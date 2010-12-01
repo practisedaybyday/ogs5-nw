@@ -1,0 +1,86 @@
+ /**************************************************************************
+MSHLib - Object:
+Task:
+Programing:
+08/2005 WW/OK Encapsulation from rf_ele_msh
+last modified
+**************************************************************************/
+#ifndef msh_lib_INC
+#define msh_lib_INC
+
+#include "msh_mesh.h"
+
+#ifdef USE_TOKENBUF
+#include "tokenbuf.h"
+#endif
+
+using Mesh_Group::CFEMesh;
+using Mesh_Group::CElem;
+using Mesh_Group::CNode;
+extern vector<Mesh_Group::CFEMesh*> fem_msh_vector;
+extern CFEMesh* FEMGet(const string &msh_name);
+extern void MSHCreateNOD2ELERelations(Mesh_Group::CFEMesh*); //OK
+
+extern CFEMesh* FEMRead(const std::string& , GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
+
+extern void MSHWrite(string);
+extern void CompleteMesh(); //WW
+extern bool CompleteMesh(string); //OK
+extern void FEMDeleteAll();
+extern void MSHCalcMinMaxMidCoordinates(); //OK
+extern double msh_x_min,msh_x_max; //OK
+extern double msh_y_min,msh_y_max; //OK
+extern double msh_z_min,msh_z_max; //OK
+extern double msh_x_mid,msh_y_mid,msh_z_mid; //OK
+// Might be removed
+void Read_RFI(istream& msh_file, CFEMesh* m_msh);
+extern void MSHAssignMATGroup2Elements(string);
+extern void MSHCreateQuadsFromPLY(CGLPolyline*,int);
+//OK411 extern void MSHCreatePrismsFromTriangles();
+extern void MSHCreateNodes();
+extern void MSHDeleteDoubleElements(int);
+extern long MSHMarkDoubleElementsType(int);
+extern void RFIWriteTecplot();
+extern void MSHWriteTecplot();
+extern void MSHAssignMATGroup2LineElements();
+extern void MSHAssignMATGroup2TrisElements(string);
+extern void MSHAssignMATGroup2QuadElements();
+extern void MSHAssignMATGroup2TetsElements();
+extern void MSHAssignMATGroup2PrisElements();
+extern void MSHAssignMATGroup2PrisElementsNew();
+extern void MSH2MATPris();
+extern void MSHAssignMATGroup2HexsElements();
+extern void MSHDestroy();
+extern void MSHDelete(string);
+extern void DATWriteRFIFile(const char *file_name);
+extern void DATWriteParticleFile(int);     // PCH
+extern void MSHWriteVOL2TEC(string); //OK
+//KR extern bool msh_file_binary; //OK
+extern void GMSH2MSH(const char*,CFEMesh*);
+extern void Mesh_Single_Surface(string surface_name, const char *file_name_const_char);//TK
+//extern void Select_Nodes_Elements_by_TINFile(const char *file_name_const_char);
+extern void Clear_Selected_Nodes_Elements();
+extern void GMSH2TIN(const char *file_name_const_char);
+extern void MSHLayerWriteTecplot(); //OK
+extern CFEMesh* MSHGet(const string &mat_type_name); //OK
+extern CFEMesh* MSHGet(const string &pcs_type_name,const string &mat_type_name); //OK
+extern CFEMesh* MSHGetGEO(string); //OK
+extern int MSHSetMaxMMPGroups(); //OK
+extern bool MSHTestMATGroups(); //OK
+#ifdef RFW_FRACTURE
+extern bool MSHGetCommonNodes(CElem*, CElem*, vector<CNode*>&);
+extern void MSHSetFractureElements(void);
+extern void MSHResetFractureElements(void);
+extern long MSHWhatElemIsPointIn(double x, double y, long index); //RFW
+#endif
+extern void MSHDefineMobile(CRFProcess*); //OK411
+extern void MSHMoveNODUcFlow (CRFProcess*); //OK411
+extern long* MSHGetNodesClose(long*,CGLPolyline*); //OK411
+
+//extern bool IsPointInSurface(Surface*,CGLPoint*); //OK411
+
+extern long* GetPointsIn(Surface*,long*); //OK411
+extern void GEOGetNodesInMaterialDomain(CFEMesh*, const int, vector<long>&, bool); //OK411
+extern void SetRFIPointsClose(CGLLine*); //OK411
+extern void MSHGetNodesClose(vector<long>&,CGLPoint*); //OK411
+#endif
