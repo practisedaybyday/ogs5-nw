@@ -175,7 +175,7 @@ class CFiniteElementStd:public CElement
      // Gravity matrix;
      //25.2.2007.WW  SymMatrix *GravityMatrix;
      // Gauss point value. Buffers. // Some changes. 27.2.2007 WW
-     double TG, TG0, PG, PG2, drho_gw_dT;
+     double TG, TG0, PG, PG0, PG2,PG20, drho_gw_dT;
      double Sw, rhow, poro, dSdp;
      double rho_gw, rho_ga, rho_g, p_gw, M_g, tort;
      //
@@ -217,6 +217,7 @@ class CFiniteElementStd:public CElement
 		 inline void CalCoef_RHS_Pc(int dof_index);	// 03.2007 PCH
         inline double CalCoef_RHS_AIR_FLOW(int dof_index);	//AKS
  inline double CalCoef_RHS_HEAT_TRANSPORT(int dof_index);	//AKS
+ inline double CalCoef_RHS_HEAT_TRANSPORT2(int dof_index);	//AKS
      inline void CalNodalEnthalpy();
      //-----------------------------------------------------
      // Process type
@@ -251,6 +252,7 @@ class CFiniteElementStd:public CElement
 		 void Assemble_RHS_Pc();	// 03.2009 PCH
 void Assemble_RHS_AIR_FLOW();	//AKS
 void Assemble_RHS_HEAT_TRANSPORT();	//AKS
+void Assemble_RHS_HEAT_TRANSPORT2();	//AKS
 		 void Assemble_RHS_T_PSGlobal(); // Assembly of RHS by temperature for PSGlobal
 	 void AssembleRHS(int dimension); // PCH
      void Assemble_DualTransfer();
@@ -280,6 +282,7 @@ void Assemble_RHS_HEAT_TRANSPORT();	//AKS
      double *NodalVal_Sat;
      double *NodalVal_SatNW;
      double *NodalVal_p2;
+    double *NodalVal_p20;//AKS
      //
      double *weight_func; //NW
      //

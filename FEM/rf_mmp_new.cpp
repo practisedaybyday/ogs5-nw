@@ -1329,6 +1329,12 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       in.clear();
       continue;
     }
+if(line_string.find("$EVAPORATION")!=string::npos) { //subkeyword found
+      in.str(GetLineFromFile1(mmp_file));
+	  in >> evaporation;
+      in.clear();
+      continue;
+}
 //------------------------------------------------------------------------
 //16. Surface water
 //------------------------------------------------------------------------
@@ -2343,7 +2349,10 @@ double* CMediumProperties::HeatConductivityTensor(int number) {
 	int i, dimen;
 	CSolidProperties *m_msp = NULL;
 	double heat_conductivity_fluids;
+  double *tensor = NULL;
+double a, b, Pc, T, Mw, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A, B,H_vap, dp_gw, dPc, dA, dB, dT, q,Tc=647.3,expfactor;
 	double dens_arg[3];//AKS
+  ElementValue* gp_ele = ele_gp_value[Fem_Ele_Std->Index];
 	//  double porosity =  this->porosity;  //MX
 	double Sw, porosity = this->porosity_model_values[0];
 	bool FLOW = false; //WW
@@ -2427,9 +2436,45 @@ double* CMediumProperties::HeatConductivityTensor(int number) {
 	for (i = 0; i < dimen * dimen; i++)
 		heat_conductivity_tensor[i] *= (1.0 - porosity);
 	for (i = 0; i < dimen; i++)
-		heat_conductivity_tensor[i * dimen + i] += porosity
-				* heat_conductivity_fluids;
+    heat_conductivity_tensor[i*dimen+i] += porosity*heat_conductivity_fluids;
 
+if(Fem_Ele_Std->cpl_pcs->type==1212&&evaporation==647)
+{
+double  PG2 = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_p2);
+double PG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC1); // Capillary pressure
+double TG=Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal1)+273.15;//Temperature
+double Sw = Fem_Ele_Std->MediaProp->SaturationCapillaryPressureFunction(PG,0);
+heat_conductivity_fluids=0.0;
+H_vap = 2257000;//pow((Tc - TG),0.38)*2.65E+5;
+a=19.81;
+b=4975.9;
+m_mfp = mfp_vector[0];
+rhow=m_mfp->Density();
+expfactor = COMP_MOL_MASS_WATER/(rhow*GAS_CONSTANT*TG);
+rho_gw = m_mfp->vaporDensity(TG)*exp(-PG*expfactor);
+p_gw = rho_gw*GAS_CONSTANT*TG/COMP_MOL_MASS_WATER;
+dens_arg[0] = PG2-p_gw;
+dens_arg[1] = TG;
+m_mfp = mfp_vector[1];
+rho_ga = m_mfp->Density(dens_arg); 
+rho_g = rho_ga+rho_gw;  
+m_mfp = mfp_vector[0];
+mat_fac_w = PermeabilitySaturationFunction(Sw,0)/m_mfp->Viscosity();
+m_mfp = mfp_vector[1];
+mat_fac_g = PermeabilitySaturationFunction(Sw,1)/m_mfp->Viscosity();
+A=b+((PG*COMP_MOL_MASS_WATER)/(rhow*GAS_CONSTANT));
+B=a-log(rho_gw*1e3);
+q=100;
+dPc=(q/(H_vap*1.0e-13))*((1/(rhow*mat_fac_w)) + (1/(rho_g*mat_fac_g)));
+dA=COMP_MOL_MASS_WATER*dPc/(rhow*GAS_CONSTANT);
+dp_gw=q/(H_vap*rho_gw*mat_fac_g*1.0e-13) ;
+dB=-dp_gw/p_gw;
+dT=(B*dA - A*dB)/(pow(B,2)+(A/TG));
+heat_conductivity_fluids = 2.25*q/dT;
+for(i=0;i<dimen*dimen;i++) heat_conductivity_tensor[i] = 0.0;
+for(i=0;i<dimen;i++)
+heat_conductivity_tensor[i*dimen+i] = heat_conductivity_fluids;
+}
 	return heat_conductivity_tensor;
 }
 

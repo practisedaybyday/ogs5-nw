@@ -78,6 +78,7 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess *Pcs, const int C_Sys_Flad, con
 	NodalVal_Sat = new double[size_m];
 	NodalVal_SatNW = new double[size_m];
 	NodalVal_p2 = new double[size_m];
+NodalVal_p20 = new double [size_m]; //AKS
 	//NW
 	switch (C_Sys_Flad / 10) {
 	case 1:
@@ -335,6 +336,7 @@ CFiniteElementStd::~CFiniteElementStd()
     delete [] NodalVal_Sat;
     delete [] NodalVal_SatNW;
     delete [] NodalVal_p2;
+delete [] NodalVal_p20;  //AKS
     //NW
     delete [] weight_func;
     weight_func = NULL;
@@ -4077,9 +4079,15 @@ void CFiniteElementStd::CalcAdvection()
     vel[2] = mat_factor*gp_ele->Velocity(2, gp);
     if(multiphase)  //02/2007 WW
     {
-       dens_aug[0] = interpolate(NodalVal_p2);
-       dens_aug[1] = interpolate(NodalVal1)+T_KILVIN_ZERO; // 29.05.2008. WW
-       rho_g = GasProp->Density(dens_aug); // 29.05.2008. WW
+PG2=interpolate(NodalVal_p2);
+PG=  interpolate(NodalValC1);
+TG=interpolate(NodalVal1)+T_KILVIN_ZERO;
+rhow=FluidProp->Density();
+rho_gw = FluidProp->vaporDensity(TG)*exp(-PG*COMP_MOL_MASS_WATER/(rhow*GAS_CONSTANT*TG));     
+p_gw = rho_gw*GAS_CONSTANT*TG/COMP_MOL_MASS_WATER;
+dens_aug[0] = PG2-p_gw;
+dens_aug[1] = TG;
+rho_g = rho_gw + GasProp->Density(dens_aug);  // 29.05.2008. WW/ 2 Dec 2010 AKS
        mat_factor = rho_g*m_mfp_g->SpecificHeatCapacity();
        vel[0] += mat_factor*gp_ele->Velocity_g(0, gp);
        vel[1] += mat_factor*gp_ele->Velocity_g(1, gp);
@@ -6289,6 +6297,7 @@ void CFiniteElementStd::Config()
       NodalValC1[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1);
       if(cpl_pcs->type==1212)
         NodalVal_p2[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1+2);
+NodalVal_p20[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c0+2);         
     }
   }
 }
@@ -6373,6 +6382,8 @@ heat_phase_change = false; // ?2WW
 AssembleMixedHyperbolicParabolicEquation(); //CMCD4213
 if(FluidProp->density_model==14 && MediaProp->heat_diffusion_model==273 && cpl_pcs )
 Assemble_RHS_HEAT_TRANSPORT();// This include when need pressure terms n dp/dt + nv.Nabla p//AKS
+if(cpl_pcs->type==1212&&MediaProp->evaporation==647)
+Assemble_RHS_HEAT_TRANSPORT2();//AKS
 	  break;
     //....................................................................
     case M: // Mass transport
@@ -6821,6 +6832,7 @@ void CFiniteElementStd::CalcNodeMatParatemer()
       NodalValC1[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1);
       if(cpl_pcs->type==1212)
         NodalVal_p2[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1+2);
+ NodalVal_p20[i] = pcs->GetNodeValue(nodes[i],idx_c0+2); //AKS         
 	}
   }
   //
@@ -7067,7 +7079,7 @@ last modification:
 inline double CFiniteElementStd::CalCoef_RHS_T_MPhase(int dof_index)
 {
   double val = 0.0, D_gw=0.0, D_ga=0.0;
-  double expfactor=0.0;
+  double expfactor=0.0,dens_arg[3];
   int Index = MeshElement->GetIndex();
   ComputeShapefct(1);
   //======================================================================
@@ -7112,7 +7124,9 @@ inline double CFiniteElementStd::CalCoef_RHS_T_MPhase(int dof_index)
       tort *=(1.0-Sw)*poro*2.16e-5*pow(TG/T_KILVIN_ZERO, 1.8);
       //
       p_gw = rho_gw*GAS_CONSTANT*TG/COMP_MOL_MASS_WATER;
-      rho_ga = (PG2-p_gw)*GasProp->molar_mass/(GAS_CONSTANT*TG);
+    dens_arg[0] = PG2-p_gw; 
+         dens_arg[1] = TG; 
+      rho_ga = GasProp->Density(dens_arg);  //AKS SEP 2010  //(PG2-p_gw)*GasProp->molar_mass/(GAS_CONSTANT*TG);
       rho_g = rho_ga+rho_gw;
       // 1/Mg
       M_g = (rho_gw/COMP_MOL_MASS_WATER+rho_ga/GasProp->molar_mass)/rho_g;
@@ -7788,6 +7802,176 @@ eqs_rhs[i_sh + eqs_number[i]] -= NodalVal[i+ii_sh];
 (*RHS)(i+LocalShift+ii_sh) -=  NodalVal[i+ii_sh];
 }
 }
+}
+/**************************************************************************
+FEMLib-Method:
+Task: Calculate RHS of pressure coupled term
+Programing:
+05/2010 AKS Implementation
+last modification:
+**************************************************************************/
+
+inline double CFiniteElementStd::CalCoef_RHS_HEAT_TRANSPORT2(int dof_index)
+{
+int i;
+ElementValue* gp_ele = ele_gp_value[Index];
+double *tensor = NULL;
+double val = 0.0,mat_fac,Tc=647.096,H_vap=0.0,dens_arg[3]; 
+ComputeShapefct(1);
+PG = interpolate(NodalValC1); 
+PG2 = interpolate(NodalVal_p2);
+TG = interpolate(NodalVal1)+T_KILVIN_ZERO; 
+PG0 = interpolate(NodalValC);   
+PG20 = interpolate(NodalVal_p20); 
+dens_arg[1] = TG;
+dens_arg[0] = PG2-PG;
+rhow = FluidProp->Density(dens_arg);
+Sw =MediaProp->SaturationCapillaryPressureFunction(PG,0);
+dSdp = -MediaProp->SaturationPressureDependency(Sw, rhow, pcs->m_num->ls_theta);
+poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
+if(MediaProp->evaporation==647)
+H_vap = -2257000;//pow((Tc - TG),0.38)*2.5397E+5;//It is specific you can change thi value as you chaning fluid from water 
+for (i=0;i<dim*dim;i++) mat[i]=0.0;
+switch(dof_index)
+{
+case 0:
+val = H_vap*rhow*poro*dSdp;
+val *= (PG-PG0);
+return val;
+break;
+
+case 1:
+val=0.0;
+return val;
+break;
+
+case 2: 
+tensor = MediaProp->PermeabilityTensor(Index);
+mat_fac = H_vap*rhow*MediaProp->PermeabilitySaturationFunction(Sw,0)/FluidProp->Viscosity();
+for(i=0;i<dim*dim;i++)
+mat[i] = tensor[i]*mat_fac*time_unit_factor;
+break;
+
+case 3:
+tensor = MediaProp->PermeabilityTensor(Index);
+mat_fac = -H_vap*rhow*MediaProp->PermeabilitySaturationFunction(Sw,0)/FluidProp->Viscosity();
+for(i=0;i<dim*dim;i++)
+mat[i] = tensor[i]*mat_fac*time_unit_factor;
+break;
+
+}
+}
+/***************************************************************************
+   GeoSys - Funktion:
+   Assemble_RHS_HEAT_TRANSPORT2: This include when need pressure terms n dp/dt + nv.Nabla p
+   Programming:
+   05/2010   AKS
+**************************************************************************/
+
+void CFiniteElementStd::Assemble_RHS_HEAT_TRANSPORT2()
+{
+int i, j, k, ii;
+// ---- Gauss integral
+int gp_r=0,gp_s=0,gp_t=0;
+double *tensor = NULL,dens_arg[3],H_vap=0,Tc=647.096;
+double fkt=0.0, fac=0.0,mat_fac;
+// Material
+int dof_n = 1;
+//----------------------------------------------------------------------
+for (i = 0; i < dof_n*nnodes; i++) NodalVal[i] = 0.0;
+//======================================================================
+// Loop over Gauss points
+for (gp = 0; gp < nGaussPoints; gp++)
+{
+//---------------------------------------------------------
+//  Get local coordinates and weights 
+//  Compute Jacobian matrix and its determinate
+//---------------------------------------------------------
+fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+// Compute geometry
+ComputeGradShapefct(1); // Linear interpolation function
+ComputeShapefct(1); // Linear interpolation function
+ElementValue* gp_ele = ele_gp_value[Index];
+  int dof_n = 2;
+int GravityOn = 1; // Initialized to be on
+// If no gravity, then set GravityOn to be zero.
+if((coordinate_system)%10!=2&&(!axisymmetry))
+GravityOn = 0;
+TG = interpolate(NodalVal1)+T_KILVIN_ZERO; 
+PG=interpolate(NodalValC1);
+PG2=interpolate(NodalVal_p2);
+dens_arg[1] = TG;
+dens_arg[0] = PG2-PG;
+
+for(ii=0; ii<dof_n; ii++)
+{
+// Material
+fac = fkt*CalCoef_RHS_HEAT_TRANSPORT2(ii)/dt;
+// Calculate THS
+for (i = 0; i < nnodes; i++)
+NodalVal[i] += fac *shapefct[i];
+}
+
+
+// grad pc
+for(ii=0; ii<dof_n-1; ii++)
+{
+// Material
+CalCoef_RHS_HEAT_TRANSPORT2(ii+dof_n);
+for (i = 0; i< nnodes; i++)
+{
+for (j = 0; j < nnodes; j++)
+{
+for (k = 0; k < dim; k++)
+NodalVal[i]  += fkt*mat[dim*k+k]*dshapefct[k*nnodes+i]*dshapefct[k*nnodes+j]*NodalValC1[j];
+}
+}
+}
+
+// grad pc
+for(ii=0; ii<dof_n-1; ii++)
+{
+// Material
+CalCoef_RHS_HEAT_TRANSPORT2(ii+dof_n+1);
+for (i = 0; i< nnodes; i++)
+{
+for (j = 0; j < nnodes; j++)
+{
+for (k = 0; k < dim; k++)
+NodalVal[i] += fkt*mat[dim*k+k]*dshapefct[k*nnodes+i]*dshapefct[k*nnodes+j]*NodalVal_p2[j];
+}
+}
+}
+
+//gravity
+if(GravityOn)
+{
+
+Sw =MediaProp->SaturationCapillaryPressureFunction(PG,0);
+if(MediaProp->evaporation==647)
+H_vap = -2257000;//0.0*pow((Tc - TG),0.38)*2.65E+5;
+tensor = MediaProp->PermeabilityTensor(Index);
+mat_fac = MediaProp->PermeabilitySaturationFunction(Sw,0)/FluidProp->Viscosity();
+for(i=0; i<dim*dim; i++)
+mat[i] = tensor[i]*mat_fac*time_unit_factor;
+for (i = 0; i < nnodes; i++)
+for (k = 0; k < dim; k++)
+NodalVal[i] += fkt*H_vap*FluidProp->Density(dens_arg)*mat[dim*k+dim-1]*FluidProp->Density(dens_arg)*gravity_constant*dshapefct[k*nnodes+i];	
+}
+
+}
+int ii_sh;
+long i_sh;
+for(ii=0;ii<pcs->dof;ii++)
+{
+i_sh = NodeShift[ii];
+ii_sh = ii*nnodes;
+for (i=0;i<nnodes;i++)
+{
+eqs_rhs[i_sh + eqs_number[i]] -= NodalVal[i+ii_sh];
+(*RHS)(i+LocalShift+ii_sh) -=  NodalVal[i+ii_sh];
+}
+} 
 }
 
 /**************************************************************************

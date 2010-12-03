@@ -1337,7 +1337,7 @@ Programing:
 double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 {
   double heat_capacity_fluids=0.0;
-  double PG=0.0, Sw = 0.0;
+  double PG=0.0, Sw = 0.0,TG,rhow,rho_gw,p_gw,dens_aug[3],rho_g;
   double dens_arg[3]; //AKS
   //
   CFluidProperties *m_mfp = NULL;
@@ -1359,7 +1359,15 @@ else
      PG = assem->interpolate(assem->NodalValC1); // Capillary pressure
      Sw = assem->MediaProp->SaturationCapillaryPressureFunction(PG,0);
      double PG2 = assem->interpolate(assem->NodalVal_p2);
-     double rho_g = PG2*COMP_MOL_MASS_AIR/(GAS_CONSTANT*(assem->TG+273.15));
+TG=assem->interpolate(assem->NodalVal1)+T_KILVIN_ZERO;
+rhow=assem->FluidProp->Density();
+rho_gw = assem->FluidProp->vaporDensity(TG)*exp(-PG*COMP_MOL_MASS_WATER/(rhow*GAS_CONSTANT*TG));     
+p_gw = rho_gw*GAS_CONSTANT*TG/COMP_MOL_MASS_WATER;
+dens_aug[0] = PG2-p_gw;
+dens_aug[1] = TG;
+m_mfp = mfp_vector[1];
+rho_g = rho_gw + m_mfp->Density(dens_aug);  // 2 Dec 2010 AKS
+//double rho_g = PG2*COMP_MOL_MASS_AIR/(GAS_CONSTANT*(assem->TG+273.15));\\WW
      //
      m_mfp = mfp_vector[0];
      heat_capacity_fluids = Sw * m_mfp->Density() * m_mfp->SpecificHeatCapacity();

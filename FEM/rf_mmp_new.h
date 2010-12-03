@@ -201,6 +201,7 @@ class CMediumProperties
   double permeability_exp[1]; // JOD
   double permeability_alpha[1]; // JOD
   int heat_diffusion_model;
+int evaporation;// if it is 647 then evaporation ON, else OFF: and corresponding heat loss will compensated by heat ST 
   //aux
   int m_color[3];
   bool selected;
