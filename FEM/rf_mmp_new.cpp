@@ -2438,7 +2438,7 @@ double a, b, Pc, T, Mw, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A
 	for (i = 0; i < dimen; i++)
     heat_conductivity_tensor[i*dimen+i] += porosity*heat_conductivity_fluids;
 
-if(Fem_Ele_Std->cpl_pcs->type==1212&&evaporation==647)
+if(evaporation==647)
 {
 double  PG2 = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_p2);
 double PG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC1); // Capillary pressure
@@ -2463,19 +2463,19 @@ mat_fac_w = PermeabilitySaturationFunction(Sw,0)/m_mfp->Viscosity();
 m_mfp = mfp_vector[1];
 mat_fac_g = PermeabilitySaturationFunction(Sw,1)/m_mfp->Viscosity();
 A=b+((PG*COMP_MOL_MASS_WATER)/(rhow*GAS_CONSTANT));
-B=a-log(rho_gw*1e3);
+B=a-log(p_gw/30024.895431831395);
 q=100;
 dPc=(q/(H_vap*1.0e-13))*((1/(rhow*mat_fac_w)) + (1/(rho_g*mat_fac_g)));
 dA=COMP_MOL_MASS_WATER*dPc/(rhow*GAS_CONSTANT);
 dp_gw=q/(H_vap*rho_gw*mat_fac_g*1.0e-13) ;
 dB=-dp_gw/p_gw;
-dT=(B*dA - A*dB)/(pow(B,2)+(A/TG));
-heat_conductivity_fluids = 2.25*q/dT;
+dT=(B*dA - A*dB)/(pow(B,2)+(0/TG));
+heat_conductivity_fluids = 2*q/dT;
 for(i=0;i<dimen*dimen;i++) heat_conductivity_tensor[i] = 0.0;
 for(i=0;i<dimen;i++)
 heat_conductivity_tensor[i*dimen+i] = heat_conductivity_fluids;
 }
-	return heat_conductivity_tensor;
+return heat_conductivity_tensor;
 }
 
 

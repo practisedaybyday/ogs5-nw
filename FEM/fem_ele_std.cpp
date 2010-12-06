@@ -4087,7 +4087,9 @@ rho_gw = FluidProp->vaporDensity(TG)*exp(-PG*COMP_MOL_MASS_WATER/(rhow*GAS_CONST
 p_gw = rho_gw*GAS_CONSTANT*TG/COMP_MOL_MASS_WATER;
 dens_aug[0] = PG2-p_gw;
 dens_aug[1] = TG;
-rho_g = rho_gw + GasProp->Density(dens_aug);  // 29.05.2008. WW/ 2 Dec 2010 AKS
+rho_g = rho_gw + GasProp->Density(dens_aug);  // 29.05.2008. WW
+if(MediaProp->evaporation==647)
+rho_g += rho_gw; // 2 Dec 2010 AKS
        mat_factor = rho_g*m_mfp_g->SpecificHeatCapacity();
        vel[0] += mat_factor*gp_ele->Velocity_g(0, gp);
        vel[1] += mat_factor*gp_ele->Velocity_g(1, gp);
@@ -6382,7 +6384,7 @@ heat_phase_change = false; // ?2WW
 AssembleMixedHyperbolicParabolicEquation(); //CMCD4213
 if(FluidProp->density_model==14 && MediaProp->heat_diffusion_model==273 && cpl_pcs )
 Assemble_RHS_HEAT_TRANSPORT();// This include when need pressure terms n dp/dt + nv.Nabla p//AKS
-if(cpl_pcs->type==1212&&MediaProp->evaporation==647)
+if(MediaProp->evaporation==647)
 Assemble_RHS_HEAT_TRANSPORT2();//AKS
 	  break;
     //....................................................................
