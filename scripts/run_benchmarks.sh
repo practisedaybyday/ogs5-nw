@@ -21,12 +21,12 @@ then
 	cd .. >/dev/null
 	
 	cd build_brns
-	ctest -R 'EXCEED' -E 'FILE' -j 32 >> ../benchOut.txt
+	ctest -R 'EXCEED' -E 'FILE|AllTests' -j 32 >> ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' >> ../benchOut.txt
 	cd .. >/dev/null
 	
 	cd build_pqc
-	ctest -R 'EXCEED' -E 'FILE' -j 32 >> ../benchOut.txt
+	ctest -R 'EXCEED' -E 'FILE|AllTests' -j 32 >> ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' >> ../benchOut.txt
 	
 else
@@ -35,12 +35,12 @@ else
 	cd .. >/dev/null
 	
 	cd build_brns
-	ctest -E 'FILE|EXCEED' -j 32 >> ../benchOut.txt
+	ctest -E 'FILE|EXCEED|AllTests' -j 32 >> ../benchOut.txt
 	ctest -R 'FILECOMPARE' -E 'EXCEED' >> ../benchOut.txt
 	cd .. >/dev/null
 
 	cd build_pqc
-	ctest -E 'FILE|EXCEED' -j 32 >> ../benchOut.txt
+	ctest -E 'FILE|EXCEED|AllTests' -j 32 >> ../benchOut.txt
 	ctest -R 'FILECOMPARE' -E 'EXCEED' >> ../benchOut.txt
 fi
 cd .. >/dev/null
@@ -49,6 +49,6 @@ cd .. >/dev/null
 cat benchOut.txt
 
 # Send emails on errors
-#python26 ~/bin/sendmail/sendmail.py
+python26 ~/bin/sendmail/sendmail.py
 
 set -e >/dev/null
