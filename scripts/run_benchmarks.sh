@@ -14,8 +14,7 @@ set +e >/dev/null
 
 # Run FEM benchmarks
 cd build_fem
-if  [ "$1" = "ex" ]
-then
+if  [ "$1" = "ex" ]; then
 	ctest -R 'EXCEED' -E 'JOD|AllTests|FILE' -j 32 >> ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' -E 'JOD' >> ../benchOut.txt
 	cd .. >/dev/null
