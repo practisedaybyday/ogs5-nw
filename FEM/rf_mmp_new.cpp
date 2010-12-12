@@ -2348,7 +2348,7 @@ ToDo:
 double* CMediumProperties::HeatConductivityTensor(int number) {
 	int i, dimen;
 	CSolidProperties *m_msp = NULL;
-	double heat_conductivity_fluids;
+	double heat_conductivity_fluids,Kx[3];
   double *tensor = NULL;
 double a, b, Pc, T, Mw, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A, B,H_vap, dp_gw, dPc, dA, dB, dT, q,Tc=647.3,expfactor;
 	double dens_arg[3];//AKS
@@ -2438,8 +2438,15 @@ double a, b, Pc, T, Mw, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A
 	for (i = 0; i < dimen; i++)
     heat_conductivity_tensor[i*dimen+i] += porosity*heat_conductivity_fluids;
 
+for(i=0;i<dimen*dimen;i++) heat_conductivity_tensor[i] = 0.0;
+for(i=0;i<dimen;i++)
+heat_conductivity_tensor[i*dimen+i] = heat_conductivity_fluids;
+
 if(evaporation==647)
 {
+int GravityOn = 1;
+if((Fem_Ele_Std->coordinate_system)%10!=2&&(!Fem_Ele_Std->axisymmetry))
+GravityOn = 0;
 double  PG2 = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_p2);
 double PG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC1); // Capillary pressure
 double TG=Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal1)+273.15;//Temperature
@@ -2465,15 +2472,28 @@ mat_fac_g = PermeabilitySaturationFunction(Sw,1)/m_mfp->Viscosity();
 A=b+((PG*COMP_MOL_MASS_WATER)/(rhow*GAS_CONSTANT));
 B=a-log(p_gw/30024.895431831395);
 q=100;
+for(i=0;i<dimen;i++) Kx[i]=0.0;
 dPc=(q/(H_vap*1.0e-13))*((1/(rhow*mat_fac_w)) + (1/(rho_g*mat_fac_g)));
 dA=COMP_MOL_MASS_WATER*dPc/(rhow*GAS_CONSTANT);
 dp_gw=q/(H_vap*rho_gw*mat_fac_g*1.0e-13) ;
 dB=-dp_gw/p_gw;
 dT=(B*dA - A*dB)/(pow(B,2)+(0/TG));
-heat_conductivity_fluids = 2*q/dT;
+heat_conductivity_fluids = 4*q/dT;
+Kx[0]=heat_conductivity_fluids;
+if(GravityOn)
+{
+dPc -= (rhow-rho_g)*gravity_constant;
+dA=COMP_MOL_MASS_WATER*dPc/(rhow*GAS_CONSTANT);
+dp_gw -= rho_g*gravity_constant;
+dB=-dp_gw/p_gw;
+dT=(B*dA - A*dB)/(pow(B,2)+(0/TG));
+heat_conductivity_fluids = 4*q/dT;
+Kx[dimen-1]=heat_conductivity_fluids;
 for(i=0;i<dimen*dimen;i++) heat_conductivity_tensor[i] = 0.0;
 for(i=0;i<dimen;i++)
-heat_conductivity_tensor[i*dimen+i] = heat_conductivity_fluids;
+heat_conductivity_tensor[i*dimen+i] = Kx[i];
+}
+
 }
 return heat_conductivity_tensor;
 }

@@ -4087,9 +4087,7 @@ rho_gw = FluidProp->vaporDensity(TG)*exp(-PG*COMP_MOL_MASS_WATER/(rhow*GAS_CONST
 p_gw = rho_gw*GAS_CONSTANT*TG/COMP_MOL_MASS_WATER;
 dens_aug[0] = PG2-p_gw;
 dens_aug[1] = TG;
-rho_g = rho_gw + GasProp->Density(dens_aug);  // 29.05.2008. WW
-if(MediaProp->evaporation==647)
-rho_g += rho_gw; // 2 Dec 2010 AKS
+rho_g = rho_gw + GasProp->Density(dens_aug);  // 29.05.2008. WW/ 2 Dec 2010 AKS
        mat_factor = rho_g*m_mfp_g->SpecificHeatCapacity();
        vel[0] += mat_factor*gp_ele->Velocity_g(0, gp);
        vel[1] += mat_factor*gp_ele->Velocity_g(1, gp);
@@ -7948,17 +7946,12 @@ NodalVal[i] += fkt*mat[dim*k+k]*dshapefct[k*nnodes+i]*dshapefct[k*nnodes+j]*Noda
 //gravity
 if(GravityOn)
 {
-
-Sw =MediaProp->SaturationCapillaryPressureFunction(PG,0);
-if(MediaProp->evaporation==647)
-H_vap = -2257000;//0.0*pow((Tc - TG),0.38)*2.65E+5;
-tensor = MediaProp->PermeabilityTensor(Index);
-mat_fac = MediaProp->PermeabilitySaturationFunction(Sw,0)/FluidProp->Viscosity();
-for(i=0; i<dim*dim; i++)
-mat[i] = tensor[i]*mat_fac*time_unit_factor;
+CalCoef_RHS_HEAT_TRANSPORT2(2);
 for (i = 0; i < nnodes; i++)
+{
 for (k = 0; k < dim; k++)
-NodalVal[i] += fkt*H_vap*FluidProp->Density(dens_arg)*mat[dim*k+dim-1]*FluidProp->Density(dens_arg)*gravity_constant*dshapefct[k*nnodes+i];	
+NodalVal[i] -= fkt*mat[dim*k+dim-1]*FluidProp->Density(dens_arg)*gravity_constant*dshapefct[k*nnodes+i];	
+}
 }
 
 }
