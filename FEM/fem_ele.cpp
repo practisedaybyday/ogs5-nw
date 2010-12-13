@@ -1080,8 +1080,6 @@ void CElement::SetExtropoGaussPoints(const int i)
 			unit[2] = 1.5;
 		}
 		break;
-    case MshElemType::LINE: 
-        break;
 	default:
 		std::cerr << "CElement::SetExtropoGaussPoints MshElemType not handled" << std::endl;
 	}

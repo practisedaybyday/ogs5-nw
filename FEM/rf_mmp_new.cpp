@@ -1332,6 +1332,8 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
 if(line_string.find("$EVAPORATION")!=string::npos) { //subkeyword found
       in.str(GetLineFromFile1(mmp_file));
 	  in >> evaporation;
+in >> heatflux;
+in >> vaporfraction;
       in.clear();
       continue;
 }
@@ -2438,10 +2440,6 @@ double a, b, Pc, T, Mw, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A
 	for (i = 0; i < dimen; i++)
     heat_conductivity_tensor[i*dimen+i] += porosity*heat_conductivity_fluids;
 
-for(i=0;i<dimen*dimen;i++) heat_conductivity_tensor[i] = 0.0;
-for(i=0;i<dimen;i++)
-heat_conductivity_tensor[i*dimen+i] = heat_conductivity_fluids;
-
 if(evaporation==647)
 {
 int GravityOn = 1;
@@ -2471,7 +2469,8 @@ m_mfp = mfp_vector[1];
 mat_fac_g = PermeabilitySaturationFunction(Sw,1)/m_mfp->Viscosity();
 A=b+((PG*COMP_MOL_MASS_WATER)/(rhow*GAS_CONSTANT));
 B=a-log(p_gw/30024.895431831395);
-q=100;
+q=heatflux;
+
 for(i=0;i<dimen;i++) Kx[i]=0.0;
 dPc=(q/(H_vap*1.0e-13))*((1/(rhow*mat_fac_w)) + (1/(rho_g*mat_fac_g)));
 dA=COMP_MOL_MASS_WATER*dPc/(rhow*GAS_CONSTANT);
