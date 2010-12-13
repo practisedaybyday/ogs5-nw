@@ -2477,7 +2477,7 @@ dA=COMP_MOL_MASS_WATER*dPc/(rhow*GAS_CONSTANT);
 dp_gw=q/(H_vap*rho_gw*mat_fac_g*1.0e-13) ;
 dB=-dp_gw/p_gw;
 dT=(B*dA - A*dB)/(pow(B,2)+(0/TG));
-heat_conductivity_fluids = 4*q/dT;
+heat_conductivity_fluids = 2*q/dT;
 Kx[0]=heat_conductivity_fluids;
 if(GravityOn)
 {
@@ -2486,12 +2486,13 @@ dA=COMP_MOL_MASS_WATER*dPc/(rhow*GAS_CONSTANT);
 dp_gw -= rho_g*gravity_constant;
 dB=-dp_gw/p_gw;
 dT=(B*dA - A*dB)/(pow(B,2)+(0/TG));
-heat_conductivity_fluids = 4*q/dT;
+heat_conductivity_fluids = 2*q/dT;
 Kx[dimen-1]=heat_conductivity_fluids;
+}
 for(i=0;i<dimen*dimen;i++) heat_conductivity_tensor[i] = 0.0;
 for(i=0;i<dimen;i++)
 heat_conductivity_tensor[i*dimen+i] = Kx[i];
-}
+
 
 }
 return heat_conductivity_tensor;
