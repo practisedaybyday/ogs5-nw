@@ -29,6 +29,9 @@ last modified
 #include "rf_node.h"
 #include "geo_ply.h"
 
+namespace process{class CRFProcessDeformation;}; //WW
+using process::CRFProcessDeformation; //WW
+
 typedef struct {
   std::vector<double> value_reference;
   std::vector<double> last_source_value;
@@ -139,6 +142,10 @@ private: // TF, KR
 
 	double normaldepth_slope; // used only once in a global in rf_st_new
 
+    /// Subdomain index for excvation simulation
+    // 14.12.2010. WW
+    int sub_dom_idx;
+
     int fct_method;
 	std::string fct_name;
 
@@ -166,6 +173,7 @@ private: // TF, KR
     std::vector<double*> pnt_parameter_vector;
 
     friend class CSourceTermGroup;
+    friend class process::CRFProcessDeformation; //WW
 
     std::string geo_name;
     double _coup_leakance;

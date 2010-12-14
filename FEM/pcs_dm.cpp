@@ -2482,7 +2482,7 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 			// ---- 16.01.2009 WW
 			exist = false;
 			for (j = k + 1; j < SizeSt; j++) {
-				if (m_st->getGeoType() == st_vector[j]->getGeoType()) {
+				if (m_st->sub_dom_idx == st_vector[j]->sub_dom_idx) {
 					//
 					exist = true;
 					break;
@@ -2490,7 +2490,7 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 			}
 			if (!exist)
 				//---
-				ExcavDomainIndex.push_back(m_st->getGeoType());
+				ExcavDomainIndex.push_back(m_st->sub_dom_idx);
 		}
 	}
 	SizeSubD = (int) ExcavDomainIndex.size();
@@ -2557,7 +2557,7 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 	for (k = 0; k < SizeSt; k++) {
 		// Get nodes on cave surface
 		m_st = st_vector[k];
-		if (m_st->getProcessPrimaryVariable () == EXCAVATION)
+		if (m_st->getProcessPrimaryVariable () != EXCAVATION)
 			continue;
 		if (m_st->getGeoType () == GEOLIB::POLYLINE) {
 //			CGLPolyline *m_polyline (GEOGetPLYByName(m_st->getGeoName()));

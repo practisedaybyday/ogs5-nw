@@ -82,7 +82,7 @@ vector<NODE_HISTORY*> node_history_vector;//CMCD
  01/2004 OK Implementation
  **************************************************************************/
 CSourceTerm::CSourceTerm() :
-	ProcessInfo(), GeoInfo(), _coupled (false)
+	ProcessInfo(), GeoInfo(), _coupled (false), sub_dom_idx(-1)
 {
 	CurveIndex = -1;
 	//KR critical_depth = false;
@@ -463,19 +463,7 @@ void CSourceTerm::ReadGeoType(std::ifstream *st_file,
 		strstr.str(GetLineFromFile1(st_file));
 		size_t tmp_geo_type;
 		std::string sub_string;
-		strstr >> sub_string >> tmp_geo_type;
-		switch (tmp_geo_type) {
-		case 0: _geo_type = GEOLIB::POINT;
-				break;
-		case 1: _geo_type = GEOLIB::POLYLINE;
-				break;
-		case 2: _geo_type = GEOLIB::SURFACE;
-				break;
-		case 3: _geo_type = GEOLIB::VOLUME;
-				break;
-		case 4: _geo_type = GEOLIB::GEODOMAIN;
-				break;
-		}
+		strstr >> sub_string >> sub_dom_idx;
 		strstr.clear();
 	}
 }
