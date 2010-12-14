@@ -81,16 +81,35 @@ IF(PARALLEL_USE_MPI)
 #		ENDIF(MPI_FOUND)			
 	ENDIF(WIN32)
 	IF(UNIX)
-		FIND_PACKAGE(MPI)
-		IF(MPI_FOUND)		
-			SET(CMAKE_C_COMPILER ${MPI_COMPILER})
-			SET(CMAKE_CXX_COMPILER ${MPI_COMPILER})
-			ADD_DEFINITIONS(-DNEW_EQS -DUSE_MPI)    			
-		ELSE(MPI_FOUND)
-			MESSAGE (FATAL_ERROR "Aborting: MPI implementation is not found!")
-		ENDIF(MPI_FOUND)			
-	ENDIF(UNIX)
-	
+
+# If there is an mpi compiler find it and interogate (farther below) it for the include
+# and lib dirs otherwise we will continue to search from ${_MPI_BASE_DIR}.
+
+		IF( ${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} LESS 8)
+			find_program(MPI_COMPILER
+ 			 NAMES mpic++ mpicxx mpiCC mpicc
+			 HINTS "${_MPI_BASE_DIR}"
+ 			 PATH_SUFFIXES bin
+			  DOC "MPI compiler. Used only to detect MPI compilation flags.")
+			IF(MPI_COMPILER)
+
+			MESSAGE (STATUS  "CMake version is less than 2.8, MPI compiler is set directly" )	
+			mark_as_advanced(MPI_COMPILER)
+				SET(CMAKE_C_COMPILER ${MPI_COMPILER})
+				SET(CMAKE_CXX_COMPILER ${MPI_COMPILER})
+				ADD_DEFINITIONS(-DNEW_EQS -DUSE_MPI)    		
+			ENDIF(MPI_COMPILER)
+		ELSE( ${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} LESS 8)
+			FIND_PACKAGE(MPI)
+			IF(MPI_FOUND)		
+				SET(CMAKE_C_COMPILER ${MPI_COMPILER})
+				SET(CMAKE_CXX_COMPILER ${MPI_COMPILER})
+				ADD_DEFINITIONS(-DNEW_EQS -DUSE_MPI)    			
+			ELSE(MPI_FOUND)
+				MESSAGE (FATAL_ERROR "Aborting: MPI implementation is not found!")
+			ENDIF(MPI_FOUND)
+		ENDIF( ${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} LESS 8)
+	ENDIF(UNIX)	
 ENDIF(PARALLEL_USE_MPI)
 
 

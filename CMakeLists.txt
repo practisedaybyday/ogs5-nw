@@ -42,7 +42,9 @@ IF (WIN32)
 		# Sets warning level 3 and ignores some warnings
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /wd4290")
 	ELSE (MSVC)
-		MESSAGE (FATAL_ERROR "Aborting: On Windows only the Visual Studio compiler is supported!")
+#FOR CYGWIN.  25.02.2010. WW
+		MESSAGE (STATUS "Might be GCC under cygwin.")
+#		MESSAGE (FATAL_ERROR "Aborting: On Windows only the Visual Studio compiler is supported!")
 	ENDIF (MSVC)
 ENDIF (WIN32)
 

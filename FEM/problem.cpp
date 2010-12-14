@@ -852,28 +852,26 @@ bool Problem::CouplingLoop()
 
    for(i=0; i<(int)total_processes.size(); i++)
    {
-//    if(active_processes[i]&&total_processes[i]->selected) //CB 12/09 Timtypesteady
-      if(active_processes[i]) //NW
+      if(active_processes[i]&&total_processes[i]->selected) 
       {
-        if (total_processes[i]->selected) {
-          m_tim = total_processes[i]->Tim;
-          if(m_tim->CheckTime(current_time, dt)>DBL_MIN)
-          {
-            exe_flag[i] = true;
-            total_processes[i]->SetDefaultTimeStepAccepted();
-            acounter++;
-            m_tim->step_current++;
-          }
-          else
-            exe_flag[i] = false;
-        } else {
-          // no need to recalculate but active, e.g. the steady state
-          exe_flag[i] = false;
-          acounter++; // incrementation is necessary for output
-        }
+        m_tim = total_processes[i]->Tim;
+        if(m_tim->CheckTime(current_time, dt)>DBL_MIN)
+        {
+           exe_flag[i] = true;
+           total_processes[i]->SetDefaultTimeStepAccepted();
+           acounter++;
+           m_tim->step_current++;
+        } 
+        else   
+           exe_flag[i] = false;
       }
       else
-        exe_flag[i] = false;
+      {
+        if(total_processes[i]&&total_processes[i]->tim_type_name.find("STEADY")!=string::npos)     //21.05.2010.  WW
+           acounter++;  
+
+         exe_flag[i] = false;
+      }
    }
    //
    int num_processes = (int)active_process_index.size();
