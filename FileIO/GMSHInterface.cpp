@@ -343,6 +343,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo)
 	}
 	std::cout << "ok" << std::endl;
 
+/*
 	// debug
 	std::vector<GEOLIB::Point*> *quad_pnts (new std::vector<GEOLIB::Point*>);
 	std::vector<GEOLIB::Polyline*> *quad_plys (new std::vector<GEOLIB::Polyline*>);
@@ -350,6 +351,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo)
 	std::string name ("QuadTree");
 	geo.addPointVec (quad_pnts, name, NULL);
 	geo.addPolylineVec (quad_plys, name);
+*/
 
 	//	// go through all geometric data sets and get polygons
 	//	std::vector<GEOLIB::Polygon*> polygon_vec;

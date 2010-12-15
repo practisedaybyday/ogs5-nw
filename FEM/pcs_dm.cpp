@@ -2560,7 +2560,11 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 		if (m_st->getProcessPrimaryVariable () != EXCAVATION)
 			continue;
 		if (m_st->getGeoType () == GEOLIB::POLYLINE) {
-//			CGLPolyline *m_polyline (GEOGetPLYByName(m_st->getGeoName()));
+			CGLPolyline *m_polyline (GEOGetPLYByName(m_st->getGeoName()));
+
+			double mesh_min_edge_length (m_msh->getMinEdgeLength());
+			m_msh->setMinEdgeLength(m_polyline->epsilon);
+
 //			if (m_polyline) {
 //				m_st->SetPolyline(m_polyline);
 //				if (m_polyline->type == 100)
@@ -2572,6 +2576,8 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 //			}
 			if (m_st->getGeoObj()) {
 				m_msh->GetNODOnPLY(static_cast<const GEOLIB::Polyline*>(m_st->getGeoObj()), nodes_vector);
+					// reset min edge length of mesh
+					m_msh->setMinEdgeLength (mesh_min_edge_length);
 			}
 		}
 		if (m_st->getGeoType () == GEOLIB::SURFACE) {
