@@ -2352,7 +2352,8 @@ double* CMediumProperties::HeatConductivityTensor(int number) {
 	CSolidProperties *m_msp = NULL;
 	double heat_conductivity_fluids,Kx[3];
   double *tensor = NULL;
-double a, b, Pc, T, Mw, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A, B,H_vap, dp_gw, dPc, dA, dB, dT, q,Tc=647.3,expfactor;
+//double a, b, Pc, T, Mw, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A, B,H_vap, dp_gw, dPc, dA, dB, dT, q,Tc=647.3,expfactor;
+double a, b, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A, B,H_vap, dp_gw, dPc, dA, dB, dT, q,Tc=647.3,expfactor;
 	double dens_arg[3];//AKS
   ElementValue* gp_ele = ele_gp_value[Fem_Ele_Std->Index];
 	//  double porosity =  this->porosity;  //MX

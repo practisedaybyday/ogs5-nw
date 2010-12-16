@@ -906,7 +906,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 {
 	int imflag=1, iprocs=0;
     int iterdum=1;
-	double my_max_time_step;
+	double my_max_time_step = 0;
 	CRFProcess* m_pcs = NULL; //YDToDo: m_pcs should be member
 
 // kg44 This does not work with multiple mass tranport processes!

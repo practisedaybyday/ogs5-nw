@@ -3638,7 +3638,9 @@ void CRFProcess::GlobalAssembly()
 		// Assemble global system
 		DDCAssembleGlobalMatrix();
 #endif
-	} else { // STD
+	} 
+    else 
+    { // STD
 		for (size_t ii = 0; ii < continuum_vector.size(); ii++) { //YDTEST. Changed to DOF 15.02.2007 WW
 			continuum = ii;
 			for (size_t i = 0; i < m_msh->ele_vector.size(); i++) {
@@ -3674,7 +3676,9 @@ void CRFProcess::GlobalAssembly()
 		IncorporateBoundaryConditions();
 		// ofstream Dum("rf_pcs.txt", ios::out); // WW
 		// eqs_new->Write(Dum);   Dum.close();
-		// MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
+		// 
+        string ttt = FileName+"rf_pcs1.txt";
+         MXDumpGLS(ttt.c_str(),1,eqs->b,eqs->x); //abort();
 	}
 }
 

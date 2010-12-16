@@ -461,7 +461,7 @@ void CSourceTerm::ReadGeoType(std::ifstream *st_file,
 	if (getProcessPrimaryVariable() == EXCAVATION) { //WW
 		std::stringstream strstr;
 		strstr.str(GetLineFromFile1(st_file));
-		size_t tmp_geo_type;
+		//size_t tmp_geo_type;
 		std::string sub_string;
 		strstr >> sub_string >> sub_dom_idx;
 		strstr.clear();

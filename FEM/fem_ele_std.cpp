@@ -7860,6 +7860,7 @@ mat[i] = tensor[i]*mat_fac*time_unit_factor;
 break;
 
 }
+   return 0.; //WW
 }
 /***************************************************************************
    GeoSys - Funktion:
@@ -7874,7 +7875,7 @@ int i, j, k, ii;
 // ---- Gauss integral
 int gp_r=0,gp_s=0,gp_t=0;
 double *tensor = NULL,dens_arg[3],H_vap=0,Tc=647.096;
-double fkt=0.0, fac=0.0,mat_fac;
+double fkt=0.0, fac=0.0; //WW,mat_fac;
 // Material
 int dof_n = 1;
 //----------------------------------------------------------------------
