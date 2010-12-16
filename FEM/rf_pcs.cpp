@@ -3676,9 +3676,7 @@ void CRFProcess::GlobalAssembly()
 		IncorporateBoundaryConditions();
 		// ofstream Dum("rf_pcs.txt", ios::out); // WW
 		// eqs_new->Write(Dum);   Dum.close();
-		// 
-        string ttt = FileName+"rf_pcs1.txt";
-         MXDumpGLS(ttt.c_str(),1,eqs->b,eqs->x); //abort();
+		//          MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 	}
 }
 
