@@ -575,7 +575,7 @@ public:
     bool m_bCheck; //OK
 #ifdef USE_MPI //WW
     void Print_CPU_time_byAssembly(ostream &os=cout) const
-      {   os<<"\n***\nCPU time elapsed in the linear equation of "<<pcs_type_name<<"\n";
+      {   os<<"\n***\nCPU time elapsed in the linear equation of "<< convertProcessTypeToString(getProcessType()) <<"\n";
           os<<"--Global assembly: "<<(double)cpu_time_assembly/CLOCKS_PER_SEC<<"\n";
       }
 #endif
