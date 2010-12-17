@@ -3757,7 +3757,7 @@ void CFEMesh::GetELEOnPLY(const GEOLIB::Polyline* ply, std::vector<size_t>& ele_
 	// loop over all elements
 	for (size_t i=0; i<ele_vector.size(); i++) {
 		ele_vector[i]->GetEdges (ele_edges_vector);
-		size_t n_edges (ele_edges_vector.Size());
+		size_t n_edges (ele_vector[i]->GetEdgesNumber());
 		// loop over all edges of the i-th element
 		for (size_t j=0; j<n_edges; j++) {
 			ele_edges_vector[j]->GetNodes(edge_nodes);
