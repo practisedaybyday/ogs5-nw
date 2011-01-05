@@ -2287,6 +2287,9 @@ string test = "rank";
      else
         CalcBC_or_SecondaryVariable_Dynamics(true);
      // 	 {	    MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  //abort();}
+
+ string ttt = FileName+"rf_pcs1.txt";
+         MXDumpGLS(ttt.c_str(),1,eqs->b,eqs->x); //abort();
      //
      /*
      ofstream Dum("rf_pcs.txt", ios::out); // WW
