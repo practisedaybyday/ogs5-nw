@@ -48,6 +48,7 @@ class Linear_EQS
     void ConfigNumerics( CNumerics *m_num, const long n=0);
     // Preconditioner;
     void Precond(double *vec_s, double *vec_r); 
+    void TransPrecond(double *vec_s, double *vec_r); 
 #if defined(USE_MPI)
     void Precond_Jacobi(const double *vec_s, double *vec_r);
 #endif
@@ -60,7 +61,7 @@ class Linear_EQS
 #if defined(USE_MPI)
     int Solver(double *xg, const long n);
     int CG(double *xg, const long n); 
-    int BiCG(double *xg, const long n) {return -1;}
+    int BiCG(double *xg, const long n); //02.2010. WW
     int BiCGStab(double *xg, const long n);
     int CGS(double *xg, const long n);
     double GetCPUtime() const { return cpu_time;  }
@@ -71,7 +72,7 @@ class Linear_EQS
     int Solver();
 #endif
     int CG();
-    int BiCG() {return -1;}
+    int BiCG();  //02.2010. WW
     int BiCGStab();
     int Gauss() {return -1;}
     int QMRCGStab() {return -1;}
@@ -88,6 +89,7 @@ class Linear_EQS
     void Clean(); 
     //
     // Access to the members
+    void SetDOF(const int dof_n) {A->SetDOF(dof_n);} // For different processes with different DOF of OPDE. _new. 02/2010. WW
     void SetKnownX_i(const long i, const double x_i);
     double X(const long i) const {return x[i];} 
     double RHS(const long i) const {return b[i];} 
@@ -124,6 +126,7 @@ class Linear_EQS
     //
     double dot (const double *xx,  const double *yy, const long n); 
     inline void MatrixMulitVec(double *xx,  double *yy);
+    inline void TransMatrixMulitVec(double *xx,  double *yy);
 #endif
     // 
     string solver_name;

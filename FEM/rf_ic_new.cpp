@@ -68,10 +68,10 @@ CInitialCondition::~CInitialCondition(void)
   node_value_vector.clear();
   delete m_node; //HS
   //WW
-  delete a0;
-  delete b0;
-  delete c0;
-  delete d0;
+  if(a0) delete [] a0;
+  if(b0) delete [] b0;
+  if(c0) delete [] c0;
+  if(d0) delete [] d0;
   a0=b0=c0=d0=NULL;
 }
 /**************************************************************************
@@ -296,7 +296,7 @@ ios::pos_type CInitialCondition::Read(std::ifstream *ic_file,
 				if (geo_type_name.find("SUB") != string::npos) {
 					*ic_file >> SubNumber;
 					if (convertPrimaryVariableToString(this->getProcessPrimaryVariable()).find("STRESS") != string::npos)
-							//KR not used || dis_type_name.find("FUNCTION") != string::npos) //01.07.2008 WW
+                    //     ||dis_type_name.find("FUNCTION")!=string::npos) //01.07.2008 WW
 					{
 						string str_buff;
 						vector<string> tokens;

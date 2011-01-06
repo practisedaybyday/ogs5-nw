@@ -1238,8 +1238,65 @@ void CSparseMatrix::multiVec(double *vec_s, double *vec_r)
 }
 /*\!
 ********************************************************************
+   Perform A^T*x
+   Arguments:  
+      vec_sr: M^T*vec_s-->vec_r
+   10/2010 WW
+********************************************************************/
+void CSparseMatrix::Trans_MultiVec(double *vec_s, double *vec_r)
+{
+  long i, j, k, ii, jj, kk,ll,idof, jdof, counter;
+  for(i=0; i<rows*DOF; i++)
+    vec_r[i] = 0.0;
+  //
+  counter=0;
+  if(DOF>1)
+  {
+    // Although this piece of code can deal with the case
+    // of DOF = 1, we also prepare a special piece of code for
+    // the case of DOF = 1 just for efficiency
+    for (k = 0; k < max_columns; k++)
+    {
+       for (i = 0; i < num_column_entries[k]; i++)
+       {          
+          ii = row_index_mapping_n2o[i];  
+          jj=entry_column[counter];
+          for(idof=0; idof<DOF; idof++)
+          {
+             kk = idof*rows+ii;
+             for(jdof=0; jdof<DOF; jdof++)
+             {
+               ll = jdof*rows+jj; 
+               j = (idof*DOF+jdof)*size_entry_column+counter;
+               vec_r[ll] += entry[j]*vec_s[kk];
+               if(symmetry&(kk!=ll))
+                  vec_r[kk] += entry[j]*vec_s[ll];
+             }
+          }
+          counter++;
+       }         
+    }
+  }
+  else  // DOF = 1
+  {
+    for (k = 0; k < max_columns; k++)
+    {
+       for (i = 0; i < num_column_entries[k]; i++)
+       {          
+          ii = row_index_mapping_n2o[i];  
+          jj=entry_column[counter];
+          vec_r[jj] += entry[counter]*vec_s[ii];
+          if(symmetry&(ii!=jj))
+             vec_r[ii] += entry[counter]*vec_s[jj];
+          counter++;
+       }         
+    }
+  }
+}
+/*\!
+********************************************************************
    Set
-        A(ii,ii) = x_i,
+        A(ii,ii) = x_i, 
         A(ii, j) = 0., j!=ii
         A(i, ii) = 0., i!=ii
         b_i -= A(i,k)b_k  // b_k is given

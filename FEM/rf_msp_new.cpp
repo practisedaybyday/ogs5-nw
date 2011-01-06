@@ -4285,8 +4285,8 @@ void CSolidProperties::CalStress_and_TangentialMatrix_CC_SubStep(const int GPiGP
   //TEST
   int test_c = 0;
   // Begin substeps
-  bool OK = true; //OK411
-  while(OK)
+  //WW bool OK = true; //OK411
+  for(;;) //WW while(OK)
   {
 /*
 if(test_c>2)

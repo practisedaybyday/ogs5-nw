@@ -1096,25 +1096,22 @@ inline double Problem::RichardsFlow()
    {  //-------  WW
       lop_coupling_iterations = m_pcs->m_num->cpl_iterations;  // JOD coupling
       if(pcs_vector.size()>1 && lop_coupling_iterations > 1)
-      {
          m_pcs->CopyCouplingNODValues();
-         TolCoupledF = m_pcs->m_num->cpl_tolerance;
-      }
       //WW if(m_pcs->adaption) PCSStorage();
       CFEMesh* m_msh = FEMGet("RICHARDS_FLOW");
       if(m_msh->geo_name.compare("REGIONAL")==0)
         LOPExecuteRegionalRichardsFlow(m_pcs);
       else
-        pcs_flow_error = error = m_pcs->ExecuteNonLinear(); // JOD 4.10.01
+        error = m_pcs->ExecuteNonLinear();
       if(m_pcs->saturation_switch == true)
         m_pcs->CalcSaturationRichards(1, false); // JOD
       else
         m_pcs->CalcSecondaryVariablesUnsaturatedFlow();  //WW
-#ifndef NEW_EQS //WW. 07.11.2008
-     // if(lop_coupling_iterations > 1) // JOD  4.10.01 removed
-     //    pcs_coupling_error = m_pcs->CalcCouplingNODError();
-#endif
-       conducted = true; //WW
+//WW#ifndef NEW_EQS //WW. 07.11.2008
+//WW      if(lop_coupling_iterations > 1) // JOD  coupling
+//WW         pcs_coupling_error = m_pcs->CalcCouplingNODError();
+//WW#endif
+       conducted = true; //WW 
    }
    else  //WW
    {
@@ -1211,12 +1208,82 @@ Programming:
 07/2008 WW Extract from LOPTimeLoop_PCS();
 Modification:
 12.2008 WW Update
+05.2009 WW For surface-soil-ground coupled model
 -------------------------------------------------------------------------*/
 inline double Problem::GroundWaterFlow()
 {
   double error = 1.0e+8;
   CRFProcess *m_pcs = total_processes[1];
   if(!m_pcs->selected) return error; //12.12.2008 WW
+
+  //----- For the coupling with the soil column approach. 05.2009. WW
+  GridsTopo *neighb_grid = NULL;
+  GridsTopo *neighb_grid_this = NULL;
+  CRFProcess *neighb_pcs = total_processes[2];
+  vector<double> border_flux;
+  int idx_flux =0, idx_flux_this;
+  int no_local_nodes;
+
+  long i;
+  if(neighb_pcs)
+  {
+    for(i=0; i<(long)neighb_pcs->m_msh->grid_neighbors.size(); i++)
+    {
+       neighb_grid = neighb_pcs->m_msh->grid_neighbors[i];
+       if(neighb_grid->getNeighbor_Name().find("SECTOR_GROUND")!=string::npos) 
+         break;
+       neighb_grid = NULL;
+    }
+    for(i=0; i<(long)m_pcs->m_msh->grid_neighbors.size(); i++)
+    {
+       neighb_grid_this = m_pcs->m_msh->grid_neighbors[i];
+       if(neighb_grid_this->getNeighbor_Name().find("SECTOR_SOIL")!=string::npos) 
+         break;
+       neighb_grid_this = NULL;
+    }
+  }
+  //------------
+  if(neighb_grid)
+  {
+     CSourceTerm *m_st = NULL;
+     CNodeValue *m_nod_val = NULL;
+     long l = 0, m = 0;     
+     no_local_nodes = neighb_pcs->m_msh->_n_msh_layer+1;
+
+     if(aktueller_zeitschritt==1)  
+     { 
+        m_st = new CSourceTerm();
+        for(i=0; i<neighb_grid->getBorderNodeNumber(); i++)
+        {
+           m_nod_val = new CNodeValue();
+           m_pcs->st_node_value.push_back(m_nod_val);  
+           m_pcs->st_node.push_back(m_st); 
+        }
+     }
+     l = (long)m_pcs->st_node_value.size();
+     long *local_indxs = neighb_grid->getBorderNodeIndicies();
+     long *local_indxs_this = neighb_grid_this->getBorderNodeIndicies();
+     border_flux.resize(neighb_grid->getBorderNodeNumber());
+     idx_flux = neighb_pcs->GetNodeValueIndex("VELOCITY_Z1");
+
+     for(i=0; i<neighb_grid->getBorderNodeNumber(); i++)
+       border_flux[local_indxs_this[i]] = neighb_pcs->GetNodeValue(local_indxs[i], idx_flux)
+                                          /neighb_pcs->time_unit_factor ;
+
+     m_pcs->Integration(border_flux);
+
+     m = l-neighb_grid->getBorderNodeNumber();
+     for(i=m; i<l; i++)
+     {  
+        m_nod_val = m_pcs->st_node_value[i];
+        m_nod_val->msh_node_number = local_indxs_this[i-m];
+        m_nod_val->geo_node_number = local_indxs_this[i-m];
+        m_nod_val->node_value = -border_flux[local_indxs_this[i-m]];
+     }
+  }
+  //-------------------------------
+
+
   error =  m_pcs->ExecuteNonLinear();
   //................................................................
   // Calculate secondary variables
@@ -1230,9 +1297,19 @@ inline double Problem::GroundWaterFlow()
 #endif
     cout << "      Calculation of secondary GP values" << endl;
     m_pcs->CalIntegrationPointValue(); //WW
-    m_pcs->cal_integration_point_value = false; //WW Do not extropolate Gauss velocity
-	if(m_pcs->tim_type_name.compare("STEADY")==0) //SB
-		m_pcs->selected = false;
+    m_pcs->cal_integration_point_value = true; //WW Do not extropolate Gauss velocity
+    if(neighb_grid)
+    {
+       m_pcs->Extropolation_GaussValue();
+       m_pcs->cal_integration_point_value = false;
+       idx_flux_this = m_pcs->GetNodeValueIndex("VELOCITY_Z1");
+       for(i=0; i<neighb_grid->getBorderNodeNumber(); i++)
+         border_flux[i] = m_pcs->GetNodeValue(i,idx_flux_this);
+       m_pcs->Integration(border_flux);
+       for(i=0; i<neighb_grid->getBorderNodeNumber(); i++)
+         neighb_pcs->SetNodeValue(i, idx_flux, border_flux[i]);
+//         neighb_pcs->SetNodeValue(i+no_local_nodes, idx_flux, border_flux[i]);
+    }      
   }
   // ELE values
 #ifndef NEW_EQS //WW. 07.11.2008
@@ -1649,6 +1726,7 @@ FEMLib-Method:
 08/2005 MB Changes ... (OK to what ?)
 04/2006 OK and once again ...
 07/2008 WW Extract from LOPTimeLoop_PCS();
+05.2009 WW For surface-soil-ground coupled model
 **************************************************************************/
 inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
 {
@@ -1771,6 +1849,23 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
   cout << "    ->Process " << m_pcs_global->pcs_number << ": "
        << "REGIONAL_" << convertProcessTypeToString (m_pcs_global->getProcessType()) << endl;
   int no_richards_problems = (int)(m_pcs_global->m_msh->ele_vector.size()/no_local_elements);
+
+  //--- For couping with ground flow process. WW
+  int idx_v; 
+  GridsTopo *neighb_grid = NULL;
+  CRFProcess *neighb_pcs = total_processes[1];
+  
+  if(neighb_pcs)
+  {
+    for(i=0; i<(int)neighb_pcs->m_msh->grid_neighbors.size(); i++)
+    {
+       neighb_grid = neighb_pcs->m_msh->grid_neighbors[i];
+       if(neighb_grid->getNeighbor_Name().find("§SECTOR_SOIL")!=string::npos)
+         break;
+       neighb_grid = NULL;
+    }   
+  }
+  //------------
 #ifndef USE_MPI_REGSOIL
   for(i=0;i<no_richards_problems;i++)
   //for(i=0;i<2;i++)
@@ -1832,14 +1927,50 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
     }
     //....................................................................
     // Set local BCs
-    m_pcs_local->CreateBCGroup();
+    //WW m_pcs_local->CreateBCGroup();
     //....................................................................
     // Set local STs
-    // m_pcs_local->CreateSTGroup();
+    //WW m_pcs_local->CreateSTGroup();
     // look for corresponding OF-triangle
     // m_ele_of = m_msh_of->GetElement(m_pnt_sf);
     //....................................................................
+    //---- Source term from neighbor process. 25.05.2009. WW
+    idx_v = m_pcs_local->GetNodeValueIndex("VELOCITY_Z1"); 
+    if(neighb_grid)
+    {
+       CSourceTerm *m_st = NULL;
+       CNodeValue *m_nod_val = NULL;
+       if(aktueller_zeitschritt==1)  
+       { 
+          m_st = new CSourceTerm();
+          m_nod_val = new CNodeValue();
+          m_pcs_local->st_node_value.push_back(m_nod_val);  
+          m_pcs_local->st_node.push_back(m_st); 
+       }
+       else
+       {
+          m_st = m_pcs_local->st_node[(int)m_pcs_local->st_node.size()-1];
+          m_nod_val = m_pcs_local->st_node_value[(int)m_pcs_local->st_node_value.size()-1];
+       }
+       long *local_indxs = NULL;
+       local_indxs = neighb_grid->getBorderNodeIndicies();
+       m_nod_val->msh_node_number = no_local_nodes-1;
+       m_nod_val->geo_node_number = no_local_nodes-1;
+//       m_nod_val->node_value = -neighb_pcs->GetNodeValue(local_indxs[i], neighb_pcs->GetNodeValueIndex("VELOCITY_Z1"))
+//                               /neighb_pcs->time_unit_factor;
+       m_nod_val->node_value = -m_pcs_global->GetNodeValue(i, m_pcs_global->GetNodeValueIndex("VELOCITY_Z1"))
+                               /neighb_pcs->time_unit_factor;
+       
+       m_pcs_global->SetNodeValue(i, m_pcs_global->GetNodeValueIndex("VELOCITY_Z1"),0.);
+
+    }
+    //-----------------------------------------------------
+
     m_pcs_local->ExecuteNonLinear();
+    // Velocity. 22.05.2009. WW 
+    m_pcs_local->CalIntegrationPointValue();
+    m_pcs_local->Extropolation_GaussValue(); 
+    m_pcs_local->cal_integration_point_value = false;
     //....................................................................
     // Store results in global PCS tables
     for(j=0;j<no_local_nodes;j++)
@@ -1851,13 +1982,15 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
       //m_pcs_global->SetNodeValue(g_node_number,idxcp,value);
       value = m_pcs_local->GetNodeValue(j,idxS);
       m_pcs_global->SetNodeValue(g_node_number,idxS,value);
+      value = m_pcs_local->GetNodeValue(j,idx_v);   //WW. 22.05.2009 
+      m_pcs_global->SetNodeValue(g_node_number,idx_v,value);
     }
     //m_pcs->m_msh = FEMGet("RICHARDS_FLOW");
     // pcs->m_msh->RenumberNodesForGlobalAssembly(); related to Comment 1  // MB/WW
   }
 #else
   num_parallel_blocks = no_richards_problems / size;
-
+  
 #ifdef TRACE
   std::cout << "Num parallel blocks: " << num_parallel_blocks << std::endl;
 #endif

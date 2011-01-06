@@ -745,7 +745,7 @@ void CPARDomain::CreateEQS()
 	const size_t pcs_vector_size (pcs_vector.size());
 	for(size_t i=0;i<pcs_vector_size;i++) {
 		m_pcs = pcs_vector[i];
-		if(m_pcs->type==22) // Monolithic TH2
+    if(m_pcs->type==22 ||m_pcs->type==1212) // Monolithic dual porosity or multphase. 02.2010. WW
 			dof_nonDM = m_pcs->GetPrimaryVNumber();
 		if(m_pcs->type==4||m_pcs->type==41) // Deformation
 			dof_DM = m_pcs->GetPrimaryVNumber();
@@ -805,7 +805,11 @@ void CPARDomain::CreateEQS(CRFProcess *m_pcs)
   {
      for(size_t i=0; i<m_pcs->GetPrimaryVNumber(); i++)
         shift[i] = i*nnodesHQ_dom;
-
+  }
+  else if(m_pcs->type==1212) //02.2010. WW
+  {
+     for(int i=0; i<(int)m_pcs->GetPrimaryVNumber(); i++)
+        shift[i] = i*nnodes_dom;
   }
   if(m_pcs->type==4)
   {
@@ -817,6 +821,8 @@ void CPARDomain::CreateEQS(CRFProcess *m_pcs)
      eqs = CreateLinearSolverDim(m_pcs->m_num->ls_storage_method,dof,dof*nnodesHQ_dom+nnodes_dom);
 
   }
+  else if(m_pcs->type==1212)  //02.2010.  WW  
+     eqs = CreateLinearSolverDim(m_pcs->m_num->ls_storage_method,dof,dof*nnodes_dom);  
   else
     eqs = CreateLinearSolver(m_pcs->m_num->ls_storage_method, no_nodes); //WW.
 //  eqs = CreateLinearSolver(0,no_nodes);
@@ -1245,7 +1251,7 @@ void DDCCreate()
      //----------------------------------------------------------------------
      for(i=0;i<no_processes;i++){
        m_pcs = pcs_vector[i];
-       // if(m_pcs->pcs_type_name.find("DEFORMATION")!=string::npos) { // TF 10/2010
+       //if(m_pcs->pcs_type_name.find("DEFORMATION")!=string::npos) { // TF 10/2010
        if(m_pcs->getProcessType () == DEFORMATION || m_pcs->getProcessType() == DEFORMATION_FLOW) {
            DOF_gt_one = true;
            break;

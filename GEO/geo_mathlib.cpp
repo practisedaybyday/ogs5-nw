@@ -8,6 +8,7 @@ Programing:
 #include <stdlib.h>
 #include <cstdio>
 #include "geo_mathlib.h"
+#include "mathlib.h" //WW  
 
 /**************************************************************************/
 /* GEO MATHLIB - Funktion: EuklVek3dDist
@@ -118,29 +119,7 @@ int M3KreuzProdukt(double *vec1, double *vec2, double *vec)
     vec[2] = vec1[0] * vec2[1] - vec1[1] * vec2[0];
     return 1;
 }
-/***************************************************************************
-   GEO MATHLIB - Funktion: MBtrgVec
-   Aufgabe:
-           Berechnet Betrag von Vektor
-   Formalparameter:
-           E: *vec
-           E: n
-   Ergebnis:
-           Betrag
-   Aenderungen/Korrekturen:
-   07/1995     hh        Erste Version
-   11/1999     C.Thorenz Register-Variablen
 
- **************************************************************************/
-
-double MBtrgVec(double *vec, long n)
-{
-    register long i;
-    register double zwo = 0.0;
-    for (i = 0; i < n; i++)
-        zwo += vec[i] * vec[i];
-    return sqrt(zwo);
-}
 /***************************************************************************
    GEO MATHLIB - Funktion: MSkalarprodukt
    Aufgabe:

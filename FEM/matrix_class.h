@@ -224,6 +224,7 @@ class CSparseMatrix
      void operator -= (const CSparseMatrix& m);
      // Vector pass through augment and bring results back.
      void multiVec(double *vec_s, double *vec_r);
+     void Trans_MultiVec(double *vec_s, double *vec_r);
      void Diagonize(const long idiag, const double b_given, double *b);
      //
      // Access to members
@@ -231,6 +232,7 @@ class CSparseMatrix
      //
      long Dim() const {return DOF*rows;}
      int Dof() const {return DOF;}
+     void SetDOF(const int dof_n) {DOF = dof_n;} //_new. 02/2010. WW
      long Size() const {return rows;}
 #ifdef LIS // These two pointers are in need for Compressed Row Storage
 	 int nnz() const {return DOF*DOF*size_entry_column;}	// PCH

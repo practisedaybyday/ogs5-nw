@@ -83,6 +83,7 @@ CElement::CElement(int CoordFlag, const int order)
           break;
      }
      time_unit_factor = 1.0;
+#ifndef NON_PROCESS     // 04.03.2010 WW
      if(M_Process)
        D_Flag = 4;
      if(MH_Process)
@@ -91,6 +92,7 @@ CElement::CElement(int CoordFlag, const int order)
      T_Flag = T_Process;
 	 PT_Flag = 0;	// PCH Initialize to be no RWPT.
      RD_Flag = RD_Process;
+#endif
 
 }
 
@@ -339,6 +341,7 @@ double CElement::interpolate(double *nodalVal, const int order) const
     return val;
 }
 
+#ifndef NON_PROCESS     // 04.03.2010 WW
 /**************************************************************************
 FEMLib-Method:
 Task:
@@ -388,6 +391,7 @@ double CElement::elemnt_average (const int idx, CRFProcess* m_pcs, const int ord
     return val/(double)nn;
 }
 
+#endif
 
 /**************************************************************************
   The generalized Jacobian caculation

@@ -860,13 +860,14 @@ void CRFProcess:: WriteSolution()
 	os.precision(15); // 15 digits accuracy seems enough? more fields are filled up with random numbers!
 	os.setf(ios_base::scientific,ios_base::floatfield);
 
+	int j;
 	int *idx(new int [2*pcs_number_of_primary_nvals]);
-	for (int j=0; j<pcs_number_of_primary_nvals; j++ ) {
+	for ( j=0; j<pcs_number_of_primary_nvals; j++ ) {
 		idx[j] = GetNodeValueIndex ( pcs_primary_function_name[j] );
 		idx[j+pcs_number_of_primary_nvals] = idx[j]+1;
 	}
 	for (long i=0; i<m_msh->GetNodesNumber ( false ); i++ ) {
-		for (int j=0; j<2*pcs_number_of_primary_nvals; j++ )
+		for ( j=0; j<2*pcs_number_of_primary_nvals; j++ )
 			os<<GetNodeValue ( i,idx[j] ) <<"  ";
 		os<<endl;
 	}
@@ -891,19 +892,20 @@ void CRFProcess:: ReadSolution()
 		cout << "Failure to open file: "<<m_file_name << endl;
 		abort();
 	}
+	int j;
 
 	int *idx (new int [2*pcs_number_of_primary_nvals]);
 	double *val (new double [2*pcs_number_of_primary_nvals]);
 
-	for (int j=0; j<pcs_number_of_primary_nvals; j++ ) {
+	for (j=0; j<pcs_number_of_primary_nvals; j++ ) {
 		idx[j] = GetNodeValueIndex ( pcs_primary_function_name[j] );
 		idx[j+pcs_number_of_primary_nvals] = idx[j]+1;
 	}
 	for (long i=0; i<m_msh->GetNodesNumber ( false ); i++ ) {
-		for (int j=0; j<2*pcs_number_of_primary_nvals; j++ )
+		for (j=0; j<2*pcs_number_of_primary_nvals; j++ )
 			is>>val[j];
 		is>>ws;
-		for (int j=0; j<2*pcs_number_of_primary_nvals; j++ )
+		for (j=0; j<2*pcs_number_of_primary_nvals; j++ )
 			SetNodeValue ( i,idx[j], val[j] );
 	}
 	is.close();
@@ -3289,10 +3291,16 @@ double CRFProcess::Execute()
 #ifdef NEW_EQS //WW
 	if(!configured_in_nonlinearloop)
 #if defined(USE_MPI)
-	dom->ConfigEQS(m_num, global_eqs_dim);
+  {
+    dom->eqs->SetDOF(pcs_number_of_primary_nvals);  //02.2010.  WW
+    dom->ConfigEQS(m_num, global_eqs_dim);
+  }
 #else
 	// Also allocate temporary memory for linear solver. WW
-	eqs_new->ConfigNumerics(m_num);
+  {
+    eqs_new->SetDOF(pcs_number_of_primary_nvals);   //_new 02/2010. WW
+    eqs_new->ConfigNumerics(m_num);
+  }
 	eqs_new->Initialize();
 #endif
 #else
@@ -3682,6 +3690,47 @@ void CRFProcess::GlobalAssembly()
 		// MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 		//          MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 	}
+}
+/*************************************************************************
+GeoSys-Function:
+Task: Integration
+Programming: 
+05/2009 WW Implementation
+**************************************************************************/
+void CRFProcess::Integration(vector<double> &node_velue)
+{
+  //----------------------------------------------------------------------
+  int k;
+  long i;
+  CElem* elem = NULL;
+  bool Check2D3D;
+  Check2D3D = false;
+  double n_val[8];
+
+  if(type == 66) //Overland flow
+    Check2D3D = true;
+
+  vector<double> buffer((long)node_velue.size());
+  for(i=0; i<(long)buffer.size(); i++)
+     buffer[i] = 0.;
+
+  for(i=0;i<(long)m_msh->ele_vector.size();i++)
+  {
+     elem = m_msh->ele_vector[i];
+     if(!elem->GetMark()) continue;
+     
+     for(k=0; k<elem->GetNodesNumber(false); k++)
+        n_val[k] = node_velue[elem->GetNodeIndex(k)]; 
+
+     elem->SetOrder(false);
+     fem->ConfigElement(elem,Check2D3D);
+     fem->FaceIntegration(n_val);
+
+     for(k=0; k<elem->GetNodesNumber(false); k++)
+       buffer[elem->GetNodeIndex(k)] += n_val[k];
+
+  }
+  //----------------------------------------------------------------------
 }
 
 /*************************************************************************
@@ -4257,7 +4306,10 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
         // Time dependencies - CURVE
         curve =  m_bc_node->CurveIndex;
         if(curve>0){
-          time_fac = GetCurveValue(curve,interp_method,aktuelle_zeit,&valid);
+          if(curve>10000000)  /// 16.08.2010. WW
+            time_fac = GetCurveValue(curve-10000000,interp_method,aktuelle_zeit,&valid);
+          else
+            time_fac = GetCurveValue(curve,interp_method,aktuelle_zeit,&valid);
           if(!valid) continue;
 	    }
 	    else
@@ -4292,6 +4344,10 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
         else
           bc_value = time_fac*fac*m_bc_node->node_value; // time_fac*fac*PCSGetNODValue(bc_msh_node,"PRESSURE1",0);
 
+         /// 16.08.2010. WW
+         if(curve>10000000&&fabs(time_fac)>DBL_EPSILON)
+           bc_value = bc_value/time_fac+time_fac; /// bc_value +time_fac;
+	    
 		if(m_bc->isPeriodic()) // JOD
 		   bc_value *= sin( 2 * 3.14159 * aktuelle_zeit / m_bc->getPeriodeTimeLength()  + m_bc->getPeriodePhaseShift());
 
@@ -6081,9 +6137,11 @@ double CRFProcess::ExecuteNonLinear()
   //
 #if defined(USE_MPI)
   CPARDomain *dom = dom_vector[myrank];
+  dom->eqs->SetDOF(pcs_number_of_primary_nvals); //_new 02/2010 WW
   dom->ConfigEQS(m_num, pcs_number_of_primary_nvals
                         *m_msh->GetNodesNumber(false));
 #else
+  eqs_new->SetDOF(pcs_number_of_primary_nvals);   //_new 02/2010. WW
   eqs_new->ConfigNumerics(m_num);
 #endif
   //
@@ -9608,9 +9666,283 @@ Task:
 Programming:
 10/2008 //WW/CB Implementation
 07/2010 TF substituted GEOGetPLYByName
+03/2010  WW Read binary file of precipitation
+06/2010  WW Output top surface flux and head to a raster file
 **************************************************************************/
 void CRFProcess::UpdateTransientBC()
 {
+  //--------------- 24.03.2010. WW
+  long i;
+  CSourceTerm *precip;
+  CSourceTerm *a_st;
+  precip  = NULL;
+
+  for(i=0;i<(long)st_vector.size(); i++)
+  {
+     a_st = st_vector[i];
+     if(  a_st->getProcessDistributionType() == PRECIPITATION
+        &&a_st->getProcessType() == getProcessType() )        
+     {
+        precip = a_st;
+        if(!m_msh->top_surface_checked)   // 07.06--19.08.2010. WW
+        { 
+           if(m_msh->GetCoordinateFlag()/10==3)
+             m_msh->MarkInterface_mHM_Hydro_3D(); 
+           m_msh->top_surface_checked = true;
+        }
+        break;
+     }
+  } 
+  if(precip) // 08-07.06.2010.  WW
+  { 
+      string ofile_name;
+      ofile_name = precip->DirectAssign_Precipitation(aktuelle_zeit);
+
+      if( m_msh->GetCoordinateFlag()/10==3 ) //19.08.2010. WW
+      {
+         /// Remove .bin from the file name
+         i = (int)ofile_name.find_last_of(".");
+         if(i>0)
+            ofile_name.erase(ofile_name.begin()+i,ofile_name.end());
+         i = (int)ofile_name.find_last_of(".");
+         if(i>0)
+            ofile_name.erase(ofile_name.begin()+i,ofile_name.end());
+         string of_name = ofile_name + ".flx.asc";
+         ofstream of_flux(of_name.c_str(), ios::trunc|ios::out);
+
+         of_name = ofile_name + ".pri.asc";
+         ofstream of_primary(of_name.c_str(), ios::trunc|ios::out);
+   
+
+
+         /// GIS_shape_head[0]:  ncols
+         /// GIS_shape_head[1]:  nrows
+         /// GIS_shape_head[2]:  xllcorner
+         /// GIS_shape_head[3]:  yllcorner
+         /// GIS_shape_head[4]:  cellsize
+         /// GIS_shape_head[5]:  NONDATA_value
+         double *g_para = precip->GIS_shape_head;
+         long size = (long)(g_para[0]*g_para[1]);
+         vector<double> cell_data_p(size);
+         vector<double> cell_data_v(size);
+         for(i=0; i<size; i++)
+         {
+            cell_data_p[i] = g_para[5];
+            cell_data_v[i] = g_para[5];
+         }
+       
+         int j, k, nnodes; 
+         int node_xmin, node_xmax, node_ymin, node_ymax; 
+         long m, n, mm, nn, l;
+         CElem *elem;
+         CNode *node;
+         double *cent;
+         double vel_av[3], x1[3], x2[3], x3[3], sub_area[3], area, tol_a;
+
+         double x_min, y_min, x_max, y_max; 
+         long  row_min, col_min, row_max, col_max; 
+
+         int *vel_idx;
+         int idx = fem->idx0+1;
+         vel_idx = fem->idx_vel;
+
+
+         long n_idx, irow, icol, nrow, ncol; 
+         nrow = (long)g_para[1];
+         ncol = (long)g_para[0];
+
+         node_xmin = node_xmax = node_ymin = node_ymax = 0;
+
+         tol_a = 1.e-8;   
+        
+         of_flux.setf(ios::fixed, ios::floatfield);
+         of_primary.setf(ios::fixed, ios::floatfield);
+         of_flux.precision(1);
+         of_primary.precision(1);
+   
+         of_flux<<"ncols"<<setw(19)<<ncol<<endl;
+         of_flux<<"nrows"<<setw(19)<<nrow<<endl;
+         of_flux<<"xllcorner"<<setw(15)<<g_para[2]<<endl;
+         of_flux<<"yllcorner"<<setw(15)<<g_para[3]<<endl;
+         of_flux<<"cellsize"<<setw(16)<<(long)g_para[4]<<endl;
+         of_flux<<"NODATA_value"<<setw(11)<<(long)g_para[5]<<endl;
+   
+         of_primary<<"ncols"<<setw(19)<<ncol<<endl;
+         of_primary<<"nrows"<<setw(19)<<nrow<<endl;
+         of_primary<<"xllcorner"<<setw(15)<<g_para[2]<<endl;
+         of_primary<<"yllcorner"<<setw(15)<<g_para[3]<<endl;
+         of_primary<<"cellsize"<<setw(16)<<(long)g_para[4]<<endl;
+         of_primary<<"NODATA_value"<<setw(11)<<(long)g_para[5]<<endl;
+   
+   
+   
+         for(i=0; i<(long)m_msh->face_vector.size(); i++)
+         {
+            elem = m_msh->face_vector[i];
+            if(!elem->GetMark())
+               continue;
+   
+            if(elem->GetElementType()!=4)  /// If not triangle
+               continue; 
+  
+            //// In element
+            nnodes = elem->GetNodesNumber(false);
+            cent = elem->gravity_center;
+
+            /// Find the range of this element
+            x_min = y_min = 1.e+20;
+            x_max = y_max = -1.e+20;
+            for(k=0; k<nnodes; k++)
+            {
+                node = elem->nodes[k];
+
+                if(node->X()<x_min)
+                {
+                   x_min = node->X();
+                   node_xmin = k;
+                } 
+                if(node->X()>x_max)
+                {
+                   x_max = node->X();
+                   node_xmax = k;
+                }
+                if(node->Y()<y_min)
+                {
+                   y_min = node->Y();
+                   node_ymin = k;
+                }
+                if(node->Y()>y_max)
+                {
+                   y_max = node->Y();
+                   node_ymax = k;
+                }
+            }
+
+            /// Determine the cells that this element covers. 05.10. 2010
+            col_min = (long)((x_min-g_para[2])/g_para[4]);
+            row_min = nrow -(long)((y_max-g_para[3])/g_para[4]);
+            col_max = (long)((x_max-g_para[2])/g_para[4]);
+            row_max = nrow -(long)((y_min-g_para[3])/g_para[4]);
+
+
+            node = elem->nodes[0];
+            x1[0] = node->X();
+            x1[1] = node->Y();
+            node = elem->nodes[1];
+            x2[0] = node->X();
+            x2[1] = node->Y();
+            node = elem->nodes[2];
+            x3[0] = node->X();
+            x3[1] = node->Y();
+            
+            x3[2] = x2[2] = x1[2] = 0.;
+            cent[2] = 0.; 
+
+            for(m=col_min; m<=col_max; m++)
+            {
+               mm = m;
+               if(m>ncol-1) mm = ncol-1;
+               if(m<0) mm = 0;
+               cent[0] = g_para[2] + g_para[4]*(mm + 0.5); 
+
+               for(n=row_min; n<=row_max; n++)
+               {
+                  nn = n;
+                  if(n>nrow-1) nn = nrow-1;
+                  if(nn<0) nn = 0;
+                  cent[1] = g_para[3] + g_para[4]*(nrow-nn + 0.5); 
+
+                  if(cent[0]<x_min)
+                  {
+                     node = elem->nodes[node_xmin];
+                     cent[0] = node->X();
+                     cent[1] = node->Y();
+                  }
+                  if(cent[0]>x_max)
+                  {
+                     node = elem->nodes[node_xmax];
+                     cent[0] = node->X();
+                     cent[1] = node->Y();
+                  }
+                  if(cent[1]<y_min)
+                  {
+                     node = elem->nodes[node_ymin];
+                     cent[0] = node->X();
+                     cent[1] = node->Y();
+                  }
+                  if(cent[1]<y_max)
+                  {
+                     node = elem->nodes[node_ymax];
+                     cent[0] = node->X();
+                     cent[1] = node->Y();
+                  }
+   
+
+
+                  /// Check whether this point is in this element. 
+                  sub_area[0] = ComputeDetTri(cent, x2, x3); 
+                  sub_area[1] = ComputeDetTri(cent, x3, x1); 
+                  sub_area[2] = ComputeDetTri(cent, x1, x2); 
+                  area =  ComputeDetTri(x1, x2, x3); 
+                  
+                  /// This point locates within the element
+                  if(fabs(area-sub_area[0]-sub_area[1]-sub_area[2])<tol_a)
+                  {
+                      /// Use sub_area[k] as shape function  
+                       for(k=0; k<3; k++)
+                         sub_area[k] /= area;   
+
+                     
+                       l = nn*ncol + mm;
+                       cell_data_p[l] = 0.0;
+ 
+                       for(k=0; k<3; k++)
+                          vel_av[k] = 0.;
+   
+           
+                       for(j=0; j<nnodes; j++)
+                       {
+                          n_idx = elem->GetNodeIndex(j);
+                        
+                          cell_data_p[l] +=  sub_area[j]*GetNodeValue(n_idx,idx); 
+                 
+                          for(k=0; k<3; k++)
+                            vel_av[k] += sub_area[j]*GetNodeValue(n_idx,vel_idx[k]);
+                       }
+                       cell_data_v[l] =  1000.0*(vel_av[0]*(*elem->tranform_tensor)(0,2)
+                                 +vel_av[1]*(*elem->tranform_tensor)(1,2) 
+                                 +vel_av[2]*(*elem->tranform_tensor)(2,2));    // 1000*:  m-->mm
+
+                  }
+               } 
+
+            } 
+
+     
+         }
+    
+         of_flux.precision(4);
+         //of_flux.setf(ios::scientific, ios::floatfield);
+         of_primary.precision(2);
+         for(irow=0; irow<nrow; irow++)
+         {
+             for(icol=0; icol<ncol; icol++)
+             {
+                m = irow*ncol+icol;
+                of_flux<<" "<<setw(9)<< cell_data_v[m];  
+                of_primary<<setw(11)<< cell_data_p[m];   
+             }
+             of_flux<<endl;
+             of_primary<<endl;
+         } 
+   
+         cell_data_p.clear();
+         cell_data_v.clear();
+         of_flux.close();
+         of_primary.close();
+     }
+  }
+  //-------------------------------------------------------------------------------------
 	if (bc_transient_index.size() == 0)
 		return;
 	bool valid = false;

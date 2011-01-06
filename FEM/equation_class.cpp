@@ -163,6 +163,7 @@ void Linear_EQS::ConfigNumerics(CNumerics *m_num, const long n)
       break;
     case 3:
       solver_name = "BiCG";
+      nbuffer = 8;  //20.10.2010. WW
       break;
     case 4:
       solver_name = "QMRCGStab"; 
@@ -739,6 +740,16 @@ void Linear_EQS::Precond(double *vec_s, double *vec_r)
        vec_r[i] = vec_s[i];
   } 
 }
+/**************************************************************************
+Task: Linear equation:: M^T x
+  Transpose of preconditioner times a vector
+Programing:
+02/2010 WW/
+**************************************************************************/
+void Linear_EQS::TransPrecond(double *vec_s, double *vec_r)
+{
+   Precond(vec_s, vec_r);
+}
 /*\!
 ********************************************************************
    Dot production of two vectors
@@ -812,9 +823,29 @@ inline void Linear_EQS::MatrixMulitVec(double *xx,  double *yy)
   dom->Border2Local(border_buffer1, yy);    
 #endif
 }
+/*!
+********************************************************************
+   Dot production of two vectors
+   Programm:  
+   12/2007 WW  
+   02/2010 WW Revise
+********************************************************************/
+inline void Linear_EQS::TransMatrixMulitVec(double *xx,  double *yy)
+{
+  //
+  A->Trans_MultiVec(xx, yy);
+#if defined(NEW_BREDUCE)
+  dom->ReduceBorderV(yy);
+#else
+  dom->Local2Border(yy, border_buffer0); 
+  MPI_Allreduce(border_buffer0, border_buffer1, A->Dof()*dom->BSize(),
+                MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);  
+  dom->Border2Local(border_buffer1, yy);    
+#endif
+}
 
 #endif
-/*\!
+/*!
 ********************************************************************
    ConvergeTest
    Programm:  
@@ -940,6 +971,102 @@ int Linear_EQS::CG()
       p[i] = s[i] + beta*p[i];
   }
   //
+  Message(); 
+  return iter <= max_iter;
+}
+/**************************************************************************
+Task: Linear equation::BiCG
+Programing:
+10/2010 WW/
+**************************************************************************/
+int Linear_EQS::BiCG()
+{
+  long i, size;
+  double rho1, rho2 = 0., alpha, beta;
+  double *z, *zt, *p, *pt, *q, *qt, *r, *rt;
+  //
+  size = A->Dim();
+  z = f_buffer[0];
+  zt = f_buffer[1];
+  p = f_buffer[2];
+  pt = f_buffer[3];
+  q = f_buffer[4];
+  qt = f_buffer[5];
+  r = f_buffer[6];
+  rt = f_buffer[7];
+  //
+  double bNorm_new = Norm(b);
+  // Check if the norm of b is samll enough for convengence
+  if(CheckNormRHS(bNorm_new))
+    return 0;
+  //
+  // r0 = b-Ax 
+  A->multiVec(x,rt); 
+  for(i=0; i<size; i++)
+  {
+    r[i] = b[i]-rt[i];	
+    rt[i] = r[i];	
+  }
+  //
+  // Check the convergence
+  if ((error = Norm(r)/bNorm) < tol)
+  {
+    Message();
+    return 1; 
+  }
+  //
+  //
+  for (iter=1; iter<=max_iter; ++iter)
+  {
+    Precond(r, z);   
+    TransPrecond(rt, zt);
+    rho1 = dot(z, rt);
+    //
+    if (fabs(rho1) < DBL_MIN)
+    {
+       Message();
+       return iter <= max_iter; 
+    }
+    //
+    if(iter == 1)
+    {
+       for(i=0; i<size; i++)
+       {
+          p[i] = z[i];	
+          pt[i] = zt[i];	
+       }
+    }
+    else
+    {
+       beta = rho1/rho2;
+       for(i=0; i<size; i++)
+       {
+          p[i] = z[i] + beta*p[i];	
+          pt[i] = zt[i] + beta*pt[i];	
+       }
+    }
+    // 
+    A->multiVec(p, q);
+    A->Trans_MultiVec(pt, qt);
+    alpha = rho1/dot(pt,q);
+    // 
+    for(i=0; i<size; i++)
+    {
+       x[i] += alpha*p[i];	
+       r[i] -= alpha*q[i];	
+       rt[i] -= alpha*qt[i];	
+    }
+    //
+    rho2 = rho1;
+    if ((error = Norm(r)/bNorm) < tol)
+    {
+      Message();
+      return iter <= max_iter; 
+    }
+    //
+  }
+  //
+  Message(); 
   return iter <= max_iter;
 }
 
@@ -1725,6 +1852,164 @@ int Linear_EQS::BiCGStab(double *xg, const long n)
   //
 //  return iter <= max_iter;
   return iter ;
+}
+
+//#define  CG_test
+/*************************************************************************
+GeoSys-Function:
+Task: Parallel BiCG solver 
+    xg:  Global solution
+    n:  Size of x
+Programming: 
+08/2008 WW  
+**************************************************************************/
+int Linear_EQS::BiCG(double *xg, const long n) 
+{
+  long i, size, size_b;
+  double rho1, rho2, alpha, beta;
+  double *z, *zt, *p, *pt, *q, *qt, *r, *rt;
+  // 
+  size = A->Dim();
+  //
+  size_b = dom->BSize()*A->Dof();
+  z = f_buffer[0];
+  zt = f_buffer[1];
+  p = f_buffer[2];
+  pt = f_buffer[3];
+  q = f_buffer[4];
+  qt = f_buffer[5];
+  r = f_buffer[6];
+  rt = f_buffer[7];
+  //
+  //*** Norm b
+  double bNorm_new; 
+  double buff_fl = dom->Dot_Interior(b, b);  
+  MPI_Allreduce(&buff_fl, &bNorm_new, 1, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+  dom->Local2Border(b, border_buffer0); // 
+  MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+  buff_fl = bNorm_new + dot(border_buffer1, border_buffer1, size_b); //  (rhs on border)
+  bNorm_new = sqrt(buff_fl);
+  // Check if the norm of b is samll enough for convengence
+
+  // Check if the norm of b is samll enough for convengence
+  if(CheckNormRHS(bNorm_new))
+    return 0;
+  //*** r = b-Ax
+  //    A*x
+  dom->Global2Local(xg, x, n);
+  A->multiVec(x,rt);   // rt as buffer
+  for(i=0; i<size; i++)
+    r[i] = b[i]-rt[i];	  // r = b-Ax
+  //   Collect border r
+  dom->Local2Border(r, border_buffer0);  //  buffer
+  MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+  dom->Border2Local(border_buffer1, r);   
+  //
+  // Initial.  
+  for(i=0; i<size; i++)
+  {
+     r[i] = b[i]-rt[i];	
+     rt[i] = r[i];	
+  }
+  if ((error = Norm(r)/bNorm) < tol)
+  {
+    if(myrank==0) // Make screen output only by processor 0
+      Message();
+    return 0; 
+  }
+
+
+ #ifdef CG_test 
+    //TEST
+ string test = "rank";
+ char stro[64];  
+ sprintf(stro, "%d",myrank);
+ string test1 = test+(string)stro+"_Assemble.txt";   
+ ofstream Dum(test1.c_str(), ios::out);
+ Dum.width(20);
+ Dum.precision(15);
+ Dum.setf(ios::scientific);
+ 
+  Dum<<" Norm(r) "<< Norm(r)<<" bNorm "<<bNorm<<endl;
+#endif
+
+
+  //  
+  for (iter = 1; iter <= max_iter; iter++)
+  {
+    Precond(r, z);   
+    TransPrecond(rt, zt);
+    rho1 = dot(z, rt);
+
+#ifdef CG_test
+  Dum<<" rho1 "<< rho1<<endl;
+#endif
+
+
+
+    //
+    if (fabs(rho1) < DBL_MIN)
+    {
+       Message();
+       break; 
+    }
+    //
+    if (iter == 1)
+    { 
+       for(i=0; i<size; i++)
+       {
+          p[i] = z[i];	
+          pt[i] = zt[i];	
+       }
+    }
+    else
+    {
+       beta = rho1/rho2;
+       for(i=0; i<size; i++)
+       {
+          p[i] = z[i] + beta*p[i];	
+          pt[i] = zt[i] + beta*pt[i];	
+       }
+    }
+    MatrixMulitVec(p, q);
+    TransMatrixMulitVec(pt, qt);
+    alpha = rho1/dot(pt,q);
+
+#ifdef CG_test
+  Dum<<" alpha "<< alpha<<endl;
+#endif
+
+
+    for(i=0; i<size; i++)
+    {
+       x[i] += alpha*p[i];	
+       r[i] -= alpha*q[i];	
+       rt[i] -= alpha*qt[i];	
+    }
+    //
+    rho2 = rho1;
+    if ((error = Norm(r)/bNorm) < tol)
+      break; 
+
+#ifdef CG_test
+  Dum<<" error = Norm(r)/bNorm "<< error<<endl;
+#endif
+
+    //
+  }
+  //
+  // concancert internal x
+  dom->CatInnerX(xg, x, n);
+
+  //
+  Message(); 
+#ifdef CG_test
+  exit(0);
+#endif
+
+
+  //
+  return iter <= max_iter;
 }
 #endif
 //------------------------------------------------------------------------

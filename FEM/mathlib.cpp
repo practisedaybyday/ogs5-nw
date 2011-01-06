@@ -170,6 +170,30 @@ VoidFuncDXCDX GradShapeFunction = NULL;
 
 
 /***************************************************************************
+   GEO MATHLIB - Funktion: MBtrgVec
+   Aufgabe:
+           Berechnet Betrag von Vektor
+   Formalparameter:
+           E: *vec
+           E: n
+   Ergebnis:
+           Betrag
+   Aenderungen/Korrekturen:
+   07/1995     hh        Erste Version
+   11/1999     C.Thorenz Register-Variablen
+
+ **************************************************************************/
+
+double MBtrgVec(double *vec, long n)
+{
+    register long i;
+    register double zwo = 0.0;
+    for (i = 0; i < n; i++)
+        zwo += vec[i] * vec[i];
+    return sqrt(zwo);
+}
+#ifdef obsolete  //05.03.2010 WW
+/***************************************************************************
    ROCKFLOW - Funktion: MGleichDouble
    Aufgabe:
            Vergleicht zwei double-Zahlen unter Beruecksichtigung
@@ -194,78 +218,11 @@ int MGleichDouble(double zahl1, double zahl2, double tol)
         retval = 0;
     return retval;
 }
+#endif //#ifdef obsolete  //05.03.2010 WW
 
 
-/**************************************************************************/
-/* ROCKFLOW - Funktion: MMin
-                                                                          */
-/* Aufgabe:
-   Gibt den Kleineren der Eingabewerte zurueck
-                                                                          */
-/* Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   E double a,b
-                                                                          */
-/* Ergebnis:
-   kleinere Zahl
-                                                                          */
-/* Programmaenderungen:
-   2/2000     C.Thorenz  Erste Version                                                                          */
-/**************************************************************************/
-double MMin(double a, double b)
-{
-    if (a < b)
-        return a;
-    else
-        return b;
-}
-/**************************************************************************/
-/* ROCKFLOW - Funktion: MMax
-                                                                          */
-/* Aufgabe:
-   Gibt den Groesseren der Eingabewerte zurueck
-                                                                          */
-/* Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   E double a,b
-                                                                          */
-/* Ergebnis:
-   groessere Zahl
-                                                                          */
-/* Programmaenderungen:
-   2/2000     C.Thorenz  Erste Version                                                                          */
-/**************************************************************************/
-double MMax(double a, double b)
-{
-    if (a > b)
-        return a;
-    else
-        return b;
-}
-
-/**************************************************************************/
-/* ROCKFLOW - Funktion: MRange
-                                                                          */
-/* Aufgabe:
-   Begrenzt eine Zahl auf ein Intervall
-                                                                          */
-/* Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   E double a,b,c
-                                                                          */
-/* Ergebnis:
-   Zahl im Intervall
-                                                                          */
-/* Programmaenderungen:
-   7/2000     C.Thorenz  Erste Version                                                                          */
-/**************************************************************************/
-double MRange(double a, double b, double c)
-{
-    if (b < a)
-        return a;
-    if (b > c)
-        return c;
-
-    return b;
-}
-
+////////////////////////////////////////////////////////////
+#ifdef obsolete  //05.03.2010 WW
 /***************************************************************************
    ROCKFLOW - Funktion: MOmega1D
    Aufgabe:
@@ -407,7 +364,7 @@ int MOmega3D(double *vf, double r, double s, double t)
    08/1995     cb        Erste Version
 
  **************************************************************************/
-#ifdef obsolete //WW. 06.11.2008
+//#ifdef obsolete //WW. 06.11.2008
 int MOmega2DTriangle(double *vf, double xx, double yy, long number)
 {
   int i,nn=3,ok=0;
@@ -429,13 +386,13 @@ int MOmega2DTriangle(double *vf, double xx, double yy, long number)
     y[i]=GetNodeY(element_nodes[i]);
   }
 /* CMCD March 2004 The area of the triangle needs to be calculated for the 2D projected triangle
-not the three D as above
+not the three D as above 
     area = (x[1]*y[2]-x[2]*y[1]+x[0]*y[1]-x[1]*y[0]+x[2]*y[0]-x[0]*y[2])/2; // CMCD March 2004
 	xx=0.;
 	yy=0.;
 what is this ?
 */
-    vf[0] = (x[1]*y[2]-x[2]*y[1]) + (y[1]-y[2])*xx + (x[2]-x[1])*yy;
+    vf[0] = (x[1]*y[2]-x[2]*y[1]) + (y[1]-y[2])*xx + (x[2]-x[1])*yy; 
     vf[1] = (x[2]*y[0]-x[0]*y[2]) + (y[2]-y[0])*xx + (x[0]-x[2])*yy;
     vf[2] = (x[0]*y[1]-x[1]*y[0]) + (y[0]-y[1])*xx + (x[1]-x[0])*yy;
     vf[0] /= (2.*area);
@@ -557,7 +514,7 @@ int ok=0;
 	return ok = 1;
 }
 
-#endif //#ifndef obsolete //WW. 06.11.2008
+//#endif //#ifndef obsolete //WW. 06.11.2008
 
 /***************************************************************************
    ROCKFLOW - Funktion: MPhi3D
@@ -834,122 +791,6 @@ int MGradPhi3D(double *vf, double r, double s, double t)
 }
 
 
-/***************************************************************************
-   ROCKFLOW - Funktion: MXPGaussPkt
-   Aufgabe:
-   X Punkt Gauss-Integration
-           bestimmtes Integral
-           1/           X
-            | P(x)dx = Sigma  Fi*P(xi)
-            |
-          -1/          i=1
-   Formalparameter:
-           E: grd  (das X aus der Gleichung oben)
-           E: pkt  (welcher von den vielen es sein soll)
-           return :
-   Ergebnis:
-           bestimmtes Integral
-   Aenderungen/Korrekturen:
-   07/1995     hh        Erste Version
-
- **************************************************************************/
-double MXPGaussPkt(long grd, long pkt)
-{
-    switch (grd) {
-    case 1:
-        return 0.0;
-    case 2:
-        switch (pkt) {
-        case 0:
-            return 0.577350269189626;
-        case 1:
-            return -0.577350269189626;
-        }
-        break;
-    case 3:
-        switch (pkt) {
-        case 0:
-            return 0.774596669241483;
-        case 1:
-            return 0.0;
-        case 2:
-            return -0.774596669241483;
-        }
-        break;
-    case 4:
-        switch (pkt) {
-        case 0:
-            return 0.861136311594053;
-        case 1:
-            return 0.339981043584856;
-        case 2:
-            return -0.339981043584856;
-        case 3:
-            return -0.861136311594053;
-        }
-        break;
-    }                           /* switch grd */
-    return 0.0;
-}
-
-/***************************************************************************
-   ROCKFLOW - Funktion: MXPGaussFkt
-   Aufgabe:
-   X Punkt Gauss-Integration
-           bestimmtes Integral
-           1/           X
-            | P(x)dx = Sigma  Fi*P(xi)
-            |
-          -1/          i=1
-   Formalparameter:
-           E: grd  (das X uas der Gleichung oben)
-           E: pkt  (welcher von den vielen es sein soll)
-           return : Faktor fuer Gauss-Integration
-   Ergebnis:
-           bestimmtes Integral
-   Aenderungen/Korrekturen:
-   07/1995     hh        Erste Version
-
- **************************************************************************/
-double MXPGaussFkt(long grd, long pkt)
-{
-    switch (grd) {
-    case 1:
-        return 2.0;
-    case 2:
-        switch (pkt) {
-        case 0:
-            return 1.0;
-        case 1:
-            return 1.0;
-        }
-        break;
-    case 3:
-        switch (pkt) {
-        case 0:
-            return 0.555555555555556;
-        case 1:
-            return 0.888888888888889;
-        case 2:
-            return 0.555555555555556;
-        }
-        break;
-    case 4:
-        switch (pkt) {
-        case 0:
-            return 0.347854845137454;
-        case 1:
-            return 0.652145154862546;
-        case 2:
-            return 0.652145154862546;
-        case 3:
-            return 0.347854845137454;
-        }
-        break;
-    }                           /* switch grd */
-    return 0.0;
-}
-
 
 /***************************************************************************
    ROCKFLOW - Funktion: MGetCoor
@@ -985,64 +826,19 @@ void MGetCoor(int typ, long j, double *r, double *s, double *t)
     }                           /* switch typ */
 }
 
-/*##########################################################################
-   Funktionen fuer Vektoren und Matrizen
-   ######################################################################## */
-
-/***************************************************************************
-   ROCKFLOW - Funktion: MNulleVec
-   Aufgabe:
-           Setze angegebenen Vektor = 0.0
-   Formalparameter:
-           E: *vec
-           E: g
-   Ergebnis:
-           viele Nullen
-   Aenderungen/Korrekturen:
-   09/1994     hh        Erste Version
-
- **************************************************************************/
-
-void MNulleVec(double *vec, long g)
-{
-    register long i;
-    for (i = 0; i < g; i++)
-        vec[i] = 0.0;
-}
-
-/***************************************************************************
-   ROCKFLOW - Funktion: MNulleMat
-   Aufgabe:
-           Setze angegebene Matrix = 0.0
-   Formalparameter:[B
-           E: *mat
-           E: g
-   Ergebnis:
-           viele Nullen
-   Aenderungen/Korrekturen:
-   09/1994     hh        Erste Version
-
- **************************************************************************/
-
-void MNulleMat(double *mat, long m, long n)
-{
-    register long i;
-    for (i = 0; i < m * n; i++)
-        mat[i] = 0.0;
-}
 
 
 /**************************************************************************
    ROCKFLOW - Function: MAngleVectors
-
+   
    Task:  Calculate angle between 2 vectors
-
+         
    Parameter: (I: Input; R: Return; X: Both)
            I: *v1, *v2
-
+           
    Return:
            Angle
-
+   
    Programming:
    09/2002   MB   First Version
  **************************************************************************/
@@ -1246,7 +1042,7 @@ void M2InvertiereUndTransponiere(double *m)
     zecke = m[0];
     m[0] = m[3];
     m[3] = zecke;
-    zecke = -m[1];
+    zecke = -m[1];  
     m[1] = -m[2];   /* hier wird auch transponiert */
     m[2] = zecke;
     for (i = 0; i < 4; i++)
@@ -1268,10 +1064,10 @@ void M2InvertiereUndTransponiere(double *m)
    Aenderungen/Korrekturen:
    08/1994   hh           Erste Version
    11/1999   C.Thorenz    Register-Variablen
-   08/2001   M. Kohlmeier Funktion transponierte und invertierte jetzt
-                          invertiert sie nur. Alle Aufrufe ersetzt durch
-                          M2InvertiereUndTransponiere
-
+   08/2001   M. Kohlmeier Funktion transponierte und invertierte jetzt 
+                          invertiert sie nur. Alle Aufrufe ersetzt durch 
+                          M2InvertiereUndTransponiere  
+  
  **************************************************************************/
 
 void M2Invertiere(double *m)
@@ -1406,55 +1202,6 @@ int MAddVektoren(double *v1, double *v2, double *vout, long g)
     return 1;
 }                               /* MAddVektoren */
 
-/**************************************************************************
-   ROCKFLOW - Funktion: MAddSkalVektoren
-   Aufgabe:
-           Vektoren mit Skalar multiplizieren und dann addieren
-   Formalparameter:
-           E: *v1, *v2  : Vektoren
-           e: m1,  m2   : Multiplikatoren
-           A: *vout     : Ergebnisvektor
-           E: g         : Vektorlaenge
-   Ergebnis:
-           Vektorsumme
-   Aenderungen/Korrekturen:
-   8/2001     C.Thorenz: Erste Version
- **************************************************************************/
-#ifdef SX
-int MAddSkalVektoren(double *restrict v1, double m1, double *restrict v2, double m2, double *restrict vout, long g)
-#else
-int MAddSkalVektoren(double *v1, double m1, double *v2, double m2, double *vout, long g)
-#endif
-{
-    register long i;
-      //WW    if ((m1==1.)&&(m2==1.))
-    if ((fabs(m1-1.)< MKleinsteZahl)&&(fabs(m2-1.)< MKleinsteZahl))
-#ifdef SX
-#pragma cdir nodep
-#endif
-      for (i = 0; i < g; i++)
-        vout[i] = v1[i] + v2[i];
-    else if(fabs(m1-1.)< MKleinsteZahl)
-#ifdef SX
-#pragma cdir nodep
-#endif
-      for (i = 0; i < g; i++)
-        vout[i] = v1[i] + m2 * v2[i];
-    else if(fabs(m2-1.)< MKleinsteZahl)
-#ifdef SX
-#pragma cdir nodep
-#endif
-      for (i = 0; i < g; i++)
-        vout[i] = m1 * v1[i] + v2[i];
-    else
-#ifdef SX
-#pragma cdir nodep
-#endif
-      for (i = 0; i < g; i++)
-        vout[i] = m1 * v1[i] + m2 * v2[i];
-
-    return 1;
-}
 
 /**************************************************************************
    ROCKFLOW - Funktion: MAddMatrizen
@@ -1540,247 +1287,6 @@ int MMultMatSkalar(double *matrix, double skal, long m, long n)
         matrix[i] *= skal;
     return 1;
 }
-/**************************************************************************
-   ROCKFLOW - Funktion: MMultVecVec
-   Aufgabe:
-           Multiplikation Vektor mit Vektor (zeilenweise)
-
-                  xxxxxx <- vec1
-                x oooooo
-        vec1 -> x oooooo <- mato
-                x oooooo
-                x oooooo
-
-   Formalparameter:
-           E: *vec1 *vec2
-           E: gv1, gv2
-           A: *mato, m (Zeilen) ,n (Spalten)
-   Ergebnis:
-           Matrix
-   Aenderungen/Korrekturen:
-   08/1994     hh        Erste Version
-   11/1999     C.Thorenz Register-Variablen
- **************************************************************************/
-
-int MMultVecVec(double *vec1, long gv1,
-                double *vec2, long gv2,
-                double *mato, long mo, long no)
-{
-    register long i, j;
-
-#ifdef ERROR_CONTROL
-    if (gv1 != mo)
-        DisplayErrorMsg("MMultVecVec: Groesse von Matrix und Vektor 1 passen nicht");
-    if (gv2 != no)
-        DisplayErrorMsg("MMultVecVec: Groesse von Matrix und Vektor 2 passen nicht");
-#endif
-
-    mo = gv1;
-    no = gv2;
-    for (i = 0; i < gv1; i++)
-        for (j = 0; j < gv2; j++)
-            mato[i * gv2 + j] = vec1[i] * vec2[j];
-    return 1;
-}                               /* MMultVecVec */
-
-/**************************************************************************
-   ROCKFLOW - Funktion: MMultVecMat
-   Aufgabe:
-           Multiplikation Vektor mit Matrix
-
-                     xxxxxx
-                     xxxxxx
-                     xxxxxx <- mat
-                     xxxxxx
-          vec-> xxxx oooooo <-veco
-
-                     xxxxxx      Es wird zeilenweise aufsummiert.
-                     XXXXXX
-                     xxxxxx
-                     xxxxxx
-                XXXX Oooooo
-
-   Formalparameter:
-           E: *vec *mat
-           E: gv, gm
-           A: *veco
-   Ergebnis:
-           Vektor
-   Aenderungen/Korrekturen:
-   08/1994     hh        Erste Version
-   11/1999     C.Thorenz Register-Variablen
- **************************************************************************/
-#ifdef SX
-int MMultVecMat(double *restrict vec, long gv,
-                double *restrict mat, long m, long n,
-                double *restrict veco, long go)
-#else
-int MMultVecMat(double *vec, long gv,
-                double *mat, long m, long n,
-                double *veco, long go)
-#endif
-{
-   register long i, j;
-
-#ifdef ERROR_CONTROL
-    if (gv != m)
-        DisplayErrorMsg("MMultVecMat: Groesse von Matrix und Vektor passen nicht");
-    if (go != n)
-        DisplayErrorMsg("MMultVecMat: Groesse von Ergebnis-Vektor stimmt nicht");
-#endif
-
-    gv = m;
-    go = n;
-    MNulleVec(veco, n);         /* cb: Nullen nicht vergessen ! */
-    for (i = 0; i < m; i++)
-#ifdef SX
-#pragma cdir nodep
-#endif
-        for (j = 0; j < n; j++)
-            veco[j] += vec[i] * mat[j + i * n];
-    return 1;
-}                               /* MMultVecMat */
-
-/**************************************************************************
-   ROCKFLOW - Funktion: MMultMatVec
-   Aufgabe:
-           Multiplikation Matrix Vektor
-                  z
-                  z
-                  z
-                  z
-            n     z
-        x x x x x o
-      m x x x x x o
-        x x x x x o
-
-   Formalparameter:
-           E: *mat
-           E: m,n     Groesse von *mat
-           E: *vec
-           E: g       Groesse von *vec
-           A: *veco
-           E: r       Groesse von *veco
-   Ergebnis:
-           Vektor
-   Aenderungen/Korrekturen:
-   08/1994     hh        Erste Version
-   24.06.1999  OK        Warnung
-   11/1999     C.Thorenz Warnung in #IFDEF, Register-Variablen
- **************************************************************************/
-
-int MMultMatVec(                /* Matrix */
-                   double *mat, long m, long n,
-                /* Veltor fuer das Produkt */
-                   double *vec, long g,
-                /* Vektor fuer das Ergebnis */
-                   double *veco, long r)
-{   register long i, k;
-
-#ifdef ERROR_CONTROL
-    if (g != n)
-        DisplayErrorMsg("MMultMatVec: Groesse von Matrix und Vektor passen nicht");
-    if (r != m)
-        DisplayErrorMsg("MMultMatVec: Groesse von Ergebnis-Vektor stimmt nicht");
-#endif
-    r = m;
-    for (k = 0; k < m; k++) {
-        veco[k] = 0.0;          /* cb: Nullen nicht vergessen ! */
-        for (i = 0; i < g; i++)
-            veco[k] += vec[i] * mat[i + k * n];
-    }
-    return 1;
-}                               /* MMultMatVec */
-
-/**************************************************************************
-   ROCKFLOW - Funktion: MMultMatMat
-   Aufgabe:
-           Multiplikation Matrix mit Matrix
-   Erlaeuterung:              n2
-                            X X X   Die Funktion arbeitet sich zeilenweise
-             mat2           x x x   durch die Matrizen durch. Es wird mit
-                         m2 x x x   dem ersten Element der ersten Zeile von
-                            x x x   mat1 begonnen. Damit werden alle
-                            x x x   Multiplikationen in der ersten Zeile von
-                    n1     -------  mat2 durchgefuehrt. Das Ergebnis wird
-                X X X X X | O O O   jeweils an der entsprechenden Stelle in
-        mat1    x x x x x | o o o   der Ergebnismatrix mato hinzuaddiert.
-             m1 x x x x x | o o o   Danach geht es mit dem zweiten Element der
-                x x x x x | o o o   ersten Zeile von mat1 so weiter.
-     Die Elemente der einzelnen Matrizen sind     mato mat1 mat2
-     immer zeilenweise durchnummeriert            0  =  0  *  0
-     gespeichert/verfuegbar. In der aus-          1  =  0  *  1
-     schnittweisen Tabelle sind in der            2  =  0  *  2
-     Reihenfolge der Abarbeitung die              0  =  1  *  3
-     Elementnummern.                              1  =  1  *  4
-                                                  2  =  1  *  5
-                                                  0  =  2  *  6
-
-
-   Kommentar C.Thorenz: Vorsicht! Die zweite Matrix wird vorher trans-
-   poniert.
-
-   Formalparameter:
-           E: *mat1 *mat2
-           A: *mato
-           E: m1,n1, m2, n2, mo, no
-   Ergebnis:
-           Matrix
-   Aenderungen/Korrekturen:
-   08/1994     hh        Erste Version
-    3/1999     C.Thorenz Optimiert (... ca. doppelt so schnell)
-    1/2001     C.Thorenz Noch etwas weiter optimiert
-    8/2001     C.Thorenz CBLAS eingehaengt
-
- **************************************************************************/
-#ifdef SX
-int MMultMatMat(double *restrict mat1, long m1, long n1,
-                double *restrict mat2, long m2, long n2,
-                double *restrict mato, long mo, long no)
-#else
-int MMultMatMat(double *mat1, long m1, long n1,
-                double *mat2, long m2, long n2,
-                double *mato, long mo, long no)
-#endif
-{
-#ifdef CBLAS_MMultMatMat
-    enum CBLAS_ORDER Order = CblasRowMajor;
-    enum CBLAS_TRANSPOSE TransA = CblasNoTrans;
-    enum CBLAS_TRANSPOSE TransB = CblasNoTrans;
-#else
-    register int i, j, ih1, ih2;
-#endif
-
-
-#ifdef ERROR_CONTROL
-    if ((m1 != mo) || (n2 != no) || (n1 != m2)) {
-        DisplayErrorMsg("MMultMatMat:Die Matrizen passen nicht zueinander !");
-        return 0;
-    }
-#endif
-
-#ifndef CBLAS_MMultMatMat
-#ifdef SX
-#pragma cdir nodep
-#endif
-    for (i = 0; i < mo * no; i++)
-        mato[i] = 0.0;          /*Ergebnismatrix vorsichtshalber nullen */
-
-    for (i = 0; i < n1 * m1; i++) {
-        ih1 = i/n1*no;
-        ih2 = (i-i/n1*m2)*n2;
-#ifdef SX
-#pragma cdir nodep
-#endif
-        for (j = 0; j < n2; j++)
-            mato[j+ih1] += mat1[i]*mat2[ih2+j];
-    }
-#else
-    cblas_dgemm(Order, TransA, TransB, m1, n2, n1, 1., mat1, n1, mat2, n2, 0., mato, no);
-#endif
-
-    return 1;
-}                               /* MMultMatMat */
 
 
 /*##########################################################################
@@ -2068,61 +1574,6 @@ int MBistDuDiagMat(double *matrix, long m, long n)
    ######################################################################## */
 
 /**************************************************************************
-   ROCKFLOW - Funktion: MMachVec
-   Aufgabe:
-           Erzeugen eines neuen Vektors
-   Formalparameter:
-           E: g
-   Ergebnis:
-           Zeiger auf den erzeugten Vektor.
-           oder Rueckgabewert NULL wenn nicht genuegend Speicher da ist.
-   Aenderungen/Korrekturen:
-   08/1994     hh        Erste Version
-   11/1999     C.Thorenz Nullung herausgenommen
- **************************************************************************/
-
-double *MMachVec(long g)
-{
-    double *zwerg;
-    zwerg = (double *) Malloc(sizeof(double) * g);
-#ifdef ERROR_CONTROL
-    if (zwerg == NULL)
-        DisplayErrorMsg("zuwenig Speicher in MMachVec");
-#endif
-    return zwerg;
-}                               /* MMachVec */
-
-/**************************************************************************
-   ROCKFLOW - Funktion: MNullVec
-   Aufgabe:
-           Schreibt Nullen in einen Vektors
-   Formalparameter:
-           E: *zwerg
-           E: g
-   Ergebnis:
-   Aenderungen/Korrekturen:
-   11/1999     C.Thorenz Erste Version
- **************************************************************************/
-#ifdef SX
-void MNullVec(double *restrict zwerg, long g)
-#else
-void MNullVec(double *zwerg, long g)
-#endif
-{
-    register long i;
-    zwerg = (double *) Malloc(sizeof(double) * g);
-#ifdef ERROR_CONTROL
-    if (zwerg == NULL)
-        DisplayErrorMsg("Fehler in MNullVec");
-#endif
-#ifdef SX
-#pragma cdir nodep
-#endif
-    for (i = 0; i < g; i++)
-        zwerg[i] = 0.0;
-}                               /* MNullVec */
-
-/**************************************************************************
    ROCKFLOW - Funktion: MLoeschVec
    Aufgabe:
            Zerstoeren eines bestehenden Vektors
@@ -2142,59 +1593,6 @@ void MLoeschVec(double *vec)
 #endif
     vec = (double *) Free(vec);
 }                               /* MLoeschVec */
-
-/**************************************************************************
-   ROCKFLOW - Funktion: MKopierVec
-   Aufgabe:
-           Kopieren eines Vektors
-   Formalparameter:
-           E: *vecquelle
-           A: *vecziel
-           E: g
-   Ergebnis:
-           Rueckgabewert 1
-   Aenderungen/Korrekturen:
-   08/1994     hh        Erste Version
-   11/1995     msr       register
-   11/1999     C.Thorenz Fehlerabfrage
-
- **************************************************************************/
-#ifdef SX
-void MKopierVec(double *restrict vecquelle, double *restrict vecziel, long g)
-#else
-void MKopierVec(double *vecquelle, double *vecziel, long g)
-#endif
-{
-    register long i;
-#ifdef ERROR_CONTROL
-    if ((vecquelle == NULL) || (vecziel == NULL))
-        DisplayErrorMsg("Fehler in MLoeschVec");
-#endif
-#ifdef SX
-#pragma cdir nodep
-#endif
-    for (i = 0; i < g; i++)
-        vecziel[i] = vecquelle[i];
-}                               /* MKopierVec */
-
-/* Function MVectorlength
-   Aufgabe:
-           Calculates the length of a vector in cartesian co-ordinates.
-   Formalparameter:
-           delta x
-           delta y
-           delta z
-   Ergebnis:
-           Length of vector
-   Aenderungen/Korrekturen:
-   05/2004     CMCD        Erste Version*/
-
-double MVectorlength(double dx, double dy, double dz)
-{
-    double length;
-    length=pow(((dz*dz)+(dy*dy)+(dx*dx)),0.5);
-    return length;
-}
 
 /*##########################################################################
    Bearbeitungfunktionen fuer Matrizen
@@ -2360,70 +1758,6 @@ void MZeigMat(double *mat, long m, long n, char *text)
 
 
 
-/*##########################################################################
-   Funktionen fuer Gleichungsloeser (CG)
-   ######################################################################## */
-
-/**************************************************************************
- ROCKFLOW - Funktion: MVekNorm1
-
- Aufgabe:
-   Berechnet die Spaltensummennorm von x
-
- Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   E double *x : Zeiger auf Vektor
-   E long n : Dimension von x
-
- Ergebnis:
-   Norm
-
- Programmaenderungen:
-   11/1995     MSR        Erste Version
-
-**************************************************************************/
-double MVekNorm1(double *x, long n)
-{
-    register long i;
-    register double erg = 0.0;
-#ifdef SX
-#pragma cdir nodep
-#endif
-    for (i = 0l; i < n; i++)
-        erg += fabs(x[i]);
-    return erg;
-}
-
-
-/**************************************************************************
- ROCKFLOW - Funktion: MVekNorm2
-
- Aufgabe:
-   Berechnet die euklidische Norm von x
-
- Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   E double *x : Zeiger auf Vektor
-   E long n : Dimension von x
-
- Ergebnis:
-   Norm
-
- Programmaenderungen:
-   11/1995     MSR        Erste Version
-
-**************************************************************************/
-double MVekNorm2(double *x, long n)
-{
-    register long i;
-    register double erg = 0.0;
-#ifdef SX
-#pragma cdir nodep
-#endif
-    for (i = 0l; i < n; i++)
-        erg += x[i] * x[i];
-    return sqrt(erg);
-}
-
-
 /**************************************************************************
  ROCKFLOW - Funktion: MVekNormMax
 
@@ -2452,123 +1786,23 @@ double MVekNormMax(double *x, long n)
 }
 
 
-/**************************************************************************
- ROCKFLOW - Funktion: MVekSum
 
- Aufgabe:
-   Fuehrt die Operation
-
-   x = x + alpha * y
-
-   durch
-
- Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   X double *x : Zeiger auf Vektor x
-   E double alpha : Faktor alpha
-   E double *y : Zeiger auf Vektor y
-   E long n : Dimension von x und y
-
- Ergebnis:
-   - void -
-
- Programmaenderungen:
-   11/1995     MSR        Erste Version
-
-**************************************************************************/
-#ifdef SX
-void MVekSum(double *restrict x, double alpha, double *restrict y, long n)
-#else
-void MVekSum(double*x,double alpha,double*y,long n)
-#endif
-{
-    register long i;
-#ifdef SX
-#pragma cdir nodep
-#endif
-    for (i = 0l; i < n; i++)
-        x[i] += alpha * y[i];
-}
-
-/**************************************************************************
- ROCKFLOW - Funktion: MVekDist
-
- Aufgabe:
-   Berechnet den Abstand zwischen x und y in einer gegebenen Norm
-
- Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   E double *x : Zeiger auf Vektor
-   E double *y : Zeiger auf Vektor
-   E long n : Dimension von x und y
-
- Ergebnis:
-   Abstand
-
- Programmaenderungen:
-   09/1997     AH         Einbau der Funktion
-
-**************************************************************************/
-double MVekDist(double *x, double *y, long n)
-{
-    double dist;
-    double *d;
-
-    d = (double *) Malloc(n * sizeof(double));
-    MVekGle(1., x, -1., y, d, n);
-    dist = VEKNORM_BICG(d, n);
-    d = (double *) Free(d);
-
-    return dist;
-}
-
-
-/**************************************************************************
- ROCKFLOW - Funktion: MVekGle
-
- Aufgabe:
-   Fuehrt die Operation
-
-   z = alpha * x + beta * y
-
-   durch
-
- Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   E double alpha : Faktor alpha
-   E double *x : Zeiger auf Vektor x
-   E double beta : Faktor beta
-   E double *y : Zeiger auf Vektor y
-   R double *z : Zeiger auf Ergabnisvektor z
-   (der Speicher muss bereits allokiert sein)
-   E long n : Dimension von x, y und z
-
- Ergebnis:
-   - void -
-
- Programmaenderungen:
-   11/1995     MSR        Erste Version
-
-**************************************************************************/
-void MVekGle(double alpha, double *x, double beta, double *y,
-             double *z, long n)
-{
-    register long i;
-    for (i = 0l; i < n; i++)
-        z[i] = alpha * x[i] + beta * y[i];
-}
 
 /*##########################################################################
    Geometrische Funktionen im R3
    ######################################################################## */
 
+
+
 /***************************************************************************
-   ROCKFLOW - Funktion: MCalcDistancePointToLine
+   ROCKFLOW - Funktion: MCalcDistancePointToPoint
 
    Aufgabe:
-           Abstand Punkt - Linie im R3
+           Abstand zweier Punkte im R3
 
    Formalparameter:
-           E: *pt  - Punktkoordinaten
-           E: *l1  - Punktkoordinaten fuer ersten Punkt auf Linie
-           E: *l2  - Punktkoordinaten fuer zweiten Punkt auf Linie
+           E: *pt1  - Punktkoordinaten
+           E: *pt2  - Punktkoordinaten
 
    Ergebnis:
            Abstand
@@ -2577,85 +1811,6 @@ void MVekGle(double alpha, double *x, double beta, double *y,
    02/2000   C. Thorenz      Erste Version
 
  **************************************************************************/
-double MCalcDistancePointToLine(double *pt,double *l1,double *l2) {
-
-int i;
-double vec1[3], vec2[3], erg_vec[3], l;
-
- /* Vektor Linienpunkt zu Punkt */
- for(i=0; i<3; i++) vec1[i] = pt[i] - l1[i];
-
- /* Vektor Linienpunkt zu Linienpunkt */
- for(i=0; i<3; i++) vec2[i] = l2[i] - l1[i];
-
- /* Normieren */
- l = MBtrgVec(vec2,3);
-#ifdef ERROR_CONTROL
- if (l < MKleinsteZahl) {
-   printf("\n FEHLER IN CalcDistancePointToLine: Laenge ist Null !!!");
-   exit(1);
- }
-#endif
-
- for(i=0; i<3; i++) vec2[i] /= (l + MKleinsteZahl);
-
- M3KreuzProdukt(vec1, vec2, erg_vec);
-
- return MBtrgVec(erg_vec,3);
-}
-
-
-/***************************************************************************
-   ROCKFLOW - Funktion: MCalcDistancePointToPlane
-
-   Aufgabe:
-           Abstand Punkt - Ebene im R3
-
-   Formalparameter:
-           E: *pt  - Punktkoordinaten
-           E: *e1  - Punktkoordinaten fuer ersten Punkt auf Ebene
-           E: *e2  - Punktkoordinaten fuer zweiten Punkt auf Ebene
-           E: *e3  - Punktkoordinaten fuer dritten Punkt auf Ebene
-
-   Ergebnis:
-      Abstand-Flaeche   (Kann negativ sein, je nach Lage des Punkts zur Ebene)
-
-   Aenderungen/Korrekturen:
-   02/2000   C. Thorenz      Erste Version
-
- **************************************************************************/
-double MCalcDistancePointToPlane(double *pt,double *e1,double *e2,double *e3) {
-
-int i;
-double vec1[3], vec2[3], vec3[3], normal[3], volume, area;
-
- /* 1. Ebenen-Vektor  */
- for(i=0; i<3; i++) vec1[i] = e2[i] -e1[i];
-
- /* 2. Ebenen-Vektor  */
- for(i=0; i<3; i++) vec2[i] = e3[i] -e1[i];
-
- /* Ebene-Punkt-Vektor  */
- for(i=0; i<3; i++) vec3[i] = pt[i] -e1[i];
-
- /* Normalenvektor */
- M3KreuzProdukt(vec1, vec2, normal);
-
- /* Volumen des Spats */
- volume = MSkalarprodukt(normal, vec3, 3);
-
- /* Flaeche auf der Ebene */
- area = MBtrgVec(normal, 3);
-
-#ifdef ERROR_CONTROL
- if (area < MKleinsteZahl) {
-   printf("\n FEHLER IN CalcDistancePointToPlane: Flaeche ist Null !!!");
-   exit(1);
- }
-#endif
-
- return volume / (area + MKleinsteZahl);
-}
 
 
 
@@ -2963,7 +2118,7 @@ int MGradPhi2D_9N(double *vf, double r, double s)
    Aufgabe:
            Berechnet Testfunktion (r,s,t).
            (K.- J. Bathe, Finite-Elemente-Methoden)
-
+           
    Formalparameter:
            Z: *vf - 1x20 Feld
            E: r,s,t (s.o.)
@@ -2977,7 +2132,7 @@ int MPhi3D_20N(double *vf, double r, double s, double t)
 {
     int ok = 0;
     double g[20];
-
+    
 #ifdef ERROR_CONTROL
     if (vf == NULL) {
         ok = 0;
@@ -3005,7 +2160,7 @@ int MPhi3D_20N(double *vf, double r, double s, double t)
     g[17] = 0.25  * (1.0 - r)     * (1.0 + s)     * (1.0 - t * t);
     g[18] = 0.25  * (1.0 - r)     * (1.0 - s)     * (1.0 - t * t);
     g[19] = 0.25  * (1.0 + r)     * (1.0 - s)     * (1.0 - t * t);
-
+    
 
     vf[0] = g[0] - (g[8] + g[11] + g[16]) * 0.5;
     vf[1] = g[1] - (g[8] + g[9] + g[17]) * 0.5;
@@ -3015,14 +2170,14 @@ int MPhi3D_20N(double *vf, double r, double s, double t)
     vf[5] = g[5] - (g[12] + g[13] + g[17]) * 0.5;
     vf[6] = g[6] - (g[13] + g[14] + g[18]) * 0.5;
     vf[7] = g[7] - (g[14] + g[15] + g[19]) * 0.5;
-
+   
     vf[8]  =  g[8]; vf[9]  = g[9] ; vf[10] = g[10];
     vf[11] = g[11]; vf[12] = g[12]; vf[13] = g[13];
     vf[14] = g[14]; vf[15] = g[15]; vf[16] = g[16];
     vf[17] = g[17]; vf[18] = g[18]; vf[19] = g[19];
 
 
-
+    
     return ok = 1;
 }
 
@@ -3030,7 +2185,7 @@ int MPhi3D_20N(double *vf, double r, double s, double t)
    ROCKFLOW - Funktion: MGradOmega3D_20N
    Aufgabe:
            Berechnet Gradient der Ansatzfunktion (r,s,t)
-
+           
    Formalparameter:
            Z: *vf - 3x20 Feld
            E: r,s,t (s.o.)
@@ -3046,7 +2201,7 @@ int MGradOmega3D_20N(double *vf, double r, double s, double t)
     double g_r[20];  /* r-Ableitung */
     double g_s[20];  /* s-Ableitung */
     double g_t[20];  /* t-Ableitung */
-
+    
 #ifdef ERROR_CONTROL
     if (vf == NULL) {
         ok = 0;
@@ -3074,8 +2229,8 @@ int MGradOmega3D_20N(double *vf, double r, double s, double t)
     g_r[17] = -0.25    * (1.0 + s)     * (1.0 - t * t);
     g_r[18] = -0.25    * (1.0 - s)     * (1.0 - t * t);
     g_r[19] = +0.25    * (1.0 - s)     * (1.0 - t * t);
-
-
+    
+    
     g_s[0] =  +0.125 * (1.0 + r)     * (1.0 + t);
     g_s[1] =  +0.125 * (1.0 - r)     * (1.0 + t);
     g_s[2] =  -0.125 * (1.0 - r)     * (1.0 + t);
@@ -3095,9 +2250,9 @@ int MGradOmega3D_20N(double *vf, double r, double s, double t)
     g_s[16] = +0.25  * (1.0 + r)     * (1.0 - t * t);
     g_s[17] = +0.25  * (1.0 - r)     * (1.0 - t * t);
     g_s[18] = -0.25  * (1.0 - r)     * (1.0 - t * t);
-    g_s[19] = -0.25  * (1.0 + r)     * (1.0 - t * t);
-
-
+    g_s[19] = -0.25  * (1.0 + r)     * (1.0 - t * t);   
+    
+    
     g_t[0] =  +0.125 * (1.0 + r)     * (1.0 + s)     ;
     g_t[1] =  +0.125 * (1.0 - r)     * (1.0 + s)     ;
     g_t[2] =  +0.125 * (1.0 - r)     * (1.0 - s)     ;
@@ -3118,7 +2273,7 @@ int MGradOmega3D_20N(double *vf, double r, double s, double t)
     g_t[17] = -0.5  * (1.0 - r)     * (1.0 + s)   * t;
     g_t[18] = -0.5  * (1.0 - r)     * (1.0 - s)   * t;
     g_t[19] = -0.5  * (1.0 + r)     * (1.0 - s)   * t;
-
+    
 
     vf[0] = g_r[0] - (g_r[8] + g_r[11] + g_r[16]) * 0.5;
     vf[1] = g_r[1] - (g_r[8] + g_r[9] + g_r[17]) * 0.5;
@@ -3128,10 +2283,10 @@ int MGradOmega3D_20N(double *vf, double r, double s, double t)
     vf[5] = g_r[5] - (g_r[12] + g_r[13] + g_r[17]) * 0.5;
     vf[6] = g_r[6] - (g_r[13] + g_r[14] + g_r[18]) * 0.5;
     vf[7] = g_r[7] - (g_r[14] + g_r[15] + g_r[19]) * 0.5;
-
+   
     vf[8] =  g_r[8];  vf[9] =  g_r[9];  vf[10] = g_r[10];
     vf[11] = g_r[11]; vf[12] = g_r[12]; vf[13] = g_r[13];
-    vf[14] = g_r[14]; vf[15] = g_r[15]; vf[16] = g_r[16];
+    vf[14] = g_r[14]; vf[15] = g_r[15]; vf[16] = g_r[16]; 
     vf[17] = g_r[17]; vf[18] = g_r[18]; vf[19] = g_r[19];
 
     vf[20] = g_s[0] - (g_s[8] + g_s[11] + g_s[16]) * 0.5;
@@ -3142,12 +2297,12 @@ int MGradOmega3D_20N(double *vf, double r, double s, double t)
     vf[25] = g_s[5] - (g_s[12] + g_s[13] + g_s[17]) * 0.5;
     vf[26] = g_s[6] - (g_s[13] + g_s[14] + g_s[18]) * 0.5;
     vf[27] = g_s[7] - (g_s[14] + g_s[15] + g_s[19]) * 0.5;
-
+   
     vf[28] =  g_s[8];  vf[29] =  g_s[9];  vf[30] = g_s[10];
     vf[31] = g_s[11];  vf[32] = g_s[12];  vf[33] = g_s[13];
     vf[34] = g_s[14];  vf[35] = g_s[15];  vf[36] = g_s[16];
     vf[37] = g_s[17];  vf[38] = g_s[18];  vf[39] = g_s[19];
-
+    
     vf[40] = g_t[0] - (g_t[8] + g_t[11] + g_t[16]) * 0.5;
     vf[41] = g_t[1] - (g_t[8] + g_t[9] + g_t[17]) * 0.5;
     vf[42] = g_t[2] - (g_t[9] + g_t[10] + g_t[18]) * 0.5;
@@ -3156,12 +2311,12 @@ int MGradOmega3D_20N(double *vf, double r, double s, double t)
     vf[45] = g_t[5] - (g_t[12] + g_t[13] + g_t[17]) * 0.5;
     vf[46] = g_t[6] - (g_t[13] + g_t[14] + g_t[18]) * 0.5;
     vf[47] = g_t[7] - (g_t[14] + g_t[15] + g_t[19]) * 0.5;
-
+ 
     vf[48] =  g_t[8]; vf[49] =  g_t[9];  vf[50] = g_t[10];
     vf[51] = g_t[11]; vf[52] = g_t[12];  vf[53] = g_t[13];
     vf[54] = g_t[14]; vf[55] = g_t[15];  vf[56] = g_t[16];
     vf[57] = g_t[17]; vf[58] = g_t[18];  vf[59] = g_t[19];
-
+    
     return ok = 1;
 }
 
@@ -3198,7 +2353,7 @@ int MGradPhi3D_20N(double *vf, double r, double s, double t)
            *Arg1, *Arg2
 
    Ergebnis:
-           1,0,-1  (groeßer, gleich, kleiner)
+           1,0,-1  (groeßer, gleich, kleiner) 
    Aenderungen/Korrekturen:
    06/2001     MK       Erste Version
 
@@ -3227,7 +2382,7 @@ int MCompare_for_MQSort_LongDouble( const void *Arg1, const void *Arg2 )
            SizeOfDataSet
 
    Ergebnis:
-           Sortierter Datensatz
+           Sortierter Datensatz 
    Aenderungen/Korrekturen:
    06/2001     MK       Erste Version
 
@@ -3280,23 +2435,23 @@ double *JWDMMultMatSkalar(double *matrix,
 
 /**************************************************************************
   ROCKFLOW - Function: GetPriMatFromTriMat
-
-  Task:
+   
+  Task:  
       Gets a 9x9 Matrix from 3x3 matrix according to:
 
-                 a b c  a b c
+                 a b c  a b c 
    a b c         d e f  d e f
-   d e f   ==>   g h i  g h i
+   d e f   ==>   g h i  g h i 
    g h i         a b c  a b c
                  d e f  d e f
                  g h i  g h i
 
   Parameter: (I: Input; R: Return; X: Both)
            I: double *mat
-
+           
   Return:
            *mat2
-
+   
   Programming:
   07/2003   MB   First Version
  **************************************************************************/
@@ -3304,7 +2459,7 @@ double *JWDMMultMatSkalar(double *matrix,
 int GetPriMatFromTriMat(double *mat1, double *mat_2)
 {
 
-  mat_2[0] = mat_2[3] = mat1[0];
+  mat_2[0] = mat_2[3] = mat1[0]; 
   mat_2[1] = mat_2[4] = mat1[1];
   mat_2[2] = mat_2[5] = mat1[2];
   mat_2[6] = mat_2[9] = mat1[3];
@@ -3314,7 +2469,7 @@ int GetPriMatFromTriMat(double *mat1, double *mat_2)
   mat_2[13] = mat_2[16] = mat1[7];
   mat_2[14] = mat_2[17] = mat1[8];
 
-  mat_2[18] = mat_2[21] = mat1[0];
+  mat_2[18] = mat_2[21] = mat1[0]; 
   mat_2[19] = mat_2[22] = mat1[1];
   mat_2[20] = mat_2[23] = mat1[2];
   mat_2[24] = mat_2[27] = mat1[3];
@@ -3332,49 +2487,49 @@ int GetPriMatFromTriMat(double *mat1, double *mat_2)
    ROCKFLOW - Funktion: MMultMatMat2
    Aufgabe:
            Multiplikation zweier Matrizen der gleichen Grösse nach:
-
+  
    a b  x  e f  ==>  axe bxf
    c d     g h       cxg dxh
-
+ 
    Formalparameter:
-           E: *mat1, *mat2, m1, n1
+           E: *mat1, *mat2, m1, n1 
    Ergebnis:
            *matrix
-
+ 
 **************************************************************************/
 int MMultMatMat2(double *mat1, long m1, long n1, double *mat2, double *ergebnis)
 {
 
-  int i;
+  int i;  
 
   for (i = 0; i < m1 * n1; i++) {
-    ergebnis[i] = mat1[i] * mat2[i];
+    ergebnis[i] = mat1[i] * mat2[i];  
   }
-
+  
   return 1;
 }
 
 
 /**************************************************************************
  ROCKFLOW - Function: TensorDrehDich
-
-   Task: Dreht Tensor von von stromlinienorietierten in lokale physikalische
-         (Element) Koordinaten.
+   
+   Task: Dreht Tensor von von stromlinienorietierten in lokale physikalische 
+         (Element) Koordinaten. 
 
    Parameter: (I: Input; R: Return; X: Both)
            I: double*  d Tensor
               double*  velo Geschwindigkeitsvektor
-
+           
    Return:
            double* d
-
+   
    Programming:
    08/2003   MB   First Version, herausgelöst aus CalcEle3D
-
+ 
  **************************************************************************/
 double* TensorDrehDich(double* d, double* velo)
 
-{
+{  
   double zwa[18];
   double zwi[18];
   long l, ii;
@@ -3415,28 +2570,992 @@ double* TensorDrehDich(double* d, double* velo)
         MTranspoMat(zwa, 3, 3, zwo);
         MMultMatMat(zwo, 3, 3, zwi, 3, 3, d, 3, 3);
       } /* end if (vg > MKleinsteZahl) */
-    } /* end if (d[0] > MKleinsteZahl || d[4] > MKleinsteZahl || d[8] > MKleinsteZahl) */
+    } /* end if (d[0] > MKleinsteZahl || d[4] > MKleinsteZahl || d[8] > MKleinsteZahl) */  
 
   return d;
 }
+#endif //#ifdef obsolete  //05.03.2010 WW
 
 
 
+
+///////////////////////////////////////////////////////////////////
+//
+//        Moved here by WW. 05.03.2010
+//
+///////////////////////////////////////////////////////////////////
+ 
+#ifndef NON_GEO // 05.03.2010. WW
+/***************************************************************************
+   ROCKFLOW - Funktion: MCalcDistancePointToLine
+
+   Aufgabe:
+           Abstand Punkt - Linie im R3
+
+   Formalparameter:
+           E: *pt  - Punktkoordinaten
+           E: *l1  - Punktkoordinaten fuer ersten Punkt auf Linie
+           E: *l2  - Punktkoordinaten fuer zweiten Punkt auf Linie
+
+   Ergebnis:
+           Abstand
+
+   Aenderungen/Korrekturen:
+   02/2000   C. Thorenz      Erste Version
+
+ **************************************************************************/
+double MCalcDistancePointToLine(double *pt,double *l1,double *l2) {
+
+int i;
+double vec1[3], vec2[3], erg_vec[3], l;
+
+ /* Vektor Linienpunkt zu Punkt */
+ for(i=0; i<3; i++) vec1[i] = pt[i] - l1[i];
+
+ /* Vektor Linienpunkt zu Linienpunkt */
+ for(i=0; i<3; i++) vec2[i] = l2[i] - l1[i];
+
+ /* Normieren */
+ l = MBtrgVec(vec2,3);
+#ifdef ERROR_CONTROL
+ if (l < MKleinsteZahl) {
+   printf("\n FEHLER IN CalcDistancePointToLine: Laenge ist Null !!!");
+   exit(1);
+ }
+#endif
+
+ for(i=0; i<3; i++) vec2[i] /= (l + MKleinsteZahl);
+
+ M3KreuzProdukt(vec1, vec2, erg_vec);
+
+ return MBtrgVec(erg_vec,3);
+}
+/***************************************************************************
+   ROCKFLOW - Funktion:  MCalcProjectionOfPointOnLine
+
+   Aufgabe:
+           Ermittelt den Projektionspunkt eines Punktes auf eine Linie (Lotpunkt)
+
+   Formalparameter:
+           E: *pt   - Punktkoordinaten
+           E: *l1   - Punktkoordinaten fuer ersten Punkt auf Linie
+           E: *l2   - Punktkoordinaten fuer zweiten Punkt auf Linie
+           R: *proj   - Punktkoordinaten fuer Projektionspunkt auf Linie
+   Ergebnis:
+      Abstand Punkt-Linie
+
+   Aenderungen/Korrekturen:
+   02/2000   C. Thorenz      Erste Version
+
+ **************************************************************************/
+double MCalcProjectionOfPointOnLine(double *pt, double *l1, double *l2, double *proj) {
+
+ int i;
+ double vec1[3], vec2[3], l, projektionslaenge, abstand;
+
+ /* Vektor Linienpunkt zu Punkt */
+ for(i=0; i<3; i++) vec1[i] = pt[i] - l1[i];
+
+ /* Vektor Linienpunkt zu Linienpunkt */
+ for(i=0; i<3; i++) vec2[i] = l2[i] - l1[i];
+
+ /* Normieren */
+ l = MBtrgVec(vec2,3);
+#ifdef ERROR_CONTROL
+ if (l < MKleinsteZahl) {
+   printf("\n Fehler in MCalcProjectionOfPointOnLine: Laenge ist Null !!!");
+   exit(1);
+ }
+#endif
+ for(i=0; i<3; i++) vec2[i] /= (l + MKleinsteZahl);
+
+ projektionslaenge = MSkalarprodukt(vec1, vec2, 3);
+
+ /* Punkt bestimmen */
+ for(i=0; i<3; i++) proj[i] = l1[i] + projektionslaenge * vec2[i];
+
+ abstand = MCalcDistancePointToPoint(proj, pt);
+
+ return abstand;
+}
+
+/***************************************************************************
+   ROCKFLOW - Funktion: MCalcDistancePointToPlane
+
+   Aufgabe:
+           Abstand Punkt - Ebene im R3
+
+   Formalparameter:
+           E: *pt  - Punktkoordinaten
+           E: *e1  - Punktkoordinaten fuer ersten Punkt auf Ebene
+           E: *e2  - Punktkoordinaten fuer zweiten Punkt auf Ebene
+           E: *e3  - Punktkoordinaten fuer dritten Punkt auf Ebene
+
+   Ergebnis:
+      Abstand-Flaeche   (Kann negativ sein, je nach Lage des Punkts zur Ebene)
+
+   Aenderungen/Korrekturen:
+   02/2000   C. Thorenz      Erste Version
+
+ **************************************************************************/
+double MCalcDistancePointToPlane(double *pt,double *e1,double *e2,double *e3) {
+
+int i;
+double vec1[3], vec2[3], vec3[3], normal[3], volume, area;
+
+ /* 1. Ebenen-Vektor  */
+ for(i=0; i<3; i++) vec1[i] = e2[i] -e1[i];
+
+ /* 2. Ebenen-Vektor  */
+ for(i=0; i<3; i++) vec2[i] = e3[i] -e1[i];
+
+ /* Ebene-Punkt-Vektor  */
+ for(i=0; i<3; i++) vec3[i] = pt[i] -e1[i];
+
+ /* Normalenvektor */
+ M3KreuzProdukt(vec1, vec2, normal);
+
+ /* Volumen des Spats */
+ volume = MSkalarprodukt(normal, vec3, 3);
+
+ /* Flaeche auf der Ebene */
+ area = MBtrgVec(normal, 3);
+
+#ifdef ERROR_CONTROL
+ if (area < MKleinsteZahl) {
+   printf("\n FEHLER IN CalcDistancePointToPlane: Flaeche ist Null !!!");
+   exit(1);
+ }
+#endif
+
+ return volume / (area + MKleinsteZahl);
+}
+
+#endif //NON_GEO // 05.03.2010. WW
+
+
+/**************************************************************************/
+/* ROCKFLOW - Funktion: MMin
+                                                                          */
+/* Aufgabe:
+   Gibt den Kleineren der Eingabewerte zurueck
+                                                                          */
+/* Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
+   E double a,b
+                                                                          */
+/* Ergebnis:
+   kleinere Zahl
+                                                                          */
+/* Programmaenderungen:
+   2/2000     C.Thorenz  Erste Version                                                                          */
+/**************************************************************************/
+double MMin(double a, double b)
+{
+    if (a < b)
+        return a;
+    else
+        return b;
+}
+/**************************************************************************/
+/* ROCKFLOW - Funktion: MMax
+                                                                          */
+/* Aufgabe:
+   Gibt den Groesseren der Eingabewerte zurueck
+                                                                          */
+/* Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
+   E double a,b
+                                                                          */
+/* Ergebnis:
+   groessere Zahl
+                                                                          */
+/* Programmaenderungen:
+   2/2000     C.Thorenz  Erste Version                                                                          */
+/**************************************************************************/
+double MMax(double a, double b)
+{
+    if (a > b)
+        return a;
+    else
+        return b;
+}
+
+/**************************************************************************/
+/* ROCKFLOW - Funktion: MRange
+                                                                          */
+/* Aufgabe:
+   Begrenzt eine Zahl auf ein Intervall
+                                                                          */
+/* Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
+   E double a,b,c
+                                                                          */
+/* Ergebnis:
+   Zahl im Intervall
+                                                                          */
+/* Programmaenderungen:
+   7/2000     C.Thorenz  Erste Version                                                                          */
+/**************************************************************************/
+double MRange(double a, double b, double c)
+{
+    if (b < a)
+        return a;
+    if (b > c)
+        return c;
+
+    return b;
+}
+
+
+/*##########################################################################
+   Funktionen fuer Vektoren und Matrizen
+   ######################################################################## */
+
+/***************************************************************************
+   ROCKFLOW - Funktion: MNulleVec
+   Aufgabe:
+           Setze angegebenen Vektor = 0.0
+   Formalparameter:
+           E: *vec
+           E: g
+   Ergebnis:
+           viele Nullen
+   Aenderungen/Korrekturen:
+   09/1994     hh        Erste Version
+
+ **************************************************************************/
+
+void MNulleVec(double *vec, long g)
+{
+    register long i;
+    for (i = 0; i < g; i++)
+        vec[i] = 0.0;
+}
+
+/***************************************************************************
+   ROCKFLOW - Funktion: MNulleMat
+   Aufgabe:
+           Setze angegebene Matrix = 0.0
+   Formalparameter:[B
+           E: *mat
+           E: g
+   Ergebnis:
+           viele Nullen
+   Aenderungen/Korrekturen:
+   09/1994     hh        Erste Version
+
+ **************************************************************************/
+
+void MNulleMat(double *mat, long m, long n)
+{
+    register long i;
+    for (i = 0; i < m * n; i++)
+        mat[i] = 0.0;
+}
+
+
+#ifndef NON_GEO //   05.03.2010. WW
+#ifndef NEW_EQS //WW. 05.03.2010
+/*##########################################################################
+   Funktionen fuer Gleichungsloeser (CG)
+   ######################################################################## */
+
+/**************************************************************************
+ ROCKFLOW - Funktion: MVekNorm1
+
+ Aufgabe:
+   Berechnet die Spaltensummennorm von x
+
+ Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
+   E double *x : Zeiger auf Vektor
+   E long n : Dimension von x
+
+ Ergebnis:
+   Norm
+
+ Programmaenderungen:
+   11/1995     MSR        Erste Version
+
+**************************************************************************/
+double MVekNorm1(double *x, long n)
+{
+    register long i;
+    register double erg = 0.0;
+#ifdef SX
+#pragma cdir nodep
+#endif
+    for (i = 0l; i < n; i++)
+        erg += fabs(x[i]);
+    return erg;
+}
+
+
+/**************************************************************************
+ ROCKFLOW - Funktion: MVekNorm2
+
+ Aufgabe:
+   Berechnet die euklidische Norm von x
+
+ Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
+   E double *x : Zeiger auf Vektor
+   E long n : Dimension von x
+
+ Ergebnis:
+   Norm
+
+ Programmaenderungen:
+   11/1995     MSR        Erste Version
+
+**************************************************************************/
+double MVekNorm2(double *x, long n)
+{
+    register long i;
+    register double erg = 0.0;
+#ifdef SX
+#pragma cdir nodep
+#endif
+    for (i = 0l; i < n; i++)
+        erg += x[i] * x[i];
+    return sqrt(erg);
+}
+/**************************************************************************
+ ROCKFLOW - Funktion: MVekSum
+
+ Aufgabe:
+   Fuehrt die Operation
+
+   x = x + alpha * y
+
+   durch
+
+ Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
+   X double *x : Zeiger auf Vektor x
+   E double alpha : Faktor alpha
+   E double *y : Zeiger auf Vektor y
+   E long n : Dimension von x und y
+
+ Ergebnis:
+   - void -
+
+ Programmaenderungen:
+   11/1995     MSR        Erste Version
+
+**************************************************************************/
+#ifdef SX
+void MVekSum(double *restrict x, double alpha, double *restrict y, long n)
+#else
+void MVekSum(double*x,double alpha,double*y,long n)
+#endif
+{
+    register long i;
+#ifdef SX
+#pragma cdir nodep
+#endif
+    for (i = 0l; i < n; i++)
+        x[i] += alpha * y[i];
+}
+
+/**************************************************************************
+ ROCKFLOW - Funktion: MVekGle
+
+ Aufgabe:
+   Fuehrt die Operation
+
+   z = alpha * x + beta * y
+
+   durch
+
+ Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
+   E double alpha : Faktor alpha
+   E double *x : Zeiger auf Vektor x
+   E double beta : Faktor beta
+   E double *y : Zeiger auf Vektor y
+   R double *z : Zeiger auf Ergabnisvektor z
+   (der Speicher muss bereits allokiert sein)
+   E long n : Dimension von x, y und z
+
+ Ergebnis:
+   - void -
+
+ Programmaenderungen:
+   11/1995     MSR        Erste Version
+
+**************************************************************************/
+void MVekGle(double alpha, double *x, double beta, double *y,
+             double *z, long n)
+{
+    register long i;
+    for (i = 0l; i < n; i++)
+        z[i] = alpha * x[i] + beta * y[i];
+}
+
+/**************************************************************************
+ ROCKFLOW - Funktion: MVekDist
+
+ Aufgabe:
+   Berechnet den Abstand zwischen x und y in einer gegebenen Norm
+
+ Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
+   E double *x : Zeiger auf Vektor
+   E double *y : Zeiger auf Vektor
+   E long n : Dimension von x und y
+
+ Ergebnis:
+   Abstand
+
+ Programmaenderungen:
+   09/1997     AH         Einbau der Funktion
+
+**************************************************************************/
+double MVekDist(double *x, double *y, long n)
+{
+    double dist;
+    double *d;
+
+    d = (double *) Malloc(n * sizeof(double));
+    MVekGle(1., x, -1., y, d, n);
+    dist = VEKNORM_BICG(d, n);
+    d = (double *) Free(d);
+
+    return dist;
+}
+
+
+/**************************************************************************
+   ROCKFLOW - Funktion: MMachVec
+   Aufgabe:
+           Erzeugen eines neuen Vektors
+   Formalparameter:
+           E: g
+   Ergebnis:
+           Zeiger auf den erzeugten Vektor.
+           oder Rueckgabewert NULL wenn nicht genuegend Speicher da ist.
+   Aenderungen/Korrekturen:
+   08/1994     hh        Erste Version
+   11/1999     C.Thorenz Nullung herausgenommen
+ **************************************************************************/
+
+double *MMachVec(long g)
+{
+    double *zwerg;
+    zwerg = (double *) Malloc(sizeof(double) * g);
+#ifdef ERROR_CONTROL
+    if (zwerg == NULL)
+        DisplayErrorMsg("zuwenig Speicher in MMachVec");
+#endif
+    return zwerg;
+}                               /* MMachVec */
+
+/**************************************************************************
+   ROCKFLOW - Funktion: MNullVec
+   Aufgabe:
+           Schreibt Nullen in einen Vektors
+   Formalparameter:
+           E: *zwerg
+           E: g
+   Ergebnis:
+   Aenderungen/Korrekturen:
+   11/1999     C.Thorenz Erste Version
+ **************************************************************************/
+#ifdef SX
+void MNullVec(double *restrict zwerg, long g)
+#else
+void MNullVec(double *zwerg, long g)
+#endif
+{
+    register long i;
+    zwerg = (double *) Malloc(sizeof(double) * g);
+#ifdef ERROR_CONTROL
+    if (zwerg == NULL)
+        DisplayErrorMsg("Fehler in MNullVec");
+#endif
+#ifdef SX
+#pragma cdir nodep
+#endif
+    for (i = 0; i < g; i++)
+        zwerg[i] = 0.0;
+}                               /* MNullVec */
+
+
+/**************************************************************************
+   ROCKFLOW - Funktion: MKopierVec
+   Aufgabe:
+           Kopieren eines Vektors
+   Formalparameter:
+           E: *vecquelle
+           A: *vecziel
+           E: g
+   Ergebnis:
+           Rueckgabewert 1
+   Aenderungen/Korrekturen:
+   08/1994     hh        Erste Version
+   11/1995     msr       register
+   11/1999     C.Thorenz Fehlerabfrage
+
+ **************************************************************************/
+#ifdef SX
+void MKopierVec(double *restrict vecquelle, double *restrict vecziel, long g)
+#else
+void MKopierVec(double *vecquelle, double *vecziel, long g)
+#endif
+{
+    register long i;
+#ifdef ERROR_CONTROL
+    if ((vecquelle == NULL) || (vecziel == NULL))
+        DisplayErrorMsg("Fehler in MLoeschVec");
+#endif
+#ifdef SX
+#pragma cdir nodep
+#endif
+    for (i = 0; i < g; i++)
+        vecziel[i] = vecquelle[i];
+}                               /* MKopierVec */
+
+/* Function MVectorlength
+   Aufgabe:
+           Calculates the length of a vector in cartesian co-ordinates.
+   Formalparameter:
+           delta x
+           delta y
+           delta z
+   Ergebnis:
+           Length of vector
+   Aenderungen/Korrekturen:
+   05/2004     CMCD        Erste Version*/
+
+double MVectorlength(double dx, double dy, double dz)
+{
+    double length;
+    length=pow(((dz*dz)+(dy*dy)+(dx*dx)),0.5);
+    return length;
+}
+
+/**************************************************************************
+   ROCKFLOW - Funktion: MAddSkalVektoren
+   Aufgabe:
+           Vektoren mit Skalar multiplizieren und dann addieren
+   Formalparameter:
+           E: *v1, *v2  : Vektoren
+           e: m1,  m2   : Multiplikatoren
+           A: *vout     : Ergebnisvektor 
+           E: g         : Vektorlaenge  
+   Ergebnis:
+           Vektorsumme
+   Aenderungen/Korrekturen:
+   8/2001     C.Thorenz: Erste Version
+ **************************************************************************/
+#ifdef SX
+int MAddSkalVektoren(double *restrict v1, double m1, double *restrict v2, double m2, double *restrict vout, long g)
+#else
+int MAddSkalVektoren(double *v1, double m1, double *v2, double m2, double *vout, long g)
+#endif
+{
+    register long i;
+      //WW    if ((m1==1.)&&(m2==1.))
+    if ((fabs(m1-1.)< MKleinsteZahl)&&(fabs(m2-1.)< MKleinsteZahl))
+#ifdef SX
+#pragma cdir nodep
+#endif
+      for (i = 0; i < g; i++)
+        vout[i] = v1[i] + v2[i];
+    else if(fabs(m1-1.)< MKleinsteZahl) 
+#ifdef SX
+#pragma cdir nodep
+#endif
+      for (i = 0; i < g; i++)
+        vout[i] = v1[i] + m2 * v2[i];
+    else if(fabs(m2-1.)< MKleinsteZahl) 
+#ifdef SX
+#pragma cdir nodep
+#endif
+      for (i = 0; i < g; i++)
+        vout[i] = m1 * v1[i] + v2[i];
+    else  
+#ifdef SX
+#pragma cdir nodep
+#endif
+      for (i = 0; i < g; i++)
+        vout[i] = m1 * v1[i] + m2 * v2[i];
+
+    return 1;
+}
+#endif //   05.03.2010. WW
+////
+//#ifndef NON_GEO //   05.03.2010. WW
+/**************************************************************************
+   ROCKFLOW - Funktion: MMultVecVec
+   Aufgabe:
+           Multiplikation Vektor mit Vektor (zeilenweise)
+
+                  xxxxxx <- vec1
+                x oooooo
+        vec1 -> x oooooo <- mato
+                x oooooo
+                x oooooo
+
+   Formalparameter:
+           E: *vec1 *vec2
+           E: gv1, gv2
+           A: *mato, m (Zeilen) ,n (Spalten)
+   Ergebnis:
+           Matrix
+   Aenderungen/Korrekturen:
+   08/1994     hh        Erste Version
+   11/1999     C.Thorenz Register-Variablen
+ **************************************************************************/
+
+int MMultVecVec(double *vec1, long gv1,
+                double *vec2, long gv2,
+                double *mato, long mo, long no)
+{
+    register long i, j;
+
+#ifdef ERROR_CONTROL
+    if (gv1 != mo)
+        DisplayErrorMsg("MMultVecVec: Groesse von Matrix und Vektor 1 passen nicht");
+    if (gv2 != no)
+        DisplayErrorMsg("MMultVecVec: Groesse von Matrix und Vektor 2 passen nicht");
+#endif
+
+    mo = gv1;
+    no = gv2;
+    for (i = 0; i < gv1; i++)
+        for (j = 0; j < gv2; j++)
+            mato[i * gv2 + j] = vec1[i] * vec2[j];
+    return 1;
+}                               /* MMultVecVec */
+
+/**************************************************************************
+   ROCKFLOW - Funktion: MMultVecMat
+   Aufgabe:
+           Multiplikation Vektor mit Matrix
+
+                     xxxxxx
+                     xxxxxx
+                     xxxxxx <- mat
+                     xxxxxx
+          vec-> xxxx oooooo <-veco
+
+                     xxxxxx      Es wird zeilenweise aufsummiert.
+                     XXXXXX
+                     xxxxxx
+                     xxxxxx
+                XXXX Oooooo
+
+   Formalparameter:
+           E: *vec *mat
+           E: gv, gm
+           A: *veco
+   Ergebnis:
+           Vektor
+   Aenderungen/Korrekturen:
+   08/1994     hh        Erste Version
+   11/1999     C.Thorenz Register-Variablen
+ **************************************************************************/
+#ifdef SX
+int MMultVecMat(double *restrict vec, long gv,
+                double *restrict mat, long m, long n,
+                double *restrict veco, long go)
+#else
+int MMultVecMat(double *vec, long gv,
+                double *mat, long m, long n,
+                double *veco, long go)
+#endif
+{
+   register long i, j;
+
+#ifdef ERROR_CONTROL
+    if (gv != m)
+        DisplayErrorMsg("MMultVecMat: Groesse von Matrix und Vektor passen nicht");
+    if (go != n)
+        DisplayErrorMsg("MMultVecMat: Groesse von Ergebnis-Vektor stimmt nicht");
+#endif
+
+    gv = m;
+    go = n;
+    MNulleVec(veco, n);         /* cb: Nullen nicht vergessen ! */
+    for (i = 0; i < m; i++)
+#ifdef SX
+#pragma cdir nodep
+#endif
+        for (j = 0; j < n; j++)
+            veco[j] += vec[i] * mat[j + i * n];
+    return 1;
+}                               /* MMultVecMat */
+
+/**************************************************************************
+   ROCKFLOW - Funktion: MMultMatVec
+   Aufgabe:
+           Multiplikation Matrix Vektor
+                  z
+                  z
+                  z
+                  z
+            n     z
+        x x x x x o
+      m x x x x x o
+        x x x x x o
+
+   Formalparameter:
+           E: *mat
+           E: m,n     Groesse von *mat
+           E: *vec
+           E: g       Groesse von *vec
+           A: *veco
+           E: r       Groesse von *veco
+   Ergebnis:
+           Vektor
+   Aenderungen/Korrekturen:
+   08/1994     hh        Erste Version
+   24.06.1999  OK        Warnung
+   11/1999     C.Thorenz Warnung in #IFDEF, Register-Variablen
+ **************************************************************************/
+
+int MMultMatVec(                /* Matrix */
+                   double *mat, long m, long n,
+                /* Veltor fuer das Produkt */
+                   double *vec, long g,
+                /* Vektor fuer das Ergebnis */
+                   double *veco, long r)
+{   register long i, k;
+
+#ifdef ERROR_CONTROL
+    if (g != n)
+        DisplayErrorMsg("MMultMatVec: Groesse von Matrix und Vektor passen nicht");
+    if (r != m)
+        DisplayErrorMsg("MMultMatVec: Groesse von Ergebnis-Vektor stimmt nicht");
+#endif
+    r = m;
+    for (k = 0; k < m; k++) {
+        veco[k] = 0.0;          /* cb: Nullen nicht vergessen ! */
+        for (i = 0; i < g; i++)
+            veco[k] += vec[i] * mat[i + k * n];
+    }
+    return 1;
+}                               /* MMultMatVec */
+
+/**************************************************************************
+   ROCKFLOW - Funktion: MMultMatMat
+   Aufgabe:
+           Multiplikation Matrix mit Matrix
+   Erlaeuterung:              n2
+                            X X X   Die Funktion arbeitet sich zeilenweise
+             mat2           x x x   durch die Matrizen durch. Es wird mit
+                         m2 x x x   dem ersten Element der ersten Zeile von
+                            x x x   mat1 begonnen. Damit werden alle
+                            x x x   Multiplikationen in der ersten Zeile von
+                    n1     -------  mat2 durchgefuehrt. Das Ergebnis wird
+                X X X X X | O O O   jeweils an der entsprechenden Stelle in
+        mat1    x x x x x | o o o   der Ergebnismatrix mato hinzuaddiert.
+             m1 x x x x x | o o o   Danach geht es mit dem zweiten Element der
+                x x x x x | o o o   ersten Zeile von mat1 so weiter.
+     Die Elemente der einzelnen Matrizen sind     mato mat1 mat2
+     immer zeilenweise durchnummeriert            0  =  0  *  0
+     gespeichert/verfuegbar. In der aus-          1  =  0  *  1
+     schnittweisen Tabelle sind in der            2  =  0  *  2
+     Reihenfolge der Abarbeitung die              0  =  1  *  3
+     Elementnummern.                              1  =  1  *  4
+                                                  2  =  1  *  5
+                                                  0  =  2  *  6
+
+
+   Kommentar C.Thorenz: Vorsicht! Die zweite Matrix wird vorher trans-
+   poniert.
+
+   Formalparameter:
+           E: *mat1 *mat2
+           A: *mato
+           E: m1,n1, m2, n2, mo, no
+   Ergebnis:
+           Matrix
+   Aenderungen/Korrekturen:
+   08/1994     hh        Erste Version
+    3/1999     C.Thorenz Optimiert (... ca. doppelt so schnell)
+    1/2001     C.Thorenz Noch etwas weiter optimiert
+    8/2001     C.Thorenz CBLAS eingehaengt
+
+ **************************************************************************/
+#ifdef SX
+int MMultMatMat(double *restrict mat1, long m1, long n1,
+                double *restrict mat2, long m2, long n2,
+                double *restrict mato, long mo, long no)
+#else
+int MMultMatMat(double *mat1, long m1, long n1,
+                double *mat2, long m2, long n2,
+                double *mato, long mo, long no)
+#endif
+{
+#ifdef CBLAS_MMultMatMat
+    enum CBLAS_ORDER Order = CblasRowMajor;
+    enum CBLAS_TRANSPOSE TransA = CblasNoTrans;
+    enum CBLAS_TRANSPOSE TransB = CblasNoTrans;
+#else
+    register int i, j, ih1, ih2;
+#endif
+
+
+#ifdef ERROR_CONTROL
+    if ((m1 != mo) || (n2 != no) || (n1 != m2)) {
+        DisplayErrorMsg("MMultMatMat:Die Matrizen passen nicht zueinander !");
+        return 0;
+    }
+#endif
+
+#ifndef CBLAS_MMultMatMat
+#ifdef SX
+#pragma cdir nodep
+#endif
+    for (i = 0; i < mo * no; i++)
+        mato[i] = 0.0;          /*Ergebnismatrix vorsichtshalber nullen */
+
+    for (i = 0; i < n1 * m1; i++) {
+        ih1 = i/n1*no;
+        ih2 = (i-i/n1*m2)*n2;
+#ifdef SX
+#pragma cdir nodep
+#endif
+        for (j = 0; j < n2; j++)
+            mato[j+ih1] += mat1[i]*mat2[ih2+j];
+    }
+#else
+    cblas_dgemm(Order, TransA, TransB, m1, n2, n1, 1., mat1, n1, mat2, n2, 0., mato, no);
+#endif
+
+    return 1;
+}                               /* MMultMatMat */
+#endif //#ifndef NEW_EQS //WW. 05.03.2010
+
+
+/***************************************************************************
+   ROCKFLOW - Funktion: MXPGaussPkt
+   Aufgabe:
+   X Punkt Gauss-Integration
+           bestimmtes Integral
+           1/           X
+            | P(x)dx = Sigma  Fi*P(xi)
+            |
+          -1/          i=1
+   Formalparameter:
+           E: grd  (das X aus der Gleichung oben)
+           E: pkt  (welcher von den vielen es sein soll)
+           return :
+   Ergebnis:
+           bestimmtes Integral
+   Aenderungen/Korrekturen:
+   07/1995     hh        Erste Version
+
+ **************************************************************************/
+double MXPGaussPkt(long grd, long pkt)
+{
+    switch (grd) {
+    case 1:
+        return 0.0;
+    case 2:
+        switch (pkt) {
+        case 0:
+            return 0.577350269189626;
+        case 1:
+            return -0.577350269189626;
+        }
+        break;
+    case 3:
+        switch (pkt) {
+        case 0:
+            return 0.774596669241483;
+        case 1:
+            return 0.0;
+        case 2:
+            return -0.774596669241483;
+        }
+        break;
+    case 4:
+        switch (pkt) {
+        case 0:
+            return 0.861136311594053;
+        case 1:
+            return 0.339981043584856;
+        case 2:
+            return -0.339981043584856;
+        case 3:
+            return -0.861136311594053;
+        }
+        break;
+    }                           /* switch grd */
+    return 0.0;
+}
+
+/***************************************************************************
+   ROCKFLOW - Funktion: MXPGaussFkt
+   Aufgabe:
+   X Punkt Gauss-Integration
+           bestimmtes Integral
+           1/           X
+            | P(x)dx = Sigma  Fi*P(xi)
+            |
+          -1/          i=1
+   Formalparameter:
+           E: grd  (das X uas der Gleichung oben)
+           E: pkt  (welcher von den vielen es sein soll)
+           return : Faktor fuer Gauss-Integration
+   Ergebnis:
+           bestimmtes Integral
+   Aenderungen/Korrekturen:
+   07/1995     hh        Erste Version
+
+ **************************************************************************/
+double MXPGaussFkt(long grd, long pkt)
+{
+    switch (grd) {
+    case 1:
+        return 2.0;
+    case 2:
+        switch (pkt) {
+        case 0:
+            return 1.0;
+        case 1:
+            return 1.0;
+        }
+        break;
+    case 3:
+        switch (pkt) {
+        case 0:
+            return 0.555555555555556;
+        case 1:
+            return 0.888888888888889;
+        case 2:
+            return 0.555555555555556;
+        }
+        break;
+    case 4:
+        switch (pkt) {
+        case 0:
+            return 0.347854845137454;
+        case 1:
+            return 0.652145154862546;
+        case 2:
+            return 0.652145154862546;
+        case 3:
+            return 0.347854845137454;
+        }
+        break;
+    }                           /* switch grd */
+    return 0.0;
+}
+
+///////////////////////////////////////////////////////////////////
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-//NEW. WW
+//NEW. WW 
 
 /***************************************************************************
    ROCKFLOW - Funktion: SamplePointTriHQ(const int nsample)
 
    Aufgabe:
-        Provide the sample point for numerical intergral of quadratic
-   triangle element. Totally there are three sample points.
+        Provide the sample point for numerical intergral of quadratic 
+   triangle element. Totally there are three sample points. 
    Formalparameter:
-         const int nsample: Index of integration points
+         const int nsample: Index of integration points 
          double *SPoint   : 0-1 unit coordinates
                             2   Weight
    Programming:
@@ -3458,20 +3577,20 @@ void SamplePointTriHQ(const int nsample, double *SPoint)
      case 0:
             SPoint[0] = 0.166666666666667 ;
             SPoint[1] = 0.166666666666667 ;
-            SPoint[2] = 0.1666666666667;  // Weight
-            break;
+            SPoint[2] = 0.1666666666667;  // Weight 
+            break;        
      case 1:
             SPoint[0] = 0.666666666666667 ;
             SPoint[1] = 0.166666666666667 ;
-            SPoint[2] = 0.1666666666667;  // Weight
-            break;
+            SPoint[2] = 0.1666666666667;  // Weight 
+            break;        
      case 2:
             SPoint[0] = 0.166666666666667 ;
             SPoint[1] = 0.666666666666667 ;
-            SPoint[2] = 0.1666666666667;  // Weight
-            break;
-     default: break;
-
+            SPoint[2] = 0.1666666666667;  // Weight 
+            break; 
+     default: break;            
+            
    }
 }
 
@@ -3479,10 +3598,10 @@ void SamplePointTriHQ(const int nsample, double *SPoint)
    ROCKFLOW - Funktion: SamplePointTet(const int nsample, double *SPoint)
 
    Aufgabe:
-        Provide the sample point for numerical intergral of tedeahedra element.
+        Provide the sample point for numerical intergral of tedeahedra element. 
         Totally there are three sample points. 5 sample points
    Formalparameter:
-         const int nsample: Index of integration points
+         const int nsample: Index of integration points 
          double *SPoint   : 0-2 unit coordinates
                             3   Weight
    Programming:
@@ -3496,35 +3615,35 @@ void SamplePointTet5(const int nsample, double *SPoint)
       case 0:
          SPoint[0] = 0.25;
          SPoint[1] = 0.25;
-         SPoint[2] = 0.25;
-         SPoint[3] = -0.133333333333333;  // Weight
-         break;
+         SPoint[2] = 0.25;   
+         SPoint[3] = -0.133333333333333;  // Weight 
+         break;        
       case 1:
          SPoint[0] = 0.166666666666667;
          SPoint[1] = 0.166666666666667;
-         SPoint[2] = 0.166666666666667;
-         SPoint[3] = 0.07500000000000;   // Weight
-         break;
+         SPoint[2] = 0.166666666666667;   
+         SPoint[3] = 0.07500000000000;   // Weight 
+         break;        
       case 2:
          SPoint[0] = 0.5;
          SPoint[1] = 0.166666666666667 ;
-         SPoint[2] = 0.166666666666667 ;
-         SPoint[3] = 0.07500000000000;  // Weight
-         break;
+         SPoint[2] = 0.166666666666667 ;   
+         SPoint[3] = 0.07500000000000;  // Weight 
+         break;        
       case 3:
          SPoint[0] = 0.166666666666667;
          SPoint[1] = 0.5;
-         SPoint[2] = 0.166666666666667;
-         SPoint[3] = 0.07500000000000;  // Weight
-         break;
+         SPoint[2] = 0.166666666666667;   
+         SPoint[3] = 0.07500000000000;  // Weight 
+         break;        
       case 4:
          SPoint[0] = 0.166666666666667;
          SPoint[1] = 0.166666666666667;
-         SPoint[2] = 0.5;
-         SPoint[3] = 0.07500000000000;  // Weight
-         break;
-     default: break;
-
+         SPoint[2] = 0.5;   
+         SPoint[3] = 0.07500000000000;  // Weight 
+         break;        
+     default: break;            
+            
    }
 }
 
@@ -3533,10 +3652,10 @@ void SamplePointTet5(const int nsample, double *SPoint)
    ROCKFLOW - Funktion: SamplePointTetHQ(const int nsample, double *SPoint)
 
    Aufgabe:
-        Provide the sample point for numerical intergral of tedeahedra element.
+        Provide the sample point for numerical intergral of tedeahedra element. 
         Totally there are three sample points. 15 sample points
    Formalparameter:
-         const int nsample: Index of integration points
+         const int nsample: Index of integration points 
          double *SPoint   : 0-2 unit coordinates
                             3   Weight
    Programming:
@@ -3550,100 +3669,100 @@ void SamplePointTet15(const int nsample, double *SPoint)
       case 0:
          SPoint[0] = 0.25;
          SPoint[1] = 0.25;
-         SPoint[2] = 0.25;
-         SPoint[3] = 0.019753086419753086;  // Weight
-         break;
+         SPoint[2] = 0.25;   
+         SPoint[3] = 0.019753086419753086;  // Weight 
+         break;        
       case 1:
          SPoint[0] = 0.09197107805272303;
          SPoint[1] = 0.09197107805272303;
-         SPoint[2] = 0.09197107805272303;
-         SPoint[3] = 0.011989513963169772;   // Weight
-         break;
+         SPoint[2] = 0.09197107805272303;   
+         SPoint[3] = 0.011989513963169772;   // Weight 
+         break;        
       case 2:
          SPoint[0] = 0.72408676584183096;
          SPoint[1] = 0.09197107805272303 ;
-         SPoint[2] = 0.09197107805272303 ;
-         SPoint[3] = 0.011989513963169772;  // Weight
-         break;
+         SPoint[2] = 0.09197107805272303 ;   
+         SPoint[3] = 0.011989513963169772;  // Weight 
+         break;        
       case 3:
          SPoint[0] = 0.09197107805272303;
          SPoint[1] = 0.72408676584183096;
-         SPoint[2] = 0.09197107805272303;
-         SPoint[3] = 0.011989513963169772;  // Weight
-         break;
+         SPoint[2] = 0.09197107805272303;   
+         SPoint[3] = 0.011989513963169772;  // Weight 
+         break;        
       case 4:
          SPoint[0] = 0.09197107805272303;
          SPoint[1] = 0.09197107805272303;
-         SPoint[2] = 0.72408676584183096;
-         SPoint[3] = 0.011989513963169772;  // Weight
-         break;
-      case 5:
+         SPoint[2] = 0.72408676584183096;   
+         SPoint[3] = 0.011989513963169772;  // Weight 
+         break;        
+      case 5:   
          SPoint[0] = 0.44364916731037080;
          SPoint[1] = 0.05635083268962915;
-         SPoint[2] = 0.05635083268962915;
-         SPoint[3] = 0.008818342151675485;  // Weight
-         break;
+         SPoint[2] = 0.05635083268962915;   
+         SPoint[3] = 0.008818342151675485;  // Weight 
+         break;        
       case 6:
          SPoint[0] = 0.05635083268962915;
          SPoint[1] = 0.44364916731037080;
-         SPoint[2] = 0.05635083268962915;
-         SPoint[3] = 0.008818342151675485;  // Weight
-         break;
+         SPoint[2] = 0.05635083268962915;   
+         SPoint[3] = 0.008818342151675485;  // Weight 
+         break;        
       case 7:
          SPoint[0] = 0.05635083268962915;
          SPoint[1] = 0.05635083268962915;
-         SPoint[2] = 0.44364916731037080;
-         SPoint[3] = 0.008818342151675485;  // Weight
-         break;
+         SPoint[2] = 0.44364916731037080;   
+         SPoint[3] = 0.008818342151675485;  // Weight 
+         break;        
       case 8:
          SPoint[0] = 0.05635083268962915;
          SPoint[1] = 0.44364916731037080;
-         SPoint[2] = 0.44364916731037080;
-         SPoint[3] = 0.008818342151675485;  // Weight
-         break;
+         SPoint[2] = 0.44364916731037080;   
+         SPoint[3] = 0.008818342151675485;  // Weight 
+         break;        
       case 9:
          SPoint[0] = 0.44364916731037080;
          SPoint[1] = 0.05635083268962915;
-         SPoint[2] = 0.44364916731037080;
-         SPoint[3] = 0.008818342151675485;  // Weight
-         break;
+         SPoint[2] = 0.44364916731037080;   
+         SPoint[3] = 0.008818342151675485;  // Weight 
+         break;        
       case 10:
          SPoint[0] = 0.44364916731037080;
          SPoint[1] = 0.44364916731037080;
-         SPoint[2] = 0.05635083268962915;
-         SPoint[3] = 0.008818342151675485;  // Weight
-         break;
+         SPoint[2] = 0.05635083268962915;   
+         SPoint[3] = 0.008818342151675485;  // Weight 
+         break;        
       case 11:
          SPoint[0] = 0.31979362782962989;
          SPoint[1] = 0.31979362782962989;
-         SPoint[2] = 0.31979362782962989;
-         SPoint[3] = 0.011511367871045397;  // Weight
-         break;
+         SPoint[2] = 0.31979362782962989;   
+         SPoint[3] = 0.011511367871045397;  // Weight 
+         break;        
       case 12:
          SPoint[0] = 0.04061911651111023;
          SPoint[1] = 0.31979362782962989;
-         SPoint[2] = 0.31979362782962989;
-         SPoint[3] = 0.011511367871045397;  // Weight
-         break;
+         SPoint[2] = 0.31979362782962989;   
+         SPoint[3] = 0.011511367871045397;  // Weight 
+         break;        
       case 13:
          SPoint[0] = 0.31979362782962989;
          SPoint[1] = 0.04061911651111023;
-         SPoint[2] = 0.31979362782962989;
-         SPoint[3] = 0.011511367871045397;  // Weight
-         break;
+         SPoint[2] = 0.31979362782962989;   
+         SPoint[3] = 0.011511367871045397;  // Weight 
+         break;        
       case 14:
          SPoint[0] = 0.31979362782962989;
          SPoint[1] = 0.31979362782962989;
-         SPoint[2] = 0.04061911651111023;
-         SPoint[3] = 0.011511367871045397;  // Weight
-         break;
-      default: break;
+         SPoint[2] = 0.04061911651111023;   
+         SPoint[3] = 0.011511367871045397;  // Weight 
+         break;        
+      default: break;                        
    }
 }
 
 /**************************************************************************
 MathLib-Method:
-Task:
+Task: 
 Programing:
 02/2005 OK Implementation
 Last modified:
@@ -3661,21 +3780,21 @@ void ShapeFunctionLine(double *N1, const double *u)
 
 /**************************************************************************
 MathLib-Method:
-Task:
+Task:    
 Programing:
 07/2003 WW Implementation
 Last modified:
 **************************************************************************/
 void ShapeFunctionLineHQ(double *N1, const double *u)
 {
-   N1[0] = 0.5*u[0]*(u[0]-1.0);
-   N1[1] = 0.5*u[0]*(u[0]+1.0);
+   N1[0] = 0.5*u[0]*(u[0]-1.0); 
+   N1[1] = 0.5*u[0]*(u[0]+1.0); 
    N1[2] = 1.0-u[0]*u[0];
 }
 
 /**************************************************************************
 MathLib-Method:
-Task:
+Task: 
 Programing:
 02/2005 WW Implementation
 01/2006 PCH Correct the sign.
@@ -3684,8 +3803,8 @@ Last modified:
 void GradShapeFunctionLine(double *dN1, const double *u)
 {
   u = u;
-  dN1[0] = -0.5;
-  dN1[1] = 0.5;
+  dN1[0] = -0.5;	
+  dN1[1] = 0.5;	
 }
 
 /**************************************************************************
@@ -3706,15 +3825,15 @@ void GradShapeFunctionLineHQ(double *dN1, const double *u)
    ROCKFLOW - Funktion:  ShapeFunctionTri
 
    Aufgabe:
-        Compute the shape function for numerical intergral of linear
-   triangle element.
+        Compute the shape function for numerical intergral of linear  
+   triangle element. 
    Formalparameter:
-      E:
-        const  double *u  : Pointer to a 2 dimension array for
+      E: 
+        const  double *u  : Pointer to a 2 dimension array for 
                                the unit coordinates
       R:
-	    double * N3       : Array of size 3, to store the value of shape
-                               function
+	    double * N3       : Array of size 3, to store the value of shape 
+                               function 
 
    Programming:
    06/2003     WW        Erste Version
@@ -3722,7 +3841,7 @@ void GradShapeFunctionLineHQ(double *dN1, const double *u)
  **************************************************************************/
 void ShapeFunctionTri(double *N3, const double *u)
 {
-   N3[0] = 1.-u[0]-u[1];
+   N3[0] = 1.-u[0]-u[1]; 
    N3[1] = u[0];
    N3[2] = u[1];
 }
@@ -3731,14 +3850,14 @@ void ShapeFunctionTri(double *N3, const double *u)
    ROCKFLOW - Funktion:  *GradShapeFunctionTri
 
    Aufgabe:
-        Compute the shape function for numerical intergral of linear
-   triangle element.
+        Compute the shape function for numerical intergral of linear  
+   triangle element. 
    Formalparameter:
-      E:
+      E: 
 	    double * N3       : Array of size 6, gradient of shape function
 		                    0--2 d()/dL_1
 		                    3--5 d()/dL_2
-        const  double *u  : Pointer to a 2 dimension array for
+        const  double *u  : Pointer to a 2 dimension array for 
                                the unit coordinates
 
    Programming:
@@ -3749,11 +3868,11 @@ void GradShapeFunctionTri(double * dN3, const  double *u)
 {
    u = u;
    //   d()/dL_1
-   dN3[0] = -1.0;
-   dN3[1] =  1.0;
+   dN3[0] = -1.0;  
+   dN3[1] =  1.0; 
    dN3[2] =  0.0;
    //   d()/dL_2
-   dN3[3] = -1.0;
+   dN3[3] = -1.0; 
    dN3[4] = 0.0;
    dN3[5] = 1.0;
 }
@@ -3763,15 +3882,15 @@ void GradShapeFunctionTri(double * dN3, const  double *u)
    ROCKFLOW - Funktion:  ShapeFunctionTriHQ
 
    Aufgabe:
-        Compute the shape function for numerical intergral of quadratic
-   triangle element.
+        Compute the shape function for numerical intergral of quadratic  
+   triangle element. 
    Formalparameter:
-      E:
-        const  double *u  : Pointer to a 2 dimension array for
+      E: 
+        const  double *u  : Pointer to a 2 dimension array for 
                                the unit coordinates
       R:
-	    double * N3       : Array of size 6, to store the value of shape
-                               function
+	    double * N3       : Array of size 6, to store the value of shape 
+                               function 
 
    Programming:
    06/2003     WW        Erste Version
@@ -3779,11 +3898,11 @@ void GradShapeFunctionTri(double * dN3, const  double *u)
  **************************************************************************/
 void ShapeFunctionTriHQ(double *N6, const double *u)
 {
-   N6[0] = 2.*(1.-u[0]-u[1])*(0.5-u[0]-u[1]);
+   N6[0] = 2.*(1.-u[0]-u[1])*(0.5-u[0]-u[1]); 
    N6[1] = u[0]*(2.*u[0]-1.);
    N6[2] = u[1]*(2.*u[1]-1.);
-   N6[3] = 4.*u[0]*(1.-u[0]-u[1]);
-   N6[4] = 4.*u[0]*u[1];
+   N6[3] = 4.*u[0]*(1.-u[0]-u[1]);   
+   N6[4] = 4.*u[0]*u[1]; 
    N6[5] = 4.*u[1]*(1.-u[0]-u[1]);
 }
 
@@ -3791,14 +3910,14 @@ void ShapeFunctionTriHQ(double *N6, const double *u)
    ROCKFLOW - Funktion:  *GradShapeFunctionTriHQ
 
    Aufgabe:
-        Compute the shape function for numerical intergral of quadratic
-   triangle element.
+        Compute the shape function for numerical intergral of quadratic  
+   triangle element. 
    Formalparameter:
-      E:
+      E: 
 	    double * N3       : Array of size 6, gradient of shape function
 		                    0--5  d()/dL_1
 		                    6--11 d()/dL_2
-        const  double *u  : Pointer to a 2 dimension array for
+        const  double *u  : Pointer to a 2 dimension array for 
                                the unit coordinates
 
    Programming:
@@ -3807,24 +3926,24 @@ void ShapeFunctionTriHQ(double *N6, const double *u)
 **************************************************************************/
 void GradShapeFunctionTriHQ(double *dN6, const  double *u)
 {
-   dN6[0] = 4.*(u[0]+u[1])-3.;     // dN1/dL1
-   dN6[6] = 4.*(u[0]+u[1])-3.;     // dN1/dL2
+   dN6[0] = 4.*(u[0]+u[1])-3.;     // dN1/dL1    
+   dN6[6] = 4.*(u[0]+u[1])-3.;     // dN1/dL2 
+ 
+   dN6[1] = 4.*u[0]-1.;            // dN2/dL1 
+   dN6[7] = 0.;                    // dN2/dL2 
 
-   dN6[1] = 4.*u[0]-1.;            // dN2/dL1
-   dN6[7] = 0.;                    // dN2/dL2
+   dN6[2] = 0.;                    // dN3/dL1 
+   dN6[8] = 4.*u[1]-1.;            // dN3/dL2  
 
-   dN6[2] = 0.;                    // dN3/dL1
-   dN6[8] = 4.*u[1]-1.;            // dN3/dL2
-
-   dN6[3] =  4.*(1-2.*u[0]-u[1]);  // dN4/dL1
-   dN6[9] = -4.*u[0];              // dN4/dL2
-
-   dN6[4] = 4.*u[1];               // dN5/dL1
-   dN6[10] = 4.*u[0];              // dN5/dL2
+   dN6[3] =  4.*(1-2.*u[0]-u[1]);  // dN4/dL1 
+   dN6[9] = -4.*u[0];              // dN4/dL2 
+   
+   dN6[4] = 4.*u[1];               // dN5/dL1 
+   dN6[10] = 4.*u[0];              // dN5/dL2 
 
 
-   dN6[5] =-4.*u[1];               // dN6/dL1
-   dN6[11] = 4.*(1-u[0]-2.*u[1]);  // dN6/dL2
+   dN6[5] =-4.*u[1];               // dN6/dL1 
+   dN6[11] = 4.*(1-u[0]-2.*u[1]);  // dN6/dL2 
 }
 
 
@@ -3834,15 +3953,15 @@ void GradShapeFunctionTriHQ(double *dN6, const  double *u)
    ROCKFLOW - Funktion: realCoordTriHQ
 
    Aufgabe:
-        Mapping to real coordaintes from the local ones of quadratic traingle
-   element.
+        Mapping to real coordaintes from the local ones of quadratic traingle 
+   element. 
    Formalparameter:
-           E:
-             double * x         : Array of size 3, real coordiantes
+           E: 
+             double * x         : Array of size 3, real coordiantes 
              const double *XY   : Array of size 12, to store the coordinates of
                                   the six  verteces as:
                                     0-5;  x1, ..., x6,
-                                    6-11; y1, ..., y6
+                                    6-11; y1, ..., y6                                            
              const double *u    : Array of size 2, unit coordiantes
 
 
@@ -3852,8 +3971,8 @@ void GradShapeFunctionTriHQ(double *dN6, const  double *u)
  **************************************************************************/
 void  realCoordTriHQ(double * x,   const double *XY, const double *u )
 {
-    x[1] = (1.0 - u[0] - u[1])*XY[0] +  u[0]*XY[1] + u[1]* XY[2];
-    x[1] = (1.0 - u[0] - u[1])*XY[6] +  u[0]*XY[7] + u[1]* XY[8];
+    x[1] = (1.0 - u[0] - u[1])*XY[0] +  u[0]*XY[1] + u[1]* XY[2]; 
+    x[1] = (1.0 - u[0] - u[1])*XY[6] +  u[0]*XY[7] + u[1]* XY[8]; 
 }
 
 
@@ -3861,13 +3980,13 @@ void  realCoordTriHQ(double * x,   const double *XY, const double *u )
    ROCKFLOW - Funktion:  ShapeFunctionQuad
 
    Aufgabe:
-        Compute the shape function for numerical intergral of linear
-   quadralateral element.
+        Compute the shape function for numerical intergral of linear  
+   quadralateral element. 
    Formalparameter:
-           E:
-             double * N4     : Array of size 4, to store the value of shape
-                                    function
-             const  double *u   : Pointer to a 2 dimension array for
+           E: 
+             double * N4     : Array of size 4, to store the value of shape 
+                                    function 
+             const  double *u   : Pointer to a 2 dimension array for 
                                     the unit coordinates
 
    Programming:
@@ -3889,13 +4008,13 @@ void ShapeFunctionQuad(double *N4, const double *u)
    ROCKFLOW - Funktion:  ShapeFunctionQuad
 
    Aufgabe:
-        Compute the shape function for numerical intergral of linear
-   quadralateral element.
+        Compute the shape function for numerical intergral of linear  
+   quadralateral element. 
    Formalparameter:
-           E:
+           E: 
              double * dN4     : Array of size 8, to store the gradient
-                                of shape function.
-             const  double *u   : Pointer to a 2 dimension array for
+                                of shape function. 
+             const  double *u   : Pointer to a 2 dimension array for 
                                     the unit coordinates
 
    Programming:
@@ -3919,15 +4038,15 @@ void GradShapeFunctionQuad(double *dN4, const double *u)
 
 /***************************************************************************
    Aufgabe:
-        Compute the shape function for numerical intergral of linear
-   quadratic quadralateral element.(8 nodes)
+        Compute the shape function for numerical intergral of linear  
+   quadratic quadralateral element.(8 nodes) 
    Formalparameter:
-      E:
-        const  double *u  : Pointer to a 2 dimension array for
+      E: 
+        const  double *u  : Pointer to a 2 dimension array for 
                                the unit coordinates
       R:
-	    double * N8       : Array of size 8, to store the value of shape
-                               function
+	    double * N8       : Array of size 8, to store the value of shape 
+                               function 
 
    Programming:
    08/2004     WW              Generalization
@@ -3949,15 +4068,15 @@ void ShapeFunctionQuadHQ8(double *N8, const double *u)
 
 /***************************************************************************
    Aufgabe:
-        Compute the shape function for numerical intergral of linear
-   quadratic quadralateral element.
+        Compute the shape function for numerical intergral of linear  
+   quadratic quadralateral element. 
    Formalparameter:
-      E:
-        const  double *u  : Pointer to a 2 dimension array for
+      E: 
+        const  double *u  : Pointer to a 2 dimension array for 
                                the unit coordinates
       R:
-	    double * N9       : Array of size 9, to store the value of shape
-                               function
+	    double * N9       : Array of size 9, to store the value of shape 
+                               function 
 
    Programming:
    12/1999     R.Kaiser        Erste Version
@@ -3979,18 +4098,18 @@ void ShapeFunctionQuadHQ(double *N9, const double *u)
 
 /***************************************************************************
    Aufgabe:
-        Compute the shape function for numerical intergral of linear
-   quadratic quadralateral element.
+        Compute the shape function for numerical intergral of linear  
+   quadratic quadralateral element. 
    Formalparameter:
-      E:
-	    double * N9       : Array of size 9, to store the value of shape
-                               function
-        const  double *u  : Pointer to a 2 dimension array for
+      E: 
+	    double * N9       : Array of size 9, to store the value of shape 
+                               function 
+        const  double *u  : Pointer to a 2 dimension array for 
                                the unit coordinates
 
    Programming:
    12/1999     RK        Erste Version
-   06/2004     WW
+   06/2004     WW        
  **************************************************************************/
 void GradShapeFunctionQuadHQ(double *dN9, const double *u)
 {
@@ -4018,141 +4137,141 @@ void GradShapeFunctionQuadHQ(double *dN9, const double *u)
 
 /***************************************************************************
    Aufgabe:
-        Compute the shape function for numerical intergral of
-   linear tedrahedra element.
+        Compute the shape function for numerical intergral of   
+   linear tedrahedra element. 
    Formalparameter:
-      E:
-	    double * Nt4      : Array of size 4, to store the value of shape
-                            function
-        const  double *x  : Pointer to a 3 dimension array for
+      E: 
+	    double * Nt4      : Array of size 4, to store the value of shape 
+                            function 
+        const  double *x  : Pointer to a 3 dimension array for 
 
    Programming:
-   09/2004     WW
+   09/2004     WW           
 **************************************************************************/
 void ShapeFunctionTet(double *Nt4, const double *x)
 {
 
-    Nt4[0] = 1.-x[0]-x[1]-x[2];
-    Nt4[1] = x[0];
-    Nt4[2] = x[1];
-    Nt4[3] = x[2];
+    Nt4[0] = 1.-x[0]-x[1]-x[2]; 
+    Nt4[1] = x[0];  
+    Nt4[2] = x[1];  
+    Nt4[3] = x[2];  
 }
 /***************************************************************************
    Aufgabe:
-        Compute the gradient of shape functions for numerical intergral of
-   linear tedrahedra element.
+        Compute the gradient of shape functions for numerical intergral of   
+   linear tedrahedra element. 
    Formalparameter:
-      E:
-	    double * dNt4      : Array of size 12, to store the value of shape
-                             function
+      E: 
+	    double * dNt4      : Array of size 12, to store the value of shape 
+                             function 
                              0--3 /dr
                              4--7 /ds
                              8--12 /dt
-        const  double *x   : Pointer to a 3 dimension array for
+        const  double *x   : Pointer to a 3 dimension array for 
 
    Programming:
-   09/2004     WW
+   09/2004     WW           
 **************************************************************************/
 void GradShapeFunctionTet(double *dNt4, const double* dummy)
 {
 dummy = dummy;
-    dNt4[0] = -1.0;
-    dNt4[1] = 1.0;
+    dNt4[0] = -1.0; 
+    dNt4[1] = 1.0;  
     dNt4[2] = 0.0;
-    dNt4[3] = 0.0;
+    dNt4[3] = 0.0;  
 
-    dNt4[4] = -1.0;
-    dNt4[5] = 0.0;
+    dNt4[4] = -1.0; 
+    dNt4[5] = 0.0;  
     dNt4[6] = 1.0;
-    dNt4[7] = 0.0;
+    dNt4[7] = 0.0;  
 
-    dNt4[8] = -1.0;
-    dNt4[9] = 0.0;
+    dNt4[8] = -1.0; 
+    dNt4[9] = 0.0;  
     dNt4[10] = 0.0;
-    dNt4[11] = 1.0;
+    dNt4[11] = 1.0;  
 }
 
 /***************************************************************************
    Aufgabe:
-        Compute the shape function for numerical intergral of
-   quadratic tedrahedra element.
+        Compute the shape function for numerical intergral of   
+   quadratic tedrahedra element. 
    Formalparameter:
-      E:
-        const  double *x  : Pointer to a 3 dimension array for
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
                             the unit coordinates
       R:
-	    double * N10      : Array of size 10, to store the value of shape
-                            function
+	    double * N10      : Array of size 10, to store the value of shape 
+                            function 
 
    Programming:
-   09/2004     WW
+   09/2004     WW           
 **************************************************************************/
 void ShapeFunctionTetHQ(double *N10, const double *x)
 {
 
-    N10[0] = 2.*(1-x[0]-x[1]-x[2])*(0.5-x[0]-x[1]-x[2]);
-    N10[1] = x[0]*(2.*x[0]-1);
-    N10[2] = x[1]*(2.*x[1]-1);
-    N10[3] = x[2]*(2.*x[2]-1);
-    N10[4] = 4.0*x[0]*(1.0-x[0]-x[1]-x[2]);
-    N10[5] = 4.0*x[0]*x[1];
-    N10[6] = 4.0*x[1]*(1.0-x[0]-x[1]-x[2]);
-    N10[7] = 4.0*x[0]*x[2];
-    N10[8] = 4.0*x[1]*x[2];
-    N10[9] = 4.0*x[2]*(1.0-x[0]-x[1]-x[2]);
+    N10[0] = 2.*(1-x[0]-x[1]-x[2])*(0.5-x[0]-x[1]-x[2]); 
+    N10[1] = x[0]*(2.*x[0]-1);  
+    N10[2] = x[1]*(2.*x[1]-1);  
+    N10[3] = x[2]*(2.*x[2]-1);  
+    N10[4] = 4.0*x[0]*(1.0-x[0]-x[1]-x[2]); 
+    N10[5] = 4.0*x[0]*x[1];  
+    N10[6] = 4.0*x[1]*(1.0-x[0]-x[1]-x[2]); 
+    N10[7] = 4.0*x[0]*x[2];  
+    N10[8] = 4.0*x[1]*x[2];  
+    N10[9] = 4.0*x[2]*(1.0-x[0]-x[1]-x[2]); 
 }
 
 /***************************************************************************
    Aufgabe:
-        Compute the gradient of the shape function for numerical intergral
-    of quadratic tedrahedra element with respect to unit coordinates.
+        Compute the gradient of the shape function for numerical intergral 
+    of quadratic tedrahedra element with respect to unit coordinates. 
    Formalparameter:
-      E:
-        const  double *x  : Pointer to a 3 dimension array for
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
                             the unit coordinates
       R:
-	    double * dN10     : Array of size 30, to store the value
+	    double * dN10     : Array of size 30, to store the value 
                             0 - 9, d()/dr
                             10-19, d()/ds
                             20-29, d()/dt
    Programming:
-   09/2004     WW
+   09/2004     WW           
 **************************************************************************/
 void GradShapeFunctionTetHQ(double *dN10, const double *x)
 {
 
-    dN10[0] = 4.0*(x[0]+x[1]+x[2])-3.0;
-    dN10[1] = 4.*x[0]-1.;
-    dN10[2] = 0.0;
-    dN10[3] = 0.0;
-    dN10[4] = 4.0*(1.0-2.0*x[0]-x[1]-x[2]);
-    dN10[5] = 4.0*x[1];
-    dN10[6] = -4.0*x[1];
-    dN10[7] = 4.0*x[2];
-    dN10[8] = 0.0;
-    dN10[9] = -4.0*x[2];
+    dN10[0] = 4.0*(x[0]+x[1]+x[2])-3.0; 
+    dN10[1] = 4.*x[0]-1.;   
+    dN10[2] = 0.0;  
+    dN10[3] = 0.0;  
+    dN10[4] = 4.0*(1.0-2.0*x[0]-x[1]-x[2]); 
+    dN10[5] = 4.0*x[1];  
+    dN10[6] = -4.0*x[1]; 
+    dN10[7] = 4.0*x[2];  
+    dN10[8] = 0.0;  
+    dN10[9] = -4.0*x[2]; 
 
-    dN10[10] =  4.*(x[0]+x[1]+x[2])-3.;
-    dN10[11] = 0.0;
-    dN10[12] = 4.*x[1]-1.;
-    dN10[13] = 0.;
-    dN10[14] = -4.0*x[0];
-    dN10[15] = 4.0*x[0];
-    dN10[16] = 4.0*(1.0-x[0]-2.0*x[1]-x[2]);
-    dN10[17] = 0.0;
-    dN10[18] = 4.0*x[2];
-    dN10[19] = -4.0*x[2];
+    dN10[10] =  4.*(x[0]+x[1]+x[2])-3.; 
+    dN10[11] = 0.0;  
+    dN10[12] = 4.*x[1]-1.; 
+    dN10[13] = 0.; 
+    dN10[14] = -4.0*x[0]; 
+    dN10[15] = 4.0*x[0];  
+    dN10[16] = 4.0*(1.0-x[0]-2.0*x[1]-x[2]); 
+    dN10[17] = 0.0;  
+    dN10[18] = 4.0*x[2];  
+    dN10[19] = -4.0*x[2]; 
 
-    dN10[20] = 4.*(x[0]+x[1]+x[2])-3.;
-    dN10[21] = 0.;
-    dN10[22] = 0.;
-    dN10[23] = 4.*x[2]-1.;
-    dN10[24] = -4.0*x[0];
-    dN10[25] = 0.0;
-    dN10[26] = -4.0*x[1];
-    dN10[27] = 4.0*x[0];
-    dN10[28] = 4.0*x[1];
-    dN10[29] = 4.0*(1.0-x[0]-x[1]-2.0*x[2]);
+    dN10[20] = 4.*(x[0]+x[1]+x[2])-3.; 
+    dN10[21] = 0.;  
+    dN10[22] = 0.;  
+    dN10[23] = 4.*x[2]-1.;  
+    dN10[24] = -4.0*x[0]; 
+    dN10[25] = 0.0;  
+    dN10[26] = -4.0*x[1]; 
+    dN10[27] = 4.0*x[0];  
+    dN10[28] = 4.0*x[1];  
+    dN10[29] = 4.0*(1.0-x[0]-x[1]-2.0*x[2]); 
 }
 
 /***************************************************************************
@@ -4174,7 +4293,7 @@ void GradShapeFunctionTetHQ(double *dN10, const double *x)
            Vektor
    Aenderungen/Korrekturen:
    08/1995     cb        Erste Version
-   09/2004     WW     Generalization
+   09/2004     WW     Generalization   
  **************************************************************************/
 void ShapeFunctionHex(double *N8, const double *x)
 {
@@ -4213,7 +4332,7 @@ void ShapeFunctionHex(double *N8, const double *x)
            3x8 Matrix
    Aenderungen/Korrekturen:
    05/1995     hh        Erste Version
-   09/2004     WW        Generalization
+   09/2004     WW        Generalization   
  **************************************************************************/
 
 void GradShapeFunctionHex(double *dN8, const double *x)
@@ -4259,33 +4378,33 @@ void GradShapeFunctionHex(double *dN8, const double *x)
 /***************************************************************************
    GEOSYS - Funktion: ShapeFunctionHexHQ
    Task:
-     Shape functions for the 20 node hexahedral element
-     (Including:
+     Shape functions for the 20 node hexahedral element    
+     (Including: 
              ShapeFunctionHexHQ_Corner
              ShapeFunctionHexHQ_Middle
              dShapeFunctionHexHQ_Corner
              dShapeFunctionHexHQ_Middle
              )
    Arguments:
-      E:
-        const  double *x  : Pointer to a 3 dimension array for
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
                             the unit coordinates
       R:
-	    double * N20      : Array of size 20, to store the value of shape
-                            function
+	    double * N20      : Array of size 20, to store the value of shape 
+                            function 
    Programming:
-   09/2004     WW
+   09/2004     WW        
  **************************************************************************/
 double ShapeFunctionHexHQ_Corner(const double r, const double s, const double t)
-{
+{ 
     return 0.125*(1+r)*(1+s)*(1+t)*( r+s+t-2.0);
 }
 double ShapeFunctionHexHQ_Middle(const double r, const double s, const double t)
-{
+{ 
     return  0.25*(1-r*r)*(1+s)*(1+t);
 }
 double dShapeFunctionHexHQ_Corner(const double r, const double s, const double t, const int ty)
-{
+{ 
     switch(ty)
     {
        case 0:
@@ -4302,7 +4421,7 @@ double dShapeFunctionHexHQ_Corner(const double r, const double s, const double t
 }
 
 double dShapeFunctionHexHQ_Middle(const double r, const double s, const double t, const int ty)
-{
+{ 
    switch(ty)
     {
        case 0:
@@ -4321,7 +4440,7 @@ void ShapeFunctionHexHQ(double *N20, const double *x)
 {
     double r = x[0];
     double s = x[1];
-    double t = x[2];
+    double t = x[2];    
 
     N20[0] = ShapeFunctionHexHQ_Corner(r,s,t);
     N20[1] = ShapeFunctionHexHQ_Corner(-r,s,t);
@@ -4337,35 +4456,35 @@ void ShapeFunctionHexHQ(double *N20, const double *x)
     N20[14] = ShapeFunctionHexHQ_Middle(r,-s,-t);
     N20[12] = ShapeFunctionHexHQ_Middle(r,s,-t);
 
-    N20[11] = ShapeFunctionHexHQ_Middle(s,t,r);
-    N20[15] = ShapeFunctionHexHQ_Middle(s,-t,r);
-    N20[13] = ShapeFunctionHexHQ_Middle(s,-t,-r);
-    N20[9]  =  ShapeFunctionHexHQ_Middle(s,t,-r);
+    N20[11] = ShapeFunctionHexHQ_Middle(s,t,r); 
+    N20[15] = ShapeFunctionHexHQ_Middle(s,-t,r); 
+    N20[13] = ShapeFunctionHexHQ_Middle(s,-t,-r); 
+    N20[9]  =  ShapeFunctionHexHQ_Middle(s,t,-r); 
 
-    N20[16] = ShapeFunctionHexHQ_Middle(t,r,s);
-    N20[17] = ShapeFunctionHexHQ_Middle(t,-r,s);
-    N20[18] = ShapeFunctionHexHQ_Middle(t,-r,-s);
-    N20[19] = ShapeFunctionHexHQ_Middle(t,r,-s);
+    N20[16] = ShapeFunctionHexHQ_Middle(t,r,s); 
+    N20[17] = ShapeFunctionHexHQ_Middle(t,-r,s);  
+    N20[18] = ShapeFunctionHexHQ_Middle(t,-r,-s); 
+    N20[19] = ShapeFunctionHexHQ_Middle(t,r,-s); 
 
 }
 
 /***************************************************************************
    GEOSYS - Funktion: ShapeFunctionHexHQ
    Task:
-        Compute the gradient of shape functions
-        for the 20 node hexahedral element
+        Compute the gradient of shape functions 
+        for the 20 node hexahedral element           
    Arguments:
-      E:
-        const  double *x  : Pointer to a 3 dimension array for
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
                             the unit coordinates
       R:
-	    double * dN20     : Array of size 60, to store the value of shape
-                            function
+	    double * dN20     : Array of size 60, to store the value of shape 
+                            function 
                             0 - 9, d()/dr
                             10-19, d()/ds
                             20-29, d()/dt
    Programming:
-   09/2004     WW
+   09/2004     WW           
  **************************************************************************/
 void GradShapeFunctionHexHQ(double *dN20, const double *x)
 {
@@ -4373,9 +4492,9 @@ void GradShapeFunctionHexHQ(double *dN20, const double *x)
     double r = x[0];
     double s = x[1];
     double t = x[2];
-    static double sign1[] = {-1.0, 1.0,1.0};
-    static double sign2[] = { 1.0,-1.0,1.0};
-    static double sign3[] = { 1.0, 1.0,-1.0};
+    static double sign1[] = {-1.0, 1.0,1.0}; 
+    static double sign2[] = { 1.0,-1.0,1.0}; 
+    static double sign3[] = { 1.0, 1.0,-1.0}; 
     for(int i=0; i<3; i++)
     {
        dN20[20*i+0] = dShapeFunctionHexHQ_Corner(r,s,t,i);
@@ -4408,23 +4527,23 @@ void GradShapeFunctionHexHQ(double *dN20, const double *x)
 /***************************************************************************
    GEOSYS/ROCKFLOW - Funktion: ShapeFunctionPri
    Task:
-        Compute the gradient of shape functions
-        for the 6 node prism element
+        Compute the gradient of shape functions 
+        for the 6 node prism element           
    Arguments:
-      E:
-        const  double *x  : Pointer to a 3 dimension array for
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
                             the unit coordinates
       R:
-	    double * N     : Array of size 6, to store the value of shape
+	    double * N     : Array of size 6, to store the value of shape 
                             function of 6 nodes
    Programming:
-   08/2005     WW   (duplicated from MOmegaPrism by MB, 07/2003)
+   08/2005     WW   (duplicated from MOmegaPrism by MB, 07/2003)        
  **************************************************************************/
 void ShapeFunctionPri(double *N, const double *x)
 {
     double L1 = x[0];
     double L2 = x[1];
-    double t = x[2];
+    double t = x[2];    
     N[0] = 0.5*(1.0-L1-L2)*(1.0-t);
     N[1] = 0.5*L1*(1.0-t);
     N[2] = 0.5*L2*(1.0-t);
@@ -4436,25 +4555,25 @@ void ShapeFunctionPri(double *N, const double *x)
 /***************************************************************************
    GEOSYS/ROCKFLOW - Funktion: ShapeFunctionPriHQ
    Task:
-        Compute the gradient of shape functions
-        for the 6 node prism element
+        Compute the gradient of shape functions 
+        for the 6 node prism element           
    Arguments:
-      E:
-        const  double *x  : Pointer to a 3 dimension array for
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
                             the unit coordinates
       R:
-	    double * N     : Array of size 15, to store the value of shape
+	    double * N     : Array of size 15, to store the value of shape 
                             function of 15 nodes
    Programming:
-   08/2005     WW
+   08/2005     WW           
  **************************************************************************/
 void ShapeFunctionPriHQ(double *N, const double *x)
 {
     double L0;
     double L1 = x[0];
     double L2 = x[1];
-    double t = x[2];
-    double tt1 = 1.0-t*t;
+    double t = x[2]; 
+    double tt1 = 1.0-t*t; 
     L0 = 1.0-L1-L2;
     // Vertex, bottom
     N[0] = 0.5*L0*((2.0*L0-1)*(1.0-t)-tt1);
@@ -4481,26 +4600,26 @@ void ShapeFunctionPriHQ(double *N, const double *x)
 /***************************************************************************
    GEOSYS/ROCKFLOW - Funktion: GradShapeFunctionPri
    Task:
-        Compute the gradient of shape functions
-        for the 6 node prism element
+        Compute the gradient of shape functions 
+        for the 6 node prism element           
    Arguments:
-      E:
-        const  double *x  : Pointer to a 3 dimension array for
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
                             the unit coordinates
       R:
-	    double * N     : Array of size 18, to store the value of the grandient
-		                 shape functions
+	    double * N     : Array of size 18, to store the value of the grandient 
+		                 shape functions 
                           0--5: dN/dL1
                          6--11: dN/dL2
                         12--17: dN/dt
    Programming:
-   08/2005     WW
+   08/2005     WW           
  **************************************************************************/
 void GradShapeFunctionPri(double *dN, const double *x)
 {
     double L1 = x[0];
     double L2 = x[1];
-    double t = x[2];
+    double t = x[2];    
     //  dN/dL1
     dN[0] = -0.5*(1.0-t);
     dN[1] = 0.5*(1.0-t);
@@ -4526,28 +4645,28 @@ void GradShapeFunctionPri(double *dN, const double *x)
 
 /***************************************************************************
    GEOSYS/ROCKFLOW - Funktion: GradShapeFunctionPriHQ
-        Compute the gradient of shape functions
-        for the 6 node prism element
+        Compute the gradient of shape functions 
+        for the 6 node prism element           
    Arguments:
-      E:
-        const  double *x  : Pointer to a 3 dimension array for
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
                             the unit coordinates
       R:
-	    double * N     : Array of size 18, to store the value of the grandient
-		                 shape functions
+	    double * N     : Array of size 18, to store the value of the grandient 
+		                 shape functions 
                           0--15: dN/dL1
                          16--29: dN/dL2
                          30--44: dN/dt
    Programming:
-   08/2005     WW
+   08/2005     WW           
 **************************************************************************/
 void GradShapeFunctionPriHQ(double *dN, const double *x)
 {
     double L0;
     double L1 = x[0];
     double L2 = x[1];
-    double t = x[2];
-    double tt1 = 1.0-t*t;
+    double t = x[2]; 
+    double tt1 = 1.0-t*t; 
     L0 = 1.0-L1-L2;
     //---dN/dL1
     // Vertex, bottom
@@ -4617,14 +4736,21 @@ void GradShapeFunctionPriHQ(double *dN, const double *x)
 
 
 
+
+
+
+
+
+
+
 /***************************************************************************
-   GeoSys - Funktion:
+   GeoSys - Funktion: 
            CElement::ComputeDetTri(const *double x1, const *double x2,
                                  const *double x3)
    Aufgabe:
-         Compute the vulume of a triangle
+         Compute the vulume of a triangle 
    Formalparameter:
-           E:
+           E: 
              const *double x1    : Vertex 1
              const *double x2    : Vertex 2
              const *double x3    : Vertex 3
@@ -4635,47 +4761,47 @@ double ComputeDetTri(const double *x1, const double *x2,
                                 const double *x3)
 {
     static double u[3], v[3], z[3];
-
-    u[0] = x3[0] - x1[0];
+    
+    u[0] = x3[0] - x1[0];	
     u[1] = x3[1] - x1[1];
     u[2] = x3[2] - x1[2];
 
-    v[0] = x2[0] - x1[0];
+    v[0] = x2[0] - x1[0];	
     v[1] = x2[1] - x1[1];
     v[2] = x2[2] - x1[2];
-
+ 
     z[0] = u[1]*v[2] - u[2]*v[1];
     z[1] = u[2]*v[0] - u[0]*v[2];
     z[2] = u[0]*v[1] - u[1]*v[0];
 
-    return 0.5*sqrt(z[0]*z[0]+z[1]*z[1]+z[2]*z[2] );
-}
+    return 0.5*sqrt(z[0]*z[0]+z[1]*z[1]+z[2]*z[2] );   
+} 
 
 /***************************************************************************
-   GeoSys - Funktion:
+   GeoSys - Funktion: 
            CElem::ComputeDetTet(const *double x1, const *double x2,
                                  const *double x3, const *double x4)
    Aufgabe:
-         Compute the vulume of a tedrahedra
+         Compute the vulume of a tedrahedra 
    Formalparameter:
-           E:
+           E: 
              const *double x1    : Vertex 1
              const *double x2    : Vertex 2
              const *double x3    : Vertex 3
-             const *double x4    : Vertex 4
+             const *double x4    : Vertex 4 
    Programming:
    09/2004     WW        Erste Version
 **************************************************************************/
 double ComputeDetTex(const double *x1, const double *x2,
                      const double *x3, const double *x4)
 {
-   return
+   return 
      fabs((x1[0]-x4[0])*((x2[1]-x4[1])*(x3[2]-x4[2])-(x2[2]-x4[2])*(x3[1]-x4[1]))
          -(x1[1]-x4[1])*((x2[0]-x4[0])*(x3[2]-x4[2])-(x2[2]-x4[2])*(x3[0]-x4[0]))
-         +(x1[2]-x4[2])*((x2[0]-x4[0])*(x3[1]-x4[1])-(x2[1]-x4[1])*(x3[0]-x4[0])))/6.0;
-}
+         +(x1[2]-x4[2])*((x2[0]-x4[0])*(x3[1]-x4[1])-(x2[1]-x4[1])*(x3[0]-x4[0])))/6.0;   
+} 
 /**************************************************************************
-MSHLib-Method:
+MSHLib-Method: 
 Task:
 Programing:
 09/2005 WW Implementation
@@ -4689,10 +4815,10 @@ double NormalizeVector(double *x, const int n)
    for(i=0; i<n; i++)
      x[i] /= sqrt(nrm);
    return sqrt(nrm);
-
+   
 }
 /**************************************************************************
-MSHLib-Method:
+MSHLib-Method: 
 Task:         dim == 3
 Programing:
 09/2005 WW Implementation
@@ -4704,7 +4830,7 @@ void CrossProduction(const double *x, const double *y, double *z)
 	z[2] = x[0]*y[1]-x[1]*y[0];
 }
 /**************************************************************************
-MSHLib-Method:
+MSHLib-Method: 
 Task:
 Programing:
 01/2006 YD Implementation
@@ -4717,21 +4843,9 @@ double PointProduction(double *x, double *y)
      nrm += x[i]*y[i];
    return nrm;
 }
-/**************************************************************************
-MSHLib-Method:
-Task: Vector copy routine
-Programing:
-12.03.2010 JT Implementation
-**************************************************************************/
-void VCopy(double *x, const double *y, const int n)
-{
-   int i;
-   for(i=0; i<n; i++)
-     x[i] = y[i];
-}
 
 /**************************************************************************
-MSHLib-Method:
+MSHLib-Method: 
 Task: Langevin function: L(x) = coth(x) - 1/x
 Programing:
 12/2009 NW Implementation
@@ -4749,6 +4863,18 @@ double MLangevin(double v)
   }
 
   return s;
+}
+/**************************************************************************
+MSHLib-Method:
+Task: Vector copy routine
+Programing:
+12.03.2010 JT Implementation
+**************************************************************************/
+void VCopy(double *x, const double *y, const int n)
+{
+   int i;
+   for(i=0; i<n; i++)
+     x[i] = y[i];
 }
 
 /*##########################################################################

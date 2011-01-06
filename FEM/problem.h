@@ -71,10 +71,6 @@ class Problem
    size_t max_time_steps;
    double coupling_tolerance;
    //
-   double TolCoupledF;
-   double pcs_flow_error;
-   double pcs_flow_error0;
-   double pcs_coupling_error;
    int lop_coupling_iterations;
    bool CalcVelocities;
    bool conducted;

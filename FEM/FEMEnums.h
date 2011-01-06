@@ -281,7 +281,8 @@ enum DistributionType
 	NORMALDEPTH,		// ST
 	CRITICALDEPTH,		// ST
 	GREEN_AMPT,			// ST
-	SYSTEM_DEPENDENT	// ST
+	SYSTEM_DEPENDENT,	// ST
+    PRECIPITATION       // Sort of Neumann BC //WW
 };
 
 /**

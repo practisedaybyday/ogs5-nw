@@ -2675,7 +2675,7 @@ void CRFProcessDeformation::UpdateInitialStress(bool ZeroInitialS)
 bool CRFProcessDeformation::CalcBC_or_SecondaryVariable_Dynamics(bool BC)
 {
   const char *function_name[7];
-  long j;
+  long i, j;
   double v, bc_value, time_fac = 1.0;
 
   vector<int> bc_type;
@@ -2823,7 +2823,7 @@ bool CRFProcessDeformation::CalcBC_or_SecondaryVariable_Dynamics(bool BC)
 
 
   // BC
-  for(long i=0; i<m_msh->GetNodesNumber(true); i++)
+  for(i=0; i<m_msh->GetNodesNumber(true); i++)
   {
      for(k=0; k<problem_dimension_dm; k++)
      {
@@ -2849,7 +2849,7 @@ bool CRFProcessDeformation::CalcBC_or_SecondaryVariable_Dynamics(bool BC)
      }
   }
 
-  for(long i=0; i<m_msh->GetNodesNumber(false); i++)
+  for(i=0; i<m_msh->GetNodesNumber(false); i++)
   {
     if(bc_type[i]&(int)pow(2.0, (double)(nv-1)))
          continue;

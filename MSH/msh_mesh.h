@@ -30,11 +30,14 @@
 
 // MSHLib
 #include "MSHEnums.h" // KR 2010/11/15
-#include "msh_elem.h"
 #include "MeshNodesAlongPolyline.h"
 
+#include "msh_elem.h"
+
 class RandomWalk;
-class CFluidMomentum;
+class CFluidMomentum;    
+
+class Problem;
 
 #ifdef NEW_EQS    //1.11.2007 WW
 namespace Math_Group {class SparseTable;}
@@ -45,11 +48,38 @@ using Math_Group::SparseTable;
 //------------------------------------------------------------------------
 namespace Mesh_Group {
 
+#ifndef NON_GEO
+/*!
+   Class to handle topologic relationship among grids
+   Designed by WW 
+   First version:    13.05.2009
+*/
+class GridsTopo
+{
+   private:
+    long *local_indices; // of border nodes in local node array of a grid
+    //double *comm_data;   // data for communication
+    string neighbor_name;
+    long bnodes;
+    friend class CFEMesh;
+    friend class ::CRFProcess;
+   public:
+    GridsTopo(istream &in, string sec_name); 
+    string getNeighbor_Name() const {return neighbor_name;}
+    long *getBorderNodeIndicies() const {return local_indices;}
+    long getBorderNodeNumber() const {return bnodes;}
+
+    //void Write(ostream &os=cout); 
+    ~GridsTopo(); 
+};
+#endif //#ifndef NON_GEO
+
 //------------------------------------------------------------------------
 // Class definition
 class CFEMesh {
 
 public:
+
 	/// Constructor using geometric information.
 	CFEMesh(GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
 	
@@ -59,9 +89,11 @@ public:
 	/// Destructor
 	~CFEMesh();
 
+#ifndef NON_GEO
 	GEOLIB::GEOObjects* getGEOObjects () const { return _geo_obj; }
 
 	std::string* getProjectName () const { return _geo_name; }
+#endif //#ifndef NON_GEO
 
 	/**
 	 * sets the value for element type
@@ -147,6 +179,8 @@ public:
 		NodesNumber_Quadratic = NodesNumber_Linear = nod_vector.size();
 	}
 
+
+#ifndef NON_GEO //WW
 	/**
 	 * @{
 	 * */
@@ -293,6 +327,9 @@ public:
 
 	/** @} */ // close doxygen group
 
+#endif //WW #ifndef NON_GEO
+
+
 	//....................................................................
 	// QUAD->HEX
 	void CreateHexELEFromQuad(int, double);
@@ -307,11 +344,14 @@ public:
 	void SetELE2NODTopology();
 	// LINE->LINE
 	void AppendLineELE();
+
+#ifndef NON_GEO 
 	// TRI->PRIS
 	void CreatePriELEFromTri(int, double);
 	// TRI->LINE
 	void CreateLineELEFromTri(); //OK
 	void CreateLineELEFromTriELE(); //OK
+#endif
 
 
 	// Coordinate system
@@ -340,6 +380,7 @@ public:
 	// Nodes in usage
 	// To record eqs_index->global node index
 	std::vector<long> Eqs2Global_NodeIndex;
+   
 
 	void PrismRefine(const int Layer, const int subdivision); //OK
 	//	void EdgeLengthMinMax(); //OK
@@ -356,12 +397,14 @@ public:
 	void FaceNormal(); // YD
 	void SetNODPatchAreas(); //OK4310
 	void SetNetworkIntersectionNodes(); //OK4319->PCH
+#ifndef NON_PROCESS  // 05.03.2010 WW
 #ifdef NEW_EQS   // 1.11.2007 WW
 	// Compute the graph of the sparse matrix related to this mesh. 1.11.2007 WW
 	void CreateSparseTable();
 	// Get the sparse graph   1.11.2007 WW
 	SparseTable *GetSparseTable(bool quad = false)
 	const {if(!quad) return sparse_graph; else return sparse_graph_H;}
+#endif
 #endif
 
 	std::string pcs_name;
@@ -375,6 +418,21 @@ public:
 
 	CFluidMomentum* fm_pcs; // by PCH
 
+    /// Import MODFlow grid. 10.2009 WW
+    void ImportMODFlowGrid(string fname);
+    /// Convert raster cells into grid. 12.2009 WW
+    void ConvertShapeCells(string fname);
+#ifdef USE_HydSysMshGen
+    // Be activated if it is still needed. 
+    // WW   
+    /// Generate Column-surface grid system for the modeling of surafce-subsuface coupled processes
+    void HydroSysMeshGenerator(string fname, const int nlayers, const double thickness, int mapping); //15.05.2009. WW
+#endif
+    void MarkInterface_mHM_Hydro_3D(); //07.06.2010. WW
+    void mHM2NeumannBC();
+    /// Comptute \int {f} a dA on top surface.
+    void TopSurfaceIntegration();
+
 
 private:
 	// private attributes
@@ -386,6 +444,7 @@ private:
 	 * identifier for geometry
 	 */
 	std::string* _geo_name;
+	std::vector<Mesh_Group::MeshNodesAlongPolyline> _mesh_nodes_along_polylines;
 
 	MshElemType::type _ele_type;
 	size_t _n_msh_layer; //OK
@@ -399,7 +458,6 @@ private:
 
 	double _min_edge_length; //TK
 
-	std::vector<Mesh_Group::MeshNodesAlongPolyline> _mesh_nodes_along_polylines;
 
 
 	// Process friends
@@ -409,6 +467,7 @@ private:
 	size_t NodesNumber_Quadratic;
 	bool useQuadratic;
 	bool _axisymmetry;
+    bool top_surface_checked; // 07.06.2010.  WW
 
 	// Coordinate indicator
 	// 1:  X component only
@@ -421,19 +480,38 @@ private:
 	bool has_multi_dim_ele;
 	int max_ele_dim;
 	int map_counter; //21.01.2009 WW
-	bool mapping_check; //23.01.2009 WW
 
+	bool mapping_check; //23.01.2009 WW
+    /// Import shape file. 16.03.2026. WW    
+    long ncols, nrows;
+    /// (x_0, y_0): coordinate of the left down corner
+    double x0, y0, csize, ndata_v; 
+    vector<double>  zz;  //Elevation
+    inline void ReadShapeFile(string fname);
+    // 03.2010. WW
+    inline void Precipitation2NeumannBC(string fname, string ofname, const double ratio = 0.8);
+
+#ifndef NON_GEO    //  WW
+    /// Store boder nodes among different grids.
+    vector<GridsTopo*> grid_neighbors;   
+    friend class Problem;
+#endif // #ifndef NON_GEO
+
+    //
 	// Sparse graph of this mesh. 1.11.2007 WW
 #ifdef NEW_EQS
 	SparseTable *sparse_graph;
 	SparseTable *sparse_graph_H; // For high order interpolation
 #endif
+
+#ifndef NON_GEO //WW  
 	// LINE
 	void CheckMarkedEdgesOnPolyLine(CGLPolyline*m_polyline,
 			std::vector<long> &ele_vector_at_ply); //NW
 	void CreateLineElementsFromMarkedEdges(CFEMesh*m_msh_ply,
 			std::vector<long> &ele_vector_at_ply); //NW
 	bool HasSameCoordinatesNode(CNode* nod, long &node_no); //NW
+#endif // #ifndef NON_GEO //WW
 };
 
 } // namespace Mesh_Group

@@ -52,7 +52,6 @@ public:
     void FaceIntegration(CFEMesh *m_msh, std::vector<long> & nodes_on_sfc, std::vector<double> & node_value_vector);
     void DomainIntegration(CFEMesh *m_msh, const std::vector<long> & nodes_in_dom, std::vector<double> & node_value_vector) const;
 
-    inline void DirectAssign(long ShiftInNodeVector);
     void SetNOD2MSHNOD(std::vector<long> & nodes, std::vector<long> & conditional_nodes);
 
     /**
@@ -84,6 +83,11 @@ public:
     		const std::vector<double>& node_values, int ShiftInNodeVector);
 
     void SetNOD();
+
+    inline void DirectAssign(const long ShiftInNodeVector);  //23.02.2009. WW
+    string DirectAssign_Precipitation(const double current_time);  //03.2010. WW
+
+
 
     double getCoupLeakance () const;
 
@@ -171,9 +175,15 @@ private: // TF, KR
     std::vector<double> node_value_vectorArea;
     std::vector<double*> normal2surface;
     std::vector<double*> pnt_parameter_vector;
+    // 03.2010. WW
+    long start_pos_in_st;
+    double *GIS_shape_head; // 07.06.2010. WW
+    vector<double> precip_times;
+    vector<string> precip_files;
 
     friend class CSourceTermGroup;
     friend class process::CRFProcessDeformation; //WW
+    friend class ::CRFProcess;  //WW
 
     std::string geo_name;
     double _coup_leakance;

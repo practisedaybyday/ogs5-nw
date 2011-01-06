@@ -174,6 +174,9 @@ NodalVal_p20 = new double [size_m]; //AKS
 		PcsType = G;
 		idx0 = pcs->GetNodeValueIndex("HEAD");
 		idx1 = idx0 + 1;
+        idx_vel[0] =  pcs->GetNodeValueIndex("VELOCITY_X1"); //WW
+        idx_vel[1] =  pcs->GetNodeValueIndex("VELOCITY_Y1"); //WW
+        idx_vel[2] =  pcs->GetNodeValueIndex("VELOCITY_Z1"); //WW
 		break;
 	case 'T': // Two-phase flow
 		PcsType = T;

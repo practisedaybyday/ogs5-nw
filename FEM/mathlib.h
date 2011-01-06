@@ -15,11 +15,11 @@
 /* Schutz gegen mehrfaches Einfuegen */
 
 #include "Configure.h"
-
 #define noTESTMATH
 
 /* Andere oeffentlich benutzte Module */
 #include <cmath>
+#include <math.h>
 //#include "test.h"
 
 /* Die Schnittstellen der Gleichungsloeser und der Speichertechnik werden
@@ -39,26 +39,20 @@ using std::vector;
       Mathematische Funktionen
   ########################################################################*/
 
+#ifdef obsolete  //01.2011 WW
 extern int MGleichDouble (double zahl1, double zahl2 ,double tol);
 /*   MGleichDouble         - Vergleicht zwei double-Zahlen unter
                              Beruecksichtigung einer Fehlertoleranz */
-/* Ermittelt min */
-extern double MMin(double, double);
-/* Ermittelt max */
-extern double MMax(double, double);
-/* Ermittelt Intervall */
-extern double MRange(double a, double b, double c);
-
 extern int MOmega1D(double *vf,double r);
 /*  Berechnet 1D Ansatzfunktionen */
 extern int MOmega2D(double *vf,double r, double s);
 /*  Berechnet 2D Ansatzfunktionen */
 extern int MOmega3D(double *vf,double r, double s, double t);
 /*  Berechnet 3D Ansatzfunktionen */
-#ifdef obsolete //WW. 11.2008
+//#ifdef obsolete //WW. 11.2008
 extern int MOmega3DTetrahedron(double *vf,double xx,double yy,double zz,long number);
 extern int MOmega2DTriangle(double *vf,double r, double s, long number);
-#endif
+//#endif
 /*  Berechnet 2D Ansatzfunktionen fuer Dreiecke */
 //extern int MPhi2D(double *vf,double r, double s);
 /*  Berechnet 2D Testfunktionen */
@@ -75,20 +69,12 @@ extern int MGradOmega3D(double *vf,double r, double s, double t);
 extern int MGradPhi2D(double *vf,double r, double s);
 /*  Berechnet Gradient der 2D Testfunktionen */
 extern int MGradPhi3D(double *vf,double r, double s, double t);
-/*  Berechnet Gradient der 3D Testfunktionen */
-extern double MXPGaussPkt(long grd, long pkt);
-/* Punkte fuer die X Punkt Gauss-Integration */
-extern double MXPGaussFkt(long grd, long pkt);
 /* Faktoren fuer die X Punkt Gauss-Integration */
 extern void MGetCoor(int typ, long j, double *r, double *s, double *t);
 /* lokale Koordinaten der Eckpunkte */
 
-/*   MNulleVec             - Setze angegebenen Vektor = 0.0 */
-extern void MNulleVec (double *vec, long g);
-/*   MNulleMat             - Setze angegebene Matrix = 0.0 */
-extern void MNulleMat (double *vec, long m, long n);
 /*   MBtrgVec              - Betrag von Vektor */
-//double MBtrgVec(double *vec, long n);
+
 /*   MAngleVectors         -  Winkel zwischen Vektoren */  /* MB */
 double MAngleVectors(double *v1, double *v2);
 /*   MNormiere             - Normiert Vektoren */
@@ -117,7 +103,7 @@ extern void MInvertiere (double *matrix, long m, long n);
 /*   MAddVektoren          - Addition zweier beliebier Vektoren */
 extern int MAddVektoren (double *v1, double *v2, double *vout, long g);
 /*   MAddSkalVektoren      - Vektoren mit Skalar multiplizieren und dann addieren */
-extern int MAddSkalVektoren(double *v1, double m1, double *v2, double m2, double *vout, long g);
+//WW extern int MAddSkalVektoren(double *v1, double m1, double *v2, double m2, double *vout, long g);
 /*   MAddMatrizen          - Addition zweier beliebier Matrizen */
 extern int MAddMatrizen (double *m1, double *m2, double *mout,long m,long n);
 /*   MMultVecSkalar        - Multiplikation Vektor mit Skalarwert */
@@ -128,22 +114,6 @@ extern int MMultMatSkalar (double *matrix, double skal, long m, long n);
 //extern double MSkalarprodukt ( double *vec1, double *vec2, long g );
 /*   M3KreuzProdukt        - Kreuzprodukt von 3D-Vektoren */
 //extern int M3KreuzProdukt( double *vec1, double *vec2 , double *vec);
-/*   MMultVecVec           - Multiplikation Vektor mit Vektor */
-extern int MMultVecVec ( double *vec1, long gv1,
-                         double *vec2, long gv2,
-                         double *mato, long mo, long no);
-/*   MMultVecMat           - Multiplikation Vektor mit Matrix */
-extern int MMultVecMat (double *vec, long gv,
-                        double *mat, long m, long n,
-                        double *veco, long go);
-/*   MMultMatVec           - Multiplikation Matrix mit Vektor */
-extern int MMultMatVec ( double *mat, long m, long n,
-                         double *vec, long g,
-                         double *veco, long r);
-/*   MMultMatMat           - Multiplikation Matrix mit Matrix */
-extern int MMultMatMat (double *mat1, long m1, long n1,
-                        double *mat2, long m2, long n2,
-                        double *mato, long mo, long no);
 /*##########################################################################
    Auf Matrizen und Vektoren aufbauende Funktionen
   ########################################################################*/
@@ -161,57 +131,9 @@ void MKTFMat3Dr2D(double *vec1, double *vec2, double winkel, double *mat);
 /*   MBistDuDiagMat        - Prueft auf Diagonalitaet einer Matrix */
 extern int MBistDuDiagMat ( double *matrix, long m, long n );
 
-/*##########################################################################
-    Bearbeitungsfunktionen
-  ########################################################################*/
-/*   MMachVec              - Erzeugt einen Vektor */
-extern double *MMachVec (long g);
-/*   MNullVec              - Fuellt einen Vektor mit Nullen */
-extern void MNullVec (double *, long);
-/*   MLoeschVec            - Loescht einen Vektor */
-extern void MLoeschVec (double *vec);
-/*   MKopierVec            - Kopiert einen Vektor auf einen Anderen */
-extern void MKopierVec (double *vecquelle, double *vecziel, long g);
-/*   MMachMat              - Erzeugt einer Matrix */
-extern double *MMachMat (long m, long n);
-/*   MNullMat              - Fuellt eine Matrix mit Nullen*/
-extern void MNullMat (double *,long , long);
-/*   MLoeschMat            - Loescht einer Matrix */
-extern void MLoeschMat (double *mat);
-/*   MKopierMat            - Kopiert eine Matrix auf eine Andere */
-extern void MKopierMat (double *matq, double *matz, long m, long n);
-/* nur fuer mich!!! hh */
-extern void MZeigVec (double *vec, long grad, char *text);
-extern void MZeigMat (double *mat, long m, long n, char *text);
-extern void M2FileVec (double *vec, long grad, char *text);
-/* PS: Finger Weg, Michael!!! --> baeeh */
-
-/*##########################################################################
-    Funktionen fuer Gleichungsloeser (CG)
-  ########################################################################*/
-extern double MVekNorm1 ( double *x, long n );
-  /* Spaltensummennorm */
-extern double MVekNorm2 ( double *x, long n );
-  /* Euklidische Norm */
-extern double MVekNormMax ( double *x, long n );
-  /* Maximumnorm */
-extern void MVekSum ( double *x, double alpha, double *y, long n );
-  /* Fuehrt die Operation x = x + alpha * y durch; n: Vektordimension */
-extern void MVekGle ( double alpha, double *x, double beta, double *y,
-                      double *z, long n );
-  /* Fuehrt die Operation z = alpha * x + beta * y durch; n: Vektordimension */
-extern double MVekDist ( double *x, double *y, long n );
-  /* Abstand zwischen zwei Vektoren */
 
 
-/*##########################################################################
-   Geometrie-Funktionen
-  ########################################################################*/
-//extern double MCalcDistancePointToPoint(double *pt1,double *pt2);
-extern double MCalcDistancePointToLine(double *pt,double *l1,double *l2);
-extern double MCalcProjectionOfPointOnLine(double *pt1,double *pt2,double *pt3,double *pt4);
-extern double MCalcDistancePointToPlane(double *pt,double *e1,double *e2,double *e3);
-//extern double MCalcProjectionOfPointOnPlane(double *pt, double *e1, double *e2, double *e3, double *proj);
+
 
 /*##########################################################################
    Sortierfunktionen
@@ -250,6 +172,102 @@ extern int MPhi3D_20N(double *vf, double r, double s, double t);
 extern int MGradOmega3D_20N(double *vf, double r, double s, double t);
 extern int MGradPhi3D_20N(double *vf, double r, double s, double t);
 
+#endif // 05.03.2010. WW //#ifdef obsolete
+
+/* Ermittelt min */
+extern double MMin(double, double);
+/* Ermittelt max */
+extern double MMax(double, double);
+/* Ermittelt Intervall */
+extern double MRange(double a, double b, double c);
+double MBtrgVec(double *vec, long n);
+
+#ifndef NON_GEO //   01.2011. WW
+#ifndef NEW_EQS //WW. 05.03.2010
+/*##########################################################################
+    Funktionen fuer Gleichungsloeser (CG)
+  ########################################################################*/
+extern double MVekNorm1 ( double *x, long n );
+  /* Spaltensummennorm */
+extern double MVekNorm2 ( double *x, long n );
+  /* Euklidische Norm */
+//WW extern double MVekNormMax ( double *x, long n );
+  /* Maximumnorm */
+ extern void MVekSum ( double *x, double alpha, double *y, long n );
+  /* Fuehrt die Operation x = x + alpha * y durch; n: Vektordimension */
+extern void MVekGle ( double alpha, double *x, double beta, double *y,
+                     double *z, long n );
+  /* Fuehrt die Operation z = alpha * x + beta * y durch; n: Vektordimension */
+extern double MVekDist ( double *x, double *y, long n );
+  /* Abstand zwischen zwei Vektoren */
+
+/*##########################################################################
+    Bearbeitungsfunktionen
+  ########################################################################*/
+/*   MMachVec              - Erzeugt einen Vektor */
+extern double *MMachVec (long g);
+/*   MNullVec              - Fuellt einen Vektor mit Nullen */
+extern void MNullVec (double *, long);
+/*   MLoeschVec            - Loescht einen Vektor */
+//WW extern void MLoeschVec (double *vec);
+/*   MKopierVec            - Kopiert einen Vektor auf einen Anderen */
+extern void MKopierVec (double *vecquelle, double *vecziel, long g);
+/*   MMachMat              - Erzeugt einer Matrix */
+//WW extern double *MMachMat (long m, long n);
+/*   MNullMat              - Fuellt eine Matrix mit Nullen*/
+//WW extern void MNullMat (double *,long , long);
+/*   MLoeschMat            - Loescht einer Matrix */
+//WW extern void MLoeschMat (double *mat);
+/*   MKopierMat            - Kopiert eine Matrix auf eine Andere */
+extern void MKopierMat (double *matq, double *matz, long m, long n);
+/* nur fuer mich!!! hh */
+//extern void MZeigVec (double *vec, long grad, char *text);
+//extern void MZeigMat (double *mat, long m, long n, char *text);
+//extern void M2FileVec (double *vec, long grad, char *text);
+/* PS: Finger Weg, Michael!!! --> baeeh */
+/*   MAddSkalVektoren      - Vektoren mit Skalar multiplizieren und dann addieren */
+extern int MAddSkalVektoren(double *v1, double m1, double *v2, double m2, double *vout, long g);
+#endif ///////////////////////////
+
+
+
+
+//WW: Only unsed in a member function of CFiniteElementStd implementated by MB
+/*   MMultVecVec           - Multiplikation Vektor mit Vektor */
+extern int MMultVecVec ( double *vec1, long gv1,
+                         double *vec2, long gv2,
+                         double *mato, long mo, long no);
+/*   MMultVecMat           - Multiplikation Vektor mit Matrix */
+extern int MMultVecMat (double *vec, long gv,
+                        double *mat, long m, long n,
+                        double *veco, long go);
+/*   MMultMatVec           - Multiplikation Matrix mit Vektor */
+extern int MMultMatVec ( double *mat, long m, long n,
+                         double *vec, long g,
+                         double *veco, long r);
+/*   MMultMatMat           - Multiplikation Matrix mit Matrix */
+extern int MMultMatMat (double *mat1, long m1, long n1,
+                        double *mat2, long m2, long n2,
+                        double *mato, long mo, long no);
+/*##########################################################################
+   Geometrie-Funktionen
+  ########################################################################*/
+//extern double MCalcDistancePointToPoint(double *pt1,double *pt2);
+extern double MCalcDistancePointToLine(double *pt,double *l1,double *l2);
+extern double MCalcProjectionOfPointOnLine(double *pt1,double *pt2,double *pt3,double *pt4);
+extern double MCalcDistancePointToPlane(double *pt,double *e1,double *e2,double *e3);
+//extern double MCalcProjectionOfPointOnPlane(double *pt, double *e1, double *e2, double *e3, double *proj);
+#endif
+
+/*   MNulleVec             - Setze angegebenen Vektor = 0.0 */
+extern void MNulleVec (double *vec, long g);
+/*   MNulleMat             - Setze angegebene Matrix = 0.0 */
+extern void MNulleMat (double *vec, long m, long n);
+
+/*  Berechnet Gradient der 3D Testfunktionen */
+extern double MXPGaussPkt(long grd, long pkt);
+/* Punkte fuer die X Punkt Gauss-Integration */
+extern double MXPGaussFkt(long grd, long pkt);
 
 
 extern void  realCoordTriHQ(double * x, const double *XY, const double *u );

@@ -82,7 +82,7 @@ vector<NODE_HISTORY*> node_history_vector;//CMCD
  01/2004 OK Implementation
  **************************************************************************/
 CSourceTerm::CSourceTerm() :
-	ProcessInfo(), GeoInfo(), _coupled (false), sub_dom_idx(-1)
+	ProcessInfo(), GeoInfo(), _coupled (false), sub_dom_idx(-1), GIS_shape_head(NULL) // 07.06.2010, 03.2010. WW
 {
 	CurveIndex = -1;
 	//KR critical_depth = false;
@@ -117,6 +117,11 @@ CSourceTerm::~CSourceTerm()
 	size = pnt_parameter_vector.size();
 	for (size_t i = 0; i < size; i++)
 		delete pnt_parameter_vector[i];
+    if(GIS_shape_head) // 07.06.2010. WW
+    {
+       delete [] GIS_shape_head; 
+       GIS_shape_head = NULL;
+    }
 	//WW---------------------------------------
 }
 
@@ -279,6 +284,9 @@ ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
 void CSourceTerm::ReadDistributionType(ifstream *st_file) {
 
 	std::stringstream in;
+    // 03.2010 WW
+    string aline;
+    std::stringstream ss;
 	int abuff, nLBC = 0;
 	double bbuff;
 
@@ -363,6 +371,50 @@ void CSourceTerm::ReadDistributionType(ifstream *st_file) {
 		in >> sorptivity >> constant >> rainfall >> moistureDeficit;
 		in.clear();
 	}
+      // Soure terms are assign to element nodes directly. 23.02.2009. WW
+	  if(dis_type_name.find("DIRECT")!=string::npos)
+      {
+        dis_type_name = "DIRECT";     
+		in >> fname;
+        fname = FilePath+fname;
+		in.clear();
+	  }
+      // Soure terms from precipitation are assign to element nodes directly.03.2010. WW
+	  if(dis_type_name.find("PRECIPITATION")!=string::npos)
+      {
+        dis_type_name = "PRECIPITATION";     
+		in >> fname;
+        fname = FilePath+fname;
+        ifstream ins(fname.c_str());
+        if(!ins.good())
+        {
+            cout<<"Could not find file "<<fname<<endl;
+            exit(0);
+        }
+        double timess;
+        GIS_shape_head = new double[6];  // 07.06.2010. WW
+        for(int i=0; i<6; i++)
+        {
+           getline(ins, aline);     
+           ss.str(aline);
+           ss>> aline >> GIS_shape_head[i];
+           ss.clear();
+            
+        }
+        while(!ins.eof())
+        {
+           getline(ins, aline);     
+           if(aline.find("#STOP")!=string::npos)
+             break;
+           ss.str(aline);
+           ss>> timess >> aline;
+           precip_times.push_back(timess);
+           precip_files.push_back(aline);
+
+           ss.clear();
+        }
+		in.clear();
+	  }
 }
 
 /**************************************************************************
@@ -888,178 +940,6 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
  07/2005 WW Re-Implementation
  12/2005 WW Axismmetry
  **************************************************************************/
-//void CSourceTerm::EdgeIntegration(CFEMesh* msh, vector<long>&nodes_on_ply,
-//		vector<double>&node_value_vector) {
-//	long i, j, k, l;
-//	long this_number_of_nodes;
-//	int elemsCnode;
-//	int nedges, ii;
-//	vec<CNode*> e_nodes(3);
-//	vec<CEdge*> e_edges(12);
-//
-//	double Jac = 0.0;
-//	double Weight = 0.0;
-//	double eta = 0.0;
-//	double v1, v2, radius = 0.0;
-//	double Shfct[3];
-//	bool Const = false;
-//
-//	if (dis_type_name.find("CONSTANT") != string::npos)
-//		Const = true;
-//
-//	//CFEMesh* msh = m_pcs->m_msh;
-//	//CFEMesh* msh;  // JOD
-//	//msh = FEMGet(pcs_type_name);
-//	CElem* elem = NULL;
-//	CEdge* edge = NULL;
-//	CNode* node = NULL;
-//
-//	int nSize = (long) msh->nod_vector.size();
-//	this_number_of_nodes = (long) nodes_on_ply.size();
-//	vector<long> G2L(nSize);
-//	vector<double> NVal(this_number_of_nodes);
-//
-//	// Unmakr edges.
-//	for (i = 0; i < (long) msh->edge_vector.size(); i++)
-//		msh->edge_vector[i]->SetMark(false);
-//	for (i = 0; i < nSize; i++) {
-//		msh->nod_vector[i]->SetMark(false);
-//		G2L[i] = -1;
-//	}
-//
-//	// Search edges on polyline
-//	for (i = 0; i < this_number_of_nodes; i++) {
-//		NVal[i] = 0.0;
-//		k = nodes_on_ply[i];
-//		G2L[k] = i;
-//		node = msh->nod_vector[k];
-//		elemsCnode = (int) node->connected_elements.size();
-//		for (j = 0; j < elemsCnode; j++) {
-//			l = msh->nod_vector[k]->connected_elements[j];
-//			elem = msh->ele_vector[l];
-//			nedges = elem->GetEdgesNumber();
-//			elem->GetEdges(e_edges);
-//			for (ii = 0; ii < nedges; ii++) {
-//				edge = e_edges[ii];
-//				if (edge->GetMark())
-//					continue;
-//				edge->GetNodes(e_nodes);
-//				// Edge A
-//				if (*node == *e_nodes[0])
-//					e_nodes[0]->SetMark(true);
-//				// Edge B
-//				if (*node == *e_nodes[1])
-//					e_nodes[1]->SetMark(true);
-//				if (msh->getOrder()) // Quadratic
-//				{
-//					if (*node == *e_nodes[2])
-//						e_nodes[2]->SetMark(true);
-//				}
-//				if (e_nodes[0]->GetMark() && e_nodes[1]->GetMark()) {
-//					if (msh->getOrder()) {
-//						if (e_nodes[2]->GetMark())
-//							edge->SetMark(true);
-//					} else
-//						edge->SetMark(true);
-//				}
-//
-//			}// e_edges
-//		}
-//	}
-//
-//	for (i = 0; i < (long) msh->edge_vector.size(); i++) {
-//		edge = msh->edge_vector[i];
-//		if (!edge->GetMark())
-//			continue;
-//		edge->GetNodes(e_nodes);
-//		if (msh->getOrder()) // Quad
-//		{
-//			if (e_nodes[0]->GetMark() && e_nodes[1]->GetMark()
-//					&& e_nodes[2]->GetMark()) {
-//				Jac = 0.5 * edge->Length();
-//				v1 = node_value_vector[G2L[e_nodes[0]->GetIndex()]];
-//				v2 = node_value_vector[G2L[e_nodes[1]->GetIndex()]];
-//				if (Const && (!msh->isAxisymmetry())) {
-//					NVal[G2L[e_nodes[0]->GetIndex()]] += Jac * v1 / 3.0;
-//					NVal[G2L[e_nodes[1]->GetIndex()]] += Jac * v1 / 3.0;
-//					NVal[G2L[e_nodes[2]->GetIndex()]] += 4.0 * Jac * v1 / 3.0;
-//
-//				} else {
-//					for (k = 0; k < 3; k++) // Three nodes
-//					{
-//						// Numerical integration
-//						for (l = 0; l < 3; l++) // Gauss points
-//						{
-//							Weight = Jac * MXPGaussFkt(3, l);
-//							eta = MXPGaussPkt(3, l);
-//							ShapeFunctionLineHQ(Shfct, &eta);
-//							//Axisymmetical problem
-//							if (msh->isAxisymmetry()) {
-//								radius = 0.0;
-//								for (ii = 0; ii < 3; ii++)
-//									radius += Shfct[ii] * e_nodes[ii]->X();
-//								Weight *= radius; //2.0*pai*radius;
-//							}
-//							NVal[G2L[e_nodes[k]->GetIndex()]] += 0.5 * (v1 + v2
-//									+ eta * (v2 - v1)) * Shfct[k] * Weight;
-//						}
-//					}
-//				}
-//			}
-//		} else // Linear
-//		{
-//			if (e_nodes[0]->GetMark() && e_nodes[1]->GetMark()) {
-//				Jac = 0.5 * edge->Length();
-//				v1 = node_value_vector[G2L[e_nodes[0]->GetIndex()]];
-//				v2 = node_value_vector[G2L[e_nodes[1]->GetIndex()]];
-//				if (!msh->isAxisymmetry()) {
-//					if (Const) {
-//						NVal[G2L[e_nodes[0]->GetIndex()]] += Jac * v1;
-//						NVal[G2L[e_nodes[1]->GetIndex()]] += Jac * v1;
-//					} else {
-//						NVal[G2L[e_nodes[0]->GetIndex()]] += Jac * (2.0 * v1
-//								+ v2) / 3.0;
-//						NVal[G2L[e_nodes[1]->GetIndex()]] += Jac * (v1 + 2.0
-//								* v2) / 3.0;
-//					}
-//				} else // Axisymmetry
-//				{
-//
-//					for (k = 0; k < 2; k++) // Three nodes
-//					{
-//						// Numerical integration
-//						for (l = 0; l < 3; l++) // Gauss points
-//						{
-//							Weight = Jac * MXPGaussFkt(3, l);
-//							eta = MXPGaussPkt(3, l);
-//							ShapeFunctionLine(Shfct, &eta);
-//							//Axisymmetical problem
-//							if (msh->isAxisymmetry()) {
-//								radius = 0.0;
-//								for (ii = 0; ii < 2; ii++)
-//									radius += Shfct[ii] * e_nodes[ii]->X();
-//								Weight *= radius; //2.0*pai*radius;
-//							}
-//							NVal[G2L[e_nodes[k]->GetIndex()]] += 0.5 * (v1 + v2
-//									+ eta * (v2 - v1)) * Shfct[k] * Weight;
-//						}
-//					}
-//				}// End of is (!axi)
-//			}
-//		}
-//	}
-//	for (i = 0; i < this_number_of_nodes; i++)
-//		node_value_vector[i] = NVal[i];
-//	for (i = 0; i < (long) msh->edge_vector.size(); i++)
-//		msh->edge_vector[i]->SetMark(true);
-//	for (i = 0; i < nSize; i++)
-//		msh->nod_vector[i]->SetMark(true);
-//	NVal.clear();
-//	G2L.clear();
-//	e_nodes.resize(0);
-//	e_edges.resize(0);
-//}
-
 void CSourceTerm::EdgeIntegration(CFEMesh* msh, const std::vector<long>&nodes_on_ply,
                 std::vector<double>&node_value_vector) const
 {
@@ -1584,83 +1464,6 @@ void CSourceTerm::DomainIntegration(CFEMesh* msh, const std::vector<long>&nodes_
 	e_nodes.resize(0);
 	delete fem;
 }
-
-//void CSourceTerm::DomainIntegration(CFEMesh* msh, vector<long>&nodes_in_dom,
-//		vector<double>&node_value_vector) {
-//	long i, j, k;
-//	int nn;
-//	long this_number_of_nodes;
-//	double nodesFVal[8];
-//
-//	bool Const = false;
-//
-//	if (dis_type_name.find("CONSTANT") != string::npos)
-//		Const = true;
-//
-//	int Axisymm = 1; // ani-axisymmetry
-//	//CFEMesh* msh = m_pcs->m_msh;
-//	//CFEMesh* msh;  // JOD
-//	//msh = FEMGet(pcs_type_name);
-//	if (msh->isAxisymmetry())
-//		Axisymm = -1; // Axisymmetry is true
-//	CElem* elem = NULL;
-//	CElement* fem = new CElement(Axisymm * msh->GetCoordinateFlag());
-//	vec<CNode*> e_nodes(20);
-//
-//	this_number_of_nodes = (long) nodes_in_dom.size();
-//	int nSize = (long) msh->nod_vector.size();
-//	vector<long> G2L(nSize);
-//	vector<double> NVal(this_number_of_nodes);
-//
-//	for (i = 0; i < nSize; i++) {
-//		msh->nod_vector[i]->SetMark(false);
-//		G2L[i] = -1;
-//	}
-//
-//	for (i = 0; i < this_number_of_nodes; i++) {
-//		NVal[i] = 0.0;
-//		k = nodes_in_dom[i];
-//		G2L[k] = i;
-//	}
-//
-//	int count = 0;
-//	for (i = 0; i < (long) msh->ele_vector.size(); i++) {
-//		elem = msh->ele_vector[i];
-//		if (!elem->GetMark())
-//			continue;
-//		elem->GetNodes(e_nodes);
-//		nn = elem->GetNodesNumber(msh->getOrder());
-//		count = 0;
-//		for (j = 0; j < nn; j++) {
-//			for (k = 0; k < this_number_of_nodes; k++) {
-//				if (*e_nodes[j] == *msh->nod_vector[nodes_in_dom[k]]) {
-//					count++;
-//					break;
-//				}
-//			}
-//		}
-//		if (count != nn)
-//			continue;
-//		for (j = 0; j < nn; j++)
-//			nodesFVal[j] = node_value_vector[G2L[e_nodes[j]->GetIndex()]];
-//		fem->ConfigElement(elem, true);
-//		fem->setOrder(msh->getOrder() + 1);
-//		fem->FaceIntegration(nodesFVal);
-//		for (j = 0; j < nn; j++)
-//			NVal[G2L[e_nodes[j]->GetIndex()]] += nodesFVal[j];
-//	}
-//
-//	for (i = 0; i < this_number_of_nodes; i++)
-//		node_value_vector[i] = NVal[i];
-//	for (i = 0; i < nSize; i++)
-//		msh->nod_vector[i]->SetMark(true);
-//
-//	NVal.clear();
-//	G2L.clear();
-//	e_nodes.resize(0);
-//	delete fem;
-//}
-
 
 /**************************************************************************
  FEMLib-Method:
@@ -3538,6 +3341,155 @@ inline void CSourceTerm::DirectAssign(long ShiftInNodeVector)
 		m_pcs->st_node.push_back(this);
 		//
 	} // eof
+}
+
+/**************************************************************************
+GeoSys source term function: 
+03/2010 WW Implementation
+**************************************************************************/
+string CSourceTerm::DirectAssign_Precipitation(const double current_time)
+{
+  int i, size;  
+  double stepA, stepB, tim_val;
+   
+  long l, nbc_node, n_index, osize = 0;
+  double n_val;
+
+  string fileA, fileB;
+
+  CRFProcess* m_pcs = NULL;
+  CNodeValue *m_nod_val = NULL; 
+  m_pcs = PCSGet(convertProcessTypeToString (getProcessType())); //PCSGet(pcs_type_name);
+  
+
+  if(start_pos_in_st<0)
+    osize = (long)m_pcs->st_node.size();
+
+
+  size = (int)precip_times.size();
+  stepA = 0.;
+  stepB = 0.;
+  if(current_time < m_pcs->Tim->time_start||fabs(current_time - m_pcs->Tim->time_start)<DBL_MIN)
+  {
+     fileA = precip_files[0];
+     stepB = -1.; 
+  }
+  else if(current_time > precip_times[size-1]||fabs(current_time - precip_times[size-1])<DBL_MIN)
+  { 
+     fileA = precip_files[size-1];
+     stepB = -1.;        
+  }
+  else 
+  {
+     double step_b = DBL_MAX;
+     double step_f = DBL_MAX;
+  
+     for(i=0; i<size; i++)
+     {
+         tim_val = precip_times[i];
+         if(current_time>tim_val)
+         {
+            if((current_time-tim_val)<step_b)
+            {
+               step_b = current_time-tim_val;
+               stepA = tim_val;
+               fileA = precip_files[i];
+            }
+         }
+         else
+         {
+
+            if((tim_val-current_time)<step_f)
+            {
+               step_f = tim_val-current_time;
+               stepB = tim_val;
+               fileB = precip_files[i];
+            }
+         }
+     }
+     if(fabs(stepA-current_time)<DBL_MIN)
+         stepB = -1.; 
+     if(fabs(current_time-stepB)<DBL_MIN)
+     {
+         fileA = fileB;        
+         stepB = -1.; 
+     }
+     if(fabs(stepA-stepB)<DBL_MIN)
+        stepB = -1.; 
+  }
+  
+  fileA = FilePath + fileA;
+  ifstream bin_sA(fileA.c_str(), ios::binary);
+  ifstream bin_sB;
+
+  if(!bin_sA.good()) 
+  {
+      cout<<"Could not find file "<< fileA<<endl;
+      exit(0);
+  }
+  bin_sA.setf(ios::scientific,ios::floatfield);
+  bin_sA.precision(14);
+
+  /*
+  if(stepB>0.)   
+  { 
+     fileB = FilePath + fileB;
+     bin_sB.open(fileB.c_str(), ios::binary);
+     if(!bin_sB.good()) 
+     {
+         cout<<"Could not find file "<< fileB<<endl;
+         exit(0);
+     }
+     bin_sB.setf(ios::scientific,ios::floatfield);
+     bin_sB.precision(14);
+     bin_sB.read((char*)(&nbc_node), sizeof(nbc_node)); 
+  }
+  */
+  
+  bin_sA.read((char*)(&nbc_node), sizeof(nbc_node)); 
+
+  double valA; //, valB = 0.;
+  for(l=0; l<nbc_node; l++) 
+  {
+
+    bin_sA.read((char*)(&n_index), sizeof(n_index));   
+    bin_sA.read((char*)(&valA), sizeof(valA)); 
+    /*
+    if( stepB>0.)
+    {
+       bin_sB.read((char*)(&n_index), sizeof(n_index));   
+       bin_sB.read((char*)(&valB), sizeof(valB));
+       n_val = valA + (current_time - stepA)*(valB-valA)/(stepB-stepA);  
+    }
+    else
+    */ 
+       n_val = valA;
+  
+    //   
+    if(start_pos_in_st<0)
+    {
+       m_nod_val = new CNodeValue();
+       m_pcs->st_node_value.push_back(m_nod_val);  
+       m_pcs->st_node.push_back(this); 
+    }
+    else
+      m_nod_val = m_pcs->st_node_value[l+start_pos_in_st];
+
+    m_nod_val->msh_node_number = n_index ;
+    m_nod_val->geo_node_number = n_index;
+    m_nod_val->setProcessDistributionType (getProcessDistributionType());//node_distype = dis_type;
+    m_nod_val->node_value = n_val;
+    m_nod_val->CurveIndex = CurveIndex;   
+    // 
+  } //
+
+  if(start_pos_in_st<0)
+    start_pos_in_st = osize;
+
+  bin_sA.close();
+  //bin_sB.close();
+  
+  return fileA;
 }
 
 /**************************************************************************
