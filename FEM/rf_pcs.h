@@ -517,6 +517,7 @@ public:
     // Extropolate Gauss point values to node values. WW
     void Extropolation_GaussValue();
     void Extropolation_MatValue();  //WW
+    void Integration(vector<double> &node_velue); //WW. 05.2009 
     // Auto time step size control. WW
     void PI_TimeStepSize(double *u_n); //WW
     bool TimeStepAccept() const { return accepted;}
