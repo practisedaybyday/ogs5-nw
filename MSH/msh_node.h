@@ -1,4 +1,4 @@
- /**************************************************************************
+/**************************************************************************
 MSHLib - Object:
 Task:
 Programing:
@@ -15,81 +15,82 @@ last modified
 // MSHLib
 #include "msh_core.h"
 
-namespace Mesh_Group {
-using Math_Group::SymMatrix;
-using Math_Group::vec;
-using Math_Group::Vec;
-
-// Class definition
-class CNode: public CCore
+namespace Mesh_Group
 {
-public:
-	double epsilon;
-	int free_surface; //MB ??? mobile
+   using Math_Group::SymMatrix;
+   using Math_Group::vec;
+   using Math_Group::Vec;
 
-	std::vector<long> connected_elements;
-	std::vector<long> connected_nodes; //OK
-	// The vector to store the representative element index.
-	// This can be used to extract the norm of the plane that the element lies on.
-	// Establishing this vector is done in the Fluid Momentum
-	// since this is bounded by velocity.
-	std::vector<long> connected_planes; // PCH
+   // Class definition
+   class CNode: public CCore
+   {
+      public:
+         double epsilon;
+         int free_surface;                        //MB ??? mobile
 
-	//GUI control variables
-	int selected;
-	double patch_area; //OK4310
-	int crossroad; // PCH: Make theses privates can be done later on.
+         std::vector<long> connected_elements;
+         std::vector<long> connected_nodes;       //OK
+         // The vector to store the representative element index.
+         // This can be used to extract the norm of the plane that the element lies on.
+         // Establishing this vector is done in the Fluid Momentum
+         // since this is bounded by velocity.
+         std::vector<long> connected_planes;      // PCH
 
-	/** constructor */
-	CNode(size_t Index) :
-		CCore(Index), epsilon (0.0), free_surface (-1), selected (0),
-		patch_area (-1.0), crossroad (0), eqs_index(-1)
-	{}
+         //GUI control variables
+         int selected;
+         double patch_area;                       //OK4310
+         int crossroad;                           // PCH: Make theses privates can be done later on.
 
-	CNode(size_t Index, double x, double y, double z = 0.0);
-	CNode(size_t Index, const CNode* parent); //NW
-	~CNode() {}
+         /** constructor */
+         CNode(size_t Index) :
+         CCore(Index), epsilon (0.0), free_surface (-1), selected (0),
+            patch_area (-1.0), crossroad (0), eqs_index(-1)
+            {}
 
-	// Operator
-	void operator =(const CNode& n);
-	bool operator ==(const CNode& n);
+         CNode(size_t Index, double x, double y, double z = 0.0);
+         CNode(size_t Index, const CNode* parent);//NW
+         ~CNode() {}
 
-	// Get functions
-	double X() const { return coordinate[0]; };
-	double Y() const { return coordinate[1]; };
-	double Z() const { return coordinate[2]; };
+         // Operator
+         void operator =(const CNode& n);
+         bool operator ==(const CNode& n);
 
-	void Coordinates(double *xyz) const {
-		for (size_t i = 0; i < 3; i++)
-			xyz[i] = coordinate[i];
-	}
+         // Get functions
+         double X() const { return coordinate[0]; };
+         double Y() const { return coordinate[1]; };
+         double Z() const { return coordinate[2]; };
 
-	// 04/2010 TF
-	/** returns the coordinates of the mesh node */
-	const double* getData () const { return coordinate; }
+         void Coordinates(double *xyz) const
+         {
+            for (size_t i = 0; i < 3; i++)
+               xyz[i] = coordinate[i];
+         }
 
+         // 04/2010 TF
+         /** returns the coordinates of the mesh node */
+         const double* getData () const { return coordinate; }
 
-	// Set functions
-	void SetX(double argX) { coordinate[0] = argX; };
-	void SetY(double argY) { coordinate[1] = argY; };
-	void SetZ(double argZ) { coordinate[2] = argZ; };
-	
-	void SetCoordinates(const double* argCoord);
+         // Set functions
+         void SetX(double argX) { coordinate[0] = argX; };
+         void SetY(double argY) { coordinate[1] = argY; };
+         void SetZ(double argZ) { coordinate[2] = argZ; };
 
-	int GetEquationIndex() const { return eqs_index; };
-	void SetEquationIndex(long eqIndex) { eqs_index = eqIndex; };
+         void SetCoordinates(const double* argCoord);
 
-	// Output
-	void Write(std::ostream& os = std::cout) const;
+         int GetEquationIndex() const { return eqs_index; };
+         void SetEquationIndex(long eqIndex) { eqs_index = eqIndex; };
 
-private:
-	// Members
-	long eqs_index; // renumber
-	double coordinate[3];
+         // Output
+         void Write(std::ostream& os = std::cout) const;
 
-	friend class CElem;
+      private:
+         // Members
+         long eqs_index;                          // renumber
+         double coordinate[3];
 
-};
+         friend class CElem;
 
-} // namespace Mesh_Group
+   };
+
+}                                                 // namespace Mesh_Group
 #endif

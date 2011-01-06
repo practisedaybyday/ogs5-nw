@@ -51,11 +51,11 @@ extern void Calc2DElement_ab2xyz_Coord(long index, double *erg, double a, double
 extern void Calc2DElement_ab2xyz_Vector(long index, double *vec_ab, double *vec_xyz);
 extern void Calc2DElement_xyz2ab_Vector(long index, double *vec_xyz, double *vec_ab);
 extern void Calc2DEdgeUnitNormalVec(long index, long side, double *n);
-#ifndef NEW_EQS //WW. 06.11.2008
+#ifndef NEW_EQS                                   //WW. 06.11.2008
 extern void IncorporateMatrix(long element, double *left_matrix, double *right_vector, double *rechts);
 #endif
 extern void FEMCorrectFluxesOverIrregularNodes(int ndx);
 extern void FEMCorrectFluxesOverIrregularNodesOnVector(double *flux);
-extern void FEMCalcElementCharacterisiticLength(long index); //CMCD 05.2004
-
+                                                  //CMCD 05.2004
+extern void FEMCalcElementCharacterisiticLength(long index);
 #endif

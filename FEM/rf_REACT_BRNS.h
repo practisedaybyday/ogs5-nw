@@ -20,104 +20,102 @@ extern "C" __declspec( dllimport )  void invokebrns(double* theCurArray, double*
 
 class REACT_BRNS
 {
-public:
-    REACT_BRNS(void);
-    ~REACT_BRNS(void);
-    
-    // flag, whether BRNS is initialized; 1-true; 0-false;
-    bool init_flag;
-    int flowflag;
-    bool flag_update_porosity;
+   public:
+      REACT_BRNS(void);
+      ~REACT_BRNS(void);
 
-    // Data structure storing the Concentration;
-    double* cur_ts_Conc;
-    double* pre_ts_Conc;
-    double* m_dC_Chem_delta;
-	int* boundary_flag;
+      // flag, whether BRNS is initialized; 1-true; 0-false;
+      bool init_flag;
+      int flowflag;
+      bool flag_update_porosity;
 
-    // storing porosity
-    // its dimension is the number of nodes
-    double* m_porosity_Node; 
-    double* m_porosity_Elem; 
+      // Data structure storing the Concentration;
+      double* cur_ts_Conc;
+      double* pre_ts_Conc;
+      double* m_dC_Chem_delta;
+      int* boundary_flag;
 
-    // array of return values of BRNS;
-    int* rt_BRNS;
-    
-    #ifdef GCC
-    void *hDll, *hDll_1, *hDll_2;
-    typedef void (* LPFNDLLFUNC)(double*, double*, double*, int*, double*, int*, int*, double*, double*, double*, double*, double*, double*);
-    LPFNDLLFUNC invokebrns;
-    #endif
+      // storing porosity
+      // its dimension is the number of nodes
+      double* m_porosity_Node;
+      double* m_porosity_Elem;
 
-    #ifdef USE_MPI_BRNS
-    // buffer for the MPI implementation
-    double* pre_ts_Conc_buf; 
-    int* rt_BRNS_buf;
-    #endif
-    
-    // pointer to the PCS Class;
-    CRFProcess *m_pcs, *this_pcs, *m_flow_pcs;
-    Problem* myProblem;
+      // array of return values of BRNS;
+      int* rt_BRNS;
 
-    // pointer to MFP class
-    CFluidProperties *m_FluidProp;
+#ifdef GCC
+      void *hDll, *hDll_1, *hDll_2;
+      typedef void (* LPFNDLLFUNC)(double*, double*, double*, int*, double*, int*, int*, double*, double*, double*, double*, double*, double*);
+      LPFNDLLFUNC invokebrns;
+#endif
 
-    // pointer to the MCP Class;
-    CompProperties *m_cp; 
+#ifdef USE_MPI_BRNS
+      // buffer for the MPI implementation
+      double* pre_ts_Conc_buf;
+      int* rt_BRNS_buf;
+#endif
 
-    // Media property
-    CMediumProperties *MediaProp;
+      // pointer to the PCS Class;
+      CRFProcess *m_pcs, *this_pcs, *m_flow_pcs;
+      Problem* myProblem;
 
-    // number of Components passed to BRNS;
-    int num_Comp;  
+      // pointer to MFP class
+      CFluidProperties *m_FluidProp;
 
-    // number of nodes;
-    long nNodes;
-	long nElems;
+      // pointer to the MCP Class;
+      CompProperties *m_cp;
 
-    // This is just a test run of BRNS dll;
-    void TestRUN(void);
+      // Media property
+      CMediumProperties *MediaProp;
 
-    // The Run function
-    void RUN(double time_step);
+      // number of Components passed to BRNS;
+      int num_Comp;
 
-    // Get the number of Nodes in GeoSys;
-    long GetNodesNumber(void);
-	long GetElemNumber(void);
+      // number of nodes;
+      long nNodes;
+      long nElems;
 
-	// Get flow flag;
-	int GetFlowType_MT(void);
+      // This is just a test run of BRNS dll;
+      void TestRUN(void);
 
-    // Get the number of Components in GeoSys;
-    int GetCompsNumber(void);
+      // The Run function
+      void RUN(double time_step);
 
-    // Initialize Data Structure;
-    void InitBRNS(Problem* myProblem);
+      // Get the number of Nodes in GeoSys;
+      long GetNodesNumber(void);
+      long GetElemNumber(void);
 
-    // Data transfer btw GeoSys and BRNS;
-    void GSRF2Buffer( long i );
-    void Buffer2GSRF( long i );
+      // Get flow flag;
+      int GetFlowType_MT(void);
 
+      // Get the number of Components in GeoSys;
+      int GetCompsNumber(void);
 
-	// BC node checking
-	int IsThisPointBCIfYesStoreValue(int index, CRFProcess* m_pcs, double& value);
+      // Initialize Data Structure;
+      void InitBRNS(Problem* myProblem);
 
-    // porosity setting function
-    int SetPorosityValue_MT ( long ele_Index,  double m_porosity_Elem , int i_timestep );
-    void GetFluidProperty_MT ( void ); 
-    void ConvPorosityNodeValue2Elem( int i_timestep );
+      // Data transfer btw GeoSys and BRNS;
+      void GSRF2Buffer( long i );
+      void Buffer2GSRF( long i );
 
-private:
-	// For measuring the time spent in BRNS calls
-	double timeSpentInBrnsCoupling;
-	clock_t startTime;
+      // BC node checking
+      int IsThisPointBCIfYesStoreValue(int index, CRFProcess* m_pcs, double& value);
 
-#ifdef USE_MPI_BRNS    
-    // MPI Buffer Value Manipulation
-    void GetBRNSResult_MPI(void);
-    void CleanMPIBuffer(void);
+      // porosity setting function
+      int SetPorosityValue_MT ( long ele_Index,  double m_porosity_Elem , int i_timestep );
+      void GetFluidProperty_MT ( void );
+      void ConvPorosityNodeValue2Elem( int i_timestep );
+
+   private:
+      // For measuring the time spent in BRNS calls
+      double timeSpentInBrnsCoupling;
+      clock_t startTime;
+
+#ifdef USE_MPI_BRNS
+      // MPI Buffer Value Manipulation
+      void GetBRNSResult_MPI(void);
+      void CleanMPIBuffer(void);
 #endif
 
 };
-
 #endif

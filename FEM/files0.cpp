@@ -1,6 +1,6 @@
 /**************************************************************************/
 /* ROCKFLOW - Modul: files0.c
-                                                                          */
+ */
 /* Aufgabe:
    Enthaelt die uebergeordneten Datei- Ein- und Ausgaberoutinen, sowie
    das Speichern der Durchbruchskurven.
@@ -16,23 +16,23 @@
                           jetzt auskommentiert. Sie war hier nur um Kompatibilitaeten
                           zum Rockflow aufzubewahren.
    03/1999     CT         anz_matxx, start_mat entfernt
-   02/2000     CT         Restart wieder hergestellt
-   07/2000     AH         Vorbereitungen zum HGM.
-    9/2000     CT         Neu: RefreshNodeOutputData, Warnungen beseitigt
-   10/2001     AH         Inverse Modellierung
-                          Trennung und Anpassung (CreateFileData)
-                          In DestroyFileData Datenfeld auskommentiert.
-                          Neues Konzept fuer Datenbank-Verwaltung ah inv
-   01/2002     MK         DisplayMsgX-Umleitung in *.msg-Datei: OpenMsgFile
-   08/2002     MK         GetPathRFDFile
-                          ConfigFileData aus CreateFileData herausgeloest
-   03/2003     RK         Quellcode bereinigt, Globalvariablen entfernt
-                                                                          */
+02/2000     CT         Restart wieder hergestellt
+07/2000     AH         Vorbereitungen zum HGM.
+9/2000     CT         Neu: RefreshNodeOutputData, Warnungen beseitigt
+10/2001     AH         Inverse Modellierung
+Trennung und Anpassung (CreateFileData)
+In DestroyFileData Datenfeld auskommentiert.
+Neues Konzept fuer Datenbank-Verwaltung ah inv
+01/2002     MK         DisplayMsgX-Umleitung in *.msg-Datei: OpenMsgFile
+08/2002     MK         GetPathRFDFile
+ConfigFileData aus CreateFileData herausgeloest
+03/2003     RK         Quellcode bereinigt, Globalvariablen entfernt
+*/
 /**************************************************************************/
 #include "Configure.h"
 #include <iostream>
 #include "makros.h"
-#ifndef NEW_EQS //WW. 07.11.2008
+#ifndef NEW_EQS                                   //WW. 07.11.2008
 #include "solver.h"
 #endif
 #include "rf_pcs.h"
@@ -48,13 +48,13 @@
 #include "rf_mfp_new.h"
 #include "rf_msp_new.h"
 #include "rf_num_new.h"
-#include "rf_random_walk.h" // PCH
+#include "rf_random_walk.h"                       // PCH
 #include "rf_react.h"
 #include "rf_kinreact.h"
-#include "rf_fluid_momentum.h"  // PCH
-#include "rf_fct.h" //OK
+#include "rf_fluid_momentum.h"                    // PCH
+#include "rf_fct.h"                               //OK
 #ifdef CHEMAPP
-  #include "eqlink.h"  //MX
+#include "eqlink.h"                               //MX
 #endif
 /* Tools */
 #include "mathlib.h"
@@ -66,16 +66,16 @@
 #include "msh_lib.h"
 #include "gs_project.h"
 /* Dateinamen */
-char *crdat = NULL; /*MX*/
-char *file_name = NULL; /* dateiname */
+char *crdat = NULL;                               /*MX*/
+char *file_name = NULL;                           /* dateiname */
 static char *msgdat = NULL;
 
-#define RFD_FILE_EXTENSION ".rfd" //OK
-#ifndef MFC    //WW
-void CURRead(string); //OK
+#define RFD_FILE_EXTENSION ".rfd"                 //OK
+#ifndef MFC                                       //WW
+void CURRead(string);                             //OK
 #endif
-ios::pos_type CURReadCurve(ifstream*); //OK
-void CURWrite(); //OK
+ios::pos_type CURReadCurve(ifstream*);            //OK
+void CURWrite();                                  //OK
 
 #define KEYWORD '#'
 #define SUBKEYWORD '$'
@@ -88,7 +88,7 @@ void CURWrite(); //OK
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: ReadData
-                                                                          */
+ */
 /* Aufgabe:
    Liest Daten aus den Eingabedateien ein
                                                                           */
@@ -112,85 +112,91 @@ void CURWrite(); //OK
 /**************************************************************************/
 int ReadData ( char *dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique_name )
 {
-#if defined(USE_MPI) //WW
-  if(myrank==0)
-  {
+#if defined(USE_MPI)                           //WW
+   if(myrank==0)
+   {
 #endif
-  cout << endl;
-  cout << "---------------------------------------------" << endl;
-  cout << "Data input:" << endl;
-#if defined(USE_MPI) //WW
-  }
+      cout << endl;
+      cout << "---------------------------------------------" << endl;
+      cout << "Data input:" << endl;
+#if defined(USE_MPI)                        //WW
+   }
 #endif
-  /* Dateinamen generieren */
-//OK  DATCreateFileNames(dateiname);
-  static int datlen;
-  datlen = (int)strlen(dateiname) + 5;
-  crdat = (char *) Malloc(datlen);                                      /*MX*/
-  crdat = strcat(strcpy(crdat,dateiname),CHEM_REACTION_EXTENSION);    /*MX*/
-  msgdat = (char *) Malloc(datlen);
-  msgdat = strcat(strcpy(msgdat,dateiname),RF_MESSAGE_EXTENSION);
-  FILE *f = NULL;
-  if ((f = fopen(msgdat,"r")) == NULL) { /* MSG-Datei existiert nicht */
-    msgdat = (char *)Free(msgdat);
-  } else {
-    fclose (f);
-    if ((f = fopen(msgdat,"a")) == NULL) { /* MSG-Schreibzugriff nicht moeglich */
+   /* Dateinamen generieren */
+   //OK  DATCreateFileNames(dateiname);
+   static int datlen;
+   datlen = (int)strlen(dateiname) + 5;
+   crdat = (char *) Malloc(datlen);               /*MX*/
+                                                  /*MX*/
+   crdat = strcat(strcpy(crdat,dateiname),CHEM_REACTION_EXTENSION);
+   msgdat = (char *) Malloc(datlen);
+   msgdat = strcat(strcpy(msgdat,dateiname),RF_MESSAGE_EXTENSION);
+   FILE *f = NULL;
+   if ((f = fopen(msgdat,"r")) == NULL)           /* MSG-Datei existiert nicht */
+   {
       msgdat = (char *)Free(msgdat);
-    } else fclose (f);
-  }
-  //----------------------------------------------------------------------
-  // Read GEO data
-  GEOLIB_Read_GeoLib(dateiname);
+   }
+   else
+   {
+      fclose (f);
+      if ((f = fopen(msgdat,"a")) == NULL)        /* MSG-Schreibzugriff nicht moeglich */
+      {
+         msgdat = (char *)Free(msgdat);
+      } else fclose (f);
+   }
+   //----------------------------------------------------------------------
+   // Read GEO data
+   GEOLIB_Read_GeoLib(dateiname);
 
-  unique_name = dateiname;
-  unique_name += ".gli";
-  FileIO::readGLIFileV4 (unique_name, &geo_obj);
+   unique_name = dateiname;
+   unique_name += ".gli";
+   FileIO::readGLIFileV4 (unique_name, &geo_obj);
 
-  //----------------------------------------------------------------------
-  // Read object data
-  PCSRead(dateiname);
-  BCRead(dateiname, geo_obj, unique_name);
-  STRead(dateiname, geo_obj, unique_name);
-  ICRead(dateiname, geo_obj, unique_name);
-  OUTRead(dateiname, geo_obj, unique_name);
-  TIMRead(dateiname);
-  MFPRead(dateiname);
-  MSPRead(dateiname);
-  MMPRead(dateiname);
-  CPRead(dateiname); //SB:GS4
-  RCRead(dateiname);
-  KRRead(dateiname, geo_obj, unique_name);
-  KRWrite(dateiname);
+   //----------------------------------------------------------------------
+   // Read object data
+   PCSRead(dateiname);
+   BCRead(dateiname, geo_obj, unique_name);
+   STRead(dateiname, geo_obj, unique_name);
+   ICRead(dateiname, geo_obj, unique_name);
+   OUTRead(dateiname, geo_obj, unique_name);
+   TIMRead(dateiname);
+   MFPRead(dateiname);
+   MSPRead(dateiname);
+   MMPRead(dateiname);
+   CPRead(dateiname);                             //SB:GS4
+   RCRead(dateiname);
+   KRRead(dateiname, geo_obj, unique_name);
+   KRWrite(dateiname);
 #ifdef CHEMAPP
-  CHMRead(dateiname); //MX for CHEMAPP
+   CHMRead(dateiname);                            //MX for CHEMAPP
 #endif
-  NUMRead(dateiname);
+   NUMRead(dateiname);
 
-  FEMDeleteAll(); // KR moved from FEMRead()
-  CFEMesh* msh = FEMRead(dateiname, &geo_obj, &unique_name);
-  if (msh) //KR
-  {
-	 fem_msh_vector.push_back(msh);
-     CompleteMesh(); //WW
-  }
-//SBOK4209 MSHWrite(dateiname);
-  // PCTRead is bounded by msh
-  PCTRead(dateiname);   // PCH
-  FMRead(dateiname);    // PCH
-  FCTRead(dateiname); //OK
-  CURRead(dateiname); //OK
-  //CURWrite(); //OK
-  //----------------------------------------------------------------------
-  // Read Excel/CVS data
-  //PNTPropertiesRead(dateiname);
+   FEMDeleteAll();                                // KR moved from FEMRead()
+   CFEMesh* msh = FEMRead(dateiname, &geo_obj, &unique_name);
+   if (msh)                                       //KR
+   {
+      fem_msh_vector.push_back(msh);
+      CompleteMesh();                             //WW
+   }
+   //SBOK4209 MSHWrite(dateiname);
+   // PCTRead is bounded by msh
+   PCTRead(dateiname);                            // PCH
+   FMRead(dateiname);                             // PCH
+   FCTRead(dateiname);                            //OK
+   CURRead(dateiname);                            //OK
+   //CURWrite(); //OK
+   //----------------------------------------------------------------------
+   // Read Excel/CVS data
+   //PNTPropertiesRead(dateiname);
 
-  msgdat = (char *)Free(msgdat);
+   msgdat = (char *)Free(msgdat);
 
-  if (msh) return 100;
+   if (msh) return 100;
 
-  return 1;
+   return 1;
 }
+
 
 /**************************************************************************
 GeoSys-Method: FEMOpen->RFDOpen
@@ -202,18 +208,19 @@ Programing:
 **************************************************************************/
 bool RFDOpen(string file_name_base)
 {
-	(void)file_name_base;
-  return false;
+   (void)file_name_base;
+   return false;
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: *OpenMsgFile *CloseMsgFile
-                                                                          */
+ */
 /* Aufgabe:
    Oeffnet MSG-Datei fuer Display-Umleitung
                                                                           */
 /* Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-                                                                          */
+ */
 /* Ergebnis:
    - FILE -
                                                                           */
@@ -223,24 +230,28 @@ bool RFDOpen(string file_name_base)
 /**************************************************************************/
 FILE *OpenMsgFile ()
 {
-  FILE *f = NULL;
-  if (msgdat) {
-    if ((f = fopen(msgdat,"a")) == NULL) {
-      f=stdout;
-      fprintf(f,"\n!!!!!!!!  %s\n\n            ","Fehler: Schreibzugriff auf Message-Protokolldatei nicht moeglich!!");
-    }
-  } else f=stdout; /* Dateiname existiert nicht */
-  return f;
+   FILE *f = NULL;
+   if (msgdat)
+   {
+      if ((f = fopen(msgdat,"a")) == NULL)
+      {
+         f=stdout;
+         fprintf(f,"\n!!!!!!!!  %s\n\n            ","Fehler: Schreibzugriff auf Message-Protokolldatei nicht moeglich!!");
+      }
+   } else f=stdout;                               /* Dateiname existiert nicht */
+   return f;
 }
+
 
 void CloseMsgFile (FILE *f)
 {
-  if (f!=stdout)
-    if (fclose(f))
-      DisplayErrorMsg("Fehler: Message-Protokolldatei konnte nicht geschlossen werden !!");
+   if (f!=stdout)
+      if (fclose(f))
+         DisplayErrorMsg("Fehler: Message-Protokolldatei konnte nicht geschlossen werden !!");
 
-  return;
+   return;
 }
+
 
 /**************************************************************************
 FEMLib-Method:
@@ -248,26 +259,27 @@ FEMLib-Method:
 **************************************************************************/
 void PRJRead(string base_file_name)
 {
-  char line[MAX_ZEILE];
-  string sub_line;
-  string line_string;
-  ios::pos_type position;
-  //========================================================================
-  // file handling
-  string rfd_file_name;
-  rfd_file_name = base_file_name + FCT_FILE_EXTENSION;
-  ifstream rfd_file (rfd_file_name.data(),ios::in);
-  if (!rfd_file.good()) return;
-  rfd_file.seekg(0L,ios::beg);
-  //========================================================================
-  // keyword loop
-  cout << "RFDRead" << endl;
-  while (!rfd_file.eof())
-  {
-    rfd_file.getline(line,MAX_ZEILE);
-    project_title = line;
-  } // eof
+   char line[MAX_ZEILE];
+   string sub_line;
+   string line_string;
+   ios::pos_type position;
+   //========================================================================
+   // file handling
+   string rfd_file_name;
+   rfd_file_name = base_file_name + FCT_FILE_EXTENSION;
+   ifstream rfd_file (rfd_file_name.data(),ios::in);
+   if (!rfd_file.good()) return;
+   rfd_file.seekg(0L,ios::beg);
+   //========================================================================
+   // keyword loop
+   cout << "RFDRead" << endl;
+   while (!rfd_file.eof())
+   {
+      rfd_file.getline(line,MAX_ZEILE);
+      project_title = line;
+   }                                              // eof
 }
+
 
 /**************************************************************************
 FEMLib-Method:
@@ -275,42 +287,44 @@ FEMLib-Method:
 **************************************************************************/
 void CURRead(string base_file_name)
 {
-  char line[MAX_ZEILE];
-  string sub_line;
-  string line_string;
-  ios::pos_type position;
-  //----------------------------------------------------------------------
-  StuetzStellen *stuetz = NULL;
-  anz_kurven = 1;
-  stuetz = (StuetzStellen *) Malloc(sizeof(StuetzStellen));
-  stuetz[0].punkt = 1.0;
-  stuetz[0].wert = 1.0;
-  kurven = (Kurven *) Malloc(sizeof(Kurven));
-  kurven[anz_kurven - 1].anz_stuetzstellen = 1;
-  kurven[anz_kurven - 1].stuetzstellen = stuetz;
-  //----------------------------------------------------------------------
-  // file handling
-  string cur_file_name;
-  cur_file_name = base_file_name + RFD_FILE_EXTENSION;
-  ifstream cur_file (cur_file_name.data(),ios::in);
-  if (!cur_file.good()) return;
-  cur_file.seekg(0L,ios::beg);
-  //========================================================================
-  // keyword loop
-  cout << "CURRead" << endl;
-  while (!cur_file.eof())
-  {
-    cur_file.getline(line,MAX_ZEILE);
-    line_string = line;
-    if(line_string.find("#STOP")!=string::npos)
-      return;
-    //----------------------------------------------------------------------
-    if(line_string.find("#CURVE")!=string::npos) { // keyword found
-      position = CURReadCurve(&cur_file);
-      cur_file.seekg(position,ios::beg);
-    } // keyword found
-  } // eof
+   char line[MAX_ZEILE];
+   string sub_line;
+   string line_string;
+   ios::pos_type position;
+   //----------------------------------------------------------------------
+   StuetzStellen *stuetz = NULL;
+   anz_kurven = 1;
+   stuetz = (StuetzStellen *) Malloc(sizeof(StuetzStellen));
+   stuetz[0].punkt = 1.0;
+   stuetz[0].wert = 1.0;
+   kurven = (Kurven *) Malloc(sizeof(Kurven));
+   kurven[anz_kurven - 1].anz_stuetzstellen = 1;
+   kurven[anz_kurven - 1].stuetzstellen = stuetz;
+   //----------------------------------------------------------------------
+   // file handling
+   string cur_file_name;
+   cur_file_name = base_file_name + RFD_FILE_EXTENSION;
+   ifstream cur_file (cur_file_name.data(),ios::in);
+   if (!cur_file.good()) return;
+   cur_file.seekg(0L,ios::beg);
+   //========================================================================
+   // keyword loop
+   cout << "CURRead" << endl;
+   while (!cur_file.eof())
+   {
+      cur_file.getline(line,MAX_ZEILE);
+      line_string = line;
+      if(line_string.find("#STOP")!=string::npos)
+         return;
+      //----------------------------------------------------------------------
+      if(line_string.find("#CURVE")!=string::npos)// keyword found
+      {
+         position = CURReadCurve(&cur_file);
+         cur_file.seekg(position,ios::beg);
+      }                                           // keyword found
+   }                                              // eof
 }
+
 
 /**************************************************************************
 FEMLib-Method:
@@ -318,57 +332,58 @@ FEMLib-Method:
 **************************************************************************/
 ios::pos_type CURReadCurve(ifstream *cur_file)
 {
-  bool new_keyword = false;
-  string hash("#");
-  string line_string;
-  ios::pos_type position;
-  std::stringstream line_stream;
-  int anz = 0;
-  double d1,d2;
-  StuetzStellen *stuetz = NULL;
-  //----------------------------------------------------------------------
-  while (!new_keyword)
-  {
-    position = cur_file->tellg();
-//OK    cur_file->getline(buffer,MAX_ZEILE);
-//OK    line_string = buffer;
-    line_string = GetLineFromFile1(cur_file);
-	if(line_string.size() < 1) continue;
-    //....................................................................
-    // Test next keyword
-    if(line_string.find(hash)!=string::npos)
-    {
-      new_keyword = true;
-      continue;
-    }
-    //--------------------------------------------------------------------
-    if(line_string.find(";")!=string::npos)
-    {
-      continue;
-    }
-    //--------------------------------------------------------------------
-    //DATA
-//OK    cur_file->seekg(position,ios::beg);
-//OK    *cur_file >> d1 >> d2;
-    line_stream.str(line_string);
-    line_stream >> d1 >> d2;
-    anz++;
-    stuetz = (StuetzStellen *) Realloc(stuetz, (anz * sizeof(StuetzStellen)));
-    stuetz[anz - 1].punkt = d1;
-    stuetz[anz - 1].wert = d2;
-    line_stream.clear();
-    //--------------------------------------------------------------------
-  }
-  //----------------------------------------------------------------------
-  if(anz>=1l)
-  {
-    anz_kurven++;
-    kurven = (Kurven *) Realloc(kurven, (anz_kurven * sizeof(Kurven)));
-    kurven[anz_kurven - 1].anz_stuetzstellen = anz;
-    kurven[anz_kurven - 1].stuetzstellen = stuetz;
-  }
-  return position;
+   bool new_keyword = false;
+   string hash("#");
+   string line_string;
+   ios::pos_type position;
+   std::stringstream line_stream;
+   int anz = 0;
+   double d1,d2;
+   StuetzStellen *stuetz = NULL;
+   //----------------------------------------------------------------------
+   while (!new_keyword)
+   {
+      position = cur_file->tellg();
+      //OK    cur_file->getline(buffer,MAX_ZEILE);
+      //OK    line_string = buffer;
+      line_string = GetLineFromFile1(cur_file);
+      if(line_string.size() < 1) continue;
+      //....................................................................
+      // Test next keyword
+      if(line_string.find(hash)!=string::npos)
+      {
+         new_keyword = true;
+         continue;
+      }
+      //--------------------------------------------------------------------
+      if(line_string.find(";")!=string::npos)
+      {
+         continue;
+      }
+      //--------------------------------------------------------------------
+      //DATA
+      //OK    cur_file->seekg(position,ios::beg);
+      //OK    *cur_file >> d1 >> d2;
+      line_stream.str(line_string);
+      line_stream >> d1 >> d2;
+      anz++;
+      stuetz = (StuetzStellen *) Realloc(stuetz, (anz * sizeof(StuetzStellen)));
+      stuetz[anz - 1].punkt = d1;
+      stuetz[anz - 1].wert = d2;
+      line_stream.clear();
+      //--------------------------------------------------------------------
+   }
+   //----------------------------------------------------------------------
+   if(anz>=1l)
+   {
+      anz_kurven++;
+      kurven = (Kurven *) Realloc(kurven, (anz_kurven * sizeof(Kurven)));
+      kurven[anz_kurven - 1].anz_stuetzstellen = anz;
+      kurven[anz_kurven - 1].stuetzstellen = stuetz;
+   }
+   return position;
 }
+
 
 /**************************************************************************
 FEMLib-Method:
@@ -376,32 +391,33 @@ FEMLib-Method:
 **************************************************************************/
 void CURWrite()
 {
-  //========================================================================
-  // File handling
-  string fct_file_name = "test.cur";
-  fstream fct_file (fct_file_name.c_str(),ios::trunc|ios::out);
-  fct_file.setf(ios::scientific,ios::floatfield);
-  fct_file.precision(12);
-  if (!fct_file.good()) return;
-  fct_file << "GeoSys-CUR: Functions ------------------------------------------------" << endl ;
-  //========================================================================
-  int j;
-  StuetzStellen stuetz;
-  for(int i=0;i<anz_kurven;i++)
-  {
-    fct_file << "#CURVES" << endl;
-    for(j=0;j<kurven[i].anz_stuetzstellen;j++)
-    {
-      stuetz = kurven[i].stuetzstellen[j];
-      fct_file << stuetz.punkt << " " << stuetz.wert <<  endl;
-    }
-  }
-  fct_file << "#STOP";
+   //========================================================================
+   // File handling
+   string fct_file_name = "test.cur";
+   fstream fct_file (fct_file_name.c_str(),ios::trunc|ios::out);
+   fct_file.setf(ios::scientific,ios::floatfield);
+   fct_file.precision(12);
+   if (!fct_file.good()) return;
+   fct_file << "GeoSys-CUR: Functions ------------------------------------------------" << endl ;
+   //========================================================================
+   int j;
+   StuetzStellen stuetz;
+   for(int i=0;i<anz_kurven;i++)
+   {
+      fct_file << "#CURVES" << endl;
+      for(j=0;j<kurven[i].anz_stuetzstellen;j++)
+      {
+         stuetz = kurven[i].stuetzstellen[j];
+         fct_file << stuetz.punkt << " " << stuetz.wert <<  endl;
+      }
+   }
+   fct_file << "#STOP";
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: GetLineFromFile1
-                                      */
+ */
 /* Aufgabe:
    Liest aus dem Eingabefile *ein die n?chste Zeile
    F?ngt die Zeile mit ";" an oder ist sie leer, wird sie ausgelassen
@@ -416,38 +432,43 @@ void CURWrite()
 string GetLineFromFile1(ifstream *ein)
 {
 
-  string line, zeile = "";
-  int fertig=0, i=0, j=0;
-  char zeile1[MAX_ZEILEN];
-  line =""; //WW
-  //----------------------------------------------------------------------
-  while(fertig<1){
-    if(ein->getline(zeile1,MAX_ZEILEN)){				//Zeile lesen
-	  line = zeile1;							//character in string umwandeln
-	  i = (int) line.find_first_not_of(" ",0);		//Anf?ngliche Leerzeichen ?berlesen, i=Position des ersten Nichtleerzeichens im string
-	  j = (int) line.find(";",i) ;					//Nach Kommentarzeichen ; suchen. j = Position des Kommentarzeichens, j=-1 wenn es keines gibt.
-	  if(j!=i)fertig = 1;						//Wenn das erste nicht-leerzeichen ein Kommentarzeichen ist, zeile ?berlesen. Sonst ist das eine Datenzeile
-	  if((i != -1))
-		zeile = line.substr(i,j-i);   //Ab erstem nicht-Leerzeichen bis Kommentarzeichen rauskopieren in neuen substring, falls Zeile nicht leer ist
-	  i = (int) zeile.find_last_not_of(" "); // Suche nach dem letzten Zeichen, dass kein Leerzeichen ist
-	  if(i>=0){
-//		  line.clear(); // = "";
-		  line = zeile.substr(0,i+1); // Leerzeichen am Ende rausschneiden
-//		  zeile.clear(); // = "";
-		  zeile = line;
-	  }
-    }
-    else{//end of file found
-       fertig=1;
-    }
-  }// end while(...)
-  //----------------------------------------------------------------------
-  return zeile;
+   string line, zeile = "";
+   int fertig=0, i=0, j=0;
+   char zeile1[MAX_ZEILEN];
+   line ="";                                      //WW
+   //----------------------------------------------------------------------
+   while(fertig<1)
+   {
+      if(ein->getline(zeile1,MAX_ZEILEN))         //Zeile lesen
+      {
+         line = zeile1;                           //character in string umwandeln
+         i = (int) line.find_first_not_of(" ",0); //Anf?ngliche Leerzeichen ?berlesen, i=Position des ersten Nichtleerzeichens im string
+         j = (int) line.find(";",i) ;             //Nach Kommentarzeichen ; suchen. j = Position des Kommentarzeichens, j=-1 wenn es keines gibt.
+         if(j!=i)fertig = 1;                      //Wenn das erste nicht-leerzeichen ein Kommentarzeichen ist, zeile ?berlesen. Sonst ist das eine Datenzeile
+         if((i != -1))
+            zeile = line.substr(i,j-i);           //Ab erstem nicht-Leerzeichen bis Kommentarzeichen rauskopieren in neuen substring, falls Zeile nicht leer ist
+         i = (int) zeile.find_last_not_of(" ");   // Suche nach dem letzten Zeichen, dass kein Leerzeichen ist
+         if(i>=0)
+         {
+            //		  line.clear(); // = "";
+            line = zeile.substr(0,i+1);           // Leerzeichen am Ende rausschneiden
+            //		  zeile.clear(); // = "";
+            zeile = line;
+         }
+      }
+      else                                        //end of file found
+      {
+         fertig=1;
+      }
+   }                                              // end while(...)
+   //----------------------------------------------------------------------
+   return zeile;
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: FilePrintString
-                                                                          */
+ */
 /* Aufgabe:
    Schreibt Zeichenkette ohne Zeilenvorschub in Textdatei
                                                                           */
@@ -464,14 +485,15 @@ string GetLineFromFile1(ifstream *ein)
 /**************************************************************************/
 int FilePrintString ( FILE *f, const char *s )
 {
-  if ((int)fprintf(f,"%s",s)!=(int)strlen(s))
+   if ((int)fprintf(f,"%s",s)!=(int)strlen(s))
       return 0;
-  return 1;
+   return 1;
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: FilePrintInt
-                                                                          */
+ */
 /* Aufgabe:
    Schreibt Integer-Wert ohne Zeilenvorschub in Textdatei
                                                                           */
@@ -488,15 +510,15 @@ int FilePrintString ( FILE *f, const char *s )
 /**************************************************************************/
 int FilePrintInt ( FILE *f, int x )
 {
-  if (fprintf(f," %i ",x)<0)
+   if (fprintf(f," %i ",x)<0)
       return 0;
-  return 1;
+   return 1;
 }
 
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: FilePrintLong
-                                                                          */
+ */
 /* Aufgabe:
    Schreibt Long-Wert ohne Zeilenvorschub in Textdatei
                                                                           */
@@ -513,15 +535,15 @@ int FilePrintInt ( FILE *f, int x )
 /**************************************************************************/
 int FilePrintLong ( FILE *f, long x )
 {
-  if (fprintf(f," %ld ",x)<0)
+   if (fprintf(f," %ld ",x)<0)
       return 0;
-  return 1;
+   return 1;
 }
 
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: FilePrintDouble
-                                                                          */
+ */
 /* Aufgabe:
    Schreibt Double-Wert ohne Zeilenvorschub in Textdatei
                                                                           */
@@ -540,18 +562,19 @@ int FilePrintLong ( FILE *f, long x )
 int FilePrintDouble ( FILE *f, double x )
 {
 #ifdef FORMAT_DOUBLE
-    if (fprintf(f," % #*.*g ",FPD_GESAMT,FPD_NACHKOMMA,x)<0)
-        return 0;
+   if (fprintf(f," % #*.*g ",FPD_GESAMT,FPD_NACHKOMMA,x)<0)
+      return 0;
 #else
-    if (fprintf(f," % #g ",x)<0)
-        return 0;
+   if (fprintf(f," % #g ",x)<0)
+      return 0;
 #endif
-  return 1;
+   return 1;
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: StrReadDouble
-                                                                          */
+ */
 /* Aufgabe:
    Liest Double-Wert aus String und schreibt Protokoll in Datei
                                                                           */
@@ -572,31 +595,36 @@ int FilePrintDouble ( FILE *f, double x )
 /**************************************************************************/
 int StrReadDouble ( double *x, char *s, FILE *f, FctTestDouble func, int *pos )
 {
-  int test;
-  *x = 0.0;
-  if (sscanf(s," %lf%n",x,pos)<=0) {
-      *pos = 0;  /* nichts sinnvolles gelesen */
+   int test;
+   *x = 0.0;
+   if (sscanf(s," %lf%n",x,pos)<=0)
+   {
+      *pos = 0;                                   /* nichts sinnvolles gelesen */
       fprintf(f,"\n %f      *** Fehler: Kein Wert eingelesen (double) !!!\n",*x);
       return 0;
-  }
-  else {
+   }
+   else
+   {
       test = func(x,f);
 
-/* CT: Protokolformat geaendert */
-      if ((fabs(*x)<100000.)&&(fabs(*x)>=0.1)) {
-      fprintf(f," %f ",*x);
+      /* CT: Protokolformat geaendert */
+      if ((fabs(*x)<100000.)&&(fabs(*x)>=0.1))
+      {
+         fprintf(f," %f ",*x);
       }
-      else {
-        fprintf(f," %e ",*x);
+      else
+      {
+         fprintf(f," %e ",*x);
       }
 
       return test;
-  }
+   }
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: ReadString
-                                                                          */
+ */
 /* Aufgabe:
    Liest Zeichenkette von Standardeingabe
                                                                           */
@@ -612,15 +640,16 @@ int StrReadDouble ( double *x, char *s, FILE *f, FctTestDouble func, int *pos )
 /**************************************************************************/
 char *ReadString ( void )
 {
-  char *s = (char *) malloc(256);
-  //char *s = new char[256];//CC
-  scanf(" %s%*[^\n]%*c",s);
-//  int a = (int)strlen(s);
-//  delete[] s;
-  //s = new char[a+1];//CC
-  s = (char *) realloc(s,((int)strlen(s)+1));
-  return s;
+   char *s = (char *) malloc(256);
+   //char *s = new char[256];//CC
+   scanf(" %s%*[^\n]%*c",s);
+   //  int a = (int)strlen(s);
+   //  delete[] s;
+   //s = new char[a+1];//CC
+   s = (char *) realloc(s,((int)strlen(s)+1));
+   return s;
 }
+
 
 /**************************************************************************
 STRLib-Method: SubKeyword
@@ -631,11 +660,12 @@ last modification:
 **************************************************************************/
 bool SubKeyword(const string &line)
 {
-  if(line.find(SUBKEYWORD)!=string::npos)
-    return true;
-  else
-    return false;
+   if(line.find(SUBKEYWORD)!=string::npos)
+      return true;
+   else
+      return false;
 }
+
 
 /**************************************************************************
 STRLib-Method: SubKeyword
@@ -646,15 +676,16 @@ last modification:
 **************************************************************************/
 bool Keyword(const string &line)
 {
-  if(line.find(KEYWORD)!=string::npos)
-    return true;
-  else
-    return false;
+   if(line.find(KEYWORD)!=string::npos)
+      return true;
+   else
+      return false;
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: StrUp
-                                                                          */
+ */
 /* Aufgabe:
    wandelt Zeichenkette in Grossbuchstaben um
                                                                           */
@@ -670,20 +701,22 @@ bool Keyword(const string &line)
 /**************************************************************************/
 char *StrUp ( const char *s )
 {
-  int i;
-  int l = (int)strlen(s);
-  char* tmp = new char[l];
-  strcpy(tmp, s);
-  for (i=0; i<l; i++) {
+   int i;
+   int l = (int)strlen(s);
+   char* tmp = new char[l];
+   strcpy(tmp, s);
+   for (i=0; i<l; i++)
+   {
       if (islower((int)s[i]))
-		  tmp[i] = (char)toupper((int)s[i]);
-  }
-  return tmp;
+         tmp[i] = (char)toupper((int)s[i]);
+   }
+   return tmp;
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: StringReadStr
-                                                                          */
+ */
 /* Aufgabe:
    Liest Zeichenkette aus String
                                                                           */
@@ -703,26 +736,29 @@ char *StrUp ( const char *s )
 /**************************************************************************/
 int StringReadStr ( char **x, char *s, int *pos )
 {
-  *x = NULL;
-//  *x = (char *) Malloc(256);
-*x = new char[256];//CC
-  *x[0] = '\0';
-  if (sscanf(s," %s%n",*x,pos)<=0) {
-      int a = (int)strlen(*x);//CC
+   *x = NULL;
+   //  *x = (char *) Malloc(256);
+   *x = new char[256];                            //CC
+   *x[0] = '\0';
+   if (sscanf(s," %s%n",*x,pos)<=0)
+   {
+      int a = (int)strlen(*x);                    //CC
       //delete[] *x;//CC
-      *x = new char[a+1];//CC
+      *x = new char[a+1];                         //CC
       //*x = (char *) Realloc(*x,((int)strlen(*x)+1));
-      *pos = 0;  /* nichts sinnvolles gelesen */
+      *pos = 0;                                   /* nichts sinnvolles gelesen */
       return 0;
-  }
-  else {
+   }
+   else
+   {
       return 1;
-  }
+   }
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: LineFeed
-                                                                          */
+ */
 /* Aufgabe:
    Schreibt Zeilenvorschub in Textdatei
                                                                           */
@@ -738,28 +774,31 @@ int StringReadStr ( char **x, char *s, int *pos )
 /**************************************************************************/
 int LineFeed ( FILE *f )
 {
-  if (fprintf(f,"\n")<0)
+   if (fprintf(f,"\n")<0)
       return 0;
-  return 1;
+   return 1;
 }
+
 
 int TFDouble ( double *x, FILE *f )
 {
-  double dummy;
-  FILE fdummy;
-  dummy = *x;
-  fdummy = *f;
-  return 1;
+   double dummy;
+   FILE fdummy;
+   dummy = *x;
+   fdummy = *f;
+   return 1;
 }
+
 
 int TFString ( char *x, FILE *f )
 {
-  char dummy;
-  FILE fdummy;
-  dummy = *x;
-  fdummy = *f;
-  return 1;
+   char dummy;
+   FILE fdummy;
+   dummy = *x;
+   fdummy = *f;
+   return 1;
 }
+
 
 /**************************************************************************
 STRLib-Method:
@@ -770,17 +809,19 @@ last modification:
 **************************************************************************/
 void remove_white_space(string *buffer)
 {
-  int pos=0;
-  while (pos>=0) {
-    pos = (int)buffer->find_first_of(" ");
-    if (pos<0) break;
-    buffer->erase(pos,1);
-  }
+   int pos=0;
+   while (pos>=0)
+   {
+      pos = (int)buffer->find_first_of(" ");
+      if (pos<0) break;
+      buffer->erase(pos,1);
+   }
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: StrReadStr
-                                                                          */
+ */
 /* Aufgabe:
    Liest Zeichenkette aus String und schreibt Protokoll in Datei
                                                                           */
@@ -802,25 +843,27 @@ void remove_white_space(string *buffer)
 /**************************************************************************/
 int StrReadStr ( char *x, char *s, FILE *f, FctTestString func, int *pos )
 {
-  int test;
+   int test;
 
-  x[0] = '\0';
-  if (sscanf(s," %s%n",x,pos)<=0) {
-      *pos = 0;  /* nichts sinnvolles gelesen */
+   x[0] = '\0';
+   if (sscanf(s," %s%n",x,pos)<=0)
+   {
+      *pos = 0;                                   /* nichts sinnvolles gelesen */
       fprintf(f,"\n %s      *** Fehler: Kein Wert eingelesen (string) !!!\n",x);
       return 0;
-  }
-  else {
+   }
+   else
+   {
       test = func(x,f);
       fprintf(f,"%s ",x);
       return test;
-  }
+   }
 }
 
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: StrTestDouble
-                                                                          */
+ */
 /* Aufgabe:
    Testet, ob in s noch ein Double kommt;
                                                                           */
@@ -836,16 +879,17 @@ int StrReadStr ( char *x, char *s, FILE *f, FctTestString func, int *pos )
 /**************************************************************************/
 int StrTestDouble ( char *s )
 {
-  double i;
-  if (sscanf(s," %lf",&i)<=0)
+   double i;
+   if (sscanf(s," %lf",&i)<=0)
       return 0;
-  else
+   else
       return 1;
 }
 
+
 /**************************************************************************/
 /* ROCKFLOW - Funktion: StrTestHash
-                                                                          */
+ */
 /* Aufgabe:
    Testet, ob in s ein # folgt
                                                                           */
@@ -862,26 +906,30 @@ int StrTestDouble ( char *s )
 /**************************************************************************/
 int StrTestHash ( char *s, int *pos )
 {
-  int p;
-  char h[256];
-  if (sscanf(s," %s%n",h,&p)<=0) {
+   int p;
+   char h[256];
+   if (sscanf(s," %s%n",h,&p)<=0)
+   {
       return 0;
-  }
-  else {
-      if (strcmp(h,"#")==0) {
-          *pos = p;
-          return 1;
+   }
+   else
+   {
+      if (strcmp(h,"#")==0)
+      {
+         *pos = p;
+         return 1;
       }
-      else {
-          return 0;
+      else
+      {
+         return 0;
       }
-  }
+   }
 }
 
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: StrOnlyReadStr
-                                                                          */
+ */
 /* Aufgabe:
    Liest Zeichenkette aus String aber schreibt Protokoll in Datei nicht
    (for Phreeqc read function)
@@ -902,24 +950,28 @@ int StrTestHash ( char *s, int *pos )
    06/2003     MX        Erste Version
                                                                           */
 /**************************************************************************/
-int StrOnlyReadStr ( char *x, char *s, FILE *f, FctTestString func, int *pos ) /*MX*/
+                                                  /*MX*/
+int StrOnlyReadStr ( char *x, char *s, FILE *f, FctTestString func, int *pos )
 {
-  int test;
+   int test;
 
-  x[0] = '\0';
-  if (sscanf(s," %s%n",x,pos)<=0) {
-      *pos = 0;  /* nichts sinnvolles gelesen */
+   x[0] = '\0';
+   if (sscanf(s," %s%n",x,pos)<=0)
+   {
+      *pos = 0;                                   /* nichts sinnvolles gelesen */
       return 0;
-  }
-  else {
+   }
+   else
+   {
       test = func(x,f);
       return test;
-  }
+   }
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: StrReadSubKeyword
-                                                                          */
+ */
 /* Aufgabe:
    Liest ein Sub-Keyword (eingeleitet mit "$") aus Keyword-String. Nur bis zum
    naechsten Hash (naechstes Keyword) oder Stringende
@@ -942,42 +994,51 @@ int StrOnlyReadStr ( char *x, char *s, FILE *f, FctTestString func, int *pos ) /
 /**************************************************************************/
 int StrReadSubKeyword ( char *sub, char *s, int beginn, int *found, int *ende)
 {
-  int i, xi=0;
+   int i, xi=0;
 
-  *found=-1;
-  *ende=(int)strlen(s);
+   *found=-1;
+   *ende=(int)strlen(s);
 
-  for(i=beginn;i<(int)strlen(s);i++){
-     if(s[i]=='$') {
-       if(*found<1) {
-           /* Anfang des Sub-Keywords merken */
-           *found=i;
-       } else {
-           /* Ende des Sub-Keywords merken (neues Sub-Keyword folgt) */
-           *ende=i;
-           break;
-       }
-     }
+   for(i=beginn;i<(int)strlen(s);i++)
+   {
+      if(s[i]=='$')
+      {
+         if(*found<1)
+         {
+            /* Anfang des Sub-Keywords merken */
+            *found=i;
+         }
+         else
+         {
+            /* Ende des Sub-Keywords merken (neues Sub-Keyword folgt) */
+            *ende=i;
+            break;
+         }
+      }
 
-     if(s[i]=='#') {
-        /* Ende des Sub-Keywords merken (neues Keyword folgt) */
-        *ende=i;
-        break;
-     }
+      if(s[i]=='#')
+      {
+         /* Ende des Sub-Keywords merken (neues Keyword folgt) */
+         *ende=i;
+         break;
+      }
 
-     if(*found>=0) {
-       sub[xi]=s[i];
-       xi++;
-     }
-  }
+      if(*found>=0)
+      {
+         sub[xi]=s[i];
+         xi++;
+      }
+   }
 
-  if(*found>=0) {
-     sub[xi] = '\0';
-  }
+   if(*found>=0)
+   {
+      sub[xi] = '\0';
+   }
 
-  return  (*found>=0);
+   return  (*found>=0);
 
 }
+
 
 /**************************************************************************
 STRLib-Method: get_sub_string
@@ -988,30 +1049,34 @@ last modification:
 **************************************************************************/
 string get_sub_string(const string &buffer,const string &delimiter,int pos1,int *pos2)
 {
-  int pos=0;
-  string empty_string("");
-  //string sub_string_this;
-  *pos2 = (int)buffer.find(delimiter,pos1);
-  if(*pos2<0)
-    return empty_string;
-  while(*pos2<=pos1) {
-    pos1++;
-    *pos2 = (int)buffer.find(delimiter,pos1);
-    if(*pos2<0) {
-      *pos2 = (int)buffer.size();
-      break;
-    }
-    if(pos1>=(int)buffer.size())
-      break;
-  }
-  string sub_string_this = buffer.substr(pos1,*pos2);
-  while (pos>=0) {
-    pos = (int)sub_string_this.find_first_of(" ");
-    if (pos<0) break;
-    sub_string_this.erase(pos,1);
-  }
-  return sub_string_this;
+   int pos=0;
+   string empty_string("");
+   //string sub_string_this;
+   *pos2 = (int)buffer.find(delimiter,pos1);
+   if(*pos2<0)
+      return empty_string;
+   while(*pos2<=pos1)
+   {
+      pos1++;
+      *pos2 = (int)buffer.find(delimiter,pos1);
+      if(*pos2<0)
+      {
+         *pos2 = (int)buffer.size();
+         break;
+      }
+      if(pos1>=(int)buffer.size())
+         break;
+   }
+   string sub_string_this = buffer.substr(pos1,*pos2);
+   while (pos>=0)
+   {
+      pos = (int)sub_string_this.find_first_of(" ");
+      if (pos<0) break;
+      sub_string_this.erase(pos,1);
+   }
+   return sub_string_this;
 }
+
 
 /**************************************************************************
 STRLib-Method: get_sub_string2
@@ -1022,15 +1087,16 @@ last modification:
 **************************************************************************/
 string get_sub_string2(const string &buffer,const string &delimiter,string *tmp)
 {
-  int pos2 = (int)buffer.find_first_of(delimiter);
-  string sub_string = buffer.substr(0,pos2);
-  *tmp = buffer.substr(pos2+delimiter.size());
-  return sub_string;
+   int pos2 = (int)buffer.find_first_of(delimiter);
+   string sub_string = buffer.substr(0,pos2);
+   *tmp = buffer.substr(pos2+delimiter.size());
+   return sub_string;
 }
+
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: GetUncommentedLine
-                                      */
+ */
 /* Aufgabe:
    R?ckgabe ist ist ein string mit dem Zeileninhalt ab dem ersten Nicht-Leerzeichen
    bis zum ersten Auftreten des Kommentartzeichens ";"
@@ -1038,20 +1104,22 @@ string get_sub_string2(const string &buffer,const string &delimiter,string *tmp)
 /* Programmaenderungen:
     06/2009     SB  First Version
  **************************************************************************/
-string GetUncommentedLine(string line){
+string GetUncommentedLine(string line)
+{
 
-  string zeile = "";
-  int i=0, j=0;
-  //----------------------------------------------------------------------
-	  i = (int) line.find_first_not_of(" ",0);		//Anf?ngliche Leerzeichen ?berlesen, i=Position des ersten Nichtleerzeichens im string
-	  j = (int) line.find(";",i) ;					//Nach Kommentarzeichen ; suchen. j = Position des Kommentarzeichens, j=-1 wenn es keines gibt.
-	  if((i != -1))
-		zeile = line.substr(i,j-i);   //Ab erstem nicht-Leerzeichen bis Kommentarzeichen rauskopieren in neuen substring, falls Zeile nicht leer ist
-	  i = (int) zeile.find_last_not_of(" "); // Suche nach dem letzten Zeichen, dass kein Leerzeichen ist
-	  if(i>=0){
-		  line = zeile.substr(0,i+1); // Leerzeichen am Ende rausschneiden
-		  zeile = line;
-	  }
+   string zeile = "";
+   int i=0, j=0;
+   //----------------------------------------------------------------------
+   i = (int) line.find_first_not_of(" ",0);       //Anf?ngliche Leerzeichen ?berlesen, i=Position des ersten Nichtleerzeichens im string
+   j = (int) line.find(";",i) ;                   //Nach Kommentarzeichen ; suchen. j = Position des Kommentarzeichens, j=-1 wenn es keines gibt.
+   if((i != -1))
+      zeile = line.substr(i,j-i);                 //Ab erstem nicht-Leerzeichen bis Kommentarzeichen rauskopieren in neuen substring, falls Zeile nicht leer ist
+   i = (int) zeile.find_last_not_of(" ");         // Suche nach dem letzten Zeichen, dass kein Leerzeichen ist
+   if(i>=0)
+   {
+      line = zeile.substr(0,i+1);                 // Leerzeichen am Ende rausschneiden
+      zeile = line;
+   }
 
-  return zeile;
+   return zeile;
 }

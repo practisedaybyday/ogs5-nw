@@ -45,40 +45,38 @@ extern long TGetTicksPerSecond(void);
 /* Zerstoert alle Zeitspeicher */
 extern void TDestroyTimers(void);
 
-
 /* Weitere externe Objekte */
 
 /* Interface fuer AMG-Loeser */
 extern void ctime_(float *time);
 
-
 //SB_time
 
-class CClockTime{
-	private:
-	public:
-		CClockTime(void);
-		~CClockTime(void);
-	vector <double> time_flow;
-	vector <double> time_transport;
-	vector <double> time_kinreact;
-	vector <double> time_equireact;
-	double time_total_flow;
-	double time_total_transport;
-	double time_total_kinreact;
-	double time_total_equireact;
-	double delta_clocktime;
-	clock_t start;
-	clock_t end;
+class CClockTime
+{
+   private:
+   public:
+      CClockTime(void);
+      ~CClockTime(void);
+      vector <double> time_flow;
+      vector <double> time_transport;
+      vector <double> time_kinreact;
+      vector <double> time_equireact;
+      double time_total_flow;
+      double time_total_transport;
+      double time_total_kinreact;
+      double time_total_equireact;
+      double delta_clocktime;
+      clock_t start;
+      clock_t end;
 
-	void StopTime(const string &name="");
-	void StartTime(void);
-	void PrintTimes(void);
+      void StopTime(const string &name="");
+      void StartTime(void);
+      void PrintTimes(void);
 
-	long time1;
-	long time2;
-	double difftime;
-	
+      long time1;
+      long time2;
+      double difftime;
 
 };
 extern void CreateClockTime(void);

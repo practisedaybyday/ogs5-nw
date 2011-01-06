@@ -64,7 +64,8 @@ typedef double (*DoubleFuncLII) (long, int, int);
 typedef double (*DoubleFuncLIII) (long, int, int, int);
 typedef double (*DoubleFuncLIIII) (long, int, int, int, int);
 typedef double (*DoubleFuncILD) (int, long, double);
-typedef double (*DoubleFuncILDDD) (int, long, double, double, double);  /* UJ rf3217 */
+                                                  /* UJ rf3217 */
+typedef double (*DoubleFuncILDDD) (int, long, double, double, double);
 typedef double (*DoubleFuncILDDDD) (int, long, double, double, double, double);
 typedef double (*DoubleFuncILDDID) (int, long, double, double, double, double);
 typedef double (*DoubleFuncILLD) (int, long, long, double);
@@ -77,5 +78,4 @@ typedef double *(*DoubleXFuncLII) (long,int,int);
 typedef void (*VoidFuncDXCDX) (double*, const double*);
 typedef void *(*VoidXFuncIVoidX) (int,void *);
 typedef double (*DoubleFuncIL) (int,long);
-
 #endif

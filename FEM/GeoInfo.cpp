@@ -11,13 +11,12 @@
 // FEM
 #include "GeoInfo.h"
 
-
 GeoInfo::GeoInfo() :
-	_geo_type (GEOLIB::POINT), _geo_obj (NULL)
+_geo_type (GEOLIB::POINT), _geo_obj (NULL)
 {}
 
 GeoInfo::GeoInfo(GEOLIB::GEOTYPE geo_type, const GEOLIB::GeoObject* geo_obj) :
-	_geo_type (geo_type), _geo_obj (geo_obj)
+_geo_type (geo_type), _geo_obj (geo_obj)
 {}
 
 GeoInfo::~GeoInfo()
@@ -25,38 +24,43 @@ GeoInfo::~GeoInfo()
 
 GEOLIB::GEOTYPE GeoInfo::getGeoType () const
 {
-	return _geo_type;
+   return _geo_type;
 }
+
 
 std::string GeoInfo::getGeoTypeAsString () const
 {
-	switch (_geo_type) {
-	case GEOLIB::POINT:
-		return "POINT";
-	case GEOLIB::POLYLINE:
-		return "POLYLINE";
-	case GEOLIB::SURFACE:
-		return "SURFACE";
-	case GEOLIB::VOLUME:
-		return "VOLUME";
-	case GEOLIB::GEODOMAIN:
-		return "DOMAIN";
-	default:
-		return "";
-	}
+   switch (_geo_type)
+   {
+      case GEOLIB::POINT:
+         return "POINT";
+      case GEOLIB::POLYLINE:
+         return "POLYLINE";
+      case GEOLIB::SURFACE:
+         return "SURFACE";
+      case GEOLIB::VOLUME:
+         return "VOLUME";
+      case GEOLIB::GEODOMAIN:
+         return "DOMAIN";
+      default:
+         return "";
+   }
 }
+
 
 void GeoInfo::setGeoType (GEOLIB::GEOTYPE geo_type)
 {
-	_geo_type = geo_type;
+   _geo_type = geo_type;
 }
+
 
 const GEOLIB::GeoObject* GeoInfo::getGeoObj () const
 {
-	return _geo_obj;
+   return _geo_obj;
 }
+
 
 void GeoInfo::setGeoObj (const GEOLIB::GeoObject* geo_obj)
 {
-	_geo_obj = geo_obj;
+   _geo_obj = geo_obj;
 }

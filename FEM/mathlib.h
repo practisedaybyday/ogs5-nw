@@ -25,11 +25,11 @@
 /* Die Schnittstellen der Gleichungsloeser und der Speichertechnik werden
    sozusagen durchgeschleift: */
 /* #include "matrix.h" */
-  /* Speichertechnik fuer Matrix des Gesamtgleichungssystems */
-#ifndef NEW_EQS //WW. 11.2008
+/* Speichertechnik fuer Matrix des Gesamtgleichungssystems */
+#ifndef NEW_EQS                                   //WW. 11.2008
 #include "solver.h"
 #endif
-  /* Iterative GLS-Loeser auf Basis der Speichertechnik aus 'matrix.h' (herkoemmliche Verfahren) */
+/* Iterative GLS-Loeser auf Basis der Speichertechnik aus 'matrix.h' (herkoemmliche Verfahren) */
 
 // C++
 #include <vector>
@@ -39,7 +39,7 @@ using std::vector;
       Mathematische Funktionen
   ########################################################################*/
 
-#ifdef obsolete  //01.2011 WW
+#ifdef obsolete                                   //01.2011 WW
 extern int MGleichDouble (double zahl1, double zahl2 ,double tol);
 /*   MGleichDouble         - Vergleicht zwei double-Zahlen unter
                              Beruecksichtigung einer Fehlertoleranz */
@@ -123,7 +123,7 @@ int MKTFMat2Dr2D(double winkel, double *tmat);
 int MKTF2Dt2D(double *vec1, double dx, double dy, double *vec2);
 int MKTF3Dr2D(double *vec1, double *vec2, double winkel, double *vec);
 void MKTFMat3Dr2D(double *vec1, double *vec2, double winkel, double *mat);
-  /* was ist das alles ??? (msr) */
+/* was ist das alles ??? (msr) */
 
 /*##########################################################################
     Prueffunktion fuer Matrix
@@ -131,36 +131,27 @@ void MKTFMat3Dr2D(double *vec1, double *vec2, double winkel, double *mat);
 /*   MBistDuDiagMat        - Prueft auf Diagonalitaet einer Matrix */
 extern int MBistDuDiagMat ( double *matrix, long m, long n );
 
-
-
-
-
 /*##########################################################################
    Sortierfunktionen
   ########################################################################*/
 extern void MQSort_LongDouble(void *DataSets, const int NumberOfDataSets, const int SiezeOfDataSet);
 extern  int MCompare_for_MQSort_LongDouble( const void *arg1, const void *arg2 );
 
-
 extern double* TensorDrehDich(double* d, double* velo);
 extern int GetPriMatFromTriMat(double* mat1, double* mat2);
 extern int MMultMatMat2(double *mat1, long m1, long n1, double *mat2, double *ergebnis);
-
-
-
 
 /*##########################################################################
    eventuell noch nuetzliche Funktionen,
    die im Moment nicht gebraucht werden
   ########################################################################*/
 extern double *JWDMMultMatSkalar (double *matrix,
-                                  double skal, long m, long n);
-
+double skal, long m, long n);
 
 //extern long IsNodeInsideTriangle (long n1, long n2, long n3, long node);
-extern double CalcTriangleArea (long n1, long n2, long n3);//CC
+                                                  //CC
+extern double CalcTriangleArea (long n1, long n2, long n3);
 //extern long IsNodeInsidePlain (long n1, long n2, long n3, long node);
-
 
 extern int MOmega2D_9N(double *vf, double r, double s);
 extern int MPhi2D_9N(double *vf, double r, double s);
@@ -171,8 +162,7 @@ extern int MOmega3D_20N(double *vf, double r, double s, double t);
 extern int MPhi3D_20N(double *vf, double r, double s, double t);
 extern int MGradOmega3D_20N(double *vf, double r, double s, double t);
 extern int MGradPhi3D_20N(double *vf, double r, double s, double t);
-
-#endif // 05.03.2010. WW //#ifdef obsolete
+#endif                                            // 05.03.2010. WW //#ifdef obsolete
 
 /* Ermittelt min */
 extern double MMin(double, double);
@@ -182,24 +172,24 @@ extern double MMax(double, double);
 extern double MRange(double a, double b, double c);
 double MBtrgVec(double *vec, long n);
 
-#ifndef NON_GEO //   01.2011. WW
-#ifndef NEW_EQS //WW. 05.03.2010
+#ifndef NON_GEO                                   //   01.2011. WW
+#ifndef NEW_EQS                                   //WW. 05.03.2010
 /*##########################################################################
     Funktionen fuer Gleichungsloeser (CG)
   ########################################################################*/
 extern double MVekNorm1 ( double *x, long n );
-  /* Spaltensummennorm */
+/* Spaltensummennorm */
 extern double MVekNorm2 ( double *x, long n );
-  /* Euklidische Norm */
+/* Euklidische Norm */
 //WW extern double MVekNormMax ( double *x, long n );
-  /* Maximumnorm */
- extern void MVekSum ( double *x, double alpha, double *y, long n );
-  /* Fuehrt die Operation x = x + alpha * y durch; n: Vektordimension */
+/* Maximumnorm */
+extern void MVekSum ( double *x, double alpha, double *y, long n );
+/* Fuehrt die Operation x = x + alpha * y durch; n: Vektordimension */
 extern void MVekGle ( double alpha, double *x, double beta, double *y,
-                     double *z, long n );
-  /* Fuehrt die Operation z = alpha * x + beta * y durch; n: Vektordimension */
+double *z, long n );
+/* Fuehrt die Operation z = alpha * x + beta * y durch; n: Vektordimension */
 extern double MVekDist ( double *x, double *y, long n );
-  /* Abstand zwischen zwei Vektoren */
+/* Abstand zwischen zwei Vektoren */
 
 /*##########################################################################
     Bearbeitungsfunktionen
@@ -227,28 +217,25 @@ extern void MKopierMat (double *matq, double *matz, long m, long n);
 /* PS: Finger Weg, Michael!!! --> baeeh */
 /*   MAddSkalVektoren      - Vektoren mit Skalar multiplizieren und dann addieren */
 extern int MAddSkalVektoren(double *v1, double m1, double *v2, double m2, double *vout, long g);
-#endif ///////////////////////////
-
-
-
+#endif                                            ///////////////////////////
 
 //WW: Only unsed in a member function of CFiniteElementStd implementated by MB
 /*   MMultVecVec           - Multiplikation Vektor mit Vektor */
 extern int MMultVecVec ( double *vec1, long gv1,
-                         double *vec2, long gv2,
-                         double *mato, long mo, long no);
+double *vec2, long gv2,
+double *mato, long mo, long no);
 /*   MMultVecMat           - Multiplikation Vektor mit Matrix */
 extern int MMultVecMat (double *vec, long gv,
-                        double *mat, long m, long n,
-                        double *veco, long go);
+double *mat, long m, long n,
+double *veco, long go);
 /*   MMultMatVec           - Multiplikation Matrix mit Vektor */
 extern int MMultMatVec ( double *mat, long m, long n,
-                         double *vec, long g,
-                         double *veco, long r);
+double *vec, long g,
+double *veco, long r);
 /*   MMultMatMat           - Multiplikation Matrix mit Matrix */
 extern int MMultMatMat (double *mat1, long m1, long n1,
-                        double *mat2, long m2, long n2,
-                        double *mato, long mo, long no);
+double *mat2, long m2, long n2,
+double *mato, long mo, long no);
 /*##########################################################################
    Geometrie-Funktionen
   ########################################################################*/
@@ -268,7 +255,6 @@ extern void MNulleMat (double *vec, long m, long n);
 extern double MXPGaussPkt(long grd, long pkt);
 /* Punkte fuer die X Punkt Gauss-Integration */
 extern double MXPGaussFkt(long grd, long pkt);
-
 
 extern void  realCoordTriHQ(double * x, const double *XY, const double *u );
 
@@ -305,16 +291,14 @@ extern void GradShapeFunctionPriHQ(double *dN, const double *u);
 
 extern double pai;
 
-
 //WW Cubic spline
 //WW
 double ComputeDetTri(const double *x1, const double *x2,
-                                const double *x3);
+const double *x3);
 double ComputeDetTex(const double *x1, const double *x2,
-                                const double *x3, const double *x4);
+const double *x3, const double *x4);
 void CrossProduction(const double *x, const double *y, double *z);
 double NormalizeVector(double *x, const int n);
-
 
 extern double MVectorlength(double dx, double dy, double dz);
 extern double PointProduction(double *x, double *y);
@@ -322,9 +306,7 @@ extern void VCopy(double *x, const double *y, const int n);
 
 //NW
 extern double MLangevin(double v);
-
-
-#endif /* gehoert zum Schutz gegen mehrfaches Einfuegen */
+#endif                                            /* gehoert zum Schutz gegen mehrfaches Einfuegen */
 
 /*##########################################################################
     Ende von: ROCKFLOW - Modul mathlib.h

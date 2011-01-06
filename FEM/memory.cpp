@@ -9,22 +9,22 @@
    MEMORY_SHOW_USAGE    : Zeigt aktuellen Bedarf bei jeder Anforderung an
    MEMORY_FLUSH         : Schreibt Protokoll ungepuffert (zeitintensiv!)
    MEMORY_REALLOC       : Ersetzt Realloc durch Malloc und Free und speichert
-   Daten um
-   MEMORY_STR           : Zusaetzliche Uebergabe einer Aufrufkennung bei jedem
-   memory-Aufruf, um Aufrufstellen zu lokalisieren.
-   MEMORY_ALLOCATION_TEST_SUCCESS
-   : Prueft, ob eine Speicheranforderung erfolgreich
-   absolviert wurde
+Daten um
+MEMORY_STR           : Zusaetzliche Uebergabe einer Aufrufkennung bei jedem
+memory-Aufruf, um Aufrufstellen zu lokalisieren.
+MEMORY_ALLOCATION_TEST_SUCCESS
+: Prueft, ob eine Speicheranforderung erfolgreich
+absolviert wurde
 
- Programmaenderungen:
-   12/1994     MSR        Erste Version
-   10/1995     MSR        Erweiterung im Hinblick auf Auswertung der
-   Ausgabedatei und Aufrufstellenlokalisierung
-   5/1997     C.Thorenz  Erste Version des "in-time" Speichertests
-   9/1997     C.Thorenz  Sichereres Handling fuer NULL-Zeiger und
-   Zero-Groesse
-   10/1998    C.Thorenz  Ueberpruefe den Erfolg der Aktionen
-    7/1999    C.Thorenz  Bugfix
+Programmaenderungen:
+12/1994     MSR        Erste Version
+10/1995     MSR        Erweiterung im Hinblick auf Auswertung der
+Ausgabedatei und Aufrufstellenlokalisierung
+5/1997     C.Thorenz  Erste Version des "in-time" Speichertests
+9/1997     C.Thorenz  Sichereres Handling fuer NULL-Zeiger und
+Zero-Groesse
+10/1998    C.Thorenz  Ueberpruefe den Erfolg der Aktionen
+7/1999    C.Thorenz  Bugfix
 
 **************************************************************************/
 
@@ -36,19 +36,20 @@
 
 #ifdef MEMORY_TEST_IN_TIME
 #ifndef MEMORY_STR
-typedef struct {
-    long address;
-    long size;
+typedef struct
+{
+   long address;
+   long size;
 } Memory_Table;
 
 #else
-typedef struct {
-    long address;
-    long size;
-    char *file;
-    int line;
+typedef struct
+{
+   long address;
+   long size;
+   char *file;
+   int line;
 } Memory_Table;
-
 #endif
 
 static Memory_Table *memtab = NULL;
@@ -58,7 +59,6 @@ static long memory_alloced = 0;
 static long memory_max_alloced = 0;
 extern long MemoryTestInTimeSum(void);
 #endif
-
 
 /* Definitionen */
 
@@ -74,24 +74,24 @@ extern long MemoryTestInTimeSum(void);
  Ergebnis:
    0 bei Fehler, sonst 1
 
- Programmaenderungen:
-   12/1994     MSR        Erste Version
-   5/1997     C.Thorenz  Erste Version des "in-time" Speichertests
+Programmaenderungen:
+12/1994     MSR        Erste Version
+5/1997     C.Thorenz  Erste Version des "in-time" Speichertests
 
 **************************************************************************/
 int InitMemoryTest(void)
 {
 
 #ifdef MEMORY_TEST_IN_TIME
-/* Sicherstellen, dass auch beim ersten Aufruf schon Speicher zur
-   Verfuegung steht */
-    memtab = (Memory_Table *) malloc(sizeof(Memory_Table));
-    memory_list_size = 0;
-    memory_alloced = 0;
-    memory_max_alloced = 0;
+   /* Sicherstellen, dass auch beim ersten Aufruf schon Speicher zur
+      Verfuegung steht */
+   memtab = (Memory_Table *) malloc(sizeof(Memory_Table));
+   memory_list_size = 0;
+   memory_alloced = 0;
+   memory_max_alloced = 0;
 #endif
 
-    return 1;
+   return 1;
 }
 
 
@@ -107,41 +107,42 @@ int InitMemoryTest(void)
  Ergebnis:
    - void -
 
- Programmaenderungen:
-   12/1994     MSR        Erste Version
-   5/1997     C.Thorenz  Erste Version des "in-time" Speichertests
+Programmaenderungen:
+12/1994     MSR        Erste Version
+5/1997     C.Thorenz  Erste Version des "in-time" Speichertests
 
 **************************************************************************/
 void StopMemoryTest(void)
 {
 #ifdef MEMORY_TEST_IN_TIME
 #ifdef MEMORY_STR
-    long i;
+   long i;
 #endif
 
-    if (memtab) {
-        printf("\n");
+   if (memtab)
+   {
+      printf("\n");
 #ifdef MEMORY_STR
-        /* Fehler in der Speicherfreigabe anzeigen */
-        i = 0;
-        while (i < memory_list_size) {
-            if (memtab[i].address > 0)
-                printf("Nicht freigegeben wurde: %s Zeile %d\n", memtab[i].file, memtab[i].line);
-            i = i + 1;
-        };
+      /* Fehler in der Speicherfreigabe anzeigen */
+      i = 0;
+      while (i < memory_list_size)
+      {
+         if (memtab[i].address > 0)
+            printf("Nicht freigegeben wurde: %s Zeile %d\n", memtab[i].file, memtab[i].line);
+         i = i + 1;
+      };
 #endif
-        /* Speicher wieder freigeben */
-        free(memtab);
-        memtab = NULL;
+      /* Speicher wieder freigeben */
+      free(memtab);
+      memtab = NULL;
 
-        printf("\nSpeicherbilanz:\n");
-        printf("Nicht freigegeben wurden %ld Bytes.\n", memory_alloced);
-        printf("Maximal allokiert waren %ld Bytes.\n\n", memory_max_alloced);
+      printf("\nSpeicherbilanz:\n");
+      printf("Nicht freigegeben wurden %ld Bytes.\n", memory_alloced);
+      printf("Maximal allokiert waren %ld Bytes.\n\n", memory_max_alloced);
 
-    }
+   }
 #endif
 }
-
 
 
 /**************************************************************************
@@ -155,14 +156,14 @@ void StopMemoryTest(void)
    E char *datei: OPTIONAL, Name der aufrufenden Datei (--> MEMORY_STR)
    E int zeile: OPTIONAL, Zeile, aus der aufgerufen wird (--> MEMORY_STR)
 
- Ergebnis:
-   Zeiger auf den reservierten Speicherbereich (NULL bei Fehler)
+Ergebnis:
+Zeiger auf den reservierten Speicherbereich (NULL bei Fehler)
 
- Programmaenderungen:
-   12/1994     MSR        Erste Version
-   5/1997     C.Thorenz  Erste Version des "in-time" Speichertests
-   9/1997     C.Thorenz  Sichereres Handling fuer NULL-Zeiger und
-   Zero-Groesse
+Programmaenderungen:
+12/1994     MSR        Erste Version
+5/1997     C.Thorenz  Erste Version des "in-time" Speichertests
+9/1997     C.Thorenz  Sichereres Handling fuer NULL-Zeiger und
+Zero-Groesse
 
 **************************************************************************/
 #ifndef MEMORY_STR
@@ -171,66 +172,69 @@ void *Malloc(long bytes)
 void *MAlloc(long bytes, char *datei, int zeile)
 #endif
 {
-    void *address = NULL;
+   void *address = NULL;
 #ifdef MEMORY_TEST_IN_TIME
-    long i;
+   long i;
 #endif
 
 #ifdef MEMORY_MANAGEMENT_NOT_ANSI_COMPLIANT
-    /* Laut ANSI nicht noetig, zur Sicherheit eingefuegt. CT */
-    if (bytes == 0)
-        return NULL;
+   /* Laut ANSI nicht noetig, zur Sicherheit eingefuegt. CT */
+   if (bytes == 0)
+      return NULL;
 #endif
 
-    address = (void *) malloc((size_t) bytes);
+   address = (void *) malloc((size_t) bytes);
 #ifdef MEMORY_SHOW_USAGE
-    printf("address %8x %ld  , ",address,(long)address);
+   printf("address %8x %ld  , ",address,(long)address);
 #endif
 
 #ifdef MEMORY_TEST_IN_TIME
-    if (memtab) {
-        /* Nach freiem Platz in der Speichertabelle suchen */
-        i = 0;
-        while ((i < memory_list_size) && (memtab[i].address > 0))
-            i = i + 1;
-        if (i == memory_list_size) {
-            /* Kein freier Platz wurde gefunden, der Ueberhang wird benutzt.
-               Fuer den naechsten Durchlauf muss ein neuer Platz erzeugt werden. */
-            memory_list_size = memory_list_size + 1;
-            memtab = (Memory_Table *) realloc(memtab, (memory_list_size + 1) * sizeof(Memory_Table));
-            memtab[memory_list_size].address = 0;
-            memtab[memory_list_size].size = 0;
-        }
-        memory_alloced = memory_alloced + bytes;
+   if (memtab)
+   {
+      /* Nach freiem Platz in der Speichertabelle suchen */
+      i = 0;
+      while ((i < memory_list_size) && (memtab[i].address > 0))
+         i = i + 1;
+      if (i == memory_list_size)
+      {
+         /* Kein freier Platz wurde gefunden, der Ueberhang wird benutzt.
+            Fuer den naechsten Durchlauf muss ein neuer Platz erzeugt werden. */
+         memory_list_size = memory_list_size + 1;
+         memtab = (Memory_Table *) realloc(memtab, (memory_list_size + 1) * sizeof(Memory_Table));
+         memtab[memory_list_size].address = 0;
+         memtab[memory_list_size].size = 0;
+      }
+      memory_alloced = memory_alloced + bytes;
 
-        memtab[i].address = (long) address;
-        memtab[i].size = (long) bytes;
+      memtab[i].address = (long) address;
+      memtab[i].size = (long) bytes;
 
 #ifdef MEMORY_STR
-        memtab[i].file = datei;
-        memtab[i].line = zeile;
+      memtab[i].file = datei;
+      memtab[i].line = zeile;
 #endif
-    }
+   }
 #ifdef MEMORY_SHOW_USAGE
 #ifdef MEMORY_STR
-    printf("Malloc aufgerufen von %s Zeile %d.  ", datei, zeile);
+   printf("Malloc aufgerufen von %s Zeile %d.  ", datei, zeile);
 #endif
-    printf("Bytes im Speicher: %ld \n", memory_alloced);
+   printf("Bytes im Speicher: %ld \n", memory_alloced);
 #endif
-    if (memory_alloced > memory_max_alloced)
-        memory_max_alloced = memory_alloced;
+   if (memory_alloced > memory_max_alloced)
+      memory_max_alloced = memory_alloced;
 #endif
 
 #ifdef MEMORY_ALLOCATION_TEST_SUCCESS
-    if ((bytes) && (address == 0)) {    /* Angeforderter Speicher wurde nicht geliefert */
+   if ((bytes) && (address == 0))                 /* Angeforderter Speicher wurde nicht geliefert */
+   {
 #ifdef MEMORY_STR
-        printf("Malloc aufgerufen von %s Zeile %d. \n", datei, zeile);
+      printf("Malloc aufgerufen von %s Zeile %d. \n", datei, zeile);
 #endif
-        printf("Malloc ist fehlgeschlagen!!!\n");
-    }
+      printf("Malloc ist fehlgeschlagen!!!\n");
+   }
 #endif
 
-    return address;
+   return address;
 }
 
 
@@ -263,47 +267,50 @@ void *FRee(void *block, char *datei, int zeile)
 #endif
 {
 #ifdef MEMORY_TEST_IN_TIME
-    long i;
+   long i;
 #endif
 
 #ifdef MEMORY_MANAGEMENT_NOT_ANSI_COMPLIANT
-    /* Laut ANSI nicht noetig, zur Sicherheit eingefuegt. CT */
-    if (block == NULL)
-        return NULL;
+   /* Laut ANSI nicht noetig, zur Sicherheit eingefuegt. CT */
+   if (block == NULL)
+      return NULL;
 #endif
 
 #ifdef MEMORY_TEST_IN_TIME
-    if (memtab) {
-        /* Nach "Block" in der Speichertabelle suchen */
-        i = memory_list_size - 1;
-        /* Von hinten anfangen muesste schneller gehen, da sich die "alten"
-           Addressen (hoffentlich) am Anfang sammeln. */
+   if (memtab)
+   {
+      /* Nach "Block" in der Speichertabelle suchen */
+      i = memory_list_size - 1;
+      /* Von hinten anfangen muesste schneller gehen, da sich die "alten"
+         Addressen (hoffentlich) am Anfang sammeln. */
 
-        while (i >= 0) {
-            if (memtab[i].address == (long) block) {
-                /* Richtiger Block wurde gefunden! Kann freigegeben werden. */
+      while (i >= 0)
+      {
+         if (memtab[i].address == (long) block)
+         {
+            /* Richtiger Block wurde gefunden! Kann freigegeben werden. */
 
-                memory_alloced = memory_alloced - memtab[i].size;
+            memory_alloced = memory_alloced - memtab[i].size;
 
-                memtab[i].address = 0;
-                memtab[i].size = 0;
-                i = 0;
-            }
-            i = i - 1;
-        }
+            memtab[i].address = 0;
+            memtab[i].size = 0;
+            i = 0;
+         }
+         i = i - 1;
+      }
 
 #ifdef MEMORY_SHOW_USAGE
 #ifdef MEMORY_STR
-        printf("Free aufgerufen von %s Zeile %d.  ", datei, zeile);
+      printf("Free aufgerufen von %s Zeile %d.  ", datei, zeile);
 #endif
-        printf("Bytes im Speicher: %ld \n", memory_alloced);
+      printf("Bytes im Speicher: %ld \n", memory_alloced);
 #endif
-    }
+   }
 #endif
 
-    free(block);
+   free(block);
 
-    return NULL;
+   return NULL;
 }
 
 
@@ -337,117 +344,122 @@ void *Realloc(void *block, long bytes)
 void *REalloc(void *block, long bytes, char *datei, int zeile)
 #endif
 {
-    static void *address;
+   static void *address;
 #ifdef MEMORY_REALLOC
-    static char *a;
-    static char *b;
+   static char *a;
+   static char *b;
 #endif
 
 #ifdef MEMORY_TEST_IN_TIME
-    /* Es wird in den folgenden verschiedenen "#ifdef"-Abschnitten
-       sehr wuest mit den Eingangsgroessen hantiert, darum lege ich sie
-       erstmal ab ... */
-    long old_block;
-    long new_bytes;
-    long i;
+   /* Es wird in den folgenden verschiedenen "#ifdef"-Abschnitten
+      sehr wuest mit den Eingangsgroessen hantiert, darum lege ich sie
+      erstmal ab ... */
+   long old_block;
+   long new_bytes;
+   long i;
 
-    old_block = (long) block;
-    new_bytes = (long) bytes;
+   old_block = (long) block;
+   new_bytes = (long) bytes;
 #endif
 
 #ifdef MEMORY_MANAGEMENT_NOT_ANSI_COMPLIANT
-    /* Laut ANSI nicht noetig, zur Sicherheit eingefuegt. CT */
-    if (block == NULL)
+   /* Laut ANSI nicht noetig, zur Sicherheit eingefuegt. CT */
+   if (block == NULL)
 #ifndef MEMORY_STR
-        return Malloc(bytes);
+      return Malloc(bytes);
 #else
-        return MAlloc(bytes, datei, zeile);
+   return MAlloc(bytes, datei, zeile);
 #endif
-    if (bytes == 0)
+   if (bytes == 0)
 #ifndef MEMORY_STR
-        return Free(block);
+      return Free(block);
 #else
-        return FRee(block, datei, zeile);
+   return FRee(block, datei, zeile);
 #endif
 #endif
 
 #ifdef MEMORY_REALLOC
 #ifndef MEMORY_STR
-    address = Malloc(bytes);
+   address = Malloc(bytes);
 #else
-    address = MAlloc(bytes, datei, zeile);
+   address = MAlloc(bytes, datei, zeile);
 #endif
-    if (!(block == NULL)) {
-        a = (char *) address;
-        b = (char *) block;
-        {
-            /* beim Vergroessern wird ein laengerer Bereich gelesen,
-               als eigentlich belegt war !
-               --> nur mit eigener Speichertabelle zu aendern */
-            register long i;
-            i = 0l;
-            while (i < bytes) {
-                a[i] = b[i];
-                i++;
-            }
-        }
-    }
+   if (!(block == NULL))
+   {
+      a = (char *) address;
+      b = (char *) block;
+      {
+         /* beim Vergroessern wird ein laengerer Bereich gelesen,
+            als eigentlich belegt war !
+            --> nur mit eigener Speichertabelle zu aendern */
+         register long i;
+         i = 0l;
+         while (i < bytes)
+         {
+            a[i] = b[i];
+            i++;
+         }
+      }
+   }
 #ifndef MEMORY_STR
-    block = Free(block);
+   block = Free(block);
 #else
-    block = FRee(block, datei, zeile);  /* vorher Free msr 0796 */
+   block = FRee(block, datei, zeile);             /* vorher Free msr 0796 */
 #endif
 #else
-    address = (void *) realloc(block, (size_t) bytes);
+   address = (void *) realloc(block, (size_t) bytes);
 #ifdef MEMORY_SHOW_USAGE
-    printf("address %8x %ld  , ",address,(long)address);
+   printf("address %8x %ld  , ",address,(long)address);
 #endif
 #endif
 
 #ifdef MEMORY_ALLOCATION_TEST_SUCCESS
-    if ((bytes) && (address == 0)) {    /* Angeforderter Speicher wurde nicht geliefert */
+   if ((bytes) && (address == 0))                 /* Angeforderter Speicher wurde nicht geliefert */
+   {
 #ifdef MEMORY_STR
-        printf("Malloc aufgerufen von %s Zeile %d. \n", datei, zeile);
+      printf("Malloc aufgerufen von %s Zeile %d. \n", datei, zeile);
 #endif
-        printf("Malloc ist fehlgeschlagen!!!\n");
-    }
+      printf("Malloc ist fehlgeschlagen!!!\n");
+   }
 #endif
 
 #ifdef MEMORY_TEST_IN_TIME
-    if (memtab) {
-        /* Nach "Block" in der Speichertabelle suchen */
-        i = memory_list_size - 1;
-        /* Von hinten anfangen muesste schneller gehen, da sich die "alten"
-           Addressen (hoffentlich) am Anfang sammeln. */
+   if (memtab)
+   {
+      /* Nach "Block" in der Speichertabelle suchen */
+      i = memory_list_size - 1;
+      /* Von hinten anfangen muesste schneller gehen, da sich die "alten"
+         Addressen (hoffentlich) am Anfang sammeln. */
 
-        while (i >= 0) {
-            if (memtab[i].address == old_block) {
-                /* Richtiger Block wurde gefunden! Kann freigegeben werden. */
-                memory_alloced = memory_alloced - memtab[i].size + new_bytes;
-                memtab[i].address = (long) address;
-                memtab[i].size = (long) new_bytes;
+      while (i >= 0)
+      {
+         if (memtab[i].address == old_block)
+         {
+            /* Richtiger Block wurde gefunden! Kann freigegeben werden. */
+            memory_alloced = memory_alloced - memtab[i].size + new_bytes;
+            memtab[i].address = (long) address;
+            memtab[i].size = (long) new_bytes;
 #ifdef MEMORY_STR
-                memtab[i].file = datei;
-                memtab[i].line = zeile;
+            memtab[i].file = datei;
+            memtab[i].line = zeile;
 #endif
-                i = 0;
-            }
-            i = i - 1;
-        }
+            i = 0;
+         }
+         i = i - 1;
+      }
 #ifdef MEMORY_SHOW_USAGE
 #ifdef MEMORY_STR
-        printf("Realloc aufgerufen von %s Zeile %d.  ", datei, zeile);
+      printf("Realloc aufgerufen von %s Zeile %d.  ", datei, zeile);
 #endif
-        printf("Bytes im Speicher: %ld \n", memory_alloced);
+      printf("Bytes im Speicher: %ld \n", memory_alloced);
 #endif
-        if (memory_alloced > memory_max_alloced)
-            memory_max_alloced = memory_alloced;
-    }
+      if (memory_alloced > memory_max_alloced)
+         memory_max_alloced = memory_alloced;
+   }
 #endif
 
-    return address;
+   return address;
 }
-
 
 
 #ifdef MEMORY_TEST_IN_TIME
@@ -469,18 +481,20 @@ void *REalloc(void *block, long bytes, char *datei, int zeile)
 /**************************************************************************/
 long MemoryTestInTimeSum(void)
 {
-    long i, summe;
+   long i, summe;
 
-    i = 0;
-    summe = 0;
-    if (memtab) {
+   i = 0;
+   summe = 0;
+   if (memtab)
+   {
 
-        while (i < memory_list_size) {
-            summe = summe + memtab[i].size;
-            i = i + 1;
-        }
-    }
-    return summe;
+      while (i < memory_list_size)
+      {
+         summe = summe + memtab[i].size;
+         i = i + 1;
+      }
+   }
+   return summe;
 }
 #endif
 #ifdef MEMORY_TEST_IN_TIME
@@ -502,11 +516,11 @@ long MemoryTestInTimeSum(void)
 /**************************************************************************/
 long MemoryTestInTimeMemory(void)
 {
-    long summe;
+   long summe;
 
-    summe = memory_list_size * sizeof(Memory_Table);
+   summe = memory_list_size * sizeof(Memory_Table);
 
-    return summe;
+   return summe;
 }
 #endif
 
@@ -529,22 +543,24 @@ long MemoryTestInTimeMemory(void)
 /**************************************************************************/
 long MemoryTestInTimeArea(void)
 {
-    long i, min_address = 0, max_address = 0;
+   long i, min_address = 0, max_address = 0;
 
-    i = 0;
-    if (memtab) {
+   i = 0;
+   if (memtab)
+   {
 
-        min_address = memtab[i].address;
-        max_address = memtab[i].address + memtab[i].size;
+      min_address = memtab[i].address;
+      max_address = memtab[i].address + memtab[i].size;
 
-        while (i < memory_list_size) {
-            if (min_address > memtab[i].address)
-                min_address = memtab[i].address;
-            if (max_address < (memtab[i].address + memtab[i].size))
-                max_address = memtab[i].address + memtab[i].size;
-            i = i + 1;
-        }
-    }
-    return (max_address - min_address);
+      while (i < memory_list_size)
+      {
+         if (min_address > memtab[i].address)
+            min_address = memtab[i].address;
+         if (max_address < (memtab[i].address + memtab[i].size))
+            max_address = memtab[i].address + memtab[i].size;
+         i = i + 1;
+      }
+   }
+   return (max_address - min_address);
 }
 #endif

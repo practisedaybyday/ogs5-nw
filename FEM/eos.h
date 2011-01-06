@@ -6,7 +6,6 @@
 
 using namespace std;
 
-
 double pressure (double rho, double T, int fluid);
 // calculates the pressure depending on density and temperature
 //double density (double P, double rho0, double T, double prec, string c);

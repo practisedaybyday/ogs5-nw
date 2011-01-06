@@ -1,6 +1,6 @@
 /**************************************************************************/
 /* ROCKFLOW - Modul: intrface.c
-                                                                          */
+ */
 /* Aufgabe:
    Stellt allgemeine Funktionszeiger bereit.
                                                                           */
@@ -14,13 +14,10 @@
 /* Preprozessor-Definitionen */
 #include "makros.h"
 
-
 /* Header / Andere intern benutzte Module */
 #include "intrface.h"
 
-
 /* Interne (statische) Deklarationen */
-
 
 /* Definitionen */
 
@@ -31,4 +28,3 @@ DoubleFuncLong GetElementPecletNumber;
 
 /*DoubleFuncLong GetElementVolume;*/
 /*VoidFuncLD     SetElementVolume;*/
-

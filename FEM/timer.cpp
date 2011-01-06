@@ -5,13 +5,12 @@
    Funktionen zur Laufzeitermittlung im Testbetrieb.
    Es werden beliebig viele Zeitspeicher bereitgestellt.
 
-
    Programmaenderungen:
    07/1994     MSR        Erste Version
    6/1997      C.Thorenz  Komplett neue zweite Version
-   1/1999      C.Thorenz  Dritte Version: CPU-Zeit auf POSIX-Rechner
-   09/1999     AH         Funktionen: TGetTime und TGetTicksPerSecond global.
-   11/1999     C.Thorenz  Beliebige Anzahl Zeitspeicher
+1/1999      C.Thorenz  Dritte Version: CPU-Zeit auf POSIX-Rechner
+09/1999     AH         Funktionen: TGetTime und TGetTicksPerSecond global.
+11/1999     C.Thorenz  Beliebige Anzahl Zeitspeicher
 **************************************************************************/
 #include "Configure.h"
 
@@ -27,9 +26,9 @@ using namespace std;
 /* Auf POSIX-Rechern ist exaktere Zeitmessung vorhanden */
 #ifdef _POSIX_SOURCE
 #ifndef WIN32
-	#include <unistd.h>
-	#include <sys/times.h>
-#endif // WIN32
+#include <unistd.h>
+#include <sys/times.h>
+#endif                                            // WIN32
 #include <time.h>
 #endif
 
@@ -50,27 +49,29 @@ vector <CClockTime *> ClockTimeVec;
  Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
    E int speicher: Nummer (0..9) des Zeitspeichers
 
- Ergebnis:
-   - void -
+Ergebnis:
+- void -
 
- Programmaenderungen:
-   07/1994     MSR        Erste Version
-   6/1997      C.Thorenz  Komplett neue zweite Version
-   1/1999      C.Thorenz  Dritte Version: CPU-Zeit auf POSIX-Rechner
+Programmaenderungen:
+07/1994     MSR        Erste Version
+6/1997      C.Thorenz  Komplett neue zweite Version
+1/1999      C.Thorenz  Dritte Version: CPU-Zeit auf POSIX-Rechner
 **************************************************************************/
 void TInitTimer(int speicher)
 {
-    /* Ggf. Liste der Speicher erweitern */
-    if (speicher > max_zeitspeicher) {
-       zeit = (long *) Realloc(zeit, sizeof(long)*(speicher+1));
-       running = (int *) Realloc(running, sizeof(int)*(speicher+1));
-       max_zeitspeicher = speicher;
-    }
+   /* Ggf. Liste der Speicher erweitern */
+   if (speicher > max_zeitspeicher)
+   {
+      zeit = (long *) Realloc(zeit, sizeof(long)*(speicher+1));
+      running = (int *) Realloc(running, sizeof(int)*(speicher+1));
+      max_zeitspeicher = speicher;
+   }
 
-    /* Der Timer wird "genullt", aber nicht gestartet. */
-    zeit[speicher] = 0;
-    running[speicher] = 0;
+   /* Der Timer wird "genullt", aber nicht gestartet. */
+   zeit[speicher] = 0;
+   running[speicher] = 0;
 }
+
 
 /*************************************************************************
  ROCKFLOW - Funktion: TStartTimer
@@ -83,26 +84,27 @@ void TInitTimer(int speicher)
    E int speicher: Nummer (0..x) des Zeitspeichers
 
  Ergebnis:
-   - void -
+- void -
 
- Programmaenderungen:
-   07/1994     MSR        Erste Version
-   6/1997      C.Thorenz  Komplett neue zweite Version
-   1/1999      C.Thorenz  Dritte Version: CPU-Zeit auf POSIX-Rechner
+Programmaenderungen:
+07/1994     MSR        Erste Version
+6/1997      C.Thorenz  Komplett neue zweite Version
+1/1999      C.Thorenz  Dritte Version: CPU-Zeit auf POSIX-Rechner
 **************************************************************************/
 void TStartTimer(int speicher)
 {
-    /* Ggf. Liste der Speicher erweitern */
-    if (speicher > max_zeitspeicher) {
-       zeit = (long *) Realloc(zeit, sizeof(long)*(speicher+1));
-       running = (int *) Realloc(running, sizeof(int)*(speicher+1));
-       max_zeitspeicher = speicher;
-    }
+   /* Ggf. Liste der Speicher erweitern */
+   if (speicher > max_zeitspeicher)
+   {
+      zeit = (long *) Realloc(zeit, sizeof(long)*(speicher+1));
+      running = (int *) Realloc(running, sizeof(int)*(speicher+1));
+      max_zeitspeicher = speicher;
+   }
 
-    /* Der Timer wird "genullt" indem die aktuelle Zeit im Speicher abgelegt
-       wird. */
-    zeit[speicher] = TGetTime();
-    running[speicher] = 1;
+   /* Der Timer wird "genullt" indem die aktuelle Zeit im Speicher abgelegt
+      wird. */
+   zeit[speicher] = TGetTime();
+   running[speicher] = 1;
 }
 
 
@@ -117,28 +119,32 @@ void TStartTimer(int speicher)
    E int speicher       : Nummer (0..9) des Zeitspeichers
    R double time_gone_by: Laufzeit
 
- Ergebnis:
-   (CPU-)Zeitdifferenz seit dem letzten Aufruf von TStartTimer
+Ergebnis:
+(CPU-)Zeitdifferenz seit dem letzten Aufruf von TStartTimer
 
- Programmaenderungen:
-   07/1994     MSR        Erste Version
-   6/1997      C.Thorenz  Komplett neue zweite Version
-   1/1999      C.Thorenz  Dritte Version: CPU-Zeit auf POSIX-Rechner
+Programmaenderungen:
+07/1994     MSR        Erste Version
+6/1997      C.Thorenz  Komplett neue zweite Version
+1/1999      C.Thorenz  Dritte Version: CPU-Zeit auf POSIX-Rechner
 **************************************************************************/
 double TGetTimerDouble(int speicher)
 {
-    double time_gone_by;
+   double time_gone_by;
 
-    if (!running[speicher]) {
-        /* Der Timer war angehalten */
-        time_gone_by = (double) zeit[speicher] / (double) TGetTicksPerSecond();
-    } else {
-        /* Der Timer lief */
-        time_gone_by = (double) (TGetTime() - zeit[speicher]) / (double) TGetTicksPerSecond();
-    }
+   if (!running[speicher])
+   {
+      /* Der Timer war angehalten */
+      time_gone_by = (double) zeit[speicher] / (double) TGetTicksPerSecond();
+   }
+   else
+   {
+      /* Der Timer lief */
+      time_gone_by = (double) (TGetTime() - zeit[speicher]) / (double) TGetTicksPerSecond();
+   }
 
-    return time_gone_by;
+   return time_gone_by;
 }
+
 
 /**************************************************************************
  ROCKFLOW - Funktion: TGetTimer
@@ -152,31 +158,31 @@ double TGetTimerDouble(int speicher)
    E int speicher: Nummer (0..9) des Zeitspeichers
    R long time_gone_by: Laufzeit
 
- Ergebnis:
-   (CPU-)Zeitdifferenz seit dem letzten Aufruf von TStartTimer
+Ergebnis:
+(CPU-)Zeitdifferenz seit dem letzten Aufruf von TStartTimer
 
- Programmaenderungen:
-   07/1994     MSR        Erste Version
-   6/1997      C.Thorenz  Komplett neue zweite Version
-   1/1999      C.Thorenz  Dritte Version: CPU-Zeit auf POSIX-Rechner
+Programmaenderungen:
+07/1994     MSR        Erste Version
+6/1997      C.Thorenz  Komplett neue zweite Version
+1/1999      C.Thorenz  Dritte Version: CPU-Zeit auf POSIX-Rechner
 08/2007 OK Test
 **************************************************************************/
 long TGetTimer(int speicher)
 {
-  if(!running) //OK
-    return -1;
-  long time_gone_by;
-  if (!running[speicher]) 
-  {
-    /* Der Timer war angehalten */
-    time_gone_by = (long) (zeit[speicher] / TGetTicksPerSecond());
-  } 
-  else 
-  {
-    /* Der Timer lief */
-    time_gone_by = (long) ((TGetTime() - zeit[speicher]) / TGetTicksPerSecond());
-  }
-  return time_gone_by;
+   if(!running)                                   //OK
+      return -1;
+   long time_gone_by;
+   if (!running[speicher])
+   {
+      /* Der Timer war angehalten */
+      time_gone_by = (long) (zeit[speicher] / TGetTicksPerSecond());
+   }
+   else
+   {
+      /* Der Timer lief */
+      time_gone_by = (long) ((TGetTime() - zeit[speicher]) / TGetTicksPerSecond());
+   }
+   return time_gone_by;
 }
 
 
@@ -191,19 +197,21 @@ long TGetTimer(int speicher)
 
  Ergebnis:
 
- Programmaenderungen:
-   6/1997   C.Thorenz        Erste Version
+Programmaenderungen:
+6/1997   C.Thorenz        Erste Version
 **************************************************************************/
 void TStopTimer(int speicher)
 {
-    /* Im Speicher wird die bisher verstrichene Zeit abgelegt.
-       Wird nur bei laufendem Timer ausgefuehrt. */
+   /* Im Speicher wird die bisher verstrichene Zeit abgelegt.
+      Wird nur bei laufendem Timer ausgefuehrt. */
 
-    if (running[speicher]) {
-        zeit[speicher] = TGetTime() - zeit[speicher];
-        running[speicher] = 0;
-    }
+   if (running[speicher])
+   {
+      zeit[speicher] = TGetTime() - zeit[speicher];
+      running[speicher] = 0;
+   }
 }
+
 
 /**************************************************************************
  ROCKFLOW - Funktion: TRestartTimer
@@ -216,22 +224,22 @@ void TStopTimer(int speicher)
 
  Ergebnis:
 
- Programmaenderungen:
-   6/1997   C.Thorenz        Erste Version
+Programmaenderungen:
+6/1997   C.Thorenz        Erste Version
 
 **************************************************************************/
 void TRestartTimer(int speicher)
 {
-    /* Im Speicher liegt die bisher vom Timer gezaehlte Zeit. Mit der
-       aktuellen Zeit wird die Startzeit errechnet.
-       Wird nur bei angehaltenem Timer ausgefuehrt. */
+   /* Im Speicher liegt die bisher vom Timer gezaehlte Zeit. Mit der
+      aktuellen Zeit wird die Startzeit errechnet.
+      Wird nur bei angehaltenem Timer ausgefuehrt. */
 
-    if (!running[speicher])
+   if (!running[speicher])
 
- {
-        zeit[speicher] = TGetTime() - zeit[speicher];
-        running[speicher] = 1;
-        }
+   {
+      zeit[speicher] = TGetTime() - zeit[speicher];
+      running[speicher] = 1;
+   }
 }
 
 
@@ -246,26 +254,26 @@ void TRestartTimer(int speicher)
  Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
    R long zeit: Zeit
 
- Ergebnis:
+Ergebnis:
 
- Programmaenderungen:
-   1/1999   C.Thorenz        Erste Version
+Programmaenderungen:
+1/1999   C.Thorenz        Erste Version
 
 **************************************************************************/
 long TGetTime(void)
 {
 
-    long runtime;
+   long runtime;
 
 #ifdef _POSIX_SOURCE
-    runtime = clock();
+   runtime = clock();
 #else
-    runtime = (long)time(NULL);
+   runtime = (long)time(NULL);
 #endif
 
-
-    return runtime;
+   return runtime;
 }
+
 
 /**************************************************************************
  ROCKFLOW - Funktion: TGetTicksPerSecond
@@ -279,23 +287,24 @@ long TGetTime(void)
 
  Ergebnis:
 
- Programmaenderungen:
-   1/1999   C.Thorenz        Erste Version
+Programmaenderungen:
+1/1999   C.Thorenz        Erste Version
 
 **************************************************************************/
 long TGetTicksPerSecond(void)
 {
 
-    long TicksPerSecond;
+   long TicksPerSecond;
 
-    TicksPerSecond = 1;
+   TicksPerSecond = 1;
 
 #ifdef _POSIX_SOURCE
-    TicksPerSecond = CLOCKS_PER_SEC;
+   TicksPerSecond = CLOCKS_PER_SEC;
 #endif
 
-    return TicksPerSecond;
+   return TicksPerSecond;
 }
+
 
 /*************************************************************************
  ROCKFLOW - Funktion: TDestroyTimers
@@ -308,14 +317,16 @@ long TGetTicksPerSecond(void)
  Ergebnis:
    - void -
 
- Programmaenderungen:
-   10/1999      C.Thorenz  Erste Version
+Programmaenderungen:
+10/1999      C.Thorenz  Erste Version
 **************************************************************************/
-void TDestroyTimers(void) {
-    /* Speicherfreigaben */
-    zeit = (long *) Free(zeit);
-    running = (int *) Free(running);
+void TDestroyTimers(void)
+{
+   /* Speicherfreigaben */
+   zeit = (long *) Free(zeit);
+   running = (int *) Free(running);
 }
+
 
 /*************************************************************************
  ROCKFLOW - Funktion: ctime_
@@ -329,126 +340,139 @@ void TDestroyTimers(void) {
  Ergebnis:
    - void -
 
- Programmaenderungen:
-   10/2001      C.Thorenz  Erste Version
+Programmaenderungen:
+10/2001      C.Thorenz  Erste Version
 **************************************************************************/
 void ctime_(float *time)
 {
-    *time = (float)TGetTime()/(float)TGetTicksPerSecond();
-} 
+   *time = (float)TGetTime()/(float)TGetTicksPerSecond();
+}
+
 
 //New SB time
 
-
-CClockTime::CClockTime(void){
-	delta_clocktime=0.0;
-	time_flow.clear();
-	time_transport.clear();
-	time_kinreact.clear();
-	time_equireact.clear();
-	start = 0;
-	end=0;
-	time_total_flow = 0.0;
-	time_total_transport = 0.0;
-	time_total_kinreact = 0.0;
-	time_total_equireact = 0.0;
-	time1=0;
-	time2=0;
-	difftime=0;
+CClockTime::CClockTime(void)
+{
+   delta_clocktime=0.0;
+   time_flow.clear();
+   time_transport.clear();
+   time_kinreact.clear();
+   time_equireact.clear();
+   start = 0;
+   end=0;
+   time_total_flow = 0.0;
+   time_total_transport = 0.0;
+   time_total_kinreact = 0.0;
+   time_total_equireact = 0.0;
+   time1=0;
+   time2=0;
+   difftime=0;
 }
 
-CClockTime::~CClockTime(void){
-	delta_clocktime=0.0;
-	time_flow.clear();
-	time_transport.clear();
-	time_kinreact.clear();
-	time_equireact.clear();
+
+CClockTime::~CClockTime(void)
+{
+   delta_clocktime=0.0;
+   time_flow.clear();
+   time_transport.clear();
+   time_kinreact.clear();
+   time_equireact.clear();
 }
 
-void CClockTime::StartTime(void){
-	start = clock();
-	//WW	time1=GetTickCount();
+
+void CClockTime::StartTime(void)
+{
+   start = clock();
+   //WW	time1=GetTickCount();
 }
 
-void CClockTime::StopTime(const string &name){
-char name1;
-name1 = name[0];
 
-end = clock();
-this->delta_clocktime = (double)(end-start)/CLOCKS_PER_SEC;
+void CClockTime::StopTime(const string &name)
+{
+   char name1;
+   name1 = name[0];
 
-//WW time2=GetTickCount();
-difftime=(time2-time1)/1000.0;
-// cout << " ClockTime: " << delta_clocktime << ", TickTime: " << difftime << endl;
+   end = clock();
+   this->delta_clocktime = (double)(end-start)/CLOCKS_PER_SEC;
 
-switch (name1){
-default:
-	break;
-case ('F'):
-	time_flow.push_back(delta_clocktime);
-	time_total_flow += delta_clocktime;
-	break;
-case ('T'):
-	this->time_transport.push_back(delta_clocktime);
-	time_total_transport += delta_clocktime;
-	break;
-case ('K'):
-	this->time_kinreact.push_back(delta_clocktime);
-	time_total_kinreact += delta_clocktime;
-	break;
-case ('E'):
-	this->time_equireact.push_back(delta_clocktime);
-	time_total_equireact += delta_clocktime;
-	break;
-}
-}
+   //WW time2=GetTickCount();
+   difftime=(time2-time1)/1000.0;
+   // cout << " ClockTime: " << delta_clocktime << ", TickTime: " << difftime << endl;
 
-void CClockTime::PrintTimes(void){
-int i,length;
-double tot=0., help=0.0, tot_zeitschritt=0.;
-string outname= "ClockTimes.txt";
-
-cout.precision(2);
-tot = time_total_flow + time_total_transport+time_total_kinreact+time_total_equireact;
-cout << "ClockTimes: " << endl << "Unit   Flow:  Transport:  KinReactions:  EquiReactions:  total: "<< endl;
-cout <<  "[sec] " << setw(6) << time_total_flow << "  " << setw(10) << time_total_transport << "  " << setw(13) << time_total_kinreact << "  " << setw(14) <<  time_total_equireact << "  " << setw(6) << tot << endl;
-cout <<  "[%]   " << setw(6) <<  time_total_flow/tot*100 << "  " <<  setw(10) << time_total_transport/tot*100 << "  " <<  setw(13) << time_total_kinreact/tot*100 << "  " <<  setw(14) << time_total_equireact/tot*100 << "  " <<  setw(6) << tot/tot*100 << endl;
-
-length = (int)this->time_flow.size();
-ofstream out_file (outname.data(),ios::out);
-out_file.precision(6);
-
-out_file << "Flow   Transport  KinReactions  EquiReactions "<< endl;
-for(i=0;i<length;i++) {
- //flow
- help = time_flow[i];
- out_file << help << "  ";
- tot_zeitschritt = help;
- //transport
- if((int)time_transport.size() > i) help = time_transport[i]; else help = 0.0;
- out_file << help << "  ";
- tot_zeitschritt += help;
- //kinetic reactions
- if((int)time_kinreact.size() > i) help = time_kinreact[i]; else help = 0.0;
- out_file << help << "  ";
- tot_zeitschritt += help;
- //equilibrium reactions
- if((int)time_equireact.size() > i) help = time_equireact[i]; else help = 0.0;
- out_file << help << "  ";
- tot_zeitschritt += help;
-
- out_file << tot_zeitschritt << endl;
-}
-out_file << endl;
- out_file << time_total_flow << "  " << time_total_transport << "  " << time_total_kinreact << "  " << time_total_equireact << "  " << endl;
- out_file <<  time_total_flow/tot*100 << "  " << time_total_transport/tot*100 << "  " << time_total_kinreact/tot*100 << "  " << time_total_equireact/tot*100 << "  " << tot/tot*100 << endl;
-out_file.close();
-
+   switch (name1)
+   {
+      default:
+         break;
+      case ('F'):
+         time_flow.push_back(delta_clocktime);
+         time_total_flow += delta_clocktime;
+         break;
+      case ('T'):
+         this->time_transport.push_back(delta_clocktime);
+         time_total_transport += delta_clocktime;
+         break;
+      case ('K'):
+         this->time_kinreact.push_back(delta_clocktime);
+         time_total_kinreact += delta_clocktime;
+         break;
+      case ('E'):
+         this->time_equireact.push_back(delta_clocktime);
+         time_total_equireact += delta_clocktime;
+         break;
+   }
 }
 
-void CreateClockTime(void){
-CClockTime *m_ct=NULL;
-m_ct = new CClockTime();
-m_ct->delta_clocktime=0.0;
-ClockTimeVec.push_back(m_ct);
+
+void CClockTime::PrintTimes(void)
+{
+   int i,length;
+   double tot=0., help=0.0, tot_zeitschritt=0.;
+   string outname= "ClockTimes.txt";
+
+   cout.precision(2);
+   tot = time_total_flow + time_total_transport+time_total_kinreact+time_total_equireact;
+   cout << "ClockTimes: " << endl << "Unit   Flow:  Transport:  KinReactions:  EquiReactions:  total: "<< endl;
+   cout <<  "[sec] " << setw(6) << time_total_flow << "  " << setw(10) << time_total_transport << "  " << setw(13) << time_total_kinreact << "  " << setw(14) <<  time_total_equireact << "  " << setw(6) << tot << endl;
+   cout <<  "[%]   " << setw(6) <<  time_total_flow/tot*100 << "  " <<  setw(10) << time_total_transport/tot*100 << "  " <<  setw(13) << time_total_kinreact/tot*100 << "  " <<  setw(14) << time_total_equireact/tot*100 << "  " <<  setw(6) << tot/tot*100 << endl;
+
+   length = (int)this->time_flow.size();
+   ofstream out_file (outname.data(),ios::out);
+   out_file.precision(6);
+
+   out_file << "Flow   Transport  KinReactions  EquiReactions "<< endl;
+   for(i=0;i<length;i++)
+   {
+      //flow
+      help = time_flow[i];
+      out_file << help << "  ";
+      tot_zeitschritt = help;
+      //transport
+      if((int)time_transport.size() > i) help = time_transport[i]; else help = 0.0;
+      out_file << help << "  ";
+      tot_zeitschritt += help;
+      //kinetic reactions
+      if((int)time_kinreact.size() > i) help = time_kinreact[i]; else help = 0.0;
+      out_file << help << "  ";
+      tot_zeitschritt += help;
+      //equilibrium reactions
+      if((int)time_equireact.size() > i) help = time_equireact[i]; else help = 0.0;
+      out_file << help << "  ";
+      tot_zeitschritt += help;
+
+      out_file << tot_zeitschritt << endl;
+   }
+   out_file << endl;
+   out_file << time_total_flow << "  " << time_total_transport << "  " << time_total_kinreact << "  " << time_total_equireact << "  " << endl;
+   out_file <<  time_total_flow/tot*100 << "  " << time_total_transport/tot*100 << "  " << time_total_kinreact/tot*100 << "  " << time_total_equireact/tot*100 << "  " << tot/tot*100 << endl;
+   out_file.close();
+
+}
+
+
+void CreateClockTime(void)
+{
+   CClockTime *m_ct=NULL;
+   m_ct = new CClockTime();
+   m_ct->delta_clocktime=0.0;
+   ClockTimeVec.push_back(m_ct);
 }

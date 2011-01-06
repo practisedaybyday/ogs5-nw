@@ -15,7 +15,7 @@ last modified:
 
 // FEMLib
 #include "rf_pcs.h"
-#include <sstream>        // for istringstream (ME)
+#include <sstream>                                // for istringstream (ME)
 #include "vtk.h"
 
 // FEM
@@ -28,187 +28,193 @@ using Mesh_Group::CFEMesh;
 
 class COutput: public GeoInfo, public ProcessInfo, public DistributionInfo
 {
-public:
-	COutput();
-	COutput (size_t id);
-	/**
-	 * method initializes process and mesh attributes
-	 */
-	void init ();
-	~COutput(void);
+   public:
+      COutput();
+      COutput (size_t id);
+      /**
+       * method initializes process and mesh attributes
+       */
+      void init ();
+      ~COutput(void);
 
-	/**
-	 * scaling factor for values
-	 * @param amplifier - a double value for scaling data
-	 */
-	void setAmplifier(double amplifier) {
-		out_amplifier = amplifier;
-	}
+      /**
+       * scaling factor for values
+       * @param amplifier - a double value for scaling data
+       */
+      void setAmplifier(double amplifier)
+      {
+         out_amplifier = amplifier;
+      }
 
-	CRFProcess* GetPCS(const std::string&); //OK
-	CRFProcess* GetPCS(); // 09/2010 TF
-	CRFProcess* GetPCS_ELE(const std::string&); //OK
+      CRFProcess* GetPCS(const std::string&);     //OK
+      CRFProcess* GetPCS();                       // 09/2010 TF
+      CRFProcess* GetPCS_ELE(const std::string&); //OK
 
-	/**
-	 * checking the consistency of the output data as specified in the input file
-	 * This means up to now, that data for missing processes is not written.
-	 */
-	void checkConsistency(); // CB (refactored by TF)
+      /**
+       * checking the consistency of the output data as specified in the input file
+       * This means up to now, that data for missing processes is not written.
+       */
+      void checkConsistency();                    // CB (refactored by TF)
 
-	void GetNodeIndexVector(std::vector<int>&); //OK
-	void SetNODFluxAtPLY(); //OK
+      void GetNodeIndexVector(std::vector<int>&); //OK
+      void SetNODFluxAtPLY();                     //OK
 
-	// ELE values
-	const std::vector<std::string>& getElementValueVector () const { return _ele_value_vector; }
-	void GetELEValuesIndexVector(std::vector<int>&); //OK
+      // ELE values
+      const std::vector<std::string>& getElementValueVector () const { return _ele_value_vector; }
+                                                  //OK
+      void GetELEValuesIndexVector(std::vector<int>&);
 
-	/**
-	 *
-	 * @return
-	 */
-	const std::vector<std::string>& getRandomWalkParticleTracingValueVector() const { return _rwpt_value_vector; }
+      /**
+       *
+       * @return
+       */
+      const std::vector<std::string>& getRandomWalkParticleTracingValueVector() const { return _rwpt_value_vector; }
 
-	/**
-	 * ToDo remove after transition to new GEOLIB - REMOVE CANDIDATE
-	 * getGeoName returns a string used as id for geometric entity
-	 * @return the value of attribute geo_name in case of
-	 * geo_type_name == POLYLINE or geo_type_name = SURFACE
-	 * If geo_type_name == POINT the id of the point is returned.
-	 */
-	const std::string& getGeoName() const; // TF 05/2010
+      /**
+       * ToDo remove after transition to new GEOLIB - REMOVE CANDIDATE
+       * getGeoName returns a string used as id for geometric entity
+       * @return the value of attribute geo_name in case of
+       * geo_type_name == POLYLINE or geo_type_name = SURFACE
+       * If geo_type_name == POINT the id of the point is returned.
+       */
+      const std::string& getGeoName() const;      // TF 05/2010
 
-	CFEMesh* getMesh () { return m_msh; } // TF
+      CFEMesh* getMesh ()                         // TF
+      {
+         return m_msh;
+      }
 
-	/**
-	 * read from file stream
-	 * @param in input file stream
-	 * @param geo_obj object of class GEOObjects that manages the geometric entities
-	 * @param unique_name the name of the project to access the right geometric entities
-	 * @return the new position in the stream after reading
-	 */
-	ios::pos_type Read(std::ifstream& in, const GEOLIB::GEOObjects& geo_obj,
-			const std::string& unique_name);
+      /**
+       * read from file stream
+       * @param in input file stream
+       * @param geo_obj object of class GEOObjects that manages the geometric entities
+       * @param unique_name the name of the project to access the right geometric entities
+       * @return the new position in the stream after reading
+       */
+      ios::pos_type Read(std::ifstream& in, const GEOLIB::GEOObjects& geo_obj,
+         const std::string& unique_name);
 
-	void Write(fstream*);
-	// TF not used (at the moment?) REMOVE CANDIDATE
-	//    int GetPointClose(CGLPoint);
-	void WriteTimeCurveData(fstream &);
-	void WriteTimeCurveHeader(fstream &);
-	void NODWriteDOMDataTEC();
-	void WriteTECHeader(fstream&, int, std::string);
-	void WriteTECNodeData(fstream&);
-	void WriteTECElementData(fstream&, int);
-	double NODWritePLYDataTEC(int);
-	void NODWritePNTDataTEC(double, int);
-	void ELEWriteDOMDataTEC();
-	void WriteELEValuesTECHeader(fstream&);
-	void WriteELEValuesTECData(fstream&);
-	void NODWriteSFCDataTEC(int);
-	void NODWriteSFCAverageDataTEC(double, int); //OK
-	void WriteDataVTK(int); //GK
-	void WriteVTKHeader(fstream&, int);
-	void WriteVTKNodeData(fstream&);
-	void WriteVTKElementData(fstream&);
-	void WriteVTKValues(fstream&);
-	void WriteRFO(); //OK
-	void WriteRFOHeader(fstream&); //OK
-	void WriteRFONodes(fstream&); //OK
-	void WriteRFOElements(fstream&); //OK
-	void WriteRFOValues(fstream&); //OK
-	void NODWriteLAYDataTEC(int); //OK
-	void ELEWriteSFC_TEC(); //OK
-	void ELEWriteSFC_TECHeader(fstream&); //OK
-	void ELEWriteSFC_TECData(fstream&); //OK
-	void CalcELEFluxes(); //OK
-	void ELEWritePLY_TEC(); //OK
-	void ELEWritePLY_TECHeader(fstream&); //OK
-	void ELEWritePLY_TECData(fstream&); //OK
-	void TIMValue_TEC(double); //OK
-	double NODFlux(long); //OK
-	void PCONWriteDOMDataTEC(); //MX
-	void WriteTECNodePCONData(fstream &); //MX
+      void Write(fstream*);
+      // TF not used (at the moment?) REMOVE CANDIDATE
+      //    int GetPointClose(CGLPoint);
+      void WriteTimeCurveData(fstream &);
+      void WriteTimeCurveHeader(fstream &);
+      void NODWriteDOMDataTEC();
+      void WriteTECHeader(fstream&, int, std::string);
+      void WriteTECNodeData(fstream&);
+      void WriteTECElementData(fstream&, int);
+      double NODWritePLYDataTEC(int);
+      void NODWritePNTDataTEC(double, int);
+      void ELEWriteDOMDataTEC();
+      void WriteELEValuesTECHeader(fstream&);
+      void WriteELEValuesTECData(fstream&);
+      void NODWriteSFCDataTEC(int);
+      void NODWriteSFCAverageDataTEC(double, int);//OK
+      void WriteDataVTK(int);                     //GK
+      void WriteVTKHeader(fstream&, int);
+      void WriteVTKNodeData(fstream&);
+      void WriteVTKElementData(fstream&);
+      void WriteVTKValues(fstream&);
+      void WriteRFO();                            //OK
+      void WriteRFOHeader(fstream&);              //OK
+      void WriteRFONodes(fstream&);               //OK
+      void WriteRFOElements(fstream&);            //OK
+      void WriteRFOValues(fstream&);              //OK
+      void NODWriteLAYDataTEC(int);               //OK
+      void ELEWriteSFC_TEC();                     //OK
+      void ELEWriteSFC_TECHeader(fstream&);       //OK
+      void ELEWriteSFC_TECData(fstream&);         //OK
+      void CalcELEFluxes();                       //OK
+      void ELEWritePLY_TEC();                     //OK
+      void ELEWritePLY_TECHeader(fstream&);       //OK
+      void ELEWritePLY_TECData(fstream&);         //OK
+      void TIMValue_TEC(double);                  //OK
+      double NODFlux(long);                       //OK
+      void PCONWriteDOMDataTEC();                 //MX
+      void WriteTECNodePCONData(fstream &);       //MX
 
-	void setTime (double time) { _time = time; }
-	/**
-	 * get time returns the value of attribute time
-	 * @return
-	 */
-	double getTime () const { return _time; }
+      void setTime (double time) { _time = time; }
+      /**
+       * get time returns the value of attribute time
+       * @return
+       */
+      double getTime () const { return _time; }
 
-	const std::vector<double>& getTimeVector () const { return time_vector; }
-	std::string& getFileBaseName () { return file_base_name; }
+      const std::vector<double>& getTimeVector () const { return time_vector; }
+      std::string& getFileBaseName () { return file_base_name; }
 
-	size_t getNSteps () const { return nSteps; }
-	/**
-	 * constructs/adds the output file name using geo_name,
-	 * process type, mesh type
-	 * @param fname a reference to the constructed file name
-	 * @param geo switch on/off geo info in file name (default = on)
-	 * @param process switch on/off process info in file name (default = on)
-	 * @param mesh switch on/off mesh info in file name (default = on)
-	 */
-	void addInfoToFileName(std::string& fname, bool geo = true, bool process =
-			true, bool mesh = true) const; // 09/2010 TF
+      size_t getNSteps () const { return nSteps; }
+      /**
+       * constructs/adds the output file name using geo_name,
+       * process type, mesh type
+       * @param fname a reference to the constructed file name
+       * @param geo switch on/off geo info in file name (default = on)
+       * @param process switch on/off process info in file name (default = on)
+       * @param mesh switch on/off mesh info in file name (default = on)
+       */
+      void addInfoToFileName(std::string& fname, bool geo = true, bool process =
+         true, bool mesh = true) const;           // 09/2010 TF
 
-	std::vector<std::string> _nod_value_vector;
-	// MAT values
-	std::vector<std::string> mmp_value_vector; //OK
-	std::vector<std::string> mfp_value_vector; //OK
+      std::vector<std::string> _nod_value_vector;
+      // MAT values
+      std::vector<std::string> mmp_value_vector;  //OK
+      std::vector<std::string> mfp_value_vector;  //OK
 
-	CRFProcess* m_pcs; //OK
+      CRFProcess* m_pcs;                          //OK
 
-//	std::vector<double>& getRWPTTimeVector () { return rwpt_time_vector; }
-	std::vector<double>& getRWPTTimeVector () { return time_vector; }
+      //	std::vector<double>& getRWPTTimeVector () { return rwpt_time_vector; }
+      std::vector<double>& getRWPTTimeVector () { return time_vector; }
 
-private:
-	friend void OUTData(double, int step);
+   private:
+      friend void OUTData(double, int step);
 
-//	std::vector<double> rwpt_time_vector; //JTARON, needed because outputs are treated differently in RWPT
+      //	std::vector<double> rwpt_time_vector; //JTARON, needed because outputs are treated differently in RWPT
 
-	// MSH
-	std::string msh_type_name; //OK
+      // MSH
+      std::string msh_type_name;                  //OK
 
-	// TIM
-	std::string tim_type_name; // STEPS or TIMES ?
-	std::vector<double> time_vector;
-	double _time;
+      // TIM
+      std::string tim_type_name;                  // STEPS or TIMES ?
+      std::vector<double> time_vector;
+      double _time;
 
-	/**
-	 * the position in the global vector out_vector, used only in NODWritePLYDataTEC
-	 */
-	size_t _id;
+      /**
+       * the position in the global vector out_vector, used only in NODWritePLYDataTEC
+       */
+      size_t _id;
 
-	std::string file_base_name;
-	double out_amplifier; //WW to amplify output
-	inline void WriteELEVelocity(iostream &vtk_file); //WW/OK
+      std::string file_base_name;
+      double out_amplifier;                       //WW to amplify output
+                                                  //WW/OK
+      inline void WriteELEVelocity(iostream &vtk_file);
 
-	CFEMesh* m_msh;
-	int nSteps; // After each nSteps, make output
+      CFEMesh* m_msh;
+      int nSteps;                                 // After each nSteps, make output
 
-	CVTK* vtk;
-	// GEO
-	/**
-	 * the id of the geometric object as string REMOVE CANDIDATE
-	 */
-	std::string geo_name; // TF 05/2010
+      CVTK* vtk;
+      // GEO
+      /**
+       * the id of the geometric object as string REMOVE CANDIDATE
+       */
+      std::string geo_name;                       // TF 05/2010
 
-	// File status
-	bool _new_file_opened; //WW
+      // File status
+      bool _new_file_opened;                      //WW
 
-	// DAT
-	/**
-	 * this attribute stores the output format
-	 */
-	std::string dat_type_name;
+      // DAT
+      /**
+       * this attribute stores the output format
+       */
+      std::string dat_type_name;
 
-	// ELE value
-	std::vector<std::string> _ele_value_vector;
+      // ELE value
+      std::vector<std::string> _ele_value_vector;
 
-	// RWPT values
-	std::vector<std::string> _rwpt_value_vector;
+      // RWPT values
+      std::vector<std::string> _rwpt_value_vector;
 
-	// PCON values
-	std::vector<std::string> _pcon_value_vector;
+      // PCON values
+      std::vector<std::string> _pcon_value_vector;
 };
 
 extern std::vector<COutput*> out_vector;
@@ -227,7 +233,6 @@ extern void OUTWrite(std::string);
 extern void OUTData(double, const int step);
 extern void OUTDelete();
 extern COutput* OUTGet(const std::string &);
-extern void OUTCheck(void); // new SB
-extern COutput* OUTGetRWPT(const std::string &); //JTARON
-
+extern void OUTCheck(void);                       // new SB
+extern COutput* OUTGetRWPT(const std::string &);  //JTARON
 #endif

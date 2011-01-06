@@ -1,6 +1,6 @@
 /**************************************************************************/
 /* ROCKFLOW - Modul: makros.h
-                                                                          */
+ */
 /* Aufgabe:
    Diese Datei wird von allen ROCKFLOW-Modulen (*.c - Dateien !!!)
    importiert. Sie enthaelt globale Preprozessor-Definitionen und
@@ -16,15 +16,15 @@
 
 /* Global benoetigte Header */
 #include <stdlib.h>
-  /* Speicherverwaltung */
+/* Speicherverwaltung */
 #include <string.h>
 #include <string>
-  /* Zeichenketten */
+/* Zeichenketten */
 #include <float.h>
-  /* Floating-Point */
+/* Floating-Point */
 
 /* ROCKFLOW-Version */
-// LB: renamed ROCKFLOW_VERSION to OGS_VERSION and moved the #define to 
+// LB: renamed ROCKFLOW_VERSION to OGS_VERSION and moved the #define to
 // Base/Configure.h.in. Please set the version in the top-level CMakeLists.txt!!
 // (see sources/CMakeLists.txt)
 
@@ -49,9 +49,9 @@
 
 /* Definitionen von Makros zur Steuerung der bedingten Compilierung */
 #define SWITCHES
-  /* Ausgabe der Schalterstellungen zu Beginn des Programms */
+/* Ausgabe der Schalterstellungen zu Beginn des Programms */
 #ifdef MSVCPP6
- #pragma warning (disable:4786)
+#pragma warning (disable:4786)
 #endif
 
 /* Laufzeitausgaben */
@@ -63,40 +63,40 @@
 /**********************************************************************/
 /* Speicher */
 
-#ifndef NO_ERROR_CONTROL /* Wird ggf. im Makefile gesetzt */
+#ifndef NO_ERROR_CONTROL                          /* Wird ggf. im Makefile gesetzt */
 #define ERROR_CONTROL
-  /* Fehlertests (Feldgrenzen, Existenz o.ae.), die bei sauberen Netzen und
-     einwandfrei funktionierendem Programm nichts bringen und nur Laufzeit
-     kosten */
+/* Fehlertests (Feldgrenzen, Existenz o.ae.), die bei sauberen Netzen und
+   einwandfrei funktionierendem Programm nichts bringen und nur Laufzeit
+   kosten */
 #endif
 
 #define MEMORY_MANAGEMENT_NOT_ANSI_COMPLIANT
- /*  Bei einigen Compilern werden
-      malloc(0)
-      realloc(NULL,xxx)
-      realloc(xxx,0)
-      free(NULL)
-     nicht ANSI-gerecht gehandhabt. Mit diesem Schalter wird
-     ANSI-Verhalten gewaehrleistet. */
+/*  Bei einigen Compilern werden
+     malloc(0)
+     realloc(NULL,xxx)
+     realloc(xxx,0)
+     free(NULL)
+    nicht ANSI-gerecht gehandhabt. Mit diesem Schalter wird
+    ANSI-Verhalten gewaehrleistet. */
 
 #define noMEMORY_ALLOCATION_TEST_SUCCESS
- /*  Prueft, ob eine Speicheranforderung erfolgreich absolviert wurde */
+/*  Prueft, ob eine Speicheranforderung erfolgreich absolviert wurde */
 
-#define noMEMORY_TEST_IN_TIME /* fuer Versions-Speichertest */
-  /* Erstellt waehrend der Laufzeit eine Bilanz des allockierten
-     und wieder freigegebenen Speichers. Sehr Zeitintensiv !!! */
+#define noMEMORY_TEST_IN_TIME                     /* fuer Versions-Speichertest */
+/* Erstellt waehrend der Laufzeit eine Bilanz des allockierten
+   und wieder freigegebenen Speichers. Sehr Zeitintensiv !!! */
 
-#define noMEMORY_STR /* fuer Versions-Speichertest */
-  /* Gibt Informationen bei Memory-Funktionen zur
-     Aufrufstellenlokalisation. Funktioniert nur zusammen mit
-     MEMORY_TEST_IN_TIME. Sehr Speicherintensiv!!! */
+#define noMEMORY_STR                              /* fuer Versions-Speichertest */
+/* Gibt Informationen bei Memory-Funktionen zur
+   Aufrufstellenlokalisation. Funktioniert nur zusammen mit
+   MEMORY_TEST_IN_TIME. Sehr Speicherintensiv!!! */
 
 #define noMEMORY_SHOW_USAGE
-  /* Gibt bei MEMORY_TEST_IN_TIME Informationen ueber jeden
-     Malloc/Realloc/Free-Vorgang aus. */
+/* Gibt bei MEMORY_TEST_IN_TIME Informationen ueber jeden
+   Malloc/Realloc/Free-Vorgang aus. */
 
 #define noMEMORY_REALLOC
-  /* Ersetzt Realloc durch Malloc und Free und speichert um */
+/* Ersetzt Realloc durch Malloc und Free und speichert um */
 
 #ifndef MEMORY_TEST_IN_TIME
 #ifdef MEMORY_SHOW_USAGE
@@ -117,76 +117,74 @@
    erweiterten Aufruf mit Dateiname und Zeilennummer */
 #endif
 
-
 /**********************************************************************/
 /* Daten */
 
 #define noENABLE_ADT
-   /* Listen, Baeumen, etc sind dann moeglich */
+/* Listen, Baeumen, etc sind dann moeglich */
 
 /* Definitionen der Feldgroessen */
 #define ELEM_START_SIZE     200l
-  /* Minimale Groesse des Elementverzeichnisses */
+/* Minimale Groesse des Elementverzeichnisses */
 #define ELEM_INC_SIZE       1000l
-  /* Bei Erreichen von ELEM_START_SIZE wird das Elementverzeichnis
-     automatisch um ELEM_INC_SIZE vergroessert */
+/* Bei Erreichen von ELEM_START_SIZE wird das Elementverzeichnis
+   automatisch um ELEM_INC_SIZE vergroessert */
 #define NODE_START_SIZE     200l
-  /* Minimale Groesse des Knotenverzeichnisses */
+/* Minimale Groesse des Knotenverzeichnisses */
 #define NODE_INC_SIZE       1000l
-  /* Bei Erreichen von NODE_START_SIZE wird das Knotenverzeichnis
-     automatisch um NODE_INC_SIZE vergroessert */
+/* Bei Erreichen von NODE_START_SIZE wird das Knotenverzeichnis
+   automatisch um NODE_INC_SIZE vergroessert */
 #define EDGE_START_SIZE     0l
-  /* Minimale Groesse des Kantenverzeichnisses */
+/* Minimale Groesse des Kantenverzeichnisses */
 #define EDGE_INC_SIZE       1000l
-  /* Bei Erreichen von EDGE_START_SIZE wird das Kantenverzeichnis
-     automatisch um EDGE_INC_SIZE vergroessert */
+/* Bei Erreichen von EDGE_START_SIZE wird das Kantenverzeichnis
+   automatisch um EDGE_INC_SIZE vergroessert */
 #define PLAIN_START_SIZE     0l
-  /* Minimale Groesse des Flaechenverzeichnisses */
+/* Minimale Groesse des Flaechenverzeichnisses */
 #define PLAIN_INC_SIZE       1000l
-  /* Bei Erreichen von PLAIN_START_SIZE wird das Flaechenverzeichnis
-     automatisch um PLAIN_INC_SIZE vergroessert */
-
+/* Bei Erreichen von PLAIN_START_SIZE wird das Flaechenverzeichnis
+   automatisch um PLAIN_INC_SIZE vergroessert */
 
 /**********************************************************************/
 /* Protokolle */
 
 /* Definitionen der Dateinamen-Erweiterungen */
 #define TEXT_EXTENSION            ".rfd"
-  /* Dateinamen-Erweiterung fuer Text-Eingabedatei */
+/* Dateinamen-Erweiterung fuer Text-Eingabedatei */
 #define PROTOCOL_EXTENSION        ".rfe"
-  /* Dateinamen-Erweiterung fuer Text-Protokolldatei */
+/* Dateinamen-Erweiterung fuer Text-Protokolldatei */
 #define RF_INPUT_EXTENSION        ".rfi"
-  /* Dateinamen-Erweiterung fuer RF-Input-Dateien */
+/* Dateinamen-Erweiterung fuer RF-Input-Dateien */
 #define RF_OUTPUT_EXTENSION       ".rfo"
-  /* Dateinamen-Erweiterung fuer RF-Output-Dateien */
+/* Dateinamen-Erweiterung fuer RF-Output-Dateien */
 #define RF_MESSAGE_EXTENSION      ".msg"
-  /* Dateinamen-Erweiterung fuer RF-Output-Dateien */
+/* Dateinamen-Erweiterung fuer RF-Output-Dateien */
 #define RF_SAVE_EXTENSION1        ".sv1"
-  /* Dateinamen-Erweiterung fuer RF-Sicherheitskopien */
+/* Dateinamen-Erweiterung fuer RF-Sicherheitskopien */
 #define RF_SAVE_EXTENSION2        ".sv2"
-  /* Dateinamen-Erweiterung fuer RF-Sicherheitskopien */
+/* Dateinamen-Erweiterung fuer RF-Sicherheitskopien */
 #define MESH_GENERATOR_EXTENSION    ".rfm"
-  /* Dateinamen-Erweiterung fuer Text-Eingabedatei (Netzgenerator) */
+/* Dateinamen-Erweiterung fuer Text-Eingabedatei (Netzgenerator) */
 #define MESH_GENERATOR_PROTOCOL_EXTENSION  ".rfg"
-  /* Dateinamen-Erweiterung fuer Text-Protokolldatei (Netzgenerator) */
-#define INVERSE_EXTENSION         ".rfv"  /* ah inv */
-  /* Dateinamen-Erweiterung fuer Text-Eingabedatei (Inverses Modellieren) */
+/* Dateinamen-Erweiterung fuer Text-Protokolldatei (Netzgenerator) */
+#define INVERSE_EXTENSION         ".rfv"          /* ah inv */
+/* Dateinamen-Erweiterung fuer Text-Eingabedatei (Inverses Modellieren) */
 #define INVERSE_PROTOCOL_EXTENSION  ".rfp"
-  /* Dateinamen-Erweiterung fuer Text-Eingabedatei (Inverses Modellieren) */
+/* Dateinamen-Erweiterung fuer Text-Eingabedatei (Inverses Modellieren) */
 #define CHEM_REACTION_EXTENSION  ".pqc"
-  /* Dateinamen-Erweiterung fuer Text-Eingabedatei (Chemical reaction) */
+/* Dateinamen-Erweiterung fuer Text-Eingabedatei (Chemical reaction) */
 #define CHEMAPP_REACTION_EXTENSION  ".chm"
 #define TEC_FILE_EXTENSION ".tec"
-#define VTK_FILE_EXTENSION ".vtk" //GK
+#define VTK_FILE_EXTENSION ".vtk"                 //GK
 #define CSV_FILE_EXTENSION ".csv"
 
 #define noTESTFILES
-  /* RFD-File Datenbank testen */
+/* RFD-File Datenbank testen */
 
 #define noEXT_RFD
-  /* Eingabeprotokoll ausfuehrlich kommentieren */
+/* Eingabeprotokoll ausfuehrlich kommentieren */
 #define EXT_RFD_MIN
-  /* Eingabeprotokoll kommentieren, nur gefundene Schluesselworte */
+/* Eingabeprotokoll kommentieren, nur gefundene Schluesselworte */
 #ifdef EXT_RFD
 #undef EXT_RFD_MIN
 #endif
@@ -199,20 +197,20 @@
 /**********************************************************************/
 /* C1.2 Numerik */
 #define noTESTTAYLOR
-  /* nur zu Testzwecken: Taylor-Galerkin-Verfahren nach Donea (1D) */
+/* nur zu Testzwecken: Taylor-Galerkin-Verfahren nach Donea (1D) */
 
 /**********************************************************************/
 /* C1.4 Loeser */
 #define noNULLE_ERGEBNIS
-  /* Nullt den Ergebnisvektor vor Aufruf des Loesers; ansonsten wird er
-     mit den Ergebniswerten des letzten Zeitschritts vorbelegt. */
+/* Nullt den Ergebnisvektor vor Aufruf des Loesers; ansonsten wird er
+   mit den Ergebniswerten des letzten Zeitschritts vorbelegt. */
 #define noSOLVER_SHOW_ERROR
-  /* Anzeigen des Iterationsfehlers */
+/* Anzeigen des Iterationsfehlers */
 #define noSOLVER_SHOW_RESULTS
-  /* Anzeigen der Iterationswerte */
+/* Anzeigen der Iterationswerte */
 #define RELATIVE_EPS
-  /* Abbruchkriterium bei CG-Loesern wird nicht als absolute Schranke
-     benutzt, sondern mit der Norm der rechten Seite multipliziert */
+/* Abbruchkriterium bei CG-Loesern wird nicht als absolute Schranke
+   benutzt, sondern mit der Norm der rechten Seite multipliziert */
 /* Benutzte Normen bei Abbruchkriterien der CG-Loeser mit Speichertechnik:
      MVekNorm1 : Spaltensummennorm
      MVekNorm2 : euklidische Norm
@@ -221,16 +219,16 @@
    werden !!!
 */
 #define VEKNORM_BICG MVekNorm2
-  /* Norm fuer SpBICG-Loeser */
+/* Norm fuer SpBICG-Loeser */
 #define VEKNORM_BICGSTAB MVekNorm2
-  /* Norm fuer SpBICGSTAB-Loeser */
+/* Norm fuer SpBICGSTAB-Loeser */
 #define VEKNORM_QMRCGSTAB MVekNorm2
-  /* Norm fuer SpQMRCGSTAB-Loeser */
+/* Norm fuer SpQMRCGSTAB-Loeser */
 /*ahb*/
 #define VEKNORM_CG MVekNorm2
-  /* Norm fuer SpCG-Loeser */
+/* Norm fuer SpCG-Loeser */
 #define NORM 2
-  /* Norm fuer alle Objekte */
+/* Norm fuer alle Objekte */
 #if NORM == 0
 #define VEKNORM MVekNormMax
 #elif NORM == 1
@@ -243,15 +241,15 @@
 /**********************************************************************/
 /* C1.9 Adaption */
 #define noTEST_ADAPTIV
-  /* nur zu Testzwecken */
+/* nur zu Testzwecken */
 #define noREF_STATIC
-  /* erlaubt an ungefaehrlichen Stellen statische Variablen in Rekursionen.
-     --> refine.c */
+/* erlaubt an ungefaehrlichen Stellen statische Variablen in Rekursionen.
+   --> refine.c */
 
 /**********************************************************************/
 /* C1.10 Grafik */
 #define no__RFGRAF
-   /* Bindet zur Zeit die Grafik-Funktionen unter X11 */
+/* Bindet zur Zeit die Grafik-Funktionen unter X11 */
 
 /**********************************************************************/
 /* PCS / C++ */
@@ -264,7 +262,7 @@
 /**********************************************************************/
 /* Parallelization */
 #define noPARALLEL
-#define noCHEMAPP   //MX
+#define noCHEMAPP                                 //MX
 #define noREACTION_ELEMENT
 #define noSX
 #define noMPI
@@ -330,7 +328,7 @@
 #endif
 */
 #define MAX_ZEILE 2048
-  /* max. Laenge einer UCD-Zeile; bei Leseproblemen vergroessern */
+/* max. Laenge einer UCD-Zeile; bei Leseproblemen vergroessern */
 
 //enum DIS_TYPES {CONSTANT,LINEAR};
 
@@ -339,10 +337,7 @@
 #include "timer.h"
 
 extern std::string FileName;
-extern std::string FilePath; //WW
+extern std::string FilePath;                      //WW
 
-#define RESET_4410 // H2_ELE test
-
+#define RESET_4410                                // H2_ELE test
 #endif
-
-

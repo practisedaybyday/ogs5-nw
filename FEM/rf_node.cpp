@@ -15,22 +15,23 @@ Programing:
 last modification:
 **************************************************************************/
 CNodeValue::CNodeValue() :
-	_node_distype (INVALID_DIS_TYPE)
+_node_distype (INVALID_DIS_TYPE)
 {
-  geo_node_number = -1;
-  msh_node_number = -1;
-  msh_node_number_conditional = -1;
-  node_value = 0.;
-  node_area = 0.;
-  node_parameterA = 0.;
-  node_parameterB = 0.;
-  node_parameterC = 0.;
-  node_parameterD = 0.;
-  node_parameterE = 0.;
-  CurveIndex = -1;
-  conditional = -1;
-  check_me = true; //OK
+   geo_node_number = -1;
+   msh_node_number = -1;
+   msh_node_number_conditional = -1;
+   node_value = 0.;
+   node_area = 0.;
+   node_parameterA = 0.;
+   node_parameterB = 0.;
+   node_parameterC = 0.;
+   node_parameterD = 0.;
+   node_parameterE = 0.;
+   CurveIndex = -1;
+   conditional = -1;
+   check_me = true;                               //OK
 }
+
 
 /**************************************************************************
 FEMLib-Method:
@@ -41,8 +42,9 @@ last modification:
 **************************************************************************/
 CNodeValue::~CNodeValue()
 {
-  check_me = false; //OK
+   check_me = false;                              //OK
 }
+
 
 /**************************************************************************
 FEMLib-Method:
@@ -53,7 +55,7 @@ last modification:
 **************************************************************************/
 void CNodeValue::Write(std::ostream& os) const
 {
-	std::string deli = "  ";
+   std::string deli = "  ";
    os<<geo_node_number<<deli;
    os<<msh_node_number<<deli;
    os<< CurveIndex <<deli;
@@ -73,6 +75,7 @@ void CNodeValue::Write(std::ostream& os) const
    */
    os<<std::endl;
 }
+
 
 /**************************************************************************
 FEMLib-Method:

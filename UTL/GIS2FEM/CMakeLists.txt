@@ -26,13 +26,15 @@ SET(PROJECT_NAME GIS2FEM)
 PROJECT( ${PROJECT_NAME}  )
 INCLUDE( Cmake/base.cmake )
 
-# Create Configure.h
-CONFIGURE_FILE (Cmake/Configure.h.in ${PROJECT_BINARY_DIR}/Configure.h)
-
 # Set build directories
 # Binaries are created in /bin and libraries in /lib
 SET( EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin )
 #SET( LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib )
+IF (MSVC)
+	SET(OGS_EXECUTABLE ${EXECUTABLE_OUTPUT_PATH}/release/g2f)
+ELSE (MSVC)
+	SET(OGS_EXECUTABLE ${EXECUTABLE_OUTPUT_PATH}/g2f)
+ENDIF (MSVC)
 
 # Relative paths are used in the created projects
 # May not work correcty due to the CMake docs
@@ -54,17 +56,20 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 	ENDIF(CMAKE_C_FLAGS_RELEASE) 
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
+# Create Configure.h
+CONFIGURE_FILE (Cmake/Configure.h.in ${PROJECT_BINARY_DIR}/Configure.h)
+
+
 
 SET(OGS_PATH ../..)
-SET(OGS_FEM_PATH ../../FEM)
-SET(OGS_MSH_PATH ../../MSH)
-SET(OGS_GEO_PATH ../../GEO)
-SET(OGS_MATH_PATH ../../MathLib)
-SET(OGS_BASE_PATH ../../Base)
+SET(OGS_FEM_PATH ${OGS_PATH}/FEM)
+SET(OGS_MSH_PATH ${OGS_PATH}/MSH)
+SET(OGS_GEO_PATH ${OGS_PATH}/GEO)
+SET(OGS_MATH_PATH ${OGS_PATH}/MathLib)
+SET(OGS_BASE_PATH ${OGS_PATH}/Base)
 
 INCLUDE_DIRECTORIES(
 .
-${OGS_PATH}
 ${OGS_FEM_PATH}
 ${OGS_MSH_PATH}
 ${OGS_GEO_PATH}
@@ -84,8 +89,9 @@ SET(GIS2FEM_SOURCES main.cpp misc.cpp
    ${OGS_FEM_PATH}/mathlib.cpp ${OGS_FEM_PATH}/matrix_class.cpp ${OGS_MSH_PATH}/msh_core.cpp  ${OGS_MSH_PATH}/msh_edge.cpp
    ${OGS_MSH_PATH}/msh_node.cpp ${OGS_MSH_PATH}/msh_elem.cpp ${OGS_MSH_PATH}/msh_mesh.cpp ${OGS_MSH_PATH}/MSHEnums.cpp
    misc.h 
-   ${OGS_FEM_PATH}/matrix_class.h  ${OGS_FEM_PATH}/fem_ele.h ${OGS_MSH_PATH}/msh_core.h  ${OGS_MSH_PATH}/msh_edge.h
+   ${OGS_FEM_PATH}/matrix_class.h  ${OGS_FEM_PATH}/fem_ele.h  ${OGS_FEM_PATH}/mathlib.h ${OGS_MSH_PATH}/msh_core.h  ${OGS_MSH_PATH}/msh_edge.h
    ${OGS_MSH_PATH}/msh_node.h ${OGS_MSH_PATH}/msh_elem.h ${OGS_MSH_PATH}/msh_mesh.h ${OGS_MSH_PATH}/MSHEnums.h
   )
 
+  
 add_executable(${PROJECT_NAME}  ${GIS2FEM_SOURCES})

@@ -1,4 +1,4 @@
- /**************************************************************************
+/**************************************************************************
 MSHLib - Object:
 Task:
 Programing:
@@ -14,102 +14,115 @@ last modified
 //------------------------------------------------------------------------
 namespace FiniteElement
 {
-  class CElement;
-  class CFiniteElementStd;
-  class CFiniteElementVec;
-  class ElementMatrix;
-  class ElementMatrix_DM;
+   class CElement;
+   class CFiniteElementStd;
+   class CFiniteElementVec;
+   class ElementMatrix;
+   class ElementMatrix_DM;
 }
+
 
 namespace Mesh_Group
 {
 
-//------------------------------------------------------------------------
-class CCore {
-public:
-	// Methods
-	CCore(size_t id);
-	virtual ~CCore() {}
+   //------------------------------------------------------------------------
+   class CCore
+   {
+      public:
+         // Methods
+         CCore(size_t id);
+         virtual ~CCore() {}
 
-	// Get members
-	size_t GetIndex() const { return index; }
+         // Get members
+         size_t GetIndex() const { return index; }
 
-	bool GetMark() const {
-		return mark;
-	}
-	
-    bool GetOrder() const { return quadratic; };
+         bool GetMark() const
+         {
+            return mark;
+         }
 
-	bool Dirichlet() const {
-		if (boundary_type == 'D')
-			return true;
-		else
-			return false;
-	}
+         bool GetOrder() const { return quadratic; };
 
-	bool Neumann() const {
-		if (boundary_type == 'N')
-			return true;
-		else
-			return false;
-	}
+         bool Dirichlet() const
+         {
+            if (boundary_type == 'D')
+               return true;
+            else
+               return false;
+         }
 
-	bool Cauchy() const {
-		if (boundary_type == 'C')
-			return true;
-		else
-			return false;
-	}
+         bool Neumann() const
+         {
+            if (boundary_type == 'N')
+               return true;
+            else
+               return false;
+         }
 
-	bool onBoundary() const {
-		if (boundary_type == 'B')
-			return true;
-		else
-			return false;
-	}
+         bool Cauchy() const
+         {
+            if (boundary_type == 'C')
+               return true;
+            else
+               return false;
+         }
 
-	bool Interior() const {
-		if (boundary_type == 'I')
-			return true;
-		else
-			return false;
-	}
+         bool onBoundary() const
+         {
+            if (boundary_type == 'B')
+               return true;
+            else
+               return false;
+         }
 
-	// Set members
-	void SetBoundaryType(char type) {
-		boundary_type = type;
-	}
+         bool Interior() const
+         {
+            if (boundary_type == 'I')
+               return true;
+            else
+               return false;
+         }
 
-	char GetBoundaryType() const {
-		return boundary_type;
-	} // 18.02.2009. WW
+         // Set members
+         void SetBoundaryType(char type)
+         {
+            boundary_type = type;
+         }
 
-	void SetOrder(bool order) {
-		quadratic = order;
-	}
+         char GetBoundaryType() const
+         {
+            return boundary_type;
+         }                                        // 18.02.2009. WW
 
-	void SetMark(bool state) {
-		mark = state;
-	}
+         void SetOrder(bool order)
+         {
+            quadratic = order;
+         }
 
-	void SetIndex(size_t lvalue) {
-		index = lvalue;
-	} //OK
+         void SetMark(bool state)
+         {
+            mark = state;
+         }
 
-	// Output
-	virtual void Write(std::ostream& os = std::cout) const {
-		os << std::endl;
-	}
+         void SetIndex(size_t lvalue)
+         {
+            index = lvalue;
+         }                                        //OK
 
-protected:
-	// Properties
-	size_t index;
-	char boundary_type;
-	bool mark; // e.g. marked to be refined or active
-	bool quadratic; // higher order
+         // Output
+         virtual void Write(std::ostream& os = std::cout) const
+         {
+            os << std::endl;
+         }
 
-};
+      protected:
+         // Properties
+         size_t index;
+         char boundary_type;
+         bool mark;                               // e.g. marked to be refined or active
+         bool quadratic;                          // higher order
 
-} // namespace Mesh_Group
+   };
 
+}                                                 // namespace Mesh_Group
 #endif

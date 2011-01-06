@@ -1,6 +1,6 @@
 /**************************************************************************/
 /* ROCKFLOW - Modul: break.c
-                                                                          */
+ */
 /* Aufgabe:
    Ctrl-C - Ueberwachung
                                                                           */
@@ -17,7 +17,7 @@ int abbruch = 0;
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: NoBreak
-                                                                          */
+ */
 /* Aufgabe:
    schaltet Ctrl-C aus
                                                                           */
@@ -33,14 +33,14 @@ int abbruch = 0;
 /**************************************************************************/
 void NoBreak ( void )
 {
-  signal(SIGINT,SIG_IGN);
-  abbruch = 0;
+   signal(SIGINT,SIG_IGN);
+   abbruch = 0;
 }
 
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: StandardBreak
-                                                                          */
+ */
 /* Aufgabe:
    schaltet Ctrl-C - interpretation auf Standard
                                                                           */
@@ -56,14 +56,14 @@ void NoBreak ( void )
 /**************************************************************************/
 void StandardBreak ( void )
 {
-  signal(SIGINT,SIG_DFL);
-  abbruch = 0;
+   signal(SIGINT,SIG_DFL);
+   abbruch = 0;
 }
 
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: SaveBreak
-                                                                          */
+ */
 /* Aufgabe:
    speichert eventuelles Ctrl-C in abbruch
                                                                           */
@@ -79,14 +79,14 @@ void StandardBreak ( void )
 /**************************************************************************/
 void SaveBreak ( void )
 {
-  signal(SIGINT,BreakFunc);
-  abbruch = 0;
+   signal(SIGINT,BreakFunc);
+   abbruch = 0;
 }
 
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: ClearBreak
-                                                                          */
+ */
 /* Aufgabe:
    setzt abbruch auf 0
                                                                           */
@@ -102,13 +102,13 @@ void SaveBreak ( void )
 /**************************************************************************/
 void ClearBreak ( void )
 {
-  abbruch = 0;
+   abbruch = 0;
 }
 
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: BreakFunc
-                                                                          */
+ */
 /* Aufgabe:
    setzt abbruch auf 1 bei Ctrl-C
                                                                           */
@@ -124,6 +124,6 @@ void ClearBreak ( void )
 /**************************************************************************/
 void BreakFunc ( int sig )
 {
-  if (sig==SIGINT)
+   if (sig==SIGINT)
       abbruch = 1;
 }
