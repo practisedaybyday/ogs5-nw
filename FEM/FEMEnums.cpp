@@ -448,6 +448,7 @@ DistributionType convertDisType ( const std::string& dis_type_string )
    if (dis_type_string.compare ("CRITICALDEPTH") == 0) return CRITICALDEPTH;
    if (dis_type_string.compare ("GREEN_AMPT") == 0) return GREEN_AMPT;
    if (dis_type_string.compare ("SYSTEM_DEPENDENT") == 0) return SYSTEM_DEPENDENT;
+   if (dis_type_string.compare ("PRECIPITATION") == 0) return PRECIPITATION;
    else
    {
       std::cout << "convertDisType #" << dis_type_string << "# not found" << std::endl;
@@ -473,5 +474,7 @@ std::string convertDisTypeToString ( DistributionType dis_type )
    if (dis_type == CRITICALDEPTH) return "CRITICALDEPTH";
    if (dis_type == GREEN_AMPT) return "GREEN_AMPT";
    if (dis_type == SYSTEM_DEPENDENT) return "SYSTEM_DEPENDENT";
+   if (dis_type == PRECIPITATION) return "PRECIPITATION";
+
    return "INVALID_DIS_TYPE";
 }

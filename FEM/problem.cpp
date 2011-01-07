@@ -1391,6 +1391,7 @@ inline double Problem::GroundWaterFlow()
       cout << "      Calculation of secondary GP values" << endl;
       m_pcs->CalIntegrationPointValue();          //WW
       m_pcs->cal_integration_point_value = true;  //WW Do not extropolate Gauss velocity
+
       if(neighb_grid)
       {
          m_pcs->Extropolation_GaussValue();

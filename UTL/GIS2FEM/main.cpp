@@ -38,19 +38,21 @@ int main(int argc, char* argv[])
   string ofname;
 
  
-  cout<<"\t|================================================| \n"<<endl;
-  cout<<"\t|                                                | \n"<<endl;
-  cout<<"\t|       Generation of OGS Neumman BC             | \n"<<endl;
-  cout<<"\t|              By    WW                          | \n"<<endl;
-  cout<<"\t|                                                | \n"<<endl;
-  cout<<"\t|    Argument:                                   | \n"<<endl;
-  cout<<"\t|      option and file name (no extension)       | \n"<<endl;
-  cout<<"\t|    Option:                                     | \n"<<endl;
-  cout<<"\t|     1. Raster files from GIS                   | \n"<<endl;
-  cout<<"\t|     2. Top surface integration for 3D mesh     | \n"<<endl;
-  cout<<"\t|     3. Convert GIS raster cells into FE mesh   | \n"<<endl;
-  cout<<"\t|                                                | \n"<<endl;
-  cout<<"\t|================================================| \n"<<endl;
+  cout<<"\t|================================================| "<<endl;
+  cout<<"\t|                                                | "<<endl;
+  cout<<"\t|        Toolkit for hydraulic modeling          | "<<endl;
+  cout<<"\t|                                                | "<<endl;
+  cout<<"\t|                 By    WW                       | "<<endl;
+  cout<<"\t|                                                | "<<endl;
+  cout<<"\t|    Argument:                                   | "<<endl;
+  cout<<"\t|      option and file name (no extension)       | "<<endl;
+  cout<<"\t|    Option:                                     | "<<endl;
+  cout<<"\t|     1. Generation OGS Neumman BC from          | "<<endl;
+  cout<<"\t|        raster files of GIS                     | "<<endl;
+  cout<<"\t|     2. Top surface integration for 3D mesh     | "<<endl;
+  cout<<"\t|     3. Convert GIS raster cells into FE mesh   | "<<endl;
+  cout<<"\t|                                                | "<<endl;
+  cout<<"\t|================================================| "<<endl;
   cout<<"\tInput file name: ";
 
   if(argc>1) 

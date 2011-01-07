@@ -929,6 +929,11 @@ string this_pv_name)
       for (long i = 0; i < no_st; i++)
       {
          CSourceTerm *source_term (st_vector[i]);
+
+         // 07.01.2011. WW
+         if(source_term->getProcessDistributionType()==PRECIPITATION)
+            continue;        
+
          if (source_term->isCoupled())
             m_msh_cond = FEMGet(source_term->pcs_type_name_cond);
 

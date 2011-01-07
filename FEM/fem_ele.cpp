@@ -1097,7 +1097,8 @@ namespace FiniteElement
             }
             break;
          default:
-            std::cerr << "CElement::SetExtropoGaussPoints MshElemType not handled" << std::endl;
+            unit[0] = unit[1] = unit[2] = 0.; //07.01.2011. WW 
+            break;
       }
    }
 

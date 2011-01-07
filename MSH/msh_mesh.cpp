@@ -82,6 +82,7 @@ namespace Mesh_Group
       map_counter = 0;                            //21.01.2009 WW
       mapping_check = false;                      //23.01.2009 WW
       has_multi_dim_ele = false;                  //NW
+      top_surface_checked = false;                // 07.06.2010.  WW
    }
 
    // Copy-Constructor for CFEMeshes.
