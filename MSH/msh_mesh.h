@@ -505,7 +505,7 @@ namespace Mesh_Group
 #ifndef NON_GEO                             //  WW
          /// Store boder nodes among different grids.
          vector<GridsTopo*> grid_neighbors;
-         friend class Problem;
+         friend class ::Problem;
 #endif                                      // #ifndef NON_GEO
 
          //
