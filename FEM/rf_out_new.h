@@ -8,14 +8,14 @@ last modified:
 #ifndef rf_out_new_INC
 #define rf_out_new_INC
 // C++ STL
-#include <list>
-#include <fstream>
-#include <string>
-#include <vector>
+//#include <list>
+//#include <fstream>
+//#include <string>
+//#include <vector>
 
 // FEMLib
-#include "rf_pcs.h"
-#include <sstream>                                // for istringstream (ME)
+//#include "rf_pcs.h"
+//#include <sstream>        // for istringstream (ME)
 #include "vtk.h"
 
 // FEM
@@ -23,8 +23,14 @@ last modified:
 #include "ProcessInfo.h"
 #include "DistributionInfo.h"
 
+namespace GEOLIB
+{
+   class GEOObjects;
+}
+
+
 namespace Mesh_Group{class CFEMesh;}
-using Mesh_Group::CFEMesh;
+//using Mesh_Group::CFEMesh;
 
 class COutput: public GeoInfo, public ProcessInfo, public DistributionInfo
 {
@@ -91,47 +97,47 @@ class COutput: public GeoInfo, public ProcessInfo, public DistributionInfo
        * @param unique_name the name of the project to access the right geometric entities
        * @return the new position in the stream after reading
        */
-      ios::pos_type Read(std::ifstream& in, const GEOLIB::GEOObjects& geo_obj,
+      std::ios::pos_type Read(std::ifstream& in, const GEOLIB::GEOObjects& geo_obj,
          const std::string& unique_name);
 
-      void Write(fstream*);
+      void Write(std::fstream*);
       // TF not used (at the moment?) REMOVE CANDIDATE
       //    int GetPointClose(CGLPoint);
-      void WriteTimeCurveData(fstream &);
-      void WriteTimeCurveHeader(fstream &);
+      void WriteTimeCurveData(std::fstream &);
+      void WriteTimeCurveHeader(std::fstream &);
       void NODWriteDOMDataTEC();
-      void WriteTECHeader(fstream&, int, std::string);
-      void WriteTECNodeData(fstream&);
-      void WriteTECElementData(fstream&, int);
+      void WriteTECHeader(std::fstream&, int, std::string);
+      void WriteTECNodeData(std::fstream&);
+      void WriteTECElementData(std::fstream&, int);
       double NODWritePLYDataTEC(int);
       void NODWritePNTDataTEC(double, int);
       void ELEWriteDOMDataTEC();
-      void WriteELEValuesTECHeader(fstream&);
-      void WriteELEValuesTECData(fstream&);
+      void WriteELEValuesTECHeader(std::fstream&);
+      void WriteELEValuesTECData(std::fstream&);
       void NODWriteSFCDataTEC(int);
       void NODWriteSFCAverageDataTEC(double, int);//OK
       void WriteDataVTK(int);                     //GK
-      void WriteVTKHeader(fstream&, int);
-      void WriteVTKNodeData(fstream&);
-      void WriteVTKElementData(fstream&);
-      void WriteVTKValues(fstream&);
+      void WriteVTKHeader(std::fstream&, int);
+      void WriteVTKNodeData(std::fstream&);
+      void WriteVTKElementData(std::fstream&);
+      void WriteVTKValues(std::fstream&);
       void WriteRFO();                            //OK
-      void WriteRFOHeader(fstream&);              //OK
-      void WriteRFONodes(fstream&);               //OK
-      void WriteRFOElements(fstream&);            //OK
-      void WriteRFOValues(fstream&);              //OK
+      void WriteRFOHeader(std::fstream&);         //OK
+      void WriteRFONodes(std::fstream&);          //OK
+      void WriteRFOElements(std::fstream&);       //OK
+      void WriteRFOValues(std::fstream&);         //OK
       void NODWriteLAYDataTEC(int);               //OK
       void ELEWriteSFC_TEC();                     //OK
-      void ELEWriteSFC_TECHeader(fstream&);       //OK
-      void ELEWriteSFC_TECData(fstream&);         //OK
+      void ELEWriteSFC_TECHeader(std::fstream&);  //OK
+      void ELEWriteSFC_TECData(std::fstream&);    //OK
       void CalcELEFluxes();                       //OK
       void ELEWritePLY_TEC();                     //OK
-      void ELEWritePLY_TECHeader(fstream&);       //OK
-      void ELEWritePLY_TECData(fstream&);         //OK
+      void ELEWritePLY_TECHeader(std::fstream&);  //OK
+      void ELEWritePLY_TECData(std::fstream&);    //OK
       void TIMValue_TEC(double);                  //OK
       double NODFlux(long);                       //OK
       void PCONWriteDOMDataTEC();                 //MX
-      void WriteTECNodePCONData(fstream &);       //MX
+      void WriteTECNodePCONData(std::fstream &);  //MX
 
       void setTime (double time) { _time = time; }
       /**
@@ -186,7 +192,7 @@ class COutput: public GeoInfo, public ProcessInfo, public DistributionInfo
       std::string file_base_name;
       double out_amplifier;                       //WW to amplify output
                                                   //WW/OK
-      inline void WriteELEVelocity(iostream &vtk_file);
+      inline void WriteELEVelocity(std::iostream &vtk_file);
 
       CFEMesh* m_msh;
       int nSteps;                                 // After each nSteps, make output

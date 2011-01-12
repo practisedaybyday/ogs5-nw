@@ -13,14 +13,15 @@
             <xs:element name="geoObject">
               <xs:simpleType>
 	        <xs:restriction base="xs:string">
-	          <xs:enumeration value="Point"/>
-	          <xs:enumeration value="Polyline"/>
-	          <xs:enumeration value="Surface"/>
-	          <xs:enumeration value="Volume"/>
+	          <xs:enumeration value="POINT"/>
+	          <xs:enumeration value="POLYLINE"/>
+	          <xs:enumeration value="SURFACE"/>
+	          <xs:enumeration value="VOLUME"/>
+	          <xs:enumeration value="DOMAIN"/>
 	        </xs:restriction>
               </xs:simpleType>
             </xs:element>
-            <xs:element name="name" type="xs:string" />
+            <xs:element name="geoName" type="xs:string" />
           </xs:all>
         </xs:complexType>
       </xs:element>
@@ -28,7 +29,7 @@
         <xs:complexType>
           <xs:all>
             <xs:element name="disName" type="xs:string" />
-            <xs:element name="value" type="xs:decimal" />
+            <xs:element name="disValue" type="xs:decimal" />
           </xs:all>
         </xs:complexType>
       </xs:element>
@@ -53,7 +54,7 @@
   <xs:element name="OpenGeoSysCond">
     <xs:complexType>
       <xs:sequence>
-	<xs:element name="name" type="xs:string" maxOccurs="1" />
+	<xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1" />
 
         <!-- definition of initial conditions -->
 	<xs:element name="InitialConditions" minOccurs="0" maxOccurs="1">

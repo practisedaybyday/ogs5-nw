@@ -49,7 +49,7 @@ B =MXDestroyMatrix();      Speicher wieder freigeben, B =NULL setzen
 
 /* Andere oeffentlich benutzte Module */
 
-#include<iostream>
+//#include<iostream>
 /* Deklarationen */
 
 /* allgemeine Funktionen */
@@ -158,6 +158,4 @@ extern MXPMatTVek MXMatTVek;
 extern MXPVorkond MXVorkond;
 extern MXPCopyToAMG1R5Structure MXCopyToAMG1R5Structure;
 
-using namespace std;
-extern void Write_Matrix_M5(double *b, ostream& os=cout);
 #endif

@@ -2,7 +2,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include <iostream>
-using namespace std;
+
 /* interne Deklarationen */
 void nrerror(char *error_text);
 double *dvector(long nl, long nh);
@@ -67,7 +67,7 @@ void nrerror(const char *error_text)
    fprintf(stderr,"\n \n Numerical Recipes run-time error...\n");
    fprintf(stderr,"%s\n",error_text);
    fprintf(stderr,"...now exiting to system...\n");
-   cout.flush();
+   std::cout.flush();
    exit(1);
 }
 
@@ -84,7 +84,7 @@ double *dvector(long nl, long nh)
    v=(double *)malloc((size_t) ((nh-nl+1+NR_END)*sizeof(double)));
    if (!v)                                        //CB
    {
-      cout <<  "allocation failure in dvector()" << endl;
+      std::cout <<  "allocation failure in dvector()" << std::endl;
       nrerror("allocation failure in dvector()");
    }
    return v-nl+NR_END;
@@ -103,7 +103,7 @@ int *ivector(long nl, long nh)
    v=(int *)malloc((size_t) ((nh-nl+1+NR_END)*sizeof(int)));
    if (!v)                                        //CB
    {
-      cout <<  "allocation failure in ivector()" << endl;
+      std::cout <<  "allocation failure in ivector()" << std::endl;
       nrerror("allocation failure in ivector()");
    }
    return v-nl+NR_END;
@@ -124,7 +124,7 @@ double **dmatrix(long nrl, long nrh, long ncl, long nch)
    m=(double **) malloc((size_t)((nrow+NR_END)*sizeof(double*)));
    if (!m)                                        //CB
    {
-      cout <<  "allocation failure 1 in matrix()" << endl;
+      std::cout <<  "allocation failure 1 in matrix()" << std::endl;
       nrerror("allocation failure 1 in matrix()");
    }
    m += NR_END;
@@ -134,7 +134,7 @@ double **dmatrix(long nrl, long nrh, long ncl, long nch)
    m[nrl]=(double *) malloc((size_t)((nrow*ncol+NR_END)*sizeof(double)));
    if (!m[nrl])                                   //CB
    {
-      cout <<  "allocation failure 2 in matrix()" << endl;
+      std::cout <<  "allocation failure 2 in matrix()" << std::endl;
       nrerror("allocation failure 2 in matrix()");
    }
    m[nrl] += NR_END;
@@ -217,7 +217,7 @@ void ludcmp(double **a, int n, int *indx, double *d)
          if ((temp=fabs(a[i][j])) > big) big=temp;
       if (big == 0.0)                             //CB
       {
-         cout << "Singular matrix in routine ludcmp" << endl;
+         std::cout << "Singular matrix in routine ludcmp" << std::endl;
          nrerror("Singular matrix in routine ludcmp");
       }
       vv[i]=1.0/big;
@@ -508,7 +508,7 @@ void (*derivs)(double, double [], double [], int, long), long node)
          xnew=(*xx)+h;
          if (xnew == (*xx))                       //CB
          {
-            cout << "step size underflow in stifbs" << endl;
+            std::cout << "step size underflow in stifbs" << std::endl;
             nrerror("step size underflow in stifbs");
          }
          simpr(ysav,dydx,dfdx,dfdy,nv,*xx,h,nseq[k],yseq,derivs,node);
@@ -554,7 +554,7 @@ void (*derivs)(double, double [], double [], int, long), long node)
             }
          }
       }
-      //		if (exitflag) cout << " Exitflag > 0 in stifbs of biodegradation" << endl;
+      //		if (exitflag) std::cout << " Exitflag > 0 in stifbs of biodegradation" << std::endl;
       if (exitflag) break;
 
       red=DMIN(red,REDMIN);
@@ -680,13 +680,13 @@ double *, double *, void (*)(double, double [], double [], int, long), long), lo
       }
       if (fabs(hnext) <= hmin)                    //CB
       {
-         cout << "Step size too small in odeint" << endl;
+         std::cout << "Step size too small in odeint" << std::endl;
          nrerror("Step size too small in odeint");
       }
       h=hnext;
    }
                                                   //CB
-   cout << "Too many steps in routine odeint" << endl;
+   std::cout << "Too many steps in routine odeint" << std::endl;
    nrerror("Too many steps in routine odeint");
 }
 

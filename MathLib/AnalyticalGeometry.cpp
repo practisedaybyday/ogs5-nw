@@ -172,6 +172,10 @@ void getNewellPlane(const std::vector<GEOLIB::Point*>& pnts, Vector &plane_norma
 void rotatePointsToXY(Vector &plane_normal,
 		std::vector<GEOLIB::Point*> &pnts)
 {
+	double small_value (sqrt (std::numeric_limits<double>::min()));
+	if (fabs(plane_normal[0]) < small_value && fabs(plane_normal[1]) < small_value)
+		return;
+
 	// *** some frequently used terms ***
 	// sqrt (v_1^2 + v_2^2)
 	double h0(sqrt(plane_normal[0] * plane_normal[0] + plane_normal[1]

@@ -104,9 +104,9 @@ namespace Math_Group
          void SetDomain(CPARDomain *a_dom) {dom = a_dom;}
 #endif
          // Write
-         void Write(ostream &os=cout);
-         void WriteRHS(ostream &os=cout);
-         void WriteX(ostream &os=cout);
+         void Write(std::ostream &os=std::cout);
+         void WriteRHS(std::ostream &os=std::cout);
+         void WriteX(std::ostream &os=std::cout);
 
          CSparseMatrix *A;
          double *b;
@@ -132,10 +132,10 @@ namespace Math_Group
          inline void TransMatrixMulitVec(double *xx,  double *yy);
 #endif
          //
-         string solver_name;
-         string precond_name;
+         std::string solver_name;
+         std::string precond_name;
          // Buffer
-         vector<double *> f_buffer;
+         std::vector<double *> f_buffer;
          // Controls
          int precond_type;
          int solver_type;

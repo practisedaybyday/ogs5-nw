@@ -913,7 +913,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
       bool REACT_GEM::Load_Init_File ( string m_Project_path )
       {
          string init_path;
-         char *buffer;
+         char *buffer (NULL);
 
          init_path = m_Project_path.append ( REACT_GEM::init_input_file_path );
 

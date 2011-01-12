@@ -49,13 +49,20 @@ size_t getOrientation (const GEOLIB::Point* p0, const GEOLIB::Point* p1, const G
  * compute a supporting plane (represented by plane_normal and the value d) for the polygon
  * Let \f$n\f$ be the plane normal and \f$d\f$ a parameter. Then for all points \f$p \in \R^3\f$ of the plane
  * it holds \f$ n \cdot p + d = 0\f$
- * @param ply a closed polyline describing a polygon
+ * @param pnts points of a closed polyline describing a polygon
  * @param plane_normal the normal of the plane the polygon is located in
  * @param d parameter from the plane equation
  */
-void getNewellPlane (GEOLIB::Polyline* ply, Vector &plane_normal, double& d);
+void getNewellPlane (const std::vector<GEOLIB::Point*>& pnts, MATHLIB::Vector &plane_normal, double& d);
 
 //void delaunayTriangulatePolygon(const GEOLIB::Polyline* ply, std::list<GEOLIB::Triangle> &triangles);
+
+/**
+ *
+ * @param plane_normal
+ * @param pnts
+ */
+void rotatePointsToXY(MATHLIB::Vector &plane_normal, std::vector<GEOLIB::Point*> &pnts);
 
 /**
  * simple triangulation of simple polygons - ear clipping algorithm

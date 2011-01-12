@@ -20,6 +20,7 @@ set( SOURCES
 	Station.cpp
 	GEOObjects.cpp
 	PointVec.cpp
+	GeoType.cpp
 )
 
 # Header files

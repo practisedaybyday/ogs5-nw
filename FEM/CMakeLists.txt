@@ -8,6 +8,7 @@ set( SOURCES
 	fem_ele.h
 	fem_ele_std.h
 	fem_ele_vec.h
+	FEMCondition.h
 	FEMEnums.h
 	femlib.h
 	files0.h
@@ -55,6 +56,7 @@ set( SOURCES
 	fem_ele_std.cpp
 	fem_ele_vec.cpp
 	femlib.cpp
+	FEMCondition.cpp
 	FEMEnums.cpp
 	files0.cpp
 	#intrface.cpp

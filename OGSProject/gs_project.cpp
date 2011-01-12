@@ -12,10 +12,10 @@ last modified:
 #include <vector>
 #include <iostream>
 #include <fstream>
-using namespace std;
+
 // FEM-Makros
 #include "makros.h"
-extern string GetLineFromFile1(ifstream*);
+extern std::string GetLineFromFile1(std::ifstream*);
 #include "files0.h"
 // GeoSys-GEOLib
 #include "geo_lib.h"
@@ -34,17 +34,17 @@ extern string GetLineFromFile1(ifstream*);
 #include "rf_mfp_new.h"
 #include "rf_msp_new.h"
 #include "rfmat_cp.h"
-extern bool RFDOpen(string file_name_base);
+extern bool RFDOpen(std:: string file_name_base);
 #include "problem.h"
 
 // FileIO
 #include "OGSIOVer4.h"
 
 //==========================================================================
-vector<CGSProject*>gsp_vector;
-string g_gsp_path;
-string g_gsp_base;
-string gsp_path_base;
+std::vector<CGSProject*>gsp_vector;
+std::string g_gsp_path;
+std::string g_gsp_base;
+std::string gsp_path_base;
 
 /**************************************************************************
 GeoSys-Method:
@@ -237,12 +237,12 @@ last modification:
 void GSPWrite()
 {
   int i;
-  string sub_line;
-  string line_string;
+  std::string sub_line;
+  std::string line_string;
   CGSProject* m_gsp = NULL;
   //========================================================================
   // File handling
-  string gsp_this;
+  std::string gsp_this;
   gsp_this = g_gsp_path + g_gsp_base + GSP_FILE_EXTENSION;
   FILE* gsp_file_this = NULL;
   gsp_file_this = fopen(gsp_this.c_str(),"r");
@@ -250,21 +250,21 @@ void GSPWrite()
     fclose(gsp_file_this);
   gsp_file_this = fopen(gsp_this.c_str(),"w");
   //
-  fstream gsp_file (gsp_this.data(),ios::trunc|ios::out);
+  std::fstream gsp_file (gsp_this.data(),std::ios::trunc|std::ios::out);
   //gsp_file.close();
   //gsp_file.open(gsp_this.data(),ios::trunc|ios::out);
   if (!gsp_file.good())
     return;
-  gsp_file.seekg(0L,ios::beg);
+  gsp_file.seekg(0L,std::ios::beg);
   //========================================================================
-  gsp_file << "#PROJECT_MEMBERS" << endl;
+  gsp_file << "#PROJECT_MEMBERS" << std::endl;
   //========================================================================
   // GSP vector
-  string line;
+  std::string line;
   int gsp_vector_size =(int)gsp_vector.size();
   for(i=0;i<gsp_vector_size;i++){
     m_gsp = gsp_vector[i];
-    gsp_file << m_gsp->base << "." << m_gsp->type << endl;
+    gsp_file << m_gsp->base << "." << m_gsp->type << std::endl;
   }
   gsp_file << "#STOP";
   gsp_file.close();
@@ -277,7 +277,7 @@ Programing:
 01/2005 OK GSP function
 last modification:
 **************************************************************************/
-void GSPRemoveMember(string file_type)
+void GSPRemoveMember(std::string file_type)
 {
   int i;
   CGSProject* m_gsp = NULL;
@@ -300,14 +300,13 @@ Programing:
 01/2005 OK GSP function
 last modification:
 **************************************************************************/
-void GSPAddMember(string base_plus_type)
+void GSPAddMember(std::string base_plus_type)
 {
   CGSProject* m_gsp = NULL;
   // String analysis
-  int pos;
-  pos = (int)base_plus_type.find_last_of('.');
-  string base = base_plus_type.substr(0,pos);
-  string type = base_plus_type.substr(pos+1,string::npos);
+  size_t pos = base_plus_type.find_last_of('.');
+  std::string base = base_plus_type.substr(0,pos);
+  std::string type = base_plus_type.substr(pos+1,std::string::npos);
   // Check GSP member and remove existing GSP type
   GSPRemoveMember(type);
   // Add GSP member
@@ -325,11 +324,11 @@ Programing:
 01/2005 OK Implementation
 last modification:
 **************************************************************************/
-void GSPAddMemberNew(string path_base_orig,string path_base_copy,string type)
+void GSPAddMemberNew(std::string path_base_orig,std::string path_base_copy,std::string type)
 {
   // Copy file to GSP directory
-  string path_base_type_orig = path_base_orig + "." + type;
-  string path_base_type_copy = path_base_copy + "." + type;
+  std::string path_base_type_orig = path_base_orig + "." + type;
+  std::string path_base_type_copy = path_base_copy + "." + type;
   char input_text[MAX_ZEILE];
   FILE *gsp_member_file_orig = NULL;
   FILE *gsp_member_file_copy = NULL;
@@ -349,8 +348,8 @@ void GSPAddMemberNew(string path_base_orig,string path_base_copy,string type)
   int pos;
   char a = '\\';
   pos = (int)path_base_copy.find_last_of(a);
-  string path = path_base_copy.substr(0,pos);
-  string base = path_base_copy.substr(pos+1,string::npos);
+  std::string path = path_base_copy.substr(0,pos);
+  std::string base = path_base_copy.substr(pos+1,std::string::npos);
   CGSProject* m_gsp = NULL;
   m_gsp = new CGSProject;
   m_gsp->path = path;
@@ -370,7 +369,7 @@ last modification:
 void GSPWriteData()
 {
   int i;
-  string path_base;
+  std::string path_base;
   CGSProject* m_gsp = NULL;
   int gsp_vector_size =(int)gsp_vector.size();
   for(i=0;i<gsp_vector_size;i++){
@@ -445,7 +444,7 @@ Programing:
 01/2005 OK GSP function
 last modification:
 **************************************************************************/
-CGSProject* GSPGetMember(string file_type)
+CGSProject* GSPGetMember(std::string file_type)
 {
   int i;
   CGSProject* m_gsp = NULL;
@@ -468,7 +467,7 @@ last modification:
 **************************************************************************/
 bool GSPSimulatorReady()
 {
-  string problem_type = PCSProblemType();
+  std::string problem_type = PCSProblemType();
   if(!GSPGetMember("gli"))
     return false;
   if(!GSPGetMember("rfi")&&(!GSPGetMember("msh")))
@@ -486,22 +485,22 @@ bool GSPSimulatorReady()
   if(!GSPGetMember("mmp"))
     return false;
   //......................................................................
-  if(problem_type.find("LIQUID_FLOW")!=string::npos){
+  if(problem_type.find("LIQUID_FLOW")!=std::string::npos){
     if(!GSPGetMember("mfp"))
       return false;
   }
   //......................................................................
-  if(problem_type.find("DEFORMATION")!=string::npos){
+  if(problem_type.find("DEFORMATION")!=std::string::npos){
     if(!GSPGetMember("msp"))
       return false;
   }
   //......................................................................
-  if(problem_type.find("HEAT")!=string::npos){
+  if(problem_type.find("HEAT")!=std::string::npos){
     if(!GSPGetMember("msp"))
       return false;
   }
   //......................................................................
-  if(problem_type.find("MASS")!=string::npos){
+  if(problem_type.find("MASS")!=std::string::npos){
     if(!GSPGetMember("mcp"))
       return false;
   }

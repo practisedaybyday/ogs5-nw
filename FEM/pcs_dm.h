@@ -22,8 +22,8 @@ typedef struct
    // Local indeces of intersection faces (3D)
    int *InterFace;
 } DisElement;
-extern vector<DisElement*> LastElement;           // Last discontinuity element correponding to SeedElement
-extern vector<long> ElementOnPath;                // Element on the discontinuity path
+extern std::vector<DisElement*> LastElement;      // Last discontinuity element correponding to SeedElement
+extern std::vector<long> ElementOnPath;           // Element on the discontinuity path
 
 namespace FiniteElement {class CFiniteElementVec; }
 using FiniteElement::CFiniteElementVec;

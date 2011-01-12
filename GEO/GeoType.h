@@ -8,7 +8,7 @@
 #ifndef GEOTYPE_H_
 #define GEOTYPE_H_
 
-
+#include <string>
 
 namespace GEOLIB {
 
@@ -17,12 +17,17 @@ namespace GEOLIB {
  */
 
 enum GEOTYPE {
+	INVALID = 0,
 	POINT,   //!< POINT
 	POLYLINE,//!< POLYLINE
 	SURFACE, //!< SURFACE
 	VOLUME,  //!< VOLUME
 	GEODOMAIN//!< GEODOMAIN
 };
+
+GEOTYPE convertGeoType (const std::string& geo_type_str);
+
+std::string convertGeoTypeToString (GEOTYPE geo_type);
 
 } // end namespace GEOLIB
 

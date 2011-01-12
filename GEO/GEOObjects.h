@@ -114,6 +114,17 @@ public:
 	virtual void addPolylineVec(std::vector<Polyline*> *lines,
 			const std::string &name, std::map<std::string,size_t>* ply_names = NULL);
 
+	/** copies the pointers to the polylines in the vector to the PolylineVec with provided name.
+	 * the pointers are managed by the GEOObjects, i.e. GEOObjects will delete the Polylines at the
+	 * end of its scope
+	 * \param polylines the vector with polylines
+	 * \param name the name of the internal PolylineVec
+	 * \return true if the polylines are appended, false if the a PolylineVec with the
+	 * corresponding name does not exist
+	 * */
+	virtual bool appendPolylineVec(const std::vector<Polyline*> &polylines,
+			std::string &name);
+
 	/**
 	 * Returns the polyline vector with the given name.
 	 * */

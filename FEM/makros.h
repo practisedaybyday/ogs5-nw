@@ -15,12 +15,12 @@
 #include "Configure.h"
 
 /* Global benoetigte Header */
-#include <stdlib.h>
+//#include <stdlib.h>
 /* Speicherverwaltung */
-#include <string.h>
+//#include <string.h>
 #include <string>
 /* Zeichenketten */
-#include <float.h>
+//#include <float.h>
 /* Floating-Point */
 
 /* ROCKFLOW-Version */

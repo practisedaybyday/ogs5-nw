@@ -12,7 +12,7 @@ Programing:
 #include "geo_dom.h"
 #include "../FEM/files0.h"
 // Vector
-vector<CGLDomain*> domain_vector;//CC
+std::vector<CGLDomain*> domain_vector;//CC
 
 /**************************************************************************
 GeoLib-Method: CGLDomain::Insert
@@ -32,7 +32,7 @@ Task:
 Programing:
 09/2003 OK Implementation
 **************************************************************************/
-vector<CGLDomain*> CGLDomain::GetVector(void)
+std::vector<CGLDomain*> CGLDomain::GetVector(void)
 {
   return domain_vector;
 }
@@ -127,10 +127,10 @@ Task: select volume instance from list by name
 Programing:
 07/2003 OK Implementation
 **************************************************************************/
-CGLDomain* CGLDomain::Get(string name)
+CGLDomain* CGLDomain::Get(std::string name)
 {
   CGLDomain *m_domain;
-  vector<CGLDomain*>::iterator p = domain_vector.begin();//CC
+  std::vector<CGLDomain*>::iterator p = domain_vector.begin();//CC
   while(p!=domain_vector.end()) {
     m_domain = *p;
     if(m_domain->name==name) { 

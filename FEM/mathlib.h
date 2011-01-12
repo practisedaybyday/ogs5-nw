@@ -15,11 +15,11 @@
 /* Schutz gegen mehrfaches Einfuegen */
 
 #include "Configure.h"
+#include <cstddef>
+
 #define noTESTMATH
 
 /* Andere oeffentlich benutzte Module */
-#include <cmath>
-#include <math.h>
 //#include "test.h"
 
 /* Die Schnittstellen der Gleichungsloeser und der Speichertechnik werden
@@ -32,8 +32,7 @@
 /* Iterative GLS-Loeser auf Basis der Speichertechnik aus 'matrix.h' (herkoemmliche Verfahren) */
 
 // C++
-#include <vector>
-using std::vector;
+//#include <vector>
 
 /*##########################################################################
       Mathematische Funktionen
@@ -298,9 +297,9 @@ const double *x3);
 double ComputeDetTex(const double *x1, const double *x2,
 const double *x3, const double *x4);
 void CrossProduction(const double *x, const double *y, double *z);
-double NormalizeVector(double *x, const int n);
+double NormalizeVector(double *x, size_t n);
 
-extern double MVectorlength(double dx, double dy, double dz);
+//extern double MVectorlength(double dx, double dy, double dz);
 extern double PointProduction(double *x, double *y);
 extern void VCopy(double *x, const double *y, const int n);
 

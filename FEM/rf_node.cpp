@@ -15,7 +15,7 @@ Programing:
 last modification:
 **************************************************************************/
 CNodeValue::CNodeValue() :
-_node_distype (INVALID_DIS_TYPE)
+_node_distype (FiniteElement::INVALID_DIS_TYPE)
 {
    geo_node_number = -1;
    msh_node_number = -1;

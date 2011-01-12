@@ -19,16 +19,16 @@ Einheitsnormalenvektors zur Elementkante (2D)
 **************************************************************************/
 #include "Configure.h"
 
-#include <iostream>
-#include "makros.h"
+//#include <iostream>
+//#include "makros.h"
 #include "femlib.h"
-#include "mathlib.h"
-#include "rf_pcs.h"                               //OK_MOD"
+//#include "mathlib.h"
+//#include "rf_pcs.h" //OK_MOD"
 #ifndef NEW_EQS                                   //WW. 11.2008
-#include "matrix.h"
+//#include "matrix.h"
 #endif
-#include "rf_mmp_new.h"
-#include "rf_num_new.h"
+//#include "rf_mmp_new.h"
+//#include "rf_num_new.h"
 
 /***************************************************************************
    ROCKFLOW - Funktion: MXPGaussPktTri

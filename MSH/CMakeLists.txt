@@ -10,7 +10,7 @@ set( SOURCES
 	msh_node.h
 	MSHEnums.h
 	MeshNodesAlongPolyline.h
-	
+	MeshQualityChecker.h
 	
 	msh_core.cpp
 	msh_edge.cpp
@@ -22,6 +22,7 @@ set( SOURCES
 	msh_node.cpp
 	MSHEnums.cpp
 	MeshNodesAlongPolyline.cpp
+	MeshQualityChecker.cpp
 	#msh_pnt.cpp		# references removed elements.h nodes.h
 	
 	Delaunay/DT_Matrix.h

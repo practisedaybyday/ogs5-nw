@@ -14,11 +14,11 @@ last modified
 #include <iostream>
 using namespace std;
 // FEM-Makros
-#include "files0.h"
+//#include "files0.h"
 #include "mathlib.h"
 #include "files0.h"
 // Base
-#include "StringTools.h"
+//#include "StringTools.h"
 // GEOLIB
 #include "GEOObjects.h"
 // MSHLib
@@ -26,7 +26,8 @@ using namespace std;
 // FEMLib
 #include "rf_ic_new.h"
 #include "rf_pcs.h"
-#include "problem.h"
+#include "rf_node.h"
+//#include "problem.h"
 
 //==========================================================================
 vector<CInitialConditionGroup*>ic_group_vector;
@@ -41,7 +42,7 @@ Programing:
 CInitialCondition::CInitialCondition()
 {
    //  geo_type_name = "DOMAIN";
-   this->setProcessDistributionType(CONSTANT);
+   this->setProcessDistributionType(FiniteElement::CONSTANT);
    // HS: not needed, removed.
    // m_node = new CNodeValue();
    // m_node->node_value = 0.0;
@@ -235,7 +236,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
          in.str(GetLineFromFile1(ic_file));
          std::string tmp;
          in >> tmp;                               // dis_type_name;
-         this->setProcessDistributionType(convertDisType(tmp));
+         this->setProcessDistributionType(FiniteElement::convertDisType(tmp));
 
          // Initial conditions are assign to mesh nodes directly. 17.11.2009. PCH
          /* KR not used in benchmarks
@@ -248,7 +249,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
          */
 
          //if (dis_type_name.find("CONSTANT") != string::npos) {
-         if (this->getProcessDistributionType() == CONSTANT)
+         if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
          {
             m_node = new CNodeValue();
             in >> m_node->node_value;
@@ -256,14 +257,14 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
             m_node = NULL;
          }
          //if (dis_type_name.find("GRADIENT") != string::npos) {
-         if (this->getProcessDistributionType() == GRADIENT)
+         if (this->getProcessDistributionType() == FiniteElement::GRADIENT)
          {
             in >> gradient_ref_depth;             //CMCD
             in >> gradient_ref_depth_value;       //CMCD
             in >> gradient_ref_depth_gradient;    //CMCD
          }
          //if (dis_type_name.find("RESTART") != string::npos) { //OK
-         if (this->getProcessDistributionType() == RESTART)
+         if (this->getProcessDistributionType() == FiniteElement::RESTART)
          {
             in >> rfr_file_name;
          }
@@ -438,7 +439,7 @@ void CInitialCondition::Write(fstream* ic_file) const
    *ic_file << "  ";
    *ic_file << convertDisTypeToString(this->getProcessDistributionType()) << endl;
    *ic_file << " ";
-   if (this->getProcessDistributionType() == CONSTANT)
+   if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
    {
       CNodeValue* m_node = NULL;
       int node_value_vector_size = (int)node_value_vector.size();
@@ -448,7 +449,7 @@ void CInitialCondition::Write(fstream* ic_file) const
          *ic_file << m_node->node_value;
       }
    }
-   else if (this->getProcessDistributionType() == GRADIENT)
+   else if (this->getProcessDistributionType() == FiniteElement::GRADIENT)
    {
       *ic_file << this->gradient_ref_depth << " ";
       *ic_file << this->gradient_ref_depth_value << " ";
@@ -484,6 +485,9 @@ void CInitialCondition::Set(int nidx)
          break;
       case GEOLIB::GEODOMAIN:
          SetDomain(nidx);
+         break;
+      case GEOLIB::INVALID:
+         std::cout << "WARNING: CInitialCondition::Set - invalid geo type" << endl;
          break;
    }
 
@@ -543,7 +547,7 @@ last modification:
 **************************************************************************/
 void CInitialCondition::SetPoint(int nidx)
 {
-   if (m_msh && this->getProcessDistributionType() == CONSTANT)
+   if (m_msh && this->getProcessDistributionType() == FiniteElement::CONSTANT)
    {
       this->getProcess()->SetNodeValue(this->getProcess()->m_msh->GetNODOnPNT(static_cast<const GEOLIB::Point*>(getGeoObj())), nidx,
          node_value_vector[0]->node_value);
@@ -583,6 +587,9 @@ void CInitialCondition::SetEle(int nidx)
       case GEOLIB::GEODOMAIN:
          SetDomainEle(nidx);
          break;
+      case GEOLIB::INVALID:
+         std::cout << "WARNING: CInitialCondition::SetEle - invalid geo type" << endl;
+         break;
    }
 }
 
@@ -596,7 +603,7 @@ Programing:
 **************************************************************************/
 void CInitialCondition::SetPolyline(int nidx)
 {
-   if (this->getProcessDistributionType() == CONSTANT)
+   if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
    {
       //		CGLPolyline* m_polyline = polyline_vector[getGeoObjIdx()];
       //		if (m_polyline) {
@@ -646,7 +653,7 @@ void CInitialCondition::SetSurface(int nidx)
 
       m_msh->GetNODOnSFC(m_sfc, sfc_nod_vector);
 
-      if(this->getProcessDistributionType() == CONSTANT)
+      if(this->getProcessDistributionType() == FiniteElement::CONSTANT)
       {
          for(size_t i = 0; i < sfc_nod_vector.size(); i++)
          {
@@ -655,7 +662,7 @@ void CInitialCondition::SetSurface(int nidx)
          }                                        // end surface nodes
 
       }                                           // end constant
-      else if(this->getProcessDistributionType() == GRADIENT)
+      else if(this->getProcessDistributionType() == FiniteElement::GRADIENT)
       {
          int onZ = m_msh->GetCoordinateFlag()%10;
          long msh_node;
@@ -734,7 +741,7 @@ void CInitialCondition::SetDomain(int nidx)
    k = 0;
    if (SubNumber == 0)
    {
-      if (this->getProcessDistributionType() == CONSTANT)
+      if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
       {
          // if (this->getProcess()->pcs_type_name.compare("OVERLAND_FLOW") == 0)
          if (this->getProcess()->getProcessType() == OVERLAND_FLOW)
@@ -759,7 +766,7 @@ void CInitialCondition::SetDomain(int nidx)
       }
       //--------------------------------------------------------------------
                                                   // Remove unused stuff by WW
-      if (this->getProcessDistributionType() == GRADIENT)
+      if (this->getProcessDistributionType() == FiniteElement::GRADIENT)
       {
                                                   //WW
          for (i = 0; i < m_msh->GetNodesNumber(true); i++)
@@ -775,14 +782,14 @@ void CInitialCondition::SetDomain(int nidx)
          }
       }                                           //if(dis_type_name.find("GRADIENT")!=string::npos)
       //----------------------------------------------------------------------
-      if (this->getProcessDistributionType() == RESTART)
+      if (this->getProcessDistributionType() == FiniteElement::RESTART)
       {
          char line[MAX_ZEILEN];
          int no_var;
          int* var_n;
-         vector<string> var_name;
-         string var_name_string;
-         string sdummy;
+         std::vector<std::string> var_name;
+         std::string var_name_string;
+         std::string sdummy;
          double ddummy, dddummy;
          long ldummy;
          //....................................................................
@@ -793,9 +800,9 @@ void CInitialCondition::SetDomain(int nidx)
                << endl;
             return;
          }
-         ifstream rfr_file;
+         std::ifstream rfr_file;
          CGSProject* m_gsp = GSPGetMember("msh");
-         string restart_file_name;
+         std::string restart_file_name;
          restart_file_name = rfr_file_name;
          if (m_gsp)
             restart_file_name = m_gsp->path + rfr_file_name;
@@ -886,7 +893,7 @@ void CInitialCondition::SetDomain(int nidx)
       {
          GEOGetNodesInMaterialDomain(m_msh, subdom_index[k], nodes_vector,
             quadratic);
-         if (this->getProcessDistributionType() == GRADIENT)
+         if (this->getProcessDistributionType() == FiniteElement::GRADIENT)
          {
             if (k == 0)                           //TEST for DECOVALEX
             {
@@ -1016,7 +1023,7 @@ void CInitialCondition::SetDomainEle(int nidx)
    int k;
    long i;
    double ele_val=0.0;
-   vector<long>ele_vector;
+   std::vector<long>ele_vector;
    CFEMesh* m_msh = this->getProcess()->m_msh;
    k=0;
    CElem* m_ele = NULL;

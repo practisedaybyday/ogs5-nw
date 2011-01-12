@@ -38,6 +38,35 @@ bool ProjectData::removeMesh(const std::string &name)
 	return (result>0);
 }
 
+void ProjectData::addCondition(FEMCondition* cond)
+{
+	_cond_vec.push_back(cond);
+};
+
+const FEMCondition* ProjectData::getCondition(const std::string &name) const
+{
+	for (std::vector<FEMCondition*>::const_iterator it = _cond_vec.begin(); it != _cond_vec.end(); ++it)
+	{
+		if ((*it)->getGeoName().compare(name) == 0) return *it;
+	}
+	std::cout << "Error in ProjectData::getCondition() - No condition found with name \"" << name << "\"..." << std::endl;
+	return NULL;
+}
+
+bool ProjectData::removeCondition(const std::string &name)
+{
+	for (std::vector<FEMCondition*>::iterator it = _cond_vec.begin(); it != _cond_vec.end(); ++it)
+	{
+		if ((*it)->getGeoName().compare(name) == 0)
+		{
+			_cond_vec.erase(it);
+			return true;
+		}
+	}
+	std::cout << "Error in ProjectData::getCondition() - No condition found with name \"" << name << "\"..." << std::endl;
+	return false;
+}
+
 bool ProjectData::isUniqueMeshName(std::string &name)
 {
 	int count(0);

@@ -3,16 +3,17 @@
    Designed and programmed by WW, 06/2004
 */
 
-#include "makros.h"
-#include <iostream>
+//#include "makros.h"
+//#include <iostream>
+#include <cfloat>
 #include "fem_ele_std.h"
 /* Objekte */
-#include "rf_pcs.h"                               //OK_MOD"
+//#include "rf_pcs.h" //OK_MOD"
 #include "mathlib.h"
 #include "femlib.h"
-#include "matrix_class.h"
+//#include "matrix_class.h"
 // MSHLib
-#include "msh_elem.h"
+//#include "msh_elem.h"
 // Will be removed when new FEM is ready
 //=============================================
 FiniteElement::CElement *elem_dm = NULL;
@@ -460,7 +461,7 @@ namespace FiniteElement
             DetJac =  Jacobian[0]*Jacobian[3]-Jacobian[1]*Jacobian[2];
             if (fabs(DetJac)<MKleinsteZahl)
             {
-               cout << "\n*** Jacobian: Det == 0 " << DetJac << "\n";
+               std::cout << "\n*** Jacobian: Det == 0 " << DetJac << "\n";
                abort();
             }
             invJacobian[0] = Jacobian[3];
@@ -507,9 +508,10 @@ namespace FiniteElement
                (Jacobian[1]*Jacobian[5]-Jacobian[4]*Jacobian[2])
                +Jacobian[3]*
                (Jacobian[2]*Jacobian[7]-Jacobian[8]*Jacobian[1]);
+
             if (fabs(DetJac)<MKleinsteZahl)
             {
-               cout << "\n*** Jacobian: DetJac == 0 " << DetJac << "\n";
+               std::cout << "\n*** Jacobian: DetJac == 0 " << DetJac << "\n";
                abort();
             }
             invJacobian[0] =  Jacobian[4]*Jacobian[8]-Jacobian[7]*Jacobian[5];
@@ -1095,6 +1097,8 @@ namespace FiniteElement
                   unit[1] = -0.166666666666667;
                   unit[2] = 1.5;
             }
+            break;
+         case MshElemType::LINE:
             break;
          default:
             unit[0] = unit[1] = unit[2] = 0.; //07.01.2011. WW 

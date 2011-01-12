@@ -8,12 +8,11 @@ last modified
 
 #include <float.h>                                //WW
 #include <cstdlib>                                //WW
+#include <cmath>
 #include "mathlib.h"
 // MSHLib
 //WW#include "MSHEnums.h" // KR 2010/11/15
 #include "msh_elem.h"
-
-using namespace std;
 
 #ifdef RFW_FRACTURE
 #include "rf_pcs.h"                               //RFW 06/2006
@@ -256,7 +255,7 @@ namespace Mesh_Group
    void CElem::FillTransformMatrix()
    {
       if(tranform_tensor) return;
-      int i;
+
       double xx[3];
       double yy[3];
       double zz[3];
@@ -269,18 +268,18 @@ namespace Mesh_Group
          xx[2] = nodes[1]->Z()-nodes[0]->Z();
          NormalizeVector(xx,3);
          // an arbitrary vector
-         for(i=0; i<3; i++)
+         for(size_t i=0; i<3; i++)
             yy[i] = 0.0;
                                                   //WW. 06.11.2007
-         if(fabs(xx[0])>0.0&&fabs(xx[1])+fabs(xx[2])<DBL_MIN)
+         if(fabs(xx[0])>0.0 && fabs(xx[1])+fabs(xx[2]) < DBL_MIN)
             yy[2] = 1.0;
-         else if (fabs(xx[1])>0.0&&fabs(xx[0])+fabs(xx[2])<DBL_MIN)
+         else if (fabs(xx[1])>0.0 && fabs(xx[0])+fabs(xx[2])<DBL_MIN)
             yy[0] = 1.0;
-         else if (fabs(xx[2])>0.0&&fabs(xx[0])+fabs(xx[1])<DBL_MIN)
+         else if (fabs(xx[2])>0.0 && fabs(xx[0])+fabs(xx[1])<DBL_MIN)
             yy[1] = 1.0;
          else
          {
-            for(i=0; i<3; i++)
+            for(size_t i=0; i<3; i++)
             {
                if(fabs(xx[i])>0.0)
                {
@@ -314,7 +313,7 @@ namespace Mesh_Group
          CrossProduction(zz,xx,yy);
          NormalizeVector(yy,3);
       }
-      for(i=0; i<3; i++)
+      for(size_t i=0; i<3; i++)
       {
          (*tranform_tensor)(i,0) = xx[i];
          (*tranform_tensor)(i,1) = yy[i];
@@ -394,7 +393,7 @@ namespace Mesh_Group
    06/2005 WW Implementation
    11/2010 KR moved to MSHEnums.h
    **************************************************************************/
-   string CElem::GetName() const
+   std::string CElem::GetName() const
    {
       return MshElemType2String(geo_type);
    }
@@ -406,7 +405,7 @@ namespace Mesh_Group
    08/2005 WW/OK Extension for GMS/SOL files
    10/2008 OK FEFLOW
    **************************************************************************/
-   void CElem::Read(istream& is, int fileType)
+   void CElem::Read(std::istream& is, int fileType)
    {
       //fileType=0: msh
       //fileType=1: rfi
@@ -418,7 +417,7 @@ namespace Mesh_Group
       //fileType=6: FEFLOW //OK
       //fileType=7: GMSH 2008 Version//TK
       int idummy, et;
-      string buffer, name;
+      std::string buffer, name;
       idummy=et=-1;
       int j=0;
       int gmsh_patch_index;                       //TKOK
@@ -434,7 +433,7 @@ namespace Mesh_Group
             is>>index>>patch_index;
             is>>buffer;
 
-            if(buffer.find("-1")!=string::npos)
+            if(buffer.find("-1")!=std::string::npos)
             {
                grid_adaptation = strtol(buffer.data(),NULL,0);
                is>>name;
@@ -599,7 +598,7 @@ namespace Mesh_Group
             patch_index-=1;
             break;
       }
-      is>>ws;
+      is>>std::ws;
       //----------------------------------------------------------------------
       // Initialize topological properties
       neighbors.resize(nfaces);
@@ -703,16 +702,16 @@ namespace Mesh_Group
    Programing:
    06/2005 WW Implementation
    **************************************************************************/
-   void CElem::WriteIndex(ostream &os) const
+   void CElem::WriteIndex(std::ostream &os) const
    {
       int nn;
-      string deli = "  ";
+      std::string deli = "  ";
       nn = nnodes;
       //Comment for GUI WW if(quadratic) nn = nnodesHQ;
       os<<index<<deli<<patch_index<<deli<<GetName()<<deli;
       for(int i=0; i<nn; i++)
          os<<nodes_index[i]<<deli;
-      os<<endl;
+      os<<std::endl;
    }
    /**************************************************************************
    MSHLib-Method:
@@ -720,9 +719,9 @@ namespace Mesh_Group
    Programing:
    06/2005 WW Implementation
    **************************************************************************/
-   void CElem::WriteIndex_TEC(ostream &os) const
+   void CElem::WriteIndex_TEC(std::ostream &os) const
    {
-      string deli = "  ";
+      std::string deli = "  ";
       if(geo_type==MshElemType::LINE)
          os<<nodes_index[0]+1<<deli<<nodes_index[1]+1<<deli<<nodes_index[1]+1<<deli<<nodes_index[0]+1;
 
@@ -749,18 +748,18 @@ namespace Mesh_Group
    Programing:
    06/2005 WW Implementation
    **************************************************************************/
-   void CElem::WriteAll(ostream &os) const
+   void CElem::WriteAll(std::ostream &os) const
    {
-      string deli = "  ";
+      std::string deli = "  ";
       os<<index<<deli<<patch_index<<deli<<GetName()<<deli;
       //if(index==0)
-      os<<"Index X Y Z: "<<endl;
+      os<<"Index X Y Z: "<<std::endl;
       for(size_t i=0; i<nodes.Size(); i++)
       {
          os<<nodes_index[i]
             <<deli<<nodes[i]->X()
             <<deli<<nodes[i]->Y()
-            <<deli<<nodes[i]->Z()<<endl;
+            <<deli<<nodes[i]->Z()<<std::endl;
       }
 
    }
@@ -770,12 +769,12 @@ namespace Mesh_Group
    Programing:
    06/2005 WW Implementation
    **************************************************************************/
-   void CElem::WriteNeighbors(ostream &os) const
+   void CElem::WriteNeighbors(std::ostream &os) const
    {
-      os<<"Neighbors of "<<index<<endl;
+      os<<"Neighbors of "<<index<<std::endl;
       for(int i=0; i<nfaces; i++)
          neighbors[i]->WriteAll(os);
-      os<<"End neighbors of "<<index<<endl<<endl;;
+      os<<"End neighbors of "<<index<<std::endl<<std::endl;;
    }
 
    /**************************************************************************
@@ -1387,7 +1386,7 @@ namespace Mesh_Group
             x2buff[0] = nodes[nnodes-1]->X()-nodes[0]->X();
             x2buff[1] = nodes[nnodes-1]->Y()-nodes[0]->Y();
             x2buff[2] = nodes[nnodes-1]->Z()-nodes[0]->Z();
-            volume = sqrt(x2buff[0]*x2buff[0]+x2buff[1]*x2buff[1]+x2buff[2]*x2buff[2]) ;
+            volume = sqrt(x2buff[0]*x2buff[0]+x2buff[1]*x2buff[1]+x2buff[2]*x2buff[2]);
                                                   //CMCD kg44 reactivated
             representative_length = sqrt(x2buff[0]*x2buff[0]+x2buff[1]*x2buff[1]+x2buff[2]*x2buff[2]) ;
             break;

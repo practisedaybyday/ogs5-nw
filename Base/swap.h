@@ -3,9 +3,6 @@
 
 namespace BASELIB {
 
-/**
- * swap the content of arg0 and arg1
- */
 template<class T> void swap(T& arg0, T& arg1)
 {
   T temp(arg0);

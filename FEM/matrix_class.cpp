@@ -87,7 +87,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(nrows!=m.Rows()||ncols!=m.Cols())
       {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
+         std::cout<<"\n The sizes of the two matrices are not matched"<<std::endl;
          abort();
       }
 #endif
@@ -102,7 +102,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(nrows!=m.Rows()||ncols!=m.Cols())
       {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
+         std::cout<<"\n The sizes of the two matrices are not matched"<<std::endl;
          abort();
       }
 #endif
@@ -117,7 +117,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(nrows!=m.Rows()||ncols!=m.Cols())        //Assertion, will be removed
       {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
+         std::cout<<"\n The sizes of the two matrices are not matched"<<std::endl;
          abort();
       }
 #endif
@@ -131,7 +131,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(ncols!=m.Rows()&&nrows!=m.Cols())
       {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
+         std::cout<<"\n The sizes of the two matrices are not matched"<<std::endl;
          abort();
       }
 #endif
@@ -151,7 +151,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(ncols!=m.Rows()&&nrows!=m_result.Rows()&&m.Cols()!=m_result.Cols())
       {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
+         std::cout<<"\n The sizes of the two matrices are not matched"<<std::endl;
          abort();
       }
 #endif
@@ -177,7 +177,7 @@ namespace Math_Group
       if(ncols!=m1.Rows()&&m1.Cols()!=m2.Rows()
          &&m2.Cols()!=m_result.Cols()&&nrows!=m_result.Rows())
       {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
+         std::cout<<"\n The sizes of the two matrices are not matched"<<std::endl;
          abort();
       }
 #endif
@@ -213,7 +213,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(i>=nrows||j>=ncols)
       {
-         cout<<"\n Index exceeds the size of the matrix"<<endl;
+         std::cout<<"\n Index exceeds the size of the matrix"<<std::endl;
          abort();
       }
 #endif
@@ -224,7 +224,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(nRows>nrows0||nCols>ncols0)
       {
-         cout<<"\n Given size exceeds the original size of the matrix"<<endl;
+         std::cout<<"\n Given size exceeds the original size of the matrix"<<std::endl;
          abort();
       }
 #endif
@@ -349,7 +349,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(nrows!=m.Rows()||ncols!=m.Cols())
       {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
+         std::cout<<"\n The sizes of the two matrices are not matched"<<endl;
          abort();
       }
 #endif
@@ -372,7 +372,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(nrows!=m.Rows())
       {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
+         std::cout<<"\n The sizes of the two matrices are not matched"<<endl;
          abort();
       }
 #endif
@@ -394,7 +394,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(nrows!=m.Rows())                         //Assertion, will be removed
       {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
+         std::cout<<"\n The sizes of the two matrices are not matched"<<endl;
          abort();
       }
 #endif
@@ -416,7 +416,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(i>=nrows||j>=nrows)
       {
-         cout<<"\n Index exceeds the size of the matrix"<<endl;
+         std::cout<<"\n Index exceeds the size of the matrix"<<std::endl;
          abort();
       }
 #endif
@@ -430,7 +430,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(dim>nrows0)
       {
-         cout<<"\n Given size exceeds the original size of the matrix"<<endl;
+         std::cout<<"\n Given size exceeds the original size of the matrix"<<std::endl;
          abort();
       }
 #endif
@@ -452,7 +452,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if (!entry)
       {
-         cout << "\n*** failed in memory allocatiing for vec ";
+         std::cout << "\n*** failed in memory allocating for vec ";
          abort();
       }
 #endif
@@ -465,7 +465,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if (!entry)
       {
-         cout << "\n*** failed in memory allocatiing for vec ";
+         std::cout << "\n*** failed in memory allocatiing for vec ";
          abort();
       }
 #endif
@@ -492,7 +492,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if (!entry)
       {
-         cout << "\n*** failed in memory allocatiing for vec ";
+         std::cout << "\n*** failed in memory allocatiing for vec ";
          abort();
       }
 #endif
@@ -503,7 +503,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if (size!=v.Size())
       {
-         cout << "\n*** Sizes do not match in vec ";
+         std::cout << "\n*** Sizes do not match in vec ";
          abort();
       }
 #endif
@@ -538,7 +538,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if (!entry)
       {
-         cout << "\n*** failed in memory allocatiing for vec ";
+         std::cout << "\n*** failed in memory allocatiing for vec ";
          abort();
       }
 #endif
@@ -564,7 +564,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if (!entry)
       {
-         cout << "\n*** failed in memory allocatiing for vec ";
+         std::cout << "\n*** failed in memory allocatiing for vec ";
          abort();
       }
 #endif
@@ -582,7 +582,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if (size!=v.Size())
       {
-         cout << "\n*** Sizes do not match in vec ";
+         std::cout << "\n*** Sizes do not match in vec ";
          abort();
       }
 #endif
@@ -595,7 +595,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if (size!=v.Size())
       {
-         cout << "\n*** Sizes do not match in vec ";
+         std::cout << "\n*** Sizes do not match in vec ";
          abort();
       }
 #endif
@@ -762,7 +762,8 @@ namespace Math_Group
       12/2007 WW
    ********************************************************************
    */
-   SparseTable::SparseTable(CPARDomain &m_dom, bool quadratic, bool symm):symmetry(symm)
+   SparseTable::SparseTable(CPARDomain &m_dom, bool quadratic, bool symm) :
+   symmetry(symm)
    {
       long i=0, j=0, ii=0, jj=0;
       long lbuff0=0, lbuff1=0;
@@ -776,7 +777,8 @@ namespace Math_Group
 
       if(symmetry)
       {
-         vector<long> conc;
+         std::vector<long> conc;
+
          for(i=0; i<rows; i++)
          {
             row_index_mapping_n2o[i] = i;
@@ -884,24 +886,24 @@ namespace Math_Group
       08/2007 WW
       10/2007 WW
    ********************************************************************/
-   void SparseTable::Write(ostream &os)
+   void SparseTable::Write(std::ostream &os)
    {
       long i, k, counter=0;
-      os<<"Symmetry: "<<symmetry<<endl;
-      os<<"\n*** Row index  "<<endl;
+      os<<"Symmetry: "<<symmetry<<std::endl;
+      os<<"\n*** Row index  "<<std::endl;
       for (i = 0; i < rows; i++)
-         os<<row_index_mapping_n2o[i]+1<<endl;
+         os<<row_index_mapping_n2o[i]+1<<std::endl;
       //
-      os<<"\n*** Sparse entry  "<<endl;
+      os<<"\n*** Sparse entry  "<<std::endl;
       for (k = 0; k < max_columns; k++)
       {
-         os<<"--Column: "<<k+1<<endl;
+         os<<"--Column: "<<k+1<<std::endl;
          for (i = 0; i < num_column_entries[k]; i++)
          {
-            os<<entry_column[counter]+1<<endl;;
+            os<<entry_column[counter]+1<<std::endl;;
             counter++;
          }
-         os<<endl;
+         os<<std::endl;
       }
    }
 
@@ -1028,7 +1030,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(i>=rows*DOF||j>=rows*DOF)
       {
-         cout<<"\n Index exceeds the dimension of the matrix"<<endl;
+         std::cout<<"\n Index exceeds the dimension of the matrix"<<std::endl;
          abort();
       }
 #endif
@@ -1112,7 +1114,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(size!=m.DOF*m.DOF*m.size_entry_column)
       {
-         cout<<"\n Dimensions of two matrices do not match"<<endl;
+         std::cout<<"\n Dimensions of two matrices do not match"<<std::endl;
          abort();
       }
 #endif
@@ -1131,7 +1133,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(size!=m.DOF*m.DOF*m.size_entry_column)
       {
-         cout<<"\n Dimensions of two matrices do not match"<<endl;
+         std::cout<<"\n Dimensions of two matrices do not match"<<std::endl;
          abort();
       }
 #endif
@@ -1150,7 +1152,7 @@ namespace Math_Group
 #ifdef gDEBUG
       if(size!=m.DOF*m.DOF*m.size_entry_column)
       {
-         cout<<"\n Dimensions of two matrices do not match"<<endl;
+         std::cout<<"\n Dimensions of two matrices do not match"<<std::endl;
          abort();
       }
 #endif
@@ -1163,11 +1165,11 @@ namespace Math_Group
       08/2007 WW
       10/2007 WW
    ********************************************************************/
-   void CSparseMatrix::Write(ostream &os)
+   void CSparseMatrix::Write(std::ostream &os)
    {
       //
       long i, k, ii, jj, row_in_parse_table, counter;
-      os<<"*** Non-zero entries of matrix:  "<<endl;
+      os<<"*** Non-zero entries of matrix:  "<<std::endl;
       os.width(10);
       os.precision(6);
       //
@@ -1185,9 +1187,9 @@ namespace Math_Group
                   {
                      //TEST
                      //if(fabs(entry[(ii*DOF+jj)*size_entry_column+counter])>DBL_EPSILON) //DBL_EPSILON)
-                     os<<setw(10)<<ii*rows+i<<" "
-                        <<setw(10)<< jj*rows+entry_column[counter]<<" "
-                        <<setw(15)<<entry[(ii*DOF+jj)*size_entry_column+counter]<<endl;
+                     os<<std::setw(10)<<ii*rows+i<<" "
+                        <<std::setw(10)<< jj*rows+entry_column[counter]<<" "
+                        <<std::setw(15)<<entry[(ii*DOF+jj)*size_entry_column+counter]<<std::endl;
                      counter += num_column_entries[k];
                   }
                   else
@@ -1411,7 +1413,7 @@ namespace Math_Group
                if(fabs(diag)<DBL_MIN)
                   //        if(fabs(diag)<DBL_EPSILON)
                   diag = 1.0;
-               //  cout<<"Diagonal entry is zero. Abort simulation!!  " <<endl;
+               //  std::cout<<"Diagonal entry is zero. Abort simulation!!  " <<std::endl;
                vec_r[idof*rows+i] = vec_s[idof*rows+i]/diag;
             }
          }
@@ -1425,7 +1427,7 @@ namespace Math_Group
             //if(fabs(diag)<DBL_EPSILON)
             if(fabs(diag)<DBL_MIN)
                diag = 1.0;
-            //   cout<<"Diagonal entry is zero. Abort simulation!!  " <<endl;
+            //   std::cout<<"Diagonal entry is zero. Abort simulation!!  " <<std::endl;
             //
             vec_r[i] = vec_s[i]/diag;
          }

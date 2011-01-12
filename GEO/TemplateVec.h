@@ -41,7 +41,7 @@ public:
 	 */
 	virtual ~TemplateVec ()
 	{
-		for (size_t k(0); k<size(); k++) delete (*_data_vec)[k];	
+		for (size_t k(0); k<size(); k++) delete (*_data_vec)[k];
 		delete _data_vec;
 		delete _name_id_map;
 	}
@@ -134,6 +134,18 @@ public:
 			}
 		}
 		return false;
+	}
+
+	void push_back (T* data_element, std::string const * const name = NULL)
+	{
+		_data_vec->push_back (data_element);
+		if (name == NULL) return;
+		if (! name->empty()) {
+			if (_name_id_map == NULL) {
+				_name_id_map = new std::map <std::string, size_t>;
+			}
+			_name_id_map->insert (std::pair<std::string,size_t>(*name, _data_vec->size()-1));
+		}
 	}
 
 private:

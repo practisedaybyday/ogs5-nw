@@ -43,38 +43,6 @@ namespace Mesh_Group
 
          bool GetOrder() const { return quadratic; };
 
-         bool Dirichlet() const
-         {
-            if (boundary_type == 'D')
-               return true;
-            else
-               return false;
-         }
-
-         bool Neumann() const
-         {
-            if (boundary_type == 'N')
-               return true;
-            else
-               return false;
-         }
-
-         bool Cauchy() const
-         {
-            if (boundary_type == 'C')
-               return true;
-            else
-               return false;
-         }
-
-         bool onBoundary() const
-         {
-            if (boundary_type == 'B')
-               return true;
-            else
-               return false;
-         }
-
          bool Interior() const
          {
             if (boundary_type == 'I')

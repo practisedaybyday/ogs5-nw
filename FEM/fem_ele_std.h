@@ -8,12 +8,11 @@
 #ifndef fem_std_INC
 #define fem_std_INC
 
-#include "FEMEnums.h"
+//#include "FEMEnums.h"
 
 #include "fem_ele.h"
 // Problems
 #include "rf_mfp_new.h"
-#include "rf_mmp_new.h"
 #include "rf_msp_new.h"
 #include "rf_out_new.h"                           //OK
 
@@ -49,7 +48,7 @@ namespace FiniteElement
    using process::CRFProcessDeformation;
    using ::CRFProcess;
 
-   class CFiniteElementStd:public CElement
+   class CFiniteElementStd : public CElement
    {
       public:
          CFiniteElementStd(CRFProcess *Pcs, const int C_Sys_Flad, const int order=1);
@@ -285,7 +284,7 @@ namespace FiniteElement
          void AssembleRHSVector();                //OK
          void AssembleCapillaryEffect();          // PCH
                                                   // PCH for debugging
-         void PrintTheSetOfElementMatrices(string mark);
+         void PrintTheSetOfElementMatrices(std::string mark);
          // Friend classes, 01/07, WW
          friend class ::CMediumProperties;
          friend class SolidProp::CSolidProperties;

@@ -267,7 +267,7 @@ Mesh_Group::CFEMesh* GMSInterface::readGMS3DMMesh(std::string filename)
 			double xyz[3];
 			in >> i;
 			Mesh_Group::CNode* node = new Mesh_Group::CNode(i-1);
-			in >> xyz[0] >> xyz[1] >> xyz[2] >> ws;
+			in >> xyz[0] >> xyz[1] >> xyz[2] >> std::ws;
 			node->SetCoordinates(xyz);
 			mesh->nod_vector.push_back(node);
 		}

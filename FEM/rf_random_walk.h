@@ -8,11 +8,10 @@ Programing:
 #define break_RWPT                                //OK
 
 #include "Configure.h"
-#include <math.h>
-#include "mathlib.h"
-#include "fem_ele.h"
+//#include <math.h>
+//#include "mathlib.h"
+//#include "fem_ele.h"
 #include "rf_mmp_new.h"
-#include "rfmat_cp.h"
 
 #define ALLOW_PARTICLES_GO_OUTSIDE
 
@@ -134,11 +133,11 @@ class RandomWalk
       class Pathline
       {
          public:
-            vector<Position> path;
+            std::vector<Position> path;
       };
 
-      vector<Trace> X;
-      vector<Pathline> pathline;
+      std::vector<Trace> X;
+      std::vector<Pathline> pathline;
 
       double Marsaglia(void);                     // N(0,1) sample generator
       int IsTheParticleInThisElement(Particle* A);
@@ -194,7 +193,7 @@ class RandomWalk
       double Tmin(double* a, int* idx);
 
                                                   // Read in velocity fields from an separate file
-      int ReadInVelocityFieldOnNodes(string file_base_name);
+      int ReadInVelocityFieldOnNodes(std::string file_base_name);
       void buildFDMIndex(void);
       void RecordPath(int no, Particle* P);
 
@@ -208,8 +207,8 @@ class RandomWalk
       CRFProcess* m_pcs;
       CFEMesh* m_msh;
 
-      vector<FDMIndex> indexFDM;
-      vector<string>rwpt_out_strings;             //JTARON
+      std::vector<FDMIndex> indexFDM;
+      std::vector<std::string>rwpt_out_strings;   //JTARON
       int nx;
       int ny;
       int nz;
@@ -244,6 +243,6 @@ class RandomWalk
       CFEMesh* selectMeshForFluidMomentumProcess ();
 };
 
-extern void PCTRead(string);
+extern void PCTRead(std::string);
 extern void DATWriteParticleFile(int);
 #endif                                            //OK

@@ -13,8 +13,8 @@
 /* Schutz gegen mehrfaches Einfuegen */
 
 /* Andere oeffentlich benutzte Module */
-#include <stdio.h>
-#include <ctype.h>
+//#include <stdio.h>
+//#include <ctype.h>
 
 /* Deklarationen */
 extern void DisplayStartMsg ( void );

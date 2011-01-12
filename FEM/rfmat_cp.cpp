@@ -16,6 +16,7 @@
 // C
 #include <math.h>
 // C++
+#include <cfloat>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -38,7 +39,7 @@ using namespace std;
 #endif
 using SolidProp::CSolidProperties;
 /* Vector auf CompProperties , globale Zugriffe */
-vector <CompProperties*> cp_vec;
+std::vector <CompProperties*> cp_vec;
 
 /*========================================================================*/
 /* Component Properties                                                  */
@@ -98,19 +99,19 @@ Programing:
 01/2005 OK boolean type
 01/2005 OK Destruct before read
 **************************************************************************/
-bool CPRead(string file_base_name)
+bool CPRead(std::string file_base_name)
 {
    //----------------------------------------------------------------------
    //OK  MCPDelete();
    //----------------------------------------------------------------------
    CompProperties *m_cp = NULL;
    char line[MAX_ZEILE];
-   string sub_line;
-   string line_string;
-   ios::pos_type position;
+   std::string sub_line;
+   std::string line_string;
+   std::ios::pos_type position;
    //========================================================================
    // File handling
-   string cp_file_name = file_base_name + CP_FILE_EXTENSION;
+   std::string cp_file_name = file_base_name + CP_FILE_EXTENSION;
    ifstream cp_file (cp_file_name.data(),ios::in);
    if (!cp_file.good())
       return false;
@@ -125,11 +126,11 @@ bool CPRead(string file_base_name)
 
       cp_file.getline(line,MAX_ZEILE);
       line_string = line;
-      if(line_string.find("#STOP")!=string::npos)
+      if(line_string.find("#STOP")!=std::string::npos)
          return true;
       //----------------------------------------------------------------------
                                                   // keyword found
-      if(line_string.find("#COMPONENT_PROPERTIES")!=string::npos)
+      if(line_string.find("#COMPONENT_PROPERTIES")!=std::string::npos)
       {
          m_cp = new CompProperties((long) cp_vec.size());
          m_cp->file_base_name = file_base_name;
@@ -153,11 +154,11 @@ Programing:
 ios::pos_type CompProperties::Read(ifstream *rfd_file)
 {
    //  char line[MAX_ZEILE];
-   string sub_line;
-   string line_string;
-   string delimiter(" ");
+   std::string sub_line;
+   std::string line_string;
+   std::string delimiter(" ");
    bool new_keyword = false;
-   string hash("#");
+   std::string hash("#");
    std::stringstream in;
    int j;
    //  double *read_help;
@@ -176,7 +177,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       line_string = GetLineFromFile1(rfd_file);
       if(line_string.size() < 1) break;
 
-      if(line_string.find(hash)!=string::npos)
+      if(line_string.find(hash)!=std::string::npos)
       {
          new_keyword = true;
          break;
@@ -184,7 +185,8 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
 
       /* Keywords nacheinander durchsuchen */
       //....................................................................
-      if(line_string.find("$NAME")!=string::npos) // subkeyword found
+                                                  // subkeyword found
+      if(line_string.find("$NAME")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> compname;                          //sub_line
@@ -193,7 +195,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$MOBILE")!=string::npos)
+      if(line_string.find("$MOBILE")!=std::string::npos)
       {
          //      rfd_file->getline(line,MAX_ZEILE);
          //      line_string = line;
@@ -204,7 +206,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$TRANSPORT_PHASE")!=string::npos)
+      if(line_string.find("$TRANSPORT_PHASE")!=std::string::npos)
       {
          //      rfd_file->getline(line,MAX_ZEILE);
          //      line_string = line;
@@ -215,7 +217,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$FLUID_PHASE")!=string::npos)
+      if(line_string.find("$FLUID_PHASE")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> fluid_phase;
@@ -234,7 +236,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$MOL_MASS")!=string::npos)
+      if(line_string.find("$MOL_MASS")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> mol_mass;
@@ -242,7 +244,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$CRITICAL_PRESSURE")!=string::npos)
+      if(line_string.find("$CRITICAL_PRESSURE")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> critical_pressure;
@@ -250,7 +252,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$CRITICAL_TEMPERATURE")!=string::npos)
+      if(line_string.find("$CRITICAL_TEMPERATURE")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> critical_teperature;
@@ -259,7 +261,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       //....................................................................
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$CRITICAL_VOLUME")!=string::npos)
+      if(line_string.find("$CRITICAL_VOLUME")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> critical_volume;
@@ -267,7 +269,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$CRITICAL_DENSITY")!=string::npos)
+      if(line_string.find("$CRITICAL_DENSITY")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> critical_density;
@@ -275,7 +277,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$ACENTRIC_FACTOR")!=string::npos)
+      if(line_string.find("$ACENTRIC_FACTOR")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> acentric_factor;
@@ -283,7 +285,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$COMP_CAPACITY")!=string::npos)
+      if(line_string.find("$COMP_CAPACITY")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> comp_capacity;
@@ -291,7 +293,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$COMP_CONDUCTIVITY")!=string::npos)
+      if(line_string.find("$COMP_CONDUCTIVITY")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> comp_conductivity;
@@ -299,7 +301,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$DIFFUSION")!=string::npos)
+      if(line_string.find("$DIFFUSION")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> diffusion_model;
@@ -354,7 +356,8 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
          in.clear();
 
       }                                           // subkeyword found
-      if(line_string.find("$DECAY")!=string::npos)// subkeyword found
+                                                  // subkeyword found
+      if(line_string.find("$DECAY")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> decay_model;
@@ -402,7 +405,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
 
       }                                           // subkeyword found
                                                   // subkeyword found
-      if(line_string.find("$ISOTHERM")!=string::npos)
+      if(line_string.find("$ISOTHERM")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> isotherm_model;
@@ -450,7 +453,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
       }                                           // subkeyword found
 
                                                   // subkeyword found
-      if(line_string.find("$BUBBLE_VELOCITY")!=string::npos)
+      if(line_string.find("$BUBBLE_VELOCITY")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> bubble_velocity_model;
@@ -463,7 +466,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
 
       // parameters for NAPL dissolution CB140708
                                                   // subkeyword found
-      if(line_string.find("$MOLAR_DENSITY")!=string::npos)
+      if(line_string.find("$MOLAR_DENSITY")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> molar_density;
@@ -475,7 +478,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
          }
       }
                                                   // subkeyword found
-      if(line_string.find("$MOLAR_WEIGHT")!=string::npos)
+      if(line_string.find("$MOLAR_WEIGHT")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> molar_weight;
@@ -487,7 +490,7 @@ ios::pos_type CompProperties::Read(ifstream *rfd_file)
          }
       }
                                                   // subkeyword found
-      if(line_string.find("$MAXIMUM_AQUEOUS_SOLUBILITY")!=string::npos)
+      if(line_string.find("$MAXIMUM_AQUEOUS_SOLUBILITY")!=std::string::npos)
       {
          in.str(GetLineFromFile1(rfd_file));
          in >> max_solubility;
@@ -510,13 +513,12 @@ Task: ComponentProperties write function - echo of input values to rfe - file
 Programing:
 05/2004 SB Implementation
 **************************************************************************/
-void CPWrite(string base_file_name,int flag)
+void CPWrite(std::string base_file_name,int flag)
 {
-
    CompProperties *m_kr = NULL;
-   string rfe_file_name;
+   std::string rfe_file_name;
    int i, length;
-   ofstream rfe_file;
+   std::ofstream rfe_file;
 
    //========================================================================
    // File handling
@@ -559,7 +561,6 @@ Programing:
 **************************************************************************/
 void CompProperties::Write(ofstream *rfe_file)
 {
-
    int i;
 
    // Write Keyword

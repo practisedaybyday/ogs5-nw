@@ -25,6 +25,7 @@
 
 *************************************************************************/
 #include <iostream>
+#include <cfloat>
 using namespace std;
 #include "makros.h"
 #include "solver.h"

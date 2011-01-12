@@ -13,9 +13,11 @@
 #include "GeoObject.h"
 #include "Point.h"
 #include "Triangle.h"
-#include "AxisAlignedBoundingBox.h"
+
 
 namespace GEOLIB {
+
+class AABB;
 
 /**
  * \ingroup GEOLIB

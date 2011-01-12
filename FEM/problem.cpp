@@ -21,6 +21,7 @@ Modification:
 #endif
 #include <iostream>
 #include <sstream>
+#include <cfloat>
 //WW
 //
 /*------------------------------------------------------------------------*/
@@ -52,6 +53,7 @@ extern int ReadData(char*, GEOLIB::GEOObjects& geo_obj, std::string& unique_name
 #include "rf_bc_new.h"
 #include "rf_out_new.h"
 #include "tools.h"
+#include "rf_node.h"
 #include "files0.h"                               // GetLineFromFile1
 //
 #ifdef CHEMAPP
@@ -71,11 +73,10 @@ extern int ReadData(char*, GEOLIB::GEOObjects& geo_obj, std::string& unique_name
 
 namespace process{class CRFProcessDeformation;}
 using process::CRFProcessDeformation;
-using namespace std;
 
 //NW: moved the following variables from rf.cpp to avoid linker errors
-string FileName;                                  //WW
-string FilePath;                                  //23.02.2009. WW
+std::string FileName;                             //WW
+std::string FilePath;                             //23.02.2009. WW
 
 /**************************************************************************
 GeoSys - Function: Constructor
@@ -119,9 +120,10 @@ print_result(true), _geo_obj (new GEOLIB::GEOObjects), _geo_name (filename)
    //----------------------------------------------------------------------
    // Test MSH-MMP //OK
    int g_max_mmp_groups = MSHSetMaxMMPGroups();
+
    if(g_max_mmp_groups>(int)mmp_vector.size())
    {
-      cout << "Error: not enough MMP data";
+      std::cout << "Error: not enough MMP data";
       print_result = false;                       //OK
       return;
    }
@@ -312,22 +314,22 @@ print_result(true), _geo_obj (new GEOLIB::GEOObjects), _geo_name (filename)
    //========================================================================
    // WW
    char line[MAX_ZEILE];
-   string line_string;
-   ios::pos_type position;
+   std::string line_string;
+   std::ios::pos_type position;
    std::stringstream in_num;
    // File handling
-   string num_file_name = FileName + NUM_FILE_EXTENSION;
-   ifstream num_file (num_file_name.data(),ios::in);
+   std::string num_file_name = FileName + NUM_FILE_EXTENSION;
+   std::ifstream num_file (num_file_name.data(),std::ios::in);
    if (num_file.good())
    {
-      num_file.seekg(0L,ios::beg);
+      num_file.seekg(0L,std::ios::beg);
       while (!num_file.eof())
       {
          num_file.getline(line,MAX_ZEILE);
          line_string = line;
-         if(line_string.find("#STOP")!=string::npos)
+         if(line_string.find("#STOP")!=std::string::npos)
             break;
-         if(line_string.find("$OVERALL_COUPLING")!=string::npos)
+         if(line_string.find("$OVERALL_COUPLING")!=std::string::npos)
          {
             in_num.str(GetLineFromFile1(&num_file));
             in_num>>max_coupling_iterations >> coupling_tolerance;
@@ -443,7 +445,7 @@ Problem::~Problem()
    delete m_vec_BRNS;
 #endif
 
-   cout<<"\n^O^: Your simulation is terminated normally ^O^ "<<endl;
+   std::cout<<"\n^O^: Your simulation is terminated normally ^O^ "<<std::endl;
 }
 
 
@@ -589,7 +591,7 @@ inline int Problem::AssignProcessIndex(CRFProcess *m_pcs, bool activefunc)
       active_processes[3] = &Problem::PS_Global;
       return 3;
    }
-   cout << "Error: no process is specified. " << endl;
+   std::cout << "Error: no process is specified. " << std::endl;
    return -1;
 }
 
@@ -681,8 +683,8 @@ Modification:
 ***************************************************************************/
 void Problem::PCSCreate()
 {
-   cout << "---------------------------------------------" << endl;
-   cout << "Create PCS processes" << endl;
+   std::cout << "---------------------------------------------" << std::endl;
+   std::cout << "Create PCS processes" << std::endl;
 
    size_t no_processes = pcs_vector.size();
    //OK_MOD if(pcs_deformation>0) Init_Linear_Elements();
@@ -698,16 +700,16 @@ void Problem::PCSCreate()
 
    for (size_t i = 0; i < no_processes; i++)
    {
-      cout << "............................................." << endl;
+      std::cout << "............................................." << std::endl;
       ProcessType pcs_type (pcs_vector[i]->getProcessType());
-      cout << "Create: " << convertProcessTypeToString (pcs_type) << endl;
+      std::cout << "Create: " << convertProcessTypeToString (pcs_type) << std::endl;
       //		if (!pcs_vector[i]->pcs_type_name.compare("MASS_TRANSPORT")) {
       if (pcs_type != MASS_TRANSPORT)             // TF
       {
-         cout << " for " << pcs_vector[i]->pcs_primary_function_name[0] << " ";
-         cout << " pcs_component_number " << pcs_vector[i]->pcs_component_number;
+         std::cout << " for " << pcs_vector[i]->pcs_primary_function_name[0] << " ";
+         std::cout << " pcs_component_number " << pcs_vector[i]->pcs_component_number;
       }
-      cout << endl;
+      std::cout << std::endl;
       pcs_vector[i]->Create();
    }
 
@@ -744,9 +746,10 @@ void Problem::PCSRestart()
       return;                                     //OK41
 
    int ok = 0;                                    // = ReadRFRRestartData(file_name_base);
+
    if (ok == 0)
    {
-      cout << "RFR: no restart data" << endl;
+      std::cout << "RFR: no restart data" << std::endl;
       return;
    }
 
@@ -808,7 +811,7 @@ void Problem::Euler_TimeDiscretize()
       }
       if(dt<DBL_EPSILON)
       {
-         cout<<"!!! Too small time step size. Choose smallest number: "<< DBL_EPSILON <<endl;
+         std::cout<<"!!! Too small time step size. Choose smallest number: "<< DBL_EPSILON <<std::endl;
          dt=DBL_EPSILON;
          //kg44 04/2010 proceed exit(0);
       }
@@ -832,8 +835,8 @@ void Problem::Euler_TimeDiscretize()
       if(myrank==0)
       {
 #endif
-         cout<<"\n\n#############################################################";
-         cout<<"\nTime step: "<<aktueller_zeitschritt<<"|  Time: "<<current_time<<"|  Time step size: "<<dt<<endl;
+         std::cout<<"\n\n#############################################################";
+         std::cout<<"\nTime step: "<<aktueller_zeitschritt<<"|  Time: "<<current_time<<"|  Time step size: "<<dt<<std::endl;
 #if defined(USE_MPI)
       }
 #endif
@@ -842,7 +845,7 @@ void Problem::Euler_TimeDiscretize()
 #if defined(USE_MPI)
          if(myrank==0)
 #endif
-            cout<<"This step is accepted." <<endl;
+            std::cout<<"This step is accepted." <<std::endl;
          PostCouplingLoop();
          if(print_result)
 #if defined(USE_MPI)
@@ -876,20 +879,20 @@ void Problem::Euler_TimeDiscretize()
 #if defined(USE_MPI)
          if(myrank==0)
 #endif
-            cout<<"This step is rejected." <<endl;
+            std::cout<<"This step is rejected." <<std::endl;
       }
 #if defined(USE_MPI)
       if(myrank==0)
 #endif
-         cout<<"\n#############################################################\n";
+         std::cout<<"\n#############################################################\n";
       if(aktueller_zeitschritt>=max_time_steps)
          break;
    }
 
-   cout<<"----------------------------------------------------\n";
-   cout<<"|Acccepted step times |"<<accepted_times;
-   cout<<"  |Rejected step times |"<<rejected_times<<endl;
-   cout<<"----------------------------------------------------\n";
+   std::cout<<"----------------------------------------------------\n";
+   std::cout<<"|Acccepted step times |"<<accepted_times;
+   std::cout<<"  |Rejected step times |"<<rejected_times<<std::endl;
+   std::cout<<"----------------------------------------------------\n";
    //
 }
 
@@ -935,8 +938,9 @@ bool Problem::CouplingLoop()
       }
       else
       {
+
                                                   //21.05.2010.  WW
-         if(total_processes[i]&&total_processes[i]->tim_type_name.find("STEADY")!=string::npos)
+         if(total_processes[i]&&total_processes[i]->tim_type_name.find("STEADY")!=std::string::npos)
             acounter++;
 
          exe_flag[i] = false;
@@ -1012,7 +1016,7 @@ bool Problem::CouplingLoop()
          }
       }
       if(error_cpl<coupling_tolerance) break;     // JOD/WW 4.10.01
-      cout<<"Coupling loop: "<<loop_index+1<<" of "<<max_coupling_iterations<<endl;
+      std::cout<<"Coupling loop: "<<loop_index+1<<" of "<<max_coupling_iterations<<std::endl;
       if(!accept) break;
       /*index = active_process_index[1];
        cpl_index = coupled_process_index[index];
@@ -1314,7 +1318,7 @@ inline double Problem::GroundWaterFlow()
    GridsTopo *neighb_grid = NULL;
    GridsTopo *neighb_grid_this = NULL;
    CRFProcess *neighb_pcs = total_processes[2];
-   vector<double> border_flux;
+   std::vector<double> border_flux;
    int idx_flux =0, idx_flux_this;
    int no_local_nodes;
 
@@ -1324,14 +1328,14 @@ inline double Problem::GroundWaterFlow()
       for(i=0; i<(long)neighb_pcs->m_msh->grid_neighbors.size(); i++)
       {
          neighb_grid = neighb_pcs->m_msh->grid_neighbors[i];
-         if(neighb_grid->getNeighbor_Name().find("SECTOR_GROUND")!=string::npos)
+         if(neighb_grid->getNeighbor_Name().find("SECTOR_GROUND")!=std::string::npos)
             break;
          neighb_grid = NULL;
       }
       for(i=0; i<(long)m_pcs->m_msh->grid_neighbors.size(); i++)
       {
          neighb_grid_this = m_pcs->m_msh->grid_neighbors[i];
-         if(neighb_grid_this->getNeighbor_Name().find("SECTOR_SOIL")!=string::npos)
+         if(neighb_grid_this->getNeighbor_Name().find("SECTOR_SOIL")!=std::string::npos)
             break;
          neighb_grid_this = NULL;
       }
@@ -1342,7 +1346,7 @@ inline double Problem::GroundWaterFlow()
       CSourceTerm *m_st = NULL;
       CNodeValue *m_nod_val = NULL;
       long l = 0, m = 0;
-      no_local_nodes = neighb_pcs->m_msh->_n_msh_layer+1;
+      no_local_nodes = neighb_pcs->m_msh->getNumberOfMeshLayers()+1;
 
       if(aktueller_zeitschritt==1)
       {
@@ -1382,13 +1386,13 @@ inline double Problem::GroundWaterFlow()
    // Calculate secondary variables
    // NOD values
    conducted = true;                              //WW
-   cout << "      Calculation of secondary NOD values" << endl;
+   std::cout << "      Calculation of secondary NOD values" << std::endl;
    if(m_pcs->TimeStepAccept())
    {
 #ifdef RESET_4410
       PCSCalcSecondaryVariables();                // PCS member function
 #endif
-      cout << "      Calculation of secondary GP values" << endl;
+      std::cout << "      Calculation of secondary GP values" << std::endl;
       m_pcs->CalIntegrationPointValue();          //WW
       m_pcs->cal_integration_point_value = true;  //WW Do not extropolate Gauss velocity
 
@@ -1409,7 +1413,7 @@ inline double Problem::GroundWaterFlow()
 #ifndef NEW_EQS                                //WW. 07.11.2008
    if(m_pcs->tim_type_name.compare("STEADY")==0)  //CMCD 05/2006
    {
-      cout << "      Calculation of secondary ELE values" << endl;
+      std::cout << "      Calculation of secondary ELE values" << std::endl;
       m_pcs->AssembleParabolicEquationRHSVector();//WW LOPCalcNODResultants();
       m_pcs->CalcELEVelocities();
       m_pcs->selected = false;
@@ -1576,7 +1580,7 @@ inline double Problem::MassTrasport()
          if (m_pcs->m_num->cpl_iterations > 1)
             m_vec_GEM->flag_iterative_scheme = 1; // set to standard iterative scheme;
          // write time
-         cout << "CPU time elapsed before GEMIMP2K: " << TGetTimer(0) << " s" << endl;
+         std::cout << "CPU time elapsed before GEMIMP2K: " << TGetTimer(0) << " s" << std::endl;
          // Move current xDC to previous xDC
          m_vec_GEM->CopyCurXDCPre();
          // Get info from MT
@@ -1593,7 +1597,7 @@ inline double Problem::MassTrasport()
          m_vec_GEM->SetReactInfoBackMassTransport(m_time);
          //m_vec_GEM->ConvPorosityNodeValue2Elem(); // update element porosity and push back values
          // write time
-         cout << "CPU time elapsed after GEMIMP2K: " << TGetTimer(0) << " s" << endl;
+         std::cout << "CPU time elapsed after GEMIMP2K: " << TGetTimer(0) << " s" << std::endl;
       }
    }
 #endif                                         // GEM_REACT
@@ -1716,7 +1720,7 @@ inline double Problem::RandomWalker()
          int sizeOfWord = 100;
          dateiname = (char *)malloc(sizeOfWord * sizeof(char ));
 
-         string filename = FileName;
+         std::string filename = FileName;
          for(int i=0; i<= (int)filename.size(); ++i)
             dateiname[i] = filename[i];
 
@@ -1729,60 +1733,60 @@ inline double Problem::RandomWalker()
       if(m_pcs->num_type_name.compare("HETERO")==0)
       {
          rw_pcs->RWPTMode = 1;                    // Set it for heterogeneous media
-         cout << "RWPT is on " << m_pcs->num_type_name << " mode." << endl;
+         std::cout << "RWPT is on " << m_pcs->num_type_name << " mode." << std::endl;
       }
       else if(m_pcs->num_type_name.compare("HOMO_ADVECTION")==0)
       {
          rw_pcs->RWPTMode = 2;
-         cout << "RWPT is on " << m_pcs->num_type_name << " mode." << endl;
+         std::cout << "RWPT is on " << m_pcs->num_type_name << " mode." << std::endl;
       }
       else if(m_pcs->num_type_name.compare("HETERO_ADVECTION")==0)
       {
          rw_pcs->RWPTMode = 3;
-         cout << "RWPT is on " << m_pcs->num_type_name << " mode." << endl;
+         std::cout << "RWPT is on " << m_pcs->num_type_name << " mode." << std::endl;
       }
       else if(m_pcs->num_type_name.compare("HOMO_DISPERSION")==0)
       {
          rw_pcs->RWPTMode = 4;
-         cout << "RWPT is on " << m_pcs->num_type_name << " mode." << endl;
+         std::cout << "RWPT is on " << m_pcs->num_type_name << " mode." << std::endl;
       }
       else if(m_pcs->num_type_name.compare("HETERO_DISPERSION")==0)
       {
          rw_pcs->RWPTMode = 5;
-         cout << "RWPT is on " << m_pcs->num_type_name << " mode." << endl;
+         std::cout << "RWPT is on " << m_pcs->num_type_name << " mode." << std::endl;
       }
       else if(m_pcs->num_type_name.compare("HETERO_FDM")==0)
       {
          rw_pcs->RWPTMode = 1;                    // Set it for heterogeneous media
-         cout << "RWPT is on " << m_pcs->num_type_name << " mode." << endl;
+         std::cout << "RWPT is on " << m_pcs->num_type_name << " mode." << std::endl;
       }
       else if(m_pcs->num_type_name.compare("HOMO_ADVECTION_FDM")==0)
       {
          rw_pcs->RWPTMode = 2;
-         cout << "RWPT is on " << m_pcs->num_type_name << " mode." << endl;
+         std::cout << "RWPT is on " << m_pcs->num_type_name << " mode." << std::endl;
       }
       else if(m_pcs->num_type_name.compare("HETERO_ADVECTION_FDM")==0)
       {
          rw_pcs->RWPTMode = 3;
-         cout << "RWPT is on " << m_pcs->num_type_name << " mode." << endl;
+         std::cout << "RWPT is on " << m_pcs->num_type_name << " mode." << std::endl;
       }
       else if(m_pcs->num_type_name.compare("HOMO_DISPERSION_FDM")==0)
       {
          rw_pcs->RWPTMode = 4;
-         cout << "RWPT is on " << m_pcs->num_type_name << " mode." << endl;
+         std::cout << "RWPT is on " << m_pcs->num_type_name << " mode." << std::endl;
       }
       else if(m_pcs->num_type_name.compare("HETERO_DISPERSION_FDM")==0)
       {
          rw_pcs->RWPTMode = 5;
-         cout << "RWPT is on " << m_pcs->num_type_name << " mode." << endl;
+         std::cout << "RWPT is on " << m_pcs->num_type_name << " mode." << std::endl;
       }
       else                                        // HOMO Advection + Dispersion
       {
          rw_pcs->RWPTMode = 0;
-         cout << "RWPT is on HOMO_ADVECTION_DISPERSION mode." << endl;
+         std::cout << "RWPT is on HOMO_ADVECTION_DISPERSION mode." << std::endl;
       }
 
-      if(m_pcs->num_type_name.find("FDM")!=string::npos)
+      if(m_pcs->num_type_name.find("FDM")!=std::string::npos)
       {
          rw_pcs->PURERWPT = 2;
          if(rw_pcs->FDMIndexSwitch == 0)
@@ -1876,7 +1880,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
    {
       //--------------------------------------------------------------------
       // Create local RICHARDS process
-      cout << "    Create local RICHARDS process" << endl;
+      std::cout << "    Create local RICHARDS process" << std::endl;
       m_pcs_local = new CRFProcess();
       //    m_pcs_local->pcs_type_name = m_pcs_global->pcs_type_name;
                                                   // TF
@@ -1960,8 +1964,8 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
       }
    }
    //======================================================================
-   cout << "    ->Process " << m_pcs_global->pcs_number << ": "
-      << "REGIONAL_" << convertProcessTypeToString (m_pcs_global->getProcessType()) << endl;
+   std::cout << "    ->Process " << m_pcs_global->pcs_number << ": "
+      << "REGIONAL_" << convertProcessTypeToString (m_pcs_global->getProcessType()) << std::endl;
    int no_richards_problems = (int)(m_pcs_global->m_msh->ele_vector.size()/no_local_elements);
 
    //--- For couping with ground flow process. WW
@@ -1974,7 +1978,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
       for(i=0; i<(int)neighb_pcs->m_msh->grid_neighbors.size(); i++)
       {
          neighb_grid = neighb_pcs->m_msh->grid_neighbors[i];
-         if(neighb_grid->getNeighbor_Name().find("§SECTOR_SOIL")!=string::npos)
+         if(neighb_grid->getNeighbor_Name().find("ï¿½SECTOR_SOIL")!=std::string::npos)
             break;
          neighb_grid = NULL;
       }
@@ -1984,7 +1988,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
    for(i=0;i<no_richards_problems;i++)
       //for(i=0;i<2;i++)
    {
-      cout << "->Column number " << i<<endl;
+      std::cout << "->Column number " << i<<std::endl;
       m_pcs_local = pcs_vector[(int)pcs_vector.size()-1];
       m_pcs_local->pcs_number = i;
       m_msh_local = fem_msh_vector[(int)fem_msh_vector.size()-1];
@@ -2406,7 +2410,7 @@ void Problem::PCSCalcSecondaryVariables()
                //MMPCalcSecondaryVariablesNew(m_pcs);
                break;
             default:
-               cout << "PCSCalcSecondaryVariables - nothing to do" << endl;
+               std::cout << "PCSCalcSecondaryVariables - nothing to do" << std::endl;
                break;
          }
       }                                           //If
@@ -2440,7 +2444,7 @@ bool MODCreate()
    PCSConfig();                                   //OK
    if(!PCSCheck())                                //OK
    {
-      cout << "Not enough data for MOD creation.\n";
+      std::cout << "Not enough data for MOD creation.\n";
       return false;
    }
    else

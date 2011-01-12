@@ -56,10 +56,4 @@ float normalize(const float min, const float max, const float val)
 	return ((val-min)/static_cast<float>(max-min));
 }
 
-//double sqrNrm2 (const CGLPoint* p0)
-//{
-//	double v[3] = { p0->getX(), p0->getY(), p0->getZ() };
-//	return scpr (v, v, 3);
-//}
-
 } // namespace

@@ -7,6 +7,7 @@ last modified:
 **************************************************************************/
 #include "makros.h"
 // C++ STL
+#include <cfloat>
 #include <cmath>
 #include <limits>
 #include <list>
@@ -25,6 +26,7 @@ using namespace std;
 #include "files0.h"
 #include "geo_ply.h"
 #include "geo_sfc.h"
+#include "GEOObjects.h"
 // GeoSys-FEMLib
 #include "rf_out_new.h"
 #include "rf_pcs.h"
@@ -444,7 +446,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
       {
          std::string dis_type_name;
          in_str >> dis_type_name;
-         setProcessDistributionType (convertDisType(dis_type_name));
+         setProcessDistributionType (FiniteElement::convertDisType(dis_type_name));
          in_str.ignore(MAX_ZEILE, '\n');
          continue;
       }
@@ -631,7 +633,7 @@ void COutput::Write(fstream* out_file)
    //		*out_file << "  ";
    //		*out_file << _dis_type_name << endl;
    //	}
-   if (getProcessDistributionType() != INVALID_DIS_TYPE)
+   if (getProcessDistributionType() != FiniteElement::INVALID_DIS_TYPE)
    {
       *out_file << " $DIS_TYPE" << endl;
       *out_file << "  ";
@@ -849,7 +851,7 @@ void OUTData(double time_current, int time_step_number)
                cout << "Data output: Surface profile" << endl;
                //..............................................................
                //				if (m_out->_dis_type_name.compare("AVERAGE") == 0) {
-               if (m_out->getProcessDistributionType() == AVERAGE)
+               if (m_out->getProcessDistributionType() == FiniteElement::AVERAGE)
                {
                   if (OutputBySteps)
                   {
@@ -1848,15 +1850,11 @@ double COutput::NODWritePLYDataTEC(int number)
    CRFProcess* dm_pcs = NULL;                     //WW
    for (size_t i = 0; i < pcs_vector.size(); i++)
    {
-      //		std::cout << "testing process type of process " << i << " ... " << std::flush;
-      //		if (pcs_vector[i]->pcs_type_name.find("DEFORMATION") != string::npos) {
       if (isDeformationProcess (pcs_vector[i]->getProcessType ()))
       {
          dm_pcs = pcs_vector[i];
-         //			std::cout << "found deformation process" << std::endl;
          break;
       }
-      //		std::cout << " found " << convertProcessTypeToString (pcs_vector[i]->getProcessType()) << " process" << std::endl;
    }
    //......................................................................
    // VEL
@@ -1957,18 +1955,21 @@ double COutput::NODWritePLYDataTEC(int number)
    //======================================================================
    double flux_sum = 0.0;                         //OK
    double flux_nod;
-   //....................................................................
+
    m_msh->SwitchOnQuadraticNodes(false);          //WW
    // NOD at PLY
    vector<long> nodes_vector;
    m_msh->GetNODOnPLY(m_ply, nodes_vector);
-   //....................................................................
+
    // ELE at PLY
-   if (_ele_value_vector.size() > 0)
-   {
-      vector<long> ele_vector_at_geo;
-      m_msh->GetELEOnPLY(m_ply, ele_vector_at_geo);
-   }
+   // TF commented out, since the vector ele_vector_at_geo is local within the if statement
+   // 	and in the consequence can not be used later on (i tried to check side effects, but
+   //  i am not sure - all tested benchmarks are working)
+//	if (_ele_value_vector.size() > 0) {
+//		vector<long> ele_vector_at_geo;
+//		m_msh->GetELEOnPLY(m_ply, ele_vector_at_geo);
+//	}
+
    //--------------------------------------------------------------------
    //bool b_specified_pcs = (m_pcs != NULL); //NW m_pcs = PCSGet(pcs_type_name);
    for (j = 0; j < (long) nodes_vector.size(); j++)
@@ -2041,10 +2042,6 @@ double COutput::NODWritePLYDataTEC(int number)
       tec_file << endl;
    }
    tec_file.close();                              // kg44 close file
-
-   //OK cout << "Flux averall: " << flux_sum << endl;
-   //======================================================================
-   //======================================================================
    return flux_sum;
 }
 
@@ -3581,13 +3578,13 @@ void COutput::CalcELEFluxes()
    {
       case GEOLIB::POLYLINE:
       {
-         //		m_ply = GEOGetPLYByName(geo_name);
-         //		CGLPolyline* ply = polyline_vector[getGeoObjIdx()];
+         //		CGLPolyline* ply = GEOGetPLYByName(geo_name);
          //		if (!ply)
          //			std::cout << "Warning in COutput::CalcELEFluxes - no GEO data" << std::endl;
          double f_n_sum = 0.0;
          //		f_n_sum = pcs->CalcELEFluxes(ply); // TF
          f_n_sum = pcs->CalcELEFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()));
+
          ELEWritePLY_TEC();
          //BUGFIX_4402_OK_1
          TIMValue_TEC(f_n_sum);
@@ -3851,7 +3848,7 @@ double COutput::NODFlux(long nod_number)
 {
    nod_number = nod_number;                       //OK411
    /*
-    cout << gnode << " " \ 
+    cout << gnode << " " \
        << m_pcs->GetNodeValue(gnode,NodeIndex[k]) << end
     flux_sum += m_pcs->GetNodeValue(gnode,NodeIndex[k]);
     */
@@ -4348,6 +4345,9 @@ void COutput::checkConsistency ()
                   break;
                case GEOLIB::GEODOMAIN:
                   std::cout << "DOMAIN " << getGeoName() << std::endl;
+                  break;
+               case GEOLIB::INVALID:
+                  std::cout << "WARNING: COutput::checkConsistency - invalid geo type" << endl;
                   break;
             }
          }

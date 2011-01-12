@@ -2,8 +2,8 @@
 
 
 static bool bStartTriangle_TRI( 
-		vector<Cp_dbl2>	*Pnt2List,		// [i] list of node
-		vector<Cp_dtri> *TriList,		// [i] list of triangles
+		std::vector<Cp_dbl2>	*Pnt2List,		// [i] list of node
+		std::vector<Cp_dtri> *TriList,		// [i] list of triangles
 		int				iUseConvexHul )	// [i] 1:YES,0:NO)
 {	
 	bool bRet, bRetCode = false;
@@ -15,9 +15,9 @@ static bool bStartTriangle_TRI(
 	Cp_dbl2 ep;
 	CDT_Matrix<int> iNbrList;
 	CDT_Matrix<int> iBlgList;
-	vector<Cp_dtri> TriVector;
-	vector<int> Cnv2List;
-	vector<int> PntTable;
+	std::vector<Cp_dtri> TriVector;
+	std::vector<int> Cnv2List;
+	std::vector<int> PntTable;
 
 	TriList->clear( );
 	
@@ -197,9 +197,9 @@ PIX_EXIT:
 {
 	bool bRet, bRetCode = false;
 	int nTri;
-	vector<Cp_dbl2> Pnt2List;	
-	vector<Cp_dbl3> Pnt3List;	
-	vector<Cp_dtri> TriList;	
+	std::vector<Cp_dbl2> Pnt2List;	
+	std::vector<Cp_dbl3> Pnt3List;	
+	std::vector<Cp_dtri> TriList;	
 
 	// --- load points ---
 	bLoadNodeFile_TRI( szNodeFile, &Pnt3List );

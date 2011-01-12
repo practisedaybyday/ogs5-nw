@@ -151,8 +151,8 @@ M2Invertiere korrigiert
 
 /* Preprozessor-Definitionen */
 
-#include <float.h>
-#include <stdio.h>
+#include <cfloat>
+//#include <stdio.h>
 #include "makros.h"
 #include "mathlib.h"
 #include "femlib.h"                               //CMCD 03 2004
@@ -2394,7 +2394,7 @@ int MGradPhi3D_20N(double *vf, double r, double s, double t)
            *Arg1, *Arg2
 
    Ergebnis:
-           1,0,-1  (groe√er, gleich, kleiner)
+           1,0,-1  (groesser, gleich, kleiner)
    Aenderungen/Korrekturen:
    06/2001     MK       Erste Version
 
@@ -3183,15 +3183,16 @@ void MKopierVec(double *vecquelle, double *vecziel, long g)
    Ergebnis:
            Length of vector
    Aenderungen/Korrekturen:
-   05/2004     CMCD        Erste Version*/
-
-double MVectorlength(double dx, double dy, double dz)
-{
-   double length;
-   length=pow(((dz*dz)+(dy*dy)+(dx*dx)),0.5);
-   return length;
-}
-
+   05/2004     CMCD        Erste Version
+01/2011	TF changed from pow(*,0.5) to sqrt(*)
+*/
+//double MVectorlength(double dx, double dy, double dz)
+//{
+////    double length;
+////    length=pow(((dz*dz)+(dy*dy)+(dx*dx)),0.5);
+////    return length;
+//    return sqrt(dz * dz + dy * dy + dx * dx);
+//}
 
 /**************************************************************************
    ROCKFLOW - Funktion: MAddSkalVektoren
@@ -4903,17 +4904,17 @@ MSHLib-Method:
 Task:
 Programing:
 09/2005 WW Implementation
+12/2010 TF
 **************************************************************************/
-double NormalizeVector(double *x, const int n)
+double NormalizeVector(double *x, size_t n)
 {
-   int i;
-   double nrm = 0.0;
-   for(i=0; i<n; i++)
+   double nrm(x[0]*x[0]);
+   for(size_t i=1; i<n; i++)
       nrm += x[i]*x[i];
-   for(i=0; i<n; i++)
-      x[i] /= sqrt(nrm);
-   return sqrt(nrm);
-
+   double sqrt_nrm (sqrt(nrm));
+   for(size_t i=0; i<n; i++)
+      x[i] /= sqrt_nrm;
+   return sqrt_nrm;
 }
 
 

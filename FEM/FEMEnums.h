@@ -266,24 +266,25 @@ PrimaryVariable convertPrimaryVariable ( const std::string& pcs_pv_string );
  */
 std::string convertPrimaryVariableToString ( PrimaryVariable pcs_pv );
 
-enum DistributionType
-{
-   INVALID_DIS_TYPE = 0,
-   ANALYTICAL,                                    // ST
-   AVERAGE,
-   CONSTANT,                                      // IC, BC, ST
-   CONSTANT_GEO,
-   GRADIENT,                                      // IC
-   RESTART,                                       // IC
-   LINEAR,                                        // BC, ST
-   POINT,                                         // BC
-   CONSTANT_NEUMANN,                              // ST
-   LINEAR_NEUMANN,                                // ST
-   NORMALDEPTH,                                   // ST
-   CRITICALDEPTH,                                 // ST
-   GREEN_AMPT,                                    // ST
-   SYSTEM_DEPENDENT,                              // ST
-   PRECIPITATION                                  // Sort of Neumann BC //WW
+namespace FiniteElement {
+
+enum DistributionType {
+	INVALID_DIS_TYPE = 0, ANALYTICAL, // ST
+	AVERAGE,
+	CONSTANT, // IC, BC, ST
+	CONSTANT_GEO,
+	GRADIENT, // IC
+	RESTART, // IC
+	LINEAR, // BC, ST
+	POINT, // BC
+	CONSTANT_NEUMANN, // ST
+	LINEAR_NEUMANN, // ST
+	NORMALDEPTH, // ST
+	CRITICALDEPTH, // ST
+	GREEN_AMPT, // ST
+	SYSTEM_DEPENDENT, // ST
+	PRECIPITATION
+// Sort of Neumann BC //WW
 };
 
 /**
@@ -291,12 +292,14 @@ enum DistributionType
  * @param pcs_pv_string string describing the primary variable
  * @return enum value describing the primary variable of the process
  */
-DistributionType convertDisType ( const std::string& dis_type_string );
+DistributionType convertDisType(const std::string& dis_type_string);
 
 /**
  * Converts the given enum value into the appropriate string.
  * @param pcs_pv primary variable described by the enum ProcessType
  * @return string describing the process type
  */
-std::string convertDisTypeToString ( DistributionType dis_type );
+std::string convertDisTypeToString(DistributionType dis_type);
+} // end namespace FiniteElement
+
 #endif                                            //FEMENUMS_H

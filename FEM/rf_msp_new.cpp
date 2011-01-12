@@ -7,13 +7,12 @@ last modified:
 **************************************************************************/
 
 // C++ STL
-#include <math.h>
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-
-using namespace std;
+//#include <math.h>
+//#include <string>
+//#include <fstream>
+//#include <iostream>
+//#include <sstream>
+#include <cfloat>
 
 // FEM-Makros
 #include "makros.h"
@@ -24,11 +23,13 @@ using namespace std;
 #include "rf_msp_new.h"
 #include "fem_ele_vec.h"
 #include "fem_ele_std.h"
-#include "rf_mmp_new.h"
+//#include "rf_mmp_new.h"
 #include "pcs_dm.h"
 
 #include "files0.h"                               // GetLineFromFile1
 #include "tools.h"                                // GetLineFromFile
+
+using namespace std;
 
 vector<SolidProp::CSolidProperties*> msp_vector;
 vector<string> msp_key_word_vector;               //OK
@@ -45,20 +46,20 @@ namespace SolidProp
    08/2004 WW Modification for solid properties
    12/2005 WW Creep properties
    **************************************************************************/
-   ios::pos_type CSolidProperties::Read(ifstream *msp_file)
+   std::ios::pos_type CSolidProperties::Read(std::ifstream *msp_file)
    {
       char buffer[MAX_ZEILE];
-      string sub_line;
-      string line_string;
-      string delimiter(" ");
+      std::string sub_line;
+      std::string line_string;
+      std::string delimiter(" ");
       bool new_keyword = false;
-      string hash("#");
-      ios::pos_type position;
+      std::string hash("#");
+      std::ios::pos_type position;
       //  ios::pos_type position0;
-      string sub_string;
+      std::string sub_string;
       bool new_subkeyword = false;
-      string dollar("$");
-      string delimiter_type(":");
+      std::string dollar("$");
+      std::string delimiter_type(":");
       std::stringstream in_sd;
 
       int i=0, Size = 0;
@@ -120,8 +121,8 @@ namespace SolidProp
                }
                else
                {
-                  cout<<"No multi-phase flow coupled. The thermal elatic model can only be used in H2 coupled proccess."<<endl;
-                  cout<<"Quit the simulation now!"<<endl;
+                  std::cout<<"No multi-phase flow coupled. The thermal elatic model can only be used in H2 coupled proccess."<< std::endl;
+                  std::cout<<"Quit the simulation now!"<< std::endl;
                   abort();
                }
             }
@@ -4793,18 +4794,18 @@ namespace SolidProp
    05/2009 OK DENSITY
    09/2009 OK Bugfix, write only existing data
    **************************************************************************/
-   void CSolidProperties::Write(fstream* msp_file)
+   void CSolidProperties::Write(std::fstream* msp_file)
    {
       //----------------------------------------------------------------------
       // KEYWORD
-      *msp_file << "#SOLID_PROPERTIES" << endl;
+      *msp_file << "#SOLID_PROPERTIES" << std::endl;
       //-----------------------------------------------------------------------
       //NAME
       if(name.length()>0)
       {
-         *msp_file << " $NAME" << endl;
+         *msp_file << " $NAME" << std::endl;
          *msp_file << "  ";
-         *msp_file << name << endl;
+         *msp_file << name << std::endl;
       }
       //-----------------------------------------------------------------------
       // GEO_TYPE
@@ -4813,40 +4814,40 @@ namespace SolidProp
       //-----------------------------------------------------------------------
       // PROPERTIES
       //.......................................................................
-      *msp_file << " $DENSITY" << endl;
+      *msp_file << " $DENSITY" << std::endl;
       *msp_file << "  " << Density_mode;
       if(data_Density)                            //OK410
-         *msp_file << " " << (*data_Density)(0) << endl;
+         *msp_file << " " << (*data_Density)(0) << std::endl;
       else
-         *msp_file << " Warning: no density data" << endl;
+         *msp_file << " Warning: no density data" << std::endl;
       //.......................................................................
       // Elasticity properties
-      *msp_file << " $ELASTICITY" << endl;
+      *msp_file << " $ELASTICITY" << std::endl;
       if(Poisson_Ratio())                         //OK410
-         *msp_file << "  POISSION " << Poisson_Ratio() << endl;
-      *msp_file << "  YOUNGS_MODULUS" << endl;
+         *msp_file << "  POISSION " << Poisson_Ratio() << std::endl;
+      *msp_file << "  YOUNGS_MODULUS" << std::endl;
       *msp_file << "  " << Youngs_mode;
       if(data_Youngs)                             //OK410
-         *msp_file << " " << (*data_Youngs)(0) << endl;
+         *msp_file << " " << (*data_Youngs)(0) << std::endl;
       //.......................................................................
       // Thermal properties
-      *msp_file << " $THERMAL" << endl;
+      *msp_file << " $THERMAL" << std::endl;
       if(ThermalExpansion>=0)
       {
-         *msp_file << "  EXPANSION" << endl;
-         *msp_file << "  " << ThermalExpansion << endl;
+         *msp_file << "  EXPANSION" << std::endl;
+         *msp_file << "  " << ThermalExpansion << std::endl;
       }
       if(Capacity_mode>0)
       {
-         *msp_file << "  CAPACITY" << endl;
+         *msp_file << "  CAPACITY" << std::endl;
          *msp_file << "  " << Capacity_mode;
-         *msp_file << " " << (*data_Capacity)(0) << endl;
+         *msp_file << " " << (*data_Capacity)(0) << std::endl;
       }
       if(this->Conductivity_mode>0)               //OK410
       {
-         *msp_file << "  CONDUCTIVITY" << endl;
+         *msp_file << "  CONDUCTIVITY" << std::endl;
          *msp_file << "  " << Conductivity_mode;
-         *msp_file << " " << (*data_Conductivity)(0) << endl;
+         *msp_file << " " << (*data_Conductivity)(0) << std::endl;
       }
       //-----------------------------------------------------------------------
    }
@@ -4908,26 +4909,26 @@ Programing:
 01/2005 OK Boolean type
 01/2005 OK Destruct before read
 **************************************************************************/
-bool MSPRead(string file_base_name)
+bool MSPRead(std::string file_base_name)
 {
    //----------------------------------------------------------------------
    //OK  MSPDelete();
    //----------------------------------------------------------------------
    SolidProp::CSolidProperties *m_msp = NULL;
    char line[MAX_ZEILE];
-   string sub_line;
-   string line_string;
-   ios::pos_type position;
+   std::string sub_line;
+   std::string line_string;
+   std::ios::pos_type position;
    //========================================================================
    // File handling
-   string msp_file_name = file_base_name + MSP_FILE_EXTENSION;
-   ifstream msp_file (msp_file_name.data(),ios::in);
+   std::string msp_file_name = file_base_name + MSP_FILE_EXTENSION;
+   std::ifstream msp_file (msp_file_name.data(),std::ios::in);
    if (!msp_file.good())
       return false;
-   msp_file.seekg(0L,ios::beg);
+   msp_file.seekg(0L,std::ios::beg);
    //========================================================================
    // Keyword loop
-   cout << "MSPRead" << endl;
+   std::cout << "MSPRead" << std::endl;
    while (!msp_file.eof())
    {
       msp_file.getline(line,MAX_ZEILE);
@@ -4936,13 +4937,13 @@ bool MSPRead(string file_base_name)
          return true;
       //----------------------------------------------------------------------
                                                   // keyword found
-      if(line_string.find("#SOLID_PROPERTIES")!=string::npos)
+      if(line_string.find("#SOLID_PROPERTIES")!=std::string::npos)
       {
          m_msp = new SolidProp::CSolidProperties();
          m_msp->file_base_name = file_base_name;
          position = m_msp->Read(&msp_file);
          msp_vector.push_back(m_msp);
-         msp_file.seekg(position,ios::beg);
+         msp_file.seekg(position,std::ios::beg);
       }                                           // keyword found
    }                                              // eof
    return true;
@@ -5111,19 +5112,19 @@ void MSPDelete()
 FEMLib-Method:
 01/2006 OK Implementation
 **************************************************************************/
-void MSPWrite(string base_file_name)
+void MSPWrite(std::string base_file_name)
 {
    CSolidProperties* m_msp = NULL;
    //----------------------------------------------------------------------
    // File handling
-   fstream msp_file;
-   string msp_file_name = base_file_name + MSP_FILE_EXTENSION;
+   std::fstream msp_file;
+   std::string msp_file_name = base_file_name + MSP_FILE_EXTENSION;
    msp_file.open(msp_file_name.data(),ios::trunc|ios::out);
    msp_file.setf(ios::scientific,ios::floatfield);
    msp_file.precision(12);
    if (!msp_file.good()) return;
    //----------------------------------------------------------------------
-   msp_file << "GeoSys-MSP: Material Solid Properties -------------" << endl;
+   msp_file << "GeoSys-MSP: Material Solid Properties -------------" << std::endl;
    //----------------------------------------------------------------------
    for(int i=0;i<(int)msp_vector.size();i++)
    {
@@ -5155,7 +5156,7 @@ void MSPStandardKeywords()
 FEMLib-Method:
 07/2007 OK Implementation
 **************************************************************************/
-CSolidProperties* MSPGet(string mat_name)
+CSolidProperties* MSPGet(std::string mat_name)
 {
    CSolidProperties *m_msp = NULL;
    for(int i=0;i<(int)msp_vector.size();i++)

@@ -19,6 +19,8 @@
                                                                           */
 /**************************************************************************/
 #include "makros.h"
+
+#include <cfloat>
 #define noTESTTOOLS
 /* Header / Andere intern benutzte Module */
 #include "tools.h"
@@ -1143,7 +1145,7 @@ returns a value interpolated between both arguments.
 Programming:
 08/2008 NB
 ***********************************************************************/
-double GetMatrixValue(double var1, double var2, string caption, int *gueltig)
+double GetMatrixValue(double var1, double var2, std::string caption, int *gueltig)
 {
    CFunction * matrix;
    int anz_variables;

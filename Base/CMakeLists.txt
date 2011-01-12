@@ -33,7 +33,8 @@ target_link_libraries (
 )
 
 
-IF(OGS_BUILD_UTILITIES)
+IF(OGS_BUILD_CORRECT_SCIENTIFIC)
 	# Create utility executable
 	add_executable( correctScientificNotation CorrectScientificNotationMain.cpp )
-ENDIF(OGS_BUILD_UTILITIES)
+ENDIF(OGS_BUILD_CORRECT_SCIENTIFIC)
+

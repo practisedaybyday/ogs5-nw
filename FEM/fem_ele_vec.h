@@ -6,13 +6,17 @@
 #ifndef fem_dm_INC
 #define fem_dm_INC
 #include "fem_ele.h"
-#include "matrix_class.h"
+//#include "matrix_class.h"
 // Material properties
-#include "rf_mfp_new.h"
-#include "rf_mmp_new.h"
+//#include "rf_mfp_new.h"
+//#include "rf_mmp_new.h"
 
 namespace SolidProp {class CSolidProperties;}
+
 class CRFProcess;
+class CFluidProperties;
+class CMediumProperties;
+
 namespace process{class CRFProcessDeformation;}
 namespace Mesh_Group{class CElem;}
 namespace FiniteElement
@@ -34,8 +38,8 @@ namespace FiniteElement
          ElementValue_DM(CElem* ele,  const int NGP, bool HM_Staggered);
          ~ElementValue_DM();
          void ResetStress(bool cpl_loop);
-         void Write_BIN(fstream& os);
-         void Read_BIN(fstream& is);
+         void Write_BIN(std::fstream& os);
+         void Read_BIN(std::fstream& is);
          double MeanStress(const int gp)
          {
             return (*Stress)(0, gp)
@@ -125,8 +129,8 @@ namespace FiniteElement
          // B matrix
          Matrix *B_matrix;
          Matrix *B_matrix_T;
-         vector<Matrix*> vec_B_matrix;            //NW
-         vector<Matrix*> vec_B_matrix_T;          //NW
+         std::vector<Matrix*> vec_B_matrix;       //NW
+         std::vector<Matrix*> vec_B_matrix_T;     //NW
 
          //------ Material -------
          CSolidProperties* smat;
@@ -246,6 +250,6 @@ namespace FiniteElement
 
 }                                                 // end namespace
 
-
 extern std::vector<FiniteElement::ElementValue_DM*> ele_value_dm;
 #endif
+

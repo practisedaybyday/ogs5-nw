@@ -11,8 +11,10 @@
 #include "rf_mmp_new.h"
 #include "fem_ele_std.h"                          // for element velocity
 
-const string INDEX_STR = "  ";
-const string velocity_name[3][4] =
+using namespace std;
+
+const std::string INDEX_STR = "  ";
+const std::string velocity_name[3][4] =
 {
    {
       "VELOCITY_X1", "VELOCITY_Y1", "VELOCITY_Z1", "NODAL_VELOCITY1"
@@ -60,29 +62,26 @@ bool CVTK::InitializePVD(const string &file_base_name, const string &pcs_type_na
    return true;
 }
 
-
-bool CVTK::WriteHeaderOfPVD(fstream &fin)
+bool CVTK::WriteHeaderOfPVD(std::fstream &fin)
 {
-   fin << "<?xml version=\"1.0\"?>" << endl;
-   fin << "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">"  << endl;
-   fin << INDEX_STR << "<Collection>" << endl;
+   fin << "<?xml version=\"1.0\"?>" << std::endl;
+   fin << "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">"  << std::endl;
+   fin << INDEX_STR << "<Collection>" << std::endl;
    return true;
 }
 
-
-bool CVTK::WriteEndOfPVD(fstream &fin)
+bool CVTK::WriteEndOfPVD(std::fstream &fin)
 {
-   fin << INDEX_STR << "</Collection>" << endl;
-   fin << "</VTKFile>" << endl;
+   fin << INDEX_STR << "</Collection>" << std::endl;
+   fin << "</VTKFile>" << std::endl;
    return true;
 }
 
-
-bool CVTK::WriteDatasetOfPVD(fstream &fin, double timestep, const string &vtkfile)
+bool CVTK::WriteDatasetOfPVD(std::fstream &fin, double timestep, const std::string &vtkfile)
 {
-   fin.setf(ios::scientific,ios::floatfield);
+   fin.setf(ios::scientific,std::ios::floatfield);
    fin.precision(12);
-   fin << INDEX_STR << INDEX_STR << "<DataSet timestep=\"" << timestep << "\" group=\"\" part=\"0\" file=\"" << vtkfile << "\"/>" << endl;
+   fin << INDEX_STR << INDEX_STR << "<DataSet timestep=\"" << timestep << "\" group=\"\" part=\"0\" file=\"" << vtkfile << "\"/>" << std::endl;
    return true;
 }
 
@@ -149,7 +148,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
             cell_type = 13;
             break;
          default:
-            cerr << "***ERROR: NO CORRESPONDING VTK CELL TYPE FOUND. (ELEMENT TYPE=" << ele_type << ")" << endl;
+            std::cerr << "***ERROR: NO CORRESPONDING VTK CELL TYPE FOUND. (ELEMENT TYPE=" << ele_type << ")" << std::endl;
       }
       return cell_type;
    }
@@ -189,9 +188,9 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       this->isInitialized = true;
    }
 
-   bool CVTK::WriteDataArrayHeader(fstream &fin, VTK_XML_DATA_TYPE data_type, const string &str_name, int nr_components, const string &str_format, long offset)
+   bool CVTK::WriteDataArrayHeader(std::fstream &fin, VTK_XML_DATA_TYPE data_type, const std::string &str_name, int nr_components, const std::string &str_format, long offset)
    {
-      string str_data_type;
+      std::string str_data_type;
       switch (data_type)
       {
          case CVTK::Int8: str_data_type = "Int8"; break;
@@ -213,20 +212,20 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       fin << " format=\"" << str_format << "\"";
       if (useBinary)
          fin << " offset=\"" << offset << "\" /";
-      fin << ">" << endl;
+      fin << ">" << std::endl;
 
       return true;
    }
 
-   bool CVTK::WriteDataArrayFooter(fstream &fin)
+   bool CVTK::WriteDataArrayFooter(std::fstream &fin)
    {
       if (!this->useBinary)
-         fin << "        </DataArray>" << endl;
+         fin << "        </DataArray>" << std::endl;
 
       return true;
    }
 
-   bool CVTK::WriteXMLUnstructuredGrid(const string &vtkfile, COutput *out, const int time_step_number)
+   bool CVTK::WriteXMLUnstructuredGrid(const std::string &vtkfile, COutput *out, const int time_step_number)
    {
       if (!this->isInitialized)
          this->InitializeVTU();
@@ -234,21 +233,21 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       //-------------------------------------------------------------------------
       //# Setup file stream
       //-------------------------------------------------------------------------
-      fstream fin;
+      std::fstream fin;
       if (this->useBinary)
-         fin.open(vtkfile.data(), ios::out|ios::binary);
+         fin.open(vtkfile.data(), std::ios::out|std::ios::binary);
       else
-         fin.open(vtkfile.data(), ios::out);
+         fin.open(vtkfile.data(), std::ios::out);
 
       if (!fin.good())
       {
-         cout << "***Warning: Cannot open the output file, " << vtkfile << endl;
+         std::cout << "***Warning: Cannot open the output file, " << vtkfile << std::endl;
          return false;
       }
 
       if (!this->useBinary)
       {
-         fin.setf(ios::scientific,ios::floatfield);
+         fin.setf(std::ios::scientific,std::ios::floatfield);
          fin.precision(12);
       }
 
@@ -267,8 +266,8 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       bool data_out = !useBinary;
 
       //# Header
-      fin << "<?xml version=\"1.0\"?>" << endl;
-      fin << "<!-- Time step: " << time_step_number << " | Time: " << out->getTime() << " -->" << endl;
+      fin << "<?xml version=\"1.0\"?>" << std::endl;
+      fin << "<!-- Time step: " << time_step_number << " | Time: " << out->getTime() << " -->" << std::endl;
       fin << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\"";
       if (!this->useBinary || isLittleEndian)
       {
@@ -278,16 +277,16 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       {
          fin << " byte_order=\"BigEndian\"";
       }
-      fin << ">" << endl;
+      fin << ">" << std::endl;
       //  fin << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">"  << endl;
 
       //# Unstructured Grid information
       fin << "  <UnstructuredGrid>" << endl;
-      fin << "    <Piece NumberOfPoints=\"" << msh->GetNodesNumber(false) << "\" NumberOfCells=\"" << msh->ele_vector.size() << "\">" << endl;
+      fin << "    <Piece NumberOfPoints=\"" << msh->GetNodesNumber(false) << "\" NumberOfCells=\"" << msh->ele_vector.size() << "\">" << std::endl;
       //....................................................................
       // Nodes
       //OK411 CNode *nod = NULL;
-      fin << "      <Points>" << endl;
+      fin << "      <Points>" << std::endl;
       WriteDataArrayHeader(fin, type_Double, "", 3, str_format, offset);
       WriteMeshNodes(fin, data_out, msh, offset);
       WriteDataArrayFooter(fin);
@@ -370,12 +369,12 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       else return false;                          //am big
    }
 
-   template <typename T> void CVTK::write_value_binary(fstream &fin, T val)
+   template <typename T> void CVTK::write_value_binary(std::fstream &fin, T val)
    {
       fin.write((const char *)&val, sizeof(T));
    }
 
-   bool CVTK::WriteMeshNodes(fstream &fin, bool output_data, CFEMesh *msh, long &offset)
+   bool CVTK::WriteMeshNodes(std::fstream &fin, bool output_data, CFEMesh *msh, long &offset)
    {
       if (output_data)
       {
@@ -410,7 +409,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       return true;
    }
 
-   bool CVTK::WriteMeshElementConnectivity(fstream &fin, bool output_data, CFEMesh *msh, long &offset, long &sum_ele_components)
+   bool CVTK::WriteMeshElementConnectivity(std::fstream &fin, bool output_data, CFEMesh *msh, long &offset, long &sum_ele_components)
    {
       if (output_data)
       {
@@ -453,7 +452,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       return true;
    }
 
-   bool CVTK::WriteMeshElementOffset(fstream &fin, bool output_data, CFEMesh *msh, long &offset)
+   bool CVTK::WriteMeshElementOffset(std::fstream &fin, bool output_data, CFEMesh *msh, long &offset)
    {
       if (output_data)
       {
@@ -496,7 +495,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       return true;
    }
 
-   bool CVTK::WriteMeshElementType(fstream &fin, bool output_data, CFEMesh *msh, long &offset)
+   bool CVTK::WriteMeshElementType(std::fstream &fin, bool output_data, CFEMesh *msh, long &offset)
    {
       if (output_data)
       {
@@ -534,7 +533,8 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       return true;
    }
 
-   bool CVTK::WriteNodalValue(fstream &fin, bool output_data, COutput *out, CFEMesh *msh, long &offset)
+
+   bool CVTK::WriteNodalValue(std::fstream &fin, bool output_data, COutput *out, CFEMesh *msh, long &offset)
    {
       CRFProcess* m_pcs = NULL;
       std::vector<int> NodeIndex(out->_nod_value_vector.size());
@@ -706,7 +706,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       return true;
    }
 
-   bool CVTK::WriteElementValue(fstream &fin, bool output_data, COutput *out, CFEMesh *msh, long &offset)
+   bool CVTK::WriteElementValue(std::fstream &fin, bool output_data, COutput *out, CFEMesh *msh, long &offset)
    {
       std::vector<int> ele_value_index_vector(out->getElementValueVector().size());
       if (ele_value_index_vector.size() > 0)      // GetELEValuesIndexVector() should check this!

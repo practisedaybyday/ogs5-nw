@@ -9,10 +9,9 @@
 #define fem_INC
 
 // C++
-#include <vector>
-#include <string>
+//#include <vector>
+//#include <string>
 
-using namespace std;
 // MSH
 #include "par_ddc.h"                              //OK //Moved from fem_ele_std.h. WW
 

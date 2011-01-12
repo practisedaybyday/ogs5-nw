@@ -63,6 +63,10 @@ int XMLInterface::readProjectFile(const QString &fileName)
 	QFile* file = new QFile(fileName);
 	QFileInfo fi(fileName);
 	QString path = (fi.path().length()>3) ? QString(fi.path() + "/") : fi.path();
+
+	QFileInfo si(QString::fromStdString(_schemaName));
+	QString schemaPath(si.absolutePath() + "/");
+
 	if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
 	{
 		std::cout << "XMLInterface::readProjectFile() - Can't open xml-file." << std::endl;
@@ -77,6 +81,7 @@ int XMLInterface::readProjectFile(const QString &fileName)
 	if (docElement.nodeName().compare("OpenGeoSysProject"))
 	{
 		std::cout << "XMLInterface::readProjectFile() - Unexpected XML root." << std::endl;
+		delete file;
 		return 0;
 	}
 
@@ -84,15 +89,14 @@ int XMLInterface::readProjectFile(const QString &fileName)
 
 	for(int i=0; i<fileList.count(); i++)
     {
-		std::string schemaFile(SOURCEPATH);
 		if (fileList.at(i).nodeName().compare("geo") == 0)
 		{
-			this->setSchema(schemaFile.append("/OpenGeoSysGLI.xsd"));
+			this->setSchema(std::string(schemaPath.toStdString() + "OpenGeoSysGLI.xsd"));
 			this->readGLIFile(QString(path + fileList.at(i).toElement().text()));
 		}
 		else if (fileList.at(i).nodeName().compare("stn") == 0)
 		{
-			this->setSchema(schemaFile.append("/OpenGeoSysSTN.xsd"));
+			this->setSchema(std::string(schemaPath.toStdString() + "OpenGeoSysSTN.xsd"));
 			QDomNodeList childList = fileList.at(i).childNodes();
 			for(int j=0; j<childList.count(); j++)
 				if (childList.at(j).nodeName().compare("file") == 0)
@@ -138,6 +142,7 @@ int XMLInterface::readGLIFile(const QString &fileName)
 	if (docElement.nodeName().compare("OpenGeoSysGLI"))
 	{
 		std::cout << "XMLInterface::readGLIFile() - Unexpected XML root." << std::endl;
+		delete file;
 		return 0;
 	}
 
@@ -251,12 +256,13 @@ int XMLInterface::readSTNFile(const QString &fileName)
 	}
 	if (!checkHash(fileName)) { delete file; return 0; }
 
-	QDomDocument doc("OGS-GML-DOM");
+	QDomDocument doc("OGS-STN-DOM");
 	doc.setContent(file);
 	QDomElement docElement = doc.documentElement(); //root element, used for identifying file-type
 	if (docElement.nodeName().compare("OpenGeoSysSTN"))
 	{
 		std::cout << "XMLInterface::readSTNFile() - Unexpected XML root." << std::endl;
+		delete file;
 		return 0;
 	}
 
@@ -282,11 +288,6 @@ int XMLInterface::readSTNFile(const QString &fileName)
 
 	delete file;
 
-/*
-	QString filename2("d:/xmlstationtest.stn");
-	writeSTNFile(filename2, "Bode Catchment");
-	writeSTNFile(filename2, "Selke Catchment");
-*/
 	return 1;
 }
 
@@ -367,9 +368,87 @@ void XMLInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationB
 	}
 }
 
+int XMLInterface::readFEMCondFile(std::vector<FEMCondition*> &conditions, const QString &fileName)
+{
+	QFile* file = new QFile(fileName);
+	if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		std::cout << "XMLInterface::readSTNFile() - Can't open xml-file." << std::endl;
+		delete file;
+		return 0;
+	}
+	if (!checkHash(fileName)) { delete file; return 0; }
+
+	QDomDocument doc("OGS-Cond-DOM");
+	doc.setContent(file);
+	QDomElement docElement = doc.documentElement(); //root element, used for identifying file-type
+	if (docElement.nodeName().compare("OpenGeoSysCond"))
+	{
+		std::cout << "XMLInterface::readFEMCondFile() - Unexpected XML root." << std::endl;
+		delete file;
+		return 0;
+	}
+
+	//std::vector<FEMCondition*> conditions;
+	QDomNodeList lists = docElement.childNodes();
+	for (int i=0; i<lists.count(); i++)
+    {
+		if      (lists.at(i).nodeName().compare("BoundaryConditions") == 0) readConditions(lists.at(i), conditions, FEMCondition::BOUNDARY_CONDITION);
+		else if (lists.at(i).nodeName().compare("InitialConditions") == 0)  readConditions(lists.at(i), conditions, FEMCondition::INITIAL_CONDITION);
+		else if (lists.at(i).nodeName().compare("SourceTerms") == 0)        readConditions(lists.at(i), conditions, FEMCondition::SOURCE_TERM);
+	}
+	if (!conditions.empty()) return 1;//do something like _geoObjects->addStationVec(stations, stnName, color);
+	else 
+	{
+		std::cout << "XMLInterface::readFEMCondFile() - No FEM Conditions found..." << std::endl;
+		return 0;
+	}
+
+	delete file;
+
+	return 1;
+}
+
+void XMLInterface::readConditions( const QDomNode &listRoot, std::vector<FEMCondition*> &conditions, FEMCondition::CondType type)
+{
+	QDomElement cond = listRoot.firstChildElement();
+	while (!cond.isNull())
+	{
+		FEMCondition* c = new FEMCondition(type);
+		QDomNodeList condProperties = cond.childNodes();
+		for (int i=0; i<condProperties.count(); i++)
+		{
+			if (condProperties.at(i).nodeName().compare("ProcessType") == 0) c->setProcessType(convertProcessType(condProperties.at(i).toElement().text().toStdString()));
+			if (condProperties.at(i).nodeName().compare("PrimaryVariable") == 0) c->setProcessPrimaryVariable(convertPrimaryVariable(condProperties.at(i).toElement().text().toStdString()));
+			if (condProperties.at(i).nodeName().compare("GeoType") == 0)
+			{
+				QDomNodeList geoProps = condProperties.at(i).childNodes();
+				for (int j=0; j<geoProps.count(); j++)
+				{
+					if (geoProps.at(j).nodeName().compare("geoObject") == 0) c->setGeoType(GEOLIB::convertGeoType(geoProps.at(j).toElement().text().toStdString()));
+					if (geoProps.at(j).nodeName().compare("geoName") == 0) c->setGeoName(geoProps.at(j).toElement().text().toStdString());
+				}
+			}
+			if (condProperties.at(i).nodeName().compare("DisType") == 0)
+			{
+				QDomNodeList distProps = condProperties.at(i).childNodes();
+				for (int j=0; j<distProps.count(); j++)
+				{
+					if (distProps.at(j).nodeName().compare("disName") == 0) c->setProcessDistributionType(FiniteElement::convertDisType(distProps.at(j).toElement().text().toStdString()));
+					if (distProps.at(j).nodeName().compare("disValue") == 0) c->setDisValue(strtod(distProps.at(j).toElement().text().toStdString().c_str(),0));
+				}
+			}
+		}
+		conditions.push_back(c);
+		cond = cond.nextSiblingElement();
+	}
+}
+
 int XMLInterface::writeProjectFile(const QString &fileName) const
 {
 	std::fstream stream(fileName.toStdString().c_str(), std::ios::out);
+	QFileInfo fi(fileName);
+	QString path(fi.absolutePath() + "/");
 	if (!stream.is_open())
     {
 		std::cout << "XMLInterface::writeProjectFile() - Could not open file...\n";
@@ -394,7 +473,7 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 	{
 		// write GLI file
 		QString name(QString::fromStdString(*it));
-		this->writeGLIFile(QString(name + ".gml"), name);
+		this->writeGLIFile(QString(path + name + ".gml"), name);
 
 		// write entry in project file
 		QDomElement geoTag = doc.createElement("geo");
@@ -413,7 +492,7 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 		// write STN file
 		QString name(QString::fromStdString(*it));
 
-		if (this->writeSTNFile(QString(name + ".stn"), name))
+		if (this->writeSTNFile(QString(path + name + ".stn"), name))
 		{
 			// write entry in project file
 			QDomElement geoTag = doc.createElement("stn");

@@ -21,15 +21,20 @@ Polygon::Polygon(const Polyline &ply) :
 	_maxx (std::numeric_limits<double>::min()),
 	_maxy (std::numeric_limits<double>::min())
 {
-	size_t n_nodes (getNumberOfPoints()-1);
-	for (size_t k(0); k<n_nodes; k++) {
-		if ((*(getPoint(k)))[0] > _maxx) _maxx = (*(getPoint(k)))[0];
-		if ((*(getPoint(k)))[1] > _maxy) _maxy = (*(getPoint(k)))[1];
-	}
+	if (ply.isClosed())
+	{
+		size_t n_nodes (getNumberOfPoints()-1);
+		for (size_t k(0); k<n_nodes; k++) {
+			if ((*(getPoint(k)))[0] > _maxx) _maxx = (*(getPoint(k)))[0];
+			if ((*(getPoint(k)))[1] > _maxy) _maxy = (*(getPoint(k)))[1];
+		}
 
-	double s0 (0.1), s1(0.2); // small random values
-	_maxx += _maxx*s0;
-	_maxy += _maxy*s1;
+		double s0 (0.1), s1(0.2); // small random values
+		_maxx += _maxx*s0;
+		_maxy += _maxy*s1;
+	}
+	else
+		std::cout << "Error in Polygon::Polygon() - base polyline is not closed..." << std::endl;
 }
 
 Polygon::~Polygon()
@@ -63,11 +68,11 @@ bool Polygon::isPntInPolygon (const GEOLIB::Point& pnt) const
 	}
 	if (n_intersections%2 == 1) return true;
 
-	// check if point is at the border
+	// check if point is at the border points
 	if (_simple_polygon_list.empty ()) {
 		const size_t n_nodes (getNumberOfPoints());
 		for (size_t k(0); k<n_nodes; k++) {
-			if (MATHLIB::sqrDist (getPoint(k), &pnt) < std::numeric_limits<double>::min())
+			if (MATHLIB::sqrDist (getPoint(k), &pnt) < sqrt(std::numeric_limits<double>::min()))
 				return true;
 		}
 	} else {
@@ -75,13 +80,24 @@ bool Polygon::isPntInPolygon (const GEOLIB::Point& pnt) const
 			it != _simple_polygon_list.end(); ++it) {
 			const size_t n_nodes_simple_polygon ((*it)->getNumberOfPoints());
 			for (size_t k(0); k<n_nodes_simple_polygon; k++) {
-				if (MATHLIB::sqrDist ((*it)->getPoint(k), &pnt)) {
+				if (MATHLIB::sqrDist ((*it)->getPoint(k), &pnt) < sqrt(std::numeric_limits<double>::min())) {
 					return true;
 				}
 			}
 		}
 	}
 
+	// check if point is at the border lines
+	if (_simple_polygon_list.empty ()) {
+		const size_t n_nodes (getNumberOfPoints()-1);
+		for (size_t k(0); k<n_nodes; k++) {
+			double d0, d1, lambda(0.0);
+			d1 = MATHLIB::calcProjPntToLineAndDists(pnt.getData(), getPoint(k)->getData(),
+					getPoint(k+1)->getData(), lambda, d0);
+			if (d0 < sqrt(std::numeric_limits<double>::min()) && 0.0 <= lambda && lambda <= 1.0)
+				return true;
+		}
+	}
 	return false;
 }
 
@@ -193,5 +209,6 @@ void Polygon::splitPolygonAtPoint (std::list<GEOLIB::Polygon*>::iterator polygon
 	delete [] perm;
 	delete [] id_vec;
 }
+
 
 } // end namespace GEOLIB

@@ -6,29 +6,29 @@ Programing:
 **************************************************************************/
 #include "Configure.h"
 
-#include "makros.h"
+//#include "makros.h"
 // C++ STL
-#include <iostream>
-using namespace std;
+//#include <iostream>
+#include <cfloat>
+
 // FEMLib
 #include "tools.h"
-#include "rf_pcs.h"
-#include "femlib.h"
+//#include "rf_pcs.h"
+//#include "femlib.h"
 extern double* GEOGetELEJacobianMatrix(long number,double *detjac);
 #include "mathlib.h"
-#include "rf_mfp_new.h"
+//#include "rf_mfp_new.h"
 #include "rf_msp_new.h"
 //#include "material.h"
 #include "rf_tim_new.h"
 #include "rfmat_cp.h"
 extern double gravity_constant;
-using SolidProp::CSolidProperties;
+//using SolidProp::CSolidProperties;
 // LIB
-#include "files0.h"
 #include "files0.h"
 // this
 #include "rf_mmp_new.h"
-#include "rf_react.h"
+//#include "rf_react.h"
 #ifdef RFW_FRACTURE
 #include "fem_ele.h"
 #endif
@@ -37,7 +37,9 @@ using SolidProp::CSolidProperties;
 #include "fem_ele_std.h"
 #include "fem_ele_vec.h"
 // MSHLib
-#include "msh_lib.h"
+//#include "msh_lib.h"
+
+using namespace std;
 
 // MAT-MP data base lists
 list<string>keywd_list;
@@ -154,28 +156,28 @@ Programing:
 02/2004 OK Implementation
 last modification:
 **************************************************************************/
-bool MMPRead(string base_file_name)
+bool MMPRead(std::string base_file_name)
 {
    //----------------------------------------------------------------------
    //OK  MMPDelete();
    //----------------------------------------------------------------------
-   cout << "MMPRead" << endl;
+   std::cout << "MMPRead ... " << std::flush;
    CMediumProperties *m_mat_mp = NULL;
    char line[MAX_ZEILE];
-   string sub_line;
-   string line_string;
-   ios::pos_type position;
+   std::string sub_line;
+   std::string line_string;
+   std::ios::pos_type position;
    //========================================================================
    // file handling
-   string mp_file_name;
+   std::string mp_file_name;
    mp_file_name = base_file_name + MMP_FILE_EXTENSION;
-   ifstream mp_file (mp_file_name.data(),ios::in);
+   std::ifstream mp_file (mp_file_name.data(),std::ios::in);
    if (!mp_file.good())
    {
-      cout << "! Error in MMPRead: No material data !" << endl;
+      std::cout << "! Error in MMPRead: No material data !" << std::endl;
       return false;
    }
-   mp_file.seekg(0L,ios::beg);
+   mp_file.seekg(0L,std::ios::beg);
    //========================================================================
    // keyword loop
    while (!mp_file.eof())
@@ -183,7 +185,10 @@ bool MMPRead(string base_file_name)
       mp_file.getline(line,MAX_ZEILE);
       line_string = line;
       if(line_string.find("#STOP")!=string::npos)
+      {
+         std::cout << "done, read " << mmp_vector.size() << " medium properties" << std::endl;
          return true;
+      }
       //----------------------------------------------------------------------
                                                   // keyword found
       if(line_string.find("#MEDIUM_PROPERTIES")!=string::npos)
@@ -193,7 +198,7 @@ bool MMPRead(string base_file_name)
                                                   //OK41
          m_mat_mp->number = (int)mmp_vector.size();
          mmp_vector.push_back(m_mat_mp);
-         mp_file.seekg(position,ios::beg);
+         mp_file.seekg(position,std::ios::beg);
       }                                           // keyword found
    }                                              // eof
    return true;
@@ -255,43 +260,41 @@ last modification:
 20.$UNCONFINED_FLOW_GROUP
 21.$FLUID_EXCHANGE_WITH_OTHER_CONTINUA
 */
-ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
+std::ios::pos_type CMediumProperties::Read(std::ifstream *mmp_file)
 {
    int i, j, k=0;
-   string line_string;
+   std::string line_string;
    std::stringstream in;
-   ios::pos_type position;
-   string dollar("$");
-   string hash("#");
+   std::ios::pos_type position;
+   std::string dollar("$");
+   std::string hash("#");
    bool new_subkeyword = false;
    bool new_keyword = false;
-   string m_string;
+   std::string m_string;
    // WW
-   stringstream buff;
-   vector<string> tokens;
+   std::stringstream buff;
+   std::vector<string> tokens;
    char *pch;
    char seps[] = "+\n";
    char seps1[] = "*";
    double f_buff;
-                                                  //JT, DEC 2009
-   basic_string <char>::size_type indexChWin, indexChLinux;
-   string funfname;                               //JT, DEC 2009
-   //======================================================================
+   size_t indexChWin, indexChLinux;               //JT, DEC 2009
+   std::string funfname;                          //JT, DEC 2009
+
    while (!new_keyword)
    {
       new_subkeyword = false;
       position = mmp_file->tellg();
       line_string = GetLineFromFile1(mmp_file);
       if(line_string.size() < 1) break;
-      if(line_string.find(hash)!=string::npos)
+      if(line_string.find(hash)!=std::string::npos)
       {
          new_keyword = true;
          break;
       }
       //--------------------------------------------------------------------
       //PCS                         //YD
-                                                  // subkeyword found
-      if(line_string.find("$PCS_TYPE")!=string::npos)
+      if(line_string.find("$PCS_TYPE")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> pcs_type_name;
@@ -300,7 +303,8 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       }
 
       //NAME
-      if(line_string.find("$NAME")!=string::npos) //subkeyword found
+                                                  //subkeyword found
+      if(line_string.find("$NAME")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> name;                              //sub_line
@@ -309,8 +313,9 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       }
       //--------------------------------------------------------------------
       //GEO_TYPE
+
                                                   //subkeyword found
-      if(line_string.find("$GEO_TYPE")!=string::npos)
+      if(line_string.find("$GEO_TYPE")!=std::string::npos)
       {
          /*
                in.str(GetLineFromFile1(mmp_file));
@@ -330,19 +335,19 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
          mmp_file->seekg(position,ios::beg);
          continue;
          */
-         while(!(m_string.find("$")!=string::npos)&&(!(m_string.find("#")!=string::npos)))
+         while(!(m_string.find("$")!=std::string::npos)&&(!(m_string.find("#")!=std::string::npos)))
          {
             position = mmp_file->tellg();
             in.str(GetLineFromFile1(mmp_file));
             in >> m_string >> geo_name;
             in.clear();
-            if(!(m_string.find("$")!=string::npos)&&(!(m_string.find("#")!=string::npos)))
+            if(!(m_string.find("$")!=std::string::npos)&&(!(m_string.find("#")!=std::string::npos)))
             {
                geo_type_name = m_string;
                geo_name_vector.push_back(geo_name);
             }
          }
-         mmp_file->seekg(position,ios::beg);
+         mmp_file->seekg(position,std::ios::beg);
          continue;
       }
       //....................................................................
@@ -350,7 +355,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //2i..GEOMETRY_DIMENSION
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$GEOMETRY_DIMENSION")!=string::npos)
+      if(line_string.find("$GEOMETRY_DIMENSION")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> geo_dimension;
@@ -363,7 +368,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //------------------------------------------------------------------------
       indexChWin = indexChLinux = 0;              //JT, DEC 2009
                                                   //subkeyword found
-      if(line_string.find("$GEOMETRY_AREA")!=string::npos)
+      if(line_string.find("$GEOMETRY_AREA")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> line_string;
@@ -371,7 +376,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
          {
             in >> geo_area_file;
             // JT, Dec. 16, 2009, added lines below to correct and globalize the read of geometry area file
-            string file_name = geo_area_file;
+            std::string file_name = geo_area_file;
             CGSProject* m_gsp = NULL;
             m_gsp = GSPGetMember("mmp");
             if(m_gsp)
@@ -380,7 +385,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
             }
             indexChWin = FileName.find_last_of('\\');
             indexChLinux = FileName.find_last_of('/');
-            if(indexChWin==string::npos&&indexChLinux==string::npos)
+            if(indexChWin==string::npos&&indexChLinux==std::string::npos)
                funfname = file_name;
             else if(indexChWin!=string::npos)
             {
@@ -407,12 +412,10 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //------------------------------------------------------------------------
       //CB
                                                   //subkeyword found
-      if((line_string.find("$POROSITY")!=string::npos) && (!(line_string.find("_DISTRIBUTION")!=string::npos)))
+      if((line_string.find("$POROSITY")!=string::npos) && (!(line_string.find("_DISTRIBUTION")!=std::string::npos)))
       {
-         //    if(line_string.find("$POROSITY")!=string::npos) { //subkeyword found
          in.str(GetLineFromFile1(mmp_file));
          in >> porosity_model;
-         int m=0;
          switch(porosity_model)
          {
             case 0:                               // n=f(x)
@@ -479,13 +482,19 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                in >> porosity_curve;
                break;
             case 10:                              // Chemical swelling model (constrained swelling, constant I)
+            {
+               int m;
                in >> porosity_model_values[0];    // Initial porosity
                in >> m;                           // m
-               if (m>15) cout<<"Maximal number of solid phases is now limited to be 15!!!"<<endl;
-               for (int i=0; i<m+1; i++)
+               if (m > 15)
+                  std::cout
+                     << "Maximal number of solid phases is now limited to be 15!!!"
+                     << std::endl;
+               for (int i = 0; i < m + 1; i++)
                                                   // molar volume [l/mol]
-                     in >> porosity_model_values[i+1];
+                     in >> porosity_model_values[i + 1];
                break;
+            }
             case 11:                              //MB: read from file ToDo
                // in >> porosity_file; // CB
                in >> porosity_model_values[0];    // CB some dummy default value is read
@@ -509,7 +518,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                break;
 #endif
             default:
-               cout << "Error in MMPRead: no valid porosity model" << endl;
+               std::cerr << "Error in MMPRead: no valid porosity model" << std::endl;
                break;
 
          }
@@ -529,7 +538,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
             case 2:                               // do nothing
                break;
             default:
-               cout << "Error in MMPRead: no valid vol_mat_model" << endl;
+               std::cout << "Error in MMPRead: no valid vol_mat_model" << std::endl;
                break;
          }
          in.clear();
@@ -548,7 +557,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
             case 2:                               // do nothing
                break;
             default:
-               cout << "Error in MMPRead: no valid vol_bio_model" << endl;
+               std::cout << "Error in MMPRead: no valid vol_bio_model" << std::endl;
                break;
          }
          in.clear();
@@ -558,7 +567,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //4..TORTUOSITY
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$TORTUOSITY")!=string::npos)
+      if(line_string.find("$TORTUOSITY")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> tortuosity_tensor_type_name;
@@ -581,7 +590,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                tortuosity_model = 1;
                tortuosity_tensor_type = 1;
                if(geo_dimension==0)
-                  cout << "Error in CMediumProperties::Read: no geometric dimension" << endl;
+                  std::cout << "Error in CMediumProperties::Read: no geometric dimension" << std::endl;
                if(geo_dimension==2)
                {
                   in >> tortuosity_model_values[0];
@@ -598,7 +607,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                tortuosity_model = 1;
                tortuosity_tensor_type = 2;
                if(geo_dimension==0)
-                  cout << "Error in CMediumProperties::Read: no geometric dimension" << endl;
+                  std::cout << "Error in CMediumProperties::Read: no geometric dimension" << std::endl;
                if(geo_dimension==2)
                {
                   in >> tortuosity_model_values[0];
@@ -624,7 +633,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                in >> permeability_file;
                break;
             default:
-               cout << "Error in MMPRead: no valid tortuosity tensor type" << endl;
+               std::cout << "Error in MMPRead: no valid tortuosity tensor type" << std::endl;
                break;
          }
          in.clear();
@@ -645,7 +654,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //7..FLOWLINEARITY
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$FLOWLINEARITY")!=string::npos)
+      if(line_string.find("$FLOWLINEARITY")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> flowlinearity_model;
@@ -667,7 +676,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                pcs_name_vector.push_back("PRESSURE1");
                break;
             default:
-               cout << "Error in MMPRead: no valid flow linearity model" << endl;
+               std::cout << "Error in MMPRead: no valid flow linearity model" << std::endl;
                break;
          }
          in.clear();
@@ -677,7 +686,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //8..SORPTION_MODEL
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$ORGANIC_CARBON")!=string::npos)
+      if(line_string.find("$ORGANIC_CARBON")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> foc;
@@ -688,8 +697,9 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //------------------------------------------------------------------------
       //9..STORAGE
       //------------------------------------------------------------------------
+
                                                   //subkeyword found
-      if(line_string.find("$STORAGE")!=string::npos)
+      if(line_string.find("$STORAGE")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> storage_model;
@@ -758,7 +768,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //10..CONDUCTIVITY_MODEL
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$CONDUCTIVITY_MODEL")!=string::npos)
+      if(line_string.find("$CONDUCTIVITY_MODEL")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> conductivity_model;
@@ -774,7 +784,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
             case 3:                               // Chezy
                break;
             default:
-               cout << "Error in MMPRead: no valid conductivity model" << endl;
+               std::cout << "Error in MMPRead: no valid conductivity model" << std::endl;
                break;
          }
          in.clear();
@@ -792,7 +802,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //11..PERMEABILITY_TENSOR
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$PERMEABILITY_TENSOR")!=string::npos)
+      if(line_string.find("$PERMEABILITY_TENSOR")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> permeability_tensor_type_name;
@@ -808,7 +818,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
             case 'O':                             // orthotropic
                permeability_tensor_type = 1;
                if(geo_dimension==0)
-                  cout << "Error in CMediumProperties::Read: no geometric dimension" << endl;
+                  std::cout << "Error in CMediumProperties::Read: no geometric dimension" << std::endl;
                if(geo_dimension==2)
                {
                   in >> permeability_tensor[0];
@@ -824,7 +834,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
             case 'A':                             // anisotropic
                permeability_tensor_type = 2;
                if(geo_dimension==0)
-                  cout << "Error in CMediumProperties::Read: no geometric dimension" << endl;
+                  std::cout << "Error in CMediumProperties::Read: no geometric dimension" << std::endl;
                if(geo_dimension==2)
                {
                   in >> permeability_tensor[0];
@@ -850,7 +860,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                in >> permeability_file;
                break;
             default:
-               cout << "Error in MMPRead: no valid permeability tensor type" << endl;
+               std::cout << "Error in MMPRead: no valid permeability tensor type" << std::endl;
                break;
          }
          in.clear();
@@ -870,7 +880,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //12.1 PERMEABILITY_FUNCTION_DEFORMATION
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$PERMEABILITY_FUNCTION_DEFORMATION")!=string::npos)
+      if(line_string.find("$PERMEABILITY_FUNCTION_DEFORMATION")!=std::string::npos)
       {
 #ifdef RFW_FRACTURE
          relative_permeability_function.push_back("PERMEABILITY_FUNCTION_DEFORMATION");
@@ -885,7 +895,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                in >> permeability;
                break;
             default:
-               cout << "Error in MMPRead: no valid permeability model" << endl;
+               std::cout << "Error in MMPRead: no valid permeability model" << std::endl;
                break;
          }
          in.clear();
@@ -895,7 +905,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //12.2 PERMEABILITY_FUNCTION_PRESSURE
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$PERMEABILITY_FUNCTION_PRESSURE")!=string::npos)
+      if(line_string.find("$PERMEABILITY_FUNCTION_PRESSURE")!=std::string::npos)
       {
 #ifdef RFW_FRACTURE
          relative_permeability_function.push_back("PERMEABILITY_FUNCTION_PRESSURE");
@@ -970,7 +980,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                pcs_name_vector.push_back("TEMPERATURE1");
                break;
             default:
-               cout << "Error in MMPRead: no valid permeability model" << endl;
+               std::cout << "Error in MMPRead: no valid permeability model" << std::endl;
                break;
          }
          in.clear();
@@ -981,7 +991,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //------------------------------------------------------------------------
       //....................................................................
                                                   //subkeyword found
-      if(line_string.find("$PERMEABILITY_SATURATION")!=string::npos)
+      if(line_string.find("$PERMEABILITY_SATURATION")!=std::string::npos)
       {
 #ifdef RFW_FRACTURE
          relative_permeability_function.push_back("PERMEABILITY_SATURATION");
@@ -1056,7 +1066,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                   in >> saturation_alpha[i];
                   break;
                default:
-                  cout << "Error in MMPRead: no valid permeability saturation model" << endl;
+                  std::cout << "Error in MMPRead: no valid permeability saturation model" << std::endl;
                   break;
             }
             in.clear();
@@ -1089,7 +1099,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //12.4 PERMEABILITY_FUNCTION_STRESS
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$PERMEABILITY_FUNCTION_STRESS")!=string::npos)
+      if(line_string.find("$PERMEABILITY_FUNCTION_STRESS")!=std::string::npos)
       {
 #ifdef RFW_FRACTURE
          relative_permeability_function.push_back("PERMEABILITY_FUNCTION_STRESS");
@@ -1208,7 +1218,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                break;
 
             default:
-               cout << "Error in MMPRead: no valid permeability model" << endl;
+               std::cout << "Error in MMPRead: no valid permeability model" << std::endl;
                break;
          }
          in.clear();
@@ -1218,7 +1228,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //12.5 PERMEABILITY_FUNCTION_VELOCITY
       //------------------------------------------------------------------------
                                                   //WW
-      if(line_string.find("$PERMEABILITY_FUNCTION_VELOCITY")!=string::npos)
+      if(line_string.find("$PERMEABILITY_FUNCTION_VELOCITY")!=std::string::npos)
       {
          //WW   if(line_string.find("$PERMEABILITY_FUNCTION_STRESS")!=string::npos) { //subkeyword found
 #ifdef RFW_FRACTURE
@@ -1234,7 +1244,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                in >> permeability;
                break;
             default:
-               cout << "Error in MMPRead: no valid permeability model" << endl;
+               std::cout << "Error in MMPRead: no valid permeability model" << std::endl;
                break;
          }
          in.clear();
@@ -1245,7 +1255,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //------------------------------------------------------------------------
 
                                                   //subkeyword found
-      if(line_string.find("$PERMEABILITY_FUNCTION_POROSITY")!=string::npos)
+      if(line_string.find("$PERMEABILITY_FUNCTION_POROSITY")!=std::string::npos)
       {
 #ifdef RFW_FRACTURE
          relative_permeability_function.push_back("PERMEABILITY_FUNCTION_POROSITY");
@@ -1312,7 +1322,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                in >> permeability_porosity_model_values[3];
                break;
             default:
-               cout << "Error in MMPRead: no valid permeability model" << endl;
+               std::cout << "Error in MMPRead: no valid permeability model" << std::endl;
                break;
          }
          in.clear();
@@ -1337,7 +1347,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
 
       //....................................................................
                                                   //subkeyword found
-      if(line_string.find("$CAPILLARY_PRESSURE")!=string::npos)
+      if(line_string.find("$CAPILLARY_PRESSURE")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> capillary_pressure_model;
@@ -1362,7 +1372,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                break;
             default:
                                                   //WW
-               cout << "Error in MMPRead: no valid capillary model" << endl;
+               std::cout << "Error in MMPRead: no valid capillary model" << std::endl;
                break;
          }
          in.clear();
@@ -1370,7 +1380,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       }
       //....................................................................
                                                   //Dual Richards
-      if(line_string.find("$TRANSFER_COEFFICIENT")!=string::npos)
+      if(line_string.find("$TRANSFER_COEFFICIENT")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> transfer_coefficient;              //(-)
@@ -1380,7 +1390,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       }
       //....................................................................
                                                   //Dual Richards
-      if(line_string.find("$SPECIFIC_STORAGE")!=string::npos)
+      if(line_string.find("$SPECIFIC_STORAGE")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> specific_storage;                  //(Pa-1)
@@ -1393,7 +1403,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //			(2) TRANSVERSE
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$MASS_DISPERSION")!=string::npos)
+      if(line_string.find("$MASS_DISPERSION")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> mass_dispersion_model;
@@ -1408,7 +1418,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                if(lgpn > 0 ) cout << "      Limiting Grid Peclet Numbers to " << lgpn << endl;
                break;
             default:
-               cout << "Error in CMediumProperties::Read: no valid mass dispersion model" << endl;
+               std::cout << "Error in CMediumProperties::Read: no valid mass dispersion model" << std::endl;
                break;
          }
          in.clear();
@@ -1420,7 +1430,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //			(2) TRANSVERSE
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$HEAT_DISPERSION")!=string::npos)
+      if(line_string.find("$HEAT_DISPERSION")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> heat_dispersion_model;
@@ -1433,14 +1443,14 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
                in >> heat_dispersion_transverse;
                break;
             default:
-               cout << "Error in CMediumProperties::Read: no valid heat dispersion model" << endl;
+               std::cout << "Error in CMediumProperties::Read: no valid heat dispersion model" << std::endl;
                break;
          }
          in.clear();
          continue;
       }
                                                   //subkeyword found
-      if(line_string.find("$DIFFUSION")!=string::npos)
+      if(line_string.find("$DIFFUSION")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> heat_diffusion_model;
@@ -1461,7 +1471,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //16. Surface water
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$SURFACE_FRICTION")!=string::npos)
+      if(line_string.find("$SURFACE_FRICTION")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> friction_coefficient >> friction_exp_slope >> friction_exp_depth;
@@ -1469,7 +1479,8 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
          continue;
       }
 
-      if(line_string.find("$WIDTH")!=string::npos)//subkeyword found
+                                                  //subkeyword found
+      if(line_string.find("$WIDTH")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> overland_width;
@@ -1477,7 +1488,8 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
          continue;
       }
 
-      if(line_string.find("$RILL")!=string::npos) //subkeyword found
+                                                  //subkeyword found
+      if(line_string.find("$RILL")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> rill_height >> rill_epsilon;
@@ -1486,7 +1498,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       }
 
                                                   //subkeyword found
-      if(line_string.find("$CHANNEL")!=string::npos)
+      if(line_string.find("$CHANNEL")!=std::string::npos)
       {
          channel = 1;
          continue;
@@ -1505,12 +1517,11 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //------------------------------------------------------------------------
       //11..PERMEABILITY_DISTRIBUTION
       //------------------------------------------------------------------------
-                                                  //WW
-      basic_string <char>::size_type indexChWin, indexChLinux;
+      size_t indexChWin, indexChLinux;            //WW
       indexChWin = indexChLinux = 0;
-      string funfname;
+      std::string funfname;
                                                   //subkeyword found
-      if(line_string.find("$PERMEABILITY_DISTRIBUTION")!=string::npos)
+      if(line_string.find("$PERMEABILITY_DISTRIBUTION")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> permeability_file;
@@ -1524,7 +1535,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
          //-------WW
          indexChWin = FileName.find_last_of('\\');
          indexChLinux = FileName.find_last_of('/');
-         if(indexChWin==string::npos&&indexChLinux==string::npos)
+         if(indexChWin==string::npos&&indexChLinux==std::string::npos)
             funfname = file_name;
          else if(indexChWin!=string::npos)
          {
@@ -1539,10 +1550,10 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
          permeability_file = funfname;
          //--------------------------------------
                                                   //WW
-         ifstream mmp_file(funfname.data(),ios::in);
+         std::ifstream mmp_file(funfname.data(),std::ios::in);
          if (!mmp_file.good())
          {
-            cout << "Fatal error in MMPRead: no PERMEABILITY_DISTRIBUTION file" << endl;
+            std::cout << "Fatal error in MMPRead: no PERMEABILITY_DISTRIBUTION file" << std::endl;
          }
          mmp_file.close();
          permeability_model = 2;
@@ -1554,7 +1565,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //11..POROSITY_DISTRIBUTION
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$POROSITY_DISTRIBUTION")!=string::npos)
+      if(line_string.find("$POROSITY_DISTRIBUTION")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> porosity_file;
@@ -1572,7 +1583,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
          //-------CB as above by WW
          indexChWin = FileName.find_last_of('\\');
          indexChLinux = FileName.find_last_of('/');
-         if(indexChWin==string::npos&&indexChLinux==string::npos)
+         if(indexChWin==string::npos&&indexChLinux==std::string::npos)
             funfname = file_name;
          else if(indexChWin!=string::npos)
          {
@@ -1589,7 +1600,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
          ifstream mmp_file(funfname.data(),ios::in);
          if (!mmp_file.good())
          {
-            cout << "Fatal error in MMPRead: no POROSITY_DISTRIBUTION file" << endl;
+            std::cout << "Fatal error in MMPRead: no POROSITY_DISTRIBUTION file" << std::endl;
          }
          mmp_file.close();
          porosity_model = 11;
@@ -1603,7 +1614,7 @@ ios::pos_type CMediumProperties::Read(ifstream *mmp_file)
       //FRACTURE DATA, namely how many fractures, what are their names? RFW 11/2005
       //------------------------------------------------------------------------
                                                   //subkeyword found
-      if(line_string.find("$FRACTURE_DATA")!=string::npos)
+      if(line_string.find("$FRACTURE_DATA")!=std::string::npos)
       {
          in.str(GetLineFromFile1(mmp_file));
          in >> frac_num;
@@ -1636,17 +1647,17 @@ Programing:
 02/2004 OK Implementation
 last modification:
 **************************************************************************/
-void MMPWrite(string file_base_name)
+void MMPWrite(std::string file_base_name)
 //void MATWriteMediumProperties(fstream *mp_file)
 {
    CMediumProperties *m_mat_mp = NULL;
-   string sub_line;
-   string line_string;
+   std::string sub_line;
+   std::string line_string;
    //========================================================================
    // File handling
-   string mp_file_name = file_base_name + MMP_FILE_EXTENSION;
-   fstream mp_file (mp_file_name.c_str(),ios::trunc|ios::out);
-   mp_file.setf(ios::scientific,ios::floatfield);
+   std::string mp_file_name = file_base_name + MMP_FILE_EXTENSION;
+   std::fstream mp_file (mp_file_name.c_str(),std::ios::trunc|ios::out);
+   mp_file.setf(std::ios::scientific,std::ios::floatfield);
    mp_file.precision(12);
    if (!mp_file.good()) return;
    mp_file << "GeoSys-MMP: Material Medium Properties ------------------------------------------------\n";
@@ -1677,7 +1688,7 @@ Programing:
 10/2005 OK geo_name_vector
 ToDo: MB CONDUCTIVITY_MODEL, PERMEABILITY_SATURATION
 **************************************************************************/
-void CMediumProperties::Write(fstream* mmp_file)
+void CMediumProperties::Write(std::fstream* mmp_file)
 {
    //KEYWORD
    *mmp_file  << "#MEDIUM_PROPERTIES\n";
@@ -1879,7 +1890,7 @@ Programing:
 03/2004 OK Implementation
 last modification:
 **************************************************************************/
-void MMPWriteTecplot(string msh_name)
+void MMPWriteTecplot(std::string msh_name)
 {
    CMediumProperties *m_mmp = NULL;
    int i;
@@ -1901,10 +1912,10 @@ Programing:
 10/2005 OK OO-ELE
 last modification:
 **************************************************************************/
-void CMediumProperties::WriteTecplot(string msh_name)
+void CMediumProperties::WriteTecplot(std::string msh_name)
 {
    long i,j;
-   string element_type;
+   std::string element_type;
    //----------------------------------------------------------------------
    // GSP
    CGSProject* m_gsp = NULL;
@@ -1915,8 +1926,8 @@ void CMediumProperties::WriteTecplot(string msh_name)
    }
    //--------------------------------------------------------------------
    // file handling
-   string mat_file_name = m_gsp->path + "MAT_" + name + TEC_FILE_EXTENSION;
-   fstream mat_file (mat_file_name.data(),ios::trunc|ios::out);
+   std::string mat_file_name = m_gsp->path + "MAT_" + name + TEC_FILE_EXTENSION;
+   std::fstream mat_file (mat_file_name.data(),ios::trunc|ios::out);
    mat_file.setf(ios::scientific,ios::floatfield);
    mat_file.precision(12);
    //--------------------------------------------------------------------
@@ -1929,7 +1940,7 @@ void CMediumProperties::WriteTecplot(string msh_name)
       return;
    //--------------------------------------------------------------------
    if (!mat_file.good()) return;
-   mat_file.seekg(0L,ios::beg);
+   mat_file.seekg(0L,std::ios::beg);
    //--------------------------------------------------------------------
    j=0;
    for(i=0;i<(long)m_msh->ele_vector.size();i++)
@@ -1942,18 +1953,18 @@ void CMediumProperties::WriteTecplot(string msh_name)
    }
    long no_elements = j-1;
    //--------------------------------------------------------------------
-   mat_file << "VARIABLES = X,Y,Z,MAT" << endl;
+   mat_file << "VARIABLES = X,Y,Z,MAT" << std::endl;
    long no_nodes = (long)m_msh->nod_vector.size();
    mat_file << "ZONE T = " << name << ", " \
       << "N = " << no_nodes << ", " \
       << "E = " << no_elements << ", " \
-      << "F = FEPOINT" << ", " << "ET = BRICK" << endl;
+      << "F = FEPOINT" << ", " << "ET = BRICK" << std::endl;
    for(i=0;i<no_nodes;i++)
    {
       m_nod = m_msh->nod_vector[i];
       mat_file \
          << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << " " \
-         << number << endl;
+         << number << std::endl;
    }
    j=0;
    for(i=0;i<(long)m_msh->ele_vector.size();i++)
@@ -1965,20 +1976,20 @@ void CMediumProperties::WriteTecplot(string msh_name)
          {
             case MshElemType::LINE:
                mat_file \
-                  << m_ele->nodes_index[0]+1 << " " << m_ele->nodes_index[1]+1 << " " << m_ele->nodes_index[1]+1 << " " << m_ele->nodes_index[0]+1 << endl;
+                  << m_ele->nodes_index[0]+1 << " " << m_ele->nodes_index[1]+1 << " " << m_ele->nodes_index[1]+1 << " " << m_ele->nodes_index[0]+1 << std::endl;
                j++;
                element_type = "ET = QUADRILATERAL";
                break;
             case MshElemType::QUAD:
                mat_file \
-                  << m_ele->nodes_index[0]+1 << " " << m_ele->nodes_index[1]+1 << " " << m_ele->nodes_index[2]+1 << " " << m_ele->nodes_index[3]+1 << endl;
+                  << m_ele->nodes_index[0]+1 << " " << m_ele->nodes_index[1]+1 << " " << m_ele->nodes_index[2]+1 << " " << m_ele->nodes_index[3]+1 << std::endl;
                j++;
                element_type = "ET = QUADRILATERAL";
                break;
             case MshElemType::HEXAHEDRON:
                mat_file \
                   << m_ele->nodes_index[0]+1 << " " << m_ele->nodes_index[1]+1 << " " << m_ele->nodes_index[2]+1 << " " << m_ele->nodes_index[3]+1 << " " \
-                  << m_ele->nodes_index[4]+1 << " " << m_ele->nodes_index[5]+1 << " " << m_ele->nodes_index[6]+1 << " " << m_ele->nodes_index[7]+1 << endl;
+                  << m_ele->nodes_index[4]+1 << " " << m_ele->nodes_index[5]+1 << " " << m_ele->nodes_index[6]+1 << " " << m_ele->nodes_index[7]+1 << std::endl;
                j++;
                element_type = "ET = BRICK";
                break;
@@ -1990,14 +2001,14 @@ void CMediumProperties::WriteTecplot(string msh_name)
                break;
             case MshElemType::TETRAHEDRON:
                mat_file \
-                  << m_ele->nodes_index[0]+1 << " " << m_ele->nodes_index[1]+1 << " " << m_ele->nodes_index[2]+1 << " " << m_ele->nodes_index[3]+1 << endl;
+                  << m_ele->nodes_index[0]+1 << " " << m_ele->nodes_index[1]+1 << " " << m_ele->nodes_index[2]+1 << " " << m_ele->nodes_index[3]+1 << std::endl;
                j++;
                element_type = "ET = TETRAHEDRON";
                break;
             case MshElemType::PRISM:
                mat_file \
                   << m_ele->nodes_index[0]+1 << " " << m_ele->nodes_index[0]+1 << " " << m_ele->nodes_index[1]+1 << " " << m_ele->nodes_index[2]+1 << " " \
-                  << m_ele->nodes_index[3]+1 << " " << m_ele->nodes_index[3]+1 << " " << m_ele->nodes_index[4]+1 << " " << m_ele->nodes_index[5]+1 << endl;
+                  << m_ele->nodes_index[3]+1 << " " << m_ele->nodes_index[3]+1 << " " << m_ele->nodes_index[4]+1 << " " << m_ele->nodes_index[5]+1 << std::endl;
                j++;
                element_type = "ET = BRICK";
                break;
@@ -2020,7 +2031,7 @@ Programing:
 02/2004 OK Implementation
 last modification:
 **************************************************************************/
-CMediumProperties* MMPGet(const string &mat_name)
+CMediumProperties* MMPGet(const std::string &mat_name)
 {
    CMediumProperties *m_mat = NULL;
    int no_mat =(int)mmp_vector.size();
@@ -2112,11 +2123,11 @@ int phase)
           nidx0 = PCSGetNODValueIndex(pcs_name_this,0);
           nidx1 = PCSGetNODValueIndex(pcs_name_this,1);
           if(mode==0){ // Gauss point values
-            saturation = (1.-theta)*InterpolValue(number,nidx0,gp[0],gp[1],gp[2]) \ 
+            saturation = (1.-theta)*InterpolValue(number,nidx0,gp[0],gp[1],gp[2]) \
                      + theta*InterpolValue(number,nidx1,gp[0],gp[1],gp[2]);
           }
       else{ // Node values
-      saturation = (1.-theta)*GetNodeVal(number,nidx0) \ 
+      saturation = (1.-theta)*GetNodeVal(number,nidx0) \
       + theta*GetNodeVal(number,nidx1);
       }
       */
@@ -2232,7 +2243,7 @@ int phase)
          permeability_saturation = MRange(0.,permeability_saturation,1.);
          break;
       default:
-         cout << "Error in CFluidProperties::PermeabilitySaturationFunction: no valid material model" << endl;
+         std::cout << "Error in CFluidProperties::PermeabilitySaturationFunction: no valid material model" << std::endl;
          break;
    }
    return permeability_saturation;
@@ -2262,7 +2273,7 @@ int phase)
    int no_fluid_phases =(int)mfp_vector.size();
    if(!m_pcs)
    {
-      cout << "CMediumProperties::PermeabilitySaturationFunction: no PCS data" << endl;
+      std::cout << "CMediumProperties::PermeabilitySaturationFunction: no PCS data" << std::endl;
       return 1.0;
    }
    //  if(!(m_pcs->pcs_type_name.find("RICHARDS")!=string::npos) && no_fluid_phases!=2) TF
@@ -2421,7 +2432,7 @@ int phase)
 
          break;
       default:
-         cout << "Error in CFluidProperties::PermeabilitySaturationFunction: no valid material model" << endl;
+         std::cout << "Error in CFluidProperties::PermeabilitySaturationFunction: no valid material model" << std::endl;
          break;
    }
    return permeability_saturation;
@@ -2531,9 +2542,9 @@ CFiniteElementStd* assem)
          break;
          //....................................................................
       default:
-         cout
+         std::cout
             << "Error in CMediumProperties::HeatCapacity: no valid material model"
-            << endl;
+            << std::endl;
          break;
          //....................................................................
    }
@@ -2560,11 +2571,16 @@ double* CMediumProperties::HeatConductivityTensor(int number)
    int i, dimen;
    CSolidProperties *m_msp = NULL;
    double heat_conductivity_fluids,Kx[3];
-   double *tensor = NULL;
+   // TF unused variable - comment fix compile warning
+//   double *tensor = NULL;
    //double a, b, Pc, T, Mw, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A, B,H_vap, dp_gw, dPc, dA, dB, dT, q,Tc=647.3,expfactor;
-   double a, b, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A, B,H_vap, dp_gw, dPc, dA, dB, dT, q,Tc=647.3,expfactor;
-   double dens_arg[3];                            //AKS
-   ElementValue* gp_ele = ele_gp_value[Fem_Ele_Std->Index];
+   double a, b, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A, B,H_vap, dp_gw, dPc, dA, dB, dT, q;
+   // TF unused variable - comment fix compile warning
+//   double Tc=647.3;
+   double expfactor;
+   double dens_arg[3]; //AKS
+   // TF unused variable - comment fix compile warning
+//   ElementValue* gp_ele = ele_gp_value[Fem_Ele_Std->Index];
    //  double porosity =  this->porosity;  //MX
    double Sw, porosity = this->porosity_model_values[0];
    bool FLOW = false;                             //WW
@@ -2899,7 +2915,7 @@ double* CMediumProperties::MassDispersionTensorNew(int ip)
       velocity[1] = m_cp->bubble_velocity[1];
       velocity[2] = m_cp->bubble_velocity[2];
       vg = MBtrgVec(velocity,3);
-      if(index == 100) cout <<" Bubble velocity in MassDispersionTensorNew(): "<<velocity[0]<<", "<<velocity[1]<<", "<<velocity[2]<<", "<<vg<<endl;
+      if(index == 100) std::cout <<" Bubble velocity in MassDispersionTensorNew(): "<<velocity[0]<<", "<<velocity[1]<<", "<<velocity[2]<<", "<<vg<<std::endl;
    }
    // end bubble velocity
    //Dl in local coordinates
@@ -2925,8 +2941,9 @@ double* CMediumProperties::MassDispersionTensorNew(int ip)
          set = 1;
          alpha_t = l_char/lgpn;
       }
+
                                                   //cout << " alpha_L = " << alpha_l << " < l_char/Pe; setting alpha_L = " << l_char/lgpn << " for element " << index << endl;
-      if((set > 0)&(aktueller_zeitschritt==1)&(component<1)&(ip<1)) cout << "element " << index << " " << l_char << " " << alpha_l << " " << alpha_t <<  endl;
+      if((set > 0)&(aktueller_zeitschritt==1)&(component<1)&(ip<1)) std::cout << "element " << index << " " << l_char << " " << alpha_l << " " << alpha_t <<  std::endl;
    }
    //----------------------------------------------------------------------
 
@@ -3012,10 +3029,10 @@ Programing:
 02/2004 OK Implementation
 last modification:
 **************************************************************************/
-CMediumProperties* CMediumProperties::GetDB(string mat_name)
+CMediumProperties* CMediumProperties::GetDB(std::string mat_name)
 {
    CMediumProperties *m_mat = NULL;
-   list<CMediumProperties*>::const_iterator p_mat = db_mat_mp_list.begin();
+   std::list<CMediumProperties*>::const_iterator p_mat = db_mat_mp_list.begin();
    while(p_mat!=db_mat_mp_list.end())
    {
       m_mat = *p_mat;
@@ -3034,7 +3051,7 @@ Programing:
 02/2004 OK Implementation
 last modification:
 **************************************************************************/
-void CMediumProperties::SetDB(string mat_name,string prop_name,double value)
+void CMediumProperties::SetDB(std::string mat_name,std::string prop_name,double value)
 {
    CMediumProperties *m_mat = NULL;
    m_mat = GetDB(mat_name);
@@ -3060,7 +3077,7 @@ Programing:
 02/2004 OK Implementation
 last modification:
 **************************************************************************/
-int CMediumProperties::GetPropertyType(string prop_name)
+int CMediumProperties::GetPropertyType(std::string prop_name)
 {
    int counter=0;
    string keyword_name;
@@ -3080,13 +3097,13 @@ int CMediumProperties::GetPropertyType(string prop_name)
 ////////////////////////////////////////////////////////////////////////////
 // MAT-MP data base
 ////////////////////////////////////////////////////////////////////////////
-string read_MAT_name(string in, string *z_rest_out)
+std::string read_MAT_name(std::string in, std::string *z_rest_out)
 {
-   string mat_name;
-   string z_rest;
-   string delimiter(";");
+   std::string mat_name;
+   std::string z_rest;
+   std::string delimiter(";");
                                                   //wenn eine mg gefunden wird nach dem Schlüsselwort
-   if(in.find_first_not_of(delimiter)!=string::npos)
+   if(in.find_first_not_of(delimiter)!=std::string::npos)
    {
       z_rest = in.substr(in.find_first_not_of(delimiter));
                                                   //string für die erste (1) material group
@@ -3106,14 +3123,14 @@ Programing:
 01/2004 OK/JG Implementation
 last modification:
 **************************************************************************/
-void MATLoadDB(string csv_file_name)
+void MATLoadDB(std::string csv_file_name)
 {
-   string keyword("MATERIALS");
-   string in;
-   string line;
-   string z_rest;
-   string mat_name;
-   string mat_name_tmp("MAT_NAME");
+   std::string keyword("MATERIALS");
+   std::string in;
+   std::string line;
+   std::string z_rest;
+   std::string mat_name;
+   std::string mat_name_tmp("MAT_NAME");
    //========================================================================
    // Read available MAT-MP keywords
    read_keywd_list();
@@ -3153,18 +3170,18 @@ last modification:
 void read_keywd_list(void)
 {
    //File handling=============================
-   ifstream eingabe("mat_mp_keywords.dat",ios::in);
+   std::ifstream eingabe("mat_mp_keywords.dat",ios::in);
    if (eingabe.good())
    {
       eingabe.seekg(0L,ios::beg);
       //==========================================
-      string keyword("MATERIALS");
-      string in;
-      string line;
-      string z_rest;
-      string mat_name;
-      string delimiter(";");
-      string keywd_tmp("KEYWD");
+      std::string keyword("MATERIALS");
+      std::string in;
+      std::string line;
+      std::string z_rest;
+      std::string mat_name;
+      std::string delimiter(";");
+      std::string keywd_tmp("KEYWD");
       char line_char[MAX_ZEILE];
       // Read MATERIALS group names
       //1 get string with keywords
@@ -3197,23 +3214,23 @@ Programing:
 01/2004 JG/OK Implementation
 last modification:
 **************************************************************************/
-void comp_keywd_list(string csv_file_name)
+void comp_keywd_list(std::string csv_file_name)
 {
-   string mat_names("MATERIALS");
-   string in;
-   string line;
-   string z_rest;
-   string mat_name;
-   string mat_name_tmp("MAT_NAME");
+   std::string mat_names("MATERIALS");
+   std::string in;
+   std::string line;
+   std::string z_rest;
+   std::string mat_name;
+   std::string mat_name_tmp("MAT_NAME");
    char line_char[MAX_ZEILE];
-   string in1;                                    //zwischenstring zum abschneiden der einheit
-   string delimiter(";");
-   string keyword("MATERIALS");
+   std::string in1;                               //zwischenstring zum abschneiden der einheit
+   std::string delimiter(";");
+   std::string keyword("MATERIALS");
    double kwvalue;
 
    //File handling------------------------------------
-   string sp;
-   ifstream eingabe(csv_file_name.data(),ios::in);
+   std::string sp;
+   std::ifstream eingabe(csv_file_name.data(),ios::in);
    if (eingabe.good())
    {
       eingabe.seekg(0L,ios::beg);                 //rewind um materialgruppen auszulesen
@@ -3532,7 +3549,7 @@ last modification:
 *************************************************************************/
 double CMediumProperties::Porosity(long number,double theta)
 {
-   static int nidx0,nidx1;
+   static int nidx0, nidx1;
    double primary_variable[PCS_NUMBER_MAX];
    int gueltig;
 #ifdef GEM_REACT
@@ -3545,40 +3562,58 @@ double CMediumProperties::Porosity(long number,double theta)
    ElementValue_DM* gval = NULL;
 
    // CB Get idx of porosity in elements mat vector for het porosity
-   int por_index=0;
-   if(porosity_model==11)
-      for(por_index=0;por_index<(int)m_pcs->m_msh->mat_names_vector.size();por_index++)
-         if(m_pcs->m_msh->mat_names_vector[por_index].compare("POROSITY")==0)
+   size_t por_index (0);
+   if (porosity_model == 11)
+   {
+      for (por_index = 0; por_index
+         < m_pcs->m_msh->mat_names_vector.size(); por_index++)
+      {
+         if (m_pcs->m_msh->mat_names_vector[por_index].compare("POROSITY")
+            == 0)
+         {
             break;
+         }
+      }
+   }
 
-   //----------------------------------------------------------------------
    // Functional dependencies
-   int i;
-   int no_pcs_names =(int)porosity_pcs_name_vector.size();
    CRFProcess *pcs_temp;
-   for(i=0;i<no_pcs_names;i++)
+
+   const size_t no_pcs_names(this->porosity_pcs_name_vector.size());
+   for (size_t i = 0; i < no_pcs_names; i++)
    {
       str = porosity_pcs_name_vector[i];
       pcs_temp = PCSGet(str, true);               //MX
       nidx0 = pcs_temp->GetNodeValueIndex(porosity_pcs_name_vector[i]);
-      nidx1 = nidx0+1;
-      if(mode==0)                                 // Gauss point values
+      nidx1 = nidx0 + 1;
+      if (mode == 0)                              // Gauss point values
       {
          assem->ComputeShapefct(1);
-         primary_variable[i] = (1.-theta)*assem->interpolate(nidx0,pcs_temp)
-            + theta*assem->interpolate(nidx1,pcs_temp);
+         primary_variable[i] = (1. - theta) * assem->interpolate(nidx0,
+            pcs_temp) + theta * assem->interpolate(nidx1, pcs_temp);
+      }                                           // Node values
+      else if (mode == 1)
+      {
+         primary_variable[i] = (1. - theta) * pcs_temp->GetNodeValue(number,
+            nidx0) + theta * pcs_temp->GetNodeValue(number, nidx1);
+      }                                           // Element average value
+      else if (mode == 2)
+      {
+         primary_variable[i] = (1. - theta) * assem->elemnt_average(nidx0,
+            pcs_temp) + theta * assem->elemnt_average(nidx1, pcs_temp);
       }
       else if(mode==1)                            // Node values
       {
          primary_variable[i] = (1.-theta)*pcs_temp->GetNodeValue(number,nidx0) \
             + theta*pcs_temp->GetNodeValue(number,nidx1);
-      }
+   }
       else if(mode==2)                            // Element average value
       {
          primary_variable[i] = (1.-theta)*assem->elemnt_average(nidx0,pcs_temp)
             + theta*assem->elemnt_average(nidx1,pcs_temp);
       }
    }
+
    //----------------------------------------------------------------------
    // Material models
    /*
@@ -3608,30 +3643,35 @@ double CMediumProperties::Porosity(long number,double theta)
    switch (porosity_model)
    {
       case 0:                                     // n = f(x)
-         porosity = GetCurveValue(fct_number,0,primary_variable[0],&gueltig);
+         porosity = GetCurveValue(fct_number, 0, primary_variable[0], &gueltig);
          break;
       case 1:                                     // n = const
          porosity = porosity_model_values[0];
          break;
       case 2:                                     // n = f(sigma_eff), Stress dependance
-         porosity = PorosityEffectiveStress(number,primary_variable[0]);
+         porosity = PorosityEffectiveStress(number, primary_variable[0]);
          break;
       case 3:                                     // n = f(S), Free chemical swelling
-         porosity = PorosityVolumetricFreeSwellingConstantIonicstrength(number,primary_variable[0],primary_variable[1]);
+         porosity = PorosityVolumetricFreeSwellingConstantIonicstrength(number,
+            primary_variable[0], primary_variable[1]);
          break;
       case 4:                                     // n = f(S), Constrained chemical swelling
-         porosity = PorosityEffectiveConstrainedSwellingConstantIonicStrength(number,primary_variable[0],primary_variable[1],&porosity_sw);
+         porosity = PorosityEffectiveConstrainedSwellingConstantIonicStrength(
+            number, primary_variable[0], primary_variable[1], &porosity_sw);
          break;
       case 5:                                     // n = f(S), Free chemical swelling, I const
-         porosity = PorosityVolumetricFreeSwelling(number,primary_variable[0],primary_variable[1]);
+         porosity = PorosityVolumetricFreeSwelling(number, primary_variable[0],
+            primary_variable[1]);
          break;
       case 6:                                     // n = f(S), Constrained chemical swelling, I const
-         porosity = PorosityEffectiveConstrainedSwelling(number,primary_variable[0],primary_variable[1],&porosity_sw);
+         porosity = PorosityEffectiveConstrainedSwelling(number,
+            primary_variable[0], primary_variable[1], &porosity_sw);
          break;
       case 7:                                     // n = f(mean stress) WW
          gval = ele_value_dm[number];
-         primary_variable[0] = -gval->MeanStress(assem->gp)/3.0;
-         porosity = GetCurveValue(porosity_curve,0,primary_variable[0],&gueltig);
+         primary_variable[0] = -gval->MeanStress(assem->gp) / 3.0;
+         porosity = GetCurveValue(porosity_curve, 0, primary_variable[0],
+            &gueltig);
          break;
       case 10:
                                                   /* porosity change through dissolution/precipitation */
@@ -3639,20 +3679,20 @@ double CMediumProperties::Porosity(long number,double theta)
          break;
       case 11:                                    // n = temp const, but spatially distributed CB
          //porosity = porosity_model_values[0];
-         porosity  = m_msh->ele_vector[number]->mat_vector(por_index);
+         porosity = m_msh->ele_vector[number]->mat_vector(por_index);
          break;
 #ifdef GEM_REACT
       case 15:
          porosity = porosity_model_values[0];     // default value as backup
 
-         for (size_t i=0; i < pcs_vector.size() ; i++)
+         for (size_t i=0; i < pcs_vector.size(); i++)
          {
             //		if ((pcs_vector[i]->pcs_type_name.find("FLOW") != string::npos)) {
             if (isFlowProcess(pcs_vector[i]->getProcessType()))
             {
                idx=pcs_vector[i]->GetElementValueIndex ( "POROSITY" );
                porosity = pcs_vector[i]->GetElementValue(number, idx);
-               if (porosity <1.e-6 || porosity > 1.0) { cout <<"Porosity: error getting porosity for model 15. porosity: " <<porosity << " at node "<< number << endl; porosity = porosity_model_values[0];}
+               if (porosity <1.e-6 || porosity > 1.0) {cout <<"Porosity: error getting porosity for model 15. porosity: " <<porosity << " at node "<< number << endl; porosity = porosity_model_values[0];}
             }
          }
 
@@ -3661,9 +3701,9 @@ double CMediumProperties::Porosity(long number,double theta)
 #ifdef BRNS
       case 16:
          porosity = porosity_model_values[0];     // default value as backup
-         if ( aktueller_zeitschritt > 1  )
+         if ( aktueller_zeitschritt > 1 )
          {
-            for (size_t i=0; i < pcs_vector.size() ; i++)
+            for (size_t i=0; i < pcs_vector.size(); i++)
             {
                pcs_temp = pcs_vector[i];
                //	            if ( pcs_temp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0 ||
@@ -3686,7 +3726,6 @@ double CMediumProperties::Porosity(long number,double theta)
          cout << "Unknown porosity model!" << endl;
          break;
    }
-   //----------------------------------------------------------------------
    return (porosity);
 }
 
@@ -3719,17 +3758,17 @@ double CMediumProperties::Porosity(CElement* assem)
    double primary_variable[PCS_NUMBER_MAX];
    int gueltig;
    double porosity_sw, theta;
-   string str;
+   std::string str;
    ///
    ElementValue_DM* gval = NULL;
 
    //----------------------------------------------------------------------
    // Functional dependencies
-   int i;
-   int no_pcs_names =(int)porosity_pcs_name_vector.size();
    number = assem->GetElementIndex();
    CRFProcess *pcs_temp;
-   for(i=0;i<no_pcs_names;i++)
+
+   const size_t no_pcs_names (porosity_pcs_name_vector.size());
+   for(size_t i=0;i<no_pcs_names;i++)
    {
       str = porosity_pcs_name_vector[i];
       pcs_temp = PCSGet(str, true);               //MX
@@ -5087,11 +5126,11 @@ double CMediumProperties::SaturationCapillaryPressureFunction(long number,double
           nidx0 = PCSGetNODValueIndex("PRESSURE_CAP",0);
           nidx1 = PCSGetNODValueIndex("PRESSURE_CAP",1);
           if(mode==0){ // Gauss point values
-            capillary_pressure = (1.-theta)*InterpolValue(number,nidx0,gp[0],gp[1],gp[2]) \ 
+            capillary_pressure = (1.-theta)*InterpolValue(number,nidx0,gp[0],gp[1],gp[2]) \
                                + theta*InterpolValue(number,nidx1,gp[0],gp[1],gp[2]);
           }
           else{ // Node values
-            capillary_pressure = (1.-theta)*GetNodeVal(number,nidx0) \ 
+            capillary_pressure = (1.-theta)*GetNodeVal(number,nidx0) \
                                + theta*GetNodeVal(number,nidx1);
           }
       */
@@ -5368,13 +5407,13 @@ double CMediumProperties::SaturationPressureDependency(long number,double*gp,dou
           nidx0 = PCSGetNODValueIndex("SATURATION1",0);
           nidx1 = PCSGetNODValueIndex("SATURATION1",1);
           if(mode==0){ // Gauss point values
-            saturation = (1.-theta)*InterpolValue(number,nidx0,gp[0],gp[1],gp[2]) \ 
+            saturation = (1.-theta)*InterpolValue(number,nidx0,gp[0],gp[1],gp[2]) \
                      + theta*InterpolValue(number,nidx1,gp[0],gp[1],gp[2]);
           }
           else // Node values
           {
             saturation = SaturationCapillaryPressureFunction(number,NULL,theta,phase);
-            saturation = (1.-theta)*GetNodeVal(number,nidx0) \ 
+            saturation = (1.-theta)*GetNodeVal(number,nidx0) \
       + theta*GetNodeVal(number,nidx1);
       }
       */
@@ -6729,7 +6768,7 @@ double CMediumProperties::PorosityVolumetricFreeSwellingConstantIonicstrength(lo
      double mat_mp_m, beta;
      double porosity = 0.0;
      static double theta;
-     static double porosity_n, porosity_IL, d_porosity, \ 
+     static double porosity_n, porosity_IL, d_porosity, \
                    density_rock, fmon;
      static double S_0;
      static double epsilon;
@@ -6761,7 +6800,7 @@ double CMediumProperties::PorosityVolumetricFreeSwellingConstantIonicstrength(lo
    epsilon = 87.0 + exp(-0.00456*(temperature-273.0));
    porosity_n = porosity_model_values[0];
    // Maximal inter layer porosity
-   porosity_IL = fmon * psi * mat_mp_m * S_0 * (density_rock * 1.0e3) \ 
+   porosity_IL = fmon * psi * mat_mp_m * S_0 * (density_rock * 1.0e3) \
    * sqrt(epsilon * epsilon_0 * R * temperature / (2000.0 * F_const * F_const * ion_strength ));
    d_porosity=porosity_IL*(pow(saturation,beta)-pow(satu_0,beta));
    porosity_IL *=pow(saturation,beta);
@@ -6795,7 +6834,7 @@ double CMediumProperties::PorosityEffectiveConstrainedSwelling(long index,double
      double mat_mp_m, beta;
      double porosity = 0.0;
      static double theta;
-     double porosity_n, porosity_IL, d_porosity, \ 
+     double porosity_n, porosity_IL, d_porosity, \
                    n_total, density_rock, fmon;
    //  double n_max, n_min;
      static double S_0;
@@ -6850,7 +6889,7 @@ double CMediumProperties::PorosityEffectiveConstrainedSwelling(long index,double
    porosity_n = porosity_model_values[0];
 
    // Maximal inter layer porosity
-   porosity_IL=fmon * psi * mat_mp_m * S_0 * (density_rock * 1.0e3) \ 
+   porosity_IL=fmon * psi * mat_mp_m * S_0 * (density_rock * 1.0e3) \
    * sqrt(epsilon * epsilon_0 * R * temperature / (2000.0 * F_const * F_const * ion_strength ));
    d_porosity=porosity_IL*(pow(satu, beta)-pow(satu_0, beta));
 
@@ -6981,7 +7020,7 @@ double CMediumProperties::PorosityVolumetricFreeSwelling(long index,double satur
      double mat_mp_m, beta;
      double porosity = 0.0;
      static double theta;
-     static double porosity_n, porosity_IL, d_porosity, \ 
+     static double porosity_n, porosity_IL, d_porosity, \
                    density_rock, fmon;
      static double S_0;
      static double epsilon;
@@ -7015,7 +7054,7 @@ double CMediumProperties::PorosityVolumetricFreeSwelling(long index,double satur
    epsilon = 87.0 + exp(-0.00456*(temperature-273.0));
    porosity_n = porosity_model_values[0];
    // Maximal inter layer porosity
-   porosity_IL = fmon * psi * mat_mp_m * S_0 * (density_rock * 1.0e3) \ 
+   porosity_IL = fmon * psi * mat_mp_m * S_0 * (density_rock * 1.0e3) \
    * sqrt(epsilon * epsilon_0 * R * temperature / (2000.0 * F_const * F_const * ion_strength ));
    d_porosity=porosity_IL*(pow(saturation,beta)-pow(satu_0,beta));
    porosity_IL *=pow(saturation,beta);
@@ -7138,11 +7177,11 @@ double CMediumProperties::TortuosityFunction(long number, double *gp, double the
        nidx0 = PCSGetNODValueIndex(pcs_name_vector[i],0);
        nidx1 = PCSGetNODValueIndex(pcs_name_vector[i],1);
        if(mode==0){ // Gauss point values
-         primary_variable[i] = (1.-theta)*InterpolValue(number,nidx0,gp[0],gp[1],gp[2]) \ 
+         primary_variable[i] = (1.-theta)*InterpolValue(number,nidx0,gp[0],gp[1],gp[2]) \
    + theta*InterpolValue(number,nidx1,gp[0],gp[1],gp[2]);
    }
    else if(mode==1){ // Node values
-   primary_variable[i] = (1.-theta)*GetNodeVal(number,nidx0) \ 
+   primary_variable[i] = (1.-theta)*GetNodeVal(number,nidx0) \
    + theta*GetNodeVal(number,nidx1);
    }
    else if(mode==2){ // Element average value
@@ -7251,8 +7290,8 @@ double CMediumProperties::NonlinearFlowFunction(long index, double *gp, double t
    invjac = GEOGetELEJacobianMatrix(index, &detjac);
    //          if(fabs(h_element_node[1]-h_element_node[0])>MKleinsteZahl)
    if (fabs(h_element_node[1] - h_element_node[0]) > grad_h_min) {
-   k_rel = \ 
-   pow(fabs(0.5 * sqrt(MSkalarprodukt(invjac, invjac, 3))), (alpha - 1.0)) * \ 
+   k_rel = \
+   pow(fabs(0.5 * sqrt(MSkalarprodukt(invjac, invjac, 3))), (alpha - 1.0)) * \
    pow(fabs(h_element_node[1] - h_element_node[0]), (alpha - 1.0));
    if (k_rel > 1)
    k_rel = 1.;
@@ -7274,8 +7313,8 @@ double CMediumProperties::NonlinearFlowFunction(long index, double *gp, double t
    MMultVecMat(mult, 2, invjac2d, 2, 2, grad_h, 2);
    //          if( (fabs(grad_h[0])>MKleinsteZahl)||(fabs(grad_h[1])>MKleinsteZahl) ) )
    if ((fabs(grad_h[0]) > grad_h_min) || (fabs(grad_h[1]) > grad_h_min)) {
-   k_rel = \ 
-   pow(fabs(sqrt((grad_h[0]) * (grad_h[0]) + (grad_h[1]) * (grad_h[1]))), \ 
+   k_rel = \
+   pow(fabs(sqrt((grad_h[0]) * (grad_h[0]) + (grad_h[1]) * (grad_h[1]))), \
    (alpha - 1.0));
    } else {
    k_rel = 1.0;
@@ -7430,11 +7469,11 @@ double CMediumProperties::StorageFunction(long index,double *gp,double theta)
         nidx1 = PCSGetNODValueIndex(pcs_name_vector[i],1);
         if(mode==0) // Gauss point values
          {
-          primary_variable[i] = (1.-theta)*InterpolValue(index,nidx0,gp[0],gp[1],gp[2]) \ 
+          primary_variable[i] = (1.-theta)*InterpolValue(index,nidx0,gp[0],gp[1],gp[2]) \
                         + theta*InterpolValue(index,nidx1,gp[0],gp[1],gp[2]);		}
    else if(mode==1) // Node values
    {
-   primary_variable[i] = (1.-theta)*GetNodeVal(index,nidx0) \ 
+   primary_variable[i] = (1.-theta)*GetNodeVal(index,nidx0) \
    + theta*GetNodeVal(index,nidx1);
    }
    else if(mode==2) // Element average value

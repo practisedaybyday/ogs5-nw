@@ -136,6 +136,8 @@ FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration)
     MATH (EXPR substringLength ${benchmarkNameLength}-${benchmarkStrippedNameLength}) 
     STRING (SUBSTRING ${benchmarkName} 0 ${substringLength} benchmarkDir)
     STRING (REPLACE "/" "_" benchmarkNameUnderscore ${benchmarkName})
+    STRING (REPLACE "_LONG_" "_" benchmarkNameUnderscore ${benchmarkNameUnderscore})
+    STRING (REPLACE "_EXCEEDING_" "_" benchmarkNameUnderscore ${benchmarkNameUnderscore})
 
     # Delete output files on testing
     FOREACH (entry ${ARGN})

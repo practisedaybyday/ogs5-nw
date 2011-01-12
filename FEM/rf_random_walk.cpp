@@ -7,9 +7,12 @@ Programing:
 
 #include "rf_random_walk.h"
 #include "rf_fluid_momentum.h"
+#include "rf_tim_new.h"
+#include "rfmat_cp.h"
 
 // C++ STL
-#include <iostream>
+//#include <iostream>
+#include <cfloat>
 using namespace std;
 
 #define PCT_FILE_EXTENSION ".pct"

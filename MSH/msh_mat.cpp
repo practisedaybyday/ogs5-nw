@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 #include <list>
-using namespace std;
 
 // GEOLib
 #include "geo_sfc.h"
@@ -72,14 +71,14 @@ void MSHAssignMATGroup2LineElements(void)
  10/2005 OK MAT-GEO
  last modified:
  **************************************************************************/
-void MSHAssignMATGroup2TrisElements(string msh_name)
+void MSHAssignMATGroup2TrisElements(std::string msh_name)
 {
    // Tests
    CFEMesh* m_msh (FEMGet(msh_name));
    if (!m_msh)
    {
-      cout << "Warning: MSHAssignMATGroup2TrisElements: no MSH data: "
-         << msh_name << endl;
+      std::cout << "Warning: MSHAssignMATGroup2TrisElements: no MSH data: "
+         << msh_name << std::endl;
       return;
    }
    //-----------------------------------------------------------------------
@@ -417,7 +416,7 @@ void MSH2MATPris(void)
    for(j=0;j<ElListSize();j++){
    element_mat_group = ElGetElementGroupNumber(j);
    if(element_mat_group<0){
-   elements_failed_file << "Element number: " << j \ 
+   elements_failed_file << "Element number: " << j \
    << ", Element type: " << ElGetElementType(j) << endl;
    }
    }
@@ -480,8 +479,7 @@ void MSHAssignMATGroup2HexsElements(void)
    */
 }
 
-
-void MSHAssignMATGroup2Elements(string msh_name)
+void MSHAssignMATGroup2Elements(std::string msh_name)
 {
    MSHAssignMATGroup2LineElements();
    MSHAssignMATGroup2TrisElements(msh_name);
@@ -539,7 +537,7 @@ bool MSHTestMATGroups()
    int g_max_mmp_groups = MSHSetMaxMMPGroups();
    if (g_max_mmp_groups > (int) mmp_vector.size())
    {
-      cout << "Error: not enough MMP data";
+      std::cout << "Error: not enough MMP data";
       return false;                               //abort();
    }
    return true;

@@ -9,7 +9,7 @@ Programing:
 // C++
 #include <string>
 #include <vector>
-using namespace std;
+
 // MSHLib
 #include "msh_lib.h"
 #include "msh_elem.h"
@@ -517,15 +517,15 @@ Programing:
 void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_msh_ply)
 {
    CGLLine *m_line=NULL;
-   list<CGLLine*>::const_iterator pl;
+   std::list<CGLLine*>::const_iterator pl;
    //  int hits;
    long i,j,k;
    //WW  long *nodes_unsorted = NULL;
    //WW  double *node_distances = NULL;
-   list<CGLLine*>msh_line_list;
-   list<CGLLine*>::iterator pl1;
-   list<CGLLine*>::iterator pl2;
-   list<CGLLine*>::iterator pl3;
+   std::list<CGLLine*>msh_line_list;
+   std::list<CGLLine*>::iterator pl1;
+   std::list<CGLLine*>::iterator pl2;
+   std::list<CGLLine*>::iterator pl3;
    long m_point11,m_point12,m_point21,m_point22;
    CGLLine *m_line1,*m_line2;
    //  bool hitP0,hitP1,hitP2;
@@ -533,7 +533,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
    //  double angle;
    //WW  double eps_angle = 1.;
    //OK
-   vector<long>nodes_vector;
+   std::vector<long>nodes_vector;
    CNode* m_nod = NULL;
    CElem* m_ele = NULL;
    CEdge* m_edg = NULL;
@@ -541,11 +541,11 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
    long no_elements;
    long no_nodes;
    double m_nod_x,m_nod_y,m_nod_z;
-   vector<long>elements_vector;
+   std::vector<long>elements_vector;
    vec<CNode*>edge_nodes(3);
    vec<CEdge*>ele_edges_vector(15);
-   vector<long>ele_vector_at_ply;
-   vector<long>nod_vector_at_ply;
+   std::vector<long>ele_vector_at_ply;
+   std::vector<long>nod_vector_at_ply;
 
    //======================================================================
    switch(type)
@@ -672,7 +672,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
          GetELEOnPLY(m_polyline,ele_vector_at_ply);
          for(i=0;i<(long)ele_vector_at_ply.size();i++)
          {
-            cout << ele_vector_at_ply[i] << endl;
+            std::cout << ele_vector_at_ply[i] << std::endl;
             m_ele = ele_vector[ele_vector_at_ply[i]];
             m_line = new CGLLine();
             m_line->m_point1 = new CGLPoint();
@@ -1033,31 +1033,32 @@ Programing:
 void GMSH2MSH(const char* filename,CFEMesh* m_msh)
 {
    long id;
-   long i=0;
-   int NumNodes=0;
-   int NumElements=0;
-   double x,y,z;
-   string strbuffer;
+   long i = 0;
+   int NumNodes = 0;
+   int NumElements = 0;
+   double x, y, z;
+   std::string strbuffer;
 
    //WW  bool quad=false;
    //WW  CRFProcess* m_pcs = NULL;
    CNode* node = NULL;
    CElem* elem = NULL;
-   ifstream msh_file(filename,ios::in);
+   std::ifstream msh_file(filename, std::ios::in);
    getline(msh_file, strbuffer);                  // Node keyword
 
    // OLD GMSH  FORMAT----------------------------------------------------------------------
-   if (strbuffer.compare("$NOD")==0)
+   if (strbuffer.compare("$NOD") == 0)
    {
-      while (strbuffer.compare("$ENDELM")!=0)
+      while (strbuffer.compare("$ENDELM") != 0)
       {
-         msh_file>>NumNodes>>ws;
+         msh_file >> NumNodes >> std::ws;
          //....................................................................
          // Node data
-         for(i=0;i<NumNodes;i++)
+         for (i = 0; i < NumNodes; i++)
          {
-            msh_file>>id>>x>>y>>z>>ws;
-            node = new CNode(id,x,y,z);
+            msh_file >> id >> x >> y >> z >> std::ws;
+
+            node = new CNode(id, x, y, z);
             m_msh->nod_vector.push_back(node);
          }
 
@@ -1065,8 +1066,8 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
          //....................................................................
          // Element data
          getline(msh_file, strbuffer);            // Element keyword
-         msh_file>>NumElements>>ws;
-         for(i=0;i<NumElements; i++)
+         msh_file >> NumElements >> std::ws;
+         for (i = 0; i < NumElements; i++)
          {
             elem = new CElem(i);
             elem->Read(msh_file, 2);
@@ -1075,14 +1076,14 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
          getline(msh_file, strbuffer);            // END keyword
 
          // ordering nodes and closing gaps TK
-         vector<int> gmsh_id;
+         std::vector<int> gmsh_id;
          long new_node_id;
-         int counter=0;
-         int diff=0;
-         int j=0;
-         for(i=0;i<(int)m_msh->nod_vector.size();i++)
+         int counter = 0;
+         int diff = 0;
+         int j = 0;
+         for (i = 0; i < (int) m_msh->nod_vector.size(); i++)
          {
-            diff = m_msh->nod_vector[i]->GetIndex()-counter;
+            diff = m_msh->nod_vector[i]->GetIndex() - counter;
             if (diff == 0)
             {
                gmsh_id.push_back(i);
@@ -1090,7 +1091,7 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
             }
             else
             {
-               for(j=0;j<diff;j++)
+               for (j = 0; j < diff; j++)
                {
                   gmsh_id.push_back(i);
                   counter++;
@@ -1099,17 +1100,18 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
             }
          }
 
-         for(i=0;i<(int)m_msh->ele_vector.size();i++)
+         for (i = 0; i < (int) m_msh->ele_vector.size(); i++)
          {
-            for(j=0;j<(int)m_msh->ele_vector[i]->GetVertexNumber();j++)
+            for (j = 0; j < (int) m_msh->ele_vector[i]->GetVertexNumber(); j++)
             {
-               new_node_id = gmsh_id[m_msh->ele_vector[i]->GetNodeIndex(j)+1];
+               new_node_id = gmsh_id[m_msh->ele_vector[i]->GetNodeIndex(j)
+                  + 1];
                //m_msh->ele_vector[i]->nodes[j]->SetIndex(new_node_id);/*global*/
                                                   /*local*/
-               m_msh->ele_vector[i]->nodes_index[j]=new_node_id;
+               m_msh->ele_vector[i]->nodes_index[j] = new_node_id;
             }
          }
-         for(i=0;i<(int)m_msh->nod_vector.size();i++)
+         for (i = 0; i < (int) m_msh->nod_vector.size(); i++)
          {
             m_msh->nod_vector[i]->SetIndex(i);
          }
@@ -1129,10 +1131,10 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
       while (strbuffer.compare("$EndElements") != 0)
       {
          // Node data
-         msh_file >> NumNodes >> ws;
+         msh_file >> NumNodes >> std::ws;
          for (i = 0; i < NumNodes; i++)
          {
-            msh_file >> id >> x >> y >> z >> ws;
+            msh_file >> id >> x >> y >> z >> std::ws;
             node = new CNode(id, x, y, z);
             m_msh->nod_vector.push_back(node);
          }
@@ -1140,7 +1142,7 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
 
          // Element data
          getline(msh_file, strbuffer);            // Element keyword $Elements
-         msh_file >> NumElements >> ws;           // number-of-elements
+         msh_file >> NumElements >> std::ws;      // number-of-elements
          for (i = 0; i < NumElements; i++)
          {
             elem = new CElem(i);
@@ -1150,15 +1152,15 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
          }
          getline(msh_file, strbuffer);            // END keyword
 
-         // correct indices  TF
-         const size_t n_elements (m_msh->ele_vector.size());
-         for (size_t k(0); k<n_elements; k++)
+         // correct indices TF
+         const size_t n_elements(m_msh->ele_vector.size());
+         for (size_t k(0); k < n_elements; k++)
          {
             m_msh->ele_vector[k]->SetIndex(k);
          }
 
          // ordering nodes and closing gaps TK
-         vector<int> gmsh_id;
+         std::vector<int> gmsh_id;
          long new_node_id;
          int counter = 0;
          int diff = 0;
@@ -1221,13 +1223,13 @@ Task:   Takes Surface, meshs it and saves it with defined file name
 Programing:
 12/2005 TK implementation
 **************************************************************************/
-void Mesh_Single_Surface(string surface_name, const char *file_name_const_char)
+void Mesh_Single_Surface(std::string surface_name, const char *file_name_const_char)
 {
 
    //Searching Methods
    int i=0, j=0, k=0;
-   string Name;
-   vector<CGLPoint*> surface_points_searchvector;
+   std::string Name;
+   std::vector<CGLPoint*> surface_points_searchvector;
    CGLPoint *m_point = NULL;
 
    for (i=0; i<(int)surface_points_searchvector.size();i++)
@@ -1298,7 +1300,7 @@ void Mesh_Single_Surface(string surface_name, const char *file_name_const_char)
             surface_points_searchvector.erase(surface_points_searchvector.begin());
 
          //Write GMSH_GEO_FILE of marked Surface and mesh it
-         string m_strFileNameGEO = file_name_const_char;
+         std::string m_strFileNameGEO = file_name_const_char;
          m_strFileNameGEO = m_strFileNameGEO + ".geo";
          file_name_const_char = m_strFileNameGEO.data();
          FILE *geo_file=NULL;
@@ -1420,7 +1422,7 @@ void Mesh_Single_Surface(string surface_name, const char *file_name_const_char)
 
          fclose(geo_file);
 
-         string m_strExecuteGEO = "gmsh " + m_strFileNameGEO +" -2";
+         std::string m_strExecuteGEO = "gmsh " + m_strFileNameGEO +" -2";
 
          // PCH & TK: Workaround for the old problem.
 
@@ -1699,7 +1701,7 @@ Task:
 Programing:
 11/2005 MB
 **************************************************************************/
-void CFEMesh::SetMSHPart(vector<long>&elements_active, long StrangNumber)
+void CFEMesh::SetMSHPart(std::vector<long>&elements_active, long StrangNumber)
 {
    int j;
    int k;
@@ -1852,7 +1854,7 @@ Task:   CheckMarkedEdgesOnPolyLine
 Programing:
 05/2007 NW implementation
 **************************************************************************/
-void CFEMesh::CheckMarkedEdgesOnPolyLine(CGLPolyline*m_polyline, vector<long> &ele_vector_at_ply)
+void CFEMesh::CheckMarkedEdgesOnPolyLine(CGLPolyline*m_polyline, std::vector<long> &ele_vector_at_ply)
 {
    CElem* m_ele = NULL;
    CEdge* m_edg = NULL;
@@ -1861,7 +1863,7 @@ void CFEMesh::CheckMarkedEdgesOnPolyLine(CGLPolyline*m_polyline, vector<long> &e
 
    //------------------------------------------------------------------
    // Make a list of elements to check
-   vector<int> chk_ele_list;
+   std::vector<int> chk_ele_list;
    for (int i=0;i<(long)ele_vector_at_ply.size();i++)
    {
       m_ele = ele_vector[ele_vector_at_ply[i]];
@@ -2016,7 +2018,7 @@ Task:   CreateLineElementsFromMarkedEdges
 Programing:
 05/2007 NW implementation
 **************************************************************************/
-void CFEMesh::CreateLineElementsFromMarkedEdges(CFEMesh*m_msh_ply, vector<long> &ele_vector_at_ply)
+void CFEMesh::CreateLineElementsFromMarkedEdges(CFEMesh*m_msh_ply, std::vector<long> &ele_vector_at_ply)
 {
    CElem* m_ele = NULL;
    CEdge* m_edg = NULL;
@@ -2025,7 +2027,7 @@ void CFEMesh::CreateLineElementsFromMarkedEdges(CFEMesh*m_msh_ply, vector<long> 
    long no_elements;
 
    // Create line elements
-   vector<CEdge*> vct_used_edge;
+   std::vector<CEdge*> vct_used_edge;
    for (int i=0;i<(long)ele_vector_at_ply.size();i++)
    {
       m_ele = ele_vector[ele_vector_at_ply[i]];

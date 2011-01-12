@@ -55,15 +55,15 @@ void NetCDFInterface::readNetCDFData(std::string &ifname, std::vector<GEOLIB::Po
    if (status != NC_NOERR)   HANDLE_ERROR(status);
 
    /* Get the choosen variable name from the opened NetCDF file. */
-   string nc_fname; 
-   basic_string <char>::size_type indexChar; 
+   std::string nc_fname; 
+   size_t indexChar; 
    indexChar = ifname.find_last_of('/');
-   if(indexChar==string::npos)
+   if(indexChar==std::string::npos)
      nc_fname = ifname;
    else
      nc_fname = ifname.substr(indexChar+1);
-   basic_string <char>::size_type len_varname = nc_fname.size() - LEN_ORIGINAL;   
-   string var_name;
+   size_t len_varname = nc_fname.size() - LEN_ORIGINAL;   
+   std::string var_name;
    var_name = nc_fname.substr(0,len_varname);
 
    /* Get the varids of the netCDF variables, such as longitude, latitude,

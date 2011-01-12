@@ -13,7 +13,6 @@ Programing:
 #include <fstream>
 #include <iostream>
 #include <sstream>
-using namespace std;
 
 class CFunction
 {
@@ -21,29 +20,29 @@ class CFunction
    public:
       CFunction(void);
       ~CFunction(void);
-      void Set(string,string,double);
-      ios::pos_type Read(ifstream*);
-      void Write(fstream*);
+      void Set(std::string,std::string,double);
+      std::ios::pos_type Read(std::ifstream*);
+      void Write(std::fstream*);
                                                   // add int method. WW
       double GetValue(double point, bool*valid, int method =0);
    public:
-      string type_name;
-      string geo_name;
-      string geo_type_name;
-      string dis_type_name;                       //CMCD
-      vector<string>variable_names_vector;
-      vector<double*>variable_data_vector;
+      std::string type_name;
+      std::string geo_name;
+      std::string geo_type_name;
+      std::string dis_type_name;                  //CMCD
+      std::vector<std::string>variable_names_vector;
+      std::vector<double*>variable_data_vector;
       //	int matrix_dimension_x; //NB4703
       //	int matrix_dimension_y; //NB4703
-      vector<int>matrix_dimension;                //NB 4.8.01
+      std::vector<int>matrix_dimension;           //NB 4.8.01
       bool selected;
 };
 
-extern vector<CFunction*>fct_vector;
-extern void FCTWrite(string);
-extern void FCTRead(string);
-extern void FCTReadTIMData(string);
-extern CFunction* FCTGet(string);
+extern std::vector<CFunction*>fct_vector;
+extern void FCTWrite(std::string);
+extern void FCTRead(std::string);
+extern void FCTReadTIMData(std::string);
+extern CFunction* FCTGet(std::string);
 extern CFunction* FCTGet(long);                   //YD
 
 #define FCT_FILE_EXTENSION ".fct"

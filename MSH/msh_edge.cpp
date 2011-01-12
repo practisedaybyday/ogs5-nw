@@ -12,8 +12,6 @@ last modified
 #include "msh_edge.h"
 #include "mathlib.h"                              //OK
 
-using namespace std;
-
 //========================================================================
 namespace Mesh_Group
 {
@@ -110,15 +108,15 @@ namespace Mesh_Group
    Programing:
    06/2005 WW Implementation
    **************************************************************************/
-   void CEdge::Write(ostream& osm) const
+   void CEdge::Write(std::ostream& osm) const
    {
-      osm<<"Edge: "<< index<<endl;
+      osm<<"Edge: "<< index<<std::endl;
       for(size_t i=0; i<nodes_of_edges.Size(); i++)
       {
-         osm<<"Node: "<< i<<endl;
+         osm<<"Node: "<< i<<std::endl;
          nodes_of_edges[i]->Write(osm);
       }
-      osm<<endl;
+      osm<<std::endl;
    }
 
    /**************************************************************************

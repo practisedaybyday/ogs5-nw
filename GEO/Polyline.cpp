@@ -101,6 +101,83 @@ const std::vector<double>& Polyline::getLengthVec () const
 	return _length;
 }
 
+
+Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &ply_vec)
+{
+	size_t nLines = ply_vec.size();
+
+	Polyline* new_ply = new Polyline(*ply_vec[0]);
+
+	std::vector<Polyline*> local_ply_vec;
+	for (size_t i=1; i<nLines; i++)
+	{
+		local_ply_vec.push_back(ply_vec[i]);
+	}
+	
+	while (!local_ply_vec.empty())
+	{
+		bool ply_found(false);
+		for (std::vector<Polyline*>::iterator it=local_ply_vec.begin(); it!=local_ply_vec.end(); ++it)
+		{
+			if (new_ply->getPointsVec() == (*it)->getPointsVec())
+			{
+				size_t nPoints((*it)->getNumberOfPoints());
+
+				if (new_ply->getPointID(0) == (*it)->getPointID(0))
+				{
+					Polyline* tmp = new Polyline((*it)->getPointsVec());
+					for (size_t k=0; k<nPoints; k++)
+						tmp->addPoint((*it)->getPointID(nPoints-k-1));
+					
+					size_t new_ply_size(new_ply->getNumberOfPoints());
+					for (size_t k=1; k<new_ply_size; k++)
+						tmp->addPoint(new_ply->getPointID(k));
+					delete new_ply;
+					new_ply = tmp;
+					ply_found = true;
+				}
+				else if (new_ply->getPointID(0) == (*it)->getPointID(nPoints-1))
+				{
+					Polyline* tmp = new Polyline(**it);
+					size_t new_ply_size(new_ply->getNumberOfPoints());
+					for (size_t k=1; k<new_ply_size; k++)
+						tmp->addPoint(new_ply->getPointID(k));
+					delete new_ply;
+					new_ply = tmp;
+					ply_found = true;
+				}
+				else if (new_ply->getPointID(new_ply->getNumberOfPoints()-1) == (*it)->getPointID(0))
+				{
+					for (size_t k=1; k<nPoints; k++)
+						new_ply->addPoint((*it)->getPointID(k));
+					ply_found = true;
+				}
+				else if (new_ply->getPointID(new_ply->getNumberOfPoints()-1) == (*it)->getPointID(nPoints-1))
+				{
+					for (size_t k=1; k<nPoints; k++)
+						new_ply->addPoint((*it)->getPointID(nPoints-k-1));
+					ply_found = true;
+				}
+				if (ply_found) 
+				{
+					local_ply_vec.erase(it);
+					break;
+				}
+			}
+			else
+				std::cout << "Error in Polyline::contructPolylineFromSegments() - Line segments use different point vectors..." << std::endl;
+		}
+
+		if (!ply_found)
+		{
+			std::cout << "Error in Polyline::contructPolylineFromSegments() - Not all segments are connected..." << std::endl;
+			new_ply = NULL;
+			break;
+		}
+	}
+	return new_ply;
+}
+
 std::ostream& operator<< (std::ostream &os, const Polyline &pl)
 {
 	pl.write (os);
@@ -125,5 +202,19 @@ bool containsEdge (const Polyline& ply, size_t id0, size_t id1)
 	}
 	return false;
 }
+
+Polyline* Polyline::closePolyline(const Polyline& ply)
+{
+	if (ply.getNumberOfPoints()>2)
+	{
+		Polyline* new_ply = new Polyline(ply);
+		if (ply.isClosed()) return new_ply;
+		new_ply->addPoint(new_ply->getPointID(0));
+		return new_ply;
+	}
+	std::cout << "Error in Polyline::closePolyline() - Input polyline needs to be composed of at least three points..." << std::endl;
+	return NULL;
+}
+
 
 } // end namespace GEOLIB

@@ -8,19 +8,20 @@
 #include "DistributionInfo.h"
 
 DistributionInfo::DistributionInfo() :
-_dis_type (INVALID_DIS_TYPE)
+_dis_type (FiniteElement::INVALID_DIS_TYPE)
 {}
 
 DistributionInfo::~DistributionInfo()
 {}
 
-void DistributionInfo::setProcessDistributionType (DistributionType dis_type)
+void DistributionInfo::setProcessDistributionType (FiniteElement::DistributionType dis_type)
+
 {
    _dis_type = dis_type;
 }
 
 
-DistributionType DistributionInfo::getProcessDistributionType () const
+FiniteElement::DistributionType DistributionInfo::getProcessDistributionType () const
 {
    return _dis_type;
 }

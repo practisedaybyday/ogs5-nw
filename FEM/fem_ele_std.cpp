@@ -5,29 +5,35 @@
 #include "Configure.h"
 
 // C++ STL
-#include <iostream>
-#include <limits>                                 // PCH to better use system max and min
+#include <cfloat>
+//#include <iostream>
+//#include <limits>	// PCH to better use system max and min
 // Method
 #include "fem_ele_std.h"
 #include "mathlib.h"
+// Problems
+//#include "rf_mfp_new.h"
+#include "rf_mmp_new.h"
+
+#include "pcs_dm.h"                               // displacement coupled
+#include "rfmat_cp.h"
 // Steps
-#include "rf_pcs.h"
-#include "rf_tim_new.h"
+//#include "rf_pcs.h"
+//#include "rf_tim_new.h"
 #ifndef NEW_EQS                                   //WW. 06.11.2008
 // Sytem matrix
 #include "matrix.h"
 #endif
 // Parallel computing
-#include "par_ddc.h"
+//#include "par_ddc.h"
 // MSHLib
-#include "msh_elem.h"
+//#include "msh_elem.h"
 // Solver
 #ifdef NEW_EQS
 #include "equation_class.h"
 using Math_Group::CSparseMatrix;
 #endif
 
-#include "pcs_dm.h"                               // displacement coupled
 extern double gravity_constant;                   // TEST, must be put in input file
 #define COMP_MOL_MASS_AIR   28.96                 // kg/kmol WW  28.96
 #define COMP_MOL_MASS_WATER 18.016                //WW 18.016
@@ -35,7 +41,8 @@ extern double gravity_constant;                   // TEST, must be put in input 
 #define GAS_CONSTANT_V  461.5                     //WW
 #define T_KILVIN_ZERO  273.15                     //WW
 
-#include "rfmat_cp.h"
+using namespace std;
+
 namespace FiniteElement
 {
 
@@ -1091,7 +1098,7 @@ namespace FiniteElement
       else if(MeshElement->geo_type==4)
          CalcOverlandCoefficientsTri(head, axx, ayy, ast );
       else
-         cout << "Error in CFiniteElementStd::CalcOverlandCoefficients !!!";
+         std::cout << "Error in CFiniteElementStd::CalcOverlandCoefficients !!!";
 
    }
    /**************************************************************************
@@ -1281,7 +1288,7 @@ namespace FiniteElement
       switch(PcsType)
       {
          default:
-            cout << "Fatal error in CalCoefMass: No valid PCS type" << endl;
+            std::cout << "Fatal error in CalCoefMass: No valid PCS type" << std::endl;
             break;
          case L:                                  // Liquid flow
                                                   // Is this really needed?
@@ -1578,7 +1585,7 @@ namespace FiniteElement
       switch(PcsType)
       {
          default:
-            cout << "Fatal error in CalCoefStorage: No valid PCS type" << endl;
+            std::cout << "Fatal error in CalCoefStorage: No valid PCS type" << std::endl;
             break;
          case L:                                  // Liquid flow
             break;
@@ -1637,7 +1644,7 @@ namespace FiniteElement
       switch(PcsType)
       {
          default:
-            cout << "Fatal error in CalCoefContent: No valid PCS type" << endl;
+            std::cout << "Fatal error in CalCoefContent: No valid PCS type" << std::endl;
             break;
          case L:                                  // Liquid flow
             break;
@@ -2490,7 +2497,7 @@ namespace FiniteElement
             }
             else
             {
-               cout << "Phase number is wrong in UpwindElement."<<endl;
+               std::cout << "Phase number is wrong in UpwindElement."<< std::endl;
                abort();
             }
 
@@ -2504,8 +2511,8 @@ namespace FiniteElement
 
       if(WhichNodeInTheElement == -1)
       {
-         cout<<"UpwindElement is failed. Impossible node index!!!"<<endl;
-         cout<<"Pmin = "<<Pmin<<endl;
+         std::cout<<"UpwindElement is failed. Impossible node index!!!"<< std::endl;
+         std::cout<<"Pmin = "<<Pmin<< std::endl;
          abort();
       }
       return WhichNodeInTheElement;
@@ -2862,7 +2869,7 @@ namespace FiniteElement
       switch(PcsType)
       {
          default:
-            cout << "Fatal error in CalCoefAdvection: No valid PCS type" << endl;
+            cout << "Fatal error in CalCoefAdvection: No valid PCS type" << std::endl;
             break;
          case L:                                  // Liquid flow
             break;
@@ -4005,7 +4012,7 @@ namespace FiniteElement
                            (*Laplace)(i_plus_in_times_nnodes,j_plus_jn_times_nnodes) += fkt_times_dshapefct__k_times_nnodes_plus_i__ \
                               * mat[dim_times_k_plus_l] * dshapefct[l_times_nnodes_plus_j];
                            /*
-                                             (*Laplace)(i+in*nnodes,j+jn*nnodes) += fkt * dshapefct[k*nnodes+i] \ 
+                                             (*Laplace)(i+in*nnodes,j+jn*nnodes) += fkt * dshapefct[k*nnodes+i] \
                                                 * mat[dim*k+l] * dshapefct[l*nnodes+j];
                                              if(Index < 10) {cout << " i, j, k, l, nnodes, dim: " << i << ", " << j << ", " << k << ", " << l << ", " << nnodes << ", " << dim << ". fkt, dshapefct[k*nnodes+i], mat[dim*k+l], dshapefct[l*nnodes+j]: ";
                                              cout << fkt << ", " << dshapefct[k*nnodes+i] << ", " << mat[dim*k+l] << ", " << dshapefct[l*nnodes+j] << endl;}
@@ -8014,9 +8021,13 @@ namespace FiniteElement
    inline double CFiniteElementStd::CalCoef_RHS_HEAT_TRANSPORT2(int dof_index)
    {
       int i;
-      ElementValue* gp_ele = ele_gp_value[Index];
+      // TF unused variable - comment fix compile warning
+//      ElementValue* gp_ele = ele_gp_value[Index];
       double *tensor = NULL;
-      double val = 0.0,mat_fac,Tc=647.096,H_vap=0.0,dens_arg[3];
+      double val = 0.0,mat_fac;
+      // TF unused variable - comment fix compile warning
+//      double Tc=647.096;
+      double H_vap=0.0,dens_arg[3];
       ComputeShapefct(1);
       PG = interpolate(NodalValC1);
       PG2 = interpolate(NodalVal_p2);
@@ -8074,7 +8085,13 @@ namespace FiniteElement
       int i, j, k, ii;
       // ---- Gauss integral
       int gp_r=0,gp_s=0,gp_t=0;
-      double *tensor = NULL,dens_arg[3],H_vap=0,Tc=647.096;
+      // TF unused variable - comment fix compile warning
+//      double *tensor = NULL,
+      double dens_arg[3];
+      // TF unused variable - comment fix compile warning
+//      double H_vap=0;
+      // TF unused variable - comment fix compile warning
+//      double Tc=647.096;
       double fkt=0.0, fac=0.0;                    //WW,mat_fac;
       // Material
       int dof_n = 1;
@@ -8092,7 +8109,8 @@ namespace FiniteElement
          // Compute geometry
          ComputeGradShapefct(1);                  // Linear interpolation function
          ComputeShapefct(1);                      // Linear interpolation function
-         ElementValue* gp_ele = ele_gp_value[Index];
+         // TF unused variable - comment fix compile warning
+//         ElementValue* gp_ele = ele_gp_value[Index];
          int dof_n = 2;
          int GravityOn = 1;                       // Initialized to be on
          // If no gravity, then set GravityOn to be zero.
@@ -8674,7 +8692,7 @@ namespace FiniteElement
    PCSLib-Method:
    02/2009 PCH Implementation
    **************************************************************************/
-   void CFiniteElementStd::PrintTheSetOfElementMatrices(string mark)
+   void CFiniteElementStd::PrintTheSetOfElementMatrices(std::string mark)
    {
       // Output matrices
       if(pcs->Write_Matrix)

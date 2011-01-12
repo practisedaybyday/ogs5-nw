@@ -51,6 +51,13 @@ namespace Mesh_Group
           */
          void setElementProperties(MshElemType::type t, bool isFace = false);
 
+         /**
+          * Method (re)sets the patch index. Patch index is used to assign a
+          * material to the element.
+          * @param pidx an identifier for material
+          */
+         void setPatchIndex (size_t pidx) { patch_index = pidx; }
+
          /// Depricated method kept for backward compatibility. Use setElementProperties(MshElemType::type t) instead.
          void Config(MshElemType::type t) { setElementProperties(t); };
 

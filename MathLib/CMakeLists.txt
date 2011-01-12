@@ -9,8 +9,12 @@ set( HEADERS
 	CubicSpline.h
 	LinearInterpolation.h
 	# directory LinAlg
+	LinAlg/LinearSolver.h
+	LinAlg/DirectLinearSolver.h
+	LinAlg/DenseDirectLinearSolver.h
 	LinAlg/GaussAlgorithm.h
 	LinAlg/TriangularSolve.h
+	LinAlg/IterativeLinearSolver.h
 )
 
 set( SOURCES

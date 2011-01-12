@@ -15,7 +15,6 @@ Programing:
 #include <string>
 #include <vector>
 #include <cstdio>
-using namespace std;
 
 /* Class */
 /*---------------------------------------------------------------*/
@@ -23,9 +22,9 @@ using namespace std;
 class CGLDomain
 {
   private:
-    string name;
+    std::string name;
     long Insert(CGLDomain *);
-    vector<CGLDomain*> GetVector(void);
+    std::vector<CGLDomain*> GetVector(void);
   public:
     double x_min,x_max;
     double y_min,y_max;
@@ -35,8 +34,8 @@ class CGLDomain
     // destructor
     ~CGLDomain(void);
     int Read(char *,FILE *);
-    CGLDomain* Get(string);
+    CGLDomain* Get(std::string);
 };
-extern vector<CGLDomain*> domain_vector;
+extern std::vector<CGLDomain*> domain_vector;
 extern int GEOReadDomain(char*,int,FILE*);
 #endif

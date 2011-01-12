@@ -20,8 +20,6 @@
 #endif
 #include "mathlib.h"
 
-using namespace std;
-
 using namespace FiniteElement;
 
 class PlaneSet
@@ -87,8 +85,8 @@ class CFluidMomentum: public CRFProcess
 
       int RWPTSwitch;
 
-      vector<CrossRoad*> crossroads;
-      vector<CrossRoad*> joints;
+      std::vector<CrossRoad*> crossroads;
+      std::vector<CrossRoad*> joints;
 
       void Create(void);
       virtual double Execute();
@@ -103,5 +101,5 @@ class CFluidMomentum: public CRFProcess
       CRFProcess* m_pcs;
 };
 
-extern void FMRead(string pcs_name = "");
+extern void FMRead(std::string pcs_name = "");
 extern void DATWriteHETFile(const char *file_name);

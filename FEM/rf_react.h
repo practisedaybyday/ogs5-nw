@@ -5,7 +5,6 @@
 #define reactions_INC
 
 #include <vector>
-using namespace std;
 
 /* Structure for exchange of reaction rates */
 class REACT
@@ -43,12 +42,12 @@ class REACT
       int rcml_number_of_pqcsteps;                /* Anzahl der Reaktionsschritte in PHREEQC aus dem Befehl: -steps "time" in "pqcsteps" steps */
       int rcml_pH_charge;                         /* =0, no charge balance for pH; =1, used for charge balance (keyword charge in line with pH*/
       char * outfile;                             /* Ausgabefile von PHREEQC */
-      string file_name_pqc;                       // Name of pqc file in GeoSys project (*.pqc)
-      string outfile_name;
-      string results_file_name;
-      vector < string > pqc_names;                // species names in *-pqc input file
-      vector < int > pqc_index;                   // index in process array
-      vector < int > pqc_process;                 // process number in pcs_vector
+      std::string file_name_pqc;                  // Name of pqc file in GeoSys project (*.pqc)
+      std::string outfile_name;
+      std::string results_file_name;
+      std::vector < std::string > pqc_names;      // species names in *-pqc input file
+      std::vector < int > pqc_index;              // index in process array
+      std::vector < int > pqc_process;            // process number in pcs_vector
       double gamma_Hplus;                         //activity coefficent of H+ ion
 
       // Member functions
@@ -57,14 +56,14 @@ class REACT
       void InitREACT(void);
       void ExecuteReactionsPHREEQC(void);
       void ExecuteReactionsPHREEQCNew(void);
-      void TestPHREEQC(string);
+      void TestPHREEQC(std::string);
       int  Call_Phreeqc(void);
       void GetTransportResults(void);
       int  ReadReactionModel(FILE *File);
-      int  ReadReactionModelNew(ifstream *);
+      int  ReadReactionModelNew(std::ifstream *);
                                                   //fsout removed 3912
       int  ReadInputPhreeqc( long index, FILE *fpqc, FILE *Fphinp);
-      int  WriteInputPhreeqc(long, /*ifstream*,*/ ofstream*);
+      int  WriteInputPhreeqc(long, /*ifstream*,*/ std::ofstream*);
       int  ReadOutputPhreeqc(char* fout);
       int  ReadOutputPhreeqcNew(void);
       void ResetpHpe(void);
@@ -82,15 +81,15 @@ class REACT
       // MDL: libphreeqc
       void ExecuteReactionsPHREEQCNewLib(void);   // MDL:
                                                   // MDL:
-      int  WriteInputPhreeqcLib(long, stringstream*, int*);
+      int  WriteInputPhreeqcLib(long, std::stringstream*, int*);
       int  ReadOutputPhreeqcNewLib(double*);      // MDL:
-      int  Call_PhreeqcLib(int, int, int, stringstream*, double*);
+      int  Call_PhreeqcLib(int, int, int, std::stringstream*, double*);
 #endif                                         // LIBPHREEQC
 };
-extern vector <REACT*> REACT_vec;
+extern std::vector <REACT*> REACT_vec;
 
 extern void DestroyREACT(void);
-extern void RCRead(string);
+extern void RCRead(std::string);
 extern double MATCalcIonicStrengthNew(long index);
 extern void REACTInit();                          //OK
 #endif

@@ -24,10 +24,9 @@
 #cmakedefine _POSIX_SOURCE
 #cmakedefine NO_ERROR_CONTROL
 
-#cmakedefine MSVC
-
 #cmakedefine OGS_VRED_PLUGIN
 #cmakedefine OGS_PYTHON
+#cmakedefine MSVC
 #cmakedefine OGS_USE_OPENSG
 
 #cmakedefine OGS_USE_VRPN

@@ -10,11 +10,11 @@ Programing:
 /* Schutz gegen mehrfaches Einfuegen */
 
 // C++ STL
-#include <list>
-#include <string>
-#include <vector>
-#include <fstream>
-using namespace std;
+//#include <list>
+//#include <string>
+//#include <vector>
+//#include <fstream>
+
 // PCSLib
 #include "rf_pcs.h"
 
@@ -66,15 +66,15 @@ class CMediumProperties
       // Methods
       CMediumProperties(void);                    // constructor
       ~CMediumProperties(void);                   // destructor
-      CMediumProperties* Get(string);
-      CMediumProperties* GetDB(string);
+      CMediumProperties* Get(std::string);
+      CMediumProperties* GetDB(std::string);
       CMediumProperties* GetByGroupNumber(int);
-      void Set(string,string,double);
-      void SetDB(string,string,double);
-      int GetPropertyType(string);
-      ios::pos_type Read(ifstream*);
-      void Write(fstream*);
-      void WriteTecplot(string);
+      void Set(std::string,std::string,double);
+      void SetDB(std::string,std::string,double);
+      int GetPropertyType(std::string);
+      std::ios::pos_type Read(std::ifstream*);
+      void Write(std::fstream*);
+      void WriteTecplot(std::string);
       double* PermeabilityTensor(long index);
 #ifdef RFW_FRACTURE
       double RelativePermeability (long index);   //RW/CMCD03/06
@@ -137,28 +137,32 @@ class CMediumProperties
       double Porosity(long number,double theta);  //CMCD 9/2004 GeoSys 4
                                                   //CMCD 4/2005
       void SetConstantELEarea(double area, int group);
-      void SetDistributedELEProperties(string);   //OK
+                                                  //OK
+      void SetDistributedELEProperties(std::string);
+
       void WriteTecplotDistributedProperties();   //OK
       //-------------------------------------------
       // Properties
       // PCS
-      string pcs_type_name;                       //YD
+      std::string pcs_type_name;                  //YD
       CRFProcess*m_pcs;                           //OK
       CRFProcess*m_pcs_tmp;                       //HS
-      vector<string>pcs_name_vector;
-      vector<string>porosity_pcs_name_vector;
+      std::vector<std::string>pcs_name_vector;
+   private:
+      std::vector<std::string> porosity_pcs_name_vector;
+   public:
       //....................................................................
       //GEO
-      string geo_type_name;
-      string geo_name;
-      vector<string>geo_name_vector;              //OK
+      std::string geo_type_name;
+      std::string geo_name;
+      std::vector<std::string>geo_name_vector;    //OK
       int geo_dimension;
       double geo_area;
-      string geo_area_file;                       //OK
+      std::string geo_area_file;                  //OK
       CFEMesh* m_msh;                             //OK
       //....................................................................
       double density;
-      string name;
+      std::string name;
       int number;
       int porosity_model;                         // porosity
       int porosity_curve;
@@ -166,7 +170,7 @@ class CMediumProperties
       double porosity;
       double KC_porosity_initial;                 // HS 11.2008
       double KC_permeability_initial;             // HS 11.2008
-      string porosity_file;                       //OK/MB
+      std::string porosity_file;                  //OK/MB
       int tortuosity_model;
       double tortuosity_model_values[10];
       double tortuosity;
@@ -181,8 +185,8 @@ class CMediumProperties
       int permeability_model;                     // permeability
       double permeability;
       double permeability_tensor[10];             // permeability_tensor[9] is the minmum permeability. WW
-      string permeability_tensor_type_name;
-      string tortuosity_tensor_type_name;
+      std::string permeability_tensor_type_name;
+      std::string tortuosity_tensor_type_name;
       int permeability_tensor_type;
       int tortuosity_tensor_type;
 
@@ -208,8 +212,8 @@ class CMediumProperties
       double permeability_pressure_rel;
       int permeability_saturation_model[3];
       double permeability_saturation;
-      string permeability_file;                   //SB //OK/MB string permeability_dis_type_file;
-      string tortuosity_file;                     // PCH
+      std::string permeability_file;              //SB //OK/MB string permeability_dis_type_file;
+      std::string tortuosity_file;                // PCH
       int capillary_pressure_model;
       double capillary_pressure;
       int permeability_porosity_model;
@@ -242,7 +246,7 @@ class CMediumProperties
       int m_color[3];
       bool selected;
       int mode;
-      string het_file_name;                       //SB
+      std::string het_file_name;                  //SB
       // surface water
                                                   // JOD
       double friction_coefficient, friction_exp_slope, friction_exp_depth;
@@ -266,37 +270,37 @@ class CMediumPropertiesGroup                      //YD
    public:
       CMediumPropertiesGroup() {OrigSize=0;}
       void Set(CRFProcess* m_pcs);
-      string pcs_name;
-      string pcs_type_name;
+      std::string pcs_name;
+      std::string pcs_type_name;
       CFEMesh* m_msh;
-      vector<CMediumProperties*>mmp_group_vector;
+      std::vector<CMediumProperties*>mmp_group_vector;
    private:
       int OrigSize;                               // For excavation simulation.
 };
 
                                                   //YD
-extern CMediumPropertiesGroup* MMPGetGroup(const string &pcs_type_name);
+extern CMediumPropertiesGroup* MMPGetGroup(const std::string &pcs_type_name);
                                                   //YD
-extern list<CMediumPropertiesGroup*>mmp_group_list;
+extern std::list<CMediumPropertiesGroup*>mmp_group_list;
 extern void MMPGroupDelete(/*string pcs_type_name*/);
 
-extern vector<CMediumProperties*>mmp_vector;
-extern void MATLoadDB(string);
-extern list<string> keywd_list;                   //keyword-referenzliste "kw"
-extern void comp_keywd_list(string);
+extern std::vector<CMediumProperties*>mmp_vector;
+extern void MATLoadDB(std::string);
+extern std::list<std::string> keywd_list;         //keyword-referenzliste "kw"
+extern void comp_keywd_list(std::string);
 extern void read_keywd_list(void);
-extern list<string>mat_name_list;
+extern std::list<std::string>mat_name_list;
 
-extern void MMPWrite(string);
-extern bool MMPRead(string);
-extern void MMPWriteTecplot(string);
+extern void MMPWrite(std::string);
+extern bool MMPRead(std::string);
+extern void MMPWriteTecplot(std::string);
 extern void MMPDelete();
-extern CMediumProperties* MMPGet(const string&);
+extern CMediumProperties* MMPGet(const std::string&);
 extern void MMP2PCSRelation(CRFProcess*);
 extern void GetHeterogeneousFields();             //SB
-extern long GetNearestHetVal2(long EleIndex, CFEMesh *m_msh, vector <double> xvals,  vector <double> yvals,  vector <double> zvals,  vector <double> mmpvals);
-double GetAverageHetVal2(long EleIndex, CFEMesh *m_msh, vector <double> xvals,  vector <double> yvals,  vector <double> zvals,  vector <double> mmpvals);
-extern bool MMPExist(ifstream *mmp_file);         //OK
+extern long GetNearestHetVal2(long EleIndex, CFEMesh *m_msh, std::vector <double> xvals,  std::vector <double> yvals,  std::vector <double> zvals,  std::vector <double> mmpvals);
+double GetAverageHetVal2(long EleIndex, CFEMesh *m_msh, std::vector <double> xvals,  std::vector <double> yvals,  std::vector <double> zvals,  std::vector <double> mmpvals);
+extern bool MMPExist(std::ifstream *mmp_file);    //OK
 extern bool MMPExist();                           //OK
 
 #define MMP_FILE_EXTENSION ".mmp"

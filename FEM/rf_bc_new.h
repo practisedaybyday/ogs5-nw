@@ -8,23 +8,28 @@ last modified
 #ifndef rf_bc_new_INC
 #define rf_bc_new_INC
 
-#include <list>
-#include <fstream>
-#include <string>
-#include <vector>
+//#include <list>
+//#include <fstream>
+//#include <string>
+//#include <vector>
 
 // new GEOLIB
-#include "GEOObjects.h"
+//#include "GEOObjects.h"
 #include "GeoInfo.h"                              // TF
 #include "ProcessInfo.h"                          // KR
 #include "DistributionInfo.h"                     // TF
 
 // GEOLib
-#include "geo_ply.h"
+//#include "geo_ply.h"
 // MSHLib
-#include "msh_lib.h"
+//#include "msh_lib.h"
 // PCSLib
-#include "rf_pcs.h"
+//#include "rf_pcs.h"
+namespace Mesh_Group
+{
+   class CFEMesh;
+}
+
 
 class CBoundaryCondition : public ProcessInfo, public GeoInfo, public DistributionInfo
 {
@@ -32,6 +37,9 @@ class CBoundaryCondition : public ProcessInfo, public GeoInfo, public Distributi
       friend class CBoundaryConditionsGroup;
       CBoundaryCondition();
       ~CBoundaryCondition();
+      void Write(std::fstream*) const;
+      void WriteTecplot(std::fstream*) const;
+
       /**
        * reads a boundary condition from stream
        * @param in input file stream for reading
@@ -40,9 +48,7 @@ class CBoundaryCondition : public ProcessInfo, public GeoInfo, public Distributi
        * @return the position in the stream after the boundary condition
        */
                                                   // TF
-      ios::pos_type Read(std::ifstream* in, const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname);
-      void Write(std::fstream*) const;
-      void WriteTecplot(std::fstream*) const;
+      std::ios::pos_type Read(std::ifstream* in, const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname);
 
       /**
        * ToDo remove after transition to new GEOLIB - REMOVE CANDIDATE
@@ -80,6 +86,7 @@ class CBoundaryCondition : public ProcessInfo, public GeoInfo, public Distributi
       const std::string& getMeshTypeName () const { return _msh_type_name; }
 
    private:
+
       std::vector<std::string> _PointsFCTNames;
 
       std::vector<int> _PointsHaveDistribedBC;
@@ -114,9 +121,8 @@ class CBoundaryCondition : public ProcessInfo, public GeoInfo, public Distributi
       std::string fct_name;
       bool conditional;
 
-      void SurfaceInterpolation(CRFProcess* m_pcs, std::vector<long>& nodes_on_sfc,
-         std::vector<double>& node_value_vector); //WW
-                                                  //27.02.2009. WW
+                                                  //WW
+      void SurfaceInterpolation(CRFProcess* m_pcs, std::vector<long>& nodes_on_sfc, std::vector<double>& node_value_vector);
       inline void DirectAssign(long ShiftInNodeVector);
                                                   //19.03.2009. WW
       inline void PatchAssign(long ShiftInNodeVector);
@@ -161,7 +167,7 @@ class CBoundaryConditionsGroup
       long msh_node_number_subst;                 //WW
       std::string fct_name;                       //OK
 
-      CFEMesh* m_msh;                             //OK
+      Mesh_Group::CFEMesh* m_msh;                 //OK
       //WW std::vector<CBoundaryCondition*>bc_group_vector; //OK
       //WW double GetConditionalNODValue(int,CBoundaryCondition*); //OK
       int time_dep_bc;
@@ -174,9 +180,9 @@ class CBoundaryConditionsGroup
 
 //========================================================================
 #define BC_FILE_EXTENSION ".bc"
-extern list<CBoundaryConditionsGroup*> bc_group_list;
+extern std::list<CBoundaryConditionsGroup*> bc_group_list;
 extern CBoundaryConditionsGroup* BCGetGroup(const std::string& pcs_type_name, const std::string& pcs_pv_name);
-extern list<CBoundaryCondition*> bc_list;
+extern std::list<CBoundaryCondition*> bc_list;
 
 /**
  * read boundary conditions from file

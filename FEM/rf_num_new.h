@@ -15,7 +15,6 @@ last modified:
 #include <fstream>
 #include <string>
 #include <vector>
-using namespace std;
 #include "prototyp.h"
 //----------------------------------------------------------------
 class CNumerics
@@ -25,9 +24,9 @@ class CNumerics
       double *DynamicDamping;
    public:
       // method
-      string method_name;                         //OK
+      std::string method_name;                    //OK
       // PCS
-      string pcs_type_name;
+      std::string pcs_type_name;
       // RENUMBER
       int renumber_method;
       int renumber_parameter;
@@ -40,7 +39,7 @@ class CNumerics
       int ls_precond;
       int ls_storage_method;
       // LS - Linear Solver
-      string nls_method_name;
+      std::string nls_method_name;
       int nls_method;                             // Picard or Newton
       int nls_error_method;                       //WW
       int nls_max_iterations;
@@ -50,7 +49,7 @@ class CNumerics
       // CPL WW
       double cpl_tolerance;
       int  cpl_iterations;
-      string  cpl_variable;                       // MB
+      std::string  cpl_variable;                  // MB
       // ELE
       int ele_gauss_points;                       // probably element-type-wise
       int ele_mass_lumping;
@@ -76,17 +75,17 @@ class CNumerics
       double GetDynamicDamping_beta2 () const {return DynamicDamping[1];}
       double GetDynamicDamping_bbeta () const {return DynamicDamping[2];}
       //
-      CNumerics(string);
+      CNumerics(std::string);
       ~CNumerics(void);
-      ios::pos_type Read(ifstream*);
-      void Write(fstream*);
+      std::ios::pos_type Read(std::ifstream*);
+      void Write(std::fstream*);
 };
 
-extern vector<CNumerics*>num_vector;
-extern bool NUMRead(string);
-extern void NUMWrite(string);
+extern std::vector<CNumerics*>num_vector;
+extern bool NUMRead(std::string);
+extern void NUMWrite(std::string);
 extern void NUMDelete();
-extern CNumerics* NUMGet(string);
+extern CNumerics* NUMGet(std::string);
 
 //////////////////////////////////////////////////////////////////////////
 // SOLVER

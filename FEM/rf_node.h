@@ -10,10 +10,10 @@ last modified
 #define rf_node_INC
 
 // C++ STL
-#include <list>
+//#include <list>
 #include <iostream>
-#include <fstream>
-#include <string>
+//#include <fstream>
+//#include <string>
 #include <vector>
 
 // FEM
@@ -25,8 +25,8 @@ class CNodeValue
       CNodeValue(void);
       ~CNodeValue(void);
 
-      void setProcessDistributionType (DistributionType distype) { _node_distype = distype; }
-      DistributionType getProcessDistributionType () const { return _node_distype; }
+      void setProcessDistributionType (FiniteElement::DistributionType distype) { _node_distype = distype; }
+      FiniteElement::DistributionType getProcessDistributionType () const { return _node_distype; }
       //
       long geo_node_number;
       long msh_node_number;
@@ -54,6 +54,6 @@ class CNodeValue
       bool check_me;                              //OK
 
    private:
-      DistributionType _node_distype;
+      FiniteElement::DistributionType _node_distype;
 };
 #endif

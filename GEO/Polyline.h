@@ -50,6 +50,17 @@ public:
 	void addPoint(size_t pos);
 
 	/**
+	 * Closes a polyline by adding a line sement that connects start- and end-point.
+	 * \param ply A Polyline containing at least three points.
+	 * \result A polygon.
+	 */
+	static Polyline* closePolyline(const Polyline& ply);
+
+	/// Constructs one polyline from a vector of connected polylines.
+	/// All polylines in this vector need to reference the same point vector.
+	static Polyline* contructPolylineFromSegments(const std::vector<Polyline*> &ply_vec);
+
+	/**
 	 * returns the number of points,
 	 * the number of segments is about one smaller
 	 * */

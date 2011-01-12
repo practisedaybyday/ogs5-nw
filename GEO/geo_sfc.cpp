@@ -19,10 +19,13 @@ Programing:
 #include "../FEM/files0.h"
 #include "geo_lib.h"
 #include "geo_mathlib.h"
+
+using namespace std;
+
 //GSP
 /*----------------------------------------------------------------------*/
 //vector
-vector<Surface*>surface_vector;//CC
+std::vector<Surface*>surface_vector;//CC
 int sfc_ID_max = 0; //OK
 /*constructor*/
 Surface::Surface(void):Radius(0.0)
@@ -88,7 +91,7 @@ void Surface::output(FILE* geo_file, int &p_index, int &l_index,
 	double dist = 0.0;
 	const double DistTol = 1.0e-10;
     //bool firstPline = true;
-	vector<int> lineIndex;
+	std::vector<int> lineIndex;
 
 
     CGLPolyline *p_pline=NULL;
@@ -101,7 +104,7 @@ void Surface::output(FILE* geo_file, int &p_index, int &l_index,
 
 	//First entity: points
     // list<CGLPolyline*>::const_iterator p  = polyline_of_surface_list.begin();//CC
-    vector<CGLPolyline*>::iterator p = polyline_of_surface_vector.begin();
+    std::vector<CGLPolyline*>::iterator p = polyline_of_surface_vector.begin();
 
     FilePrintString(geo_file, "// Points");
     LineFeed (geo_file);
@@ -158,14 +161,14 @@ void Surface::output(FILE* geo_file, int &p_index, int &l_index,
     while (p!=polyline_of_surface_vector.end())//CC
     {
        p_pline = *p;
-      vector<CGLLine*>::iterator pl //CC
+      std::vector<CGLLine*>::iterator pl //CC
 		   = p_pline->line_vector.begin();
        while (pl!=p_pline->line_vector.end())//CC
 	   {
            CGLn = *pl;
            //OK test 11.09.2004
             if(!CGLn->m_point1&&!CGLn->m_point2){
-              cout << "Error in Surface::output: no line points" << endl;
+              std::cout << "Error in Surface::output: no line points" << std::endl;
               FilePrintString(geo_file, "Error in Surface::output: no line points");
               return;
             }
@@ -225,7 +228,7 @@ void Surface::output(FILE* geo_file, int &p_index, int &l_index,
 
 	  orient = polyline_of_surface_orient[LocalPLyIndex];
 
-	  vector<CGLLine*>::iterator pl =  p_pline->line_vector.begin(); //WW NULL;
+	  std::vector<CGLLine*>::iterator pl =  p_pline->line_vector.begin(); //WW NULL;
 	  if(orient>0)
 	  {
 
@@ -368,7 +371,7 @@ void GEOSurfaceGLI2GEO(FILE *geo_file)
   int mesh_surface (0);
   CGLPolyline *polyline;
   /* Write the forth entity, surface */
-   vector<CGLPolyline*>::iterator p = polyline_vector.begin();//CC
+   std::vector<CGLPolyline*>::iterator p = polyline_vector.begin();//CC
   while(p!=polyline_vector.end()) {
     polyline = *p;
     if(polyline->getType() == 2) {
@@ -410,7 +413,7 @@ void Surface::Write(const std::string &path_name)
   //-----------------------------------------------------------------------
   // GLI File
   FILE *gli_file = NULL;
-  string gli_file_name;
+  std::string gli_file_name;
   gli_file_name = path_name + ".gli";
   const char *gli_file_name_char = 0;
   gli_file_name_char = gli_file_name.data();
@@ -439,7 +442,7 @@ void Surface::Write(const std::string &path_name)
       fprintf(gli_file," %s\n","$POLYLINES");
       CGLPolyline *m_polyline = NULL;
    //   list<CGLPolyline*>::iterator p = m_surface->polyline_of_surface_list.begin();//CC
-vector<CGLPolyline*>::iterator p = polyline_of_surface_vector.begin();
+std::vector<CGLPolyline*>::iterator p = polyline_of_surface_vector.begin();
       while(p!=polyline_of_surface_vector.end()) {//CC
         m_polyline = *p;
         fprintf(gli_file,"  %s\n",m_polyline->name.c_str());
@@ -477,11 +480,11 @@ void Surface::ReArrangePolylineList()
 
     CGLLine *line_end=NULL;
     CGLLine *line_begin=NULL;
-    vector<CGLPolyline*> buff;
+    std::vector<CGLPolyline*> buff;
     int ite = 0;
     int ite2 = 0;
 	//list<CGLPolyline*>::const_iterator p = polyline_of_surface_list.begin();//CC
-    vector<CGLPolyline*>::iterator p = polyline_of_surface_vector.begin();
+    std::vector<CGLPolyline*>::iterator p = polyline_of_surface_vector.begin();
 
 	// The first polyline
     p_pline = *p;
@@ -586,7 +589,7 @@ void Surface::PolylineOrientation()
     CGLLine *line_begin=NULL;
 
    // list<CGLPolyline*>::const_iterator p = polyline_of_surface_list.begin();
-vector<CGLPolyline*>::iterator p =polyline_of_surface_vector.begin();
+std::vector<CGLPolyline*>::iterator p =polyline_of_surface_vector.begin();
 
     p_pline = *p;
     if(p_pline->data_type==1) // OK not a toplogical polyline
@@ -596,7 +599,7 @@ vector<CGLPolyline*>::iterator p =polyline_of_surface_vector.begin();
 
       p_pline = *p;
 
-      vector<CGLLine*>::iterator pl
+      std::vector<CGLLine*>::iterator pl
 		  = p_pline->line_vector.begin();//CC
 
       //Determine the orientation
@@ -627,7 +630,7 @@ vector<CGLPolyline*>::iterator p =polyline_of_surface_vector.begin();
 	  }
 	  else
 	  {
-        vector<CGLLine*>::iterator pl2
+        std::vector<CGLLine*>::iterator pl2
 			= p_pline->line_vector.end();//CC
 		--pl2;
    	    while(pl2!=p_pline->line_vector.begin()) {//CC
@@ -828,7 +831,7 @@ void Surface::CreateTIN(void)
 //OK41
 if(type==1){ // TIN based on 2 layer polylines
   //  list<CGLPolyline*>::const_iterator  p = polyline_of_surface_list.begin();
-vector<CGLPolyline*>::iterator p = polyline_of_surface_vector.begin();
+	std::vector<CGLPolyline*>::iterator p = polyline_of_surface_vector.begin();
     CGLPolyline *m_polyline1 = NULL;
     CGLPolyline *m_polyline2 = NULL;
     while(p!=polyline_of_surface_vector.end()) {

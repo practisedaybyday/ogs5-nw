@@ -8,6 +8,7 @@
 
 #include "Configure.h"
 #include "GEOObjects.h"
+#include "FEMCondition.h"
 
 #include <QXmlStreamReader>
 
@@ -51,6 +52,9 @@ public:
 	/// Reads an xml-file containing station object definitions into the GEOObjects used in the contructor
 	int readSTNFile(const QString &fileName);
 
+	/// Reads an xml-file containing containing FEM Conditions such as Boundary- or Initial Conditions
+	int readFEMCondFile(std::vector<FEMCondition*> &conditions, const QString &fileName);
+
 	/// Writes a GeoSys project file containing all data that is currently loaded.
 	/// Project files currently cover only geo- and station data. This will be expanded in the future.
 	int writeProjectFile(const QString &fileName) const;
@@ -87,6 +91,9 @@ private:
 
 	/// Reads the stratigraphy of a borehole from an xml-file
 	void readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationBorehole* borehole );
+
+	/// Read the details of various FEM Conditions from an xml-file
+	void readConditions( const QDomNode &condRoot, std::vector<FEMCondition*> &conditions, FEMCondition::CondType type);
 
 	/// Checks if a hash for the given data file exists to skip the time-consuming validation part.
 	/// If a hash file exists _and_ the hash of the data file is the same as the content of the hash file the validation is skipped

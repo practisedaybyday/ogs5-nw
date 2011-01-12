@@ -7,25 +7,28 @@ last modified:
 **************************************************************************/
 #include "makros.h"
 // C++ STL
-#include <math.h>
-#include <fstream>
-#include <iostream>
-using namespace std;
+//#include <math.h>
+//#include <fstream>
+//#include <iostream>
+#include <cfloat>
+
 // FEM-Makros
-#include "mathlib.h"
+//#include "mathlib.h"
 #include "eos.h"                                  //NB
 // GeoSys-GeoLib
-#include "files0.h"
 #include "files0.h"
 // GeoSys-FEMLib
 #include "fem_ele_std.h"
 //
 #include "rf_mfp_new.h"
-#include "rf_mmp_new.h"
+//#include "rf_mmp_new.h"
 extern double InterpolValue(long number,int ndx,double r,double s,double t);
-#include "rf_pcs.h"
+//#include "rf_pcs.h"
+#include "rfmat_cp.h"
 extern double GetCurveValue(int,int,double,int*);
 #include "tools.h"                                //GetLineFromFile
+
+using namespace std;
 
 /* Umrechnungen SI - Amerikanisches System */
 //WW #include "steam67.h"
@@ -39,7 +42,7 @@ extern double GetCurveValue(int,int,double,int*);
 double gravity_constant = 9.81;                   //TEST for FEBEX OK 9.81;
 
 //==========================================================================
-vector<CFluidProperties*>mfp_vector;
+std::vector<CFluidProperties*>mfp_vector;
 
 /**************************************************************************
 FEMLib-Method:
@@ -110,18 +113,18 @@ Programing:
 08/2004 OK Implementation
 11/2004 SB string streaming
 **************************************************************************/
-ios::pos_type CFluidProperties::Read(ifstream *mfp_file)
+std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
 {
-   string sub_line;
-   string line_string;
-   string delimiter(" ");
+   std::string sub_line;
+   std::string line_string;
+   std::string delimiter(" ");
    bool new_keyword = false;
-   string hash("#");
-   ios::pos_type position;
-   string sub_string;
+   std::string hash("#");
+   std::ios::pos_type position;
+   std::string sub_string;
    bool new_subkeyword = false;
-   string dollar("$");
-   string delimiter_type(":");
+   std::string dollar("$");
+   std::string delimiter_type(":");
    std::stringstream in;
    //========================================================================
    // Schleife ueber alle Phasen bzw. Komponenten
@@ -274,7 +277,7 @@ ios::pos_type CFluidProperties::Read(ifstream *mfp_file)
             ||(density_model==13)                 //NB JUN 09  Fundamental equation
             ||(density_model==14))                //AKS MAY 10  Extended Ideal gas Eq. based on Super compressibility factor
          {
-            string arg1,arg2,arg3;
+            std::string arg1,arg2,arg3;
             in >> arg1 >> arg2 >> arg3;           //get up to three arguments for density model
 
             if (isdigit(arg1[0])!=0)              // first argument is reference temperature
@@ -347,7 +350,7 @@ ios::pos_type CFluidProperties::Read(ifstream *mfp_file)
          if(viscosity_model==9)                   // my(rho,T)
          {
 
-            string arg1,arg2;
+            std::string arg1,arg2;
             in >> arg1 >> arg2;                   //get up to three arguments for density model
 
             if (arg1.length()==0)                 // if no arguments are given use standard
@@ -439,7 +442,7 @@ ios::pos_type CFluidProperties::Read(ifstream *mfp_file)
          if(heat_conductivity_model==3)           // my = f(p,T) NB
          {
 
-            string arg1,arg2;
+            std::string arg1,arg2;
             in >> arg1 >> arg2;                   //get up to three arguments for density model
 
             if (arg1.length()==0)                 // if no arguments are given use standard
@@ -499,42 +502,42 @@ Programing:
 01/2005 OK Boolean type
 01/2005 OK Destruct before read
 **************************************************************************/
-bool MFPRead(string file_base_name)
+bool MFPRead(std::string file_base_name)
 {
    //----------------------------------------------------------------------
    //OK  MFPDelete();
    //----------------------------------------------------------------------
    CFluidProperties *m_mfp = NULL;
    char line[MAX_ZEILE];
-   string sub_line;
-   string line_string;
-   ios::pos_type position;
+   std::string sub_line;
+   std::string line_string;
+   std::ios::pos_type position;
    //========================================================================
    // File handling
-   string mfp_file_name = file_base_name + MFP_FILE_EXTENSION;
-   ifstream mfp_file (mfp_file_name.data(),ios::in);
+   std::string mfp_file_name = file_base_name + MFP_FILE_EXTENSION;
+   std::ifstream mfp_file (mfp_file_name.data(),std::ios::in);
    if (!mfp_file.good())
       return false;
-   mfp_file.seekg(0L,ios::beg);
+   mfp_file.seekg(0L,std::ios::beg);
    //========================================================================
    // Keyword loop
-   cout << "MFPRead" << endl;
+   std::cout << "MFPRead" << std::endl;
    while (!mfp_file.eof())
    {
       mfp_file.getline(line,MAX_ZEILE);
       line_string = line;
-      if(line_string.find("#STOP")!=string::npos)
+      if(line_string.find("#STOP")!=std::string::npos)
          return true;
       //----------------------------------------------------------------------
                                                   // keyword found
-      if(line_string.find("#FLUID_PROPERTIES")!=string::npos)
+      if(line_string.find("#FLUID_PROPERTIES")!=std::string::npos)
       {
          m_mfp = new CFluidProperties();
          m_mfp->file_base_name = file_base_name;
          position = m_mfp->Read(&mfp_file);
          m_mfp->phase = (int)mfp_vector.size();   //OK4108
          mfp_vector.push_back(m_mfp);
-         mfp_file.seekg(position,ios::beg);
+         mfp_file.seekg(position,std::ios::beg);
       }                                           // keyword found
    }                                              // eof
    //========================================================================
@@ -559,9 +562,9 @@ bool MFPRead(string file_base_name)
    }
    //----------------------------------------------------------------------
    // Test
-   if((int)mfp_vector.size()==0)
+   if(mfp_vector.size()==0)
    {
-      cout << "Error in MFPRead: no MFP data" << endl;
+      std::cout << "Error in MFPRead: no MFP data" << std::endl;
       abort();
    }
    //----------------------------------------------------------------------
@@ -576,28 +579,28 @@ Programing:
 11/2004 SB Implementation
 last modification:
 **************************************************************************/
-void CFluidProperties::Write(ofstream* mfp_file)
+void CFluidProperties::Write(std::ofstream* mfp_file)
 {
    //KEYWORD
-   *mfp_file  << "#FLUID_PROPERTIES" << endl;
-   *mfp_file  << " $FLUID_TYPE" << endl;
-   *mfp_file  << "  " << name << endl;
-   *mfp_file  << " $DAT_TYPE" << endl;
-   *mfp_file  << "  " << name << endl;
-   *mfp_file  << " $DENSITY" << endl;
-   if(density_model == 0) *mfp_file << "  " << density_model << " " << rho_fct_name << endl;
-   if(density_model == 1) *mfp_file << "  " << density_model << " " << rho_0 << endl;
+   *mfp_file  << "#FLUID_PROPERTIES" << std::endl;
+   *mfp_file  << " $FLUID_TYPE" << std::endl;
+   *mfp_file  << "  " << name << std::endl;
+   *mfp_file  << " $DAT_TYPE" << std::endl;
+   *mfp_file  << "  " << name << std::endl;
+   *mfp_file  << " $DENSITY" << std::endl;
+   if(density_model == 0) *mfp_file << "  " << density_model << " " << rho_fct_name << std::endl;
+   if(density_model == 1) *mfp_file << "  " << density_model << " " << rho_0 << std::endl;
    //todo
    *mfp_file  << " $VISCOSITY" << endl;
-   if(viscosity_model == 0) *mfp_file << "  " << viscosity_model << " " << my_fct_name << endl;
-   if(viscosity_model == 1) *mfp_file << "  " << viscosity_model << " " << my_0 << endl;
+   if(viscosity_model == 0) *mfp_file << "  " << viscosity_model << " " << my_fct_name << std::endl;
+   if(viscosity_model == 1) *mfp_file << "  " << viscosity_model << " " << my_0 << std::endl;
    //todo
    *mfp_file  << " $SPECIFIC_HEAT_CAPACITY" << endl;
-   if(heat_capacity_model == 0) *mfp_file << "  " << heat_capacity_model << " " << heat_capacity_fct_name << endl;
-   if(heat_capacity_model == 1) *mfp_file << "  " << heat_capacity_model << " " << specific_heat_capacity << endl;
+   if(heat_capacity_model == 0) *mfp_file << "  " << heat_capacity_model << " " << heat_capacity_fct_name << std::endl;
+   if(heat_capacity_model == 1) *mfp_file << "  " << heat_capacity_model << " " << specific_heat_capacity << std::endl;
    *mfp_file  << " $SPECIFIC_HEAT_CONDUCTIVITY" << endl;
-   if(heat_conductivity_model == 0) *mfp_file << "  " << heat_conductivity_model << " " << heat_conductivity_fct_name << endl;
-   if(heat_conductivity_model == 1) *mfp_file << "  " << heat_conductivity_model << " " << heat_conductivity << endl;
+   if(heat_conductivity_model == 0) *mfp_file << "  " << heat_conductivity_model << " " << heat_conductivity_fct_name << std::endl;
+   if(heat_conductivity_model == 1) *mfp_file << "  " << heat_conductivity_model << " " << heat_conductivity << std::endl;
    //--------------------------------------------------------------------
 }
 
@@ -609,7 +612,7 @@ Programing:
 08/2004 OK Implementation
 last modification:
 **************************************************************************/
-void MFPWrite(string base_file_name)
+void MFPWrite(std::string base_file_name)
 {
    CFluidProperties *m_mfp = NULL;
    string sub_line;
@@ -617,14 +620,14 @@ void MFPWrite(string base_file_name)
    ofstream mfp_file;
    //========================================================================
    // File handling
-   string mfp_file_name = base_file_name + MFP_FILE_EXTENSION;
-   mfp_file.open(mfp_file_name.data(),ios::trunc|ios::out);
-   mfp_file.setf(ios::scientific,ios::floatfield);
+   std::string mfp_file_name = base_file_name + MFP_FILE_EXTENSION;
+   mfp_file.open(mfp_file_name.data(),std::ios::trunc|std::ios::out);
+   mfp_file.setf(std::ios::scientific,std::ios::floatfield);
    mfp_file.precision(12);
    if (!mfp_file.good()) return;
    //  mfp_file.seekg(0L,ios::beg);
    //========================================================================
-   mfp_file << "GeoSys-MFP: Material Fluid Properties -------------" << endl;
+   mfp_file << "GeoSys-MFP: Material Fluid Properties -------------" << std::endl;
    //========================================================================
    // OUT vector
    int mfp_vector_size =(int)mfp_vector.size();
@@ -653,7 +656,7 @@ Programing:
 05/2007 PCH improvement for density-dependent flow
 last modification:
 **************************************************************************/
-void CFluidProperties::CalPrimaryVariable(vector<string>& pcs_name_vector)
+void CFluidProperties::CalPrimaryVariable(std::vector<std::string>& pcs_name_vector)
 {
    CRFProcess* m_pcs = NULL;
 
@@ -769,7 +772,7 @@ double CFluidProperties::Density(double* variables)
             density = MixtureSubProperity(5, (long)  variables[2], variables[0], variables[1])* variables[0] / (CalCopressibility((long)  variables[2], variables[0], variables[1] )*variables[1] * GAS_CONSTANT) ;
             break;
          default:
-            cout << "Error in CFluidProperties::Density: no valid model" << endl;
+            std::cout << "Error in CFluidProperties::Density: no valid model" << std::endl;
             break;
       }
    }
@@ -832,7 +835,7 @@ double CFluidProperties::Density(double* variables)
             density = MixtureSubProperity(5, (long)  variables[2], variables[0], variables[1])* variables[0] / (CalCopressibility((long)  variables[2], variables[0], variables[1] )*variables[1] * GAS_CONSTANT) ;
             //Replace MixtureSubProperity(5, (long)  variables[2], variables[0], variables[1])* variables[0] by molar_mass in case of no MASS_TRANSPORT proces
          default:
-            cout << "Error in CFluidProperties::Density: no valid model" << endl;
+            std::cout << "Error in CFluidProperties::Density: no valid model" << std::endl;
             break;
       }
    }
@@ -1531,11 +1534,11 @@ case 1:
 //m_mfp = mfp_vector[0];
 if(New) //WW
 {
-heat_capacity_fluids = assem->FluidProp->Density() \ 
+heat_capacity_fluids = assem->FluidProp->Density() \
 * assem->FluidProp->SpecificHeatCapacity();
 }
 else
-heat_capacity_fluids = assem->FluidProp->Density() \ 
+heat_capacity_fluids = assem->FluidProp->Density() \
 * assem->FluidProp->SpecificHeatCapacity();
 
 break;
@@ -1552,16 +1555,16 @@ else
 {
 nidx0 = PCSGetNODValueIndex("SATURATION1",0);
 nidx1 = PCSGetNODValueIndex("SATURATION1",1);
-saturation_phase = (1.-assem->pcs->m_num->ls_theta)*assem->interpolate(nidx0) \ 
+saturation_phase = (1.-assem->pcs->m_num->ls_theta)*assem->interpolate(nidx0) \
 + assem->pcs->m_num->ls_theta*assem->interpolate(nidx1);
 }
 m_mfp = mfp_vector[0];
-heat_capacity_fluids = saturation_phase \ 
-* assem->FluidProp->Density() \ 
+heat_capacity_fluids = saturation_phase \
+* assem->FluidProp->Density() \
 * assem->FluidProp->SpecificHeatCapacity();
 m_mfp = mfp_vector[1];
-heat_capacity_fluids += (1.0-saturation_phase) \ 
-* assem->FluidProp->Density() \ 
+heat_capacity_fluids += (1.0-saturation_phase) \
+* assem->FluidProp->Density() \
 * assem->FluidProp->SpecificHeatCapacity();
 break;
 //....................................................................
@@ -1715,7 +1718,7 @@ double MFPCalcVapourPressure(double temperature)
      double vapour_pressure;
      double vapour_enthalpy = 2258.0; kJ/kg
      double potenz;
-     potenz = ((1./temperature_ref)-(1./(*temperature))) * \ 
+     potenz = ((1./temperature_ref)-(1./(*temperature))) * \
                      ((vapour_enthalpy*comp_mol_mass_water)/gas_constant);
      vapour_pressure = pressure_ref * exp(potenz);
    */
@@ -3016,7 +3019,7 @@ Programing:
  **************************************************************************/
 double CFluidProperties::CalCopressibility(long idx_elem, double p,double T)
 {
-   vector<double> roots;
+   std::vector<double> roots;
    double a,b,A,B, R=8314.41;                     //KR w,Pc,dff,TG,Tc,PG,zn,z,ff
    double z1,z2,z3,h;                             //KR d
    a=MixtureSubProperity(0, idx_elem, p, T);
@@ -3041,7 +3044,6 @@ Programing: 05/2010 AKS
  **************************************************************************/
 double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, double p, double T)
 {
-
    CRFProcess* m_pcs;
    double ax, dens_arg[3];
    double mass_fraction[10], components_properties[10], w[10],pc[10],tc[10],fact[10];
@@ -3177,3 +3179,4 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
    }
    return variables ;
 }
+

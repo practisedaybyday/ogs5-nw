@@ -152,6 +152,25 @@ void GEOObjects::addPolylineVec(std::vector<Polyline*> *lines,
 	_ply_vecs.push_back(new PolylineVec(name, lines, ply_names));
 }
 
+bool GEOObjects::appendPolylineVec(const std::vector<Polyline*> &polylines, std::string &name)
+{
+	// search vector
+	size_t idx (0);
+	bool nfound (true);
+	for (idx=0; idx<_ply_vecs.size() && nfound; idx++) {
+		if ( (_ply_vecs[idx]->getName()).compare (name) == 0 ) nfound = false;
+	}
+
+	if (! nfound) {
+		idx--;
+		size_t n_plys (polylines.size());
+		// append lines
+		for (size_t k(0); k<n_plys; k++)
+			_ply_vecs[idx]->push_back (polylines[k]);
+		return true;
+	} else return false;
+}
+
 const std::vector<Polyline*> *GEOObjects::getPolylineVec(const std::string &name) const
 {
 	size_t size (_ply_vecs.size());

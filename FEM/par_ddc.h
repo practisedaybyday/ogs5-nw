@@ -16,7 +16,7 @@ last modified:
 #include <fstream>
 #include <string>
 #include <vector>
-using namespace std;
+
 #include "rf_pcs.h"
 
 //---------   Declaration ---------------------WW
@@ -40,7 +40,7 @@ void FindNodesOnInterface( CFEMesh *m_msh, bool quadr);
 class CPARDomain
 {
    private:
-      vector<long*> element_nodes_dom;            // Local DOM element nodes. WW
+      std::vector<long*> element_nodes_dom;       // Local DOM element nodes. WW
       long nnodes_dom;
       long nnodesHQ_dom;
       //#ifdef USE_MPI //WW
@@ -54,7 +54,7 @@ class CPARDomain
       // Store global indices of all border nodes to border_nodes of the whole mesh
       // 0-->border_nodes_size, nodes for linear interpolation
       // border_nodes_size-->border_nodes_sizeH, nodes for quadratic interpolation
-      vector<int> bnode_connected_dom;            // Connected doms of border nodes
+      std::vector<int> bnode_connected_dom;       // Connected doms of border nodes
       long *t_border_nodes;
       long t_border_nodes_size;
       long t_border_nodes_sizeH;
@@ -95,10 +95,10 @@ class CPARDomain
       friend class process::CRFProcessDeformation;//WW //:: for SXC compiler
    public:
       int ID;
-      vector<long> elements;
-      vector<long> nodes_inner;
-      vector<long> nodes_halo;
-      vector<long> nodes;
+      std::vector<long> elements;
+      std::vector<long> nodes_inner;
+      std::vector<long> nodes_halo;
+      std::vector<long> nodes;
       //?vector<double>matrix;
       // EQS
 #ifndef NEW_EQS
@@ -111,7 +111,7 @@ class CPARDomain
       // public:
       CPARDomain(void);
       ~CPARDomain(void);
-      ios::pos_type Read(ifstream*);
+      std::ios::pos_type Read(std::ifstream*);
       void CreateNodes();
       // const long *longbuff, const bool quadr. WW
       void CreateElements(const bool quadr);
@@ -128,12 +128,12 @@ class CPARDomain
       //WW   void AssembleMatrix(CRFProcess*);
       long GetDOMNode(long);
       int m_color[3];                             //OK
-      void WriteTecplot(string);                  //OK
+      void WriteTecplot(std::string);             //OK
 
       bool selected;                              //OK
       bool quadratic;                             //WW
-      vector<long*> node_conneted_nodes;          //WW
-      vector<int> num_nodes2_node;                //WW
+      std::vector<long*> node_conneted_nodes;     //WW
+      std::vector<int> num_nodes2_node;           //WW
       //
       long GetDomainNodes() const                 //WW
       {
@@ -149,7 +149,7 @@ class CPARDomain
       // long MaxDim() const {return max_dimen;}   //WW
       void ReleaseMemory();
                                                   //WW
-      void FillBorderNodeConnectDom(vector<int> allnodes_doms);
+      void FillBorderNodeConnectDom(std::vector<int> allnodes_doms);
       long BSize() const                          //WW
       {
          return n_bc;
@@ -175,7 +175,8 @@ class CPARDomain
       //
                                                   //WW
       void CatInnerX(double *global_x, const double *local_x, const long n);
-      void PrintEQS_CPUtime(ostream &os=cout);    //WW
+                                                  //WW
+      void PrintEQS_CPUtime(std::ostream &os=std::cout);
 
 #if defined(NEW_BREDUCE)
       void ReduceBorderV(double *local_x);
@@ -185,11 +186,11 @@ class CPARDomain
 #endif
 };
 
-extern vector<CPARDomain*> dom_vector;
+extern std::vector<CPARDomain*> dom_vector;
 
-extern vector<int> node_connected_doms;           // WW
+extern std::vector<int> node_connected_doms;      // WW
 extern void CountDoms2Nodes(CRFProcess *m_pcs);   //WW
-extern void DOMRead(string);
+extern void DOMRead(std::string);
 extern void DOMCreate();
 //---- MPI Parallel --------------
                                                   //MH//HS
@@ -202,6 +203,6 @@ extern double time_ele_paral;
 //---- MPI Parallel --------------
 
 #define DDC_FILE_EXTENSION ".ddc"
-extern void DOMWriteTecplot(string);
+extern void DOMWriteTecplot(std::string);
 extern void DDCCreate();                          //OK
 #endif

@@ -10,24 +10,18 @@ last modified
 
 #include "Configure.h"
 
-// C++ STL
-#include <list>
-#include <fstream>
-#include <string>
-#include <vector>
-
 // FEM
-#include "rf_pcs.h"                               // TF
 #include "GeoInfo.h"                              // TF
 #include "ProcessInfo.h"                          // TF
 #include "DistributionInfo.h"                     // TF
 
-// MSH
-#include "MeshNodesAlongPolyline.h"               // TF
+class CNodeValue;
 
-//#include "gs_project.h" // TF
-#include "rf_node.h"
-#include "geo_ply.h"
+namespace process                                 //WW
+{
+   class CRFProcessDeformation;
+};
+using process::CRFProcessDeformation;             //WW
 
 namespace process                                 //WW
 {
@@ -49,8 +43,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       CSourceTerm();
       ~CSourceTerm();
 
-      ios::pos_type Read(std::ifstream *in, const GEOLIB::GEOObjects & geo_obj, const std::string & unique_name);
-      void Write(fstream*);
+      std::ios::pos_type Read(std::ifstream *in, const GEOLIB::GEOObjects & geo_obj, const std::string & unique_name);
+      void Write(std::fstream*);
 
       void EdgeIntegration(CFEMesh *m_msh, const std::vector<long> & nodes_on_ply, std::vector<double> & node_value_vector) const;
       void FaceIntegration(CFEMesh *m_msh, std::vector<long> & nodes_on_sfc, std::vector<double> & node_value_vector);
@@ -97,7 +91,7 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
                                                   //23.02.2009. WW
       inline void DirectAssign(const long ShiftInNodeVector);
                                                   //03.2010. WW
-      string DirectAssign_Precipitation(const double current_time);
+      std::string DirectAssign_Precipitation(double current_time);
 
       double getCoupLeakance () const;
 
@@ -142,6 +136,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       std::string pcs_type_name_cond;
       std::string pcs_pv_name_cond;
 
+      int getSubDomainIndex () const { return _sub_dom_idx; }
+
    private:                                       // TF, KR
       void ReadDistributionType(std::ifstream *st_file);
       void ReadGeoType(std::ifstream *st_file, const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name);
@@ -158,7 +154,7 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
 
       /// Subdomain index for excvation simulation
       // 14.12.2010. WW
-      int sub_dom_idx;
+      int _sub_dom_idx;
 
       int fct_method;
       std::string fct_name;
@@ -176,7 +172,7 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       double analytical_matrix_density;           // used only once in a global in rf_st_new
       double factor;
 
-      string nodes_file;
+      std::string nodes_file;
       int msh_node_number;
       std::string msh_type_name;
       std::string fname;
@@ -188,8 +184,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       // 03.2010. WW
       long start_pos_in_st;
       double *GIS_shape_head;                     // 07.06.2010. WW
-      vector<double> precip_times;
-      vector<string> precip_files;
+      std::vector<double> precip_times;
+      std::vector<std::string> precip_files;
 
       friend class CSourceTermGroup;
       friend class process::CRFProcessDeformation;//WW
@@ -288,7 +284,7 @@ class CSourceTermGroup
 };
 
 extern CSourceTermGroup* STGetGroup(std::string pcs_type_name,std::string pcs_pv_name);
-extern list<CSourceTermGroup*> st_group_list;
+extern std::list<CSourceTermGroup*> st_group_list;
 
 /**
  * read source term file

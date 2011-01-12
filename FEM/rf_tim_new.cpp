@@ -6,17 +6,16 @@ Programing:
 last modified:
 **************************************************************************/
 // C++ STL
-#include <math.h>
-#include <iostream>
-using namespace std;
-#include "files0.h"
+//#include <math.h>
+//#include <iostream>
+#include <cfloat>
 // FEM-Makros
 #include "makros.h"
 // GeoSys-GeoLib
 #include "files0.h"
 // GeoSys-FEMLib
 #include "rf_tim_new.h"
-#include "rf_pcs.h"
+//#include "rf_pcs.h"
 #include "rf_mmp_new.h"
 #include "fem_ele_std.h"
 #include "mathlib.h"
@@ -29,7 +28,7 @@ size_t aktueller_zeitschritt = 0;
 double dt = 0.0;
 int rwpt_numsplits = -1;                          //JTARON 2010
 //==========================================================================
-vector<CTimeDiscretization*>time_vector;
+std::vector<CTimeDiscretization*>time_vector;
 /**************************************************************************
 FEMLib-Method:
 Task: OBJ constructor
@@ -82,31 +81,30 @@ CTimeDiscretization::~CTimeDiscretization(void)
    }
 }
 
-
-ios::pos_type GetNextSubKeyword(ifstream* file,string* line, bool* keyword)
+std::ios::pos_type GetNextSubKeyword(std::ifstream* file,std::string* line, bool* keyword)
 {
    char buffer[MAX_ZEILE];
-   ios::pos_type position;
+   std::ios::pos_type position;
    position = file->tellg();
    *keyword = false;
-   string line_complete;
+   std::string line_complete;
    int i,j;
    // Look for next subkeyword
-   while(!(line_complete.find("$")!=string::npos)&&(!file->eof()))
+   while(!(line_complete.find("$")!=std::string::npos)&&(!file->eof()))
    {
       file->getline(buffer,MAX_ZEILE);
       line_complete = buffer;
-      if(line_complete.find("#")!=string::npos)
+      if(line_complete.find("#")!=std::string::npos)
       {
          *keyword = true;
          return position;
       }
-                                                  //Anf?ngliche Leerzeichen ?berlesen, i=Position des ersten Nichtleerzeichens im string
+                                                  //Anf�ngliche Leerzeichen �berlesen, i=Position des ersten Nichtleerzeichens im string
       i = (int) line_complete.find_first_not_of(" ",0);
       j = (int) line_complete.find(";",i);        //Nach Kommentarzeichen ; suchen. j = Position des Kommentarzeichens, j=-1 wenn es keines gibt.
       if(j<0)
          j = (int)line_complete.length();
-      //if(j!=i) break;						 //Wenn das erste nicht-leerzeichen ein Kommentarzeichen ist, zeile ?berlesen. Sonst ist das eine Datenzeile
+      //if(j!=i) break;						 //Wenn das erste nicht-leerzeichen ein Kommentarzeichen ist, zeile �berlesen. Sonst ist das eine Datenzeile
       if(i!=-1)
          *line = line_complete.substr(i,j-i);     //Ab erstem nicht-Leerzeichen bis Kommentarzeichen rauskopieren in neuen substring, falls Zeile nicht leer ist
    }
@@ -123,22 +121,22 @@ Programing:
 10/2005 YD Time Controls
 08/2008 WW General classic time step size control (PI control)
 **************************************************************************/
-ios::pos_type CTimeDiscretization::Read(ifstream *tim_file)
+std::ios::pos_type CTimeDiscretization::Read(std::ifstream *tim_file)
 {
-   string sub_line;
-   string line_string;
-   string delimiter(" ");
+   std::string sub_line;
+   std::string line_string;
+   std::string delimiter(" ");
    bool new_keyword = false;
-   string hash("#");
-   ios::pos_type position;
-   string sub_string;
+   std::string hash("#");
+   std::ios::pos_type position;
+   std::string sub_string;
    bool new_subkeyword = false;
-   string dollar("$");
+   std::string dollar("$");
    int no_time_steps = 0;
    double time_step_length;
-   ios::pos_type position_subkeyword;
+   std::ios::pos_type position_subkeyword;
    std::stringstream line;
-   string line_complete;
+   std::string line_complete;
    int iter_times;                                //YD
    double multiply_coef;                          //YD
    int i;
@@ -151,7 +149,7 @@ ios::pos_type CTimeDiscretization::Read(ifstream *tim_file)
    while(!new_keyword)
    {
       if(new_subkeyword)
-         tim_file->seekg(position,ios::beg);
+         tim_file->seekg(position,std::ios::beg);
       new_subkeyword = false;
       position = GetNextSubKeyword(tim_file,&line_string,&new_keyword);
       if(new_keyword)
@@ -171,7 +169,7 @@ ios::pos_type CTimeDiscretization::Read(ifstream *tim_file)
       //....................................................................
 
                                                   // subkeyword found
-      if(line_string.find("$PCS_TYPE")!=string::npos)
+      if(line_string.find("$PCS_TYPE")!=std::string::npos)
       {
          line.str(GetLineFromFile1(tim_file));
          line >> pcs_type_name;
@@ -182,7 +180,7 @@ ios::pos_type CTimeDiscretization::Read(ifstream *tim_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$TIME_START")!=string::npos)
+      if(line_string.find("$TIME_START")!=std::string::npos)
       {
          line.str(GetLineFromFile1(tim_file));
          line >> time_start;
@@ -191,7 +189,7 @@ ios::pos_type CTimeDiscretization::Read(ifstream *tim_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$TIME_END")!=string::npos)
+      if(line_string.find("$TIME_END")!=std::string::npos)
       {
          line.str(GetLineFromFile1(tim_file));
          line >> time_end;
@@ -200,9 +198,9 @@ ios::pos_type CTimeDiscretization::Read(ifstream *tim_file)
       }
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$TIME_UNIT")!=string::npos)
+      if(line_string.find("$TIME_UNIT")!=std::string::npos)
       {
-         *tim_file>>time_unit>>ws;                //WW unit of time
+         *tim_file>>time_unit>>std::ws;           //WW unit of time
          continue;
       }
       //....................................................................
@@ -224,17 +222,17 @@ ios::pos_type CTimeDiscretization::Read(ifstream *tim_file)
       */
       //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$TIME_STEPS")!=string::npos)
+      if(line_string.find("$TIME_STEPS")!=std::string::npos)
       {
          while((!new_keyword)||(!new_subkeyword)||(!tim_file->eof()))
          {
             position = tim_file->tellg();
             line_string = GetLineFromFile1(tim_file);
-            if(line_string.find("#")!=string::npos)
+            if(line_string.find("#")!=std::string::npos)
             {
                return position;
             }
-            if(line_string.find("$")!=string::npos)
+            if(line_string.find("$")!=std::string::npos)
             {
                new_subkeyword = true;
                break;
@@ -247,28 +245,26 @@ ios::pos_type CTimeDiscretization::Read(ifstream *tim_file)
             line.clear();
          }
       }
-      //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$TIME_SPLITS")!=string::npos)
+      if(line_string.find("$TIME_SPLITS")!=std::string::npos)
       {
          line.str(GetLineFromFile1(tim_file));
          line >> rwpt_numsplits;
          line.clear();
          continue;
       }
-      //....................................................................
                                                   // 25.08.2008. WW
-      if(line_string.find("$CRITICAL_TIME")!=string::npos)
+      if(line_string.find("$CRITICAL_TIME")!=std::string::npos)
       {
          while((!new_keyword)||(!new_subkeyword)||(!tim_file->eof()))
          {
             position = tim_file->tellg();
             line_string = GetLineFromFile1(tim_file);
-            if(line_string.find("#")!=string::npos)
+            if(line_string.find("#")!=std::string::npos)
             {
                return position;
             }
-            if(line_string.find("$")!=string::npos)
+            if(line_string.find("$")!=std::string::npos)
             {
                new_subkeyword = true;
                break;
@@ -280,19 +276,19 @@ ios::pos_type CTimeDiscretization::Read(ifstream *tim_file)
             line.clear();
          }
       }
-      //....................................................................
                                                   // subkeyword found
-      if(line_string.find("$TIME_CONTROL")!=string::npos)
+      if(line_string.find("$TIME_CONTROL")!=std::string::npos)
       {
          while((!new_keyword)||(!new_subkeyword)||(!tim_file->eof()))
          {
             position = tim_file->tellg();
             line_string = GetLineFromFile1(tim_file);
-            if(line_string.find("#")!=string::npos)
+
+            if(line_string.find("#")!=std::string::npos)
             {
                return position;
             }
-            if(line_string.find("$")!=string::npos)
+            if(line_string.find("$")!=std::string::npos)
             {
                new_subkeyword = true;
                break;
@@ -354,23 +350,23 @@ ios::pos_type CTimeDiscretization::Read(ifstream *tim_file)
                {
                   position = tim_file->tellg();
                   line_string = GetLineFromFile1(tim_file);
-                  if(line_string.find("#")!=string::npos)
+                  if(line_string.find("#")!=std::string::npos)
                   {
                      return position;
                   }
-                  if(line_string.find("$")!=string::npos)
+                  if(line_string.find("$")!=std::string::npos)
                   {
                      new_subkeyword = true;
                      break;
                   }
-                  if(line_string.find("MAX_TIME_STEP")!=string::npos)
+                  if(line_string.find("MAX_TIME_STEP")!=std::string::npos)
                   {
                      *tim_file >> line_string;
                      max_time_step = strtod(line_string.data(),NULL);
                      line.clear();
                      // kg44 should not break break;
                   }
-                  if(line_string.find("MIN_TIME_STEP")!=string::npos)
+                  if(line_string.find("MIN_TIME_STEP")!=std::string::npos)
                   {
                      *tim_file >> line_string;
                      min_time_step = strtod(line_string.data(),NULL);
@@ -384,7 +380,7 @@ ios::pos_type CTimeDiscretization::Read(ifstream *tim_file)
                   line.clear();
                   }
                   */
-                  if(line_string.find("M")==string::npos)
+                  if(line_string.find("M")==std::string::npos)
                   {
                      line.str(line_string);
                      line >> iter_times;
@@ -419,35 +415,35 @@ Programing:
 01/2005 OK Boolean type
 01/2005 OK Destruct before read
 **************************************************************************/
-bool TIMRead(string file_base_name)
+bool TIMRead(std::string file_base_name)
 {
    //----------------------------------------------------------------------
    //OK  TIMDelete();
    //----------------------------------------------------------------------
    CTimeDiscretization *m_tim = NULL;
    char line[MAX_ZEILE];
-   string sub_line;
-   string line_string;
-   ios::pos_type position;
+   std::string sub_line;
+   std::string line_string;
+   std::ios::pos_type position;
    //========================================================================
    // File handling
-   string tim_file_name = file_base_name + TIM_FILE_EXTENSION;
-   ifstream tim_file (tim_file_name.data(),ios::in);
+   std::string tim_file_name = file_base_name + TIM_FILE_EXTENSION;
+   std::ifstream tim_file (tim_file_name.data(),std::ios::in);
    if (!tim_file.good())
       return false;
-   tim_file.seekg(0L,ios::beg);
+   tim_file.seekg(0L,std::ios::beg);
    //========================================================================
    // Keyword loop
-   cout << "TIMRead" << endl;
+   std::cout << "TIMRead" << std::endl;
    while (!tim_file.eof())
    {
       tim_file.getline(line,MAX_ZEILE);
       line_string = line;
-      if(line_string.find("#STOP")!=string::npos)
+      if(line_string.find("#STOP")!=std::string::npos)
          return true;
       //----------------------------------------------------------------------
                                                   // keyword found
-      if(line_string.find("#TIME_STEPPING")!=string::npos)
+      if(line_string.find("#TIME_STEPPING")!=std::string::npos)
       {
          m_tim = new CTimeDiscretization();
          position = m_tim->Read(&tim_file);
@@ -455,16 +451,16 @@ bool TIMRead(string file_base_name)
          //----------------------------------------------------------------------
          if(m_tim->Write_tim_discrete)            //YD Write out Time Steps & Iterations
          {
-            string m_file_name = file_base_name + "_TimeDiscrete.txt";
-            m_tim->tim_discrete = new fstream(m_file_name.c_str(),ios::trunc|ios::out);
-            fstream *tim_dis =  m_tim->tim_discrete;
-            *tim_dis << " No. Time  Tim-Disc  Iter"<<endl;
+            std::string m_file_name = file_base_name + "_TimeDiscrete.txt";
+            m_tim->tim_discrete = new std::fstream(m_file_name.c_str(),std::ios::trunc|std::ios::out);
+            std::fstream *tim_dis =  m_tim->tim_discrete;
+            *tim_dis << " No. Time  Tim-Disc  Iter"<< std::endl;
             if (!m_tim->tim_discrete->good())
-               cout << "Warning : Time-Discrete files are not found" << endl;
+               std::cout << "Warning : Time-Discrete files are not found" << std::endl;
          }
          //----------------------------------------------------------------------
          time_vector.push_back(m_tim);
-         tim_file.seekg(position,ios::beg);
+         tim_file.seekg(position,std::ios::beg);
       }                                           // keyword found
    }                                              // eof
    return true;
@@ -477,23 +473,23 @@ Task: master write function
 01/2005 OK Implementation
 06/2009 OK Write only existing data
 **************************************************************************/
-void TIMWrite(string base_file_name)
+void TIMWrite(std::string base_file_name)
 {
    //----------------------------------------------------------------------
    if((int)time_vector.size()<1)
       return;
    //----------------------------------------------------------------------
    CTimeDiscretization *m_tim = NULL;
-   string sub_line;
-   string line_string;
+   std::string sub_line;
+   std::string line_string;
    //========================================================================
    // File handling
-   string tim_file_name = base_file_name + TIM_FILE_EXTENSION;
-   fstream tim_file (tim_file_name.data(),ios::trunc|ios::out);
-   tim_file.setf(ios::scientific,ios::floatfield);
+   std::string tim_file_name = base_file_name + TIM_FILE_EXTENSION;
+   std::fstream tim_file (tim_file_name.data(),std::ios::trunc|std::ios::out);
+   tim_file.setf(std::ios::scientific,std::ios::floatfield);
    tim_file.precision(12);
    if (!tim_file.good()) return;
-   tim_file.seekg(0L,ios::beg);
+   tim_file.seekg(0L,std::ios::beg);
    //========================================================================
    // OUT vector
    tim_file << "GeoSys-TIM: ------------------------------------------------\n";
@@ -512,62 +508,62 @@ FEMLib-Method:
 01/2004 OK Implementation
 05/2009 OK $TIME_CONTROL
 **************************************************************************/
-void CTimeDiscretization::Write(fstream*tim_file)
+void CTimeDiscretization::Write(std::fstream*tim_file)
 {
    int i;
    //--------------------------------------------------------------------
    // KEYWORD
-   *tim_file  << "#TIME_STEPPING" << endl;
+   *tim_file  << "#TIME_STEPPING" << std::endl;
    //--------------------------------------------------------------------
    // PCS_TYPE
-   *tim_file  << " $PCS_TYPE" << endl;
-   *tim_file  << "  " << pcs_type_name << endl;
+   *tim_file  << " $PCS_TYPE" << std::endl;
+   *tim_file  << "  " << pcs_type_name << std::endl;
    //--------------------------------------------------------------------
-   *tim_file  << " $TIME_START" << endl;
-   *tim_file  << "  " << time_start << endl;
+   *tim_file  << " $TIME_START" << std::endl;
+   *tim_file  << "  " << time_start << std::endl;
    //--------------------------------------------------------------------
-   *tim_file  << " $TIME_END" << endl;
-   *tim_file  << "  " << time_end << endl;
+   *tim_file  << " $TIME_END" << std::endl;
+   *tim_file  << "  " << time_end << std::endl;
    //--------------------------------------------------------------------
    if(time_control_name.size()==0)
    {
-      *tim_file  << " $TIME_STEPS" << endl;
+      *tim_file  << " $TIME_STEPS" << std::endl;
       for(i=0;i<(int)time_step_vector.size();i++)
       {
-         *tim_file  << "  " << 1 << " " << time_step_vector[i] << endl;
+         *tim_file  << "  " << 1 << " " << time_step_vector[i] << std::endl;
       }
    }
    //--------------------------------------------------------------------
    if(time_control_name.size()>0)
    {
-      *tim_file  << " $TIME_CONTROL" << endl;
+      *tim_file  << " $TIME_CONTROL" << std::endl;
       if(time_control_name=="COURANT_MANIPULATE")
       {
-         *tim_file  << "  " << time_control_name << endl;
-         *tim_file  << "   " << time_control_manipulate << endl;
+         *tim_file  << "  " << time_control_name << std::endl;
+         *tim_file  << "   " << time_control_manipulate << std::endl;
       }
       if(time_control_name=="PI_AUTO_STEP_SIZE")
       {
-         *tim_file  << "  " << time_control_name << endl;
-         *tim_file  << "   " << tsize_ctrl_type << " " << relative_error << " " << absolute_error << " " << this_stepsize << endl;
+         *tim_file  << "  " << time_control_name << std::endl;
+         *tim_file  << "   " << tsize_ctrl_type << " " << relative_error << " " << absolute_error << " " << this_stepsize << std::endl;
       }
       if(time_control_name=="STEP_SIZE_RESTRICTION")
       {
-         *tim_file  << "  " << time_control_name << endl;
-         *tim_file  << "   " << h_min << " " << h_max << endl;
+         *tim_file  << "  " << time_control_name << std::endl;
+         *tim_file  << "   " << h_min << " " << h_max << std::endl;
       }
       if(time_control_name=="NEUMANN")
       {
-         *tim_file  << "  " << time_control_name << endl;
+         *tim_file  << "  " << time_control_name << std::endl;
       }
       if(time_control_name=="ERROR_CONTROL_ADAPTIVE")
       {
-         *tim_file  << "  " << time_control_name << endl;
+         *tim_file  << "  " << time_control_name << std::endl;
       }
       if(time_control_name=="SELF_ADAPTIVE")
       {
-         *tim_file  << "  MAX_TIME_STEP " << max_time_step << endl;
-         *tim_file  << "  MIM_TIME_STEP " << min_time_step << endl;
+         *tim_file  << "  MAX_TIME_STEP " << max_time_step << std::endl;
+         *tim_file  << "  MIM_TIME_STEP " << min_time_step << std::endl;
       }
    }
    //--------------------------------------------------------------------
@@ -638,7 +634,7 @@ double CTimeDiscretization::CalcTimeStep(double crt_time)
                                                   // _new, 23.09.2008.
          if(fabs( critical_time[i]-crt_time)>DBL_EPSILON)
             time_step_length = critical_time[i]-crt_time;
-         cout << "Time step set to " << time_step_length << " in order to match critical times!"<< endl;
+         std::cout << "Time step set to " << time_step_length << " in order to match critical times!"<< std::endl;
          break;
       }
    }
@@ -653,7 +649,7 @@ Task:
 Programing:
 08/2008 WW Implementation
 **************************************************************************/
-CTimeDiscretization::CTimeDiscretization(const CTimeDiscretization& a_tim, string pcsname)
+CTimeDiscretization::CTimeDiscretization(const CTimeDiscretization& a_tim, std::string pcsname)
 {
    int i;
    safty_coe = a_tim.safty_coe;
@@ -739,7 +735,7 @@ Programing:
 01/2005 OK Implementation
 last modified:
 **************************************************************************/
-void TIMDelete(string pcs_type_name)
+void TIMDelete(std::string pcs_type_name)
 {
    long i;
    CTimeDiscretization *m_tim = NULL;
@@ -840,18 +836,19 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
                buffer /= m_pcs->time_unit_factor;
                time_step_length = MMin(time_step_length, buffer);
             }                                     // ele_vector
+
             if (time_step_length < MKleinsteZahl)
             {
-               cout << "Waning : Time Control Step Wrong, dt = 0.0 " << endl;
+               std::cout << "Warning : Time Control Step Wrong, dt = 0.0 " << std::endl;
                time_step_length = 1.e-6;
             }
-            cout << "Neumann Time Step: " << time_step_length << endl;
+            std::cout << "Neumann Time Step: " << time_step_length << std::endl;
             time_step_length_neumann = 1.e10;
             time_step_length = MMin(time_step_length, max_time_step);
             if (Write_tim_discrete)
                *tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit
                   << "   " << time_step_length << "  " << m_pcs->iter
-                  << endl;
+                  << std::endl;
             break;
          }
          default:
@@ -920,8 +917,9 @@ double CTimeDiscretization::CourantTimeControl(void)
       for(i=0; i<3; i++)                          //							Hold square root until after internal loop, for efficiency only
          dx[i]=sqrt(dx[i]);
 
-                                                  //	velocity magnitude
-      vel_mag = MVectorlength(vel[0],vel[1],vel[2]);
+
+      //    vel_mag = MVectorlength(vel[0],vel[1],vel[2]); //	velocity magnitude
+      vel_mag = sqrt (vel[0]*vel[0] + vel[1]*vel[1] + vel[2]*vel[2]);
       for(i=0; i<3; i++)
          vel[i] = fabs(vel[i])/vel_mag;           //							normalized velocity
       char_len = PointProduction(vel,dx);         //			dot product, gives projection of element size onto velocity vector
@@ -936,12 +934,12 @@ double CTimeDiscretization::CourantTimeControl(void)
 
    if(time_step_length < MKleinsteZahl)
    {
-      cout << "Fatal error: Courant time step is less than machine tolerance, setting dt = 1.e-6" << endl;
+      std::cout << "Fatal error: Courant time step is less than machine tolerance, setting dt = 1.e-6" << std::endl;
       time_step_length = 1.e-6;
    }
 
    if(Write_tim_discrete)
-      *tim_discrete<<aktueller_zeitschritt<<"  "<<aktuelle_zeit<<"   "<<time_step_length<< "  "<<m_pcs->iter<<endl;
+      *tim_discrete<<aktueller_zeitschritt<<"  "<<aktuelle_zeit<<"   "<<time_step_length<< "  "<<m_pcs->iter<<std::endl;
    return time_step_length;
 }
 
@@ -967,16 +965,16 @@ double CTimeDiscretization::NeumannTimeControl(void)
             time_step_length = time_step_length_neumann;
             break;
          default:
-            cout << "Fatal error: No valid PCS type" << endl;
+            std::cout << "Fatal error: No valid PCS type" << std::endl;
             break;
       }
    }
 
-   cout << "Neumann Time Step: " << time_step_length << endl;
+   std::cout << "Neumann Time Step: " << time_step_length << std::endl;
    time_step_length_neumann = 1.e10;
    if (Write_tim_discrete)
       *tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit
-         << "   " << time_step_length << "  " << m_pcs->iter << endl;
+         << "   " << time_step_length << "  " << m_pcs->iter << std::endl;
    return time_step_length;
 }
 
@@ -998,7 +996,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
    // kg44 This does not work with multiple mass tranport processes!
    if ( repeat )
    {
-      cout << "   TIM step is repeated" << endl;
+      std::cout << "   TIM step is repeated" << std::endl;
       m_pcs = PCSGet ( pcs_type_name );
       m_pcs->PrimaryVariableReload();
    }
@@ -1006,7 +1004,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
    // First calculate maximum time step according to Neumann criteria
 #ifdef GEM_REACT
    my_max_time_step= MMin(max_time_step,MaxTimeStep());
-   cout<<"Self_Adaptive Time Step: max time step "<<my_max_time_step<< endl;
+   std::cout<<"Self_Adaptive Time Step: max time step "<<my_max_time_step<< std::endl;
 #endif
 
                                                   // TF
@@ -1023,7 +1021,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
          switch (m_pcs->getProcessType())         // TF
          {
             default:
-               cout << "Fatal error: No valid PCS type" << endl;
+               std::cout << "Fatal error: No valid PCS type" << std::endl;
                break;
                //			case 'R': // Richards
             case RICHARDS_FLOW:                   // TF
@@ -1053,17 +1051,17 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
                   - 1]))
                {
                   imflag = 0;
-                  iterdum = max(iterdum, m_pcs->iter);
+                  iterdum = std::max(iterdum, m_pcs->iter);
                }
                if (((imflag == 1) && (m_pcs->iter <= time_adapt_tim_vector[0])))
                {
                   imflag = 2;
-                  iterdum = max(iterdum, m_pcs->iter);
+                  iterdum = std::max(iterdum, m_pcs->iter);
                }
                break;
                //			case 'M': // Mass transport
             case MASS_TRANSPORT:                  // TF
-               iterdum = max(iterdum, m_pcs->iter);
+               iterdum = std::max(iterdum, m_pcs->iter);
                break;
          }
       }
@@ -1087,9 +1085,9 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
    time_step_length = MMin ( time_step_length,my_max_time_step );
    time_step_length = MMax ( time_step_length,min_time_step );
 
-   cout<<"Self_Adaptive Time Step: "<<" imflag " << imflag << " dr " << time_step_length<<" max iterations: " << iterdum << " number of evaluated processes: " << iprocs << endl;
+   std::cout<<"Self_Adaptive Time Step: "<<" imflag " << imflag << " dr " << time_step_length<<" max iterations: " << iterdum << " number of evaluated processes: " << iprocs << std::endl;
    if ( Write_tim_discrete )
-      *tim_discrete<<aktueller_zeitschritt<<"  "<<aktuelle_zeit<<"   "<<time_step_length<< "  "<<m_pcs->iter<<endl;
+      *tim_discrete<<aktueller_zeitschritt<<"  "<<aktuelle_zeit<<"   "<<time_step_length<< "  "<<m_pcs->iter<<std::endl;
    //}
    return time_step_length;
 }
@@ -1144,7 +1142,7 @@ double CTimeDiscretization::CheckCourant(void)
          critical_element_no = index;
       }
    }
-   cout<<"Courant time step control, critical element = "<<critical_element_no<<" Recomended time step "<<recommended_time_step<<endl;
+   std::cout<<"Courant time step control, critical element = "<<critical_element_no<<" Recomended time step "<<recommended_time_step<<std::endl;
    return recommended_time_step;
 }
 
@@ -1192,14 +1190,14 @@ double CTimeDiscretization::AdaptiveFirstTimeStepEstimate(void)
             time_step_length = MMin(time_step_length, buff);
             if (time_step_length < MKleinsteZahl)
             {
-               cout << "Waning : Time Control Step Wrong, dt = 0.0 " << endl;
+               std::cout << "Warning : Time Control Step Wrong, dt = 0.0 " << std::endl;
                time_step_length = 1.0e-8;
             }
-            cout << "Error Control Time Step: " << time_step_length << endl;
+            std::cout << "Error Control Time Step: " << time_step_length << std::endl;
             if (Write_tim_discrete)
                *tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit
                   << "   " << time_step_length << "  " << m_pcs->iter
-                  << endl;
+                  << std::endl;
             break;
          }
          //		case 'M': // kg44 mass transport
@@ -1238,7 +1236,7 @@ double CTimeDiscretization::ErrorControlAdaptiveTimeControl(void)
       switch (m_pcs->getProcessType())            // TF
       {
          default:
-            cout << "Fatal error: No valid PCS type" << endl;
+            std::cout << "Fatal error: No valid PCS type" << std::endl;
             break;
             //		case 'R': // Richards, accepted and refused time step
          case RICHARDS_FLOW:                      // accepted and refused time step
@@ -1255,12 +1253,12 @@ double CTimeDiscretization::ErrorControlAdaptiveTimeControl(void)
                   m_pcs->m_num->nls_error_tolerance
                   / nonlinear_iteration_error), rmax);
             }
-            cout << "Error_Self_Adaptive Time Step: " << time_step_length
-               << endl;
+            std::cout << "Error_Self_Adaptive Time Step: " << time_step_length
+               << std::endl;
             if (Write_tim_discrete)
                *tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit
                   << "   " << time_step_length << "  " << m_pcs->iter
-                  << endl;
+                  << std::endl;
       }
    }
    return time_step_length;
@@ -1383,7 +1381,7 @@ void CTimeDiscretization::FillCriticalTime()
             //				double val = critical_time[i];
             //				critical_time[i] = critical_time[j];
             //				critical_time[j] = val;
-            swap (critical_time[i], critical_time[j]);
+            std::swap (critical_time[i], critical_time[j]);
          }
       }
    }
@@ -1455,9 +1453,9 @@ double CTimeDiscretization::MaxTimeStep()
    CompProperties *m_cp = cp_vec[component];
 
    dummy=CheckCourant();                          // courant number
-   cout << " Advective Time Step " << dummy << " " ;
+   std::cout << " Advective Time Step " << dummy << " " ;
                                                   //only do if Courant number bigger than zero
-   if (dummy>DBL_EPSILON) max_adv_time_step=min(max_diff_time_step, dummy);
+   if (dummy>DBL_EPSILON) max_adv_time_step=std::min(max_diff_time_step, dummy);
 
    // find Neumann for first mass transport process
    for(i=0;i<nElems;i++)
@@ -1472,12 +1470,12 @@ double CTimeDiscretization::MaxTimeStep()
       // calculation of typical length
 
       dummy=( 0.5 * (melem->representative_length*melem->representative_length))/Dm;
-      max_diff_time_step=min(max_diff_time_step, dummy);
-      //	cout << "Neumann criteria: " << max_diff_time_step << " i " << i << endl;
+      max_diff_time_step=std::min(max_diff_time_step, dummy);
+      //	std::cout << "Neumann criteria: " << max_diff_time_step << " i " << i << std::endl;
    }
 
-   cout << " Diffusive Time Step " << max_diff_time_step  << endl;
+   std::cout << " Diffusive Time Step " << max_diff_time_step  << std::endl;
 
-   return min(max_diff_time_step, max_adv_time_step);
+   return std::min(max_diff_time_step, max_adv_time_step);
 }
 #endif                                            // end of GEM_REACT

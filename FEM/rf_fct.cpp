@@ -8,11 +8,14 @@ Programing:
 #include "makros.h"
 #include "rf_fct.h"
 #include "files0.h"
-extern void remove_white_space(string *buffer);
-extern string GetLineFromFile1(ifstream*);
 #include "gs_project.h"
 
-vector<CFunction*>fct_vector;
+using namespace std;
+
+extern void remove_white_space(std::string *buffer);
+extern string GetLineFromFile1(std::ifstream*);
+
+std::vector<CFunction*> fct_vector;
 
 /**************************************************************************
 FEMLib-Method: CFunction
@@ -46,7 +49,7 @@ Programing:
 01/2005 OK Implementation
 last modification:
 **************************************************************************/
-CFunction* FCTGet(string fct_name)
+CFunction* FCTGet(std::string fct_name)
 {
    int i;
    int fct_vector_size = (int)fct_vector.size();
@@ -69,7 +72,7 @@ Programing:
 09/2008 NB, matrix functions
 last modification:
 **************************************************************************/
-ios::pos_type CFunction::Read(ifstream *fct_file)
+std::ios::pos_type CFunction::Read(std::ifstream *fct_file)
 {
    bool ok_true = true;
    bool new_keyword = false;
@@ -88,9 +91,9 @@ ios::pos_type CFunction::Read(ifstream *fct_file)
    string dollar("$");
    ios::pos_type position;
    std::stringstream line_stream;
-   vector<double*>dim_x;                          //OK memory release check
-   vector<double*>dim_y;
-   vector<double*>dim_z;
+   std::vector<double*>dim_x;                     //OK memory release check
+   std::vector<double*>dim_y;
+   std::vector<double*>dim_z;
    //----------------------------------------------------------------------
    while (!new_keyword)
    {
@@ -205,7 +208,7 @@ ios::pos_type CFunction::Read(ifstream *fct_file)
                                                   //OK411
          if ((int)variable_data_vector.size()!=matrix_dimension[0]*matrix_dimension[1]+matrix_dimension[0]+matrix_dimension[1])
          {
-            cout << "FCT function: Error! The number of data does not correspond to the specified matrix size" << endl;
+            std::cout << "FCT function: Error! The number of data does not correspond to the specified matrix size" << std::endl;
             break;
          }
          line_stream.clear();
@@ -253,7 +256,7 @@ Programing:
 01/2005 OK Implementation
 last modification:
 **************************************************************************/
-void CFunction::Write(fstream* fct_file)
+void CFunction::Write(std::fstream* fct_file)
 {
    int i,j;
    int variable_names_vector_size = (int)variable_names_vector.size();
@@ -262,29 +265,29 @@ void CFunction::Write(fstream* fct_file)
    // CHECK
    //--------------------------------------------------------------------
    //KEYWORD
-   *fct_file  << "#FUNCTION" << endl;
+   *fct_file  << "#FUNCTION" << std::endl;
    //--------------------------------------------------------------------
    // TYPE
-   *fct_file << " $TYPE" << endl;
+   *fct_file << " $TYPE" <<std:: endl;
    *fct_file << "  ";
-   *fct_file << type_name << endl;
+   *fct_file << type_name << std::endl;
    //--------------------------------------------------------------------
    // GEO_TYPE
-   *fct_file << " $GEO_TYPE" << endl;
+   *fct_file << " $GEO_TYPE" << std::endl;
    *fct_file << "  ";
-   *fct_file << geo_type_name << " " << geo_name << endl;
+   *fct_file << geo_type_name << " " << geo_name << std::endl;
    //--------------------------------------------------------------------
    // DATA
-   *fct_file << " $VARIABLES" << endl;
+   *fct_file << " $VARIABLES" << std::endl;
    *fct_file << " ";
    for(i=0;i<variable_names_vector_size;i++)
    {
       *fct_file << " " << variable_names_vector[i];
    }
-   *fct_file << endl;
+   *fct_file << std::endl;
    //--------------------------------------------------------------------
    // DATA
-   *fct_file << " $DATA" << endl;
+   *fct_file << " $DATA" << std::endl;
    for(i=0;i<variable_data_vector_size;i++)
    {
       *fct_file << " ";
@@ -292,7 +295,7 @@ void CFunction::Write(fstream* fct_file)
       {
          *fct_file << " " << variable_data_vector[i][j];
       }
-      *fct_file << endl;
+      *fct_file << std::endl;
    }
    //--------------------------------------------------------------------
 }
@@ -305,7 +308,7 @@ Programing:
 01/2005 OK Implementation
 last modification:
 **************************************************************************/
-void FCTRead(string base_file_name)
+void FCTRead(std::string base_file_name)
 {
    CFunction *m_fct = NULL;
    char line[MAX_ZEILE];
@@ -314,26 +317,26 @@ void FCTRead(string base_file_name)
    ios::pos_type position;
    //========================================================================
    // file handling
-   string fct_file_name;
+   std::string fct_file_name;
    fct_file_name = base_file_name + FCT_FILE_EXTENSION;
-   ifstream fct_file (fct_file_name.data(),ios::in);
+   std::ifstream fct_file (fct_file_name.data(),std::ios::in);
    if (!fct_file.good()) return;
-   fct_file.seekg(0L,ios::beg);
+   fct_file.seekg(0L,std::ios::beg);
    //========================================================================
    // keyword loop
-   cout << "FCTRead" << endl;
+   std::cout << "FCTRead" << std::endl;
    while (!fct_file.eof())
    {
       fct_file.getline(line,MAX_ZEILE);
       line_string = line;
       //----------------------------------------------------------------------
                                                   // keyword found
-      if(line_string.find("#FUNCTION")!=string::npos)
+      if(line_string.find("#FUNCTION")!=std::string::npos)
       {
          m_fct = new CFunction();
          position = m_fct->Read(&fct_file);
          fct_vector.push_back(m_fct);
-         fct_file.seekg(position,ios::beg);
+         fct_file.seekg(position,std::ios::beg);
       }                                           // keyword found
    }                                              // eof
 }
@@ -346,20 +349,20 @@ Programing:
 01/2005 OK Implementation
 last modification:
 **************************************************************************/
-void FCTWrite(string file_base_name)
+void FCTWrite(std::string file_base_name)
 //void MATWriteMediumProperties(fstream *mp_file)
 {
    CFunction *m_fct = NULL;
-   string sub_line;
-   string line_string;
+   std::string sub_line;
+   std::string line_string;
    //========================================================================
    // File handling
-   string fct_file_name = file_base_name + FCT_FILE_EXTENSION;
-   fstream fct_file (fct_file_name.c_str(),ios::trunc|ios::out);
-   fct_file.setf(ios::scientific,ios::floatfield);
+   std::string fct_file_name = file_base_name + FCT_FILE_EXTENSION;
+   std::fstream fct_file (fct_file_name.c_str(),ios::trunc|ios::out);
+   fct_file.setf(std::ios::scientific,std::ios::floatfield);
    fct_file.precision(12);
    if (!fct_file.good()) return;
-   fct_file << "GeoSys-FCT: Functions ------------------------------------------------" << endl ;
+   fct_file << "GeoSys-FCT: Functions ------------------------------------------------" << std::endl ;
    //========================================================================
    // FCT vect list
    int no_fct = (int)fct_vector.size();
@@ -381,37 +384,37 @@ Programing:
 03/2005 OK Implementation
 04/2005 OK MODE
 **************************************************************************/
-void FCTReadTIMData(string file_name_base)
+void FCTReadTIMData(std::string file_name_base)
 {
    int counter;
    int pos1,pos2;
    double scale_factor = 1.;
    double* variable_data = NULL;
    char line[MAX_ZEILE];
-   string sub_string;
-   string line_string;
-   string delimiter_type(";");
-   string fct_type_name;
-   string fct_x_name;
-   string fct_x_unit;
-   string fct_y_name;
-   string fct_y_unit;
+   std::string sub_string;
+   std::string line_string;
+   std::string delimiter_type(";");
+   std::string fct_type_name;
+   std::string fct_x_name;
+   std::string fct_x_unit;
+   std::string fct_y_name;
+   std::string fct_y_unit;
    CFunction* m_fct = NULL;
-   string header_rows;
-   string header_cols;
+   std::string header_rows;
+   std::string header_cols;
    int mode = -1;
    int i;
    double time;
    double value;
    //----------------------------------------------------------------------
-   cout << "Read FCT properties from " << file_name_base << endl;
+   std::cout << "Read FCT properties from " << file_name_base << std::endl;
    //----------------------------------------------------------------------
    // File handling
                                                   //OK4105
-   string csv_file_name = file_name_base + CSV_FILE_EXTENSION;
-   ifstream csv_file (csv_file_name.data(),ios::in);
+   std::string csv_file_name = file_name_base + CSV_FILE_EXTENSION;
+   std::ifstream csv_file (csv_file_name.data(),std::ios::in);
    if (!csv_file.good()) return;
-   csv_file.seekg(0L,ios::beg);
+   csv_file.seekg(0L,std::ios::beg);
    //----------------------------------------------------------------------
    // Evaluate header
    csv_file.getline(line,MAX_ZEILE);
@@ -426,9 +429,9 @@ void FCTReadTIMData(string file_name_base)
    sub_string = get_sub_string(line_string,delimiter_type,pos1,&pos2);
    sub_string = line_string.substr(pos1,pos2-pos1);
    header_cols = sub_string;
-   if(header_cols.find("TIME")!=string::npos)
+   if(header_cols.find("TIME")!=std::string::npos)
       mode = 0;
-   if(header_rows.find("TIME")!=string::npos)
+   if(header_rows.find("TIME")!=std::string::npos)
       mode = 1;
    //======================================================================
    // MODE 0 - ROW: PNT, COL: TIM
@@ -507,7 +510,7 @@ void FCTReadTIMData(string file_name_base)
    // MODE 1 - ROW: TIM, COL: PNT
    if(mode==1)
    {
-      csv_file.seekg(0L,ios::beg);
+      csv_file.seekg(0L,std::ios::beg);
       csv_file.getline(line,MAX_ZEILE);
       pos1 = 0;
       sub_string = get_sub_string(header_rows,"=",pos1,&pos2);

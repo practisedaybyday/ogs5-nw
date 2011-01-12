@@ -74,6 +74,7 @@ Speichermodell 2 vereinfacht
 -> schnelleres Suchen
 **************************************************************************/
 
+#include <cfloat>
 #include "makros.h"
 #include "solver.h"
 
@@ -87,7 +88,7 @@ Speichermodell 2 vereinfacht
 // MSHLib
 #include "msh_node.h"
 #include "msh_mesh.h"
-extern Mesh_Group::CFEMesh* FEMGet(const string&);
+extern Mesh_Group::CFEMesh* FEMGet(const std::string&);
 
 using Mesh_Group::CNode;
 
@@ -1798,28 +1799,29 @@ int M5Inc(long i, long j, double aij_inc)
 
 
 //WW/PA 08/02/2006
+/*
 void Write_Matrix_M5(double *b, ostream& os)
 {
-   long i,j , dim1;
-   Mesh_Group::CFEMesh* m_msh = NULL;
-   m_msh = FEMGet("GROUNDWATER_FLOW");
+  long i,j , dim1;
+  Mesh_Group::CFEMesh* m_msh = NULL;
+  m_msh = FEMGet("GROUNDWATER_FLOW");
 
 #ifdef SX
 #pragma cdir nodep
 #endif
-   dim1 = m_msh->NodesInUsage();
-   for (i = 0; i < dim1; i++)
-   {
-      for (j = 0; j < dim1; j++)
-      {
-         if(fabs(MXGet(i,j))>MKleinsteZahl)
-            os<<i<<"  "<<j<<"  "<<MXGet(i,j)<<endl;
-      }
-      if(fabs(b[i])>MKleinsteZahl)
-         os<<i<<"  "<<dim1+1<<"  "<<b[i]<<endl;   // os<<endl;
-   }
+  dim1 = m_msh->NodesInUsage();
+for (i = 0; i < dim1; i++)
+{
+for (j = 0; j < dim1; j++)
+{
+if(fabs(MXGet(i,j))>MKleinsteZahl)
+os<<i<<"  "<<j<<"  "<<MXGet(i,j)<<endl;
 }
-
+if(fabs(b[i])>MKleinsteZahl)
+os<<i<<"  "<<dim1+1<<"  "<<b[i]<<endl;   // os<<endl;
+}
+}
+*/
 
 //void transM2toM5(void)
 //void M5CreateMatrix(void)

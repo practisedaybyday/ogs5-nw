@@ -14,7 +14,6 @@
 #include "rf_pcs.h"
 #include "rf_mmp_new.h"                           //MB
 #include <sstream>
-using namespace std;
 
 typedef struct                                    /* fuer Kurven (Stuetzstellen) */
 {
@@ -32,7 +31,7 @@ typedef struct                                    /* fuer Kurven (Kurven) */
 
 extern double GetCurveValue ( int, int, double, int *);
                                                   //NB
-extern double GetMatrixValue (double, double, string, int *);
+extern double GetMatrixValue (double, double, std::string, int *);
 extern double GetCurveValueInverse ( int, int, double, int *);
 extern double GetCurveDerivative(int kurve, int methode, double punkt, int *gueltig);
 extern Kurven *kurven;                            /* Feld mit Kurven */
@@ -101,7 +100,7 @@ extern int get_hetfields_number(hetfields *hf);   //SB
                                                   //MB
 extern int FctReadHeterogeneousFields(char *name_file, CMediumProperties*);
 extern long DampOscillations(int ndx1, int oscil_damp_method, double *oscil_damp_parameter, double (*NodeCalcLumpedMass) (long));
-extern int GetLineFromFile(char*, ifstream*);
+extern int GetLineFromFile(char*, std::ifstream*);
 
 typedef struct
 {
@@ -112,10 +111,10 @@ typedef struct
 
 extern DMATRIX *CreateDoubleMatrix(long row, long col);
 extern void DestroyDoubleMatrix(DMATRIX *dm);
-extern double FindMin (vector<double>Vec);        //NB 4.9.05
-extern double FindMax (vector<double>Vec);        //NB 4.9.05
+extern double FindMin (std::vector<double>Vec);   //NB 4.9.05
+extern double FindMax (std::vector<double>Vec);   //NB 4.9.05
                                                   //NB 4.9.05
-extern void NsPol3 (double p, double q, double r, vector<double>*t);
+extern void NsPol3 (double p, double q, double r, std::vector<double>*t);
 
 typedef struct
 {

@@ -23,7 +23,8 @@ last modified:
 
 #include "makros.h"
 // C++ STL
-#include <math.h>
+#include <cfloat>
+#include <cmath>
 #include <list>
 #include <string>
 #include <fstream>

@@ -194,7 +194,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo)
 	}
 	std::cout << "ok" << std::endl;
 	// *** QuadTree - create object
-	const size_t number_of_point_per_quadtree_node (2);
+	const size_t number_of_point_per_quadtree_node (10);
 	std::cout << "creating quadtree ... " << std::flush;
 	GEOLIB::QuadTree<GEOLIB::Point, number_of_point_per_quadtree_node> quad_tree (ll, ur);
 	std::cout << "ok" << std::endl;

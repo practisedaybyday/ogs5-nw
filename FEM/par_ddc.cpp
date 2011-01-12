@@ -780,22 +780,20 @@ Programing:
 **************************************************************************/
 void CPARDomain::CreateEQS()
 {
-   int dof_nonDM=1;
-   int dof_DM=1;
-   CRFProcess *m_pcs = NULL;
+   size_t dof_nonDM=1, dof_DM=1;
 
    const size_t pcs_vector_size (pcs_vector.size());
    for(size_t i=0;i<pcs_vector_size;i++)
    {
-      m_pcs = pcs_vector[i];
-      if(m_pcs->type==22 ||m_pcs->type==1212)     // Monolithic dual porosity or multphase. 02.2010. WW
-         dof_nonDM = m_pcs->GetPrimaryVNumber();
-      if(m_pcs->type==4||m_pcs->type==41)         // Deformation
-         dof_DM = m_pcs->GetPrimaryVNumber();
+      CRFProcess *pcs (pcs_vector[i]);
+      if(pcs->type==22)                           // Monolithic TH2
+         dof_nonDM = pcs->GetPrimaryVNumber();
+      if(pcs->type==4 || pcs->type==41)           // Deformation
+         dof_DM = pcs->GetPrimaryVNumber();
       else                                        // Monolithic scheme for the process with linear elements
       {
-         if(dof_nonDM < m_pcs->GetPrimaryVNumber())
-            dof_nonDM = m_pcs->GetPrimaryVNumber();
+         if(dof_nonDM < pcs->GetPrimaryVNumber())
+            dof_nonDM = pcs->GetPrimaryVNumber();
       }
    }
 
@@ -851,11 +849,7 @@ void CPARDomain::CreateEQS(CRFProcess *m_pcs)
    {
       for(size_t i=0; i<m_pcs->GetPrimaryVNumber(); i++)
          shift[i] = i*nnodesHQ_dom;
-   }
-   else if(m_pcs->type==1212)                     //02.2010. WW
-   {
-      for(int i=0; i<(int)m_pcs->GetPrimaryVNumber(); i++)
-         shift[i] = i*nnodes_dom;
+
    }
    if(m_pcs->type==4)
    {
@@ -867,8 +861,6 @@ void CPARDomain::CreateEQS(CRFProcess *m_pcs)
       eqs = CreateLinearSolverDim(m_pcs->m_num->ls_storage_method,dof,dof*nnodesHQ_dom+nnodes_dom);
 
    }
-   else if(m_pcs->type==1212)                     //02.2010.  WW
-      eqs = CreateLinearSolverDim(m_pcs->m_num->ls_storage_method,dof,dof*nnodes_dom);
    else
                                                   //WW.
       eqs = CreateLinearSolver(m_pcs->m_num->ls_storage_method, no_nodes);

@@ -9,20 +9,17 @@ last modified:
 #define rf_msp_new_INC
 
 // C++ STL
-#include <fstream>
-#include <string>
-#include <vector>
+//#include <fstream>
+//#include <string>
+//#include <vector>
 
 #define MSP_FILE_EXTENSION ".msp"
-
-using namespace std;
 
 namespace FiniteElement
 {
    class element; class CFiniteElementVec;
    class CFiniteElementStd; class ElementValue_DM;
 }
-
 
 namespace Math_Group {class Matrix;}
 namespace process{class CRFProcessDeformation;}
@@ -83,7 +80,7 @@ namespace SolidProp
          int SwellingPressureType;
          double Max_SwellingPressure;
          //
-         string CurveVariable_Conductivity;
+         std::string CurveVariable_Conductivity;
          int CurveVariableType_Conductivity;
          // Secondary data
          // Elasticity
@@ -122,17 +119,17 @@ namespace SolidProp
          // Thermal properties
          int thermal_conductivity_tensor_type;
          double thermal_conductivity_tensor[9];
-         string thermal_conductivity_tensor_type_name;
+         std::string thermal_conductivity_tensor_type_name;
          // Handles. May be used by GUI
-         string solid_name;
+         std::string solid_name;
          //-------------------------------------------------------------
          // Numeric
          double CalulateValue(const Matrix *data, const double x) const;
          double Kronecker(const int ii, const int jj);
 
          // Friends that can access to this data explicitly
-         friend bool MSPRead(string file_base_name);
-         friend void MSPWrite(string);
+         friend bool MSPRead(std::string file_base_name);
+         friend void MSPWrite(std::string);
          //WW
          friend class FiniteElement::CFiniteElementVec;
          friend class FiniteElement::CFiniteElementStd;
@@ -147,17 +144,18 @@ namespace SolidProp
          //
          CSolidProperties();
          ~CSolidProperties();
-         ios::pos_type Read(ifstream*);
+
+         std::ios::pos_type Read(std::ifstream*);
                                                   //CMCD
          FiniteElement::CFiniteElementStd *Fem_Ele_Std;
-         string name;
+         std::string name;
          CRFProcess*m_pcs;                        //NW
          // IO
-         string file_base_name;
+         std::string file_base_name;
          // Output
-         void Write(fstream*);
+         void Write(std::fstream*);
                                                   //CMCD
-         void CalPrimaryVariable(vector<string>& pcs_name_vector);
+         void CalPrimaryVariable(std::vector<std::string>& pcs_name_vector);
 
          //-------------------------------------------------------------
          // Access to data
@@ -269,23 +267,22 @@ namespace SolidProp
          double Hard;
          double Hard_Loc;
 
-         vector<string>  capacity_pcs_name_vector;//WW
                                                   //WW
-         vector<string>  conductivity_pcs_name_vector;
-
+         std::vector<std::string>  capacity_pcs_name_vector;
+                                                  //WW
+         std::vector<std::string>  conductivity_pcs_name_vector;
    };
 
 }                                                 // end namespace
-
-
-extern vector<SolidProp::CSolidProperties*> msp_vector;
-extern bool MSPRead(string file_base_name);
-extern void MSPWrite(string);
+extern std::vector<SolidProp::CSolidProperties*> msp_vector;
+extern bool MSPRead(std::string file_base_name);
+extern void MSPWrite(std::string);
 extern void MSPDelete();
-extern vector<string> msp_key_word_vector;        //OK
+                                                  //OK
+extern std::vector<std::string> msp_key_word_vector;
 extern void MSPStandardKeywords();                //OK
                                                   //OK
-extern SolidProp::CSolidProperties* MSPGet(string);
+extern SolidProp::CSolidProperties* MSPGet(std::string);
 
 extern double StressNorm(const double *s, const int Dim);
 extern double TensorMutiplication2(const double *s1, const double *s2, const int Dim);

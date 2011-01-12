@@ -9,9 +9,9 @@
 #define GEOINFO_H_
 
 // STL
-#include <cstddef>
-#include <string>
-#include <limits>
+//#include <cstddef>
+//#include <string>
+//#include <limits>
 
 // GEO
 #include "GeoType.h"

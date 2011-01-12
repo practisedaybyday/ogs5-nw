@@ -386,8 +386,7 @@ void CClockTime::StartTime(void)
    //WW	time1=GetTickCount();
 }
 
-
-void CClockTime::StopTime(const string &name)
+void CClockTime::StopTime(const std::string &name)
 {
    char name1;
    name1 = name[0];

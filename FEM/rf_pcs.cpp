@@ -33,15 +33,16 @@ Programing:
 #endif
 
 // C++
+#include <cfloat>
 #include <iostream>
 #include <iomanip>                                //WW
 //#include <algorithm> // header of transform. WW
 // GEOLib
-#include "geo_ply.h"
+//#include "geo_ply.h"
 /*------------------------------------------------------------------------*/
 /* MshLib */
-#include "msh_elem.h"
-#include "msh_lib.h"
+//#include "msh_elem.h"
+//#include "msh_lib.h"
 /*-----------------------------------------------------------------------*/
 /* Objects */
 #include "rf_pcs.h"
@@ -50,20 +51,21 @@ Programing:
 #include "solver.h"                               // ConfigRenumberProperties
 #endif
 #include "rf_st_new.h"                            // ST
-#include "rf_bc_new.h"                            // ST
-#include "rf_mmp_new.h"                           // MAT
+//#include "rf_bc_new.h" // ST
+//#include "rf_mmp_new.h" // MAT
 #include "rf_ic_new.h"                            // IC
-#include "rf_tim_new.h"                           // IC
 #include "fem_ele_std.h"                          // ELE
-#include "msh_lib.h"                              // ELE
-#include "rf_tim_new.h"
-#include "rf_out_new.h"
+//#include "msh_lib.h" // ELE
+//#include "rf_tim_new.h"
+//#include "rf_out_new.h"
 #include "rfmat_cp.h"
-#include "rf_mfp_new.h"                           // MFP
-#include "rf_num_new.h"
-#include "gs_project.h"
+//#include "rf_mfp_new.h" // MFP
+//#include "rf_num_new.h"
+//#include "gs_project.h"
 #include "rf_fct.h"
-#include "femlib.h"
+//#include "femlib.h"
+#include "rf_node.h"
+
 /*-----------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------*/
 /* Tools */
@@ -75,10 +77,10 @@ Programing:
 #endif
 /* Tools */
 #include "mathlib.h"
-#include "files0.h"
-#include "par_ddc.h"
+//#include "files0.h"
+//#include "par_ddc.h"
 #include "tools.h"
-#include "rf_pcs.h"
+//#include "rf_pcs.h"
 #include "files0.h"
 #ifdef GEM_REACT
 // GEMS chemical solver
@@ -96,6 +98,8 @@ REACT_BRNS *m_vec_BRNS;
 #include "equation_class.h"
 #endif
 #include "problem.h"
+
+using namespace std;
 
 /*-------------------- ITPACKV    ---------------------------*/
 extern void transM2toM6(void);
@@ -418,7 +422,7 @@ void CRFProcess::SetOBJNames()
    }
 
    // BC
-   list<CBoundaryCondition*>::const_iterator p_bc = bc_list.begin();
+   std::list<CBoundaryCondition*>::const_iterator p_bc = bc_list.begin();
    while (p_bc != bc_list.end())
    {
       (*p_bc)->setProcessType(this->getProcessType());
@@ -476,19 +480,19 @@ void CRFProcess::Create()
    // Element matrix output. WW
    if (Write_Matrix)
    {
-      cout << "->Write Matrix" << '\n';
+      std::cout << "->Write Matrix" << '\n';
 #if defined(USE_MPI)
       char stro[32];
       sprintf(stro, "%d",myrank);
       string m_file_name = FileName +"_"+pcs_type_name+(string)stro+"_element_matrix.txt";
 #else
-      string m_file_name = FileName + "_" + pcs_type_name
+      std::string m_file_name = FileName + "_" + pcs_type_name
          + "_element_matrix.txt";
 #endif
-      matrix_file = new fstream(m_file_name.c_str(), ios::trunc | ios::out);
+      matrix_file = new std::fstream(m_file_name.c_str(), ios::trunc | ios::out);
       if (!matrix_file->good())
-         cout << "Warning in GlobalAssembly: Matrix files are not found"
-            << endl;
+         std::cout << "Warning in GlobalAssembly: Matrix files are not found"
+            << std::endl;
    }
    //----------------------------------------------------------------------------
    if (m_msh)                                     //OK->MB please shift to Config()
@@ -541,7 +545,7 @@ void CRFProcess::Create()
    }
    if (!m_num)
    {
-      cout << "Warning in CRFProcess::Create() - no NUM data" << endl;
+      std::cout << "Warning in CRFProcess::Create() - no NUM data" << std::endl;
       m_num = new CNumerics(pcs_type_name);       //OK
       //		m_num = m_num_tmp;
    }
@@ -555,7 +559,7 @@ void CRFProcess::Create()
    //----------------------------------------------------------------------------
    // EQS - create equation system
    //WW CreateEQS();
-   cout << "->Create EQS" << '\n';
+   std::cout << "->Create EQS" << '\n';
 #ifdef NEW_EQS
    size_t k;
    for(k=0; k<fem_msh_vector.size(); k++)
@@ -621,7 +625,7 @@ void CRFProcess::Create()
 
    //----------------------------------------------------------------------------
    // Time unit factor //WW
-   cout << "->Create TIM" << '\n';
+   std::cout << "->Create TIM" << '\n';
    //CTimeDiscretization* Tim = TIMGet(_pcs_type_name);
    Tim = TIMGet(pcs_type_name);
    if (!Tim)
@@ -630,15 +634,15 @@ void CRFProcess::Create()
       Tim = new CTimeDiscretization(*time_vector[0], pcs_type_name);
       time_vector.push_back(Tim);                 //21.08.2008. WW
    }
-   if (Tim->time_unit.find("MINUTE") != string::npos)
+   if (Tim->time_unit.find("MINUTE") != std::string::npos)
       time_unit_factor = 60.0;
-   else if (Tim->time_unit.find("HOUR") != string::npos)
+   else if (Tim->time_unit.find("HOUR") != std::string::npos)
       time_unit_factor = 3600.0;
-   else if (Tim->time_unit.find("DAY") != string::npos)
+   else if (Tim->time_unit.find("DAY") != std::string::npos)
       time_unit_factor = 86400.0;
-   else if (Tim->time_unit.find("MONTH") != string::npos)
+   else if (Tim->time_unit.find("MONTH") != std::string::npos)
       time_unit_factor = 2592000.0;
-   else if (Tim->time_unit.find("YEAR") != string::npos)
+   else if (Tim->time_unit.find("YEAR") != std::string::npos)
       time_unit_factor = 31536000;
 
    //
@@ -862,7 +866,7 @@ inline void CRFProcess::WriteRHS_of_ST_NeumannBC()
    os << "CurveIndex ";
    os << "node_value ";
    os << endl;
-   os.setf(ios::scientific, ios::floatfield);
+   os.setf(std::ios::scientific, std::ios::floatfield);
    os.precision(14);
    const size_t st_node_value_size(st_node_value.size());
    os << st_node_value_size << endl;
@@ -884,7 +888,7 @@ inline void CRFProcess::ReadRHS_of_ST_NeumannBC()
 {
    std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
    std::string m_file_name = FileName + "_" + pcs_type_name + "_ST_RHS.asc";
-   std::ifstream is(m_file_name.c_str(), ios::in);
+   std::ifstream is(m_file_name.c_str(), std::ios::in);
    if (!is.good())
    {
       cout << "File " << m_file_name << " is not found" << endl;
@@ -931,7 +935,7 @@ void CRFProcess:: WriteSolution()
    }
 
    os.precision(15);                              // 15 digits accuracy seems enough? more fields are filled up with random numbers!
-   os.setf(ios_base::scientific,ios_base::floatfield);
+   os.setf(std::ios_base::scientific,std::ios_base::floatfield);
 
    int j;
    int *idx(new int [2*pcs_number_of_primary_nvals]);
@@ -1290,19 +1294,19 @@ Programing:
 last modified:
 10/2010 TF changed process type handling from string to enum
 **************************************************************************/
-bool PCSRead(string file_base_name)
+bool PCSRead(std::string file_base_name)
 {
    //----------------------------------------------------------------------
    char line[MAX_ZEILE];
    int indexCh1a, indexCh2a;
-   string CommentK("//");
-   string line_string;
-   string pcs_file_name;
-   ios::pos_type position;
+   std::string CommentK("//");
+   std::string line_string;
+   std::string pcs_file_name;
+   std::ios::pos_type position;
    //========================================================================
    // File handling
    pcs_file_name = file_base_name + PCS_FILE_EXTENSION;
-   ifstream pcs_file(pcs_file_name.data(), ios::in);
+   std::ifstream pcs_file(pcs_file_name.data(), ios::in);
    if (!pcs_file.good())
    {
       cout << "Warning: no PCS data *.pcs file is missing" << endl;
@@ -1311,10 +1315,10 @@ bool PCSRead(string file_base_name)
 
    // rewind the file
    pcs_file.clear();
-   pcs_file.seekg(0, ios::beg);
+   pcs_file.seekg(0, std::ios::beg);
    //========================================================================
    // Keyword loop
-   std::cout << "PCSRead" << endl;
+   std::cout << "PCSRead ... " << std::flush;
    while (!pcs_file.eof())
    {
       pcs_file.getline(line, MAX_ZEILE);
@@ -1349,7 +1353,7 @@ bool PCSRead(string file_base_name)
             }
          }
 
-         m_pcs->pcs_number = (int) pcs_vector.size();
+         m_pcs->pcs_number = pcs_vector.size();
          //RelocateDeformationProcess(m_pcs);
          //			if (m_pcs->_pcs_type_name.find("DEFORMATION") != string::npos) { // TF
          if (isDeformationProcess(m_pcs->getProcessType()))
@@ -1360,10 +1364,12 @@ bool PCSRead(string file_base_name)
          } else
          pcs_vector.push_back(m_pcs);
 
-         pcs_file.seekg(position, ios::beg);
+         pcs_file.seekg(position, std::ios::beg);
       }                                           // keyword found
    }                                              // eof
-   ///OK LOPPreTimeLoop_PCS();
+
+   std::cout << "done, read " << pcs_vector.size() << " processes" << std::endl;
+
    return true;
 }
 
@@ -1412,7 +1418,7 @@ Programing:
 12/2005 OK MSH_TYPE
 01/2006 OK GEO_TYPE
 **************************************************************************/
-ios::pos_type CRFProcess::Read(ifstream *pcs_file)
+std::ios::pos_type CRFProcess::Read(std::ifstream *pcs_file)
 {
    char line[MAX_ZEILE];
    string line_string;
@@ -5076,7 +5082,7 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank, const int axis)
                bc_eqs_index = m_msh->nod_vector[bc_msh_node]->GetEquationIndex();
             //..............................................................
             // NEWTON WW
-            if(m_num->nls_method_name.find("NEWTON")!=string::npos
+            if(m_num->nls_method_name.find("NEWTON")!=std::string::npos
                || type==4||type==41  )            //Solution is in the manner of increment !
             {
                idx0 = GetNodeValueIndex(convertPrimaryVariableToString(m_bc->getProcessPrimaryVariable()).c_str());
@@ -5094,7 +5100,7 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank, const int axis)
             if((int)continuum_vector.size() > 1)
             {
                //YD/WW
-               if(m_bc_node->pcs_pv_name.find(pcs_primary_function_name[continuum]) == string::npos)
+               if(m_bc_node->pcs_pv_name.find(pcs_primary_function_name[continuum]) == std::string::npos)
                   continue;
             }
 #ifdef NEW_EQS                        //WW
@@ -5238,10 +5244,8 @@ void CRFProcess::IncorporateSourceTerms(const int rank)
          //if(m_st->_pcs_type_name_cond.size()>0) continue; // this is a CPL source term, JOD removed
          //--------------------------------------------------------------------
          // system dependent YD
-
-         if (cnodev->getProcessDistributionType() == SYSTEM_DEPENDENT)
+         if (cnodev->getProcessDistributionType() == FiniteElement::SYSTEM_DEPENDENT)
          {
-            //			if (cnodev->node_distype == 7) {
             long no_st_ele = (long) m_st->element_st_vector.size();
             for (long i_st = 0; i_st < no_st_ele; i_st++)
             {
@@ -8135,205 +8139,11 @@ void CRFProcess::CreateSTGroup()
    }
 }
 
-
 /**************************************************************************
-PCSLib-Method:
-08/2006 OK Implementation
-**************************************************************************/
-void CRFProcess::CalcELEFluxes(CGLPoint*m_pnt)
-{
-   m_pnt = NULL;
-}
-
-
-/**************************************************************************
-PCSLib-Method:
-08/2006 OK Implementation
-**************************************************************************/
-double CRFProcess::CalcELEFluxes(CGLPolyline*m_ply)
-{
-   /*BUGFIX_4402_OK_2
-    int f_eidx[3];
-    f_eidx[0] = GetElementValueIndex("FLUX_X");
-    f_eidx[1] = GetElementValueIndex("FLUX_Y");
-    f_eidx[2] = GetElementValueIndex("FLUX_Z");
-    for(i=0;i<3;i++)
-    {
-    if(f_eidx[i]<0)
-    {
-    //cout << "Fatal error in CRFProcess::CalcELEFluxes(CGLPolyline*m_ply) - abort"; abort();
-    cout << "Warning in CRFProcess::CalcELEFluxes(CGLPolyline*m_ply) - return" << endl;
-   return 0.0;
-   }
-   }
-   */
-
-   CRFProcess* m_pcs_flow = NULL;
-   //	if (_pcs_type_name.find("FLOW") != string::npos) {
-   if (isFlowProcess (this->getProcessType()))
-   {
-      m_pcs_flow = this;
-   }
-   else
-   {
-      m_pcs_flow = PCSGet(GROUNDWATER_FLOW);
-   }
-
-   int v_eidx[3];
-   v_eidx[0] = m_pcs_flow->GetElementValueIndex("VELOCITY1_X");
-   v_eidx[1] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Y");
-   v_eidx[2] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Z");
-   for (size_t i = 0; i < 3; i++)
-   {
-      if (v_eidx[i] < 0)
-      {
-         //cout << "Fatal error in CRFProcess::CalcELEFluxes(CGLPolyline*m_ply) - abort";
-         cout << i << v_eidx[i] << "Velocity output is not specified"
-            << endl;
-         return 0.0;
-         //  abort();
-      }
-   }
-   double v[3];
-
-   // Get elements at GEO
-   vector<long> ele_vector_at_geo;
-   m_msh->GetELEOnPLY(m_ply, ele_vector_at_geo);
-
-   CElem* m_ele = NULL;
-   CEdge* m_edg = NULL;
-   vec<CEdge*> ele_edges_vector(15);
-   double edg_normal_vector[3];
-   double vn;
-   double edg_length = 0.0;
-   double vn_vec[3];
-   double edge_vector[3];
-   double f_n_sum = 0.0;
-   double C_ele = 0.0;
-   vec<long> element_nodes(20);
-   int nidx;
-
-   double f[3];
-   const size_t ele_vector_at_geo_size(ele_vector_at_geo.size());
-   for (size_t i = 0; i < ele_vector_at_geo_size; i++)
-   {
-      m_ele = m_msh->ele_vector[ele_vector_at_geo[i]];
-      m_ele->SetNormalVector();
-      m_ele->GetNodeIndeces(element_nodes);
-      /*BUGFIX_4402_OK_3
-       for(j=0;j<3;j++)
-       {
-       SetElementValue(m_ele->GetIndex(),f_eidx[j],0.0);
-       }
-       */
-      //--------------------------------------------------------------------
-      // velocity vector
-      for (size_t j = 0; j < 3; j++)
-      {
-         v[j] = m_pcs_flow->GetElementValue(m_ele->GetIndex(), v_eidx[j]);
-      }
-      // edge projection // edge marked
-      m_ele->GetEdges(ele_edges_vector);
-      for (int j = 0; j < m_ele->GetEdgesNumber(); j++)
-      {
-         m_edg = ele_edges_vector[j];
-         if (m_edg->GetMark())
-         {
-            m_edg->SetNormalVector(m_ele->normal_vector, edg_normal_vector);
-            edg_length = m_edg->Length();
-            m_edg->GetEdgeVector(edge_vector);
-         }
-      }
-      vn = MSkalarprodukt(v, edg_normal_vector, 3);
-      for (size_t j = 0; j < 3; j++)
-      {
-         vn_vec[j] = vn * edg_normal_vector[j];
-      }
-
-      //		switch (_pcs_type_name[0]) {
-      //		case 'L': // Liquid flow
-      //			break;
-      //		case 'G': // Groundwater flow
-      //			// Volume flux = v_n * l^e * z^e
-      //			for (size_t j = 0; j < 3; j++) {
-      //				f[j] = vn_vec[j] * edg_length * m_ele->GetFluxArea();
-      //			}
-      //			break;
-      //		case 'T': // Two-phase flow
-      //			break;
-      //		case 'C': // Componental flow
-      //			break;
-      //		case 'H': // heat transport
-      //			break;
-      //		case 'M': // Mass transport
-      //			// Mass flux = v_n * l^e * z^e * C^e
-      //			C_ele = 0.0;
-      //			for (j = 0; j < m_ele->GetNodesNumber(false); j++) {
-      //				nidx = GetNodeValueIndex(pcs_primary_function_name[0]) + 1;
-      //				C_ele = +GetNodeValue(element_nodes[j], nidx);
-      //			}
-      //			C_ele /= (double) m_ele->GetNodesNumber(false);
-      //			for (j = 0; j < 3; j++) {
-      //				f[j] = vn_vec[j] * edg_length * m_ele->GetFluxArea() * C_ele;
-      //			}
-      //			break;
-      //		case 'O': // Overland flow
-      //			break;
-      //		case 'R': //OK4104 Richards flow
-      //			break;
-      //		case 'A': // Air (gas) flow
-      //			break;
-      //		case 'F': // Fluid Momentum Process
-      //			break;
-      //		}
-      switch (this->getProcessType())
-      {
-         case GROUNDWATER_FLOW:
-            // Volume flux = v_n * l^e * z^e
-            for (size_t j = 0; j < 3; j++)
-            {
-               f[j] = vn_vec[j] * edg_length * m_ele->GetFluxArea();
-            }
-            break;
-         case MASS_TRANSPORT:
-            // Mass flux = v_n * l^e * z^e * C^e
-            C_ele = 0.0;
-            for (int j = 0; j < m_ele->GetNodesNumber(false); j++)
-            {
-               nidx = GetNodeValueIndex(pcs_primary_function_name[0]) + 1;
-               C_ele = +GetNodeValue(element_nodes[j], nidx);
-            }
-            C_ele /= (double) m_ele->GetNodesNumber(false);
-            for (size_t j = 0; j < 3; j++)
-            {
-               f[j] = vn_vec[j] * edg_length * m_ele->GetFluxArea() * C_ele;
-            }
-            break;
-         default:
-            break;
-      }
-
-      // set
-      /*BUGFIX_4402_OK_4
-       for(j=0;j<3;j++)
-       {
-       SetElementValue(m_ele->GetIndex(),f_eidx[j],f[j]);
-       }
-       // overall flux across polyline
-       */
-      f_n_sum += MBtrgVec(f, 3);
-   }
-   ele_vector_at_geo.clear();
-
-   return f_n_sum;
-}
-
-
-/**************************************************************************
-PCSLib-Method:
-08/2006 OK Implementation
-**************************************************************************/
-double CRFProcess::CalcELEFluxes(const GEOLIB::Polyline* ply)
+    PCSLib-Method:
+    08/2006 OK Implementation
+ **************************************************************************/
+double CRFProcess::CalcELEFluxes(const GEOLIB::Polyline* const ply)
 {
    CRFProcess* m_pcs_flow = NULL;
    //	if (_pcs_type_name.find("FLOW") != string::npos) {
@@ -8408,43 +8218,6 @@ double CRFProcess::CalcELEFluxes(const GEOLIB::Polyline* ply)
          vn_vec[j] = vn * edg_normal_vector[j];
       }
 
-      //		switch (_pcs_type_name[0]) {
-      //		case 'L': // Liquid flow
-      //			break;
-      //		case 'G': // Groundwater flow
-      //			// Volume flux = v_n * l^e * z^e
-      //			for (size_t j = 0; j < 3; j++) {
-      //				f[j] = vn_vec[j] * edg_length * m_ele->GetFluxArea();
-      //			}
-      //			break;
-      //		case 'T': // Two-phase flow
-      //			break;
-      //		case 'C': // Componental flow
-      //			break;
-      //		case 'H': // heat transport
-      //			break;
-      //		case 'M': // Mass transport
-      //			// Mass flux = v_n * l^e * z^e * C^e
-      //			C_ele = 0.0;
-      //			for (size_t j = 0; j < static_cast<size_t>(m_ele->GetNodesNumber(false)); j++) {
-      //				size_t nidx = GetNodeValueIndex(pcs_primary_function_name[0]) + 1;
-      //				C_ele = +GetNodeValue(element_nodes[j], nidx);
-      //			}
-      //			C_ele /= (double) m_ele->GetNodesNumber(false);
-      //			for (size_t j = 0; j < 3; j++) {
-      //				f[j] = vn_vec[j] * edg_length * m_ele->GetFluxArea() * C_ele;
-      //			}
-      //			break;
-      //		case 'O': // Overland flow
-      //			break;
-      //		case 'R': //OK4104 Richards flow
-      //			break;
-      //		case 'A': // Air (gas) flow
-      //			break;
-      //		case 'F': // Fluid Momentum Process
-      //			break;
-      //		}
-
       switch (this->getProcessType())
       {
          case GROUNDWATER_FLOW:
@@ -8481,14 +8254,13 @@ double CRFProcess::CalcELEFluxes(const GEOLIB::Polyline* ply)
    return f_n_sum;
 }
 
-
 /**************************************************************************
-FEMLib-Method:
-Task:
-Programing:
-11/2004 OK Implementation
-08/2006 OK new
-**************************************************************************/
+ FEMLib-Method:
+ Task:
+ Programing:
+ 11/2004 OK Implementation
+ 08/2006 OK new
+ **************************************************************************/
 void CRFProcess::CalcELEVelocities(void)
 {
    // If not FLUID_MOMENTUM,
@@ -8816,7 +8588,7 @@ void CalcNewNAPLSat(CRFProcess*m_pcs)
          mass += conc * molar_weights_vector[j];
       }
       if(mass > 0)
-         rho_N_old = mass;                        // [kg/m�³REV]
+         rho_N_old = mass;                        // [kg/m�³REV]
       else
          rho_N_old = 0;
       // determine the new NAPL density rho_N_neu at current node
@@ -8833,8 +8605,8 @@ void CalcNewNAPLSat(CRFProcess*m_pcs)
                                                   // this is required calculating the napl fluid density
          volume += conc / molar_densities_vector[j];
       }
-      if(mass > 0)
-         rho_N_new = mass ;                       // [kg/m�³REV]
+      if (mass > 0)
+         rho_N_new = mass;                        // [kg/m�³REV]
       else
          rho_N_new = 0;
 
@@ -8864,7 +8636,7 @@ void CalcNewNAPLSat(CRFProcess*m_pcs)
 
       // finally determine the new napl fluid density
       if(mass * volume > 0)
-         rho_N_fluid = mass / volume;             // [kg/m�³N] = [kg/m�³REV] / [m�³N/m�³REV]
+         rho_N_fluid = mass / volume;             // [kg/m�³N] = [kg/m�³REV] / [m�³N/m�³REV]
       else
          rho_N_fluid = m_mfp->Density();          // use NAPL phase fluid density as defined in .mfp
       // set new DENSITY2
@@ -10105,8 +9877,8 @@ void CRFProcess::WriteBC()
          nindex = bc_node_value[i]->geo_node_number;
          anode = m_msh->nod_vector[nindex];
          os << nindex << "  " << bc_node_value[i]->pcs_pv_name << " "
-            << setw(14) << anode->X() << " " << setw(14) << anode->Y()
-            << " " << setw(14) << anode->Z() << " " << setw(14)
+            << std::setw(14) << anode->X() << " " << std::setw(14) << anode->Y()
+            << " " << std::setw(14) << anode->Z() << " " << std::setw(14)
             << bc_node_value[i]->node_value << endl;
       }
    }
@@ -10121,9 +9893,9 @@ void CRFProcess::WriteBC()
          nindex = st_node_value[i]->geo_node_number;
          anode = m_msh->nod_vector[nindex];
          os << nindex << "  " << convertPrimaryVariableToString(
-            st_node[i]->getProcessPrimaryVariable()) << " " << setw(14)
-            << anode->X() << " " << setw(14) << anode->Y() << " "
-            << setw(14) << anode->Z() << " " << setw(14)
+            st_node[i]->getProcessPrimaryVariable()) << " " << std::setw(14)
+            << anode->X() << " " << std::setw(14) << anode->Y() << " "
+            << std::setw(14) << anode->Z() << " " << std::setw(14)
             << st_node_value[i]->node_value << endl;
       }
    }
@@ -10417,7 +10189,7 @@ void CRFProcess::UpdateTransientBC()
    for(i=0;i<(long)st_vector.size(); i++)
    {
       a_st = st_vector[i];
-      if(  a_st->getProcessDistributionType() == PRECIPITATION
+      if(  a_st->getProcessDistributionType() == FiniteElement::PRECIPITATION
          &&a_st->getProcessType() == getProcessType() )
       {
          precip = a_st;

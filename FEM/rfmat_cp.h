@@ -16,7 +16,10 @@
 #include "Configure.h"
 
 #define CP_FILE_EXTENSION ".mcp"                  /* File extension for component properties input file */
-#include<fstream>
+#include <fstream>
+#include <vector>
+
+class CRFProcess;
 
 /*************************************************************************
 
@@ -34,8 +37,8 @@ class CompProperties
       /* destructor */
       ~CompProperties(void);
 
-      string name;                                /* Gruppenname */
-      string compname;                            /* component name */
+      std::string name;                           /* Gruppenname */
+      std::string compname;                       /* component name */
       long mobil;                                 /* flag mobil */
       long transport_phase;                       /* number of phase, in which component is transported */
       long fluid_phase;
@@ -86,7 +89,7 @@ class CompProperties
       //
       int kinetic_model;                          // only 1 = GEMS implemented right now
       int n_activities;                           // number of species for activities
-      string active_species[10];                  // name for species ...maximum 10 names
+      std::string active_species[10];             // name for species ...maximum 10 names
       double kinetic_parameters[41];
       //	0,1,2  double E_acid,E_neutral,E_base; // activation energies
       //      3-5  double k_acid, k_neutral,k_base; // dissolution/precipitation rate constants
@@ -98,8 +101,8 @@ class CompProperties
       double GetNodePorosityValue_MT ( long node_Index, int timelevel);
 #endif
 
-      ios::pos_type Read(ifstream*);              /* Lesefunktion f? eine Instanz von CompProperties */
-      void Write(ofstream*);                      /* Schreibfunktion f? eine Instanz von CompProperties */
+      std::ios::pos_type Read(std::ifstream*);              /* Lesefunktion f? eine Instanz von CompProperties */
+      void Write(std::ofstream*);                      /* Schreibfunktion f? eine Instanz von CompProperties */
 
       /* Member - Functions */
       double CalcDiffusionCoefficientCP(long index,double theta,CRFProcess* m_pcs);
@@ -111,18 +114,18 @@ class CompProperties
       double CalcElementDecayRate( long index);
       double CalcElementDecayRateNew( long index, CRFProcess* m_pcs);
       // IO
-      string file_base_name;
+      std::string file_base_name;
 
 };
 
 /* Vector auf CompProperties , globale Zugriffe */
-extern vector <CompProperties*> cp_vec;
+extern std::vector <CompProperties*> cp_vec;
 
 /* ----------------------------------------------------------------------- */
 /* Read all Component Properties instance by instance from input file *.cp */
-extern bool CPRead(string);
+extern bool CPRead(std::string);
 /* Write all Component Properties instance by instance to output file */
-extern void CPWrite(string,int);
+extern void CPWrite(std::string, int);
 extern int CPGetMobil(long comp);
 extern void MCPDelete();
 #endif

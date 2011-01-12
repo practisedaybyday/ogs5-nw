@@ -28,7 +28,7 @@
 #endif
 
 #include "BuildInfo.h"
-#include<iostream>
+
 /* Preprozessor-Definitionen */
 #include "makros.h"
 #define TEST
@@ -90,28 +90,28 @@ int main ( int argc, char *argv[] )
 		  << "Where OPTIONS are:\n"
 		  << "  -h [--help]       print this message and exit\n"
 		  << "  -b [--build-info] print build info and exit\n"
-		  << "  --version         print ogs version and exit" << endl;
+		  << "  --version         print ogs version and exit" << std::endl;
 	continue;
       }
     if( anArg == "--build-info" || anArg == "-b" )
       {
-	std::cout << "ogs version: " << OGS_VERSION << endl
-		  << "ogs date: " << OGS_DATE << endl
-		  << "cmake command line arguments: " << CMAKE_CMD_ARGS << endl
-		  << "git commit info: " << GIT_COMMIT_INFO << endl
-		  << "subversion info: " << SVN_REVISION << endl
-		  << "build timestamp: " << BUILD_TIMESTAMP << endl;
-	continue;
+		  std::cout << "ogs version: " << OGS_VERSION << std::endl
+		  << "ogs date: " << OGS_DATE << std::endl
+		  << "cmake command line arguments: " << CMAKE_CMD_ARGS << std::endl
+		  << "git commit info: " << GIT_COMMIT_INFO << std::endl
+		  << "subversion info: " << SVN_REVISION << std::endl
+		  << "build timestamp: " << BUILD_TIMESTAMP << std::endl;
+		  continue;
       }
     if( anArg == "--version" )
       {
-	std::cout << OGS_VERSION << endl;
-	continue;
+		  std::cout << OGS_VERSION << std::endl;
+		  continue;
       }
     if( anArg == "--model-root" || anArg == "-m" )
       {
-	modelRoot = std::string( argv[++i] );
-	continue;
+		modelRoot = std::string( argv[++i] );
+		continue;
       }
     // anything left over must be the model root, unless already found
     if ( modelRoot == "" ){ modelRoot = std::string( argv[i] ); }
@@ -147,7 +147,7 @@ int main ( int argc, char *argv[] )
       elapsed_time_mpi = -MPI_Wtime(); // 12.09.2007 WW
       MPI_Comm_size(MPI_COMM_WORLD,&mysize);
       MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
-      cout << "After MPI_Init myrank = " << myrank << '\n';
+	  std::cout << "After MPI_Init myrank = " << myrank << '\n';
       time_ele_paral = 0.0;
 #endif
 /*---------- MPI Initialization ----------------------------------*/
@@ -205,19 +205,19 @@ int main ( int argc, char *argv[] )
   tmpFilename.append(".pcs");
   if(!IsFileExisting(tmpFilename))
   {
-	  cout << " Error: Cannot find file " << dateiname << endl;
+	  std::cout << " Error: Cannot find file " << dateiname << std::endl;
 	  return 1;
   }
 
   FileName = dateiname;
-  basic_string <char>::size_type indexChWin, indexChLinux;
+  size_t indexChWin, indexChLinux;
   indexChWin = indexChLinux = 0;
   indexChWin = FileName.find_last_of('\\');
   indexChLinux = FileName.find_last_of('/');
   //
-  if(indexChWin!=string::npos)
+  if(indexChWin!=std::string::npos)
      FilePath = FileName.substr(0,indexChWin)+"\\";
-  else if(indexChLinux!=string::npos)
+  else if(indexChLinux!=std::string::npos)
      FilePath = FileName.substr(0,indexChLinux)+"/";
   // ---------------------------WW
   aproblem = new Problem(dateiname);
@@ -225,7 +225,7 @@ int main ( int argc, char *argv[] )
   delete aproblem;
   aproblem = NULL;
 #ifdef TESTTIME
-  cout << "Simulation time: " << TGetTimer(0) << "s" << endl;
+  std::cout << "Simulation time: " << TGetTimer(0) << "s" << std::endl;
 #endif
   /* Abspann ausgeben */
   /* Ctrl-C wieder normal */
@@ -233,7 +233,7 @@ int main ( int argc, char *argv[] )
 /*--------- MPI Finalize ------------------*/
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
    elapsed_time_mpi += MPI_Wtime(); // 12.09.2007 WW
-   cout<<"\n *** Total CPU time of parallel modeling: "<< elapsed_time_mpi<<endl; //WW
+   std::cout<<"\n *** Total CPU time of parallel modeling: "<< elapsed_time_mpi<<std::endl; //WW
    // Count CPU time of post time loop WW
    MPI_Finalize();
 #endif

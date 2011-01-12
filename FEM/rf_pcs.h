@@ -19,9 +19,9 @@ Programing:
 #include "rf_num_new.h"
 #include "rf_bc_new.h"
 #include "rf_tim_new.h"
-#include "rf_st_new.h"                            //CMCD 02_06
+//#include "rf_st_new.h"//CMCD 02_06
 // C++ STL
-#include <fstream>
+//#include <fstream>
 //
 // The follows are implicit declaration. WW
 //---------------------------------------------------------------------------
@@ -190,7 +190,7 @@ class CRFProcess : public ProcessInfo
    public:                                        //OK
       bool Write_Matrix;
    protected:                                     //WW
-      fstream *matrix_file;
+      std::fstream *matrix_file;
       // Write RHS from source or Neumann BC terms to file
       // 0: Do nothing
       // 1: Write
@@ -205,7 +205,7 @@ class CRFProcess : public ProcessInfo
       long nwrite_restart;
       inline void  WriteRHS_of_ST_NeumannBC();
       inline void  ReadRHS_of_ST_NeumannBC();
-      friend bool PCSRead(string);
+      friend bool PCSRead(std::string);
       //....................................................................
       // 1-GEO
    public:
@@ -220,8 +220,8 @@ class CRFProcess : public ProcessInfo
        * @return
        */
       const Problem* getProblemObjectPointer () const;
-      string geo_type;                            //OK
-      string geo_type_name;                       //OK
+      std::string geo_type;                       //OK
+      std::string geo_type_name;                  //OK
       //....................................................................
       // 2-MSH
       //....................................................................
@@ -231,21 +231,21 @@ class CRFProcess : public ProcessInfo
       //....................................................................
       // 5-BC
                                                   //WW
-      vector<CBoundaryConditionNode*> bc_node_value;
-      vector<CBoundaryCondition*> bc_node;        //WW
-      vector<long> bc_node_value_in_dom;          //WW for domain decomposition
-      vector<long> bc_local_index_in_dom;         //WW for domain decomposition
-      vector<long> rank_bc_node_value_in_dom;     //WW
-      vector<long> bc_transient_index;            //WW/CB
+      std::vector<CBoundaryConditionNode*> bc_node_value;
+      std::vector<CBoundaryCondition*> bc_node;   //WW
+      std::vector<long> bc_node_value_in_dom;     //WW for domain decomposition
+      std::vector<long> bc_local_index_in_dom;    //WW for domain decomposition
+      std::vector<long> rank_bc_node_value_in_dom;//WW
+      std::vector<long> bc_transient_index;       //WW/CB
       void UpdateTransientBC();                   //WW/CB
       //....................................................................
       // 6-ST
       // Node values from sourse/sink or Neumann BC. WW
-      vector<CNodeValue*> st_node_value;          //WW
-      vector<CSourceTerm*> st_node;               //WW
-      vector<long> st_node_value_in_dom;          //WW for domain decomposition
-      vector<long> st_local_index_in_dom;         //WW for domain decomposition
-      vector<long> rank_st_node_value_in_dom;     //WW
+      std::vector<CNodeValue*> st_node_value;     //WW
+      std::vector<CSourceTerm*> st_node;          //WW
+      std::vector<long> st_node_value_in_dom;     //WW for domain decomposition
+      std::vector<long> st_local_index_in_dom;    //WW for domain decomposition
+      std::vector<long> rank_st_node_value_in_dom;//WW
       void RecordNodeVSize(const int Size)        //WW
       {
          orig_size = Size;
@@ -255,6 +255,7 @@ class CRFProcess : public ProcessInfo
          return orig_size;
       }
 
+
       //....................................................................
       // 7-MFP
       //....................................................................
@@ -263,7 +264,7 @@ class CRFProcess : public ProcessInfo
       // 9-MMP
       int GetContinnumType() const {return continuum;}
       // const int number_continuum=1;
-      vector<double> continuum_vector;
+      std:: vector<double> continuum_vector;
       //....................................................................
       // 10-MCP
       //....................................................................
@@ -288,8 +289,8 @@ class CRFProcess : public ProcessInfo
       virtual ~CRFProcess();
       //....................................................................
       // IO
-      ios::pos_type Read(ifstream*);
-      void Write(fstream*);
+      std::ios::pos_type Read(std::ifstream*);
+      void Write(std::fstream*);
       //....................................................................
       // 1-GEO
       //....................................................................
@@ -331,10 +332,11 @@ class CRFProcess : public ProcessInfo
       int Shift[10];
       // 16-GEM  // HS 11.2008
       int flag_couple_GEMS;                       // 0-no couple; 1-coupled
-      vector<Water_ST_GEMS> Water_ST_vec;
-      vector<long> stgem_node_value_in_dom;       //KG for domain decomposition
-      vector<long> stgem_local_index_in_dom;      //KG for domain decomposition
-      vector<long> rank_stgem_node_value_in_dom;  //KG
+      std::vector<Water_ST_GEMS> Water_ST_vec;
+      std::vector<long> stgem_node_value_in_dom;  //KG for domain decomposition
+      std::vector<long> stgem_local_index_in_dom; //KG for domain decomposition
+                                                  //KG
+      std::vector<long> rank_stgem_node_value_in_dom;
 
       void Clean_Water_ST_vec(void);
       void Add_GEMS_Water_ST(long idx, double val);
@@ -346,7 +348,7 @@ class CRFProcess : public ProcessInfo
       int mobile_nodes_flag;
 
    private:
-      std::vector<string> pcs_type_name_vector;
+      std::vector<std::string> pcs_type_name_vector;
 
    public:
       int pcs_type_number;
@@ -355,11 +357,12 @@ class CRFProcess : public ProcessInfo
       int pcs_component_number;                   //SB: counter for transport components
       int ML_Cap;                                 // 23.01 2009 PCH
       int PartialPS;                              // 16.02 2009 PCH
+
       int GetProcessComponentNumber() const       //SB:namepatch
       {
          return pcs_component_number;
       }
-      string file_name_base;                      //OK
+      std::string file_name_base;                 //OK
       // Access to PCS
       // Configuration 1 - NOD
       PCS_NVAL_DATA *pcs_nval_data;               ///OK
@@ -369,7 +372,7 @@ class CRFProcess : public ProcessInfo
       const char *pcs_primary_function_unit[4];
       const char *pcs_primary_function_name[4];
       const char* GetPrimaryVName(const int index) const {return pcs_primary_function_name[index];}
-      string primary_variable_name;               //OK
+      std::string primary_variable_name;          //OK
       int pcs_number_of_secondary_nvals;
       size_t GetSecondaryVNumber() const {return static_cast<size_t> (pcs_number_of_secondary_nvals);}
       const char *pcs_secondary_function_name[PCS_NUMBER_MAX];
@@ -394,28 +397,29 @@ class CRFProcess : public ProcessInfo
 #ifndef NEW_EQS                                //WW 07.11.2008
       LINEAR_SOLVER *eqs;
 #endif
-      string num_type_name;
+      std::string num_type_name;
       int  rwpt_app;
       const char *pcs_num_name[2];                //For monolithic scheme
       double pcs_nonlinear_iteration_tolerance;
       int pcs_nonlinear_iterations;               //OK
       int pcs_coupling_iterations;                //OK
-      string tim_type_name;                       //OK
+      std::string tim_type_name;                  //OK
       const char *pcs_sol_name;
-      string cpl_type_name;
+      std::string cpl_type_name;
       CNumerics* m_num;
       //
       bool selected;                              //OK
       bool saturation_switch;                     // JOD
       // MSH
       CFEMesh* m_msh;                             //OK
-      string msh_type_name;                       //OK
+      std::string msh_type_name;                  //OK
       //MB-------------
-      vector<double*> nod_val_vector;             //OK
-      vector<string> nod_val_name_vector;         //OK
+      std::vector<double*> nod_val_vector;        //OK
+                                                  //OK
+      std::vector<std::string> nod_val_name_vector;
       void SetNodeValue(long,int,double);         //OK
       double GetNodeValue(long,int);              //OK
-      int GetNodeValueIndex(const string&);       //OK
+      int GetNodeValueIndex(const std::string&);  //OK
       //-----------------------------
 
       std::vector<std::string> const& getElementValueNameVector () { return ele_val_name_vector; }
@@ -423,10 +427,11 @@ class CRFProcess : public ProcessInfo
                                                   //PCH
       std::vector<std::string> ele_val_name_vector;
    public:
-      vector<double*> ele_val_vector;             //PCH
+      std::vector<double*> ele_val_vector;        //PCH
       void SetElementValue(long,int,double);      //PCH
       double GetElementValue(long,int);           //PCH
-      int GetElementValueIndex(const string&);    //PCH
+                                                  //PCH
+      int GetElementValueIndex(const std::string&);
       //CB-----------------------------
       int flow_pcs_type;
       //----------------------------------------------------------------------
@@ -533,7 +538,7 @@ class CRFProcess : public ProcessInfo
       void PCSMoveNOD();
       void PCSDumpModelNodeValues(void);
                                                   //WW
-      int GetNODValueIndex(const string &name,int timelevel);
+      int GetNODValueIndex(const std::string &name,int timelevel);
       // BC for dynamic problems. WW
       inline void setBC_danymic_problems();
       inline void setST_danymic_problems();
@@ -542,7 +547,7 @@ class CRFProcess : public ProcessInfo
       void Extropolation_GaussValue();
       void Extropolation_MatValue();              //WW
                                                   //WW. 05.2009
-      void Integration(vector<double> &node_velue);
+      void Integration(std::vector<double> &node_velue);
       // Auto time step size control. WW
       void PI_TimeStepSize(double *u_n);          //WW
       bool TimeStepAccept() const { return accepted;}
@@ -572,9 +577,9 @@ class CRFProcess : public ProcessInfo
       void CalcSaturationRichards(int timelevel, bool update);
       bool non_linear;                            //OK/CMCD
                                                   //MX
-      void InterpolateTempGP(CRFProcess *, string);
+      void InterpolateTempGP(CRFProcess *, std::string);
                                                   //MX
-      void ExtropolateTempGP(CRFProcess *, string);
+      void ExtropolateTempGP(CRFProcess *, std::string);
       //Repeat Calculation,    JOD removed // HS reactivated
       void PrimaryVariableReload();               //YD
       void PrimaryVariableReloadRichards();       //YD
@@ -584,9 +589,7 @@ class CRFProcess : public ProcessInfo
       void PrimaryVariableStorageTransport();     //kg44
       //double GetNewTimeStepSizeTransport(double mchange); //kg44
       // FLX
-      void CalcELEFluxes(CGLPoint*);              //OK
-      double CalcELEFluxes(CGLPolyline*);         //OK
-      double CalcELEFluxes(const GEOLIB::Polyline* ply);
+      double CalcELEFluxes(const GEOLIB::Polyline* const ply);
       // NEW
       CRFProcess* CopyPCStoDM_PCS();
       bool OBJRelations();                        //OK
@@ -597,7 +600,7 @@ class CRFProcess : public ProcessInfo
       bool CreateEQS();                           //OK
       void EQSDelete();                           //OK
       // Dumping matrix and RHS. WW
-      void DumpEqs(string file_name);
+      void DumpEqs(std::string file_name);
 #endif
       bool Check();                               //OK
       void NODRelationsDelete();                  //OK
@@ -609,7 +612,7 @@ class CRFProcess : public ProcessInfo
       void Delete();                              //OK
       bool m_bCheck;                              //OK
 #ifdef USE_MPI                                 //WW
-      void Print_CPU_time_byAssembly(ostream &os=cout) const
+      void Print_CPU_time_byAssembly(std::ostream &os=std::cout) const
       {
          os<<"\n***\nCPU time elapsed in the linear equation of "<< convertProcessTypeToString(getProcessType()) <<"\n";
          os<<"--Global assembly: "<<(double)cpu_time_assembly/CLOCKS_PER_SEC<<"\n";
@@ -626,10 +629,10 @@ class CRFProcess : public ProcessInfo
 
 //========================================================================
 // PCS
-extern vector<CRFProcess*>pcs_vector;
-extern vector<ElementValue*> ele_gp_value;        // Gauss point value for velocity. WW
-extern bool PCSRead(string);
-extern void PCSWrite(string);
+extern std::vector<CRFProcess*>pcs_vector;
+extern std::vector<ElementValue*> ele_gp_value;   // Gauss point value for velocity. WW
+extern bool PCSRead(std::string);
+extern void PCSWrite(std::string);
 extern void RelocateDeformationProcess(CRFProcess *m_pcs);
 extern void PCSDestroyAllProcesses(void);
 
@@ -641,14 +644,14 @@ extern CRFProcess* PCSGet(const std::string&);
  */
 CRFProcess* PCSGet (ProcessType pcs_type);        // TF
 
-extern CRFProcess* PCSGetNew(const string&,const string&);
+extern CRFProcess* PCSGetNew(const std::string&,const std::string&);
 extern void PCSDelete();
 extern void PCSDelete(const std::string&);
 extern void PCSCreate();
                                                   //SB
-extern int PCSGetPCSIndex(const string&,const string&);
+extern int PCSGetPCSIndex(const std::string&,const std::string&);
                                                   //SB
-extern CRFProcess *PCSGet(const string&,const string&);
+extern CRFProcess *PCSGet(const std::string&,const std::string&);
 
 /**
  * Function searchs in the global pcs_vector for a process
@@ -661,20 +664,21 @@ extern CRFProcess *PCSGet(const string&,const string&);
                                                   // TF
 CRFProcess* PCSGet(ProcessType pcs_type, const std::string &pv_name);
 
-extern CRFProcess *PCSGet(const string&,bool);    //OK
+                                                  //OK
+extern CRFProcess *PCSGet(const std::string&,bool);
 extern CRFProcess *PCSGetFluxProcess();           //CMCD
 extern CRFProcess *PCSGetFlow();                  //OK
 extern bool PCSConfig();                          //OK
 // NOD
-extern int PCSGetNODValueIndex(const string&,int);
+extern int PCSGetNODValueIndex(const std::string&,int);
 extern double PCSGetNODValue(long,char*,int);
-extern void PCSSetNODValue(long,const string&,double,int);
+extern void PCSSetNODValue(long,const std::string&,double,int);
 // ELE
 extern int PCSGetELEValueIndex(char*);
-extern double PCSGetELEValue(long index,double*gp,double theta,const string &nod_fct_name);
+extern double PCSGetELEValue(long index,double*gp,double theta,const std::string &nod_fct_name);
 // Specials
 extern void PCSRestart();
-extern string PCSProblemType();
+extern std::string PCSProblemType();
 // PCS global variables
 extern int pcs_no_fluid_phases;
 extern int pcs_no_components;
@@ -689,10 +693,10 @@ extern double PCSGetNODConcentration(long index, long component, long timelevel)
 extern void PCSSetNODConcentration(long index, long component, long timelevel, double value);
 extern char *GetCompNamehelp(char *name);         //SB:namepatch - superseded by GetPFNamebyCPName
                                                   //SB4218
-extern double PCSGetEleMeanNodeSecondary(long index, const string &pcs_name, const string &var_name, int timelevel);
+extern double PCSGetEleMeanNodeSecondary(long index, const std::string &pcs_name, const std::string &var_name, int timelevel);
                                                   //CB
-extern double PCSGetEleMeanNodeSecondary_2(long index, int pcsT, const string &var_name, int timelevel);
-extern string GetPFNamebyCPName(string line_string);
+extern double PCSGetEleMeanNodeSecondary_2(long index, int pcsT, const std::string &var_name, int timelevel);
+extern std::string GetPFNamebyCPName(std::string line_string);
 
 extern int memory_opt;
 
@@ -751,9 +755,9 @@ extern bool MASS_TRANSPORT_Process;
 extern bool FLUID_MOMENTUM_Process;
 extern bool RANDOM_WALK_Process;
 extern bool PS_Global;                            //NB
-extern string project_title;                      //OK41
+extern std::string project_title;                 //OK41
 extern bool pcs_created;
-extern vector<LINEAR_SOLVER *> PCS_Solver;        //WW
+extern std::vector<LINEAR_SOLVER *> PCS_Solver;   //WW
                                                   //OK
 extern void MMPCalcSecondaryVariablesNew(CRFProcess*m_pcs, bool NAPLdiss);
 extern void CalcNewNAPLSat(CRFProcess*m_pcs);     //CB 01/08

@@ -9,7 +9,6 @@ Programing:
 // C++
 #include <string>
 #include <vector>
-using namespace std;
 
 // FileIO
 #include "GMSHInterface.h"
@@ -34,11 +33,11 @@ using namespace std;
 #ifndef NEW_EQS                                   //WW. 07.11.2008
 extern void ConfigRenumberProperties(void);
 #endif
-extern int ReadRFIFile(string g_strFileNameBase);
+extern int ReadRFIFile(std::string g_strFileNameBase);
 #include "rf_pcs.h"
 #include "gs_project.h"
 
-vector<Mesh_Group::CFEMesh*>fem_msh_vector;
+std::vector<Mesh_Group::CFEMesh*>fem_msh_vector;
 
 #define FEM_FILE_EXTENSION ".msh"
 
@@ -57,7 +56,7 @@ Task:
 Programing:
 04/2005 OK Implementation
 **************************************************************************/
-void MSHDelete(string m_msh_name)
+void MSHDelete(std::string m_msh_name)
 {
    CFEMesh* m_fem_msh = NULL;
    size_t fem_msh_vector_size = fem_msh_vector.size();
@@ -105,12 +104,12 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    //----------------------------------------------------------------------
    CFEMesh *fem_msh (NULL);
    char line[MAX_ZEILE];
-   string sub_line;
-   string line_string;
-   ios::pos_type position;
+   std::string sub_line;
+   std::string line_string;
+   std::ios::pos_type position;
    //========================================================================
    // File handling
-   string msh_file_name_ascii = file_base_name + FEM_FILE_EXTENSION;
+   std::string msh_file_name_ascii = file_base_name + FEM_FILE_EXTENSION;
 
    // test if this is a GMSH mesh
    if (FileIO::GMSHInterface::isGMSHMeshFile (msh_file_name_ascii))
@@ -122,21 +121,21 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
       return fem_msh;
    }
 
-   ifstream msh_file_ascii;
+   std::ifstream msh_file_ascii;
 
 #ifdef USE_TOKENBUF
    TokenBuf *tokenbuf;
 #endif
-   cout << "MSHRead: ";
-   cout << "ASCII file" << endl;
-   msh_file_ascii.open(msh_file_name_ascii.data(),ios::in);
+   std::cout << "MSHRead: ";
+   std::cout << "ASCII file" << std::endl;
+   msh_file_ascii.open(msh_file_name_ascii.data(),std::ios::in);
    if (!msh_file_ascii.good()) return NULL;
 
    //----------------------------------------------------------------------
    // RFI - WW
    bool rfiMesh = true;
    getline(msh_file_ascii, line_string);          // The first line
-   if(line_string.find("#FEM_MSH")!=string::npos)
+   if(line_string.find("#FEM_MSH")!=std::string::npos)
       rfiMesh = false;
    //	else	// KR: included error message
    //	{
@@ -144,7 +143,7 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    //		return NULL;
    //	}
 
-   msh_file_ascii.seekg(0L,ios::beg);
+   msh_file_ascii.seekg(0L,std::ios::beg);
 
 #ifdef USE_TOKENBUF
    tokenbuf = new TokenBuf(msh_file_ascii, 10485760);
@@ -164,7 +163,7 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    {
       tokenbuf->get_non_empty_line(line, MAX_ZEILE);
       line_string = line;
-      if(line_string.find("#STOP") != string::npos)
+      if(line_string.find("#STOP") != std::string::npos)
          return true;
 
                                                   // mesh
@@ -182,16 +181,16 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    {
       msh_file_ascii.getline(line,MAX_ZEILE);
       line_string = line;
-      if(line_string.find("#STOP")!=string::npos)
+      if(line_string.find("#STOP")!=std::string::npos)
          return fem_msh;
       //..................................................................
                                                   // keyword found
-      if(line_string.find("#FEM_MSH")!=string::npos)
+      if(line_string.find("#FEM_MSH")!=std::string::npos)
       {
          fem_msh = new CFEMesh(geo_obj, unique_name);
          position = fem_msh->Read(&msh_file_ascii);
          //fem_msh_vector.push_back(m_fem_msh);
-         msh_file_ascii.seekg(position,ios::beg);
+         msh_file_ascii.seekg(position,std::ios::beg);
       }                                           // keyword found
    }                                              // eof
 #endif
@@ -209,7 +208,7 @@ Task:
 Programing:
 08/2005 WW Re-implememtation
 **************************************************************************/
-void Read_RFI(istream& msh_file,CFEMesh* m_msh)
+void Read_RFI(std::istream& msh_file,CFEMesh* m_msh)
 {
    long id;
    long i=0;
@@ -217,7 +216,7 @@ void Read_RFI(istream& msh_file,CFEMesh* m_msh)
    int NumElements=0;
    int End = 1;
    double x,y,z;
-   string strbuffer;
+   std::string strbuffer;
 
    CNode* node = NULL;
    CElem* elem = NULL;
@@ -225,12 +224,12 @@ void Read_RFI(istream& msh_file,CFEMesh* m_msh)
    while (End)
    {
       getline(msh_file, strbuffer);               // The first line
-      msh_file>>i>>NumNodes>>NumElements>>ws;
+      msh_file>>i>>NumNodes>>NumElements>>std::ws;
       //....................................................................
       // Node data
       for(i=0;i<NumNodes;i++)
       {
-         msh_file>>id>>x>>y>>z>>ws;
+         msh_file>>id>>x>>y>>z>>std::ws;
          node = new CNode(id,x,y,z);
          m_msh->nod_vector.push_back(node);
       }
@@ -268,24 +267,24 @@ Programing:
 last modification:
 08/2010	KR binary case deleted
 **************************************************************************/
-void MSHWrite(string file_base_name)
+void MSHWrite(std::string file_base_name)
 {
    CFEMesh* m_fem_msh = NULL;
-   string sub_line;
-   string line_string;
+   std::string sub_line;
+   std::string line_string;
    //----------------------------------------------------------------------
    // File handling
-   string fem_msh_file_name = file_base_name + FEM_FILE_EXTENSION;
-   fstream fem_msh_file;
-   string msh_file_test_name = file_base_name + "_test" + FEM_FILE_EXTENSION;
-   fstream msh_file_test;
+   std::string fem_msh_file_name = file_base_name + FEM_FILE_EXTENSION;
+   std::fstream fem_msh_file;
+   std::string msh_file_test_name = file_base_name + "_test" + FEM_FILE_EXTENSION;
+   std::fstream msh_file_test;
    for(size_t i=0; i<fem_msh_vector.size(); i++)
    {
       m_fem_msh = fem_msh_vector[i];
    }
-   fem_msh_file.open(fem_msh_file_name.c_str(),ios::trunc|ios::out);
+   fem_msh_file.open(fem_msh_file_name.c_str(),std::ios::trunc|std::ios::out);
    if(!fem_msh_file.good()) return;
-   fem_msh_file.setf(ios::scientific,ios::floatfield);
+   fem_msh_file.setf(std::ios::scientific,std::ios::floatfield);
    fem_msh_file.precision(12);
 
    //----------------------------------------------------------------------
@@ -307,7 +306,7 @@ Programing:
 03/2005 OK Implementation
 last modification:
 **************************************************************************/
-CFEMesh* FEMGet(const string &msh_name)
+CFEMesh* FEMGet(const std::string &msh_name)
 {
    size_t no_msh = fem_msh_vector.size();
    // If there is only one msh file available, use it for all process. WW
@@ -379,16 +378,16 @@ Programing:
 09/2005 OK MSH ToDo
 last modification:
 **************************************************************************/
-void MSHWriteVOL2TEC(string m_msh_name)
+void MSHWriteVOL2TEC(std::string m_msh_name)
 {
    long i,j;
    CGLVolume *m_vol = NULL;
-   vector<CGLVolume*>::const_iterator p_vol;
-   string name("VOLUMES");
-   vector<Surface*>::const_iterator p_sfc;
+   std::vector<CGLVolume*>::const_iterator p_vol;
+   std::string name("VOLUMES");
+   std::vector<Surface*>::const_iterator p_sfc;
    double x,y,z;
    //  CGLPoint m_point; // TF
-   ios::pos_type position;
+   std::ios::pos_type position;
    int vol_number = -1;
    Surface* m_sfc = NULL;
    //--------------------------------------------------------------------
@@ -399,7 +398,7 @@ void MSHWriteVOL2TEC(string m_msh_name)
    long ep_layer = (long)m_msh->ele_vector.size() / m_msh->getNumberOfMeshLayers();
    //--------------------------------------------------------------------
    // File handling
-   string tec_path;
+   std::string tec_path;
    CGSProject* m_gsp = GSPGetMember("gli");
    if(m_gsp)
       tec_path = m_gsp->path;
@@ -423,14 +422,14 @@ void MSHWriteVOL2TEC(string m_msh_name)
       vol_number++;
       //--------------------------------------------------------------------
       // file handling
-      string vol_file_name = tec_path + "VOL_" + m_vol->name + TEC_FILE_EXTENSION;
-      fstream vol_file (vol_file_name.data(),ios::trunc|ios::out);
-      vol_file.setf(ios::scientific,ios::floatfield);
+      std::string vol_file_name = tec_path + "VOL_" + m_vol->name + TEC_FILE_EXTENSION;
+      std::fstream vol_file (vol_file_name.data(),std::ios::trunc|std::ios::out);
+      vol_file.setf(std::ios::scientific,std::ios::floatfield);
       vol_file.precision(12);
       if (!vol_file.good()) return;
-      vol_file.seekg(0L,ios::beg);
+      vol_file.seekg(0L,std::ios::beg);
       //--------------------------------------------------------------------
-      vol_file << "VARIABLES = X,Y,Z,VOL" << endl;
+      vol_file << "VARIABLES = X,Y,Z,VOL" << std::endl;
       //--------------------------------------------------------------------
       long no_mat_elements = 0;
       CElem* m_ele = NULL;
@@ -466,11 +465,11 @@ void MSHWriteVOL2TEC(string m_msh_name)
       vol_file << "ZONE T = " << m_vol->name << ", " \
          << "N = " << no_nodes << ", " \
          << "E = " << no_mat_elements << ", " \
-         << "F = FEPOINT" << ", " << "ET = BRICK" << endl;
+         << "F = FEPOINT" << ", " << "ET = BRICK" << std::endl;
       for(i=0;i<no_nodes;i++)
       {
          vol_file \
-            << m_msh->nod_vector[i]->X() << " " << m_msh->nod_vector[i]->Y() << " " << m_msh->nod_vector[i]->Z() << " " << vol_number << endl;
+            << m_msh->nod_vector[i]->X() << " " << m_msh->nod_vector[i]->Y() << " " << m_msh->nod_vector[i]->Z() << " " << vol_number << std::endl;
       }
       for(long i=jb;i<je;i++)
       {
@@ -495,7 +494,7 @@ void MSHWriteVOL2TEC(string m_msh_name)
             //        if(m_sfc->PointInSurface(&m_point)){
             //          vol_file
             //            << node_indeces[0]+1 << " " << node_indeces[0]+1 << " " << node_indeces[1]+1 << " " << node_indeces[2]+1 << " "
-            //            << node_indeces[3]+1 << " " << node_indeces[3]+1 << " " << node_indeces[4]+1 << " " << node_indeces[5]+1 << endl;
+            //            << node_indeces[3]+1 << " " << node_indeces[3]+1 << " " << node_indeces[4]+1 << " " << node_indeces[5]+1 << std::endl;
             //        }
          }
       }
@@ -517,13 +516,13 @@ void MSHWriteTecplot()
    MshElemType::type ele_type = MshElemType::INVALID;
    long no_nodes;
    long no_elements;
-   string delimiter(", ");
+   std::string delimiter(", ");
    long i;
    CElem* m_ele = NULL;
    vec<long> node_indeces(8);
    //----------------------------------------------------------------------
    // File handling
-   string file_path = "MSH";
+   std::string file_path = "MSH";
    CGSProject* m_gsp = NULL;
    m_gsp = GSPGetMember("msh");
    if (m_gsp)
@@ -542,15 +541,15 @@ void MSHWriteTecplot()
          ele_type = m_ele->GetElementType();
       }
       // File handling
-      string msh_file_name = file_path + "_" + m_msh->pcs_name
+      std::string msh_file_name = file_path + "_" + m_msh->pcs_name
          + TEC_FILE_EXTENSION;
-      fstream msh_file(msh_file_name.data(), ios::trunc | ios::out);
-      msh_file.setf(ios::scientific, ios::floatfield);
+      std::fstream msh_file(msh_file_name.data(), std::ios::trunc | std::ios::out);
+      msh_file.setf(std::ios::scientific, std::ios::floatfield);
       msh_file.precision(12);
       if (!msh_file.good())
          return;
-      msh_file.seekg(0L, ios::beg);
-      msh_file << "VARIABLES = X,Y,Z" << endl;
+      msh_file.seekg(0L, std::ios::beg);
+      msh_file << "VARIABLES = X,Y,Z" << std::endl;
       msh_file << "ZONE T = " << m_msh->pcs_name << delimiter << "N = "
          << no_nodes << delimiter << "E = " << no_elements << delimiter;
       msh_file << "F = FEPOINT" << delimiter;
@@ -558,12 +557,12 @@ void MSHWriteTecplot()
       {
          //..................................................................
          case MshElemType::LINE:
-            msh_file << "ET = QUADRILATERAL" << endl;
+            msh_file << "ET = QUADRILATERAL" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
                msh_file << m_msh->nod_vector[i]->X() << " "
                   << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << endl;
+                  << m_msh->nod_vector[i]->Z() << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -571,17 +570,17 @@ void MSHWriteTecplot()
                m_ele->GetNodeIndeces(node_indeces);
                msh_file << node_indeces[0] + 1 << " " << node_indeces[1] + 1
                   << " " << node_indeces[1] + 1 << " " << node_indeces[0]
-                  + 1 << endl;
+                  + 1 << std::endl;
             }
             break;
             //..................................................................
          case MshElemType::QUAD:
-            msh_file << "ET = QUADRILATERAL" << endl;
+            msh_file << "ET = QUADRILATERAL" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
                msh_file << m_msh->nod_vector[i]->X() << " "
                   << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << endl;
+                  << m_msh->nod_vector[i]->Z() << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -589,17 +588,17 @@ void MSHWriteTecplot()
                m_ele->GetNodeIndeces(node_indeces);
                msh_file << node_indeces[0] + 1 << " " << node_indeces[1] + 1
                   << " " << node_indeces[2] + 1 << " " << node_indeces[3]
-                  + 1 << endl;
+                  + 1 << std::endl;
             }
             break;
             //..................................................................
          case MshElemType::HEXAHEDRON:
-            msh_file << "ET = BRICK" << endl;
+            msh_file << "ET = BRICK" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
                msh_file << m_msh->nod_vector[i]->X() << " "
                   << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << endl;
+                  << m_msh->nod_vector[i]->Z() << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -609,34 +608,34 @@ void MSHWriteTecplot()
                   << " " << node_indeces[2] + 1 << " " << node_indeces[3]
                   + 1 << " " << node_indeces[4] + 1 << " "
                   << node_indeces[5] + 1 << " " << node_indeces[6] + 1
-                  << " " << node_indeces[7] + 1 << endl;
+                  << " " << node_indeces[7] + 1 << std::endl;
             }
             break;
             //..................................................................
          case MshElemType::TRIANGLE:
-            msh_file << "ET = TRIANGLE" << endl;
+            msh_file << "ET = TRIANGLE" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
                msh_file << m_msh->nod_vector[i]->X() << " "
                   << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << endl;
+                  << m_msh->nod_vector[i]->Z() << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
                m_ele = m_msh->ele_vector[i];
                m_ele->GetNodeIndeces(node_indeces);
                msh_file << node_indeces[0] + 1 << " " << node_indeces[1] + 1
-                  << " " << node_indeces[2] + 1 << endl;
+                  << " " << node_indeces[2] + 1 << std::endl;
             }
             break;
             //..................................................................
          case MshElemType::TETRAHEDRON:
-            msh_file << "ET = TETRAHEDRON" << endl;
+            msh_file << "ET = TETRAHEDRON" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
                msh_file << m_msh->nod_vector[i]->X() << " "
                   << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << endl;
+                  << m_msh->nod_vector[i]->Z() << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -644,17 +643,17 @@ void MSHWriteTecplot()
                m_ele->GetNodeIndeces(node_indeces);
                msh_file << node_indeces[0] + 1 << " " << node_indeces[1] + 1
                   << " " << node_indeces[2] + 1 << " " << node_indeces[3]
-                  + 1 << endl;
+                  + 1 << std::endl;
             }
             break;
             //..................................................................
          case MshElemType::PRISM:
-            msh_file << "ET = BRICK" << endl;
+            msh_file << "ET = BRICK" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
                msh_file << m_msh->nod_vector[i]->X() << " "
                   << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << endl;
+                  << m_msh->nod_vector[i]->Z() << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -667,7 +666,7 @@ void MSHWriteTecplot()
                      << node_indeces[2] + 1 << " " << node_indeces[3]
                      + 1 << " " << node_indeces[4] + 1 << " "
                      << node_indeces[5] + 1 << " " << node_indeces[5]
-                     + 1 << endl;
+                     + 1 << std::endl;
                }
                if (m_ele->GetElementType() == MshElemType::HEXAHEDRON)
                {
@@ -676,7 +675,7 @@ void MSHWriteTecplot()
                      << node_indeces[3] + 1 << " " << node_indeces[4]
                      + 1 << " " << node_indeces[5] + 1 << " "
                      << node_indeces[6] + 1 << " " << node_indeces[7]
-                     + 1 << endl;
+                     + 1 << std::endl;
                }
             }
             break;
@@ -699,14 +698,14 @@ void MSHLayerWriteTecplot()
    MshElemType::type ele_type = MshElemType::INVALID;
    long no_nodes;
    long no_elements;
-   string delimiter(", ");
+   std::string delimiter(", ");
    CElem* m_ele = NULL;
    vec<long> node_indeces(8);
-   string no_layer_str;
+   std::string no_layer_str;
    char no_layer_char[3];
    //----------------------------------------------------------------------
    // File handling
-   string file_path = "MSH";
+   std::string file_path = "MSH";
    CGSProject* m_gsp = NULL;
    m_gsp = GSPGetMember("msh");
    if (m_gsp)
@@ -730,15 +729,15 @@ void MSHLayerWriteTecplot()
             ele_type = m_ele->GetElementType();
          }
          // File handling
-         string msh_file_name = file_path + "MSH_LAYER" + no_layer_str + "_"
+         std::string msh_file_name = file_path + "MSH_LAYER" + no_layer_str + "_"
             + m_msh->pcs_name + TEC_FILE_EXTENSION;
-         fstream msh_file(msh_file_name.data(), ios::trunc | ios::out);
-         msh_file.setf(ios::scientific, ios::floatfield);
+         std::fstream msh_file(msh_file_name.data(), std::ios::trunc | std::ios::out);
+         msh_file.setf(std::ios::scientific, std::ios::floatfield);
          msh_file.precision(12);
          if (!msh_file.good())
             return;
-         msh_file.seekg(0L, ios::beg);
-         msh_file << "VARIABLES = X,Y,Z" << endl;
+         msh_file.seekg(0L, std::ios::beg);
+         msh_file << "VARIABLES = X,Y,Z" << std::endl;
          msh_file << "ZONE T = " << m_msh->pcs_name << delimiter << "N = "
             << (long) m_msh->nod_vector.size() << delimiter << "E = "
             << no_elements << delimiter;
@@ -747,12 +746,12 @@ void MSHLayerWriteTecplot()
          {
             //..................................................................
             case MshElemType::LINE:
-               msh_file << "ET = QUADRILATERAL" << endl;
+               msh_file << "ET = QUADRILATERAL" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
                   msh_file << m_msh->nod_vector[i]->X() << " "
                      << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << endl;
+                     << m_msh->nod_vector[i]->Z() << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -760,17 +759,17 @@ void MSHLayerWriteTecplot()
                   m_ele->GetNodeIndeces(node_indeces);
                   msh_file << node_indeces[0] + 1 << " " << node_indeces[1]
                      + 1 << " " << node_indeces[1] + 1 << " "
-                     << node_indeces[0] + 1 << endl;
+                     << node_indeces[0] + 1 << std::endl;
                }
                break;
                //..................................................................
             case MshElemType::QUAD:
-               msh_file << "ET = QUADRILATERAL" << endl;
+               msh_file << "ET = QUADRILATERAL" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
                   msh_file << m_msh->nod_vector[i]->X() << " "
                      << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << endl;
+                     << m_msh->nod_vector[i]->Z() << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -778,17 +777,17 @@ void MSHLayerWriteTecplot()
                   m_ele->GetNodeIndeces(node_indeces);
                   msh_file << node_indeces[0] + 1 << " " << node_indeces[1]
                      + 1 << " " << node_indeces[2] + 1 << " "
-                     << node_indeces[3] + 1 << endl;
+                     << node_indeces[3] + 1 << std::endl;
                }
                break;
                //..................................................................
             case MshElemType::HEXAHEDRON:
-               msh_file << "ET = BRICK" << endl;
+               msh_file << "ET = BRICK" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
                   msh_file << m_msh->nod_vector[i]->X() << " "
                      << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << endl;
+                     << m_msh->nod_vector[i]->Z() << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -799,34 +798,34 @@ void MSHLayerWriteTecplot()
                      << node_indeces[3] + 1 << " " << node_indeces[4]
                      + 1 << " " << node_indeces[5] + 1 << " "
                      << node_indeces[6] + 1 << " " << node_indeces[7]
-                     + 1 << endl;
+                     + 1 << std::endl;
                }
                break;
                //..................................................................
             case MshElemType::TRIANGLE:
-               msh_file << "ET = TRIANGLE" << endl;
+               msh_file << "ET = TRIANGLE" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
                   msh_file << m_msh->nod_vector[i]->X() << " "
                      << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << endl;
+                     << m_msh->nod_vector[i]->Z() << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
                   m_ele = m_msh->ele_vector[i];
                   m_ele->GetNodeIndeces(node_indeces);
                   msh_file << node_indeces[0] + 1 << " " << node_indeces[1]
-                     + 1 << " " << node_indeces[2] + 1 << endl;
+                     + 1 << " " << node_indeces[2] + 1 << std::endl;
                }
                break;
                //..................................................................
             case MshElemType::TETRAHEDRON:
-               msh_file << "ET = TETRAHEDRON" << endl;
+               msh_file << "ET = TETRAHEDRON" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
                   msh_file << m_msh->nod_vector[i]->X() << " "
                      << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << endl;
+                     << m_msh->nod_vector[i]->Z() << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -834,17 +833,17 @@ void MSHLayerWriteTecplot()
                   m_ele->GetNodeIndeces(node_indeces);
                   msh_file << node_indeces[0] + 1 << " " << node_indeces[1]
                      + 1 << " " << node_indeces[2] + 1 << " "
-                     << node_indeces[3] + 1 << endl;
+                     << node_indeces[3] + 1 << std::endl;
                }
                break;
                //..................................................................
             case MshElemType::PRISM:
-               msh_file << "ET = BRICK" << endl;
+               msh_file << "ET = BRICK" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
                   msh_file << m_msh->nod_vector[i]->X() << " "
                      << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << endl;
+                     << m_msh->nod_vector[i]->Z() << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -855,7 +854,7 @@ void MSHLayerWriteTecplot()
                      << node_indeces[2] + 1 << " " << node_indeces[3]
                      + 1 << " " << node_indeces[4] + 1 << " "
                      << node_indeces[5] + 1 << " " << node_indeces[5]
-                     + 1 << endl;
+                     + 1 << std::endl;
                }
                break;
             default:
@@ -871,7 +870,7 @@ MSHLib-Method:
 12/2005 OK Implementation
 07/2007 OK PCS
 **************************************************************************/
-CFEMesh* MSHGet(const string &geo_name)
+CFEMesh* MSHGet(const std::string &geo_name)
 {
    CFEMesh* m_msh = NULL;
    for(int i=0;i<(int)fem_msh_vector.size();i++)
@@ -896,7 +895,7 @@ Task:
 Programing:
 12/2005 OK Implementation
 **************************************************************************/
-CFEMesh* MSHGet(const string &pcs_type_name,const string &geo_name)
+CFEMesh* MSHGet(const std::string &pcs_type_name,const std::string &geo_name)
 {
    CFEMesh* m_msh = NULL;
    for(int i=0;i<(int)fem_msh_vector.size();i++)
@@ -916,7 +915,7 @@ CFEMesh* MSHGet(const string &pcs_type_name,const string &geo_name)
 PCSLib-Method:
 12/2005 OK Implementation
 **************************************************************************/
-CFEMesh* MSHGetGEO(string geo_name)
+CFEMesh* MSHGetGEO(std::string geo_name)
 {
    int no_msh = (int)fem_msh_vector.size();
    // If there is only one msh file available, use it for all process. WW
@@ -999,7 +998,7 @@ bool MSHGetCommonNodes(CElem* elem1, CElem* elem2, vector<CNode*>& nodes)
 void MSHSetFractureElements(void)
 {
    //** TEST *************
-   cout << "Location 0 MSHSetFractureElements\n";
+   std::cout << "Location 0 MSHSetFractureElements\n";
    //** TEST *************
    int group, frac_exists=0;
    CElem *elem = NULL;
@@ -1055,15 +1054,15 @@ void MSHSetFractureElements(void)
       }
       else
       {
-         cout <<"Error 1 in ELESetBoundaryElements, no BOUNDARY polyline.\n";
+         std::cout <<"Error 1 in ELESetBoundaryElements, no BOUNDARY polyline.\n";
          abort();
       }
       //grabbing the nodes of the boundary polyline-------------------------------------------------END
 
       for(long j=0; j<m_mmp->frac_num; ++j)       //loop1, over all fractures
       {
-         string polyname_top = m_mmp->frac_names[j] + "_top";
-         string polyname_bot = m_mmp->frac_names[j] + "_bot";
+         std::string polyname_top = m_mmp->frac_names[j] + "_top";
+         std::string polyname_bot = m_mmp->frac_names[j] + "_bot";
          frac_top = GEOGetPLYByName(polyname_top);
          frac_bot = GEOGetPLYByName(polyname_bot);
          //frac_segments[j].resize((long)frac_top->point_vector.size()-1);
@@ -1074,7 +1073,7 @@ void MSHSetFractureElements(void)
 
          if(!frac_top || !frac_bot)
          {
-            cout << "Error 1 in MSHSetFractureElements: fracture polyline "<<m_mmp->frac_names[j]<<" not found.\n";
+            std::cout << "Error 1 in MSHSetFractureElements: fracture polyline "<<m_mmp->frac_names[j]<<" not found.\n";
             abort();
          }
                                                   //loop2, over fracture segments
@@ -1173,8 +1172,8 @@ void MSHSetFractureElements(void)
          double Weight=0, seg_length=0;
          vector<double> point_x, point_y;
          point_x.resize(2); point_y.resize(2);
-         string polyname_top = m_mmp->frac_names[j] + "_top";
-         string polyname_bot = m_mmp->frac_names[j] + "_bot";
+         std::string polyname_top = m_mmp->frac_names[j] + "_top";
+         std::string polyname_bot = m_mmp->frac_names[j] + "_bot";
          frac_top = GEOGetPLYByName(polyname_top);
          frac_bot = GEOGetPLYByName(polyname_bot);
 
@@ -1320,7 +1319,7 @@ long MSHWhatElemIsPointIn(double x, double y, long index)
                                                   //check to avoid infinite loops
       if ((long)index_guess.size() > number_of_elem)
       {
-         cout<<"Error in ELEWhatElemIsPointIn, point not in any element";
+         std::cout<<"Error in ELEWhatElemIsPointIn, point not in any element";
          return_value = -100;
          break;
       }
@@ -1427,7 +1426,7 @@ long MSHWhatElemIsPointIn(double x, double y, long index)
       return return_value;
    else
    {
-      cout<<"Error 1 in ELEWhatElemIsPointIn. Starting element: "<<index<<"\n";
+      std::cout<<"Error 1 in ELEWhatElemIsPointIn. Starting element: "<<index<<"\n";
       abort();
    }
 }
@@ -1437,7 +1436,7 @@ long MSHWhatElemIsPointIn(double x, double y, long index)
 MSHLib-Method:
 07/2007 OK Implementation
 **************************************************************************/
-bool CompleteMesh(string pcs_name)
+bool CompleteMesh(std::string pcs_name)
 {
    bool succeed = false;
    for(int i=0;i<(int)fem_msh_vector.size(); i++)
@@ -1583,7 +1582,7 @@ void MSHDefineMobile(CRFProcess*m_pcs)
          //if (m_pcs->m_msh->cross_section){
          //....................................................................
          //DOMAIN
-         if(m_mat_mp->geo_type_name.find("DOMAIN")!=string::npos)
+         if(m_mat_mp->geo_type_name.find("DOMAIN")!=std::string::npos)
          {
             //CGLDomain *m_domain = NULL;
             //m_domain = m_domain->Get(m_mat_mp->geo_name);
@@ -1598,13 +1597,13 @@ void MSHDefineMobile(CRFProcess*m_pcs)
          }
          //....................................................................
          //LAYER
-         if(m_mat_mp->geo_type_name.find("LAYER")!=string::npos)
+         if(m_mat_mp->geo_type_name.find("LAYER")!=std::string::npos)
          {
             //TODO next version, change to msh file !!!
          }
          //....................................................................
          //SURFACE
-         if(m_mat_mp->geo_type_name.find("SURFACE")!=string::npos)
+         if(m_mat_mp->geo_type_name.find("SURFACE")!=std::string::npos)
          {
             Surface *m_surface = NULL;
                                                   //CC
@@ -1614,7 +1613,7 @@ void MSHDefineMobile(CRFProcess*m_pcs)
          }
          //....................................................................
          //VOLUME
-         if(m_mat_mp->geo_type_name.find("VOLUME")!=string::npos)
+         if(m_mat_mp->geo_type_name.find("VOLUME")!=std::string::npos)
          {
             CGLVolume *m_volume = NULL;
                                                   //CC 10/05
@@ -1814,7 +1813,7 @@ void CFEMesh::DefineMobileNodes(CRFProcess*m_pcs)
    //----------------------------------------------------------------------
    //......................................................................
    //DOMAIN
-   if(m_pcs->geo_type.find("DOMAIN")!=string::npos)
+   if(m_pcs->geo_type.find("DOMAIN")!=std::string::npos)
    {
       for(i=0;i<(long)nod_vector.size();i++)
       {
@@ -1825,18 +1824,18 @@ void CFEMesh::DefineMobileNodes(CRFProcess*m_pcs)
    }
    //......................................................................
    //LAYER
-   if(m_pcs->geo_type.find("LAYER")!=string::npos)
+   if(m_pcs->geo_type.find("LAYER")!=std::string::npos)
    {
-      string m_string;
+      std::string m_string;
       long no_nodes_per_layer = (long)nod_vector.size() / (getNumberOfMeshLayers()+1);
       int pos = 0;
       int layer_start=0,layer_end=0;
-      if(m_pcs->geo_type_name.find("-")!=string::npos)
+      if(m_pcs->geo_type_name.find("-")!=std::string::npos)
       {
-         pos = m_pcs->geo_type_name.find("-")!=string::npos;
+         pos = m_pcs->geo_type_name.find("-")!=std::string::npos;
          m_string = m_pcs->geo_type_name.substr(0,pos);
          layer_start = strtol(m_string.c_str(),NULL,0);
-         m_string = m_pcs->geo_type_name.substr(pos+1,string::npos);
+         m_string = m_pcs->geo_type_name.substr(pos+1,std::string::npos);
          layer_end = strtol(m_string.c_str(),NULL,0);
       }
       else
@@ -1857,7 +1856,7 @@ void CFEMesh::DefineMobileNodes(CRFProcess*m_pcs)
    }
    //......................................................................
    //SURFACE
-   if(m_pcs->geo_type.find("SURFACE")!=string::npos)
+   if(m_pcs->geo_type.find("SURFACE")!=std::string::npos)
    {
       Surface *m_sfc = NULL;
                                                   //CC
@@ -1866,19 +1865,19 @@ void CFEMesh::DefineMobileNodes(CRFProcess*m_pcs)
                                                   //CC
          mobile_nodes = GetPointsIn(m_sfc,&no_mobile_nodes);
       else
-         cout << "Warning in CFEMesh::DefineMobileNodes - no GEO data" << endl;
+         std::cout << "Warning in CFEMesh::DefineMobileNodes - no GEO data" << std::endl;
    }
    //......................................................................
    //VOLUME
    /*OK411
-     if(m_pcs->geo_type.find("VOLUME")!=string::npos)
+     if(m_pcs->geo_type.find("VOLUME")!=std::string::npos)
      {
        CGLVolume *m_vol = NULL;
        m_vol = GEOGetVOL(m_pcs->geo_type_name);//CC 10/05
        if(m_vol)
          mobile_nodes = GetPointsInVolume(m_vol,&no_mobile_nodes);//CC 10/05
        else
-         cout << "Warning in CFEMesh::DefineMobileNodes - no GEO data" << endl;
+         std::cout << "Warning in CFEMesh::DefineMobileNodes - no GEO data" << endl;
      }
    */
    //----------------------------------------------------------------------
@@ -1913,7 +1912,7 @@ Programing:
 ToDo evtl. vector<CGLPoint>
 08/2005 CC Modification: CGLPoint* e_pnt - Move from GeoLib to MshLib
 **************************************************************************/
-void MSHGetNodesClose(vector<long>&msh_point_vector,CGLPoint* e_pnt)
+void MSHGetNodesClose(std::vector<long>&msh_point_vector,CGLPoint* e_pnt)
 {
    e_pnt = e_pnt;
    msh_point_vector.size();
@@ -2038,7 +2037,7 @@ long* MSHGetNodesClose(long *number_of_nodes, CGLPolyline* m_ply)
    }
 
    if (mult_eps > 1.)
-   cout << "!!! Epsilon increased in sources!" << endl;
+   std::cout << "!!! Epsilon increased in sources!" << endl;
 
    do {
    weiter = 0;
@@ -2101,7 +2100,7 @@ long* GetPointsIn(Surface* m_sfc,long* number_of_nodes)
    m_pnt.y = GetNodeY(i);
    m_pnt.z = GetNodeZ(i);
    if(m_pnt.IsInsidePolygonPlain(
-   xp,yp,zp,\ 
+   xp,yp,zp,\
    (long)m_sfc->polygon_point_vector.size())) {
    anz_relevant++;
    nodes = (long *) Realloc(nodes,sizeof(long)*anz_relevant);
@@ -2127,7 +2126,7 @@ Task: Get element nodes in a material domain
 Programing:
 10/2004 WW Implementation
 **************************************************************************/
-void GEOGetNodesInMaterialDomain(const int MatIndex, vector<long>& Nodes)
+void GEOGetNodesInMaterialDomain(const int MatIndex, std::vector<long>& Nodes)
 {
    (void)MatIndex;
    (void)Nodes;
@@ -2183,7 +2182,7 @@ Programing:
 10/2004 WW Implementation
 **************************************************************************/
 //using Mesh_Group::CElem;
-void GEOGetNodesInMaterialDomain(CFEMesh* m_msh, const int MatIndex, vector<long>& Nodes, bool Order)
+void GEOGetNodesInMaterialDomain(CFEMesh* m_msh, const int MatIndex, std::vector<long>& Nodes, bool Order)
 {
    int i, nn;
    long e, j, Size;

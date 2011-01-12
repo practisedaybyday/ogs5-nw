@@ -19,6 +19,7 @@ Programing:
 #include "Configure.h"
 #include "makros.h"
 
+#include <cfloat>
 // NEW_EQS To be removed
 #ifdef NEW_EQS                                    //1.11.2007 WW
 #include <iomanip>
@@ -49,7 +50,10 @@ int *, double *, double*, int *);
 #include"rf_num_new.h"
 #include"matrix_class.h"
 #include"equation_class.h"
-vector<Math_Group::Linear_EQS *> EQS_Vector;
+
+std::vector<Math_Group::Linear_EQS *> EQS_Vector;
+using namespace std;
+
 //
 namespace Math_Group
 {
@@ -300,7 +304,7 @@ namespace Math_Group
    Programing:
    11/2007 WW/
    **************************************************************************/
-   void Linear_EQS::Write(ostream &os)
+   void Linear_EQS::Write(std::ostream &os)
    {
       A->Write(os);
       //

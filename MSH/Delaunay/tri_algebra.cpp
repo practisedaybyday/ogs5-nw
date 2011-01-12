@@ -6,7 +6,7 @@
 
 
 void PixMiniMax(
-		vector<Cp_dbl2> *points, 
+		std::vector<Cp_dbl2> *points, 
 		Cp_dbl2			*pmin, 
 		Cp_dbl2			*pmax )
 {
@@ -17,7 +17,7 @@ void PixMiniMax(
 
 void PixMiniMax(
 		int				npoints, 
-		vector<Cp_dbl2> *points, 
+		std::vector<Cp_dbl2> *points, 
 		Cp_dbl2			*pmin, 
 		Cp_dbl2			*pmax )
 {
@@ -59,8 +59,8 @@ double dbl2_distance( 	double	dX0,
 }
 
 
-bool ConvertPntList(	vector<Cp_dbl2> *Pnt2List, 
-						vector<Cp_dbl3> *Pnt3List )
+bool ConvertPntList(	std::vector<Cp_dbl2> *Pnt2List, 
+						std::vector<Cp_dbl3> *Pnt3List )
 {
 	bool bRetCode = false;
 	int nPoints, i;
@@ -79,8 +79,8 @@ bool ConvertPntList(	vector<Cp_dbl2> *Pnt2List,
 }
 
 
-bool ConvertPntList(	vector<Cp_dbl3> *Pnt3List, 
-						vector<Cp_dbl2> *Pnt2List )
+bool ConvertPntList(	std::vector<Cp_dbl3> *Pnt3List, 
+						std::vector<Cp_dbl2> *Pnt2List )
 {
 	bool bRetCode = false;
 	int nPoints, i;
@@ -99,7 +99,7 @@ bool ConvertPntList(	vector<Cp_dbl3> *Pnt3List,
 }
 
 
-int iPolygonRotDirection( vector<Cp_dbl2> *PntList )
+int iPolygonRotDirection( std::vector<Cp_dbl2> *PntList )
 {
 	int iRot, i;
 	int nPoints = (int)PntList->size( );
@@ -228,7 +228,7 @@ double get_angle_atan(
 }
 
 
-bool bPolygonSwapRotation( 	vector<Cp_dbl2>	*vers, 
+bool bPolygonSwapRotation( 	std::vector<Cp_dbl2>	*vers, 
 							bool			bClosed )
 {
 	bool bRet, bRetCode = false;
@@ -367,8 +367,8 @@ double	y;
 
 
 int	CreateConvexHull( 	
-		vector<Cp_dbl2> *points,		// [i] input points
-		vector<int>		*convh )	// [o] convex hull, list of point numbers
+		std::vector<Cp_dbl2> *points,		// [i] input points
+		std::vector<int>		*convh )	// [o] convex hull, list of point numbers
 {
 	int npoints = (int)points->size( ); 
 	int nconvh = CreateConvexHull( npoints, points, convh );
@@ -378,8 +378,8 @@ int	CreateConvexHull(
 
 int	CreateConvexHull( 	
 		int				npoints,	// [i] number of points in "points" to use
-		vector<Cp_dbl2> *Pnt2List,	// [i] input points
-		vector<int>		*convh )	// [o] convex hull, list of point numbers
+		std::vector<Cp_dbl2> *Pnt2List,	// [i] input points
+		std::vector<int>		*convh )	// [o] convex hull, list of point numbers
 {	
 	int j, i, k, imin, ptr, ptr1, ptr2, nconvh=0;
 	double	angle;
@@ -509,14 +509,14 @@ PIX_EXIT:
 }
 
 
-int MinDicrionaryDbl2( vector<Cp_dbl2> *points )
+int MinDicrionaryDbl2( std::vector<Cp_dbl2> *points )
 {
 	int	npoints = (int)points->size( );
 	return MinDicrionaryDbl2( npoints, points );
 }
 
 
-int MinDicrionaryDbl2( int npoints, vector<Cp_dbl2> *points )
+int MinDicrionaryDbl2( int npoints, std::vector<Cp_dbl2> *points )
 {
 	int	i, imin;
 	double	xmin, ymin;

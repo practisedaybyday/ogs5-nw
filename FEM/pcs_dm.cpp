@@ -1,9 +1,10 @@
 #include "makros.h"
 
-#include <math.h>
+#include <cfloat>
+#include <cmath>
 #include <iostream>
 #include <iomanip>
-#include<fstream>
+#include <fstream>
 #include <time.h>
 
 #include "FEMEnums.h"
@@ -33,6 +34,11 @@
 #include "msh_elem.h"
 // IC
 #include "rf_ic_new.h"
+
+#include "rf_node.h"
+
+using namespace std;
+
 // Solver
 #if defined(NEW_EQS)
 #include "equation_class.h"
@@ -201,32 +207,29 @@ namespace process
    **************************************************************************/
    void CRFProcessDeformation::InitialMBuffer()
    {
-      long i;
-      int bufferSize;
-      bool HM_Stagered = false;
-      bufferSize = 0;
-
       if(!msp_vector.size())
       {
          cout<<"No .msp file.   "<<endl;
          abort();
       }
+
+      int bufferSize (0);
+      bool HM_Stagered = false;
       if(GetObjType()==4)
       {
          bufferSize = GetPrimaryVNumber()*m_msh->GetNodesNumber(true);
-         if(H_Process)  HM_Stagered = true;
-
-      }
-      else if(GetObjType()==41)
-         bufferSize = (GetPrimaryVNumber()-1)*m_msh->GetNodesNumber(true)+
+         if(H_Process)
+            HM_Stagered = true;
+      } else if(GetObjType()==41)
+      bufferSize = (GetPrimaryVNumber()-1)*m_msh->GetNodesNumber(true)+
                m_msh->GetNodesNumber(false);
-      //
-      //Allocate memory for  temporily array
+
+      //Allocate memory for  temporal array
       ARRAY = (double*) Malloc(bufferSize*sizeof(double));
-      //
+
       // Allocate memory for element variables
       Mesh_Group::CElem* elem = NULL;
-      for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
+      for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
       {
          elem = m_msh->ele_vector[i];
          //       if (elem->GetMark()) // Marked for use
@@ -496,7 +499,7 @@ namespace process
             /*
             #ifdef MFC
                     CString m_str;
-                    m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\ 
+                    m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\
                                   aktuelle_zeit,pcs_type_name.c_str(),l,ite_steps);
                     pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
             #endif
@@ -686,7 +689,7 @@ namespace process
       //----------------------------------------------------------------------
       //Excavation. .. .12.2009. WW
       //----------------------------------------------------------------------
-      vector<int> deact_dom;
+      std::vector<int> deact_dom;
       for(l=0; l<(long)msp_vector.size(); l++)
       {
          if(msp_vector[l]->excavated)
@@ -790,7 +793,7 @@ namespace process
       ElementValue_DM *eleV_DM = NULL;
       CSolidProperties *SMat = NULL;
       CInitialCondition *m_ic = NULL;
-      vector<CInitialCondition *> stress_ic(6);
+      std::vector<CInitialCondition *> stress_ic(6);
 
       double M_cam = 0.0;
       double pc0 = 0.0;
@@ -1711,7 +1714,7 @@ namespace process
       double v1,v2;
 
       int FNodes0[8];
-      vector<long> SeedElement;
+      std::vector<long> SeedElement;
 
       locEleFound=0;
       nPathNodes=2;                               //2D element
@@ -2129,7 +2132,7 @@ namespace process
    Programing:
    02/2005 WW
    **************************************************************************/
-   void CRFProcessDeformation:: GlobalAssembly()
+   void CRFProcessDeformation::GlobalAssembly()
    {
       //----------------------------------------------------------------------
       long i;
@@ -2137,7 +2140,8 @@ namespace process
 #ifdef USE_MPI
       if(dom_vector.size()>0)
       {
-         cout << "      Domain Decomposition " << myrank  << '\n';
+         std::cout << "      Domain Decomposition " << myrank  << '\n';
+
          CPARDomain* m_dom = NULL;
          m_dom = dom_vector[myrank];
          DomainAssembly(m_dom);
@@ -2417,8 +2421,8 @@ namespace process
       int j, k, l, SizeSt, SizeSubD;
       ElementValue_DM *ele_val = NULL;
 
-      vector<int> ExcavDomainIndex;
-      vector<long> NodesOnCaveSurface;
+      std::vector<int> ExcavDomainIndex;
+      std::vector<long> NodesOnCaveSurface;
 
       CSourceTerm *m_st = NULL;
       SizeSt = (int) st_vector.size();
@@ -2437,18 +2441,17 @@ namespace process
          {
             // ---- 16.01.2009 WW
             exist = false;
+
             for (j = k + 1; j < SizeSt; j++)
             {
-               if (m_st->sub_dom_idx == st_vector[j]->sub_dom_idx)
+               if (m_st->getSubDomainIndex() == st_vector[j]->getSubDomainIndex())
                {
-                  //
                   exist = true;
                   break;
                }
             }
             if (!exist)
-               //---
-               ExcavDomainIndex.push_back(m_st->sub_dom_idx);
+               ExcavDomainIndex.push_back(m_st->getSubDomainIndex());
          }
       }
       SizeSubD = (int) ExcavDomainIndex.size();
@@ -2507,7 +2510,7 @@ namespace process
       // Store the released loads to source term buffer
       long number_of_nodes;
       CNodeValue *m_node_value = NULL;
-      vector<long> nodes_vector(0);
+      std::vector<long> nodes_vector(0);
 
       number_of_nodes = 0;
       RecordNodeVSize((long) st_node_value.size());
@@ -2526,24 +2529,17 @@ namespace process
          {
             CGLPolyline *m_polyline (GEOGetPLYByName(m_st->getGeoName()));
 
+            // reset the min edge length of mesh
             double mesh_min_edge_length (m_msh->getMinEdgeLength());
             m_msh->setMinEdgeLength(m_polyline->epsilon);
 
-            //			if (m_polyline) {
-            //				m_st->SetPolyline(m_polyline);
-            //				if (m_polyline->type == 100)
-            //					m_msh->GetNodesOnArc(m_polyline, nodes_vector); //WW
-            //				else {
-            //					m_polyline->type = 3;
-            //					m_msh->GetNODOnPLY(m_polyline, nodes_vector);
-            //				}
-            //			}
             if (m_st->getGeoObj())
             {
                m_msh->GetNODOnPLY(static_cast<const GEOLIB::Polyline*>(m_st->getGeoObj()), nodes_vector);
                // reset min edge length of mesh
                m_msh->setMinEdgeLength (mesh_min_edge_length);
             }
+            m_msh->setMinEdgeLength (mesh_min_edge_length);
          }
          if (m_st->getGeoType () == GEOLIB::SURFACE)
          {
@@ -2650,7 +2646,7 @@ namespace process
       long i, j;
       double v, bc_value, time_fac = 1.0;
 
-      vector<int> bc_type;
+      std::vector<int> bc_type;
       long bc_msh_node;
       long bc_eqs_index;
       int interp_method=0;

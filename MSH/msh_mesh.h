@@ -59,17 +59,17 @@ namespace Mesh_Group
       private:
          long *local_indices;                     // of border nodes in local node array of a grid
          //double *comm_data;   // data for communication
-         string neighbor_name;
+         std::string neighbor_name;
          long bnodes;
          friend class CFEMesh;
          friend class ::CRFProcess;
       public:
-         GridsTopo(istream &in, string sec_name);
-         string getNeighbor_Name() const {return neighbor_name;}
+         GridsTopo(std::istream &in, std::string sec_name);
+         std::string getNeighbor_Name() const {return neighbor_name;}
          long *getBorderNodeIndicies() const {return local_indices;}
          long getBorderNodeNumber() const {return bnodes;}
 
-         //void Write(ostream &os=cout);
+         //void Write(std::ostream &os=cout);
          ~GridsTopo();
    };
 #endif                                         //#ifndef NON_GEO
@@ -112,7 +112,7 @@ namespace Mesh_Group
           * returns the number of mesh layers
           * @return the number of mesh layers
           */
-         size_t getNumberOfMeshLayers () const;
+         size_t getNumberOfMeshLayers () const;   // TF
 
          /**
           *
@@ -136,14 +136,14 @@ namespace Mesh_Group
             _min_edge_length = val;
          }
 
-         ios::pos_type Read(std::ifstream*);
+         std::ios::pos_type Read(std::ifstream*);
 
 #ifdef USE_TOKENBUF
          int Read(TokenBuf* tokenbuf);
 #endif
 
-         void Write(fstream*) const;
-         ios::pos_type GMSReadTIN(std::ifstream*);
+         void Write(std::fstream*) const;
+         std::ios::pos_type GMSReadTIN(std::ifstream*);
          //
          void ConstructGrid();
          void GenerateHighOrderNodes();
@@ -201,7 +201,7 @@ namespace Mesh_Group
           * @param ply CGLPolyline
           * @param msh_nod_vector
           */
-         void GetNODOnPLY(CGLPolyline* ply, std::vector<long>& msh_nod_vector);
+         void GetNODOnPLY(CGLPolyline* ply, std::vector<long>& msh_nod_vector) const;
          /**
           * \brief depreciated method
           */
@@ -214,7 +214,7 @@ namespace Mesh_Group
          //	/**
          //	 * \brief depreciated method - uses old surface class
          //	 */
-         void GetNODOnSFC_Vertical(Surface*m_sfc,vector<long>&msh_nod_vector);
+         void GetNODOnSFC_Vertical(Surface*m_sfc, std::vector<long>&msh_nod_vector);
 
          /**
           * \brief depreciated method
@@ -232,7 +232,8 @@ namespace Mesh_Group
           * \brief depreciated method
           */
                                                   //OK
-         void GetELEOnPLY(CGLPolyline*, std::vector<long>&);
+         void GetELEOnPLY(CGLPolyline *, std::vector<long>&) const;
+
 
          // GEO-SFC
          /**
@@ -252,13 +253,14 @@ namespace Mesh_Group
           * \brief depreciated method
           */
                                                   // 02.2009/OK
-         void GetNODOnSFC_PLY_Z(Surface*,vector<long>&);
+         void GetNODOnSFC_PLY_Z(Surface*, std::vector<long>&);
+
          /**
           * \brief depreciated method
           */
          void GetNODOnSFC_TIN(Surface*, std::vector<long>&);
          /**
-          * \brief depreciated method
+          * \brief deprecated method
           */
          void GetNodesOnCylindricalSurface(Surface*m_sfc, std::vector<long>& NodesS);
          /**
@@ -315,16 +317,16 @@ namespace Mesh_Group
           * */
          void GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& msh_nod_vector);
 
-         /**
-          * \brief get nodes near the circle arc described by the middle point m, the arc start point a
-          * and the arc end point b.
-          *
-          * If the angle is to small (a == b) then all mesh nodes within the annulus defined by
-          * the inner radius \f$ \|(a-m) \| - min\_edge\_length \f$ and the outer radius
-          * \f$\|(a-m) \| + min\_edge\_length \f$ are pushed in msh_nod_vector
-          */
-         void GetNodesOnArc(const GEOLIB::Point* a, const GEOLIB::Point* m,
-            const GEOLIB::Point* b, std::vector<size_t>& msh_nod_vector) const;
+         //	/**
+         //	 * \brief get nodes near the circle arc described by the middle point m, the arc start point a
+         //	 * and the arc end point b.
+         //	 *
+         //	 * If the angle is to small (a == b) then all mesh nodes within the annulus defined by
+         //	 * the inner radius \f$ \|(a-m) \| - min\_edge\_length \f$ and the outer radius
+         //	 * \f$\|(a-m) \| + min\_edge\_length \f$ are pushed in msh_nod_vector
+         //	 */
+         //	void GetNodesOnArc(const GEOLIB::Point* a, const GEOLIB::Point* m,
+         //			const GEOLIB::Point* b, std::vector<size_t>& msh_nod_vector) const;
 
          /**
           * \brief gives the indices of CElement elements, which have an edge
@@ -339,7 +341,13 @@ namespace Mesh_Group
 
          /** @} */ // close doxygen group
 #endif                                      //WW #ifndef NON_GEO
-
+//#ifndef NON_GEO                             //  WW
+//         /**
+//          * Store border nodes among different grids.
+//          */
+//         std::vector<GridsTopo*> grid_neighbors;
+//         friend class ::Problem;
+//#endif
          //....................................................................
          // QUAD->HEX
          void CreateHexELEFromQuad(int, double);
@@ -379,10 +387,12 @@ namespace Mesh_Group
 
          // All edges
          std::vector<Mesh_Group::CEdge*> edge_vector;
-         // All surface feces
+         // All surface faces
          std::vector<Mesh_Group::CElem*> face_vector;
-         // All surface nomal
+         // All surface normal
          std::vector<double*> face_normal;        //YD
+
+         const std::vector<Mesh_Group::CElem*>& getElementVector () const { return ele_vector; }
          /**
           * all elements stored in this vector
           * */
@@ -432,15 +442,16 @@ namespace Mesh_Group
          CFluidMomentum* fm_pcs;                  // by PCH
 
          /// Import MODFlow grid. 10.2009 WW
-         void ImportMODFlowGrid(string fname);
+         void ImportMODFlowGrid(std::string const & fname);
          /// Convert raster cells into grid. 12.2009 WW
-         void ConvertShapeCells(string fname);
+         void ConvertShapeCells(std::string const & fname);
 #ifdef USE_HydSysMshGen
          // Be activated if it is still needed.
          // WW
          /// Generate Column-surface grid system for the modeling of surafce-subsuface coupled processes
-                                                  //15.05.2009. WW
-         void HydroSysMeshGenerator(string fname, const int nlayers, const double thickness, int mapping);
+                                                  //15.05.2009. WW // removed useless const TF
+         void HydroSysMeshGenerator(std::string fname, int nlayers, double thickness, int mapping);
+
 #endif
          void MarkInterface_mHM_Hydro_3D();       //07.06.2010. WW
          void mHM2NeumannBC();
@@ -497,17 +508,16 @@ namespace Mesh_Group
          long ncols, nrows;
          /// (x_0, y_0): coordinate of the left down corner
          double x0, y0, csize, ndata_v;
-         vector<double>  zz;                      //Elevation
-         inline void ReadShapeFile(string fname);
+         std::vector<double>  zz;                 //Elevation
+         inline void ReadShapeFile(std::string const & fname);
          // 03.2010. WW
-         inline void Precipitation2NeumannBC(string fname, string ofname, const double ratio = 0.8);
+         inline void Precipitation2NeumannBC(std::string const & fname, std::string const & ofname, double ratio = 0.8);
 
 #ifndef NON_GEO                             //  WW
-         /// Store boder nodes among different grids.
-         vector<GridsTopo*> grid_neighbors;
+         /// Store border nodes among different grids.
+         std::vector<GridsTopo*> grid_neighbors;
          friend class ::Problem;
 #endif                                      // #ifndef NON_GEO
-
          //
          // Sparse graph of this mesh. 1.11.2007 WW
 #ifdef NEW_EQS

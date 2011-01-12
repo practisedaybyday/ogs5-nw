@@ -11,17 +11,18 @@ last modified
 #define IC_FILE_EXTENSION ".ic"
 
 // C++ STL
-#include <fstream>
-#include <string>
-#include <vector>
+//#include <fstream>
+//#include <string>
+//#include <vector>
 
 // FEM
 #include "GeoInfo.h"                              // TF
 #include "ProcessInfo.h"                          // KR
 #include "DistributionInfo.h"                     // TF
 
-#include "rf_node.h"
-#include "rf_pcs.h"
+//#include "rf_pcs.h"
+
+class CNodeValue;
 
 /**
  * class for handling initial conditions
@@ -75,7 +76,7 @@ class CInitialCondition : public ProcessInfo, public GeoInfo, public Distributio
        * @param unique_name the name of the project to access the right geometric entities
        * @return the new position in the stream after reading
        */
-      ios::pos_type Read(std::ifstream* in, const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name);
+      std::ios::pos_type Read(std::ifstream* in, const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name);
       void Write(std::fstream*) const;
       void Set(int);
       void SetEle(int);                           //MX

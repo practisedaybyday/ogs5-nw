@@ -10,8 +10,7 @@
 #include <iostream> 
 #include <string> 
 #include <vector>                   
-#include <algorithm>
-using namespace std;   
+#include <algorithm>   
 
 #define DXPORT 
 #define EXT_CLASS_TYPE  
@@ -155,11 +154,11 @@ public:
 ======================================================================*/
 
 DXPORT double	GoodRadian( double );
-DXPORT bool		ConvertPntList( vector<Cp_dbl2>*, vector<Cp_dbl3>* );
-DXPORT bool		ConvertPntList( vector<Cp_dbl3>*, vector<Cp_dbl2>* );
+DXPORT bool		ConvertPntList( std::vector<Cp_dbl2>*, std::vector<Cp_dbl3>* );
+DXPORT bool		ConvertPntList( std::vector<Cp_dbl3>*, std::vector<Cp_dbl2>* );
 DXPORT void		DoubleArrayQsort( double*, int, int* );
 DXPORT void		DoubleQsx( double*, int, int, int* );
-DXPORT int		iPolygonRotDirection( vector<Cp_dbl2>* );
+DXPORT int		iPolygonRotDirection( std::vector<Cp_dbl2>* );
 DXPORT int		iPolygonRotDirection( int, Cp_dbl2* );
 
 DXPORT double	get_3angle( Cp_dbl2*, Cp_dbl2*, Cp_dbl2* );
@@ -167,16 +166,16 @@ DXPORT double	get_anglex_diff( double, double );
 DXPORT double	get_angle_atan( double, double, double, double );
 DXPORT double	get_angle_atan( Cp_dbl2*, Cp_dbl2* );
 
-DXPORT int		CreateConvexHull( vector<Cp_dbl2> *PntList, vector<int> *ConvHull );
-DXPORT int		CreateConvexHull( int nPoints, vector<Cp_dbl2> *PntList, vector<int> *ConvHull );
-DXPORT int		MinDicrionaryDbl2( int nPoints, vector<Cp_dbl2> *points );
+DXPORT int		CreateConvexHull( std::vector<Cp_dbl2> *PntList, std::vector<int> *ConvHull );
+DXPORT int		CreateConvexHull( int nPoints, std::vector<Cp_dbl2> *PntList, std::vector<int> *ConvHull );
+DXPORT int		MinDicrionaryDbl2( int nPoints, std::vector<Cp_dbl2> *points );
 DXPORT double	dbl2_distance( double, double, double, double );
 DXPORT double	dbl2_distance( Cp_dbl2*, Cp_dbl2* );
-DXPORT bool		bPolygonSwapRotation( vector<Cp_dbl2> *vers, bool );
+DXPORT bool		bPolygonSwapRotation( std::vector<Cp_dbl2> *vers, bool );
 DXPORT bool		bPolygonSwapRotation( int, Cp_dbl2*, bool );
 
-DXPORT void		PixMiniMax( vector<Cp_dbl2>*, Cp_dbl2*, Cp_dbl2* );
-DXPORT void		PixMiniMax( int, vector<Cp_dbl2>*, Cp_dbl2*, Cp_dbl2* );
+DXPORT void		PixMiniMax( std::vector<Cp_dbl2>*, Cp_dbl2*, Cp_dbl2* );
+DXPORT void		PixMiniMax( int, std::vector<Cp_dbl2>*, Cp_dbl2*, Cp_dbl2* );
 
 
 /*======================================================================
@@ -191,40 +190,40 @@ DXPORT int		iDelimitStr_PIX( char*, char *str[], char, int );
 ======================================================================*/
 
 DXPORT int iPsuedoPointCount_TRI( void );
-DXPORT bool bLoadNodeFile_TRI( char* szNodeFile, vector<Cp_dbl2>* );
-DXPORT bool bLoadNodeFile_TRI( char* szNodeFile, vector<Cp_dbl3>* );
-DXPORT bool bSaveNodeFile_TRI( char* szNodeFile, vector<Cp_dbl2> );
-DXPORT bool bSaveNodeFile_TRI( char* szNodeFile, vector<Cp_dbl3> );
-DXPORT bool bLoadTriFile_TRI( char *szNodeFile, vector<Cp_dtri> *TriList );
-DXPORT bool bSaveTriFile_TRI(char* szTriFile, vector<Cp_dtri> *TriList,  vector<Cp_dbl3> *pnt);
+DXPORT bool bLoadNodeFile_TRI( char* szNodeFile, std::vector<Cp_dbl2>* );
+DXPORT bool bLoadNodeFile_TRI( char* szNodeFile, std::vector<Cp_dbl3>* );
+DXPORT bool bSaveNodeFile_TRI( char* szNodeFile, std::vector<Cp_dbl2> );
+DXPORT bool bSaveNodeFile_TRI( char* szNodeFile, std::vector<Cp_dbl3> );
+DXPORT bool bLoadTriFile_TRI( char *szNodeFile, std::vector<Cp_dtri> *TriList );
+DXPORT bool bSaveTriFile_TRI(char* szTriFile, std::vector<Cp_dtri> *TriList,  std::vector<Cp_dbl3> *pnt);
 DXPORT void GenerateRandomSample_TRI( char *szFile );
 
 DXPORT int iPointsRelation_TRI( Cp_dbl2 *p0, Cp_dbl2 *p1, Cp_dbl2 *p2 );
-DXPORT int iPointsRelation_TRI( vector<Cp_dbl2> *Pnt2List, int i0, int i1, int i2 );
+DXPORT int iPointsRelation_TRI( std::vector<Cp_dbl2> *Pnt2List, int i0, int i1, int i2 );
 DXPORT bool bCheckPropIntersection_TRI( Cp_dbl2*, Cp_dbl2*, Cp_dbl2*, Cp_dbl2* );
 DXPORT bool bBetweenSegments_TRI( Cp_dbl2 *p0, Cp_dbl2	*p1, Cp_dbl2 *p2 );	
 DXPORT bool bCheckIntersection_TRI( Cp_dbl2 *p0, Cp_dbl2 *p1, Cp_dbl2 *p2, Cp_dbl2	*p3 );
-DXPORT bool bCheckIntersection_TRI( vector<Cp_dbl2>*, int i0, int i1, int i2, int i3 );
-DXPORT bool bCheckDiagonalie_TRI( vector<Cp_dbl2> *Pnt2List, int i, int j );
-DXPORT bool bCheckCone_TRI( vector<Cp_dbl2> *Pnt2List, int i, int j );
-DXPORT bool bCheckDiagonal_TRI( vector<Cp_dbl2> *Pnt2List, int i, int j );
-DXPORT int	iTriangulatePolygon_TRI( vector<Cp_dbl2>*, vector<Cp_dtri>* );
-DXPORT void StartPolygonTri_TRI( vector<Cp_dbl2> *Pnt2List, vector<Cp_dtri> *Tri2List );
+DXPORT bool bCheckIntersection_TRI( std::vector<Cp_dbl2>*, int i0, int i1, int i2, int i3 );
+DXPORT bool bCheckDiagonalie_TRI( std::vector<Cp_dbl2> *Pnt2List, int i, int j );
+DXPORT bool bCheckCone_TRI( std::vector<Cp_dbl2> *Pnt2List, int i, int j );
+DXPORT bool bCheckDiagonal_TRI( std::vector<Cp_dbl2> *Pnt2List, int i, int j );
+DXPORT int	iTriangulatePolygon_TRI( std::vector<Cp_dbl2>*, std::vector<Cp_dtri>* );
+DXPORT void StartPolygonTri_TRI( std::vector<Cp_dbl2> *Pnt2List, std::vector<Cp_dtri> *Tri2List );
 
-DXPORT bool	bSetPseudoPoints_TRI( int, vector<Cp_dbl2>* );
-DXPORT int	iListNeighbour_TRI( int, int, vector<Cp_dbl2>*, int*,   
-				CDT_Matrix<int>*, CDT_Matrix<int>*, vector<Cp_dtri>* );
-DXPORT int	iListConvex_TRI(int iPtr, int opoints, vector<Cp_dbl2>* Pnt2List, 
-				vector<int>* Cnv2List, int*, CDT_Matrix<int>*, 
-				vector<Cp_dtri>* );
+DXPORT bool	bSetPseudoPoints_TRI( int, std::vector<Cp_dbl2>* );
+DXPORT int	iListNeighbour_TRI( int, int, std::vector<Cp_dbl2>*, int*,   
+				CDT_Matrix<int>*, CDT_Matrix<int>*, std::vector<Cp_dtri>* );
+DXPORT int	iListConvex_TRI(int iPtr, int opoints, std::vector<Cp_dbl2>* Pnt2List, 
+				std::vector<int>* Cnv2List, int*, CDT_Matrix<int>*, 
+				std::vector<Cp_dtri>* );
 DXPORT bool	bInitNeighbourList( int, CDT_Matrix<int>* );
 DXPORT bool	bCmpNbrList( int, int, int, CDT_Matrix<int>* );	
-DXPORT bool	bResetTriangleList_TRI( int, vector<int>*, vector<Cp_dtri>*, vector<Cp_dtri>* );
-DXPORT bool	bCreateTriangleVector_TRI( int, vector<Cp_dtri>*, vector<Cp_dtri>* );
+DXPORT bool	bResetTriangleList_TRI( int, std::vector<int>*, std::vector<Cp_dtri>*, std::vector<Cp_dtri>* );
+DXPORT bool	bCreateTriangleVector_TRI( int, std::vector<Cp_dtri>*, std::vector<Cp_dtri>* );
 DXPORT bool	bInitBelongList_TRI( int, CDT_Matrix<int>* );
-DXPORT bool	bSortByDistance( int, vector<Cp_dbl2>*, int* );
-DXPORT bool	bBoxSortPoint_TRI( vector<Cp_dbl2>* PntList, int* iBoxSorted );
-DXPORT bool	bBoxSortPoint_TRI( int, vector<Cp_dbl2>* PntList, int* iBoxSorted );
+DXPORT bool	bSortByDistance( int, std::vector<Cp_dbl2>*, int* );
+DXPORT bool	bBoxSortPoint_TRI( std::vector<Cp_dbl2>* PntList, int* iBoxSorted );
+DXPORT bool	bBoxSortPoint_TRI( int, std::vector<Cp_dbl2>* PntList, int* iBoxSorted );
 
 
 

@@ -3,6 +3,7 @@ rf_react.cpp
 Reaction package to go with MTM2
 */
 
+#include <cfloat>
 #include <signal.h>
 #include "display.h"
 #include "makros.h"
@@ -200,20 +201,20 @@ void REACT::ExecuteReactionsPHREEQCNew(void)
 
    long i, ii,  ok = 0;
 
-   cout << "   ExecuteReactionsPHREEQCNew:" << endl;
+   std::cout << "   ExecuteReactionsPHREEQCNew:" << std::endl;
 
    /* File handling - GeoSys input file */
-   ifstream pqc_file (this->file_name_pqc.data(),ios::in);
+   std::ifstream pqc_file (this->file_name_pqc.data(),ios::in);
    if (!pqc_file.good())
    {
-      cout << "! Error in ExecuteReactionsPHREEQCNew: no Input File (*.pqc) found !" << endl;
+      std::cout << "! Error in ExecuteReactionsPHREEQCNew: no Input File (*.pqc) found !" << std::endl;
       //         exit(1);
    }
    //	File handling - data exchange file to phreeqc, input to PHREEQC
-   ofstream outfile (this->outfile_name.data(),ios::out);
+   std::ofstream outfile (this->outfile_name.data(),ios::out);
    if(!outfile.is_open())
    {
-      cout << "Error: Outfile phinp.dat could not be opened for writing " << endl;
+      std::cout << "Error: Outfile phinp.dat could not be opened for writing " << std::endl;
       //        exit(1);
    }
 
@@ -222,7 +223,7 @@ void REACT::ExecuteReactionsPHREEQCNew(void)
    {
       ok = this->ReadReactionModelNew(&pqc_file);
       if(!ok)
-         cout << "Error setting up reaction model" << endl;
+         std::cout << "Error setting up reaction model" << std::endl;
    }
 
    // Check for nodes without reactions
@@ -230,7 +231,7 @@ void REACT::ExecuteReactionsPHREEQCNew(void)
    {
       ok = this->CheckNoReactionNodes();
       if(!ok)
-         cout << "Error when checking for nodes without reactions" << endl;
+         std::cout << "Error when checking for nodes without reactions" << std::endl;
    }
    /* Read the input file (*.pqc) and set up the input file for PHREEQC ("phinp.dat")*/
    // Write input data block to PHREEQC for each node
@@ -252,8 +253,8 @@ void REACT::ExecuteReactionsPHREEQCNew(void)
    if(ok) ok = Call_Phreeqc();
    if(ok ==0)
    {
-      cout << " Error executing PHREEQC.exe - Stopping "<< endl;
-      cout.flush();
+      std::cout << " Error executing PHREEQC.exe - Stopping "<< std::endl;
+      std::cout.flush();
       //        exit(1);
    }
 
@@ -261,10 +262,10 @@ void REACT::ExecuteReactionsPHREEQCNew(void)
    {
       ok = ReadOutputPhreeqcNew();
       if(!ok)
-         cout << " Error in call to PHREEQC !!!" << endl;
+         std::cout << " Error in call to PHREEQC !!!" << std::endl;
    }
 
-   cout << " Calculated equilibrium geochemistry at " << ii << " nodes." << endl;
+   std::cout << " Calculated equilibrium geochemistry at " << ii << " nodes." << std::endl;
 
    /* Calculate Rates */
    // CalculateReactionRates();
@@ -565,9 +566,8 @@ void REACT::InitREACT0()
    }
 }
 
-
                                                   //MX
-void CRFProcess::InterpolateTempGP(CRFProcess *m_pcs, string name)
+void CRFProcess::InterpolateTempGP(CRFProcess *m_pcs, std::string name)
 {
    MshElemType::type EleType;
    int j;
@@ -618,7 +618,7 @@ void CRFProcess::InterpolateTempGP(CRFProcess *m_pcs, string name)
 
 
                                                   //MX
-void CRFProcess::ExtropolateTempGP(CRFProcess *m_pcs, string name)
+void CRFProcess::ExtropolateTempGP(CRFProcess *m_pcs, std::string name)
 {
    MshElemType::type EleType;
    int j;
@@ -701,7 +701,7 @@ void REACT::CalculateReactionRates(void)
    if(time_vector.size()>0)
       m_tim = time_vector[0];
    else
-      cout << "Error in MPCCalcCharacteristicNumbers: no time discretization data !" << endl;
+      std::cout << "Error in MPCCalcCharacteristicNumbers: no time discretization data !" << std::endl;
    delta_t = m_tim->CalcTimeStep();
    //OK_TIM delta_t = GetDt(aktueller_zeitschritt-1l);
    teta = 0.0;                                    /* teta = 0; concentration before reactions */
@@ -2843,9 +2843,9 @@ double MATCalcIonicStrengthNew(long index)
 }
 
 
-void RCRead(string filename)
-{
 
+void RCRead(std::string filename)
+{
    REACT *rc = new REACT();                       //SB
    rc->TestPHREEQC(filename);                     // Test if *.pqc file is present
    if (rc->flag_pqc)                              //MX
@@ -3666,7 +3666,7 @@ void REACT::ExecuteReactionsPHREEQCNewLib(void)
    double* out_vec = new double [ npunch * ii ];
 
    // call to libphreeqc
-   cout << endl << endl;
+   std::cout << endl << std::endl;
    ok = Call_PhreeqcLib(ii,npunch, nline, &out_buff, out_vec);
 
    if(ok)
@@ -3674,9 +3674,9 @@ void REACT::ExecuteReactionsPHREEQCNewLib(void)
       cout << "Reading phreeqc's output...";
       ok = ReadOutputPhreeqcNewLib(out_vec);
       if(!ok)
-         cout << " [ERROR] ExecuteReactionsPHREEQCNewLib: Error reading phreeqc's output" << endl;
+         std::cout << " [ERROR] ExecuteReactionsPHREEQCNewLib: Error reading phreeqc's output" << std::endl;
       else
-         cout << " [OK]" << endl;
+         std::cout << " [OK]" << std::endl;
    }
 
    // deallocation

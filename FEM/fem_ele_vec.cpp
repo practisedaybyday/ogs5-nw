@@ -5,21 +5,23 @@
 
 #include "Configure.h"
 
-#include "makros.h"
-#include <iostream>
+#include <cfloat>
+//#include "makros.h"
+//#include <iostream>
 // Sytem matrix
 #include "matrix.h"
 #include "mathlib.h"
 #include "pcs_dm.h"
+#include "rf_mfp_new.h"
 #include "rf_msp_new.h"
 //Time step
-#include "rf_tim_new.h"
+//#include "rf_tim_new.h"
 // MSHLib
-#include "msh_elem.h"
+//#include "msh_elem.h"
 // FEMLib
-#include "fem_ele.h"
+//#include "fem_ele.h"
 #include "fem_ele_vec.h"
-#include "rf_pcs.h"
+//#include "rf_pcs.h"
 #include "tools.h"                                //12.2009. WW
 // Equation
 #if defined(NEW_EQS)
@@ -55,7 +57,7 @@ namespace FiniteElement
       AuxNodal2 = NULL;
       for(i=0; i<4; i++)
          NodeShift[i] = pcs->Shift[i];
-      if(dm_pcs->pcs_type_name_vector[0].find("DYNAMIC")!=string::npos)
+      if(dm_pcs->pcs_type_name_vector[0].find("DYNAMIC")!=std::string::npos)
       {
          // Indecex in nodal value table
          Idx_dm0[0] = pcs->GetNodeValueIndex("ACCELERATION_X1");
@@ -981,14 +983,14 @@ namespace FiniteElement
          //Output matrices
          if(pcs->Write_Matrix)
          {
-            (*pcs->matrix_file) << "### Element: " << Index << endl;
-            (*pcs->matrix_file) << "---Stiffness matrix: " << endl;
+            (*pcs->matrix_file) << "### Element: " << Index << std::endl;
+            (*pcs->matrix_file) << "---Stiffness matrix: " << std::endl;
             Stiffness->Write(*pcs->matrix_file);
-            (*pcs->matrix_file) << "---RHS: " <<endl;
+            (*pcs->matrix_file) << "---RHS: " << std::endl;
             RHS->Write(*pcs->matrix_file);
             if(PressureC)
             {
-               (*pcs->matrix_file) << "Pressue coupling matrix: " <<endl;
+               (*pcs->matrix_file) << "Pressue coupling matrix: " << std::endl;
                PressureC->Write(*pcs->matrix_file);
             }
          }
@@ -2927,7 +2929,7 @@ namespace FiniteElement
       Localized = false;
    }
    // 01/2006 WW
-   void ElementValue_DM::Write_BIN(fstream& os)
+   void ElementValue_DM::Write_BIN(std::fstream& os)
    {
       Stress0->Write_BIN(os);
       Stress_i->Write_BIN(os);
@@ -2944,7 +2946,7 @@ namespace FiniteElement
       os.write((char*)(&Localized), sizeof(Localized));
    }
    // 01/2006 WW
-   void ElementValue_DM::Read_BIN(fstream& is)
+   void ElementValue_DM::Read_BIN(std::fstream& is)
    {
       Stress0->Read_BIN(is);
       Stress_i->Read_BIN(is);

@@ -10,12 +10,14 @@
 // MATHLIB
 #include "CubicSpline.h"
 
+using namespace std;
+
 //GSP
-vector<CGLPolyline*> polyline_vector;
+std::vector<CGLPolyline*> polyline_vector;
 int ply_max = -1;
 
-vector<CColumn*> column_vector;
-vector<CSoilProfile*> profile_vector; //YD
+std::vector<CColumn*> column_vector;
+std::vector<CSoilProfile*> profile_vector; //YD
 
 /*----------------------------------------------------------------------*/
 // constructor
@@ -90,7 +92,7 @@ void CGLPolyline::setID (size_t nid)
  **************************************************************************/
 CGLPolyline* GEOGetPLYByName(const std::string& name)
 {
-	vector<CGLPolyline*>::iterator p = polyline_vector.begin();//CC
+	std::vector<CGLPolyline*>::iterator p = polyline_vector.begin();//CC
 	while (p != polyline_vector.end()) {
 		if ((*p)->getName().compare(name) == 0) {
 			return *p;
@@ -108,7 +110,7 @@ CGLPolyline* GEOGetPLYByName(const std::string& name)
  08/2005 CC Implementation
  **************************************************************************/
 CGLPolyline* GEOGetPLYById(size_t number) {
-	vector<CGLPolyline*>::iterator p = polyline_vector.begin();//CC
+	std::vector<CGLPolyline*>::iterator p = polyline_vector.begin();//CC
 	while (p != polyline_vector.end()) {
 		if ((*p)->getID() == number) {
 			return *p;
@@ -165,7 +167,7 @@ void GEORemovePolyline(long nSel) {
  07/2003 OK Implementation
  08/2005 CC Modification
  **************************************************************************/
-vector<CGLPolyline*> GetPolylineVector(void) {
+std::vector<CGLPolyline*> GetPolylineVector(void) {
 	return polyline_vector;
 }
 /**************************************************************************
@@ -184,7 +186,7 @@ vector<CGLPolyline*> GetPolylineVector(void) {
 void GEOPolylineGLI2GEO(FILE *geo_file) {
 	int i;
 	//vector<CGLLine*> gli_lines_vector;
-	vector<CGLPoint*> gli_Points_vector;
+	std::vector<CGLPoint*> gli_Points_vector;
 	long gli_lines_vector_size;
 	gli_Points_vector = GetPointsVector();
 	/*---------------------------------------------------------------*/
@@ -202,7 +204,7 @@ void GEOPolylineGLI2GEO(FILE *geo_file) {
 	gli_lines_vector_size = (long) gli_lines_vector.size();
 	if (gli_lines_vector_size == 0) {
 		CGLPolyline* p_pline = NULL;
-		vector<CGLPolyline*>::iterator p = polyline_vector.begin();//CC
+		std::vector<CGLPolyline*>::iterator p = polyline_vector.begin();//CC
 		while (p != polyline_vector.end()) {
 			p_pline = *p;
 			if (p_pline->getLineVector().size() == 0) //CC
@@ -346,16 +348,16 @@ void CGLPolyline::WritePointVector(const std::string & base)
 		std::string ply_file_name = "POLYLINE";
 		ply_file_name += PLY_FILE_EXTENSION;//CC
 		ply_path_base_type = ply_path + ply_file_name;
-		fstream ply_file(ply_path_base_type.data(), ios::trunc | ios::out);
-		ply_file.setf(ios::scientific, ios::floatfield);
+		std::fstream ply_file(ply_path_base_type.data(), std::ios::trunc | std::ios::out);
+		ply_file.setf(std::ios::scientific, std::ios::floatfield);
 		ply_file.precision(12);
 		//--------------------------------------------------------------------
 		if (!ply_file.good())
 			return;
-		ply_file.seekg(0L, ios::beg);
+		ply_file.seekg(0L, std::ios::beg);
 		for (i = 0; i < no_points; i++) {
 			ply_file << point_vector[i]->x << " " << point_vector[i]->y << " "
-					<< point_vector[i]->z << endl;
+					<< point_vector[i]->z << std::endl;
 		}
 	}
 }
@@ -369,12 +371,12 @@ void CGLPolyline::WritePointVector(const std::string & base)
  10/2005 OK Path
  **************************************************************************/
 void CGLPolyline::ReadPointVector(const std::string &base) {
-	string cut_string;
-	string delimiter_type(" ");
+	std::string cut_string;
+	std::string delimiter_type(" ");
 	char line[MAX_ZEILEN];
-	string line_string;
-	string sub_string;
-	string buffer;
+	std::string line_string;
+	std::string sub_string;
+	std::string buffer;
 	CGLPoint *m_point = NULL;
 	//----------------------------------------------------------------------
 	// File handling
@@ -385,7 +387,7 @@ void CGLPolyline::ReadPointVector(const std::string &base) {
 				<< ply_file_name << " not found" << std::endl;
 		return;
 	}
-	ply_file.seekg(0L, ios::beg);
+	ply_file.seekg(0L, std::ios::beg);
 	//----------------------------------------------------------------------
 	while (!ply_file.eof()) {
 		ply_file.getline(line, MAX_ZEILEN);
@@ -468,22 +470,22 @@ void CGLPolyline::ComputeLines()
 void GEOReadPolylines(const std::string &file_name_path_base) {
 	CGLPolyline *m_polyline = NULL;
 	char line[MAX_ZEILEN];
-	string sub_line;
-	string line_string;
-	string gli_file_name;
-	string path_name;
-	ios::pos_type position;
+	std::string sub_line;
+	std::string line_string;
+	std::string gli_file_name;
+	std::string path_name;
+	std::ios::pos_type position;
 	//========================================================================
 	// File handling
 	gli_file_name = file_name_path_base + ".gli";
 	//  pos = (int)file_name_path_base.rfind('\\'); //CC remove
 	//path_name = file_name_path_base.substr(0,(pos+1));//CC remove
-	ifstream gli_file(gli_file_name.data(), ios::in);
+	std::ifstream gli_file(gli_file_name.data(), std::ios::in);
 	if (!gli_file.good()) {
 		std::cerr << "stream error GEOReadPolylines " << std::endl;
 		return;
 	}
-	gli_file.seekg(0L, ios::beg); // rewind?
+	gli_file.seekg(0L, std::ios::beg); // rewind?
 	//========================================================================
 	// Keyword loop
 	while (!gli_file.eof()) {
@@ -494,7 +496,7 @@ void GEOReadPolylines(const std::string &file_name_path_base) {
 			m_polyline = new CGLPolyline();
 			position = m_polyline->Read(gli_file); // CC8888, TF
 			polyline_vector.push_back(m_polyline);
-			gli_file.seekg(position, ios::beg);
+			gli_file.seekg(position, std::ios::beg);
 			// OK->CC encapsulate function
 			//..................................................................
 //			m_polyline->CalcMinimumPointDistance();
@@ -517,10 +519,10 @@ void GEOReadPolylines(const std::string &file_name_path_base) {
 ios::pos_type CGLPolyline::Read(std::ifstream &gli_file)//CC8888
 {
 	char line[MAX_ZEILEN];
-	string line_string;
+	std::string line_string;
 
 	bool new_keyword = false;
-	ios::pos_type position;
+	std::ios::pos_type position;
 	CGLPoint *m_point = NULL;
 
 	// Schleife ueber alle Phasen bzw. Komponenten
@@ -583,13 +585,13 @@ ios::pos_type CGLPolyline::Read(std::ifstream &gli_file)//CC8888
 					AddPoint(m_point);
 				//CC---------------------------
 				else {
-					cout << "Error: point " << lvalue << " not found" << endl;
+					std::cout << "Error: point " << lvalue << " not found" << std::endl;
 					//--------------------------------------------------
-					string m_strname = name + ": Point not found: point ";
+					std::string m_strname = name + ": Point not found: point ";
 					char m_strnameid[10];
 					sprintf(m_strnameid, "%li", lvalue); //OK
 					//itoa((int)lvalue,m_strnameid,10); //CC 09/05 convert integer to string ultoa convert unsigned long to string
-					string error_str = m_strname + m_strnameid;
+					std::string error_str = m_strname + m_strnameid;
 					return position;
 				};
 				gli_file.getline(line, MAX_ZEILEN);
@@ -652,15 +654,15 @@ void CGLPolyline::AddPoint(CGLPoint* m_point) {
  02/2004 WW Implementation
  last modification:
  **************************************************************************/
-void InterpolationAlongPolyline(CGLPolyline *plyL, vector<double>& bcNodalValue) {
+void InterpolationAlongPolyline(CGLPolyline *plyL, std::vector<double>& bcNodalValue) {
 	//Obtain fem node for groupvector
 	const size_t SizeCGLPoint(plyL->point_vector.size());
 	double xp(0.0), yp(0.0), zp(0.0);
 
 	// Prepare spline data
 	double sl = 0.0;
-	vector<double> ss0;
-	vector<double> bVal;
+	std::vector<double> ss0;
+	std::vector<double> bVal;
 	for (size_t i = 0; i < SizeCGLPoint - 1; i++) {
 		CGLPoint * CGPa = plyL->point_vector[i];
 		CGLPoint * CGPb = plyL->point_vector[i + 1];
@@ -682,9 +684,9 @@ void InterpolationAlongPolyline(CGLPolyline *plyL, vector<double>& bcNodalValue)
 	}
 
 	if (ss0.size() == 0) {
-		cout
+		std::cout
 				<< "Error in CGLPolyline::InterpolationAlongPolyline: no PNT data found for Spline interpolation"
-				<< endl;
+				<< std::endl;
 		return;
 	}
 
@@ -720,15 +722,15 @@ void CGLPolyline::WriteTecplot(const std::string &file_path) {
 	long i;
 	//----------------------------------------------------------------------
 	// File handling
-	string tec_path;
+	std::string tec_path;
 	/* CGSProject* m_gsp = GSPGetMember("gli");
 	 if(m_gsp)
 	 tec_path = m_gsp->path; */
 
-	string tec_file_name = file_path + name + ".tec";
+	std::string tec_file_name = file_path + name + ".tec";
 	//string tec_file_name = tec_path + name + ".tec";
-	fstream tec_file(tec_file_name.data(), ios::trunc | ios::out);
-	tec_file.setf(ios::scientific, ios::floatfield);
+	std::fstream tec_file(tec_file_name.data(), ios::trunc | ios::out);
+	tec_file.setf(std::ios::scientific, std::ios::floatfield);
 	tec_file.precision(12);
 	// Write header
 	tec_file << "VARIABLES = X,Y,Z" << endl;
@@ -776,7 +778,7 @@ void CGLPolyline::SortPointVectorByDistance() {
 	}
 	nodes_sorted = TOLSortNodes1(nodes_unsorted, node_distances, no_points);
 	// Reorder point vector
-	vector<CGLPoint*> aux_point_vector;
+	std::vector<CGLPoint*> aux_point_vector;
 	CGLPoint* m_pnt;
 	for (i = 0; i < no_points; i++) {
 		m_pnt = point_vector[nodes_sorted[i]];
@@ -922,7 +924,7 @@ void CGLPolyline::SetPointOrderByDistance(CGLPoint*m_pnt) {
 	//OK  double eps = 1e-3;
 	//----------------------------------------------------------------------
 	CGLPoint* m_pnt_i = NULL;
-	vector<CGLPoint*> point_vector_aux;
+	std::vector<CGLPoint*> point_vector_aux;
 	for (i = 0; i < (int) point_vector.size(); i++) {
 		m_pnt_i = point_vector[i];
 		//OK if(m_pnt->PointDisXY(m_pnt_i)<epsilon){
@@ -980,7 +982,7 @@ void GEOWritePolylines(char* file_name) {
  **************************************************************************/
 void GEORemovePLY(CGLPolyline*m_ply) {
 	CGLPolyline* m_ply_this = NULL;
-	vector<CGLPolyline*>::const_iterator p_ply = polyline_vector.begin();
+	std::vector<CGLPolyline*>::const_iterator p_ply = polyline_vector.begin();
 	for (int i = 0; i < (int) polyline_vector.size(); i++) {
 		m_ply_this = polyline_vector[i];
 		if (m_ply_this->getName().compare(m_ply->getName()) == 0) {

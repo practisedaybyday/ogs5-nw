@@ -11,7 +11,6 @@
 #define timer_INC
 
 /* Andere oeffentlich benutzte Module */
-using namespace std;
 #include <time.h>
 #include <vector>
 //#include <windows.h>
@@ -58,10 +57,10 @@ class CClockTime
    public:
       CClockTime(void);
       ~CClockTime(void);
-      vector <double> time_flow;
-      vector <double> time_transport;
-      vector <double> time_kinreact;
-      vector <double> time_equireact;
+      std::vector <double> time_flow;
+      std::vector <double> time_transport;
+      std::vector <double> time_kinreact;
+      std::vector <double> time_equireact;
       double time_total_flow;
       double time_total_transport;
       double time_total_kinreact;
@@ -70,7 +69,7 @@ class CClockTime
       clock_t start;
       clock_t end;
 
-      void StopTime(const string &name="");
+      void StopTime(const std::string &name="");
       void StartTime(void);
       void PrintTimes(void);
 
@@ -80,5 +79,5 @@ class CClockTime
 
 };
 extern void CreateClockTime(void);
-extern vector <CClockTime *> ClockTimeVec;
+extern std::vector <CClockTime *> ClockTimeVec;
 #endif
