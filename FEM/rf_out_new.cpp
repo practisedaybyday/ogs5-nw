@@ -96,32 +96,29 @@ dat_type_name ("TECPLOT")
 }
 
 
-void COutput::init ()
+void COutput::init()
 {
-   if (getProcessType () == INVALID_PROCESS)
-   {
-      std::cerr << "COutput::init(): could not initialize process pointer (process type INVALID_PROCESS) and appropriate mesh" << std::endl;
-      std::cerr << "COutput::init(): trying to fetch process pointer using msh_type_name ... " << std::endl;
-      if(msh_type_name.size()>0)
-      {
-         _pcs = PCSGet(msh_type_name);
-         if (_pcs)
-         {
-            std::cerr << " successful" << std::endl;
-         }
-         else
-         {
-            std::cerr << " failed" << std::endl;
-            exit (1);
-         }
-      }
-      else
-      {
-         std::cerr << " failed" << std::endl;
-      }
-   }
+	if (getProcessType() == INVALID_PROCESS) {
+		std::cerr
+				<< "COutput::init(): could not initialize process pointer (process type INVALID_PROCESS) and appropriate mesh"
+				<< std::endl;
+		std::cerr
+				<< "COutput::init(): trying to fetch process pointer using msh_type_name ... "
+				<< std::endl;
+		if (msh_type_name.size() > 0) {
+			_pcs = PCSGet(msh_type_name);
+			if (_pcs) {
+				std::cerr << " successful" << std::endl;
+			} else {
+				std::cerr << " failed" << std::endl;
+				exit(1);
+			}
+		} else {
+			std::cerr << " failed" << std::endl;
+		}
+	}
 
-   m_msh = FEMGet(convertProcessTypeToString(getProcessType()));
+	m_msh = FEMGet(convertProcessTypeToString(getProcessType()));
 }
 
 
