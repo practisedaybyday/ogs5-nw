@@ -18,11 +18,11 @@ endif( CMAKE_CMD_ARGS )
 # OGS version information. Adjust these if you release a new version.
 SET (OGS_VERSION_MAJOR 5)
 SET (OGS_VERSION_MINOR 0)
-SET (OGS_VERSION_PATCH 11)
-SET (OGS_RELEASE_PERSONS "WW")
+SET (OGS_VERSION_PATCH 12)
+SET (OGS_RELEASE_PERSONS "LB/TF/KR")
 SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}(${OGS_RELEASE_PERSONS})")
 # should we use ISO dates: 2010-12-31 ?
-SET (OGS_DATE "06.01.2010")
+SET (OGS_DATE "13.01.2010")
 
 # Adds useful macros and variables
 INCLUDE( CMakeConfiguration/Macros.cmake )
