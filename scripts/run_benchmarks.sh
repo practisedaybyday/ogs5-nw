@@ -58,9 +58,8 @@ cat benchOut.txt
 
 cd scripts
 # Send emails on errors
-#python26 ~/bin/sendmail/sendmail.py
-#if [ "$HOSTNAME" -eq "dev2.intern.ufz.de" ] ; then
-  ruby process_benchmark_job.rb ./../svnInfo.txt ./../benchOut.txt $HUDSON_EMAIL $1 /home/lars/db/ogsbench.db
-#fi
+if [ "$HOSTNAME" -eq "dev2.intern.ufz.de" ] ; then
+  ruby process_benchmark_job.rb ./../svnInfo.txt ./../benchOut.txt $HUDSON_EMAIL $1 ~/db/ogsbench.db
+fi
 
 set -e >/dev/null
