@@ -30,7 +30,7 @@ ConfigFileData aus CreateFileData herausgeloest
 */
 /**************************************************************************/
 #include "Configure.h"
-//#include <iostream>
+#include <cstring>
 //#include "makros.h"
 //#ifndef NEW_EQS //WW. 07.11.2008
 //#include "solver.h"

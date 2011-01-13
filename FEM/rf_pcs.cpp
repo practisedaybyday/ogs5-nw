@@ -36,6 +36,7 @@ Programing:
 #include <cfloat>
 #include <iostream>
 #include <iomanip>                                //WW
+#include <cstring>
 //#include <algorithm> // header of transform. WW
 // GEOLib
 //#include "geo_ply.h"

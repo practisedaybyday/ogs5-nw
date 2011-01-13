@@ -21,6 +21,7 @@
 #include "makros.h"
 
 #include <cfloat>
+#include <cstring>
 #define noTESTTOOLS
 /* Header / Andere intern benutzte Module */
 #include "tools.h"

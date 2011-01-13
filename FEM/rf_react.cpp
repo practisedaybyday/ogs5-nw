@@ -18,6 +18,7 @@ Reaction package to go with MTM2
 #include "rf_pcs.h"                               //OK_MOD"
 #include <iostream>
 #include <fstream>
+#include <cstring>
 #include "rf_tim_new.h"
 #include "rf_mmp_new.h"
 #include "rf_kinreact.h"
