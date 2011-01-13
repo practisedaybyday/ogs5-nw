@@ -75,6 +75,7 @@ Speichermodell 2 vereinfacht
 **************************************************************************/
 
 #include <cfloat>
+#include <cstring>
 #include "makros.h"
 #include "solver.h"
 
