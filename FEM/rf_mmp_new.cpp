@@ -10,6 +10,7 @@ Programing:
 // C++ STL
 //#include <iostream>
 #include <cfloat>
+#include <cstring>
 
 // FEMLib
 #include "tools.h"

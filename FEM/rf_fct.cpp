@@ -9,6 +9,7 @@ Programing:
 #include "rf_fct.h"
 #include "files0.h"
 #include "gs_project.h"
+#include <cstdlib>
 
 using namespace std;
 

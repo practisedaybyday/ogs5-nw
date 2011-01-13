@@ -30,7 +30,8 @@ Zero-Groesse
 
 #include "makros.h"
 #include "memory.h"
-#include <stdio.h>
+#include <cstdio>
+#include <cstdlib>
 
 /* Interne (statische) Deklarationen */
 

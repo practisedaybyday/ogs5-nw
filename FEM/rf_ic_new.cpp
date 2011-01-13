@@ -12,6 +12,7 @@ last modified
 // C++ STL
 #include <list>
 #include <iostream>
+#include <cstring>
 using namespace std;
 // FEM-Makros
 //#include "files0.h"

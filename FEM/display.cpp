@@ -14,6 +14,8 @@
 
 #include "makros.h"
 #include "display.h"
+#include <cstdio>
+#include <cstring>
 extern FILE *OpenMsgFile(void);
 extern void CloseMsgFile(FILE*);
 
