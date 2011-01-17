@@ -235,9 +235,10 @@ else
   end
 
   ### Read files ###
+  ci = nil
   if File.exists?(ARGV[0])
     # read commit info
-    CommitInfoLoader.new(ARGV[0])
+    ci = CommitInfoLoader.new(ARGV[0])
 
     if File.exists?(ARGV[1])
       # read benchmark job output
@@ -254,7 +255,7 @@ else
   ### Process info ###
   bi = BenchmarkInfoProcessor.new
   bi.write_statistics_to_csv("#{File.dirname(ARGV[0])}/benchSummary.csv")
-  bi.send_email
+  bi.send_email if ci.new?
   bi.print_summary
 
   ## Generate plots ##
