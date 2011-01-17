@@ -124,7 +124,6 @@ public:
 	 */
 	bool getNameOfElement (const Point* data, std::string& name) const;
 
-
 	/**
 	 * The method returns true if there is a name associated
 	 * with the given id, else method returns false.
@@ -154,10 +153,15 @@ private:
 
 	size_t uniqueInsert (Point *pnt);
 
-	/** pointer to a vector of pointers to Points */
+	/**
+	 * pointer to a vector of pointers to Points
+	 *
+	 * The destructor of PointVec will delete all GEOLIB::Points
+	 * inside the vector.
+	 */
 	std::vector <Point*> *_pnt_vec;
 	/**
-	 * store the name associated with a point
+	 * used to store the name associated with a point
 	 */
 	std::map<std::string, size_t>* _name_id_map;
 	/** the type of the point (\sa enum PointType) */
