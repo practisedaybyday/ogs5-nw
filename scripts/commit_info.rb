@@ -22,8 +22,15 @@ class CommitInfo < Sequel::Model(:commit_infos)
 end
 
 class CommitInfoLoader
+  
+  def new?
+    @new
+  end
 
   def initialize(filename)
+    
+    @new = true
+    
     File.open(filename, 'r') do |file|
       revision = 0
       author = nil
@@ -47,6 +54,7 @@ class CommitInfoLoader
       end
 
       if CommitInfo[:revision => revision]
+        @new = false
         puts "Commit info of revision #{revision} already read."
       else
         commit_info = CommitInfo.create(:revision => revision,

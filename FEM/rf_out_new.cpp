@@ -1004,9 +1004,9 @@ void OUTData(double time_current, int time_step_number)
                   vtk->WriteXMLUnstructuredGrid(vtk_file_name, m_out,
                      time_step_number);
                   VTK_Info dat;
+                  dat.timestep = m_out->getTime();
+                  dat.vtk_file = pvd_vtk_file_name;
                   vtk->vec_dataset.push_back(dat);
-                  m_out->setTime (vtk->vec_dataset.back().timestep);
-                  vtk->vec_dataset.back().vtk_file = pvd_vtk_file_name;
                   vtk->UpdatePVD(vtk->pvd_file_name, vtk->vec_dataset);
                }
                else
@@ -1020,10 +1020,10 @@ void OUTData(double time_current, int time_step_number)
                         m_out->time_vector.erase(m_out->time_vector.begin()
                            + j);
                         VTK_Info dat;
+                        dat.timestep = m_out->getTime();
+                        dat.vtk_file = pvd_vtk_file_name;
                         vtk->vec_dataset.push_back(dat);
-                        m_out->setTime (vtk->vec_dataset.back().timestep);
-                        vtk->vec_dataset.back().vtk_file
-                           = pvd_vtk_file_name;
+
                         vtk->UpdatePVD(vtk->pvd_file_name, vtk->vec_dataset);
                         break;
                      }
