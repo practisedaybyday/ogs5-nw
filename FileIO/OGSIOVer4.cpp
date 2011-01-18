@@ -656,7 +656,6 @@ void writeAllDataToGLIFileV4 (const std::string& fname, const GEOLIB::GEOObjects
 		const GEOLIB::PolylineVec* plys_vec (geo.getPolylineVecObj (geo_names[j]));
 		if (plys_vec) {
 			const std::vector<GEOLIB::Polyline*>* plys (plys_vec->getVector());
-			const std::vector<size_t>& pnt_id_map (geo.getPointVecObj(geo_names[j])->getIDMap());
 			for (size_t k(0); k<plys->size(); k++) {
 				os << "#POLYLINE" << std::endl;
 				std::string ply_name;
@@ -667,7 +666,7 @@ void writeAllDataToGLIFileV4 (const std::string& fname, const GEOLIB::GEOObjects
 				}
 				os << " $POINTS" << std::endl;
 				for (size_t l(0); l<(*plys)[k]->getNumberOfPoints(); l++) {
-					os << "  " << pnts_id_offset[j] + pnt_id_map[((*plys)[k])->getPointID(l)] << std::endl;
+					os << "  " << pnts_id_offset[j] + ((*plys)[k])->getPointID(l) << std::endl;
 				}
 				plys_cnt++;
 			}
