@@ -23,7 +23,7 @@ PointVec::PointVec (const std::string& name, std::vector<Point*>* points, std::m
 
 PointVec::~PointVec ()
 {
-	for (size_t k(0); k<size(); k++) {
+	for (size_t k(0); k<_pnt_vec->size(); k++) {
 		delete (*_pnt_vec)[k];
 		(*_pnt_vec)[k] = NULL;
 	}
