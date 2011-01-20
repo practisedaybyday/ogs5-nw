@@ -25,9 +25,9 @@ void Surface::addTriangle (size_t pnt_a, size_t pnt_b, size_t pnt_c)
 {
 	assert (pnt_a < m_sfc_pnts.size() && pnt_b < m_sfc_pnts.size() && pnt_c < m_sfc_pnts.size());
 	m_sfc_triangles.push_back (new Triangle(m_sfc_pnts, pnt_a, pnt_b, pnt_c));
-	bv->update (m_sfc_pnts[pnt_a]->getData());
-	bv->update (m_sfc_pnts[pnt_b]->getData());
-	bv->update (m_sfc_pnts[pnt_c]->getData());
+	bv->update (*m_sfc_pnts[pnt_a]);
+	bv->update (*m_sfc_pnts[pnt_b]);
+	bv->update (*m_sfc_pnts[pnt_c]);
 }
 
 size_t Surface::getNTriangles () const
