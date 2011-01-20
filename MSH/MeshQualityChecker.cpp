@@ -2,7 +2,7 @@
  * MeshQualityChecker.cpp
  *
  *  Created on: Dec 8, 2010
- *      Author: fischeth
+ *      Author: TF
  */
 
 #include "MeshQualityChecker.h"
@@ -10,7 +10,7 @@
 
 namespace Mesh_Group {
 
-MeshQualityChecker::MeshQualityChecker(CFEMesh* mesh) :
+MeshQualityChecker::MeshQualityChecker(CFEMesh const * const mesh) :
 	_mesh (mesh), _static_histogramm (100, 0)
 {}
 
@@ -60,12 +60,6 @@ void MeshQualityChecker::checkTriangles ()
 			}
 		}
 	}
-
-	std::ofstream out ("histogramm.txt");
-	for (size_t k(0); k<100; k++) {
-		out << k/100.0 << " " << _static_histogramm[k] << std::endl;
-	}
-	out.close ();
 }
 
 MeshQualityChecker::~MeshQualityChecker()

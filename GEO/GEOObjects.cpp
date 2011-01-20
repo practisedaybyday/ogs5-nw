@@ -36,6 +36,8 @@ void GEOObjects::addPointVec(std::vector<Point*> *points, std::string &name, std
 {
 	isUniquePointVecName(name);
 	_pnt_vecs.push_back(new PointVec(name, points, pnt_id_name_map));
+	std::cout << "minimal dist between points: " << (_pnt_vecs[_pnt_vecs.size()-1])->getShortestPointDistance () << std::endl;
+	std::cout << "largest dist between points: " << (_pnt_vecs[_pnt_vecs.size()-1])->getLargestPointDistance () << std::endl;
 }
 
 bool GEOObjects::appendPointVec(const std::vector<Point*> &points, std::string &name)

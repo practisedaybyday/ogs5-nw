@@ -137,6 +137,9 @@ public:
 
 	const std::vector<size_t>& getIDMap () const { return _pnt_id_map; }
 
+	double getShortestPointDistance () const;
+	double getLargestPointDistance () const;
+
 private:
 	void makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector<size_t> &pnt_id_map);
 
@@ -173,6 +176,19 @@ private:
 	 * to their lexicographical order
 	 */
 	std::vector<size_t> _pnt_id_map;
+
+	/**
+	 * method calculates the shortest and largest distance of points inside the _pnt_vec
+	 */
+	void calculateShortestAndLargestDistance ();
+	/**
+	 * squared shortest distance - calculated by calculateShortestAndLargestDistance, possible update by uniqueInsert
+	 */
+	double _sqr_shortest_dist;
+	/**
+	 * squared largest distance - calculated by calculateShortestAndLargestDistance, possible update by uniqueInsert
+	 */
+	double _sqr_largest_dist;
 };
 
 } // end namespace
