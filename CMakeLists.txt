@@ -28,7 +28,7 @@ SET (OGS_DATE "13.01.2010")
 INCLUDE( CMakeConfiguration/Macros.cmake )
 
 # Suppress waring on add_subdirectory(dir) where dir contains no CMakeLists.txt
-IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.6)
+IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.7)
 	CMAKE_POLICY(SET CMP0014 OLD)
 ENDIF ()
 
@@ -323,6 +323,8 @@ IF (MSVC)
 	ADD_SUBDIRECTORY (CMakeConfiguration)
 ENDIF (MSVC)
 
+#
+IF(!OGS_FEM_MPI)
 IF(CMAKE_MINOR_VERSION GREATER 6)
 	IF (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005" AND NOT OGS_FEM_GEMS )
 		#SET (GTEST_MSVC_SEARCH MT)
@@ -347,6 +349,7 @@ IF (GTEST_FOUND)
 	include_directories(${GTEST_INCLUDE_DIRS})
 	add_subdirectory(tests)
 ENDIF (GTEST_FOUND)
+ENDIF(!OGS_FEM_MPI)
 
 IF (OGS_PACKAGING)
 	# Add packaging configuration
