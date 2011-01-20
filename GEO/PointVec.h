@@ -9,6 +9,7 @@
 // GEOLIB
 #include "Point.h"
 #include "Station.h"
+#include "AxisAlignedBoundingBox.h"
 
 // Base
 #include "quicksort.h"
@@ -138,7 +139,7 @@ public:
 	const std::vector<size_t>& getIDMap () const { return _pnt_id_map; }
 
 	double getShortestPointDistance () const;
-	double getLargestPointDistance () const;
+	const GEOLIB::AABB& getAxisAlignedBoundingBox () const;
 
 private:
 	void makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector<size_t> &pnt_id_map);
@@ -178,17 +179,16 @@ private:
 	std::vector<size_t> _pnt_id_map;
 
 	/**
-	 * method calculates the shortest and largest distance of points inside the _pnt_vec
+	 * method calculates the shortest distance of points inside the _pnt_vec
 	 */
-	void calculateShortestAndLargestDistance ();
+	void calculateShortestDistance ();
 	/**
 	 * squared shortest distance - calculated by calculateShortestAndLargestDistance, possible update by uniqueInsert
 	 */
 	double _sqr_shortest_dist;
-	/**
-	 * squared largest distance - calculated by calculateShortestAndLargestDistance, possible update by uniqueInsert
-	 */
-	double _sqr_largest_dist;
+
+	void calculateAxisAlignedBoundingBox ();
+	AABB aabb;
 };
 
 } // end namespace
