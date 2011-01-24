@@ -37,6 +37,21 @@ public:
 	 */
 	bool writeGMSHInputFile(const std::string &proj_name, const GEOLIB::GEOObjects& geo);
 
+	/**
+	 * Method writes selected data to the stream (opened from constructor) employing a Quadtree for
+	 * adaptive mesh generation.
+	 *
+	 * @param geo object managing all geometric information
+	 * @param selected_geometries geometric information that should be included into the mesh process
+	 * @param number_of_point_per_quadtree_node maximum number of points per Quadtree leaf
+	 * (see class \sa Quadtree for documentation)
+	 * @param mesh_density_scaling The mesh density at a point depends on the edge size
+	 * of the Quadtree leaf the point is located in. The mesh_density is the edge size
+	 * multiplied with the scaling factor mesh_density_scaling.
+	 * @param mesh_density_scaling_station_pnts The mesh density at a station depends on the edge size
+	 * of the Quadtree leaf the point is located in. The mesh_density is the edge size
+	 * multiplied with the scaling factor mesh_density_scaling_station_pnts.
+	 */
 	void writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 			std::vector<std::string> const & selected_geometries,
 			size_t number_of_point_per_quadtree_node = 10,
