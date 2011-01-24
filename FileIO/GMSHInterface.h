@@ -37,7 +37,10 @@ public:
 	 */
 	bool writeGMSHInputFile(const std::string &proj_name, const GEOLIB::GEOObjects& geo);
 
-	void writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo);
+	void writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
+			std::vector<std::string> const & selected_geometries,
+			size_t number_of_point_per_quadtree_node = 10,
+			double mesh_density_scaling = 0.3, double mesh_density_scaling_station_pnts = 0.05);
 
 	void writeGMSHPoints(const std::vector<GEOLIB::Point*>& pnt_vec);
 	void writeGMSHPolyline (const GEOLIB::Polyline* ply);
