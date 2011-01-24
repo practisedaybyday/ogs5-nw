@@ -83,7 +83,7 @@ public:
 	 * get the type of Point, this can be either POINT or STATION
 	 *
 	 */
-	int getType() const { return _type; }
+	PointType getType() const { return _type; }
 
 	/**
 	 * getVector returns the internal vector of Points,
