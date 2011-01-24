@@ -473,6 +473,9 @@ private :
 	size_t _depth;
 	std::vector<POINT *> _pnts;
 	bool _is_leaf;
+	/**
+	 * maximum number of points per leaf
+	 */
 	const size_t _max_points_per_node;
 };
 
