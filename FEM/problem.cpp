@@ -704,7 +704,7 @@ void Problem::PCSCreate()
       ProcessType pcs_type (pcs_vector[i]->getProcessType());
       std::cout << "Create: " << convertProcessTypeToString (pcs_type) << std::endl;
       //		if (!pcs_vector[i]->pcs_type_name.compare("MASS_TRANSPORT")) {
-      if (pcs_type != MASS_TRANSPORT)             // TF
+      if (pcs_type != MASS_TRANSPORT && pcs_type != FLUID_MOMENTUM && pcs_type != RANDOM_WALK)     //YS   // TF
       {
          std::cout << " for " << pcs_vector[i]->pcs_primary_function_name[0] << " ";
          std::cout << " pcs_component_number " << pcs_vector[i]->pcs_component_number;
