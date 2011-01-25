@@ -16,12 +16,6 @@ namespace GEOLIB {
  */
 
 typedef TemplatePoint<double> Point;
-}
-
-/**
- * lexicographic comparison of points
- */
-bool operator<= (GEOLIB::Point const & p0, GEOLIB::Point const & p1);
 
 /**
  * comparison based on the x coordinate
@@ -46,5 +40,12 @@ bool lessY (GEOLIB::Point const & p0, GEOLIB::Point const & p1);
  * @return true if the z coordinate of p0 is smaller equal the z coordinate of p1, else false
  */
 bool lessZ (GEOLIB::Point const & p0, GEOLIB::Point const & p1);
+
+}
+
+/**
+ * lexicographic comparison of points
+ */
+bool operator<= (GEOLIB::Point const & p0, GEOLIB::Point const & p1);
 
 #endif /* POINT_H_ */

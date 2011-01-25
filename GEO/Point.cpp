@@ -31,6 +31,7 @@ bool operator<= (const GEOLIB::Point& p0, const GEOLIB::Point& p1)
 	}
 }
 
+namespace GEOLIB {
 
 bool lessX (GEOLIB::Point const & p0, GEOLIB::Point const & p1)
 {
@@ -49,3 +50,5 @@ bool lessZ (GEOLIB::Point const & p0, GEOLIB::Point const & p1)
 	if (p0[2] <= p1[2]) return true;
 	return false;
 }
+
+} // end namespace GEOLIB

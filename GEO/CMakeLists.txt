@@ -22,6 +22,7 @@ set( SOURCES
 	PointVec.cpp
 	GeoType.cpp
 	BruteForceClosestPair.cpp
+	DivideAndConquerClosestPair.cpp
 )
 
 # Header files
@@ -58,6 +59,7 @@ set( HEADERS
 	QuadTree.h
 	ClosestPair.h
 	BruteForceClosestPair.h
+	DivideAndConquerClosestPair.h
 )
 
 # Create the library

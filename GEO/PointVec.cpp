@@ -21,7 +21,7 @@ PointVec::PointVec (const std::string& name, std::vector<Point*>* points,
 	makePntsUnique (_pnt_vec, _pnt_id_map);
 	if (number_of_all_input_pnts - _pnt_vec->size() > 0)
 		std::cerr << "WARNING: there are " << number_of_all_input_pnts - _pnt_vec->size() << " double points" << std::endl;
-	calculateShortestDistance ();
+//	calculateShortestDistance ();
 	calculateAxisAlignedBoundingBox ();
 }
 
