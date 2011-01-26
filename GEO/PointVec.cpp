@@ -6,6 +6,7 @@
  */
 
 #include "PointVec.h"
+#include "BruteForceClosestPair.h"
 
 namespace GEOLIB {
 
@@ -20,7 +21,7 @@ PointVec::PointVec (const std::string& name, std::vector<Point*>* points,
 	makePntsUnique (_pnt_vec, _pnt_id_map);
 	if (number_of_all_input_pnts - _pnt_vec->size() > 0)
 		std::cerr << "WARNING: there are " << number_of_all_input_pnts - _pnt_vec->size() << " double points" << std::endl;
-	calculateShortestDistance ();
+//	calculateShortestDistance ();
 	calculateAxisAlignedBoundingBox ();
 }
 
@@ -234,13 +235,9 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector
 
 void PointVec::calculateShortestDistance ()
 {
-	const size_t n_pnts (_pnt_vec->size());
-	for (size_t i(0); i<n_pnts; i++) {
-		for (size_t j(i+1); j<n_pnts; j++) {
-			double sqr_dist (MATHLIB::sqrDist ((*_pnt_vec)[i], (*_pnt_vec)[j]));
-			if (sqr_dist < _sqr_shortest_dist) _sqr_shortest_dist = sqr_dist;
-		}
-	}
+	size_t i, j;
+	BruteForceClosestPair (*_pnt_vec, i, j);
+	_sqr_shortest_dist = MATHLIB::sqrDist ((*_pnt_vec)[i], (*_pnt_vec)[j]);
 }
 
 void PointVec::calculateAxisAlignedBoundingBox ()

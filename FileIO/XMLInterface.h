@@ -17,7 +17,7 @@ class QDomDocument;
 class QDomNode;
 class QDomElement;
 
-/** 
+/**
  * \brief Reads and writes GeoObjects to and from XML files.
  * Note: Currently it is possible to store names for objects in the xml-file (the schema DOES support that) but
  * these names will neither be read or written by this interface as this functionality is not yet fully implemented
@@ -26,7 +26,7 @@ class QDomElement;
 class XMLInterface
 {
 public:
-	/** 
+	/**
 	 * Constructor
 	 * \param geoObjects An GEOObject that into which data will be read or from which data will be written.
 	 * \param schemaFile An XML schema file (*.xsd) that defines the structure of a valid data file.
@@ -60,12 +60,21 @@ public:
 	int writeProjectFile(const QString &fileName) const;
 
 	/**
+	 * Writes geometric data from GEOObjects to an xml-file (using the QString version)
+	 * \param file The file into which the data will be written.
+	 * \param gliName The name of the GEOOBjects that will be written into the file.
+	 */
+	void writeGLIFile(const std::string &filename, const std::string &gliName) const
+	{
+		writeGLIFile (QString::fromStdString(filename), QString::fromStdString(gliName));
+	}
+
+	/**
 	 * Writes geometric data from GEOObjects to an xml-file
 	 * \param file The file into which the data will be written.
 	 * \param gliName The name of the GEOOBjects that will be written into the file.
 	 */
 	void writeGLIFile(const QString &filename, const QString &gliName) const;
-
 	/**
 	 * Writes geometric data from GEOObjects to an xml-file
 	 * \param filename The filename for the file into which the data will be written.
@@ -78,7 +87,7 @@ public:
 
 private:
 	/// Reads GEOLIB::Point-objects from an xml-file
-	void readPoints    ( const QDomNode &pointsRoot, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *pnt_names );	
+	void readPoints    ( const QDomNode &pointsRoot, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *pnt_names );
 
 	/// Reads GEOLIB::Polyline-objects from an xml-file
 	void readPolylines ( const QDomNode &polylinesRoot, std::vector<GEOLIB::Polyline*> *polylines, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *ply_names );
@@ -87,7 +96,7 @@ private:
 	void readSurfaces  ( const QDomNode &surfacesRoot, std::vector<GEOLIB::Surface*> *surfaces, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *sfc_names );
 
 	/// Reads GEOLIB::Station- or StationBorehole-objects from an xml-file
-	void readStations  ( const QDomNode &stationsRoot, std::vector<GEOLIB::Point*> *stations );	
+	void readStations  ( const QDomNode &stationsRoot, std::vector<GEOLIB::Point*> *stations );
 
 	/// Reads the stratigraphy of a borehole from an xml-file
 	void readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationBorehole* borehole );
@@ -102,12 +111,12 @@ private:
 
 	/// Calculates an MD5 hash of the given file.
 	QByteArray calcHash(const QString &fileName) const;
-	
+
 	/// Checks if the given file is conform to the given hash.
 	bool hashIsGood(const QString &fileName, const QByteArray &hash) const;
 
 	GEOLIB::GEOObjects* _geoObjects;
-	
+
 	std::string _schemaName;
 	std::map<size_t, size_t> _idx_map;
 };

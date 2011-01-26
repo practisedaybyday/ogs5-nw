@@ -21,6 +21,8 @@ set( SOURCES
 	GEOObjects.cpp
 	PointVec.cpp
 	GeoType.cpp
+	BruteForceClosestPair.cpp
+	DivideAndConquerClosestPair.cpp
 )
 
 # Header files
@@ -37,6 +39,7 @@ set( HEADERS
 	AxisAlignedBoundingBox.h
 	TemplatePoint.h
 	Point.h
+	PointWithID.h
 	Polyline.h
 	PolylineSmoother.h
 	Polygon.h
@@ -54,6 +57,9 @@ set( HEADERS
 	GeoObject.h
 	GeoType.h
 	QuadTree.h
+	ClosestPair.h
+	BruteForceClosestPair.h
+	DivideAndConquerClosestPair.h
 )
 
 # Create the library

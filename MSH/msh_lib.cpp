@@ -1498,50 +1498,36 @@ long MSHGetNextNode (long startnode, CFEMesh* m_msh)
 /**************************************************************************/
 void MSHSelectFreeSurfaceNodes (CFEMesh* m_msh)
 {
-   long i;
-   long startnode;
-   long nextnode;
-   long *strang=NULL;
-   long NumberOfNodes;
-   long NumberOfNodesPerLayer;
-   int NumberOfLayers;
-
    // Number of nodes per node layer
-   NumberOfNodes = (long)m_msh->nod_vector.size();
-   NumberOfLayers = m_msh->getNumberOfMeshLayers();
-   NumberOfNodesPerLayer = NumberOfNodes / (NumberOfLayers + 1);
-   int no_unconfined_layer = 0;
-   // create array with nodes in vertical column
-   for (i = 0; i < NumberOfNodesPerLayer; i++)
-   {
+	size_t NumberOfNodesPerLayer = m_msh->nod_vector.size()
+			/ (m_msh->getNumberOfMeshLayers() + 1);
+	size_t no_unconfined_layer = 0;
+	// create array with nodes in vertical column
+	size_t *strang(new size_t[m_msh->getNumberOfMeshLayers()]);
+	for (size_t i = 0; i < NumberOfNodesPerLayer; i++) {
+		if (m_msh->nod_vector[i]->free_surface == 4) {
+			size_t nextnode = i;
+			no_unconfined_layer = 0;
+			for (size_t j = 0; j < m_msh->getNumberOfMeshLayers(); j++) {
+				//				strang = (long*) Realloc(strang,(j+1)*sizeof(long));
+				strang[j] = nextnode;
+				size_t startnode = nextnode;
+				nextnode = MSHGetNextNode(startnode, m_msh);
+				if (m_msh->nod_vector[nextnode]->free_surface == 4) {
+					strang[j + 1] = nextnode;
+					no_unconfined_layer++;
+				} else {
+					continue;
+				}
+			}
+		} //endif free_surface==4
 
-      if(m_msh->nod_vector[i]->free_surface == 4)
-      {
-         nextnode = i;
-         no_unconfined_layer = 0;
-         for (size_t j=0; j < m_msh->getNumberOfMeshLayers(); j++)
-         {
-            strang = (long*) Realloc(strang,(j+1)*sizeof(long));
-            strang[j] = nextnode;
-            startnode = nextnode;
-            nextnode = MSHGetNextNode (startnode, m_msh);
-            if(m_msh->nod_vector[nextnode]->free_surface == 4)
-            {
-               strang[j+1] = nextnode;
-               no_unconfined_layer++;
-            }
-            else
-            {
-               continue;
-            }
-         }
-      }                                           //endif free_surface==4
-
-      // mark start of vertical column with 1 - end of column with 2
-      // this is than used in MSHMoveNODUcFlow
-      m_msh->nod_vector[strang[0]]->free_surface = 1;
-      m_msh->nod_vector[strang[no_unconfined_layer]]->free_surface = 2;
-   }                                              /*endfor*/
+		// mark start of vertical column with 1 - end of column with 2
+		// this is than used in MSHMoveNODUcFlow
+		m_msh->nod_vector[strang[0]]->free_surface = 1;
+		m_msh->nod_vector[strang[no_unconfined_layer]]->free_surface = 2;
+	} /*endfor*/
+	delete[] strang;
 }
 
 

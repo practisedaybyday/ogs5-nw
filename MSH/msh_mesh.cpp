@@ -2133,7 +2133,8 @@ namespace Mesh_Group
       double tolerance = 0.001;
       double min_mesh_dist = 0.0;
       double tri_point1[3], tri_point2[3], tri_point3[3], checkpoint[3];
-      double sfc_min[3], sfc_max[3];
+      double sfc_min[3] = {m_sfc->TIN->Triangles[0]->x[0], m_sfc->TIN->Triangles[0]->y[0], m_sfc->TIN->Triangles[0]->z[0] };
+      double sfc_max[3] = {m_sfc->TIN->Triangles[0]->x[0], m_sfc->TIN->Triangles[0]->y[0], m_sfc->TIN->Triangles[0]->z[0] };
 
       CTriangle *m_triangle = NULL;
       //----------------------------------------------------------------------

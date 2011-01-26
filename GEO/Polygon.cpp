@@ -101,6 +101,12 @@ bool Polygon::isPntInPolygon (const GEOLIB::Point& pnt) const
 	return false;
 }
 
+bool Polygon::isPntInPolygon (double x, double y, double z) const
+{
+	const GEOLIB::Point pnt(x,y,z);
+	return isPntInPolygon (pnt);
+}
+
 bool Polygon::isPolylineInPolygon (const Polyline& ply) const
 {
 	size_t ply_size (ply.getNumberOfPoints()), cnt (0);
