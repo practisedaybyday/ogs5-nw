@@ -2,7 +2,7 @@
  * ModifyMeshProperties.h
  *
  *  Created on: Dec 8, 2010
- *      Author: fischeth
+ *      Author: TF
  */
 
 #ifndef MODIFYMESHPROPERTIES_H_

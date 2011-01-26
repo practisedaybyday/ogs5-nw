@@ -25,7 +25,20 @@ public:
 	Polygon(const Polyline &ply);
 	virtual ~Polygon();
 
+	/**
+	 * checks if the given point is inside the polygon
+	 * @param pnt the Point
+	 * @return if point is inside the polygon true, else false
+	 */
 	bool isPntInPolygon (const GEOLIB::Point& pnt) const;
+	/**
+	 * wrapper for method isPntInPolygon (const GEOLIB::Point&)
+	 * @param x x coordinate of point
+	 * @param y y coordinate of point
+	 * @param z z coordinate of point
+	 * @return if point is inside the polygon true, else false
+	 */
+	bool isPntInPolygon (double x, double y, double z) const;
 	bool isPolylineInPolygon (const Polyline& ply) const;
 	GEOLIB::Point* getIntersectionPointPolygonLine (GEOLIB::Point const & a, GEOLIB::Point const & b) const;
 	void computeListOfSimplePolygons ();

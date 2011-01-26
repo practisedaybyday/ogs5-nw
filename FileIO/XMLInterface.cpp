@@ -610,7 +610,7 @@ void XMLInterface::writeGLIFile(const QString &filename, const QString &gliName)
 					xml.writeAttribute("name", QString::fromStdString(sfc_name));
 
 				// writing the elements compromising the surface
-				size_t nElements = (*surfaces)[i]->getNTriangles();
+				size_t nElements = ((*surfaces)[i])->getNTriangles();
 				for (size_t j=0; j<nElements; j++)
 				{
 					xml.writeStartElement("element"); //triangle-element
