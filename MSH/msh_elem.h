@@ -234,8 +234,7 @@ namespace Mesh_Group
          {
             return face_index;
          }
-         int GetFaceType();
-         int GetElementFaceNodes(const int Face, int *FacesNode);
+         int GetElementFaceNodes(int Face, int *FacesNode);
          //------------------------------------------------------------------
          // Neighbors
          void SetNeighbors(vec<CElem*>& ele_neighbors)
@@ -261,7 +260,7 @@ namespace Mesh_Group
          // Coordinates transform
          void FillTransformMatrix();
          void FillTransformMatrix(int noneed);
-         double getTransformTensor(const int idx);
+         double getTransformTensor(int idx);
          void AllocateMeomoryforAngle()
          {
             if (!angle)

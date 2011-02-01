@@ -28,7 +28,7 @@
 
 namespace MATHLIB {
 
-size_t getOrientation (const double& p0_x, const double& p0_y,
+Orientation getOrientation (const double& p0_x, const double& p0_y,
 	const double& p1_x, const double& p1_y,
 	const double& p2_x, const double& p2_y)
 {
@@ -43,7 +43,7 @@ size_t getOrientation (const double& p0_x, const double& p0_y,
 	return CW;
 }
 
-size_t getOrientation (const GEOLIB::Point* p0, const GEOLIB::Point* p1, const GEOLIB::Point* p2)
+Orientation getOrientation (const GEOLIB::Point* p0, const GEOLIB::Point* p1, const GEOLIB::Point* p2)
 {
 	return getOrientation ((*p0)[0], (*p0)[1], (*p1)[0], (*p1)[1], (*p2)[0], (*p2)[1]);
 }

@@ -70,27 +70,27 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
-	std::vector<GEOLIB::Point*> *sfc_pnts (new std::vector<GEOLIB::Point*>);
-	std::vector<GEOLIB::Surface*> *surfaces (new std::vector<GEOLIB::Surface*>);
-
 	Mesh_Group::ExtractSurface extract_surface (mesh);
-	GEOLIB::Polygon polygon (*((*plys)[0]));
-	GEOLIB::Surface* surface (extract_surface.extractSurface(polygon, *sfc_pnts));
-	std::cout << "surface: " << surface << std::endl;
-	surfaces->push_back (surface);
-	std::cout << "number of triangles in surface: " <<  surface->getNTriangles() << std::endl;
-
-	std::string fname ("PointsForSurface");
-	geo->addPointVec (sfc_pnts, fname);
-	geo->addSurfaceVec (surfaces, fname);
-//	// remove initial geometry
-//	geo->removeSurfaceVec (tmp);
-//	geo->removePolylineVec (tmp);
-//	geo->removePointVec (tmp);
-
+	const size_t n_plys (plys->size());
 	XMLInterface xml_out (geo, "OpenGeoSysGLI.xsd");
-	std::string out_fname ("Surface.gml");
-	xml_out.writeGLIFile (out_fname , fname);
+	for (size_t k(0); k<n_plys; k++) {
+		GEOLIB::Polygon polygon (*((*plys)[k]));
+		std::vector<GEOLIB::Point*> *sfc_pnts (new std::vector<GEOLIB::Point*>);
+		std::vector<GEOLIB::Surface*> *surfaces (new std::vector<GEOLIB::Surface*>);
+		GEOLIB::Surface* surface (extract_surface.extractSurface(polygon, *sfc_pnts));
+		surfaces->push_back (surface);
+		std::cout << "number of triangles in surface " << k << ": " <<  surface->getNTriangles() << std::endl;
+
+		std::string fname ("PointsForSurface");
+		fname += number2str (k);
+		geo->addPointVec (sfc_pnts, fname);
+		geo->addSurfaceVec (surfaces, fname);
+
+		std::string out_fname ("Surface");
+		out_fname += number2str (k);
+		out_fname += ".gml";
+		xml_out.writeGLIFile (out_fname , fname);
+	}
 
 	delete mesh;
 	delete geo;

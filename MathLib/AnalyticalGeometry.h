@@ -19,7 +19,7 @@ namespace GEOLIB {
 
 namespace MATHLIB {
 
-enum orientation {
+enum Orientation {
 	CW = 1,
 	CCW = 2,
 	COLLINEAR = 3
@@ -30,14 +30,14 @@ enum orientation {
  * p0_x, p0_y, p1_x, p1_y, p2_x and p2_y
  * \returns CW (clockwise), CCW (counterclockwise) or COLLINEAR (points are on a line)
  */
-size_t getOrientation (const double& p0_x, const double& p0_y,
+Orientation getOrientation (const double& p0_x, const double& p0_y,
 	const double& p1_x, const double& p1_y,
 	const double& p2_x, const double& p2_y);
 
 /**
  * wrapper for getOrientation ()
  */
-size_t getOrientation (const GEOLIB::Point* p0, const GEOLIB::Point* p1, const GEOLIB::Point* p2);
+Orientation getOrientation (const GEOLIB::Point* p0, const GEOLIB::Point* p1, const GEOLIB::Point* p2);
 
 /**
  * computes the circumscribed circle of a triangle given by the 3d-points a, b, c

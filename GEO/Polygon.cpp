@@ -13,6 +13,7 @@
 
 // Base
 #include "quicksort.h"
+#include "swap.h"
 
 namespace GEOLIB {
 
@@ -21,82 +22,101 @@ Polygon::Polygon(const Polyline &ply) :
 	_maxx (std::numeric_limits<double>::min()),
 	_maxy (std::numeric_limits<double>::min())
 {
-	if (ply.isClosed())
-	{
-		size_t n_nodes (getNumberOfPoints()-1);
+	if (ply.isClosed()) {
+		size_t n_nodes (getNumberOfPoints());
+		size_t min_x_max_y_idx (0);	// for orientation check
 		for (size_t k(0); k<n_nodes; k++) {
+			_aabb.update ((*(getPoint(k))));
 			if ((*(getPoint(k)))[0] > _maxx) _maxx = (*(getPoint(k)))[0];
 			if ((*(getPoint(k)))[1] > _maxy) _maxy = (*(getPoint(k)))[1];
+			if ((*(getPoint(k)))[0] <= (*(getPoint(min_x_max_y_idx)))[0]) {
+				if ((*(getPoint(k)))[0] < (*(getPoint(min_x_max_y_idx)))[0]) {
+					min_x_max_y_idx = k;
+				} else {
+					if ((*(getPoint(k)))[1] > (*(getPoint(min_x_max_y_idx)))[1]) {
+						min_x_max_y_idx = k;
+					}
+				}
+			}
 		}
 
 		double s0 (0.1), s1(0.2); // small random values
 		_maxx += _maxx*s0;
 		_maxy += _maxy*s1;
+
+		// determine orientation
+		MATHLIB::Orientation orient;
+		if (0 < min_x_max_y_idx && min_x_max_y_idx < n_nodes-1) {
+			orient = MATHLIB::getOrientation (
+				(*(getPoint(min_x_max_y_idx-1)))[0], (*(getPoint(min_x_max_y_idx-1)))[1],
+				(*(getPoint(min_x_max_y_idx)))[0], (*(getPoint(min_x_max_y_idx)))[1],
+				(*(getPoint(min_x_max_y_idx+1)))[0], (*(getPoint(min_x_max_y_idx+1)))[1]);
+		} else {
+			if (0 == min_x_max_y_idx) {
+				orient = MATHLIB::getOrientation (
+					(*(getPoint(n_nodes-1)))[0], (*(getPoint(n_nodes-1)))[1],
+					(*(getPoint(0)))[0], (*(getPoint(0)))[1],
+					(*(getPoint(1)))[0], (*(getPoint(1)))[1]);
+			} else {
+				orient = MATHLIB::getOrientation (
+					(*(getPoint(n_nodes-2)))[0], (*(getPoint(n_nodes-2)))[1],
+					(*(getPoint(n_nodes-1)))[0], (*(getPoint(n_nodes-1)))[1],
+					(*(getPoint(0)))[0], (*(getPoint(0)))[1]);
+			}
+		}
+		if (orient == MATHLIB::CCW) {
+			// switch orientation
+			for (size_t k(0); k<n_nodes/2; k++) {
+				BASELIB::swap (_ply_pnt_ids[k], _ply_pnt_ids[n_nodes-1-k]);
+			}
+		}
 	}
-	else
+	else {
 		std::cout << "Error in Polygon::Polygon() - base polyline is not closed..." << std::endl;
+	}
 }
 
 Polygon::~Polygon()
 {}
 
-bool Polygon::isPntInPolygon (const GEOLIB::Point& pnt) const
+bool Polygon::isPntInPolygon (GEOLIB::Point const & pnt) const
 {
+	GEOLIB::Point min_aabb_pnt (_aabb.getMinPoint());
+	GEOLIB::Point max_aabb_pnt (_aabb.getMaxPoint());
+
+	if (pnt[0] < min_aabb_pnt[0] || max_aabb_pnt[0] < pnt[0] || pnt[1] < min_aabb_pnt[1] || max_aabb_pnt[1] < pnt[1])
+		return false;
+
 	size_t n_intersections (0);
 	GEOLIB::Point s;
 
 	if (_simple_polygon_list.empty ()) {
 		const size_t n_nodes (getNumberOfPoints()-1);
-		const GEOLIB::Point other (_maxx, _maxy, pnt[2]);
 		for (size_t k(0); k<n_nodes; k++) {
-			if (MATHLIB::lineSegmentIntersect (*(getPoint(k)), *(getPoint(k+1)), other, pnt, s)) {
-				n_intersections++;
-			}
-		}
-	} else {
-		for (std::list<Polygon*>::const_iterator it (_simple_polygon_list.begin());
-			it != _simple_polygon_list.end(); ++it) {
-			const Polygon* polygon (*it);
-			const GEOLIB::Point other (_maxx, _maxy, pnt[2]);
-			const size_t n_nodes_simple_polygon (polygon->getNumberOfPoints()-1);
-			for (size_t k(0); k<n_nodes_simple_polygon; k++) {
-				if (MATHLIB::lineSegmentIntersect (*(polygon->getPoint(k)), *(polygon->getPoint(k+1)), other, pnt, s)) {
-					n_intersections++;
-				}
-			}
-		}
-	}
-	if (n_intersections%2 == 1) return true;
-
-	// check if point is at the border points
-	if (_simple_polygon_list.empty ()) {
-		const size_t n_nodes (getNumberOfPoints());
-		for (size_t k(0); k<n_nodes; k++) {
-			if (MATHLIB::sqrDist (getPoint(k), &pnt) < sqrt(std::numeric_limits<double>::min()))
-				return true;
-		}
-	} else {
-		for (std::list<Polygon*>::const_iterator it (_simple_polygon_list.begin());
-			it != _simple_polygon_list.end(); ++it) {
-			const size_t n_nodes_simple_polygon ((*it)->getNumberOfPoints());
-			for (size_t k(0); k<n_nodes_simple_polygon; k++) {
-				if (MATHLIB::sqrDist ((*it)->getPoint(k), &pnt) < sqrt(std::numeric_limits<double>::min())) {
+			if ((*(getPoint(k)))[1] <= pnt[1] && pnt[1] <= (*(getPoint(k+1)))[1] ||
+					(*(getPoint(k+1)))[1] <= pnt[1] && pnt[1] <= (*(getPoint(k)))[1]) {
+				switch (getEdgeType(k, pnt)) {
+				case EdgeType::TOUCHING:
 					return true;
+					break;
+				case EdgeType::CROSSING:
+					n_intersections++;
+					break;
+				case EdgeType::INESSENTIAL:
+					break;
+				default:
+					// do nothing
+					;
 				}
 			}
 		}
-	}
-
-	// check if point is at the border lines
-	if (_simple_polygon_list.empty ()) {
-		const size_t n_nodes (getNumberOfPoints()-1);
-		for (size_t k(0); k<n_nodes; k++) {
-			double d0, d1, lambda(0.0);
-			d1 = MATHLIB::calcProjPntToLineAndDists(pnt.getData(), getPoint(k)->getData(),
-					getPoint(k+1)->getData(), lambda, d0);
-			if (d0 < sqrt(std::numeric_limits<double>::min()) && 0.0 <= lambda && lambda <= 1.0)
-				return true;
+		if (n_intersections%2 == 1) return true;
+	} else {
+		for (std::list<Polygon*>::const_iterator it (_simple_polygon_list.begin());
+			it != _simple_polygon_list.end(); ++it) {
+			if ((*it)->isPntInPolygon (pnt)) return true;
 		}
+		return false;
 	}
 	return false;
 }
@@ -159,6 +179,33 @@ void Polygon::computeListOfSimplePolygons ()
 	_simple_polygon_list.push_back (this);
 	splitPolygonAtPoint (_simple_polygon_list.begin());
 	splitPolygonAtIntersection (_simple_polygon_list.begin());
+}
+
+EdgeType::value Polygon::getEdgeType (size_t k, GEOLIB::Point const & pnt) const
+{
+	switch (getLocationOfPoint(k, pnt)) {
+	case Location::LEFT: {
+		const GEOLIB::Point & v (*(getPoint(k)));
+		const GEOLIB::Point & w (*(getPoint(k+1)));
+		if (v[1] < pnt[1] && pnt[1] <= w[1]) return EdgeType::CROSSING;
+		else return EdgeType::INESSENTIAL;
+		break;
+	}
+	case Location::RIGHT: {
+		const GEOLIB::Point & v (*(getPoint(k)));
+		const GEOLIB::Point & w (*(getPoint(k+1)));
+		if (w[1] < pnt[1] && pnt[1] <= v[1]) return EdgeType::CROSSING;
+		else return EdgeType::INESSENTIAL;
+		break;
+	}
+	case Location::BETWEEN:
+	case Location::SOURCE:
+	case Location::DESTINATION:
+		return EdgeType::TOUCHING;
+		break;
+	default:
+		return EdgeType::INESSENTIAL;
+	}
 }
 
 void Polygon::splitPolygonAtIntersection (std::list<Polygon*>::iterator polygon_it)

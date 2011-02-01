@@ -78,6 +78,8 @@ void ExtractMeshNodes::writeTopSurfaceMeshNodeIDs (std::ostream& os, std::ostrea
 			os << p0.getID() << std::endl;
 		}
 	}
+	// write last point
+	os << nodes_as_points[nodes_as_points.size()-1].getID() << std::endl;
 
 	size_t n_nodes (0);
 	gli_out.precision (14);
@@ -89,6 +91,9 @@ void ExtractMeshNodes::writeTopSurfaceMeshNodeIDs (std::ostream& os, std::ostrea
 			n_nodes++;
 		}
 	}
+	// write last point
+	gli_out << n_nodes + _gli_pnt_offset << " " << std::scientific << nodes_as_points[nodes_as_points.size()-1] << " $NAME " << nodes_as_points[nodes_as_points.size()-1].getID() << std::endl;
+	n_nodes++;
 	_gli_pnt_offset += n_nodes;
 }
 

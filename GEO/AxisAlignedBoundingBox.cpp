@@ -34,6 +34,11 @@ void AABB::update (double x, double y, double z)
 	if (_max_pnt[2] < z) _max_pnt[2] = z;
 }
 
+bool AABB::containsPoint (GEOLIB::Point const & pnt) const
+{
+	return containsPoint (pnt[0], pnt[1], pnt[2]);
+}
+
 bool AABB::containsPoint (const double *pnt) const
 {
 	return containsPoint (pnt[0], pnt[1], pnt[2]);
