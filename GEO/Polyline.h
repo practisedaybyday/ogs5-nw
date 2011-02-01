@@ -8,16 +8,30 @@
 #ifndef POLYLINE_H_
 #define POLYLINE_H_
 
-// Math
-#include "MathTools.h"
-
+// GEOLIB
 #include "GeoObject.h"
 #include "Point.h"
+
+// MATHLIB
+#include "MathTools.h"
 
 #include <vector>
 #include <cmath>
 
 namespace GEOLIB {
+
+class Location {
+public:
+	enum type {
+		LEFT,
+		RIGHT,
+		BEYOND,
+		BEHIND,
+		BETWEEN,
+		SOURCE,
+		DESTINATION
+	};
+};
 
 /**
  * \ingroup GEOLIB
@@ -101,6 +115,17 @@ public:
 	const std::vector<double>& getLengthVec () const;
 
 protected:
+	/**
+	 * 2D method - ignores z coordinate. It calculates the location
+	 * of the point relative to the k-th line segment of the polyline.
+	 * (literatur reference:
+	 * Computational Geometry and Computer Graphics in C++; Michael J. Laszlo)
+	 * @param k the number of line segment
+	 * @param pnt the point
+	 * @return a value of enum LOCATION
+	 */
+	Location::type getLocationOfPoint (size_t k, GEOLIB::Point const & pnt) const;
+
 	/** a reference to the vector of pointers to the geometric points */
 	const std::vector<Point*> &_ply_pnts;
 	/** position of pointers to the geometric points */

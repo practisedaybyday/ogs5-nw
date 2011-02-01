@@ -326,7 +326,7 @@ namespace Mesh_Group
    Programing:
    02/2006 PCH Implementation
    **************************************************************************/
-   double CElem::getTransformTensor(const int idx)
+   double CElem::getTransformTensor(int idx)
    {
       //WW
       int i = idx%3;
@@ -334,17 +334,19 @@ namespace Mesh_Group
       return (*tranform_tensor)(i,j);
       //return MatT[idx];
    }
+
    /**************************************************************************
    MSHLib-Method:
    Task:
    Programing:
    06/2005 WW Implementation
    **************************************************************************/
-   void CElem:: SetFace()
+   void CElem::SetFace()
    {
       nodes.resize(8);
       nodes_index.resize(8);
    }
+
    /**************************************************************************
    MSHLib-Method:
    Task:
@@ -398,220 +400,227 @@ namespace Mesh_Group
       return MshElemType2String(geo_type);
    }
 
-   /**************************************************************************
-   MSHLib-Method:
-   Programing:
-   06/2005 WW Implementation
-   08/2005 WW/OK Extension for GMS/SOL files
-   10/2008 OK FEFLOW
-   **************************************************************************/
-   void CElem::Read(std::istream& is, int fileType)
-   {
-      //fileType=0: msh
-      //fileType=1: rfi
-      //fileType=2: gmsh
-      //fileType=3: GMS
-      //fileType=4: SOL
-      //fileType=5: FLAC 3D. WW
-      //fileType=5x: FLAC3D //MR
-      //fileType=6: FEFLOW //OK
-      //fileType=7: GMSH 2008 Version//TK
-      int idummy, et;
-      std::string buffer, name;
-      idummy=et=-1;
-      int j=0;
-      int gmsh_patch_index;                       //TKOK
-      int nb_tags;                                //TK
+/**************************************************************************
+ MSHLib-Method:
+ Programing:
+ 06/2005 WW Implementation
+ 08/2005 WW/OK Extension for GMS/SOL files
+ 10/2008 OK FEFLOW
+ **************************************************************************/
+void CElem::Read(std::istream& is, int fileType)
+{
+	//fileType=0: msh
+	//fileType=1: rfi
+	//fileType=2: gmsh
+	//fileType=3: GMS
+	//fileType=4: SOL
+	//fileType=5: FLAC 3D. WW
+	//fileType=5x: FLAC3D //MR
+	//fileType=6: FEFLOW //OK
+	//fileType=7: GMSH 2008 Version//TK
+	int idummy, et;
+	std::string buffer, name;
+	idummy = et = -1;
+	int j = 0;
+	int gmsh_patch_index; //TKOK
+	int nb_tags; //TK
 
-      //   is.ignore(numeric_limits<int>::max(), '\n');
-      //----------------------------------------------------------------------
-      // 1 Reading element type data
-      switch(fileType)
-      {
-         //....................................................................
-         case 0:                                  // msh
-            is>>index>>patch_index;
-            is>>buffer;
+	//   is.ignore(numeric_limits<int>::max(), '\n');
+	//----------------------------------------------------------------------
+	// 1 Reading element type data
+	switch (fileType) {
+	//....................................................................
+	case 0: // msh
+		is >> index >> patch_index;
+		is >> buffer;
 
-            if(buffer.find("-1")!=std::string::npos)
-            {
-               grid_adaptation = strtol(buffer.data(),NULL,0);
-               is>>name;
-            }
-            else
-               name = buffer;
+		if (buffer.find("-1") != std::string::npos) {
+			grid_adaptation = strtol(buffer.data(), NULL, 0);
+			is >> name;
+		} else
+			name = buffer;
 
-            geo_type = String2MshElemType(name);
-            break;
-            //....................................................................
-         case 1:                                  // rfi
-            is>>index>>patch_index>>name;
-            geo_type = String2MshElemType(name);
-            break;
-            //....................................................................
-         case 2:                                  // gmsh
-            is >> index >> et >> gmsh_patch_index >> idummy >> nnodes;
-            patch_index = gmsh_patch_index-1;     //OK
-            switch(et)
-            {
-               case 1: geo_type = MshElemType::LINE; break;
-               case 2: geo_type = MshElemType::TRIANGLE; break;
-               case 3: geo_type = MshElemType::QUAD; break;
-               case 4: geo_type = MshElemType::TETRAHEDRON; break;
-               case 5: geo_type = MshElemType::HEXAHEDRON; break;
-               case 6: geo_type = MshElemType::PRISM; break;
-            }
-            index--;
-            break;
-         case 7:                                  // GMSH 2008
-            is >> index >> et >> nb_tags >> gmsh_patch_index;
-            patch_index = gmsh_patch_index;
-            for (j=0;j<nb_tags-1;j++)
-            {
-               is>>idummy;
-            }
-            switch(et)
-            {
-               case 1: geo_type = MshElemType::LINE; nnodes=2; break;
-               case 2: geo_type = MshElemType::TRIANGLE; nnodes=3; break;
-               case 3: geo_type = MshElemType::QUAD; nnodes=4; break;
-               case 4: geo_type = MshElemType::TETRAHEDRON; nnodes=4; break;
-               case 5: geo_type = MshElemType::HEXAHEDRON; nnodes=8; break;
-               case 6: geo_type = MshElemType::PRISM; nnodes=6; break;
-               case 15: geo_type = MshElemType::INVALID; nnodes=1; break;
-               default:
-                  geo_type = MshElemType::INVALID;
-            }
-            index--;
-            break;
-            //....................................................................
-         case 3:                                  // GMS
-            geo_type = MshElemType::TRIANGLE;
-            break;
-            //....................................................................
-         case 4:                                  // gmsh
-            geo_type = MshElemType::TRIANGLE;
-            break;
-            //....................................................................
-         case 5:                                  // FLAC 3D. 14.01.2008 WW
-            geo_type = MshElemType::HEXAHEDRON;
-            break;
-         case 56:                                 // FLAC3D - pri (Wedge)        //MR
-            geo_type = MshElemType::PRISM;        //MR
-            fileType = 5;                         //MR
-            break;                                //MR
-      }
+		geo_type = String2MshElemType(name);
+		break;
+		//....................................................................
+	case 1: // rfi
+		is >> index >> patch_index >> name;
+		geo_type = String2MshElemType(name);
+		break;
+		//....................................................................
+	case 2: // gmsh
+		is >> index >> et >> gmsh_patch_index >> idummy >> nnodes;
+		patch_index = gmsh_patch_index - 1; //OK
+		switch (et) {
+		case 1:
+			geo_type = MshElemType::LINE;
+			break;
+		case 2:
+			geo_type = MshElemType::TRIANGLE;
+			break;
+		case 3:
+			geo_type = MshElemType::QUAD;
+			break;
+		case 4:
+			geo_type = MshElemType::TETRAHEDRON;
+			break;
+		case 5:
+			geo_type = MshElemType::HEXAHEDRON;
+			break;
+		case 6:
+			geo_type = MshElemType::PRISM;
+			break;
+		}
+		index--;
+		break;
+	case 7: // GMSH 2008
+		is >> index >> et >> nb_tags >> gmsh_patch_index;
+		patch_index = gmsh_patch_index;
+		for (j = 0; j < nb_tags - 1; j++) {
+			is >> idummy;
+		}
+		switch (et) {
+		case 1:
+			geo_type = MshElemType::LINE;
+			nnodes = 2;
+			break;
+		case 2:
+			geo_type = MshElemType::TRIANGLE;
+			nnodes = 3;
+			break;
+		case 3:
+			geo_type = MshElemType::QUAD;
+			nnodes = 4;
+			break;
+		case 4:
+			geo_type = MshElemType::TETRAHEDRON;
+			nnodes = 4;
+			break;
+		case 5:
+			geo_type = MshElemType::HEXAHEDRON;
+			nnodes = 8;
+			break;
+		case 6:
+			geo_type = MshElemType::PRISM;
+			nnodes = 6;
+			break;
+		case 15:
+			geo_type = MshElemType::INVALID;
+			nnodes = 1;
+			break;
+		default:
+			geo_type = MshElemType::INVALID;
+		}
+		index--;
+		break;
+		//....................................................................
+	case 3: // GMS
+		geo_type = MshElemType::TRIANGLE;
+		break;
+		//....................................................................
+	case 4: // gmsh
+		geo_type = MshElemType::TRIANGLE;
+		break;
+		//....................................................................
+	case 5: // FLAC 3D. 14.01.2008 WW
+		geo_type = MshElemType::HEXAHEDRON;
+		break;
+	case 56: // FLAC3D - pri (Wedge)        //MR
+		geo_type = MshElemType::PRISM; //MR
+		fileType = 5; //MR
+		break; //MR
+	}
 
-      // TF
-      if (geo_type == MshElemType::INVALID)
-      {
-         // read rest of line
-         std::string tmp;
-         getline (is, tmp);
-         return;
-      }
+	// TF
+	if (geo_type == MshElemType::INVALID) {
+		// read rest of line
+		std::string tmp;
+		getline(is, tmp);
+		return;
+	}
 
-      //----------------------------------------------------------------------
-      // 2 Element configuration
-      this->setElementProperties(geo_type);
+	//----------------------------------------------------------------------
+	// 2 Element configuration
+	this->setElementProperties(geo_type);
 
-      //----------------------------------------------------------------------
-      // 3 Reading element node data
-      switch(fileType)
-      {
-         //....................................................................
-         case 0:                                  // msh
-            for(int i=0; i<nnodes; i++)
-               is>>nodes_index[i];
-            break;
-            //....................................................................
-         case 1:                                  // rfi
-            for(int i=0; i<nnodes; i++)
-               is>>nodes_index[i];
-            break;
-            //....................................................................
-         case 2:                                  // gmsh
-            for(int i=0; i<nnodes; i++)
-            {
-               is>>nodes_index[i];
-               nodes_index[i] -= 1;
-            }
-            break;
-            //....................................................................
-         case 7:                                  // GMSH 2008
-            if (et != 15)
-            {
-               for(int i=0; i<nnodes; i++)
-               {
-                  is>>nodes_index[i];
-                  nodes_index[i] -= 1;
-               }
-            }
-            else
-            {
-               // eat rest of line
-               std::string dummy;
-               is >> dummy;
-            }
-            break;
-            //....................................................................
-         case 3:                                  // GMS
-            for(int i=0; i<nnodes; i++)
-            {
-               is>>nodes_index[i];
-               nodes_index[i] -= 1;
-            }
-            break;
-            //....................................................................
-         case 4:                                  // SOL
-            for(int i=0; i<nnodes; i++)
-            {
-               is>>nodes_index[i];
-               nodes_index[i] -= 1;
-            }
-            is >> patch_index;
-            break;
-            //....................................................................
-         case 5:                                  // FLAC 3D. 14.01.2008. WW
-            for(int i=0; i<nnodes; i++)
-            {
-               is>>nodes_index[i];
-               nodes_index[i] -= 1;
-            }
-            break;
-            //....................................................................
-         case 6:                                  // FEFLOLW
-            for(int i=0; i<nnodes; i++)
-            {
-               is>>nodes_index[i];
-               nodes_index[i] -= 1;
-            }
-            break;
-         case 8:                                  // GMS_3DM
-            is>>idummy;
-            for(int i=0; i<nnodes; i++)
-            {
-               is>>nodes_index[i];
-               nodes_index[i] -= 1;
-            }
-            is>>patch_index;
-            patch_index-=1;
-            break;
-      }
-      is>>std::ws;
-      //----------------------------------------------------------------------
-      // Initialize topological properties
-      neighbors.resize(nfaces);
-      for(int i=0; i<nfaces; i++)
-         neighbors[i] = NULL;
-      edges.resize(nedges);
-      edges_orientation.resize(nedges);
-      for(int i=0; i<nedges; i++)
-      {
-         edges[i] = NULL;
-         edges_orientation[i] = 1;
-      }
-   }
+	//----------------------------------------------------------------------
+	// 3 Reading element node data
+	switch (fileType) {
+	case 0: // msh
+		for (int i = 0; i < nnodes; i++)
+			is >> nodes_index[i];
+		break;
+	case 1: // rfi
+		for (int i = 0; i < nnodes; i++)
+			is >> nodes_index[i];
+		break;
+	case 2: // gmsh
+		for (int i = 0; i < nnodes; i++) {
+			is >> nodes_index[i];
+			nodes_index[i] -= 1;
+		}
+		break;
+	case 7: // GMSH 2008
+		if (et != 15) {
+			for (int i = 0; i < nnodes; i++) {
+				is >> nodes_index[i];
+				nodes_index[i] -= 1;
+			}
+		} else {
+			// eat rest of line
+			std::string dummy;
+			is >> dummy;
+		}
+		break;
+	case 3: // GMS
+		for (int i = 0; i < nnodes; i++) {
+			is >> nodes_index[i];
+			nodes_index[i] -= 1;
+		}
+		break;
+	case 4: // SOL
+		for (int i = 0; i < nnodes; i++) {
+			is >> nodes_index[i];
+			nodes_index[i] -= 1;
+		}
+		is >> patch_index;
+		break;
+	case 5: // FLAC 3D. 14.01.2008. WW
+		for (int i = 0; i < nnodes; i++) {
+			is >> nodes_index[i];
+			nodes_index[i] -= 1;
+		}
+		break;
+	case 6: // FEFLOLW
+		for (int i = 0; i < nnodes; i++) {
+			is >> nodes_index[i];
+			nodes_index[i] -= 1;
+		}
+		break;
+	case 8: // GMS_3DM
+		is >> idummy;
+		for (int i = 0; i < nnodes; i++) {
+			is >> nodes_index[i];
+			nodes_index[i] -= 1;
+		}
+		is >> patch_index;
+		patch_index -= 1;
+		break;
+	}
+	is >> std::ws;
+	//----------------------------------------------------------------------
+	// Initialize topological properties
+	neighbors.resize(nfaces);
+	for (int i = 0; i < nfaces; i++)
+		neighbors[i] = NULL;
+	edges.resize(nedges);
+	edges_orientation.resize(nedges);
+	for (int i = 0; i < nedges; i++) {
+		edges[i] = NULL;
+		edges_orientation[i] = 1;
+	}
+}
+
    void CElem::InitializeMembers()
    {
       // Initialize topological properties
@@ -704,15 +713,13 @@ namespace Mesh_Group
    **************************************************************************/
    void CElem::WriteIndex(std::ostream &os) const
    {
-      int nn;
-      std::string deli = "  ";
-      nn = nnodes;
       //Comment for GUI WW if(quadratic) nn = nnodesHQ;
-      os<<index<<deli<<patch_index<<deli<<GetName()<<deli;
-      for(int i=0; i<nn; i++)
-         os<<nodes_index[i]<<deli;
-      os<<std::endl;
+      os << index << "  " << patch_index << "  " << GetName() << "  ";
+      for(int i=0; i<nnodes; i++)
+         os << nodes_index[i] << "  ";
+      os << std::endl;
    }
+
    /**************************************************************************
    MSHLib-Method:
    Task:
@@ -1104,8 +1111,7 @@ namespace Mesh_Group
    GetElementFaceNodesPri
    Task: Get local indeces of a prismal element face nodes
    Augs.:
-           const int Face :  Local index of element face
-           const int order:  1 Linear. 2, quadratic
+           int Face :  Local index of element face
            int *FaceNode  :  Local index of face nodes
    Return: number of nodes of a face
    Programing:

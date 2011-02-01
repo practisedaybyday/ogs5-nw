@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 SET ( SOURCES
 	testrunner.cpp
 	testBase.cpp
+	testGeo.cpp
 )
 
 IF (NOT MSVC)
@@ -13,10 +14,13 @@ ENDIF (NOT MSVC)
 
 include_directories(
 	../Base
+	../FileIO
+	../GEO
+	../MathLib
 )
 
 add_executable (testrunner ${SOURCES})
-target_link_libraries(testrunner ${GTEST_BOTH_LIBRARIES})
+target_link_libraries(testrunner ${GTEST_BOTH_LIBRARIES} FileIO GEO MathLib)
 
 IF (WIN32)
 	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/testrunner)
@@ -73,4 +77,5 @@ endmacro ( UPDATE_MODEL_FILES dirOUT fileLIST)
 # on compile flags but it is safe to copy them all across
 IF (NOT MSVC)
 	add_subdirectory( data/bmskel )
+	add_subdirectory( data/GEO )
 ENDIF (NOT MSVC)

@@ -36,7 +36,7 @@ void GEOObjects::addPointVec(std::vector<Point*> *points, std::string &name, std
 {
 	isUniquePointVecName(name);
 	_pnt_vecs.push_back(new PointVec(name, points, pnt_id_name_map));
-	std::cout << "minimal dist between points: " << (_pnt_vecs[_pnt_vecs.size()-1])->getShortestPointDistance () << std::endl;
+//	std::cout << "minimal dist between points: " << (_pnt_vecs[_pnt_vecs.size()-1])->getShortestPointDistance () << std::endl;
 }
 
 bool GEOObjects::appendPointVec(const std::vector<Point*> &points, std::string &name)
@@ -180,7 +180,9 @@ const std::vector<Polyline*> *GEOObjects::getPolylineVec(const std::string &name
 		if (_ply_vecs[i]->getName().compare(name)==0)
 			return _ply_vecs[i]->getVector();
 	}
-	std::cout << "GEOObjects::getPolylineVec() - No entry found with name \"" << name << "." << std::endl;
+#ifndef NDEBUG
+	std::cout << "DEB: GEOObjects::getPolylineVec() - No entry found with name \"" << name << "." << std::endl;
+#endif
 	return NULL;
 }
 
@@ -191,7 +193,9 @@ const PolylineVec* GEOObjects::getPolylineVecObj(const std::string &name) const
 		if (_ply_vecs[i]->getName().compare(name)==0)
 			return _ply_vecs[i];
 	}
-	std::cout << "GEOObjects::getPolylineVec() - No entry found with name \"" << name << "\"." << std::endl;
+#ifndef NDEBUG
+	std::cout << "DEB: GEOObjects::getPolylineVec() - No entry found with name \"" << name << "\"." << std::endl;
+#endif
 	return NULL;
 }
 
@@ -206,8 +210,10 @@ bool GEOObjects::removePolylineVec(const std::string &name)
 			return true;
 		}
 	}
+#ifndef NDEBUG
 	std::cout << "GEOObjects::removePolylineVec() - No entry found with name \""
 			<< name << "\"." << std::endl;
+#endif
 	return false;
 }
 
