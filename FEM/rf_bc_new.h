@@ -82,7 +82,7 @@ class CBoundaryCondition : public ProcessInfo, public GeoInfo, public Distributi
 
       const std::vector<std::string>& getPointsFCTNames () const { return _PointsFCTNames; }
 
-      const size_t getMeshNodeNumber () const { return _msh_node_number; }
+      size_t getMeshNodeNumber () const { return _msh_node_number; }
       const std::string& getMeshTypeName () const { return _msh_type_name; }
 
    private:

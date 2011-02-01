@@ -9,6 +9,7 @@
 #define CUBICSPLINE_H_
 
 #include <vector>
+#include <cstddef>
 
 namespace MATHLIB {
 
