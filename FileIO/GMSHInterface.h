@@ -16,6 +16,9 @@
 
 namespace FileIO {
 
+/**
+ * \brief Reads and writes GMSH-files to and from OGS data structures.
+ */
 class GMSHInterface {
 public:
 	/**
