@@ -36,7 +36,6 @@ Programing:
 #include <cfloat>
 #include <iostream>
 #include <iomanip>                                //WW
-#include <cstring>
 //#include <algorithm> // header of transform. WW
 // GEOLib
 //#include "geo_ply.h"
@@ -1499,6 +1498,7 @@ std::ios::pos_type CRFProcess::Read(std::ifstream *pcs_file)
                H_Process = true;
                MASS_TRANSPORT_Process = true;
                pcs_no_components++;
+               this->setProcessPrimaryVariable(CONCENTRATION);
             }
             //				if (_pcs_type_name.find("HEAT") != string::npos)
             if (this->getProcessType() == HEAT_TRANSPORT)
@@ -3059,6 +3059,7 @@ void CRFProcess::ConfigRandomWalk()
    pcs_number_of_evals = 1;
    pcs_eval_name[0] = "CONCENTRATION0";
    pcs_eval_unit[0]  = "kg/m3";
+
 }
 
 
@@ -3647,16 +3648,16 @@ double CRFProcess::Execute()
    //
 #ifdef NEW_EQS                                 //WW
 #if defined(USE_MPI)
-   dom->eqs->Solver(eqs_new->x, global_eqs_dim);  //21.12.2007
+   iter_lin=dom->eqs->Solver(eqs_new->x, global_eqs_dim);  //21.12.2007
 #else
 #ifdef LIS
-   eqs_new->Solver(this->m_num);                  //NW
+   iter_lin=eqs_new->Solver(this->m_num);                  //NW
 #else
-   eqs_new->Solver();
+   iter_lin=eqs_new->Solver();
 #endif
 #endif
 #else
-   ExecuteLinearSolver();
+   iter_lin=ExecuteLinearSolver();
 #endif
    //
    //PCSDumpModelNodeValues();
@@ -4480,7 +4481,7 @@ void CRFProcess::SetSTWaterGemSubDomain(int myrank)
    for ( i=0; i<Size; i++ )
    {
       l_index = Water_ST_vec[i].index_node;
-      cout << i << " " << node_connected_doms[l_index] << " " << endl;
+      // cout << i << " " << node_connected_doms[l_index] << " " << endl;
                                                   //values for shared nodes are scaled
       Water_ST_vec[i].water_st_value /= ( double ) node_connected_doms[l_index];
    }
@@ -6413,26 +6414,54 @@ Programing:
 void CRFProcess::SetIC()
 {
    CInitialCondition* m_ic = NULL;
-   for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+   // HS, for MASS_TRANSPORT PCS, 
+   // it is not necessary to use PrimaryVarible as second check.
+   // nidx will give the proper IC pointer.
+   if ( this->getProcessType() == MASS_TRANSPORT )
    {
-      int nidx = GetNodeValueIndex(pcs_primary_function_name[i]);
-      PrimaryVariable pv_i (convertPrimaryVariable(pcs_primary_function_name[i]));
-      for (size_t j = 0; j < ic_vector.size(); j++)
-      {
-         m_ic = ic_vector[j];
-         m_ic->m_msh = m_msh;                     //OK/MX
+       for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+       {
+          int nidx = GetNodeValueIndex(pcs_primary_function_name[i]);
 
-         if (m_ic->getProcessType() != this->getProcessType())
-            continue;
+          // PrimaryVariable pv_i (convertPrimaryVariable(pcs_primary_function_name[i]));
+          for (size_t j = 0; j < ic_vector.size(); j++)
+          {
+             m_ic = ic_vector[j];
+             m_ic->m_msh = m_msh;                     //OK/MX
 
-         m_ic->setProcess(this);
-         if (m_ic->getProcessPrimaryVariable() == pv_i)
-         {
-            m_ic->Set(nidx);
-            m_ic->Set(nidx + 1);
-         }
-      }
+             if (m_ic->getProcess() == this )
+             {
+                m_ic->Set(nidx);
+                m_ic->Set(nidx + 1);
+             }
+          }
+       }
    }
+   else // otherwise PrimaryVariable check is still performed. 
+   {
+          for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+          {
+              int nidx = GetNodeValueIndex(pcs_primary_function_name[i]);
+              PrimaryVariable pv_i (convertPrimaryVariable(pcs_primary_function_name[i]));
+              for (size_t j = 0; j < ic_vector.size(); j++)
+              {
+                  m_ic = ic_vector[j];
+                  m_ic->m_msh = m_msh;                     //OK/MX
+                  
+                  if (m_ic->getProcessType() != this->getProcessType())
+                      continue;
+
+                  m_ic->setProcess(this);
+                  if (m_ic->getProcessPrimaryVariable() == pv_i)
+                  {
+                      m_ic->Set(nidx);
+                      m_ic->Set(nidx + 1);
+                  } // end of if
+              } // end of for j
+          } // end of for i
+          
+   } // end of if-else
+
 }
 
 
@@ -6623,9 +6652,9 @@ double CRFProcess::ExecuteNonLinear()
       CopyU_n(aproblem->GetBufferArray());
    if (hasAnyProcessDeactivatedSubdomains)
       this->CheckMarkedElement();                 //NW
-   for(iter=0;iter<pcs_nonlinear_iterations;iter++)
+   for(iter_nlin=0;iter_nlin<pcs_nonlinear_iterations;iter_nlin++)
    {
-      cout << "    PCS non-linear iteration: " << iter << "/"
+      cout << "    PCS non-linear iteration: " << iter_nlin << "/"
          << pcs_nonlinear_iterations << endl;
       nonlinear_iteration_error = Execute();
       if(mobile_nodes_flag ==1)
@@ -9751,7 +9780,7 @@ void CreateEQS_LinearSolver()
    for(size_t i=0;i<pcs_vector.size();i++)
    {
       m_pcs = pcs_vector[i];
-      if(m_pcs->type==1212) //Important for parallel computing. 24.1.2011 WW
+      if(m_pcs->type==22)                         // Monolithic TH2
       {
          dof_nonDM = m_pcs->GetPrimaryVNumber();
          dof = dof_nonDM;

@@ -1,22 +1,15 @@
-CC = g++
 CXX = g++
-FORT = gfortran
-CFLAGS = -c  -g -O2 -pedantic -fno-nonansi-builtins -D__unix -DUse_qd_real
-# -lstd -lC -lpgc -lrt -Msecond_underscore
-CCFLAGS =   -c -g -O2 -DIPMGEMPLUGIN -D__unix -DUse_qd_real
-CCFLAGS1 =   -c -g -O2 -DIPMGEMPLUGIN -D__unix -DUse_qd_real
-FFLAGS = -c -g -O2 -fbounds-check -fno-underscoring -D__unix -D__GNU
-LINK = g++
-LFLAGS = -lstdc++ -lqd -lgfortran
+CCFLAGS =   -c -g -O2 -DIPMGEMPLUGIN -D__unix 
+LINK = ar
 LIB = libgemipm2k.a
 
-${LIB}:  gstring.o gdatastream.o s_fgl.o s_fgl1.o s_fgl2.o s_fgl3.o s_fgl4.o \
+${LIB}:  gdatastream.o s_fgl.o s_fgl1.o s_fgl2.o s_fgl3.o s_fgl4.o \
        node.o node_format.o ms_multi_file.o \
        ms_multi_format.o ipm_chemical.o ipm_chemical2.o ipm_chemical3.o \
        ipm_main.o ipm_simplex.o io_arrays.o ms_param.o num_methods.o
 # mcotac.o mcotac1d.o datio.o erech.o inistat2.o inparf.o setpar_.o walk2_.o wegdat1d_.o hydro1d_.o 
              
-	ar -rvs ${LIB} gstring.o gdatastream.o s_fgl.o s_fgl1.o s_fgl2.o s_fgl3.o s_fgl4.o \
+	$(LINK) -rvs ${LIB} gdatastream.o s_fgl.o s_fgl1.o s_fgl2.o s_fgl3.o s_fgl4.o \
 	   node.o node_format.o ms_multi_file.o \
        ms_multi_format.o ipm_chemical.o ipm_chemical2.o ipm_chemical3.o \
        ipm_main.o ipm_simplex.o io_arrays.o ms_param.o num_methods.o
@@ -177,6 +170,7 @@ io_arrays.o: io_arrays.cpp io_arrays.h \
 		v_user.h \
 		gstring.h \
 		array.h
+	$(CXX)  $(CCFLAGS) io_arrays.cpp
 ms_param.o: ms_param.cpp m_param.h \
 		num_methods.h \
 		gdatastream.h \

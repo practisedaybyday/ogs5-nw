@@ -14,10 +14,12 @@ PointVec::PointVec (const std::string& name, std::vector<Point*>* points, std::m
 : _pnt_vec (points), _name_id_map (name_id_map), _type(type), _name (name)
 {
 	assert (_pnt_vec);
-	size_t number_of_all_input_pnts (_pnt_vec->size());
+	std::cout << "INFO: " << _pnt_vec->size() << " points" << std::endl;
 	makePntsUnique (_pnt_vec, _pnt_id_map);
-	if (number_of_all_input_pnts - _pnt_vec->size() > 0)
-		std::cerr << "WARNING: there are " << number_of_all_input_pnts - _pnt_vec->size() << " double points" << std::endl;
+	std::cout << "INFO: " << _pnt_vec->size() << " unique points" << std::endl;
+
+	if (name_id_map)
+		std::cout << "INFO: " << _name_id_map->size() << " points are named" << std::endl;
 }
 
 PointVec::~PointVec ()
@@ -96,7 +98,7 @@ const Point* PointVec::getElementByName (const std::string& name) const
 	size_t id;
 	bool ret (getElementIDByName (name, id));
 	if (ret) {
-		return (*_pnt_vec)[_pnt_id_map[id]];
+		return (*_pnt_vec)[id];
 	} else {
 		return NULL;
 	}

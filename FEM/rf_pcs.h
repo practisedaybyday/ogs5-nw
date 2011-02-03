@@ -533,7 +533,10 @@ class CRFProcess : public ProcessInfo
 #endif
       //Time Control
       double timebuffer;                          //YD
-      int iter;                                   //YD
+      // this is times of non-linear iterations
+      int iter_nlin;                              //YD //HS rename to avoid confusion; 
+      // this is times of linear iterations
+      int iter_lin;
       // Specials
       void PCSMoveNOD();
       void PCSDumpModelNodeValues(void);

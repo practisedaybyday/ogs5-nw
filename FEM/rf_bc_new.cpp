@@ -30,7 +30,7 @@ extern void remove_white_space(std::string*);
 #include "rf_bc_new.h"
 //#include "rf_pcs.h"
 //#include "rf_fct.h"
-//#include "msh_lib.h"
+#include "rfmat_cp.h"
 //#include "geo_ply.h"
 // MathLib
 #include "mathlib.h"
@@ -136,7 +136,48 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
          in.str(GetLineFromFile1(bc_file));
          std::string tmp;
          in >> tmp;                               // _pcs_pv_name;
-         this->setProcessPrimaryVariable(convertPrimaryVariable(tmp));
+         if ( this->_pcs_type == MASS_TRANSPORT )
+         {
+             // HS set the pointer to MCP based on component name.
+             // a check whether this name is existing and unique. 
+             if ( cp_name_2_idx.count( tmp ) == 1 )
+             {
+                 setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
+                 setProcessPrimaryVariable( CONCENTRATION );
+             }
+             else
+             {
+                 DisplayErrorMsg("Error: In reading BC file, the input component names are not found in MCP file!!!");
+                 exit(1);             
+             }
+         }
+         else
+         {
+             setProcess( PCSGet( this->getProcessType() ) );
+             setProcessPrimaryVariable (convertPrimaryVariable (tmp));
+         }
+         in.clear();
+      }
+      //....................................................................
+      // HS, this is new. later on we should stick to COMP_NAME, PRIMARY_VARIABLE support will be removed. 
+      if (line_string.find("$COMP_NAME") != std::string::npos)
+      {
+         in.str(GetLineFromFile1(bc_file));
+         std::string tmp;
+         in >> tmp;                               // _pcs_pv_name;
+         if ( this->_pcs_type == MASS_TRANSPORT )
+             // HS set the pointer to MCP based on component name.
+             // check whether this name is existing and unique. 
+             if ( cp_name_2_idx.count( tmp ) == 1 )
+             {
+                 setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
+                 setProcessPrimaryVariable( CONCENTRATION );
+             }
+             else
+             {
+                 DisplayErrorMsg("Error: In reading BC file, the input component names are not found in MCP file!!!");
+                 exit(1);             
+             }
          in.clear();
       }
       //....................................................................
@@ -859,27 +900,9 @@ last modification:
          }
          //====================================================================
          //OK if(m_bc->pcs_type_name.compare(pcs_type_name)==0){ //OK/SB 4108
-         if ((m_bc->getProcessType() == convertProcessType(_pcs_type_name))
-            && (m_bc->getProcessPrimaryVariable() == convertPrimaryVariable(_pcs_pv_name)))
+         if ( ( m_bc->getProcess() == m_pcs ) && (m_bc->getProcessPrimaryVariable() == convertPrimaryVariable(_pcs_pv_name)) )
          {
-            /* KR not used
-            //................................................................
-            //-- 23.02.3009. WW
-            if (m_bc->dis_type_name.find("DIRECT") != string::npos) {
-               m_bc->DirectAssign(ShiftInNodeVector);
-               ++p_bc;
-               continue;
-            }
-            */
-            /* KR not used
-            //-- 19.03.3009. WW
-            if (m_bc->dis_type_name.find("PATCH_C") != string::npos) {
-               m_bc->PatchAssign(ShiftInNodeVector);
-               ++p_bc;
-               continue;
-            }
-            */
-            //
+
             cont = false;
             //------------------------------------------------------------------
             if (m_bc->getGeoType () == GEOLIB::POINT)
@@ -892,13 +915,6 @@ last modification:
                   // TF - tests from CC removed -> should be checked while reading data
                   m_node_value->geo_node_number = m_msh->GetNODOnPNT(static_cast<const GEOLIB::Point*>(m_bc->getGeoObj()));
                }
-               /* KR not used
-               if (m_bc->dis_type_name.compare("VARIABLE") == 0) { //OK
-                  m_node_value->conditional = true;
-                  m_node_value->geo_node_number = m_msh->GetNODOnPNT(static_cast<const GEOLIB::Point*>(m_bc->getGeoObj()));
-                  m_node_value->msh_node_number = m_node_value->geo_node_number; // WW ShiftInNodeVector +
-               }
-               */
 
                m_node_value->conditional = cont;
                m_node_value->CurveIndex = m_bc->getCurveIndex();
@@ -966,67 +982,6 @@ last modification:
                      //WW bc_group_vector.push_back(m_bc); //OK
                   }
                }
-
-               /* KR not used
-               if (m_bc->dis_type_name.compare("VARIABLE") == 0) {
-               //						m_msh->GetNODOnPLY(m_polyline, nodes_vector);
-                  double msh_min_edge_length = m_msh->getMinEdgeLength();
-                  m_msh->setMinEdgeLength (m_polyline->epsilon);
-                  std::vector<size_t> my_nodes_vector;
-                  m_msh->GetNODOnPLY (ply, my_nodes_vector);
-                  m_msh->setMinEdgeLength (msh_min_edge_length);
-
-                  nodes_vector.clear ();
-                  for (size_t k(0); k<my_nodes_vector.size(); k++)
-               nodes_vector.push_back (my_nodes_vector[k]);
-
-               // for some benchmarks we need the vector entries sorted by index
-               std::vector<size_t> perm;
-               for (size_t k(0); k<my_nodes_vector.size(); k++) perm.push_back (k);
-               Quicksort<long> (nodes_vector, 0, nodes_vector.size(), perm);
-
-               for (i = 0; i < (long) nodes_vector.size(); i++) {
-               m_node_value = new CBoundaryConditionNode();
-               m_node_value->conditional = cont;
-               m_node_value->msh_node_number = -1;
-               m_node_value->msh_node_number = nodes_vector[i]
-               + ShiftInNodeVector;
-               m_node_value->geo_node_number = nodes_vector[i];
-               m_node_value->node_value = m_bc->geo_node_value; //dis_prop[0];
-               m_node_value->CurveIndex = m_bc->getCurveIndex();
-               m_node_value->pcs_pv_name = _pcs_pv_name; //YD/WW
-               m_node_value->msh_node_number_subst
-               = msh_node_number_subst; //WW
-               m_pcs->bc_node.push_back(m_bc); //WW
-               m_pcs->bc_node_value.push_back(m_node_value); //WW
-               //WW group_vector.push_back(m_node_value);
-               //WW bc_group_vector.push_back(m_bc); //OK
-               }
-               }
-               */
-
-               /* KR not used
-               //................................................................
-               if (m_bc->dis_type_name.compare("POINTS") == 0) {
-                  long node_number_vector_length =
-                        (long) m_bc->node_number_vector.size();
-                  for (i = 0; i < node_number_vector_length; i++) {
-                     m_node_value = new CBoundaryConditionNode;
-                     m_node_value->msh_node_number = ShiftInNodeVector\
-
-                           + m_bc->node_number_vector[i];
-                     //m_node_value->geo_node_number = m_bc->geo_node_number;
-               m_node_value->node_value
-               = m_bc->node_value_vector[i];
-               m_node_value->CurveIndex = m_bc->getCurveIndex();
-               m_node_value->pcs_pv_name = _pcs_pv_name; //YD/WW
-               m_pcs->bc_node.push_back(m_bc); //WW
-               m_pcs->bc_node_value.push_back(m_node_value); //WW
-               //WW group_vector.push_back(m_node_value);
-               //WW bc_group_vector.push_back(m_bc); //OK
-               }
-               }
-               */
                //................................................................
                                                   //WW
                if (m_bc->getProcessDistributionType() == FiniteElement::LINEAR)
@@ -1236,8 +1191,9 @@ last modification:
       }
       //====================================================================
       //OK if(m_bc->pcs_type_name.compare(pcs_type_name)==0){ //OK/SB 4108
-      if ((convertProcessTypeToString(m_bc->getProcessType()).compare(_pcs_type_name) == 0)
-         && (m_bc->getProcessPrimaryVariable() == convertPrimaryVariable(_pcs_pv_name)))
+      // if ( convertProcessTypeToString(m_bc->getProcessType()).compare(_pcs_type_name) == 0 ) 
+      //    && (m_bc->getProcessPrimaryVariable() == convertPrimaryVariable(_pcs_pv_name)))
+      if ( m_bc->getProcess() == m_pcs )
       {
          //................................................................
          if (m_bc->getGeoType () == GEOLIB::POLYLINE)

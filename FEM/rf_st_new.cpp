@@ -51,6 +51,7 @@
 // For analytical source terms
 #include "rf_mfp_new.h"
 #include "rf_node.h"
+#include "rfmat_cp.h"
 
 // Base
 //#include "StringTools.h"
@@ -66,6 +67,7 @@ using Mesh_Group::CElem;
 using Mesh_Group::CEdge;
 using Mesh_Group::CNode;
 using Math_Group::vec;
+
 #ifndef GRAVITY_CONSTANT
 #define GRAVITY_CONSTANT 9.81
 #endif
@@ -199,7 +201,47 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
          in.str(GetLineFromFile1(st_file));
          std::string tmp;
          in >> tmp;
-         setProcessPrimaryVariable (convertPrimaryVariable (tmp));
+         if ( this->getProcessType() == MASS_TRANSPORT )
+         {
+             // HS set the pointer to MCP based on component name.
+             // first do a check whether this name is existing and unique. 
+             if ( cp_name_2_idx.count( tmp ) == 1 )
+             {
+                 setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
+                 setProcessPrimaryVariable( CONCENTRATION );
+             }
+             else
+             {
+                 DisplayErrorMsg("Error: In reading ST file, the input component names are not found in MCP file!!!");
+                 exit(1);             
+             }
+         }
+         else
+         {
+             setProcess( PCSGet( this->getProcessType() ) );
+             setProcessPrimaryVariable (convertPrimaryVariable (tmp));
+         }
+         in.clear();
+         continue;
+      }
+
+      if (line_string.find("$COMP_NAME") != std::string::npos)
+      {
+         in.str(GetLineFromFile1(st_file));
+         std::string tmp;
+         in >> tmp;
+         // HS set the pointer to MCP based on component name.
+         // first do a check whether this name is existing and unique. 
+         if ( cp_name_2_idx.count( tmp ) == 1 )
+         {
+             setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
+             setProcessPrimaryVariable( CONCENTRATION );
+         }
+         else
+         {
+             DisplayErrorMsg("Error: In reading ST file, the input component names are not found in MCP file!!!");
+             exit(1);             
+         }
          in.clear();
          continue;
       }
@@ -333,7 +375,9 @@ void CSourceTerm::ReadDistributionType(std::ifstream *st_file)
       exit (1);
    }
 
-   if (this->getProcessDistributionType() == FiniteElement::CONSTANT || this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
+   if (   this->getProcessDistributionType() == FiniteElement::CONSTANT 
+       || this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN
+       || this->getProcessDistributionType() == FiniteElement::CONSTANT_GEO      )
    {
       in >> geo_node_value;
       in.clear();
@@ -932,37 +976,25 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
          if (source_term->isCoupled())
             m_msh_cond = FEMGet(source_term->pcs_type_name_cond);
 
-         //			if ((source_term->pcs_type_name.compare(pcs_type_name) == 0)
+         if (source_term->getProcessType() == MASS_TRANSPORT)
+             if ( cp_vec[cp_name_2_idx[convertPrimaryVariableToString(source_term->getProcessPrimaryVariable())]]->getProcess() != m_pcs )
+                 continue; 
+
          if ((convertProcessTypeToString (source_term->getProcessType ()).compare(pcs_type_name) == 0)
             && (convertPrimaryVariableToString(source_term->getProcessPrimaryVariable()).compare(pcs_pv_name) == 0))
+         // if ( source_term->getProcess() == m_pcs )
          {
-            source_term->setProcess (m_pcs);      // HS: 01.09.2009
-            //				if (source_term->geo_type_name.compare("POINT") == 0)
-            //					SetPNT(m_pcs, source_term, ShiftInNodeVector);
-            if (source_term->getGeoType() == GEOLIB::POINT)
-               SetPNT(m_pcs, source_term, ShiftInNodeVector);
-
-            //				if (source_term->geo_type_name.compare("POLYLINE") == 0)
-            if (source_term->getGeoType () == GEOLIB::POLYLINE)
-               SetPLY(source_term, ShiftInNodeVector);
-            //				if (source_term->geo_type_name.compare("SURFACE") == 0) // "SURFACE" has to be changed to "FACE". WW
-            if (source_term->getGeoType () == GEOLIB::SURFACE)
-               SetSFC(source_term, ShiftInNodeVector);
-            //				if (source_term->geo_type_name.compare("DOMAIN") == 0)
-            if (source_term->getGeoType () == GEOLIB::GEODOMAIN)
-               SetDMN(source_term, ShiftInNodeVector);
-
-            //				if (source_term->geo_type_name.compare("COLUMN") == 0) {
-            //					std::cerr << "CSourceTermGroup::Set geo_type_name == COLUMN" << std::endl;
-            //					SetCOL(source_term, ShiftInNodeVector);
-            //				}
-            //
-            //				// MSH types //OK4310
-            //				if (source_term->msh_type_name.compare("NODE") == 0)
-            //					source_term->SetNOD();
-            // FCT types //YD
-            if (source_term->fct_name.size() > 0)
-               fct_name = source_term->fct_name;
+             source_term->setProcess (m_pcs);      // HS: 01.09.2009
+             if (source_term->getGeoType() == GEOLIB::POINT)
+                 SetPNT(m_pcs, source_term, ShiftInNodeVector);
+             if (source_term->getGeoType () == GEOLIB::POLYLINE)
+                 SetPLY(source_term, ShiftInNodeVector);
+             if (source_term->getGeoType () == GEOLIB::SURFACE)
+                 SetSFC(source_term, ShiftInNodeVector);
+             if (source_term->getGeoType () == GEOLIB::GEODOMAIN)
+                 SetDMN(source_term, ShiftInNodeVector);
+             if (source_term->fct_name.size() > 0)
+                 fct_name = source_term->fct_name;
          }                                        // end pcs name & pv
       }                                           // end st loop
    }                                              // end msh

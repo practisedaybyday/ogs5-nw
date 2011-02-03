@@ -96,29 +96,32 @@ dat_type_name ("TECPLOT")
 }
 
 
-void COutput::init()
+void COutput::init ()
 {
-	if (getProcessType() == INVALID_PROCESS) {
-		std::cerr
-				<< "COutput::init(): could not initialize process pointer (process type INVALID_PROCESS) and appropriate mesh"
-				<< std::endl;
-		std::cerr
-				<< "COutput::init(): trying to fetch process pointer using msh_type_name ... "
-				<< std::endl;
-		if (msh_type_name.size() > 0) {
-			_pcs = PCSGet(msh_type_name);
-			if (_pcs) {
-				std::cerr << " successful" << std::endl;
-			} else {
-				std::cerr << " failed" << std::endl;
-				exit(1);
-			}
-		} else {
-			std::cerr << " failed" << std::endl;
-		}
-	}
+   if (getProcessType () == INVALID_PROCESS)
+   {
+      std::cerr << "COutput::init(): could not initialize process pointer (process type INVALID_PROCESS) and appropriate mesh" << std::endl;
+      std::cerr << "COutput::init(): trying to fetch process pointer using msh_type_name ... " << std::endl;
+      if(msh_type_name.size()>0)
+      {
+         _pcs = PCSGet(msh_type_name);
+         if (_pcs)
+         {
+            std::cerr << " successful" << std::endl;
+         }
+         else
+         {
+            std::cerr << " failed" << std::endl;
+            exit (1);
+         }
+      }
+      else
+      {
+         std::cerr << " failed" << std::endl;
+      }
+   }
 
-	m_msh = FEMGet(convertProcessTypeToString(getProcessType()));
+   m_msh = FEMGet(convertProcessTypeToString(getProcessType()));
 }
 
 
@@ -1004,9 +1007,9 @@ void OUTData(double time_current, int time_step_number)
                   vtk->WriteXMLUnstructuredGrid(vtk_file_name, m_out,
                      time_step_number);
                   VTK_Info dat;
-                  dat.timestep = m_out->getTime();
-                  dat.vtk_file = pvd_vtk_file_name;
                   vtk->vec_dataset.push_back(dat);
+                  m_out->setTime (vtk->vec_dataset.back().timestep);
+                  vtk->vec_dataset.back().vtk_file = pvd_vtk_file_name;
                   vtk->UpdatePVD(vtk->pvd_file_name, vtk->vec_dataset);
                }
                else
@@ -1020,10 +1023,10 @@ void OUTData(double time_current, int time_step_number)
                         m_out->time_vector.erase(m_out->time_vector.begin()
                            + j);
                         VTK_Info dat;
-                        dat.timestep = m_out->getTime();
-                        dat.vtk_file = pvd_vtk_file_name;
                         vtk->vec_dataset.push_back(dat);
-
+                        m_out->setTime (vtk->vec_dataset.back().timestep);
+                        vtk->vec_dataset.back().vtk_file
+                           = pvd_vtk_file_name;
                         vtk->UpdatePVD(vtk->pvd_file_name, vtk->vec_dataset);
                         break;
                      }
@@ -3300,7 +3303,7 @@ void COutput::WriteVTKValues(fstream &vtk_file)
             break;
          }
       }
-      vtk_file << "SCALARS " << _nod_value_vector[k] << " float 1" << endl;
+		vtk_file << "SCALARS " << _nod_value_vector[k] << " double 1" << endl;
       vtk_file << "LOOKUP_TABLE default" << endl;
       //....................................................................
       for (j = 0l; j < m_msh->GetNodesNumber(false); j++)
@@ -3319,7 +3322,7 @@ void COutput::WriteVTKValues(fstream &vtk_file)
    if (m_pcs && m_pcs->type == 1212)
    {
       size_t i = m_pcs->GetNodeValueIndex("SATURATION1");
-      vtk_file << "SCALARS SATURATION2 float 1" << endl;
+		vtk_file << "SCALARS SATURATION2 double 1" << endl;
       //
       vtk_file << "LOOKUP_TABLE default" << endl;
       //....................................................................
@@ -3350,7 +3353,7 @@ void COutput::WriteVTKValues(fstream &vtk_file)
          //    JTARON 2010, "VELOCITY" should only write as vector, scalars handled elswhere
          if (_ele_value_vector[k].compare("VELOCITY") == 0)
          {
-            vtk_file << "VECTORS velocity float " << endl;
+				vtk_file << "VECTORS velocity double " << endl;
             WriteELEVelocity(vtk_file);           //WW/OK
          }
          //	  PRINT CHANGING (OR CONSTANT) PERMEABILITY TENSOR?   // JTARON 2010
