@@ -36,6 +36,11 @@ public:
 	 */
 	TemplatePoint (T x1, T x2, T x3);
 
+	/** constructor - constructs a TemplatePoint object
+	 \param x values for three coordinates
+	 */
+	TemplatePoint (T const* x);
+
 	/** virtual destructor */
 	virtual ~TemplatePoint() {};
 
@@ -48,7 +53,7 @@ public:
 	*/
 	const T& operator[] (size_t idx) const {
 		assert (idx <= 2);
-		return x[idx];
+		return _x[idx];
 	}
 	/** \brief access operator (see book Effektiv C++ programmieren - subsection 1.3.2 ).
 	 * \sa const T& operator[] (size_t idx) const
@@ -58,13 +63,13 @@ public:
 	}
 
 	/** returns an array containing the coordinates of the point */
-	const T* getData () const { return x; }
+	const T* getData () const { return _x; }
 
 	/** write point coordinates into stream (used from operator<<)
 	 * \param os a standard output stream
 	*/
 	virtual void write (std::ostream &os) const {
-		os << x[0] << " " << x[1] << " " << x[2] << std::flush;
+		os << _x[0] << " " << _x[1] << " " << _x[2] << std::flush;
 	}
 
 	/**
@@ -72,33 +77,39 @@ public:
 	*/
 	virtual std::string write () const {
 		std::ostringstream strStream;
-		strStream << x[0] << " " << x[1] << " " << x[2];
+		strStream << _x[0] << " " << _x[1] << " " << _x[2];
 		return strStream.str();
 	}
 
 	/** read point coordinates into stream (used from operator>>) */
 	virtual void read (std::istream &is) {
-		is >> x[0] >> x[1] >> x[2];
+		is >> _x[0] >> _x[1] >> _x[2];
 	}
 
 protected:
-	T x[3];
+	T _x[3];
 };
 
 template <class T> TemplatePoint<T>::TemplatePoint() :
 	GeoObject()
 {
-	x[0] = static_cast<T>(0);
-	x[1] = static_cast<T>(0);
-	x[2] = static_cast<T>(0);
+	_x[0] = static_cast<T>(0);
+	_x[1] = static_cast<T>(0);
+	_x[2] = static_cast<T>(0);
 }
 
 template <class T> TemplatePoint<T>::TemplatePoint(T x1, T x2, T x3) :
 	GeoObject()
 {
-	x[0] = x1;
-	x[1] = x2;
-	x[2] = x3;
+	_x[0] = x1;
+	_x[1] = x2;
+	_x[2] = x3;
+}
+
+template <class T> TemplatePoint<T>::TemplatePoint (T const* x) :
+	GeoObject()
+{
+	for (size_t k(0); k<3; k++) _x[k] = x[k];
 }
 
 /** overload the output operator for class Point */

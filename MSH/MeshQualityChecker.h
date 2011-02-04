@@ -18,14 +18,18 @@ namespace Mesh_Group {
 class MeshQualityChecker {
 public:
 	MeshQualityChecker(CFEMesh const * const mesh);
-	~MeshQualityChecker();
 
-	void checkTriangles ();
-
-	const std::vector<size_t>& getHistogramm () const { return _static_histogramm; }
+	void check ();
+	const std::vector<double>& getMeshQuality () const { return _mesh_quality_messure; }
+	void getHistogramm (std::vector<size_t>& histogramm) const;
 
 private:
+	double checkTriangle (GEOLIB::Point const * const a, GEOLIB::Point const * const b, GEOLIB::Point const * const c) const;
+	double checkQuad (GEOLIB::Point const * const a, GEOLIB::Point const * const b, GEOLIB::Point const * const c, GEOLIB::Point const * const d) const;
+	double checkTetrahedron (GEOLIB::Point const * const a, GEOLIB::Point const * const b, GEOLIB::Point const * const c, GEOLIB::Point const * const d) const;
+//	double checkPrism (std::vector<GEOLIB::Point *> const & pnts) const;
 	CFEMesh const * const _mesh;
+	std::vector<double> _mesh_quality_messure;
 	std::vector<size_t> _static_histogramm;
 };
 

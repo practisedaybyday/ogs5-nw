@@ -60,36 +60,36 @@ public:
 
 	TemplateVector& operator+=(const GEOLIB::TemplatePoint<T>& pnt)
 	{
-		for (size_t i(0); i<3; i++) this->x[i] += pnt[i];
+		for (size_t i(0); i<3; i++) this->_x[i] += pnt[i];
 		return *this;
 	}
 
 	TemplateVector& operator-=(const TemplateVector & pV)
 	{
-		for (size_t i(0); i<3; i++) this->x[i] -= pV[i];
+		for (size_t i(0); i<3; i++) this->_x[i] -= pV[i];
 		return *this;
 	}
 
 	// Accessors
-	T X() const { return this->x[0]; }
-	T Y() const { return this->x[1]; }
-	T Z() const { return this->x[2]; }
-	void setX(T value) { this->x[0] = value; }
-	void setY(T value) { this->x[1] = value; }
-	void setZ(T value) { this->x[2] = value; }
+	T X() const { return this->_x[0]; }
+	T Y() const { return this->_x[1]; }
+	T Z() const { return this->_x[2]; }
+	void setX(T value) { this->_x[0] = value; }
+	void setY(T value) { this->_x[1] = value; }
+	void setZ(T value) { this->_x[2] = value; }
 
 	/// Dot product with another vector
 	double Dot(const TemplateVector & pV) const
 	{
-		return this->x[0]*pV[0] + this->x[1]*pV[1] + this->x[2]*pV[2];
+		return this->_x[0]*pV[0] + this->_x[1]*pV[1] + this->_x[2]*pV[2];
 	}
 
 	/// Cross product as the multiplication operator
 	TemplateVector operator*(const TemplateVector & pV) const {
 		return TemplateVector (
-				this->x[1]*pV[2]-this->x[2]*pV[1],
-				this->x[2]*pV[0]-this->x[0]*pV[2],
-				this->x[0]*pV[1]-this->x[1]*pV[0] );
+				this->_x[1]*pV[2]-this->_x[2]*pV[1],
+				this->_x[2]*pV[0]-this->_x[0]*pV[2],
+				this->_x[0]*pV[1]-this->_x[1]*pV[0] );
 	}
 
 	/// Cross product with another vector
@@ -114,7 +114,7 @@ public:
 
 	TemplateVector& operator*=(double pR)
 	{
-		for (size_t i(0); i<3; i++) this->x[i]*=pR;
+		for (size_t i(0); i<3; i++) this->_x[i]*=pR;
 		return *this;
 	}
 
@@ -140,13 +140,16 @@ public:
 	/// Comparison if equal
 	bool operator==( const TemplateVector & pV) const
 	{
-		return this->x[0]==pV[0] && this->x[1]==pV[1] && this->x[2]==pV[2];
+		return (std::fabs(this->_x[0] - pV[0]) < sqrt(std::numeric_limits<double>::min()) &&
+				std::fabs(this->_x[1] - pV[1]) < sqrt(std::numeric_limits<double>::min()) &&
+				std::fabs(this->_x[2] - pV[2]) < sqrt(std::numeric_limits<double>::min()));
 	}
 
 	/// Comparison if not equal
-	int operator!=( const TemplateVector & pV) const
+	bool operator!=( const TemplateVector & pV) const
 	{
-		return this->x[0]!=pV[0] || this->x[1]!=pV[1] || this->x[2]!=pV[2];
+		return (! (pV == this));
+//		this->_x[0]!=pV[0] || this->_x[1]!=pV[1] || this->_x[2]!=pV[2];
 	}
 };
 
