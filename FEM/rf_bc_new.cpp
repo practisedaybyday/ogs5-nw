@@ -80,7 +80,7 @@ CBoundaryCondition::~CBoundaryCondition()
 }
 
 
-const std::string& CBoundaryCondition::getGeoName ()
+const std::string& CBoundaryCondition::getGeoName () const
 {
    return geo_name;
 }

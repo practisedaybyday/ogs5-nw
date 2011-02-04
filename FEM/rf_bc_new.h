@@ -14,7 +14,7 @@ last modified
 //#include <vector>
 
 // new GEOLIB
-//#include "GEOObjects.h"
+#include "GEOObjects.h"
 #include "GeoInfo.h"                              // TF
 #include "ProcessInfo.h"                          // KR
 #include "DistributionInfo.h"                     // TF
@@ -57,7 +57,7 @@ class CBoundaryCondition : public ProcessInfo, public GeoInfo, public Distributi
        * geo_type_name == POLYLINE or geo_type_name = SURFACE
        * If geo_type_name == POINT the id of the point is returned.
        */
-      const std::string& getGeoName();            // TF 05/2010
+      const std::string& getGeoName() const;            // TF 05/2010
 
       int getCurveIndex () const                  // TF 05/2010
       {

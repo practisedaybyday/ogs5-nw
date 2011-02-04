@@ -129,7 +129,7 @@ CSourceTerm::~CSourceTerm()
 }
 
 
-const std::string& CSourceTerm::getGeoName()
+const std::string& CSourceTerm::getGeoName() const
 {
    return geo_name;
 }

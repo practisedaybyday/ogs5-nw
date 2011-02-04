@@ -16,6 +16,9 @@ last modified
 #include "DistributionInfo.h"                     // TF
 
 class CNodeValue;
+class CGLPolyline;
+class CGLLine;
+class Surface;
 
 namespace process                                 //WW
 {
@@ -23,11 +26,11 @@ namespace process                                 //WW
 };
 using process::CRFProcessDeformation;             //WW
 
-namespace process                                 //WW
+namespace Mesh_Group
 {
-   class CRFProcessDeformation;
-};
-using process::CRFProcessDeformation;             //WW
+	class MeshNodesAlongPolyline;
+}
+
 
 typedef struct
 {
@@ -46,9 +49,9 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       std::ios::pos_type Read(std::ifstream *in, const GEOLIB::GEOObjects & geo_obj, const std::string & unique_name);
       void Write(std::fstream*);
 
-      void EdgeIntegration(CFEMesh *m_msh, const std::vector<long> & nodes_on_ply, std::vector<double> & node_value_vector) const;
-      void FaceIntegration(CFEMesh *m_msh, std::vector<long> & nodes_on_sfc, std::vector<double> & node_value_vector);
-      void DomainIntegration(CFEMesh *m_msh, const std::vector<long> & nodes_in_dom, std::vector<double> & node_value_vector) const;
+	  void EdgeIntegration(Mesh_Group::CFEMesh *m_msh, const std::vector<long> & nodes_on_ply, std::vector<double> & node_value_vector) const;
+      void FaceIntegration(Mesh_Group::CFEMesh *m_msh, std::vector<long> & nodes_on_sfc, std::vector<double> & node_value_vector);
+      void DomainIntegration(Mesh_Group::CFEMesh *m_msh, const std::vector<long> & nodes_in_dom, std::vector<double> & node_value_vector) const;
 
       void SetNOD2MSHNOD(std::vector<long> & nodes, std::vector<long> & conditional_nodes);
 
@@ -101,7 +104,7 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
        * REMOVE CANDIDATE only for compatibility with old GEOLIB version
        * @return
        */
-      const std::string & getGeoName();
+      const std::string & getGeoName() const;
 
       int CurveIndex;
       std::vector<int> element_st_vector;
@@ -223,8 +226,8 @@ class CSourceTermGroup
       std::string pcs_name;
       std::string pcs_type_name;                  //OK
       std::string pcs_pv_name;                    //OK
-      CFEMesh* m_msh;
-      CFEMesh* m_msh_cond;
+      Mesh_Group::CFEMesh* m_msh;
+      Mesh_Group::CFEMesh* m_msh_cond;
       //WW    std::vector<CSourceTerm*>st_group_vector; //OK
       //WW double GetConditionalNODValue(int,CSourceTerm*); //OK
       //WW double GetRiverNODValue(int,CSourceTerm*, long msh_node); //MB
@@ -273,7 +276,7 @@ class CSourceTermGroup
        * @param ply_nod_vector_cond
        * @param ply_nod_val_vector
        */
-      void SetPolylineNodeValueVector(CSourceTerm* st, const Mesh_Group::MeshNodesAlongPolyline& msh_nodes_along_polyline,
+	  void SetPolylineNodeValueVector(CSourceTerm* st, const Mesh_Group::MeshNodesAlongPolyline& msh_nodes_along_polyline,
          const std::vector<long>& ply_nod_vector_cond, std::vector<double>& ply_nod_val_vector) const;
 
                                                   // JOD
