@@ -21,6 +21,9 @@
 #include "node.h"
 #include "rf_mfp_new.h"
 
+/**
+ * class REACT_GEM for coupling OGS with GEMS
+ */
 class REACT_GEM
 {
    private:
@@ -35,8 +38,9 @@ class REACT_GEM
       REACT_GEM(void);
       ~REACT_GEM(void);
 
-      TNode* m_Node;                              // Instance of TNode class
-      // HS: 06.2007 Only set one TNode here, repeatedly use its resources for GEM calculation
+		/// Instance of TNode class
+		/// HS: 06.2007 Only set one TNode here, repeatedly use its resources for GEM calculation
+		TNode* m_Node; 
 
       // DATABR structure for exchange with GEMIPM
       DATACH* dCH;                                //pointer to DATACH
@@ -54,12 +58,14 @@ class REACT_GEM
       long m_IterDoneIndexSort, m_ShuffleGems;
       // this is for porosity calculated on volume of solids
       double *m_porosity;
-      double *m_fluid_volume, *m_gas_volume;
+		 /// this is used for kinetic law number 4
+		double  *m_porosity_initial;
 
-      // index, which one in the xDC vector is water.
-      int idx_water;
-      int idx_hydrogen;
-      int idx_oxygen;
+		/// this we need for porosity coupling to groundwater flow & multiphase flow
+		double *m_fluid_volume, *m_gas_volume;
+
+		/// indexes, which one in the xDC vector is water, oxygen or hydrogen
+		int idx_water, idx_hydrogen, idx_oxygen;
 
       double *m_T, *m_P, *m_Vs, *m_Ms,
          *m_Gs, *m_Hs, *m_IC, *m_pH, *m_pe,
@@ -70,8 +76,8 @@ class REACT_GEM
 
       double  *m_porosity_Elem, *m_porosity_Elem_buff;
 
-      // data for transport of IC
-      double *m_soluteB, *m_soluteB_buff;
+		/// data for transport of IC
+		double *m_soluteB, *m_soluteB_buff, *m_soluteB_pts, *m_bIC_pts;
 
       // previous time step DC values
       double *m_xDC_pts;                          // previous time step Concentration;
@@ -95,7 +101,13 @@ class REACT_GEM
       CRFProcess *m_pcs;                          // pointer to the PCS Class.
       CRFProcess *m_flow_pcs;                     // pointer to the flow PCS.
 
-      // functions
+
+		/** Initialization of the GEM TNode Class
+		*  return: 0-ok;
+		*          1-loading init file failure;
+		*          3-dch problem;
+		*           4-dbr problem;
+                */
       short Init_Nodes(string Project_path);      // Initialization of the GEM TNode Class
       //  return: 0-ok;
       //          1-loading init file failure;
@@ -135,6 +147,7 @@ class REACT_GEM
       int flag_gem_smart;                         // shall we work with faster simplex for GEM?
       int gem_pressure_flag;                      //shall we give a constant user defined pressure to gems?
       int flag_transport_b;                       //1: transport only dissolved components of b vector; 0: transport full speciation
+		long m_max_failed_nodes; ///maximum number of failed nodes
       //--------------
 
       long nNodes;                                // number of all nodes;
@@ -166,20 +179,16 @@ class REACT_GEM
       short SetDCValue_MT(long node_Index, int timelevel, double* m_DC);
       short SetBValue_MT(long node_Index, int timelevel, double* m_soluteB);
 
-      short SetSoComponentValue_MT(long node_Index, int timelevel, double* m_Phase);
-      short SetPHValue_MT(long node_Index, int timelevel, double m_PH);
-      short SetPeValue_MT(long node_Index, int timelevel, double m_PE);
-      short SetEhValue_MT(long node_Index, int timelevel, double m_EH);
-      short SetNodePorosityValue_MT(long node_Index, int timelevel, double m_porosity);
+		int IsThisPointBCIfYesStoreValue ( long index, CRFProcess* m_pcs, double& value );/// taken from rf_REACT_BRNS
 
-                                                  // taken from rf_REACT_BRNS
-      int IsThisPointBCIfYesStoreValue(long index, CRFProcess* m_pcs, double& value);
-
-      // Copy current values into previous time step values
-      void CopyCurXDCPre(void);
-      void UpdateXDCChemDelta(void);
-
-      // this is only for porosity
+		/// Copy current values into previous time step values
+		void CopyCurXDCPre ( void );
+		void UpdateXDCChemDelta ( void );
+		void CopyCurBPre ( void );
+		double CalcSoluteBDelta ( long in );
+		double m_diff_gems;
+		void RestoreOldSolution ( long in );
+		/// this is only for porosity interpolation to elemens
       void ConvPorosityNodeValue2Elem(int i_timestep);
       void CalcPorosity(long in);
 
@@ -195,9 +204,8 @@ class REACT_GEM
       int Findhydrogen_bIC ( void );
       int Findoxygen_bIC ( void );
       //kg44 11/2008 for kinetics
-      double CalcSaturationIndex(long in, long node,double temp, double press);
-      void CalcReactionRate(long node, double temp, double press);
-      double SurfaceAreaPh(long kin_phasenr);
+		void CalcReactionRate ( long node, double temp );
+		double SurfaceAreaPh ( long kin_phasenr,long in );
 
       // concentration related
       void ConcentrationToMass (long l /*idx of node*/,int i_timestep);
@@ -231,7 +239,7 @@ class REACT_GEM
       // GEM pressure (needed for Richards flow)
       double m_gem_pressure;
 
-      // Definition of buffer variables
+		/// Definition of buffer variables for MPI
       long *m_NodeHandle_buff, *m_NodeStatusCH_buff, *m_IterDone_buff;
                                                   // porosity buffer
       double *m_porosity_buff, *m_fluid_volume_buff, *m_gas_volume_buff;
@@ -269,12 +277,15 @@ class REACT_GEM
          int kinetic_model;                       // only 1 = GEMS implemented right now
          int n_activities;                        // number of species for activities
          string active_species[10];               // name for species ...maximum 10 names
-         double kinetic_parameters[41];
-         //	0,1,2  double E_acid,E_neutral,E_base; // activation energies
-         //      3-5  double k_acid, k_neutral,k_base; // dissolution/precipitation rate constants
-         //      6-11  double p1,q1,p2,q2,p2,q2; // exponents for omega
-         //      12,13, 14  double n_1, n_2, n_3; // exponents for acidic neutral and base cases for species one
-         //      append for each species another set of n_1, n_2, n_3 (up to 10 sets -> up to ten species)
+
+/**	this vector holds the kinetic material parameters
+*      0,1,2  double E_acid,E_neutral,E_base; // activation energies
+*      3-5  double k_acid, k_neutral,k_base; // dissolution/precipitation rate constants
+*      6-11  double p1,q1,p2,q2,p2,q2; // exponents for omega
+*      12,13, 14  double n_1, n_2, n_3; // exponents for acidic neutral and base cases for species one
+*      append for each species another set of n_1, n_2, n_3 (up to 10 sets -> up to ten species)
+*/
+			double kinetic_parameters[41];
          int surface_model;                       // currently only 1 implemented
          double surface_area[10];
       } Kinetic_GEMS;
@@ -284,6 +295,9 @@ class REACT_GEM
 };
 
 #define GEM_FILE_EXTENSION ".gem"
+/** This is the function for reading the OGS-GEM specific parameters.
+*  Todo: if .gems not exist, decouple gems
+*/
 extern bool GEMRead(string base_file_name, REACT_GEM *m_GEM_p);
 #endif
 #endif

@@ -698,11 +698,15 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
       {
          sp_name = cp_vec[j]->compname;
          idummy = -1;
-         m_pcs = PCSGet("MASS_TRANSPORT", sp_name);
+         // HS, PCSGet not needed any more. 
+         // m_pcs = PCSGet("MASS_TRANSPORT", sp_name);
+         // new style: 
+         m_pcs = cp_vec[cp_name_2_idx[sp_name]]->getProcess(); 
          if (m_pcs != NULL)
          {
-            idummy = PCSGetPCSIndex("MASS_TRANSPORT", sp_name);
-            m_krd->sp_pcsind.push_back(idummy);
+            // HS, not needed any more
+            // idummy = PCSGetPCSIndex("MASS_TRANSPORT", sp_name);
+            // m_krd->sp_pcsind.push_back(idummy);
                                                   // new timelevel
             idx = m_pcs->GetNodeValueIndex(sp_name) + 1;
             m_krd->sp_varind.push_back(idx);
@@ -2256,7 +2260,7 @@ CKinReactData::CKinReactData(void)
    //sp_index.clear();
    //kr_active_species = -1;
    sp_varind.clear();
-   sp_pcsind.clear();
+   // sp_pcsind.clear(); //HS
    //das Surface-Array k�nnte auch dynamisch allokiert werden
    for (int i = 0; i < maxSurfaces; i++)
       exSurface.push_back(-1.0);
@@ -2797,8 +2801,10 @@ double *usedtneu, int *nok, int *nbad)
    /* Konzentrationen aller Substanzen aus Datenstruktur auslesen und in neuem Array speichern */
    for (sp = 0; sp < Number_of_Components; sp++)
    {
-      Concentration[sp + 1] = pcs_vector[sp_pcsind[sp]]->GetNodeValue(node,
-         sp_varind[sp]);
+      // HS, old:
+      // Concentration[sp + 1] = pcs_vector[sp_pcsind[sp]]->GetNodeValue(node, sp_varind[sp]);
+      // new:
+      Concentration[sp + 1] = cp_vec[sp]->getProcess()->GetNodeValue(node, sp_varind[sp]);
       if (fabs(Concentration[sp + 1]) < 1.e-19)
          Concentration[sp + 1] = 0.0;
       //SB todo - ist abewr gerade eh noch ein dummy
@@ -2809,7 +2815,8 @@ double *usedtneu, int *nok, int *nbad)
    {
       //debugoutstr << " Concentrations before odeint: " << endl << " " << flush;
       for (sp = 0; sp < Number_of_Components; sp++)
-         debugoutstr << pcs_vector[sp_pcsind[sp]]->nod_val_name_vector[0]
+         // debugoutstr << pcs_vector[sp_pcsind[sp]]->nod_val_name_vector[0]
+         debugoutstr << cp_vec[sp]->getProcess()->nod_val_name_vector[0]
             << " " << flush;
       debugoutstr << "baditerations" << endl;
 
@@ -2950,7 +2957,7 @@ double *usedtneu, int *nok, int *nbad)
       if ((is_a_bacterium[sp]) && (Concentration[sp + 1] < 1.E-30))
          Concentration[sp + 1] = 1.E-30;
       // Konzentrationen aller Substanzen in Datenstruktur zur�ckschreiben
-      pcs_vector[sp_pcsind[sp]]->SetNodeValue(node, sp_varind[sp],
+      cp_vec[sp]->getProcess()->SetNodeValue(node, sp_varind[sp],
          Concentration[sp + 1]);
       // save exchange term SB todo
    }
@@ -3422,8 +3429,9 @@ double CKinReact::GetReferenceVolume(int comp, long index)
 
    // Get process
                                                   //SB todo check
-   CRFProcess *m_pcs (PCSGet("MASS_TRANSPORT", cp_vec[comp]->compname));
-   m_pcs = pcs_vector[KinReactData_vector[0]->sp_pcsind[comp]];
+   CRFProcess *m_pcs; // (PCSGet("MASS_TRANSPORT", cp_vec[comp]->compname));
+   // m_pcs = pcs_vector[KinReactData_vector[0]->sp_pcsind[comp]];
+   m_pcs = cp_vec[comp]->getProcess();
    theta = m_pcs->m_num->ls_theta;
    long phase = cp_vec[comp]->transport_phase;
 
@@ -4611,7 +4619,7 @@ void CKinReactData::ReactionDeactivation(long nonodes)
          if (ReactDeactMode != 3)                 // for all timesteps, anyway prepare the concentrationmatrix for the next time step, i.e. save the current concentrations after Transport
             for (sp = 0; sp < Number_of_Components; sp++)
                concentrationmatrix[node][sp]
-                  = pcs_vector[sp_pcsind[sp]]->GetNodeValue(node,
+                  = cp_vec[sp]->getProcess()->GetNodeValue(node,
                   sp_varind[sp]);
       }
    }                                              // CB Now check if node can be deactivated for the next time step
@@ -4635,7 +4643,7 @@ void CKinReactData::ReactionDeactivation(long nonodes)
                {
                   //This is C of last time step after reactions, i.e. the old time level for this time step
                   Concentration
-                     = pcs_vector[sp_pcsind[sp]]->GetNodeValue(node,
+                     = cp_vec[sp]->getProcess()->GetNodeValue(node,
                      (sp_varind[sp] - 1));
                   //This is C of previous time step after transport only, which was stored in matrix
                   Concentration_old = concentrationmatrix[node][sp];
@@ -4643,7 +4651,7 @@ void CKinReactData::ReactionDeactivation(long nonodes)
                      - Concentration) / maxi) / dt;// normalized by current local concentration
                   // and now prepare concentrationmatrix for next time step, i.e. save current concentrations after Transport
                   concentrationmatrix[node][sp]
-                     = pcs_vector[sp_pcsind[sp]]->GetNodeValue(node,
+                     = cp_vec[sp]->getProcess()->GetNodeValue(node,
                      sp_varind[sp]);
                }
             }
@@ -4669,7 +4677,7 @@ void CKinReactData::ReactionDeactivation(long nonodes)
                for (sp = 0; sp < Number_of_Components; sp++)
                {
                   //This is C of current time step after transport
-                  Concentration = pcs_vector[sp_pcsind[sp]]->GetNodeValue(
+                  Concentration = cp_vec[sp]->getProcess()->GetNodeValue(
                      node, sp_varind[sp]);
                   //This is C of previous time step after transport only
                   Concentration_old = concentrationmatrix[node][sp];
@@ -4682,11 +4690,11 @@ void CKinReactData::ReactionDeactivation(long nonodes)
                for (sp = 0; sp < Number_of_Components; sp++)
                {
                   //This is C of current time step after transport
-                  Concentration = pcs_vector[sp_pcsind[sp]]->GetNodeValue(
+                  Concentration = cp_vec[sp]->getProcess()->GetNodeValue(
                      node, sp_varind[sp]);
                   //This is C of previous time step after transport & reaction
                   Concentration_old
-                     = pcs_vector[sp_pcsind[sp]]->GetNodeValue(node,
+                     = cp_vec[sp]->getProcess()->GetNodeValue(node,
                      (sp_varind[sp] - 1));
                   sumReact_dCdT += fabs(Concentration - Concentration_old);
                }
@@ -4738,10 +4746,10 @@ void CKinReactData::ReactDeactSetOldReactionTerms(long nonodes)
          for (sp = 0; sp < Number_of_Components; sp++)
          {
             // Get the C after reactions of last time step (old time level, index = 0)
-            Concentration = pcs_vector[sp_pcsind[sp]]->GetNodeValue(node,
+            Concentration = cp_vec[sp]->getProcess()->GetNodeValue(node,
                sp_varind[sp] - 1);
             // Set this C as the new concentration after reaction
-            pcs_vector[sp_pcsind[sp]]->SetNodeValue(node, sp_varind[sp],
+            cp_vec[sp]->getProcess()->SetNodeValue(node, sp_varind[sp],
                Concentration);
          }
       }
@@ -4829,16 +4837,18 @@ void CKinReactData::Aromaticum(long nonodes)
 
    long node;
    double conc, lambda = 0.0;                     //OK411
-   int pcsindex = 0;
+   // int pcsindex = 0;
+   CRFProcess* m_pcs; 
    int varindex = 0;
    int nospec = (int) sp_varind.size();
 
    for (int sp = 0; sp < nospec; sp++)
    {
-      if (pcs_vector[sp_pcsind[sp]]->nod_val_name_vector[0].compare(
+      if (cp_vec[sp]->getProcess()->nod_val_name_vector[0].compare(
          "Aromaticum") == 0)
       {
-         pcsindex = sp_pcsind[sp];
+         // pcsindex = sp_pcsind[sp];
+         m_pcs = cp_vec[sp]->getProcess(); 
          varindex = sp_varind[sp];
          break;
       }
@@ -4854,8 +4864,8 @@ void CKinReactData::Aromaticum(long nonodes)
 
    for (node = 0; node < nonodes; node++)
    {
-      conc = pcs_vector[pcsindex]->GetNodeValue(node, varindex);
+      conc = m_pcs->GetNodeValue(node, varindex);
       conc = conc * exp(-lambda * dt);
-      pcs_vector[pcsindex]->SetNodeValue(node, varindex, conc);
+      m_pcs->SetNodeValue(node, varindex, conc);
    }
 }

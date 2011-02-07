@@ -40,7 +40,7 @@ TARGET_LINK_LIBRARIES( ogs
 
 if (WIN32)
 	if (OGS_FEM_GEMS)
-		target_link_libraries( ogs qd debug GEMS3_dbg optimized GEMS3_rl ) 
+		target_link_libraries( ogs debug GEMS3_dbg optimized GEMS3_rl ) 
 	endif (OGS_FEM_GEMS)
 	if (LIS)
 		target_link_libraries( ogs lisomp ) 
@@ -56,7 +56,7 @@ endif (WIN32)
 
 if (UNIX)
 	if (OGS_FEM_GEMS)
-		target_link_libraries( ogs gemipm2k qd )
+		target_link_libraries( ogs gemipm2k )
 	endif (OGS_FEM_GEMS)
 	
 	if (OGS_FEM_BRNS)

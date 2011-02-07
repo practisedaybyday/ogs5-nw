@@ -12,6 +12,7 @@ Programing:
 //#include "mathlib.h"
 //#include "fem_ele.h"
 #include "rf_mmp_new.h"
+#include "rfmat_cp.h"
 
 #define ALLOW_PARTICLES_GO_OUTSIDE
 

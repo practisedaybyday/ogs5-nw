@@ -26,9 +26,6 @@
 // QD_real is enabled only if the above compiler key is used (experimental)
 #include <qd/qd_real.h>
 #include <qd/fpu.h>
-#else
-typedef double qd_real;
-#define to_double (double)
 #endif
 
 #ifndef IPMGEMPLUGIN
@@ -109,15 +106,15 @@ tMin,  // Type of thermodynamic potential to minimize
     CpX_,CpXc,  // reserved
     CvX_,CvXc,  // reserved
     TMols,      // Input total moles in b vector before rescaling
-    SMols,      // Standart total moles (upscaled) {10000}
+    SMols,      // Standart total moles (upscaled) {1000}
     MBX,        // Total mass of the system, kg
     FX,    	// Current Gibbs potential of the system in IPM, moles
     IC,         // Effective molal ionic strength of aqueous electrolyte
     pH,         // pH of aqueous solution
     pe,         // pe of aqueous solution
     Eh,         // Eh of aqueous solution, V
-    DHBM,       // Adjusted balance precision criterion (IPM-2 )
-    DSM,        // min value phase DS (IPM-2)
+    DHBM,       // balance (relative) precision criterion
+    DSM,        // min amount of phase DS
     GWAT,       // used in ipm_gamma()
     YMET,       // reserved
     PCI,        // Current value of Dikin criterion of IPM convergence DK>=DX
@@ -132,7 +129,8 @@ tMin,  // Type of thermodynamic potential to minimize
     logXw,      // work variable
     logYFk,     // work variable
     YFk,        // Current number of moles in a multicomponent phase
-    FitVar[5];  // internal; FitVar[0] is T,P-dependent b_gamma parameter
+    FitVar[5];  // internal; FitVar[0] is total mass (g) of solids in the system (sum over the BFC array)
+                //      FitVar[1], [2] reserved
                 //       FitVar[4] is the AG smoothing parameter;
                 //       FitVar[3] is the actual smoothing coefficient
 double
@@ -325,7 +323,7 @@ double
   char errorCode[100]; //  code of error in IPM      (Ec number of error)
   char errorBuf[1024]; // description of error in IPM
   double logCDvalues[5]; // Collection of lg Dikin crit. values for the new smoothing equation
-  qd_real qdFX;    	// Current Gibbs potential of the system in IPM, moles
+//  qd_real qdFX;    	// Current Gibbs potential of the system in IPM, moles
 
   double // Iterators for MTP interpolation (do not load/unload for IPM)
 Pai[4],  // Pressure P, bar: start, end, increment for MTP array in DataCH , Ptol
@@ -370,8 +368,10 @@ class TMulti
    long int sizeN; /*, sizeL, sizeAN;*/
    double *AA;
    double *BB;
+#ifdef Use_qd_real
    qd_real *qdAA;
    qd_real *qdBB;
+#endif
    long int *arrL;
    long int *arrAN;
 
@@ -447,7 +447,7 @@ class TMulti
     void GasParcP();
     void phase_bcs( long int N, long int M, long int jb, double *A, double X[], double BF[] );
     void phase_bfc( long int k, long int jj );
-    //double pH_via_hydroxyl( double x[], double Factor, long int j);
+    double bfc_mass( void );
     void ConCalcDC( double X[], double XF[], double XFA[],
                     double Factor, double MMC, double Dsur, long int jb, long int je, long int k );
     void ConCalc( double X[], double XF[], double XFA[]);
@@ -534,7 +534,7 @@ class TMulti
     void MultiCalcInit();
 
 
-
+#ifdef Use_qd_real
 // QD_real
     // ipm_main.cpp - miscellaneous fuctions of GEM IPM-2
        void qdMassBalanceResiduals( long int N, long int L, double *A, double *Y,
@@ -543,7 +543,7 @@ class TMulti
        long int qdSolverLinearEquations( long int N, bool initAppr );
        double qdLMD( double LM );
        double qdcalcDikin(  long int N, bool initAppr );
-
+#endif
 
 public:
 

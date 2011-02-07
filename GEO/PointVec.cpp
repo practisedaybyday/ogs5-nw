@@ -107,7 +107,7 @@ const Point* PointVec::getElementByName (const std::string& name) const
 	size_t id;
 	bool ret (getElementIDByName (name, id));
 	if (ret) {
-		return (*_pnt_vec)[_pnt_id_map[id]];
+		return (*_pnt_vec)[id];
 	} else {
 		return NULL;
 	}

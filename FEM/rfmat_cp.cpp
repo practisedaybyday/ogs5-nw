@@ -39,7 +39,10 @@ using namespace std;
 #endif
 using SolidProp::CSolidProperties;
 /* Vector auf CompProperties , globale Zugriffe */
-std::vector <CompProperties*> cp_vec;
+// vector <CompProperties*> cp_vec; 
+// do not need this anymore, use global map structure instead. 
+std::map <int, CompProperties*> cp_vec;
+std::map <std::string, int> cp_name_2_idx; 
 
 /*========================================================================*/
 /* Component Properties                                                  */
@@ -51,17 +54,15 @@ Task: CompProperties Constructor
 Programing:
 02/2004 SB Implementation
 **************************************************************************/
-CompProperties::CompProperties(long n)
+CompProperties::CompProperties(/* int n // HS we do not need this. */) 
+:idx(std::numeric_limits<size_t>::max())
 {
+   // if ( idx != std::numeric_limits<size_t>::max() ) // this means idx is set. 
 
-   char name1[MAX_ZEILE];
-   sprintf(name1,"%s%ld","CONCENTRATION", n);
-
-   name =  name1;
-   compname = name1;
-   mobil = 1;
-   transport_phase = 0;
-   fluid_phase = 0;
+   // compname = name1; // HS it will be loaded later.
+   mobil = 1;           // by default, set to mobile species. 
+   transport_phase = 0; // by default, set to the 1st phase. 
+   fluid_phase = 0;     // by default, set to water
 
    diffusion_model = -1;
    count_of_diffusion_model_values = 0;
@@ -76,6 +77,8 @@ CompProperties::CompProperties(long n)
    bubble_velocity[0] = bubble_velocity[1] = bubble_velocity[2] = 0.0;
    file_base_name = "nix";
 
+   this->setProcessType( MASS_TRANSPORT );
+   this->setProcessPrimaryVariable( CONCENTRATION );
 }
 
 
@@ -127,19 +130,53 @@ bool CPRead(std::string file_base_name)
       cp_file.getline(line,MAX_ZEILE);
       line_string = line;
       if(line_string.find("#STOP")!=std::string::npos)
-         return true;
+         break;
       //----------------------------------------------------------------------
                                                   // keyword found
       if(line_string.find("#COMPONENT_PROPERTIES")!=std::string::npos)
       {
-         m_cp = new CompProperties((long) cp_vec.size());
+         m_cp = new CompProperties();
          m_cp->file_base_name = file_base_name;
          position = m_cp->Read(&cp_file);
-         //-----------------------------
-         cp_vec.push_back(m_cp);
+         // HS the index of this component is filled
+         // one after another by its sequence in mcp file. 
+         m_cp->idx = cp_vec.size();
+         cp_name_2_idx[m_cp->compname] = m_cp->idx; 
+         cp_vec[m_cp->idx] = m_cp;
+         m_cp = NULL; 
          cp_file.seekg(position,ios::beg);
       }                                           // keyword found
    }                                              // eof
+   // immediately check if enough PCS objects are available
+   size_t pcs_mt_count = 0; 
+   size_t pcs_rwpt_count = 0;
+   size_t i; 
+   for ( i=0; i < pcs_vector.size() ; i++ )
+   {
+       if ( pcs_vector[i]->getProcessType() == MASS_TRANSPORT ) pcs_mt_count++;   
+       if ( pcs_vector[i]->getProcessType() == RANDOM_WALK ) pcs_rwpt_count++;   
+   }
+   if ( pcs_rwpt_count == 0) // HS, no random walk detected. 
+   {
+   if ( pcs_mt_count != cp_vec.size() || pcs_mt_count != cp_name_2_idx.size() )
+   {
+       DisplayMsgLn("Mass transport components and Mass transport processes do not fit!");
+       exit(1);
+   }
+   else
+   {
+       // and then link MCP with the PCS. 
+       std::map <int, CompProperties*>::iterator cp_iter = cp_vec.begin();
+       for ( i=0; i < pcs_vector.size() ; i++ )
+       {
+           if ( pcs_vector[i]->getProcessType() == MASS_TRANSPORT )
+           {
+               cp_iter->second->setProcess( pcs_vector[i] );
+               ++cp_iter; 
+           }
+       }
+   }   // end of else
+   }
    return true;
 }
 
@@ -659,7 +696,8 @@ double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFPro
    // static long *element_nodes;
 #ifdef GEM_REACT
    static int count_nodes;
-   static double eta = 0.0;                       //, theta = 1.0;
+   // TF unused variable - fix a compiler warning
+//   static double eta = 0.0;                       //, theta = 1.0;
    double porosity;
    int i;
 #endif

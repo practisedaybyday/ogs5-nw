@@ -1662,10 +1662,6 @@ namespace FiniteElement
          {
                                                   // Porosity
             val = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-            /*
-            m_cp = cp_vec[pcs->pcs_component_number];
-            val *= m_cp->CalcElementRetardationFactorNew(Index, unit, pcs); // Retardation factor
-            */
             // Get saturation change:
             nodeval0 = PCSGetEleMeanNodeSecondary_2(Index, pcs->flow_pcs_type, "SATURATION1", 0);
             nodeval1 = PCSGetEleMeanNodeSecondary_2(Index, pcs->flow_pcs_type, "SATURATION1", 1);
@@ -5431,8 +5427,8 @@ namespace FiniteElement
             rho = 1.0;
          else if(HEAD_Flag)
          {
-            //FS/WW 21.05.2010
-            //		fkt = fkt*rho * gravity_constant/FluidProp->Viscosity();
+            // FS/WW 21.05.2010
+            // fkt = fkt*rho * gravity_constant/FluidProp->Viscosity();
             rho = 1.0;
          }
          else
@@ -5449,7 +5445,7 @@ namespace FiniteElement
             //	*************************************
             //FS/WW 21.05.2010
                   if (HEAD_Flag)
-                     continue;
+                      continue;
             //***************************************
                   NodalVal2[i] += fktG*dshapefct[dimension*nnodes+j]
                      *mat[dim*dimension+k]* shapefct[i] * MeshElement->nodes[j]->Z();
