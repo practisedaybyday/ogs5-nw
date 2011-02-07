@@ -33,11 +33,6 @@ extern const double R_CONSTANT, NA_CONSTANT, F_CONSTANT,
 #include "ms_multi.h"
 #include "verror.h"
 
-// HS, 20.10.2009
-// fmin function is not supported by math.h on VS2005,
-// so that we define a macro here.
-static double minarg1,minarg2;
-#define fmin(a,b) (minarg1=(a),minarg2=(b),(minarg1) < (minarg2) ? (minarg1) : (minarg2)) 
 
 struct BASE_PARAM
 { // Flags and thresholds for numeric modules

@@ -163,7 +163,13 @@ class CBoundaryConditionsGroup
       const std::string& getProcessTypeName () const { return _pcs_type_name; }
       void setProcessTypeName (const std::string& pcs_type_name) { _pcs_type_name = pcs_type_name; }
       const std::string& getProcessPrimaryVariableName () const { return _pcs_pv_name; }
-      void setProcessPrimaryVariableName (const std::string& pcs_pv_name) { _pcs_pv_name = pcs_pv_name; }
+      void setProcessPrimaryVariableName (const std::string& pcs_pv_name) {
+    	  if (_pcs_type_name.find("MASS_TRANSPORT") == std::string::npos) {
+    		  _pcs_pv_name = pcs_pv_name;
+    	  } else {
+    		  _pcs_pv_name = "CONCENTRATION1";
+    	  }
+	}
       long msh_node_number_subst;                 //WW
       std::string fct_name;                       //OK
 

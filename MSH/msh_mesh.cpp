@@ -2259,6 +2259,13 @@ namespace Mesh_Group
       //         }
       //     }
       //     tolerance = min_mesh_dist;
+
+      // TF expand bounding box with epsilon environment
+      for (size_t k(0); k<3; k++) {
+    	  sfc_min[k] -= tolerance;
+    	  sfc_max[k] += tolerance;
+      }
+
       //Loop over all mesh nodes
       for (i = 0; i < NodesInUsage(); i++)        //NW cannot use nod_vector.size() because of higher order elements
       {
@@ -2266,11 +2273,9 @@ namespace Mesh_Group
          checkpoint[1] = nod_vector[i]->Y();
          checkpoint[2] = nod_vector[i]->Z();
          node = new CNode(i, checkpoint[0], checkpoint[1], checkpoint[2]);
-         if ((checkpoint[0] >= sfc_min[0] - tolerance && checkpoint[0]
-            <= sfc_max[0] + tolerance) && (checkpoint[1] >= sfc_min[1]
-            - tolerance && checkpoint[1] <= sfc_max[1] + tolerance)
-            && (checkpoint[2] >= sfc_min[2] - tolerance && checkpoint[2]
-            <= sfc_max[2] + tolerance))
+         if ((checkpoint[0] >= sfc_min[0] && checkpoint[0] <= sfc_max[0])
+        		 && (checkpoint[1] >= sfc_min[1] && checkpoint[1] <= sfc_max[1])
+        		 && (checkpoint[2] >= sfc_min[2] && checkpoint[2] <= sfc_max[2]))
          {
             m_msh_aux->nod_vector.push_back(node);
          }

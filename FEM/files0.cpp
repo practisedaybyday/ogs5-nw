@@ -30,7 +30,7 @@ ConfigFileData aus CreateFileData herausgeloest
 */
 /**************************************************************************/
 #include "Configure.h"
-#include <cstring>
+//#include <iostream>
 //#include "makros.h"
 //#ifndef NEW_EQS //WW. 07.11.2008
 //#include "solver.h"
@@ -158,6 +158,8 @@ int ReadData ( char *dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
    //----------------------------------------------------------------------
    // Read object data
    PCSRead(dateiname);
+   // HS PCS immediately followed by the MCP read
+   CPRead(dateiname);                             //SB:GS4
    BCRead(dateiname, geo_obj, unique_name);
    STRead(dateiname, geo_obj, unique_name);
    ICRead(dateiname, geo_obj, unique_name);
@@ -166,7 +168,6 @@ int ReadData ( char *dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
    MFPRead(dateiname);
    MSPRead(dateiname);
    MMPRead(dateiname);
-   CPRead(dateiname);                             //SB:GS4
    RCRead(dateiname);
    KRRead(dateiname, geo_obj, unique_name);
    KRWrite(dateiname);

@@ -8,6 +8,7 @@
 // STL
 #include <limits>
 #include <vector>
+#include <cstddef>
 
 #ifndef BINARYSEARCH_H_
 #define BINARYSEARCH_H_

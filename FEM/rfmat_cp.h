@@ -14,12 +14,12 @@
 #define rfmat_cp_INC
 
 #include "Configure.h"
-
+#include "ProcessInfo.h"
 #define CP_FILE_EXTENSION ".mcp"                  /* File extension for component properties input file */
 #include <fstream>
+#include <string>
+#include <map>
 #include <vector>
-
-class CRFProcess;
 
 /*************************************************************************
 
@@ -27,21 +27,21 @@ Class ComponentProperties
 
 **************************************************************************/
 
-class CompProperties
+class CompProperties : public ProcessInfo
 {
    private:
    public:
 
       /* constructor */
-      CompProperties(long);
+      CompProperties();
       /* destructor */
       ~CompProperties(void);
 
-      std::string name;                           /* Gruppenname */
-      std::string compname;                       /* component name */
-      long mobil;                                 /* flag mobil */
-      long transport_phase;                       /* number of phase, in which component is transported */
-      long fluid_phase;
+      size_t idx;                                   /* the unique index of this component. not effective, saved for future*/
+      std::string compname;                           /* component name */
+      int mobil;                                 /* flag mobil */
+      int transport_phase;                       /* number of phase, in which component is transported */
+      int fluid_phase;
       int valence;                                // valence of ionic elements /*MX*/
       double mol_mass;
       double critical_pressure;
@@ -118,8 +118,24 @@ class CompProperties
 
 };
 
-/* Vector auf CompProperties , globale Zugriffe */
-extern std::vector <CompProperties*> cp_vec;
+/** 
+  * HS 01.2011 instead of the old cp_vec:
+  * extern vector <CompProperties*> cp_vec;
+  * a new cp_vec is introduced with map structure. 
+  * cp_vec[i] still points the i-th component. 
+*/
+extern std::map <int, CompProperties*> cp_vec;
+/**
+ * also introduce a second map structure, that store the relationship
+ * of component name and its index value. 
+ * this will give access to the user who would like to get access 
+ * to a particular component by name. 
+*/
+extern std::map <std::string, int> cp_name_2_idx; 
+/**
+ * Here is a straight forward example: 
+ * cp_vec[cp_name_2_idx["O2"]];
+*/
 
 /* ----------------------------------------------------------------------- */
 /* Read all Component Properties instance by instance from input file *.cp */
