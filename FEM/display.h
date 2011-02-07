@@ -13,7 +13,8 @@
 /* Schutz gegen mehrfaches Einfuegen */
 
 /* Andere oeffentlich benutzte Module */
-//#include <stdio.h>
+#include <cstdio>
+#include <cstring>
 //#include <ctype.h>
 
 /* Deklarationen */

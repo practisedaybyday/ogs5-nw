@@ -209,7 +209,7 @@ class CKinReactData
       //index vector for shortening vectors c in kinetic calculations (omitting nonreacting species)
       //	vector <int> sp_index;
       //	int kr_active_species;
-      std::vector<int> sp_pcsind;
+      // std::vector<int> sp_pcsind; // HS
       std::vector<int> sp_varind;
 
       // No reactions on specified GEO-Objects; Data structures

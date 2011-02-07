@@ -27,7 +27,6 @@ void GeoIO::readGeoInfo (GeoInfo* geo_info, std::ifstream& in_str, std::string& 
 		const GEOLIB::Point *pnt(
 				(geo_obj.getPointVecObj(unique_geo_name))->getElementByName(
 						geo_name));
-
 		if (pnt == NULL) {
 			std::cerr << "ERROR in GeoIO::GeoIO : point name \"" << geo_name
 					<< "\" not found!" << std::endl;

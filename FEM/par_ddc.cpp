@@ -823,7 +823,7 @@ void CPARDomain::InitialEQS(CRFProcess *m_pcs)
    }
    else
       this_eqs = eqs;
-   for(int i=0; i<m_pcs->GetPrimaryVNumber(); i++)
+   for(size_t i=0; i<m_pcs->GetPrimaryVNumber(); i++)
       shift[i] = i*size;
    //
    this_eqs->Initialize();
