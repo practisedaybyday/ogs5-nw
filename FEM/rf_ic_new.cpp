@@ -12,7 +12,6 @@ last modified
 // C++ STL
 #include <list>
 #include <iostream>
-#include <cstring>
 using namespace std;
 // FEM-Makros
 //#include "files0.h"
@@ -28,7 +27,7 @@ using namespace std;
 #include "rf_ic_new.h"
 #include "rf_pcs.h"
 #include "rf_node.h"
-//#include "problem.h"
+#include "rfmat_cp.h"
 
 //==========================================================================
 vector<CInitialConditionGroup*>ic_group_vector;
@@ -226,7 +225,48 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
          in.str(GetLineFromFile1(ic_file));
          std::string tmp;
          in >> tmp;                               // pcs_pv_name;
-         this->setProcessPrimaryVariable(convertPrimaryVariable(tmp));
+         if ( this->getProcessType() == MASS_TRANSPORT )
+         {
+             // HS set the pointer to MCP based on component name.
+             // first do a check whether this name is existing and unique. 
+             if ( cp_name_2_idx.count( tmp ) == 1 )
+             {
+                 setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
+                 setProcessPrimaryVariable( CONCENTRATION );
+             }
+             else
+             {
+                 DisplayErrorMsg("Error: In reading IC file, the input component names are not found in MCP file!!!");
+                 exit(1);             
+             }
+         }
+         else
+         {
+             setProcess( PCSGet( this->getProcessType() ) );
+             setProcessPrimaryVariable (convertPrimaryVariable (tmp));
+         }
+         in.clear();
+         continue;
+      }
+      //....................................................................
+                                                  // subkeyword found
+      if (line_string.find("$COMP_NAME") != string::npos)
+      {
+         in.str(GetLineFromFile1(ic_file));
+         std::string tmp;
+         in >> tmp;
+         // HS set the pointer to MCP based on component name.
+         // first do a check whether this name is existing and unique. 
+         if ( cp_name_2_idx.count( tmp ) == 1 )
+         {
+             setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
+             setProcessPrimaryVariable( CONCENTRATION );
+         }
+         else
+         {
+             DisplayErrorMsg("Error: In reading BC file, the input component names are not found in MCP file!!!");
+             exit(1);             
+         }
          in.clear();
          continue;
       }
@@ -238,16 +278,6 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
          std::string tmp;
          in >> tmp;                               // dis_type_name;
          this->setProcessDistributionType(FiniteElement::convertDisType(tmp));
-
-         // Initial conditions are assign to mesh nodes directly. 17.11.2009. PCH
-         /* KR not used in benchmarks
-         if (dis_type_name.find("DIRECT") != string::npos) {
-            dis_type_name = "DIRECT";
-            in >> fname;
-            fname = FilePath + fname;
-            in.clear();
-         }
-         */
 
          //if (dis_type_name.find("CONSTANT") != string::npos) {
          if (this->getProcessDistributionType() == FiniteElement::CONSTANT)

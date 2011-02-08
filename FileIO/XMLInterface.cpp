@@ -148,13 +148,17 @@ int XMLInterface::readGLIFile(const QString &fileName)
 
 	QDomNodeList geoTypes = docElement.childNodes();
 
-	for(int i=0; i<geoTypes.count(); i++)
-    {
-		if (geoTypes.at(i).nodeName().compare("name") == 0)				gliName = geoTypes.at(i).toElement().text().toStdString();
-		else if (geoTypes.at(i).nodeName().compare("points") == 0)		readPoints(geoTypes.at(i), points, pnt_names);
-		else if (geoTypes.at(i).nodeName().compare("polylines") == 0)	readPolylines(geoTypes.at(i), polylines, points, ply_names);
-		else if (geoTypes.at(i).nodeName().compare("surfaces") == 0)	readSurfaces(geoTypes.at(i), surfaces, points, sfc_names);
-		else std::cout << "Unknown XML-Node found in file." << std::endl;
+	for (int i = 0; i < geoTypes.count(); i++) {
+		if (geoTypes.at(i).nodeName().compare("name") == 0)
+			gliName = geoTypes.at(i).toElement().text().toStdString();
+		else if (geoTypes.at(i).nodeName().compare("points") == 0)
+			readPoints(geoTypes.at(i), points, pnt_names);
+		else if (geoTypes.at(i).nodeName().compare("polylines") == 0)
+			readPolylines(geoTypes.at(i), polylines, points, ply_names);
+		else if (geoTypes.at(i).nodeName().compare("surfaces") == 0)
+			readSurfaces(geoTypes.at(i), surfaces, points, sfc_names);
+		else
+			std::cout << "Unknown XML-Node found in file." << std::endl;
 	}
 	delete file;
 

@@ -38,12 +38,11 @@
 //16.12.2008. WW #include "rf_apl.h"
 #include "files0.h"
 #include "FileTools.h"
-#include <cstring>
 #ifdef SUPERCOMPUTER
 // kg44 test for buffered outputh
-#include <cstdio>
+#include <stdio.h>
 #include <unistd.h>
-#include <cstdlib>
+#include <stdlib.h>
 #endif
 #include "problem.h"
 

@@ -847,7 +847,7 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
             time_step_length = MMin(time_step_length, max_time_step);
             if (Write_tim_discrete)
                *tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit
-                  << "   " << time_step_length << "  " << m_pcs->iter
+                  << "   " << time_step_length << "  " << m_pcs->iter_lin
                   << std::endl;
             break;
          }
@@ -939,7 +939,7 @@ double CTimeDiscretization::CourantTimeControl(void)
    }
 
    if(Write_tim_discrete)
-      *tim_discrete<<aktueller_zeitschritt<<"  "<<aktuelle_zeit<<"   "<<time_step_length<< "  "<<m_pcs->iter<<std::endl;
+      *tim_discrete<<aktueller_zeitschritt<<"  "<<aktuelle_zeit<<"   "<<time_step_length<< "  "<<m_pcs->iter_lin <<std::endl;
    return time_step_length;
 }
 
@@ -974,7 +974,7 @@ double CTimeDiscretization::NeumannTimeControl(void)
    time_step_length_neumann = 1.e10;
    if (Write_tim_discrete)
       *tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit
-         << "   " << time_step_length << "  " << m_pcs->iter << std::endl;
+         << "   " << time_step_length << "  " << m_pcs->iter_lin << std::endl;
    return time_step_length;
 }
 
@@ -985,101 +985,90 @@ Task: Self adaptive method
 Programing:
 10/2005 YD Implementation
 03/2008 HS KG Implementation for Groundwater flow and mass transport
+10/2010 KG updates
 **************************************************************************/
 double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 {
    int imflag=1, iprocs=0;
    int iterdum=1;
-   double my_max_time_step = 0;
+	double my_max_time_step=0.0;
    CRFProcess* m_pcs = NULL;                      //YDToDo: m_pcs should be member
 
-   // kg44 This does not work with multiple mass tranport processes!
+
+
+  // First calculate maximum time step according to Neumann criteria
+#ifdef GEM_REACT
+  my_max_time_step= MMin(max_time_step,MaxTimeStep());
+  std::cout<<"Self_Adaptive Time Step: max time step "<<my_max_time_step<< std::endl;
+#else
+// kg44 This does not work in this way with multiple mass tranport processes!
    if ( repeat )
    {
       std::cout << "   TIM step is repeated" << std::endl;
       m_pcs = PCSGet ( pcs_type_name );
       m_pcs->PrimaryVariableReload();
    }
-
-   // First calculate maximum time step according to Neumann criteria
-#ifdef GEM_REACT
-   my_max_time_step= MMin(max_time_step,MaxTimeStep());
-   std::cout<<"Self_Adaptive Time Step: max time step "<<my_max_time_step<< std::endl;
 #endif
-
                                                   // TF
    ProcessType pcs_type (convertProcessType (pcs_type_name));
    for (size_t n_p = 0; n_p < pcs_vector.size(); n_p++)
    {
-      m_pcs = pcs_vector[n_p];
-
-      //		if (m_pcs->pcs_type_name == pcs_type_name) { //compare process type and type name from Tim object
-      if (m_pcs->getProcessType() == pcs_type)    //compare process type and type from Tim object
-      {
-         iprocs++;
-         //			switch (m_pcs->pcs_type_name[0]) {
-         switch (m_pcs->getProcessType())         // TF
-         {
-            default:
-               std::cout << "Fatal error: No valid PCS type" << std::endl;
-               break;
-               //			case 'R': // Richards
-            case RICHARDS_FLOW:                   // TF
-               if ((imflag > 0) && (m_pcs->iter
-                  >= time_adapt_tim_vector[time_adapt_tim_vector.size()
-                  - 1]))
-               {
-                  imflag = 0;
-                  time_step_length
-                     = time_step_length
-                     * time_adapt_coe_vector[time_adapt_tim_vector.size()
-                     - 1];
-               }
-               if ((imflag == 1) && (m_pcs->iter <= time_adapt_tim_vector[0]))
-               {
-                  imflag = 2;
-                  time_step_length = time_step_length
-                     * time_adapt_coe_vector[0];
-               }
-               break;
-               //			case 'G': //Groundwater flow
-            case GROUNDWATER_FLOW:                // TF
-               // iterdum=MMax(iterdum,m_pcs->iter);
-               imflag = 1;
-               if ((imflag > 0) && (m_pcs->iter
-                  >= time_adapt_tim_vector[time_adapt_tim_vector.size()
-                  - 1]))
-               {
-                  imflag = 0;
-                  iterdum = std::max(iterdum, m_pcs->iter);
-               }
-               if (((imflag == 1) && (m_pcs->iter <= time_adapt_tim_vector[0])))
-               {
-                  imflag = 2;
-                  iterdum = std::max(iterdum, m_pcs->iter);
-               }
-               break;
-               //			case 'M': // Mass transport
-            case MASS_TRANSPORT:                  // TF
-               iterdum = std::max(iterdum, m_pcs->iter);
-               break;
-         }
-      }
+       m_pcs = pcs_vector[n_p];
+       
+       if (m_pcs->getProcessType() == pcs_type)  //compare process type and type name from Tim object
+       {
+           iprocs++;
+           //			switch (m_pcs->pcs_type_name[0]) {
+           switch (m_pcs->getProcessType())         // TF
+           {
+               default:
+                   std::cout << "Fatal error: No valid PCS type" << std::endl;
+                   break;
+                   //			case 'R': // Richards
+               case RICHARDS_FLOW:                   // TF
+                   if ( (imflag>0) && ( m_pcs->iter_lin  >= time_adapt_tim_vector[time_adapt_tim_vector.size()-1] ) )
+                   {
+                       imflag=0;
+                       time_step_length = time_step_length * time_adapt_coe_vector[time_adapt_tim_vector.size()-1];
+                   }
+                   if ((imflag == 1) && (m_pcs->iter_lin <= time_adapt_tim_vector[0]))
+                   {
+                       imflag = 2;
+                       time_step_length = time_step_length * time_adapt_coe_vector[0];
+                   }
+                   break;
+                   //			case 'G': //Groundwater flow
+               case GROUNDWATER_FLOW:                // TF
+                   // iterdum=MMax(iterdum,m_pcs->iter);
+                   imflag = 1;
+                   if ( (imflag>0) && ( m_pcs->iter_lin  >= time_adapt_tim_vector[1] ) )
+                   {
+                       imflag=0; std::cout << "Self adaptive time step: to many iterations for Groundwater flow" << std::endl;
+                   }
+                   if (((imflag == 1) && (m_pcs->iter_lin <= time_adapt_tim_vector[0])))
+                   {
+                       imflag = 2;
+                   }
+                   break;
+                   //			case 'M': // Mass transport
+               case MASS_TRANSPORT:                  // TF
+                   iterdum = std::max(iterdum, m_pcs->iter_lin);
+                   if ( (imflag>0) && ( m_pcs->iter_lin  >= time_adapt_tim_vector[1] ) )
+                   {
+                       imflag=0; std::cout << "Self adaptive time step: to many iterations for Transport " << m_pcs->iter_lin << " "<< time_adapt_tim_vector[1] << std::endl;
+                   }
+                   if ( ((imflag == 1) && ( m_pcs->iter_lin  <= time_adapt_tim_vector[0] ) ))
+                   {
+                       imflag=2; 
+                   }
+                   break;
+           }
+       }
    }
 
-                                                  //reduce timestep always if mass transport need it
-   if   ( iterdum  >= time_adapt_tim_vector[time_adapt_tim_vector.size()-1] )
-   {
-      imflag=0;
-   }
-                                                  // increase timestep only if groundwater flow alows it,
-   else if ( (imflag>0) && (iterdum  <= time_adapt_tim_vector[0]) )
-   {
-      imflag=2;
-   }
 
-   if (imflag==0) {time_step_length = time_step_length * time_adapt_coe_vector[time_adapt_tim_vector.size()-1];}
-   else if (imflag==2){ time_step_length = time_step_length * time_adapt_coe_vector[0];}
+	if (imflag==0 && (time_adapt_coe_vector[time_adapt_tim_vector.size()-1]*time_step_length )>min_time_step) {time_step_length = time_step_length * time_adapt_coe_vector[time_adapt_tim_vector.size()-1];} //timestep smaller
+        else if (imflag==2){ time_step_length = time_step_length * time_adapt_coe_vector[0];} //timestep bigger
 
    // BUG my_max_time_step is not necessarily initialised
    time_step_length = MMin ( time_step_length,my_max_time_step );
@@ -1087,7 +1076,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 
    std::cout<<"Self_Adaptive Time Step: "<<" imflag " << imflag << " dr " << time_step_length<<" max iterations: " << iterdum << " number of evaluated processes: " << iprocs << std::endl;
    if ( Write_tim_discrete )
-      *tim_discrete<<aktueller_zeitschritt<<"  "<<aktuelle_zeit<<"   "<<time_step_length<< "  "<<m_pcs->iter<<std::endl;
+      *tim_discrete<<aktueller_zeitschritt<<"  "<<aktuelle_zeit<<"   "<<time_step_length<< "  "<<m_pcs->iter_lin<<std::endl;
    //}
    return time_step_length;
 }
@@ -1196,7 +1185,7 @@ double CTimeDiscretization::AdaptiveFirstTimeStepEstimate(void)
             std::cout << "Error Control Time Step: " << time_step_length << std::endl;
             if (Write_tim_discrete)
                *tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit
-                  << "   " << time_step_length << "  " << m_pcs->iter
+                  << "   " << time_step_length << "  " << m_pcs->iter_lin
                   << std::endl;
             break;
          }
@@ -1257,7 +1246,7 @@ double CTimeDiscretization::ErrorControlAdaptiveTimeControl(void)
                << std::endl;
             if (Write_tim_discrete)
                *tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit
-                  << "   " << time_step_length << "  " << m_pcs->iter
+                  << "   " << time_step_length << "  " << m_pcs->iter_lin
                   << std::endl;
       }
    }
