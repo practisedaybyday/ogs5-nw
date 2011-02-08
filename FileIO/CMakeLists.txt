@@ -20,6 +20,7 @@ SET( HEADERS
 	StationIO.h
 	#FEMIO.h
 	FEMIO/GeoIO.h
+	MathIO/CRSIO.h
 )
 
 IF (OGS_USE_NETCDF)
@@ -49,6 +50,7 @@ ADD_LIBRARY( FileIO STATIC
 INCLUDE_DIRECTORIES(
 	.
 	./FEMIO
+	./MathIO
 	../Base
 	../FEM
 	../GEO
