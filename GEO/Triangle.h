@@ -98,7 +98,7 @@ public:
 		return true;
 	}
 
-	bool containsPoint (const GEOLIB::Point &pnt) const
+	bool containsPoint (const Point &pnt) const
 	{
 		return containsPoint (pnt.getData());
 	}

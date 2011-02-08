@@ -123,7 +123,7 @@ public:
 	 * corresponding name does not exist
 	 * */
 	virtual bool appendPolylineVec(const std::vector<Polyline*> &polylines,
-			std::string &name);
+			const std::string &name);
 
 	/**
 	 * Returns the polyline vector with the given name.
