@@ -7,6 +7,7 @@
 
 #include "MeshQualityChecker.h"
 #include "msh_elem.h"
+#include <cmath>
 
 namespace Mesh_Group {
 
