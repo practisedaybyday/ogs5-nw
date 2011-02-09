@@ -33,6 +33,9 @@ class EdgeType {
 		};
 };
 
+/**
+ *
+ */
 class Polygon : public Polyline
 {
 public:
@@ -40,10 +43,17 @@ public:
 	 * constructor checks if the given polyline is closed,
 	 * and assures that the orientation is clock wise.
 	 * @param ply closed Polyline
+	 * @param init if true, check if polyline is closed, calculate bounding box
 	 * @return
 	 */
-	Polygon(const Polyline &ply);
+	Polygon(const Polyline &ply, bool init = true);
 	virtual ~Polygon();
+
+	/**
+	 *
+	 * @return
+	 */
+	bool initialise ();
 
 	/**
 	 * Method checks if the given point is inside the polygon.
@@ -74,10 +84,11 @@ private:
 	 */
 	EdgeType::value getEdgeType (size_t k, GEOLIB::Point const & pnt) const;
 
+	void calculateAxisAlignedBoundingBox ();
+	void ensureCWOrientation ();
+
 	void splitPolygonAtIntersection (std::list<Polygon*>::iterator polygon_it);
 	void splitPolygonAtPoint (std::list<Polygon*>::iterator polygon_it);
-	double _maxx;
-	double _maxy;
 	std::list<Polygon*> _simple_polygon_list;
 	AABB _aabb;
 };
