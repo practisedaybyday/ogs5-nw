@@ -405,9 +405,6 @@ void MainWindow::save()
 	else
 		dir_str = QDir::homePath();
 
-	QString gliName = "Test"; //HACK change this!!!
-			//pntTabWidget->dataViewWidget->modelSelectComboBox->currentText();
-
 	QString
 			fileName =
 					QFileDialog::getSaveFileName(
@@ -416,12 +413,11 @@ void MainWindow::save()
 							dir_str,
 							"GeoSys project (*.gsp);;GeoSys4 geometry files (*.gli);;GMSH geometry files (*.geo)");
 
-	if (!(fileName.isEmpty() || gliName.isEmpty())) {
+	if (!fileName.isEmpty()) {
 		QFileInfo fi(fileName);
 
 		if (fi.suffix().toLower() == "gsp") {
-			std::string
-					schemaName(_fileFinder.getPath("OpenGeoSysProject.xsd"));
+			std::string schemaName(_fileFinder.getPath("OpenGeoSysProject.xsd"));
 			XMLInterface xml(_geoModels, schemaName);
 			xml.writeProjectFile(fileName);
 		/*
@@ -442,9 +438,7 @@ void MainWindow::save()
 			//			writeGLIFileV4 (fileName.toStdString(), gliName.toStdString(), *_geoModels);
 			writeAllDataToGLIFileV4(fileName.toStdString(), *_geoModels);
 		}
-
-	} else if (!fileName.isEmpty() && gliName.isEmpty()) OGSError::box(
-			"No geometry data available.");
+	}
 }
 
 void MainWindow::loadFile(const QString &fileName)
@@ -872,46 +866,60 @@ void MainWindow::callGMSH(std::vector<std::string> const & selectedGeometries,
 
 		QSettings settings("UFZ", "OpenGeoSys-5");
 		QString fileName("");
+		QStringList files = settings.value("recentFileList").toStringList();
+		QString dir_str;
+		if (files.size() != 0)
+			dir_str = QFileInfo(files[0]).absolutePath();
+		else
+			dir_str = QDir::homePath();
+
 		if (!delete_geo_file)
 			fileName = QFileDialog::getSaveFileName(this, "Save GMSH-file as",
-					settings.value("lastOpenedFileDirectory").toString(), "GMSH geometry files (*.geo)");
+					dir_str, "GMSH geometry files (*.geo)");
 		else
 			fileName = "tmp_gmsh.geo";
 
-		GMSHInterface gmsh_io(fileName.toStdString());
+		if (!fileName.isEmpty())
+		{
+			GMSHInterface gmsh_io(fileName.toStdString());
 
-		if (param4 == -1) { // adaptive meshing selected
-			gmsh_io.writeAllDataToGMSHInputFile(*_geoModels,
-					selectedGeometries, param1, param2, param3);
-		} else { // homogeneous meshing selected
-			gmsh_io.writeAllDataToGMSHInputFile(*_geoModels,
-					selectedGeometries, param4);
-		}
+			if (param4 == -1) { // adaptive meshing selected
+				gmsh_io.writeAllDataToGMSHInputFile(*_geoModels,
+						selectedGeometries, param1, param2, param3);
+			} else { // homogeneous meshing selected
+				gmsh_io.writeAllDataToGMSHInputFile(*_geoModels,
+						selectedGeometries, param4);
+			}
 
-		if (system(NULL) != 0) { // command processor available
-			std::string gmsh_command("gmsh -2 ");
-			std::string fname (fileName.toStdString());
-			gmsh_command += fname;
-			size_t pos (fname.rfind ("."));
-			if (pos != std::string::npos)
-				fname = fname.substr (0, pos);
-			gmsh_command += " -o " + fname + ".msh";
-			system(gmsh_command.c_str());
-		} else {
-			// give a error message here
-		}
+			if (system(NULL) != 0) { // command processor available
+				std::string gmsh_command("gmsh -2 ");
+				std::string fname (fileName.toStdString());
+				gmsh_command += fname;
+				size_t pos (fname.rfind ("."));
+				if (pos != std::string::npos)
+					fname = fname.substr (0, pos);
+				gmsh_command += " -o " + fname + ".msh";
+				system(gmsh_command.c_str());
+			} else {
+				// give a error message here
+			}
 
-		if (delete_geo_file) { // delete file
-			std::string remove_command ("rm ");
-#ifdef _WIN32
-			remove_command = "del ";
-#endif
-			remove_command += fileName.toStdString();
-			std::cout << "remove command: " << remove_command << std::endl;
-			system(remove_command.c_str());
+			if (delete_geo_file) { // delete file
+				std::string remove_command ("rm ");
+	#ifdef _WIN32
+				remove_command = "del ";
+	#endif
+				remove_command += fileName.toStdString();
+				std::cout << "remove command: " << remove_command << std::endl;
+				system(remove_command.c_str());
+			}
 		}
-	} else
+	} 
+	else
+	{
+		OGSError::box("No geometry information selected.", "Error");
 		std::cout << "No geometry information selected..." << std::endl;
+	}
 }
 
 void MainWindow::showDiagramPrefsDialog(QModelIndex &index)
