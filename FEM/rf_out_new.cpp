@@ -1008,7 +1008,8 @@ void OUTData(double time_current, int time_step_number)
                      time_step_number);
                   VTK_Info dat;
                   dat.timestep = m_out->getTime();
-                  dat.vtk_file = pvd_vtk_file_name;                  vtk->vec_dataset.push_back(dat);
+                  dat.vtk_file = pvd_vtk_file_name;
+                  vtk->vec_dataset.push_back(dat);
                   vtk->UpdatePVD(vtk->pvd_file_name, vtk->vec_dataset);
                }
                else
