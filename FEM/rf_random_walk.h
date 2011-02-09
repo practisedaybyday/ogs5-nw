@@ -86,7 +86,7 @@ class Trace
 class RandomWalk
 {
    public:
-      RandomWalk(void);
+      RandomWalk(int srand_seed);
       ~RandomWalk(void);
 
       // This will be determined from user's input
@@ -95,6 +95,7 @@ class RandomWalk
       int numOfParticles;
       int UniformOrNormal;
       int leavingParticles;
+	  int srand_seed;
       int RWPTMode;                               // 0: Advection and dispersion for homogeneous media
       // 1: Advection and dispersion for heterogeneous media
       // 2: Advection only for homogeneous media
