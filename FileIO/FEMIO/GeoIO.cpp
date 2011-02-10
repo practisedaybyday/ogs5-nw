@@ -25,8 +25,7 @@ void GeoIO::readGeoInfo (GeoInfo* geo_info, std::ifstream& in_str, std::string& 
 	if (geo_type_name.find("POINT") != std::string::npos) {
 		strstream >> geo_name;
 		const GEOLIB::Point *pnt(
-				(geo_obj.getPointVecObj(unique_geo_name))->getElementByName(
-						geo_name));
+				(geo_obj.getPointVecObj(unique_geo_name))->getElementByName(geo_name));
 		if (pnt == NULL) {
 			std::cerr << "ERROR in GeoIO::GeoIO : point name \"" << geo_name
 					<< "\" not found!" << std::endl;
@@ -41,8 +40,7 @@ void GeoIO::readGeoInfo (GeoInfo* geo_info, std::ifstream& in_str, std::string& 
 		geo_info->setGeoType(GEOLIB::POLYLINE);
 		strstream >> geo_name;
 		const GEOLIB::Polyline *ply(
-				(geo_obj.getPolylineVecObj(unique_geo_name))->getElementByName(
-						geo_name));
+				(geo_obj.getPolylineVecObj(unique_geo_name))->getElementByName(geo_name));
 		if (ply == NULL) {
 			std::cerr << "error in COutput::Read: polyline name \"" << geo_name
 					<< "\" not found!" << std::endl;
