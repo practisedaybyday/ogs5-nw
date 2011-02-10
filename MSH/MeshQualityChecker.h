@@ -5,7 +5,7 @@
  *      Author: TF
  */
 
-#ifndef MESHQUALITYCHECKER_H_
+#ifndef MESHQUALITYCHECKER_H_ 
 #define MESHQUALITYCHECKER_H_
 
 #include <vector>
