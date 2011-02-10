@@ -10,8 +10,8 @@
 #include "rf_ic_new.h"
 #include "rf_st_new.h"
 
-FEMCondition::FEMCondition(CondType t) 
-: _type(t), _geoObject(NULL), _geoName("")
+FEMCondition::FEMCondition(const std::string &geometry_name, CondType t) 
+: _type(t), _geoObject(NULL), _geoName("[unspecified]"), _associated_geometry(geometry_name)
 {
 	this->setProcessType(INVALID_PROCESS);
 	this->setProcessPrimaryVariable(INVALID_PV);
@@ -20,8 +20,8 @@ FEMCondition::FEMCondition(CondType t)
 }
 
 
-BoundaryCondition::BoundaryCondition(const CBoundaryCondition &bc)
-: FEMCondition(FEMCondition::BOUNDARY_CONDITION)
+BoundaryCondition::BoundaryCondition(const CBoundaryCondition &bc, const std::string &geometry_name)
+: FEMCondition(geometry_name, FEMCondition::BOUNDARY_CONDITION)
 {
 	this->setProcessType(bc.getProcessType());
 	this->setProcessPrimaryVariable(bc.getProcessPrimaryVariable());
@@ -30,18 +30,18 @@ BoundaryCondition::BoundaryCondition(const CBoundaryCondition &bc)
 	this->setProcessDistributionType(bc.getProcessDistributionType());
 }
 
-InitialCondition::InitialCondition(const CInitialCondition &ic)
-: FEMCondition(FEMCondition::BOUNDARY_CONDITION)
+InitialCondition::InitialCondition(const CInitialCondition &ic, const std::string &geometry_name)
+: FEMCondition(geometry_name, FEMCondition::INITIAL_CONDITION)
 {
 	this->setProcessType(ic.getProcessType());
 	this->setProcessPrimaryVariable(ic.getProcessPrimaryVariable());
 	this->setGeoType(ic.getGeoType());
-	this->setGeoName("blub");//ic.getGeoName());
+	this->setGeoName("[unspecified]");//ic.getGeoName());
 	this->setProcessDistributionType(ic.getProcessDistributionType());
 }
 
-SourceTerm::SourceTerm(const CSourceTerm &st)
-: FEMCondition(FEMCondition::BOUNDARY_CONDITION)
+SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
+: FEMCondition(geometry_name, FEMCondition::SOURCE_TERM)
 {
 	this->setProcessType(st.getProcessType());
 	this->setProcessPrimaryVariable(st.getProcessPrimaryVariable());
