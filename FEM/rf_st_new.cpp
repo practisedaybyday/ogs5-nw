@@ -204,7 +204,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
          if ( this->getProcessType() == MASS_TRANSPORT )
          {
              // HS set the pointer to MCP based on component name.
-             // first do a check whether this name is existing and unique. 
+             // first do a check whether this name is existing and unique.
              if ( cp_name_2_idx.count( tmp ) == 1 )
              {
                  setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
@@ -213,7 +213,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
              else
              {
                  DisplayErrorMsg("Error: In reading ST file, the input component names are not found in MCP file!!!");
-                 exit(1);             
+                 exit(1);
              }
          }
          else
@@ -231,7 +231,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
          std::string tmp;
          in >> tmp;
          // HS set the pointer to MCP based on component name.
-         // first do a check whether this name is existing and unique. 
+         // first do a check whether this name is existing and unique.
          if ( cp_name_2_idx.count( tmp ) == 1 )
          {
              setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
@@ -240,7 +240,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
          else
          {
              DisplayErrorMsg("Error: In reading ST file, the input component names are not found in MCP file!!!");
-             exit(1);             
+             exit(1);
          }
          in.clear();
          continue;
@@ -375,7 +375,7 @@ void CSourceTerm::ReadDistributionType(std::ifstream *st_file)
       exit (1);
    }
 
-   if (   this->getProcessDistributionType() == FiniteElement::CONSTANT 
+   if (   this->getProcessDistributionType() == FiniteElement::CONSTANT
        || this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN
        || this->getProcessDistributionType() == FiniteElement::CONSTANT_GEO      )
    {
@@ -510,86 +510,6 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
 {
    FileIO::GeoIO geo_io;
    geo_io.readGeoInfo(this, *st_file, geo_name, geo_obj, unique_name);
-   //	std::stringstream in;
-   //	in.str(GetLineFromFile1(st_file));
-   //	std::string geo_type_name;
-   //	in >> geo_type_name;
-   //
-   //	if (geo_type_name.find("POINT") != std::string::npos) {
-   //		geo_type_name = "POINT";
-   //		in >> geo_name;
-   //
-   //		// TF 06/2010 - get the point
-   //		const GEOLIB::Point* pnt ((geo_obj.getPointVecObj(unique_name))->getPointByName(geo_name));
-   //		if (pnt == NULL) {
-   //			std::cerr << "error in CSourceTerm::Read: point with name \""
-   //					<< geo_name << "\" not found!" << std::endl;
-   //			exit(1);
-   //		}
-   //
-   //		setGeoType (GEOLIB::POINT);
-   //		setGeoObj (pnt);
-   //
-   //		in.clear();
-   //	}
-   //
-   //	if (geo_type_name.find("POLYLINE") != std::string::npos) {
-   //		in >> geo_name;
-   //		geo_type_name = "POLYLINE";
-   //
-   //		// TF 07/2010 - get the polyline vector for this project
-   //		if (geo_obj.getPolylineVecObj(unique_name) != NULL) {
-   //			const GEOLIB::Polyline* ply ((geo_obj.getPolylineVecObj(unique_name))->getElementByName(geo_name));
-   //			if (ply == NULL) {
-   //				std::cerr << "ERROR: CSourceTerm::Read: polyline with name \""
-   //						<< geo_name << "\" within vector of polylines with name \"" << unique_name << "\" not found!" << std::endl;
-   //				exit (1);
-   //			} else {
-   //				setGeoType (GEOLIB::POLYLINE);
-   //				setGeoObj (ply);
-   //			}
-   //		} else {
-   //			std::cerr << "WARNING: CSourceTerm::Read: vector of polylines with name \""
-   //				<< unique_name << "\" not found!" << std::endl;
-   //		}
-   //
-   //		in.clear();
-   //	}
-   //	if (geo_type_name.find("SURFACE") != std::string::npos) {
-   //		_geo_type = GEOLIB::SURFACE;
-   //		in >> geo_name;
-   //		geo_type_name = "SURFACE";
-   //
-   //		in.clear();
-   //	}
-   //	if (geo_type_name.find("VOLUME") != std::string::npos) {
-   //		_geo_type = GEOLIB::VOLUME;
-   //		in >> geo_name;
-   //		geo_type_name = "VOLUME";
-   //		in.clear();
-   //	}
-   //	if (geo_type_name.find("DOMAIN") != std::string::npos) {//CMCD for analytical function
-   ////		geo_type = 3; // 06/2010 TF
-   //		_geo_type = GEOLIB::VOLUME;
-   //		geo_type_name = "DOMAIN";
-   //		in.clear();
-   //	}
-   //	if (geo_type_name.find("COLUMN") != string::npos) {
-   //		//		geo_type = 0; 06/2010 TF
-   //		_geo_type = GEOLIB::POINT;
-   //		in >> geo_name;
-   //		geo_type_name = "COLUMN";
-   //		in.clear();
-   //		std::cout << "ERROR in CSourceTerm::ReadGeoType() reading COLUMN " << std::endl;
-   //		exit (1);
-   //	}
-   //
-   //	if (geo_type_name.find("NODES") != std::string::npos) { //WW
-   //		in >> nodes_file;
-   //		in.clear();
-   //		std::cout << "ERROR in CSourceTerm::ReadGeoType() reading NODES " << std::endl;
-   //		exit (1);
-   //	}
 
    if (getProcessPrimaryVariable() == EXCAVATION) //WW
    {
@@ -978,7 +898,7 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 
          if (source_term->getProcessType() == MASS_TRANSPORT)
              if ( cp_vec[cp_name_2_idx[convertPrimaryVariableToString(source_term->getProcessPrimaryVariable())]]->getProcess() != m_pcs )
-                 continue; 
+                 continue;
 
          if ((convertProcessTypeToString (source_term->getProcessType ()).compare(pcs_type_name) == 0)
             && (convertPrimaryVariableToString(source_term->getProcessPrimaryVariable()).compare(pcs_pv_name) == 0))

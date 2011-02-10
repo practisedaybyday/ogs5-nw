@@ -278,7 +278,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 							if (s != NULL) {
 								// write new point as gmsh geo point with mesh density from existing point
 								GEOLIB::Point ll, ur;
-								quad_tree.getLeaf (*(all_polylines[k+1])->getPoint(j), ll, ur);
+								quad_tree.getLeaf (*(all_polylines[k])->getPoint(j+1), ll, ur);
 								double mesh_density (0.3*(ur[0]-ll[0])); // scaling with 0.3 - do not know if this is a good value
 								_out << "Point(" << _n_pnt_offset << ") = {" << (*s)[0] << ","
 									<< (*s)[1] << "," << (*s)[2] << "," << mesh_density
