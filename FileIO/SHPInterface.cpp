@@ -159,6 +159,7 @@ void SHPInterface::readPolygons(const SHPHandle &hSHP, int numberOfElements, std
 
 		std::cout << "triangulation of Polygon with " << (*poly_it)->getNumberOfPoints() << " points ... " << std::flush;
 
+		/*
 		if ((*poly_it)->getNumberOfPoints() > 2) {
 			// create empty surface
 			GEOLIB::Surface *sfc(new GEOLIB::Surface(*pnt_vec));
@@ -175,8 +176,11 @@ void SHPInterface::readPolygons(const SHPHandle &hSHP, int numberOfElements, std
 			}
 
 			// add surface to sfc_vec
+
 			sfc_vec->push_back(sfc);
 		}
+		*/
+		sfc_vec->push_back(GEOLIB::Surface::createSurface(*(*poly_it)));
 	}
 
 	if (!sfc_vec->empty())

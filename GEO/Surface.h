@@ -12,6 +12,7 @@
 
 #include "GeoObject.h"
 #include "Point.h"
+#include "Polyline.h"
 #include "Triangle.h"
 
 
@@ -36,6 +37,9 @@ public:
 	 * adds three indices describing a triangle and updates the bounding box
 	 * */
 	void addTriangle (size_t pnt_a, size_t pnt_b, size_t pnt_c);
+
+	/// Triangulates a new surface based on closed polyline.
+	static Surface* createSurface(const Polyline &ply);
 
 	/**
 	 * returns the number of triangles describing the Surface

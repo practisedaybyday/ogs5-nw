@@ -119,7 +119,7 @@ public:
 	 * end of its scope
 	 * \param polylines the vector with polylines
 	 * \param name the name of the internal PolylineVec
-	 * \return true if the polylines are appended, false if the a PolylineVec with the
+	 * \return true if the polylines are appended, false if the PolylineVec with the
 	 * corresponding name does not exist
 	 * */
 	virtual bool appendPolylineVec(const std::vector<Polyline*> &polylines,
@@ -147,6 +147,16 @@ public:
 	/** Adds a vector of surfaces with the given name to GEOObjects. */
 	virtual void addSurfaceVec(std::vector<Surface*> *surfaces,
 			const std::string &name, std::map<std::string, size_t>* sfc_names = NULL);
+
+	/** 
+	 * Copies the surfaces in the vector to the SurfaceVec with the given name.
+	 * \param polylines the vector with polylines
+	 * \param name the name of the internal PolylineVec
+	 * \return true if the surfaces are appended, false if the SurfaceVec with the
+	 * corresponding name does not exist
+	 * */
+	virtual bool appendSurfaceVec(const std::vector<Surface*> &surfaces,
+			const std::string &name);
 
 	/// Returns the surface vector with the given name.
 	const std::vector<Surface*> *getSurfaceVec(const std::string &name) const;

@@ -20,7 +20,8 @@
 
 #include <QTime>
 
-XMLInterface::XMLInterface(GEOLIB::GEOObjects* geoObjects, const std::string &schemaFile) : _geoObjects(geoObjects), _schemaName(schemaFile)
+XMLInterface::XMLInterface(GEOLIB::GEOObjects* geoObjects, const std::string &schemaFile) 
+: _geoObjects(geoObjects), _schemaName(schemaFile)
 {
 }
 
