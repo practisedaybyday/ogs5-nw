@@ -806,7 +806,7 @@ namespace FiniteElement
 
       if(F_Flag&&!PreLoad)
       {
-         fac = S_Water* LoadFactor* fkt;
+         fac = LoadFactor* fkt;
          if(axisymmetry)
          {
             for (k=0;k<nnodesHQ;k++)
@@ -1282,7 +1282,7 @@ namespace FiniteElement
 #ifdef DECOVALEX
                int  idv0;
                                                   // DECOVALEX
-               idv0 = h_pcs->GetNodeValueIndex("PRESSURE_I");
+               idv0 = S_Water * h_pcs->GetNodeValueIndex("PRESSURE_I");
 #endif
                //
                for (i=0;i<nnodes;i++)
@@ -1295,7 +1295,7 @@ namespace FiniteElement
 #ifdef DECOVALEX
                      AuxNodal[i] = LoadFactor*(val_n-Max(h_pcs->GetNodeValue(nodes[i],idv0),0.0));
 #else
-                  AuxNodal[i] = LoadFactor*val_n;
+                  AuxNodal[i] = LoadFactor*S_Water* val_n;
 #endif
                }
                break;

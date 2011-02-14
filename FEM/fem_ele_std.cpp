@@ -5428,7 +5428,7 @@ namespace FiniteElement
          else if(HEAD_Flag)
          {
             // FS/WW 21.05.2010
-            // fkt = fkt*rho * gravity_constant/FluidProp->Viscosity();
+             //fkt = fkt*rho * gravity_constant/FluidProp->Viscosity();
             rho = 1.0;
          }
          else
@@ -5440,15 +5440,15 @@ namespace FiniteElement
             for (int j = 0; j < nnodes; j++)
                for (int k = 0; k < dim; k++)
                {
-                  NodalVal[i]  -= fkt*dshapefct[dimension*nnodes+j]
-                     *mat[dim*dimension+k]* shapefct[i] * NodalVal1[j];
+                  NodalVal[i]  -= fkt*dshapefct[k*nnodes+j]
+                     *mat[dim*dimension+k]* shapefct[i] * NodalVal1[j]; //NW  dshapefct[dimension*nnodes+j] -> dshapefct[k*nnodes+j]
             //	*************************************
             //FS/WW 21.05.2010
                   if (HEAD_Flag)
                       continue;
             //***************************************
-                  NodalVal2[i] += fktG*dshapefct[dimension*nnodes+j]
-                     *mat[dim*dimension+k]* shapefct[i] * MeshElement->nodes[j]->Z();
+                  NodalVal2[i] += fktG*dshapefct[k*nnodes+j]
+                     *mat[dim*dimension+k]* shapefct[i] * MeshElement->nodes[j]->Z();  //NW  dshapefct[dimension*nnodes+j] -> dshapefct[k*nnodes+j]
          }
       }
 
