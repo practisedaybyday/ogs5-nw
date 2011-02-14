@@ -87,7 +87,7 @@ Programing:
 Modification:
 ***************************************************************************/
 Problem::Problem (char* filename) :
-print_result(true), _geo_obj (new GEOLIB::GEOObjects), _geo_name (filename)
+print_result(true), _geo_obj (new GEOLIB::GEOObjects), _geo_name (filename), dt0(0.)
 {
    if (filename != NULL)
    {

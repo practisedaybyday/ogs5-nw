@@ -11,13 +11,13 @@ Programing:
 #include "rfmat_cp.h"
 
 // C++ STL
-//#include <iostream>
+#include <sstream>
 #include <cfloat>
 using namespace std;
 
 #define PCT_FILE_EXTENSION ".pct"
 #define SWAP(x,y) {double t; t=x; x=y; y=t;};     //WW data type is change to double
-//#define CountParticleNumber //YS: to count the number of particles leave the domain
+#define CountParticleNumber                       //YS: to count the number of particles leave the domain
 
 /**************************************************************************
 Class: RandomWalk
@@ -26,7 +26,7 @@ Programing:
 07/2005 PCH Implementation
 last modification:
  **************************************************************************/
-RandomWalk::RandomWalk(void)
+RandomWalk::RandomWalk(int srand_seed)
 {
    m_pcs = NULL;
    fem = NULL;
@@ -44,7 +44,11 @@ RandomWalk::RandomWalk(void)
    ChanceOfIrreversed = NULL;                     //YS: judgement for decay
 
    // To produce a different pseudo-random series each time your program is run.
+   if(srand_seed == 0)
    srand((int)time(0));
+   // To produce same pseudo-random series each time your program is run.
+   else if(srand_seed == 1)
+   srand(1);
 
    // These are the allowable outputs (input as options to file <file_base_name>.out
    rwpt_out_strings.push_back("PARTICLES");       // output particle locations
@@ -2233,14 +2237,17 @@ void RandomWalk::AdvanceToNextTimeStep(double dt,double ctime)
                   Astatus = SolveForNextPosition(&(X[i].Now), &Y);
 
 #ifdef CountParticleNumber
-               if(Y.x< 1.e-20 && m_pcs->rwpt_app==2)
-                  Y.x= 1.e-20;
-               if(Y.x> 0.1 && Y.identity != 2 && m_pcs->rwpt_app==2)
+               if(m_pcs->rwpt_app == 2)
                {
-                  leavingParticles++;
-                  Y.elementIndex=-10;             //YS: out of the domain
+                  if (Y.x < 1.e-20)
+                     Y.x = 1.e-20;
+                  if((Y.identity != 2) && (Y.x > 0.1 || Y.y > 100 || Y.z > 100))
+                  {
+                     leavingParticles++;
+                     Y.elementIndex = -10;          //YS: out of the domain
+                  }
                }
-#endif                             // CountParticleNumber
+#endif CountParticleNumber
 
                // Just get the element index after this movement
                // if not Homogeneous aquifer
@@ -3176,7 +3183,7 @@ void RandomWalk::GetDisplacement(Particle* B, double* Z, double* V, double* dD, 
       // Fix for translation
       dsp[2] = theElement->GetAngle(2);
    }
-   else if(ele_dim == 1)                          // If 2D,
+   else if(ele_dim == 1)                          // If 1D,
    {
       double VV = 0.0, DD = 0.0, Dsp = 0.0;
       int coordinateflag = m_msh->GetCoordinateFlag();
@@ -4802,10 +4809,18 @@ void PCTRead(string file_base_name)
 
    ifstream pct_file (pct_file_name.data(),ios::in);
 
+   std::stringstream ss;
+   int srand_seed;
+   string s_flag;
+   getline(pct_file, s_flag);
+   ss.str(s_flag);
+   ss>>srand_seed;
+   ss.clear();
+
    int End = 1;
    string strbuffer;
    RandomWalk* RW = NULL;
-   m_msh->PT = new RandomWalk();                  //PCH
+   m_msh->PT = new RandomWalk(srand_seed);                  //PCH
    RW = m_msh->PT;
 
    // Create pathline

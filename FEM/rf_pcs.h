@@ -399,6 +399,7 @@ class CRFProcess : public ProcessInfo
 #endif
       std::string num_type_name;
       int  rwpt_app;
+	  int  srand_seed;
       const char *pcs_num_name[2];                //For monolithic scheme
       double pcs_nonlinear_iteration_tolerance;
       int pcs_nonlinear_iterations;               //OK
