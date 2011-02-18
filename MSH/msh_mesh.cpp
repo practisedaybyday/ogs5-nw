@@ -3602,7 +3602,6 @@ namespace Mesh_Group
       //------------------------
       for (i = 0; i < (long) face_vector.size(); i++)
       {
-         double* normal = new double[3];
          elem_face = face_vector[i];
          elem = face_vector[i]->GetOwner();
 
@@ -3613,6 +3612,7 @@ namespace Mesh_Group
          int no_owner_vertex = face_vector[i]->GetOwner()->GetVertexNumber();
          idx0_face = face_vector[i]->GetNodeIndex(0);
          idx1_face = face_vector[i]->GetNodeIndex(1);
+		 double* normal = new double[3];
          for (j = 0; j < no_owner_vertex; j++)
          {
             idx_owner = face_vector[i]->GetOwner()->GetNodeIndex(j);
