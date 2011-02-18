@@ -1,13 +1,14 @@
 # Source files
 set( HEADERS
+	binarySearch.h
 	Configure.h.in
 	DateTools.h
-	StringTools.h
-	swap.h
 	FileFinder.h
 	FileTools.h
 	quicksort.h
-	binarySearch.h
+	StringTools.h
+	swap.h
+	wait.h	
 )
 
 set( SOURCES
