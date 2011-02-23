@@ -8,6 +8,7 @@ set( HEADERS
 	LinkedTriangle.h
 	CubicSpline.h
 	LinearInterpolation.h
+	EarClippingTriangulation.h
 	# directory LinAlg
 	LinAlg/LinearSolver.h
 	LinAlg/DirectLinearSolver.h
@@ -23,6 +24,7 @@ set( SOURCES
 	LinkedTriangle.cpp
 	CubicSpline.cpp
 	LinearInterpolation.cpp
+	EarClippingTriangulation.cpp
 	# directory LinAlg
 	LinAlg/GaussAlgorithm.cpp
 	LinAlg/TriangularSolve.cpp
@@ -42,6 +44,6 @@ include_directories(
 
 target_link_libraries (
 	MathLib
-        Base
+       Base
 )
 

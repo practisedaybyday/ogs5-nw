@@ -8,6 +8,8 @@ set( HEADERS
 	FileTools.h
 	quicksort.h
 	binarySearch.h
+	printList.h
+	uniqueListInsert.h
 )
 
 set( SOURCES
@@ -27,10 +29,10 @@ include_directories(
 	.
 )
 
-target_link_libraries (
-        Base
-        GEO
-)
+#target_link_libraries (
+#        Base
+#        GEO
+#)
 
 
 IF(OGS_BUILD_CORRECT_SCIENTIFIC)

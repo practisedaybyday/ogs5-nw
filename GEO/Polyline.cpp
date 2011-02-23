@@ -85,7 +85,7 @@ const Point* Polyline::getPoint(size_t i) const
  	return _ply_pnts[_ply_pnt_ids[i]];
 }
 
-const std::vector<Point*> & Polyline::getPointsVec () const
+std::vector<Point*> const& Polyline::getPointsVec () const
 {
 	return _ply_pnts;
 }
@@ -109,68 +109,62 @@ Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &p
 	Polyline* new_ply = new Polyline(*ply_vec[0]);
 
 	std::vector<Polyline*> local_ply_vec;
-	for (size_t i=1; i<nLines; i++)
-	{
+	for (size_t i = 1; i < nLines; i++) {
 		local_ply_vec.push_back(ply_vec[i]);
 	}
 
-	while (!local_ply_vec.empty())
-	{
+	while (!local_ply_vec.empty()) {
 		bool ply_found(false);
-		for (std::vector<Polyline*>::iterator it=local_ply_vec.begin(); it!=local_ply_vec.end(); ++it)
-		{
-			if (new_ply->getPointsVec() == (*it)->getPointsVec())
-			{
+		for (std::vector<Polyline*>::iterator it = local_ply_vec.begin(); it
+				!= local_ply_vec.end(); ++it) {
+			if (new_ply->getPointsVec() == (*it)->getPointsVec()) {
 				size_t nPoints((*it)->getNumberOfPoints());
 
-				if (new_ply->getPointID(0) == (*it)->getPointID(0))
-				{
+				if (new_ply->getPointID(0) == (*it)->getPointID(0)) {
 					Polyline* tmp = new Polyline((*it)->getPointsVec());
-					for (size_t k=0; k<nPoints; k++)
-						tmp->addPoint((*it)->getPointID(nPoints-k-1));
+					for (size_t k = 0; k < nPoints; k++)
+						tmp->addPoint((*it)->getPointID(nPoints - k - 1));
 
 					size_t new_ply_size(new_ply->getNumberOfPoints());
-					for (size_t k=1; k<new_ply_size; k++)
+					for (size_t k = 1; k < new_ply_size; k++)
 						tmp->addPoint(new_ply->getPointID(k));
 					delete new_ply;
 					new_ply = tmp;
 					ply_found = true;
-				}
-				else if (new_ply->getPointID(0) == (*it)->getPointID(nPoints-1))
-				{
+				} else if (new_ply->getPointID(0) == (*it)->getPointID(nPoints
+						- 1)) {
 					Polyline* tmp = new Polyline(**it);
 					size_t new_ply_size(new_ply->getNumberOfPoints());
-					for (size_t k=1; k<new_ply_size; k++)
+					for (size_t k = 1; k < new_ply_size; k++)
 						tmp->addPoint(new_ply->getPointID(k));
 					delete new_ply;
 					new_ply = tmp;
 					ply_found = true;
-				}
-				else if (new_ply->getPointID(new_ply->getNumberOfPoints()-1) == (*it)->getPointID(0))
-				{
-					for (size_t k=1; k<nPoints; k++)
+				} else if (new_ply->getPointID(new_ply->getNumberOfPoints() - 1)
+						== (*it)->getPointID(0)) {
+					for (size_t k = 1; k < nPoints; k++)
 						new_ply->addPoint((*it)->getPointID(k));
 					ply_found = true;
-				}
-				else if (new_ply->getPointID(new_ply->getNumberOfPoints()-1) == (*it)->getPointID(nPoints-1))
-				{
-					for (size_t k=1; k<nPoints; k++)
-						new_ply->addPoint((*it)->getPointID(nPoints-k-1));
+				} else if (new_ply->getPointID(new_ply->getNumberOfPoints() - 1)
+						== (*it)->getPointID(nPoints - 1)) {
+					for (size_t k = 1; k < nPoints; k++)
+						new_ply->addPoint((*it)->getPointID(nPoints - k - 1));
 					ply_found = true;
 				}
-				if (ply_found)
-				{
+				if (ply_found) {
 					local_ply_vec.erase(it);
 					break;
 				}
-			}
-			else
-				std::cout << "Error in Polyline::contructPolylineFromSegments() - Line segments use different point vectors..." << std::endl;
+			} else
+				std::cout
+						<< "Error in Polyline::contructPolylineFromSegments() - Line segments use different point vectors..."
+						<< std::endl;
 		}
 
-		if (!ply_found)
-		{
-			std::cout << "Error in Polyline::contructPolylineFromSegments() - Not all segments are connected..." << std::endl;
+		if (!ply_found) {
+			std::cout
+					<< "Error in Polyline::contructPolylineFromSegments() - Not all segments are connected..."
+					<< std::endl;
 			new_ply = NULL;
 			break;
 		}

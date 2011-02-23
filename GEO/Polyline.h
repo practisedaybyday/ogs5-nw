@@ -98,7 +98,7 @@ public:
 	 * */
 	const Point* getPoint(size_t i) const;
 
-	const std::vector<Point*> & getPointsVec () const;
+	std::vector<Point*> const& getPointsVec () const;
 
 	/**
 	 * returns the length of the polyline until the k-th line segment, employed by

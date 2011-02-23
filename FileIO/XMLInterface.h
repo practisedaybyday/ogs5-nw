@@ -81,6 +81,15 @@ public:
 	 * \param stnName The name of the station vector that will be written into the file.
 	 */
 	int writeSTNFile(const QString &filename, const QString &stnName) const;
+	/**
+	 * Writes geometric data from GEOObjects to an xml-file (using QString version)
+	 * \param fname The filename for the file into which the data will be written.
+	 * \param stn_name The name of the station vector that will be written into the file.
+	 */
+	int writeSTNFile(std::string const& fname, std::string const &stn_name) const
+	{
+		return writeSTNFile (QString::fromStdString(fname), QString::fromStdString(stn_name));
+	}
 
 	/// Writes borehole-specific data to a station-xml-file.
 	void writeBoreholeData(QDomDocument &doc, QDomElement &boreholeTag, GEOLIB::StationBorehole* borehole) const;
