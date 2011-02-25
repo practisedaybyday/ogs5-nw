@@ -524,6 +524,7 @@ bool OUTRead(const std::string& file_base_name, const GEOLIB::GEOObjects& geo_ob
    char line[MAX_ZEILE];
    std::string line_string;
    ios::pos_type position;
+   bool output_version = false; // 02.2011. WW
 
    // File handling
    std::string out_file_name = file_base_name + OUT_FILE_EXTENSION;
@@ -546,16 +547,20 @@ bool OUTRead(const std::string& file_base_name, const GEOLIB::GEOObjects& geo_ob
       // Give version in file name
                                                   //15.01.2008. WW
       if (line_string.find("#VERSION") != string::npos)
-      {
-         out->getFileBaseName().append("(V");
-         out->getFileBaseName().append(OGS_VERSION);
-         out->getFileBaseName().append(")");
-      }
+         output_version = true; // 02.2011. WW
       //----------------------------------------------------------------------
                                                   // keyword found
       if (line_string.find("#OUTPUT") != string::npos)
       {
          position = out->Read(out_file, geo_obj, unique_name);
+
+         if(output_version) //// 02.2011. WW
+         {
+            out->getFileBaseName().append("(V");
+            out->getFileBaseName().append(OGS_VERSION);
+            out->getFileBaseName().append(")");
+         }
+
          out_vector.push_back(out);
 
          //			char number_char[3]; //OK4709
