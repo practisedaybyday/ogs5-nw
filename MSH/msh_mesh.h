@@ -78,6 +78,7 @@ namespace Mesh_Group
    // Class definition
    class CFEMesh
    {
+	  friend class MshLayerMapper;
 
       public:
 
