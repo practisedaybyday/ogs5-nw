@@ -9,6 +9,7 @@
 #include <vector>
 
 // BASELIB
+#include "swap.h"
 #include "printList.h"
 #include "uniqueListInsert.h"
 
@@ -18,9 +19,15 @@
 namespace MATHLIB {
 
 EarClippingTriangulation::EarClippingTriangulation(const GEOLIB::Polygon* polygon,
-		std::list<GEOLIB::Triangle> &triangles)
+		std::list<GEOLIB::Triangle> &triangles, bool rot)
 {
 	copyPolygonPoints (polygon);
+
+	if (rot) {
+		rotate ();
+		ensureCWOrientation ();
+	}
+
 	initVertexList ();
 	initLists ();
 	clipEars ();
@@ -50,6 +57,57 @@ void EarClippingTriangulation::copyPolygonPoints (const GEOLIB::Polygon* polygon
 	size_t n_pnts (polygon->getNumberOfPoints()-1);
 	for (size_t k(0); k < n_pnts; k++) {
 		_pnts.push_back (new GEOLIB::Point (*(polygon->getPoint(k))));
+	}
+}
+
+void EarClippingTriangulation::rotate ()
+{
+	// calculate supporting plane
+	Vector plane_normal;
+	double d;
+	// compute the plane normal
+	getNewellPlane(_pnts, plane_normal, d);
+
+	double tol (sqrt(std::numeric_limits<double>::min()));
+	if (fabs(plane_normal[0]) > tol || fabs(plane_normal[1]) > tol) {
+		// rotate copied points into x-y-plane
+		rotatePointsToXY(plane_normal, _pnts);
+	}
+}
+
+void EarClippingTriangulation::ensureCWOrientation ()
+{
+	size_t n_pnts (_pnts.size());
+	// get the left most upper point
+	size_t min_x_max_y_idx (0);	// for orientation check
+	for (size_t k(0); k<n_pnts; k++) {
+		if ((*(_pnts[k]))[0] <= (*(_pnts[min_x_max_y_idx]))[0]) {
+			if ((*(_pnts[k]))[0] < (*(_pnts[min_x_max_y_idx]))[0]) {
+				min_x_max_y_idx = k;
+			} else {
+				if ((*(_pnts[k]))[1] > (*(_pnts[min_x_max_y_idx]))[1]) {
+					min_x_max_y_idx = k;
+				}
+			}
+		}
+	}
+	// determine orientation
+	MATHLIB::Orientation orient;
+	if (0 < min_x_max_y_idx && min_x_max_y_idx < n_pnts-1) {
+		orient = MATHLIB::getOrientation (
+			_pnts[min_x_max_y_idx-1], _pnts[min_x_max_y_idx], _pnts[min_x_max_y_idx+1]);
+	} else {
+		if (0 == min_x_max_y_idx) {
+			orient = MATHLIB::getOrientation (_pnts[n_pnts-1], _pnts[0], _pnts[1]);
+		} else {
+			orient = MATHLIB::getOrientation (_pnts[n_pnts-2], _pnts[n_pnts-1], _pnts[0]);
+		}
+	}
+	if (orient == MATHLIB::CCW) {
+		// switch orientation
+		for (size_t k(0); k<n_pnts/2; k++) {
+			BASELIB::swap (_pnts[k], _pnts[n_pnts-1-k]);
+		}
 	}
 }
 
@@ -228,4 +286,5 @@ void EarClippingTriangulation::clipEars()
 	else
 		_triangles.push_back(GEOLIB::Triangle(_pnts, *prev, *next, *it));
 }
-}
+
+} // end namespace MATHLIB

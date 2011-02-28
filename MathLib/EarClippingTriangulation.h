@@ -22,13 +22,15 @@ namespace MATHLIB {
 
 class EarClippingTriangulation {
 public:
-	EarClippingTriangulation(const GEOLIB::Polygon* ply, std::list<GEOLIB::Triangle> &triangles);
+	EarClippingTriangulation(const GEOLIB::Polygon* ply, std::list<GEOLIB::Triangle> &triangles, bool rot = true);
 	virtual ~EarClippingTriangulation();
 private:
 	/**
 	 * copies the points of the polygon to the vector _pnts
 	 */
 	inline void copyPolygonPoints (const GEOLIB::Polygon* polygon);
+	inline void rotate ();
+	inline void ensureCWOrientation ();
 
 	inline bool isEar(size_t v0, size_t v1, size_t v2) const;
 
@@ -50,6 +52,6 @@ private:
 	std::list<GEOLIB::Triangle> _triangles;
 };
 
-}
+} // end namespace MATHLIB
 
 #endif /* EARCLIPPINGTRIANGULATION_H_ */
