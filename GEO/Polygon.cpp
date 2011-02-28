@@ -5,6 +5,8 @@
  *      Author: TF
  */
 
+#include <cstdlib> // for exit
+
 #include "Polygon.h"
 
 // MathLib
