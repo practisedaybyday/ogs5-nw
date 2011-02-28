@@ -41,6 +41,15 @@ bool lessY (Point const & p0, Point const & p1);
  */
 bool lessZ (Point const & p0, Point const & p1);
 
+/**
+ * Checks if two points are within a given distance of each other
+ * @param p0 The first point
+ * @param p1 the second point
+ * @param squaredDistance The square of the distance within which the two points should be
+ * @return true if p1 and p2 are within the given distance of each other, false otherwise
+ */
+bool checkDistance(Point const &p0, Point const &p1, double squaredDistance);
+
 }
 
 /**

@@ -102,11 +102,12 @@ const std::vector<double>& Polyline::getLengthVec () const
 }
 
 
-Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &ply_vec)
+Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &ply_vec, double prox)
 {
 	size_t nLines = ply_vec.size();
 
 	Polyline* new_ply = new Polyline(*ply_vec[0]);
+	std::vector<GEOLIB::Point*> pnt_vec(new_ply->getPointsVec());
 
 	std::vector<Polyline*> local_ply_vec;
 	for (size_t i = 1; i < nLines; i++) {
@@ -115,12 +116,16 @@ Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &p
 
 	while (!local_ply_vec.empty()) {
 		bool ply_found(false);
-		for (std::vector<Polyline*>::iterator it = local_ply_vec.begin(); it
-				!= local_ply_vec.end(); ++it) {
-			if (new_ply->getPointsVec() == (*it)->getPointsVec()) {
+		prox *= prox; // square distance once to save time later
+		for (std::vector<Polyline*>::iterator it=local_ply_vec.begin(); it!=local_ply_vec.end(); ++it)
+		{
+			if (pnt_vec == (*it)->getPointsVec())
+			{
 				size_t nPoints((*it)->getNumberOfPoints());
 
-				if (new_ply->getPointID(0) == (*it)->getPointID(0)) {
+				//if (new_ply->getPointID(0) == (*it)->getPointID(0))
+				if (pointsAreIdentical(pnt_vec, new_ply->getPointID(0), (*it)->getPointID(0), prox))
+				{
 					Polyline* tmp = new Polyline((*it)->getPointsVec());
 					for (size_t k = 0; k < nPoints; k++)
 						tmp->addPoint((*it)->getPointID(nPoints - k - 1));
@@ -131,8 +136,10 @@ Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &p
 					delete new_ply;
 					new_ply = tmp;
 					ply_found = true;
-				} else if (new_ply->getPointID(0) == (*it)->getPointID(nPoints
-						- 1)) {
+				}
+				//else if (new_ply->getPointID(0) == (*it)->getPointID(nPoints-1))
+				else if (pointsAreIdentical(pnt_vec, new_ply->getPointID(0), (*it)->getPointID(nPoints-1), prox))
+				{
 					Polyline* tmp = new Polyline(**it);
 					size_t new_ply_size(new_ply->getNumberOfPoints());
 					for (size_t k = 1; k < new_ply_size; k++)
@@ -140,15 +147,19 @@ Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &p
 					delete new_ply;
 					new_ply = tmp;
 					ply_found = true;
-				} else if (new_ply->getPointID(new_ply->getNumberOfPoints() - 1)
-						== (*it)->getPointID(0)) {
-					for (size_t k = 1; k < nPoints; k++)
+				}
+				//else if (new_ply->getPointID(new_ply->getNumberOfPoints()-1) == (*it)->getPointID(0))
+				else if (pointsAreIdentical(pnt_vec, new_ply->getPointID(new_ply->getNumberOfPoints()-1), (*it)->getPointID(0), prox))
+				{
+					for (size_t k=1; k<nPoints; k++)
 						new_ply->addPoint((*it)->getPointID(k));
 					ply_found = true;
-				} else if (new_ply->getPointID(new_ply->getNumberOfPoints() - 1)
-						== (*it)->getPointID(nPoints - 1)) {
-					for (size_t k = 1; k < nPoints; k++)
-						new_ply->addPoint((*it)->getPointID(nPoints - k - 1));
+				}
+				//else if (new_ply->getPointID(new_ply->getNumberOfPoints()-1) == (*it)->getPointID(nPoints-1))
+				else if (pointsAreIdentical(pnt_vec, new_ply->getPointID(new_ply->getNumberOfPoints()-1), (*it)->getPointID(nPoints-1), prox))
+				{
+					for (size_t k=1; k<nPoints; k++)
+						new_ply->addPoint((*it)->getPointID(nPoints-k-1));
 					ply_found = true;
 				}
 				if (ply_found) {
@@ -170,6 +181,12 @@ Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &p
 		}
 	}
 	return new_ply;
+}
+
+bool Polyline::pointsAreIdentical(const std::vector<Point*> &pnt_vec, size_t i, size_t j, double prox)
+{
+	if (i==j) return true;
+	return (GEOLIB::checkDistance( *pnt_vec[i], *pnt_vec[j], prox ));
 }
 
 Polyline* Polyline::closePolyline(const Polyline& ply)

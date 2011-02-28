@@ -51,11 +51,6 @@ void EarClippingTriangulation::copyPolygonPoints (const GEOLIB::Polygon* polygon
 	for (size_t k(0); k < n_pnts; k++) {
 		_pnts.push_back (new GEOLIB::Point (*(polygon->getPoint(k))));
 	}
-
-	std::cout << "Polygon points: " << std::endl;
-	for (size_t k(0); k < n_pnts; k++) {
-		std::cout << k << ": " << *(_pnts[k]) << std::endl;
-	}
 }
 
 bool EarClippingTriangulation::isEar(size_t v0, size_t v1, size_t v2) const
@@ -75,8 +70,6 @@ void EarClippingTriangulation::initVertexList ()
 {
 	size_t n_pnts (_pnts.size());
 	for (size_t k(0); k<n_pnts; k++) _vertex_list.push_back (k);
-
-//	BASELIB::printList (_vertex_list, "EarClippingTriangulation::initVertexList () initial _vertex_list");
 }
 
 void EarClippingTriangulation::initLists ()
@@ -114,10 +107,6 @@ void EarClippingTriangulation::initLists ()
 		if (isEar (*prev, *it, *next))
 			_ear_list.push_back (*it);
 	}
-
-	BASELIB::printList (_vertex_list, "EarClippingTriangulation::initLists () _vertex_list");
-	BASELIB::printList (_convex_vertex_list, "EarClippingTriangulation::initLists () _convex_vertex_list");
-	BASELIB::printList (_ear_list, "EarClippingTriangulation::initLists () _ear_list");
 }
 
 void EarClippingTriangulation::clipEars()
@@ -125,8 +114,6 @@ void EarClippingTriangulation::clipEars()
 	std::list<size_t>::iterator it, prev, next;
 	// *** clip an ear
 	while (_vertex_list.size() > 3) {
-		std::cout << std::endl;
-		BASELIB::printList (_ear_list, "EarClippingTriangulation::clipEars () _ear_list");
 		// pop ear from list
 		size_t ear = _ear_list.front();
 		_ear_list.pop_front();
@@ -141,12 +128,6 @@ void EarClippingTriangulation::clipEars()
 		while (nfound && it != _vertex_list.end()) {
 			if (*it == ear) {
 				nfound = false;
-				std::cout << "*** removing ear " << *it
-						<< " from _vertex_list (" << _vertex_list.size() << ")"
-						<< std::endl;
-				std::cout << "*** _convex_vertex_list.size(): "
-						<< _convex_vertex_list.size() << ", _ear_list.size(): "
-						<< _ear_list.size() << std::endl;
 				it = _vertex_list.erase(it); // remove ear tip
 				next = it;
 				if (next == _vertex_list.end()) {
@@ -155,8 +136,6 @@ void EarClippingTriangulation::clipEars()
 					prev--;
 				}
 				// add triangle
-				std::cout << "tri " << *prev << " " << ear << " " << *next
-						<< std::endl;
 				_triangles.push_back(GEOLIB::Triangle(_pnts, *prev, ear, *next));
 
 				// check the orientation of prevprev, prev, next
@@ -169,37 +148,23 @@ void EarClippingTriangulation::clipEars()
 				prevprev--;
 
 				// apply changes to _convex_vertex_list and _ear_list looking "backward"
-				std::cout << "<- checking orientation of " << *prevprev << ", "
-						<< *prev << ", " << *next << " ... " << std::flush;
 				MATHLIB::Orientation orientation = getOrientation(_pnts[*prevprev], _pnts[*prev],
 						_pnts[*next]);
 				if (orientation == CW) {
 					BASELIB::uniqueListInsert(_convex_vertex_list, *prev);
-					std::cout << "CW" << std::endl;
 					// prev is convex
 					if (isEar(*prevprev, *prev, *next)) {
 						// prev is an ear tip
-						std::cout << "<- CW _ear_list insert " << *prev << std::endl;
 						BASELIB::uniqueListInsert(_ear_list, *prev);
 					} else {
 						// if necessary remove prev
-						std::cout << "<- CW _ear_list.remove(" << *prev << ")"
-								<< std::endl;
 						_ear_list.remove(*prev);
 					}
 				} else {
-					std::cout << "non CW" << std::endl;
 					// prev is not convex => reflex or collinear
 					_convex_vertex_list.remove(*prev);
-					std::cout
-							<< "<- nCW _ear_list and convex vertices remove: "
-							<< *prev << std::endl;
 					_ear_list.remove(*prev);
 					if (orientation == COLLINEAR) {
-						std::cout << "<- COLLINEAR _vertex_list.erase(" << *prev
-								<< ") - (" << *prevprev << ", " << *prev
-								<< ", " << *next << ")"
-								<< " orientation == COLLINEAR" << std::endl;
 						prev = _vertex_list.erase(prev);
 						if (prev == _vertex_list.begin()) {
 							prev = _vertex_list.end();
@@ -207,20 +172,6 @@ void EarClippingTriangulation::clipEars()
 						} else {
 							prev--;
 						}
-						std::cout << "<- prev: " << *prev << std::endl;
-//					} else {
-//						// find another ear?
-//						if (prev == _vertex_list.begin()) {
-//							prevprev = _vertex_list.end();
-//						} else {
-//							prevprev = prev;
-//						}
-//						prevprev--;
-//
-//						if (isEar (*prevprev, *prev, *next)) {
-//							// prev is an ear tip
-//							BASELIB::uniqueListInsert (_ear_list, *prev);
-//						}
 					}
 				}
 
@@ -236,74 +187,29 @@ void EarClippingTriangulation::clipEars()
 				}
 
 				// apply changes to _convex_vertex_list and _ear_list looking "forward"
-				std::cout << "-> checking orientation of " << *prev << ", "
-						<< *next << ", " << *nextnext << " ... " << std::flush;
 				orientation = getOrientation(_pnts[*prev], _pnts[*next],
 						_pnts[*nextnext]);
 				if (orientation == CW) {
 					BASELIB::uniqueListInsert(_convex_vertex_list, *next);
-					std::cout << "CW" << std::endl;
 					// next is convex
 					if (isEar(*prev, *next, *nextnext)) {
 						// next is an ear tip
-						std::cout << "-> CW _ear_list insert " << *next << std::endl;
 						BASELIB::uniqueListInsert(_ear_list, *next);
 					} else {
 						// if necessary remove *next
-						std::cout << "-> CW _ear_list.remove(" << *next << ")"
-								<< std::endl;
 						_ear_list.remove(*next);
 					}
 				} else {
 					// next is not convex => reflex or collinear
 					_convex_vertex_list.remove(*next);
 					_ear_list.remove(*next);
-					std::cout
-							<< "-> nCW _convex_vertex_list and _ear_list remove "
-							<< *next << std::endl;
 					if (orientation == COLLINEAR) {
-						std::cout << "-> COLLINEAR _vertex_list.remove(" << *next
-								<< ") - (" << *prev << ", " << *next << ", "
-								<< *nextnext << ")" << std::endl;
 						next = _vertex_list.erase(next);
 						if (next == _vertex_list.end()) next
 								= _vertex_list.begin();
-						std::cout << "-> new next: " << *next << std::endl;
-//					} else {
-//						// find another ear?
-//						nextnext = next;
-//						nextnext++;
-//						if (nextnext == _vertex_list.end()) {
-//							nextnext = _vertex_list.begin();
-//						}
-//
-//						if (isEar (*prev, *next, *nextnext)) {
-//							// prev is an ear tip
-//							BASELIB::uniqueListInsert (_ear_list, *next);
-//						}
 					}
 				}
 
-//				BASELIB::printList (_vertex_list, "EarClippingTriangulation::clipEars () _vertex_list");
-//				BASELIB::printList (_ear_list, "EarClippingTriangulation::clipEars () _ear_list");
-//				BASELIB::printList (_convex_vertex_list, "EarClippingTriangulation::clipEars () _convex_vertex_list");
-
-//				std::list<size_t> copy_of_ear_list;
-//				for (std::list<size_t>::const_iterator my_it (_ear_list.begin());
-//					my_it != _ear_list.end(); ++my_it) {
-//					copy_of_ear_list.push_back (*my_it);
-//				}
-//				std::list<size_t> copy_of_convex_vertex_list;
-//				for (std::list<size_t>::const_iterator my_it (_convex_vertex_list.begin());
-//					my_it != _convex_vertex_list.end(); ++my_it) {
-//					copy_of_convex_vertex_list.push_back (*my_it);
-//				}
-//				_ear_list.clear();
-//				_convex_vertex_list.clear();
-//				initLists();
-//				BASELIB::printList (_vertex_list, "EarClippingTriangulation::clipEars () new _vertex_list");
-//				BASELIB::printList (_ear_list, "EarClippingTriangulation::clipEars () new _ear_list");
-//				BASELIB::printList (_convex_vertex_list, "EarClippingTriangulation::clipEars () new _convex_vertex_list");
 			} else {
 				prev = it;
 				it++;
