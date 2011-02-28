@@ -32,9 +32,12 @@ ADD_EXECUTABLE( ogs
 )
 
 TARGET_LINK_LIBRARIES( ogs
-	GEO
-	MSH
 	FEM
+	MSH
+	GEO
+	MathLib
+	FileIO
+	Base
 	OGSProject
 )
 

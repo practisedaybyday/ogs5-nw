@@ -5,6 +5,8 @@
  *      Author: TF
  */
 
+#include <cstdlib> // for exit
+
 #include "Polygon.h"
 
 // MathLib
@@ -145,6 +147,11 @@ void Polygon::computeListOfSimplePolygons ()
 	_simple_polygon_list.push_back (this);
 	splitPolygonAtPoint (_simple_polygon_list.begin());
 	splitPolygonAtIntersection (_simple_polygon_list.begin());
+
+	for (std::list<Polygon*>::iterator it (_simple_polygon_list.begin());
+		it != _simple_polygon_list.end(); it++) {
+		(*it)->initialise ();
+	}
 }
 
 EdgeType::value Polygon::getEdgeType (size_t k, GEOLIB::Point const & pnt) const
@@ -207,10 +214,7 @@ void Polygon::ensureCWOrientation ()
 			(*(getPoint(min_x_max_y_idx+1)))[0], (*(getPoint(min_x_max_y_idx+1)))[1]);
 	} else {
 		if (0 == min_x_max_y_idx) {
-			orient = MATHLIB::getOrientation (
-				(*(getPoint(n_nodes-1)))[0], (*(getPoint(n_nodes-1)))[1],
-				(*(getPoint(0)))[0], (*(getPoint(0)))[1],
-				(*(getPoint(1)))[0], (*(getPoint(1)))[1]);
+			orient = MATHLIB::getOrientation (getPoint(n_nodes-2), getPoint(0), getPoint(1));
 		} else {
 			orient = MATHLIB::getOrientation (
 				(*(getPoint(n_nodes-2)))[0], (*(getPoint(n_nodes-2)))[1],
@@ -240,16 +244,24 @@ void Polygon::splitPolygonAtIntersection (std::list<Polygon*>::iterator polygon_
 			// split Polygon
 			if (idx0 > idx1) BASELIB::swap (idx0, idx1);
 
-			GEOLIB::Polygon* polygon0 (new GEOLIB::Polygon((*polygon_it)->getPointsVec()));
+			GEOLIB::Polygon* polygon0 (new GEOLIB::Polygon((*polygon_it)->getPointsVec(), false));
 			for (size_t k(0); k<=idx0; k++) polygon0->addPoint ((*polygon_it)->getPointID (k));
 			polygon0->addPoint (intersection_pnt_id);
 			for (size_t k(idx1+1); k<(*polygon_it)->getNumberOfPoints(); k++)
 				polygon0->addPoint ((*polygon_it)->getPointID (k));
+			if (! polygon0->initialise()) {
+				std::cerr << "ERROR in Polygon::splitPolygonAtIntersection polygon0" << std::endl;
+				exit (1);
+			}
 
-			GEOLIB::Polygon* polygon1 (new GEOLIB::Polygon((*polygon_it)->getPointsVec()));
+			GEOLIB::Polygon* polygon1 (new GEOLIB::Polygon((*polygon_it)->getPointsVec(), false));
 			polygon1->addPoint (intersection_pnt_id);
 			for (size_t k(idx0+1); k<=idx1; k++) polygon1->addPoint ((*polygon_it)->getPointID (k));
 			polygon1->addPoint (intersection_pnt_id);
+			if (! polygon1->initialise()) {
+				std::cerr << "ERROR in Polygon::splitPolygonAtIntersection polygon1" << std::endl;
+				exit (1);
+			}
 
 			// remove original polyline and add two new polylines
 			std::list<GEOLIB::Polygon*>::iterator polygon0_it, polygon1_it;

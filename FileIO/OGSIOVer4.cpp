@@ -31,6 +31,7 @@
 
 // MATHLIB
 #include "AnalyticalGeometry.h"
+#include "EarClippingTriangulation.h"
 
 using namespace GEOLIB;
 
@@ -358,7 +359,7 @@ std::string readSurface(std::istream &in,
 		// surface created by polygon
 		if (ply_id != std::numeric_limits<size_t>::max()) {
 			if (ply_vec[ply_id]->isClosed()) {
-				polygon_vec.push_back (new Polygon (*(ply_vec[ply_id])));
+				polygon_vec.push_back (new Polygon (*(ply_vec[ply_id]), true));
 			}
 		}
 	}
@@ -402,7 +403,7 @@ std::string readSurfaces(std::istream &in,
 
 				std::list<GEOLIB::Triangle> triangles;
 				std::cout << "triangulation of surface: ... " << std::flush;
-				MATHLIB::earClippingTriangulationOfPolygon(*simple_polygon_it, triangles);
+				MATHLIB::EarClippingTriangulation(*simple_polygon_it, triangles);
 				std::cout << "done - " << triangles.size () << " triangles " << std::endl;
 
 				Surface *sfc(new Surface(pnt_vec));
@@ -648,6 +649,21 @@ void writeAllDataToGLIFileV4 (const std::string& fname, const GEOLIB::GEOObjects
 	}
 
 	std::cout << "wrote " << pnts_offset << " points" << std::endl;
+
+	// writing all stations
+	std::vector<std::string> stn_names;
+	geo.getStationNames (stn_names);
+	for (size_t j(0); j<stn_names.size(); j++) {
+		os.precision (20);
+		const std::vector<GEOLIB::Point*>* pnts (geo.getStationVec(stn_names[j]));
+		if (pnts) {
+			for (size_t k(0); k<pnts->size(); k++) {
+				os << k+pnts_offset << " " << *((*pnts)[k]) << " $NAME " << static_cast<GEOLIB::Station*>((*pnts)[k])->getName() << std::endl;
+			}
+			pnts_offset += pnts->size();
+			pnts_id_offset.push_back (pnts_offset);
+		}
+	}
 
 	size_t plys_cnt (0);
 

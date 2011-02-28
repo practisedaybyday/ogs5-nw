@@ -130,9 +130,11 @@ add_library( FEM STATIC ${SOURCES} )
 
 target_link_libraries( 
 	FEM
- 	GEO
+	Base
 	FileIO
+ 	GEO
  	MSH
+	OGSProject
 )
 
 IF (LIBPQC)
