@@ -6,6 +6,8 @@ set( HEADERS
 	FileFinder.h
 	FileTools.h
 	quicksort.h
+	printList.h
+	uniqueListInsert.h
 	StringTools.h
 	swap.h
 	wait.h	
@@ -28,10 +30,10 @@ include_directories(
 	.
 )
 
-target_link_libraries (
-        Base
-        GEO
-)
+#target_link_libraries (
+#        Base
+#        GEO
+#)
 
 
 IF(OGS_BUILD_CORRECT_SCIENTIFIC)

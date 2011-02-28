@@ -140,7 +140,7 @@ MainWindow::MainWindow(QWidget *parent /* = 0*/)
 		this, SLOT(updateDataViews()));
 	connect(_geoModels, SIGNAL(geoDataRemoved(GeoTreeModel*, std::string, GEOLIB::GEOTYPE)),
 		this, SLOT(updateDataViews()));
-	//connect(_geoModels, SIGNAL(geoDataRemoved(GeoTreeModel*, std::string, GEOLIB::GEOTYPE)), 
+	//connect(_geoModels, SIGNAL(geoDataRemoved(GeoTreeModel*, std::string, GEOLIB::GEOTYPE)),
 	//	_conditionModel, SLOT(removeFEMConditions(std::string, GEOLIB::GEOTYPE)));
 
 
@@ -968,8 +968,8 @@ void MainWindow::showDiagramPrefsDialog(QModelIndex &index)
 void MainWindow::showLineEditDialog(const std::string &geoName)
 {
 	LineEditDialog lineEdit(*(_geoModels->getPolylineVecObj(geoName)));
-	connect(&lineEdit, SIGNAL(connectPolylines(const std::string&, std::vector<size_t>, bool, bool)),
-		_geoModels, SLOT(connectPolylineSegments(const std::string&, std::vector<size_t>, bool, bool)));
+	connect(&lineEdit, SIGNAL(connectPolylines(const std::string&, std::vector<size_t>, double, std::string, bool, bool)),
+		_geoModels, SLOT(connectPolylineSegments(const std::string&, std::vector<size_t>, double, std::string, bool, bool)));
 	lineEdit.exec();
 }
 

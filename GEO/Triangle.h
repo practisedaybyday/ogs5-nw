@@ -25,12 +25,12 @@ public:
 	/**
 	 * construction of object, initialization of reference to point vector
 	 */
-	Triangle (const std::vector<Point*> &pnt_vec) : m_pnts(pnt_vec) {}
+	Triangle (std::vector<Point *> const &pnt_vec) : m_pnts(pnt_vec) {}
 	/**
 	 * construction of object, initialization of reference to point vector,
 	 * saves the three indices describing a triangle
 	 */
-	Triangle (const std::vector<Point*> &pnt_vec, size_t pnt_a, size_t pnt_b, size_t pnt_c)
+	Triangle (std::vector<Point *> const &pnt_vec, size_t pnt_a, size_t pnt_b, size_t pnt_c)
 	: m_pnts(pnt_vec)
 	{
 		m_pnt_ids[0] = pnt_a;

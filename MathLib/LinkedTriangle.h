@@ -19,7 +19,7 @@ namespace MATHLIB {
 
 class LinkedTriangle : public GEOLIB::Triangle {
 public:
-	LinkedTriangle(const std::vector<GEOLIB::Point*> &pnt_vec, size_t pnt_a,
+	LinkedTriangle(std::vector<GEOLIB::Point*> const&pnt_vec, size_t pnt_a,
 			size_t pnt_b, size_t pnt_c, LinkedTriangle* tri_a,
 			LinkedTriangle* tri_b, LinkedTriangle* tri_c);
 	virtual ~LinkedTriangle();

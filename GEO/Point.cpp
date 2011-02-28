@@ -51,4 +51,14 @@ bool lessZ (GEOLIB::Point const & p0, GEOLIB::Point const & p1)
 	return false;
 }
 
+bool checkDistance(GEOLIB::Point const &p0, GEOLIB::Point const &p1, double squaredDistance)
+{
+	double distX((p0[0]-p1[0])*(p0[0]-p1[0]));
+	double distY((p0[1]-p1[1])*(p0[1]-p1[1]));
+	double distZ((p0[2]-p1[2])*(p0[2]-p1[2]));
+
+	return ((distX+distY+distZ) < squaredDistance);
+}
+
+
 } // end namespace GEOLIB

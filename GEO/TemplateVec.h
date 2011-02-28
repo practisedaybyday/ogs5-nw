@@ -118,6 +118,12 @@ public:
 		return false;
 	}
 
+	void setNameOfElementByID (size_t id, std::string& element_name)
+	{
+		if (! _name_id_map) return;
+		_name_id_map->insert( std::pair<std::string, size_t>(element_name, id) );
+	}
+
 	/**
 	 * The method returns true if the given element of type T
 	 * can be found and the element has a name, else method returns false.
@@ -147,6 +153,7 @@ public:
 			_name_id_map->insert (std::pair<std::string,size_t>(*name, _data_vec->size()-1));
 		}
 	}
+
 
 private:
 	/** copy constructor doesn't have an implementation */

@@ -131,11 +131,16 @@ public:
 	const std::vector<Polyline*> *getPolylineVec(const std::string &name) const;
 
 	/**
-	 * Returns a pointer to a PolylineVec object for the given name.
+	 * Returns a pointer to a PolylineVec object for the given name as a const.
 	 * @param name the name of the vector of polylines
 	 * @return PolylineVec object
 	 */
 	const PolylineVec* getPolylineVecObj(const std::string &name) const;
+
+	/// Returns a pointer to a PolylineVec object for the given name.
+	PolylineVec* getPolylineVecObj(const std::string &name) { 
+		return const_cast<PolylineVec*>(static_cast<const GEOObjects&>(*this).getPolylineVecObj(name)); 
+	};
 
 	/**
 	 * If no Surfaces depends on the vector of Polylines with the given
@@ -158,8 +163,14 @@ public:
 	virtual bool appendSurfaceVec(const std::vector<Surface*> &surfaces,
 			const std::string &name);
 
-	/// Returns the surface vector with the given name.
+	/// Returns the surface vector with the given name as a const.
 	const std::vector<Surface*> *getSurfaceVec(const std::string &name) const;
+
+	/// Returns the surface vector with the given name.
+	SurfaceVec* getSurfaceVecObj(const std::string &name) { 
+		return const_cast<SurfaceVec*>(static_cast<const GEOObjects&>(*this).getSurfaceVecObj(name)); 
+	};
+
 	/** removes the vector of Surfaces with the given name */
 	virtual bool removeSurfaceVec(const std::string &name);
 	/**

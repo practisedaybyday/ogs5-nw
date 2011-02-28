@@ -72,7 +72,7 @@ public:
 
 	/// Constructs one polyline from a vector of connected polylines.
 	/// All polylines in this vector need to reference the same point vector.
-	static Polyline* contructPolylineFromSegments(const std::vector<Polyline*> &ply_vec);
+	static Polyline* contructPolylineFromSegments(const std::vector<Polyline*> &ply_vec, double prox = 0.0);
 
 	/**
 	 * returns the number of points,
@@ -98,7 +98,7 @@ public:
 	 * */
 	const Point* getPoint(size_t i) const;
 
-	const std::vector<Point*> & getPointsVec () const;
+	std::vector<Point*> const& getPointsVec () const;
 
 	/**
 	 * returns the length of the polyline until the k-th line segment, employed by
@@ -125,6 +125,9 @@ protected:
 	 * @return a value of enum LOCATION
 	 */
 	Location::type getLocationOfPoint (size_t k, GEOLIB::Point const & pnt) const;
+
+	static bool pointsAreIdentical(const std::vector<Point*> &pnt_vec, size_t i, size_t j, double prox);
+
 
 	/** a reference to the vector of pointers to the geometric points */
 	const std::vector<Point*> &_ply_pnts;

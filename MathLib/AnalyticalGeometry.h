@@ -40,12 +40,6 @@ Orientation getOrientation (const double& p0_x, const double& p0_y,
 Orientation getOrientation (const GEOLIB::Point* p0, const GEOLIB::Point* p1, const GEOLIB::Point* p2);
 
 /**
- * computes the circumscribed circle of a triangle given by the 3d-points a, b, c
- */
-//void getCircumscribedSphereOfTriangle(const double a[3], const double b[3],
-//		const double c[3], double middle_pnt[3], double& radius);
-
-/**
  * compute a supporting plane (represented by plane_normal and the value d) for the polygon
  * Let \f$n\f$ be the plane normal and \f$d\f$ a parameter. Then for all points \f$p \in \R^3\f$ of the plane
  * it holds \f$ n \cdot p + d = 0\f$
@@ -55,8 +49,6 @@ Orientation getOrientation (const GEOLIB::Point* p0, const GEOLIB::Point* p1, co
  */
 void getNewellPlane (const std::vector<GEOLIB::Point*>& pnts, MATHLIB::Vector &plane_normal, double& d);
 
-//void delaunayTriangulatePolygon(const GEOLIB::Polyline* ply, std::list<GEOLIB::Triangle> &triangles);
-
 /**
  *
  * @param plane_normal
@@ -64,10 +56,8 @@ void getNewellPlane (const std::vector<GEOLIB::Point*>& pnts, MATHLIB::Vector &p
  */
 void rotatePointsToXY(MATHLIB::Vector &plane_normal, std::vector<GEOLIB::Point*> &pnts);
 
-/**
- * simple triangulation of simple polygons - ear clipping algorithm
- */
-void earClippingTriangulationOfPolygon (const GEOLIB::Polyline* ply, std::list<GEOLIB::Triangle> &triangles);
+bool isPointInTriangle (const GEOLIB::Point* p,
+		const GEOLIB::Point* a, const GEOLIB::Point* b, const GEOLIB::Point* c);
 
 /**
  * test for intersections of the line segments of the Polyline
@@ -92,15 +82,6 @@ bool lineSegmentsIntersect (const GEOLIB::Polyline* ply, size_t &idx0, size_t &i
  */
 bool lineSegmentIntersect (const GEOLIB::Point& a, const GEOLIB::Point& b,
 		const GEOLIB::Point& c, const GEOLIB::Point& d, GEOLIB::Point& s);
-
-/**
- * Function getSimplePolygons checks if the Polylines of the list
- * are simple Polygons. If a Polygon is not simple it is decomposed into
- * simple Polygons. The original Polygon in the list is substituted by these.
- * @param ply_list list of Polylines describing Polygons
- * @param pnt_vec In case we have to add some points we need the vector of points.
- */
-void getListOfSimplePolygons (std::list<GEOLIB::Polyline*>& ply_list, std::vector<GEOLIB::Point*>& pnt_vec);
 
 } // end namespace MATHLIB
 

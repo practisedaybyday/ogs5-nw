@@ -59,9 +59,10 @@ INCLUDE_DIRECTORIES(
 )
 
 TARGET_LINK_LIBRARIES( FileIO
-	Base
-	MathLib
+#	Base
+#	MathLib
 	GEO
+	FEM
 )
 
 IF (Shapelib_FOUND)

@@ -26,6 +26,6 @@ add_library( OGSProject
 	${HEADERS}
 )
 
-target_link_libraries( OGSProject
-
-)
+#target_link_libraries( OGSProject
+#
+#)

@@ -9,7 +9,7 @@
 
 namespace MATHLIB {
 
-LinkedTriangle::LinkedTriangle(const std::vector<GEOLIB::Point*> &pnt_vec,
+LinkedTriangle::LinkedTriangle(std::vector<GEOLIB::Point*> const &pnt_vec,
 		size_t pnt_a, size_t pnt_b, size_t pnt_c, LinkedTriangle* tri_a,
 		LinkedTriangle* tri_b, LinkedTriangle* tri_c) :
 	GEOLIB::Triangle(pnt_vec, pnt_a, pnt_b, pnt_c)
