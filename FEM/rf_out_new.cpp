@@ -556,8 +556,16 @@ bool OUTRead(const std::string& file_base_name, const GEOLIB::GEOObjects& geo_ob
 
          if(output_version) //// 02.2011. WW
          {
+			std::string VersionStr = OGS_VERSION; //02.2011 WX
+			int curPos = 0;
+			int pos = 0;
+			while((pos=VersionStr.find("/",curPos)) != -1)
+			{
+				VersionStr.replace(pos, 1, "_");
+				curPos = pos + 1;
+			}
             out->getFileBaseName().append("(V");
-            out->getFileBaseName().append(OGS_VERSION);
+            out->getFileBaseName().append(VersionStr);
             out->getFileBaseName().append(")");
          }
 
