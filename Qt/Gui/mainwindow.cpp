@@ -38,6 +38,7 @@
 #include "rf_bc_new.h"
 #include "rf_st_new.h"
 #include "rf_ic_new.h"
+#include "wait.h"
 
 // FileIO includes
 #include "OGSIOVer4.h"
@@ -927,8 +928,7 @@ void MainWindow::callGMSH(std::vector<std::string> const & selectedGeometries,
 					fname = fname.substr (0, pos);
 				gmsh_command += " -o " + fname + ".msh";
 				system(gmsh_command.c_str());
-				//wait(3);
-
+				this->loadFile(fileName.left(fileName.length()-3).append("msh"));
 			} else {
 				OGSError::box("Error executing command", "Error");
 			}
@@ -970,7 +970,7 @@ void MainWindow::showLineEditDialog(const std::string &geoName)
 	LineEditDialog lineEdit(*(_geoModels->getPolylineVecObj(geoName)));
 	connect(&lineEdit, SIGNAL(connectPolylines(const std::string&, std::vector<size_t>, double, std::string, bool, bool)),
 		_geoModels, SLOT(connectPolylineSegments(const std::string&, std::vector<size_t>, double, std::string, bool, bool)));
-	lineEdit.exec();
+	lineEdit.exec();	
 }
 
 void MainWindow::showGMSHPrefsDialog()
@@ -1009,7 +1009,7 @@ void MainWindow::FEMTestStart()
 
 		std::cout << "reading matrix ... " << std::flush;
 		// read matrix
-		//FileIO::readCompressedStorageFmt (in, n, iA, jA, A); //KR does not compile under windows
+		FileIO::readCompressedStorageFmt (in, n, iA, jA, A);
 		in.close ();
 		std::cout << "done" << std::endl;
 
