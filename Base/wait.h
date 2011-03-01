@@ -7,6 +7,8 @@
 #ifndef WAIT_H
 #define WAIT_H
 
+#include <ctime>
+
 namespace BASELIB {
 
 void wait(size_t seconds)

@@ -29,12 +29,12 @@ int XMLInterface::isValid(const QString &fileName) const
 {
 #if OGS_QT_VERSION > 45
 	QXmlSchema schema;
-	schema.load( QUrl(QString::fromStdString(_schemaName)) );
+	schema.load( QUrl::fromLocalFile((QString::fromStdString(_schemaName))) );
 
 	if ( schema.isValid() )
 	{
 		QXmlSchemaValidator validator( schema );
-		if ( validator.validate( QUrl(fileName) ) )
+		if ( validator.validate( QUrl::fromLocalFile((fileName))) )
 			return 1;
 		else
 		{
