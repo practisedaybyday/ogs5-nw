@@ -20,7 +20,7 @@
 
 #include <QTime>
 
-XMLInterface::XMLInterface(GEOLIB::GEOObjects* geoObjects, const std::string &schemaFile) 
+XMLInterface::XMLInterface(GEOLIB::GEOObjects* geoObjects, const std::string &schemaFile)
 : _geoObjects(geoObjects), _schemaName(schemaFile)
 {
 }
@@ -70,7 +70,7 @@ int XMLInterface::readProjectFile(const QString &fileName)
 
 	if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		std::cout << "XMLInterface::readProjectFile() - Can't open xml-file." << std::endl;
+		std::cout << "XMLInterface::readProjectFile() - Can't open xml-file " << fileName.toStdString() << "." << std::endl;
 		delete file;
 		return 0;
 	}
