@@ -186,7 +186,7 @@ Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &p
 bool Polyline::pointsAreIdentical(const std::vector<Point*> &pnt_vec, size_t i, size_t j, double prox)
 {
 	if (i==j) return true;
-	return (GEOLIB::checkDistance( *pnt_vec[i], *pnt_vec[j], prox ));
+	return (MATHLIB::checkDistance( *pnt_vec[i], *pnt_vec[j], prox ));
 }
 
 Polyline* Polyline::closePolyline(const Polyline& ply)
