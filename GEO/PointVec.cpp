@@ -214,7 +214,7 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector
 		else it++;
 	}
 
-	// renumber id-mapping
+	// renumber id-mapping - part I
 	size_t cnt (0);
 	for (size_t k(0); k<n_pnts_in_file; k++) {
 		if (pnt_id_map[k] == k) { // point not removed, if necessary: id change
