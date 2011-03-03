@@ -27,6 +27,7 @@ public:
 
 	bool isPntInPolygon (const GEOLIB::Point& pnt) const;
 	bool isPolylineInPolygon (const Polyline& ply) const;
+	GEOLIB::Point* getIntersectionPointPolygonLine (GEOLIB::Point const & a, GEOLIB::Point const & b) const;
 	void computeListOfSimplePolygons ();
 	const std::list<Polygon*>& getListOfSimplePolygons ();
 

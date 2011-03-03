@@ -122,7 +122,7 @@ int XMLInterface::readGLIFile(const QString &fileName)
 	QFile* file = new QFile(fileName);
 	if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		std::cout << "XMLInterface::readGLIFile() - Can't open xml-file." << std::endl;
+		std::cout << "XMLInterface::readGLIFile() - Can't open xml-file " << fileName.toStdString() << "." << std::endl;
 		delete file;
 		return 0;
 	}
@@ -398,7 +398,7 @@ int XMLInterface::readFEMCondFile(std::vector<FEMCondition*> &conditions, const 
 		else if (lists.at(i).nodeName().compare("SourceTerms") == 0)        readConditions(lists.at(i), conditions, FEMCondition::SOURCE_TERM);
 	}
 	if (!conditions.empty()) return 1;//do something like _geoObjects->addStationVec(stations, stnName, color);
-	else 
+	else
 	{
 		std::cout << "XMLInterface::readFEMCondFile() - No FEM Conditions found..." << std::endl;
 		return 0;

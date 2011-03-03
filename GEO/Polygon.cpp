@@ -114,6 +114,33 @@ bool Polygon::isPolylineInPolygon (const Polyline& ply) const
 	return false;
 }
 
+GEOLIB::Point* Polygon::getIntersectionPointPolygonLine (GEOLIB::Point const & a, GEOLIB::Point const & b) const
+{
+	GEOLIB::Point* s (new GEOLIB::Point (0,0,0));
+
+	if (_simple_polygon_list.empty ()) {
+		const size_t n_nodes (getNumberOfPoints()-1);
+		for (size_t k(0); k<n_nodes; k++) {
+			if (MATHLIB::lineSegmentIntersect (*(getPoint(k)), *(getPoint(k+1)), a, b, *s)) {
+				return s;
+			}
+		}
+	} else {
+		for (std::list<Polygon*>::const_iterator it (_simple_polygon_list.begin());
+			it != _simple_polygon_list.end(); ++it) {
+			const Polygon* polygon (*it);
+			const size_t n_nodes_simple_polygon (polygon->getNumberOfPoints()-1);
+			for (size_t k(0); k<n_nodes_simple_polygon; k++) {
+				if (MATHLIB::lineSegmentIntersect (*(polygon->getPoint(k)), *(polygon->getPoint(k+1)), a, b, *s)) {
+					return s;
+				}
+			}
+		}
+	}
+	delete s;
+	return NULL;
+}
+
 const std::list<Polygon*>& Polygon::getListOfSimplePolygons()
 {
 	if (_simple_polygon_list.empty())
