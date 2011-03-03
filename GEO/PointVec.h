@@ -163,7 +163,7 @@ private:
 	 * The destructor of PointVec will delete all GEOLIB::Points
 	 * inside the vector.
 	 */
-	std::vector<Point*> *_pnt_vec;
+	std::vector <Point*> *_pnt_vec;
 	/**
 	 * used to store the name associated with a point
 	 */
