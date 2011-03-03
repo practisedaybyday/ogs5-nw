@@ -14,12 +14,11 @@ PointVec::PointVec (const std::string& name, std::vector<Point*>* points, std::m
 : _pnt_vec (points), _name_id_map (name_id_map), _type(type), _name (name)
 {
 	assert (_pnt_vec);
-	std::cout << "INFO: " << _pnt_vec->size() << " points" << std::endl;
-	makePntsUnique (_pnt_vec, _pnt_id_map);
-	std::cout << "INFO: " << _pnt_vec->size() << " unique points" << std::endl;
+	size_t number_of_all_input_pnts (_pnt_vec->size());
 
-	if (name_id_map)
-		std::cout << "INFO: " << _name_id_map->size() << " points are named" << std::endl;
+	makePntsUnique (_pnt_vec, _pnt_id_map);
+	if (number_of_all_input_pnts - _pnt_vec->size() > 0)
+		std::cerr << "WARNING: there are " << number_of_all_input_pnts - _pnt_vec->size() << " double points" << std::endl;
 }
 
 PointVec::~PointVec ()
@@ -173,9 +172,6 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector
 		}
 	}
 
-//	std::cout << "sorted points: " << std::endl;
-//	for (size_t k(0); k<pnt_vec->size(); k++) std::cout << k << ": " << *((*pnt_vec)[k]) << "  | " << pnt_id_map[perm[k]] << std::endl;
-
 	// check if there are identical points
 	for (size_t k=0; k<n_pnts_in_file-1; k++) {
 		if ( fabs((*((*pnt_vec)[k+1]))[0]-(*((*pnt_vec)[k]))[0]) < eps
@@ -184,8 +180,6 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector
 			pnt_id_map[perm[k+1]] = pnt_id_map[perm[k]];
 		}
 	}
-//	std::cout << "*** id mapping: " << std::endl;
-//	for (size_t k(0); k<n_pnts_in_file; k++) std::cout << k << ": " << pnt_id_map[k] << std::endl;
 
 	// reverse permutation
 	Quicksort<GEOLIB::Point*> (perm, 0, n_pnts_in_file, *pnt_vec);
@@ -205,27 +199,18 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector
 		else it++;
 	}
 
-	size_t cnt (0);
+	// renumber id-mapping - part I
+	size_t cnt (0), cnt_removed(0);
 	for (size_t k(0); k<n_pnts_in_file; k++) {
-		if (pnt_id_map[k] == k) {
+		if (pnt_id_map[k] == k) { // point not removed, simple id change
 			pnt_id_map[k] = cnt;
 			cnt++;
+		} else { // point object removed, id changed
+			pnt_id_map[k] -= cnt_removed;
+			cnt_removed++;
 		}
-	}
 
-	// renumber id-mapping
-	size_t n_unique_pnts (pnt_vec->size());
-	for (size_t k(1); k<n_pnts_in_file; k++) {
-		size_t j (pnt_id_map[k]);
-		while (j != pnt_id_map[j] && j > n_unique_pnts) j = pnt_id_map[j];
-		pnt_id_map[k] = j;
 	}
-
-//	std::cout << "id mapping: " << std::endl;
-//	for (size_t k(0); k<n_pnts_in_file; k++) std::cout << k << ": " << pnt_id_map[k] << std::endl;
-//
-//	std::cout << pnt_vec->size() << " unique points: " << std::endl;
-//	for (size_t k(0); k<pnt_vec->size(); k++) std::cout << k << ": " << *((*pnt_vec)[k]) << std::endl;
 }
 
 } // end namespace
