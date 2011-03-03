@@ -63,7 +63,8 @@ void SHPInterface::readStations(const SHPHandle &hSHP, int numberOfElements, std
 {
 	if (numberOfElements>0)
 	{
-		std::vector<GEOLIB::Point*> *stations = new std::vector<GEOLIB::Point*>[numberOfElements];
+		std::vector<GEOLIB::Point*> *stations (new std::vector<GEOLIB::Point*>);
+		stations->reserve (numberOfElements);
 		SHPObject *hSHPObject;
 
 		for (int i=0; i<numberOfElements; i++)
