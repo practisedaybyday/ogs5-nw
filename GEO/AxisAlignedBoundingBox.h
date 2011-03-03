@@ -8,6 +8,8 @@
 #ifndef AXISALIGNEDBOUNDINGBOX_H_
 #define AXISALIGNEDBOUNDINGBOX_H_
 
+#include "Point.h"
+
 namespace GEOLIB {
 
 /**
@@ -24,6 +26,7 @@ public:
 	 * */
 	AABB ();
 
+	void update (GEOLIB::Point const & pnt);
 	/**
 	 * update axis aligned bounding box
 	 */
@@ -38,6 +41,12 @@ public:
 	}
 
 	/**
+	 * check if point is in the axis aligned bounding box
+	 * (employing containsPoint (double x, double y, double z))
+	 */
+	bool containsPoint (GEOLIB::Point const & pnt) const;
+
+	/**
 	 * wrapper for GEOLIB::Point
 	 */
 	bool containsPoint (const double *pnt) const;
@@ -50,8 +59,8 @@ public:
 
 
 private:
-	double _min[3];
-	double _max[3];
+	GEOLIB::Point _min_pnt;
+	GEOLIB::Point _max_pnt;
 };
 
 } // end namespace

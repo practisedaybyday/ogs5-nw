@@ -14,19 +14,24 @@ namespace GEOLIB {
 AABB::AABB ()
 {
 	for (std::size_t k(0); k<3; k++) {
-		_min[k] = std::numeric_limits<double>::max();
-		_max[k] = std::numeric_limits<double>::min();
+		_min_pnt[k] = std::numeric_limits<double>::max();
+		_max_pnt[k] = std::numeric_limits<double>::min();
 	}
+}
+
+void AABB::update (GEOLIB::Point const & pnt)
+{
+	update (pnt[0], pnt[1], pnt[2]);
 }
 
 void AABB::update (double x, double y, double z)
 {
-	if (x < _min[0]) _min[0] = x;
-	if (_max[0] < x) _max[0] = x;
-	if (y < _min[1]) _min[1] = y;
-	if (_max[1] < y) _max[1] = y;
-	if (z < _min[2]) _min[2] = z;
-	if (_max[2] < z) _max[2] = z;
+	if (x < _min_pnt[0]) _min_pnt[0] = x;
+	if (_max_pnt[0] < x) _max_pnt[0] = x;
+	if (y < _min_pnt[1]) _min_pnt[1] = y;
+	if (_max_pnt[1] < y) _max_pnt[1] = y;
+	if (z < _min_pnt[2]) _min_pnt[2] = z;
+	if (_max_pnt[2] < z) _max_pnt[2] = z;
 }
 
 bool AABB::containsPoint (const double *pnt) const
@@ -36,9 +41,9 @@ bool AABB::containsPoint (const double *pnt) const
 
 bool AABB::containsPoint (double x, double y, double z) const
 {
-	if (_min[0] <= x && x <= _max[0]) {
-		if (_min[1] <= y && y <= _max[1]) {
-			if (_min[2] <= z && z <= _max[2]) {
+	if (_min_pnt[0] <= x && x <= _max_pnt[0]) {
+		if (_min_pnt[1] <= y && y <= _max_pnt[1]) {
+			if (_min_pnt[2] <= z && z <= _max_pnt[2]) {
 				return true;
 			} else return false;
 		} else return false;

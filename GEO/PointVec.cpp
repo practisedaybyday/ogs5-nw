@@ -12,7 +12,7 @@ namespace GEOLIB {
 PointVec::PointVec (const std::string& name, std::vector<Point*>* points,
 		std::map<std::string, size_t>* name_id_map, PointType type) :
 			_pnt_vec (points), _name_id_map (name_id_map), _type(type), _name (name),
-			_sqr_shortest_dist (std::numeric_limits<double>::max()), _sqr_largest_dist (0)
+			_sqr_shortest_dist (std::numeric_limits<double>::max())
 {
 	assert (_pnt_vec);
 	size_t number_of_all_input_pnts (_pnt_vec->size());
@@ -20,7 +20,8 @@ PointVec::PointVec (const std::string& name, std::vector<Point*>* points,
 	makePntsUnique (_pnt_vec, _pnt_id_map);
 	if (number_of_all_input_pnts - _pnt_vec->size() > 0)
 		std::cerr << "WARNING: there are " << number_of_all_input_pnts - _pnt_vec->size() << " double points" << std::endl;
-	calculateShortestAndLargestDistance ();
+	calculateShortestDistance ();
+	calculateAxisAlignedBoundingBox ();
 }
 
 PointVec::~PointVec ()
@@ -70,7 +71,7 @@ size_t PointVec::uniqueInsert (Point* pnt)
 		for (size_t i(0); i<n; i++) {
 			double sqr_dist (MATHLIB::sqrDist((*_pnt_vec)[i], (*_pnt_vec)[n]));
 			if (sqr_dist < _sqr_shortest_dist) _sqr_shortest_dist = sqr_dist;
-			if (sqr_dist > _sqr_largest_dist) _sqr_largest_dist = sqr_dist;
+			aabb.update (*((*_pnt_vec)[n]));
 		}
 	}
 	if (k<n) {
@@ -139,11 +140,6 @@ bool PointVec::getNameOfElementByID (size_t id, std::string& element_name) const
 double PointVec::getShortestPointDistance () const
 {
 	return sqrt (_sqr_shortest_dist);
-}
-
-double PointVec::getLargestPointDistance () const
-{
-	return sqrt (_sqr_largest_dist);
 }
 
 void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector<size_t> &pnt_id_map)
@@ -236,15 +232,22 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector
 	}
 }
 
-void PointVec::calculateShortestAndLargestDistance ()
+void PointVec::calculateShortestDistance ()
 {
 	const size_t n_pnts (_pnt_vec->size());
 	for (size_t i(0); i<n_pnts; i++) {
 		for (size_t j(i+1); j<n_pnts; j++) {
 			double sqr_dist (MATHLIB::sqrDist ((*_pnt_vec)[i], (*_pnt_vec)[j]));
 			if (sqr_dist < _sqr_shortest_dist) _sqr_shortest_dist = sqr_dist;
-			if (sqr_dist > _sqr_largest_dist) _sqr_largest_dist = sqr_dist;
 		}
+	}
+}
+
+void PointVec::calculateAxisAlignedBoundingBox ()
+{
+	const size_t n_pnts (_pnt_vec->size());
+	for (size_t i(0); i<n_pnts; i++) {
+		aabb.update (*(*_pnt_vec)[i]);
 	}
 }
 
