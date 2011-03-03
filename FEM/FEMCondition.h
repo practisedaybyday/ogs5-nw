@@ -12,8 +12,11 @@
 #include "DistributionInfo.h"
 #include "GeoObject.h"
 
-
 #include <vector>
+
+class CBoundaryCondition;
+class CInitialCondition;
+class CSourceTerm;
 
 /** 
  * \brief Adapter class for handling FEM Conditions in the user Interface
@@ -32,16 +35,16 @@ public:
 	FEMCondition(CondType = UNSPECIFIED);
 	~FEMCondition() {};
 
-	CondType getCondType() { return _type; };
+	CondType getCondType() const { return _type; };
 
-	const std::vector<double> getDisValue() { return _disValue; };
+	const std::vector<double> getDisValue() const { return _disValue; };
 	const std::string& getGeoName() { return _geoName; };
 
 	void setDisValue(std::vector<double> disValue) { for (size_t i=0; i<disValue.size(); i++) _disValue.push_back(disValue[i]); };
 	void setDisValue(double disValue) { _disValue.push_back(disValue); };
-	void setGeoName(const std::string geoName) { _geoName = geoName; };
+	void setGeoName(std::string geoName) { _geoName = geoName; };
 
-private:
+protected:
 	CondType _type;
 	GEOLIB::GeoObject* _geoObject;
 	std::vector<double> _disValue;
@@ -54,10 +57,11 @@ private:
 class BoundaryCondition : public FEMCondition
 {
 public:
-	BoundaryCondition() : _tim_type(0) {};
+	BoundaryCondition() : FEMCondition(FEMCondition::BOUNDARY_CONDITION), _tim_type(0) {};
+	BoundaryCondition(const CBoundaryCondition &bc);
 	~BoundaryCondition() {};
 
-	size_t getTimType() {return _tim_type; };
+	size_t getTimType() const {return _tim_type; };
 	void setTimType(size_t value) { _tim_type = value; };
 
 
@@ -71,7 +75,8 @@ private:
 class InitialCondition : public FEMCondition
 {
 public:
-	InitialCondition() {};
+	InitialCondition() : FEMCondition(FEMCondition::INITIAL_CONDITION) {};
+	InitialCondition(const CInitialCondition &ic);
 	~InitialCondition() {};
 };
 
@@ -81,10 +86,11 @@ public:
 class SourceTerm : public FEMCondition
 {
 public:
-	SourceTerm() : _tim_type(0) {};
+	SourceTerm() : FEMCondition(FEMCondition::SOURCE_TERM), _tim_type(0) {};
+	SourceTerm(const CSourceTerm &st);
 	~SourceTerm() {};
 
-	size_t getTimType() {return _tim_type; };
+	size_t getTimType() const {return _tim_type; };
 	void setTimType(size_t value) { _tim_type = value; };
 
 private:
