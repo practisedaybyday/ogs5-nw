@@ -21,6 +21,30 @@ typedef TemplatePoint<double> Point;
 /**
  * lexicographic comparison of points
  */
-bool operator<= (const GEOLIB::Point& p0, const GEOLIB::Point& p1);
+bool operator<= (GEOLIB::Point const & p0, GEOLIB::Point const & p1);
+
+/**
+ * comparison based on the x coordinate
+ * @param p0 first point
+ * @param p1 second point
+ * @return true if the x coordinate of p0 is smaller equal the x coordinate of p1, else false
+ */
+bool lessX (GEOLIB::Point const & p0, GEOLIB::Point const & p1);
+
+/**
+ * comparison based on the y coordinate
+ * @param p0 first point
+ * @param p1 second point
+ * @return true if the y coordinate of p0 is smaller equal the y coordinate of p1, else false
+ */
+bool lessY (GEOLIB::Point const & p0, GEOLIB::Point const & p1);
+
+/**
+ * comparison based on the z coordinate
+ * @param p0 first point
+ * @param p1 second point
+ * @return true if the z coordinate of p0 is smaller equal the z coordinate of p1, else false
+ */
+bool lessZ (GEOLIB::Point const & p0, GEOLIB::Point const & p1);
 
 #endif /* POINT_H_ */

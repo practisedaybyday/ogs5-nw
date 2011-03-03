@@ -17,27 +17,7 @@
 // GEO
 #include "GEOObjects.h"
 #include "Polygon.h"
-
-namespace GEOLIB {
-/**
- * class PointWithId is derived from class Point in
- * order to extend the class Point with an ID.
- */
-class PointWithID : public Point
-{
-public:
-	PointWithID (double x0, double x1, double x2, size_t id) :
-		Point (x0, x1, x2), _id (id)
-	{
-	}
-
-	size_t getID () const { return _id; }
-
-protected:
-	size_t _id;
-};
-} // end namespace GEOLIB
-
+#include "PointWithID.h"
 
 namespace Mesh_Group {
 
