@@ -61,13 +61,17 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 	// get surface points
 	double eps (sqrt(std::numeric_limits<double>::min()));
 	std::vector<GEOLIB::PointWithID*> surface_pnts;
-	for (size_t k(1); k<points_inside_polygon.size(); k++) {
+	const size_t number_points_inside_polygon (points_inside_polygon.size());
+	for (size_t k(1); k<number_points_inside_polygon; k++) {
 		const GEOLIB::PointWithID& p0 (*(points_inside_polygon[k-1]));
 		const GEOLIB::PointWithID& p1 (*(points_inside_polygon[k]));
 		if (fabs (p0[0]-p1[0]) > eps || fabs (p0[1]-p1[1]) > eps) {
 			surface_pnts.push_back (points_inside_polygon[k-1]);
 		}
 	}
+	// last point
+	surface_pnts.push_back (points_inside_polygon[number_points_inside_polygon-1]);
+
 
 	// update id mapping and copy surface points in vector
 	for (size_t k(0); k<surface_pnts.size(); k++){
@@ -83,42 +87,117 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 	// get all elements of mesh
 	const std::vector<Mesh_Group::CElem*>& msh_elem (_mesh->getElementVector());
 	const size_t msh_elem_size (msh_elem.size());
-	size_t cnt_triangle (0), cnt_tetrahedron(0), cnt_prism (0);
 	for (size_t j(0); j<msh_elem_size; j++) {
 		switch (msh_elem[j]->GetElementType()) {
 		case MshElemType::TRIANGLE:
-			cnt_triangle++;
-			break;
-		case MshElemType::TETRAHEDRON:
-			cnt_tetrahedron++;
-			break;
-		case MshElemType::PRISM:
-			cnt_prism++;
-		}
-
-		// indices of nodes of the j-th element
-		const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
-		size_t k;
-		for (k = 0; k<nodes_indices.Size(); k++) {
-			if (id_map[nodes_indices[k]] == std::numeric_limits<size_t>::max()) {
-				break;
+		{
+			// indices of nodes of the j-th element
+			const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
+			size_t k;
+			for (k = 0; k<nodes_indices.Size(); k++) {
+				if (id_map[nodes_indices[k]] == std::numeric_limits<size_t>::max()) {
+					break;
+				}
 			}
-		}
-//		if (msh_elem[j]->GetElementType() == MshElemType::TRIANGLE) {
-//			std::cout << "tri: k: " << k << ", nodes_indices.Size(): " << nodes_indices.Size() << std::endl;
-//		} else {
-//			std::cout << msh_elem[j]->GetElementType() << ": k: " << k << ", nodes_indices.Size(): " << nodes_indices.Size() << std::endl;
-//		}
-		if (k == nodes_indices.Size()) { // all nodes of element are points in the surface
-			if (msh_elem[j]->GetElementType() == MshElemType::TRIANGLE) {
+			if (k == nodes_indices.Size()) { // all nodes of element are points in the surface
 				sfc->addTriangle (id_map[nodes_indices[0]], id_map[nodes_indices[1]], id_map[nodes_indices[2]]);
 			}
+			break;
+		}
+		case MshElemType::QUAD:
+		{
+			// indices of nodes of the j-th element
+			const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
+			size_t k;
+			for (k = 0; k<nodes_indices.Size(); k++) {
+				if (id_map[nodes_indices[k]] == std::numeric_limits<size_t>::max()) {
+					break;
+				}
+			}
+			if (k == nodes_indices.Size()) { // all nodes of element are points in the surface
+				sfc->addTriangle (id_map[nodes_indices[0]], id_map[nodes_indices[1]], id_map[nodes_indices[2]]);
+				sfc->addTriangle (id_map[nodes_indices[0]], id_map[nodes_indices[2]], id_map[nodes_indices[3]]);
+			}
+			break;
+		}
+		case MshElemType::TETRAHEDRON:
+		{
+			// max number of nodes for a triangle of the tetrahedron is 6 (high quality element)
+			int *face_nodes (new int[6]);
+			for (size_t face_number(0); face_number<4; face_number++) {
+				size_t n_nodes (msh_elem[j]->GetElementFaceNodes(face_number, face_nodes));
+
+				// indices of nodes of the j-th element
+				const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
+				size_t k;
+				for (k = 0; k<n_nodes; k++) {
+					if (id_map[nodes_indices[face_nodes[k]]] == std::numeric_limits<size_t>::max()) {
+						break;
+					}
+				}
+				if (k == n_nodes) { // all nodes of element are points in the surface
+					sfc->addTriangle (id_map[nodes_indices[face_nodes[0]]], id_map[nodes_indices[face_nodes[1]]], id_map[nodes_indices[face_nodes[2]]]);
+				}
+			}
+			delete [] face_nodes;
+			break;
+		}
+		case MshElemType::PRISM:
+		{
+			// max number of nodes for a surface of a prism is 8(high quality quad element)
+			int *face_nodes (new int[8]);
+			for (size_t face_number(0); face_number<5; face_number++) {
+				size_t n_nodes (msh_elem[j]->GetElementFaceNodes(face_number, face_nodes));
+
+				// indices of nodes of the j-th element
+				const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
+				size_t k;
+				for (k = 0; k<n_nodes; k++) {
+					if (id_map[nodes_indices[face_nodes[k]]] == std::numeric_limits<size_t>::max()) {
+						break;
+					}
+				}
+				if (k == n_nodes) { // all nodes of element are points in the surface
+					if (n_nodes == 3) {
+						sfc->addTriangle (id_map[nodes_indices[face_nodes[0]]], id_map[nodes_indices[face_nodes[1]]], id_map[nodes_indices[face_nodes[2]]]);
+					} else {
+						// case n_nodes == 4 quad -> make two triangles
+						sfc->addTriangle (id_map[nodes_indices[face_nodes[0]]], id_map[nodes_indices[face_nodes[1]]], id_map[nodes_indices[face_nodes[2]]]);
+						sfc->addTriangle (id_map[nodes_indices[face_nodes[0]]], id_map[nodes_indices[face_nodes[2]]], id_map[nodes_indices[face_nodes[3]]]);
+					}
+				}
+			}
+			delete [] face_nodes;
+			break;
+		}
+		case MshElemType::HEXAHEDRON:
+		{
+			// max number of nodes for a surface of a hexahedron is 8 (high quality quad element)
+			int *face_nodes (new int[8]);
+			for (size_t face_number(0); face_number<6; face_number++) {
+				size_t n_nodes (msh_elem[j]->GetElementFaceNodes(face_number, face_nodes));
+
+				// indices of nodes of the j-th element
+				const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
+				size_t k;
+				for (k = 0; k<n_nodes; k++) {
+					if (id_map[nodes_indices[face_nodes[k]]] == std::numeric_limits<size_t>::max()) {
+						break;
+					}
+				}
+				if (k == n_nodes) { // all nodes of element are points in the surface
+					// make two triangles
+					sfc->addTriangle (id_map[nodes_indices[face_nodes[0]]], id_map[nodes_indices[face_nodes[1]]], id_map[nodes_indices[face_nodes[2]]]);
+					sfc->addTriangle (id_map[nodes_indices[face_nodes[0]]], id_map[nodes_indices[face_nodes[2]]], id_map[nodes_indices[face_nodes[3]]]);
+				}
+			}
+			delete [] face_nodes;
+			break;
+		}
+		default:
+			break;
 		}
 	}
-	std::cout << "triangles: " << cnt_triangle << std::endl << "tetrahedrons: " << cnt_tetrahedron << std::endl;
-	std::cout << "prisms: " << cnt_prism << std::endl;
-
-	std::cout << "Surface has " << sfc->getNTriangles() << " triangles " << std::endl;
 
 	return sfc;
 }

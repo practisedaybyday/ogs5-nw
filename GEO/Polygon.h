@@ -11,6 +11,8 @@
 // STL
 #include <list>
 
+// GEOLIB
+#include "AxisAlignedBoundingBox.h"
 #include "Polyline.h"
 
 namespace GEOLIB {
@@ -19,14 +21,33 @@ namespace GEOLIB {
  * \ingroup GEOLIB
  */
 
+/**
+ * edge classification
+ */
+class EdgeType {
+	public:
+		enum value {
+			TOUCHING,  //!< TOUCHING
+			CROSSING,  //!< CROSSING
+			INESSENTIAL//!< INESSENTIAL
+		};
+};
+
 class Polygon : public Polyline
 {
 public:
+	/**
+	 * constructor checks if the given polyline is closed,
+	 * and assures that the orientation is clock wise.
+	 * @param ply closed Polyline
+	 * @return
+	 */
 	Polygon(const Polyline &ply);
 	virtual ~Polygon();
 
 	/**
-	 * checks if the given point is inside the polygon
+	 * Method checks if the given point is inside the polygon.
+	 * The method requires that the polygon has clock wise orientation.
 	 * @param pnt the Point
 	 * @return if point is inside the polygon true, else false
 	 */
@@ -45,11 +66,20 @@ public:
 	const std::list<Polygon*>& getListOfSimplePolygons ();
 
 private:
+	/**
+	 * get the type of edge with respect to the given point (2d method!)
+	 * @param k number of line segment
+	 * @param pnt point that is edge type computed for
+	 * @return a value of enum EdgeType
+	 */
+	EdgeType::value getEdgeType (size_t k, GEOLIB::Point const & pnt) const;
+
 	void splitPolygonAtIntersection (std::list<Polygon*>::iterator polygon_it);
 	void splitPolygonAtPoint (std::list<Polygon*>::iterator polygon_it);
 	double _maxx;
 	double _maxy;
 	std::list<Polygon*> _simple_polygon_list;
+	AABB _aabb;
 };
 
 }

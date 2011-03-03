@@ -57,6 +57,8 @@ public:
 	 */
 	bool containsPoint (double x, double y, double z) const;
 
+	GEOLIB::Point getMinPoint () const { return _min_pnt; }
+	GEOLIB::Point getMaxPoint () const { return _max_pnt; }
 
 private:
 	GEOLIB::Point _min_pnt;

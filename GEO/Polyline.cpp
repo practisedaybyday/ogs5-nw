@@ -113,7 +113,7 @@ Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &p
 	{
 		local_ply_vec.push_back(ply_vec[i]);
 	}
-	
+
 	while (!local_ply_vec.empty())
 	{
 		bool ply_found(false);
@@ -128,7 +128,7 @@ Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &p
 					Polyline* tmp = new Polyline((*it)->getPointsVec());
 					for (size_t k=0; k<nPoints; k++)
 						tmp->addPoint((*it)->getPointID(nPoints-k-1));
-					
+
 					size_t new_ply_size(new_ply->getNumberOfPoints());
 					for (size_t k=1; k<new_ply_size; k++)
 						tmp->addPoint(new_ply->getPointID(k));
@@ -158,7 +158,7 @@ Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &p
 						new_ply->addPoint((*it)->getPointID(nPoints-k-1));
 					ply_found = true;
 				}
-				if (ply_found) 
+				if (ply_found)
 				{
 					local_ply_vec.erase(it);
 					break;
@@ -176,6 +176,41 @@ Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &p
 		}
 	}
 	return new_ply;
+}
+
+Polyline* Polyline::closePolyline(const Polyline& ply)
+{
+	if (ply.getNumberOfPoints()>2)
+	{
+		Polyline* new_ply = new Polyline(ply);
+		if (ply.isClosed()) return new_ply;
+		new_ply->addPoint(new_ply->getPointID(0));
+		return new_ply;
+	}
+	std::cout << "Error in Polyline::closePolyline() - Input polyline needs to be composed of at least three points..." << std::endl;
+	return NULL;
+}
+
+Location::type Polyline::getLocationOfPoint (size_t k, GEOLIB::Point const & pnt) const
+{
+	assert (k<_ply_pnt_ids.size()-1);
+
+	GEOLIB::Point const& source (*(_ply_pnts[_ply_pnt_ids[k]]));
+	GEOLIB::Point const& dest (*(_ply_pnts[_ply_pnt_ids[k+1]]));
+	GEOLIB::Point a (dest[0]-source[0], dest[1]-source[1], dest[2]-source[2]); // vector
+	GEOLIB::Point b (pnt[0]-source[0], pnt[1]-source[1], pnt[2]-source[2]); // vector
+
+	double det_2x2 (a[0]*b[1] - a[1]*b[0]);
+
+	if (det_2x2 > sqrt(std::numeric_limits<double>::min())) return Location::LEFT;
+	if (sqrt(std::numeric_limits<double>::min()) < fabs(det_2x2)) return Location::RIGHT;
+	if (a[0]*b[0] < 0.0 || a[1]*b[1] < 0.0) return Location::BEHIND;
+	if (MATHLIB::sqrNrm2(&a) < MATHLIB::sqrNrm2(&b)) return Location::BEYOND;
+	if (MATHLIB::sqrDist (&pnt, _ply_pnts[_ply_pnt_ids[k]]) < sqrt(std::numeric_limits<double>::min()))
+		return Location::SOURCE;
+	if (MATHLIB::sqrDist (&pnt, _ply_pnts[_ply_pnt_ids[k+1]]) < sqrt(std::numeric_limits<double>::min()))
+		return Location::DESTINATION;
+	return Location::BETWEEN;
 }
 
 std::ostream& operator<< (std::ostream &os, const Polyline &pl)
@@ -201,19 +236,6 @@ bool containsEdge (const Polyline& ply, size_t id0, size_t id1)
 			return true;
 	}
 	return false;
-}
-
-Polyline* Polyline::closePolyline(const Polyline& ply)
-{
-	if (ply.getNumberOfPoints()>2)
-	{
-		Polyline* new_ply = new Polyline(ply);
-		if (ply.isClosed()) return new_ply;
-		new_ply->addPoint(new_ply->getPointID(0));
-		return new_ply;
-	}
-	std::cout << "Error in Polyline::closePolyline() - Input polyline needs to be composed of at least three points..." << std::endl;
-	return NULL;
 }
 
 
