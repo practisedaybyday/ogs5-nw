@@ -128,19 +128,29 @@ void GMSHInterface::writePlaneSurface ()
 	_polygon_list.clear();
 }
 
-void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo)
+void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
+		std::vector<std::string> const & selected_geometries,
+		size_t number_of_point_per_quadtree_node,
+		double mesh_density_scaling, double mesh_density_scaling_station_pnts)
 {
 	// check file stream
 	if (! _out) return;
 
 	std::cout << "GMSHInterface::writeGMSHInputFile " << std::endl;
 
-	// get names of all available data sources
+	// get names of all available data sources except stations
 	std::vector<std::string> geo_names;
-	geo.getGeometryNames(geo_names);
 	// get station names
 	std::vector<std::string> geo_station_names;
-	geo.getStationNames(geo_station_names);
+
+	for (std::vector<std::string>::const_iterator it (selected_geometries.begin());
+		it != selected_geometries.end(); it++) {
+		if ((geo.getPointVecObj (*it))->getType() == GEOLIB::PointVec::POINT) {
+			geo_names.push_back (*it);
+		} else if ((geo.getPointVecObj (*it))->getType() == GEOLIB::PointVec::STATION) {
+			geo_station_names.push_back (*it);
+		}
+	}
 
 	size_t pnt_offset (0);
 	std::vector<GEOLIB::Point*> all_points;
@@ -150,7 +160,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo)
 			it != geo_names.end(); it++) {
 		// get data from geo
 #ifndef NDEBUG
-		std::cout << "fetch data for " << *it << " " << std::flush;
+		std::cout << "fetch geometrical data for " << *it << " " << std::flush;
 #endif
 		const std::vector<GEOLIB::Point*> *pnts (geo.getPointVec (*it));
 		const std::vector<GEOLIB::Polyline*> *plys (geo.getPolylineVec (*it));
@@ -179,7 +189,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo)
 		it != geo_station_names.end(); it++) {
 		// get data from geo
 #ifndef NDEBUG
-		std::cout << "fetch data for " << *it << " " << std::flush;
+		std::cout << "fetch station data for " << *it << " " << std::flush;
 #endif
 		const std::vector<GEOLIB::Point*> *pnts (geo.getPointVec (*it));
 #ifndef NDEBUG
@@ -236,11 +246,10 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo)
 	std::cout << "ok" << std::endl;
 #endif
 	// *** QuadTree - create object
-	const size_t number_of_point_per_quadtree_node (2);
 #ifndef NDEBUG
 	std::cout << "creating quadtree ... " << std::flush;
 #endif
-	GEOLIB::QuadTree<GEOLIB::Point, number_of_point_per_quadtree_node> quad_tree (ll, ur);
+	GEOLIB::QuadTree<GEOLIB::Point> quad_tree (ll, ur, number_of_point_per_quadtree_node);
 	std::cout << "ok" << std::endl;
 
 	// *** QuadTree - insert points
@@ -280,7 +289,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo)
 		if (bounding_polygon->isPntInPolygon (*(all_points[k]))) {
 			GEOLIB::Point ll, ur;
 			quad_tree.getLeaf (*(all_points[k]), ll, ur);
-			double mesh_density (0.3*(ur[0]-ll[0])); // scaling with 0.3 - do not know if this is a good value
+			double mesh_density (mesh_density_scaling * (ur[0]-ll[0]));
 			_out << "Point(" << _n_pnt_offset + k << ") = {" << (*(all_points[k]))[0] << ","
 				<< (*(all_points[k]))[1] << "," << (*(all_points[k]))[2]
 				<< "," << mesh_density
@@ -350,7 +359,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo)
 								double mesh_density (0.3*(ur[0]-ll[0])); // scaling with 0.3 - do not know if this is a good value
 								_out << "Point(" << _n_pnt_offset << ") = {" << (*s)[0] << ","
 									<< (*s)[1] << "," << (*s)[2] << "," << mesh_density
-									<< "};" << std::endl;
+									<< "}; // new end point of polyline " << k << std::endl;
 								// write line
 								_out << "Line(" << _n_lines+j << ") = {" << (all_polylines[k])->getPointID(j) << ","
 									<< _n_pnt_offset << "};" << std::endl;
@@ -370,7 +379,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo)
 								double mesh_density (0.3*(ur[0]-ll[0])); // scaling with 0.3 - do not know if this is a good value
 								_out << "Point(" << _n_pnt_offset << ") = {" << (*s)[0] << ","
 									<< (*s)[1] << "," << (*s)[2] << "," << mesh_density
-									<< "};" << std::endl;
+									<< "}; // new end point of polyline " << k << std::endl;
 								// write line
 								_out << "Line(" << _n_lines+j << ") = {" << _n_pnt_offset << "," << (all_polylines[k])->getPointID(j+1)
 									<< "};" << std::endl;
@@ -395,20 +404,20 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo)
 	for (size_t k(0); k<n_stations; k++) {
 		GEOLIB::Point ll, ur;
 		quad_tree.getLeaf (*(all_stations[k]), ll, ur);
-		double mesh_density (0.05*(ur[0]-ll[0])); // scaling with 0.3 - do not know if this is a good value
-		_out << "Point(" << _n_pnt_offset + k << ") = {" << (*(all_stations[k]))[0] << ","
+		double mesh_density (mesh_density_scaling_station_pnts * (ur[0]-ll[0]));
+		_out << "Point(" << _n_pnt_offset+k << ") = {" << (*(all_stations[k]))[0] << ","
 			<< (*(all_stations[k]))[1] << "," << (*(all_stations[k]))[2] << "," << mesh_density
 			<< "};" << std::endl;
 
-		_out << "Point {" << pnt_offset+k << "} In Surface {" << _n_plane_sfc-1 << "};" << std::endl;
+		_out << "Point {" << _n_pnt_offset+k << "} In Surface {" << _n_plane_sfc-1 << "};" << std::endl;
 	}
 	_n_pnt_offset += n_stations;
 
 	// write Steiner points
-	std::list<GEOLIB::QuadTree<GEOLIB::Point, number_of_point_per_quadtree_node>*> leaf_list;
+	std::list<GEOLIB::QuadTree<GEOLIB::Point>*> leaf_list;
 	quad_tree.getLeafs (leaf_list);
 	_out << "// write Steiner points" << std::endl;
-	for (std::list<GEOLIB::QuadTree<GEOLIB::Point, number_of_point_per_quadtree_node>*>::const_iterator it (leaf_list.begin());
+	for (std::list<GEOLIB::QuadTree<GEOLIB::Point>*>::const_iterator it (leaf_list.begin());
 		it != leaf_list.end(); it++) {
 		if ((*it)->getPoints().empty()) {
 			// compute point from square

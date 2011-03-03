@@ -21,7 +21,7 @@ namespace GEOLIB {
  * the access to its coordinates via operator[] and for debugging
  * purposes operator<<)
  */
-template <typename POINT, size_t MAX_POINTS_PER_NODE> class QuadTree {
+template <typename POINT> class QuadTree {
 public:
 	enum Quadrant {
 		NE = 0, //!< north east
@@ -35,9 +35,12 @@ public:
 	 * @param ll lower left point of the square
 	 * @param ur upper right point of the square
 	 */
-	QuadTree(POINT const& ll, POINT const& ur) :
-		_father (NULL), _ll (ll), _ur (ur), _depth (0), _is_leaf (true)
+	QuadTree(POINT const& ll, POINT const& ur, size_t max_points_per_node) :
+		_father (NULL), _ll (ll), _ur (ur), _depth (0), _is_leaf (true),
+		_max_points_per_node (max_points_per_node)
 	{
+		assert (_max_points_per_node > 0);
+
 		// init childs
 		for (size_t k(0); k<4; k++) {
 			_childs[k] = NULL;
@@ -48,9 +51,9 @@ public:
 		} else {
 			_ur[0] = _ll[0] + _ur[1] - _ll[1];
 		}
-#ifdef NDEBUG
-		std::cerr << "lower left: " << _ll << ", upper right: " << _ur << ", depth " << _depth << std::endl;
-#endif
+//#ifndef NDEBUG
+//		std::cerr << "lower left: " << _ll << ", upper right: " << _ur << ", depth " << _depth << std::endl;
+//#endif
 	}
 
 	/**
@@ -87,7 +90,7 @@ public:
 
 		_pnts.push_back (pnt);
 
-		if (_pnts.size () > MAX_POINTS_PER_NODE) {
+		if (_pnts.size () > _max_points_per_node) {
 			splitNode ();
 		}
 		return true;
@@ -102,11 +105,11 @@ public:
 	 */
 	void balance ()
 	{
-		std::list<QuadTree<POINT, MAX_POINTS_PER_NODE>*> leaf_list;
+		std::list<QuadTree<POINT>*> leaf_list;
 		getLeafs (leaf_list);
 
 		while (!leaf_list.empty()) {
-			QuadTree<POINT, MAX_POINTS_PER_NODE>* node (leaf_list.front());
+			QuadTree<POINT>* node (leaf_list.front());
 			leaf_list.pop_front ();
 
 			if (node->isLeaf()) {
@@ -118,7 +121,7 @@ public:
 					leaf_list.push_back (node->getChild(SE));
 
 					// check if north neighbor has to be refined
-					QuadTree<POINT, MAX_POINTS_PER_NODE>* north_neighbor (node->getNorthNeighbor());
+					QuadTree<POINT>* north_neighbor (node->getNorthNeighbor());
 					if (north_neighbor != NULL) {
 						if (north_neighbor->getDepth() < node->getDepth ()) {
 							if (north_neighbor->isLeaf()) {
@@ -128,7 +131,7 @@ public:
 					}
 
 					// check if west neighbor has to be refined
-					QuadTree<POINT, MAX_POINTS_PER_NODE>* west_neighbor (node->getWestNeighbor());
+					QuadTree<POINT>* west_neighbor (node->getWestNeighbor());
 					if (west_neighbor != NULL) {
 						if (west_neighbor->getDepth() < node->getDepth ()) {
 							if (west_neighbor->isLeaf()) {
@@ -138,7 +141,7 @@ public:
 					}
 
 					// check if south neighbor has to be refined
-					QuadTree<POINT, MAX_POINTS_PER_NODE>* south_neighbor (node->getSouthNeighbor());
+					QuadTree<POINT>* south_neighbor (node->getSouthNeighbor());
 					if (south_neighbor != NULL) {
 						if (south_neighbor->getDepth() < node->getDepth ()) {
 							if (south_neighbor->isLeaf()) {
@@ -148,7 +151,7 @@ public:
 					}
 
 					// check if east neighbor has to be refined
-					QuadTree<POINT, MAX_POINTS_PER_NODE>* east_neighbor (node->getEastNeighbor());
+					QuadTree<POINT>* east_neighbor (node->getEastNeighbor());
 					if (east_neighbor != NULL) {
 						if (east_neighbor->getDepth() < node->getDepth ()) {
 							if (east_neighbor->isLeaf()) {
@@ -165,7 +168,7 @@ public:
 	 * add all leafs of the quadtree to the list
 	 * @param leaf_list list of leafs
 	 */
-	void getLeafs (std::list<QuadTree<POINT, MAX_POINTS_PER_NODE>*>& leaf_list)
+	void getLeafs (std::list<QuadTree<POINT>*>& leaf_list)
 	{
 		if (_is_leaf) {
 			leaf_list.push_back (this);
@@ -232,18 +235,18 @@ public:
 private :
 	bool isLeaf () const { return _is_leaf; }
 
-	bool isChild (QuadTree<POINT, MAX_POINTS_PER_NODE> const * const tree, Quadrant quadrant) const
+	bool isChild (QuadTree<POINT> const * const tree, Quadrant quadrant) const
 	{
 		if (_childs[quadrant] == tree) return true;
 		return false;
 	}
 
-	QuadTree<POINT, MAX_POINTS_PER_NODE> * getChild (Quadrant quadrant) const
+	QuadTree<POINT> * getChild (Quadrant quadrant) const
 	{
 		return _childs[quadrant];
 	}
 
-	QuadTree<POINT, MAX_POINTS_PER_NODE>* getNorthNeighbor () const
+	QuadTree<POINT>* getNorthNeighbor () const
 	{
 		if (this->_father == NULL) { // root of QuadTree
 			return NULL;
@@ -254,7 +257,7 @@ private :
 		if (this->_father->isChild (this, SE))
 			return this->_father->getChild (NE);
 
-		QuadTree<POINT, MAX_POINTS_PER_NODE>* north_neighbor (this->_father->getNorthNeighbor ());
+		QuadTree<POINT>* north_neighbor (this->_father->getNorthNeighbor ());
 		if (north_neighbor == NULL)
 			return NULL;
 		if (north_neighbor->isLeaf())
@@ -266,7 +269,7 @@ private :
 			return north_neighbor->getChild (SE);
 	}
 
-	QuadTree<POINT, MAX_POINTS_PER_NODE>* getSouthNeighbor () const
+	QuadTree<POINT>* getSouthNeighbor () const
 	{
 		if (this->_father == NULL) { // root of QuadTree
 			return NULL;
@@ -277,7 +280,7 @@ private :
 		if (this->_father->isChild (this, NE))
 			return this->_father->getChild (SE);
 
-		QuadTree<POINT, MAX_POINTS_PER_NODE>* south_neighbor (this->_father->getSouthNeighbor ());
+		QuadTree<POINT>* south_neighbor (this->_father->getSouthNeighbor ());
 		if (south_neighbor == NULL)
 			return NULL;
 		if (south_neighbor->isLeaf())
@@ -289,7 +292,7 @@ private :
 			return south_neighbor->getChild (NE);
 	}
 
-	QuadTree<POINT, MAX_POINTS_PER_NODE>* getEastNeighbor () const
+	QuadTree<POINT>* getEastNeighbor () const
 	{
 		if (this->_father == NULL) { // root of QuadTree
 			return NULL;
@@ -300,7 +303,7 @@ private :
 		if (this->_father->isChild (this, SW))
 			return this->_father->getChild (SE);
 
-		QuadTree<POINT, MAX_POINTS_PER_NODE>* east_neighbor (this->_father->getEastNeighbor ());
+		QuadTree<POINT>* east_neighbor (this->_father->getEastNeighbor ());
 		if (east_neighbor == NULL)
 			return NULL;
 		if (east_neighbor->isLeaf())
@@ -312,7 +315,7 @@ private :
 			return east_neighbor->getChild (NW);
 	}
 
-	QuadTree<POINT, MAX_POINTS_PER_NODE>* getWestNeighbor () const
+	QuadTree<POINT>* getWestNeighbor () const
 	{
 		if (this->_father == NULL) { // root of QuadTree
 			return NULL;
@@ -323,7 +326,7 @@ private :
 		if (this->_father->isChild (this, SE))
 			return this->_father->getChild (SW);
 
-		QuadTree<POINT, MAX_POINTS_PER_NODE>* west_neighbor (this->_father->getWestNeighbor ());
+		QuadTree<POINT>* west_neighbor (this->_father->getWestNeighbor ());
 		if (west_neighbor == NULL)
 			return NULL;
 		if (west_neighbor->isLeaf())
@@ -345,17 +348,18 @@ private :
 	 * @param depth depth of the node
 	 * @return
 	 */
-	QuadTree (POINT const& ll, POINT const& ur, QuadTree* father, size_t depth) :
-		_father (father), _ll (ll), _ur (ur), _depth (depth), _is_leaf (true)
+	QuadTree (POINT const& ll, POINT const& ur, QuadTree* father, size_t depth, size_t max_points_per_node) :
+		_father (father), _ll (ll), _ur (ur), _depth (depth), _is_leaf (true),
+		_max_points_per_node (max_points_per_node)
 	{
 		// init childs
 		for (size_t k(0); k<4; k++) {
 			_childs[k] = NULL;
 		}
 
-#ifdef NDEBUG
-		std::cerr << "lower left: " << _ll << ", upper right: " << _ur << ", depth: " << _depth << std::endl;
-#endif
+//#ifndef NDEBUG
+//		std::cerr << "lower left: " << _ll << ", upper right: " << _ur << ", depth: " << _depth << std::endl;
+//#endif
 	}
 
 	void splitNode ()
@@ -364,17 +368,17 @@ private :
 		POINT mid_point(_ll);
 		mid_point[0] += (_ur[0] - _ll[0]) / 2.0;
 		mid_point[1] += (_ur[1] - _ll[1]) / 2.0;
-		_childs[0] = new QuadTree<POINT, MAX_POINTS_PER_NODE> (mid_point, _ur, this, _depth + 1); // north east
+		_childs[0] = new QuadTree<POINT> (mid_point, _ur, this, _depth + 1, _max_points_per_node); // north east
 		POINT h_ll(mid_point), h_ur(mid_point);
 		h_ll[0] = _ll[0];
 		h_ur[1] = _ur[1];
-		_childs[1] = new QuadTree<POINT, MAX_POINTS_PER_NODE> (h_ll, h_ur, this, _depth + 1); // north west
-		_childs[2] = new QuadTree<POINT, MAX_POINTS_PER_NODE> (_ll, mid_point, this, _depth + 1); // south west
+		_childs[1] = new QuadTree<POINT> (h_ll, h_ur, this, _depth + 1, _max_points_per_node); // north west
+		_childs[2] = new QuadTree<POINT> (_ll, mid_point, this, _depth + 1, _max_points_per_node); // south west
 		h_ll = _ll;
 		h_ll[0] = mid_point[0];
 		h_ur = _ur;
 		h_ur[1] = mid_point[1];
-		_childs[3] = new QuadTree<POINT, MAX_POINTS_PER_NODE> (h_ll, h_ur, 	this, _depth + 1); // south east
+		_childs[3] = new QuadTree<POINT> (h_ll, h_ur, 	this, _depth + 1, _max_points_per_node); // south east
 
 		// distribute points to sub quadtrees
 		for (size_t j(0); j < _pnts.size(); j++) {
@@ -389,9 +393,9 @@ private :
 		_is_leaf = false;
 	}
 
-	bool needToRefine (QuadTree<POINT, MAX_POINTS_PER_NODE>* node)
+	bool needToRefine (QuadTree<POINT>* node)
 	{
-		QuadTree<POINT, MAX_POINTS_PER_NODE>* north_neighbor (node->getNorthNeighbor ());
+		QuadTree<POINT>* north_neighbor (node->getNorthNeighbor ());
 		if (north_neighbor != NULL) {
 			if (north_neighbor->getDepth() == node->getDepth()) {
 				if (! north_neighbor->isLeaf ()) {
@@ -405,7 +409,7 @@ private :
 			}
 		}
 
-		QuadTree<POINT, MAX_POINTS_PER_NODE>* west_neighbor (node->getWestNeighbor ());
+		QuadTree<POINT>* west_neighbor (node->getWestNeighbor ());
 		if (west_neighbor != NULL) {
 			if (west_neighbor->getDepth() == node->getDepth()) {
 				if (! west_neighbor->isLeaf ()) {
@@ -419,7 +423,7 @@ private :
 			}
 		}
 
-		QuadTree<POINT, MAX_POINTS_PER_NODE>* south_neighbor (node->getSouthNeighbor ());
+		QuadTree<POINT>* south_neighbor (node->getSouthNeighbor ());
 		if (south_neighbor != NULL) {
 			if (south_neighbor->getDepth() == node->getDepth()) {
 				if (!south_neighbor->isLeaf()) {
@@ -433,7 +437,7 @@ private :
 			}
 		}
 
-		QuadTree<POINT, MAX_POINTS_PER_NODE>* east_neighbor (node->getEastNeighbor ());
+		QuadTree<POINT>* east_neighbor (node->getEastNeighbor ());
 		if (east_neighbor != NULL) {
 			if (east_neighbor->getDepth() == node->getDepth()) {
 				if (! east_neighbor->isLeaf ()) {
@@ -449,7 +453,7 @@ private :
 		return false;
 	}
 
-	QuadTree<POINT, MAX_POINTS_PER_NODE>* _father;
+	QuadTree<POINT>* _father;
 	/**
 	 * childs are sorted:
 	 *   _childs[0] is north east child
@@ -457,7 +461,7 @@ private :
 	 *   _childs[2] is south west child
 	 *   _childs[3] is south east child
 	 */
-	QuadTree<POINT, MAX_POINTS_PER_NODE>* _childs[4];
+	QuadTree<POINT>* _childs[4];
 	/**
 	 * lower left point of the square
 	 */
@@ -469,6 +473,7 @@ private :
 	size_t _depth;
 	std::vector<POINT *> _pnts;
 	bool _is_leaf;
+	const size_t _max_points_per_node;
 };
 
 }
