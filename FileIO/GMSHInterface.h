@@ -60,6 +60,11 @@ public:
 			size_t number_of_point_per_quadtree_node = 10,
 			double mesh_density_scaling = 0.3, double mesh_density_scaling_station_pnts = 0.05);
 
+	void writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
+				std::vector<std::string> const & selected_geometries,
+				double mesh_density);
+
+
 	void writeGMSHPoints(const std::vector<GEOLIB::Point*>& pnt_vec);
 	void writeGMSHPolyline (const GEOLIB::Polyline* ply);
 	void writeGMSHPolylines(const std::vector<GEOLIB::Polyline*>& ply_vec);
@@ -69,6 +74,13 @@ public:
 	static bool isGMSHMeshFile (const std::string& fname);
 
 private:
+	void fetchGeometries (GEOLIB::GEOObjects const & geo,
+			std::vector<std::string> const & selected_geometries,
+			std::vector<GEOLIB::Point*>& all_points,
+			std::vector<GEOLIB::Polyline*>& all_polylines,
+			std::vector<GEOLIB::Point*>& all_stations) const;
+	GEOLIB::Polygon* getBoundingPolygon (std::vector<GEOLIB::Polyline*> const & all_polylines, size_t &bp_idx) const;
+	void writeBoundingPolygon (GEOLIB::Polygon const * const bounding_polygon );
 	size_t _n_pnt_offset;
 	size_t _n_lines;
 	size_t _n_plane_sfc;
