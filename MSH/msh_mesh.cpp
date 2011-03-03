@@ -51,6 +51,48 @@ extern std::string GetLineFromFile1(std::ifstream*);
 
 size_t max_dim = 0;                               //OK411
 
+class ThreadParameter {
+public:
+	ThreadParameter (GEOLIB::Point const* const pnt, size_t start, size_t end, std::vector<Mesh_Group::CNode*> const& nod_vector)
+	: _pnt (pnt), _start (start), _end (end), _nod_vector (nod_vector)
+	{}
+
+	GEOLIB::Point const * const _pnt;
+	size_t _start;
+	size_t _end;
+	std::vector<Mesh_Group::CNode*> const& _nod_vector;
+	long _number;
+	double _sqr_dist;
+	size_t _id;
+};
+
+void* threadGetDist (void *ptr)
+{
+	ThreadParameter *thread_param ((ThreadParameter*)(ptr));
+	size_t start (thread_param->_start);
+	size_t end (thread_param->_end);
+	std::vector<Mesh_Group::CNode*> const& nod_vector (thread_param->_nod_vector);
+	GEOLIB::Point const * const pnt (thread_param->_pnt);
+
+	size_t number (std::numeric_limits<size_t>::max());
+	double distmin (std::numeric_limits<double>::max());
+	double sqr_dist;
+
+	for (size_t i = start; i < end; i++) {
+		sqr_dist = MATHLIB::sqrDist (nod_vector[i]->getData(), pnt->getData());
+		if (sqr_dist < distmin) {
+			distmin = sqr_dist;
+			number = i;
+		}
+	}
+
+	thread_param->_number = number;
+	thread_param->_sqr_dist = sqr_dist;
+
+	if (number == std::numeric_limits<size_t>::max()) return (void*)(-1);
+	return (void*)(number);
+}
+
 //========================================================================
 namespace Mesh_Group
 {
@@ -1374,35 +1416,62 @@ namespace Mesh_Group
    }
 
 #ifndef NON_GEO
-   /**************************************************************************
-    FEMLib-Method:
-    Task: Ermittelt den nahliegenden existierenden Knoten
-    Programing:
-    03/2010 TF implementation based on long CFEMesh::GetNODOnPNT(CGLPoint*m_pnt)
-    by OK, WW
-    **************************************************************************/
-   long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
-   {
-      double sqr_dist(0.0), distmin(std::numeric_limits<double>::max());
-      long number(-1);
+/**************************************************************************
+	FEMLib-Method:
+	Task: Ermittelt den nahliegenden existierenden Knoten
+	Programing:
+	03/2010 TF implementation based on long CFEMesh::GetNODOnPNT(CGLPoint*m_pnt)
+	by OK, WW
+**************************************************************************/
+long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
+{
+	/* thread version */
+	const size_t nodes_in_usage (static_cast<size_t>(NodesInUsage()));
+	pthread_t thread0, thread1, thread2, thread3;
+	int iret0, iret1, iret2, iret3;
 
-      for (size_t i=0; i<(size_t)NodesInUsage(); i++)
-      {
-         sqr_dist = 0.0;
-         sqr_dist += (nod_vector[i]->X() - (*pnt)[0]) * (nod_vector[i]->X()
-            - (*pnt)[0]);
-         sqr_dist += (nod_vector[i]->Y() - (*pnt)[1]) * (nod_vector[i]->Y()
-            - (*pnt)[1]);
-         sqr_dist += (nod_vector[i]->Z() - (*pnt)[2]) * (nod_vector[i]->Z()
-            - (*pnt)[2]);
-         if (sqr_dist < distmin)
-         {
-            distmin = sqr_dist;
-            number = i;
-         }
-      }
-      return number;
-   }
+	ThreadParameter *thread_param0 (new ThreadParameter (pnt, 0, static_cast<size_t>(nodes_in_usage/4.0), nod_vector));
+	ThreadParameter *thread_param1 (new ThreadParameter(pnt, static_cast<size_t>(nodes_in_usage/4.0+1), static_cast<size_t>(nodes_in_usage/2.0), nod_vector));
+	ThreadParameter *thread_param2 (new ThreadParameter(pnt, static_cast<size_t>(nodes_in_usage/2.0+1), static_cast<size_t>(3*nodes_in_usage/4.0), nod_vector));
+	ThreadParameter *thread_param3 (new ThreadParameter(pnt, static_cast<size_t>(3.0*nodes_in_usage/4.0+1), nodes_in_usage, nod_vector));
+
+	thread_param0->_id = 0;
+	thread_param1->_id = 1;
+	thread_param2->_id = 2;
+	thread_param3->_id = 3;
+
+	iret0 = pthread_create( &thread0, NULL, threadGetDist, thread_param0);
+	iret1 = pthread_create( &thread1, NULL, threadGetDist, thread_param1);
+	iret2 = pthread_create( &thread2, NULL, threadGetDist, thread_param2);
+	iret3 = pthread_create( &thread3, NULL, threadGetDist, thread_param3);
+
+	if (thread_param0->_sqr_dist < thread_param1->_sqr_dist
+			&& thread_param0->_sqr_dist < thread_param2->_sqr_dist
+			&& thread_param0->_sqr_dist < thread_param3->_sqr_dist)
+		return thread_param0->_number;
+	if (thread_param1->_sqr_dist < thread_param0->_sqr_dist
+				&& thread_param1->_sqr_dist < thread_param2->_sqr_dist
+				&& thread_param1->_sqr_dist < thread_param3->_sqr_dist)
+			return thread_param1->_number;
+	if (thread_param2->_sqr_dist < thread_param0->_sqr_dist
+				&& thread_param2->_sqr_dist < thread_param1->_sqr_dist
+				&& thread_param2->_sqr_dist < thread_param3->_sqr_dist)
+			return thread_param2->_number;
+	return thread_param3->_number;
+
+	/* non thread version
+	double sqr_dist(0.0), distmin(std::numeric_limits<double>::max());
+	long number(-1);
+	for (size_t i = 0; i < nodes_in_usage; i++) {
+		sqr_dist = MATHLIB::sqrDist (nod_vector[i]->getData(), pnt->getData());
+		if (sqr_dist < distmin) {
+			distmin = sqr_dist;
+			number = i;
+		}
+	}
+	return number;
+	*/
+}
 
    /**************************************************************************
     FEMLib-Method:

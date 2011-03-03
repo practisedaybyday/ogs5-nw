@@ -99,4 +99,5 @@ target_link_libraries (
 	MSH
 	FileIO
 	GEO
+	${CMAKE_THREAD_LIBS_INIT}
 )

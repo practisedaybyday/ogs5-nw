@@ -53,3 +53,17 @@ IF (OGS_USE_OPENSG)
 	ENDIF (OGS_PACKAGING)
 	
 ENDIF (OGS_USE_OPENSG)
+
+ADD_EXECUTABLE (generateBCandGLI generateBCandGLI.cpp )
+TARGET_LINK_LIBRARIES (generateBCandGLI 
+	FEM
+	MSH
+	#GEO
+	MathLib
+	FileIO
+	Base
+	OGSProject
+	${QT_LIBRARIES}
+)
+
+
