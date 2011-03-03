@@ -153,7 +153,7 @@ void GEOObjects::addPolylineVec(std::vector<Polyline*> *lines,
 	_ply_vecs.push_back(new PolylineVec(name, lines, ply_names));
 }
 
-bool GEOObjects::appendPolylineVec(const std::vector<Polyline*> &polylines, std::string &name)
+bool GEOObjects::appendPolylineVec(const std::vector<Polyline*> &polylines, const std::string &name)
 {
 	// search vector
 	size_t idx (0);
@@ -245,8 +245,10 @@ bool GEOObjects::removeSurfaceVec(const std::string &name)
 			return true;
 		}
 	}
+#ifndef NDEBUG
 	std::cout << "GEOObjects::removeSurfaceVec() - No entry found with name \""
 			<< name << "\"." << std::endl;
+#endif
 	return false;
 }
 
