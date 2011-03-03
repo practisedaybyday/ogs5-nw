@@ -93,8 +93,8 @@ bool Polygon::isPntInPolygon (GEOLIB::Point const & pnt) const
 	if (_simple_polygon_list.empty ()) {
 		const size_t n_nodes (getNumberOfPoints()-1);
 		for (size_t k(0); k<n_nodes; k++) {
-			if ((*(getPoint(k)))[1] <= pnt[1] && pnt[1] <= (*(getPoint(k+1)))[1] ||
-					(*(getPoint(k+1)))[1] <= pnt[1] && pnt[1] <= (*(getPoint(k)))[1]) {
+			if (((*(getPoint(k)))[1] <= pnt[1] && pnt[1] <= (*(getPoint(k+1)))[1]) ||
+					((*(getPoint(k+1)))[1] <= pnt[1] && pnt[1] <= (*(getPoint(k)))[1])) {
 				switch (getEdgeType(k, pnt)) {
 				case EdgeType::TOUCHING:
 					return true;
