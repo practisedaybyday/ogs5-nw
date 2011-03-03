@@ -90,10 +90,10 @@ private:
 	void readPoints    ( const QDomNode &pointsRoot, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *pnt_names );
 
 	/// Reads GEOLIB::Polyline-objects from an xml-file
-	void readPolylines ( const QDomNode &polylinesRoot, std::vector<GEOLIB::Polyline*> *polylines, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *ply_names );
+	void readPolylines ( const QDomNode &polylinesRoot, std::vector<GEOLIB::Polyline*> *polylines, std::vector<GEOLIB::Point*> *points, const std::vector<size_t> &pnt_id_map, std::map<std::string, size_t> *ply_names );
 
 	/// Reads GEOLIB::Surface-objects from an xml-file
-	void readSurfaces  ( const QDomNode &surfacesRoot, std::vector<GEOLIB::Surface*> *surfaces, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *sfc_names );
+	void readSurfaces  ( const QDomNode &surfacesRoot, std::vector<GEOLIB::Surface*> *surfaces, std::vector<GEOLIB::Point*> *points, const std::vector<size_t> &pnt_id_map, std::map<std::string, size_t> *sfc_names );
 
 	/// Reads GEOLIB::Station- or StationBorehole-objects from an xml-file
 	void readStations  ( const QDomNode &stationsRoot, std::vector<GEOLIB::Point*> *stations );

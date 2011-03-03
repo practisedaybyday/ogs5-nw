@@ -152,17 +152,19 @@ int XMLInterface::readGLIFile(const QString &fileName)
 		if (geoTypes.at(i).nodeName().compare("name") == 0)
 			gliName = geoTypes.at(i).toElement().text().toStdString();
 		else if (geoTypes.at(i).nodeName().compare("points") == 0)
+		{
 			readPoints(geoTypes.at(i), points, pnt_names);
+			_geoObjects->addPointVec(points, gliName, pnt_names);
+		}
 		else if (geoTypes.at(i).nodeName().compare("polylines") == 0)
-			readPolylines(geoTypes.at(i), polylines, points, ply_names);
+			readPolylines(geoTypes.at(i), polylines, points, _geoObjects->getPointVecObj(gliName)->getIDMap(), ply_names);
 		else if (geoTypes.at(i).nodeName().compare("surfaces") == 0)
-			readSurfaces(geoTypes.at(i), surfaces, points, sfc_names);
+			readSurfaces(geoTypes.at(i), surfaces, points, _geoObjects->getPointVecObj(gliName)->getIDMap(), sfc_names);
 		else
 			std::cout << "Unknown XML-Node found in file." << std::endl;
 	}
 	delete file;
 
-	_geoObjects->addPointVec(points, gliName, pnt_names);
 	if (!polylines->empty()) _geoObjects->addPolylineVec(polylines, gliName, ply_names);
 	if (!surfaces->empty())  _geoObjects->addSurfaceVec(surfaces, gliName, sfc_names);
 	return 1;
@@ -191,7 +193,7 @@ void XMLInterface::readPoints( const QDomNode &pointsRoot, std::vector<GEOLIB::P
 	if (pnt_names->empty()) pnt_names = NULL; // if names-map is empty, set it to NULL because it is not needed
 }
 
-void XMLInterface::readPolylines( const QDomNode &polylinesRoot, std::vector<GEOLIB::Polyline*> *polylines, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *ply_names )
+void XMLInterface::readPolylines( const QDomNode &polylinesRoot, std::vector<GEOLIB::Polyline*> *polylines, std::vector<GEOLIB::Point*> *points, const std::vector<size_t> &pnt_id_map, std::map<std::string, size_t> *ply_names )
 {
 	size_t idx(0);
 	QDomElement polyline = polylinesRoot.firstChildElement();
@@ -207,7 +209,7 @@ void XMLInterface::readPolylines( const QDomNode &polylinesRoot, std::vector<GEO
 			QDomElement point = polyline.firstChildElement();
 			while (!point.isNull())
 			{
-				(*polylines)[idx]->addPoint(_idx_map[atoi(point.text().toStdString().c_str())]);
+				(*polylines)[idx]->addPoint(pnt_id_map[_idx_map[atoi(point.text().toStdString().c_str())]]);
 				point = point.nextSiblingElement();
 			}
 		}
@@ -218,7 +220,7 @@ void XMLInterface::readPolylines( const QDomNode &polylinesRoot, std::vector<GEO
 	if (ply_names->empty()) ply_names = NULL; // if names-map is empty, set it to NULL because it is not needed
 }
 
-void XMLInterface::readSurfaces( const QDomNode &surfacesRoot, std::vector<GEOLIB::Surface*> *surfaces, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *sfc_names )
+void XMLInterface::readSurfaces( const QDomNode &surfacesRoot, std::vector<GEOLIB::Surface*> *surfaces, std::vector<GEOLIB::Point*> *points, const std::vector<size_t> &pnt_id_map, std::map<std::string, size_t> *sfc_names )
 {
 	QDomElement surface = surfacesRoot.firstChildElement();
 	while (!surface.isNull())
@@ -233,9 +235,9 @@ void XMLInterface::readSurfaces( const QDomNode &surfacesRoot, std::vector<GEOLI
 			{
 				if (element.hasAttribute("p1") && element.hasAttribute("p2") && element.hasAttribute("p3"))
 				{
-					size_t p1 = _idx_map[atoi((element.attribute("p1")).toStdString().c_str())];
-					size_t p2 = _idx_map[atoi((element.attribute("p2")).toStdString().c_str())];
-					size_t p3 = _idx_map[atoi((element.attribute("p3")).toStdString().c_str())];
+					size_t p1 = pnt_id_map[_idx_map[atoi((element.attribute("p1")).toStdString().c_str())]];
+					size_t p2 = pnt_id_map[_idx_map[atoi((element.attribute("p2")).toStdString().c_str())]];
+					size_t p3 = pnt_id_map[_idx_map[atoi((element.attribute("p3")).toStdString().c_str())]];
 					surfaces->back()->addTriangle(p1,p2,p3);
 				}
 				else std::cout << "XMLInterface::readSurfaces() - Attribute missing in <element> tag ..." << std::endl;
