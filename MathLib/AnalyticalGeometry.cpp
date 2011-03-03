@@ -121,10 +121,10 @@ bool isPointInTriangle (const double p[3], const double a[3], const double b[3],
 {
 	// criterion: p-b = u0 * (b - a) + u1 * (b - c); 0 <= u0, u1 <= 1, u0+u1 <= 1
 	MATHLIB::Matrix<double> mat (2,2);
-	mat(0,0) = b[0] - a[0];
-	mat(0,1) = b[0] - c[0];
-	mat(1,0) = b[1] - a[1];
-	mat(1,1) = b[1] - c[1];
+	mat(0,0) = a[0] - b[0];
+	mat(0,1) = c[0] - b[0];
+	mat(1,0) = a[1] - b[1];
+	mat(1,1) = c[1] - b[1];
 	double rhs[2] = {p[0]-b[0], p[1]-b[1]};
 
 	MATHLIB::GaussAlgorithm gauss (mat);

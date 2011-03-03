@@ -6,6 +6,8 @@ set( HEADERS
 	FileFinder.h
 	FileTools.h
 	quicksort.h
+	printList.h
+	uniqueListInsert.h
 	StringTools.h
 	swap.h
 	wait.h	
@@ -38,6 +40,4 @@ IF(OGS_BUILD_CORRECT_SCIENTIFIC)
 	# Create utility executable
 	add_executable( correctScientificNotation CorrectScientificNotationMain.cpp )
 ENDIF(OGS_BUILD_CORRECT_SCIENTIFIC)
-
-
 

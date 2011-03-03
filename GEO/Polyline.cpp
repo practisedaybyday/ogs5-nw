@@ -162,8 +162,7 @@ Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &p
 						new_ply->addPoint((*it)->getPointID(nPoints-k-1));
 					ply_found = true;
 				}
-				if (ply_found)
-				{
+				if (ply_found) {
 					local_ply_vec.erase(it);
 					break;
 				}
