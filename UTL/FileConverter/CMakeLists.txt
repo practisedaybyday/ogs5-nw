@@ -19,9 +19,15 @@ IF (Shapelib_FOUND)
 	ADD_EXECUTABLE( ConvertSHPToGLI ConvertSHPToGLI.cpp )
 
 	TARGET_LINK_LIBRARIES( ConvertSHPToGLI
-		GEO
-		FileIO
+		FEM
+	        MSH
+        	#GEO
+	        MathLib
+        	FileIO
+	        Base
+        	OGSProject
 		${Shapelib_LIBRARIES}
+		${QT_LIBRARIES}
 	)
 
 	IF (OGS_PACKAGING)

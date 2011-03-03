@@ -53,7 +53,7 @@ public:
 	int readSTNFile(const QString &fileName);
 
 	/// Reads an xml-file containing containing FEM Conditions such as Boundary- or Initial Conditions
-	int readFEMCondFile(std::vector<FEMCondition*> &conditions, const QString &fileName);
+	int readFEMCondFile(std::vector<FEMCondition*> &conditions, const QString &fileName, const QString &geoName);
 
 	/// Writes a GeoSys project file containing all data that is currently loaded.
 	/// Project files currently cover only geo- and station data. This will be expanded in the future.
@@ -81,6 +81,15 @@ public:
 	 * \param stnName The name of the station vector that will be written into the file.
 	 */
 	int writeSTNFile(const QString &filename, const QString &stnName) const;
+	/**
+	 * Writes geometric data from GEOObjects to an xml-file (using QString version)
+	 * \param fname The filename for the file into which the data will be written.
+	 * \param stn_name The name of the station vector that will be written into the file.
+	 */
+	int writeSTNFile(std::string const& fname, std::string const &stn_name) const
+	{
+		return writeSTNFile (QString::fromStdString(fname), QString::fromStdString(stn_name));
+	}
 
 	/// Writes borehole-specific data to a station-xml-file.
 	void writeBoreholeData(QDomDocument &doc, QDomElement &boreholeTag, GEOLIB::StationBorehole* borehole) const;
@@ -102,7 +111,7 @@ private:
 	void readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationBorehole* borehole );
 
 	/// Read the details of various FEM Conditions from an xml-file
-	void readConditions( const QDomNode &condRoot, std::vector<FEMCondition*> &conditions, FEMCondition::CondType type);
+	void readConditions( const QDomNode &condRoot, std::vector<FEMCondition*> &conditions, const QString &geoName, FEMCondition::CondType type);
 
 	/// Checks if a hash for the given data file exists to skip the time-consuming validation part.
 	/// If a hash file exists _and_ the hash of the data file is the same as the content of the hash file the validation is skipped

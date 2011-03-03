@@ -78,7 +78,6 @@ namespace Mesh_Group
    // Class definition
    class CFEMesh
    {
-
       public:
 
          /// Constructor using geometric information.
@@ -187,6 +186,11 @@ namespace Mesh_Group
          void InitialNodesNumber()                //WW
          {
             NodesNumber_Quadratic = NodesNumber_Linear = nod_vector.size();
+         }
+
+         void setNumberOfElementsFromElementsVectorSize ()
+         {
+        	 NodesNumber_Linear = nod_vector.size();
          }
 
 #ifndef NON_GEO                             //WW

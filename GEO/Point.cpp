@@ -51,4 +51,5 @@ bool lessZ (GEOLIB::Point const & p0, GEOLIB::Point const & p1)
 	return false;
 }
 
+
 } // end namespace GEOLIB

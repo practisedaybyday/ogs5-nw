@@ -158,25 +158,7 @@ void SHPInterface::readPolygons(const SHPHandle &hSHP, int numberOfElements, std
 		poly_it != polylines->end(); poly_it++) {
 
 		std::cout << "triangulation of Polygon with " << (*poly_it)->getNumberOfPoints() << " points ... " << std::flush;
-
-		if ((*poly_it)->getNumberOfPoints() > 2) {
-			// create empty surface
-			GEOLIB::Surface *sfc(new GEOLIB::Surface(*pnt_vec));
-
-			std::list<GEOLIB::Triangle> triangles;
-			MATHLIB::earClippingTriangulationOfPolygon(*poly_it, triangles);
-			std::cout << "done - " << triangles.size () << " triangles " << std::endl;
-
-			// add Triangles to Surface
-			std::list<GEOLIB::Triangle>::const_iterator it (triangles.begin());
-			while (it != triangles.end()) {
-				sfc->addTriangle ((*it)[0], (*it)[1], (*it)[2]);
-				it++;
-			}
-
-			// add surface to sfc_vec
-			sfc_vec->push_back(sfc);
-		}
+		sfc_vec->push_back(GEOLIB::Surface::createSurface(*(*poly_it)));
 	}
 
 	if (!sfc_vec->empty())

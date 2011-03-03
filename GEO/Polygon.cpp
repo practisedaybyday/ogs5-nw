@@ -5,6 +5,8 @@
  *      Author: TF
  */
 
+#include <cstdlib> // for exit
+
 #include "Polygon.h"
 
 // MathLib
@@ -17,67 +19,33 @@
 
 namespace GEOLIB {
 
-Polygon::Polygon(const Polyline &ply) :
-	Polyline (ply),
-	_maxx (std::numeric_limits<double>::min()),
-	_maxy (std::numeric_limits<double>::min())
+Polygon::Polygon(const Polyline &ply, bool init) :
+	Polyline (ply)
 {
-	if (ply.isClosed()) {
-		size_t n_nodes (getNumberOfPoints());
-		size_t min_x_max_y_idx (0);	// for orientation check
-		for (size_t k(0); k<n_nodes; k++) {
-			_aabb.update ((*(getPoint(k))));
-			if ((*(getPoint(k)))[0] > _maxx) _maxx = (*(getPoint(k)))[0];
-			if ((*(getPoint(k)))[1] > _maxy) _maxy = (*(getPoint(k)))[1];
-			if ((*(getPoint(k)))[0] <= (*(getPoint(min_x_max_y_idx)))[0]) {
-				if ((*(getPoint(k)))[0] < (*(getPoint(min_x_max_y_idx)))[0]) {
-					min_x_max_y_idx = k;
-				} else {
-					if ((*(getPoint(k)))[1] > (*(getPoint(min_x_max_y_idx)))[1]) {
-						min_x_max_y_idx = k;
-					}
-				}
-			}
-		}
-
-		double s0 (0.1), s1(0.2); // small random values
-		_maxx += _maxx*s0;
-		_maxy += _maxy*s1;
-
-		// determine orientation
-		MATHLIB::Orientation orient;
-		if (0 < min_x_max_y_idx && min_x_max_y_idx < n_nodes-1) {
-			orient = MATHLIB::getOrientation (
-				(*(getPoint(min_x_max_y_idx-1)))[0], (*(getPoint(min_x_max_y_idx-1)))[1],
-				(*(getPoint(min_x_max_y_idx)))[0], (*(getPoint(min_x_max_y_idx)))[1],
-				(*(getPoint(min_x_max_y_idx+1)))[0], (*(getPoint(min_x_max_y_idx+1)))[1]);
-		} else {
-			if (0 == min_x_max_y_idx) {
-				orient = MATHLIB::getOrientation (
-					(*(getPoint(n_nodes-1)))[0], (*(getPoint(n_nodes-1)))[1],
-					(*(getPoint(0)))[0], (*(getPoint(0)))[1],
-					(*(getPoint(1)))[0], (*(getPoint(1)))[1]);
-			} else {
-				orient = MATHLIB::getOrientation (
-					(*(getPoint(n_nodes-2)))[0], (*(getPoint(n_nodes-2)))[1],
-					(*(getPoint(n_nodes-1)))[0], (*(getPoint(n_nodes-1)))[1],
-					(*(getPoint(0)))[0], (*(getPoint(0)))[1]);
-			}
-		}
-		if (orient == MATHLIB::CCW) {
-			// switch orientation
-			for (size_t k(0); k<n_nodes/2; k++) {
-				BASELIB::swap (_ply_pnt_ids[k], _ply_pnt_ids[n_nodes-1-k]);
-			}
-		}
-	}
-	else {
-		std::cout << "Error in Polygon::Polygon() - base polyline is not closed..." << std::endl;
+	if (init) {
+		initialise ();
 	}
 }
 
 Polygon::~Polygon()
-{}
+{
+	// remove polygons from list
+	for (std::list<Polygon*>::iterator it (_simple_polygon_list.begin()); it != _simple_polygon_list.end(); it++) {
+		delete *it;
+	}
+}
+
+bool Polygon::initialise ()
+{
+	if (this->isClosed()) {
+		calculateAxisAlignedBoundingBox();
+		ensureCWOrientation();
+		return true;
+	} else {
+		std::cerr << "ERROR in Polygon::initialise() - base polyline is not closed" << std::endl;
+		return false;
+	}
+}
 
 bool Polygon::isPntInPolygon (GEOLIB::Point const & pnt) const
 {
@@ -179,6 +147,11 @@ void Polygon::computeListOfSimplePolygons ()
 	_simple_polygon_list.push_back (this);
 	splitPolygonAtPoint (_simple_polygon_list.begin());
 	splitPolygonAtIntersection (_simple_polygon_list.begin());
+
+	for (std::list<Polygon*>::iterator it (_simple_polygon_list.begin());
+		it != _simple_polygon_list.end(); it++) {
+		(*it)->initialise ();
+	}
 }
 
 EdgeType::value Polygon::getEdgeType (size_t k, GEOLIB::Point const & pnt) const
@@ -208,6 +181,55 @@ EdgeType::value Polygon::getEdgeType (size_t k, GEOLIB::Point const & pnt) const
 	}
 }
 
+void Polygon::calculateAxisAlignedBoundingBox ()
+{
+	size_t n_nodes (getNumberOfPoints());
+	for (size_t k(0); k<n_nodes; k++) {
+		_aabb.update ((*(getPoint(k))));
+	}
+}
+
+void Polygon::ensureCWOrientation ()
+{
+	size_t n_nodes (getNumberOfPoints());
+	// get the left most upper point
+	size_t min_x_max_y_idx (0);	// for orientation check
+	for (size_t k(0); k<n_nodes; k++) {
+		if ((*(getPoint(k)))[0] <= (*(getPoint(min_x_max_y_idx)))[0]) {
+			if ((*(getPoint(k)))[0] < (*(getPoint(min_x_max_y_idx)))[0]) {
+				min_x_max_y_idx = k;
+			} else {
+				if ((*(getPoint(k)))[1] > (*(getPoint(min_x_max_y_idx)))[1]) {
+					min_x_max_y_idx = k;
+				}
+			}
+		}
+	}
+	// determine orientation
+	MATHLIB::Orientation orient;
+	if (0 < min_x_max_y_idx && min_x_max_y_idx < n_nodes-1) {
+		orient = MATHLIB::getOrientation (
+			(*(getPoint(min_x_max_y_idx-1)))[0], (*(getPoint(min_x_max_y_idx-1)))[1],
+			(*(getPoint(min_x_max_y_idx)))[0], (*(getPoint(min_x_max_y_idx)))[1],
+			(*(getPoint(min_x_max_y_idx+1)))[0], (*(getPoint(min_x_max_y_idx+1)))[1]);
+	} else {
+		if (0 == min_x_max_y_idx) {
+			orient = MATHLIB::getOrientation (getPoint(n_nodes-2), getPoint(0), getPoint(1));
+		} else {
+			orient = MATHLIB::getOrientation (
+				(*(getPoint(n_nodes-2)))[0], (*(getPoint(n_nodes-2)))[1],
+				(*(getPoint(n_nodes-1)))[0], (*(getPoint(n_nodes-1)))[1],
+				(*(getPoint(0)))[0], (*(getPoint(0)))[1]);
+		}
+	}
+	if (orient == MATHLIB::CCW) {
+		// switch orientation
+		for (size_t k(0); k<n_nodes/2; k++) {
+			BASELIB::swap (_ply_pnt_ids[k], _ply_pnt_ids[n_nodes-1-k]);
+		}
+	}
+}
+
 void Polygon::splitPolygonAtIntersection (std::list<Polygon*>::iterator polygon_it)
 {
 	size_t idx0 (0), idx1 (0);
@@ -222,16 +244,24 @@ void Polygon::splitPolygonAtIntersection (std::list<Polygon*>::iterator polygon_
 			// split Polygon
 			if (idx0 > idx1) BASELIB::swap (idx0, idx1);
 
-			GEOLIB::Polygon* polygon0 (new GEOLIB::Polygon((*polygon_it)->getPointsVec()));
+			GEOLIB::Polygon* polygon0 (new GEOLIB::Polygon((*polygon_it)->getPointsVec(), false));
 			for (size_t k(0); k<=idx0; k++) polygon0->addPoint ((*polygon_it)->getPointID (k));
 			polygon0->addPoint (intersection_pnt_id);
 			for (size_t k(idx1+1); k<(*polygon_it)->getNumberOfPoints(); k++)
 				polygon0->addPoint ((*polygon_it)->getPointID (k));
+			if (! polygon0->initialise()) {
+				std::cerr << "ERROR in Polygon::splitPolygonAtIntersection polygon0" << std::endl;
+				exit (1);
+			}
 
-			GEOLIB::Polygon* polygon1 (new GEOLIB::Polygon((*polygon_it)->getPointsVec()));
+			GEOLIB::Polygon* polygon1 (new GEOLIB::Polygon((*polygon_it)->getPointsVec(), false));
 			polygon1->addPoint (intersection_pnt_id);
 			for (size_t k(idx0+1); k<=idx1; k++) polygon1->addPoint ((*polygon_it)->getPointID (k));
 			polygon1->addPoint (intersection_pnt_id);
+			if (! polygon1->initialise()) {
+				std::cerr << "ERROR in Polygon::splitPolygonAtIntersection polygon1" << std::endl;
+				exit (1);
+			}
 
 			// remove original polyline and add two new polylines
 			std::list<GEOLIB::Polygon*>::iterator polygon0_it, polygon1_it;
@@ -268,12 +298,18 @@ void Polygon::splitPolygonAtPoint (std::list<GEOLIB::Polygon*>::iterator polygon
 
 			if (idx0 > idx1) BASELIB::swap (idx0, idx1);
 
-			GEOLIB::Polygon* polygon0 (new GEOLIB::Polygon((*polygon_it)->getPointsVec()));
-			for (size_t k(0); k<=idx0; k++) polygon0->addPoint ((*polygon_it)->getPointID (k));
-			for (size_t k(idx1+1); k<(*polygon_it)->getNumberOfPoints(); k++) polygon0->addPoint ((*polygon_it)->getPointID (k));
+			// create two closed polylines
+			GEOLIB::Polygon* polygon0 (new GEOLIB::Polygon((*polygon_it)->getPointsVec(), false));
+			for (size_t k(0); k<=idx0; k++)
+				polygon0->addPoint ((*polygon_it)->getPointID (k));
+			for (size_t k(idx1+1); k<(*polygon_it)->getNumberOfPoints(); k++)
+				polygon0->addPoint ((*polygon_it)->getPointID (k));
+			polygon0->initialise();
 
-			GEOLIB::Polygon* polygon1 (new GEOLIB::Polygon((*polygon_it)->getPointsVec()));
-			for (size_t k(idx0); k<=idx1; k++) polygon1->addPoint ((*polygon_it)->getPointID (k));
+			GEOLIB::Polygon* polygon1 (new GEOLIB::Polygon((*polygon_it)->getPointsVec(), false));
+			for (size_t k(idx0); k<=idx1; k++)
+				polygon1->addPoint ((*polygon_it)->getPointID (k));
+			polygon1->initialise();
 
 			// remove original polygon and add two new polygons
 			std::list<GEOLIB::Polygon*>::iterator polygon0_it, polygon1_it;

@@ -119,7 +119,7 @@ public:
 	 * end of its scope
 	 * \param polylines the vector with polylines
 	 * \param name the name of the internal PolylineVec
-	 * \return true if the polylines are appended, false if the a PolylineVec with the
+	 * \return true if the polylines are appended, false if the PolylineVec with the
 	 * corresponding name does not exist
 	 * */
 	virtual bool appendPolylineVec(const std::vector<Polyline*> &polylines,
@@ -131,11 +131,16 @@ public:
 	const std::vector<Polyline*> *getPolylineVec(const std::string &name) const;
 
 	/**
-	 * Returns a pointer to a PolylineVec object for the given name.
+	 * Returns a pointer to a PolylineVec object for the given name as a const.
 	 * @param name the name of the vector of polylines
 	 * @return PolylineVec object
 	 */
 	const PolylineVec* getPolylineVecObj(const std::string &name) const;
+
+	/// Returns a pointer to a PolylineVec object for the given name.
+	PolylineVec* getPolylineVecObj(const std::string &name) { 
+		return const_cast<PolylineVec*>(static_cast<const GEOObjects&>(*this).getPolylineVecObj(name)); 
+	};
 
 	/**
 	 * If no Surfaces depends on the vector of Polylines with the given
@@ -148,8 +153,24 @@ public:
 	virtual void addSurfaceVec(std::vector<Surface*> *surfaces,
 			const std::string &name, std::map<std::string, size_t>* sfc_names = NULL);
 
-	/// Returns the surface vector with the given name.
+	/** 
+	 * Copies the surfaces in the vector to the SurfaceVec with the given name.
+	 * \param polylines the vector with polylines
+	 * \param name the name of the internal PolylineVec
+	 * \return true if the surfaces are appended, false if the SurfaceVec with the
+	 * corresponding name does not exist
+	 * */
+	virtual bool appendSurfaceVec(const std::vector<Surface*> &surfaces,
+			const std::string &name);
+
+	/// Returns the surface vector with the given name as a const.
 	const std::vector<Surface*> *getSurfaceVec(const std::string &name) const;
+
+	/// Returns the surface vector with the given name.
+	SurfaceVec* getSurfaceVecObj(const std::string &name) { 
+		return const_cast<SurfaceVec*>(static_cast<const GEOObjects&>(*this).getSurfaceVecObj(name)); 
+	};
+
 	/** removes the vector of Surfaces with the given name */
 	virtual bool removeSurfaceVec(const std::string &name);
 	/**

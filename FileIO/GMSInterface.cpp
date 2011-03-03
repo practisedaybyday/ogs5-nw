@@ -63,6 +63,12 @@ int GMSInterface::readBoreholesFromGMS(std::vector<GEOLIB::Point*> *boreholes, c
 		else
 			std::cout << "GMSInterface::readBoreholeFromGMS() - Error reading format..." << std::endl;
 	}
+	// write the last borehole from the file
+	if (newBorehole != NULL)
+	{
+		newBorehole->setDepth((*newBorehole)[2]-depth);
+		boreholes->push_back(newBorehole);
+	}
 
 	in.close();
 	return 1;

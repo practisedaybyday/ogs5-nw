@@ -97,5 +97,6 @@ add_library( MSH STATIC ${SOURCES} )
 
 target_link_libraries (
 	MSH
+	FileIO
 	GEO
 )

@@ -1,13 +1,14 @@
 # Source files
 set( HEADERS
+	binarySearch.h
 	Configure.h.in
 	DateTools.h
-	StringTools.h
-	swap.h
 	FileFinder.h
 	FileTools.h
 	quicksort.h
-	binarySearch.h
+	StringTools.h
+	swap.h
+	wait.h	
 )
 
 set( SOURCES
@@ -27,14 +28,16 @@ include_directories(
 	.
 )
 
-target_link_libraries (
-        Base
-        GEO
-)
+#target_link_libraries (
+#        Base
+#        GEO
+#)
 
 
 IF(OGS_BUILD_CORRECT_SCIENTIFIC)
 	# Create utility executable
 	add_executable( correctScientificNotation CorrectScientificNotationMain.cpp )
 ENDIF(OGS_BUILD_CORRECT_SCIENTIFIC)
+
+
 

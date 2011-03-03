@@ -51,6 +51,11 @@ double sqrDist(const double* p0, const double* p1)
 	return scpr (v, v, 3);
 }
 
+bool checkDistance(GEOLIB::Point const &p0, GEOLIB::Point const &p1, double squaredDistance)
+{
+	return (sqrDist(&p0, &p1) < squaredDistance);
+}
+
 float normalize(const float min, const float max, const float val)
 {
 	return ((val-min)/static_cast<float>(max-min));

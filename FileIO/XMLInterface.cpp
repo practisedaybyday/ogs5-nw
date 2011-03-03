@@ -20,7 +20,8 @@
 
 #include <QTime>
 
-XMLInterface::XMLInterface(GEOLIB::GEOObjects* geoObjects, const std::string &schemaFile) : _geoObjects(geoObjects), _schemaName(schemaFile)
+XMLInterface::XMLInterface(GEOLIB::GEOObjects* geoObjects, const std::string &schemaFile) 
+: _geoObjects(geoObjects), _schemaName(schemaFile)
 {
 }
 
@@ -28,12 +29,12 @@ int XMLInterface::isValid(const QString &fileName) const
 {
 #if OGS_QT_VERSION > 45
 	QXmlSchema schema;
-	schema.load( QUrl(QString::fromStdString(_schemaName)) );
+	schema.load( QUrl::fromLocalFile((QString::fromStdString(_schemaName))) );
 
 	if ( schema.isValid() )
 	{
 		QXmlSchemaValidator validator( schema );
-		if ( validator.validate( QUrl(fileName) ) )
+		if ( validator.validate( QUrl::fromLocalFile((fileName))) )
 			return 1;
 		else
 		{
@@ -374,12 +375,12 @@ void XMLInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationB
 	}
 }
 
-int XMLInterface::readFEMCondFile(std::vector<FEMCondition*> &conditions, const QString &fileName)
+int XMLInterface::readFEMCondFile(std::vector<FEMCondition*> &conditions, const QString &fileName, const QString &geoName)
 {
 	QFile* file = new QFile(fileName);
 	if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		std::cout << "XMLInterface::readSTNFile() - Can't open xml-file." << std::endl;
+		std::cout << "XMLInterface::readFEMCondFile() - Can't open xml-file." << std::endl;
 		delete file;
 		return 0;
 	}
@@ -399,9 +400,9 @@ int XMLInterface::readFEMCondFile(std::vector<FEMCondition*> &conditions, const 
 	QDomNodeList lists = docElement.childNodes();
 	for (int i=0; i<lists.count(); i++)
     {
-		if      (lists.at(i).nodeName().compare("BoundaryConditions") == 0) readConditions(lists.at(i), conditions, FEMCondition::BOUNDARY_CONDITION);
-		else if (lists.at(i).nodeName().compare("InitialConditions") == 0)  readConditions(lists.at(i), conditions, FEMCondition::INITIAL_CONDITION);
-		else if (lists.at(i).nodeName().compare("SourceTerms") == 0)        readConditions(lists.at(i), conditions, FEMCondition::SOURCE_TERM);
+		if      (lists.at(i).nodeName().compare("BoundaryConditions") == 0) readConditions(lists.at(i), conditions, geoName, FEMCondition::BOUNDARY_CONDITION);
+		else if (lists.at(i).nodeName().compare("InitialConditions") == 0)  readConditions(lists.at(i), conditions, geoName, FEMCondition::INITIAL_CONDITION);
+		else if (lists.at(i).nodeName().compare("SourceTerms") == 0)        readConditions(lists.at(i), conditions, geoName, FEMCondition::SOURCE_TERM);
 	}
 	if (!conditions.empty()) return 1;//do something like _geoObjects->addStationVec(stations, stnName, color);
 	else
@@ -415,12 +416,12 @@ int XMLInterface::readFEMCondFile(std::vector<FEMCondition*> &conditions, const 
 	return 1;
 }
 
-void XMLInterface::readConditions( const QDomNode &listRoot, std::vector<FEMCondition*> &conditions, FEMCondition::CondType type)
+void XMLInterface::readConditions( const QDomNode &listRoot, std::vector<FEMCondition*> &conditions, const QString &geoName, FEMCondition::CondType type)
 {
 	QDomElement cond = listRoot.firstChildElement();
 	while (!cond.isNull())
 	{
-		FEMCondition* c = new FEMCondition(type);
+		FEMCondition* c = new FEMCondition(geoName.toStdString(), type);
 		QDomNodeList condProperties = cond.childNodes();
 		for (int i=0; i<condProperties.count(); i++)
 		{

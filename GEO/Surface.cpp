@@ -5,8 +5,16 @@
  *      Author: TF
  */
 
+#include <list>
+
+// GEOLIB
 #include "Surface.h"
 #include "AxisAlignedBoundingBox.h"
+#include "Polygon.h"
+
+// MATHLIB
+#include "AnalyticalGeometry.h"
+#include "EarClippingTriangulation.h"
 
 namespace GEOLIB {
 
@@ -28,6 +36,36 @@ void Surface::addTriangle (size_t pnt_a, size_t pnt_b, size_t pnt_c)
 	bv->update (*m_sfc_pnts[pnt_a]);
 	bv->update (*m_sfc_pnts[pnt_b]);
 	bv->update (*m_sfc_pnts[pnt_c]);
+}
+
+Surface* Surface::createSurface(const Polyline &ply)
+{
+	if (!ply.isClosed()) {
+		std::cout << "Error in Surface::createSurface() - Polyline is not closed..." << std::cout;
+		return NULL;
+	}
+
+	if (ply.getNumberOfPoints() > 2) {
+		// create empty surface
+		Surface *sfc(new Surface(ply.getPointsVec()));
+
+		Polygon* polygon (new Polygon (ply));
+		std::list<Triangle> triangles;
+		MATHLIB::EarClippingTriangulation (polygon, triangles);
+		std::cout << "done - " << triangles.size () << " triangles " << std::endl;
+
+		// add Triangles to Surface
+		std::list<Triangle>::const_iterator it (triangles.begin());
+		while (it != triangles.end()) {
+			sfc->addTriangle ((*it)[0], (*it)[1], (*it)[2]);
+			it++;
+		}
+		return sfc;
+	} else {
+		std::cout << "Error in Surface::createSurface() - Polyline consists of less than three points and therefore cannot be triangulated..." << std::cout;
+		return NULL;
+	}
+
 }
 
 size_t Surface::getNTriangles () const

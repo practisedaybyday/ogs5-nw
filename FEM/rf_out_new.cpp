@@ -272,133 +272,71 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
       }
       //-------------------------------------------------------------------- // Added 03.2010 JTARON
                                                   // subkeyword found
-      if (line_string.find("$RWPT_VALUES") != string::npos)
-      {
-         while ((!new_keyword) && (!new_subkeyword))
-         {
-            position_subkeyword = in_str.tellg();
-            line_string = GetLineFromFile1(&in_str);
-            if (line_string.find("#") != string::npos)
-            {
-               return position;
-            }
-            if (line_string.find("$") != string::npos)
-            {
-               new_subkeyword = true;
-               break;
-            }
-            if (line_string.size() == 0)
-               break;                             //SB: empty line
-            in.str(line_string);
-            in >> name;
-            _rwpt_value_vector.push_back(name);
-            in.clear();
-         }
-         continue;
-      }
+      if (line_string.find("$RWPT_VALUES") != string::npos) {
+			while ((!new_keyword) && (!new_subkeyword)) {
+				position_subkeyword = in_str.tellg();
+				line_string = GetLineFromFile1(&in_str);
+				if (line_string.find("#") != string::npos) {
+					return position;
+				}
+				if (line_string.find("$") != string::npos) {
+					new_subkeyword = true;
+					break;
+				}
+				if (line_string.size() == 0) break; //SB: empty line
+				in.str(line_string);
+				in >> name;
+				_rwpt_value_vector.push_back(name);
+				in.clear();
+			}
+			continue;
+		}
 
                                                   //subkeyword found
-      if (line_string.find("$GEO_TYPE") != string::npos)
-      {
+      if (line_string.find("$GEO_TYPE") != string::npos) {
          FileIO::GeoIO geo_io;
          geo_io.readGeoInfo (this, in_str, geo_name, geo_obj, unique_geo_name);
-         //			std::stringstream line;
-         //			line.str(GetLineFromFile1(&in_str));
-         //			std::string geo_type_name;
-         //			line >> geo_type_name;
-         //			if (geo_type_name.find("POINT") != string::npos) {
-         //				line >> geo_name;
-         //
-         //				// TF 06/2010 - get the point vector and set the _geo_obj_idx
-         //				const GEOLIB::Point *pnt((geo_obj.getPointVecObj(
-         //						unique_geo_name))->getPointByName(geo_name));
-         //				if (pnt == NULL) {
-         //					std::cerr << "error in COutput::Read: point name \""
-         //							<< geo_name << "\" not found!" << std::endl;
-         //					exit(1);
-         //				}
-         //				setGeoType(GEOLIB::POINT);
-         //				setGeoObj(pnt);
-         //				line.clear();
-         //			}
-         //			if (geo_type_name.find("POLYLINE") != string::npos) {
-         //				line >> geo_name;
-         //				// TF 06/2010 - get the polyline vector and set the _geo_obj_idx
-         //				const GEOLIB::Polyline *ply((geo_obj.getPolylineVecObj(
-         //						unique_geo_name))->getElementByName(geo_name));
-         //				if (ply == NULL) {
-         //					std::cerr << "error in COutput::Read: polyline name \""
-         //							<< geo_name << "\" not found!" << std::endl;
-         //					exit(1);
-         //				}
-         //				setGeoType(GEOLIB::POLYLINE);
-         //				setGeoObj(ply);
-         //				line.clear();
-         //			}
-         //			if (geo_type_name.find("SURFACE") != string::npos) {
-         //				setGeoType(GEOLIB::SURFACE);
-         //				line >> geo_name;
-         //				line.clear();
-         //			}
-         //			if (geo_type_name.find("VOLUME") != string::npos) {
-         //				setGeoType(GEOLIB::VOLUME);
-         //				line >> geo_name;
-         //				line.clear();
-         //			}
-         //			if (geo_type_name.find("DOMAIN") != string::npos) {
-         //				setGeoType(GEOLIB::GEODOMAIN);
-         //				line.clear(); //JT
-         //			}
          continue;
       }
 
                                                   // subkeyword found
-      if (line_string.find("$TIM_TYPE") != string::npos)
-      {
-         while ((!new_keyword) && (!new_subkeyword))
-         {
-            position_subkeyword = in_str.tellg();
-            in_str >> line_string;
-            if (line_string.size() == 0)          //SB
-               break;
-            if (line_string.find("#") != string::npos)
-            {
-               new_keyword = true;
-               break;
-            }
-            if (line_string.find("$") != string::npos)
-            {
-               new_subkeyword = true;
-               break;
-            }
-            if (line_string.find("STEPS") != string::npos)
-            {
-               in_str >> nSteps;
-               tim_type_name = "STEPS";           //OK
-               break;                             //kg44 I guess that was missing..otherwise it pushes back a time_vector!
-            }
-                                                  // JTARON 2010, reconfigured (and added RWPT)... didn't work
-            if (line_string.find("STEPPING") != string::npos)
-            {
-               double stepping_length, stepping_end, stepping_current;
-               in_str >> stepping_length >> stepping_end;
-               stepping_current = stepping_length;
-               while (stepping_current <= stepping_end)
-               {
-                  time_vector.push_back(stepping_current);
-                  //						rwpt_time_vector.push_back(stepping_current);
-                  stepping_current += stepping_length;
-               }
-            }
-            else
-            {
-               time_vector.push_back(strtod(line_string.data(), NULL));
-               //					rwpt_time_vector.push_back(strtod(line_string.data(), NULL));
-            }
-            in_str.ignore(MAX_ZEILE, '\n');
-         }
-         continue;
-      }
+      if (line_string.find("$TIM_TYPE") != string::npos) {
+			while ((!new_keyword) && (!new_subkeyword)) {
+				position_subkeyword = in_str.tellg();
+				in_str >> line_string;
+				if (line_string.size() == 0) //SB
+				break;
+				if (line_string.find("#") != string::npos) {
+					new_keyword = true;
+					break;
+				}
+				if (line_string.find("$") != string::npos) {
+					new_subkeyword = true;
+					break;
+				}
+				if (line_string.find("STEPS") != string::npos) {
+					in_str >> nSteps;
+					tim_type_name = "STEPS"; //OK
+					break; //kg44 I guess that was missing..otherwise it pushes back a time_vector!
+				}
+				// JTARON 2010, reconfigured (and added RWPT)... didn't work
+				if (line_string.find("STEPPING") != string::npos) {
+					double stepping_length, stepping_end, stepping_current;
+					in_str >> stepping_length >> stepping_end;
+					stepping_current = stepping_length;
+					while (stepping_current <= stepping_end) {
+						time_vector.push_back(stepping_current);
+						//						rwpt_time_vector.push_back(stepping_current);
+						stepping_current += stepping_length;
+					}
+				} else {
+					time_vector.push_back(strtod(line_string.data(), NULL));
+					//					rwpt_time_vector.push_back(strtod(line_string.data(), NULL));
+				}
+				in_str.ignore(MAX_ZEILE, '\n');
+			}
+			continue;
+		}
 
                                                   // subkeyword found
       if (line_string.find("$DAT_TYPE") != string::npos)
