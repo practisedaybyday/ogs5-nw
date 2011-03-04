@@ -150,7 +150,6 @@ void SHPInterface::readPolygons(const SHPHandle &hSHP, int numberOfElements, std
 {
 	this->readPolylines(hSHP, numberOfElements, listName);
 
-	const std::vector<GEOLIB::Point*> *pnt_vec (_geoObjects->getPointVec(listName));
 	const std::vector<GEOLIB::Polyline*> *polylines (_geoObjects->getPolylineVec(listName));
 	std::vector<GEOLIB::Surface*> *sfc_vec(new std::vector<GEOLIB::Surface*>);
 
