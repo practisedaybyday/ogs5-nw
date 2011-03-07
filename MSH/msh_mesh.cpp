@@ -473,64 +473,29 @@ namespace Mesh_Group
 
    /**************************************************************************
     FEMLib-Method: ConnectedElements2Node
-    Task:
+    Task: Set elements connected to a node
     Programing:
     04/2007 WW Cut from Construct grid
+	03/2011 KR cleaned up code
     **************************************************************************/
    void CFEMesh::ConnectedElements2Node(bool quadratic)
    {
-      // Set neighbors of node
       for (size_t e = 0; e < nod_vector.size(); e++)
          nod_vector[e]->connected_elements.clear();
 
-      bool done = false;
-
-      size_t ele_vector_size (ele_vector.size());
-      for (size_t e = 0; e < ele_vector_size; e++)
+      size_t nElems (ele_vector.size());
+      for (size_t e = 0; e < nElems; e++)
       {
-         CElem* celem_e = ele_vector[e];
-         if (! celem_e->GetMark())
-            continue;
-         size_t n_nodes(   static_cast<size_t> (celem_e->GetNodesNumber(quadratic)) );
-         for (size_t i = 0; i < n_nodes; i++)
+         CElem* elem = ele_vector[e];
+         if (!elem->GetMark()) continue;
+
+         size_t nNodes( static_cast<size_t> (elem->GetNodesNumber(quadratic)) );
+         for (size_t i = 0; i < nNodes; i++)
          {
-            //done = false;
-            Mesh_Group::CNode* cnode_i (nod_vector[celem_e->GetNodeIndex(i)]);
-			/*
-            size_t n_connected_elements (cnode_i->connected_elements.size());
-            for (size_t j = 0; j < n_connected_elements; j++)
-            {
-               if (e == static_cast<size_t> (cnode_i->connected_elements[j]))
-               {
-                  done = true;
-                  break;
-               }
-            }
-            if (!done)
-				*/
-               cnode_i->connected_elements.push_back(e);
+            Mesh_Group::CNode* node (nod_vector[elem->GetNodeIndex(i)]);
+            node->connected_elements.push_back(e);
          }
       }
-
-      //	CElem* thisElem0 = NULL;
-      //	for (size_t e = 0; e < (long) ele_vector.size(); e++) {
-      //		thisElem0 = ele_vector[e];
-      //		if (!thisElem0->GetMark())
-      //			continue;
-      //		size_t n_nodes(static_cast<size_t>(thisElem0->GetNodesNumber(quadratic)));
-      //		for (size_t i = 0; i < n_nodes; i++) {
-      //			done = false;
-      //			ni = thisElem0->GetNodeIndex(i);
-      //			for (j = 0; j < (int) nod_vector[ni]->connected_elements.size(); j++) {
-      //				if (e == nod_vector[ni]->connected_elements[j]) {
-      //					done = true;
-      //					break;
-      //				}
-      //			}
-      //			if (!done)
-      //				nod_vector[ni]->connected_elements.push_back(e);
-      //		}
-      //	}
    }
 
    /**************************************************************************
@@ -949,25 +914,19 @@ void CFEMesh::ConstructGrid2_Test()
       CElem* thisElem0 = NULL;
       CElem* thisElem = NULL;
 
-      //Elem->nodes not initialized
-
-
       NodesNumber_Linear = nod_vector.size();
 
       Edge_Orientation = 1;
-      //----------------------------------------------------------------------
-      // Set neighbors of node
-      ConnectedElements2Node();
-      //----------------------------------------------------------------------
 
-      //----------------------------------------------------------------------
+	  // Set neighbors of node
+      ConnectedElements2Node();
+
       // Compute neighbors and edges
 	  size_t e_size = ele_vector.size();
       for (size_t e = 0; e < e_size; e++)
       {
          thisElem0 = ele_vector[e];
          size_t nnodes0 = thisElem0->nnodes;             // Number of nodes for linear element
-         //		thisElem0->GetNodeIndeces(node_index_glb0);
          const vec<long>& node_index_glb0 (thisElem0->GetNodeIndeces());
          thisElem0->GetNeighbors(Neighbors0);
          for (size_t i = 0; i < nnodes0; i++)            // Nodes
@@ -1028,8 +987,8 @@ void CFEMesh::ConstructGrid2_Test()
             }
 		 }
          thisElem0->SetNeighbors(Neighbors0);
-         //------------neighbor of 1D line
-         if (thisElem0->geo_type == 1)            //YD
+         
+		 if (thisElem0->geo_type == MshElemType::LINE) 
          {
             size_t ii = 0;
             for (size_t i = 0; i < m0; i++)
@@ -1055,6 +1014,7 @@ void CFEMesh::ConstructGrid2_Test()
             thisElem0->SetNeighbors(Neighbors0);
          }
          // --------------------------------
+
          // Edges
          size_t nedges0 = thisElem0->GetEdgesNumber();
          thisElem0->GetEdges(Edges0);
