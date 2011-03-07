@@ -926,6 +926,382 @@ namespace Mesh_Group
       e_edgeNodes.resize(0);
    }
 
+
+// Trying a re-implementation
+void CFEMesh::ConstructGrid2_Test()
+   {
+      int counter;
+      bool done;
+      double x_sum, y_sum, z_sum;
+
+      int edgeIndex_loc0[2];
+      int edgeIndex_loc[2];
+      int faceIndex_loc0[10];
+      int faceIndex_loc[10];
+      vec<CNode*> e_nodes0(20);
+      //	vec<long> node_index_glb(20);
+      //	vec<long> node_index_glb0(20);
+      vec<int> Edge_Orientation(15);
+      vec<CEdge*> Edges(15);
+      vec<CEdge*> Edges0(15);
+      vec<CElem*> Neighbors(15);
+      vec<CElem*> Neighbors0(15);
+
+      vec<CNode*> e_edgeNodes0(3);
+      vec<CNode*> e_edgeNodes(3);
+      CElem* thisElem0 = NULL;
+      CElem* thisElem = NULL;
+
+      //Elem->nodes not initialized
+
+
+      NodesNumber_Linear = nod_vector.size();
+
+      Edge_Orientation = 1;
+      //----------------------------------------------------------------------
+      // Set neighbors of node
+      ConnectedElements2Node();
+      //----------------------------------------------------------------------
+
+      //----------------------------------------------------------------------
+      // Compute neighbors and edges
+	  size_t e_size = ele_vector.size();
+      for (size_t e = 0; e < e_size; e++)
+      {
+         thisElem0 = ele_vector[e];
+         size_t nnodes0 = thisElem0->nnodes;             // Number of nodes for linear element
+         //		thisElem0->GetNodeIndeces(node_index_glb0);
+         const vec<long>& node_index_glb0 (thisElem0->GetNodeIndeces());
+         thisElem0->GetNeighbors(Neighbors0);
+         for (size_t i = 0; i < nnodes0; i++)            // Nodes
+            e_nodes0[i] = nod_vector[node_index_glb0[i]];
+         size_t m0 = static_cast<size_t>(thisElem0->GetFacesNumber());
+         // neighbors
+         for (size_t i = 0; i < m0; i++)              // Faces
+         {
+            if (Neighbors0[i])
+               continue;
+            size_t n0 = static_cast<size_t>(thisElem0->GetElementFaceNodes(i, faceIndex_loc0));
+            done = false;
+            for (size_t k = 0; k < n0; k++)			//face nodes
+            {
+               size_t e_size_l = e_nodes0[faceIndex_loc0[k]]->connected_elements.size();
+               for (size_t ei = 0; ei < e_size_l; ei++)  
+               {
+                  size_t ee = static_cast<size_t>(e_nodes0[faceIndex_loc0[k]]->connected_elements[ei]);
+                  if (ee == e)
+                     continue;
+                  thisElem = ele_vector[ee];
+                  const vec<long>& node_index_glb (thisElem->GetNodeIndeces());
+                  thisElem->GetNeighbors(Neighbors);
+                  size_t m = static_cast<size_t>(thisElem->GetFacesNumber());
+
+                  for (size_t ii = 0; ii < m; ii++)      // Faces
+                  {
+                     size_t n = static_cast<size_t>(thisElem->GetElementFaceNodes(ii, faceIndex_loc));
+                     if (n0 != n)
+                        continue;
+                     counter = 0;
+                     for (size_t j = 0; j < n0; j++)
+                     {
+                        for (size_t jj = 0; jj < n; jj++)
+                        {
+                           if (node_index_glb0[faceIndex_loc0[j]]
+                              == node_index_glb[faceIndex_loc[jj]])
+                           {
+                              counter++;
+                              break;
+                           }
+                        }
+                     }
+                     if (counter == n)
+                     {
+                        Neighbors0[i] = thisElem;
+                        Neighbors[ii] = thisElem0;
+                        thisElem->SetNeighbor(ii, thisElem0);
+                        done = true;
+                        break;
+                     }
+                  }
+                  if (done)
+                     break;
+               }
+               if (done)
+                  break;
+            }
+		 }
+         thisElem0->SetNeighbors(Neighbors0);
+         //------------neighbor of 1D line
+         if (thisElem0->geo_type == 1)            //YD
+         {
+            size_t ii = 0;
+            for (size_t i = 0; i < m0; i++)
+            {
+               size_t n0 = thisElem0->GetElementFaceNodes(i, faceIndex_loc0);
+               for (size_t k = 0; k < n0; k++)
+               {
+                  size_t e_size_l = e_nodes0[faceIndex_loc0[k]]->connected_elements.size();
+                  for (size_t ei = 0; ei < e_size_l; ei++)
+                  {
+                     size_t ee = e_nodes0[faceIndex_loc0[k]]->connected_elements[ei];
+                     thisElem = ele_vector[ee];
+                     if (e_size_l == 2 && thisElem->GetIndex() != thisElem0->GetIndex())
+                     {
+                        Neighbors0[i] = thisElem;
+                        Neighbors[ii] = thisElem;
+                        // thisElem->SetNeighbor(ii, thisElem0);   //?? Todo YD
+                        ii++;
+                     }
+                  }
+               }
+            }
+            thisElem0->SetNeighbors(Neighbors0);
+         }
+         // --------------------------------
+         // Edges
+         size_t nedges0 = thisElem0->GetEdgesNumber();
+         thisElem0->GetEdges(Edges0);
+         for (size_t i = 0; i < nedges0; i++)
+         {
+            thisElem0->GetLocalIndicesOfEdgeNodes(i, edgeIndex_loc0);
+            // Check neighbors
+            done = false;
+            for (size_t k = 0; k < 2; k++)
+            {
+               size_t e_size_l = e_nodes0[edgeIndex_loc0[k]]->connected_elements.size();
+               for (size_t ei = 0; ei < e_size_l; ei++)
+               {
+                  size_t ee = e_nodes0[edgeIndex_loc0[k]]->connected_elements[ei];
+                  if (ee == e)
+                     continue;
+                  thisElem = ele_vector[ee];
+                  const vec<long>& node_index_glb (thisElem->GetNodeIndeces());
+                  size_t nedges = thisElem->GetEdgesNumber();
+                  thisElem->GetEdges(Edges);
+                  // Edges of neighbors
+                  for (size_t ii = 0; ii < nedges; ii++)
+                  {
+                     thisElem->GetLocalIndicesOfEdgeNodes(ii, edgeIndex_loc);
+                     if ((node_index_glb0[edgeIndex_loc0[0]] == node_index_glb[edgeIndex_loc[0]]
+                        && node_index_glb0[edgeIndex_loc0[1]] == node_index_glb[edgeIndex_loc[1]])
+                        || (node_index_glb0[edgeIndex_loc0[0]] == node_index_glb[edgeIndex_loc[1]]
+                        && node_index_glb0[edgeIndex_loc0[1]] == node_index_glb[edgeIndex_loc[0]]))
+                     {
+                        if (Edges[ii])
+                        {
+                           Edges0[i] = Edges[ii];
+                           Edges[ii]->GetNodes(e_edgeNodes);
+                           if ((size_t)node_index_glb0[edgeIndex_loc0[0]] == e_edgeNodes[1]->GetIndex()
+                              && (size_t)node_index_glb0[edgeIndex_loc0[1]] == e_edgeNodes[0]->GetIndex())
+                              Edge_Orientation[i] = -1;
+                           done = true;
+                           break;
+                        }
+                     }
+                  }                               //  for(ii=0; ii<nedges; ii++)
+                  if (done)
+                     break;
+               }                                  // for(ei=0; ei<e_size_l; ei++)
+               if (done)
+                  break;
+            }                                     //for(k=0;k<2;k++)
+            if (!done)                            // new edges and new node
+            {
+               Edges0[i] = new CEdge((long) edge_vector.size());
+               Edges0[i]->SetOrder(false);
+               e_edgeNodes0[0] = e_nodes0[edgeIndex_loc0[0]];
+               e_edgeNodes0[1] = e_nodes0[edgeIndex_loc0[1]];
+               e_edgeNodes0[2] = NULL;
+               Edges0[i]->SetNodes(e_edgeNodes0);
+               edge_vector.push_back(Edges0[i]);
+            }                                     // new edges
+         }                                        //  for(i=0; i<nedges0; i++)
+         //
+         // Set edges and nodes
+         thisElem0->SetOrder(false);
+         thisElem0->SetEdgesOrientation(Edge_Orientation);
+         thisElem0->SetEdges(Edges0);
+         // Resize is true
+         thisElem0->SetNodes(e_nodes0, true);
+      }                                           // Over elements
+      // Set faces on surfaces and others
+      _msh_n_lines = 0;                           // Should be members of mesh
+      _msh_n_quads = 0;
+      _msh_n_hexs = 0;
+      _msh_n_tris = 0;
+      _msh_n_tets = 0;
+      _msh_n_prisms = 0;
+      for (size_t e = 0; e < e_size; e++)
+      {
+         thisElem0 = ele_vector[e];
+         switch (thisElem0->GetElementType())
+         {
+            case MshElemType::LINE:
+               _msh_n_lines++;
+               break;
+            case MshElemType::QUAD:
+               _msh_n_quads++;
+               break;
+            case MshElemType::HEXAHEDRON:
+               _msh_n_hexs++;
+               break;
+            case MshElemType::TRIANGLE:
+               _msh_n_tris++;
+               break;
+            case MshElemType::TETRAHEDRON:
+               _msh_n_tets++;
+               break;
+            case MshElemType::PRISM:
+               _msh_n_prisms++;
+               break;
+            default:
+               std::cerr << "CFEMesh::ConstructGrid MshElemType not handled" << std::endl;
+         }
+         // Compute volume meanwhile
+         thisElem0->ComputeVolume();
+
+         if (thisElem0->GetElementType() == MshElemType::LINE)
+            continue;                             // line element
+         //		thisElem0->GetNodeIndeces(node_index_glb0);
+         //		const vec<long>& node_index_glb0 (thisElem0->GetNodeIndeces()); // compiler said: unused variable // TF
+         thisElem0->GetNeighbors(Neighbors0);
+         size_t m0 = thisElem0->GetFacesNumber();
+
+         // Check face on surface
+         for (size_t i = 0; i < m0; i++)                 // Faces
+         {
+            if (Neighbors0[i])
+               continue;
+            CElem* newFace = new CElem((long) face_vector.size(), thisElem0, i);
+            //          thisElem0->boundary_type='B';
+            thisElem0->no_faces_on_surface++;
+            face_vector.push_back(newFace);
+            Neighbors0[i] = newFace;
+         }
+         thisElem0->SetNeighbors(Neighbors0);
+
+      }
+      NodesNumber_Quadratic = (long) nod_vector.size();
+      if ((_msh_n_hexs + _msh_n_tets + _msh_n_prisms) > 0)
+         max_ele_dim = 3;
+      else if ((_msh_n_quads + _msh_n_tris) > 0)
+         max_ele_dim = 2;
+      else
+         max_ele_dim = 1;
+
+      // check if this mesh includes multi-dimensional elements
+      if (max_ele_dim == 2 && _msh_n_lines > 0)   //NW
+      {
+         this->has_multi_dim_ele = true;
+      } else if (max_ele_dim == 3 && (_msh_n_quads + _msh_n_tris + _msh_n_lines)
+         > 0)
+      {
+         this->has_multi_dim_ele = true;
+      }
+
+      //----------------------------------------------------------------------
+      // Node information
+      // 1. Default node index <---> eqs index relationship
+      // 2. Coordiate system flag
+      x_sum = 0.0;
+      y_sum = 0.0;
+      z_sum = 0.0;
+      Eqs2Global_NodeIndex.clear();
+      double xyz_max[3] =                         //NW
+      {
+         -DBL_MAX, -DBL_MAX, -DBL_MAX
+      };
+      double xyz_min[3] =                         //NW
+      {
+         DBL_MAX, DBL_MAX, DBL_MAX
+      };
+
+      for (size_t e = 0; e < nod_vector.size(); e++)
+      {
+         nod_vector[e]->SetEquationIndex(e);
+         Eqs2Global_NodeIndex.push_back(nod_vector[e]->GetIndex());
+         x_sum += fabs(nod_vector[e]->X());
+         y_sum += fabs(nod_vector[e]->Y());
+         z_sum += fabs(nod_vector[e]->Z());
+         if (nod_vector[e]->X() > xyz_max[0])
+            xyz_max[0] = nod_vector[e]->X();
+         if (nod_vector[e]->Y() > xyz_max[1])
+            xyz_max[1] = nod_vector[e]->Y();
+         if (nod_vector[e]->Z() > xyz_max[2])
+            xyz_max[2] = nod_vector[e]->Z();
+         if (nod_vector[e]->X() < xyz_min[0])
+            xyz_min[0] = nod_vector[e]->X();
+         if (nod_vector[e]->Y() < xyz_min[1])
+            xyz_min[1] = nod_vector[e]->Y();
+         if (nod_vector[e]->Z() < xyz_min[2])
+            xyz_min[2] = nod_vector[e]->Z();
+      }
+      double xyz_dim[3];                          //NW
+      xyz_dim[0] = xyz_max[0] - xyz_min[0];
+      xyz_dim[1] = xyz_max[1] - xyz_min[1];
+      xyz_dim[2] = xyz_max[2] - xyz_min[2];
+
+      //check dimension of the domain to select appropriate coordinate system
+      if (xyz_dim[0] > 0.0 && xyz_dim[1] < MKleinsteZahl && xyz_dim[2]
+         < MKleinsteZahl)
+         coordinate_system = 10;
+      else if (xyz_dim[1] > 0.0 && xyz_dim[0] < MKleinsteZahl && xyz_dim[2]
+         < MKleinsteZahl)
+         coordinate_system = 11;
+      else if (xyz_dim[2] > 0.0 && xyz_dim[0] < MKleinsteZahl && xyz_dim[1]
+         < MKleinsteZahl)
+         coordinate_system = 12;
+      else if (xyz_dim[0] > 0.0 && xyz_dim[1] > 0.0 && xyz_dim[2] < MKleinsteZahl)
+         coordinate_system = 21;
+      else if (xyz_dim[0] > 0.0 && xyz_dim[2] > 0.0 && xyz_dim[1] < MKleinsteZahl)
+         coordinate_system = 22;
+      else if (xyz_dim[0] > 0.0 && xyz_dim[1] > 0.0 && xyz_dim[2] > 0.0)
+         coordinate_system = 32;
+
+      // 1D in 2D
+      if (_msh_n_lines > 0)
+      {
+         if (xyz_dim[0] > 0.0 && xyz_dim[1] > 0.0 && xyz_dim[2] < MKleinsteZahl)
+            coordinate_system = 32;
+         if (xyz_dim[0] > 0.0 && xyz_dim[2] > 0.0 && xyz_dim[1] < MKleinsteZahl)
+            coordinate_system = 32;
+      }
+
+      max_dim = coordinate_system / 10 - 1;
+      //----------------------------------------------------------------------
+      // Gravity center
+      for (size_t e = 0; e < e_size; e++)
+      {
+         thisElem0 = ele_vector[e];
+         size_t nnodes0 = thisElem0->nnodes;
+         for (size_t i = 0; i < nnodes0; i++)            // Nodes
+         {
+            thisElem0->gravity_center[0] += thisElem0->nodes[i]->X();
+            thisElem0->gravity_center[1] += thisElem0->nodes[i]->Y();
+            thisElem0->gravity_center[2] += thisElem0->nodes[i]->Z();
+         }
+         thisElem0->gravity_center[0] /= (double) nnodes0;
+         thisElem0->gravity_center[1] /= (double) nnodes0;
+         thisElem0->gravity_center[2] /= (double) nnodes0;
+      }
+      //----------------------------------------------------------------------
+
+      //TEST WW
+      // For sparse matrix
+      ConnectedNodes(false);
+      //
+      e_nodes0.resize(0);
+      //	node_index_glb.resize(0);
+      //	node_index_glb0.resize(0);
+      Edge_Orientation.resize(0);
+      Edges.resize(0);
+      Edges0.resize(0);
+      Neighbors.resize(0);
+      Neighbors0.resize(0);
+      e_edgeNodes0.resize(0);
+      e_edgeNodes.resize(0);
+   }
+
    /**************************************************************************
     FEMLib-Method: GenerateHighOrderNodes()
     Task:
@@ -4472,7 +4848,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
 	layer_act_flag.clear();
 	marked_nodes.clear();
 
-	ConstructGrid();
+	ConstructGrid2_Test();
 	for(l=0; l<nod_vector.size(); l++) {
 			node = nod_vector[l];
 			z = node->Z()/(double)node->connected_elements.size();
@@ -4719,7 +5095,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
       ///  To Karsten: If quad elements, comment ends here
 #endif                                      //ifndef need_quad
 
-      ConstructGrid();
+      ConstructGrid2_Test();
       node_index.clear();
       mark.clear();
 
@@ -5015,7 +5391,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
          return;
       }
 
-      ConstructGrid();
+      ConstructGrid2_Test();
 
       MarkInterface_mHM_Hydro_3D();
 
@@ -5081,7 +5457,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
       CElem* elem = NULL;
       CElement* fem = NULL;
 
-      ConstructGrid();
+      ConstructGrid2_Test();
       MarkInterface_mHM_Hydro_3D();
 
       fem = new CElement(GetCoordinateFlag());
