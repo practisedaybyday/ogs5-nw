@@ -1064,7 +1064,7 @@ void CElem::Read(std::istream& is, int fileType)
             FaceNode[2] = 3;
             if(quadratic)
             {
-               FaceNode[3] = 5 ;
+               FaceNode[3] = 5;
                FaceNode[4] = 8;
                FaceNode[5] = 7;
             }
@@ -1075,7 +1075,7 @@ void CElem::Read(std::istream& is, int fileType)
             FaceNode[2] = 0;
             if(quadratic)
             {
-               FaceNode[3] = 8 ;
+               FaceNode[3] = 8;
                FaceNode[4] = 6;
                FaceNode[5] = 9;
             }
@@ -1086,7 +1086,7 @@ void CElem::Read(std::istream& is, int fileType)
             FaceNode[2] = 0;
             if(quadratic)
             {
-               FaceNode[3] = 7 ;
+               FaceNode[3] = 7;
                FaceNode[4] = 9;
                FaceNode[5] = 4;
             }
@@ -1097,7 +1097,7 @@ void CElem::Read(std::istream& is, int fileType)
             FaceNode[2] = 1;
             if(quadratic)
             {
-               FaceNode[3] = 6 ;
+               FaceNode[3] = 6;
                FaceNode[4] = 5;
                FaceNode[5] = 4;
             }
@@ -1384,7 +1384,7 @@ void CElem::Read(std::istream& is, int fileType)
 		else if (this->geo_type == MshElemType::QUAD)
 		{
 			volume = ComputeDetTri(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData())
-				 + ComputeDetTri(nodes[2]->getData(), nodes[3]->getData(), nodes[0]->getData());
+				   + ComputeDetTri(nodes[2]->getData(), nodes[3]->getData(), nodes[0]->getData());
 			representative_length = sqrt(volume); //kg44 reactivated
 		}
 		else if (this->geo_type == MshElemType::TETRAHEDRON)
