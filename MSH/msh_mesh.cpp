@@ -494,8 +494,9 @@ namespace Mesh_Group
          size_t n_nodes(   static_cast<size_t> (celem_e->GetNodesNumber(quadratic)) );
          for (size_t i = 0; i < n_nodes; i++)
          {
-            done = false;
+            //done = false;
             Mesh_Group::CNode* cnode_i (nod_vector[celem_e->GetNodeIndex(i)]);
+			/*
             size_t n_connected_elements (cnode_i->connected_elements.size());
             for (size_t j = 0; j < n_connected_elements; j++)
             {
@@ -506,6 +507,7 @@ namespace Mesh_Group
                }
             }
             if (!done)
+				*/
                cnode_i->connected_elements.push_back(e);
          }
       }
@@ -929,18 +931,13 @@ namespace Mesh_Group
 
 // Trying a re-implementation
 void CFEMesh::ConstructGrid2_Test()
-   {
-      int counter;
+{
       bool done;
-      double x_sum, y_sum, z_sum;
 
       int edgeIndex_loc0[2];
-      int edgeIndex_loc[2];
       int faceIndex_loc0[10];
-      int faceIndex_loc[10];
+
       vec<CNode*> e_nodes0(20);
-      //	vec<long> node_index_glb(20);
-      //	vec<long> node_index_glb0(20);
       vec<int> Edge_Orientation(15);
       vec<CEdge*> Edges(15);
       vec<CEdge*> Edges0(15);
@@ -996,18 +993,18 @@ void CFEMesh::ConstructGrid2_Test()
                   thisElem->GetNeighbors(Neighbors);
                   size_t m = static_cast<size_t>(thisElem->GetFacesNumber());
 
+				  int faceIndex_loc[10];
                   for (size_t ii = 0; ii < m; ii++)      // Faces
                   {
                      size_t n = static_cast<size_t>(thisElem->GetElementFaceNodes(ii, faceIndex_loc));
                      if (n0 != n)
                         continue;
-                     counter = 0;
+                     size_t counter = 0;
                      for (size_t j = 0; j < n0; j++)
                      {
                         for (size_t jj = 0; jj < n; jj++)
                         {
-                           if (node_index_glb0[faceIndex_loc0[j]]
-                              == node_index_glb[faceIndex_loc[jj]])
+                           if (node_index_glb0[faceIndex_loc0[j]] == node_index_glb[faceIndex_loc[jj]])
                            {
                               counter++;
                               break;
@@ -1079,6 +1076,7 @@ void CFEMesh::ConstructGrid2_Test()
                   size_t nedges = thisElem->GetEdgesNumber();
                   thisElem->GetEdges(Edges);
                   // Edges of neighbors
+				  int edgeIndex_loc[2];
                   for (size_t ii = 0; ii < nedges; ii++)
                   {
                      thisElem->GetLocalIndicesOfEdgeNodes(ii, edgeIndex_loc);
@@ -1203,9 +1201,7 @@ void CFEMesh::ConstructGrid2_Test()
       // Node information
       // 1. Default node index <---> eqs index relationship
       // 2. Coordiate system flag
-      x_sum = 0.0;
-      y_sum = 0.0;
-      z_sum = 0.0;
+      double x_sum(0.0), y_sum(0.0), z_sum(0.0);
       Eqs2Global_NodeIndex.clear();
       double xyz_max[3] =                         //NW
       {
