@@ -222,6 +222,58 @@ namespace Mesh_Group
       area = 1.0;                                 //WW
    }
 
+CElem::CElem(CElem const &elem) :
+	CCore(elem.GetIndex()),
+	mat_vector (elem.mat_vector),
+	matgroup_view (elem.matgroup_view),
+	selected (elem.selected),
+	normal_vector(new double[3]),
+	representative_length (elem.representative_length),
+	courant (elem.courant),
+	neumann (elem.neumann),
+	geo_type (elem.geo_type),
+	owner (elem.owner),
+	ele_dim (elem.ele_dim),
+	nnodes (elem.nnodes),
+	nnodesHQ (elem.nnodesHQ),
+	nodes (elem.nodes),
+	nedges (elem.nedges),
+	edges (elem.edges),
+	edges_orientation (elem.edges_orientation),
+	nfaces (elem.nfaces),
+	no_faces_on_surface (elem.no_faces_on_surface),
+	face_index (elem.face_index),
+	volume (elem.volume),
+	grid_adaptation (elem.grid_adaptation),
+	patch_index (elem.patch_index),
+	area (elem.area),
+	angle (new double)
+{
+	for (size_t k(0); k<3; k++) {
+		normal_vector[k] = elem.normal_vector[k];
+		gravity_center[k] = elem.gravity_center[k];
+	}
+
+	// copy nodes
+	nodes.resize ((int)((elem.nodes).Size()));
+	for (size_t k(0); k<(elem.nodes).Size() ; k++) {
+		nodes[k] = new CNode ((elem.nodes[k])->GetIndex(), (elem.nodes[k])->X(), (elem.nodes[k])->Y(), (elem.nodes[k])->Z());
+	}
+
+	// copy edges
+//	edges = vec<CEdge*> ((elem.edges).Size());
+//	for (size_t k(0); k<(elem.edges).Size() ; k++) {
+//		edges[k] = new CNode ((elem.nodes[k])->GetIndex(), (elem.nodes[k])->X(), (elem.nodes[k])->Y(), (elem.nodes[k])->Z());
+//	}
+
+	*angle = *(elem.angle);
+	// copy transform tensor
+//	Matrix * tranform_tensor;
+
+	// copy neighbors
+//	vec<CElem*> neighbors;
+}
+
    /**************************************************************************
    MSHLib-Method:
    Task:
@@ -714,10 +766,10 @@ void CElem::Read(std::istream& is, int fileType)
    void CElem::WriteIndex(std::ostream &os) const
    {
       //Comment for GUI WW if(quadratic) nn = nnodesHQ;
-      os << index << "  " << patch_index << "  " << GetName() << "  ";
-      for(int i=0; i<nnodes; i++)
-         os << nodes_index[i] << "  ";
-      os << std::endl;
+      os << index << " " << patch_index << " " << GetName() << " ";
+      for(int i=0; i<nnodes-1; i++)
+         os << nodes_index[i] << " ";
+      os << nodes_index[nnodes-1] << std::endl;
    }
 
    /**************************************************************************
@@ -1571,6 +1623,218 @@ void CElem::Read(std::istream& is, int fileType)
             std::cerr << "CElem::ComputeVolume MshElemType not handled" << std::endl;
       }
    }
+
+double CElem::getVolume () const
+{
+   double x1buff[3];
+   double x2buff[3];
+   double x3buff[3];
+   double x4buff[3];
+   double myvolume = 0.0;
+   double myrepresentative_length = 0.0;
+
+   if(geo_type!=MshElemType::LINE)
+   {
+	   x1buff[0] = nodes[0]->X();
+	   x1buff[1] = nodes[0]->Y();
+	   x1buff[2] = nodes[0]->Z();
+
+	   x2buff[0] = nodes[1]->X();
+	   x2buff[1] = nodes[1]->Y();
+	   x2buff[2] = nodes[1]->Z();
+
+	   x3buff[0] = nodes[2]->X();
+	   x3buff[1] = nodes[2]->Y();
+	   x3buff[2] = nodes[2]->Z();
+   }
+
+   switch(geo_type)
+   {
+   case MshElemType::LINE:                  // Line
+	   x2buff[0] = nodes[nnodes-1]->X()-nodes[0]->X();
+	   x2buff[1] = nodes[nnodes-1]->Y()-nodes[0]->Y();
+	   x2buff[2] = nodes[nnodes-1]->Z()-nodes[0]->Z();
+	   myvolume = sqrt(x2buff[0]*x2buff[0]+x2buff[1]*x2buff[1]+x2buff[2]*x2buff[2]);
+	   //CMCD kg44 reactivated
+	   myrepresentative_length = sqrt(x2buff[0]*x2buff[0]+x2buff[1]*x2buff[1]+x2buff[2]*x2buff[2]) ;
+	   break;
+   case MshElemType::TRIANGLE:              // Triangle
+	   myvolume = ComputeDetTri(x1buff, x2buff, x3buff);
+	   //kg44 reactivated
+	   myrepresentative_length = sqrt(volume)*4.0;
+	   break;
+   case MshElemType::QUAD:                  // Quadrilateral
+	   x4buff[0] = nodes[3]->X();
+	   x4buff[1] = nodes[3]->Y();
+	   x4buff[2] = nodes[3]->Z();
+
+	   myvolume =  ComputeDetTri(x1buff, x2buff, x3buff)
+	   +ComputeDetTri(x3buff, x4buff, x1buff);
+	   myrepresentative_length = sqrt(volume); //kg44 reactivated
+	   break;
+   case MshElemType::TETRAHEDRON:           // Tedrahedra
+	   x4buff[0] = nodes[3]->X();
+	   x4buff[1] = nodes[3]->Y();
+	   x4buff[2] = nodes[3]->Z();
+
+	   myvolume =  ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
+	   //kg44 reactivated
+	   myrepresentative_length = sqrt(volume)*6.0;
+	   break;
+   case MshElemType::HEXAHEDRON:            // Hexehadra
+	   x1buff[0] = nodes[4]->X();
+	   x1buff[1] = nodes[4]->Y();
+	   x1buff[2] = nodes[4]->Z();
+
+	   x2buff[0] = nodes[7]->X();
+	   x2buff[1] = nodes[7]->Y();
+	   x2buff[2] = nodes[7]->Z();
+
+	   x3buff[0] = nodes[5]->X();
+	   x3buff[1] = nodes[5]->Y();
+	   x3buff[2] = nodes[5]->Z();
+
+	   x4buff[0] = nodes[0]->X();
+	   x4buff[1] = nodes[0]->Y();
+	   x4buff[2] = nodes[0]->Z();
+	   myvolume  = ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
+
+	   x1buff[0] = nodes[5]->X();
+	   x1buff[1] = nodes[5]->Y();
+	   x1buff[2] = nodes[5]->Z();
+
+	   x2buff[0] = nodes[3]->X();
+	   x2buff[1] = nodes[3]->Y();
+	   x2buff[2] = nodes[3]->Z();
+
+	   x3buff[0] = nodes[1]->X();
+	   x3buff[1] = nodes[1]->Y();
+	   x3buff[2] = nodes[1]->Z();
+
+	   x4buff[0] = nodes[0]->X();
+	   x4buff[1] = nodes[0]->Y();
+	   x4buff[2] = nodes[0]->Z();
+	   myvolume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
+
+	   x1buff[0] = nodes[5]->X();
+	   x1buff[1] = nodes[5]->Y();
+	   x1buff[2] = nodes[5]->Z();
+
+	   x2buff[0] = nodes[7]->X();
+	   x2buff[1] = nodes[7]->Y();
+	   x2buff[2] = nodes[7]->Z();
+
+	   x3buff[0] = nodes[3]->X();
+	   x3buff[1] = nodes[3]->Y();
+	   x3buff[2] = nodes[3]->Z();
+
+	   x4buff[0] = nodes[0]->X();
+	   x4buff[1] = nodes[0]->Y();
+	   x4buff[2] = nodes[0]->Z();
+	   myvolume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
+
+	   x1buff[0] = nodes[5]->X();
+	   x1buff[1] = nodes[5]->Y();
+	   x1buff[2] = nodes[5]->Z();
+
+	   x2buff[0] = nodes[7]->X();
+	   x2buff[1] = nodes[7]->Y();
+	   x2buff[2] = nodes[7]->Z();
+
+	   x3buff[0] = nodes[6]->X();
+	   x3buff[1] = nodes[6]->Y();
+	   x3buff[2] = nodes[6]->Z();
+
+	   x4buff[0] = nodes[2]->X();
+	   x4buff[1] = nodes[2]->Y();
+	   x4buff[2] = nodes[2]->Z();
+	   myvolume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
+
+	   x1buff[0] = nodes[1]->X();
+	   x1buff[1] = nodes[1]->Y();
+	   x1buff[2] = nodes[1]->Z();
+
+	   x2buff[0] = nodes[3]->X();
+	   x2buff[1] = nodes[3]->Y();
+	   x2buff[2] = nodes[3]->Z();
+
+	   x3buff[0] = nodes[5]->X();
+	   x3buff[1] = nodes[5]->Y();
+	   x3buff[2] = nodes[5]->Z();
+
+	   x4buff[0] = nodes[2]->X();
+	   x4buff[1] = nodes[2]->Y();
+	   x4buff[2] = nodes[2]->Z();
+	   myvolume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
+
+	   x1buff[0] = nodes[3]->X();
+	   x1buff[1] = nodes[3]->Y();
+	   x1buff[2] = nodes[3]->Z();
+
+	   x2buff[0] = nodes[7]->X();
+	   x2buff[1] = nodes[7]->Y();
+	   x2buff[2] = nodes[7]->Z();
+
+	   x3buff[0] = nodes[5]->X();
+	   x3buff[1] = nodes[5]->Y();
+	   x3buff[2] = nodes[5]->Z();
+
+	   x4buff[0] = nodes[2]->X();
+	   x4buff[1] = nodes[2]->Y();
+	   x4buff[2] = nodes[2]->Z();
+
+	   myvolume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
+	   //kg44 reactivated
+	   myrepresentative_length = pow(volume,1./3.);
+	   break;
+   case MshElemType::PRISM:                 // Prism
+	   x4buff[0] = nodes[3]->X();
+	   x4buff[1] = nodes[3]->Y();
+	   x4buff[2] = nodes[3]->Z();
+	   myvolume =  ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
+
+	   x1buff[0] = nodes[1]->X();
+	   x1buff[1] = nodes[1]->Y();
+	   x1buff[2] = nodes[1]->Z();
+
+	   x2buff[0] = nodes[4]->X();
+	   x2buff[1] = nodes[4]->Y();
+	   x2buff[2] = nodes[4]->Z();
+
+	   x3buff[0] = nodes[2]->X();
+	   x3buff[1] = nodes[2]->Y();
+	   x3buff[2] = nodes[2]->Z();
+
+	   x4buff[0] = nodes[3]->X();
+	   x4buff[1] = nodes[3]->Y();
+	   x4buff[2] = nodes[3]->Z();
+	   myvolume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
+
+	   x1buff[0] = nodes[2]->X();
+	   x1buff[1] = nodes[2]->Y();
+	   x1buff[2] = nodes[2]->Z();
+
+	   x2buff[0] = nodes[4]->X();
+	   x2buff[1] = nodes[4]->Y();
+	   x2buff[2] = nodes[4]->Z();
+
+	   x3buff[0] = nodes[5]->X();
+	   x3buff[1] = nodes[5]->Y();
+	   x3buff[2] = nodes[5]->Z();
+
+	   x4buff[0] = nodes[3]->X();
+	   x4buff[1] = nodes[3]->Y();
+	   x4buff[2] = nodes[3]->Z();
+	   myvolume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
+	   // kg44 reactivated ---------Here the direction of flow needs to be taken into account, we need rep length in x,y,z direction
+	   myrepresentative_length = pow(volume,1./3.);
+	   break;
+   default:
+	   std::cerr << "CElem::ComputeVolume MshElemType not handled" << std::endl;
+   }
+   return myvolume;
+}
+
 
    /**************************************************************************
    MSHLib-Method:

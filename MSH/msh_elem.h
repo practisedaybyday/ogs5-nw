@@ -40,6 +40,12 @@ namespace Mesh_Group
                                                   // For Faces: Face, local face index
          CElem(size_t Index, CElem* onwer, int Face);
          CElem(size_t Index, CElem* m_ele_parent);//WWOK
+
+         /**
+          * copy constructor
+          */
+         CElem (CElem const &elem);
+
          ~CElem();
 
          //------------------------------------------------------------------
@@ -87,6 +93,9 @@ namespace Mesh_Group
          {
             return area;
          }                                        //CMCD for <3D elements with varying area
+
+         double getVolume () const;
+
          double GetVolume() const
          {
             return volume;

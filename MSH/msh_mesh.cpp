@@ -66,6 +66,7 @@ public:
 	size_t _id;
 };
 
+extern "C" {
 void* threadGetDist (void *ptr)
 {
 	ThreadParameter *thread_param ((ThreadParameter*)(ptr));
@@ -92,6 +93,7 @@ void* threadGetDist (void *ptr)
 	if (number == std::numeric_limits<size_t>::max()) return (void*)(-1);
 	return (void*)(number);
 }
+} // end extern "C"
 
 //========================================================================
 namespace Mesh_Group
@@ -1425,6 +1427,7 @@ namespace Mesh_Group
 **************************************************************************/
 long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
 {
+#ifdef HAVE_PTHREADS
 	/* thread version */
 	const size_t nodes_in_usage (static_cast<size_t>(NodesInUsage()));
 	pthread_t thread0, thread1, thread2, thread3;
@@ -1445,6 +1448,11 @@ long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
 	iret2 = pthread_create( &thread2, NULL, threadGetDist, thread_param2);
 	iret3 = pthread_create( &thread3, NULL, threadGetDist, thread_param3);
 
+	pthread_join( thread0, NULL);
+	pthread_join( thread1, NULL);
+	pthread_join( thread2, NULL);
+	pthread_join( thread3, NULL);
+
 	if (thread_param0->_sqr_dist < thread_param1->_sqr_dist
 			&& thread_param0->_sqr_dist < thread_param2->_sqr_dist
 			&& thread_param0->_sqr_dist < thread_param3->_sqr_dist)
@@ -1458,8 +1466,7 @@ long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
 				&& thread_param2->_sqr_dist < thread_param3->_sqr_dist)
 			return thread_param2->_number;
 	return thread_param3->_number;
-
-	/* non thread version
+#else
 	double sqr_dist(0.0), distmin(std::numeric_limits<double>::max());
 	long number(-1);
 	for (size_t i = 0; i < nodes_in_usage; i++) {
@@ -1470,7 +1477,7 @@ long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
 		}
 	}
 	return number;
-	*/
+#endif
 }
 
    /**************************************************************************

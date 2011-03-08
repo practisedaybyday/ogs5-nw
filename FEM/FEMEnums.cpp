@@ -107,13 +107,6 @@ PrimaryVariable convertPrimaryVariable ( const std::string& pcs_pv_string )
    if (pcs_pv_string.compare ("STRESS_YY") == 0) return STRESS_YY;
    if (pcs_pv_string.compare ("STRESS_YZ") == 0) return STRESS_YZ;
    if (pcs_pv_string.compare ("STRESS_ZZ") == 0) return STRESS_ZZ;
-   //	if (pcs_pv_string.compare ("STRAIN_XX") == 0) return STRAIN_XX;
-   //	if (pcs_pv_string.compare ("STRAIN_XY") == 0) return STRAIN_XY;
-   //	if (pcs_pv_string.compare ("STRAIN_XZ") == 0) return STRAIN_XZ;
-   //	if (pcs_pv_string.compare ("STRAIN_YY") == 0) return STRAIN_YY;
-   //	if (pcs_pv_string.compare ("STRAIN_YZ") == 0) return STRAIN_YZ;
-   //	if (pcs_pv_string.compare ("STRAIN_ZZ") == 0) return STRAIN_ZZ;
-   //	if (pcs_pv_string.compare ("STRAIN_PLS") == 0) return STRAIN_PLS;
    if (pcs_pv_string.compare ("ACCELERATION_X1") == 0) return ACCELERATION_X1;
    if (pcs_pv_string.compare ("ACCELERATION_Y1") == 0) return ACCELERATION_Y1;
    if (pcs_pv_string.compare ("ACCELERATION_Z1") == 0) return ACCELERATION_Z1;
@@ -184,8 +177,8 @@ DistributionType convertDisType(const std::string& dis_type_string)
 	if (dis_type_string.compare("CRITICALDEPTH") == 0) return CRITICALDEPTH;
 	if (dis_type_string.compare("GREEN_AMPT") == 0) return GREEN_AMPT;
 	if (dis_type_string.compare("SYSTEM_DEPENDENT") == 0) return SYSTEM_DEPENDENT;
-	if (dis_type_string.compare("PRECIPITATION") == 0)
-		return PRECIPITATION;
+	if (dis_type_string.compare("PRECIPITATION") == 0) return PRECIPITATION;
+	if (dis_type_string.compare("DIRECT") == 0) return DIRECT;
 	else {
 		std::cout << "convertDisType #" << dis_type_string << "# not found"
 				<< std::endl;
@@ -211,6 +204,7 @@ std::string convertDisTypeToString(DistributionType dis_type)
 	if (dis_type == GREEN_AMPT) return "GREEN_AMPT";
 	if (dis_type == SYSTEM_DEPENDENT) return "SYSTEM_DEPENDENT";
 	if (dis_type == PRECIPITATION) return "PRECIPITATION";
+	if (dis_type == DIRECT) return "DIRECT";
 
 	return "INVALID_DIS_TYPE";
 }

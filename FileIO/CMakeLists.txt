@@ -8,6 +8,7 @@ SET( SOURCES
 	StationIO.cpp
 	#FEMIO.cpp
 	FEMIO/GeoIO.cpp
+	MeshIO/OGSMeshIO.cpp
 )
 
 # Header files
@@ -21,6 +22,7 @@ SET( HEADERS
 	#FEMIO.h
 	FEMIO/GeoIO.h
 	MathIO/CRSIO.h
+	MeshIO/OGSMeshIO.h
 )
 
 IF (OGS_USE_NETCDF)
@@ -51,6 +53,7 @@ INCLUDE_DIRECTORIES(
 	.
 	./FEMIO
 	./MathIO
+	./MeshIO
 	../Base
 	../FEM
 	../GEO

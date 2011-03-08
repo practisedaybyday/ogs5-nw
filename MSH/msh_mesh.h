@@ -32,6 +32,9 @@
 #include "MSHEnums.h"                             // KR 2010/11/15
 #include "MeshNodesAlongPolyline.h"
 
+// FileIO
+#include "MeshIO/OGSMeshIO.h"
+
 #include "msh_elem.h"
 
 class RandomWalk;
@@ -141,6 +144,7 @@ namespace Mesh_Group
          int Read(TokenBuf* tokenbuf);
 #endif
 
+         friend class FileIO::OGSMeshIO;
          void Write(std::fstream*) const;
          std::ios::pos_type GMSReadTIN(std::ifstream*);
          //

@@ -33,4 +33,7 @@
 
 #cmakedefine HAVE_64_BIT
 
+#cmakedefine HAVE_PTHREADS
+#cmakedefine PROCESSOR_COUNT "${PROCESSOR_COUNT}"
+
 #endif // CONFIGURE_H

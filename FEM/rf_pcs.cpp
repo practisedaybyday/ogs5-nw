@@ -673,6 +673,9 @@ void CRFProcess::Create()
          m_bc_group->setProcessPrimaryVariableName(
             pcs_primary_function_name[i]);        //OK
          m_bc_group->Set(this, Shift[i]);
+
+
+
          bc_group_list.push_back(m_bc_group);     //Useless, to be removed. WW
          m_bc_group = NULL;
          //OK}
@@ -6414,7 +6417,7 @@ Programing:
 void CRFProcess::SetIC()
 {
    CInitialCondition* m_ic = NULL;
-   // HS, for MASS_TRANSPORT PCS, 
+   // HS, for MASS_TRANSPORT PCS,
    // it is not necessary to use PrimaryVarible as second check.
    // nidx will give the proper IC pointer.
    if ( this->getProcessType() == MASS_TRANSPORT )
@@ -6437,7 +6440,7 @@ void CRFProcess::SetIC()
           }
        }
    }
-   else // otherwise PrimaryVariable check is still performed. 
+   else // otherwise PrimaryVariable check is still performed.
    {
           for (int i = 0; i < pcs_number_of_primary_nvals; i++)
           {
@@ -6447,7 +6450,7 @@ void CRFProcess::SetIC()
               {
                   m_ic = ic_vector[j];
                   m_ic->m_msh = m_msh;                     //OK/MX
-                  
+
                   if (m_ic->getProcessType() != this->getProcessType())
                       continue;
 
@@ -6459,7 +6462,7 @@ void CRFProcess::SetIC()
                   } // end of if
               } // end of for j
           } // end of for i
-          
+
    } // end of if-else
 
 }

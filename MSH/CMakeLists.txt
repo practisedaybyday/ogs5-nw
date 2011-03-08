@@ -11,6 +11,8 @@ set( SOURCES
 	MSHEnums.h
 	MeshNodesAlongPolyline.h
 	MeshQualityChecker.h
+	MeshQualityShortestLongestRatio.h
+	MeshQualityNormalisedVolumes.h
 	
 	msh_core.cpp
 	msh_edge.cpp
@@ -23,6 +25,8 @@ set( SOURCES
 	MSHEnums.cpp
 	MeshNodesAlongPolyline.cpp
 	MeshQualityChecker.cpp
+	MeshQualityShortestLongestRatio.cpp
+	MeshQualityNormalisedVolumes.cpp
 	#msh_pnt.cpp		# references removed elements.h nodes.h
 	
 	Delaunay/DT_Matrix.h
