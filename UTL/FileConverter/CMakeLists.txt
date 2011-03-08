@@ -66,4 +66,17 @@ TARGET_LINK_LIBRARIES (generateBCandGLI
 	${QT_LIBRARIES}
 )
 
+ADD_EXECUTABLE (generateBCFromPolyline generateBCFromPolyline.cpp )
+TARGET_LINK_LIBRARIES (generateBCFromPolyline
+	FEM
+	MSH
+	#GEO
+	MathLib
+	FileIO
+	Base
+	OGSProject
+	${QT_LIBRARIES}
+)
+
+
 

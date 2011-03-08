@@ -54,14 +54,15 @@ size_t max_dim = 0;                               //OK411
 class ThreadParameter {
 public:
 	ThreadParameter (GEOLIB::Point const* const pnt, size_t start, size_t end, std::vector<Mesh_Group::CNode*> const& nod_vector)
-	: _pnt (pnt), _start (start), _end (end), _nod_vector (nod_vector)
+	: _pnt (pnt), _start (start), _end (end), _nod_vector (nod_vector),
+	_number (start), _sqr_dist (std::numeric_limits<double>::max())
 	{}
 
 	GEOLIB::Point const * const _pnt;
 	size_t _start;
 	size_t _end;
 	std::vector<Mesh_Group::CNode*> const& _nod_vector;
-	long _number;
+	size_t _number;
 	double _sqr_dist;
 	size_t _id;
 };
@@ -75,11 +76,11 @@ void* threadGetDist (void *ptr)
 	std::vector<Mesh_Group::CNode*> const& nod_vector (thread_param->_nod_vector);
 	GEOLIB::Point const * const pnt (thread_param->_pnt);
 
-	size_t number (std::numeric_limits<size_t>::max());
-	double distmin (std::numeric_limits<double>::max());
-	double sqr_dist;
+	double distmin (MATHLIB::sqrDist (nod_vector[start]->getData(), pnt->getData()));
+	size_t number (start);
+	double sqr_dist (distmin);
 
-	for (size_t i = start; i < end; i++) {
+	for (size_t i = start+1; i < end; i++) {
 		sqr_dist = MATHLIB::sqrDist (nod_vector[i]->getData(), pnt->getData());
 		if (sqr_dist < distmin) {
 			distmin = sqr_dist;
@@ -88,7 +89,7 @@ void* threadGetDist (void *ptr)
 	}
 
 	thread_param->_number = number;
-	thread_param->_sqr_dist = sqr_dist;
+	thread_param->_sqr_dist = distmin;
 
 	if (number == std::numeric_limits<size_t>::max()) return (void*)(-1);
 	return (void*)(number);
@@ -1028,7 +1029,7 @@ void CFEMesh::ConstructGrid2_Test()
             }
 		 }
          elem->SetNeighbors(Neighbors0);
-         
+
 		 if (elem->geo_type == MshElemType::LINE) //YD
          {
             size_t ii (0);
@@ -1760,16 +1761,16 @@ void CFEMesh::ConstructGrid2_Test()
 **************************************************************************/
 long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
 {
+	const size_t nodes_in_usage (static_cast<size_t>(NodesInUsage()));
 #ifdef HAVE_PTHREADS
 	/* thread version */
-	const size_t nodes_in_usage (static_cast<size_t>(NodesInUsage()));
 	pthread_t thread0, thread1, thread2, thread3;
 	int iret0, iret1, iret2, iret3;
 
 	ThreadParameter *thread_param0 (new ThreadParameter (pnt, 0, static_cast<size_t>(nodes_in_usage/4.0), nod_vector));
-	ThreadParameter *thread_param1 (new ThreadParameter(pnt, static_cast<size_t>(nodes_in_usage/4.0+1), static_cast<size_t>(nodes_in_usage/2.0), nod_vector));
-	ThreadParameter *thread_param2 (new ThreadParameter(pnt, static_cast<size_t>(nodes_in_usage/2.0+1), static_cast<size_t>(3*nodes_in_usage/4.0), nod_vector));
-	ThreadParameter *thread_param3 (new ThreadParameter(pnt, static_cast<size_t>(3.0*nodes_in_usage/4.0+1), nodes_in_usage, nod_vector));
+	ThreadParameter *thread_param1 (new ThreadParameter(pnt, static_cast<size_t>(nodes_in_usage/4.0), static_cast<size_t>(nodes_in_usage/2.0), nod_vector));
+	ThreadParameter *thread_param2 (new ThreadParameter(pnt, static_cast<size_t>(nodes_in_usage/2.0), static_cast<size_t>(3*nodes_in_usage/4.0), nod_vector));
+	ThreadParameter *thread_param3 (new ThreadParameter(pnt, static_cast<size_t>(3.0*nodes_in_usage/4.0), nodes_in_usage, nod_vector));
 
 	thread_param0->_id = 0;
 	thread_param1->_id = 1;
@@ -1800,9 +1801,9 @@ long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
 			return thread_param2->_number;
 	return thread_param3->_number;
 #else
-	double sqr_dist(0.0), distmin(std::numeric_limits<double>::max());
-	long number(-1);
-	for (size_t i = 0; i < nodes_in_usage; i++) {
+	double sqr_dist(0.0), distmin(MATHLIB::sqrDist (nod_vector[0]->getData(), pnt->getData()));
+	size_t number(0);
+	for (size_t i = 1; i < nodes_in_usage; i++) {
 		sqr_dist = MATHLIB::sqrDist (nod_vector[i]->getData(), pnt->getData());
 		if (sqr_dist < distmin) {
 			distmin = sqr_dist;

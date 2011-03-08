@@ -674,8 +674,6 @@ void CRFProcess::Create()
             pcs_primary_function_name[i]);        //OK
          m_bc_group->Set(this, Shift[i]);
 
-
-
          bc_group_list.push_back(m_bc_group);     //Useless, to be removed. WW
          m_bc_group = NULL;
          //OK}

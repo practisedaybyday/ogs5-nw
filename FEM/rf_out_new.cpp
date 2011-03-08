@@ -75,26 +75,22 @@ Programing:
 01/2004 OK Implementation
 **************************************************************************/
 COutput::COutput() :
-GeoInfo (GEOLIB::GEODOMAIN), ProcessInfo(), _id (0),
-out_amplifier(0.0), m_msh(NULL), nSteps(-1), _new_file_opened (false),
-dat_type_name ("TECPLOT")
+	GeoInfo(GEOLIB::GEODOMAIN), ProcessInfo(), _id(0), out_amplifier(0.0),
+	m_msh(NULL), nSteps(-1), _new_file_opened(false), dat_type_name("TECPLOT")
 {
-   tim_type_name = "TIMES";
-   m_pcs = NULL;
-   vtk = NULL;                                    //NW
+	tim_type_name = "TIMES";
+	m_pcs = NULL;
+	vtk = NULL; //NW
 }
-
 
 COutput::COutput(size_t id) :
-GeoInfo (GEOLIB::GEODOMAIN), ProcessInfo(), _id (id),
-out_amplifier(0.0), m_msh(NULL), nSteps(-1), _new_file_opened (false),
-dat_type_name ("TECPLOT")
+	GeoInfo(GEOLIB::GEODOMAIN), ProcessInfo(), _id(id), out_amplifier(0.0),
+	m_msh(NULL), nSteps(-1), _new_file_opened(false), dat_type_name("TECPLOT")
 {
-   tim_type_name = "TIMES";
-   m_pcs = NULL;
-   vtk = NULL;                                    //NW
+	tim_type_name = "TIMES";
+	m_pcs = NULL;
+	vtk = NULL; //NW
 }
-
 
 void COutput::init ()
 {

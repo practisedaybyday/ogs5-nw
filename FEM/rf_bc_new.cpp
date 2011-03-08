@@ -916,13 +916,8 @@ last modification:
 
       PrimaryVariable primary_variable (convertPrimaryVariable(_pcs_pv_name));
       std::list<CBoundaryCondition*>::const_iterator p_bc = bc_list.begin();
-      size_t cnt (0);
       double setup_time (cputime (0.0));
       while (p_bc != bc_list.end()) {
-		if (cnt % 100 == 0) {
-			std::cout << "CBoundaryConditionsGroup::Set " << bc_list.size() << " boundary conditions, " << cnt << " are done, took "
-					<< cputime(setup_time) << " sec " << std::endl;
-		}
 		m_bc = *p_bc;
 		if (m_bc->time_dep_interpol) //WW/CB
 		{
@@ -944,7 +939,6 @@ last modification:
 					m_node_value->geo_node_number
 							= m_msh->GetNODOnPNT(
 									static_cast<const GEOLIB::Point*> (m_bc->getGeoObj()));
-					cnt++;
 				}
 
 				m_node_value->conditional = cont;
