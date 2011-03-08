@@ -917,7 +917,6 @@ last modification:
 
       PrimaryVariable primary_variable (convertPrimaryVariable(_pcs_pv_name));
       std::list<CBoundaryCondition*>::const_iterator p_bc = bc_list.begin();
-      double setup_time (cputime (0.0));
       while (p_bc != bc_list.end()) {
 		m_bc = *p_bc;
 		if (m_bc->time_dep_interpol) //WW/CB
