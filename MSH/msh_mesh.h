@@ -145,7 +145,6 @@ namespace Mesh_Group
          std::ios::pos_type GMSReadTIN(std::ifstream*);
          //
          void ConstructGrid();
-		 void ConstructGrid2_Test(); //KR
          void GenerateHighOrderNodes();
          //
          void RenumberNodesForGlobalAssembly();

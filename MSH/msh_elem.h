@@ -236,7 +236,8 @@ namespace Mesh_Group
          }
          int GetElementFaceNodes(int Face, int *FacesNode);
          //------------------------------------------------------------------
-         // Neighbors
+       
+		 // Neighbors
          void SetNeighbors(vec<CElem*>& ele_neighbors)
          {
             for (int i = 0; i < nfaces; i++)
@@ -256,7 +257,7 @@ namespace Mesh_Group
             return neighbors[index];
          }
 
-         //------------------------------------------------------------------
+		 //------------------------------------------------------------------
          // Coordinates transform
          void FillTransformMatrix();
          void FillTransformMatrix(int noneed);
