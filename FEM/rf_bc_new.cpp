@@ -35,6 +35,7 @@ extern void remove_white_space(std::string*);
 // MathLib
 #include "mathlib.h"
 
+#ifndef _WIN32
 #include <cstdio>
 #include <cstdlib>
 #include <sys/time.h>
@@ -57,7 +58,7 @@ double cputime(double x)
 
 	return usr + sys - x;
 }
-
+#endif
 
 
 CBoundaryConditionNode::CBoundaryConditionNode()
