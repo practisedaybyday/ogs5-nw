@@ -22,7 +22,7 @@ void MeshQualityNormalisedVolumes::check()
 	double max_volume (0.0);
 
 	for (size_t k(0); k < msh_elem.size(); k++) {
-		double volume (msh_elem[k]->getVolume());
+		double volume (msh_elem[k]->calcVolume());
 		if (volume > max_volume) max_volume = volume;
 		if (volume < sqrt(fabs(std::numeric_limits<double>::min()))) {
 			std::cout << "volume of element " << k << " is " << volume << std::endl;
