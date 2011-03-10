@@ -695,9 +695,16 @@ void InterpolationAlongPolyline(CGLPolyline *plyL, std::vector<double>& bcNodalV
 
 	// Interpolate
 	size_t number_of_nodes(bcNodalValue.size()), i;
-	for (i = 0; i < number_of_nodes; i++)
+	for (i = 0; i < number_of_nodes; i++) {
 		bcNodalValue[plyL->getOrderedPoints()[i]] = csp->interpolation(
 				plyL->getSBuffer()[i]);
+	}
+	std::cout << "MATHLIB::CubicSpline results: " << std::endl;
+	for (size_t k(0); k<plyL->getSBuffer().size(); k++) {
+		std::cout << "\t" << plyL->getSBuffer()[k] << ", " << bcNodalValue[k] << std::endl;
+	}
+	std::cout << "end MATHLIB::CubicSpline results" << std::endl;
+
 
 	// Release the memory
 	delete csp;

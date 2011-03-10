@@ -698,10 +698,10 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
       {
          sp_name = cp_vec[j]->compname;
          idummy = -1;
-         // HS, PCSGet not needed any more. 
+         // HS, PCSGet not needed any more.
          // m_pcs = PCSGet("MASS_TRANSPORT", sp_name);
-         // new style: 
-         m_pcs = cp_vec[cp_name_2_idx[sp_name]]->getProcess(); 
+         // new style:
+         m_pcs = cp_vec[cp_name_2_idx[sp_name]]->getProcess();
          if (m_pcs != NULL)
          {
             // HS, not needed any more
@@ -793,12 +793,6 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
          //------------------------------------------------------------------
          if (s_geo_type.compare("POINT") == 0)
          {
-            // 06/2010 TF switch to new GEOLIB
-            //				CGLPoint* m_geo_point = NULL; // make new GEO point
-            //				m_geo_point = GEOGetPointByName(s_geo_name);//Get GEO point by name
-            //				if (m_geo_point)
-            //					l = m_msh->GetNODOnPNT(m_geo_point); // + ShiftInNodeVector; // find MSH point number stored in l
-
             const std::vector<GEOLIB::Point*>* pnt_vec (geo_obj.getPointVec(unique_name));
             l = m_msh->GetNODOnPNT ((*pnt_vec)[m_krd->NoReactGeoID[j]]);
             m_krd->is_a_CCBC[l] = true;
@@ -4838,7 +4832,7 @@ void CKinReactData::Aromaticum(long nonodes)
    long node;
    double conc, lambda = 0.0;                     //OK411
    // int pcsindex = 0;
-   CRFProcess* m_pcs; 
+   CRFProcess* m_pcs;
    int varindex = 0;
    int nospec = (int) sp_varind.size();
 
@@ -4848,7 +4842,7 @@ void CKinReactData::Aromaticum(long nonodes)
          "Aromaticum") == 0)
       {
          // pcsindex = sp_pcsind[sp];
-         m_pcs = cp_vec[sp]->getProcess(); 
+         m_pcs = cp_vec[sp]->getProcess();
          varindex = sp_varind[sp];
          break;
       }

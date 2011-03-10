@@ -14,7 +14,9 @@ namespace GEOLIB {
 
 Polyline::Polyline(const std::vector<Point*>& pnt_vec) :
 	GeoObject(), _ply_pnts(pnt_vec)
-{}
+{
+	_length.push_back (0.0);
+}
 
 Polyline::Polyline(const Polyline& ply) :
 	GeoObject(), _ply_pnts (ply._ply_pnts)
