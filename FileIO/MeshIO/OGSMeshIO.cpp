@@ -36,7 +36,7 @@ void OGSMeshIO::write(Mesh_Group::CFEMesh const * mesh, std::ofstream &out) cons
 	std::vector<bool> non_null_element (ele_vector_size, true);
 	size_t non_null_elements (0);
 	for (size_t i(0); i < ele_vector_size; i++) {
-		if ((mesh->ele_vector[i])->getVolume() < epsilon) {
+		if ((mesh->ele_vector[i])->calcVolume() < epsilon) {
 			non_null_element[i] = false;
 		} else {
 			non_null_elements++;

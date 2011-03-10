@@ -4174,7 +4174,7 @@ long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
          patch_area = 0.0;
          //....................................................................
          // triangle neighbor nodes
-         for (size_t j = 0; j < (int) m_nod->connected_elements.size(); j++)
+         for (size_t j = 0; j < m_nod->connected_elements.size(); j++)
          {
             e = m_nod->connected_elements[j];
             m_ele = ele_vector[e];
