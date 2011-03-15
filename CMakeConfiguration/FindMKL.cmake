@@ -26,24 +26,38 @@ if (NOT MKL_FOUND)
 		# Tell if the unix system is on 64-bit base
 		if(CMAKE_SIZEOF_VOID_P MATCHES "8")
 		set (MKL_LIB_PATH "${CMAKE_SOURCE_DIR}/../Libs/MKL/64")
+			find_library(MKL_SOLVER_LIBRARY
+			    NAMES mkl_solver_lp64 PATHS ${MKL_LIB_PATH} )
+			find_library(MKL_INTEL_LIBRARY
+			    NAMES mkl_intel_lp64 PATHS ${MKL_LIB_PATH} )
+			find_library(MKL_CORE_LIBRARY
+			    NAMES mkl_core PATHS ${MKL_LIB_PATH} )
+			set(MKL_LIBRARIES ${MKL_SOLVER_LIBRARY} ${MKL_INTEL_LIBRARY} ${MKL_CORE_LIBRARY} CACHE STRING "Found MKL Libraries")
 		    if(CMAKE_C_COMPILER MATCHES "icc")
-		        find_library(MKL_LIBRARIES
-				    NAMES mkl_solver_lp64 mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread
-				    PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/64 )
+		        find_library(MKL_INTEL_THREAD_LIBRARY
+				    NAMES mkl_intel_thread PATHS ${MKL_LIB_PATH} )
+				find_library(MKL_IOMP5_LIBRARY
+				    NAMES iomp5 PATHS ${MKL_LIB_PATH} )
+				find_library(MKL_PTHREAD_LIBRARY
+				    NAMES pthread PATHS ${MKL_LIB_PATH} )
+				set(MKL_LIBRARIES ${MKL_LIBRARIES} ${MKL_INTEL_THREAD_LIBRARY} ${MKL_IOMP5_LIBRARY} ${MKL_PTHREAD_LIBRARY})
 		    else(CMAKE_C_COMPILER MATCHES "icc")
-				find_library(MKL_SOLVER_LIBRARY
-				    NAMES mkl_solver_lp64 PATHS ${MKL_LIB_PATH} )
-				find_library(MKL_INTEL_LIBRARY
-				    NAMES mkl_intel_lp64 PATHS ${MKL_LIB_PATH} )
 				find_library(MKL_GNU_THREAD_LIBRARY
 				    NAMES mkl_gnu_thread PATHS ${MKL_LIB_PATH} )
-				find_library(MKL_CORE_LIBRARY
-				    NAMES mkl_core PATHS ${MKL_LIB_PATH} )
+				set(MKL_LIBRARIES ${MKL_LIBRARIES} ${MKL_GNU_THREAD_LIBRARY})
 		    endif(CMAKE_C_COMPILER MATCHES "icc") 
+		
 		else (CMAKE_SIZEOF_VOID_P MATCHES "8")
-			find_library(MKL_LIBRARIES
-				NAMES lis-32 mkl_solver mkl_intel mkl_gnu_thread mkl_core
-				PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/32 )	
+			set (MKL_LIB_PATH "${CMAKE_SOURCE_DIR}/../Libs/MKL/32")
+			find_library(MKL_SOLVER_LIBRARY
+				NAMES mkl_solver PATHS ${MKL_LIB_PATH} )
+			find_library(MKL_INTEL_LIBRARY
+				NAMES mkl_intel PATHS ${MKL_LIB_PATH} )
+			find_library(MKL_GNU_THREAD_LIBRARY
+				NAMES mkl_gnu_thread PATHS ${MKL_LIB_PATH} )	
+			find_library(MKL_CORE_LIBRARY
+				NAMES mkl_core PATHS ${MKL_LIB_PATH} )
+			set(MKL_LIBRARIES ${MKL_SOLVER_LIBRARY} ${MKL_INTEL_LIBRARY} ${MKL_GNU_THREAD_LIBRARY} ${MKL_CORE_LIBRARY} CACHE STRING "Found MKL Libraries")
 		endif (CMAKE_SIZEOF_VOID_P MATCHES "8")	
 	endif ( UNIX )
 
