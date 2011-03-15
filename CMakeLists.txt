@@ -3,12 +3,8 @@
 # Specify minimum CMake version
 cmake_minimum_required(VERSION 2.6)	# or set to 2.4 for older systems (like JUGENE...)
 
-# Project name
-IF(OGS_USE_QT)
-	PROJECT( OGS-${OGS_VERSION_MAJOR}-GUI )
-ELSE(OGS_USE_QT)
-	PROJECT( OGS-FEM-${OGS_VERSION_MAJOR}${PRJ_EXT} )
-ENDIF(OGS_USE_QT)
+# Project name is set later
+PROJECT(tmp)
 
 ### CMake setup ###
 INCLUDE(CMakeConfiguration/CMakeSetup.cmake)
@@ -200,6 +196,13 @@ IF(OGS_USE_QT)
    MESSAGE (STATUS  "Configuring for OGS with GUI" )	
    SET(OGS_FEM ON )
    INCLUDE(GUI.cmake )
+ENDIF(OGS_USE_QT)
+
+# Project name
+IF(OGS_USE_QT)
+	PROJECT( OGS-${OGS_VERSION_MAJOR}-GUI )
+ELSE(OGS_USE_QT)
+	PROJECT( OGS-FEM-${OGS_VERSION_MAJOR}${PRJ_EXT} )
 ENDIF(OGS_USE_QT)
 
 # Create Configure.h
