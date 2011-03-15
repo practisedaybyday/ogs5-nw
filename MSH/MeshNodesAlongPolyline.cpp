@@ -17,10 +17,10 @@
 namespace Mesh_Group {
 
 MeshNodesAlongPolyline::MeshNodesAlongPolyline(
-		const GEOLIB::Polyline* ply, const Mesh_Group::CFEMesh* mesh) :
+		GEOLIB::Polyline const * const ply, Mesh_Group::CFEMesh const * mesh) :
 	_ply(ply), _mesh(mesh), _linear_nodes (0)
 {
-	const std::vector<CNode*> &mesh_nodes (mesh->getNodeVector());
+	std::vector<CNode*> const& mesh_nodes (mesh->getNodeVector());
 	double min_edge_length (mesh->getMinEdgeLength());
 
 	size_t n_linear_order_nodes (mesh->GetNodesNumber (false));
@@ -33,7 +33,7 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 	while (_msh_node_ids.empty()) {
 		// loop over all line segments of the polyline
 		for (size_t k=0; k<ply->getNumberOfPoints()-1; k++) {
-			double act_length_of_ply (ply->getLength(k));
+			double act_length_of_ply(ply->getLength(k));
 			// loop over all nodes
 			for (size_t j=0; j<n_nodes; j++) {
 				double dist, lambda;
@@ -65,12 +65,9 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 
 #ifndef NDEBUG
 	std::cout << "*****" << std::endl;
-	std::cout << "linear nodes along polyline " << ply << "(min_edge_length = " << min_edge_length << "): " << std::endl;
-	for (size_t k(0); k<_linear_nodes; k++) std::cout << _msh_node_ids[k] << " " << std::flush;
-	std::cout << std::endl;
-	std::cout << "distances of linear nodes along polyline " << ply << "(min_edge_length = " << min_edge_length << "): " << std::endl;
+	std::cout << "distances of linear nodes along polyline " << *ply << "(min_edge_length = " << min_edge_length << "): " << std::endl;
 	for (size_t k(0); k<_dist_of_proj_node_from_ply_start.size(); k++)
-		std::cout << _dist_of_proj_node_from_ply_start[k] << " " << std::flush;
+		std::cout << "\t" << _msh_node_ids[k] << ", " << _dist_of_proj_node_from_ply_start[k] << std::endl;
 	std::cout << std::endl;
 	std::cout << "number of linear nodes along polyline " << ply << ": " << _dist_of_proj_node_from_ply_start.size() << ", number of higher order nodes: " << msh_node_higher_order_ids.size() << std::endl;
 #endif

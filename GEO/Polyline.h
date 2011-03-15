@@ -101,8 +101,7 @@ public:
 	std::vector<Point*> const& getPointsVec () const;
 
 	/**
-	 * returns the length of the polyline until the k-th line segment, employed by
-	 * class CFEMesh for searching along the polyline
+	 * returns the length of the polyline until the k-th line segment
 	 * @param k the k-th line segment
 	 * @return the length of the polyline until the k-th line segment
 	 */

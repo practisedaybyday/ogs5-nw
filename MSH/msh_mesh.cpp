@@ -1618,255 +1618,248 @@ long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
    //	}
    //}
 
-   /**************************************************************************
-    FEMLib-Method:
-    Task: Ermittelt den nahliegenden existierenden Knoten
-    Programing:
-    03/2005 OK Implementation (based on ExecuteSourceSinkMethod11 by CT)
-    07/2005 WW Node object is replaced
-    10/2005 OK test
-    **************************************************************************/
-   void CFEMesh::GetNODOnPLY(CGLPolyline* m_ply, std::vector<long>&msh_nod_vector) const
-   {
-      if (m_ply->point_vector.size() == 0)
-         return;
+/**************************************************************************
+ FEMLib-Method:
+ Task: Ermittelt den nahliegenden existierenden Knoten
+ Programing:
+ 03/2005 OK Implementation (based on ExecuteSourceSinkMethod11 by CT)
+ 07/2005 WW Node object is replaced
+ 10/2005 OK test
+ **************************************************************************/
+void CFEMesh::GetNODOnPLY(CGLPolyline* m_ply, std::vector<long>&msh_nod_vector) const
+{
+	if (m_ply->point_vector.size() == 0) return;
 
-      //	_min_edge_length = m_ply->epsilon;
+	//	_min_edge_length = m_ply->epsilon;
 
-      long j, k, l;
-      double pt1[3], line1[3], line2[3];
-      double mult_eps = 1.0;
-      double dist1p, dist2p;
-      // 07/2010 TF declare and initialize
-      double *length (new double[m_ply->point_vector.size()]);
-      double laenge;
-      long anz_relevant = 0;
-      typedef struct
-      {
-         long knoten;
-         long abschnitt;
-         double laenge;
-      } INFO;
-      INFO *relevant = NULL;
+	long j, k, l;
+	double pt1[3], line1[3], line2[3];
+	double mult_eps = 1.0;
+	double dist1p, dist2p;
+	// 07/2010 TF declare and initialize
+	double *length(new double[m_ply->point_vector.size()]);
+	double laenge;
+	long anz_relevant = 0;
+	typedef struct {
+		long knoten;
+		long abschnitt;
+		double laenge;
+	} INFO;
+	INFO *relevant = NULL;
 
-      // 07/2010 TF - variables only for swapping
-      //	long knoten_help;
-      //	double laenge_help;
-      m_ply->getSBuffer().clear();
-      m_ply->getIBuffer().clear();
-      msh_nod_vector.clear();
-      //
-      /* */
-      for (k = 0; k < (long) m_ply->point_vector.size() - 1; k++)
-      {
-         line1[0] = m_ply->point_vector[k]->x;
-         line1[1] = m_ply->point_vector[k]->y;
-         line1[2] = m_ply->point_vector[k]->z;
-         line2[0] = m_ply->point_vector[k + 1]->x;
-         line2[1] = m_ply->point_vector[k + 1]->y;
-         line2[2] = m_ply->point_vector[k + 1]->z;
-         length[k] = MCalcDistancePointToPoint(line2, line1);
-      }
+	// 07/2010 TF - variables only for swapping
+	//	long knoten_help;
+	//	double laenge_help;
+	m_ply->getSBuffer().clear();
+	m_ply->getIBuffer().clear();
+	msh_nod_vector.clear();
+	//
+	/* */
+	for (k = 0; k < (long) m_ply->point_vector.size() - 1; k++) {
+		line1[0] = m_ply->point_vector[k]->x;
+		line1[1] = m_ply->point_vector[k]->y;
+		line1[2] = m_ply->point_vector[k]->z;
+		line2[0] = m_ply->point_vector[k + 1]->x;
+		line2[1] = m_ply->point_vector[k + 1]->y;
+		line2[2] = m_ply->point_vector[k + 1]->z;
+		length[k] = MCalcDistancePointToPoint(line2, line1);
+	}
 
-      /* Wiederholen bis zumindest ein Knoten gefunden wurde */
-      while (anz_relevant == 0)
-      {
-         /* Schleife ueber alle Knoten */
-         for (j = 0; j < NodesInUsage(); j++)
-         {
-            /* Schleife ueber alle Punkte des Polygonzuges */
-            for (k = 0; k < (long) m_ply->point_vector.size() - 1; k++)
-            {
-               /* ??? */
-               pt1[0] = nod_vector[j]->X();
-               pt1[1] = nod_vector[j]->Y();
-               pt1[2] = nod_vector[j]->Z();
-               line1[0] = m_ply->point_vector[k]->x;
-               line1[1] = m_ply->point_vector[k]->y;
-               line1[2] = m_ply->point_vector[k]->z;
-               line2[0] = m_ply->point_vector[k + 1]->x;
-               line2[1] = m_ply->point_vector[k + 1]->y;
-               line2[2] = m_ply->point_vector[k + 1]->z;
-               /* Ist der Knoten nah am Polygonabschnitt? */
-               if (MCalcDistancePointToLine(pt1, line1, line2) <= mult_eps
-                  * m_ply->epsilon)
-               {
-                  /* Im folgenden wird mit der Projektion weitergearbeitet */
-                  MCalcProjectionOfPointOnLine(pt1, line1, line2, pt1);
-                  /* Abstand des Punktes zum ersten Punkt des Polygonabschnitts */
-                  dist1p = MCalcDistancePointToPoint(line1, pt1);
-                  /* Abstand des Punktes zum zweiten Punkt des Polygonabschnitts */
-                  dist2p = MCalcDistancePointToPoint(line2, pt1);
-                  /* Ist der Knoten innerhalb des Intervalls? */
-                  /* bis rf3807: if ((length[k] - dist1p - dist2p + MKleinsteZahl)/(length[k] + dist1p + dist2p + MKleinsteZahl) > -MKleinsteZahl){ */
-                  if ((dist1p + dist2p - length[k]) <= mult_eps
-                     * m_ply->epsilon)
-                  {
-                     // For boundara conditions. WW
-                     m_ply->getSBuffer().push_back(dist1p);
-                                                  //Section index
-                     m_ply->getIBuffer().push_back(k);
-                     anz_relevant++;
-                     /* Feld anpassen */
-                     //nodes_all = (long *) Realloc(nodes_all,sizeof(long)*anz_relevant);
-                     relevant = (INFO *) Realloc(relevant, sizeof(INFO)
-                        * anz_relevant);
-                     /* Ablegen von Knotennummer und Position */
-                     //nodes_all[anz_relevant-1] = j;
-                     msh_nod_vector.push_back(nod_vector[j]->GetIndex());
-                     /* Position ermitteln */
-                     laenge = 0.;
-                     for (l = 0; l < k; l++)
-                        laenge += length[l];
-                     /* Ablegen von Knotennummer und Position */
-                     relevant[anz_relevant - 1].knoten = j;
-                     relevant[anz_relevant - 1].laenge = laenge + dist1p;
-                     /* Suche am Polygon abbrechen, naechster Knoten */
-                     k = (long) m_ply->point_vector.size();
-                  }
-               }                                  /* endif */
-            }                                     /* Ende Schleife ueber Polygonabschnitte */
-         }                                        /* Ende Schleife ueber Knoten */
-         if (anz_relevant == 0)
-            mult_eps *= 2.;
-      }                                           /* Ende Schleife Wiederholungen */
-      if (mult_eps > 1.)
-         std::cout << "!!! Epsilon increased in sources!" << std::endl;
+	/* Wiederholen bis zumindest ein Knoten gefunden wurde */
+	while (anz_relevant == 0) {
+		/* Schleife ueber alle Knoten */
+		for (j = 0; j < NodesInUsage(); j++) {
+			/* Schleife ueber alle Punkte des Polygonzuges */
+			for (k = 0; k < (long) m_ply->point_vector.size() - 1; k++) {
+				/* ??? */
+				pt1[0] = nod_vector[j]->X();
+				pt1[1] = nod_vector[j]->Y();
+				pt1[2] = nod_vector[j]->Z();
+				line1[0] = m_ply->point_vector[k]->x;
+				line1[1] = m_ply->point_vector[k]->y;
+				line1[2] = m_ply->point_vector[k]->z;
+				line2[0] = m_ply->point_vector[k + 1]->x;
+				line2[1] = m_ply->point_vector[k + 1]->y;
+				line2[2] = m_ply->point_vector[k + 1]->z;
+				/* Ist der Knoten nah am Polygonabschnitt? */
+				if (MCalcDistancePointToLine(pt1, line1, line2) <= mult_eps
+						* m_ply->epsilon) {
+					/* Im folgenden wird mit der Projektion weitergearbeitet */
+					MCalcProjectionOfPointOnLine(pt1, line1, line2, pt1);
+					/* Abstand des Punktes zum ersten Punkt des Polygonabschnitts */
+					dist1p = MCalcDistancePointToPoint(line1, pt1);
+					/* Abstand des Punktes zum zweiten Punkt des Polygonabschnitts */
+					dist2p = MCalcDistancePointToPoint(line2, pt1);
+					/* Ist der Knoten innerhalb des Intervalls? */
+					/* bis rf3807: if ((length[k] - dist1p - dist2p + MKleinsteZahl)/(length[k] + dist1p + dist2p + MKleinsteZahl) > -MKleinsteZahl){ */
+					if ((dist1p + dist2p - length[k]) <= mult_eps
+							* m_ply->epsilon) {
+						// For boundara conditions. WW
+						m_ply->getSBuffer().push_back(dist1p);
+						//Section index
+						m_ply->getIBuffer().push_back(k);
+						anz_relevant++;
+						/* Feld anpassen */
+						//nodes_all = (long *) Realloc(nodes_all,sizeof(long)*anz_relevant);
+						relevant = (INFO *) Realloc(relevant, sizeof(INFO)
+								* anz_relevant);
+						/* Ablegen von Knotennummer und Position */
+						//nodes_all[anz_relevant-1] = j;
+						msh_nod_vector.push_back(nod_vector[j]->GetIndex());
+						/* Position ermitteln */
+						laenge = 0.;
+						for (l = 0; l < k; l++)
+							laenge += length[l];
+						/* Ablegen von Knotennummer und Position */
+						relevant[anz_relevant - 1].knoten = j;
+						relevant[anz_relevant - 1].laenge = laenge + dist1p;
+						/* Suche am Polygon abbrechen, naechster Knoten */
+						k = (long) m_ply->point_vector.size();
+					}
+				} /* endif */
+			} /* Ende Schleife ueber Polygonabschnitte */
+		} /* Ende Schleife ueber Knoten */
+		if (anz_relevant == 0) mult_eps *= 2.;
+	} /* Ende Schleife Wiederholungen */
+	if (mult_eps > 1.) std::cout << "!!! Epsilon increased in sources!"
+			<< std::endl;
 
-      delete [] length;
+	delete[] length;
 
-      //	/* Schleife ueber alle Knoten; sortieren nach Reihenfolge auf dem Abschnitt (zyklisches Vertauschen, sehr lahm)*/
-      //	int weiter;
-      //	double w1, w2;
-      //	do {
-      //		weiter = 0;
-      //		for (k = 0; k < anz_relevant - 1; k++) {
-      //			w1 = relevant[k].laenge;
-      //			w2 = relevant[k + 1].laenge;
-      //			if (w1 > w2) { /* Die Eintraege vertauschen */
-      //				// 07/2010 TF
-      //				std::swap (relevant[k].knoten, relevant[k+1].knoten);
-      //				std::swap (relevant[k].laenge, relevant[k+1].laenge);
-      ////				knoten_help = relevant[k].knoten;
-      ////				laenge_help = relevant[k].laenge;
-      ////				relevant[k].knoten = relevant[k + 1].knoten;
-      ////				relevant[k].laenge = relevant[k + 1].laenge;
-      ////				relevant[k + 1].knoten = knoten_help;
-      ////				relevant[k + 1].laenge = laenge_help;
-      //				weiter = 1;
-      //			}
-      //		}
-      //	} while (weiter);
-      relevant = (INFO*) Free(relevant);
+	//	/* Schleife ueber alle Knoten; sortieren nach Reihenfolge auf dem Abschnitt (zyklisches Vertauschen, sehr lahm)*/
+	//	int weiter;
+	//	double w1, w2;
+	//	do {
+	//		weiter = 0;
+	//		for (k = 0; k < anz_relevant - 1; k++) {
+	//			w1 = relevant[k].laenge;
+	//			w2 = relevant[k + 1].laenge;
+	//			if (w1 > w2) { /* Die Eintraege vertauschen */
+	//				// 07/2010 TF
+	//				std::swap (relevant[k].knoten, relevant[k+1].knoten);
+	//				std::swap (relevant[k].laenge, relevant[k+1].laenge);
+	////				knoten_help = relevant[k].knoten;
+	////				laenge_help = relevant[k].laenge;
+	////				relevant[k].knoten = relevant[k + 1].knoten;
+	////				relevant[k].laenge = relevant[k + 1].laenge;
+	////				relevant[k + 1].knoten = knoten_help;
+	////				relevant[k + 1].laenge = laenge_help;
+	//				weiter = 1;
+	//			}
+	//		}
+	//	} while (weiter);
+	relevant = (INFO*) Free(relevant);
 
-      //WW
-      m_ply->GetPointOrderByDistance();
-      //----------------------------------------------------------------------
+	//WW
+	m_ply->GetPointOrderByDistance();
+	//----------------------------------------------------------------------
 #ifdef MSH_CHECK
-      cout << "MSH nodes at polyline:" << endl;
-      for(j=0;j<(int)msh_nod_vector.size();j++)
-      {
-         cout << msh_nod_vector [j] << endl;
-      }
+	cout << "MSH nodes at polyline:" << endl;
+	for(j=0;j<(int)msh_nod_vector.size();j++)
+	{
+		cout << msh_nod_vector [j] << endl;
+	}
 #endif
-      //----------------------------------------------------------------------
-   }
+	//----------------------------------------------------------------------
+}
 
-   /**************************************************************************
-    FEMLib-Method:
-    Task: Ermittelt den nahliegenden existierenden Knoten
-    Programing:
-    03/2005 OK Implementation (based on ExecuteSourceSinkMethod11 by CT)
-    07/2005 WW Node object is replaced
-    10/2005 OK test
-    03/2010 TF adaption to new data GEO-structures, changed the algorithm
-    **************************************************************************/
-   void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply,
-      std::vector<size_t>& msh_nod_vector)
-   {
-      msh_nod_vector.clear();
+/**************************************************************************
+FEMLib-Method:
+Task: Ermittelt den nahliegenden existierenden Knoten
+Programing:
+03/2005 OK Implementation (based on ExecuteSourceSinkMethod11 by CT)
+07/2005 WW Node object is replaced
+10/2005 OK test
+03/2010 TF adaption to new data GEO-structures, changed the algorithm
+**************************************************************************/
+void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply,
+		std::vector<size_t>& msh_nod_vector)
+{
+	msh_nod_vector.clear();
 
-      // search for nodes along polyline in previous computed polylines
-      std::vector<MeshNodesAlongPolyline>::const_iterator it (_mesh_nodes_along_polylines.begin());
-      for (; it != _mesh_nodes_along_polylines.end(); it++)
-      {
-         if (it->getPolyline() == ply)
-         {
-            const std::vector<size_t> node_ids (it->getNodeIDs ());
+	// search for nodes along polyline in previous computed polylines
+	std::vector<MeshNodesAlongPolyline>::const_iterator it(
+			_mesh_nodes_along_polylines.begin());
+	for (; it != _mesh_nodes_along_polylines.end(); it++) {
+		if (it->getPolyline() == ply) {
+			const std::vector<size_t> node_ids(it->getNodeIDs());
 
-            size_t n_valid_nodes (0);
-            if (useQuadratic)
-               n_valid_nodes = node_ids.size();
-            else
-               n_valid_nodes = it->getNumberOfLinearNodes();
+			size_t n_valid_nodes(0);
+			if (useQuadratic)
+				n_valid_nodes = node_ids.size();
+			else n_valid_nodes = it->getNumberOfLinearNodes();
 
-            for (size_t k(0); k<n_valid_nodes; k++)
-               msh_nod_vector.push_back (node_ids[k]);
-            std::cout << "****** access " << msh_nod_vector.size() << " buffered nodes for polyline " << ply << std::endl;
-            return;
-         }
-      }
+			for (size_t k(0); k < n_valid_nodes; k++)
+				msh_nod_vector.push_back(node_ids[k]);
+			std::cout << "****** access " << msh_nod_vector.size()
+					<< " buffered nodes for polyline " << ply << std::endl;
+			return;
+		}
+	}
 
-      // compute nodes (and supporting points) along polyline
-      _mesh_nodes_along_polylines.push_back (MeshNodesAlongPolyline (ply, this));
-      const std::vector<size_t> node_ids (_mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size()-1].getNodeIDs ());
+	// compute nodes (and supporting points) along polyline
+	_mesh_nodes_along_polylines.push_back(MeshNodesAlongPolyline(ply, this));
+	const std::vector<size_t> node_ids(
+					_mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size() - 1].getNodeIDs());
 
-      size_t n_valid_nodes (0);
-      if (useQuadratic)
-         n_valid_nodes = node_ids.size();
-      else
-         n_valid_nodes = _mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size()-1].getNumberOfLinearNodes();
+	size_t n_valid_nodes(0);
+	if (useQuadratic)
+		n_valid_nodes = node_ids.size();
+	else n_valid_nodes
+			= _mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size()
+					- 1].getNumberOfLinearNodes();
 
-      for (size_t k(0); k<n_valid_nodes; k++)
-         msh_nod_vector.push_back (node_ids[k]);
-      std::cout << "****** computed " << n_valid_nodes << " nodes for polyline " << ply << " - " << NodesInUsage() << std::endl;
-   }
+	for (size_t k(0); k < n_valid_nodes; k++)
+		msh_nod_vector.push_back(node_ids[k]);
+	std::cout << "****** computed " << n_valid_nodes << " nodes for polyline "
+			<< ply << " - " << NodesInUsage() << std::endl;
+}
 
-   const MeshNodesAlongPolyline& CFEMesh::GetMeshNodesAlongPolyline(const GEOLIB::Polyline* const ply)
-   {
-      // search for nodes along polyline in previous computed polylines
-      std::vector<MeshNodesAlongPolyline>::const_iterator it (_mesh_nodes_along_polylines.begin());
-      for (; it != _mesh_nodes_along_polylines.end(); it++)
-      {
-         if (it->getPolyline() == ply)
-         {
-            return *it;
-         }
-      }
-      // compute nodes (and supporting points for interpolation) along polyline
-      _mesh_nodes_along_polylines.push_back (MeshNodesAlongPolyline (ply, this));
-      return _mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size()-1];
-   }
+const MeshNodesAlongPolyline& CFEMesh::GetMeshNodesAlongPolyline(const GEOLIB::Polyline* const ply)
+{
+  // search for nodes along polyline in previous computed polylines
+  std::vector<MeshNodesAlongPolyline>::const_iterator it (_mesh_nodes_along_polylines.begin());
+  for (; it != _mesh_nodes_along_polylines.end(); it++)
+  {
+	 if (it->getPolyline() == ply)
+	 {
+		return *it;
+	 }
+  }
+  // compute nodes (and supporting points for interpolation) along polyline
+  _mesh_nodes_along_polylines.push_back (MeshNodesAlongPolyline (ply, this));
+  return _mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size()-1];
+}
 
-   void CFEMesh::getPointsForInterpolationAlongPolyline (const GEOLIB::Polyline* const ply, std::vector<double>& points)
-   {
-      // search for nodes along polyline in previous computed polylines
-      std::vector<MeshNodesAlongPolyline>::const_iterator it (_mesh_nodes_along_polylines.begin());
-      for (; it != _mesh_nodes_along_polylines.end(); it++)
-      {
-         if (it->getPolyline() == ply)
-         {
-            // copy points from object into vector
-            for (size_t k(0); k<it->getDistOfProjNodeFromPlyStart().size(); k++)
-               points.push_back (it->getDistOfProjNodeFromPlyStart()[k]);
-            return;
-         }
-      }
+void CFEMesh::getPointsForInterpolationAlongPolyline (const GEOLIB::Polyline* const ply, std::vector<double>& points)
+{
+  // search for nodes along polyline in previous computed polylines
+  std::vector<MeshNodesAlongPolyline>::const_iterator it (_mesh_nodes_along_polylines.begin());
+  for (; it != _mesh_nodes_along_polylines.end(); it++)
+  {
+	 if (it->getPolyline() == ply)
+	 {
+		// copy points from object into vector
+		for (size_t k(0); k<it->getDistOfProjNodeFromPlyStart().size(); k++)
+		   points.push_back (it->getDistOfProjNodeFromPlyStart()[k]);
+		return;
+	 }
+  }
 
-      // compute nodes (and points according the nodes) along polyline
-      _mesh_nodes_along_polylines.push_back (MeshNodesAlongPolyline (ply, this));
-      // copy supporting points from object into vector
-      for (size_t k(0); k<(_mesh_nodes_along_polylines.back()).getDistOfProjNodeFromPlyStart().size(); k++)
-         points.push_back (it->getDistOfProjNodeFromPlyStart()[k]);
-   }
+  // compute nodes (and points according the nodes) along polyline
+  _mesh_nodes_along_polylines.push_back (MeshNodesAlongPolyline (ply, this));
+  // copy supporting points from object into vector
+  for (size_t k(0); k<(_mesh_nodes_along_polylines.back()).getDistOfProjNodeFromPlyStart().size(); k++)
+	 points.push_back (it->getDistOfProjNodeFromPlyStart()[k]);
+}
 
-   void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& msh_nod_vector)
-   {
-      std::vector<size_t> tmp_msh_node_vector;
-      GetNODOnPLY (ply, tmp_msh_node_vector);
-      for (size_t k(0); k<tmp_msh_node_vector.size(); k++)
-         msh_nod_vector.push_back (tmp_msh_node_vector[k]);
-   }
+void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& msh_nod_vector)
+{
+  std::vector<size_t> tmp_msh_node_vector;
+  GetNODOnPLY (ply, tmp_msh_node_vector);
+  for (size_t k(0); k<tmp_msh_node_vector.size(); k++)
+	 msh_nod_vector.push_back (tmp_msh_node_vector[k]);
+}
 
    /**************************************************************************
     MSHLib-Method:
@@ -4174,7 +4167,7 @@ long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
          patch_area = 0.0;
          //....................................................................
          // triangle neighbor nodes
-         for (size_t j = 0; j < (int) m_nod->connected_elements.size(); j++)
+         for (size_t j = 0; j < m_nod->connected_elements.size(); j++)
          {
             e = m_nod->connected_elements[j];
             m_ele = ele_vector[e];

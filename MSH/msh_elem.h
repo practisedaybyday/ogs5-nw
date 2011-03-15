@@ -94,7 +94,7 @@ namespace Mesh_Group
             return area;
          }                                        //CMCD for <3D elements with varying area
 
-         double getVolume () const;
+         double calcVolume () const;
 
          double GetVolume() const
          {
