@@ -1,5 +1,5 @@
 
-if (NOT MKL_FOUND)
+#if (NOT MKL_FOUND)
 	
 	#Extract MKL
 	FIND_PATH (MKL_INCLUDE_DIR_FOUND mkl.h ${PROJECT_SOURCE_DIR}/../Libs/MKL/include)
@@ -20,37 +20,44 @@ if (NOT MKL_FOUND)
 
 	include(LibFindMacros)
 	
-	find_path( MKL_INCLUDE_DIR
-		NAMES mkl.h
-		PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/include)
+	find_path( MKL_INCLUDE_DIR NAMES mkl.h
+		   PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/include)
 
 	if ( UNIX )
 		# Tell if the unix system is on 64-bit base
 		if(CMAKE_SIZEOF_VOID_P MATCHES "8")
+		set (MKL_LIB_PATH "${CMAKE_SOURCE_DIR}/../Libs/MKL/64")
 		    if(CMAKE_C_COMPILER MATCHES "icc")
 		        find_library(MKL_LIBRARIES
 				    NAMES mkl_solver_lp64 mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread
 				    PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/64 )
 		    else(CMAKE_C_COMPILER MATCHES "icc")
-			    find_library(MKL_LIBRARIES
-				    NAMES mkl_solver_lp64 mkl_intel_lp64 mkl_gnu_thread mkl_core
-				    PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/64 )	
+				find_library(MKL_SOLVER_LIBRARY
+				    NAMES mkl_solver_lp64 PATHS ${MKL_LIB_PATH} )
+				find_library(MKL_INTEL_LIBRARY
+				    NAMES mkl_intel_lp64 PATHS ${MKL_LIB_PATH} )
+				find_library(MKL_GNU_THREAD_LIBRARY
+				    NAMES mkl_gnu_thread PATHS ${MKL_LIB_PATH} )
+				find_library(MKL_CORE_LIBRARY
+				    NAMES mkl_core PATHS ${MKL_LIB_PATH} )
 		    endif(CMAKE_C_COMPILER MATCHES "icc") 
 		else (CMAKE_SIZEOF_VOID_P MATCHES "8")
 			find_library(MKL_LIBRARIES
-				NAMES mkl_solver mkl_intel mkl_gnu_thread mkl_core
+				NAMES lis-32 mkl_solver mkl_intel mkl_gnu_thread mkl_core
 				PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/32 )	
 		endif (CMAKE_SIZEOF_VOID_P MATCHES "8")	
 	endif ( UNIX )
+
+	set(MKL_LIBRARIES ${MKL_SOLVER_LIBRARY} ${MKL_INTEL_LIBRARY} ${MKL_GNU_THREAD_LIBRARY} ${MKL_CORE_LIBRARY} CACHE INTERNAL "MKL Libraries")
 
 	# Set the include dir variables and the libraries and let libfind_process do the rest.
 	# NOTE: Singular variables for this library, plural for libraries this this lib depends on.
 	if (NOT MKL_LIBRARIES STREQUAL "MKL_LIBRARIES-NOTFOUND" AND NOT MKL_INCLUDE_DIR STREQUAL "MKL_INCLUDE_DIR-NOTFOUND")
 		set(MKL_PROCESS_INCLUDES MKL_INCLUDE_DIR)
-		set(MKL_PROCESS_LIBS MKL_LIBRARIES)
+		set(MKL_PROCESS_LIBS ${MKL_LIBRARIES})
 		libfind_process(MKL)
 	else (NOT MKL_LIBRARIES STREQUAL "MKL_LIBRARIES-NOTFOUND" AND NOT MKL_INCLUDE_DIR STREQUAL "MKL_INCLUDE_DIR-NOTFOUND")
 		message (STATUS "Warning: MKL not found!")
 	endif (NOT MKL_LIBRARIES STREQUAL "MKL_LIBRARIES-NOTFOUND" AND NOT MKL_INCLUDE_DIR STREQUAL "MKL_INCLUDE_DIR-NOTFOUND")
 	
-endif (NOT MKL_FOUND)
+#endif (NOT MKL_FOUND)
