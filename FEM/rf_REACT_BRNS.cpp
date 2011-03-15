@@ -366,7 +366,7 @@ void REACT_BRNS::RUN(double time_step)
 {
    long i;
                                                   // this is the last call to the chemical solver and
-   if (myProblem->getEndTime() <= myProblem->getCurrentTime() )
+   if (myProblem->getEndTime() < myProblem->getCurrentTime() + time_step )
    {
       rt_BRNS[0] = -1;                            // reaction rates should be printed by BRNS.dll for the whole domain
       for (i=1; i < nNodes; i++)                  // -1: delete a potentially existing rate file
