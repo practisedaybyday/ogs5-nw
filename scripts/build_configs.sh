@@ -31,6 +31,7 @@ do
 
 	# Run CMake
 	../scripts/cmake.ogs.sh -D$config_cmake=ON -DOGS_DONT_USE_QT=ON -DMPI_INCLUDE_PATH=/opt/openmpi-1.4.1/include ..
+	../scripts/cmake.ogs.sh ..
 
 	# Build
 	make -j
