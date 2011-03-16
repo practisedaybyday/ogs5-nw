@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cfloat>
 #include <iostream>
+#include <algorithm>
 
 // GEOLib
 //#include "geo_lib.h"

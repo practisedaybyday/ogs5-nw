@@ -25,12 +25,10 @@ void MeshQualityNormalisedVolumes::check()
 		double volume (msh_elem[k]->calcVolume());
 		if (volume > max_volume) max_volume = volume;
 		if (volume < sqrt(fabs(std::numeric_limits<double>::min()))) {
-			std::cout << "volume of element " << k << " is " << volume << std::endl;
-			std::cout << "points of tetrahedron: " << std::endl;
-			std::cout << "\t" << 0 << " " << GEOLIB::Point((msh_elem[k]->GetNode(0))->getData()) << std::endl;
-			std::cout << "\t" << 1 << " " << GEOLIB::Point((msh_elem[k]->GetNode(1))->getData()) << std::endl;
-			std::cout << "\t" << 2 << " " << GEOLIB::Point((msh_elem[k]->GetNode(2))->getData()) << std::endl;
-			std::cout << "\t" << 3 << " " << GEOLIB::Point((msh_elem[k]->GetNode(3))->getData()) << std::endl;
+			std::cout << "Error in MeshQualityNormalisedVolumes::check() - Volume of element is below double precision minimum value." << std::endl;
+			std::cout << "Points of " << MshElemType2String(msh_elem[k]->GetElementType()) << "-Element " << k << ": " << std::endl;
+			for (int i(0); i<msh_elem[k]->GetVertexNumber(); i++)
+				std::cout << "\t Node " << i << " " << GEOLIB::Point((msh_elem[k]->GetNode(i))->getData()) << std::endl;
 		}
 		_mesh_quality_messure[k] = volume;
 	}
