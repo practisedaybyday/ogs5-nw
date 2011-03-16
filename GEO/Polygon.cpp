@@ -6,6 +6,7 @@
  */
 
 #include <cstdlib> // for exit
+#include <cmath> // for M_PI
 
 #include "Polygon.h"
 
