@@ -79,10 +79,21 @@ std::string readPoints(std::istream &in, std::vector<Point*>* pnt_vec,
 			// read name of point
 			size_t pos (line.find("$NAME"));
 			if (pos != std::string::npos) { //OK
-				(*pnt_id_name_map)[line.substr (pos+6)] = id;
-//				std::cout << "name: " << line.substr (pos+6) << ", id: " << id << std::endl;
+				size_t end_pos ((line.substr (pos+6)).find(" "));
+				if (end_pos != std::string::npos) {
+					(*pnt_id_name_map)[line.substr (pos+6, end_pos)] = id;
+//					std::cout << "* name: " << line.substr (pos+6, end_pos) << ", id: " << id << std::endl;
+				} else {
+					(*pnt_id_name_map)[line.substr (pos+6)] = id;
+//					std::cout << "name: " << line.substr (pos+6) << ", id: " << id << std::endl;
+				}
+
 			}
 
+			size_t id_pos (line.find("$ID"));
+			if (id_pos != std::string::npos) {
+				std::cout << "WARNING / ERROR: found tag $ID - please use tag $NAME for reading point names" << cnt << std::endl;
+			}
 			cnt++;
 		}
 		getline(in, line);
@@ -212,7 +223,8 @@ std::string readPolyline(std::istream &in,
 std::string readPolylines(std::istream &in, std::vector<Polyline*>* ply_vec,
 		std::map<std::string,size_t>& ply_vec_names, std::vector<Point*>& pnt_vec,
 		bool zero_based_indexing, const std::vector<size_t>& pnt_id_map,
-		const std::string &path) {
+		const std::string &path)
+{
 	if (!in) {
 		std::cerr << "*** readPolylines input stream error " << std::endl;
 		return std::string("");

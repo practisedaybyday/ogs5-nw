@@ -99,6 +99,9 @@ REACT_BRNS *m_vec_BRNS;
 #endif
 #include "problem.h"
 
+// MathLib
+#include "LinearInterpolation.h"
+
 using namespace std;
 
 /*-------------------- ITPACKV    ---------------------------*/
@@ -10472,55 +10475,61 @@ void CRFProcess::UpdateTransientBC()
          of_primary.close();
       }
    }
-   //-------------------------------------------------------------------------------------
-   if (bc_transient_index.size() == 0)
-      return;
-   bool valid = false;
-   long end_i = 0;
-   double t_fac = 0.;
-   std::vector<double> node_value;
 
-   for (size_t i = 0; i < bc_transient_index.size(); i++)
-   {
-      CBoundaryCondition *bc = bc_node[bc_transient_index[i]];
-                                                  // TF
-      CGLPolyline *polyline = GEOGetPLYByName (bc->getGeoName());
-      long start_i = bc_transient_index[i];
-      if (i == bc_transient_index.size() - 1)
-         end_i = (long) bc_node.size();
-      else
-         end_i = bc_transient_index[i + 1];
-      node_value.resize(end_i - start_i);
-      // Piecewise linear distributed.
-      for (size_t k = 0; k < (bc->getDistribedBC()).size(); k++)
-      {
-         for (size_t j = 0; j < polyline->point_vector.size(); j++)
-         {
-            if ((bc->getPointsWithDistribedBC())[k] == polyline->point_vector[j]->id)
-            {
-               if (fabs((bc->getDistribedBC())[k]) < MKleinsteZahl)
-                  (bc->getDistribedBC())[k] = 1.0e-20;
-               polyline->point_vector[j]->setPropert ((bc->getDistribedBC())[k]);
-               CFunction* m_fct = FCTGet(bc->getPointsFCTNames()[k]);
-               if (m_fct)
-                  t_fac = m_fct->GetValue(aktuelle_zeit, &valid);
-               else
-                  cout
-                     << "Warning in CBoundaryConditionsGroup - no FCT data"
-                     << endl;
-               if (valid)
-                  polyline->point_vector[j]->setPropert (polyline->point_vector[j]->getPropert()*t_fac);
-               break;
-            }
-         }
-      }
-      std::cout << "CRFProcess::UpdateTransientBC() for polyline: " << bc->getGeoName() << std::endl;
-      std::cout << "polyline.ibuffer.size(): " << polyline->getIBuffer().size() << std::endl;
-      std::cout << "polyline.getOrderedPoints().size(): " << polyline->getOrderedPoints().size() << std::endl;
-      InterpolationAlongPolyline(polyline, node_value);
-      for (long k = start_i; k < end_i; k++)
-      {
-         bc_node_value[k]->node_value = node_value[k - start_i];
+	// transient boundary condition
+	if (bc_transient_index.size() == 0) return;
+
+	bool valid = false;
+	long end_i = 0;
+	double t_fac = 0.;
+	std::vector<double> node_value;
+
+
+   for (size_t i = 0; i < bc_transient_index.size(); i++) {
+	   std::vector<double> interpolation_points;
+	   std::vector<double> interpolation_values;
+
+		CBoundaryCondition *bc = bc_node[bc_transient_index[i]];
+		long start_i = bc_transient_index[i];
+		if (i == bc_transient_index.size() - 1)
+			end_i = (long) bc_node.size();
+		else end_i = bc_transient_index[i + 1];
+
+		// fetch points (representing mesh nodes) along polyline for interpolation
+		std::vector<double> nodes_as_interpol_points;
+		GEOLIB::Polyline const* ply (static_cast<GEOLIB::Polyline const *> (bc->getGeoObj()));
+		m_msh->getPointsForInterpolationAlongPolyline (ply, nodes_as_interpol_points);
+
+		valid = false;
+		t_fac = 0.0;
+		// Piecewise linear distributed.
+		for (size_t i(0); i < bc->getDistribedBC().size(); i++) {
+			for (size_t j = 0; j < ply->getNumberOfPoints(); j++) {
+				if (bc->getPointsWithDistribedBC()[i] == ply->getPointID(j)) {
+					if (fabs(bc->getDistribedBC()[i]) < MKleinsteZahl)
+						bc->getDistribedBC()[i] = 1.0e-20;
+					interpolation_points.push_back (ply->getLength(j));
+					interpolation_values.push_back (bc->getDistribedBC()[i]);
+
+					CFunction* fct (FCTGet(bc->getPointsFCTNames()[i]));
+					if (fct)
+						t_fac = fct->GetValue(aktuelle_zeit, &valid);
+					else {
+						std::cout << "Warning in CBoundaryConditionsGroup - no FCT data" << std::endl;
+					}
+
+					if (valid)
+						interpolation_values[interpolation_values.size()-1] *= t_fac;
+
+					break;
+				}
+			}
+		}
+		std::vector<double> interpol_res;
+		MATHLIB::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, interpol_res);
+
+      for (long k = start_i; k < end_i; k++) {
+         bc_node_value[k]->node_value = interpol_res[k-start_i];
       }
    }
 }

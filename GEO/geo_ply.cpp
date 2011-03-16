@@ -691,6 +691,12 @@ void InterpolationAlongPolyline(CGLPolyline *plyL, std::vector<double>& bcNodalV
 	}
 
 	// Spline interpolation
+	std::cout << "MATHLIB::CubicSpline input data: " << std::endl;
+	for (size_t k(0); k<ss0.size(); k++) {
+		std::cout << "\t" << ss0[k] << " " << bVal[k] << std::endl;
+	}
+	std::cout << "end MATHLIB::CubicSpline input data" << std::endl;
+
 	MATHLIB::CubicSpline *csp = new MATHLIB::CubicSpline(ss0, bVal);
 
 	// Interpolate
@@ -701,7 +707,7 @@ void InterpolationAlongPolyline(CGLPolyline *plyL, std::vector<double>& bcNodalV
 	}
 	std::cout << "MATHLIB::CubicSpline results: " << std::endl;
 	for (size_t k(0); k<plyL->getSBuffer().size(); k++) {
-		std::cout << "\t" << plyL->getSBuffer()[k] << ", " << bcNodalValue[k] << std::endl;
+		std::cout << "\t" << plyL->getOrderedPoints()[k] << " " << plyL->getSBuffer()[k] << " " << bcNodalValue[plyL->getOrderedPoints()[k]] << " (bcNodalValue[" << plyL->getOrderedPoints()[k] << "])" << std::endl;
 	}
 	std::cout << "end MATHLIB::CubicSpline results" << std::endl;
 
@@ -812,6 +818,13 @@ void CGLPolyline::SortPointVectorByDistance() {
  04/2006 WW Fix a big for polyines have more than two points
  **************************************************************************/
 void CGLPolyline::GetPointOrderByDistance() {
+
+	std::cout << "CGLPolyline::GetPointOrderByDistance() polyline " << getName() << std::endl;
+	for (size_t k(0); k<sbuffer.size(); k++) {
+		std::cout << "\tsbuffer[" << k << "]: " << sbuffer[k] << ", ibuffer[" << k << "]: " << ibuffer[k] <<std::endl;
+	}
+
+
 	long number_of_nodes, i, l;
 	int j, k;
 
@@ -901,6 +914,10 @@ void CGLPolyline::GetPointOrderByDistance() {
 				OrderedPoint[k] = l;
 			}
 		}
+	}
+	std::cout << "CGLPolyline::GetPointOrderByDistance() polyline " << getName() << std::endl;
+	for (size_t k(0); k<OrderedPoint.size(); k++) {
+		std::cout << "OrderedPoint[" << k << "]: " << OrderedPoint[k] << ", sbuffer[" << k << "]: " << sbuffer[k] << ", ibuffer[" << k << "]: " << ibuffer[k] <<std::endl;
 	}
 }
 
