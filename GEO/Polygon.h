@@ -93,6 +93,9 @@ private:
 	AABB _aabb;
 };
 
-}
+GEOLIB::Polygon* createPolygonFromCircle (GEOLIB::Point const& middle_pnt, double radius,
+		std::vector<GEOLIB::Point*> & pnts, size_t resolution = 12);
+
+} // end namespace GEOLIB
 
 #endif /* POLYGON_H_ */

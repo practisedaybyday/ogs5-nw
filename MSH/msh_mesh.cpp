@@ -1791,8 +1791,10 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply,
 
 			for (size_t k(0); k < n_valid_nodes; k++)
 				msh_nod_vector.push_back(node_ids[k]);
+#ifndef NDEBUG
 			std::cout << "****** access " << msh_nod_vector.size()
 					<< " buffered nodes for polyline " << ply << std::endl;
+#endif
 			return;
 		}
 	}
@@ -1811,8 +1813,10 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply,
 
 	for (size_t k(0); k < n_valid_nodes; k++)
 		msh_nod_vector.push_back(node_ids[k]);
+#ifndef NDEBUG
 	std::cout << "****** computed " << n_valid_nodes << " nodes for polyline "
 			<< ply << " - " << NodesInUsage() << std::endl;
+#endif
 }
 
 const MeshNodesAlongPolyline& CFEMesh::GetMeshNodesAlongPolyline(const GEOLIB::Polyline* const ply)

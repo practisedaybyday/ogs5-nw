@@ -87,8 +87,13 @@ bool lineSegmentIntersect (const GEOLIB::Point& a, const GEOLIB::Point& b,
 		s[0] = a[0] + rhs[0] * (b[0] - a[0]);
 		s[1] = a[1] + rhs[0] * (b[1] - a[1]);
 		s[2] = a[2] + rhs[0] * (b[2] - a[2]);
+		// check z component
+		double z0 (a[2] - d[2]), z1(rhs[0]*(b[2]-a[2]) + rhs[1]*(d[2]-c[2]));
 		delete [] rhs;
-		return true;
+		if (std::fabs (z0-z1) < eps)
+			return true;
+		else
+			return false;
 	} else delete [] rhs;
 	return false;
 }

@@ -50,6 +50,8 @@ private:
 	 * triangles of the triangulation (maybe in the wrong orientation)
 	 */
 	std::list<GEOLIB::Triangle> _triangles;
+
+	MATHLIB::Orientation _original_orient;
 };
 
 } // end namespace MATHLIB

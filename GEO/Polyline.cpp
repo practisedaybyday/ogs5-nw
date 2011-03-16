@@ -50,7 +50,7 @@ void Polyline::addPoint(size_t point_id)
 		double act_dist (sqrt(MATHLIB::sqrDist (_ply_pnts[_ply_pnt_ids[n_pnts-1]], _ply_pnts[point_id])));
 		double dist_until_now (0.0);
 		if (n_pnts > 1)
-			dist_until_now = _length[n_pnts - 2];
+			dist_until_now = _length[n_pnts - 1];
 
 		_length.push_back (dist_until_now + act_dist);
 	}
