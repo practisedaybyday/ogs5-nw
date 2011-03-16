@@ -1202,39 +1202,19 @@ void CBoundaryConditionsGroup::Set(CRFProcess* m_pcs, int ShiftInNodeVector,
 
 				if (m_polyline) {
 					//WW
-					if (m_bc->getProcessDistributionType()
-							== FiniteElement::LINEAR) {
-						//WW
-						if (m_polyline->getType() == 100)
-							m_msh->GetNodesOnArc(m_polyline, nodes_vector);
-						else {
-							// *** REMOVE CANDIDATE
-							m_msh->GetNODOnPLY(m_polyline, nodes_vector);
+					if (m_bc->getProcessDistributionType() == FiniteElement::LINEAR) {
+						// TF
+						double msh_min_edge_length = m_msh->getMinEdgeLength();
+						m_msh->setMinEdgeLength(m_polyline->epsilon);
+						std::vector<size_t> my_nodes_vector;
+						GEOLIB::Polyline const* ply (static_cast<GEOLIB::Polyline const*> (m_bc->getGeoObj()));
+						m_msh->GetNODOnPLY(ply, my_nodes_vector);
+						m_msh->setMinEdgeLength(msh_min_edge_length);
 
-							double msh_min_edge_length =
-									m_msh->getMinEdgeLength();
-							m_msh->setMinEdgeLength(m_polyline->epsilon);
-							std::vector<size_t> my_nodes_vector;
+						nodes_vector.clear();
+						for (size_t k(0); k < my_nodes_vector.size(); k++)
+							nodes_vector.push_back(my_nodes_vector[k]);
 
-							m_msh->GetNODOnPLY(
-									static_cast<const GEOLIB::Polyline*> (m_bc->getGeoObj()),
-									my_nodes_vector);
-							m_msh->setMinEdgeLength(msh_min_edge_length);
-
-							nodes_vector.clear();
-							for (size_t k(0); k < my_nodes_vector.size(); k++)
-								nodes_vector.push_back(my_nodes_vector[k]);
-
-							// for some benchmarks we need the vector entries sorted by index
-							std::vector<size_t> perm;
-							for (size_t k(0); k < my_nodes_vector.size(); k++)
-								perm.push_back(k);
-							Quicksort<long> (nodes_vector, 0,
-									nodes_vector.size(), perm);
-						}
-
-						node_value.resize(nodes_vector.size());
-						//InterpolationAlongPolyline(m_polyline, node_value);
 						m_pcs->bc_transient_index.push_back(
 								(long) m_pcs->bc_node.size());
 						for (size_t i = 0; i < nodes_vector.size(); i++) {

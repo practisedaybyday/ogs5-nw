@@ -61,13 +61,13 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 	}
 
 	// sort the (linear) nodes along the polyline according to their distances
-//	Quicksort<double> (_dist_of_proj_node_from_ply_start, 0, _dist_of_proj_node_from_ply_start.size(), _msh_node_ids);
+	Quicksort<double> (_dist_of_proj_node_from_ply_start, 0, _dist_of_proj_node_from_ply_start.size(), _msh_node_ids);
 
 #ifndef NDEBUG
 	std::cout << "*****" << std::endl;
 	std::cout << "distances of linear nodes along polyline " << *ply << "(min_edge_length = " << min_edge_length << "): " << std::endl;
 	for (size_t k(0); k<_dist_of_proj_node_from_ply_start.size(); k++)
-		std::cout << "\t" << _msh_node_ids[k] << ", " << _dist_of_proj_node_from_ply_start[k] << std::endl;
+		std::cout << "\t" << _msh_node_ids[k] << " " << _dist_of_proj_node_from_ply_start[k] << std::endl;
 	std::cout << std::endl;
 	std::cout << "number of linear nodes along polyline " << ply << ": " << _dist_of_proj_node_from_ply_start.size() << ", number of higher order nodes: " << msh_node_higher_order_ids.size() << std::endl;
 #endif
