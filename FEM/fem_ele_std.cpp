@@ -3175,7 +3175,47 @@ namespace FiniteElement
          }
          else
          {
+<<<<<<< HEAD
             diff /= (FluidProp->SpecificHeatCapacity()*FluidProp->Density());
+=======
+            diff = heat_conductivity_tensor[0] / (FluidProp->SpecificHeatCapacity()*FluidProp->Density());
+         }
+      }                                           //mass
+      else if (PcsType==M)
+      {
+         double *advection_dispersion_tensor = MediaProp->MassDispersionTensorNew(ip,0); // SB, BG
+         switch (pcs->m_num->ele_supg_method_diffusivity)
+         {
+            case 1:                               // min
+            {
+               double min_diff = advection_dispersion_tensor[0];
+               for (int i=1; i<dim; i++)
+               {
+                  if (advection_dispersion_tensor[i]<min_diff) min_diff = advection_dispersion_tensor[i];
+               }
+               diff = min_diff;
+            }
+            break;
+            case 2:                               // magnitude
+            {
+               double tmp_diff = 0.0;
+               for (int i=0; i<dim; i++)
+               {
+                  tmp_diff = pow(advection_dispersion_tensor[i], 2.0);
+               }
+               diff = sqrt(tmp_diff);
+            }
+            break;
+            default:                              //0 or any invalid number: max. in dispersion coefficient
+            {
+               double max_diff = advection_dispersion_tensor[0];
+               for (int i=1; i<dim; i++)
+               {
+                  if (advection_dispersion_tensor[i]>max_diff) max_diff = advection_dispersion_tensor[i];
+               }
+               diff = max_diff;
+            }
+>>>>>>> Version 5.1.01 by Bastian Graupner
          }
 	  }
 
