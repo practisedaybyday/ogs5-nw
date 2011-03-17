@@ -22,18 +22,31 @@ void MeshQualityNormalisedVolumes::check()
 	double max_volume (0.0);
 
 	for (size_t k(0); k < msh_elem.size(); k++) {
-		double volume (msh_elem[k]->calcVolume());
-		if (volume > max_volume) max_volume = volume;
-		if (volume < sqrt(fabs(std::numeric_limits<double>::min()))) {
-			std::cout << "Error in MeshQualityNormalisedVolumes::check() - Volume of element is below double precision minimum value." << std::endl;
-			std::cout << "Points of " << MshElemType2String(msh_elem[k]->GetElementType()) << "-Element " << k << ": " << std::endl;
-			for (int i(0); i<msh_elem[k]->GetVertexNumber(); i++)
-				std::cout << "\t Node " << i << " " << GEOLIB::Point((msh_elem[k]->GetNode(i))->getData()) << std::endl;
+		MshElemType::type elem_type (msh_elem[k]->GetElementType());
+		if (elem_type != MshElemType::LINE
+				&& elem_type != MshElemType::TRIANGLE
+				&& elem_type != MshElemType::QUAD) {
+			double volume (msh_elem[k]->calcVolume());
+			if (volume > max_volume) max_volume = volume;
+			if (volume < sqrt(fabs(std::numeric_limits<double>::min()))) {
+				std::cout << "Error in MeshQualityNormalisedVolumes::check() - Volume of element is below double precision minimum value." << std::endl;
+				std::cout << "Points of " << MshElemType2String(msh_elem[k]->GetElementType()) << "-Element " << k << ": " << std::endl;
+				for (int i(0); i<msh_elem[k]->GetVertexNumber(); i++)
+					std::cout << "\t Node " << i << " " << GEOLIB::Point((msh_elem[k]->GetNode(i))->getData()) << std::endl;
+			}
+			_mesh_quality_messure[k] = volume;
 		}
-		_mesh_quality_messure[k] = volume;
 	}
+
 	for (size_t k(0); k < msh_elem.size(); k++) {
-		_mesh_quality_messure[k] /= max_volume;
+		MshElemType::type elem_type (msh_elem[k]->GetElementType());
+		if (elem_type != MshElemType::LINE
+			&& elem_type != MshElemType::TRIANGLE
+			&& elem_type != MshElemType::QUAD) {
+			_mesh_quality_messure[k] /= max_volume;
+		} else {
+			_mesh_quality_messure[k] = 1.1; // element has no valid value
+		}
 	}
 }
 
