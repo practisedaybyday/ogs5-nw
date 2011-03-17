@@ -42,6 +42,9 @@ set( SOURCES
 	timer.h
 	tools.h
 	vtk.h
+	Eclipse.h
+	DUMUX.h
+	geochemcalc.h
 	GeoInfo.h
 	ProcessInfo.h
 	DistributionInfo.h
@@ -86,6 +89,8 @@ set( SOURCES
 	timer.cpp
 	tools.cpp
 	vtk.cpp
+	Eclipse.cpp
+	DUMUX.cpp
 )
 
 ## New sparse class. WW

@@ -27,6 +27,7 @@ class CTimeDiscretization
       double this_stepsize;
       double relative_error;
       double absolute_error;
+      double reject_factor; //for automatic timestep control: BG
    private:
       double h_min;
       double h_max;

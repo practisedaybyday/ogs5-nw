@@ -44,6 +44,8 @@ class CSourceTermGroup;
 class CSourceTerm;
 class CNodeValue;
 class Problem;                                    //WW
+class CECLIPSEData;		//BG Coupling to Eclipse
+class CDUMUXData;		//BG Coupling to DuMux
 using FiniteElement::CFiniteElementStd;
 using FiniteElement::CFiniteElementVec;
 using FiniteElement::ElementMatrix;
@@ -85,6 +87,36 @@ typedef struct
    long index_node;
    double water_st_value;
 } Water_ST_GEMS;                                  // HS 11.2008
+
+typedef struct
+{
+	std::string name;      //fluid name
+	double temperature;
+	double pressure;
+	double density;   //density g/cm^3
+	double viscosity; //viscosity mPa.s
+	double volume;    //volume cm^3
+	double mass;      //weight g
+	double CO2;       //mole of CO2
+	double H2O;       //mole of H2O
+	double NaCl;      //mole of NaCl
+}Phase_Properties;
+
+typedef struct
+{
+	double B;
+	double C;
+	double D;
+	double E;
+	double F;
+	double b;
+	double G;
+	double Vc;
+	double V2,V3,V5,V6;
+	double Tc,Pc;
+	double M;
+	int id;
+}VirialCoefficients;
 
 //MB moved inside the Process object
 //extern vector<double*>nod_val_vector; //OK
@@ -136,6 +168,8 @@ class CRFProcess : public ProcessInfo
       friend class FiniteElement::ElementValue;
       friend class ::CSourceTermGroup;
       friend class ::Problem;
+      friend class CECLIPSEData; //BG
+      friend class CDUMUXData; //SBG
       // Assembler
       CFiniteElementStd *fem;
       // Time step control
@@ -209,6 +243,11 @@ class CRFProcess : public ProcessInfo
       //....................................................................
       // 1-GEO
    public:
+      void CO2_H2O_NaCl_VLE_isobaric(double T, double P, Phase_Properties &vapor, Phase_Properties &liquid, Phase_Properties &solid, int f);  // BG, DL Calculate phase transition of CO2
+	  void CO2_H2O_NaCl_VLE_isochoric(Phase_Properties &vapor, Phase_Properties &liquid, Phase_Properties &solid, int f);  // BG, DL Calculate phase transition of CO2
+	  void Phase_Transition_CO2(CRFProcess *m_pcs, int Step);  // BG, NB Calculate phase transition of CO2
+	  int Phase_Transition_Model; //BG, NB flag of Phase_Transition_Model (1...CO2-H2O-NaCl)
+	  void CalculateFluidDensitiesAndViscositiesAtNodes(CRFProcess *m_pcs);  // BG 11/2010 Sets the initial conditions for multi phase flow if Phase_Transition_CO2 is used
       /**
        * Sets the value for pointer _problem.
        * @param problem the value for _problem
@@ -341,6 +380,15 @@ class CRFProcess : public ProcessInfo
       void Clean_Water_ST_vec(void);
       void Add_GEMS_Water_ST(long idx, double val);
       void SetSTWaterGemSubDomain(int myrank);
+      // ECLIPSE interface:
+      CDUMUXData *DuMuxData; //SBG
+      CECLIPSEData *EclipseData; //BG
+      void CalGPVelocitiesfromECLIPSE(std::string path, int timestep, int phase_index, std::string phase);
+	  std::string simulator; // which solver to use, i.e. GeoSys, ECLIPSE or DuMux
+      std::string simulator_path; // path for executable of external simulator
+      std::string simulator_model_path; // path to exclipse input data file (*.data), with extension
+      bool PrecalculatedFiles;     // defines if Eclipse or dumux is calculated or if precalculated files are used
+      std::string simulator_well_path; // path to well schedule ( *.well), with extension
       //....................................................................
       // Construction / destruction
       char pcs_name[MAX_ZEILE];                   //string pcs_name;
