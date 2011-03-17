@@ -5,7 +5,7 @@
  */
 
 #include "MeshQualityNormalisedArea.h"
-#include "Mathlib.cpp"
+#include "mathlib.cpp"
 
 namespace Mesh_Group {
 
