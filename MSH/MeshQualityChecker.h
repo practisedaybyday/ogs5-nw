@@ -23,7 +23,7 @@ public:
 
 	virtual void check () = 0;
 	const std::vector<double>& getMeshQuality () const { return _mesh_quality_messure; }
-	void getHistogramm (std::vector<size_t>& histogramm) const;
+	virtual void getHistogramm (std::vector<size_t>& histogramm) const;
 
 protected:
 	CFEMesh const * const _mesh;

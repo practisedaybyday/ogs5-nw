@@ -23,7 +23,7 @@ void MeshQualityShortestLongestRatio::check()
 	for (size_t k(0); k < msh_elem.size(); k++) {
 		switch (msh_elem[k]->GetElementType()) {
 		case MshElemType::LINE:
-			// if you know a reasonable criterion let me know (TF)
+			_mesh_quality_messure[k] = 1.1;
 			break;
 		case MshElemType::TRIANGLE: {
 			GEOLIB::Point* a(new GEOLIB::Point(

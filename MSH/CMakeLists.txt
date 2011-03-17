@@ -13,6 +13,7 @@ set( SOURCES
 	MeshQualityChecker.h
 	MeshQualityShortestLongestRatio.h
 	MeshQualityNormalisedVolumes.h
+	MeshQualityEquiAngleSkew.h
 	
 	msh_core.cpp
 	msh_edge.cpp
@@ -27,6 +28,7 @@ set( SOURCES
 	MeshQualityChecker.cpp
 	MeshQualityShortestLongestRatio.cpp
 	MeshQualityNormalisedVolumes.cpp
+	MeshQualityEquiAngleSkew.cpp
 	#msh_pnt.cpp		# references removed elements.h nodes.h
 	
 	Delaunay/DT_Matrix.h
