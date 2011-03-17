@@ -6,6 +6,12 @@
  */
 
 #include <cstdlib> // for exit
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #include "Polygon.h"
 
 // MathLib
@@ -369,7 +375,6 @@ GEOLIB::Polygon* createPolygonFromCircle (GEOLIB::Point const& middle_pnt, doubl
 	}
 
 	// create points
-	double M_PI = 2 * acos(0.0);
 	double angle (2.0 * M_PI / resolution);
 	for (size_t k(0); k<resolution; k++) {
 		GEOLIB::Point *pnt (new GEOLIB::Point(middle_pnt.getData()));
