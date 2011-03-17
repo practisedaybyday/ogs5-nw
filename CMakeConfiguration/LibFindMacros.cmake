@@ -75,6 +75,9 @@ macro (libfind_process PREFIX)
       endif (${PREFIX}_FIND_REQUIRED)
     endif (${PREFIX}_FOUND)
   endif (NOT ${PREFIX}_FOUND)
+
+  # Cache libraries variable
+  SET (${PREFIX}_LIBRARIES ${${PREFIX}_LIBRARIES} CACHE STRING "${PREFIX} libraries")
 endmacro (libfind_process)
 
 macro(libfind_library PREFIX basename)
