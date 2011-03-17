@@ -575,7 +575,7 @@ void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
 	std::vector<std::string> geo_station_names;
 
 	for (std::vector<std::string>::const_iterator it (selected_geometries.begin());
-		it != selected_geometries.end(); it++) {
+		it != selected_geometries.end(); ++it) {
 		if ((geo.getPointVecObj (*it))->getType() == GEOLIB::PointVec::POINT) {
 			geo_names.push_back (*it);
 		} else if ((geo.getPointVecObj (*it))->getType() == GEOLIB::PointVec::STATION) {
@@ -586,7 +586,7 @@ void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
 	size_t pnt_offset (0);
 	// fetch points and polylines and add them to the vectors, add points to the QuadTree
 	for (std::vector<std::string>::const_iterator it (geo_names.begin());
-			it != geo_names.end(); it++) {
+			it != geo_names.end(); ++it) {
 		// get data from geo
 #ifndef NDEBUG
 		std::cout << "fetch geometrical data for " << *it << " " << std::flush;
@@ -614,7 +614,7 @@ void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
 	}
 
 	for (std::vector<std::string>::const_iterator it (geo_station_names.begin());
-		it != geo_station_names.end(); it++) {
+		it != geo_station_names.end(); ++it) {
 		// get data from geo
 #ifndef NDEBUG
 		std::cout << "fetch station data for " << *it << " " << std::flush;
