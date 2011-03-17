@@ -302,7 +302,17 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
             density_pcs_name_vector.push_back(arg1);
             if (T_Process) density_pcs_name_vector.push_back(arg2);
          }
+         if(density_model==18)			// BG, NB calculated node densities from the phase transition model
+         {
+         }
+
          //      mfp_file->ignore(MAX_ZEILE,'\n');
+         in.clear();
+         continue;
+      }
+      if(line_string.find("$TEMPERATURE")!=string::npos) { // subkeyword found 11/2010, BG, NB, DL, SB
+         in.str(GetLineFromFile1(mfp_file));
+         in >> T_0 >> T_0;
          in.clear();
          continue;
       }
@@ -369,6 +379,10 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
             if (T_Process) viscosity_pcs_name_vector.push_back(arg2);
 
          }
+         if(viscosity_model==18)			// BG, NB calculated node viscosities from the phase transition model
+         { 
+         }
+
          //    mfp_file->ignore(MAX_ZEILE,'\n');
          in.clear();
          continue;
@@ -757,7 +771,6 @@ double CFluidProperties::Density(double* variables)
          case 11:                                 //Peng-Robinson EOS for different fluids NB 4.9.05
             if(!T_Process) variables[1]=T_0;
             density = rkeos(variables[1],variables[0],fluid_id);
-
             break;
          case 12:                                 // Redlich-Kwong EOS for different fluids NB 4.9.05
             if(!T_Process) variables[1]=T_0;
@@ -771,6 +784,10 @@ double CFluidProperties::Density(double* variables)
          case 14:                                 //AKS empiricaly extented Ideal gas Eq for real gas // it has used with fractional mass transport Eq.//
             density = MixtureSubProperity(5, (long)  variables[2], variables[0], variables[1])* variables[0] / (CalCopressibility((long)  variables[2], variables[0], variables[1] )*variables[1] * GAS_CONSTANT) ;
             break;
+	  case 18:	//using calculated densities at nodes from the phase transition model, BG, NB 11/2010
+		  variables[2] = phase;
+		  density = GetElementValueFromNodes(int(variables[0]), int(variables[1]), int(variables[2]), 0); // hand over element index, Gauss point index and phase index
+		  break;
          default:
             std::cout << "Error in CFluidProperties::Density: no valid model" << std::endl;
             break;
@@ -842,6 +859,99 @@ double CFluidProperties::Density(double* variables)
    return density;
 }
 
+/*-------------------------------------------------------------------------
+GeoSys - Function: GetElementValueFromNodes
+Task: Interpolates node values like density or viscosity to the elements (if GPIndex < 0) or to element gauss points
+Return: interpolated variable
+Programming: 11/2010 BG
+Modification:
+-------------------------------------------------------------------------*/
+double CFluidProperties::GetElementValueFromNodes(long ElementIndex, int GPIndex, int PhaseIndex, int VariableIndex) {
+	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
+	CElem *m_ele = NULL;
+	CNode* m_node = NULL;
+	CRFProcess *m_pcs;
+	double var, variable;
+	int variable_index, nNodes;
+	double distance, weight, sum_weights;
+	double *gravity_centre;
+	Math_Group::vec <long>vec_nod_index(8);
+
+	variable = 0;
+
+	m_pcs= PCSGet("MULTI_PHASE_FLOW"); 
+	//check if PHASE_TRANSITION is used for the process
+	if ((density_model == 18) || (viscosity_model == 18)) {
+		if (m_pcs->Phase_Transition_Model != 1) {
+			cout << "The Phase_Transition_Model should be used together with the density and viscosity model 18 !" << endl;
+			cout << "The run is terminated now ..." << endl;
+			system("Pause");
+			exit(0);
+		}
+	}
+
+	m_ele = m_msh->ele_vector[ElementIndex]; // get element
+	//if GPIndex > 0 -> interpolation to GP if not then interpolation to the Element centre
+	if (PhaseIndex == 0) {
+		 switch(VariableIndex){
+			 case 0:		// Density
+				variable_index = m_pcs->GetNodeValueIndex("DENSITY1");
+				break;
+			 case 1:		// Viscosity
+				variable_index = m_pcs->GetNodeValueIndex("VISCOSITY1");
+				break;
+		 }
+	}
+	else {
+		 switch(VariableIndex){
+			 case 0:		// Density
+				variable_index = m_pcs->GetNodeValueIndex("DENSITY2");
+				break;
+			 case 1:		// Viscosity
+				variable_index = m_pcs->GetNodeValueIndex("VISCOSITY2");
+				break;
+		 }
+	}
+
+	if (GPIndex > -1) {
+		//interpolate density to gauss point
+		if (m_ele->GetMark()) { // Marked for use
+			// Configure Element for interpolation of node velocities to GP velocities
+			//Fem_Ele_Std->ConfigElement(m_ele);
+			variable = Fem_Ele_Std->InterpolatePropertyToGausspoint(GPIndex, m_pcs, variable_index);
+		}
+	}
+	else {
+		distance =  weight = sum_weights = 0.0;
+		if (m_ele->GetElementType() == 0)
+			nNodes = m_ele->GetNodesNumber(true);
+		else
+			nNodes = m_ele->GetNodesNumber(false);
+		m_ele->GetNodeIndeces(vec_nod_index);
+
+		for (long i = 0; i < int(nNodes); i++) { // go through list of connected nodes
+			//Get the connected node
+			m_node = m_msh->nod_vector[vec_nod_index[i]];
+			//calculate distance between the node and the barycentre
+			gravity_centre = m_ele->GetGravityCenter();
+			distance =  (gravity_centre[0] - m_node->X())*(gravity_centre[0] - m_node->X());
+			distance += (gravity_centre[1] - m_node->Y())*(gravity_centre[1] - m_node->Y());
+			distance += (gravity_centre[2] - m_node->Z())*(gravity_centre[2] - m_node->Z());
+			distance =  sqrt(distance);
+
+			//Weight of each face depending on distance
+			weight = (1.0 / distance);
+			// Sum of weights
+			sum_weights += weight;
+			//Density
+			var = m_pcs->GetNodeValue(int(m_node->GetIndex()), variable_index);
+			variable += var * weight;
+		}
+		variable = variable / sum_weights;
+	}
+	//cout << "Variable: " << variable << endl;
+	return variable;
+}
 
 /*************************************************************************
  ROCKFLOW - Funktion: MATCalcFluidDensityMethod8
@@ -1096,12 +1206,14 @@ double CFluidProperties::Viscosity(double* variables)
          density = Density(mfp_arguments);        //TODO: (NB) store density (and viscosity) as secondary variable
                                                   //NB
          viscosity = Fluid_Viscosity(density,mfp_arguments[1],mfp_arguments[0],fluid_id);
-
          break;
-
       case 10:                                    // my(rho, T) for real gases mixture
          viscosity = GasViscosity_Chung_1988((long)  primary_variable[2], primary_variable[0], primary_variable[1]);
          break;
+	case 18:	//BG, NB using calculated viscosities at nodes from the phase transition model
+		variables[2] = phase;
+  		viscosity = GetElementValueFromNodes(int(variables[0]), int(variables[1]), int(variables[2]), 1); // hand over element index, Gauss point index, phase index and variable index
+		break;
       default:
          cout << "Error in CFluidProperties::Viscosity: no valid model" << endl;
          break;
