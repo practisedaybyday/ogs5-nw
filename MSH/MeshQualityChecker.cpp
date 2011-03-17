@@ -33,4 +33,14 @@ void MeshQualityChecker::getHistogramm (std::vector<size_t>& histogramm) const
 	}
 }
 
+void MeshQualityChecker::errorMsg (CElem* elem, size_t idx) const
+{
+	std::cout << "Error in MeshQualityChecker::check() - Calculated value of element is below double precision minimum." << std::endl;
+	std::cout << "Points of " << MshElemType2String(elem->GetElementType()) << "-Element " << idx << ": " << std::endl;
+	for (int i(0); i<elem->GetVertexNumber(); i++)
+		std::cout << "\t Node " << i << " " << GEOLIB::Point((elem->GetNode(i))->getData()) << std::endl;
+}
+
+
+
 }

@@ -28,12 +28,7 @@ void MeshQualityNormalisedVolumes::check()
 				&& elem_type != MshElemType::QUAD) {
 			double volume (msh_elem[k]->calcVolume());
 			if (volume > max_volume) max_volume = volume;
-			if (volume < sqrt(fabs(std::numeric_limits<double>::min()))) {
-				std::cout << "Error in MeshQualityNormalisedVolumes::check() - Volume of element is below double precision minimum value." << std::endl;
-				std::cout << "Points of " << MshElemType2String(msh_elem[k]->GetElementType()) << "-Element " << k << ": " << std::endl;
-				for (int i(0); i<msh_elem[k]->GetVertexNumber(); i++)
-					std::cout << "\t Node " << i << " " << GEOLIB::Point((msh_elem[k]->GetNode(i))->getData()) << std::endl;
-			}
+			if (volume < sqrt(fabs(std::numeric_limits<double>::min()))) errorMsg(msh_elem[k], k);
 			_mesh_quality_messure[k] = volume;
 		}
 	}
@@ -46,6 +41,23 @@ void MeshQualityNormalisedVolumes::check()
 			_mesh_quality_messure[k] /= max_volume;
 		} else {
 			_mesh_quality_messure[k] = 1.1; // element has no valid value
+		}
+	}
+}
+
+void MeshQualityNormalisedVolumes::getHistogramm (std::vector<size_t>& histogramm) const
+{
+	// get all elements of mesh
+	const std::vector<Mesh_Group::CElem*>& msh_elem (_mesh->getElementVector());
+
+	const size_t msh_elem_size (msh_elem.size());
+	const size_t histogramm_size (histogramm.size()-1);
+	for (size_t k(0); k<msh_elem_size; k++) {
+		if (msh_elem[k]->GetElementType() != MshElemType::LINE 
+			&& msh_elem[k]->GetElementType() != MshElemType::TRIANGLE
+			&& msh_elem[k]->GetElementType() != MshElemType::QUAD) 
+		{
+			histogramm[static_cast<size_t>(_mesh_quality_messure[k] * histogramm_size)]++;
 		}
 	}
 }

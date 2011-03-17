@@ -12,6 +12,7 @@ set( SOURCES
 	MeshNodesAlongPolyline.h
 	MeshQualityChecker.h
 	MeshQualityShortestLongestRatio.h
+	MeshQualityNormalisedArea.h
 	MeshQualityNormalisedVolumes.h
 	
 	msh_core.cpp
@@ -26,6 +27,7 @@ set( SOURCES
 	MeshNodesAlongPolyline.cpp
 	MeshQualityChecker.cpp
 	MeshQualityShortestLongestRatio.cpp
+	MeshQualityNormalisedArea.cpp
 	MeshQualityNormalisedVolumes.cpp
 	#msh_pnt.cpp		# references removed elements.h nodes.h
 	
