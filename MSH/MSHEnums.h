@@ -1,6 +1,6 @@
 /**
  * \file MSHEnums.h
- * 15/11/2010 KR inital implementation
+ * 15/11/2010 KR initial implementation
  *
  */
 
@@ -9,7 +9,7 @@
 
 #include <string>
 
-/** 
+/**
  * \brief Types of mesh elements supported by OpenGeoSys.
  * Classification and associated int are identical with
  * identifier in Mesh_Group::CElem::geo_type
