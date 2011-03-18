@@ -26,7 +26,7 @@ Polyline::Polyline(const Polyline& ply) :
 	}
 
 	if (ply.getNumberOfPoints() > 0) {
-		for (size_t k(0); k<ply.getNumberOfPoints()-1; ++k) {
+		for (size_t k(0); k<ply.getNumberOfPoints(); ++k) {
 			_length.push_back (ply.getLength (k));
 		}
 	}

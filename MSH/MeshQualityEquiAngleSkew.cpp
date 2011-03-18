@@ -102,14 +102,14 @@ double MeshQualityEquiAngleSkew::checkTetrahedron (CElem const * const elem) con
 	double const * const node3 (elem->GetNode(3)->getData());
 
 	// first triangle (0,1,2)
-	double min_angle (MATHLIB::getAngle (node2, node0, node1));
+	double min_angle (MATHLIB::getAngle (node1, node0, node2));
 	double max_angle (min_angle);
 
-	double angle (MATHLIB::getAngle (node0, node1, node2));
+	double angle (MATHLIB::getAngle (node2, node1, node0));
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 
-	angle = MATHLIB::getAngle (node1, node2, node0);
+	angle = MATHLIB::getAngle (node0, node2, node1);
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 

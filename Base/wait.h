@@ -11,7 +11,7 @@
 
 namespace BASELIB {
 
-void wait(size_t seconds)
+void wait(int seconds)
 {
 	time_t start_time, cur_time;
 

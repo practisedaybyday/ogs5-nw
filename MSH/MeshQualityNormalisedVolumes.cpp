@@ -28,12 +28,7 @@ void MeshQualityNormalisedVolumes::check()
 				&& elem_type != MshElemType::QUAD) {
 			double volume (msh_elem[k]->calcVolume());
 			if (volume > max_volume) max_volume = volume;
-			if (volume < sqrt(fabs(std::numeric_limits<double>::min()))) {
-				std::cout << "Error in MeshQualityNormalisedVolumes::check() - Volume of element is below double precision minimum value." << std::endl;
-				std::cout << "Points of " << MshElemType2String(msh_elem[k]->GetElementType()) << "-Element " << k << ": " << std::endl;
-				for (int i(0); i<msh_elem[k]->GetVertexNumber(); i++)
-					std::cout << "\t Node " << i << " " << GEOLIB::Point((msh_elem[k]->GetNode(i))->getData()) << std::endl;
-			}
+			if (volume < sqrt(fabs(std::numeric_limits<double>::min()))) errorMsg(msh_elem[k], k);
 			_mesh_quality_messure[k] = volume;
 		}
 	}
