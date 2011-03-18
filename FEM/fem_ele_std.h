@@ -102,6 +102,9 @@ namespace FiniteElement
          void Cal_Velocity();
          void Cal_Velocity_2();                   //CB this is to provide velocity only at the element center of gravity
          void  Cal_GP_Velocity_FM(int *i_ind);    //SB 4900 interpolate node velocities to Gauss point velocities
+	     std::string Cal_GP_Velocity_ECLIPSE(std::string tempstring, bool output_average, int phase_index, std::string phase); //BG
+	     std::string Cal_GP_Velocity_DuMux(int *i_ind, CRFProcess *m_pcs, int phase_index); //BG coupling to DuMux
+	     double InterpolatePropertyToGausspoint(int GPIndex, CRFProcess *m_pcs, int Variableindex); // necessary for using precalculated density and viscosity BG, 11/2010
          //
                                                   //OK
          void AssembleParabolicEquationRHSVector();
@@ -321,6 +324,7 @@ namespace FiniteElement
          ElementValue(CRFProcess* m_pcs, CElem* ele);
          ~ElementValue();
          void getIPvalue_vec(const int IP, double * vec);
+	     void getIPvalue_vec_phase(const int IP, int phase, double * vec); //SB 09/2010
          void GetEleVelocity(double * vec);
       private:
          // Friend class

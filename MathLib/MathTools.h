@@ -71,7 +71,16 @@ double sqrDist(const GEOLIB::Point* p0, const GEOLIB::Point* p1);
 double sqrDist(const double* p0, const double* p1);
 
 /** linear normalisation of val from [min, max] into [0,1] */
-float normalize(const float min, const float max, const float val);
+float normalize(float min, float max, float val);
+
+/**
+ * computes the angle between the edges p0,p1 and p1,p2
+ * @param p0 start point of edge 0
+ * @param p1 end point of edge 0 and start point of edge 1
+ * @param p2 end point of edge 1
+ * @return the angle between the edges
+ */
+double getAngle (const double p0[3], const double p1[3], const double p2[3]);
 
 } // namespace
 

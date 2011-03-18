@@ -61,6 +61,9 @@ double DivideAndConquerClosestPair::closestPair (size_t s, size_t e, size_t id0,
 	// merge
 	double d (std::min (d0,d1));
 
+	// hack - implementation not yet finished
+	return d;
+
 }
 
 } // end namespace GEOLIB

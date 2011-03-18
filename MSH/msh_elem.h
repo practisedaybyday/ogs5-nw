@@ -80,7 +80,7 @@ namespace Mesh_Group
          {
             return patch_index;
          }                                        //MatGroup
-         void SetPatchIndex(const int value)
+         void SetPatchIndex(int value)
          {
             patch_index = value;
          }
@@ -100,7 +100,7 @@ namespace Mesh_Group
          {
             return volume;
          }
-         void SetVolume(const double Vol)
+         void SetVolume(double Vol)
          {
             volume = Vol;
          }
@@ -148,11 +148,11 @@ namespace Mesh_Group
           */
          const vec<long>& GetNodeIndeces () const { return nodes_index; }
 
-         long GetNodeIndex(const int index) const
+         long GetNodeIndex(int index) const
          {
             return nodes_index[index];
          }
-         void SetNodeIndex(const int index, const long g_index)
+         void SetNodeIndex(int index, long g_index)
          {
             nodes_index[index] = g_index;
          }
@@ -173,6 +173,12 @@ namespace Mesh_Group
          {
             return nodes[index];
          }
+
+         CNode const * const GetNode(int index) const
+		 {
+			return nodes[index];
+		 }
+
          void SetNodes(vec<CNode*>& ele_nodes, bool ReSize = false);
          int GetNodesNumber_H() const
          {
@@ -207,7 +213,7 @@ namespace Mesh_Group
             for (int i = 0; i < nedges; i++)
                ele_edges[i] = edges[i];
          }
-         CEdge* GetEdge(const int index)
+         CEdge* GetEdge(int index)
          {
             return edges[index];
          }
@@ -245,7 +251,7 @@ namespace Mesh_Group
          }
          int GetElementFaceNodes(int Face, int *FacesNode);
          //------------------------------------------------------------------
-       
+
 		 // Neighbors
          void SetNeighbors(vec<CElem*>& ele_neighbors)
          {
@@ -276,11 +282,11 @@ namespace Mesh_Group
             if (!angle)
                angle = new double[3];
          }                                        // WW
-         double GetAngle(const int i) const
+         double GetAngle(int i) const
          {
             return angle[i];
          }                                        // PCH
-         void SetAngle(const int i, const double value)
+         void SetAngle(int i, double value)
          {
             angle[i] = value;
          }                                        // PCH
@@ -377,5 +383,5 @@ namespace Mesh_Group
          friend class ::CRFProcess;
    };
 
-}                                                 // namespace Mesh_Group
+} // namespace Mesh_Group
 #endif

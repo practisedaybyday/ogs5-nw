@@ -12,7 +12,7 @@ set( SOURCES
 	FEMEnums.h
 	femlib.h
 	files0.h
-	#intrface.h
+	intrface.h
 	makros.h
 	mathlib.h
 	matrix_class.h
@@ -42,6 +42,9 @@ set( SOURCES
 	timer.h
 	tools.h
 	vtk.h
+	Eclipse.h
+	DUMUX.h
+	geochemcalc.h
 	GeoInfo.h
 	ProcessInfo.h
 	DistributionInfo.h
@@ -86,6 +89,8 @@ set( SOURCES
 	timer.cpp
 	tools.cpp
 	vtk.cpp
+	Eclipse.cpp
+	DUMUX.cpp
 )
 
 ## New sparse class. WW
