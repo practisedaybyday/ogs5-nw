@@ -12,7 +12,7 @@ set( SOURCES
 	FEMEnums.h
 	femlib.h
 	files0.h
-	#intrface.h
+	intrface.h
 	makros.h
 	mathlib.h
 	matrix_class.h

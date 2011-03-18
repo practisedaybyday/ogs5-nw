@@ -32,6 +32,7 @@ using namespace std;
 
 
 CECLIPSEBlock::CECLIPSEBlock(long Nodelength, long Facelength){
+	(void)Facelength; // unused
 	this->row = 0;
 	this->column=0;
 	this->index=0;
@@ -298,18 +299,18 @@ std::string CECLIPSEData::AddZero(double Number, int Places, bool before){
 			Result = tempstring;
 		}
 		//else {
-		while (int(Result.length()) < Places + position + 1) {
+		while (size_t(Result.length()) < Places + position + 1) {
 			position = Result.find(".");
-			if ((position >= 0) && (position < Result.length())) {
+			if (position < Result.length()) {
 				position_e = Result.find("e");
-				if ((position_e >= 0) && (position_e < Result.length()))
+				if (position_e < Result.length())
 					Result = Result.substr(0, position_e) + "0" + Result.substr(position_e, Result.length() - (position_e));
 				else
 					Result = Result + "0";
 			}
 			else {
 				position_e = Result.find("e");
-				if ((position_e >= 0) && (position_e < Result.length()))
+				if (position_e < Result.length())
 					Result = Result.substr(0, position_e) + "." + Result.substr(position_e, Result.length() - (position_e));
 				else
 					Result = Result + ".";
@@ -752,7 +753,7 @@ Modification: 02/2011 KB Change from ReadSurfaceDensity to ReadDataFromInputFile
 -------------------------------------------------------------------------*/
 int CECLIPSEData::ReadDataFromInputFile(std::string Filename) {
 	std::string tempstring;
-	CBoundaryConditions* m_BoundaryConditions = NULL;
+	//CBoundaryConditions* m_BoundaryConditions = NULL; // unused
 	CReadTextfiles_ECL *TextFile;
 	std::stringstream in;
 	double density;
@@ -849,7 +850,7 @@ void CECLIPSEData::ReadWellData(std::string Filename_Wells) {
 	std::string dollar("$");
 	std::string hash("#");
 	bool new_subkeyword = false;
-	bool new_keyword = false;
+	// bool new_keyword = false; // unused
 
 	std::string tempstring_name;
 	std::string tempvalue_rate;
@@ -1127,7 +1128,8 @@ Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
 void CECLIPSEData::ReadEclipseData(std::string Filename, long Timestep){
-    vector<string> files = vector<string>();
+	(void)Timestep; // unused
+	vector<string> files = vector<string>();
 	CReadTextfiles_ECL *TextFile;
 	std::string tempstring;
 	bool saturation_water, saturation_gas, saturation_oil;
@@ -2923,7 +2925,8 @@ Programming: 10/2009 SB
 Modification:
 -------------------------------------------------------------------------*/
 void CECLIPSEData::InterpolateDataFromBlocksToNodes(CRFProcess *m_pcs, std::string path, int phase_index)
-	{
+{
+	(void)path; // unused
 	clock_t start,finish;
 	double time;
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt

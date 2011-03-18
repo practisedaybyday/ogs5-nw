@@ -44,15 +44,23 @@ double VLE_Psat_H2O(double){return 0.0;};
 double VLE_solubility_CO2(double, double, double){return 0.0;};
 double VLE_solubility_CH4(double, double, double){return 0.0;};
 double VLE_fraction_H2O(double, double, double){return 0.0;};
-double VLE_solubilityNEW_CO2(double T, double P, double mNaCl){return 0.0;};
-double VLE_pressure_CO2(double T, double D){return 0.0;};
-double Density_CO2brine(double T, double P, double mNaCl, double mCO2){return 0.0;};
-double Density_viscosity(double T, double P, double m, int f){return 0.0;};
+double VLE_solubilityNEW_CO2(double T, double P, double mNaCl)
+{(void)T; (void)P; (void)mNaCl;	return 0.0;};
+double VLE_pressure_CO2(double T, double D)
+{(void)T; (void)D; return 0.0;};
+double Density_CO2brine(double T, double P, double mNaCl, double mCO2)
+{(void)T; (void)P; (void)mNaCl; (void)mCO2; return 0.0;};
+double Density_viscosity(double T, double P, double m, int f)
+{(void)T; (void)P; (void)m; (void)f; return 0.0;};
 	//T (K), P (bar), m (mol/kg)  flag 0-LiCl, 1-NaCl, 2-KCl
 
 
-double HKF_HKFcalcw(double T, double P, int ghs){return 0.0;};
-double HKF_HKFcalc(double T, double P, int ghs, std::string name, int sub, int type){return 0.0;};
+double HKF_HKFcalcw(double T, double P, int ghs)
+{(void)T; (void)P; (void)ghs; return 0.0;};
+double HKF_HKFcalc(double T, double P, int ghs, std::string name, int sub, int type)
+{(void)T; (void)P; (void)ghs; (void)name; (void)sub; (void)type; return 0.0;};
 
-int HKF_OGS_loadparam(std::string species_name0, int &type, double &charge, double param[][4]){return 0;};
-int HKF_OGS_calc(double T, double P, double &G, double &H, double &S, int type, double charge, double param[][4]){return 0;};
+int HKF_OGS_loadparam(std::string species_name0, int &type, double &charge, double param[][4])
+{(void)species_name0; (void)type; (void)charge; (void)param; return 0;};
+int HKF_OGS_calc(double T, double P, double &G, double &H, double &S, int type, double charge, double param[][4])
+{(void)T; (void)P; (void)G; (void)H; (void)S; (void)type; (void)charge; (void)param; ;return 0;};

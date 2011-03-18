@@ -446,7 +446,7 @@ int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timest
 
 	vec_string.push_back(tempstring);
 	// Loop over all nodes
-	for (int i = 0; i < this->NodeData.size(); i++){
+	for (size_t i = 0; i < this->NodeData.size(); i++){
 		m_node = m_msh->nod_vector[i]; // get element
 		node_volume = 0;
 		concentration_CO2_water = 0;
@@ -647,7 +647,7 @@ void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep
 	Mesh_Group::CNode* m_node = NULL;
 	CMediumProperties *m_mat_mp = NULL;
 	ostringstream temp;
-	double mass_CO2_gas, mass_CO2_water, mass_CO2;
+	double mass_CO2_gas, mass_CO2_water; // unused:, mass_CO2;
 	double node_volume;
 	vector <string> vec_string;
 	//int position;
@@ -660,7 +660,7 @@ void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep
 
 	vec_string.push_back(tempstring);
 	// Loop over all nodes
-	for (int i = 0; i < this->NodeData.size(); i++){
+	for (size_t i = 0; i < this->NodeData.size(); i++){
 		m_node = m_msh->nod_vector[i]; // get element
 		node_volume = 0;
 		concentration_CO2_water = 0;

@@ -10620,7 +10620,7 @@ void CRFProcess::UpdateTransientBC()
 		// Piecewise linear distributed.
 		for (size_t i(0); i < bc->getDistribedBC().size(); i++) {
 			for (size_t j = 0; j < ply->getNumberOfPoints(); j++) {
-				if (bc->getPointsWithDistribedBC()[i] == ply->getPointID(j)) {
+				if (bc->getPointsWithDistribedBC()[i] == (int)ply->getPointID(j)) {
 					if (fabs(bc->getDistribedBC()[i]) < MKleinsteZahl)
 						bc->getDistribedBC()[i] = 1.0e-20;
 					interpolation_points.push_back (ply->getLength(j));
@@ -10780,6 +10780,8 @@ Programming:
 **************************************************************************/
 void CRFProcess::CalGPVelocitiesfromECLIPSE(string path, int timestep, int phase_index, string phase)
 {
+  (void)path; // unused
+  (void)timestep; // unused
   long i;
   Mesh_Group::CElem* elem = NULL;
   clock_t start,finish;
@@ -10933,6 +10935,8 @@ double k_co2_ch4 (int number, double T)
 //*****************************************************************************/
 double k_ch4_h2o (int number, double T)
 {
+	(void)number;
+	(void)T;
 	// Not implemented yet! If you feel constrained to change this, you'll find the correlation in Duan, Moller and Weare ,1992.
 	return 1;
 }
@@ -11206,6 +11210,7 @@ void MixDuansVirialCoefficients(VirialCoefficients fluid_a, VirialCoefficients f
 //*****************************************************************************/
 double DuansMixingRule(double T, double P, double x, int fluid1, int fluid2, bool neu)
 {
+	(void)neu; // unused
 	P/=1e5;
 	//CVirialCoefficients u,v,w;
 	VirialCoefficients u,v,w;
@@ -11336,7 +11341,7 @@ void CRFProcess::CO2_H2O_NaCl_VLE_isobaric(double T, double P, Phase_Properties 
 	//f ---  1 V-L-S, 2 V-L, 3 CO2-L-S, 4 CO2-L
 
 	double tCO2,tH2O,tNaCl;
-	double wH2O,mCO2,mNaCl,soluCO2,xCO2,yH2O,AW=1.0;
+	double wH2O,mNaCl,soluCO2,xCO2,yH2O,AW=1.0; // ,mCO2; unused
 	double a,b,tvCO2,tvH2O,tH2Or,er=1.0e-6,err=1.0e-6;
 	int i,iter_max=100;
 	double Molweight_CO2, Molweight_H2O,Molweight_NaCl;
@@ -11601,11 +11606,11 @@ void CRFProcess::CalculateFluidDensitiesAndViscositiesAtNodes(CRFProcess *m_pcs)
 	double saturation_gas, saturation_liquid;
 	double Molweight_CO2, Molweight_H2O, Molweight_NaCl;
 	double Density_gas, Density_liquid, Density_pureCO2, Viscosity_liquid, Viscosity_gas;
-	double c_H2OinLiquid, c_CO2inLiquid, c_NaClinLiquid, c_H2OinGas;
+	double c_CO2inLiquid, c_NaClinLiquid, c_H2OinGas; // ,c_H2OinLiquid; unused
 	double b_CO2inPureWater, b_NaClinPureWater, b_H2OinPureCO2;
 	double mass_gas;
-	double volume_liquid, volume_gas, node_volume, porosity, Volume_eff;
-	double saturation_gas_min, saturation_liquid_min, saturation_gas_effective, saturation_liquid_effective;
+	double volume_liquid, volume_gas, node_volume, porosity; // ,Volume_eff; unused
+	double saturation_gas_min, saturation_liquid_min; // ,saturation_liquid_effective ,saturation_gas_effective; unused
 	int variable_index, indexProcess;
 	CMediumProperties *MediaProp;
 	CFluidProperties *FluidProp;
@@ -11837,10 +11842,10 @@ void CRFProcess::Phase_Transition_CO2(CRFProcess *m_pcs, int Step)
 	Mesh_Group::CNode* m_node = NULL;
 	double saturation_gas, saturation_liquid;
 	double Molweight_CO2, Molweight_H2O, Molweight_NaCl;
-	double Volume_eff, Density_gas, Density_liquid, Density_liquid_old, Density_purewater, Density_pureCO2, p_cap;
-	double c_H2OinLiquid, c_CO2inLiquid, c_CO2inLiquid_old, c_NaClinLiquid, c_H2OinGas, c_CO2inGas;
+	double Volume_eff, Density_gas, Density_liquid, p_cap; // ,Density_liquid_old, Density_purewater, Density_pureCO2; unused
+	double c_H2OinLiquid, c_CO2inLiquid, c_NaClinLiquid, c_H2OinGas, c_CO2inGas; // , c_CO2inLiquid_old; unused
 	//double b_CO2inPureWater, b_NaClinPureWater, b_H2OinPureCO2;
-	double mass_gas, mass_liquid;
+	// double mass_gas, mass_liquid; unused
 	double saturation_gas_min, saturation_liquid_min, saturation_gas_effective, saturation_liquid_effective;
 	double porosity, node_volume;
 	int variable_index, indexProcess;
@@ -11853,7 +11858,7 @@ void CRFProcess::Phase_Transition_CO2(CRFProcess *m_pcs, int Step)
 	int MassTransportID[6];
 	int MaterialGroup;
 	int TimeStepVariableIndex = 1;
-	double c_oldCO2inLiquid;
+	// double c_oldCO2inLiquid; unused
 	double p_cap_1, pressure_1;
 
 	//---------------------------------------------------------------------------------------------------------
