@@ -3046,6 +3046,7 @@ void CSourceTermGroup::SetPolylineNodeVectorConditional(CSourceTerm* st,
 CGLPolyline* m_ply, std::vector<long>& ply_nod_vector,
 std::vector<long>& ply_nod_vector_cond)
 {
+   (void)m_ply;
    size_t assembled_mesh_node, number_of_nodes;
 
    if (st->node_averaging)

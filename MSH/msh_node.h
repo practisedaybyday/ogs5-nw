@@ -40,6 +40,8 @@ namespace Mesh_Group
          int selected;
          double patch_area;                       //OK4310
          int crossroad;                           // PCH: Make theses privates can be done later on.
+	     std::vector <long> connected_faces;		// BG, 09/2010, necessary for coupling to Eclipse, index of faces where the node is part of it
+	     std::vector <double> distance_to_connected_faces; // BG, 09/2010,  necessary for coupling to Eclipse
 
          /** constructor */
          CNode(size_t Index) :
@@ -59,6 +61,7 @@ namespace Mesh_Group
          double X() const { return coordinate[0]; };
          double Y() const { return coordinate[1]; };
          double Z() const { return coordinate[2]; };
+	     double* GetCoordinates() {return coordinate;} // BG, 09/2010, necesary for coupling to Eclipse
 
          void Coordinates(double *xyz) const
          {

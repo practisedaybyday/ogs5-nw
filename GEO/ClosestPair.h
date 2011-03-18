@@ -21,7 +21,10 @@ class ClosestPair
 public:
 	ClosestPair (std::vector<GEOLIB::Point*> const & pnts, size_t& id0, size_t& id1) :
 		_pnts (pnts)
-	{}
+	{
+		(void)id0;
+		(void)id1;
+	}
 
 protected:
 	std::vector<GEOLIB::Point*> const & _pnts;

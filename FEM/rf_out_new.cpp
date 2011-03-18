@@ -3693,7 +3693,7 @@ void COutput::ELEWritePLY_TECData(fstream &tec_file)
    // helper variables
    vec<CEdge*> ele_edges_vector(15);
    vec<CNode*> edge_nodes(3);
-   double edge_mid_vector[3];
+   double edge_mid_vector[3] = {0.0,0.0,0.0};
 
    for (size_t i = 0; i < ele_vector_at_geo.size(); i++)
    {

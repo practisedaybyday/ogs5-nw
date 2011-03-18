@@ -1014,7 +1014,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* m_pcs, int ShiftInNodeVector,
 						std::vector<double> interpolation_values;
 						for (size_t i(0); i < m_bc->getDistribedBC().size(); i++) {
 							for (size_t j = 0; j < ply->getNumberOfPoints(); j++) {
-								if (m_bc->getPointsWithDistribedBC()[i] == ply->getPointID(j)) {
+								if (m_bc->getPointsWithDistribedBC()[i] == (int)ply->getPointID(j)) {
 									if (fabs(m_bc->getDistribedBC()[i]) < MKleinsteZahl)
 										m_bc->getDistribedBC()[i] = 1.0e-20;
 									interpolation_points.push_back (ply->getLength(j));

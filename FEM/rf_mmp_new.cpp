@@ -2839,7 +2839,7 @@ Programing:
          coeefient computed with tortuosity added
 ToDo:
 **************************************************************************/
-double* CMediumProperties::MassDispersionTensorNew(int ip)
+double* CMediumProperties::MassDispersionTensorNew(int ip, int tr_phase) // SB + BG
 {
    static double advection_dispersion_tensor[9];  //Name change due to static conflict
    int component = Fem_Ele_Std->pcs->pcs_component_number;
@@ -2852,6 +2852,7 @@ double* CMediumProperties::MassDispersionTensorNew(int ip)
    double theta = Fem_Ele_Std->pcs->m_num->ls_theta;
    double g[3]={0.,0.,0.};
    double l_char=0.0;                             //OK411 volume=0.0;
+   double saturation = 1.0;
    int set=0;
    ElementValue* gp_ele = ele_gp_value[index];
    CompProperties *m_cp = cp_vec[component];
@@ -2861,9 +2862,11 @@ double* CMediumProperties::MassDispersionTensorNew(int ip)
    // Materials
    molecular_diffusion_value = m_cp->CalcDiffusionCoefficientCP(index,theta, m_pcs) * TortuosityFunction(index,g,theta);
    molecular_diffusion_value *= Porosity(index,theta);
-   //CB
-   molecular_diffusion_value *= PCSGetEleMeanNodeSecondary_2(index, Fem_Ele_Std->pcs->flow_pcs_type, "SATURATION1", 1);
-   //if(PCSGet("RICHARDS_FLOW")) molecular_diffusion_value *= PCSGetEleMeanNodeSecondary(index, "RICHARDS_FLOW", "SATURATION1", 1);
+   //CB, SB
+   saturation = PCSGetEleMeanNodeSecondary_2(index, Fem_Ele_Std->pcs->flow_pcs_type, "SATURATION1", 1);
+   if (tr_phase == 10) // multi phase transport
+       saturation = 1.0 - saturation;
+   molecular_diffusion_value *= saturation; 
    for (i = 0; i<Dim*Dim; i++)
       molecular_diffusion[i] = 0.0;
    for (i = 0; i<Dim; i++)
@@ -2904,7 +2907,7 @@ double* CMediumProperties::MassDispersionTensorNew(int ip)
 
    //Global Velocity
    double velocity[3]={0.,0.,0.};
-   gp_ele->getIPvalue_vec(ip, velocity);          //gp velocities
+   gp_ele->getIPvalue_vec_phase(ip, tr_phase, velocity);//gp velocities // SB
    vg = MBtrgVec(velocity,3);
    //  if(index < 10) cout <<" Velocity in MassDispersionTensorNew(): "<<velocity[0]<<", "<<velocity[1]<<", "<<velocity[2]<<", "<<vg<<endl;
    // test bubble velocity
