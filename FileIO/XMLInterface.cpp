@@ -476,7 +476,7 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 	// GLI
 	std::vector<std::string> geoNames;
 	_geoObjects->getGeometryNames(geoNames);
-	for (std::vector<std::string>::const_iterator it(geoNames.begin());	it != geoNames.end(); it++)
+	for (std::vector<std::string>::const_iterator it(geoNames.begin());	it != geoNames.end(); ++it)
 	{
 		// write GLI file
 		QString name(QString::fromStdString(*it));
@@ -494,7 +494,7 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 	// STN
 	std::vector<std::string> stnNames;
 	_geoObjects->getStationNames(stnNames);
-	for (std::vector<std::string>::const_iterator it(stnNames.begin());	it != stnNames.end(); it++)
+	for (std::vector<std::string>::const_iterator it(stnNames.begin());	it != stnNames.end(); ++it)
 	{
 		// write STN file
 		QString name(QString::fromStdString(*it));
@@ -767,7 +767,7 @@ bool XMLInterface::checkHash(const QString &fileName) const
 		char* md5HashStr = new char[16];
 		md5.read(md5HashStr, 16);
 		QByteArray md5Hash(md5HashStr, 16);
-		delete md5HashStr;
+		delete[] md5HashStr;
 		if (hashIsGood(fileName, md5Hash)) return true;
 	}
 

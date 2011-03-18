@@ -72,7 +72,6 @@ bool Polygon::isPntInPolygon (GEOLIB::Point const & pnt) const
 				switch (getEdgeType(k, pnt)) {
 				case EdgeType::TOUCHING:
 					return true;
-					break;
 				case EdgeType::CROSSING:
 					n_intersections++;
 					break;
@@ -181,7 +180,6 @@ EdgeType::value Polygon::getEdgeType (size_t k, GEOLIB::Point const & pnt) const
 	case Location::SOURCE:
 	case Location::DESTINATION:
 		return EdgeType::TOUCHING;
-		break;
 	default:
 		return EdgeType::INESSENTIAL;
 	}

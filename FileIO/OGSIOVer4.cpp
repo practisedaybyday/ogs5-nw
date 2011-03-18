@@ -411,7 +411,7 @@ std::string readSurfaces(std::istream &in,
 			// create surfaces from simple polygons
 			const std::list<GEOLIB::Polygon*>& list_of_simple_polygons (polygon_vec[polygon_vec.size()-1]->getListOfSimplePolygons());
 			for (std::list<GEOLIB::Polygon*>::const_iterator simple_polygon_it (list_of_simple_polygons.begin());
-				simple_polygon_it != list_of_simple_polygons.end(); simple_polygon_it++) {
+				simple_polygon_it != list_of_simple_polygons.end(); ++simple_polygon_it) {
 
 				std::list<GEOLIB::Triangle> triangles;
 				std::cout << "triangulation of surface: ... " << std::flush;

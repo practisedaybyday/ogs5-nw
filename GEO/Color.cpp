@@ -47,6 +47,7 @@ int readColorLookupTable(std::map<std::string, Color*> &colors, const std::strin
 			(*c)[2] = atoi(fields.front().c_str());
 			colors.insert(std::pair<std::string, Color*>(id, c));
 		}
+		else delete c;
 	}
 
 	return 1;
