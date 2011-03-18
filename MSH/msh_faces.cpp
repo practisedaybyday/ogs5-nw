@@ -55,6 +55,7 @@ Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
 bool CPlaneEquation::CheckIfPointInPlane(double Point[3]) {
+	(void)Point;
 	//the point is included in the normal equation of the plane, it is part of the plane if the equation is fullfilled
 	if (this->Lambda_NormalEquation == this->Point[0] * this->normal_vector[0] + this->Point[1] * this->normal_vector[1] + this->Point[2] * this->normal_vector[2])
 		return 1;

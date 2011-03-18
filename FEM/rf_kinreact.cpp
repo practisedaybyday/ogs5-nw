@@ -4832,7 +4832,7 @@ void CKinReactData::Aromaticum(long nonodes)
    long node;
    double conc, lambda = 0.0;                     //OK411
    // int pcsindex = 0;
-   CRFProcess* m_pcs;
+   CRFProcess* m_pcs = NULL;
    int varindex = 0;
    int nospec = (int) sp_varind.size();
 

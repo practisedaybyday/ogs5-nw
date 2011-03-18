@@ -338,7 +338,7 @@ int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timest
 	double value;
 	double timestep_length;
 	//CRFProcess *n_pcs = NULL;
-	int indexConcentration_DIC;
+	int indexConcentration_DIC = 0;
 	//int indexConcentration_NaCl_dissolved;
 
 	//delete old input files

@@ -2247,7 +2247,7 @@ void RandomWalk::AdvanceToNextTimeStep(double dt,double ctime)
                      Y.elementIndex = -10;          //YS: out of the domain
                   }
                }
-#endif CountParticleNumber
+#endif // CountParticleNumber
 
                // Just get the element index after this movement
                // if not Homogeneous aquifer

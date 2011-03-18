@@ -1280,7 +1280,7 @@ namespace FiniteElement
       double val = 0.0;
       double humi = 1.0;
       double rhov = 0.0;
-      double biot_val, poro_val, rho_val, Se;
+	  double biot_val, poro_val = 0.0, rho_val, Se;
       int tr_phase = 0; // SB, BG
       double saturation = 0.0; // SB, BG
       CompProperties *m_cp = NULL;
@@ -5191,6 +5191,7 @@ namespace FiniteElement
 **************************************************************************/
 double  CFiniteElementStd::InterpolatePropertyToGausspoint(int GPIndex, CRFProcess *m_pcs, int Variableindex)
 {
+	(void)GPIndex; // unused
 	//double fkt = 0.0;
 	//int gp_r=0, gp_s=0, gp_t=0;
 	//ElementValue* gp_ele = ele_gp_value[Index];
@@ -5506,9 +5507,9 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
 	//double n_vel_x[8], n_vel_y[8], n_vel_z[8];
 	// ---- Gauss integral
 	int gp_r=0, gp_s=0, gp_t=0;
-	double coef = 0.0, fkt=0.0;
+	double fkt=0.0;
 	//  int i_idx;    
-	CPointData_ECL* m_NodeData = NULL;
+	// CPointData_ECL* m_NodeData = NULL;
 	double value[3], value_old[3];
 	ostringstream temp;
 

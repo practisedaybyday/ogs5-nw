@@ -11249,7 +11249,7 @@ double DuansMixingRule(double T, double P, double x, int fluid1, int fluid2, boo
 	//		}
 	//}*/
 
-	for (int i=V1;i<51;i+=2)
+	for (int i=(int)V1;i<51;i+=2)
 	{   V+=2;
 		dev = DuanMixCompressibility(T,P,V,w);
 		if (dev <= dev_1) {V1 = V; dev_1 = dev;}
@@ -11553,7 +11553,7 @@ void CRFProcess::CO2_H2O_NaCl_VLE_isochoric(Phase_Properties &vapor, Phase_Prope
 	//f ---  1 V-L-S, 2 V-L, 3 CO2-L-S, 4 CO2-L
 
 	int i,i_max=100;
-	double V, V0, P1, P2;
+	double V, V0, P1 = 0.0, P2 = 0.0;
 	double err=1.0e-4;
 	double T, P;
 
@@ -11616,8 +11616,8 @@ void CRFProcess::CalculateFluidDensitiesAndViscositiesAtNodes(CRFProcess *m_pcs)
 	CFluidProperties *FluidProp;
 	CRFProcess *pcs_MassTransport;
 	double pressure, temperature;
-	int MassTransportID[5];
-	int MaterialGroup;
+	int MassTransportID[5] = {0,0,0,0,0};
+	int MaterialGroup = 0;
 	int TimeStepVariableIndex = 1;
 	clock_t start,finish;
 	double time;
@@ -11855,7 +11855,7 @@ void CRFProcess::Phase_Transition_CO2(CRFProcess *m_pcs, int Step)
 	Phase_Properties liquid;
 	Phase_Properties solid;
 	CRFProcess *pcs_MassTransport;
-	int MassTransportID[6];
+	int MassTransportID[6] = {0,0,0,0,0,0};
 	int MaterialGroup;
 	int TimeStepVariableIndex = 1;
 	// double c_oldCO2inLiquid; unused

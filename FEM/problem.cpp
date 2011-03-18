@@ -1611,7 +1611,7 @@ void Problem::TestOutputEclipse(CRFProcess *m_pcs) {
   //int position;
   string path;
   double density_CO2;
-  double porosity;
+  double porosity = 0.0;
   int variable_index;
   double concentration_CO2_water;
   int indexConcentration_CO2;

@@ -872,7 +872,7 @@ double CFluidProperties::GetElementValueFromNodes(long ElementIndex, int GPIndex
 	CNode* m_node = NULL;
 	CRFProcess *m_pcs;
 	double var, variable;
-	int variable_index, nNodes;
+	int variable_index = 0, nNodes;
 	double distance, weight, sum_weights;
 	double *gravity_centre;
 	Math_Group::vec <long>vec_nod_index(8);
