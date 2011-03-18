@@ -117,7 +117,7 @@ class CMediumProperties
       double HeatCapacity(long number,double theta, CFiniteElementStd* assem=NULL);
       double* HeatConductivityTensor(int number); //MX
       double* HeatDispersionTensorNew(int ip);    //CMCD
-      double* MassDispersionTensorNew(int ip);    //CMCD
+      double* MassDispersionTensorNew(int ip, int phase); //CMCD, SB, BG
                                                   //OK
       double Density(long number,double*gp,double theta);
                                                   //OK4104

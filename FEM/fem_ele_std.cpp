@@ -42,7 +42,7 @@ extern double gravity_constant;                   // TEST, must be put in input 
 #define T_KILVIN_ZERO  273.15                     //WW
 
 using namespace std;
-
+#include "Eclipse.h" //BG 09/2009
 namespace FiniteElement
 {
 
@@ -1281,6 +1281,8 @@ namespace FiniteElement
       double humi = 1.0;
       double rhov = 0.0;
       double biot_val, poro_val, rho_val, Se;
+      int tr_phase = 0; // SB, BG
+      double saturation = 0.0; // SB, BG
       CompProperties *m_cp = NULL;
 
       if(pcs->m_num->ele_mass_lumping)
@@ -1380,8 +1382,14 @@ namespace FiniteElement
          case M:                                  // Mass transport //SB4200
                                                   // Porosity
             val = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-            val *= PCSGetEleMeanNodeSecondary_2(Index, pcs->flow_pcs_type, "SATURATION1", 1);
-            //   val *= PCSGetEleMeanNodeSecondary(Index, "RICHARDS_FLOW", "SATURATION1", 1);
+            // SB Transport in both phases	
+            tr_phase = cp_vec[this->pcs->pcs_component_number]->transport_phase;
+	        // Multi phase transport of components
+	        saturation = PCSGetEleMeanNodeSecondary_2(Index, pcs->flow_pcs_type, "SATURATION1", 1);
+	        if(tr_phase == 0) // Water phase
+               val *= saturation;
+	        else if (tr_phase == 10) // non wetting phase
+               val *= (1.0 - saturation);
             m_cp = cp_vec[pcs->pcs_component_number];
                                                   //Retardation Factor
             val *= m_cp->CalcElementRetardationFactorNew(Index, unit, pcs);
@@ -1580,6 +1588,8 @@ namespace FiniteElement
    {
       int Index = MeshElement->GetIndex();
       double val = 0.0;
+      double saturation=0.0; // SB, BG
+      int tr_phase = 0; // SB, BG
       CompProperties *m_cp =NULL;                 //CMCD
       //CompProperties *m_cp = cp_vec[pcs->pcs_component_number]; //SB4200
       switch(PcsType)
@@ -1605,8 +1615,13 @@ namespace FiniteElement
             m_cp = cp_vec[pcs->pcs_component_number];
                                                   //Porosity
             val = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-            val *= PCSGetEleMeanNodeSecondary(Index, "RICHARDS_FLOW", "SATURATION1", 1);
-                                                  // Decay rate
+            tr_phase = cp_vec[this->pcs->pcs_component_number]->transport_phase; // SB, BG
+	        // Multi phase transport of components
+	        saturation = PCSGetEleMeanNodeSecondary_2(Index, pcs->flow_pcs_type, "SATURATION1", 1);
+	        if(tr_phase == 0) // Water phase
+               val *= saturation;
+	        else if (tr_phase == 10) // non wetting phase
+               val *= (1.0-saturation); // SB, BG
             val *= m_cp->CalcElementDecayRateNew(Index, pcs);
                                                   //Retardation Factor
             val *= m_cp->CalcElementRetardationFactorNew(Index, unit, pcs);
@@ -1638,6 +1653,7 @@ namespace FiniteElement
       double val = 0.0;
       double dS = 0.0;
       double nodeval0, nodeval1;
+      int tr_phase=0; // SB, BG
       //CompProperties *m_cp = NULL; //SB4200
       string name;
 
@@ -1663,10 +1679,14 @@ namespace FiniteElement
                                                   // Porosity
             val = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
             // Get saturation change:
+		    // Get saturation change, depending on phase // SB, BG
+		    tr_phase = cp_vec[this->pcs->pcs_component_number]->transport_phase;
             nodeval0 = PCSGetEleMeanNodeSecondary_2(Index, pcs->flow_pcs_type, "SATURATION1", 0);
             nodeval1 = PCSGetEleMeanNodeSecondary_2(Index, pcs->flow_pcs_type, "SATURATION1", 1);
-            // 	nodeval0 = PCSGetEleMeanNodeSecondary(Index, "RICHARDS_FLOW", "SATURATION1", 0);
-            //  nodeval1 = PCSGetEleMeanNodeSecondary(Index, "RICHARDS_FLOW", "SATURATION1", 1);
+            if (tr_phase == 10){
+		        nodeval0 = 1.0- nodeval0;
+			    nodeval1 = 1.0- nodeval1;
+		    } // SB, BG
             dS = nodeval1 - nodeval0;             // 1/dt accounted for in assemble function
             //		if(Index == 195) cout << val << "Sat_old = " << nodeval0 << ", Sa_new: "<< nodeval1<< ", dS: " << dS << endl;
             val*= dS;
@@ -1715,6 +1735,7 @@ namespace FiniteElement
       double k_rel;
       ComputeShapefct(1);                         //  12.3.2007 WW
       double variables[3];                        //OK4709
+      int tr_phase = 0; // SB, BG
 
       // For nodal value interpolation
       //======================================================================
@@ -1938,7 +1959,9 @@ namespace FiniteElement
             break;
          case M:                                  // Mass transport
             mat_fac = 1.0;                        //MediaProp->Porosity(Index,pcs->m_num->ls_theta); // porosity now included in MassDispersionTensorNew()
-            tensor = MediaProp->MassDispersionTensorNew(ip);
+            // Get transport phase of component, to obtain correct velocities in dispersion tensor
+            tr_phase = cp_vec[this->pcs->pcs_component_number]->transport_phase;
+            tensor = MediaProp->MassDispersionTensorNew(ip, tr_phase); // SB, BG
             //CB
             //SB->CB I think this does not belong here
             // mat_fac *= PCSGetEleMeanNodeSecondary_2(Index, pcs->flow_pcs_type, "SATURATION1", 1);
@@ -3118,7 +3141,7 @@ namespace FiniteElement
       }                                           //mass
       else if (PcsType==M)
       {
-         double *advection_dispersion_tensor = MediaProp->MassDispersionTensorNew(ip);
+         double *advection_dispersion_tensor = MediaProp->MassDispersionTensorNew(ip,0); // SB, BG
          switch (pcs->m_num->ele_supg_method_diffusivity)
          {
             case 1:                               // min
@@ -4225,6 +4248,14 @@ namespace FiniteElement
          vel[0] = mat_factor*gp_ele->Velocity(0, gp);
          vel[1] = mat_factor*gp_ele->Velocity(1, gp);
          vel[2] = mat_factor*gp_ele->Velocity(2, gp);
+         // If component is in non - wetting phase, as designated by transport_phase == 10 // SB, BG
+		 if(cp_vec.size() > 0) {
+            if(cp_vec[this->pcs->pcs_component_number]->transport_phase == 10){ // // SB, BG
+               vel[0] = mat_factor*gp_ele->Velocity_g(0, gp);   
+		       vel[1] = mat_factor*gp_ele->Velocity_g(1, gp);
+               vel[2] = mat_factor*gp_ele->Velocity_g(2, gp);
+            } // SB, BG
+		 }
          if(multiphase)                           //02/2007 WW
          {
             PG2=interpolate(NodalVal_p2);
@@ -5151,7 +5182,135 @@ namespace FiniteElement
       // gp_ele->Velocity.Write();
    }
 
-   /***************************************************************************
+/***************************************************************************
+   GeoSys - Funktion: InterpolatePropertyToGausspoint
+   CFiniteElementStd:: necessary for using precalculated density and viscosity BG, 11/2010
+ 
+   Programming:  BG
+   11/2010	first version
+**************************************************************************/
+double  CFiniteElementStd::InterpolatePropertyToGausspoint(int GPIndex, CRFProcess *m_pcs, int Variableindex)
+{
+	//double fkt = 0.0;
+	//int gp_r=0, gp_s=0, gp_t=0;
+	//ElementValue* gp_ele = ele_gp_value[Index];
+	int i;
+	double variable;
+    int size_m = 20; //assigned to the value in CFiniteElementStd(CRFProcess *Pcs, const int C_Sys_Flad, const int order=1);
+	double *NodalVal_BG;
+
+	NodalVal_BG = new double [size_m]; //BG
+	// Get gauss point data
+	// GetGaussData(gp, gp_r, gp_s, gp_t);
+	//fkt = GetGaussData(GPIndex, gp_r, gp_s, gp_t);
+	// Compute the shape function for interpolation within element
+	//ComputeShapefct(1);
+	//read density from nodes
+	for(i = 0; i < nnodes; i++){
+		NodalVal_BG[i] = m_pcs->GetNodeValue(nodes[i], Variableindex); 
+	}
+	// Interpolate density from nodes to gauss point
+	variable = interpolate(NodalVal_BG);
+
+	return variable;
+}
+
+/***************************************************************************
+   GeoSys - Funktion: Cal_GP_Velocity_DuMux
+   CFiniteElementStd:: Velocity calulation in gauss points from 
+   node velocities obtained by DUMUX or ECLIPSE
+ 
+   Programming:  BG
+   08/2010	first version
+**************************************************************************/
+string  CFiniteElementStd::Cal_GP_Velocity_DuMux(int *i_ind, CRFProcess *m_pcs, int phase_index)
+{
+	int i, i_dim;
+	static double temp_val_old[3]={0.0,0.0,0.0}, temp_val[3]={0.0,0.0,0.0}; 
+	double value_old[3]={0.0,0.0,0.0}, value[3]={0.0,0.0,0.0};
+	// ---- Gauss integral
+	int gp_r=0, gp_s=0, gp_t=0;
+	double fkt=0.0; //OK411 coef = 0.0
+	int i_idx;    
+	ostringstream temp;
+	string tempstring;
+
+
+	if (m_pcs->simulator == "DUMUX") {
+		ElementValue* gp_ele = ele_gp_value[Index];
+
+		// Gauss point loop
+		for (gp = 0; gp < nGaussPoints; gp++){
+			for(i_dim=0;i_dim<dim;i_dim++) {
+				temp_val[i_dim] = 0;
+				temp_val_old[i_dim] = 0;
+			}
+
+			// Get gauss point data
+			// GetGaussData(gp, gp_r, gp_s, gp_t);
+			fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+			// Compute the shape function for interpolation within element
+			ComputeShapefct(1);
+
+			// Save former gp velocity
+			for(i_dim=0;i_dim<dim;i_dim++) {
+			  if (phase_index == 0)
+				temp_val_old[i_dim] = gp_ele->Velocity(i_dim,gp);
+			  else
+				temp_val_old[i_dim] = gp_ele->Velocity_g(i_dim,gp);
+			}
+
+			// Interpolate velocity from nodes to gauss point for all three velocity components
+			for(i_dim=0;i_dim< dim;i_dim++){
+			   // Get  velocities from FLUID_MOMENTUM process in element nodes: 
+				i_idx = i_ind[i_dim];
+				for(i=0; i<nnodes; i++){
+					NodalVal[i] = m_pcs->GetNodeValue(nodes[i], i_idx); 
+					//NodalVal[i] = NodalVal[i] /gravity_constant/1000.0*0.001;  //dirty fix for permebility to conductivity
+				}
+				temp_val[i_dim] = interpolate(NodalVal);
+			} // end for dim
+
+		  // Set gauss point velocity
+			for(i_dim=0; i_dim<dim; i_dim++) {
+				if (phase_index == 0)
+					gp_ele->Velocity(i_dim, gp) = temp_val[i_dim];
+				else {
+					if (phase_index == 1)
+						gp_ele->Velocity_g(i_dim, gp) = temp_val[i_dim];
+					else {
+						cout << "The program is canceled because there is a phase used which is not considered yet!" << endl;	
+						system("Pause");
+						exit(0);
+					}
+				}
+			}
+
+			// Data for Test Output
+			for(i_dim=0;i_dim<dim;i_dim++) {
+				// average value of all Gauss points
+				value_old[i_dim] = value_old[i_dim] + temp_val_old[i_dim] / nGaussPoints;
+			}
+			for(i_dim=0;i_dim<dim;i_dim++) {
+				// average value of all Gauss points
+				value[i_dim] = value[i_dim] + temp_val[i_dim] / nGaussPoints;
+			}
+		} // end gauss point loop
+	
+		// Data for Test Output
+		for(i_dim=0;i_dim<dim;i_dim++) {
+			temp.str(""); temp.clear(); temp << value_old[i_dim]; tempstring += "; " + temp.str();
+		}
+		for(i_dim=0;i_dim<dim;i_dim++) {
+			temp.str(""); temp.clear(); temp << value[i_dim]; tempstring += "; " + temp.str();
+		}
+	}
+	return tempstring;
+}
+
+
+
+/***************************************************************************
       GeoSys - Funktion:
               CFiniteElementStd:: Velocity calulation
 
@@ -5328,8 +5487,113 @@ namespace FiniteElement
             gp_ele->Velocity_g.Write(*pcs->matrix_file);
          }
       }
-      // gp_ele->Velocity.Write();
-   }
+// gp_ele->Velocity.Write();
+}
+
+
+/***************************************************************************
+   GeoSys - Funktion: Cal_GP_Velocity_ECLIPSE
+   CFiniteElementStd:: Velocity calulation in gauss points from 
+   node velocities obtained by fluid momentum for one element
+ 
+   Programming:  SB, BG
+   09/2010
+**************************************************************************/
+string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool output_average, int phase_index, string phase)
+{
+	int i_dim;
+	static double temp_vel_old[3]={0.0,0.0,0.0}, temp_vel[3]={0.0,0.0,0.0};  
+	//double n_vel_x[8], n_vel_y[8], n_vel_z[8];
+	// ---- Gauss integral
+	int gp_r=0, gp_s=0, gp_t=0;
+	double coef = 0.0, fkt=0.0;
+	//  int i_idx;    
+	CPointData_ECL* m_NodeData = NULL;
+	double value[3], value_old[3];
+	ostringstream temp;
+
+
+	ElementValue* gp_ele = ele_gp_value[Index];
+
+	// Get  velocities from ECLIPSE faces in element node: 
+	this->pcs->EclipseData->InterpolateDataFromFacesToNodes(this->Index, NodalVal, NodalVal1, NodalVal2, phase_index);
+		
+	// Gauss point loop
+	for(i_dim=0;i_dim<dim;i_dim++) {
+		value[i_dim] = 0;
+		value_old[i_dim] = 0;
+	}
+
+	for (gp = 0; gp < nGaussPoints; gp++){
+	  // Get gauss point data
+      // GetGaussData(gp, gp_r, gp_s, gp_t);
+	  fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+	  // Compute the shape function for interpolation within element
+      ComputeShapefct(1);
+	 
+	  // Save former gp velocity for test use only
+	  for(i_dim=0;i_dim<dim;i_dim++) {
+		  if (phase_index == 0)
+			temp_vel_old[i_dim] = gp_ele->Velocity(i_dim,gp);
+		  else
+			temp_vel_old[i_dim] = gp_ele->Velocity_g(i_dim,gp);
+	  }
+
+	  // Interpolate velocity from nodes to gauss point for all three velocity components
+	  temp_vel[0] = interpolate(NodalVal);
+	  temp_vel[1] = interpolate(NodalVal1);
+	  temp_vel[2] = interpolate(NodalVal2);
+
+	  // Set gauss point velocity
+	  for(i_dim=0; i_dim<dim; i_dim++)
+			if (phase == "WATER")
+				gp_ele->Velocity(i_dim, gp) = temp_vel[i_dim];
+			else {
+				if ((phase == "GAS") || (phase == "OIL"))
+					gp_ele->Velocity_g(i_dim, gp) = temp_vel[i_dim];
+				else {
+					cout << "The program is canceled because there is a phase used which is not considered yet!" << endl;	
+					system("Pause");
+					exit(0);
+				}
+			}
+
+		// Data for Test Output
+		if (output_average = true) {
+			for(i_dim=0;i_dim<dim;i_dim++) {
+				// average value of all Gauss points
+				value_old[i_dim] = value_old[i_dim] + temp_vel_old[i_dim] / nGaussPoints;
+			}
+			for(i_dim=0;i_dim<dim;i_dim++) {
+				// average value of all Gauss points
+				value[i_dim] = value[i_dim] + temp_vel[i_dim] / nGaussPoints;
+			}
+		}
+		else {
+			if (gp == 1) {
+				for(i_dim=0;i_dim<dim;i_dim++) {
+					value_old[i_dim] = temp_vel_old[i_dim];
+				}
+				for(i_dim=0;i_dim<dim;i_dim++) {
+					value[i_dim] = temp_vel[i_dim];
+				}
+			}
+		}
+	} // end gauss point loop
+
+
+	// Data for Test Output
+	for(i_dim=0;i_dim<dim;i_dim++) {
+		temp.str(""); temp.clear(); temp << value_old[i_dim]; tempstring += "; " + temp.str();
+	}
+	for(i_dim=0;i_dim<dim;i_dim++) {
+		temp.str(""); temp.clear(); temp << value[i_dim]; tempstring += "; " + temp.str();
+	}
+	return tempstring;
+
+  // Output
+  // gp_ele->Velocity.Write();
+}
 
    /***************************************************************************
       GeoSys - Funktion:
@@ -5906,9 +6170,9 @@ namespace FiniteElement
       (*AuxMatrix)   *= fac_storage;
       *StiffMatrix   += *AuxMatrix;
       // Content matrix
-      *AuxMatrix      = *Content;
-      (*AuxMatrix)   *= fac_content;
-      *StiffMatrix   += *AuxMatrix;
+      //*AuxMatrix      = *Content;		//SB, BG; Korrektur Stofftransport bei Mehrphasenströmung
+      //(*AuxMatrix)   *= fac_content;
+      //*StiffMatrix   += *AuxMatrix; // SB, BG
 
       //----------------------------------------------------------------------
       // Add local matrix to global matrix
@@ -7189,7 +7453,15 @@ namespace FiniteElement
    //WW 08/2007
    void ElementValue::getIPvalue_vec(const int IP, double * vec)
    {
-      for(int i=0; (size_t)i<Velocity.Rows(); i++) vec[i] = Velocity(i, IP);
+	for(int i=0; i<int(Velocity.Rows()); i++) vec[i] = Velocity(i, IP); // SB, BG
+	}
+	//SB, BG 09/2010
+	void ElementValue::getIPvalue_vec_phase(const int IP, int phase, double * vec)
+	{
+	if(phase == 0)
+		for(int i=0; (size_t)i<Velocity.Rows(); i++) vec[i] = Velocity(i, IP);
+	else if (phase == 10)
+		for(int i=0; (size_t)i<Velocity_g.Rows(); i++) vec[i] = Velocity_g(i, IP);
    }
 
    /**************************************************************************

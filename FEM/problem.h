@@ -110,7 +110,9 @@ class Problem
       void LOPCalcELEResultants();
       inline void ASMCalcNodeWDepth(CRFProcess *m_pcs);
       void PCSCalcSecondaryVariables();
-      bool Check();                               //OK
+      bool Check();                           //OK
+	  void TestOutputEclipse(CRFProcess *m_pcs);
+	  void TestOutputDuMux(CRFProcess *m_pcs);
 
       /**
        * pointer to an instance of class GEOObjects,

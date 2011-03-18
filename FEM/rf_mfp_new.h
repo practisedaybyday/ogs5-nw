@@ -130,6 +130,7 @@ class CFluidProperties
       double drhodP (double P, double T);
                                                   //AKS
       double MixtureSubProperity(int properties, long idx_elem, double p, double T);
+      double GetElementValueFromNodes(long ElementIndex, int GPIndex, int PhaseIndex, int Variable); // BG 11/2010
       double drhodT (double P, double T);
       double Viscosity(double *variables = NULL); //OK4709
                                                   //NB Jan09
