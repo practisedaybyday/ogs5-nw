@@ -36,8 +36,8 @@ void MeshQualityNormalisedVolumes::check()
 	for (size_t k(0); k < msh_elem.size(); k++) {
 		MshElemType::type elem_type (msh_elem[k]->GetElementType());
 		if (elem_type != MshElemType::LINE
-			&& elem_type != MshElemType::TRIANGLE
-			&& elem_type != MshElemType::QUAD) {
+				&& elem_type != MshElemType::TRIANGLE
+				&& elem_type != MshElemType::QUAD) {
 			_mesh_quality_messure[k] /= max_volume;
 		} else {
 			_mesh_quality_messure[k] = 1.1; // element has no valid value

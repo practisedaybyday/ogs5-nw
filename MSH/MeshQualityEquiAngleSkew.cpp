@@ -16,10 +16,14 @@
 #define M_PI 3.14159265358979323846
 #endif
 
+#ifndef M_PI_2
+#define M_PI_2 1.57079632679489661923
+#endif
+
 namespace Mesh_Group {
 
 MeshQualityEquiAngleSkew::MeshQualityEquiAngleSkew(CFEMesh const * const mesh) :
-	MeshQualityChecker(mesh), M_PI_THIRD (M_PI/3.0), M_PI_HALF (M_PI/2.0)
+	MeshQualityChecker(mesh), M_PI_THIRD (M_PI/3.0), TWICE_M_PI (2*M_PI)
 {}
 
 MeshQualityEquiAngleSkew::~MeshQualityEquiAngleSkew()
@@ -55,16 +59,8 @@ double MeshQualityEquiAngleSkew::checkTriangle (CElem const * const elem) const
 	double const * const node1 (elem->GetNode(1)->getData());
 	double const * const node2 (elem->GetNode(2)->getData());
 
-	double min_angle (MATHLIB::getAngle (node2, node0, node1));
-	double max_angle (min_angle);
-
-	double angle (MATHLIB::getAngle (node0, node1, node2));
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
-	angle = MATHLIB::getAngle (node1, node2, node0);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
+	double min_angle (M_PI_2), max_angle (0.0);
+	getMinMaxAngleFromTriangle (node0, node1, node2, min_angle, max_angle);
 
 	return 1.0 - std::max((max_angle - M_PI_THIRD)/(M_PI - M_PI_THIRD), (M_PI_THIRD - min_angle)/(M_PI_THIRD));
 }
@@ -76,22 +72,12 @@ double MeshQualityEquiAngleSkew::checkQuad (CElem const * const elem) const
 	double const * const node2 (elem->GetNode(2)->getData());
 	double const * const node3 (elem->GetNode(3)->getData());
 
-	double min_angle (MATHLIB::getAngle (node3, node0, node1));
-	double max_angle (min_angle);
+	double min_angle (TWICE_M_PI);
+	double max_angle (0.0);
 
-	double angle (MATHLIB::getAngle (node0, node1, node2));
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
+	getMinMaxAngleFromQuad (node0, node1, node2, node3, min_angle, max_angle);
 
-	angle = MATHLIB::getAngle (node1, node2, node3);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
-	angle = MATHLIB::getAngle (node2, node3, node0);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
-	return 1.0 - std::max((max_angle - M_PI_HALF)/(M_PI - M_PI_HALF), (M_PI_HALF - min_angle)/(M_PI_HALF));
+	return 1.0 - std::max((max_angle - M_PI_2)/(M_PI - M_PI_2), (M_PI_2 - min_angle)/(M_PI_2));
 }
 
 double MeshQualityEquiAngleSkew::checkTetrahedron (CElem const * const elem) const
@@ -101,63 +87,88 @@ double MeshQualityEquiAngleSkew::checkTetrahedron (CElem const * const elem) con
 	double const * const node2 (elem->GetNode(2)->getData());
 	double const * const node3 (elem->GetNode(3)->getData());
 
+	double min_angle (M_PI_2);
+	double max_angle (0.0);
+
 	// first triangle (0,1,2)
-	double min_angle (MATHLIB::getAngle (node1, node0, node2));
-	double max_angle (min_angle);
-
-	double angle (MATHLIB::getAngle (node2, node1, node0));
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
-	angle = MATHLIB::getAngle (node0, node2, node1);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
+	getMinMaxAngleFromTriangle(node0, node1, node2, min_angle, max_angle);
 	// second triangle (0,1,3)
-	angle = MATHLIB::getAngle (node3, node0, node1);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
-	angle = MATHLIB::getAngle (node0, node1, node3);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
-	angle = MATHLIB::getAngle (node1, node3, node0);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
+	getMinMaxAngleFromTriangle(node0, node1, node3, min_angle, max_angle);
 	// third triangle (0,2,3)
-	angle = MATHLIB::getAngle (node3, node0, node2);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
-	angle = MATHLIB::getAngle (node0, node2, node3);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
-	angle = MATHLIB::getAngle (node2, node3, node0);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
+	getMinMaxAngleFromTriangle(node0, node2, node3, min_angle, max_angle);
 	// fourth triangle (1,2,3)
-	angle = MATHLIB::getAngle (node3, node1, node2);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
+	getMinMaxAngleFromTriangle(node1, node2, node3, min_angle, max_angle);
 
-	angle = MATHLIB::getAngle (node1, node2, node3);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
-	angle = MATHLIB::getAngle (node2, node3, node1);
-	if (angle < min_angle) min_angle = angle;
-	if (angle > max_angle) max_angle = angle;
-
-	return 1.0 - std::max((max_angle - M_PI_HALF)/(M_PI - M_PI_THIRD), (M_PI_THIRD - min_angle)/(M_PI_THIRD));
+	return 1.0 - std::max((max_angle - M_PI_2)/(M_PI - M_PI_THIRD), (M_PI_THIRD - min_angle)/(M_PI_THIRD));
 }
 
 double MeshQualityEquiAngleSkew::checkHexahedron (CElem const * const elem) const
 {
-	return 0.0;
+	double const * const node0 (elem->GetNode(0)->getData());
+	double const * const node1 (elem->GetNode(1)->getData());
+	double const * const node2 (elem->GetNode(2)->getData());
+	double const * const node3 (elem->GetNode(3)->getData());
+	double const * const node4 (elem->GetNode(4)->getData());
+	double const * const node5 (elem->GetNode(5)->getData());
+	double const * const node6 (elem->GetNode(6)->getData());
+	double const * const node7 (elem->GetNode(7)->getData());
+
+	double min_angle (2 * M_PI);
+	double max_angle (0.0);
+
+	// first surface (0,1,2,3)
+	getMinMaxAngleFromQuad (node0, node1, node2, node3, min_angle, max_angle);
+	// second surface (0,3,7,4)
+	getMinMaxAngleFromQuad (node0, node3, node7, node4, min_angle, max_angle);
+	// third surface (4,5,6,7)
+	getMinMaxAngleFromQuad (node4, node5, node6, node7, min_angle, max_angle);
+	// fourth surface (5,1,2,6)
+	getMinMaxAngleFromQuad (node5, node1, node2, node6, min_angle, max_angle);
+	// fifth surface (5,1,0,4)
+	getMinMaxAngleFromQuad (node5, node1, node0, node4, min_angle, max_angle);
+	// sixth surface (6,2,3,7)
+	getMinMaxAngleFromQuad (node6, node2, node3, node7, min_angle, max_angle);
+
+	return 1.0 - std::max((max_angle - M_PI_2)/(M_PI - M_PI_2), (M_PI_2 - min_angle)/(M_PI_2));
+}
+
+void MeshQualityEquiAngleSkew::getMinMaxAngleFromQuad (
+		double const * const n0, double const * const n1,
+		double const * const n2, double const * const n3,
+		double &min_angle, double &max_angle) const
+{
+	double angle (MATHLIB::getAngle (n3, n0, n1));
+	if (angle < min_angle) min_angle = angle;
+	if (angle > max_angle) max_angle = angle;
+
+	angle = MATHLIB::getAngle (n0, n1, n2);
+	if (angle < min_angle) min_angle = angle;
+	if (angle > max_angle) max_angle = angle;
+
+	angle = MATHLIB::getAngle (n1, n2, n3);
+	if (angle < min_angle) min_angle = angle;
+	if (angle > max_angle) max_angle = angle;
+
+	angle = MATHLIB::getAngle (n2, n3, n0);
+	if (angle < min_angle) min_angle = angle;
+	if (angle > max_angle) max_angle = angle;
+}
+
+void MeshQualityEquiAngleSkew::getMinMaxAngleFromTriangle(double const * const n0,
+		double const * const n1, double const * const n2, double &min_angle,
+		double &max_angle) const
+{
+	double angle (MATHLIB::getAngle (n2, n0, n1));
+	if (angle < min_angle) min_angle = angle;
+	if (angle > max_angle) max_angle = angle;
+
+	angle = MATHLIB::getAngle (n0, n1, n2);
+	if (angle < min_angle) min_angle = angle;
+	if (angle > max_angle) max_angle = angle;
+
+	angle = MATHLIB::getAngle (n1, n2, n0);
+	if (angle < min_angle) min_angle = angle;
+	if (angle > max_angle) max_angle = angle;
 }
 
 } // end namespace Mesh_Group
