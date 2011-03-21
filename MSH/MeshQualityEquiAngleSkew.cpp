@@ -48,6 +48,11 @@ void MeshQualityEquiAngleSkew::check ()
 		case MshElemType::HEXAHEDRON:
 			_mesh_quality_messure[k] = checkHexahedron (msh_elem[k]);
 			break;
+		case MshElemType::PRISM:
+			_mesh_quality_messure[k] = checkPrism (msh_elem[k]);
+			break;
+		default:
+			break;
 		}
 
 	}
@@ -130,6 +135,39 @@ double MeshQualityEquiAngleSkew::checkHexahedron (CElem const * const elem) cons
 	getMinMaxAngleFromQuad (node6, node2, node3, node7, min_angle, max_angle);
 
 	return 1.0 - std::max((max_angle - M_PI_2)/(M_PI - M_PI_2), (M_PI_2 - min_angle)/(M_PI_2));
+}
+
+double MeshQualityEquiAngleSkew::checkPrism (CElem const * const elem) const
+{
+	double const * const node0 (elem->GetNode(0)->getData());
+	double const * const node1 (elem->GetNode(1)->getData());
+	double const * const node2 (elem->GetNode(2)->getData());
+	double const * const node3 (elem->GetNode(3)->getData());
+	double const * const node4 (elem->GetNode(4)->getData());
+	double const * const node5 (elem->GetNode(5)->getData());
+
+	double min_angle_tri (2 * M_PI);
+	double max_angle_tri (0.0);
+
+	// first triangle (0,1,2)
+	getMinMaxAngleFromTriangle (node0, node1, node2, min_angle_tri, max_angle_tri);
+	// second surface (3,4,5)
+	getMinMaxAngleFromTriangle (node3, node4, node5, min_angle_tri, max_angle_tri);
+
+	double tri_criterion (1.0 - std::max((max_angle_tri - M_PI_2)/(M_PI - M_PI_THIRD), (M_PI_THIRD - min_angle_tri)/(M_PI_THIRD)));
+
+	double min_angle_quad (2 * M_PI);
+	double max_angle_quad (0.0);
+	// surface (0,3,4,1)
+	getMinMaxAngleFromQuad (node0, node3, node4, node1, min_angle_quad, max_angle_quad);
+	// surface (2,5,3,0)
+	getMinMaxAngleFromQuad (node2, node5, node3, node0, min_angle_quad, max_angle_quad);
+	// surface (1,2,5,4)
+	getMinMaxAngleFromQuad (node1, node2, node5, node4, min_angle_quad, max_angle_quad);
+
+	double quad_criterion (1.0 - std::max((max_angle_quad - M_PI_2)/(M_PI - M_PI_2), (M_PI_2 - min_angle_quad)/(M_PI_2)));
+
+	return std::min (tri_criterion, quad_criterion);
 }
 
 void MeshQualityEquiAngleSkew::getMinMaxAngleFromQuad (

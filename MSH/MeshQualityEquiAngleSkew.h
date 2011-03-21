@@ -24,6 +24,7 @@ private:
 	double checkQuad(CElem const * const elem) const;
 	double checkTetrahedron(CElem const * const elem) const;
 	double checkHexahedron(CElem const * const elem) const;
+	double checkPrism (CElem const * const elem) const;
 	void getMinMaxAngleFromQuad(double const * const n0,
 			double const * const n1, double const * const n2,
 			double const * const n3, double &min_angle, double &max_angle) const;
