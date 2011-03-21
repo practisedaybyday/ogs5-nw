@@ -51,6 +51,15 @@ IF ( CMAKE_USE_PTHREADS_INIT )
 	MESSAGE (STATUS "pthread library found." )
 ENDIF (CMAKE_USE_PTHREADS_INIT )
 
+## boost (see FindBoost.cmake for more options) ##
+set(Boost_USE_STATIC_LIBS        ON)
+set(Boost_USE_MULTITHREADED      ON)
+set(Boost_USE_STATIC_RUNTIME    OFF)
+FIND_PACKAGE( Boost COMPONENTS filesystem system regex)
+
+## VTK ##
+FIND_PACKAGE( VTK )
+
 IF (OGS_PYTHON)
 	FIND_PACKAGE (PythonLibs 2.5 REQUIRED)
 ENDIF (OGS_PYTHON)

@@ -26,7 +26,9 @@ SET( HEADERS
 )
 
 IF (OGS_USE_NETCDF)
-	FIND_PACKAGE( VTK REQUIRED )
+	IF (NOT VTK_FOUND)
+		MESSAGE(FATAL_ERROR "Error: VTK was not found but is needed for the GUI. Aborting...")
+	ENDIF (NOT VTK_FOUND)
 	INCLUDE( ${VTK_USE_FILE} )
 	SET (HEADERS NetCDFInterface.h ${HEADERS})
 	SET (SOURCES NetCDFInterface.cpp ${SOURCES})

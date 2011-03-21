@@ -8,6 +8,10 @@ IF (NOT QT4_FOUND)
 	MESSAGE(FATAL_ERROR "Error: Qt was not found but is needed for the GUI. Aborting...")
 ENDIF (NOT QT4_FOUND)
 
+IF (NOT VTK_FOUND)
+	MESSAGE(FATAL_ERROR "Error: VTK was not found but is needed for the GUI. Aborting...")
+ENDIF (NOT VTK_FOUND)
+
 FIND_PACKAGE( VRPN )
 IF(NOT VRPN_FOUND OR NOT QUATLIB_FOUND)
 	SET(OGS_USE_VRPN Off)
