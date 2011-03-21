@@ -9,6 +9,9 @@ PROJECT(tmp)
 ### CMake setup ###
 INCLUDE(CMakeConfiguration/CMakeSetup.cmake)
 
+### Find directories and libraries ###
+INCLUDE (CMakeConfiguration/Find.cmake)
+
 ###############
 ### Options ###
 ###############
@@ -48,8 +51,12 @@ OPTION(OGS_CMAKE_DEBUG "Show additional cmake debug information" OFF)
 OPTION(OGS_ONE_BIG_GTEST "Should all gtests be collected to one ctest" ON)
 OPTION(OGS_USE_NETCDF "NetCDF interface" OFF)
 OPTION(OGS_USE_OPENSG "VTK to OpenSG converter" OFF)
+OPTION(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OFF)
+OPTION(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OFF)
 OPTION(OGS_BUILD_INFO "Should build information be generated" ON)
 OPTION (CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
+
+MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_USE_OPENSG OGS_USE_VRPN OGS_VRED_PLUGIN OGS_BUILD_INFO CMAKE_CMD_ARGS)
 
 ###########################################################################
 ### OGS version information. Adjust these if you release a new version. ###
@@ -64,9 +71,6 @@ SET (OGS_DATE "03.03.2011")
 
 ### Compiler setup ###
 INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
-
-### Find directories and libraries ###
-INCLUDE (CMakeConfiguration/Find.cmake)
 
 # Check for number of processors
 CHECK_PROCESSOR_COUNT()
@@ -194,7 +198,10 @@ ADD_SUBDIRECTORY( OGS )
 IF(OGS_USE_QT)
    MESSAGE (STATUS  "Configuring for OGS with GUI" )	
    SET(OGS_FEM ON )
-   INCLUDE(GUI.cmake )
+	IF(OGS_USE_OPENSG AND CMAKE_COMPILER_IS_GNUCXX)
+		ADD_DEFINITIONS (-D__STDC_FORMAT_MACROS)	# for OpenSG compiling
+	ENDIF()
+   ADD_SUBDIRECTORY( Qt )
 ENDIF(OGS_USE_QT)
 
 # Project name
