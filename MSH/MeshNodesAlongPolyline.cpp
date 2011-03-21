@@ -26,7 +26,6 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 	size_t n_linear_order_nodes (mesh->GetNodesNumber (false));
 	size_t n_nodes (mesh->GetNodesNumber (true));
 
-	// for sorting the mesh nodes along the polyline
 	std::vector<size_t> msh_node_higher_order_ids;
 
 	// repeat until at least one relevant node was found
@@ -68,8 +67,8 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 	std::cout << "distances of linear nodes along polyline " << *ply << "(min_edge_length = " << min_edge_length << "): " << std::endl;
 	for (size_t k(0); k<_dist_of_proj_node_from_ply_start.size(); k++)
 		std::cout << "\t" << _msh_node_ids[k] << " " << _dist_of_proj_node_from_ply_start[k] << std::endl;
-	std::cout << std::endl;
-	std::cout << "number of linear nodes along polyline " << ply << ": " << _dist_of_proj_node_from_ply_start.size() << ", number of higher order nodes: " << msh_node_higher_order_ids.size() << std::endl;
+	std::cout << "number of linear nodes along polyline " << ply << ": " << _dist_of_proj_node_from_ply_start.size()
+			<< ", number of higher order nodes: " << msh_node_higher_order_ids.size() << std::endl;
 #endif
 	// assign/append higher order nodes at the end of vector _msh_node_ids
 	for (size_t k(0); k<msh_node_higher_order_ids.size(); k++)
