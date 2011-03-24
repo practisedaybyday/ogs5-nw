@@ -4242,7 +4242,7 @@ void CRFProcess::AllocateLocalMatrixMemory()
       }
    }
    if(!H_Process) up_type = 2;
-   if(MASS_TRANSPORT_Process)up_type = 5;         //SB for steady state element matrices in transport
+   if(MASS_TRANSPORT_Process || T_Process)up_type = 5;         //SB for steady state element matrices in transport
    //----------------------------------------------------------------------
    ElementMatrix *eleMatrix = NULL;
    CElem* elem = NULL;

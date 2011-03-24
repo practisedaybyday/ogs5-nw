@@ -414,7 +414,7 @@ namespace FiniteElement
          Mass = EleMat->GetMass();
          Laplace = EleMat->GetLaplace();
          // Advection, Storage, Content SB4200
-         if(PcsType==M)
+         if(PcsType==M || PcsType==H)
          {
             Advection = EleMat->GetAdvection();
             Storage = EleMat->GetStorage();
