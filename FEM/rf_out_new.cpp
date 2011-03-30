@@ -1717,21 +1717,23 @@ Programing:
 double COutput::NODWritePLYDataTEC(int number)
 {
    //WW  int nidx;
-   long j, gnode;
+   long gnode;
    bool bdummy = false;
    int stress_i[6], strain_i[6];
    double ss[6];
    double val_n = 0.;                             //WW
-   //----------------------------------------------------------------------
-   // Tests
-   // OUT
-   //OK4704 if((int)_nod_value_vector.size()==0)
                                                   //OK4704
    if ((_nod_value_vector.size() == 0) && (mfp_value_vector.size() == 0))
       return 0.0;
-   //----------------------------------------------------------------------
+
+   // TF
+   GEOLIB::Polyline const * const ply (dynamic_cast<GEOLIB::Polyline const * const>(this->getGeoObj()));
+   if (this->getGeoType() != GEOLIB::POLYLINE || ply == NULL) {
+	   std::cerr << "COutput::NODWritePLYDataTEC geometric object is not a polyline" << std::endl;
+	   return 0.0;
+   }
+
    // File handling
-   //......................................................................
    std::string tec_file_name = file_base_name + "_ply_" + geo_name + "_t"
       + number2str<size_t> (_id);                 //OK4709
    if (getProcessType() != INVALID_PROCESS)
@@ -1741,8 +1743,8 @@ double COutput::NODWritePLYDataTEC(int number)
    tec_file_name += TEC_FILE_EXTENSION;
    if (!_new_file_opened)
       remove(tec_file_name.c_str());              //WW
-   //......................................................................
-                                                  //WW
+
+   //WW
    fstream tec_file(tec_file_name.data(), ios::app | ios::out);
 
    tec_file.setf(ios::scientific, ios::floatfield);
@@ -1760,16 +1762,15 @@ double COutput::NODWritePLYDataTEC(int number)
    // Tests
    //......................................................................
    // GEO
-   CGLPolyline* m_ply = GEOGetPLYByName(geo_name);//CC
-   //  CGLPolyline* m_ply = polyline_vector[getGeoObjIdx()];
-   if (!m_ply)
-   {
-      cout << "Warning in COutput::NODWritePLYDataTEC - no GEO data" << endl;
-      tec_file << "Warning in COutput::NODWritePLYDataTEC - no GEO data: "
-         << geo_name << endl;
-      tec_file.close();
-      return 0.0;
-   }
+//   CGLPolyline* m_ply = GEOGetPLYByName(geo_name);//CC
+//   if (!m_ply)
+//   {
+//      cout << "Warning in COutput::NODWritePLYDataTEC - no GEO data" << endl;
+//      tec_file << "Warning in COutput::NODWritePLYDataTEC - no GEO data: "
+//         << geo_name << endl;
+//      tec_file.close();
+//      return 0.0;
+//   }
 
    // MSH
    //	CFEMesh* m_msh = GetMSH();
@@ -1782,16 +1783,13 @@ double COutput::NODWritePLYDataTEC(int number)
       //OKToDo return;
    } else
    m_msh->SwitchOnQuadraticNodes(false);          //WW
-   //......................................................................
+
    // PCS
-   if (getProcessType() == INVALID_PROCESS)
-   {
-      m_pcs = NULL;
-   }
-   else
-   {
-      m_pcs = PCSGet(getProcessType());
-   }
+   if (getProcessType() == INVALID_PROCESS) {
+		m_pcs = NULL;
+	} else {
+		m_pcs = PCSGet(getProcessType());
+	}
 
    CRFProcess* dm_pcs = NULL;                     //WW
    for (size_t i = 0; i < pcs_vector.size(); i++)
@@ -1802,12 +1800,11 @@ double COutput::NODWritePLYDataTEC(int number)
          break;
       }
    }
-   //......................................................................
+
    // VEL
    int v_eidx[3];
-   CRFProcess* m_pcs_flow = NULL;
+   CRFProcess* m_pcs_flow (PCSGetFlow());
    //m_pcs_flow = PCSGet("GROUNDWATER_FLOW"); //OKToDo
-   m_pcs_flow = PCSGetFlow();                     //OK
    if (!m_pcs_flow)
    {
       //WW cout << "Warning in COutput::NODWritePLYDataTEC() - no PCS flow data" << endl;
@@ -1821,15 +1818,16 @@ double COutput::NODWritePLYDataTEC(int number)
       v_eidx[1] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Y");
       v_eidx[2] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Z");
    }
-   for (size_t i = 0; i < 3; i++)
-   {
-      if (v_eidx[i] < 0)
-      {
-         //WW cout << "Warning in COutput::NODWritePLYDataTEC() - no PCS flow data" << endl;
-         //tec_file << "Warning in COutput::NODWritePLYDataTEC() - no PCS flow data " << endl;
-         //tec_file.close();
-      }
-   }
+
+//   for (size_t i = 0; i < 3; i++)
+//   {
+//      if (v_eidx[i] < 0)
+//      {
+//         //WW cout << "Warning in COutput::NODWritePLYDataTEC() - no PCS flow data" << endl;
+//         //tec_file << "Warning in COutput::NODWritePLYDataTEC() - no PCS flow data " << endl;
+//         //tec_file.close();
+//      }
+//   }
    //--------------------------------------------------------------------
    // NIDX for output variables
    size_t no_variables (_nod_value_vector.size());
@@ -1904,89 +1902,83 @@ double COutput::NODWritePLYDataTEC(int number)
 
    m_msh->SwitchOnQuadraticNodes(false);          //WW
    // NOD at PLY
-   vector<long> nodes_vector;
-   m_msh->GetNODOnPLY(m_ply, nodes_vector);
+   std::vector<long> nodes_vector;
 
-   // ELE at PLY
-   // TF commented out, since the vector ele_vector_at_geo is local within the if statement
-   // 	and in the consequence can not be used later on (i tried to check side effects, but
-   //  i am not sure - all tested benchmarks are working)
-//	if (_ele_value_vector.size() > 0) {
-//		vector<long> ele_vector_at_geo;
-//		m_msh->GetELEOnPLY(m_ply, ele_vector_at_geo);
-//	}
+   CGLPolyline* m_ply = GEOGetPLYByName(geo_name);
+//   m_msh->GetNODOnPLY(m_ply, old_nodes_vector); // TF
 
-   //--------------------------------------------------------------------
+   double tmp_min_edge_length (m_msh->getMinEdgeLength());
+   m_msh->setMinEdgeLength (m_ply->epsilon);
+   m_msh->GetNODOnPLY(ply, nodes_vector); // TF
+   std::vector<double> interpolation_points;
+   m_msh->getPointsForInterpolationAlongPolyline (ply, interpolation_points);
+   m_msh->setMinEdgeLength(tmp_min_edge_length);
+
+//   std::cout << "size of nodes_vector: " << nodes_vector.size() << ", size of old_nodes_vector: " << old_nodes_vector.size() << std::endl;
    //bool b_specified_pcs = (m_pcs != NULL); //NW m_pcs = PCSGet(pcs_type_name);
-   for (j = 0; j < (long) nodes_vector.size(); j++)
-   {
-      tec_file << m_ply->getSBuffer()[j] << " ";
-                                                  //WW
-      gnode = nodes_vector[m_ply->getOrderedPoints()[j]];
-      //------------------------------------------------------------------
-      for (size_t k = 0; k < no_variables; k++)
-      {
-         //if(!(_nod_value_vector[k].compare("FLUX")==0))  // removed JOD, does not work for multiple flow processes
-         //if (!b_specified_pcs) //NW
-         if (msh_type_name != "COMPARTMENT")      // JOD 4.10.01
-            m_pcs = PCSGet(_nod_value_vector[k], bdummy);
+   for (size_t j(0); j < nodes_vector.size(); j++) {
+//		tec_file << m_ply->getSBuffer()[j] << " ";
+		tec_file << interpolation_points[j] << " ";
+		//WW
+//		long old_gnode = nodes_vector[m_ply->getOrderedPoints()[j]];
+		gnode = nodes_vector[j];
+		for (size_t k = 0; k < no_variables; k++) {
+			//if(!(_nod_value_vector[k].compare("FLUX")==0))  // removed JOD, does not work for multiple flow processes
+			//if (!b_specified_pcs) //NW
+			if (msh_type_name != "COMPARTMENT") // JOD 4.10.01
+				m_pcs = PCSGet(_nod_value_vector[k], bdummy);
 
-         if (!m_pcs)
-         {
-            cout << "Warning in COutput::NODWritePLYDataTEC - no PCS data"
-               << endl;
-            tec_file
-               << "Warning in COutput::NODWritePLYDataTEC - no PCS data"
-               << endl;
-            return 0.0;
-         }
-         //-----------------------------------------WW
-         val_n = m_pcs->GetNodeValue(gnode, NodeIndex[k]);
-         tec_file << val_n << " ";
-         if (m_pcs->type == 1212 && (_nod_value_vector[k].find("SATURATION")
-            != string::npos))
-            tec_file << 1. - val_n << " ";
-         //-----------------------------------------WW
-         //................................................................
-         if (_nod_value_vector[k].compare("FLUX") == 0)
-         {
-            if (aktueller_zeitschritt == 0)       //OK
-               flux_nod = 0.0;
-            else
-               flux_nod = NODFlux(gnode);
-            tec_file << flux_nod << " ";
-            //flux_sum += abs(m_pcs->eqs->b[gnode]);
-            flux_sum += abs(flux_nod);
-            //OK cout << gnode << " " << flux_nod << " " << flux_sum << endl;
-         }
-         //................................................................
-      }
-      if (dm_pcs)                                 //WW
-      {
-         for (size_t i = 0; i < ns; i++)
-            ss[i] = dm_pcs->GetNodeValue(gnode, stress_i[i]);
-         tec_file << -DeviatoricStress(ss) / 3.0 << " ";
-         tec_file << sqrt(3.0 * TensorMutiplication2(ss, ss,
-            m_msh->GetCoordinateFlag() / 10) / 2.0) << "  ";
-         for (size_t i = 0; i < ns; i++)
-            ss[i] = dm_pcs->GetNodeValue(gnode, strain_i[i]);
-         DeviatoricStress(ss);
-         tec_file << sqrt(3.0 * TensorMutiplication2(ss, ss,
-            m_msh->GetCoordinateFlag() / 10) / 2.0);
-      }
-      //....................................................................
-      // MFP //OK4704
-                                                  //OK4704
-      for (size_t k = 0; k < mfp_value_vector.size(); k++)
-      {
-         //     tec_file << MFPGetNodeValue(gnode,mfp_value_vector[k],0) << " "; //NB
-         tec_file << MFPGetNodeValue(gnode, mfp_value_vector[k], atoi(
-            &mfp_value_vector[k][mfp_value_vector[k].size() - 1]) - 1)
-            << " ";                               //NB: MFP output for all phases
-      }
-      //....................................................................
-      tec_file << endl;
-   }
+			if (!m_pcs) {
+				cout << "Warning in COutput::NODWritePLYDataTEC - no PCS data"
+						<< endl;
+				tec_file
+						<< "Warning in COutput::NODWritePLYDataTEC - no PCS data"
+						<< endl;
+				return 0.0;
+			}
+			// WW
+//			double old_val_n = m_pcs->GetNodeValue(old_gnode, NodeIndex[k]);
+			val_n = m_pcs->GetNodeValue(gnode, NodeIndex[k]);
+//			tec_file << old_val_n << " ";
+			tec_file << val_n << " ";
+			if (m_pcs->type == 1212 && (_nod_value_vector[k].find("SATURATION")
+					!= string::npos)) tec_file << 1. - val_n << " ";
+
+			if (_nod_value_vector[k].compare("FLUX") == 0) {
+				if (aktueller_zeitschritt == 0) //OK
+					flux_nod = 0.0;
+				else flux_nod = NODFlux(gnode);
+				tec_file << flux_nod << " ";
+				//flux_sum += abs(m_pcs->eqs->b[gnode]);
+				flux_sum += abs(flux_nod);
+				//OK cout << gnode << " " << flux_nod << " " << flux_sum << endl;
+			}
+
+		}
+		if (dm_pcs) { //WW
+			for (size_t i = 0; i < ns; i++)
+				ss[i] = dm_pcs->GetNodeValue(gnode, stress_i[i]);
+			tec_file << -DeviatoricStress(ss) / 3.0 << " ";
+			tec_file << sqrt(3.0 * TensorMutiplication2(ss, ss,
+					m_msh->GetCoordinateFlag() / 10) / 2.0) << "  ";
+			for (size_t i = 0; i < ns; i++)
+				ss[i] = dm_pcs->GetNodeValue(gnode, strain_i[i]);
+			DeviatoricStress(ss);
+			tec_file << sqrt(3.0 * TensorMutiplication2(ss, ss,
+					m_msh->GetCoordinateFlag() / 10) / 2.0);
+		}
+
+		// MFP //OK4704
+		//OK4704
+		for (size_t k = 0; k < mfp_value_vector.size(); k++) {
+			//     tec_file << MFPGetNodeValue(gnode,mfp_value_vector[k],0) << " "; //NB
+			tec_file << MFPGetNodeValue(gnode, mfp_value_vector[k], atoi(
+					&mfp_value_vector[k][mfp_value_vector[k].size() - 1]) - 1)
+					<< " "; //NB: MFP output for all phases
+		}
+
+		tec_file << endl;
+	}
    tec_file.close();                              // kg44 close file
    return flux_sum;
 }

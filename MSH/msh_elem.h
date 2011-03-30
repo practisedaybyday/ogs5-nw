@@ -142,6 +142,12 @@ namespace Mesh_Group
                node_index[i] = nodes_index[i];
          }
 
+         void getNodeIndices(std::vector<size_t>& node_indices)
+         {
+            for (size_t i = 0; i < nodes_index.Size(); i++)
+               node_indices.push_back (nodes_index[i]);
+         }
+
          /**
           * const access to the vector nodes_index
           * @return a const reference to the vector

@@ -526,9 +526,9 @@ void CElem::Read(std::istream& is, int fileType)
 		index--;
 		break;
 	case 7: // GMSH 2008
-		is >> index >> et >> nb_tags >> gmsh_patch_index;
+		is >> index >> et >> nb_tags >> idummy >> gmsh_patch_index;
 		patch_index = gmsh_patch_index;
-		for (j = 0; j < nb_tags - 1; j++) {
+		for (j = 2; j < nb_tags; j++) {
 			is >> idummy;
 		}
 		switch (et) {
@@ -1350,9 +1350,9 @@ double CElem::calcVolume () const
 	}
 	else
 		std::cerr << "Error in CElem::ComputeVolume() - MshElemType not found" << std::endl;
-  
+
 	return elemVolume;
-}		
+}
 
 
    /**************************************************************************

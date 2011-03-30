@@ -20,6 +20,7 @@ void MeshQualityNormalisedVolumes::check()
 	const std::vector<Mesh_Group::CElem*>& msh_elem(_mesh->getElementVector());
 
 	double max_volume (0.0);
+	double min_volume (std::numeric_limits<double>::max());
 
 	for (size_t k(0); k < msh_elem.size(); k++) {
 		MshElemType::type elem_type (msh_elem[k]->GetElementType());
@@ -28,7 +29,12 @@ void MeshQualityNormalisedVolumes::check()
 				&& elem_type != MshElemType::QUAD) {
 			double volume (msh_elem[k]->calcVolume());
 			if (volume > max_volume) max_volume = volume;
-			if (volume < sqrt(fabs(std::numeric_limits<double>::min()))) errorMsg(msh_elem[k], k);
+			if (volume < sqrt(fabs(std::numeric_limits<double>::min())))
+				errorMsg(msh_elem[k], k);
+			else {
+				if (volume < min_volume)
+					min_volume = volume;
+			}
 			_mesh_quality_messure[k] = volume;
 		}
 	}
@@ -36,13 +42,16 @@ void MeshQualityNormalisedVolumes::check()
 	for (size_t k(0); k < msh_elem.size(); k++) {
 		MshElemType::type elem_type (msh_elem[k]->GetElementType());
 		if (elem_type != MshElemType::LINE
-			&& elem_type != MshElemType::TRIANGLE
-			&& elem_type != MshElemType::QUAD) {
+				&& elem_type != MshElemType::TRIANGLE
+				&& elem_type != MshElemType::QUAD) {
 			_mesh_quality_messure[k] /= max_volume;
 		} else {
 			_mesh_quality_messure[k] = 1.1; // element has no valid value
 		}
 	}
+
+	std::cout << "MeshQualityNormalisedVolumes::check() min_volume: " << min_volume
+			<< ", max_volume: " << max_volume << std::endl;
 }
 
 void MeshQualityNormalisedVolumes::getHistogramm (std::vector<size_t>& histogramm) const

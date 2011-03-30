@@ -1382,7 +1382,7 @@ namespace FiniteElement
          case M:                                  // Mass transport //SB4200
                                                   // Porosity
             val = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-            // SB Transport in both phases	
+            // SB Transport in both phases
             tr_phase = cp_vec[this->pcs->pcs_component_number]->transport_phase;
 	        // Multi phase transport of components
 	        saturation = PCSGetEleMeanNodeSecondary_2(Index, pcs->flow_pcs_type, "SATURATION1", 1);
@@ -4251,7 +4251,7 @@ namespace FiniteElement
          // If component is in non - wetting phase, as designated by transport_phase == 10 // SB, BG
 		 if(cp_vec.size() > 0) {
             if(cp_vec[this->pcs->pcs_component_number]->transport_phase == 10){ // // SB, BG
-               vel[0] = mat_factor*gp_ele->Velocity_g(0, gp);   
+               vel[0] = mat_factor*gp_ele->Velocity_g(0, gp);
 		       vel[1] = mat_factor*gp_ele->Velocity_g(1, gp);
                vel[2] = mat_factor*gp_ele->Velocity_g(2, gp);
             } // SB, BG
@@ -5185,7 +5185,7 @@ namespace FiniteElement
 /***************************************************************************
    GeoSys - Funktion: InterpolatePropertyToGausspoint
    CFiniteElementStd:: necessary for using precalculated density and viscosity BG, 11/2010
- 
+
    Programming:  BG
    11/2010	first version
 **************************************************************************/
@@ -5208,7 +5208,7 @@ double  CFiniteElementStd::InterpolatePropertyToGausspoint(int GPIndex, CRFProce
 	//ComputeShapefct(1);
 	//read density from nodes
 	for(i = 0; i < nnodes; i++){
-		NodalVal_BG[i] = m_pcs->GetNodeValue(nodes[i], Variableindex); 
+		NodalVal_BG[i] = m_pcs->GetNodeValue(nodes[i], Variableindex);
 	}
 	// Interpolate density from nodes to gauss point
 	variable = interpolate(NodalVal_BG);
@@ -5218,21 +5218,21 @@ double  CFiniteElementStd::InterpolatePropertyToGausspoint(int GPIndex, CRFProce
 
 /***************************************************************************
    GeoSys - Funktion: Cal_GP_Velocity_DuMux
-   CFiniteElementStd:: Velocity calulation in gauss points from 
+   CFiniteElementStd:: Velocity calulation in gauss points from
    node velocities obtained by DUMUX or ECLIPSE
- 
+
    Programming:  BG
    08/2010	first version
 **************************************************************************/
 string  CFiniteElementStd::Cal_GP_Velocity_DuMux(int *i_ind, CRFProcess *m_pcs, int phase_index)
 {
 	int i, i_dim;
-	static double temp_val_old[3]={0.0,0.0,0.0}, temp_val[3]={0.0,0.0,0.0}; 
+	static double temp_val_old[3]={0.0,0.0,0.0}, temp_val[3]={0.0,0.0,0.0};
 	double value_old[3]={0.0,0.0,0.0}, value[3]={0.0,0.0,0.0};
 	// ---- Gauss integral
 	int gp_r=0, gp_s=0, gp_t=0;
 	double fkt=0.0; //OK411 coef = 0.0
-	int i_idx;    
+	int i_idx;
 	ostringstream temp;
 	string tempstring;
 
@@ -5263,10 +5263,10 @@ string  CFiniteElementStd::Cal_GP_Velocity_DuMux(int *i_ind, CRFProcess *m_pcs, 
 
 			// Interpolate velocity from nodes to gauss point for all three velocity components
 			for(i_dim=0;i_dim< dim;i_dim++){
-			   // Get  velocities from FLUID_MOMENTUM process in element nodes: 
+			   // Get  velocities from FLUID_MOMENTUM process in element nodes:
 				i_idx = i_ind[i_dim];
 				for(i=0; i<nnodes; i++){
-					NodalVal[i] = m_pcs->GetNodeValue(nodes[i], i_idx); 
+					NodalVal[i] = m_pcs->GetNodeValue(nodes[i], i_idx);
 					//NodalVal[i] = NodalVal[i] /gravity_constant/1000.0*0.001;  //dirty fix for permebility to conductivity
 				}
 				temp_val[i_dim] = interpolate(NodalVal);
@@ -5280,7 +5280,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_DuMux(int *i_ind, CRFProcess *m_pcs, 
 					if (phase_index == 1)
 						gp_ele->Velocity_g(i_dim, gp) = temp_val[i_dim];
 					else {
-						cout << "The program is canceled because there is a phase used which is not considered yet!" << endl;	
+						cout << "The program is canceled because there is a phase used which is not considered yet!" << endl;
 						system("Pause");
 						exit(0);
 					}
@@ -5297,7 +5297,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_DuMux(int *i_ind, CRFProcess *m_pcs, 
 				value[i_dim] = value[i_dim] + temp_val[i_dim] / nGaussPoints;
 			}
 		} // end gauss point loop
-	
+
 		// Data for Test Output
 		for(i_dim=0;i_dim<dim;i_dim++) {
 			temp.str(""); temp.clear(); temp << value_old[i_dim]; tempstring += "; " + temp.str();
@@ -5494,21 +5494,21 @@ string  CFiniteElementStd::Cal_GP_Velocity_DuMux(int *i_ind, CRFProcess *m_pcs, 
 
 /***************************************************************************
    GeoSys - Funktion: Cal_GP_Velocity_ECLIPSE
-   CFiniteElementStd:: Velocity calulation in gauss points from 
+   CFiniteElementStd:: Velocity calulation in gauss points from
    node velocities obtained by fluid momentum for one element
- 
+
    Programming:  SB, BG
    09/2010
 **************************************************************************/
 string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool output_average, int phase_index, string phase)
 {
 	int i_dim;
-	static double temp_vel_old[3]={0.0,0.0,0.0}, temp_vel[3]={0.0,0.0,0.0};  
+	static double temp_vel_old[3]={0.0,0.0,0.0}, temp_vel[3]={0.0,0.0,0.0};
 	//double n_vel_x[8], n_vel_y[8], n_vel_z[8];
 	// ---- Gauss integral
 	int gp_r=0, gp_s=0, gp_t=0;
 	double fkt=0.0;
-	//  int i_idx;    
+	//  int i_idx;
 	// CPointData_ECL* m_NodeData = NULL;
 	double value[3], value_old[3];
 	ostringstream temp;
@@ -5516,9 +5516,9 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
 
 	ElementValue* gp_ele = ele_gp_value[Index];
 
-	// Get  velocities from ECLIPSE faces in element node: 
+	// Get  velocities from ECLIPSE faces in element node:
 	this->pcs->EclipseData->InterpolateDataFromFacesToNodes(this->Index, NodalVal, NodalVal1, NodalVal2, phase_index);
-		
+
 	// Gauss point loop
 	for(i_dim=0;i_dim<dim;i_dim++) {
 		value[i_dim] = 0;
@@ -5531,7 +5531,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
 	  fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 	  // Compute the shape function for interpolation within element
       ComputeShapefct(1);
-	 
+
 	  // Save former gp velocity for test use only
 	  for(i_dim=0;i_dim<dim;i_dim++) {
 		  if (phase_index == 0)
@@ -5553,7 +5553,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
 				if ((phase == "GAS") || (phase == "OIL"))
 					gp_ele->Velocity_g(i_dim, gp) = temp_vel[i_dim];
 				else {
-					cout << "The program is canceled because there is a phase used which is not considered yet!" << endl;	
+					cout << "The program is canceled because there is a phase used which is not considered yet!" << endl;
 					system("Pause");
 					exit(0);
 				}
@@ -7056,7 +7056,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       // For strain and stress extropolation all element types
       // Number of elements associated to nodes
       for(i=0; i<nnodes; i++)
-         dbuff[i] = (double)MeshElement->nodes[i]->connected_elements.size();
+         dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
       //
       gp_r=gp_s=gp_t=gp=0;
       ElementValue* gp_ele = ele_gp_value[Index];
@@ -7187,7 +7187,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       for(i=0; i<nnodes; i++)
       {
          // Number of elements associated to nodes
-         dbuff[i] = (double)MeshElement->nodes[i]->connected_elements.size();
+         dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
                                                   // pressure
          NodalVal0[i] = sign*pcs->GetNodeValue(nodes[i],idx_cp);
       }
@@ -7317,7 +7317,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
          idxp = pcs->GetNodeValueIndex("POROSITY");
       // Number of elements associated to nodes
       for(i=0; i<nnodes; i++)
-         dbuff[i] = (double)MeshElement->nodes[i]->connected_elements.size();
+         dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
       //
       gp_r=gp_s=gp_t=gp=0;
       //

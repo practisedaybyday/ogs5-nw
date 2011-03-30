@@ -894,7 +894,7 @@ namespace FiniteElement
       // For strain and stress extropolation all element types
       // Number of elements associated to nodes
       for(i=0; i<nnodes; i++)
-         dbuff[i] = (double)MeshElement->nodes[i]->connected_elements.size();
+         dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
 
       // Get displacement_n
       if(dynamic)
@@ -1008,76 +1008,63 @@ namespace FiniteElement
       02/2005   WW
       12/2009   WW New excavtion approach
    **************************************************************************/
-   bool CFiniteElementVec::GlobalAssembly()
-   {
-      // For excavation simulation. 12.2009. WW
-      int valid = 0;
-      if(excavation)
-      {
-         excavation = true;
-         bool onExBoundary = false;
+bool CFiniteElementVec::GlobalAssembly()
+{
+	// For excavation simulation. 12.2009. WW
+	int valid = 0;
+	if (excavation) {
+		excavation = true;
+		bool onExBoundary = false;
 
-         CNode * node;
-         CElem * elem;
-         CSolidProperties* smat_e;
+		CNode * node;
+		CElem * elem;
+		CSolidProperties* smat_e;
 
-         int i,j;
+		for (int i = 0; i < nnodesHQ; i++) {
+			node = MeshElement->nodes[i];
+			onExBoundary = false;
+			const size_t n_elements (node->getConnectedElementIDs().size());
+			for (size_t j = 0; j < n_elements; j++) {
+				elem = pcs->m_msh->ele_vector[node->getConnectedElementIDs()[j]];
+				if (!elem->GetMark()) continue;
 
-         for(i=0; i<nnodesHQ; i++)
-         {
+				smat_e = msp_vector[elem->GetPatchIndex()];
+				if (smat_e->excavation > 0) {
+					if (fabs(GetCurveValue(smat_e->excavation, 0,
+							aktuelle_zeit, &valid) - 1.0) < DBL_MIN) {
+						onExBoundary = true;
+						break;
+					}
+				} else {
+					onExBoundary = true;
+					break;
+				}
+			}
 
-            node =  MeshElement->nodes[i];
-            onExBoundary = false;
-            for(j=0; j<(long)node->connected_elements.size(); j++)
-            {
-               elem = pcs->m_msh->ele_vector[node->connected_elements[j]];
-               if(!elem->GetMark()) continue;
+			if (!onExBoundary) {
+				for (int j = 0; j < dim; j++)
+					(*RHS)(j * nnodesHQ + i) = 0.0;
+			}
 
-               smat_e = msp_vector[elem->GetPatchIndex()];
-               if(smat_e->excavation>0)
-               {
-                  if(fabs(GetCurveValue(smat_e->excavation,0,aktuelle_zeit,&valid)-1.0)<DBL_MIN)
-                  {
-                     onExBoundary = true;
-                     break;
-                  }
+		}
+	}
 
-               }
-               else
-               {
-                  onExBoundary = true;
-                  break;
-               }
-            }
+	GlobalAssembly_RHS();
+	if (PreLoad == 11) return true;
 
-            if(!onExBoundary)
-            {
-               for(j=0; j<dim; j++)
-                  (*RHS)(j*nnodesHQ+i) = 0.0;
-            }
+	// For excavation simulation. 12.2009. WW
+	if (excavation) {
 
-         }
-      }
-      //------------------------------------------------------------------------------
+		MeshElement->MarkingAll(false);
+		*(eleV_DM->Stress) = 0.;
+		*(eleV_DM->Stress0) = 0.;
+		if (eleV_DM->Stress_j) (*eleV_DM->Stress_j) = 0.0;
+		return false;
+	}
 
-      GlobalAssembly_RHS();
-      if(PreLoad==11) return true;
-
-      // For excavation simulation. 12.2009. WW
-      if(excavation)
-      {
-
-         MeshElement->MarkingAll(false);
-         *(eleV_DM->Stress) = 0.;
-         *(eleV_DM->Stress0) = 0.;
-         if(eleV_DM->Stress_j)
-            (*eleV_DM->Stress_j) = 0.0;
-         return false;
-      }
-
-      GlobalAssembly_Stiffness();
-      return true;
-   }
+	GlobalAssembly_Stiffness();
+	return true;
+}
 
    /***************************************************************************
       GeoSys - Funktion:
@@ -1907,7 +1894,7 @@ namespace FiniteElement
       // For strain and stress extropolation all element types
       // Number of elements associated to nodes
       for(i=0; i<nnodes; i++)
-         dbuff[i] = (double)MeshElement->nodes[i]->connected_elements.size();
+         dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
       //
       gp = gp_r=gp_s=gp_t=gp=0;
       eleV_DM = ele_value_dm[MeshElement->GetIndex()];

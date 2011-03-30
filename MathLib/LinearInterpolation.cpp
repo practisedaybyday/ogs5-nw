@@ -39,8 +39,10 @@ double LinearInterpolation::getValue ( double pnt_to_interpolate )
 	}
 
 	// compute linear interpolation polynom: y = m * x + n
-	double m ((_values_at_supp_pnts[interval_idx+1] - _values_at_supp_pnts[interval_idx]) / (_supporting_points[interval_idx+1] - _supporting_points[interval_idx]));
-	double n (_values_at_supp_pnts[interval_idx+1] - m * _supporting_points[interval_idx+1]);
+	long double m ((_values_at_supp_pnts[interval_idx+1] - _values_at_supp_pnts[interval_idx]) / (_supporting_points[interval_idx+1] - _supporting_points[interval_idx]));
+//	double m ((_values_at_supp_pnts[interval_idx] - _values_at_supp_pnts[interval_idx+1]) / (_supporting_points[interval_idx] - _supporting_points[interval_idx+1]));
+//	double n (_values_at_supp_pnts[interval_idx+1] - m * _supporting_points[interval_idx+1]);
+	long double n (_values_at_supp_pnts[interval_idx] - m * _supporting_points[interval_idx]);
 
 	return m * pnt_to_interpolate + n;
 }

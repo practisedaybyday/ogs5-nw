@@ -215,8 +215,8 @@ Location::type Polyline::getLocationOfPoint (size_t k, GEOLIB::Point const & pnt
 
 	double det_2x2 (a[0]*b[1] - a[1]*b[0]);
 
-	if (det_2x2 > sqrt(std::numeric_limits<double>::min())) return Location::LEFT;
-	if (sqrt(std::numeric_limits<double>::min()) < fabs(det_2x2)) return Location::RIGHT;
+	if (det_2x2 > std::numeric_limits<double>::epsilon()) return Location::LEFT;
+	if (std::numeric_limits<double>::epsilon() < fabs(det_2x2)) return Location::RIGHT;
 	if (a[0]*b[0] < 0.0 || a[1]*b[1] < 0.0) return Location::BEHIND;
 	if (MATHLIB::sqrNrm2(&a) < MATHLIB::sqrNrm2(&b)) return Location::BEYOND;
 	if (MATHLIB::sqrDist (&pnt, _ply_pnts[_ply_pnt_ids[k]]) < sqrt(std::numeric_limits<double>::min()))

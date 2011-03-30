@@ -409,11 +409,11 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
    for(int i=0; i<(int) m_msh->nod_vector.size(); ++i)
    {
       CNode* thisNode = m_msh->nod_vector[i];
-      int NumOfNeighborElements = (int)thisNode->connected_elements.size();
+      int NumOfNeighborElements = (int)thisNode->getConnectedElementIDs().size();
 
       // Let's get the norm of the first connected element plane.
       double norm[3];
-      int index = thisNode->connected_elements[0];
+      int index = thisNode->getConnectedElementIDs()[0];
       // Let's store the index of the reference element
       // to the connected_planes of thisNode
       thisNode->connected_planes.push_back(index);
@@ -432,7 +432,7 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
       {
          double normOther[3];
          // Let's get the element one by one.
-         int indexOther = thisNode->connected_elements[j];
+         int indexOther = thisNode->getConnectedElementIDs()[j];
          if(m_msh->GetCoordinateFlag() != 32 && m_msh->GetCoordinateFlag() != 22)
          {
             normOther[0] = 0.0; normOther[1] = 0.0; normOther[2] = 1.0;
@@ -452,7 +452,7 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
             // the reference element. Then, I will get rid of the duplicate elements
             // of the same plane.
             int indexOther = -1;
-            indexOther = thisNode->connected_elements[j];
+            indexOther = thisNode->getConnectedElementIDs()[j];
             thisNode->connected_planes.push_back(indexOther);
          }
       }
@@ -637,14 +637,14 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
          m_msh->edge_vector[i]->SetJoint(1);
 
          // Constructing the connected elements of an edge starts here
-         int numOfCEfromNode0 = (int)theNodesOfThisEdge[0]->connected_elements.size();
-         int numOfCEfromNode1 = (int)theNodesOfThisEdge[1]->connected_elements.size();
+         int numOfCEfromNode0 = (int)theNodesOfThisEdge[0]->getConnectedElementIDs().size();
+         int numOfCEfromNode1 = (int)theNodesOfThisEdge[1]->getConnectedElementIDs().size();
 
          for(int j=0; j<numOfCEfromNode0; ++j)
             for(int k=0; k<numOfCEfromNode1; ++k)
          {
-            int indexOfCEfromNode0 = theNodesOfThisEdge[0]->connected_elements[j];
-            int indexOfCEfromNode1 = theNodesOfThisEdge[1]->connected_elements[k];
+            int indexOfCEfromNode0 = theNodesOfThisEdge[0]->getConnectedElementIDs()[j];
+            int indexOfCEfromNode1 = theNodesOfThisEdge[1]->getConnectedElementIDs()[k];
             if( indexOfCEfromNode0 == indexOfCEfromNode1 )
                m_msh->edge_vector[i]->connected_elements.push_back(indexOfCEfromNode0);
          }

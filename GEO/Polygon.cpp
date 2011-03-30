@@ -367,11 +367,7 @@ void Polygon::splitPolygonAtPoint (std::list<GEOLIB::Polygon*>::iterator polygon
 GEOLIB::Polygon* createPolygonFromCircle (GEOLIB::Point const& middle_pnt, double radius,
 		std::vector<GEOLIB::Point*> & pnts, size_t resolution)
 {
-	if (!pnts.empty()) {
-		for (size_t k(0); k<pnts.size(); k++)
-			delete pnts[k];
-	}
-
+	const size_t off_set (pnts.size());
 	// create points
 	double angle (2.0 * M_PI / resolution);
 	for (size_t k(0); k<resolution; k++) {
@@ -384,9 +380,9 @@ GEOLIB::Polygon* createPolygonFromCircle (GEOLIB::Point const& middle_pnt, doubl
 	// create polygon
 	GEOLIB::Polygon* polygon (new GEOLIB::Polygon (pnts, false));
 	for (size_t k(0); k<resolution; k++) {
-		polygon->addPoint (k);
+		polygon->addPoint (k+off_set);
 	}
-	polygon->addPoint (0);
+	polygon->addPoint (off_set);
 
 	return polygon;
 }
