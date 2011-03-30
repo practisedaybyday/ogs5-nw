@@ -32,7 +32,7 @@ TEST(GEO, PointInPolygon)
 	std::vector<GEOLIB::Point*>* pnts_in_polygon(new std::vector<GEOLIB::Point*>);
 	std::vector<GEOLIB::Point*>* pnts_outside_of_polygon(new std::vector<GEOLIB::Point*>);
 	GEOLIB::Polygon polygon(*((*plys)[0]));
-	std::cout << "creating test points ..." << std::flush;
+	std::cout << "creating test points ... " << std::flush;
 	std::vector<GEOLIB::Point*> pnts;
 	for (size_t j(0); j < 320; j++) {
 		for (size_t k(0); k < 920; k++) {
@@ -43,7 +43,7 @@ TEST(GEO, PointInPolygon)
 
 	ASSERT_EQ (static_cast<int>(pnts.size()), 294400);
 
-	std::cout << "testing points ..." << std::endl;
+	std::cout << "testing points ..."  << std::endl;
 	const size_t size(pnts.size());
 	for (size_t k(0); k < size; k++) {
 		if (polygon.isPntInPolygon(*(pnts[k]))) {
@@ -54,6 +54,6 @@ TEST(GEO, PointInPolygon)
 	}
 
 	ASSERT_EQ (static_cast<int>(pnts.size()), static_cast<int>(pnts_in_polygon->size() + pnts_outside_of_polygon->size()));
-	ASSERT_EQ (static_cast<int>(pnts_in_polygon->size()), 95346);
-	ASSERT_EQ (static_cast<int>(pnts_outside_of_polygon->size()), 199054);
+	ASSERT_EQ (static_cast<int>(pnts_in_polygon->size()), 95512);
+	ASSERT_EQ (static_cast<int>(pnts_outside_of_polygon->size()),  198888);
 }
