@@ -1176,7 +1176,7 @@ inline double Problem::LiquidFlow()
 		   if(m_pcs->tim_type_name.compare("STEADY")==0)
 		      m_pcs->selected = false;
 		}
- 
+
 	else if (m_pcs->simulator.compare("DUMUX") == 0) {
 		if(m_pcs->DuMuxData == NULL) //SBG if this is the first call, make a new instance
 			m_pcs->DuMuxData = new CDUMUXData();
@@ -1449,8 +1449,8 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs) {
 	else
 		density_CO2 = mfp_vector[1]->Density();
 
-	for (int j = 0; j < int(m_node->connected_elements.size()); j++) {
-		m_ele = m_msh->ele_vector[m_node->connected_elements[j]];
+	for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++) {
+		m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
 
 		//get the phase volume of current element elem
 		group = m_ele->GetPatchIndex();
@@ -1539,8 +1539,8 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs) {
 
 	density_CO2 = m_pcs->DuMuxData->NodeData[i]->phase_density[1];
 
-	for (int j = 0; j < int(m_node->connected_elements.size()); j++) {
-		m_ele = m_msh->ele_vector[m_node->connected_elements[j]];
+	for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++) {
+		m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
 
 		//get the phase volume of current element elem
 		group = m_ele->GetPatchIndex();
@@ -1649,15 +1649,15 @@ void Problem::TestOutputEclipse(CRFProcess *m_pcs) {
 	node_volume = 0;
 	saturation_CO2 = 0;
 	if (mfp_vector[1]->density_model == 18) {
-		variable_index = m_pcs->GetNodeValueIndex("DENSITY2"); 
+		variable_index = m_pcs->GetNodeValueIndex("DENSITY2");
 		density_CO2 = m_pcs->GetNodeValue(i, variable_index);
 	}
 	else
 		density_CO2 = mfp_vector[1]->Density();
 
-	for (int j = 0; j < int(m_node->connected_elements.size()); j++) {
-		m_ele = m_msh->ele_vector[m_node->connected_elements[j]];
-		
+	for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++) {
+		m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
+
 		//get the phase volume of current element elem
 		group = m_ele->GetPatchIndex();
 		m_mat_mp = mmp_vector[group];
@@ -1712,7 +1712,7 @@ void Problem::TestOutputEclipse(CRFProcess *m_pcs) {
   //position = int(path_new.find_last_of("\\"));
   //path_new = path_new.substr(0,position);
   tempstring = path_new + "\\Sum_CO2_elements.csv";
-  
+
   vec_string.clear();
   if (m_pcs->Tim->step_current == 1) {
 	//Header of the file
@@ -2510,7 +2510,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
          m_nod = m_pcs_global->m_msh->nod_vector[g_node_number];
          m_nod_local = m_msh_local->nod_vector[j];
          //m_nod_local = m_nod;
-         m_nod_local->connected_elements.push_back(i);
+         m_nod_local->getConnectedElementIDs().push_back(i);
          //m_nod_local->ok_dummy = i;
       }
       //....................................................................

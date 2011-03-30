@@ -95,7 +95,7 @@ void MeshQualityShortestLongestRatio::check()
 			break;
 		}
 		default:
-			std::cout << "MeshQualityChecker::check () check for element type "
+			std::cout << "MeshQualityShortestLongestRatio::check () check for element type "
 					<< MshElemType2String(msh_elem[k]->GetElementType())
 					<< " not implemented" << std::endl;
 		}

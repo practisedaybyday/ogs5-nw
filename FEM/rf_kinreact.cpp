@@ -932,10 +932,10 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
          m_nod = m_msh->nod_vector[l];
          ww = 0.0;
          w = 0.0;
-         for (i = 0; i < (int) m_nod->connected_elements.size(); i++)
+         for (i = 0; i < (int) m_nod->getConnectedElementIDs().size(); i++)
          {
-            ll = m_nod->connected_elements[i];
-            m_ele = m_msh->ele_vector[m_nod->connected_elements[i]];
+            ll = m_nod->getConnectedElementIDs()[i];
+            m_ele = m_msh->ele_vector[m_nod->getConnectedElementIDs()[i]];
             group = m_ele->GetPatchIndex();
             m_mat_mp = mmp_vector[group];
             ww += m_mat_mp->foc * m_ele->GetVolume();
@@ -1003,10 +1003,10 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
 
             // loop over PRIMARY NEIGHBOR elements
             // this routine takes longer, but gets all the nodes
-            for (ll = 0; ll < (long) m_nod->connected_elements.size(); ll++)
+            for (ll = 0; ll < (long) m_nod->getConnectedElementIDs().size(); ll++)
             {
                                                   // get index of direct neighbour element
-               dnele_idx = m_nod->connected_elements[ll];
+               dnele_idx = m_nod->getConnectedElementIDs()[ll];
                                                   // get direct neighbour element object
                m_dnele = m_msh->ele_vector[dnele_idx];
                                                   // get the neighbor element node indices
@@ -1022,10 +1022,10 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
                   m_dnnod = m_msh->nod_vector[pneighnod_idx];
                   // loop over the connected elements, this now includes the SECONDARY NEIGHBORS
                   for (llll = 0; llll
-                     < (long) m_dnnod->connected_elements.size(); llll++)
+                     < (long) m_dnnod->getConnectedElementIDs().size(); llll++)
                   {
                                                   // get the current connected element indices
-                     snele_idx = m_dnnod->connected_elements[llll];
+                     snele_idx = m_dnnod->getConnectedElementIDs()[llll];
                                                   // get secondary neighbour element object
                      m_snele = m_msh->ele_vector[snele_idx];
                                                   // get the neighbor element node indices
@@ -3525,12 +3525,12 @@ double CKinReact::GetPhaseVolumeAtNode(long node, double theta, int phase)
    m_nod = m_msh->nod_vector[node];
    m_nod->Coordinates(coord);
 
-   for (el = 0; el < (int) m_nod->connected_elements.size(); el++)
+   for (el = 0; el < (int) m_nod->getConnectedElementIDs().size(); el++)
    {
       // initialize for each connected element
       distance = weight = poro = 0;
       // Get the connected element
-      elem = m_nod->connected_elements[el];       // element index
+      elem = m_nod->getConnectedElementIDs()[el];       // element index
       m_ele = m_msh->ele_vector[elem];
       //get the phase volume of current element elem
       group = 0;                                  // group = m_ele->GetPatchIndex(); Todo CB
@@ -4540,10 +4540,10 @@ double CKinReact::GetNodePoreVelocity(long node)
    idxVy = m_pcs->GetElementValueIndex("VELOCITY1_Y");
    idxVz = m_pcs->GetElementValueIndex("VELOCITY1_Z");
 
-   for (el = 0; el < (int) m_nod->connected_elements.size(); el++)
+   for (el = 0; el < (int) m_nod->getConnectedElementIDs().size(); el++)
    {
       distance = weight = 0;                      // initialize for each connected element
-      elem = m_nod->connected_elements[el];
+      elem = m_nod->getConnectedElementIDs()[el];
       m_ele = m_msh->ele_vector[elem];
 
       //get the porosity of current element elem

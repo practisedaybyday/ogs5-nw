@@ -39,7 +39,7 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 	// get all nodes of mesh
 	const std::vector<Mesh_Group::CNode*>& mesh_nodes (_mesh->getNodeVector());
 
-	// check if nodes (!projected to x-y-plane) are inside the polygon
+	// check if nodes (projected to x-y-plane) are inside the polygon
 	std::vector<size_t> id_map;
 	std::vector<GEOLIB::PointWithID*> points_inside_polygon;
 	const size_t number_of_mesh_nodes (mesh_nodes.size());

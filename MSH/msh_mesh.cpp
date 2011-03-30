@@ -536,7 +536,7 @@ namespace Mesh_Group
    {
       size_t nNodes (nod_vector.size());
       for (size_t e = 0; e < nNodes; e++)
-         nod_vector[e]->connected_elements.clear();
+         nod_vector[e]->getConnectedElementIDs().clear();
 
       size_t nElems (ele_vector.size());
       for (size_t e = 0; e < nElems; e++)
@@ -548,7 +548,7 @@ namespace Mesh_Group
          for (size_t i = 0; i < nElemNodes; i++)
          {
             Mesh_Group::CNode* node (nod_vector[elem->GetNodeIndex(i)]);
-            node->connected_elements.push_back(e);
+            node->getConnectedElementIDs().push_back(e);
          }
       }
    }
@@ -606,10 +606,10 @@ namespace Mesh_Group
             size_t nFaceNodes = static_cast<size_t>(elem->GetElementFaceNodes(i, faceIndex_loc0));
             for (size_t k = 0; k < nFaceNodes; k++)			//face nodes
             {
-               size_t nConnElems ( e_nodes0[faceIndex_loc0[k]]->connected_elements.size() );
+               size_t nConnElems ( e_nodes0[faceIndex_loc0[k]]->getConnectedElementIDs().size() );
                for (size_t ei = 0; ei < nConnElems; ei++)  // elements connected to face node
                {
-                  size_t ee ( static_cast<size_t>(e_nodes0[faceIndex_loc0[k]]->connected_elements[ei]) );
+                  size_t ee ( static_cast<size_t>(e_nodes0[faceIndex_loc0[k]]->getConnectedElementIDs()[ei]) );
                   if (ee == e)
                      continue;
                   CElem* connElem ( ele_vector[ee] );
@@ -662,10 +662,10 @@ namespace Mesh_Group
                size_t n0 = elem->GetElementFaceNodes(i, faceIndex_loc0);
                for (size_t k = 0; k < n0; k++)
                {
-                  size_t e_size_l = e_nodes0[faceIndex_loc0[k]]->connected_elements.size();
+                  size_t e_size_l = e_nodes0[faceIndex_loc0[k]]->getConnectedElementIDs().size();
                   for (size_t ei = 0; ei < e_size_l; ei++)
                   {
-                     size_t ee = e_nodes0[faceIndex_loc0[k]]->connected_elements[ei];
+                     size_t ee = e_nodes0[faceIndex_loc0[k]]->getConnectedElementIDs()[ei];
                      CElem* connElem = ele_vector[ee];
                      if (e_size_l == 2 && connElem->GetIndex() != elem->GetIndex())
                      {
@@ -692,10 +692,10 @@ namespace Mesh_Group
             done = false;
             for (size_t k = 0; k < 2; k++)		// beginning and end of edge
             {
-               size_t nConnElem ( e_nodes0[edgeIndex_loc0[k]]->connected_elements.size() );
+               size_t nConnElem ( e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs().size() );
                for (size_t ei = 0; ei < nConnElem; ei++)	// elements connected to edge node
                {
-                  size_t ee ( e_nodes0[edgeIndex_loc0[k]]->connected_elements[ei] );
+                  size_t ee ( e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs()[ei] );
                   if (ee == e)
                      continue;
                   CElem* connElem ( ele_vector[ee] );
@@ -938,32 +938,32 @@ namespace Mesh_Group
    {
       int i, j, k, ii;
       int nnodes0, nedges0, nedges;
-      long e, ei, ee, e_size, e_size_l;
+      long e, ei, ee, e_size_l;
       int edgeIndex_loc0[2];
       bool done;
       double x0 = 0.0, y0 = 0.0, z0 = 0.0;        //OK411
 
       // Set neighbors of node. All elements, even in deactivated subdomains, are taken into account here.
       for (e = 0; e < (long) nod_vector.size(); e++)
-         nod_vector[e]->connected_elements.clear();
+         nod_vector[e]->getConnectedElementIDs().clear();
       done = false;
-      for (e = 0; e < (long) ele_vector.size(); e++)
-      {
+      size_t ele_vector_size (ele_vector.size());
+      for (size_t e = 0; e < ele_vector_size; e++) {
          CElem *thisElem0 = ele_vector[e];
          for (i = 0; i < thisElem0->GetNodesNumber(false); i++)
          {
             done = false;
             long ni = thisElem0->GetNodeIndex(i);
-            for (j = 0; j < (int) nod_vector[ni]->connected_elements.size(); j++)
+            size_t n_connected_elements (nod_vector[ni]->getConnectedElementIDs().size());
+            for (size_t j = 0; j < n_connected_elements; j++)
             {
-               if (e == nod_vector[ni]->connected_elements[j])
-               {
+               if (e == nod_vector[ni]->getConnectedElementIDs()[j]) {
                   done = true;
                   break;
                }
             }
             if (!done)
-               nod_vector[ni]->connected_elements.push_back(e);
+               nod_vector[ni]->getConnectedElementIDs().push_back(e);
          }
       }
       //
@@ -976,8 +976,8 @@ namespace Mesh_Group
       CEdge *thisEdge = NULL;
       //----------------------------------------------------------------------
       // Loop over elements (except for line elements)
-      e_size = (long) ele_vector.size();
-      for (e = 0; e < e_size; e++)
+      size_t e_size (ele_vector.size());
+      for (size_t e = 0; e < e_size; e++)
       {
          thisElem0 = ele_vector[e];
          if (thisElem0->GetElementType() == MshElemType::LINE)
@@ -1000,10 +1000,10 @@ namespace Mesh_Group
             for (k = 0; k < 2; k++)
             {
                e_size_l
-                  = (long) e_nodes0[edgeIndex_loc0[k]]->connected_elements.size();
+                  = (long) e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs().size();
                for (ei = 0; ei < e_size_l; ei++)
                {
-                  ee = e_nodes0[edgeIndex_loc0[k]]->connected_elements[ei];
+                  size_t ee (e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs()[ei]);
                   if (ee == e)
                      continue;
                   thisElem = ele_vector[ee];
@@ -1078,7 +1078,7 @@ namespace Mesh_Group
       // Setup 1d line elements at the end
       if (_msh_n_lines > 0)
       {
-         for (e = 0; e < e_size; e++)
+         for (size_t e = 0; e < e_size; e++)
          {
             thisElem0 = ele_vector[e];
             if (thisElem0->GetElementType() != MshElemType::LINE)
@@ -1110,11 +1110,11 @@ namespace Mesh_Group
                   {
                      //OK411 CNode *tmp_nod = e_nodes[edgeIndex_loc0[k]];
                      e_size_l
-                        = (long) e_nodes[edgeIndex_loc0[k]]->connected_elements.size();
+                        = (long) e_nodes[edgeIndex_loc0[k]]->getConnectedElementIDs().size();
                      for (ei = 0; ei < e_size_l; ei++)
                      {
                         ee
-                           = e_nodes[edgeIndex_loc0[k]]->connected_elements[ei];
+                           = e_nodes[edgeIndex_loc0[k]]->getConnectedElementIDs()[ei];
                         if (ele_vector[ee] != thisElem0)
                            continue;
                         //the edge is found now
@@ -1168,23 +1168,21 @@ namespace Mesh_Group
          nod_vector[e]->SetEquationIndex(e);
          Eqs2Global_NodeIndex.push_back(nod_vector[e]->GetIndex());
       }
-      for (e = 0; e < e_size; e++)
-      {
+      for (size_t e = 0; e < e_size; e++) {
          thisElem0 = ele_vector[e];
-         for (i = thisElem0->nnodes; i < thisElem0->nnodesHQ; i++)
-         {
+         for (i = thisElem0->nnodes; i < thisElem0->nnodesHQ; i++) {
             done = false;
             aNode = thisElem0->GetNode(i);
-            for (k = 0; k < (int) aNode->connected_elements.size(); k++)
+            for (k = 0; k < (int) aNode->getConnectedElementIDs().size(); k++)
             {
-               if (e == aNode->connected_elements[k])
+               if (e == aNode->getConnectedElementIDs()[k])
                {
                   done = true;
                   break;
                }
             }
             if (!done)
-               aNode->connected_elements.push_back(e);
+               aNode->getConnectedElementIDs().push_back(e);
          }
       }
 
@@ -2451,9 +2449,9 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& 
          for (i = 0; i < NodesS_size; i++)
          {
             cnode = nod_vector[NodesS[i]];
-            for (j = 0; j < (long) cnode->connected_elements.size(); j++)
+            for (j = 0; j < (long) cnode->getConnectedElementIDs().size(); j++)
             {
-               elem = ele_vector[cnode->connected_elements[j]];
+               elem = ele_vector[cnode->getConnectedElementIDs()[j]];
                for (k = 0; k < elem->GetFacesNumber(); k++)
                {
                   nf = elem->GetElementFaceNodes(k, faceIndex_loc);
@@ -3424,10 +3422,10 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& 
       for (size_t i = 0; i < nod_vector.size(); i++)
       {
          CNode * nod = nod_vector[i];
-         size_t n_connected_elements (nod->connected_elements.size());
+         size_t n_connected_elements (nod->getConnectedElementIDs().size());
          for (size_t j = 0; j < n_connected_elements; j++)
          {
-            CElem *ele = ele_vector[nod->connected_elements[j]];
+            CElem *ele = ele_vector[nod->getConnectedElementIDs()[j]];
             size_t n_quadratic_node (static_cast<size_t>(ele->GetNodesNumber(quadratic)));
             for (size_t l = 0; l < n_quadratic_node; l++)
             {
@@ -3717,9 +3715,9 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& 
          m_nod = nod_vector[i];
          //OKif(m_nod->selected)
          //OKcontinue;
-         if ((int) m_nod->connected_elements.size() == 0)
+         if ((int) m_nod->getConnectedElementIDs().size() == 0)
             continue;
-         m_tri_ele = ele_vector[m_nod->connected_elements[0]];
+         m_tri_ele = ele_vector[m_nod->getConnectedElementIDs()[0]];
          //....................................................................
          // Node normal vector
          x0 = m_nod->X();
@@ -3755,9 +3753,9 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& 
          // Intersection node
          if (m_nod->selected)
             continue;
-         if ((int) m_nod->connected_elements.size() == 0)
+         if ((int) m_nod->getConnectedElementIDs().size() == 0)
             continue;
-         m_tri_ele = ele_vector[m_nod->connected_elements[0]];
+         m_tri_ele = ele_vector[m_nod->getConnectedElementIDs()[0]];
          //....................................................................
          // Line elements
          for (size_t j = 0; j < m_msh_line->_n_msh_layer; j++)
@@ -4171,13 +4169,13 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& 
          patch_area = 0.0;
          //....................................................................
          // triangle neighbor nodes
-         for (size_t j = 0; j < m_nod->connected_elements.size(); j++)
+         for (size_t j = 0; j < m_nod->getConnectedElementIDs().size(); j++)
          {
-            e = m_nod->connected_elements[j];
+            e = m_nod->getConnectedElementIDs()[j];
             m_ele = ele_vector[e];
             for (size_t k = 0; k < 3; k++)
             {
-               if (m_ele->GetNodeIndex(k) == i)
+               if (m_ele->GetNodeIndex(k) == static_cast<int>(i))
                {
                   switch (k)
                   {
@@ -4252,16 +4250,16 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& 
       for (i = 0; i < (long) nod_vector.size(); i++)
       {
          m_nod = nod_vector[i];                   // this node
-         if ((int) m_nod->connected_elements.size() == 0)
+         if ((int) m_nod->getConnectedElementIDs().size() == 0)
             continue;
-         m_ele = ele_vector[m_nod->connected_elements[0]];
+         m_ele = ele_vector[m_nod->getConnectedElementIDs()[0]];
          for (k = 0; k < 3; k++)
             nr1[k] = (*m_ele->tranform_tensor)(2, k);
          //....................................................................
          // Compare element normal vectors
-         for (j = 1; j < (int) m_nod->connected_elements.size(); j++)
+         for (j = 1; j < (int) m_nod->getConnectedElementIDs().size(); j++)
          {
-            e = m_nod->connected_elements[j];
+            e = m_nod->getConnectedElementIDs()[j];
             m_ele1 = ele_vector[e];
             for (k = 0; k < 3; k++)
                nr2[k] = (*m_ele1->tranform_tensor)(2, k);
@@ -4506,7 +4504,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
 	ConstructGrid();
 	for(l=0; l<nod_vector.size(); l++) {
 			node = nod_vector[l];
-			z = node->Z()/(double)node->connected_elements.size();
+			z = node->Z()/(double)node->getConnectedElementIDs().size();
 			node->SetZ(z);
 	}
 	ins.close();
@@ -5102,75 +5100,75 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
 
       WW. 29.11.2010
    */
-   void CFEMesh::TopSurfaceIntegration()
-   {
-      int k;
-      long i, nx;
-      double node_val[8];
+void CFEMesh::TopSurfaceIntegration()
+{
+	int k;
+	long i, nx;
+	double node_val[8];
 
-      CNode *node;
-      CElem* elem = NULL;
-      CElement* fem = NULL;
+  CNode *node;
+  CElem* elem = NULL;
+  CElement* fem = NULL;
 
-      ConstructGrid();
-      MarkInterface_mHM_Hydro_3D();
+  ConstructGrid();
+  MarkInterface_mHM_Hydro_3D();
 
-      fem = new CElement(GetCoordinateFlag());
-      std::vector<double> val;
-      val.resize(NodesNumber_Linear);
-      for(i=0; i<(long)nod_vector.size(); i++)
-      {
-         nod_vector[i]->SetMark(false);
-         val[i] = 0.0;
-      }
+  fem = new CElement(GetCoordinateFlag());
+  std::vector<double> val;
+  val.resize(NodesNumber_Linear);
+  for(i=0; i<(long)nod_vector.size(); i++)
+  {
+	 nod_vector[i]->SetMark(false);
+	 val[i] = 0.0;
+  }
 
-      //
-      //	//
-      std::string ofname = FileName+"_top_surface_Neumann_BC.txt";
-      std::ofstream ofile_asci(ofname.c_str(), std::ios::trunc);
-      ofile_asci.setf(std::ios::scientific,std::ios::floatfield);
-      ofile_asci.precision(14);
-      //	//
-      //
+  //
+  //	//
+  std::string ofname = FileName+"_top_surface_Neumann_BC.txt";
+  std::ofstream ofile_asci(ofname.c_str(), std::ios::trunc);
+  ofile_asci.setf(std::ios::scientific,std::ios::floatfield);
+  ofile_asci.precision(14);
+  //	//
+  //
 
-      for(i=0; i<(long)face_vector.size(); i++)
-      {
-         elem = face_vector[i];
-         if(!elem->GetMark())
-            continue;
+  for(i=0; i<(long)face_vector.size(); i++)
+  {
+	 elem = face_vector[i];
+	 if(!elem->GetMark())
+		continue;
 
-         for(k=0; k<elem->nnodes; k++)
-            node_val[k] = 1.0;
+	 for(k=0; k<elem->nnodes; k++)
+		node_val[k] = 1.0;
 
-         elem->ComputeVolume();
-         fem->setOrder(getOrder()+1);
-         fem->ConfigElement(elem);
-         fem->FaceIntegration(node_val);
-         for(k=0; k<elem->nnodes; k++)
-         {
-            node = elem->nodes[k];
-            node->SetMark(true);
-            val[node->GetIndex()] += node_val[k];
-         }
-      }
+	 elem->ComputeVolume();
+	 fem->setOrder(getOrder()+1);
+	 fem->ConfigElement(elem);
+	 fem->FaceIntegration(node_val);
+	 for(k=0; k<elem->nnodes; k++)
+	 {
+		node = elem->nodes[k];
+		node->SetMark(true);
+		val[node->GetIndex()] += node_val[k];
+	 }
+  }
 
-      for(i=0; i<(long)nod_vector.size(); i++)
-      {
-         node = nod_vector[i];
-         if(!node->GetMark())
-            continue;
-         nx = node->GetIndex();
+  for(i=0; i<(long)nod_vector.size(); i++)
+  {
+	 node = nod_vector[i];
+	 if(!node->GetMark())
+		continue;
+	 nx = node->GetIndex();
 
-         ofile_asci<< nx <<" "<< val[i] << std::endl;
+	 ofile_asci<< nx <<" "<< val[i] << std::endl;
 
-      }
-      ofile_asci<<"#STOP "<< std::endl;
+  }
+  ofile_asci<<"#STOP "<< std::endl;
 
-      ofile_asci.close();
-      delete fem;
-      fem = NULL;
-      val.clear();
-   }
+  ofile_asci.close();
+  delete fem;
+  fem = NULL;
+  val.clear();
+}
 
 #ifdef USE_HydSysMshGen
    /**************************************************************************
