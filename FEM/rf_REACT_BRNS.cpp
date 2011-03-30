@@ -284,12 +284,12 @@ void REACT_BRNS::InitBRNS(Problem *myProblem)
    double total_volume;
    for ( long i=0 ; i < nNodes ; i++ )
    {
-      if ( m_flow_pcs->m_msh->nod_vector[i]->connected_elements.size() > 0 )
+      if ( m_flow_pcs->m_msh->nod_vector[i]->getConnectedElementIDs().size() > 0 )
       {
          total_volume = 0.0;
-         for ( int j=0 ; j < (int)m_flow_pcs->m_msh->nod_vector[i]->connected_elements.size(); j++ )
+         for ( int j=0 ; j < (int)m_flow_pcs->m_msh->nod_vector[i]->getConnectedElementIDs().size(); j++ )
          {
-            idx_elem = m_flow_pcs->m_msh->nod_vector[i]->connected_elements[j];
+            idx_elem = m_flow_pcs->m_msh->nod_vector[i]->getConnectedElementIDs()[j];
             elem_volume = m_flow_pcs->m_msh->ele_vector[idx_elem]->GetVolume();
             m_porosity_Node[i] += m_porosity_Elem[idx_elem] * elem_volume;
             total_volume += elem_volume;

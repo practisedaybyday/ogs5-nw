@@ -180,7 +180,7 @@ namespace Mesh_Group
             return nodes[index];
          }
 
-         CNode const * const GetNode(int index) const
+         CNode const * GetNode(int index) const
 		 {
 			return nodes[index];
 		 }
