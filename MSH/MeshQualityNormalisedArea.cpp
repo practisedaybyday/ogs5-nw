@@ -42,9 +42,9 @@ void MeshQualityNormalisedArea::check()
 					size_t nNodes = msh_elem[k]->GetElementFaceNodes(i, face_node_index);
 
 					double volume(0);
-					if (nNodes==3)
+					if (nNodes==3)		// face is a triangle
 						volume = ComputeDetTri(msh_elem[k]->GetNode(0)->getData(), msh_elem[k]->GetNode(1)->getData(), msh_elem[k]->GetNode(2)->getData());
-					else if (nNodes==4)
+					else if (nNodes==4)	// face is a quad
 						volume = ComputeDetTri(msh_elem[k]->GetNode(0)->getData(), msh_elem[k]->GetNode(1)->getData(), msh_elem[k]->GetNode(2)->getData())
 							   + ComputeDetTri(msh_elem[k]->GetNode(2)->getData(), msh_elem[k]->GetNode(3)->getData(), msh_elem[k]->GetNode(0)->getData());
 					else std::cout << "Error in MeshQualityNormalisedArea::check()" << std::endl;
