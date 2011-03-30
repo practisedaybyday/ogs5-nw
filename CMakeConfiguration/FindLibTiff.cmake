@@ -36,7 +36,7 @@ if (NOT libtiff_FOUND)
 		set(libtiff_PROCESS_LIBS libtiff_LIBRARIES)
 		libfind_process(libtiff)
 	else (NOT libtiff_LIBRARIES STREQUAL "libtiff_LIBRARIES-NOTFOUND" AND NOT libtiff_INCLUDE_DIR STREQUAL "libtiff_INCLUDE_DIR-NOTFOUND")
-		message (STATUS "Error: libtiff not found!")
+		message (STATUS "Could NOT find libtiff.")
 	endif (NOT libtiff_LIBRARIES STREQUAL "libtiff_LIBRARIES-NOTFOUND" AND NOT libtiff_INCLUDE_DIR STREQUAL "libtiff_INCLUDE_DIR-NOTFOUND")
 	
 endif (NOT libtiff_FOUND)
