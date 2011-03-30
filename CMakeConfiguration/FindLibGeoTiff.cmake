@@ -34,7 +34,7 @@ if (NOT libgeotiff_FOUND)
 		set(libgeotiff_PROCESS_LIBS libgeotiff_LIBRARIES)
 		libfind_process(libgeotiff)
 	else (NOT libgeotiff_LIBRARIES STREQUAL "libgeotiff_LIBRARIES-NOTFOUND" AND NOT libgeotiff_INCLUDE_DIR STREQUAL "libgeotiff_INCLUDE_DIR-NOTFOUND")
-		message (STATUS "Error: libgeotiff not found!")
+		message (STATUS "Could NOT find libgeotiff.")
 	endif (NOT libgeotiff_LIBRARIES STREQUAL "libgeotiff_LIBRARIES-NOTFOUND" AND NOT libgeotiff_INCLUDE_DIR STREQUAL "libgeotiff_INCLUDE_DIR-NOTFOUND")
 	
 #	SET ( libgeotiff_INCLUDE_DIR ${libgeotiff_INCLUDE_DIR} ${libtiff_INCLUDE_DIR} )

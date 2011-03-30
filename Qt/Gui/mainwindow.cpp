@@ -20,9 +20,12 @@
 #include "LineEditDialog.h"
 #include "ListPropertiesDialog.h"
 #include "MshQualitySelectionDialog.h"
-#include "SHPImportDialog.h"
 #include "VtkAddFilterDialog.h"
 #include "VisPrefsDialog.h"
+
+#ifdef shapelib_FOUND
+#include "SHPImportDialog.h"
+#endif
 
 #include "OGSRaster.h"
 #include "OGSError.h"
@@ -226,7 +229,7 @@ MainWindow::MainWindow(QWidget *parent /* = 0*/)
 	const unsigned int screenCount = desktopWidget->screenCount();
 #endif // OGS_QT_VERSION < 46
 	for (size_t i = 0; i < screenCount; ++i)
-		_screenGeometries.push_back(desktopWidget->availableGeometry(i));
+		_screenGeometries.push_back(desktopWidget->availableGeometry((int)i));
 
 	// Setup import files menu
 	menu_File->insertMenu(action_Exit, createImportFilesMenu());
@@ -655,8 +658,10 @@ QMenu* MainWindow::createImportFilesMenu()
 	QAction* rasterPolyFiles = importFiles->addAction("R&aster Files as PolyData...");
 	connect(rasterPolyFiles, SIGNAL(triggered()), this, SLOT(importRasterAsPoly()));
 #endif
+#ifdef shapelib_FOUND
 	QAction* shapeFiles = importFiles->addAction("&Shape Files...");
 	connect(shapeFiles, SIGNAL(triggered()), this, SLOT(importShape()));
+#endif
 	QAction* vtkFiles = importFiles->addAction("&VTK Files...");
 	connect( vtkFiles, SIGNAL(triggered()), this, SLOT(importVtk()) );
 
@@ -745,6 +750,7 @@ void MainWindow::importRasterAsPoly()
 		OGSError::box("File extension not supported.");
 }
 
+#ifdef shapelib_FOUND
 void MainWindow::importShape()
 {
 	QSettings settings("UFZ", "OpenGeoSys-5");
@@ -762,6 +768,7 @@ void MainWindow::importShape()
 		settings.setValue("lastOpenedFileDirectory", dir.absolutePath());
 	}
 }
+#endif
 
 void MainWindow::importPetrel()
 {

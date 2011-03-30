@@ -36,4 +36,7 @@
 #cmakedefine HAVE_PTHREADS
 #cmakedefine PROCESSOR_COUNT "${PROCESSOR_COUNT}"
 
+#cmakedefine shapelib_FOUND
+#cmakedefine libgeotiff_FOUND
+
 #endif // CONFIGURE_H
