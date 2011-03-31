@@ -8447,7 +8447,7 @@ GeoSys-FEM Function:
 void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
 {
    //cout << "CRFProcess::AssembleParabolicEquationRHSVector" << endl;
-   int i;
+   //int i;
    long ldummy;
    double ddummy;
    //----------------------------------------------------------------------
@@ -8485,7 +8485,7 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
    v_eidx[0] = m_pcs_flow->GetElementValueIndex("VELOCITY1_X");
    v_eidx[1] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Y");
    v_eidx[2] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Z");
-   for(i=0;i<3;i++)
+   for(size_t i=0;i<3;i++)
    {
       if(v_eidx[i]<0)
       {
@@ -8496,7 +8496,7 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
    double v[3];
    //======================================================================
    // Topology
-   for(i=0;i<(int)m_nod->getConnectedElementIDs().size();i++)
+   for(size_t i=0;i<m_nod->getConnectedElementIDs().size();i++)
    {
       m_ele = m_msh->ele_vector[m_nod->getConnectedElementIDs()[i]];
       m_ele->SetNormalVector();                   //OK_BUGFIX
@@ -8555,7 +8555,7 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
       }                                           // switch
    }
    //======================================================================
-   for(i=0;i<(int)m_nod->getConnectedElementIDs().size();i++)
+   for(size_t i=0;i<m_nod->getConnectedElementIDs().size();i++)
    {
       m_ele = m_msh->ele_vector[m_nod->getConnectedElementIDs()[i]];
       switch(m_ele->GetElementType())
