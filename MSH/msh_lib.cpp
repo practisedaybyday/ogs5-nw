@@ -120,7 +120,9 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    std::cout << "MSHRead:  ASCII file" << std::endl;
    bool rfiMesh (true);
    std::string line_string ("");
-   getline(msh_file_ascii, line_string); 
+   getline(msh_file_ascii, line_string);
+   msh_file_ascii.seekg(0L,std::ios::beg);
+
    if(line_string.find("#FEM_MSH")!=std::string::npos)	// OGS mesh file
    {
 		std::ios::pos_type position;
@@ -138,7 +140,6 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    }
    else // RFI mesh file
    {
-		msh_file_ascii.seekg(0L,std::ios::beg);
 		fem_msh = new CFEMesh(geo_obj, unique_name);
 		Read_RFI(msh_file_ascii, fem_msh);
    }
