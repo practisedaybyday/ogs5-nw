@@ -38,10 +38,10 @@ std::vector<Mesh_Group::CFEMesh*>fem_msh_vector;
 
 #define FEM_FILE_EXTENSION ".msh"
 
-//double msh_x_min,msh_x_max;                       //OK
-//double msh_y_min,msh_y_max;                       //OK
-//double msh_z_min,msh_z_max;                       //OK
-//double msh_x_mid,msh_y_mid,msh_z_mid;             //OK
+//KR double msh_x_min,msh_x_max;                       //OK
+//KR double msh_y_min,msh_y_max;                       //OK
+//KR double msh_z_min,msh_z_max;                       //OK
+//KR double msh_x_mid,msh_y_mid,msh_z_mid;             //OK
 
 //#define MSH_SIZE 1e5
 

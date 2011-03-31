@@ -309,6 +309,9 @@ namespace Mesh_Group
          position = fem_file->tellg();
          getline(*fem_file, line_string);
 
+		 if (fem_file->fail())
+	        return position;
+
          if (line_string.find("#") != std::string::npos)
          {
             new_keyword = true;
