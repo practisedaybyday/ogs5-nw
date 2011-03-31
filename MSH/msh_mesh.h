@@ -140,10 +140,6 @@ namespace Mesh_Group
 
          std::ios::pos_type Read(std::ifstream*);
 
-#ifdef USE_TOKENBUF
-         int Read(TokenBuf* tokenbuf);
-#endif
-
          friend class FileIO::OGSMeshIO;
          void Write(std::fstream*) const;
          std::ios::pos_type GMSReadTIN(std::ifstream*);

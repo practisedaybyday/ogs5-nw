@@ -85,7 +85,7 @@ template<class T> void readCompressedStorageFmt(std::istream &is, long &n,
 	if (iA[0] != 0) std::cerr << std::endl
 			<< "CRS matrix: array iA doesn't start with 0" << std::endl;
 
-	unsigned i = 0;
+	long i = 0;
 	while (i < iA[n] && jA[i] < n)
 		++i;
 	if (i < iA[n]) std::cerr << std::endl << "CRS matrix: the " << i

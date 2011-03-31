@@ -295,81 +295,70 @@ namespace Mesh_Group
     08/2005 WW/MB Keyword CrossSection
     09/2005 WW 2D-3D flag
     12/2005 OK MAT_TYPE
+	03/2011 KR cleaned up code
     **************************************************************************/
    std::ios::pos_type CFEMesh::Read(std::ifstream *fem_file)
    {
       std::string line_string;
       bool new_keyword = false;
       std::ios::pos_type position;
-      double x, y, z;
-      this->max_ele_dim = 0;                      //NW
 
       // Keyword loop
       while (!new_keyword)
       {
          position = fem_file->tellg();
          getline(*fem_file, line_string);
-         if (fem_file->fail())
-            break;
+
          if (line_string.find("#") != std::string::npos)
          {
             new_keyword = true;
-            break;
+            return position;
          }
-                                                  // subkeyword found
+		 
+		 // check subkeyword
          if (line_string.find("$PCS_TYPE") != std::string::npos)
          {
             *fem_file >> pcs_name >> std::ws;     //WW
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$GEO_NAME") != std::string::npos)
+		 }
+		 else if (line_string.find("$GEO_NAME") != std::string::npos)
          {
             *fem_file >> geo_name >> std::ws;     //WW
-            continue;
-         }
-                                                  //OK9_4310
-         if (line_string.find("$GEO_TYPE") != std::string::npos)
+		 }
+		 else if (line_string.find("$GEO_TYPE") != std::string::npos)
          {
             *fem_file >> geo_type_name >> geo_name >> std::ws;
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$AXISYMMETRY") != std::string::npos)
+		 }
+		 else if (line_string.find("$AXISYMMETRY") != std::string::npos)
          {
             _axisymmetry = true;
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$CROSS_SECTION") != std::string::npos)
+		 }
+		 else if (line_string.find("$CROSS_SECTION") != std::string::npos)
          {
             _cross_section = true;
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$NODES") != std::string::npos)
+		 }
+		 else if (line_string.find("$NODES") != std::string::npos)
          {
-            size_t no_nodes, ibuff;
+		    double x, y, z;
+            size_t no_nodes, idx;
             *fem_file >> no_nodes >> std::ws;
             std::string s;
             for (size_t i = 0; i < no_nodes; i++)
             {
-               *fem_file >> ibuff >> x >> y >> z;
-               CNode* newNode (new CNode(ibuff, x, y, z));
+               *fem_file >> idx >> x >> y >> z;
+               CNode* newNode (new CNode(idx, x, y, z));
                nod_vector.push_back(newNode);
                position = fem_file->tellg();
                *fem_file >> s;
                if (s.find("$AREA") != std::string::npos)
                {
                   *fem_file >> newNode->patch_area;
-               } else
-               fem_file->seekg(position, std::ios::beg);
+               } 
+			   else
+				  fem_file->seekg(position, std::ios::beg);
                *fem_file >> std::ws;
             }
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$ELEMENTS") != std::string::npos)
+		 }
+		 else  if (line_string.find("$ELEMENTS") != std::string::npos)
          {
             size_t no_elements;
             *fem_file >> no_elements >> std::ws;
@@ -385,145 +374,14 @@ namespace Mesh_Group
                   this->max_ele_dim = newElem->GetDimension();
                ele_vector.push_back(newElem);
             }
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$LAYER") != std::string::npos)
+		 }
+		 else if (line_string.find("$LAYER") != std::string::npos)
          {
             *fem_file >> _n_msh_layer >> std::ws;
-            continue;
          }
       }
       return position;
    }
-
-#ifdef USE_TOKENBUF
-   int
-      CFEMesh::Read(TokenBuf *tokenbuf)
-   {
-      std::string sub_line;
-      std::string line_string;
-      char line_buf[LINE_MAX];
-      char str1[LINE_MAX], str2[LINE_MAX];
-      bool new_keyword = false;
-      std::string hash("#");
-      std::ios::pos_type position;
-      std::string sub_string,sub_string1;
-      long i, ibuff;
-      long no_elements;
-      long no_nodes;
-      double x,y,z;
-      CNode* newNode = NULL;
-      CElem* newElem = NULL;
-#ifdef BENCHMARKING
-      BenchTimer read_timer;
-
-      read_timer.start();
-#endif
-
-      //========================================================================
-      // Keyword loop
-      while (!new_keyword && !tokenbuf->done())
-      {
-         tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-         if(tokenbuf->done()) break;
-         line_string = std::string(line_buf);
-         if(line_string.find(hash)!=std::string::npos)
-         {
-            new_keyword = true;
-            break;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$PCS_TYPE")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            pcs_name = std::string(line_buf);
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$GEO_NAME")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            geo_name = std::string(line_buf);
-            continue;
-         }
-         //....................................................................
-                                                  //OK9_4310
-         if(line_string.find("$GEO_TYPE")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            sscanf(line_buf, "%s %s", str1, str2);
-            geo_type_name = std::string(str1);
-            geo_name = std::string(str2);
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$AXISYMMETRY")!=std::string::npos)
-         {
-            _axisymmetry=true;
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$CROSS_SECTION")!=string::npos)
-         {
-            cross_section=true;
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$NODES")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            sscanf(line_buf, "%ld", &no_nodes);
-            for(i=0;i<no_nodes;i++)
-            {
-               tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-               sscanf(line_buf, "%ld %lf %lf %lf", &ibuff, &x, &y, &z);
-               newNode = new CNode(ibuff,x,y,z);
-               nod_vector.push_back(newNode);
-            }
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$ELEMENTS")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            sscanf(line_buf, "%ld", &no_elements);
-            for(i=0;i<no_elements;i++)
-            {
-               newElem = new CElem(i);
-               newElem->Read(tokenbuf);
-               setElementType (newElem->geo_type);//CC02/2006
-               if(newElem->GetPatchIndex()>max_mmp_groups)
-                  max_mmp_groups = newElem->GetPatchIndex();
-               ele_vector.push_back(newElem);
-            }
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$LAYER")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            sscanf(line_buf, "%ld", &_n_msh_layer);
-            continue;
-         }
-         //....................................................................
-      }
-      //========================================================================
-
-#ifdef BENCHMARKING
-      read_timer.stop();
-      std::cout << "Reading mesh took " << read_timer.time_s() << " s." << std::endl;
-#endif
-      return 0;
-   }
-#endif
 
    /**************************************************************************
     FEMLib-Method: ConnectedElements2Node

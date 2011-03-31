@@ -14,9 +14,7 @@ last modified
 // MSHLib
 #include "MSHEnums.h"
 #include "msh_edge.h"
-#ifdef USE_TOKENBUF
-#include "tokenbuf.h"
-#endif
+
 // PCSLib
 namespace process{class CRFProcessDeformation;}
 namespace Math_Group{class Matrix;}
@@ -299,9 +297,7 @@ namespace Mesh_Group
          //------------------------------------------------------------------
          // I/O
          void Read(std::istream& is = std::cin, int fileType = 0);
-#ifdef USE_TOKENBUF
-         void Read(TokenBuf* tokenbuf, int fileType=0);
-#endif
+
          void WriteIndex(std::ostream& os = std::cout) const;
          void WriteIndex_TEC(std::ostream& os = std::cout) const;
          void WriteAll(std::ostream& os = std::cout) const;
