@@ -297,29 +297,20 @@ namespace Mesh_Group
     12/2005 OK MAT_TYPE
 	03/2011 KR cleaned up code
     **************************************************************************/
-   std::ios::pos_type CFEMesh::Read(std::ifstream *fem_file)
+   void CFEMesh::Read(std::ifstream *fem_file)
    {
       std::string line_string;
-      bool new_keyword = false;
-      std::ios::pos_type position;
-
-      // Keyword loop
-      while (!new_keyword)
+      
+      while (!fem_file->eof())
       {
-         position = fem_file->tellg();
          getline(*fem_file, line_string);
 
-		 if (fem_file->fail())
-	        return position;
-
-         if (line_string.find("#") != std::string::npos)
+		 // check keywords
+         if (line_string.find("#STOP") != std::string::npos)
          {
-            new_keyword = true;
-            return position;
+            return;
          }
-		 
-		 // check subkeyword
-         if (line_string.find("$PCS_TYPE") != std::string::npos)
+         else if (line_string.find("$PCS_TYPE") != std::string::npos)
          {
             *fem_file >> pcs_name >> std::ws;     //WW
 		 }
@@ -345,6 +336,7 @@ namespace Mesh_Group
             size_t no_nodes, idx;
             *fem_file >> no_nodes >> std::ws;
             std::string s;
+			std::ios::pos_type position = fem_file->tellg();
             for (size_t i = 0; i < no_nodes; i++)
             {
                *fem_file >> idx >> x >> y >> z;
@@ -383,7 +375,6 @@ namespace Mesh_Group
             *fem_file >> _n_msh_layer >> std::ws;
          }
       }
-      return position;
    }
 
    /**************************************************************************

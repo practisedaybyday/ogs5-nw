@@ -138,7 +138,7 @@ namespace Mesh_Group
             _min_edge_length = val;
          }
 
-         std::ios::pos_type Read(std::ifstream*);
+         void Read(std::ifstream*);
 
          friend class FileIO::OGSMeshIO;
          void Write(std::fstream*) const;
