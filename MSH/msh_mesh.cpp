@@ -3470,18 +3470,15 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& 
     **************************************************************************/
    void CFEMesh::FaceNormal()
    {
-      int i, j;
       int idx0_face, idx1_face, idx_owner, index0 = 0, index1 = 0;
 
-      CElem* elem = NULL;
-      CElem* elem_face = NULL;
+      CElem* elem (NULL);
+      CElem* elem_face (NULL);
 
-      // if(coordinate_system!=32)
-      //   return;
-      if ((long) face_normal.size() > 0)
+      if (face_normal.size() > 0)
          return;                                  //WW
       //------------------------
-      for (i = 0; i < (long) face_vector.size(); i++)
+      for (size_t i = 0; i < face_vector.size(); i++)
       {
          elem_face = face_vector[i];
          elem = face_vector[i]->GetOwner();
@@ -3494,13 +3491,13 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& 
          idx0_face = face_vector[i]->GetNodeIndex(0);
          idx1_face = face_vector[i]->GetNodeIndex(1);
 		 double* normal = new double[3];
-         for (j = 0; j < no_owner_vertex; j++)
+         for (int j = 0; j < no_owner_vertex; j++)
          {
             idx_owner = face_vector[i]->GetOwner()->GetNodeIndex(j);
             if (idx0_face == idx_owner)
                index0 = j;
          }
-         for (j = 0; j < no_owner_vertex; j++)
+         for (int j = 0; j < no_owner_vertex; j++)
          {
             idx_owner = face_vector[i]->GetOwner()->GetNodeIndex(j);
             if (idx1_face == idx_owner)

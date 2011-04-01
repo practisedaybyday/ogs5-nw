@@ -243,6 +243,7 @@ namespace Mesh_Group
          {
             return nfaces;
          }
+
          void SetFace();
          void SetFace(CElem* onwer, const int Face);
          int GetSurfaceFacesNumber() const

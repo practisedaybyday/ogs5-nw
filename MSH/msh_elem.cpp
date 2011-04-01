@@ -383,11 +383,10 @@ CElem::CElem(CElem const &elem) :
    **************************************************************************/
    void CElem:: SetFace(CElem* onwer, const int Face)
    {
-      int i, n;
       static int nodeIndex_loc[8];
       no_faces_on_surface=0;
       owner = onwer;
-      n = owner->GetElementFaceNodes(Face, nodeIndex_loc);
+      size_t n = owner->GetElementFaceNodes(Face, nodeIndex_loc);
       face_index = Face;
       switch(owner->geo_type)
       {
@@ -410,10 +409,9 @@ CElem::CElem(CElem const &elem) :
             std::cerr << "CElem::SetFace MshElemType not handled" << std::endl;
       }
 
-      for(i=0; i<n; i++)
+      for(size_t i=0; i<n; i++)
       {
-         nodes[i] =
-            owner->nodes[nodeIndex_loc[i]];
+         nodes[i] = owner->nodes[nodeIndex_loc[i]];
       }
    }
    /**************************************************************************
@@ -446,12 +444,9 @@ void CElem::Read(std::istream& is, int fileType)
 	//fileType=5x: FLAC3D //MR
 	//fileType=6: FEFLOW //OK
 	//fileType=7: GMSH 2008 Version//TK
-	int idummy, et;
-	std::string buffer, name;
-	idummy = et = -1;
-	int j = 0;
+	int idummy(-1), et(-1);
+	std::string name("");
 	int gmsh_patch_index; //TKOK
-	int nb_tags; //TK
 
 	//   is.ignore(numeric_limits<int>::max(), '\n');
 	//----------------------------------------------------------------------
@@ -459,6 +454,8 @@ void CElem::Read(std::istream& is, int fileType)
 	switch (fileType) {
 	//....................................................................
 	case 0: // msh
+	{
+		std::string buffer("");
 		is >> index >> patch_index;
 		is >> buffer;
 
@@ -470,6 +467,7 @@ void CElem::Read(std::istream& is, int fileType)
 
 		geo_type = String2MshElemType(name);
 		break;
+	}
 		//....................................................................
 	case 1: // rfi
 		is >> index >> patch_index >> name;
@@ -502,9 +500,10 @@ void CElem::Read(std::istream& is, int fileType)
 		index--;
 		break;
 	case 7: // GMSH 2008
+		size_t nb_tags;
 		is >> index >> et >> nb_tags >> idummy >> gmsh_patch_index;
 		patch_index = gmsh_patch_index;
-		for (j = 2; j < nb_tags; j++) {
+		for (size_t j = 2; j < nb_tags; j++) {
 			is >> idummy;
 		}
 		switch (et) {
@@ -840,7 +839,7 @@ void CElem::Read(std::istream& is, int fileType)
             }
             break;
          default:
-            std::cerr << "CElem::GetLocalIndicesOfEdgeNodes MshElemType not handled" << std::endl;
+            std::cerr << "CElem::GetLocalIndicesOfEdgeNodes() - MshElemType not handled" << std::endl;
       }
    }
    /**************************************************************************
@@ -1153,6 +1152,7 @@ void CElem::Read(std::istream& is, int fileType)
       }
       return nn;
    }
+
    /**************************************************************************
    GetElementFaces
    Task: set element faces (Geometry)
@@ -1271,12 +1271,12 @@ double CElem::calcVolume () const
    **************************************************************************/
    void CElem::FaceNormal(int index0, int index1, double* face)
    {
-      int i;
-      double xx[3];
-      double yy[3];
-      double zz[3];
       if (GetElementType() == MshElemType::TRIANGLE || GetElementType() == MshElemType::QUAD)
       {
+		 double xx[3];
+		 double yy[3];
+		 double zz[3];
+
          //----plane normal----------------------------
          // tranform_tensor = new Matrix(3,3);
          // face"_vec
@@ -1298,7 +1298,7 @@ double CElem::calcVolume () const
          // y"_vec
          CrossProduction(face,zz,yy);
          NormalizeVector(yy,3);
-         for(i=0; i<3; i++)
+         for(size_t i=0; i<3; i++)
          {
             face[i] = yy[i];
          }
