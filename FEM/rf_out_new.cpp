@@ -16,6 +16,8 @@ last modified:
 #include <iostream>
 using namespace std;
 
+#include "Configure.h"
+
 // Base
 #include "StringTools.h"
 
@@ -3058,19 +3060,18 @@ void COutput::WriteVTKHeader(fstream &vtk_file, int time_step_number)
    // Write Header
    vtk_file << "# vtk DataFile Version 3.0" << endl;
    // title
-   vtk_file << "Unstructured Grid Rockflow"  << endl;
+   vtk_file << "Unstructured Grid from OpenGeoSys " << OGS_VERSION << endl;
    // data type here always ASCII
    vtk_file << "ASCII"  << endl;
-   vtk_file << endl;
 
    // geometry/topoology
    vtk_file << "DATASET UNSTRUCTURED_GRID"  << endl;
    // time information
-   vtk_file << "FIELD TimesAndCycles 2" << endl;
-   vtk_file << "TIME 1 1 double" << endl;
-   vtk_file << _time << endl;
-   vtk_file << "CYLCE 1 1 long" << endl;
-   vtk_file << time_step_number << endl;
+   //vtk_file << "FIELD TimesAndCycles 2" << endl;
+   //vtk_file << "TIME 1 1 double" << endl;
+   //vtk_file << _time << endl;
+   //vtk_file << "CYLCE 1 1 long" << endl;
+   //vtk_file << time_step_number << endl;
 
 }
 
@@ -3088,14 +3089,11 @@ void COutput::WriteVTKNodeData(fstream &vtk_file)
                                                   //KG44 12/2009 should be double !!!!
    vtk_file << "POINTS "<< m_msh->GetNodesNumber(false) << " double" << endl;
 
-   CNode* m_nod = NULL;
-   for(long i=0;i<m_msh->GetNodesNumber(false) ;i++)
+   for(long i=0; i < m_msh->GetNodesNumber(false) ;i++)
    {
-      m_nod = m_msh->nod_vector[i];
-      vtk_file << " " << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << " " << endl;
+      CNode* m_nod = m_msh->nod_vector[i];
+      vtk_file << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << endl;
    }
-   vtk_file << endl;
-
 }
 
 
@@ -3114,40 +3112,42 @@ void COutput::WriteVTKElementData(fstream &vtk_file)
    //  CFEMesh* m_msh = GetMSH(); //WW
    //  m_msh = GetMSH(); //WW
 
+   size_t numCells = m_msh->ele_vector.size();
+
    // count overall length of element vector
-   for(long i=0;i<(long)m_msh->ele_vector.size();i++)
+   for(size_t i=0; i < numCells; i++)
    {
       m_ele = m_msh->ele_vector[i];
       no_all_elements=no_all_elements+(m_ele->GetNodesNumber(false))+1;
    }
 
    // write element header
-   vtk_file << "CELLS " << (long)m_msh->ele_vector.size() << " " << no_all_elements << endl;
+   vtk_file << "CELLS " << numCells << " " << no_all_elements << endl;
 
    // write elements
-   for(long i=0;i<(long)m_msh->ele_vector.size();i++)
+   for(size_t i=0; i < numCells; i++)
    {
       m_ele = m_msh->ele_vector[i];
 
       switch(m_ele->GetElementType())
       {
          case MshElemType::LINE:                  // vtk_line=3
-            vtk_file << "2  " ;
+            vtk_file << "2" ;
             break;
          case MshElemType::QUAD:                  // quadrilateral=9
-            vtk_file << "4  ";
+            vtk_file << "4";
             break;
          case MshElemType::HEXAHEDRON:            // hexahedron=12
-            vtk_file << "8  ";
+            vtk_file << "8";
             break;
          case MshElemType::TRIANGLE:              // triangle=5
-            vtk_file << "3  ";
+            vtk_file << "3";
             break;
          case MshElemType::TETRAHEDRON:           // tetrahedron=10
-            vtk_file << "4  ";
+            vtk_file << "4";
             break;
          case MshElemType::PRISM:                 // wedge=13
-            vtk_file << "6  ";
+            vtk_file << "6";
             break;
          default:
             std::cerr << "COutput::WriteVTKElementData MshElemType not handled" << std::endl;
@@ -3155,7 +3155,7 @@ void COutput::WriteVTKElementData(fstream &vtk_file)
 
       for(j=0;j<m_ele->GetNodesNumber(false);j++)
       {
-         vtk_file << m_ele->nodes_index[j] << " ";
+         vtk_file << " " << m_ele->nodes_index[j];
       }
       vtk_file << endl;
    }
@@ -3165,38 +3165,37 @@ void COutput::WriteVTKElementData(fstream &vtk_file)
    // write cell types
 
    // write cell_types header
-   vtk_file << "CELL_TYPES " << (int) m_msh->ele_vector.size() << endl;
+   vtk_file << "CELL_TYPES " << numCells << endl;
 
-   for(long i=0;i<(long)m_msh->ele_vector.size();i++)
+   for(size_t i=0; i < numCells; i++)
    {
       m_ele = m_msh->ele_vector[i];
 
       switch(m_ele->GetElementType())
       {
          case MshElemType::LINE:                  // vtk_line=3
-            vtk_file << "3  "<< endl ;
+			vtk_file << "3" << endl ;
             break;
          case MshElemType::QUAD:                  // quadrilateral=9
-            vtk_file << "9  "<< endl;
+			vtk_file << "9" << endl;
             break;
          case MshElemType::HEXAHEDRON:            // hexahedron=12
-            vtk_file << "12  "<< endl;
+			vtk_file << "12" << endl;
             break;
          case MshElemType::TRIANGLE:              // triangle=5
-            vtk_file << "5  "<< endl;
+			vtk_file << "5" << endl;
             break;
          case MshElemType::TETRAHEDRON:           // tetrahedron=10
-            vtk_file << "10  "<< endl;
+			vtk_file << "10" << endl;
             break;
          case MshElemType::PRISM:                 // wedge=13
-            vtk_file << "13  "<< endl;
+			vtk_file << "13" << endl;
             break;
          default:
             std::cerr << "COutput::WriteVTKElementData MshElemType not handled" << std::endl;
       }
    }
    vtk_file << endl;
-
 }
 
 
@@ -3211,64 +3210,100 @@ Programing:
 **************************************************************************/
 void COutput::WriteVTKValues(fstream &vtk_file)
 {
-   CRFProcess* m_pcs = NULL;
+	CRFProcess* pcs = NULL;
    const size_t num_nod_values(_nod_value_vector.size());
    const size_t num_ele_values(_ele_value_vector.size());
    std::vector<int> nod_value_index_vector(num_nod_values);
    std::vector<int> ele_value_index_vector(num_ele_values);
-   long j;
    double val_n = 0.;
    double *tensor = NULL;                         // JTARON 2010, added for permeability output
+   long numNodes = m_msh->GetNodesNumber(false);
 
    // NODAL DATA
-   vtk_file << "POINT_DATA " << m_msh->GetNodesNumber(false) << endl;
+   vtk_file << "POINT_DATA " << numNodes << endl;
    //WW
    for (size_t k = 0; k < num_nod_values; k++)
    {
-      m_pcs = PCSGet(_nod_value_vector[k], true);
-      if (!m_pcs)
-         continue;
-      nod_value_index_vector[k] = m_pcs->GetNodeValueIndex(
-         _nod_value_vector[k]);
-      //   if(_nod_value_vector[k].find("SATURATION")!=string::npos)
-      //   NodeIndex[k]++;
-      for (size_t i = 0; i < m_pcs->GetPrimaryVNumber(); i++)
-      {
-         if (_nod_value_vector[k].compare(m_pcs->pcs_primary_function_name[i])
-            == 0)
-         {
-            nod_value_index_vector[k]++;
-            break;
-         }
-      }
-		vtk_file << "SCALARS " << _nod_value_vector[k] << " double 1" << endl;
-      vtk_file << "LOOKUP_TABLE default" << endl;
-      //....................................................................
-      for (j = 0l; j < m_msh->GetNodesNumber(false); j++)
-      {
-         if (nod_value_index_vector[k] > -1)
-            vtk_file << " " << m_pcs->GetNodeValue(
-               m_msh->nod_vector[j]->GetIndex(),
-               nod_value_index_vector[k]) << endl;
-      }
+	   string arrayName = _nod_value_vector[k];
+	   if (arrayName.find("X"))
+	   {
+		   vtk_file << "VECTORS " << arrayName.substr(0, arrayName.size() - 2) << " double" << endl;
+		   string arrayNames[3];
+		   arrayNames[0] = arrayName;
+		   arrayNames[1] = arrayName.substr(0, arrayName.size() - 1).append("Y");
+		   arrayNames[2] = arrayName.substr(0, arrayName.size() - 1).append("Z");
+
+		   double vector3[3];
+		   for (long j = 0l; j < numNodes; j++)
+		   {
+			   for(int component = 0; component < 3; ++component)
+			   {
+				   pcs = PCSGet(arrayNames[component], true);
+				   if (!pcs)
+					  continue;
+				   nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName);
+				   //   if(_nod_value_vector[k].find("SATURATION")!=string::npos)
+				   //   NodeIndex[k]++;
+				   for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
+				   {
+					  if (arrayName.compare(pcs->pcs_primary_function_name[i]) == 0)
+					  {
+						 nod_value_index_vector[k]++;
+						 break;
+					  }
+				   }
+				   vector3[component] = pcs->GetNodeValue(m_msh->nod_vector[j]->GetIndex(),
+														  nod_value_index_vector[k]);
+			   }
+			   vtk_file << vector3[0] << " " << vector3[1] << " " << vector3[2] << endl;
+			}
+		   k += 2;
+	   }
+	   else
+	   {
+		   pcs = PCSGet(arrayName, true);
+		   if (!pcs)
+			  continue;
+		   nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName);
+		   //   if(_nod_value_vector[k].find("SATURATION")!=string::npos)
+		   //   NodeIndex[k]++;
+		   for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
+		   {
+			  if (arrayName.compare(pcs->pcs_primary_function_name[i]) == 0)
+			  {
+				 nod_value_index_vector[k]++;
+				 break;
+			  }
+		   }
+		 vtk_file << "SCALARS " << arrayName << " double 1" << endl;
+		   vtk_file << "LOOKUP_TABLE default" << endl;
+		   //....................................................................
+		   for (long j = 0l; j < numNodes; j++)
+		   {
+			  if (nod_value_index_vector[k] > -1)
+				 vtk_file << pcs->GetNodeValue(m_msh->nod_vector[j]->GetIndex(),
+											   nod_value_index_vector[k])
+						  << endl;
+		   }
+	   }
    }
    //======================================================================
    // Saturation 2 for 1212 pp - scheme. 01.04.2009. WW
    // ---------------------------------------------------------------------
    if (num_nod_values > 0)                        //SB added
-      m_pcs = PCSGet(_nod_value_vector[0], true);
-   if (m_pcs && m_pcs->type == 1212)
+	  pcs = PCSGet(_nod_value_vector[0], true);
+   if (pcs && pcs->type == 1212)
    {
-      size_t i = m_pcs->GetNodeValueIndex("SATURATION1");
+	  size_t i = pcs->GetNodeValueIndex("SATURATION1");
 		vtk_file << "SCALARS SATURATION2 double 1" << endl;
       //
       vtk_file << "LOOKUP_TABLE default" << endl;
       //....................................................................
-      for (j = 0l; j < m_msh->GetNodesNumber(false); j++)
+	  for (long j = 0l; j < numNodes; j++)
       {
                                                   //WW
-         val_n = m_pcs->GetNodeValue(m_msh->nod_vector[j]->GetIndex(), i);
-         vtk_file << " " << 1. - val_n << endl;
+		 val_n = pcs->GetNodeValue(m_msh->nod_vector[j]->GetIndex(), i);
+		 vtk_file << 1. - val_n << endl;
       }
    }
    //kg44 GEM node data
@@ -3280,7 +3315,7 @@ void COutput::WriteVTKValues(fstream &vtk_file)
    bool wroteAnyEleData = false;                  //NW
    if (num_ele_values > 0)
    {
-      m_pcs = GetPCS_ELE(_ele_value_vector[0]);
+	  pcs = GetPCS_ELE(_ele_value_vector[0]);
       GetELEValuesIndexVector(ele_value_index_vector);
       vtk_file << "CELL_DATA " << (long) m_msh->ele_vector.size() << endl;
       wroteAnyEleData = true;
@@ -3300,7 +3335,7 @@ void COutput::WriteVTKValues(fstream &vtk_file)
             vtk_file << "VECTORS permeability double " << endl;
             CMediumProperties* MediaProp = NULL;
             CElem* m_ele = NULL;
-            for (j = 0l; j < (long) m_msh->ele_vector.size(); j++)
+			for (int j = 0l; j < (long) m_msh->ele_vector.size(); j++)
             {
                m_ele = m_msh->ele_vector[j];
                MediaProp = mmp_vector[m_ele->GetPatchIndex()];
@@ -3317,7 +3352,7 @@ void COutput::WriteVTKValues(fstream &vtk_file)
                << endl;
             vtk_file << "LOOKUP_TABLE default" << endl;
             for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
-               vtk_file << m_pcs->GetElementValue(i,
+			   vtk_file << pcs->GetElementValue(i,
                   ele_value_index_vector[k]) << endl;
          }
       }
