@@ -3035,6 +3035,9 @@ namespace FiniteElement
          //      UpwindUnitCoord(phase, gp, indice); // phase 0
          //}
          ComputeShapefct(1);                      // Linear interpolation function
+         if (pcs->m_num->ele_supg_method>0) //NW
+           ComputeGradShapefct(1); // Linear interpolation function
+
          // Material
          mat_fac = CalCoefMass();
          // if(Index < 0) cout << "mat_fac in CalCoeffMass: " << mat_fac << endl;
@@ -3117,64 +3120,65 @@ namespace FiniteElement
       // + (Peclet number)
 
       double v_mag = sqrt(vel[0]*vel[0]+vel[1]*vel[1]+vel[2]*vel[2]);
+      if (v_mag==0.0) return 0.0;
+
       // Characteristic element length
       double ele_len = CalcSUPGEffectiveElemenetLength(vel);
       // Diffusivity = (effective heat conductivity) / (fluid heat capacity)
-      double diff = 0;
+	  double *dispersion_tensor = NULL;
       if (PcsType==H)                             //heat
       {
-         double *heat_conductivity_tensor = MediaProp->HeatConductivityTensor(MeshElement->GetIndex());
-
-         if((FluidProp->density_model==14))
+         dispersion_tensor = MediaProp->HeatConductivityTensor(MeshElement->GetIndex());
+      }                                           //mass
+      else if (PcsType==M)
+      {
+         dispersion_tensor = MediaProp->MassDispersionTensorNew(ip, 0);  // SB, BG
+      }
+	  double diff = .0;
+	  switch (pcs->m_num->ele_supg_method_diffusivity){
+	      case 1: // min
+	        {
+	          double min_diff = dispersion_tensor[0];
+	          for (int i=1; i<dim*dim; i++) {
+	            if (dispersion_tensor[i]<min_diff) min_diff = dispersion_tensor[i];
+	          }
+	          diff = min_diff;
+	        }
+	        break;
+	      case 2: // magnitude of diagonal
+	        {
+	          double tmp_diff = 0.0;
+	          for (int i=0; i<dim; i++) {
+	            tmp_diff = pow(dispersion_tensor[i+i*dim], 2.0);
+	          }
+	          diff = sqrt(tmp_diff);
+	        }
+	        break;
+	      default: //0 or any invalid number: max. in dispersion coefficient
+	        {
+	          double max_diff = dispersion_tensor[0];
+	          for (int i=1; i<dim*dim; i++) {
+	            if (dispersion_tensor[i]>max_diff) max_diff = dispersion_tensor[i];
+	          }
+	          diff = max_diff;
+	        }
+	  }
+	  if (PcsType==H) { //heat
+         if (FluidProp->density_model==14)
          {
             double dens_arg[3];                   //AKS
             int Index = MeshElement->GetIndex();
             dens_arg[0]=interpolate(NodalValC1);
             dens_arg[1]=interpolate(NodalVal1)+T_KILVIN_ZERO;
             dens_arg[2] =Index;
-            diff = heat_conductivity_tensor[0] / (FluidProp->SpecificHeatCapacity(dens_arg)*FluidProp->Density(dens_arg));
+            diff /= (FluidProp->SpecificHeatCapacity(dens_arg)*FluidProp->Density(dens_arg));
          }
          else
          {
-            diff = heat_conductivity_tensor[0] / (FluidProp->SpecificHeatCapacity()*FluidProp->Density());
+            diff /= (FluidProp->SpecificHeatCapacity()*FluidProp->Density());
          }
-      }                                           //mass
-      else if (PcsType==M)
-      {
-         double *advection_dispersion_tensor = MediaProp->MassDispersionTensorNew(ip,0); // SB, BG
-         switch (pcs->m_num->ele_supg_method_diffusivity)
-         {
-            case 1:                               // min
-            {
-               double min_diff = advection_dispersion_tensor[0];
-               for (int i=1; i<dim; i++)
-               {
-                  if (advection_dispersion_tensor[i]<min_diff) min_diff = advection_dispersion_tensor[i];
-               }
-               diff = min_diff;
-            }
-            break;
-            case 2:                               // magnitude
-            {
-               double tmp_diff = 0.0;
-               for (int i=0; i<dim; i++)
-               {
-                  tmp_diff = pow(advection_dispersion_tensor[i], 2.0);
-               }
-               diff = sqrt(tmp_diff);
-            }
-            break;
-            default:                              //0 or any invalid number: max. in dispersion coefficient
-            {
-               double max_diff = advection_dispersion_tensor[0];
-               for (int i=1; i<dim; i++)
-               {
-                  if (advection_dispersion_tensor[i]>max_diff) max_diff = advection_dispersion_tensor[i];
-               }
-               diff = max_diff;
-            }
-         }
-      }
+	  }
+
 
       //--------------------------------------------------------------------
       // Here calculates SUPG coefficient (tau)
@@ -3183,7 +3187,7 @@ namespace FiniteElement
       {
          case 1:
          {
-            // this coefficient matches with the analytical solution in 1D stady state case
+            // this coefficient matches with the analytical solution in 1D steady state case
             double alpha = 0.5*v_mag*ele_len/diff;// 0.5*Pe
             double func = MLangevin(alpha);
             tau = 0.5*ele_len/v_mag*func;
@@ -3192,7 +3196,8 @@ namespace FiniteElement
          case 2:
          {
             // taking into account time step
-            tau = 1.0 / sqrt(pow(2.0/dt ,2.0)+pow(2.0*v_mag/ele_len,2.0));
+//          tau = 1.0 / sqrt(pow(2.0/dt ,2.0)+pow(2.0*v_mag/ele_len,2.0));
+            tau = 1.0 / sqrt(pow(2.0/dt ,2.0)+pow(2.0*v_mag/ele_len,2.0)+pow(4.0*diff/(ele_len*ele_len),2.0));
          }
          break;
       }
