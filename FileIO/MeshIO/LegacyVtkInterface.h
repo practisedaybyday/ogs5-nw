@@ -15,6 +15,8 @@ namespace Mesh_Group
 }
 class COutput;
 
+/// @brief Writes a legacy ascii vtk file of a mesh.
+// TODO decouple from COutput
 class LegacyVtkInterface
 {	
 public:
@@ -25,9 +27,9 @@ public:
 
 protected:
 	void WriteVTKHeader(std::fstream&, int);
-	void WriteVTKNodeData(std::fstream&);
-	void WriteVTKElementData(std::fstream&);
-	void WriteVTKValues(std::fstream&);
+	void WriteVTKPointData(std::fstream&);
+	void WriteVTKCellData(std::fstream&);
+	void WriteVTKDataArrays(std::fstream&);
 	void WriteELEVelocity(std::fstream &vtk_file);
 	
 	Mesh_Group::CFEMesh* _mesh;

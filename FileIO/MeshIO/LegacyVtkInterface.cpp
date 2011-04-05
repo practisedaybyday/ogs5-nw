@@ -41,9 +41,6 @@ Programing:
 void LegacyVtkInterface::WriteDataVTK(int number)
 {
 	string filename = _output->file_base_name;
-	char number_char[10];
-	sprintf(number_char,"%i",number);
-	string number_string = number_char;
 
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
 	char tf_name[10];
@@ -53,32 +50,27 @@ void LegacyVtkInterface::WriteDataVTK(int number)
 	_mesh = FEMGet(convertProcessTypeToString (_output->getProcessType()));
 	if(!_mesh)
 	{
-		cout << "Warning in COutput::WriteVTKNodes - no MSH data" << endl;
+		cout << "Warning in LegacyVtkInterface::WriteVTKNodes - no MSH data" << endl;
 		return;
 	}
-//--------------------------------------------------------------------
-// File handling
-//  if(pcs_type_name.size()>0) // PCS
-//    vtk_file_name += "_" + pcs_type_name;
+
 	if(_output->getProcessType() != INVALID_PROCESS)        // PCS
 		filename += "_" + convertProcessTypeToString (_output->getProcessType());
 
-	filename += number_string ;
-
-#if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
-// kg44 removed "_0" as this make it impossible for visit/paraview to identify the cycle number
-// sprintf(tf_name, "%d", myrank);
-// filename += "_" + string(tf_name);
-// std::cout << "VTK filename: " << filename << endl;
-#endif
+	stringstream ss;
+	ss << number;
+	filename += ss.str();
 	filename += ".vtk";
-												//KG44
-// LB if(!_new_file_opened) remove(filename.c_str());
-												//NW remove ios::app
-	fstream vtk_file (filename.data(),ios::out);
+
+	// LB if(!_new_file_opened) remove(filename.c_str());
+	fstream vtk_file (filename.c_str(), ios::out);
 	vtk_file.setf(ios::scientific,ios::floatfield);
 	vtk_file.precision(12);
-	if (!vtk_file.good()) return;
+	if (!vtk_file.good())
+	{
+		cout << "Could not open file for writing: " << filename << endl;
+		return;
+	}
 	vtk_file.seekg(0L,ios::beg);
 #ifdef SUPERCOMPUTER
 // kg44 buffer the output
@@ -86,23 +78,16 @@ void LegacyVtkInterface::WriteDataVTK(int number)
 	vtk_file.rdbuf()->pubsetbuf(mybuffer,MY_IO_BUFSIZE*MY_IO_BUFSIZE);
 //
 #endif
-//--------------------------------------------------------------------
+
 	this->WriteVTKHeader(vtk_file,number);
-	this->WriteVTKNodeData(vtk_file);
-	this->WriteVTKElementData(vtk_file);
-	this->WriteVTKValues(vtk_file);
-//======================================================================
-// vtk
-	vtk_file.close();                              // kg44 close file
+	this->WriteVTKPointData(vtk_file);
+	this->WriteVTKCellData(vtk_file);
+	this->WriteVTKDataArrays(vtk_file);
+
+	vtk_file.close();
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-Programing:
-04/2006 KG44 Implementation
-12/2009 KG44 added time information to header
-**************************************************************************/
 void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number)
 {
 	
@@ -122,12 +107,8 @@ void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number)
 }
 
 
-void LegacyVtkInterface::WriteVTKNodeData(fstream &vtk_file)
+void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file)
 {
-// header for node data
-//   CFEMesh* _mesh = GetMSH(); //WW
-//   _mesh = GetMSH(); //WW
-	//KG44 12/2009 should be double !!!!
 	vtk_file << "POINTS "<< _mesh->GetNodesNumber(false) << " double" << endl;
 
 	for(long i=0; i < _mesh->GetNodesNumber(false) ;i++)
@@ -138,96 +119,76 @@ void LegacyVtkInterface::WriteVTKNodeData(fstream &vtk_file)
 }
 
 
-void LegacyVtkInterface::WriteVTKElementData(fstream &vtk_file)
+void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file)
 {
-
-	int j;
-	long no_all_elements =0;
-	CElem* m_ele = NULL;
-//  CFEMesh* _mesh = GetMSH(); //WW
-//  _mesh = GetMSH(); //WW
-
 	size_t numCells = _mesh->ele_vector.size();
 
-// count overall length of element vector
+	// count overall length of element vector
+	long no_all_elements =0;
 	for(size_t i=0; i < numCells; i++)
 	{
-		m_ele = _mesh->ele_vector[i];
-		no_all_elements=no_all_elements+(m_ele->GetNodesNumber(false))+1;
+		CElem* ele = _mesh->ele_vector[i];
+		no_all_elements = no_all_elements + (ele->GetNodesNumber(false)) + 1;
 	}
 
-// write element header
+	// write elements
 	vtk_file << "CELLS " << numCells << " " << no_all_elements << endl;
-
-// write elements
 	for(size_t i=0; i < numCells; i++)
 	{
-		m_ele = _mesh->ele_vector[i];
+		CElem* ele = _mesh->ele_vector[i];
 
-		switch(m_ele->GetElementType())
+		// Write number of points per cell
+		switch(ele->GetElementType())
 		{
-			case MshElemType::LINE:                  // vtk_line=3
-			vtk_file << "2" ;
-			break;
-			case MshElemType::QUAD:                  // quadrilateral=9
-			vtk_file << "4";
-			break;
-			case MshElemType::HEXAHEDRON:            // hexahedron=12
-			vtk_file << "8";
-			break;
-			case MshElemType::TRIANGLE:              // triangle=5
-			vtk_file << "3";
-			break;
-			case MshElemType::TETRAHEDRON:           // tetrahedron=10
-			vtk_file << "4";
-			break;
-			case MshElemType::PRISM:                 // wedge=13
-			vtk_file << "6";
-			break;
+			case MshElemType::LINE:
+				vtk_file << "2"; break;
+			case MshElemType::QUAD:
+				vtk_file << "4"; break;
+			case MshElemType::HEXAHEDRON:
+				vtk_file << "8"; break;
+			case MshElemType::TRIANGLE:
+				vtk_file << "3"; break;
+			case MshElemType::TETRAHEDRON:
+				vtk_file << "4"; break;
+			case MshElemType::PRISM:
+				vtk_file << "6"; break;
 			default:
-			std::cerr << "COutput::WriteVTKElementData MshElemType not handled" << std::endl;
+				cerr << "COutput::WriteVTKElementData MshElemType not handled" << endl;
+				break;
 		}
 
-		for(j=0;j<m_ele->GetNodesNumber(false);j++)
-		{
-			vtk_file << " " << m_ele->nodes_index[j];
-		}
+		for(int j = 0; j < ele->GetNodesNumber(false); j++)
+			vtk_file << " " << ele->nodes_index[j];
+
 		vtk_file << endl;
 	}
-
 	vtk_file << endl;
 
-// write cell types
-
-// write cell_types header
+	// write cell types
 	vtk_file << "CELL_TYPES " << numCells << endl;
 
 	for(size_t i=0; i < numCells; i++)
 	{
-		m_ele = _mesh->ele_vector[i];
+		CElem* ele = _mesh->ele_vector[i];
 
-		switch(m_ele->GetElementType())
+		// Write vtk cell type number (see vtkCellType.h)
+		switch(ele->GetElementType())
 		{
-			case MshElemType::LINE:                  // vtk_line=3
-			vtk_file << "3" << endl ;
-			break;
-			case MshElemType::QUAD:                  // quadrilateral=9
-			vtk_file << "9" << endl;
-			break;
-			case MshElemType::HEXAHEDRON:            // hexahedron=12
-			vtk_file << "12" << endl;
-			break;
-			case MshElemType::TRIANGLE:              // triangle=5
-			vtk_file << "5" << endl;
-			break;
-			case MshElemType::TETRAHEDRON:           // tetrahedron=10
-			vtk_file << "10" << endl;
-			break;
-			case MshElemType::PRISM:                 // wedge=13
-			vtk_file << "13" << endl;
-			break;
+			case MshElemType::LINE:
+				vtk_file << "3" << endl; break;
+			case MshElemType::QUAD:
+				vtk_file << "9" << endl; break;
+			case MshElemType::HEXAHEDRON:
+				vtk_file << "12" << endl; break;
+			case MshElemType::TRIANGLE:
+				vtk_file << "5" << endl; break;
+			case MshElemType::TETRAHEDRON:
+				vtk_file << "10" << endl; break;
+			case MshElemType::PRISM: // VTK_WEDGE
+				vtk_file << "13" << endl; break;
 			default:
-			std::cerr << "COutput::WriteVTKElementData MshElemType not handled" << std::endl;
+				cerr << "COutput::WriteVTKElementData MshElemType not handled" << endl;
+				break;
 		}
 	}
 	vtk_file << endl;
@@ -243,7 +204,7 @@ Programing:
 08/2008 OK MAT values
 06/2009 WW/OK WriteELEVelocity for different coordinate systems
 **************************************************************************/
-void LegacyVtkInterface::WriteVTKValues(fstream &vtk_file)
+void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 {
 	CRFProcess* pcs = NULL;
 	const size_t num_nod_values(_output->_nod_value_vector.size());
@@ -251,12 +212,10 @@ void LegacyVtkInterface::WriteVTKValues(fstream &vtk_file)
 	std::vector<int> nod_value_index_vector(num_nod_values);
 	std::vector<int> ele_value_index_vector(num_ele_values);
 	double val_n = 0.;
-	double *tensor = NULL;                         // JTARON 2010, added for permeability output
 	long numNodes = _mesh->GetNodesNumber(false);
 
-// NODAL DATA
+	// NODAL DATA
 	vtk_file << "POINT_DATA " << numNodes << endl;
-//WW
 	for (size_t k = 0; k < num_nod_values; k++)
 	{
 		string arrayName = _output->_nod_value_vector[k];
@@ -277,8 +236,8 @@ void LegacyVtkInterface::WriteVTKValues(fstream &vtk_file)
 					if (!pcs)
 						continue;
 					nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName);
-				//   if(_nod_value_vector[k].find("SATURATION")!=string::npos)
-				//   NodeIndex[k]++;
+					// if(_nod_value_vector[k].find("SATURATION")!=string::npos)
+					// NodeIndex[k]++;
 					for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
 					{
 						if (arrayName.compare(pcs->pcs_primary_function_name[i]) == 0)
@@ -300,8 +259,6 @@ void LegacyVtkInterface::WriteVTKValues(fstream &vtk_file)
 			if (!pcs)
 				continue;
 			nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName);
-		//   if(_nod_value_vector[k].find("SATURATION")!=string::npos)
-		//   NodeIndex[k]++;
 			for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
 			{
 				if (arrayName.compare(pcs->pcs_primary_function_name[i]) == 0)
@@ -312,7 +269,7 @@ void LegacyVtkInterface::WriteVTKValues(fstream &vtk_file)
 			}
 			vtk_file << "SCALARS " << arrayName << " double 1" << endl;
 			vtk_file << "LOOKUP_TABLE default" << endl;
-		//....................................................................
+
 			for (long j = 0l; j < numNodes; j++)
 			{
 				if (nod_value_index_vector[k] > -1)
@@ -322,9 +279,9 @@ void LegacyVtkInterface::WriteVTKValues(fstream &vtk_file)
 			}
 		}
 	}
-//======================================================================
-// Saturation 2 for 1212 pp - scheme. 01.04.2009. WW
-// ---------------------------------------------------------------------
+	//======================================================================
+	// Saturation 2 for 1212 pp - scheme. 01.04.2009. WW
+	// ---------------------------------------------------------------------
 	if (num_nod_values > 0)                        //SB added
 		pcs = PCSGet(_output->_nod_value_vector[0], true);
 	if (pcs && pcs->type == 1212)
@@ -345,8 +302,8 @@ void LegacyVtkInterface::WriteVTKValues(fstream &vtk_file)
 #ifdef GEM_REACT
 	m_vec_GEM->WriteVTKGEMValues(vtk_file);        //kg44 export GEM internal variables like speciateion vector , phases etc
 #endif
-// ELEMENT DATA
-// ---------------------------------------------------------------------
+	// ELEMENT DATA
+	// ---------------------------------------------------------------------
 	bool wroteAnyEleData = false;                  //NW
 	if (num_ele_values > 0)
 	{
@@ -358,13 +315,13 @@ void LegacyVtkInterface::WriteVTKValues(fstream &vtk_file)
 	//
 		for (size_t k = 0; k < num_ele_values; k++)
 		{
-		//    JTARON 2010, "VELOCITY" should only write as vector, scalars handled elswhere
+			// JTARON 2010, "VELOCITY" should only write as vector, scalars handled elswhere
 			if (_output->_ele_value_vector[k].compare("VELOCITY") == 0)
 			{
 				vtk_file << "VECTORS velocity double " << endl;
 				this->WriteELEVelocity(vtk_file);           //WW/OK
 			}
-		//	  PRINT CHANGING (OR CONSTANT) PERMEABILITY TENSOR?   // JTARON 2010
+			// PRINT CHANGING (OR CONSTANT) PERMEABILITY TENSOR?   // JTARON 2010
 			else if (_output->_ele_value_vector[k].compare("PERMEABILITY") == 0)
 			{
 				vtk_file << "VECTORS permeability double " << endl;
@@ -374,15 +331,14 @@ void LegacyVtkInterface::WriteVTKValues(fstream &vtk_file)
 				{
 					m_ele = _mesh->ele_vector[j];
 					MediaProp = mmp_vector[m_ele->GetPatchIndex()];
-					tensor = MediaProp->PermeabilityTensor(j);
 					for (size_t i = 0; i < 3; i++)
-						vtk_file << tensor[i * 3 + i] << " ";
+						vtk_file << MediaProp->PermeabilityTensor(j)[i * 3 + i] << " ";
 					vtk_file << endl;
 				}
 			}
 			else if (ele_value_index_vector[k] > -1)
 			{
-			//	  NOW REMAINING SCALAR DATA  // JTARON 2010, reconfig
+				// NOW REMAINING SCALAR DATA  // JTARON 2010, reconfig
 				vtk_file << "SCALARS " << _output->_ele_value_vector[k] << " double 1"
 					<< endl;
 				vtk_file << "LOOKUP_TABLE default" << endl;
@@ -394,8 +350,8 @@ void LegacyVtkInterface::WriteVTKValues(fstream &vtk_file)
 	//--------------------------------------------------------------------
 		ele_value_index_vector.clear();
 	}
-//======================================================================
-// MAT data
+	//======================================================================
+	// MAT data
 	double mat_value = 0.0;                        //OK411
 	CMediumProperties* m_mmp = NULL;
 	CElem* m_ele = NULL;
@@ -426,14 +382,14 @@ void LegacyVtkInterface::WriteVTKValues(fstream &vtk_file)
 			vtk_file << mat_value << endl;
 		}
 	}
-// PCH: Material groups from .msh just for temparary purpose
+	// PCH: Material groups from .msh just for temparary purpose
 	if (mmp_vector.size() > 1)
 	{
-	// write header for cell data
+		// write header for cell data
 		if (!wroteAnyEleData)                       //NW: check whether the header has been already written
 			vtk_file << "CELL_DATA " << _mesh->ele_vector.size() << endl;
 		wroteAnyEleData = true;
-	// header now scalar data
+
 		vtk_file << "SCALARS " << "MatGroup" << " int 1" << endl;
 		vtk_file << "LOOKUP_TABLE default" << endl;
 		for (size_t i = 0; i < _mesh->ele_vector.size(); i++)
@@ -450,38 +406,34 @@ FEMLib-Method:
 **************************************************************************/
 inline void LegacyVtkInterface::WriteELEVelocity(fstream &vtk_file)
 {
-	int k;
-	int vel_ind[3];
+	int vel_ind[3] = {0, 1, 2};
 
-	vel_ind[0] = 0;
-	vel_ind[1] = 1;
-	vel_ind[2] = 2;
-// 1D
+	// 1D
 	if(_mesh->GetCoordinateFlag()/10==1)
 	{
-	// 0 y 0
+		// 0 y 0
 		if(_mesh->GetCoordinateFlag()%10==1)
 		{
 			vel_ind[0] = 1;
 			vel_ind[1] = 0;
 		}
-	// 0 0 z
+		// 0 0 z
 		else if(_mesh->GetCoordinateFlag()%10==2)
 		{
 			vel_ind[0] = 2;
 			vel_ind[2] = 0;
 		}
 	}
-// 2D
+	// 2D
 	if(_mesh->GetCoordinateFlag()/10==2)
 	{
-	// 0 y z
+		// 0 y z
 		if(_mesh->GetCoordinateFlag()%10==1)
 		{
 			vel_ind[0] = 1;
 			vel_ind[1] = 2;
 		}
-	// x 0 z
+		// x 0 z
 		else if(_mesh->GetCoordinateFlag()%10==2)
 		{
 			vel_ind[0] = 0;
@@ -492,7 +444,7 @@ inline void LegacyVtkInterface::WriteELEVelocity(fstream &vtk_file)
 
 	for(long i=0;i<(long)_mesh->ele_vector.size();i++)
 	{
-		for(k=0; k<3; k++)
+		for(int k=0; k<3; k++)
 			vtk_file << ele_gp_value[i]->Velocity(vel_ind[k],0) << " ";
 		vtk_file << endl;
 	}

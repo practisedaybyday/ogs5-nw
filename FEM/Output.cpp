@@ -8,31 +8,16 @@
 // ** INCLUDES **
 #include "Output.h"
 
-#include "makros.h"
-// C++ STL
-#include <cfloat>
-#include <cmath>
-#include <limits>
-#include <list>
 #include <string>
 #include <fstream>
 #include <iostream>
-using namespace std;
 
 #include "Configure.h"
 
-// Base
 #include "StringTools.h"
-
-// FEM-Makros
 #include "makros.h"
 #include "files0.h"
-// GeoSys-GeoLib
-#include "files0.h"
-#include "geo_ply.h"
-#include "geo_sfc.h"
 #include "GEOObjects.h"
-// GeoSys-FEMLib
 #include "rf_pcs.h"
 #include "rf_pcs.h"
 #include "rf_tim_new.h"
@@ -40,43 +25,32 @@ using namespace std;
 #include "fem_ele_std.h"
 #include "rf_msp_new.h"
 #include "rf_random_walk.h"
-// GeoSys-MSHLib
-#include "msh_lib.h"
-
-// FileIO/FEMIO
-#include "FEMIO/GeoIO.h"
-
 #include "problem.h"
-
-// Base
-#include "StringTools.h"
+#include "msh_lib.h"
+#include "vtk.h"
+#include "FEMIO/GeoIO.h"
 
 extern size_t max_dim;                            //OK411 todo
 
 #ifdef CHEMAPP
-#include "eqlink.h"
+	#include "eqlink.h"
 #endif
-#include "vtk.h"
-// MPI Parallel
+
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
-#include "par_ddc.h"
+	#include "par_ddc.h"
 #endif
 #ifdef SUPERCOMPUTER
-// kg44 this is usefull for io-buffering as endl flushes the buffer
-#define endl '\n' // Introduced by WW. LB super bad programming style: this breaks platform independet IO
-#define MY_IO_BUFSIZE 4096
-#endif
+	// kg44 this is usefull for io-buffering as endl flushes the buffer
+	#define endl '\n' // Introduced by WW. LB super bad programming style: this breaks platform independet IO
+	#define MY_IO_BUFSIZE 4096
+#endif // SUPERCOMPUTER
 #ifdef GEM_REACT
-#include "rf_REACT_GEM.h"
-#endif
-using Mesh_Group::CFEMesh;
+	#include "rf_REACT_GEM.h"
+#endif // GEM_REACT
 
-/**************************************************************************
-FEMLib-Method:
-Task: OUT constructor
-Programing:
-01/2004 OK Implementation
-**************************************************************************/
+using Mesh_Group::CFEMesh;
+using namespace std;
+
 COutput::COutput() :
 	GeoInfo(GEOLIB::GEODOMAIN), ProcessInfo(), _id(0), out_amplifier(0.0),
 	m_msh(NULL), nSteps(-1), _new_file_opened(false), dat_type_name("TECPLOT")
@@ -86,6 +60,7 @@ COutput::COutput() :
 	vtk = NULL; //NW
 }
 
+
 COutput::COutput(size_t id) :
 	GeoInfo(GEOLIB::GEODOMAIN), ProcessInfo(), _id(id), out_amplifier(0.0),
 	m_msh(NULL), nSteps(-1), _new_file_opened(false), dat_type_name("TECPLOT")
@@ -94,6 +69,7 @@ COutput::COutput(size_t id) :
 	m_pcs = NULL;
 	vtk = NULL; //NW
 }
+
 
 void COutput::init()
 {
@@ -124,12 +100,6 @@ void COutput::init()
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-Task: OUT deconstructor
-Programing:
-04/2004 OK Implementation
-**************************************************************************/
 COutput::~COutput()
 {
    mmp_value_vector.clear();                      //OK
@@ -940,9 +910,8 @@ void COutput::WriteTECNodeData(fstream &tec_file)
          {
             //tec_file << MFPGetNodeValue(m_msh->nod_vector[j]->GetIndex(),mfp_value_vector[k]) << " "; //NB
             tec_file << MFPGetNodeValue(m_msh->nod_vector[j]->GetIndex(),
-               mfp_value_vector[k], atoi(
-               &mfp_value_vector[k][mfp_value_vector[k].size()
-               - 1]) - 1) << " ";                 //NB: MFP output for all phases
+               mfp_value_vector[k],
+               atoi(&mfp_value_vector[k][mfp_value_vector[k].size() - 1]) - 1) << " "; //NB: MFP output for all phases
          }
       }
       tec_file << endl;
@@ -962,7 +931,6 @@ Programing:
 **************************************************************************/
 void COutput::WriteTECElementData(fstream &tec_file,int e_type)
 {
-   //	m_msh = GetMSH();
    for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
    {
       if (!m_msh->ele_vector[i]->GetMark())
@@ -973,7 +941,6 @@ void COutput::WriteTECElementData(fstream &tec_file,int e_type)
          m_msh->ele_vector[i]->WriteIndex_TEC(tec_file);
       }
    }
-
 }
 
 
@@ -1092,13 +1059,6 @@ void COutput::ELEWriteDOMDataTEC()
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-Task:
-Programing:
-09/2004 OK Implementation
-last modification:
-**************************************************************************/
 void COutput::WriteELEValuesTECHeader(fstream &tec_file)
 {
    // Write Header I: variables
@@ -1781,13 +1741,6 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-Task:
-Programing:
-03/2005 OK Implementation
-12/2005 OK MSH
-**************************************************************************/
 void COutput::WriteRFOHeader(fstream &rfo_file)
 {
    //#0#0#0#1#0.00000000000000e+000#0#3915###########################################
@@ -1800,13 +1753,6 @@ void COutput::WriteRFOHeader(fstream &rfo_file)
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-Task:
-Programing:
-03/2005 OK Implementation
-12/2005 OK MSH
-**************************************************************************/
 void COutput::WriteRFONodes(fstream &rfo_file)
 {
    //0 101 100
@@ -1821,13 +1767,6 @@ void COutput::WriteRFONodes(fstream &rfo_file)
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-Task:
-Programing:
-03/2005 OK Implementation
-12/2005 OK MSH
-**************************************************************************/
 void COutput::WriteRFOElements(fstream &rfo_file)
 {
    int j;
@@ -1848,13 +1787,6 @@ void COutput::WriteRFOElements(fstream &rfo_file)
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-Task:
-Programing:
-03/2005 OK Implementation
-12/2005 OK MSH
-**************************************************************************/
 void COutput::WriteRFOValues(fstream &rfo_file)
 {
    int p,nidx;
@@ -1895,14 +1827,6 @@ void COutput::WriteRFOValues(fstream &rfo_file)
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-Task:
-Programing:
-03/2005 OK Implementation
-12/2005 OK COutput
-last modification:
-**************************************************************************/
 void COutput::WriteRFO()
 {
    m_msh = FEMGet(convertProcessTypeToString (getProcessType()));
@@ -1940,12 +1864,6 @@ void COutput::WriteRFO()
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-Task:
-Programing:
-05/2004 OK Implementation
-**************************************************************************/
 void COutput::NODWriteSFCDataTEC(int number)
 {
    if (_nod_value_vector.size() == 0)
@@ -2177,29 +2095,6 @@ void COutput::NODWriteSFCAverageDataTEC(double time_current,int time_step_number
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-Programing:
-12/2005 OK Implementation
-**************************************************************************/
-//CFEMesh* COutput::GetMSH()
-//{
-////  if(pcs_type_name.size()>0)
-////	  m_msh = FEMGet(pcs_type_name);
-//  if(getProcessType() != INVALID_PROCESS)
-//    m_msh = FEMGet(convertProcessTypeToString (getProcessType()));
-//  else if(msh_type_name.size()>0)
-//    m_msh = MSHGet(msh_type_name);
-//  else if(fem_msh_vector.size()==1)
-//    m_msh = fem_msh_vector[0];
-//  return m_msh;
-//}
-
-/**************************************************************************
-FEMLib-Method:
-Programing:
-12/2005 OK Implementation
-**************************************************************************/
 void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 {
    CRFProcess* pcs = NULL;
@@ -2289,11 +2184,6 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 }
 
 
-/**************************************************************************
-PCSLib-Method:
-Programing:
-12/2005 OK Implementation
-**************************************************************************/
 CRFProcess* COutput::GetPCS(const string &var_name)
 {
    CRFProcess* m_pcs = NULL;
@@ -2329,11 +2219,6 @@ CRFProcess* COutput::GetPCS()
 }
 
 
-/**************************************************************************
-PCSLib-Method:
-Programing:
-12/2005 OK Implementation
-**************************************************************************/
 CRFProcess* COutput::GetPCS_ELE(const string &var_name)
 {
    string pcs_var_name;
@@ -2365,11 +2250,6 @@ CRFProcess* COutput::GetPCS_ELE(const string &var_name)
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-Programing:
-01/2006 OK Implementation
-**************************************************************************/
 void COutput::GetELEValuesIndexVector(vector<int>&ele_value_index_vector)
 {
    if (_ele_value_vector[0].size() == 0)
@@ -2429,10 +2309,6 @@ void COutput::SetNODFluxAtPLY()
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-06/2006 OK Implementation
-**************************************************************************/
 void COutput::ELEWriteSFC_TEC()
 {
    //----------------------------------------------------------------------
@@ -2475,10 +2351,6 @@ void COutput::ELEWriteSFC_TEC()
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-06/2006 OK Implementation
-**************************************************************************/
 void COutput::ELEWriteSFC_TECHeader(fstream &tec_file)
 {
    // Write Header I: variables
@@ -2499,10 +2371,6 @@ void COutput::ELEWriteSFC_TECHeader(fstream &tec_file)
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-06/2006 OK Implementation
-**************************************************************************/
 void COutput::ELEWriteSFC_TECData(fstream &tec_file)
 {
    tec_file << "COutput::ELEWriteSFC_TECData - implementation not finished" << endl;
@@ -2610,10 +2478,6 @@ void COutput::CalcELEFluxes()
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-08/2006 OK Implementation
-**************************************************************************/
 void COutput::ELEWritePLY_TEC()
 {
    //----------------------------------------------------------------------
@@ -2660,10 +2524,6 @@ void COutput::ELEWritePLY_TEC()
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-06/2006 OK Implementation
-**************************************************************************/
 void COutput::ELEWritePLY_TECHeader(fstream &tec_file)
 {
    // Write Header I: variables
@@ -2777,10 +2637,6 @@ void COutput::ELEWritePLY_TECData(fstream &tec_file)
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-08/2006 OK Implementation
-**************************************************************************/
 void COutput::TIMValue_TEC(double tim_value)
 {
    //----------------------------------------------------------------------
@@ -2832,10 +2688,6 @@ void COutput::TIMValue_TEC(double tim_value)
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-08/2006 OK Implementation
-**************************************************************************/
 double COutput::NODFlux(long nod_number)
 {
    nod_number = nod_number;                       //OK411
@@ -2857,11 +2709,6 @@ double COutput::NODFlux(long nod_number)
 }
 
 
-/**************************************************************************
-FEMLib-Method:
-04/2006 OK Implementation
-08/2006 YD
-**************************************************************************/
 void COutput::NODWriteLAYDataTEC(int time_step_number)
 {
    // Tests
