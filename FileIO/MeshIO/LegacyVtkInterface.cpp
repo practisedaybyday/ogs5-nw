@@ -22,10 +22,16 @@
 #include <string>
 using namespace std;
 
-LegacyVtkInterface::LegacyVtkInterface(Mesh_Group::CFEMesh* mesh, COutput* output)
-: _mesh(mesh), _output(output)
+LegacyVtkInterface::LegacyVtkInterface(Mesh_Group::CFEMesh* mesh, COutput* output,
+	std::string processType,
+	std::vector<std::string> pointArrayNames,
+	std::vector<std::string> cellArrayNames,
+	std::vector<std::string> materialPropertyArrayNames)
+: _mesh(mesh), _output(output), _processType(processType),
+  _pointArrayNames(pointArrayNames),
+  _cellArrayNames(cellArrayNames),
+  _materialPropertyArrayNames(materialPropertyArrayNames)
 {
-	
 }
 
 LegacyVtkInterface::~LegacyVtkInterface() {}
@@ -38,37 +44,35 @@ Programing:
 09/2006 KG44 Output for MPI - correct OUTPUT not yet implemented
 12/2008 NW Remove ios::app, Add PCS name to VTK file name
 **************************************************************************/
-void LegacyVtkInterface::WriteDataVTK(int number)
+void LegacyVtkInterface::WriteDataVTK(int number, std::string baseFilename)
 {
-	string filename = _output->file_base_name;
-
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
 	char tf_name[10];
 	cout << "Process " << myrank << " in WriteDataVTK" << "\n";
 #endif
 
-	_mesh = FEMGet(convertProcessTypeToString (_output->getProcessType()));
+	_mesh = FEMGet(_processType);
 	if(!_mesh)
 	{
 		cout << "Warning in LegacyVtkInterface::WriteVTKNodes - no MSH data" << endl;
 		return;
 	}
-
-	if(_output->getProcessType() != INVALID_PROCESS)        // PCS
-		filename += "_" + convertProcessTypeToString (_output->getProcessType());
+	
+	if (_processType.compare("INVALID_PROCESS") != 0)
+		baseFilename += "_" + _processType;
 
 	stringstream ss;
 	ss << number;
-	filename += ss.str();
-	filename += ".vtk";
+	baseFilename += ss.str();
+	baseFilename += ".vtk";
 
-	// LB if(!_new_file_opened) remove(filename.c_str());
-	fstream vtk_file (filename.c_str(), ios::out);
+	// LB if(!_new_file_opened) remove(baseFilename.c_str());
+	fstream vtk_file (baseFilename.c_str(), ios::out);
 	vtk_file.setf(ios::scientific,ios::floatfield);
 	vtk_file.precision(12);
 	if (!vtk_file.good())
 	{
-		cout << "Could not open file for writing: " << filename << endl;
+		cout << "Could not open file for writing: " << baseFilename << endl;
 		return;
 	}
 	vtk_file.seekg(0L,ios::beg);
@@ -207,18 +211,15 @@ Programing:
 void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 {
 	CRFProcess* pcs = NULL;
-	const size_t num_nod_values(_output->_nod_value_vector.size());
-	const size_t num_ele_values(_output->_ele_value_vector.size());
-	std::vector<int> nod_value_index_vector(num_nod_values);
-	std::vector<int> ele_value_index_vector(num_ele_values);
+	std::vector<int> nod_value_index_vector(_pointArrayNames.size());
 	double val_n = 0.;
 	long numNodes = _mesh->GetNodesNumber(false);
 
 	// NODAL DATA
 	vtk_file << "POINT_DATA " << numNodes << endl;
-	for (size_t k = 0; k < num_nod_values; k++)
+	for (size_t k = 0; k < _pointArrayNames.size(); k++)
 	{
-		string arrayName = _output->_nod_value_vector[k];
+		string arrayName = _pointArrayNames[k];
 		if (arrayName.find("X"))
 		{
 			vtk_file << "VECTORS " << arrayName.substr(0, arrayName.size() - 2) << " double" << endl;
@@ -282,8 +283,8 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 	//======================================================================
 	// Saturation 2 for 1212 pp - scheme. 01.04.2009. WW
 	// ---------------------------------------------------------------------
-	if (num_nod_values > 0)                        //SB added
-		pcs = PCSGet(_output->_nod_value_vector[0], true);
+	if (_pointArrayNames.size() > 0)                        //SB added
+		pcs = PCSGet(_pointArrayNames[0], true);
 	if (pcs && pcs->type == 1212)
 	{
 		size_t i = pcs->GetNodeValueIndex("SATURATION1");
@@ -305,32 +306,38 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 	// ELEMENT DATA
 	// ---------------------------------------------------------------------
 	bool wroteAnyEleData = false;                  //NW
-	if (num_ele_values > 0)
+	if (_cellArrayNames.size() > 0)
 	{
-		pcs = _output->GetPCS_ELE(_output->_ele_value_vector[0]);
-		_output->GetELEValuesIndexVector(ele_value_index_vector);
+		pcs = _output->GetPCS_ELE(_cellArrayNames[0]);
+		
+		std::vector<int> ele_value_index_vector(_cellArrayNames.size());
+		if (_cellArrayNames[0].size() > 0)
+		{
+		   CRFProcess * m_pcs(_output->GetPCS_ELE(_cellArrayNames[0]));
+		   for (size_t i = 0; i < _cellArrayNames.size(); i++)
+		      ele_value_index_vector[i] = m_pcs->GetElementValueIndex(_cellArrayNames[i]);
+		}
+		
 		vtk_file << "CELL_DATA " << (long) _mesh->ele_vector.size() << endl;
 		wroteAnyEleData = true;
 	//....................................................................
 	//
-		for (size_t k = 0; k < num_ele_values; k++)
+		for (size_t k = 0; k < _cellArrayNames.size(); k++)
 		{
 			// JTARON 2010, "VELOCITY" should only write as vector, scalars handled elswhere
-			if (_output->_ele_value_vector[k].compare("VELOCITY") == 0)
+			if (_cellArrayNames[k].compare("VELOCITY") == 0)
 			{
 				vtk_file << "VECTORS velocity double " << endl;
 				this->WriteELEVelocity(vtk_file);           //WW/OK
 			}
 			// PRINT CHANGING (OR CONSTANT) PERMEABILITY TENSOR?   // JTARON 2010
-			else if (_output->_ele_value_vector[k].compare("PERMEABILITY") == 0)
+			else if (_cellArrayNames[k].compare("PERMEABILITY") == 0)
 			{
 				vtk_file << "VECTORS permeability double " << endl;
-				CMediumProperties* MediaProp = NULL;
-				CElem* m_ele = NULL;
 				for (int j = 0l; j < (long) _mesh->ele_vector.size(); j++)
 				{
-					m_ele = _mesh->ele_vector[j];
-					MediaProp = mmp_vector[m_ele->GetPatchIndex()];
+					CElem* ele = _mesh->ele_vector[j];
+					CMediumProperties* MediaProp = mmp_vector[ele->GetPatchIndex()];
 					for (size_t i = 0; i < 3; i++)
 						vtk_file << MediaProp->PermeabilityTensor(j)[i * 3 + i] << " ";
 					vtk_file << endl;
@@ -339,7 +346,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 			else if (ele_value_index_vector[k] > -1)
 			{
 				// NOW REMAINING SCALAR DATA  // JTARON 2010, reconfig
-				vtk_file << "SCALARS " << _output->_ele_value_vector[k] << " double 1"
+				vtk_file << "SCALARS " << _cellArrayNames[k] << " double 1"
 					<< endl;
 				vtk_file << "LOOKUP_TABLE default" << endl;
 				for (size_t i = 0; i < _mesh->ele_vector.size(); i++)
@@ -352,32 +359,28 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 	}
 	//======================================================================
 	// MAT data
-	double mat_value = 0.0;                        //OK411
-	CMediumProperties* m_mmp = NULL;
-	CElem* m_ele = NULL;
-	int mmp_id = -1;
-	if (_output->mmp_value_vector.size() > 0)
+	if (_materialPropertyArrayNames.size() > 0)
 	{
-	// Identify MAT value
-		if (_output->mmp_value_vector[0].compare("POROSITY") == 0)
+		int mmp_id = -1;
+		if (_materialPropertyArrayNames[0].compare("POROSITY") == 0)
 			mmp_id = 0;
-	// Let's say porosity
-	// write header for cell data
+		// Let's say porosity
+		// write header for cell data
 		if (!wroteAnyEleData)
 			vtk_file << "CELL_DATA " << _mesh->ele_vector.size() << endl;
 		wroteAnyEleData = true;
 		for (size_t i = 0; i < _mesh->ele_vector.size(); i++)
 		{
-			m_ele = _mesh->ele_vector[i];
-			m_mmp = mmp_vector[m_ele->GetPatchIndex()];
+			CElem* ele = _mesh->ele_vector[i];
+			double mat_value = 0.0;
 			switch (mmp_id)
 			{
 				case 0:
-				mat_value = m_mmp->Porosity(i, 0.0);
-				break;
+					mat_value = mmp_vector[ele->GetPatchIndex()]->Porosity(i, 0.0);
+					break;
 				default:
-				cout << "COutput::WriteVTKValues: no MMP values specified"
-					<< endl;
+					cout << "COutput::WriteVTKValues: no MMP values specified" << endl;
+					break;
 			}
 			vtk_file << mat_value << endl;
 		}
@@ -394,8 +397,8 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 		vtk_file << "LOOKUP_TABLE default" << endl;
 		for (size_t i = 0; i < _mesh->ele_vector.size(); i++)
 		{
-			m_ele = _mesh->ele_vector[i];
-			vtk_file << m_ele->GetPatchIndex() << endl;
+			CElem* ele = _mesh->ele_vector[i];
+			vtk_file << ele->GetPatchIndex() << endl;
 		}
 	}
 }

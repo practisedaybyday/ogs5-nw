@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include <string>
+#include <vector>
 
 namespace Mesh_Group
 {
@@ -20,10 +21,14 @@ class COutput;
 class LegacyVtkInterface
 {	
 public:
-	LegacyVtkInterface(Mesh_Group::CFEMesh* mesh, COutput* output);
+	LegacyVtkInterface(Mesh_Group::CFEMesh* mesh, COutput* output,
+		std::string processType,
+		std::vector<std::string> pointArrayNames,
+		std::vector<std::string> cellArrayNames,
+		std::vector<std::string> materialPropertyArrayNames);
 	virtual ~LegacyVtkInterface();
 	
-	void WriteDataVTK(int number);
+	void WriteDataVTK(int number, std::string baseFilename);
 
 protected:
 	void WriteVTKHeader(std::fstream&, int);
@@ -34,6 +39,10 @@ protected:
 	
 	Mesh_Group::CFEMesh* _mesh;
 	COutput* _output;
+	std::string _processType;
+	std::vector<std::string> _pointArrayNames;
+	std::vector<std::string> _cellArrayNames;
+	std::vector<std::string> _materialPropertyArrayNames;
 };
 
 #endif // LEGACYVTKINTERFACE_H
