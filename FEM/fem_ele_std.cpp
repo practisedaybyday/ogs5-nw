@@ -3215,7 +3215,7 @@ namespace FiniteElement
    {
       if (pcs->m_num->ele_supg_method==0)
       {
-         cout << "***Warning in CalcSUPGWeightingFunction(): SPUG is not selected" << endl;
+         cout << "***Warning in CFiniteElementStd::CalcSUPGWeightingFunction(): SUPG option is not selected" << endl;
          return;
       }
 
