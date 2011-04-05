@@ -10,10 +10,6 @@ last modified
 
 #include "msh_mesh.h"
 
-#ifdef USE_TOKENBUF
-#include "tokenbuf.h"
-#endif
-
 using Mesh_Group::CFEMesh;
 using Mesh_Group::CElem;
 using Mesh_Group::CNode;
@@ -29,11 +25,11 @@ extern void MSHWrite(std::string);
 extern void CompleteMesh();                       //WW
 extern bool CompleteMesh(std::string);            //OK
 extern void FEMDeleteAll();
-extern void MSHCalcMinMaxMidCoordinates();        //OK
-extern double msh_x_min,msh_x_max;                //OK
-extern double msh_y_min,msh_y_max;                //OK
-extern double msh_z_min,msh_z_max;                //OK
-extern double msh_x_mid,msh_y_mid,msh_z_mid;      //OK
+//KR extern void MSHCalcMinMaxMidCoordinates();        //OK
+//KR extern double msh_x_min,msh_x_max;                //OK
+//KR extern double msh_y_min,msh_y_max;                //OK
+//KR extern double msh_z_min,msh_z_max;                //OK
+//KR extern double msh_x_mid,msh_y_mid,msh_z_mid;      //OK
 // Might be removed
 void Read_RFI(std::istream& msh_file, CFEMesh* m_msh);
 extern void MSHAssignMATGroup2Elements(std::string);

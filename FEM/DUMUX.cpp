@@ -263,7 +263,7 @@ string CDUMUXData::AddZero(double Number, int Places, bool before){
 	}
 	else {
 		while (int(Result.length()) < Places) {
-            if (Result.find(".") == true)
+			if (Result.find(".") != std::string::npos)
                 Result = Result + "0";
             else
                 Result = Result + ".";

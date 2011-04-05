@@ -138,11 +138,7 @@ namespace Mesh_Group
             _min_edge_length = val;
          }
 
-         std::ios::pos_type Read(std::ifstream*);
-
-#ifdef USE_TOKENBUF
-         int Read(TokenBuf* tokenbuf);
-#endif
+         void Read(std::ifstream*);
 
          friend class FileIO::OGSMeshIO;
          void Write(std::fstream*) const;
