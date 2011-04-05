@@ -60,6 +60,7 @@ INCLUDE_DIRECTORIES(
 	../GEO
 	../MathLib
 	../MSH
+	../GEM
 )
 
 TARGET_LINK_LIBRARIES( FileIO

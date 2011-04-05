@@ -15,6 +15,9 @@
 #include "rf_mmp_new.h" // this is for class CMediumProperties, what else???
 #include "fem_ele_std.h"
 #include "matrix_class.h"
+#ifdef GEM_REACT
+	#include "rf_REACT_GEM.h"
+#endif // GEM_REACT
 
 #include <string>
 using namespace std;
