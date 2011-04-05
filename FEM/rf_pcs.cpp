@@ -12,6 +12,7 @@ Programing:
 **************************************************************************/
 #include "Configure.h"
 #include "FEMEnums.h"
+#include "Output.h"
 
 /*--------------------- MPI Parallel  -------------------*/
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
@@ -104,6 +105,7 @@ REACT_BRNS *m_vec_BRNS;
 #include "LinearInterpolation.h"
 
 using namespace std;
+using namespace Mesh_Group;
 
 /*-------------------- ITPACKV    ---------------------------*/
 extern void transM2toM6(void);

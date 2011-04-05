@@ -9,6 +9,7 @@ SET( SOURCES
 	#FEMIO.cpp
 	FEMIO/GeoIO.cpp
 	MeshIO/OGSMeshIO.cpp
+	MeshIO/LegacyVtkInterface.cpp
 )
 
 # Header files
@@ -23,6 +24,7 @@ SET( HEADERS
 	FEMIO/GeoIO.h
 	MathIO/CRSIO.h
 	MeshIO/OGSMeshIO.h
+	MeshIO/LegacyVtkInterface.h
 )
 
 IF (OGS_USE_NETCDF)

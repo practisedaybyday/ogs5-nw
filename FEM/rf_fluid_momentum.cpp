@@ -12,6 +12,8 @@ using namespace std;
 
 #include "rf_fluid_momentum.h"
 #include "rf_random_walk.h"
+#include "matrix_class.h"
+using namespace Math_Group;
 
 /**************************************************************************
 FEMLib-Method: ThreeComponet
