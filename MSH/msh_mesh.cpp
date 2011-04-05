@@ -1626,6 +1626,7 @@ long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
  **************************************************************************/
 void CFEMesh::GetNODOnPLY(CGLPolyline* m_ply, std::vector<long>&msh_nod_vector) const
 {
+	exit (1);
 	if (m_ply->point_vector.size() == 0) return;
 
 	//	_min_edge_length = m_ply->epsilon;

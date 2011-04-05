@@ -34,6 +34,7 @@ TARGET_LINK_LIBRARIES( ModifyMeshProperties
 
 TARGET_LINK_LIBRARIES( filterMeshNodes
 	Base
+	MSH
 )
 
 TARGET_LINK_LIBRARIES( extractSurface
