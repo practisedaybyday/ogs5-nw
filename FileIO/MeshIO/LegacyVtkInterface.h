@@ -14,35 +14,41 @@ namespace Mesh_Group
 {
    class CFEMesh;
 }
-class COutput;
+class CRFProcess;
+class ProcessInfo;
 
 /// @brief Writes a legacy ascii vtk file of a mesh.
 // TODO decouple from COutput
 class LegacyVtkInterface
 {	
 public:
-	LegacyVtkInterface(Mesh_Group::CFEMesh* mesh, COutput* output,
-		std::string processType,
+	LegacyVtkInterface(Mesh_Group::CFEMesh* mesh,
 		std::vector<std::string> pointArrayNames,
 		std::vector<std::string> cellArrayNames,
-		std::vector<std::string> materialPropertyArrayNames);
+		std::vector<std::string> materialPropertyArrayNames,
+		std::string meshTypeName,
+		ProcessInfo* processInfo);
 	virtual ~LegacyVtkInterface();
 	
-	void WriteDataVTK(int number, std::string baseFilename);
+	void WriteDataVTK(int number, std::string baseFilename) const;
 
 protected:
-	void WriteVTKHeader(std::fstream&, int);
-	void WriteVTKPointData(std::fstream&);
-	void WriteVTKCellData(std::fstream&);
-	void WriteVTKDataArrays(std::fstream&);
-	void WriteELEVelocity(std::fstream &vtk_file);
+	void WriteVTKHeader(std::fstream&, int) const;
+	void WriteVTKPointData(std::fstream&) const;
+	void WriteVTKCellData(std::fstream&) const;
+	void WriteVTKDataArrays(std::fstream&) const;
+	void WriteELEVelocity(std::fstream &vtk_file) const;
+
+	// Copied from COutput
+	CRFProcess* GetPCS_ELE(const std::string &var_name) const;
 	
 	Mesh_Group::CFEMesh* _mesh;
-	COutput* _output;
 	std::string _processType;
 	std::vector<std::string> _pointArrayNames;
 	std::vector<std::string> _cellArrayNames;
 	std::vector<std::string> _materialPropertyArrayNames;
+	std::string _meshTypeName;
+	ProcessInfo* _processInfo;
 };
 
 #endif // LEGACYVTKINTERFACE_H

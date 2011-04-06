@@ -431,11 +431,12 @@ void OUTData(double time_current, int time_step_number)
 				OutputBySteps = false;
 												//OK
 				//m_out->WriteDataVTK(time_step_number);
-				LegacyVtkInterface vtkOutput(m_msh, m_out,
-					convertProcessTypeToString(m_out->getProcessType()),
+				LegacyVtkInterface vtkOutput(m_msh,
 					m_out->_nod_value_vector,
 					m_out->_ele_value_vector,
-					m_out->mmp_value_vector);
+					m_out->mmp_value_vector,
+					m_out->msh_type_name,
+					m_out);
 				vtkOutput.WriteDataVTK(time_step_number, m_out->file_base_name);
 
 				if (!m_out->_new_file_opened)
@@ -450,11 +451,12 @@ void OUTData(double time_current, int time_step_number)
 					{
 												//OK
 						//m_out->WriteDataVTK(time_step_number);
-						LegacyVtkInterface vtkOutput(m_msh, m_out,
-							convertProcessTypeToString(m_out->getProcessType()),
+						LegacyVtkInterface vtkOutput(m_msh,
 							m_out->_nod_value_vector,
 							m_out->_ele_value_vector,
-							m_out->mmp_value_vector);
+							m_out->mmp_value_vector,
+							m_out->msh_type_name,
+							m_out);
 						vtkOutput.WriteDataVTK(time_step_number, m_out->file_base_name);
 						m_out->time_vector.erase(m_out->time_vector.begin()
 							+ j);

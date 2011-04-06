@@ -10,11 +10,13 @@
 
 #include "msh_mesh.h"
 #include "msh_lib.h"
-#include "Output.h"
 #include "rf_pcs.h"
 #include "rf_mmp_new.h" // this is for class CMediumProperties, what else???
 #include "fem_ele_std.h"
 #include "matrix_class.h"
+#include "rf_pcs.h"
+#include "ProcessInfo.h"
+#include "FEMEnums.h"
 #ifdef GEM_REACT
 	#include "rf_REACT_GEM.h"
 #endif // GEM_REACT
@@ -22,16 +24,21 @@
 #include <string>
 using namespace std;
 
-LegacyVtkInterface::LegacyVtkInterface(Mesh_Group::CFEMesh* mesh, COutput* output,
-	std::string processType,
+LegacyVtkInterface::LegacyVtkInterface(Mesh_Group::CFEMesh* mesh,
 	std::vector<std::string> pointArrayNames,
 	std::vector<std::string> cellArrayNames,
-	std::vector<std::string> materialPropertyArrayNames)
-: _mesh(mesh), _output(output), _processType(processType),
+	std::vector<std::string> materialPropertyArrayNames,
+	std::string meshTypeName,
+	ProcessInfo* processInfo)
+: _mesh(mesh),
   _pointArrayNames(pointArrayNames),
   _cellArrayNames(cellArrayNames),
-  _materialPropertyArrayNames(materialPropertyArrayNames)
+  _materialPropertyArrayNames(materialPropertyArrayNames),
+  _meshTypeName(meshTypeName),
+  _processInfo(processInfo)
 {
+	_processType = convertProcessTypeToString(processInfo->getProcessType());
+	_mesh = FEMGet(_processType);
 }
 
 LegacyVtkInterface::~LegacyVtkInterface() {}
@@ -44,14 +51,13 @@ Programing:
 09/2006 KG44 Output for MPI - correct OUTPUT not yet implemented
 12/2008 NW Remove ios::app, Add PCS name to VTK file name
 **************************************************************************/
-void LegacyVtkInterface::WriteDataVTK(int number, std::string baseFilename)
+void LegacyVtkInterface::WriteDataVTK(int number, std::string baseFilename) const
 {
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
 	char tf_name[10];
 	cout << "Process " << myrank << " in WriteDataVTK" << "\n";
 #endif
 
-	_mesh = FEMGet(_processType);
 	if(!_mesh)
 	{
 		cout << "Warning in LegacyVtkInterface::WriteVTKNodes - no MSH data" << endl;
@@ -92,11 +98,11 @@ void LegacyVtkInterface::WriteDataVTK(int number, std::string baseFilename)
 }
 
 
-void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number)
+void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number) const
 {
 	
 	vtk_file << "# vtk DataFile Version 3.0" << endl;
-	vtk_file << "Unstructured Grid from OpenGeoSys " << OGS_VERSION << endl;
+	vtk_file << "Unstructured Grid from OpenGeoSys" << endl;
 	vtk_file << "ASCII"  << endl;
 	vtk_file << "DATASET UNSTRUCTURED_GRID"  << endl;
 	
@@ -111,7 +117,7 @@ void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number)
 }
 
 
-void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file)
+void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file) const
 {
 	vtk_file << "POINTS "<< _mesh->GetNodesNumber(false) << " double" << endl;
 
@@ -123,7 +129,7 @@ void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file)
 }
 
 
-void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file)
+void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 {
 	size_t numCells = _mesh->ele_vector.size();
 
@@ -208,9 +214,8 @@ Programing:
 08/2008 OK MAT values
 06/2009 WW/OK WriteELEVelocity for different coordinate systems
 **************************************************************************/
-void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
+void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 {
-	CRFProcess* pcs = NULL;
 	std::vector<int> nod_value_index_vector(_pointArrayNames.size());
 	double val_n = 0.;
 	long numNodes = _mesh->GetNodesNumber(false);
@@ -233,7 +238,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 			{
 				for(int component = 0; component < 3; ++component)
 				{
-					pcs = PCSGet(arrayNames[component], true);
+					CRFProcess* pcs = PCSGet(arrayNames[component], true);
 					if (!pcs)
 						continue;
 					nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName);
@@ -256,7 +261,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 		}
 		else
 		{
-			pcs = PCSGet(arrayName, true);
+			CRFProcess* pcs = PCSGet(arrayName, true);
 			if (!pcs)
 				continue;
 			nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName);
@@ -283,6 +288,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 	//======================================================================
 	// Saturation 2 for 1212 pp - scheme. 01.04.2009. WW
 	// ---------------------------------------------------------------------
+	CRFProcess* pcs = NULL;
 	if (_pointArrayNames.size() > 0)                        //SB added
 		pcs = PCSGet(_pointArrayNames[0], true);
 	if (pcs && pcs->type == 1212)
@@ -308,14 +314,13 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 	bool wroteAnyEleData = false;                  //NW
 	if (_cellArrayNames.size() > 0)
 	{
-		pcs = _output->GetPCS_ELE(_cellArrayNames[0]);
+		CRFProcess* pcs = this->GetPCS_ELE(_cellArrayNames[0]);
 		
 		std::vector<int> ele_value_index_vector(_cellArrayNames.size());
 		if (_cellArrayNames[0].size() > 0)
 		{
-		   CRFProcess * m_pcs(_output->GetPCS_ELE(_cellArrayNames[0]));
 		   for (size_t i = 0; i < _cellArrayNames.size(); i++)
-		      ele_value_index_vector[i] = m_pcs->GetElementValueIndex(_cellArrayNames[i]);
+			  ele_value_index_vector[i] = pcs->GetElementValueIndex(_cellArrayNames[i]);
 		}
 		
 		vtk_file << "CELL_DATA " << (long) _mesh->ele_vector.size() << endl;
@@ -407,7 +412,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file)
 FEMLib-Method:
 06/2009 WW/OK Implementation
 **************************************************************************/
-inline void LegacyVtkInterface::WriteELEVelocity(fstream &vtk_file)
+inline void LegacyVtkInterface::WriteELEVelocity(fstream &vtk_file) const
 {
 	int vel_ind[3] = {0, 1, 2};
 
@@ -451,4 +456,29 @@ inline void LegacyVtkInterface::WriteELEVelocity(fstream &vtk_file)
 			vtk_file << ele_gp_value[i]->Velocity(vel_ind[k],0) << " ";
 		vtk_file << endl;
 	}
+}
+
+CRFProcess* LegacyVtkInterface::GetPCS_ELE(const string &var_name) const
+{
+	string pcs_var_name;
+	CRFProcess* pcs = NULL;
+	if (_processInfo->getProcessType() != INVALID_PROCESS)
+		pcs = PCSGet(_processInfo->getProcessType());
+	else if (_meshTypeName.size() > 0)
+		pcs = PCSGet(_meshTypeName);
+
+	if (!pcs)
+	{
+	   for (size_t i = 0; i < pcs_vector.size(); i++)
+	   {
+		  pcs = pcs_vector[i];
+		  for (int j = 0; j < pcs->pcs_number_of_evals; j++)
+		  {
+			 pcs_var_name = pcs->pcs_eval_name[j];
+			 if (pcs_var_name.compare(var_name) == 0)
+				return pcs;
+		  }
+	   }
+	}
+	return pcs;
 }

@@ -76,6 +76,7 @@ void COutput::init()
    if (getProcessType () == INVALID_PROCESS)
    {
       std::cerr << "COutput::init(): could not initialize process pointer (process type INVALID_PROCESS) and appropriate mesh" << std::endl;
+	  std::cerr << "COutput::init(): trying to fetch process pointer using msh_type_name ... " << std::endl;
       std::cerr << "COutput::init(): trying to fetch process pointer using msh_type_name ... " << std::endl;
       if(msh_type_name.size()>0)
       {
