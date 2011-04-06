@@ -225,7 +225,8 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 	for (size_t k = 0; k < _pointArrayNames.size(); k++)
 	{
 		string arrayName = _pointArrayNames[k];
-		if (arrayName.find("X"))
+		// Write x, y and z arrays as vectors
+		if (arrayName.find("X") != string::npos)
 		{
 			vtk_file << "VECTORS " << arrayName.substr(0, arrayName.size() - 2) << " double" << endl;
 			string arrayNames[3];
