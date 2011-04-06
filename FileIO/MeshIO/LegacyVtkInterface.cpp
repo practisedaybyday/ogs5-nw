@@ -119,11 +119,12 @@ void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number)
 
 void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file) const
 {
-	vtk_file << "POINTS "<< _mesh->GetNodesNumber(false) << " double" << endl;
+	std::vector<Mesh_Group::CNode*> pointVector = _mesh->getNodeVector();
+	vtk_file << "POINTS "<< pointVector.size() << " double" << endl;
 
-	for(long i=0; i < _mesh->GetNodesNumber(false) ;i++)
+	for(size_t i = 0; i < pointVector.size() ; i++)
 	{
-		CNode* m_nod = _mesh->nod_vector[i];
+		CNode* m_nod = pointVector[i];
 		vtk_file << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << endl;
 	}
 }
@@ -134,15 +135,15 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 	size_t numCells = _mesh->ele_vector.size();
 
 	// count overall length of element vector
-	long no_all_elements =0;
+	long numAllPoints =0;
 	for(size_t i=0; i < numCells; i++)
 	{
 		CElem* ele = _mesh->ele_vector[i];
-		no_all_elements = no_all_elements + (ele->GetNodesNumber(false)) + 1;
+		numAllPoints = numAllPoints + (ele->GetNodesNumber(false)) + 1;
 	}
 
 	// write elements
-	vtk_file << "CELLS " << numCells << " " << no_all_elements << endl;
+	vtk_file << "CELLS " << numCells << " " << numAllPoints << endl;
 	for(size_t i=0; i < numCells; i++)
 	{
 		CElem* ele = _mesh->ele_vector[i];
@@ -217,7 +218,6 @@ Programing:
 void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 {
 	std::vector<int> nod_value_index_vector(_pointArrayNames.size());
-	double val_n = 0.;
 	long numNodes = _mesh->GetNodesNumber(false);
 
 	// NODAL DATA
@@ -243,8 +243,6 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 					if (!pcs)
 						continue;
 					nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName);
-					// if(_nod_value_vector[k].find("SATURATION")!=string::npos)
-					// NodeIndex[k]++;
 					for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
 					{
 						if (arrayName.compare(pcs->pcs_primary_function_name[i]) == 0)
@@ -296,14 +294,11 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 	{
 		size_t i = pcs->GetNodeValueIndex("SATURATION1");
 		vtk_file << "SCALARS SATURATION2 double 1" << endl;
-	//
 		vtk_file << "LOOKUP_TABLE default" << endl;
-	//....................................................................
 		for (long j = 0l; j < numNodes; j++)
 		{
-												//WW
-			val_n = pcs->GetNodeValue(_mesh->nod_vector[j]->GetIndex(), i);
-			vtk_file << 1. - val_n << endl;
+			double val_n = pcs->GetNodeValue(_mesh->nod_vector[j]->GetIndex(), i);
+			vtk_file << 1.0 - val_n << endl;
 		}
 	}
 //kg44 GEM node data
@@ -313,7 +308,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 	// ELEMENT DATA
 	// ---------------------------------------------------------------------
 	bool wroteAnyEleData = false;                  //NW
-	if (_cellArrayNames.size() > 0)
+	if (!_cellArrayNames.empty())
 	{
 		CRFProcess* pcs = this->GetPCS_ELE(_cellArrayNames[0]);
 		

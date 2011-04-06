@@ -258,6 +258,8 @@ CElem::CElem(CElem const &elem) :
    **************************************************************************/
    CElem::~CElem()
    {
+	   // HACK LB those resize() do not free memory allocated with new
+	   // HACK LB Possible memory leak otherwise resize() not necessary
       nodes_index.resize(0);
       nodes.resize(0);
       edges.resize(0);
