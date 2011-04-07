@@ -8,15 +8,20 @@
 
 
 ProjectData::ProjectData()
-	: _geoObjects ()
+//: _geoObjects ()
 {}
 
 ProjectData::~ProjectData()
 {
+	delete _geoObjects;
 	for (std::map<std::string, Mesh_Group::CFEMesh*>::iterator it = _msh_vec.begin(); it != _msh_vec.end(); ++it)
 	{
 		delete it->second;
-		//_msh_vec.erase(it);
+	}
+	size_t nCond (_cond_vec.size());
+	for (size_t i=0; i<nCond; i++)
+	{
+		delete _cond_vec[i];
 	}
 }
 
@@ -43,28 +48,70 @@ void ProjectData::addCondition(FEMCondition* cond)
 	_cond_vec.push_back(cond);
 };
 
-const FEMCondition* ProjectData::getCondition(const std::string &name) const
+void ProjectData::addConditions(std::vector<FEMCondition*> conds)
+{
+	for (size_t i=0; i<conds.size(); i++)
+		_cond_vec.push_back(conds[i]);
+};
+
+const FEMCondition* ProjectData::getCondition(const std::string &geo_name, GEOLIB::GEOTYPE type, const std::string &cond_name) const
 {
 	for (std::vector<FEMCondition*>::const_iterator it = _cond_vec.begin(); it != _cond_vec.end(); ++it)
 	{
-		if ((*it)->getGeoName().compare(name) == 0) return *it;
+		if ((*it)->getAssociatedGeometryName().compare(geo_name) == 0) 
+		{
+			if ( ((*it)->getGeoName().compare(cond_name)==0) && ((*it)->getGeoType()==type) )
+				return *it;
+		}
 	}
-	std::cout << "Error in ProjectData::getCondition() - No condition found with name \"" << name << "\"..." << std::endl;
+	std::cout << "Error in ProjectData::getCondition() - No condition found with name \"" << cond_name << "\"..." << std::endl;
 	return NULL;
 }
 
-bool ProjectData::removeCondition(const std::string &name)
+const std::vector<FEMCondition*> ProjectData::getConditions(const std::string &geo_name, FEMCondition::CondType type) const
+{
+	std::vector<FEMCondition*> conds;
+	for (std::vector<FEMCondition*>::const_iterator it = _cond_vec.begin(); it != _cond_vec.end(); ++it)
+	{
+		if ((*it)->getAssociatedGeometryName().compare(geo_name) == 0)
+		{
+			if ( (type == FEMCondition::UNSPECIFIED) || ((*it)->getCondType() == type) )
+				conds.push_back(*it);
+		}
+	}
+	return conds;
+}
+
+bool ProjectData::removeCondition(const std::string &geo_name, GEOLIB::GEOTYPE type, const std::string &cond_name)
 {
 	for (std::vector<FEMCondition*>::iterator it = _cond_vec.begin(); it != _cond_vec.end(); ++it)
 	{
-		if ((*it)->getGeoName().compare(name) == 0)
+		if ((*it)->getAssociatedGeometryName().compare(geo_name) == 0) 
 		{
-			_cond_vec.erase(it);
-			return true;
+			if ( ((*it)->getGeoName().compare(cond_name)==0) && ((*it)->getGeoType()==type) )
+			{
+				delete *it;
+				_cond_vec.erase(it);
+				return true;
+			}
 		}
 	}
-	std::cout << "Error in ProjectData::getCondition() - No condition found with name \"" << name << "\"..." << std::endl;
+	std::cout << "Error in ProjectData::getCondition() - No condition found with name \"" << cond_name << "\"..." << std::endl;
 	return false;
+}
+
+void ProjectData::removeConditions(const std::string &geo_name, FEMCondition::CondType type)
+{
+	for (std::vector<FEMCondition*>::iterator it = _cond_vec.begin(); it != _cond_vec.end();)
+	{
+		if ( ((*it)->getAssociatedGeometryName().compare(geo_name) == 0) 
+			&& ( (type == FEMCondition::UNSPECIFIED) || ((*it)->getCondType() == type) ))
+		{
+			delete *it;
+			it = _cond_vec.erase(it);
+		}
+		else ++it;
+	}
 }
 
 bool ProjectData::isUniqueMeshName(std::string &name)

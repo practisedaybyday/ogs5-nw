@@ -28,7 +28,10 @@ public:
 	virtual ~ProjectData();
 
 	// Returns the GEOObjects containing all points, polylines and surfaces
-	GEOLIB::GEOObjects& getGEOObjects() const;
+	GEOLIB::GEOObjects* getGEOObjects() { return _geoObjects; };
+
+	// Returns the GEOObjects containing all points, polylines and surfaces
+	void setGEOObjects(GEOLIB::GEOObjects* geo_objects) { _geoObjects = geo_objects; };
 
 	/// Adds a new mesh
 	virtual void addMesh(Mesh_Group::CFEMesh* mesh, std::string &name);
@@ -42,17 +45,26 @@ public:
 	/// Adds a new FEM Condition
 	virtual void addCondition(FEMCondition* cond);
 
-	/// Returns the FEM Condition set on a GeoObject with the given name.
-	const FEMCondition* getCondition(const std::string &name) const;
+	/// Adds a new FEM Condition
+	virtual void addConditions(std::vector<FEMCondition*> conds);
 
-	/// Removes the FEM Condition set on a GeoObject with the given name.
-	virtual bool removeCondition(const std::string &name);
+	/// Returns the FEM Condition set on a GeoObject with the given name and type from a certain geometry.
+	const FEMCondition* getCondition(const std::string &geo_name, GEOLIB::GEOTYPE type, const std::string &cond_name) const;
+
+	/// Returns all FEM Conditions with the given type from a certain geometry.
+	const std::vector<FEMCondition*> getConditions(const std::string &geo_name, FEMCondition::CondType type = FEMCondition::UNSPECIFIED) const;
+
+	/// Removes the FEM Condition set on a GeoObject with the given name and type from a certain geometry.
+	virtual bool removeCondition(const std::string &geo_name, GEOLIB::GEOTYPE type, const std::string &cond_name);
+
+	/// Removes all FEM Conditions with the given type from a certain geometry
+	virtual void removeConditions(const std::string &geo_name, FEMCondition::CondType type = FEMCondition::UNSPECIFIED);
 
 	/// Checks if the name of the mesh is already exists, if so it generates a unique name.
 	bool isUniqueMeshName(std::string &name);
 
 private:
-	GEOLIB::GEOObjects _geoObjects;
+	GEOLIB::GEOObjects* _geoObjects;
 	std::map<std::string, Mesh_Group::CFEMesh*> _msh_vec;
 	std::vector<FEMCondition*> _cond_vec;
 };

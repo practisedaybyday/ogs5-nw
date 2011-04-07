@@ -7,10 +7,12 @@
 #define XMLINTERFACE_H
 
 #include "Configure.h"
-#include "GEOObjects.h"
-#include "FEMCondition.h"
+#include "ProjectData.h"
 
 #include <QXmlStreamReader>
+
+
+class FEMCondition;
 
 class QFile;
 class QDomDocument;
@@ -31,7 +33,7 @@ public:
 	 * \param geoObjects An GEOObject that into which data will be read or from which data will be written.
 	 * \param schemaFile An XML schema file (*.xsd) that defines the structure of a valid data file.
 	 */
-	XMLInterface(GEOLIB::GEOObjects* geoObjects, const std::string &schemaFile);
+	XMLInterface(ProjectData* project, const std::string &schemaFile);
 
 	/// As QXMLStreamWriter seems currently unable to include style-file links into xml-files, this method will workaround this issue and include the stylefile link.
 	int insertStyleFileDefinition(const QString &fileName) const;
@@ -124,7 +126,7 @@ private:
 	/// Checks if the given file is conform to the given hash.
 	bool hashIsGood(const QString &fileName, const QByteArray &hash) const;
 
-	GEOLIB::GEOObjects* _geoObjects;
+	ProjectData* _project;
 
 	std::string _schemaName;
 	std::map<size_t, size_t> _idx_map;
