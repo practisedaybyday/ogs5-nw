@@ -142,7 +142,8 @@ void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream&
 
 	// write ids and areas
 	for (size_t k(0); k<n_nodes; k++) {
-		os << node_ids[k] << " " << areas[k] << std::endl;
+		if (areas[k] > std::numeric_limits<double>::epsilon())
+			os << node_ids[k] << " " << areas[k] << std::endl;
 	}
 
 	n_nodes = 0;

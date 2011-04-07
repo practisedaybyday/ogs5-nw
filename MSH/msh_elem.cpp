@@ -85,8 +85,8 @@ namespace Mesh_Group
    CCore(Index), normal_vector(NULL), owner(onwer)
    {
       int i, j, k, n, ne;
-      static int faceIndex_loc[10];
-      static int edgeIndex_loc[10];
+      int faceIndex_loc[10];
+      int edgeIndex_loc[10];
       no_faces_on_surface=0;
       n = owner->GetElementFaceNodes(Face, faceIndex_loc);
       face_index = Face;
@@ -271,8 +271,9 @@ CElem::CElem(CElem const &elem) :
       angle = NULL;
       tranform_tensor = NULL;
       if (normal_vector)
-         delete[] normal_vector;
+         delete [] normal_vector;
       normal_vector = NULL;
+      delete [] angle;
    }
    /**************************************************************************
    MSHLib-Method:

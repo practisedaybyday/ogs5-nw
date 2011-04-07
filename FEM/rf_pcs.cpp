@@ -5369,15 +5369,11 @@ void CRFProcess::IncorporateSourceTerms(const int rank)
                                                   //Traingle & Qua
                if (EleType == MshElemType::TRIANGLE || EleType == MshElemType::QUAD)
                {
-                  for (long i_face = 0; i_face
-                     < (long) m_msh->face_vector.size(); i_face++)
+                  for (size_t i_face = 0; i_face < m_msh->face_vector.size(); i_face++)
                   {
                      face = m_msh->face_vector[i_face];
-                     if ((size_t) m_st->element_st_vector[i_st]
-                        == face->GetOwner()->GetIndex())
-                        q_face = PointProduction(vel,
-                           m_msh->face_normal[i_face])
-                           * face->GetVolume();   //
+                     if ((size_t) m_st->element_st_vector[i_st] == face->GetOwner()->GetIndex())
+                        q_face = PointProduction(vel, m_msh->face_normal[i_face]) * face->GetVolume();   //
                      //for(i_node)
                   }
                   cnodev->node_value = +q_face / 2;
