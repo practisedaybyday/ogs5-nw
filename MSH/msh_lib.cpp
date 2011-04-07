@@ -118,7 +118,6 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    }
 
    std::cout << "MSHRead:  ASCII file" << std::endl;
-   bool rfiMesh (true);
    std::string line_string ("");
    getline(msh_file_ascii, line_string);
 

@@ -54,6 +54,7 @@ void OGSMeshIO::write(Mesh_Group::CFEMesh const * mesh, std::ofstream &out) cons
 	out << " $LAYER" << std::endl;
 	out << "  ";
 	out << mesh->_n_msh_layer << std::endl;
+	out << "#STOP" << std::endl;
 }
 
 } // end namespace FileIO

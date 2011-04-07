@@ -288,7 +288,7 @@ extern std::vector <CKinBlob*> KinBlob_vector;    // declare extern instance of 
  */
 bool KRRead(const std::string& file_base_name, const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name);
 
-extern bool KRWrite(std::string);
+extern bool KRWrite(std::string const&);
 extern void KRCDelete(void);
 
 /**

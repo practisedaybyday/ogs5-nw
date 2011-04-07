@@ -39,6 +39,7 @@ namespace Mesh_Group
    CEdge::~CEdge()
    {
       nodes_of_edges.resize(0);
+      delete [] velocity;
    }
    /**************************************************************************
    MSHLib-Method:
