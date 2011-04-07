@@ -149,7 +149,7 @@ namespace Mesh_Group
          //
          void RenumberNodesForGlobalAssembly();
          // For number of nodes
-         int GetMaxElementDim()
+         int GetMaxElementDim() const
          {
             return max_ele_dim;
          }
@@ -361,10 +361,6 @@ namespace Mesh_Group
                                                   //MB
          void SetMSHPart(std::vector<long>&, long);
          bool NodeExists(size_t node);
-         // NOD-ELE relations
-         //OK411 void SetNOD2ELETopology();
-         // ELE-NOD relations
-         void SetELE2NODTopology();
          // LINE->LINE
          void AppendLineELE();
 
@@ -406,7 +402,7 @@ namespace Mesh_Group
          std::vector<long> Eqs2Global_NodeIndex;
 
                                                   //OK
-         void PrismRefine(const int Layer, const int subdivision);
+         void PrismRefine(int Layer, int subdivision);
          //	void EdgeLengthMinMax(); //OK
          // TF the following two methods are not used, at least in the standard config
          //	void SetMATGroupFromVOLLayer(CGLVolume*); //OK
@@ -509,7 +505,7 @@ namespace Mesh_Group
 
          bool mapping_check;                      //23.01.2009 WW
          /// Import shape file. 16.03.2026. WW
-         long ncols, nrows;
+         size_t ncols, nrows;
          /// (x_0, y_0): coordinate of the left down corner
          double x0, y0, csize, ndata_v;
          std::vector<double>  zz;                 //Elevation

@@ -10,6 +10,13 @@
 #include <fstream>
 #include <algorithm>
 
+
+// MSH
+#include "msh_mesh.h"
+#include "msh_lib.h" // for FEMRead
+
+Problem *aproblem = NULL;
+
 // Base
 #include "quicksort.h"
 #include "binarySearch.h"
@@ -17,7 +24,7 @@
 int main (int argc, char *argv[])
 {
 	if (argc < 7) {
-		std::cout << "Usage: " << argv[0] << " --nodes-with-area nodes_with_area_file --nodes-in-polygon nodes_in_polygon --output output_file_name" << std::endl;
+		std::cout << "Usage: " << argv[0] << " --nodes-with-area nodes_with_area_file --nodes-in-polygon nodes_in_polygon --output output_file_name [--mesh mesh]" << std::endl;
 		return -1;
 	}
 
@@ -118,6 +125,37 @@ int main (int argc, char *argv[])
 			std::cout << not_found_ids[k] << std::endl;
 		}
 		std::cout << "number of not found ids: " << not_found_ids.size() << std::endl;
+	}
+
+	if (argc > 8) {
+		tmp = argv[7];
+		if (tmp.find ("--mesh") != std::string::npos) {
+			tmp = argv[8];
+			if (tmp.find (".msh") != std::string::npos)
+				tmp = tmp.substr (0, tmp.size()-4);
+
+			std::cout << "reading mesh " << tmp << " ... " << std::flush;
+			Mesh_Group::CFEMesh* mesh (FEMRead(tmp));
+			std::cout << "done" << std::endl;
+			if (!mesh) {
+				std::cerr << "could not read mesh from file " << std::endl;
+				return -1;
+			}
+
+			std::ofstream out_mesh_nodes_as_pnts ("MeshNodesAsPntsWW.gli");
+			if (out_mesh_nodes_as_pnts) {
+				out_mesh_nodes_as_pnts << "#POINTS" << std::endl;
+				const size_t ids0_size (ids0.size());
+				for (size_t k(0); k<ids0_size; k++) {
+					out_mesh_nodes_as_pnts << k << " "
+						<< mesh->getNodeVector()[ids0[k]]->X() << " "
+						<< mesh->getNodeVector()[ids0[k]]->Y() << " "
+						<< mesh->getNodeVector()[ids0[k]]->Z() << std::endl;
+				}
+				out_mesh_nodes_as_pnts << "#STOP" << std::endl;
+				out_mesh_nodes_as_pnts.close();
+			}
+		}
 	}
 }
 

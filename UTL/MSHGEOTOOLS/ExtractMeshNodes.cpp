@@ -72,9 +72,6 @@ void ExtractMeshNodes::writeTopSurfaceMeshNodeIDs (std::ostream& os, std::ostrea
 
 	// write data
 	for (size_t k(1); k<nodes_as_points.size(); k++) {
-		if (k<30) {
-			std::cout << nodes_as_points[k-1] << std::endl;
-		}
 		const GEOLIB::PointWithID& p0 (nodes_as_points[k-1]);
 		const GEOLIB::PointWithID& p1 (nodes_as_points[k]);
 		if (fabs (p0[0]-p1[0]) > eps || fabs (p0[1]-p1[1]) > eps) {
@@ -145,7 +142,8 @@ void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream&
 
 	// write ids and areas
 	for (size_t k(0); k<n_nodes; k++) {
-		os << node_ids[k] << " " << areas[k] << std::endl;
+		if (areas[k] > std::numeric_limits<double>::epsilon())
+			os << node_ids[k] << " " << areas[k] << std::endl;
 	}
 
 	n_nodes = 0;
@@ -159,5 +157,18 @@ void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream&
 	_gli_pnt_offset += n_nodes;
 }
 
+void ExtractMeshNodes::writeNearestMeshNodeToPoint (std::ostream& os, std::ostream& gli_out, GEOLIB::Point const & pnt)
+{
+	size_t node_id (_msh->GetNODOnPNT (&pnt));
+	os << node_id << std::endl;
+
+	gli_out.precision (14);
+	gli_out << _gli_pnt_offset << " " << std::scientific
+		<< (_msh->getNodeVector()[node_id])->X() << " "
+		<< (_msh->getNodeVector()[node_id])->Y() << " "
+		<< (_msh->getNodeVector()[node_id])->Z() << std::endl;
+
+	_gli_pnt_offset++;
+}
 
 } // end namespace Mesh_Group

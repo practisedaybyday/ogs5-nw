@@ -49,16 +49,27 @@ class MonodSubstruct
 };
 
 // C++ Class CKinReact
-class CKinReact
-{
-   private:
+class CKinReact {
+private:
+	/**
+	 * name of reaction
+	 */
+	std::string name;
+	/**
+	 * type of reaction: monod, exchange, NAPLdissolution, ...
+	 */
+	std::string type;
+
+	friend bool KRRead(std::string const & file_base_name,
+			GEOLIB::GEOObjects const & geo_obj, std::string const & unique_name);
+	friend void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name);
 
    public:
       CKinReact(void);                            // Constructor
       ~CKinReact(void);                           // Destructor
 
-      std::string   name;                         /* name of reaction */
-      std::string   type;                         /* type of reaction: monod, exchange, NAPLdissolution, ... */
+      std::string const & getType () const { return type; }
+
       int     number;                             /* counter */
       int      number_reactionpartner;            /* Number of chemical species involved in reaction */
       std::vector <std::string> reactionpartner;  /* all names of reaction partners stored here */
@@ -277,7 +288,7 @@ extern std::vector <CKinBlob*> KinBlob_vector;    // declare extern instance of 
  */
 bool KRRead(const std::string& file_base_name, const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name);
 
-extern bool KRWrite(std::string);
+extern bool KRWrite(std::string const&);
 extern void KRCDelete(void);
 
 /**
