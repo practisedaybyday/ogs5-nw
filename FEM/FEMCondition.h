@@ -56,6 +56,8 @@ public:
 	/// Sets the name of the geo-object the condition is assigned to.
 	void setGeoName(std::string geoName) { _geoName = geoName; };
 
+	static std::string condTypeToString(CondType type);
+
 protected:
 	CondType _type;
 	GEOLIB::GeoObject* _geoObject;
