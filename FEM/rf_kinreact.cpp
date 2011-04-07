@@ -127,9 +127,7 @@ CKinReact::CKinReact(void)
  02/2006 SB Implementation
  ***************************************************************************/
 CKinReact::~CKinReact(void)
-{
-
-}
+{}
 
 
 /**************************************************************************
@@ -304,7 +302,7 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
    CKinReact *m_kr = NULL;                        //, *m_kr1=NULL;
    CKinReactData *m_krd = NULL;
    int i, j, k, length;
-   int idx, idummy;
+   int idx;
    long l, ll;
    string m_name, sp_name;
    CompProperties *m_cp = NULL;
@@ -697,7 +695,6 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
       for (j = 0; j < length; j++)
       {
          sp_name = cp_vec[j]->compname;
-         idummy = -1;
          // HS, PCSGet not needed any more.
          // m_pcs = PCSGet("MASS_TRANSPORT", sp_name);
          // new style:
@@ -800,22 +797,30 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
          //------------------------------------------------------------------
          if (s_geo_type.compare("POLYLINE") == 0)
          {
-            //				CGLPolyline *ply = NULL;
-            //				ply = GEOGetPLYByName(s_geo_name);// get Polyline by name
-            CGLPolyline *ply (polyline_vector[s_geo_id]);
-            if (ply)
-            {
-               if (ply->getType() == 100)         //WW
-                  m_msh->GetNodesOnArc(ply, nodes_vector);
-               else
-                  m_msh->GetNODOnPLY(ply, nodes_vector);
-               for (i = 0; i < (long) nodes_vector.size(); i++)
-               {
-                  ll = nodes_vector[i];
-                  l = ll;                         //+ShiftInNodeVector;
-                  m_krd->is_a_CCBC[l] = true;
-               }
-            }
+//			CGLPolyline *ply = NULL;
+//			ply = GEOGetPLYByName(s_geo_name);// get Polyline by name
+
+        	CGLPolyline *ply (polyline_vector[s_geo_id]);
+//            if (ply) {
+//               m_msh->GetNODOnPLY(ply, nodes_vector);
+//               for (size_t i = 0; i < nodes_vector.size(); i++) {
+//                  ll = nodes_vector[i];
+//                  l = ll;                         //+ShiftInNodeVector;
+//                  m_krd->is_a_CCBC[l] = true;
+//               }
+//            }
+
+        	std::vector<GEOLIB::Polyline*> const * const ply_vec (geo_obj.getPolylineVec(unique_name));
+        	GEOLIB::Polyline const * const polyline ((*ply_vec)[s_geo_id]);
+        	double msh_min_edge_length (m_msh->getMinEdgeLength());
+        	m_msh->setMinEdgeLength (ply->epsilon);
+        	m_msh->GetNODOnPLY(polyline, nodes_vector);
+        	m_msh->setMinEdgeLength (msh_min_edge_length);
+			for (size_t i = 0; i < nodes_vector.size(); i++) {
+				ll = nodes_vector[i]; //+ShiftInNodeVector;
+				m_krd->is_a_CCBC[ll] = true;
+			}
+
          }                                        // if(POLYLINE)
          //------------------------------------------------------------------
          if (s_geo_type.compare("SURFACE") == 0)
@@ -834,22 +839,16 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
             }
          }
       }                                           // end of for(j=0;j<m_krd->NoReactGeoName.size()...
-      //test output
-      /*  cout << " Vector KinReactData::is_a_CCBC: " << endl;
-       for(l=0; l< (long)m_msh->nod_vector.size();l++)
-       if(m_krd->is_a_CCBC[l] == true) cout << l <<", ";
-       cout << endl;
-       */
+
       nodes_vector.clear();
 
       /********************************************************/
       //Set up vectors switched_off_node for individual reactions
       m_msh = fem_msh_vector[0];                  //SB: ToDo hart gesetzt
-      if (m_msh == NULL)
-      {
-         std::cout << "No mesh in KRConfig" << std::endl;
-         exit(1);
-      }
+      if (m_msh == NULL) {
+			std::cout << "No mesh in KRConfig" << std::endl;
+			exit(1);
+		}
       // for all reactions
       for (k = 0; k < m_krd->NumberReactions; k++)
       {
@@ -868,38 +867,35 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
                //------------------------------------------------------------------
                if (s_geo_type.compare("POINT") == 0)
                {
-                  // 06/2010 TF - switch to new GEOLIB
-                  //						CGLPoint* m_geo_point = NULL; // make new GEO point
-                  //						m_geo_point = GEOGetPointByName(s_geo_name);//Get GEO point by name
-                  //						if (m_geo_point)
-                  //							l = m_msh->GetNODOnPNT(m_geo_point); // + ShiftInNodeVector; // find MSH point number stored in l
-
                   const std::vector<GEOLIB::Point*>* pnt_vec (geo_obj.getPointVec(unique_name));
                   l = m_msh->GetNODOnPNT ((*pnt_vec)[m_kr->NotThisReactGeoID[j]]);
 
                   m_kr->switched_off_node[l] = true;
                }
                //------------------------------------------------------------------
-               if (s_geo_type.compare("POLYLINE") == 0)
-               {
-                  //						CGLPolyline *ply = NULL;
-                  //						ply = GEOGetPLYByName(s_geo_name);// get Polyline by name
-                  CGLPolyline *ply (polyline_vector[s_geo_id]);
-                  if (ply)
-                  {
-                     if (ply->getType() == 100)   //WW
-                        m_msh->GetNodesOnArc(ply, nodes_vector);
-                     else
-                        m_msh->GetNODOnPLY(ply, nodes_vector);
-                     for (i = 0; i < (long) nodes_vector.size(); i++)
-                     {
-                        ll = nodes_vector[i];
-                        l = ll;                   //+ShiftInNodeVector;
-                        m_kr->switched_off_node[l] = true;
-                     }
-                  }
-               }
-               //------------------------------------------------------------------
+               if (s_geo_type.compare("POLYLINE") == 0) {
+//					CGLPolyline *ply(polyline_vector[s_geo_id]);
+//					if (ply) {
+//						if (ply->getType() == 100) //WW
+//							m_msh->GetNodesOnArc(ply, nodes_vector);
+//						else m_msh->GetNODOnPLY(ply, nodes_vector);
+//						for (i = 0; i < (long) nodes_vector.size(); i++) {
+//							ll = nodes_vector[i];
+//							l = ll; //+ShiftInNodeVector;
+//							m_kr->switched_off_node[l] = true;
+//						}
+//					}
+
+					std::vector<GEOLIB::Polyline*> const * const ply_vec(
+							geo_obj.getPolylineVec(unique_name));
+					GEOLIB::Polyline const * const polyline((*ply_vec)[s_geo_id]);
+					m_msh->GetNODOnPLY(polyline, nodes_vector);
+					for (size_t i = 0; i < nodes_vector.size(); i++) {
+						ll = nodes_vector[i]; //+ShiftInNodeVector;
+						m_krd->is_a_CCBC[ll] = true;
+					}
+				}
+
                if (s_geo_type.compare("SURFACE") == 0)
                {
                   Surface *m_surface = NULL;
@@ -2107,22 +2103,27 @@ void KBlobConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_na
 
          if (s_geo_type.compare("POLYLINE") == 0)
          {
-            //				CGLPolyline *ply = NULL;
-            //				ply = GEOGetPLYByName(s_geo_name);// get Polyline by name
-            CGLPolyline *ply (polyline_vector[s_geo_id]);
-            if (ply)
-            {
-               if (ply->getType() == 100)         //WW
-                  m_msh->GetNodesOnArc(ply, nodes_vector);
-               else
-                  m_msh->GetNODOnPLY(ply, nodes_vector);
-               for (size_t k = 0; k < nodes_vector.size(); k++)
-               {
-                                                  //+ShiftInNodeVector;
-                  size_t msh_node_id = nodes_vector[k];
-                  m_kb->Interfacial_area[msh_node_id] = m_kb->Area_Value[j];
-               }
-            }
+//            CGLPolyline *ply (polyline_vector[s_geo_id]);
+//            if (ply)
+//            {
+//               if (ply->getType() == 100)         //WW
+//                  m_msh->GetNodesOnArc(ply, nodes_vector);
+//               else
+//                  m_msh->GetNODOnPLY(ply, nodes_vector);
+//               for (size_t k = 0; k < nodes_vector.size(); k++) {
+//					size_t msh_node_id = nodes_vector[k];
+//					m_kb->Interfacial_area[msh_node_id] = m_kb->Area_Value[j];
+//				}
+//            }
+
+			std::vector<GEOLIB::Polyline*> const * const ply_vec(
+					geo_obj.getPolylineVec(unique_name));
+			GEOLIB::Polyline const * const polyline((*ply_vec)[s_geo_id]);
+			m_msh->GetNODOnPLY(polyline, nodes_vector);
+			for (size_t k = 0; k < nodes_vector.size(); k++) {
+				m_kb->Interfacial_area[nodes_vector[k]] = m_kb->Area_Value[j];
+			}
+
          }                                        // end if POLYLINE
 
          if (s_geo_type.compare("SURFACE") == 0)
@@ -2757,7 +2758,7 @@ double *usedtneu, int *nok, int *nbad)
    double *Concentration;
    double *newVolume;
    double nexth = 0.;
-   long sp, timelevel;
+   long sp;
    //  int nok=0, nbad=0, Number_of_Components;
    int Number_of_Components, nreactions, r, Sp1, blob, Number_of_blobs;
    double Csat_max, DensityNAPL, DensityAQ, DiffusionAQ, ViscosityAQ,
@@ -2781,9 +2782,7 @@ double *usedtneu, int *nok, int *nbad)
    CKinReactData *m_krd = NULL;
    m_krd = KinReactData_vector[0];
 
-   timelevel = 1;                                 // concentrations are in new timelevel
-   if (time_vector.size() > 0)
-   {
+   if (time_vector.size() > 0) {
       m_tim = time_vector[0];
       dt = m_tim->CalcTimeStep();
    }
@@ -4152,7 +4151,7 @@ long node)
          if (m_kr->switched_off_node.size() > 0)
             if (m_kr->switched_off_node[node] == true)
                continue;
-         if ((m_kr->type.compare("exchange") == 0)
+         if ((m_kr->getType().compare("exchange") == 0)
             && (m_kr->typeflag_exchange_langmuir))
          {
             Sp1 = m_kr->ex_species[0] + 1;
@@ -4233,7 +4232,7 @@ long node)
             for (j = 0; j < nreactions; j++)
             {
                m_kr1 = KinReact_vector[j];
-               if (m_kr1->type.compare("exchange") == 0)
+               if (m_kr1->getType().compare("exchange") == 0)
                   if (m_kr1->typeflag_exchange_langmuir)
                {
                   SpX = m_kr1->ex_species[0] + 1;
@@ -4466,7 +4465,7 @@ bool KNaplDissCheck(void)
    for (j = 0; j < nreact; j++)
    {
       m_kr = KinReact_vector[j];
-      if (m_kr->type.compare("NAPLdissolution") == 0)
+      if (m_kr->getType().compare("NAPLdissolution") == 0)
       {
          NAPLdiss = true;
          break;

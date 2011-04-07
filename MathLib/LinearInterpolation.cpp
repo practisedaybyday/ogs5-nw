@@ -20,6 +20,11 @@ LinearInterpolation::LinearInterpolation(const std::vector<double>& supporting_p
 LinearInterpolation::LinearInterpolation(const std::vector<double>& supporting_points, const std::vector<double>& values_at_supp_pnts, const std::vector<double>& points_to_interpolate, std::vector<double>& values_at_interpol_pnts)
 	: _supporting_points (supporting_points), _values_at_supp_pnts (values_at_supp_pnts)
 {
+//	std::cout << "LinearInterpolation::LinearInterpolation support_points, values_at_supp_pnts: " << std::endl;
+//	for (size_t k(0); k<supporting_points.size(); k++) {
+//		std::cout << supporting_points[k] << " " << values_at_supp_pnts[k] << std::endl;
+//	}
+//	std::cout << std::endl;
 	values_at_interpol_pnts.clear();
 	for (size_t k(0); k<points_to_interpolate.size(); k++)
 		values_at_interpol_pnts.push_back (this->getValue (points_to_interpolate[k]));

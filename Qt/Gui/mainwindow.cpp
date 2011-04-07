@@ -1026,7 +1026,7 @@ void MainWindow::FEMTestStart()
 		std::map<std::string, size_t>* ply_names (new std::map<std::string, size_t>);
 
 		for (size_t k(0); k<middle_pnts->size(); k++) {
-			GEOLIB::Polygon *polygon(createPolygonFromCircle (*((*middle_pnts)[k]), 1000.0, *pnts, resolution));
+			GEOLIB::Polygon *polygon(createPolygonFromCircle (*((*middle_pnts)[k]), 450.0, *pnts, resolution));
 			plys->push_back (polygon);
 			std::string station_name ("CircleAreaAroundStation");
 			if (dynamic_cast<GEOLIB::Station*>((*middle_pnts)[k])) {

@@ -44,7 +44,6 @@ extern void remove_white_space(std::string*);
 #include <sys/resource.h>
 #include <unistd.h>
 
-
 double cputime(double x)
 {
 	struct rusage rsrc;
@@ -1006,9 +1005,6 @@ void CBoundaryConditionsGroup::Set(CRFProcess* m_pcs, int ShiftInNodeVector,
 						nodes_vector.clear();
 						for (size_t k(0); k < my_nodes_vector.size(); k++)
 							nodes_vector.push_back(my_nodes_vector[k]);
-
-						// for some benchmarks we need the vector entries sorted by index
-//						std::sort (nodes_vector.begin(), nodes_vector.end());
 
 						std::vector<double> interpolation_points;
 						std::vector<double> interpolation_values;
