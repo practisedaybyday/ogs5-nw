@@ -91,7 +91,7 @@ Problem *aproblem = NULL;
 using namespace FileIO;
 
 MainWindow::MainWindow(QWidget *parent /* = 0*/)
-: QMainWindow(parent), _project(), _db (NULL)
+: QMainWindow(parent), _db (NULL), _project()
 {
     setupUi(this);
 
@@ -330,11 +330,11 @@ MainWindow::MainWindow(QWidget *parent /* = 0*/)
 
 MainWindow::~MainWindow()
 {
-	delete _visPrefsDialog;
 	delete _db;
 	delete _vtkVisPipeline;
 	delete _meshModels;
 	delete _conditionModel;
+	//delete _visPrefsDialog;
 	//delete _geoModels;
 
 #ifdef OGS_USE_VRPN
