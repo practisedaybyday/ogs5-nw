@@ -56,6 +56,7 @@ public:
 	/// Sets the name of the geo-object the condition is assigned to.
 	void setGeoName(std::string geoName) { _geoName = geoName; };
 
+	/// Returns the type of the FEM condition as a string.
 	static std::string condTypeToString(CondType type);
 
 protected:

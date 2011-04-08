@@ -46,6 +46,9 @@ InitialCondition::InitialCondition(const CInitialCondition &ic, const std::strin
 	this->setGeoType(ic.getGeoType());
 	this->setGeoName("[unspecified]");//ic.getGeoName());
 	this->setProcessDistributionType(ic.getProcessDistributionType());
+	
+	//this->setDisValue()
+	//ic.getdi
 }
 
 SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
