@@ -13,10 +13,7 @@
 // MATHLIB
 #include "AnalyticalGeometry.h"
 
-// FileIO
-//#include "XMLInterface.h"
-
-int main (int argc, char *argv[])
+int main ()
 {
 	GEOLIB::Point pnt_a (0.0, 0.0, 0.0);
 	GEOLIB::Point pnt_b (1.0, 0.0, 0.0);

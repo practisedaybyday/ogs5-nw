@@ -22,11 +22,13 @@ BruteForceClosestPair::BruteForceClosestPair(
 			double sqr_dist (MATHLIB::sqrDist (_pnts[i], _pnts[j]));
 			if (sqr_dist < sqr_shortest_dist) {
 				sqr_shortest_dist = sqr_dist;
-				id0 = i;
-				id1 = j;
+				_id0 = i;
+				_id1 = j;
 			}
 		}
 	}
+	id0 = _id0;
+	id1 = _id1;
 }
 
 } // end namespace GEOLIB
