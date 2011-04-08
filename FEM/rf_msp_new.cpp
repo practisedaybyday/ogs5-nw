@@ -28,6 +28,7 @@ last modified:
 
 #include "files0.h"                               // GetLineFromFile1
 #include "tools.h"                                // GetLineFromFile
+#include "StringTools.h"
 
 using namespace std;
 
@@ -73,6 +74,8 @@ namespace SolidProp
          position = msp_file->tellg();
          if(!GetLineFromFile(buffer,msp_file)) break;
          line_string = buffer;
+         trim(line_string); //NW
+         trim(line_string, ':'); //NW
          if(line_string.find(hash)!=string::npos)
          {
             new_keyword = true;
@@ -202,7 +205,7 @@ namespace SolidProp
 
          //....................................................................
                                                   // subkeyword found
-         if(line_string.find("CONDUCTIVITY")!=string::npos)
+         if(line_string.compare("CONDUCTIVITY")==0)
          {
             in_sd.str(GetLineFromFile1(msp_file));
             in_sd>> Conductivity_mode;
@@ -255,28 +258,69 @@ namespace SolidProp
                   }
                   break;
             }
+            in_sd.clear();
          }
-         /*
-             //....................................................................
-             if(line_string.find("$THERMAL_CONDUCTIVITY_TENSOR")!=string::npos) { //subkeyword found
-              *msp_file >> thermal_conductivity_tensor_type_name;
-               switch(thermal_conductivity_tensor_type_name[0]) {
-                 case 'I': // isotropic
-                   thermal_conductivity_tensor_type = 0;
-                  *msp_file >> thermal_conductivity_tensor[0];
-                   break;
-                 case 'O': // orthotropic
-                   break;
-         case 'A': // anisotropic
-         break;
-         default:
-         cout << "Error in CSolidProperties::Read: no valid thermal conductivity tensor type" << endl;
-         break;
+
+         //....................................................................
+         if(line_string.find("CONDUCTIVITY_TENSOR")!=string::npos) { //subkeyword found
+           in_sd.str(GetLineFromFile1(msp_file));
+           in_sd>> thermal_conductivity_tensor_type_name;
+           thermal_conductivity_tensor_dim = 0; //NW
+           switch(thermal_conductivity_tensor_type_name[0]) {
+             case 'I': // isotropic
+               thermal_conductivity_tensor_type = 0;
+               in_sd >> thermal_conductivity_tensor[0];
+               thermal_conductivity_tensor[1] = thermal_conductivity_tensor[2] = thermal_conductivity_tensor[0];
+               break;
+             case 'O':                             // orthotropic
+               thermal_conductivity_tensor_type = 1;
+               in_sd >> thermal_conductivity_tensor_dim;
+               if(thermal_conductivity_tensor_dim==0)
+                 std::cout << "Error in CSolidProperties::Read: no tensor dimension" << std::endl;
+               if(thermal_conductivity_tensor_dim==2)
+               {
+                 in_sd >> thermal_conductivity_tensor[0];
+                 in_sd >> thermal_conductivity_tensor[1];
+               }
+               if(thermal_conductivity_tensor_dim==3)
+               {
+                 in_sd >> thermal_conductivity_tensor[0];
+                 in_sd >> thermal_conductivity_tensor[1];
+                 in_sd >> thermal_conductivity_tensor[2];
+               }
+               break;
+             case 'A':                             // anisotropic
+               thermal_conductivity_tensor_type = 2;
+               in_sd >> thermal_conductivity_tensor_dim;
+               if(thermal_conductivity_tensor_dim==0)
+                 std::cout << "Error in CSolidProperties::Read: no tensor dimension" << std::endl;
+               if(thermal_conductivity_tensor_dim==2)
+               {
+                 in_sd >> thermal_conductivity_tensor[0];
+                 in_sd >> thermal_conductivity_tensor[1];
+                 in_sd >> thermal_conductivity_tensor[2];
+                 in_sd >> thermal_conductivity_tensor[3];
+               }
+               if(thermal_conductivity_tensor_dim==3)
+               {
+                 in_sd >> thermal_conductivity_tensor[0];
+                 in_sd >> thermal_conductivity_tensor[1];
+                 in_sd >> thermal_conductivity_tensor[2];
+                 in_sd >> thermal_conductivity_tensor[3];
+                 in_sd >> thermal_conductivity_tensor[4];
+                 in_sd >> thermal_conductivity_tensor[5];
+                 in_sd >> thermal_conductivity_tensor[6];
+                 in_sd >> thermal_conductivity_tensor[7];
+                 in_sd >> thermal_conductivity_tensor[8];
+               }
+               break;
+             default:
+               cout << "Error in CSolidProperties::Read: no valid thermal conductivity tensor type" << endl;
+               break;
+            }
+            in_sd.clear();
          }
-         msp_file->ignore(MAX_ZEILE,'\n');
-         continue;
-         }
-         */
+         
          //....................................................................
                                                   // subkeyword found
          if(line_string.find("$ELASTICITY")!=string::npos)
@@ -588,6 +632,11 @@ namespace SolidProp
 
       Crotm = NULL;                               // rotation matrix for matrices: UJG 25.11.2009
       D_tran = NULL;                              //UJG/WW
+
+      // Thermal conductivity tensor (default: iso)
+      thermal_conductivity_tensor_type = 0; 
+      thermal_conductivity_tensor_dim = 1;
+      thermal_conductivity_tensor[0] = 1.0;
    }
    CSolidProperties::~CSolidProperties()
    {
@@ -890,6 +939,7 @@ namespace SolidProp
    Programing:
    09/2004 OK MSP implementation
    03/2005 WW Conductivity from input file
+   04/2011 NW Conductivity tensor
    last modification:
    ToDo: geo_dimension
    **************************************************************************/
@@ -909,106 +959,72 @@ namespace SolidProp
       // Test for DECOVALEX
       // thermal_conductivity_tensor[0] =0.5+0.8*PCSGetELEValue(number,NULL,theta,"SATURATION1");
 
+      //--------------------------------------------------------------------
       //There are a number of cases where the heat conductivity tensor is defined by the capacity model;
+      double base_thermal_conductivity = .0;
       switch (Conductivity_mode)
       {
          case 0:
                                                   //WW
-            thermal_conductivity_tensor[0] = Heat_Conductivity(primary_variable[0]);
-            for(i=0; i<dim; i++)
-               tensor[i*dim+i] =  thermal_conductivity_tensor[0];
+            base_thermal_conductivity = Heat_Conductivity(primary_variable[0]);
             break;
          case 1:
                                                   //WW
-            thermal_conductivity_tensor[0] = Heat_Conductivity(0);
-            for(i=0; i<dim; i++)
-               tensor[i*dim+i] =  thermal_conductivity_tensor[0];
+            base_thermal_conductivity = Heat_Conductivity(0);
             break;
          case 2:                                  // Boiling model. DECOVALEX THM2
             temperature = primary_variable[0];
-            //for(i=0; i<dim*dim; i++) mat[i] = 0.0;
-            for(i=0; i<dim; i++)
-               tensor[i*dim+i] = Heat_Conductivity(temperature);
+            base_thermal_conductivity = Heat_Conductivity(temperature);
             break;
          case 3:                                  // DECOVALEX THM1
             saturation = primary_variable[1];
-            //for(i=0; i<dim*dim; i++) mat[i] = 0.0;
-            for(i=0; i<dim; i++)
-               tensor[i*dim+i] = Heat_Conductivity(saturation);
+            base_thermal_conductivity = Heat_Conductivity(saturation);
             break;
          default:                                 //Normal case
-                                                  //WW
-            thermal_conductivity_tensor[0] = Heat_Conductivity();
-            thermal_conductivity_tensor_type = 0;
-            switch(dim)
-            {
-               case 1:                            // 1-D
-                  tensor[0] = thermal_conductivity_tensor[0];
-                  break;
-               case 2:                            // 2-D
-                  if(thermal_conductivity_tensor_type==0)
-                  {
-                     tensor[0] = thermal_conductivity_tensor[0];
-                     tensor[1] = 0.0;
-                     tensor[2] = 0.0;
-                     tensor[3] = thermal_conductivity_tensor[0];
-                  }
-                  else if(thermal_conductivity_tensor_type==1)
-                  {
-                     tensor[0] = thermal_conductivity_tensor[0];
-                     tensor[1] = 0.0;
-                     tensor[2] = 0.0;
-                     tensor[3] = thermal_conductivity_tensor[1];
-                  }
-                  else if(thermal_conductivity_tensor_type==2)
-                  {
-                     tensor[0] = thermal_conductivity_tensor[0];
-                     tensor[1] = thermal_conductivity_tensor[1];
-                     tensor[2] = thermal_conductivity_tensor[2];
-                     tensor[3] = thermal_conductivity_tensor[3];
-                  }
-                  break;
-               case 3:                            // 3-D
-                  if(thermal_conductivity_tensor_type==0)
-                  {
-                     tensor[0] = thermal_conductivity_tensor[0];
-                     tensor[1] = 0.0;
-                     tensor[2] = 0.0;
-                     tensor[3] = 0.0;
-                     tensor[4] = thermal_conductivity_tensor[0];
-                     tensor[5] = 0.0;
-                     tensor[6] = 0.0;
-                     tensor[7] = 0.0;
-                     tensor[8] = thermal_conductivity_tensor[0];
-                  }
-                  else if(thermal_conductivity_tensor_type==1)
-                  {
-                     tensor[0] = thermal_conductivity_tensor[0];
-                     tensor[1] = 0.0;
-                     tensor[2] = 0.0;
-                     tensor[3] = 0.0;
-                     tensor[4] = thermal_conductivity_tensor[1];
-                     tensor[5] = 0.0;
-                     tensor[6] = 0.0;
-                     tensor[7] = 0.0;
-                     tensor[8] = thermal_conductivity_tensor[2];
-                  }
-                  else if(thermal_conductivity_tensor_type==2)
-                  {
-                     tensor[0] = thermal_conductivity_tensor[0];
-                     tensor[1] = thermal_conductivity_tensor[1];
-                     tensor[2] = thermal_conductivity_tensor[2];
-                     tensor[3] = thermal_conductivity_tensor[3];
-                     tensor[4] = thermal_conductivity_tensor[4];
-                     tensor[5] = thermal_conductivity_tensor[5];
-                     tensor[6] = thermal_conductivity_tensor[6];
-                     tensor[7] = thermal_conductivity_tensor[7];
-                     tensor[8] = thermal_conductivity_tensor[8];
-                  }
-                  break;
-            }
+           cout << "***Error in CSolidProperties::HeatConductivityTensor(): conductivity mode is not supported " << endl;
+           //base_thermal_conductivity = Heat_Conductivity();
       }
-      //  return tensor;
+
+      //--------------------------------------------------------------------
+      //Set unit tensor
+	  //check
+      if (thermal_conductivity_tensor_type>0 && dim!=thermal_conductivity_tensor_dim) {
+        cout << "***Error in CSolidProperties::HeatConductivityTensor(): problem dimension and the given tensor dimension are not same." << endl;
+      }
+      //reset
+      for(i=0; i<9; i++) tensor[i] = 0.0;
+      //set
+      switch (thermal_conductivity_tensor_type) {
+        case 0: //Iso
+          for(i=0; i<dim; i++)
+            tensor[i*dim+i] = 1.0;
+          break;
+        case 1: //Ortho
+          switch (thermal_conductivity_tensor_dim) {
+            case 1:                            // 1-D
+              tensor[0] = thermal_conductivity_tensor[0];
+              break;
+            case 2:                            // 2-D
+              tensor[0] = thermal_conductivity_tensor[0];
+              tensor[3] = thermal_conductivity_tensor[1];
+              break;
+            case 3:                            // 3-D
+              tensor[0] = thermal_conductivity_tensor[0];
+              tensor[4] = thermal_conductivity_tensor[1];
+              tensor[8] = thermal_conductivity_tensor[2];
+              break;
+          }
+          break;
+        case 2: //Aniso
+          for(i=0; i<thermal_conductivity_tensor_dim*thermal_conductivity_tensor_dim; i++)
+            tensor[i] = thermal_conductivity_tensor[i];
+          break;
+      }
+
+      //--------------------------------------------------------------------
+      //tensor form
+      for(i=0; i<dim*dim; i++)
+        tensor[i] *= base_thermal_conductivity;
    }
 
    /**************************************************************************

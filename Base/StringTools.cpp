@@ -30,17 +30,18 @@ std::string replaceString(const std::string &searchString, const std::string &re
 	return stringToReplace;
 }
 
-void trim(std::string &str)
+void trim(std::string &str, char ch)
 {
-	std::string::size_type pos = str.find_last_not_of(' ');
-	if(pos != std::string::npos)
-	{
-		str.erase(pos + 1);
-		pos = str.find_first_not_of(' ');
-		if(pos != std::string::npos) str.erase(0, pos);
-	}
-	else str.erase(str.begin(), str.end());
+  std::string::size_type pos = str.find_last_not_of(ch);
+  if(pos != std::string::npos)
+  {
+    str.erase(pos + 1);
+    pos = str.find_first_not_of(ch);
+    if(pos != std::string::npos) str.erase(0, pos);
+  }
+  else str.erase(str.begin(), str.end());
 }
+
 
 #ifdef MSVC
 void correctScientificNotation(std::string filename, size_t precision)

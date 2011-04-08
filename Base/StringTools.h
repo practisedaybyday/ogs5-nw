@@ -57,7 +57,7 @@ template<typename T> T str2number (const std::string &str)
 /**
  * Strip whitespace (or other characters) from the beginning and end of a string.
  */
-void trim(std::string &str);
+void trim(std::string &str, char ch=' ');
 
 #ifdef MSVC
 void correctScientificNotation(std::string filename, size_t precision = 0);
