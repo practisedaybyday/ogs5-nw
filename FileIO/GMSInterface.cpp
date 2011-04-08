@@ -241,7 +241,7 @@ Mesh_Group::CFEMesh* GMSInterface::readGMS3DMMesh(std::string filename)
 			mesh->ele_vector.push_back(elem);
 
 		}
-		else if (element_id.compare("E5P") == 0)
+		else if ((element_id.compare("E4P") == 0) || (element_id.compare("E5P") == 0)) // KR both versions exist!
 		{
 			int i(0);
 			long node_index[5];
