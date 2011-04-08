@@ -4242,7 +4242,7 @@ void CRFProcess::AllocateLocalMatrixMemory()
       }
    }
    if(!H_Process) up_type = 2;
-   if(MASS_TRANSPORT_Process)up_type = 5;         //SB for steady state element matrices in transport
+   if(MASS_TRANSPORT_Process || T_Process)up_type = 5;         //SB for steady state element matrices in transport
    //----------------------------------------------------------------------
    ElementMatrix *eleMatrix = NULL;
    CElem* elem = NULL;
@@ -9881,7 +9881,7 @@ void CreateEQS_LinearSolver()
    for(size_t i=0;i<pcs_vector.size();i++)
    {
       m_pcs = pcs_vector[i];
-      if(m_pcs->type==22)                         // Monolithic TH2
+      if(m_pcs->type==1212)                        //Important for parallel computing. 24.1.2011 WW 
       {
          dof_nonDM = m_pcs->GetPrimaryVNumber();
          dof = dof_nonDM;

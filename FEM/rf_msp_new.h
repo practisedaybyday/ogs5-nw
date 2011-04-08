@@ -118,6 +118,7 @@ namespace SolidProp
          void Gauss_Back(const int DimE, Matrix& AA, double * rhs, int *L, double *xx);
          // Thermal properties
          int thermal_conductivity_tensor_type;
+         int thermal_conductivity_tensor_dim;
          double thermal_conductivity_tensor[9];
          std::string thermal_conductivity_tensor_type_name;
          // Handles. May be used by GUI
