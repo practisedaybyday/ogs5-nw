@@ -19,6 +19,15 @@ AABB::AABB ()
 	}
 }
 
+AABB::AABB ( const std::vector<GEOLIB::Point*> *points )
+{
+	size_t nPoints (points->size());
+	for (size_t i=0; i<nPoints; i++)
+	{
+		this->update((*(*points)[i])[0], (*(*points)[i])[1], (*(*points)[i])[2]);
+	}
+}
+
 void AABB::update (GEOLIB::Point const & pnt)
 {
 	update (pnt[0], pnt[1], pnt[2]);

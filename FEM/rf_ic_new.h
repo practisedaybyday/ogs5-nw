@@ -40,8 +40,10 @@ class CInitialCondition : public ProcessInfo, public GeoInfo, public Distributio
    private:
       // REMOVE CANDIDATE
       std::string geo_name;                       // TF 05/2010
+	  double geo_node_value;					//KR
    public:
 	  const std::string& getGeoName () const { return geo_name; }; //KR 
+	  double getGeoNodeValue() const { return geo_node_value; }; //KR
 
 	  int GetNumDom() const { return (int) subdom_index.size(); };                                           //WW
       int GetDomain(const int dom_index) const { return subdom_index[dom_index]; };                                           //WW
@@ -78,7 +80,6 @@ class CInitialCondition : public ProcessInfo, public GeoInfo, public Distributio
       void SetEle(int);                           //MX
       void SetDomainEle(int);                     //MX
 	  Mesh_Group::CFEMesh* m_msh;
-      double _node_value;
 };
 
 class CInitialConditionGroup

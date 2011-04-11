@@ -46,10 +46,11 @@ InitialCondition::InitialCondition(const CInitialCondition &ic, const std::strin
 	this->setProcessType(ic.getProcessType());
 	this->setProcessPrimaryVariable(ic.getProcessPrimaryVariable());
 	this->setGeoType(ic.getGeoType());
-	std::string geo_name = (ic.getGeoType() == GEOLIB::GEODOMAIN) ? "" : ic.getGeoName();
+	std::string geo_name = (ic.getGeoType() == GEOLIB::GEODOMAIN) ? "Domain" : ic.getGeoName();
+	this->setGeoName(geo_name);
 	this->setProcessDistributionType(ic.getProcessDistributionType());
 
-	//if (this->getProcessDistributionType() == FiniteElement::CONSTANT) this->setDisValue(ic.geo_node_value);
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT) this->setDisValue(ic.getGeoNodeValue());
 }
 
 SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
