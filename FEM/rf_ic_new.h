@@ -41,17 +41,13 @@ class CInitialCondition : public ProcessInfo, public GeoInfo, public Distributio
       // REMOVE CANDIDATE
       std::string geo_name;                       // TF 05/2010
    public:
-      int GetNumDom() const
-      {
-         return (int) subdom_index.size();
-      }                                           //WW
-      int GetDomain(const int dom_index) const
-      {
-         return subdom_index[dom_index];
-      }                                           //WW
+	  const std::string& getGeoName () const { return geo_name; }; //KR 
+
+	  int GetNumDom() const { return (int) subdom_index.size(); };                                           //WW
+      int GetDomain(const int dom_index) const { return subdom_index[dom_index]; };                                           //WW
       //int mat_type; //MX
       // DIS
-      std::vector<CNodeValue*> node_value_vector;
+      //KR std::vector<CNodeValue*> node_value_vector;
       void SetDomain(int);
       void SetByNodeIndex(int);                   // 19.11.2009 PCH
       void SetPolyline(int);
@@ -82,7 +78,7 @@ class CInitialCondition : public ProcessInfo, public GeoInfo, public Distributio
       void SetEle(int);                           //MX
       void SetDomainEle(int);                     //MX
 	  Mesh_Group::CFEMesh* m_msh;
-      CNodeValue* m_node;
+      double _node_value;
 };
 
 class CInitialConditionGroup

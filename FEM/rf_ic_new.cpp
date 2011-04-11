@@ -50,7 +50,7 @@ CInitialCondition::CInitialCondition()
    this->setProcess(NULL);                        //OK
    a0=b0=c0=d0=NULL;                              //WW
    m_msh = NULL;                                  //OK
-   m_node = NULL;                                 //HS
+   //KR m_node = NULL;                                 //HS
 }
 
 
@@ -62,13 +62,15 @@ Programing:
 **************************************************************************/
 CInitialCondition::~CInitialCondition(void)
 {
+/* KR
    if ( !node_value_vector.empty() )
    {
-      for (int i=0; i < (int)node_value_vector.size(); i++)
+      for (size_t i=0; i < node_value_vector.size(); i++)
          delete node_value_vector[i];
    }
    node_value_vector.clear();
-   delete m_node;                                 //HS
+*/
+   //KR delete m_node;                                 //HS
    //WW
    if(a0) delete [] a0;
    if(b0) delete [] b0;
@@ -282,10 +284,9 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
          //if (dis_type_name.find("CONSTANT") != string::npos) {
          if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
          {
-            m_node = new CNodeValue();
-            in >> m_node->node_value;
-            node_value_vector.push_back(m_node);
-            m_node = NULL;
+            //CNodeValue* m_node = new CNodeValue();
+            in >> _node_value;
+            //node_value_vector.push_back(m_node);
          }
          //if (dis_type_name.find("GRADIENT") != string::npos) {
          if (this->getProcessDistributionType() == FiniteElement::GRADIENT)
@@ -472,13 +473,16 @@ void CInitialCondition::Write(fstream* ic_file) const
    *ic_file << " ";
    if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
    {
-      CNodeValue* m_node = NULL;
+      /* KR
+	  CNodeValue* m_node = NULL;
       int node_value_vector_size = (int)node_value_vector.size();
       if(node_value_vector_size>0)
       {
          m_node = node_value_vector[0];
          *ic_file << m_node->node_value;
       }
+	  */
+	  *ic_file << _node_value;
    }
    else if (this->getProcessDistributionType() == FiniteElement::GRADIENT)
    {
@@ -581,7 +585,7 @@ void CInitialCondition::SetPoint(int nidx)
    if (m_msh && this->getProcessDistributionType() == FiniteElement::CONSTANT)
    {
       this->getProcess()->SetNodeValue(this->getProcess()->m_msh->GetNODOnPNT(static_cast<const GEOLIB::Point*>(getGeoObj())), nidx,
-         node_value_vector[0]->node_value);
+         _node_value);
    }
    else
    {
@@ -653,7 +657,7 @@ void CInitialCondition::SetPolyline(int nidx)
          m_msh->GetNODOnPLY(static_cast<const GEOLIB::Polyline*>(getGeoObj()), nodes_vector);
          for (size_t i = 0; i < nodes_vector.size(); i++)
          {
-            this->getProcess()->SetNodeValue(nodes_vector[i], nidx, node_value_vector[0]->node_value);
+            this->getProcess()->SetNodeValue(nodes_vector[i], nidx, _node_value);
          }
       }
       else
@@ -688,7 +692,7 @@ void CInitialCondition::SetSurface(int nidx)
       {
          for(size_t i = 0; i < sfc_nod_vector.size(); i++)
          {
-            value = node_value_vector[0]->node_value;
+            value = _node_value;
             this->getProcess()->SetNodeValue(sfc_nod_vector[i],nidx, value);
          }                                        // end surface nodes
 
@@ -780,15 +784,14 @@ void CInitialCondition::SetDomain(int nidx)
                                                   //OK MSH
             for (i = 0; i < this->getProcess()->m_msh->GetNodesNumber(false); i++)
             {
-               node_val = node_value_vector[0]->node_value
-                  + this->getProcess()->m_msh->nod_vector[i]->Z();
+               node_val = _node_value + this->getProcess()->m_msh->nod_vector[i]->Z();
                this->getProcess()->SetNodeValue(i, nidx, node_val);
             }
          }
          else
          {
             //................................................................
-            node_val = node_value_vector[0]->node_value;
+            node_val = _node_value;
                                                   //OK MSH
             for (i = 0; i < m_msh->GetNodesNumber(true); i++)
                this->getProcess()->SetNodeValue(i, nidx, node_val);
@@ -1061,13 +1064,14 @@ void CInitialCondition::SetDomainEle(int nidx)
 
    if(SubNumber==0)                               //only for constant values
    {
-      ele_val = node_value_vector[0]->node_value;
+   
+      //KR ele_val = node_value_vector[0]->node_value;
       for(i=0;i<(long)m_msh->ele_vector.size();i++)
       {
          m_ele = m_msh->ele_vector[i];
          if(m_ele->GetMark())                     // Marked for use
          {
-            this->getProcess()->SetElementValue(i,nidx, ele_val);
+            this->getProcess()->SetElementValue(i,nidx, _node_value);
          }
       }
    }

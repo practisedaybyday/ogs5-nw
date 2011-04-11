@@ -107,6 +107,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
        */
       const std::string & getGeoName() const;
 
+	  double getGeoNodeValue() const { return geo_node_value; }; //KR
+
       int CurveIndex;
       std::vector<int> element_st_vector;
 
@@ -129,7 +131,6 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       bool channel;
       double channel_width;
       int geo_node_number;
-      double geo_node_value;
 
       double *nodes;
       std::vector<int> node_number_vector;
@@ -148,6 +149,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
 
       void CreateHistoryNodeMemory(NODE_HISTORY *nh);
       void DeleteHistoryNodeMemory();
+
+	  double geo_node_value;
 
       /**
        * is the source term coupled with another source term
