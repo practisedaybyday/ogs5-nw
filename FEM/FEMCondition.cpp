@@ -27,6 +27,15 @@ std::string FEMCondition::condTypeToString(CondType type)
 	else return "Unspecified";
 }
 
+void FEMCondition::setLinearDisValues(const std::vector<int> &point_ids, const std::vector<double> &point_values)
+{
+	for (size_t i=0; i<point_ids.size(); i++)
+	{
+		this->_disValue.push_back(point_ids[i]);
+		this->_disValue.push_back(point_values[i]);
+	}
+}
+
 
 BoundaryCondition::BoundaryCondition(const CBoundaryCondition &bc, const std::string &geometry_name)
 : FEMCondition(geometry_name, FEMCondition::BOUNDARY_CONDITION)
@@ -37,7 +46,10 @@ BoundaryCondition::BoundaryCondition(const CBoundaryCondition &bc, const std::st
 	this->setGeoName(bc.getGeoName());
 	this->setProcessDistributionType(bc.getProcessDistributionType());
 
-	if (this->getProcessDistributionType() == FiniteElement::CONSTANT) this->setDisValue(bc.getGeoNodeValue());
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT) 
+		this->setDisValue(bc.getGeoNodeValue());
+	else if (this->getProcessDistributionType() == FiniteElement::LINEAR) 
+		this->setLinearDisValues(bc.getPointsWithDistribedBC(), bc.getDistribedBC());
 }
 
 InitialCondition::InitialCondition(const CInitialCondition &ic, const std::string &geometry_name)
@@ -50,7 +62,8 @@ InitialCondition::InitialCondition(const CInitialCondition &ic, const std::strin
 	this->setGeoName(geo_name);
 	this->setProcessDistributionType(ic.getProcessDistributionType());
 
-	if (this->getProcessDistributionType() == FiniteElement::CONSTANT) this->setDisValue(ic.getGeoNodeValue());
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
+		this->setDisValue(ic.getGeoNodeValue());
 }
 
 SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
@@ -62,5 +75,9 @@ SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
 	this->setGeoName(st.getGeoName());
 	this->setProcessDistributionType(st.getProcessDistributionType());
 
-	if (this->getProcessDistributionType() == FiniteElement::CONSTANT) this->setDisValue(st.getGeoNodeValue());
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
+		this->setDisValue(st.getGeoNodeValue());
+	else if (this->getProcessDistributionType() == FiniteElement::LINEAR) 
+		this->setLinearDisValues(st.getPointsWithDistribedST(), st.getDistribedST());
+
 }

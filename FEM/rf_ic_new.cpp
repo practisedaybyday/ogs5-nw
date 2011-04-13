@@ -279,21 +279,18 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
          in >> tmp;                               // dis_type_name;
          this->setProcessDistributionType(FiniteElement::convertDisType(tmp));
 
-         //if (dis_type_name.find("CONSTANT") != string::npos) {
          if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
          {
             //KR CNodeValue* m_node = new CNodeValue();
 		    //KR node_value_vector.push_back(m_node);
             in >> geo_node_value;
          }
-         //if (dis_type_name.find("GRADIENT") != string::npos) {
          if (this->getProcessDistributionType() == FiniteElement::GRADIENT)
          {
             in >> gradient_ref_depth;             //CMCD
             in >> gradient_ref_depth_value;       //CMCD
             in >> gradient_ref_depth_gradient;    //CMCD
          }
-         //if (dis_type_name.find("RESTART") != string::npos) { //OK
          if (this->getProcessDistributionType() == FiniteElement::RESTART)
          {
             in >> rfr_file_name;

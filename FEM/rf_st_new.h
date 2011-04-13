@@ -122,6 +122,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       const std::string& getFunctionName () const { return fct_name; }
       int getFunctionMethod () const { return fct_method; }
 
+	  const std::vector<int>& getPointsWithDistribedST () const { return PointsHaveDistribedBC; }
+      const std::vector<double>& getDistribedST() const { return DistribedBC; }
       bool isAnalytical () const { return analytical; }
       double GetAnalyticalSolution(long location);
       size_t getNumberOfTerms () const { return number_of_terms; }

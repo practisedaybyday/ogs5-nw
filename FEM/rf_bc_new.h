@@ -78,6 +78,7 @@ class CBoundaryCondition : public ProcessInfo, public GeoInfo, public Distributi
       }
 
       const std::vector<int>& getPointsWithDistribedBC () const { return _PointsHaveDistribedBC; }
+	  const std::vector<double>& getDistribedBC() const { return _DistribedBC; }
       std::vector<double>& getDistribedBC() { return _DistribedBC; }
 	  double getGeoNodeValue() const { return geo_node_value; }; //KR
 
