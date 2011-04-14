@@ -8,6 +8,7 @@
 // GEO
 #include "GEOObjects.h"
 #include "SurfaceVec.h"
+#include "ProjectData.h"
 
 // FileIO
 #include "XMLInterface.h"
@@ -23,22 +24,24 @@ int main (int argc, char *argv[])
 		std::cout << "Usage: " << argv[0] << " gml-file" << std::endl;
 		return -1;
 	}
-	GEOLIB::GEOObjects *geo_objects (new GEOLIB::GEOObjects);
+	GEOLIB::GEOObjects *geo_objs (new GEOLIB::GEOObjects);
+	ProjectData *project_data (new ProjectData);
+	project_data->setGEOObjects (geo_objs);
 	std::string schema_name("/home/fischeth/workspace/OGS-FirstFloor/sources/FileIO/OpenGeoSysGLI.xsd");
-	XMLInterface xml(geo_objects, schema_name);
+	XMLInterface xml(project_data, schema_name);
 	std::string fname (argv[1]);
 	xml.readGLIFile(QString::fromStdString (fname));
 
 	std::vector<std::string> geo_names;
-	geo_objects->getGeometryNames (geo_names);
+	geo_objs->getGeometryNames (geo_names);
 	if (geo_names.empty ()) {
 		std::cout << "no geometries found" << std::endl;
 		return -1;
 	}
-	const GEOLIB::SurfaceVec* sfc_vec (geo_objects->getSurfaceVecObj(geo_names[0]));
+	const GEOLIB::SurfaceVec* sfc_vec (geo_objs->getSurfaceVecObj(geo_names[0]));
 	if (!sfc_vec) {
 		std::cout << "could not found surfaces" << std::endl;
-		delete geo_objects;
+		delete project_data;
 		return -1;
 	}
 	const size_t n_sfc (sfc_vec->size());
@@ -77,7 +80,7 @@ int main (int argc, char *argv[])
 	}
 	std::cout << "done" << std::endl;
 
-	std::vector<GEOLIB::Point*> const* geo_pnts (geo_objects->getPointVec(geo_names[0]));
+	std::vector<GEOLIB::Point*> const* geo_pnts (geo_objs->getPointVec(geo_names[0]));
 	// write gli file and bc file
 	std::ofstream gli_out ("TB.gli");
 	std::ofstream bc_out ("TB.bc");
@@ -99,5 +102,5 @@ int main (int argc, char *argv[])
 		bc_out.close ();
 	}
 
-	delete geo_objects;
+	delete project_data;
 }
