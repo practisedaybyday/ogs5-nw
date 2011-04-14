@@ -6,6 +6,7 @@
 
 #include "MeshIO/OGSMeshIO.h"
 #include "msh_mesh.h"
+#include "msh_lib.h"
 
 namespace FileIO {
 
@@ -14,6 +15,50 @@ OGSMeshIO::OGSMeshIO()
 
 OGSMeshIO::~OGSMeshIO()
 {}
+
+
+Mesh_Group::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string fileName)
+{
+	std::cout << "FEMRead ... " << std::flush;
+/*
+#ifndef NDEBUG
+	QTime myTimer;
+	myTimer.start();
+#endif
+*/
+	FEMDeleteAll();
+
+	CFEMesh* msh = FEMRead(fileName.substr(0, fileName.length()-4));
+	if (msh)
+	{
+/*
+#ifndef NDEBUG
+		QTime constructTimer;
+		constructTimer.start();
+#endif
+*/
+		msh->ConstructGrid();
+
+		std::cout << "Nr. Nodes: " << msh->nod_vector.size() << std::endl;
+		std::cout << "Nr. Elements: " << msh->ele_vector.size() << std::endl;
+/*
+#ifndef NDEBUG
+		std::cout << "constructGrid time: " << constructTimer.elapsed() << " ms" << std::endl;
+#endif
+*/
+		msh->FillTransformMatrix();
+/*
+#ifndef NDEBUG
+		std::cout << "Loading time: " << myTimer.elapsed() << " ms" << std::endl;
+#endif
+*/
+		return msh;
+	}
+
+    std::cout << "Failed to load a mesh file: " << fileName << std::endl;
+	return NULL;
+}
+
 
 void OGSMeshIO::write(Mesh_Group::CFEMesh const * mesh, std::ofstream &out) const
 {
