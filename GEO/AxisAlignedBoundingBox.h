@@ -9,6 +9,7 @@
 #define AXISALIGNEDBOUNDINGBOX_H_
 
 #include "Point.h"
+#include <vector>
 
 namespace GEOLIB {
 
@@ -25,6 +26,11 @@ public:
 	 * construction of object, initialization the axis aligned bounding box
 	 * */
 	AABB ();
+
+	/**
+	 * construction of object using vector of points
+	 * */
+	AABB ( const std::vector<GEOLIB::Point*> *points );
 
 	void update (GEOLIB::Point const & pnt);
 	/**

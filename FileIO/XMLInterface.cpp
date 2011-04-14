@@ -7,6 +7,7 @@
 #include "ProjectData.h"
 #include "DateTools.h"
 #include "FEMCondition.h"
+#include "OGSMeshIO.h"
 
 #include <iostream>
 #include <QFileInfo>
@@ -105,13 +106,16 @@ int XMLInterface::readProjectFile(const QString &fileName)
 				if (childList.at(j).nodeName().compare("file") == 0)
 					this->readSTNFile(QString(path + childList.at(j).toElement().text()));
 		}
-		/*
-		else (fileList.at(i).nodeName().compare("msh") == 0)
+		else if (fileList.at(i).nodeName().compare("msh") == 0)
 		{
-			GridAdapter msh(fileList.at(i).toElement().text().toStdString());
+			std::string msh_name = path.toStdString() + fileList.at(i).toElement().text().toStdString();
+			Mesh_Group::CFEMesh* msh = FileIO::OGSMeshIO::loadMeshFromFile(msh_name);
+			QFileInfo fi(QString::fromStdString(msh_name));
+			std::string name = fi.fileName().toStdString();
+			_project->addMesh(msh, name); 
+			//GridAdapter msh(fileList.at(i).toElement().text().toStdString());
 			// TODO gridadapter to mesh-models
 		}
-		*/
 	}
 
 	return 1;
@@ -493,6 +497,29 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 		QDomElement fileNameTag = doc.createElement("file");
 		geoTag.appendChild(fileNameTag);
 		QDomText fileNameText = doc.createTextNode(QString(name + ".gml"));
+		fileNameTag.appendChild(fileNameText);
+	}
+
+	// MSH
+	const std::map<std::string, Mesh_Group::CFEMesh*> msh_vec = _project->getMeshObjects();
+	for (std::map<std::string, Mesh_Group::CFEMesh*>::const_iterator it(msh_vec.begin());	it != msh_vec.end(); ++it)
+	{
+		// write mesh file
+		QString fileName(path + QString::fromStdString(it->first));
+		std::fstream* out = new std::fstream(fileName.toStdString().c_str(), std::fstream::out);
+		if (out->is_open()) {
+			(it->second)->Write(out);
+			out->close();
+		}
+		else
+			std::cout << "MshTabWidget::saveMeshFile() - Could not create file..." << std::endl;
+
+		// write entry in project file
+		QDomElement mshTag = doc.createElement("msh");
+		root.appendChild(mshTag);
+		QDomElement fileNameTag = doc.createElement("file");
+		mshTag.appendChild(fileNameTag);
+		QDomText fileNameText = doc.createTextNode(QString::fromStdString(it->first));
 		fileNameTag.appendChild(fileNameText);
 	}
 
