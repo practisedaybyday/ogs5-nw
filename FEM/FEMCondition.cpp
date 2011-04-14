@@ -19,6 +19,14 @@ FEMCondition::FEMCondition(const std::string &geometry_name, CondType t)
 	this->setProcessDistributionType(FiniteElement::INVALID_DIS_TYPE);
 }
 
+std::string FEMCondition::condTypeToString(CondType type)
+{
+	if (type==FEMCondition::BOUNDARY_CONDITION) return "Boundary Conditions";
+	else if (type==FEMCondition::INITIAL_CONDITION) return "Initial Conditions";
+	else if (type==FEMCondition::SOURCE_TERM) return "Source Terms";
+	else return "Unspecified";
+}
+
 
 BoundaryCondition::BoundaryCondition(const CBoundaryCondition &bc, const std::string &geometry_name)
 : FEMCondition(geometry_name, FEMCondition::BOUNDARY_CONDITION)
