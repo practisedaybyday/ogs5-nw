@@ -111,7 +111,8 @@ int XMLInterface::readProjectFile(const QString &fileName)
 			std::string msh_name = path.toStdString() + fileList.at(i).toElement().text().toStdString();
 			Mesh_Group::CFEMesh* msh = FileIO::OGSMeshIO::loadMeshFromFile(msh_name);
 			QFileInfo fi(QString::fromStdString(msh_name));
-			_project->addMesh(msh, fi.fileName().toStdString()); 
+			std::string name = fi.fileName().toStdString();
+			_project->addMesh(msh, name); 
 			//GridAdapter msh(fileList.at(i).toElement().text().toStdString());
 			// TODO gridadapter to mesh-models
 		}
