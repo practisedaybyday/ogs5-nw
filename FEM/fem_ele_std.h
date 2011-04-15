@@ -318,26 +318,27 @@ namespace FiniteElement
    };
 
    // Vector for storing element values WW
-   class ElementValue
-   {
-      public:
-         ElementValue(CRFProcess* m_pcs, CElem* ele);
-         ~ElementValue();
-         void getIPvalue_vec(const int IP, double * vec);
-	     void getIPvalue_vec_phase(const int IP, int phase, double * vec); //SB 09/2010
-         void GetEleVelocity(double * vec);
-      private:
-         // Friend class
-         friend class ::CRFProcess;
-         friend class FiniteElement::CFiniteElementStd;
-         friend class ::COutput;                  //OK
-         // Process
-         CRFProcess *pcs;
-         // Data
-         Matrix Velocity;
-         Matrix Velocity_g;
-   };
-}                                                 // end namespace
+class ElementValue
+{
+public:
+	ElementValue(CRFProcess* m_pcs, CElem* ele);
+	~ElementValue();
+	void getIPvalue_vec(const int IP, double * vec);
+	void getIPvalue_vec_phase(const int IP, int phase, double * vec); //SB 09/2010
+	void GetEleVelocity(double * vec);
+	Matrix Velocity;
+private:
+		// Friend class
+	friend class ::CRFProcess;
+	friend class FiniteElement::CFiniteElementStd;
+	friend class ::COutput;                  //OK
+		// Process
+	CRFProcess *pcs;
+		// Data
+	Matrix Velocity_g;
+};
+
+} // end namespace
 
 
 /*------------------------------------------------------------------

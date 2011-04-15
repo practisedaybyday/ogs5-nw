@@ -51,6 +51,7 @@ extern int ReadData(char*, GEOLIB::GEOObjects& geo_obj, std::string& unique_name
 // Finite element
 #include "fem_ele_std.h"
 #include "rf_bc_new.h"
+#include "Output.h"
 #include "rf_out_new.h"
 #include "tools.h"
 #include "rf_node.h"
