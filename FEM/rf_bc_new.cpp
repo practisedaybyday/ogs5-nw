@@ -223,7 +223,9 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
             if (pnt == NULL)
             {
                std::cerr << "ERROR in CBoundaryCondition::Read() - Point name \"" << geo_name << "\" from geometry \"" << unique_fname << "\" not found!" << std::endl;
+#ifndef OGS_USE_QT
                exit (1);
+#endif
             }
 
             in.clear();

@@ -28,6 +28,7 @@
 #cmakedefine OGS_PYTHON
 #cmakedefine MSVC
 #cmakedefine OGS_USE_OPENSG
+#cmakedefine OGS_USE_QT
 
 #cmakedefine OGS_USE_VRPN
 
