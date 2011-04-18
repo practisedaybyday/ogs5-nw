@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-//#include "rf_out_new.h"
 #include "MSHEnums.h"
 
 class COutput;

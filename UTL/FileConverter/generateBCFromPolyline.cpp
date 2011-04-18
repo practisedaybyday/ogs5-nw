@@ -8,6 +8,7 @@
 // GEO
 #include "GEOObjects.h"
 #include "PolylineVec.h"
+#include "ProjectData.h"
 
 // FileIO
 #include "XMLInterface.h"
@@ -26,22 +27,24 @@ int main (int argc, char *argv[])
 		std::cout << "\tcreates for the given polyline points boundary conditions" << std::endl;
 		return -1;
 	}
-	GEOLIB::GEOObjects *geo_objects (new GEOLIB::GEOObjects);
+	GEOLIB::GEOObjects *geo_objs (new GEOLIB::GEOObjects);
 	std::string schema_name("/home/fischeth/workspace/OGS-FirstFloor/sources/FileIO/OpenGeoSysGLI.xsd");
-	XMLInterface xml(geo_objects, schema_name);
+	ProjectData *project_data (new ProjectData);
+	project_data->setGEOObjects (geo_objs);
+	XMLInterface xml(project_data, schema_name);
 	std::string fname (argv[1]);
 	xml.readGLIFile(QString::fromStdString (fname));
 
 	std::vector<std::string> geo_names;
-	geo_objects->getGeometryNames (geo_names);
+	geo_objs->getGeometryNames (geo_names);
 	if (geo_names.empty ()) {
 		std::cout << "no geometries found" << std::endl;
 		return -1;
 	}
-	const GEOLIB::PolylineVec* ply_vec (geo_objects->getPolylineVecObj(geo_names[0]));
+	const GEOLIB::PolylineVec* ply_vec (geo_objs->getPolylineVecObj(geo_names[0]));
 	if (!ply_vec) {
 		std::cout << "could not found polylines" << std::endl;
-		delete geo_objects;
+		delete project_data;
 		return -1;
 	}
 	const size_t n_ply (ply_vec->size());
@@ -68,7 +71,7 @@ int main (int argc, char *argv[])
 	if (argc == 2)
 		return 0;
 
-	std::vector<GEOLIB::Point*> const* geo_pnts (geo_objects->getPointVec(geo_names[0]));
+	std::vector<GEOLIB::Point*> const* geo_pnts (geo_objs->getPointVec(geo_names[0]));
 	// write gli file and bc file
 	std::ofstream gli_out ("TB.gli");
 	std::ofstream bc_out ("TB.bc");
@@ -90,6 +93,6 @@ int main (int argc, char *argv[])
 		bc_out.close ();
 	}
 
-	delete geo_objects;
+	delete project_data;
 }
 

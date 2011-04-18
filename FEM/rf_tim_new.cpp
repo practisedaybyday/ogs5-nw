@@ -19,6 +19,7 @@ last modified:
 #include "rf_mmp_new.h"
 #include "fem_ele_std.h"
 #include "mathlib.h"
+#include "Output.h"
 // kg44 not found #include "elements.h"
 #include "rfmat_cp.h"
 //WW #include "elements.h" //set functions for stability criteria
