@@ -19,39 +19,78 @@ writeCompressedStorageFmt (std::ostream &os, unsigned n, unsigned* iA, unsigned*
   os.write((char*) A, iA[n]*sizeof(T));
 }
 
-template<class T> void
-readCompressedStorageFmt (std::istream &is, unsigned &n, unsigned* &iA, unsigned* &jA, T* &A)
+template<class T> void readCompressedStorageFmt(std::istream &is, unsigned &n,
+		unsigned* &iA, unsigned* &jA, T* &A)
 {
-  is.read((char*) &n, sizeof(unsigned));
-  if (iA != NULL) {
-    delete [] iA;
-    delete [] jA;
-    delete [] A;
-  }
-  iA = new unsigned[n+1];
-  assert(iA!=NULL);
-  is.read((char*) iA, (n+1)*sizeof(unsigned));
+	is.read((char*) &n, sizeof(unsigned));
+	if (iA != NULL) {
+		delete[] iA;
+		delete[] jA;
+		delete[] A;
+	}
+	iA = new unsigned[n + 1];
+	assert(iA != NULL);
+	is.read((char*) iA, (n + 1) * sizeof(unsigned));
 
-  jA = new unsigned[iA[n]];
-  assert(jA!=NULL);
-  is.read((char*) jA, iA[n]*sizeof(unsigned));
+	jA = new unsigned[iA[n]];
+	assert(jA != NULL);
+	is.read((char*) jA, iA[n] * sizeof(unsigned));
 
-  A = new T[iA[n]];
-  assert(A!=NULL);
-  is.read((char*) A, iA[n]*sizeof(T));
+	A = new T[iA[n]];
+	assert(A != NULL);
+	is.read((char*) A, iA[n] * sizeof(T));
 
 #ifndef NDEBUG
-  // do simple checks
-  if (iA[0]!=0)
-    std::cerr << std::endl
-              << "CRS matrix: array iA doesn't start with 0" << std::endl;
+	// do simple checks
+	if (iA[0] != 0) std::cerr << std::endl
+			<< "CRS matrix: array iA doesn't start with 0" << std::endl;
 
-  unsigned i = 0;
-  while (i<iA[n] && jA[i]<n) ++i;
-  if (i<iA[n])
-    std::cerr << std::endl
-              << "CRS matrix: the " << i << "th entry of jA has the value "
-              << jA[i] << ", which is out of bounds." << std::endl;
+	unsigned i = 0;
+	while (i < iA[n] && jA[i] < n)
+		++i;
+	if (i < iA[n]) std::cerr << std::endl << "CRS matrix: the " << i
+			<< "th entry of jA has the value " << jA[i]
+			<< ", which is out of bounds." << std::endl;
+#endif
+}
+
+template<class T> void readCompressedStorageFmt(std::istream &is, long &n,
+		long* &iA, long* &jA, T* &A, T* &rhs)
+{
+	is.read((char*) &n, sizeof(long));
+	if (iA != NULL) {
+		delete[] iA;
+		delete[] jA;
+		delete[] A;
+	}
+
+	iA = new long[n + 1];
+	assert(iA != NULL);
+	is.read((char*) iA, (n + 1) * sizeof(long));
+
+	jA = new long[iA[n]];
+	assert(jA != NULL);
+	is.read((char*) jA, iA[n] * sizeof(long));
+
+	A = new T[iA[n]];
+	assert(A != NULL);
+	is.read((char*) A, iA[n] * sizeof(T));
+
+	rhs = new T[n];
+	assert(rhs != NULL);
+	is.read((char*) rhs, n * sizeof(T));
+
+#ifndef NDEBUG
+	// do simple checks
+	if (iA[0] != 0) std::cerr << std::endl
+			<< "CRS matrix: array iA doesn't start with 0" << std::endl;
+
+	long i = 0;
+	while (i < iA[n] && jA[i] < n)
+		++i;
+	if (i < iA[n]) std::cerr << std::endl << "CRS matrix: the " << i
+			<< "th entry of jA has the value " << jA[i]
+			<< ", which is out of bounds." << std::endl;
 #endif
 }
 

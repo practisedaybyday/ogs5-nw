@@ -1,119 +1,20 @@
 #### OGS-5 Project ####
-## Programmed by Lars Bilke
-## Modified by:
-##            WW 20.04.2010. 
 
 # Specify minimum CMake version
 cmake_minimum_required(VERSION 2.6)	# or set to 2.4 for older systems (like JUGENE...)
 
-# Project name
-project( OGS-5 )
+# Project name is set later
+PROJECT(tmp)
 
-option ( CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
+### CMake setup ###
+INCLUDE(CMakeConfiguration/CMakeSetup.cmake)
 
-if( CMAKE_CMD_ARGS )
-  message( STATUS "CMake args: ${CMAKE_CMD_ARGS}")
-endif( CMAKE_CMD_ARGS )
+### Find directories and libraries ###
+INCLUDE (CMakeConfiguration/Find.cmake)
 
-# OGS version information. Adjust these if you release a new version.
-SET (OGS_VERSION_MAJOR 5)
-SET (OGS_VERSION_MINOR 1)
-SET (OGS_VERSION_PATCH 01)
-SET (OGS_RELEASE_PERSONS "BG")
-SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}(${OGS_RELEASE_PERSONS})")
-# should we use ISO dates: 2010-12-31 ?
-SET (OGS_DATE "17.03.2011")
-
-# Adds useful macros and variables
-INCLUDE( CMakeConfiguration/Macros.cmake )
-
-# Suppress waring on add_subdirectory(dir) where dir contains no CMakeLists.txt
-IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.7)
-	CMAKE_POLICY(SET CMP0014 OLD)
-ENDIF ()
-
-IF (WIN32)
-	## For Visual Studio compiler
-	IF (MSVC)
-		ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-		ADD_DEFINITIONS(-D_CRT_NONSTDC_NO_WARNINGS)
-		ADD_DEFINITIONS(-D_CRT_XNONSTDC_NO_WARNINGS)
-		SET ( CMAKE_CONFIGURATION_TYPES "Release;Debug" CACHE TYPE INTERNAL FORCE )
-		# Sets warning level 3 and ignores some warnings
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /wd4290")
-	ELSE (MSVC)
-#FOR CYGWIN.  25.02.2010. WW
-		MESSAGE (STATUS "Might be GCC under cygwin.")
-#		MESSAGE (FATAL_ERROR "Aborting: On Windows only the Visual Studio compiler is supported!")
-	ENDIF (MSVC)
-ENDIF (WIN32)
-
-### For GNU C/CXX. WW
-IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
-	IF( NOT CMAKE_BUILD_TYPE STREQUAL "Debug" )
-		MESSAGE(STATUS "Set GCC release flags")
-		SET(CMAKE_CXX_FLAGS "-O3 -DNDEBUG")
-	ENDIF()
-	# -g
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wall -Wextra -fno-nonansi-builtins")
-        ADD_DEFINITIONS(
-		-DGCC
-	)
-	OPTION (OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
-	IF (OGS_PROFILE)
-		SET(PROFILE_FLAGS "-pg -fno-omit-frame-pointer -O2 -DNDEBUG -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PROFILE_FLAGS}")
-		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${PROFILE_FLAGS}ctest")
-	ENDIF (OGS_PROFILE)
-ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
-
-
-# Set build directories
-SET( EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin )
-SET( LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib )
-IF (MSVC)
-	SET(OGS_EXECUTABLE ${EXECUTABLE_OUTPUT_PATH}/release/ogs)
-ELSE (MSVC)
-	SET(OGS_EXECUTABLE ${EXECUTABLE_OUTPUT_PATH}/ogs)
-ENDIF (MSVC)
-
-# Find precompiled libraries (for BRNS GEMS LIS)
-FIND_PATH (OGS_PRECOMPILED_LIBS_DIR_FOUND GEMS3_rl.lib ${PROJECT_SOURCE_DIR}/../Libs/precompiled)
-IF (OGS_PRECOMPILED_LIBS_DIR_FOUND)
-	INCLUDE_DIRECTORIES (${PROJECT_SOURCE_DIR}/../Libs/precompiled)
-	LINK_DIRECTORIES (${PROJECT_SOURCE_DIR}/../Libs/precompiled)
-ELSE (OGS_PRECOMPILED_LIBS_DIR_FOUND)
-	IF (WIN32)
-		IF (OGS_FEM_BRNS OR OGS_FEM_GEMS OR OGS_FEM_CHEMAPP)
-			MESSAGE (FATAL_ERROR "Precompiled libraries not found! Make sure to also checked out the trunk/Libs directory beneath your sources directory.")
-		ENDIF (OGS_FEM_BRNS OR OGS_FEM_GEMS OR OGS_FEM_CHEMAPP)
-	ELSE (WIN32)
-		IF (OGS_FEM_LIS)
-			MESSAGE (FATAL_ERROR "Precompiled libraries not found! Make sure to also checked out the trunk/Libs directory beneath your sources directory.")
-		ENDIF (OGS_FEM_LIS)	
-	ENDIF (WIN32)
-ENDIF (OGS_PRECOMPILED_LIBS_DIR_FOUND)
-
-FIND_PATH (LIB_DIR_FOUND GEMS3_rl.lib ${PROJECT_SOURCE_DIR}/LIB)
-IF (LIB_DIR_FOUND)
-	INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/LIB )
-	LINK_DIRECTORIES( ${PROJECT_SOURCE_DIR}/LIB )
-ENDIF (LIB_DIR_FOUND)
-
-# Set additional CMake modules path
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeConfiguration")
-
-
-###-----WW------------------------------------------------------
-#OPTION Parallel
-OPTION(PARALLEL_USE_MPI OFF)
-OPTION(PARALLEL_USE_OPENMP OFF)
-IF(_OPENMP)
-	SET(PARALLEL_USE_OPENMP ON)
-ENDIF(_OPENMP)
-IF(PARALLEL_USE_OPENMP)
-	SET(_OPENMP ON)
-ENDIF(PARALLEL_USE_OPENMP)
+###############
+### Options ###
+###############
 
 # Configurations
 OPTION(OGS_FEM "Default configuration" OFF)
@@ -136,6 +37,9 @@ IF (NOT OGS_FEM AND NOT OGS_FEM_SP AND NOT OGS_FEM_GEMS AND NOT OGS_FEM_PQC AND 
 	SET (OGS_FEM ON)
 ENDIF (NOT OGS_FEM AND NOT OGS_FEM_SP AND NOT OGS_FEM_GEMS AND NOT OGS_FEM_PQC AND NOT OGS_FEM_BRNS AND NOT OGS_FEM_CHEMAPP AND NOT OGS_FEM_LIS AND NOT OGS_FEM_MKL AND NOT OGS_FEM_MPI AND NOT OGS_USE_QT)
 
+# Check if a valid OGS configuration is given (see Macros.cmake)
+CHECK_CONFIG()
+
 # Additional options
 OPTION(OGS_PACKAGING "Creating installers / packages" OFF)
 IF (OGS_PACKAGING)
@@ -147,99 +51,32 @@ OPTION(OGS_CMAKE_DEBUG "Show additional cmake debug information" OFF)
 OPTION(OGS_ONE_BIG_GTEST "Should all gtests be collected to one ctest" ON)
 OPTION(OGS_USE_NETCDF "NetCDF interface" OFF)
 OPTION(OGS_USE_OPENSG "VTK to OpenSG converter" OFF)
+OPTION(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OFF)
+OPTION(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OFF)
 OPTION(OGS_BUILD_INFO "Should build information be generated" ON)
+OPTION (CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
 
-# Check if a valid OGS configuration is given (see Macros.cmake)
-CHECK_CONFIG()
+MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_USE_OPENSG OGS_USE_VRPN OGS_VRED_PLUGIN OGS_BUILD_INFO CMAKE_CMD_ARGS)
+
+###########################################################################
+### OGS version information. Adjust these if you release a new version. ###
+###########################################################################
+SET (OGS_VERSION_MAJOR 5)
+SET (OGS_VERSION_MINOR 1)
+SET (OGS_VERSION_PATCH 02)
+SET (OGS_RELEASE_PERSONS "KR/TF/LB")
+SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}(${OGS_RELEASE_PERSONS})")
+# should we use ISO dates: 2010-12-31 ?
+SET (OGS_DATE "19.04.2011")
+
+### Compiler setup ###
+INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
 
 # Check for number of processors
 CHECK_PROCESSOR_COUNT()
 
-###LIBRARY
-FIND_PACKAGE (PythonInterp)
-FIND_PACKAGE( Shapelib )
-
-IF (OGS_PYTHON)
-	FIND_PACKAGE (PythonLibs 2.5 REQUIRED)
-ENDIF (OGS_PYTHON)
-
-# Find Qt4 library
-IF(NOT OGS_DONT_USE_QT)
-	FIND_PACKAGE( Qt4 4.5)
-ENDIF(NOT OGS_DONT_USE_QT)
-
-IF ( QT4_FOUND )
-	# OPTION(OGS_GUI OFF )
-	# this is needed to correctly link the qt libraries through target_link_libraries
-	# By default only QtCore and QtGui modules are enabled
-	# other modules must be enabled like this:
-	SET( QT_USE_QTOPENGL TRUE )
-	SET( QT_USE_QTSQL TRUE )
-	SET( QT_USE_QTTEST TRUE )
-	SET( QT_USE_QTXML TRUE )
-	IF (QT_QTXMLPATTERNS_FOUND)
-		set( QT_USE_QTXMLPATTERNS TRUE )
-	ENDIF (QT_QTXMLPATTERNS_FOUND)
-	INCLUDE( ${QT_USE_FILE} )
-	IF (OGS_USE_QT)
-		SET(OGS_USE_NETCDF ON)
-	ENDIF (OGS_USE_QT)
-ENDIF (QT4_FOUND )
-
-IF (OGS_BUILD_INFO)
-	find_package( Subversion )
-	if(Subversion_FOUND)
-	  #Subversion_WC_INFO(${CMAKE_SOURCE_DIR} "svn") , not a working copy
-	  execute_process(
-	    COMMAND "svnversion" "--no-newline" ${CMAKE_SOURCE_DIR}
-	    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-	    OUTPUT_VARIABLE svn_revision
-	    ERROR_VARIABLE svn_error
-	    )
-	  set( SVN_REVISION "${svn_revision}" )
-	endif( Subversion_FOUND )
-
-	if( NOT MSVC )
-	  # see if there is a file that will work with find_package
-	  find_file( GIT FindGit.cmake CMakeConfiguration/ )
-	  if( GIT STREQUAL GIT-NOTFOUND )
-	    message( WARNING "there is no FindGit.cmake file, so I am downloading one that is licensed under the GPL, copyright Szilard Pall (pszilard@cbr.su.se).  Do not commit it to the repository." )
-	    file( DOWNLOAD http://repo.or.cz/w/gromacs.git/blob_plain/f81efa276ee7e1c41197d9d8b56b91c7764e0641:/cmake/FindGit.cmake ${PROJECT_SOURCE_DIR}/CMakeConfiguration/FindGit.cmake TIMEOUT 10 )
-	  endif( GIT STREQUAL GIT-NOTFOUND )
-	    execute_process(
-	      COMMAND "date" "+%Y-%m-%d %H:%M:%S"
-	      OUTPUT_VARIABLE build_timestamp
-	      OUTPUT_STRIP_TRAILING_WHITESPACE
-	      )
-	    if( build_timestamp )
-	       set( BUILD_TIMESTAMP "${build_timestamp}" )
-	       message( STATUS "Build timestamp: ${BUILD_TIMESTAMP}" )
-	    endif()
-	  find_package( Git )
-	  if(Git_FOUND)
-	    execute_process(
-	      COMMAND "git" "describe" "--always"
-	      COMMAND "xargs" "-Ixx" "git" "name-rev" "xx"
-	      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-	      OUTPUT_VARIABLE git_commit_info
-	      OUTPUT_STRIP_TRAILING_WHITESPACE
-	      ERROR_VARIABLE not_git_repo
-	      )
-	    if( git_commit_info )
-	      #message( STATUS "Git executable version: " ${Git_VERSION} )
-	      message( STATUS "Git commit: " ${git_commit_info} )
-	      set( GIT_COMMIT_INFO "${git_commit_info}" )
-	    else( git_commit_info )
-	      if( not_git_repo )
-		message( STATUS "Git not versioning the source" )
-	      endif( not_git_repo )
-	    endif( git_commit_info )
-	  endif( Git_FOUND )
-	endif( NOT MSVC )
-ENDIF (OGS_BUILD_INFO)
-
-# This is for Configure.h which is generated later
-INCLUDE_DIRECTORIES( ${PROJECT_BINARY_DIR}/Base )
+### General project setup ###
+INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
 
 IF(OGS_FEM)
    MESSAGE (STATUS  "Configuring for FEM command line" )	
@@ -248,62 +85,130 @@ ENDIF(OGS_FEM)
 IF(OGS_FEM_SP)
 	MESSAGE (STATUS  "Configuring for FEM command line with new sparse matrix" )	
 	SET( PRJ_EXT "-SP" )
-	INCLUDE(configs/sparse.cmake)
+	ADD_DEFINITIONS(-DNEW_EQS)
 ENDIF(OGS_FEM_SP)
 
 IF(OGS_FEM_MPI)
 	MESSAGE (STATUS  "Configuring for FEM command line with MPI" )
+MESSAGE (WARNING "Make sure that you specified the mpi c and c++ compiler on the command line. E.g. cmake -DOGS_FEM_MPI=ON -DCMAKE_C_COMPILER=/opt/openmpi-1.4.1/bin/mpicc -DCMAKE_CXX_COMPILER=/opt/openmpi-1.4.1/bin/mpic++ ..")
 	SET( PRJ_EXT "-MPI" )
-	SET(PARALLEL_USE_MPI ON)	
-	INCLUDE(configs/sparse.cmake)
+	SET(PARALLEL_USE_MPI ON CACHE BOOL "Use Message Passing Interface")
+	MARK_AS_ADVANCED(PARALLEL_USE_MPI)
+	ADD_DEFINITIONS(-DUSE_MPI)
+	ADD_DEFINITIONS(-DNEW_EQS)
 ENDIF(OGS_FEM_MPI)
 
 IF(OGS_FEM_GEMS)
 	MESSAGE (STATUS  "Configuring for FEM command line with GEMS" )
 	SET( PRJ_EXT "-GEMS" )
-	INCLUDE(configs/gems.cmake)
+	ADD_DEFINITIONS(-DNO_ERROR_CONTROL)
+	ADD_DEFINITIONS(-DGEM_REACT)
+	ADD_DEFINITIONS(-DGEMlib)
+	ADD_DEFINITIONS(-DIPMGEMPLUGIN)
+	ADD_DEFINITIONS(-DNEW_EQS)
+	IF (MSVC)
+		SET (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+		SET (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+	ENDIF (MSVC)
+
+	IF(PARALLEL_USE_MPI)
+		ADD_DEFINITIONS(-DUSE_MPI_GEMS)
+	ENDIF(PARALLEL_USE_MPI)
 ENDIF(OGS_FEM_GEMS)
 
 IF(OGS_FEM_PQC)
 	MESSAGE (STATUS  "Configuring for FEM command line with PQC" )	
 	SET( PRJ_EXT "-PQC" )
-	INCLUDE(configs/PQC.cmake)
+	MESSAGE (STATUS "Configuration: g++ and LIBPHREEQC")
+	ADD_DEFINITIONS(-D_POSIX_SOURCE)
+	ADD_DEFINITIONS(-DNO_ERROR_CONTROL)
+	ADD_DEFINITIONS(-DNEW_EQS)
+
+	IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)  #WW
+		IF (LIBPQC_DEBUG)
+			MESSAGE (STATUS  "Compiling ogs and LIBPHREEQC with debug flags" )
+			SET(CMAKE_CXX_FLAGS "-O0 -ggdb -Wall")
+		ELSE (LIBPQC_DEBUG)
+			ADD_DEFINITIONS ( "-O3" )
+		ENDIF (LIBPQC_DEBUG)
+	ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
+	SET (LIBPQC ON)
     ADD_SUBDIRECTORY ( PQC )
 ENDIF(OGS_FEM_PQC)
 
 IF(OGS_FEM_BRNS)
 	MESSAGE (STATUS  "Configuring for FEM command line with BRNS" )
 	SET( PRJ_EXT "-BRNS" )
-	INCLUDE(configs/BRNS.cmake)
+	ADD_DEFINITIONS(-DNEW_EQS)
+	ADD_DEFINITIONS(-DBRNS)
+	ADD_DEFINITIONS(-DNO_ERROR_CONTROL)
+	ADD_DEFINITIONS(-D_POSIX_SOURCE)
+	IF(PARALLEL_USE_MPI)
+			ADD_DEFINITIONS(-DUSE_MPI_BRNS)
+	ENDIF(PARALLEL_USE_MPI)
 ENDIF(OGS_FEM_BRNS)
 
 IF(OGS_FEM_LIS)
 	MESSAGE (STATUS  "Configuring for FEM command line with LIS" )
 	SET( PRJ_EXT "-LIS" )
-	SET(PARALLEL_USE_OPENMP ON)
-	INCLUDE(configs/vc_lis.cmake)
+	ADD_DEFINITIONS(-DNEW_EQS)
+	SET(PARALLEL_USE_OPENMP ON CACHE BOOL "Use Library of Iterative Solvers")
+	MARK_AS_ADVANCED(PARALLEL_USE_OPENMP)
+	SET(LIS ON CACHE BOOL "Use Library of Iterative Solvers")
+	MARK_AS_ADVANCED(LIS)
+	ADD_DEFINITIONS( -DIPMGEMPLUGIN )
 ENDIF(OGS_FEM_LIS)
 
 IF(OGS_FEM_MKL)
 	MESSAGE (STATUS  "Configuring for FEM command line with MKL" )
 	SET( PRJ_EXT "-MKL" )
-	SET(PARALLEL_USE_OPENMP ON)
-	INCLUDE(configs/pardiso.cmake)
+	ADD_DEFINITIONS(-DNO_ERROR_CONTROL)
+	ADD_DEFINITIONS(-DNEW_EQS)
+	SET(PARALLEL_USE_OPENMP ON CACHE BOOL "Use Library of Iterative Solvers")
+	MARK_AS_ADVANCED(PARALLEL_USE_OPENMP)
+	SET(LIS ON CACHE BOOL "Use Library of Iterative Solvers")
+	MARK_AS_ADVANCED(LIS)
+	SET(MKL ON CACHE BOOL "Use Math Kernel Library")
+	MARK_AS_ADVANCED(MKL)
 ENDIF(OGS_FEM_MKL)
 
 IF(OGS_FEM_CHEMAPP)
 	MESSAGE (STATUS  "Configuring for FEM command line with CHEMAPP" )
 	SET( PRJ_EXT "-CHEMAPP" )
-	INCLUDE(configs/chemapp.cmake)
+	ADD_DEFINITIONS(-DCHEMAPP)
 ENDIF(OGS_FEM_CHEMAPP)
 
-INCLUDE(FEM.cmake )
+# Add subdirectories with the projects
+ADD_SUBDIRECTORY( Base )
+ADD_SUBDIRECTORY( MathLib )
+ADD_SUBDIRECTORY( GEO )
+ADD_SUBDIRECTORY( MSH )
+ADD_SUBDIRECTORY( FEM )
+IF(OGS_FEM_GEMS)
+	ADD_SUBDIRECTORY( GEM )
+ENDIF(OGS_FEM_GEMS)
+IF(OGS_FEM_CHEMAPP)
+	ADD_SUBDIRECTORY( EQL )
+	LINK_DIRECTORIES( ${CMAKE_SOURCE_DIR}/EQL )
+ENDIF(OGS_FEM_CHEMAPP)
+ADD_SUBDIRECTORY( FileIO )
+ADD_SUBDIRECTORY( OGSProject )
+ADD_SUBDIRECTORY( OGS )
 
 IF(OGS_USE_QT)
    MESSAGE (STATUS  "Configuring for OGS with GUI" )	
    SET(OGS_FEM ON )
-   #INCLUDE(FEM.cmake )
-   INCLUDE(GUI.cmake )
+	IF(OGS_USE_OPENSG AND CMAKE_COMPILER_IS_GNUCXX)
+		ADD_DEFINITIONS (-D__STDC_FORMAT_MACROS)	# for OpenSG compiling
+	ENDIF()
+   ADD_SUBDIRECTORY( Qt )
+ENDIF(OGS_USE_QT)
+
+# Project name
+IF(OGS_USE_QT)
+	PROJECT( OGS-${OGS_VERSION_MAJOR}-GUI )
+ELSE(OGS_USE_QT)
+	PROJECT( OGS-FEM-${OGS_VERSION_MAJOR}${PRJ_EXT} )
 ENDIF(OGS_USE_QT)
 
 # Create Configure.h
@@ -314,35 +219,13 @@ IF (MSVC)
 	ADD_SUBDIRECTORY (CMakeConfiguration)
 ENDIF (MSVC)
 
-IF(CMAKE_MINOR_VERSION GREATER 6)
-	IF (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005" AND NOT OGS_FEM_GEMS )
-		#SET (GTEST_MSVC_SEARCH MT)
-		SET (GTEST_ROOT ${PROJECT_SOURCE_DIR}/../Libs/gtest)
-	ENDIF (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005" AND NOT OGS_FEM_GEMS )
-	FIND_PACKAGE (GTest)
-ENDIF(CMAKE_MINOR_VERSION GREATER 6)
-
-IF(DEFINED BENCHMARK_DIR)
-	FIND_PATH (BENCHMARK_DIR_FOUND copy.py ${BENCHMARK_DIR})
-ELSE()
-	FIND_PATH (BENCHMARK_DIR_FOUND copy.py ${PROJECT_SOURCE_DIR}/../benchmarks)
-ENDIF()
-
 IF (BENCHMARK_DIR_FOUND OR GTEST_FOUND)
 	ENABLE_TESTING()
 ENDIF (BENCHMARK_DIR_FOUND OR GTEST_FOUND)
 
-
-IF(DEFINED EXAMPLEDATA_DIR)
-	FIND_PATH (EXAMPLEDATA_DIR_FOUND points.gli ${EXAMPLEDATA_DIR})
-ELSE()
-	FIND_PATH (EXAMPLEDATA_DIR_FOUND points.gli ${PROJECT_SOURCE_DIR}/../ExampleData)
-ENDIF()
-
-
-IF (EXAMPLEDATA_DIR_FOUND AND OGS_USE_QT)
+IF (EXAMPLEDATA_DIR_FOUND)
 	INSTALL (DIRECTORY ${EXAMPLEDATA_DIR_FOUND} DESTINATION . PATTERN .svn EXCLUDE)
-ENDIF (EXAMPLEDATA_DIR_FOUND AND OGS_USE_QT)
+ENDIF (EXAMPLEDATA_DIR_FOUND)
 
 IF (GTEST_FOUND)
 	include_directories(${GTEST_INCLUDE_DIRS})

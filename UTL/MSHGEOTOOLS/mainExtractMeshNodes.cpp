@@ -56,6 +56,7 @@ int main (int argc, char *argv[])
 		std::cerr << "could not read mesh from file " << std::endl;
 		return -1;
 	}
+	mesh->ConstructGrid();
 
 	// *** read geometry
 	tmp = argv[3];
@@ -68,6 +69,27 @@ int main (int argc, char *argv[])
 	tmp = argv[4];
 	FileIO::readGLIFileV4(tmp, geo);
 
+//	{
+//		const std::vector<GEOLIB::Point*>* pnts (geo->getPointVec (tmp));
+//		if (pnts) {
+//			std::string fname ("MeshIDs.txt");
+//			std::ofstream out (fname.c_str());
+//
+//			std::string fname_gli ("MeshNodesAsPnts.gli");
+//			std::ofstream pnt_out (fname_gli.c_str());
+//			pnt_out << "#POINTS" << std::endl;
+//
+//			Mesh_Group::ExtractMeshNodes extract_mesh_nodes (mesh);
+//
+//			const size_t n_pnts (pnts->size());
+//			for (size_t k(0); k<n_pnts; k++) {
+//				extract_mesh_nodes.writeNearestMeshNodeToPoint (out, pnt_out, *((*pnts)[k]));
+//			}
+//			pnt_out << "#STOP" << std::endl;
+//		}
+//		return 0;
+//	}
+
 	// *** get Polygon
 	const std::vector<GEOLIB::Polyline*>* plys (geo->getPolylineVec (tmp));
 	if (!plys) {
@@ -79,7 +101,7 @@ int main (int argc, char *argv[])
 
 	Mesh_Group::ExtractMeshNodes extract_mesh_nodes (mesh);
 
-	std::string fname ("MeshIds.txt");
+	std::string fname ("MeshIDs.txt");
 	std::ofstream out (fname.c_str());
 
 	std::string fname_gli ("MeshNodesAsPnts.gli");
@@ -93,6 +115,7 @@ int main (int argc, char *argv[])
 			std::cout << "polyline " << k << " is not closed" << std::endl;
 		} else {
 			GEOLIB::Polygon polygon (*((*plys)[k]));
+//			extract_mesh_nodes.writeMesh2DNodeIDAndArea (out, pnt_out, polygon);
 			extract_mesh_nodes.writeTopSurfaceMeshNodeIDs (out, pnt_out, polygon);
 			// write all nodes - not only the surface nodes
 //			extract_mesh_nodes.writeMeshNodeIDs (out, pnt_out, polygon);

@@ -6,12 +6,18 @@
  */
 
 #include <cstdlib> // for exit
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 #include "Polygon.h"
 
 // MathLib
 #include "AnalyticalGeometry.h"
 #include "MathTools.h"
+#include "Vector3.h"
 
 // Base
 #include "quicksort.h"
@@ -66,7 +72,6 @@ bool Polygon::isPntInPolygon (GEOLIB::Point const & pnt) const
 				switch (getEdgeType(k, pnt)) {
 				case EdgeType::TOUCHING:
 					return true;
-					break;
 				case EdgeType::CROSSING:
 					n_intersections++;
 					break;
@@ -175,7 +180,6 @@ EdgeType::value Polygon::getEdgeType (size_t k, GEOLIB::Point const & pnt) const
 	case Location::SOURCE:
 	case Location::DESTINATION:
 		return EdgeType::TOUCHING;
-		break;
 	default:
 		return EdgeType::INESSENTIAL;
 	}
@@ -191,42 +195,75 @@ void Polygon::calculateAxisAlignedBoundingBox ()
 
 void Polygon::ensureCWOrientation ()
 {
-	size_t n_nodes (getNumberOfPoints());
-	// get the left most upper point
+	// *** pre processing: rotate points to xy-plan
+	// *** copy points to vector - last point is identical to the first
+	size_t n_pnts (this->getNumberOfPoints()-1);
+	std::vector<GEOLIB::Point*> tmp_polygon_pnts;
+	for (size_t k(0); k < n_pnts; k++) {
+		tmp_polygon_pnts.push_back (new GEOLIB::Point (*(this->getPoint(k))));
+	}
+
+	// *** calculate supporting plane (plane normal and
+	MATHLIB::Vector plane_normal;
+	double d;
+	MATHLIB::getNewellPlane(tmp_polygon_pnts, plane_normal, d);
+
+	// *** rotate if necessary
+	double tol (sqrt(std::numeric_limits<double>::min()));
+	if (fabs(plane_normal[0]) > tol || fabs(plane_normal[1]) > tol) {
+		// rotate copied points into x-y-plane
+		MATHLIB::rotatePointsToXY(plane_normal, tmp_polygon_pnts);
+	}
+
+	for (size_t k(0); k<tmp_polygon_pnts.size(); k++) {
+		(*(tmp_polygon_pnts[k]))[2] = 0.0; // should be -= d but there are numerical errors
+	}
+
+	// *** get the left most upper point
 	size_t min_x_max_y_idx (0);	// for orientation check
-	for (size_t k(0); k<n_nodes; k++) {
-		if ((*(getPoint(k)))[0] <= (*(getPoint(min_x_max_y_idx)))[0]) {
-			if ((*(getPoint(k)))[0] < (*(getPoint(min_x_max_y_idx)))[0]) {
+	for (size_t k(0); k<n_pnts; k++) {
+		if ((*(tmp_polygon_pnts[k]))[0] <= (*(tmp_polygon_pnts[min_x_max_y_idx]))[0]) {
+			if ((*(tmp_polygon_pnts[k]))[0] < (*(tmp_polygon_pnts[min_x_max_y_idx]))[0]) {
 				min_x_max_y_idx = k;
 			} else {
-				if ((*(getPoint(k)))[1] > (*(getPoint(min_x_max_y_idx)))[1]) {
+				if ((*(tmp_polygon_pnts[k]))[1] > (*(tmp_polygon_pnts[min_x_max_y_idx]))[1]) {
 					min_x_max_y_idx = k;
 				}
 			}
 		}
 	}
-	// determine orientation
+	// *** determine orientation
 	MATHLIB::Orientation orient;
-	if (0 < min_x_max_y_idx && min_x_max_y_idx < n_nodes-1) {
+	if (0 < min_x_max_y_idx && min_x_max_y_idx < n_pnts-2) {
 		orient = MATHLIB::getOrientation (
-			(*(getPoint(min_x_max_y_idx-1)))[0], (*(getPoint(min_x_max_y_idx-1)))[1],
-			(*(getPoint(min_x_max_y_idx)))[0], (*(getPoint(min_x_max_y_idx)))[1],
-			(*(getPoint(min_x_max_y_idx+1)))[0], (*(getPoint(min_x_max_y_idx+1)))[1]);
+			tmp_polygon_pnts[min_x_max_y_idx-1],
+			tmp_polygon_pnts[min_x_max_y_idx],
+			tmp_polygon_pnts[min_x_max_y_idx+1]);
 	} else {
 		if (0 == min_x_max_y_idx) {
-			orient = MATHLIB::getOrientation (getPoint(n_nodes-2), getPoint(0), getPoint(1));
+			orient = MATHLIB::getOrientation (
+					tmp_polygon_pnts[n_pnts-1],
+					tmp_polygon_pnts[0],
+					tmp_polygon_pnts[1]);
 		} else {
 			orient = MATHLIB::getOrientation (
-				(*(getPoint(n_nodes-2)))[0], (*(getPoint(n_nodes-2)))[1],
-				(*(getPoint(n_nodes-1)))[0], (*(getPoint(n_nodes-1)))[1],
-				(*(getPoint(0)))[0], (*(getPoint(0)))[1]);
+					tmp_polygon_pnts[n_pnts-2],
+					tmp_polygon_pnts[n_pnts-1],
+					tmp_polygon_pnts[0]);
 		}
 	}
+
 	if (orient == MATHLIB::CCW) {
 		// switch orientation
-		for (size_t k(0); k<n_nodes/2; k++) {
-			BASELIB::swap (_ply_pnt_ids[k], _ply_pnt_ids[n_nodes-1-k]);
+		size_t tmp_n_pnts (n_pnts);
+		tmp_n_pnts++; // include last point of polygon (which is identical to the first)
+		for (size_t k(0); k<tmp_n_pnts/2; k++) {
+			BASELIB::swap (_ply_pnt_ids[k], _ply_pnt_ids[tmp_n_pnts-1-k]);
 		}
+	}
+
+	for (size_t k(0); k<n_pnts; k++) {
+		delete tmp_polygon_pnts[k];
 	}
 }
 
@@ -256,7 +293,8 @@ void Polygon::splitPolygonAtIntersection (std::list<Polygon*>::iterator polygon_
 
 			GEOLIB::Polygon* polygon1 (new GEOLIB::Polygon((*polygon_it)->getPointsVec(), false));
 			polygon1->addPoint (intersection_pnt_id);
-			for (size_t k(idx0+1); k<=idx1; k++) polygon1->addPoint ((*polygon_it)->getPointID (k));
+			for (size_t k(idx0+1); k<=idx1; k++)
+				polygon1->addPoint ((*polygon_it)->getPointID (k));
 			polygon1->addPoint (intersection_pnt_id);
 			if (! polygon1->initialise()) {
 				std::cerr << "ERROR in Polygon::splitPolygonAtIntersection polygon1" << std::endl;
@@ -324,6 +362,29 @@ void Polygon::splitPolygonAtPoint (std::list<GEOLIB::Polygon*>::iterator polygon
 	}
 	delete [] perm;
 	delete [] id_vec;
+}
+
+GEOLIB::Polygon* createPolygonFromCircle (GEOLIB::Point const& middle_pnt, double radius,
+		std::vector<GEOLIB::Point*> & pnts, size_t resolution)
+{
+	const size_t off_set (pnts.size());
+	// create points
+	double angle (2.0 * M_PI / resolution);
+	for (size_t k(0); k<resolution; k++) {
+		GEOLIB::Point *pnt (new GEOLIB::Point(middle_pnt.getData()));
+		(*pnt)[0] += radius * cos (k*angle);
+		(*pnt)[1] += radius * sin (k*angle);
+		pnts.push_back (pnt);
+	}
+
+	// create polygon
+	GEOLIB::Polygon* polygon (new GEOLIB::Polygon (pnts, false));
+	for (size_t k(0); k<resolution; k++) {
+		polygon->addPoint (k+off_set);
+	}
+	polygon->addPoint (off_set);
+
+	return polygon;
 }
 
 

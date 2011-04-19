@@ -148,7 +148,7 @@ void GEOObjects::addPolylineVec(std::vector<Polyline*> *lines,
 		} else it++;
 	}
 
-	if (lines->size () == 0) return;
+	if (lines->empty()) return;
 
 	_ply_vecs.push_back(new PolylineVec(name, lines, ply_names));
 }

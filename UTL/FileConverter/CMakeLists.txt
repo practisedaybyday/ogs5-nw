@@ -37,19 +37,46 @@ IF (Shapelib_FOUND)
 ENDIF (Shapelib_FOUND)
 
 ## VTK to OpenSG file converter ##
-IF (OGS_USE_OPENSG)
+IF (OGS_USE_OPENSG AND VTK_FOUND AND Boost_FOUND)
 	
-	FIND_PACKAGE( VTK REQUIRED )
 	INCLUDE( ${VTK_USE_FILE} )
 	
 	ADD_EXECUTABLE (ConvertVtkToOsg ConvertVtkToOsg.cpp)
 	
 	USE_OPENSG ( ConvertVtkToOsg )
-	INCLUDE_DIRECTORIES ( ../OpenSG )
-	TARGET_LINK_LIBRARIES ( ConvertVtkToOsg OgsOpenSG vtkRendering )
+	INCLUDE_DIRECTORIES ( ../OpenSG ${Boost_INCLUDE_DIRS} )
+	TARGET_LINK_LIBRARIES ( ConvertVtkToOsg OgsOpenSG vtkRendering ${Boost_LIBRARIES} )
 	
 	IF (OGS_PACKAGING)
 		INSTALL ( TARGETS ConvertVtkToOsg RUNTIME DESTINATION bin COMPONENT ConvertVtkToOsg )
 	ENDIF (OGS_PACKAGING)
 	
-ENDIF (OGS_USE_OPENSG)
+ENDIF () # OGS_USE_OPENSG AND VTK_FOUND AND Boost_FOUND
+
+IF (QT4_FOUND)
+	ADD_EXECUTABLE (generateBCandGLI generateBCandGLI.cpp )
+	TARGET_LINK_LIBRARIES (generateBCandGLI 
+		FEM
+		MSH
+		#GEO
+		MathLib
+		FileIO
+		Base
+		OGSProject
+		${QT_LIBRARIES}
+	)
+
+	ADD_EXECUTABLE (generateBCFromPolyline generateBCFromPolyline.cpp )
+	TARGET_LINK_LIBRARIES (generateBCFromPolyline
+		FEM
+		MSH
+		#GEO
+		MathLib
+		FileIO
+		Base
+		OGSProject
+		${QT_LIBRARIES}
+	)
+ENDIF () # QT4_FOUND
+
+

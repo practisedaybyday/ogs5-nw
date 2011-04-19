@@ -2,7 +2,7 @@
  * PointWithID.h
  *
  *  Created on: Jan 25, 2011
- *      Author: fischeth
+ *      Author: TF
  */
 
 #ifndef POINTWITHID_H_

@@ -2,7 +2,7 @@
  * LinearInterpolation.h
  *
  *  Created on: Sep 7, 2010
- *      Author: fischeth
+ *      Author: TF
  */
 
 #ifndef LINEARINTERPOLATION_H_

@@ -140,7 +140,8 @@ std::string convertPrimaryVariableToString ( PrimaryVariable pcs_pv );
 namespace FiniteElement {
 
 enum DistributionType {
-	INVALID_DIS_TYPE = 0, ANALYTICAL, // ST
+	INVALID_DIS_TYPE = 0,
+	ANALYTICAL, // ST
 	AVERAGE,
 	CONSTANT, // IC, BC, ST
 	CONSTANT_GEO,
@@ -154,7 +155,8 @@ enum DistributionType {
 	CRITICALDEPTH, // ST
 	GREEN_AMPT, // ST
 	SYSTEM_DEPENDENT, // ST
-	PRECIPITATION
+	PRECIPITATION,
+	DIRECT
 // Sort of Neumann BC //WW
 };
 

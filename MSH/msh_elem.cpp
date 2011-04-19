@@ -18,31 +18,7 @@ last modified
 #include "rf_pcs.h"                               //RFW 06/2006
 #endif
 
-#ifdef USE_TOKENBUF
-#include "tokenbuf.h"
 
-typedef struct
-{
-   char *name;
-   int geo_type;
-   int nnodes;
-   int nnodesHQ;
-   int ele_dim;
-   int nfaces;
-   int nedges;
-} elem_descr_t;
-
-elem_descr_t elem_descr[] =
-{
-   { "line",  1,  2,  3,  1,  2,  0 },
-   { "quad",  2,  4,  9,  2,  4,  4 },
-   { "hex",   3,  8, 20,  3,  6, 12 },
-   { "tri",   4,  3,  6,  2,  3,  3 },
-   { "tet",   5,  4, 10,  3,  4,  6 },
-   { "pri",   6,  6, 15,  3,  5,  9 },
-   { NULL,   -1, -1, -1, -1, -1, -1 }
-};
-#endif
 
 //========================================================================
 namespace Mesh_Group
@@ -109,8 +85,8 @@ namespace Mesh_Group
    CCore(Index), normal_vector(NULL), owner(onwer)
    {
       int i, j, k, n, ne;
-      static int faceIndex_loc[10];
-      static int edgeIndex_loc[10];
+      int faceIndex_loc[10];
+      int edgeIndex_loc[10];
       no_faces_on_surface=0;
       n = owner->GetElementFaceNodes(Face, faceIndex_loc);
       face_index = Face;
@@ -222,6 +198,58 @@ namespace Mesh_Group
       area = 1.0;                                 //WW
    }
 
+CElem::CElem(CElem const &elem) :
+	CCore(elem.GetIndex()),
+	mat_vector (elem.mat_vector),
+	matgroup_view (elem.matgroup_view),
+	selected (elem.selected),
+	normal_vector(new double[3]),
+	representative_length (elem.representative_length),
+	courant (elem.courant),
+	neumann (elem.neumann),
+	geo_type (elem.geo_type),
+	owner (elem.owner),
+	ele_dim (elem.ele_dim),
+	nnodes (elem.nnodes),
+	nnodesHQ (elem.nnodesHQ),
+	nodes (elem.nodes),
+	nedges (elem.nedges),
+	edges (elem.edges),
+	edges_orientation (elem.edges_orientation),
+	nfaces (elem.nfaces),
+	no_faces_on_surface (elem.no_faces_on_surface),
+	face_index (elem.face_index),
+	volume (elem.volume),
+	grid_adaptation (elem.grid_adaptation),
+	patch_index (elem.patch_index),
+	area (elem.area),
+	angle (new double)
+{
+	for (size_t k(0); k<3; k++) {
+		normal_vector[k] = elem.normal_vector[k];
+		gravity_center[k] = elem.gravity_center[k];
+	}
+
+	// copy nodes
+	nodes.resize ((int)((elem.nodes).Size()));
+	for (size_t k(0); k<(elem.nodes).Size() ; k++) {
+		nodes[k] = new CNode ((elem.nodes[k])->GetIndex(), (elem.nodes[k])->X(), (elem.nodes[k])->Y(), (elem.nodes[k])->Z());
+	}
+
+	// copy edges
+//	edges = vec<CEdge*> ((elem.edges).Size());
+//	for (size_t k(0); k<(elem.edges).Size() ; k++) {
+//		edges[k] = new CNode ((elem.nodes[k])->GetIndex(), (elem.nodes[k])->X(), (elem.nodes[k])->Y(), (elem.nodes[k])->Z());
+//	}
+
+	*angle = *(elem.angle);
+	// copy transform tensor
+//	Matrix * tranform_tensor;
+
+	// copy neighbors
+//	vec<CElem*> neighbors;
+}
+
    /**************************************************************************
    MSHLib-Method:
    Task:
@@ -230,6 +258,8 @@ namespace Mesh_Group
    **************************************************************************/
    CElem::~CElem()
    {
+	   // HACK LB those resize() do not free memory allocated with new
+	   // HACK LB Possible memory leak otherwise resize() not necessary
       nodes_index.resize(0);
       nodes.resize(0);
       edges.resize(0);
@@ -243,8 +273,9 @@ namespace Mesh_Group
       angle = NULL;
       tranform_tensor = NULL;
       if (normal_vector)
-         delete[] normal_vector;
+         delete [] normal_vector;
       normal_vector = NULL;
+      delete [] angle;
    }
    /**************************************************************************
    MSHLib-Method:
@@ -355,11 +386,10 @@ namespace Mesh_Group
    **************************************************************************/
    void CElem:: SetFace(CElem* onwer, const int Face)
    {
-      int i, n;
       static int nodeIndex_loc[8];
       no_faces_on_surface=0;
       owner = onwer;
-      n = owner->GetElementFaceNodes(Face, nodeIndex_loc);
+      size_t n = owner->GetElementFaceNodes(Face, nodeIndex_loc);
       face_index = Face;
       switch(owner->geo_type)
       {
@@ -382,10 +412,9 @@ namespace Mesh_Group
             std::cerr << "CElem::SetFace MshElemType not handled" << std::endl;
       }
 
-      for(i=0; i<n; i++)
+      for(size_t i=0; i<n; i++)
       {
-         nodes[i] =
-            owner->nodes[nodeIndex_loc[i]];
+         nodes[i] = owner->nodes[nodeIndex_loc[i]];
       }
    }
    /**************************************************************************
@@ -418,12 +447,9 @@ void CElem::Read(std::istream& is, int fileType)
 	//fileType=5x: FLAC3D //MR
 	//fileType=6: FEFLOW //OK
 	//fileType=7: GMSH 2008 Version//TK
-	int idummy, et;
-	std::string buffer, name;
-	idummy = et = -1;
-	int j = 0;
+	int idummy(-1), et(-1);
+	std::string name("");
 	int gmsh_patch_index; //TKOK
-	int nb_tags; //TK
 
 	//   is.ignore(numeric_limits<int>::max(), '\n');
 	//----------------------------------------------------------------------
@@ -431,6 +457,8 @@ void CElem::Read(std::istream& is, int fileType)
 	switch (fileType) {
 	//....................................................................
 	case 0: // msh
+	{
+		std::string buffer("");
 		is >> index >> patch_index;
 		is >> buffer;
 
@@ -442,6 +470,7 @@ void CElem::Read(std::istream& is, int fileType)
 
 		geo_type = String2MshElemType(name);
 		break;
+	}
 		//....................................................................
 	case 1: // rfi
 		is >> index >> patch_index >> name;
@@ -474,9 +503,10 @@ void CElem::Read(std::istream& is, int fileType)
 		index--;
 		break;
 	case 7: // GMSH 2008
-		is >> index >> et >> nb_tags >> gmsh_patch_index;
+		size_t nb_tags;
+		is >> index >> et >> nb_tags >> idummy >> gmsh_patch_index;
 		patch_index = gmsh_patch_index;
-		for (j = 0; j < nb_tags - 1; j++) {
+		for (size_t j = 2; j < nb_tags; j++) {
 			is >> idummy;
 		}
 		switch (et) {
@@ -636,74 +666,6 @@ void CElem::Read(std::istream& is, int fileType)
       }
    }
 
-#ifdef USE_TOKENBUF
-   void CElem::Read(TokenBuf* tokenbuf, int fileType)
-   {
-      //fileType=0: msh
-      //fileType=1: rfi
-      //fileType=2: gmsh
-      //fileType=3: GMS
-      //fileType=4: SOL
-      int idummy, et;
-      string buffer, name;
-      idummy=et=-1;
-      char line_buf[LINE_MAX];
-      char str1[LINE_MAX], remains[LINE_MAX];
-
-      //   is.ignore(numeric_limits<int>::max(), '\n');
-      //----------------------------------------------------------------------
-      // 1 Reading element type data
-      switch(fileType)
-      {
-         //....................................................................
-         case 0:                                  // msh
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            sscanf(line_buf, "%ld %ld %s %[0-9a-zA-Z ]", &index, &patch_index, str1, remains);
-            if(!strcmp(str1, "-1"))
-            {
-               grid_adaptation = strtol(str1, NULL, 0);
-               sscanf(remains, "%s %[0-9a-zA-Z ]", str1, remains);
-               name = std::string(str1);
-            }
-            else
-               name = std::string(str1);
-
-            for(int i=0; elem_descr[i].name != NULL; i++)
-            {
-               if(!strcmp(str1, elem_descr[i].name))
-               {
-                  geo_type = elem_descr[i].geo_type;
-                  nnodes   = elem_descr[i].nnodes;
-                  nnodesHQ = elem_descr[i].nnodesHQ;
-                  ele_dim  = elem_descr[i].ele_dim;
-                  nfaces   = elem_descr[i].nfaces;
-                  nedges   = elem_descr[i].nedges;
-                  nodes_index.resize(nnodes);
-                  for(int j=0; j<nnodes; j++)
-                  {
-                     sscanf(remains, "%ld %[0-9] ", &nodes_index[j], remains);
-                  }
-                  break;
-               }
-            }
-
-            break;
-            //....................................................................
-      }
-      //----------------------------------------------------------------------
-      // Initialize topological properties
-      neighbors.resize(nfaces);
-      for(int i=0; i<nfaces; i++)
-         neighbors[i] = NULL;
-      edges.resize(nedges);
-      edges_orientation.resize(nedges);
-      for(int i=0; i<nedges; i++)
-      {
-         edges[i] = NULL;
-         edges_orientation[i] = 1;
-      }
-   }
-#endif
 
    /**************************************************************************
    MSHLib-Method:
@@ -714,10 +676,10 @@ void CElem::Read(std::istream& is, int fileType)
    void CElem::WriteIndex(std::ostream &os) const
    {
       //Comment for GUI WW if(quadratic) nn = nnodesHQ;
-      os << index << "  " << patch_index << "  " << GetName() << "  ";
-      for(int i=0; i<nnodes; i++)
-         os << nodes_index[i] << "  ";
-      os << std::endl;
+      os << index << " " << patch_index << " " << GetName() << " ";
+      for(int i=0; i<nnodes-1; i++)
+         os << nodes_index[i] << " ";
+      os << nodes_index[nnodes-1] << std::endl;
    }
 
    /**************************************************************************
@@ -880,7 +842,7 @@ void CElem::Read(std::istream& is, int fileType)
             }
             break;
          default:
-            std::cerr << "CElem::GetLocalIndicesOfEdgeNodes MshElemType not handled" << std::endl;
+            std::cerr << "CElem::GetLocalIndicesOfEdgeNodes() - MshElemType not handled" << std::endl;
       }
    }
    /**************************************************************************
@@ -1064,7 +1026,7 @@ void CElem::Read(std::istream& is, int fileType)
             FaceNode[2] = 3;
             if(quadratic)
             {
-               FaceNode[3] = 5 ;
+               FaceNode[3] = 5;
                FaceNode[4] = 8;
                FaceNode[5] = 7;
             }
@@ -1075,7 +1037,7 @@ void CElem::Read(std::istream& is, int fileType)
             FaceNode[2] = 0;
             if(quadratic)
             {
-               FaceNode[3] = 8 ;
+               FaceNode[3] = 8;
                FaceNode[4] = 6;
                FaceNode[5] = 9;
             }
@@ -1086,7 +1048,7 @@ void CElem::Read(std::istream& is, int fileType)
             FaceNode[2] = 0;
             if(quadratic)
             {
-               FaceNode[3] = 7 ;
+               FaceNode[3] = 7;
                FaceNode[4] = 9;
                FaceNode[5] = 4;
             }
@@ -1097,7 +1059,7 @@ void CElem::Read(std::istream& is, int fileType)
             FaceNode[2] = 1;
             if(quadratic)
             {
-               FaceNode[3] = 6 ;
+               FaceNode[3] = 6;
                FaceNode[4] = 5;
                FaceNode[5] = 4;
             }
@@ -1193,6 +1155,7 @@ void CElem::Read(std::istream& is, int fileType)
       }
       return nn;
    }
+
    /**************************************************************************
    GetElementFaces
    Task: set element faces (Geometry)
@@ -1227,350 +1190,81 @@ void CElem::Read(std::istream& is, int fileType)
       return 0;
    }
 
-   /**************************************************************************
-   FindFaceEdges(const int LocalFaceIndex, vec<CEdge*>&  face_edges)
-   Task: set element faces (Geometry)
-   Augs.:
-           const int LocalFaceIndex :  Local index of element face
-           vec<CEdge*>&  face_edges :  Found face edges
-   retrun: number of face edges
-
-   Programing:
-   07/2005 WW
-   **************************************************************************/
-   /* KR not used
-   int CElem::FindFaceEdges(const int LocalFaceIndex, vec<CEdge*>&  face_edges)
-   {
-       int i;
-      i=0;
-      switch(geo_type)
-      {
-         case MshElemType::LINE:
-              break; // 1-D bar element
-         case MshElemType::QUAD: // 2-D quadrilateral element
-           face_edges[0] = edges[LocalFaceIndex];
-   return 1;
-   break;
-   case MshElemType::HEXAHEDRON: // 3-D hexahedral element
-   if(LocalFaceIndex<2)
-   {
-   for(i=0; i<4; i++)
-   face_edges[i] = edges[LocalFaceIndex*4+i];
-   }
-   else if(LocalFaceIndex==2)
-   {
-   face_edges[0] = edges[0];
-   face_edges[1] = edges[9];
-   face_edges[2] = edges[4];
-   face_edges[3] = edges[8];
-   }
-   else if(LocalFaceIndex==3)
-   {
-   face_edges[0] = edges[1];
-   face_edges[1] = edges[9];
-   face_edges[2] = edges[5];
-   face_edges[3] = edges[10];
-   }
-   else if(LocalFaceIndex==4)
-   {
-   face_edges[0] = edges[2];
-   face_edges[1] = edges[10];
-   face_edges[2] = edges[6];
-   face_edges[3] = edges[11];
-   }
-   else if(LocalFaceIndex==5)
-   {
-   face_edges[0] = edges[7];
-   face_edges[1] = edges[8];
-   face_edges[2] = edges[3];
-   face_edges[3] = edges[11];
-   }
-
-   return 4;
-   break;
-   case MshElemType::TRIANGLE:  // 2-D triagular element
-   face_edges[0] = edges[LocalFaceIndex];
-   return 1;
-   break;
-   case MshElemType::TETRAHEDRON:  // 3-D tetrahedra
-   if(LocalFaceIndex==0)
-   {
-   face_edges[0] = edges[1];
-   face_edges[1] = edges[4];
-   face_edges[2] = edges[3];
-   }
-   else if(LocalFaceIndex==1)
-   {
-   face_edges[0] = edges[2];
-   face_edges[1] = edges[4];
-   face_edges[2] = edges[5];
-   }
-   else if(LocalFaceIndex==2)
-   {
-   face_edges[0] = edges[0];
-   face_edges[1] = edges[3];
-   face_edges[2] = edges[5];
-   }
-   else if(LocalFaceIndex==3)
-   {
-   face_edges[0] = edges[0];
-   face_edges[1] = edges[1];
-   face_edges[2] = edges[2];
-   }
-   return 3;
-   break;
-   case MshElemType::PRISM: // 3-D prismatic element
-   if(LocalFaceIndex<2)
-   {
-   for(i=0; i<3; i++)
-   face_edges[i] = edges[LocalFaceIndex*3+i];
-   return 3;
-   }
-   else if(LocalFaceIndex==2)
-   {
-   face_edges[0] = edges[1];
-   face_edges[1] = edges[8];
-   face_edges[2] = edges[4];
-   face_edges[3] = edges[9];
-   return 4;
-   }
-   else if(LocalFaceIndex==3)
-   {
-   face_edges[0] = edges[2];
-   face_edges[1] = edges[9];
-   face_edges[2] = edges[5];
-   face_edges[3] = edges[7];
-   return 4;
-   }
-   else if(LocalFaceIndex==4)
-   {
-   face_edges[0] = edges[0];
-   face_edges[1] = edges[8];
-   face_edges[2] = edges[3];
-   face_edges[3] = edges[7];
-   return 4;
-   }
-
-   break;
-   }
-   return 0;
-   }
-   */
 
    /**************************************************************************
    MSHLib-Method:
-   Task:´For elements with straight edges and surfaces
+   Task: Compute volume for elements with straight edges and surfaces
    Programing:
    06/2005 WW Implementation
+   03/2011 KR cleaned up code
    **************************************************************************/
    void CElem::ComputeVolume()
    {
-      double x1buff[3];
-      double x2buff[3];
-      double x3buff[3];
-      double x4buff[3];
-      volume = 0.0;
+		volume = calcVolume();
 
-      if(geo_type!=MshElemType::LINE)
-      {
-         x1buff[0] = nodes[0]->X();
-         x1buff[1] = nodes[0]->Y();
-         x1buff[2] = nodes[0]->Z();
-
-         x2buff[0] = nodes[1]->X();
-         x2buff[1] = nodes[1]->Y();
-         x2buff[2] = nodes[1]->Z();
-
-         x3buff[0] = nodes[2]->X();
-         x3buff[1] = nodes[2]->Y();
-         x3buff[2] = nodes[2]->Z();
-      }
-
-      switch(geo_type)
-      {
-         case MshElemType::LINE:                  // Line
-            x2buff[0] = nodes[nnodes-1]->X()-nodes[0]->X();
-            x2buff[1] = nodes[nnodes-1]->Y()-nodes[0]->Y();
-            x2buff[2] = nodes[nnodes-1]->Z()-nodes[0]->Z();
-            volume = sqrt(x2buff[0]*x2buff[0]+x2buff[1]*x2buff[1]+x2buff[2]*x2buff[2]);
-                                                  //CMCD kg44 reactivated
-            representative_length = sqrt(x2buff[0]*x2buff[0]+x2buff[1]*x2buff[1]+x2buff[2]*x2buff[2]) ;
-            break;
-         case MshElemType::TRIANGLE:              // Triangle
-            volume = ComputeDetTri(x1buff, x2buff, x3buff);
-                                                  //kg44 reactivated
-            representative_length = sqrt(volume)*4.0;
-            break;
-         case MshElemType::QUAD:                  // Quadrilateral
-            x4buff[0] = nodes[3]->X();
-            x4buff[1] = nodes[3]->Y();
-            x4buff[2] = nodes[3]->Z();
-
-            volume =  ComputeDetTri(x1buff, x2buff, x3buff)
-               +ComputeDetTri(x3buff, x4buff, x1buff);
-            representative_length = sqrt(volume); //kg44 reactivated
-            break;
-         case MshElemType::TETRAHEDRON:           // Tedrahedra
-            x4buff[0] = nodes[3]->X();
-            x4buff[1] = nodes[3]->Y();
-            x4buff[2] = nodes[3]->Z();
-
-            volume =  ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
-                                                  //kg44 reactivated
-            representative_length = sqrt(volume)*6.0;
-            break;
-         case MshElemType::HEXAHEDRON:            // Hexehadra
-            x1buff[0] = nodes[4]->X();
-            x1buff[1] = nodes[4]->Y();
-            x1buff[2] = nodes[4]->Z();
-
-            x2buff[0] = nodes[7]->X();
-            x2buff[1] = nodes[7]->Y();
-            x2buff[2] = nodes[7]->Z();
-
-            x3buff[0] = nodes[5]->X();
-            x3buff[1] = nodes[5]->Y();
-            x3buff[2] = nodes[5]->Z();
-
-            x4buff[0] = nodes[0]->X();
-            x4buff[1] = nodes[0]->Y();
-            x4buff[2] = nodes[0]->Z();
-            volume  = ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
-
-            x1buff[0] = nodes[5]->X();
-            x1buff[1] = nodes[5]->Y();
-            x1buff[2] = nodes[5]->Z();
-
-            x2buff[0] = nodes[3]->X();
-            x2buff[1] = nodes[3]->Y();
-            x2buff[2] = nodes[3]->Z();
-
-            x3buff[0] = nodes[1]->X();
-            x3buff[1] = nodes[1]->Y();
-            x3buff[2] = nodes[1]->Z();
-
-            x4buff[0] = nodes[0]->X();
-            x4buff[1] = nodes[0]->Y();
-            x4buff[2] = nodes[0]->Z();
-            volume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
-
-            x1buff[0] = nodes[5]->X();
-            x1buff[1] = nodes[5]->Y();
-            x1buff[2] = nodes[5]->Z();
-
-            x2buff[0] = nodes[7]->X();
-            x2buff[1] = nodes[7]->Y();
-            x2buff[2] = nodes[7]->Z();
-
-            x3buff[0] = nodes[3]->X();
-            x3buff[1] = nodes[3]->Y();
-            x3buff[2] = nodes[3]->Z();
-
-            x4buff[0] = nodes[0]->X();
-            x4buff[1] = nodes[0]->Y();
-            x4buff[2] = nodes[0]->Z();
-            volume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
-
-            x1buff[0] = nodes[5]->X();
-            x1buff[1] = nodes[5]->Y();
-            x1buff[2] = nodes[5]->Z();
-
-            x2buff[0] = nodes[7]->X();
-            x2buff[1] = nodes[7]->Y();
-            x2buff[2] = nodes[7]->Z();
-
-            x3buff[0] = nodes[6]->X();
-            x3buff[1] = nodes[6]->Y();
-            x3buff[2] = nodes[6]->Z();
-
-            x4buff[0] = nodes[2]->X();
-            x4buff[1] = nodes[2]->Y();
-            x4buff[2] = nodes[2]->Z();
-            volume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
-
-            x1buff[0] = nodes[1]->X();
-            x1buff[1] = nodes[1]->Y();
-            x1buff[2] = nodes[1]->Z();
-
-            x2buff[0] = nodes[3]->X();
-            x2buff[1] = nodes[3]->Y();
-            x2buff[2] = nodes[3]->Z();
-
-            x3buff[0] = nodes[5]->X();
-            x3buff[1] = nodes[5]->Y();
-            x3buff[2] = nodes[5]->Z();
-
-            x4buff[0] = nodes[2]->X();
-            x4buff[1] = nodes[2]->Y();
-            x4buff[2] = nodes[2]->Z();
-            volume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
-
-            x1buff[0] = nodes[3]->X();
-            x1buff[1] = nodes[3]->Y();
-            x1buff[2] = nodes[3]->Z();
-
-            x2buff[0] = nodes[7]->X();
-            x2buff[1] = nodes[7]->Y();
-            x2buff[2] = nodes[7]->Z();
-
-            x3buff[0] = nodes[5]->X();
-            x3buff[1] = nodes[5]->Y();
-            x3buff[2] = nodes[5]->Z();
-
-            x4buff[0] = nodes[2]->X();
-            x4buff[1] = nodes[2]->Y();
-            x4buff[2] = nodes[2]->Z();
-
-            volume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
-                                                  //kg44 reactivated
-            representative_length = pow(volume,1./3.);
-            break;
-         case MshElemType::PRISM:                 // Prism
-            x4buff[0] = nodes[3]->X();
-            x4buff[1] = nodes[3]->Y();
-            x4buff[2] = nodes[3]->Z();
-            volume =  ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
-
-            x1buff[0] = nodes[1]->X();
-            x1buff[1] = nodes[1]->Y();
-            x1buff[2] = nodes[1]->Z();
-
-            x2buff[0] = nodes[4]->X();
-            x2buff[1] = nodes[4]->Y();
-            x2buff[2] = nodes[4]->Z();
-
-            x3buff[0] = nodes[2]->X();
-            x3buff[1] = nodes[2]->Y();
-            x3buff[2] = nodes[2]->Z();
-
-            x4buff[0] = nodes[3]->X();
-            x4buff[1] = nodes[3]->Y();
-            x4buff[2] = nodes[3]->Z();
-            volume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
-
-            x1buff[0] = nodes[2]->X();
-            x1buff[1] = nodes[2]->Y();
-            x1buff[2] = nodes[2]->Z();
-
-            x2buff[0] = nodes[4]->X();
-            x2buff[1] = nodes[4]->Y();
-            x2buff[2] = nodes[4]->Z();
-
-            x3buff[0] = nodes[5]->X();
-            x3buff[1] = nodes[5]->Y();
-            x3buff[2] = nodes[5]->Z();
-
-            x4buff[0] = nodes[3]->X();
-            x4buff[1] = nodes[3]->Y();
-            x4buff[2] = nodes[3]->Z();
-            volume  += ComputeDetTex(x1buff, x2buff, x3buff, x4buff);
-                                                  // kg44 reactivated ---------Here the direction of flow needs to be taken into account, we need rep length in x,y,z direction
-            representative_length = pow(volume,1./3.);
-            break;
-         default:
-            std::cerr << "CElem::ComputeVolume MshElemType not handled" << std::endl;
-      }
+		if (this->geo_type == MshElemType::LINE)                  // Line
+			representative_length = volume;
+		else if (this->geo_type == MshElemType::TRIANGLE)
+			representative_length = sqrt(volume)*4.0;
+		else if (this->geo_type == MshElemType::QUAD)
+			representative_length = sqrt(volume); //kg44 reactivated
+		else if (this->geo_type == MshElemType::TETRAHEDRON)
+		  representative_length = sqrt(volume)*6.0;
+		else if (this->geo_type == MshElemType::HEXAHEDRON)
+			representative_length = pow(volume,1./3.);
+		else if (this->geo_type == MshElemType::PRISM)
+			representative_length = pow(volume,1./3.);
+		else
+			std::cerr << "Error in CElem::ComputeVolume() - MshElemType not found" << std::endl;
    }
+
+double CElem::calcVolume () const
+{
+	double elemVolume = 0.0;
+
+	if (this->geo_type == MshElemType::LINE)                  // Line
+	{
+		double xDiff = nodes[nnodes-1]->X()-nodes[0]->X();
+		double yDiff = nodes[nnodes-1]->Y()-nodes[0]->Y();
+		double zDiff = nodes[nnodes-1]->Z()-nodes[0]->Z();
+		elemVolume = sqrt(xDiff*xDiff + yDiff*yDiff + zDiff*zDiff); //CMCD kg44 reactivated
+	}
+	else if (this->geo_type == MshElemType::TRIANGLE)
+	{
+		elemVolume = ComputeDetTri(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData()); //kg44 reactivated
+	}
+	else if (this->geo_type == MshElemType::QUAD)
+	{
+		elemVolume = ComputeDetTri(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData())
+			       + ComputeDetTri(nodes[2]->getData(), nodes[3]->getData(), nodes[0]->getData());
+	}
+	else if (this->geo_type == MshElemType::TETRAHEDRON)
+	{
+		elemVolume  = ComputeDetTex(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData(), nodes[3]->getData()); //kg44 reactivated
+	}
+	else if (this->geo_type == MshElemType::HEXAHEDRON)
+	{
+		elemVolume  = ComputeDetTex(nodes[4]->getData(), nodes[7]->getData(), nodes[5]->getData(), nodes[0]->getData());
+		elemVolume += ComputeDetTex(nodes[5]->getData(), nodes[3]->getData(), nodes[1]->getData(), nodes[0]->getData());
+		elemVolume += ComputeDetTex(nodes[5]->getData(), nodes[7]->getData(), nodes[3]->getData(), nodes[0]->getData());
+		elemVolume += ComputeDetTex(nodes[5]->getData(), nodes[7]->getData(), nodes[6]->getData(), nodes[2]->getData());
+		elemVolume += ComputeDetTex(nodes[1]->getData(), nodes[3]->getData(), nodes[5]->getData(), nodes[2]->getData());
+		elemVolume += ComputeDetTex(nodes[3]->getData(), nodes[7]->getData(), nodes[5]->getData(), nodes[2]->getData());
+											  //kg44 reactivated
+	}
+	else if (this->geo_type == MshElemType::PRISM)
+	{
+		elemVolume  = ComputeDetTex(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData(), nodes[3]->getData());
+		elemVolume += ComputeDetTex(nodes[1]->getData(), nodes[4]->getData(), nodes[2]->getData(), nodes[3]->getData());
+		elemVolume += ComputeDetTex(nodes[2]->getData(), nodes[4]->getData(), nodes[5]->getData(), nodes[3]->getData());
+											  // kg44 reactivated ---------Here the direction of flow needs to be taken into account, we need rep length in x,y,z direction
+	}
+	else
+		std::cerr << "Error in CElem::ComputeVolume() - MshElemType not found" << std::endl;
+
+	return elemVolume;
+}
+
 
    /**************************************************************************
    MSHLib-Method:
@@ -1580,12 +1274,12 @@ void CElem::Read(std::istream& is, int fileType)
    **************************************************************************/
    void CElem::FaceNormal(int index0, int index1, double* face)
    {
-      int i;
-      double xx[3];
-      double yy[3];
-      double zz[3];
       if (GetElementType() == MshElemType::TRIANGLE || GetElementType() == MshElemType::QUAD)
       {
+		 double xx[3];
+		 double yy[3];
+		 double zz[3];
+
          //----plane normal----------------------------
          // tranform_tensor = new Matrix(3,3);
          // face"_vec
@@ -1607,7 +1301,7 @@ void CElem::Read(std::istream& is, int fileType)
          // y"_vec
          CrossProduction(face,zz,yy);
          NormalizeVector(yy,3);
-         for(i=0; i<3; i++)
+         for(size_t i=0; i<3; i++)
          {
             face[i] = yy[i];
          }

@@ -14,9 +14,7 @@ last modified
 // MSHLib
 #include "MSHEnums.h"
 #include "msh_edge.h"
-#ifdef USE_TOKENBUF
-#include "tokenbuf.h"
-#endif
+
 // PCSLib
 namespace process{class CRFProcessDeformation;}
 namespace Math_Group{class Matrix;}
@@ -40,6 +38,12 @@ namespace Mesh_Group
                                                   // For Faces: Face, local face index
          CElem(size_t Index, CElem* onwer, int Face);
          CElem(size_t Index, CElem* m_ele_parent);//WWOK
+
+         /**
+          * copy constructor
+          */
+         CElem (CElem const &elem);
+
          ~CElem();
 
          //------------------------------------------------------------------
@@ -74,7 +78,7 @@ namespace Mesh_Group
          {
             return patch_index;
          }                                        //MatGroup
-         void SetPatchIndex(const int value)
+         void SetPatchIndex(int value)
          {
             patch_index = value;
          }
@@ -87,11 +91,14 @@ namespace Mesh_Group
          {
             return area;
          }                                        //CMCD for <3D elements with varying area
+
+         double calcVolume () const;
+
          double GetVolume() const
          {
             return volume;
          }
-         void SetVolume(const double Vol)
+         void SetVolume(double Vol)
          {
             volume = Vol;
          }
@@ -133,17 +140,23 @@ namespace Mesh_Group
                node_index[i] = nodes_index[i];
          }
 
+         void getNodeIndices(std::vector<size_t>& node_indices)
+         {
+            for (size_t i = 0; i < nodes_index.Size(); i++)
+               node_indices.push_back (nodes_index[i]);
+         }
+
          /**
           * const access to the vector nodes_index
           * @return a const reference to the vector
           */
          const vec<long>& GetNodeIndeces () const { return nodes_index; }
 
-         long GetNodeIndex(const int index) const
+         long GetNodeIndex(int index) const
          {
             return nodes_index[index];
          }
-         void SetNodeIndex(const int index, const long g_index)
+         void SetNodeIndex(int index, long g_index)
          {
             nodes_index[index] = g_index;
          }
@@ -164,6 +177,12 @@ namespace Mesh_Group
          {
             return nodes[index];
          }
+
+         CNode const * GetNode(int index) const
+		 {
+			return nodes[index];
+		 }
+
          void SetNodes(vec<CNode*>& ele_nodes, bool ReSize = false);
          int GetNodesNumber_H() const
          {
@@ -198,7 +217,7 @@ namespace Mesh_Group
             for (int i = 0; i < nedges; i++)
                ele_edges[i] = edges[i];
          }
-         CEdge* GetEdge(const int index)
+         CEdge* GetEdge(int index)
          {
             return edges[index];
          }
@@ -224,6 +243,7 @@ namespace Mesh_Group
          {
             return nfaces;
          }
+
          void SetFace();
          void SetFace(CElem* onwer, const int Face);
          int GetSurfaceFacesNumber() const
@@ -236,7 +256,8 @@ namespace Mesh_Group
          }
          int GetElementFaceNodes(int Face, int *FacesNode);
          //------------------------------------------------------------------
-         // Neighbors
+
+		 // Neighbors
          void SetNeighbors(vec<CElem*>& ele_neighbors)
          {
             for (int i = 0; i < nfaces; i++)
@@ -256,7 +277,7 @@ namespace Mesh_Group
             return neighbors[index];
          }
 
-         //------------------------------------------------------------------
+		 //------------------------------------------------------------------
          // Coordinates transform
          void FillTransformMatrix();
          void FillTransformMatrix(int noneed);
@@ -266,20 +287,18 @@ namespace Mesh_Group
             if (!angle)
                angle = new double[3];
          }                                        // WW
-         double GetAngle(const int i) const
+         double GetAngle(int i) const
          {
             return angle[i];
          }                                        // PCH
-         void SetAngle(const int i, const double value)
+         void SetAngle(int i, double value)
          {
             angle[i] = value;
          }                                        // PCH
          //------------------------------------------------------------------
          // I/O
          void Read(std::istream& is = std::cin, int fileType = 0);
-#ifdef USE_TOKENBUF
-         void Read(TokenBuf* tokenbuf, int fileType=0);
-#endif
+
          void WriteIndex(std::ostream& os = std::cout) const;
          void WriteIndex_TEC(std::ostream& os = std::cout) const;
          void WriteAll(std::ostream& os = std::cout) const;
@@ -367,5 +386,5 @@ namespace Mesh_Group
          friend class ::CRFProcess;
    };
 
-}                                                 // namespace Mesh_Group
+} // namespace Mesh_Group
 #endif

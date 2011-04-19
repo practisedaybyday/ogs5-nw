@@ -14,7 +14,9 @@ namespace GEOLIB {
 
 Polyline::Polyline(const std::vector<Point*>& pnt_vec) :
 	GeoObject(), _ply_pnts(pnt_vec)
-{}
+{
+	_length.push_back (0.0);
+}
 
 Polyline::Polyline(const Polyline& ply) :
 	GeoObject(), _ply_pnts (ply._ply_pnts)
@@ -24,7 +26,7 @@ Polyline::Polyline(const Polyline& ply) :
 	}
 
 	if (ply.getNumberOfPoints() > 0) {
-		for (size_t k(0); k<ply.getNumberOfPoints()-1; ++k) {
+		for (size_t k(0); k<ply.getNumberOfPoints(); ++k) {
 			_length.push_back (ply.getLength (k));
 		}
 	}
@@ -48,7 +50,7 @@ void Polyline::addPoint(size_t point_id)
 		double act_dist (sqrt(MATHLIB::sqrDist (_ply_pnts[_ply_pnt_ids[n_pnts-1]], _ply_pnts[point_id])));
 		double dist_until_now (0.0);
 		if (n_pnts > 1)
-			dist_until_now = _length[n_pnts - 2];
+			dist_until_now = _length[n_pnts - 1];
 
 		_length.push_back (dist_until_now + act_dist);
 	}
@@ -213,8 +215,8 @@ Location::type Polyline::getLocationOfPoint (size_t k, GEOLIB::Point const & pnt
 
 	double det_2x2 (a[0]*b[1] - a[1]*b[0]);
 
-	if (det_2x2 > sqrt(std::numeric_limits<double>::min())) return Location::LEFT;
-	if (sqrt(std::numeric_limits<double>::min()) < fabs(det_2x2)) return Location::RIGHT;
+	if (det_2x2 > std::numeric_limits<double>::epsilon()) return Location::LEFT;
+	if (std::numeric_limits<double>::epsilon() < fabs(det_2x2)) return Location::RIGHT;
 	if (a[0]*b[0] < 0.0 || a[1]*b[1] < 0.0) return Location::BEHIND;
 	if (MATHLIB::sqrNrm2(&a) < MATHLIB::sqrNrm2(&b)) return Location::BEYOND;
 	if (MATHLIB::sqrDist (&pnt, _ply_pnts[_ply_pnt_ids[k]]) < sqrt(std::numeric_limits<double>::min()))

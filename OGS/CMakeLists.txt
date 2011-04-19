@@ -39,6 +39,7 @@ TARGET_LINK_LIBRARIES( ogs
 	FileIO
 	Base
 	OGSProject
+	${CMAKE_THREAD_LIBS_INIT}
 )
 
 if (WIN32)

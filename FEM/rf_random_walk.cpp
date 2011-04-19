@@ -9,11 +9,14 @@ Programing:
 #include "rf_fluid_momentum.h"
 #include "rf_tim_new.h"
 #include "rfmat_cp.h"
+#include "matrix_class.h"
+#include "Output.h"
 
 // C++ STL
 #include <sstream>
 #include <cfloat>
 using namespace std;
+using namespace Math_Group;
 
 #define PCT_FILE_EXTENSION ".pct"
 #define SWAP(x,y) {double t; t=x; x=y; y=t;};     //WW data type is change to double
@@ -2247,7 +2250,7 @@ void RandomWalk::AdvanceToNextTimeStep(double dt,double ctime)
                      Y.elementIndex = -10;          //YS: out of the domain
                   }
                }
-#endif CountParticleNumber
+#endif // CountParticleNumber
 
                // Just get the element index after this movement
                // if not Homogeneous aquifer

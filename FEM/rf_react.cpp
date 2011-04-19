@@ -673,7 +673,7 @@ void CRFProcess::ExtropolateTempGP(CRFProcess *m_pcs, std::string name)
    for (i = 0; i <(long)m_msh->GetNodesNumber(false); i++)
    {
       T_sum = m_pcs->GetNodeValue(i, index_nod);
-      nn = (int) m_msh->nod_vector[i]->connected_elements.size();
+      nn = (int) m_msh->nod_vector[i]->getConnectedElementIDs().size();
       if(nn==0) nn =1;
       T_sum /= (double)nn;
       m_pcs->SetNodeValue(i,index_nod, T_sum);

@@ -702,7 +702,7 @@ namespace process
 
          //
          // 07.04.2010 WW
-         int i, j;
+         int i;
          bool done;
          CElem *elem = NULL;
          CNode *node = NULL;
@@ -729,29 +729,29 @@ namespace process
                elem->MarkingAll(true);
          }
 
-         for (l = 0; l < (long)m_msh->nod_vector.size(); l++)
-         {
-            while(m_msh->nod_vector[l]->connected_elements.size())
-               m_msh->nod_vector[l]->connected_elements.pop_back();
+         size_t mesh_node_vector_size (m_msh->nod_vector.size());
+         for (size_t l = 0; l < mesh_node_vector_size; l++) {
+            while(m_msh->nod_vector[l]->getConnectedElementIDs().size())
+               m_msh->nod_vector[l]->getConnectedElementIDs().pop_back();
          }
-         for (l = 0; l < (long)m_msh->ele_vector.size(); l++)
-         {
+
+         for (size_t l = 0; l < mesh_node_vector_size; l++) {
             elem = m_msh->ele_vector[l];
             if(!elem->GetMark()) continue;
             for(i=0; i<elem->GetNodesNumber(m_msh->getOrder()); i++)
             {
                done = false;
                node = elem->GetNode(i);
-               for(j=0; j<(int)node->connected_elements.size(); j++)
+               for(size_t j=0; j<node->getConnectedElementIDs().size(); j++)
                {
-                  if(l==node->connected_elements[j])
+                  if(l==node->getConnectedElementIDs()[j])
                   {
                      done = true;
                      break;
                   }
                }
                if(!done)
-                  node->connected_elements.push_back(l);
+                  node->getConnectedElementIDs().push_back(l);
             }
 
          }                                        //

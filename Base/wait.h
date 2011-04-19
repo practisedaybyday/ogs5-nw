@@ -11,7 +11,7 @@
 
 namespace BASELIB {
 
-void wait(size_t seconds)
+void wait(int seconds)
 {
 	time_t start_time, cur_time;
 
@@ -20,7 +20,7 @@ void wait(size_t seconds)
 	{
 		 time(&cur_time);
 	}
-	while((cur_time - start_time) < 3);
+	while((cur_time - start_time) < seconds);
 }
 
 } // end namespace BASELIB

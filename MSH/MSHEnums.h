@@ -1,6 +1,6 @@
 /**
  * \file MSHEnums.h
- * 15/11/2010 KR inital implementation
+ * 15/11/2010 KR initial implementation
  *
  */
 
@@ -9,7 +9,7 @@
 
 #include <string>
 
-/** 
+/**
  * \brief Types of mesh elements supported by OpenGeoSys.
  * Classification and associated int are identical with
  * identifier in Mesh_Group::CElem::geo_type
@@ -27,11 +27,23 @@ struct MshElemType
 	};
 };
 
+struct MshQualityType
+{
+	enum type {
+		INVALID = 0,
+		AREA,
+		VOLUME,
+		EDGERATIO,
+		EQUIANGLESKEW
+	};
+};
+
 /// Given a MshElemType this returns the appropriate string.
-std::string MshElemType2String(const MshElemType::type t);
+const std::string MshElemType2String(const MshElemType::type t);
 
 /// Given a string describing an element type this returns the corresponding MshElemType.
 MshElemType::type String2MshElemType(const std::string &s);
 
+const std::string MshQualityType2String(const MshQualityType::type t);
 
 #endif //MSHENUMS_H

@@ -48,13 +48,20 @@ public:
 	const std::string& getAssociatedGeometryName() const { return _associated_geometry; };
 
 	/// Sets a vector of values specifying the distribution.
-	void setDisValue(std::vector<double> disValue) { for (size_t i=0; i<disValue.size(); i++) _disValue.push_back(disValue[i]); };
+	void setDisValue(const std::vector<double> &disValue) { for (size_t i=0; i<disValue.size(); i++) _disValue.push_back(disValue[i]); };
+
+	/// Sets a vector of values specifying the distribution.
+	void setLinearDisValues(const std::vector<int> &point_ids, const std::vector<double> &point_values);
+
 
 	/// Convenience method for setting a single value specifying the distribution.
 	void setDisValue(double disValue) { _disValue.push_back(disValue); };
 
 	/// Sets the name of the geo-object the condition is assigned to.
 	void setGeoName(std::string geoName) { _geoName = geoName; };
+
+	/// Returns the type of the FEM condition as a string.
+	static std::string condTypeToString(CondType type);
 
 protected:
 	CondType _type;

@@ -2034,10 +2034,10 @@ short REACT_GEM::Init_Nodes ( string Project_path )
          m_Node =  m_pcs->m_msh->nod_vector[Idx_Node];
 
          // loop over all the elements that adjacent to this node;
-         for ( int i=0 ; i < ( long ) m_Node->connected_elements.size() ; i++ )
+         for ( int i=0 ; i < ( long ) m_Node->getConnectedElementIDs().size() ; i++ )
          {
             // get the index of current element;
-            Idx_Ele = m_Node->connected_elements[i];
+            Idx_Ele = m_Node->getConnectedElementIDs()[i];
 
             // get the pointer of this element;
             m_Elem = m_pcs->m_msh->ele_vector[Idx_Ele];
@@ -3569,16 +3569,16 @@ void REACT_GEM::WriteVTKGEMValues ( fstream &vtk_file )
    // this is point data
 
     for ( j=0 ; j < nIC; j++ )
-                {         
+                {
                 vtk_file << "SCALARS " << dCH->ICNL[j] << " double 1" << endl;
-                vtk_file << "LOOKUP_TABLE default" <<endl;                    
+                vtk_file << "LOOKUP_TABLE default" <<endl;
                 //....................................................................
-                for ( k=0;k<nNodes;k++ )                                              
-                {                                                                     
+                for ( k=0;k<nNodes;k++ )
+                {
                         bdummy=m_soluteB[k*nIC + j] * m_fluid_volume[k] ; //soluteB contains volume based concentrations
-                        // now we have to add water                                                                     
-                        if ( idx_hydrogen == j )        bdummy += ( 2.0*m_xDC[k*nDC + idx_water] ) ;   //carrier for zero(first phase)  is normally water!                                                                                                                                                
-                        else if ( idx_oxygen == j )  bdummy +=  m_xDC[k*nDC + idx_water]  ;                                                          
+                        // now we have to add water
+                        if ( idx_hydrogen == j )        bdummy += ( 2.0*m_xDC[k*nDC + idx_water] ) ;   //carrier for zero(first phase)  is normally water!
+                        else if ( idx_oxygen == j )  bdummy +=  m_xDC[k*nDC + idx_water]  ;
 
                         bdummy+=m_bIC[k*nIC + j]; //add the solids
                         vtk_file <<" "<<  bdummy << endl; // and output

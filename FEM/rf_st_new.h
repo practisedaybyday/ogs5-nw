@@ -74,11 +74,12 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       void SetSurfaceNodeVectorConditional(std::vector<long> & sfc_nod_vector, std::vector<long> & sfc_nod_vector_cond);
                                                   // used only once in sourcetermgroup
       void InterpolatePolylineNodeValueVector(CGLPolyline *m_ply, std::vector<double> & Distribed, std::vector<double> & ply_nod_vector);
+      void InterpolatePolylineNodeValueVector(std::vector<double> const & nodes_as_interpol_points,
+      		std::vector<double>& node_values) const;
+
 
       void SetNodeValues(const std::vector<long> & nodes, const std::vector<long> & nodes_cond,
-                                                  // used only in sourcetermgroup
-         const std::vector<double> & node_values, int ShiftInNodeVector);
-
+    		  const std::vector<double> & node_values, int ShiftInNodeVector); // used only in sourcetermgroup
       /**
        * the only difference to the previous SetNodeValues() method is the change of vector type from long to size_t
        * @param nodes
@@ -86,8 +87,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
        * @param node_values
        * @param ShiftInNodeVector
        */
-      void SetNodeValues(const std::vector<size_t>& nodes, const std::vector<size_t>& nodes_cond,
-         const std::vector<double>& node_values, int ShiftInNodeVector);
+//      void SetNodeValues(const std::vector<size_t>& nodes, const std::vector<size_t>& nodes_cond,
+//         const std::vector<double>& node_values, int ShiftInNodeVector);
 
       void SetNOD();
 
@@ -106,6 +107,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
        */
       const std::string & getGeoName() const;
 
+	  double getGeoNodeValue() const { return geo_node_value; }; //KR
+
       int CurveIndex;
       std::vector<int> element_st_vector;
 
@@ -119,6 +122,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       const std::string& getFunctionName () const { return fct_name; }
       int getFunctionMethod () const { return fct_method; }
 
+	  const std::vector<int>& getPointsWithDistribedST () const { return PointsHaveDistribedBC; }
+      const std::vector<double>& getDistribedST() const { return DistribedBC; }
       bool isAnalytical () const { return analytical; }
       double GetAnalyticalSolution(long location);
       size_t getNumberOfTerms () const { return number_of_terms; }
@@ -128,7 +133,6 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       bool channel;
       double channel_width;
       int geo_node_number;
-      double geo_node_value;
 
       double *nodes;
       std::vector<int> node_number_vector;
@@ -147,6 +151,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
 
       void CreateHistoryNodeMemory(NODE_HISTORY *nh);
       void DeleteHistoryNodeMemory();
+
+	  double geo_node_value;
 
       /**
        * is the source term coupled with another source term
@@ -252,9 +258,9 @@ class CSourceTermGroup
       void SetCOL(CSourceTerm *m_st, const int ShiftInNodeVector);
 
                                                   // JOD
-      void SetPolylineNodeVector(CGLPolyline* m_ply, std::vector<long>&ply_nod_vector);
+//      void SetPolylineNodeVector(CGLPolyline* m_ply, std::vector<long>&ply_nod_vector);
 
-      void SetPolylineNodeVectorConditional(CSourceTerm* m_st, CGLPolyline* m_ply,
+      void SetPolylineNodeVectorConditional(CSourceTerm* st,
          std::vector<long>&ply_nod_vector, std::vector<long>&ply_nod_vector_cond);
 
       /**
@@ -267,17 +273,21 @@ class CSourceTermGroup
          std::vector<size_t>& ply_nod_vector,
          std::vector<size_t>& ply_nod_vector_cond);
 
-      void SetPolylineNodeValueVector(CSourceTerm* st, CGLPolyline* ply, const std::vector<long>& ply_nod_vector,
-         std::vector<long>& ply_nod_vector_cond, std::vector<double>& ply_nod_val_vector);
+      void SetPolylineNodeValueVector(CSourceTerm* st, CGLPolyline * old_ply,
+    		  const std::vector<long>& ply_nod_vector,
+    		  std::vector<long>& ply_nod_vector_cond, std::vector<double>& ply_nod_val_vector);
+
       /**
-       * 09/2010 TF
+       * 09/2010 / 03/2011 TF
        * @param st
-       * @param msh_nodes_along_polyline
+       * @param ply_nod_vector
        * @param ply_nod_vector_cond
        * @param ply_nod_val_vector
        */
-	  void SetPolylineNodeValueVector(CSourceTerm* st, const Mesh_Group::MeshNodesAlongPolyline& msh_nodes_along_polyline,
-         const std::vector<long>& ply_nod_vector_cond, std::vector<double>& ply_nod_val_vector) const;
+      void SetPolylineNodeValueVector(CSourceTerm* st,
+      		std::vector<long> const & ply_nod_vector,
+      		std::vector<long>& ply_nod_vector_cond,
+      		std::vector<double>& ply_nod_val_vector) const;
 
                                                   // JOD
       void SetSurfaceNodeVector(Surface* m_sfc, std::vector<long>&sfc_nod_vector);

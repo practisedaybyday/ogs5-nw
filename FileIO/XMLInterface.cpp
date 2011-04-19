@@ -4,7 +4,10 @@
  */
 
 #include "XMLInterface.h"
+#include "ProjectData.h"
 #include "DateTools.h"
+#include "FEMCondition.h"
+#include "OGSMeshIO.h"
 
 #include <iostream>
 #include <QFileInfo>
@@ -20,8 +23,8 @@
 
 #include <QTime>
 
-XMLInterface::XMLInterface(GEOLIB::GEOObjects* geoObjects, const std::string &schemaFile) 
-: _geoObjects(geoObjects), _schemaName(schemaFile)
+XMLInterface::XMLInterface(ProjectData* project, const std::string &schemaFile)
+: _project(project), _schemaName(schemaFile)
 {
 }
 
@@ -70,7 +73,7 @@ int XMLInterface::readProjectFile(const QString &fileName)
 
 	if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		std::cout << "XMLInterface::readProjectFile() - Can't open xml-file." << std::endl;
+		std::cout << "XMLInterface::readProjectFile() - Can't open xml-file " << fileName.toStdString() << "." << std::endl;
 		delete file;
 		return 0;
 	}
@@ -103,13 +106,16 @@ int XMLInterface::readProjectFile(const QString &fileName)
 				if (childList.at(j).nodeName().compare("file") == 0)
 					this->readSTNFile(QString(path + childList.at(j).toElement().text()));
 		}
-		/*
-		else (fileList.at(i).nodeName().compare("msh") == 0)
+		else if (fileList.at(i).nodeName().compare("msh") == 0)
 		{
-			GridAdapter msh(fileList.at(i).toElement().text().toStdString());
+			std::string msh_name = path.toStdString() + fileList.at(i).toElement().text().toStdString();
+			Mesh_Group::CFEMesh* msh = FileIO::OGSMeshIO::loadMeshFromFile(msh_name);
+			QFileInfo fi(QString::fromStdString(msh_name));
+			std::string name = fi.fileName().toStdString();
+			_project->addMesh(msh, name); 
+			//GridAdapter msh(fileList.at(i).toElement().text().toStdString());
 			// TODO gridadapter to mesh-models
 		}
-		*/
 	}
 
 	return 1;
@@ -118,6 +124,7 @@ int XMLInterface::readProjectFile(const QString &fileName)
 
 int XMLInterface::readGLIFile(const QString &fileName)
 {
+	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	std::string gliName("[NN]");
 
 	QFile* file = new QFile(fileName);
@@ -155,19 +162,19 @@ int XMLInterface::readGLIFile(const QString &fileName)
 		else if (geoTypes.at(i).nodeName().compare("points") == 0)
 		{
 			readPoints(geoTypes.at(i), points, pnt_names);
-			_geoObjects->addPointVec(points, gliName, pnt_names);
+			geoObjects->addPointVec(points, gliName, pnt_names);
 		}
 		else if (geoTypes.at(i).nodeName().compare("polylines") == 0)
-			readPolylines(geoTypes.at(i), polylines, points, _geoObjects->getPointVecObj(gliName)->getIDMap(), ply_names);
+			readPolylines(geoTypes.at(i), polylines, points, geoObjects->getPointVecObj(gliName)->getIDMap(), ply_names);
 		else if (geoTypes.at(i).nodeName().compare("surfaces") == 0)
-			readSurfaces(geoTypes.at(i), surfaces, points, _geoObjects->getPointVecObj(gliName)->getIDMap(), sfc_names);
+			readSurfaces(geoTypes.at(i), surfaces, points, geoObjects->getPointVecObj(gliName)->getIDMap(), sfc_names);
 		else
 			std::cout << "Unknown XML-Node found in file." << std::endl;
 	}
 	delete file;
 
-	if (!polylines->empty()) _geoObjects->addPolylineVec(polylines, gliName, ply_names);
-	if (!surfaces->empty())  _geoObjects->addSurfaceVec(surfaces, gliName, sfc_names);
+	if (!polylines->empty()) geoObjects->addPolylineVec(polylines, gliName, ply_names);
+	if (!surfaces->empty())  geoObjects->addSurfaceVec(surfaces, gliName, sfc_names);
 	return 1;
 }
 
@@ -254,6 +261,7 @@ void XMLInterface::readSurfaces( const QDomNode &surfacesRoot, std::vector<GEOLI
 
 int XMLInterface::readSTNFile(const QString &fileName)
 {
+	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	QFile* file = new QFile(fileName);
 	if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
 	{
@@ -289,7 +297,7 @@ int XMLInterface::readSTNFile(const QString &fileName)
 		}
 
 		GEOLIB::Color* color = GEOLIB::getRandomColor();
-		if (!stations->empty()) _geoObjects->addStationVec(stations, stnName, color);
+		if (!stations->empty()) geoObjects->addStationVec(stations, stnName, color);
 		else delete stations;
 	}
 
@@ -453,6 +461,7 @@ void XMLInterface::readConditions( const QDomNode &listRoot, std::vector<FEMCond
 
 int XMLInterface::writeProjectFile(const QString &fileName) const
 {
+	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	std::fstream stream(fileName.toStdString().c_str(), std::ios::out);
 	QFileInfo fi(fileName);
 	QString path(fi.absolutePath() + "/");
@@ -475,8 +484,8 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 
 	// GLI
 	std::vector<std::string> geoNames;
-	_geoObjects->getGeometryNames(geoNames);
-	for (std::vector<std::string>::const_iterator it(geoNames.begin());	it != geoNames.end(); it++)
+	geoObjects->getGeometryNames(geoNames);
+	for (std::vector<std::string>::const_iterator it(geoNames.begin());	it != geoNames.end(); ++it)
 	{
 		// write GLI file
 		QString name(QString::fromStdString(*it));
@@ -491,10 +500,33 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 		fileNameTag.appendChild(fileNameText);
 	}
 
+	// MSH
+	const std::map<std::string, Mesh_Group::CFEMesh*> msh_vec = _project->getMeshObjects();
+	for (std::map<std::string, Mesh_Group::CFEMesh*>::const_iterator it(msh_vec.begin());	it != msh_vec.end(); ++it)
+	{
+		// write mesh file
+		QString fileName(path + QString::fromStdString(it->first));
+		std::fstream* out = new std::fstream(fileName.toStdString().c_str(), std::fstream::out);
+		if (out->is_open()) {
+			(it->second)->Write(out);
+			out->close();
+		}
+		else
+			std::cout << "MshTabWidget::saveMeshFile() - Could not create file..." << std::endl;
+
+		// write entry in project file
+		QDomElement mshTag = doc.createElement("msh");
+		root.appendChild(mshTag);
+		QDomElement fileNameTag = doc.createElement("file");
+		mshTag.appendChild(fileNameTag);
+		QDomText fileNameText = doc.createTextNode(QString::fromStdString(it->first));
+		fileNameTag.appendChild(fileNameText);
+	}
+
 	// STN
 	std::vector<std::string> stnNames;
-	_geoObjects->getStationNames(stnNames);
-	for (std::vector<std::string>::const_iterator it(stnNames.begin());	it != stnNames.end(); it++)
+	geoObjects->getStationNames(stnNames);
+	for (std::vector<std::string>::const_iterator it(stnNames.begin());	it != stnNames.end(); ++it)
 	{
 		// write STN file
 		QString name(QString::fromStdString(*it));
@@ -520,6 +552,7 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 
 void XMLInterface::writeGLIFile(const QString &filename, const QString &gliName) const
 {
+	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	QFile file(filename);
 	file.open( QIODevice::WriteOnly );
 	std::cout << "Writing " << filename.toStdString() << " ... ";
@@ -546,7 +579,7 @@ void XMLInterface::writeGLIFile(const QString &filename, const QString &gliName)
 	// POINTS
 	xml.writeStartElement("points");
 
-	const GEOLIB::PointVec *pnt_vec (_geoObjects->getPointVecObj(gliName.toStdString()));
+	const GEOLIB::PointVec *pnt_vec (geoObjects->getPointVecObj(gliName.toStdString()));
 	if (pnt_vec)
 	{
 		const std::vector<GEOLIB::Point*> *points (pnt_vec->getVector());
@@ -570,7 +603,7 @@ void XMLInterface::writeGLIFile(const QString &filename, const QString &gliName)
 	else std::cout << "Point vector empty, no points written to file." << std::endl;
 
 	// POLYLINES
-	const GEOLIB::PolylineVec *ply_vec (_geoObjects->getPolylineVecObj(gliName.toStdString()));
+	const GEOLIB::PolylineVec *ply_vec (geoObjects->getPolylineVecObj(gliName.toStdString()));
 	if (ply_vec)
 	{
 		const std::vector<GEOLIB::Polyline*> *polylines (ply_vec->getVector());
@@ -600,7 +633,7 @@ void XMLInterface::writeGLIFile(const QString &filename, const QString &gliName)
 	else std::cout << "Polyline vector empty, no polylines written to file." << std::endl;
 
 	// SURFACES
-	const GEOLIB::SurfaceVec *sfc_vec (_geoObjects->getSurfaceVecObj(gliName.toStdString()));
+	const GEOLIB::SurfaceVec *sfc_vec (geoObjects->getSurfaceVecObj(gliName.toStdString()));
 	if (sfc_vec)
 	{
 		const std::vector<GEOLIB::Surface*> *surfaces (sfc_vec->getVector());
@@ -646,6 +679,7 @@ void XMLInterface::writeGLIFile(const QString &filename, const QString &gliName)
 
 int XMLInterface::writeSTNFile(const QString &filename, const QString &stnName) const
 {
+	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	std::fstream stream(filename.toStdString().c_str(), std::ios::out);
 	if (!stream.is_open())
     {
@@ -661,7 +695,7 @@ int XMLInterface::writeSTNFile(const QString &filename, const QString &stnName) 
     root.setAttribute( "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance" );
     root.setAttribute( "xsi:noNamespaceSchemaLocation", "http://141.65.34.25/OpenGeoSysSTN.xsd" );
 
-	const std::vector<GEOLIB::Point*> *stations (_geoObjects->getStationVec(stnName.toStdString()));
+	const std::vector<GEOLIB::Point*> *stations (geoObjects->getStationVec(stnName.toStdString()));
 	bool isBorehole = (static_cast<GEOLIB::Station*>((*stations)[0])->type() == GEOLIB::Station::BOREHOLE) ? true : false;
 
 	doc.appendChild(root);
@@ -767,7 +801,7 @@ bool XMLInterface::checkHash(const QString &fileName) const
 		char* md5HashStr = new char[16];
 		md5.read(md5HashStr, 16);
 		QByteArray md5Hash(md5HashStr, 16);
-		delete md5HashStr;
+		delete[] md5HashStr;
 		if (hashIsGood(fileName, md5Hash)) return true;
 	}
 

@@ -28,7 +28,6 @@ namespace Mesh_Group
          double epsilon;
          int free_surface;                        //MB ??? mobile
 
-         std::vector<long> connected_elements;
          std::vector<long> connected_nodes;       //OK
          // The vector to store the representative element index.
          // This can be used to extract the norm of the plane that the element lies on.
@@ -86,7 +85,12 @@ namespace Mesh_Group
          // Output
          void Write(std::ostream& os = std::cout) const;
 
+         std::vector<size_t> const & getConnectedElementIDs () const { return _connected_elements; }
+         std::vector<size_t> & getConnectedElementIDs () { return _connected_elements; }
+
       private:
+    	  std::vector<size_t> _connected_elements;
+//    	  std::vector<long> connected_elements;
          // Members
          long eqs_index;                          // renumber
          double coordinate[3];

@@ -12,6 +12,7 @@ mkdir -p Release
 # Iterate over configurations
 for config in "" "SP" "MPI" "GEMS" "PQC" "BRNS" "MKL" "LIS"
 do
+	cmake_args=""
 	if [ "$config" = "" ] ; then
 		config_cmake="OGS_FEM"
 		exe_name="ogs"
@@ -23,6 +24,10 @@ do
 		build_dir="build_$config_low"
 	fi
 
+	if [ "$config" = "MPI" ] ; then
+		cmake_args="-DCMAKE_C_COMPILER=/opt/openmpi-1.4.1/bin/mpicc -DCMAKE_CXX_COMPILER=/opt/openmpi-1.4.1/bin/mpic++ -DMPI_INCLUDE_PATH=/opt/openmpi-1.4.1/include"
+	fi
+
 	# Cleanup
 	rm -rf $build_dir
 
@@ -30,7 +35,8 @@ do
 	mkdir -p $build_dir && cd $build_dir
 
 	# Run CMake
-	../scripts/cmake.ogs.sh -D$config_cmake=ON -DOGS_DONT_USE_QT=ON -DMPI_INCLUDE_PATH=/opt/openmpi-1.4.1/include ..
+	../scripts/cmake.ogs.sh -D$config_cmake=ON -DOGS_DONT_USE_QT=ON $cmake_args ..
+	../scripts/cmake.ogs.sh ..
 
 	# Build
 	make -j

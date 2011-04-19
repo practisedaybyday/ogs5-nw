@@ -25,9 +25,6 @@ Programing:
 #ifdef RFW_FRACTURE
 #include"rf_mmp_new.h"
 #endif
-#ifdef USE_TOKENBUF
-#include "tokenbuf.h"
-#endif
 
 // WW extern void RFConfigRenumber(void);
 #ifndef NEW_EQS                                   //WW. 07.11.2008
@@ -41,12 +38,12 @@ std::vector<Mesh_Group::CFEMesh*>fem_msh_vector;
 
 #define FEM_FILE_EXTENSION ".msh"
 
-double msh_x_min,msh_x_max;                       //OK
-double msh_y_min,msh_y_max;                       //OK
-double msh_z_min,msh_z_max;                       //OK
-double msh_x_mid,msh_y_mid,msh_z_mid;             //OK
+//KR double msh_x_min,msh_x_max;                       //OK
+//KR double msh_y_min,msh_y_max;                       //OK
+//KR double msh_z_min,msh_z_max;                       //OK
+//KR double msh_x_mid,msh_y_mid,msh_z_mid;             //OK
 
-#define MSH_SIZE 1e5
+//#define MSH_SIZE 1e5
 
 using namespace Math_Group;
 
@@ -97,107 +94,46 @@ Programing:
 08/2005 WW Topology construction and rfi compatible
 10/2005 OK BINARY
 08/2010 KR deleted binary mesh read
+03/2011 KR cleaned up code
 **************************************************************************/
 
 CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj, std::string* unique_name)
 {
-   //----------------------------------------------------------------------
    CFEMesh *fem_msh (NULL);
-   char line[MAX_ZEILE];
-   std::string sub_line;
-   std::string line_string;
-   std::ios::pos_type position;
-   //========================================================================
-   // File handling
-   std::string msh_file_name_ascii = file_base_name + FEM_FILE_EXTENSION;
+   std::string msh_file_name = file_base_name + FEM_FILE_EXTENSION;
 
    // test if this is a GMSH mesh
-   if (FileIO::GMSHInterface::isGMSHMeshFile (msh_file_name_ascii))
+   if (FileIO::GMSHInterface::isGMSHMeshFile (msh_file_name))
    {
-      // create mesh object
       fem_msh = new CFEMesh();
-      // read mesh
-      GMSH2MSH(msh_file_name_ascii.c_str(), fem_msh);
+      GMSH2MSH(msh_file_name.c_str(), fem_msh);
       return fem_msh;
    }
 
-   std::ifstream msh_file_ascii;
-
-#ifdef USE_TOKENBUF
-   TokenBuf *tokenbuf;
-#endif
-   std::cout << "MSHRead: ";
-   std::cout << "ASCII file" << std::endl;
-   msh_file_ascii.open(msh_file_name_ascii.data(),std::ios::in);
-   if (!msh_file_ascii.good()) return NULL;
-
-   //----------------------------------------------------------------------
-   // RFI - WW
-   bool rfiMesh = true;
-   getline(msh_file_ascii, line_string);          // The first line
-   if(line_string.find("#FEM_MSH")!=std::string::npos)
-      rfiMesh = false;
-   //	else	// KR: included error message
-   //	{
-   //		std::cout << "Error in CFEMesh::FEMRead() - The file \"" << file_base_name << "\" is not an OpenGeoSys mesh file." << std::endl;
-   //		return NULL;
-   //	}
-
-   msh_file_ascii.seekg(0L,std::ios::beg);
-
-#ifdef USE_TOKENBUF
-   tokenbuf = new TokenBuf(msh_file_ascii, 10485760);
-#endif
-
-   if (rfiMesh)
+   std::ifstream msh_file_ascii (msh_file_name.data(),std::ios::in);
+   if (!msh_file_ascii.is_open())
    {
-      fem_msh = new CFEMesh(geo_obj, unique_name);
-      Read_RFI(msh_file_ascii, fem_msh);
-      //KR fem_msh_vector.push_back(fem_msh);
-      msh_file_ascii.close();
-      return fem_msh;
+	   std::cout << "CFEMesh::FEMRead() - Could not open file...\n";
+	   return NULL;
    }
 
-#ifdef USE_TOKENBUF
-   while(!tokenbuf->done())
-   {
-      tokenbuf->get_non_empty_line(line, MAX_ZEILE);
-      line_string = line;
-      if(line_string.find("#STOP") != std::string::npos)
-         return true;
+   std::cout << "MSHRead:  ASCII file" << std::endl;
+   std::string line_string ("");
+   getline(msh_file_ascii, line_string);
 
-                                                  // mesh
-      if(line_string.find("#FEM_MSH") != string::npos)
-      {
-         m_fem_msh = new CFEMesh();
-         m_fem_msh->Read(tokenbuf);
-         fem_msh_vector.push_back(m_fem_msh);
-      }
+   if(line_string.find("#FEM_MSH")!=std::string::npos)	// OGS mesh file
+   {
+		fem_msh = new CFEMesh(geo_obj, unique_name);
+		fem_msh->Read(&msh_file_ascii);
    }
-   delete tokenbuf;
-#else
-
-   while(!msh_file_ascii.eof())
+   else // RFI mesh file
    {
-      msh_file_ascii.getline(line,MAX_ZEILE);
-      line_string = line;
-      if(line_string.find("#STOP")!=std::string::npos)
-         return fem_msh;
-      //..................................................................
-                                                  // keyword found
-      if(line_string.find("#FEM_MSH")!=std::string::npos)
-      {
-         fem_msh = new CFEMesh(geo_obj, unique_name);
-         position = fem_msh->Read(&msh_file_ascii);
-         //fem_msh_vector.push_back(m_fem_msh);
-         msh_file_ascii.seekg(position,std::ios::beg);
-      }                                           // keyword found
-   }                                              // eof
-#endif
+	    msh_file_ascii.seekg(0L,std::ios::beg);
+		fem_msh = new CFEMesh(geo_obj, unique_name);
+		Read_RFI(msh_file_ascii, fem_msh);
+   }
 
    msh_file_ascii.close();
-
-   //========================================================================
    return fem_msh;
 }
 
@@ -320,12 +256,14 @@ CFEMesh* FEMGet(const std::string &msh_name)
 }
 
 
-/**************************************************************************
+/* KR method not used
+
+**************************************************************************
 FEMLib-Method:
 Task:
 Programing:
 09/2004 OK Implementation
-**************************************************************************/
+**************************************************************************
 void MSHCalcMinMaxMidCoordinates()
 {
    double m_dXMin1 = 1.e+19;
@@ -367,7 +305,7 @@ void MSHCalcMinMaxMidCoordinates()
    msh_z_mid = 0.5*(msh_z_min+msh_z_max);
    //----------------------------------------------------------------------
 }
-
+*/
 
 /**************************************************************************
 GeoLib-Method:
@@ -717,7 +655,7 @@ void MSHLayerWriteTecplot()
       m_msh = fem_msh_vector[j];
       for (size_t k = 0; k < m_msh->getNumberOfMeshLayers(); k++)
       {
-         sprintf(no_layer_char, "%lu", k + 1);
+         sprintf(no_layer_char, "%lu", static_cast<long unsigned>(k) + 1);
          no_layer_str = no_layer_char;
          no_nodes = (long) m_msh->nod_vector.size() / (m_msh->getNumberOfMeshLayers()
             + 1);

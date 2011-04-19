@@ -255,7 +255,7 @@ void CGLPolyline::Write(char* file_name) {
 	f = fopen(filename, "a");
 	fprintf(f, "#POLYLINE\n");
 	fprintf(f, " $ID\n");//CC
-	fprintf(f, "  %ld\n", id);//CC
+	fprintf(f, "  %ld\n", static_cast<long>(id));//CC
 	fprintf(f, " $NAME\n");
 	if (data_type == 1)//CC8888
 		fprintf(f, "  POLYLINE\n");//CC8888
@@ -691,13 +691,26 @@ void InterpolationAlongPolyline(CGLPolyline *plyL, std::vector<double>& bcNodalV
 	}
 
 	// Spline interpolation
+	std::cout << "MATHLIB::CubicSpline input data: " << std::endl;
+	for (size_t k(0); k<ss0.size(); k++) {
+		std::cout << "\t" << ss0[k] << " " << bVal[k] << std::endl;
+	}
+	std::cout << "end MATHLIB::CubicSpline input data" << std::endl;
+
 	MATHLIB::CubicSpline *csp = new MATHLIB::CubicSpline(ss0, bVal);
 
 	// Interpolate
 	size_t number_of_nodes(bcNodalValue.size()), i;
-	for (i = 0; i < number_of_nodes; i++)
+	for (i = 0; i < number_of_nodes; i++) {
 		bcNodalValue[plyL->getOrderedPoints()[i]] = csp->interpolation(
 				plyL->getSBuffer()[i]);
+	}
+	std::cout << "MATHLIB::CubicSpline results: " << std::endl;
+	for (size_t k(0); k<plyL->getSBuffer().size(); k++) {
+		std::cout << "\t" << plyL->getOrderedPoints()[k] << " " << plyL->getSBuffer()[k] << " " << bcNodalValue[plyL->getOrderedPoints()[k]] << " (bcNodalValue[" << plyL->getOrderedPoints()[k] << "])" << std::endl;
+	}
+	std::cout << "end MATHLIB::CubicSpline results" << std::endl;
+
 
 	// Release the memory
 	delete csp;
@@ -805,6 +818,12 @@ void CGLPolyline::SortPointVectorByDistance() {
  04/2006 WW Fix a big for polyines have more than two points
  **************************************************************************/
 void CGLPolyline::GetPointOrderByDistance() {
+
+//	std::cout << "CGLPolyline::GetPointOrderByDistance() polyline " << getName() << std::endl;
+//	for (size_t k(0); k<sbuffer.size(); k++) {
+//		std::cout << "\tsbuffer[" << k << "]: " << sbuffer[k] << ", ibuffer[" << k << "]: " << ibuffer[k] <<std::endl;
+//	}
+
 	long number_of_nodes, i, l;
 	int j, k;
 
@@ -895,6 +914,10 @@ void CGLPolyline::GetPointOrderByDistance() {
 			}
 		}
 	}
+//	std::cout << "CGLPolyline::GetPointOrderByDistance() polyline " << getName() << std::endl;
+//	for (size_t k(0); k<OrderedPoint.size(); k++) {
+//		std::cout << "OrderedPoint[" << k << "]: " << OrderedPoint[k] << ", sbuffer[" << k << "]: " << sbuffer[k] << ", ibuffer[" << k << "]: " << ibuffer[k] <<std::endl;
+//	}
 }
 
 /**************************************************************************

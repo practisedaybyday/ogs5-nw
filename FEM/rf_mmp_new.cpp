@@ -2866,7 +2866,7 @@ double* CMediumProperties::MassDispersionTensorNew(int ip, int tr_phase) // SB +
    saturation = PCSGetEleMeanNodeSecondary_2(index, Fem_Ele_Std->pcs->flow_pcs_type, "SATURATION1", 1);
    if (tr_phase == 10) // multi phase transport
        saturation = 1.0 - saturation;
-   molecular_diffusion_value *= saturation; 
+   molecular_diffusion_value *= saturation;
    for (i = 0; i<Dim*Dim; i++)
       molecular_diffusion[i] = 0.0;
    for (i = 0; i<Dim; i++)
@@ -6013,12 +6013,12 @@ void CMediumProperties::WriteTecplotDistributedProperties()
       for (j = 0; j < (int) m_msh->mat_names_vector.size(); j++)
       {
          m_mat_prop_nod = 0.0;
-         for (k = 0; k < (int) m_nod->connected_elements.size(); k++)
+         for (k = 0; k < (int) m_nod->getConnectedElementIDs().size(); k++)
          {
-            m_ele = m_msh->ele_vector[m_nod->connected_elements[k]];
+            m_ele = m_msh->ele_vector[m_nod->getConnectedElementIDs()[k]];
             m_mat_prop_nod += m_ele->mat_vector(j);
          }
-         m_mat_prop_nod /= (int) m_nod->connected_elements.size();
+         m_mat_prop_nod /= (int) m_nod->getConnectedElementIDs().size();
          mat_file << " " << m_mat_prop_nod;
       }
       mat_file << endl;

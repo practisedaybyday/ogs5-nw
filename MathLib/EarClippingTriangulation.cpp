@@ -34,12 +34,23 @@ EarClippingTriangulation::EarClippingTriangulation(const GEOLIB::Polygon* polygo
 
 	std::vector<GEOLIB::Point*> const& ref_pnts_vec (polygon->getPointsVec());
 	std::list<GEOLIB::Triangle>::const_iterator it (_triangles.begin());
-	while (it != _triangles.end()) {
-		const size_t i0 (polygon->getPointID ((*it)[0]));
-		const size_t i1 (polygon->getPointID ((*it)[1]));
-		const size_t i2 (polygon->getPointID ((*it)[2]));
-		triangles.push_back (GEOLIB::Triangle (ref_pnts_vec, i0, i1, i2));
-		it++;
+	if (_original_orient == MATHLIB::CW) {
+		while (it != _triangles.end()) {
+			const size_t i0 (polygon->getPointID ((*it)[0]));
+			const size_t i1 (polygon->getPointID ((*it)[1]));
+			const size_t i2 (polygon->getPointID ((*it)[2]));
+			triangles.push_back (GEOLIB::Triangle (ref_pnts_vec, i0, i1, i2));
+			it++;
+		}
+	} else {
+		size_t n_pnts (_pnts.size()-1);
+		while (it != _triangles.end()) {
+			const size_t i0 (polygon->getPointID (n_pnts-(*it)[0]));
+			const size_t i1 (polygon->getPointID (n_pnts-(*it)[1]));
+			const size_t i2 (polygon->getPointID (n_pnts-(*it)[2]));
+			triangles.push_back (GEOLIB::Triangle (ref_pnts_vec, i0, i1, i2));
+			it++;
+		}
 	}
 }
 
@@ -73,6 +84,9 @@ void EarClippingTriangulation::rotate ()
 		// rotate copied points into x-y-plane
 		rotatePointsToXY(plane_normal, _pnts);
 	}
+
+	for (size_t k(0); k<_pnts.size(); k++)
+		(*(_pnts[k]))[2] = 0.0; // should be -= d but there are numerical errors
 }
 
 void EarClippingTriangulation::ensureCWOrientation ()
@@ -92,18 +106,17 @@ void EarClippingTriangulation::ensureCWOrientation ()
 		}
 	}
 	// determine orientation
-	MATHLIB::Orientation orient;
 	if (0 < min_x_max_y_idx && min_x_max_y_idx < n_pnts-1) {
-		orient = MATHLIB::getOrientation (
+		_original_orient = MATHLIB::getOrientation (
 			_pnts[min_x_max_y_idx-1], _pnts[min_x_max_y_idx], _pnts[min_x_max_y_idx+1]);
 	} else {
 		if (0 == min_x_max_y_idx) {
-			orient = MATHLIB::getOrientation (_pnts[n_pnts-1], _pnts[0], _pnts[1]);
+			_original_orient = MATHLIB::getOrientation (_pnts[n_pnts-1], _pnts[0], _pnts[1]);
 		} else {
-			orient = MATHLIB::getOrientation (_pnts[n_pnts-2], _pnts[n_pnts-1], _pnts[0]);
+			_original_orient = MATHLIB::getOrientation (_pnts[n_pnts-2], _pnts[n_pnts-1], _pnts[0]);
 		}
 	}
-	if (orient == MATHLIB::CCW) {
+	if (_original_orient == MATHLIB::CCW) {
 		// switch orientation
 		for (size_t k(0); k<n_pnts/2; k++) {
 			BASELIB::swap (_pnts[k], _pnts[n_pnts-1-k]);
@@ -263,11 +276,10 @@ void EarClippingTriangulation::clipEars()
 					_ear_list.remove(*next);
 					if (orientation == COLLINEAR) {
 						next = _vertex_list.erase(next);
-						if (next == _vertex_list.end()) next
-								= _vertex_list.begin();
+						if (next == _vertex_list.end())
+							next = _vertex_list.begin();
 					}
 				}
-
 			} else {
 				prev = it;
 				it++;

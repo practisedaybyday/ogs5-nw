@@ -51,39 +51,89 @@ extern std::string GetLineFromFile1(std::ifstream*);
 
 size_t max_dim = 0;                               //OK411
 
-//========================================================================
-namespace Mesh_Group
-{
-   /**************************************************************************
-    FEMLib-Method:
-    Task:
-    Programing:
-    03/2005 OK Implementation
-    **************************************************************************/
-   CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
-   max_mmp_groups (0), _geo_obj (geo_obj), _geo_name (geo_name),
-      _n_msh_layer (0), _cross_section (false),
-      _msh_n_lines (0), _msh_n_quads (0), _msh_n_hexs (0),
-      _msh_n_tris (0), _msh_n_tets (0), _msh_n_prisms (0),
-      _min_edge_length (1e-3), _axisymmetry (false)
-   {
-      useQuadratic = false;
-      coordinate_system = 1;
+class ThreadParameter {
+public:
+	ThreadParameter (GEOLIB::Point const* const pnt, size_t start, size_t end,
+			std::vector<Mesh_Group::CNode*> const& nod_vector, size_t id)
+	: _pnt (pnt), _start (start), _end (end), _nod_vector (nod_vector),
+	_number (start), _sqr_dist (std::numeric_limits<double>::max()), _id (id)
+	{}
 
-      max_ele_dim = 0;                            //NW
-      pcs_name = "NotSpecified";                  //WW
-      PT=NULL;                                    // WW+TK
-      fm_pcs=NULL;                                //WW
-      // 1.11.2007 WW
+	GEOLIB::Point const * const _pnt;
+	size_t _start;
+	size_t _end;
+	std::vector<Mesh_Group::CNode*> const& _nod_vector;
+	size_t _number;
+	double _sqr_dist;
+	size_t _id;
+};
+
+extern "C" {
+void* threadGetDist (void *ptr)
+{
+	ThreadParameter *thread_param ((ThreadParameter*)(ptr));
+	size_t start (thread_param->_start);
+	size_t end (thread_param->_end);
+	std::vector<Mesh_Group::CNode*> const& nod_vector (thread_param->_nod_vector);
+	GEOLIB::Point const * const pnt (thread_param->_pnt);
+
+	double distmin (MATHLIB::sqrDist (nod_vector[start]->getData(), pnt->getData()));
+	size_t number (start);
+	double sqr_dist (distmin);
+
+	for (size_t i = start+1; i < end; i++) {
+		sqr_dist = MATHLIB::sqrDist (nod_vector[i]->getData(), pnt->getData());
+		if (sqr_dist < distmin) {
+			distmin = sqr_dist;
+			number = i;
+		}
+	}
+
+	thread_param->_number = number;
+	thread_param->_sqr_dist = distmin;
+
+	if (number == std::numeric_limits<size_t>::max()) return (void*)(-1);
+	return (void*)(number);
+}
+} // end extern "C"
+
+//========================================================================
+namespace Mesh_Group {
+/**************************************************************************
+ FEMLib-Method:
+ Task:
+ Programing:
+ 03/2005 OK Implementation
+ **************************************************************************/
+CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
+	max_mmp_groups(0), msh_max_dim (0), _geo_obj(geo_obj), _geo_name(geo_name),
+	_ele_type (MshElemType::INVALID), _n_msh_layer(0),
+	_cross_section(false), _msh_n_lines(0), _msh_n_quads(0),
+	_msh_n_hexs(0), _msh_n_tris(0), _msh_n_tets(0), _msh_n_prisms(0),
+	_min_edge_length(1e-3),
+	NodesNumber_Linear(0), NodesNumber_Quadratic(0),
+	_axisymmetry(false),
+	ncols(0), nrows(0), x0(0.0), y0(0.0),
+	csize(0.0), ndata_v(0.0)
+
+{
+	useQuadratic = false;
+	coordinate_system = 1;
+
+	max_ele_dim = 0; //NW
+	pcs_name = "NotSpecified"; //WW
+	PT = NULL; // WW+TK
+	fm_pcs = NULL; //WW
+	// 1.11.2007 WW
 #ifdef NEW_EQS
-      sparse_graph = NULL;
-      sparse_graph_H = NULL;
+	sparse_graph = NULL;
+	sparse_graph_H = NULL;
 #endif
-      map_counter = 0;                            //21.01.2009 WW
-      mapping_check = false;                      //23.01.2009 WW
-      has_multi_dim_ele = false;                  //NW
-      top_surface_checked = false;                // 07.06.2010.  WW
-   }
+	map_counter = 0; //21.01.2009 WW
+	mapping_check = false; //23.01.2009 WW
+	has_multi_dim_ele = false; //NW
+	top_surface_checked = false; // 07.06.2010.  WW
+}
 
    // Copy-Constructor for CFEMeshes.
    // Programming: 2010/11/10 KR
@@ -145,23 +195,32 @@ namespace Mesh_Group
    CFEMesh::~CFEMesh(void)
    {
       // delete nodes
-      for (size_t i = 0; i < nod_vector.size(); i++)
+	  size_t nNodes(nod_vector.size());
+      for (size_t i = 0; i < nNodes; i++)
          delete nod_vector[i];
       nod_vector.clear();
+
       // Edges
-      for (size_t i = 0; i < edge_vector.size(); i++)
+	  size_t nEdges(edge_vector.size());
+      for (size_t i = 0; i < nEdges; i++)
          delete edge_vector[i];
       edge_vector.clear();
+
       // Surface faces
-      for (size_t i = 0; i < face_vector.size(); i++)
+	  size_t nFaces(face_vector.size());
+      for (size_t i = 0; i < nFaces; i++)
          delete face_vector[i];
       face_vector.clear();
+
       // Element
-      for (size_t i = 0; i < ele_vector.size(); i++)
+	  size_t nElems(ele_vector.size());
+      for (size_t i = 0; i < nElems; i++)
          delete ele_vector[i];
       ele_vector.clear();
+
       // normal  YD
-      for (size_t i = 0; i < face_normal.size(); i++)
+	  size_t nNormals(face_normal.size());
+      for (size_t i = 0; i < nNormals; i++)
          delete face_normal[i];
       face_normal.clear();
 
@@ -170,8 +229,8 @@ namespace Mesh_Group
 #endif
       // 1.11.2007 WW
 #ifdef NEW_EQS
-      if(sparse_graph) delete sparse_graph;
-      if(sparse_graph_H) delete sparse_graph_H;
+      delete sparse_graph;
+      delete sparse_graph_H;
       sparse_graph = NULL;
       sparse_graph_H = NULL;
 #endif
@@ -241,81 +300,65 @@ namespace Mesh_Group
     08/2005 WW/MB Keyword CrossSection
     09/2005 WW 2D-3D flag
     12/2005 OK MAT_TYPE
+	03/2011 KR cleaned up code
     **************************************************************************/
-   std::ios::pos_type CFEMesh::Read(std::ifstream *fem_file)
+   void CFEMesh::Read(std::ifstream *fem_file)
    {
       std::string line_string;
-      bool new_keyword = false;
-      std::ios::pos_type position;
-      double x, y, z;
-      this->max_ele_dim = 0;                      //NW
 
-      // Keyword loop
-      while (!new_keyword)
+      while (!fem_file->eof())
       {
-         position = fem_file->tellg();
          getline(*fem_file, line_string);
-         if (fem_file->fail())
-            break;
-         if (line_string.find("#") != std::string::npos)
+
+		 // check keywords
+         if (line_string.find("#STOP") != std::string::npos)
          {
-            new_keyword = true;
-            break;
+            return;
          }
-                                                  // subkeyword found
-         if (line_string.find("$PCS_TYPE") != std::string::npos)
+         else if (line_string.find("$PCS_TYPE") != std::string::npos)
          {
             *fem_file >> pcs_name >> std::ws;     //WW
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$GEO_NAME") != std::string::npos)
+		 }
+		 else if (line_string.find("$GEO_NAME") != std::string::npos)
          {
             *fem_file >> geo_name >> std::ws;     //WW
-            continue;
-         }
-                                                  //OK9_4310
-         if (line_string.find("$GEO_TYPE") != std::string::npos)
+		 }
+		 else if (line_string.find("$GEO_TYPE") != std::string::npos)
          {
             *fem_file >> geo_type_name >> geo_name >> std::ws;
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$AXISYMMETRY") != std::string::npos)
+		 }
+		 else if (line_string.find("$AXISYMMETRY") != std::string::npos)
          {
             _axisymmetry = true;
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$CROSS_SECTION") != std::string::npos)
+		 }
+		 else if (line_string.find("$CROSS_SECTION") != std::string::npos)
          {
             _cross_section = true;
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$NODES") != std::string::npos)
+		 }
+		 else if (line_string.find("$NODES") != std::string::npos)
          {
-            size_t no_nodes, ibuff;
+		    double x, y, z;
+            size_t no_nodes, idx;
             *fem_file >> no_nodes >> std::ws;
             std::string s;
+			std::ios::pos_type position = fem_file->tellg();
             for (size_t i = 0; i < no_nodes; i++)
             {
-               *fem_file >> ibuff >> x >> y >> z;
-               CNode* newNode (new CNode(ibuff, x, y, z));
+               *fem_file >> idx >> x >> y >> z;
+               CNode* newNode (new CNode(idx, x, y, z));
                nod_vector.push_back(newNode);
                position = fem_file->tellg();
                *fem_file >> s;
                if (s.find("$AREA") != std::string::npos)
                {
                   *fem_file >> newNode->patch_area;
-               } else
-               fem_file->seekg(position, std::ios::beg);
+               }
+			   else
+				  fem_file->seekg(position, std::ios::beg);
                *fem_file >> std::ws;
             }
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$ELEMENTS") != std::string::npos)
+		 }
+		 else  if (line_string.find("$ELEMENTS") != std::string::npos)
          {
             size_t no_elements;
             *fem_file >> no_elements >> std::ws;
@@ -331,204 +374,40 @@ namespace Mesh_Group
                   this->max_ele_dim = newElem->GetDimension();
                ele_vector.push_back(newElem);
             }
-            continue;
-         }
-                                                  // subkeyword found
-         if (line_string.find("$LAYER") != std::string::npos)
+		 }
+		 else if (line_string.find("$LAYER") != std::string::npos)
          {
             *fem_file >> _n_msh_layer >> std::ws;
-            continue;
          }
       }
-      return position;
    }
-
-#ifdef USE_TOKENBUF
-   int
-      CFEMesh::Read(TokenBuf *tokenbuf)
-   {
-      std::string sub_line;
-      std::string line_string;
-      char line_buf[LINE_MAX];
-      char str1[LINE_MAX], str2[LINE_MAX];
-      bool new_keyword = false;
-      std::string hash("#");
-      std::ios::pos_type position;
-      std::string sub_string,sub_string1;
-      long i, ibuff;
-      long no_elements;
-      long no_nodes;
-      double x,y,z;
-      CNode* newNode = NULL;
-      CElem* newElem = NULL;
-#ifdef BENCHMARKING
-      BenchTimer read_timer;
-
-      read_timer.start();
-#endif
-
-      //========================================================================
-      // Keyword loop
-      while (!new_keyword && !tokenbuf->done())
-      {
-         tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-         if(tokenbuf->done()) break;
-         line_string = std::string(line_buf);
-         if(line_string.find(hash)!=std::string::npos)
-         {
-            new_keyword = true;
-            break;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$PCS_TYPE")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            pcs_name = std::string(line_buf);
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$GEO_NAME")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            geo_name = std::string(line_buf);
-            continue;
-         }
-         //....................................................................
-                                                  //OK9_4310
-         if(line_string.find("$GEO_TYPE")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            sscanf(line_buf, "%s %s", str1, str2);
-            geo_type_name = std::string(str1);
-            geo_name = std::string(str2);
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$AXISYMMETRY")!=std::string::npos)
-         {
-            _axisymmetry=true;
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$CROSS_SECTION")!=string::npos)
-         {
-            cross_section=true;
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$NODES")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            sscanf(line_buf, "%ld", &no_nodes);
-            for(i=0;i<no_nodes;i++)
-            {
-               tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-               sscanf(line_buf, "%ld %lf %lf %lf", &ibuff, &x, &y, &z);
-               newNode = new CNode(ibuff,x,y,z);
-               nod_vector.push_back(newNode);
-            }
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$ELEMENTS")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            sscanf(line_buf, "%ld", &no_elements);
-            for(i=0;i<no_elements;i++)
-            {
-               newElem = new CElem(i);
-               newElem->Read(tokenbuf);
-               setElementType (newElem->geo_type);//CC02/2006
-               if(newElem->GetPatchIndex()>max_mmp_groups)
-                  max_mmp_groups = newElem->GetPatchIndex();
-               ele_vector.push_back(newElem);
-            }
-            continue;
-         }
-         //....................................................................
-                                                  // subkeyword found
-         if(line_string.find("$LAYER")!=std::string::npos)
-         {
-            tokenbuf->get_non_empty_line(line_buf, LINE_MAX);
-            sscanf(line_buf, "%ld", &_n_msh_layer);
-            continue;
-         }
-         //....................................................................
-      }
-      //========================================================================
-
-#ifdef BENCHMARKING
-      read_timer.stop();
-      std::cout << "Reading mesh took " << read_timer.time_s() << " s." << std::endl;
-#endif
-      return 0;
-   }
-#endif
 
    /**************************************************************************
     FEMLib-Method: ConnectedElements2Node
-    Task:
+    Task: Set elements connected to a node
     Programing:
     04/2007 WW Cut from Construct grid
+	03/2011 KR cleaned up code
     **************************************************************************/
    void CFEMesh::ConnectedElements2Node(bool quadratic)
    {
-      // Set neighbors of node
-      for (size_t e = 0; e < nod_vector.size(); e++)
-         nod_vector[e]->connected_elements.clear();
+      size_t nNodes (nod_vector.size());
+      for (size_t e = 0; e < nNodes; e++)
+         nod_vector[e]->getConnectedElementIDs().clear();
 
-      bool done = false;
-
-      size_t ele_vector_size (ele_vector.size());
-      for (size_t e = 0; e < ele_vector_size; e++)
+      size_t nElems (ele_vector.size());
+      for (size_t e = 0; e < nElems; e++)
       {
-         CElem* celem_e = ele_vector[e];
-         if (! celem_e->GetMark())
-            continue;
-         size_t n_nodes(   static_cast<size_t> (celem_e->GetNodesNumber(quadratic)) );
-         for (size_t i = 0; i < n_nodes; i++)
+         CElem* elem = ele_vector[e];
+         if (!elem->GetMark()) continue;
+
+         size_t nElemNodes( static_cast<size_t> (elem->GetNodesNumber(quadratic)) );
+         for (size_t i = 0; i < nElemNodes; i++)
          {
-            done = false;
-            Mesh_Group::CNode* cnode_i (nod_vector[celem_e->GetNodeIndex(i)]);
-            size_t n_connected_elements (cnode_i->connected_elements.size());
-            for (size_t j = 0; j < n_connected_elements; j++)
-            {
-               if (e == static_cast<size_t> (cnode_i->connected_elements[j]))
-               {
-                  done = true;
-                  break;
-               }
-            }
-            if (!done)
-               cnode_i->connected_elements.push_back(e);
+            Mesh_Group::CNode* node (nod_vector[elem->GetNodeIndex(i)]);
+            node->getConnectedElementIDs().push_back(e);
          }
       }
-
-      //	CElem* thisElem0 = NULL;
-      //	for (size_t e = 0; e < (long) ele_vector.size(); e++) {
-      //		thisElem0 = ele_vector[e];
-      //		if (!thisElem0->GetMark())
-      //			continue;
-      //		size_t n_nodes(static_cast<size_t>(thisElem0->GetNodesNumber(quadratic)));
-      //		for (size_t i = 0; i < n_nodes; i++) {
-      //			done = false;
-      //			ni = thisElem0->GetNodeIndex(i);
-      //			for (j = 0; j < (int) nod_vector[ni]->connected_elements.size(); j++) {
-      //				if (e == nod_vector[ni]->connected_elements[j]) {
-      //					done = true;
-      //					break;
-      //				}
-      //			}
-      //			if (!done)
-      //				nod_vector[ni]->connected_elements.push_back(e);
-      //		}
-      //	}
    }
 
    /**************************************************************************
@@ -538,23 +417,13 @@ namespace Mesh_Group
     05/2005 WW Implementation
     02/2006 YD Add 1D line neighbor element set
     01/2010 NW Changed to determine the coordinate system by domain dimensions
+	03/2011 KR cleaned up code (at least a little)
     **************************************************************************/
    void CFEMesh::ConstructGrid()
    {
-      int counter;
-      int i, j, k, ii, jj, m0, m, n0, n;
-      int nnodes0, nedges0, nedges;
-      long e, ei, ee, e_size, e_size_l;
       bool done;
-      double x_sum, y_sum, z_sum;
 
-      int edgeIndex_loc0[2];
-      int edgeIndex_loc[2];
-      int faceIndex_loc0[10];
-      int faceIndex_loc[10];
       vec<CNode*> e_nodes0(20);
-      //	vec<long> node_index_glb(20);
-      //	vec<long> node_index_glb0(20);
       vec<int> Edge_Orientation(15);
       vec<CEdge*> Edges(15);
       vec<CEdge*> Edges0(15);
@@ -563,76 +432,71 @@ namespace Mesh_Group
 
       vec<CNode*> e_edgeNodes0(3);
       vec<CNode*> e_edgeNodes(3);
-      CElem* thisElem0 = NULL;
-      CElem* thisElem = NULL;
 
-      //Elem->nodes not initialized
-
-      e_size = (long) ele_vector.size();
       NodesNumber_Linear = nod_vector.size();
 
       Edge_Orientation = 1;
-      //----------------------------------------------------------------------
-      // Set neighbors of node
-      ConnectedElements2Node();
-      //----------------------------------------------------------------------
 
-      //----------------------------------------------------------------------
+	  // Set neighbors of node
+      ConnectedElements2Node();
+
       // Compute neighbors and edges
-      for (e = 0; e < e_size; e++)
+	  size_t e_size ( ele_vector.size() );
+      for (size_t e = 0; e < e_size; e++)
       {
-         thisElem0 = ele_vector[e];
-         nnodes0 = thisElem0->nnodes;             // Number of nodes for linear element
-         //		thisElem0->GetNodeIndeces(node_index_glb0);
-         const vec<long>& node_index_glb0 (thisElem0->GetNodeIndeces());
-         thisElem0->GetNeighbors(Neighbors0);
-         for (i = 0; i < nnodes0; i++)            // Nodes
-            e_nodes0[i] = nod_vector[node_index_glb0[i]];
-         m0 = thisElem0->GetFacesNumber();
+		 CElem* elem ( ele_vector[e] );
+		 const vec<long>& node_index (elem->GetNodeIndeces());
+		 elem->GetNeighbors(Neighbors0);
+
+		 size_t nnodes0 ( elem->nnodes );             // Number of nodes for linear element
+         for (size_t i = 0; i < nnodes0; i++)            // Nodes
+            e_nodes0[i] = nod_vector[node_index[i]];
+
+         size_t nFaces = static_cast<size_t>(elem->GetFacesNumber());
          // neighbors
-         for (i = 0; i < m0; i++)                 // Faces
+         for (size_t i = 0; i < nFaces; i++)              // Faces
          {
-            if (Neighbors0[i])
-               continue;
-            n0 = thisElem0->GetElementFaceNodes(i, faceIndex_loc0);
-            done = false;
-            for (k = 0; k < n0; k++)
+            if (Neighbors0[i]) continue;
+
+			done = false;
+			int faceIndex_loc0[10];
+            size_t nFaceNodes = static_cast<size_t>(elem->GetElementFaceNodes(i, faceIndex_loc0));
+            for (size_t k = 0; k < nFaceNodes; k++)			//face nodes
             {
-               e_size_l
-                  = (long) e_nodes0[faceIndex_loc0[k]]->connected_elements.size();
-               for (ei = 0; ei < e_size_l; ei++)
+               size_t nConnElems ( e_nodes0[faceIndex_loc0[k]]->getConnectedElementIDs().size() );
+               for (size_t ei = 0; ei < nConnElems; ei++)  // elements connected to face node
                {
-                  ee = e_nodes0[faceIndex_loc0[k]]->connected_elements[ei];
+                  size_t ee ( static_cast<size_t>(e_nodes0[faceIndex_loc0[k]]->getConnectedElementIDs()[ei]) );
                   if (ee == e)
                      continue;
-                  thisElem = ele_vector[ee];
-                  const vec<long>& node_index_glb (thisElem->GetNodeIndeces());
-                  thisElem->GetNeighbors(Neighbors);
-                  m = thisElem->GetFacesNumber();
+                  CElem* connElem ( ele_vector[ee] );
+                  const vec<long>& node_index_glb (connElem->GetNodeIndeces());
+                  connElem->GetNeighbors(Neighbors);
+                  size_t nFacesConnElem = static_cast<size_t>(connElem->GetFacesNumber());
 
-                  for (ii = 0; ii < m; ii++)      // Faces
+				  int faceIndex_loc[10];
+                  for (size_t ii = 0; ii < nFacesConnElem; ii++)      // faces of elements connected to face node
                   {
-                     n = thisElem->GetElementFaceNodes(ii, faceIndex_loc);
-                     if (n0 != n)
+                     size_t nFaceNodesConnElem ( static_cast<size_t>(connElem->GetElementFaceNodes(ii, faceIndex_loc)) );
+                     if (nFaceNodes != nFaceNodesConnElem)
                         continue;
-                     counter = 0;
-                     for (j = 0; j < n0; j++)
+                     size_t counter(0);
+                     for (size_t j = 0; j < nFaceNodes; j++)
                      {
-                        for (jj = 0; jj < n; jj++)
+                        for (size_t jj = 0; jj < nFaceNodesConnElem; jj++)
                         {
-                           if (node_index_glb0[faceIndex_loc0[j]]
-                              == node_index_glb[faceIndex_loc[jj]])
+                           if (node_index[faceIndex_loc0[j]] == node_index_glb[faceIndex_loc[jj]])
                            {
                               counter++;
                               break;
                            }
                         }
                      }
-                     if (counter == n)
+                     if (counter == nFaceNodesConnElem)
                      {
-                        Neighbors0[i] = thisElem;
-                        Neighbors[ii] = thisElem0;
-                        thisElem->SetNeighbor(ii, thisElem0);
+                        Neighbors0[i] = connElem;
+                        Neighbors[ii] = elem;
+                        connElem->SetNeighbor(ii, elem);
                         done = true;
                         break;
                      }
@@ -643,80 +507,75 @@ namespace Mesh_Group
                if (done)
                   break;
             }
-         }
-         thisElem0->SetNeighbors(Neighbors0);
-         //------------neighbor of 1D line
-         if (thisElem0->geo_type == 1)            //YD
+		 }
+         elem->SetNeighbors(Neighbors0);
+
+		 if (elem->geo_type == MshElemType::LINE) //YD
          {
-            ii = 0;
-            for (i = 0; i < m0; i++)
+            size_t ii (0);
+            for (size_t i = 0; i < nFaces; i++)
             {
-               n0 = thisElem0->GetElementFaceNodes(i, faceIndex_loc0);
-               for (k = 0; k < n0; k++)
+			   int faceIndex_loc0[10];
+               size_t n0 = elem->GetElementFaceNodes(i, faceIndex_loc0);
+               for (size_t k = 0; k < n0; k++)
                {
-                  e_size_l
-                     = (long) e_nodes0[faceIndex_loc0[k]]->connected_elements.size();
-                  for (ei = 0; ei < e_size_l; ei++)
+                  size_t e_size_l = e_nodes0[faceIndex_loc0[k]]->getConnectedElementIDs().size();
+                  for (size_t ei = 0; ei < e_size_l; ei++)
                   {
-                     ee
-                        = e_nodes0[faceIndex_loc0[k]]->connected_elements[ei];
-                     thisElem = ele_vector[ee];
-                     if (e_size_l == 2 && thisElem->GetIndex()
-                        != thisElem0->GetIndex())
+                     size_t ee = e_nodes0[faceIndex_loc0[k]]->getConnectedElementIDs()[ei];
+                     CElem* connElem = ele_vector[ee];
+                     if (e_size_l == 2 && connElem->GetIndex() != elem->GetIndex())
                      {
-                        Neighbors0[i] = thisElem;
-                        Neighbors[ii] = thisElem;
+                        Neighbors0[i] = connElem;
+                        Neighbors[ii] = connElem;
                         // thisElem->SetNeighbor(ii, thisElem0);   //?? Todo YD
                         ii++;
                      }
                   }
                }
             }
-            thisElem0->SetNeighbors(Neighbors0);
+            elem->SetNeighbors(Neighbors0);
          }
          // --------------------------------
+
          // Edges
-         nedges0 = thisElem0->GetEdgesNumber();
-         thisElem0->GetEdges(Edges0);
-         for (i = 0; i < nedges0; i++)
+         size_t nedges0 ( elem->GetEdgesNumber() );
+         elem->GetEdges(Edges0);
+         for (size_t i = 0; i < nedges0; i++)	// edges
          {
-            thisElem0->GetLocalIndicesOfEdgeNodes(i, edgeIndex_loc0);
+			int edgeIndex_loc0[2];
+            elem->GetLocalIndicesOfEdgeNodes(i, edgeIndex_loc0);
             // Check neighbors
             done = false;
-            for (k = 0; k < 2; k++)
+            for (size_t k = 0; k < 2; k++)		// beginning and end of edge
             {
-               e_size_l
-                  = (long) e_nodes0[edgeIndex_loc0[k]]->connected_elements.size();
-               for (ei = 0; ei < e_size_l; ei++)
+               size_t nConnElem ( e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs().size() );
+               for (size_t ei = 0; ei < nConnElem; ei++)	// elements connected to edge node
                {
-                  ee = e_nodes0[edgeIndex_loc0[k]]->connected_elements[ei];
+                  size_t ee ( e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs()[ei] );
                   if (ee == e)
                      continue;
-                  thisElem = ele_vector[ee];
-                  const vec<long>& node_index_glb (thisElem->GetNodeIndeces());
-                  nedges = thisElem->GetEdgesNumber();
-                  thisElem->GetEdges(Edges);
+                  CElem* connElem ( ele_vector[ee] );
+                  const vec<long>& node_index_glb (connElem->GetNodeIndeces());
+                  size_t nedges ( connElem->GetEdgesNumber() );
+                  connElem->GetEdges(Edges);
                   // Edges of neighbors
-                  for (ii = 0; ii < nedges; ii++)
+				  int edgeIndex_loc[2];
+                  for (size_t ii = 0; ii < nedges; ii++)	// edges of element connected to edge node
                   {
-                     thisElem->GetLocalIndicesOfEdgeNodes(ii, edgeIndex_loc);
-                     if ((node_index_glb0[edgeIndex_loc0[0]]
-                        == node_index_glb[edgeIndex_loc[0]]
-                        && node_index_glb0[edgeIndex_loc0[1]]
-                        == node_index_glb[edgeIndex_loc[1]])
-                        || (node_index_glb0[edgeIndex_loc0[0]]
-                        == node_index_glb[edgeIndex_loc[1]]
-                        && node_index_glb0[edgeIndex_loc0[1]]
-                        == node_index_glb[edgeIndex_loc[0]]))
+                     connElem->GetLocalIndicesOfEdgeNodes(ii, edgeIndex_loc);
+
+                     if ((node_index[edgeIndex_loc0[0]] == node_index_glb[edgeIndex_loc[0]]
+                        && node_index[edgeIndex_loc0[1]] == node_index_glb[edgeIndex_loc[1]])
+                        || (node_index[edgeIndex_loc0[0]] == node_index_glb[edgeIndex_loc[1]]
+                        && node_index[edgeIndex_loc0[1]] == node_index_glb[edgeIndex_loc[0]])) // check if elements share edge
                      {
                         if (Edges[ii])
                         {
                            Edges0[i] = Edges[ii];
                            Edges[ii]->GetNodes(e_edgeNodes);
-                           if ((size_t)node_index_glb0[edgeIndex_loc0[0]]
-                              == e_edgeNodes[1]->GetIndex()
-                              && (size_t)node_index_glb0[edgeIndex_loc0[1]]
-                              == e_edgeNodes[0]->GetIndex())
+                           if ((size_t)node_index[edgeIndex_loc0[0]] == e_edgeNodes[1]->GetIndex()
+                              && (size_t)node_index[edgeIndex_loc0[1]] == e_edgeNodes[0]->GetIndex()) // check direction of edge
                               Edge_Orientation[i] = -1;
                            done = true;
                            break;
@@ -742,12 +601,13 @@ namespace Mesh_Group
          }                                        //  for(i=0; i<nedges0; i++)
          //
          // Set edges and nodes
-         thisElem0->SetOrder(false);
-         thisElem0->SetEdgesOrientation(Edge_Orientation);
-         thisElem0->SetEdges(Edges0);
+         elem->SetOrder(false);
+         elem->SetEdgesOrientation(Edge_Orientation);
+         elem->SetEdges(Edges0);
          // Resize is true
-         thisElem0->SetNodes(e_nodes0, true);
+         elem->SetNodes(e_nodes0, true);
       }                                           // Over elements
+
       // Set faces on surfaces and others
       _msh_n_lines = 0;                           // Should be members of mesh
       _msh_n_quads = 0;
@@ -755,10 +615,10 @@ namespace Mesh_Group
       _msh_n_tris = 0;
       _msh_n_tets = 0;
       _msh_n_prisms = 0;
-      for (e = 0; e < e_size; e++)
+      for (size_t e = 0; e < e_size; e++)
       {
-         thisElem0 = ele_vector[e];
-         switch (thisElem0->GetElementType())
+         CElem* elem ( ele_vector[e] );
+         switch (elem->GetElementType())
          {
             case MshElemType::LINE:
                _msh_n_lines++;
@@ -782,27 +642,27 @@ namespace Mesh_Group
                std::cerr << "CFEMesh::ConstructGrid MshElemType not handled" << std::endl;
          }
          // Compute volume meanwhile
-         thisElem0->ComputeVolume();
+         elem->ComputeVolume();
 
-         if (thisElem0->GetElementType() == MshElemType::LINE)
+         if (elem->GetElementType() == MshElemType::LINE)
             continue;                             // line element
          //		thisElem0->GetNodeIndeces(node_index_glb0);
          //		const vec<long>& node_index_glb0 (thisElem0->GetNodeIndeces()); // compiler said: unused variable // TF
-         thisElem0->GetNeighbors(Neighbors0);
-         m0 = thisElem0->GetFacesNumber();
+         elem->GetNeighbors(Neighbors0);
+         size_t m0 = elem->GetFacesNumber();
 
          // Check face on surface
-         for (i = 0; i < m0; i++)                 // Faces
+         for (size_t i = 0; i < m0; i++)                 // Faces
          {
             if (Neighbors0[i])
                continue;
-            CElem* newFace = new CElem((long) face_vector.size(), thisElem0, i);
+            CElem* newFace = new CElem((long) face_vector.size(), elem, i);
             //          thisElem0->boundary_type='B';
-            thisElem0->no_faces_on_surface++;
+            elem->no_faces_on_surface++;
             face_vector.push_back(newFace);
             Neighbors0[i] = newFace;
          }
-         thisElem0->SetNeighbors(Neighbors0);
+         elem->SetNeighbors(Neighbors0);
 
       }
       NodesNumber_Quadratic = (long) nod_vector.size();
@@ -827,9 +687,7 @@ namespace Mesh_Group
       // Node information
       // 1. Default node index <---> eqs index relationship
       // 2. Coordiate system flag
-      x_sum = 0.0;
-      y_sum = 0.0;
-      z_sum = 0.0;
+      double x_sum(0.0), y_sum(0.0), z_sum(0.0);
       Eqs2Global_NodeIndex.clear();
       double xyz_max[3] =                         //NW
       {
@@ -840,7 +698,7 @@ namespace Mesh_Group
          DBL_MAX, DBL_MAX, DBL_MAX
       };
 
-      for (e = 0; e < (long) nod_vector.size(); e++)
+      for (size_t e = 0; e < nod_vector.size(); e++)
       {
          nod_vector[e]->SetEquationIndex(e);
          Eqs2Global_NodeIndex.push_back(nod_vector[e]->GetIndex());
@@ -894,19 +752,19 @@ namespace Mesh_Group
       max_dim = coordinate_system / 10 - 1;
       //----------------------------------------------------------------------
       // Gravity center
-      for (e = 0; e < e_size; e++)
+      for (size_t e = 0; e < e_size; e++)
       {
-         thisElem0 = ele_vector[e];
-         nnodes0 = thisElem0->nnodes;
-         for (i = 0; i < nnodes0; i++)            // Nodes
+         CElem* elem = ele_vector[e];
+         size_t nnodes0 = elem->nnodes;
+         for (size_t i = 0; i < nnodes0; i++)            // Nodes
          {
-            thisElem0->gravity_center[0] += thisElem0->nodes[i]->X();
-            thisElem0->gravity_center[1] += thisElem0->nodes[i]->Y();
-            thisElem0->gravity_center[2] += thisElem0->nodes[i]->Z();
+            elem->gravity_center[0] += elem->nodes[i]->X();
+            elem->gravity_center[1] += elem->nodes[i]->Y();
+            elem->gravity_center[2] += elem->nodes[i]->Z();
          }
-         thisElem0->gravity_center[0] /= (double) nnodes0;
-         thisElem0->gravity_center[1] /= (double) nnodes0;
-         thisElem0->gravity_center[2] /= (double) nnodes0;
+         elem->gravity_center[0] /= (double) nnodes0;
+         elem->gravity_center[1] /= (double) nnodes0;
+         elem->gravity_center[2] /= (double) nnodes0;
       }
       //----------------------------------------------------------------------
 
@@ -937,32 +795,32 @@ namespace Mesh_Group
    {
       int i, j, k, ii;
       int nnodes0, nedges0, nedges;
-      long e, ei, ee, e_size, e_size_l;
+      long e, ei, ee, e_size_l;
       int edgeIndex_loc0[2];
       bool done;
       double x0 = 0.0, y0 = 0.0, z0 = 0.0;        //OK411
 
       // Set neighbors of node. All elements, even in deactivated subdomains, are taken into account here.
       for (e = 0; e < (long) nod_vector.size(); e++)
-         nod_vector[e]->connected_elements.clear();
+         nod_vector[e]->getConnectedElementIDs().clear();
       done = false;
-      for (e = 0; e < (long) ele_vector.size(); e++)
-      {
+      size_t ele_vector_size (ele_vector.size());
+      for (size_t e = 0; e < ele_vector_size; e++) {
          CElem *thisElem0 = ele_vector[e];
          for (i = 0; i < thisElem0->GetNodesNumber(false); i++)
          {
             done = false;
             long ni = thisElem0->GetNodeIndex(i);
-            for (j = 0; j < (int) nod_vector[ni]->connected_elements.size(); j++)
+            size_t n_connected_elements (nod_vector[ni]->getConnectedElementIDs().size());
+            for (size_t j = 0; j < n_connected_elements; j++)
             {
-               if (e == nod_vector[ni]->connected_elements[j])
-               {
+               if (e == nod_vector[ni]->getConnectedElementIDs()[j]) {
                   done = true;
                   break;
                }
             }
             if (!done)
-               nod_vector[ni]->connected_elements.push_back(e);
+               nod_vector[ni]->getConnectedElementIDs().push_back(e);
          }
       }
       //
@@ -975,8 +833,8 @@ namespace Mesh_Group
       CEdge *thisEdge = NULL;
       //----------------------------------------------------------------------
       // Loop over elements (except for line elements)
-      e_size = (long) ele_vector.size();
-      for (e = 0; e < e_size; e++)
+      size_t e_size (ele_vector.size());
+      for (size_t e = 0; e < e_size; e++)
       {
          thisElem0 = ele_vector[e];
          if (thisElem0->GetElementType() == MshElemType::LINE)
@@ -999,10 +857,10 @@ namespace Mesh_Group
             for (k = 0; k < 2; k++)
             {
                e_size_l
-                  = (long) e_nodes0[edgeIndex_loc0[k]]->connected_elements.size();
+                  = (long) e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs().size();
                for (ei = 0; ei < e_size_l; ei++)
                {
-                  ee = e_nodes0[edgeIndex_loc0[k]]->connected_elements[ei];
+                  size_t ee (e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs()[ei]);
                   if (ee == e)
                      continue;
                   thisElem = ele_vector[ee];
@@ -1077,7 +935,7 @@ namespace Mesh_Group
       // Setup 1d line elements at the end
       if (_msh_n_lines > 0)
       {
-         for (e = 0; e < e_size; e++)
+         for (size_t e = 0; e < e_size; e++)
          {
             thisElem0 = ele_vector[e];
             if (thisElem0->GetElementType() != MshElemType::LINE)
@@ -1109,11 +967,11 @@ namespace Mesh_Group
                   {
                      //OK411 CNode *tmp_nod = e_nodes[edgeIndex_loc0[k]];
                      e_size_l
-                        = (long) e_nodes[edgeIndex_loc0[k]]->connected_elements.size();
+                        = (long) e_nodes[edgeIndex_loc0[k]]->getConnectedElementIDs().size();
                      for (ei = 0; ei < e_size_l; ei++)
                      {
                         ee
-                           = e_nodes[edgeIndex_loc0[k]]->connected_elements[ei];
+                           = e_nodes[edgeIndex_loc0[k]]->getConnectedElementIDs()[ei];
                         if (ele_vector[ee] != thisElem0)
                            continue;
                         //the edge is found now
@@ -1167,23 +1025,21 @@ namespace Mesh_Group
          nod_vector[e]->SetEquationIndex(e);
          Eqs2Global_NodeIndex.push_back(nod_vector[e]->GetIndex());
       }
-      for (e = 0; e < e_size; e++)
-      {
+      for (size_t e = 0; e < e_size; e++) {
          thisElem0 = ele_vector[e];
-         for (i = thisElem0->nnodes; i < thisElem0->nnodesHQ; i++)
-         {
+         for (i = thisElem0->nnodes; i < thisElem0->nnodesHQ; i++) {
             done = false;
             aNode = thisElem0->GetNode(i);
-            for (k = 0; k < (int) aNode->connected_elements.size(); k++)
+            for (k = 0; k < (int) aNode->getConnectedElementIDs().size(); k++)
             {
-               if (e == aNode->connected_elements[k])
+               if (e == aNode->getConnectedElementIDs()[k])
                {
                   done = true;
                   break;
                }
             }
             if (!done)
-               aNode->connected_elements.push_back(e);
+               aNode->getConnectedElementIDs().push_back(e);
          }
       }
 
@@ -1264,22 +1120,22 @@ namespace Mesh_Group
     **************************************************************************/
    void CFEMesh::RenumberNodesForGlobalAssembly()
    {
-      int i;
-      long l, el, el_0;
-
       CElem* elem = NULL;
       Eqs2Global_NodeIndex.clear();
-      for (l = 0; l < (long) nod_vector.size(); l++)
+	  size_t nNodes(nod_vector.size());
+      for (size_t l = 0; l < nNodes; l++)
          nod_vector[l]->SetEquationIndex(-1);
 
-      el_0 = 0;
+      size_t el_0 (0);
       // Lower order
-      for (l = 0; l < (long) ele_vector.size(); l++)
+	  size_t nElems(ele_vector.size());
+      for (size_t l = 0; l < nElems; l++)
       {
          elem = ele_vector[l];
          if (elem->GetMark())                     // Marked for use
          {
-            for (i = 0; i < elem->GetVertexNumber(); i++)
+		    int nVert (elem->GetVertexNumber());
+            for (int i = 0; i < nVert; i++)
             {
                if (elem->nodes[i]->GetEquationIndex() < 0)
                {
@@ -1291,7 +1147,7 @@ namespace Mesh_Group
             }
          }
       }
-      el = el_0;
+      size_t el (el_0);
       if (!getOrder())
       {
          NodesNumber_Linear = el_0;
@@ -1299,13 +1155,13 @@ namespace Mesh_Group
          return;
       }
       // High order
-      for (l = 0; l < (long) ele_vector.size(); l++)
+      for (size_t l = 0; l < nElems; l++)
       {
          elem = ele_vector[l];
          if (elem->GetMark())                     // Marked for use
          {
-
-            for (i = elem->GetVertexNumber(); i < elem->GetNodesNumber(true); i++)
+			int nElemNodes (elem->GetNodesNumber(true));
+            for (int i = elem->GetVertexNumber(); i < nElemNodes; i++)
             {
                if (elem->nodes[i]->GetEquationIndex() < 0)
                {
@@ -1320,6 +1176,7 @@ namespace Mesh_Group
       NodesNumber_Linear = el_0;
       NodesNumber_Quadratic = el;
    }
+
    /**************************************************************************
     FEMLib-Method:
     Task:
@@ -1374,35 +1231,62 @@ namespace Mesh_Group
    }
 
 #ifndef NON_GEO
-   /**************************************************************************
-    FEMLib-Method:
-    Task: Ermittelt den nahliegenden existierenden Knoten
-    Programing:
-    03/2010 TF implementation based on long CFEMesh::GetNODOnPNT(CGLPoint*m_pnt)
-    by OK, WW
-    **************************************************************************/
-   long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
-   {
-      double sqr_dist(0.0), distmin(std::numeric_limits<double>::max());
-      long number(-1);
+/**************************************************************************
+	FEMLib-Method:
+	Task: Ermittelt den nahliegenden existierenden Knoten
+	Programing:
+	03/2010 TF implementation based on long CFEMesh::GetNODOnPNT(CGLPoint*m_pnt)
+	by OK, WW
+**************************************************************************/
+long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
+{
+	const size_t nodes_in_usage (static_cast<size_t>(NodesInUsage()));
+#ifdef HAVE_PTHREADS
+	/* thread version */
+	pthread_t thread0, thread1, thread2, thread3;
+	int iret0, iret1, iret2, iret3;
 
-      for (size_t i=0; i<(size_t)NodesInUsage(); i++)
-      {
-         sqr_dist = 0.0;
-         sqr_dist += (nod_vector[i]->X() - (*pnt)[0]) * (nod_vector[i]->X()
-            - (*pnt)[0]);
-         sqr_dist += (nod_vector[i]->Y() - (*pnt)[1]) * (nod_vector[i]->Y()
-            - (*pnt)[1]);
-         sqr_dist += (nod_vector[i]->Z() - (*pnt)[2]) * (nod_vector[i]->Z()
-            - (*pnt)[2]);
-         if (sqr_dist < distmin)
-         {
-            distmin = sqr_dist;
-            number = i;
-         }
-      }
-      return number;
-   }
+	ThreadParameter *thread_param0 (new ThreadParameter (pnt, 0, static_cast<size_t>(nodes_in_usage/4.0), nod_vector, 0));
+	ThreadParameter *thread_param1 (new ThreadParameter(pnt, static_cast<size_t>(nodes_in_usage/4.0), static_cast<size_t>(nodes_in_usage/2.0), nod_vector, 1));
+	ThreadParameter *thread_param2 (new ThreadParameter(pnt, static_cast<size_t>(nodes_in_usage/2.0), static_cast<size_t>(3*nodes_in_usage/4.0), nod_vector, 2));
+	ThreadParameter *thread_param3 (new ThreadParameter(pnt, static_cast<size_t>(3.0*nodes_in_usage/4.0), nodes_in_usage, nod_vector, 3));
+
+	iret0 = pthread_create( &thread0, NULL, threadGetDist, thread_param0);
+	iret1 = pthread_create( &thread1, NULL, threadGetDist, thread_param1);
+	iret2 = pthread_create( &thread2, NULL, threadGetDist, thread_param2);
+	iret3 = pthread_create( &thread3, NULL, threadGetDist, thread_param3);
+
+	pthread_join( thread0, NULL);
+	pthread_join( thread1, NULL);
+	pthread_join( thread2, NULL);
+	pthread_join( thread3, NULL);
+
+	if (thread_param0->_sqr_dist < thread_param1->_sqr_dist
+			&& thread_param0->_sqr_dist < thread_param2->_sqr_dist
+			&& thread_param0->_sqr_dist < thread_param3->_sqr_dist)
+		return thread_param0->_number;
+	if (thread_param1->_sqr_dist < thread_param0->_sqr_dist
+				&& thread_param1->_sqr_dist < thread_param2->_sqr_dist
+				&& thread_param1->_sqr_dist < thread_param3->_sqr_dist)
+			return thread_param1->_number;
+	if (thread_param2->_sqr_dist < thread_param0->_sqr_dist
+				&& thread_param2->_sqr_dist < thread_param1->_sqr_dist
+				&& thread_param2->_sqr_dist < thread_param3->_sqr_dist)
+			return thread_param2->_number;
+	return thread_param3->_number;
+#else
+	double sqr_dist(0.0), distmin(MATHLIB::sqrDist (nod_vector[0]->getData(), pnt->getData()));
+	size_t number(0);
+	for (size_t i = 1; i < nodes_in_usage; i++) {
+		sqr_dist = MATHLIB::sqrDist (nod_vector[i]->getData(), pnt->getData());
+		if (sqr_dist < distmin) {
+			distmin = sqr_dist;
+			number = i;
+		}
+	}
+	return number;
+#endif
+}
 
    /**************************************************************************
     FEMLib-Method:
@@ -1584,255 +1468,252 @@ namespace Mesh_Group
    //	}
    //}
 
-   /**************************************************************************
-    FEMLib-Method:
-    Task: Ermittelt den nahliegenden existierenden Knoten
-    Programing:
-    03/2005 OK Implementation (based on ExecuteSourceSinkMethod11 by CT)
-    07/2005 WW Node object is replaced
-    10/2005 OK test
-    **************************************************************************/
-   void CFEMesh::GetNODOnPLY(CGLPolyline* m_ply, std::vector<long>&msh_nod_vector) const
-   {
-      if (m_ply->point_vector.size() == 0)
-         return;
+/**************************************************************************
+ FEMLib-Method:
+ Task: Ermittelt den nahliegenden existierenden Knoten
+ Programing:
+ 03/2005 OK Implementation (based on ExecuteSourceSinkMethod11 by CT)
+ 07/2005 WW Node object is replaced
+ 10/2005 OK test
+ **************************************************************************/
+void CFEMesh::GetNODOnPLY(CGLPolyline* m_ply, std::vector<long>&msh_nod_vector) const
+{
+	exit (1);
+	if (m_ply->point_vector.size() == 0) return;
 
-      //	_min_edge_length = m_ply->epsilon;
+	//	_min_edge_length = m_ply->epsilon;
 
-      long j, k, l;
-      double pt1[3], line1[3], line2[3];
-      double mult_eps = 1.0;
-      double dist1p, dist2p;
-      // 07/2010 TF declare and initialize
-      double *length (new double[m_ply->point_vector.size()]);
-      double laenge;
-      long anz_relevant = 0;
-      typedef struct
-      {
-         long knoten;
-         long abschnitt;
-         double laenge;
-      } INFO;
-      INFO *relevant = NULL;
+	long j, k, l;
+	double pt1[3], line1[3], line2[3];
+	double mult_eps = 1.0;
+	double dist1p, dist2p;
+	// 07/2010 TF declare and initialize
+	double *length(new double[m_ply->point_vector.size()]);
+	double laenge;
+	long anz_relevant = 0;
+	typedef struct {
+		long knoten;
+		double laenge;
+	} INFO;
+	INFO *relevant = NULL;
 
-      // 07/2010 TF - variables only for swapping
-      //	long knoten_help;
-      //	double laenge_help;
-      m_ply->getSBuffer().clear();
-      m_ply->getIBuffer().clear();
-      msh_nod_vector.clear();
-      //
-      /* */
-      for (k = 0; k < (long) m_ply->point_vector.size() - 1; k++)
-      {
-         line1[0] = m_ply->point_vector[k]->x;
-         line1[1] = m_ply->point_vector[k]->y;
-         line1[2] = m_ply->point_vector[k]->z;
-         line2[0] = m_ply->point_vector[k + 1]->x;
-         line2[1] = m_ply->point_vector[k + 1]->y;
-         line2[2] = m_ply->point_vector[k + 1]->z;
-         length[k] = MCalcDistancePointToPoint(line2, line1);
-      }
+	// 07/2010 TF - variables only for swapping
+	//	long knoten_help;
+	//	double laenge_help;
+	m_ply->getSBuffer().clear();
+	m_ply->getIBuffer().clear();
+	msh_nod_vector.clear();
+	//
+	/* */
+	for (k = 0; k < (long) m_ply->point_vector.size() - 1; k++) {
+		line1[0] = m_ply->point_vector[k]->x;
+		line1[1] = m_ply->point_vector[k]->y;
+		line1[2] = m_ply->point_vector[k]->z;
+		line2[0] = m_ply->point_vector[k + 1]->x;
+		line2[1] = m_ply->point_vector[k + 1]->y;
+		line2[2] = m_ply->point_vector[k + 1]->z;
+		length[k] = MCalcDistancePointToPoint(line2, line1);
+	}
 
-      /* Wiederholen bis zumindest ein Knoten gefunden wurde */
-      while (anz_relevant == 0)
-      {
-         /* Schleife ueber alle Knoten */
-         for (j = 0; j < NodesInUsage(); j++)
-         {
-            /* Schleife ueber alle Punkte des Polygonzuges */
-            for (k = 0; k < (long) m_ply->point_vector.size() - 1; k++)
-            {
-               /* ??? */
-               pt1[0] = nod_vector[j]->X();
-               pt1[1] = nod_vector[j]->Y();
-               pt1[2] = nod_vector[j]->Z();
-               line1[0] = m_ply->point_vector[k]->x;
-               line1[1] = m_ply->point_vector[k]->y;
-               line1[2] = m_ply->point_vector[k]->z;
-               line2[0] = m_ply->point_vector[k + 1]->x;
-               line2[1] = m_ply->point_vector[k + 1]->y;
-               line2[2] = m_ply->point_vector[k + 1]->z;
-               /* Ist der Knoten nah am Polygonabschnitt? */
-               if (MCalcDistancePointToLine(pt1, line1, line2) <= mult_eps
-                  * m_ply->epsilon)
-               {
-                  /* Im folgenden wird mit der Projektion weitergearbeitet */
-                  MCalcProjectionOfPointOnLine(pt1, line1, line2, pt1);
-                  /* Abstand des Punktes zum ersten Punkt des Polygonabschnitts */
-                  dist1p = MCalcDistancePointToPoint(line1, pt1);
-                  /* Abstand des Punktes zum zweiten Punkt des Polygonabschnitts */
-                  dist2p = MCalcDistancePointToPoint(line2, pt1);
-                  /* Ist der Knoten innerhalb des Intervalls? */
-                  /* bis rf3807: if ((length[k] - dist1p - dist2p + MKleinsteZahl)/(length[k] + dist1p + dist2p + MKleinsteZahl) > -MKleinsteZahl){ */
-                  if ((dist1p + dist2p - length[k]) <= mult_eps
-                     * m_ply->epsilon)
-                  {
-                     // For boundara conditions. WW
-                     m_ply->getSBuffer().push_back(dist1p);
-                                                  //Section index
-                     m_ply->getIBuffer().push_back(k);
-                     anz_relevant++;
-                     /* Feld anpassen */
-                     //nodes_all = (long *) Realloc(nodes_all,sizeof(long)*anz_relevant);
-                     relevant = (INFO *) Realloc(relevant, sizeof(INFO)
-                        * anz_relevant);
-                     /* Ablegen von Knotennummer und Position */
-                     //nodes_all[anz_relevant-1] = j;
-                     msh_nod_vector.push_back(nod_vector[j]->GetIndex());
-                     /* Position ermitteln */
-                     laenge = 0.;
-                     for (l = 0; l < k; l++)
-                        laenge += length[l];
-                     /* Ablegen von Knotennummer und Position */
-                     relevant[anz_relevant - 1].knoten = j;
-                     relevant[anz_relevant - 1].laenge = laenge + dist1p;
-                     /* Suche am Polygon abbrechen, naechster Knoten */
-                     k = (long) m_ply->point_vector.size();
-                  }
-               }                                  /* endif */
-            }                                     /* Ende Schleife ueber Polygonabschnitte */
-         }                                        /* Ende Schleife ueber Knoten */
-         if (anz_relevant == 0)
-            mult_eps *= 2.;
-      }                                           /* Ende Schleife Wiederholungen */
-      if (mult_eps > 1.)
-         std::cout << "!!! Epsilon increased in sources!" << std::endl;
+	/* Wiederholen bis zumindest ein Knoten gefunden wurde */
+	while (anz_relevant == 0) {
+		/* Schleife ueber alle Knoten */
+		for (j = 0; j < NodesInUsage(); j++) {
+			/* Schleife ueber alle Punkte des Polygonzuges */
+			for (k = 0; k < (long) m_ply->point_vector.size() - 1; k++) {
+				/* ??? */
+				pt1[0] = nod_vector[j]->X();
+				pt1[1] = nod_vector[j]->Y();
+				pt1[2] = nod_vector[j]->Z();
+				line1[0] = m_ply->point_vector[k]->x;
+				line1[1] = m_ply->point_vector[k]->y;
+				line1[2] = m_ply->point_vector[k]->z;
+				line2[0] = m_ply->point_vector[k + 1]->x;
+				line2[1] = m_ply->point_vector[k + 1]->y;
+				line2[2] = m_ply->point_vector[k + 1]->z;
+				/* Ist der Knoten nah am Polygonabschnitt? */
+				if (MCalcDistancePointToLine(pt1, line1, line2) <= mult_eps
+						* m_ply->epsilon) {
+					/* Im folgenden wird mit der Projektion weitergearbeitet */
+					MCalcProjectionOfPointOnLine(pt1, line1, line2, pt1);
+					/* Abstand des Punktes zum ersten Punkt des Polygonabschnitts */
+					dist1p = MCalcDistancePointToPoint(line1, pt1);
+					/* Abstand des Punktes zum zweiten Punkt des Polygonabschnitts */
+					dist2p = MCalcDistancePointToPoint(line2, pt1);
+					/* Ist der Knoten innerhalb des Intervalls? */
+					/* bis rf3807: if ((length[k] - dist1p - dist2p + MKleinsteZahl)/(length[k] + dist1p + dist2p + MKleinsteZahl) > -MKleinsteZahl){ */
+					if ((dist1p + dist2p - length[k]) <= mult_eps
+							* m_ply->epsilon) {
+						// For boundara conditions. WW
+						m_ply->getSBuffer().push_back(dist1p);
+						//Section index
+						m_ply->getIBuffer().push_back(k);
+						anz_relevant++;
+						/* Feld anpassen */
+						//nodes_all = (long *) Realloc(nodes_all,sizeof(long)*anz_relevant);
+						relevant = (INFO *) Realloc(relevant, sizeof(INFO)
+								* anz_relevant);
+						/* Ablegen von Knotennummer und Position */
+						//nodes_all[anz_relevant-1] = j;
+						msh_nod_vector.push_back(nod_vector[j]->GetIndex());
+						/* Position ermitteln */
+						laenge = 0.;
+						for (l = 0; l < k; l++)
+							laenge += length[l];
+						/* Ablegen von Knotennummer und Position */
+						relevant[anz_relevant - 1].knoten = j;
+						relevant[anz_relevant - 1].laenge = laenge + dist1p;
+						/* Suche am Polygon abbrechen, naechster Knoten */
+						k = (long) m_ply->point_vector.size();
+					}
+				} /* endif */
+			} /* Ende Schleife ueber Polygonabschnitte */
+		} /* Ende Schleife ueber Knoten */
+		if (anz_relevant == 0) mult_eps *= 2.;
+	} /* Ende Schleife Wiederholungen */
+	if (mult_eps > 1.) std::cout << "!!! Epsilon increased in sources!"
+			<< std::endl;
 
-      delete [] length;
+	delete[] length;
 
-      //	/* Schleife ueber alle Knoten; sortieren nach Reihenfolge auf dem Abschnitt (zyklisches Vertauschen, sehr lahm)*/
-      //	int weiter;
-      //	double w1, w2;
-      //	do {
-      //		weiter = 0;
-      //		for (k = 0; k < anz_relevant - 1; k++) {
-      //			w1 = relevant[k].laenge;
-      //			w2 = relevant[k + 1].laenge;
-      //			if (w1 > w2) { /* Die Eintraege vertauschen */
-      //				// 07/2010 TF
-      //				std::swap (relevant[k].knoten, relevant[k+1].knoten);
-      //				std::swap (relevant[k].laenge, relevant[k+1].laenge);
-      ////				knoten_help = relevant[k].knoten;
-      ////				laenge_help = relevant[k].laenge;
-      ////				relevant[k].knoten = relevant[k + 1].knoten;
-      ////				relevant[k].laenge = relevant[k + 1].laenge;
-      ////				relevant[k + 1].knoten = knoten_help;
-      ////				relevant[k + 1].laenge = laenge_help;
-      //				weiter = 1;
-      //			}
-      //		}
-      //	} while (weiter);
-      relevant = (INFO*) Free(relevant);
+	//	/* Schleife ueber alle Knoten; sortieren nach Reihenfolge auf dem Abschnitt (zyklisches Vertauschen, sehr lahm)*/
+	//	int weiter;
+	//	double w1, w2;
+	//	do {
+	//		weiter = 0;
+	//		for (k = 0; k < anz_relevant - 1; k++) {
+	//			w1 = relevant[k].laenge;
+	//			w2 = relevant[k + 1].laenge;
+	//			if (w1 > w2) { /* Die Eintraege vertauschen */
+	//				// 07/2010 TF
+	//				std::swap (relevant[k].knoten, relevant[k+1].knoten);
+	//				std::swap (relevant[k].laenge, relevant[k+1].laenge);
+	////				knoten_help = relevant[k].knoten;
+	////				laenge_help = relevant[k].laenge;
+	////				relevant[k].knoten = relevant[k + 1].knoten;
+	////				relevant[k].laenge = relevant[k + 1].laenge;
+	////				relevant[k + 1].knoten = knoten_help;
+	////				relevant[k + 1].laenge = laenge_help;
+	//				weiter = 1;
+	//			}
+	//		}
+	//	} while (weiter);
+	relevant = (INFO*) Free(relevant);
 
-      //WW
-      m_ply->GetPointOrderByDistance();
-      //----------------------------------------------------------------------
+	//WW
+	m_ply->GetPointOrderByDistance();
+	//----------------------------------------------------------------------
 #ifdef MSH_CHECK
-      cout << "MSH nodes at polyline:" << endl;
-      for(j=0;j<(int)msh_nod_vector.size();j++)
-      {
-         cout << msh_nod_vector [j] << endl;
-      }
+	cout << "MSH nodes at polyline:" << endl;
+	for(j=0;j<(int)msh_nod_vector.size();j++)
+	{
+		cout << msh_nod_vector [j] << endl;
+	}
 #endif
-      //----------------------------------------------------------------------
-   }
+	//----------------------------------------------------------------------
+}
 
-   /**************************************************************************
-    FEMLib-Method:
-    Task: Ermittelt den nahliegenden existierenden Knoten
-    Programing:
-    03/2005 OK Implementation (based on ExecuteSourceSinkMethod11 by CT)
-    07/2005 WW Node object is replaced
-    10/2005 OK test
-    03/2010 TF adaption to new data GEO-structures, changed the algorithm
-    **************************************************************************/
-   void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply,
-      std::vector<size_t>& msh_nod_vector)
-   {
-      msh_nod_vector.clear();
+/**************************************************************************
+FEMLib-Method:
+Task: Ermittelt den nahliegenden existierenden Knoten
+Programing:
+03/2005 OK Implementation (based on ExecuteSourceSinkMethod11 by CT)
+07/2005 WW Node object is replaced
+10/2005 OK test
+03/2010 TF adaption to new data GEO-structures, changed the algorithm
+**************************************************************************/
+void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply,
+		std::vector<size_t>& msh_nod_vector)
+{
+	msh_nod_vector.clear();
 
-      // search for nodes along polyline in previous computed polylines
-      std::vector<MeshNodesAlongPolyline>::const_iterator it (_mesh_nodes_along_polylines.begin());
-      for (; it != _mesh_nodes_along_polylines.end(); it++)
-      {
-         if (it->getPolyline() == ply)
-         {
-            const std::vector<size_t> node_ids (it->getNodeIDs ());
+	// search for nodes along polyline in previous computed polylines
+	std::vector<MeshNodesAlongPolyline>::const_iterator it(
+			_mesh_nodes_along_polylines.begin());
+	for (; it != _mesh_nodes_along_polylines.end(); it++) {
+		if (it->getPolyline() == ply) {
+			const std::vector<size_t> node_ids(it->getNodeIDs());
 
-            size_t n_valid_nodes (0);
-            if (useQuadratic)
-               n_valid_nodes = node_ids.size();
-            else
-               n_valid_nodes = it->getNumberOfLinearNodes();
+			size_t n_valid_nodes(0);
+			if (useQuadratic)
+				n_valid_nodes = node_ids.size();
+			else n_valid_nodes = it->getNumberOfLinearNodes();
 
-            for (size_t k(0); k<n_valid_nodes; k++)
-               msh_nod_vector.push_back (node_ids[k]);
-            std::cout << "****** access " << msh_nod_vector.size() << " buffered nodes for polyline " << ply << std::endl;
-            return;
-         }
-      }
+			for (size_t k(0); k < n_valid_nodes; k++)
+				msh_nod_vector.push_back(node_ids[k]);
+#ifndef NDEBUG
+			std::cout << "****** access " << msh_nod_vector.size()
+					<< " buffered nodes for polyline " << ply << std::endl;
+#endif
+			return;
+		}
+	}
 
-      // compute nodes (and supporting points) along polyline
-      _mesh_nodes_along_polylines.push_back (MeshNodesAlongPolyline (ply, this));
-      const std::vector<size_t> node_ids (_mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size()-1].getNodeIDs ());
+	// compute nodes (and supporting points) along polyline
+	_mesh_nodes_along_polylines.push_back(MeshNodesAlongPolyline(ply, this));
+	const std::vector<size_t> node_ids(
+					_mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size() - 1].getNodeIDs());
 
-      size_t n_valid_nodes (0);
-      if (useQuadratic)
-         n_valid_nodes = node_ids.size();
-      else
-         n_valid_nodes = _mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size()-1].getNumberOfLinearNodes();
+	size_t n_valid_nodes(0);
+	if (useQuadratic)
+		n_valid_nodes = node_ids.size();
+	else n_valid_nodes
+			= _mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size()
+					- 1].getNumberOfLinearNodes();
 
-      for (size_t k(0); k<n_valid_nodes; k++)
-         msh_nod_vector.push_back (node_ids[k]);
-      std::cout << "****** computed " << n_valid_nodes << " nodes for polyline " << ply << " - " << NodesInUsage() << std::endl;
-   }
+	for (size_t k(0); k < n_valid_nodes; k++)
+		msh_nod_vector.push_back(node_ids[k]);
+#ifndef NDEBUG
+	std::cout << "****** computed " << n_valid_nodes << " nodes for polyline "
+			<< ply << " - " << NodesInUsage() << std::endl;
+#endif
+}
 
-   const MeshNodesAlongPolyline& CFEMesh::GetMeshNodesAlongPolyline(const GEOLIB::Polyline* const ply)
-   {
-      // search for nodes along polyline in previous computed polylines
-      std::vector<MeshNodesAlongPolyline>::const_iterator it (_mesh_nodes_along_polylines.begin());
-      for (; it != _mesh_nodes_along_polylines.end(); it++)
-      {
-         if (it->getPolyline() == ply)
-         {
-            return *it;
-         }
-      }
-      // compute nodes (and supporting points for interpolation) along polyline
-      _mesh_nodes_along_polylines.push_back (MeshNodesAlongPolyline (ply, this));
-      return _mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size()-1];
-   }
+const MeshNodesAlongPolyline& CFEMesh::GetMeshNodesAlongPolyline(const GEOLIB::Polyline* const ply)
+{
+  // search for nodes along polyline in previous computed polylines
+  std::vector<MeshNodesAlongPolyline>::const_iterator it (_mesh_nodes_along_polylines.begin());
+  for (; it != _mesh_nodes_along_polylines.end(); it++)
+  {
+	 if (it->getPolyline() == ply)
+	 {
+		return *it;
+	 }
+  }
+  // compute nodes (and supporting points for interpolation) along polyline
+  _mesh_nodes_along_polylines.push_back (MeshNodesAlongPolyline (ply, this));
+  return _mesh_nodes_along_polylines[_mesh_nodes_along_polylines.size()-1];
+}
 
-   void CFEMesh::getPointsForInterpolationAlongPolyline (const GEOLIB::Polyline* const ply, std::vector<double>& points)
-   {
-      // search for nodes along polyline in previous computed polylines
-      std::vector<MeshNodesAlongPolyline>::const_iterator it (_mesh_nodes_along_polylines.begin());
-      for (; it != _mesh_nodes_along_polylines.end(); it++)
-      {
-         if (it->getPolyline() == ply)
-         {
-            // copy points from object into vector
-            for (size_t k(0); k<it->getDistOfProjNodeFromPlyStart().size(); k++)
-               points.push_back (it->getDistOfProjNodeFromPlyStart()[k]);
-            return;
-         }
-      }
+void CFEMesh::getPointsForInterpolationAlongPolyline (const GEOLIB::Polyline* const ply, std::vector<double>& points)
+{
+  // search for nodes along polyline in previous computed polylines
+  std::vector<MeshNodesAlongPolyline>::const_iterator it (_mesh_nodes_along_polylines.begin());
+  for (; it != _mesh_nodes_along_polylines.end(); it++)
+  {
+	 if (it->getPolyline() == ply)
+	 {
+		// copy points from object into vector
+		for (size_t k(0); k<it->getDistOfProjNodeFromPlyStart().size(); k++)
+		   points.push_back (it->getDistOfProjNodeFromPlyStart()[k]);
+		return;
+	 }
+  }
 
-      // compute nodes (and points according the nodes) along polyline
-      _mesh_nodes_along_polylines.push_back (MeshNodesAlongPolyline (ply, this));
-      // copy supporting points from object into vector
-      for (size_t k(0); k<(_mesh_nodes_along_polylines.back()).getDistOfProjNodeFromPlyStart().size(); k++)
-         points.push_back (it->getDistOfProjNodeFromPlyStart()[k]);
-   }
+  // compute nodes (and points according the nodes) along polyline
+  _mesh_nodes_along_polylines.push_back (MeshNodesAlongPolyline (ply, this));
+  // copy supporting points from object into vector
+  for (size_t k(0); k<(_mesh_nodes_along_polylines.back()).getDistOfProjNodeFromPlyStart().size(); k++)
+	 points.push_back (it->getDistOfProjNodeFromPlyStart()[k]);
+}
 
-   void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& msh_nod_vector)
-   {
-      std::vector<size_t> tmp_msh_node_vector;
-      GetNODOnPLY (ply, tmp_msh_node_vector);
-      for (size_t k(0); k<tmp_msh_node_vector.size(); k++)
-         msh_nod_vector.push_back (tmp_msh_node_vector[k]);
-   }
+void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& msh_nod_vector)
+{
+  std::vector<size_t> tmp_msh_node_vector;
+  GetNODOnPLY (ply, tmp_msh_node_vector);
+  for (size_t k(0); k<tmp_msh_node_vector.size(); k++)
+	 msh_nod_vector.push_back (tmp_msh_node_vector[k]);
+}
 
    /**************************************************************************
     MSHLib-Method:
@@ -2279,6 +2160,8 @@ namespace Mesh_Group
         		 && (checkpoint[2] >= sfc_min[2] && checkpoint[2] <= sfc_max[2]))
          {
             m_msh_aux->nod_vector.push_back(node);
+         } else {
+        	 delete node;
          }
       }
 
@@ -2420,9 +2303,9 @@ namespace Mesh_Group
          for (i = 0; i < NodesS_size; i++)
          {
             cnode = nod_vector[NodesS[i]];
-            for (j = 0; j < (long) cnode->connected_elements.size(); j++)
+            for (j = 0; j < (long) cnode->getConnectedElementIDs().size(); j++)
             {
-               elem = ele_vector[cnode->connected_elements[j]];
+               elem = ele_vector[cnode->getConnectedElementIDs()[j]];
                for (k = 0; k < elem->GetFacesNumber(); k++)
                {
                   nf = elem->GetElementFaceNodes(k, faceIndex_loc);
@@ -2559,7 +2442,6 @@ namespace Mesh_Group
       typedef struct
       {
          long knoten;
-         long abschnitt;
          double laenge;
       } INFO;
       INFO *relevant = NULL;
@@ -2766,7 +2648,7 @@ namespace Mesh_Group
       for (size_t j = 1; j < (_n_msh_layer + 1); j++)
       {
          m_polyline = new CGLPolyline;
-         sprintf(layer_number, "%ld", j);
+         sprintf(layer_number, "%ld", static_cast<long>(j));
          //		m_polyline->ply_name = m_ply->name.data();//CC/TK8888
          //		m_polyline->ply_name.append("_L");//CC/TK8888
          //		m_polyline->ply_name.append(layer_number);//CC/TK8888
@@ -2882,50 +2764,6 @@ namespace Mesh_Group
       }
    }
 #endif                                         //WW#ifndef NON_GEO
-   //-------------------------------------------------------------------------
-
-   /**************************************************************************
-   MSHLib-Method:
-   Task:
-   Programing:
-   05/2005 OK Implementation: hex elements to line nodes
-    last modification:
-    **************************************************************************/
-   // REMOVE CANDIDATE
-   void CFEMesh::SetELE2NODTopology()
-   {
-      /* //WW TODO
-       int k;
-       long j;
-       double xr[4],yr[4],zr[4];
-       CGLPoint m_pnt;
-       CGLPoint m_pnt1,m_pnt2,m_pnt3,m_pnt4;
-       FiniteElement::CElement* m_ele = NULL;
-       CFEMesh* m_msh_cond = NULL;
-       CMSHNodes* m_mod = NULL;
-       //----------------------------------------------------------------------
-       m_msh_cond = FEMGet("RICHARDS_FLOW");
-      for(long i=0;i<(long)ele_vector.size();i++){
-      m_ele = ele_vector[i];
-      for(k=0;k<4;k++){
-      xr[k] = nod_vector[m_ele->nodes_index[k]]->x;
-      yr[k] = nod_vector[m_ele->nodes_index[k]]->y;
-      zr[k] = nod_vector[m_ele->nodes_index[k]]->z;
-      }
-      for(j=0;j<(long)m_msh_cond->nod_vector.size();j++){
-      m_mod = m_msh_cond->nod_vector[j];
-      m_mod->nodenumber = j;
-      m_pnt.x = m_msh_cond->nod_vector[j]->x;
-      m_pnt.y = m_msh_cond->nod_vector[j]->y;
-      m_pnt.z = m_msh_cond->nod_vector[j]->z;
-      if(m_pnt.PointInRectangle(xr,yr,zr)){
-      ele_vector[i]->nod_vector.push_back(m_mod);
-      //cout << i << " " << j << endl;
-      }
-      }
-      }
-      */
-   }
 
    /**************************************************************************
     GeoSys-Method:
@@ -2938,11 +2776,8 @@ namespace Mesh_Group
 	   std::string line_string, s_buff;
       std::stringstream in;
       std::ios::pos_type position;
-      int i, ibuf;
-      double d_buf;
+      int i;
       i = 0;
-      ibuf = 0;
-      d_buf = 0.0;
       std::string line;
       std::string sub_line;
       long no_vertexes = 0;
@@ -3032,22 +2867,18 @@ namespace Mesh_Group
     08/2005 WW Changes due to geometry objects applied
     see also: BuildActiveElementsArray
     **************************************************************************/
-   void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
-   {
-      long i;
-      //-----------------------------------------------------------------------
-      for (i = 0; i < (long) this->ele_vector.size(); i++)
-      {
-         ele_vector[i]->MarkingAll(false);
-      }
-      //-----------------------------------------------------------------------
-      for (i = 0; i < (long) elements_active.size(); i++)
-      {
-         ele_vector[elements_active[i]]->MarkingAll(true);
-      }
-      //-----------------------------------------------------------------------
-      // Inactivate element with -1 MMP group
-   }
+void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
+{
+	const size_t ele_vector_size(this->ele_vector.size());
+	for (size_t i = 0; i < ele_vector_size; i++) {
+		ele_vector[i]->MarkingAll(false);
+	}
+
+	const size_t elements_active_size (elements_active.size());
+	for (size_t i = 0; i < elements_active_size; i++) {
+		ele_vector[elements_active[i]]->MarkingAll(true);
+	}
+}
 
    /**************************************************************************
     MSHLib-Method:
@@ -3060,74 +2891,59 @@ namespace Mesh_Group
     08/2004 MB NElementsPerLayer = msh_no_pris / NLayers;
     09/2005 OK MSH
     ***************************************************************************/
-   void CFEMesh::PrismRefine(const int Layer, const int subdivision)
+   void CFEMesh::PrismRefine(int Layer, int subdivision)
    {
-      const int nn = 6;
-      int i, j, nes;
-      int iii;
-      long *element_nodes = NULL;
-      //WW  static long ele_nodes[6];
-      static double nx[6], ny[6], nz[6];
-      //WW  static int newNode0[3], newNode1[3];
+      const size_t nn = 6;
+      int j, nes;
+      size_t *element_nodes = NULL;
+      double nx[6], ny[6], nz[6];
       double dx[3], dy[3], dz[3];
       double newz;
-      //WW  static double  newx0[3],newy0[3],newz0[3];
-      //WW  static double  newx1[3],newy1[3],newz1[3];
-      int NumNodesNew, NumElementNew;
-      // KR not needed long *knoten = NULL;
-      int NNodesPerRow = 0;
-      int NElementsPerLayer = 0;
-      int row;
+      int row (Layer);
       int NRowsToShift;
-      int NRows;
-      int count;
+      int NRows (_n_msh_layer + 1);
       int CountNLayers;
       CNode* m_nod = NULL;
       double xyz[3];
-      //----------------------------------------------------------------------
       const int NSubLayers = subdivision + 1;     //OK
-      const long NumElement0 = (long) ele_vector.size();
+      const size_t NumElement0 (ele_vector.size());
                                                   //NodeListSize() / (NLayers+1);
-      NNodesPerRow = (long) nod_vector.size() / (_n_msh_layer + 1);
+      size_t NNodesPerRow (nod_vector.size() / (_n_msh_layer + 1));
                                                   //msh_no_pris / NLayers;
-      NElementsPerLayer = (long) ele_vector.size() / _n_msh_layer;
-      row = Layer;
-      NRows = _n_msh_layer + 1;
-      NumNodesNew = (long) nod_vector.size() - 1; //NodeListSize()-1;
-                                                  //ElListSize()-1;
-      NumElementNew = (long) ele_vector.size() - 1;
-      //----------------------------------------------------------------------
-      long nod_vector_size_add = NNodesPerRow * subdivision;
-      for (i = 0; i < nod_vector_size_add; i++)
+//      int NElementsPerLayer = ele_vector.size() / _n_msh_layer;
+
+      size_t nod_vector_size_add (NNodesPerRow * subdivision);
+      for (size_t i = 0; i < nod_vector_size_add; i++)
       {
          m_nod = new CNode(i);
          nod_vector.push_back(m_nod);
       }
       //nod_vector.resize(nod_vector_size_new);
-      //----------------------------------------------------------------------
+
       // Initialisierung der Knoten flags
-      for (i = 0; i < (long) nod_vector.size(); i++)
+      const size_t nod_vector_size(nod_vector.size());
+      for (size_t i = 0; i < nod_vector_size; i++)
       {
          nod_vector[i]->SetMark(true);
       }
-      //======================================================================
+
       CElem* m_ele = NULL;
       CElem* m_ele_new = NULL;
-      for (int ne = 0; ne < NumElement0; ne++)
+      for (size_t ne = 0; ne < NumElement0; ne++)
       {
          m_ele = ele_vector[ne];
          if (m_ele->GetElementType() == MshElemType::PRISM)
          {
             //element_nodes = m_ele->nodes;
             CountNLayers = _n_msh_layer;
-            for (i = 0; i < nn; i++)
+            for (size_t i = 0; i < nn; i++)
             {
                nx[i] = nod_vector[m_ele->nodes_index[i]]->X();
                ny[i] = nod_vector[m_ele->nodes_index[i]]->Y();
                nz[i] = nod_vector[m_ele->nodes_index[i]]->Z();
             }
             nes = 0;
-            for (i = 0; i < 3; i++)
+            for (size_t i = 0; i < 3; i++)
             {
                if (element_nodes[i] >= (row - 1) * NNodesPerRow
                   && element_nodes[i] <= (row * NNodesPerRow) - 1)
@@ -3137,39 +2953,33 @@ namespace Mesh_Group
             }
             if (nes == 3)
             {
-               for (i = 0; i < 3; i++)
+               for (size_t i = 0; i < 3; i++)
                {
                   dx[i] = (nx[i + 3] - nx[i]) / (float) NSubLayers;
                   dy[i] = (ny[i + 3] - ny[i]) / (float) NSubLayers;
                   dz[i] = (nz[i + 3] - nz[i]) / (float) NSubLayers;
                }
-               //----------------------------------------------------------------
                // Create new nodes
                                                   // Loop over SubLayers
-               for (iii = 0; iii < NSubLayers - 1; iii++)
+               for (int iii = 0; iii < NSubLayers - 1; iii++)
                {
-                  //..............................................................
                   // neue Knoten ganz unten
-                  for (i = 0; i < 3; i++)
+                  for (size_t i = 0; i < 3; i++)
                   {
                      //if(NODGetFreeSurfaceFlag(element_nodes[i])==0){
                      if (nod_vector[element_nodes[i]]->GetMark())
                      {
                         //m_nod = new CMSHNodes(); //kno = (Knoten *)CreateNodeGeometry();
-                        m_nod
-                           = nod_vector[(m_ele->nodes_index[i]
+                        m_nod = nod_vector[(m_ele->nodes_index[i]
                            + ((CountNLayers + 2) - row)
                            * NNodesPerRow)];
-                        xyz[0]
-                           = nod_vector[m_ele->nodes_index[i]
+                        xyz[0] = nod_vector[m_ele->nodes_index[i]
                            + ((CountNLayers + 1) - row)
                            * NNodesPerRow]->X();
-                        xyz[1]
-                           = nod_vector[m_ele->nodes_index[i]
+                        xyz[1] = nod_vector[m_ele->nodes_index[i]
                            + ((CountNLayers + 1) - row)
                            * NNodesPerRow]->Y();
-                        xyz[2]
-                           = nod_vector[m_ele->nodes_index[i]
+                        xyz[2] = nod_vector[m_ele->nodes_index[i]
                            + ((CountNLayers + 1) - row)
                            * NNodesPerRow]->Z();
                         //PlaceNode(kno,(element_nodes[i] + ((CountNLayers+2) - row) * NNodesPerRow));
@@ -3178,7 +2988,6 @@ namespace Mesh_Group
                            + 2) - row) * NNodesPerRow)] = m_nod;
                      }
                   }
-                  //..............................................................
                   // neues Element ganz unten
                   m_ele_new = new CElem();
                   //m_ele_new = m_ele;
@@ -3196,16 +3005,13 @@ namespace Mesh_Group
                   //	m_ele_new->nodes_index[j] = knoten[j];
                   //}
                   ele_vector.push_back(m_ele_new);
-                  //..............................................................
                   /* "rowx hochziehen"   */
                   /* loop ?er die betroffenen rows   */
                   NRowsToShift = NRows - Layer;
-                  count = 0;
-                  for (i = NRowsToShift; i > 0; i--)
+                  for (int i = NRowsToShift; i > 0; i--)
                   {
                      if (i != 1)
                      {
-                        count++;
                         for (j = 0; j < 3; j++)
                         {
                            //if(NODGetFreeSurfaceFlag(element_nodes[j])==0){
@@ -3239,7 +3045,6 @@ namespace Mesh_Group
                         }
                      }
                   }                               /* end for Rows to shift */
-                  //..............................................................
                   if (iii == NSubLayers - 2)
                   {
                      for (j = 0; j < 3; j++)
@@ -3253,9 +3058,7 @@ namespace Mesh_Group
             }                                     /* End if nes==3 */
          }                                        /* Elementtyp ==6 */
       }                                           /* Element loop */
-      //======================================================================
       _n_msh_layer += subdivision;
-      //----------------------------------------------------------------------
    }
 
    /**************************************************************************
@@ -3387,16 +3190,16 @@ namespace Mesh_Group
     **************************************************************************/
    void CFEMesh::ConnectedNodes(bool quadratic) const
    {
-      bool exist = false;
 #define noTestConnectedNodes
-      //----------------------------------------------------------------------
+	  bool exist = false;
+
       for (size_t i = 0; i < nod_vector.size(); i++)
       {
          CNode * nod = nod_vector[i];
-         size_t n_connected_elements (nod->connected_elements.size());
+         size_t n_connected_elements (nod->getConnectedElementIDs().size());
          for (size_t j = 0; j < n_connected_elements; j++)
          {
-            CElem *ele = ele_vector[nod->connected_elements[j]];
+            CElem *ele = ele_vector[nod->getConnectedElementIDs()[j]];
             size_t n_quadratic_node (static_cast<size_t>(ele->GetNodesNumber(quadratic)));
             for (size_t l = 0; l < n_quadratic_node; l++)
             {
@@ -3589,18 +3392,15 @@ namespace Mesh_Group
     **************************************************************************/
    void CFEMesh::FaceNormal()
    {
-      int i, j;
       int idx0_face, idx1_face, idx_owner, index0 = 0, index1 = 0;
 
-      CElem* elem = NULL;
-      CElem* elem_face = NULL;
+      CElem* elem (NULL);
+      CElem* elem_face (NULL);
 
-      // if(coordinate_system!=32)
-      //   return;
-      if ((long) face_normal.size() > 0)
+      if (! face_normal.empty())
          return;                                  //WW
       //------------------------
-      for (i = 0; i < (long) face_vector.size(); i++)
+      for (size_t i = 0; i < face_vector.size(); i++)
       {
          elem_face = face_vector[i];
          elem = face_vector[i]->GetOwner();
@@ -3613,13 +3413,13 @@ namespace Mesh_Group
          idx0_face = face_vector[i]->GetNodeIndex(0);
          idx1_face = face_vector[i]->GetNodeIndex(1);
 		 double* normal = new double[3];
-         for (j = 0; j < no_owner_vertex; j++)
+         for (int j = 0; j < no_owner_vertex; j++)
          {
             idx_owner = face_vector[i]->GetOwner()->GetNodeIndex(j);
             if (idx0_face == idx_owner)
                index0 = j;
          }
-         for (j = 0; j < no_owner_vertex; j++)
+         for (int j = 0; j < no_owner_vertex; j++)
          {
             idx_owner = face_vector[i]->GetOwner()->GetNodeIndex(j);
             if (idx1_face == idx_owner)
@@ -3686,9 +3486,9 @@ namespace Mesh_Group
          m_nod = nod_vector[i];
          //OKif(m_nod->selected)
          //OKcontinue;
-         if ((int) m_nod->connected_elements.size() == 0)
+         if ((int) m_nod->getConnectedElementIDs().size() == 0)
             continue;
-         m_tri_ele = ele_vector[m_nod->connected_elements[0]];
+         m_tri_ele = ele_vector[m_nod->getConnectedElementIDs()[0]];
          //....................................................................
          // Node normal vector
          x0 = m_nod->X();
@@ -3724,9 +3524,9 @@ namespace Mesh_Group
          // Intersection node
          if (m_nod->selected)
             continue;
-         if ((int) m_nod->connected_elements.size() == 0)
+         if ((int) m_nod->getConnectedElementIDs().size() == 0)
             continue;
-         m_tri_ele = ele_vector[m_nod->connected_elements[0]];
+         m_tri_ele = ele_vector[m_nod->getConnectedElementIDs()[0]];
          //....................................................................
          // Line elements
          for (size_t j = 0; j < m_msh_line->_n_msh_layer; j++)
@@ -3888,8 +3688,6 @@ namespace Mesh_Group
       vec<long> ele_nodes(8);
       //int edge_node_numbers[2];
       vec<CNode*> edge_nodes(3);
-      long edge_node_0, edge_node_1;
-      long nn;
       //----------------------------------------------------------------------
       GetNODOnPLY(m_ply, nodes_vector_ply);
       //----------------------------------------------------------------------
@@ -3951,13 +3749,10 @@ namespace Mesh_Group
                   m_ele->selected = 0;
                   for (k = 0; k < (long) nodes_vector_ply.size(); k++)
                   {
-                     nn = nodes_vector_ply[k];
                      //if(edge_node_numbers[0]==nodes_vector_ply[k])
-                     edge_node_0 = edge_nodes[0]->GetIndex();
                      if (edge_nodes[0]->GetIndex() == (size_t)nodes_vector_ply[k])
                         m_ele->selected++;
                      //if(edge_node_numbers[1]==nodes_vector_ply[k])
-                     edge_node_1 = edge_nodes[1]->GetIndex();
                      if (edge_nodes[1]->GetIndex() == (size_t)nodes_vector_ply[k])
                         m_ele->selected++;
                   }
@@ -4122,8 +3917,7 @@ namespace Mesh_Group
     **************************************************************************/
    void CFEMesh::SetNODPatchAreas()
    {
-      long i, e;
-      int j, k;
+      long e;
       int n1 = 0, n2 = 0;
       double v1[3], v2[3], v3[3];
       double patch_area;
@@ -4134,19 +3928,20 @@ namespace Mesh_Group
       CNode* m_nod2 = NULL;
       CElem* m_ele = NULL;
       //----------------------------------------------------------------------
-      for (i = 0; i < (long) nod_vector.size(); i++)
+	  size_t nNodes (nod_vector.size());
+      for (size_t i = 0; i < nNodes; i++)
       {
          m_nod = nod_vector[i];                   // this node
          patch_area = 0.0;
          //....................................................................
          // triangle neighbor nodes
-         for (j = 0; j < (int) m_nod->connected_elements.size(); j++)
+         for (size_t j = 0; j < m_nod->getConnectedElementIDs().size(); j++)
          {
-            e = m_nod->connected_elements[j];
+            e = m_nod->getConnectedElementIDs()[j];
             m_ele = ele_vector[e];
-            for (k = 0; k < 3; k++)
+            for (size_t k = 0; k < 3; k++)
             {
-               if (m_ele->GetNodeIndex(k) == i)
+               if (m_ele->GetNodeIndex(k) == static_cast<int>(i))
                {
                   switch (k)
                   {
@@ -4221,16 +4016,16 @@ namespace Mesh_Group
       for (i = 0; i < (long) nod_vector.size(); i++)
       {
          m_nod = nod_vector[i];                   // this node
-         if ((int) m_nod->connected_elements.size() == 0)
+         if ((int) m_nod->getConnectedElementIDs().size() == 0)
             continue;
-         m_ele = ele_vector[m_nod->connected_elements[0]];
+         m_ele = ele_vector[m_nod->getConnectedElementIDs()[0]];
          for (k = 0; k < 3; k++)
             nr1[k] = (*m_ele->tranform_tensor)(2, k);
          //....................................................................
          // Compare element normal vectors
-         for (j = 1; j < (int) m_nod->connected_elements.size(); j++)
+         for (j = 1; j < (int) m_nod->getConnectedElementIDs().size(); j++)
          {
-            e = m_nod->connected_elements[j];
+            e = m_nod->getConnectedElementIDs()[j];
             m_ele1 = ele_vector[e];
             for (k = 0; k < 3; k++)
                nr2[k] = (*m_ele1->tranform_tensor)(2, k);
@@ -4239,15 +4034,16 @@ namespace Mesh_Group
                m_nod->selected = true;
          }
       }
-      // Count non-intersection nodes
-      long no_non_intersection_nodes = 0;
-      for (i = 0; i < (long) nod_vector.size(); i++)
-      {
-         m_nod = nod_vector[i];
-         if (m_nod->selected)
-            continue;
-         no_non_intersection_nodes++;
-      }
+      // TF useless code
+//      // Count non-intersection nodes
+//      long no_non_intersection_nodes = 0;
+//      for (i = 0; i < (long) nod_vector.size(); i++)
+//      {
+//         m_nod = nod_vector[i];
+//         if (m_nod->selected)
+//            continue;
+//         no_non_intersection_nodes++;
+//      }
    }
 
 #ifndef NON_PROCESS                            // 05.03.2010 WW
@@ -4475,7 +4271,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
 	ConstructGrid();
 	for(l=0; l<nod_vector.size(); l++) {
 			node = nod_vector[l];
-			z = node->Z()/(double)node->connected_elements.size();
+			z = node->Z()/(double)node->getConnectedElementIDs().size();
 			node->SetZ(z);
 	}
 	ins.close();
@@ -4498,33 +4294,30 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
    void CFEMesh::ConvertShapeCells(std::string const & fname)
    {
       int i;
-      long l, k, counter;
+      long counter;
       double  x, y;
 
       ReadShapeFile(fname);
 
-      long ll, nsize;
+      long ll;
       long neighbor[4];
 
-      nsize = (nrows+1) * (ncols+1);
+      size_t nsize = (nrows+1) * (ncols+1);
       std::vector<bool> mark(nsize);
       std::vector<long> node_index(nsize);
 
       CElem *elem;
       CNode *point = NULL;
-      bool onboundary;
 
-#define no_need_quad
-
-      for(l=0; l<nsize; l++)
+      for(size_t l=0; l<nsize; l++)
       {
          mark[l] = false;
          node_index[l] = -1;
       }
-      for(l=0; l<nrows; l++)
+      for(size_t l=0; l<nrows; l++)
       {
          ll = nrows-1-l;
-         for(k=0; k<ncols; k++)
+         for(size_t k=0; k<ncols; k++)
          {
             counter = l*ncols+k;
             if(fabs(zz[counter]-ndata_v)>DBL_MIN)
@@ -4533,10 +4326,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
                ele_vector.push_back(elem);
 
                // Boundary
-               onboundary = false;
-               if(k==0||(k==ncols-1)||l==0||(l==nrows-1))
-                  onboundary = true;
-               else
+               if(!(k==0||(k==ncols-1)||l==0||(l==nrows-1)))
                {
                   neighbor[0] =  l*ncols+k-1;
                   neighbor[1] =  l*ncols+k+1;
@@ -4546,7 +4336,6 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
                   {
                      if(fabs(zz[ neighbor[i]]-ndata_v)<DBL_MIN)
                      {
-                        onboundary = true;
                         break;
                      }
 
@@ -4557,6 +4346,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
                elem->nodes_index.resize(elem->nnodes);
                elem->nodes.resize(elem->nnodes);
 
+#define no_need_quad
 #ifdef need_quad
                elem->nnodesHQ = 9;
                elem->ele_dim = 2;
@@ -4597,10 +4387,10 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
       }
 
       // Nodes
-      for(l=0; l<=nrows; l++)
+      for(size_t l=0; l<=nrows; l++)
       {
          ll = nrows-l;
-         for(k=0; k<=ncols; k++)
+         for(size_t k=0; k<=ncols; k++)
          {
             counter = l*(ncols+1)+k;
             if(mark[counter])
@@ -4615,10 +4405,10 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
          }
       }
 
-      for(l=0; l<(long)ele_vector.size(); l++)
+      for(size_t l=0; l<ele_vector.size(); l++)
       {
          elem = ele_vector[l];
-         for(i=0; i<4; i++)
+         for(size_t i=0; i<4; i++)
          {
             elem->nodes[i] = nod_vector[node_index[elem->GetNodeIndex(i)]];
             elem->SetNodeIndex(i, elem->nodes[i]->GetIndex());
@@ -4636,7 +4426,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
       std::vector<CElem*> ele_tri_v;
       std::vector<CNode*> nodes_e(3);
       CElem *ele_tri;
-      for(l=0; l<(long)ele_vector.size(); l++)
+      for(size_t l=0; l<ele_vector.size(); l++)
       {
          elem = ele_vector[l];
 
@@ -4712,7 +4502,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
 
       }
 
-      for(l=0; l<(long)ele_tri_v.size(); l++)
+      for(size_t l=0; l<ele_tri_v.size(); l++)
          ele_vector.push_back(ele_tri_v[l]);
       ele_tri_v.clear();
       //-------------------------------------------------------------
@@ -4801,7 +4591,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
    inline void CFEMesh::Precipitation2NeumannBC(std::string const & fname, std::string const & ofname, double ratio)
    {
       int k;
-      long i, nx, ny;
+      long nx, ny;
       double  x, y;
       double node_val[8];
 
@@ -4812,7 +4602,8 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
 
       std::vector<double> val;
       val.resize(NodesNumber_Linear);
-      for(i=0; i<(long)nod_vector.size(); i++)
+      const size_t nod_vector_size (nod_vector.size());
+      for(size_t i=0; i<nod_vector_size; i++)
       {
          nod_vector[i]->SetMark(false);
          val[i] = 0.0;
@@ -4829,7 +4620,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
       //		CElem *own_elem (elem->owner);
       //
 
-      for(i=0; i<(long)face_vector.size(); i++)
+      for(size_t i=0; i<face_vector.size(); i++)
       {
          elem = face_vector[i];
          if(!elem->GetMark())
@@ -4848,12 +4639,12 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
             ny = (long)((y-y0)/csize);
             ny = nrows-ny;
             if(ny<0) ny = 0;
-            if(ny>nrows) ny = nrows;
+            if(ny>static_cast<long>(nrows)) ny = nrows;
 
             if(nx*csize+x0>=x)  nx -= 1;
             if(ny*csize+y0>=y)  ny -= 1;
-            if(nx>=ncols-1) nx = ncols-2;
-            if(ny>=nrows-1) ny = nrows-2;
+            if(nx>=static_cast<long>(ncols)-1) nx = ncols-2;
+            if(ny>=static_cast<long>(nrows)-1) ny = nrows-2;
             if(nx<0) nx = 0;
             if(ny<0) ny = 0;
 
@@ -4875,7 +4666,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
       }
 
       long counter = 0;
-      for(i=0; i<(long)nod_vector.size(); i++)
+      for(size_t i=0; i<nod_vector_size; i++)
       {
          if(!nod_vector[i]->GetMark())
             continue;
@@ -4884,7 +4675,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
       }
       ofile_bin.write((char*)(&counter), sizeof(counter));
 
-      for(i=0; i<(long)nod_vector.size(); i++)
+      for(size_t i=0; i<nod_vector_size; i++)
       {
          node = nod_vector[i];
          if(!node->GetMark())
@@ -5071,75 +4862,75 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
 
       WW. 29.11.2010
    */
-   void CFEMesh::TopSurfaceIntegration()
-   {
-      int k;
-      long i, nx;
-      double node_val[8];
+void CFEMesh::TopSurfaceIntegration()
+{
+	int k;
+	long i, nx;
+	double node_val[8];
 
-      CNode *node;
-      CElem* elem = NULL;
-      CElement* fem = NULL;
+  CNode *node;
+  CElem* elem = NULL;
+  CElement* fem = NULL;
 
-      ConstructGrid();
-      MarkInterface_mHM_Hydro_3D();
+  ConstructGrid();
+  MarkInterface_mHM_Hydro_3D();
 
-      fem = new CElement(GetCoordinateFlag());
-      std::vector<double> val;
-      val.resize(NodesNumber_Linear);
-      for(i=0; i<(long)nod_vector.size(); i++)
-      {
-         nod_vector[i]->SetMark(false);
-         val[i] = 0.0;
-      }
+  fem = new CElement(GetCoordinateFlag());
+  std::vector<double> val;
+  val.resize(NodesNumber_Linear);
+  for(i=0; i<(long)nod_vector.size(); i++)
+  {
+	 nod_vector[i]->SetMark(false);
+	 val[i] = 0.0;
+  }
 
-      //
-      //	//
-      std::string ofname = FileName+"_top_surface_Neumann_BC.txt";
-      std::ofstream ofile_asci(ofname.c_str(), std::ios::trunc);
-      ofile_asci.setf(std::ios::scientific,std::ios::floatfield);
-      ofile_asci.precision(14);
-      //	//
-      //
+  //
+  //	//
+  std::string ofname = FileName+"_top_surface_Neumann_BC.txt";
+  std::ofstream ofile_asci(ofname.c_str(), std::ios::trunc);
+  ofile_asci.setf(std::ios::scientific,std::ios::floatfield);
+  ofile_asci.precision(14);
+  //	//
+  //
 
-      for(i=0; i<(long)face_vector.size(); i++)
-      {
-         elem = face_vector[i];
-         if(!elem->GetMark())
-            continue;
+  for(i=0; i<(long)face_vector.size(); i++)
+  {
+	 elem = face_vector[i];
+	 if(!elem->GetMark())
+		continue;
 
-         for(k=0; k<elem->nnodes; k++)
-            node_val[k] = 1.0;
+	 for(k=0; k<elem->nnodes; k++)
+		node_val[k] = 1.0;
 
-         elem->ComputeVolume();
-         fem->setOrder(getOrder()+1);
-         fem->ConfigElement(elem);
-         fem->FaceIntegration(node_val);
-         for(k=0; k<elem->nnodes; k++)
-         {
-            node = elem->nodes[k];
-            node->SetMark(true);
-            val[node->GetIndex()] += node_val[k];
-         }
-      }
+	 elem->ComputeVolume();
+	 fem->setOrder(getOrder()+1);
+	 fem->ConfigElement(elem);
+	 fem->FaceIntegration(node_val);
+	 for(k=0; k<elem->nnodes; k++)
+	 {
+		node = elem->nodes[k];
+		node->SetMark(true);
+		val[node->GetIndex()] += node_val[k];
+	 }
+  }
 
-      for(i=0; i<(long)nod_vector.size(); i++)
-      {
-         node = nod_vector[i];
-         if(!node->GetMark())
-            continue;
-         nx = node->GetIndex();
+  for(i=0; i<(long)nod_vector.size(); i++)
+  {
+	 node = nod_vector[i];
+	 if(!node->GetMark())
+		continue;
+	 nx = node->GetIndex();
 
-         ofile_asci<< nx <<" "<< val[i] << std::endl;
+	 ofile_asci<< nx <<" "<< val[i] << std::endl;
 
-      }
-      ofile_asci<<"#STOP "<< std::endl;
+  }
+  ofile_asci<<"#STOP "<< std::endl;
 
-      ofile_asci.close();
-      delete fem;
-      fem = NULL;
-      val.clear();
-   }
+  ofile_asci.close();
+  delete fem;
+  fem = NULL;
+  val.clear();
+}
 
 #ifdef USE_HydSysMshGen
    /**************************************************************************

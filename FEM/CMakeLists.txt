@@ -12,7 +12,7 @@ set( SOURCES
 	FEMEnums.h
 	femlib.h
 	files0.h
-	#intrface.h
+	intrface.h
 	makros.h
 	mathlib.h
 	matrix_class.h
@@ -48,6 +48,7 @@ set( SOURCES
 	GeoInfo.h
 	ProcessInfo.h
 	DistributionInfo.h
+	Output.h
 	GeoInfo.cpp
 	ProcessInfo.cpp
 	DistributionInfo.cpp
@@ -91,6 +92,7 @@ set( SOURCES
 	vtk.cpp
 	Eclipse.cpp
 	DUMUX.cpp
+	Output.cpp
 )
 
 ## New sparse class. WW
@@ -115,6 +117,7 @@ include_directories(
 	../MathLib
 	../GEO
 	../FileIO
+	../FileIO/MeshIO
 	../MSH
 	../GEM
 	../OGSProject

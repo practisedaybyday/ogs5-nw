@@ -8,6 +8,8 @@ SET( SOURCES
 	StationIO.cpp
 	#FEMIO.cpp
 	FEMIO/GeoIO.cpp
+	MeshIO/OGSMeshIO.cpp
+	MeshIO/LegacyVtkInterface.cpp
 )
 
 # Header files
@@ -21,10 +23,11 @@ SET( HEADERS
 	#FEMIO.h
 	FEMIO/GeoIO.h
 	MathIO/CRSIO.h
+	MeshIO/OGSMeshIO.h
+	MeshIO/LegacyVtkInterface.h
 )
 
 IF (OGS_USE_NETCDF)
-	FIND_PACKAGE( VTK REQUIRED )
 	INCLUDE( ${VTK_USE_FILE} )
 	SET (HEADERS NetCDFInterface.h ${HEADERS})
 	SET (SOURCES NetCDFInterface.cpp ${SOURCES})
@@ -51,11 +54,13 @@ INCLUDE_DIRECTORIES(
 	.
 	./FEMIO
 	./MathIO
+	./MeshIO
 	../Base
 	../FEM
 	../GEO
 	../MathLib
 	../MSH
+	../GEM
 )
 
 TARGET_LINK_LIBRARIES( FileIO

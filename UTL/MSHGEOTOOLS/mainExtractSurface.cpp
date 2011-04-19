@@ -15,6 +15,7 @@
 #include "GEOObjects.h"
 #include "PolylineVec.h"
 #include "Polygon.h"
+#include "ProjectData.h"
 
 // MSH
 #include "msh_mesh.h"
@@ -72,7 +73,10 @@ int main (int argc, char *argv[])
 
 	Mesh_Group::ExtractSurface extract_surface (mesh);
 	const size_t n_plys (plys->size());
-	XMLInterface xml_out (geo, "OpenGeoSysGLI.xsd");
+
+	ProjectData *project_data (new ProjectData);
+	project_data->setGEOObjects (geo);
+	XMLInterface xml_out (project_data, "OpenGeoSysGLI.xsd");
 	for (size_t k(0); k<n_plys; k++) {
 		GEOLIB::Polygon polygon (*((*plys)[k]));
 		std::vector<GEOLIB::Point*> *sfc_pnts (new std::vector<GEOLIB::Point*>);
@@ -93,5 +97,5 @@ int main (int argc, char *argv[])
 	}
 
 	delete mesh;
-	delete geo;
+	delete project_data;
 }

@@ -12,11 +12,11 @@
 #include "GeoInfo.h"
 
 GeoInfo::GeoInfo() :
-_geo_type (GEOLIB::POINT), _geo_obj (NULL)
+	_geo_type(GEOLIB::INVALID), _geo_obj(NULL)
 {}
 
 GeoInfo::GeoInfo(GEOLIB::GEOTYPE geo_type, const GEOLIB::GeoObject* geo_obj) :
-_geo_type (geo_type), _geo_obj (geo_obj)
+	_geo_type(geo_type), _geo_obj(geo_obj)
 {}
 
 GeoInfo::~GeoInfo()

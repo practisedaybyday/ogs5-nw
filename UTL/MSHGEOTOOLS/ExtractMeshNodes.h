@@ -58,6 +58,10 @@ public:
 	 */
 	void writeTopSurfaceMeshNodeIDs (std::ostream& os, std::ostream& gli_out, const GEOLIB::Polygon& polygon);
 
+	void writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream& gli_out, const GEOLIB::Polygon& polygon);
+
+	void writeNearestMeshNodeToPoint (std::ostream& os, std::ostream& gli_out, GEOLIB::Point const & pnt);
+
 private:
 	const CFEMesh* _msh;
 	/**

@@ -231,6 +231,11 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 
 			// write line segments (= Line) of the polyline
 			for (size_t j(0); j<s-1; j++) {
+//				_out << "Line(" << _n_lines+j << ") = {" << (all_polylines[k])->getPointID(j) << ","
+//						<< (all_polylines[k])->getPointID(j+1) << "};" << std::endl;
+//				// write line as constraint
+//				_out << "Line {" << _n_lines + j << "} In Surface {" << _n_plane_sfc-1 << "};" << std::endl;
+
 				// check if line segment is contained in bounding polygon
 				bool line_seg_is_already_used (GEOLIB::containsEdge (*(dynamic_cast<GEOLIB::Polyline*>(bounding_polygon)), (all_polylines[k])->getPointID(j), (all_polylines[k])->getPointID(j+1)));
 				// check if line segment is contained in a previous polyline
@@ -305,14 +310,15 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 	_out << "// Stations" << std::endl;
 	const size_t n_stations (all_stations.size());
 	for (size_t k(0); k<n_stations; k++) {
-		GEOLIB::Point ll, ur;
-		quad_tree.getLeaf (*(all_stations[k]), ll, ur);
-		double mesh_density (mesh_density_scaling_station_pnts * (ur[0]-ll[0]));
-		_out << "Point(" << _n_pnt_offset+k << ") = {" << (*(all_stations[k]))[0] << ","
-			<< (*(all_stations[k]))[1] << "," << (*(all_stations[k]))[2] << "," << mesh_density
-			<< "};" << std::endl;
-
-		_out << "Point {" << _n_pnt_offset+k << "} In Surface {" << _n_plane_sfc-1 << "};" << std::endl;
+		if (bounding_polygon->isPntInPolygon (*(all_stations[k]))) {
+			GEOLIB::Point ll, ur;
+			quad_tree.getLeaf (*(all_stations[k]), ll, ur);
+			double mesh_density (mesh_density_scaling_station_pnts * (ur[0]-ll[0]));
+			_out << "Point(" << _n_pnt_offset+k << ") = {" << (*(all_stations[k]))[0] << ","
+				<< (*(all_stations[k]))[1] << "," << (*(all_stations[k]))[2] << "," << mesh_density
+				<< "};" << std::endl;
+			_out << "Point {" << _n_pnt_offset+k << "} In Surface {" << _n_plane_sfc-1 << "};" << std::endl;
+		}
 	}
 	_n_pnt_offset += n_stations;
 
@@ -339,80 +345,6 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 		}
 	}
 	std::cout << "ok" << std::endl;
-
-//	// go through all geometric data sets and get polygons
-//	std::vector<GEOLIB::Polygon*> polygon_vec;
-//	for (std::vector<std::string>::const_iterator it (geo_names.begin());
-//		it != geo_names.end(); it++) {
-//		const std::vector<GEOLIB::Polyline*> *polylines (geo.getPolylineVec (*it));
-//		for (std::vector<GEOLIB::Polyline*>::const_iterator it (polylines->begin()); it != polylines->end(); it++) {
-//			if ((*it)->isClosed ()) {
-//				polygon_vec.push_back (new GEOLIB::Polygon (*(*it)));
-//			}
-//		}
-//	}
-//
-//	// we assume that all polygons are simple polygons
-//	// forest consist of (hierarchy) trees
-//	std::list<GEOLIB::SimplePolygonTree*> polygon_forest;
-//	// create polygon forest
-//	for (std::vector<GEOLIB::Polygon*>::iterator
-//			polygon_it(polygon_vec.begin()); polygon_it != polygon_vec.end(); polygon_it++) {
-//		// get the list and insert the elements as SimplePolygonTree items into the forest
-//		const std::list<GEOLIB::Polygon*> simple_polygon_list(
-//				(*polygon_it)->getListOfSimplePolygons());
-//		for (std::list<GEOLIB::Polygon*>::const_iterator simple_polygon_it(
-//				simple_polygon_list.begin()); simple_polygon_it
-//				!= simple_polygon_list.end(); simple_polygon_it++) {
-//			GEOLIB::SimplePolygonTree *spt(new GEOLIB::SimplePolygonTree(*simple_polygon_it));
-//			polygon_forest.push_back(spt);
-//		}
-//	}
-//
-//	// create the hierarchy
-//	GEOLIB::createPolygonTree(polygon_forest);
-//	std::cout << "\"Polygon forest\" consists of "
-//			<< polygon_forest.size() << " trees" << std::endl;
-//
-//	// *** insert additional Points (for instance Stations) and Polylines (Wadis, rivers, ...)
-//	// Stations
-//	for (std::vector<std::string>::const_iterator it (geo_names.begin());
-//		it != geo_names.end(); it++) {
-//		const std::vector<GEOLIB::Point*> *stations (geo.getStationVec (*it));
-//		if (stations) {
-//			// go through all Stations
-//			for (std::vector<GEOLIB::Point*>::const_iterator it (stations->begin()); it != stations->end(); it++) {
-//				bool nfound (true);
-//				// go through all top level polygons / SimplePolygonTrees
-//				for (std::list<GEOLIB::SimplePolygonTree*>::iterator polygon_it (polygon_forest.begin());
-//					polygon_it != polygon_forest.end() && nfound; polygon_it++) {
-//					if ((*polygon_it)->isGeoObjInside (*it)) {
-//						(*polygon_it)->insertGeoObj (*it);
-//						nfound = false;
-//					}
-//				}
-//			}
-//		}
-//	}
-//	// Polylines
-//	for (std::vector<std::string>::const_iterator it (geo_names.begin());
-//		it != geo_names.end(); it++) {
-//		const std::vector<GEOLIB::Polyline*> *polylines (geo.getPolylineVec (*it));
-//		for (std::vector<GEOLIB::Polyline*>::const_iterator it (polylines->begin()); it != polylines->end(); it++) {
-//			if (! (*it)->isClosed ()) {
-//				bool nfound (true);
-//				// go through all top level polygons / SimplePolygonTrees
-//				for (std::list<GEOLIB::SimplePolygonTree*>::iterator polygon_it (polygon_forest.begin());
-//					polygon_it != polygon_forest.end() && nfound; polygon_it++) {
-//					if ((*polygon_it)->isGeoObjInside (*it)) {
-//						(*polygon_it)->insertGeoObj (*it);
-//						nfound = false;
-//					}
-//				}
-//			}
-//		}
-//	}
-
 }
 
 
@@ -528,10 +460,12 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 	_out << "// Stations" << std::endl;
 	const size_t n_stations (all_stations.size());
 	for (size_t k(0); k<n_stations; k++) {
-		_out << "Point(" << _n_pnt_offset+k << ") = {" << (*(all_stations[k]))[0] << ","
-			<< (*(all_stations[k]))[1] << "," << (*(all_stations[k]))[2] << "," << mesh_density
-			<< "};" << std::endl;
-		_out << "Point {" << _n_pnt_offset+k << "} In Surface {" << _n_plane_sfc-1 << "};" << std::endl;
+		if (bounding_polygon->isPntInPolygon (*(all_stations[k]))) {
+			_out << "Point(" << _n_pnt_offset+k << ") = {" << (*(all_stations[k]))[0] << ","
+				<< (*(all_stations[k]))[1] << "," << (*(all_stations[k]))[2] << "," << mesh_density
+				<< "};" << std::endl;
+			_out << "Point {" << _n_pnt_offset+k << "} In Surface {" << _n_plane_sfc-1 << "};" << std::endl;
+		}
 	}
 	_n_pnt_offset += n_stations;
 
@@ -575,7 +509,7 @@ void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
 	std::vector<std::string> geo_station_names;
 
 	for (std::vector<std::string>::const_iterator it (selected_geometries.begin());
-		it != selected_geometries.end(); it++) {
+		it != selected_geometries.end(); ++it) {
 		if ((geo.getPointVecObj (*it))->getType() == GEOLIB::PointVec::POINT) {
 			geo_names.push_back (*it);
 		} else if ((geo.getPointVecObj (*it))->getType() == GEOLIB::PointVec::STATION) {
@@ -586,7 +520,7 @@ void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
 	size_t pnt_offset (0);
 	// fetch points and polylines and add them to the vectors, add points to the QuadTree
 	for (std::vector<std::string>::const_iterator it (geo_names.begin());
-			it != geo_names.end(); it++) {
+			it != geo_names.end(); ++it) {
 		// get data from geo
 #ifndef NDEBUG
 		std::cout << "fetch geometrical data for " << *it << " " << std::flush;
@@ -614,7 +548,7 @@ void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
 	}
 
 	for (std::vector<std::string>::const_iterator it (geo_station_names.begin());
-		it != geo_station_names.end(); it++) {
+		it != geo_station_names.end(); ++it) {
 		// get data from geo
 #ifndef NDEBUG
 		std::cout << "fetch station data for " << *it << " " << std::flush;
