@@ -7060,7 +7060,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       // For strain and stress extropolation all element types
       // Number of elements associated to nodes
       for(i=0; i<nnodes; i++)
-         dbuff[i] = (double)MeshElement->nodes[i]->connected_elements.size();
+         dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
       //
       gp_r=gp_s=gp_t=gp=0;
       ElementValue* gp_ele = ele_gp_value[Index];
@@ -7191,7 +7191,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       for(i=0; i<nnodes; i++)
       {
          // Number of elements associated to nodes
-         dbuff[i] = (double)MeshElement->nodes[i]->connected_elements.size();
+         dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
                                                   // pressure
          NodalVal0[i] = sign*pcs->GetNodeValue(nodes[i],idx_cp);
       }
@@ -7321,7 +7321,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
          idxp = pcs->GetNodeValueIndex("POROSITY");
       // Number of elements associated to nodes
       for(i=0; i<nnodes; i++)
-         dbuff[i] = (double)MeshElement->nodes[i]->connected_elements.size();
+         dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
       //
       gp_r=gp_s=gp_t=gp=0;
       //
