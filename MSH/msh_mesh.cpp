@@ -2648,7 +2648,7 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& 
       for (size_t j = 1; j < (_n_msh_layer + 1); j++)
       {
          m_polyline = new CGLPolyline;
-         sprintf(layer_number, "%ld", j);
+         sprintf(layer_number, "%ld", static_cast<long>(j));
          //		m_polyline->ply_name = m_ply->name.data();//CC/TK8888
          //		m_polyline->ply_name.append("_L");//CC/TK8888
          //		m_polyline->ply_name.append(layer_number);//CC/TK8888

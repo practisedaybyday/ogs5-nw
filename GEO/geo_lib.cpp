@@ -1035,7 +1035,7 @@ vector<CGLPolyline*>::iterator pp = gl_surface->polyline_of_surface_vector.begin
 		  {
 			gl_polyline = *p2;
             if (sfc_polyline->getName() == gl_polyline->getName())
-				fprintf(geo_file,"%ld",gl_polyline->getID());
+				fprintf(geo_file,"%ld", static_cast<long>(gl_polyline->getID()));
 			++p2;
 		  }
 

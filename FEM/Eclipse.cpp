@@ -2187,7 +2187,8 @@ Return: bool value if there occured an error
 Programming: 09/2009 SB
 Modification:
 -------------------------------------------------------------------------*/
-bool CECLIPSEData::ConnectFacesToElements(void){
+bool CECLIPSEData::ConnectFacesToElements(void)
+{
 	//CECLIPSEBlock*m_block=NULL;
 	CFaces *m_face=NULL;
 	long ind_block, ind_face;
@@ -2215,7 +2216,7 @@ bool CECLIPSEData::ConnectFacesToElements(void){
 	//	cout << endl;
 	//}
 
-	for(long i = 0; i < long(eclgrid.size()); i++){
+	for(long i = 0; i < long(eclgrid.size()); i++) {
 		// Test output: all faces at one block
 		if(eclgrid[i]->connected_faces.size() != 6)
 			cout << " Error - not 6 faces at one block " << endl;
@@ -2227,36 +2228,42 @@ bool CECLIPSEData::ConnectFacesToElements(void){
 			//cout << eclgrid[i]->connected_faces[j] << ", ";
 			// Order faces +i, -i, +j. -j, +k , -k
 			m_face = faces[eclgrid[i]->connected_faces[j]]; // get face
-			if(m_face->model_axis == "I+")
+			if(m_face->model_axis == "I+") {
 				if(m_face->connected_elements[0] == i)
 					faces_at_block[0] = m_face->index; // this is +i for this element
 				else
 					faces_at_block[1] = m_face->index; // this is -i for this element
-			if(m_face->model_axis == "I-")
+			}
+			if(m_face->model_axis == "I-") {
 				if(m_face->connected_elements[0] == i)
 					faces_at_block[1] = m_face->index; // for this element it is i-
 				else
 					faces_at_block[0] = m_face->index; // for this element it is i+
-			if(m_face->model_axis == "J+")
+			}
+			if(m_face->model_axis == "J+") {
 				if(m_face->connected_elements[0] == i)
 					faces_at_block[2] = m_face->index;
 				else
 					faces_at_block[3] = m_face->index;
-			if(m_face->model_axis == "J-")
+			}
+			if(m_face->model_axis == "J-") {
 				if(m_face->connected_elements[0] == i)
 					faces_at_block[3] = m_face->index;
 				else
 					faces_at_block[2] = m_face->index;
-			if(m_face->model_axis == "K+")
+			}
+			if(m_face->model_axis == "K+") {
 				if(m_face->connected_elements[0] == i)
 					faces_at_block[4] = m_face->index;
 				else
 					faces_at_block[5] = m_face->index;
-			if(m_face->model_axis == "K-")
+			}
+			if(m_face->model_axis == "K-") {
 				if(m_face->connected_elements[0] == i)
 					faces_at_block[5] = m_face->index;
 				else
 					faces_at_block[4] = m_face->index;
+			}
 		}
 		// copy sorted faces to ecl block
 		for(unsigned long j=0;j<eclgrid[i]->connected_faces.size();j++){
