@@ -53,7 +53,7 @@ double DivideAndConquerClosestPair::closestPair (size_t s, size_t e, size_t left
 	}
 
 	// divide and conquer
-	size_t m ((s+e)/2), lleft, lright, rleft, rright;
+	size_t m ((s+e)/2), lleft(s), lright(m), rleft(m+1), rright(e);
 	// recursion
 	double d0 (closestPair (s, m, lleft, lright));
 	double d1 (closestPair (m+1, e, rleft, rright));

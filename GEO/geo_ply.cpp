@@ -255,7 +255,7 @@ void CGLPolyline::Write(char* file_name) {
 	f = fopen(filename, "a");
 	fprintf(f, "#POLYLINE\n");
 	fprintf(f, " $ID\n");//CC
-	fprintf(f, "  %ld\n", id);//CC
+	fprintf(f, "  %ld\n", static_cast<long>(id));//CC
 	fprintf(f, " $NAME\n");
 	if (data_type == 1)//CC8888
 		fprintf(f, "  POLYLINE\n");//CC8888
