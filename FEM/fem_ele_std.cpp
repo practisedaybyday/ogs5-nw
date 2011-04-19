@@ -5565,7 +5565,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
 			}
 
 		// Data for Test Output
-		if (output_average = true) {
+		if (output_average == true) {
 			for(i_dim=0;i_dim<dim;i_dim++) {
 				// average value of all Gauss points
 				value_old[i_dim] = value_old[i_dim] + temp_vel_old[i_dim] / nGaussPoints;

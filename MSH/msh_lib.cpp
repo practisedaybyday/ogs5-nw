@@ -655,7 +655,7 @@ void MSHLayerWriteTecplot()
       m_msh = fem_msh_vector[j];
       for (size_t k = 0; k < m_msh->getNumberOfMeshLayers(); k++)
       {
-         sprintf(no_layer_char, "%lu", k + 1);
+         sprintf(no_layer_char, "%lu", static_cast<long unsigned>(k) + 1);
          no_layer_str = no_layer_char;
          no_nodes = (long) m_msh->nod_vector.size() / (m_msh->getNumberOfMeshLayers()
             + 1);

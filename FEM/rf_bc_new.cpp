@@ -192,7 +192,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
          in.str(GetLineFromFile1(bc_file));
          std::string tmp;
          in >> tmp;                               // _pcs_pv_name;
-         if ( this->_pcs_type == MASS_TRANSPORT )
+         if ( this->_pcs_type == MASS_TRANSPORT ) {
              // HS set the pointer to MCP based on component name.
              // check whether this name is existing and unique.
              if ( cp_name_2_idx.count( tmp ) == 1 )
@@ -205,6 +205,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
                  DisplayErrorMsg("Error: In reading BC file, the input component names are not found in MCP file!!!");
                  exit(1);
              }
+         }
          in.clear();
       }
       //....................................................................
