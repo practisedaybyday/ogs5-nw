@@ -18,14 +18,11 @@ namespace FileIO {
 
 class OGSMeshIO {
 public:
-	OGSMeshIO();
-	virtual ~OGSMeshIO();
-
 	/// Read a OGS mesh from file.
 	static Mesh_Group::CFEMesh* loadMeshFromFile(std::string fileName);
 
 	/// Write an OGS msh to a file.
-	void write (Mesh_Group::CFEMesh const * mesh, std::ofstream &out) const;
+	static void write (Mesh_Group::CFEMesh const * mesh, std::ofstream &out);
 };
 
 } // end namespace FileIO

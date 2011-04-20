@@ -112,7 +112,7 @@ int XMLInterface::readProjectFile(const QString &fileName)
 			Mesh_Group::CFEMesh* msh = FileIO::OGSMeshIO::loadMeshFromFile(msh_name);
 			QFileInfo fi(QString::fromStdString(msh_name));
 			std::string name = fi.fileName().toStdString();
-			_project->addMesh(msh, name); 
+			_project->addMesh(msh, name);
 			//GridAdapter msh(fileList.at(i).toElement().text().toStdString());
 			// TODO gridadapter to mesh-models
 		}
@@ -506,10 +506,10 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 	{
 		// write mesh file
 		QString fileName(path + QString::fromStdString(it->first));
-		std::fstream* out = new std::fstream(fileName.toStdString().c_str(), std::fstream::out);
-		if (out->is_open()) {
-			(it->second)->Write(out);
-			out->close();
+		std::ofstream out (fileName.toStdString().c_str(), std::fstream::out);
+		if (out.is_open()) {
+			FileIO::OGSMeshIO::write (it->second, out);
+			out.close();
 		}
 		else
 			std::cout << "MshTabWidget::saveMeshFile() - Could not create file..." << std::endl;

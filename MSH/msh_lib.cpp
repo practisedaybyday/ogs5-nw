@@ -205,31 +205,17 @@ last modification:
 **************************************************************************/
 void MSHWrite(std::string file_base_name)
 {
-   CFEMesh* m_fem_msh = NULL;
-   std::string sub_line;
-   std::string line_string;
-   //----------------------------------------------------------------------
    // File handling
    std::string fem_msh_file_name = file_base_name + FEM_FILE_EXTENSION;
-   std::fstream fem_msh_file;
-   std::string msh_file_test_name = file_base_name + "_test" + FEM_FILE_EXTENSION;
-   std::fstream msh_file_test;
-   for(size_t i=0; i<fem_msh_vector.size(); i++)
-   {
-      m_fem_msh = fem_msh_vector[i];
-   }
-   fem_msh_file.open(fem_msh_file_name.c_str(),std::ios::trunc|std::ios::out);
+   std::ofstream fem_msh_file (fem_msh_file_name.c_str(),std::ios::trunc|std::ios::out);
+
    if(!fem_msh_file.good()) return;
    fem_msh_file.setf(std::ios::scientific,std::ios::floatfield);
    fem_msh_file.precision(12);
 
-   //----------------------------------------------------------------------
-   for(size_t i=0; i<fem_msh_vector.size(); i++)
-   {
-      m_fem_msh = fem_msh_vector[i];
-      m_fem_msh->Write(&fem_msh_file);
+   for(size_t i=0; i<fem_msh_vector.size(); i++) {
+      FileIO::OGSMeshIO::write (fem_msh_vector[i], fem_msh_file);
    }
-   //----------------------------------------------------------------------
    fem_msh_file << "#STOP";
    fem_msh_file.close();
 }
