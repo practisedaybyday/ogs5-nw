@@ -118,6 +118,7 @@ include_directories(
 	../GEO
 	../FileIO
 	../FileIO/MeshIO
+	../FileIO/FEMIO
 	../MSH
 	../GEM
 	../OGSProject

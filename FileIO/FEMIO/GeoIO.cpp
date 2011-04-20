@@ -10,15 +10,15 @@
 #include "FEMIO/GeoIO.h"
 
 // FEM
-#include "files0.h" // for GetLineFromFile1
+#include "readNonBlankLineFromInputStream.h"
 
 namespace FileIO {
 
-void GeoIO::readGeoInfo (GeoInfo* geo_info, std::ifstream& in_str, std::string& geo_name,
-			const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name) const
+bool GeoIO::readGeoInfo (GeoInfo* geo_info, std::istream& in_str, std::string& geo_name,
+			const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
 {
 	std::stringstream strstream;
-	strstream.str(GetLineFromFile1(&in_str));
+	strstream.str(readNonBlankLineFromInputStream(in_str));
 	std::string geo_type_name;
 	strstream >> geo_type_name;
 
@@ -27,9 +27,13 @@ void GeoIO::readGeoInfo (GeoInfo* geo_info, std::ifstream& in_str, std::string& 
 		const GEOLIB::Point *pnt(
 				(geo_obj.getPointVecObj(unique_geo_name))->getElementByName(geo_name));
 		if (pnt == NULL) {
-			std::cerr << "ERROR in GeoIO::GeoIO : point name \"" << geo_name
+			std::cerr << "ERROR in GeoIO::readGeoInfo: point name \"" << geo_name
 					<< "\" not found!" << std::endl;
+#ifdef OGS_USE_QT
+			return false;
+#else
 			exit(1);
+#endif
 		}
 		geo_info->setGeoType(GEOLIB::POINT);
 		geo_info->setGeoObj(pnt);
@@ -42,9 +46,13 @@ void GeoIO::readGeoInfo (GeoInfo* geo_info, std::ifstream& in_str, std::string& 
 		const GEOLIB::Polyline *ply(
 				(geo_obj.getPolylineVecObj(unique_geo_name))->getElementByName(geo_name));
 		if (ply == NULL) {
-			std::cerr << "error in COutput::Read: polyline name \"" << geo_name
+			std::cerr << "error in GeoIO::readGeoInfo: polyline name \"" << geo_name
 					<< "\" not found!" << std::endl;
+#ifdef OGS_USE_QT
+			return false;
+#else
 			exit(1);
+#endif
 		}
 		geo_info->setGeoObj(ply);
 		strstream.clear();
@@ -67,6 +75,8 @@ void GeoIO::readGeoInfo (GeoInfo* geo_info, std::ifstream& in_str, std::string& 
 		strstream >> geo_name;
 		strstream.clear();
 	}
+
+	return true;
 }
 
 }

@@ -55,6 +55,8 @@
 
 // FileIO
 #include "FEMIO/GeoIO.h"
+#include "FEMIO/ProcessIO.h"
+#include "readNonBlankLineFromInputStream.h"
 
 using FiniteElement::CElement;
 using Mesh_Group::CElem;
@@ -180,20 +182,23 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
                                                   // subkeyword found
       if (line_string.find("$PCS_TYPE") != std::string::npos)
       {
-         in.str(GetLineFromFile1(st_file));
-         std::string tmp;
-         in >> tmp;
-         setProcessType (convertProcessType (tmp));
-         in.clear();
+    	  FileIO::ProcessIO::readProcessInfo (*st_file, _pcs_type);
+//         in.str(GetLineFromFile1(st_file));
+//         std::string tmp;
+//         in >> tmp;
+//         setProcessType (convertProcessType (tmp));
+//         in.clear();
          continue;
       }
 
                                                   // subkeyword found
       if (line_string.find("$PRIMARY_VARIABLE") != std::string::npos)
       {
-         in.str(GetLineFromFile1(st_file));
+    	  in.str (readNonBlankLineFromInputStream (*st_file));
+//         in.str(GetLineFromFile1(st_file));
          std::string tmp;
          in >> tmp;
+
          if ( this->getProcessType() == MASS_TRANSPORT )
          {
              // HS set the pointer to MCP based on component name.
@@ -220,7 +225,8 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
 
       if (line_string.find("$COMP_NAME") != std::string::npos)
       {
-         in.str(GetLineFromFile1(st_file));
+    	  in.str(readNonBlankLineFromInputStream (*st_file));
+//         in.str(GetLineFromFile1(st_file));
          std::string tmp;
          in >> tmp;
          // HS set the pointer to MCP based on component name.
@@ -253,13 +259,14 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
          {
             _coupled = true;
             ReadDistributionType(st_file);
-            in.str(GetLineFromFile1(st_file));    //PCS type
+            in.str(readNonBlankLineFromInputStream(*st_file));
             in >> line_string >> pcs_type_name_cond;
             in.clear();
-            in.str(GetLineFromFile1(st_file));    //
+            in.str(readNonBlankLineFromInputStream(*st_file));    //
             in >> pcs_pv_name_cond;
             in.clear();
-            in.str(GetLineFromFile1(st_file));
+//            in.str(GetLineFromFile1(st_file));
+            in.str(readNonBlankLineFromInputStream(*st_file));
             in >> _coup_leakance >> rill_height;
             in.clear();
          }                                        //05.09.2008 WW
@@ -270,30 +277,24 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
          }
       }
 
-      //		if (line_string.find("$COUPLING_SWITCH") != std::string::npos) {
-      //			COUPLING_SWITCH = true; // switch case
-      //			in.str(GetLineFromFile1(st_file));
-      //			in >> rainfall >> rainfall_duration;
-      //			in.clear();
-      //		}
-
       if (line_string.find("$NODE_AVERAGING") != std::string::npos)
       {
          in.clear();
-         node_averaging = 1;
+         node_averaging = true;
          continue;
       }
                                                   // JOD 4.10.01
       if (line_string.find("$NEGLECT_SURFACE_WATER_PRESSURE") != std::string::npos)
       {
          in.clear();
-         no_surface_water_pressure = 1;
+         no_surface_water_pressure = true;
          continue;
       }
+
       if (line_string.find("$CHANNEL") != std::string::npos)
       {
          in.clear();
-         in.str(GetLineFromFile1(st_file));
+         in.str(readNonBlankLineFromInputStream(*st_file));
          in >> channel_width;
          channel = 1;
          continue;
@@ -301,7 +302,7 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
 
       if (line_string.find("$TIM_TYPE") != std::string::npos)
       {
-         in.str(GetLineFromFile1(st_file));
+         in.str(readNonBlankLineFromInputStream(*st_file));
          in >> tim_type_name;
          if (tim_type_name.find("CURVE") != std::string::npos)
          {
@@ -314,7 +315,7 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
 
       if (line_string.find("$FCT_TYPE") != std::string::npos)
       {
-         in.str(GetLineFromFile1(st_file));
+         in.str(readNonBlankLineFromInputStream(*st_file));
          in >> fct_name;                          //sub_line
                                                   //WW
          if (fct_name.find("METHOD") != std::string::npos)
@@ -324,7 +325,7 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
 
       if (line_string.find("$MSH_TYPE") != std::string::npos)
       {
-         in.str(GetLineFromFile1(st_file));
+         in.str(readNonBlankLineFromInputStream(*st_file));
          std::string sub_string;
          in >> sub_string;                        //sub_line
          msh_type_name = "NODE";
@@ -501,8 +502,7 @@ void CSourceTerm::ReadDistributionType(std::ifstream *st_file)
 void CSourceTerm::ReadGeoType(std::ifstream *st_file,
 const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
 {
-   FileIO::GeoIO geo_io;
-   geo_io.readGeoInfo(this, *st_file, geo_name, geo_obj, unique_name);
+   FileIO::GeoIO::readGeoInfo(this, *st_file, geo_name, geo_obj, unique_name);
 
    if (getProcessPrimaryVariable() == EXCAVATION) //WW
    {

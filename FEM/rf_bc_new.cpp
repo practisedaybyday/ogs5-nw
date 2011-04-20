@@ -12,10 +12,15 @@
 #include <iostream>
 #include <algorithm>
 
+// FileIO
+#include "BoundaryConditionIO.h"
+#include "readNonBlankLineFromInputStream.h"
+#include "ProcessIO.h"
+#include "GeoIO.h"
+
 // GEOLib
 //#include "geo_lib.h"
 //#include "geo_sfc.h"
-#include "files0.h"
 
 // GEOLIB
 #include "GEOObjects.h"
@@ -122,7 +127,7 @@ const std::string& CBoundaryCondition::getGeoName () const
  11/2004 MX stream string
  **************************************************************************/
 std::ios::pos_type CBoundaryCondition::Read(std::ifstream *bc_file,
-const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
+		const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname, bool & valid)
 {
    std::string line_string;
    bool new_keyword = false;
@@ -133,12 +138,11 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
    double dbuff;                                  //WW
    std::stringstream in;
 
-   //========================================================================
    // Schleife ueber alle Phasen bzw. Komponenten
    while (!new_keyword)
    {
       position = bc_file->tellg();
-      line_string = GetLineFromFile1(bc_file);
+      line_string = readNonBlankLineFromInputStream (*bc_file);
       if (line_string.size() < 1)
          break;
       if (line_string.find("#") != std::string::npos)
@@ -146,21 +150,15 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
          new_keyword = true;
          break;
       }
-      //....................................................................
-                                                  // subkeyword found
-      if (line_string.find("$PCS_TYPE") != std::string::npos)
-      {
-         in.str(GetLineFromFile1(bc_file));
-         std::string tmp;
-         in >> tmp;                               // pcs_type_name;
-         this->setProcessType(convertProcessType (tmp));
-         in.clear();
+
+      if (line_string.find("$PCS_TYPE") != std::string::npos) {
+    	  if (! FileIO::ProcessIO::readProcessInfo (*bc_file, _pcs_type))
+    		  valid = false;
       }
-      //....................................................................
-                                                  // subkeyword found
+
       if (line_string.find("$PRIMARY_VARIABLE") != std::string::npos)
       {
-         in.str(GetLineFromFile1(bc_file));
+         in.str(readNonBlankLineFromInputStream(*bc_file));
          std::string tmp;
          in >> tmp;                               // _pcs_pv_name;
          if ( this->_pcs_type == MASS_TRANSPORT )
@@ -185,11 +183,11 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
          }
          in.clear();
       }
-      //....................................................................
+
       // HS, this is new. later on we should stick to COMP_NAME, PRIMARY_VARIABLE support will be removed.
       if (line_string.find("$COMP_NAME") != std::string::npos)
       {
-         in.str(GetLineFromFile1(bc_file));
+         in.str(readNonBlankLineFromInputStream(*bc_file));
          std::string tmp;
          in >> tmp;                               // _pcs_pv_name;
          if ( this->_pcs_type == MASS_TRANSPORT ) {
@@ -208,106 +206,28 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
          }
          in.clear();
       }
-      //....................................................................
-                                                  //subkeyword found
-      if (line_string.find("$GEO_TYPE") != std::string::npos)
-      {
-         in.str(GetLineFromFile1(bc_file));
-         in >> sub_string;                        //sub_line
 
-         if (sub_string.compare("POINT") == 0)    //OK
-         {
-            in >> geo_name;                       //sub_line
-
-            // TF 05/2010 - get the point from the point vector
-            const GEOLIB::Point *pnt ((geo_obj.getPointVecObj(unique_fname))->getElementByName (geo_name));
-            if (pnt == NULL)
-            {
-               std::cerr << "ERROR in CBoundaryCondition::Read() - Point name \"" << geo_name << "\" from geometry \"" << unique_fname << "\" not found!" << std::endl;
-#ifndef OGS_USE_QT
-               exit (1);
-#endif
-            }
-
-            in.clear();
-            geo_type_name = "POINT";
-            setGeoType (GEOLIB::POINT);
-            setGeoObj (pnt);
-         }
-         if (sub_string.find("POLYLINE") != std::string::npos)
-         {
-            in >> geo_name;                       //sub_line
-            in.clear();
-            // 07/2010 TF substitute source code in order to use new GEOLIB
-            geo_type_name = "POLYLINE";
-            //				CGLPolyline* m_ply = NULL;
-            //				m_ply = GEOGetPLYByName(geo_name); //CC 10/05
-            //				if (!m_ply)
-            //					cout << "Warning in BCRead: no PLY data" << endl;
-
-            // TF 07/2010 - get the index from the polyline vector
-            if (geo_obj.getPolylineVecObj(unique_fname) != NULL)
-            {
-               const GEOLIB::Polyline* ply ((geo_obj.getPolylineVecObj(unique_fname))->getElementByName (geo_name));
-               if (ply == NULL)
-               {
-                  std::cerr << "Warning CBoundaryCondition::Read: polyline name \"" << geo_name << "\" not found!" << std::endl;
-                  exit (1);
-               }
-               setGeoObj (ply);
-            }
-
-            setGeoType (GEOLIB::POLYLINE);
-         }
-
-         if (sub_string.find("SURFACE") != std::string::npos)
-         {
-            in >> geo_name;                       //sub_line
-            in.clear();
-            // TF 07/2010 - get the index from the surface vector
-            //				if (geo_obj.getSurfaceVecObj(unique_fname) != NULL) {
-            //					if (!((geo_obj.getSurfaceVecObj(unique_fname))->getElementIDByName (geo_name, _geo_obj_idx))) {
-            //						std::cerr << "Warning CBoundaryCondition::Read: surface name \"" << geo_name << "\" not found!" << std::endl;
-            //						exit (1);
-            //					}
-            //				}
-            geo_type_name = "SURFACE";
-            setGeoType (GEOLIB::SURFACE);
-         }
-         if (sub_string.find("VOLUME") != std::string::npos)
-         {
-            in >> geo_name;                       //sub_line
-            in.clear();
-
-            //				geo_type_name = "VOLUME";
-            setGeoType (GEOLIB::VOLUME);
-         }
+      if (line_string.find("$GEO_TYPE") != std::string::npos) {
+    	  if (! FileIO::GeoIO::readGeoInfo (this, *bc_file, geo_name, geo_obj, unique_fname)) {
+    		  valid = false;
+    	  }
       }
-      //....................................................................
+
                                                   //PCH
       if (line_string.find("$DIS_TYPE") != std::string::npos)
       {
-         in.str(GetLineFromFile1(bc_file));
+         in.str(readNonBlankLineFromInputStream(*bc_file));
          in >> line_string;                       //sub_line
          _periodic = false;                       // JOD
 
-         // Soure terms are assign to element nodes directly. 23.02.2009. WW
+         // Source terms are assign to element nodes directly. 23.02.2009. WW
          if (line_string.find("DIRECT") != std::string::npos) {
         	this->setProcessDistributionType(FiniteElement::DIRECT);
             in >> fname;
             fname = FilePath + fname;
             in.clear();
          }
-         /* KR not used
-         // Patch-wise constant. 19.03.2009. WW
-         if (line_string.find("PATCH_C") != string::npos) {
-            dis_type_name = "PATCH_C";
-            in >> fname;
-            fname = FilePath + fname;
-            in >> geo_node_value;
-            in.clear();
-         }
-         */
+
          if (line_string.find("CONSTANT") != std::string::npos)
          {
             this->setProcessDistributionType(FiniteElement::CONSTANT);
@@ -317,17 +237,14 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
          if (line_string.find("LINEAR") != std::string::npos)
          {
             this->setProcessDistributionType(FiniteElement::LINEAR);
-            // Distribued. WW
+            // Distribuded. WW
             size_t nLBC;
             in >> nLBC;                           //sub_line
             in.clear();
 
-            //        sub_string = strtok(buffer,seps);
-            //        sub_string = strtok( NULL, seps );
-            //        int nLBC = atoi(sub_string.c_str());
             for (size_t i = 0; i < nLBC; i++)
             {
-               in.str(GetLineFromFile1(bc_file));
+               in.str(readNonBlankLineFromInputStream(*bc_file));
                in >> ibuff >> dbuff >> strbuff;
                in.clear();
 
@@ -342,31 +259,15 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
             }
             //        bc_file->ignore(MAX_ZEILE,'\n');
          }
-         /* KR not used
-         if (line_string.find("PERIODIC") != string::npos) { // JOD
-            dis_type_name = "PERIODIC";
-            _periodic = true;
-            dis_type = 0;
-            in >> geo_node_value;
-            in.clear();
-            in.str(GetLineFromFile1(bc_file));
-            in >> _periode_time_length >> _periode_phase_shift; //sub_line
-            in.clear();
-         } // subkeyword found
-         */
       }
+
       // Time dependent function
       //..Time dependent curve ............................................
-                                                  // subkeyword found
       if (line_string.find("$TIM_TYPE") != std::string::npos)
       {
-         in.str(GetLineFromFile1(bc_file));
+         in.str(readNonBlankLineFromInputStream(*bc_file));
          in >> line_string;
 
-         //      bc_file->getline(buffer,MAX_ZEILE);
-         //      line_string = buffer;
-         //      pos1 = 0;
-         //      sub_string = get_sub_string(buffer,delimiter_type,pos1,&pos2);
          if (line_string.find("CURVE") != std::string::npos)
          {
             //				tim_type_name = "CURVE";
@@ -380,25 +281,17 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
          }
          continue;
       }
-      //....................................................................
-                                                  // subkeyword found
+
       if (line_string.find("$FCT_TYPE") != std::string::npos)
       {
-         in.str(GetLineFromFile1(bc_file));
+         in.str(readNonBlankLineFromInputStream(*bc_file));
          in >> fct_name;                          //sub_line
          in.clear();
-
-         //		bc_file->getline(line,MAX_ZEILE);
-         //      line_string = line;
-         //      remove_white_space(&line_string);
-         //      fct_name = line_string.substr(0);
       }
-      //....................................................................
-      //OK4105
-                                                  //subkeyword found
+
       if (line_string.find("$MSH_TYPE") != std::string::npos)
       {
-         in.str(GetLineFromFile1(bc_file));
+         in.str(readNonBlankLineFromInputStream(*bc_file));
          in >> sub_string;                        //sub_line
          _msh_type_name = "NODE";
          if (sub_string.find("NODE") != std::string::npos)
@@ -407,12 +300,10 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
             in.clear();
          }
       }
-      //....................................................................
-      //OK4108
-                                                  // subkeyword found
+
       if (line_string.find("$DIS_TYPE_CONDITION") != std::string::npos)
       {
-         in.str(GetLineFromFile1(bc_file));       // CONSTANT -21500.0
+         in.str(readNonBlankLineFromInputStream(*bc_file));       // CONSTANT -21500.0
          in >> line_string;
          if (line_string.find("CONSTANT") != std::string::npos)
          {
@@ -420,96 +311,94 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
             in >> geo_node_value;
             in.clear();
          }
-         in.str(GetLineFromFile1(bc_file));       // 0.0 IF HEAD > 0.04
+         in.str(readNonBlankLineFromInputStream(*bc_file));       // 0.0 IF HEAD > 0.04
          std::string pcs_pv_name_cond;            // 07/2010 TF temp string
          in >> node_value_cond >> line_string >> pcs_pv_name_cond
             >> line_string >> condition;
          in.clear();
-         in.str(GetLineFromFile1(bc_file));       // PCS OVERLAND_FLOW
+         in.str(readNonBlankLineFromInputStream(*bc_file));       // PCS OVERLAND_FLOW
          std::string pcs_type_name_cond;
          in >> line_string >> pcs_type_name_cond;
          in.clear();
          conditional = true;
       }
-      //....................................................................
-                                                  // NW
-      if (line_string.find("$EPSILON") != std::string::npos)
+
+      if (line_string.find("$EPSILON") != std::string::npos) // NW
       {
-         in.str(GetLineFromFile1(bc_file));
+         in.str(readNonBlankLineFromInputStream(*bc_file));
          in >> epsilon;
          in.clear();
       }
-      //....................................................................
    }
    return position;
 }
 
 
-/**************************************************************************
- FEMLib-Method: CBoundaryCondition::Write
- 02/2004 OK Implementation
- 07/2007 OK LINEAR
- 10/2008 OK NOD
- 06/2009 OK MSH_TYPE off
- **************************************************************************/
-void CBoundaryCondition::Write(std::fstream* rfd_file) const
-{
-   //KEYWORD
-   *rfd_file << "#BOUNDARY_CONDITION" << std::endl;
-   //--------------------------------------------------------------------
-   //NAME+NUMBER
-   *rfd_file << " $PCS_TYPE" << std::endl;
-   *rfd_file << "  " << convertProcessTypeToString(getProcessType()) << std::endl;
-   *rfd_file << " $PRIMARY_VARIABLE" << std::endl;
-   *rfd_file << "  " << convertPrimaryVariableToString(this->getProcessPrimaryVariable()) << std::endl;
-   //--------------------------------------------------------------------
-   //GEO_TYPE
-   *rfd_file << " $GEO_TYPE" << std::endl;
-   *rfd_file << "  ";
-   *rfd_file << getGeoTypeAsString() << " " << geo_name << std::endl;
-
-   //--------------------------------------------------------------------
-   /*OK4910
-    //MSH_TYPE
-    if(msh_node_number>0){
-    *rfd_file << " $MSH_TYPE" << endl;
-    *rfd_file << "  ";
-    *rfd_file << "NODE" << " " << msh_node_number << endl;
-    }
-    */
-   //--------------------------------------------------------------------
-   //DIS_TYPE
-   *rfd_file << " $DIS_TYPE" << std::endl;
-   *rfd_file << "  ";
-   *rfd_file << convertDisTypeToString(this->getProcessDistributionType());
-   //switch (dis_type_name[0]) {
-   //case 'C': // Constant
-   if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
-   {
-      *rfd_file << " " << geo_node_value;
-      *rfd_file << std::endl;
-      //break;
-   }
-   //case 'L': // Linear
-   else if (this->getProcessDistributionType() == FiniteElement::LINEAR)
-   {
-      *rfd_file << " " << _PointsHaveDistribedBC.size() << std::endl;
-      for (size_t i = 0; i < _PointsHaveDistribedBC.size(); i++)
-      {
-         *rfd_file << "  " << _PointsHaveDistribedBC[i] << " ";
-         *rfd_file << "  " << _DistribedBC[i] << std::endl;
-      }
-      //break;
-   }
-
-   //FCT
-   if (fct_name.length() > 0)                     //OK4108
-   {
-      *rfd_file << " $FCT_TYPE" << std::endl;
-      *rfd_file << "  ";
-      *rfd_file << fct_name << std::endl;
-   }
-}
+///**************************************************************************
+// FEMLib-Method: CBoundaryCondition::Write
+// 02/2004 OK Implementation
+// 07/2007 OK LINEAR
+// 10/2008 OK NOD
+// 06/2009 OK MSH_TYPE off
+// **************************************************************************/
+//void CBoundaryCondition::Write(std::fstream* rfd_file) const
+//{
+//   //KEYWORD
+//   *rfd_file << "#BOUNDARY_CONDITION" << std::endl;
+//   //--------------------------------------------------------------------
+//   //NAME+NUMBER
+//   *rfd_file << " $PCS_TYPE" << std::endl;
+//   *rfd_file << "  " << convertProcessTypeToString(getProcessType()) << std::endl;
+//   *rfd_file << " $PRIMARY_VARIABLE" << std::endl;
+//   *rfd_file << "  " << convertPrimaryVariableToString(this->getProcessPrimaryVariable()) << std::endl;
+//   //--------------------------------------------------------------------
+//   //GEO_TYPE
+//   *rfd_file << " $GEO_TYPE" << std::endl;
+//   *rfd_file << "  ";
+//   *rfd_file << getGeoTypeAsString() << " " << geo_name << std::endl;
+//
+//   //--------------------------------------------------------------------
+//   /*OK4910
+//    //MSH_TYPE
+//    if(msh_node_number>0){
+//    *rfd_file << " $MSH_TYPE" << endl;
+//    *rfd_file << "  ";
+//    *rfd_file << "NODE" << " " << msh_node_number << endl;
+//    }
+//    */
+//   //--------------------------------------------------------------------
+//   //DIS_TYPE
+//   *rfd_file << " $DIS_TYPE" << std::endl;
+//   *rfd_file << "  ";
+//   *rfd_file << convertDisTypeToString(this->getProcessDistributionType());
+//   //switch (dis_type_name[0]) {
+//   //case 'C': // Constant
+//   if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
+//   {
+//      *rfd_file << " " << geo_node_value;
+//      *rfd_file << std::endl;
+//      //break;
+//   }
+//   //case 'L': // Linear
+//   else if (this->getProcessDistributionType() == FiniteElement::LINEAR)
+//   {
+//      *rfd_file << " " << _PointsHaveDistribedBC.size() << std::endl;
+//      for (size_t i = 0; i < _PointsHaveDistribedBC.size(); i++)
+//      {
+//         *rfd_file << "  " << _PointsHaveDistribedBC[i] << " ";
+//         *rfd_file << "  " << _DistribedBC[i] << std::endl;
+//      }
+//      //break;
+//   }
+//
+//   //FCT
+//   if (fct_name.length() > 0)                     //OK4108
+//   {
+//      *rfd_file << " $FCT_TYPE" << std::endl;
+//      *rfd_file << "  ";
+//      *rfd_file << fct_name << std::endl;
+//   }
+//}
 
 
 /**************************************************************************
@@ -622,43 +511,45 @@ void CBoundaryCondition::WriteTecplot(std::fstream* tec_file) const
  01/2005 OK Destruct before read
  05/2010 TF changes due to new GEOLIB integration, some improvements
  **************************************************************************/
-   bool BCRead(std::string file_base_name, const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
-   {
-      char line[MAX_ZEILE];
-      std::string line_string, bc_file_name;
+bool BCRead(std::string const& file_base_name, const GEOLIB::GEOObjects& geo_obj,
+		const std::string& unique_name)
+{
+	char line[MAX_ZEILE];
+	std::string line_string, bc_file_name;
 
-      // File handling
-      bc_file_name = file_base_name + BC_FILE_EXTENSION;
+	// File handling
+	bc_file_name = file_base_name + BC_FILE_EXTENSION;
 
-      std::ifstream bc_file(bc_file_name.data(), std::ios::in);
-      if (!bc_file.good())
-      {
-         std::cout << "! Error in BCRead: No boundary conditions !" << std::endl;
-         return false;
-      }
+	std::ifstream bc_file(bc_file_name.data(), std::ios::in);
+	if (!bc_file.good()) {
+		std::cout << "! Error in BCRead: No boundary conditions !" << std::endl;
+		return false;
+	}
 
-      // Keyword loop
-      std::cout << "BCRead ... " << std::flush;
-      while (!bc_file.eof())
-      {
-         bc_file.getline(line, MAX_ZEILE);
-         line_string = line;
-         if (line_string.find("#STOP") != std::string::npos)
-         {
-            std::cout << "done, read " << bc_list.size() << " boundary conditions" << std::endl;
-            return true;
-         }
-         if (line_string.find("#BOUNDARY_CONDITION") != std::string::npos)
-         {
-            CBoundaryCondition *bc (new CBoundaryCondition());
-            std::ios::pos_type position = bc->Read (&bc_file, geo_obj, unique_name);
-            bc_list.push_back(bc);
-            bc_file.seekg(position, std::ios::beg);
-         }                                        // keyword found
-      }                                           // eof
-      std::cout << "done, read " << bc_list.size() << " boundary conditions" << std::endl;
-      return true;
-   }
+	// Keyword loop
+	std::cout << "BCRead ... " << std::flush;
+	while (!bc_file.eof()) {
+		bc_file.getline(line, MAX_ZEILE);
+		line_string = line;
+		if (line_string.find("#STOP") != std::string::npos) {
+			std::cout << "done, read " << bc_list.size()
+					<< " boundary conditions" << std::endl;
+			return true;
+		}
+		if (line_string.find("#BOUNDARY_CONDITION") != std::string::npos) {
+			CBoundaryCondition *bc(new CBoundaryCondition());
+			bool valid (true);
+			std::ios::pos_type position = bc->Read(&bc_file, geo_obj,
+					unique_name, valid);
+			if (valid)
+				bc_list.push_back(bc);
+			else
+				delete bc;
+			bc_file.seekg(position, std::ios::beg);
+		} // keyword found
+	} // eof
+	return true;
+}
 
 
 /**************************************************************************
@@ -669,41 +560,40 @@ void CBoundaryCondition::WriteTecplot(std::fstream* tec_file) const
  last modification:
  **************************************************************************/
 
-   void BCWrite(std::string base_file_name)
-   {
-      CBoundaryCondition *m_bc = NULL;
-      std::string sub_line;
-      std::string line_string;
-      //========================================================================
-      // File handling
-      std::string bc_file_name = base_file_name + BC_FILE_EXTENSION;
-      std::fstream bc_file(bc_file_name.data(), std::ios::trunc | std::ios::out);
-      bc_file.setf(std::ios::scientific, std::ios::floatfield);
-      bc_file.precision(12);
-      //OK string tec_file_name = base_file_name + ".tec";
-      //OK fstream tec_file (tec_file_name.data(),ios::trunc|ios::out);
-      //OK tec_file.setf(ios::scientific,ios::floatfield);
-      //OK tec_file.precision(12);
-      if (!bc_file.good())
-         return;
-      bc_file.seekg(0L, std::ios::beg);           // rewind?
-      //========================================================================
-      bc_file
-         << "GeoSys-BC: Boundary Conditions ------------------------------------------------\n";
-      //========================================================================
-      // BC list
-      std::list<CBoundaryCondition*>::const_iterator p_bc = bc_list.begin();
-      while (p_bc != bc_list.end())
-      {
-         m_bc = *p_bc;
-         m_bc->Write(&bc_file);
-         //OK m_bc->WriteTecplot(&tec_file);
-         ++p_bc;
-      }
-      bc_file << "#STOP";
-      bc_file.close();
-      //OK tec_file.close();
-   }
+void BCWrite(std::string const& base_file_name)
+{
+	CBoundaryCondition *m_bc = NULL;
+	std::string sub_line;
+	std::string line_string;
+	//========================================================================
+	// File handling
+	std::string bc_file_name (base_file_name + BC_FILE_EXTENSION);
+	std::fstream bc_file(bc_file_name.data(), std::ios::trunc | std::ios::out);
+	bc_file.setf(std::ios::scientific, std::ios::floatfield);
+	bc_file.precision(12);
+	//OK string tec_file_name = base_file_name + ".tec";
+	//OK fstream tec_file (tec_file_name.data(),ios::trunc|ios::out);
+	//OK tec_file.setf(ios::scientific,ios::floatfield);
+	//OK tec_file.precision(12);
+	if (!bc_file.good()) return;
+	bc_file.seekg(0L, std::ios::beg); // rewind?
+	//========================================================================
+	bc_file
+			<< "GeoSys-BC: Boundary Conditions ------------------------------------------------\n";
+	//========================================================================
+	// BC list
+	std::list<CBoundaryCondition*>::const_iterator p_bc = bc_list.begin();
+	while (p_bc != bc_list.end()) {
+		m_bc = *p_bc;
+		FileIO::BoundaryConditionIO::write(bc_file, *(*p_bc));
+		// m_bc->Write(&bc_file);
+		//OK m_bc->WriteTecplot(&tec_file);
+		++p_bc;
+	}
+	bc_file << "#STOP";
+	bc_file.close();
+	//OK tec_file.close();
+}
 
 
 /**************************************************************************
@@ -757,7 +647,7 @@ void CBoundaryCondition::WriteTecplot(std::fstream* tec_file) const
       //========================================================================
       while (!d_file.eof())
       {
-         line_string = GetLineFromFile1(&d_file);
+         line_string = readNonBlankLineFromInputStream(d_file);
          if (line_string.find("#STOP") != std::string::npos)
             break;
 
@@ -781,62 +671,56 @@ void CBoundaryCondition::WriteTecplot(std::fstream* tec_file) const
  GeoSys BC function:
  03/2009 WW Implementation
  **************************************************************************/
-   inline void CBoundaryCondition::PatchAssign(long ShiftInNodeVector)
-   {
-      std::string line_string;
-      std::string st_file_name;
-      std::stringstream in;
-      long n_index;
-      std::vector<long> sfc_nodes;
-      CRFProcess* m_pcs = NULL;
-      CBoundaryConditionNode *m_node_value = NULL;
+inline void CBoundaryCondition::PatchAssign(long ShiftInNodeVector)
+{
+	std::string line_string;
+	std::stringstream in;
+	long n_index;
+	std::vector<long> sfc_nodes;
+	CBoundaryConditionNode *m_node_value = NULL;
 
-      m_pcs = PCSGet(convertProcessTypeToString(this->getProcessType()));
+	CRFProcess* pcs(
+			PCSGet(convertProcessTypeToString(this->getProcessType())));
+	Surface *surface(GEOGetSFCByName(geo_name));
 
-      Surface *m_surface = NULL;
-      m_surface = GEOGetSFCByName(geo_name);
-      //========================================================================
-      // File handling
-      std::ifstream d_file(fname.c_str(), std::ios::in);
-      //if (!st_file.good()) return;
+	// File handling
+	std::ifstream d_file(fname.c_str(), std::ios::in);
 
-      if (!d_file.good())
-      {
-         std::cout << "! Error in direct node source terms: Could not find file:!\n"
-            << fname << std::endl;
-         abort();
-      }
-      // Rewind the file
-      d_file.clear();
-      d_file.seekg(0L, std::ios::beg);
-      //========================================================================
-      while (!d_file.eof())
-      {
-         line_string = GetLineFromFile1(&d_file);
-         if (line_string.find("#STOP") != std::string::npos)
-            break;
+	if (!d_file.good()) {
+		std::cout
+				<< "! Error in direct node source terms: Could not find file:!\n"
+				<< fname << std::endl;
+		abort();
+	}
+	// Rewind the file
+	d_file.clear();
+	d_file.seekg(0L, std::ios::beg);
 
-         in.str(line_string);
-         in >> n_index;
-         in.clear();
-         sfc_nodes.push_back(n_index);
-      }
-      if (m_surface)
-         m_pcs->m_msh->GetNODOnSFC_PLY_XY(m_surface, sfc_nodes, true);
-      for (long i = 0; i < (long) sfc_nodes.size(); i++)
-      {
-         //
-         m_node_value = new CBoundaryConditionNode;
-         m_node_value->conditional = false;
-         n_index = sfc_nodes[i];
-         m_node_value->msh_node_number = n_index + ShiftInNodeVector;
-         m_node_value->geo_node_number = n_index;
-         m_node_value->node_value = geo_node_value;
-         m_node_value->CurveIndex = _curve_index;
-         m_pcs->bc_node.push_back(this);
-         m_pcs->bc_node_value.push_back(m_node_value);
-      }                                           // eof
-   }
+	while (!d_file.eof()) {
+		line_string = readNonBlankLineFromInputStream(d_file);
+		if (line_string.find("#STOP") != std::string::npos) break;
+
+		in.str(line_string);
+		in >> n_index;
+		in.clear();
+		sfc_nodes.push_back(n_index);
+	}
+
+	if (surface)
+		pcs->m_msh->GetNODOnSFC_PLY_XY(surface, sfc_nodes, true);
+
+	for (size_t i = 0; i < sfc_nodes.size(); i++) {
+		m_node_value = new CBoundaryConditionNode;
+		m_node_value->conditional = false;
+		n_index = sfc_nodes[i];
+		m_node_value->msh_node_number = n_index + ShiftInNodeVector;
+		m_node_value->geo_node_number = n_index;
+		m_node_value->node_value = geo_node_value;
+		m_node_value->CurveIndex = _curve_index;
+		pcs->bc_node.push_back(this);
+		pcs->bc_node_value.push_back(m_node_value);
+	} // eof
+}
 
 
    CBoundaryConditionsGroup::CBoundaryConditionsGroup(void)

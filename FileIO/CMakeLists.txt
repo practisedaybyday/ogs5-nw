@@ -6,8 +6,11 @@ SET( SOURCES
 	OGSIOVer4.cpp
 	PetrelInterface.cpp	
 	StationIO.cpp
+	readNonBlankLineFromInputStream.cpp
 	#FEMIO.cpp
 	FEMIO/GeoIO.cpp
+	FEMIO/ProcessIO.cpp
+	FEMIO/BoundaryConditionIO.cpp
 	MeshIO/OGSMeshIO.cpp
 	MeshIO/LegacyVtkInterface.cpp
 )
@@ -20,8 +23,11 @@ SET( HEADERS
 	OGSIOVer4.h
 	PetrelInterface.h
 	StationIO.h
+	readNonBlankLineFromInputStream.h
 	#FEMIO.h
 	FEMIO/GeoIO.h
+	FEMIO/ProcessIO.h
+	FEMIO/BoundaryConditionIO.h
 	MathIO/CRSIO.h
 	MeshIO/OGSMeshIO.h
 	MeshIO/LegacyVtkInterface.h
