@@ -19,6 +19,11 @@ FEMCondition::FEMCondition(const std::string &geometry_name, CondType t)
 	this->setProcessDistributionType(FiniteElement::INVALID_DIS_TYPE);
 }
 
+FEMCondition::FEMCondition(const std::string &geometry_name, ProcessType pt, PrimaryVariable pv, GEOLIB::GEOTYPE gt, const std::string &gn, FiniteElement::DistributionType dt, CondType ct)
+: ProcessInfo(pt, pv, NULL), GeoInfo(gt, NULL), DistributionInfo(dt), _type(ct), _geoObject(NULL), _geoName(gn), _associated_geometry(geometry_name)
+{
+}
+
 std::string FEMCondition::condTypeToString(CondType type)
 {
 	if (type==FEMCondition::BOUNDARY_CONDITION) return "Boundary Conditions";
@@ -38,46 +43,29 @@ void FEMCondition::setLinearDisValues(const std::vector<int> &point_ids, const s
 
 
 BoundaryCondition::BoundaryCondition(const CBoundaryCondition &bc, const std::string &geometry_name)
-: FEMCondition(geometry_name, FEMCondition::BOUNDARY_CONDITION)
+: FEMCondition(geometry_name, bc.getProcessType(), bc.getProcessPrimaryVariable(), bc.getGeoType(), bc.getGeoName(), 
+			   bc.getProcessDistributionType(), FEMCondition::BOUNDARY_CONDITION)
 {
-	this->setProcessType(bc.getProcessType());
-	this->setProcessPrimaryVariable(bc.getProcessPrimaryVariable());
-	this->setGeoType(bc.getGeoType());
-	this->setGeoName(bc.getGeoName());
-	this->setProcessDistributionType(bc.getProcessDistributionType());
-
-	if (this->getProcessDistributionType() == FiniteElement::CONSTANT) 
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT || this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN) 
 		this->setDisValue(bc.getGeoNodeValue());
-	else if (this->getProcessDistributionType() == FiniteElement::LINEAR) 
+	else if (this->getProcessDistributionType() == FiniteElement::LINEAR || this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN) 
 		this->setLinearDisValues(bc.getPointsWithDistribedBC(), bc.getDistribedBC());
 }
 
 InitialCondition::InitialCondition(const CInitialCondition &ic, const std::string &geometry_name)
-: FEMCondition(geometry_name, FEMCondition::INITIAL_CONDITION)
+: FEMCondition(geometry_name, ic.getProcessType(), ic.getProcessPrimaryVariable(), ic.getGeoType(), (ic.getGeoType() == GEOLIB::GEODOMAIN) ? "Domain" : ic.getGeoName(), 
+			   ic.getProcessDistributionType(), FEMCondition::INITIAL_CONDITION)
 {
-	this->setProcessType(ic.getProcessType());
-	this->setProcessPrimaryVariable(ic.getProcessPrimaryVariable());
-	this->setGeoType(ic.getGeoType());
-	std::string geo_name = (ic.getGeoType() == GEOLIB::GEODOMAIN) ? "Domain" : ic.getGeoName();
-	this->setGeoName(geo_name);
-	this->setProcessDistributionType(ic.getProcessDistributionType());
-
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
 		this->setDisValue(ic.getGeoNodeValue());
 }
 
 SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
-: FEMCondition(geometry_name, FEMCondition::SOURCE_TERM)
+: FEMCondition(geometry_name, st.getProcessType(), st.getProcessPrimaryVariable(), st.getGeoType(), st.getGeoName(), 
+			   st.getProcessDistributionType(), FEMCondition::SOURCE_TERM)
 {
-	this->setProcessType(st.getProcessType());
-	this->setProcessPrimaryVariable(st.getProcessPrimaryVariable());
-	this->setGeoType(st.getGeoType());
-	this->setGeoName(st.getGeoName());
-	this->setProcessDistributionType(st.getProcessDistributionType());
-
-	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT || this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN) 
 		this->setDisValue(st.getGeoNodeValue());
-	else if (this->getProcessDistributionType() == FiniteElement::LINEAR) 
+	else if (this->getProcessDistributionType() == FiniteElement::LINEAR || this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN) 
 		this->setLinearDisValues(st.getPointsWithDistribedST(), st.getDistribedST());
-
 }

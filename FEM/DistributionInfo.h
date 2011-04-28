@@ -14,7 +14,7 @@
 class DistributionInfo
 {
    public:
-      DistributionInfo();
+	  DistributionInfo(FiniteElement::DistributionType dt = FiniteElement::INVALID_DIS_TYPE);
       virtual ~DistributionInfo();
 
       /**
