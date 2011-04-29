@@ -21,7 +21,7 @@ class CSourceTerm;
 /** 
  * \brief Adapter class for handling FEM Conditions in the user Interface
  */
-class FEMCondition : public GeoInfo, public ProcessInfo, public DistributionInfo
+class FEMCondition : public ProcessInfo, public GeoInfo, public DistributionInfo
 {
 public:
 	/// Specifier for types of FEM Conditions
