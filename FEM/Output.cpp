@@ -264,8 +264,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
 
                                                   //subkeyword found
       if (line_string.find("$GEO_TYPE") != string::npos) {
-         FileIO::GeoIO geo_io;
-         geo_io.readGeoInfo (this, in_str, geo_name, geo_obj, unique_geo_name);
+		  FileIO::GeoIO::readGeoInfo (this, in_str, geo_name, geo_obj, unique_geo_name);
          continue;
       }
 

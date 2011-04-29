@@ -7,8 +7,8 @@
 
 #include "DistributionInfo.h"
 
-DistributionInfo::DistributionInfo() :
-_dis_type (FiniteElement::INVALID_DIS_TYPE)
+DistributionInfo::DistributionInfo(FiniteElement::DistributionType dt) :
+_dis_type (dt)
 {}
 
 DistributionInfo::~DistributionInfo()

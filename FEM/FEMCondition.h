@@ -33,6 +33,8 @@ public:
 	};
 
 	FEMCondition(const std::string &geometry_name, CondType = UNSPECIFIED);
+	FEMCondition(const std::string &geometry_name, ProcessType pt = INVALID_PROCESS, PrimaryVariable pv = INVALID_PV, GEOLIB::GEOTYPE gt = GEOLIB::INVALID, const std::string &gn = "[unspecified]", 
+		         FiniteElement::DistributionType dt = FiniteElement::INVALID_DIS_TYPE, CondType ct = UNSPECIFIED);
 	~FEMCondition() {};
 
 	/// Returns the type of the FEM Condition (i.e. BC, IC or ST)
