@@ -115,7 +115,6 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 	_axisymmetry(false),
 	ncols(0), nrows(0), x0(0.0), y0(0.0),
 	csize(0.0), ndata_v(0.0)
-
 {
 	useQuadratic = false;
 	coordinate_system = 1;
@@ -1112,70 +1111,70 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
       }
    }
 
-   /**************************************************************************
-    FEMLib-Method:
-    Task:  Renumbering nodes corresponding to the activiate of elements
-    Programing:
-    05/2005 WW Implementation
-    **************************************************************************/
-   void CFEMesh::RenumberNodesForGlobalAssembly()
-   {
-      CElem* elem = NULL;
-      Eqs2Global_NodeIndex.clear();
-	  size_t nNodes(nod_vector.size());
-      for (size_t l = 0; l < nNodes; l++)
-         nod_vector[l]->SetEquationIndex(-1);
-
-      size_t el_0 (0);
-      // Lower order
-	  size_t nElems(ele_vector.size());
-      for (size_t l = 0; l < nElems; l++)
-      {
-         elem = ele_vector[l];
-         if (elem->GetMark())                     // Marked for use
-         {
-		    int nVert (elem->GetVertexNumber());
-            for (int i = 0; i < nVert; i++)
-            {
-               if (elem->nodes[i]->GetEquationIndex() < 0)
-               {
-                  elem->nodes[i]->SetEquationIndex(el_0);
-                  Eqs2Global_NodeIndex.push_back(elem->nodes[i]->GetIndex());
-                  el_0++;
-               } else
-               continue;
-            }
-         }
-      }
-      size_t el (el_0);
-      if (!getOrder())
-      {
-         NodesNumber_Linear = el_0;
-         NodesNumber_Quadratic = el;
-         return;
-      }
-      // High order
-      for (size_t l = 0; l < nElems; l++)
-      {
-         elem = ele_vector[l];
-         if (elem->GetMark())                     // Marked for use
-         {
-			int nElemNodes (elem->GetNodesNumber(true));
-            for (int i = elem->GetVertexNumber(); i < nElemNodes; i++)
-            {
-               if (elem->nodes[i]->GetEquationIndex() < 0)
-               {
-                  elem->nodes[i]->SetEquationIndex(el);
-                  Eqs2Global_NodeIndex.push_back(elem->nodes[i]->GetIndex());
-                  el++;
-               } else
-               continue;
-            }
-         }
-      }
-      NodesNumber_Linear = el_0;
-      NodesNumber_Quadratic = el;
-   }
+//   /**************************************************************************
+//    FEMLib-Method:
+//    Task:  Renumbering nodes corresponding to the activiate of elements
+//    Programing:
+//    05/2005 WW Implementation
+//    **************************************************************************/
+//   void CFEMesh::RenumberNodesForGlobalAssembly()
+//   {
+//      CElem* elem = NULL;
+//      Eqs2Global_NodeIndex.clear();
+//	  size_t nNodes(nod_vector.size());
+//      for (size_t l = 0; l < nNodes; l++)
+//         nod_vector[l]->SetEquationIndex(-1);
+//
+//      size_t el_0 (0);
+//      // Lower order
+//	  size_t nElems(ele_vector.size());
+//      for (size_t l = 0; l < nElems; l++)
+//      {
+//         elem = ele_vector[l];
+//         if (elem->GetMark())                     // Marked for use
+//         {
+//		    int nVert (elem->GetVertexNumber());
+//            for (int i = 0; i < nVert; i++)
+//            {
+//               if (elem->nodes[i]->GetEquationIndex() < 0)
+//               {
+//                  elem->nodes[i]->SetEquationIndex(el_0);
+//                  Eqs2Global_NodeIndex.push_back(elem->nodes[i]->GetIndex());
+//                  el_0++;
+//               } else
+//               continue;
+//            }
+//         }
+//      }
+//      size_t el (el_0);
+//      if (!getOrder())
+//      {
+//         NodesNumber_Linear = el_0;
+//         NodesNumber_Quadratic = el;
+//         return;
+//      }
+//      // High order
+//      for (size_t l = 0; l < nElems; l++)
+//      {
+//         elem = ele_vector[l];
+//         if (elem->GetMark())                     // Marked for use
+//         {
+//			int nElemNodes (elem->GetNodesNumber(true));
+//            for (int i = elem->GetVertexNumber(); i < nElemNodes; i++)
+//            {
+//               if (elem->nodes[i]->GetEquationIndex() < 0)
+//               {
+//                  elem->nodes[i]->SetEquationIndex(el);
+//                  Eqs2Global_NodeIndex.push_back(elem->nodes[i]->GetIndex());
+//                  el++;
+//               } else
+//               continue;
+//            }
+//         }
+//      }
+//      NodesNumber_Linear = el_0;
+//      NodesNumber_Quadratic = el;
+//   }
 
 #ifndef NON_GEO
 /**************************************************************************
@@ -1413,26 +1412,26 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& 
       }
    }
 
-   /**************************************************************************
-    MSHLib-Method:
-    Task: Get nodes on plane surface
-    Programing:
-    03/2010 TF
-    last modification:
-    **************************************************************************/
-   void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc, std::vector<size_t>& msh_nod_vector) const
-   {
-      msh_nod_vector.clear();
+/**************************************************************************
+ MSHLib-Method:
+ Task: Get nodes on plane surface
+ Programing:
+ 03/2010 TF
+ last modification:
+ **************************************************************************/
+void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
+		std::vector<size_t>& msh_nod_vector) const
+{
+	msh_nod_vector.clear();
 
-      for (size_t j(0); j<(size_t)NodesInUsage(); j++)
-      {
-         if (sfc->isPntInBV ( (nod_vector[j])->getData() ))
-         {
-            if (! sfc->isPntInSfc((nod_vector[j])->getData()))
-               msh_nod_vector.push_back (nod_vector[j]->GetIndex());
-         }
-      }
-   }
+	const size_t nodes_in_usage((size_t) NodesInUsage());
+	for (size_t j(0); j < nodes_in_usage; j++) {
+		if (sfc->isPntInBV((nod_vector[j])->getData())) {
+			if (sfc->isPntInSfc((nod_vector[j])->getData()))
+				msh_nod_vector.push_back(nod_vector[j]->GetIndex());
+		}
+	}
+}
 
    /**************************************************************************
     MSHLib-Method:
@@ -4377,7 +4376,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
    }
 
    /*!
-    Comptute \int {f} a dA on top surface.
+    Compute \int {f} a dA on top surface.
 
       WW. 29.11.2010
    */

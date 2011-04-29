@@ -70,7 +70,7 @@ void OGSMeshIO::write(Mesh_Group::CFEMesh const * mesh, std::ofstream &out)
 
 	out << "$ELEMENTS" << std::endl << "  ";
 	const size_t ele_vector_size (mesh->ele_vector.size());
-	const double epsilon (sqrt(fabs(std::numeric_limits<double>::min())));
+	const double epsilon (std::numeric_limits<double>::epsilon()); // sqrt(fabs(std::numeric_limits<double>::min())));
 	std::vector<bool> non_null_element (ele_vector_size, true);
 	size_t non_null_elements (0);
 	for (size_t i(0); i < ele_vector_size; i++) {

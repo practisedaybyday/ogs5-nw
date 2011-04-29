@@ -147,7 +147,7 @@ namespace Mesh_Group
          void ConstructGrid();
          void GenerateHighOrderNodes();
          //
-         void RenumberNodesForGlobalAssembly();
+//         void RenumberNodesForGlobalAssembly();
          // For number of nodes
          int GetMaxElementDim() const
          {

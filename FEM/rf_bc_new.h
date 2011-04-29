@@ -200,8 +200,6 @@ class CBoundaryConditionsGroup
       void Set(CRFProcess* pcs, int ShiftInNodeVector, const std::string& this_pv_name="");
       CBoundaryConditionsGroup* Get(const std::string&);
 
-      void WriteTecplot() const;
-
       const std::string& getProcessTypeName () const { return _pcs_type_name; }
       void setProcessTypeName (const std::string& pcs_type_name) { _pcs_type_name = pcs_type_name; }
       const std::string& getProcessPrimaryVariableName () const { return _pcs_pv_name; }

@@ -61,6 +61,27 @@ bool GeoIO::readGeoInfo (GeoInfo* geo_info, std::istream& in_str, std::string& g
 	if (geo_type_name.find("SURFACE") != std::string::npos) {
 		geo_info->setGeoType(GEOLIB::SURFACE);
 		strstream >> geo_name;
+		GEOLIB::SurfaceVec const* sfc_vec (geo_obj.getSurfaceVecObj(unique_geo_name));
+		if (sfc_vec) {
+			const GEOLIB::Surface *sfc(sfc_vec->getElementByName(geo_name));
+			if (sfc == NULL) {
+				std::cerr << "error in GeoIO::readGeoInfo: surface name \"" << geo_name
+					<< "\" not found!" << std::endl;
+#ifdef OGS_USE_QT
+				return false;
+#else
+				exit(1);
+#endif
+			}
+			geo_info->setGeoObj(sfc);
+		} else {
+			std::cerr << "error in GeoIO::readGeoInfo: surface vector not found!" << std::endl;
+#ifdef OGS_USE_QT
+			return false;
+#else
+			exit(1);
+#endif
+		}
 		strstream.clear();
 	}
 
