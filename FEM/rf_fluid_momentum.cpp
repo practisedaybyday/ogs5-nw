@@ -449,7 +449,7 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
             ;                                     // Two elements stay on the same plane
          else
          {
-            thisNode->crossroad = 1;
+            thisNode->crossroad = true;
             // I am going to store all the element indeces which are different from
             // the reference element. Then, I will get rid of the duplicate elements
             // of the same plane.
@@ -461,7 +461,7 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
 
       // Get rid of duplicates of the elements that have the same norm for the potential crossroads
       // This works great with h_frac example in RWPT
-      if(thisNode->crossroad == 1)
+      if(thisNode->crossroad)
       {
          // Let's get rid of duplicates of the elements on the same plane
          int numOfPlanesAtCrossroad = (int)thisNode->connected_planes.size();
@@ -517,7 +517,7 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
       V[0] = m_pcs->GetNodeValue(i, m_pcs->GetNodeValueIndex("VELOCITY1_X")+1);
       V[1] = m_pcs->GetNodeValue(i, m_pcs->GetNodeValueIndex("VELOCITY1_Y")+1);
       V[2] = m_pcs->GetNodeValue(i, m_pcs->GetNodeValueIndex("VELOCITY1_Z")+1);
-      if(thisNode->crossroad == 0)
+      if(thisNode->crossroad == false)
       {
          // Let's solve the projected velocity on the element plane
          // by  Vp = norm X (V X norm) assuming norm is a unit vector
@@ -604,12 +604,12 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
             // If this angle is bigger than Pi/2 (90 degree),
             // then this crossroad is not a realone.
             if(angle > PI / 2.0)
-               thisNode->crossroad = 0;
+               thisNode->crossroad = false;
          }
          // Extraction ends here.
 
          // Now add this crossroad to the vector of all crossroads in the domain
-         if(thisNode->crossroad == 1)
+         if(thisNode->crossroad)
             crossroads.push_back(thisCross);
       }
    }
@@ -634,7 +634,7 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
       V1[2] = m_pcs->GetNodeValue(theNodesOfThisEdge[1]->GetIndex(), m_pcs->GetNodeValueIndex("VELOCITY1_Z")+1);
       V[0] = (V0[0]+V1[0])/2.0; V[1] = (V0[1]+V1[1])/2.0; V[2] = (V0[2]+V1[2])/2.0;
 
-      if( theNodesOfThisEdge[0]->crossroad == 1 && theNodesOfThisEdge[1]->crossroad == 1 )
+      if( theNodesOfThisEdge[0]->crossroad && theNodesOfThisEdge[1]->crossroad )
       {
          m_msh->edge_vector[i]->SetJoint(1);
 

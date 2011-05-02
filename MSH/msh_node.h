@@ -25,7 +25,6 @@ namespace Mesh_Group
    class CNode: public CCore
    {
       public:
-         double epsilon;
          int free_surface;                        //MB ??? mobile
 
          std::vector<long> connected_nodes;       //OK
@@ -36,16 +35,15 @@ namespace Mesh_Group
          std::vector<long> connected_planes;      // PCH
 
          //GUI control variables
-         //int selected;
          double patch_area;                       //OK4310
-         int crossroad;                           // PCH: Make theses privates can be done later on.
+         bool crossroad;                           // PCH: Make theses privates can be done later on.
 	     std::vector <long> connected_faces;		// BG, 09/2010, necessary for coupling to Eclipse, index of faces where the node is part of it
 	     std::vector <double> distance_to_connected_faces; // BG, 09/2010,  necessary for coupling to Eclipse
 
          /** constructor */
          CNode(size_t Index) :
-         CCore(Index), epsilon (0.0), free_surface (-1), //selected (0),
-            patch_area (-1.0), crossroad (0), eqs_index(-1)
+         CCore(Index), free_surface (-1), 
+            patch_area (-1.0), crossroad (false), eqs_index(-1)
             {}
 
          CNode(size_t Index, double x, double y, double z = 0.0);
@@ -90,7 +88,6 @@ namespace Mesh_Group
 
       private:
     	  std::vector<size_t> _connected_elements;
-//    	  std::vector<long> connected_elements;
          // Members
          long eqs_index;                          // renumber
          double coordinate[3];

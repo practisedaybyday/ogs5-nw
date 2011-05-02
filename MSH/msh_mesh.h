@@ -248,18 +248,6 @@ namespace Mesh_Group
           * \brief depreciated method
           */
          void CreateQuadELEFromSFC(Surface*);
-         /**
-          * \brief depreciated method
-          */
-                                                  //TK
-         // KR void CopySelectedNodes(std::vector<long>&msh_nod_vector);
-
-         // REMOVE CANDIDATE
-         /**
-          * \brief depreciated method
-          */
-         void CreateLineELEFromSFC();             //OK
-         // GEO-VOL
 
          /**
           * GetNODOnPNT searchs the nearest node to the geometric point
@@ -333,9 +321,7 @@ namespace Mesh_Group
 #ifndef NON_GEO
          // TRI->PRIS
          void CreatePriELEFromTri(int, double);
-         // TRI->LINE
-         // KR void CreateLineELEFromTri();             //OK
-         // KR void CreateLineELEFromTriELE();          //OK
+
 #endif
 
          // Coordinate system
