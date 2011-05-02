@@ -1556,7 +1556,7 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
    CFluidProperties *m_mfp = NULL;
    CRFProcess* m_pcs = assem->cpl_pcs;
    //AKS
-   if(assem->PcsType)
+   if(assem->PcsType==S)
    {
 
       dens_arg[0]=assem->interpolate(assem->NodalVal0); // pressure
@@ -3027,7 +3027,7 @@ double MFPGetNodeValue(long node,const string &mfp_name, int phase_number)
 
    tp = PCSGet(pcs_name2,true);                   //NB 4.8.01
    val_idx=tp->GetNodeValueIndex(pcs_name2);      // NB
-   arguments[1] = tp->GetNodeValue(node,val_idx)+T_KILVIN_ZERO;
+   arguments[1] = tp->GetNodeValue(node,val_idx);
 
    //......................................................................
    switch(mfp_id)
@@ -3110,7 +3110,7 @@ double CFluidProperties::drhodT(double P, double T)
    switch(compressibility_model_temperature)
    {
       case 0 :                                    // fluid is incompressible
-         drhodT = -0.001; // just for the moment...
+         drhodT = 0;
          break;
       case 1 :                                    // constant slope compressibility, (for test cases)
          drhodT = compressibility_temperature;

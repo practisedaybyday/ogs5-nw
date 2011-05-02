@@ -1518,7 +1518,7 @@ std::ios::pos_type CRFProcess::Read(std::ifstream *pcs_file)
             //				if (_pcs_type_name.find("HEAT") != string::npos)
             if (this->getProcessType() == HEAT_TRANSPORT)
                T_Process = true;
-
+ pcs_type_name_vector.push_back(pcs_type_name);
             if (this->getProcessType() == PTC_FLOW)
                    T_Process = true;
             pcs_type_name_vector.push_back(pcs_type_name);

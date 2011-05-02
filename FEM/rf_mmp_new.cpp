@@ -2666,8 +2666,8 @@ double* CMediumProperties::HeatConductivityTensor(int number)
    {
       heat_conductivity_fluids = 0.0;
       porosity = 0.0;
-	}
    }
+}
    dimen = m_pcs->m_msh->GetCoordinateFlag() / 10;
    int group = m_pcs->m_msh->ele_vector[number]->GetPatchIndex();
 
