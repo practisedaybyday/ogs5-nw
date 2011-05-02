@@ -6451,9 +6451,9 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       (*AuxMatrix)   *= fac_storage;
       *StiffMatrix   += *AuxMatrix;
       // Content matrix
-      *AuxMatrix      = *Content;
-      (*AuxMatrix)   *= fac_content;
-      *StiffMatrix   += *AuxMatrix;
+      //*AuxMatrix      = *Content;		//SB, BG; Korrektur Stofftransport bei Mehrphasenströmung
+      //(*AuxMatrix)   *= fac_content;
+      //*StiffMatrix   += *AuxMatrix; // SB, BG
 
       //----------------------------------------------------------------------
       // Add local matrix to global matrix
