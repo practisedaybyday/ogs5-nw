@@ -18,6 +18,7 @@
 enum ProcessType
 {
    INVALID_PROCESS = 0,                           //!< INVALID_PROCESS
+   PTC_FLOW,									  // Fluid flow coupled with heat transport
    AIR_FLOW,                                      //!< AIR_FLOW
    /// M process, single/multi-phase flow
    DEFORMATION,                                   //!< DEFORMATION

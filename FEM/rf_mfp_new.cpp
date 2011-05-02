@@ -1556,7 +1556,16 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
    CFluidProperties *m_mfp = NULL;
    CRFProcess* m_pcs = assem->cpl_pcs;
    //AKS
-                                                  //rho(p,T) //AKS
+   if(assem->PcsType)
+   {
+
+      dens_arg[0]=assem->interpolate(assem->NodalVal0); // pressure
+
+      dens_arg[1]=assem->interpolate(assem->NodalVal_t0)+T_KILVIN_ZERO; // temperature
+
+      heat_capacity_fluids = assem->FluidProp->Density(dens_arg)*assem->FluidProp->SpecificHeatCapacity();
+   }
+   else
    if(assem->FluidProp->density_model==14 && assem->MediaProp->heat_diffusion_model==273 && assem->cpl_pcs )
    {
                                                   // pressure
@@ -2974,6 +2983,18 @@ double MFPGetNodeValue(long node,const string &mfp_name, int phase_number)
       }
       break;
       case 'S': mfp_id = 3;                       //SPECIFIC HEAT CAPACITY
+      if(m_mfp->specific_heat_capacity_pcs_name_vector.size()<1)
+         {pcs_name1 = "PRESSURE1";}
+         else
+      {
+         pcs_name1 = m_mfp->specific_heat_capacity_pcs_name_vector[0];
+      }
+      if(m_mfp->specific_heat_capacity_pcs_name_vector.size()<2)
+         {pcs_name2 = "TEMPERATURE1";}
+         else
+      {
+         pcs_name2 = m_mfp->specific_heat_capacity_pcs_name_vector[1];
+      }
       break;
       default:  mfp_id = -1;
       pcs_name1 = "PRESSURE1";
@@ -3006,7 +3027,7 @@ double MFPGetNodeValue(long node,const string &mfp_name, int phase_number)
 
    tp = PCSGet(pcs_name2,true);                   //NB 4.8.01
    val_idx=tp->GetNodeValueIndex(pcs_name2);      // NB
-   arguments[1] = tp->GetNodeValue(node,val_idx);
+   arguments[1] = tp->GetNodeValue(node,val_idx)+T_KILVIN_ZERO;
 
    //......................................................................
    switch(mfp_id)
@@ -3089,7 +3110,7 @@ double CFluidProperties::drhodT(double P, double T)
    switch(compressibility_model_temperature)
    {
       case 0 :                                    // fluid is incompressible
-         drhodT = 0;
+         drhodT = -0.001; // just for the moment...
          break;
       case 1 :                                    // constant slope compressibility, (for test cases)
          drhodT = compressibility_temperature;

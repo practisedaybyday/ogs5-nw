@@ -506,6 +506,7 @@ class CRFProcess : public ProcessInfo
       void ConfigRandomWalk();
       void ConfigMultiPhaseFlow();
       void ConfigPS_Global();                     // PCH
+      void ConfigPTC_FLOW();                     // AKS/NB
       // Configuration 1 - NOD
 #ifndef NEW_EQS                                //WW. 07.11.2008
       void ConfigNODValues1(void);

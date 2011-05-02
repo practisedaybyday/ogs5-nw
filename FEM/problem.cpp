@@ -594,6 +594,14 @@ inline int Problem::AssignProcessIndex(CRFProcess *m_pcs, bool activefunc)
       active_processes[3] = &Problem::PS_Global;
       return 3;
    }
+   else if (m_pcs->getProcessType() == PTC_FLOW)
+   {
+      if (!activefunc)
+         return 5;
+      total_processes[5] = m_pcs;
+      active_processes[5] = &Problem::PTC_Flow;
+      return 5;
+   }
    std::cout << "Error: no process is specified. " << std::endl;
    return -1;
 }
@@ -1807,6 +1815,24 @@ inline double Problem::PS_Global()
    return error;
 }
 
+/*-------------------------------------------------------------------------
+GeoSys - Function: PTC_FLOW()
+Task: Simulate coupled haet and fluid flow
+Return: error
+Programming:
+02/2011 AKS/NB Implementation
+Modification:
+-------------------------------------------------------------------------*/
+inline double Problem::PTC_Flow()
+{
+   double error = 1.0e+8;
+   CRFProcess *m_pcs = total_processes[5];
+   if(!m_pcs->selected) return error;
+   error = m_pcs->ExecuteNonLinear(); //PTC
+   if(m_pcs->TimeStepAccept())
+      m_pcs->CalIntegrationPointValue();//PTC
+   return error;
+}
 
 /*-------------------------------------------------------------------------
 GeoSys - Function: GroundWaterFlow()

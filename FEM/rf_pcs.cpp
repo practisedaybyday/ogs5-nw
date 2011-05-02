@@ -1519,6 +1519,8 @@ std::ios::pos_type CRFProcess::Read(std::ifstream *pcs_file)
             if (this->getProcessType() == HEAT_TRANSPORT)
                T_Process = true;
 
+            if (this->getProcessType() == PTC_FLOW)
+                   T_Process = true;
             pcs_type_name_vector.push_back(pcs_type_name);
 
             //				if (_pcs_type_name.compare("FLUID_MOMENTUM") == 0) {
@@ -2046,6 +2048,11 @@ void CRFProcess::Config(void)
    {
       type = 1313;
       ConfigPS_Global();
+   }
+   if (this->getProcessType() == PTC_FLOW)       //24.02.2007 WW
+   {
+      type = 1111;
+      ConfigPTC_FLOW();
    }
 }
 
@@ -3285,6 +3292,40 @@ void CRFProcess::ConfigPS_Global()
       Shift[i] = i*m_msh->GetNodesNumber(true);
 }
 
+/**************************************************************************
+FEMLib-Method: For Pressure-temperature-coupled flow for fluids
+Task:
+Programing:
+02/2011 AKS/NB Implementation
+**************************************************************************/
+void CRFProcess::ConfigPTC_FLOW()
+{
+   dof = 2;
+   // 1.1 primary variables
+   pcs_number_of_primary_nvals = 2;
+   pcs_primary_function_name[0] = "PRESSURE1";
+   pcs_primary_function_unit[0] = "Pa";
+   pcs_primary_function_name[1] = "TEMPERATURE1";
+   pcs_primary_function_unit[1] = "K";
+      // 1.2 secondary variables
+   pcs_number_of_secondary_nvals = 0;
+      // Nodal velocity.
+   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_X1";
+   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+   pcs_number_of_secondary_nvals++;
+   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Y1";
+   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+   pcs_number_of_secondary_nvals++;
+   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Z1";
+   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+   pcs_number_of_secondary_nvals++;
+
+   for(size_t i=0; i<GetPrimaryVNumber(); i++)
+      Shift[i] = i*m_msh->GetNodesNumber(true);
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Configuration NOD
@@ -4149,7 +4190,8 @@ void CRFProcess::CalIntegrationPointValue()
       || getProcessType() == GROUNDWATER_FLOW
       || getProcessType() == TWO_PHASE_FLOW
       || getProcessType() == AIR_FLOW
-      || getProcessType() == PS_GLOBAL)           //WW/CB/TF
+      || getProcessType() == PS_GLOBAL
+      || getProcessType() == PTC_FLOW)           //AKS/NB
       cal_integration_point_value = true;
    if (!cal_integration_point_value)
       return;

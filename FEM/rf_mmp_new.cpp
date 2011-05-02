@@ -2589,6 +2589,13 @@ double* CMediumProperties::HeatConductivityTensor(int number)
    // long group = Fem_Ele_Std->GetMeshElement()->GetPatchIndex();
    m_mfp = Fem_Ele_Std->FluidProp;                //WW
 
+	if (Fem_Ele_Std->PcsType==S)     // Multi-phase WW
+			{
+				m_mfp = mfp_vector[0];
+				heat_conductivity_fluids = m_mfp->HeatConductivity();
+			}
+	else
+	{
    for (size_t ii = 0; ii < pcs_vector.size(); ii++)
    {
       //		if (pcs_vector[ii]->pcs_type_name.find("FLOW") != string::npos) TF
@@ -2659,6 +2666,7 @@ double* CMediumProperties::HeatConductivityTensor(int number)
    {
       heat_conductivity_fluids = 0.0;
       porosity = 0.0;
+	}
    }
    dimen = m_pcs->m_msh->GetCoordinateFlag() / 10;
    int group = m_pcs->m_msh->ele_vector[number]->GetPatchIndex();
