@@ -1855,8 +1855,10 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
             {
                angle_sum = AngleSumPointInsideTriangle(checkpoint, tri_point1,
                   tri_point2, tri_point3, min_mesh_dist);
+			   /* KR
                if (angle_sum > 359)
                   m_msh_aux->nod_vector[i]->selected = 1;
+			   */
             }
          }
       }
@@ -1874,7 +1876,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
          {
             if ((m_msh_aux->nod_vector[i]->GetIndex()
                == nod_vector[index]->GetIndex())
-               && m_msh_aux->nod_vector[i]->selected == 1
+               /* KR && m_msh_aux->nod_vector[i]->selected == 1 */
                && (m_msh_aux->nod_vector[i]->X() == nod_vector[index]->X())
                && (m_msh_aux->nod_vector[i]->Y() == nod_vector[index]->Y())
                && (m_msh_aux->nod_vector[i]->Z() == nod_vector[index]->Z()))
@@ -2336,6 +2338,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
     Programing:
     12/2005 TK Implementation
     **************************************************************************/
+/* KR
    void CFEMesh::CopySelectedNodes(std::vector<long>&msh_nod_vector)
    {
       int i = 0, j = 0;
@@ -2356,7 +2359,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
          }
       }
    }
-
+*/
    /**************************************************************************
     MSHLib-Method:
     08/2006 OK Implementation
@@ -3100,6 +3103,7 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
     Programing:
     02/2006 OK Implementation
     **************************************************************************/
+/* KR not used
    void CFEMesh::CreateLineELEFromTri()
    {
       int k;
@@ -3218,12 +3222,15 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
       else
          MSHWrite("test");
    }
+*/ 
+
    /**************************************************************************
     MSHLib-Method:
     Programing:
     04/2006 OK Implementation
     **************************************************************************/
-   void CFEMesh::CreateLineELEFromTriELE()
+/* KR not used
+	void CFEMesh::CreateLineELEFromTriELE()
    {
       int k;
       long i;
@@ -3323,6 +3330,7 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
       else
          MSHWrite("test");
    }
+*/
 
    /**************************************************************************
     MSHLib-Method:
@@ -3528,7 +3536,7 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
       for (i = 0; i < (long) nod_vector.size(); i++)
       {
          m_nod = nod_vector[i];
-         m_nod->selected = false;
+         // KR m_nod->selected = false;
       }
       double eps = 1e-3;
       for (i = 0; i < (long) nod_vector.size(); i++)
@@ -3548,8 +3556,10 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
             for (k = 0; k < 3; k++)
                nr2[k] = (*m_ele1->tranform_tensor)(2, k);
             CrossProduction(nr1, nr2, v3);
+			/* KR
             if (MBtrgVec(v3, 3) > eps)
                m_nod->selected = true;
+		    */
          }
       }
       // TF useless code

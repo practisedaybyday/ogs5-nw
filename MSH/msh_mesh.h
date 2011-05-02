@@ -252,7 +252,7 @@ namespace Mesh_Group
           * \brief depreciated method
           */
                                                   //TK
-         void CopySelectedNodes(std::vector<long>&msh_nod_vector);
+         // KR void CopySelectedNodes(std::vector<long>&msh_nod_vector);
 
          // REMOVE CANDIDATE
          /**
@@ -334,8 +334,8 @@ namespace Mesh_Group
          // TRI->PRIS
          void CreatePriELEFromTri(int, double);
          // TRI->LINE
-         void CreateLineELEFromTri();             //OK
-         void CreateLineELEFromTriELE();          //OK
+         // KR void CreateLineELEFromTri();             //OK
+         // KR void CreateLineELEFromTriELE();          //OK
 #endif
 
          // Coordinate system

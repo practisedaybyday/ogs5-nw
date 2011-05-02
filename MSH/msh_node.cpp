@@ -22,7 +22,7 @@ namespace Mesh_Group
    06/2005 WW Implementation
    **************************************************************************/
    CNode::CNode(size_t Index, double x, double y, double z) :
-   CCore(Index), epsilon (0.0), free_surface (-1), selected (0),
+   CCore(Index), epsilon (0.0), free_surface (-1), //selected (0),
       patch_area (-1.0), crossroad (0), eqs_index (-1)
    {
       coordinate[0] = x;
@@ -38,7 +38,7 @@ namespace Mesh_Group
    **************************************************************************/
    CNode::CNode(size_t Index, const CNode* parent) :
    CCore(Index), epsilon (0.0),
-      free_surface (-1), selected (0), patch_area (-1.0), crossroad (0), eqs_index (-1)
+      free_surface (-1), /*selected (0), */ patch_area (-1.0), crossroad (0), eqs_index (-1)
    {
       coordinate[0] = parent->coordinate[0];
       coordinate[1] = parent->coordinate[1];

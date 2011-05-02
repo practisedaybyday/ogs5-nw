@@ -45,7 +45,7 @@ public:
 	void setSchema(const std::string &schemaName);
 
 	/// Reads an xml-file containing a GeoSys project.
-	/// Project files currently cover only geo- and station data. This will be expanded in the future.
+	/// Project files currently cover only geo-, msh- and station-data. This will be expanded in the future.
 	int readProjectFile(const QString &fileName);
 
 	/// Reads an xml-file containing geometric object definitions into the GEOObjects used in the contructor
@@ -58,7 +58,7 @@ public:
 	int readFEMCondFile(std::vector<FEMCondition*> &conditions, const QString &fileName, const QString &geoName);
 
 	/// Writes a GeoSys project file containing all data that is currently loaded.
-	/// Project files currently cover only geo- and station data. This will be expanded in the future.
+	/// Project files currently cover only geo-, msh- and station-data. This will be expanded in the future.
 	int writeProjectFile(const QString &fileName) const;
 
 	/**

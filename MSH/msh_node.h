@@ -36,7 +36,7 @@ namespace Mesh_Group
          std::vector<long> connected_planes;      // PCH
 
          //GUI control variables
-         int selected;
+         //int selected;
          double patch_area;                       //OK4310
          int crossroad;                           // PCH: Make theses privates can be done later on.
 	     std::vector <long> connected_faces;		// BG, 09/2010, necessary for coupling to Eclipse, index of faces where the node is part of it
@@ -44,7 +44,7 @@ namespace Mesh_Group
 
          /** constructor */
          CNode(size_t Index) :
-         CCore(Index), epsilon (0.0), free_surface (-1), selected (0),
+         CCore(Index), epsilon (0.0), free_surface (-1), //selected (0),
             patch_area (-1.0), crossroad (0), eqs_index(-1)
             {}
 
