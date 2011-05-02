@@ -568,9 +568,6 @@ namespace FiniteElement
             }
             break;
          case 'C':                                // Componental flow
-         {
-
-         }
             break;
          case 'H':                                // heat transport
             //SB CMCD this needs to be fixed
@@ -1462,8 +1459,6 @@ namespace FiniteElement
             break;
          case A:                                  // Air (gas) flow
             val = MediaProp->Porosity(Index,pcs->m_num->ls_theta)/interpolate(NodalVal1);
-            break;
-         case S:        	 // Unconfined flow
             break;
       }
       return val;
