@@ -568,6 +568,9 @@ namespace FiniteElement
             }
             break;
          case 'C':                                // Componental flow
+         {
+
+         }
             break;
          case 'H':                                // heat transport
             //SB CMCD this needs to be fixed
@@ -6144,10 +6147,15 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       else
       {
          *AuxMatrix      = *Laplace;
+		 if(PcsType==S){
          *AdvMatrix      = *Advection;
-      }
-      (*AuxMatrix)   *= fac2;
+		 }
+      } 
+	  if(PcsType==S){
       *AuxMatrix   += *AdvMatrix;
+	  }
+      (*AuxMatrix)   *= fac2;
+	
       *StiffMatrix   += *AuxMatrix;
       //----------------------------------------------------------------------
       // Add local matrix to global matrix
