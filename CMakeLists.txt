@@ -25,9 +25,9 @@ OPTION(OGS_FEM_BRNS "BRNS configuration" OFF)
 OPTION(OGS_FEM_CHEMAPP "CHEMAPP configuration" OFF)
 OPTION(OGS_USE_QT "User interface configuration" OFF)
 OPTION(OGS_FEM_LIS "Library of Iterative Solvers for Linear Systems configuration" OFF)
+OPTION(OGS_FEM_MKL "Math kernel library configuration" OFF)
 
 IF (UNIX) # Only supported on Linux
-	OPTION(OGS_FEM_MKL "Math kernel library configuration" OFF)
 	OPTION(OGS_FEM_MPI "Message passing interface configuration" OFF)
 ENDIF (UNIX)
 
