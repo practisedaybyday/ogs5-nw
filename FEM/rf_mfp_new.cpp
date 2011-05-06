@@ -503,19 +503,6 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
          continue;
       }
       //....................................................................
-	        if(line_string.find("$SUPER_COMPRESSIBILITY")!=string::npos)
-      {
-		  {
-         in.str(GetLineFromFile1(mfp_file));
-		 in >> beta_T;
-         in >> critical_pressure;
-		 in >> critical_temperature;
-		 in >> acentric_factor;
-		 in >> MOLAR_MASS_GAS; 
-		 }
-         in.clear();
-         continue;
-      }
    }
    return position;
 }
@@ -797,14 +784,10 @@ double CFluidProperties::Density(double* variables)
          case 14:                                 //AKS empiricaly extented Ideal gas Eq for real gas // it has used with fractional mass transport Eq.//
             density = MixtureSubProperity(5, (long)  variables[2], variables[0], variables[1])* variables[0] / (CalCopressibility((long)  variables[2], variables[0], variables[1] )*variables[1] * GAS_CONSTANT) ;
             break;
-		 case 15:                               
-            density = variables[0]*MOLAR_MASS_GAS/(CalCopressibility_PTC(variables[0], variables[1])*GAS_CONSTANT*variables[1]);
-			          break;
 	  case 18:	//using calculated densities at nodes from the phase transition model, BG, NB 11/2010
 		  variables[2] = phase;
 		  density = GetElementValueFromNodes(int(variables[0]), int(variables[1]), int(variables[2]), 0); // hand over element index, Gauss point index and phase index
 		  break;
-		   
          default:
             std::cout << "Error in CFluidProperties::Density: no valid model" << std::endl;
             break;
@@ -868,9 +851,6 @@ double CFluidProperties::Density(double* variables)
          case 14:                                 //AKS empiricaly extented Ideal gas Eq for real gas
             density = MixtureSubProperity(5, (long)  variables[2], variables[0], variables[1])* variables[0] / (CalCopressibility((long)  variables[2], variables[0], variables[1] )*variables[1] * GAS_CONSTANT) ;
             //Replace MixtureSubProperity(5, (long)  variables[2], variables[0], variables[1])* variables[0] by molar_mass in case of no MASS_TRANSPORT proces
-          case 15:                             
-            density = variables[0]*MOLAR_MASS_GAS/(CalCopressibility_PTC(variables[0], variables[1])*GAS_CONSTANT*variables[1]);
-			          break;
          default:
             std::cout << "Error in CFluidProperties::Density: no valid model" << std::endl;
             break;
@@ -3188,90 +3168,6 @@ double CFluidProperties::CalCopressibility(long idx_elem, double p,double T)
    //if(p > Pc)
    //h=FindMin(roots);
    return h;
-}
-
-
-/**************************************************************************
-Task: return super compressibility factor of the mixture
-Programing:
-05/2010 AKS
- **************************************************************************/
-double CFluidProperties::CalCopressibility_PTC(double p,double T)
-{
-   std::vector<double> roots;
-   double a, a0, b, A, B, R=8314.41;                   
-   double z1, z2, z3, h; 
-   double Tc=critical_temperature;
-   double Pc=critical_pressure;
-   a0=(1+(0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor)*(1-pow(T/Tc,0.5)));
-   a = 0.45724*R*R*Tc*Tc*a0*a0/Pc;
-   b=0.07780*R*Tc/Pc;
-   A=a*p/(R*R*T*T);
-   B=b*p/(R*T);
-   z1=-(1-B);
-   z2=(A-3*pow(B,2)-2*B);
-   z3=-(A*B-pow(B,2)-pow(B,3));
-   NsPol3(z1,z2,z3,&roots);                     
-   //if(p < Pc && T > Tc)
-   h=FindMax(roots);
-   //if(p > Pc && T< Tc)
-   h=FindMin(roots);
-   return h;
-}
-
-
-/**************************************************************************
-Task: return super compressibility factor of the mixture
-Programing:
-05/2010 AKS
- **************************************************************************/
-double CFluidProperties::CaldZdP(double p,double T)
-{
-   std::vector<double> roots;
-   double a, a0, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdP;                   
-   double z1, z2, z3, h; 
-   double Tc=critical_temperature;
-   double Pc=critical_pressure;
-   a0=(1+(0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor)*(1-pow(T/Tc,0.5)));
-   a = 0.45724*R*R*Tc*Tc*a0*a0/Pc;
-   b=0.07780*R*Tc/Pc;
-   A=a*p/(R*R*T*T);
-   B=b*p/(R*T);
-   dA=a/(R*R*T*T);
-   dB=b/(R*T);
-   z=CalCopressibility_PTC(p, T);
-   X=(3*z*z+2*z*(B-1)+ A-3*B*B-2*B);
-   Y=z*z*dB + z*(dA-6*B*dB-2*dB) + 3*B*B*dB-2*B*dB-A*dB-B*dA;
-   dZdP=Y/X;
-   return dZdP;
-}
-
-
-/**************************************************************************
-Task: return super compressibility factor of the mixture
-Programing:
-05/2010 AKS
- **************************************************************************/
-double CFluidProperties::CaldZdT(double p,double T)
-{
-   std::vector<double> roots;
-   double a, a0,daa, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;                   
-   double z1, z2, z3, h; 
-   double Tc=critical_temperature;
-   double Pc=critical_pressure;
-   a0=(1+(0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor)*(1-pow(T/Tc,0.5)));
-   daa=0.45724*R*R*Tc*Tc*2*a0*(-(0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor)*0.5*pow(T*Tc, -0.5))/Pc;
-   a = 0.45724*R*R*Tc*Tc*a0*a0/Pc;
-   b=0.07780*R*Tc/Pc;
-   A=a*p/(R*R*T*T);
-   B=b*p/(R*T);
-   dA=-(2*p*a/(R*R*T*T*T))+(p*daa/(R*R*T*T));
-   dB=-b*p/(R*T*T);
-   z=CalCopressibility_PTC(p, T);
-   X=(3*z*z+2*z*(B-1)+ A-3*B*B-2*B);
-   Y=z*z*dB + z*(dA-6*B*dB-2*dB) + 3*B*B*dB-2*B*dB-A*dB-B*dA;
-   dZdT=Y/X;
-   return dZdT;
 }
 
 

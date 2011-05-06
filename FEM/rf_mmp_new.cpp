@@ -2498,7 +2498,9 @@ CFiniteElementStd* assem)
             heat_capacity_fluids = 0.0;
             porosity = 0.0;
          }
-         heat_capacity = porosity * heat_capacity_fluids + (1.0 - porosity) * specific_heat_capacity_solid * density_solid;
+         heat_capacity = porosity * heat_capacity_fluids + (1.
+            - porosity) * specific_heat_capacity_solid
+            * density_solid;
          break;
       case 2:                                     //boiling model for YD
          //YD/OK: n c rho = n S^g c^g rho^g + n S^l c^l rho^l + (1-n) c^s rho^s

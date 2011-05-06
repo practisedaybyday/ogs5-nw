@@ -55,11 +55,6 @@ class CFluidProperties
       int compressibility_model_temperature;      //NB
       int compressibility_pressure;               //NB
       int compressibility_temperature;            //NB
-	double beta_T;//AKS
-	double  critical_pressure;            //aks
-	double critical_temperature;            //aks
-	double acentric_factor; 
-	double MOLAR_MASS_GAS; //aks
 
       int phase;
 
@@ -167,9 +162,6 @@ class CFluidProperties
       double phi_0_tt (double T, int c);
                                                   //AKS
       double CalCopressibility(long idx_elem, double p, double T);
-	        double CalCopressibility_PTC(double p, double T); //AKS
-				        double CaldZdP(double p, double T); //AKS
-						  double CaldZdT(double p, double T); //AKS
 
    private:
       double GasViscosity_Reichenberg_1971(double,double);
