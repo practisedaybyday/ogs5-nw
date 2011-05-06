@@ -6175,6 +6175,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       else
       {
          *AuxMatrix      = *Laplace;
+		 if(PcsType==S)
     *AuxMatrix     += *Advection;
 	} 
 	
@@ -6262,6 +6263,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       else
       {
          *AuxMatrix      = *Laplace;
+		 		 if(PcsType==S)
 	*AuxMatrix     += *Advection;
       }
       (*AuxMatrix)  *= fac2;
