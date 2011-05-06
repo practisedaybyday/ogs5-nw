@@ -320,7 +320,7 @@ namespace FiniteElement
       StiffMatrix = new Matrix(size_m, size_m);
       AuxMatrix = new Matrix(size_m, size_m);
       AuxMatrix1 = new Matrix(size_m, size_m);
-      AdvMatrix = new Matrix(size_m, size_m);
+
 
       time_unit_factor = pcs->time_unit_factor;
 
@@ -418,8 +418,7 @@ namespace FiniteElement
             Storage->LimitSize(Size, Size);       //SB4200
             Content->LimitSize(Size, Size);       //SB4209
          }
-         if(PcsType==S)
-                   Advection->LimitSize(nnodes,nnodes);
+
          if(PcsType==R&&pcs->type==22)            //dual-porosity. WW
             Advection->LimitSize(Size, Size);
          if(D_Flag>0)
@@ -1563,18 +1562,26 @@ namespace FiniteElement
       case 0:
     	  poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
     	  PG = interpolate(NodalVal0);
+		  TG = interpolate(NodalVal_t0);
     	  val=poro/PG;
+		  if(FluidProp->density_model ==15)
+		  val -= poro*FluidProp->CaldZdP(PG, TG)/FluidProp->CalCopressibility_PTC(PG, TG);
     	  break;
       case 1:
     	  poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
     	  TG = interpolate(NodalVal_t0);
+		  PG = interpolate(NodalVal0);
     	  val = - poro/TG;
+		  if(FluidProp->density_model ==15)
+		  val -= poro*FluidProp->CaldZdT(PG, TG)/FluidProp->CalCopressibility_PTC(PG, TG);
     	  break;
       case 2:
     	  poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
     	  PG = interpolate(NodalVal0);
     	  TG = interpolate(NodalVal_t0);
-    	  val=0;//poro*FluidProp->drhodT(PG,TG)*TG;
+    	  val=poro*FluidProp->beta_T*TG;
+		  if(FluidProp->beta_T == 0)
+		  val = 0.0;
     	  break;
       case 3:
     	  val=MediaProp->HeatCapacity(Index,pcs->m_num->ls_theta,this);
@@ -2403,8 +2410,14 @@ namespace FiniteElement
         		mat[i] = tensor[i]/mat_fac;
         	break;
         case 1:
+			mat_fac = 0;
+        	for(i=0;i<dim*dim;i++)
+        	mat[i] = mat_fac;
         	break;
         case 2:
+			mat_fac = 0;
+        	for(i=0;i<dim*dim;i++)
+        	mat[i] = mat_fac;
         	break;
         case 3:
         	tensor = MediaProp->HeatConductivityTensor(Index);
@@ -3056,15 +3069,25 @@ namespace FiniteElement
 	   switch(dof_index)
 	   {
 	   case 0:
-		   val=1.0/interpolate(NodalVal0); // 1/P
+		   PG = interpolate(NodalVal0);
+		   TG = interpolate(NodalVal_t0);
+		   val = 1/PG;
+		   		   if(FluidProp->density_model ==15)
+		   val -= FluidProp->CaldZdP(PG, TG)/FluidProp->CalCopressibility_PTC(PG, TG);
 		   break;
 	   case 1:
-		   val = - 1/interpolate(NodalVal_t0); //-1/T
+		   PG = interpolate(NodalVal0);
+		   TG = interpolate(NodalVal_t0);
+		   val = -1/TG;
+		   if(FluidProp->density_model ==15)
+		   val +=  FluidProp->CaldZdT(PG, TG)/FluidProp->CalCopressibility_PTC(PG, TG);
 		   break;
 	   case 2:
 		   PG = interpolate(NodalVal0);
 		   TG = interpolate(NodalVal_t0);
-		   val=0;//1+FluidProp->drhodT(PG,TG)*TG;
+		   val=1+FluidProp->beta_T*TG;
+		   if(FluidProp->beta_T == 0)
+		   val = 0.0;
 		   break;
 	   case 3:
 		   dens_arg[0] = interpolate(NodalVal0);
@@ -3828,8 +3851,7 @@ namespace FiniteElement
             for(jn=0; jn<dof_n; jn++)
             {
                // Material
-               mat_fac = CalCoefMassPTC(in*dof_n+jn);
-               mat_fac *= fkt;
+	mat_fac = fkt*CalCoefMassPTC(in*dof_n+jn);;
                // Calculate mass matrix
                for (i = 0; i < nnodes; i++)
                {
@@ -4533,9 +4555,10 @@ namespace FiniteElement
       {
  	int i, j, k, in, jn;
        int gp_r=0, gp_s=0, gp_t = 0;
-       double fkt;
-       double vel[3];
-       int dof_n = 2;   
+       double fkt, mat_fac;
+       double vel[3], val=0;
+       int dof_n = 2;  
+	   mat_fac =1.0;
        ElementValue* gp_ele = ele_gp_value[Index];
        for (gp = 0; gp < nGaussPoints; gp++)
        {
@@ -4551,14 +4574,14 @@ namespace FiniteElement
        {
        for (jn = 0; jn < dof_n; jn++)
        {
-	fkt *= CalCoefAdvectionPTC(in*dof_n + jn);
+       mat_fac = fkt*CalCoefAdvectionPTC(in*dof_n + jn);
        for (i = 0; i< nnodes; i++)
        {
        for (j = 0; j< nnodes; j++)
        {
        for (k = 0; k < dim; k++)
        {
-       (*Advection)(i+in*nnodes, j+jn*nnodes) += fkt*shapefct[i]*vel[k]*dshapefct[k*nnodes+j];
+		(*Advection)(i+in*nnodes, j+jn*nnodes) += mat_fac*shapefct[i]*vel[k]*dshapefct[k*nnodes+j];
        }
 	}
 	}
@@ -4797,7 +4820,7 @@ namespace FiniteElement
       // ---- Gauss integral
       int gp_r=0, gp_s=0, gp_t;
       gp_t = 0;
-      double fkt, rho;                            //, rich_f;
+      double fkt, rho, dens_arg[3];                            //, rich_f;
       double k_rel_iteration;
       // GEO
       //NW  double geo_fac = MediaProp->geo_area;
@@ -4806,7 +4829,7 @@ namespace FiniteElement
       //
       //
       int dof_n = 1;                              // 27.2.2007 WW
-      if(PcsType==V || PcsType==P) dof_n = 2;
+      if(PcsType==V || PcsType==P|| PcsType==S) dof_n = 2;
 
       //WW 05.01.07
       cshift = 0;
@@ -4837,6 +4860,12 @@ namespace FiniteElement
          ComputeShapefct(1);                      // Moved from CalCoefLaplace(). 12.3.2007 WW
          // Material
          rho = FluidProp->Density();              //Index,unit,pcs->m_num->ls_theta
+	if(PcsType==S) 
+	{
+	dens_arg[0]=interpolate(NodalVal0); // pressure
+	dens_arg[1]=interpolate(NodalVal_t0); // temperature
+	rho = FluidProp->Density(dens_arg); 
+	}
          if(gravity_constant<MKleinsteZahl)       // HEAD version
             rho = 1.0;
          else if(HEAD_Flag) rho = 1.0;
@@ -4860,6 +4889,8 @@ namespace FiniteElement
                   CalCoefLaplace2(true, ii*dof_n+1);
                else if(PcsType==P)
                   CalCoefLaplacePSGLOBAL(true, ii*dof_n);
+			   if(PcsType==S)
+                  CalCoefLaplacePTC(0);
             }
             // Calculate mass matrix
             for (i = 0; i < nnodes; i++)
@@ -5255,10 +5286,12 @@ namespace FiniteElement
                                                   //NW
          if(k==2&&(!HEAD_Flag)&&FluidProp->CheckGravityCalculation())
          {
-            if((FluidProp->density_model==14)  || (FluidProp->density_model==7))
+            if((FluidProp->density_model==14)  || (FluidProp->density_model==15))
             {
                dens_arg[0] = interpolate(NodalVal1);
                dens_arg[1] = interpolate(NodalValC)+T_KILVIN_ZERO;
+			   if(PcsType==S)
+			   dens_arg[1] = interpolate(NodalVal_t0);
                dens_arg[2] = Index;
                coef  =  gravity_constant*FluidProp->Density(dens_arg);
             }
@@ -6142,13 +6175,9 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       else
       {
          *AuxMatrix      = *Laplace;
-		 if(PcsType==S){
-         *AdvMatrix      = *Advection;
-		 }
-      } 
-	  if(PcsType==S){
-      *AuxMatrix   += *AdvMatrix;
-	  }
+    *AuxMatrix     += *Advection;
+	} 
+	
       (*AuxMatrix)   *= fac2;
 	
       *StiffMatrix   += *AuxMatrix;
@@ -6233,6 +6262,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       else
       {
          *AuxMatrix      = *Laplace;
+	*AuxMatrix     += *Advection;
       }
       (*AuxMatrix)  *= fac2;
       *AuxMatrix1   -= *AuxMatrix;
@@ -6312,19 +6342,8 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
             (*RHS)(i+LocalShift) +=  NodalVal[i];
          }
       }
-      //
-   }
-   /**************************************************************************
-   FEMLib-Method:
-   Task: Assemble local matrices of parabolic equation to the global system
-   Programing:
-
-   **************************************************************************/
-   void CFiniteElementStd::AssembleAdvectionPTC()
-   {
-
-   }
-
+	//
+	}
    //SB4200
    /**************************************************************************
    FEMLib-Method:
@@ -8208,75 +8227,6 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       }
       //
    }
-   /***************************************************************************
-      GeoSys - Funktion:
-             Assemble_RHS_T_MPhaseFlow
-      Programming:
-      02/2007   WW
-   **************************************************************************/
-   void CFiniteElementStd::Assemble_RHS_PTC()
-   {
-      int i, j, k, ii;
-      // ---- Gauss integral
-      int gp_r=0,gp_s=0,gp_t=0;
-      double fkt, fac;
-      // Material
-      int dof_n = 2;
-      //----------------------------------------------------------------------
-      for (i = 0; i < dof_n*nnodes; i++) NodalVal[i] = 0.0;
-      //======================================================================
-      // Loop over Gauss points
-      for (gp = 0; gp < nGaussPoints; gp++)
-      {
-         //---------------------------------------------------------
-         //  Get local coordinates and weights
-         //  Compute Jacobian matrix and its determinate
-         //---------------------------------------------------------
-         fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
-         // Compute geometry
-         ComputeGradShapefct(1);                  // Linear interpolation function
-         ComputeShapefct(1);                      // Linear interpolation function
-         for(ii=0; ii<dof_n; ii++)
-         {
-            // Material
-            fac = fkt*CalCoef_RHS_PTC(ii)/dt;
-            // Calculate THS
-            for (i = 0; i < nnodes; i++)
-               NodalVal[i+ii*nnodes] += fac *shapefct[i];
-         }
-         // grad T
-         for(ii=0; ii<dof_n; ii++)
-         {
-            // Material
-            fac = fkt*CalCoef_RHS_PTC(ii+dof_n);
-            // Calculate THS
-            for (i = 0; i < nnodes; i++)
-            {
-               for (j = 0; j < nnodes; j++)
-               {
-                  for (k = 0; k < dim; k++)
-                     NodalVal[i+ii*nnodes] +=
-                        fac*dshapefct[k*nnodes+i]*dshapefct[k*nnodes+j]
-                        *(NodalValC1[j]+T_KILVIN_ZERO);
-               }
-            }
-         }
-      }
-      int ii_sh;
-      long i_sh;
-      for(ii=0;ii<pcs->dof;ii++)
-      {
-         i_sh = NodeShift[ii];
-         ii_sh = ii*nnodes;
-         for (i=0;i<nnodes;i++)
-         {
-            eqs_rhs[i_sh + eqs_number[i]] -= NodalVal[i+ii_sh];
-            (*RHS)(i+LocalShift+ii_sh) -=  NodalVal[i+ii_sh];
-         }
-      }
-      //
-   }
-
    /***************************************************************************
    GeoSys - Function: Assemble_RHS_T_PSGlobal
    Programming:

@@ -187,7 +187,6 @@ namespace FiniteElement
          // Auxillarary matrices
          Matrix *StiffMatrix;
          Matrix *AuxMatrix;
-         Matrix *AdvMatrix;
          Matrix *AuxMatrix1;
          // Gravity matrix;
          //25.2.2007.WW  SymMatrix *GravityMatrix;
@@ -268,8 +267,6 @@ namespace FiniteElement
          // Local Assembly
          // Assembly of parabolic equation
          void AssembleParabolicEquation();        //OK4104
-                                                  //SB4200
-         void AssembleAdvectionPTC();
          void AssembleMixedHyperbolicParabolicEquation();
          void AssembleParabolicEquationNewton();
                                                   // JOD
@@ -281,7 +278,6 @@ namespace FiniteElement
          void Assemble_Gravity_Multiphase();
          // Assembly of RHS by temperature for m-phase flow 27.2.2007 WW
          void Assemble_RHS_T_MPhaseFlow();
-         void Assemble_RHS_PTC();
          // Assembly of RHS by deformation. 27.2.2007 WW
          void Assemble_RHS_M();
          void Assemble_RHS_Pc();                  // 03.2009 PCH
