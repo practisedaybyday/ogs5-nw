@@ -44,6 +44,7 @@ namespace FiniteElement
 {
    using Math_Group::SymMatrix;
    using Math_Group::Matrix;
+   using Math_Group::DiagonalMatrix; 
    using Math_Group::Vec;
    using process::CRFProcessDeformation;
    using ::CRFProcess;
@@ -207,6 +208,7 @@ namespace FiniteElement
          Matrix *Content;                         //SB4209
          Matrix *StrainCoupling;
          Vec       *RHS;
+     DiagonalMatrix       *FCT_MassL; //NW      
          //-------------------------------------------------------
          void SetHighOrderNodes();                // 25.2.2007 WW
          // Primary as water head
@@ -319,6 +321,7 @@ namespace FiniteElement
          double *NodalVal_t1;                    //AKS
          //
          double *weight_func;                     //NW
+     void CalcFEM_FCT(); //NW
          //
          friend class ::CRFProcess;
    };

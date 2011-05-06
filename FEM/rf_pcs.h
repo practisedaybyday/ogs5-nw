@@ -39,6 +39,7 @@ namespace Math_Group {class Linear_EQS;}
 using Math_Group::Linear_EQS;
 #endif
 
+using Math_Group::SparseMatrixDOK;
 //
 class CSourceTermGroup;
 class CSourceTerm;
@@ -181,7 +182,11 @@ class CRFProcess : public ProcessInfo
       long orig_size;                             // Size of source term nodes
       // ELE
       std::vector<FiniteElement::ElementMatrix*> Ele_Matrices;
-
+      //Global matrix
+      Math_Group::Vec *Gl_Vec; //NW
+      Math_Group::Vec *Gl_Vec1; //NW
+      Math_Group::Vec *Gl_ML; //NW
+      Math_Group::SparseMatrixDOK *FCT_AFlux; //NW
       /**
        * Storage type for all element matrices and vectors
        * Cases:
@@ -195,6 +200,7 @@ class CRFProcess : public ProcessInfo
       friend class CTimeDiscretization;
    public:                                        //OK
       CTimeDiscretization *Tim;                   //time
+      bool femFCTmode; //NW
    protected:                                     //WW
       void CopyU_n(double *temp_v);               //29.08.2008. WW
       // Time unit factor
@@ -546,6 +552,7 @@ class CRFProcess : public ProcessInfo
       CFiniteElementStd* GetAssember () { return fem; }
       void AllocateLocalMatrixMemory();
       void GlobalAssembly();                      //NEW
+      void AddFCT_CorrectionVector(); //NW
       void ConfigureCouplingForLocalAssemblier();
       void CalIntegrationPointValue();
       bool cal_integration_point_value;           //WW

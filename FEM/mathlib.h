@@ -305,6 +305,10 @@ extern void VCopy(double *x, const double *y, const int n);
 
 //NW
 extern double MLangevin(double v);
+extern double MinMod(double v1, double v2);
+extern double SuperBee(double v1, double v2);
+extern double GetFCTADiff(double v1, double v2);
+
 #endif                                            /* gehoert zum Schutz gegen mehrfaches Einfuegen */
 
 /*##########################################################################

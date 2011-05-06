@@ -17,14 +17,14 @@ if (NOT MKL_FOUND)
 				MESSAGE (STATUS "MKL archives in ../Libs/ not found")
 			ENDIF (MKL_DIR_FOUND)
 		ENDIF (NOT MKL_INCLUDE_DIR_FOUND)
-	endif ( UNIX )
+	endif (UNIX)
 
 	include(LibFindMacros)
 	
-	find_path( MKL_INCLUDE_DIR NAMES mkl.h
-		   PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/include)
-
 	if ( UNIX )
+		find_path( MKL_INCLUDE_DIR NAMES mkl.h
+			   PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/include)
+
 		# Tell if the unix system is on 64-bit base
 		if(CMAKE_SIZEOF_VOID_P MATCHES "8")
 			set (MKL_LIB_PATH "${CMAKE_SOURCE_DIR}/../Libs/MKL/64")
@@ -61,11 +61,30 @@ if (NOT MKL_FOUND)
 				NAMES mkl_core PATHS ${MKL_LIB_PATH} )
 			set(TMP_MKL_PROCESS_LIBS ${TMP_MKL_PROCESS_LIBS} ${MKL_INTEL_LIBRARY} ${MKL_GNU_THREAD_LIBRARY} ${MKL_CORE_LIBRARY} CACHE STRING "Found MKL Libraries")
 		endif (CMAKE_SIZEOF_VOID_P MATCHES "8")	
+	else ( UNIX )			
+		find_library(MKL_LIBRARIES
+			NAMES libpardiso400_INTEL_IA32
+			PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled )	
 	endif ( UNIX )
+
 	# Set the include dir variables and the libraries and let libfind_process do the rest.
 	# NOTE: Singular variables for this library, plural for libraries this lib depends on.
-	set(MKL_PROCESS_INCLUDES MKL_INCLUDE_DIR)
-	set(MKL_PROCESS_LIBS TMP_MKL_PROCESS_LIBS)
-	libfind_process(MKL)
-	
+	if (UNIX)
+		if (NOT TMP_MKL_PROCESS_LIBS STREQUAL "TMP_MKL_PROCESS_LIBS-NOTFOUND" AND NOT MKL_INCLUDE_DIR STREQUAL "MKL_INCLUDE_DIR-NOTFOUND")
+			set(MKL_PROCESS_INCLUDES MKL_INCLUDE_DIR)
+			set(MKL_PROCESS_LIBS TMP_MKL_PROCESS_LIBS)
+			libfind_process(MKL)
+		else (NOT TMP_MKL_PROCESS_LIBS STREQUAL "TMP_MKL_PROCESS_LIBS-NOTFOUND" AND NOT MKL_INCLUDE_DIR STREQUAL "MKL_INCLUDE_DIR-NOTFOUND")
+			message (STATUS "Warning: MKL not found!")
+		endif (NOT TMP_MKL_PROCESS_LIBS STREQUAL "TMP_MKL_PROCESS_LIBS-NOTFOUND" AND NOT MKL_INCLUDE_DIR STREQUAL "MKL_INCLUDE_DIR-NOTFOUND")
+	else (UNIX)
+		if (NOT MKL_LIBRARIES STREQUAL "MKL_LIBRARIES-NOTFOUND")
+			set(MKL_PROCESS_LIBS MKL_LIBRARIES)
+			libfind_process(MKL)
+		else (NOT MKL_LIBRARIES STREQUAL "MKL_LIBRARIES-NOTFOUND")
+			message (STATUS "Warning: MKL not found!")
+		endif (NOT MKL_LIBRARIES STREQUAL "MKL_LIBRARIES-NOTFOUND")
+	endif (UNIX)
+
+
 endif (NOT MKL_FOUND)

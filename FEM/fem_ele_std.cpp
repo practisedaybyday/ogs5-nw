@@ -77,6 +77,8 @@ namespace FiniteElement
       Content = NULL;
       StrainCoupling = NULL;
       RHS = NULL;
+    FCT_MassL = NULL; //NW
+
       //
       NodalVal1 = new double[size_m];
       NodalVal2 = new double[size_m];
@@ -321,7 +323,9 @@ namespace FiniteElement
       AuxMatrix = new Matrix(size_m, size_m);
       AuxMatrix1 = new Matrix(size_m, size_m);
 
-
+    if (this->pcs->m_num->fct_method>0) { //NW
+      FCT_MassL = new DiagonalMatrix(size_m);
+    }
       time_unit_factor = pcs->time_unit_factor;
 
       check_matrices = true;
@@ -355,6 +359,8 @@ namespace FiniteElement
          if(Content) delete Content;
          if(StrainCoupling) delete StrainCoupling;
          if(RHS) delete RHS;
+       if(FCT_MassL) delete FCT_MassL;
+       
          Mass = NULL;
          Laplace = NULL;
          Advection = NULL;
@@ -362,6 +368,7 @@ namespace FiniteElement
          Content = NULL;
          StrainCoupling = NULL;
          RHS = NULL;
+       FCT_MassL = NULL;
       }
 
       delete StiffMatrix;
@@ -450,6 +457,9 @@ namespace FiniteElement
       StiffMatrix->LimitSize(Size, Size);
       AuxMatrix->LimitSize(Size, Size);
       AuxMatrix1->LimitSize(Size, Size);
+    if (this->pcs->m_num->fct_method>0) { //NW
+      FCT_MassL->LimitSize(Size);
+    }
    }
 
    /**************************************************************************
@@ -6168,10 +6178,10 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       {
          *AuxMatrix      = *Laplace;
 		 if(PcsType==S){
-         *AuxMatrix      += *Advection;
+    *AuxMatrix     += *Advection;
 		 }
       } 
-	 
+	
       (*AuxMatrix)   *= fac2;
 	
       *StiffMatrix   += *AuxMatrix;
@@ -6257,8 +6267,8 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       {
          *AuxMatrix      = *Laplace;
 		 if(PcsType==S){
-         *AuxMatrix      += *Advection;
-		 }
+	*AuxMatrix     += *Advection;
+      }
       }
       (*AuxMatrix)  *= fac2;
       *AuxMatrix1   -= *AuxMatrix;
@@ -6338,8 +6348,93 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
             (*RHS)(i+LocalShift) +=  NodalVal[i];
          }
       }
-	//
-	}
+      //
+   }
+/**************************************************************************
+FEMLib-Method: 
+Task: 
+Programing:
+04/2010 NW Implementation
+**************************************************************************/
+void CFiniteElementStd::CalcFEM_FCT()
+{
+  int i,j;
+  const double theta = pcs->m_num->ls_theta;
+  const double dt_inverse = 1.0/dt;
+#if defined(NEW_EQS)
+   CSparseMatrix *A = NULL;  //WW
+   if(m_dom)
+     A = m_dom->eqs->A;
+   else
+     A = pcs->eqs_new->A;
+#endif 
+  //----------------------------------------------------------------------
+  // FCT method
+  //----------------------------------------------------------------------
+   SparseMatrixDOK *FCT_Flux = this->pcs->FCT_AFlux;
+   Vec *ML = this->pcs->Gl_ML;
+
+  //----------------------------------------------------------------------
+  // L+A matrix
+  *AuxMatrix      = *Laplace;
+  *AuxMatrix      += *Advection;
+  *AuxMatrix      += *Storage;
+  //*AuxMatrix      += *Content;
+
+  // Lumped mass matrix
+  (*FCT_MassL) = 0.0;
+  for (int i=0; i<nnodes; i++) {
+    for (int j=0; j<nnodes; j++)
+      (*FCT_MassL)(i) += (*Mass)(i,j);
+  }
+
+  //----------------------------------------------------------------------
+  // Add K matrix to global matrix
+  for(i=0;i<nnodes;i++){
+    for(j=0;j<nnodes;j++){
+#ifdef NEW_EQS
+       (*A)(NodeShift[problem_dimension_dm]+eqs_number[i],  
+            NodeShift[problem_dimension_dm]+eqs_number[j]) += (*AuxMatrix)(i,j);
+#else
+       MXInc(NodeShift[problem_dimension_dm]+eqs_number[i],\
+            NodeShift[problem_dimension_dm]+eqs_number[j],\
+               (*AuxMatrix)(i,j));
+#endif
+    }
+  }
+  // Lumped mass matrix
+  for(i=0;i<nnodes;i++){
+    long node_i_id = this->MeshElement->nodes_index[i];
+    (*ML)(node_i_id) += (*FCT_MassL)(i);
+  }
+
+  // assemble part of FCT flux: f_ij = m_ij
+  for (i=0; i<nnodes; i++) {
+    long node_i_id = this->MeshElement->nodes_index[i];
+//    for (j=i; j<nnodes; j++) {
+    for (j=i+1; j<nnodes; j++) { //symmetric
+      if ((*this->Mass)(i,j)==0.0) continue; 
+      long node_j_id = this->MeshElement->nodes_index[j];
+      //double diff_uH = this->pcs->GetNodeValue(node_i_id, this->idx1) - this->pcs->GetNodeValue(node_j_id, this->idx1);
+      //double diff_u0 = this->pcs->GetNodeValue(node_i_id, this->idx0) - this->pcs->GetNodeValue(node_j_id, this->idx0);
+      //double v = 1.0/dt*((*this->Mass)(i,j))*(diff_uH - diff_u0);
+      double v =(*this->Mass)(i,j);
+      (*FCT_Flux)(node_i_id,node_j_id) += v;
+      (*FCT_Flux)(node_j_id,node_i_id) += v;
+    }
+  }
+
+  // assemble part of RHS: b_i += 1/dt * ml_i * u_i^n
+  double fac_mass = dt_inverse; //*geo_fac;
+  for (i=0;i<nnodes; i++)
+    NodalVal[i] = fac_mass * (*FCT_MassL)(i) * pcs->GetNodeValue(nodes[i],idx0);
+  for (i=0;i<nnodes;i++)
+  {
+      eqs_rhs[NodeShift[problem_dimension_dm] + eqs_number[i]] += NodalVal[i];
+      (*RHS)(i+LocalShift) +=  NodalVal[i];
+  }
+
+}
    //SB4200
    /**************************************************************************
    FEMLib-Method:
@@ -6450,6 +6545,10 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       fac_storage = theta;
       fac_content = theta*dt_inverse;
 
+  if (this->pcs->femFCTmode) { //NW
+    this->CalcFEM_FCT();
+  } else {
+
       //Mass matrix
       *StiffMatrix    = *Mass;
       (*StiffMatrix) *= fac_mass;
@@ -6530,6 +6629,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
          eqs_rhs[NodeShift[problem_dimension_dm] + eqs_number[i]] += NodalVal[i];
          (*RHS)(i+LocalShift) +=  NodalVal[i];
       }
+  } //end: femFCTmode
       //----------------------------------------------------------------------
       //Debug output
       /*
