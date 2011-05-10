@@ -1,8 +1,6 @@
 #### Packaging setup for OGS-5 ####
 
-INCLUDE(CMakeConfiguration/InstallRequiredSystemLibraries.cmake)
-
-
+#INCLUDE(CMakeConfiguration/InstallRequiredSystemLibraries.cmake)
 
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OGS-5")
 SET(CPACK_PACKAGE_VENDOR "OpenGeoSys Development Team")
@@ -50,16 +48,21 @@ ENDIF (OGS_PACKAGING_ZIP)
 
 SET(CPACK_COMPONENT_OGS_DISPLAY_NAME "Executable")
 SET(CPACK_COMPONENT_OGS_DESCRIPTION "The command line executable (former rf4)")
+SET(CPACK_COMPONENT_MSVC_REDIST_DISPLAY_NAME "C++ Redistributable")
+SET(CPACK_COMPONENT_MSVC_REDIST_DESCRIPTION "Microsoft Visual C++ Redistributable")
+
 SET(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
 IF (OGS_USE_QT)
 	SET(CPACK_PACKAGE_EXECUTABLES "ogs" "OGS Command Line" "ogs-gui" "OGS User Interface")
-	SET(CPACK_COMPONENTS_ALL ogs ogs_gui Unspecified)
+	SET(CPACK_COMPONENTS_ALL ogs ogs_gui msvc_redist Unspecified)
 	SET(CPACK_COMPONENT_OGS_GUI_DISPLAY_NAME "Graphical User Interface")
 	SET(CPACK_COMPONENT_OGS_GUI_DESCRIPTION "The graphical user interface")
 	SET(CPACK_COMPONENT_OGS_GUI_DEPENDS ogs)
 ELSE ()
 	SET(CPACK_PACKAGE_EXECUTABLES "ogs" "OGS Command Line")
-	SET(CPACK_COMPONENTS_ALL ogs Unspecified)
+	SET(CPACK_COMPONENTS_ALL ogs msvc_redist Unspecified)
 ENDIF ()
+
+INCLUDE (FindMSVCRedist)
 
 INCLUDE (CPack)
