@@ -51,7 +51,7 @@ Programing:
 09/2006 KG44 Output for MPI - correct OUTPUT not yet implemented
 12/2008 NW Remove ios::app, Add PCS name to VTK file name
 **************************************************************************/
-void LegacyVtkInterface::WriteDataVTK(int number, std::string baseFilename) const
+void LegacyVtkInterface::WriteDataVTK(int number, float simulation_time, std::string baseFilename) const
 {
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
 	char tf_name[10];
@@ -89,7 +89,7 @@ void LegacyVtkInterface::WriteDataVTK(int number, std::string baseFilename) cons
 //
 #endif
 
-	this->WriteVTKHeader(vtk_file,number);
+	this->WriteVTKHeader(vtk_file,number,simulation_time);
 	this->WriteVTKPointData(vtk_file);
 	this->WriteVTKCellData(vtk_file);
 	this->WriteVTKDataArrays(vtk_file);
@@ -98,7 +98,7 @@ void LegacyVtkInterface::WriteDataVTK(int number, std::string baseFilename) cons
 }
 
 
-void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number) const
+void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number, float simulation_time) const
 {
 	
 	vtk_file << "# vtk DataFile Version 3.0" << endl;
@@ -107,12 +107,12 @@ void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number)
 	vtk_file << "DATASET UNSTRUCTURED_GRID"  << endl;
 	
 	// time information
-	(void)time_step_number;
-	//vtk_file << "FIELD TimesAndCycles 2" << endl;
-	//vtk_file << "TIME 1 1 double" << endl;
-	//vtk_file << _time << endl;
-	//vtk_file << "CYLCE 1 1 long" << endl;
-	//vtk_file << time_step_number << endl;
+	// see http://www.visitusers.org/index.php?title=Time_and_Cycle_in_VTK_files
+	vtk_file << "FIELD TimesAndCycles 2" << endl;
+	vtk_file << "TIME 1 1 double" << endl;
+	vtk_file << simulation_time << endl;
+	vtk_file << "CYLCE 1 1 long" << endl;
+	vtk_file << time_step_number << endl;
 
 }
 

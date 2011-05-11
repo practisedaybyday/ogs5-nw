@@ -437,7 +437,7 @@ void OUTData(double time_current, int time_step_number)
 					m_out->mmp_value_vector,
 					m_out->msh_type_name,
 					m_out);
-				vtkOutput.WriteDataVTK(time_step_number, m_out->file_base_name);
+				vtkOutput.WriteDataVTK(time_step_number, m_out->_time, m_out->file_base_name);
 
 				if (!m_out->_new_file_opened)
 												//WW
@@ -457,7 +457,7 @@ void OUTData(double time_current, int time_step_number)
 							m_out->mmp_value_vector,
 							m_out->msh_type_name,
 							m_out);
-						vtkOutput.WriteDataVTK(time_step_number, m_out->file_base_name);
+						vtkOutput.WriteDataVTK(time_step_number, m_out->_time, m_out->file_base_name);
 						m_out->time_vector.erase(m_out->time_vector.begin()
 							+ j);
 						if (!m_out->_new_file_opened)
