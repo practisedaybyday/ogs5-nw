@@ -34,16 +34,14 @@ namespace Mesh_Group
          // since this is bounded by velocity.
          std::vector<long> connected_planes;      // PCH
 
-         //GUI control variables
          double patch_area;                       //OK4310
-         bool crossroad;                           // PCH: Make theses privates can be done later on.
+         bool crossroad;                           //KR changed to bool // PCH: Make theses privates can be done later on.
 	     std::vector <long> connected_faces;		// BG, 09/2010, necessary for coupling to Eclipse, index of faces where the node is part of it
 	     std::vector <double> distance_to_connected_faces; // BG, 09/2010,  necessary for coupling to Eclipse
 
          /** constructor */
          CNode(size_t Index) :
-         CCore(Index), free_surface (-1), 
-            patch_area (-1.0), crossroad (false), eqs_index(-1)
+         CCore(Index), free_surface (-1), patch_area (-1.0), crossroad (false), eqs_index(-1)
             {}
 
          CNode(size_t Index, double x, double y, double z = 0.0);
@@ -91,8 +89,6 @@ namespace Mesh_Group
          // Members
          long eqs_index;                          // renumber
          double coordinate[3];
-
-         friend class CElem;
 
    };
 
