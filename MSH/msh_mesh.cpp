@@ -2882,7 +2882,7 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
          m_nod = nod_vector[i];
          // KR m_nod->selected = false;
       }
-      //KR double eps = 1e-3;
+      double eps = 1e-3;
       for (i = 0; i < (long) nod_vector.size(); i++)
       {
          m_nod = nod_vector[i];                   // this node

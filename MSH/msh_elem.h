@@ -74,19 +74,15 @@ namespace Mesh_Group
          {
             return gravity_center;
          }
-
          int GetPatchIndex() const
          {
             return patch_index;
          }                                        //MatGroup
-
          void SetPatchIndex(int value)
          {
             patch_index = value;
          }
-
          void ComputeVolume();
-
          void SetFluxArea(double fluxarea)
          {
             area = fluxarea;
@@ -102,7 +98,6 @@ namespace Mesh_Group
          {
             return volume;
          }
-
          void SetVolume(double Vol)
          {
             volume = Vol;
