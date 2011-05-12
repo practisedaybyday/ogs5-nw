@@ -13,7 +13,7 @@
 #include "fem_ele.h"
 // Problems
 #include "rf_mfp_new.h"
-#include "rf_msp_new.h"
+//#include "rf_msp_new.h"
 #include "rf_out_new.h"                           //OK
 
 //-----------------------------------------------------
@@ -33,10 +33,10 @@ enum EnumProcessType { L, U, G, T, C, H, M, O, R, F, A, V, P};
 //-----------------------------------------------------
 
 namespace process {class CRFProcessDeformation;}
-using SolidProp::CSolidProperties;
+// using SolidProp::CSolidProperties; // evil in header!
+namespace SolidProp { class CSolidProperties; }
 // Predeclared classes  01/07, WW
 class CMediumProperties;
-class CSolidProperties;
 class CFluidProperties;
 
 class CRFProcess;
@@ -172,12 +172,12 @@ namespace FiniteElement
 
          bool dynamic;
          CRFProcess *mfp_pcs;
-         CSolidProperties *SolidProp;
+         SolidProp::CSolidProperties *SolidProp;
          CFluidProperties *FluidProp;
          CFluidProperties *GasProp;
          CMediumProperties *MediaProp;
          CMediumProperties *MediaProp1;           // Matrix for the dual model. YD/WW
-         CSolidProperties *SolidProp1;            // Matrix for the dual model. YD/WW
+         SolidProp::CSolidProperties *SolidProp1;            // Matrix for the dual model. YD/WW
          CRFProcess *pcs;
          process::CRFProcessDeformation *dm_pcs;
          bool flag_cpl_pcs;                       //OK
