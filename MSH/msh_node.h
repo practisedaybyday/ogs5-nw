@@ -36,7 +36,7 @@ namespace Mesh_Group
 
          //GUI control variables
          double patch_area;                       //OK4310
-         bool crossroad;                           // PCH: Make theses privates can be done later on.
+         bool crossroad;                           //KR changed to bool // PCH: Make theses privates can be done later on.
 	     std::vector <long> connected_faces;		// BG, 09/2010, necessary for coupling to Eclipse, index of faces where the node is part of it
 	     std::vector <double> distance_to_connected_faces; // BG, 09/2010,  necessary for coupling to Eclipse
 
@@ -92,7 +92,7 @@ namespace Mesh_Group
          long eqs_index;                          // renumber
          double coordinate[3];
 
-         friend class CElem;
+         //friend class CElem;
 
    };
 

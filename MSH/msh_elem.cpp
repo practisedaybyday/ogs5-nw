@@ -132,8 +132,8 @@ namespace Mesh_Group
             owner->nodes_index[faceIndex_loc[i]];
          nodes[i] = owner->nodes[faceIndex_loc[i]];
                                                   //18.02.2009. cf. changes in mapping & generation. WW
-         if((nodes[i]->boundary_type != '0')&&(nodes[i]->boundary_type != '1'))
-            nodes[i]->boundary_type = 'B';
+         if((nodes[i]->GetBoundaryType() != '0')&&(nodes[i]->GetBoundaryType() != '1'))
+            nodes[i]->SetBoundaryType('B');
       }
       // Face edges
       ne = owner->GetEdgesNumber();
@@ -759,9 +759,9 @@ void CElem::Read(std::istream& is, int fileType)
       int SizeV = nnodes;
       if(quadratic) SizeV = nnodesHQ;
       for (i=0; i< SizeV;i++)
-         nodes[i]->mark = mark;
+         nodes[i]->SetMark(mark);
       for (i=0; i< nedges;i++)
-         edges[i]->mark = mark;
+         edges[i]->SetMark(mark);
    }
    /**************************************************************************
    MSHLib-Method:
