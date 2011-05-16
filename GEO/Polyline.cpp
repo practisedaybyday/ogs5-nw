@@ -104,7 +104,7 @@ const std::vector<double>& Polyline::getLengthVec () const
 }
 
 
-Polyline* Polyline::contructPolylineFromSegments(const std::vector<Polyline*> &ply_vec, double prox)
+Polyline* Polyline::constructPolylineFromSegments(const std::vector<Polyline*> &ply_vec, double prox)
 {
 	size_t nLines = ply_vec.size();
 

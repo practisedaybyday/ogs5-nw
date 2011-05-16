@@ -6,8 +6,6 @@
  *
  */
 
-#include "ExtractMeshNodes.h"
-
 // Base
 #include "StringTools.h"
 
@@ -17,6 +15,9 @@
 // MSH
 #include "msh_mesh.h"
 #include "msh_lib.h" // for FEMRead
+
+// MSHGEOTOOLS
+#include "ExtractMeshNodes.h"
 
 // GEO
 #include "GEOObjects.h"
@@ -115,12 +116,15 @@ int main (int argc, char *argv[])
 			std::cout << "polyline " << k << " is not closed" << std::endl;
 		} else {
 			GEOLIB::Polygon polygon (*((*plys)[k]));
-//			extract_mesh_nodes.writeMesh2DNodeIDAndArea (out, pnt_out, polygon);
-			extract_mesh_nodes.writeTopSurfaceMeshNodeIDs (out, pnt_out, polygon);
+			extract_mesh_nodes.writeMesh2DNodeIDAndArea (out, pnt_out, polygon);
+//			extract_mesh_nodes.writeTopSurfaceMeshNodeIDs (out, pnt_out, polygon);
 			// write all nodes - not only the surface nodes
 //			extract_mesh_nodes.writeMeshNodeIDs (out, pnt_out, polygon);
 		}
 	}
+	out << "#STOP" << std::endl;
+	out.close();
+
 	pnt_out << "#STOP" << std::endl;
 	pnt_out.close ();
 

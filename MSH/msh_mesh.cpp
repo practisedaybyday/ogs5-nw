@@ -1399,7 +1399,7 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& 
          case 2:                                  // 2 vertical polylines
             GetNODOnSFC_Vertical(m_sfc,msh_nod_vector);
             break;
-         case 3:                                  // projection on xy plane (all mesh points above and below the surface) //MB
+         case 3: // projection on xy plane (all mesh points above and below the surface) //MB
             GetNODOnSFC_PLY_XY(m_sfc, msh_nod_vector);
             break;
             //....................................................................
