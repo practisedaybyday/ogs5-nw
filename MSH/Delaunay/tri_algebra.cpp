@@ -272,8 +272,8 @@ bool bPolygonSwapRotation(
 	work = new Cp_dbl2[nver];
 	if( !work ) goto PIX_EXIT;
 
-	switch( bClosed ) {
-	case true:
+	if( bClosed )
+    {
 		for( i = 1 ; i < nver ; i++ ) {
 			j = nver - i;
 			work[j] = vers[i];
@@ -282,8 +282,9 @@ bool bPolygonSwapRotation(
 		for( i = 1 ; i < nver ; i++ ) {
 			vers[i] = work[i];
 		}
-		break;
-	case false:
+    }
+    else
+    {
 		nver2 = nver - 1;
 		for( i = 0 ; i < nver ; i++ ) {
 			j = nver2 - i;
@@ -293,7 +294,6 @@ bool bPolygonSwapRotation(
 		for( i = 0 ; i < nver ; i++ ) {
 			vers[i] = work[i];
 		}
-		break;
 	}
 
 	// --- DOne ---

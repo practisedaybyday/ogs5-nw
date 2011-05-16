@@ -72,7 +72,7 @@ public:
 
 	/// Constructs one polyline from a vector of connected polylines.
 	/// All polylines in this vector need to reference the same point vector.
-	static Polyline* contructPolylineFromSegments(const std::vector<Polyline*> &ply_vec, double prox = 0.0);
+	static Polyline* constructPolylineFromSegments(const std::vector<Polyline*> &ply_vec, double prox = 0.0);
 
 	/**
 	 * returns the number of points,

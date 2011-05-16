@@ -38,6 +38,7 @@ bool GeoIO::readGeoInfo (GeoInfo* geo_info, std::istream& in_str, std::string& g
 		geo_info->setGeoType(GEOLIB::POINT);
 		geo_info->setGeoObj(pnt);
 		strstream.clear();
+		return true;
 	}
 
 	if (geo_type_name.find("POLYLINE") != std::string::npos) {
@@ -56,6 +57,7 @@ bool GeoIO::readGeoInfo (GeoInfo* geo_info, std::istream& in_str, std::string& g
 		}
 		geo_info->setGeoObj(ply);
 		strstream.clear();
+		return true;
 	}
 
 	if (geo_type_name.find("SURFACE") != std::string::npos) {
@@ -83,18 +85,21 @@ bool GeoIO::readGeoInfo (GeoInfo* geo_info, std::istream& in_str, std::string& g
 #endif
 		}
 		strstream.clear();
+		return true;
 	}
 
 	if (geo_type_name.find("VOLUME") != std::string::npos) {
 		geo_info->setGeoType(GEOLIB::VOLUME);
 		strstream >> geo_name;
 		strstream.clear();
+		return true;
 	}
 
 	if (geo_type_name.find("DOMAIN") != std::string::npos) {
 		geo_info->setGeoType(GEOLIB::GEODOMAIN);
 		strstream >> geo_name;
 		strstream.clear();
+		return true;
 	}
 
 	return true;

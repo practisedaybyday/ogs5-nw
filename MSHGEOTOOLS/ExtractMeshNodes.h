@@ -44,8 +44,8 @@ public:
 	 */
 	void writeMeshNodeIDs (std::ostream& os, std::ostream& gli_out, const GEOLIB::Polygon& polygon);
 	/**
-	 * This method first projects a mesh node into the x-y-plane (z=0).
-	 * Then it checks if this mesh node is within the given polygon
+	 * This method first projects all mesh nodes into the x-y-plane (z=0).
+	 * Then it checks if mesh nodes are within the given polygon
 	 * (polygon have to be located in the x-y-plane (z=0). All the mesh
 	 * nodes are located within a "cylinder". The method sorts the mesh nodes
 	 * lexicographical (first by x, then by y and in the end by z). The id of the
@@ -61,6 +61,24 @@ public:
 	void writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream& gli_out, const GEOLIB::Polygon& polygon);
 
 	void writeNearestMeshNodeToPoint (std::ostream& os, std::ostream& gli_out, GEOLIB::Point const & pnt);
+
+	/**
+	 * computes the bottom mesh nodes along a polyline
+	 * @param ply along the polyline ply
+	 * @param bottom_points the bottom mesh nodes as points
+	 */
+	void getBottomMeshNodesAlongPolylineAsPoints (const GEOLIB::Polyline& ply, std::vector<GEOLIB::Point*>& bottom_points) const;
+
+	/**
+	 * Method computes the polygon to a given polyline that is consisting of this polyline, a
+	 * projection of this polyline to the bottom of the mesh and the links between these two polylines.
+	 * @param polyline the ("defining") polyline which is a part of the polygon,
+	 * 	the other part will be created by projection of the polyline to the bottom of the mesh.
+	 * @param point_vec point vector that holds (at least) the points of the polygon
+	 * @param polygon pointer to the resulting polygon
+	 * 	warning: the pointer to an already existing polygon will be destroyed
+	 */
+	void getPolygonFromPolyline (const GEOLIB::Polyline& polyline, std::vector<GEOLIB::Point*>& point_vec, GEOLIB::Polygon* &polygon) const;
 
 private:
 	const CFEMesh* _msh;

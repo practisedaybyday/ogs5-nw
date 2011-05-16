@@ -2453,7 +2453,7 @@ Programing:
 double CMediumProperties::HeatCapacity(long number, double theta,
 CFiniteElementStd* assem)
 {
-   CSolidProperties *m_msp = NULL;
+   SolidProp::CSolidProperties *m_msp = NULL;
    double heat_capacity_fluids, specific_heat_capacity_solid;
    double density_solid;
    double porosity, Sat, PG;
@@ -2569,7 +2569,7 @@ ToDo:
 double* CMediumProperties::HeatConductivityTensor(int number)
 {
    int i, dimen;
-   CSolidProperties *m_msp = NULL;
+   SolidProp::CSolidProperties *m_msp = NULL;
    double heat_conductivity_fluids,Kx[3];
    // TF unused variable - comment fix compile warning
 //   double *tensor = NULL;
@@ -3909,7 +3909,7 @@ double saturation,double temperature, double *porosity_sw)
    beta =     porosity_model_values[6];           // modifications coefficient (z.B. free swelling Weimar beta=3.0)
    //--------------------------------------------------------------------
    // MSP solid properties
-   CSolidProperties *m_msp = NULL;
+   SolidProp::CSolidProperties *m_msp = NULL;
    // long group = ElGetElementGroupNumber(index);
    long group = m_pcs->m_msh->ele_vector[index]->GetPatchIndex();
    m_msp = msp_vector[group];

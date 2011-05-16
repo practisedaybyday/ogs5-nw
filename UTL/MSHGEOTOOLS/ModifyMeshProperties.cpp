@@ -55,6 +55,7 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 	for (size_t k(0); k<polygon.getNumberOfPoints(); k++) {
 		rot_polyline.addPoint (k);
 	}
+	rot_polyline.addPoint (0);
 	GEOLIB::Polygon rot_polygon (rot_polyline);
 
 //	std::cout << "Polygon: " << std::endl;
@@ -97,8 +98,8 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 		}
 	}
 
-	for (size_t k(0); k<rot_polygon.getNumberOfPoints(); k++) {
-		delete rot_polygon[k];
+	for (size_t k(0); k<polygon_points.size(); k++) {
+		delete polygon_points[k];
 	}
 	for (size_t j(0); j<mesh_nodes_as_points.size(); j++) {
 		delete mesh_nodes_as_points[j];

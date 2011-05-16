@@ -22,6 +22,7 @@
 
 // FileIO
 #include "OGSIOVer4.h"
+#include "MeshIO/OGSMeshIO.h"
 
 Problem *aproblem = NULL;
 
@@ -93,12 +94,13 @@ int main (int argc, char *argv[])
 
 	modify_mesh_nodes.setMaterial (polygon, material_id);
 
-	std::fstream mesh_out;
-	mesh_out.open ("MeshWithMaterial.msh", std::fstream::out);
+	std::ofstream mesh_out;
+	mesh_out.open ("MeshWithMaterial.msh");
 
+	mesh->ConstructGrid();
 	if (mesh_out.is_open()) {
-		std::cout << "write TestMesh.msh" << std::endl;
-		mesh->Write (&mesh_out);
+		std::cout << "write MeshWithMaterial.msh" << std::endl;
+		FileIO::OGSMeshIO::write (mesh, mesh_out);
 	}
 	mesh_out.close ();
 
