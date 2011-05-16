@@ -5,6 +5,9 @@
  *      Author: TF
  */
 
+// STL
+#include <algorithm>
+
 #include "ExtractMeshNodes.h"
 
 // BASELIB
