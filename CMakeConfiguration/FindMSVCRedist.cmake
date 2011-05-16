@@ -7,13 +7,13 @@ IF (MSVC)
   endif()
   
   IF(CMAKE_CL_64)
-    IF(MSVC_VERSION GREATER 1599)
+    #IF(MSVC_VERSION GREATER 1599)
       # VS 10 and later:
       SET(CMAKE_MSVC_ARCH x64)
-    ELSE()
-      # VS 9 and earlier:
-      SET(CMAKE_MSVC_ARCH amd64)
-    ENDIF()
+    #ELSE()
+    #  # VS 9 and earlier:
+    #  SET(CMAKE_MSVC_ARCH amd64)
+    #ENDIF()
   ELSE(CMAKE_CL_64)
     SET(CMAKE_MSVC_ARCH x86)
   ENDIF(CMAKE_CL_64)
