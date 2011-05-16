@@ -161,3 +161,9 @@ IF(PARALLEL_USE_MPI)
 		ENDIF( ${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} LESS 8)
 	ENDIF(UNIX)
 ENDIF(PARALLEL_USE_MPI)
+
+# Find dot tool from graphviz
+FIND_PROGRAM(DOT_TOOL_PATH dot DOC "Dot tool from graphviz")
+
+# Find gnu profiler gprof
+FIND_PROGRAM(GPROF_PATH gprof DOC "GNU profiler gprof")

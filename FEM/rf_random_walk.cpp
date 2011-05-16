@@ -646,7 +646,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByInverseDistance(Particle* A)
       m_pcs = PCSGet("FLUID_MOMENTUM");
       double vx = 0.0, vy = 0.0, vz = 0.0;
       // If this node is crossroad,
-      if(m_msh->nod_vector[m_ele->GetNodeIndex(i)]->crossroad == 1)
+      if(m_msh->nod_vector[m_ele->GetNodeIndex(i)]->crossroad)
       {
          // Get the velocity contributed in this element
          CrossRoad* crossroad = NULL;

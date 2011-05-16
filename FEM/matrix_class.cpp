@@ -1488,12 +1488,9 @@ namespace Math_Group
 }                                                 // Namespace
 
 
-using Math_Group::vec;
-using Math_Group::SymMatrix;
-
-template class vec<int>;
-template class vec<long>;
-template class vec<double>;
+template class Math_Group::vec<int>;
+template class Math_Group::vec<long>;
+template class Math_Group::vec<double>;
 
 // End of class Matrix
 //==========================================================================

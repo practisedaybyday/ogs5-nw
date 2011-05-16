@@ -352,4 +352,12 @@ void GEOObjects::getGeometryNames (std::vector<std::string>& names) const
 	}
 }
 
+void GEOObjects::printGeometryNames () const
+{
+	for (std::vector<PointVec*>::const_iterator it(_pnt_vecs.begin());	it != _pnt_vecs.end(); it++) {
+		if ((*it)->getType() == PointVec::POINT)
+			std::cout << (*it)->getName() << std::endl;
+	}
+}
+
 } // namespace

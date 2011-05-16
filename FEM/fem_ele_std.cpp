@@ -14,6 +14,7 @@
 // Problems
 //#include "rf_mfp_new.h"
 #include "rf_mmp_new.h"
+#include "rf_msp_new.h"
 
 #include "pcs_dm.h"                               // displacement coupled
 #include "rfmat_cp.h"

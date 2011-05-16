@@ -1607,7 +1607,6 @@ void MSHMoveNODUcFlow (CRFProcess*m_pcs)
 {
    long nextnode = -1;
    long startnode;
-   int index, index2;
    long node;
    int anz_zeilen = 0;
    int i;
@@ -1625,8 +1624,7 @@ void MSHMoveNODUcFlow (CRFProcess*m_pcs)
    for (node = 0; node < NumberOfNodesPerLayer; node++)
    {
 
-      index = m_pcs->m_msh->nod_vector[node]->free_surface;
-      if (index == 1)
+      if (m_pcs->m_msh->nod_vector[node]->free_surface == 1)
       {
          /* Z�hlen der Zeilen (-> anz_zeilen) */
          anz_zeilen = 0;
@@ -1638,9 +1636,7 @@ void MSHMoveNODUcFlow (CRFProcess*m_pcs)
             nextnode = MSHGetNextNode (startnode, m_pcs->m_msh);
 
             /* Test2: Geh�rt der n�chste Knoten zu unterer Reihe ==> Abbruch */
-            index2 = m_pcs->m_msh->nod_vector[nextnode]->free_surface;
-
-            if (index2 == 2)
+            if (m_pcs->m_msh->nod_vector[nextnode]->free_surface == 2)
             {
                xxflag = 1;
             }

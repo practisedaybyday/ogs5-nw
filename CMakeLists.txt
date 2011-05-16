@@ -9,6 +9,9 @@ PROJECT(tmp)
 ### CMake setup ###
 INCLUDE(CMakeConfiguration/CMakeSetup.cmake)
 
+### Compiler setup ###
+INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
+
 ### Find directories and libraries ###
 INCLUDE (CMakeConfiguration/Find.cmake)
 
@@ -54,7 +57,14 @@ OPTION(OGS_USE_OPENSG "VTK to OpenSG converter" OFF)
 OPTION(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OFF)
 OPTION(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OFF)
 OPTION(OGS_BUILD_INFO "Should build information be generated" ON)
-OPTION (CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
+OPTION(CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
+IF(GCC AND GPROF_PATH)
+	OPTION(OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
+	IF(OGS_PROFILE AND DOT_TOOL_PATH)
+		OPTION(OGS_OUTPUT_PROFILE "Enables pdf output of profiling results." OFF)
+	ENDIF() # OGS_PROFILE AND DOT_TOOL_PATH
+ENDIF() # GCC AND GPROF_PATH
+OPTION (OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
 
 MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_USE_OPENSG OGS_USE_VRPN OGS_VRED_PLUGIN OGS_BUILD_INFO CMAKE_CMD_ARGS)
 
@@ -68,9 +78,6 @@ SET (OGS_RELEASE_PERSONS "KR/TF/LB")
 SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}(${OGS_RELEASE_PERSONS})")
 # should we use ISO dates: 2010-12-31 ?
 SET (OGS_DATE "19.04.2011")
-
-### Compiler setup ###
-INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
 
 # Check for number of processors
 CHECK_PROCESSOR_COUNT()
@@ -244,6 +251,8 @@ IF (OGS_CMAKE_DEBUG)
 ENDIF (OGS_CMAKE_DEBUG)	
 
 IF (BENCHMARK_DIR_FOUND)
+	SET(BENCHMARK_TIMEOUT 1800) # in s, 30 minutes timeout on normal benchmarks
+	SET(EXCEEDING_BENCHMARK_TIMEOUT 86400) # 1 day timeout on exceeding benchmarks
 	STRING (COMPARE EQUAL "$ENV{HOSTNAME}" "dev2.intern.ufz.de" HOST_IS_DEV2)
 	MESSAGE (STATUS "Benchmarking through CTest enabled")
 	IF (${HOST_IS_DEV2})

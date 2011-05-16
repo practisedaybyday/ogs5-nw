@@ -183,6 +183,9 @@ public:
 
 	/// Returns the names of all geometry vectors.
 	void getGeometryNames (std::vector<std::string>& names) const;
+	
+	/// @brief Prints the names of all geometry vectors on std out.
+	void printGeometryNames () const;
 
 	/// Returns the names of all station vectors.
 	void getStationNames(std::vector<std::string>& names) const;
