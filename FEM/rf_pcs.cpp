@@ -108,10 +108,7 @@ REACT_BRNS *m_vec_BRNS;
 
 using namespace std;
 using namespace Mesh_Group;
-<<<<<<< HEAD
-=======
 using namespace Math_Group;
->>>>>>> 47bc2bb95a63b6dd9f475bbe641339023921c5e6
 
 /*-------------------- ITPACKV    ---------------------------*/
 extern void transM2toM6(void);

@@ -1603,12 +1603,6 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
     **************************************************************************/
    void CFEMesh::GetNODOnSFC_TIN(Surface*m_sfc, std::vector<long>&msh_nod_vector)
    {
-<<<<<<< HEAD
-      //long i = 0;//k = 0, m = 0;
-=======
-      long k = 0, m = 0;
-      size_t i = 0;
->>>>>>> master
       double angle_sum, dist;
       double tolerance = 0.001;
       double min_mesh_dist = 0.0;
@@ -1780,11 +1774,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
          tri_point3[1] = m_triangle->y[2];
          tri_point3[2] = m_triangle->z[2];
          //Loop over all preselected mesh nodes
-<<<<<<< HEAD
          for (size_t i = 0; i < m_msh_aux->nod_vector.size(); i++)
-=======
-         for (i = 0; i < m_msh_aux->nod_vector.size(); i++)
->>>>>>> master
          {
             checkpoint[0] = m_msh_aux->nod_vector[i]->X();
             checkpoint[1] = m_msh_aux->nod_vector[i]->Y();
@@ -1818,11 +1808,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
       //----------------------------------------------------------------------
       int index;
       //Loop over selected nodes
-<<<<<<< HEAD
       for (size_t i = 0; i < m_msh_aux->nod_vector.size(); i++)
-=======
-      for (i = 0; i < m_msh_aux->nod_vector.size(); i++)
->>>>>>> master
       {
          index = m_msh_aux->nod_vector[i]->GetIndex();
          if (index < (int) nod_vector.size())
@@ -1841,11 +1827,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
       // Delete Search Vector at the end of fem_msh_vector
       // TODO: Proper delete by MSHDelete!!!
       //----------------------------------------------------------------------
-<<<<<<< HEAD
       for (size_t i = 0; i < m_msh_aux->nod_vector.size(); i++)
-=======
-      for (i = 0; i < m_msh_aux->nod_vector.size(); i++)
->>>>>>> master
       {
          delete m_msh_aux->nod_vector[i];
       }
