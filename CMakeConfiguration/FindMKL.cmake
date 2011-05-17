@@ -21,8 +21,9 @@ if (NOT MKL_FOUND)
 
 	include(LibFindMacros)
 	
-	find_path( MKL_INCLUDE_DIR NAMES mkl.h
-		   PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/include)
+	if ( UNIX )
+		find_path( MKL_INCLUDE_DIR NAMES mkl.h
+			   PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/include)
 
 		# Tell if the unix system is on 64-bit base
 		if(CMAKE_SIZEOF_VOID_P MATCHES "8")
@@ -65,6 +66,7 @@ if (NOT MKL_FOUND)
 			NAMES libpardiso400_INTEL_IA32
 			PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled )	
 	endif ( UNIX )
+
 	# Set the include dir variables and the libraries and let libfind_process do the rest.
 	# NOTE: Singular variables for this library, plural for libraries this lib depends on.
 	if (UNIX)
