@@ -831,7 +831,7 @@ void COutput::WriteTECNodeData(fstream &tec_file)
       else
          nidx_dm[2] = -1;
    }
-   for (long j = 0l; j < m_msh->GetNodesNumber(false); j++)
+   for (size_t j = 0l; j < m_msh->GetNodesNumber(false); j++)
    {
       // XYZ
       x[0] = m_msh->nod_vector[j]->X();
@@ -1770,7 +1770,7 @@ void COutput::WriteRFONodes(fstream &rfo_file)
 
 void COutput::WriteRFOElements(fstream &rfo_file)
 {
-   int j;
+   size_t j;
    CElem* m_ele = NULL;
    //0 0 -1 line 0 1
    for(long i=0;i<(long)m_msh->ele_vector.size();i++)
@@ -3112,7 +3112,7 @@ void COutput::WriteTECNodePCONData(fstream &tec_file)
 #endif
    // MSH
    //--------------------------------------------------------------------
-   for (long j = 0l; j < m_msh->GetNodesNumber(false); j++)
+   for (size_t j = 0l; j < m_msh->GetNodesNumber(false); j++)
    {
       // XYZ
       x[0] = m_msh->nod_vector[j]->X();

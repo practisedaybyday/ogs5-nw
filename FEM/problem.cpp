@@ -367,7 +367,7 @@ Problem::Problem (char* filename) :
    if (time_ctr)
    {
       size_t maxi_dof = 0;
-      int maxi_nnodes = 0;
+      size_t maxi_nnodes = 0;
       for (size_t i = 0; i < no_processes; i++)
       {
          m_pcs = pcs_vector[i];
@@ -593,6 +593,14 @@ inline int Problem::AssignProcessIndex(CRFProcess *m_pcs, bool activefunc)
       total_processes[3] = m_pcs;
       active_processes[3] = &Problem::PS_Global;
       return 3;
+   }
+   else if (m_pcs->getProcessType() == PTC_FLOW)
+   {
+      if (!activefunc)
+         return 5;
+      total_processes[5] = m_pcs;
+      active_processes[5] = &Problem::PTC_Flow;
+      return 5;
    }
    std::cout << "Error: no process is specified. " << std::endl;
    return -1;
@@ -1403,7 +1411,7 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs) {
   //int position;
   string path;
   double density_CO2;
-  double porosity;
+  double porosity = 0.0;
   int variable_index;
   double concentration_CO2_water;
   int indexConcentration_CO2;
@@ -1807,6 +1815,24 @@ inline double Problem::PS_Global()
    return error;
 }
 
+/*-------------------------------------------------------------------------
+GeoSys - Function: PTC_FLOW()
+Task: Simulate coupled haet and fluid flow
+Return: error
+Programming:
+02/2011 AKS/NB Implementation
+Modification:
+-------------------------------------------------------------------------*/
+inline double Problem::PTC_Flow()
+{
+   double error = 1.0e+8;
+   CRFProcess *m_pcs = total_processes[5];
+   if(!m_pcs->selected) return error;
+   error = m_pcs->ExecuteNonLinear(); //PTC
+   if(m_pcs->TimeStepAccept())
+      m_pcs->CalIntegrationPointValue();//PTC
+   return error;
+}
 
 /*-------------------------------------------------------------------------
 GeoSys - Function: GroundWaterFlow()

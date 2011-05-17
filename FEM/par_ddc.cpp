@@ -143,8 +143,8 @@ Programing:
 **************************************************************************/
 void CountDoms2Nodes(CRFProcess *m_pcs)
 {
-   int i,k;
-   long j, n_index=0;
+   size_t i,j,k;
+   long n_index=0;
    CPARDomain *m_dom = NULL;
    CNode *anode = NULL;
    CElem *elem = NULL;
@@ -153,17 +153,17 @@ void CountDoms2Nodes(CRFProcess *m_pcs)
    //Average of nodal Neumann BCs contributed by nodes from different domains
    bool quad = false;
    if(m_pcs->type==4||m_pcs->type==41) quad = true;
-   long nsize = m_pcs->m_msh->GetNodesNumber(quad);
+   size_t nsize = m_pcs->m_msh->GetNodesNumber(quad);
    node_connected_doms.resize(nsize);
 
    for(j=0; j<nsize; j++)
       node_connected_doms[j] = 0;
-   for(i=0;i<(int)dom_vector.size();i++)
+   for(i=0;i<dom_vector.size();i++)
    {
       m_dom = dom_vector[i];
       for(j=0; j<nsize; j++)
          a_msh->nod_vector[j]->SetMark(false);
-      for(j=0;j<(long)m_dom->elements.size();j++)
+      for(j=0;j<m_dom->elements.size();j++)
       {
          elem = a_msh->ele_vector[m_dom->elements[j]];
          if(elem->GetMark())
@@ -182,7 +182,7 @@ void CountDoms2Nodes(CRFProcess *m_pcs)
       }
    }
    //
-   for(j=0; j<(long)a_msh->ele_vector.size(); j++)
+   for(j=0; j<a_msh->ele_vector.size(); j++)
    {
       elem = a_msh->ele_vector[j];
       if(elem->GetMark())
@@ -1084,7 +1084,8 @@ last modification:
 void FindNodesOnInterface(CFEMesh *m_msh, bool quadr)
 {
    // int k;
-   long i, j, nnodes_gl, g_index, nnodes_l;
+   long i, nnodes_gl, g_index, nnodes_l;
+   size_t j;
    long l_buff = 0, l_buff1 = 0;
 
    long *elem_nodes=NULL;

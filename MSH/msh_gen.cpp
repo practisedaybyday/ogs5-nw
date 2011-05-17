@@ -519,7 +519,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
    CGLLine *m_line=NULL;
    std::list<CGLLine*>::const_iterator pl;
    //  int hits;
-   long i,j,k;
+   size_t i,j,k;
    //WW  long *nodes_unsorted = NULL;
    //WW  double *node_distances = NULL;
    std::list<CGLLine*>msh_line_list;
@@ -557,7 +557,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
          // Create nodes
          if(m_msh_ply)
          {
-            for(i=0;i<(long)nod_vector_at_ply.size();i++)
+            for(i=0;i<nod_vector_at_ply.size();i++)
             {
                m_nod = nod_vector[i];
                no_nodes = (long)m_msh_ply->nod_vector.size();
@@ -570,7 +570,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
          }
          //------------------------------------------------------------------
          // Create elements
-         for(i=0;i<(long)nod_vector_at_ply.size();i++)
+         for(i=0;i<nod_vector_at_ply.size();i++)
          {
             no_elements = (long)m_msh_ply->ele_vector.size();
             m_ele = new CElem(no_elements);
@@ -670,7 +670,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
          m_polyline->getLineVector().clear();
          ele_vector_at_ply.clear();
          GetELEOnPLY(m_polyline,ele_vector_at_ply);
-         for(i=0;i<(long)ele_vector_at_ply.size();i++)
+         for(i=0;i<ele_vector_at_ply.size();i++)
          {
             std::cout << ele_vector_at_ply[i] << std::endl;
             m_ele = ele_vector[ele_vector_at_ply[i]];
@@ -678,7 +678,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
             m_line->m_point1 = new CGLPoint();
             m_line->m_point2 = new CGLPoint();
             m_ele->GetEdges(ele_edges_vector);
-            for(j=0;j<(int)m_ele->GetEdgesNumber();j++)
+            for(j=0;j<(size_t)m_ele->GetEdgesNumber();j++)
             {
                m_edg = ele_edges_vector[j];
                if(m_edg->GetMark())
@@ -773,7 +773,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
          // Create nodes
          if(m_msh_ply)
          {
-            for(i=0;i<(long)m_msh_ply->ele_vector.size();i++)
+            for(i=0;i<m_msh_ply->ele_vector.size();i++)
             {
                m_ele = m_msh_ply->ele_vector[i];
                for(k=0;k<m_ele->GetNodesNumber(false);k++)
@@ -821,7 +821,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
          // Create nodes into new mesh
          if(m_msh_ply)
          {
-            for (i=0; i<(long)m_msh_ply->ele_vector.size(); i++)
+            for (i=0; i<m_msh_ply->ele_vector.size(); i++)
             {
                m_ele = m_msh_ply->ele_vector[i];
                m_ele->nodes.resize(m_ele->GetNodesNumber(false));
@@ -830,7 +830,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
                {
                   if (m_msh_ply->NodeExists(m_ele->nodes_index[j]))
                   {
-                     for (k=0; k<(long)m_msh_ply->nod_vector.size(); k++)
+                     for (k=0; k<m_msh_ply->nod_vector.size(); k++)
                      {
                         if(m_msh_ply->nod_vector[k]->GetIndex() == (size_t)m_ele->nodes_index[j])
                         {
@@ -856,7 +856,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
                   }
                }
             }
-            for (i=0; i<(long)m_msh_ply->nod_vector.size(); i++)
+            for (i=0; i<m_msh_ply->nod_vector.size(); i++)
             {
                m_msh_ply->nod_vector[i]->SetIndex(i);
             }
@@ -892,7 +892,7 @@ void CFEMesh::CreateLineELEFromPLY(CGLPolyline *m_polyline,int type,CFEMesh*m_ms
          // Create nodes into existing mesh
          if(m_msh_ply)
          {
-            for(i=old_element_size; i<(long)m_msh_ply->ele_vector.size(); i++)
+            for(i=old_element_size; i<m_msh_ply->ele_vector.size(); i++)
             {
                m_ele = m_msh_ply->ele_vector[i];
                m_ele->nodes.resize(m_ele->GetNodesNumber(false));

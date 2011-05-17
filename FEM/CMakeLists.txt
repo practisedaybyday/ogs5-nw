@@ -123,6 +123,10 @@ include_directories(
 	../OGSProject
 )
 
+IF (LIS)
+  INCLUDE_DIRECTORIES(${LIS_INCLUDE_DIR})
+ENDIF (LIS)
+
 IF (LIBPQC)
   INCLUDE_DIRECTORIES(
     ../PQC

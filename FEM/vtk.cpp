@@ -421,7 +421,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
             {
                ele = msh->ele_vector[i];
                fin << "          ";
-               for (long j=0; j<ele->GetNodesNumber(false); j++)
+               for (size_t j=0; j<ele->GetNodesNumber(false); j++)
                   fin << ele->GetNodeIndex(j) << " ";
                fin << endl;
             }
@@ -432,7 +432,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
             for (long i=0; i<(long)msh->ele_vector.size(); i++)
             {
                ele = msh->ele_vector[i];
-               for (long j=0; j<msh->ele_vector[i]->GetNodesNumber(false); j++)
+               for (size_t j=0; j<msh->ele_vector[i]->GetNodesNumber(false); j++)
                   write_value_binary<long>(fin, ele->GetNodeIndex(j));
             }
          }
@@ -442,7 +442,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
          if (useBinary)
          {
             sum_ele_components = 0;
-            for (long i=0; i<(long)msh->ele_vector.size(); i++)
+            for (size_t i=0; i<msh->ele_vector.size(); i++)
             {
                sum_ele_components += msh->ele_vector[i]->GetNodesNumber(false);
             }
@@ -592,7 +592,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
             if (!useBinary)
             {
                fin << "          ";
-               for (int j = 0; j < msh->GetNodesNumber(false); j++)
+               for (size_t j = 0; j < msh->GetNodesNumber(false); j++)
                {
                   fin << m_pcs->GetNodeValue(msh->nod_vector[j]->GetIndex(),
                      NodeIndex[i]) << " ";
@@ -603,7 +603,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
             {
                write_value_binary<unsigned int> (fin, sizeof(double)
                   * msh->GetNodesNumber(false));
-               for (int j = 0; j < msh->GetNodesNumber(false); j++)
+               for (size_t j = 0; j < msh->GetNodesNumber(false); j++)
                {
                   write_value_binary(fin, m_pcs->GetNodeValue(
                      msh->nod_vector[j]->GetIndex(), NodeIndex[i]));
@@ -667,7 +667,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
                if (!useBinary)
                {
                   fin << "          ";
-                  for (int j = 0l; j < msh->GetNodesNumber(false); j++)
+                  for (size_t j = 0l; j < msh->GetNodesNumber(false); j++)
                   {
                      fin << m_pcs->GetNodeValue(
                         msh->nod_vector[j]->GetIndex(), ix) << " ";
@@ -682,7 +682,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
                {
                   write_value_binary<unsigned int> (fin, sizeof(double)
                      * msh->GetNodesNumber(false) * 3);
-                  for (int j = 0l; j < msh->GetNodesNumber(false); j++)
+                  for (size_t j = 0l; j < msh->GetNodesNumber(false); j++)
                   {
                      write_value_binary(fin, m_pcs->GetNodeValue(
                         msh->nod_vector[j]->GetIndex(), ix));

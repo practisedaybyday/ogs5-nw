@@ -29,7 +29,7 @@
 //R: Richards flow
 //F: Fluid momentum
 //A: Gas flow
-enum EnumProcessType { L, U, G, T, C, H, M, O, R, F, A, V, P};
+enum EnumProcessType { L, U, G, T, C, H, M, O, R, F, A, V, P, S};
 //-----------------------------------------------------
 
 namespace process {class CRFProcessDeformation;}
@@ -44,6 +44,7 @@ namespace FiniteElement
 {
    using Math_Group::SymMatrix;
    using Math_Group::Matrix;
+   using Math_Group::DiagonalMatrix; 
    using Math_Group::Vec;
    using process::CRFProcessDeformation;
    using ::CRFProcess;
@@ -68,6 +69,7 @@ namespace FiniteElement
          // 1. Mass matrix
          void CalcMass();
          void CalcMass2();
+         void CalcMassPTC();						//AKS/NB
          void CalcMassPSGLOBAL();                 // PCH
          // 2. Lumped mass matrix
          void CalcLumpedMass();
@@ -83,6 +85,7 @@ namespace FiniteElement
          void CalcRHS_by_ThermalDiffusion();
          // 7. Advection matrix
          void CalcAdvection();
+         void CalcAdvectionPTC();
          // 8. Storage matrix
          void CalcStorage();
          // 9. Content matrix
@@ -150,7 +153,7 @@ namespace FiniteElement
          int dof_index;                           //24.02.2007 WW
          // Column index in the node value table
          int idx0, idx1, idxS, idxSn0, idxSn1, idx3;
-         int idxp0,idxp1, idxp20, idxp21;
+         int idxp0,idxp1, idxp20, idxp21, idxt0, idxt1;
          int phase;
          int comp;                                // Component
          int LocalShift;                          // For RHS
@@ -205,6 +208,7 @@ namespace FiniteElement
          Matrix *Content;                         //SB4209
          Matrix *StrainCoupling;
          Vec       *RHS;
+     DiagonalMatrix       *FCT_MassL; //NW      
          //-------------------------------------------------------
          void SetHighOrderNodes();                // 25.2.2007 WW
          // Primary as water head
@@ -215,21 +219,24 @@ namespace FiniteElement
          inline double CalCoefMass();
                                                   // 25.2.2007 WW
          inline double CalCoefMass2(int dof_index);
+         inline double CalCoefMassPTC(int dof_index);
                                                   // 03.3.2009 PCH
          inline double CalCoefMassPSGLOBAL(int dof_index);
          inline void CalCoefLaplace(bool Gravity, int ip=0);
                                                   // 10 2008 PCH
          inline void CalCoefLaplaceMultiphase(int phase, int ip=0);
          inline void CalCoefLaplace2(bool Gravity, int dof_index);
-                                                  // 03 2009 PCH
+         inline void CalCoefLaplacePTC(int dof_index); // AKS/NB
          inline void CalCoefLaplacePSGLOBAL(bool Gravity, int dof_index);
          inline double CalCoefAdvection();        //SB4200 OK/CMCD
+         inline double CalCoefAdvectionPTC(int dof_index);        //AKS/NB
          inline double CalCoefStorage();          //SB4200
          inline double CalCoefContent();
          inline double CalCoefStrainCouping();
          inline double  CalcCoefDualTransfer();
                                                   // 27.2.2007 WW
          inline double CalCoef_RHS_T_MPhase(int dof_index);
+         inline double CalCoef_RHS_PTC(int dof_index);
                                                   // 27.2.2007 WW
          inline double CalCoef_RHS_M_MPhase(int dof_index);
          inline double CalCoef_RHS_PSGLOBAL(int dof_index);
@@ -262,7 +269,6 @@ namespace FiniteElement
          // Local Assembly
          // Assembly of parabolic equation
          void AssembleParabolicEquation();        //OK4104
-                                                  //SB4200
          void AssembleMixedHyperbolicParabolicEquation();
          void AssembleParabolicEquationNewton();
                                                   // JOD
@@ -311,8 +317,11 @@ namespace FiniteElement
          double *NodalVal_SatNW;
          double *NodalVal_p2;
          double *NodalVal_p20;                    //AKS
+         double *NodalVal_t0;
+         double *NodalVal_t1;                    //AKS
          //
          double *weight_func;                     //NW
+     void CalcFEM_FCT(); //NW
          //
          friend class ::CRFProcess;
    };

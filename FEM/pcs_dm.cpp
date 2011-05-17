@@ -178,7 +178,7 @@ namespace process
 
 #ifdef DECOVALEX
       // DECOVALEX test
-      long i;
+      size_t i;
       int idv0=0, idv1=0;
       CRFProcess *h_pcs = NULL;
       h_pcs = fem_dm->h_pcs;
@@ -641,7 +641,7 @@ namespace process
       Error = 0.0;
       if(type!=41)                                // Partitioned scheme
       {
-         for(long n=0; n<m_msh->GetNodesNumber(true); n++)
+         for(size_t n=0; n<m_msh->GetNodesNumber(true); n++)
          {
             for(l=0; l<pcs_number_of_primary_nvals; l++)
             {
@@ -702,7 +702,7 @@ namespace process
 
          //
          // 07.04.2010 WW
-         int i;
+         size_t i;
          bool done;
          CElem *elem = NULL;
          CNode *node = NULL;
@@ -714,7 +714,7 @@ namespace process
 
             elem = m_msh->ele_vector[l];
             done = false;
-            for(i=0; i<(int)deact_dom.size(); i++)
+            for(i=0; i<(size_t)deact_dom.size(); i++)
             {
                if(elem->GetPatchIndex()== deact_dom[i])
                {
@@ -783,7 +783,7 @@ namespace process
    void CRFProcessDeformation::InitGauss(void)
    {
       const int LenMat=7;
-      long i;
+      size_t i;
       int j, k, gp, NGS, NGSS, MatGroup, n_dom;
       int PModel = 1;
       int gp_r=0, gp_s=0, gp_t=0;
@@ -839,7 +839,7 @@ namespace process
             SetNodeValue(i, Idx_Strain[j], 0.0);
       }
       Mesh_Group::CElem* elem = NULL;
-      for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
+      for (i = 0; i < m_msh->ele_vector.size(); i++)
       {
          elem = m_msh->ele_vector[i];
          if (elem->GetMark())                     // Marked for use
@@ -993,7 +993,7 @@ namespace process
    **************************************************************************/
    void CRFProcessDeformation::CreateInitialState4Excavation()
    {
-      long i;
+      size_t i;
       int j;
       int Idx_Strain[9];
       int NS =4;
@@ -2643,7 +2643,8 @@ namespace process
    bool CRFProcessDeformation::CalcBC_or_SecondaryVariable_Dynamics(bool BC)
    {
       const char *function_name[7];
-      long i, j;
+      size_t i;
+      long j;
       double v, bc_value, time_fac = 1.0;
 
       std::vector<int> bc_type;

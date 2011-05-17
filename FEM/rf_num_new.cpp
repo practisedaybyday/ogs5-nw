@@ -88,6 +88,9 @@ CNumerics::CNumerics(string name)
    ele_supg_method = 0;                           //NW
    ele_supg_method_length = 0;                    //NW
    ele_supg_method_diffusivity = 0;               //NW
+  fct_method = -1; //NW
+  fct_prelimiter_type = 0; //NW
+  fct_const_alpha = -1.0; //NW
    //----------------------------------------------------------------------
    // Deformation
    GravityProfile = 0;
@@ -332,6 +335,17 @@ ios::pos_type CNumerics::Read(ifstream *num_file)
          line.clear();
          continue;
       }
+    //Flux corrected transport by Kuzmin (2009)
+    if(line_string.find("$FEM_FCT")!=string::npos) { // NW
+	  line.str(GetLineFromFile1(num_file));
+      line >> fct_method;          //1: linearized FCT
+      line >> fct_prelimiter_type; //0: just cancel, 1: minmod, 2: superbee
+      line >> fct_const_alpha;     //-1: off, [0.0,1.0] 0: Upwind, 1: Galerkin
+      line.clear();
+      cout << "->FEM_FCT method is selected." << endl;
+      continue;
+    }
+
       //....................................................................
       /*
           if(line_string.find("$TIME_STEPS")!=string::npos) { // subkeyword found
@@ -924,6 +938,9 @@ void SetLinearSolverType(LINEAR_SOLVER* ls ,CNumerics *m_num)
       case 12:
          ls->LinearSolver = SpUMF;
          break;
+      default:
+        cout << "***ERROR in SetLinearSolverType(): Specified linear solver type (" << m_num->ls_method << ") is not supported. " << endl;
+        exit(1);
    }
 
 }

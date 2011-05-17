@@ -27,7 +27,7 @@ if (NOT LIS_FOUND)
 	else ( UNIX )			
 		find_library(LIS_LIBRARIES
 			NAMES lis-32
-			PATHS ${CMAKE_SOURCE_DIR}/LIB )	
+			PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled )	
 	endif ( UNIX )
 
 	# Set the include dir variables and the libraries and let libfind_process do the rest.

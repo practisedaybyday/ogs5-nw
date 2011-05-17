@@ -622,7 +622,8 @@ void CRFProcess::ExtropolateTempGP(CRFProcess *m_pcs, std::string name)
 {
    MshElemType::type EleType;
    int j;
-   long i, enode, nn;
+   size_t i;
+   long enode, nn;
    long group;
    double GP[3];
    static double Node_T[8];
@@ -637,7 +638,7 @@ void CRFProcess::ExtropolateTempGP(CRFProcess *m_pcs, std::string name)
    for (i = 0; i < m_msh->GetNodesNumber(false); i++)
       SetNodeValue(i,index_nod, 0.0);
 
-   for (i=0;i<(long) m_pcs->m_msh->ele_vector.size();i++)
+   for (i=0;i<m_pcs->m_msh->ele_vector.size();i++)
    {
       elem = m_pcs->m_msh->ele_vector[i];
       m_pcs->GetAssembler();
@@ -670,7 +671,7 @@ void CRFProcess::ExtropolateTempGP(CRFProcess *m_pcs, std::string name)
    }                                              //for
 
    // Average
-   for (i = 0; i <(long)m_msh->GetNodesNumber(false); i++)
+   for (i = 0; i < m_msh->GetNodesNumber(false); i++)
    {
       T_sum = m_pcs->GetNodeValue(i, index_nod);
       nn = (int) m_msh->nod_vector[i]->getConnectedElementIDs().size();
