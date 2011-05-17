@@ -116,7 +116,7 @@ IF(LIS)
 	# Find LISlib
 	FIND_PACKAGE( LIS REQUIRED )
 	set (NEW_EQS ON)
-	add_desfinitions(
+	add_definitions(
 		-o3
 		-DIPMGEMPLUGIN
 	)
