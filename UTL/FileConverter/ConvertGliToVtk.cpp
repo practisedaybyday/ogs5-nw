@@ -1,7 +1,7 @@
 /**
  * \file ConvertGliToVtk.cpp
  * 06/05/2010 LB Initial implementation
- * 
+ *
  * Implementation of ConvertGliToVtk utility
  */
 
@@ -46,13 +46,13 @@ int main (int argc, char const *argv[])
 		directory_iterator end;
 		for (directory_iterator it("./"); it != end; ++it)
 		{
-			string curFile = it->path().filename().string();
+			string curFile = it->path().filename(); //.string();
 			if (regex_match(curFile, e))
 				filenames.push_back(curFile);
 		}
 	}
 
-	
+
 	vtkPolyDataWriter* writer = vtkPolyDataWriter::New();
 
 
@@ -60,7 +60,7 @@ int main (int argc, char const *argv[])
 	{
 		string filename(*it);
 		cout << "Opening file " << filename << " ... " << endl << flush;
-		
+
 		GEOLIB::GEOObjects *geo (new GEOLIB::GEOObjects);
 		FileIO::readGLIFileV4(filename, geo);
 		const std::vector< Point * > * pnts = geo->getPointVec(filename);
@@ -68,7 +68,7 @@ int main (int argc, char const *argv[])
 		{
 			string vtkFilename = filename;
 			replaceExt(vtkFilename, "vtk");
-			
+
 			VtkPointsSource* vtkPoints = VtkPointsSource::New();
 			vtkPoints->setPoints(pnts);
 			writer->SetInputConnection(vtkPoints->GetOutputPort());
@@ -76,16 +76,16 @@ int main (int argc, char const *argv[])
 			writer->Write();
 			vtkPoints->Delete();
 		}
-		
+
 		// TODO convert polylines and surfaces as well
-		
+
 		delete geo;
 	}
 
 	writer->Delete(); // TODO crashes
 
-	
+
 	cout << "File conversion finished" << endl;
-	
+
 	return 0;
 }

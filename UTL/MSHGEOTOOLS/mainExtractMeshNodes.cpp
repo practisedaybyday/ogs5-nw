@@ -116,8 +116,8 @@ int main (int argc, char *argv[])
 			std::cout << "polyline " << k << " is not closed" << std::endl;
 		} else {
 			GEOLIB::Polygon polygon (*((*plys)[k]));
-			extract_mesh_nodes.writeMesh2DNodeIDAndArea (out, pnt_out, polygon);
-//			extract_mesh_nodes.writeTopSurfaceMeshNodeIDs (out, pnt_out, polygon);
+//			extract_mesh_nodes.writeMesh2DNodeIDAndArea (out, pnt_out, polygon);
+			extract_mesh_nodes.writeTopSurfaceMeshNodeIDs (out, pnt_out, polygon);
 			// write all nodes - not only the surface nodes
 //			extract_mesh_nodes.writeMeshNodeIDs (out, pnt_out, polygon);
 		}
