@@ -755,13 +755,13 @@ void CElem::Read(std::istream& is, int fileType)
    void CElem:: MarkingAll(bool makop)
    {
       int i;
-      mark=makop;
+      this->mark=makop;
       int SizeV = nnodes;
       if(quadratic) SizeV = nnodesHQ;
       for (i=0; i< SizeV;i++)
-         nodes[i]->SetMark(mark);
+         nodes[i]->SetMark(makop);
       for (i=0; i< nedges;i++)
-         edges[i]->SetMark(mark);
+         edges[i]->SetMark(makop);
    }
    /**************************************************************************
    MSHLib-Method:
