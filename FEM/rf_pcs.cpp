@@ -985,7 +985,7 @@ void CRFProcess:: WriteSolution()
       idx[j] = GetNodeValueIndex ( pcs_primary_function_name[j] );
       idx[j+pcs_number_of_primary_nvals] = idx[j]+1;
    }
-   for (long i=0; i<m_msh->GetNodesNumber ( false ); i++ )
+   for (size_t i=0; i<m_msh->GetNodesNumber ( false ); i++ )
    {
       for ( j=0; j<2*pcs_number_of_primary_nvals; j++ )
          os<<GetNodeValue ( i,idx[j] ) <<"  ";
@@ -1024,7 +1024,7 @@ void CRFProcess:: ReadSolution()
       idx[j] = GetNodeValueIndex ( pcs_primary_function_name[j] );
       idx[j+pcs_number_of_primary_nvals] = idx[j]+1;
    }
-   for (long i=0; i<m_msh->GetNodesNumber ( false ); i++ )
+   for (size_t i=0; i<m_msh->GetNodesNumber ( false ); i++ )
    {
       for (j=0; j<2*pcs_number_of_primary_nvals; j++ )
          is>>val[j];
@@ -3613,7 +3613,7 @@ Programing:
 **************************************************************************/
 void CRFProcess::CheckMarkedElement()
 {
-   int i, j;
+   size_t i, j;
    bool done;
    CElem *elem = NULL;
    CNode *node = NULL;
@@ -3624,7 +3624,7 @@ void CRFProcess::CheckMarkedElement()
    {
       elem = m_msh->ele_vector[l];
       done = false;
-      for(i=0; i<NumDeactivated_SubDomains; i++)
+      for(i=0; i<(size_t)NumDeactivated_SubDomains; i++)
       {
          if(elem->GetPatchIndex()== Deactivated_SubDomain[i])
          {
@@ -3654,7 +3654,7 @@ void CRFProcess::CheckMarkedElement()
       {
          done = false;
          node = elem->GetNode(i);
-         for(j=0; j<(int)node->getConnectedElementIDs().size(); j++)
+         for(j=0; j<node->getConnectedElementIDs().size(); j++)
          {
             if(l==node->getConnectedElementIDs()[j])
             {
@@ -4096,11 +4096,11 @@ last modified:
 **************************************************************************/
 void CRFProcess::AddFCT_CorrectionVector()
 {
-    long i,j;
+    size_t i,j;
     int idx0 = 0;
     int idx1 = idx0 + 1;
     const double theta = this->m_num->ls_theta;
-    const long node_size = m_msh->GetNodesNumber(false);
+    const size_t node_size = m_msh->GetNodesNumber(false);
     SparseMatrixDOK::mat_t &fct_f = this->FCT_AFlux->GetRawData();
     SparseMatrixDOK::col_t *col;
     SparseMatrixDOK::mat_t::const_iterator ii;
@@ -4179,7 +4179,6 @@ void CRFProcess::AddFCT_CorrectionVector()
 
         //prelimiting f
         v = (*FCT_AFlux)(i,j);
-        double v2 = v;
         if (this->m_num->fct_prelimiter_type==0) {
           if (v*(-diff_uH)>0.0) v = 0.0;
         } else if (this->m_num->fct_prelimiter_type==1) {
@@ -4532,7 +4531,7 @@ Programming:
 void CRFProcess::Integration(vector<double> &node_velue)
 {
    //----------------------------------------------------------------------
-   int k;
+   size_t k;
    long i;
    CElem* elem = NULL;
    bool Check2D3D;
@@ -7309,7 +7308,7 @@ void CRFProcess::Extropolation_MatValue()
       idx[1] = GetNodeValueIndex("PERMEABILITY_Y1");
       if (NS > 2)
          idx[2] = GetNodeValueIndex("PERMEABILITY_Z1");
-      for (long i = 0; i < m_msh->GetNodesNumber(false); i++)
+      for (size_t i = 0; i < m_msh->GetNodesNumber(false); i++)
       {
          for (int k = 0; k < NS; k++)
             SetNodeValue(i, idx[k], 0.0);
@@ -7318,7 +7317,7 @@ void CRFProcess::Extropolation_MatValue()
    if (additioanl2ndvar_print > 1)
    {
       int idxp = GetNodeValueIndex("POROSITY");
-      for (long i = 0; i < m_msh->GetNodesNumber(false); i++)
+      for (size_t i = 0; i < m_msh->GetNodesNumber(false); i++)
          SetNodeValue(i, idxp, 0.0);
    }
    //
@@ -7567,7 +7566,7 @@ void CRFProcess::CopyCouplingNODValues()
 {
    //Carefull if cpl_variable = primary variable -> need extra column in NodeValueTable !
    int nidx0 = GetNodeValueIndex(m_num->cpl_variable);
-   for (long l = 0; l < m_msh->GetNodesNumber(false); l++)
+   for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
    {
       SetNodeValue(l, nidx0, GetNodeValue(l, nidx0+1));
    }
@@ -7575,7 +7574,7 @@ void CRFProcess::CopyCouplingNODValues()
    if (this->getProcessType() == RICHARDS_FLOW)   //WW
    {
       nidx0 = GetNodeValueIndex("SATURATION1");
-      for (long l = 0; l < m_msh->GetNodesNumber(false); l++)
+      for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
          SetNodeValue(l, nidx0, GetNodeValue(l, nidx0 + 1));
    }
 }
@@ -7604,7 +7603,7 @@ void CRFProcess::CopyTimestepNODValues(bool forward)
          nidx0++;
          nidx1--;
       }
-      for (long l = 0; l < m_msh->GetNodesNumber(Quadr); l++)
+      for (size_t l = 0; l < m_msh->GetNodesNumber(Quadr); l++)
          SetNodeValue(l, nidx0, GetNodeValue(l, nidx1));
       //WW
       //		if (_pcs_type_name.find("RICHARDS") != string::npos || type == 1212) { //Multiphase. WW
@@ -7624,7 +7623,7 @@ void CRFProcess::CopyTimestepNODValues(bool forward)
             nidx1--;
          }
          //
-         for (long l = 0; l < m_msh->GetNodesNumber(false); l++)
+         for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
             SetNodeValue(l, nidx0, GetNodeValue(l, nidx1));
       }
    }
@@ -8311,13 +8310,13 @@ Reload primary variable of Richards Flow
 **************************************************************************/
 void CRFProcess::PrimaryVariableReloadRichards()
 {
-   int i;
+   size_t i;
    int idxp,idx_storage;
    double storage_p;
 
    idxp = GetNodeValueIndex(pcs_primary_function_name[0]);
    idx_storage = GetNodeValueIndex("STORAGE_P");
-   for(i=0;i<(long)m_msh->GetNodesNumber(false);i++)
+   for(i=0;i<m_msh->GetNodesNumber(false);i++)
    {
       storage_p = GetNodeValue(i,idx_storage);
       SetNodeValue(i,idxp,storage_p);
@@ -8335,7 +8334,7 @@ Reload primary variable for Transport
 **************************************************************************/
 void CRFProcess::PrimaryVariableReloadTransport()
 {
-   long i;
+   size_t i;
    int idxp,idx_storage;
    double conc_back;
    char* mcomp_name;
@@ -8348,7 +8347,7 @@ void CRFProcess::PrimaryVariableReloadTransport()
 
    idx_storage = GetNodeValueIndex(mcomp_name);
 
-   for(i=0;i<(long)m_msh->GetNodesNumber(false);i++)
+   for(i=0;i<m_msh->GetNodesNumber(false);i++)
    {
       conc_back = GetNodeValue(i,idx_storage);
       SetNodeValue(i,idxp,conc_back);
@@ -8368,7 +8367,7 @@ Reload primary variable for Transport
 **************************************************************************/
 void CRFProcess::PrimaryVariableStorageTransport()
 {
-   long i;
+   size_t i;
    int idxp,idx_storage;
    double concentration;
    char* mcomp_name;
@@ -8379,7 +8378,7 @@ void CRFProcess::PrimaryVariableStorageTransport()
    //   cout << "mcomp_name"<< mcomp_name<<endl;
    idx_storage = GetNodeValueIndex(mcomp_name);
 
-   for(i=0;i<(long)m_msh->GetNodesNumber(false);i++)
+   for(i=0;i<m_msh->GetNodesNumber(false);i++)
    {
       concentration = GetNodeValue(i,idxp);
       SetNodeValue(i,idx_storage,concentration);
@@ -8395,13 +8394,13 @@ Reload primary variable of Richards Flow
 **************************************************************************/
 void CRFProcess::PrimaryVariableStorageRichards()
 {
-   int i;
+   size_t i;
    int idxp,idx_storage;
    double pressure;
 
    idxp = GetNodeValueIndex(pcs_primary_function_name[0])+1;
    idx_storage = GetNodeValueIndex("STORAGE_P");
-   for(i=0;i<(long)m_msh->GetNodesNumber(false);i++)
+   for(i=0;i<m_msh->GetNodesNumber(false);i++)
    {
       pressure = GetNodeValue(i,idxp);
       SetNodeValue(i,idx_storage,pressure);
@@ -8418,7 +8417,8 @@ void CRFProcess::PrimaryVariableStorageRichards()
 #ifdef kg44                                       // WW
 double CRFProcess::GetNewTimeStepSizeTransport(double mchange)
 {
-   long i, mnode=-1;
+   size_t i;
+   long mnode=-1;
    int comp;
    int idxn,idxo;
    double conc_new, conc_old,/*time_coeff,*/ max_change=1.0e-10, tchange=1.0;
@@ -8431,7 +8431,7 @@ double CRFProcess::GetNewTimeStepSizeTransport(double mchange)
    sprintf(mcomp_name, "%s%li","CONC_BACK_",comp);
    //   cout << "mcomp_name"<< mcomp_name<<endl;
    idxn = GetNodeValueIndex(mcomp_name);
-   for(i=0;i<(long)m_msh->GetNodesNumber(false);i++)
+   for(i=0;i<m_msh->GetNodesNumber(false);i++)
    {
       conc_old = abs(GetNodeValue(i,idxo));
       conc_new = abs(GetNodeValue(i,idxn));
@@ -8553,7 +8553,7 @@ void CRFProcess::SetCPL()
       //  m_st_group = STGetGroup(_pcs_type_name,pcs_primary_function_name[0]);
       //----------------------------------------------------------------------
       double cpl_ele_val = 0.0;
-      int j;
+      size_t j;
       CNodeValue *cnodev = NULL;
       //  for(i=0;i<(int)m_st_group->group_vector.size();i++)
       //  ofstream st_out_file("st_out_file.txt",ios::app);
@@ -8810,7 +8810,7 @@ double CRFProcess::CalcELEFluxes(const GEOLIB::Polyline* const ply)
          case MASS_TRANSPORT:
             // Mass flux = v_n * l^e * z^e * C^e
             C_ele = 0.0;
-            for (int j = 0; j < m_ele->GetNodesNumber(false); j++)
+            for (size_t j = 0; j < m_ele->GetNodesNumber(false); j++)
             {
                size_t nidx = GetNodeValueIndex(pcs_primary_function_name[0]) + 1;
                C_ele = +GetNodeValue(element_nodes[j], nidx);
@@ -9431,8 +9431,7 @@ void CRFProcess::WriteAllVariables()
       }
    }
    os << endl;
-   long i;
-   for (i = 0; i < m_msh->GetNodesNumber(false); i++)
+   for (size_t i = 0; i < m_msh->GetNodesNumber(false); i++)
    {
       for (j = 0; j < 2* pcs_number_of_primary_nvals ; j++)
          os << GetNodeValue(i, idx[j]) << "  ";
@@ -12301,7 +12300,7 @@ void CRFProcess::Phase_Transition_CO2(CRFProcess *m_pcs, int Step)
 	Phase_Properties solid;
 	CRFProcess *pcs_MassTransport;
 	int MassTransportID[6] = {0,0,0,0,0,0};
-	int MaterialGroup;
+	int MaterialGroup = 0;
 	int TimeStepVariableIndex = 1;
 	// double c_oldCO2inLiquid; unused
 	double p_cap_1, pressure_1;

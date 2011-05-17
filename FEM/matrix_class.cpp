@@ -559,7 +559,6 @@ double& DiagonalMatrix::operator() (size_t i, size_t j) const
     }
  #endif
 
-    int id=0;
     if(i==j)
        return data[i]; // temporary
     else
@@ -1098,7 +1097,7 @@ void SparseMatrixDOK::Diagonize(size_t idiag, const double b_given, double *b)
   mat_col_t::iterator itr_col_diag = this->mat_col.begin()+idiag;
   const size_t n_itr_col_diag = itr_col_diag->size();
   for (size_t i=0; i<n_itr_col_diag; i++) {
-    long row_id = (*itr_col_diag)[i];
+    size_t row_id = (*itr_col_diag)[i];
     if (row_id==idiag) continue;
     jj = this->mat_row[row_id].find(idiag);
     b[row_id] -= (*jj).second*b_given;
@@ -1123,6 +1122,8 @@ void SparseMatrixDOK::Diagonize(size_t idiag, const double b_given, double *b)
 
 void SparseMatrixDOK::multiVec(double *vec_s, double *vec_r)
 {
+  (void)vec_s; // unused
+  (void)vec_r; // unused
   std::cout << "***ERROR: SparseMatrixDOK::multiVec() is not implemented yet." << std::endl;
 }
 
@@ -1194,7 +1195,7 @@ bool SparseMatrixDOK::IsSymmetry()
       if (jj2 != this->mat_row[jj->first].end()) {
         double diff = jj->second - jj2->second;
         //if (jj->second != jj2->second) {
-        if (abs(diff) > ZERO_TOLERANCE) {
+        if (abs((int)diff) > ZERO_TOLERANCE) {
           std::cout << "->unsymmetry: " << i << " - " << jj->first << std::endl;
           return false;
         }

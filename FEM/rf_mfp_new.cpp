@@ -3228,7 +3228,6 @@ double CFluidProperties::CaldZdP(double p,double T)
 {
    std::vector<double> roots;
    double a, a0, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdP;                   
-   double z1, z2, z3, h; 
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=(1+(0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor)*(1-pow(T/Tc,0.5)));
@@ -3255,7 +3254,6 @@ double CFluidProperties::CaldZdT(double p,double T)
 {
    std::vector<double> roots;
    double a, a0,daa, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;                   
-   double z1, z2, z3, h; 
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=(1+(0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor)*(1-pow(T/Tc,0.5)));

@@ -167,7 +167,7 @@ namespace Mesh_Group
          }
          // Get number of nodes
                                                   //CMCD int to long
-         long GetNodesNumber(const bool quadr) const
+         size_t GetNodesNumber(const bool quadr) const
          {
             if (quadr)
                return NodesNumber_Quadratic;
@@ -175,7 +175,7 @@ namespace Mesh_Group
                return NodesNumber_Linear;
          }
 
-         long NodesInUsage() const
+         size_t NodesInUsage() const
          {
             if (useQuadratic)
                return NodesNumber_Quadratic;

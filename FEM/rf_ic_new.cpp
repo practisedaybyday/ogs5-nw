@@ -759,7 +759,7 @@ Programing:
 void CInitialCondition::SetDomain(int nidx)
 {
    int k, onZ;
-   long i;
+   size_t i;
    double node_val, node_depth;
    vector<long> nodes_vector;
    CFEMesh* m_msh = this->getProcess()->m_msh;
@@ -870,12 +870,12 @@ void CInitialCondition::SetDomain(int nidx)
          rfr_file.getline(line, MAX_ZEILEN);      //1 1 4
          rfr_file >> no_var;                      //2 1 1
          var_n = new int[no_var];
-         for (i = 0; i < no_var; i++)
+         for (i = 0; i < (size_t)no_var; i++)
          {
             rfr_file >> var_n[i];
          }
          size_t pos;
-         for (i = 0; i < no_var; i++)             // HEAD, m ...
+         for (i = 0; i < (size_t)no_var; i++)             // HEAD, m ...
          {
             rfr_file >> var_name_string >> sdummy;
             pos = var_name_string.find_first_of(',');
@@ -887,7 +887,7 @@ void CInitialCondition::SetDomain(int nidx)
             rfr_file >> dddummy;
             ldummy = (long) dddummy;
             //WW        cout << ldummy << endl;
-            for (i = 0; i < no_var; i++)          // HEAD, m ...
+            for (i = 0; i < (size_t)no_var; i++)          // HEAD, m ...
             {
                rfr_file >> ddummy;
                this->getProcess()->SetNodeValue(ldummy, nidx, ddummy);
@@ -925,13 +925,13 @@ void CInitialCondition::SetDomain(int nidx)
          {
             if (k == 0)                           //TEST for DECOVALEX
             {
-               for (i = 0; i < (int) nodes_vector.size(); i++)
+               for (i = 0; i < nodes_vector.size(); i++)
                   this->getProcess()->SetNodeValue(nodes_vector[i], nidx,
                      subdom_ic[k]);
             }
             else
             {
-               for (i = 0; i < (int) nodes_vector.size(); i++)
+               for (i = 0; i < nodes_vector.size(); i++)
                {
                   if (onZ == 1)                   //2D
                      node_depth
@@ -959,7 +959,7 @@ void CInitialCondition::SetDomain(int nidx)
           */
          else
          {
-            for (i = 0; i < (int) nodes_vector.size(); i++)
+            for (i = 0; i < nodes_vector.size(); i++)
                this->getProcess()->SetNodeValue(nodes_vector[i], nidx,
                   subdom_ic[k]);
          }

@@ -367,7 +367,7 @@ Problem::Problem (char* filename) :
    if (time_ctr)
    {
       size_t maxi_dof = 0;
-      int maxi_nnodes = 0;
+      size_t maxi_nnodes = 0;
       for (size_t i = 0; i < no_processes; i++)
       {
          m_pcs = pcs_vector[i];
@@ -1411,7 +1411,7 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs) {
   //int position;
   string path;
   double density_CO2;
-  double porosity;
+  double porosity = 0.0;
   int variable_index;
   double concentration_CO2_water;
   int indexConcentration_CO2;
