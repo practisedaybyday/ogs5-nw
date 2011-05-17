@@ -96,6 +96,7 @@ class Problem
       inline double TwoPhaseFlow();
       inline double MultiPhaseFlow();
       inline double PS_Global();                  // 03 2009 PCH
+      inline double PTC_Flow();                  // 02 2011 AKS/NB
       inline double GroundWaterFlow();
       inline double ComponentalFlow();
       inline double OverlandFlow();

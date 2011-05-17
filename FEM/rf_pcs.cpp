@@ -38,6 +38,7 @@ Programing:
 #include <iostream>
 #include <iomanip>                                //WW
 //#include <algorithm> // header of transform. WW
+#include <set>
 // GEOLib
 //#include "geo_ply.h"
 /*------------------------------------------------------------------------*/
@@ -107,6 +108,10 @@ REACT_BRNS *m_vec_BRNS;
 
 using namespace std;
 using namespace Mesh_Group;
+<<<<<<< HEAD
+=======
+using namespace Math_Group;
+>>>>>>> 47bc2bb95a63b6dd9f475bbe641339023921c5e6
 
 /*-------------------- ITPACKV    ---------------------------*/
 extern void transM2toM6(void);
@@ -289,6 +294,11 @@ WriteSourceNBC_RHS(0), ele_val_name_vector (std::vector<std::string>())
    configured_in_nonlinearloop = false;
 #endif
    flag_couple_GEMS = 0;                          // 11.2009 HS
+  femFCTmode = false; //NW
+  this->Gl_ML = NULL; //NW
+  this->Gl_Vec = NULL; //NW
+  this->Gl_Vec1 = NULL; //NW
+  this->FCT_AFlux = NULL; //NW
 }
 
 
@@ -398,6 +408,17 @@ CRFProcess::~CRFProcess(void)
       delete [] Deactivated_SubDomain;
       Deactivated_SubDomain = NULL;
    }
+  //----------------------------------------------------------------------
+  if (this->m_num && this->m_num->fct_method>0) { //NW
+    delete this->Gl_ML;
+    delete this->Gl_Vec;
+    delete this->Gl_Vec1;
+    delete this->FCT_AFlux;
+    this->Gl_ML = NULL;
+    this->Gl_Vec = NULL;
+    this->Gl_Vec1 = NULL;
+    this->FCT_AFlux = NULL;
+  }
 }
 
 
@@ -571,6 +592,14 @@ void CRFProcess::Create()
       if (pcs_nonlinear_iterations > 1)           //WW
          non_linear = true;
    }
+  if (m_num->fct_method>0) { //NW
+    //Memory_Type = 1; 
+    long gl_size = m_msh->GetNodesNumber(false);
+    this->FCT_AFlux = new SparseMatrixDOK(gl_size, gl_size);
+    this->Gl_ML = new Vec(gl_size);
+    this->Gl_Vec = new Vec(gl_size);
+    this->Gl_Vec1 = new Vec(gl_size);
+  }
    //----------------------------------------------------------------------------
    // EQS - create equation system
    //WW CreateEQS();
@@ -960,7 +989,7 @@ void CRFProcess:: WriteSolution()
       idx[j] = GetNodeValueIndex ( pcs_primary_function_name[j] );
       idx[j+pcs_number_of_primary_nvals] = idx[j]+1;
    }
-   for (long i=0; i<m_msh->GetNodesNumber ( false ); i++ )
+   for (size_t i=0; i<m_msh->GetNodesNumber ( false ); i++ )
    {
       for ( j=0; j<2*pcs_number_of_primary_nvals; j++ )
          os<<GetNodeValue ( i,idx[j] ) <<"  ";
@@ -999,7 +1028,7 @@ void CRFProcess:: ReadSolution()
       idx[j] = GetNodeValueIndex ( pcs_primary_function_name[j] );
       idx[j+pcs_number_of_primary_nvals] = idx[j]+1;
    }
-   for (long i=0; i<m_msh->GetNodesNumber ( false ); i++ )
+   for (size_t i=0; i<m_msh->GetNodesNumber ( false ); i++ )
    {
       for (j=0; j<2*pcs_number_of_primary_nvals; j++ )
          is>>val[j];
@@ -1519,8 +1548,7 @@ std::ios::pos_type CRFProcess::Read(std::ifstream *pcs_file)
             //				if (_pcs_type_name.find("HEAT") != string::npos)
             if (this->getProcessType() == HEAT_TRANSPORT)
                T_Process = true;
-
-            pcs_type_name_vector.push_back(pcs_type_name);
+ pcs_type_name_vector.push_back(pcs_type_name);
 
             //				if (_pcs_type_name.compare("FLUID_MOMENTUM") == 0) {
             if (this->getProcessType() == FLUID_MOMENTUM)
@@ -2047,6 +2075,11 @@ void CRFProcess::Config(void)
    {
       type = 1313;
       ConfigPS_Global();
+   }
+   if (this->getProcessType() == PTC_FLOW)       //24.02.2007 WW
+   {
+      type = 1111;
+      ConfigPTC_FLOW();
    }
 }
 
@@ -3286,6 +3319,40 @@ void CRFProcess::ConfigPS_Global()
       Shift[i] = i*m_msh->GetNodesNumber(true);
 }
 
+/**************************************************************************
+FEMLib-Method: For Pressure-temperature-coupled flow for fluids
+Task:
+Programing:
+02/2011 AKS/NB Implementation
+**************************************************************************/
+void CRFProcess::ConfigPTC_FLOW()
+{
+   dof = 2;
+   // 1.1 primary variables
+   pcs_number_of_primary_nvals = 2;
+   pcs_primary_function_name[0] = "PRESSURE1";
+   pcs_primary_function_unit[0] = "Pa";
+   pcs_primary_function_name[1] = "TEMPERATURE1";
+   pcs_primary_function_unit[1] = "K";
+      // 1.2 secondary variables
+   pcs_number_of_secondary_nvals = 0;
+      // Nodal velocity.
+   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_X1";
+   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+   pcs_number_of_secondary_nvals++;
+   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Y1";
+   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+   pcs_number_of_secondary_nvals++;
+   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Z1";
+   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+   pcs_number_of_secondary_nvals++;
+
+   for(size_t i=0; i<GetPrimaryVNumber(); i++)
+      Shift[i] = i*m_msh->GetNodesNumber(true);
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Configuration NOD
@@ -3550,7 +3617,7 @@ Programing:
 **************************************************************************/
 void CRFProcess::CheckMarkedElement()
 {
-   int i, j;
+   size_t i, j;
    bool done;
    CElem *elem = NULL;
    CNode *node = NULL;
@@ -3561,7 +3628,7 @@ void CRFProcess::CheckMarkedElement()
    {
       elem = m_msh->ele_vector[l];
       done = false;
-      for(i=0; i<NumDeactivated_SubDomains; i++)
+      for(i=0; i<(size_t)NumDeactivated_SubDomains; i++)
       {
          if(elem->GetPatchIndex()== Deactivated_SubDomain[i])
          {
@@ -3591,7 +3658,7 @@ void CRFProcess::CheckMarkedElement()
       {
          done = false;
          node = elem->GetNode(i);
-         for(j=0; j<(int)node->getConnectedElementIDs().size(); j++)
+         for(j=0; j<node->getConnectedElementIDs().size(); j++)
          {
             if(l==node->getConnectedElementIDs()[j])
             {
@@ -3765,6 +3832,97 @@ double CRFProcess::Execute()
 #else
    iter_lin=ExecuteLinearSolver();
 #endif
+
+  //----------------------------------------------------------------------
+  // Linearized Flux corrected transport (FCT) by Kuzmin 2009
+  //----------------------------------------------------------------------
+  if (this->m_num->fct_method>0) { //NW
+    pcs_error = CalcIterationNODError(1);
+#ifdef USE_MPI 
+    if(myrank==0)
+#endif 
+    cout << "      PCS error: " << pcs_error << endl;
+    cout << "      Start FCT calculation" << endl;
+
+    // Set u^H: use the solution as the higher-order solution
+    for(i=0; i<pcs_number_of_primary_nvals; i++)
+    {  
+      nidx1 = GetNodeValueIndex(pcs_primary_function_name[i])+1;
+      g_nnodes = m_msh->GetNodesNumber(false);  //DOF>1, WW
+      for(j=0;j<g_nnodes;j++)
+      {
+         k = m_msh->Eqs2Global_NodeIndex[j];
+//         val_n = GetNodeValue(k,nidx1);  
+#ifdef NEW_EQS
+         SetNodeValue(k,nidx1,eqs_new->x[j+i*g_nnodes]);
+//         eqs_new->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW  
+#else
+         SetNodeValue(k,nidx1,eqs->x[j+i*g_nnodes]);
+//         eqs->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW  
+#endif
+      } 
+    }
+
+    // Initialize the algebra system
+#ifdef NEW_EQS //WW
+    if(!configured_in_nonlinearloop)
+#if defined(USE_MPI)
+      dom->ConfigEQS(m_num, global_eqs_dim);
+#else  
+    eqs_new->Initialize(); 
+#endif
+#else
+    SetZeroLinearSolver(eqs);
+#endif
+
+    // Set initial guess
+    for(i=0;i<pcs_number_of_primary_nvals;i++)
+    {
+      nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1; //new time
+      g_nnodes = m_msh->GetNodesNumber(false); //WW 
+      for(j=0;j<g_nnodes;j++) {
+        k = m_msh->Eqs2Global_NodeIndex[j];
+#ifdef NEW_EQS
+        // New EQS  WW
+        eqs_new->x[j+i*g_nnodes] = GetNodeValue(k,nidx1);
+#else
+        eqs->x[j+i*g_nnodes] = GetNodeValue(k,nidx1);
+#endif 
+      }
+    } 
+
+    // Assembly
+#ifdef USE_MPI //WW
+    clock_t cpu_time=0;  //WW
+    cpu_time = -clock();
+#endif
+    this->femFCTmode = true;
+    GlobalAssembly();
+    this->femFCTmode = false;
+#ifdef USE_MPI
+    cpu_time += clock();
+    cpu_time_assembly += cpu_time;
+#endif
+
+    // Solve the algebra
+#ifdef CHECK_EQS
+    string eqs_name = pcs_type_name + "_EQS.txt";
+    MXDumpGLS((char*)eqs_name.c_str(),1,eqs->b,eqs->x);
+#endif
+#ifdef NEW_EQS //WW
+#if defined(USE_MPI)
+     dom->eqs->Solver(eqs_new->x, global_eqs_dim); //21.12.2007
+#else
+#ifdef LIS
+          eqs_new->Solver(this->m_num); //NW
+#else
+          eqs_new->Solver();
+#endif
+#endif
+#else
+     ExecuteLinearSolver();
+#endif
+   }
    //
    //PCSDumpModelNodeValues();
    //----------------------------------------------------------------------
@@ -3933,6 +4091,284 @@ void CRFProcess::CalculateElementMatrices(void)
    }
 }
 
+/*************************************************************************
+GeoSys-Function:
+Task: Algebraic operation for the flux corrected transport (FCT)
+Programming: 
+04/2010 NW Implementation
+last modified:
+**************************************************************************/
+void CRFProcess::AddFCT_CorrectionVector()
+{
+    size_t i,j;
+    int idx0 = 0;
+    int idx1 = idx0 + 1;
+    const double theta = this->m_num->ls_theta;
+    const size_t node_size = m_msh->GetNodesNumber(false);
+    SparseMatrixDOK::mat_t &fct_f = this->FCT_AFlux->GetRawData();
+    SparseMatrixDOK::col_t *col;
+    SparseMatrixDOK::mat_t::const_iterator ii;
+    SparseMatrixDOK::col_t::const_iterator jj;
+    Vec *ML = this->Gl_ML;
+#if defined(NEW_EQS)
+    CSparseMatrix *A = NULL;  //WW
+    //if(m_dom)
+    //  A = m_dom->eqs->A;
+    //else
+      A = this->eqs_new->A;
+#endif
+
+    // List of Dirichlet nodes
+    std::set<long> list_bc_nodes;
+    //cout << "Dirichlet nodes" << endl;
+    for (i=0; i<bc_node_value.size(); i++) {
+      CBoundaryConditionNode *bc_node = bc_node_value[i];
+      long nod_id = bc_node->geo_node_number;
+      list_bc_nodes.insert(nod_id);
+    }
+
+    //----------------------------------------------------------------------
+    // Construct global matrices: antidiffusive flux(f_ij), positivity matrix(L)
+    // - f_ij = 1/dt*m_ij*(DeltaU_ij^H-DeltaU_ij^n)-theta*d_ij^H*DeltaU_ij^H-(1-theta)*d_ij^n*DeltaU_ij^n
+    // - L = K + D 
+    // - D_ij = min(0, -K_ij, -K_ji)
+    // * f_ji = -f_ij
+    // * K:original coefficient matrix, D:artificial diffusion operator
+    // Implementation memo: 
+    // - K is stored in A matrix in the element assembly. 
+    // - the first part of the antidiffusive flux is done in the element assembly.
+    //   -> f_ij = m_ij
+    //----------------------------------------------------------------------
+    // f_ij*=1/dt*(DeltaU_ij^H-DeltaU_ij^n)  for i!=j
+    for (i=0; i<node_size; i++) {
+      col = &fct_f[i];
+      for(jj=col->begin(); jj!=col->end(); jj++){
+        j = (*jj).first;
+        if (i>j) continue; //symmetric part, off-diagonal
+        double diff_uH = this->GetNodeValue(i, idx1) - this->GetNodeValue(j, idx1);
+        double diff_u0 = this->GetNodeValue(i, idx0) - this->GetNodeValue(j, idx0);
+        double v = 1.0/dt*(diff_uH - diff_u0);
+        (*FCT_AFlux)(i,j) *= v; //MC is already done in local ele assembly
+      }
+    }
+
+    //Complete f, L
+    //Remark: Using iteration is only possible after the sparse table has been constructed.
+    for(i=0; i<node_size; i++){
+      col = &fct_f[i];
+      for(jj=col->begin(); jj!=col->end(); jj++){
+        j = (*jj).first;
+        if (i>j) continue; //symmetric part, off-diagonal
+
+        // Get artificial diffusion operator D
+#if defined(NEW_EQS)
+        double K_ij = (*A)(i,j);
+        double K_ji = (*A)(j,i);
+#else
+        double K_ij = MXGet(i,j);
+        double K_ji = MXGet(j,i);
+#endif
+        if (K_ij == 0.0 && K_ji == 0.0) continue;
+        double d1 = GetFCTADiff(K_ij, K_ji);
+        double d0 = d1; //TODO should use AuxMatrix at the previous time step
+        //if (list_bc_nodes.find(i)!=list_bc_nodes.end() || list_bc_nodes.find(j)!=list_bc_nodes.end()) {
+        //  d1 = d0 = 0.0;
+        //}
+
+        // Complete antidiffusive flux: f_ij += -theta*d_ij^H*DeltaU_ij^H - (1-theta)*d_ij^n*DeltaU_ij^n
+        double diff_uH = this->GetNodeValue(i, idx1) - this->GetNodeValue(j, idx1);
+        double diff_u0 = this->GetNodeValue(i, idx0) - this->GetNodeValue(j, idx0);
+        double v = - (theta*d1*diff_uH + (1.0-theta)*d0*diff_u0);
+        (*FCT_AFlux)(i,j) += v;
+
+        //prelimiting f
+        v = (*FCT_AFlux)(i,j);
+        if (this->m_num->fct_prelimiter_type==0) {
+          if (v*(-diff_uH)>0.0) v = 0.0;
+        } else if (this->m_num->fct_prelimiter_type==1) {
+          v = MinMod(v, -d1*diff_uH);
+        } else if (this->m_num->fct_prelimiter_type==2) {
+          v = SuperBee(v, -d1*diff_uH);    
+        }
+        (*FCT_AFlux)(i,j) = v;
+        (*FCT_AFlux)(j,i) = v;
+
+        // L = K + D
+#if defined(NEW_EQS)
+        (*A)(i,i) += -d1;
+        (*A)(i,j) += d1;
+        (*A)(j,i) += d1;
+        (*A)(j,j) += -d1;
+#else
+        // add off-diagonal term
+        MXInc(i,j,d1);
+        MXInc(j,i,d1);
+        // add diagonal term
+        MXInc(i,i,-d1);
+        MXInc(j,j,-d1);
+#endif
+      }
+    }
+
+
+    //----------------------------------------------------------------------
+    // Assemble RHS: b_i += [- (1-theta) * L_ij] u_j^n
+    //----------------------------------------------------------------------
+    Vec *V1 = this->Gl_Vec1;
+    Vec *V = this->Gl_Vec;
+    (*V1) = 0.0;
+    (*V) = 0.0;
+    double *eqs_rhs;
+#ifdef NEW_EQS
+    eqs_rhs = eqs_new->b;
+#else
+    eqs_rhs = eqs->b;
+#endif 
+    // b = [-(1-theta) * L] u^n
+    if (1.0-theta>0) {
+      // u^n
+      for (i=0;i<node_size; i++)
+         (*V1)(i) = this->GetNodeValue(i,idx0);
+      // L*u^n
+      for (i=0; i<node_size; i++) {
+        for (j=0; j<node_size; j++) {
+#ifdef NEW_EQS
+          (*V)(i) += (*A)(i,j)*(*V1)(j);
+#else
+          (*V)(i) += MXGet(i,j)*(*V1)(j);
+#endif
+        }
+      }
+      for (i=0;i<node_size;i++)
+      {
+        eqs_rhs[i] -= (1.0-theta) * (*V)(i);
+        //(*RHS)(i+LocalShift) +=  NodalVal[i];
+      }
+    }
+
+    //----------------------------------------------------------------------
+    // Assemble A matrix: 1/dt*ML + theta * L
+    //----------------------------------------------------------------------
+    // A matrix: theta * L
+    if (theta == 0.0) {
+#ifdef NEW_EQS
+      (*A) = 0.0;
+#else
+      for (i=0; i<node_size; i++) {
+        for (j=0; j<node_size; j++) {
+          MXSet(i,j,0.0);
+        }
+      }
+#endif
+    } else if (theta == 1.0) {
+      //keep 
+    } else {
+#ifdef NEW_EQS
+      (*A) *= theta;
+#else
+      for (i=0; i<node_size; i++) {
+        for (j=0; j<node_size; j++) {
+          MXMul(i,j,theta);
+        }
+      }
+#endif
+    }
+    // A matrix: += 1/dt * ML
+    for (i=0; i<node_size; i++) {
+      double v = 1.0/dt*(*ML)(i);
+#ifdef NEW_EQS
+      (*A)(i,i) += v;
+#else
+      MXInc(i,i,v);
+#endif
+    }
+
+    //----------------------------------------------------------------------
+    // Assemble RHS: b += alpha * f
+    //----------------------------------------------------------------------
+    // Calculate R+, R-
+    Vec *R_plus = this->Gl_Vec1;
+    Vec *R_min = this->Gl_Vec;
+    (*R_plus) = 0.0;
+    (*R_min) = 0.0;
+    //for(ii=fct_f.begin(); ii!=fct_f.end(); ii++){
+    //  i = (*ii).first;
+    for(i=0; i<node_size; i++){
+      double P_plus, P_min;
+      double Q_plus, Q_min;
+      P_plus = P_min = 0.0;
+      Q_plus = Q_min = 0.0;
+      //for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
+      col = &fct_f[i];
+      for(jj=col->begin(); jj!=col->end(); jj++){
+        j = (*jj).first;
+        if (i==j) continue;
+        double f = (*jj).second; //double f = (*FCT_AFlux)(i,j);
+        if (i>j) f *= -1.0;
+        double diff_uH = this->GetNodeValue(j, idx1) - this->GetNodeValue(i, idx1);
+
+        P_plus += max(0.0, f);
+        P_min += min(0.0, f);
+        Q_plus = max(Q_plus, diff_uH);
+        Q_min = min(Q_min, diff_uH);
+      }
+      double ml = (*ML)(i);
+      if (P_plus == 0.0) 
+        (*R_plus)(i)=0.0;
+      else
+        (*R_plus)(i) = min(1.0, ml*Q_plus/(dt*P_plus));
+      if (P_min == 0.0) 
+        (*R_min)(i)=0.0;
+      else
+        (*R_min)(i) = min(1.0, ml*Q_min/(dt*P_min));
+    }
+
+    // for Dirichlet nodes
+    //cout << "Dirichlet nodes" << endl;
+    for (i=0; i<bc_node_value.size(); i++) {
+      CBoundaryConditionNode *bc_node = bc_node_value[i];
+      long nod_id = bc_node->geo_node_number;
+      //cout << nod_id << ": R+=" <<  (*R_plus)(nod_id) << ", R-=" << (*R_min)(nod_id) << endl;
+      (*R_plus)(nod_id)=1.0;
+      (*R_min)(nod_id)=1.0;
+
+      //col = &fct_f[nod_id];
+      //for (jj=col->begin(); jj!=col->end(); jj++) {
+      //  j = (*jj).first;
+      //  double f = (*jj).second; //double f = (*FCT_AFlux)(i,j);
+      //  cout << nod_id << "," << j << ": f=" << f << endl;
+      //}
+    }
+
+
+    // b_i += alpha_i * f_ij
+    for (i=0; i<node_size; i++) {
+      col = &fct_f[i];
+      for (jj=col->begin(); jj!=col->end(); jj++) {
+    //for(ii=fct_f.begin(); ii!=fct_f.end(); ii++){
+    //  i = (*ii).first;
+    //  for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
+        j = (*jj).first;
+        if (i==j) continue;
+
+        double f = (*jj).second; //double f = (*FCT_AFlux)(i,j);
+        if (i>j) f *= -1; // symmetric
+        double alpha = 1.0;
+        if (f>0) 
+          alpha = min((*R_plus)(i), (*R_min)(j));
+        else
+          alpha = min((*R_plus)(j), (*R_min)(i));
+
+        if (this->m_num->fct_const_alpha<0.0) 
+          eqs_rhs[i] += alpha*f; 
+        else  
+          eqs_rhs[i] += this->m_num->fct_const_alpha*f; 
+
+        //Note: Galerkin FEM is recovered if alpha = 1 as below,
+        //eqs_rhs[i] += 1.0*f;
+      }
+    }
+}
 
 /*************************************************************************
 GeoSys-Function:
@@ -3974,7 +4410,12 @@ void CRFProcess::GlobalAssembly()
    Check2D3D = false;
    if (type == 66)                                //Overland flow
       Check2D3D = true;
-
+  if (this->femFCTmode) { //NW
+    (*this->FCT_AFlux) = 0.0;
+    (*this->Gl_ML) = 0.0;
+    (*this->Gl_Vec) = 0.0;
+    (*this->Gl_Vec1) = 0.0;
+  }
    // DDC
    if (dom_vector.size() > 0)
    {
@@ -4059,6 +4500,10 @@ void CRFProcess::GlobalAssembly()
             }
          }
       }
+
+    if (this->femFCTmode) { //NW
+      this->AddFCT_CorrectionVector();
+    }
       //MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
       //eqs_new->Write();
       IncorporateSourceTerms();
@@ -4090,7 +4535,7 @@ Programming:
 void CRFProcess::Integration(vector<double> &node_velue)
 {
    //----------------------------------------------------------------------
-   int k;
+   size_t k;
    long i;
    CElem* elem = NULL;
    bool Check2D3D;
@@ -4150,7 +4595,8 @@ void CRFProcess::CalIntegrationPointValue()
       || getProcessType() == GROUNDWATER_FLOW
       || getProcessType() == TWO_PHASE_FLOW
       || getProcessType() == AIR_FLOW
-      || getProcessType() == PS_GLOBAL)           //WW/CB/TF
+      || getProcessType() == PS_GLOBAL
+      || getProcessType() == PTC_FLOW)           //AKS/NB
       cal_integration_point_value = true;
    if (!cal_integration_point_value)
       return;
@@ -6866,7 +7312,7 @@ void CRFProcess::Extropolation_MatValue()
       idx[1] = GetNodeValueIndex("PERMEABILITY_Y1");
       if (NS > 2)
          idx[2] = GetNodeValueIndex("PERMEABILITY_Z1");
-      for (long i = 0; i < m_msh->GetNodesNumber(false); i++)
+      for (size_t i = 0; i < m_msh->GetNodesNumber(false); i++)
       {
          for (int k = 0; k < NS; k++)
             SetNodeValue(i, idx[k], 0.0);
@@ -6875,7 +7321,7 @@ void CRFProcess::Extropolation_MatValue()
    if (additioanl2ndvar_print > 1)
    {
       int idxp = GetNodeValueIndex("POROSITY");
-      for (long i = 0; i < m_msh->GetNodesNumber(false); i++)
+      for (size_t i = 0; i < m_msh->GetNodesNumber(false); i++)
          SetNodeValue(i, idxp, 0.0);
    }
    //
@@ -7124,7 +7570,7 @@ void CRFProcess::CopyCouplingNODValues()
 {
    //Carefull if cpl_variable = primary variable -> need extra column in NodeValueTable !
    int nidx0 = GetNodeValueIndex(m_num->cpl_variable);
-   for (long l = 0; l < m_msh->GetNodesNumber(false); l++)
+   for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
    {
       SetNodeValue(l, nidx0, GetNodeValue(l, nidx0+1));
    }
@@ -7132,7 +7578,7 @@ void CRFProcess::CopyCouplingNODValues()
    if (this->getProcessType() == RICHARDS_FLOW)   //WW
    {
       nidx0 = GetNodeValueIndex("SATURATION1");
-      for (long l = 0; l < m_msh->GetNodesNumber(false); l++)
+      for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
          SetNodeValue(l, nidx0, GetNodeValue(l, nidx0 + 1));
    }
 }
@@ -7161,7 +7607,7 @@ void CRFProcess::CopyTimestepNODValues(bool forward)
          nidx0++;
          nidx1--;
       }
-      for (long l = 0; l < m_msh->GetNodesNumber(Quadr); l++)
+      for (size_t l = 0; l < m_msh->GetNodesNumber(Quadr); l++)
          SetNodeValue(l, nidx0, GetNodeValue(l, nidx1));
       //WW
       //		if (_pcs_type_name.find("RICHARDS") != string::npos || type == 1212) { //Multiphase. WW
@@ -7181,7 +7627,7 @@ void CRFProcess::CopyTimestepNODValues(bool forward)
             nidx1--;
          }
          //
-         for (long l = 0; l < m_msh->GetNodesNumber(false); l++)
+         for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
             SetNodeValue(l, nidx0, GetNodeValue(l, nidx1));
       }
    }
@@ -7868,13 +8314,13 @@ Reload primary variable of Richards Flow
 **************************************************************************/
 void CRFProcess::PrimaryVariableReloadRichards()
 {
-   int i;
+   size_t i;
    int idxp,idx_storage;
    double storage_p;
 
    idxp = GetNodeValueIndex(pcs_primary_function_name[0]);
    idx_storage = GetNodeValueIndex("STORAGE_P");
-   for(i=0;i<(long)m_msh->GetNodesNumber(false);i++)
+   for(i=0;i<m_msh->GetNodesNumber(false);i++)
    {
       storage_p = GetNodeValue(i,idx_storage);
       SetNodeValue(i,idxp,storage_p);
@@ -7892,7 +8338,7 @@ Reload primary variable for Transport
 **************************************************************************/
 void CRFProcess::PrimaryVariableReloadTransport()
 {
-   long i;
+   size_t i;
    int idxp,idx_storage;
    double conc_back;
    char* mcomp_name;
@@ -7905,7 +8351,7 @@ void CRFProcess::PrimaryVariableReloadTransport()
 
    idx_storage = GetNodeValueIndex(mcomp_name);
 
-   for(i=0;i<(long)m_msh->GetNodesNumber(false);i++)
+   for(i=0;i<m_msh->GetNodesNumber(false);i++)
    {
       conc_back = GetNodeValue(i,idx_storage);
       SetNodeValue(i,idxp,conc_back);
@@ -7925,7 +8371,7 @@ Reload primary variable for Transport
 **************************************************************************/
 void CRFProcess::PrimaryVariableStorageTransport()
 {
-   long i;
+   size_t i;
    int idxp,idx_storage;
    double concentration;
    char* mcomp_name;
@@ -7936,7 +8382,7 @@ void CRFProcess::PrimaryVariableStorageTransport()
    //   cout << "mcomp_name"<< mcomp_name<<endl;
    idx_storage = GetNodeValueIndex(mcomp_name);
 
-   for(i=0;i<(long)m_msh->GetNodesNumber(false);i++)
+   for(i=0;i<m_msh->GetNodesNumber(false);i++)
    {
       concentration = GetNodeValue(i,idxp);
       SetNodeValue(i,idx_storage,concentration);
@@ -7952,13 +8398,13 @@ Reload primary variable of Richards Flow
 **************************************************************************/
 void CRFProcess::PrimaryVariableStorageRichards()
 {
-   int i;
+   size_t i;
    int idxp,idx_storage;
    double pressure;
 
    idxp = GetNodeValueIndex(pcs_primary_function_name[0])+1;
    idx_storage = GetNodeValueIndex("STORAGE_P");
-   for(i=0;i<(long)m_msh->GetNodesNumber(false);i++)
+   for(i=0;i<m_msh->GetNodesNumber(false);i++)
    {
       pressure = GetNodeValue(i,idxp);
       SetNodeValue(i,idx_storage,pressure);
@@ -7975,7 +8421,8 @@ void CRFProcess::PrimaryVariableStorageRichards()
 #ifdef kg44                                       // WW
 double CRFProcess::GetNewTimeStepSizeTransport(double mchange)
 {
-   long i, mnode=-1;
+   size_t i;
+   long mnode=-1;
    int comp;
    int idxn,idxo;
    double conc_new, conc_old,/*time_coeff,*/ max_change=1.0e-10, tchange=1.0;
@@ -7988,7 +8435,7 @@ double CRFProcess::GetNewTimeStepSizeTransport(double mchange)
    sprintf(mcomp_name, "%s%li","CONC_BACK_",comp);
    //   cout << "mcomp_name"<< mcomp_name<<endl;
    idxn = GetNodeValueIndex(mcomp_name);
-   for(i=0;i<(long)m_msh->GetNodesNumber(false);i++)
+   for(i=0;i<m_msh->GetNodesNumber(false);i++)
    {
       conc_old = abs(GetNodeValue(i,idxo));
       conc_new = abs(GetNodeValue(i,idxn));
@@ -8110,7 +8557,7 @@ void CRFProcess::SetCPL()
       //  m_st_group = STGetGroup(_pcs_type_name,pcs_primary_function_name[0]);
       //----------------------------------------------------------------------
       double cpl_ele_val = 0.0;
-      int j;
+      size_t j;
       CNodeValue *cnodev = NULL;
       //  for(i=0;i<(int)m_st_group->group_vector.size();i++)
       //  ofstream st_out_file("st_out_file.txt",ios::app);
@@ -8367,7 +8814,7 @@ double CRFProcess::CalcELEFluxes(const GEOLIB::Polyline* const ply)
          case MASS_TRANSPORT:
             // Mass flux = v_n * l^e * z^e * C^e
             C_ele = 0.0;
-            for (int j = 0; j < m_ele->GetNodesNumber(false); j++)
+            for (size_t j = 0; j < m_ele->GetNodesNumber(false); j++)
             {
                size_t nidx = GetNodeValueIndex(pcs_primary_function_name[0]) + 1;
                C_ele = +GetNodeValue(element_nodes[j], nidx);
@@ -8988,8 +9435,7 @@ void CRFProcess::WriteAllVariables()
       }
    }
    os << endl;
-   long i;
-   for (i = 0; i < m_msh->GetNodesNumber(false); i++)
+   for (size_t i = 0; i < m_msh->GetNodesNumber(false); i++)
    {
       for (j = 0; j < 2* pcs_number_of_primary_nvals ; j++)
          os << GetNodeValue(i, idx[j]) << "  ";
@@ -11858,7 +12304,7 @@ void CRFProcess::Phase_Transition_CO2(CRFProcess *m_pcs, int Step)
 	Phase_Properties solid;
 	CRFProcess *pcs_MassTransport;
 	int MassTransportID[6] = {0,0,0,0,0,0};
-	int MaterialGroup;
+	int MaterialGroup = 0;
 	int TimeStepVariableIndex = 1;
 	// double c_oldCO2inLiquid; unused
 	double p_cap_1, pressure_1;

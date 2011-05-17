@@ -792,7 +792,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
     **************************************************************************/
    void CFEMesh::GenerateHighOrderNodes()
    {
-      int i, j, k, ii;
+      int j, k, ii;
       int nnodes0, nedges0, nedges;
       long e, ei, ee, e_size_l;
       int edgeIndex_loc0[2];
@@ -806,7 +806,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
       size_t ele_vector_size (ele_vector.size());
       for (size_t e = 0; e < ele_vector_size; e++) {
          CElem *thisElem0 = ele_vector[e];
-         for (i = 0; i < thisElem0->GetNodesNumber(false); i++)
+         for (size_t i = 0; i < thisElem0->GetNodesNumber(false); i++)
          {
             done = false;
             long ni = thisElem0->GetNodeIndex(i);
@@ -841,13 +841,13 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 
          nnodes0 = thisElem0->nnodes;             // Number of nodes for linear element
          //      thisElem0->GetNodeIndeces(node_index_glb0);
-         for (i = 0; i < nnodes0; i++)            // Nodes
+         for (int i = 0; i < nnodes0; i++)            // Nodes
             e_nodes0[i] = thisElem0->GetNode(i);
          // --------------------------------
          // Edges
          nedges0 = thisElem0->GetEdgesNumber();
          // Check if there is any neighbor that has new middle points
-         for (i = 0; i < nedges0; i++)
+         for (int i = 0; i < nedges0; i++)
          {
             thisEdge0 = thisElem0->GetEdge(i);
             thisElem0->GetLocalIndicesOfEdgeNodes(i, edgeIndex_loc0);
@@ -911,7 +911,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
             aNode = new CNode((long) nod_vector.size());
             e_nodes0[nnodes0] = aNode;
             nnodes0 = thisElem0->nnodes;
-            for (i = 0; i < nnodes0; i++)         // Nodes
+            for (int i = 0; i < nnodes0; i++)         // Nodes
             {
                x0 += e_nodes0[i]->X();
                y0 += e_nodes0[i]->Y();
@@ -941,12 +941,12 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
                continue;
 
             nnodes0 = thisElem0->nnodes;
-            for (i = 0; i < nnodes0; i++)
+            for (int i = 0; i < nnodes0; i++)
                e_nodes0[i] = thisElem0->GetNode(i);
 
             done = false;
 
-            for (i = 0; i < thisElem0->GetFacesNumber(); i++)
+            for (int i = 0; i < thisElem0->GetFacesNumber(); i++)
             {
                thisElem = thisElem0->GetNeighbor(i);
                // look for adjacent solid elements
@@ -997,7 +997,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
             if (!done)
             {
                aNode = new CNode((long) nod_vector.size());
-               for (i = 0; i < nnodes0; i++)      // Nodes
+               for (int i = 0; i < nnodes0; i++)      // Nodes
                {
                   x0 += e_nodes0[i]->X();
                   y0 += e_nodes0[i]->Y();
@@ -1026,7 +1026,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
       }
       for (size_t e = 0; e < e_size; e++) {
          thisElem0 = ele_vector[e];
-         for (i = thisElem0->nnodes; i < thisElem0->nnodesHQ; i++) {
+         for (int i = thisElem0->nnodes; i < thisElem0->nnodesHQ; i++) {
             done = false;
             aNode = thisElem0->GetNode(i);
             for (k = 0; k < (int) aNode->getConnectedElementIDs().size(); k++)
@@ -1382,7 +1382,8 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
     **************************************************************************/
    void CFEMesh::GetNODOnSFC_PLY(Surface*m_sfc, std::vector<long>&msh_nod_vector)
    {
-      long i, j, k;
+      long i, k;
+      size_t j;
       int nPointsPly = 0;
       double gC[3], p1[3], p2[3];
       double Area1, Area2;
@@ -1476,7 +1477,8 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
    void CFEMesh::GetNODOnSFC_PLY_XY(Surface*m_sfc, std::vector<long>&msh_nod_vector,
       bool givenNodesOnSurface)
    {
-      long i, j, k;
+      long i, k;
+      size_t j;
       int nPointsPly = 0;
       double gC[3], p1[3], p2[3];
       double Area1, Area2;
@@ -1536,7 +1538,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
          //------- 19.03.2009. WW ----------------
          if (givenNodesOnSurface)
          {
-            for (j = 0; j < (long) temp_v.size(); j++)
+            for (j = 0; j < temp_v.size(); j++)
             {
                Area2 = 0.0;
                a_node = nod_vector[temp_v[j]];
@@ -1601,7 +1603,12 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
     **************************************************************************/
    void CFEMesh::GetNODOnSFC_TIN(Surface*m_sfc, std::vector<long>&msh_nod_vector)
    {
+<<<<<<< HEAD
       //long i = 0;//k = 0, m = 0;
+=======
+      long k = 0, m = 0;
+      size_t i = 0;
+>>>>>>> master
       double angle_sum, dist;
       double tolerance = 0.001;
       double min_mesh_dist = 0.0;
@@ -1773,7 +1780,11 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
          tri_point3[1] = m_triangle->y[2];
          tri_point3[2] = m_triangle->z[2];
          //Loop over all preselected mesh nodes
+<<<<<<< HEAD
          for (size_t i = 0; i < m_msh_aux->nod_vector.size(); i++)
+=======
+         for (i = 0; i < m_msh_aux->nod_vector.size(); i++)
+>>>>>>> master
          {
             checkpoint[0] = m_msh_aux->nod_vector[i]->X();
             checkpoint[1] = m_msh_aux->nod_vector[i]->Y();
@@ -1807,7 +1818,11 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
       //----------------------------------------------------------------------
       int index;
       //Loop over selected nodes
+<<<<<<< HEAD
       for (size_t i = 0; i < m_msh_aux->nod_vector.size(); i++)
+=======
+      for (i = 0; i < m_msh_aux->nod_vector.size(); i++)
+>>>>>>> master
       {
          index = m_msh_aux->nod_vector[i]->GetIndex();
          if (index < (int) nod_vector.size())
@@ -1826,7 +1841,11 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
       // Delete Search Vector at the end of fem_msh_vector
       // TODO: Proper delete by MSHDelete!!!
       //----------------------------------------------------------------------
+<<<<<<< HEAD
       for (size_t i = 0; i < m_msh_aux->nod_vector.size(); i++)
+=======
+      for (i = 0; i < m_msh_aux->nod_vector.size(); i++)
+>>>>>>> master
       {
          delete m_msh_aux->nod_vector[i];
       }
@@ -3570,7 +3589,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
    */
    void CFEMesh::MarkInterface_mHM_Hydro_3D()
    {
-      int k;
+      size_t k;
       long i;
       CElem *elem;
       CElem *own_elem;

@@ -78,6 +78,8 @@ namespace FiniteElement
       Content = NULL;
       StrainCoupling = NULL;
       RHS = NULL;
+    FCT_MassL = NULL; //NW
+
       //
       NodalVal1 = new double[size_m];
       NodalVal2 = new double[size_m];
@@ -89,6 +91,8 @@ namespace FiniteElement
       NodalVal_SatNW = new double[size_m];
       NodalVal_p2 = new double[size_m];
       NodalVal_p20 = new double [size_m];         //AKS
+      NodalVal_t0 = new double [size_m];         //AKS/NB
+      NodalVal_t1 = new double [size_m];         //AKS/NB
       //NW
       switch (C_Sys_Flad / 10)
       {
@@ -139,6 +143,8 @@ namespace FiniteElement
       //	if (pcs->pcs_type_name.find("AIR") != string::npos) //OK // TF commented out
       if (pcs->getProcessType () == AIR_FLOW)     //OK
          pcsT = 'A';
+      if (pcs->getProcessType () == PTC_FLOW)     //OK
+         pcsT = 'S';
       //	if (pcs->pcs_type_name.find("MULTI") != string::npos) // 24.02.2007 WW
                                                   // 24.02.2007 WW
       if (pcs->getProcessType () == MULTI_PHASE_FLOW)
@@ -282,15 +288,28 @@ namespace FiniteElement
             PcsType = P;
             size_m = 40;
             break;
+         case 'S':                                // PTCoupled-Flow //AKS/NB Mar2011
+            for (i = 0; i < pcs->pcs_number_of_primary_nvals; i++)
+               NodeShift[i] = i * pcs->m_msh->GetNodesNumber(false);
+            idx0 = pcs->GetNodeValueIndex("PRESSURE1");
+            idx1 = idx0 + 1;
+            idxt0 = pcs->GetNodeValueIndex("TEMPERATURE1");
+            idxt1 = idxt0 + 1;
+            idx_vel[0] = pcs->GetNodeValueIndex("VELOCITY_X1");
+            idx_vel[1] = pcs->GetNodeValueIndex("VELOCITY_Y1");
+            idx_vel[2] = pcs->GetNodeValueIndex("VELOCITY_Z1");
+            PcsType = S;
+            size_m = 40; // todo: change???
+            break;
       }
       if (pcs->Memory_Type == 0)                  // Do not store local matrices
       {
-         if (PcsType == V || PcsType == P)        // 04.03.2009 PCH
+         if (PcsType == V || PcsType == P|| PcsType == S)        // 04.03.2009 PCH
             Mass2 = new Matrix(size_m, size_m);
          else
             Mass = new Matrix(size_m, size_m);
          Laplace = new Matrix(size_m, size_m);
-         if (pcsT == 'H' || pcsT == 'M' || pcsT == 'A')
+         if (pcsT == 'H' || pcsT == 'M' || pcsT == 'A'|| pcsT == 'S')
          {
             Advection = new Matrix(size_m, size_m);
             Storage = new Matrix(size_m, size_m);
@@ -305,6 +324,9 @@ namespace FiniteElement
       AuxMatrix = new Matrix(size_m, size_m);
       AuxMatrix1 = new Matrix(size_m, size_m);
 
+    if (this->pcs->m_num->fct_method>0) { //NW
+      FCT_MassL = new DiagonalMatrix(size_m);
+    }
       time_unit_factor = pcs->time_unit_factor;
 
       check_matrices = true;
@@ -338,6 +360,8 @@ namespace FiniteElement
          if(Content) delete Content;
          if(StrainCoupling) delete StrainCoupling;
          if(RHS) delete RHS;
+       if(FCT_MassL) delete FCT_MassL;
+       
          Mass = NULL;
          Laplace = NULL;
          Advection = NULL;
@@ -345,6 +369,7 @@ namespace FiniteElement
          Content = NULL;
          StrainCoupling = NULL;
          RHS = NULL;
+       FCT_MassL = NULL;
       }
 
       delete StiffMatrix;
@@ -383,24 +408,25 @@ namespace FiniteElement
    void CFiniteElementStd::SetMemory()
    {
       int Size=nnodes;
-      if(PcsType==V || PcsType==P)                //4.3.2009 PCH
+      if(PcsType==V || PcsType==P || PcsType==S)                //4.3.2009 PCH
          Size *= 2;
       ElementMatrix * EleMat = NULL;
       // Prepare local matrices
       // If local matrices are not stored, resize the matrix
       if(pcs->Memory_Type==0)
       {
-         if(PcsType==V || PcsType==P)             //04.3.2009 PCH
+         if(PcsType==V || PcsType==P|| PcsType==S)             //04.3.2009 PCH
             Mass2->LimitSize(Size, Size);
          else
             Mass->LimitSize(nnodes, nnodes);      // Mass->LimitSize(nnodes); // unsymmetric in case of Upwinding
          Laplace->LimitSize(Size, Size);
-         if(PcsType==H||PcsType==M ||PcsType==A)
+         if(PcsType==H||PcsType==M ||PcsType==A|| PcsType==S)
          {
             Advection->LimitSize(Size, Size);     //SB4200
             Storage->LimitSize(Size, Size);       //SB4200
             Content->LimitSize(Size, Size);       //SB4209
          }
+
          if(PcsType==R&&pcs->type==22)            //dual-porosity. WW
             Advection->LimitSize(Size, Size);
          if(D_Flag>0)
@@ -432,6 +458,9 @@ namespace FiniteElement
       StiffMatrix->LimitSize(Size, Size);
       AuxMatrix->LimitSize(Size, Size);
       AuxMatrix1->LimitSize(Size, Size);
+    if (this->pcs->m_num->fct_method>0) { //NW
+      FCT_MassL->LimitSize(Size);
+    }
    }
 
    /**************************************************************************
@@ -458,6 +487,8 @@ namespace FiniteElement
          pcsT = 'A';
       if(pcs_type == MULTI_PHASE_FLOW)            //24.2.2007 WW
          pcsT = 'V';
+      if(pcs_type == PTC_FLOW)            //Feb 2011 AKS/NB
+         pcsT = 'S';
 
       if (D_Flag > 0)
       {
@@ -538,6 +569,12 @@ namespace FiniteElement
                cpl_pcs = pcs_vector[pcs->pcs_number-1];
                idx_c0 = cpl_pcs->GetNodeValueIndex("PRESSURE1");
                idx_c1 = idx_c0+1;
+            }
+            break;
+         case 'S':                                // Multi-phase flow. 24.2.2007 WW
+            if(T_Flag)                            //if(PCSGet("HEAT_TRANSPORT"))
+            {
+                cpl_pcs = PCSGet("MASS_TRANSPORT");
             }
             break;
          case 'C':                                // Componental flow
@@ -1281,7 +1318,7 @@ namespace FiniteElement
       double val = 0.0;
       double humi = 1.0;
       double rhov = 0.0;
-	  double biot_val, poro_val = 0.0, rho_val, Se;
+      double biot_val, poro_val = 0.0, rho_val, Se;
       int tr_phase = 0; // SB, BG
       double saturation = 0.0; // SB, BG
       CompProperties *m_cp = NULL;
@@ -1516,6 +1553,50 @@ namespace FiniteElement
             else
                val = 0.;
             break;
+      }
+      return val;
+   }
+   /**************************************************************************
+   FEMLib-Method:
+   Task: Calculate material coefficient for mass matrix for
+   Pressure-Temperature Coupled global approach
+   Implementaion:
+   03/2011 AKS /  NB
+   **************************************************************************/
+   inline double CFiniteElementStd::CalCoefMassPTC(int dof_index)
+   {
+      int Index = MeshElement->GetIndex();
+      double val = 0.0;
+
+      switch(dof_index)
+      {
+      case 0:
+    	  poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
+    	  PG = interpolate(NodalVal0);
+		  TG = interpolate(NodalVal_t0);
+    	  val=poro/PG;
+		  if(FluidProp->density_model ==15)
+		  val -= poro*FluidProp->CaldZdP(PG, TG)/FluidProp->CalCopressibility_PTC(PG, TG);
+    	  break;
+      case 1:
+    	  poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
+    	  TG = interpolate(NodalVal_t0);
+		  PG = interpolate(NodalVal0);
+    	  val = - poro/TG;
+		  if(FluidProp->density_model ==15)
+		  val -= poro*FluidProp->CaldZdT(PG, TG)/FluidProp->CalCopressibility_PTC(PG, TG);
+    	  break;
+      case 2:
+    	  poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
+    	  PG = interpolate(NodalVal0);
+    	  TG = interpolate(NodalVal_t0);
+    	  val=poro*FluidProp->beta_T*TG;
+		  if(FluidProp->beta_T == 0)
+		  val = 0.0;
+    	  break;
+      case 3:
+    	  val=MediaProp->HeatCapacity(Index,pcs->m_num->ls_theta,this);
+    	  break;
       }
       return val;
    }
@@ -2306,6 +2387,56 @@ namespace FiniteElement
             //------------------------------------------------------------------
       }
    }
+
+   ///////
+     /**************************************************************************
+     FEMLib-Method:
+     Task: Calculate material coefficient for Laplacian matrix for
+     Pressure-Temperature Coupled global approach
+     Implementaion:
+     03/2011 AKS /  NB
+     last modification:
+     **************************************************************************/
+     inline void CFiniteElementStd::CalCoefLaplacePTC(int dof_index)
+     {
+        int i=0;
+        double *tensor = NULL;
+        double mat_fac = 1.0;
+
+        double dens_arg[3];
+
+        int Index = MeshElement->GetIndex();
+
+
+        for(i=0; i<dim*dim; i++) mat[i] = 0.0;
+
+        switch(dof_index)
+        {
+        case 0:
+        	dens_arg[0] = interpolate(NodalVal0);
+        	dens_arg[1] = interpolate(NodalVal_t0);
+        	mat_fac = FluidProp->Viscosity(dens_arg);
+        	tensor = MediaProp->PermeabilityTensor(Index);
+        	for(i=0;i<dim*dim;i++)
+        		mat[i] = tensor[i]/mat_fac;
+        	break;
+        case 1:
+			mat_fac = 0;
+        	for(i=0;i<dim*dim;i++)
+        	mat[i] = mat_fac;
+        	break;
+        case 2:
+			mat_fac = 0;
+        	for(i=0;i<dim*dim;i++)
+        	mat[i] = mat_fac;
+        	break;
+        case 3:
+        	tensor = MediaProp->HeatConductivityTensor(Index);
+        	for(i=0; i<dim*dim; i++)
+        		mat[i] = tensor[i];             //mat[i*dim+i] = tensor[i];
+        	break;
+        }
+     }
    /**************************************************************************
    FEMLib-Method:
    Task: Calculate material coefficient for Laplacian matrix of PS multi-phase
@@ -2931,6 +3062,52 @@ namespace FiniteElement
       return val;
    }
    /**************************************************************************
+    FEMLib-Method:
+    Task: Calculate material coefficient for advection matrix
+    Programing:
+    01/2005 WW/OK Implementation
+    03/2005 WW Heat transport
+    07/2005 WW Change for geometry element object
+    09/2005 SB
+    last modification:
+    **************************************************************************/
+   inline double CFiniteElementStd::CalCoefAdvectionPTC(int dof_index)
+   {
+	   double val = 0.0;
+	   double dens_arg[3];
+
+	   switch(dof_index)
+	   {
+	   case 0:
+		   PG = interpolate(NodalVal0);
+		   TG = interpolate(NodalVal_t0);
+		   val = 1/PG;
+		   		   if(FluidProp->density_model ==15)
+		   val -= FluidProp->CaldZdP(PG, TG)/FluidProp->CalCopressibility_PTC(PG, TG);
+		   break;
+	   case 1:
+		   PG = interpolate(NodalVal0);
+		   TG = interpolate(NodalVal_t0);
+		   val = -1/TG;
+		   if(FluidProp->density_model ==15)
+		   val +=  FluidProp->CaldZdT(PG, TG)/FluidProp->CalCopressibility_PTC(PG, TG);
+		   break;
+	   case 2:
+		   PG = interpolate(NodalVal0);
+		   TG = interpolate(NodalVal_t0);
+		   val=1+FluidProp->beta_T*TG;
+		   if(FluidProp->beta_T == 0)
+		   val = 0.0;
+		   break;
+	   case 3:
+		   dens_arg[0] = interpolate(NodalVal0);
+		   dens_arg[1] = interpolate(NodalVal_t0);
+		   val=FluidProp->Density(dens_arg)*FluidProp->SpecificHeatCapacity();
+		   break;
+	   }
+	   return val;
+   }
+      /***************************************************************************
       GeoSys - Function: CalCoefStrainCouping
 
       Aufgabe:
@@ -3652,6 +3829,50 @@ namespace FiniteElement
          }
       }
    }
+   /***************************************************************************
+      GeoSys - Funktion:
+              CFiniteElementStd:: CalcMassPTC
+      Programming:
+      02/2007   WW
+   **************************************************************************/
+   void CFiniteElementStd::CalcMassPTC()
+   {
+      int i, j,in,jn;
+      // ---- Gauss integral
+      int gp_r=0,gp_s=0,gp_t=0;
+      double fkt,mat_fac;
+      // Material
+      int dof_n = 2;
+      mat_fac = 1.0;
+      //----------------------------------------------------------------------
+      //======================================================================
+      // Loop over Gauss points
+      for (gp = 0; gp < nGaussPoints; gp++)
+      {
+         //---------------------------------------------------------
+         //  Get local coordinates and weights
+         //  Compute Jacobian matrix and its determinate
+         //---------------------------------------------------------
+         fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+         // Compute geometry
+         ComputeShapefct(1);                      // Linear interpolation function
+         for(in=0; in<dof_n; in++)
+         {
+            for(jn=0; jn<dof_n; jn++)
+            {
+               // Material
+               mat_fac = CalCoefMassPTC(in*dof_n+jn);
+               mat_fac *= fkt;
+               // Calculate mass matrix
+               for (i = 0; i < nnodes; i++)
+               {
+                  for (j = 0; j < nnodes; j++)
+                     (*Mass2)(i+in*nnodes,j+jn*nnodes) += mat_fac *shapefct[i]*shapefct[j];
+               }
+            }
+         }
+      }
+   }
 
    /***************************************************************************
       GeoSys - Funktion:
@@ -3978,7 +4199,7 @@ namespace FiniteElement
       int in_times_nnodes, jn_times_nnodes, i_plus_in_times_nnodes, j_plus_jn_times_nnodes, dim_times_k, dim_times_k_plus_l, nnodes_plus_j, l_times_nnodes_plus_j, k_times_nnodes_plus_i;
       double fkt_times_dshapefct__k_times_nnodes_plus_i__;
 
-      if(PcsType==V || PcsType==P) dof_n = 2;     // 03.03 2009 PCH
+      if(PcsType==V || PcsType==P|| PcsType==S) dof_n = 2;     // 03.03 2009 PCH
 
       //----------------------------------------------------------------------
       // Loop over Gauss points
@@ -4018,6 +4239,8 @@ namespace FiniteElement
                      CalCoefLaplace2(false,in*dof_n+jn);
                   else if (PcsType==P)
                      CalCoefLaplacePSGLOBAL(false,in*dof_n+jn);
+                  else if (PcsType==S)
+                     CalCoefLaplacePTC(in*dof_n+jn);
                }
                //---------------------------------------------------------
 
@@ -4326,6 +4549,56 @@ namespace FiniteElement
       //  cout << "Advection Matrix: " << endl; Advection->Write();
    }
 
+    /***************************************************************************
+          GeoSys - Funktion:
+                  CFiniteElementStd:: CalcAdvection
+          Aufgabe:  Calculate the advection matrix
+
+          Programming:
+          01/2005   WW
+          02/2005   OK GEO factor
+          09/2005   SB - adapted to advection
+          03/2007   WW - Fluid advection with multiphase flow
+          05/2008   WW - General densty for multiphase flow
+       01/2010   NW - SUPG
+       **************************************************************************/
+     void CFiniteElementStd::CalcAdvectionPTC()
+      {
+ 	int i, j, k, in, jn;
+       int gp_r=0, gp_s=0, gp_t = 0;
+       double fkt, mat_fac;
+       double vel[3];
+       int dof_n = 2;   
+       ElementValue* gp_ele = ele_gp_value[Index];
+       for (gp = 0; gp < nGaussPoints; gp++)
+       {
+       fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+       ComputeGradShapefct(1);             
+	ComputeShapefct(1);                   
+       //Velocity
+       vel[0] = gp_ele->Velocity(0, gp);
+       vel[1] = gp_ele->Velocity(1, gp);
+       vel[2] = gp_ele->Velocity(2, gp);
+
+       for (in = 0; in < dof_n; in++)
+       {
+       for (jn = 0; jn < dof_n; jn++)
+       {
+       mat_fac = fkt*CalCoefAdvectionPTC(in*dof_n + jn);
+       for (i = 0; i< nnodes; i++)
+       {
+       for (j = 0; j< nnodes; j++)
+       {
+       for (k = 0; k < dim; k++)
+       {
+		(*Advection)(i+in*nnodes, j+jn*nnodes) += mat_fac*shapefct[i]*vel[k]*dshapefct[k*nnodes+j];
+       }
+	}
+	}
+	}
+	}
+	}
+	}
    /***************************************************************************
       GeoSys - Funktion:
               CFiniteElementStd:: CalcAdvection
@@ -4899,7 +5172,7 @@ namespace FiniteElement
       int gp_r=0, gp_s=0, gp_t;
       double coef = 0.0;
       int dof_n = 1;
-      if(PcsType==V || PcsType==P) dof_n = 2;
+      if(PcsType==V || PcsType==P || PcsType==S) dof_n = 2;
       //
       gp_t = 0;
 
@@ -4984,6 +5257,8 @@ namespace FiniteElement
          // Material
          if(dof_n==1)
             CalCoefLaplace(true);
+         else if (PcsType==S)
+            CalCoefLaplacePTC(0);  
          else if (dof_n==2 && PcsType==V)         // PCH 05.2009
             CalCoefLaplace2(true,0);
          else if (dof_n==2 && PcsType==P)         // PCH 05.2009
@@ -5013,10 +5288,12 @@ namespace FiniteElement
                                                   //NW
          if(k==2&&(!HEAD_Flag)&&FluidProp->CheckGravityCalculation())
          {
-            if((FluidProp->density_model==14))
+            if((FluidProp->density_model==14)  || (FluidProp->density_model==15))
             {
                dens_arg[0] = interpolate(NodalVal1);
                dens_arg[1] = interpolate(NodalValC)+T_KILVIN_ZERO;
+			   if(PcsType==S)
+			   dens_arg[1] = interpolate(NodalVal_t0);
                dens_arg[2] = Index;
                coef  =  gravity_constant*FluidProp->Density(dens_arg);
             }
@@ -5514,8 +5791,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
 	// ---- Gauss integral
 	int gp_r=0, gp_s=0, gp_t=0;
 	double fkt=0.0;
-	//  int i_idx;
-	// CPointData_ECL* m_NodeData = NULL;
+	//  int i_idx;    
 	double value[3], value_old[3];
 	ostringstream temp;
 
@@ -5808,11 +6084,13 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       //----------------------------------------------------------------------
       // Initialize.
       // if (pcs->Memory_Type==2) skip the these initialization
-      if(PcsType==V || PcsType==P)                //PCH
+      if(PcsType==V || PcsType==P|| PcsType==S)                //PCH
          (*Mass2) = 0.0;
       else
          (*Mass) = 0.0;
       (*Laplace) = 0.0;
+      if(PcsType==S)
+    	  (*Advection) = 0.0;
       //----------------------------------------------------------------------
       // GEO
       // double geo_fac = MediaProp->geo_area;
@@ -5833,6 +6111,10 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
          else
             CalcMassPSGLOBAL();
       }
+      else if(PcsType==S)                         //AKS/NB
+      {
+            CalcMassPTC();
+      }
       else
       {
          if(pcs->m_num->ele_mass_lumping)
@@ -5842,6 +6124,8 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       }
       // Laplace matrix.......................................................
       CalcLaplace();
+    	  if(PcsType==S)                         //AKS/NB
+    	  CalcAdvectionPTC();
       if(RD_Flag)                                 //YD /WW
          Assemble_DualTransfer();
       if(pcs->Tim->time_control_name.find("NEUMANN")!=string::npos)
@@ -5878,7 +6162,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       //Mass matrix
       if(pcs->PartialPS != 1)                     // PCH if not partial-pressure-based
       {
-         if(PcsType==V || PcsType==P)             //PCH
+         if(PcsType==V || PcsType==P|| PcsType==S)             //PCH
             *StiffMatrix    = *Mass2;
          else
             *StiffMatrix    = *Mass;
@@ -5893,12 +6177,17 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       else
       {
          *AuxMatrix      = *Laplace;
-      }
+		 if(PcsType==S){
+    *AuxMatrix     += *Advection;
+		 }
+      } 
+	
       (*AuxMatrix)   *= fac2;
+	
       *StiffMatrix   += *AuxMatrix;
       //----------------------------------------------------------------------
       // Add local matrix to global matrix
-      if(PcsType==V || PcsType==P)                // For DOF>1: 03.03.2009 PCH
+      if(PcsType==V || PcsType==P|| PcsType==S)                // For DOF>1: 03.03.2009 PCH
       {
          int ii_sh, jj_sh;
          long i_sh, j_sh=0;
@@ -5962,7 +6251,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       // Mass - Storage
       if(pcs->PartialPS != 1)                     // PCH if not partial-pressure-based
       {
-         if(PcsType==V || PcsType==P)             //PCH
+         if(PcsType==V || PcsType==P|| PcsType==S)             //PCH
             *AuxMatrix1 = *Mass2;
          else
             *AuxMatrix1 = *Mass;
@@ -5977,6 +6266,9 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       else
       {
          *AuxMatrix      = *Laplace;
+		 if(PcsType==S){
+	*AuxMatrix     += *Advection;
+      }
       }
       (*AuxMatrix)  *= fac2;
       *AuxMatrix1   -= *AuxMatrix;
@@ -5997,6 +6289,14 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
             NodalVal[i+nnodes] = 0.0;
          }
       }
+      if(PcsType==S)                              // For DOF>1: 27.2.2007 WW
+          {
+             for (i=0;i<nnodes; i++)
+             {
+                NodalVal0[i+nnodes] = pcs->GetNodeValue(nodes[i],idxt1);
+                NodalVal[i+nnodes] = 0.0;
+             }
+          }
       else if(PcsType==P)                         // For DOF>1:
       {
          for (i=0;i<nnodes; i++)
@@ -6025,7 +6325,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
          Laplace->multi(NodalVal0, NodalVal, -1.0);
       }
       //
-      if(PcsType==V || PcsType==P)                // For DOF>1: 03.03.2009 PCH
+      if(PcsType==V || PcsType==P|| PcsType==S)                // For DOF>1: 03.03.2009 PCH
       {
          int ii_sh;
          long i_sh;
@@ -6050,7 +6350,90 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       }
       //
    }
+/**************************************************************************
+FEMLib-Method: 
+Task: 
+Programing:
+04/2010 NW Implementation
+**************************************************************************/
+void CFiniteElementStd::CalcFEM_FCT()
+{
+  int i,j;
+  const double dt_inverse = 1.0/dt;
+#if defined(NEW_EQS)
+   CSparseMatrix *A = NULL;  //WW
+   if(m_dom)
+     A = m_dom->eqs->A;
+   else
+     A = pcs->eqs_new->A;
+#endif 
+  //----------------------------------------------------------------------
+  // FCT method
+  //----------------------------------------------------------------------
+   SparseMatrixDOK *FCT_Flux = this->pcs->FCT_AFlux;
+   Vec *ML = this->pcs->Gl_ML;
 
+  //----------------------------------------------------------------------
+  // L+A matrix
+  *AuxMatrix      = *Laplace;
+  *AuxMatrix      += *Advection;
+  *AuxMatrix      += *Storage;
+  //*AuxMatrix      += *Content;
+
+  // Lumped mass matrix
+  (*FCT_MassL) = 0.0;
+  for (int i=0; i<nnodes; i++) {
+    for (int j=0; j<nnodes; j++)
+      (*FCT_MassL)(i) += (*Mass)(i,j);
+  }
+
+  //----------------------------------------------------------------------
+  // Add K matrix to global matrix
+  for(i=0;i<nnodes;i++){
+    for(j=0;j<nnodes;j++){
+#ifdef NEW_EQS
+       (*A)(NodeShift[problem_dimension_dm]+eqs_number[i],  
+            NodeShift[problem_dimension_dm]+eqs_number[j]) += (*AuxMatrix)(i,j);
+#else
+       MXInc(NodeShift[problem_dimension_dm]+eqs_number[i],\
+            NodeShift[problem_dimension_dm]+eqs_number[j],\
+               (*AuxMatrix)(i,j));
+#endif
+    }
+  }
+  // Lumped mass matrix
+  for(i=0;i<nnodes;i++){
+    long node_i_id = this->MeshElement->nodes_index[i];
+    (*ML)(node_i_id) += (*FCT_MassL)(i);
+  }
+
+  // assemble part of FCT flux: f_ij = m_ij
+  for (i=0; i<nnodes; i++) {
+    long node_i_id = this->MeshElement->nodes_index[i];
+//    for (j=i; j<nnodes; j++) {
+    for (j=i+1; j<nnodes; j++) { //symmetric
+      if ((*this->Mass)(i,j)==0.0) continue; 
+      long node_j_id = this->MeshElement->nodes_index[j];
+      //double diff_uH = this->pcs->GetNodeValue(node_i_id, this->idx1) - this->pcs->GetNodeValue(node_j_id, this->idx1);
+      //double diff_u0 = this->pcs->GetNodeValue(node_i_id, this->idx0) - this->pcs->GetNodeValue(node_j_id, this->idx0);
+      //double v = 1.0/dt*((*this->Mass)(i,j))*(diff_uH - diff_u0);
+      double v =(*this->Mass)(i,j);
+      (*FCT_Flux)(node_i_id,node_j_id) += v;
+      (*FCT_Flux)(node_j_id,node_i_id) += v;
+    }
+  }
+
+  // assemble part of RHS: b_i += 1/dt * ml_i * u_i^n
+  double fac_mass = dt_inverse; //*geo_fac;
+  for (i=0;i<nnodes; i++)
+    NodalVal[i] = fac_mass * (*FCT_MassL)(i) * pcs->GetNodeValue(nodes[i],idx0);
+  for (i=0;i<nnodes;i++)
+  {
+      eqs_rhs[NodeShift[problem_dimension_dm] + eqs_number[i]] += NodalVal[i];
+      (*RHS)(i+LocalShift) +=  NodalVal[i];
+  }
+
+}
    //SB4200
    /**************************************************************************
    FEMLib-Method:
@@ -6161,6 +6544,10 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       fac_storage = theta;
       fac_content = theta*dt_inverse;
 
+  if (this->pcs->femFCTmode) { //NW
+    this->CalcFEM_FCT();
+  } else {
+
       //Mass matrix
       *StiffMatrix    = *Mass;
       (*StiffMatrix) *= fac_mass;
@@ -6241,6 +6628,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
          eqs_rhs[NodeShift[problem_dimension_dm] + eqs_number[i]] += NodalVal[i];
          (*RHS)(i+LocalShift) +=  NodalVal[i];
       }
+  } //end: femFCTmode
       //----------------------------------------------------------------------
       //Debug output
       /*
@@ -6748,6 +7136,15 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
          for(i=0;i<nnodes;i++)
             NodalVal_p2[i] = pcs->GetNodeValue(nodes[i],idxp21);
       }
+      if(PcsType==S)                              // 25.2.2007
+      {
+
+    	  for(i=0;i<nnodes;i++)
+    	  {
+    		  NodalVal_t0[i] = pcs->GetNodeValue(nodes[i],idxt0)+T_KILVIN_ZERO;
+    		  NodalVal_t1[i] = pcs->GetNodeValue(nodes[i],idxt1)+T_KILVIN_ZERO;
+    	  }
+      }
       if(PcsType==P)
       {
          for(i=0;i<nnodes;i++)
@@ -6906,7 +7303,10 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
                Assemble_RHS_M();
             Assemble_RHS_T_PSGlobal();
             break;
-
+         case S:
+        	 AssembleParabolicEquation();
+        	 //Assemble_Gravity();
+        	 break;
             //....................................................................
          default:
             cout << "Fatal error: No valid PCS type" << endl;
@@ -7629,6 +8029,39 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
 
             break;
             //------------------------------------------------------------------
+         }
+         return val;
+      }
+      /**************************************************************************
+         FEMLib-Method:
+         Task: Calculate  coefficient of temperature induced RHS of multi-phase
+               flow
+         Programing:
+         02/2007 WW Implementation
+         last modification:
+         **************************************************************************/
+         inline double CFiniteElementStd::CalCoef_RHS_PTC(int dof_index)
+         {
+			double val = 0.0; //, D_gw=0.0, D_ga=0.0; unused
+            // double expfactor=0.0,dens_arg[3]; unused
+            // int Index = MeshElement->GetIndex(); unused
+            ComputeShapefct(1);
+            //======================================================================
+            switch(dof_index)
+            {
+               case 0:
+
+                  val =0;
+                  break;
+               case 1:
+            	   val =0;
+            	   break;
+               case 2:
+            	   val =0;
+            	   break;
+               case 3:
+            	   val =0;
+            	   break;
       }
       return val;
    }
@@ -7889,7 +8322,6 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       }
       //
    }
-
    /***************************************************************************
    GeoSys - Function: Assemble_RHS_T_PSGlobal
    Programming:

@@ -28,9 +28,9 @@ OPTION(OGS_FEM_BRNS "BRNS configuration" OFF)
 OPTION(OGS_FEM_CHEMAPP "CHEMAPP configuration" OFF)
 OPTION(OGS_USE_QT "User interface configuration" OFF)
 OPTION(OGS_FEM_LIS "Library of Iterative Solvers for Linear Systems configuration" OFF)
+OPTION(OGS_FEM_MKL "Math kernel library configuration" OFF)
 
 IF (UNIX) # Only supported on Linux
-	OPTION(OGS_FEM_MKL "Math kernel library configuration" OFF)
 	OPTION(OGS_FEM_MPI "Message passing interface configuration" OFF)
 ENDIF (UNIX)
 
@@ -73,11 +73,11 @@ MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_USE_OPEN
 ###########################################################################
 SET (OGS_VERSION_MAJOR 5)
 SET (OGS_VERSION_MINOR 1)
-SET (OGS_VERSION_PATCH 02)
-SET (OGS_RELEASE_PERSONS "KR/TF/LB")
+SET (OGS_VERSION_PATCH 04)
+SET (OGS_RELEASE_PERSONS "NW/AKS")
 SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}(${OGS_RELEASE_PERSONS})")
 # should we use ISO dates: 2010-12-31 ?
-SET (OGS_DATE "19.04.2011")
+SET (OGS_DATE "06.05.2011")
 
 # Check for number of processors
 CHECK_PROCESSOR_COUNT()
