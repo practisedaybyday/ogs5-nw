@@ -51,7 +51,7 @@ Programing:
 09/2006 KG44 Output for MPI - correct OUTPUT not yet implemented
 12/2008 NW Remove ios::app, Add PCS name to VTK file name
 **************************************************************************/
-void LegacyVtkInterface::WriteDataVTK(int number, float simulation_time, std::string baseFilename) const
+void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time, std::string baseFilename) const
 {
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
 	char tf_name[10];
@@ -98,7 +98,7 @@ void LegacyVtkInterface::WriteDataVTK(int number, float simulation_time, std::st
 }
 
 
-void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number, float simulation_time) const
+void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number, double simulation_time) const
 {
 	
 	vtk_file << "# vtk DataFile Version 3.0" << endl;

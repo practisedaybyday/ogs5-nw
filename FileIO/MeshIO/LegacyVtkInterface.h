@@ -30,10 +30,10 @@ public:
 		ProcessInfo* processInfo);
 	virtual ~LegacyVtkInterface();
 	
-	void WriteDataVTK(int number, float simulation_time, std::string baseFilename) const;
+	void WriteDataVTK(int number, double simulation_time, std::string baseFilename) const;
 
 protected:
-	void WriteVTKHeader(std::fstream&, int, float) const;
+	void WriteVTKHeader(std::fstream&, int, double) const;
 	void WriteVTKPointData(std::fstream&) const;
 	void WriteVTKCellData(std::fstream&) const;
 	void WriteVTKDataArrays(std::fstream&) const;
