@@ -659,7 +659,7 @@ int REACT_BRNS::GetFlowType_MT ( void )
 void REACT_BRNS::ConvPorosityNodeValue2Elem ( int i_timestep )
 {
    long i,idx_Node;
-   int j, number_of_nodes;
+   size_t j, number_of_nodes;
    double pormin=2.0,pormax=0.0;
    CNode* m_Node;
    CElem* m_Elem;
@@ -676,7 +676,7 @@ void REACT_BRNS::ConvPorosityNodeValue2Elem ( int i_timestep )
       {
          idx_Node = m_Elem->GetNodeIndex ( j );   // get the connected nodes;
          m_Node = m_pcs->m_msh->nod_vector[idx_Node];
-         number_of_nodes = ( int ) m_Elem->GetNodesNumber ( false );
+         number_of_nodes = m_Elem->GetNodesNumber ( false );
          // m_porosity_Elem[i] += m_porosity[idx_Node] / number_of_nodes; // this is arithmetric mean
          // here we use harmonic mean, as porosity is used for permeability/diffusivity changes....flux in the element is strongly influenced by the minimum values
                                                   // this is for harmonic mean

@@ -58,6 +58,10 @@ class CNumerics
       int ele_supg_method;                        //NW
       int ele_supg_method_length;                 //NW
       int ele_supg_method_diffusivity;            //NW
+    //FEM-FCT
+    int fct_method; //NW
+    unsigned int fct_prelimiter_type; //NW
+    double fct_const_alpha; //NW
       // Deformation
       int GravityProfile;
       // LAGRANGE method //OK

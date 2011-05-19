@@ -188,12 +188,12 @@ namespace Mesh_Group
          {
             return nnodesHQ;
          }
-         int GetNodesNumber(bool quad) const
+         size_t GetNodesNumber(bool quad) const
          {
             if (quad)
-               return nnodesHQ;
+               return (size_t)nnodesHQ;
             else
-               return nnodes;
+               return (size_t)nnodes;
          }
          int GetVertexNumber() const
          {
