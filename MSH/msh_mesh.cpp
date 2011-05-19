@@ -3025,7 +3025,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
 		}
 	}
 
-	int ii, jj;
+	size_t ii, jj;
 	long counter = 0, lnn = (ncols + 1) * (nrows + 1);
 	long nn[8];
 
@@ -3165,7 +3165,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
    //---------------------------------------------------------------------------
    void CFEMesh::ConvertShapeCells(std::string const & fname)
    {
-      int i;
+      size_t i;
       long counter;
       double  x, y;
 

@@ -171,7 +171,6 @@ namespace Mesh_Group
    CElem::CElem(size_t Index, CElem* m_ele_parent) :
    CCore(Index), normal_vector(NULL)
    {
-      int i;
       //  static int faceIndex_loc[10];
       //  static int edgeIndex_loc[10];
       gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
@@ -186,11 +185,11 @@ namespace Mesh_Group
       //----------------------------------------------------------------------
       // Initialize topological properties
       neighbors.resize(nfaces);
-      for(i=0; i<nfaces; i++)
+      for(size_t i=0; i<nfaces; i++)
          neighbors[i] = NULL;
       edges.resize(nedges);
       edges_orientation.resize(nedges);
-      for(i=0; i<nedges; i++)
+      for(size_t i=0; i<nedges; i++)
       {
          edges[i] = NULL;
          edges_orientation[i] = 1;
@@ -641,11 +640,11 @@ void CElem::Read(std::istream& is, int fileType)
 	//----------------------------------------------------------------------
 	// Initialize topological properties
 	neighbors.resize(nfaces);
-	for (int i = 0; i < nfaces; i++)
+	for (size_t i = 0; i < nfaces; i++)
 		neighbors[i] = NULL;
 	edges.resize(nedges);
 	edges_orientation.resize(nedges);
-	for (int i = 0; i < nedges; i++) {
+	for (size_t i = 0; i < nedges; i++) {
 		edges[i] = NULL;
 		edges_orientation[i] = 1;
 	}
@@ -655,11 +654,11 @@ void CElem::Read(std::istream& is, int fileType)
    {
       // Initialize topological properties
       neighbors.resize(nfaces);
-      for(int i=0; i<nfaces; i++)
+      for(size_t i=0; i<nfaces; i++)
          neighbors[i] = NULL;
       edges.resize(nedges);
       edges_orientation.resize(nedges);
-      for(int i=0; i<nedges; i++)
+      for(size_t i=0; i<nedges; i++)
       {
          edges[i] = NULL;
          edges_orientation[i] = 1;
@@ -741,7 +740,7 @@ void CElem::Read(std::istream& is, int fileType)
    void CElem::WriteNeighbors(std::ostream &os) const
    {
       os<<"Neighbors of "<<index<<std::endl;
-      for(int i=0; i<nfaces; i++)
+      for(size_t i=0; i<nfaces; i++)
          neighbors[i]->WriteAll(os);
       os<<"End neighbors of "<<index<<std::endl<<std::endl;;
    }
@@ -754,13 +753,12 @@ void CElem::Read(std::istream& is, int fileType)
    **************************************************************************/
    void CElem:: MarkingAll(bool makop)
    {
-      int i;
       this->mark=makop;
       int SizeV = nnodes;
       if(quadratic) SizeV = nnodesHQ;
-      for (i=0; i< SizeV;i++)
+      for (int i=0; i< SizeV;i++)
          nodes[i]->SetMark(makop);
-      for (i=0; i< nedges;i++)
+      for (size_t i=0; i< nedges;i++)
          edges[i]->SetMark(makop);
    }
    /**************************************************************************
@@ -1388,6 +1386,16 @@ double CElem::calcVolume () const
             std::cerr << "CElem::setElementProperties MshElemType not handled" << std::endl;
       }
       this->nodes_index.resize(nnodes);
+	  this->neighbors.resize(nfaces);
+      for(size_t i=0; i<nfaces; i++)
+         neighbors[i] = NULL;
+	  edges.resize(nedges);
+      edges_orientation.resize(nedges);
+      for(size_t i=0; i<nedges; i++)
+      {
+         edges[i] = NULL;
+         edges_orientation[i] = 1;
+      }
    }
 
 }                                                 // namespace Mesh_Group
