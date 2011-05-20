@@ -26,7 +26,7 @@ if (NOT LIS_FOUND)
 		endif (CMAKE_SIZEOF_VOID_P MATCHES "8")
 	else ( UNIX )			
 		find_library(LIS_LIBRARIES
-			NAMES lis-32
+			NAMES lisomp
 			PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled )	
 	endif ( UNIX )
 
