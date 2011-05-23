@@ -42,7 +42,7 @@ namespace Mesh_Group
 
          /** constructor */
          CNode(size_t Index) :
-         CCore(Index), free_surface (-1), 
+         CCore(Index), free_surface (-1),
             patch_area (-1.0), crossroad (false), eqs_index(-1)
             {}
 
@@ -58,7 +58,6 @@ namespace Mesh_Group
          double X() const { return coordinate[0]; };
          double Y() const { return coordinate[1]; };
          double Z() const { return coordinate[2]; };
-	     double* GetCoordinates() {return coordinate;} // BG, 09/2010, necesary for coupling to Eclipse
 
          void Coordinates(double *xyz) const
          {
@@ -67,7 +66,10 @@ namespace Mesh_Group
          }
 
          // 04/2010 TF
-         /** returns the coordinates of the mesh node */
+         /**
+          * returns the coordinates of the mesh node
+          * @return the coordinates of this mesh node
+          */
          const double* getData () const { return coordinate; }
 
          // Set functions

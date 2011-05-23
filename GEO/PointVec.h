@@ -64,9 +64,13 @@ public:
 	~PointVec ();
 
 	/**
-	 * Method adds a Point to the vector and takes the ownership.
-	 * */
-	void push_back (Point *pnt);
+	 * Method adds a Point to the (internal) standard vector and takes the ownership.
+	 * If the given point is already included in the vector, the point will be destroyed and
+	 * the id of the existing point will be returned.
+	 * @param pnt the pointer to the Point
+	 * @return the id of the point within the internal vector
+	 */
+	size_t push_back (Point *pnt);
 
 	/**
 	 * push_back adds new elements at the end of the vector _pnt_vec.

@@ -16,6 +16,12 @@ namespace Mesh_Group {
 // forward declaration
 class CFEMesh;
 
+/**
+ * This class computes the ids of the mesh nodes along a polyline.
+ *
+ * The mesh nodes are sorted as follow:
+ * [ ... ids of sorted linear nodes ... | ... ids of unsorted higher order nodes ]
+ */
 class MeshNodesAlongPolyline {
 public:
 	MeshNodesAlongPolyline(GEOLIB::Polyline const * const ply, CFEMesh const * mesh);
