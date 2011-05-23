@@ -626,12 +626,22 @@ namespace FiniteElement
             }
             break;
          case 'M':                                // Mass transport
-            if(T_Flag)
-			{
-               cpl_pcs = PCSGet("HEAT_TRANSPORT");
-               idx_c0 = cpl_pcs->GetNodeValueIndex("TEMPERATURE1");
-               idx_c1 = idx_c0+1;
-		 }
+		if(C_Flag && T_Flag)
+	{
+	if(cpl_pcs == NULL)
+	{
+	cpl_pcs = PCSGet("PTC_FLOW");
+	if(cpl_pcs)
+	idx_c0 = cpl_pcs->GetNodeValueIndex("PRESSURE1");
+	idx_c1 = idx_c0+1;
+	}
+	}                              // Mass transport
+	else if(T_Flag)
+	{
+	cpl_pcs = PCSGet("HEAT_TRANSPORT");
+	idx_c0 = cpl_pcs->GetNodeValueIndex("TEMPERATURE1");
+	idx_c1 = idx_c0+1;
+	} 
             break;
          case 'O':                                // Liquid flow
             break;
