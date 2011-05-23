@@ -67,11 +67,13 @@ public:
 	 * end of its scope
 	 * \param points the vector with points
 	 * \param name the name of the internal PointVec
+	 * \param ids On return the vector holds the ids of the inserted points within the internal vector.
+	 * In case the ids are not needed it is possible to give a NULL pointer (default value).
 	 * \return true if the points are appended, false if the a PointVec with the
 	 * corresponding name does not exist
 	 * */
 	virtual bool appendPointVec(const std::vector<Point*> &points,
-			std::string &name);
+			std::string const &name, std::vector<size_t>* ids = NULL);
 
 	/**
 	 * Returns the point vector with the given name.
@@ -138,8 +140,8 @@ public:
 	const PolylineVec* getPolylineVecObj(const std::string &name) const;
 
 	/// Returns a pointer to a PolylineVec object for the given name.
-	PolylineVec* getPolylineVecObj(const std::string &name) { 
-		return const_cast<PolylineVec*>(static_cast<const GEOObjects&>(*this).getPolylineVecObj(name)); 
+	PolylineVec* getPolylineVecObj(const std::string &name) {
+		return const_cast<PolylineVec*>(static_cast<const GEOObjects&>(*this).getPolylineVecObj(name));
 	};
 
 	/**
@@ -153,7 +155,7 @@ public:
 	virtual void addSurfaceVec(std::vector<Surface*> *surfaces,
 			const std::string &name, std::map<std::string, size_t>* sfc_names = NULL);
 
-	/** 
+	/**
 	 * Copies the surfaces in the vector to the SurfaceVec with the given name.
 	 * \param polylines the vector with polylines
 	 * \param name the name of the internal PolylineVec
@@ -167,8 +169,8 @@ public:
 	const std::vector<Surface*> *getSurfaceVec(const std::string &name) const;
 
 	/// Returns the surface vector with the given name.
-	SurfaceVec* getSurfaceVecObj(const std::string &name) { 
-		return const_cast<SurfaceVec*>(static_cast<const GEOObjects&>(*this).getSurfaceVecObj(name)); 
+	SurfaceVec* getSurfaceVecObj(const std::string &name) {
+		return const_cast<SurfaceVec*>(static_cast<const GEOObjects&>(*this).getSurfaceVecObj(name));
 	};
 
 	/** removes the vector of Surfaces with the given name */
@@ -183,7 +185,7 @@ public:
 
 	/// Returns the names of all geometry vectors.
 	void getGeometryNames (std::vector<std::string>& names) const;
-	
+
 	/// @brief Prints the names of all geometry vectors on std out.
 	void printGeometryNames () const;
 

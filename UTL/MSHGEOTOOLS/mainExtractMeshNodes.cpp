@@ -122,6 +122,27 @@ int main (int argc, char *argv[])
 //			extract_mesh_nodes.writeMeshNodeIDs (out, pnt_out, polygon);
 		}
 	}
+
+	// *** for Model Pipiripau
+//	std::vector<GEOLIB::Polygon*> holes;
+//	size_t bounding_polygon_id(0);
+//	while (bounding_polygon_id < n_plys && ! (*plys)[bounding_polygon_id]->isClosed()) {
+//		bounding_polygon_id++;
+//	}
+//
+//	for (size_t k(bounding_polygon_id+1); k<n_plys; k++) {
+//		bool closed ((*plys)[k]->isClosed());
+//		if (!closed) {
+//			std::cout << "polyline " << k << " is not closed" << std::endl;
+//		} else {
+//			holes.push_back (new GEOLIB::Polygon(*(((*plys)[k]))));
+//		}
+//	}
+//	extract_mesh_nodes.writeMesh2DNodeIDAndArea (out, pnt_out, GEOLIB::Polygon((*((*plys)[bounding_polygon_id]))), holes);
+//	for (size_t k(0); k<holes.size(); k++) {
+//		delete holes[k];
+//	}
+
 	out << "#STOP" << std::endl;
 	out.close();
 

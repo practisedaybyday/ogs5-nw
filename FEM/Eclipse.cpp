@@ -1851,17 +1851,23 @@ Return: bool value if there occured an error
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-double CECLIPSEData::CalculateDistanceBetween2Points(double Point1[3], double Point2[3])
-{
-	double distance;
-
-	distance = sqrt(pow(Point1[0] - Point2[0],2) + pow(Point1[1] - Point2[1],2) + pow(Point1[2] - Point2[2],2));
-
-	if (distance >= 0)
-		return distance;
-	else
-		return -1;
-};
+// TF commented since we can use sqrt (MATHLIB::sqrDist(pnt1, pnt2))
+// this has three advantages:
+// (1) we use existing code and do not invent the distance computation again
+// (2) since the proposed function takes const arguments you can use
+//     it in const methods, which is not the case with this method
+// (3) imho the distance computation has nothing to do with the eclipse interface
+//double CECLIPSEData::CalculateDistanceBetween2Points(double Point1[3], double Point2[3])
+//{
+//	double distance;
+//
+//	distance = sqrt(pow(Point1[0] - Point2[0],2) + pow(Point1[1] - Point2[1],2) + pow(Point1[2] - Point2[2],2));
+//
+//	if (distance >= 0)
+//		return distance;
+//	else
+//		return -1;
+//};
 
 /*-------------------------------------------------------------------------
 GeoSys - Function: CreateFaces
@@ -1943,7 +1949,9 @@ bool CECLIPSEData::CreateFaces(void){
 			//Connect nodes with faces
 			m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->connected_faces.push_back(m_face->index);
 			//Calculate distance between node and gravity centre of the face and store it in a vector
-			m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(this->CalculateDistanceBetween2Points(vec_face_nodes[j]->GetCoordinates(), m_face->GetFaceGravityCentre()));
+//			m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(this->CalculateDistanceBetween2Points(vec_face_nodes[j]->getData(), m_face->GetFaceGravityCentre()));
+			m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(sqrt(MATHLIB::sqrDist(vec_face_nodes[j]->getData(), m_face->GetFaceGravityCentre())));
+
 		}
 
 		//non-radial elements: Upper face of the Element (j-direction) (Nodes: 3,2,7,6) -> with this order of the nodes the normal vector shows automatically to the positve j-direction
@@ -1983,7 +1991,7 @@ bool CECLIPSEData::CreateFaces(void){
 			//Connect nodes with faces
 			m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->connected_faces.push_back(m_face->index);
 			//Calculate distance between node and gravity centre of the face and store it in a vector
-			m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(this->CalculateDistanceBetween2Points(vec_face_nodes[j]->GetCoordinates(), m_face->GetFaceGravityCentre()));
+			m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(sqrt(MATHLIB::sqrDist(vec_face_nodes[j]->getData(), m_face->GetFaceGravityCentre())));
 		}
 
 		//non-radial elements: Bottom face of the Element (k-direction) (Nodes: 4,5,7,6) -> with this order of the nodes the normal vector shows automatically to the positve k-direction
@@ -2023,7 +2031,7 @@ bool CECLIPSEData::CreateFaces(void){
 			//Connect nodes with faces
 			m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->connected_faces.push_back(m_face->index);
 			//Calculate distance between node and gravity centre of the face and store it in a vector
-			m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(this->CalculateDistanceBetween2Points(vec_face_nodes[j]->GetCoordinates(), m_face->GetFaceGravityCentre()));
+			m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(sqrt(MATHLIB::sqrDist(vec_face_nodes[j]->getData(), m_face->GetFaceGravityCentre())));
 		}
 
 		//non-radial elements: Left face of the Element at the left (x) site of the grid (i-direction) (Nodes: 0,4,3,7) -> with this order of the nodes the normal vector shows automatically to the positve i-direction
@@ -2066,7 +2074,7 @@ bool CECLIPSEData::CreateFaces(void){
 				//Connect nodes with faces
 				m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->connected_faces.push_back(m_face->index);
 				//Calculate distance between node and gravity centre of the face and store it in a vector
-				m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(this->CalculateDistanceBetween2Points(vec_face_nodes[j]->GetCoordinates(), m_face->GetFaceGravityCentre()));
+				m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(sqrt(MATHLIB::sqrDist(vec_face_nodes[j]->getData(), m_face->GetFaceGravityCentre())));
 			}
 		}
 
@@ -2109,7 +2117,7 @@ bool CECLIPSEData::CreateFaces(void){
 				//Connect nodes with faces
 				m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->connected_faces.push_back(m_face->index);
 				//Calculate distance between node and gravity centre of the face and store it in a vector
-				m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(this->CalculateDistanceBetween2Points(vec_face_nodes[j]->GetCoordinates(), m_face->GetFaceGravityCentre()));
+				m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(sqrt(MATHLIB::sqrDist(vec_face_nodes[j]->getData(), m_face->GetFaceGravityCentre())));
 			}
 		}
 
@@ -2152,7 +2160,7 @@ bool CECLIPSEData::CreateFaces(void){
 				//Connect nodes with faces
 				m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->connected_faces.push_back(m_face->index);
 				//Calculate distance between node and gravity centre of the face and store it in a vector
-				m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(this->CalculateDistanceBetween2Points(vec_face_nodes[j]->GetCoordinates(), m_face->GetFaceGravityCentre()));
+				m_msh->nod_vector[vec_face_nodes[j]->GetIndex()]->distance_to_connected_faces.push_back(sqrt(MATHLIB::sqrDist(vec_face_nodes[j]->getData(), m_face->GetFaceGravityCentre())));
 			}
 		}
 	}

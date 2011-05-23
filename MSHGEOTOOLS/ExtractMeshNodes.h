@@ -60,27 +60,60 @@ public:
 
 	void writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream& gli_out, const GEOLIB::Polygon& polygon);
 
+	/**
+	 * Method computes the ids of mesh nodes that are inside the bounding polygon
+	 * and not inside a "hole". It writes these ids to the output stream.
+	 * @param os out put stream
+	 * @param gli_out mesh nodes as point for visualization purposes
+	 * @param bounding_polygon the bounding polygon (all mesh nodes inside this polygon are candidates)
+	 * @param holes mesh nodes insides these polygons are excluded from the output
+	 */
+	void writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream& gli_out, const GEOLIB::Polygon& bounding_polygon, std::vector<GEOLIB::Polygon*> const& holes);
+
 	void writeNearestMeshNodeToPoint (std::ostream& os, std::ostream& gli_out, GEOLIB::Point const & pnt);
 
 	/**
-	 * computes the bottom mesh nodes along a polyline
-	 * @param ply along the polyline ply
+	 * computes the mesh nodes along a polyline belonging to the bottom surface
+	 * @param ply computation along the polyline ply
 	 * @param bottom_points the bottom mesh nodes as points
 	 */
 	void getBottomMeshNodesAlongPolylineAsPoints (const GEOLIB::Polyline& ply, std::vector<GEOLIB::Point*>& bottom_points) const;
 
 	/**
-	 * Method computes the polygon to a given polyline that is consisting of this polyline, a
-	 * projection of this polyline to the bottom of the mesh and the links between these two polylines.
-	 * @param polyline the ("defining") polyline which is a part of the polygon,
-	 * 	the other part will be created by projection of the polyline to the bottom of the mesh.
-	 * @param point_vec point vector that holds (at least) the points of the polygon
+	 * computes the mesh nodes along a polyline belonging to the top surface
+	 * @param polyline computation along the polyline ply
+	 * @param top_points the top mesh nodes as points
+	 */
+	void getTopMeshNodesAlongPolylineAsPoints(
+			const GEOLIB::Polyline& polyline,
+			std::vector<GEOLIB::Point*>& top_points) const;
+
+	/**
+	 * Method computes the polygon to a given polyline that is consisting of the projection
+	 * of this polyline to the bottom and the top surface of the mesh and the links between
+	 * these two polylines.
+	 * @param polyline the ("defining") polyline
+	 * @param geo_obj geometric objects manager
+	 * @param name the name of the group of geometric objects
 	 * @param polygon pointer to the resulting polygon
 	 * 	warning: the pointer to an already existing polygon will be destroyed
 	 */
-	void getPolygonFromPolyline (const GEOLIB::Polyline& polyline, std::vector<GEOLIB::Point*>& point_vec, GEOLIB::Polygon* &polygon) const;
+	void getPolygonFromPolyline(const GEOLIB::Polyline& polyline,
+			GEOLIB::GEOObjects* geo_obj, std::string const& name,
+			GEOLIB::Polygon* &polygon) const;
 
 private:
+	/**
+	 * This method searchs all mesh nodes with the same x and y coordinates
+	 * like the polyline points. It returns the mesh nodes as points and the ids
+	 * within objects of type PointWithID.  The mesh nodes / points are
+	 * sorted lexicographically.
+	 * @param polyline the "defining" polyline
+	 * @param nodes_as_points vector of GEOLIB::Point objects
+	 */
+	void getOrthogonalProjectedMeshNodesAlongPolyline (
+			GEOLIB::Polyline const& polyline,
+			std::vector<GEOLIB::PointWithID>& nodes_as_points) const;
 	const CFEMesh* _msh;
 	/**
 	 * offset for gli point index

@@ -40,7 +40,7 @@ public:
 	int active;
 	double volume;
 	vector <long> connected_faces;
-	
+
 	vector <long> NeighbourElement;
 	vector <long> ConnectedBoundaryCondition;
 
@@ -155,7 +155,7 @@ public:
 	vector <structWell*> ecl_well;
 
 	double ** Data;	//array of points, times and variables
-	vector <string> WellRates; // KB, abspeichern der neuen Raten für einen bestimmten Zeitschritt
+	vector <string> WellRates; // KB, abspeichern der neuen Raten fï¿½r einen bestimmten Zeitschritt
 
 	vector <long> output_x;
 	vector <long> output_y;
@@ -202,10 +202,12 @@ public:
 	bool ReadPositionBoundaryCondition(std::string Filename);
 
 	bool CorrespondingElements(void);
-	
+
 	bool CompareElementsGeosysEclipse(void);
 
-	double CalculateDistanceBetween2Points(double Point1[3], double Point2[3]);
+	// TF commented out method since we have already functions for computing the distance
+	// between points
+//	double CalculateDistanceBetween2Points(double Point1[3], double Point2[3]);
 
 	bool CreateFaces(void);
 
@@ -233,7 +235,7 @@ public:
 	void WriteDataToGeoSys(CRFProcess *m_pcs, std::string folder);
 
 	bool CleanUpEclipseFiles(std::string folder, std::string projectname);
-	
+
 	int RunEclipse(long Timestep, CRFProcess *m_pcs);
 
 	void ReadWellData(std::string Filename_Wells);

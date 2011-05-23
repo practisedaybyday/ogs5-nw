@@ -87,13 +87,24 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 		// indices of nodes of the j-th element
 		const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
 		size_t k;
+//		for (k = 0; k<nodes_indices.Size(); k++) {
+//			if (! rot_polygon.isPntInPolygon(*(mesh_nodes_as_points[nodes_indices[k]]))) {
+//				break;
+//			}
+//		}
+//
+//		if (k == nodes_indices.Size()) {
+//			msh_elem[j]->setPatchIndex (mat_id);
+//		}
+
+		size_t cnt (0);
 		for (k = 0; k<nodes_indices.Size(); k++) {
-			if (! rot_polygon.isPntInPolygon(*(mesh_nodes_as_points[nodes_indices[k]]))) {
-				break;
+			if (rot_polygon.isPntInPolygon(*(mesh_nodes_as_points[nodes_indices[k]]))) {
+				cnt++;
 			}
 		}
 
-		if (k == nodes_indices.Size()) {
+		if (cnt >= 1) {
 			msh_elem[j]->setPatchIndex (mat_id);
 		}
 	}

@@ -39,20 +39,30 @@ void GEOObjects::addPointVec(std::vector<Point*> *points, std::string &name, std
 //	std::cout << "minimal dist between points: " << (_pnt_vecs[_pnt_vecs.size()-1])->getShortestPointDistance () << std::endl;
 }
 
-bool GEOObjects::appendPointVec(const std::vector<Point*> &points, std::string &name)
+bool GEOObjects::appendPointVec(std::vector<Point*> const& new_points,
+		std::string const &name, std::vector<size_t>* ids)
 {
 	// search vector
 	size_t idx (0);
 	bool nfound (true);
 	for (idx=0; idx<_pnt_vecs.size() && nfound; idx++) {
-		if ( (_pnt_vecs[idx]->getName()).compare (name) == 0 ) nfound = false;
+		if ( (_pnt_vecs[idx]->getName()).compare (name) == 0 )
+			nfound = false;
 	}
 
 	if (! nfound) {
 		idx--;
-		size_t n_pnts (points.size());
+		size_t n_new_pnts (new_points.size());
 		// append points
-		for (size_t k(0); k<n_pnts; k++) _pnt_vecs[idx]->push_back (points[k]);
+		if (ids) {
+			for (size_t k(0); k<n_new_pnts; k++) {
+				ids->push_back (_pnt_vecs[idx]->push_back (new_points[k]));
+			}
+		} else {
+			for (size_t k(0); k<n_new_pnts; k++) {
+				_pnt_vecs[idx]->push_back (new_points[k]);
+			}
+		}
 		return true;
 	} else return false;
 }
