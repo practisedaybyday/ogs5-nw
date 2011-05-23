@@ -571,9 +571,11 @@ namespace FiniteElement
             }
             break;
          case 'S':                                // Multi-phase flow. 24.2.2007 WW
-            if(T_Flag)                            //if(PCSGet("HEAT_TRANSPORT"))
-            {
-                cpl_pcs = PCSGet("MASS_TRANSPORT");
+	if(C_Flag)                            //if(PCSGet("HEAT_TRANSPORT"))
+	{
+	cpl_pcs = PCSGet("MASS_TRANSPORT");
+	idx_c0 = cpl_pcs->GetNodeValueIndex("CONCENTRATION1");
+	idx_c1 = idx_c0+1;
             }
             break;
          case 'C':                                // Componental flow
@@ -626,10 +628,23 @@ namespace FiniteElement
          case 'M':                                // Mass transport
             if(T_Flag)
             {
+	if(C_Flag)
+	{
+	if(cpl_pcs == NULL)
+	{
+	cpl_pcs = PCSGet("PTC_FLOW");
+	if(cpl_pcs)
+	idx_c0 = cpl_pcs->GetNodeValueIndex("PRESSURE1");
+	idx_c1 = idx_c0+1;//
+	}
+	}
+	else 
+	{
                cpl_pcs = PCSGet("HEAT_TRANSPORT");
                idx_c0 = cpl_pcs->GetNodeValueIndex("TEMPERATURE1");
                idx_c1 = idx_c0+1;
             }
+		}
             break;
          case 'O':                                // Liquid flow
             break;
@@ -2414,6 +2429,7 @@ namespace FiniteElement
         case 0:
         	dens_arg[0] = interpolate(NodalVal0);
         	dens_arg[1] = interpolate(NodalVal_t0);
+			dens_arg[2] = Index;
         	mat_fac = FluidProp->Viscosity(dens_arg);
         	tensor = MediaProp->PermeabilityTensor(Index);
         	for(i=0;i<dim*dim;i++)
@@ -3072,6 +3088,7 @@ namespace FiniteElement
     **************************************************************************/
    inline double CFiniteElementStd::CalCoefAdvectionPTC(int dof_index)
    {
+	   int Index = MeshElement->GetIndex();
 	   double val = 0.0;
 	   double dens_arg[3];
 
@@ -3094,13 +3111,14 @@ namespace FiniteElement
 	   case 2:
 		   PG = interpolate(NodalVal0);
 		   TG = interpolate(NodalVal_t0);
-		   val=1+FluidProp->beta_T*TG;
+		   val=1-FluidProp->beta_T*TG;
 		   if(FluidProp->beta_T == 0)
 		   val = 0.0;
 		   break;
 	   case 3:
 		   dens_arg[0] = interpolate(NodalVal0);
 		   dens_arg[1] = interpolate(NodalVal_t0);
+		   dens_arg[2] = Index;
 		   val=FluidProp->Density(dens_arg)*FluidProp->SpecificHeatCapacity();
 		   break;
 	   }
@@ -3860,8 +3878,7 @@ namespace FiniteElement
             for(jn=0; jn<dof_n; jn++)
             {
                // Material
-               mat_fac = CalCoefMassPTC(in*dof_n+jn);
-               mat_fac *= fkt;
+	mat_fac = fkt*CalCoefMassPTC(in*dof_n+jn);;
                // Calculate mass matrix
                for (i = 0; i < nnodes; i++)
                {
@@ -4820,6 +4837,7 @@ namespace FiniteElement
    // Local assembly
    void  CFiniteElementStd::Assemble_Gravity()
    {
+	         int Index = MeshElement->GetIndex();
       if((coordinate_system)%10!=2)               //NW: exclude (!axisymmetry)
       {
          // 27.2.2007 WW (*GravityMatrix) = 0.0;
@@ -4829,7 +4847,7 @@ namespace FiniteElement
       // ---- Gauss integral
       int gp_r=0, gp_s=0, gp_t;
       gp_t = 0;
-      double fkt, rho;                            //, rich_f;
+      double fkt, rho, dens_arg[3];                            //, rich_f;
       double k_rel_iteration;
       // GEO
       //NW  double geo_fac = MediaProp->geo_area;
@@ -4868,7 +4886,17 @@ namespace FiniteElement
          ComputeGradShapefct(1);                  // Linear interpolation function
          ComputeShapefct(1);                      // Moved from CalCoefLaplace(). 12.3.2007 WW
          // Material
-         rho = FluidProp->Density();              //Index,unit,pcs->m_num->ls_theta
+	if(PcsType==S) 
+	{
+	dens_arg[0]=interpolate(NodalVal0); // pressure
+	dens_arg[1]=interpolate(NodalVal_t0); // temperature
+	dens_arg[2] = Index;
+	rho = FluidProp->Density(dens_arg); 
+	}
+	  else
+	  {
+ rho = FluidProp->Density(); 
+	  }
          if(gravity_constant<MKleinsteZahl)       // HEAD version
             rho = 1.0;
          else if(HEAD_Flag) rho = 1.0;
@@ -4882,6 +4910,8 @@ namespace FiniteElement
             {
                if(PcsType==T)
                   CalCoefLaplace(false);
+              if(PcsType==S)
+                  CalCoefLaplacePTC(0);
                else
                   CalCoefLaplace(true);
             }
@@ -7304,7 +7334,7 @@ void CFiniteElementStd::CalcFEM_FCT()
             break;
          case S:
         	 AssembleParabolicEquation();
-        	 //Assemble_Gravity();
+        	 Assemble_Gravity();
         	 break;
             //....................................................................
          default:

@@ -85,6 +85,7 @@ namespace FiniteElement
          bool isTemperatureCoupling() const {return T_Flag;}
          bool isFluidPressureCoupling() const {return F_Flag;}
          int isDeformationCoupling() const {return D_Flag;}
+		          int isConcentrationCoupling() const {return C_Flag;}
 
          // Interpolate Gauss values
          double interpolate (double *nodalVal, const int order =1) const;
@@ -164,6 +165,7 @@ namespace FiniteElement
 
          // Coupling flag
          bool T_Flag;                             // Temperature
+		          bool C_Flag;                             // Concentration
          bool F_Flag;                             // Fluid
          int D_Flag;                              // Deformation
          int PT_Flag;                             // Particle Tracking Random Walk
