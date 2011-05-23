@@ -14,10 +14,10 @@
 
 #include <algorithm>
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 MeshNodesAlongPolyline::MeshNodesAlongPolyline(
-		GEOLIB::Polyline const * const ply, Mesh_Group::CFEMesh const * mesh) :
+		GEOLIB::Polyline const * const ply, MeshLib::CFEMesh const * mesh) :
 	_ply(ply), _mesh(mesh), _linear_nodes (0)
 {
 	std::vector<CNode*> const& mesh_nodes (mesh->getNodeVector());

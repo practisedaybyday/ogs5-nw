@@ -603,8 +603,8 @@ void CPARDomain::CreateElements(const bool quadr)
    long i,k;
    int j, nNodes, nNodesHQ;
    long *elem_nodes=NULL;
-   Mesh_Group::CElem* m_ele = NULL;
-   Mesh_Group::CNode* m_nod = NULL;
+   MeshLib::CElem* m_ele = NULL;
+   MeshLib::CNode* m_nod = NULL;
    //*** Buffer for acceleration. 14.09.2007 WW:
                                                   // As long buffer
    node_connected_doms.resize((long)m_msh->nod_vector.size());
@@ -1090,7 +1090,7 @@ void FindNodesOnInterface(CFEMesh *m_msh, bool quadr)
 
    long *elem_nodes=NULL;
    //
-   Mesh_Group::CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    //
    CPARDomain *m_dom = NULL;
    vector<long> boundary_nodes;

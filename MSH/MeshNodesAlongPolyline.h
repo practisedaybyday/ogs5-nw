@@ -11,7 +11,7 @@
 // GEOLIB
 #include "Polyline.h"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 // forward declaration
 class CFEMesh;

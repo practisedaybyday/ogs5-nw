@@ -15,7 +15,7 @@ namespace GEOLIB{
 	class GEOObjects;
 }
 
-namespace Mesh_Group{
+namespace MeshLib{
 	class CFEMesh;
 }
 
@@ -26,7 +26,7 @@ public:
 	/// Import climate data from a NetCDF file.
     static void readNetCDFData(std::string &fname, std::vector<GEOLIB::Point*>* points_vec, GEOLIB::GEOObjects *geo_obj, size_t &NRLAT, size_t &NRLON);
     /// Convert imported point data to an CFEMesh.
-	static Mesh_Group::CFEMesh* createMeshFromPoints(std::vector<GEOLIB::Point*>* points_vec, size_t &NRLAT, size_t &NRLON);
+	static MeshLib::CFEMesh* createMeshFromPoints(std::vector<GEOLIB::Point*>* points_vec, size_t &NRLAT, size_t &NRLON);
 
 private:
 

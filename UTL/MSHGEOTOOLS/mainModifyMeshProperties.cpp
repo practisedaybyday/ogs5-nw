@@ -45,7 +45,7 @@ int main (int argc, char *argv[])
 	if (tmp.find (".msh") != std::string::npos)
 		file_base_name = tmp.substr (0, tmp.size()-4);
 
-	Mesh_Group::CFEMesh* mesh (FEMRead(file_base_name));
+	MeshLib::CFEMesh* mesh (FEMRead(file_base_name));
 	if (!mesh) {
 		std::cerr << "could not read mesh from file " << std::endl;
 		return -1;
@@ -90,7 +90,7 @@ int main (int argc, char *argv[])
 	size_t material_id (atoi (argv[6]));
 
 	GEOLIB::Polygon polygon (*((*plys)[0]));
-	Mesh_Group::ModifyMeshProperties modify_mesh_nodes (mesh);
+	MeshLib::ModifyMeshProperties modify_mesh_nodes (mesh);
 
 	modify_mesh_nodes.setMaterial (polygon, material_id);
 

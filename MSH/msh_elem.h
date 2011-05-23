@@ -21,7 +21,7 @@ namespace Math_Group{class Matrix;}
 
 class CRFProcess;
 //------------------------------------------------------------------------
-namespace Mesh_Group
+namespace MeshLib
 {
    // Process
    using process::CRFProcessDeformation;
@@ -386,5 +386,5 @@ namespace Mesh_Group
          friend class ::CRFProcess;
    };
 
-} // namespace Mesh_Group
+} // namespace MeshLib
 #endif

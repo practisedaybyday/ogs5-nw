@@ -48,7 +48,7 @@ using Math_Group::SparseTable;
 #endif
 
 //------------------------------------------------------------------------
-namespace Mesh_Group
+namespace MeshLib
 {
 
 #ifndef NON_GEO
@@ -332,23 +332,23 @@ namespace Mesh_Group
           * returns the vector storing pointers to all nodes (class CNode) of the mesh
           * @return
           */
-         const std::vector<Mesh_Group::CNode*>& getNodeVector () const { return nod_vector; }
+         const std::vector<MeshLib::CNode*>& getNodeVector () const { return nod_vector; }
 
          // All nodes - should be private!!!
-         std::vector<Mesh_Group::CNode*> nod_vector;
+         std::vector<MeshLib::CNode*> nod_vector;
 
          // All edges
-         std::vector<Mesh_Group::CEdge*> edge_vector;
+         std::vector<MeshLib::CEdge*> edge_vector;
          // All surface faces
-         std::vector<Mesh_Group::CElem*> face_vector;
+         std::vector<MeshLib::CElem*> face_vector;
          // All surface normal
          std::vector<double*> face_normal;        //YD
 
-         const std::vector<Mesh_Group::CElem*>& getElementVector () const { return ele_vector; }
+         const std::vector<MeshLib::CElem*>& getElementVector () const { return ele_vector; }
          /**
           * all elements stored in this vector
           * */
-         std::vector<Mesh_Group::CElem*> ele_vector;
+         std::vector<MeshLib::CElem*> ele_vector;
          // Nodes in usage
          // To record eqs_index->global node index
          std::vector<long> Eqs2Global_NodeIndex;
@@ -413,7 +413,7 @@ namespace Mesh_Group
           * identifier for geometry
           */
          std::string* _geo_name;
-         std::vector<Mesh_Group::MeshNodesAlongPolyline> _mesh_nodes_along_polylines;
+         std::vector<MeshLib::MeshNodesAlongPolyline> _mesh_nodes_along_polylines;
 
          MshElemType::type _ele_type;
          size_t _n_msh_layer;                     //OK
@@ -476,5 +476,5 @@ namespace Mesh_Group
 #endif                                      // #ifndef NON_GEO //WW
    };
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib
 #endif

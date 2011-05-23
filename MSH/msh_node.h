@@ -15,7 +15,7 @@ last modified
 // MSHLib
 #include "msh_core.h"
 
-namespace Mesh_Group
+namespace MeshLib
 {
    using Math_Group::SymMatrix;
    using Math_Group::vec;
@@ -98,5 +98,5 @@ namespace Mesh_Group
 
    };
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib
 #endif

@@ -19,7 +19,7 @@
 #include "Polygon.h"
 #include "PointWithID.h"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 /**
  * This class implements an algorithm to extract mesh node ids from a given (extruded) mesh.

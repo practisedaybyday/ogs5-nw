@@ -32,7 +32,7 @@ namespace FiniteElement
 }
 
 
-namespace Mesh_Group {class CFEMesh;}
+namespace MeshLib {class CFEMesh;}
 
 #ifdef NEW_EQS                                    //WW
 namespace Math_Group {class Linear_EQS;}
@@ -51,7 +51,7 @@ using FiniteElement::CFiniteElementStd;
 using FiniteElement::CFiniteElementVec;
 using FiniteElement::ElementMatrix;
 using FiniteElement::ElementValue;
-using Mesh_Group::CFEMesh;
+using MeshLib::CFEMesh;
 //---------------------------------------------------------------------------
 
 #define PCS_FILE_EXTENSION ".pcs"

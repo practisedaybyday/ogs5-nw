@@ -34,13 +34,13 @@ public:
 	void setGEOObjects(GEOLIB::GEOObjects* geo_objects) { _geoObjects = geo_objects; };
 
 	/// Adds a new mesh
-	virtual void addMesh(Mesh_Group::CFEMesh* mesh, std::string &name);
+	virtual void addMesh(MeshLib::CFEMesh* mesh, std::string &name);
 
 	/// Returns the mesh with the given name.
-	const Mesh_Group::CFEMesh* getMesh(const std::string &name) const;
+	const MeshLib::CFEMesh* getMesh(const std::string &name) const;
 
 	/// Returns all the meshes with their respective names
-	const std::map<std::string, Mesh_Group::CFEMesh*>& getMeshObjects() const { return _msh_vec; };
+	const std::map<std::string, MeshLib::CFEMesh*>& getMeshObjects() const { return _msh_vec; };
 
 	/// Removes the mesh with the given name.
 	virtual bool removeMesh(const std::string &name);
@@ -68,7 +68,7 @@ public:
 
 private:
 	GEOLIB::GEOObjects* _geoObjects;
-	std::map<std::string, Mesh_Group::CFEMesh*> _msh_vec;
+	std::map<std::string, MeshLib::CFEMesh*> _msh_vec;
 	std::vector<FEMCondition*> _cond_vec;
 };
 

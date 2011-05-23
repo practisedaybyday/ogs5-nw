@@ -7,7 +7,7 @@
 #include "MeshQualityNormalisedArea.h"
 #include "mathlib.cpp"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 MeshQualityNormalisedArea::MeshQualityNormalisedArea(CFEMesh const * const mesh)
 : MeshQualityChecker(mesh)
@@ -16,7 +16,7 @@ MeshQualityNormalisedArea::MeshQualityNormalisedArea(CFEMesh const * const mesh)
 void MeshQualityNormalisedArea::check()
 {
 	// get all elements of mesh
-	const std::vector<Mesh_Group::CElem*>& msh_elem(_mesh->getElementVector());
+	const std::vector<MeshLib::CElem*>& msh_elem(_mesh->getElementVector());
 
 	double max_volume (0.0);
 
@@ -64,4 +64,4 @@ void MeshQualityNormalisedArea::check()
 	}
 }
 
-} // end namespace Mesh_Group
+} // end namespace MeshLib

@@ -48,7 +48,7 @@ extern size_t max_dim;                            //OK411 todo
 	#include "rf_REACT_GEM.h"
 #endif // GEM_REACT
 
-using Mesh_Group::CFEMesh;
+using MeshLib::CFEMesh;
 using namespace std;
 
 COutput::COutput() :

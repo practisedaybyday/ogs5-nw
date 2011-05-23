@@ -79,7 +79,7 @@ class CInitialCondition : public ProcessInfo, public GeoInfo, public Distributio
       void Set(int);
       void SetEle(int);                           //MX
       void SetDomainEle(int);                     //MX
-	  Mesh_Group::CFEMesh* m_msh;
+	  MeshLib::CFEMesh* m_msh;
 };
 
 class CInitialConditionGroup

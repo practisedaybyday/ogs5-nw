@@ -10,7 +10,7 @@
 
 #include <fstream>
 
-namespace Mesh_Group {
+namespace MeshLib {
 class CFEMesh;
 }
 
@@ -19,10 +19,10 @@ namespace FileIO {
 class OGSMeshIO {
 public:
 	/// Read a OGS mesh from file.
-	static Mesh_Group::CFEMesh* loadMeshFromFile(std::string fileName);
+	static MeshLib::CFEMesh* loadMeshFromFile(std::string fileName);
 
 	/// Write an OGS msh to a file.
-	static void write (Mesh_Group::CFEMesh const * mesh, std::ofstream &out);
+	static void write (MeshLib::CFEMesh const * mesh, std::ofstream &out);
 };
 
 } // end namespace FileIO

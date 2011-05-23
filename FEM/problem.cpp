@@ -1396,8 +1396,8 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs) {
 
   //Testoutput amount of co2 in model domain
   CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-  Mesh_Group::CElem* m_ele = NULL;
-  Mesh_Group::CNode* m_node = NULL;
+  MeshLib::CElem* m_ele = NULL;
+  MeshLib::CNode* m_node = NULL;
   CMediumProperties *m_mat_mp = NULL;
   ostringstream temp;
   double mass_CO2_gas, mass_CO2_water, mass_CO2;
@@ -1605,8 +1605,8 @@ Programming:
 void Problem::TestOutputEclipse(CRFProcess *m_pcs) {
   //Testoutput amount of co2 in model domain calculated at nodes
   CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-  Mesh_Group::CElem* m_ele = NULL;
-  Mesh_Group::CNode* m_node = NULL;
+  MeshLib::CElem* m_ele = NULL;
+  MeshLib::CNode* m_node = NULL;
   CMediumProperties *m_mat_mp = NULL;
   ostringstream temp;
   double mass_CO2_gas, mass_CO2_water, mass_CO2;

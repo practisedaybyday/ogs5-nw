@@ -38,8 +38,8 @@ void CFEMesh::CreatePriELEFromTri(int no_layer,double layer_thickness)
    long size;
    long no_tri_elements = (long)ele_vector.size();
    long no_tri_nodes = (long)nod_vector.size();
-   Mesh_Group::CElem* m_tri_ele = NULL;
-   Mesh_Group::CElem* m_ele = NULL;
+   MeshLib::CElem* m_tri_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    //----------------------------------------------------------------------
    // Create MSH
    MSHDelete("PRIS_from_TRI");
@@ -60,7 +60,7 @@ void CFEMesh::CreatePriELEFromTri(int no_layer,double layer_thickness)
       {
          //Elements
          m_tri_ele = ele_vector[i];
-         m_ele = new  Mesh_Group::CElem;
+         m_ele = new  MeshLib::CElem;
                                                   //OK
          m_ele->SetPatchIndex((int)mmp_vector.size()+j);
          m_ele->SetElementType(MshElemType::PRISM);
@@ -126,8 +126,8 @@ void CFEMesh::CreateLineELEFromQuad(int m_numberofprismlayers,double m_thickness
    long no_quad_elements = (long)ele_vector.size();
    //long no_quad_nodes = (long)nod_vector.size();
    double* center = NULL;
-   Mesh_Group::CElem* m_quad_ele = NULL;
-   Mesh_Group::CElem* m_ele = NULL;
+   MeshLib::CElem* m_quad_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
 
    //----------------------------------------------------------------------
    // Create MSH
@@ -154,7 +154,7 @@ void CFEMesh::CreateLineELEFromQuad(int m_numberofprismlayers,double m_thickness
       {
          //Elements
          m_quad_ele = ele_vector[i];
-         m_ele = new Mesh_Group::CElem;
+         m_ele = new MeshLib::CElem;
          //m_ele->GetPatchIndex() = m_msh_line->mat_group;
          m_ele->SetIndex((i*m_numberofprismlayers) + j);
          m_ele->SetElementType(MshElemType::LINE);
@@ -211,8 +211,8 @@ void CFEMesh::CreateHexELEFromQuad(int no_layer,double layer_thickness)
    long size;
    long no_quad_elements = (long)ele_vector.size();
    long no_quad_nodes = (long)nod_vector.size();
-   Mesh_Group::CElem* m_quad_ele = NULL;
-   Mesh_Group::CElem* m_ele = NULL;
+   MeshLib::CElem* m_quad_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
 
    //----------------------------------------------------------------------
    // Create MSH
@@ -235,7 +235,7 @@ void CFEMesh::CreateHexELEFromQuad(int no_layer,double layer_thickness)
       {
          //Elements
          m_quad_ele = ele_vector[i];
-         m_ele = new Mesh_Group::CElem;
+         m_ele = new MeshLib::CElem;
          //m_ele->SetPatchIndex(j);
          m_ele->SetIndex((j*no_quad_elements) + i);
          m_ele->SetElementType(MshElemType::HEXAHEDRON);

@@ -17,10 +17,10 @@
 #include <map>
 #include <vector>
 #ifdef NEW_EQS
-namespace Mesh_Group {class CFEMesh;}
+namespace MeshLib {class CFEMesh;}
 //08.2007 WW
 class CPARDomain;
-using Mesh_Group::CFEMesh;
+using MeshLib::CFEMesh;
 #endif
 //#define OverLoadNEW_DELETE
 

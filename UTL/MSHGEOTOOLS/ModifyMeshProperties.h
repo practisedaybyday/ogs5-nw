@@ -10,7 +10,7 @@
 
 #include "Polygon.h"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 class CFEMesh;
 

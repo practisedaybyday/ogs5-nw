@@ -21,7 +21,7 @@ last modified
 
 
 //========================================================================
-namespace Mesh_Group
+namespace MeshLib
 {
    /**************************************************************************
    MSHLib-Method:
@@ -1398,4 +1398,4 @@ double CElem::calcVolume () const
       }
    }
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib

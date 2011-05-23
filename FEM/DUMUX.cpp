@@ -430,8 +430,8 @@ int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timest
 
 	//--------------------------------------------------------------------------------------------
 	//Test output
-	Mesh_Group::CElem* m_ele = NULL;
-	Mesh_Group::CNode* m_node = NULL;
+	MeshLib::CElem* m_ele = NULL;
+	MeshLib::CNode* m_node = NULL;
 	CMediumProperties *m_mat_mp = NULL;
 	double node_volume;
 	//int position;
@@ -536,7 +536,7 @@ void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep
 	double time;
 	int column;
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-	Mesh_Group::CElem* m_ele = NULL;
+	MeshLib::CElem* m_ele = NULL;
 
 
 	start = clock();
@@ -644,7 +644,7 @@ void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep
 
 	//--------------------------------------------------------------------------------------------
 	//Test output
-	Mesh_Group::CNode* m_node = NULL;
+	MeshLib::CNode* m_node = NULL;
 	CMediumProperties *m_mat_mp = NULL;
 	ostringstream temp;
 	double mass_CO2_gas, mass_CO2_water; // unused:, mass_CO2;
@@ -739,7 +739,7 @@ Modification:
 -------------------------------------------------------------------------*/
 void CDUMUXData::WriteDataToGeoSys(CRFProcess *m_pcs){
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-	Mesh_Group::CElem* m_ele = NULL;
+	MeshLib::CElem* m_ele = NULL;
 	CFiniteElementStd *fem;
 	long index;
 	double value = 0;

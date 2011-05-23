@@ -135,7 +135,7 @@ int main (int argc, char *argv[])
 				tmp = tmp.substr (0, tmp.size()-4);
 
 			std::cout << "reading mesh " << tmp << " ... " << std::flush;
-			Mesh_Group::CFEMesh* mesh (FEMRead(tmp));
+			MeshLib::CFEMesh* mesh (FEMRead(tmp));
 			std::cout << "done" << std::endl;
 			if (!mesh) {
 				std::cerr << "could not read mesh from file " << std::endl;

@@ -7,12 +7,12 @@
 
 class COutput;
 
-namespace Mesh_Group
+namespace MeshLib
 {
    class CFEMesh;
 }
 
-using namespace Mesh_Group;
+using namespace MeshLib;
 
 typedef struct
 {

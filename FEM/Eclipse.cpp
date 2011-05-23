@@ -2807,7 +2807,7 @@ Modification:
 void CECLIPSEData::InterpolateDataFromFacesToNodes(long ele_nr, double* n_vel_x, double* n_vel_y, double* n_vel_z, int phase_index)
 {
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-	Mesh_Group::CElem* m_ele = NULL;
+	MeshLib::CElem* m_ele = NULL;
 	CFaces *m_face=NULL;
 	CNode* m_node = NULL;
 	double distance;
@@ -3418,7 +3418,7 @@ void CECLIPSEData::WriteDataToGeoSys(CRFProcess *m_pcs, std::string path){
 		vector <string> vec_string;
 		std::string tempstring;
 		ostringstream temp;
-		Mesh_Group::CElem* elem = NULL;
+		MeshLib::CElem* elem = NULL;
 		vec<CNode*> Nodes(8);
 		double Val;
 		if (this->Phases.size() == 1) {

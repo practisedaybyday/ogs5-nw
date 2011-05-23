@@ -7,7 +7,7 @@
 
 #include "MeshQualityShortestLongestRatio.h"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 MeshQualityShortestLongestRatio::MeshQualityShortestLongestRatio(
 		CFEMesh const * const mesh) :
@@ -18,7 +18,7 @@ MeshQualityShortestLongestRatio::MeshQualityShortestLongestRatio(
 void MeshQualityShortestLongestRatio::check()
 {
 	// get all elements of mesh
-	const std::vector<Mesh_Group::CElem*>& msh_elem(_mesh->getElementVector());
+	const std::vector<MeshLib::CElem*>& msh_elem(_mesh->getElementVector());
 
 	for (size_t k(0); k < msh_elem.size(); k++) {
 		switch (msh_elem[k]->GetElementType()) {
@@ -214,4 +214,4 @@ double MeshQualityShortestLongestRatio::checkHexahedron (std::vector<GEOLIB::Poi
 	return sqrt(sqr_lengths[0]) / sqrt(sqr_lengths[11]);
 }
 
-} // end namespace Mesh_Group
+} // end namespace MeshLib

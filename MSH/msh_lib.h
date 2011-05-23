@@ -10,14 +10,14 @@ last modified
 
 #include "msh_mesh.h"
 
-using Mesh_Group::CFEMesh;
-using Mesh_Group::CElem;
-using Mesh_Group::CNode;
+using MeshLib::CFEMesh;
+using MeshLib::CElem;
+using MeshLib::CNode;
 
-extern std::vector<Mesh_Group::CFEMesh*> fem_msh_vector;
+extern std::vector<MeshLib::CFEMesh*> fem_msh_vector;
 extern CFEMesh* FEMGet(const std::string &msh_name);
                                                   //OK
-extern void MSHCreateNOD2ELERelations(Mesh_Group::CFEMesh*);
+extern void MSHCreateNOD2ELERelations(MeshLib::CFEMesh*);
 
 extern CFEMesh* FEMRead(const std::string& , GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
 

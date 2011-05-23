@@ -52,7 +52,7 @@ int main (int argc, char *argv[])
 	if (tmp.find (".msh") != std::string::npos)
 		file_base_name = tmp.substr (0, tmp.size()-4);
 
-	Mesh_Group::CFEMesh* mesh (FEMRead(file_base_name));
+	MeshLib::CFEMesh* mesh (FEMRead(file_base_name));
 	if (!mesh) {
 		std::cerr << "could not read mesh from file " << std::endl;
 		return -1;
@@ -80,7 +80,7 @@ int main (int argc, char *argv[])
 //			std::ofstream pnt_out (fname_gli.c_str());
 //			pnt_out << "#POINTS" << std::endl;
 //
-//			Mesh_Group::ExtractMeshNodes extract_mesh_nodes (mesh);
+//			MeshLib::ExtractMeshNodes extract_mesh_nodes (mesh);
 //
 //			const size_t n_pnts (pnts->size());
 //			for (size_t k(0); k<n_pnts; k++) {
@@ -100,7 +100,7 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
-	Mesh_Group::ExtractMeshNodes extract_mesh_nodes (mesh);
+	MeshLib::ExtractMeshNodes extract_mesh_nodes (mesh);
 
 	std::string fname ("MeshIDs.txt");
 	std::ofstream out (fname.c_str());

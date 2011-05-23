@@ -12,7 +12,7 @@ last modified
 // MSHLib
 #include "msh_node.h"
 //------------------------------------------------------------------------
-namespace Mesh_Group
+namespace MeshLib
 {
    /**
     * \brief Class CEdge represent an edge of a finite element mesh.
@@ -102,5 +102,5 @@ namespace Mesh_Group
          friend class CElem;
    };
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib
 #endif

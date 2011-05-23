@@ -3,7 +3,7 @@
 #include <vector>
 #include "msh_node.h"
 using namespace std;
-using namespace Mesh_Group; //necessary for using CNode and CElem??
+using namespace MeshLib; //necessary for using CNode and CElem??
 
 class CPlaneEquation {
 private:

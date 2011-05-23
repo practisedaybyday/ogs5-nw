@@ -10,9 +10,9 @@
 
 #include "MeshQualityChecker.h"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
-class MeshQualityEquiAngleSkew: public Mesh_Group::MeshQualityChecker {
+class MeshQualityEquiAngleSkew: public MeshLib::MeshQualityChecker {
 public:
 	MeshQualityEquiAngleSkew(CFEMesh const * const mesh);
 	virtual ~MeshQualityEquiAngleSkew();

@@ -59,9 +59,9 @@
 #include "readNonBlankLineFromInputStream.h"
 
 using FiniteElement::CElement;
-using Mesh_Group::CElem;
-using Mesh_Group::CEdge;
-using Mesh_Group::CNode;
+using MeshLib::CElem;
+using MeshLib::CEdge;
+using MeshLib::CNode;
 using Math_Group::vec;
 
 #ifndef GRAVITY_CONSTANT

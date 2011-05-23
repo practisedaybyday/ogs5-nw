@@ -22,7 +22,7 @@
 // STL
 #include <fstream>
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 ModifyMeshProperties::ModifyMeshProperties(CFEMesh* msh) :
 	_mesh (msh)
@@ -34,7 +34,7 @@ ModifyMeshProperties::~ModifyMeshProperties()
 void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t mat_id)
 {
 	// get all nodes of mesh
-	const std::vector<Mesh_Group::CNode*>& msh_nodes (_mesh->getNodeVector());
+	const std::vector<MeshLib::CNode*>& msh_nodes (_mesh->getNodeVector());
 
 	// *** rotate polygon to xy_plane
 	// 1 copy all points
@@ -79,7 +79,7 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 	MathLib::rotatePointsToXY(plane_normal_polygon, mesh_nodes_as_points);
 
 	// get all elements of mesh
-	const std::vector<Mesh_Group::CElem*>& msh_elem (_mesh->getElementVector());
+	const std::vector<MeshLib::CElem*>& msh_elem (_mesh->getElementVector());
 
 	// *** perform search and modify mesh
 	const size_t msh_elem_size (msh_elem.size());

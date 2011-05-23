@@ -7,7 +7,7 @@
 
 #include "MeshQualityNormalisedVolumes.h"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 MeshQualityNormalisedVolumes::MeshQualityNormalisedVolumes(
 		CFEMesh const * const mesh) :
@@ -17,7 +17,7 @@ MeshQualityNormalisedVolumes::MeshQualityNormalisedVolumes(
 void MeshQualityNormalisedVolumes::check()
 {
 	// get all elements of mesh
-	const std::vector<Mesh_Group::CElem*>& msh_elem(_mesh->getElementVector());
+	const std::vector<MeshLib::CElem*>& msh_elem(_mesh->getElementVector());
 
 	size_t error_count(0);
 	double max_volume (0.0);
@@ -63,7 +63,7 @@ void MeshQualityNormalisedVolumes::check()
 void MeshQualityNormalisedVolumes::getHistogramm (std::vector<size_t>& histogramm) const
 {
 	// get all elements of mesh
-	std::vector<Mesh_Group::CElem*> const& msh_elem (_mesh->getElementVector());
+	std::vector<MeshLib::CElem*> const& msh_elem (_mesh->getElementVector());
 
 	const size_t msh_elem_size (msh_elem.size());
 	const size_t histogramm_size (histogramm.size()-1);
@@ -77,4 +77,4 @@ void MeshQualityNormalisedVolumes::getHistogramm (std::vector<size_t>& histogram
 	}
 }
 
-} // end namespace Mesh_Group
+} // end namespace MeshLib

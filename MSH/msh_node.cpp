@@ -13,7 +13,7 @@ Programing:
 #include "msh_node.h"
 
 //========================================================================
-namespace Mesh_Group
+namespace MeshLib
 {
    /**************************************************************************
    MSHLib-Method:
@@ -107,4 +107,4 @@ namespace Mesh_Group
       coordinate[2] = argCoord[2];
    }
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib

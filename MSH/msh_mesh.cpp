@@ -54,7 +54,7 @@ size_t max_dim = 0;                               //OK411
 class ThreadParameter {
 public:
 	ThreadParameter (GEOLIB::Point const* const pnt, size_t start, size_t end,
-			std::vector<Mesh_Group::CNode*> const& nod_vector, size_t id)
+			std::vector<MeshLib::CNode*> const& nod_vector, size_t id)
 	: _pnt (pnt), _start (start), _end (end), _nod_vector (nod_vector),
 	_number (start), _sqr_dist (std::numeric_limits<double>::max()), _id (id)
 	{}
@@ -62,7 +62,7 @@ public:
 	GEOLIB::Point const * const _pnt;
 	size_t _start;
 	size_t _end;
-	std::vector<Mesh_Group::CNode*> const& _nod_vector;
+	std::vector<MeshLib::CNode*> const& _nod_vector;
 	size_t _number;
 	double _sqr_dist;
 	size_t _id;
@@ -74,7 +74,7 @@ void* threadGetDist (void *ptr)
 	ThreadParameter *thread_param ((ThreadParameter*)(ptr));
 	size_t start (thread_param->_start);
 	size_t end (thread_param->_end);
-	std::vector<Mesh_Group::CNode*> const& nod_vector (thread_param->_nod_vector);
+	std::vector<MeshLib::CNode*> const& nod_vector (thread_param->_nod_vector);
 	GEOLIB::Point const * const pnt (thread_param->_pnt);
 
 	double distmin (MathLib::sqrDist (nod_vector[start]->getData(), pnt->getData()));
@@ -98,7 +98,7 @@ void* threadGetDist (void *ptr)
 } // end extern "C"
 
 //========================================================================
-namespace Mesh_Group {
+namespace MeshLib {
 /**************************************************************************
  FEMLib-Method:
  Task:
@@ -146,7 +146,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
          size_t nNodes = old_mesh->nod_vector.size();
          for (size_t i=0; i<nNodes; i++)
          {
-            Mesh_Group::CNode* node = new Mesh_Group::CNode(i);
+            MeshLib::CNode* node = new MeshLib::CNode(i);
             double coords[3] = { old_mesh->nod_vector[i]->X(), old_mesh->nod_vector[i]->Y(), old_mesh->nod_vector[i]->Z() };
             node->SetCoordinates(coords);
             this->nod_vector.push_back(node);
@@ -156,7 +156,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
          size_t nElems = old_mesh->ele_vector.size();
          for (size_t i=0; i<nElems; i++)
          {
-            Mesh_Group::CElem* elem = new Mesh_Group::CElem();
+            MeshLib::CElem* elem = new MeshLib::CElem();
             elem->SetElementType(old_mesh->ele_vector[i]->GetElementType());
             elem->SetPatchIndex(old_mesh->ele_vector[i]->GetPatchIndex());
 
@@ -403,7 +403,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
          size_t nElemNodes( static_cast<size_t> (elem->GetNodesNumber(quadratic)) );
          for (size_t i = 0; i < nElemNodes; i++)
          {
-            Mesh_Group::CNode* node (nod_vector[elem->GetNodeIndex(i)]);
+            MeshLib::CNode* node (nod_vector[elem->GetNodeIndex(i)]);
             node->getConnectedElementIDs().push_back(e);
          }
       }
@@ -3918,4 +3918,4 @@ void CFEMesh::TopSurfaceIntegration()
 }
 
 
-// namespace Mesh_Group
+// namespace MeshLib

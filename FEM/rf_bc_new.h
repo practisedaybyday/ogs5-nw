@@ -29,7 +29,7 @@ class BoundaryConditionIO;
 //#include "msh_lib.h"
 // PCSLib
 //#include "rf_pcs.h"
-namespace Mesh_Group
+namespace MeshLib
 {
    class CFEMesh;
 }
@@ -213,7 +213,7 @@ class CBoundaryConditionsGroup
       long msh_node_number_subst;                 //WW
       std::string fct_name;                       //OK
 
-      Mesh_Group::CFEMesh* m_msh;                 //OK
+      MeshLib::CFEMesh* m_msh;                 //OK
       //WW std::vector<CBoundaryCondition*>bc_group_vector; //OK
       //WW double GetConditionalNODValue(int,CBoundaryCondition*); //OK
       int time_dep_bc;

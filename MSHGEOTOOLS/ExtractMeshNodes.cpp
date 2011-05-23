@@ -19,7 +19,7 @@
 // MathLib
 #include "MathTools.h"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 ExtractMeshNodes::ExtractMeshNodes(const CFEMesh* msh) :
 	_msh (msh), _gli_pnt_offset (0)
@@ -29,7 +29,7 @@ ExtractMeshNodes::ExtractMeshNodes(const CFEMesh* msh) :
 void ExtractMeshNodes::writeMeshNodeIDs (std::ostream& os, std::ostream& gli_out, const GEOLIB::Polygon& polygon)
 {
 	// get all nodes of mesh
-	const std::vector<Mesh_Group::CNode*>& msh_nodes (_msh->getNodeVector());
+	const std::vector<MeshLib::CNode*>& msh_nodes (_msh->getNodeVector());
 
 	std::vector<size_t> node_indices;
 
@@ -55,7 +55,7 @@ void ExtractMeshNodes::writeMeshNodeIDs (std::ostream& os, std::ostream& gli_out
 void ExtractMeshNodes::writeTopSurfaceMeshNodeIDs (std::ostream& os, std::ostream& gli_out, const GEOLIB::Polygon& polygon)
 {
 	// get all nodes of mesh
-	const std::vector<Mesh_Group::CNode*>& msh_nodes (_msh->getNodeVector());
+	const std::vector<MeshLib::CNode*>& msh_nodes (_msh->getNodeVector());
 
 	std::vector<GEOLIB::PointWithID> nodes_as_points;
 
@@ -108,7 +108,7 @@ void ExtractMeshNodes::getOrthogonalProjectedMeshNodesAlongPolyline (
 		std::vector<GEOLIB::PointWithID>& nodes_as_points) const
 {
 	// get all nodes of mesh
-	std::vector<Mesh_Group::CNode*> const & msh_nodes (_msh->getNodeVector());
+	std::vector<MeshLib::CNode*> const & msh_nodes (_msh->getNodeVector());
 	size_t number_of_msh_nodes (msh_nodes.size());
 
 	size_t number_of_ply_pnts (polyline.getNumberOfPoints());
@@ -238,7 +238,7 @@ void ExtractMeshNodes::getPolygonFromPolyline (const GEOLIB::Polyline& polyline,
 void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream& gli_out, const GEOLIB::Polygon& polygon)
 {
 	// get all nodes of mesh
-	const std::vector<Mesh_Group::CNode*>& msh_nodes (_msh->getNodeVector());
+	const std::vector<MeshLib::CNode*>& msh_nodes (_msh->getNodeVector());
 
 	// store node id
 	std::vector<size_t> node_ids;
@@ -254,7 +254,7 @@ void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream&
 	size_t n_nodes (node_ids.size());
 	std::vector<double> areas (n_nodes, 0.0);
 	// in order to compute the area we need the mesh elements
-	const std::vector<Mesh_Group::CElem*>& msh_elem (_msh->getElementVector());
+	const std::vector<MeshLib::CElem*>& msh_elem (_msh->getElementVector());
 	for (size_t k(0); k<n_nodes; k++) {
 		// get all associated mesh elements
 		std::vector<size_t> const & mesh_elem_ids(msh_nodes[node_ids[k]]->getConnectedElementIDs());
@@ -298,7 +298,7 @@ void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream&
 void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream& gli_out, const GEOLIB::Polygon& bounding_polygon, std::vector<GEOLIB::Polygon*> const& holes)
 {
 	// get all nodes of mesh
-	const std::vector<Mesh_Group::CNode*>& msh_nodes (_msh->getNodeVector());
+	const std::vector<MeshLib::CNode*>& msh_nodes (_msh->getNodeVector());
 
 	// store node id
 	std::vector<size_t> node_ids;
@@ -323,7 +323,7 @@ void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream&
 	size_t n_nodes (node_ids.size());
 	std::vector<double> areas (n_nodes, 0.0);
 	// in order to compute the area we need the mesh elements
-	const std::vector<Mesh_Group::CElem*>& msh_elem (_msh->getElementVector());
+	const std::vector<MeshLib::CElem*>& msh_elem (_msh->getElementVector());
 	for (size_t k(0); k<n_nodes; k++) {
 		// get all associated mesh elements
 		std::vector<size_t> const & mesh_elem_ids(msh_nodes[node_ids[k]]->getConnectedElementIDs());
@@ -379,4 +379,4 @@ void ExtractMeshNodes::writeNearestMeshNodeToPoint (std::ostream& os, std::ostre
 	_gli_pnt_offset++;
 }
 
-} // end namespace Mesh_Group
+} // end namespace MeshLib

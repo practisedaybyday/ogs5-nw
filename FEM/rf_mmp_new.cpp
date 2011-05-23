@@ -5540,7 +5540,7 @@ last modified:
 void MMP2PCSRelation(CRFProcess*m_pcs)
 {
    CMediumProperties*m_mmp = NULL;
-   Mesh_Group::CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    if(m_pcs->m_msh)
    {
       for(long i=0;i<(long)m_pcs->m_msh->ele_vector.size();i++)
@@ -6113,7 +6113,7 @@ long GetNearestHetVal2(long EleIndex, CFEMesh *m_msh, vector <double> xvals,  ve
    double ex, ey, ez, dist, dist1, dist2;
    double x, y, z;
    double* center = NULL;
-   Mesh_Group::CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    no_values = (long) xvals.size();
 
    x=0.0; y=0.0; z=0.0;
@@ -6164,7 +6164,7 @@ double GetAverageHetVal2(long EleIndex, CFEMesh *m_msh, vector <double> xvals,  
    double NumberOfValues;
    double InvNumberOfValues;
    CGLPoint *m_point = NULL;
-   Mesh_Group::CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    long   no_values = (long) xvals.size();
 
    j = 0;                                         //only for 1 value

@@ -12,7 +12,7 @@
 /**
  * \brief Types of mesh elements supported by OpenGeoSys.
  * Classification and associated int are identical with
- * identifier in Mesh_Group::CElem::geo_type
+ * identifier in MeshLib::CElem::geo_type
  */
 struct MshElemType
 {

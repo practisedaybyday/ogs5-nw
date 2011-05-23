@@ -24,7 +24,7 @@
 #include <string>
 using namespace std;
 
-LegacyVtkInterface::LegacyVtkInterface(Mesh_Group::CFEMesh* mesh,
+LegacyVtkInterface::LegacyVtkInterface(MeshLib::CFEMesh* mesh,
 	std::vector<std::string> pointArrayNames,
 	std::vector<std::string> cellArrayNames,
 	std::vector<std::string> materialPropertyArrayNames,
@@ -119,7 +119,7 @@ void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number,
 
 void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file) const
 {
-	std::vector<Mesh_Group::CNode*> pointVector = _mesh->getNodeVector();
+	std::vector<MeshLib::CNode*> pointVector = _mesh->getNodeVector();
 	vtk_file << "POINTS "<< pointVector.size() << " double" << endl;
 
 	for(size_t i = 0; i < pointVector.size() ; i++)

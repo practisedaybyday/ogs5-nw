@@ -109,7 +109,7 @@ int XMLInterface::readProjectFile(const QString &fileName)
 		else if (fileList.at(i).nodeName().compare("msh") == 0)
 		{
 			std::string msh_name = path.toStdString() + fileList.at(i).toElement().text().toStdString();
-			Mesh_Group::CFEMesh* msh = FileIO::OGSMeshIO::loadMeshFromFile(msh_name);
+			MeshLib::CFEMesh* msh = FileIO::OGSMeshIO::loadMeshFromFile(msh_name);
 			QFileInfo fi(QString::fromStdString(msh_name));
 			std::string name = fi.fileName().toStdString();
 			_project->addMesh(msh, name);
@@ -501,8 +501,8 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 	}
 
 	// MSH
-	const std::map<std::string, Mesh_Group::CFEMesh*> msh_vec = _project->getMeshObjects();
-	for (std::map<std::string, Mesh_Group::CFEMesh*>::const_iterator it(msh_vec.begin());	it != msh_vec.end(); ++it)
+	const std::map<std::string, MeshLib::CFEMesh*> msh_vec = _project->getMeshObjects();
+	for (std::map<std::string, MeshLib::CFEMesh*>::const_iterator it(msh_vec.begin());	it != msh_vec.end(); ++it)
 	{
 		// write mesh file
 		QString fileName(path + QString::fromStdString(it->first));

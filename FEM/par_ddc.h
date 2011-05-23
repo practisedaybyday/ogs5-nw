@@ -31,8 +31,8 @@ using Math_Group::SparseTable;
 
 #if defined(USE_MPI)
 //WW
-namespace Mesh_Group {class CFEMesh;}
-using  Mesh_Group::CFEMesh;
+namespace MeshLib {class CFEMesh;}
+using  MeshLib::CFEMesh;
 #endif
 void FindNodesOnInterface( CFEMesh *m_msh, bool quadr);
 

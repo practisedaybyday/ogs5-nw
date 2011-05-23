@@ -13,7 +13,7 @@ last modified
 #include "mathlib.h"                              //OK
 
 //========================================================================
-namespace Mesh_Group
+namespace MeshLib
 {
    /**************************************************************************
    MSHLib-Method:
@@ -163,4 +163,4 @@ namespace Mesh_Group
       //return edge_vector;
    }
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib

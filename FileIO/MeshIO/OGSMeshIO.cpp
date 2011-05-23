@@ -10,7 +10,7 @@
 
 namespace FileIO {
 
-Mesh_Group::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string fileName)
+MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string fileName)
 {
 	std::cout << "FEMRead ... " << std::flush;
 /*
@@ -53,7 +53,7 @@ Mesh_Group::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string fileName)
 }
 
 
-void OGSMeshIO::write(Mesh_Group::CFEMesh const * mesh, std::ofstream &out)
+void OGSMeshIO::write(MeshLib::CFEMesh const * mesh, std::ofstream &out)
 {
 	out << "#FEM_MSH" << std::endl;
 

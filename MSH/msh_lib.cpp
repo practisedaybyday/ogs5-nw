@@ -34,7 +34,7 @@ extern int ReadRFIFile(std::string g_strFileNameBase);
 #include "rf_pcs.h"
 #include "gs_project.h"
 
-std::vector<Mesh_Group::CFEMesh*>fem_msh_vector;
+std::vector<MeshLib::CFEMesh*>fem_msh_vector;
 
 #define FEM_FILE_EXTENSION ".msh"
 
@@ -2087,7 +2087,7 @@ Task: Get element nodes in a material domain
 Programing:
 10/2004 WW Implementation
 **************************************************************************/
-//using Mesh_Group::CElem;
+//using MeshLib::CElem;
 void GEOGetNodesInMaterialDomain(CFEMesh* m_msh, const int MatIndex, std::vector<long>& Nodes, bool Order)
 {
    int i, nn;

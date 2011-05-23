@@ -2023,7 +2023,7 @@ while(!pqc_infile.eof())
 
       // get height of node z
       CFEMesh* m_msh = fem_msh_vector[0];         //SB: ToDo hart gesetzt
-      Mesh_Group::CNode* m_nod = NULL;
+      MeshLib::CNode* m_nod = NULL;
       m_nod = m_msh->nod_vector[index];
       z = m_msh->nod_vector[index]->Z();
 
@@ -3337,7 +3337,7 @@ int REACT::WriteInputPhreeqcLib(long index, stringstream* out_buff, int* nl)
 
          // get height of node z
          CFEMesh* m_msh = fem_msh_vector[0];      //SB: ToDo hart gesetzt
-         Mesh_Group::CNode* m_nod = NULL;
+         MeshLib::CNode* m_nod = NULL;
          m_nod = m_msh->nod_vector[index];
          z = m_msh->nod_vector[index]->Z();
 

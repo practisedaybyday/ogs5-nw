@@ -20,7 +20,7 @@
 #include "msh_node.h"
 #include "msh_elem.h"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 ExtractSurface::ExtractSurface(CFEMesh const * msh) :
 	_mesh (msh)
@@ -37,7 +37,7 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 	}
 
 	// get all nodes of mesh
-	const std::vector<Mesh_Group::CNode*>& mesh_nodes (_mesh->getNodeVector());
+	const std::vector<MeshLib::CNode*>& mesh_nodes (_mesh->getNodeVector());
 
 	// check if nodes (projected to x-y-plane) are inside the polygon
 	std::vector<size_t> id_map;
@@ -85,7 +85,7 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 	GEOLIB::Surface* sfc (new GEOLIB::Surface (pnts));
 
 	// get all elements of mesh
-	const std::vector<Mesh_Group::CElem*>& msh_elem (_mesh->getElementVector());
+	const std::vector<MeshLib::CElem*>& msh_elem (_mesh->getElementVector());
 	const size_t msh_elem_size (msh_elem.size());
 	for (size_t j(0); j<msh_elem_size; j++) {
 		switch (msh_elem[j]->GetElementType()) {
@@ -202,4 +202,4 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 	return sfc;
 }
 
-} // end namespace Mesh_Group
+} // end namespace MeshLib

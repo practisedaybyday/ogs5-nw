@@ -18,7 +18,7 @@ class CFluidProperties;
 class CMediumProperties;
 
 namespace process{class CRFProcessDeformation;}
-namespace Mesh_Group{class CElem;}
+namespace MeshLib{class CElem;}
 namespace FiniteElement
 {
 
@@ -29,7 +29,7 @@ namespace FiniteElement
    using ::CRFProcess;
    using ::CMediumProperties;
    using process::CRFProcessDeformation;
-   using Mesh_Group::CElem;
+   using MeshLib::CElem;
 
    // Vector for storing element values
    class ElementValue_DM
