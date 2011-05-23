@@ -646,7 +646,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByInverseDistance(Particle* A)
       m_pcs = PCSGet("FLUID_MOMENTUM");
       double vx = 0.0, vy = 0.0, vz = 0.0;
       // If this node is crossroad,
-      if(m_msh->nod_vector[m_ele->GetNodeIndex(i)]->crossroad == 1)
+      if(m_msh->nod_vector[m_ele->GetNodeIndex(i)]->crossroad)
       {
          // Get the velocity contributed in this element
          CrossRoad* crossroad = NULL;
@@ -2250,7 +2250,7 @@ void RandomWalk::AdvanceToNextTimeStep(double dt,double ctime)
                      Y.elementIndex = -10;          //YS: out of the domain
                   }
                }
-#endif // CountParticleNumber
+#endif
 
                // Just get the element index after this movement
                // if not Homogeneous aquifer
@@ -4918,7 +4918,7 @@ void DATWriteParticleFile(int current_time_step)
 
    string vtk_file_name = FileName + "RWPT_";
    vtk_file_name += nowstr;
-   vtk_file_name += ".particles";
+   vtk_file_name += ".particles.vtk";
    fstream vtk_file (vtk_file_name.data(),ios::out);
    vtk_file.setf(ios::scientific,ios::floatfield);
    vtk_file.precision(12);
@@ -4930,12 +4930,17 @@ void DATWriteParticleFile(int current_time_step)
    vtk_file << "Particle file: OpenGeoSys->Paraview. Current time (s) = " << RW->CurrentTime  << endl;
    vtk_file << "ASCII"  << endl;
    vtk_file << endl;
-   vtk_file << "DATASET PARTICLES"  << endl;
-   vtk_file << "POINTS "<< RW->numOfParticles << " float" << endl;
+   vtk_file << "DATASET POLYDATA"  << endl;//KR vtk_file << "DATASET PARTICLES"  << endl;
+   vtk_file << "POINTS "<< RW->numOfParticles << " double" << endl;
 
    // Write particle locations
    for(int i=0; i<np; ++i)
       vtk_file << RW->X[i].Now.x << " " << RW->X[i].Now.y << " " << RW->X[i].Now.z << endl;
+
+   // KR add "vertices" block to create a correct VTK file
+   vtk_file << "VERTICES "<< np <<  " " << (2*np) << endl;
+   for(int i=0; i<np; ++i)
+      vtk_file << 1 << " " << i << endl;
 
    // Write particle identities
    vtk_file << endl;
