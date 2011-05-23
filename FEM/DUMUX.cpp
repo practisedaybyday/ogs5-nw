@@ -29,6 +29,11 @@ CReadTextfiles_DuMux::CReadTextfiles_DuMux(void){
 CReadTextfiles_DuMux::~CReadTextfiles_DuMux(void){
 };
 
+using std::string;
+using std::vector;
+using std::cout;
+using std::endl;
+
 /*-------------------------------------------------------------------------
 GeoSys - Function: SplitStrings
 Task: Separate a string with a delimiter
@@ -71,7 +76,7 @@ bool CReadTextfiles_DuMux::Read_Text(string Filename){
 	string tempstring;
 
 		// .data ... provides the filename as it is necessary for C, ios::in ... reads the file
-	ifstream in_file (Filename.data(),ios::in);
+	std::ifstream in_file (Filename.data(),std::ios::in);
 	if (in_file==0){
 		error = true;
 		cout << "The file " << Filename.data() << " can not be opened!" << endl;
@@ -114,7 +119,7 @@ bool CReadTextfiles_DuMux::Read_SeparatedText(string Filename, string delimiter)
 	string tempstring;
 
 		// .data ... provides the filename as it is necessary for C, ios::in ... reads the file
-	ifstream in_file (Filename.data(),ios::in);
+	std::ifstream in_file (Filename.data(),std::ios::in);
 	if (in_file==0){
 		error = true;
 		cout << "The file " << Filename.data() << " can not be opened!" << endl;
@@ -175,9 +180,10 @@ Return: sucess
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-void CWriteTextfiles_DuMux::Write_Text(string Filename, vector<string> Text){
-	ofstream textfile;
-	textfile.open(Filename.data(), ios::out);
+void CWriteTextfiles_DuMux::Write_Text(string Filename, vector<string> Text)
+{
+	std::ofstream textfile;
+	textfile.open(Filename.data(), std::ios::out);
 
 	for (int i = 0; i < int(Text.size()); i++) {
 		if (i == int(Text.size()) - 1)
@@ -247,7 +253,7 @@ Modification:
 string CDUMUXData::AddZero(double Number, int Places, bool before){
     string tempstring;
 	string Result;
-	stringstream NumberString;
+	std::stringstream NumberString;
 
 	NumberString << Number;
     tempstring = NumberString.str();
@@ -332,7 +338,7 @@ int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timest
 	vector<string> vec_string;
 	string tempstring;
 	string DOScommand;
-	ostringstream temp;
+	std::ostringstream temp;
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
 	CNode* a_node;
 	double value;
@@ -508,8 +514,7 @@ int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timest
 		temp.str(""); temp.clear(); temp << this->AddZero(Timestep, 4, true); aus_file += temp.str();
 		aus_file += ".csv";
 	}
-	ofstream aus;
-	aus.open(aus_file.data(),ios::out);
+	std::ofstream aus (aus_file.data(), std::ios::out);
 	for (unsigned int i = 0; i < vec_string.size(); i++) {
 		aus << vec_string[i] << endl;
 	}
@@ -646,7 +651,7 @@ void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep
 	//Test output
 	MeshLib::CNode* m_node = NULL;
 	CMediumProperties *m_mat_mp = NULL;
-	ostringstream temp;
+	std::ostringstream temp;
 	double mass_CO2_gas, mass_CO2_water; // unused:, mass_CO2;
 	double node_volume;
 	vector <string> vec_string;
@@ -722,8 +727,7 @@ void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep
 		temp.str(""); temp.clear(); temp <<  this->AddZero(Timestep, 4, true); aus_file += temp.str();
 		aus_file += ".csv";
 	}
-	ofstream aus;
-	aus.open(aus_file.data(),ios::out);
+	std::ofstream aus (aus_file.data(),std::ios::out);
 	for (unsigned int i = 0; i < vec_string.size(); i++) {
 		aus << vec_string[i] << endl;
 	}
@@ -948,7 +952,7 @@ Modification:
 -------------------------------------------------------------------------*/
 void CDUMUXData::ExecuteDuMux(CRFProcess *m_pcs, string folder){
 	string DuMuxExe;
-	ostringstream temp;
+	std::ostringstream temp;
 	string tempstring;
 	vector <string> vec_string;
 
@@ -986,7 +990,7 @@ int CDUMUXData::RunDuMux(long Timestep, CRFProcess *m_pcs){
 	string projectname;
 	string Filename;
 	string Executable_Filename;
-	ostringstream temp;
+	std::ostringstream temp;
 	string DOScommand;
 	string Executable_Folder;
 	string folder;
