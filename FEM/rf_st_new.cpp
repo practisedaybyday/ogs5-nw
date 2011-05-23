@@ -3002,7 +3002,7 @@ void CSourceTerm::InterpolatePolylineNodeValueVector(
 		}
 	}
 
-	MATHLIB::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, node_values);
+	MathLib::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, node_values);
 }
 
 /**************************************************************************

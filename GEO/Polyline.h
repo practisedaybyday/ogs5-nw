@@ -12,7 +12,7 @@
 #include "GeoObject.h"
 #include "Point.h"
 
-// MATHLIB
+// MathLib
 #include "MathTools.h"
 
 #include <vector>

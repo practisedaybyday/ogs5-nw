@@ -7,7 +7,7 @@
 
 #include "LinkedTriangle.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 LinkedTriangle::LinkedTriangle(std::vector<GEOLIB::Point*> const &pnt_vec,
 		size_t pnt_a, size_t pnt_b, size_t pnt_c, LinkedTriangle* tri_a,
@@ -80,4 +80,4 @@ std::ostream& operator<< (std::ostream &os, const LinkedTriangle &tri)
 	return os;
 }
 
-} // end namespace MATHLIB
+} // end namespace MathLib

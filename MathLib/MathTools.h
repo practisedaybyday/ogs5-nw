@@ -13,7 +13,7 @@
 #include <limits>
 #include "Point.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 /**
  * standard inner product in R^3

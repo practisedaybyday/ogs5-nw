@@ -29,7 +29,7 @@
 #include "PointVec.h"
 #include "PolylineSmoother.h"
 
-// MATHLIB
+// MathLib
 #include "AnalyticalGeometry.h"
 #include "EarClippingTriangulation.h"
 
@@ -415,7 +415,7 @@ std::string readSurfaces(std::istream &in,
 
 				std::list<GEOLIB::Triangle> triangles;
 				std::cout << "triangulation of surface: ... " << std::flush;
-				MATHLIB::EarClippingTriangulation(*simple_polygon_it, triangles);
+				MathLib::EarClippingTriangulation(*simple_polygon_it, triangles);
 				std::cout << "done - " << triangles.size () << " triangles " << std::endl;
 
 				Surface *sfc(new Surface(pnt_vec));
@@ -480,7 +480,7 @@ std::string readSurfaces(std::istream &in,
 //			simple_polygon_it != list_of_simple_polygons.end(); simple_polygon_it++) {
 //
 //			std::list<GEOLIB::Triangle> triangles;
-//			MATHLIB::earClippingTriangulationOfPolygon(*simple_polygon_it, triangles);
+//			MathLib::earClippingTriangulationOfPolygon(*simple_polygon_it, triangles);
 //			std::cout << "done - " << triangles.size () << " triangles " << std::endl;
 //
 //			Surface *sfc(new Surface(pnt_vec));

@@ -15,7 +15,7 @@
 #include "Triangle.h"
 #include "Point.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 class LinkedTriangle : public GEOLIB::Triangle {
 public:
@@ -49,6 +49,6 @@ private:
 /** overload the output operator for class LinkedTriangle */
 std::ostream& operator<< (std::ostream &os, const LinkedTriangle &tri);
 
-} // end namespace MATHLIB
+} // end namespace MathLib
 
 #endif /* LINKEDTRIANGLE_H_ */

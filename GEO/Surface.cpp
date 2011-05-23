@@ -12,7 +12,7 @@
 #include "AxisAlignedBoundingBox.h"
 #include "Polygon.h"
 
-// MATHLIB
+// MathLib
 #include "AnalyticalGeometry.h"
 #include "EarClippingTriangulation.h"
 
@@ -51,7 +51,7 @@ Surface* Surface::createSurface(const Polyline &ply)
 
 		Polygon* polygon (new Polygon (ply));
 		std::list<Triangle> triangles;
-		MATHLIB::EarClippingTriangulation (polygon, triangles);
+		MathLib::EarClippingTriangulation (polygon, triangles);
 		std::cout << "done - " << triangles.size () << " triangles " << std::endl;
 
 		// add Triangles to Surface

@@ -17,7 +17,7 @@
 #include <iostream>
 #include <cmath>
 
-namespace MATHLIB {
+namespace MathLib {
 
 /**
  * The Vector class defines a three-dimensional vector, with appropriate

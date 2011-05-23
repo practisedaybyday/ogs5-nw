@@ -13,7 +13,7 @@
 #include "DenseDirectLinearSolver.h"
 #include "TriangularSolve.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 /**
  * This is a class for the direct solution of (dense) systems of
@@ -23,7 +23,7 @@ namespace MATHLIB {
  * the entries of A change! The solution for a specific
  * right hand side is computed by the method execute().
  */
-class GaussAlgorithm : public MATHLIB::DenseDirectLinearSolver {
+class GaussAlgorithm : public MathLib::DenseDirectLinearSolver {
 public:
 	/**
 	 * A direct solver for the (dense) linear system \$fA x = b\f$.
@@ -73,6 +73,6 @@ private:
 	int* _pivot_idx;
 };
 
-} // end namespace MATHLIB
+} // end namespace MathLib
 
 #endif /* GAUSSALGORITHM_H_ */

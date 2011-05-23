@@ -8,7 +8,7 @@
 #ifndef TRIANGULARSOLVE_H_
 #define TRIANGULARSOLVE_H_
 
-namespace MATHLIB {
+namespace MathLib {
 
 /**
  * solves the \$fn \times n\$f triangular linear system \$fL \cdot y = b\f$,
@@ -26,6 +26,6 @@ void forwardSolve (const Matrix <double> &L, double* b);
  */
 void backwardSolve (const Matrix <double> &U, double* y);
 
-} // end namespace MATHLIB
+} // end namespace MathLib
 
 #endif /* TRIANGULARSOLVE_H_ */

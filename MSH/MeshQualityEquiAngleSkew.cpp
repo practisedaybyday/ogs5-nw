@@ -177,19 +177,19 @@ void MeshQualityEquiAngleSkew::getMinMaxAngleFromQuad (
 		double const * const n2, double const * const n3,
 		double &min_angle, double &max_angle) const
 {
-	double angle (MATHLIB::getAngle (n3, n0, n1));
+	double angle (MathLib::getAngle (n3, n0, n1));
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 
-	angle = MATHLIB::getAngle (n0, n1, n2);
+	angle = MathLib::getAngle (n0, n1, n2);
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 
-	angle = MATHLIB::getAngle (n1, n2, n3);
+	angle = MathLib::getAngle (n1, n2, n3);
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 
-	angle = MATHLIB::getAngle (n2, n3, n0);
+	angle = MathLib::getAngle (n2, n3, n0);
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 }
@@ -198,15 +198,15 @@ void MeshQualityEquiAngleSkew::getMinMaxAngleFromTriangle(double const * const n
 		double const * const n1, double const * const n2, double &min_angle,
 		double &max_angle) const
 {
-	double angle (MATHLIB::getAngle (n2, n0, n1));
+	double angle (MathLib::getAngle (n2, n0, n1));
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 
-	angle = MATHLIB::getAngle (n0, n1, n2);
+	angle = MathLib::getAngle (n0, n1, n2);
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 
-	angle = MATHLIB::getAngle (n1, n2, n0);
+	angle = MathLib::getAngle (n1, n2, n0);
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 }

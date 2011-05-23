@@ -29,7 +29,7 @@
 
 Problem *aproblem = NULL;
 
-// MATHLIB
+// MathLib
 #include "Matrix.h"
 #include "Vector3.h"
 

@@ -10,7 +10,7 @@
 #include <cstdlib>
 #include <cstdio>
 
-namespace MATHLIB {
+namespace MathLib {
 
 CubicSpline::CubicSpline(const std::vector<double>& s, const std::vector<double>& val) :
 	n (s.size()), bb (new double[n]), cc (new double[n]), dd (new double[n])
@@ -206,4 +206,4 @@ void CubicSpline::computeCoefficents()
 	}
 }
 
-} // end namespace MATHLIB
+} // end namespace MathLib

@@ -70,7 +70,7 @@ size_t PointVec::uniqueInsert (Point* pnt)
 		_pnt_vec->push_back (pnt);
 		// update shortest distance and bounding box
 		for (size_t i(0); i<n; i++) {
-			double sqr_dist (MATHLIB::sqrDist((*_pnt_vec)[i], (*_pnt_vec)[n]));
+			double sqr_dist (MathLib::sqrDist((*_pnt_vec)[i], (*_pnt_vec)[n]));
 			if (sqr_dist < _sqr_shortest_dist)
 				_sqr_shortest_dist = sqr_dist;
 			aabb.update (*((*_pnt_vec)[n]));
@@ -238,7 +238,7 @@ void PointVec::calculateShortestDistance ()
 {
 	size_t i, j;
 	BruteForceClosestPair (*_pnt_vec, i, j);
-	_sqr_shortest_dist = MATHLIB::sqrDist ((*_pnt_vec)[i], (*_pnt_vec)[j]);
+	_sqr_shortest_dist = MathLib::sqrDist ((*_pnt_vec)[i], (*_pnt_vec)[j]);
 }
 
 void PointVec::calculateAxisAlignedBoundingBox ()

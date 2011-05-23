@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-namespace MATHLIB {
+namespace MathLib {
 
 LinearInterpolation::LinearInterpolation(const std::vector<double>& supporting_points, const std::vector<double>& values_at_supp_pnts)
 	: _supporting_points (supporting_points), _values_at_supp_pnts (values_at_supp_pnts)
@@ -52,4 +52,4 @@ double LinearInterpolation::getValue ( double pnt_to_interpolate )
 	return m * pnt_to_interpolate + n;
 }
 
-} // end MATHLIB
+} // end MathLib

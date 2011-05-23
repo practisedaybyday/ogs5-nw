@@ -7,7 +7,7 @@
 
 #include "Matrix.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 void forwardSolve (const Matrix <double> &L, double* b)
 {
@@ -36,4 +36,4 @@ void backwardSolve (const Matrix <double> &U, double* y)
 	}
 }
 
-} // end namespace MATHLIB
+} // end namespace MathLib

@@ -13,7 +13,7 @@
 // GEOLIB
 #include "PointWithID.h"
 
-// MATHLIB
+// MathLib
 #include "AnalyticalGeometry.h"
 
 // MSH

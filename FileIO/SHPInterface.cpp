@@ -6,7 +6,7 @@
 #include "SHPInterface.h"
 #include "StringTools.h"
 
-// MATHLIB
+// MathLib
 #include "AnalyticalGeometry.h"
 
 

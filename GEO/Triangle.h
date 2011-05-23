@@ -79,19 +79,19 @@ public:
 	 */
 	bool containsPoint (const double *pnt) const
 	{
-		MATHLIB::Vector a(*(m_pnts[m_pnt_ids[0]])), b(*(m_pnts[m_pnt_ids[1]])), c(*(m_pnts[m_pnt_ids[2]]));
-		MATHLIB::Vector p (pnt[0], pnt[1], pnt[2]);
+		MathLib::Vector a(*(m_pnts[m_pnt_ids[0]])), b(*(m_pnts[m_pnt_ids[1]])), c(*(m_pnts[m_pnt_ids[2]]));
+		MathLib::Vector p (pnt[0], pnt[1], pnt[2]);
 		a -= p;
 		b -= p;
 		c -= p;
 
 		// compute normal vectors for triangles pab and pbc
-		MATHLIB::Vector u (a.Cross (b));
-		MATHLIB::Vector v (b.Cross (c));
+		MathLib::Vector u (a.Cross (b));
+		MathLib::Vector v (b.Cross (c));
 		// make sure they are both pointing in the same direction
 		if (u.Dot(v) < 0.0) return false;
 		// compute normal vector for triangle pca
-		MATHLIB::Vector w (c.Cross (a));
+		MathLib::Vector w (c.Cross (a));
 		// make sure it points in the same direction as the first two
 		if (u.Dot(w) < 0.0) return false;
 

@@ -47,7 +47,7 @@ void Polyline::addPoint(size_t point_id)
 	_ply_pnt_ids.push_back(point_id);
 
 	if (n_pnts > 0) {
-		double act_dist (sqrt(MATHLIB::sqrDist (_ply_pnts[_ply_pnt_ids[n_pnts-1]], _ply_pnts[point_id])));
+		double act_dist (sqrt(MathLib::sqrDist (_ply_pnts[_ply_pnt_ids[n_pnts-1]], _ply_pnts[point_id])));
 		double dist_until_now (0.0);
 		if (n_pnts > 1)
 			dist_until_now = _length[n_pnts - 1];
@@ -188,7 +188,7 @@ Polyline* Polyline::constructPolylineFromSegments(const std::vector<Polyline*> &
 bool Polyline::pointsAreIdentical(const std::vector<Point*> &pnt_vec, size_t i, size_t j, double prox)
 {
 	if (i==j) return true;
-	return (MATHLIB::checkDistance( *pnt_vec[i], *pnt_vec[j], prox ));
+	return (MathLib::checkDistance( *pnt_vec[i], *pnt_vec[j], prox ));
 }
 
 Polyline* Polyline::closePolyline(const Polyline& ply)
@@ -218,10 +218,10 @@ Location::type Polyline::getLocationOfPoint (size_t k, GEOLIB::Point const & pnt
 	if (det_2x2 > std::numeric_limits<double>::epsilon()) return Location::LEFT;
 	if (std::numeric_limits<double>::epsilon() < fabs(det_2x2)) return Location::RIGHT;
 	if (a[0]*b[0] < 0.0 || a[1]*b[1] < 0.0) return Location::BEHIND;
-	if (MATHLIB::sqrNrm2(&a) < MATHLIB::sqrNrm2(&b)) return Location::BEYOND;
-	if (MATHLIB::sqrDist (&pnt, _ply_pnts[_ply_pnt_ids[k]]) < sqrt(std::numeric_limits<double>::min()))
+	if (MathLib::sqrNrm2(&a) < MathLib::sqrNrm2(&b)) return Location::BEYOND;
+	if (MathLib::sqrDist (&pnt, _ply_pnts[_ply_pnt_ids[k]]) < sqrt(std::numeric_limits<double>::min()))
 		return Location::SOURCE;
-	if (MATHLIB::sqrDist (&pnt, _ply_pnts[_ply_pnt_ids[k+1]]) < sqrt(std::numeric_limits<double>::min()))
+	if (MathLib::sqrDist (&pnt, _ply_pnts[_ply_pnt_ids[k+1]]) < sqrt(std::numeric_limits<double>::min()))
 		return Location::DESTINATION;
 	return Location::BETWEEN;
 }

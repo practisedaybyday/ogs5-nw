@@ -16,7 +16,7 @@
 // GEO
 #include "Point.h"
 
-// MATHLIB
+// MathLib
 #include "MathTools.h"
 
 namespace Mesh_Group {
@@ -119,7 +119,7 @@ void ExtractMeshNodes::getOrthogonalProjectedMeshNodesAlongPolyline (
 		GEOLIB::Point proj_ply_pnt ((*(polyline.getPoint(k)))[0], (*(polyline.getPoint(k)))[1], 0.0);
 		for (size_t j(0); j<number_of_msh_nodes; j++) {
 			GEOLIB::Point mesh_pnt (msh_nodes[j]->X(), msh_nodes[j]->Y(), 0);
-			if (MATHLIB::sqrDist (&mesh_pnt, &proj_ply_pnt) < std::numeric_limits<double>::epsilon()) {
+			if (MathLib::sqrDist (&mesh_pnt, &proj_ply_pnt) < std::numeric_limits<double>::epsilon()) {
 				nodes_as_points.push_back (GEOLIB::PointWithID (msh_nodes[j]->X(), msh_nodes[j]->Y(), msh_nodes[j]->Z(), j));
 			}
 		}
@@ -205,7 +205,7 @@ void ExtractMeshNodes::getPolygonFromPolyline (const GEOLIB::Polyline& polyline,
 		for (size_t k(0); k<s; k++) {
 			GEOLIB::Point *test_pnt (new GEOLIB::Point (*(*original_pnts)[(*top_ids)[k]]));
 			(*test_pnt)[2] = 0.0;
-			if (MATHLIB::sqrDist (polyline.getPoint(j), test_pnt) < std::numeric_limits<double>::epsilon()) {
+			if (MathLib::sqrDist (polyline.getPoint(j), test_pnt) < std::numeric_limits<double>::epsilon()) {
 				polygon->addPoint ((*top_ids)[k]);
 				k=s;
 			}
@@ -219,7 +219,7 @@ void ExtractMeshNodes::getPolygonFromPolyline (const GEOLIB::Polyline& polyline,
 		for (size_t k(0); k<s; k++) {
 			GEOLIB::Point *test_pnt (new GEOLIB::Point (*(*original_pnts)[(*bottom_ids)[k]]));
 			(*test_pnt)[2] = 0.0;
-			if (MATHLIB::sqrDist (polyline.getPoint(j), test_pnt) < std::numeric_limits<double>::epsilon()) {
+			if (MathLib::sqrDist (polyline.getPoint(j), test_pnt) < std::numeric_limits<double>::epsilon()) {
 				polygon->addPoint ((*bottom_ids)[k]);
 				k=s;
 			}

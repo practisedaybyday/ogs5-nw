@@ -17,7 +17,7 @@ namespace GEOLIB {
 	class Polyline;
 }
 
-namespace MATHLIB {
+namespace MathLib {
 
 enum Orientation {
 	CW = 1,
@@ -47,14 +47,14 @@ Orientation getOrientation (const GEOLIB::Point* p0, const GEOLIB::Point* p1, co
  * @param plane_normal the normal of the plane the polygon is located in
  * @param d parameter from the plane equation
  */
-void getNewellPlane (const std::vector<GEOLIB::Point*>& pnts, MATHLIB::Vector &plane_normal, double& d);
+void getNewellPlane (const std::vector<GEOLIB::Point*>& pnts, MathLib::Vector &plane_normal, double& d);
 
 /**
  *
  * @param plane_normal
  * @param pnts
  */
-void rotatePointsToXY(MATHLIB::Vector &plane_normal, std::vector<GEOLIB::Point*> &pnts);
+void rotatePointsToXY(MathLib::Vector &plane_normal, std::vector<GEOLIB::Point*> &pnts);
 
 bool isPointInTriangle (const GEOLIB::Point* p,
 		const GEOLIB::Point* a, const GEOLIB::Point* b, const GEOLIB::Point* c);
@@ -83,6 +83,6 @@ bool lineSegmentsIntersect (const GEOLIB::Polyline* ply, size_t &idx0, size_t &i
 bool lineSegmentIntersect (const GEOLIB::Point& a, const GEOLIB::Point& b,
 		const GEOLIB::Point& c, const GEOLIB::Point& d, GEOLIB::Point& s);
 
-} // end namespace MATHLIB
+} // end namespace MathLib
 
 #endif /* MATHTOOLS_H_ */

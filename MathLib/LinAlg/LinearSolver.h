@@ -8,7 +8,7 @@
 #ifndef LINEARSOLVER_H_
 #define LINEARSOLVER_H_
 
-namespace MATHLIB {
+namespace MathLib {
 
 /**
  * Base class for all linear solver classes.

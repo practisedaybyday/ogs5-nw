@@ -7,7 +7,7 @@
 
 #include <algorithm>
 
-// MATHLIB
+// MathLib
 #include "MathTools.h"
 
 #include "Point.h"
@@ -41,7 +41,7 @@ double DivideAndConquerClosestPair::closestPair (size_t s, size_t e, size_t left
 		double sqr_dist (std::numeric_limits<double>::max());
 		for (size_t k(s); k<e; k++) {
 			for (size_t j(k+1); j<e; j++) {
-				double act_dist (MATHLIB::sqrDist (&(_pnts_with_ids_sorted_by_x[k]), &(_pnts_with_ids_sorted_by_x[j])));
+				double act_dist (MathLib::sqrDist (&(_pnts_with_ids_sorted_by_x[k]), &(_pnts_with_ids_sorted_by_x[j])));
 				if (act_dist < sqr_dist) {
 					left = k;
 					right = j;

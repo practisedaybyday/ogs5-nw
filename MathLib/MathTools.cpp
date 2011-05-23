@@ -7,7 +7,7 @@
 
 #include "MathTools.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 void crossProd(const double u[3], const double v[3], double r[3])
 {

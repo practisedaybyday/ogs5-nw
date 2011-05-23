@@ -16,7 +16,7 @@
 #include "msh_elem.h"
 #include "msh_mesh.h"
 
-// MATHLIB
+// MathLib
 #include "AnalyticalGeometry.h"
 
 // STL
@@ -43,12 +43,12 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 		polygon_points.push_back (new GEOLIB::Point (*(polygon[k])));
 	}
 	// 2 rotate points
-	MATHLIB::Vector plane_normal_polygon(0.0, 0.0, 0.0);
+	MathLib::Vector plane_normal_polygon(0.0, 0.0, 0.0);
 	double d_polygon (0.0);
-	MATHLIB::getNewellPlane (polygon_points, plane_normal_polygon, d_polygon);
+	MathLib::getNewellPlane (polygon_points, plane_normal_polygon, d_polygon);
 
 //	std::cout << "plane normal: " << plane_normal_polygon << std::endl;
-	MATHLIB::rotatePointsToXY(plane_normal_polygon, polygon_points);
+	MathLib::rotatePointsToXY(plane_normal_polygon, polygon_points);
 
 	// 3 create new polygon
 	GEOLIB::Polyline rot_polyline (polygon_points);
@@ -76,7 +76,7 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 		mesh_nodes_as_points.push_back (new GEOLIB::Point (msh_nodes[j]->X(), msh_nodes[j]->Y(), msh_nodes[j]->Z()));
 	}
 	// 2 rotate the Points
-	MATHLIB::rotatePointsToXY(plane_normal_polygon, mesh_nodes_as_points);
+	MathLib::rotatePointsToXY(plane_normal_polygon, mesh_nodes_as_points);
 
 	// get all elements of mesh
 	const std::vector<Mesh_Group::CElem*>& msh_elem (_mesh->getElementVector());

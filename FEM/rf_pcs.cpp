@@ -11086,7 +11086,7 @@ void CRFProcess::UpdateTransientBC()
 			}
 		}
 		std::vector<double> interpol_res;
-		MATHLIB::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, interpol_res);
+		MathLib::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, interpol_res);
 
       for (long k = start_i; k < end_i; k++) {
          bc_node_value[k]->node_value = interpol_res[k-start_i];

@@ -169,7 +169,7 @@ VoidFuncDXCDX GradShapeFunction = NULL;
    ######################################################################## */
 
 /***************************************************************************
-   GEO MATHLIB - Funktion: MBtrgVec
+   GEO MathLib - Funktion: MBtrgVec
    Aufgabe:
            Berechnet Betrag von Vektor
    Formalparameter:

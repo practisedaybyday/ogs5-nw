@@ -105,9 +105,9 @@ void MeshQualityShortestLongestRatio::check()
 double MeshQualityShortestLongestRatio::checkTriangle (GEOLIB::Point const * const a,
 		GEOLIB::Point const * const b, GEOLIB::Point const * const c) const
 {
-	double len0 (sqrt(MATHLIB::sqrDist (b,a)));
-	double len1 (sqrt(MATHLIB::sqrDist (b,c)));
-	double len2 (sqrt(MATHLIB::sqrDist (a,c)));
+	double len0 (sqrt(MathLib::sqrDist (b,a)));
+	double len1 (sqrt(MathLib::sqrDist (b,c)));
+	double len2 (sqrt(MathLib::sqrDist (a,c)));
 
 	if (len0 < len1 && len0 < len2) {
 		if (len1 < len2) {
@@ -135,10 +135,10 @@ double MeshQualityShortestLongestRatio::checkTriangle (GEOLIB::Point const * con
 double MeshQualityShortestLongestRatio::checkQuad (GEOLIB::Point const * const a, GEOLIB::Point const * const b,
 		GEOLIB::Point const * const c, GEOLIB::Point const * const d) const
 {
-	double sqr_lengths[4] = {MATHLIB::sqrDist (b,a),
-			MATHLIB::sqrDist (c,b),
-			MATHLIB::sqrDist (d,c),
-			MATHLIB::sqrDist (a,d)};
+	double sqr_lengths[4] = {MathLib::sqrDist (b,a),
+			MathLib::sqrDist (c,b),
+			MathLib::sqrDist (d,c),
+			MathLib::sqrDist (a,d)};
 
 	// sort lengths - since this is a very small array we use bubble sort
 	for (size_t i(0); i<4; i++) {
@@ -153,9 +153,9 @@ double MeshQualityShortestLongestRatio::checkQuad (GEOLIB::Point const * const a
 double MeshQualityShortestLongestRatio::checkTetrahedron (GEOLIB::Point const * const a, GEOLIB::Point const * const b,
 		GEOLIB::Point const * const c, GEOLIB::Point const * const d) const
 {
-	double sqr_lengths[6] = {MATHLIB::sqrDist (b,a), MATHLIB::sqrDist (c,b),
-			MATHLIB::sqrDist (c,a), MATHLIB::sqrDist (a,d),
-			MATHLIB::sqrDist (b,d), MATHLIB::sqrDist (c,d)};
+	double sqr_lengths[6] = {MathLib::sqrDist (b,a), MathLib::sqrDist (c,b),
+			MathLib::sqrDist (c,a), MathLib::sqrDist (a,d),
+			MathLib::sqrDist (b,d), MathLib::sqrDist (c,d)};
 
 	// sort lengths - since this is a very small array we use bubble sort
 	for (size_t i(0); i<6; i++) {
@@ -169,15 +169,15 @@ double MeshQualityShortestLongestRatio::checkTetrahedron (GEOLIB::Point const * 
 
 double MeshQualityShortestLongestRatio::checkPrism (std::vector<GEOLIB::Point *> const & pnts) const
 {
-	double sqr_lengths[9] = {MATHLIB::sqrDist (pnts[0],pnts[1]),
-			MATHLIB::sqrDist (pnts[1],pnts[2]),
-			MATHLIB::sqrDist (pnts[2],pnts[0]),
-			MATHLIB::sqrDist (pnts[3],pnts[4]),
-			MATHLIB::sqrDist (pnts[4],pnts[5]),
-			MATHLIB::sqrDist (pnts[5],pnts[3]),
-			MATHLIB::sqrDist (pnts[0],pnts[3]),
-			MATHLIB::sqrDist (pnts[1],pnts[4]),
-			MATHLIB::sqrDist (pnts[2],pnts[5])};
+	double sqr_lengths[9] = {MathLib::sqrDist (pnts[0],pnts[1]),
+			MathLib::sqrDist (pnts[1],pnts[2]),
+			MathLib::sqrDist (pnts[2],pnts[0]),
+			MathLib::sqrDist (pnts[3],pnts[4]),
+			MathLib::sqrDist (pnts[4],pnts[5]),
+			MathLib::sqrDist (pnts[5],pnts[3]),
+			MathLib::sqrDist (pnts[0],pnts[3]),
+			MathLib::sqrDist (pnts[1],pnts[4]),
+			MathLib::sqrDist (pnts[2],pnts[5])};
 
 	// sort lengths - since this is a very small array we use bubble sort
 	for (size_t i(0); i<9; i++) {
@@ -191,18 +191,18 @@ double MeshQualityShortestLongestRatio::checkPrism (std::vector<GEOLIB::Point *>
 
 double MeshQualityShortestLongestRatio::checkHexahedron (std::vector<GEOLIB::Point *> const & pnts) const
 {
-	double sqr_lengths[12] = {MATHLIB::sqrDist (pnts[0],pnts[1]),
-			MATHLIB::sqrDist (pnts[1],pnts[2]),
-			MATHLIB::sqrDist (pnts[2],pnts[3]),
-			MATHLIB::sqrDist (pnts[3],pnts[0]),
-			MATHLIB::sqrDist (pnts[4],pnts[5]),
-			MATHLIB::sqrDist (pnts[5],pnts[6]),
-			MATHLIB::sqrDist (pnts[6],pnts[7]),
-			MATHLIB::sqrDist (pnts[7],pnts[4]),
-			MATHLIB::sqrDist (pnts[0],pnts[4]),
-			MATHLIB::sqrDist (pnts[1],pnts[5]),
-			MATHLIB::sqrDist (pnts[2],pnts[6]),
-			MATHLIB::sqrDist (pnts[3],pnts[7])};
+	double sqr_lengths[12] = {MathLib::sqrDist (pnts[0],pnts[1]),
+			MathLib::sqrDist (pnts[1],pnts[2]),
+			MathLib::sqrDist (pnts[2],pnts[3]),
+			MathLib::sqrDist (pnts[3],pnts[0]),
+			MathLib::sqrDist (pnts[4],pnts[5]),
+			MathLib::sqrDist (pnts[5],pnts[6]),
+			MathLib::sqrDist (pnts[6],pnts[7]),
+			MathLib::sqrDist (pnts[7],pnts[4]),
+			MathLib::sqrDist (pnts[0],pnts[4]),
+			MathLib::sqrDist (pnts[1],pnts[5]),
+			MathLib::sqrDist (pnts[2],pnts[6]),
+			MathLib::sqrDist (pnts[3],pnts[7])};
 
 	// sort lengths - since this is a very small array we use bubble sort
 	for (size_t i(0); i<12; i++) {

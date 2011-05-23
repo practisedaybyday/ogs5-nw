@@ -10,9 +10,9 @@
 
 #include <LinearSolver.h>
 
-namespace MATHLIB {
+namespace MathLib {
 
-class DirectLinearSolver: public MATHLIB::LinearSolver {
+class DirectLinearSolver: public MathLib::LinearSolver {
 public:
 	DirectLinearSolver() {};
 	virtual ~DirectLinearSolver() {};

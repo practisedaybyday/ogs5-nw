@@ -26,7 +26,7 @@
 #include "Matrix.h" // for transformation matrix
 #include "max.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 Orientation getOrientation (const double& p0_x, const double& p0_y,
 	const double& p1_x, const double& p1_y,
@@ -125,14 +125,14 @@ bool lineSegmentsIntersect (const GEOLIB::Polyline* ply, size_t &idx0, size_t &i
 bool isPointInTriangle (const double p[3], const double a[3], const double b[3], const double c[3])
 {
 	// criterion: p-b = u0 * (b - a) + u1 * (b - c); 0 <= u0, u1 <= 1, u0+u1 <= 1
-	MATHLIB::Matrix<double> mat (2,2);
+	MathLib::Matrix<double> mat (2,2);
 	mat(0,0) = a[0] - b[0];
 	mat(0,1) = c[0] - b[0];
 	mat(1,0) = a[1] - b[1];
 	mat(1,1) = c[1] - b[1];
 	double rhs[2] = {p[0]-b[0], p[1]-b[1]};
 
-	MATHLIB::GaussAlgorithm gauss (mat);
+	MathLib::GaussAlgorithm gauss (mat);
 	gauss.execute (rhs);
 
 	if (0 <= rhs[0] && rhs[0] <= 1 && 0 <= rhs[1] && rhs[1] <= 1 && rhs[0] + rhs[1] <= 1) return true;
@@ -210,4 +210,4 @@ void rotatePointsToXY(Vector &plane_normal,
 	delete [] tmp;
 }
 
-} // end namespace MATHLIB
+} // end namespace MathLib

@@ -901,7 +901,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 								}
 							}
 						}
-						MATHLIB::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, node_value);
+						MathLib::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, node_value);
 
 						for (size_t i = 0; i < nodes_vector.size(); i++) {
 							m_node_value = new CBoundaryConditionNode();
