@@ -246,5 +246,5 @@ class RandomWalk
 };
 
 extern void PCTRead(std::string);
-extern void DATWriteParticleFile(int);
+void DATWriteParticleFile(int);
 #endif                                            //OK

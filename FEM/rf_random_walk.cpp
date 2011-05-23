@@ -4918,7 +4918,7 @@ void DATWriteParticleFile(int current_time_step)
 
    string vtk_file_name = FileName + "RWPT_";
    vtk_file_name += nowstr;
-   vtk_file_name += ".particles";
+   vtk_file_name += ".particles.vtk";
    fstream vtk_file (vtk_file_name.data(),ios::out);
    vtk_file.setf(ios::scientific,ios::floatfield);
    vtk_file.precision(12);
@@ -4930,12 +4930,17 @@ void DATWriteParticleFile(int current_time_step)
    vtk_file << "Particle file: OpenGeoSys->Paraview. Current time (s) = " << RW->CurrentTime  << endl;
    vtk_file << "ASCII"  << endl;
    vtk_file << endl;
-   vtk_file << "DATASET PARTICLES"  << endl;
-   vtk_file << "POINTS "<< RW->numOfParticles << " float" << endl;
+   vtk_file << "DATASET POLYDATA"  << endl;//KR vtk_file << "DATASET PARTICLES"  << endl;
+   vtk_file << "POINTS "<< RW->numOfParticles << " double" << endl;
 
    // Write particle locations
    for(int i=0; i<np; ++i)
       vtk_file << RW->X[i].Now.x << " " << RW->X[i].Now.y << " " << RW->X[i].Now.z << endl;
+
+   // KR add "vertices" block to create a correct VTK file
+   vtk_file << "VERTICES "<< np <<  " " << (2*np) << endl;
+   for(int i=0; i<np; ++i)
+      vtk_file << 1 << " " << i << endl;
 
    // Write particle identities
    vtk_file << endl;
