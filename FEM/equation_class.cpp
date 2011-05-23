@@ -36,6 +36,13 @@ Programing:
 #endif
 
 #ifdef MKL
+#ifdef _WIN32
+/* PARDISO prototype. */
+extern "C" int PARDISOINIT (void*, int*, int*, int*, double*, int*);
+extern "C" int PARDISO (void*, int*, int*, int*, int*, int*, 
+                        double*, int*, int*, int*, int*, int*, 
+                        int*, double*, double*, int*, double*);
+#else 
 #include "mkl.h"
 
 /* PARDISO prototype. */
@@ -45,6 +52,7 @@ extern int PARDISO
 (int *, int *, int *, int *, int *, int *,
 double *, int *, int*, int *, int *, int *,
 int *, double *, double*, int *);
+#endif
 #endif
 
 #include"rf_num_new.h"
@@ -441,6 +449,8 @@ namespace Math_Group
       if(m_num->ls_method==805)                   // Then, PARDISO parallel direct solver
       {
 #ifdef MKL                               // PCH 10.03.2009: Requires the system platform where Math Kernel Library is properly configured.
+         cout << "------------------------------------------------------------------" << endl;
+         cout << "*** PARDISO computation" << endl;
          int i, iter, ierr;
          // Assembling the matrix
          // Establishing CRS type matrix from GeoSys Matrix data storage type
@@ -471,11 +481,36 @@ namespace Math_Group
          void *pt[64];
          /* Pardiso control parameters.*/
          int iparm[64];
-         int maxfct, mnum, phase, error, msglvl;
+         double dparm[64];
+         int maxfct, mnum, phase, error, msglvl, solver;
 
          /* Auxiliary variables.*/
          double ddum;                             /* Double dummy */
          int idum;                                /* Integer dummy. */
+
+#ifdef _WIN32
+         // Check the license and initialize the solver
+         {
+           //static bool done = false;
+           //if (!done) {
+           PARDISOINIT (pt,  &mtype, &solver, iparm, dparm, &error); 
+           if (error != 0) 
+           {
+             if (error == -10 )
+               printf("No license file found \n");
+             if (error == -11 )
+               printf("License is expired \n");
+             if (error == -12 )
+               printf("Wrong username or hostname \n");
+             exit(1); 
+           }
+           else
+             printf("PARDISO license check was successful ... \n");
+
+           //  done = true;
+           //}
+         }
+#endif
 
          /* --------------------------------------------------------------------*/
          /* .. Setup Pardiso control parameters.*/
@@ -487,7 +522,11 @@ namespace Math_Group
          iparm[0] = 1;                            /* No solver default */
          iparm[1] = 2;                            /* Fill-in reordering from METIS */
          /* Numbers of processors, value of MKL_NUM_THREADS */
+#ifdef _WIN32
+         iparm[2] = omp_get_max_threads();
+#else
          iparm[2] = mkl_get_max_threads();
+#endif
          iparm[3] = 0;                            /* No iterative-direct algorithm */
          iparm[4] = 0;                            /* No user fill-in reducing permutation */
          iparm[5] = 0;                            /* Write solution into x */
@@ -524,9 +563,15 @@ namespace Math_Group
          /* all memory that is necessary for the factorization. */
          /* --------------------------------------------------------------------*/
          phase = 11;
+#ifdef _WIN32
          PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-            &numOfNode, value, ptr, index , &idum, &nrhs,
-            iparm, &msglvl, &ddum, &ddum, &error);
+           &numOfNode, value, ptr, index , &idum, &nrhs,
+           iparm, &msglvl, &ddum, &ddum, &error, dparm);
+#else
+         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+           &numOfNode, value, ptr, index , &idum, &nrhs,
+           iparm, &msglvl, &ddum, &ddum, &error);
+#endif
 
          if (error != 0)
          {
@@ -538,9 +583,15 @@ namespace Math_Group
          /* .. Numerical factorization.*/
          /* --------------------------------------------------------------------*/
          phase = 22;
+#ifdef _WIN32
          PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-            &numOfNode, value, ptr, index, &idum, &nrhs,
-            iparm, &msglvl, &ddum, &ddum, &error);
+           &numOfNode, value, ptr, index, &idum, &nrhs,
+           iparm, &msglvl, &ddum, &ddum, &error, dparm);
+#else
+         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+           &numOfNode, value, ptr, index, &idum, &nrhs,
+           iparm, &msglvl, &ddum, &ddum, &error);
+#endif
          if (error != 0)
          {
             printf("\nERROR during numerical factorization: %d", error);
@@ -555,9 +606,15 @@ namespace Math_Group
 
          /* Set right hand side to one. */
 
+#ifdef _WIN32
          PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-            &numOfNode, value, ptr, index , &idum, &nrhs,
-            iparm, &msglvl, b, x, &error);
+           &numOfNode, value, ptr, index , &idum, &nrhs,
+           iparm, &msglvl, b, x, &error, dparm);
+#else
+         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+           &numOfNode, value, ptr, index , &idum, &nrhs,
+           iparm, &msglvl, b, x, &error);
+#endif
          if (error != 0)
          {
             printf("\nERROR during solution: %d", error);
@@ -565,9 +622,15 @@ namespace Math_Group
          }
 
          phase = -1;                              /* Release internal memory. */
+#ifdef _WIN32
          PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-            &numOfNode, value, ptr, index, &idum, &nrhs,
-            iparm, &msglvl, &ddum, &ddum, &error);
+           &numOfNode, value, ptr, index, &idum, &nrhs,
+           iparm, &msglvl, &ddum, &ddum, &error, dparm);
+#else
+         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+           &numOfNode, value, ptr, index, &idum, &nrhs,
+           iparm, &msglvl, &ddum, &ddum, &error);
+#endif
 
          // Releasing the local memory
          delete [] value; free(ptr); free(index);

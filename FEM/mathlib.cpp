@@ -4988,7 +4988,48 @@ void VCopy(double *x, const double *y, const int n)
       x[i] = y[i];
 }
 
+/**************************************************************************
+MSHLib-Method:
+Task: Flux limiter function: minmod
+Programing:
+04/2010 NW Implementation
+**************************************************************************/
+double MinMod(double v1, double v2)
+{
+  if (v1*v2 < 0.0) return 0.0;
+  if (fabs(v1) < fabs(v2)) return v1;
+  else return v2;
+}
 
+/**************************************************************************
+MSHLib-Method:
+Task: Flux limiter function: Superbee 
+Programing:
+04/2010 NW Implementation
+**************************************************************************/
+double SuperBee(double v1, double v2)
+{  
+  if (v1*v2 < 0.0) return 0.0;  
+  //max{min{2|a|, |b|},min{|a|, 2|b|}}.  
+  double a1 = std::min(2.0*fabs(v1), fabs(v2));  
+  double a2 = std::min(fabs(v1), 2.0*fabs(v2));  
+  double ret = std::max(a1,a2);  
+  if (v1 > 0.0) return ret;  
+  else return -ret;
+}
+
+/**************************************************************************
+MSHLib-Method:
+Task: Flux limiter function: Superbee 
+Programing:
+04/2010 NW Implementation
+**************************************************************************/
+double GetFCTADiff(double K_ij, double K_ji)
+{
+  double r = std::min(0.0, -K_ij);
+  r = std::min(r, -K_ji);
+  return r;
+}
 /*##########################################################################
    ##########################################################################
    Ende des ROCKFLOW - Moduls: mathlib.c

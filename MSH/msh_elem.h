@@ -188,12 +188,12 @@ namespace Mesh_Group
          {
             return nnodesHQ;
          }
-         int GetNodesNumber(bool quad) const
+         size_t GetNodesNumber(bool quad) const
          {
             if (quad)
-               return nnodesHQ;
+               return (size_t)nnodesHQ;
             else
-               return nnodes;
+               return (size_t)nnodes;
          }
          int GetVertexNumber() const
          {
@@ -214,7 +214,7 @@ namespace Mesh_Group
          // Edges
          void GetEdges(vec<CEdge*>& ele_edges)
          {
-            for (int i = 0; i < nedges; i++)
+            for (size_t i = 0; i < nedges; i++)
                ele_edges[i] = edges[i];
          }
          CEdge* GetEdge(int index)
@@ -223,13 +223,13 @@ namespace Mesh_Group
          }
          void SetEdges(vec<CEdge*>& ele_edges)
          {
-            for (int i = 0; i < nedges; i++)
+            for (size_t i = 0; i < nedges; i++)
                edges[i] = ele_edges[i];
          }
          // KR not used int FindFaceEdges(const int LocalFaceIndex, vec<CEdge*>& face_edges);
          void SetEdgesOrientation(vec<int>& ori_edg)
          {
-            for (int i = 0; i < nedges; i++)
+            for (size_t i = 0; i < nedges; i++)
                edges_orientation[i] = ori_edg[i];
          }
          void GetLocalIndicesOfEdgeNodes(const int Edge, int *EdgeNodes);
@@ -260,7 +260,7 @@ namespace Mesh_Group
 		 // Neighbors
          void SetNeighbors(vec<CElem*>& ele_neighbors)
          {
-            for (int i = 0; i < nfaces; i++)
+            for (size_t i = 0; i < nfaces; i++)
                neighbors[i] = ele_neighbors[i];
          }
          void SetNeighbor(const int LocalIndex, CElem* ele_neighbor)
@@ -269,7 +269,7 @@ namespace Mesh_Group
          }
          void GetNeighbors(vec<CElem*>& ele_neighbors)
          {
-            for (int i = 0; i < nfaces; i++)
+            for (size_t i = 0; i < nfaces; i++)
                ele_neighbors[i] = neighbors[i];
          }
          CElem* GetNeighbor(int index)
@@ -337,10 +337,10 @@ namespace Mesh_Group
          int nnodesHQ;
          //
          vec<CNode*> nodes;
-         int nedges;
+         size_t nedges;
          vec<CEdge*> edges;
          vec<int> edges_orientation;
-         int nfaces;
+         size_t nfaces;
          int no_faces_on_surface;
          int face_index;                          // Local face index for the instance for face
          double volume;
