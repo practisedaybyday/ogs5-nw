@@ -20,7 +20,7 @@ using namespace Math_Group;
 
 #define PCT_FILE_EXTENSION ".pct"
 #define SWAP(x,y) {double t; t=x; x=y; y=t;};     //WW data type is change to double
-//#define CountParticleNumber                       //YS: to count the number of particles leave the domain
+#define CountParticleNumber                       //YS: to count the number of particles leave the domain
 
 /**************************************************************************
 Class: RandomWalk
