@@ -287,9 +287,10 @@ Modification:
 bool CDUMUXData::MakeNodeVector(void)
 {
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-	CNode* m_node = NULL;
-	CPointData_DuMux* m_NodeData = NULL;
-	m_NodeData = new CPointData_DuMux;
+//	CNode* m_node = NULL;
+//	CPointData_DuMux* m_NodeData = NULL;
+//	m_NodeData = new CPointData_DuMux;
+//	PointDuMux* node_data (NULL);
 	vector <double> temp_q;
 
 	for (int i = 0; i < dim; i++)
@@ -299,28 +300,40 @@ bool CDUMUXData::MakeNodeVector(void)
 
 		for (unsigned long i = 0; i < m_msh->nod_vector.size(); i++) {
 			// create new instance of CPointData
-			m_NodeData = new CPointData_DuMux;
+//			m_NodeData = new CPointData_DuMux;
+			PointDuMux* node_data (new PointDuMux (
+					m_msh->nod_vector[i]->X(),
+					m_msh->nod_vector[i]->Y(),
+					m_msh->nod_vector[i]->Z(),
+					-1.0E+99, // temperature
+					-1.0E+99, // CO2 in liquid
+					-1.0E+99 // NaCl in liquid
+					));
 			//Get the node
-			m_node = m_msh->nod_vector[i];
-			m_NodeData->x = m_node->X();
-			m_NodeData->y = m_node->Y();
-			m_NodeData->z = m_node->Z();
-			m_NodeData->phase_pressure.resize(this->Phases.size());
-			m_NodeData->phase_saturation.resize(this->Phases.size());
-			m_NodeData->phase_density.resize(this->Phases.size());
-			for (int j = 0; j < int(this->Phases.size()); j++)
-				m_NodeData->q.push_back(temp_q);
-
+//			m_node = m_msh->nod_vector[i];
+//			m_NodeData->x = m_node->X();
+//			m_NodeData->y = m_node->Y();
+//			m_NodeData->z = m_node->Z();
+//			m_NodeData->phase_pressure.resize(this->Phases.size());
+//			m_NodeData->phase_saturation.resize(this->Phases.size());
+//			m_NodeData->phase_density.resize(this->Phases.size());
+			for (size_t j = 0; j < this->Phases.size(); j++) {
+//				m_NodeData->q.push_back(temp_q);
+				node_data->getQ().push_back(temp_q);
+			}
 			//Set variable to zero
-			m_NodeData->temperature = -1.0E+99;
-			m_NodeData->CO2inLiquid = -1.0E+99;
-			m_NodeData->NaClinLiquid = -1.0E+99;
-			for (long k = 0; k < int(this->Phases.size()); k++){
-				m_NodeData->phase_pressure[k] = -1.0E+99;
-				m_NodeData->phase_saturation[k] = -1.0E+99;
+//			m_NodeData->temperature = -1.0E+99;
+//			m_NodeData->CO2inLiquid = -1.0E+99;
+//			m_NodeData->NaClinLiquid = -1.0E+99;
+			for (size_t k = 0; k < this->Phases.size(); k++){
+//				m_NodeData->phase_pressure[k] = -1.0E+99;
+//				m_NodeData->phase_saturation[k] = -1.0E+99;
+				node_data->getPhasePressure()[k] = -1.0E+99;
+				node_data->getPhaseSaturation()[k] = -1.0E+99;
 			}
 			// transfer Data to node
-			this->NodeData.push_back(m_NodeData);
+//			this->NodeData.push_back(m_NodeData);
+			this->NodeData.push_back(node_data);
 		}
 	}
 	return true;
@@ -333,7 +346,8 @@ Return: nothing
 Programming: 11/2010 BG
 Modification:
 -------------------------------------------------------------------------*/
-int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timestep) {
+int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timestep)
+{
 	CWriteTextfiles_DuMux *TextFile;
 	vector<string> vec_string;
 	string tempstring;
@@ -407,15 +421,23 @@ int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timest
 			temp.str(""); temp.clear(); temp << a_node->Y(); tempstring += " " + temp.str();
 			temp.str(""); temp.clear(); temp << a_node->Z(); tempstring += " " + temp.str();
 
-			value = pcs_vector[this->ProcessIndex_CO2inLiquid]->GetNodeValue(i, indexConcentration_DIC) * (this->Molweight_CO2 / 1000) / this->NodeData[i]->phase_density[0];
+			// TF commented out since we want to use the improved PointDuMux class
+//			value = pcs_vector[this->ProcessIndex_CO2inLiquid]->GetNodeValue(i, indexConcentration_DIC) * (this->Molweight_CO2 / 1000) / this->NodeData[i]->phase_density[0];
+			value = pcs_vector[this->ProcessIndex_CO2inLiquid]->GetNodeValue(i, indexConcentration_DIC) * (this->Molweight_CO2 / 1000) / this->NodeData[i]->getPhaseDensity()[0];
 			//cout << i << " X_CO2 " << value << " C_CO2 " << pcs_vector[this->ProcessIndex_CO2inLiquid]->GetNodeValue(i, indexConcentration_DIC) << " Dichte " <<  this->NodeData[i]->phase_density[0] << " X_CO2_alt " << this->NodeData[i]->CO2inLiquid << endl;
 			temp.str(""); temp.clear(); temp << value; tempstring += " " + temp.str();
 
-			value = this->NodeData[i]->NaClinLiquid;
+			// TF commented out since we want to use the improved PointDuMux class
+//			value = this->NodeData[i]->NaClinLiquid;
+			value = this->NodeData[i]->getNaClInLiquid();
 			temp.str(""); temp.clear(); temp << value; tempstring += " " + temp.str();
-			value = this->NodeData[i]->phase_density[0];
+			// TF commented out since we want to use the improved PointDuMux class
+//			value = this->NodeData[i]->phase_density[0];
+			value = this->NodeData[i]->getPhaseDensity()[0];
 			temp.str(""); temp.clear(); temp << value; tempstring += " " + temp.str();
-			value = this->NodeData[i]->phase_density[1];
+			// TF commented out since we want to use the improved PointDuMux class
+//			value = this->NodeData[i]->phase_density[1];
+			value = this->NodeData[i]->getPhaseDensity()[1];
 			temp.str(""); temp.clear(); temp << value; tempstring += " " + temp.str();
 
 			vec_string.push_back(tempstring);
@@ -466,21 +488,40 @@ int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timest
 		}
 
 		temp.str(""); temp.clear(); temp << i; tempstring = temp.str();
-		temp.str(""); temp.clear(); temp << this->NodeData[i]->x; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp << this->NodeData[i]->y; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp << this->NodeData[i]->z; tempstring += "; " + temp.str();
+		// TF commented out since we want to use the improved PointDuMux class
+//		temp.str(""); temp.clear(); temp << this->NodeData[i]->x; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp << this->NodeData[i]->y; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp << this->NodeData[i]->z; tempstring += "; " + temp.str();
+		for (size_t k(0); k<3; k++) {
+			temp.str("");
+			temp.clear();
+			temp << (*(this->NodeData[i]))[k];
+			tempstring += "; " + temp.str();
+		}
 
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_pressure[0]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_pressure[1]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_saturation[0]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_saturation[1]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_density[0]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_density[1]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->CO2inLiquid; tempstring += "; " + temp.str();
+		// TF commented out since we want to use the improved PointDuMux class
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_pressure[0]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_pressure[1]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_saturation[0]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_saturation[1]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_density[0]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_density[1]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->CO2inLiquid; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhasePressure()[0]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhasePressure()[1]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhaseSaturation()[0]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhaseSaturation()[1]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhaseDensity()[0]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhaseDensity()[1]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getCO2InLiquid(); tempstring += "; " + temp.str();
+
 
 		concentration_CO2_water = pcs_vector[this->ProcessIndex_CO2inLiquid]->GetNodeValue(i, indexConcentration_DIC);
-		mass_CO2_gas = node_volume * this->NodeData[i]->phase_saturation[1] *  this->NodeData[i]->phase_density[1];
-		mass_CO2_water = node_volume * this->NodeData[i]->phase_saturation[0] * concentration_CO2_water * this->Molweight_CO2 * 0.001;
+		// TF commented out since we want to use the improved PointDuMux class
+//		mass_CO2_gas = node_volume * this->NodeData[i]->phase_saturation[1] *  this->NodeData[i]->phase_density[1];
+//		mass_CO2_water = node_volume * this->NodeData[i]->phase_saturation[0] * concentration_CO2_water * this->Molweight_CO2 * 0.001;
+		mass_CO2_gas = node_volume * this->NodeData[i]->getPhaseSaturation()[1] *  this->NodeData[i]->getPhaseDensity()[1];
+		mass_CO2_water = node_volume * this->NodeData[i]->getPhaseSaturation()[0] * concentration_CO2_water * this->Molweight_CO2 * 0.001;
 
 		temp.str(""); temp.clear(); temp.precision(12); temp << mass_CO2_gas; tempstring += "; " + temp.str();
 		temp.str(""); temp.clear(); temp.precision(12); temp << mass_CO2_water; tempstring += "; " + temp.str();
@@ -532,7 +573,8 @@ Return: nothing
 Programming: 09/2010 BG
 Modification:
 -------------------------------------------------------------------------*/
-void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep){
+void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep)
+{
     vector<string> files = vector<string>();
 	CReadTextfiles_DuMux *TextFile;
 	string tempstring;
@@ -596,7 +638,11 @@ void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep
 		}
 
 		for (long i = 0; i < TextFile->NumberOfRows; i++) {
-			if ((atof(TextFile->Data_separated[i][1].data()) != this->NodeData[i]->x) || (atof(TextFile->Data_separated[i][2].data()) != this->NodeData[i]->y) || (atof(TextFile->Data_separated[i][3].data()) != this->NodeData[i]->z)) {
+			// TF commented out since we want to use the improved PointDuMux class
+//			if ((atof(TextFile->Data_separated[i][1].data()) != this->NodeData[i]->x) || (atof(TextFile->Data_separated[i][2].data()) != this->NodeData[i]->y) || (atof(TextFile->Data_separated[i][3].data()) != this->NodeData[i]->z)) {
+			if ((atof(TextFile->Data_separated[i][1].data()) != (*(this->NodeData[i]))[0])
+					|| (atof(TextFile->Data_separated[i][2].data()) != (*(this->NodeData[i]))[1])
+					|| (atof(TextFile->Data_separated[i][3].data()) != (*(this->NodeData[i]))[2])) {
 				cout << "The node coordinates are not equal between OGS and DUMUX!" << endl;
 				system("Pause");
 				exit(0);
@@ -610,31 +656,47 @@ void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep
 		double Multiplier = 1;
 		for (int j = 0; j < int(this->Phases.size()); j++) {
 			column += 1;
-			this->NodeData[i]->phase_pressure[j] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+			// TF commented out since we want to use the improved PointDuMux class
+//			this->NodeData[i]->phase_pressure[j] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+			this->NodeData[i]->getPhasePressure()[j] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
 		}
 		if (this->Phases.size()>1) {
 			for (int j = 0; j < int(this->Phases.size()); j++) {
 				column += 1;
-				this->NodeData[i]->phase_saturation[j] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+				// TF commented out since we want to use the improved PointDuMux class
+//				this->NodeData[i]->phase_saturation[j] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+				this->NodeData[i]->getPhaseSaturation()[j] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
 			}
 		}
 		for (int j = 0; j < int(this->Phases.size()); j++) {
 			for (int k = 0; k < 3; k++) {
 				column += 1;
-				this->NodeData[i]->q[j][k] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+				// TF commented out since we want to use the improved PointDuMux class
+//				this->NodeData[i]->q[j][k] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+				this->NodeData[i]->getQ()[j][k] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
 			}
 		}
 		column += 1;
-		this->NodeData[i]->CO2inLiquid = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+		// TF commented out since we want to use the improved PointDuMux class
+//		this->NodeData[i]->CO2inLiquid = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+		this->NodeData[i]->setCO2InLiquid (atof(TextFile->Data_separated[i][column].data()) * Multiplier);
 		//cout << i << " " << this->NodeData[i]->CO2inLiquid << endl;
 		column += 1;
-		this->NodeData[i]->NaClinLiquid = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+		// TF commented out since we want to use the improved PointDuMux class
+//		this->NodeData[i]->NaClinLiquid = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+		this->NodeData[i]->setNaClInLiquid (atof(TextFile->Data_separated[i][column].data()) * Multiplier);
 		column += 1;
-		this->NodeData[i]->temperature = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+		// TF commented out since we want to use the improved PointDuMux class
+//		this->NodeData[i]->temperature = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+		this->NodeData[i]->setTemperature (atof(TextFile->Data_separated[i][column].data()) * Multiplier);
 		column += 1;
-		this->NodeData[i]->phase_density[0] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+		// TF commented out since we want to use the improved PointDuMux class
+//		this->NodeData[i]->phase_density[0] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+		this->NodeData[i]->getPhaseDensity()[0] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
 		column += 1;
-		this->NodeData[i]->phase_density[1] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+		// TF commented out since we want to use the improved PointDuMux class
+//		this->NodeData[i]->phase_density[1] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
+		this->NodeData[i]->getPhaseDensity()[1] = atof(TextFile->Data_separated[i][column].data()) * Multiplier;
 
 	}
 	// Release Textfile object
@@ -679,21 +741,40 @@ void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep
 		}
 
 		temp.str(""); temp.clear(); temp << i; tempstring = temp.str();
-		temp.str(""); temp.clear(); temp << this->NodeData[i]->x; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp << this->NodeData[i]->y; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp << this->NodeData[i]->z; tempstring += "; " + temp.str();
+		// TF commented out since we want to use the improved PointDuMux class
+//		temp.str(""); temp.clear(); temp << this->NodeData[i]->x; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp << this->NodeData[i]->y; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp << this->NodeData[i]->z; tempstring += "; " + temp.str();
+		for (size_t k(0); k<3; k++) {
+			temp.str("");
+			temp.clear();
+			temp << (*(this->NodeData[i]))[k];
+			tempstring += "; " + temp.str();
+		}
 
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_pressure[0]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_pressure[1]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_saturation[0]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_saturation[1]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_density[0]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_density[1]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->CO2inLiquid; tempstring += "; " + temp.str();
+		// TF commented out since we want to use the improved PointDuMux class
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_pressure[0]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_pressure[1]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_saturation[0]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_saturation[1]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_density[0]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->phase_density[1]; tempstring += "; " + temp.str();
+//		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->CO2inLiquid; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhasePressure()[0]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhasePressure()[1]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhaseSaturation()[0]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhaseSaturation()[1]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhaseDensity()[0]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getPhaseDensity()[1]; tempstring += "; " + temp.str();
+		temp.str(""); temp.clear(); temp.precision(12); temp << this->NodeData[i]->getCO2InLiquid(); tempstring += "; " + temp.str();
 
-		concentration_CO2_water = this->NodeData[i]->CO2inLiquid * this->NodeData[i]->phase_density[0] / (this->Molweight_CO2 * 1e-3);
-		mass_CO2_gas = node_volume * this->NodeData[i]->phase_saturation[1] *  this->NodeData[i]->phase_density[1];
-		mass_CO2_water = node_volume * this->NodeData[i]->phase_saturation[0] * concentration_CO2_water * this->Molweight_CO2 * 0.001;
+		// TF commented out since we want to use the improved PointDuMux class
+//		concentration_CO2_water = this->NodeData[i]->CO2inLiquid * this->NodeData[i]->phase_density[0] / (this->Molweight_CO2 * 1e-3);
+//		mass_CO2_gas = node_volume * this->NodeData[i]->phase_saturation[1] *  this->NodeData[i]->phase_density[1];
+//		mass_CO2_water = node_volume * this->NodeData[i]->phase_saturation[0] * concentration_CO2_water * this->Molweight_CO2 * 0.001;
+		concentration_CO2_water = this->NodeData[i]->getCO2InLiquid() * this->NodeData[i]->getPhaseDensity()[0] / (this->Molweight_CO2 * 1e-3);
+		mass_CO2_gas = node_volume * this->NodeData[i]->getPhaseSaturation()[1] *  this->NodeData[i]->getPhaseDensity()[1];
+		mass_CO2_water = node_volume * this->NodeData[i]->getPhaseSaturation()[0] * concentration_CO2_water * this->Molweight_CO2 * 0.001;
 
 		temp.str(""); temp.clear(); temp.precision(12); temp << mass_CO2_gas; tempstring += "; " + temp.str();
 		temp.str(""); temp.clear(); temp.precision(12); temp << mass_CO2_water; tempstring += "; " + temp.str();
@@ -760,34 +841,51 @@ void CDUMUXData::WriteDataToGeoSys(CRFProcess *m_pcs){
 	fem = m_pcs->fem;
 
 	for (unsigned long i = 0; i < m_msh->nod_vector.size(); i++) {
+		// TF abbreviation
+		PointDuMux const * const pnt_dumux (this->NodeData[i]);
 		//pressure of wetting phase
+
 		index = m_pcs->GetNodeValueIndex("PRESSURE1") + 1; //+1... new time level
-		value = this->NodeData[i]->phase_pressure[1] - this->NodeData[i]->phase_pressure[0];
+		// TF commented out since we want to use the improved PointDuMux class
+//		value = this->NodeData[i]->getPhasePressure()[1] - this->NodeData[i]->getPhasePressure()[0];
+		value = pnt_dumux->getPhasePressure()[1] - pnt_dumux->getPhasePressure()[0];
 		m_pcs->SetNodeValue(i,index,value);
 		// transfer of velocities to OGS nodes
 		index = m_pcs->GetNodeValueIndex("VELOCITY_X1"); //+1... new time level
-		value = this->NodeData[i]->q[0][0];
+		// TF commented out since we want to use the improved PointDuMux class
+//		value = this->NodeData[i]->q[0][0];
+		value = pnt_dumux->getQ()[0][0];
 		m_pcs->SetNodeValue(i,index,value);
 		// transfer of velocities to OGS nodes
 		index = m_pcs->GetNodeValueIndex("VELOCITY_Y1"); //+1... new time level
-		value = this->NodeData[i]->q[0][1];
+		// TF commented out since we want to use the improved PointDuMux class
+//		value = this->NodeData[i]->q[0][1];
+		value = pnt_dumux->getQ()[0][1];
 		m_pcs->SetNodeValue(i,index,value);
 		// transfer of velocities to OGS nodes
 		index = m_pcs->GetNodeValueIndex("VELOCITY_Z1"); //+1... new time level
-		value = this->NodeData[i]->q[0][2];
+		// TF commented out since we want to use the improved PointDuMux class
+//		value = this->NodeData[i]->q[0][2];
+		value = pnt_dumux->getQ()[0][2];
 		m_pcs->SetNodeValue(i,index,value);
 		index = m_pcs->GetNodeValueIndex("DENSITY1"); //+1... new time level
-		value = this->NodeData[i]->phase_density[0];
+		// TF commented out since we want to use the improved PointDuMux class
+//		value = this->NodeData[i]->phase_density[0];
+		value = pnt_dumux->getPhaseDensity()[0];
 		m_pcs->SetNodeValue(i,index,value);
 
 		if (this->Phases.size() == 2) {
 			// pressure of nonwetting phase
 			index = m_pcs->GetNodeValueIndex("PRESSURE2") + 1; //+1... new time level
-			value = this->NodeData[i]->phase_pressure[1];
+			// TF commented out since we want to use the improved PointDuMux class
+//			value = this->NodeData[i]->phase_pressure[1];
+			value = pnt_dumux->getPhasePressure()[1];
 			m_pcs->SetNodeValue(i,index,value);
 			//saturation of wetting phase
 			index = m_pcs->GetNodeValueIndex("SATURATION1") + 1; //+1... new time level
-			value = this->NodeData[i]->phase_saturation[0];
+			// TF commented out since we want to use the improved PointDuMux class
+//			value = this->NodeData[i]->phase_saturation[0];
+			value = pnt_dumux->getPhaseSaturation()[0];
 			m_pcs->SetNodeValue(i,index,value);
 			//saturation of nonwetting phase
 			//index = m_pcs->GetNodeValueIndex("SATURATION2") + 1; //+1... new time level
@@ -795,18 +893,26 @@ void CDUMUXData::WriteDataToGeoSys(CRFProcess *m_pcs){
 			//m_pcs->SetNodeValue(i,index,value);
 			// transfer of velocities to OGS nodes
 			index = m_pcs->GetNodeValueIndex("VELOCITY_X2"); //+1... new time level
-			value = this->NodeData[i]->q[1][0];
+			// TF commented out since we want to use the improved PointDuMux class
+//			value = this->NodeData[i]->q[1][0];
+			value = pnt_dumux->getQ()[1][0];
 			m_pcs->SetNodeValue(i,index,value);
 			// transfer of velocities to OGS nodes
 			index = m_pcs->GetNodeValueIndex("VELOCITY_Y2"); //+1... new time level
-			value = this->NodeData[i]->q[1][1];
+			// TF commented out since we want to use the improved PointDuMux class
+//			value = this->NodeData[i]->q[1][1];
+			value = pnt_dumux->getQ()[1][1];
 			m_pcs->SetNodeValue(i,index,value);
 			// transfer of velocities to OGS nodes
 			index = m_pcs->GetNodeValueIndex("VELOCITY_Z2"); //+1... new time level
-			value = this->NodeData[i]->q[1][2];
+			// TF commented out since we want to use the improved PointDuMux class
+//			value = this->NodeData[i]->q[1][2];
+			value = pnt_dumux->getQ()[1][2];
 			m_pcs->SetNodeValue(i,index,value);
 			index = m_pcs->GetNodeValueIndex("DENSITY2"); //+1... new time level
-			value = this->NodeData[i]->phase_density[1];
+			// TF commented out since we want to use the improved PointDuMux class
+//			value = this->NodeData[i]->phase_density[1];
+			value = pnt_dumux->getPhaseDensity()[1];
 			m_pcs->SetNodeValue(i,index,value);
 		}
 	}
@@ -835,13 +941,19 @@ void CDUMUXData::WriteDataToGeoSys(CRFProcess *m_pcs){
 	// get index of species concentration in nodevaluevector of this process
 	indexConcentration = pcs_vector[this->ProcessIndex_CO2inLiquid]->GetNodeValueIndex(pcs_vector[this->ProcessIndex_CO2inLiquid]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
 	for(unsigned long i = 0; i < pcs_vector[this->ProcessIndex_CO2inLiquid]->nod_val_vector.size(); i++){
+		// TF abbreviation
+		PointDuMux const * const pnt_dumux (this->NodeData[i]);
 		//recalculate dissolve gas: c_CO2 [mol/m�] = w_CO2 [kg_CO2 / kg_liquid] * density_liq[kg/m�] / (Molweight_CO2 [g/mol] * 1e-3 [kg/g])
-		value = this->NodeData[i]->CO2inLiquid * this->NodeData[i]->phase_density[0] / (this->Molweight_CO2 * 1e-3);
+		// TF commented out since we want to use the improved PointDuMux class
+//		value = this->NodeData[i]->CO2inLiquid * this->NodeData[i]->phase_density[0] / (this->Molweight_CO2 * 1e-3);
+		value = pnt_dumux->getCO2InLiquid() * pnt_dumux->getPhaseDensity()[0] / (this->Molweight_CO2 * 1e-3);
 		//cout << " c_CO2 " << value << " Dichte " <<  this->NodeData[i]->phase_density[0] << endl;
 		pcs_vector[this->ProcessIndex_CO2inLiquid]->SetNodeValue(i, indexConcentration, value);
 		//cout << "Node: " << i << " Druck: " << m_pcs->GetNodeValue(i, index_pressure2) << " RS: " << this->NodeData[i]->Gas_dissolved << " Dichte: " << this->SurfaceCO2Density << " C(4): " << value << endl;
 		if (value < 0) {
-			cout << "Node: " << i << " Druck: " << this->NodeData[i]->phase_pressure[1] << " X_CO2: " << this->NodeData[i]->CO2inLiquid << " Dichte: " << this->NodeData[i]->phase_density[0] << " C(4): " << value << endl;
+			// TF commented out since we want to use the improved PointDuMux class
+//			cout << "Node: " << i << " Druck: " << this->NodeData[i]->phase_pressure[1] << " X_CO2: " << this->NodeData[i]->CO2inLiquid << " Dichte: " << this->NodeData[i]->phase_density[0] << " C(4): " << value << endl;
+			cout << "Node: " << i << " Druck: " << pnt_dumux->getPhasePressure()[1] << " X_CO2: " << this->NodeData[i]->getCO2InLiquid() << " Dichte: " << pnt_dumux->getPhaseDensity()[0] << " C(4): " << value << endl;
 			cout << "  Fehler in Berechnung von DIC: " << value << endl;
 		}
 	}
