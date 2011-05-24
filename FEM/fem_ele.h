@@ -24,6 +24,13 @@ class CRFProcess;
 namespace FiniteElement
 {
 
+  enum ExtrapolationMethod
+  {
+    EXTRAPO_LINEAR,
+    EXTRAPO_NEAREST,
+    EXTRAPO_AVERAGE
+  };
+
    using Math_Group::SymMatrix;
    using Math_Group::Matrix;
    using Math_Group::Vec;
@@ -173,6 +180,9 @@ namespace FiniteElement
          // For extropolation
          double Xi_p;
          void SetExtropoGaussPoints(const int i); // 25.2.2007 WW
+         double CalcAverageGaussPointValues(double *GpValues);
+         double CalcXi_p();
+
          // Buffer
          int Index;
          int nNodes;
@@ -188,6 +198,10 @@ namespace FiniteElement
          double Z[20];
          double node_val[20];
          double dbuff[20];
+
+
+         ExtrapolationMethod extrapo_method;
+         ExtrapolationMethod GetExtrapoMethod() {return extrapo_method;};
    };
 
    /*------------------------------------------------------------------

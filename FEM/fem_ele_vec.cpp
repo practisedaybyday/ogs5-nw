@@ -1766,6 +1766,14 @@ bool CFiniteElementVec::GlobalAssembly()
             Sxz[gp] = dstrain[4];
             Syz[gp] = dstrain[5];
             break;
+         case MshElemType::PYRAMID:
+           Sxx[gp] = dstrain[0];
+           Syy[gp] = dstrain[1];
+           Szz[gp] = dstrain[2];
+           Sxy[gp] = dstrain[3];
+           Sxz[gp] = dstrain[4];
+           Syz[gp] = dstrain[5];
+           break;
          default:  break;
          // 3D
       }
@@ -1789,6 +1797,7 @@ bool CFiniteElementVec::GlobalAssembly()
       int i, j;
       //  int l1,l2,l3,l4; //, counter;
       double ESxx, ESyy, ESzz, ESxy, ESxz, ESyz;
+      double avgESxx, avgESyy, avgESzz, avgESxy, avgESxz, avgESyz;
       double r=0.0;
       int i_s, i_e, ish, k=0;
       gp = 0;
@@ -1796,18 +1805,9 @@ bool CFiniteElementVec::GlobalAssembly()
 
       // l1=l2=l3=l4=0;
       MshElemType::type ElementType = MeshElement->GetElementType();
-      //
       if (ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
-      {
-         Xi_p = 0.0;
-         for (gp = 0; gp < nGauss; gp++)
-         {
-            r = MXPGaussPkt(nGauss, gp);
-            if(fabs(r)>Xi_p) Xi_p = fabs(r);
-         }
-         r = 1.0/Xi_p;
-         Xi_p = r;
-      }
+        Xi_p = CalcXi_p();
+
       //
       i_s=0;
       i_e=nnodes;
@@ -1822,26 +1822,52 @@ bool CFiniteElementVec::GlobalAssembly()
       // Mapping Gauss point strains to nodes and update nodes
       // strains:
       //---------------------------------------------------------
+      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+        // average
+        avgESxx = CalcAverageGaussPointValues(Sxx);
+        avgESyy = CalcAverageGaussPointValues(Syy);
+        avgESzz = CalcAverageGaussPointValues(Szz);
+        avgESxy = CalcAverageGaussPointValues(Sxy);
+        avgESxz = CalcAverageGaussPointValues(Sxz);
+        avgESyz = CalcAverageGaussPointValues(Syz);
+      }
+
       for(i=0; i<nnodes; i++)
       {
          ESxx = ESyy = ESzz = ESxy = ESxz = ESyz = 0.0;
-         SetExtropoGaussPoints(i);
-         ComputeShapefct(1);                      // Linear interpolation function
-         //
-         for(j=i_s; j<i_e; j++)
-         {
-            k = j-ish;
-            ESxx += Sxx[j]*shapefct[k];
-            ESyy += Syy[j]*shapefct[k];
-            ESxy += Sxy[j]*shapefct[k];
-            ESzz += Szz[j]*shapefct[k];
-            if(ele_dim==3)
-            {
+
+         // Calculate values at nodes
+         if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
+           SetExtropoGaussPoints(i);
+           ComputeShapefct(1);                      // Linear interpolation function
+           //
+           for(j=i_s; j<i_e; j++)
+           {
+             k = j-ish;
+             ESxx += Sxx[j]*shapefct[k];
+             ESyy += Syy[j]*shapefct[k];
+             ESxy += Sxy[j]*shapefct[k];
+             ESzz += Szz[j]*shapefct[k];
+             if(ele_dim==3)
+             {
                ESxz += Sxz[j]*shapefct[k];
                ESyz += Syz[j]*shapefct[k];
-            }
+             }
+           }
+         } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+           //average
+           ESxx = avgESxx;
+           ESyy = avgESyy;
+           ESxy = avgESxy;
+           ESzz = avgESzz;
+           if(ele_dim==3)
+           {
+             ESxz = avgESxz;
+             ESyz = avgESyz;
+           }
          }
-         // Average value of the contribution of ell neighbor elements
+
+         // Average value of the contribution of all neighbor elements
          ESxx /= dbuff[i];
          ESyy /= dbuff[i];
          ESxy /= dbuff[i];
@@ -1887,6 +1913,7 @@ bool CFiniteElementVec::GlobalAssembly()
       int i, j, gp_r, gp_s, gp_t;
       // int l1,l2,l3,l4; //, counter;
       double ESxx, ESyy, ESzz, ESxy, ESxz, ESyz, Pls;
+      double avgESxx, avgESyy, avgESzz, avgESxy, avgESxz, avgESyz, avgPls;
       double r=0.0;
       int i_s, i_e, ish, k=0;
       MshElemType::type ElementType = MeshElement->GetElementType();
@@ -1905,24 +1932,13 @@ bool CFiniteElementVec::GlobalAssembly()
       {
          if (ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
          {
-            if (ElementType==MshElemType::QUAD)
-            {
-               gp_r = (int)(gp/nGauss);
-               gp_s = gp%nGauss;
-               gp_t = 0;
-            }
-            else if(ElementType==MshElemType::HEXAHEDRON)
-            {
-               gp_r = (int)(gp/(nGauss*nGauss));
-               gp_s = (gp%(nGauss*nGauss));
-               gp_t = gp_s%nGauss;
-               gp_s /= nGauss;
-            }
+            SetGaussPoint(gp, gp_r, gp_s, gp_t);
             i = GetLocalIndex(gp_r, gp_s, gp_t);
             if(i==-1) continue;
          }
          else
             i = gp;
+
          Sxx[i] = (*eleV_DM->Stress)(0,gp);
          Syy[i] = (*eleV_DM->Stress)(1,gp);
          Szz[i] = (*eleV_DM->Stress)(2,gp);
@@ -1939,16 +1955,8 @@ bool CFiniteElementVec::GlobalAssembly()
       }
       //
       if (ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
-      {
-         Xi_p = 0.0;
-         for (gp = 0; gp < nGauss; gp++)
-         {
-            r = MXPGaussPkt(nGauss, gp);
-            if(fabs(r)>Xi_p) Xi_p = fabs(r);
-         }
-         r = 1.0/Xi_p;
-         Xi_p = r;
-      }
+         Xi_p = CalcXi_p();
+
       //
       i_s=0;
       i_e=nnodes;
@@ -1963,28 +1971,56 @@ bool CFiniteElementVec::GlobalAssembly()
       // Mapping Gauss point strains to nodes and update nodes
       // strains:
       //---------------------------------------------------------
+      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+        // average
+        avgESxx = CalcAverageGaussPointValues(Sxx);
+        avgESyy = CalcAverageGaussPointValues(Syy);
+        avgESzz = CalcAverageGaussPointValues(Szz);
+        avgESxy = CalcAverageGaussPointValues(Sxy);
+        avgESxz = CalcAverageGaussPointValues(Sxz);
+        avgESyz = CalcAverageGaussPointValues(Syz);
+        avgPls = CalcAverageGaussPointValues(pstr);
+      }
+
       for(i=0; i<nnodes; i++)
       {
          ESxx = ESyy = ESzz = ESxy = ESxz = ESyz = Pls = 0.0;
-         //
-         SetExtropoGaussPoints(i);
-         //
-         ComputeShapefct(1);                      // Linear interpolation function
-         //
-         for(j=i_s; j<i_e; j++)
-         {
-            k = j-ish;
-            ESxx += Sxx[j]*shapefct[k];
-            ESyy += Syy[j]*shapefct[k];
-            ESxy += Sxy[j]*shapefct[k];
-            ESzz += Szz[j]*shapefct[k];
-            Pls += pstr[j]*shapefct[k];
-            if(ele_dim==3)
-            {
+
+         // Calculate values at nodes
+         if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
+           //
+           SetExtropoGaussPoints(i);
+           //
+           ComputeShapefct(1);                      // Linear interpolation function
+           //
+           for(j=i_s; j<i_e; j++)
+           {
+             k = j-ish;
+             ESxx += Sxx[j]*shapefct[k];
+             ESyy += Syy[j]*shapefct[k];
+             ESxy += Sxy[j]*shapefct[k];
+             ESzz += Szz[j]*shapefct[k];
+             Pls += pstr[j]*shapefct[k];
+             if(ele_dim==3)
+             {
                ESxz += Sxz[j]*shapefct[k];
                ESyz += Syz[j]*shapefct[k];
-            }
+             }
+           }
+         } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+           //average
+           ESxx = avgESxx;
+           ESyy = avgESyy;
+           ESxy = avgESxy;
+           ESzz = avgESzz;
+           Pls  = avgPls;
+           if(ele_dim==3)
+           {
+             ESxz = avgESxz;
+             ESyz = avgESyz;
+           }
          }
+
          // Average value of the contribution of ell neighbor elements
          ESxx /= dbuff[i];
          ESyy /= dbuff[i];

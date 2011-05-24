@@ -7485,7 +7485,7 @@ void CFiniteElementStd::CalcFEM_FCT()
          }
 
       }
-      // For strain and stress extropolation all element types
+      // For strain and stress extrapolation all element types
       // Number of elements associated to nodes
       for(i=0; i<nnodes; i++)
          dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
@@ -7497,24 +7497,13 @@ void CFiniteElementStd::CalcFEM_FCT()
       {
          if(ElementType==MshElemType::QUAD||ElementType==MshElemType::HEXAHEDRON)
          {
-            if(ElementType==MshElemType::QUAD)
-            {
-               gp_r = (int)(gp/nGauss);
-               gp_s = gp%nGauss;
-               gp_t = 0;
-            }
-            else if(ElementType==MshElemType::HEXAHEDRON)
-            {
-               gp_r = (int)(gp/(nGauss*nGauss));
-               gp_s = (gp%(nGauss*nGauss));
-               gp_t = gp_s%nGauss;
-               gp_s /= nGauss;
-            }
+            SetGaussPoint(gp, gp_r, gp_s, gp_t);
             i = GetLocalIndex(gp_r, gp_s, gp_t);
             if(i==-1) continue;
          }
          else
             i = gp;
+
          NodalVal1[i] = gp_ele->Velocity(idof,gp)*time_unit_factor;
          //
          //
@@ -7523,17 +7512,9 @@ void CFiniteElementStd::CalcFEM_FCT()
             NodalVal2[i] =gp_ele->Velocity_g(idof,gp)*time_unit_factor;
       }
 
-      if(ElementType==MshElemType::QUAD||ElementType==MshElemType::HEXAHEDRON)
-      {
-         Xi_p = 0.0;
-         for (gp = 0; gp < nGauss; gp++)
-         {
-            r = MXPGaussPkt(nGauss, gp);
-            if(fabs(r)>Xi_p) Xi_p = fabs(r);
-         }
-         r = 1.0/Xi_p;
-         Xi_p = r;
-      }
+      if (ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
+        Xi_p = CalcXi_p();
+
       //
       i_s=0;
       i_e=nnodes;
@@ -7548,14 +7529,31 @@ void CFiniteElementStd::CalcFEM_FCT()
       // Mapping Gauss point strains to nodes and update nodes
       // strains:
       //---------------------------------------------------------
+      double avgEV = .0;
+      double avgEV1 = .0;
+      if (this->GetExtrapoMethod()==EXTRAPO_AVERAGE) {
+        // average
+        avgEV = CalcAverageGaussPointValues(NodalVal1);
+        if(m_pcs->type==1212 || m_pcs->type==1313)
+          avgEV1 = CalcAverageGaussPointValues(NodalVal2);
+      }
+
       for(i=0; i<nnodes; i++)
       {
          EV = EV1 = varx = 0.0;
-         SetExtropoGaussPoints(i);
-         //
-         ComputeShapefct(1);                      // Linear interpolation function
-         for(j=i_s; j<i_e; j++)
-            EV += NodalVal1[j]*shapefct[j-ish];
+
+         // Calculate values at nodes
+         if (this->GetExtrapoMethod()==EXTRAPO_LINEAR) {
+           SetExtropoGaussPoints(i);
+           //
+           ComputeShapefct(1);                      // Linear interpolation function
+           for(j=i_s; j<i_e; j++)
+             EV += NodalVal1[j]*shapefct[j-ish];
+         } else if (this->GetExtrapoMethod()==EXTRAPO_AVERAGE) {
+           //average
+           EV = avgEV;
+         }
+
          // Average value of the contribution of ell neighbor elements
          EV /= dbuff[i];
          EV += m_pcs->GetNodeValue(nodes[i],idx_vel[idof]);
@@ -7564,8 +7562,14 @@ void CFiniteElementStd::CalcFEM_FCT()
                                                   // Multi-phase flow PCH 05.2009
          if(m_pcs->type==1212 || m_pcs->type==1313)
          {
-            for(j=i_s; j<i_e; j++)
-               EV1 += NodalVal2[j]*shapefct[j-ish];
+            // Calculate values at nodes
+            if (this->GetExtrapoMethod()==EXTRAPO_LINEAR) {
+              for(j=i_s; j<i_e; j++)
+                EV1 += NodalVal2[j]*shapefct[j-ish];
+            } else if (this->GetExtrapoMethod()==EXTRAPO_AVERAGE) {
+              //average
+              EV1 = avgEV1;
+            } 
             //
             EV1 /= dbuff[i];
             EV1 += m_pcs->GetNodeValue(nodes[i],idx_v2);
@@ -7629,7 +7633,7 @@ void CFiniteElementStd::CalcFEM_FCT()
       for(gp=0; gp<nGaussPoints; gp++)
       {
          SetGaussPoint(gp, gp_r, gp_s, gp_t);
-         if(ElementType==2||ElementType==3)
+         if(ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
          {
             i = GetLocalIndex(gp_r, gp_s, gp_t);
             if(i==-1) continue;
@@ -7645,16 +7649,8 @@ void CFiniteElementStd::CalcFEM_FCT()
       }
 
       if(ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
-      {
-         Xi_p = 0.0;
-         for (gp = 0; gp < nGauss; gp++)
-         {
-            r = MXPGaussPkt(nGauss, gp);
-            if(fabs(r)>Xi_p) Xi_p = fabs(r);
-         }
-         r = 1.0/Xi_p;
-         Xi_p = r;
-      }
+        Xi_p = CalcXi_p();
+
       //
       i_s=0;
       i_e=nnodes;
@@ -7669,14 +7665,24 @@ void CFiniteElementStd::CalcFEM_FCT()
       // Mapping Gauss point strains to nodes and update nodes
       // strains:
       //---------------------------------------------------------
+      double avgSat = .0;
+      if (this->GetExtrapoMethod()==EXTRAPO_AVERAGE) {
+        // average
+        avgSat = CalcAverageGaussPointValues(NodalVal_Sat);
+      }
       for(i=0; i<nnodes; i++)
       {
          eS = 0.0;
-         SetExtropoGaussPoints(i);
-         //
-         ComputeShapefct(1);                      // Linear interpolation function
-         for(j=i_s; j<i_e; j++)
-            eS += NodalVal_Sat[j]*shapefct[j-ish];
+         // Calculate values at nodes
+         if (this->GetExtrapoMethod()==EXTRAPO_LINEAR) {
+           SetExtropoGaussPoints(i);
+           //
+           ComputeShapefct(1);                      // Linear interpolation function
+           for(j=i_s; j<i_e; j++)
+             eS += NodalVal_Sat[j]*shapefct[j-ish];
+         } else if (this->GetExtrapoMethod()==EXTRAPO_AVERAGE) {
+           eS = avgSat;
+         }
          // Average value of the contribution of ell neighbor elements
          eS /= dbuff[i];
          eS += pcs->GetNodeValue(nodes[i],idx_S);
@@ -7794,16 +7800,7 @@ void CFiniteElementStd::CalcFEM_FCT()
       }
       //
       if (ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
-      {
-         Xi_p = 0.0;
-         for (gp = 0; gp < nGauss; gp++)
-         {
-            r = MXPGaussPkt(nGauss, gp);
-            if(fabs(r)>Xi_p) Xi_p = fabs(r);
-         }
-         r = 1.0/Xi_p;
-         Xi_p = r;
-      }
+        Xi_p = CalcXi_p();
       //
       i_s=0;
       i_e=nnodes;
@@ -7818,20 +7815,41 @@ void CFiniteElementStd::CalcFEM_FCT()
       // Mapping Gauss point strains to nodes and update nodes
       // strains:
       //---------------------------------------------------------
+      double avgW[3] = {};
+      double avgVal = 0.0;
+      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+        // average
+        if((pcs->additioanl2ndvar_print>0)&&(pcs->additioanl2ndvar_print<3)) {
+          avgW[0] = CalcAverageGaussPointValues(NodalVal2);
+          avgW[1] = CalcAverageGaussPointValues(NodalVal3);
+          avgW[2] = CalcAverageGaussPointValues(NodalVal4);
+        }
+        if(pcs->additioanl2ndvar_print>1) {
+          avgVal = CalcAverageGaussPointValues(NodalVal0);
+        }
+      }
       for(i=0; i<nnodes; i++)
       {
+        // Calculate values at nodes
+        if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
          SetExtropoGaussPoints(i);
          //
          ComputeShapefct(1);                      // Linear interpolation function
+        }
          if((pcs->additioanl2ndvar_print>0)&&(pcs->additioanl2ndvar_print<3))
          {
             w[0] = w[1] = w[2] = 0.0;
-            for(j=i_s; j<i_e; j++)
-            {
-               w[0] += NodalVal2[j]*shapefct[j-ish];
-               w[1] += NodalVal3[j]*shapefct[j-ish];
-               if(dim==3)
+            if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
+              for(j=i_s; j<i_e; j++)
+              {
+                w[0] += NodalVal2[j]*shapefct[j-ish];
+                w[1] += NodalVal3[j]*shapefct[j-ish];
+                if(dim==3)
                   w[2] += NodalVal4[j]*shapefct[j-ish];
+              }
+            } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+              for(k=0; k<dim; k++)
+                w[k] = avgW[k];
             }
             // Average value of the contribution of ell neighbor elements
             for(k=0; k<dim; k++)
@@ -7845,8 +7863,12 @@ void CFiniteElementStd::CalcFEM_FCT()
          if(pcs->additioanl2ndvar_print>1)
          {
             nval = 0.0;
-            for(j=i_s; j<i_e; j++)
-               nval += NodalVal0[j]*shapefct[j-ish];
+            if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
+              for(j=i_s; j<i_e; j++)
+                 nval += NodalVal0[j]*shapefct[j-ish];
+            } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+              nval = avgVal;
+            }
             nval /=  dbuff[i];
             nval += pcs->GetNodeValue(nodes[i],idxp);
             //
