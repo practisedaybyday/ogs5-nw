@@ -109,7 +109,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 	max_mmp_groups(0), msh_max_dim (0), _geo_obj(geo_obj), _geo_name(geo_name),
 	_ele_type (MshElemType::INVALID), _n_msh_layer(0),
 	_cross_section(false), _msh_n_lines(0), _msh_n_quads(0),
-	_msh_n_hexs(0), _msh_n_tris(0), _msh_n_tets(0), _msh_n_prisms(0),
+	_msh_n_hexs(0), _msh_n_tris(0), _msh_n_tets(0), _msh_n_prisms(0), _msh_n_pyras(0),
 	_min_edge_length(1e-3),
 	NodesNumber_Linear(0), NodesNumber_Quadratic(0),
 	_axisymmetry(false),
@@ -285,6 +285,11 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
    size_t CFEMesh::getNumberOfPrisms () const
    {
       return _msh_n_prisms;
+   }
+
+   size_t CFEMesh::getNumberOfPyramids () const
+   {
+     return _msh_n_pyras;
    }
 
    double CFEMesh::getMinEdgeLength () const
@@ -615,6 +620,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
       _msh_n_tris = 0;
       _msh_n_tets = 0;
       _msh_n_prisms = 0;
+      _msh_n_pyras = 0;
       for (size_t e = 0; e < e_size; e++)
       {
          CElem* elem ( ele_vector[e] );
@@ -638,6 +644,9 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
             case MshElemType::PRISM:
                _msh_n_prisms++;
                break;
+            case MshElemType::PYRAMID:
+              _msh_n_pyras++;
+              break;
             default:
                std::cerr << "CFEMesh::ConstructGrid MshElemType not handled" << std::endl;
          }
@@ -666,7 +675,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 
       }
       NodesNumber_Quadratic = (long) nod_vector.size();
-      if ((_msh_n_hexs + _msh_n_tets + _msh_n_prisms) > 0)
+      if ((_msh_n_hexs + _msh_n_tets + _msh_n_prisms + _msh_n_pyras) > 0)
          max_ele_dim = 3;
       else if ((_msh_n_quads + _msh_n_tris) > 0)
          max_ele_dim = 2;
@@ -1075,7 +1084,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 #endif                                      //#ifndef NON_PROCESS
 
       //
-      if ((_msh_n_hexs + _msh_n_tets + _msh_n_prisms) == ele_vector.size())
+      if ((_msh_n_hexs + _msh_n_tets + _msh_n_prisms + _msh_n_pyras) == ele_vector.size())
          return;
       else if (coordinate_system != 32 && !this->has_multi_dim_ele)
       {

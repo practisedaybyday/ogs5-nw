@@ -128,6 +128,7 @@ namespace Mesh_Group
          size_t getNumberOfTris () const;
          size_t getNumberOfTets () const;
          size_t getNumberOfPrisms () const;
+         size_t getNumberOfPyramids () const;
          double getMinEdgeLength () const;
          /**
           * do not use this method REMOVE CANDIDATE
@@ -479,6 +480,7 @@ namespace Mesh_Group
          size_t _msh_n_tris;
          size_t _msh_n_tets;
          size_t _msh_n_prisms;
+         size_t _msh_n_pyras;
 
          double _min_edge_length;                 //TK
 

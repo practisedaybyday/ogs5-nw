@@ -549,6 +549,8 @@ void COutput::NODWriteDOMDataTEC()
       mesh_type_list.push_back(5);
    if (m_msh->getNumberOfPrisms () > 0)
       mesh_type_list.push_back(6);
+   if (m_msh->getNumberOfPyramids() > 0)
+     mesh_type_list.push_back(7);
 
    // Output files for each mesh type
                                                   //NW
@@ -589,6 +591,10 @@ void COutput::NODWriteDOMDataTEC()
             tec_file_name += "_pris";
             eleType = "BRICK";
             break;
+         case 7:
+           tec_file_name += "_pyra";
+           eleType = "BRICK";
+           break;
       }
       /*
         if(m_msh->msh_no_line>0)
