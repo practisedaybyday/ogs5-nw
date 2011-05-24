@@ -1798,7 +1798,6 @@ bool CFiniteElementVec::GlobalAssembly()
       //  int l1,l2,l3,l4; //, counter;
       double ESxx, ESyy, ESzz, ESxy, ESxz, ESyz;
       double avgESxx, avgESyy, avgESzz, avgESxy, avgESxz, avgESyz;
-      double r=0.0;
       int i_s, i_e, ish, k=0;
       gp = 0;
       //double Area1, Area2, Tol=10e-9;
@@ -1822,6 +1821,7 @@ bool CFiniteElementVec::GlobalAssembly()
       // Mapping Gauss point strains to nodes and update nodes
       // strains:
       //---------------------------------------------------------
+      avgESxx = avgESyy = avgESzz = avgESxy = avgESxz = avgESyz = 0.0;
       if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
         // average
         avgESxx = CalcAverageGaussPointValues(Sxx);
@@ -1914,7 +1914,6 @@ bool CFiniteElementVec::GlobalAssembly()
       // int l1,l2,l3,l4; //, counter;
       double ESxx, ESyy, ESzz, ESxy, ESxz, ESyz, Pls;
       double avgESxx, avgESyy, avgESzz, avgESxy, avgESxz, avgESyz, avgPls;
-      double r=0.0;
       int i_s, i_e, ish, k=0;
       MshElemType::type ElementType = MeshElement->GetElementType();
       long node_i = 0;
@@ -1971,6 +1970,7 @@ bool CFiniteElementVec::GlobalAssembly()
       // Mapping Gauss point strains to nodes and update nodes
       // strains:
       //---------------------------------------------------------
+      avgESxx = avgESyy = avgESzz = avgESxy = avgESxz = avgESyz = avgPls = 0.0;
       if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
         // average
         avgESxx = CalcAverageGaussPointValues(Sxx);

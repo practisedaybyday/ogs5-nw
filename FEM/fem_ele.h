@@ -24,12 +24,15 @@ class CRFProcess;
 namespace FiniteElement
 {
 
-  enum ExtrapolationMethod
-  {
-    EXTRAPO_LINEAR,
-    EXTRAPO_NEAREST,
-    EXTRAPO_AVERAGE
-  };
+   struct ExtrapolationMethod 
+   {
+      enum type
+      {
+         EXTRAPO_LINEAR,
+         EXTRAPO_NEAREST,
+         EXTRAPO_AVERAGE
+      };
+   };
 
    using Math_Group::SymMatrix;
    using Math_Group::Matrix;
@@ -200,8 +203,8 @@ namespace FiniteElement
          double dbuff[20];
 
 
-         ExtrapolationMethod extrapo_method;
-         ExtrapolationMethod GetExtrapoMethod() {return extrapo_method;};
+         ExtrapolationMethod::type extrapo_method;
+         ExtrapolationMethod::type GetExtrapoMethod() {return extrapo_method;};
    };
 
    /*------------------------------------------------------------------

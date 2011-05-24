@@ -35,7 +35,7 @@ namespace FiniteElement
       : MeshElement(NULL), Order(order), ele_dim(1), nGaussPoints(1), nGauss(1),
       ShapeFunction(NULL), ShapeFunctionHQ(NULL),
       GradShapeFunction(NULL), GradShapeFunctionHQ(NULL),
-      T_Flag(false), C_Flag(false), F_Flag(false), D_Flag(0), RD_Flag(false), extrapo_method(EXTRAPO_LINEAR)
+      T_Flag(false), C_Flag(false), F_Flag(false), D_Flag(0), RD_Flag(false), extrapo_method(ExtrapolationMethod::EXTRAPO_LINEAR)
    {
       int i;
       //
@@ -274,7 +274,7 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionLineHQ;
             GradShapeFunction = GradShapeFunctionLine;
             GradShapeFunctionHQ = GradShapeFunctionLineHQ;
-            extrapo_method = EXTRAPO_LINEAR;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
             return;
          case 2:                                  // Quadrilateral
             ele_dim =2;
@@ -283,7 +283,7 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionQuadHQ;
             GradShapeFunction = GradShapeFunctionQuad;
             GradShapeFunctionHQ = GradShapeFunctionQuadHQ;
-            extrapo_method = EXTRAPO_LINEAR;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
             return;
          case 3:                                  // Hexahedra
             ele_dim =3;
@@ -292,7 +292,7 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionHexHQ;
             GradShapeFunction = GradShapeFunctionHex;
             GradShapeFunctionHQ = GradShapeFunctionHexHQ;
-            extrapo_method = EXTRAPO_LINEAR;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
             return;
          case 4:                                  // Triangle
             ele_dim =2;
@@ -301,7 +301,7 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionTriHQ;
             GradShapeFunction = GradShapeFunctionTri;
             GradShapeFunctionHQ = GradShapeFunctionTriHQ;
-            extrapo_method = EXTRAPO_LINEAR;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
             return;
          case 5:                                  // Tedrahedra
             ele_dim =3;
@@ -311,7 +311,7 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionTetHQ;
             GradShapeFunction = GradShapeFunctionTet;
             GradShapeFunctionHQ = GradShapeFunctionTetHQ;
-            extrapo_method = EXTRAPO_LINEAR;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
             return;
          case 6:                                  // Prism
             ele_dim =3;
@@ -321,7 +321,7 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionPriHQ;
             GradShapeFunction = GradShapeFunctionPri;
             GradShapeFunctionHQ = GradShapeFunctionPriHQ;
-            extrapo_method = EXTRAPO_AVERAGE;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_AVERAGE;
             return;
      case 7: // Pyramid 
        ele_dim =3;
@@ -333,7 +333,7 @@ namespace FiniteElement
        ShapeFunctionHQ = ShapeFunctionPyraHQ13;
 	   GradShapeFunction = GradShapeFunctionPyra;
 	   GradShapeFunctionHQ = GradShapeFunctionPyraHQ13;
-       extrapo_method = EXTRAPO_AVERAGE;
+       extrapo_method = ExtrapolationMethod::EXTRAPO_AVERAGE;
        return;
       }
 

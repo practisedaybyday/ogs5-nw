@@ -7465,7 +7465,6 @@ void CFiniteElementStd::CalcFEM_FCT()
       int i, j, gp, gp_r, gp_s, gp_t, idx_v2=0;
       int i_s, i_e, ish;
       double EV, EV1=0.0, varx=0.0;
-      double r=0.0;
       //
       MshElemType::type ElementType = MeshElement->GetElementType();
 
@@ -7531,7 +7530,7 @@ void CFiniteElementStd::CalcFEM_FCT()
       //---------------------------------------------------------
       double avgEV = .0;
       double avgEV1 = .0;
-      if (this->GetExtrapoMethod()==EXTRAPO_AVERAGE) {
+      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
         // average
         avgEV = CalcAverageGaussPointValues(NodalVal1);
         if(m_pcs->type==1212 || m_pcs->type==1313)
@@ -7543,13 +7542,13 @@ void CFiniteElementStd::CalcFEM_FCT()
          EV = EV1 = varx = 0.0;
 
          // Calculate values at nodes
-         if (this->GetExtrapoMethod()==EXTRAPO_LINEAR) {
+         if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
            SetExtropoGaussPoints(i);
            //
            ComputeShapefct(1);                      // Linear interpolation function
            for(j=i_s; j<i_e; j++)
              EV += NodalVal1[j]*shapefct[j-ish];
-         } else if (this->GetExtrapoMethod()==EXTRAPO_AVERAGE) {
+         } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
            //average
            EV = avgEV;
          }
@@ -7563,10 +7562,10 @@ void CFiniteElementStd::CalcFEM_FCT()
          if(m_pcs->type==1212 || m_pcs->type==1313)
          {
             // Calculate values at nodes
-            if (this->GetExtrapoMethod()==EXTRAPO_LINEAR) {
+            if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
               for(j=i_s; j<i_e; j++)
                 EV1 += NodalVal2[j]*shapefct[j-ish];
-            } else if (this->GetExtrapoMethod()==EXTRAPO_AVERAGE) {
+            } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
               //average
               EV1 = avgEV1;
             } 
@@ -7588,7 +7587,6 @@ void CFiniteElementStd::CalcFEM_FCT()
       int i_s, i_e, ish;
       //  int l1,l2,l3,l4; //, counter;
       double sign, eS=0.0;
-      double r=0.0;
       //
       MshElemType::type ElementType = MeshElement->GetElementType();
       //----------------------------------------------------------------------
@@ -7666,7 +7664,7 @@ void CFiniteElementStd::CalcFEM_FCT()
       // strains:
       //---------------------------------------------------------
       double avgSat = .0;
-      if (this->GetExtrapoMethod()==EXTRAPO_AVERAGE) {
+      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
         // average
         avgSat = CalcAverageGaussPointValues(NodalVal_Sat);
       }
@@ -7674,13 +7672,13 @@ void CFiniteElementStd::CalcFEM_FCT()
       {
          eS = 0.0;
          // Calculate values at nodes
-         if (this->GetExtrapoMethod()==EXTRAPO_LINEAR) {
+         if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
            SetExtropoGaussPoints(i);
            //
            ComputeShapefct(1);                      // Linear interpolation function
            for(j=i_s; j<i_e; j++)
              eS += NodalVal_Sat[j]*shapefct[j-ish];
-         } else if (this->GetExtrapoMethod()==EXTRAPO_AVERAGE) {
+         } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
            eS = avgSat;
          }
          // Average value of the contribution of ell neighbor elements
@@ -7703,7 +7701,7 @@ void CFiniteElementStd::CalcFEM_FCT()
    {
       int i, j, k, gp_r, gp_s, gp_t, idx_perm[3], idxp=0;
       int i_s, i_e, ish;
-      double w[3], r=0.0, nval=0.0;
+      double w[3], nval=0.0;
       //
       MshElemType::type ElementType = MeshElement->GetElementType();
       //----------------------------------------------------------------------
