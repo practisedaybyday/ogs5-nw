@@ -11,6 +11,7 @@
 /// Matrix
 #include <iomanip>
 #include <cfloat>
+#include <cmath>
 //
 #include "matrix_class.h"
 //
@@ -1195,7 +1196,7 @@ bool SparseMatrixDOK::IsSymmetry()
       if (jj2 != this->mat_row[jj->first].end()) {
         double diff = jj->second - jj2->second;
         //if (jj->second != jj2->second) {
-        if (abs((int)diff) > ZERO_TOLERANCE) {
+        if (fabs(diff) > ZERO_TOLERANCE) {
           std::cout << "->unsymmetry: " << i << " - " << jj->first << std::endl;
           return false;
         }
