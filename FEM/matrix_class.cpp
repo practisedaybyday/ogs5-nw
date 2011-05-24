@@ -600,11 +600,11 @@ void  DiagonalMatrix::LimitSize(size_t dim)
     05/2005  WW
    ==========================================================================*/
    //1.
-   template<class T>  vec<T>:: vec(const int argSize):size(argSize)
+   template<class T>  vec<T>:: vec(const int argSize):_size(argSize)
    {
-      entry = new T[argSize];
+      _entry = new T[argSize];
 #ifdef gDEBUG
-      if (!entry)
+      if (!_entry)
       {
          std::cout << "\n*** failed in memory allocating for vec ";
          abort();
@@ -613,38 +613,38 @@ void  DiagonalMatrix::LimitSize(size_t dim)
    }
    template<class T>  vec<T>:: vec(const vec<T>& v)
    {
-      size = v.Size();
-      resize(size);
+      _size = v.Size();
+      resize(_size);
 
 #ifdef gDEBUG
-      if (!entry)
+      if (!_entry)
       {
          std::cout << "\n*** failed in memory allocatiing for vec ";
          abort();
       }
 #endif
-      for (size_t i=0; i<size; i++)
-         entry[i] = v.entry[i];
+      for (size_t i=0; i<_size; i++)
+         _entry[i] = v._entry[i];
 
    }
 
    template<class T> vec<T>:: ~vec()
    {
-      delete[] entry;
-      entry = 0;
+      delete[] _entry;
+      _entry = 0;
    }
 
    template<class T>  void vec<T>:: resize(const int argSize)
    {
-      if(size>0)
+      if(_size>0)
       {
-         delete[] entry;
-         entry = NULL;
+         delete[] _entry;
+         _entry = NULL;
       }
-      size = argSize;
-      entry = new T[argSize];
+      _size = argSize;
+      _entry = new T[argSize];
 #ifdef gDEBUG
-      if (!entry)
+      if (!_entry)
       {
          std::cout << "\n*** failed in memory allocatiing for vec ";
          abort();
@@ -655,28 +655,28 @@ void  DiagonalMatrix::LimitSize(size_t dim)
    template<class T> void vec<T>:: operator = (const vec<T>& v)
    {
 #ifdef gDEBUG
-      if (size!=v.Size())
+      if (_size!=v.Size())
       {
          std::cout << "\n*** Sizes do not match in vec ";
          abort();
       }
 #endif
-      for (size_t i=0; i<size; i++) entry[i] = v[i];
+      for (size_t i=0; i<_size; i++) _entry[i] = v[i];
    }
 
    template<class T> void vec<T>:: Write(std::ostream& os) const
    {
-      for (size_t i=0; i<size; i++)
-         os << entry[i] << "  ";
+      for (size_t i=0; i<_size; i++)
+         os << _entry[i] << "  ";
       os << std::endl;
    }
 
    //2.
-   vec<void*>:: vec (const int argSize):size(argSize)
+   vec<void*>:: vec (const int argSize):_size(argSize)
    {
-      entry = new void*[argSize];
+      _entry = new void*[argSize];
 #ifdef gDEBUG
-      if (!entry)
+      if (!_entry)
       {
          cout << "\n*** failed in memory allocatiing for vec ";
          abort();
@@ -686,37 +686,37 @@ void  DiagonalMatrix::LimitSize(size_t dim)
 
    vec<void*>:: vec (const vec<void*>& v)
    {
-      size = v.Size();
-      resize(size);
+      _size = v.Size();
+      resize(_size);
 
 #ifdef gDEBUG
-      if (!entry)
+      if (!_entry)
       {
          std::cout << "\n*** failed in memory allocatiing for vec ";
          abort();
       }
 #endif
-      for (size_t i=0; i<size; i++)
-         entry[i] = v.entry[i];
+      for (size_t i=0; i<_size; i++)
+         _entry[i] = v._entry[i];
 
    }
 
    vec<void*>::~vec()
    {
-      delete[] entry;
-      entry = 0;
+      delete[] _entry;
+      _entry = 0;
    }
    void vec<void*>:: resize(const int argSize)
    {
-      if(size>0)
+      if(_size>0)
       {
-         delete[] entry;
-         entry=NULL;
+         delete[] _entry;
+         _entry=NULL;
       }
-      size = argSize;
-      entry = new void*[argSize];
+      _size = argSize;
+      _entry = new void*[argSize];
 #ifdef gDEBUG
-      if (!entry)
+      if (!_entry)
       {
          std::cout << "\n*** failed in memory allocatiing for vec ";
          abort();
@@ -726,34 +726,34 @@ void  DiagonalMatrix::LimitSize(size_t dim)
 
    void vec<void*>::Write(std::ostream& os) const
    {
-      for (size_t i=0; i<size; i++)
-         os << entry[i] << "  ";
+      for (size_t i=0; i<_size; i++)
+         os << _entry[i] << "  ";
       os << std::endl;
    }
 
    void vec<void*>:: operator = (const vec<void*>& v)
    {
 #ifdef gDEBUG
-      if (size!=v.Size())
+      if (_size!=v.Size())
       {
          std::cout << "\n*** Sizes do not match in vec ";
          abort();
       }
 #endif
-      for (size_t i=0; i<size; i++) entry[i] = v.entry[i];
+      for (size_t i=0; i<_size; i++) _entry[i] = v._entry[i];
    }
 
    //3.
    template<class T>  void vec<T*>:: operator = (const vec<T*>& v)
    {
 #ifdef gDEBUG
-      if (size!=v.Size())
+      if (_size!=v.Size())
       {
          std::cout << "\n*** Sizes do not match in vec ";
          abort();
       }
 #endif
-      for (int i=0; i<size; i++) entry[i] = v.entry[i];
+      for (int i=0; i<_size; i++) _entry[i] = v._entry[i];
    }
 
 //-----------------------------------------------------

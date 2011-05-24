@@ -140,26 +140,26 @@ private:
    {
       public:
          vec(int argSize);
-         vec() : size(0) {}
+         vec() : _size(0) {}
          explicit vec(const vec<T>& v);
 
          virtual ~vec();
          // Operator
-         virtual void operator = (T v) { for (size_t i=0; i<size; i++) entry[i] = v; }
+         virtual void operator = (T v) { for (size_t i=0; i<_size; i++) _entry[i] = v; }
          virtual void operator = (const vec<T>&);
          virtual void resize(int newh);
-         virtual T& operator[] (int i) { return (T&) entry[i]; }
-         virtual const T& operator[] (int i) const {return (const T&) entry[i]; }
-         virtual size_t Size() const { return size; }
+         virtual T& operator[] (int i) { return (T&) _entry[i]; }
+         virtual const T& operator[] (int i) const {return (const T&) _entry[i]; }
+         virtual size_t Size() const { return _size; }
 
-         T* Entry()        { return entry; }
-         T* Entry()  const { return entry; }
+         T* Entry()        { return _entry; }
+         T* Entry()  const { return _entry; }
 
          virtual void Write(std::ostream& os = std::cout) const;
 
       protected:
-         T* entry;
-         size_t size;
+         T* _entry;
+         size_t _size;
 
    };
 
@@ -167,28 +167,28 @@ private:
    {
       public:
          vec(int argSize);
-         vec() : size (0) {}
+         vec() : _size (0) {}
          explicit vec(const vec<void*>& v);
 
          virtual ~vec();
          // Operator
          void operator = (void* v)
-            { for (size_t i=0; i<size; i++) entry[i] = v; }
+            { for (size_t i=0; i<_size; i++) _entry[i] = v; }
          void operator = (const vec<void*>& v);
-         void*& operator[] (int i) { return entry[i]; }
-         const void*& operator[] (int i) const { return (const void*&) entry[i]; }
+         void*& operator[] (int i) { return _entry[i]; }
+         const void*& operator[] (int i) const { return (const void*&) _entry[i]; }
 
          // Access to memebers
-         void** Entry()          { return entry; }
-         const void** Entry()  const { return (const void**)entry; }
+         void** Entry()          { return _entry; }
+         const void** Entry()  const { return (const void**)_entry; }
 
          virtual void resize(int newh);
-         virtual size_t Size() const { return size; }
+         virtual size_t Size() const { return _size; }
          virtual void Write(std::ostream& os = std::cout) const;
 
       protected:
-         void** entry;
-         size_t size;
+         void** _entry;
+         size_t _size;
    };
 
    template<class T> class vec<T*> : public vec<void*>
@@ -201,13 +201,13 @@ private:
          ~vec() { }
 
          // Operator
-         void operator = (T* v) { for (size_t i=0; i<size;i++) entry[i] = v; }
+         void operator = (T* v) { for (size_t i=0; i<_size;i++) _entry[i] = v; }
          void operator = (const vec<T*>& v);
-         T*& operator[] (int i) { return (T*&) entry[i]; }
-         const T*& operator[] (int i) const {return (const T*&) entry[i]; }
+         T*& operator[] (int i) { return (T*&) _entry[i]; }
+         const T*& operator[] (int i) const {return (const T*&) _entry[i]; }
 
-         T** Entry()        { return entry; }
-         T** Entry()  const { return (const T**)entry; }
+         T** Entry()        { return _entry; }
+         T** Entry()  const { return (const T**)_entry; }
 
    };
 
