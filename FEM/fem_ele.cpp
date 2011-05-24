@@ -317,6 +317,17 @@ namespace FiniteElement
             GradShapeFunction = GradShapeFunctionPri;
             GradShapeFunctionHQ = GradShapeFunctionPriHQ;
             return;
+     case 7: // Pyramid 
+       ele_dim =3;
+       if (Order==1)
+         nGaussPoints = nGauss = 5;
+       else
+         nGaussPoints = nGauss = 8; //13;
+       ShapeFunction = ShapeFunctionPyra;
+       ShapeFunctionHQ = ShapeFunctionPyraHQ13;
+	   GradShapeFunction = GradShapeFunctionPyra;
+	   GradShapeFunctionHQ = GradShapeFunctionPyraHQ13;
+       return;
       }
 
    }
@@ -650,8 +661,14 @@ namespace FiniteElement
             unit[1] = MXPGaussPktTri(nGauss,gp_r,1);
             unit[2] = MXPGaussPkt(gp_t,gp_s);
             return;
-         default:
-            std::cerr << "CElement::SetGaussPoint invalid mesh element type given" << std::endl;
+       case MshElemType::PYRAMID: // Pyramid
+         if (Order==1)
+           SamplePointPyramid5(gp, unit);
+         else
+           SamplePointPyramid8(gp, unit); //SamplePointPyramid13(gp, unit);
+         return;
+       default:
+          std::cerr << "CElement::SetGaussPoint invalid mesh element type given" << std::endl;
       }
    }
    /***************************************************************************
@@ -702,6 +719,10 @@ namespace FiniteElement
                                                   // Weights
             fkt *= MXPGaussFktTri(nGauss,gp_r)*MXPGaussFkt(gp_t, gp_s);
             break;
+       case MshElemType::PYRAMID: // Pyramid 
+  		  fkt = computeJacobian(Order);
+          fkt *= unit[3];                       // Weights
+          break;
          default:
             std::cerr << "CElement::GetGaussData invalid mesh element type given" << std::endl;
       }
