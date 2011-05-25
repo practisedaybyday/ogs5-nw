@@ -330,9 +330,9 @@ std::string readSurface(std::istream &in,
 		if (line.find("$POLYLINES") != std::string::npos) { // subkeyword found
 			// read the name of the polyline(s)
 			in >> line;
-			while (!in.eof() && line.size() != 0 && (line.find("#")
-					== std::string::npos) && (line.find("$")
-					== std::string::npos)) {
+			while (!in.eof() && line.size() != 0
+					&& (line.find("#")== std::string::npos)
+					&& (line.find("$") == std::string::npos)) {
 				// we did read the name of a polyline -> search the id for polyline
 				std::map<std::string,size_t>::const_iterator it (ply_vec_names.find (line));
 				if (it != ply_vec_names.end())
@@ -406,29 +406,12 @@ std::string readSurfaces(std::istream &in,
 		tag = readSurface(in, polygon_vec, sfc_vec, sfc_names, ply_vec, ply_vec_names, pnt_vec, path);
 		if (n_polygons < polygon_vec.size()) {
 			// subdivide polygon in simple polygons
-			polygon_vec[polygon_vec.size()-1]->computeListOfSimplePolygons ();
-
-			// create surfaces from simple polygons
-			const std::list<GEOLIB::Polygon*>& list_of_simple_polygons (polygon_vec[polygon_vec.size()-1]->getListOfSimplePolygons());
-			for (std::list<GEOLIB::Polygon*>::const_iterator simple_polygon_it (list_of_simple_polygons.begin());
-				simple_polygon_it != list_of_simple_polygons.end(); ++simple_polygon_it) {
-
-				std::list<GEOLIB::Triangle> triangles;
-				std::cout << "triangulation of surface: ... " << std::flush;
-				MathLib::EarClippingTriangulation(*simple_polygon_it, triangles);
-				std::cout << "done - " << triangles.size () << " triangles " << std::endl;
-
-				Surface *sfc(new Surface(pnt_vec));
-				// add Triangles to Surface
-				std::list<GEOLIB::Triangle>::const_iterator it (triangles.begin());
-				while (it != triangles.end()) {
-					sfc->addTriangle ((*it)[0], (*it)[1], (*it)[2]);
-					it++;
-				}
-				sfc_vec.push_back (sfc);
-			}
-
+			GEOLIB::Surface *sfc (GEOLIB::Surface::createSurface (*(dynamic_cast<GEOLIB::Polyline*>(polygon_vec[polygon_vec.size()-1]))));
+			sfc_vec.push_back (sfc);
 		}
+	}
+	for (size_t k(0); k<polygon_vec.size(); k++) {
+		delete polygon_vec[k];
 	}
 	std::cout << "readSurfaces: number of read polygons  " << polygon_vec.size() << std::endl;
 
@@ -492,35 +475,6 @@ std::string readSurfaces(std::istream &in,
 //			}
 //			sfc_vec.push_back (sfc);
 //		}
-//	}
-
-//	// test only
-//	GEOLIB::PolylineSmoother ply_smoother;
-//
-//	for (size_t k(0); k<ply_vec.size(); k++) {
-//		GEOLIB::Polyline *smoothed_ply (ply_smoother.execute (*(ply_vec[k])));
-//		std::cout << "original Polyline has " << (ply_vec[k])->getNumberOfPoints() << " points,";
-//		std::cout << "smoothed polyline has " << smoothed_ply->getNumberOfPoints () << " points" << std::endl;
-//
-//		// write smooth polyline to file
-//		if ((ply_vec[k])->getNumberOfPoints() > 6000) {
-//			std::ofstream os ("SmoothedPolyline.gli");
-//			os << "#POINTS" << std::endl;
-//			os.precision (20);
-//			for (size_t j(0); j<smoothed_ply->getNumberOfPoints(); j++) {
-//				os << j << " " << *((*smoothed_ply)[j]) << std::endl;
-//			}
-//
-//			os << "#POLYLINE" << std::endl;
-//			os << " $NAME " << std::endl << "  " << k << std::endl;
-//			os << " $POINTS" << std::endl;
-//			for (size_t j(0); j<smoothed_ply->getNumberOfPoints(); j++) {
-//				os << "  " << j << std::endl;
-//			}
-//			os.close ();
-//		}
-//
-//		delete smoothed_ply;
 //	}
 
 	return tag;

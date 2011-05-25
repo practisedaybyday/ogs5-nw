@@ -196,16 +196,18 @@ void rotatePointsToXY(Vector &plane_normal,
 	rot_mat(2, 1) = plane_normal[1] * h2;
 	rot_mat(2, 2) = plane_normal[2] * h2;
 
-	double *tmp (new double[3]);
+	double *tmp (NULL);
 	size_t n_pnts(pnts.size());
 	for (size_t k(0); k < n_pnts; k++) {
 		tmp = rot_mat * pnts[k]->getData();
 		for (size_t j(0); j < 3; j++)
 			(*(pnts[k]))[j] = tmp[j];
+		delete [] tmp;
 	}
 
 	tmp = rot_mat * plane_normal.getData();
-	for (size_t j(0); j < 3; j++) plane_normal[j] = tmp[j];
+	for (size_t j(0); j < 3; j++)
+		plane_normal[j] = tmp[j];
 
 	delete [] tmp;
 }
