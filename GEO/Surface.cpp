@@ -50,16 +50,26 @@ Surface* Surface::createSurface(const Polyline &ply)
 		Surface *sfc(new Surface(ply.getPointsVec()));
 
 		Polygon* polygon (new Polygon (ply));
-		std::list<Triangle> triangles;
-		MathLib::EarClippingTriangulation (polygon, triangles);
-		std::cout << "done - " << triangles.size () << " triangles " << std::endl;
+		polygon->computeListOfSimplePolygons ();
 
-		// add Triangles to Surface
-		std::list<Triangle>::const_iterator it (triangles.begin());
-		while (it != triangles.end()) {
-			sfc->addTriangle ((*it)[0], (*it)[1], (*it)[2]);
-			it++;
+		// create surfaces from simple polygons
+		const std::list<GEOLIB::Polygon*>& list_of_simple_polygons (polygon->getListOfSimplePolygons());
+		for (std::list<GEOLIB::Polygon*>::const_iterator simple_polygon_it (list_of_simple_polygons.begin());
+			simple_polygon_it != list_of_simple_polygons.end(); ++simple_polygon_it) {
+
+			std::list<GEOLIB::Triangle> triangles;
+			std::cout << "triangulation of surface: ... " << std::flush;
+			MathLib::EarClippingTriangulation(*simple_polygon_it, triangles);
+			std::cout << "done - " << triangles.size () << " triangles " << std::endl;
+
+			// add Triangles to Surface
+			std::list<GEOLIB::Triangle>::const_iterator it (triangles.begin());
+			while (it != triangles.end()) {
+				sfc->addTriangle ((*it)[0], (*it)[1], (*it)[2]);
+				it++;
+			}
 		}
+		delete polygon;
 		return sfc;
 	} else {
 		std::cout << "Error in Surface::createSurface() - Polyline consists of less than three points and therefore cannot be triangulated..." << std::cout;

@@ -1546,7 +1546,8 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs) {
 	saturation_CO2 = 0;
 	node_volume = 0;
 
-	density_CO2 = m_pcs->DuMuxData->NodeData[i]->phase_density[1];
+//	density_CO2 = m_pcs->DuMuxData->NodeData[i]->phase_density[1];
+	density_CO2 = m_pcs->DuMuxData->NodeData[i]->getPhaseDensity()[1];
 
 	for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++) {
 		m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
@@ -1558,11 +1559,13 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs) {
 		node_volume = node_volume + m_ele->GetVolume() / 8 * porosity;
 	}
 
-	saturation_water = m_pcs->DuMuxData->NodeData[i]->phase_saturation[0];
+//	saturation_water = m_pcs->DuMuxData->NodeData[i]->phase_saturation[0];
+	saturation_water = m_pcs->DuMuxData->NodeData[i]->getPhaseSaturation()[0];
 	saturation_CO2 = 1 - saturation_water;
 
 	//concentration_CO2_water = pcs_vector[m_pcs->DuMuxData->ProcessIndex_CO2inLiquid]->GetNodeValue(i, indexConcentration_CO2);
-	concentration_CO2_water =m_pcs->DuMuxData->NodeData[i]->CO2inLiquid * m_pcs->DuMuxData->NodeData[i]->phase_density[0] / (m_pcs->DuMuxData->Molweight_CO2 * 1e-3);
+//	concentration_CO2_water =m_pcs->DuMuxData->NodeData[i]->CO2inLiquid * m_pcs->DuMuxData->NodeData[i]->phase_density[0] / (m_pcs->DuMuxData->Molweight_CO2 * 1e-3);
+	concentration_CO2_water =m_pcs->DuMuxData->NodeData[i]->getCO2InLiquid() * m_pcs->DuMuxData->NodeData[i]->getPhaseDensity()[0] / (m_pcs->DuMuxData->Molweight_CO2 * 1e-3);
 
 	mass_CO2_gas = mass_CO2_gas + node_volume * saturation_CO2 * density_CO2;
 	mass_CO2_water = mass_CO2_water + node_volume * saturation_water * concentration_CO2_water * m_pcs->DuMuxData->Molweight_CO2 * 0.001;

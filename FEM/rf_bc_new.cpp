@@ -933,16 +933,17 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 
 				Surface *m_surface = GEOGetSFCByName(bc->geo_name);
 				if (m_surface) {
+					nodes_vector.clear();
 
 //					std::vector<long> nodes_vector_old;
 					m_msh->GetNODOnSFC(m_surface, nodes_vector);
 
 					std::vector<size_t> msh_nod_vec;
 					m_msh->GetNODOnSFC(sfc, msh_nod_vec);
-					std::cout << "\t\told\tnew" << std::endl;
-//					for (size_t k(0); k<msh_nod_vec.size(); k++) {
-//						std::cout << "\t" << k << "\t" << nodes_vector[k] << "\t" << msh_nod_vec[k] << std::endl;
-//						nodes_vector.push_back (msh_nod_vec[k]);
+//					std::cout << "\t\told\tnew" << std::endl;
+//					for (size_t k(0); k<nodes_vector_old.size(); k++) {
+////						std::cout << "\t" << k << "\t" << nodes_vector_old[k] << "\t" << msh_nod_vec[k] << std::endl;
+//						nodes_vector.push_back (nodes_vector_old[k]);
 //					}
 					size_t nodes_vector_length (nodes_vector.size());
 

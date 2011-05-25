@@ -37,7 +37,9 @@ Polygon::~Polygon()
 {
 	// remove polygons from list
 	for (std::list<Polygon*>::iterator it (_simple_polygon_list.begin()); it != _simple_polygon_list.end(); it++) {
-		delete *it;
+		// the first entry of the list can be a pointer the object itself
+		if (*it != this)
+			delete *it;
 	}
 }
 
@@ -149,6 +151,9 @@ const std::list<Polygon*>& Polygon::getListOfSimplePolygons()
 
 void Polygon::computeListOfSimplePolygons ()
 {
+	if (! _simple_polygon_list.empty())
+		return;
+
 	_simple_polygon_list.push_back (this);
 	splitPolygonAtPoint (_simple_polygon_list.begin());
 	splitPolygonAtIntersection (_simple_polygon_list.begin());

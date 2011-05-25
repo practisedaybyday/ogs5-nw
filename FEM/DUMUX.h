@@ -34,23 +34,58 @@ public:
 	void Write_Text(std::string Filename, std::vector<std::string> Text);
 };
 
-
-class CPointData_DuMux {
+class PointDuMux : public GEOLIB::Point
+{
 public:
-	double x;
-	double y;
-	double z;
-	double temperature;
-	double CO2inLiquid;
-	double NaClinLiquid;
-	std::vector <double> phase_pressure;
-	std::vector <double> phase_saturation;
-	std::vector <double> phase_density;
-	std::vector <std::vector <double> > q;
+	PointDuMux (double x, double y, double z, double temperature,
+			double CO2_in_liquid, double NaCl_in_liquid) :
+		GEOLIB::Point (x,y,z), _temperature (temperature),
+		_CO2_in_liquid (CO2_in_liquid), _NaCl_in_Liquid (NaCl_in_liquid)
+	{}
 
-	CPointData_DuMux() {x = 0; y = 0; z = 0;}
-	~CPointData_DuMux() {}
+	double getTemperature() const { return _temperature; }
+	double getCO2InLiquid() const { return _CO2_in_liquid; }
+	double getNaClInLiquid() const { return _NaCl_in_Liquid; }
+
+	void setTemperature(double temperature) { _temperature = temperature; }
+	void setCO2InLiquid(double CO2_in_liquid) { _CO2_in_liquid = CO2_in_liquid; }
+	void setNaClInLiquid(double NaCl_in_Liquid) { _NaCl_in_Liquid = NaCl_in_Liquid; }
+
+	std::vector<double>& getPhasePressure() { return _phase_pressure; }
+	std::vector<double> const & getPhasePressure() const { return _phase_pressure; }
+	std::vector<double>& getPhaseSaturation() { return _phase_saturation; }
+	std::vector<double> const & getPhaseSaturation() const { return _phase_saturation; }
+	std::vector<double>& getPhaseDensity() { return _phase_density; }
+	std::vector<double> const & getPhaseDensity() const { return _phase_density; }
+	std::vector<std::vector<double> >& getQ() { return _q; }
+	std::vector<std::vector<double> > const & getQ() const { return _q; }
+
+private:
+	double _temperature;
+	double _CO2_in_liquid;
+	double _NaCl_in_Liquid;
+	std::vector<double> _phase_pressure;
+	std::vector<double> _phase_saturation;
+	std::vector<double> _phase_density;
+	std::vector<std::vector<double> > _q;
 };
+
+//class CPointData_DuMux {
+//public:
+//	double x;
+//	double y;
+//	double z;
+//	double temperature;
+//	double CO2inLiquid;
+//	double NaClinLiquid;
+//	std::vector <double> phase_pressure;
+//	std::vector <double> phase_saturation;
+//	std::vector <double> phase_density;
+//	std::vector <std::vector <double> > q;
+//
+//	CPointData_DuMux() {x = 0; y = 0; z = 0;}
+//	~CPointData_DuMux() {}
+//};
 
 
 class CDUMUXData {
@@ -59,7 +94,8 @@ public:
 	CDUMUXData();
 	~CDUMUXData();
 
-	std::vector <CPointData_DuMux*> NodeData;
+//	std::vector <CPointData_DuMux*> NodeData;
+	std::vector <PointDuMux*> NodeData;
 	std::vector <std::string> Phases;
 	int dim;
 	int ProcessIndex_CO2inLiquid;
