@@ -20,7 +20,6 @@
 namespace MeshLib {class CFEMesh;}
 //08.2007 WW
 class CPARDomain;
-using MeshLib::CFEMesh;
 #endif
 //#define OverLoadNEW_DELETE
 

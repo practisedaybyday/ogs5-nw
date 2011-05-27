@@ -1718,7 +1718,7 @@ Modification:
 -------------------------------------------------------------------------*/
 bool CECLIPSEData::CorrespondingElements(void){
   double *grav_c;
-  CElem* m_ele = NULL;
+  MeshLib::CElem* m_ele = NULL;
   CFEMesh* m_msh = fem_msh_vector[0];
 
   //check if number of elements is equal
@@ -1773,10 +1773,10 @@ Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
 bool CECLIPSEData::CompareElementsGeosysEclipse(){
-	CElem* m_ele = NULL;
+	MeshLib::CElem* m_ele = NULL;
 	CFEMesh* m_msh = fem_msh_vector[0];
-	vec<CNode*> ele_nodes(8);
-	CNode* a_node=NULL;
+	Math_Group::vec<MeshLib::CNode*> ele_nodes(8);
+	MeshLib::CNode* a_node=NULL;
 	clock_t start,finish;
 	double time;
 	double epsilon = 1e-7;
@@ -1878,15 +1878,15 @@ Modification:
 -------------------------------------------------------------------------*/
 bool CECLIPSEData::CreateFaces(void){
 	CFaces *m_face=NULL;
-	CElem* m_element = NULL;
+	MeshLib::CElem* m_element = NULL;
 	vector <long> element_indices;
 	CFEMesh* m_msh = fem_msh_vector[0];
-	vec <CNode*> element_nodes(8);
+	Math_Group::vec <MeshLib::CNode*> element_nodes(8);
 	//CNode* Node1=NULL;
 	//CNode* Node2=NULL;
 	//CNode* Node3=NULL;
 	//CNode* Node4=NULL;
-	vector <CNode*> vec_face_nodes;
+	vector <MeshLib::CNode*> vec_face_nodes;
 	clock_t start,finish;
 	double time;
 
@@ -2623,7 +2623,7 @@ bool CECLIPSEData::MakeNodeVector(void)
 {
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
 	//CFaces *m_face=NULL;
-	CNode* m_node = NULL;
+	MeshLib::CNode* m_node = NULL;
 	double weights_xyz[3];
 	CPointData_ECL* m_NodeData = NULL;
 	m_NodeData = new CPointData_ECL;
@@ -2809,7 +2809,7 @@ void CECLIPSEData::InterpolateDataFromFacesToNodes(long ele_nr, double* n_vel_x,
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
 	MeshLib::CElem* m_ele = NULL;
 	CFaces *m_face=NULL;
-	CNode* m_node = NULL;
+	MeshLib::CNode* m_node = NULL;
 	double distance;
 	double weight, weights_xyz[3];
 	//double sum_weights;
@@ -2946,7 +2946,7 @@ void CECLIPSEData::InterpolateDataFromBlocksToNodes(CRFProcess *m_pcs, std::stri
 	double time;
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
 	CECLIPSEBlock *m_block = NULL;
-	CNode* m_node = NULL;
+	MeshLib::CNode* m_node = NULL;
 	//CFaces *m_face=NULL;
 	double distance;
 	double volume;
@@ -3215,8 +3215,8 @@ Programming: 11/2009 BG based on CB
 Modification:
 -------------------------------------------------------------------------*/
 void CECLIPSEData::InterpolateGeosysVelocitiesToNodes(CRFProcess *m_pcs, double *vel_nod, long node){
-	CNode* m_nod = NULL;
-	CElem* m_ele = NULL;
+	MeshLib::CNode* m_nod = NULL;
+	MeshLib::CElem* m_ele = NULL;
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
 
 	long i;
@@ -3419,7 +3419,7 @@ void CECLIPSEData::WriteDataToGeoSys(CRFProcess *m_pcs, std::string path){
 		std::string tempstring;
 		ostringstream temp;
 		MeshLib::CElem* elem = NULL;
-		vec<CNode*> Nodes(8);
+		Math_Group::vec<MeshLib::CNode*> Nodes(8);
 		double Val;
 		if (this->Phases.size() == 1) {
 			int nidx1 = m_pcs->GetNodeValueIndex("PRESSURE1") + 1; //+1... new time level
@@ -3953,9 +3953,9 @@ int CECLIPSEData::WriteDataBackToEclipse(CRFProcess *m_pcs, std::string folder){
 	CRFProcess *n_pcs = NULL;
 	//int indexProcess;
 	int indexConcentration;
-	CElem* m_element = NULL;
+	MeshLib::CElem* m_element = NULL;
 	CFEMesh* m_msh = fem_msh_vector[0];
-	vec <CNode*> vec_element_nodes(8);
+	Math_Group::vec <MeshLib::CNode*> vec_element_nodes(8);
 	clock_t start, finish;
 	double time;
 	double delta_gas_dis, delta_gas_dissolved;

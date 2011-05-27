@@ -93,7 +93,7 @@ Modification:
 bool CFaces::Calculate_FaceGravityCentre(double Point1[3], double Point2[3], double Point3[3], double Point4[3]){
 	//Order of the faces: 0..left(x); 1..right(x); 2..front(y); 3..back(y); 4..bottom(z); 5..top(z)
 	if (this->connected_nodes.size()>4){
-		cout << "Error: The face has more than 4 corner points!" << endl;
+		std::cout << "Error: The face has more than 4 corner points!" << std::endl;
 		exit(1);
 	}
 
@@ -152,7 +152,7 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-void CFaces::SetNodes(CNode* Point1, CNode* Point2, CNode* Point3, CNode* Point4){
+void CFaces::SetNodes(MeshLib::CNode* Point1, MeshLib::CNode* Point2, MeshLib::CNode* Point3, MeshLib::CNode* Point4){
 	this->connected_nodes.push_back(Point1);
 	this->connected_nodes.push_back(Point2);
 	this->connected_nodes.push_back(Point3);
@@ -166,7 +166,7 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-void CFaces::SetElements(vector <long> element_indices){
+void CFaces::SetElements(std::vector <long> element_indices){
 	this->connected_elements = element_indices;
 };
 /*-------------------------------------------------------------------------
@@ -184,20 +184,20 @@ void CFaces::Calculate_components_of_a_vector(int flag, int phase_index, bool Ra
 	if (Radialmodell == false) {
 		if((this->model_axis == "I+")||(this->model_axis == "I-")) 
 			if(normal_vector[0] < 0.0){
-				cout << "Error at the normal vector. The i-component is not positiv!" << endl;
+				std::cout << "Error at the normal vector. The i-component is not positiv!" << std::endl;
 				//system("Pause");
 				exit(1);
 			}
 		if((this->model_axis == "J+")||(this->model_axis == "J-")) 
 			if(normal_vector[1] < 0.0){
-				cout << "Error at the normal vector. The j-component is not positiv!" << endl;
+				std::cout << "Error at the normal vector. The j-component is not positiv!" << std::endl;
 				//system("Pause");
 				exit(1);
 			}
 	}
 	if((this->model_axis == "K+")||(this->model_axis == "K-")) 
 		if(normal_vector[2] < 0.0){
-			cout << "Error at the normal vector. The k-component is not positiv!" << endl;
+			std::cout << "Error at the normal vector. The k-component is not positiv!" << std::endl;
 			//system("Pause");
 			exit(1);
 		}
@@ -217,7 +217,7 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-bool CFaces::CreateFace(CNode* Point1, CNode* Point2, CNode* Point3, CNode* Point4){
+bool CFaces::CreateFace(MeshLib::CNode* Point1, MeshLib::CNode* Point2, MeshLib::CNode* Point3, MeshLib::CNode* Point4){
 	double coord_Point1[3];
 	double coord_Point2[3];
 	double coord_Point3[3];

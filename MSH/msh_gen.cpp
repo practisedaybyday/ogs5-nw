@@ -777,8 +777,8 @@ void CFEMesh::CreateLineElementsFromMarkedEdges(CFEMesh*m_msh_ply, std::vector<l
 {
    MeshLib::CElem* m_ele = NULL;
    MeshLib::CEdge* m_edg = NULL;
-   vec<CEdge*>ele_edges_vector(15);
-   vec<CNode*>edge_nodes(3);
+   Math_Group::vec<CEdge*>ele_edges_vector(15);
+   Math_Group::vec<CNode*>edge_nodes(3);
    long no_elements;
 
    // Create line elements

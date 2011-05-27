@@ -1181,7 +1181,7 @@ inline double Problem::LiquidFlow()
 			m_pcs->EclipseData = new CECLIPSEData();
 		// call ECLIPSE interface
 		success = m_pcs->EclipseData->RunEclipse(m_pcs->Tim->step_current, m_pcs);
-		if (success == 0) 	cout << "Error running Eclipse!" << endl;
+		if (success == 0) 	std::cout << "Error running Eclipse!" << std::endl;
 		   if(m_pcs->tim_type_name.compare("STEADY")==0)
 		      m_pcs->selected = false;
 		}
@@ -1191,7 +1191,7 @@ inline double Problem::LiquidFlow()
 			m_pcs->DuMuxData = new CDUMUXData();
 		// call DUMUX interface
 		success = m_pcs->DuMuxData->RunDuMux(m_pcs->Tim->step_current, m_pcs);
-		if (success == 0) 	cout << "Error running DuMux!" << endl;
+		if (success == 0) 	std::cout << "Error running DuMux!" << std::endl;
 	}
 
    return error;
@@ -1312,7 +1312,7 @@ inline double Problem::MultiPhaseFlow()
 	//initialize density and viscosity if the CO2 phase transition is used
   if (m_pcs->Phase_Transition_Model == 1) {
 		if (m_pcs->Tim->step_current == 1) {
-			cout << " The Viscosity is not calculated yet!!!" << endl;
+			std::cout << " The Viscosity is not calculated yet!!!" << std::endl;
 			m_pcs->CalculateFluidDensitiesAndViscositiesAtNodes(m_pcs);
 		}
 		else
@@ -1336,7 +1336,7 @@ inline double Problem::MultiPhaseFlow()
 		// call ECLIPSE interface
 		success = m_pcs->EclipseData->RunEclipse(m_pcs->Tim->step_current, m_pcs);
 		if (success == 0) {
-			cout << "Error running Eclipse!" << endl;
+			std::cout << "Error running Eclipse!" << std::endl;
 			system("Pause");
 			exit(0);
 		}
@@ -1346,7 +1346,7 @@ inline double Problem::MultiPhaseFlow()
 			m_pcs->DuMuxData = new CDUMUXData();
 		// call DUMUX interface
 		success = m_pcs->DuMuxData->RunDuMux(m_pcs->Tim->step_current, m_pcs);
-		if (success == 0) 	cout << "Error running DuMux!" << endl;
+		if (success == 0) 	std::cout << "Error running DuMux!" << std::endl;
 	}
 	//CO2-Phase_Transition BG, NB
 	if ((m_pcs->Phase_Transition_Model == 1) && ((m_pcs->simulator.compare("GEOSYS")==0))) {
@@ -1356,15 +1356,15 @@ inline double Problem::MultiPhaseFlow()
 
 			FluidProp = MFPGet("LIQUID");
 			if ((FluidProp->density_model != 18) || (FluidProp->viscosity_model != 18)) {
-				cout << "If the Phase_Transition_Model is used the density model and the viscosity model should be 18!" << endl;
-				cout << "The run is terminated now ..." << endl;
+				std::cout << "If the Phase_Transition_Model is used the density model and the viscosity model should be 18!" << std::endl;
+				std::cout << "The run is terminated now ..." << std::endl;
 				system("Pause");
 				exit(0);
 			}
 			FluidProp = MFPGet("GAS");
 			if ((FluidProp->density_model != 18) || (FluidProp->viscosity_model != 18)) {
-				cout << "If the Phase_Transition_Model is used the density model and the viscosity model should be 18!" << endl;
-				cout << "The run is terminated now ..." << endl;
+				std::cout << "If the Phase_Transition_Model is used the density model and the viscosity model should be 18!" << std::endl;
+				std::cout << "The run is terminated now ..." << std::endl;
 				system("Pause");
 				exit(0);
 			}
@@ -1399,17 +1399,17 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs) {
   MeshLib::CElem* m_ele = NULL;
   MeshLib::CNode* m_node = NULL;
   CMediumProperties *m_mat_mp = NULL;
-  ostringstream temp;
+  std::ostringstream temp;
   double mass_CO2_gas, mass_CO2_water, mass_CO2;
   int index;
   double saturation_CO2;
   double saturation_water;
   double node_volume;
   double time;
-  string tempstring;
-  vector <string> vec_string;
+  std::string tempstring;
+  std::vector <std::string> vec_string;
   //int position;
-  string path;
+  std::string path;
   double density_CO2;
   double porosity = 0.0;
   int variable_index;
@@ -1420,7 +1420,7 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs) {
 
   path = m_pcs->file_name_base;
   int position = int(path.find_last_of("\\"));
-  string path_new;
+  std::string path_new;
   path_new = path.substr(0,position);
   //position = int(path_new.find_last_of("\\"));
   //path_new = path_new.substr(0,position);
@@ -1510,7 +1510,7 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs) {
 
     //Testoutput amount of co2 in model domain calculated at nodes-DuMux
   //double element_volume;
-  vec<CNode*> ele_nodes(8);
+  Math_Group::vec<MeshLib::CNode*> ele_nodes(8);
 
   path = m_pcs->file_name_base;
   position = int(path.find_last_of("\\"));
@@ -1611,17 +1611,17 @@ void Problem::TestOutputEclipse(CRFProcess *m_pcs) {
   MeshLib::CElem* m_ele = NULL;
   MeshLib::CNode* m_node = NULL;
   CMediumProperties *m_mat_mp = NULL;
-  ostringstream temp;
+  std::ostringstream temp;
   double mass_CO2_gas, mass_CO2_water, mass_CO2;
   int index;
   double saturation_CO2;
   double saturation_water;
   double node_volume;
   double time;
-  string tempstring;
-  vector <string> vec_string;
+  std::string tempstring;
+  std::vector <std::string> vec_string;
   //int position;
-  string path;
+  std::string path;
   double density_CO2;
   double porosity = 0.0;
   int variable_index;
@@ -1632,7 +1632,7 @@ void Problem::TestOutputEclipse(CRFProcess *m_pcs) {
 
   path = m_pcs->file_name_base;
   int position = int(path.find_last_of("\\"));
-  string path_new;
+  std::string path_new;
   path_new = path.substr(0,position);
   //position = int(path_new.find_last_of("\\"));
   //path_new = path_new.substr(0,position);
@@ -1716,7 +1716,7 @@ void Problem::TestOutputEclipse(CRFProcess *m_pcs) {
 
     //Testoutput amount of co2 in model domain calculated at elements
   double element_volume;
-  vec<CNode*> ele_nodes(8);
+  Math_Group::vec<MeshLib::CNode*> ele_nodes(8);
 
   path = m_pcs->file_name_base;
   position = int(path.find_last_of("\\"));
@@ -1854,8 +1854,8 @@ inline double Problem::GroundWaterFlow()
    if(!m_pcs->selected) return error;             //12.12.2008 WW
 
    //----- For the coupling with the soil column approach. 05.2009. WW
-   GridsTopo *neighb_grid = NULL;
-   GridsTopo *neighb_grid_this = NULL;
+   MeshLib::GridsTopo *neighb_grid = NULL;
+   MeshLib::GridsTopo *neighb_grid_this = NULL;
    CRFProcess *neighb_pcs = total_processes[2];
    std::vector<double> border_flux;
    int idx_flux =0, idx_flux_this;
@@ -2389,14 +2389,14 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
 {
    int j,k;
    long i;
-   CElem* m_ele = NULL;
-   CNode* m_nod = NULL;
+   MeshLib::CElem* m_ele = NULL;
+   MeshLib::CNode* m_nod = NULL;
    int no_local_elements = m_pcs_global->m_msh->getNumberOfMeshLayers();
    int no_local_nodes = no_local_elements + 1;
    long g_element_number,g_node_number;
    CFEMesh* m_msh_local = NULL;
    CRFProcess* m_pcs_local = NULL;
-   vec<CNode*>ele_nodes(20);
+   Math_Group::vec<MeshLib::CNode*>ele_nodes(20);
    double value;
 #if defined(USE_MPI_REGSOIL)
    double *values;
@@ -2408,8 +2408,8 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
    int idxp  = m_pcs_global->GetNodeValueIndex("PRESSURE1") + timelevel;
    //WW int idxcp = m_pcs_global->GetNodeValueIndex("PRESSURE_CAP") + timelevel;
    int idxS  = m_pcs_global->GetNodeValueIndex("SATURATION1") + timelevel;
-   CElem* m_ele_local = NULL;
-   CNode* m_nod_local = NULL;
+   MeshLib::CElem* m_ele_local = NULL;
+   MeshLib::CNode* m_nod_local = NULL;
 
 #if defined(USE_MPI_REGSOIL)
    values      = new double[no_local_nodes];      // Should be more sophisticated
@@ -2441,7 +2441,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
       for(j=0;j<no_local_elements;j++)
       {
          m_ele = m_pcs_global->m_msh->ele_vector[j];
-         m_ele_local = new CElem(j,m_ele);
+         m_ele_local = new MeshLib::CElem(j,m_ele);
          for(k=0;k<2;k++)                         // ele_type
             m_ele_local->nodes_index[k] = j+k;
          m_msh_local->ele_vector[j] = m_ele_local;
@@ -2451,7 +2451,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
       for(j=0;j<no_local_nodes;j++)
       {
          m_nod = m_pcs_global->m_msh->nod_vector[j];
-         m_nod_local = new CNode(j,m_nod->X(),m_nod->Y(),m_nod->Z());
+         m_nod_local = new MeshLib::CNode(j,m_nod->X(),m_nod->Y(),m_nod->Z());
          //m_nod_local = m_nod;
          m_msh_local->nod_vector[j] = m_nod_local;
          m_msh_local->nod_vector[j]->SetEquationIndex(j);
@@ -2510,7 +2510,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
 
    //--- For couping with ground flow process. WW
    int idx_v;
-   GridsTopo *neighb_grid = NULL;
+   MeshLib::GridsTopo *neighb_grid = NULL;
    CRFProcess *neighb_pcs = total_processes[1];
 
    if(neighb_pcs)
