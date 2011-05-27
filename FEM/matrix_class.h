@@ -297,7 +297,7 @@ private:
    class SparseTable
    {
       public:
-         SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm=false);
+		 SparseTable(MeshLib::CFEMesh *a_mesh, bool quadratic, bool symm=false);
          SparseTable(CPARDomain &m_dom, bool quadratic, bool symm=false);
          ~SparseTable();
          void Write(std::ostream &os=std::cout);
