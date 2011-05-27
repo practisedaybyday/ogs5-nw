@@ -152,7 +152,7 @@ void CFluidMomentum::SolveDarcyVelocityOnNode()
 {
    int nidx1 = 0;                                 //OK411
    long i;
-   CElem* elem = NULL;
+   MeshLib::CElem* elem = NULL;
 
    fem = new CFiniteElementStd(m_pcs, m_msh->GetCoordinateFlag());
 
@@ -410,7 +410,7 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
    // Loop over all the nodes
    for(int i=0; i<(int) m_msh->nod_vector.size(); ++i)
    {
-      CNode* thisNode = m_msh->nod_vector[i];
+      MeshLib::CNode* thisNode = m_msh->nod_vector[i];
       int NumOfNeighborElements = (int)thisNode->getConnectedElementIDs().size();
 
       // Let's get the norm of the first connected element plane.
@@ -620,7 +620,7 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
    for(int i=0; i<(int) m_msh->edge_vector.size(); ++i)
    {
       // Mount the nodes of the edge
-      vec<CNode*>theNodesOfThisEdge(3);
+      vec<MeshLib::CNode*>theNodesOfThisEdge(3);
       m_msh->edge_vector[i]->GetNodes(theNodesOfThisEdge);
 
       // Do some proper projection of velocity computed from Fluid Momentum.
@@ -756,7 +756,7 @@ void CFluidMomentum::SolveForEdgeVelocity(void)
    // Checking the edge is a joint starts here
    // Loop over all the edges
    // Mount the nodes of the edge
-   vec<CNode*>theNodesOfThisEdge(3);
+   vec<MeshLib::CNode*>theNodesOfThisEdge(3);
    for(int i=0; i<(int) m_msh->edge_vector.size(); ++i)
    {
       m_msh->edge_vector[i]->GetNodes(theNodesOfThisEdge);
@@ -872,7 +872,7 @@ void DATWriteHETFile(const char *file_name)
    double* center = NULL;
    CFEMesh* m_msh = NULL;
    m_msh = fem_msh_vector[0];                     // Something must be done later on here.
-   CElem* elem = NULL;
+   MeshLib::CElem* elem = NULL;
 
    sprintf(tet_file_name,"%s.%s",file_name,"tet");
    tet_file = fopen(tet_file_name,"w+t");

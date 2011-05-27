@@ -1,7 +1,7 @@
 // Classes for interface GeoSys - ECLIPSE
 #include <vector>
 //#define MAX_ZEILEN 512
-//using namespace std;
+
 class CRFProcess;
 #include "rf_pcs.h"
 #include "msh_faces.h"

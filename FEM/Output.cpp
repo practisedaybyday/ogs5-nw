@@ -1111,7 +1111,7 @@ void COutput::WriteELEValuesTECData(fstream &tec_file)
    GetELEValuesIndexVector(ele_value_index_vector);
 
    double* xyz;
-   CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    FiniteElement::ElementValue* gp_ele = NULL;
    for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
    {
@@ -1758,7 +1758,7 @@ void COutput::WriteRFONodes(fstream &rfo_file)
    //0 101 100
    rfo_file << 0 << " " << (long)m_msh->nod_vector.size() << " " << (long)m_msh->ele_vector.size() << endl;
    //0 0.00000000000000 0.00000000000000 0.00000000000000
-   CNode* m_nod = NULL;
+   MeshLib::CNode* m_nod = NULL;
    for(long i=0;i<(long)m_msh->nod_vector.size();i++)
    {
       m_nod = m_msh->nod_vector[i];
@@ -1770,7 +1770,7 @@ void COutput::WriteRFONodes(fstream &rfo_file)
 void COutput::WriteRFOElements(fstream &rfo_file)
 {
    size_t j;
-   CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    //0 0 -1 line 0 1
    for(long i=0;i<(long)m_msh->ele_vector.size();i++)
    {
@@ -2376,8 +2376,8 @@ void COutput::ELEWriteSFC_TECData(fstream &tec_file)
    tec_file << "COutput::ELEWriteSFC_TECData - implementation not finished" << endl;
    long i;
    int j;
-   CElem* m_ele = NULL;
-   CElem* m_ele_neighbor = NULL;
+   MeshLib::CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele_neighbor = NULL;
    double v[3];
    CRFProcess* m_pcs = NULL;
    double v_n;
@@ -2597,18 +2597,18 @@ void COutput::ELEWritePLY_TECData(fstream &tec_file)
    m_msh->GetELEOnPLY(static_cast<const GEOLIB::Polyline*> (getGeoObj()), ele_vector_at_geo);
 
    // helper variables
-   vec<CEdge*> ele_edges_vector(15);
-   vec<CNode*> edge_nodes(3);
+   Math_Group::vec<MeshLib::CEdge*> ele_edges_vector(15);
+   Math_Group::vec<MeshLib::CNode*> edge_nodes(3);
    double edge_mid_vector[3] = {0.0,0.0,0.0};
 
    for (size_t i = 0; i < ele_vector_at_geo.size(); i++)
    {
-      CElem* m_ele = m_msh->ele_vector[ele_vector_at_geo[i]];
+      MeshLib::CElem* m_ele = m_msh->ele_vector[ele_vector_at_geo[i]];
       // x,y,z
       m_ele->GetEdges(ele_edges_vector);
       for (int j = 0; j < m_ele->GetEdgesNumber(); j++)
       {
-         CEdge* m_edg = ele_edges_vector[j];
+         MeshLib::CEdge* m_edg = ele_edges_vector[j];
          if (m_edg->GetMark())
          {
             m_edg->GetNodes(edge_nodes);
@@ -2702,7 +2702,7 @@ double COutput::NODFlux(long nod_number)
 #else
    // Element nodal RHS contributions
    m_pcs->eqs->b[nod_number] = 0.0;
-   CNode* nod = m_msh->nod_vector[nod_number];
+   MeshLib::CNode* nod = m_msh->nod_vector[nod_number];
    m_pcs->AssembleParabolicEquationRHSVector(nod);
    return m_pcs->eqs->b[nod_number];
 #endif

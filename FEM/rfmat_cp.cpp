@@ -1256,7 +1256,7 @@ double CompProperties::CalcElementMeanConcNew (long index, CRFProcess* m_pcs)
    static double val, val1, val2;
    double theta;                                  //GetNumericalTimeCollocation("TRANSPORT");
    //  CFEMesh* m_msh = m_pcs->m_msh; // Get mesh from Process
-   CElem* elem =NULL;
+   MeshLib::CElem* elem =NULL;
 
    elem = m_pcs->m_msh->ele_vector[index];
    nn = elem->GetVertexNumber();

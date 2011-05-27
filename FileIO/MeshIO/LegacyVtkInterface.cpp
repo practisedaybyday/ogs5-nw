@@ -124,7 +124,7 @@ void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file) const
 
 	for(size_t i = 0; i < pointVector.size() ; i++)
 	{
-		CNode* m_nod = pointVector[i];
+		MeshLib::CNode* m_nod = pointVector[i];
 		vtk_file << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << endl;
 	}
 }
@@ -138,7 +138,7 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 	long numAllPoints =0;
 	for(size_t i=0; i < numCells; i++)
 	{
-		CElem* ele = _mesh->ele_vector[i];
+		MeshLib::CElem* ele = _mesh->ele_vector[i];
 		numAllPoints = numAllPoints + (ele->GetNodesNumber(false)) + 1;
 	}
 
@@ -146,7 +146,7 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 	vtk_file << "CELLS " << numCells << " " << numAllPoints << endl;
 	for(size_t i=0; i < numCells; i++)
 	{
-		CElem* ele = _mesh->ele_vector[i];
+		MeshLib::CElem* ele = _mesh->ele_vector[i];
 
 		// Write number of points per cell
 		switch(ele->GetElementType())
@@ -180,7 +180,7 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 
 	for(size_t i=0; i < numCells; i++)
 	{
-		CElem* ele = _mesh->ele_vector[i];
+		MeshLib::CElem* ele = _mesh->ele_vector[i];
 
 		// Write vtk cell type number (see vtkCellType.h)
 		switch(ele->GetElementType())
@@ -337,7 +337,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 				vtk_file << "VECTORS permeability double " << endl;
 				for (int j = 0l; j < (long) _mesh->ele_vector.size(); j++)
 				{
-					CElem* ele = _mesh->ele_vector[j];
+					MeshLib::CElem* ele = _mesh->ele_vector[j];
 					CMediumProperties* MediaProp = mmp_vector[ele->GetPatchIndex()];
 					for (size_t i = 0; i < 3; i++)
 						vtk_file << MediaProp->PermeabilityTensor(j)[i * 3 + i] << " ";
@@ -372,7 +372,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 		wroteAnyEleData = true;
 		for (size_t i = 0; i < _mesh->ele_vector.size(); i++)
 		{
-			CElem* ele = _mesh->ele_vector[i];
+			MeshLib::CElem* ele = _mesh->ele_vector[i];
 			double mat_value = 0.0;
 			switch (mmp_id)
 			{
@@ -398,7 +398,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 		vtk_file << "LOOKUP_TABLE default" << endl;
 		for (size_t i = 0; i < _mesh->ele_vector.size(); i++)
 		{
-			CElem* ele = _mesh->ele_vector[i];
+			MeshLib::CElem* ele = _mesh->ele_vector[i];
 			vtk_file << ele->GetPatchIndex() << endl;
 		}
 	}

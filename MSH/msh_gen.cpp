@@ -305,8 +305,8 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
 
    //WW  bool quad=false;
    //WW  CRFProcess* m_pcs = NULL;
-   CNode* node = NULL;
-   CElem* elem = NULL;
+   MeshLib::CNode* node = NULL;
+   MeshLib::CElem* elem = NULL;
    std::ifstream msh_file(filename, std::ios::in);
    getline(msh_file, strbuffer);                  // Node keyword
 
@@ -322,7 +322,7 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
          {
             msh_file >> id >> x >> y >> z >> std::ws;
 
-            node = new CNode(id, x, y, z);
+            node = new MeshLib::CNode(id, x, y, z);
             m_msh->nod_vector.push_back(node);
          }
 
@@ -333,7 +333,7 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
          msh_file >> NumElements >> std::ws;
          for (i = 0; i < NumElements; i++)
          {
-            elem = new CElem(i);
+            elem = new MeshLib::CElem(i);
             elem->Read(msh_file, 2);
             m_msh->ele_vector.push_back(elem);
          }
@@ -399,7 +399,7 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
          for (i = 0; i < NumNodes; i++)
          {
             msh_file >> id >> x >> y >> z >> std::ws;
-            node = new CNode(id, x, y, z);
+            node = new MeshLib::CNode(id, x, y, z);
             m_msh->nod_vector.push_back(node);
          }
          getline(msh_file, strbuffer);            // End Node keyword $EndNodes
@@ -409,7 +409,7 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
          msh_file >> NumElements >> std::ws;      // number-of-elements
          for (i = 0; i < NumElements; i++)
          {
-            elem = new CElem(i);
+            elem = new MeshLib::CElem(i);
             elem->Read(msh_file, 7);
             if (elem->GetElementType() != MshElemType::INVALID)
                m_msh->ele_vector.push_back(elem);
@@ -710,9 +710,9 @@ void CFEMesh::SetMSHPart(std::vector<long>&elements_active, long StrangNumber)
    int k;
    long i;
    long size;
-   CElem* m_ele = NULL;
-   CFEMesh* m_msh_strang = NULL;
-   CNode* m_nod = NULL;
+   MeshLib::CElem* m_ele = NULL;
+   MeshLib::CFEMesh* m_msh_strang = NULL;
+   MeshLib::CNode* m_nod = NULL;
    bool found = false;
    StrangNumber= StrangNumber;
    size = (long)elements_active.size();
@@ -775,8 +775,8 @@ Programing:
 **************************************************************************/
 void CFEMesh::CreateLineElementsFromMarkedEdges(CFEMesh*m_msh_ply, std::vector<long> &ele_vector_at_ply)
 {
-   CElem* m_ele = NULL;
-   CEdge* m_edg = NULL;
+   MeshLib::CElem* m_ele = NULL;
+   MeshLib::CEdge* m_edg = NULL;
    vec<CEdge*>ele_edges_vector(15);
    vec<CNode*>edge_nodes(3);
    long no_elements;

@@ -20,7 +20,6 @@
 #endif
 #include "mathlib.h"
 
-using namespace FiniteElement;
 
 class PlaneSet
 {
