@@ -788,7 +788,7 @@ double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFPro
       case 9:                                     /*  De is calculated independently from element porosity. We use node porosity values with with Archies law De = Dp * poros^m   and do a harmonic average of the node diffusion coefficients!   as Dp is part of the dispersion tensor, we  modify Dp -> Dp=Dp0*poro^(m-1)*/
       {
 
-         CElem* m_Elem;
+         MeshLib::CElem* m_Elem;
 
          if (count_of_diffusion_model_values < 2)
             return 0.0;
