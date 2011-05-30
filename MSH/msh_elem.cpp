@@ -289,7 +289,7 @@ CElem::CElem(CElem const &elem) :
       double xx[3];
       double yy[3];
       double zz[3];
-      tranform_tensor = new Matrix(3,3);
+      tranform_tensor = new Math_Group::Matrix(3,3);
       if(geo_type==MshElemType::LINE)
       {
          // x"_vec
@@ -767,7 +767,7 @@ void CElem::Read(std::istream& is, int fileType)
    Programing:
    06/2005 WW Implementation
    **************************************************************************/
-   void CElem::SetNodes(vec<CNode*>&  ele_nodes, bool ReSize)
+   void CElem::SetNodes(Math_Group::vec<CNode*>&  ele_nodes, bool ReSize)
    {
       int SizeV = nnodes;
       if(quadratic) SizeV = nnodesHQ;

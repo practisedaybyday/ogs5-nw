@@ -887,8 +887,8 @@ Modification:
 -------------------------------------------------------------------------*/
 double CFluidProperties::GetElementValueFromNodes(long ElementIndex, int GPIndex, int PhaseIndex, int VariableIndex) {
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-	CElem *m_ele = NULL;
-	CNode* m_node = NULL;
+	MeshLib::CElem *m_ele = NULL;
+	MeshLib::CNode* m_node = NULL;
 	CRFProcess *m_pcs;
 	double var, variable;
 	int variable_index = 0, nNodes;

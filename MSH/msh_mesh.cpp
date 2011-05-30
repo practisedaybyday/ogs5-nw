@@ -422,15 +422,15 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
    {
       bool done;
 
-      vec<CNode*> e_nodes0(20);
-      vec<int> Edge_Orientation(15);
-      vec<CEdge*> Edges(15);
-      vec<CEdge*> Edges0(15);
-      vec<CElem*> Neighbors(15);
-      vec<CElem*> Neighbors0(15);
+      Math_Group::vec<CNode*> e_nodes0(20);
+      Math_Group::vec<int> Edge_Orientation(15);
+      Math_Group::vec<CEdge*> Edges(15);
+      Math_Group::vec<CEdge*> Edges0(15);
+      Math_Group::vec<CElem*> Neighbors(15);
+      Math_Group::vec<CElem*> Neighbors0(15);
 
-      vec<CNode*> e_edgeNodes0(3);
-      vec<CNode*> e_edgeNodes(3);
+      Math_Group::vec<CNode*> e_edgeNodes0(3);
+      Math_Group::vec<CNode*> e_edgeNodes(3);
 
       NodesNumber_Linear = nod_vector.size();
 
@@ -444,7 +444,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
       for (size_t e = 0; e < e_size; e++)
       {
 		 CElem* elem ( ele_vector[e] );
-		 const vec<long>& node_index (elem->GetNodeIndeces());
+		 const Math_Group::vec<long>& node_index (elem->GetNodeIndeces());
 		 elem->GetNeighbors(Neighbors0);
 
 		 size_t nnodes0 ( elem->nnodes );             // Number of nodes for linear element
@@ -469,7 +469,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
                   if (ee == e)
                      continue;
                   CElem* connElem ( ele_vector[ee] );
-                  const vec<long>& node_index_glb (connElem->GetNodeIndeces());
+                  const Math_Group::vec<long>& node_index_glb (connElem->GetNodeIndeces());
                   connElem->GetNeighbors(Neighbors);
                   size_t nFacesConnElem = static_cast<size_t>(connElem->GetFacesNumber());
 
@@ -555,7 +555,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
                   if (ee == e)
                      continue;
                   CElem* connElem ( ele_vector[ee] );
-                  const vec<long>& node_index_glb (connElem->GetNodeIndeces());
+                  const Math_Group::vec<long>& node_index_glb (connElem->GetNodeIndeces());
                   size_t nedges ( connElem->GetEdgesNumber() );
                   connElem->GetEdges(Edges);
                   // Edges of neighbors
@@ -824,8 +824,8 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
       }
       //
       CNode *aNode = NULL;
-      vec<CNode*> e_nodes0(20);
-      vec<CNode*> e_nodes(20);
+      Math_Group::vec<CNode*> e_nodes0(20);
+      Math_Group::vec<CNode*> e_nodes(20);
       CElem *thisElem0 = NULL;
       CElem *thisElem = NULL;
       CEdge *thisEdge0 = NULL;
@@ -2278,8 +2278,8 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
     **************************************************************************/
    void CFEMesh::GetELEOnPLY(const GEOLIB::Polyline* ply, std::vector<size_t>& ele_vector_ply)
    {
-      vec<CEdge*> ele_edges_vector(15);
-      vec<CNode*> edge_nodes(3);
+      Math_Group::vec<CEdge*> ele_edges_vector(15);
+      Math_Group::vec<CNode*> edge_nodes(3);
 
       std::vector<size_t> nodes_near_ply;
 

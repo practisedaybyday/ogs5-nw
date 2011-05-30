@@ -14,6 +14,7 @@ Programing:
 
 // MSHLib
 #include "msh_lib.h"
+
 // PCSLib
 #include "ProcessInfo.h"
 #include "rf_num_new.h"
@@ -526,7 +527,7 @@ class CRFProcess : public ProcessInfo
       void AssembleParabolicEquationRHSVector();  //OK
       // 15-EQS
                                                   //(vector<long>&); //OK
-      void AssembleParabolicEquationRHSVector(CNode*);
+	  void AssembleParabolicEquationRHSVector(MeshLib::CNode*);
 #endif
       double CalcIterationNODError(int method);   //OK
                                                   // Add bool forward = true. WW

@@ -379,7 +379,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
    {
       if (output_data)
       {
-         CNode *nod = NULL;
+         MeshLib::CNode *nod = NULL;
          if (!useBinary)
          {
             for (long i=0; i<(long)msh->nod_vector.size(); i++)
@@ -414,7 +414,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
    {
       if (output_data)
       {
-         CElem * ele = NULL;
+         MeshLib::CElem * ele = NULL;
          if (!useBinary)
          {
             for (long i=0; i<(long)msh->ele_vector.size(); i++)
@@ -457,7 +457,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
    {
       if (output_data)
       {
-         CElem * ele = NULL;
+         MeshLib::CElem * ele = NULL;
 
          if (!useBinary)
          {
@@ -500,7 +500,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
    {
       if (output_data)
       {
-         CElem * ele = NULL;
+         MeshLib::CElem * ele = NULL;
          if (!useBinary)
          {
             fin << "          ";
@@ -713,7 +713,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       if (ele_value_index_vector.size() > 0)      // GetELEValuesIndexVector() should check this!
          out->GetELEValuesIndexVector(ele_value_index_vector);
       CRFProcess* m_pcs = NULL;
-      CElem* ele = NULL;
+      MeshLib::CElem* ele = NULL;
 
       string str_format;
       if (!this->useBinary)

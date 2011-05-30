@@ -24,7 +24,6 @@ namespace process                                 //WW
 {
    class CRFProcessDeformation;
 };
-using process::CRFProcessDeformation;             //WW
 
 namespace MeshLib
 {

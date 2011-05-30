@@ -17,10 +17,6 @@ last modified
 
 namespace MeshLib
 {
-   using Math_Group::SymMatrix;
-   using Math_Group::vec;
-   using Math_Group::Vec;
-
    // Class definition
    class CNode: public CCore
    {
