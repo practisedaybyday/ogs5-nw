@@ -157,12 +157,13 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
          for (size_t i=0; i<nElems; i++)
          {
             MeshLib::CElem* elem = new MeshLib::CElem();
-            elem->SetElementType(old_mesh->ele_vector[i]->GetElementType());
+			elem->setElementProperties(old_mesh->ele_vector[i]->GetElementType());
+            //elem->SetElementType(old_mesh->ele_vector[i]->GetElementType());
             elem->SetPatchIndex(old_mesh->ele_vector[i]->GetPatchIndex());
 
             size_t nElemNodes = old_mesh->ele_vector[i]->nodes_index.Size();
-            elem->SetNodesNumber(nElemNodes);
-            elem->nodes_index.resize(nElemNodes);
+            //elem->SetNodesNumber(nElemNodes);
+            //elem->nodes_index.resize(nElemNodes);
             for (size_t j=0; j<nElemNodes; j++)
             {
                elem->SetNodeIndex(j, old_mesh->ele_vector[i]->GetNodeIndex(j));
