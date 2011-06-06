@@ -3841,7 +3841,225 @@ void SamplePointTet15(const int nsample, double *SPoint)
    }
 }
 
+/**************************************************************************
+MathLib-Method:
+Task:
+Programing:
+05/2011 NW Implementation
+Last modified:
+**************************************************************************/
+void SamplePointPyramid5(const int nsample, double *SPoint)
+{
+  static const double g1 = 0.584237394672177188; //=8/5*sqrt(2/15)
+  static const double g2 = -2.0/3.0; 
+  static const double g3 = 2.0/5.0; 
+  static const double w1 = 81.0/100.0; 
+  static const double w2 = 125.0/27.0; 
 
+ switch(nsample)
+ {
+ case 0:
+   SPoint[0] = -g1;
+   SPoint[1] = -g1;
+   SPoint[2] = g2;
+   SPoint[3] = w1;          // Weight
+   break;
+ case 1:
+   SPoint[0] = g1;
+   SPoint[1] = -g1;
+   SPoint[2] = g2;
+   SPoint[3] = w1;          // Weight
+   break;
+ case 2:
+   SPoint[0] = g1;
+   SPoint[1] = g1;
+   SPoint[2] = g2;
+   SPoint[3] = w1;          // Weight
+   break;
+ case 3:
+   SPoint[0] = -g1;
+   SPoint[1] = g1;
+   SPoint[2] = g2;
+   SPoint[3] = w1;          // Weight
+   break;
+ case 4:
+   SPoint[0] = .0;
+   SPoint[1] = .0;
+   SPoint[2] = g3;
+   SPoint[3] = w2;          // Weight
+   break;
+ default: 
+   break;
+
+ }
+}
+
+/**************************************************************************
+MathLib-Method:
+Task:
+Programing:
+05/2011 NW Implementation
+Last modified:
+**************************************************************************/
+void SamplePointPyramid13(const int nsample, double *SPoint)
+{
+  static const double g1 = 0.673931986207731726; 
+  static const double g2 = 0.610639618865075532; 
+  static const double g3 = 0.580939660561084423; 
+  static const double g4 =-0.142857142857142857; 
+  static const double g5 =-0.321428571428571429; 
+  static const double g6 = 0.524394036075370072; 
+  static const double g7 =-0.830065359477124183;
+  static const double w1 = 0.515003019323671498; 
+  static const double w2 = 0.257183745242064659; 
+  static const double w3 = 2.474004977113405936; 
+  static const double w4 = 0.419515737191525950; 
+
+  switch(nsample)
+  {
+  case 0:
+    SPoint[0] = -g1;
+    SPoint[1] = -g1;
+    SPoint[2] = g4;
+    SPoint[3] = w1;          // Weight
+    break;
+  case 1:
+    SPoint[0] = g1;
+    SPoint[1] = -g1;
+    SPoint[2] = g4;
+    SPoint[3] = w1;          // Weight
+    break;
+  case 2:
+    SPoint[0] = g1;
+    SPoint[1] = g1;
+    SPoint[2] = g4;
+    SPoint[3] = w1;          // Weight
+    break;
+  case 3:
+    SPoint[0] = -g1;
+    SPoint[1] = g1;
+    SPoint[2] = g4;
+    SPoint[3] = w1;          // Weight
+    break;
+  case 4:
+    SPoint[0] = -g2;
+    SPoint[1] = .0;
+    SPoint[2] = g5;
+    SPoint[3] = w2;          // Weight
+    break;
+  case 5:
+    SPoint[0] = g2;
+    SPoint[1] = .0;
+    SPoint[2] = g5;
+    SPoint[3] = w2;          // Weight
+    break;
+  case 6:
+    SPoint[0] = .0;
+    SPoint[1] = -g2;
+    SPoint[2] = g5;
+    SPoint[3] = w2;          // Weight
+    break;
+  case 7:
+    SPoint[0] = .0;
+    SPoint[1] = g2;
+    SPoint[2] = g5;
+    SPoint[3] = w2;          // Weight
+    break;
+  case 8:
+    SPoint[0] = .0;
+    SPoint[1] = .0;
+    SPoint[2] = g6;
+    SPoint[3] = w3;          // Weight
+    break;
+  case 9:
+    SPoint[0] = -g3;
+    SPoint[1] = -g3;
+    SPoint[2] = g7;
+    SPoint[3] = w4;          // Weight
+    break;
+  case 10:
+    SPoint[0] = g3;
+    SPoint[1] = -g3;
+    SPoint[2] = g7;
+    SPoint[3] = w4;          // Weight
+    break;
+  case 11:
+    SPoint[0] = g3;
+    SPoint[1] = g3;
+    SPoint[2] = g7;
+    SPoint[3] = w4;          // Weight
+    break;
+  case 12:
+    SPoint[0] = -g3;
+    SPoint[1] = g3;
+    SPoint[2] = g7;
+    SPoint[3] = w4;          // Weight
+    break;
+  default: 
+    break;
+
+  }
+}
+void SamplePointPyramid8(const int i, double *SPoint)
+{
+  static const double g1=sqrt((double)1.0/3.0); 
+  static const double g2=(2.0*sqrt(10.0)-5.0)/15.0; 
+  static const double g3=-2.0/3.0-g2;
+  static const double w1=5.0*(68.0+5.0*sqrt(10.0))/432.0; 
+  static const double w2=85.0/54.0-w1;
+
+  switch(i)
+  {
+  case 0:
+    SPoint[0] = -g1;
+    SPoint[1] = -g1;
+    SPoint[2] = g2;
+    SPoint[3] = w1;          // Weight
+    break;
+  case 1:
+    SPoint[0] = g1;
+    SPoint[1] = -g1;
+    SPoint[2] = g2;
+    SPoint[3] = w1;          // Weight
+    break;
+  case 2:
+    SPoint[0] = g1;
+    SPoint[1] = g1;
+    SPoint[2] = g2;
+    SPoint[3] = w1;          // Weight
+    break;
+  case 3:
+    SPoint[0] = -g1;
+    SPoint[1] = g1;
+    SPoint[2] = g2;
+    SPoint[3] = w1;          // Weight
+    break;
+  case 4:
+    SPoint[0] = -g1;
+    SPoint[1] = -g1;
+    SPoint[2] = g3;
+    SPoint[3] = w2;          // Weight
+    break;
+  case 5:
+    SPoint[0] = g1;
+    SPoint[1] = -g1;
+    SPoint[2] = g3;
+    SPoint[3] = w2;          // Weight
+    break;
+  case 6:
+    SPoint[0] = g1;
+    SPoint[1] = g1;
+    SPoint[2] = g3;
+    SPoint[3] = w2;          // Weight
+    break;
+  case 7:
+    SPoint[0] = -g1;
+    SPoint[1] = g1;
+    SPoint[2] = g3;
+    SPoint[3] = w2;          // Weight
+    break;
+  }
+}
 /**************************************************************************
 MathLib-Method:
 Task:
@@ -4219,6 +4437,45 @@ void GradShapeFunctionQuadHQ(double *dN9, const double *u)
    dN9[9] = +0.25 * (1 + u[0]) - 0.5 * dN9[13] - 0.5 * dN9[16] - 0.25 * dN9[17];
 }
 
+/***************************************************************************
+   Aufgabe:
+        Compute the shape function for numerical intergral of linear  
+   quadratic quadralateral element. 
+   Formalparameter:
+      E: 
+	    double * N8       : Array of size 8, to store the value of shape 
+                               function 
+        const  double *u  : Pointer to a 2 dimension array for 
+                               the unit coordinates
+
+   Programming:
+   01/2010     NW Implementation        
+ **************************************************************************/
+void GradShapeFunctionQuadHQ8(double *dN8, const double *u)
+{
+    double r = u[0];
+    double s = u[1];
+
+     //dN/dr
+    dN8[0] = (1-s)*(2*r+s)*0.25;
+    dN8[1] = (1-s)*(2*r-s)*0.25;
+    dN8[2] = (1+s)*(2*r+s)*0.25;
+    dN8[3] = (1+s)*(2*r-s)*0.25;
+    dN8[4] = -r*(1-s);
+    dN8[5] = (1-s*s)*0.5;
+    dN8[6] = -r*(1+s);
+    dN8[7] = -(1-s*s)*0.5;
+
+     //dN/ds
+    dN8[8] = (1-r)*(r+2*s)*0.25;
+    dN8[9] = -(1+r)*(r-2*s)*0.25;
+    dN8[10] = (1+r)*(r+2*s)*0.25;
+    dN8[11] = -(1-r)*(r-2*s)*0.25;
+    dN8[12] = -(1-r*r)*0.5;
+    dN8[13] = -(1+r)*s;
+    dN8[14] = (1-r*r)*0.5;
+    dN8[15] = -(1-r)*s;
+}
 
 /***************************************************************************
    Aufgabe:
@@ -4838,7 +5095,182 @@ void GradShapeFunctionPriHQ(double *dN, const double *x)
    dN[44] = -2.0*L2*t;
 }
 
+/***************************************************************************
+   GEOSYS/ROCKFLOW - Funktion: ShapeFunctionPyra
+   Task:
+        Compute the gradient of shape functions 
+        for the 5 node pyramid element           
+   Arguments:
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
+                            the unit coordinates
+      R:
+	    double * N     : Array of size 5, to store the value of shape 
+                            function of 5 nodes
+   Programming:
+   01/2010     NW  
+ **************************************************************************/
+void ShapeFunctionPyra(double *N, const double *x)
+{
+    const double r = x[0];
+    const double s = x[1];
+    const double t = x[2];    
 
+    N[0] = 0.125*(1-r)*(1-s)*(1-t);
+    N[1] = 0.125*(1+r)*(1-s)*(1-t);
+    N[2] = 0.125*(1+r)*(1+s)*(1-t);
+    N[3] = 0.125*(1-r)*(1+s)*(1-t);
+    N[4] = 0.5*(1+t);
+}
+
+/***************************************************************************
+   GEOSYS/ROCKFLOW - Funktion: ShapeFunctionPyraHQ
+   Task:
+        Compute the gradient of shape functions 
+        for the 13 node pyramid element           
+   Arguments:
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
+                            the unit coordinates
+      R:
+	    double * N     : Array of size 13, to store the value of shape 
+                            function of 13 nodes
+   Programming:
+   01/2010     NW           
+ **************************************************************************/
+void ShapeFunctionPyraHQ13(double *N, const double *x)
+{
+    const double r = x[0];
+    const double s = x[1];
+    const double t = x[2];    
+
+    N[0]  = -0.0625*(1.0-r)*(1.0-s)*(1.0-t)*(4.0+3.0*r+3.0*s+2.0*r*s+2.0*t+r*t+s*t+2.0*r*s*t);
+    N[1]  = -0.0625*(1.0+r)*(1.0-s)*(1.0-t)*(4.0-3.0*r+3.0*s-2.0*r*s+2.0*t-r*t+s*t-2.0*r*s*t);
+    N[2]  = -0.0625*(1.0+r)*(1.0+s)*(1.0-t)*(4.0-3.0*r-3.0*s+2.0*r*s+2.0*t-r*t-s*t+2.0*r*s*t);
+    N[3]  = -0.0625*(1.0-r)*(1.0+s)*(1.0-t)*(4.0+3.0*r-3.0*s-2.0*r*s+2.0*t+r*t-s*t-2.0*r*s*t);
+    N[4]  =  0.5*t*(1.0+t);
+    N[5]  =  0.125*(1.0-r*r)*(1.0-s)  *(1.0-t)*(2.0+s+s*t);
+    N[6]  =  0.125*(1.0+r)  *(1.0-s*s)*(1.0-t)*(2.0-r-r*t);
+    N[7]  =  0.125*(1.0-r*r)*(1.0+s)  *(1.0-t)*(2.0-s-s*t);
+    N[8]  =  0.125*(1.0-r)  *(1.0-s*s)*(1.0-t)*(2.0+r+r*t);
+    N[9]  =  0.25*(1.0-r)*(1.0-s)*(1.0-t*t);
+    N[10] =  0.25*(1.0+r)*(1.0-s)*(1.0-t*t);
+    N[11] =  0.25*(1.0+r)*(1.0+s)*(1.0-t*t);
+    N[12] =  0.25*(1.0-r)*(1.0+s)*(1.0-t*t);
+}
+
+/***************************************************************************
+   GEOSYS/ROCKFLOW - Funktion: GradShapeFunctionPri
+   Task:
+        Compute the gradient of shape functions 
+        for the 6 node prism element           
+   Arguments:
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
+                            the unit coordinates
+      R:
+	    double * N     : Array of size 18, to store the value of the grandient 
+		                 shape functions 
+                          0--5: dN/dL1
+                         6--11: dN/dL2
+                        12--17: dN/dt
+   Programming:
+   08/2005     WW           
+ **************************************************************************/
+void GradShapeFunctionPyra(double *dN, const double *x)
+{
+    const double r = x[0];
+    const double s = x[1];
+    const double t = x[2];    
+    //  dN/dL1
+    dN[0] = -0.125*(1.0-s)*(1.0-t);
+    dN[1] =  0.125*(1.0-s)*(1.0-t);
+    dN[2] =  0.125*(1.0+s)*(1.0-t);
+    dN[3] = -0.125*(1.0+s)*(1.0-t);
+    dN[4] =  0.0;
+    //  dN/dL2
+    dN[5] = -0.125*(1.0-r)*(1.0-t);
+    dN[6] = -0.125*(1.0+r)*(1.0-t);
+    dN[7] =  0.125*(1.0+r)*(1.0-t);
+    dN[8] =  0.125*(1.0-r)*(1.0-t);
+    dN[9] =  0.0;
+    //  dN/dt
+    dN[10] = -0.125*(1.0-r)*(1.0-s);
+    dN[11] = -0.125*(1.0+r)*(1.0-s);
+    dN[12] = -0.125*(1.0+r)*(1.0+s);
+    dN[13] = -0.125*(1.0-r)*(1.0+s);
+    dN[14] = 0.5;
+}
+
+/***************************************************************************
+   GEOSYS/ROCKFLOW - Funktion: GradShapeFunctionPyraHQ
+        Compute the gradient of shape functions 
+        for the 13 node pyramid element           
+   Arguments:
+      E: 
+        const  double *x  : Pointer to a 3 dimension array for 
+                            the unit coordinates
+      R:
+	    double * N     : Array of size 18, to store the value of the grandient 
+		                 shape functions 
+                          0--15: dN/dL1
+                         16--29: dN/dL2
+                         30--44: dN/dt
+   Programming:
+   08/2005     WW           
+**************************************************************************/
+void GradShapeFunctionPyraHQ13(double *dN, const double *x)
+{
+    const double r = x[0];
+    const double s = x[1];
+    const double t = x[2]; 
+    //---dN/dr
+    dN[0]  =  0.0625*(1.0-s)*(1.0-t)*(1.0+6.0*r+s+4.0*r*s+t+2.0*r*t-s*t+4.0*r*s*t);
+    dN[1]  = -0.0625*(1.0-s)*(1.0-t)*(1.0-6.0*r+s-4.0*r*s+t-2.0*r*t-s*t-4.0*r*s*t);
+    dN[2]  = -0.0625*(1.0+s)*(1.0-t)*(1.0-6.0*r-s+4.0*r*s+t-2.0*r*t+s*t+4.0*r*s*t);
+    dN[3]  =  0.0625*(1.0+s)*(1.0-t)*(1.0+6.0*r-s-4.0*r*s+t+2.0*r*t+s*t-4.0*r*s*t);
+    dN[4]  =  0.0;
+    dN[5]  = -0.25*r*(1.0-s)*(1.0-t)*(2.0+s+s*t);
+    dN[6]  =  0.125*(1.0-s*s)*(1.0-t)*(1.0-2.0*r-t-2*r*t);
+    dN[7]  = -0.25*r*(1.0+s)*(1.0-t)*(2.0-s-s*t);
+    dN[8]  = -0.125*(1.0-s*s)*(1.0-t)*(1.0+2.0*r-t+2*r*t);
+    dN[9]  = -0.25*(1.0-s)*(1.0-t*t);
+    dN[10] =  0.25*(1.0-s)*(1.0-t*t);
+    dN[11] =  0.25*(1.0+s)*(1.0-t*t);
+    dN[12] = -0.25*(1.0+s)*(1.0-t*t);
+
+    //---dN/ds
+    dN[13] =  0.0625*(1.0-r)*(1.0-t)*(1.0+r+6.0*s+4.0*r*s+t-r*t+2.0*s*t+4.0*r*s*t);
+    dN[14] =  0.0625*(1.0+r)*(1.0-t)*(1.0-r+6.0*s-4.0*r*s+t+r*t+2.0*s*t-4.0*r*s*t);
+    dN[15] = -0.0625*(1.0+r)*(1.0-t)*(1.0-r-6.0*s+4.0*r*s+t+r*t-2.0*s*t+4.0*r*s*t);
+    dN[16] = -0.0625*(1.0-r)*(1.0-t)*(1.0+r-6.0*s-4.0*r*s+t-r*t-2.0*s*t-4.0*r*s*t);
+    dN[17] =  0.0;
+    dN[18] = -0.125*(1.0-r*r)*(1.0-t)*(1.0+2.0*s-t+2.0*s*t);
+    dN[19] = -0.25*(1.0+r)*s*(1.0-t)*(2.0-r-r*t);
+    dN[20] =  0.125*(1.0-r*r)*(1.0-t)*(1.0-2.0*s-t-2.0*s*t);
+    dN[21] = -0.25*(1.0-r)*s*(1.0-t)*(2.0+r+r*t);
+    dN[22] = -0.25*(1.0-r)*(1.0-t*t);
+    dN[23] = -0.25*(1.0+r)*(1.0-t*t);
+    dN[24] =  0.25*(1.0+r)*(1.0-t*t);
+    dN[25] =  0.25*(1.0-r)*(1.0-t*t);
+
+    //---dN/dt
+    dN[26] =  0.125*(1.0-r)*(1.0-s)*(1.0+r+s+2.0*t+r*t+s*t+2.0*r*s*t);
+    dN[27] =  0.125*(1.0+r)*(1.0-s)*(1.0-r+s+2.0*t-r*t+s*t-2.0*r*s*t);
+    dN[28] =  0.125*(1.0+r)*(1.0+s)*(1.0-r-s+2.0*t-r*t-s*t+2.0*r*s*t);
+    dN[29] =  0.125*(1.0-r)*(1.0+s)*(1.0+r-s+2.0*t+r*t-s*t-2.0*r*s*t);
+    dN[30] =  0.5+t;
+    dN[31] = -0.25*(1.0-r*r)*(1.0-s)*(1.0+s*t);
+    dN[32] = -0.25*(1.0+r)*(1.0-s*s)*(1.0-r*t);
+    dN[33] = -0.25*(1.0-r*r)*(1.0+s)*(1.0-s*t);
+    dN[34] = -0.25*(1.0-r)*(1.0-s*s)*(1.0+r*t);
+    dN[35] = -0.5*(1.0-r)*(1.0-s)*t;
+    dN[36] = -0.5*(1.0+r)*(1.0-s)*t;
+    dN[37] = -0.5*(1.0+r)*(1.0+s)*t;
+    dN[38] = -0.5*(1.0-r)*(1.0+s)*t;
+
+
+}
 /***************************************************************************
    GeoSys - Funktion:
            CElement::ComputeDetTri(const *double x1, const *double x2,

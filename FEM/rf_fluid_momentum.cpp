@@ -196,6 +196,7 @@ void CFluidMomentum::SolveDarcyVelocityOnNode()
 #ifdef NEW_EQS                           //WW
          m_pcs->EQSInitialize();
 #else
+         SetLinearSolverType(m_pcs->eqs, m_num);  //NW
          SetZeroLinearSolver(m_pcs->eqs);
 #endif
 

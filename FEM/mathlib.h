@@ -263,6 +263,9 @@ extern void ShapeFunctionLineHQ(double *N1, const double *u);
 extern void SamplePointTriHQ(const int nsample, double* SPoints);
 extern void SamplePointTet5(const int nsample, double* SPoints);
 extern void SamplePointTet15(const int nsample, double* SPoints);
+extern void SamplePointPyramid5(const int nsample, double* SPoints);
+extern void SamplePointPyramid8(const int i, double *SPoint);
+extern void SamplePointPyramid13(const int nsample, double* SPoints);
 extern void ShapeFunctionTri(double *N3, const double *u);
 extern void ShapeFunctionTriHQ(double *N6, const double *u);
 extern void ShapeFunctionQuad(double *N4, const double *u);
@@ -274,6 +277,8 @@ extern void ShapeFunctionHex(double *N8, const double *x);
 extern void ShapeFunctionHexHQ(double *N9, const double *u);
 extern void ShapeFunctionPri(double *N, const double *x);
 extern void ShapeFunctionPriHQ(double *N, const double *u);
+extern void ShapeFunctionPyra(double *N, const double *x);
+extern void ShapeFunctionPyraHQ13(double *N, const double *u);
 // Gradient of ...
 extern void GradShapeFunctionLine(double *dN1, const  double *u);
 extern void GradShapeFunctionLineHQ(double *dN1, const  double *u);
@@ -281,12 +286,15 @@ extern void GradShapeFunctionTri(double *dN3, const  double *u);
 extern void GradShapeFunctionTriHQ(double *dN3, const  double *u);
 extern void GradShapeFunctionQuad(double *dN4, const double *u);
 extern void GradShapeFunctionQuadHQ(double *dN9, const double *u);
+extern void GradShapeFunctionQuadHQ8(double *dN8, const double *u);
 extern void GradShapeFunctionTet(double *dNt4, const double *u);
 extern void GradShapeFunctionTetHQ(double *dN10, const double *u);
 extern void GradShapeFunctionHex(double *N8, const double *x);
 extern void GradShapeFunctionHexHQ(double *dN9, const double *u);
 extern void GradShapeFunctionPri(double *dN, const double *x);
 extern void GradShapeFunctionPriHQ(double *dN, const double *u);
+extern void GradShapeFunctionPyra(double *dN, const double *x);
+extern void GradShapeFunctionPyraHQ13(double *dN, const double *u);
 
 extern double pai;
 
