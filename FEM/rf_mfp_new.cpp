@@ -3257,7 +3257,7 @@ Programing:
 double CFluidProperties::CaldZdT(double p,double T)
 {
    std::vector<double> roots;
-   double a, a0,daa,w, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;                   
+   double a, a0,daa, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;                   
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor;
@@ -3397,7 +3397,7 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
          {
             m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
             mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew( idx_elem, m_pcs );
-	components_properties[i] =  Fluid_Heat_Conductivity(Density(dens_arg), T, 2*i + 0.25*(i*i- i*i*i));
+	components_properties[i] =  Fluid_Heat_Conductivity(Density(dens_arg), T, (int)(2*i + 0.25*(i*i- i*i*i)));
             variables += mass_fraction[i]*components_properties[i];
          }
          break;
@@ -3417,7 +3417,7 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
 	{
 	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
 	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew( idx_elem, m_pcs );
-	components_properties[i] =  Fluid_Viscosity(Density(dens_arg), T, p, 2*i + 0.25*(i*i- i*i*i));
+	components_properties[i] =  Fluid_Viscosity(Density(dens_arg), T, p, (int)(2*i + 0.25*(i*i- i*i*i)));
             variables += mass_fraction[i]*components_properties[i];
          }
          break;
