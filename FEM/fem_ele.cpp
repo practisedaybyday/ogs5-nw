@@ -35,7 +35,7 @@ namespace FiniteElement
       : MeshElement(NULL), Order(order), ele_dim(1), nGaussPoints(1), nGauss(1),
       ShapeFunction(NULL), ShapeFunctionHQ(NULL),
       GradShapeFunction(NULL), GradShapeFunctionHQ(NULL),
-      T_Flag(false), F_Flag(false), D_Flag(0), RD_Flag(false)
+      T_Flag(false), C_Flag(false), F_Flag(false), D_Flag(0), RD_Flag(false), extrapo_method(ExtrapolationMethod::EXTRAPO_LINEAR)
    {
       int i;
       //
@@ -91,6 +91,7 @@ namespace FiniteElement
          D_Flag = 41;
       F_Flag = H_Process;
       T_Flag = T_Process;
+	  C_Flag = MASS_TRANSPORT_Process;
       PT_Flag = 0;                                // PCH Initialize to be no RWPT.
       RD_Flag = RD_Process;
 #endif
@@ -273,6 +274,7 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionLineHQ;
             GradShapeFunction = GradShapeFunctionLine;
             GradShapeFunctionHQ = GradShapeFunctionLineHQ;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
             return;
          case 2:                                  // Quadrilateral
             ele_dim =2;
@@ -281,6 +283,7 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionQuadHQ;
             GradShapeFunction = GradShapeFunctionQuad;
             GradShapeFunctionHQ = GradShapeFunctionQuadHQ;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
             return;
          case 3:                                  // Hexahedra
             ele_dim =3;
@@ -289,6 +292,7 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionHexHQ;
             GradShapeFunction = GradShapeFunctionHex;
             GradShapeFunctionHQ = GradShapeFunctionHexHQ;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
             return;
          case 4:                                  // Triangle
             ele_dim =2;
@@ -297,6 +301,7 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionTriHQ;
             GradShapeFunction = GradShapeFunctionTri;
             GradShapeFunctionHQ = GradShapeFunctionTriHQ;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
             return;
          case 5:                                  // Tedrahedra
             ele_dim =3;
@@ -306,6 +311,7 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionTetHQ;
             GradShapeFunction = GradShapeFunctionTet;
             GradShapeFunctionHQ = GradShapeFunctionTetHQ;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
             return;
          case 6:                                  // Prism
             ele_dim =3;
@@ -315,7 +321,20 @@ namespace FiniteElement
             ShapeFunctionHQ = ShapeFunctionPriHQ;
             GradShapeFunction = GradShapeFunctionPri;
             GradShapeFunctionHQ = GradShapeFunctionPriHQ;
+            extrapo_method = ExtrapolationMethod::EXTRAPO_AVERAGE;
             return;
+     case 7: // Pyramid 
+       ele_dim =3;
+       if (Order==1)
+         nGaussPoints = nGauss = 5;
+       else
+         nGaussPoints = nGauss = 8; //13;
+       ShapeFunction = ShapeFunctionPyra;
+       ShapeFunctionHQ = ShapeFunctionPyraHQ13;
+	   GradShapeFunction = GradShapeFunctionPyra;
+	   GradShapeFunctionHQ = GradShapeFunctionPyraHQ13;
+       extrapo_method = ExtrapolationMethod::EXTRAPO_AVERAGE;
+       return;
       }
 
    }
@@ -649,8 +668,14 @@ namespace FiniteElement
             unit[1] = MXPGaussPktTri(nGauss,gp_r,1);
             unit[2] = MXPGaussPkt(gp_t,gp_s);
             return;
-         default:
-            std::cerr << "CElement::SetGaussPoint invalid mesh element type given" << std::endl;
+       case MshElemType::PYRAMID: // Pyramid
+         if (Order==1)
+           SamplePointPyramid5(gp, unit);
+         else
+           SamplePointPyramid8(gp, unit); //SamplePointPyramid13(gp, unit);
+         return;
+       default:
+          std::cerr << "CElement::SetGaussPoint invalid mesh element type given" << std::endl;
       }
    }
    /***************************************************************************
@@ -701,6 +726,10 @@ namespace FiniteElement
                                                   // Weights
             fkt *= MXPGaussFktTri(nGauss,gp_r)*MXPGaussFkt(gp_t, gp_s);
             break;
+       case MshElemType::PYRAMID: // Pyramid 
+  		  fkt = computeJacobian(Order);
+          fkt *= unit[3];                       // Weights
+          break;
          default:
             std::cerr << "CElement::GetGaussData invalid mesh element type given" << std::endl;
       }
@@ -1104,6 +1133,48 @@ namespace FiniteElement
             unit[0] = unit[1] = unit[2] = 0.; //07.01.2011. WW 
             break;
       }
+   }
+
+   /***************************************************************************
+      GeoSys - Funktion:
+      Programming:
+      05/2011   NW
+   **************************************************************************/
+   double CElement::CalcXi_p()
+   {
+     double Xi_p = 0.0;
+     MshElemType::type ElementType = MeshElement->GetElementType();
+     if (ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
+     {
+       double r = .0;
+       for (gp = 0; gp < nGauss; gp++)
+       {
+         r = MXPGaussPkt(nGauss, gp);
+         if(fabs(r)>Xi_p) Xi_p = fabs(r);
+       }
+       r = 1.0/Xi_p;
+       Xi_p = r;
+     }
+
+     return Xi_p;
+   }
+
+   /***************************************************************************
+      GeoSys - Funktion:
+      Programming:
+      05/2011   NW Implementation
+   **************************************************************************/
+   double CElement::CalcAverageGaussPointValues(double *GpValues)
+   {
+     // average
+     double avg = .0;
+     for(int j=0; j<nGauss; j++)
+     {
+       avg += GpValues[j];
+     }
+     avg /= nGauss;
+
+     return avg;
    }
 
    /**************************************************************************

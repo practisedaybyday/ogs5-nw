@@ -158,6 +158,7 @@ int ReadData ( char *dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
    //----------------------------------------------------------------------
    // Read object data
    PCSRead(dateiname);
+   MFPRead(dateiname);
    // HS PCS immediately followed by the MCP read
    CPRead(dateiname);                             //SB:GS4
    BCRead(dateiname, geo_obj, unique_name);
@@ -165,7 +166,7 @@ int ReadData ( char *dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
    ICRead(dateiname, geo_obj, unique_name);
    OUTRead(dateiname, geo_obj, unique_name);
    TIMRead(dateiname);
-   MFPRead(dateiname);
+  
    MSPRead(dateiname);
    MMPRead(dateiname);
    RCRead(dateiname);

@@ -163,6 +163,8 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 				vtk_file << "4"; break;
 			case MshElemType::PRISM:
 				vtk_file << "6"; break;
+            case MshElemType::PYRAMID:
+              vtk_file << "5"; break;
 			default:
 				cerr << "COutput::WriteVTKElementData MshElemType not handled" << endl;
 				break;
@@ -197,6 +199,8 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 				vtk_file << "10" << endl; break;
 			case MshElemType::PRISM: // VTK_WEDGE
 				vtk_file << "13" << endl; break;
+            case MshElemType::PYRAMID:
+              vtk_file << "14" << endl; break;
 			default:
 				cerr << "COutput::WriteVTKElementData MshElemType not handled" << endl;
 				break;
