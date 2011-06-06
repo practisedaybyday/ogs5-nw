@@ -571,9 +571,11 @@ namespace FiniteElement
             }
             break;
          case 'S':                                // Multi-phase flow. 24.2.2007 WW
-            if(T_Flag)                            //if(PCSGet("HEAT_TRANSPORT"))
-            {
-                cpl_pcs = PCSGet("MASS_TRANSPORT");
+	if(C_Flag)                            //if(PCSGet("HEAT_TRANSPORT"))
+	{
+	cpl_pcs = PCSGet("MASS_TRANSPORT");
+	idx_c0 = cpl_pcs->GetNodeValueIndex("CONCENTRATION1");
+	idx_c1 = idx_c0+1;
             }
             break;
          case 'C':                                // Componental flow
@@ -624,12 +626,22 @@ namespace FiniteElement
             }
             break;
          case 'M':                                // Mass transport
-            if(T_Flag)
-            {
-               cpl_pcs = PCSGet("HEAT_TRANSPORT");
-               idx_c0 = cpl_pcs->GetNodeValueIndex("TEMPERATURE1");
-               idx_c1 = idx_c0+1;
-            }
+		if(C_Flag && T_Flag)
+	{
+	if(cpl_pcs == NULL)
+	{
+	cpl_pcs = PCSGet("PTC_FLOW");
+	if(cpl_pcs)
+	idx_c0 = cpl_pcs->GetNodeValueIndex("PRESSURE1");
+	idx_c1 = idx_c0+1;
+	}
+	}                              // Mass transport
+	else if(T_Flag)
+	{
+	cpl_pcs = PCSGet("HEAT_TRANSPORT");
+	idx_c0 = cpl_pcs->GetNodeValueIndex("TEMPERATURE1");
+	idx_c1 = idx_c0+1;
+	} 
             break;
          case 'O':                                // Liquid flow
             break;
@@ -2414,6 +2426,7 @@ namespace FiniteElement
         case 0:
         	dens_arg[0] = interpolate(NodalVal0);
         	dens_arg[1] = interpolate(NodalVal_t0);
+			dens_arg[2] = Index;
         	mat_fac = FluidProp->Viscosity(dens_arg);
         	tensor = MediaProp->PermeabilityTensor(Index);
         	for(i=0;i<dim*dim;i++)
@@ -3072,6 +3085,7 @@ namespace FiniteElement
     **************************************************************************/
    inline double CFiniteElementStd::CalCoefAdvectionPTC(int dof_index)
    {
+	   int Index = MeshElement->GetIndex();
 	   double val = 0.0;
 	   double dens_arg[3];
 
@@ -3094,13 +3108,14 @@ namespace FiniteElement
 	   case 2:
 		   PG = interpolate(NodalVal0);
 		   TG = interpolate(NodalVal_t0);
-		   val=1+FluidProp->beta_T*TG;
+		   val=1-FluidProp->beta_T*TG;
 		   if(FluidProp->beta_T == 0)
 		   val = 0.0;
 		   break;
 	   case 3:
 		   dens_arg[0] = interpolate(NodalVal0);
 		   dens_arg[1] = interpolate(NodalVal_t0);
+		   dens_arg[2] = Index;
 		   val=FluidProp->Density(dens_arg)*FluidProp->SpecificHeatCapacity();
 		   break;
 	   }
@@ -3860,8 +3875,7 @@ namespace FiniteElement
             for(jn=0; jn<dof_n; jn++)
             {
                // Material
-               mat_fac = CalCoefMassPTC(in*dof_n+jn);
-               mat_fac *= fkt;
+	mat_fac = fkt*CalCoefMassPTC(in*dof_n+jn);;
                // Calculate mass matrix
                for (i = 0; i < nnodes; i++)
                {
@@ -4820,6 +4834,7 @@ namespace FiniteElement
    // Local assembly
    void  CFiniteElementStd::Assemble_Gravity()
    {
+	         int Index = MeshElement->GetIndex();
       if((coordinate_system)%10!=2)               //NW: exclude (!axisymmetry)
       {
          // 27.2.2007 WW (*GravityMatrix) = 0.0;
@@ -4829,7 +4844,7 @@ namespace FiniteElement
       // ---- Gauss integral
       int gp_r=0, gp_s=0, gp_t;
       gp_t = 0;
-      double fkt, rho;                            //, rich_f;
+      double fkt, rho, dens_arg[3];                            //, rich_f;
       double k_rel_iteration;
       // GEO
       //NW  double geo_fac = MediaProp->geo_area;
@@ -4868,7 +4883,17 @@ namespace FiniteElement
          ComputeGradShapefct(1);                  // Linear interpolation function
          ComputeShapefct(1);                      // Moved from CalCoefLaplace(). 12.3.2007 WW
          // Material
-         rho = FluidProp->Density();              //Index,unit,pcs->m_num->ls_theta
+	if(PcsType==S) 
+	{
+	dens_arg[0]=interpolate(NodalVal0); // pressure
+	dens_arg[1]=interpolate(NodalVal_t0); // temperature
+	dens_arg[2] = Index;
+	rho = FluidProp->Density(dens_arg); 
+	}
+	  else
+	  {
+ rho = FluidProp->Density(); 
+	  }
          if(gravity_constant<MKleinsteZahl)       // HEAD version
             rho = 1.0;
          else if(HEAD_Flag) rho = 1.0;
@@ -4882,6 +4907,8 @@ namespace FiniteElement
             {
                if(PcsType==T)
                   CalCoefLaplace(false);
+              if(PcsType==S)
+                  CalCoefLaplacePTC(0);
                else
                   CalCoefLaplace(true);
             }
@@ -7304,7 +7331,7 @@ void CFiniteElementStd::CalcFEM_FCT()
             break;
          case S:
         	 AssembleParabolicEquation();
-        	 //Assemble_Gravity();
+        	 Assemble_Gravity();
         	 break;
             //....................................................................
          default:
@@ -7438,7 +7465,6 @@ void CFiniteElementStd::CalcFEM_FCT()
       int i, j, gp, gp_r, gp_s, gp_t, idx_v2=0;
       int i_s, i_e, ish;
       double EV, EV1=0.0, varx=0.0;
-      double r=0.0;
       //
       MshElemType::type ElementType = MeshElement->GetElementType();
 
@@ -7458,7 +7484,7 @@ void CFiniteElementStd::CalcFEM_FCT()
          }
 
       }
-      // For strain and stress extropolation all element types
+      // For strain and stress extrapolation all element types
       // Number of elements associated to nodes
       for(i=0; i<nnodes; i++)
          dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
@@ -7470,24 +7496,13 @@ void CFiniteElementStd::CalcFEM_FCT()
       {
          if(ElementType==MshElemType::QUAD||ElementType==MshElemType::HEXAHEDRON)
          {
-            if(ElementType==MshElemType::QUAD)
-            {
-               gp_r = (int)(gp/nGauss);
-               gp_s = gp%nGauss;
-               gp_t = 0;
-            }
-            else if(ElementType==MshElemType::HEXAHEDRON)
-            {
-               gp_r = (int)(gp/(nGauss*nGauss));
-               gp_s = (gp%(nGauss*nGauss));
-               gp_t = gp_s%nGauss;
-               gp_s /= nGauss;
-            }
+            SetGaussPoint(gp, gp_r, gp_s, gp_t);
             i = GetLocalIndex(gp_r, gp_s, gp_t);
             if(i==-1) continue;
          }
          else
             i = gp;
+
          NodalVal1[i] = gp_ele->Velocity(idof,gp)*time_unit_factor;
          //
          //
@@ -7496,17 +7511,9 @@ void CFiniteElementStd::CalcFEM_FCT()
             NodalVal2[i] =gp_ele->Velocity_g(idof,gp)*time_unit_factor;
       }
 
-      if(ElementType==MshElemType::QUAD||ElementType==MshElemType::HEXAHEDRON)
-      {
-         Xi_p = 0.0;
-         for (gp = 0; gp < nGauss; gp++)
-         {
-            r = MXPGaussPkt(nGauss, gp);
-            if(fabs(r)>Xi_p) Xi_p = fabs(r);
-         }
-         r = 1.0/Xi_p;
-         Xi_p = r;
-      }
+      if (ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
+        Xi_p = CalcXi_p();
+
       //
       i_s=0;
       i_e=nnodes;
@@ -7521,14 +7528,31 @@ void CFiniteElementStd::CalcFEM_FCT()
       // Mapping Gauss point strains to nodes and update nodes
       // strains:
       //---------------------------------------------------------
+      double avgEV = .0;
+      double avgEV1 = .0;
+      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+        // average
+        avgEV = CalcAverageGaussPointValues(NodalVal1);
+        if(m_pcs->type==1212 || m_pcs->type==1313)
+          avgEV1 = CalcAverageGaussPointValues(NodalVal2);
+      }
+
       for(i=0; i<nnodes; i++)
       {
          EV = EV1 = varx = 0.0;
-         SetExtropoGaussPoints(i);
-         //
-         ComputeShapefct(1);                      // Linear interpolation function
-         for(j=i_s; j<i_e; j++)
-            EV += NodalVal1[j]*shapefct[j-ish];
+
+         // Calculate values at nodes
+         if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
+           SetExtropoGaussPoints(i);
+           //
+           ComputeShapefct(1);                      // Linear interpolation function
+           for(j=i_s; j<i_e; j++)
+             EV += NodalVal1[j]*shapefct[j-ish];
+         } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+           //average
+           EV = avgEV;
+         }
+
          // Average value of the contribution of ell neighbor elements
          EV /= dbuff[i];
          EV += m_pcs->GetNodeValue(nodes[i],idx_vel[idof]);
@@ -7537,8 +7561,14 @@ void CFiniteElementStd::CalcFEM_FCT()
                                                   // Multi-phase flow PCH 05.2009
          if(m_pcs->type==1212 || m_pcs->type==1313)
          {
-            for(j=i_s; j<i_e; j++)
-               EV1 += NodalVal2[j]*shapefct[j-ish];
+            // Calculate values at nodes
+            if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
+              for(j=i_s; j<i_e; j++)
+                EV1 += NodalVal2[j]*shapefct[j-ish];
+            } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+              //average
+              EV1 = avgEV1;
+            } 
             //
             EV1 /= dbuff[i];
             EV1 += m_pcs->GetNodeValue(nodes[i],idx_v2);
@@ -7557,7 +7587,6 @@ void CFiniteElementStd::CalcFEM_FCT()
       int i_s, i_e, ish;
       //  int l1,l2,l3,l4; //, counter;
       double sign, eS=0.0;
-      double r=0.0;
       //
       MshElemType::type ElementType = MeshElement->GetElementType();
       //----------------------------------------------------------------------
@@ -7602,7 +7631,7 @@ void CFiniteElementStd::CalcFEM_FCT()
       for(gp=0; gp<nGaussPoints; gp++)
       {
          SetGaussPoint(gp, gp_r, gp_s, gp_t);
-         if(ElementType==2||ElementType==3)
+         if(ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
          {
             i = GetLocalIndex(gp_r, gp_s, gp_t);
             if(i==-1) continue;
@@ -7618,16 +7647,8 @@ void CFiniteElementStd::CalcFEM_FCT()
       }
 
       if(ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
-      {
-         Xi_p = 0.0;
-         for (gp = 0; gp < nGauss; gp++)
-         {
-            r = MXPGaussPkt(nGauss, gp);
-            if(fabs(r)>Xi_p) Xi_p = fabs(r);
-         }
-         r = 1.0/Xi_p;
-         Xi_p = r;
-      }
+        Xi_p = CalcXi_p();
+
       //
       i_s=0;
       i_e=nnodes;
@@ -7642,14 +7663,24 @@ void CFiniteElementStd::CalcFEM_FCT()
       // Mapping Gauss point strains to nodes and update nodes
       // strains:
       //---------------------------------------------------------
+      double avgSat = .0;
+      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+        // average
+        avgSat = CalcAverageGaussPointValues(NodalVal_Sat);
+      }
       for(i=0; i<nnodes; i++)
       {
          eS = 0.0;
-         SetExtropoGaussPoints(i);
-         //
-         ComputeShapefct(1);                      // Linear interpolation function
-         for(j=i_s; j<i_e; j++)
-            eS += NodalVal_Sat[j]*shapefct[j-ish];
+         // Calculate values at nodes
+         if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
+           SetExtropoGaussPoints(i);
+           //
+           ComputeShapefct(1);                      // Linear interpolation function
+           for(j=i_s; j<i_e; j++)
+             eS += NodalVal_Sat[j]*shapefct[j-ish];
+         } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+           eS = avgSat;
+         }
          // Average value of the contribution of ell neighbor elements
          eS /= dbuff[i];
          eS += pcs->GetNodeValue(nodes[i],idx_S);
@@ -7670,7 +7701,7 @@ void CFiniteElementStd::CalcFEM_FCT()
    {
       int i, j, k, gp_r, gp_s, gp_t, idx_perm[3], idxp=0;
       int i_s, i_e, ish;
-      double w[3], r=0.0, nval=0.0;
+      double w[3], nval=0.0;
       //
       MshElemType::type ElementType = MeshElement->GetElementType();
       //----------------------------------------------------------------------
@@ -7767,16 +7798,7 @@ void CFiniteElementStd::CalcFEM_FCT()
       }
       //
       if (ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
-      {
-         Xi_p = 0.0;
-         for (gp = 0; gp < nGauss; gp++)
-         {
-            r = MXPGaussPkt(nGauss, gp);
-            if(fabs(r)>Xi_p) Xi_p = fabs(r);
-         }
-         r = 1.0/Xi_p;
-         Xi_p = r;
-      }
+        Xi_p = CalcXi_p();
       //
       i_s=0;
       i_e=nnodes;
@@ -7791,20 +7813,41 @@ void CFiniteElementStd::CalcFEM_FCT()
       // Mapping Gauss point strains to nodes and update nodes
       // strains:
       //---------------------------------------------------------
+      double avgW[3] = {};
+      double avgVal = 0.0;
+      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+        // average
+        if((pcs->additioanl2ndvar_print>0)&&(pcs->additioanl2ndvar_print<3)) {
+          avgW[0] = CalcAverageGaussPointValues(NodalVal2);
+          avgW[1] = CalcAverageGaussPointValues(NodalVal3);
+          avgW[2] = CalcAverageGaussPointValues(NodalVal4);
+        }
+        if(pcs->additioanl2ndvar_print>1) {
+          avgVal = CalcAverageGaussPointValues(NodalVal0);
+        }
+      }
       for(i=0; i<nnodes; i++)
       {
+        // Calculate values at nodes
+        if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
          SetExtropoGaussPoints(i);
          //
          ComputeShapefct(1);                      // Linear interpolation function
+        }
          if((pcs->additioanl2ndvar_print>0)&&(pcs->additioanl2ndvar_print<3))
          {
             w[0] = w[1] = w[2] = 0.0;
-            for(j=i_s; j<i_e; j++)
-            {
-               w[0] += NodalVal2[j]*shapefct[j-ish];
-               w[1] += NodalVal3[j]*shapefct[j-ish];
-               if(dim==3)
+            if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
+              for(j=i_s; j<i_e; j++)
+              {
+                w[0] += NodalVal2[j]*shapefct[j-ish];
+                w[1] += NodalVal3[j]*shapefct[j-ish];
+                if(dim==3)
                   w[2] += NodalVal4[j]*shapefct[j-ish];
+              }
+            } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+              for(k=0; k<dim; k++)
+                w[k] = avgW[k];
             }
             // Average value of the contribution of ell neighbor elements
             for(k=0; k<dim; k++)
@@ -7818,8 +7861,12 @@ void CFiniteElementStd::CalcFEM_FCT()
          if(pcs->additioanl2ndvar_print>1)
          {
             nval = 0.0;
-            for(j=i_s; j<i_e; j++)
-               nval += NodalVal0[j]*shapefct[j-ish];
+            if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
+              for(j=i_s; j<i_e; j++)
+                 nval += NodalVal0[j]*shapefct[j-ish];
+            } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
+              nval = avgVal;
+            }
             nval /=  dbuff[i];
             nval += pcs->GetNodeValue(nodes[i],idxp);
             //

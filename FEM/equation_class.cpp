@@ -449,8 +449,9 @@ namespace Math_Group
       if(m_num->ls_method==805)                   // Then, PARDISO parallel direct solver
       {
 #ifdef MKL                               // PCH 10.03.2009: Requires the system platform where Math Kernel Library is properly configured.
-         cout << "------------------------------------------------------------------" << endl;
-         cout << "*** PARDISO computation" << endl;
+         //cout << "---------------------------------------------------" << endl;
+         //omp_set_num_threads (1);
+         cout << "->Start calling PARDISO with " << omp_get_max_threads() << " threads" << endl;
          int i, iter, ierr;
          // Assembling the matrix
          // Establishing CRS type matrix from GeoSys Matrix data storage type
@@ -497,15 +498,15 @@ namespace Math_Group
            if (error != 0) 
            {
              if (error == -10 )
-               printf("No license file found \n");
+               printf("->No license file found \n");
              if (error == -11 )
-               printf("License is expired \n");
+               printf("->License is expired \n");
              if (error == -12 )
-               printf("Wrong username or hostname \n");
+               printf("->Wrong username or hostname \n");
              exit(1); 
            }
            else
-             printf("PARDISO license check was successful ... \n");
+             printf("->PARDISO license check was successful ... \n");
 
            //  done = true;
            //}
@@ -635,6 +636,7 @@ namespace Math_Group
          // Releasing the local memory
          delete [] value; free(ptr); free(index);
          //		MKL_FreeBuffers();
+         cout << "->Finished PARDISO computation" << endl;
 #endif
       }
       else                                        // LIS parallel solver

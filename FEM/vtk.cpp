@@ -148,6 +148,9 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
          case MshElemType::PRISM:                 // wedge=13
             cell_type = 13;
             break;
+         case MshElemType::PYRAMID:                 // pyramid=14
+           cell_type = 14;
+           break;
          default:
             std::cerr << "***ERROR: NO CORRESPONDING VTK CELL TYPE FOUND. (ELEMENT TYPE=" << ele_type << ")" << std::endl;
       }

@@ -2592,7 +2592,10 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 	if (Fem_Ele_Std->PcsType==S)     // Multi-phase WW
 			{
 				m_mfp = mfp_vector[0];
-				heat_conductivity_fluids = m_mfp->HeatConductivity();
+				 dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal0);
+		   dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
+		   dens_arg[2] = Fem_Ele_Std->Index;
+				heat_conductivity_fluids = m_mfp->HeatConductivity(dens_arg);
 			}
 	else
 	{

@@ -116,6 +116,12 @@ namespace Mesh_Group
             else                                  // side of the prism
                this->setElementProperties(MshElemType::QUAD, true);
             break;
+         case MshElemType::PYRAMID:               // 3-D pyramid element
+            if (Face<1)                           // bottom face
+              this->setElementProperties(MshElemType::QUAD, true);
+            else                                  // side faces
+              this->setElementProperties(MshElemType::TRIANGLE, true);
+            break;
          default:
             std::cerr << "CElem::CElem MshElemType not handled" << std::endl;
       }
@@ -408,6 +414,12 @@ CElem::CElem(CElem const &elem) :
             else
                this->setElementProperties(MshElemType::QUAD, true);
             break;                                // 3-D prismatic element
+         case MshElemType::PYRAMID:
+           if(Face<1)
+             this->setElementProperties(MshElemType::QUAD, true);
+           else
+             this->setElementProperties(MshElemType::TRIANGLE, true);
+           break;                                // 3-D pyramid element
          default:
             std::cerr << "CElem::SetFace MshElemType not handled" << std::endl;
       }
@@ -499,6 +511,9 @@ void CElem::Read(std::istream& is, int fileType)
 		case 6:
 			geo_type = MshElemType::PRISM;
 			break;
+        case 7:
+          geo_type = MshElemType::PYRAMID;
+          break;
 		}
 		index--;
 		break;
@@ -534,6 +549,9 @@ void CElem::Read(std::istream& is, int fileType)
 			geo_type = MshElemType::PRISM;
 			nnodes = 6;
 			break;
+        case 7:
+          geo_type = MshElemType::PYRAMID;
+          break;
 		case 15:
 			geo_type = MshElemType::INVALID;
 			nnodes = 1;
@@ -703,6 +721,11 @@ void CElem::Read(std::istream& is, int fileType)
          os<<nodes_index[0]+1<<deli<<nodes_index[0]+1<<deli<<nodes_index[1]+1<<deli<<nodes_index[2]+1<<deli
             <<nodes_index[3]+1<<deli<<nodes_index[3]+1<<deli<<nodes_index[4]+1<<deli<<nodes_index[5]+1<<deli;
       }
+      else if(geo_type==MshElemType::PYRAMID)
+      {
+        os<<nodes_index[0]+1<<deli<<nodes_index[1]+1<<deli<<nodes_index[2]+1<<deli<<nodes_index[3]+1<<deli
+          <<nodes_index[4]+1<<deli<<nodes_index[4]+1<<deli<<nodes_index[4]+1<<deli<<nodes_index[4]+1<<deli;
+      }
       else
       {
 
@@ -841,6 +864,18 @@ void CElem::Read(std::istream& is, int fileType)
                EdgeNodes[1] = Edge%3+3;
             }
             break;
+         case MshElemType::PYRAMID:                 // 3-D pyramid element
+           if(Edge<4)
+           {
+             EdgeNodes[0] = Edge;
+             EdgeNodes[1] = (Edge+1)%4;
+           }
+           else
+           {
+             EdgeNodes[0] = Edge%4;
+             EdgeNodes[1] = 4;
+           }
+           break;
          default:
             std::cerr << "CElem::GetLocalIndicesOfEdgeNodes() - MshElemType not handled" << std::endl;
       }
@@ -1155,7 +1190,90 @@ void CElem::Read(std::istream& is, int fileType)
       }
       return nn;
    }
+  /**************************************************************************
+  GetElementFacesPyra
+  Task: Get local indeces of a element face nodes
+  Augs.:
+          const int Face :  Local index of element face 
+          const int order:  1 Linear. 2, quadratic
+          int *FaceNode  :  Local index of face nodes
+  Return: number of nodes of a face
+  Programing:
+  01/2010 NW  
+  **************************************************************************/
+  int CElem::GetElementFacesPyramid(const int Face, int *FaceNode)
+  {
+     int nn=3, k = 0;
+     switch(Face)
+     {
+        case 0:
+           nn = 4;
+           for(k=0; k<nn; k++)
+              FaceNode[k] = k;
+           if(quadratic)
+           {
+              for(k=0; k<nn; k++)
+                  FaceNode[k+4] = k+5;
+              nn = 8;
+           }
+           break;
+        case 1:
+           FaceNode[0] = 0;
+           FaceNode[1] = 1;
+           FaceNode[2] = 4;
+           nn = 3;
+           if(quadratic)
+           {
+              FaceNode[3] = 5;
+              FaceNode[4] = 10;
+              FaceNode[5] = 9;
+              nn = 6;
+           }
+           break;
+        case 2:
+           FaceNode[0] = 1;
+           FaceNode[1] = 2;
+           FaceNode[2] = 4;
+           nn = 3;
+           if(quadratic)
+           {
+              FaceNode[3] = 6;
+              FaceNode[4] = 11;
+              FaceNode[5] = 10;
+              nn = 6;
+           }
+           break;
+        case 3:
+           FaceNode[0] = 2;
+           FaceNode[1] = 3;
+           FaceNode[2] = 4;
+           nn = 3;
+           if(quadratic)
+           {
+              FaceNode[3] = 7;
+              FaceNode[4] = 12;
+              FaceNode[5] = 11;
+              nn = 6;
+           }
+           break;
+        case 4:
+           FaceNode[0] = 3;
+           FaceNode[1] = 0;
+           FaceNode[2] = 4;
+           nn = 3;
+           if(quadratic)
+           {
+              FaceNode[3] = 8;
+              FaceNode[4] = 9;
+              FaceNode[5] = 12;
+              nn = 6;
+           }
+           break;
 
+
+     }
+     return nn;
+  }
    /**************************************************************************
    GetElementFaces
    Task: set element faces (Geometry)
@@ -1184,6 +1302,8 @@ void CElem::Read(std::istream& is, int fileType)
          case MshElemType::PRISM:
             return GetElementFacesPri(Face, FacesNode);
             // 3-D prismatic element
+         case MshElemType::PYRAMID:               // 3-D pyramid element
+           return GetElementFacesPyramid(Face, FacesNode);
          default:
             std::cerr << "CElem::GetElementFaceNodes MshElemType not handled" << std::endl;
       }
@@ -1214,56 +1334,63 @@ void CElem::Read(std::istream& is, int fileType)
 			representative_length = pow(volume,1./3.);
 		else if (this->geo_type == MshElemType::PRISM)
 			representative_length = pow(volume,1./3.);
+        else if (this->geo_type == MshElemType::PYRAMID)
+            representative_length = 0.0; //NW set zero because I don't know what is the representative_length.
 		else
 			std::cerr << "Error in CElem::ComputeVolume() - MshElemType not found" << std::endl;
    }
 
-double CElem::calcVolume () const
-{
-	double elemVolume = 0.0;
+  double CElem::calcVolume () const
+  {
+	  double elemVolume = 0.0;
 
-	if (this->geo_type == MshElemType::LINE)                  // Line
-	{
-		double xDiff = nodes[nnodes-1]->X()-nodes[0]->X();
-		double yDiff = nodes[nnodes-1]->Y()-nodes[0]->Y();
-		double zDiff = nodes[nnodes-1]->Z()-nodes[0]->Z();
-		elemVolume = sqrt(xDiff*xDiff + yDiff*yDiff + zDiff*zDiff); //CMCD kg44 reactivated
-	}
-	else if (this->geo_type == MshElemType::TRIANGLE)
-	{
-		elemVolume = ComputeDetTri(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData()); //kg44 reactivated
-	}
-	else if (this->geo_type == MshElemType::QUAD)
-	{
-		elemVolume = ComputeDetTri(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData())
-			       + ComputeDetTri(nodes[2]->getData(), nodes[3]->getData(), nodes[0]->getData());
-	}
-	else if (this->geo_type == MshElemType::TETRAHEDRON)
-	{
-		elemVolume  = ComputeDetTex(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData(), nodes[3]->getData()); //kg44 reactivated
-	}
-	else if (this->geo_type == MshElemType::HEXAHEDRON)
-	{
-		elemVolume  = ComputeDetTex(nodes[4]->getData(), nodes[7]->getData(), nodes[5]->getData(), nodes[0]->getData());
-		elemVolume += ComputeDetTex(nodes[5]->getData(), nodes[3]->getData(), nodes[1]->getData(), nodes[0]->getData());
-		elemVolume += ComputeDetTex(nodes[5]->getData(), nodes[7]->getData(), nodes[3]->getData(), nodes[0]->getData());
-		elemVolume += ComputeDetTex(nodes[5]->getData(), nodes[7]->getData(), nodes[6]->getData(), nodes[2]->getData());
-		elemVolume += ComputeDetTex(nodes[1]->getData(), nodes[3]->getData(), nodes[5]->getData(), nodes[2]->getData());
-		elemVolume += ComputeDetTex(nodes[3]->getData(), nodes[7]->getData(), nodes[5]->getData(), nodes[2]->getData());
-											  //kg44 reactivated
-	}
-	else if (this->geo_type == MshElemType::PRISM)
-	{
-		elemVolume  = ComputeDetTex(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData(), nodes[3]->getData());
-		elemVolume += ComputeDetTex(nodes[1]->getData(), nodes[4]->getData(), nodes[2]->getData(), nodes[3]->getData());
-		elemVolume += ComputeDetTex(nodes[2]->getData(), nodes[4]->getData(), nodes[5]->getData(), nodes[3]->getData());
-											  // kg44 reactivated ---------Here the direction of flow needs to be taken into account, we need rep length in x,y,z direction
-	}
-	else
-		std::cerr << "Error in CElem::ComputeVolume() - MshElemType not found" << std::endl;
+	  if (this->geo_type == MshElemType::LINE)                  // Line
+	  {
+		  double xDiff = nodes[nnodes-1]->X()-nodes[0]->X();
+		  double yDiff = nodes[nnodes-1]->Y()-nodes[0]->Y();
+		  double zDiff = nodes[nnodes-1]->Z()-nodes[0]->Z();
+		  elemVolume = sqrt(xDiff*xDiff + yDiff*yDiff + zDiff*zDiff); //CMCD kg44 reactivated
+	  }
+	  else if (this->geo_type == MshElemType::TRIANGLE)
+	  {
+		  elemVolume = ComputeDetTri(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData()); //kg44 reactivated
+	  }
+	  else if (this->geo_type == MshElemType::QUAD)
+	  {
+		  elemVolume = ComputeDetTri(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData())
+			         + ComputeDetTri(nodes[2]->getData(), nodes[3]->getData(), nodes[0]->getData());
+	  }
+	  else if (this->geo_type == MshElemType::TETRAHEDRON)
+	  {
+		  elemVolume  = ComputeDetTex(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData(), nodes[3]->getData()); //kg44 reactivated
+	  }
+	  else if (this->geo_type == MshElemType::HEXAHEDRON)
+	  {
+		  elemVolume  = ComputeDetTex(nodes[4]->getData(), nodes[7]->getData(), nodes[5]->getData(), nodes[0]->getData());
+		  elemVolume += ComputeDetTex(nodes[5]->getData(), nodes[3]->getData(), nodes[1]->getData(), nodes[0]->getData());
+		  elemVolume += ComputeDetTex(nodes[5]->getData(), nodes[7]->getData(), nodes[3]->getData(), nodes[0]->getData());
+		  elemVolume += ComputeDetTex(nodes[5]->getData(), nodes[7]->getData(), nodes[6]->getData(), nodes[2]->getData());
+		  elemVolume += ComputeDetTex(nodes[1]->getData(), nodes[3]->getData(), nodes[5]->getData(), nodes[2]->getData());
+		  elemVolume += ComputeDetTex(nodes[3]->getData(), nodes[7]->getData(), nodes[5]->getData(), nodes[2]->getData());
+											    //kg44 reactivated
+	  }
+	  else if (this->geo_type == MshElemType::PRISM)
+	  {
+		  elemVolume  = ComputeDetTex(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData(), nodes[3]->getData());
+		  elemVolume += ComputeDetTex(nodes[1]->getData(), nodes[4]->getData(), nodes[2]->getData(), nodes[3]->getData());
+		  elemVolume += ComputeDetTex(nodes[2]->getData(), nodes[4]->getData(), nodes[5]->getData(), nodes[3]->getData());
+											    // kg44 reactivated ---------Here the direction of flow needs to be taken into account, we need rep length in x,y,z direction
+	  }
+      else if (this->geo_type == MshElemType::PYRAMID)
+      {
+        elemVolume  = ComputeDetTex(nodes[0]->getData(), nodes[1]->getData(), nodes[2]->getData(), nodes[4]->getData());
+        elemVolume += ComputeDetTex(nodes[2]->getData(), nodes[3]->getData(), nodes[0]->getData(), nodes[4]->getData());
+      }
+	  else
+		  std::cerr << "Error in CElem::ComputeVolume() - MshElemType not found" << std::endl;
 
-	return elemVolume;
-}
+	  return elemVolume;
+  }
 
 
    /**************************************************************************
@@ -1384,6 +1511,14 @@ double CElem::calcVolume () const
             nfaces = 5;
             nedges = 9;
             break;
+         case MshElemType::PYRAMID:
+           nnodes = 5;
+           nnodesHQ = 13;
+           ele_dim = 3;
+           geo_type = MshElemType::PYRAMID;
+           nfaces = 5;
+           nedges = 8;
+           break;
          default:
             std::cerr << "CElem::setElementProperties MshElemType not handled" << std::endl;
       }

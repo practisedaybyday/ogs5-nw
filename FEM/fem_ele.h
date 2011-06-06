@@ -24,6 +24,16 @@ class CRFProcess;
 namespace FiniteElement
 {
 
+   struct ExtrapolationMethod 
+   {
+      enum type
+      {
+         EXTRAPO_LINEAR,
+         EXTRAPO_NEAREST,
+         EXTRAPO_AVERAGE
+      };
+   };
+
    using Math_Group::SymMatrix;
    using Math_Group::Matrix;
    using Math_Group::Vec;
@@ -85,6 +95,7 @@ namespace FiniteElement
          bool isTemperatureCoupling() const {return T_Flag;}
          bool isFluidPressureCoupling() const {return F_Flag;}
          int isDeformationCoupling() const {return D_Flag;}
+		          int isConcentrationCoupling() const {return C_Flag;}
 
          // Interpolate Gauss values
          double interpolate (double *nodalVal, const int order =1) const;
@@ -164,6 +175,7 @@ namespace FiniteElement
 
          // Coupling flag
          bool T_Flag;                             // Temperature
+		          bool C_Flag;                             // Concentration
          bool F_Flag;                             // Fluid
          int D_Flag;                              // Deformation
          int PT_Flag;                             // Particle Tracking Random Walk
@@ -171,6 +183,9 @@ namespace FiniteElement
          // For extropolation
          double Xi_p;
          void SetExtropoGaussPoints(const int i); // 25.2.2007 WW
+         double CalcAverageGaussPointValues(double *GpValues);
+         double CalcXi_p();
+
          // Buffer
          int Index;
          int nNodes;
@@ -186,6 +201,10 @@ namespace FiniteElement
          double Z[20];
          double node_val[20];
          double dbuff[20];
+
+
+         ExtrapolationMethod::type extrapo_method;
+         ExtrapolationMethod::type GetExtrapoMethod() {return extrapo_method;};
    };
 
    /*------------------------------------------------------------------

@@ -373,6 +373,7 @@ namespace Mesh_Group
          int GetElementFacesHex(int Face, int *FaceNode);
          int GetElementFacesTet(int Face, int *FaceNode);
          int GetElementFacesPri(int Face, int *FaceNode);
+         int GetElementFacesPyramid(int Face, int *FaceNode);
          //-- Friends
          friend class CFEMesh;
          // FEM
