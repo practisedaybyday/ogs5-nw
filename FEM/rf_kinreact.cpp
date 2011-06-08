@@ -2453,6 +2453,9 @@ bool KRWrite(std::string const & prot_name)
    CKinBlob *m_kp = NULL;
    string rfe_file_name;
 
+   if (KinReact_vector.empty() && KinBlob_vector.empty() && KinReactData_vector.empty())
+     return true; //NW skip writing a file if no KinReaction data are loaded
+
    //========================================================================
    // File handling
    rfe_file_name = prot_name + "_echo";

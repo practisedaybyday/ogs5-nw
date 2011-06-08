@@ -53,3 +53,14 @@ cd bin\Release
 ren ogs.exe ogs_brns.exe
 copy /Y ogs_brns.exe ..\..\..\Release\
 cd ..\..\..\
+
+:: Build FEM_LIS
+mkdir build_lis
+cd build_lis
+cmake -DOGS_FEM_LIS=ON -DOGS_DONT_USE_QT=ON ..
+cmake ..
+devenv OGS-FEM-5-LIS.sln /Build Release
+cd bin\Release
+ren ogs.exe ogs_lis.exe
+copy /Y ogs_lis.exe ..\..\..\Release\
+cd ..\..\..\
