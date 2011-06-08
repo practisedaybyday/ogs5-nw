@@ -233,7 +233,7 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector
 		pnt_id_map[k] = j;
 	}
 */
-
+	// KR correct renumbering of indices
 	size_t cnt(0);
 	std::map<size_t, size_t> reg_ids;
 	for (size_t k(0); k<n_pnts_in_file; k++) 

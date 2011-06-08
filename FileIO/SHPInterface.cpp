@@ -156,10 +156,6 @@ void SHPInterface::adjustPolylines (std::vector<GEOLIB::Polyline*> *lines, std::
 		GEOLIB::Polyline* line( (*lines)[i] );
 		size_t nPoints( line->getNumberOfPoints() );
 		for (size_t j=0; j<nPoints; j++)
-		{
-			//if (i==13)
-			//	std::cout << "pnt " << j << ", old id: " << line->getPointID(j) << ", new id: " << id_map[line->getPointID(j)] << std:: endl;
 			line->setPointID(j, id_map[line->getPointID(j)]);
-		}
 	}
 }
