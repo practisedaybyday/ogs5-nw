@@ -198,7 +198,10 @@ last modified:
 CRFProcess::CRFProcess(void) :
 _problem (NULL), fem(NULL), Memory_Type(0),
 Write_Matrix(false), matrix_file(NULL),
-                                                  //WW  //WW
+p_var_index(NULL), num_nodes_p_var(NULL),
+#ifdef JFNK_H2M
+norm_u_JFNK(NULL), array_u_JFNK(NULL), array_Fu_JFNK(NULL), JFNK_precond(false),
+#endif
 WriteSourceNBC_RHS(0), ele_val_name_vector (std::vector<std::string>())
 {
    TempArry = NULL;
@@ -238,8 +241,8 @@ WriteSourceNBC_RHS(0), ele_val_name_vector (std::vector<std::string>())
    timebuffer = 1.0e-5;                           //WW
    //_pcs_type_name.empty();
    adaption = false;                              //HS 03.2008
-   this->EclipseData = NULL; //BG 09/2009, coupling to Eclipse
-   this->DuMuxData = NULL; //SBG 09/2009, coupling to DuMux
+   this->EclipseData = NULL;                      //BG 09/2009, coupling to Eclipse
+   this->DuMuxData = NULL;                        //SBG 09/2009, coupling to DuMux
    //----------------------------------------------------------------------
    // CPL
    for(int i=0; i<10; i++)
@@ -261,12 +264,12 @@ WriteSourceNBC_RHS(0), ele_val_name_vector (std::vector<std::string>())
    //
    additioanl2ndvar_print = -1;                   //WW
    flow_pcs_type=0;                               //CB default: liquid flow, Sat = 1
-   this->simulator="GEOSYS"; // BG, 09/2009
-   this->simulator_model_path = ""; // BG, 09/2009, folder with the Eclipse or DuMux files
-   this->simulator_path = ""; // BG, 09/2009, Eclipse or Dumux
-   this->simulator_well_path = ""; //KB 02/2011, Eclipse
-   this->PrecalculatedFiles = false; // BG, 01/2011, flag for using already calculated files from Eclipse or DuMux
-   this->Phase_Transition_Model = 0; // BG, 11/2010, flag for using CO2 Phase transition (0...not used, 1...used)
+   this->simulator="GEOSYS";                      // BG, 09/2009
+   this->simulator_model_path = "";               // BG, 09/2009, folder with the Eclipse or DuMux files
+   this->simulator_path = "";                     // BG, 09/2009, Eclipse or Dumux
+   this->simulator_well_path = "";                //KB 02/2011, Eclipse
+   this->PrecalculatedFiles = false;              // BG, 01/2011, flag for using already calculated files from Eclipse or DuMux
+   this->Phase_Transition_Model = 0;              // BG, 11/2010, flag for using CO2 Phase transition (0...not used, 1...used)
    //----------------------------------------------------------------------
    m_bCheck = false;                              //OK
    m_bCheckOBJ = false;                           //OK
@@ -290,11 +293,11 @@ WriteSourceNBC_RHS(0), ele_val_name_vector (std::vector<std::string>())
    configured_in_nonlinearloop = false;
 #endif
    flag_couple_GEMS = 0;                          // 11.2009 HS
-  femFCTmode = false; //NW
-  this->Gl_ML = NULL; //NW
-  this->Gl_Vec = NULL; //NW
-  this->Gl_Vec1 = NULL; //NW
-  this->FCT_AFlux = NULL; //NW
+   femFCTmode = false;                            //NW
+   this->Gl_ML = NULL;                            //NW
+   this->Gl_Vec = NULL;                           //NW
+   this->Gl_Vec1 = NULL;                          //NW
+   this->FCT_AFlux = NULL;                        //NW
 }
 
 
@@ -399,22 +402,28 @@ CRFProcess::~CRFProcess(void)
       delete[] ele_val_vector[i];
    ele_val_vector.clear();
    //----------------------------------------------------------------------
-   if(Deactivated_SubDomain)                      //05.09.2007 WW
+   DeleteArray(Deactivated_SubDomain);            //05.09.2007 WW
+   // 11.08.2010. WW
+   DeleteArray(num_nodes_p_var);
+   // 20.08.2010. WW
+   DeleteArray(p_var_index);
+#ifdef JFNK_H2M
+   DeleteArray(array_u_JFNK);                     // 13.08.2010. WW
+   DeleteArray(array_Fu_JFNK);                    // 31.08.2010. WW
+   DeleteArray(norm_u_JFNK);                      //24.11.2010. WW
+#endif
+   //----------------------------------------------------------------------
+   if (this->m_num && this->m_num->fct_method>0)  //NW
    {
-      delete [] Deactivated_SubDomain;
-      Deactivated_SubDomain = NULL;
+      delete this->Gl_ML;
+      delete this->Gl_Vec;
+      delete this->Gl_Vec1;
+      delete this->FCT_AFlux;
+      this->Gl_ML = NULL;
+      this->Gl_Vec = NULL;
+      this->Gl_Vec1 = NULL;
+      this->FCT_AFlux = NULL;
    }
-  //----------------------------------------------------------------------
-  if (this->m_num && this->m_num->fct_method>0) { //NW
-    delete this->Gl_ML;
-    delete this->Gl_Vec;
-    delete this->Gl_Vec1;
-    delete this->FCT_AFlux;
-    this->Gl_ML = NULL;
-    this->Gl_Vec = NULL;
-    this->Gl_Vec1 = NULL;
-    this->FCT_AFlux = NULL;
-  }
 }
 
 
@@ -588,14 +597,15 @@ void CRFProcess::Create()
       if (pcs_nonlinear_iterations > 1)           //WW
          non_linear = true;
    }
-  if (m_num->fct_method>0) { //NW
-    //Memory_Type = 1; 
-    long gl_size = m_msh->GetNodesNumber(false);
-    this->FCT_AFlux = new SparseMatrixDOK(gl_size, gl_size);
-    this->Gl_ML = new Vec(gl_size);
-    this->Gl_Vec = new Vec(gl_size);
-    this->Gl_Vec1 = new Vec(gl_size);
-  }
+   if (m_num->fct_method>0)                       //NW
+   {
+      //Memory_Type = 1;
+      long gl_size = m_msh->GetNodesNumber(false);
+      this->FCT_AFlux = new SparseMatrixDOK(gl_size, gl_size);
+      this->Gl_ML = new Vec(gl_size);
+      this->Gl_Vec = new Vec(gl_size);
+      this->Gl_Vec1 = new Vec(gl_size);
+   }
    //----------------------------------------------------------------------------
    // EQS - create equation system
    //WW CreateEQS();
@@ -607,12 +617,13 @@ void CRFProcess::Create()
       if(m_msh==fem_msh_vector[k])
          break;
    }
-   if(type==4||type==41)
+   if(type==4||(type/40==1))                      // 03.08.2010. WW
       eqs_new = EQS_Vector[2*k+1];
    else
       eqs_new = EQS_Vector[2*k];
 #else
    //WW  phase=1;
+   CRFProcess *m_pcs = NULL;                      //
    // create EQS
    if (type == 4)
    {
@@ -657,6 +668,7 @@ void CRFProcess::Create()
          InitializeLinearSolver(eqs, m_num);
          PCS_Solver.push_back(eqs);
       }
+      size_unknowns = eqs->dim;                   //WW
    }
 #endif                                         // If NEW_EQS
    // Set solver properties: EQS<->SOL
@@ -686,7 +698,7 @@ void CRFProcess::Create()
       time_unit_factor = 31536000;
 
    //
-   if (type == 4 || type == 41)
+   if (type == 4 || type/40 == 1)
       m_msh->SwitchOnQuadraticNodes(true);
    else
       m_msh->SwitchOnQuadraticNodes(false);
@@ -822,7 +834,7 @@ void CRFProcess::Create()
       }
    }
    //
-   if (reload >= 2 && type != 4 && type != 41)
+   if(reload>=2&&type!=4&&type/40!=1)             // Modified at 03.08.2010. WW
    {
                                                   // PCH
       cout << "Reloading the primary variables... " << endl;
@@ -851,7 +863,7 @@ void CRFProcess::Create()
    {
       if (Memory_Type != 0)
          AllocateLocalMatrixMemory();
-      if (type == 4 || type == 41)
+      if(type==4||type/40==1)
       {
          // Set initialization function
          //      CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) (this);
@@ -875,6 +887,29 @@ void CRFProcess::Create()
 
    if (compute_domain_face_normal)                //WW
       m_msh->FaceNormal();
+   /// Variable index for equation. 20.08.2010. WW
+   if(p_var_index)
+   {
+      for(int i=0;i<pcs_number_of_primary_nvals;i++)
+         p_var_index[i] = GetNodeValueIndex(pcs_primary_function_name[i])+1;
+   }
+#ifdef NEW_EQS
+   /// For JFNK. 01.10.2010. WW
+#ifdef JFNK_H2M
+   if(m_num->nls_method==2)
+   {
+      size_unknowns = eqs_new->size_global;
+      array_u_JFNK = new double[eqs_new->size_global];
+      array_Fu_JFNK = new double[eqs_new->size_global];
+   }
+   else
+#endif
+#ifdef USE_MPI
+      size_unknowns = eqs_new->size_global;
+#else
+   size_unknowns = eqs_new->A->Dim();
+#endif
+#endif
 }
 
 
@@ -1544,7 +1579,7 @@ std::ios::pos_type CRFProcess::Read(std::ifstream *pcs_file)
             //				if (_pcs_type_name.find("HEAT") != string::npos)
             if (this->getProcessType() == HEAT_TRANSPORT)
                T_Process = true;
- pcs_type_name_vector.push_back(pcs_type_name);
+            pcs_type_name_vector.push_back(pcs_type_name);
 
             //				if (_pcs_type_name.compare("FLUID_MOMENTUM") == 0) {
             if (this->getProcessType() == FLUID_MOMENTUM)
@@ -1736,32 +1771,42 @@ std::ios::pos_type CRFProcess::Read(std::ifstream *pcs_file)
          continue;
       }
       //Interface to Eclipse and Dumux, BG, 09/2010
-//	if(line_string.find("$SIMULATOR")!=string::npos) { //OK
-      if(line_string.compare("$SIMULATOR")== 0) { // BG, 09/2010, coupling to Eclipse and DuMux
+      //	if(line_string.find("$SIMULATOR")!=string::npos) { //OK
+      if(line_string.compare("$SIMULATOR")== 0)   // BG, 09/2010, coupling to Eclipse and DuMux
+      {
          *pcs_file >> this->simulator;
          continue;
       }
-      if(line_string.find("$SIMULATOR_PATH")== 0) { // BG, 09/2010, coupling to Eclipse and DuMux
+      if(line_string.find("$SIMULATOR_PATH")== 0) // BG, 09/2010, coupling to Eclipse and DuMux
+      {
          *pcs_file >> this->simulator_path;
          continue;
       }
-      if(line_string.find("$SIMULATOR_MODEL_PATH")== 0) { // BG, 09/2010, coupling to Eclipse and DuMux
+                                                  // BG, 09/2010, coupling to Eclipse and DuMux
+      if(line_string.find("$SIMULATOR_MODEL_PATH")== 0)
+      {
          *pcs_file >> this->simulator_model_path;
          continue;
       }
-      if(line_string.find("$USE_PRECALCULATED_FILES")== 0) { // BG, 09/2010, coupling to Eclipse and DuMux
+                                                  // BG, 09/2010, coupling to Eclipse and DuMux
+      if(line_string.find("$USE_PRECALCULATED_FILES")== 0)
+      {
          this->PrecalculatedFiles = true;
          continue;
       }
-      if(line_string.find("$SIMULATOR_WELL_PATH")== 0) { // KB, 02/2011, coupling to Eclipse and DuMux
+                                                  // KB, 02/2011, coupling to Eclipse and DuMux
+      if(line_string.find("$SIMULATOR_WELL_PATH")== 0)
+      {
          *pcs_file >> this->simulator_well_path;
          continue;
       }
-      if(line_string.find("$PHASE_TRANSITION")== 0) { // BG, NB 11/2010, calculating phase transition for CO2
+                                                  // BG, NB 11/2010, calculating phase transition for CO2
+      if(line_string.find("$PHASE_TRANSITION")== 0)
+      {
          string tempstring;
          *pcs_file >> tempstring;
          if (tempstring == "CO2_H2O_NaCl")
-			this->Phase_Transition_Model = 1;
+            this->Phase_Transition_Model = 1;
          continue;
       }
       //....................................................................
@@ -2072,7 +2117,7 @@ void CRFProcess::Config(void)
       type = 1313;
       ConfigPS_Global();
    }
-   if (this->getProcessType() == PTC_FLOW)       //24.02.2007 WW
+   if (this->getProcessType() == PTC_FLOW)        //24.02.2007 WW
    {
       type = 1111;
       ConfigPTC_FLOW();
@@ -2284,7 +2329,7 @@ void CRFProcess::ConfigMultiphaseFlow()
    }
    //----------------------------------------------------------------------
    // NOD Secondary variables
-   pcs_number_of_secondary_nvals = 12; // BG
+   pcs_number_of_secondary_nvals = 12;            // BG
    switch(pcs_type_number)
    {
       case 0:
@@ -2657,30 +2702,34 @@ last modified:
 **************************************************************************/
 void CRFProcess::ConfigDeformation()
 {
+
    // Generate high order nodes for all elements.
    m_msh->GenerateHighOrderNodes();               //WW
    type = 4;
    //	if (_pcs_type_name.find("DEFORMATION") != string::npos
    //			&& _pcs_type_name.find("FLOW") != string::npos) {
-   if (getProcessType() == DEFORMATION_FLOW)
+   if (getProcessType() == DEFORMATION_FLOW || getProcessType() == DEFORMATION_H2 )
    {
       type = 41;
+      if (getProcessType() == DEFORMATION_H2 )
+         type = 42;
       cpl_type_name = "MONOLITHIC";
       pcs_deformation = 11;
    }
    pcs_coupling_iterations = 10;
 
    CNumerics* num = NULL;
-   for (size_t i = 0; i < num_vector.size(); i++)
+
+   for (size_t ii = 0; ii < num_vector.size(); ii++)
    {
-      num = num_vector[i];
+      num = num_vector[ii];
       if (num->pcs_type_name.find("DEFORMATION") != string::npos)
       {
          num->pcs_type_name = convertProcessTypeToString(this->getProcessType());
-         if (num->nls_method == 1)                // Newton-Raphson
+         if(num->nls_method>=1)                   // Newton-Raphson
          {
             pcs_deformation = 101;
-            if (type == 41)
+            if (type/40 == 1)
                pcs_deformation = 110;
          }
          break;
@@ -2690,10 +2739,6 @@ void CRFProcess::ConfigDeformation()
    // Prepare for restart
    //RFConfigRenumber();
 
-   // Geometry dimension
-   problem_dimension_dm = m_msh->GetCoordinateFlag() / 10;
-   problem_2d_plane_dm = 1;
-
    // NUM
    pcs_sol_name = "LINEAR_SOLVER_PROPERTIES_DISPLACEMENT1";
    pcs_num_name[0] = "DISPLACEMENT0";
@@ -2702,13 +2747,52 @@ void CRFProcess::ConfigDeformation()
       VariableDynamics();
    else
       VariableStaticProblem();
+   // OBJ names are set to PCS name
+   // Geometry dimension
+   problem_dimension_dm=m_msh->GetCoordinateFlag()/10;
+   problem_2d_plane_dm=1;
 
    // Coupling
-   for (size_t i = 0; i < GetPrimaryVNumber(); i++)
-      Shift[i] = i * m_msh->GetNodesNumber(true);
-   // OBJ names are set to PCS name
-   if (type == 41)
-      SetOBJNames();                              //OK->WW please put to Config()
+   int i;
+   for(i=0; i<problem_dimension_dm; i++)
+      Shift[i] = i*m_msh->GetNodesNumber(true);
+
+   /// 11-20.08.2010 WW
+   long nn_H = (long)m_msh->GetNodesNumber(true);
+   if(type==4)
+   {
+      num_nodes_p_var = new long[problem_dimension_dm];
+      p_var_index = new int[problem_dimension_dm];
+      for(int i=0;i<problem_dimension_dm;i++)
+         num_nodes_p_var[i] = nn_H;
+   }
+   else if(type==41)
+   {
+      num_nodes_p_var = new long[problem_dimension_dm+1];
+      p_var_index = new int[problem_dimension_dm+1];
+      for(i=0;i<problem_dimension_dm;i++)
+         num_nodes_p_var[i] = nn_H;
+      num_nodes_p_var[problem_dimension_dm] = (long)m_msh->GetNodesNumber(false);
+      Shift[problem_dimension_dm] = problem_dimension_dm*m_msh->GetNodesNumber(true);
+   }
+   else if(type==42)
+   {
+      num_nodes_p_var = new long[problem_dimension_dm+2];
+      p_var_index = new int[problem_dimension_dm+2];
+
+      for(i=0;i<problem_dimension_dm;i++)
+         num_nodes_p_var[i] = nn_H;
+      for(i=problem_dimension_dm;i<problem_dimension_dm+2;i++)
+         num_nodes_p_var[i] = (long)m_msh->GetNodesNumber(false);
+      Shift[problem_dimension_dm] = problem_dimension_dm*m_msh->GetNodesNumber(true);
+      Shift[problem_dimension_dm+1] = Shift[problem_dimension_dm]+m_msh->GetNodesNumber(false);
+
+#ifdef JFNK_H2M
+      norm_u_JFNK = new double[2];
+#endif
+   }
+
+   if(type/40==1) SetOBJNames();                  //if(type==41) SetOBJNames(); //OK->WW please put to Config()
 }
 
 
@@ -2735,12 +2819,6 @@ void CRFProcess::VariableStaticProblem()
       dm_number_of_primary_nvals = 3;
       pcs_primary_function_name[2] = "DISPLACEMENT_Z1";
       pcs_primary_function_unit[2] = "m";
-   }
-   if(type==41)                                   //Monolithic scheme
-   {
-      pcs_primary_function_name[pcs_number_of_primary_nvals] = "PRESSURE1";
-      pcs_primary_function_unit[pcs_number_of_primary_nvals] = "Pa";
-      pcs_number_of_primary_nvals++;
    }
    //----------------------------------------------------------------------
    // NOD Secondary functions
@@ -2806,6 +2884,19 @@ void CRFProcess::VariableStaticProblem()
       pcs_number_of_secondary_nvals++;
    }
 
+   if(type==41)
+   {                                              //Monolithic scheme
+      pcs_primary_function_name[pcs_number_of_primary_nvals] = "PRESSURE1";
+      pcs_primary_function_unit[pcs_number_of_primary_nvals] = "Pa";
+      pcs_number_of_primary_nvals++;
+   }
+   else if (type==42)                             //Monolithic scheme H2M. 03.08.2010. WW
+   {
+      Def_Variable_MultiPhaseFlow();
+
+      // Output material parameters
+      configMaterialParameters();
+   }
 }
 
 
@@ -3174,23 +3265,23 @@ void CRFProcess::ConfigRandomWalk()
 }
 
 
-/**************************************************************************
-FEMLib-Method: For non-isothermal multi-phase flow
-Task:
-Programing:
-02/2007 WW Implementation
-**************************************************************************/
-void CRFProcess::ConfigMultiPhaseFlow()
+////////////////////////////////////////////////////////////////////////////
+//
+///  Define variables of multi-phase flow model  (WW 08.2010)
+//
+////////////////////////////////////////////////////////////////////////////
+void CRFProcess:: Def_Variable_MultiPhaseFlow()
 {
-   dof = 2;
    // 1.1 primary variables
-   pcs_number_of_primary_nvals = 2;
-   pcs_primary_function_name[0] = "PRESSURE1";
-   pcs_primary_function_unit[0] = "Pa";
-   pcs_primary_function_name[1] = "PRESSURE2";
-   pcs_primary_function_unit[1] = "Pa";
+   pcs_primary_function_name[pcs_number_of_primary_nvals] = "PRESSURE1";
+   pcs_primary_function_unit[pcs_number_of_primary_nvals] = "Pa";
+   pcs_number_of_primary_nvals++;
+
+   pcs_primary_function_name[pcs_number_of_primary_nvals] = "PRESSURE2";
+   pcs_primary_function_unit[pcs_number_of_primary_nvals] = "Pa";
+   pcs_number_of_primary_nvals++;
+
    // 1.2 secondary variables
-   pcs_number_of_secondary_nvals = 0;
    pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "SATURATION1";
    pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m3/m3";
    pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 0;
@@ -3199,27 +3290,11 @@ void CRFProcess::ConfigMultiPhaseFlow()
    pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m3/m3";
    pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
    pcs_number_of_secondary_nvals++;
-   // BG additional secondary variable
-   if (mfp_vector[1]->density_model == 18) {
-	  pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "DENSITY1";
-	  pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "kg/m3";
-	  pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-	  pcs_number_of_secondary_nvals++;
-	  pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "DENSITY2";
-	  pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "kg/m3";
-	  pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-	  pcs_number_of_secondary_nvals++;
-   }
-   if (mfp_vector[1]->viscosity_model == 18) {
-	  pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VISCOSITY1";
-	  pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "Pa*s";
-	  pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-	  pcs_number_of_secondary_nvals++;
-	  pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VISCOSITY2";
-	  pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "Pa*s";
-	  pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-	  pcs_number_of_secondary_nvals++;
-   }
+   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "PRESSURE_W";
+   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+   pcs_number_of_secondary_nvals++;
+
    // Nodal velocity.
    pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_X1";
    pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
@@ -3245,13 +3320,35 @@ void CRFProcess::ConfigMultiPhaseFlow()
    pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
    pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
    pcs_number_of_secondary_nvals++;
-   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "PRESSURE_W";
-   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
-   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-   pcs_number_of_secondary_nvals++;
+}
+
+
+/**************************************************************************
+FEMLib-Method: For non-isothermal multi-phase flow
+Task:
+Programing:
+02/2007 WW Implementation
+04/2011 WW Apdate for H2M
+**************************************************************************/
+void CRFProcess::ConfigMultiPhaseFlow()
+{
+   dof = 2;
+   pcs_number_of_primary_nvals = 0;
+   pcs_number_of_secondary_nvals = 0;
+
+   Def_Variable_MultiPhaseFlow();
+
+   // Output material parameters
+   configMaterialParameters();
+
+   // 11.08.2010. WW
+   long nn = m_msh->GetNodesNumber(false);
    //
    for(size_t i=0; i<GetPrimaryVNumber(); i++)    // 03.03.2008. WW
-      Shift[i] = i*m_msh->GetNodesNumber(true);
+      Shift[i] = i*nn;
+
+   num_nodes_p_var = new long[2];
+   num_nodes_p_var[0] = num_nodes_p_var[1] = nn;
 }
 
 
@@ -3315,6 +3412,7 @@ void CRFProcess::ConfigPS_Global()
       Shift[i] = i*m_msh->GetNodesNumber(true);
 }
 
+
 /**************************************************************************
 FEMLib-Method: For Pressure-temperature-coupled flow for fluids
 Task:
@@ -3330,9 +3428,9 @@ void CRFProcess::ConfigPTC_FLOW()
    pcs_primary_function_unit[0] = "Pa";
    pcs_primary_function_name[1] = "TEMPERATURE1";
    pcs_primary_function_unit[1] = "K";
-      // 1.2 secondary variables
+   // 1.2 secondary variables
    pcs_number_of_secondary_nvals = 0;
-      // Nodal velocity.
+   // Nodal velocity.
    pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_X1";
    pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
    pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
@@ -3349,6 +3447,7 @@ void CRFProcess::ConfigPTC_FLOW()
    for(size_t i=0; i<GetPrimaryVNumber(); i++)
       Shift[i] = i*m_msh->GetNodesNumber(true);
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 // Configuration NOD
@@ -3642,7 +3741,8 @@ void CRFProcess::CheckMarkedElement()
    size_t node_vector_size = m_msh->nod_vector.size();
    for (size_t l = 0; l < node_vector_size; l++)
    {
-      while(m_msh->nod_vector[l]->getConnectedElementIDs().size()) {
+      while(m_msh->nod_vector[l]->getConnectedElementIDs().size())
+      {
          m_msh->nod_vector[l]->getConnectedElementIDs().pop_back();
       }
    }
@@ -3817,10 +3917,11 @@ double CRFProcess::Execute()
    //
 #ifdef NEW_EQS                                 //WW
 #if defined(USE_MPI)
-   iter_lin=dom->eqs->Solver(eqs_new->x, global_eqs_dim);  //21.12.2007
+                                                  //21.12.2007
+   iter_lin=dom->eqs->Solver(eqs_new->x, global_eqs_dim);
 #else
 #ifdef LIS
-   iter_lin=eqs_new->Solver(this->m_num);                  //NW
+   iter_lin=eqs_new->Solver(this->m_num);         //NW
 #else
    iter_lin=eqs_new->Solver();
 #endif
@@ -3829,94 +3930,98 @@ double CRFProcess::Execute()
    iter_lin=ExecuteLinearSolver();
 #endif
 
-  //----------------------------------------------------------------------
-  // Linearized Flux corrected transport (FCT) by Kuzmin 2009
-  //----------------------------------------------------------------------
-  if (this->m_num->fct_method>0) { //NW
-    pcs_error = CalcIterationNODError(1);
-#ifdef USE_MPI 
-    if(myrank==0)
-#endif 
-    cout << "      PCS error: " << pcs_error << endl;
-    cout << "      Start FCT calculation" << endl;
-
-    // Set u^H: use the solution as the higher-order solution
-    for(i=0; i<pcs_number_of_primary_nvals; i++)
-    {  
-      nidx1 = GetNodeValueIndex(pcs_primary_function_name[i])+1;
-      g_nnodes = m_msh->GetNodesNumber(false);  //DOF>1, WW
-      for(j=0;j<g_nnodes;j++)
-      {
-         k = m_msh->Eqs2Global_NodeIndex[j];
-//         val_n = GetNodeValue(k,nidx1);  
-#ifdef NEW_EQS
-         SetNodeValue(k,nidx1,eqs_new->x[j+i*g_nnodes]);
-//         eqs_new->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW  
-#else
-         SetNodeValue(k,nidx1,eqs->x[j+i*g_nnodes]);
-//         eqs->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW  
-#endif
-      } 
-    }
-
-    // Initialize the algebra system
-#ifdef NEW_EQS //WW
-    if(!configured_in_nonlinearloop)
-#if defined(USE_MPI)
-      dom->ConfigEQS(m_num, global_eqs_dim);
-#else  
-    eqs_new->Initialize(); 
-#endif
-#else
-    SetZeroLinearSolver(eqs);
-#endif
-
-    // Set initial guess
-    for(i=0;i<pcs_number_of_primary_nvals;i++)
-    {
-      nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1; //new time
-      g_nnodes = m_msh->GetNodesNumber(false); //WW 
-      for(j=0;j<g_nnodes;j++) {
-        k = m_msh->Eqs2Global_NodeIndex[j];
-#ifdef NEW_EQS
-        // New EQS  WW
-        eqs_new->x[j+i*g_nnodes] = GetNodeValue(k,nidx1);
-#else
-        eqs->x[j+i*g_nnodes] = GetNodeValue(k,nidx1);
-#endif 
-      }
-    } 
-
-    // Assembly
-#ifdef USE_MPI //WW
-    clock_t cpu_time=0;  //WW
-    cpu_time = -clock();
-#endif
-    this->femFCTmode = true;
-    GlobalAssembly();
-    this->femFCTmode = false;
+   //----------------------------------------------------------------------
+   // Linearized Flux corrected transport (FCT) by Kuzmin 2009
+   //----------------------------------------------------------------------
+   if (this->m_num->fct_method>0)                 //NW
+   {
+      pcs_error = CalcIterationNODError(1);
 #ifdef USE_MPI
-    cpu_time += clock();
-    cpu_time_assembly += cpu_time;
+      if(myrank==0)
+#endif
+         cout << "      PCS error: " << pcs_error << endl;
+      cout << "      Start FCT calculation" << endl;
+
+      // Set u^H: use the solution as the higher-order solution
+      for(i=0; i<pcs_number_of_primary_nvals; i++)
+      {
+         nidx1 = GetNodeValueIndex(pcs_primary_function_name[i])+1;
+         g_nnodes = m_msh->GetNodesNumber(false); //DOF>1, WW
+         for(j=0;j<g_nnodes;j++)
+         {
+            k = m_msh->Eqs2Global_NodeIndex[j];
+            //         val_n = GetNodeValue(k,nidx1);
+#ifdef NEW_EQS
+            SetNodeValue(k,nidx1,eqs_new->x[j+i*g_nnodes]);
+            //         eqs_new->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW
+#else
+            SetNodeValue(k,nidx1,eqs->x[j+i*g_nnodes]);
+            //         eqs->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW
+#endif
+         }
+      }
+
+      // Initialize the algebra system
+#ifdef NEW_EQS                              //WW
+      if(!configured_in_nonlinearloop)
+#if defined(USE_MPI)
+         dom->ConfigEQS(m_num, global_eqs_dim);
+#else
+      eqs_new->Initialize();
+#endif
+#else
+      SetZeroLinearSolver(eqs);
 #endif
 
-    // Solve the algebra
-#ifdef CHECK_EQS
-    string eqs_name = pcs_type_name + "_EQS.txt";
-    MXDumpGLS((char*)eqs_name.c_str(),1,eqs->b,eqs->x);
+      // Set initial guess
+      for(i=0;i<pcs_number_of_primary_nvals;i++)
+      {
+                                                  //new time
+         nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
+         g_nnodes = m_msh->GetNodesNumber(false); //WW
+         for(j=0;j<g_nnodes;j++)
+         {
+            k = m_msh->Eqs2Global_NodeIndex[j];
+#ifdef NEW_EQS
+            // New EQS  WW
+            eqs_new->x[j+i*g_nnodes] = GetNodeValue(k,nidx1);
+#else
+            eqs->x[j+i*g_nnodes] = GetNodeValue(k,nidx1);
 #endif
-#ifdef NEW_EQS //WW
+         }
+      }
+
+      // Assembly
+#ifdef USE_MPI                              //WW
+      clock_t cpu_time=0;                         //WW
+      cpu_time = -clock();
+#endif
+      this->femFCTmode = true;
+      GlobalAssembly();
+      this->femFCTmode = false;
+#ifdef USE_MPI
+      cpu_time += clock();
+      cpu_time_assembly += cpu_time;
+#endif
+
+      // Solve the algebra
+#ifdef CHECK_EQS
+      string eqs_name = pcs_type_name + "_EQS.txt";
+      MXDumpGLS((char*)eqs_name.c_str(),1,eqs->b,eqs->x);
+#endif
+#ifdef NEW_EQS                              //WW
 #if defined(USE_MPI)
-     dom->eqs->Solver(eqs_new->x, global_eqs_dim); //21.12.2007
+                                                  //21.12.2007
+      dom->eqs->Solver(eqs_new->x, global_eqs_dim);
 #else
 #ifdef LIS
-          eqs_new->Solver(this->m_num); //NW
+      eqs_new->Solver(this->m_num);               //NW
 #else
-          eqs_new->Solver();
+      eqs_new->Solver();
 #endif
 #endif
 #else
-     ExecuteLinearSolver();
+      ExecuteLinearSolver();
 #endif
    }
    //
@@ -4009,8 +4114,17 @@ void CRFProcess::CopyU_n(double *temp_v)
    long g_nnodes, j, k;
    for(i=0; i<pcs_number_of_primary_nvals; i++)
    {
-      nidx1 = GetNodeValueIndex(pcs_primary_function_name[i])+1;
-      g_nnodes =m_msh->GetNodesNumber(false);     //DOF>1, WW
+      /// H2M with monilithic scheme. 02.2011. WW
+      if(type == 42)
+      {
+         nidx1 = p_var_index[i];
+         g_nnodes = num_nodes_p_var[i];
+      }
+      else
+      {
+         nidx1 = GetNodeValueIndex(pcs_primary_function_name[i])+1;
+         g_nnodes =m_msh->GetNodesNumber(false);  //DOF>1, WW
+      }
       for(j=0;j<g_nnodes;j++)
       {
          k = m_msh->Eqs2Global_NodeIndex[j];
@@ -4087,241 +4201,267 @@ void CRFProcess::CalculateElementMatrices(void)
    }
 }
 
+
 /*************************************************************************
 GeoSys-Function:
 Task: Algebraic operation for the flux corrected transport (FCT)
-Programming: 
+Programming:
 04/2010 NW Implementation
 last modified:
 **************************************************************************/
 void CRFProcess::AddFCT_CorrectionVector()
 {
-    size_t i,j;
-    int idx0 = 0;
-    int idx1 = idx0 + 1;
-    const double theta = this->m_num->ls_theta;
-    const size_t node_size = m_msh->GetNodesNumber(false);
-    SparseMatrixDOK::mat_t &fct_f = this->FCT_AFlux->GetRawData();
-    SparseMatrixDOK::col_t *col;
-    SparseMatrixDOK::mat_t::const_iterator ii;
-    SparseMatrixDOK::col_t::const_iterator jj;
-    Vec *ML = this->Gl_ML;
+   size_t i,j;
+   int idx0 = 0;
+   int idx1 = idx0 + 1;
+   const double theta = this->m_num->ls_theta;
+   const size_t node_size = m_msh->GetNodesNumber(false);
+   SparseMatrixDOK::mat_t &fct_f = this->FCT_AFlux->GetRawData();
+   SparseMatrixDOK::col_t *col;
+   SparseMatrixDOK::mat_t::const_iterator ii;
+   SparseMatrixDOK::col_t::const_iterator jj;
+   Vec *ML = this->Gl_ML;
 #if defined(NEW_EQS)
-    CSparseMatrix *A = NULL;  //WW
-    //if(m_dom)
-    //  A = m_dom->eqs->A;
-    //else
-      A = this->eqs_new->A;
+   CSparseMatrix *A = NULL;                       //WW
+   //if(m_dom)
+   //  A = m_dom->eqs->A;
+   //else
+   A = this->eqs_new->A;
 #endif
 
-    // List of Dirichlet nodes
-    std::set<long> list_bc_nodes;
-    //cout << "Dirichlet nodes" << endl;
-    for (i=0; i<bc_node_value.size(); i++) {
+   // List of Dirichlet nodes
+   std::set<long> list_bc_nodes;
+   //cout << "Dirichlet nodes" << endl;
+   for (i=0; i<bc_node_value.size(); i++)
+   {
       CBoundaryConditionNode *bc_node = bc_node_value[i];
       long nod_id = bc_node->geo_node_number;
       list_bc_nodes.insert(nod_id);
-    }
+   }
 
-    //----------------------------------------------------------------------
-    // Construct global matrices: antidiffusive flux(f_ij), positivity matrix(L)
-    // - f_ij = 1/dt*m_ij*(DeltaU_ij^H-DeltaU_ij^n)-theta*d_ij^H*DeltaU_ij^H-(1-theta)*d_ij^n*DeltaU_ij^n
-    // - L = K + D 
-    // - D_ij = min(0, -K_ij, -K_ji)
-    // * f_ji = -f_ij
-    // * K:original coefficient matrix, D:artificial diffusion operator
-    // Implementation memo: 
-    // - K is stored in A matrix in the element assembly. 
-    // - the first part of the antidiffusive flux is done in the element assembly.
-    //   -> f_ij = m_ij
-    //----------------------------------------------------------------------
-    // f_ij*=1/dt*(DeltaU_ij^H-DeltaU_ij^n)  for i!=j
-    for (i=0; i<node_size; i++) {
+   //----------------------------------------------------------------------
+   // Construct global matrices: antidiffusive flux(f_ij), positivity matrix(L)
+   // - f_ij = 1/dt*m_ij*(DeltaU_ij^H-DeltaU_ij^n)-theta*d_ij^H*DeltaU_ij^H-(1-theta)*d_ij^n*DeltaU_ij^n
+   // - L = K + D
+   // - D_ij = min(0, -K_ij, -K_ji)
+   // * f_ji = -f_ij
+   // * K:original coefficient matrix, D:artificial diffusion operator
+   // Implementation memo:
+   // - K is stored in A matrix in the element assembly.
+   // - the first part of the antidiffusive flux is done in the element assembly.
+   //   -> f_ij = m_ij
+   //----------------------------------------------------------------------
+   // f_ij*=1/dt*(DeltaU_ij^H-DeltaU_ij^n)  for i!=j
+   for (i=0; i<node_size; i++)
+   {
       col = &fct_f[i];
-      for(jj=col->begin(); jj!=col->end(); jj++){
-        j = (*jj).first;
-        if (i>j) continue; //symmetric part, off-diagonal
-        double diff_uH = this->GetNodeValue(i, idx1) - this->GetNodeValue(j, idx1);
-        double diff_u0 = this->GetNodeValue(i, idx0) - this->GetNodeValue(j, idx0);
-        double v = 1.0/dt*(diff_uH - diff_u0);
-        (*FCT_AFlux)(i,j) *= v; //MC is already done in local ele assembly
+      for(jj=col->begin(); jj!=col->end(); jj++)
+      {
+         j = (*jj).first;
+         if (i>j) continue;                       //symmetric part, off-diagonal
+         double diff_uH = this->GetNodeValue(i, idx1) - this->GetNodeValue(j, idx1);
+         double diff_u0 = this->GetNodeValue(i, idx0) - this->GetNodeValue(j, idx0);
+         double v = 1.0/dt*(diff_uH - diff_u0);
+         (*FCT_AFlux)(i,j) *= v;                  //MC is already done in local ele assembly
       }
-    }
+   }
 
-    //Complete f, L
-    //Remark: Using iteration is only possible after the sparse table has been constructed.
-    for(i=0; i<node_size; i++){
+   //Complete f, L
+   //Remark: Using iteration is only possible after the sparse table has been constructed.
+   for(i=0; i<node_size; i++)
+   {
       col = &fct_f[i];
-      for(jj=col->begin(); jj!=col->end(); jj++){
-        j = (*jj).first;
-        if (i>j) continue; //symmetric part, off-diagonal
+      for(jj=col->begin(); jj!=col->end(); jj++)
+      {
+         j = (*jj).first;
+         if (i>j) continue;                       //symmetric part, off-diagonal
 
-        // Get artificial diffusion operator D
+         // Get artificial diffusion operator D
 #if defined(NEW_EQS)
-        double K_ij = (*A)(i,j);
-        double K_ji = (*A)(j,i);
+         double K_ij = (*A)(i,j);
+         double K_ji = (*A)(j,i);
 #else
-        double K_ij = MXGet(i,j);
-        double K_ji = MXGet(j,i);
+         double K_ij = MXGet(i,j);
+         double K_ji = MXGet(j,i);
 #endif
-        if (K_ij == 0.0 && K_ji == 0.0) continue;
-        double d1 = GetFCTADiff(K_ij, K_ji);
-        double d0 = d1; //TODO should use AuxMatrix at the previous time step
-        //if (list_bc_nodes.find(i)!=list_bc_nodes.end() || list_bc_nodes.find(j)!=list_bc_nodes.end()) {
-        //  d1 = d0 = 0.0;
-        //}
+         if (K_ij == 0.0 && K_ji == 0.0) continue;
+         double d1 = GetFCTADiff(K_ij, K_ji);
+         double d0 = d1;                          //TODO should use AuxMatrix at the previous time step
+         //if (list_bc_nodes.find(i)!=list_bc_nodes.end() || list_bc_nodes.find(j)!=list_bc_nodes.end()) {
+         //  d1 = d0 = 0.0;
+         //}
 
-        // Complete antidiffusive flux: f_ij += -theta*d_ij^H*DeltaU_ij^H - (1-theta)*d_ij^n*DeltaU_ij^n
-        double diff_uH = this->GetNodeValue(i, idx1) - this->GetNodeValue(j, idx1);
-        double diff_u0 = this->GetNodeValue(i, idx0) - this->GetNodeValue(j, idx0);
-        double v = - (theta*d1*diff_uH + (1.0-theta)*d0*diff_u0);
-        (*FCT_AFlux)(i,j) += v;
+         // Complete antidiffusive flux: f_ij += -theta*d_ij^H*DeltaU_ij^H - (1-theta)*d_ij^n*DeltaU_ij^n
+         double diff_uH = this->GetNodeValue(i, idx1) - this->GetNodeValue(j, idx1);
+         double diff_u0 = this->GetNodeValue(i, idx0) - this->GetNodeValue(j, idx0);
+         double v = - (theta*d1*diff_uH + (1.0-theta)*d0*diff_u0);
+         (*FCT_AFlux)(i,j) += v;
 
-        //prelimiting f
-        v = (*FCT_AFlux)(i,j);
-        if (this->m_num->fct_prelimiter_type==0) {
-          if (v*(-diff_uH)>0.0) v = 0.0;
-        } else if (this->m_num->fct_prelimiter_type==1) {
-          v = MinMod(v, -d1*diff_uH);
-        } else if (this->m_num->fct_prelimiter_type==2) {
-          v = SuperBee(v, -d1*diff_uH);    
-        }
-        (*FCT_AFlux)(i,j) = v;
-        (*FCT_AFlux)(j,i) = v;
+         //prelimiting f
+         v = (*FCT_AFlux)(i,j);
+         if (this->m_num->fct_prelimiter_type==0)
+         {
+            if (v*(-diff_uH)>0.0) v = 0.0;
+         }
+         else if (this->m_num->fct_prelimiter_type==1)
+         {
+            v = MinMod(v, -d1*diff_uH);
+         }
+         else if (this->m_num->fct_prelimiter_type==2)
+         {
+            v = SuperBee(v, -d1*diff_uH);
+         }
+         (*FCT_AFlux)(i,j) = v;
+         (*FCT_AFlux)(j,i) = v;
 
-        // L = K + D
+         // L = K + D
 #if defined(NEW_EQS)
-        (*A)(i,i) += -d1;
-        (*A)(i,j) += d1;
-        (*A)(j,i) += d1;
-        (*A)(j,j) += -d1;
+         (*A)(i,i) += -d1;
+         (*A)(i,j) += d1;
+         (*A)(j,i) += d1;
+         (*A)(j,j) += -d1;
 #else
-        // add off-diagonal term
-        MXInc(i,j,d1);
-        MXInc(j,i,d1);
-        // add diagonal term
-        MXInc(i,i,-d1);
-        MXInc(j,j,-d1);
+         // add off-diagonal term
+         MXInc(i,j,d1);
+         MXInc(j,i,d1);
+         // add diagonal term
+         MXInc(i,i,-d1);
+         MXInc(j,j,-d1);
 #endif
       }
-    }
+   }
 
-
-    //----------------------------------------------------------------------
-    // Assemble RHS: b_i += [- (1-theta) * L_ij] u_j^n
-    //----------------------------------------------------------------------
-    Vec *V1 = this->Gl_Vec1;
-    Vec *V = this->Gl_Vec;
-    (*V1) = 0.0;
-    (*V) = 0.0;
-    double *eqs_rhs;
+   //----------------------------------------------------------------------
+   // Assemble RHS: b_i += [- (1-theta) * L_ij] u_j^n
+   //----------------------------------------------------------------------
+   Vec *V1 = this->Gl_Vec1;
+   Vec *V = this->Gl_Vec;
+   (*V1) = 0.0;
+   (*V) = 0.0;
+   double *eqs_rhs;
 #ifdef NEW_EQS
-    eqs_rhs = eqs_new->b;
+   eqs_rhs = eqs_new->b;
 #else
-    eqs_rhs = eqs->b;
-#endif 
-    // b = [-(1-theta) * L] u^n
-    if (1.0-theta>0) {
+   eqs_rhs = eqs->b;
+#endif
+   // b = [-(1-theta) * L] u^n
+   if (1.0-theta>0)
+   {
       // u^n
       for (i=0;i<node_size; i++)
          (*V1)(i) = this->GetNodeValue(i,idx0);
       // L*u^n
-      for (i=0; i<node_size; i++) {
-        for (j=0; j<node_size; j++) {
+      for (i=0; i<node_size; i++)
+      {
+         for (j=0; j<node_size; j++)
+         {
 #ifdef NEW_EQS
-          (*V)(i) += (*A)(i,j)*(*V1)(j);
+            (*V)(i) += (*A)(i,j)*(*V1)(j);
 #else
-          (*V)(i) += MXGet(i,j)*(*V1)(j);
+            (*V)(i) += MXGet(i,j)*(*V1)(j);
 #endif
-        }
+         }
       }
       for (i=0;i<node_size;i++)
       {
-        eqs_rhs[i] -= (1.0-theta) * (*V)(i);
-        //(*RHS)(i+LocalShift) +=  NodalVal[i];
+         eqs_rhs[i] -= (1.0-theta) * (*V)(i);
+         //(*RHS)(i+LocalShift) +=  NodalVal[i];
       }
-    }
+   }
 
-    //----------------------------------------------------------------------
-    // Assemble A matrix: 1/dt*ML + theta * L
-    //----------------------------------------------------------------------
-    // A matrix: theta * L
-    if (theta == 0.0) {
+   //----------------------------------------------------------------------
+   // Assemble A matrix: 1/dt*ML + theta * L
+   //----------------------------------------------------------------------
+   // A matrix: theta * L
+   if (theta == 0.0)
+   {
 #ifdef NEW_EQS
       (*A) = 0.0;
 #else
-      for (i=0; i<node_size; i++) {
-        for (j=0; j<node_size; j++) {
-          MXSet(i,j,0.0);
-        }
+      for (i=0; i<node_size; i++)
+      {
+         for (j=0; j<node_size; j++)
+         {
+            MXSet(i,j,0.0);
+         }
       }
 #endif
-    } else if (theta == 1.0) {
-      //keep 
-    } else {
+   }
+   else if (theta == 1.0)
+   {
+      //keep
+   }
+   else
+   {
 #ifdef NEW_EQS
       (*A) *= theta;
 #else
-      for (i=0; i<node_size; i++) {
-        for (j=0; j<node_size; j++) {
-          MXMul(i,j,theta);
-        }
+      for (i=0; i<node_size; i++)
+      {
+         for (j=0; j<node_size; j++)
+         {
+            MXMul(i,j,theta);
+         }
       }
 #endif
-    }
-    // A matrix: += 1/dt * ML
-    for (i=0; i<node_size; i++) {
+   }
+   // A matrix: += 1/dt * ML
+   for (i=0; i<node_size; i++)
+   {
       double v = 1.0/dt*(*ML)(i);
 #ifdef NEW_EQS
       (*A)(i,i) += v;
 #else
       MXInc(i,i,v);
 #endif
-    }
+   }
 
-    //----------------------------------------------------------------------
-    // Assemble RHS: b += alpha * f
-    //----------------------------------------------------------------------
-    // Calculate R+, R-
-    Vec *R_plus = this->Gl_Vec1;
-    Vec *R_min = this->Gl_Vec;
-    (*R_plus) = 0.0;
-    (*R_min) = 0.0;
-    //for(ii=fct_f.begin(); ii!=fct_f.end(); ii++){
-    //  i = (*ii).first;
-    for(i=0; i<node_size; i++){
+   //----------------------------------------------------------------------
+   // Assemble RHS: b += alpha * f
+   //----------------------------------------------------------------------
+   // Calculate R+, R-
+   Vec *R_plus = this->Gl_Vec1;
+   Vec *R_min = this->Gl_Vec;
+   (*R_plus) = 0.0;
+   (*R_min) = 0.0;
+   //for(ii=fct_f.begin(); ii!=fct_f.end(); ii++){
+   //  i = (*ii).first;
+   for(i=0; i<node_size; i++)
+   {
       double P_plus, P_min;
       double Q_plus, Q_min;
       P_plus = P_min = 0.0;
       Q_plus = Q_min = 0.0;
       //for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
       col = &fct_f[i];
-      for(jj=col->begin(); jj!=col->end(); jj++){
-        j = (*jj).first;
-        if (i==j) continue;
-        double f = (*jj).second; //double f = (*FCT_AFlux)(i,j);
-        if (i>j) f *= -1.0;
-        double diff_uH = this->GetNodeValue(j, idx1) - this->GetNodeValue(i, idx1);
+      for(jj=col->begin(); jj!=col->end(); jj++)
+      {
+         j = (*jj).first;
+         if (i==j) continue;
+         double f = (*jj).second;                 //double f = (*FCT_AFlux)(i,j);
+         if (i>j) f *= -1.0;
+         double diff_uH = this->GetNodeValue(j, idx1) - this->GetNodeValue(i, idx1);
 
-        P_plus += max(0.0, f);
-        P_min += min(0.0, f);
-        Q_plus = max(Q_plus, diff_uH);
-        Q_min = min(Q_min, diff_uH);
+         P_plus += max(0.0, f);
+         P_min += min(0.0, f);
+         Q_plus = max(Q_plus, diff_uH);
+         Q_min = min(Q_min, diff_uH);
       }
       double ml = (*ML)(i);
-      if (P_plus == 0.0) 
-        (*R_plus)(i)=0.0;
+      if (P_plus == 0.0)
+         (*R_plus)(i)=0.0;
       else
-        (*R_plus)(i) = min(1.0, ml*Q_plus/(dt*P_plus));
-      if (P_min == 0.0) 
-        (*R_min)(i)=0.0;
+         (*R_plus)(i) = min(1.0, ml*Q_plus/(dt*P_plus));
+      if (P_min == 0.0)
+         (*R_min)(i)=0.0;
       else
-        (*R_min)(i) = min(1.0, ml*Q_min/(dt*P_min));
-    }
+         (*R_min)(i) = min(1.0, ml*Q_min/(dt*P_min));
+   }
 
-    // for Dirichlet nodes
-    //cout << "Dirichlet nodes" << endl;
-    for (i=0; i<bc_node_value.size(); i++) {
+   // for Dirichlet nodes
+   //cout << "Dirichlet nodes" << endl;
+   for (i=0; i<bc_node_value.size(); i++)
+   {
       CBoundaryConditionNode *bc_node = bc_node_value[i];
       long nod_id = bc_node->geo_node_number;
       //cout << nod_id << ": R+=" <<  (*R_plus)(nod_id) << ", R-=" << (*R_min)(nod_id) << endl;
@@ -4334,37 +4474,39 @@ void CRFProcess::AddFCT_CorrectionVector()
       //  double f = (*jj).second; //double f = (*FCT_AFlux)(i,j);
       //  cout << nod_id << "," << j << ": f=" << f << endl;
       //}
-    }
+   }
 
-
-    // b_i += alpha_i * f_ij
-    for (i=0; i<node_size; i++) {
+   // b_i += alpha_i * f_ij
+   for (i=0; i<node_size; i++)
+   {
       col = &fct_f[i];
-      for (jj=col->begin(); jj!=col->end(); jj++) {
-    //for(ii=fct_f.begin(); ii!=fct_f.end(); ii++){
-    //  i = (*ii).first;
-    //  for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
-        j = (*jj).first;
-        if (i==j) continue;
+      for (jj=col->begin(); jj!=col->end(); jj++)
+      {
+         //for(ii=fct_f.begin(); ii!=fct_f.end(); ii++){
+         //  i = (*ii).first;
+         //  for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
+         j = (*jj).first;
+         if (i==j) continue;
 
-        double f = (*jj).second; //double f = (*FCT_AFlux)(i,j);
-        if (i>j) f *= -1; // symmetric
-        double alpha = 1.0;
-        if (f>0) 
-          alpha = min((*R_plus)(i), (*R_min)(j));
-        else
-          alpha = min((*R_plus)(j), (*R_min)(i));
+         double f = (*jj).second;                 //double f = (*FCT_AFlux)(i,j);
+         if (i>j) f *= -1;                        // symmetric
+         double alpha = 1.0;
+         if (f>0)
+            alpha = min((*R_plus)(i), (*R_min)(j));
+         else
+            alpha = min((*R_plus)(j), (*R_min)(i));
 
-        if (this->m_num->fct_const_alpha<0.0) 
-          eqs_rhs[i] += alpha*f; 
-        else  
-          eqs_rhs[i] += this->m_num->fct_const_alpha*f; 
+         if (this->m_num->fct_const_alpha<0.0)
+            eqs_rhs[i] += alpha*f;
+         else
+            eqs_rhs[i] += this->m_num->fct_const_alpha*f;
 
-        //Note: Galerkin FEM is recovered if alpha = 1 as below,
-        //eqs_rhs[i] += 1.0*f;
+         //Note: Galerkin FEM is recovered if alpha = 1 as below,
+         //eqs_rhs[i] += 1.0*f;
       }
-    }
+   }
 }
+
 
 /*************************************************************************
 GeoSys-Function:
@@ -4402,16 +4544,20 @@ void CRFProcess::GlobalAssembly()
    }
 
    CElem* elem = NULL;
+
+   if(m_num->nls_method==2)                       //06.09.2010. WW
+      IncorporateBoundaryConditions();
    bool Check2D3D;
    Check2D3D = false;
    if (type == 66)                                //Overland flow
       Check2D3D = true;
-  if (this->femFCTmode) { //NW
-    (*this->FCT_AFlux) = 0.0;
-    (*this->Gl_ML) = 0.0;
-    (*this->Gl_Vec) = 0.0;
-    (*this->Gl_Vec1) = 0.0;
-  }
+   if (this->femFCTmode)                          //NW
+   {
+      (*this->FCT_AFlux) = 0.0;
+      (*this->Gl_ML) = 0.0;
+      (*this->Gl_Vec) = 0.0;
+      (*this->Gl_Vec1) = 0.0;
+   }
    // DDC
    if (dom_vector.size() > 0)
    {
@@ -4450,7 +4596,8 @@ void CRFProcess::GlobalAssembly()
          //m_dom->eqs->Write(Dum);
          //Dum.close();
          IncorporateSourceTerms(j);
-         IncorporateBoundaryConditions(j);
+         if(m_num->nls_method!=2)                 //06.09.2010. WW
+            IncorporateBoundaryConditions(j);
          /*
           //TEST
           string test = "rank";
@@ -4497,9 +4644,10 @@ void CRFProcess::GlobalAssembly()
          }
       }
 
-    if (this->femFCTmode) { //NW
-      this->AddFCT_CorrectionVector();
-    }
+      if (this->femFCTmode)                       //NW
+      {
+         this->AddFCT_CorrectionVector();
+      }
       //MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
       //eqs_new->Write();
       IncorporateSourceTerms();
@@ -4518,6 +4666,31 @@ void CRFProcess::GlobalAssembly()
       //
       // MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
       //          MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
+   }
+}
+
+
+//--------------------------------------------------------------------
+/*! \brief Assmble eqiations
+     for all PDEs excluding deformation;
+
+     24.11.2010. WW
+*/
+void CRFProcess::GlobalAssembly_std(bool Check2D3D)
+{
+   long i;
+   CElem* elem = NULL;
+
+   for(i=0;i<(long)m_msh->ele_vector.size();i++)
+   {
+      elem = m_msh->ele_vector[i];
+      if (!elem->GetMark())                       // Marked for use
+         continue;                                // For OpenMP. WW
+
+      elem->SetOrder(false);
+      fem->ConfigElement(elem,Check2D3D);
+      fem->Assembly();
+
    }
 }
 
@@ -4592,7 +4765,7 @@ void CRFProcess::CalIntegrationPointValue()
       || getProcessType() == TWO_PHASE_FLOW
       || getProcessType() == AIR_FLOW
       || getProcessType() == PS_GLOBAL
-      || getProcessType() == PTC_FLOW)           //AKS/NB
+      || getProcessType() == PTC_FLOW)            //AKS/NB
       cal_integration_point_value = true;
    if (!cal_integration_point_value)
       return;
@@ -4694,7 +4867,8 @@ void CRFProcess::AllocateLocalMatrixMemory()
       }
    }
    if(!H_Process) up_type = 2;
-   if(MASS_TRANSPORT_Process || T_Process)up_type = 5;         //SB for steady state element matrices in transport
+                                                  //SB for steady state element matrices in transport
+   if(MASS_TRANSPORT_Process || T_Process)up_type = 5;
    //----------------------------------------------------------------------
    ElementMatrix *eleMatrix = NULL;
    CElem* elem = NULL;
@@ -5061,7 +5235,7 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
    long bc_eqs_index, shift;
    int interp_method=0;
    int curve, valid=0;
-   int ii, idx0, idx1;
+   int ii, idx0 = -1;
    CBoundaryConditionNode* m_bc_node;             //WW
    CBoundaryCondition* m_bc;                      //WW
    CPARDomain *m_dom = NULL;
@@ -5072,10 +5246,19 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
    Linear_EQS *eqs_p = NULL;
 #endif
    //------------------------------------------------------------WW
+#ifdef JFNK_H2M
+   if(m_num->nls_method==2&&BC_JFNK.size()>0)     //29.10.2010. WW
+      return;
+
+   /// For JFNK
+   bool bc_inre_flag = false;
+   double bc_init_value = 0.;
+#endif
+
    // WW
    double Scaling = 1.0;
-   bool quadr = false;                            //15.4.2008. WW
-   if(type==4||type==41)
+   bool quadr = false;                            //15.4.2008
+   if(type==4||type/40==1)
    {
       fac = Scaling;
       quadr = true;
@@ -5134,21 +5317,11 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
             dim_space = 0;
          else
          {
-            // Following lines are changed since 15.4.2008 by WW
-            if(quadr)
-            {
-               if(shift%m_msh->NodesNumber_Quadratic==0)
-                  dim_space = shift/m_msh->NodesNumber_Quadratic;
-               else
-                  dim_space = m_msh->msh_max_dim;
-            }
+            // 02.2010. WW
+            if(type == 4 || type/40 == 1)
+               dim_space = shift/m_msh->NodesNumber_Quadratic;
             else
-            {
-               if(shift%m_msh->NodesNumber_Linear==0)
-                  dim_space = shift/m_msh->NodesNumber_Linear;
-               else
-                  dim_space = m_msh->msh_max_dim;
-            }
+               dim_space = shift/m_msh->NodesNumber_Linear;
          }
          shift = m_dom->shift[dim_space];
       }
@@ -5201,12 +5374,12 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
                }
             }
             bc_value = time_fac*fac* GetNodeValue(m_bc_node->msh_node_number_subst, idx_1);
-            //WW  bc_value = time_fac*fac* GetNodeVal(bc_msh_node+1,GetNODValueIndex(pcs_primary_function_name[0])+1); // YD-----TEST---
          }
          else
                                                   // time_fac*fac*PCSGetNODValue(bc_msh_node,"PRESSURE1",0);
             bc_value = time_fac*fac*m_bc_node->node_value;
-
+         //----------------------------------------------------------------
+         // MSH
          /// 16.08.2010. WW
          if(curve>10000000&&fabs(time_fac)>DBL_EPSILON)
             bc_value = bc_value/time_fac+time_fac;/// bc_value +time_fac;
@@ -5215,57 +5388,97 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
             bc_value *= sin( 2 * 3.14159 * aktuelle_zeit / m_bc->getPeriodeTimeLength()  + m_bc->getPeriodePhaseShift());
 
          //----------------------------------------------------------------
-         // MSH
          if(rank>-1)
             bc_eqs_index = bc_msh_node;
          else
                                                   //WW#
             bc_eqs_index = m_msh->nod_vector[bc_msh_node]->GetEquationIndex();
          //..............................................................
-         // NEWTON WW
-         if(m_num->nls_method_name.find("NEWTON")!=string::npos
-            ||  type==4||type==41  )              //Solution is in the manner of increment !
-         {
-            idx0 = GetNodeValueIndex(convertPrimaryVariableToString(m_bc->getProcessPrimaryVariable()).c_str());
-            if(type==4||type==41)
+         // NEWTON WW   //Modified for JFNK. 09.2010. WW
+         if(m_num->nls_method>=1                  // 04.08.2010. WW _name.find("NEWTON")!=string::npos
+            ||  type==4||type/40==1   )
+         {                                        //Solution is in the manner of increment !
+            idx0 = GetNodeValueIndex(convertPrimaryVariableToString(m_bc->getProcessPrimaryVariable()));
+            if(m_bc_node->pcs_pv_name.find("DISPLACEMENT")!=string::npos)
             {
-                                                  //02.09.2010. WW
-               if(m_bc_node->pcs_pv_name.find("PRESSURE")==string::npos)
-               {
-                  idx1 = idx0+1;
-                  bc_value -=  GetNodeValue(m_bc_node->geo_node_number, idx0)
-                     + GetNodeValue(m_bc_node->geo_node_number, idx1);
-               }
+               bc_value -=  GetNodeValue(m_bc_node->geo_node_number, idx0)
+                  + GetNodeValue(m_bc_node->geo_node_number, idx0+1);
+               /// if JFNK and if the first Newton step
+               /// In the successive Newton steps, node BC value taken from the previous Newton step.
+               if(m_num->nls_method==2&&ite_steps==1)
+                  SetNodeValue(m_bc_node->geo_node_number, idx0, bc_value);
+
+#ifdef JFNK_H2M
+               bc_inre_flag = false;
+               bc_init_value = 0.;
+#endif
             }
             else
-               bc_value = bc_value - GetNodeValue(m_bc_node->geo_node_number, idx0);
-         }
-         //----------------------------------------------------------------
-         bc_eqs_index += shift;
-         /* // Make the follows as comment by WW. 04.03.2008
-         //YD dual
-         if(dof>1) //WW
-         {
-           for(ii=0;ii<dof;ii++)
-           {
-             if(m_bc->pcs_pv_name.find(pcs_primary_function_name[ii]) != string::npos)
-             {
-                //YD/WW
-                //WW   bc_eqs_index += ii*(long)eqs->dim/dof;   //YD dual //DOF>1 WW
-                bc_eqs_index += fem->NodeShift[ii];   //DOF>1 WW
+            {
 
-         break;
+#ifdef JFNK_H2M
+               bc_inre_flag = true;
+               bc_init_value = bc_value;
+#endif
+               /// if JFNK and if the first Newton step. 11.11.2010. WW
+               //if(m_num->nls_method==2&&ite_steps==1) /// JFNK
+               /// p_{n+1} = p_b,
+               //  SetNodeValue(m_bc_node->geo_node_number, idx0++, bc_value);
+               /// dp = u_b-u_n
+               bc_value -=  GetNodeValue(m_bc_node->geo_node_number, ++idx0);
+            }
+
          }
+
+         bc_eqs_index += shift;
+
+#ifdef JFNK_H2M
+         /// If JFNK method (09.2010. WW):
+         if(m_num->nls_method==2)
+         {
+            bc_JFNK new_bc_entry;
+            new_bc_entry.var_idx = idx0;
+            new_bc_entry.bc_node = m_bc_node->geo_node_number;
+            new_bc_entry.bc_eqs_idx = bc_eqs_index;
+            new_bc_entry.bc_value = bc_value;
+
+            new_bc_entry.incremental = bc_inre_flag;
+            new_bc_entry.bc_value0 = bc_init_value;
+            BC_JFNK.push_back(new_bc_entry);
          }
-         }
-         */
-#ifdef NEW_EQS                           //WW
-         eqs_p->SetKnownX_i(bc_eqs_index, bc_value);
+         else
+         {
+#endif
+            //----------------------------------------------------------------
+            //----------------------------------------------------------------
+            /* // Make the follows as comment by WW. 04.03.2008
+            //YD dual
+            if(dof>1) //WW
+            {
+              for(ii=0;ii<dof;ii++)
+              {
+                if(m_bc->pcs_pv_name.find(pcs_primary_function_name[ii]) != string::npos)
+                {
+                   //YD/WW
+                   //WW   bc_eqs_index += ii*(long)eqs->dim/dof;   //YD dual //DOF>1 WW
+                   bc_eqs_index += fem->NodeShift[ii];   //DOF>1 WW
+
+            break;
+            }
+            }
+            }
+            */
+#ifdef NEW_EQS                        //WW
+            eqs_p->SetKnownX_i(bc_eqs_index, bc_value);
 #else
-         MXRandbed(bc_eqs_index,bc_value,eqs_rhs);
+            MXRandbed(bc_eqs_index,bc_value,eqs_rhs);
+#endif
+#ifdef JFNK_H2M
+         }
 #endif
       }
    }
+
 }
 
 
@@ -5818,7 +6031,8 @@ void CRFProcess::IncorporateSourceTerms(const int rank)
                   {
                      face = m_msh->face_vector[i_face];
                      if ((size_t) m_st->element_st_vector[i_st] == face->GetOwner()->GetIndex())
-                        q_face = PointProduction(vel, m_msh->face_normal[i_face]) * face->GetVolume();   //
+                                                  //
+                        q_face = PointProduction(vel, m_msh->face_normal[i_face]) * face->GetVolume();
                      //for(i_node)
                   }
                   cnodev->node_value = +q_face / 2;
@@ -6963,48 +7177,48 @@ void CRFProcess::SetIC()
    // nidx will give the proper IC pointer.
    if ( this->getProcessType() == MASS_TRANSPORT )
    {
-       for (int i = 0; i < pcs_number_of_primary_nvals; i++)
-       {
-          int nidx = GetNodeValueIndex(pcs_primary_function_name[i]);
+      for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+      {
+         int nidx = GetNodeValueIndex(pcs_primary_function_name[i]);
 
-          // PrimaryVariable pv_i (convertPrimaryVariable(pcs_primary_function_name[i]));
-          for (size_t j = 0; j < ic_vector.size(); j++)
-          {
-             m_ic = ic_vector[j];
-             m_ic->m_msh = m_msh;                     //OK/MX
+         // PrimaryVariable pv_i (convertPrimaryVariable(pcs_primary_function_name[i]));
+         for (size_t j = 0; j < ic_vector.size(); j++)
+         {
+            m_ic = ic_vector[j];
+            m_ic->m_msh = m_msh;                  //OK/MX
 
-             if (m_ic->getProcess() == this )
-             {
-                m_ic->Set(nidx);
-                m_ic->Set(nidx + 1);
-             }
-          }
-       }
+            if (m_ic->getProcess() == this )
+            {
+               m_ic->Set(nidx);
+               m_ic->Set(nidx + 1);
+            }
+         }
+      }
    }
-   else // otherwise PrimaryVariable check is still performed.
+   else                                           // otherwise PrimaryVariable check is still performed.
    {
-          for (int i = 0; i < pcs_number_of_primary_nvals; i++)
-          {
-              int nidx = GetNodeValueIndex(pcs_primary_function_name[i]);
-              PrimaryVariable pv_i (convertPrimaryVariable(pcs_primary_function_name[i]));
-              for (size_t j = 0; j < ic_vector.size(); j++)
-              {
-                  m_ic = ic_vector[j];
-                  m_ic->m_msh = m_msh;                     //OK/MX
+      for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+      {
+         int nidx = GetNodeValueIndex(pcs_primary_function_name[i]);
+         PrimaryVariable pv_i (convertPrimaryVariable(pcs_primary_function_name[i]));
+         for (size_t j = 0; j < ic_vector.size(); j++)
+         {
+            m_ic = ic_vector[j];
+            m_ic->m_msh = m_msh;                  //OK/MX
 
-                  if (m_ic->getProcessType() != this->getProcessType())
-                      continue;
+            if (m_ic->getProcessType() != this->getProcessType())
+               continue;
 
-                  m_ic->setProcess(this);
-                  if (m_ic->getProcessPrimaryVariable() == pv_i)
-                  {
-                      m_ic->Set(nidx);
-                      m_ic->Set(nidx + 1);
-                  } // end of if
-              } // end of for j
-          } // end of for i
+            m_ic->setProcess(this);
+            if (m_ic->getProcessPrimaryVariable() == pv_i)
+            {
+               m_ic->Set(nidx);
+               m_ic->Set(nidx + 1);
+            }                                     // end of if
+         }                                        // end of for j
+      }                                           // end of for i
 
-   } // end of if-else
+   }                                              // end of if-else
 
 }
 
@@ -8123,8 +8337,9 @@ double PCSGetEleMeanNodeSecondary_2(long index, int pcsT, const string &var_name
       case 11:                                    //Componental Flow
          break;
       case 1212:                                  //Multiphase Flow
-         m_pcs = PCSGet("MULTI_PHASE_FLOW"); // SB, BG
-         if(m_pcs){
+         m_pcs = PCSGet("MULTI_PHASE_FLOW");      // SB, BG
+         if(m_pcs)
+         {
             idx = m_pcs->GetNodeValueIndex(var_name)+timelevel;
             cplpcs = m_pcs;
          }
@@ -8719,6 +8934,7 @@ void CRFProcess::CreateSTGroup()
    }
 }
 
+
 /**************************************************************************
     PCSLib-Method:
     08/2006 OK Implementation
@@ -8833,6 +9049,7 @@ double CRFProcess::CalcELEFluxes(const GEOLIB::Polyline* const ply)
 
    return f_n_sum;
 }
+
 
 /**************************************************************************
  FEMLib-Method:
@@ -9931,7 +10148,7 @@ bool CRFProcess::ELERelations()
       // Set initialization function
       CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) this;
       dm_pcs->Initialization();
-      if (!dm_pcs->fem_dm)
+      if (!dm_pcs->GetFEM_Assembler())
          succeed = false;
    } else                                         // Initialize FEM calculator
    {
@@ -10316,6 +10533,7 @@ Programming:
 void CreateEQS_LinearSolver()
 {
    int dof_DM=1;
+   int DM_type=-1;                                //03.08.2010. WW
    CRFProcess *m_pcs = NULL;
    CFEMesh *a_msh = NULL;
    SparseTable *sp = NULL;
@@ -10329,15 +10547,18 @@ void CreateEQS_LinearSolver()
    for(size_t i=0;i<pcs_vector.size();i++)
    {
       m_pcs = pcs_vector[i];
-      if(m_pcs->type==1212)                        //Important for parallel computing. 24.1.2011 WW 
+      if(m_pcs->type==1212)                       //Important for parallel computing. 24.1.2011 WW
       {
          dof_nonDM = m_pcs->GetPrimaryVNumber();
          dof = dof_nonDM;
       }
-      if(m_pcs->type==4||m_pcs->type==41)         // Deformation
+      if(m_pcs->type==4||m_pcs->type/40==1)       // Deformation
       {
          dof_DM = m_pcs->GetPrimaryVNumber();
          dof = dof_DM;
+         DM_type =  m_pcs->type;                  //03.08.2010. WW
+         if(m_pcs->type==42)
+            dof = m_pcs->m_msh->GetMaxElementDim();
       }
       else                                        // Monolithic scheme for the process with linear elements
       {
@@ -10353,6 +10574,21 @@ void CreateEQS_LinearSolver()
          }
       }
    }
+   //Check whether the JFNK method is employed for deformation problem 04.08.2010 WW
+   CNumerics *num = NULL;
+   for(i=0;i<(int)num_vector.size();i++)
+   {
+      num = num_vector[i];
+      if(num->nls_method==2)
+      {
+         // Stiffness matrix of lower order grid may be used by more than one processes.
+         // Therefore, memo allocation is performed for it.
+         // Indicator: Not allocate memo for stiffness matrix for deformation
+         dof_DM *= -1;
+         break;
+      }
+   }
+
    //
    for(size_t i=0; i<fem_msh_vector.size(); i++)
    {
@@ -10373,7 +10609,22 @@ void CreateEQS_LinearSolver()
       if(sp)
          eqs = new Linear_EQS(*sp, dof_nonDM);
       if(spH)
+      {
+         /// If JFNK method.  //03.08.2010. WW
+         if(dof_DM<0)
+         {
+            long nn_H = static_cast<long>(a_msh->GetNodesNumber(true));
+            long nn = static_cast<long>(a_msh->GetNodesNumber(false));
+            if(DM_type==4)
+               dof_DM = -nn_H*dof;
+            else if(DM_type==41)
+               dof_DM = -nn_H*dof-nn;
+            else if(DM_type==42)
+               dof_DM = -nn_H*dof-nn*2;
+         }
+
          eqsH = new Linear_EQS(*spH, dof_DM);
+      }
       EQS_Vector.push_back(eqs);
       EQS_Vector.push_back(eqsH);
 #endif
@@ -10501,7 +10752,7 @@ void CRFProcess::PI_TimeStepSize(double *u_n)
    double factor1;                                // 1/hmin
    double factor2;                                // 1/hmax
    double sfactor = 0.9;
-   double reject_factor; // BG
+   double reject_factor;                          // BG
    //
    //
    hmax = Tim->GetMaximumTSizeRestric();
@@ -10647,7 +10898,7 @@ void CRFProcess::PI_TimeStepSize(double *u_n)
 
    //compute hnew with the resriction: 0.2<=hnew/h<=6.0;
    fac = max(factor2,min(factor1,pow(err,0.25)/sfactor));
-   hnew = dt/fac*Tim->reject_factor; // BG, use the reject factor to lower timestep after rejection BG
+   hnew = dt/fac*Tim->reject_factor;              // BG, use the reject factor to lower timestep after rejection BG
 
    //determine if the error is small enough
    if(err<=1.0e0)                                 //step is accept
@@ -10673,7 +10924,7 @@ void CRFProcess::PI_TimeStepSize(double *u_n)
       Tim->SetTimeStep(fabs(hnew));
       accepted = true;
       //store the used time steps for post-processing BG
-      if (Tim->step_current==1) // BG
+      if (Tim->step_current==1)                   // BG
          Tim->time_step_vector.push_back(Tim->time_step_length);
       Tim->time_step_vector.push_back(hnew);
       reject_factor = 1;
@@ -10681,12 +10932,12 @@ void CRFProcess::PI_TimeStepSize(double *u_n)
    }                                              //end if(err<=1.0e0)
    else
    {
-      Tim->reject_factor = 1;	//BG; if the time step is rejected the next timestep increase is reduced by the reject factor (choose reject factor between 0.1 and 0.9); 1.0 means no change
+      Tim->reject_factor = 1;                     //BG; if the time step is rejected the next timestep increase is reduced by the reject factor (choose reject factor between 0.1 and 0.9); 1.0 means no change
       reject_steps++;
       accepted = false;
-      hnew = hnew / Tim->reject_factor; //BG
+      hnew = hnew / Tim->reject_factor;           //BG
       Tim->SetTimeStep(hnew);
-      Tim->time_step_vector.push_back(hnew); //BG
+      Tim->time_step_vector.push_back(hnew);      //BG
       if(reject_steps>100&&accept_steps==0)
       {
          cout<<"!!! More than 100 steps rejected and none of steps accepted. Quit the simulation now"<<endl;
@@ -11035,59 +11286,64 @@ void CRFProcess::UpdateTransientBC()
       }
    }
 
-	// transient boundary condition
-	if (bc_transient_index.size() == 0) return;
+   // transient boundary condition
+   if (bc_transient_index.size() == 0) return;
 
-	bool valid = false;
-	long end_i = 0;
-	double t_fac = 0.;
-	std::vector<double> node_value;
+   bool valid = false;
+   long end_i = 0;
+   double t_fac = 0.;
+   std::vector<double> node_value;
 
+   for (size_t i = 0; i < bc_transient_index.size(); i++)
+   {
+      std::vector<double> interpolation_points;
+      std::vector<double> interpolation_values;
 
-   for (size_t i = 0; i < bc_transient_index.size(); i++) {
-	   std::vector<double> interpolation_points;
-	   std::vector<double> interpolation_values;
+      CBoundaryCondition *bc = bc_node[bc_transient_index[i]];
+      long start_i = bc_transient_index[i];
+      if (i == bc_transient_index.size() - 1)
+         end_i = (long) bc_node.size();
+      else end_i = bc_transient_index[i + 1];
 
-		CBoundaryCondition *bc = bc_node[bc_transient_index[i]];
-		long start_i = bc_transient_index[i];
-		if (i == bc_transient_index.size() - 1)
-			end_i = (long) bc_node.size();
-		else end_i = bc_transient_index[i + 1];
+      // fetch points (representing mesh nodes) along polyline for interpolation
+      std::vector<double> nodes_as_interpol_points;
+      GEOLIB::Polyline const* ply (static_cast<GEOLIB::Polyline const *> (bc->getGeoObj()));
+      m_msh->getPointsForInterpolationAlongPolyline (ply, nodes_as_interpol_points);
 
-		// fetch points (representing mesh nodes) along polyline for interpolation
-		std::vector<double> nodes_as_interpol_points;
-		GEOLIB::Polyline const* ply (static_cast<GEOLIB::Polyline const *> (bc->getGeoObj()));
-		m_msh->getPointsForInterpolationAlongPolyline (ply, nodes_as_interpol_points);
+      valid = false;
+      t_fac = 0.0;
+      // Piecewise linear distributed.
+      for (size_t i(0); i < bc->getDistribedBC().size(); i++)
+      {
+         for (size_t j = 0; j < ply->getNumberOfPoints(); j++)
+         {
+            if (bc->getPointsWithDistribedBC()[i] == (int)ply->getPointID(j))
+            {
+               if (fabs(bc->getDistribedBC()[i]) < MKleinsteZahl)
+                  bc->getDistribedBC()[i] = 1.0e-20;
+               interpolation_points.push_back (ply->getLength(j));
+               interpolation_values.push_back (bc->getDistribedBC()[i]);
 
-		valid = false;
-		t_fac = 0.0;
-		// Piecewise linear distributed.
-		for (size_t i(0); i < bc->getDistribedBC().size(); i++) {
-			for (size_t j = 0; j < ply->getNumberOfPoints(); j++) {
-				if (bc->getPointsWithDistribedBC()[i] == (int)ply->getPointID(j)) {
-					if (fabs(bc->getDistribedBC()[i]) < MKleinsteZahl)
-						bc->getDistribedBC()[i] = 1.0e-20;
-					interpolation_points.push_back (ply->getLength(j));
-					interpolation_values.push_back (bc->getDistribedBC()[i]);
+               CFunction* fct (FCTGet(bc->getPointsFCTNames()[i]));
+               if (fct)
+                  t_fac = fct->GetValue(aktuelle_zeit, &valid);
+               else
+               {
+                  std::cout << "Warning in CBoundaryConditionsGroup - no FCT data" << std::endl;
+               }
 
-					CFunction* fct (FCTGet(bc->getPointsFCTNames()[i]));
-					if (fct)
-						t_fac = fct->GetValue(aktuelle_zeit, &valid);
-					else {
-						std::cout << "Warning in CBoundaryConditionsGroup - no FCT data" << std::endl;
-					}
+               if (valid)
+                  interpolation_values[interpolation_values.size()-1] *= t_fac;
 
-					if (valid)
-						interpolation_values[interpolation_values.size()-1] *= t_fac;
+               break;
+            }
+         }
+      }
+      std::vector<double> interpol_res;
+      MATHLIB::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, interpol_res);
 
-					break;
-				}
-			}
-		}
-		std::vector<double> interpol_res;
-		MATHLIB::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, interpol_res);
-
-      for (long k = start_i; k < end_i; k++) {
+      for (long k = start_i; k < end_i; k++)
+      {
          bc_node_value[k]->node_value = interpol_res[k-start_i];
       }
    }
@@ -11214,87 +11470,92 @@ bool PCSConfig()
    return some_thing_done;
 }
 
+
 /*************************************************************************
 GeoSys-Function: CalGPVelocitiesfromEclipse
 Task: Calculate gauss point velocities from Eclipse solution
-		extrapolate velocities from nodes to gauss points
+      extrapolate velocities from nodes to gauss points
 Programming:
 09/2009 SB BG Implementation
 
 **************************************************************************/
 void CRFProcess::CalGPVelocitiesfromECLIPSE(string path, int timestep, int phase_index, string phase)
 {
-  (void)path; // unused
-  (void)timestep; // unused
-  long i;
-  Mesh_Group::CElem* elem = NULL;
-  clock_t start,finish;
-  double time;
+   (void)path;                                    // unused
+   (void)timestep;                                // unused
+   long i;
+   Mesh_Group::CElem* elem = NULL;
+   clock_t start,finish;
+   double time;
 
-  start = clock();
+   start = clock();
 
-  cout << "        CalGPVelocitiesfromECLIPSE() ";
+   cout << "        CalGPVelocitiesfromECLIPSE() ";
 
-  //Test Output
-	vector <string> vec_string;
-	string tempstring;
-	ostringstream temp;
-	vec_string.push_back("Element; X; Y; Z; v_Geosys_x; v_Geosys_y; v_Geosys_z; v_Eclipse_x; v_Eclipse_y; v_Eclipse_z");
+   //Test Output
+   vector <string> vec_string;
+   string tempstring;
+   ostringstream temp;
+   vec_string.push_back("Element; X; Y; Z; v_Geosys_x; v_Geosys_y; v_Geosys_z; v_Eclipse_x; v_Eclipse_y; v_Eclipse_z");
 
-  // Loop over all elements
-  for (i = 0; i < (long)m_msh->ele_vector.size(); i++){
-    elem = m_msh->ele_vector[i]; // get element
-	if (elem->GetMark()){ // Marked for use
-		//Test Output
-		tempstring="";
-		temp.str(""); temp.clear(); temp << i; tempstring = temp.str();
-		double* gc = elem->GetGravityCenter();
-		temp.str(""); temp.clear(); temp << gc[0]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp << gc[1]; tempstring += "; " + temp.str();
-		temp.str(""); temp.clear(); temp << gc[2]; tempstring += "; " + temp.str();
+   // Loop over all elements
+   for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
+   {
+      elem = m_msh->ele_vector[i];                // get element
+      if (elem->GetMark())                        // Marked for use
+      {
+         //Test Output
+         tempstring="";
+         temp.str(""); temp.clear(); temp << i; tempstring = temp.str();
+         double* gc = elem->GetGravityCenter();
+         temp.str(""); temp.clear(); temp << gc[0]; tempstring += "; " + temp.str();
+         temp.str(""); temp.clear(); temp << gc[1]; tempstring += "; " + temp.str();
+         temp.str(""); temp.clear(); temp << gc[2]; tempstring += "; " + temp.str();
 
-		// Configure Element for interpolation of node velocities to GP velocities
-		fem->ConfigElement(elem);
-		// Interpolate from nodes to GP of actual element
-		//cout << "Element: " << i << endl;
-		tempstring = fem->Cal_GP_Velocity_ECLIPSE(tempstring, true, phase_index, phase);
+         // Configure Element for interpolation of node velocities to GP velocities
+         fem->ConfigElement(elem);
+         // Interpolate from nodes to GP of actual element
+         //cout << "Element: " << i << endl;
+         tempstring = fem->Cal_GP_Velocity_ECLIPSE(tempstring, true, phase_index, phase);
 
-		// Test Output
-		vec_string.push_back(tempstring);
-	}
-  }  // end element loop
+         // Test Output
+         vec_string.push_back(tempstring);
+      }
+   }                                              // end element loop
 
- // // Test Output
- // if (timestep == 1 || timestep % 10 == 0 ) {
-	//int position = path.find_last_of("\\");
-	//path = path.substr(0,position);
-	//position = path.find_last_of("\\");
-	//path = path.substr(0,position);
-	//temp.str(""); temp.clear(); temp << timestep; tempstring = temp.str();
-	//string aus_file = path + "\\CheckVelocity_" + phase + "_" + tempstring + ".csv";
-	//ofstream aus;
-	//aus.open(aus_file.data(),ios::out);
-	//for (i = 0; i < vec_string.size(); i++) {
-	//	aus << vec_string[i] << endl;
-	//}
-	//aus.close();
-  //}
+   // // Test Output
+   // if (timestep == 1 || timestep % 10 == 0 ) {
+   //int position = path.find_last_of("\\");
+   //path = path.substr(0,position);
+   //position = path.find_last_of("\\");
+   //path = path.substr(0,position);
+   //temp.str(""); temp.clear(); temp << timestep; tempstring = temp.str();
+   //string aus_file = path + "\\CheckVelocity_" + phase + "_" + tempstring + ".csv";
+   //ofstream aus;
+   //aus.open(aus_file.data(),ios::out);
+   //for (i = 0; i < vec_string.size(); i++) {
+   //	aus << vec_string[i] << endl;
+   //}
+   //aus.close();
+   //}
 
-
-  	finish = clock();
-	time = (double(finish)-double(start))/CLOCKS_PER_SEC;
-	cout << "         Time: " << time << " seconds." << endl;
+   finish = clock();
+   time = (double(finish)-double(start))/CLOCKS_PER_SEC;
+   cout << "         Time: " << time << " seconds." << endl;
 
 }
+
+
 //****************************************************************************
 //* returns the third root of a number x, -inf < x < inf
 //* Programming: NB, Sep10
 //*****************************************************************************/
 double W3( double x)
 {
-	double s=pow(x*x,0.5);
-	return pow(s,1./3.)*x/s;
+   double s=pow(x*x,0.5);
+   return pow(s,1./3.)*x/s;
 }
+
 
 //****************************************************************************
 //* binary mixing coefficient for water and co2 , Duan 1992
@@ -11302,88 +11563,94 @@ double W3( double x)
 //*****************************************************************************/
 double k_co2_h20(int number, double T)
 {
-	if (T<373.15)
-	{
-		switch (number)
-		{
-		case 1: return 0.20611+0.0006*T;
-		case 2: return 0.8023278-0.0022206*T+184.76824/T;
-		case 3: return 1.80544-0.0032605*T;
-		default: return 1;
-		}
+   if (T<373.15)
+   {
+      switch (number)
+      {
+         case 1: return 0.20611+0.0006*T;
+         case 2: return 0.8023278-0.0022206*T+184.76824/T;
+         case 3: return 1.80544-0.0032605*T;
+         default: return 1;
+      }
 
-	} else if (T>673.15)
-	{
-		switch (number)
-		{
-		case 1: return 3.131 - 5.0624e-03 * T + 1.8641e-06 * T * T - 31.409/T;
-		case 2: return -46.646 + 4.2877e-02 * T - 1.0892e-05 * T * T + 1.5782e+04/T;
-		case 3: return 0.9;
-		default: return 1;
-		}
-	} else if (T<495.15)
-	{
-		switch (number)
-		{
-		case 1: return -10084.5042-4.27134485*T+256477.783/T+0.00166997474*T*T+1816.78*log(T);
-		case 2: return 9.000263-0.00623494*T-2307.7125/T;
-		case 3: return -74.1163+0.1800496*T-1.40904946e-4*T*T+101305246/T;
-		default:return 1;
-		}
-	}
-	else switch (number)
-	{
-	case 1: return -0.3568+7.8888e-4*T+333.399/T;
-	case 2: return -19.97444+0.0192515*T+5707.4229/T;
-	case 3: return 12.1308-0.0099489*T-3042.09583/T;
-	default:return 1;
-	}
-	cout << " This text should not be printed, something is wrong!" << endl;
-return 0;
+   } else if (T>673.15)
+   {
+      switch (number)
+      {
+         case 1: return 3.131 - 5.0624e-03 * T + 1.8641e-06 * T * T - 31.409/T;
+         case 2: return -46.646 + 4.2877e-02 * T - 1.0892e-05 * T * T + 1.5782e+04/T;
+         case 3: return 0.9;
+         default: return 1;
+      }
+   } else if (T<495.15)
+   {
+      switch (number)
+      {
+         case 1: return -10084.5042-4.27134485*T+256477.783/T+0.00166997474*T*T+1816.78*log(T);
+         case 2: return 9.000263-0.00623494*T-2307.7125/T;
+         case 3: return -74.1163+0.1800496*T-1.40904946e-4*T*T+101305246/T;
+         default:return 1;
+      }
+   }
+   else switch (number)
+   {
+      case 1: return -0.3568+7.8888e-4*T+333.399/T;
+      case 2: return -19.97444+0.0192515*T+5707.4229/T;
+      case 3: return 12.1308-0.0099489*T-3042.09583/T;
+      default:return 1;
+   }
+   cout << " This text should not be printed, something is wrong!" << endl;
+   return 0;
 }
+
+
 //****************************************************************************
 //* binary mixing coefficient for co2 and methane , Duan 1992
 //* Programming: NB, Sep10
 //*****************************************************************************/
 double k_co2_ch4 (int number, double T)
 {
-	if (T<304)
-	{
-		switch (number)
-		{
-		case 1: return 0.38;
-		case 2: return 1.74094-0.0058903*T;
-		case 3: return 1.59;
-		default: return 1;
-		}
-	} else if (T>498)
-	{
-		return 1;
-	} else
-	{
-		switch (number)
-		{
-		case 1: return 1.1;
-		case 2: return 3.211-0.00158*T-537.814/T;
-		//case 3: return -0.7;
-		case 3: return 1.80544 - 0.0032605*T; // aus F90
-		// case 3: return 12.1308 -0.0099489*T - 3042.09583/T; aus F90
-		}
-	}
-	cout << " This text should not be printed, something is wrong!" << endl;
-	return 0;
+   if (T<304)
+   {
+      switch (number)
+      {
+         case 1: return 0.38;
+         case 2: return 1.74094-0.0058903*T;
+         case 3: return 1.59;
+         default: return 1;
+      }
+   } else if (T>498)
+   {
+      return 1;
+   } else
+   {
+      switch (number)
+      {
+         case 1: return 1.1;
+         case 2: return 3.211-0.00158*T-537.814/T;
+         //case 3: return -0.7;
+         case 3: return 1.80544 - 0.0032605*T;    // aus F90
+         // case 3: return 12.1308 -0.0099489*T - 3042.09583/T; aus F90
+      }
+   }
+   cout << " This text should not be printed, something is wrong!" << endl;
+   return 0;
 }
+
+
 //****************************************************************************
 //* binary mixing coefficient for water and methane , Duan 1992
 //* Programming: NB, Sep10
 //*****************************************************************************/
 double k_ch4_h2o (int number, double T)
 {
-	(void)number;
-	(void)T;
-	// Not implemented yet! If you feel constrained to change this, you'll find the correlation in Duan, Moller and Weare ,1992.
-	return 1;
+   (void)number;
+   (void)T;
+   // Not implemented yet! If you feel constrained to change this, you'll find the correlation in Duan, Moller and Weare ,1992.
+   return 1;
 }
+
+
 //****************************************************************************
 //* this function calls the binary mixing parameter for a certain condition
 //*
@@ -11391,29 +11658,29 @@ double k_ch4_h2o (int number, double T)
 //*****************************************************************************/
 double bip (int number, int fluid_a, int fluid_b, int i, int j, int k, double T)
 {
-	//number : k1, k2 or k3
-	//fluid_a, fluid_b: a-b, b-c, a-c have different binary interaction parameters
-	//i,j,k  : needed for mixing rule
-	// T : bip depends on Temperature
+   //number : k1, k2 or k3
+   //fluid_a, fluid_b: a-b, b-c, a-c have different binary interaction parameters
+   //i,j,k  : needed for mixing rule
+   // T : bip depends on Temperature
 
-	if ( ((number==1)&&(i==j)) || (((number==2)||(number==3))&&((i==j)&&(i==k))) ) return 1;
-	else
-		switch (fluid_a+fluid_b)
-		{
-		case (1): // 2+3=5 --> CO2+H2O (duan 1992) or 0+1=1 --> CO2+H20 fo high pressure range, duan 2006
-				return k_co2_h20(number, T);
-		case (5): // 2+3=5 --> CO2+H2O (duan 1992) or 0+1=1 --> CO2+H20 fo high pressure range, duan 2006
-				return k_co2_h20(number, T);
+   if ( ((number==1)&&(i==j)) || (((number==2)||(number==3))&&((i==j)&&(i==k))) ) return 1;
+   else
+      switch (fluid_a+fluid_b)
+      {
+         case (1):                                // 2+3=5 --> CO2+H2O (duan 1992) or 0+1=1 --> CO2+H20 fo high pressure range, duan 2006
+            return k_co2_h20(number, T);
+         case (5):                                // 2+3=5 --> CO2+H2O (duan 1992) or 0+1=1 --> CO2+H20 fo high pressure range, duan 2006
+            return k_co2_h20(number, T);
 
-		case 6: // 2+4=6 --> CO2+CH4
-			return k_co2_ch4(number,T);
-		case 7: // 3+4=7 --> CH4+H2O
-			return k_co2_ch4(number, T);
-		default:
-			return 1;
-		}
-	cout << " This text should not be printed, something is wrong!" << endl;
-	return 0;
+         case 6:                                  // 2+4=6 --> CO2+CH4
+            return k_co2_ch4(number,T);
+         case 7:                                  // 3+4=7 --> CH4+H2O
+            return k_co2_ch4(number, T);
+      default:
+         return 1;
+   }
+   cout << " This text should not be printed, something is wrong!" << endl;
+   return 0;
 }
 
 
@@ -11424,64 +11691,65 @@ double bip (int number, int fluid_a, int fluid_b, int i, int j, int k, double T)
 //*****************************************************************************/
 void DuansParameter(int fluid, double  a[14], double *Tc, double *Pc, double *M)
 {
-	switch (fluid)
-	{
+   switch (fluid)
+   {
 
-	case 0 : //CO2, Duan 1992
-		*Tc = 304.1282;
-		*Pc = 73.77300; //bar
-		*M=44.01; // g/mol
-		a[0]=  8.99288497e-2;		a[1]= -4.94783127e-1;		a[2]=  4.77922245e-2;
-		a[3]=  1.03808883e-2;		a[4]= -2.82516861e-2;		a[5]=  9.49887563e-2;
-		a[6]=  5.20600880e-4;		a[7]= -2.93540971e-4;		a[8]= -1.77265112e-3;
-		a[9]=-2.51101973e-5;		a[10]= 8.93353441e-5;		a[11]= 7.88998563e-5;
-		a[12]=-1.66727022e-2;		a[13]=1.398;		a[14]=2.96e-2;
-		break;
-	case 1 : //H2O Duan 1992
-		*Tc=647.25;
-		*Pc=221.19000; //bar
-		*M=18.01; // g/mol
-		a[0]=  8.64449220E-02; 		a[1]=  -3.96918955E-01;		a[2]=  -5.73334886E-02;
-		a[3]=  -2.93893000E-04;		a[4]=  -4.15775512E-03;		a[5]=  1.99496791E-02;
-		a[6]=  1.18901426E-04;		a[7]=  1.55212063E-04;		a[8]=  -1.06855859E-04;
-		a[9]=  -4.93197687E-06;		a[10]=  -2.73739155E-06;		a[11]=   2.65571238E-06;
-		a[12]=  8.96079018E-03;		a[13]=  4.02000000E+00;		a[14]=  2.57000000E-02;
-		break;
-	case 2 : //CH4 Duan 1992
-		*Tc=190.6;
-		*Pc=46.41000; //bar
-		*M=16.04; // g/mol
-		a[0]=8.72553928E-02;		a[1]=-7.52599476E-01;		a[2]=3.75419887E-01;
-		a[3]=1.07291342E-02;		a[4]=5.49626360E-03;		a[5]=-1.84772802E-02;
-		a[6]=3.18993183E-04;		a[7]=2.11079375E-04;		a[8]=2.01682801E-05;
-		a[9]=-1.65606189E-05;		a[10]=1.19614546E-04;		a[11]=-1.08087289E-04;
-		a[12]=4.48262295E-02;		a[13]=7.5397E-01;    		a[14]=7.7167E-02;
-		break;
-	case 5 : // h20 Duan 2006
-		*Tc=647.25;
-		*Pc=22119000; // bar
-		*M=18.01; // g/mol
-		a[0]=4.38269941e-02;			    a[1]=-1.68244362e-01;			a[2]=-2.36923373e-01;
-		a[3]= 1.13027462e-02;	     	a[4]= -7.67764181e-02;			a[5]= 9.71820593e-02;
-		a[6]= 6.62674916e-05;		    a[7]= 1.06637349e-03;			a[8]= -1.23265258e-03;
-		a[9]= -8.93953948e-06;			a[10]= -3.88124606e-05;			a[11]= 5.61510206e-05;
-		a[12]= 7.51274488e-03;			a[13]= 2.51598931e+00;			a[14]= 3.94000000e-02;
-		break;
-	case 6: // co2 Duan 2006
-		*Tc=304.1282;
-		*Pc = 7377300; // bar
-		*M=18.01; // g/mol
-		a[0] = 1.14400435e-01;	        a[1] = -9.38526684e-01;	        a[2] = 7.21857006e-01;
-		a[3] = 8.81072902e-03;	        a[4] = 6.36473911e-02;	        a[5] = -7.70822213e-02;
-		a[6] = 9.01506064e-04;	        a[7] = -6.81834166e-03;	        a[8] = 7.32364258e-03;
-		a[9] = -1.10288237e-04;	        a[10] = 1.26524193e-03;	        a[11] = -1.49730823e-03;
-		a[12] = 7.81940730e-03;	        a[13] = -4.22918013e+00;	    a[14] = 1.58500000e-01;
-		break;
+      case 0 :                                    //CO2, Duan 1992
+         *Tc = 304.1282;
+         *Pc = 73.77300;                          //bar
+         *M=44.01;                                // g/mol
+         a[0]=  8.99288497e-2;      a[1]= -4.94783127e-1;      a[2]=  4.77922245e-2;
+         a[3]=  1.03808883e-2;      a[4]= -2.82516861e-2;      a[5]=  9.49887563e-2;
+         a[6]=  5.20600880e-4;      a[7]= -2.93540971e-4;      a[8]= -1.77265112e-3;
+         a[9]=-2.51101973e-5;    a[10]= 8.93353441e-5;      a[11]= 7.88998563e-5;
+         a[12]=-1.66727022e-2;      a[13]=1.398;      a[14]=2.96e-2;
+         break;
+      case 1 :                                    //H2O Duan 1992
+         *Tc=647.25;
+         *Pc=221.19000;                           //bar
+         *M=18.01;                                // g/mol
+         a[0]=  8.64449220E-02;     a[1]=  -3.96918955E-01;    a[2]=  -5.73334886E-02;
+         a[3]=  -2.93893000E-04;    a[4]=  -4.15775512E-03;    a[5]=  1.99496791E-02;
+         a[6]=  1.18901426E-04;     a[7]=  1.55212063E-04;     a[8]=  -1.06855859E-04;
+         a[9]=  -4.93197687E-06;    a[10]=  -2.73739155E-06;      a[11]=   2.65571238E-06;
+         a[12]=  8.96079018E-03;    a[13]=  4.02000000E+00;    a[14]=  2.57000000E-02;
+         break;
+      case 2 :                                    //CH4 Duan 1992
+         *Tc=190.6;
+         *Pc=46.41000;                            //bar
+         *M=16.04;                                // g/mol
+         a[0]=8.72553928E-02;    a[1]=-7.52599476E-01;      a[2]=3.75419887E-01;
+         a[3]=1.07291342E-02;    a[4]=5.49626360E-03;    a[5]=-1.84772802E-02;
+         a[6]=3.18993183E-04;    a[7]=2.11079375E-04;    a[8]=2.01682801E-05;
+         a[9]=-1.65606189E-05;      a[10]=1.19614546E-04;      a[11]=-1.08087289E-04;
+         a[12]=4.48262295E-02;      a[13]=7.5397E-01;          a[14]=7.7167E-02;
+         break;
+      case 5 :                                    // h20 Duan 2006
+         *Tc=647.25;
+         *Pc=22119000;                            // bar
+         *M=18.01;                                // g/mol
+         a[0]=4.38269941e-02;           a[1]=-1.68244362e-01;        a[2]=-2.36923373e-01;
+         a[3]= 1.13027462e-02;         a[4]= -7.67764181e-02;        a[5]= 9.71820593e-02;
+         a[6]= 6.62674916e-05;          a[7]= 1.06637349e-03;        a[8]= -1.23265258e-03;
+         a[9]= -8.93953948e-06;        a[10]= -3.88124606e-05;       a[11]= 5.61510206e-05;
+         a[12]= 7.51274488e-03;        a[13]= 2.51598931e+00;        a[14]= 3.94000000e-02;
+         break;
+      case 6:                                     // co2 Duan 2006
+         *Tc=304.1282;
+         *Pc = 7377300;                           // bar
+         *M=18.01;                                // g/mol
+         a[0] = 1.14400435e-01;          a[1] = -9.38526684e-01;          a[2] = 7.21857006e-01;
+         a[3] = 8.81072902e-03;          a[4] = 6.36473911e-02;           a[5] = -7.70822213e-02;
+         a[6] = 9.01506064e-04;          a[7] = -6.81834166e-03;          a[8] = 7.32364258e-03;
+         a[9] = -1.10288237e-04;         a[10] = 1.26524193e-03;          a[11] = -1.49730823e-03;
+         a[12] = 7.81940730e-03;         a[13] = -4.22918013e+00;     a[14] = 1.58500000e-01;
+         break;
 
-	default: break;
-	}
+      default: break;
+   }
 
 }
+
 
 //****************************************************************************
 //* task: calculate the virial coefficients of Duans EOS for a certain fluid at
@@ -11491,29 +11759,31 @@ void DuansParameter(int fluid, double  a[14], double *Tc, double *Pc, double *M)
 //CVirialCoefficients DuansVirialCoefficients(int Fluid, double T)
 VirialCoefficients DuansVirialCoefficients(int Fluid, double T)
 {
-	double a[15];
-	double Tc,Pc,M;
-	double R=83.14467; // cmÂ³*bar/(K* mol)
-	//CVirialCoefficients x;	//BG
-	VirialCoefficients x;		//BG
-	DuansParameter(Fluid,a,&Tc,&Pc,&M);
-	double Tr=T/Tc;
+   double a[15];
+   double Tc,Pc,M;
+   double R=83.14467;                             // cm�³*bar/(K* mol)
+   //CVirialCoefficients x;	//BG
+   VirialCoefficients x;                          //BG
+   DuansParameter(Fluid,a,&Tc,&Pc,&M);
+   double Tr=T/Tc;
 
-	x.B = a[0] + a[1]/(Tr*Tr) + a[2]/(Tr*Tr*Tr);
-	x.C = a[3] + a[4]/(Tr*Tr) + a[5]/(Tr*Tr*Tr);
-	x.D = a[6] + a[7]/(Tr*Tr) + a[8]/(Tr*Tr*Tr);
-	x.E = a[9] + a[10]/(Tr*Tr) + a[11]/(Tr*Tr*Tr);
-	x.F = a[12] / (Tr *Tr * Tr);
-	x.b = a[13];
-	x.G = a[14];
-	x.Tc = Tc;
-	x.Pc = Pc;
-	x.Vc = R*Tc/Pc;
-	x.M = M;
-	x.id = Fluid;
+   x.B = a[0] + a[1]/(Tr*Tr) + a[2]/(Tr*Tr*Tr);
+   x.C = a[3] + a[4]/(Tr*Tr) + a[5]/(Tr*Tr*Tr);
+   x.D = a[6] + a[7]/(Tr*Tr) + a[8]/(Tr*Tr*Tr);
+   x.E = a[9] + a[10]/(Tr*Tr) + a[11]/(Tr*Tr*Tr);
+   x.F = a[12] / (Tr *Tr * Tr);
+   x.b = a[13];
+   x.G = a[14];
+   x.Tc = Tc;
+   x.Pc = Pc;
+   x.Vc = R*Tc/Pc;
+   x.M = M;
+   x.id = Fluid;
 
-	return x;
+   return x;
 }
+
+
 //****************************************************************************
 //* task: find compressibility factor of a mixture component
 //*  note: P in bar! (1e5 Pa)
@@ -11522,10 +11792,12 @@ VirialCoefficients DuansVirialCoefficients(int Fluid, double T)
 //double DuanMixCompressibility(double T,double P,double V,CVirialCoefficients w)
 double DuanMixCompressibility(double T,double P,double V,VirialCoefficients w)
 {
-	double R= 83.14472;
-    return P*V/R/T - 1 - w.B/V - w.C/(V*V) - w.D/(V*V*V*V)- w.E/(V*V*V*V*V) - w.F/(V*V) * (w.b + w.G/(V*V) ) * exp(-w.G/(V*V));
+   double R= 83.14472;
+   return P*V/R/T - 1 - w.B/V - w.C/(V*V) - w.D/(V*V*V*V)- w.E/(V*V*V*V*V) - w.F/(V*V) * (w.b + w.G/(V*V) ) * exp(-w.G/(V*V));
 
 }
+
+
 //****************************************************************************
 //* this function mixes all virial coefficients of two fluids for DUAN EOS with
 //* respect to temperature and mole fraction
@@ -11540,109 +11812,101 @@ double DuanMixCompressibility(double T,double P,double V,VirialCoefficients w)
 void MixDuansVirialCoefficients(VirialCoefficients fluid_a, VirialCoefficients fluid_b, double T, double x_0, VirialCoefficients*mix)
 {
 
-	// this code may look weird, I tried to avoid functions like pow() to increase speed
+   // this code may look weird, I tried to avoid functions like pow() to increase speed
 
-	double Bij,Cij,Dij,Eij,Fij,Gij;
-	double Vcij;
-	double B[2],C[2],D[2],E[2],F[2],G[2],bi[2],MM[2];
-	double Vc[2];
-	double x[2];
+   double Bij,Cij,Dij,Eij,Fij,Gij;
+   double Vcij;
+   double B[2],C[2],D[2],E[2],F[2],G[2],bi[2],MM[2];
+   double Vc[2];
+   double x[2];
 
+   double BVc=0;
+   double CVc=0;
+   double DVc=0;
+   double EVc=0;
+   double FVc=0;
+   double b=0;
+   double GVc=0;
 
-	double BVc=0;
-	double CVc=0;
-	double DVc=0;
-	double EVc=0;
-	double FVc=0;
-	double b=0;
-	double GVc=0;
+   double Vcr=0;
+   double M=0;
 
-	double Vcr=0;
-	double M=0;
+   double V2,V3,V5,V6;
 
+   Vc[0]=fluid_a.Vc; Vc[1]=fluid_b.Vc;
+   MM[0]=fluid_a.M;  MM[1]=fluid_b.M;
 
-	double V2,V3,V5,V6;
+   B[0]=fluid_a.B;   B[1]=fluid_b.B;
+   C[0]=fluid_a.C;   C[1]=fluid_b.C;
+   D[0]=fluid_a.D;   D[1]=fluid_b.D;
+   E[0]=fluid_a.E;   E[1]=fluid_b.E;
+   F[0]=fluid_a.F;   F[1]=fluid_b.F;
+   bi[0]=fluid_a.b; bi[1]=fluid_b.b;
+   G[0]=fluid_a.G;   G[1]=fluid_b.G;
 
-	Vc[0]=fluid_a.Vc;	Vc[1]=fluid_b.Vc;
-	MM[0]=fluid_a.M;	MM[1]=fluid_b.M;
+   x[0] = x_0; x[1] = 1 - x[0];
 
-	B[0]=fluid_a.B;	B[1]=fluid_b.B;
-	C[0]=fluid_a.C;	C[1]=fluid_b.C;
-	D[0]=fluid_a.D;	D[1]=fluid_b.D;
-	E[0]=fluid_a.E;	E[1]=fluid_b.E;
-	F[0]=fluid_a.F;	F[1]=fluid_b.F;
-	bi[0]=fluid_a.b; bi[1]=fluid_b.b;
-	G[0]=fluid_a.G;	G[1]=fluid_b.G;
+   for (int i=0;i<2;i++)
+   {
+      b += x[i]*bi[i];
+      Vcr += x[i]*Vc[i];
+      M += x[i]*MM[i];
+      for (int j=0;j<2;j++)
+      {
+         double B1= ((W3(B[i])+W3(B[j]))/2);
+         double F1= ((W3(F[i])+W3(F[j]))/2);
+         V2= ((W3(Vc[i])+W3(Vc[j]))/2);
 
-	x[0] = x_0;	x[1] = 1 - x[0];
+         Bij = B1*B1*B1*bip(1,fluid_a.id,fluid_b.id,i,j,0,T);
+         Fij = F1*F1*F1;
+         Vcij= V2*V2*V2;
+         BVc += x[i] * x[j] * Bij * Vcij;
+         FVc += x[i] * x[j] * Fij *Vcij*Vcij;
+         for (int k=0;k<2;k++)
+         {
+            double C1=((W3(C[i])+W3(C[j])+W3(C[k]))/3);
+            double G1=((W3(G[i])+W3(G[j])+W3(G[k]))/3);
+            V3=((W3(Vc[i])+W3(Vc[j])+W3(Vc[k]))/3);
+            Cij = C1*C1*C1*bip(2,fluid_a.id,fluid_b.id,i,j,k,T);
+            Gij = G1*G1*G1*bip(3,fluid_a.id,fluid_b.id,i,j,k,T);
+            Vcij= V3*V3*V3;
+            CVc += x[i] * x[j] * x[k] * Cij * Vcij*Vcij;
+            GVc += x[i] * x[j] * x[k] * Gij * Vcij*Vcij;
+            for (int l=0;l<2;l++)
+               for (int m=0;m<2;m++)
+            {
+               double D1=((W3(D[i])+W3(D[j])+W3(D[k])+W3(D[l])+W3(D[m]))/5);
+               V5=((W3(Vc[i])+W3(Vc[j])+W3(Vc[k])+W3(Vc[l])+W3(Vc[m]))/5);
+               Dij = D1*D1*D1;
+               Vcij= V5*V5*V5;
+               DVc += x[i] * x[j] * x[k] * x[l] * x[m] * Dij * Vcij * Vcij * Vcij * Vcij;
+               for (int n=0;n<2;n++)
+               {
+                  double E1=((W3(E[i])+W3(E[j])+W3(E[k])+W3(E[l])+W3(E[m])+W3(E[n]))/6);
+                  V6=((W3(Vc[i])+W3(Vc[j])+W3(Vc[k])+W3(Vc[l])+W3(Vc[m])+W3(Vc[n]))/6);
+                  Eij = E1*E1*E1;
+                  Vcij= V6*V6*V6;
+                  EVc += x[i] * x[j] * x[k] * x[l] * x[m] * x[n] * Eij * Vcij * Vcij * Vcij * Vcij * Vcij;
+               }                                  //ijklmn
 
+            }                                     //ijklm
+         }                                        //ijk
+      }                                           //ij
+   }                                              //i
 
-
-
-
-	for (int i=0;i<2;i++)
-	{
-		b += x[i]*bi[i];
-		Vcr += x[i]*Vc[i];
-		M += x[i]*MM[i];
-		for (int j=0;j<2;j++)
-		{
-			double B1= ((W3(B[i])+W3(B[j]))/2);
-			double F1= ((W3(F[i])+W3(F[j]))/2);
-			V2= ((W3(Vc[i])+W3(Vc[j]))/2);
-
-			Bij = B1*B1*B1*bip(1,fluid_a.id,fluid_b.id,i,j,0,T);
-			Fij = F1*F1*F1;
-			Vcij= V2*V2*V2;
-			BVc += x[i] * x[j] * Bij * Vcij;
-			FVc += x[i] * x[j] * Fij *Vcij*Vcij;
-			for (int k=0;k<2;k++)
-			{
-				double C1=((W3(C[i])+W3(C[j])+W3(C[k]))/3);
-				double G1=((W3(G[i])+W3(G[j])+W3(G[k]))/3);
-				V3=((W3(Vc[i])+W3(Vc[j])+W3(Vc[k]))/3);
-				Cij = C1*C1*C1*bip(2,fluid_a.id,fluid_b.id,i,j,k,T);
-				Gij = G1*G1*G1*bip(3,fluid_a.id,fluid_b.id,i,j,k,T);
-				Vcij= V3*V3*V3;
-				CVc += x[i] * x[j] * x[k] * Cij * Vcij*Vcij;
-				GVc += x[i] * x[j] * x[k] * Gij * Vcij*Vcij;
-				for (int l=0;l<2;l++)
-					for (int m=0;m<2;m++)
-					{
-						double D1=((W3(D[i])+W3(D[j])+W3(D[k])+W3(D[l])+W3(D[m]))/5);
-						V5=((W3(Vc[i])+W3(Vc[j])+W3(Vc[k])+W3(Vc[l])+W3(Vc[m]))/5);
-						Dij = D1*D1*D1;
-						Vcij= V5*V5*V5;
-						DVc += x[i] * x[j] * x[k] * x[l] * x[m] * Dij * Vcij * Vcij * Vcij * Vcij;
-						for (int n=0;n<2;n++)
-						{
-							double E1=((W3(E[i])+W3(E[j])+W3(E[k])+W3(E[l])+W3(E[m])+W3(E[n]))/6);
-							V6=((W3(Vc[i])+W3(Vc[j])+W3(Vc[k])+W3(Vc[l])+W3(Vc[m])+W3(Vc[n]))/6);
-							Eij = E1*E1*E1;
-							Vcij= V6*V6*V6;
-							EVc += x[i] * x[j] * x[k] * x[l] * x[m] * x[n] * Eij * Vcij * Vcij * Vcij * Vcij * Vcij;
-						}//ijklmn
-
-					}//ijklm
-			}//ijk
-		} //ij
-	} //i
-
-
-
-
-	mix->B=BVc;
-	mix->C=CVc;
-	mix->D=DVc;
-	mix->E=EVc;
-	mix->F=FVc;
-	mix->b=b;
-	mix->G=GVc;
-	mix->M=M;
-	mix->Vc=Vcr;
-
+   mix->B=BVc;
+   mix->C=CVc;
+   mix->D=DVc;
+   mix->E=EVc;
+   mix->F=FVc;
+   mix->b=b;
+   mix->G=GVc;
+   mix->M=M;
+   mix->Vc=Vcr;
 
 }
+
+
 //****************************************************************************
 //* task: returns the density of a mixture of two gases (fluid1 and fluid2),
 //*  where:
@@ -11654,125 +11918,131 @@ void MixDuansVirialCoefficients(VirialCoefficients fluid_a, VirialCoefficients f
 //*****************************************************************************/
 double DuansMixingRule(double T, double P, double x, int fluid1, int fluid2, bool neu)
 {
-	(void)neu; // unused
-	P/=1e5;
-	//CVirialCoefficients u,v,w;
-	VirialCoefficients u,v,w;
+   (void)neu;                                     // unused
+   P/=1e5;
+   //CVirialCoefficients u,v,w;
+   VirialCoefficients u,v,w;
 
-	u=DuansVirialCoefficients(fluid1,T);
-	v=DuansVirialCoefficients(fluid2,T);
-	MixDuansVirialCoefficients(u,v,T,x,&w);
+   u=DuansVirialCoefficients(fluid1,T);
+   v=DuansVirialCoefficients(fluid2,T);
+   MixDuansVirialCoefficients(u,v,T,x,&w);
 
+   double V1,V2;
+   int n=0;
+   double V;
 
-	double V1,V2;
-	int n=0;
-	double V;
+   double R=83.14467;
 
-	double R=83.14467;
+   double dev_1,dev_2,dev;
 
-	double dev_1,dev_2,dev;
+   V1 = 6.0;
+   dev_1 = DuanMixCompressibility(T,P,V1,w);
+   V = V1;
 
-	V1 = 6.0;
-	dev_1 = DuanMixCompressibility(T,P,V1,w);
-	V = V1;
+   //while (true) {
+   //	V = V + 2.0;
+   //	n++;
+   //	dev = DuansCompressibility(T,P,V,w);
 
-	//while (true) {
-	//	V = V + 2.0;
-	//	n++;
-	//	dev = DuansCompressibility(T,P,V,w);
+   //	if (V<=50){
+   //		if (dev <= dev_1)
+   //		{
+   //			V1=V;
+   //			dev_1=dev;
+   //		} }else
+   //		{
+   //			//cout << " loop 1 left after " << n << " circles "<< endl;
+   //			break;
+   //		}
+   //}*/
 
-	//	if (V<=50){
-	//		if (dev <= dev_1)
-	//		{
-	//			V1=V;
-	//			dev_1=dev;
-	//		} }else
-	//		{
-	//			//cout << " loop 1 left after " << n << " circles "<< endl;
-	//			break;
-	//		}
-	//}*/
+   for (int i=(int)V1;i<51;i+=2)
+   {
+      V+=2;
+      dev = DuanMixCompressibility(T,P,V,w);
+      if (dev <= dev_1) {V1 = V; dev_1 = dev;}
+   }
 
-	for (int i=(int)V1;i<51;i+=2)
-	{   V+=2;
-		dev = DuanMixCompressibility(T,P,V,w);
-		if (dev <= dev_1) {V1 = V; dev_1 = dev;}
-	}
+   // Find the first maximum point as V_2
+   V2 = V1;
+   dev_2 = DuanMixCompressibility(T,P,V2,w);
+   V = V2;
 
+   n=0;
+   while(true)
+   {
+      n++;
+      V = V + 2.0;
+      dev = DuanMixCompressibility(T,P,V,w);
 
-	// Find the first maximum point as V_2
-	V2 = V1;
-	dev_2 = DuanMixCompressibility(T,P,V2,w);
-	V = V2;
+      if (V <= max(R*T/P,1000.0))
+      {
+         if (dev > dev_2)
+         {
+            V2=V;
+            dev_2 = dev;
+         }
+         else
+         {
+            //cout << " loop 2 left after " << n << " circles "<< endl;
+            break;
+         }
+         //goto l400;
+      }
+      else
+      {
+         //cout << " loop 2 left after " << n << " circles "<< endl;
+         break;
+      }
+   }
 
-n=0;
-	while(true)
-	{
-		n++;
-		V = V + 2.0;
-		dev = DuanMixCompressibility(T,P,V,w);
+   // Get the solution of volume with divition method
+   n=0;
+   while (true)
+   {
 
+      dev_1 = DuanMixCompressibility(T,P,V1,w);
+      dev_2 = DuanMixCompressibility(T,P,V2,w);
 
-		if (V <= max(R*T/P,1000.0))
-		{
-			if (dev > dev_2)
-			{
-				V2=V;
-				dev_2 = dev;
-			} else {
-				//cout << " loop 2 left after " << n << " circles "<< endl;
-				break;}
-			//goto l400;
-		} else {
-			//cout << " loop 2 left after " << n << " circles "<< endl;
-			break;}
-	}
+      if ((dev_1*dev_2) > 0.0)
+      {
+         V2=V2+1;
 
-	// Get the solution of volume with divition method
-n=0;
-	while (true) {
+      }
+      else
+      {
 
-		dev_1 = DuanMixCompressibility(T,P,V1,w);
-		dev_2 = DuanMixCompressibility(T,P,V2,w);
+         V = ( V1 + V2 ) / 2.0;
 
+         dev = DuanMixCompressibility(T,P,V,w);
 
-		if ((dev_1*dev_2) > 0.0)
-		{
-			V2=V2+1;
+         if (fabs(dev) < 1.0e-5)
+         {
+            //cout << " returning after " << n << " iterations " << endl;
+            return w.M/V*1000;
+         }
 
-		} else {
+         if ((dev_1*dev)> 0.0)
+         {
+            V1=V;
+         } else if (dev_2*dev > 0.0)
+         {
+            V2=V;
+         }
+         n++;
+         if (n>1000)
+         {
+            cout << " max it reached " << endl;
+            return -1;                            // Max it
+         }
 
+      }
+   }
 
-			V = ( V1 + V2 ) / 2.0;
-
-			dev = DuanMixCompressibility(T,P,V,w);
-
-
-			if (fabs(dev) < 1.0e-5)
-					{
-					//cout << " returning after " << n << " iterations " << endl;
-					return w.M/V*1000;
-					}
-
-			if ((dev_1*dev)> 0.0)
-			{
-				V1=V;
-			} else if (dev_2*dev > 0.0)
-			{
-				V2=V;
-			}
-			n++;
-			if (n>1000) {
-				cout << " max it reached " << endl;
-				return -1; // Max it
-			}
-
-		}
-	}
-
-	cout << "This should not happen. Call NB at TUD!" << endl;
-	return -1;
+   cout << "This should not happen. Call NB at TUD!" << endl;
+   return -1;
 }
+
 
 //-------------------------------------------------------------------------
 //GeoSys - Function: CO2_H2O_NaCl_VLE_isobaric
@@ -11781,209 +12051,214 @@ n=0;
 //Programming: 11/2010 DL, BG
 //Modification:
 //-------------------------------------------------------------------------
-void CRFProcess::CO2_H2O_NaCl_VLE_isobaric(double T, double P, Phase_Properties &vapor, Phase_Properties &liquid, Phase_Properties &solid, int f){
-	//f ---  1 V-L-S, 2 V-L, 3 CO2-L-S, 4 CO2-L
+void CRFProcess::CO2_H2O_NaCl_VLE_isobaric(double T, double P, Phase_Properties &vapor, Phase_Properties &liquid, Phase_Properties &solid, int f)
+{
+   //f ---  1 V-L-S, 2 V-L, 3 CO2-L-S, 4 CO2-L
 
-	double tCO2,tH2O,tNaCl;
-	double wH2O,mNaCl,soluCO2,xCO2,yH2O,AW=1.0; // ,mCO2; unused
-	double a,b,tvCO2,tvH2O,tH2Or,er=1.0e-6,err=1.0e-6;
-	int i,iter_max=100;
-	double Molweight_CO2, Molweight_H2O,Molweight_NaCl;
+   double tCO2,tH2O,tNaCl;
+   double wH2O,mNaCl,soluCO2,xCO2,yH2O,AW=1.0;    // ,mCO2; unused
+   double a,b,tvCO2,tvH2O,tH2Or,er=1.0e-6,err=1.0e-6;
+   int i,iter_max=100;
+   double Molweight_CO2, Molweight_H2O,Molweight_NaCl;
 
-	Molweight_CO2 = 44.009;
-	Molweight_H2O = 18.0148;
-	Molweight_NaCl = 58.443; //ToDo: provide constants once in the whole project
+   Molweight_CO2 = 44.009;
+   Molweight_H2O = 18.0148;
+   Molweight_NaCl = 58.443;                       //ToDo: provide constants once in the whole project
 
+   tCO2=vapor.CO2+liquid.CO2+solid.CO2;
+   tH2O=vapor.H2O+liquid.H2O+solid.H2O;
+   tNaCl=vapor.NaCl+liquid.NaCl+solid.NaCl;
+   yH2O=VLE_fraction_H2O(T,P,AW);                 //water fraction in vapor
+   //	//cout << " yH2O " << yH2O << " xCO2 " << xCO2 << endl;
 
-	tCO2=vapor.CO2+liquid.CO2+solid.CO2;
-	tH2O=vapor.H2O+liquid.H2O+solid.H2O;
-	tNaCl=vapor.NaCl+liquid.NaCl+solid.NaCl;
-	yH2O=VLE_fraction_H2O(T,P,AW);					//water fraction in vapor
-	//	//cout << " yH2O " << yH2O << " xCO2 " << xCO2 << endl;
+   //cout << " flag " << f << endl;
+   //V-L-S
+   if(f==1 || f==2)
+   {
+      //cout << " >>>>> phase equilibrium <<<<< " << endl;
+      a=0.0;
+      b=tCO2;
+      for(i=0;i<iter_max;i++)
+      {
+         tvCO2=(a+b)/2.0;
+         tvH2O=tvCO2*yH2O/(1-yH2O);
+         wH2O=(tH2O-tvH2O)*Molweight_H2O/1000;
 
-	//cout << " flag " << f << endl;
-	//V-L-S
-	if(f==1 || f==2){
-		//cout << " >>>>> phase equilibrium <<<<< " << endl;
-		a=0.0;
-		b=tCO2;
-		for(i=0;i<iter_max;i++){
-			tvCO2=(a+b)/2.0;
-			tvH2O=tvCO2*yH2O/(1-yH2O);
-			wH2O=(tH2O-tvH2O)*Molweight_H2O/1000;
+         mNaCl=tNaCl/wH2O;
+         if(f==1)
+            if(mNaCl>4.5) mNaCl=4.5;              //NaCl solubility calc
 
-			mNaCl=tNaCl/wH2O;
-			if(f==1)
-				if(mNaCl>4.5) mNaCl=4.5; //NaCl solubility calc
+         soluCO2=VLE_solubility_CO2(T,P,mNaCl);
+                                                  //???????????????????????????? (soluCO2 <= tCO2?)
+         xCO2=soluCO2/(soluCO2+1000/Molweight_H2O);
+         tH2Or=tvH2O+(tCO2-tvCO2)*(1-xCO2)/xCO2;
+         //cout << " tH2Or " << tH2Or << " tH2O " << tH2O << endl;
 
-			soluCO2=VLE_solubility_CO2(T,P,mNaCl);
-			xCO2=soluCO2/(soluCO2+1000/Molweight_H2O);						//???????????????????????????? (soluCO2 <= tCO2?)
-			tH2Or=tvH2O+(tCO2-tvCO2)*(1-xCO2)/xCO2;
-			//cout << " tH2Or " << tH2Or << " tH2O " << tH2O << endl;
+         if(abs(tH2Or-tH2O) < er) break;          // two phases coexisting
+         if(tvCO2 < err)                          // single liquid phase
+         {
+            tvCO2=0;
+            break;
+         }
+         if(tCO2-tvCO2 < err)                     // single vapor phase
+         {
+            tvCO2=tCO2;
+            break;
+         }
+         if(tH2Or > tH2O) a=tvCO2;
+         else b=tvCO2;
+      }
 
-			if(abs(tH2Or-tH2O) < er) break; // two phases coexisting
-			if(tvCO2 < err) {               // single liquid phase
-				tvCO2=0;
-				break;
-			}
-			if(tCO2-tvCO2 < err){           // single vapor phase
-				tvCO2=tCO2;
-				break;
-			}
-			if(tH2Or > tH2O) a=tvCO2;
-			else b=tvCO2;
-		}
+      // single liquid phase
+      if(tvCO2==0)
+      {
+         //cout << " >>>>> single liquid phase <<<<< " << endl;
+         vapor.CO2  = 0.0;
+         vapor.H2O  = 0.0;
+         vapor.NaCl = 0.0;
 
+         wH2O=tH2O*Molweight_H2O/1000;
+         mNaCl=tNaCl/wH2O;
+         if(f==1)
+            if(mNaCl>4.5) mNaCl=4.5;              //NaCl solubility calc
 
-		// single liquid phase
-		if(tvCO2==0){
-			//cout << " >>>>> single liquid phase <<<<< " << endl;
-			vapor.CO2  = 0.0;
-			vapor.H2O  = 0.0;
-			vapor.NaCl = 0.0;
+         liquid.CO2 = tCO2;
+         liquid.H2O = tH2O;
+         liquid.NaCl= mNaCl*wH2O;
 
-			wH2O=tH2O*Molweight_H2O/1000;
-			mNaCl=tNaCl/wH2O;
-			if(f==1)
-				if(mNaCl>4.5) mNaCl=4.5; //NaCl solubility calc
+         vapor.temperature=T;
+         vapor.pressure=P;
+         vapor.density= -1.0;
+         vapor.viscosity= -1.0;
+         vapor.volume= 0.0;
+         vapor.mass=0.0;
 
-			liquid.CO2 = tCO2;
-			liquid.H2O = tH2O;
-			liquid.NaCl= mNaCl*wH2O;
+         liquid.temperature=T;
+         liquid.pressure=P;
+         liquid.density=Density_CO2brine(T,P,mNaCl,liquid.CO2/wH2O);
+         liquid.viscosity= -1.0;
+         liquid.mass=liquid.H2O*Molweight_H2O+liquid.CO2*Molweight_CO2+liquid.NaCl*Molweight_NaCl;
+         liquid.volume=liquid.mass/liquid.density;
+      }
 
-			vapor.temperature=T;
-			vapor.pressure=P;
-			vapor.density= -1.0;
-			vapor.viscosity= -1.0;
-			vapor.volume= 0.0;
-			vapor.mass=0.0;
+      // single vapor phase
+      else if(tvCO2==tCO2)
+      {
+         //cout << " >>>>> single vapor phase <<<<< " << endl;
+         vapor.CO2  = tCO2;
+         vapor.H2O  = tH2O;
+         vapor.NaCl = 0.0;
 
-			liquid.temperature=T;
-			liquid.pressure=P;
-			liquid.density=Density_CO2brine(T,P,mNaCl,liquid.CO2/wH2O);
-			liquid.viscosity= -1.0;
-			liquid.mass=liquid.H2O*Molweight_H2O+liquid.CO2*Molweight_CO2+liquid.NaCl*Molweight_NaCl;
-			liquid.volume=liquid.mass/liquid.density;
-		}
+         liquid.CO2 = 0.0;
+         liquid.H2O = 0.0;
+         liquid.NaCl= 0.0;
 
+         liquid.mass=0.0;
+         liquid.volume=0.0;;
 
-		// single vapor phase
-		else if(tvCO2==tCO2){
-			//cout << " >>>>> single vapor phase <<<<< " << endl;
-			vapor.CO2  = tCO2;
-			vapor.H2O  = tH2O;
-			vapor.NaCl = 0.0;
+         solid.NaCl=tNaCl;
 
-			liquid.CO2 = 0.0;
-			liquid.H2O = 0.0;
-			liquid.NaCl= 0.0;
+         vapor.temperature = T;
+         vapor.pressure=P;
 
-			liquid.mass=0.0;
-			liquid.volume=0.0;;
+         vapor.density= VLE_density_CO2(T,P);     //to use mixture fluid EoS
+         vapor.viscosity =-1.0;
+         vapor.mass=vapor.CO2*Molweight_CO2+vapor.H2O*Molweight_H2O;
+         vapor.volume =vapor.mass/vapor.density;
+      }
 
-			solid.NaCl=tNaCl;
+      // two phases coexisting
+      else
+      {
+         //cout << " >>>>> two phases coexisting <<<<< " << endl;
+         vapor.H2O  = tvH2O;
+         vapor.CO2  = tvCO2;
+         vapor.NaCl = 0.0;
 
-			vapor.temperature = T;
-			vapor.pressure=P;
+         liquid.H2O = tH2O-tvH2O;
+         liquid.CO2 = tCO2-tvCO2;
+         liquid.NaCl= mNaCl*wH2O;
 
-			vapor.density= VLE_density_CO2(T,P); //to use mixture fluid EoS
-			vapor.viscosity =-1.0;
-			vapor.mass=vapor.CO2*Molweight_CO2+vapor.H2O*Molweight_H2O;
-			vapor.volume =vapor.mass/vapor.density;
-		}
+         vapor.temperature = T;
+         vapor.density = VLE_density_CO2(T,P);    //to use mixture fluid EoS
+         vapor.viscosity = -1;
+         vapor.mass=vapor.CO2*Molweight_CO2+vapor.H2O*Molweight_H2O;
+         vapor.pressure = VLE_pressure_CO2(T,vapor.density);
+         vapor.volume = vapor.mass/vapor.density;
 
+         liquid.temperature=T;
+         liquid.pressure=P;
+         liquid.density= Density_CO2brine(T,P,mNaCl,soluCO2);
+         liquid.viscosity= -1.0;
+         liquid.mass=liquid.CO2*Molweight_CO2+liquid.H2O*Molweight_H2O+liquid.NaCl*Molweight_NaCl;
+         liquid.volume= liquid.mass/liquid.density;
+      }
+   }
 
-		// two phases coexisting
-		else{
-			//cout << " >>>>> two phases coexisting <<<<< " << endl;
-			vapor.H2O  = tvH2O;
-			vapor.CO2  = tvCO2;
-			vapor.NaCl = 0.0;
+   else if(f==3 || f==4)
+   {
 
-			liquid.H2O = tH2O-tvH2O;
-			liquid.CO2 = tCO2-tvCO2;
-			liquid.NaCl= mNaCl*wH2O;
+      wH2O=tH2O*Molweight_H2O/1000;
+      mNaCl=tNaCl/wH2O;
+      if(f==3)
+         if(mNaCl>4.5) mNaCl=4.5;                 //NaCl solubility calc
+      soluCO2=VLE_solubility_CO2(T,P,mNaCl);
 
-			vapor.temperature = T;
-			vapor.density = VLE_density_CO2(T,P); //to use mixture fluid EoS
-			vapor.viscosity = -1;
-			vapor.mass=vapor.CO2*Molweight_CO2+vapor.H2O*Molweight_H2O;
-			vapor.pressure = VLE_pressure_CO2(T,vapor.density);
-			vapor.volume = vapor.mass/vapor.density;
+      // single liquid phase
+      if(tCO2<soluCO2*wH2O)
+      {
+         //cout << " >>>>> single liquid phase <<<<< " << endl;
+         vapor.CO2  = 0.0;
+         vapor.H2O  = 0.0;
+         vapor.NaCl = 0.0;
 
-			liquid.temperature=T;
-			liquid.pressure=P;
-			liquid.density= Density_CO2brine(T,P,mNaCl,soluCO2);
-			liquid.viscosity= -1.0;
-			liquid.mass=liquid.CO2*Molweight_CO2+liquid.H2O*Molweight_H2O+liquid.NaCl*Molweight_NaCl;
-			liquid.volume= liquid.mass/liquid.density;
-		}
-	}
+         liquid.CO2 = tCO2;
+         liquid.H2O = tH2O;
+         liquid.NaCl= mNaCl*wH2O;
 
+         vapor.temperature=T;
+         vapor.pressure=P;
+         vapor.density= -1.0;
+         vapor.viscosity= -1.0;
+         vapor.volume= 0.0;
+         vapor.mass=0.0;
 
-	else if(f==3 || f==4){
+         liquid.temperature=T;
+         liquid.pressure=P;
+         liquid.density=Density_CO2brine(T,P,mNaCl,liquid.CO2/wH2O);
+         liquid.viscosity= -1.0;
+         liquid.mass=liquid.H2O*Molweight_H2O+liquid.CO2*Molweight_CO2+liquid.NaCl*Molweight_NaCl;
+         liquid.volume=liquid.mass/liquid.density;
 
-		wH2O=tH2O*Molweight_H2O/1000;
-		mNaCl=tNaCl/wH2O;
-		if(f==3)
-			if(mNaCl>4.5) mNaCl=4.5; //NaCl solubility calc
-		soluCO2=VLE_solubility_CO2(T,P,mNaCl);
+      }
 
+      // two phases coexisting
+      else
+      {
+         //cout << " >>>>> two phases coexisting <<<<< " << endl;
+         vapor.H2O  = 0.0;
+         vapor.CO2  = tCO2-soluCO2*wH2O;
+         vapor.NaCl = 0.0;
 
-		// single liquid phase
-		if(tCO2<soluCO2*wH2O){
-			//cout << " >>>>> single liquid phase <<<<< " << endl;
-			vapor.CO2  = 0.0;
-			vapor.H2O  = 0.0;
-			vapor.NaCl = 0.0;
+         liquid.H2O = tH2O;
+         liquid.CO2 = soluCO2*wH2O;
+         liquid.NaCl= mNaCl*wH2O;
 
-			liquid.CO2 = tCO2;
-			liquid.H2O = tH2O;
-			liquid.NaCl= mNaCl*wH2O;
+         vapor.temperature = T;
+         vapor.density = VLE_density_CO2(T,P);    //to use mixture fluid EoS
+         vapor.viscosity = -1;
+         vapor.mass=vapor.CO2*Molweight_CO2+vapor.H2O*Molweight_H2O;
+         vapor.pressure = VLE_pressure_CO2(T,vapor.density);
+         vapor.volume = vapor.mass/vapor.density;
 
-			vapor.temperature=T;
-			vapor.pressure=P;
-			vapor.density= -1.0;
-			vapor.viscosity= -1.0;
-			vapor.volume= 0.0;
-			vapor.mass=0.0;
-
-			liquid.temperature=T;
-			liquid.pressure=P;
-			liquid.density=Density_CO2brine(T,P,mNaCl,liquid.CO2/wH2O);
-			liquid.viscosity= -1.0;
-			liquid.mass=liquid.H2O*Molweight_H2O+liquid.CO2*Molweight_CO2+liquid.NaCl*Molweight_NaCl;
-			liquid.volume=liquid.mass/liquid.density;
-
-		}
-
-
-		// two phases coexisting
-		else{
-			//cout << " >>>>> two phases coexisting <<<<< " << endl;
-			vapor.H2O  = 0.0;
-			vapor.CO2  = tCO2-soluCO2*wH2O;
-			vapor.NaCl = 0.0;
-
-			liquid.H2O = tH2O;
-			liquid.CO2 = soluCO2*wH2O;
-			liquid.NaCl= mNaCl*wH2O;
-
-			vapor.temperature = T;
-			vapor.density = VLE_density_CO2(T,P); //to use mixture fluid EoS
-			vapor.viscosity = -1;
-			vapor.mass=vapor.CO2*Molweight_CO2+vapor.H2O*Molweight_H2O;
-			vapor.pressure = VLE_pressure_CO2(T,vapor.density);
-			vapor.volume = vapor.mass/vapor.density;
-
-			liquid.temperature=T;
-			liquid.pressure=P;
-			liquid.density= Density_CO2brine(T,P,mNaCl,soluCO2);
-			liquid.viscosity= -1.0;
-			liquid.mass=liquid.CO2*Molweight_CO2+liquid.H2O*Molweight_H2O+liquid.NaCl*Molweight_NaCl;
-			liquid.volume= liquid.mass/liquid.density;
-		}
-	}
+         liquid.temperature=T;
+         liquid.pressure=P;
+         liquid.density= Density_CO2brine(T,P,mNaCl,soluCO2);
+         liquid.viscosity= -1.0;
+         liquid.mass=liquid.CO2*Molweight_CO2+liquid.H2O*Molweight_H2O+liquid.NaCl*Molweight_NaCl;
+         liquid.volume= liquid.mass/liquid.density;
+      }
+   }
 };
 
 //-------------------------------------------------------------------------
@@ -11993,47 +12268,52 @@ void CRFProcess::CO2_H2O_NaCl_VLE_isobaric(double T, double P, Phase_Properties 
 //Programming: 11/2010 DL, BG
 //Modification:
 //-------------------------------------------------------------------------
-void CRFProcess::CO2_H2O_NaCl_VLE_isochoric(Phase_Properties &vapor, Phase_Properties &liquid, Phase_Properties &solid, int f){
-	//f ---  1 V-L-S, 2 V-L, 3 CO2-L-S, 4 CO2-L
+void CRFProcess::CO2_H2O_NaCl_VLE_isochoric(Phase_Properties &vapor, Phase_Properties &liquid, Phase_Properties &solid, int f)
+{
+   //f ---  1 V-L-S, 2 V-L, 3 CO2-L-S, 4 CO2-L
 
-	int i,i_max=100;
-	double V, V0, P1 = 0.0, P2 = 0.0;
-	double err=1.0e-4;
-	double T, P;
+   int i,i_max=100;
+   double V, V0, P1 = 0.0, P2 = 0.0;
+   double err=1.0e-4;
+   double T, P;
 
-	T = vapor.temperature;
-	P = vapor.pressure;
+   T = vapor.temperature;
+   P = vapor.pressure;
 
-	V0=vapor.volume+liquid.volume;
-	CO2_H2O_NaCl_VLE_isobaric(T, P, vapor, liquid, solid, f);
-	V=vapor.volume+liquid.volume;
+   V0=vapor.volume+liquid.volume;
+   CO2_H2O_NaCl_VLE_isobaric(T, P, vapor, liquid, solid, f);
+   V=vapor.volume+liquid.volume;
 
-	//cout << " V input " << V << endl;
+   //cout << " V input " << V << endl;
 
-	if(abs(V-V0)<err)
-		return;
-	else if(V>V0){
-		P1=P;
-		P2=5.0*P;		//P2=5.0*P;
-	}
-	else if(V<V0){
-		P1=0.2*P;		//P1=0.2*P;
-		P2=P;
-	}
+   if(abs(V-V0)<err)
+      return;
+   else if(V>V0)
+   {
+      P1=P;
+      P2=5.0*P;                                   //P2=5.0*P;
+   }
+   else if(V<V0)
+   {
+      P1=0.2*P;                                   //P1=0.2*P;
+      P2=P;
+   }
 
-	for(i=0;i<i_max;i++){
-		P=0.5*(P1+P2);
-		CO2_H2O_NaCl_VLE_isobaric(T, P, vapor, liquid, solid, f);
-		V=vapor.volume+liquid.volume;
-		//cout << P << " " << V << endl;
-		if(abs(V0-V)<err)
-			break;
-		else if(V<V0)
-			P2=P;
-		else if(V>V0)
-			P1=P;
-	}
+   for(i=0;i<i_max;i++)
+   {
+      P=0.5*(P1+P2);
+      CO2_H2O_NaCl_VLE_isobaric(T, P, vapor, liquid, solid, f);
+      V=vapor.volume+liquid.volume;
+      //cout << P << " " << V << endl;
+      if(abs(V0-V)<err)
+         break;
+      else if(V<V0)
+         P2=P;
+      else if(V>V0)
+         P1=P;
+   }
 }
+
 
 //-------------------------------------------------------------------------
 //GeoSys - Function: CalculateFluidDensitiesAndViscositiesAtNodes
@@ -12044,233 +12324,272 @@ void CRFProcess::CO2_H2O_NaCl_VLE_isochoric(Phase_Properties &vapor, Phase_Prope
 //-------------------------------------------------------------------------
 void CRFProcess::CalculateFluidDensitiesAndViscositiesAtNodes(CRFProcess *m_pcs)
 {
-	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-	Mesh_Group::CElem* m_ele = NULL;
-	Mesh_Group::CNode* m_node = NULL;
-	double saturation_gas, saturation_liquid;
-	double Molweight_CO2, Molweight_H2O, Molweight_NaCl;
-	double Density_gas, Density_liquid, Density_pureCO2, Viscosity_liquid, Viscosity_gas;
-	double c_CO2inLiquid, c_NaClinLiquid, c_H2OinGas; // ,c_H2OinLiquid; unused
-	double b_CO2inPureWater, b_NaClinPureWater, b_H2OinPureCO2;
-	double mass_gas;
-	double volume_liquid, volume_gas, node_volume, porosity; // ,Volume_eff; unused
-	double saturation_gas_min, saturation_liquid_min; // ,saturation_liquid_effective ,saturation_gas_effective; unused
-	int variable_index, indexProcess;
-	CMediumProperties *MediaProp;
-	CFluidProperties *FluidProp;
-	CRFProcess *pcs_MassTransport;
-	double pressure, temperature;
-	int MassTransportID[5] = {0,0,0,0,0};
-	int MaterialGroup = 0;
-	int TimeStepVariableIndex = 1;
-	clock_t start,finish;
-	double time;
-	double a, b, temp_density;														// unit: [kg/m³]
-	double wCO2, wNaCl, wH2O;														// unit: [kg/kg]
-	double epsilon = 1e-2;
-	int iter_max = 100;
+   CFEMesh* m_msh = fem_msh_vector[0];            //SB: ToDo hart gesetzt
+   Mesh_Group::CElem* m_ele = NULL;
+   Mesh_Group::CNode* m_node = NULL;
+   double saturation_gas, saturation_liquid;
+   double Molweight_CO2, Molweight_H2O, Molweight_NaCl;
+   double Density_gas, Density_liquid, Density_pureCO2, Viscosity_liquid, Viscosity_gas;
+                                                  // ,c_H2OinLiquid; unused
+   double c_CO2inLiquid, c_NaClinLiquid, c_H2OinGas;
+   double b_CO2inPureWater, b_NaClinPureWater, b_H2OinPureCO2;
+   double mass_gas;
+                                                  // ,Volume_eff; unused
+   double volume_liquid, volume_gas, node_volume, porosity;
+                                                  // ,saturation_liquid_effective ,saturation_gas_effective; unused
+   double saturation_gas_min, saturation_liquid_min;
+   int variable_index, indexProcess;
+   CMediumProperties *MediaProp;
+   CFluidProperties *FluidProp;
+   CRFProcess *pcs_MassTransport;
+   double pressure, temperature;
+   int MassTransportID[5] = {0,0,0,0,0};
+   int MaterialGroup = 0;
+   int TimeStepVariableIndex = 1;
+   clock_t start,finish;
+   double time;
+   double a, b, temp_density;                     // unit: [kg/m³]
+   double wCO2, wNaCl, wH2O;                      // unit: [kg/kg]
+   double epsilon = 1e-2;
+   int iter_max = 100;
 
-	start = clock();
+   start = clock();
 
-	//for initial conditions variable index is the first index, for other timesteps variable index is the second index
-	if (m_pcs->Tim->step_current == 1)
-		TimeStepVariableIndex = 0;
-	else
-		TimeStepVariableIndex = 1;
+   //for initial conditions variable index is the first index, for other timesteps variable index is the second index
+   if (m_pcs->Tim->step_current == 1)
+      TimeStepVariableIndex = 0;
+   else
+      TimeStepVariableIndex = 1;
 
-	Molweight_CO2 = 44.009;		// [g/mol]
-	Molweight_H2O = 18.0148;	// [g/mol]
-	Molweight_NaCl = 58.443;	// [g/mol]				//ToDo: provide constants once in the whole project
+   Molweight_CO2 = 44.009;                        // [g/mol]
+   Molweight_H2O = 18.0148;                       // [g/mol]
+   Molweight_NaCl = 58.443;                       // [g/mol]				//ToDo: provide constants once in the whole project
 
-	saturation_gas_min = 0.00001;
-	saturation_liquid_min = 0.00001;
+   saturation_gas_min = 0.00001;
+   saturation_liquid_min = 0.00001;
 
-	for (long i = 0; i < (long)m_msh->nod_vector.size(); i++){
-		m_node = m_msh->nod_vector[i]; // get element
-		node_volume = 0;
+   for (long i = 0; i < (long)m_msh->nod_vector.size(); i++)
+   {
+      m_node = m_msh->nod_vector[i];              // get element
+      node_volume = 0;
 
-				//calculate Porevolume for the node based on connected elements
-		for (size_t j = 0; j < m_node->getConnectedElementIDs().size(); j++) {
-			m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
-			MaterialGroup = m_ele->GetPatchIndex();
-			MediaProp = mmp_vector[MaterialGroup];
-			porosity = MediaProp->Porosity(m_ele->GetIndex(), m_pcs->m_num->ls_theta);
-			node_volume = node_volume + m_ele->GetVolume() / m_ele->GetNodesNumber(false) * porosity;				// ToDo: Correct calculation of node volume
-		}
+      //calculate Porevolume for the node based on connected elements
+      for (size_t j = 0; j < m_node->getConnectedElementIDs().size(); j++)
+      {
+         m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
+         MaterialGroup = m_ele->GetPatchIndex();
+         MediaProp = mmp_vector[MaterialGroup];
+         porosity = MediaProp->Porosity(m_ele->GetIndex(), m_pcs->m_num->ls_theta);
+                                                  // ToDo: Correct calculation of node volume
+         node_volume = node_volume + m_ele->GetVolume() / m_ele->GetNodesNumber(false) * porosity;
+      }
 
-		//get pressure, temperature and saturations
-		variable_index = m_pcs->GetNodeValueIndex("PRESSURE2") + TimeStepVariableIndex; //+1... new time level
-		pressure = m_pcs->GetNodeValue(i, variable_index) / 1e5;				// unit: bar!!! Assuming that the non wetting phase pressure is the correct one
-		if(!T_Process)  {
-			// Get reference temperature if no heat transport is used
-			FluidProp = MFPGet("LIQUID");
-			temperature = FluidProp->T_0;
-		}
-		else {
-			CRFProcess *HeatProcess = PCSGet("HEAT_TRANSPORT");
-			variable_index = HeatProcess->GetNodeValueIndex("TEMPERATURE1") + TimeStepVariableIndex; //+1... new time level
-			temperature = m_pcs->GetNodeValue(i, variable_index);
-		}
-		variable_index = m_pcs->GetNodeValueIndex("SATURATION1") + TimeStepVariableIndex; //+1... new time level
-		saturation_liquid = m_pcs->GetNodeValue(i, variable_index);
-		saturation_gas = 1 - saturation_liquid;
+      //get pressure, temperature and saturations
+                                                  //+1... new time level
+      variable_index = m_pcs->GetNodeValueIndex("PRESSURE2") + TimeStepVariableIndex;
+                                                  // unit: bar!!! Assuming that the non wetting phase pressure is the correct one
+      pressure = m_pcs->GetNodeValue(i, variable_index) / 1e5;
+      if(!T_Process)
+      {
+         // Get reference temperature if no heat transport is used
+         FluidProp = MFPGet("LIQUID");
+         temperature = FluidProp->T_0;
+      }
+      else
+      {
+         CRFProcess *HeatProcess = PCSGet("HEAT_TRANSPORT");
+                                                  //+1... new time level
+         variable_index = HeatProcess->GetNodeValueIndex("TEMPERATURE1") + TimeStepVariableIndex;
+         temperature = m_pcs->GetNodeValue(i, variable_index);
+      }
+                                                  //+1... new time level
+      variable_index = m_pcs->GetNodeValueIndex("SATURATION1") + TimeStepVariableIndex;
+      saturation_liquid = m_pcs->GetNodeValue(i, variable_index);
+      saturation_gas = 1 - saturation_liquid;
 
-		//calculate liquid and gas volume from saturation
-		//Volume_eff = node_volume * (1 - saturation_gas_min - saturation_liquid_min);		//[m³]
-		volume_liquid = node_volume * saturation_liquid;										//[m³]
-		volume_gas = node_volume * saturation_gas;
+      //calculate liquid and gas volume from saturation
+      //Volume_eff = node_volume * (1 - saturation_gas_min - saturation_liquid_min);		//[m³]
+                                                  //[m³]
+      volume_liquid = node_volume * saturation_liquid;
+      volume_gas = node_volume * saturation_gas;
 
-		//get ID's of mass transport processes
-		for(int j = 0; j < int(pcs_vector.size()); j++)  {
-			pcs_MassTransport = pcs_vector[j];
-			if (pcs_MassTransport->nod_val_name_vector[0] == "H2O")
-				MassTransportID[0] = j;
-			if ((pcs_MassTransport->nod_val_name_vector[0] == "C(4)") || (pcs_MassTransport->nod_val_name_vector[0] == "CO2_w"))
-				MassTransportID[1] = j;
-			if (pcs_MassTransport->nod_val_name_vector[0] == "NaCl")
-				MassTransportID[2] = j;
-			if (pcs_MassTransport->nod_val_name_vector[0] == "CO2")
-				MassTransportID[3] = j;
-			if (pcs_MassTransport->nod_val_name_vector[0] == "H2O_gas")
-				MassTransportID[4] = j;
-		}
+      //get ID's of mass transport processes
+      for(int j = 0; j < int(pcs_vector.size()); j++)
+      {
+         pcs_MassTransport = pcs_vector[j];
+         if (pcs_MassTransport->nod_val_name_vector[0] == "H2O")
+            MassTransportID[0] = j;
+         if ((pcs_MassTransport->nod_val_name_vector[0] == "C(4)") || (pcs_MassTransport->nod_val_name_vector[0] == "CO2_w"))
+            MassTransportID[1] = j;
+         if (pcs_MassTransport->nod_val_name_vector[0] == "NaCl")
+            MassTransportID[2] = j;
+         if (pcs_MassTransport->nod_val_name_vector[0] == "CO2")
+            MassTransportID[3] = j;
+         if (pcs_MassTransport->nod_val_name_vector[0] == "H2O_gas")
+            MassTransportID[4] = j;
+      }
 
-		//Read CO2 concentration in water and calculate moles of CO2 in liquid phase
-		indexProcess = MassTransportID[1];
-		variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex; // +1: new timelevel
-		c_CO2inLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);		//[mol/m³]
+      //Read CO2 concentration in water and calculate moles of CO2 in liquid phase
+      indexProcess = MassTransportID[1];
+                                                  // +1: new timelevel
+      variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex;
+                                                  //[mol/m³]
+      c_CO2inLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);
 
-		//Read NaCl concentration in water and calculate moles of NaCl in liquid phase
-		indexProcess = MassTransportID[2];
-		variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex; // +1: new timelevel
-		c_NaClinLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);		//[mol/m³]
+      //Read NaCl concentration in water and calculate moles of NaCl in liquid phase
+      indexProcess = MassTransportID[2];
+                                                  // +1: new timelevel
+      variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex;
+                                                  //[mol/m³]
+      c_NaClinLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);
 
-		if (saturation_liquid > 0) {
-			//Determine moles of water in liquid phase
-			//calculate liquid density for initial conditions
-			//estimate density -> calculate moles of components -> calculate real density -> compare with estimation -> loop until similar values
-			a = 800;	//estimated range of valid density [kg/m³]
-			b = 1800;
-			for(int j = 0; j < iter_max; j++){
-				temp_density = (a + b) / 2.0;
-				wCO2 = c_CO2inLiquid / temp_density * Molweight_CO2 / 1000;		// mass fraction of kg CO2 per kg liquid (mol/m³ * m³/kg * g/mol / 1000) = kg/kg
-				wNaCl = c_NaClinLiquid / temp_density * Molweight_NaCl / 1000;	// mass fraction of kg NaCl per kg liquid (mol/m³ * m³/kg * g/mol / 1000) = kg/kg
-				wH2O = 1 - wCO2 - wNaCl;												// mass fraction of kg H2O per kg liquid
-				//Molality = concentration in mol per kg of solution / mass fraction of solvent = mol per kg solvent
-				b_CO2inPureWater = c_CO2inLiquid / temp_density * 1 / wH2O;		// Molality of CO2 in mol per kg pure water (mol/m³ * m³/kg) = mol/kg
-				b_NaClinPureWater = c_NaClinLiquid / temp_density * 1 / wH2O;	// Molality of NaCl in mol per kg pure water (mol/m³ * m³/kg) = mol/kg
-				// new estimate of density of brine with estimated concentration of CO2 and NaCl in mol per kg pure water
-				Density_liquid = 1000 * Density_CO2brine(temperature, pressure, b_NaClinPureWater, b_CO2inPureWater); //function provides g/cm³ -> Density_liquid [kg/m³]
-				//cout.precision(8);
-				//cout << "Iteration: " << j << " estimated: " << temp_density << " calculated: " << Density_liquid << " a: " << a  << " b: " << b << endl;
-				//compare density with density estimation
-				if (Density_liquid < 0)
-					break;
-				if (fabs(Density_liquid - temp_density) < epsilon)
-					break;
-				else if (Density_liquid < temp_density) {
-					b = temp_density;
-				}
-				else if (Density_liquid > temp_density) {
-					a = temp_density;
-				}
-			}
-			//if (i == 230)
-			//	cout << i << endl;
+      if (saturation_liquid > 0)
+      {
+         //Determine moles of water in liquid phase
+         //calculate liquid density for initial conditions
+         //estimate density -> calculate moles of components -> calculate real density -> compare with estimation -> loop until similar values
+         a = 800;                                 //estimated range of valid density [kg/m³]
+         b = 1800;
+         for(int j = 0; j < iter_max; j++)
+         {
+            temp_density = (a + b) / 2.0;
+                                                  // mass fraction of kg CO2 per kg liquid (mol/m³ * m³/kg * g/mol / 1000) = kg/kg
+            wCO2 = c_CO2inLiquid / temp_density * Molweight_CO2 / 1000;
+                                                  // mass fraction of kg NaCl per kg liquid (mol/m³ * m³/kg * g/mol / 1000) = kg/kg
+            wNaCl = c_NaClinLiquid / temp_density * Molweight_NaCl / 1000;
+            wH2O = 1 - wCO2 - wNaCl;              // mass fraction of kg H2O per kg liquid
+            //Molality = concentration in mol per kg of solution / mass fraction of solvent = mol per kg solvent
+                                                  // Molality of CO2 in mol per kg pure water (mol/m³ * m³/kg) = mol/kg
+            b_CO2inPureWater = c_CO2inLiquid / temp_density * 1 / wH2O;
+                                                  // Molality of NaCl in mol per kg pure water (mol/m³ * m³/kg) = mol/kg
+            b_NaClinPureWater = c_NaClinLiquid / temp_density * 1 / wH2O;
+            // new estimate of density of brine with estimated concentration of CO2 and NaCl in mol per kg pure water
+                                                  //function provides g/cm³ -> Density_liquid [kg/m³]
+            Density_liquid = 1000 * Density_CO2brine(temperature, pressure, b_NaClinPureWater, b_CO2inPureWater);
+            //cout.precision(8);
+            //cout << "Iteration: " << j << " estimated: " << temp_density << " calculated: " << Density_liquid << " a: " << a  << " b: " << b << endl;
+            //compare density with density estimation
+            if (Density_liquid < 0)
+               break;
+            if (fabs(Density_liquid - temp_density) < epsilon)
+               break;
+            else if (Density_liquid < temp_density)
+            {
+               b = temp_density;
+            }
+            else if (Density_liquid > temp_density)
+            {
+               a = temp_density;
+            }
+         }
+         //if (i == 230)
+         //	cout << i << endl;
 
-			if (Density_liquid < 0) {
-				cout << "Density calculation of water was not possible" << endl;
-				system("Pause");
-				exit(0);
-			}
-			//calculate new moles of H2O
-			//c_H2OinLiquid = (Density_liquid - c_CO2inLiquid * Molweight_CO2 * 1e-3 - c_NaClinLiquid * Molweight_NaCl * 1e-3) / (Molweight_H2O * 1e-3);	//[mol]
-			//indexProcess = MassTransportID[0];		//H2O in liquid
-			//variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
-			//pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_H2OinLiquid);
+         if (Density_liquid < 0)
+         {
+            cout << "Density calculation of water was not possible" << endl;
+            system("Pause");
+            exit(0);
+         }
+         //calculate new moles of H2O
+         //c_H2OinLiquid = (Density_liquid - c_CO2inLiquid * Molweight_CO2 * 1e-3 - c_NaClinLiquid * Molweight_NaCl * 1e-3) / (Molweight_H2O * 1e-3);	//[mol]
+         //indexProcess = MassTransportID[0];		//H2O in liquid
+         //variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
+         //pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_H2OinLiquid);
 
-			//set new density to nodes
-			variable_index = m_pcs->GetNodeValueIndex("DENSITY1");
-			m_pcs->SetNodeValue(i, variable_index, Density_liquid);
+         //set new density to nodes
+         variable_index = m_pcs->GetNodeValueIndex("DENSITY1");
+         m_pcs->SetNodeValue(i, variable_index, Density_liquid);
 
-			//set new viscosity to nodes
-			variable_index = m_pcs->GetNodeValueIndex("VISCOSITY1");
-			Viscosity_liquid = 5.1e-4;
-			m_pcs->SetNodeValue(i, variable_index, Viscosity_liquid);
-		}
+         //set new viscosity to nodes
+         variable_index = m_pcs->GetNodeValueIndex("VISCOSITY1");
+         Viscosity_liquid = 5.1e-4;
+         m_pcs->SetNodeValue(i, variable_index, Viscosity_liquid);
+      }
 
-		if (saturation_gas > 0) {
-			//components in gas
-			//Read H2O concentration in gas and calculate moles of H2O in gas phase
-			indexProcess = MassTransportID[4];
-			variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex; // +1: new timelevel
-			c_H2OinGas = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);			//[mol/m³]
+      if (saturation_gas > 0)
+      {
+         //components in gas
+         //Read H2O concentration in gas and calculate moles of H2O in gas phase
+         indexProcess = MassTransportID[4];
+                                                  // +1: new timelevel
+         variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex;
+                                                  //[mol/m³]
+         c_H2OinGas = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);
 
-			//calculate gas density for initial conditions
-			a = 0.1;	//estimated range of valid gas density [kg/m³]
-			b = 1000;
-			epsilon = 1e-3;
-			iter_max = 100;
-			for(int j = 0; j < iter_max; j++){
-				temp_density = (a + b) / 2.0;
-				wH2O = c_H2OinGas / temp_density * Molweight_H2O / 1000;			// mass fraction of kg H2O per kg gas  (mol/m³ * m³/kg * g/mol / 1000) = kg/kg
-				wCO2 = 1 - wH2O;														// mass fraction of kg CO2 per kg gas
-				b_H2OinPureCO2 = c_H2OinGas / temp_density * 1 / wCO2;			// Molality of H2O in pure CO2 (mol/m³ * m³/kg) = mol/kg)
-				// new estimate of density of brine with estimated concentration of CO2 and NaCl in mol per kg pure water
-				Density_pureCO2 = 1000 * VLE_density_CO2(temperature, pressure);
-				Density_gas = Density_pureCO2;
+         //calculate gas density for initial conditions
+         a = 0.1;                                 //estimated range of valid gas density [kg/m³]
+         b = 1000;
+         epsilon = 1e-3;
+         iter_max = 100;
+         for(int j = 0; j < iter_max; j++)
+         {
+            temp_density = (a + b) / 2.0;
+                                                  // mass fraction of kg H2O per kg gas  (mol/m³ * m³/kg * g/mol / 1000) = kg/kg
+            wH2O = c_H2OinGas / temp_density * Molweight_H2O / 1000;
+            wCO2 = 1 - wH2O;                      // mass fraction of kg CO2 per kg gas
+                                                  // Molality of H2O in pure CO2 (mol/m³ * m³/kg) = mol/kg)
+            b_H2OinPureCO2 = c_H2OinGas / temp_density * 1 / wCO2;
+            // new estimate of density of brine with estimated concentration of CO2 and NaCl in mol per kg pure water
+            Density_pureCO2 = 1000 * VLE_density_CO2(temperature, pressure);
+            Density_gas = Density_pureCO2;
 
-				//Using Norberts EOS, uses mole fractions of components, temperature and pressure [Pa]
-				double m_CO2, m_H2O;													// mass [kg]
-				double n_CO2, n_H2O;													// [mol]
-				double x_CO2, x_H2O;													// mole fraction [mol/mol]
-				mass_gas = volume_gas * Density_gas;										// mass of gas phase [kg] = m³ * kg/m³
-				m_CO2 = mass_gas * wCO2;												// mas of CO2 [kg] = kg * kg/kg
-				m_H2O = mass_gas * wH2O;												// mass of H2O [kg] = kg * kg/kg
-				n_CO2 = m_CO2 * Molweight_CO2 / 1000;									// moles of CO2 [mol] = kg * g/mol / 1000 g/kg
-				n_H2O = m_H2O * Molweight_H2O / 1000;									// moles of H2O [mol] = kg * g/mol / 1000 g/kg
-				x_CO2 = n_CO2 / (n_CO2 + n_H2O);										// mole fraction of CO2 [mol/mol]
-				x_H2O = n_H2O / (n_CO2 + n_H2O);										// mole fraction of H2O [mol/mol]
-				Density_gas = DuansMixingRule(temperature, pressure * 1e5, x_CO2, 0, 1, 0);		// ToDo: reorganisation of the code [kg/m³]
-				//cout.precision(8);
-				//cout << "Iteration: " << j << " estimated: " << temp_density << " calculated: " << Density_gas << " a: " << a  << " b: " << b << endl;
+            //Using Norberts EOS, uses mole fractions of components, temperature and pressure [Pa]
+            double m_CO2, m_H2O;                  // mass [kg]
+            double n_CO2, n_H2O;                  // [mol]
+            double x_CO2, x_H2O;                  // mole fraction [mol/mol]
+            mass_gas = volume_gas * Density_gas;  // mass of gas phase [kg] = m³ * kg/m³
+            m_CO2 = mass_gas * wCO2;              // mas of CO2 [kg] = kg * kg/kg
+            m_H2O = mass_gas * wH2O;              // mass of H2O [kg] = kg * kg/kg
+            n_CO2 = m_CO2 * Molweight_CO2 / 1000; // moles of CO2 [mol] = kg * g/mol / 1000 g/kg
+            n_H2O = m_H2O * Molweight_H2O / 1000; // moles of H2O [mol] = kg * g/mol / 1000 g/kg
+            x_CO2 = n_CO2 / (n_CO2 + n_H2O);      // mole fraction of CO2 [mol/mol]
+            x_H2O = n_H2O / (n_CO2 + n_H2O);      // mole fraction of H2O [mol/mol]
+                                                  // ToDo: reorganisation of the code [kg/m³]
+            Density_gas = DuansMixingRule(temperature, pressure * 1e5, x_CO2, 0, 1, 0);
+            //cout.precision(8);
+            //cout << "Iteration: " << j << " estimated: " << temp_density << " calculated: " << Density_gas << " a: " << a  << " b: " << b << endl;
 
-				//compare density with density estimation
-				if (Density_gas < 0)
-					break;
-				if (fabs(Density_gas - temp_density) < epsilon)
-					break;
-				if (Density_gas < temp_density) {
-					b = temp_density;
-				}
-				if (Density_gas > temp_density) {
-					a = temp_density;
-				}
-			}
+            //compare density with density estimation
+            if (Density_gas < 0)
+               break;
+            if (fabs(Density_gas - temp_density) < epsilon)
+               break;
+            if (Density_gas < temp_density)
+            {
+               b = temp_density;
+            }
+            if (Density_gas > temp_density)
+            {
+               a = temp_density;
+            }
+         }
 
-			if (Density_gas < 0) {
-				cout << "Density calculation of gas was not possible" << endl;
-				system("Pause");
-				exit(0);
-			}
-			//set new density to nodes
-			variable_index = m_pcs->GetNodeValueIndex("DENSITY2");
-			m_pcs->SetNodeValue(i, variable_index, Density_gas);
-			//set new viscosity to nodes
-			variable_index = m_pcs->GetNodeValueIndex("VISCOSITY2");
-			Viscosity_gas = 5.5e-5;
-			m_pcs->SetNodeValue(i, variable_index,  Viscosity_gas);
-		}
+         if (Density_gas < 0)
+         {
+            cout << "Density calculation of gas was not possible" << endl;
+            system("Pause");
+            exit(0);
+         }
+         //set new density to nodes
+         variable_index = m_pcs->GetNodeValueIndex("DENSITY2");
+         m_pcs->SetNodeValue(i, variable_index, Density_gas);
+         //set new viscosity to nodes
+         variable_index = m_pcs->GetNodeValueIndex("VISCOSITY2");
+         Viscosity_gas = 5.5e-5;
+         m_pcs->SetNodeValue(i, variable_index,  Viscosity_gas);
+      }
 
-		//cout << "   node: " << i << " Dichte_Wasser: " << Density_liquid << " Dichte_Gas: " << Density_gas << endl;
-	}
-	finish = clock();
-	time = (double(finish)-double(start))/CLOCKS_PER_SEC;
+      //cout << "   node: " << i << " Dichte_Wasser: " << Density_liquid << " Dichte_Gas: " << Density_gas << endl;
+   }
+   finish = clock();
+   time = (double(finish)-double(start))/CLOCKS_PER_SEC;
 
-	cout << "        Calculating Density and Viscosity " << time << " seconds." << endl;
-	cout << endl;
+   cout << "        Calculating Density and Viscosity " << time << " seconds." << endl;
+   cout << endl;
 
 }
+
 
 //-------------------------------------------------------------------------
 //GeoSys - Function: Phase_Transition_CO2
@@ -12281,346 +12600,411 @@ void CRFProcess::CalculateFluidDensitiesAndViscositiesAtNodes(CRFProcess *m_pcs)
 //-------------------------------------------------------------------------
 void CRFProcess::Phase_Transition_CO2(CRFProcess *m_pcs, int Step)
 {
-	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-	Mesh_Group::CElem* m_ele = NULL;
-	Mesh_Group::CNode* m_node = NULL;
-	double saturation_gas, saturation_liquid;
-	double Molweight_CO2, Molweight_H2O, Molweight_NaCl;
-	double Volume_eff, Density_gas, Density_liquid, p_cap; // ,Density_liquid_old, Density_purewater, Density_pureCO2; unused
-	double c_H2OinLiquid, c_CO2inLiquid, c_NaClinLiquid, c_H2OinGas, c_CO2inGas; // , c_CO2inLiquid_old; unused
-	//double b_CO2inPureWater, b_NaClinPureWater, b_H2OinPureCO2;
-	// double mass_gas, mass_liquid; unused
-	double saturation_gas_min, saturation_liquid_min, saturation_gas_effective, saturation_liquid_effective;
-	double porosity, node_volume;
-	int variable_index, indexProcess;
-	CMediumProperties *MediaProp;
-	CFluidProperties *FluidProp;
-	Phase_Properties gas;
-	Phase_Properties liquid;
-	Phase_Properties solid;
-	CRFProcess *pcs_MassTransport;
-	int MassTransportID[6] = {0,0,0,0,0,0};
-	int MaterialGroup = 0;
-	int TimeStepVariableIndex = 1;
-	// double c_oldCO2inLiquid; unused
-	double p_cap_1, pressure_1;
+   CFEMesh* m_msh = fem_msh_vector[0];            //SB: ToDo hart gesetzt
+   Mesh_Group::CElem* m_ele = NULL;
+   Mesh_Group::CNode* m_node = NULL;
+   double saturation_gas, saturation_liquid;
+   double Molweight_CO2, Molweight_H2O, Molweight_NaCl;
+                                                  // ,Density_liquid_old, Density_purewater, Density_pureCO2; unused
+   double Volume_eff, Density_gas, Density_liquid, p_cap;
+                                                  // , c_CO2inLiquid_old; unused
+   double c_H2OinLiquid, c_CO2inLiquid, c_NaClinLiquid, c_H2OinGas, c_CO2inGas;
+   //double b_CO2inPureWater, b_NaClinPureWater, b_H2OinPureCO2;
+   // double mass_gas, mass_liquid; unused
+   double saturation_gas_min, saturation_liquid_min, saturation_gas_effective, saturation_liquid_effective;
+   double porosity, node_volume;
+   int variable_index, indexProcess;
+   CMediumProperties *MediaProp;
+   CFluidProperties *FluidProp;
+   Phase_Properties gas;
+   Phase_Properties liquid;
+   Phase_Properties solid;
+   CRFProcess *pcs_MassTransport;
+   int MassTransportID[6] = {0,0,0,0,0,0};
+   int MaterialGroup = 0;
+   int TimeStepVariableIndex = 1;
+   // double c_oldCO2inLiquid; unused
+   double p_cap_1, pressure_1;
 
-	//---------------------------------------------------------------------------------------------------------
-	//Data preprocessing
+   //---------------------------------------------------------------------------------------------------------
+   //Data preprocessing
 
-	//for initial conditions variable index is the first index, for other timesteps variable index is the second index
-	if (m_pcs->Tim->step_current == 1)
-		TimeStepVariableIndex = 0;
+   //for initial conditions variable index is the first index, for other timesteps variable index is the second index
+   if (m_pcs->Tim->step_current == 1)
+      TimeStepVariableIndex = 0;
 
+   Molweight_CO2 = 44.009;                        // [g/mol]
+   Molweight_H2O = 18.0148;                       // [g/mol]
+   Molweight_NaCl = 58.443;                       // [g/mol]				//ToDo: provide constants once in the whole project
 
-	Molweight_CO2 = 44.009;		// [g/mol]
-	Molweight_H2O = 18.0148;	// [g/mol]
-	Molweight_NaCl = 58.443;	// [g/mol]				//ToDo: provide constants once in the whole project
+   saturation_gas_min = 0.00001;
+   saturation_liquid_min = 0.00001;
 
-	saturation_gas_min = 0.00001;
-	saturation_liquid_min = 0.00001;
+   for (long i = 0; i < (long)m_msh->nod_vector.size(); i++)
+   {
+      if (i == 230)
+         cout << i << endl;
+      m_node = m_msh->nod_vector[i];              // get element
+      node_volume = 0;
+      //calculate Porevolume for the node based on connected elements
+      for (size_t j = 0; j < m_node->getConnectedElementIDs().size(); j++)
+      {
+         m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
+         MaterialGroup = m_ele->GetPatchIndex();
+         MediaProp = mmp_vector[MaterialGroup];
+         porosity = MediaProp->Porosity(m_ele->GetIndex(), m_pcs->m_num->ls_theta);
+                                                  // ToDo: Correct calculation of node volume
+         node_volume = node_volume + m_ele->GetVolume() / m_ele->GetNodesNumber(false) * porosity;
+      }
 
-	for (long i = 0; i < (long)m_msh->nod_vector.size(); i++){
-		if (i == 230)
-			cout << i << endl;
-		m_node = m_msh->nod_vector[i]; // get element
-		node_volume = 0;
-		//calculate Porevolume for the node based on connected elements
-		for (size_t j = 0; j < m_node->getConnectedElementIDs().size(); j++) {
-			m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
-			MaterialGroup = m_ele->GetPatchIndex();
-			MediaProp = mmp_vector[MaterialGroup];
-			porosity = MediaProp->Porosity(m_ele->GetIndex(), m_pcs->m_num->ls_theta);
-			node_volume = node_volume + m_ele->GetVolume() / m_ele->GetNodesNumber(false) * porosity;				// ToDo: Correct calculation of node volume
-		}
+      //get pressure, temperature and saturations
+                                                  //+1... new time level
+      variable_index = m_pcs->GetNodeValueIndex("PRESSURE1") + 1;
+      p_cap = m_pcs->GetNodeValue(i, variable_index);
+                                                  //+1... new time level
+      variable_index = m_pcs->GetNodeValueIndex("PRESSURE1");
+      p_cap_1 = m_pcs->GetNodeValue(i, variable_index);
+                                                  //+1... new time level
+      variable_index = m_pcs->GetNodeValueIndex("PRESSURE2") + 1;
+                                                  // unit: bar!!! Assuming that the non wetting phase pressure is the correct one
+      gas.pressure = liquid.pressure = solid.pressure = m_pcs->GetNodeValue(i, variable_index) / 1e5;
+                                                  //+1... new time level
+      variable_index = m_pcs->GetNodeValueIndex("PRESSURE2");
+      pressure_1 = m_pcs->GetNodeValue(i, variable_index) / 1e5;
+      if(!T_Process)
+      {
+         // Get reference temperature if no heat transport is used
+         FluidProp = MFPGet("LIQUID");
+         gas.temperature = liquid.temperature = solid.temperature = FluidProp->T_0;
+      }
+      else
+      {
+         CRFProcess *HeatProcess = PCSGet("HEAT_TRANSPORT");
+                                                  //+1... new time level
+         variable_index = HeatProcess->GetNodeValueIndex("TEMPERATURE1") + 1;
+         gas.temperature = liquid.temperature = solid.temperature  = m_pcs->GetNodeValue(i, variable_index);
+      }
+                                                  //+1... new time level
+      variable_index = m_pcs->GetNodeValueIndex("SATURATION1");
+      saturation_liquid = m_pcs->GetNodeValue(i, variable_index);
+      saturation_gas = 1 - saturation_liquid;
+      // calculate new effective saturation that sum up to 1
+      saturation_liquid_effective = (saturation_liquid - saturation_liquid_min) / ( 1 - saturation_liquid_min - saturation_gas_min);
+      saturation_gas_effective = (saturation_gas - saturation_gas_min) / ( 1 - saturation_liquid_min - saturation_gas_min);
+      if (saturation_liquid_effective < 1e-10)
+      {
+         saturation_liquid_effective = 0;
+         saturation_gas_effective = 1;
+      }
+      if (saturation_gas_effective < 1e-10)
+      {
+         saturation_gas_effective = 0;
+         saturation_liquid_effective = 1;
+      }
 
-		//get pressure, temperature and saturations
-		variable_index = m_pcs->GetNodeValueIndex("PRESSURE1") + 1; //+1... new time level
-		p_cap = m_pcs->GetNodeValue(i, variable_index);
-		variable_index = m_pcs->GetNodeValueIndex("PRESSURE1"); //+1... new time level
-		p_cap_1 = m_pcs->GetNodeValue(i, variable_index);
-		variable_index = m_pcs->GetNodeValueIndex("PRESSURE2") + 1; //+1... new time level
-		gas.pressure = liquid.pressure = solid.pressure = m_pcs->GetNodeValue(i, variable_index) / 1e5;				// unit: bar!!! Assuming that the non wetting phase pressure is the correct one
-		variable_index = m_pcs->GetNodeValueIndex("PRESSURE2"); //+1... new time level
-		pressure_1 = m_pcs->GetNodeValue(i, variable_index) / 1e5;
-		if(!T_Process)  {
-			// Get reference temperature if no heat transport is used
-			FluidProp = MFPGet("LIQUID");
-			gas.temperature = liquid.temperature = solid.temperature = FluidProp->T_0;
-		}
-		else {
-			CRFProcess *HeatProcess = PCSGet("HEAT_TRANSPORT");
-			variable_index = HeatProcess->GetNodeValueIndex("TEMPERATURE1") + 1; //+1... new time level
-			gas.temperature = liquid.temperature = solid.temperature  = m_pcs->GetNodeValue(i, variable_index);
-		}
-		variable_index = m_pcs->GetNodeValueIndex("SATURATION1"); //+1... new time level
-		saturation_liquid = m_pcs->GetNodeValue(i, variable_index);
-		saturation_gas = 1 - saturation_liquid;
-		// calculate new effective saturation that sum up to 1
-		saturation_liquid_effective = (saturation_liquid - saturation_liquid_min) / ( 1 - saturation_liquid_min - saturation_gas_min);
-		saturation_gas_effective = (saturation_gas - saturation_gas_min) / ( 1 - saturation_liquid_min - saturation_gas_min);
-		if (saturation_liquid_effective < 1e-10) {
-			saturation_liquid_effective = 0;
-			saturation_gas_effective = 1;
-		}
-		if (saturation_gas_effective < 1e-10) {
-			saturation_gas_effective = 0;
-			saturation_liquid_effective = 1;
-		}
+      //calculate liquid and gas volume from saturation
+                                                  //[m³]
+      Volume_eff = node_volume * (1 - saturation_gas_min - saturation_liquid_min);
+                                                  //[m³]
+      liquid.volume = Volume_eff * saturation_liquid_effective;
+                                                  //[m³]
+      gas.volume = Volume_eff * saturation_gas_effective;
 
-		//calculate liquid and gas volume from saturation
-		Volume_eff = node_volume * (1 - saturation_gas_min - saturation_liquid_min);		//[m³]
-		liquid.volume = Volume_eff * saturation_liquid_effective;										//[m³]
-		gas.volume = Volume_eff * saturation_gas_effective;											//[m³]
+      //cout << "node: " << i << " p_cap: " << p_cap << " P2: " << gas.pressure << " sat_liquid: " << saturation_liquid << " sat_gas: " << saturation_gas << " V_liquid: " << liquid.volume << " V_gas: " << gas.volume << endl;
 
-		//cout << "node: " << i << " p_cap: " << p_cap << " P2: " << gas.pressure << " sat_liquid: " << saturation_liquid << " sat_gas: " << saturation_gas << " V_liquid: " << liquid.volume << " V_gas: " << gas.volume << endl;
+      //get ID's of mass transport processes
+      for(int j = 0; j < int(pcs_vector.size()); j++)
+      {
+         pcs_MassTransport = pcs_vector[j];
+         if (pcs_MassTransport->nod_val_name_vector[0] == "H2O")
+            MassTransportID[0] = j;
+         if ((pcs_MassTransport->nod_val_name_vector[0] == "C(4)") || (pcs_MassTransport->nod_val_name_vector[0] == "CO2_w"))
+            MassTransportID[1] = j;
+         if (pcs_MassTransport->nod_val_name_vector[0] == "NaCl")
+            MassTransportID[2] = j;
+         if (pcs_MassTransport->nod_val_name_vector[0] == "CO2")
+            MassTransportID[3] = j;
+         if (pcs_MassTransport->nod_val_name_vector[0] == "H2O_gas")
+            MassTransportID[4] = j;
+         if (pcs_MassTransport->nod_val_name_vector[0] == "oldC(4)")
+            MassTransportID[5] = j;
+      }
+      //get concentration of phase components and calculate moles of components per phase
+      //Read CO2 concentration in water and calculate moles of CO2 in liquid phase
+      indexProcess = MassTransportID[1];
+      solid.CO2 = 0;
+                                                  // +1: new timelevel
+      variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex;
+                                                  //[mol/m³]
+      c_CO2inLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);
+      liquid.CO2 = c_CO2inLiquid * liquid.volume; //[mol] = mol/m³ * m³
 
-		//get ID's of mass transport processes
-		for(int j = 0; j < int(pcs_vector.size()); j++)  {
-			pcs_MassTransport = pcs_vector[j];
-			if (pcs_MassTransport->nod_val_name_vector[0] == "H2O")
-				MassTransportID[0] = j;
-			if ((pcs_MassTransport->nod_val_name_vector[0] == "C(4)") || (pcs_MassTransport->nod_val_name_vector[0] == "CO2_w"))
-				MassTransportID[1] = j;
-			if (pcs_MassTransport->nod_val_name_vector[0] == "NaCl")
-				MassTransportID[2] = j;
-			if (pcs_MassTransport->nod_val_name_vector[0] == "CO2")
-				MassTransportID[3] = j;
-			if (pcs_MassTransport->nod_val_name_vector[0] == "H2O_gas")
-				MassTransportID[4] = j;
-			if (pcs_MassTransport->nod_val_name_vector[0] == "oldC(4)")
-				MassTransportID[5] = j;
-		}
-		//get concentration of phase components and calculate moles of components per phase
-		//Read CO2 concentration in water and calculate moles of CO2 in liquid phase
-		indexProcess = MassTransportID[1];
-		solid.CO2 = 0;
-		variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex; // +1: new timelevel
-		c_CO2inLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);		//[mol/m³]
-		liquid.CO2 = c_CO2inLiquid * liquid.volume;										//[mol] = mol/m³ * m³
+      //Read NaCl concentration in water and calculate moles of NaCl in liquid phase
+      indexProcess = MassTransportID[2];
+      gas.NaCl = 0;
+      solid.NaCl = 0;
+                                                  // +1: new timelevel
+      variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex;
+                                                  //[mol/m³]
+      c_NaClinLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);
+                                                  //[mol] = mol/m³ * m³
+      liquid.NaCl = c_NaClinLiquid * liquid.volume;
 
-		//Read NaCl concentration in water and calculate moles of NaCl in liquid phase
-		indexProcess = MassTransportID[2];
-		gas.NaCl = 0;
-		solid.NaCl = 0;
-		variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex; // +1: new timelevel
-		c_NaClinLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);		//[mol/m³]
-		liquid.NaCl = c_NaClinLiquid * liquid.volume;									//[mol] = mol/m³ * m³
+      //Determine moles of water in liquid phase
+      // get liquid density from the last step
+      solid.H2O = 0;
+                                                  //+1... new time level
+      variable_index = m_pcs->GetNodeValueIndex("DENSITY1");
+                                                  // [kg/m³]
+      Density_liquid = m_pcs->GetNodeValue(i, variable_index);
 
+      // Test 1: Berechnung T_H2O aus alter Dichte und alter CO2-Konz,
+      //variable_index = m_pcs->GetNodeValueIndex("DENSITY1_old"); //+1... new time level
+      //if (m_pcs->Tim->step_current == 1)
+      //	Density_liquid_old = Density_liquid;
+      //else
+      //	Density_liquid_old = m_pcs->GetNodeValue(i, variable_index);						// [kg/m³
+      ////set new Density as old value
+      //m_pcs->SetNodeValue(i, variable_index, Density_liquid);
+      //
+      //indexProcess = MassTransportID[5];
+      //variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex; // +1: new timelevel
+      //c_CO2inLiquid_old = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);		//[mol/m³]
+      //if (i == 230)
+      //	cout << i << endl;
+      //liquid.H2O = (Density_liquid_old * liquid.volume - c_CO2inLiquid_old * liquid.volume  * Molweight_CO2 * 1e-3 - liquid.NaCl * Molweight_NaCl * 1e-3 ) / (Molweight_H2O * 1e-3);	//[mol]
 
-		//Determine moles of water in liquid phase
-		// get liquid density from the last step
-		solid.H2O = 0;
-		variable_index = m_pcs->GetNodeValueIndex("DENSITY1"); //+1... new time level
-		Density_liquid = m_pcs->GetNodeValue(i, variable_index);						// [kg/m³]
+      if (i == 230)
+         cout << i << endl;
 
+      // Test 2:
+      if (Step == 1)
+      {
+         // phase transition after reactions -> use old liquid.H2O because no phase movement
+         indexProcess = MassTransportID[0];
+                                                  // +1: new timelevel
+         variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1;
+                                                  //[mol/m³]
+         c_H2OinLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);
+                                                  //[mol] = mol/m³ * m³
+         liquid.H2O = c_H2OinLiquid * liquid.volume;
+      }
+      else
+      {
+         // calculate new liquid.H2O after multiphase flow calculation based on new pressure, new density because of this new pressure, new phase saturations
+                                                  //[mol]
+         liquid.H2O = (Density_liquid * liquid.volume - liquid.CO2 * Molweight_CO2 * 1e-3 - liquid.NaCl * Molweight_NaCl * 1e-3 ) / (Molweight_H2O * 1e-3);
+      }
 
-	// Test 1: Berechnung T_H2O aus alter Dichte und alter CO2-Konz,
-		//variable_index = m_pcs->GetNodeValueIndex("DENSITY1_old"); //+1... new time level
-		//if (m_pcs->Tim->step_current == 1)
-		//	Density_liquid_old = Density_liquid;
-		//else
-		//	Density_liquid_old = m_pcs->GetNodeValue(i, variable_index);						// [kg/m³
-		////set new Density as old value
-		//m_pcs->SetNodeValue(i, variable_index, Density_liquid);
-		//
-		//indexProcess = MassTransportID[5];
-		//variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex; // +1: new timelevel
-		//c_CO2inLiquid_old = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);		//[mol/m³]
-		//if (i == 230)
-		//	cout << i << endl;
-		//liquid.H2O = (Density_liquid_old * liquid.volume - c_CO2inLiquid_old * liquid.volume  * Molweight_CO2 * 1e-3 - liquid.NaCl * Molweight_NaCl * 1e-3 ) / (Molweight_H2O * 1e-3);	//[mol]
+      //if (m_pcs->Tim->step_current == 1)
+      //liquid.H2O = (Density_liquid * liquid.volume - liquid.CO2 * Molweight_CO2 * 1e-3 - liquid.NaCl * Molweight_NaCl * 1e-3 ) / (Molweight_H2O * 1e-3);	//[mol]
+      //else {
+      //indexProcess = MassTransportID[0];
+      //variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
+      //c_H2OinLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);		//[mol/m³]
+      //liquid.H2O = c_H2OinLiquid * liquid.volume;										//[mol] = mol/m³ * m³
+      //}
 
+      //components in gas
+      //Read H2O concentration in gas and calculate moles of H2O in gas phase
+      indexProcess = MassTransportID[4];
+                                                  // +1: new timelevel
+      variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex;
+                                                  //[mol/m³]
+      c_H2OinGas = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);
+      gas.H2O = c_H2OinGas * gas.volume;          //[mol] = mol/m³ * m³
 
-		if (i == 230)
-			cout << i << endl;
+      //Determine moles of CO2 in gas phase
+      // get gas density from the last step
+                                                  //+1... new time level
+      variable_index = m_pcs->GetNodeValueIndex("DENSITY2");
+                                                  //[kg/m³]
+      Density_gas = m_pcs->GetNodeValue(i, variable_index);
 
-	// Test 2:
-		if (Step == 1) {
-			// phase transition after reactions -> use old liquid.H2O because no phase movement
-			indexProcess = MassTransportID[0];
-			variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
-			c_H2OinLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);		//[mol/m³]
-			liquid.H2O = c_H2OinLiquid * liquid.volume;										//[mol] = mol/m³ * m³
-		}
-		else {
-			// calculate new liquid.H2O after multiphase flow calculation based on new pressure, new density because of this new pressure, new phase saturations
-			liquid.H2O = (Density_liquid * liquid.volume - liquid.CO2 * Molweight_CO2 * 1e-3 - liquid.NaCl * Molweight_NaCl * 1e-3 ) / (Molweight_H2O * 1e-3);	//[mol]
-		}
+      // Test 2:
+      if (Step == 1)
+      {
+         // phase transition after reactions -> use old liquid.H2O because no phase movement
+         indexProcess = MassTransportID[3];
+                                                  // +1: new timelevel
+         variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1;
+                                                  //[mol/m³]
+         c_CO2inGas = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);
+         gas.CO2 = c_CO2inGas * gas.volume;       //[mol] = mol/m³ * m³
+      }
+      else
+      {
+         // calculate new liquid.H2O after multiphase flow calculation based on new pressure, new density because of this new pressure, new phase saturations
+                                                  // [mol] = kg / (kg / mol)
+         gas.CO2 = (Density_gas * gas.volume - gas.H2O * Molweight_H2O * 1e-3) / (Molweight_CO2 * 1e-3);
+      }
 
+      //---------------------------------------------------------------------------------------------------------
+      //Calculating phase transition with Dedong's method
 
-		//if (m_pcs->Tim->step_current == 1)
-			//liquid.H2O = (Density_liquid * liquid.volume - liquid.CO2 * Molweight_CO2 * 1e-3 - liquid.NaCl * Molweight_NaCl * 1e-3 ) / (Molweight_H2O * 1e-3);	//[mol]
-		//else {
-			//indexProcess = MassTransportID[0];
-			//variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
-			//c_H2OinLiquid = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);		//[mol/m³]
-			//liquid.H2O = c_H2OinLiquid * liquid.volume;										//[mol] = mol/m³ * m³
-		//}
+      //recalculate units
+                                                  // kg/m³ -> g/cm³
+      gas.density /= 1000; liquid.density /= 1000; solid.density /= 1000;
+                                                  // m³ -> cm³
+      gas.volume *= 1e6; liquid.volume *= 1e6; solid.volume *= 1e6;
+                                                  // kg -> g
+      gas.mass *= 1000; liquid.mass *= 1000; solid.mass *= 1000;
 
-		//components in gas
-		//Read H2O concentration in gas and calculate moles of H2O in gas phase
-		indexProcess = MassTransportID[4];
-		variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + TimeStepVariableIndex; // +1: new timelevel
-		c_H2OinGas = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);			//[mol/m³]
-		gas.H2O = c_H2OinGas * gas.volume;												//[mol] = mol/m³ * m³
+      if (m_pcs->Tim->step_current == 14)
+         cout << i << endl;
 
+      if (i == 230)
+         cout << i << " gas pressure: " << gas.pressure << " liquid pressure: " << liquid.pressure << endl;
 
-		//Determine moles of CO2 in gas phase
-		// get gas density from the last step
-		variable_index = m_pcs->GetNodeValueIndex("DENSITY2"); //+1... new time level
-		Density_gas = m_pcs->GetNodeValue(i, variable_index);							//[kg/m³]
+      //call Dedongs method to calculate CO2 phase transition
+      CO2_H2O_NaCl_VLE_isochoric(gas, liquid, solid, 1);
 
-			// Test 2:
-		if (Step == 1) {
-			// phase transition after reactions -> use old liquid.H2O because no phase movement
-			indexProcess = MassTransportID[3];
-			variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
-			c_CO2inGas = pcs_vector[indexProcess]->GetNodeValue(i, variable_index);		//[mol/m³]
-			gas.CO2 = c_CO2inGas * gas.volume;											//[mol] = mol/m³ * m³
-		}
-		else {
-			// calculate new liquid.H2O after multiphase flow calculation based on new pressure, new density because of this new pressure, new phase saturations
-			gas.CO2 = (Density_gas * gas.volume - gas.H2O * Molweight_H2O * 1e-3) / (Molweight_CO2 * 1e-3);  // [mol] = kg / (kg / mol)
-		}
+      if (i == 230)
+         cout << i << " gas pressure: " << gas.pressure << " liquid pressure: " << liquid.pressure << endl;
 
+                                                  // g/cm³ -> kg/m³
+      gas.density *= 1000; liquid.density *= 1000; solid.density *= 1000;
+                                                  // cm³ -> m³
+      gas.volume /= 1e6; liquid.volume /= 1e6; solid.volume /= 1e6;
+                                                  // g -> kg
+      gas.mass /= 1000; liquid.mass /= 1000; solid.mass /= 1000;
+                                                  // bar -> Pa
+      gas.pressure *= 1e5; liquid.pressure *= 1e5; solid.pressure *= 1e5;
 
-		//---------------------------------------------------------------------------------------------------------
-		//Calculating phase transition with Dedong's method
+      //---------------------------------------------------------------------------------------------------------
+      //Postprocessing of results to recalculate volume, pressure, saturation
 
-		//recalculate units
-		gas.density /= 1000; liquid.density /= 1000; solid.density /= 1000;						// kg/m³ -> g/cm³
-		gas.volume *= 1e6; liquid.volume *= 1e6; solid.volume *= 1e6;							// m³ -> cm³
-		gas.mass *= 1000; liquid.mass *= 1000; solid.mass *= 1000;								// kg -> g
+      //calculate saturation of phases
+      //double error = fabs((gas.volume + liquid.volume) - Volume_eff);
+      //error = error / Volume_eff;
+      if (fabs((gas.volume + liquid.volume) - Volume_eff) / Volume_eff > 1e-3)
+      {
+         cout << "The volume is not equal before and after the calculation of CO2 phase transition! " << endl;
+         cout << "Before: " << Volume_eff << " After: " << gas.volume + liquid.volume << endl;
+         system("Pause");
+         exit(0);
+      }
 
-		if (m_pcs->Tim->step_current == 14)
-			cout << i << endl;
+      //set new densities to nodes
+      if (liquid.density >= 0)
+      {
+         variable_index = m_pcs->GetNodeValueIndex("DENSITY1");
+         m_pcs->SetNodeValue(i, variable_index, liquid.density);
+      }
+      if (gas.density >= 0)
+      {
+         variable_index = m_pcs->GetNodeValueIndex("DENSITY2");
+         m_pcs->SetNodeValue(i, variable_index, gas.density);
+      }
 
-		if (i == 230)
-			cout << i << " gas pressure: " << gas.pressure << " liquid pressure: " << liquid.pressure << endl;
+      //set new viscosities to nodes
+      if (liquid.viscosity >= 0)
+      {
+         variable_index = m_pcs->GetNodeValueIndex("VISCOSITY1");
+         m_pcs->SetNodeValue(i, variable_index, liquid.viscosity);
+      }
+      if (gas.viscosity >= 0)
+      {
+         variable_index = m_pcs->GetNodeValueIndex("VISCOSITY2");
+         m_pcs->SetNodeValue(i, variable_index, gas.viscosity);
+      }
 
-		//call Dedongs method to calculate CO2 phase transition
-		CO2_H2O_NaCl_VLE_isochoric(gas, liquid, solid, 1);
+                                                  // ToDo: check calculation
+      saturation_gas = max(gas.volume / Volume_eff, saturation_gas_min);
+      //saturation_liquid = max(liquid.volume / Volume_eff, saturation_liquid_min);
+      saturation_liquid = max(1 - saturation_gas, saturation_liquid_min);
 
-		if (i == 230)
-			cout << i << " gas pressure: " << gas.pressure << " liquid pressure: " << liquid.pressure << endl;
+      //set new saturations to nodes
+      if (Step == 1)
+                                                  //+1... new time level
+         variable_index = m_pcs->GetNodeValueIndex("SATURATION1");
+      else
+                                                  //+1... new time level
+         variable_index = m_pcs->GetNodeValueIndex("SATURATION1") + 1;
+      m_pcs->SetNodeValue(i, variable_index, saturation_liquid);
 
-		gas.density *= 1000; liquid.density *= 1000; solid.density *= 1000;						// g/cm³ -> kg/m³
-		gas.volume /= 1e6; liquid.volume /= 1e6; solid.volume /= 1e6;							// cm³ -> m³
-		gas.mass /= 1000; liquid.mass /= 1000; solid.mass /= 1000;								// g -> kg
-		gas.pressure *= 1e5; liquid.pressure *= 1e5; solid.pressure *= 1e5;						// bar -> Pa
+      //new calculation of capillary pressue
 
-		//---------------------------------------------------------------------------------------------------------
-		//Postprocessing of results to recalculate volume, pressure, saturation
+      //ToDo: works only for homogenouse properties
+      MediaProp = mmp_vector[MaterialGroup];
+      p_cap = MediaProp->CapillaryPressureFunction(0,0,0,0,saturation_liquid);
 
-		//calculate saturation of phases
-		//double error = fabs((gas.volume + liquid.volume) - Volume_eff);
-		//error = error / Volume_eff;
-		if (fabs((gas.volume + liquid.volume) - Volume_eff) / Volume_eff > 1e-3) {
-			cout << "The volume is not equal before and after the calculation of CO2 phase transition! " << endl;
-			cout << "Before: " << Volume_eff << " After: " << gas.volume + liquid.volume << endl;
-			system("Pause");
-			exit(0);
-		}
+      if (i == 230)
+         cout << i << " gas pressure: " << gas.pressure << " liquid pressure: " << liquid.pressure << endl;
 
-		//set new densities to nodes
-		if (liquid.density >= 0) {
-			variable_index = m_pcs->GetNodeValueIndex("DENSITY1");
-			m_pcs->SetNodeValue(i, variable_index, liquid.density);
-		}
-		if (gas.density >= 0) {
-			variable_index = m_pcs->GetNodeValueIndex("DENSITY2");
-			m_pcs->SetNodeValue(i, variable_index, gas.density);
-		}
+      //set new pressure to nodes
+      if (Step == 1)
+                                                  //+1... new time level
+         variable_index = m_pcs->GetNodeValueIndex("PRESSURE1");
+      else
+                                                  //+1... new time level
+         variable_index = m_pcs->GetNodeValueIndex("PRESSURE1") + 1;
+      m_pcs->SetNodeValue(i, variable_index, p_cap);
+      if (Step == 1)
+                                                  //+1... new time level
+         variable_index = m_pcs->GetNodeValueIndex("PRESSURE2");
+      else
+                                                  //+1... new time level
+         variable_index = m_pcs->GetNodeValueIndex("PRESSURE2") + 1;
+      m_pcs->SetNodeValue(i, variable_index, gas.pressure);
+      //cout << "node: " << i << " p_cap: " << p_cap << " P2: " << gas.pressure << " sat_liquid: " << saturation_liquid << " sat_gas: " << saturation_gas << " V_liquid: " << liquid.volume << " V_gas: " << gas.volume << endl;
 
-		//set new viscosities to nodes
-		if (liquid.viscosity >= 0) {
-			variable_index = m_pcs->GetNodeValueIndex("VISCOSITY1");
-			m_pcs->SetNodeValue(i, variable_index, liquid.viscosity);
-		}
-		if (gas.viscosity >= 0) {
-			variable_index = m_pcs->GetNodeValueIndex("VISCOSITY2");
-			m_pcs->SetNodeValue(i, variable_index, gas.viscosity);
-		}
+      // set new component concentration
+      if (liquid.volume > 0)
+      {
+                                                  //[mol/m³] = mol / m³
+         c_H2OinLiquid = liquid.H2O / liquid.volume;
+                                                  //[mol/L] = mol / m³
+         c_CO2inLiquid = liquid.CO2 / liquid.volume;
+                                                  //[mol/L] = mol / m³
+         c_NaClinLiquid = liquid.NaCl / liquid.volume;
+      }
+      else
+      {
+         c_H2OinLiquid = 0;
+         c_CO2inLiquid = 0;
+         c_NaClinLiquid = 0;
+      }
 
-		saturation_gas = max(gas.volume / Volume_eff, saturation_gas_min);								// ToDo: check calculation
-		//saturation_liquid = max(liquid.volume / Volume_eff, saturation_liquid_min);
-		saturation_liquid = max(1 - saturation_gas, saturation_liquid_min);
+      indexProcess = MassTransportID[0];          //H2O in liquid
+                                                  // +1: new timelevel
+      variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1;
+      pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_H2OinLiquid);
 
-		//set new saturations to nodes
-		if (Step == 1)
-			variable_index = m_pcs->GetNodeValueIndex("SATURATION1"); //+1... new time level
-		else
-			variable_index = m_pcs->GetNodeValueIndex("SATURATION1") + 1; //+1... new time level
-		m_pcs->SetNodeValue(i, variable_index, saturation_liquid);
+      indexProcess = MassTransportID[1];          //CO2 in liquid
+                                                  // +1: new timelevel
+      variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1;
+      pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_CO2inLiquid);
 
-		//new calculation of capillary pressue
+      indexProcess = MassTransportID[2];          //NaCl in liquid
+                                                  // +1: new timelevel
+      variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1;
+      pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_NaClinLiquid);
 
-		//ToDo: works only for homogenouse properties
-		MediaProp = mmp_vector[MaterialGroup];
-		p_cap = MediaProp->CapillaryPressureFunction(0,0,0,0,saturation_liquid);
+      if (gas.volume > 0)
+      {
+         c_CO2inGas = gas.CO2 / gas.volume;       //[mol/L] = mol / m³
+         c_H2OinGas = gas.H2O / gas.volume;       //[mol/L] = mol / m³
+      }
+      else
+      {
+         c_CO2inGas = 0;
+         c_H2OinGas = 0;
+      }
+      indexProcess = MassTransportID[3];          //CO2 in gas
+                                                  // +1: new timelevel
+      variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1;
+      pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_CO2inGas);
 
-		if (i == 230)
-			cout << i << " gas pressure: " << gas.pressure << " liquid pressure: " << liquid.pressure << endl;
+      indexProcess = MassTransportID[4];          //H2O in gas
+                                                  // +1: new timelevel
+      variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1;
+      pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_H2OinGas);
 
-		//set new pressure to nodes
-		if (Step == 1)
-			variable_index = m_pcs->GetNodeValueIndex("PRESSURE1"); //+1... new time level
-		else
-			variable_index = m_pcs->GetNodeValueIndex("PRESSURE1") + 1; //+1... new time level
-		m_pcs->SetNodeValue(i, variable_index, p_cap);
-		if (Step == 1)
-			variable_index = m_pcs->GetNodeValueIndex("PRESSURE2"); //+1... new time level
-		else
-			variable_index = m_pcs->GetNodeValueIndex("PRESSURE2") + 1; //+1... new time level
-		m_pcs->SetNodeValue(i, variable_index, gas.pressure);
-		//cout << "node: " << i << " p_cap: " << p_cap << " P2: " << gas.pressure << " sat_liquid: " << saturation_liquid << " sat_gas: " << saturation_gas << " V_liquid: " << liquid.volume << " V_gas: " << gas.volume << endl;
+      indexProcess = MassTransportID[5];          //old CO2 in liquid
+                                                  // +1: new timelevel
+      variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1;
+      pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_CO2inLiquid);
 
-		// set new component concentration
-		if (liquid.volume > 0) {
-			c_H2OinLiquid = liquid.H2O / liquid.volume;										//[mol/m³] = mol / m³
-			c_CO2inLiquid = liquid.CO2 / liquid.volume;										//[mol/L] = mol / m³
-			c_NaClinLiquid = liquid.NaCl / liquid.volume;									//[mol/L] = mol / m³
-		}
-		else {
-			c_H2OinLiquid = 0;
-			c_CO2inLiquid = 0;
-			c_NaClinLiquid = 0;
-		}
-
-		indexProcess = MassTransportID[0];		//H2O in liquid
-		variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
-		pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_H2OinLiquid);
-
-		indexProcess = MassTransportID[1];		//CO2 in liquid
-		variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
-		pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_CO2inLiquid);
-
-		indexProcess = MassTransportID[2];		//NaCl in liquid
-		variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
-		pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_NaClinLiquid);
-
-		if (gas.volume > 0) {
-			c_CO2inGas = gas.CO2 / gas.volume;												//[mol/L] = mol / m³
-			c_H2OinGas = gas.H2O / gas.volume; 												//[mol/L] = mol / m³
-		}
-		else {
-			c_CO2inGas = 0;
-			c_H2OinGas = 0;
-		}
-		indexProcess = MassTransportID[3];		//CO2 in gas
-		variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
-		pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_CO2inGas);
-
-		indexProcess = MassTransportID[4];		//H2O in gas
-		variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
-		pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_H2OinGas);
-
-
-
-		indexProcess = MassTransportID[5];		//old CO2 in liquid
-		variable_index = pcs_vector[indexProcess]->GetNodeValueIndex(pcs_vector[indexProcess]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
-		pcs_vector[indexProcess]->SetNodeValue(i, variable_index, c_CO2inLiquid);
-
-	}
+   }
 }

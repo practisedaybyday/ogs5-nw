@@ -37,6 +37,7 @@ namespace Math_Group
          void resize(size_t rows, size_t cols=1);
          //
          virtual ~Matrix();
+         void ReleaseMemory();                    //06.2010. WW
 
          // Operators
          virtual void operator= (double a);
@@ -100,32 +101,32 @@ namespace Math_Group
          double& operator() (size_t i, size_t j) const;
    };
 
-class DiagonalMatrix:public Matrix
-{
-private:
-     mutable double dummy_zero;
-   public:
-     DiagonalMatrix(size_t dim);
-     DiagonalMatrix();
-     explicit DiagonalMatrix(const DiagonalMatrix& m);
-     
-     void resize(size_t dim);
+   class DiagonalMatrix:public Matrix
+   {
+      private:
+         mutable double dummy_zero;
+      public:
+         DiagonalMatrix(size_t dim);
+         DiagonalMatrix();
+         explicit DiagonalMatrix(const DiagonalMatrix& m);
 
-     ~DiagonalMatrix() {}
+         void resize(size_t dim);
 
-     // Operators
-     void operator = (double a);
-     void operator *= (double a);
-     void operator += (double a);
-     void operator = (const DiagonalMatrix& m);
-     void operator += (const DiagonalMatrix& m);
-     void operator -= (const DiagonalMatrix& m);
-     void LimitSize(size_t dim);  
+         ~DiagonalMatrix() {}
 
-     // Access to members     
-     double& operator() (size_t i, size_t j) const;  
-     double& operator() (size_t i) const;  
-};
+         // Operators
+         void operator = (double a);
+         void operator *= (double a);
+         void operator += (double a);
+         void operator = (const DiagonalMatrix& m);
+         void operator += (const DiagonalMatrix& m);
+         void operator -= (const DiagonalMatrix& m);
+         void LimitSize(size_t dim);
+
+         // Access to members
+         double& operator() (size_t i, size_t j) const;
+         double& operator() (size_t i) const;
+   };
 
    typedef Matrix Vec;
 
@@ -214,82 +215,82 @@ private:
    // Sparse matrix (type: Dictionary of keys)
    class SparseMatrixDOK
    {
-   public:
-     //#define USE_HASHMAP
+      public:
+         //#define USE_HASHMAP
 #ifdef USE_HASHMAP
-     typedef std::vector<hash_map<size_t , double> > mat_t;
-     typedef stdext::hash_map<size_t, double> col_t;
-     typedef std::vector<std::set<long>> mat_id_t;
-     typedef std::set<long> col_id_t;
-     typedef col_id_t::const_iterator col_id_itr;
+         typedef std::vector<hash_map<size_t , double> > mat_t;
+         typedef stdext::hash_map<size_t, double> col_t;
+         typedef std::vector<std::set<long>> mat_id_t;
+         typedef std::set<long> col_id_t;
+         typedef col_id_t::const_iterator col_id_itr;
 #else
-     typedef std::vector<std::map<size_t , double> > mat_t;
-     typedef std::map<size_t, double> col_t;
+         typedef std::vector<std::map<size_t , double> > mat_t;
+         typedef std::map<size_t, double> col_t;
 #endif
-     typedef mat_t::iterator row_iter;
-     typedef col_t::iterator col_iter;
-     typedef std::vector<std::vector<size_t> > mat_col_t;
-   protected:
-     size_t nrows, nrows0;
-     size_t ncols, ncols0;  
-     size_t size; 
-     size_t non_zero_entry_size;
-     bool Sym;
-     bool is_constructed;
-   private:
-     double dummy_zero;
-     mat_t mat_row;
-     mat_col_t mat_col;
+         typedef mat_t::iterator row_iter;
+         typedef col_t::iterator col_iter;
+         typedef std::vector<std::vector<size_t> > mat_col_t;
+      protected:
+         size_t nrows, nrows0;
+         size_t ncols, ncols0;
+         size_t size;
+         size_t non_zero_entry_size;
+         bool Sym;
+         bool is_constructed;
+      private:
+         double dummy_zero;
+         mat_t mat_row;
+         mat_col_t mat_col;
 #ifdef USE_HASHMAP
-     mat_id_t set_col_id;
+         mat_id_t set_col_id;
 #endif
 
-   public:
-     SparseMatrixDOK(size_t dim);
-     SparseMatrixDOK(size_t rows, size_t cols);
-     SparseMatrixDOK();
-     explicit SparseMatrixDOK(const SparseMatrixDOK& m);
+      public:
+         SparseMatrixDOK(size_t dim);
+         SparseMatrixDOK(size_t rows, size_t cols);
+         SparseMatrixDOK();
+         explicit SparseMatrixDOK(const SparseMatrixDOK& m);
 
-     mat_t& GetRawData(){return mat_row;};
-     long SizeOfNonZeroEntries();
-     void CalculateNonZeroEntries();
+         mat_t& GetRawData(){return mat_row;};
+         long SizeOfNonZeroEntries();
+         void CalculateNonZeroEntries();
 
-     //void resize(const int dim);
+         //void resize(const int dim);
 
-     virtual ~SparseMatrixDOK();
+         virtual ~SparseMatrixDOK();
 
-     // Operators
-     SparseMatrixDOK& operator = (double a);
-     void operator *= (double a);
-     void operator += (double a);
-     void operator = (const SparseMatrixDOK& m);
-     void operator += (const SparseMatrixDOK& m);
-     void operator -= (const SparseMatrixDOK& m);
-     void multiVec(double *vec_s, double *vec_r);
-     void LimitSize(size_t nRows, size_t nCols=1);  
-     void Diagonize(size_t idiag, const double b_given, double *b);
+         // Operators
+         SparseMatrixDOK& operator = (double a);
+         void operator *= (double a);
+         void operator += (double a);
+         void operator = (const SparseMatrixDOK& m);
+         void operator += (const SparseMatrixDOK& m);
+         void operator -= (const SparseMatrixDOK& m);
+         void multiVec(double *vec_s, double *vec_r);
+         void LimitSize(size_t nRows, size_t nCols=1);
+         void Diagonize(size_t idiag, const double b_given, double *b);
 
-     // Access to members     
-     double& operator() (size_t i, size_t j); //const;  
-     double& operator() (size_t i); //const;  
+         // Access to members
+         double& operator() (size_t i, size_t j); //const;
+         double& operator() (size_t i);           //const;
 
-     size_t Rows() const {return nrows;}
-     size_t Cols() const {return ncols;}
-     size_t Size() const {return size;}
-     size_t Dim() const  {return nrows;}
+         size_t Rows() const {return nrows;}
+         size_t Cols() const {return ncols;}
+         size_t Size() const {return size;}
+         size_t Dim() const  {return nrows;}
 
-     void Write(std::ostream &os=std::cout, int format=0);
-     bool IsSymmetry();
+         void Write(std::ostream &os=std::cout, int format=0);
+         bool IsSymmetry();
 
-#ifdef LIS // These two pointers are in need for Compressed Row Storage
-     int* ptr;
-     int* col_idx;
-     int* entry_index;
-     int GetCRSValue(double* value);
-     void ConstructCRSstructure();
+#ifdef LIS                                  // These two pointers are in need for Compressed Row Storage
+         int* ptr;
+         int* col_idx;
+         int* entry_index;
+         int GetCRSValue(double* value);
+         void ConstructCRSstructure();
 #endif
 #ifdef USE_HASHMAP
-     void ConstructSortedColumnID();
+         void ConstructSortedColumnID();
 #endif
    };
 
@@ -363,7 +364,7 @@ private:
 #endif
          // Print
          void Write(std::ostream &os=std::cout);
-
+         void Write_BIN(std::ostream &os);
          // Domain decomposition
 #if defined(USE_MPI)
          void DiagonalEntries(double *diag_e);

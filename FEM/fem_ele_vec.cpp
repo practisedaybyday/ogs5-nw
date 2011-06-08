@@ -44,7 +44,7 @@ namespace FiniteElement
 
    //  Constructor of class Element_DM
    CFiniteElementVec::CFiniteElementVec(process::CRFProcessDeformation *dm_pcs, const int C_Sys_Flad, const int order)
-      :CElement(C_Sys_Flad, order), pcs(dm_pcs)
+      :CElement(C_Sys_Flad, order), pcs(dm_pcs), b_rhs(NULL)
    {
       int i;
       excavation = false;                         // 12.2009. WW
@@ -55,11 +55,29 @@ namespace FiniteElement
       t_pcs = NULL;
       m_dom = NULL;
       AuxNodal2 = NULL;
+      Idx_Vel  = NULL;
+      X0 = n_jump = pr_stress = NULL;
+      //
+      ns = 4;
+      if(dim==3)
+         ns = 6;
+      //  10.11.2010. WW
+      AuxNodal = new double[8];
+      AuxNodal_S0 = new double[8];
+      AuxNodal_S = new double[8];
+      AuxNodal1 = new double[60];
+
+      Idx_Stress = new int[ns];
+      Idx_Strain = new int[ns];
+      strain_ne = new double[ns];
+      stress_ne = new double[ns];
+      stress0 = new double[ns];
       for(i=0; i<4; i++)
          NodeShift[i] = pcs->Shift[i];
       if(dm_pcs->pcs_type_name_vector[0].find("DYNAMIC")!=std::string::npos)
       {
          // Indecex in nodal value table
+         Idx_Vel = new int [3];
          Idx_dm0[0] = pcs->GetNodeValueIndex("ACCELERATION_X1");
          Idx_dm0[1] = pcs->GetNodeValueIndex("ACCELERATION_Y1");
          Idx_dm1[0] = Idx_dm0[0]+1;
@@ -84,7 +102,7 @@ namespace FiniteElement
       {
          dynamic = false;
          dAcceleration = NULL;
-         Idx_Vel[0] = Idx_Vel[1] = Idx_Vel[2] = -1;
+         //Idx_Vel[0] = Idx_Vel[1] = Idx_Vel[2] = -1;
          beta2 = bbeta1 = 1.0;
          // Indecex in nodal value table
          Idx_dm0[0] = pcs->GetNodeValueIndex("DISPLACEMENT_X1");
@@ -132,6 +150,13 @@ namespace FiniteElement
                vec_B_matrix_T[i] = new Matrix(3,6);
                break;
          }
+      }
+      //  10.11.2010. WW
+      if(enhanced_strain_dm)
+      {
+         X0 = new double[3];
+         n_jump = new double[3];
+         pr_stress = new double[3];
       }
 
       //
@@ -248,7 +273,7 @@ namespace FiniteElement
                                                   //25.08.2005.  WW
             } else if (h_pcs->type == 14 || h_pcs->type == 22)
             Flow_Type = 1;
-            else if (h_pcs->type == 1212)
+            else if (h_pcs->type == 1212||h_pcs->type==42)
                Flow_Type = 2;                     //25.04.2008.  WW
             // WW idx_P0 = pcs->GetNodeValueIndex("POROPRESSURE0");
             break;
@@ -337,6 +362,11 @@ namespace FiniteElement
       delete [] Szz;
       delete [] Sxy;
       delete [] pstr;
+      delete [] Idx_Strain;
+      delete [] Idx_Stress;
+      delete [] strain_ne;
+      delete [] stress_ne;
+      delete [] stress0;
       if(Sxz) delete [] Sxz;
       if(Syz) delete [] Syz;
       if(AuxNodal2) delete [] AuxNodal2;
@@ -396,6 +426,25 @@ namespace FiniteElement
       Sxz = NULL;
       Syz = NULL;
       pstr = NULL;
+      //  10.11.2010. WW
+      if(X0) delete [] X0;
+      if(n_jump) delete [] n_jump;
+      if(pr_stress) delete [] pr_stress;
+      if(Idx_Vel) delete [] Idx_Vel;
+      X0 = n_jump = pr_stress = NULL;
+      delete [] AuxNodal;
+      delete [] AuxNodal_S0;
+      delete [] AuxNodal_S;
+      delete [] AuxNodal1;
+      AuxNodal = AuxNodal_S0 =  AuxNodal_S = AuxNodal1 = NULL;
+      Idx_Vel = NULL;
+      //
+      Idx_Strain = NULL;
+      Idx_Stress = NULL;
+      strain_ne = NULL;
+      stress_ne = NULL;
+      stress0 = NULL;
+      //
 
       //NW
       for (int i=0; i<(int)vec_B_matrix.size(); i++)
@@ -771,6 +820,11 @@ namespace FiniteElement
          }
          if(PreLoad==11) continue;
          // Local assembly of stiffness matrix, B^T C B
+#ifdef JFNK_H2M
+         /// If JFNK. 18.10.2010. WW
+         if(pcs->m_num->nls_method==2&&(!pcs->JFNK_precond))
+            continue;
+#endif
          (*tmp_AuxMatrix2) = 0.0;
                                                   //NW
          tmp_B_matrix_T->multi(*p_D, *tmp_AuxMatrix2);
@@ -861,6 +915,7 @@ namespace FiniteElement
       Programming:
       06/2004   WW   Generalize for different element types as a member of class
    05/2005   WW   ...
+   08/2010   WW   JFNK method
    **************************************************************************/
    void CFiniteElementVec::LocalAssembly(const int update)
    {
@@ -872,6 +927,18 @@ namespace FiniteElement
       SetMaterial();
                                                   //12.2009. WW
       eleV_DM = ele_value_dm[MeshElement->GetIndex()];
+      if(m_dom)                                   //Moved here from GlobalAssemly. 08.2010. WW
+#ifdef NEW_EQS
+         b_rhs = m_dom->eqsH->b;
+#else
+      b_rhs = m_dom->eqs->b;
+#endif
+      else
+#ifdef NEW_EQS
+         b_rhs = pcs->eqs_new->b;
+#else
+      b_rhs = pcs->eqs->b;
+#endif
 
       (*RHS) = 0.0;
       (*Stiffness) = 0.0;
@@ -1008,63 +1075,72 @@ namespace FiniteElement
       02/2005   WW
       12/2009   WW New excavtion approach
    **************************************************************************/
-bool CFiniteElementVec::GlobalAssembly()
-{
-	// For excavation simulation. 12.2009. WW
-	int valid = 0;
-	if (excavation) {
-		excavation = true;
-		bool onExBoundary = false;
+   bool CFiniteElementVec::GlobalAssembly()
+   {
+      // For excavation simulation. 12.2009. WW
+      int valid = 0;
+      if (excavation)
+      {
+         excavation = true;
+         bool onExBoundary = false;
 
-		CNode * node;
-		CElem * elem;
-		CSolidProperties* smat_e;
+         CNode * node;
+         CElem * elem;
+         CSolidProperties* smat_e;
 
-		for (int i = 0; i < nnodesHQ; i++) {
-			node = MeshElement->nodes[i];
-			onExBoundary = false;
-			const size_t n_elements (node->getConnectedElementIDs().size());
-			for (size_t j = 0; j < n_elements; j++) {
-				elem = pcs->m_msh->ele_vector[node->getConnectedElementIDs()[j]];
-				if (!elem->GetMark()) continue;
+         for (int i = 0; i < nnodesHQ; i++)
+         {
+            node = MeshElement->nodes[i];
+            onExBoundary = false;
+            const size_t n_elements (node->getConnectedElementIDs().size());
+            for (size_t j = 0; j < n_elements; j++)
+            {
+               elem = pcs->m_msh->ele_vector[node->getConnectedElementIDs()[j]];
+               if (!elem->GetMark()) continue;
 
-				smat_e = msp_vector[elem->GetPatchIndex()];
-				if (smat_e->excavation > 0) {
-					if (fabs(GetCurveValue(smat_e->excavation, 0,
-							aktuelle_zeit, &valid) - 1.0) < DBL_MIN) {
-						onExBoundary = true;
-						break;
-					}
-				} else {
-					onExBoundary = true;
-					break;
-				}
-			}
+               smat_e = msp_vector[elem->GetPatchIndex()];
+               if (smat_e->excavation > 0)
+               {
+                  if (fabs(GetCurveValue(smat_e->excavation, 0,
+                     aktuelle_zeit, &valid) - 1.0) < DBL_MIN)
+                  {
+                     onExBoundary = true;
+                     break;
+                  }
+               }
+               else
+               {
+                  onExBoundary = true;
+                  break;
+               }
+            }
 
-			if (!onExBoundary) {
-				for (int j = 0; j < dim; j++)
-					(*RHS)(j * nnodesHQ + i) = 0.0;
-			}
+            if (!onExBoundary)
+            {
+               for (int j = 0; j < dim; j++)
+                  (*RHS)(j * nnodesHQ + i) = 0.0;
+            }
 
-		}
-	}
+         }
+      }
 
-	GlobalAssembly_RHS();
-	if (PreLoad == 11) return true;
+      GlobalAssembly_RHS();
+      if (PreLoad == 11) return true;
 
-	// For excavation simulation. 12.2009. WW
-	if (excavation) {
+      // For excavation simulation. 12.2009. WW
+      if (excavation)
+      {
 
-		MeshElement->MarkingAll(false);
-		*(eleV_DM->Stress) = 0.;
-		*(eleV_DM->Stress0) = 0.;
-		if (eleV_DM->Stress_j) (*eleV_DM->Stress_j) = 0.0;
-		return false;
-	}
+         MeshElement->MarkingAll(false);
+         *(eleV_DM->Stress) = 0.;
+         *(eleV_DM->Stress0) = 0.;
+         if (eleV_DM->Stress_j) (*eleV_DM->Stress_j) = 0.0;
+         return false;
+      }
 
-	GlobalAssembly_Stiffness();
-	return true;
-}
+      GlobalAssembly_Stiffness();
+      return true;
+   }
 
    /***************************************************************************
       GeoSys - Funktion:
@@ -1081,6 +1157,36 @@ bool CFiniteElementVec::GlobalAssembly()
       double f1,f2;
       f1=1.0;
       f2=-1.0;
+
+#if defined(NEW_EQS) && defined(JFNK_H2M)
+      ///If not JFNK. 02.2011. WW
+      if(pcs->m_num->nls_method==2)
+      {
+         if(!pcs->JFNK_precond)
+            return;
+
+         long kk = 0;
+         // Assemble Jacobi preconditioner
+         for (k = 0; k < ele_dim ; k++)
+         {
+            for (l = 0; l < ele_dim; l++)
+            {
+               for (i = 0; i < nnodesHQ; i++)
+               {
+                  kk = eqs_number[i]+NodeShift[k];
+                  for (j = 0; j < nnodesHQ; j++)
+                  {
+
+                     if(kk != eqs_number[j]+NodeShift[l])
+                        continue;
+                     pcs->eqs_new->prec_M[kk] += (*Stiffness)(i+k*nnodesHQ, j+l*nnodesHQ);
+                  }
+               }
+            }                                     // loop l
+         }                                        // loop k
+         return;
+      }
+#endif
       double biot = 1.0;
       biot = smat->biot_const;
 #if defined(NEW_EQS)
@@ -1228,7 +1334,7 @@ bool CFiniteElementVec::GlobalAssembly()
       biot = smat->biot_const;
       if(Flow_Type>=0)
       {
-         if(D_Flag==41)                           // Monolithic scheme
+         if(pcs->type/40==1)                      // Monolithic scheme
          {
             // If nonlinear deformation
             if(pcs_deformation>100)
@@ -1348,19 +1454,6 @@ bool CFiniteElementVec::GlobalAssembly()
          }
       }
       //RHS->Write();
-      double *b_rhs = NULL;
-      if(m_dom)
-#ifdef NEW_EQS
-         b_rhs = m_dom->eqsH->b;
-#else
-      b_rhs = m_dom->eqs->b;
-#endif
-      else
-#ifdef NEW_EQS
-         b_rhs = pcs->eqs_new->b;
-#else
-      b_rhs = pcs->eqs->b;
-#endif
 
       for (i=0;i<dim;i++)
       {
@@ -1409,6 +1502,12 @@ bool CFiniteElementVec::GlobalAssembly()
       double ThermalExpansion=0.0;
       double t1=0.0;
       bool Strain_TCS = false;
+
+#ifdef JFNK_H2M
+      bool JFNK = false;
+      if(pcs->m_num->nls_method==2)               // 10.09.2010. WW
+         JFNK = true;
+#endif
       //
       ThermalExpansion=0.0;
       // Thermal effect
@@ -1546,12 +1645,16 @@ bool CFiniteElementVec::GlobalAssembly()
                   dstress[i] += (*eleV_DM->Stress)(i, gp);
                break;
             case 1:                               // Drucker-Prager model
-               if(smat->StressIntegrationDP(gp, eleV_DM, dstress, dPhi, update))
-               {
-                  DevStress = smat->devS;
-                  smat->ConsistentTangentialDP(ConsistDep, dPhi, ele_dim);
-               }
-               break;
+#ifdef JFNK_H2M
+               if(smat->StressIntegrationDP(gp, eleV_DM, dstress, dPhi, update)&&!JFNK)
+#else
+                  if(smat->StressIntegrationDP(gp, eleV_DM, dstress, dPhi, update))
+#endif
+            {
+               DevStress = smat->devS;
+               smat->ConsistentTangentialDP(ConsistDep, dPhi, ele_dim);
+            }
+            break;
             case 10:                              // Drucker-Prager model, direct integration. 02/06 WW
                if(smat->DirectStressIntegrationDP(gp, eleV_DM, dstress, update))
                {
@@ -1767,13 +1870,13 @@ bool CFiniteElementVec::GlobalAssembly()
             Syz[gp] = dstrain[5];
             break;
          case MshElemType::PYRAMID:
-           Sxx[gp] = dstrain[0];
-           Syy[gp] = dstrain[1];
-           Szz[gp] = dstrain[2];
-           Sxy[gp] = dstrain[3];
-           Sxz[gp] = dstrain[4];
-           Syz[gp] = dstrain[5];
-           break;
+            Sxx[gp] = dstrain[0];
+            Syy[gp] = dstrain[1];
+            Szz[gp] = dstrain[2];
+            Sxy[gp] = dstrain[3];
+            Sxz[gp] = dstrain[4];
+            Syz[gp] = dstrain[5];
+            break;
          default:  break;
          // 3D
       }
@@ -1805,7 +1908,7 @@ bool CFiniteElementVec::GlobalAssembly()
       // l1=l2=l3=l4=0;
       MshElemType::type ElementType = MeshElement->GetElementType();
       if (ElementType==MshElemType::QUAD || ElementType==MshElemType::HEXAHEDRON)
-        Xi_p = CalcXi_p();
+         Xi_p = CalcXi_p();
 
       //
       i_s=0;
@@ -1822,14 +1925,15 @@ bool CFiniteElementVec::GlobalAssembly()
       // strains:
       //---------------------------------------------------------
       avgESxx = avgESyy = avgESzz = avgESxy = avgESxz = avgESyz = 0.0;
-      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
-        // average
-        avgESxx = CalcAverageGaussPointValues(Sxx);
-        avgESyy = CalcAverageGaussPointValues(Syy);
-        avgESzz = CalcAverageGaussPointValues(Szz);
-        avgESxy = CalcAverageGaussPointValues(Sxy);
-        avgESxz = CalcAverageGaussPointValues(Sxz);
-        avgESyz = CalcAverageGaussPointValues(Syz);
+      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE)
+      {
+         // average
+         avgESxx = CalcAverageGaussPointValues(Sxx);
+         avgESyy = CalcAverageGaussPointValues(Syy);
+         avgESzz = CalcAverageGaussPointValues(Szz);
+         avgESxy = CalcAverageGaussPointValues(Sxy);
+         avgESxz = CalcAverageGaussPointValues(Sxz);
+         avgESyz = CalcAverageGaussPointValues(Syz);
       }
 
       for(i=0; i<nnodes; i++)
@@ -1837,34 +1941,37 @@ bool CFiniteElementVec::GlobalAssembly()
          ESxx = ESyy = ESzz = ESxy = ESxz = ESyz = 0.0;
 
          // Calculate values at nodes
-         if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
-           SetExtropoGaussPoints(i);
-           ComputeShapefct(1);                      // Linear interpolation function
-           //
-           for(j=i_s; j<i_e; j++)
-           {
-             k = j-ish;
-             ESxx += Sxx[j]*shapefct[k];
-             ESyy += Syy[j]*shapefct[k];
-             ESxy += Sxy[j]*shapefct[k];
-             ESzz += Szz[j]*shapefct[k];
-             if(ele_dim==3)
-             {
-               ESxz += Sxz[j]*shapefct[k];
-               ESyz += Syz[j]*shapefct[k];
-             }
-           }
-         } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
-           //average
-           ESxx = avgESxx;
-           ESyy = avgESyy;
-           ESxy = avgESxy;
-           ESzz = avgESzz;
-           if(ele_dim==3)
-           {
-             ESxz = avgESxz;
-             ESyz = avgESyz;
-           }
+         if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR)
+         {
+            SetExtropoGaussPoints(i);
+            ComputeShapefct(1);                   // Linear interpolation function
+            //
+            for(j=i_s; j<i_e; j++)
+            {
+               k = j-ish;
+               ESxx += Sxx[j]*shapefct[k];
+               ESyy += Syy[j]*shapefct[k];
+               ESxy += Sxy[j]*shapefct[k];
+               ESzz += Szz[j]*shapefct[k];
+               if(ele_dim==3)
+               {
+                  ESxz += Sxz[j]*shapefct[k];
+                  ESyz += Syz[j]*shapefct[k];
+               }
+            }
+         }
+         else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE)
+         {
+            //average
+            ESxx = avgESxx;
+            ESyy = avgESyy;
+            ESxy = avgESxy;
+            ESzz = avgESzz;
+            if(ele_dim==3)
+            {
+               ESxz = avgESxz;
+               ESyz = avgESyz;
+            }
          }
 
          // Average value of the contribution of all neighbor elements
@@ -1971,15 +2078,16 @@ bool CFiniteElementVec::GlobalAssembly()
       // strains:
       //---------------------------------------------------------
       avgESxx = avgESyy = avgESzz = avgESxy = avgESxz = avgESyz = avgPls = 0.0;
-      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
-        // average
-        avgESxx = CalcAverageGaussPointValues(Sxx);
-        avgESyy = CalcAverageGaussPointValues(Syy);
-        avgESzz = CalcAverageGaussPointValues(Szz);
-        avgESxy = CalcAverageGaussPointValues(Sxy);
-        avgESxz = CalcAverageGaussPointValues(Sxz);
-        avgESyz = CalcAverageGaussPointValues(Syz);
-        avgPls = CalcAverageGaussPointValues(pstr);
+      if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE)
+      {
+         // average
+         avgESxx = CalcAverageGaussPointValues(Sxx);
+         avgESyy = CalcAverageGaussPointValues(Syy);
+         avgESzz = CalcAverageGaussPointValues(Szz);
+         avgESxy = CalcAverageGaussPointValues(Sxy);
+         avgESxz = CalcAverageGaussPointValues(Sxz);
+         avgESyz = CalcAverageGaussPointValues(Syz);
+         avgPls = CalcAverageGaussPointValues(pstr);
       }
 
       for(i=0; i<nnodes; i++)
@@ -1987,38 +2095,41 @@ bool CFiniteElementVec::GlobalAssembly()
          ESxx = ESyy = ESzz = ESxy = ESxz = ESyz = Pls = 0.0;
 
          // Calculate values at nodes
-         if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR) {
-           //
-           SetExtropoGaussPoints(i);
-           //
-           ComputeShapefct(1);                      // Linear interpolation function
-           //
-           for(j=i_s; j<i_e; j++)
-           {
-             k = j-ish;
-             ESxx += Sxx[j]*shapefct[k];
-             ESyy += Syy[j]*shapefct[k];
-             ESxy += Sxy[j]*shapefct[k];
-             ESzz += Szz[j]*shapefct[k];
-             Pls += pstr[j]*shapefct[k];
-             if(ele_dim==3)
-             {
-               ESxz += Sxz[j]*shapefct[k];
-               ESyz += Syz[j]*shapefct[k];
-             }
-           }
-         } else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE) {
-           //average
-           ESxx = avgESxx;
-           ESyy = avgESyy;
-           ESxy = avgESxy;
-           ESzz = avgESzz;
-           Pls  = avgPls;
-           if(ele_dim==3)
-           {
-             ESxz = avgESxz;
-             ESyz = avgESyz;
-           }
+         if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_LINEAR)
+         {
+            //
+            SetExtropoGaussPoints(i);
+            //
+            ComputeShapefct(1);                   // Linear interpolation function
+            //
+            for(j=i_s; j<i_e; j++)
+            {
+               k = j-ish;
+               ESxx += Sxx[j]*shapefct[k];
+               ESyy += Syy[j]*shapefct[k];
+               ESxy += Sxy[j]*shapefct[k];
+               ESzz += Szz[j]*shapefct[k];
+               Pls += pstr[j]*shapefct[k];
+               if(ele_dim==3)
+               {
+                  ESxz += Sxz[j]*shapefct[k];
+                  ESyz += Syz[j]*shapefct[k];
+               }
+            }
+         }
+         else if (this->GetExtrapoMethod()==ExtrapolationMethod::EXTRAPO_AVERAGE)
+         {
+            //average
+            ESxx = avgESxx;
+            ESyy = avgESyy;
+            ESxy = avgESxy;
+            ESzz = avgESzz;
+            Pls  = avgPls;
+            if(ele_dim==3)
+            {
+               ESxz = avgESxz;
+               ESyz = avgESyz;
+            }
          }
 
          // Average value of the contribution of ell neighbor elements

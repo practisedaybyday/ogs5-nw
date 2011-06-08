@@ -39,10 +39,10 @@ Programing:
 #ifdef _WIN32
 /* PARDISO prototype. */
 extern "C" int PARDISOINIT (void*, int*, int*, int*, double*, int*);
-extern "C" int PARDISO (void*, int*, int*, int*, int*, int*, 
-                        double*, int*, int*, int*, int*, int*, 
-                        int*, double*, double*, int*, double*);
-#else 
+extern "C" int PARDISO (void*, int*, int*, int*, int*, int*,
+double*, int*, int*, int*, int*, int*,
+int*, double*, double*, int*, double*);
+#else
 #include "mkl.h"
 
 /* PARDISO prototype. */
@@ -58,6 +58,9 @@ int *, double *, double*, int *);
 #include"rf_num_new.h"
 #include"matrix_class.h"
 #include"equation_class.h"
+#ifdef JFNK_H2M
+#include"rf_pcs.h"
+#endif
 
 std::vector<Math_Group::Linear_EQS *> EQS_Vector;
 using namespace std;
@@ -71,45 +74,67 @@ namespace Math_Group
    10/2007 WW/
    **************************************************************************/
    Linear_EQS::Linear_EQS(const SparseTable &sparse_table,
-      const int dof, bool messg):message(messg)
+   #ifndef JFNK_H2M
+      const long dof, bool messg):message(messg)
+   #else
+      const long dof, bool messg):message(messg), a_pcs(NULL)
+   #endif
    {
-      long i, size;
-      A = new CSparseMatrix(sparse_table, dof);
-      size = A->Dim();
-#if defined(USE_MPI)
-      prec_M =NULL;
-      x = NULL;
-      cpu_time = 0.0;
-      // WW
-      border_buffer0 = NULL;
-      border_buffer1 = NULL;
+      long i;
+      /// If JFNK method.  //03.08.2010. WW
+   #ifdef JFNK_H2M
+         if(dof<0)
+      {
+         size_A = abs(dof);
+            A = NULL;
+            size_global = size_A;
+      }
+      else
+      {
+         A = new CSparseMatrix(sparse_table, dof);
+            size_A = A->Dim();
+            size_global = 0;
+      }
 #else
-      x = new double[size];
-#endif
-      b = new double[size];
+      A = new CSparseMatrix(sparse_table, dof);
+         size_A = A->Dim();
+         size_global = 0;
+   #endif
+
+         prec_M =NULL;
+
+   #if defined(USE_MPI)
+         x = NULL;
+         cpu_time = 0.0;
+      // WW
+         border_buffer0 = NULL;
+         border_buffer1 = NULL;
+   #else
+         x = new double[size_A];
+   #endif
+         b = new double[size_A];
       //
-      for(i=0; i<size; i++)
+         for(i=0; i<size_A; i++)
       {
 #ifndef USE_MPI
          x[i] = 0.;
-#endif
-         b[i] = 0.;
+   #endif
+            b[i] = 0.;
       }
       iter = 0;
-      bNorm = 1.0;
-      error = 1.0e10;
-      size_global = 0;
+         bNorm = 1.0;
+         error = 1.0e10;
 
       //NW moved below to rf.cpp. Initialization and finalization of LIS solver
       //must be called only once but they were called several times with multiple meshes
-#ifdef LIS
+   #ifdef LIS
       ////	A->Write();
       //
-      int argc=0;
-      char** argv = NULL;
+         int argc=0;
+         char** argv = NULL;
       // Initialization of the lis solver.
-      lis_initialize(&argc, &argv);
-#endif
+         lis_initialize(&argc, &argv);
+   #endif
    }
 #if defined(USE_MPI)
    /**************************************************************************
@@ -120,16 +145,16 @@ namespace Math_Group
    Linear_EQS::Linear_EQS(const long size)
    {
       long i;
-      A = NULL;
-      b = NULL;
-      size_global = size;
-      x = new double[size];
+         A = NULL;
+         b = NULL;
+         size_global = size;
+         x = new double[size];
       //
-      for(i=0; i<size; i++)
+         for(i=0; i<size; i++)
          x[i] = 0.;
-      iter = 0;
-      bNorm = 1.0;
-      error = 1.0e10;
+         iter = 0;
+         bNorm = 1.0;
+         error = 1.0e10;
    }
 #endif
    /**************************************************************************
@@ -140,18 +165,20 @@ namespace Math_Group
    Linear_EQS::~Linear_EQS()
    {
       if(A) delete A;
-      if(x) delete [] x;
-      if(b) delete [] b;
+            if(x) delete [] x;
+               if(b) delete [] b;
       //
-      A = NULL;
-      x = NULL;
-      b = NULL;
+                  A = NULL;
+                  x = NULL;
+                  b = NULL;
 
       //NW moved to rf.cpp
-#ifdef LIS
-      lis_finalize();
-#endif
-      //
+            #ifdef LIS
+                  lis_finalize();
+            #endif
+      ///GMRES. 30.06.2010. WW
+                  if(solver_type == 13)
+                     H.ReleaseMemory();
    }
    /**************************************************************************
    Task: Linear equation::
@@ -161,51 +188,61 @@ namespace Math_Group
    void Linear_EQS::ConfigNumerics(CNumerics *m_num, const long n)
    {
       (void)n;
-      int i, nbuffer = 0;                         // Number of temperary float arrays
-      precond_type = m_num->ls_precond;
-      solver_type = m_num->ls_method;
-      switch(solver_type)
+         int i, nbuffer = 0;                      // Number of temperary float arrays
+         precond_type = m_num->ls_precond;
+         solver_type = m_num->ls_method;
+         switch(solver_type)
       {
          case 1:
             solver_name = "Gauss";
-            break;
-         case 2:
+               break;
+            case 2:
             solver_name = "BiCGSTab";
-            nbuffer = 8;
-            break;
-         case 3:
+               nbuffer = 8;
+               break;
+            case 3:
             solver_name = "BiCG";
-            nbuffer = 8;                          //20.10.2010. WW
-            break;
-         case 4:
+               nbuffer = 8;                       //20.10.2010. WW
+               break;
+            case 4:
             solver_name = "QMRCGStab";
-            break;
-         case 5:
+               break;
+            case 5:
             solver_name = "CG";
-            nbuffer = 3;
-            break;
-         case 6:
+               nbuffer = 3;
+               break;
+            case 6:
             solver_name = "CGNR";
-            break;
-         case 7:
+               break;
+            case 7:
             solver_name = "CGS";
-            nbuffer = 9;
-            break;
-         case 8:
+               nbuffer = 9;
+               break;
+            case 8:
             solver_name = "Richardson";
-            break;
-         case 9:
+               break;
+            case 9:
             solver_name = "JOR";
-            break;
-         case 10:
+               break;
+            case 10:
             solver_name = "SOR";
-            break;
-         case 11:
+               break;
+            case 11:
             solver_name = "AMG1R5";
-            break;
-         case 12:
+               break;
+            case 12:
             solver_name = "UMF";
-            break;
+            case 13:                              // 06.2010. WW
+            solver_name = "GMRES";
+               m_gmres = m_num->Get_m();
+               for(i=0; i<4; i++)
+            {
+               double *new_array = new double[m_gmres+1];
+                  f_buffer.push_back(new_array);
+            }
+            H.resize(m_gmres+1, m_gmres+1);
+               nbuffer = m_gmres+4;
+               break;
       }
       // Buffer
       /*
@@ -213,57 +250,66 @@ namespace Math_Group
       long size = A->Dim()+A->Dof()*dom->BSize();
       #else
       */
-      long size = A->Dim();
       //#endif
       for(i=0; i<nbuffer; i++)
       {
-         double *new_array = new double[size];
-         f_buffer.push_back(new_array);
+         double *new_array = new double[size_A];
+            f_buffer.push_back(new_array);
       }
 #if defined(USE_MPI)
       if(!x)
-         x = new double[size];
-#if defined(NEW_BREDUCE)
+            x = new double[size_A];
+      #if defined(NEW_BREDUCE)
       // For concatenate border entries
-      double *catb = NULL;
-      f_buffer.push_back(catb);
-#endif
+            double *catb = NULL;
+            f_buffer.push_back(catb);
+      #endif
       // Buffer for a global array
-      double *x_g_buffer = new double[n];
-      f_buffer.push_back(x_g_buffer);
+            double *x_g_buffer = new double[n];
+            f_buffer.push_back(x_g_buffer);
       // Buffer for border array
       // Will be removed if topo is ready
-      border_buffer0 = new double[A->Dof()*dom->BSize()];
-      border_buffer1 = new double[A->Dof()*dom->BSize()];
+            border_buffer0 = new double[A->Dof()*dom->BSize()];
+            border_buffer1 = new double[A->Dof()*dom->BSize()];
       //
-#endif
+      #endif
       //---------------------------------------------
-      switch(precond_type)
+            switch(precond_type)
       {
          case 1:
             precond_name = "Jacobi";
-#if defined(USE_MPI)
-            prec_M = new double[size];
-#endif
-            break;
-         case 100:
+   #if defined(USE_MPI)
+               prec_M = new double[size_A];
+   #else
+            /// If JFNK
+   #ifdef JFNK_H2M
+               if(m_num->nls_method == 2)
+                  prec_M  = new double[size_A];
+      #endif
+      #endif
+                  break;
+               case 100:
             // precond_name = "ILU"; break;
             // If ILU is ready, remove follows
             // ----------------------------------------------
             precond_name = "ILU not available. Use Jacobi";
-            precond_type = 1;
-#if defined(USE_MPI)
-            prec_M = new double[size];
-#endif
+               precond_type = 1;
+   #ifndef JFNK_H2M
+               if(m_num->nls_method == 2)
+                  prec_M  = new double[size_A];
+      #endif
+      #if defined(USE_MPI)
+                  prec_M = new double[size_A];
+      #endif
             // ----------------------------------------------
-            break;
-         default:
+                  break;
+               default:
             precond_name = "No preconditioner"; break;
       }
       //
       //
       max_iter = m_num->ls_max_iterations;
-      tol = m_num->ls_error_tolerance;
+         tol = m_num->ls_error_tolerance;
       //
    }
    /**************************************************************************
@@ -273,10 +319,11 @@ namespace Math_Group
    **************************************************************************/
    void Linear_EQS::Initialize()
    {
-      (*A) = 0.;
-      for(long i=0; i<A->Dim(); i++)
+      if(A)
+            (*A) = 0.;
+            for(long i=0; i<size_A; i++)
          b[i] = 0.;
-      error = 1.0e10;
+         error = 1.0e10;
    }
    /**************************************************************************
    Task: Linear equation::Alocate memory for solver
@@ -287,25 +334,25 @@ namespace Math_Group
    {
 #if defined(USE_MPI)
       double cpu_time_local = -MPI_Wtime();
-#endif
-      for(int i=0; i<(int)f_buffer.size(); i++)
+   #endif
+         for(int i=0; i<(int)f_buffer.size(); i++)
       {
          if(f_buffer[i]) delete [] f_buffer[i];
-         f_buffer[i] = NULL;
+               f_buffer[i] = NULL;
       }
       f_buffer.clear();
-#if defined(USE_MPI)
-      if(prec_M) delete [] prec_M;
+         if(prec_M) delete [] prec_M;
+            prec_M = NULL;
+      #if defined(USE_MPI)
       //
-      if(border_buffer0) delete [] border_buffer0;
-      border_buffer0 = NULL;
-      if(border_buffer1) delete [] border_buffer1;
-      border_buffer1 = NULL;
+            if(border_buffer0) delete [] border_buffer0;
+               border_buffer0 = NULL;
+               if(border_buffer1) delete [] border_buffer1;
+                  border_buffer1 = NULL;
       //
-      prec_M = NULL;
-      cpu_time_local += MPI_Wtime();
-      cpu_time += cpu_time_local;
-#endif
+                  cpu_time_local += MPI_Wtime();
+                  cpu_time += cpu_time_local;
+            #endif
    }
    /**************************************************************************
    Task: Linear equation::Write
@@ -316,11 +363,11 @@ namespace Math_Group
    {
       A->Write(os);
       //
-      os<<" b ( RHS): " <<endl;
-      os.width(10);
-      os.precision(6);
+         os<<" b ( RHS): " <<endl;
+         os.width(10);
+         os.precision(6);
       //
-      for(long i=0; i<A->Dim(); i++)
+         for(long i=0; i<size_A; i++)
          os<<setw(10)<<i<<" "<<setw(15)<<b[i]<<endl;
    }
    /**************************************************************************
@@ -331,9 +378,9 @@ namespace Math_Group
    void Linear_EQS::WriteRHS(ostream &os)
    {
       os.width(10);
-      os.precision(6);
+         os.precision(6);
       //
-      for(long i=0; i<A->Dim(); i++)
+         for(long i=0; i<A->Dim(); i++)
          os<<setw(15)<<b[i]<<endl;
    }
    /**************************************************************************
@@ -344,11 +391,12 @@ namespace Math_Group
    void Linear_EQS::WriteX(ostream &os)
    {
       os.width(10);
-      os.precision(6);
+         os.precision(6);
       //
-      for(long i=0; i<A->Dim(); i++)
+         for(long i=0; i<A->Dim(); i++)
          os<<setw(15)<<x[i]<<endl;
    }
+
    /**************************************************************************
    Task: Linear equation::Solver
    Programing:
@@ -410,27 +458,27 @@ namespace Math_Group
    {
       //
       double cpu_time_local = -MPI_Wtime();
-      iter = 0;
-      ComputePreconditioner();
-      size_global = n;
-      switch(solver_type)
+         iter = 0;
+         ComputePreconditioner();
+         size_global = n;
+         switch(solver_type)
       {
          case 2:
             iter = BiCGStab(xg, n);
-            break;
-         case 3:
+               break;
+            case 3:
             iter = BiCG(xg, n);
-            break;
-         case 5:
+               break;
+            case 5:
             iter = CG(xg, n);
-            break;
-         case 7:
+               break;
+            case 7:
             iter = CGS(xg, n);
-            break;
+               break;
       }
       cpu_time_local += MPI_Wtime();
-      cpu_time += cpu_time_local;
-      return iter;
+         cpu_time += cpu_time_local;
+         return iter;
    }
 
 #else
@@ -441,75 +489,75 @@ namespace Math_Group
 
       // Check the openmp solver type iterative and directive
       CNumerics* m_num;
-      if (num!=NULL)
-         m_num = num;                             //NW
-      else
+         if (num!=NULL)
+            m_num = num;                          //NW
+            else
          m_num = num_vector[0];
 
-      if(m_num->ls_method==805)                   // Then, PARDISO parallel direct solver
+         if(m_num->ls_method==805)                // Then, PARDISO parallel direct solver
       {
 #ifdef MKL                               // PCH 10.03.2009: Requires the system platform where Math Kernel Library is properly configured.
          //cout << "---------------------------------------------------" << endl;
          //omp_set_num_threads (1);
          cout << "->Start calling PARDISO with " << omp_get_max_threads() << " threads" << endl;
-         int i, iter, ierr;
+            int i, iter, ierr;
          // Assembling the matrix
          // Establishing CRS type matrix from GeoSys Matrix data storage type
-         int nonzero=A->nnz();
-         int numOfNode=A->Size()*A->Dof();
-         double *value;
-         value = new double [nonzero];
-         ierr = A->GetCRSValue(value);
-         int* ptr=NULL; int *index=NULL;
-         ptr= (int *)malloc((numOfNode+1)*sizeof( int));
-         index = (int *)malloc((nonzero)*sizeof( int));
+            int nonzero=A->nnz();
+            int numOfNode=A->Size()*A->Dof();
+            double *value;
+            value = new double [nonzero];
+            ierr = A->GetCRSValue(value);
+            int* ptr=NULL; int *index=NULL;
+            ptr= (int *)malloc((numOfNode+1)*sizeof( int));
+            index = (int *)malloc((nonzero)*sizeof( int));
 
          // Reindexing ptr according to Fortran-based PARDISO
-         for(i=0; i < numOfNode; ++i)
+            for(i=0; i < numOfNode; ++i)
             ptr[i] = A->ptr[i]+1;
          //ptr needs one more storage
-         ptr[i] = A->ptr[i]+1;
+            ptr[i] = A->ptr[i]+1;
          // Reindexing index according to Fortran-based PARDISO
          // and zonzero of Matrix A
-         for(i=0; i < nonzero; ++i)
+            for(i=0; i < nonzero; ++i)
             index[i] = A->col_idx[i]+1;
 
-         int mtype = 11;                          /* Real unsymmetric matrix */
-         int nrhs = 1;                            /* Number of right hand sides. */
+            int mtype = 11;                       /* Real unsymmetric matrix */
+            int nrhs = 1;                         /* Number of right hand sides. */
          /* Internal solver memory pointer pt, */
          /* 32-bit: int pt[64]; 64-bit: long int pt[64] */
          /* or void *pt[64] should be OK on both architectures */
-         void *pt[64];
+            void *pt[64];
          /* Pardiso control parameters.*/
-         int iparm[64];
-         double dparm[64];
-         int maxfct, mnum, phase, error, msglvl, solver;
+            int iparm[64];
+            double dparm[64];
+            int maxfct, mnum, phase, error, msglvl, solver;
 
          /* Auxiliary variables.*/
-         double ddum;                             /* Double dummy */
-         int idum;                                /* Integer dummy. */
+            double ddum;                          /* Double dummy */
+            int idum;                             /* Integer dummy. */
 
-#ifdef _WIN32
+   #ifdef _WIN32
          // Check the license and initialize the solver
          {
-           //static bool done = false;
-           //if (!done) {
-           PARDISOINIT (pt,  &mtype, &solver, iparm, dparm, &error); 
-           if (error != 0) 
-           {
-             if (error == -10 )
-               printf("->No license file found \n");
-             if (error == -11 )
-               printf("->License is expired \n");
-             if (error == -12 )
-               printf("->Wrong username or hostname \n");
-             exit(1); 
-           }
-           else
-             printf("->PARDISO license check was successful ... \n");
+            //static bool done = false;
+            //if (!done) {
+            PARDISOINIT (pt,  &mtype, &solver, iparm, dparm, &error);
+               if (error != 0)
+            {
+               if (error == -10 )
+                     printf("->No license file found \n");
+                     if (error == -11 )
+                        printf("->License is expired \n");
+                        if (error == -12 )
+                           printf("->Wrong username or hostname \n");
+                           exit(1);
+            }
+            else
+               printf("->PARDISO license check was successful ... \n");
 
-           //  done = true;
-           //}
+            //  done = true;
+            //}
          }
 #endif
 
@@ -521,40 +569,40 @@ namespace Math_Group
             iparm[i] = 0;
          }
          iparm[0] = 1;                            /* No solver default */
-         iparm[1] = 2;                            /* Fill-in reordering from METIS */
+            iparm[1] = 2;                         /* Fill-in reordering from METIS */
          /* Numbers of processors, value of MKL_NUM_THREADS */
-#ifdef _WIN32
-         iparm[2] = omp_get_max_threads();
-#else
-         iparm[2] = mkl_get_max_threads();
-#endif
-         iparm[3] = 0;                            /* No iterative-direct algorithm */
-         iparm[4] = 0;                            /* No user fill-in reducing permutation */
-         iparm[5] = 0;                            /* Write solution into x */
-         iparm[6] = 0;                            /* Not in use */
-         iparm[7] = 2;                            /* Max numbers of iterative refinement steps */
-         iparm[8] = 0;                            /* Not in use */
-         iparm[9] = 13;                           /* Perturb the pivot elements with 1E-13 */
-         iparm[10] = 1;                           /* Use nonsymmetric permutation and scaling MPS */
-         iparm[11] = 0;                           /* Not in use */
-         iparm[12] = 0;                           /* Not in use */
-         iparm[13] = 0;                           /* Output: Number of perturbed pivots */
-         iparm[14] = 0;                           /* Not in use */
-         iparm[15] = 0;                           /* Not in use */
-         iparm[16] = 0;                           /* Not in use */
-         iparm[17] = -1;                          /* Output: Number of nonzeros in the factor LU */
-         iparm[18] = -1;                          /* Output: Mflops for LU factorization */
-         iparm[19] = 0;                           /* Output: Numbers of CG Iterations */
-         maxfct = 1;                              /* Maximum number of numerical factorizations. */
-         mnum = 1;                                /* Which factorization to use. */
-         msglvl = 0;                              /* Print statistical information in file */
-         error = 0;                               /* Initialize error flag */
+   #ifdef _WIN32
+            iparm[2] = omp_get_max_threads();
+   #else
+            iparm[2] = mkl_get_max_threads();
+   #endif
+            iparm[3] = 0;                         /* No iterative-direct algorithm */
+            iparm[4] = 0;                         /* No user fill-in reducing permutation */
+            iparm[5] = 0;                         /* Write solution into x */
+            iparm[6] = 0;                         /* Not in use */
+            iparm[7] = 2;                         /* Max numbers of iterative refinement steps */
+            iparm[8] = 0;                         /* Not in use */
+            iparm[9] = 13;                        /* Perturb the pivot elements with 1E-13 */
+            iparm[10] = 1;                        /* Use nonsymmetric permutation and scaling MPS */
+            iparm[11] = 0;                        /* Not in use */
+            iparm[12] = 0;                        /* Not in use */
+            iparm[13] = 0;                        /* Output: Number of perturbed pivots */
+            iparm[14] = 0;                        /* Not in use */
+            iparm[15] = 0;                        /* Not in use */
+            iparm[16] = 0;                        /* Not in use */
+            iparm[17] = -1;                       /* Output: Number of nonzeros in the factor LU */
+            iparm[18] = -1;                       /* Output: Mflops for LU factorization */
+            iparm[19] = 0;                        /* Output: Numbers of CG Iterations */
+            maxfct = 1;                           /* Maximum number of numerical factorizations. */
+            mnum = 1;                             /* Which factorization to use. */
+            msglvl = 0;                           /* Print statistical information in file */
+            error = 0;                            /* Initialize error flag */
 
          /* --------------------------------------------------------------------*/
          /* .. Initialize the internal solver memory pointer. This is only */
          /* necessary for the FIRST call of the PARDISO solver. */
          /* --------------------------------------------------------------------*/
-         for (i = 0; i < 64; i++)
+            for (i = 0; i < 64; i++)
          {
             pt[i] = 0;
          }
@@ -564,138 +612,138 @@ namespace Math_Group
          /* all memory that is necessary for the factorization. */
          /* --------------------------------------------------------------------*/
          phase = 11;
-#ifdef _WIN32
-         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-           &numOfNode, value, ptr, index , &idum, &nrhs,
-           iparm, &msglvl, &ddum, &ddum, &error, dparm);
-#else
-         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-           &numOfNode, value, ptr, index , &idum, &nrhs,
-           iparm, &msglvl, &ddum, &ddum, &error);
-#endif
+   #ifdef _WIN32
+            PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+            &numOfNode, value, ptr, index , &idum, &nrhs,
+            iparm, &msglvl, &ddum, &ddum, &error, dparm);
+   #else
+            PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+            &numOfNode, value, ptr, index , &idum, &nrhs,
+            iparm, &msglvl, &ddum, &ddum, &error);
+   #endif
 
-         if (error != 0)
+            if (error != 0)
          {
             printf("\nERROR during symbolic factorization: %d", error);
-            exit(1);
+               exit(1);
          }
 
          /* --------------------------------------------------------------------*/
          /* .. Numerical factorization.*/
          /* --------------------------------------------------------------------*/
          phase = 22;
-#ifdef _WIN32
-         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-           &numOfNode, value, ptr, index, &idum, &nrhs,
-           iparm, &msglvl, &ddum, &ddum, &error, dparm);
-#else
-         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-           &numOfNode, value, ptr, index, &idum, &nrhs,
-           iparm, &msglvl, &ddum, &ddum, &error);
-#endif
-         if (error != 0)
+   #ifdef _WIN32
+            PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+            &numOfNode, value, ptr, index, &idum, &nrhs,
+            iparm, &msglvl, &ddum, &ddum, &error, dparm);
+   #else
+            PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+            &numOfNode, value, ptr, index, &idum, &nrhs,
+            iparm, &msglvl, &ddum, &ddum, &error);
+   #endif
+            if (error != 0)
          {
             printf("\nERROR during numerical factorization: %d", error);
-            exit(2);
+               exit(2);
          }
 
          /* --------------------------------------------------------------------*/
          /* .. Back substitution and iterative refinement. */
          /* --------------------------------------------------------------------*/
          phase = 33;
-         iparm[7] = 2;                            /* Max numbers of iterative refinement steps. */
+            iparm[7] = 2;                         /* Max numbers of iterative refinement steps. */
 
          /* Set right hand side to one. */
 
-#ifdef _WIN32
-         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-           &numOfNode, value, ptr, index , &idum, &nrhs,
-           iparm, &msglvl, b, x, &error, dparm);
-#else
-         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-           &numOfNode, value, ptr, index , &idum, &nrhs,
-           iparm, &msglvl, b, x, &error);
-#endif
-         if (error != 0)
+   #ifdef _WIN32
+            PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+            &numOfNode, value, ptr, index , &idum, &nrhs,
+            iparm, &msglvl, b, x, &error, dparm);
+   #else
+            PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+            &numOfNode, value, ptr, index , &idum, &nrhs,
+            iparm, &msglvl, b, x, &error);
+   #endif
+            if (error != 0)
          {
             printf("\nERROR during solution: %d", error);
-            exit(3);
+               exit(3);
          }
 
          phase = -1;                              /* Release internal memory. */
-#ifdef _WIN32
-         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-           &numOfNode, value, ptr, index, &idum, &nrhs,
-           iparm, &msglvl, &ddum, &ddum, &error, dparm);
-#else
-         PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-           &numOfNode, value, ptr, index, &idum, &nrhs,
-           iparm, &msglvl, &ddum, &ddum, &error);
-#endif
+   #ifdef _WIN32
+            PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+            &numOfNode, value, ptr, index, &idum, &nrhs,
+            iparm, &msglvl, &ddum, &ddum, &error, dparm);
+   #else
+            PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+            &numOfNode, value, ptr, index, &idum, &nrhs,
+            iparm, &msglvl, &ddum, &ddum, &error);
+   #endif
 
          // Releasing the local memory
-         delete [] value; free(ptr); free(index);
+            delete [] value; free(ptr); free(index);
          //		MKL_FreeBuffers();
-         cout << "->Finished PARDISO computation" << endl;
-#endif
+            cout << "->Finished PARDISO computation" << endl;
+   #endif
       }
       else                                        // LIS parallel solver
       {
          int i, iter, ierr, size;
          // Fix for the fluid_momentum Dof
-         size = A->Size()*A->Dof();
+            size = A->Size()*A->Dof();
 
          // Assembling the matrix
          // Establishing CRS type matrix from GeoSys Matrix data storage type
-         int nonzero=A->nnz();
-         double *value;
-         value = new double [nonzero];
-         ierr = A->GetCRSValue(value);
+            int nonzero=A->nnz();
+            double *value;
+            value = new double [nonzero];
+            ierr = A->GetCRSValue(value);
 
          // Creating a matrix.
-         ierr = lis_matrix_create(0,&AA);
-         ierr = lis_matrix_set_type(AA,LIS_MATRIX_CRS);
-         ierr = lis_matrix_set_size(AA,0,size);
+            ierr = lis_matrix_create(0,&AA);
+            ierr = lis_matrix_set_type(AA,LIS_MATRIX_CRS);
+            ierr = lis_matrix_set_size(AA,0,size);
 
          // Matrix solver and Precondition can be handled better way.
-         char solver_options[MAX_ZEILE], tol_option[MAX_ZEILE];
-         sprintf(solver_options, "-i %d -p %d",m_num->ls_method, m_num->ls_precond);
+            char solver_options[MAX_ZEILE], tol_option[MAX_ZEILE];
+            sprintf(solver_options, "-i %d -p %d",m_num->ls_method, m_num->ls_precond);
          // tolerance and other setting parameters are same
                                                   //NW add max iteration counts
-         sprintf(tol_option, "-tol %e -maxiter %d",m_num->ls_error_tolerance, m_num->ls_max_iterations);
+            sprintf(tol_option, "-tol %e -maxiter %d",m_num->ls_error_tolerance, m_num->ls_max_iterations);
 
-         ierr = lis_matrix_set_crs(nonzero,A->ptr,A->col_idx, value,AA);
-         ierr = lis_matrix_assemble(AA);
+            ierr = lis_matrix_set_crs(nonzero,A->ptr,A->col_idx, value,AA);
+            ierr = lis_matrix_assemble(AA);
 
          // Assemble the vector, b, x
          //OK411 int iflag = 0;
-         ierr = lis_vector_duplicate(AA,&bb);
-         ierr = lis_vector_duplicate(AA,&xx);
-#pragma omp parallel for
-         for(i=0; i < size; ++i)
+            ierr = lis_vector_duplicate(AA,&bb);
+            ierr = lis_vector_duplicate(AA,&xx);
+   #pragma omp parallel for
+            for(i=0; i < size; ++i)
          {
             ierr = lis_vector_set_value(LIS_INS_VALUE,i,x[i],xx);
-            ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[i],bb);
+               ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[i],bb);
          }
 
          // Create solver
          ierr = lis_solver_create(&solver);
 
-         ierr = lis_solver_set_option(solver_options,solver);
-         ierr = lis_solver_set_option(tol_option,solver);
-         ierr = lis_solve(AA,bb,xx,solver);
-         ierr = lis_solver_get_iters(solver,&iter);
+            ierr = lis_solver_set_option(solver_options,solver);
+            ierr = lis_solver_set_option(tol_option,solver);
+            ierr = lis_solve(AA,bb,xx,solver);
+            ierr = lis_solver_get_iters(solver,&iter);
          //NW
-         printf("\t iteration: %d/%d\n", iter, m_num->ls_max_iterations);
-         double resid = 0.0;
-         ierr = lis_solver_get_residualnorm(solver,&resid);
-         printf("\t residuals: %e\n", resid);
+            printf("\t iteration: %d/%d\n", iter, m_num->ls_max_iterations);
+            double resid = 0.0;
+            ierr = lis_solver_get_residualnorm(solver,&resid);
+            printf("\t residuals: %e\n", resid);
          //	lis_vector_print(xx);
          //	lis_vector_print(bb);
 
          // Update the solution (answer) into the x vector
-#pragma omp parallel for
-         for(i=0; i<size; ++i)
+   #pragma omp parallel for
+            for(i=0; i<size; ++i)
          {
             lis_vector_get_value(xx,i,&(x[i]));
          }
@@ -703,9 +751,9 @@ namespace Math_Group
          // Clear memory
          delete [] value;
          //	lis_matrix_destroy(AA);
-         lis_vector_destroy(bb);
-         lis_vector_destroy(xx);
-         lis_solver_destroy(solver);
+            lis_vector_destroy(bb);
+            lis_vector_destroy(xx);
+            lis_solver_destroy(solver);
       }
 
       return -1;                                  // This right now is meaningless.
@@ -715,34 +763,37 @@ namespace Math_Group
    {
       //
       iter = 0;
-      ComputePreconditioner();
-      switch(solver_type)
+         ComputePreconditioner();
+         switch(solver_type)
       {
          case 1:
             return Gauss();
-         case 2:
+            case 2:
             iter= BiCGStab();
-            return iter;                          //kg44 only to make sure here is iter returned
-         case 3:
+               return iter;                       //kg44 only to make sure here is iter returned
+            case 3:
             return BiCG();
-         case 4:
+            case 4:
             return QMRCGStab();
-         case 5:
+            case 5:
             return CG();
-         case 6:
+            case 6:
             return CGNR();
-         case 7:
+            case 7:
             return CGS();
-         case 8:
+            case 8:
             return Richardson();
-         case 9:
+            case 9:
             return JOR();
-         case 10:
+            case 10:
             return SOR();
-         case 11:
+            case 11:
             return AMG1R5();
-         case 12:
+            case 12:
             return UMF();
+            case 13:
+            return GMRES();
+               break;
       }
       return -1;
    }
@@ -761,12 +812,12 @@ namespace Math_Group
          case 1:
 #if defined(USE_MPI)
             ComputePreconditioner_Jacobi();
-#endif
-            return;
-         case 100:
+   #endif
+               return;
+            case 100:
             ComputePreconditioner_ILU();
-            return;
-         default:
+               return;
+            default:
             return;
       }
    }
@@ -789,25 +840,31 @@ namespace Math_Group
    void Linear_EQS::Precond(double *vec_s, double *vec_r)
    {
       bool pre = true;
-      switch(precond_type)
+         switch(precond_type)
       {
          case 1:
 #if defined(USE_MPI)
             Precond_Jacobi(vec_s, vec_r);
-#else
-            A->Precond_Jacobi(vec_s, vec_r);
+   #else
+   #ifdef JFNK_H2M
+            /// If JFNK
+               if(!A)
+                  Precond_Jacobi(vec_s, vec_r);
+                  else
 #endif
-            break;
-         case 100:
+               A->Precond_Jacobi(vec_s, vec_r);
+         #endif
+                     break;
+                  case 100:
             pre = false;                          //A->Precond_ILU(vec_s, vec_r);
-            break;
-         default:
+               break;
+            default:
             pre = false;                          //A->Precond_ILU(vec_s, vec_r);
-            break;
+               break;
       }
       if(!pre)
       {
-         for(long i=0; i<A->Dim(); i++)
+         for(long i=0; i<size_A; i++)
             vec_r[i] = vec_s[i];
       }
    }
@@ -831,18 +888,17 @@ namespace Math_Group
    double Linear_EQS::dot (const double *xx,  const double *yy)
    {
       long i;
-      double val = 0.;
-#if defined(USE_MPI)
-      long size = A->Dim();
-      double val_i = dom->Dot_Interior(xx,  yy);
-      val_i += dom->Dot_Border_Vec(xx,  yy);
+         double val = 0.;
+   #if defined(USE_MPI)
+         double val_i = dom->Dot_Interior(xx,  yy);
+         val_i += dom->Dot_Border_Vec(xx,  yy);
       //
-      MPI_Allreduce(&val_i, &val, 1, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-#else
-      for(i=0; i<A->Dim(); i++)
+         MPI_Allreduce(&val_i, &val, 1, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+   #else
+         for(i=0; i<size_A; i++)
          val += xx[i]*yy[i];
-#endif
-      return val;
+   #endif
+         return val;
    }
    /*\!
     ********************************************************************
@@ -854,9 +910,9 @@ namespace Math_Group
    {
 #if defined(USE_MPI)
       return sqrt(dot(x, x, size_global ));
-#else
-      return sqrt(dot(x, x ));
-#endif
+   #else
+         return sqrt(dot(x, x ));
+   #endif
    }
    //
 #if defined(USE_MPI)
@@ -869,10 +925,10 @@ namespace Math_Group
    double Linear_EQS::dot (const double *xx,  const double *yy, const long n)
    {
       long i;
-      double val = 0.;
-      for(i=0; i<n; i++)
+         double val = 0.;
+         for(i=0; i<n; i++)
          val += xx[i]*yy[i];
-      return val;
+         return val;
    }
    /*\!
     ********************************************************************
@@ -882,17 +938,17 @@ namespace Math_Group
    ********************************************************************/
    inline void Linear_EQS::MatrixMulitVec(double *xx,  double *yy)
    {
-      long i, size = A->Dim();
+      long i;                                     //, size = A->Dim();
       //
-      A->multiVec(xx, yy);
-#if defined(NEW_BREDUCE)
-      dom->ReduceBorderV(yy);
-#else
-      dom->Local2Border(yy, border_buffer0);
-      MPI_Allreduce(border_buffer0, border_buffer1, A->Dof()*dom->BSize(),
+         A->multiVec(xx, yy);
+   #if defined(NEW_BREDUCE)
+         dom->ReduceBorderV(yy);
+   #else
+         dom->Local2Border(yy, border_buffer0);
+         MPI_Allreduce(border_buffer0, border_buffer1, A->Dof()*dom->BSize(),
          MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-      dom->Border2Local(border_buffer1, yy);
-#endif
+         dom->Border2Local(border_buffer1, yy);
+   #endif
    }
    /*!
     ********************************************************************
@@ -905,14 +961,14 @@ namespace Math_Group
    {
       //
       A->Trans_MultiVec(xx, yy);
-#if defined(NEW_BREDUCE)
-      dom->ReduceBorderV(yy);
-#else
-      dom->Local2Border(yy, border_buffer0);
-      MPI_Allreduce(border_buffer0, border_buffer1, A->Dof()*dom->BSize(),
+   #if defined(NEW_BREDUCE)
+         dom->ReduceBorderV(yy);
+   #else
+         dom->Local2Border(yy, border_buffer0);
+         MPI_Allreduce(border_buffer0, border_buffer1, A->Dof()*dom->BSize(),
          MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-      dom->Border2Local(border_buffer1, yy);
-#endif
+         dom->Border2Local(border_buffer1, yy);
+   #endif
    }
 #endif
    /*!
@@ -925,27 +981,27 @@ namespace Math_Group
    {
 #ifdef USE_MPI
       if(myrank>0)
-         return;
-#endif
-      if (!message) return;
-      cout.width(10);
-      cout.precision(3);
-      cout.setf(ios::scientific);
+            return;
+      #endif
+            if (!message) return;
+               cout.width(10);
+               cout.precision(3);
+               cout.setf(ios::scientific);
       //
       //system("color 0B");
-      cout<<"\n================================================\n";
-      cout<<"Linear solver "<<solver_name<<" with "<<precond_name<<":\n";
+               cout<<"\n================================================\n";
+               cout<<"Linear solver "<<solver_name<<" with "<<precond_name<<":\n";
       //cout<<"\n------------------------------------------------ \n";
-      cout<<"Iterations |";
-      cout<<"Max Iters  |";
-      cout<<"Norm of b  |";
-      cout<<"Error      |\n";
+               cout<<"Iterations |";
+               cout<<"Max Iters  |";
+               cout<<"Norm of b  |";
+               cout<<"Error      |\n";
       //cout<<"\n------------------------------------------------ \n";
-      cout<<setw(11)<<iter<<"|"<<setw(11)<<max_iter<< "|"
-         <<setw(11)<<bNorm<< "|"<<setw(11)<<error<<"|\n";
-      cout<<"================================================\n";
-      if (iter==max_iter) cout << " Maximum iteration reached !!! \n";
-      cout.flush();
+               cout<<setw(11)<<iter<<"|"<<setw(11)<<max_iter<< "|"
+               <<setw(11)<<bNorm<< "|"<<setw(11)<<error<<"|\n";
+               cout<<"================================================\n";
+               if (iter==max_iter) cout << " Maximum iteration reached !!! \n";
+                  cout.flush();
       //
    }
    /*\!
@@ -962,17 +1018,17 @@ namespace Math_Group
          if((normb_new/bNorm)<tol)
          {
             error = normb_new/bNorm;
-            bNorm = normb_new;
-            Message();
-            return true;
+               bNorm = normb_new;
+               Message();
+               return true;
          }
       }
       bNorm = normb_new;
-      if(bNorm<DBL_MIN)
+         if(bNorm<DBL_MIN)
       {
          error = 0.;
-         Message();
-         return true;
+            Message();
+            return true;
       }
       return false;
    }
@@ -985,64 +1041,64 @@ namespace Math_Group
    int Linear_EQS::CG()
    {
       long i, size;
-      double rrM1;
-      double *p, *r, *s;
+         double rrM1;
+         double *p, *r, *s;
       //
-      size = A->Dim();
-      p = f_buffer[0];
-      r = f_buffer[1];
-      s = f_buffer[2];
+         size = A->Dim();
+         p = f_buffer[0];
+         r = f_buffer[1];
+         s = f_buffer[2];
       //
-      double bNorm_new = Norm(b);
+         double bNorm_new = Norm(b);
       // Check if the norm of b is samll enough for convengence
-      if(CheckNormRHS(bNorm_new))
-         return 0;
+         if(CheckNormRHS(bNorm_new))
+            return 0;
       //
       // r0 = b-Ax
-      A->multiVec(x,s);
-      for(i=0; i<size; i++)
+            A->multiVec(x,s);
+            for(i=0; i<size; i++)
          r[i] = b[i]-s[i];
       //
       // Preconditioning: M^{-1}r
-      Precond(r, s);
-      for(i=0; i<size; i++)
+         Precond(r, s);
+         for(i=0; i<size; i++)
          p[i] = s[i];
       // Check the convergence
-      if ((error = Norm(r)/bNorm) < tol)
+         if ((error = Norm(r)/bNorm) < tol)
       {
          Message();
-         return 1;
+            return 1;
       }
       //
       double rr = dot(r , s);
       //
-      for (iter=1; iter<=max_iter; ++iter)
+         for (iter=1; iter<=max_iter; ++iter)
       {
          A->multiVec(p, s);
-         const double alpha = rr / dot(p,s);
+            const double alpha = rr / dot(p,s);
          // Update
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
          {
             x[i] += alpha*p[i];
-            r[i] -= alpha*s[i];
+               r[i] -= alpha*s[i];
          }
          if ((error = Norm(r)/bNorm) < tol)
          {
             Message();
-            return iter <= max_iter;
+               return iter <= max_iter;
          }
          //
          Precond(r, s);
          //
-         rrM1 = rr;
-         rr   = dot(s, r);
-         const double beta = rr / rrM1;
-         for(i=0; i<size; i++)
+            rrM1 = rr;
+            rr   = dot(s, r);
+            const double beta = rr / rrM1;
+            for(i=0; i<size; i++)
             p[i] = s[i] + beta*p[i];
       }
       //
       Message();
-      return iter <= max_iter;
+         return iter <= max_iter;
    }
    /**************************************************************************
    Task: Linear equation::BiCG
@@ -1052,50 +1108,50 @@ namespace Math_Group
    int Linear_EQS::BiCG()
    {
       long i, size;
-      double rho1, rho2 = 0., alpha, beta;
-      double *z, *zt, *p, *pt, *q, *qt, *r, *rt;
+         double rho1, rho2 = 0., alpha, beta;
+         double *z, *zt, *p, *pt, *q, *qt, *r, *rt;
       //
-      size = A->Dim();
-      z = f_buffer[0];
-      zt = f_buffer[1];
-      p = f_buffer[2];
-      pt = f_buffer[3];
-      q = f_buffer[4];
-      qt = f_buffer[5];
-      r = f_buffer[6];
-      rt = f_buffer[7];
+         size = A->Dim();
+         z = f_buffer[0];
+         zt = f_buffer[1];
+         p = f_buffer[2];
+         pt = f_buffer[3];
+         q = f_buffer[4];
+         qt = f_buffer[5];
+         r = f_buffer[6];
+         rt = f_buffer[7];
       //
-      double bNorm_new = Norm(b);
+         double bNorm_new = Norm(b);
       // Check if the norm of b is samll enough for convengence
-      if(CheckNormRHS(bNorm_new))
-         return 0;
+         if(CheckNormRHS(bNorm_new))
+            return 0;
       //
       // r0 = b-Ax
-      A->multiVec(x,rt);
-      for(i=0; i<size; i++)
+            A->multiVec(x,rt);
+            for(i=0; i<size; i++)
       {
          r[i] = b[i]-rt[i];
-         rt[i] = r[i];
+            rt[i] = r[i];
       }
       //
       // Check the convergence
       if ((error = Norm(r)/bNorm) < tol)
       {
          Message();
-         return 1;
+            return 1;
       }
       //
       //
       for (iter=1; iter<=max_iter; ++iter)
       {
          Precond(r, z);
-         TransPrecond(rt, zt);
-         rho1 = dot(z, rt);
+            TransPrecond(rt, zt);
+            rho1 = dot(z, rt);
          //
-         if (fabs(rho1) < DBL_MIN)
+            if (fabs(rho1) < DBL_MIN)
          {
             Message();
-            return iter <= max_iter;
+               return iter <= max_iter;
          }
          //
          if(iter == 1)
@@ -1103,41 +1159,41 @@ namespace Math_Group
             for(i=0; i<size; i++)
             {
                p[i] = z[i];
-               pt[i] = zt[i];
+                  pt[i] = zt[i];
             }
          }
          else
          {
             beta = rho1/rho2;
-            for(i=0; i<size; i++)
+               for(i=0; i<size; i++)
             {
                p[i] = z[i] + beta*p[i];
-               pt[i] = zt[i] + beta*pt[i];
+                  pt[i] = zt[i] + beta*pt[i];
             }
          }
          //
          A->multiVec(p, q);
-         A->Trans_MultiVec(pt, qt);
-         alpha = rho1/dot(pt,q);
+            A->Trans_MultiVec(pt, qt);
+            alpha = rho1/dot(pt,q);
          //
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
          {
             x[i] += alpha*p[i];
-            r[i] -= alpha*q[i];
-            rt[i] -= alpha*qt[i];
+               r[i] -= alpha*q[i];
+               rt[i] -= alpha*qt[i];
          }
          //
          rho2 = rho1;
-         if ((error = Norm(r)/bNorm) < tol)
+            if ((error = Norm(r)/bNorm) < tol)
          {
             Message();
-            return iter <= max_iter;
+               return iter <= max_iter;
          }
          //
       }
       //
       Message();
-      return iter <= max_iter;
+         return iter <= max_iter;
    }
 
    /*************************************************************************
@@ -1149,47 +1205,66 @@ namespace Math_Group
    int Linear_EQS::BiCGStab()
    {
       long i, size;
-      double rho_0, rho_1, alpha, beta, omega, tt=0., norm_r = 0.;
-      double *r0, *r, *s, *s_h, *t, *v, *p, *p_h;
+         double rho_0, rho_1, alpha, beta, omega, tt=0., norm_r = 0.;
+         double *r0, *r, *s, *s_h, *t, *v, *p, *p_h;
       //
-      size = A->Dim();
-      r0 = f_buffer[0];
-      r = f_buffer[1];
-      s = f_buffer[2];
-      s_h = f_buffer[3];
-      t = f_buffer[4];
-      v = f_buffer[5];
-      p = f_buffer[6];
-      p_h = f_buffer[7];
+         size = size_A;
+         r0 = f_buffer[0];
+         r = f_buffer[1];
+         s = f_buffer[2];
+         s_h = f_buffer[3];
+         t = f_buffer[4];
+         v = f_buffer[5];
+         p = f_buffer[6];
+         p_h = f_buffer[7];
       //
-      rho_0 = alpha = omega = 1.0;
+         rho_0 = alpha = omega = 1.0;
       //
-      double bNorm_new = Norm(b);
+         double bNorm_new = Norm(b);
       // Check if the norm of b is small enough for convengence
-      if(CheckNormRHS(bNorm_new))
-         return 0;
+         if(CheckNormRHS(bNorm_new))
+            return 0;
       //
-      A->multiVec(x,s);                           // s as buffer
-      for(i=0; i<size; i++)
+      //Norm of M r
+      #ifdef JFNK_H2M
+            if(a_pcs)                             /// JFNK. 24.11.2010
       {
+         for(i=0; i<size; i++)
+            r0[i] = b[i];                         // r = b-Ax
+            a_pcs->Jacobian_Multi_Vector_JFNK(x, s);
+            for(i=0; i<size; i++)
+            r0[i] -= s[i];                        // r = b-Ax
+      }
+      else
+      {
+         A->multiVec(x,s);                        // s as buffer
+            for(i=0; i<size; i++)
+            r0[i] = b[i]-s[i];                    // r = b-Ax
+      }
+#else
+      A->multiVec(x,s);                           // s as buffer
+         for(i=0; i<size; i++)
          r0[i] = b[i]-s[i];                       // r = b-Ax
+   #endif
+         for(i=0; i<size; i++)
+      {
          r[i] = r0[i];
-         v[i] = 0.;
-         p[i] = 0.;
+            v[i] = 0.;
+            p[i] = 0.;
       }
       if ((error = Norm(r)/bNorm) < tol)
       {
          Message();
-         return 0;
+            return 0;
       }
       //
       for (iter = 1; iter <= max_iter; iter++)
       {
          rho_1 = dot(r0, r);
-         if (fabs(rho_1) < DBL_MIN)               // DBL_EPSILON
+            if (fabs(rho_1) < DBL_MIN)            // DBL_EPSILON
          {
             Message();
-            return 0;
+               return 0;
          }
          if (iter == 1)
          {
@@ -1199,60 +1274,70 @@ namespace Math_Group
          else
          {
             beta = (rho_1/rho_0) * (alpha/omega);
-            for(i=0; i<size; i++)
+               for(i=0; i<size; i++)
                p[i] = r[i] + beta * (p[i] - omega * v[i]);
          }
          // Preconditioner
          Precond(p, p_h);
          // A M^{-1}p-->v
-         A->multiVec(p_h, v);
+   #ifdef JFNK_H2M
+            if(a_pcs)                             /// JFNK. 24.11.2010
+               a_pcs->Jacobian_Multi_Vector_JFNK(p_h, v);
+               else
+#endif
+            A->multiVec(p_h, v);
          //
-         alpha = rho_1 / dot(r0, v);
+                  alpha = rho_1 / dot(r0, v);
          //
-         for(i=0; i<size; i++)
+                  for(i=0; i<size; i++)
             s[i] = r[i] - alpha * v[i];
-         if ((error = Norm(s)/bNorm) < tol)
+            if ((error = Norm(s)/bNorm) < tol)
          {
             for(i=0; i<size; i++)
                x[i] += alpha * p_h[i];
-            Message();
-            return iter;
+               Message();
+               return iter;
          }
          //  M^{-1}s,
          Precond(s, s_h);
          // A* M^{-1}s
-         A->multiVec(s_h, t);
+   #ifdef JFNK_H2M
+            if(a_pcs)                             /// JFNK. 24.11.2010
+               a_pcs->Jacobian_Multi_Vector_JFNK(s_h, t);
+               else
+#endif
+            A->multiVec(s_h, t);
          //
-         tt = dot(t,t);
-         if(tt>DBL_MIN)
-            omega = dot(t,s) / tt;
-         else
+                  tt = dot(t,t);
+                  if(tt>DBL_MIN)
+                     omega = dot(t,s) / tt;
+                     else
             omega = 1.0;
          // Update solution
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
          {
             x[i] += alpha * p_h[i] + omega * s_h[i];
-            r[i] = s[i] - omega * t[i];
+               r[i] = s[i] - omega * t[i];
          }
          rho_0 = rho_1;
          //
-         norm_r = Norm(r);
-         if ((error = norm_r / bNorm) < tol)
+            norm_r = Norm(r);
+            if ((error = norm_r / bNorm) < tol)
          {
             Message();
-            return iter;
+               return iter;
          }
          if (fabs(omega) < DBL_MIN)
          {
             error = norm_r / bNorm;
-            Message();
-            return iter;
+               Message();
+               return iter;
          }
       }
       //
       Message();
       //
-      return iter;
+         return iter;
    }
 
    /*************************************************************************
@@ -1264,47 +1349,47 @@ namespace Math_Group
    int Linear_EQS::CGS()
    {
       long i, size;
-      double rho_1, rho_2, alpha, beta;
-      double *r0, *r, *p, *p_h, *q, *q_h, *v, *u, *u_h;
+         double rho_1, rho_2, alpha, beta;
+         double *r0, *r, *p, *p_h, *q, *q_h, *v, *u, *u_h;
       //
-      size = A->Dim();
-      r0 = f_buffer[0];
-      r = f_buffer[1];
-      p = f_buffer[2];
-      p_h = f_buffer[3];
-      q = f_buffer[4];
-      q_h = f_buffer[5];
-      v = f_buffer[6];
-      u = f_buffer[7];
-      u_h = f_buffer[8];
+         size = A->Dim();
+         r0 = f_buffer[0];
+         r = f_buffer[1];
+         p = f_buffer[2];
+         p_h = f_buffer[3];
+         q = f_buffer[4];
+         q_h = f_buffer[5];
+         v = f_buffer[6];
+         u = f_buffer[7];
+         u_h = f_buffer[8];
       //
-      rho_1 = rho_2 = 1.0;
+         rho_1 = rho_2 = 1.0;
       //
-      double bNorm_new = Norm(b);
+         double bNorm_new = Norm(b);
       // Check if the norm of b is samll enough for convengence
-      if(CheckNormRHS(bNorm_new))
-         return 0;
+         if(CheckNormRHS(bNorm_new))
+            return 0;
       //
-      A->multiVec(x,v);                           // v as buffer
-      for(i=0; i<size; i++)
+            A->multiVec(x,v);                     // v as buffer
+            for(i=0; i<size; i++)
       {
          r0[i] = b[i]-v[i];                       // r = b-Ax
-         r[i] = r0[i];
-         v[i] = 0.;
+            r[i] = r0[i];
+            v[i] = 0.;
       }
       if ((error = Norm(r)/bNorm) < tol)
       {
          Message();
-         return 0;
+            return 0;
       }
       //
       for (iter = 1; iter <= max_iter; iter++)
       {
          rho_1 = dot(r0, r);
-         if (fabs(rho_1) < DBL_MIN)               //  DBL_EPSILON
+            if (fabs(rho_1) < DBL_MIN)            //  DBL_EPSILON
          {
             Message();
-            return 0;
+               return 0;
          }
          if (iter == 1)
          {
@@ -1314,48 +1399,303 @@ namespace Math_Group
          else
          {
             beta = rho_1/rho_2;
-            for(i=0; i<size; i++)
+               for(i=0; i<size; i++)
             {
                u[i] = r[i] + beta * q[i];
-               p[i] = u[i] + beta * (q[i] + beta * p[i]);
+                  p[i] = u[i] + beta * (q[i] + beta * p[i]);
             }
          }
          // Preconditioner
          Precond(p, p_h);
          // A M^{-1}p-->v
-         A->multiVec(p_h, v);
+            A->multiVec(p_h, v);
          //
-         alpha = rho_1 / dot(r0, v);
+            alpha = rho_1 / dot(r0, v);
          //
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
          {
             q[i] = u[i] - alpha * v[i];
-            q_h[i] = u[i] + q[i];
+               q_h[i] = u[i] + q[i];
          }
          // Preconditioner
          Precond(q_h, u_h);
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
             x[i] += alpha * u_h[i];
          //
-         A->multiVec(u_h, q_h);
+            A->multiVec(u_h, q_h);
          //
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
             r[i] -= alpha * q_h[i];
-         rho_2 = rho_1;
-         if ((error = Norm(r) / bNorm) < tol)
+            rho_2 = rho_1;
+            if ((error = Norm(r) / bNorm) < tol)
          {
             Message();
-            return iter <= max_iter;
+               return iter <= max_iter;
          }
       }
       //
       Message();
       //
-      return iter <= max_iter;
+         return iter <= max_iter;
    }
 #endif                                         // If not defined USE_MPI
    //
    //------------------------------------------------------------------------
+#define aGMRES
+#ifdef aGMRES
+
+   //-----------------------------------------------------------------
+   /*!
+        GMRES solver.
+
+        by WW. 06.2010
+   */
+   //-----------------------------------------------------------------
+   /// For GMRES
+   inline void Linear_EQS::Get_Plane_Rotation(double &dx, double &dy, double &cs, double &sn)
+   {
+      if (dy == 0.0)
+      {
+         cs = 1.0;
+            sn = 0.0;
+      }
+      else if (fabs(dy) > fabs(dx))
+      {
+         double temp = dx / dy;
+            sn = 1.0 / sqrt( 1.0 + temp*temp );
+            cs = temp * sn;
+      }
+      else
+      {
+         double temp = dy / dx;
+            cs = 1.0 / sqrt( 1.0 + temp*temp );
+            sn = temp * cs;
+      }
+   }
+
+   /// For GMRES.
+   inline void Linear_EQS::Set_Plane_Rotation(double &dx, double &dy, double &cs, double &sn)
+   {
+      double temp  =  cs * dx + sn * dy;
+         dy = -sn * dx + cs * dy;
+         dx = temp;
+   }
+
+   /// Update solution in GMRES
+   inline void Linear_EQS::Update(double *x, int k, Matrix &h, double *s)
+   {
+      long i;
+         long m, j;
+         long   size = 0;
+         int v_idx0 = 7;
+
+         if(A)
+            size = A->Dim();
+            else
+         size = size_global;
+
+         double  *v_j;
+
+         m = m_gmres;
+
+         double *y = f_buffer[3];
+         for (j = 0; j <m+1; j++)
+         y[j] = s[j];
+
+      // Back solve
+         for (i = k; i >= 0; i--)
+      {
+         y[i] /= h(i,i);
+            for ( j = i - 1; j >= 0; j--)
+            y[j] -= h(j,i) * y[i];
+      }
+
+      for (j = 0; j <= k; j++)
+      {
+         v_j =  f_buffer[v_idx0+j];
+            for(i=0; i<size; i++)
+            x[i] += v_j[i] * y[j];
+      }
+   }
+   /// GMRES solver. WW
+   int Linear_EQS::GMRES()
+   {
+
+      long i, k, l, m;
+         double normb, beta;
+         double *s, *cs, *sn,  *v, *w, *r, *t, *v_k;
+
+         normb = Norm(b);
+      // Check if the norm of b is samll enough for convengence
+         if(CheckNormRHS(normb))
+            return 0;
+
+      //
+            m = m_gmres;
+
+            s = f_buffer[0];
+            cs = f_buffer[1];
+            sn = f_buffer[2];
+            w = f_buffer[4];
+            r = f_buffer[5];
+            t = f_buffer[6];                      // Buffer array
+
+            int v_idx0 = 7;
+
+      // Norm of Mb
+            Precond(b, r);
+      // Here Mb-->r
+            normb = Norm(r);
+
+      //Norm of M r
+      #ifdef JFNK_H2M
+            if(a_pcs)                             /// JFNK. 20.10.2010
+      {
+         for(l=0; l<size_A; l++)
+            r[l] = b[l];
+            a_pcs->Jacobian_Multi_Vector_JFNK(x, w);
+            for(l=0; l<size_A; l++)
+            r[l] -= w[l];                         // r = b-Ax.
+      }
+      else
+      {
+         A->multiVec(x,w);                        // Ax-->w
+            for(l=0; l<size_A; l++)
+            r[l] = b[l]-w[l];                     // r = b-Ax.
+      }
+#else
+      A->multiVec(x,w);                           // Ax-->w
+         for(l=0; l<size_A; l++)
+         r[l] = b[l]-w[l];                        // r = b-Ax.
+   #endif
+
+         Precond(r, w);                           // Mr-->w
+         beta = Norm(w);
+
+         if (normb < DBL_MIN)
+            normb = 1;
+
+      //if ((error = Norm(r) / normb) <= tol)
+            if ((error = beta / normb) <= tol)
+      {
+         Message();
+            return 0;
+      }
+
+      iter = 1;
+         while (iter <= max_iter)
+      {
+         v =  f_buffer[v_idx0];
+            for(l=0; l<size_A; l++)
+            v[l] = r[l] / beta;                   //  r/beta
+            for(l=0; l<m+1; l++)
+            s[l] = 0.0;
+            s[0] = beta;
+
+            for (i = 0; i < m && iter <= max_iter; i++, iter++)
+         {
+            v =  f_buffer[v_idx0+i];
+   #ifdef JFNK_H2M
+               if(a_pcs)                          /// JFNK.
+                  a_pcs->Jacobian_Multi_Vector_JFNK(v, t);
+                  else
+#endif
+               A->multiVec(v, t);
+                     Precond(t, w);
+
+                     for (k = 0; k <= i; k++)
+            {
+               v_k = f_buffer[v_idx0+k];
+                  H(k, i) = dot(w, v_k);
+
+                  for(l=0; l<size_A; l++)
+                  w[l] -= H(k, i) * v_k[l];
+            }
+            H(i+1, i) = Norm(w);
+               v_k = f_buffer[v_idx0+i+1];
+               for(l=0; l<size_A; l++)
+               v_k[l] = w[l] / H(i+1, i);
+
+               for (k = 0; k < i; k++)
+               Set_Plane_Rotation(H(k,i), H(k+1,i), cs[k], sn[k]);
+
+               Get_Plane_Rotation(H(i,i), H(i+1,i), cs[i], sn[i]);
+               Set_Plane_Rotation(H(i,i), H(i+1,i), cs[i], sn[i]);
+               Set_Plane_Rotation(s[i], s[i+1], cs[i], sn[i]);
+
+               if ((error = fabs(s[i+1]) / normb) < tol)
+            {
+               Update(x, i, H, s);
+                  Message();
+                  return iter <= max_iter;
+            }
+         }
+
+         Update(x, i - 1, H, s);
+   #ifdef JFNK_H2M
+            if(a_pcs)                             /// JFNK.
+         {
+            a_pcs->Jacobian_Multi_Vector_JFNK(x, t);
+            /// In exact Newton control. 26.01.2010.
+               if(a_pcs->ForceTermCriterion(t, iter))
+            {
+               Message();
+                  return iter <= max_iter;
+            }
+         }
+         else
+#endif
+            A->multiVec(x, t);
+
+               for(l=0; l<size_A; l++)
+            w[l] = b[l]-t[l];                     // r = b-Ax.
+            Precond(w, r);                        // M*r
+
+            beta = Norm(r);
+            if ((error = beta / normb) < tol)
+         {
+            Message();
+               return iter <= max_iter;
+         }
+      }
+
+      Message();
+         return iter <= max_iter;
+   }
+   //-----------------------------------------------------------------
+#endif                                         //GMRES
+#ifdef JFNK_H2M
+   /*! \brief Initialize the Jacobi preconditioner fot JFNK
+
+      WW  02.2011.
+   */
+   void Linear_EQS::Init_Precond_Jacobi_JFNK()
+   {
+      for(long i=0; i<size_global; i++)
+         prec_M[i] = 0.;
+   }
+
+   /*************************************************************************
+   GeoSys-Function:
+   Task: Parallel preconditioner, inverse
+   Programming:
+   02/2011 WW
+   **************************************************************************/
+   void Linear_EQS::Precond_Jacobi(const double *vec_s, double *vec_r)
+   {
+      double val;
+
+         for(long i=0; i<size_A; i++)
+      {
+         val = prec_M[i];
+         //  <DBL_EPSILON
+            if(fabs(val)<DBL_MIN)
+               val = 1.0;
+               vec_r[i] = vec_s[i]/val;
+      }
+
+   }
+#endif
 #if defined(USE_MPI)
    /*************************************************************************
    GeoSys-Function:
@@ -1368,13 +1708,13 @@ namespace Math_Group
       //
       A->DiagonalEntries(prec_M);
       //
-#if defined(NEW_BREDUCE)
-      dom->ReduceBorderV(prec_M);
-#else
-      dom->Local2Border(prec_M, border_buffer0);  // to buffer
-      MPI_Allreduce(border_buffer0, border_buffer1, A->Dof()*dom->BSize(), MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-#endif
-      dom->Border2Local(border_buffer1, prec_M);
+   #if defined(NEW_BREDUCE)
+         dom->ReduceBorderV(prec_M);
+   #else
+         dom->Local2Border(prec_M, border_buffer0);// to buffer
+         MPI_Allreduce(border_buffer0, border_buffer1, A->Dof()*dom->BSize(), MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+   #endif
+         dom->Border2Local(border_buffer1, prec_M);
    }
    /*************************************************************************
    GeoSys-Function:
@@ -1385,12 +1725,12 @@ namespace Math_Group
    void Linear_EQS::Precond_Jacobi(const double *vec_s, double *vec_r)
    {
       double val;
-      for(long i=0; i<A->Dim(); i++)
+         for(long i=0; i<A->Dim(); i++)
       {
          val = prec_M[i];
-         if(val>DBL_EPSILON)
-            vec_r[i] = vec_s[i]/val;
-         else
+            if(val>DBL_EPSILON)
+               vec_r[i] = vec_s[i]/val;
+               else
             vec_r[i] = vec_s[i];
       }
    }
@@ -1403,76 +1743,76 @@ namespace Math_Group
    int Linear_EQS::CG(double *xg, const long n)
    {
       long i, size, size_b, size_t;
-      double rrM1;
-      double *p, *r, *s;
-      double *p_b, *r_b, *s_b;
-      double *x_b;
+         double rrM1;
+         double *p, *r, *s;
+         double *p_b, *r_b, *s_b;
+         double *x_b;
       //
-      size = A->Dim();
-      size_b = dom->BSize()*A->Dof();
+         size = A->Dim();
+         size_b = dom->BSize()*A->Dof();
       //size_t = size + size_b; //[0, size_i): internal; [size_i, size_i+size_b): border.
       //
-      p = f_buffer[0];
-      r = f_buffer[1];
-      s = f_buffer[2];
+         p = f_buffer[0];
+         r = f_buffer[1];
+         s = f_buffer[2];
       //
 
       //*** Norm b
-      double bNorm_new;
-      double buff_fl = dom->Dot_Interior(b, b);
-      MPI_Allreduce(&buff_fl, &bNorm_new, 1, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-      dom->Local2Border(b, border_buffer0);       // p_b s_b as buffer
-      MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         double bNorm_new;
+         double buff_fl = dom->Dot_Interior(b, b);
+         MPI_Allreduce(&buff_fl, &bNorm_new, 1, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         dom->Local2Border(b, border_buffer0);    // p_b s_b as buffer
+         MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
                                                   // (rhs on border)
-      buff_fl = bNorm_new + dot(border_buffer1, border_buffer1, size_b);
-      bNorm_new = sqrt(buff_fl);
+         buff_fl = bNorm_new + dot(border_buffer1, border_buffer1, size_b);
+         bNorm_new = sqrt(buff_fl);
       // Check if the norm of b is samll enough for convengence
-      if(CheckNormRHS(bNorm_new))
-         return 0;
+         if(CheckNormRHS(bNorm_new))
+            return 0;
       //*** r = b-Ax
       //    A*x
-      dom->Global2Local(xg, x, n);
-      A->multiVec(x,s);                           // s as buffer
-      for(i=0; i<size; i++)
+            dom->Global2Local(xg, x, n);
+            A->multiVec(x,s);                     // s as buffer
+            for(i=0; i<size; i++)
          r[i] = b[i]-s[i];                        // r = b-Ax
       //   Collect border r
-      dom->Local2Border(r, border_buffer0);       //
-      MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-      dom->Border2Local(border_buffer1, r);
+         dom->Local2Border(r, border_buffer0);    //
+         MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         dom->Border2Local(border_buffer1, r);
       //
       // Preconditioning: M^{-1}r
-      Precond(r, s);
-      for(i=0; i<size; i++)
+         Precond(r, s);
+         for(i=0; i<size; i++)
          p[i] = s[i];
       // Check the convergence
-      if ((error = Norm(r)/bNorm) < tol)
+         if ((error = Norm(r)/bNorm) < tol)
       {
          Message();
-         return 1;
+            return 1;
       }
       //
       double rr = dot(r , s);
       //
-      for (iter=1; iter<=max_iter; ++iter)
+         for (iter=1; iter<=max_iter; ++iter)
       {
          MatrixMulitVec(p, s);
-         const double alpha = rr / dot(p,s);
+            const double alpha = rr / dot(p,s);
          // Update
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
          {
             x[i] += alpha*p[i];
-            r[i] -= alpha*s[i];
+               r[i] -= alpha*s[i];
          }
          if ((error = Norm(r)/bNorm) < tol)
-            break;
+               break;
          // Preconditioner
-         Precond(r, s);
+               Precond(r, s);
          //
-         rrM1 = rr;
-         rr   = dot(s, r);
+               rrM1 = rr;
+               rr   = dot(s, r);
          //
-         const double beta = rr / rrM1;
-         for(i=0; i<size; i++)
+               const double beta = rr / rrM1;
+               for(i=0; i<size; i++)
             p[i] = s[i] + beta*p[i];
 
       }
@@ -1480,8 +1820,8 @@ namespace Math_Group
       // concancert internal x
       dom->CatInnerX(xg, x, n);
       //
-      Message();
-      return iter <= max_iter;
+         Message();
+         return iter <= max_iter;
    }
 
    /*************************************************************************
@@ -1493,68 +1833,68 @@ namespace Math_Group
    int Linear_EQS::CGS(double *xg, const long n)
    {
       long i, size, size_b, size_t;
-      double rho_1, rho_2, alpha, beta;
-      double *r0, *r, *p, *p_h, *q, *q_h, *v, *u, *u_h;
-      double *r0_b, *r_b, *p_b, *p_h_b, *q_b, *q_h_b, *v_b, *u_b, *u_h_b;
-      double *x_b;
+         double rho_1, rho_2, alpha, beta;
+         double *r0, *r, *p, *p_h, *q, *q_h, *v, *u, *u_h;
+         double *r0_b, *r_b, *p_b, *p_h_b, *q_b, *q_h_b, *v_b, *u_b, *u_h_b;
+         double *x_b;
       //
-      size = A->Dim();
-      size_b = dom->BSize()*A->Dof();
+         size = A->Dim();
+         size_b = dom->BSize()*A->Dof();
       //size_t = size + size_b; //[0, size_i): internal; [size_i, size_i+size_b): border.
-      r0 = f_buffer[0];
-      r = f_buffer[1];
-      p = f_buffer[2];
-      p_h = f_buffer[3];
-      q = f_buffer[4];
-      q_h = f_buffer[5];
-      v = f_buffer[6];
-      u = f_buffer[7];
-      u_h = f_buffer[8];
+         r0 = f_buffer[0];
+         r = f_buffer[1];
+         p = f_buffer[2];
+         p_h = f_buffer[3];
+         q = f_buffer[4];
+         q_h = f_buffer[5];
+         v = f_buffer[6];
+         u = f_buffer[7];
+         u_h = f_buffer[8];
       //
       //
-      rho_1 = rho_2 = 1.0;
+         rho_1 = rho_2 = 1.0;
       //
       //*** Norm b
-      double bNorm_new;
-      double buff_fl = dom->Dot_Interior(b, b);
-      MPI_Allreduce(&buff_fl, &bNorm_new, 1, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-      dom->Local2Border(b, border_buffer0);       //
-      MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         double bNorm_new;
+         double buff_fl = dom->Dot_Interior(b, b);
+         MPI_Allreduce(&buff_fl, &bNorm_new, 1, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         dom->Local2Border(b, border_buffer0);    //
+         MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
                                                   //  (rhs on border)
-      buff_fl = bNorm_new + dot(border_buffer1, border_buffer1, size_b);
-      bNorm_new = sqrt(buff_fl);
+         buff_fl = bNorm_new + dot(border_buffer1, border_buffer1, size_b);
+         bNorm_new = sqrt(buff_fl);
       // Check if the norm of b is samll enough for convengence
-      if(CheckNormRHS(bNorm_new))
-         return 0;
+         if(CheckNormRHS(bNorm_new))
+            return 0;
       //*** r = b-Ax
       //    A*x
-      dom->Global2Local(xg, x, n);
-      A->multiVec(x,v);                           // v as buffer
-      for(i=0; i<size; i++)
+            dom->Global2Local(xg, x, n);
+            A->multiVec(x,v);                     // v as buffer
+            for(i=0; i<size; i++)
          r0[i] = b[i]-v[i];                       // r = b-Ax
       //   Collect border r
-      dom->Local2Border(r0, border_buffer0);      //  buffer
-      MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-      dom->Border2Local(border_buffer1, r0);
+         dom->Local2Border(r0, border_buffer0);   //  buffer
+         MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         dom->Border2Local(border_buffer1, r0);
       //
-      for(i=0; i<size; i++)
+         for(i=0; i<size; i++)
       {
          r[i] = r0[i];
-         v[i] = 0.;
+            v[i] = 0.;
       }
       if ((error = Norm(r)/bNorm) < tol)
       {
          Message();
-         return 0;
+            return 0;
       }
       //
       for (iter = 1; iter <= max_iter; iter++)
       {
          rho_1 = dot(r0, r);
-         if (fabs(rho_1) < DBL_MIN)               //  DBL_EPSILON
-            break;
+            if (fabs(rho_1) < DBL_MIN)            //  DBL_EPSILON
+               break;
          //
-         if (iter == 1)
+               if (iter == 1)
          {
             for(i=0; i<size; i++)
                p[i] = u[i] = r[i];
@@ -1562,43 +1902,43 @@ namespace Math_Group
          else
          {
             beta = rho_1/rho_2;
-            for(i=0; i<size; i++)
+               for(i=0; i<size; i++)
             {
                u[i] = r[i] + beta * q[i];
-               p[i] = u[i] + beta * (q[i] + beta * p[i]);
+                  p[i] = u[i] + beta * (q[i] + beta * p[i]);
             }
          }
          // Preconditioner
          Precond(p, p_h);
          // A M^{-1}p-->v
-         MatrixMulitVec(p_h, v);
+            MatrixMulitVec(p_h, v);
          //
-         alpha = rho_1 / dot(r0, v);
+            alpha = rho_1 / dot(r0, v);
          //
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
          {
             q[i] = u[i] - alpha * v[i];
-            q_h[i] = u[i] + q[i];
+               q_h[i] = u[i] + q[i];
          }
          // Preconditioner
          Precond(q_h, u_h);
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
             x[i] += alpha * u_h[i];
          //
-         MatrixMulitVec(u_h, q_h);
+            MatrixMulitVec(u_h, q_h);
          //
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
             r[i] -= alpha * q_h[i];
-         rho_2 = rho_1;
-         if ((error = Norm(r) / bNorm) < tol)
-            break;
+            rho_2 = rho_1;
+            if ((error = Norm(r) / bNorm) < tol)
+               break;
       }
       // concancert internal x
       dom->CatInnerX(xg, x, n);
       //
-      Message();
+         Message();
       //
-      return iter <= max_iter;
+         return iter <= max_iter;
    }
 #define  TEST_MPII
    /*************************************************************************
@@ -1612,76 +1952,76 @@ namespace Math_Group
    int Linear_EQS::BiCGStab(double *xg, const long n)
    {
       long i, size, size_b;                       //, size_t;
-      double rho_0, rho_1, alpha, beta, omega, tt=0., norm_v=0.;
-      double *r0, *r, *s, *s_h, *t, *v, *p, *p_h;
-      double *r0_b, *r_b, *s_b, *s_h_b, *t_b, *v_b, *p_b, *p_h_b;
-      double *x_b;
+         double rho_0, rho_1, alpha, beta, omega, tt=0., norm_v=0.;
+         double *r0, *r, *s, *s_h, *t, *v, *p, *p_h;
+         double *r0_b, *r_b, *s_b, *s_h_b, *t_b, *v_b, *p_b, *p_h_b;
+         double *x_b;
       //
-      size = A->Dim();
+         size = A->Dim();
       //
-      size_b = dom->BSize()*A->Dof();
+         size_b = dom->BSize()*A->Dof();
       // size_t = size + size_b; //[0, size_i): internal; [size_i, size_i+size_b): border.
-      r0 = f_buffer[0];
-      r = f_buffer[1];
-      s = f_buffer[2];
-      s_h = f_buffer[3];
-      t = f_buffer[4];
-      v = f_buffer[5];
-      p = f_buffer[6];
-      p_h = f_buffer[7];
+         r0 = f_buffer[0];
+         r = f_buffer[1];
+         s = f_buffer[2];
+         s_h = f_buffer[3];
+         t = f_buffer[4];
+         v = f_buffer[5];
+         p = f_buffer[6];
+         p_h = f_buffer[7];
       //
       //
-      rho_0 = alpha = omega = 1.0;
+         rho_0 = alpha = omega = 1.0;
 
-#ifdef  TEST_MPI
+   #ifdef  TEST_MPI
       //TEST
-      string test = "rank";
-      char stro[64];
-      sprintf(stro, "%d",myrank);
-      string test1 = test+(string)stro+"Assemble.txt";
-      ofstream Dum(test1.c_str(), ios::out);
-      Dum.width(20);
-      Dum.precision(15);
-      Dum.setf(ios::scientific);
+         string test = "rank";
+         char stro[64];
+         sprintf(stro, "%d",myrank);
+         string test1 = test+(string)stro+"Assemble.txt";
+         ofstream Dum(test1.c_str(), ios::out);
+         Dum.width(20);
+         Dum.precision(15);
+         Dum.setf(ios::scientific);
 
-      Dum<<"Time step: "<<aktueller_zeitschritt<<endl;
-      Dum<<"Norm b inner  " <<dom->Dot_Interior(b, b)<<endl;
+         Dum<<"Time step: "<<aktueller_zeitschritt<<endl;
+         Dum<<"Norm b inner  " <<dom->Dot_Interior(b, b)<<endl;
       //  if(A->Dof()==1)
       //  Dum.close();
-#endif
+   #endif
 
       //*** Norm b
-      double bNorm_new;
-      double buff_fl = dom->Dot_Interior(b, b);
-      MPI_Allreduce(&buff_fl, &bNorm_new, 1, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-      dom->Local2Border(b, border_buffer0);       // buffer
-      MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         double bNorm_new;
+         double buff_fl = dom->Dot_Interior(b, b);
+         MPI_Allreduce(&buff_fl, &bNorm_new, 1, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         dom->Local2Border(b, border_buffer0);    // buffer
+         MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
                                                   // (rhs on border)
-      buff_fl = bNorm_new + dot(border_buffer1, border_buffer1, size_b);
-      bNorm_new = sqrt(buff_fl);
+         buff_fl = bNorm_new + dot(border_buffer1, border_buffer1, size_b);
+         bNorm_new = sqrt(buff_fl);
 
       // Check if the norm of b is samll enough for convengence
-      if(CheckNormRHS(bNorm_new))
-         return 0;
+         if(CheckNormRHS(bNorm_new))
+            return 0;
       //*** r = b-Ax
       //    A*x
-      dom->Global2Local(xg, x, n);
-      A->multiVec(x,s);                           // s as buffer
-      for(i=0; i<size; i++)
+            dom->Global2Local(xg, x, n);
+            A->multiVec(x,s);                     // s as buffer
+            for(i=0; i<size; i++)
          r0[i] = b[i]-s[i];                       // r = b-Ax
       //   Collect border r
-      dom->Local2Border(r0, border_buffer0);      // buffer
-      MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-      dom->Border2Local(border_buffer1, r0);
+         dom->Local2Border(r0, border_buffer0);   // buffer
+         MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         dom->Border2Local(border_buffer1, r0);
 
-#ifdef  TEST_MPI
+   #ifdef  TEST_MPI
       //TEST
       //if(A->Dof()>1)
       {
          Dum<<" |r_0|= "<<Norm(r0)<<endl;
-         Dum<<" |b_0|= "<< bNorm<<endl;
-         Dum<<" x  "<<endl;
-         for(i=0; i<n; i++)
+            Dum<<" |b_0|= "<< bNorm<<endl;
+            Dum<<" x  "<<endl;
+            for(i=0; i<n; i++)
             Dum<<xg[i]<<endl;
          /*
          Dum<<" b  "<<endl;
@@ -1709,14 +2049,14 @@ namespace Math_Group
       for(i=0; i<size; i++)
       {
          r[i] = r0[i];
-         v[i] = 0.;
-         p[i] = 0.;
+            v[i] = 0.;
+            p[i] = 0.;
       }
       if ((error = Norm(r)/bNorm) < tol)
       {
          if(myrank==0)                            // Make screen output only by processor 0
-            Message();
-         return 0;
+               Message();
+               return 0;
       }
 
       /*
@@ -1732,16 +2072,16 @@ namespace Math_Group
       for (iter = 1; iter <= max_iter; iter++)
       {
          rho_1 = dot(r0, r);
-         if (fabs(rho_1) < DBL_MIN)
-            break;
+            if (fabs(rho_1) < DBL_MIN)
+               break;
 
-#ifdef  TEST_MPI
+      #ifdef  TEST_MPI
          //TEST
          //  if(A->Dof()>1)
-         Dum<<" rho_1  "<<rho_1 <<endl;
-#endif
+               Dum<<" rho_1  "<<rho_1 <<endl;
+      #endif
 
-         if (iter == 1)
+               if (iter == 1)
          {
             // p[0, size_i): internal; p[size_i, size_i+size_b)-->p_b: border.
             for(i=0; i<size; i++)
@@ -1751,24 +2091,24 @@ namespace Math_Group
          {
             beta = (rho_1/rho_0) * (alpha/omega);
             // [0, size_i): internal; [size_i, size_i+size_b): border.
-            for(i=0; i<size; i++)
+               for(i=0; i<size; i++)
                p[i] = r[i] + beta * (p[i] - omega * v[i]);
          }
          // Preconditioner
          Precond(p, p_h);
          // A M^{-1}p-->v
-         MatrixMulitVec(p_h, v);
+            MatrixMulitVec(p_h, v);
          //
-         alpha = rho_1 / dot(r0, v);
+            alpha = rho_1 / dot(r0, v);
 
-#ifdef  TEST_MPI
+   #ifdef  TEST_MPI
          //TEST
          //  if(A->Dof()>1)
          {
             //TEST
             Dum<<"  alpha  "<<alpha <<" dot(r0, v) "<<dot(r0, v)<<" dot(r0, r) "<<dot(r0, r)  <<endl;
 
-            Dum<<"\n r0, r,  v   "<<endl;
+               Dum<<"\n r0, r,  v   "<<endl;
             //  for(i=0; i<size_t; i++)
             //   Dum<<r0[i]<<"       "<<r[i]<<"       "<<v[i]<<endl;
          }
@@ -1777,12 +2117,12 @@ namespace Math_Group
          //
          for(i=0; i<size; i++)
             s[i] = r[i] - alpha * v[i];
-         norm_v = sqrt(dot(s,s));
-         if ((error = norm_v/bNorm) < tol)
+            norm_v = sqrt(dot(s,s));
+            if ((error = norm_v/bNorm) < tol)
          {
             for(i=0; i<size; i++)
                x[i] += alpha * p_h[i];
-            break;
+               break;
          }
 
 #ifdef  TEST_MPI
@@ -1802,32 +2142,32 @@ namespace Math_Group
          //  M^{-1}s,
          Precond(s, s_h);
          // A* M^{-1}s
-         MatrixMulitVec(s_h, t);
+            MatrixMulitVec(s_h, t);
          //
-         tt = dot(t,t);
+            tt = dot(t,t);
 
-#ifdef  TEST_MPI
+   #ifdef  TEST_MPI
          //TEST
          //TEST
          //  if(A->Dof()>1)
-         Dum<<"  tt  "<<tt <<endl;
-#endif
+            Dum<<"  tt  "<<tt <<endl;
+   #endif
 
-         if(tt>DBL_MIN)
-            omega = dot(t,s) / tt;
-         else
+            if(tt>DBL_MIN)
+               omega = dot(t,s) / tt;
+               else
             omega = 1.0;
          // Update solution
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
          {
             x[i] += alpha * p_h[i] + omega * s_h[i];
-            r[i] = s[i] - omega * t[i];
+               r[i] = s[i] - omega * t[i];
          }
          rho_0 = rho_1;
          //
-         norm_v = sqrt(dot(r,r));
+            norm_v = sqrt(dot(r,r));
 
-#ifdef  TEST_MPI
+   #ifdef  TEST_MPI
          //TEST
          //TEST
          // if(A->Dof()>1)
@@ -1838,11 +2178,11 @@ namespace Math_Group
 #endif
 
          if ((error = norm_v / bNorm) < tol)
-            break;
-         if (fabs(omega) < DBL_MIN)
+               break;
+               if (fabs(omega) < DBL_MIN)
          {
             error = norm_v / bNorm;
-            break;
+               break;
          }
 
 #ifdef  TEST_MPI
@@ -1859,13 +2199,13 @@ namespace Math_Group
       // Form the local to global
       // dom->Border2Global(x_b, xg, n);
 
-#ifdef  TEST_MPI
+   #ifdef  TEST_MPI
       // if(A->Dof()>1)
       {
          Dum<<" x "<<endl;
-         for(i=0; i<n; i++)
+            for(i=0; i<n; i++)
             Dum<<xg[i]<<endl;
-         Dum.close();
+            Dum.close();
          // exit(0);
       }
 #endif
@@ -1874,7 +2214,7 @@ namespace Math_Group
       Message();
       //
       //  return iter <= max_iter;
-      return iter ;
+         return iter ;
    }
 
    //#define  CG_test
@@ -1889,89 +2229,89 @@ namespace Math_Group
    int Linear_EQS::BiCG(double *xg, const long n)
    {
       long i, size, size_b;
-      double rho1, rho2, alpha, beta;
-      double *z, *zt, *p, *pt, *q, *qt, *r, *rt;
+         double rho1, rho2, alpha, beta;
+         double *z, *zt, *p, *pt, *q, *qt, *r, *rt;
       //
-      size = A->Dim();
+         size = A->Dim();
       //
-      size_b = dom->BSize()*A->Dof();
-      z = f_buffer[0];
-      zt = f_buffer[1];
-      p = f_buffer[2];
-      pt = f_buffer[3];
-      q = f_buffer[4];
-      qt = f_buffer[5];
-      r = f_buffer[6];
-      rt = f_buffer[7];
+         size_b = dom->BSize()*A->Dof();
+         z = f_buffer[0];
+         zt = f_buffer[1];
+         p = f_buffer[2];
+         pt = f_buffer[3];
+         q = f_buffer[4];
+         qt = f_buffer[5];
+         r = f_buffer[6];
+         rt = f_buffer[7];
       //
       //*** Norm b
-      double bNorm_new;
-      double buff_fl = dom->Dot_Interior(b, b);
-      MPI_Allreduce(&buff_fl, &bNorm_new, 1, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-      dom->Local2Border(b, border_buffer0);       //
-      MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         double bNorm_new;
+         double buff_fl = dom->Dot_Interior(b, b);
+         MPI_Allreduce(&buff_fl, &bNorm_new, 1, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         dom->Local2Border(b, border_buffer0);    //
+         MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
                                                   //  (rhs on border)
-      buff_fl = bNorm_new + dot(border_buffer1, border_buffer1, size_b);
-      bNorm_new = sqrt(buff_fl);
+         buff_fl = bNorm_new + dot(border_buffer1, border_buffer1, size_b);
+         bNorm_new = sqrt(buff_fl);
       // Check if the norm of b is samll enough for convengence
 
       // Check if the norm of b is samll enough for convengence
-      if(CheckNormRHS(bNorm_new))
-         return 0;
+         if(CheckNormRHS(bNorm_new))
+            return 0;
       //*** r = b-Ax
       //    A*x
-      dom->Global2Local(xg, x, n);
-      A->multiVec(x,rt);                          // rt as buffer
-      for(i=0; i<size; i++)
+            dom->Global2Local(xg, x, n);
+            A->multiVec(x,rt);                    // rt as buffer
+            for(i=0; i<size; i++)
          r[i] = b[i]-rt[i];                       // r = b-Ax
       //   Collect border r
-      dom->Local2Border(r, border_buffer0);       //  buffer
-      MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-      dom->Border2Local(border_buffer1, r);
+         dom->Local2Border(r, border_buffer0);    //  buffer
+         MPI_Allreduce(border_buffer0, border_buffer1, size_b, MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+         dom->Border2Local(border_buffer1, r);
       //
       // Initial.
-      for(i=0; i<size; i++)
+         for(i=0; i<size; i++)
       {
          r[i] = b[i]-rt[i];
-         rt[i] = r[i];
+            rt[i] = r[i];
       }
       if ((error = Norm(r)/bNorm) < tol)
       {
          if(myrank==0)                            // Make screen output only by processor 0
-            Message();
-         return 0;
+               Message();
+               return 0;
       }
 
 #ifdef CG_test
       //TEST
       string test = "rank";
-      char stro[64];
-      sprintf(stro, "%d",myrank);
-      string test1 = test+(string)stro+"_Assemble.txt";
-      ofstream Dum(test1.c_str(), ios::out);
-      Dum.width(20);
-      Dum.precision(15);
-      Dum.setf(ios::scientific);
+         char stro[64];
+         sprintf(stro, "%d",myrank);
+         string test1 = test+(string)stro+"_Assemble.txt";
+         ofstream Dum(test1.c_str(), ios::out);
+         Dum.width(20);
+         Dum.precision(15);
+         Dum.setf(ios::scientific);
 
-      Dum<<" Norm(r) "<< Norm(r)<<" bNorm "<<bNorm<<endl;
-#endif
+         Dum<<" Norm(r) "<< Norm(r)<<" bNorm "<<bNorm<<endl;
+   #endif
 
       //
-      for (iter = 1; iter <= max_iter; iter++)
+         for (iter = 1; iter <= max_iter; iter++)
       {
          Precond(r, z);
-         TransPrecond(rt, zt);
-         rho1 = dot(z, rt);
+            TransPrecond(rt, zt);
+            rho1 = dot(z, rt);
 
-#ifdef CG_test
-         Dum<<" rho1 "<< rho1<<endl;
-#endif
+   #ifdef CG_test
+            Dum<<" rho1 "<< rho1<<endl;
+   #endif
 
          //
-         if (fabs(rho1) < DBL_MIN)
+            if (fabs(rho1) < DBL_MIN)
          {
             Message();
-            break;
+               break;
          }
          //
          if (iter == 1)
@@ -1979,40 +2319,40 @@ namespace Math_Group
             for(i=0; i<size; i++)
             {
                p[i] = z[i];
-               pt[i] = zt[i];
+                  pt[i] = zt[i];
             }
          }
          else
          {
             beta = rho1/rho2;
-            for(i=0; i<size; i++)
+               for(i=0; i<size; i++)
             {
                p[i] = z[i] + beta*p[i];
-               pt[i] = zt[i] + beta*pt[i];
+                  pt[i] = zt[i] + beta*pt[i];
             }
          }
          MatrixMulitVec(p, q);
-         TransMatrixMulitVec(pt, qt);
-         alpha = rho1/dot(pt,q);
+            TransMatrixMulitVec(pt, qt);
+            alpha = rho1/dot(pt,q);
 
-#ifdef CG_test
-         Dum<<" alpha "<< alpha<<endl;
-#endif
+   #ifdef CG_test
+            Dum<<" alpha "<< alpha<<endl;
+   #endif
 
-         for(i=0; i<size; i++)
+            for(i=0; i<size; i++)
          {
             x[i] += alpha*p[i];
-            r[i] -= alpha*q[i];
-            rt[i] -= alpha*qt[i];
+               r[i] -= alpha*q[i];
+               rt[i] -= alpha*qt[i];
          }
          //
          rho2 = rho1;
-         if ((error = Norm(r)/bNorm) < tol)
-            break;
+            if ((error = Norm(r)/bNorm) < tol)
+               break;
 
-#ifdef CG_test
-         Dum<<" error = Norm(r)/bNorm "<< error<<endl;
-#endif
+      #ifdef CG_test
+               Dum<<" error = Norm(r)/bNorm "<< error<<endl;
+      #endif
 
          //
       }
@@ -2021,13 +2361,13 @@ namespace Math_Group
       dom->CatInnerX(xg, x, n);
 
       //
-      Message();
-#ifdef CG_test
-      exit(0);
-#endif
+         Message();
+   #ifdef CG_test
+         exit(0);
+   #endif
 
       //
-      return iter <= max_iter;
+         return iter <= max_iter;
    }
 #endif
    //------------------------------------------------------------------------

@@ -23,6 +23,7 @@ ProcessType convertProcessType ( const std::string& pcs_type_string )
    if (pcs_type_string.compare ("DEFORMATION_DYNAMIC") == 0) return DEFORMATION_DYNAMIC;
    if (pcs_type_string.compare ("MASS_TRANSPORT") == 0) return MASS_TRANSPORT;
    if (pcs_type_string.compare ("MULTI_PHASE_FLOW") == 0) return MULTI_PHASE_FLOW;
+   if (pcs_type_string.compare ("DEFORMATION_H2") == 0) return DEFORMATION_H2;
    if (pcs_type_string.compare ("AIR_FLOW") == 0) return AIR_FLOW;
    if (pcs_type_string.compare ("FLUID_MOMENTUM") == 0) return FLUID_MOMENTUM;
    if (pcs_type_string.compare ("RANDOM_WALK") == 0) return RANDOM_WALK;
@@ -53,6 +54,7 @@ std::string convertProcessTypeToString ( ProcessType pcs_type )
    if (pcs_type == DEFORMATION_DYNAMIC) return "DEFORMATION_DYNAMIC";
    if (pcs_type == MASS_TRANSPORT) return "MASS_TRANSPORT";
    if (pcs_type == MULTI_PHASE_FLOW) return "MULTI_PHASE_FLOW";
+   if (pcs_type == DEFORMATION_H2) return "DEFORMATION_H2";
    if (pcs_type == AIR_FLOW) return "AIR_FLOW";
    if (pcs_type == FLUID_MOMENTUM) return "FLUID_MOMENTUM";
    if (pcs_type == RANDOM_WALK) return "RANDOM_WALK";
@@ -70,6 +72,7 @@ bool isFlowProcess (ProcessType pcs_type)
       || pcs_type == TWO_PHASE_FLOW || pcs_type == RICHARDS_FLOW
       || pcs_type == OVERLAND_FLOW || pcs_type == GROUNDWATER_FLOW
       || pcs_type == DEFORMATION_FLOW || pcs_type == MULTI_PHASE_FLOW
+      || pcs_type == DEFORMATION_H2
       || pcs_type == AIR_FLOW || pcs_type == PTC_FLOW)
       return true;
    return false;
@@ -78,7 +81,8 @@ bool isFlowProcess (ProcessType pcs_type)
 
 bool isDeformationProcess (ProcessType pcs_type)
 {
-   if (pcs_type == DEFORMATION || pcs_type == DEFORMATION_FLOW || pcs_type == DEFORMATION_DYNAMIC)
+   if (pcs_type == DEFORMATION || pcs_type == DEFORMATION_H2 ||
+      pcs_type == DEFORMATION_FLOW || pcs_type == DEFORMATION_DYNAMIC)
       return true;
    return false;
 }
@@ -161,53 +165,56 @@ std::string convertPrimaryVariableToString ( PrimaryVariable pcs_pv )
    return "INVALID_PRIMARY_VARIABLE";
 }
 
-namespace FiniteElement {
 
-DistributionType convertDisType(const std::string& dis_type_string)
+namespace FiniteElement
 {
-	if (dis_type_string.compare("CONSTANT") == 0) return CONSTANT;
-	if (dis_type_string.compare("ANALYTICAL") == 0) return ANALYTICAL;
-	if (dis_type_string.compare("AVERAGE") == 0) return AVERAGE;
-	if (dis_type_string.compare("CONSTANT_GEO") == 0) return CONSTANT_GEO;
-	if (dis_type_string.compare("GRADIENT") == 0) return GRADIENT;
-	if (dis_type_string.compare("RESTART") == 0) return RESTART;
-	if (dis_type_string.compare("LINEAR") == 0) return LINEAR;
-	if (dis_type_string.compare("POINT") == 0) return POINT;
-	if (dis_type_string.compare("CONSTANT_NEUMANN") == 0) return CONSTANT_NEUMANN;
-	if (dis_type_string.compare("LINEAR_NEUMANN") == 0) return LINEAR_NEUMANN;
-	if (dis_type_string.compare("NORMALDEPTH") == 0) return NORMALDEPTH;
-	if (dis_type_string.compare("CRITICALDEPTH") == 0) return CRITICALDEPTH;
-	if (dis_type_string.compare("GREEN_AMPT") == 0) return GREEN_AMPT;
-	if (dis_type_string.compare("SYSTEM_DEPENDENT") == 0) return SYSTEM_DEPENDENT;
-	if (dis_type_string.compare("PRECIPITATION") == 0) return PRECIPITATION;
-	if (dis_type_string.compare("DIRECT") == 0) return DIRECT;
-	else {
-		std::cout << "convertDisType #" << dis_type_string << "# not found"
-				<< std::endl;
-		exit(1);
-	}
-	return INVALID_DIS_TYPE;
-}
 
-std::string convertDisTypeToString(DistributionType dis_type)
-{
-	if (dis_type == ANALYTICAL) return "ANALYTICAL";
-	if (dis_type == AVERAGE) return "AVERAGE";
-	if (dis_type == CONSTANT) return "CONSTANT";
-	if (dis_type == CONSTANT_GEO) return "CONSTANT_GEO";
-	if (dis_type == GRADIENT) return "GRADIENT";
-	if (dis_type == RESTART) return "RESTART";
-	if (dis_type == LINEAR) return "LINEAR";
-	if (dis_type == POINT) return "POINT";
-	if (dis_type == CONSTANT_NEUMANN) return "CONSTANT_NEUMANN";
-	if (dis_type == LINEAR_NEUMANN) return "LINEAR_NEUMANN";
-	if (dis_type == NORMALDEPTH) return "NORMALDEPTH";
-	if (dis_type == CRITICALDEPTH) return "CRITICALDEPTH";
-	if (dis_type == GREEN_AMPT) return "GREEN_AMPT";
-	if (dis_type == SYSTEM_DEPENDENT) return "SYSTEM_DEPENDENT";
-	if (dis_type == PRECIPITATION) return "PRECIPITATION";
-	if (dis_type == DIRECT) return "DIRECT";
+   DistributionType convertDisType(const std::string& dis_type_string)
+   {
+      if (dis_type_string.compare("CONSTANT") == 0) return CONSTANT;
+      if (dis_type_string.compare("ANALYTICAL") == 0) return ANALYTICAL;
+      if (dis_type_string.compare("AVERAGE") == 0) return AVERAGE;
+      if (dis_type_string.compare("CONSTANT_GEO") == 0) return CONSTANT_GEO;
+      if (dis_type_string.compare("GRADIENT") == 0) return GRADIENT;
+      if (dis_type_string.compare("RESTART") == 0) return RESTART;
+      if (dis_type_string.compare("LINEAR") == 0) return LINEAR;
+      if (dis_type_string.compare("POINT") == 0) return POINT;
+      if (dis_type_string.compare("CONSTANT_NEUMANN") == 0) return CONSTANT_NEUMANN;
+      if (dis_type_string.compare("LINEAR_NEUMANN") == 0) return LINEAR_NEUMANN;
+      if (dis_type_string.compare("NORMALDEPTH") == 0) return NORMALDEPTH;
+      if (dis_type_string.compare("CRITICALDEPTH") == 0) return CRITICALDEPTH;
+      if (dis_type_string.compare("GREEN_AMPT") == 0) return GREEN_AMPT;
+      if (dis_type_string.compare("SYSTEM_DEPENDENT") == 0) return SYSTEM_DEPENDENT;
+      if (dis_type_string.compare("PRECIPITATION") == 0) return PRECIPITATION;
+      if (dis_type_string.compare("DIRECT") == 0) return DIRECT;
+      else
+      {
+         std::cout << "convertDisType #" << dis_type_string << "# not found"
+            << std::endl;
+         exit(1);
+      }
+      return INVALID_DIS_TYPE;
+   }
 
-	return "INVALID_DIS_TYPE";
-}
-} // end namespace FiniteElement
+   std::string convertDisTypeToString(DistributionType dis_type)
+   {
+      if (dis_type == ANALYTICAL) return "ANALYTICAL";
+      if (dis_type == AVERAGE) return "AVERAGE";
+      if (dis_type == CONSTANT) return "CONSTANT";
+      if (dis_type == CONSTANT_GEO) return "CONSTANT_GEO";
+      if (dis_type == GRADIENT) return "GRADIENT";
+      if (dis_type == RESTART) return "RESTART";
+      if (dis_type == LINEAR) return "LINEAR";
+      if (dis_type == POINT) return "POINT";
+      if (dis_type == CONSTANT_NEUMANN) return "CONSTANT_NEUMANN";
+      if (dis_type == LINEAR_NEUMANN) return "LINEAR_NEUMANN";
+      if (dis_type == NORMALDEPTH) return "NORMALDEPTH";
+      if (dis_type == CRITICALDEPTH) return "CRITICALDEPTH";
+      if (dis_type == GREEN_AMPT) return "GREEN_AMPT";
+      if (dis_type == SYSTEM_DEPENDENT) return "SYSTEM_DEPENDENT";
+      if (dis_type == PRECIPITATION) return "PRECIPITATION";
+      if (dis_type == DIRECT) return "DIRECT";
+
+      return "INVALID_DIS_TYPE";
+   }
+}                                                 // end namespace FiniteElement

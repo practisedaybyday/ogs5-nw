@@ -43,6 +43,7 @@ namespace process
 
          // Assemble system equation
          void GlobalAssembly();
+         void GlobalAssembly_DM();
 
                                                   // overloaded
          double Execute(const int CouplingIterations=0);
@@ -54,8 +55,8 @@ namespace process
          void InitGauss();
          //
          void SetInitialGuess_EQS_VEC();
-         void UpdateIterativeStep(const double damp, const int Type);
-         void InitializeNewtonSteps(const int type);
+         void UpdateIterativeStep(const double damp, const int type);
+         void InitializeNewtonSteps(const int ty);
          double NormOfUpdatedNewton();
          void StoreLastSolution(const int ty=0);
          void RecoverSolution(const int ty=0);
@@ -84,13 +85,15 @@ namespace process
          // Write stresses
          void WriteGaussPointStress();
          void ReadGaussPointStress();
-      public:                                     //OK
-         CFiniteElementVec *fem_dm;
+
+         // Access members
+         CFiniteElementVec *GetFEM_Assembler() const {return fem_dm;}
+
       private:
+         CFiniteElementVec *fem_dm;
          void InitialMBuffer();
          double *ARRAY;
-         int *unknown_vector_indeces;
-         long *unknown_node_numbers;
+
          int counter;
          double InitialNorm;
          double InitialNormU;

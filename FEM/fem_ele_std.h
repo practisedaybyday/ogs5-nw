@@ -44,7 +44,7 @@ namespace FiniteElement
 {
    using Math_Group::SymMatrix;
    using Math_Group::Matrix;
-   using Math_Group::DiagonalMatrix; 
+   using Math_Group::DiagonalMatrix;
    using Math_Group::Vec;
    using process::CRFProcessDeformation;
    using ::CRFProcess;
@@ -69,7 +69,7 @@ namespace FiniteElement
          // 1. Mass matrix
          void CalcMass();
          void CalcMass2();
-         void CalcMassPTC();						//AKS/NB
+         void CalcMassPTC();                      //AKS/NB
          void CalcMassPSGLOBAL();                 // PCH
          // 2. Lumped mass matrix
          void CalcLumpedMass();
@@ -105,9 +105,12 @@ namespace FiniteElement
          void Cal_Velocity();
          void Cal_Velocity_2();                   //CB this is to provide velocity only at the element center of gravity
          void  Cal_GP_Velocity_FM(int *i_ind);    //SB 4900 interpolate node velocities to Gauss point velocities
-	     std::string Cal_GP_Velocity_ECLIPSE(std::string tempstring, bool output_average, int phase_index, std::string phase); //BG
-	     std::string Cal_GP_Velocity_DuMux(int *i_ind, CRFProcess *m_pcs, int phase_index); //BG coupling to DuMux
-	     double InterpolatePropertyToGausspoint(int GPIndex, CRFProcess *m_pcs, int Variableindex); // necessary for using precalculated density and viscosity BG, 11/2010
+                                                  //BG
+         std::string Cal_GP_Velocity_ECLIPSE(std::string tempstring, bool output_average, int phase_index, std::string phase);
+                                                  //BG coupling to DuMux
+         std::string Cal_GP_Velocity_DuMux(int *i_ind, CRFProcess *m_pcs, int phase_index);
+                                                  // necessary for using precalculated density and viscosity BG, 11/2010
+         double InterpolatePropertyToGausspoint(int GPIndex, CRFProcess *m_pcs, int Variableindex);
          //
                                                   //OK
          void AssembleParabolicEquationRHSVector();
@@ -158,14 +161,13 @@ namespace FiniteElement
          int comp;                                // Component
          int LocalShift;                          // For RHS
          // Danymic
-         int idx_vel_disp[3], idx_pres;
+         int *idx_vel_disp, idx_pres;
          // Velocity
-         int idx_vel[3];                          //WW
+         int *idx_vel;                            //WW
          // Material properties
-         double mat[9];
+         double *mat;
          double *eqs_rhs;                         //For DDC WW
          bool heat_phase_change;
-         ::CRFProcess *cpl_pcs;                   // Pointer to coupled process. WW
 
          char pcsT;
          //     /**
@@ -182,6 +184,7 @@ namespace FiniteElement
          CMediumProperties *MediaProp1;           // Matrix for the dual model. YD/WW
          CSolidProperties *SolidProp1;            // Matrix for the dual model. YD/WW
          CRFProcess *pcs;
+         ::CRFProcess *cpl_pcs;                   // Pointer to coupled process. WW
          process::CRFProcessDeformation *dm_pcs;
          bool flag_cpl_pcs;                       //OK
          //-------------------------------------------------------
@@ -196,8 +199,8 @@ namespace FiniteElement
          double Sw, rhow, poro, dSdp;
          double rho_gw, rho_ga, rho_g, p_gw, M_g, tort;
          //
-         double edlluse[16];
-         double edttuse[16];
+         double *edlluse;                         // WW edlluse[16]
+         double *edttuse;                         // WW edlluse[16]
 
          // Local matrices
          Matrix *Mass;                            //CB symMatrix *Mass; // unsymmetric in case of upwinding
@@ -208,7 +211,7 @@ namespace FiniteElement
          Matrix *Content;                         //SB4209
          Matrix *StrainCoupling;
          Vec       *RHS;
-     DiagonalMatrix       *FCT_MassL; //NW      
+         DiagonalMatrix       *FCT_MassL;         //NW
          //-------------------------------------------------------
          void SetHighOrderNodes();                // 25.2.2007 WW
          // Primary as water head
@@ -226,10 +229,12 @@ namespace FiniteElement
                                                   // 10 2008 PCH
          inline void CalCoefLaplaceMultiphase(int phase, int ip=0);
          inline void CalCoefLaplace2(bool Gravity, int dof_index);
-         inline void CalCoefLaplacePTC(int dof_index); // AKS/NB
+                                                  // AKS/NB
+         inline void CalCoefLaplacePTC(int dof_index);
          inline void CalCoefLaplacePSGLOBAL(bool Gravity, int dof_index);
          inline double CalCoefAdvection();        //SB4200 OK/CMCD
-         inline double CalCoefAdvectionPTC(int dof_index);        //AKS/NB
+                                                  //AKS/NB
+         inline double CalCoefAdvectionPTC(int dof_index);
          inline double CalCoefStorage();          //SB4200
          inline double CalCoefContent();
          inline double CalCoefStrainCouping();
@@ -318,37 +323,38 @@ namespace FiniteElement
          double *NodalVal_p2;
          double *NodalVal_p20;                    //AKS
          double *NodalVal_t0;
-         double *NodalVal_t1;                    //AKS
+         double *NodalVal_t1;                     //AKS
          //
          double *weight_func;                     //NW
-     void CalcFEM_FCT(); //NW
+         void CalcFEM_FCT();                      //NW
          //
          friend class ::CRFProcess;
    };
 
    // Vector for storing element values WW
-class ElementValue
-{
-public:
-	ElementValue(CRFProcess* m_pcs, CElem* ele);
-	~ElementValue();
-	void getIPvalue_vec(const int IP, double * vec);
-	void getIPvalue_vec_phase(const int IP, int phase, double * vec); //SB 09/2010
-	void GetEleVelocity(double * vec);
-	Matrix Velocity;
-private:
-		// Friend class
-	friend class ::CRFProcess;
-	friend class FiniteElement::CFiniteElementStd;
-	friend class ::COutput;                  //OK
-		// Process
-	CRFProcess *pcs;
-		// Data
+   class ElementValue
+   {
+      public:
+         ElementValue(CRFProcess* m_pcs, CElem* ele);
+         ~ElementValue();
+         void getIPvalue_vec(const int IP, double * vec);
+                                                  //SB 09/2010
+         void getIPvalue_vec_phase(const int IP, int phase, double * vec);
+         void GetEleVelocity(double * vec);
+         Matrix Velocity;
+      private:
+         // Friend class
+         friend class ::CRFProcess;
+         friend class FiniteElement::CFiniteElementStd;
+         friend class ::COutput;                  //OK
+         // Process
+         CRFProcess *pcs;
+         // Data
 
-	Matrix Velocity_g;
-};
+         Matrix Velocity_g;
+   };
 
-} // end namespace
+}                                                 // end namespace
 
 
 /*------------------------------------------------------------------

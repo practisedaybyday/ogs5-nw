@@ -123,8 +123,8 @@ namespace FiniteElement
          int idx_S0, idx_S, idx_Snw;
          int idx_pls;
          // Displacement column indeces in the node value table
-         int Idx_Stress[6];
-         int Idx_Strain[6];
+         int *Idx_Stress;
+         int *Idx_Strain;
 
          // B matrix
          Matrix *B_matrix;
@@ -151,6 +151,8 @@ namespace FiniteElement
          Matrix *PressureC;
          SymMatrix *Mass;                         // For dynamic analysis
          Vec *RHS;
+         // Global RHS. 08.2010. WW
+         double *b_rhs;
 
          //  Stresses:
          //  s11, s22, s33, s12, s13, s23
@@ -158,9 +160,9 @@ namespace FiniteElement
          //  Straines:
          //  s11, s22, s33, s12, s13, s23
          double *dstrain;
-         double strain_ne[6];
-         double stress_ne[6];
-         double stress0[6];
+         double *strain_ne;
+         double *stress_ne;
+         double *stress0;
          // Results, displacements
          //  u_x1, u_x2, u_x3, ..., u_xn,
          //  u_y1, u_y2, u_y3, ..., u_yn,
@@ -183,11 +185,11 @@ namespace FiniteElement
          // Singular enhanced strain matrix
          Matrix *Pe;
          // Additional node. Normally, the gravity center
-         double X0[3];
+         double *X0;
          // Normal to the discontinuity surface
-         double n_jump[3];
+         double *n_jump;
          // principle stresses
-         double pr_stress[3];
+         double *pr_stress;
          // Compute principle stresses
          double ComputePrincipleStresses(const double *Stresses);
          // Compute principle stresses
@@ -232,16 +234,16 @@ namespace FiniteElement
          friend class process::CRFProcessDeformation;
 
          // Auxillarary vector
-         double AuxNodal[8];
-         double AuxNodal_S0[8];
-         double AuxNodal_S[8];
-         double AuxNodal1[60];
+         double *AuxNodal;
+         double *AuxNodal_S0;
+         double *AuxNodal_S;
+         double *AuxNodal1;
          double *AuxNodal2;
 
          // Dynamic
          // Damping parameters
          bool dynamic;
-         int Idx_Vel[3];
+         int *Idx_Vel;
          double beta2, bbeta1;
          // Auxillarary vector
          Vec *dAcceleration;
@@ -250,6 +252,6 @@ namespace FiniteElement
 
 }                                                 // end namespace
 
+
 extern std::vector<FiniteElement::ElementValue_DM*> ele_value_dm;
 #endif
-
