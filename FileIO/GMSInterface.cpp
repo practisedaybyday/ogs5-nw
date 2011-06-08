@@ -69,8 +69,9 @@ int GMSInterface::readBoreholesFromGMS(std::vector<GEOLIB::Point*> *boreholes, c
 		newBorehole->setDepth((*newBorehole)[2]-depth);
 		boreholes->push_back(newBorehole);
 	}
-
 	in.close();
+
+	if (boreholes->empty()) return 0;
 	return 1;
 }
 

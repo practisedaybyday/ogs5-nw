@@ -214,7 +214,7 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector
 		}
 		else it++;
 	}
-
+/*
 	// renumber id-mapping - part I
 	size_t cnt (0);
 	for (size_t k(0); k<n_pnts_in_file; k++) {
@@ -232,6 +232,22 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector
 			j = pnt_id_map[j];
 		pnt_id_map[k] = j;
 	}
+*/
+
+	size_t cnt(0);
+	std::map<size_t, size_t> reg_ids;
+	for (size_t k(0); k<n_pnts_in_file; k++) 
+	{
+		if (pnt_id_map[k] == k) 
+		{
+			reg_ids.insert(std::pair<size_t,size_t>(k, cnt));
+			cnt++;
+		}
+		else
+			reg_ids.insert(std::pair<size_t,size_t>(k, reg_ids[pnt_id_map[k]]));
+	}
+	for (size_t k(0); k<n_pnts_in_file; k++) 
+		pnt_id_map[k] = reg_ids[k];
 }
 
 void PointVec::calculateShortestDistance ()
