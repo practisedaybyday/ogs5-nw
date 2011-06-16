@@ -6,8 +6,6 @@
 #include "MshEditor.h"
 #include "msh_mesh.h"
 
-#include <QFileDialog>
-
 
 MeshLib::CFEMesh* MshEditor::removeMeshNodes(MeshLib::CFEMesh* mesh, const std::vector<size_t> &nodes)
 {
