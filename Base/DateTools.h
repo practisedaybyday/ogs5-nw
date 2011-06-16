@@ -18,7 +18,7 @@ double date2Double(int y, int m, int d);
 /**
  * Converts a double representing a date into a string.
  * Note: It is not really checked if the date actually makes sense.
- * \param d Number containing date in double format yyyymmdd
+ * \param ddate Number containing date in double format yyyymmdd
  * \return A string containing the date in format "dd.mm.yyyy".
  */
 std::string date2string(double ddate);

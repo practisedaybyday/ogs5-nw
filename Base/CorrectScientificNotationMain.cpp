@@ -1,5 +1,4 @@
 /**
- * \file CorrectScientificNotificationMain.h
  * 28/5/2010 LB Initial implementation
  * 
  */

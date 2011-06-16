@@ -116,6 +116,7 @@ public:
 	/**
 	 * Changes a point index for one point in a line
 	 * @param idx Index of point in line
+	 * @param id
 	 * @return id ID of point in PointVec object
 	 */
 	void setPointID(size_t idx, size_t id) { _ply_pnt_ids[idx] = id; };

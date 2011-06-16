@@ -1,5 +1,5 @@
 /**
- * \file GEOLIB::Vector.h
+ * \file Vector3.h
  * 27/10/2009 LB Initial implementation
  * From: http://www.strout.net/info/coding/classlib/intro.html
  * with modifications to derive from TemplatePoint

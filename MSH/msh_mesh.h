@@ -401,7 +401,7 @@ namespace MeshLib
 #endif
          void MarkInterface_mHM_Hydro_3D();       //07.06.2010. WW
          void mHM2NeumannBC();
-         /// Comptute \int {f} a dA on top surface.
+         /// Comptute int {f} a dA on top surface.
          void TopSurfaceIntegration();
 
       private:
