@@ -120,7 +120,7 @@ int main ( int argc, char *argv[] )
   if( argc > 1 && modelRoot == "" ) // non-interactive mode and no model given
     exit(0);                         // e.g. just wanted the build info
 
-  char *dateiname;
+  char *dateiname = NULL;
 #ifdef SUPERCOMPUTER
 // *********************************************************************
 // buffered output ... important for performance on cray

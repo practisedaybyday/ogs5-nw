@@ -2181,7 +2181,7 @@ namespace process
    void CRFProcessDeformation::GlobalAssembly()
    {
       //----------------------------------------------------------------------
-      CElem* elem = NULL;
+
 #ifdef USE_MPI
       if(dom_vector.size()>0)
       {

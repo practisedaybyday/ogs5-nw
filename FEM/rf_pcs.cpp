@@ -196,13 +196,12 @@ Programing:
 last modified:
 **************************************************************************/
 CRFProcess::CRFProcess(void) :
-_problem (NULL), fem(NULL), Memory_Type(0),
-Write_Matrix(false), matrix_file(NULL),
-p_var_index(NULL), num_nodes_p_var(NULL),
+_problem (NULL), p_var_index(NULL), num_nodes_p_var(NULL),
+fem(NULL), Memory_Type(0), Write_Matrix(false), matrix_file(NULL),WriteSourceNBC_RHS(0),
 #ifdef JFNK_H2M
-norm_u_JFNK(NULL), array_u_JFNK(NULL), array_Fu_JFNK(NULL), JFNK_precond(false),
+JFNK_precond(false), norm_u_JFNK(NULL), array_u_JFNK(NULL), array_Fu_JFNK(NULL), 
 #endif
-WriteSourceNBC_RHS(0), ele_val_name_vector (std::vector<std::string>())
+ele_val_name_vector (std::vector<std::string>())
 {
    TempArry = NULL;
    //SB:GS4  pcs_component_number=0; //SB: counter for transport components
@@ -623,7 +622,7 @@ void CRFProcess::Create()
       eqs_new = EQS_Vector[2*k];
 #else
    //WW  phase=1;
-   CRFProcess *m_pcs = NULL;                      //
+   //CRFProcess *m_pcs = NULL;                      //
    // create EQS
    if (type == 4)
    {
@@ -10532,6 +10531,7 @@ Programming:
 
 void CreateEQS_LinearSolver()
 {
+   size_t i;
    int dof_DM=1;
    int DM_type=-1;                                //03.08.2010. WW
    CRFProcess *m_pcs = NULL;
@@ -10544,7 +10544,7 @@ void CreateEQS_LinearSolver()
    //
    size_t dof_nonDM (1);
 
-   for(size_t i=0;i<pcs_vector.size();i++)
+   for(i=0;i<pcs_vector.size();i++)
    {
       m_pcs = pcs_vector[i];
       if(m_pcs->type==1212)                       //Important for parallel computing. 24.1.2011 WW
@@ -10576,7 +10576,7 @@ void CreateEQS_LinearSolver()
    }
    //Check whether the JFNK method is employed for deformation problem 04.08.2010 WW
    CNumerics *num = NULL;
-   for(i=0;i<(int)num_vector.size();i++)
+   for(i=0;i< num_vector.size();i++)
    {
       num = num_vector[i];
       if(num->nls_method==2)
@@ -10590,7 +10590,7 @@ void CreateEQS_LinearSolver()
    }
 
    //
-   for(size_t i=0; i<fem_msh_vector.size(); i++)
+   for(i=0; i<fem_msh_vector.size(); i++)
    {
       a_msh = fem_msh_vector[i];
 #if defined(USE_MPI)
