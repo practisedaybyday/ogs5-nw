@@ -1517,6 +1517,8 @@ namespace Math_Group
             x[i] += v_j[i] * y[j];
       }
    }
+
+#ifndef USE_MPI
    /// GMRES solver. WW
    int Linear_EQS::GMRES()
    {
@@ -1663,6 +1665,7 @@ namespace Math_Group
          return iter <= max_iter;
    }
    //-----------------------------------------------------------------
+#endif // USE_MPI
 #endif                                         //GMRES
 #ifdef JFNK_H2M
    /*! \brief Initialize the Jacobi preconditioner fot JFNK
