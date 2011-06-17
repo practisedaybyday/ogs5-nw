@@ -1438,7 +1438,6 @@ namespace Math_Group
       //
          return iter <= max_iter;
    }
-#endif                                         // If not defined USE_MPI
    //
    //------------------------------------------------------------------------
 #define aGMRES
@@ -1518,7 +1517,7 @@ namespace Math_Group
       }
    }
 
-#ifndef USE_MPI
+//#ifndef USE_MPI
    /// GMRES solver. WW
    int Linear_EQS::GMRES()
    {
@@ -1665,7 +1664,7 @@ namespace Math_Group
          return iter <= max_iter;
    }
    //-----------------------------------------------------------------
-#endif // USE_MPI
+//#endif // USE_MPI
 #endif                                         //GMRES
 #ifdef JFNK_H2M
    /*! \brief Initialize the Jacobi preconditioner fot JFNK
@@ -1699,6 +1698,8 @@ namespace Math_Group
 
    }
 #endif
+
+#endif                                         // If not defined USE_MPI
 #if defined(USE_MPI)
    /*************************************************************************
    GeoSys-Function:
