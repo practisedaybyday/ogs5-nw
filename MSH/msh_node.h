@@ -84,7 +84,7 @@ namespace MeshLib
          std::vector<size_t> const & getConnectedElementIDs () const { return _connected_elements; }
          std::vector<size_t> & getConnectedElementIDs () { return _connected_elements; }
 
-      private:
+   private:
     	  std::vector<size_t> _connected_elements;
          // Members
          long eqs_index;                          // renumber

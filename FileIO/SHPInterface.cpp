@@ -82,14 +82,10 @@ void SHPInterface::readStations(const SHPHandle &hSHP, int numberOfElements, std
 
 void SHPInterface::readPolylines(const SHPHandle &hSHP, int numberOfElements, std::string listName)
 {
-	int nextIdx = -1;
-	size_t noOfPoints = 0, noOfParts = 0, cnpoints = 0;
+	size_t noOfPoints = 0, noOfParts = 0;
 	std::vector<GEOLIB::Point*> *points = new std::vector<GEOLIB::Point*>();
 	std::vector<GEOLIB::Polyline*> *lines = new std::vector<GEOLIB::Polyline*>();
 	SHPObject *hSHPObject;
-
-	// TODO tolerance value (is there a better value for the tolerance from arc gis?)
-	double eps (sqrt(std::numeric_limits<double>::min()));
 
 	// for each polyline)
 	for (int i=0; i<numberOfElements; i++)

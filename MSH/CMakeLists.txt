@@ -8,6 +8,7 @@ set( SOURCES
 	msh_lib.h
 	msh_mesh.h
 	msh_node.h
+	MshEditor.h
 	MSHEnums.h
 	MeshNodesAlongPolyline.h
 	MeshQualityChecker.h
@@ -24,6 +25,7 @@ set( SOURCES
 	msh_mat.cpp
 	msh_mesh.cpp
 	msh_node.cpp
+	MshEditor.cpp
 	MSHEnums.cpp
 	MeshNodesAlongPolyline.cpp
 	MeshQualityChecker.cpp
