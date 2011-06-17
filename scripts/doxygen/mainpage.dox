@@ -1,0 +1,13 @@
+/** \mainpage OpenGeoSys source code documentation
+ *
+ * \section intro_sec Introduction
+ *
+ * This page only describes the source code itself. See the following links for additional information:
+ *
+ * - Wiki: https://svn.ufz.de/ogs
+ * - Developer guide: https://svn.ufz.de/ogs/attachment/wiki/WikiStart/ogs_guide.pdf?format=raw
+ * - Data Explorer (Gui) manual: https://svn.ufz.de/ogs/attachment/wiki/WikiStart/DataExplorer-Manual.pdf?format=raw
+ * - Mailing list: https://groups.google.com/forum/#!forum/ogs6
+ * - Jenkins build server: https://svn.ufz.de/hudson/job/Benchmarks_Linux/
+ *
+ */

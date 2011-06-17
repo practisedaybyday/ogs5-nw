@@ -3741,7 +3741,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
    }
 
    /*!
-    Compute \int {f} a dA on top surface.
+    Compute int {f} a dA on top surface.
 
       WW. 29.11.2010
    */
