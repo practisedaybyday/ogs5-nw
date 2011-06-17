@@ -11,6 +11,7 @@ mkdir -p build_gui && cd build_gui
 cmake -DOGS_USE_QT=ON -DOGS_PACKAGING=ON ..
 cmake -DOGS_USE_QT=ON -DOGS_PACKAGING=ON ..
 make -j
+make doc
 #../scripts/cmake.ogs.sh ..
 cmake ..
 make -j
