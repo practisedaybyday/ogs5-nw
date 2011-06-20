@@ -115,7 +115,7 @@ void SHPInterface::readPolylines(const SHPHandle &hSHP, int numberOfElements, st
 
 	if (numberOfElements>0)
 	{
-		// add points vector to GEOObjects
+		// add points vector to GEOObjects (and check for duplicate points)
 		_geoObjects->addPointVec(points, listName);
 
 		// adjust indeces of polylines, remove zero length elements and add vector to GEOObjects
@@ -145,6 +145,7 @@ void SHPInterface::readPolygons(const SHPHandle &hSHP, int numberOfElements, std
 }
 
 void SHPInterface::adjustPolylines (std::vector<GEOLIB::Polyline*> *lines, std::vector<size_t> id_map)
+
 {
 	for (size_t i=0; i<lines->size(); i++)
 	{

@@ -354,7 +354,7 @@ int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timest
 	string DOScommand;
 	std::ostringstream temp;
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-	CNode* a_node;
+	MeshLib::CNode* a_node;
 	double value;
 	double timestep_length;
 	//CRFProcess *n_pcs = NULL;

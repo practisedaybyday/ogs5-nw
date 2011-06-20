@@ -128,6 +128,7 @@ namespace MeshLib
          size_t getNumberOfTris () const;
          size_t getNumberOfTets () const;
          size_t getNumberOfPrisms () const;
+         size_t getNumberOfPyramids () const;
          double getMinEdgeLength () const;
          /**
           * do not use this method REMOVE CANDIDATE
@@ -400,7 +401,7 @@ namespace MeshLib
 #endif
          void MarkInterface_mHM_Hydro_3D();       //07.06.2010. WW
          void mHM2NeumannBC();
-         /// Comptute \int {f} a dA on top surface.
+         /// Comptute int {f} a dA on top surface.
          void TopSurfaceIntegration();
 
       private:
@@ -424,6 +425,7 @@ namespace MeshLib
          size_t _msh_n_tris;
          size_t _msh_n_tets;
          size_t _msh_n_prisms;
+         size_t _msh_n_pyras;
 
          /**
           * method initializes the minimal edge length that is used in search algorithms

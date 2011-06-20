@@ -109,7 +109,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 	max_mmp_groups(0), msh_max_dim (0), _geo_obj(geo_obj), _geo_name(geo_name),
 	_ele_type (MshElemType::INVALID), _n_msh_layer(0),
 	_cross_section(false), _msh_n_lines(0), _msh_n_quads(0),
-	_msh_n_hexs(0), _msh_n_tris(0), _msh_n_tets(0), _msh_n_prisms(0),
+	_msh_n_hexs(0), _msh_n_tris(0), _msh_n_tets(0), _msh_n_prisms(0), _msh_n_pyras(0),
 	_min_edge_length(1e-3),
 	NodesNumber_Linear(0), NodesNumber_Quadratic(0),
 	_axisymmetry(false),
@@ -157,12 +157,10 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
          for (size_t i=0; i<nElems; i++)
          {
             MeshLib::CElem* elem = new MeshLib::CElem();
-            elem->SetElementType(old_mesh->ele_vector[i]->GetElementType());
+			elem->setElementProperties(old_mesh->ele_vector[i]->GetElementType());
             elem->SetPatchIndex(old_mesh->ele_vector[i]->GetPatchIndex());
 
             size_t nElemNodes = old_mesh->ele_vector[i]->nodes_index.Size();
-            elem->SetNodesNumber(nElemNodes);
-            elem->nodes_index.resize(nElemNodes);
             for (size_t j=0; j<nElemNodes; j++)
             {
                elem->SetNodeIndex(j, old_mesh->ele_vector[i]->GetNodeIndex(j));
@@ -173,6 +171,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 
          pcs_name = "NotSpecified";
          this->setNumberOfMeshLayers(old_mesh->getNumberOfMeshLayers());
+		 this->ConstructGrid();
 
          std::cout << "done." << std::endl;
       }
@@ -284,6 +283,11 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
    size_t CFEMesh::getNumberOfPrisms () const
    {
       return _msh_n_prisms;
+   }
+
+   size_t CFEMesh::getNumberOfPyramids () const
+   {
+     return _msh_n_pyras;
    }
 
    double CFEMesh::getMinEdgeLength () const
@@ -436,15 +440,15 @@ void CFEMesh::computeMinEdgeLength ()
    {
       bool done;
 
-      vec<CNode*> e_nodes0(20);
-      vec<int> Edge_Orientation(15);
-      vec<CEdge*> Edges(15);
-      vec<CEdge*> Edges0(15);
-      vec<CElem*> Neighbors(15);
-      vec<CElem*> Neighbors0(15);
+      Math_Group::vec<CNode*> e_nodes0(20);
+      Math_Group::vec<int> Edge_Orientation(15);
+      Math_Group::vec<CEdge*> Edges(15);
+      Math_Group::vec<CEdge*> Edges0(15);
+      Math_Group::vec<CElem*> Neighbors(15);
+      Math_Group::vec<CElem*> Neighbors0(15);
 
-      vec<CNode*> e_edgeNodes0(3);
-      vec<CNode*> e_edgeNodes(3);
+      Math_Group::vec<CNode*> e_edgeNodes0(3);
+      Math_Group::vec<CNode*> e_edgeNodes(3);
 
       NodesNumber_Linear = nod_vector.size();
 
@@ -458,7 +462,7 @@ void CFEMesh::computeMinEdgeLength ()
       for (size_t e = 0; e < e_size; e++)
       {
 		 CElem* elem ( ele_vector[e] );
-		 const vec<long>& node_index (elem->GetNodeIndeces());
+		 const Math_Group::vec<long>& node_index (elem->GetNodeIndeces());
 		 elem->GetNeighbors(Neighbors0);
 
 		 size_t nnodes0 ( elem->nnodes );             // Number of nodes for linear element
@@ -483,7 +487,7 @@ void CFEMesh::computeMinEdgeLength ()
                   if (ee == e)
                      continue;
                   CElem* connElem ( ele_vector[ee] );
-                  const vec<long>& node_index_glb (connElem->GetNodeIndeces());
+                  const Math_Group::vec<long>& node_index_glb (connElem->GetNodeIndeces());
                   connElem->GetNeighbors(Neighbors);
                   size_t nFacesConnElem = static_cast<size_t>(connElem->GetFacesNumber());
 
@@ -569,7 +573,7 @@ void CFEMesh::computeMinEdgeLength ()
                   if (ee == e)
                      continue;
                   CElem* connElem ( ele_vector[ee] );
-                  const vec<long>& node_index_glb (connElem->GetNodeIndeces());
+                  const Math_Group::vec<long>& node_index_glb (connElem->GetNodeIndeces());
                   size_t nedges ( connElem->GetEdgesNumber() );
                   connElem->GetEdges(Edges);
                   // Edges of neighbors
@@ -628,6 +632,7 @@ void CFEMesh::computeMinEdgeLength ()
       _msh_n_tris = 0;
       _msh_n_tets = 0;
       _msh_n_prisms = 0;
+      _msh_n_pyras = 0;
       for (size_t e = 0; e < e_size; e++)
       {
          CElem* elem ( ele_vector[e] );
@@ -651,6 +656,9 @@ void CFEMesh::computeMinEdgeLength ()
             case MshElemType::PRISM:
                _msh_n_prisms++;
                break;
+            case MshElemType::PYRAMID:
+              _msh_n_pyras++;
+              break;
             default:
                std::cerr << "CFEMesh::ConstructGrid MshElemType not handled" << std::endl;
          }
@@ -679,7 +687,7 @@ void CFEMesh::computeMinEdgeLength ()
 
       }
       NodesNumber_Quadratic = (long) nod_vector.size();
-      if ((_msh_n_hexs + _msh_n_tets + _msh_n_prisms) > 0)
+      if ((_msh_n_hexs + _msh_n_tets + _msh_n_prisms + _msh_n_pyras) > 0)
          max_ele_dim = 3;
       else if ((_msh_n_quads + _msh_n_tris) > 0)
          max_ele_dim = 2;
@@ -841,8 +849,8 @@ void CFEMesh::computeMinEdgeLength ()
       }
       //
       CNode *aNode = NULL;
-      vec<CNode*> e_nodes0(20);
-      vec<CNode*> e_nodes(20);
+      Math_Group::vec<CNode*> e_nodes0(20);
+      Math_Group::vec<CNode*> e_nodes(20);
       CElem *thisElem0 = NULL;
       CElem *thisElem = NULL;
       CEdge *thisEdge0 = NULL;
@@ -1091,7 +1099,7 @@ void CFEMesh::computeMinEdgeLength ()
 #endif                                      //#ifndef NON_PROCESS
 
       //
-      if ((_msh_n_hexs + _msh_n_tets + _msh_n_prisms) == ele_vector.size())
+      if ((_msh_n_hexs + _msh_n_tets + _msh_n_prisms + _msh_n_pyras) == ele_vector.size())
          return;
       else if (coordinate_system != 32 && !this->has_multi_dim_ele)
       {
@@ -2292,8 +2300,8 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
     **************************************************************************/
    void CFEMesh::GetELEOnPLY(const GEOLIB::Polyline* ply, std::vector<size_t>& ele_vector_ply)
    {
-      vec<CEdge*> ele_edges_vector(15);
-      vec<CNode*> edge_nodes(3);
+      Math_Group::vec<CEdge*> ele_edges_vector(15);
+      Math_Group::vec<CNode*> edge_nodes(3);
 
       std::vector<size_t> nodes_near_ply;
 
@@ -3745,7 +3753,7 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
    }
 
    /*!
-    Compute \int {f} a dA on top surface.
+    Compute int {f} a dA on top surface.
 
       WW. 29.11.2010
    */

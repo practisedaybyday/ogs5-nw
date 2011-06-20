@@ -1933,8 +1933,8 @@ void CMediumProperties::WriteTecplot(std::string msh_name)
    //--------------------------------------------------------------------
    // MSH
    CFEMesh* m_msh = NULL;
-   CNode* m_nod = NULL;
-   CElem* m_ele = NULL;
+   MeshLib::CNode* m_nod = NULL;
+   MeshLib::CElem* m_ele = NULL;
    m_msh = FEMGet(msh_name);
    if(!m_msh)
       return;
@@ -2592,7 +2592,10 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 	if (Fem_Ele_Std->PcsType==S)     // Multi-phase WW
 			{
 				m_mfp = mfp_vector[0];
-				heat_conductivity_fluids = m_mfp->HeatConductivity();
+				 dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal0);
+		   dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
+		   dens_arg[2] = Fem_Ele_Std->Index;
+				heat_conductivity_fluids = m_mfp->HeatConductivity(dens_arg);
 			}
 	else
 	{
@@ -2936,7 +2939,7 @@ double* CMediumProperties::MassDispersionTensorNew(int ip, int tr_phase) // SB +
    // hard stabilization
    if(this->lgpn > 0.0)
    {
-      CElem* m_ele = NULL;
+      MeshLib::CElem* m_ele = NULL;
       m_ele = m_pcs->m_msh->ele_vector[index];
       if(eleType == 2)   l_char = sqrt(m_ele->GetVolume());
       if(eleType == 4)   l_char = sqrt(m_ele->GetVolume());
@@ -4391,8 +4394,8 @@ double CMediumProperties::RelativePermeability (long index)
 double CMediumProperties::PermeabilityFracAperture(long index)
 {
 
-   CElem *elem = NULL;
-   CElem *elem2 = NULL;
+   MeshLib::CElem *elem = NULL;
+   MeshLib::CElem *elem2 = NULL;
    CFEMesh* m_msh = NULL;
    CSolidProperties* mat_pointer;
    CMediumProperties *m_mmp = NULL;
@@ -4623,7 +4626,7 @@ double CMediumProperties::PermeabilityFracAperture(long index)
  Programmaenderungen:
 04/2005 RFW Implementierung
 *************************************************************************/
-double CMediumProperties::CalculateFracAperture(CElem* elem, double delta_y)
+double CMediumProperties::CalculateFracAperture(MeshLib::CElem* elem, double delta_y)
 {
    // TEST *************
    //cout << "ELEMENT: "<<index <<endl;
@@ -4632,15 +4635,15 @@ double CMediumProperties::CalculateFracAperture(CElem* elem, double delta_y)
    vector<double> intercept;
    double aperture=0, dy, dx;
    vector<double> centroid;
-   CElem *last_elem=NULL, *current_elem=NULL;
+   MeshLib::CElem *last_elem=NULL, *current_elem=NULL;
 
-   vec<CElem*> neighbor_last, neighbor_current, neighbor_neighbor_last;
+   vec<MeshLib::CElem*> neighbor_last, neighbor_current, neighbor_neighbor_last;
    //the next line is here because Wenqings vec class destructor does not like empty vec's, and there is no guarantee these vecs will be filled in any given call to this function
    neighbor_last.resize(1); neighbor_current.resize(1); neighbor_neighbor_last.resize(1);
    long num_face1, num_face2;
    bool at_frac_bound;
    long step, current_index, last_index=elem->GetIndex(), group, index = elem->GetIndex();
-   vector<CElem*> neighbor_vec;
+   vector<MeshLib::CElem*> neighbor_vec;
    bool neighbors, shared_neighbors, neighbors_neighbor;
    CFEMesh* msh_pointer = NULL;
    msh_pointer = fem_msh_vector[0];               // Something must be done later on here.
@@ -4774,7 +4777,7 @@ double CMediumProperties::CalculateFracAperture(CElem* elem, double delta_y)
                      if(neighbors || shared_neighbors || neighbors_neighbor)
                      {
                         bool good_intersect = false, match = false;
-                        CElem *neighbor_0, *neighbor_1;
+                        MeshLib::CElem *neighbor_0, *neighbor_1;
                         neighbor_0 = neighbor_vec[0];
                         neighbor_1 = neighbor_vec[1];
                         vector<CNode*> matching_nodes;
@@ -5681,7 +5684,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
    string mmp_property_name;
    string mmp_property_dis_type;
    string mmp_property_mesh;
-   CElem* m_ele_geo = NULL;
+   MeshLib::CElem* m_ele_geo = NULL;
    bool element_area = false;
    long i, j, ihet;
    double mmp_property_value;
@@ -5956,8 +5959,8 @@ void CMediumProperties::WriteTecplotDistributedProperties()
    }
    //--------------------------------------------------------------------
    // MSH
-   CNode* m_nod = NULL;
-   CElem* m_ele = NULL;
+   MeshLib::CNode* m_nod = NULL;
+   MeshLib::CElem* m_ele = NULL;
    if (!m_msh)
       return;
    //--------------------------------------------------------------------
@@ -6239,7 +6242,7 @@ void CMediumPropertiesGroup::Set(CRFProcess* m_pcs)
    long j,k;
    CFEMesh* m_msh = m_pcs->m_msh;
    CMediumProperties* m_mmp = NULL;
-   CElem* elem = NULL;
+   MeshLib::CElem* elem = NULL;
    //----------------------------------------------------------------------
    // Tests //
    if(!m_msh)

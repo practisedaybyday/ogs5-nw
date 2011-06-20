@@ -26,8 +26,8 @@ namespace GEOLIB {
 
 ///
 /**
- * \defgroup GEOLIB
- * This module consists of classes governing geometric objects and related algorithms.
+ * \defgroup GEOLIB This module consists of classes governing geometric objects
+ * and related algorithms.
  */
 
 /**
@@ -111,6 +111,8 @@ public:
 
 	/**
 	 * Adds a vector of polylines with the given name to GEOObjects.
+	 * @param lines The lines vector.
+	 * @param name The given name.
 	 * @param ply_names vector of the names corresponding to the polylines
 	*/
 	virtual void addPolylineVec(std::vector<Polyline*> *lines,
@@ -157,7 +159,7 @@ public:
 
 	/**
 	 * Copies the surfaces in the vector to the SurfaceVec with the given name.
-	 * \param polylines the vector with polylines
+	 * \param surfaces the vector with surfaces
 	 * \param name the name of the internal PolylineVec
 	 * \return true if the surfaces are appended, false if the SurfaceVec with the
 	 * corresponding name does not exist

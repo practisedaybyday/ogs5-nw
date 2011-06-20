@@ -1054,7 +1054,7 @@ void CInitialCondition::SetDomainEle(int nidx)
    std::vector<long>ele_vector;
    CFEMesh* m_msh = this->getProcess()->m_msh;
    k=0;
-   CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
 
    if(SubNumber==0)                               //only for constant values
    {

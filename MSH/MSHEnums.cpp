@@ -15,6 +15,7 @@ const std::string MshElemType2String(const MshElemType::type t)
 	if (t == MshElemType::TRIANGLE)		return "tri";
 	if (t == MshElemType::TETRAHEDRON)	return "tet";
 	if (t == MshElemType::PRISM)		return "pris";
+    if (t == MshElemType::PYRAMID)		return "pyra";
 	return "none";
 };
 
@@ -26,6 +27,7 @@ MshElemType::type String2MshElemType(const std::string &s)
 	if (s.compare("tri")  == 0) return MshElemType::TRIANGLE;
 	if (s.compare("tet")  == 0) return MshElemType::TETRAHEDRON;
 	if (s.compare("pris") == 0) return MshElemType::PRISM;
+    if (s.compare("pyra") == 0) return MshElemType::PYRAMID;
 	return MshElemType::INVALID;
 };
 

@@ -21,7 +21,7 @@ MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string fileName)
 */
 	FEMDeleteAll();
 
-	CFEMesh* msh = FEMRead(fileName.substr(0, fileName.length()-4));
+	MeshLib::CFEMesh* msh = FEMRead(fileName.substr(0, fileName.length()-4));
 	if (msh)
 	{
 /*

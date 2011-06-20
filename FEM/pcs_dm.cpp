@@ -704,8 +704,8 @@ namespace process
          // 07.04.2010 WW
          size_t i;
          bool done;
-         CElem *elem = NULL;
-         CNode *node = NULL;
+         MeshLib::CElem *elem = NULL;
+         MeshLib::CNode *node = NULL;
          ElementValue_DM *eleV_DM = NULL;
          for (l = 0; l < (long)m_msh->ele_vector.size(); l++)
          {
@@ -2067,7 +2067,7 @@ namespace process
    void CRFProcessDeformation:: DomainAssembly(CPARDomain* m_dom)
    {
       long i;
-      CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
 #ifdef NEW_EQS
       m_dom->InitialEQS(this);
 #else
@@ -2136,7 +2136,7 @@ namespace process
    {
       //----------------------------------------------------------------------
       long i;
-      CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
 #ifdef USE_MPI
       if(dom_vector.size()>0)
       {
@@ -2268,7 +2268,7 @@ namespace process
    void CRFProcessDeformation::UpdateStress()
    {
       long i;
-      CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       /*
       long j, irank;
       j = 0;
@@ -2460,7 +2460,7 @@ namespace process
       exist = false;                              // 16.02
       // 1. De-active host domain to be exvacated
       actElements = 0;
-      CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       for (i = 0; i < (long) m_msh->ele_vector.size(); i++)
       {
          elem = m_msh->ele_vector[i];
@@ -2620,7 +2620,7 @@ namespace process
       ElementValue_DM *eval_DM;
 
       // Over all elements
-      CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
       {
          elem = m_msh->ele_vector[i];

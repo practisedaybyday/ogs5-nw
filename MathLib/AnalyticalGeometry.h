@@ -41,7 +41,7 @@ Orientation getOrientation (const GEOLIB::Point* p0, const GEOLIB::Point* p1, co
 
 /**
  * compute a supporting plane (represented by plane_normal and the value d) for the polygon
- * Let \f$n\f$ be the plane normal and \f$d\f$ a parameter. Then for all points \f$p \in \R^3\f$ of the plane
+ * Let \f$n\f$ be the plane normal and \f$d\f$ a parameter. Then for all points \f$p \in R^3\f$ of the plane
  * it holds \f$ n \cdot p + d = 0\f$
  * @param pnts points of a closed polyline describing a polygon
  * @param plane_normal the normal of the plane the polygon is located in

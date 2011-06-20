@@ -20,13 +20,11 @@ namespace process{class CRFProcessDeformation;}
 namespace Math_Group{class Matrix;}
 
 class CRFProcess;
-//------------------------------------------------------------------------
+
+
 namespace MeshLib
 {
-   // Process
-   using process::CRFProcessDeformation;
-   using ::CRFProcess;
-   using Math_Group::Matrix;
+
    //------------------------------------------------------------------------
    // Class definition
    class CElem: public CCore
@@ -133,8 +131,8 @@ namespace MeshLib
          std::string GetName() const;
          //------------------------------------------------------------------
          // Nodes
-         vec<long> nodes_index;
-         void GetNodeIndeces(vec<long>& node_index) const
+         Math_Group::vec<long> nodes_index;
+         void GetNodeIndeces(Math_Group::vec<long>& node_index) const
          {
             for (int i = 0; i < (int) nodes_index.Size(); i++)
                node_index[i] = nodes_index[i];
@@ -150,7 +148,7 @@ namespace MeshLib
           * const access to the vector nodes_index
           * @return a const reference to the vector
           */
-         const vec<long>& GetNodeIndeces () const { return nodes_index; }
+         const Math_Group::vec<long>& GetNodeIndeces () const { return nodes_index; }
 
          long GetNodeIndex(int index) const
          {
@@ -161,7 +159,7 @@ namespace MeshLib
             nodes_index[index] = g_index;
          }
 
-         void GetNodes(vec<CNode*>& ele_nodes)
+         void GetNodes(Math_Group::vec<CNode*>& ele_nodes)
          {
             for (size_t i=0; i<nodes.Size(); i++)
                ele_nodes[i] = nodes[i];
@@ -183,7 +181,7 @@ namespace MeshLib
 			return nodes[index];
 		 }
 
-         void SetNodes(vec<CNode*>& ele_nodes, bool ReSize = false);
+         void SetNodes(Math_Group::vec<CNode*>& ele_nodes, bool ReSize = false);
          int GetNodesNumber_H() const
          {
             return nnodesHQ;
@@ -212,7 +210,7 @@ namespace MeshLib
          void InitializeMembers();
          //------------------------------------------------------------------
          // Edges
-         void GetEdges(vec<CEdge*>& ele_edges)
+         void GetEdges(Math_Group::vec<CEdge*>& ele_edges)
          {
             for (size_t i = 0; i < nedges; i++)
                ele_edges[i] = edges[i];
@@ -221,13 +219,13 @@ namespace MeshLib
          {
             return edges[index];
          }
-         void SetEdges(vec<CEdge*>& ele_edges)
+         void SetEdges(Math_Group::vec<CEdge*>& ele_edges)
          {
             for (size_t i = 0; i < nedges; i++)
                edges[i] = ele_edges[i];
          }
          // KR not used int FindFaceEdges(const int LocalFaceIndex, vec<CEdge*>& face_edges);
-         void SetEdgesOrientation(vec<int>& ori_edg)
+         void SetEdgesOrientation(Math_Group::vec<int>& ori_edg)
          {
             for (size_t i = 0; i < nedges; i++)
                edges_orientation[i] = ori_edg[i];
@@ -258,7 +256,7 @@ namespace MeshLib
          //------------------------------------------------------------------
 
 		 // Neighbors
-         void SetNeighbors(vec<CElem*>& ele_neighbors)
+         void SetNeighbors(Math_Group::vec<CElem*>& ele_neighbors)
          {
             for (size_t i = 0; i < nfaces; i++)
                neighbors[i] = ele_neighbors[i];
@@ -267,7 +265,7 @@ namespace MeshLib
          {
             neighbors[LocalIndex] = ele_neighbor;
          }
-         void GetNeighbors(vec<CElem*>& ele_neighbors)
+         void GetNeighbors(Math_Group::vec<CElem*>& ele_neighbors)
          {
             for (size_t i = 0; i < nfaces; i++)
                ele_neighbors[i] = neighbors[i];
@@ -306,7 +304,7 @@ namespace MeshLib
 
          //------------------------------------------------------------------
          // MAT
-         Vec mat_vector;                          //OKWW
+         Math_Group::Vec mat_vector;                          //OKWW
          int matgroup_view;                       //TK
          //------------------------------------------------------------------
          // Operator
@@ -336,10 +334,10 @@ namespace MeshLib
          int nnodes;
          int nnodesHQ;
          //
-         vec<CNode*> nodes;
+         Math_Group::vec<CNode*> nodes;
          size_t nedges;
-         vec<CEdge*> edges;
-         vec<int> edges_orientation;
+         Math_Group::vec<CEdge*> edges;
+         Math_Group::vec<int> edges_orientation;
          size_t nfaces;
          int no_faces_on_surface;
          int face_index;                          // Local face index for the instance for face
@@ -357,8 +355,8 @@ namespace MeshLib
          double area;                             //Flux area
          //
          // MSH topology
-         Matrix* tranform_tensor;
-         vec<CElem*> neighbors;
+		 Math_Group::Matrix* tranform_tensor;
+         Math_Group::vec<CElem*> neighbors;
          //vec<CElem*> sons;
          // double angle[3];	// PCH, angle[0] rotation along y axis
          //	    angle[1] rotation along x' axis
@@ -373,6 +371,7 @@ namespace MeshLib
          int GetElementFacesHex(int Face, int *FaceNode);
          int GetElementFacesTet(int Face, int *FaceNode);
          int GetElementFacesPri(int Face, int *FaceNode);
+         int GetElementFacesPyramid(int Face, int *FaceNode);
          //-- Friends
          friend class CFEMesh;
          // FEM

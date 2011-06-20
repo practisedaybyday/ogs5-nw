@@ -17,10 +17,6 @@ last modified
 
 namespace MeshLib
 {
-   using Math_Group::SymMatrix;
-   using Math_Group::vec;
-   using Math_Group::Vec;
-
    // Class definition
    class CNode: public CCore
    {
@@ -88,7 +84,7 @@ namespace MeshLib
          std::vector<size_t> const & getConnectedElementIDs () const { return _connected_elements; }
          std::vector<size_t> & getConnectedElementIDs () { return _connected_elements; }
 
-      private:
+   private:
     	  std::vector<size_t> _connected_elements;
          // Members
          long eqs_index;                          // renumber

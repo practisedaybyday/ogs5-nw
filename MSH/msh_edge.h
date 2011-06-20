@@ -30,7 +30,7 @@ namespace MeshLib
          ~CEdge();
 
          // Get functions
-         void GetNodes(vec<CNode*>& Nodes)
+         void GetNodes(Math_Group::vec<CNode*>& Nodes)
          {
             for (size_t i=0; i<3; i++)
                Nodes[i] = nodes_of_edges[i];
@@ -54,7 +54,7 @@ namespace MeshLib
          }                                        // PCH
 
          // Set functions
-         void SetNodes(vec<CNode*>& Nodes)
+         void SetNodes(Math_Group::vec<CNode*>& Nodes)
          {
             for (int i = 0; i < 3; i++)
                nodes_of_edges[i] = Nodes[i];
@@ -95,7 +95,7 @@ namespace MeshLib
           * three mesh nodes are stored in this vector,
           * the third is not really a mesh node, it is the middle point
           */
-         vec<CNode*> nodes_of_edges;
+         Math_Group::vec<CNode*> nodes_of_edges;
          int joint;                               // PCH
          double* velocity;                        // PCH
 
