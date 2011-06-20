@@ -41,7 +41,7 @@ namespace MeshLib
             return nodes_of_edges[l_index];
          }
 
-         double Length();
+         double getLength() const;
 
          int GetJoint() const
          {

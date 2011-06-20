@@ -26,6 +26,16 @@ void forwardSolve (const Matrix <double> &L, double* b);
  */
 void backwardSolve (const Matrix <double> &U, double* y);
 
+// backwardSolve mat * x = y, mat ... upper triangular matrix
+/**
+ * backward solve the system of linear equations \f$ U \cdot x = y\f$,
+ * where \f$U\f$ is a upper triangular matrix
+ * @param mat the upper triangular matrix
+ * @param x the solution of the system of linear equations
+ * @param b the right hand side
+ */
+void backwardSolve ( Matrix<double> const& mat, double* x, double* b);
+
 } // end namespace MathLib
 
 #endif /* TRIANGULARSOLVE_H_ */

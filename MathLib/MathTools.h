@@ -24,7 +24,7 @@ namespace MathLib {
 template<class T>
 double scpr(const T* v0, const T* v1, size_t n) {
 	long double res(0.0);
-	for (size_t k(0); k < n; k++)
+	for (size_t k(0); k<n; k++)
 		res += v0[k] * v1[k];
 	return (double) res;
 }

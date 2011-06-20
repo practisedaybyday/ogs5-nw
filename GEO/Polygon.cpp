@@ -33,6 +33,10 @@ Polygon::Polygon(const Polyline &ply, bool init) :
 	}
 }
 
+Polygon::Polygon (const std::vector<Point*>& pnt_vec) :
+	Polyline (pnt_vec)
+{}
+
 Polygon::~Polygon()
 {
 	// remove polygons from list
@@ -342,14 +346,14 @@ void Polygon::splitPolygonAtPoint (std::list<GEOLIB::Polygon*>::iterator polygon
 			if (idx0 > idx1) BASELIB::swap (idx0, idx1);
 
 			// create two closed polylines
-			GEOLIB::Polygon* polygon0 (new GEOLIB::Polygon((*polygon_it)->getPointsVec(), false));
+			GEOLIB::Polygon* polygon0 (new GEOLIB::Polygon((*polygon_it)->getPointsVec()));
 			for (size_t k(0); k<=idx0; k++)
 				polygon0->addPoint ((*polygon_it)->getPointID (k));
 			for (size_t k(idx1+1); k<(*polygon_it)->getNumberOfPoints(); k++)
 				polygon0->addPoint ((*polygon_it)->getPointID (k));
 			polygon0->initialise();
 
-			GEOLIB::Polygon* polygon1 (new GEOLIB::Polygon((*polygon_it)->getPointsVec(), false));
+			GEOLIB::Polygon* polygon1 (new GEOLIB::Polygon((*polygon_it)->getPointsVec()));
 			for (size_t k(idx0); k<=idx1; k++)
 				polygon1->addPoint ((*polygon_it)->getPointID (k));
 			polygon1->initialise();

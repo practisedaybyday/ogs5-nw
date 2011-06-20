@@ -82,14 +82,10 @@ void SHPInterface::readStations(const SHPHandle &hSHP, int numberOfElements, std
 
 void SHPInterface::readPolylines(const SHPHandle &hSHP, int numberOfElements, std::string listName)
 {
-	int nextIdx = -1;
-	size_t noOfPoints = 0, noOfParts = 0, cnpoints = 0;
+	size_t noOfPoints = 0, noOfParts = 0;
 	std::vector<GEOLIB::Point*> *points = new std::vector<GEOLIB::Point*>();
 	std::vector<GEOLIB::Polyline*> *lines = new std::vector<GEOLIB::Polyline*>();
 	SHPObject *hSHPObject;
-
-	// TODO tolerance value (is there a better value for the tolerance from arc gis?)
-	double eps (sqrt(std::numeric_limits<double>::min()));
 
 	// for each polyline)
 	for (int i=0; i<numberOfElements; i++)
@@ -106,28 +102,10 @@ void SHPInterface::readPolylines(const SHPHandle &hSHP, int numberOfElements, st
 			GEOLIB::Polyline* line = new GEOLIB::Polyline(*points);
 
 			// for each point in that polyline
-			for (int j=firstPnt; j<lastPnt; j++)
-			{
+			for (int j=firstPnt; j<lastPnt; j++) {
 				GEOLIB::Point* pnt = new GEOLIB::Point( *(hSHPObject->padfX+j), *(hSHPObject->padfY+j), *(hSHPObject->padfZ+j) );
-				nextIdx=-1;
-
-				// check if point already exists
-				cnpoints = points->size();
-
-				for (size_t k=0; k<cnpoints; k++) {
-					// TF
-					if ( /*(j>0) &&*/ (fabs((*pnt)[0]-(*((*points)[k]))[0]) < eps
-							   &&  fabs((*pnt)[1]-(*((*points)[k]))[1]) < eps
-							   &&  fabs((*pnt)[2]-(*((*points)[k]))[2]) < eps)) {
-						nextIdx=k;
-						k=cnpoints;
-					}
-				}
-				if (nextIdx<0) {
-					points->push_back(pnt);
-					nextIdx = points->size() - 1;
-				}
-				line->addPoint(nextIdx);
+				points->push_back(pnt);
+				line->addPoint(points->size() - 1);
 			}
 
 			// add polyline to polyline vector
@@ -139,7 +117,9 @@ void SHPInterface::readPolylines(const SHPHandle &hSHP, int numberOfElements, st
 	{
 		// add points vector to GEOObjects
 		_geoObjects->addPointVec(points, listName);
-		// add polyline vector to GEOObjects
+
+		// adjust indeces of polylines, remove zero length elements and add vector to GEOObjects
+		this->adjustPolylines(lines, _geoObjects->getPointVecObj(listName)->getIDMap());
 		_geoObjects->addPolylineVec(lines, listName);
 
 		SHPDestroyObject(hSHPObject); // de-allocate SHPObject
@@ -162,4 +142,15 @@ void SHPInterface::readPolygons(const SHPHandle &hSHP, int numberOfElements, std
 
 	if (!sfc_vec->empty())
 		_geoObjects->addSurfaceVec(sfc_vec, listName);
+}
+
+void SHPInterface::adjustPolylines (std::vector<GEOLIB::Polyline*> *lines, std::vector<size_t> id_map)
+{
+	for (size_t i=0; i<lines->size(); i++)
+	{
+		GEOLIB::Polyline* line( (*lines)[i] );
+		size_t nPoints( line->getNumberOfPoints() );
+		for (size_t j=0; j<nPoints; j++)
+			line->setPointID(j, id_map[line->getPointID(j)]);
+	}
 }

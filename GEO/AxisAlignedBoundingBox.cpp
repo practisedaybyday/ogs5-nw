@@ -7,6 +7,7 @@
 
 #include <limits>
 #include <cstddef>
+#include <cmath>
 #include "AxisAlignedBoundingBox.h"
 
 namespace GEOLIB {
@@ -43,21 +44,27 @@ void AABB::update (double x, double y, double z)
 	if (_max_pnt[2] < z) _max_pnt[2] = z;
 }
 
-bool AABB::containsPoint (GEOLIB::Point const & pnt) const
+bool AABB::containsPoint (GEOLIB::Point const & pnt, double eps) const
 {
-	return containsPoint (pnt[0], pnt[1], pnt[2]);
+	return containsPoint (pnt[0], pnt[1], pnt[2], eps);
 }
 
-bool AABB::containsPoint (const double *pnt) const
+bool AABB::containsPoint (const double *pnt, double eps) const
 {
-	return containsPoint (pnt[0], pnt[1], pnt[2]);
+	return containsPoint (pnt[0], pnt[1], pnt[2], eps);
 }
 
-bool AABB::containsPoint (double x, double y, double z) const
+bool AABB::containsPoint (double x, double y, double z, double eps) const
 {
-	if (_min_pnt[0] <= x && x <= _max_pnt[0]) {
-		if (_min_pnt[1] <= y && y <= _max_pnt[1]) {
-			if (_min_pnt[2] <= z && z <= _max_pnt[2]) {
+	if ((_min_pnt[0] <= x && x <= _max_pnt[0])
+			|| std::fabs(_min_pnt[0]-x) < eps
+			|| std::fabs(x - _max_pnt[0]) < eps) {
+		if ((_min_pnt[1] <= y && y <= _max_pnt[1])
+				|| std::fabs(_min_pnt[1]-y) < eps
+				|| std::fabs(y-_max_pnt[1]) < eps) {
+			if ((_min_pnt[2] <= z && z <= _max_pnt[2])
+					|| std::fabs(_min_pnt[2]-z) < eps
+					|| std::fabs(z-_max_pnt[2]) < eps) {
 				return true;
 			} else return false;
 		} else return false;

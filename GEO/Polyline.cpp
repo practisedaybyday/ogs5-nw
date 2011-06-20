@@ -75,6 +75,12 @@ size_t Polyline::getPointID(size_t i) const
 	return _ply_pnt_ids[i];
 }
 
+void Polyline::setPointID(size_t idx, size_t id)
+{
+	assert(idx < _ply_pnt_ids.size());
+	_ply_pnt_ids[idx] = id;
+}
+
 const Point* Polyline::operator[](size_t i) const
 {
 	assert(i < _ply_pnt_ids.size());

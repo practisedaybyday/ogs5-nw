@@ -290,6 +290,20 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
    {
       return _min_edge_length;
    }
+
+void CFEMesh::computeMinEdgeLength ()
+{
+	const size_t s_edge_vec (edge_vector.size());
+	if (s_edge_vec > 0) {
+		_min_edge_length = edge_vector[0]->getLength();
+		for (size_t k(1); k<s_edge_vec; k++) {
+			const double kth_edge_length (edge_vector[k]->getLength());
+			if (kth_edge_length < _min_edge_length)
+				_min_edge_length = kth_edge_length;
+		}
+	}
+}
+
    /**************************************************************************
     FEMLib-Method:
     Task:
@@ -765,6 +779,9 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
          elem->gravity_center[1] /= (double) nnodes0;
          elem->gravity_center[2] /= (double) nnodes0;
       }
+
+      // init _min_edge_length
+      computeMinEdgeLength();
       //----------------------------------------------------------------------
 
       //TEST WW
@@ -1362,7 +1379,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 
 	const size_t nodes_in_usage((size_t) NodesInUsage());
 	for (size_t j(0); j < nodes_in_usage; j++) {
-		if (sfc->isPntInBV((nod_vector[j])->getData())) {
+		if (sfc->isPntInBV((nod_vector[j])->getData(), _min_edge_length/2.0)) {
 			if (sfc->isPntInSfc((nod_vector[j])->getData()))
 				msh_nod_vector.push_back(nod_vector[j]->GetIndex());
 		}
@@ -1380,7 +1397,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
     07/2005 WW Node object is replaced
     last modification:
     **************************************************************************/
-   void CFEMesh::GetNODOnSFC_PLY(Surface*m_sfc, std::vector<long>&msh_nod_vector)
+   void CFEMesh::GetNODOnSFC_PLY(Surface const *m_sfc, std::vector<long>&msh_nod_vector) const
    {
       long i, k;
       size_t j;
@@ -1389,14 +1406,11 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
       double Area1, Area2;
       double Tol = m_sfc->epsilon;
       CGLPolyline* m_ply = NULL;
-      std::vector<CGLPolyline*>::iterator p_ply;  //CC
+      std::vector<CGLPolyline*>::const_iterator p_ply (m_sfc->polyline_of_surface_vector.begin());  //CC
       // Init
       msh_nod_vector.clear();
-      //----------------------------------------------------------------------
+
       // nodes close to first polyline
-                                                  //CC
-      p_ply = m_sfc->polyline_of_surface_vector.begin();
-                                                  //CC
       while (p_ply != m_sfc->polyline_of_surface_vector.end())
       {
          m_ply = *p_ply;

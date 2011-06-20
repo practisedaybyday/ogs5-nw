@@ -89,6 +89,13 @@ public:
 	 */
 	size_t getPointID(size_t i) const;
 
+	/**
+	 * Changes a point index for one point in a line
+	 * @param idx Index of point in line
+	 * @param id ID of point in PointVec object
+	 */
+	void setPointID(size_t idx, size_t id);
+
 	/** \brief const access operator for the access to the i-th point of the polyline.
 	 */
 	const Point* operator[](size_t i) const;

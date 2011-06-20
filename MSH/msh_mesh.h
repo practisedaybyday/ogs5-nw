@@ -224,7 +224,7 @@ namespace MeshLib
          /**
           * \brief depreciated method
           */
-         void GetNODOnSFC_PLY(Surface*, std::vector<long>&);
+         void GetNODOnSFC_PLY(Surface const*, std::vector<long>&) const;
          /**
           * \brief depreciated method
           */
@@ -425,6 +425,10 @@ namespace MeshLib
          size_t _msh_n_tets;
          size_t _msh_n_prisms;
 
+         /**
+          * method initializes the minimal edge length that is used in search algorithms
+          */
+         void computeMinEdgeLength();
          double _min_edge_length;                 //TK
 
          // Process friends
