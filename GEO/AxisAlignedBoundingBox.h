@@ -10,6 +10,7 @@
 
 #include "Point.h"
 #include <vector>
+#include <limits>
 
 namespace GEOLIB {
 
