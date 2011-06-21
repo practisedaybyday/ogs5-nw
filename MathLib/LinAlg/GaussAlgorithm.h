@@ -9,7 +9,7 @@
 #define GAUSSALGORITHM_H_
 
 #include <cstddef>
-#include "Matrix.h"
+#include "../Matrix.h"
 #include "DenseDirectLinearSolver.h"
 #include "TriangularSolve.h"
 
