@@ -69,3 +69,4 @@ MeshLib::CFEMesh* MshEditor::removeMeshNodes(MeshLib::CFEMesh* mesh, const std::
 
 	return new_mesh;
 }
+
