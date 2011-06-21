@@ -97,7 +97,7 @@ public:
 	CGLPoint (double x, double y, double z);
 	/**
 	 * constructor for CGLPoint object
-	 * @param data the field contains the coordinates
+	 * @param coordinates the field contains the coordinates
 	 */
 	CGLPoint (const double *coordinates);
 

@@ -70,8 +70,8 @@ bool lineSegmentIntersect (const GEOLIB::Point& a, const GEOLIB::Point& b,
 		// vector (D-C) is not parallel to x-axis
 		if (fabs(mat(0,1)) >= eps) {
 			// vector (B-A) is not parallel to x-axis
-			// \$f(B-A)\f$ and \$f(D-C)\f$ are parallel iff there exists
-			// a constant \f$c\f$ such that \$f(B-A) = c (D-C)\f$
+			// \f$(B-A)\f$ and \f$(D-C)\f$ are parallel iff there exists
+			// a constant \f$c\f$ such that \f$(B-A) = c (D-C)\f$
 			if (fabs (mat(0,0) / mat(0,1) - mat(1,0) / mat(1,1)) < eps * fabs (mat(0,0) / mat(0,1)))
 				return false;
 		}

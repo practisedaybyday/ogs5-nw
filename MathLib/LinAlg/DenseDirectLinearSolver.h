@@ -8,7 +8,7 @@
 #ifndef DENSEDIRECTLINEARSOLVER_H_
 #define DENSEDIRECTLINEARSOLVER_H_
 
-#include <DirectLinearSolver.h>
+#include "DirectLinearSolver.h"
 
 namespace MathLib {
 

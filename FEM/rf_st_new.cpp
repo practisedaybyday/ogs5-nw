@@ -1198,7 +1198,7 @@ std::vector<double>&node_value_vector) const
          if (e_nodes[0]->GetMark() && e_nodes[1]->GetMark()
             && e_nodes[2]->GetMark())
          {
-            Jac = 0.5 * edge->Length();
+            Jac = 0.5 * edge->getLength();
             v1 = node_value_vector[G2L[e_nodes[0]->GetIndex()]];
             v2 = node_value_vector[G2L[e_nodes[1]->GetIndex()]];
             if (Const && (!msh->isAxisymmetry()))
@@ -1236,7 +1236,7 @@ std::vector<double>&node_value_vector) const
       {
          if (e_nodes[0]->GetMark() && e_nodes[1]->GetMark())
          {
-            Jac = 0.5 * edge->Length();
+            Jac = 0.5 * edge->getLength();
             v1 = node_value_vector[G2L[e_nodes[0]->GetIndex()]];
             v2 = node_value_vector[G2L[e_nodes[1]->GetIndex()]];
             if (!msh->isAxisymmetry())

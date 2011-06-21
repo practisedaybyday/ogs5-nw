@@ -10,6 +10,9 @@
 // Base
 #include "quicksort.h"
 
+// FEM
+#include "matrix_class.h"
+
 // GEOLIB
 #include "PointWithID.h"
 
@@ -92,7 +95,7 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 		case MshElemType::TRIANGLE:
 		{
 			// indices of nodes of the j-th element
-			const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
+			const Math_Group::vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
 			size_t k;
 			for (k = 0; k<nodes_indices.Size(); k++) {
 				if (id_map[nodes_indices[k]] == std::numeric_limits<size_t>::max()) {
@@ -107,7 +110,7 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 		case MshElemType::QUAD:
 		{
 			// indices of nodes of the j-th element
-			const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
+			const Math_Group::vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
 			size_t k;
 			for (k = 0; k<nodes_indices.Size(); k++) {
 				if (id_map[nodes_indices[k]] == std::numeric_limits<size_t>::max()) {
@@ -128,7 +131,7 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 				size_t n_nodes (msh_elem[j]->GetElementFaceNodes(face_number, face_nodes));
 
 				// indices of nodes of the j-th element
-				const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
+				const Math_Group::vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
 				size_t k;
 				for (k = 0; k<n_nodes; k++) {
 					if (id_map[nodes_indices[face_nodes[k]]] == std::numeric_limits<size_t>::max()) {
@@ -150,7 +153,7 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 				size_t n_nodes (msh_elem[j]->GetElementFaceNodes(face_number, face_nodes));
 
 				// indices of nodes of the j-th element
-				const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
+				const Math_Group::vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
 				size_t k;
 				for (k = 0; k<n_nodes; k++) {
 					if (id_map[nodes_indices[face_nodes[k]]] == std::numeric_limits<size_t>::max()) {
@@ -178,7 +181,7 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 				size_t n_nodes (msh_elem[j]->GetElementFaceNodes(face_number, face_nodes));
 
 				// indices of nodes of the j-th element
-				const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
+				const Math_Group::vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
 				size_t k;
 				for (k = 0; k<n_nodes; k++) {
 					if (id_map[nodes_indices[face_nodes[k]]] == std::numeric_limits<size_t>::max()) {

@@ -34,7 +34,7 @@ public:
 
 	void write (std::ostream &os) const
 	{
-		os << m_pnt_ids[0] << " " << m_pnt_ids[1] << " " << m_pnt_ids[2];
+		os << _pnt_ids[0] << " " << _pnt_ids[1] << " " << _pnt_ids[2];
 	}
 
 	void writeNeighbor (std::ostream &os, size_t idx) const;

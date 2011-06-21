@@ -79,15 +79,6 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
 
       void SetNodeValues(const std::vector<long> & nodes, const std::vector<long> & nodes_cond,
     		  const std::vector<double> & node_values, int ShiftInNodeVector); // used only in sourcetermgroup
-      /**
-       * the only difference to the previous SetNodeValues() method is the change of vector type from long to size_t
-       * @param nodes
-       * @param nodes_cond
-       * @param node_values
-       * @param ShiftInNodeVector
-       */
-//      void SetNodeValues(const std::vector<size_t>& nodes, const std::vector<size_t>& nodes_cond,
-//         const std::vector<double>& node_values, int ShiftInNodeVector);
 
       void SetNOD();
 

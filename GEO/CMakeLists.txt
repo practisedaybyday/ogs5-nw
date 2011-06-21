@@ -15,6 +15,7 @@ set( SOURCES
 	Polygon.cpp
 	ProjectData.cpp
 	SimplePolygonTree.cpp
+	Triangle.cpp
 	Surface.cpp
 	AxisAlignedBoundingBox.cpp
 	Station.cpp

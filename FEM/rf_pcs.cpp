@@ -590,7 +590,7 @@ void CRFProcess::Create()
          non_linear = true;
    }
   if (m_num->fct_method>0) { //NW
-    //Memory_Type = 1; 
+    //Memory_Type = 1;
     long gl_size = m_msh->GetNodesNumber(false);
     this->FCT_AFlux = new SparseMatrixDOK(gl_size, gl_size);
     this->Gl_ML = new Vec(gl_size);
@@ -3835,29 +3835,29 @@ double CRFProcess::Execute()
   //----------------------------------------------------------------------
   if (this->m_num->fct_method>0) { //NW
     pcs_error = CalcIterationNODError(1);
-#ifdef USE_MPI 
+#ifdef USE_MPI
     if(myrank==0)
-#endif 
+#endif
     cout << "      PCS error: " << pcs_error << endl;
     cout << "      Start FCT calculation" << endl;
 
     // Set u^H: use the solution as the higher-order solution
     for(i=0; i<pcs_number_of_primary_nvals; i++)
-    {  
+    {
       nidx1 = GetNodeValueIndex(pcs_primary_function_name[i])+1;
       g_nnodes = m_msh->GetNodesNumber(false);  //DOF>1, WW
       for(j=0;j<g_nnodes;j++)
       {
          k = m_msh->Eqs2Global_NodeIndex[j];
-//         val_n = GetNodeValue(k,nidx1);  
+//         val_n = GetNodeValue(k,nidx1);
 #ifdef NEW_EQS
          SetNodeValue(k,nidx1,eqs_new->x[j+i*g_nnodes]);
-//         eqs_new->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW  
+//         eqs_new->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW
 #else
          SetNodeValue(k,nidx1,eqs->x[j+i*g_nnodes]);
-//         eqs->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW  
+//         eqs->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW
 #endif
-      } 
+      }
     }
 
     // Initialize the algebra system
@@ -3865,8 +3865,8 @@ double CRFProcess::Execute()
     if(!configured_in_nonlinearloop)
 #if defined(USE_MPI)
       dom->ConfigEQS(m_num, global_eqs_dim);
-#else  
-    eqs_new->Initialize(); 
+#else
+    eqs_new->Initialize();
 #endif
 #else
     SetZeroLinearSolver(eqs);
@@ -3876,7 +3876,7 @@ double CRFProcess::Execute()
     for(i=0;i<pcs_number_of_primary_nvals;i++)
     {
       nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1; //new time
-      g_nnodes = m_msh->GetNodesNumber(false); //WW 
+      g_nnodes = m_msh->GetNodesNumber(false); //WW
       for(j=0;j<g_nnodes;j++) {
         k = m_msh->Eqs2Global_NodeIndex[j];
 #ifdef NEW_EQS
@@ -3884,9 +3884,9 @@ double CRFProcess::Execute()
         eqs_new->x[j+i*g_nnodes] = GetNodeValue(k,nidx1);
 #else
         eqs->x[j+i*g_nnodes] = GetNodeValue(k,nidx1);
-#endif 
+#endif
       }
-    } 
+    }
 
     // Assembly
 #ifdef USE_MPI //WW
@@ -4091,7 +4091,7 @@ void CRFProcess::CalculateElementMatrices(void)
 /*************************************************************************
 GeoSys-Function:
 Task: Algebraic operation for the flux corrected transport (FCT)
-Programming: 
+Programming:
 04/2010 NW Implementation
 last modified:
 **************************************************************************/
@@ -4127,12 +4127,12 @@ void CRFProcess::AddFCT_CorrectionVector()
     //----------------------------------------------------------------------
     // Construct global matrices: antidiffusive flux(f_ij), positivity matrix(L)
     // - f_ij = 1/dt*m_ij*(DeltaU_ij^H-DeltaU_ij^n)-theta*d_ij^H*DeltaU_ij^H-(1-theta)*d_ij^n*DeltaU_ij^n
-    // - L = K + D 
+    // - L = K + D
     // - D_ij = min(0, -K_ij, -K_ji)
     // * f_ji = -f_ij
     // * K:original coefficient matrix, D:artificial diffusion operator
-    // Implementation memo: 
-    // - K is stored in A matrix in the element assembly. 
+    // Implementation memo:
+    // - K is stored in A matrix in the element assembly.
     // - the first part of the antidiffusive flux is done in the element assembly.
     //   -> f_ij = m_ij
     //----------------------------------------------------------------------
@@ -4185,7 +4185,7 @@ void CRFProcess::AddFCT_CorrectionVector()
         } else if (this->m_num->fct_prelimiter_type==1) {
           v = MinMod(v, -d1*diff_uH);
         } else if (this->m_num->fct_prelimiter_type==2) {
-          v = SuperBee(v, -d1*diff_uH);    
+          v = SuperBee(v, -d1*diff_uH);
         }
         (*FCT_AFlux)(i,j) = v;
         (*FCT_AFlux)(j,i) = v;
@@ -4220,7 +4220,7 @@ void CRFProcess::AddFCT_CorrectionVector()
     eqs_rhs = eqs_new->b;
 #else
     eqs_rhs = eqs->b;
-#endif 
+#endif
     // b = [-(1-theta) * L] u^n
     if (1.0-theta>0) {
       // u^n
@@ -4258,7 +4258,7 @@ void CRFProcess::AddFCT_CorrectionVector()
       }
 #endif
     } else if (theta == 1.0) {
-      //keep 
+      //keep
     } else {
 #ifdef NEW_EQS
       (*A) *= theta;
@@ -4310,11 +4310,11 @@ void CRFProcess::AddFCT_CorrectionVector()
         Q_min = min(Q_min, diff_uH);
       }
       double ml = (*ML)(i);
-      if (P_plus == 0.0) 
+      if (P_plus == 0.0)
         (*R_plus)(i)=0.0;
       else
         (*R_plus)(i) = min(1.0, ml*Q_plus/(dt*P_plus));
-      if (P_min == 0.0) 
+      if (P_min == 0.0)
         (*R_min)(i)=0.0;
       else
         (*R_min)(i) = min(1.0, ml*Q_min/(dt*P_min));
@@ -4351,15 +4351,15 @@ void CRFProcess::AddFCT_CorrectionVector()
         double f = (*jj).second; //double f = (*FCT_AFlux)(i,j);
         if (i>j) f *= -1; // symmetric
         double alpha = 1.0;
-        if (f>0) 
+        if (f>0)
           alpha = min((*R_plus)(i), (*R_min)(j));
         else
           alpha = min((*R_plus)(j), (*R_min)(i));
 
-        if (this->m_num->fct_const_alpha<0.0) 
-          eqs_rhs[i] += alpha*f; 
-        else  
-          eqs_rhs[i] += this->m_num->fct_const_alpha*f; 
+        if (this->m_num->fct_const_alpha<0.0)
+          eqs_rhs[i] += alpha*f;
+        else
+          eqs_rhs[i] += this->m_num->fct_const_alpha*f;
 
         //Note: Galerkin FEM is recovered if alpha = 1 as below,
         //eqs_rhs[i] += 1.0*f;
@@ -8789,7 +8789,7 @@ double CRFProcess::CalcELEFluxes(const GEOLIB::Polyline* const ply)
          if (m_edg->GetMark())
          {
             m_edg->SetNormalVector(m_ele->normal_vector, edg_normal_vector);
-            edg_length = m_edg->Length();
+            edg_length = m_edg->getLength();
             m_edg->GetEdgeVector(edge_vector);
          }
       }
@@ -10330,7 +10330,7 @@ void CreateEQS_LinearSolver()
    for(size_t i=0;i<pcs_vector.size();i++)
    {
       m_pcs = pcs_vector[i];
-      if(m_pcs->type==1212)                        //Important for parallel computing. 24.1.2011 WW 
+      if(m_pcs->type==1212)                        //Important for parallel computing. 24.1.2011 WW
       {
          dof_nonDM = m_pcs->GetPrimaryVNumber();
          dof = dof_nonDM;

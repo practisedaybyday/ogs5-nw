@@ -53,23 +53,23 @@ public:
 	/**
 	 * is the given point in the bounding volume of the surface
 	 */
-	bool isPntInBV (const double *pnt) const;
+	bool isPntInBV (const double *pnt, double eps = std::numeric_limits<double>::epsilon()) const;
 
 	/**
 	 * is the given point located in the surface
 	 */
 	bool isPntInSfc (const double *pnt) const;
 
-	const std::vector<Point*> *getPointVec() const { return &m_sfc_pnts; };
+	const std::vector<Point*> *getPointVec() const { return &_sfc_pnts; };
 
 
 protected:
 	/** a vector of pointers to Points */
-	const std::vector<Point*> &m_sfc_pnts;
+	const std::vector<Point*> &_sfc_pnts;
 	/** position of pointers to the geometric points */
-	std::vector<Triangle*> m_sfc_triangles;
+	std::vector<Triangle*> _sfc_triangles;
 	/** bounding volume is an axis aligned bounding box */
-	AABB *bv;
+	AABB *_bv;
 };
 
 }

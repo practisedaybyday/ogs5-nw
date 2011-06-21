@@ -7,6 +7,9 @@
 
 #include "ModifyMeshProperties.h"
 
+// FEM
+#include "matrix_class.h"
+
 // GEO
 #include "Point.h"
 #include "Polygon.h"
@@ -85,7 +88,7 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 	const size_t msh_elem_size (msh_elem.size());
 	for (size_t j(0); j<msh_elem_size; j++) {
 		// indices of nodes of the j-th element
-		const vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
+		const Math_Group::vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
 		size_t k;
 //		for (k = 0; k<nodes_indices.Size(); k++) {
 //			if (! rot_polygon.isPntInPolygon(*(mesh_nodes_as_points[nodes_indices[k]]))) {

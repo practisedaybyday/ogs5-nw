@@ -361,7 +361,7 @@ namespace FiniteElement
          if(StrainCoupling) delete StrainCoupling;
          if(RHS) delete RHS;
        if(FCT_MassL) delete FCT_MassL;
-       
+
          Mass = NULL;
          Laplace = NULL;
          Advection = NULL;
@@ -3447,10 +3447,10 @@ namespace FiniteElement
             {
                case 1:                            //min
                {
-                  double min = MeshElement->GetEdge(0)->Length();
+                  double min = MeshElement->GetEdge(0)->getLength();
                   for (int i=1; i<MeshElement->GetEdgesNumber(); i++)
                   {
-                     L = MeshElement->GetEdge(i)->Length();
+                     L = MeshElement->GetEdge(i)->getLength();
                      if (L<min) min = L;
                   }
                   L = min;
@@ -3461,7 +3461,7 @@ namespace FiniteElement
                   double tmp_L=0.0;
                   for (int i=1; i<MeshElement->GetEdgesNumber(); i++)
                   {
-                     tmp_L += MeshElement->GetEdge(i)->Length();
+                     tmp_L += MeshElement->GetEdge(i)->getLength();
                   }
                   L = tmp_L/MeshElement->GetEdgesNumber();
                }
@@ -3473,10 +3473,10 @@ namespace FiniteElement
                break;
                default:                           //0 or any invalid number: max edge length
                {
-                  double max = MeshElement->GetEdge(0)->Length();
+                  double max = MeshElement->GetEdge(0)->getLength();
                   for (int i=1; i<MeshElement->GetEdgesNumber(); i++)
                   {
-                     L = MeshElement->GetEdge(i)->Length();
+                     L = MeshElement->GetEdge(i)->getLength();
                      if (L>max) max = L;
                   }
                   L = max;
@@ -4582,13 +4582,13 @@ namespace FiniteElement
        int gp_r=0, gp_s=0, gp_t = 0;
        double fkt, mat_fac;
        double vel[3];
-       int dof_n = 2;   
+       int dof_n = 2;
        ElementValue* gp_ele = ele_gp_value[Index];
        for (gp = 0; gp < nGaussPoints; gp++)
        {
        fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
-       ComputeGradShapefct(1);             
-	ComputeShapefct(1);                   
+       ComputeGradShapefct(1);
+	ComputeShapefct(1);
        //Velocity
        vel[0] = gp_ele->Velocity(0, gp);
        vel[1] = gp_ele->Velocity(1, gp);
@@ -5285,7 +5285,7 @@ namespace FiniteElement
          if(dof_n==1)
             CalCoefLaplace(true);
          else if (PcsType==S)
-            CalCoefLaplacePTC(0);  
+            CalCoefLaplacePTC(0);
          else if (dof_n==2 && PcsType==V)         // PCH 05.2009
             CalCoefLaplace2(true,0);
          else if (dof_n==2 && PcsType==P)         // PCH 05.2009
@@ -5818,7 +5818,7 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
 	// ---- Gauss integral
 	int gp_r=0, gp_s=0, gp_t=0;
 	double fkt=0.0;
-	//  int i_idx;    
+	//  int i_idx;
 	double value[3], value_old[3];
 	ostringstream temp;
 
@@ -6207,10 +6207,10 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
 		 if(PcsType==S){
     *AuxMatrix     += *Advection;
 		 }
-      } 
-	
+      }
+
       (*AuxMatrix)   *= fac2;
-	
+
       *StiffMatrix   += *AuxMatrix;
       //----------------------------------------------------------------------
       // Add local matrix to global matrix
@@ -6378,8 +6378,8 @@ string  CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring, bool outpu
       //
    }
 /**************************************************************************
-FEMLib-Method: 
-Task: 
+FEMLib-Method:
+Task:
 Programing:
 04/2010 NW Implementation
 **************************************************************************/
@@ -6393,7 +6393,7 @@ void CFiniteElementStd::CalcFEM_FCT()
      A = m_dom->eqs->A;
    else
      A = pcs->eqs_new->A;
-#endif 
+#endif
   //----------------------------------------------------------------------
   // FCT method
   //----------------------------------------------------------------------
@@ -6419,7 +6419,7 @@ void CFiniteElementStd::CalcFEM_FCT()
   for(i=0;i<nnodes;i++){
     for(j=0;j<nnodes;j++){
 #ifdef NEW_EQS
-       (*A)(NodeShift[problem_dimension_dm]+eqs_number[i],  
+       (*A)(NodeShift[problem_dimension_dm]+eqs_number[i],
             NodeShift[problem_dimension_dm]+eqs_number[j]) += (*AuxMatrix)(i,j);
 #else
        MXInc(NodeShift[problem_dimension_dm]+eqs_number[i],\
@@ -6439,7 +6439,7 @@ void CFiniteElementStd::CalcFEM_FCT()
     long node_i_id = this->MeshElement->nodes_index[i];
 //    for (j=i; j<nnodes; j++) {
     for (j=i+1; j<nnodes; j++) { //symmetric
-      if ((*this->Mass)(i,j)==0.0) continue; 
+      if ((*this->Mass)(i,j)==0.0) continue;
       long node_j_id = this->MeshElement->nodes_index[j];
       //double diff_uH = this->pcs->GetNodeValue(node_i_id, this->idx1) - this->pcs->GetNodeValue(node_j_id, this->idx1);
       //double diff_u0 = this->pcs->GetNodeValue(node_i_id, this->idx0) - this->pcs->GetNodeValue(node_j_id, this->idx0);

@@ -30,7 +30,7 @@ class XMLInterface
 public:
 	/**
 	 * Constructor
-	 * \param geoObjects An GEOObject that into which data will be read or from which data will be written.
+	 * \param project Project data.
 	 * \param schemaFile An XML schema file (*.xsd) that defines the structure of a valid data file.
 	 */
 	XMLInterface(ProjectData* project, const std::string &schemaFile);
@@ -63,7 +63,7 @@ public:
 
 	/**
 	 * Writes geometric data from GEOObjects to an xml-file (using the QString version)
-	 * \param file The file into which the data will be written.
+	 * \param filename The file into which the data will be written.
 	 * \param gliName The name of the GEOOBjects that will be written into the file.
 	 */
 	void writeGLIFile(const std::string &filename, const std::string &gliName) const
@@ -73,7 +73,7 @@ public:
 
 	/**
 	 * Writes geometric data from GEOObjects to an xml-file
-	 * \param file The file into which the data will be written.
+	 * \param filename The file into which the data will be written.
 	 * \param gliName The name of the GEOOBjects that will be written into the file.
 	 */
 	void writeGLIFile(const QString &filename, const QString &gliName) const;

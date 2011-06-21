@@ -19,6 +19,7 @@ PointVec::PointVec (const std::string& name, std::vector<Point*>* points,
 	size_t number_of_all_input_pnts (_pnt_vec->size());
 
 	makePntsUnique (_pnt_vec, _pnt_id_map);
+
 	if (number_of_all_input_pnts - _pnt_vec->size() > 0)
 		std::cerr << "WARNING: there are " << number_of_all_input_pnts - _pnt_vec->size() << " double points" << std::endl;
 //	calculateShortestDistance ();
@@ -214,40 +215,29 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector
 		}
 		else it++;
 	}
-/*
-	// renumber id-mapping - part I
+
+	// renumber id-mapping
 	size_t cnt (0);
 	for (size_t k(0); k<n_pnts_in_file; k++) {
 		if (pnt_id_map[k] == k) { // point not removed, if necessary: id change
 			pnt_id_map[k] = cnt;
 			cnt++;
+		} else {
+			pnt_id_map[k] = pnt_id_map[pnt_id_map[k]];
 		}
 	}
 
-	// renumber id-mapping - part II
-	size_t n_unique_pnts(pnt_vec->size());
-	for (size_t k(1); k < n_pnts_in_file; k++) {
-		size_t j(pnt_id_map[k]);
-		while (j != pnt_id_map[j] && j > n_unique_pnts)
-			j = pnt_id_map[j];
-		pnt_id_map[k] = j;
-	}
-*/
 	// KR correct renumbering of indices
-	size_t cnt(0);
-	std::map<size_t, size_t> reg_ids;
-	for (size_t k(0); k<n_pnts_in_file; k++) 
-	{
-		if (pnt_id_map[k] == k) 
-		{
-			reg_ids.insert(std::pair<size_t,size_t>(k, cnt));
-			cnt++;
-		}
-		else
-			reg_ids.insert(std::pair<size_t,size_t>(k, reg_ids[pnt_id_map[k]]));
-	}
-	for (size_t k(0); k<n_pnts_in_file; k++) 
-		pnt_id_map[k] = reg_ids[k];
+//	size_t cnt(0);
+//	std::map<size_t, size_t> reg_ids;
+//	for (size_t k(0); k < n_pnts_in_file; k++) {
+//		if (pnt_id_map[k] == k) {
+//			reg_ids.insert(std::pair<size_t, size_t>(k, cnt));
+//			cnt++;
+//		} else reg_ids.insert(std::pair<size_t, size_t>(k, reg_ids[pnt_id_map[k]]));
+//	}
+//	for (size_t k(0); k < n_pnts_in_file; k++)
+//		pnt_id_map[k] = reg_ids[k];
 }
 
 void PointVec::calculateShortestDistance ()

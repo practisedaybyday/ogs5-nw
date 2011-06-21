@@ -102,11 +102,10 @@ void SHPInterface::readPolylines(const SHPHandle &hSHP, int numberOfElements, st
 			GEOLIB::Polyline* line = new GEOLIB::Polyline(*points);
 
 			// for each point in that polyline
-			for (int j=firstPnt; j<lastPnt; j++)
-			{
+			for (int j=firstPnt; j<lastPnt; j++) {
 				GEOLIB::Point* pnt = new GEOLIB::Point( *(hSHPObject->padfX+j), *(hSHPObject->padfY+j), *(hSHPObject->padfZ+j) );
 				points->push_back(pnt);
-				line->addPoint(points->size()-1);
+				line->addPoint(points->size() - 1);
 			}
 
 			// add polyline to polyline vector
@@ -145,7 +144,8 @@ void SHPInterface::readPolygons(const SHPHandle &hSHP, int numberOfElements, std
 		_geoObjects->addSurfaceVec(sfc_vec, listName);
 }
 
-void SHPInterface::adjustPolylines (std::vector<GEOLIB::Polyline*> *lines, std::vector<size_t>  id_map)
+void SHPInterface::adjustPolylines (std::vector<GEOLIB::Polyline*> *lines, std::vector<size_t> id_map)
+
 {
 	for (size_t i=0; i<lines->size(); i++)
 	{

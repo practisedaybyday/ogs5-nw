@@ -225,7 +225,7 @@ namespace MeshLib
          /**
           * \brief depreciated method
           */
-         void GetNODOnSFC_PLY(Surface*, std::vector<long>&);
+         void GetNODOnSFC_PLY(Surface const*, std::vector<long>&) const;
          /**
           * \brief depreciated method
           */
@@ -401,7 +401,7 @@ namespace MeshLib
 #endif
          void MarkInterface_mHM_Hydro_3D();       //07.06.2010. WW
          void mHM2NeumannBC();
-         /// Comptute \int {f} a dA on top surface.
+         /// Comptute int {f} a dA on top surface.
          void TopSurfaceIntegration();
 
       private:
@@ -427,6 +427,10 @@ namespace MeshLib
          size_t _msh_n_prisms;
          size_t _msh_n_pyras;
 
+         /**
+          * method initializes the minimal edge length that is used in search algorithms
+          */
+         void computeMinEdgeLength();
          double _min_edge_length;                 //TK
 
          // Process friends

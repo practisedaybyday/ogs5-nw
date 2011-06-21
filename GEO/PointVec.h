@@ -51,7 +51,7 @@ public:
 	 * @param points pointer to a vector of GEOLIB::Pointers -
 	 * PointVec will take the ownership of the vector,
 	 * i.e. delete the points and the vector itself
-	 * @param names the names to the points -
+	 * @param name_id_map the names to the points -
 	 * PointVec will take the ownership of the vector, i.e. it
 	 * deletes the names
 	 * @param type the type of the point, \sa enum PointType

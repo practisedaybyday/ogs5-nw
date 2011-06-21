@@ -10,6 +10,7 @@
 
 #include "Point.h"
 #include <vector>
+#include <limits>
 
 namespace GEOLIB {
 
@@ -50,18 +51,18 @@ public:
 	 * check if point is in the axis aligned bounding box
 	 * (employing containsPoint (double x, double y, double z))
 	 */
-	bool containsPoint (GEOLIB::Point const & pnt) const;
+	bool containsPoint (GEOLIB::Point const & pnt, double eps = std::numeric_limits<double>::epsilon()) const;
 
 	/**
 	 * wrapper for GEOLIB::Point
 	 */
-	bool containsPoint (const double *pnt) const;
+	bool containsPoint (const double *pnt, double eps = std::numeric_limits<double>::epsilon()) const;
 
 	/**
 	 * check if point described by its coordinates x, y, z is in
 	 * the axis aligned bounding box
 	 */
-	bool containsPoint (double x, double y, double z) const;
+	bool containsPoint (double x, double y, double z, double eps = std::numeric_limits<double>::epsilon()) const;
 
 	GEOLIB::Point getMinPoint () const { return _min_pnt; }
 	GEOLIB::Point getMaxPoint () const { return _max_pnt; }
