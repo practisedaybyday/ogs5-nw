@@ -87,6 +87,7 @@ namespace MeshLib
          CFEMesh(GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
 
          /// Copy-Constructor.
+		 /// Note that this is not a real copy-constructor. It copies only nodes and elements and calls ConstructGrid() afterwards.
          CFEMesh(const CFEMesh* mesh);
 
          /// Destructor

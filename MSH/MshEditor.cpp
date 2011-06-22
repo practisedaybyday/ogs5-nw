@@ -9,9 +9,6 @@
 
 MeshLib::CFEMesh* MshEditor::removeMeshNodes(MeshLib::CFEMesh* mesh, const std::vector<size_t> &nodes)
 {
-	mesh->ConstructGrid();
-	mesh->FillTransformMatrix();
-
 	MeshLib::CFEMesh* new_mesh (new MeshLib::CFEMesh(mesh));
 
 	// delete nodes and their connected elements and replace them with null pointers

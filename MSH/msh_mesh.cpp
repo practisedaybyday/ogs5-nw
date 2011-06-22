@@ -136,7 +136,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 
    // Copy-Constructor for CFEMeshes.
    // Programming: 2010/11/10 KR
-   CFEMesh::CFEMesh(const CFEMesh* old_mesh)
+   CFEMesh::CFEMesh(const CFEMesh* old_mesh) : PT(NULL)
    {
       if (old_mesh)
       {
@@ -789,7 +789,7 @@ void CFEMesh::computeMinEdgeLength ()
       }
 
       // init _min_edge_length
-      computeMinEdgeLength();
+      //computeMinEdgeLength();
       //----------------------------------------------------------------------
 
       //TEST WW
