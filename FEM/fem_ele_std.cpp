@@ -82,7 +82,8 @@ namespace FiniteElement
 
       //
       edlluse =  edttuse = NULL;
-      idx_vel_disp = NULL;                        //WW
+      idx_vel_disp = NULL;     //WW
+	  weight_func = NULL;      //WW
       idx_vel = new int[3];
       NodalVal1 = new double[size_m];
       NodalVal2 = new double[size_m];
@@ -409,7 +410,7 @@ namespace FiniteElement
       delete [] idx_vel;
       delete [] NodalVal_p20;                     //AKS
       //NW
-      delete [] weight_func;
+      if(weight_func) delete [] weight_func;      // Remove bug. WW
       weight_func = NULL;
    }
    /**************************************************************************
