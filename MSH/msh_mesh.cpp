@@ -136,49 +136,42 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 
    // Copy-Constructor for CFEMeshes.
    // Programming: 2010/11/10 KR
-   CFEMesh::CFEMesh(const CFEMesh* old_mesh) : PT(NULL)
+   CFEMesh::CFEMesh(CFEMesh const& old_mesh) : PT(NULL)
    {
-      if (old_mesh)
-      {
-         std::cout << "Copying mesh object ... ";
+     std::cout << "Copying mesh object ... ";
 
-         // mesh nodes
-         size_t nNodes = old_mesh->nod_vector.size();
-         for (size_t i=0; i<nNodes; i++)
-         {
-            MeshLib::CNode* node = new MeshLib::CNode(i);
-            double coords[3] = { old_mesh->nod_vector[i]->X(), old_mesh->nod_vector[i]->Y(), old_mesh->nod_vector[i]->Z() };
-            node->SetCoordinates(coords);
-            this->nod_vector.push_back(node);
-         }
+     // mesh nodes
+     size_t nNodes = old_mesh.nod_vector.size();
+     for (size_t i=0; i<nNodes; i++)
+     {
+        MeshLib::CNode* node = new MeshLib::CNode(i);
+        double coords[3] = { old_mesh.nod_vector[i]->X(), old_mesh.nod_vector[i]->Y(), old_mesh.nod_vector[i]->Z() };
+        node->SetCoordinates(coords);
+        this->nod_vector.push_back(node);
+     }
 
-         //  mesh elements
-         size_t nElems = old_mesh->ele_vector.size();
-         for (size_t i=0; i<nElems; i++)
-         {
-            MeshLib::CElem* elem = new MeshLib::CElem();
-			elem->setElementProperties(old_mesh->ele_vector[i]->GetElementType());
-            elem->SetPatchIndex(old_mesh->ele_vector[i]->GetPatchIndex());
+     //  mesh elements
+     size_t nElems = old_mesh.ele_vector.size();
+     for (size_t i=0; i<nElems; i++)
+     {
+        MeshLib::CElem* elem = new MeshLib::CElem();
+		elem->setElementProperties(old_mesh.ele_vector[i]->GetElementType());
+        elem->SetPatchIndex(old_mesh.ele_vector[i]->GetPatchIndex());
 
-            size_t nElemNodes = old_mesh->ele_vector[i]->nodes_index.Size();
-            for (size_t j=0; j<nElemNodes; j++)
-            {
-               elem->SetNodeIndex(j, old_mesh->ele_vector[i]->GetNodeIndex(j));
-            }
+        size_t nElemNodes = old_mesh.ele_vector[i]->nodes_index.Size();
+        for (size_t j=0; j<nElemNodes; j++)
+        {
+           elem->SetNodeIndex(j, old_mesh.ele_vector[i]->GetNodeIndex(j));
+        }
 
-            this->ele_vector.push_back(elem);
-         }
+        this->ele_vector.push_back(elem);
+     }
 
-         pcs_name = "NotSpecified";
-         this->setNumberOfMeshLayers(old_mesh->getNumberOfMeshLayers());
-		 this->ConstructGrid();
+     pcs_name = "NotSpecified";
+     this->setNumberOfMeshLayers(old_mesh.getNumberOfMeshLayers());
+	 this->ConstructGrid();
 
-         std::cout << "done." << std::endl;
-      }
-      else
-      {
-         std::cout << "Error in CFEMEsh::CFEMesh() - Given parameter is not a valid pointer... " << std::endl;
-      }
+     std::cout << "done." << std::endl;
    }
 
    /**************************************************************************

@@ -88,7 +88,7 @@ namespace MeshLib
 
          /// Copy-Constructor.
 		 /// Note that this is not a real copy-constructor. It copies only nodes and elements and calls ConstructGrid() afterwards.
-         CFEMesh(const CFEMesh* mesh);
+         CFEMesh(CFEMesh const& mesh);
 
          /// Destructor
          ~CFEMesh();
