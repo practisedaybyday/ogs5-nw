@@ -616,7 +616,7 @@ void CRFProcess::Create()
       if(m_msh==fem_msh_vector[k])
          break;
    }
-   if(type==4||(type/40==1))                      // 03.08.2010. WW
+   if(type==4||(type/10==4))                      // 03.08.2010. WW
       eqs_new = EQS_Vector[2*k+1];
    else
       eqs_new = EQS_Vector[2*k];
@@ -697,7 +697,7 @@ void CRFProcess::Create()
       time_unit_factor = 31536000;
 
    //
-   if (type == 4 || type/40 == 1)
+   if (type == 4 || type/10 == 4)
       m_msh->SwitchOnQuadraticNodes(true);
    else
       m_msh->SwitchOnQuadraticNodes(false);
@@ -833,7 +833,7 @@ void CRFProcess::Create()
       }
    }
    //
-   if(reload>=2&&type!=4&&type/40!=1)             // Modified at 03.08.2010. WW
+   if(reload>=2&&type!=4&&type/10!=4)             // Modified at 03.08.2010. WW
    {
                                                   // PCH
       cout << "Reloading the primary variables... " << endl;
@@ -862,7 +862,7 @@ void CRFProcess::Create()
    {
       if (Memory_Type != 0)
          AllocateLocalMatrixMemory();
-      if(type==4||type/40==1)
+      if(type==4||type/10==4)
       {
          // Set initialization function
          //      CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) (this);
@@ -2728,7 +2728,7 @@ void CRFProcess::ConfigDeformation()
          if(num->nls_method>=1)                   // Newton-Raphson
          {
             pcs_deformation = 101;
-            if (type/40 == 1)
+            if (type/10 == 4)
                pcs_deformation = 110;
          }
          break;
@@ -2791,7 +2791,7 @@ void CRFProcess::ConfigDeformation()
 #endif
    }
 
-   if(type/40==1) SetOBJNames();                  //if(type==41) SetOBJNames(); //OK->WW please put to Config()
+   if(type/10==4) SetOBJNames();                  //if(type==41) SetOBJNames(); //OK->WW please put to Config()
 }
 
 
@@ -5257,7 +5257,7 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
    // WW
    double Scaling = 1.0;
    bool quadr = false;                            //15.4.2008
-   if(type==4||type/40==1)
+   if(type==4||type/10==4)
    {
       fac = Scaling;
       quadr = true;
@@ -5317,7 +5317,7 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
          else
          {
             // 02.2010. WW
-            if(type == 4 || type/40 == 1)
+            if(type == 4 || type/10 == 4)
                dim_space = shift/m_msh->NodesNumber_Quadratic;
             else
                dim_space = shift/m_msh->NodesNumber_Linear;
@@ -5395,7 +5395,7 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
          //..............................................................
          // NEWTON WW   //Modified for JFNK. 09.2010. WW
          if(m_num->nls_method>=1                  // 04.08.2010. WW _name.find("NEWTON")!=string::npos
-            ||  type==4||type/40==1   )
+            ||  type==4||type/10==4   )
          {                                        //Solution is in the manner of increment !
             idx0 = GetNodeValueIndex(convertPrimaryVariableToString(m_bc->getProcessPrimaryVariable()));
             if(m_bc_node->pcs_pv_name.find("DISPLACEMENT")!=string::npos)
@@ -10552,7 +10552,7 @@ void CreateEQS_LinearSolver()
          dof_nonDM = m_pcs->GetPrimaryVNumber();
          dof = dof_nonDM;
       }
-      if(m_pcs->type==4||m_pcs->type/40==1)       // Deformation
+      if(m_pcs->type==4||m_pcs->type/10==4)       // Deformation
       {
          dof_DM = m_pcs->GetPrimaryVNumber();
          dof = dof_DM;
@@ -10562,7 +10562,7 @@ void CreateEQS_LinearSolver()
       }
       else                                        // Monolithic scheme for the process with linear elements
       {
-         if(dof_nonDM < m_pcs->GetPrimaryVNumber())
+         if(dof_n onDM < m_pcs->GetPrimaryVNumber())
          {
             dof_nonDM = m_pcs->GetPrimaryVNumber();
 
@@ -11761,7 +11761,7 @@ VirialCoefficients DuansVirialCoefficients(int Fluid, double T)
 {
    double a[15];
    double Tc,Pc,M;
-   double R=83.14467;                             // cmÃÂ³*bar/(K* mol)
+   double R=83.14467;                             // cmÃÂ?bar/(K* mol)
    //CVirialCoefficients x;	//BG
    VirialCoefficients x;                          //BG
    DuansParameter(Fluid,a,&Tc,&Pc,&M);

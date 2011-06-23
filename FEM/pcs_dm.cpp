@@ -136,7 +136,7 @@ namespace process
       fem_dm->SetGaussPointNumber(m_num->ele_gauss_points);
       //
       // Monolithic scheme
-      if(type/40==1) fem =  new CFiniteElementStd(this, Axisymm*m_msh->GetCoordinateFlag());
+      if(type/10==4) fem =  new CFiniteElementStd(this, Axisymm*m_msh->GetCoordinateFlag());
       //
       dm_pcs_number = pcs_number;
       //
@@ -295,7 +295,7 @@ namespace process
       }
 
       // For monolithic scheme
-      if(type/40 == 1)                            // Modified at 05.07.2010 WW
+      if(type/10 == 4)                            // Modified at 05.07.2010 WW
       {
          monolithic=1;
          number_of_load_steps = 1;
@@ -335,7 +335,7 @@ namespace process
       if(CouplingIterations==0&&type!=42)
          StoreLastSolution();                     //u_n-->temp
       //  Reset stress for each coupling step when partitioned scheme is applied to HM
-      if(H_Process&&(type/40!=1))
+      if(H_Process&&(type/10!=4))
          ResetCouplingStep();
       //
       // Compute the maxium ratio of load increment and
@@ -642,7 +642,7 @@ namespace process
       //
       // For coupling control
       Error = 0.0;
-      if(type/40!=1)                              // Partitioned scheme
+      if(type/10!=4)                              // Partitioned scheme
       {
          for(size_t n=0; n<m_msh->GetNodesNumber(true); n++)
          {
@@ -1167,7 +1167,7 @@ namespace process
    10/2002   WW   Erste Version
    11/2007   WW   Change to fit the new equation class
    **************************************************************************/
-   void CRFProcessDeformation::UpdateIterativeStep(const double damp, const int type)
+   void CRFProcessDeformation::UpdateIterativeStep(const double damp, const int u_type)
    {
       int i, j;
       long shift=0;
@@ -1180,6 +1180,31 @@ namespace process
 #else
       eqs_x = eqs->x;
 #endif
+
+      if(type == 41) 
+	  {
+         for (i = 0; i < pcs_number_of_primary_nvals; i++)
+         {
+            number_of_nodes = num_nodes_p_var[i];
+            //
+            if(u_type==0)
+            {
+               ColIndex = p_var_index[i]-1 ;
+               for(j=0; j<number_of_nodes; j++)
+                  SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+eqs_x[j+shift]*damp);
+               shift+=number_of_nodes;
+            }
+            else
+            {
+               ColIndex = p_var_index[i];
+               for(j=0; j<number_of_nodes; j++)
+                  SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+
+                     GetNodeValue(j, ColIndex-1));
+            }
+          }
+		  return; 
+	  }
+
       //
       for (i = 0; i < pcs_number_of_primary_nvals; i++)
       {
@@ -1189,7 +1214,7 @@ namespace process
          if(i<problem_dimension_dm||(i>=problem_dimension_dm&&fem_dm->dynamic))
          {
             ///  Update Newton step: w = w+dw
-            if(type == 0)
+            if(u_type == 0)
             {
                for(j=0; j<number_of_nodes; j++)
                   SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+eqs_x[j+shift]*damp);
@@ -1206,7 +1231,7 @@ namespace process
             if(m_num->nls_method>0)               //Newton-Raphson. 06.09.2010. WW
             {
                /// $p_{n+1}=p_{n+1}+\Delta p$ is already performed when type = 0
-               if(type == 1)
+               if(u_type == 1)
                   return;
                for(j=0; j<number_of_nodes; j++)
                {
@@ -1258,11 +1283,12 @@ namespace process
       end = pcs_number_of_primary_nvals;
       //
       // If monolithic scheme for p-u coupling, initialize p-->0 only
-      //if(pcs_deformation%11 == 0&&type==1)
-      //  start = problem_dimension_dm;
+      if(pcs_deformation%11 == 0&&ty==1)
+        start = problem_dimension_dm;
       /// Liquid flow and deformation. 06.09.2010. WW
-      if(type/40==1&&!fem_dm->dynamic)
-         end = problem_dimension_dm;
+      //if(type/10==4&&!fem_dm->dynamic)
+      //   end = problem_dimension_dm;
+
       //
       for (i = start; i < end; i++)
       {
@@ -1378,12 +1404,12 @@ namespace process
       // If monolithic scheme for p-u coupling,  p_i-->p_0 only
       if(pcs_deformation%11 == 0&&ty>0)
       {
-         /* 
+         
          start = problem_dimension_dm;
          for (i = 0; i < start; i++)
            shift += num_nodes_p_var[i];
-         */
-         end = problem_dimension_dm;
+         
+         //TODO: end = problem_dimension_dm;
       }
       for (i = start; i < end; i++)
       {
@@ -2247,7 +2273,7 @@ namespace process
       {
          GlobalAssembly_DM();
 
-         if(type/40==1)                           // p-u monolithic scheme
+         if(type/10==4)                           // p-u monolithic scheme
          {
             // if(!fem_dm->dynamic)   ///
             //  RecoverSolution(1);  // p_i-->p_0
@@ -2282,7 +2308,8 @@ namespace process
             else
                CalcBC_or_SecondaryVariable_Dynamics(true);
          }
-         //  {	    MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  //abort();}
+         //  {	  		
+		 MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  //abort();}
          //
 
 #define atest_dump

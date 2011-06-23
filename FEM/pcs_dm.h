@@ -55,7 +55,7 @@ namespace process
          void InitGauss();
          //
          void SetInitialGuess_EQS_VEC();
-         void UpdateIterativeStep(const double damp, const int type);
+         void UpdateIterativeStep(const double damp, const int u_type);
          void InitializeNewtonSteps(const int ty);
          double NormOfUpdatedNewton();
          void StoreLastSolution(const int ty=0);

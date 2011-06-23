@@ -540,7 +540,7 @@ namespace FiniteElement
                Idx_dm0[2] = dm_pcs->GetNodeValueIndex("DISPLACEMENT_Z1");
             Idx_dm1[2] = Idx_dm0[2] + 1;
          }
-         if(dm_pcs->type/40==1)
+         if(dm_pcs->type/10==4)
          {
             for(int i=0; i<5; i++)
                NodeShift[i] = Shift[i];
@@ -7267,7 +7267,7 @@ namespace FiniteElement
       nn = nnodes;
                                                   // ?2WW
                                                   // ?2WW
-      if(pcs->type/40==1||pcs->type==4) nn = nnodesHQ;
+      if(pcs->type/10==4||pcs->type==4) nn = nnodesHQ;
       //----------------------------------------------------------------------
       // For DDC WW
 #ifdef NEW_EQS
@@ -7566,7 +7566,7 @@ namespace FiniteElement
 
       nn = nnodes;
       // PCH should check the following line carefully.
-      if(pcs->type/40==1||pcs->type==4) nn = nnodesHQ;
+      if(pcs->type/10==4||pcs->type==4) nn = nnodesHQ;
 
 #ifdef NEW_EQS                              //PCH
       eqs_rhs = pcs->eqs_new->b;

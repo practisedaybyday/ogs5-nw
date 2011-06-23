@@ -1334,7 +1334,7 @@ namespace FiniteElement
       biot = smat->biot_const;
       if(Flow_Type>=0)
       {
-         if(pcs->type/40==1)                      // Monolithic scheme
+         if(pcs->type/10==4)                      // Monolithic scheme
          {
             // If nonlinear deformation
             if(pcs_deformation>100)
