@@ -4967,7 +4967,10 @@ namespace FiniteElement
       int ii_sh = 0;
       for(ii=0; ii<dof_n; ii++)                   // 07.02.07 WW
       {
-         cshift = NodeShift[ii+dm_shift];
+         if(pcs->type == 22 ) // Dual porosity model. 06.2011. WW
+			cshift += NodeShift[ii+dm_shift];
+		 else
+            cshift = NodeShift[ii+dm_shift];
          ii_sh = ii*nnodes;
          for (i=0;i<nnodes;i++)
          {
