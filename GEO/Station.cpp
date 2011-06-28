@@ -329,7 +329,7 @@ StationBorehole* StationBorehole::createStation(const std::string &name, double 
 	(*station)[1]   = y;
 	(*station)[2]   = z;
 	station->_depth = depth;
-	station->_date  = xmlDate2double(date);
+	if (date.compare("0000-00-00")) station->_date  = xmlDate2double(date);
 	return station;
 }
 

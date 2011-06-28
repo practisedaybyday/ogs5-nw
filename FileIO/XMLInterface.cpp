@@ -741,10 +741,13 @@ void XMLInterface::writeBoreholeData(QDomDocument &doc, QDomElement &boreholeTag
 	boreholeTag.appendChild(stationDepthTag);
 	QDomText stationDepthText = doc.createTextNode(QString::number(borehole->getDepth(), 'f'));
 	stationDepthTag.appendChild(stationDepthText);
-	QDomElement stationDateTag = doc.createElement("bdate");
-	boreholeTag.appendChild(stationDateTag);
-	QDomText stationDateText = doc.createTextNode(QString::fromStdString(date2string(borehole->getDate())));
-	stationDateTag.appendChild(stationDateText);
+	if (borehole->getDate() != 0)
+	{
+		QDomElement stationDateTag = doc.createElement("bdate");
+		boreholeTag.appendChild(stationDateTag);
+		QDomText stationDateText = doc.createTextNode(QString::fromStdString(date2string(borehole->getDate())));
+		stationDateTag.appendChild(stationDateText);
+	}
 
 	std::vector<GEOLIB::Point*> profile = borehole->getProfile();
 	std::vector<std::string> soilNames = borehole->getSoilNames();
