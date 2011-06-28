@@ -10562,7 +10562,7 @@ void CreateEQS_LinearSolver()
       }
       else                                        // Monolithic scheme for the process with linear elements
       {
-         if(dof_n onDM < m_pcs->GetPrimaryVNumber())
+         if(dof_nonDM < m_pcs->GetPrimaryVNumber())
          {
             dof_nonDM = m_pcs->GetPrimaryVNumber();
 
