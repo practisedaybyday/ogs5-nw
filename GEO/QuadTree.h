@@ -90,7 +90,7 @@ public:
 
 		// check if point is already in quadtree
 		bool pnt_in_quadtree (false);
-		double equal_pnt_dist (pow(2, _depth) * fabs(_ll[0] - _ur[0]) * 1e-6);
+		double equal_pnt_dist (MathLib::fastpow(2, _depth) * fabs(_ll[0] - _ur[0]) * 1e-6);
 		for (size_t k(0); k<_pnts.size() && !pnt_in_quadtree; k++) {
 			if (MathLib::sqrDist (_pnts[k]->getData(), pnt->getData()) < equal_pnt_dist) {
 				pnt_in_quadtree = true;

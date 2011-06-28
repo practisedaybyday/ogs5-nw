@@ -83,6 +83,21 @@ float normalize(float min, float max, float val);
  */
 double getAngle (const double p0[3], const double p1[3], const double p2[3]);
 
+/**
+ * simple power function that takes as a second argument an integer instead of a float
+ * @param base basis of the expression
+ * @param exp exponent of the expression
+ * @return base^exp
+ */
+template <typename T>
+T fastpow (T base, size_t exp)
+{
+	T result (base);
+	for (size_t k(0); k<exp; k++) {
+		result *= result;
+	}
+}
+
 } // namespace
 
 #endif /* MATHTOOLS_H_ */
