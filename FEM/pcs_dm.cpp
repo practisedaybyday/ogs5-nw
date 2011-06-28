@@ -442,8 +442,8 @@ namespace process
          */
 
          // For p-u monolitic scheme. If first step (counter==1), take initial value
-         //TEST    if(pcs_deformation%11 == 0&&!fem_dm->dynamic)
-         //TEST       InitializeNewtonSteps(1); // p=0
+         if(pcs_deformation%11 == 0&&!fem_dm->dynamic)
+            InitializeNewtonSteps(1); // p=0
          //
          // Initialize inremental displacement: w=0
          InitializeNewtonSteps(0);
