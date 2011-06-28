@@ -96,6 +96,7 @@ T fastpow (T base, size_t exp)
 	for (size_t k(0); k<exp; k++) {
 		result *= result;
 	}
+	return result;
 }
 
 } // namespace
