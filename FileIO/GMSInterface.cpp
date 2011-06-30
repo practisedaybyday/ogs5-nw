@@ -41,7 +41,8 @@ int GMSInterface::readBoreholesFromGMS(std::vector<GEOLIB::Point*> *boreholes, c
 				(*pnt)[1] = strtod((++it)->c_str(), 0);
 				(*pnt)[2] = strtod((++it)->c_str(), 0);
 				newBorehole->addSoilLayer((*pnt)[0], (*pnt)[1], (*pnt)[2], sName);
-				sName = (*(++it));
+				//if (fields.size()>4)
+					sName = (*(++it));
 				depth=(*pnt)[2];
 			}
 			else // add new borehole

@@ -518,6 +518,7 @@ void CElem::Read(std::istream& is, int fileType)
 		break;
 	case 7: // GMSH 2008
 		size_t nb_tags;
+
 		is >> index >> et >> nb_tags >> idummy >> gmsh_patch_index;
 		patch_index = gmsh_patch_index;
 		for (size_t j = 2; j < nb_tags; j++) {
@@ -526,6 +527,7 @@ void CElem::Read(std::istream& is, int fileType)
 		switch (et) {
 		case 1:
 			geo_type = MshElemType::LINE;
+			patch_index = 0; // KR: can line elements have material ids?
 			nnodes = 2;
 			break;
 		case 2:

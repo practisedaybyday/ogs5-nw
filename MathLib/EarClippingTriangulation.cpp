@@ -294,9 +294,9 @@ void EarClippingTriangulation::clipEars()
 	it = next;
 	next++;
 	if (getOrientation(_pnts[*prev], _pnts[*it], _pnts[*next]) == CCW)
-		_triangles.push_back(GEOLIB::Triangle(_pnts, *prev, *it, *next));
-	else
 		_triangles.push_back(GEOLIB::Triangle(_pnts, *prev, *next, *it));
+	else
+		_triangles.push_back(GEOLIB::Triangle(_pnts, *prev, *it, *next));
 }
 
 } // end namespace MathLib

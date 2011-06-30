@@ -236,6 +236,7 @@ void XMLInterface::readSurfaces( const QDomNode &surfacesRoot, std::vector<GEOLI
 		if (surface.hasAttribute("id"))
 		{
 			surfaces->push_back(new GEOLIB::Surface(*points));
+
 			if (surface.hasAttribute("name")) sfc_names->insert( std::pair<std::string, size_t>(surface.attribute("name").toStdString(), surfaces->size()-1) );
 
 			QDomElement element = surface.firstChildElement();
