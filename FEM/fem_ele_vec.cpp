@@ -1395,6 +1395,26 @@ namespace FiniteElement
             case 2:                               // Multi-phase-flow: p_g-Sw*p_c
                for (i=0;i<nnodes;i++)
                {
+			      double bishop_coef = 1.;        //bishop
+				  double S_e = 1.;
+			      switch(smat->bishop_model)
+				  {
+				  case 1:
+					  bishop_coef = smat->bishop_model_value;
+					  break;
+				  case 2:
+					  S_e = (AuxNodal_S[i]-m_mmp->saturation_res[0])/(1-m_mmp->saturation_res[0]-m_mmp->saturation_res[1]);
+					  bishop_coef = pow(S_e, smat->bishop_model_value);
+					  break;
+				  default:
+					  break;
+				  }
+				  if(smat->bishop_model==1 || smat->bishop_model==2)// pg-bishop*pc 05.2011 WX
+					  val_n = h_pcs->GetNodeValue(nodes[i],idx_P2)
+					     -bishop_coef*h_pcs->GetNodeValue(nodes[i],idx_P1);
+				  else
+					  val_n = h_pcs->GetNodeValue(nodes[i],idx_P2)// pg - Sw*pc
+                         -AuxNodal_S[i]*h_pcs->GetNodeValue(nodes[i],idx_P1);
                   val_n = h_pcs->GetNodeValue(nodes[i],idx_P2)
                      -AuxNodal_S[i]*h_pcs->GetNodeValue(nodes[i],idx_P1);
                   if(biot<0.0&&val_n<0.0)
@@ -1536,7 +1556,7 @@ namespace FiniteElement
       }
       //
 
-      if(PModel==1||PModel==10)
+      if(PModel==1||PModel==10||PModel==11)//WX:modified for DP with tension cutoff
          smat->CalulateCoefficent_DP();
       //
       if(PModel!=3&&smat->Youngs_mode!=2)         // modified due to transverse isotropic elasticity: UJG 24.11.2009
@@ -1555,6 +1575,8 @@ namespace FiniteElement
             *De = *(smat->getD_tran());           // UJG/WW
       }
 
+	  if(PModel==5)
+		  smat->CalculateCoefficent_HOEKBROWN();//WX:02.2011
       /*
        string fname=FileName+"_D.txt";
        ofstream out_f(fname.c_str());
@@ -1663,6 +1685,36 @@ namespace FiniteElement
                   dPhi = 1.0;
                }
                break;
+            case 11:	//WX: 08.2010
+				{
+					double mm = 0.;       //WX:09.2010. for DP with Tension.
+					switch(smat->DirectStressIntegrationDPwithTension(gp, De, eleV_DM, dstress, update, mm))
+					{
+					case 1:
+						{
+							*ConsistDep = *De;
+							smat->TangentialDP2(ConsistDep);
+							dPhi = 1.0;
+						}
+						break;
+					case 2:
+						{
+							*ConsistDep = *De;
+							smat->TangentialDPwithTension(ConsistDep, mm);
+							dPhi = 1.0;
+						}
+						break;
+					case 3:
+						{
+							*ConsistDep = *De;
+							smat->TangentialDPwithTensionCorner(ConsistDep, mm);
+							dPhi = 1.0;
+						}
+						break;
+					default: break;
+					}
+					break;
+				}
             case 2:                               // Rotational hardening model
                // Compute stesses and plastic multi-plier
                dPhi = 0.0;
@@ -1704,6 +1756,24 @@ namespace FiniteElement
 
                dPhi = 1.0;
                break;
+            case 4:	// Mohr-Coloumb	//WX:10.2010
+               if(smat->DirectStressIntegrationMOHR(gp, eleV_DM, dstress, update, De))
+               {
+                  *ConsistDep = *De;
+                  smat->TangentialMohrShear(ConsistDep);		//also for tension
+                  //ConsistDep->Write();
+                  dPhi = 1.0;
+               }
+               break;
+			/*case 5:
+				if(smat->StressIntegrationHoekBrown(gp, eleV_DM, dstress, update, De))
+				{
+                  *ConsistDep = *De;
+                  smat->TangentialHoekBrown(ConsistDep);		//also for tension
+                  //ConsistDep->Write();
+                  dPhi = 1.0;
+				}
+				break;*/
          }
          // --------------------------------------------------------------------
          // Stress increment by heat, swelling, or heat

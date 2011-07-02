@@ -38,7 +38,7 @@ extern double gravity_constant;
 #include "fem_ele_vec.h"
 // MSHLib
 //#include "msh_lib.h"
-
+#include "pcs_dm.h"  //WX
 using namespace std;
 
 // MAT-MP data base lists
@@ -124,6 +124,7 @@ CMediumProperties::CMediumProperties(void)
    vol_mat_model = 0;
    vol_bio_model = 0;
    foc = 0.0;
+   fixed_saturation = 1.;//WX
 #ifdef RFW_FRACTURE
    frac_num = 0;
    fracs_set = 0;
@@ -502,6 +503,9 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream *mmp_file)
                //     porosities then are to be read in from file by fct.
                //     CMediumProperties::SetDistributedELEProperties
                break;
+			case 12:
+			   in >> porosity_model_values[0];//WX 03.2011, dependent on strain
+			   break;
 #ifdef GEM_REACT
             case 15:
                in >> porosity_model_values[0];    // set a default value for GEMS calculation
@@ -901,6 +905,36 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream *mmp_file)
          in.clear();
          continue;
       }
+      //WX: 05.2010
+      if(line_string.find("$PERMEABILITY_FUNCTION_STRAIN")!=string::npos)
+	  {
+         in.str(GetLineFromFile1(mmp_file));
+         in >> permeability_strain_model;
+         switch(permeability_strain_model)
+         {
+            case 0://strain_volume
+               break;
+            case 1://strain_volumeeff plas strain
+               in >> permeability_strain_model_value[0];
+               break;
+            case 2://eff plas strainif eff plas strain>0, f(strainp). else stain volume
+               in >> permeability_strain_model_value[0];
+               break;
+            case 3://if eff plas strain>0, f(strainp). else stain volume
+               in >> permeability_strain_model_value[0];//for strain volume
+               in >> permeability_strain_model_value[1];//for eff plas strain
+               break;
+            case 4://strain volume + eff plas strain
+               in >> permeability_strain_model_value[0];
+               in >> permeability_strain_model_value[1];
+               break;
+            default:
+               cout<< "Error in MMPRead: no valid permeability strain model" << endl;
+               break;
+         }
+         in.clear();
+         continue;
+      }
       //------------------------------------------------------------------------
       //12.2 PERMEABILITY_FUNCTION_PRESSURE
       //------------------------------------------------------------------------
@@ -978,6 +1012,9 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream *mmp_file)
                in >> permeability_pressure_model_values[4];
                pcs_name_vector.push_back("PRESSURE1");
                pcs_name_vector.push_back("TEMPERATURE1");
+               break;
+            case 10: //WX:05.2010 directly from curve
+               in >> permeability_pressure_model_values[0]; //WX: curve number 05.2010
                break;
             default:
                std::cout << "Error in MMPRead: no valid permeability model" << std::endl;
@@ -1358,6 +1395,7 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream *mmp_file)
                break;
             case 1:                               // const
                in >> capillary_pressure;
+			   in >> fixed_saturation;//WX
                break;
             case 4:                               // van Genuchten
                in >> capillary_pressure_model_values[0];
@@ -2140,6 +2178,7 @@ int phase)
          permeability_saturation = GetCurveValue((int)permeability_saturation_model_values[phase],0,saturation,&gueltig);
          break;
       case 1:                                     // linear function
+		 return 1;//WX
          break;
       case 2:                                     // linear function from ! liquid saturation
          if (saturation > (saturation_max[phase] - MKleinsteZahl))
@@ -2343,12 +2382,12 @@ int phase)
          permeability_saturation = MRange(0.,permeability_saturation,1.);
          break;
       case 44:                                    // Van Genuchtenfor non wetting fluid (e.g. gas):  WW
-         if (saturation > (saturation_max[phase] - MKleinsteZahl))
-            saturation = saturation_max[phase] - MKleinsteZahl;
-         if (saturation < (saturation_res[phase] + MKleinsteZahl))
-            saturation = saturation_res[phase] + MKleinsteZahl;
+         if (saturation > (saturation_max[0] - MKleinsteZahl))//WX
+            saturation = saturation_max[0] - MKleinsteZahl;
+         if (saturation < (saturation_res[0] + MKleinsteZahl))
+            saturation = saturation_res[0] + MKleinsteZahl;
          //
-         saturation_eff = (saturation - saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
+         saturation_eff = (saturation - saturation_res[0]) / (saturation_max[0] - saturation_res[1]);
          permeability_saturation = pow(1.0-saturation_eff,1.0/3.0) \
             * pow(1-pow(saturation_eff,1./saturation_exp[phase]),2.0*saturation_exp[phase]);
          permeability_saturation = MRange(permeability_tensor[9],permeability_saturation,1.);
@@ -3695,6 +3734,9 @@ double CMediumProperties::Porosity(long number,double theta)
          //porosity = porosity_model_values[0];
          porosity = m_msh->ele_vector[number]->mat_vector(por_index);
          break;
+	  case 12:                                    // n = n0 + vol_strain, WX: 03.2011
+		 porosity = PorosityVolStrain(number, porosity_model_values[0], assem);
+		 break;
 #ifdef GEM_REACT
       case 15:
          porosity = porosity_model_values[0];     // default value as backup
@@ -3775,6 +3817,7 @@ double CMediumProperties::Porosity(CElement* assem)
    std::string str;
    ///
    ElementValue_DM* gval = NULL;
+   CFiniteElementStd* assem_tmp = m_pcs->GetAssember();//WX: for poro vol strain. 03.2011
 
    //----------------------------------------------------------------------
    // Functional dependencies
@@ -3843,6 +3886,9 @@ double CMediumProperties::Porosity(CElement* assem)
       case 11:                                    // n = const, but spatially distributed CB
          porosity = porosity_model_values[0];
          break;
+	  case 12:                                    // n = n0 + vol_strain
+		  porosity = PorosityVolStrain(number, porosity_model_values[0], assem_tmp);  //WX:03.2011
+		 break;
 #ifdef GEM_REACT
       case 15:
 
@@ -4378,7 +4424,184 @@ double CMediumProperties::RelativePermeability (long index)
 //------------------------------------------------------------------------
 //12.(ii) PERMEABILITY_FUNCTION_PRESSURE
 //------------------------------------------------------------------------
+//WX: implementation of ths permeability_function_pressure. 1. version only for multi_phase_flow. 05.2010
+double CMediumProperties::PermeabilityFunctionPressure(long index, double PG2)
+{
+   int gueltig; //WX: for function GetCurveValue(). 11.05.2010
+   double fac_perm_pressure=1;
+   //WX: permeability as function of gas pressure. 11.05.2010
+   switch(permeability_pressure_model)
+   {
+      case 10://WX: case 10, factor directly calculated from curve. 05.2010
+         if (m_pcs->getProcessType() == MULTI_PHASE_FLOW)
+          //WX: now it's only works for Multi_Phase_Flow. 05.2010
+            fac_perm_pressure=GetCurveValue((int)permeability_pressure_model_values[0], 0, PG2, &gueltig);
+            //WX: PG2 = gas pressue. 11.05.2010
+		break;
+      default:
+		break;
+   }
+   return fac_perm_pressure;
+}
+//WX: Permeability_function_stain: 05.2010
+double CMediumProperties::PermeabilityFunctionStrain(long index, int nnodes, CFiniteElementStd *h_fem) //WW:02.08.2010
+{
+   double fac_perm_strain = 1.;
+   int ele_index, gueltig;
+   CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) this;
 
+   switch(permeability_strain_model){
+      case 1:
+         {
+         double strain_temp[3] = {0}, strain_temp_pls = 0, vol_strain_temp = 0;
+         //ElementValue_DM *e_valDM = NULL;
+         //CFiniteElementVec *e_valVec = NULL;
+         int idx_temp[3];
+         int dim = m_pcs->m_msh->GetCoordinateFlag()/10;
+         if (dim==2)
+            if(h_fem->axisymmetry)
+               dim=3; //WX:02.09.2010. should not be
+
+         //CSolidProperties *m_msp = NULL;
+         //int group = m_pcs->m_msh->ele_vector[number]->GetPatchIndex();
+         //m_msp = msp_vector[group];
+         //int PModel = m_msp->Plastictity();
+
+         ele_index = index;
+
+         idx_temp[0] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
+         idx_temp[1] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
+         idx_temp[2] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
+
+         //WW:02.08.2010
+         double strain_nodes[20]={0};
+
+         for (int j=0; j<dim; j++)
+         {
+            for (int i=0; i<nnodes; i++)
+               strain_nodes[i] = h_fem->dm_pcs->GetNodeValue(h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i], idx_temp[j]);
+            strain_temp[j] = h_fem->interpolate(strain_nodes);
+         }
+
+         for (int j=0; j<dim; j++)
+            vol_strain_temp += strain_temp[j];
+
+         fac_perm_strain = GetCurveValue(permeability_strain_model_value[0], 0, vol_strain_temp, &gueltig);
+         if(fac_perm_strain<=0.)
+            fac_perm_strain = 1.;
+
+         break;
+         }
+      case 2://equivalent plasical strain
+         {
+         int idStrainP;
+         double strainp_nodes[20]={0.};
+         double strainp = 0.;
+         idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
+         for(int i=0; i<nnodes; i++)
+            strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i], idStrainP);
+         strainp = h_fem->interpolate(strainp_nodes);
+         fac_perm_strain = GetCurveValue(permeability_strain_model_value[0], 0, strainp, &gueltig);
+         if(fac_perm_strain<=0.)
+            fac_perm_strain = 1.;
+         break;
+         }
+      case 3://if StrainP>0, factor=f(StrainP), else factor=f(strain_Volume)
+         {
+         int idStrainP;
+         double strainp_nodes[20]={0.};
+         double strainp = 0.;
+         idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
+         for(int i=0; i<nnodes; i++)
+            strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i], idStrainP);
+         strainp = h_fem->interpolate(strainp_nodes);
+         if(strainp>0)
+            fac_perm_strain = GetCurveValue(permeability_strain_model_value[1], 0, strainp, &gueltig);
+         else
+         {
+            double strain_temp[3] = {0}, strain_temp_pls = 0, vol_strain_temp = 0;
+            int idx_temp[3];
+            int dim = m_pcs->m_msh->GetCoordinateFlag()/10;
+            if (dim==2)
+               if(h_fem->axisymmetry)
+                  dim=3;
+            ele_index = index;
+
+            idx_temp[0] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
+            idx_temp[1] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
+            idx_temp[2] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
+
+            double strain_nodes[20]={0};
+
+            for (int j=0; j<dim; j++)
+            {
+               for (int i=0; i<nnodes; i++)
+                  strain_nodes[i] = h_fem->dm_pcs->GetNodeValue(h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i], idx_temp[j]);
+               strain_temp[j] = h_fem->interpolate(strain_nodes);
+            }
+
+            for (int j=0; j<dim; j++)
+               vol_strain_temp += strain_temp[j];
+
+            fac_perm_strain = GetCurveValue(permeability_strain_model_value[0], 0, vol_strain_temp, &gueltig);
+         }
+         if(fac_perm_strain<=0.)
+            fac_perm_strain = 1.;
+         break;
+         }
+      case 4://factor = f(strainP+strain_Volume)
+         {
+         int idStrainP;
+         double strainp_nodes[20]={0.};
+         double strainp = 0.;
+         double tmpfkt=1.;
+         idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
+         for(int i=0; i<nnodes; i++)
+            strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i], idStrainP);
+         strainp = h_fem->interpolate(strainp_nodes);
+         if(strainp>0.)
+         {
+            tmpfkt = GetCurveValue(permeability_strain_model_value[1], 0, strainp, &gueltig);
+            if(tmpfkt<1.)
+               tmpfkt=1.;
+         }
+
+         double strain_temp[3] = {0}, strain_temp_pls = 0, vol_strain_temp = 0;
+         int idx_temp[3];
+         int dim = m_pcs->m_msh->GetCoordinateFlag()/10;
+         if (dim==2)
+            if(h_fem->axisymmetry)
+               dim=3;
+         ele_index = index;
+
+         idx_temp[0] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
+         idx_temp[1] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
+         idx_temp[2] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
+
+         double strain_nodes[20]={0};
+
+         for (int j=0; j<dim; j++)
+         {
+            for (int i=0; i<nnodes; i++)
+               strain_nodes[i] = h_fem->dm_pcs->GetNodeValue(h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i], idx_temp[j]);
+            strain_temp[j] = h_fem->interpolate(strain_nodes);
+         }
+         for (int j=0; j<dim; j++)
+            vol_strain_temp += strain_temp[j];
+
+         fac_perm_strain = GetCurveValue(permeability_strain_model_value[0], 0, vol_strain_temp, &gueltig);
+
+         if(fac_perm_strain<=0.)
+            fac_perm_strain = 1.;
+
+         fac_perm_strain *= tmpfkt;
+         break;
+         }
+      default:
+         break;
+	}
+   return fac_perm_strain;
+}
 //------------------------------------------------------------------------
 //12.(i) PERMEABILITY_FUNCTION_SATURATION
 //------------------------------------------------------------------------
@@ -5024,6 +5247,7 @@ double CMediumProperties::SaturationCapillaryPressureFunction
          break;
       case 1:                                     // constant
          saturation = 1.0;                        //MX test for DECOVALEX
+		 saturation = fixed_saturation;//WX
          break;
       case 2:                                     // Lineare Kapillardruck-Saettigungs-Beziehung
          // kap12 steigt linear von 0 auf kap[2] im Bereich satu_water_saturated bis satu_water_residual
@@ -7162,6 +7386,34 @@ double CMediumProperties::PorosityVolumetricChemicalReaction(long index)
    return porosity;
 }
 
+//WX: 03.2011. Porosity = n0 + vol_strain
+double CMediumProperties::PorosityVolStrain(long index, double val0, CFiniteElementStd *assem )
+{
+	double val = val0, vol_strain_temp = 0., strain_temp[3]={0.}, strain_nodes[20] = {0.};
+	int idx_temp[3]={0}, ele_index, nnodes = assem->nnodes;
+	CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) this;
+         int dim = m_pcs->m_msh->GetCoordinateFlag()/10;
+         if (dim==2)
+            if(assem->axisymmetry)
+               dim=3;
+	idx_temp[0] = assem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
+	idx_temp[1] = assem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
+	idx_temp[2] = assem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
+	ele_index = index;
+	for (int j=0; j<dim; j++)
+	{
+		for (int i=0; i<nnodes; i++)
+			strain_nodes[i] = assem->dm_pcs->GetNodeValue(assem->dm_pcs->m_msh->ele_vector[index]-> \
+			nodes_index[i],idx_temp[j]);
+		strain_temp[j] = assem->interpolate(strain_nodes);
+	}
+	for (int j=0; j<dim; j++)
+		vol_strain_temp += strain_temp[j];
+	val += vol_strain_temp;
+	if(val<MKleinsteZahl)
+		val = 1e-6;//lower limit of porostity
+	return val;
+}
 
 /**************************************************************************
 FEMLib-Method: TortuosityFunction

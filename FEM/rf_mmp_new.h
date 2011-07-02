@@ -91,6 +91,9 @@ class CMediumProperties
       double PermeabilitySaturationFunction(long number,double*gp,double theta,int phase);
                                                   //CMCD 9/2004 GeoSys 4
       double PermeabilityPorosityFunction(long index,double *gp,double theta);
+      double PermeabilityFunctionPressure(long index, double PG2);  //WX:  05.2010
+      double PermeabilityFunctionStrain(long index, int nnodes, CFiniteElementStd* h_fem); //WX
+	  double PorosityVolStrain(long index, double val0, CFiniteElementStd* assem); //WX: 03.2011
       double KozenyCarman(double k0/*old permeability*/,
          double n0/*old porosity*/,
          double n/*new porosity*/);//HS: 11.2008
@@ -210,12 +213,15 @@ class CMediumProperties
       int permeability_pressure_model;
       double permeability_pressure_model_values[10];
       double permeability_pressure_rel;
+      int permeability_strain_model;              //WX: permeability function strain model. 05.2010
+      int permeability_strain_model_value[3];     //WX:permeability fuction strain model value. 05.2010
       int permeability_saturation_model[3];
       double permeability_saturation;
       std::string permeability_file;              //SB //OK/MB string permeability_dis_type_file;
       std::string tortuosity_file;                // PCH
       int capillary_pressure_model;
       double capillary_pressure;
+	  double fixed_saturation;                    //WX: for fix Sw
       int permeability_porosity_model;
       double permeability_porosity_model_values[10];
       double storativity;

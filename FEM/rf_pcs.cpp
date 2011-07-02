@@ -199,7 +199,7 @@ CRFProcess::CRFProcess(void) :
 _problem (NULL), p_var_index(NULL), num_nodes_p_var(NULL),
 fem(NULL), Memory_Type(0), Write_Matrix(false), matrix_file(NULL),WriteSourceNBC_RHS(0),
 #ifdef JFNK_H2M
-JFNK_precond(false), norm_u_JFNK(NULL), array_u_JFNK(NULL), array_Fu_JFNK(NULL), 
+JFNK_precond(false), norm_u_JFNK(NULL), array_u_JFNK(NULL), array_Fu_JFNK(NULL),
 #endif
 ele_val_name_vector (std::vector<std::string>())
 {
@@ -297,6 +297,8 @@ ele_val_name_vector (std::vector<std::string>())
    this->Gl_Vec = NULL;                           //NW
    this->Gl_Vec1 = NULL;                          //NW
    this->FCT_AFlux = NULL;                        //NW
+   ExcavMaterialGroup = -1;                       //01.2010 WX
+   PCS_ExcavState = -1;                           //WX
 }
 
 
@@ -1478,6 +1480,14 @@ CRFProcess* CRFProcess::CopyPCStoDM_PCS()
    for(int i=0; i<NumDeactivated_SubDomains; i++)
       dm_pcs->Deactivated_SubDomain[i] = Deactivated_SubDomain[i];
    pcs_deformation = 1;
+   //WX:01.2011 for coupled excavation
+   if(ExcavMaterialGroup>=0)
+   {
+      dm_pcs->ExcavMaterialGroup = ExcavMaterialGroup;
+      dm_pcs->ExcavDirection = ExcavDirection;
+      dm_pcs->ExcavBeginCoordinate = ExcavBeginCoordinate;
+      dm_pcs->ExcavCurve = ExcavCurve;
+   }
    //
    return dynamic_cast<CRFProcess *> (dm_pcs);
 }
@@ -3767,6 +3777,34 @@ void CRFProcess::CheckMarkedElement()
    }
 }
 
+/**************************************************************************
+FEMLib-Method:
+Task:  check the excavation state of each aktive element
+Programing:
+01/2011 WX Implementation
+**************************************************************************/
+void CRFProcess::CheckExcavedElement()
+{
+   int valid;
+   long l;
+   //bool done;
+   CElem *elem = NULL;
+   //CNode *node = NULL;
+   for (l = 0; l < (long)m_msh->ele_vector.size(); l++)
+   {
+      elem = m_msh->ele_vector[l];
+      if(elem->GetPatchIndex()==ExcavMaterialGroup&&elem->GetMark())
+      {
+         double* ele_center = NULL;
+         ele_center = elem->GetGravityCenter();
+         if((GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)+ExcavBeginCoordinate)>(ele_center[ExcavDirection])
+            &&(ele_center[ExcavDirection]-ExcavBeginCoordinate)>-0.001)
+         {
+            elem->SetExcavState(1);
+         }
+      }
+   }
+}
 
 //////////////////////////////////////////////////////////////////////////
 // PCS Execution
@@ -4623,7 +4661,7 @@ void CRFProcess::GlobalAssembly()
          for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
          {
             elem = m_msh->ele_vector[i];
-            if (elem->GetMark())                  // Marked for use
+            if (elem->GetMark()&&elem->GetExcavState()==-1)     // Marked for use //WX: modified for coupled excavation
             {
                elem->SetOrder(false);
                fem->ConfigElement(elem, Check2D3D);
@@ -5241,6 +5279,8 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
    CFunction* m_fct = NULL;                       //OK
    double *eqs_rhs = NULL;
    bool is_valid = false;                         //OK
+   bool onExBoundary = false;                     //WX
+   bool excavated = false;                        //WX
 #ifdef NEW_EQS
    Linear_EQS *eqs_p = NULL;
 #endif
@@ -5306,6 +5346,73 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
       m_bc_node = bc_node_value[gindex];
       m_bc = bc_node[gindex];
       shift = m_bc_node->msh_node_number-m_bc_node->geo_node_number;
+      //
+     //WX: check if bc is aktive, when Time_Controlled_Aktive for this bc is defined
+      if(m_bc->getTimeContrCurve()>0)
+         if(GetCurveValue(m_bc->getTimeContrCurve(),0,aktuelle_zeit,&valid)<MKleinsteZahl)
+            continue;
+
+      //WX: 01.2011. for excavation bc, check if excavated and if on boundary
+      if(m_bc->getExcav()>0)
+      {
+         CNode * node;
+         CElem * elem;
+         //unsigned int counter;	//void warning
+         onExBoundary = false;	//WX:01.2011
+         excavated = false;
+         double node_coordinate[3]={0.};
+         node = m_msh->nod_vector[m_bc_node->geo_node_number];
+         node->Coordinates(node_coordinate);
+         //tmp_counter3++;
+         //counter = 0;
+         /*if((node_coordinate[ExcavDirection]-(GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)-ExcavBeginCoordinate)<0.001
+               &&(node_coordinate[ExcavDirection]-ExcavBeginCoordinate)>-0.001))*/
+         //used with deactive subdomain
+         if((node_coordinate[ExcavDirection]-(GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)-ExcavBeginCoordinate))<0.001)
+         {
+            excavated = true;
+            for(unsigned int j=0; j<node->getConnectedElementIDs().size(); j++)
+            {
+               elem = m_msh->ele_vector[node->getConnectedElementIDs()[j]];
+               //if(elem->GetPatchIndex()!=ExcavMaterialGroup){
+               if(elem->GetExcavState()==-1)
+               {
+                  onExBoundary = true;
+                  //tmp_counter1++;
+                        break;
+               }
+            }
+         }
+         //if(fabs(node_coordinate[ExcavDirection]-GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)-ExcavBeginCoordinate)<0.001)
+         //{
+            // excavated = true;
+            // onExBoundary = true;
+         //}
+         /*for(unsigned int j=0; j<node->connected_elements.size(); j++)
+         {
+            elem = m_msh->ele_vector[node->connected_elements[j]];
+            if(elem->GetExcavState()>0)
+               counter ++;
+         }
+         if ( counter!=0 && counter<node->connected_elements.size())
+         {
+            onExBoundary = true;
+            excavated = true;
+         }
+         else
+            if(counter==0)
+               excavated = false;
+            else
+               if(counter==node->connected_elements.size())
+               {
+                  excavated = true;
+                  onExBoundary = false;
+               }
+         */
+      }
+
+      if((m_bc->getExcav()>0)&&!excavated)	//WX:01.2011. excav bc but is not excavated jet
+         continue;
       //
       if(rank>-1)
       {

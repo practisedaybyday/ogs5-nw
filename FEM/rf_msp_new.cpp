@@ -454,6 +454,24 @@ namespace SolidProp
             in_sd.clear();
          }
          //....................................................................
+		 if(line_string.find("BISHOP_COEFFICIENT")!=string::npos)//WX
+		 {
+			 in_sd.str(GetLineFromFile1(msp_file));
+			 in_sd>>bishop_model;
+			 switch(bishop_model)
+			 {
+			 case 1://constant
+				 in_sd>>bishop_model_value;
+				 break;
+			 case 2://pow(Se, parameter)
+				 in_sd>>bishop_model_value;
+				 break;
+			 default:
+				 break;
+			 }
+			 in_sd.clear();
+		 }
+         //....................................................................
          if(line_string.find("$STRESS_INTEGRATION_TOLERANCE")!=string::npos)
          {
             in_sd.str(GetLineFromFile1(msp_file));
@@ -486,12 +504,19 @@ namespace SolidProp
                if(sub_line.find("NORETURNMAPPING")!=string::npos)
                {
                   Plasticity_type=10;
+                  if (sub_line.find("TENSIONCUTOFF")!=string::npos)	//WX: 08.2010
+                  {
+					  Plasticity_type=11;
+					  dFtds = new double[6];	//WX: 08.2010 Tensile yield function
+					  dGtds = new double[6];
+					  ConstitutiveMatrix = new Matrix(6,6);//WX: 08.2010
+                  }
                   dFds = new double[6];
                   dGds = new double[6];
                   D_dFds = new double[6];
                   D_dGds = new double[6];
                }
-               Size = 5;
+               Size = 6;
                /*
                Material parameters for Cam-Clay model
                i : parameter
@@ -500,6 +525,7 @@ namespace SolidProp
                2 : Internal frection angle
                3 : Dilatancy angle
                4 : Localized softening modulus
+               5 : Tensile strength //WX
                */
             }
             else if(sub_line.find("SINGLE_YIELD_SURFACE")!=string::npos)
@@ -559,6 +585,36 @@ namespace SolidProp
                */
 
             }
+            else if(sub_line.find("MOHR-COULOMB")!=string::npos)//WX
+            {
+            devS = new double[6];
+            ConstitutiveMatrix = new Matrix(6,6);
+            Plasticity_type=4;
+            Size = 6;
+            /*
+            i	parameter
+            0	cohesion
+            1	friction angle
+            2	dilatance angle
+            3	tension strength
+			4   hardening curve for friction angle
+			5   hardening curve for cohesion
+            */
+            }
+			else if(sub_line.find("HOEK-BROWN")!=string::npos)//WX
+			{
+				devS = new double[6];
+				ConstitutiveMatrix = new Matrix(6,6);
+				Plasticity_type = 5;
+				Size = 4;
+				/*
+				i   parameter
+				0   a
+				1   s
+				2   mb
+				3   sigci
+				*/
+			}
             data_Plasticity = new Matrix(Size);
             for(i=0; i<Size; i++)
             {
@@ -673,10 +729,16 @@ namespace SolidProp
       if(dGds) delete [] dGds;
       if(D_dFds) delete [] D_dFds;
       if(D_dGds) delete [] D_dGds;
+      if(dFtds) delete [] dFtds; //WX:
+      if(dGtds) delete [] dGtds; //WX:
+      if(ConstitutiveMatrix) delete ConstitutiveMatrix;//WX:
       dFds = NULL;
       dGds = NULL;
       D_dFds = NULL;
       D_dGds = NULL;
+      dFtds = NULL;//WX:
+      dGtds = NULL;//WX:
+      ConstitutiveMatrix = NULL;//WX:
       d2G_dSdS=NULL;
       d2G_dSdM=NULL;
       LocalJacobi=NULL;
@@ -1636,6 +1698,36 @@ namespace SolidProp
       if(fabs(Al)<MKleinsteZahl&&fabs(Xi)< MKleinsteZahl) BetaN = 1.0;
       BetaN *= sqrt(2.0/3.0);
       Hard_Loc = (*data_Plasticity)(4);
+	  tension = (*data_Plasticity)(5);      //WX:
+   }
+
+   void CSolidProperties::CalculateCoefficent_MOHR(double ep)	//WX:11.2010
+   {
+	  int valid=1;
+      double theta = (*data_Plasticity)(1)*PI/180;
+      Y0 = (*data_Plasticity)(0);
+	  if((*data_Plasticity)(5)>0 && (*data_Plasticity)(5)<100)
+		  theta = GetCurveValue((int)(*data_Plasticity)(5),0,ep,&valid)*PI/180;
+	  if((*data_Plasticity)(4)>0 && (*data_Plasticity)(4)<100)
+		  Y0 = GetCurveValue((int)(*data_Plasticity)(4),0,ep,&valid);
+      double phi = (*data_Plasticity)(2)*PI/180;
+	  Ntheta = (1+sin(theta))/(1-sin(theta));
+      Nphi = (1+sin(phi))/(1-sin(phi));
+      tension = (*data_Plasticity)(3);
+
+      if(tension<0||tension>Y0/tan(theta))
+         tension=Y0/tan(theta);
+      csn=2*Y0*sqrt(Ntheta);
+   }
+
+   void CSolidProperties::CalculateCoefficent_HOEKBROWN()      //WX: 02.2011
+   {
+	   HoekB_a = (*data_Plasticity)(0);
+	   HoekB_s = (*data_Plasticity)(1);
+	   HoekB_mb = (*data_Plasticity)(2);
+	   HoekB_sigci = (*data_Plasticity)(3);
+	   HoekB_tens = HoekB_s*HoekB_sigci/HoekB_mb;
+	   HoekB_cohe = HoekB_sigci*pow(HoekB_s,HoekB_a);
    }
 
    /**************************************************************************
@@ -1949,6 +2041,447 @@ namespace SolidProp
       return ploading;
    }
 
+   //WX
+   int CSolidProperties::DirectStressIntegrationDPwithTension(const int GPiGPj, Matrix *De,
+                const ElementValue_DM *ele_val, double *TryStress, const int Update, double &mm)
+   {
+      int i = 0, j = 0, m=0, m_max=100;
+      double I1 = 0.0;
+      double sy0, sy, ep, dlambda=0.0, tmpvalue=0., tmpvalue2=0., sqrtJ2I1;	//dTaun, dSign,
+      double F = 0.0, Ft = 0, yy; //, yl; Ft: tension failure WX: 11.08.2010
+      double R=1.0;
+      double sqrtJ2 = 0.0;
+      double A_H = 0.0, domA=0.0;
+      double dstrs[6];
+      double dTempStr[6] ={0.}, dTempStr2[6] ={0.}, TmpStress0[6] ={0}, dStrainP[6] = {0.};
+      bool ploading = false;
+      const int Size = ele_val->Stress->Rows();
+      double H=0;	//
+      int failurestate = 0;
+
+     //static double DevStress[6];
+
+      int Dim = 2;
+      if(Size>4) Dim = 3;
+
+      // Get the total effective plastic strain
+      ep = (*ele_val->pStrain)(GPiGPj);
+
+      for(i=0; i<Size; i++)
+      {
+        dstrs[i] = TryStress[i];  // d_stress
+        TryStress[i] = (*ele_val->Stress)(i, GPiGPj); // stress_0
+        devS[i] = TryStress[i] + dstrs[i];
+	    tmpvalue += fabs(dstrs[i]);
+      }
+
+
+      I1 = DeviatoricStress(devS);
+      sqrtJ2 = sqrt(TensorMutiplication2(devS, devS, Dim));
+      Hard=0;	//WX:20.09.2010. no hardning in this model
+
+   //
+      sy = sqrtJ2 + Al*I1;
+      yy = BetaN*(Y0+Hard*ep);
+
+      sqrtJ2I1 = yy-Al*3*tension;
+      if(tension<0)
+      	  tension = 0;
+      if(tension>(yy/Al/3.0))
+	     tension = yy/Al/3.0;	//WX: tension strength must be positiv and has a max limit.
+
+      F = sy - yy;
+      Ft = I1/3 - tension;	//WX: 11.08.2010  tension strength.
+      double Tau_P = (BetaN*Y0 - 3*Al*tension)/sqrt(2.0);
+      double Al_P = sqrt(1+4.5*Al*Al) - (3 * Al / (sqrt(2.0)));
+      H = sqrtJ2/sqrt(2.0) - Tau_P - (Al_P * (I1/3 - tension));	//WX:16.09.2010.correct H.
+      sy0 = (*ele_val->y_surface)(GPiGPj);
+
+      if(tmpvalue==0)
+      	  Ft = F = -1;
+
+      if(F>0.0&&(!PreLoad))
+      {
+	  //return to Fs
+	     Matrix *tmpMatrix = new Matrix(Size,Size);
+	     for(i=0; i<Size; i++)
+	     {
+		     D_dGds[i] = 0.0;	//initialisation
+		     dFds[i] = devS[i]/(sqrtJ2*sqrt(2.0));
+		     dGds[i] = dFds[i];
+		     if(i<3)
+		     {
+			     dFds[i] += Al/sqrt(2.0);
+			     dGds[i] += Xi/sqrt(2.0);
+		     }
+	     }
+
+	     De->multi(dGds, D_dGds);
+	     tmpvalue=0.;
+	     for(i=0;i<Size;i++)
+		     tmpvalue += dFds[i]*D_dGds[i];
+
+	     for(i=0;i<Size;i++)
+		     for(j=0;j<Size;j++)
+			     (*tmpMatrix)(i,j)=D_dGds[i]*dFds[j];
+
+	     for(i=0;i<Size;i++)
+	     {
+		     if(i<3)
+			     dTempStr2[i] = TryStress[i]+dstrs[i]-yy/Al/3.0;
+		     else
+			     dTempStr2[i] = TryStress[i]+dstrs[i];
+	     }
+	     tmpMatrix->multi(dTempStr2, dTempStr);
+
+	     for(i=0; i<Size; i++)
+	     {
+		     dTempStr[i] /= tmpvalue;
+		     TryStress[i] += dstrs[i]-dTempStr[i];
+	     }
+
+	     tmpvalue = (TryStress[0]+TryStress[1]+TryStress[2])/3.0;
+	     if((tmpvalue-tension)<MKleinsteZahl)
+	     {
+		     failurestate = 1;	//shear
+		     delete tmpMatrix;
+	     }
+	     else
+	     {
+		     //return to Ft
+		     for(i=0;i<Size;i++)
+		     {
+			     dFtds[i]=dGtds[i]=1.0/3.0;
+			     if(i>2)
+			  	     dFtds[i]=dGtds[i]=0.0;
+		     }
+		     for(i=0;i<3;i++)
+		     {
+			     TryStress[i] = (*ele_val->Stress)(i, GPiGPj)+dstrs[i];
+		     }
+		     I1 = TryStress[0]+TryStress[1]+TryStress[2];
+		     dTempStr[0] = dTempStr[1] = dTempStr[2] = I1/3.0-tension;
+		     for(i=3; i<Size; i++)
+			     dTempStr[i] = 0.0;
+             for(i=0; i<Size; i++)
+		     {
+			     TryStress[i] = (*ele_val->Stress)(i, GPiGPj)+dstrs[i]-dTempStr[i];
+		     }
+
+		     for(i=0; i<Size; i++)
+		     {
+			     devS[i] = TryStress[i];
+		     }
+
+      		 I1 = DeviatoricStress(devS);
+		     sqrtJ2 = sqrt(TensorMutiplication2(devS, devS, Dim));
+
+		     if(sqrtJ2<=sqrtJ2I1)
+		     {
+			     if((dstrs[0]+dstrs[1]+dstrs[2])!=0.0)
+				     mm = (3*tension-((*ele_val->Stress)(0, GPiGPj)+(*ele_val->Stress)(1, GPiGPj)+(*ele_val->Stress)(2, GPiGPj)))/(dstrs[0]+dstrs[1]+dstrs[2]);
+			     else
+				     mm=1.;
+			     //mm:  Ft(stress0 + mm*dstrs)=0	for Dep calculation
+			     failurestate = 2; //tensile failure
+		     }
+		     else
+			 {
+			  //return to corner between Fs and Ft
+			     double A, B, C;
+		   	     Matrix *tmpMatrix = new Matrix(Size,Size);
+			     for(i=0;i<Size;i++)		//initialize stress devstress
+			     {
+				     TryStress[i] = (*ele_val->Stress)(i, GPiGPj);
+				     devS[i] = TryStress[i] + dstrs[i];
+				   //  cout<<devS[i]<<endl;
+			     }
+			    // cout<<"sigmaB_End"<<endl;
+
+			     I1 = DeviatoricStress(devS);
+
+			     for(i=0; i<Size; i++)
+			     {
+				     D_dGds[i] = 0.0;	//initialization
+				     dFds[i] = devS[i]/(sqrtJ2*sqrt(2.0));
+				     dGds[i] = dFds[i];
+				     if(i<3)
+				     {
+				      	  dFds[i] += Al/sqrt(2.0);
+				   	     dGds[i] += Xi/sqrt(2.0);
+				     }
+			     }
+
+			     De->multi(dGds, D_dGds);
+			     tmpvalue =0.;
+			     for(i=0;i<Size;i++)
+				     tmpvalue += dFds[i]*D_dGds[i];
+
+			     for(i=0;i<Size;i++)
+				     for(j=0;j<Size;j++)
+					     (*tmpMatrix)(i,j)=D_dGds[i]*dFds[j];
+
+			     for(i=0;i<Size;i++)
+			     {
+				     dTempStr[i] = 0.0;
+				     if(i<3)
+					     dTempStr2[i] = TryStress[i]+dstrs[i]-yy/Al/3.0;
+				     else
+					     dTempStr2[i] = TryStress[i]+dstrs[i];
+			     }
+			     tmpMatrix->multi(dTempStr2, dTempStr);
+			     for(i=0;i<Size;i++)
+			     {
+				     dTempStr[i] /=tmpvalue;
+				     TryStress[i] += dstrs[i];
+				    // cout<<dTempStr[i]<<"||"<<TryStress[i]<<endl;
+			     }
+			   //  cout<<"delta sigmaP__SigmaB__End"<<endl;
+
+			     double dI1;
+			     I1 = DeviatoricStress(TryStress);
+			     dI1 = DeviatoricStress(dTempStr);
+
+			     A = 0.;
+			     for(i=0;i<Size;i++)
+			     {
+			      	  if(i<3)
+				   	     A += dTempStr[i]*dTempStr[i];
+				     else
+					     A += 2*dTempStr[i]*dTempStr[i];
+			     }
+
+			     B=0.;
+			     for(i=0;i<Size;i++)
+			     {
+			   	     if(i<3)
+					     B += -2*TryStress[i]*dTempStr[i];
+				     else
+					     B += -4*TryStress[i]*dTempStr[i];
+			     }
+
+			     C = 0.;
+			     for(i=0;i<Size;i++)
+			     {
+				     if(i<3)
+					     C += TryStress[i]*TryStress[i];
+				     else
+					     C += 2*TryStress[i]*TryStress[i];
+			     }
+			     C -= sqrtJ2I1*sqrtJ2I1;
+
+			     if((B*B-4*A*C)<0.0||(A==0))
+				     tmpvalue = 1.0;
+			     else
+			     {
+				     tmpvalue = (-B-sqrt(B*B-4*A*C))/(2*A);
+				     if(tmpvalue<0)
+				     {
+					     tmpvalue = (-B+sqrt(B*B-4*A*C))/(2*A);
+					     if(tmpvalue>1)
+						     tmpvalue =1;
+				     }
+			     }
+
+			     double tmpStr[6] = {0.};
+			     for(i=0;i<Size;i++)
+			     {
+				     if(i<3)
+					     tmpStr[i] = (TryStress[i]+I1/3.0)-tmpvalue*(dTempStr[i]+dI1/3.0);
+				     else
+					     tmpStr[i] = TryStress[i]-tmpvalue*dTempStr[i];
+			     }
+			     double tmpI1 = 0.;
+			     tmpI1 = DeviatoricStress(tmpStr);
+
+			     for(i=0;i<Size;i++)
+			     {
+				     if(i<3)
+					     TryStress[i] = tmpStr[i]+tension;
+				     else
+					     TryStress[i] = tmpStr[i];
+				  //test
+				  //cout<<TryStress[i]<<endl;
+			     }
+			     failurestate=3;	//corner
+
+
+			  if(Update<1) //calculate mm for Dep
+			  {
+				  double m1, m2, n1, n2, dI2;
+
+				  m1 = tmpvalue;
+
+				  for(i=0;i<Size;i++)		//initialize stress devstress
+				  {
+					  TmpStress0[i] = (*ele_val->Stress)(i, GPiGPj);
+					  dTempStr[i] = dstrs[i];
+					  dTempStr2[i] = TmpStress0[i] + dstrs[i];	//stress0+dstrs
+					  //  cout<<devS[i]<<endl;
+				  }
+				  I1 = DeviatoricStress(TmpStress0);
+				  dI1 = DeviatoricStress(dTempStr);
+				  dI2 = DeviatoricStress(dTempStr2);
+
+				  if(tmpI1>3*tension)
+					  n1 = (tmpI1-3*tension)/(dI2-3*tension);	//n1 =  (I1(sigtmp)-I1(tension))/ (I1(SigB)-I1(tension))
+				  else
+					  n1 = 0;
+				  if(dI1!=0.0)
+				  {
+					  n2 = (3*tension-I1)/dI1;
+					  if(n2<0)
+						  n2 = 0.;
+				  }
+				  else
+					  n2 = 1.;
+
+				  A = 0.;
+				  for(i=0; i<Size; i++)
+				  {
+					  if(i<3)
+						  A -= dTempStr[i]*dTempStr[i];
+					  else
+						  A -= 2*dTempStr[i]*dTempStr[i];
+				  }
+				  A += (Al*dI1)*(Al*dI1);
+
+				  B =0.;
+				  for(i=0; i<Size; i++)
+				  {
+					  if(i<3)
+						  B -= 2*TmpStress0[i]*dTempStr[i];
+					  else
+						  B -= 4*TmpStress0[i]*dTempStr[i];
+				  }
+				  B += 2*(Al*I1-yy)*Al*dI1;
+
+				  C = 0.;
+				  for(i=0; i<Size; i++)
+				  {
+					  if(i<3)
+						  C -= TmpStress0[i]*TmpStress0[i];
+					  else
+						  C -= 2*TmpStress0[i]*TmpStress0[i];
+				  }
+				  C += (Al*I1-yy)*(Al*I1-yy);
+
+				  if(((B*B-4*A*C)<0)||(A==0))
+					  m2 = 1;
+				   else
+				   {
+					   m2 = (-B-sqrt(B*B-4*A*C))/(2*A);
+					   if(m2<0)
+					   {
+						   m2 = (-B+sqrt(B*B-4*A*C))/(2*A);
+						   if(m2>1)
+							   m2 =0;
+					   }
+				  }
+
+				  Matrix *Dp_shear = new Matrix (Size,Size);
+				  Matrix *Dp_tension = new Matrix (Size,Size);
+				  Matrix *M_ds = new Matrix (Size,Size);	//dGsds*dFsdsT
+
+				  tmpvalue = 0.;		//dFsdsT*De*dGsds
+				  tmpvalue2 =0.;		//dFtdsT*De*dGtds
+
+				  for(i=0;i<3;i++)
+					  for(j=0;j<3;j++)
+						  (*Dp_tension)(i,j)=K;
+
+				  for(i=0;i<Size;i++)
+					  tmpvalue += dFds[i]*D_dGds[i];
+
+				  for(i=0;i<Size;i++)
+					  for(j=0; j<Size; j++)
+						  (*M_ds)(i,j)=dGds[i]*dFds[j];
+				  De->multi(*M_ds, *De, *Dp_shear);
+
+				  *Dp_shear /= tmpvalue;
+
+				  ConstitutiveMatrix->resize(Size,Size);
+
+
+				  for(i=0;i<Size;i++)
+					  for(j=0;j<Size;j++)
+						  (*ConstitutiveMatrix)(i,j)=(*De)(i,j) - (1-m2)*m1*(*Dp_shear)(i,j)  - (1-n2)*n1*(*Dp_tension)(i,j);
+
+				  delete Dp_shear;
+				  delete Dp_tension;
+				  delete M_ds;
+
+			  }
+
+			  delete tmpMatrix;
+		  }
+
+	  }
+   }
+   else if(Ft>0)	//muss be tensile
+   {
+	  for(i=0;i<Size;i++)
+	  {
+		  dFtds[i]=dGtds[i]=1.0/3.0;
+		  if(i>2)
+			  dFtds[i]=dGtds[i]=0.0;
+	  }
+
+	  for(i=0;i<Size;i++)
+	   {
+		   TryStress[i] = (*ele_val->Stress)(i, GPiGPj)+dstrs[i];
+	   }
+	   I1 = TryStress[0]+TryStress[1]+TryStress[2];
+
+	   dTempStr[0] = dTempStr[1] = dTempStr[2] = I1/3.0-tension;
+	   for(i=3; i<Size; i++)
+		   dTempStr[i] = 0.0;
+
+	   for(i=0; i<Size; i++)
+	   {
+		   TryStress[i] -= dTempStr[i];
+	   }
+	   if((dstrs[0]+dstrs[1]+dstrs[2])!=0.0)
+		   mm = (3*tension-((*ele_val->Stress)(0, GPiGPj)+(*ele_val->Stress)(1, GPiGPj)+(*ele_val->Stress)(2, GPiGPj)))/(dstrs[0]+dstrs[1]+dstrs[2]);
+	   else
+		   mm =1.;
+	   failurestate = 2;	//tensile failure
+   }
+
+   if(F<=0&&Ft<=0)
+   {
+     for(i=0; i<Size; i++)
+       TryStress[i] += dstrs[i];
+	 failurestate = 0;
+   }
+
+   //update ep
+   if(failurestate!=0)
+   {
+	  for(i=0;i<Size;i++)
+	  {
+		  dTempStr[i]=(*ele_val->Stress)(i, GPiGPj)+dstrs[i]-TryStress[i];	//d plas stress
+		  dStrainP[i] = 0.;
+	  }
+
+	  Matrix *invDe = new Matrix (Size,Size);
+	  Cal_Inv_Matrix(Size, De, invDe);
+
+	  invDe->multi(dTempStr,dStrainP);
+
+	  ep += sqrt(TensorMutiplication2(dStrainP,dStrainP,Dim))*sqrt(2.0/3.0);
+	  delete invDe;
+   }
+   // Save the current stresses
+   if(Update>0)
+   {
+     (*ele_val->pStrain)(GPiGPj) = ep;
+     (*ele_val->y_surface)(GPiGPj) = sy;
+   }
+   //return ploading;
+   return failurestate;
+   }
+
    /**************************************************************************
     ROCKFLOW - Funktion: CSolidProperties::ConsistentTangentialDP
 
@@ -1993,6 +2526,970 @@ namespace SolidProp
 
       //Dep->Write();
    }
+
+//WX: return to shear
+   void CSolidProperties::TangentialDP2(Matrix *Dep)
+   {
+   int i, j, Size;
+   double sqrtJ2;
+   //
+   Size=Dep->Rows();
+
+   double dTemp2 = 0;
+   double dTempStr2[6] = {0};
+   Matrix D_temp(Size, Size) ;
+   Matrix D_temp2(Size, Size);
+   //
+   int Dim=2;
+   if (Size>4)
+	   Dim=3;
+   sqrtJ2 = sqrt(TensorMutiplication2(devS, devS, Dim));
+
+   for(i=0; i<Size; i++)
+   {
+       D_dFds[i] = 0.5*devS[i]/sqrtJ2;
+       D_dGds[i] = 0.5*devS[i]/sqrtJ2;
+   }
+   for(i=0; i<3; i++)
+   {
+       D_dFds[i] += Al;
+       D_dGds[i] += Xi;
+   }
+
+   Dep->multi(D_dGds, dTempStr2);
+   for (i=0; i<Size; i++)
+	   dTemp2 += D_dFds[i]*dTempStr2[i];
+
+   for(i=0; i<Size; i++)
+	   for(j=0; j<Size; j++)
+		   D_temp(i,j)=D_dGds[i]*D_dFds[j];
+
+   Dep->multi(D_temp, *Dep, D_temp2);
+
+   //
+   for(i=0; i<Size; i++)
+   {
+      for(j=0; j<Size; j++)
+        (*Dep)(i,j) -= D_temp2(i,j)/dTemp2;
+   }
+   }
+
+//WX: return to tension
+   void CSolidProperties::TangentialDPwithTension(Matrix *Dep, double mm)
+   {
+    int i, j, Size;
+ //  double domA;
+   Size=Dep->Rows();
+  // double dTemp2 = 0;
+  // double dTempStr3[6] = {0};
+   Matrix *D_temp = new Matrix (Size, Size) ;
+   for(i=0;i<3;i++)
+	   for(j=0;j<3;j++)
+		   (*D_temp)(i,j) = K;
+   //Matrix D_temp2(Size, Size);
+   //mm=0.;
+	/*
+   Dep->multi(dGtds, dTempStr3);	// dTemp = De * dGt/ds
+
+   for(i=0; i<Size; i++)
+	   dTemp2 += dFtds[i] * dTempStr3[i];	// dFt/ds^T * De * dGt/ds
+
+   double dTemp3 = 1.0/dTemp2;	// 1/ dFt/ds^T * De * dGt/ds
+
+   for(int i=0; i<3; i++)
+	   for(int j=0; j<3; j++)
+		   D_temp(i,j)=1.0/9.0;
+
+	Dep->multi(D_temp, *Dep, D_temp2);
+	*/
+
+	 for (i=0; i<Size; i++)
+	 {
+		 for (j=0; j<Size; j++)
+			 (*Dep)(i,j) = mm*(*Dep)(i,j) + (1-mm)*((*Dep)(i,j)- (*D_temp)(i,j));
+	 }
+	 delete D_temp;
+   }
+
+//WX: return to corner
+   void CSolidProperties::TangentialDPwithTensionCorner(Matrix *Dep, double mm)
+   {
+	//return to corner
+      *Dep = *ConstitutiveMatrix;
+      //Dep->Write();
+   }
+
+//WX: Mohr Coulomb
+int CSolidProperties::DirectStressIntegrationMOHR(const int GPiGPj, const ElementValue_DM *ele_val,
+		double *TryStress, const int Update, Matrix *Dep )
+{
+	int i, j;
+	int yield = 0;
+	int Dim = 2;
+	int Size = ele_val->Stress->Rows();
+	double TmpValue1, TmpValue2, dstrNorm = 0;
+	//double LodeAngle, I1, J2, J3;
+	double shearsurf, tensionsurf, ep;
+	LoadFactor = 1.;
+
+	//initialize all vectors
+	double dstrs[6] = {0.}, TmpStress[6] = {0.}, prin_str[6] = {0.}, prin_str0[6] = {0.}, prin_dir[9] = {0.};
+
+	Matrix *TransMatrixA = new Matrix (Size,Size);
+	Matrix *TransMatrixA_T = new Matrix (Size,Size);
+	Matrix *Inv_TransA = new Matrix (Size, Size);
+	Matrix *Inv_TransA_T = new Matrix (Size, Size);
+	Matrix *TmpDe = new Matrix (Size,Size);
+	//Matrix *PrinDe = new Matrix (Size, Size);
+	Matrix *Inv_De = new Matrix (Size,Size);
+	Matrix *TMatrix = new Matrix (Size,Size);
+	Matrix *TmpMatrix = new Matrix (Size,Size);
+	Matrix *Dep_l = new Matrix (3, 3);
+	Matrix *dDep_l = new Matrix (3, 3);
+
+	*TmpDe = *Dep;
+
+	ConstitutiveMatrix->resize(Size,Size);		//in head already defined, and is used for later as global variable
+
+	ep = (*ele_val->pStrain)(GPiGPj);			//get equ plas strain
+	CalculateCoefficent_MOHR(ep);
+
+	if(Size>4) Dim = 3;
+
+	for(int i=0; i<Size; i++)
+	{
+		dstrs[i] = TryStress[i];  // d_stress
+		TryStress[i] = (*ele_val->Stress)(i, GPiGPj); // stress_0
+		devS[i] = TryStress[i] + dstrs[i];
+		TmpStress[i]=devS[i];
+		dstrNorm += dstrs[i]*dstrs[i];
+	}
+	if(Size==4)
+		devS[4]=devS[5]=0.;
+
+	////////////
+	/*/test
+	devS[0]=TmpStress[0]=-1.5356885185724423e-006;
+	devS[1]=TmpStress[1]=5250.0000001923481;
+	devS[2]=TmpStress[2]=2.1768577340708362e-6;
+	devS[3]=TmpStress[3]=-5.7126080120270688e-007;
+	devS[4]=TmpStress[4]=-2.8646737121460246e-007;
+	devS[5]=TmpStress[5]=7.9612875121132550e-007;
+
+	*////////////
+	//test
+	CalPrinStrDir(devS, prin_str, prin_dir, Dim);
+
+	//CalPrinStrs(devS, prin_str, Size);  //prin. stresses guess
+	//CalPrinDir(prin_str, TmpStress, prin_dir, Size);
+	CalTransMatrixA(prin_dir, TransMatrixA, Size);
+	TransMatrixA->GetTranspose(*TransMatrixA_T);
+	Cal_Inv_Matrix(Size, TransMatrixA, Inv_TransA);
+	Inv_TransA->GetTranspose(*Inv_TransA_T);
+	//Inv_TransA_T->multi(*Dep, *Inv_TransA, *PrinDe);  //De in prin. (A^-T De A^-1)
+
+	double TmpStress0[6]={0.}, tmp_prin_str[6]={0.}, tmp_prin_dir[9]={0.};
+	for (i=0;i<Size;i++)
+	{
+		TmpStress0[i] = TryStress[i];
+	}
+	if (Size == 4)
+		TmpStress0[4] = TmpStress[5] = 0.;
+
+	//CalPrinStrs(TmpStress0, tmp_prin_str, Size);
+	CalPrinStrDir(TmpStress0, tmp_prin_str, tmp_prin_dir, Dim);  //prin. stresses t0
+
+	/*/////////
+	double tmpresult[6]={0.};
+	TransMatrixA_T->multi(prin_str, tmpresult);
+	for(i=0; i<Size; i++)
+		cout<<tmpresult[i]<<endl;
+	*//////////
+
+	shearsurf=Ntheta*prin_str[0]-prin_str[2]-csn;
+	tensionsurf=prin_str[0]-tension;
+	if(dstrNorm == 0)
+	{
+		shearsurf = -1;
+		tensionsurf = -1;
+	}
+	if((shearsurf>0)||(tensionsurf>0))
+	{
+		double P_12, P_31, P_41, P_63, P_64, P_52, P_85, P_74, P_78, P_98, P_45, P_X7;
+		double t1, t2, t1ra ,t1r1, t2ra, t2r2, t3r1, t3r2;
+		double fkt1, fkt2;
+		double mm = 0.;
+
+		double l1[6] = {0.},l2[6] = {0.},l1g[6] = {0.},l2g[6] = {0.},l1R[6] = {0.},l2R[6] = {0.},l3R[6] = {0.};
+		double rsp[6] = {0.},rtp[6] = {0.};
+		double sigA[6] = {0.},sig1R[6] = {0.},sig2R[6] = {0.},sigaR[6] = {0.};
+		double dFsdprin_s[6] = {0.},dFtdprin_s[6] = {0.},dGsdprin_s[6] = {0.},dGtdprin_s[6] = {0.};
+		double De_dGsdprin_s[6] = {0.},De_dGtdprin_s[6] = {0.};
+		double dStressP[6] = {0.},dStrainP[6] = {0.};
+		double cVec[6] = {0};
+
+		yield = 1;
+		fkt1 = 0.001;
+		fkt2 = 0.01;
+		sigA[0] = sigA[1] = sigA[2] = csn/(Ntheta-1);
+		sig1R[0] = sig1R[1] = sig2R[0] = tension;
+		sig1R[2] = sig2R[1] = sig2R[2] = Ntheta*tension-csn;
+		sigaR[0] = sigaR[1] = sigaR[2] = tension;
+
+		l1[0] = l1[1] = l1g[0] = l1g[1] = l2[0] = l2g[0] = 1.;
+		l1[2] = l2[1] = l2[2] = Ntheta;
+		l1g[2] = l2g[1] = l2g[2] = Nphi;
+		l1R[2] = l2R[1] = l2R[2] = l3R[1] = 1.;
+
+		dFsdprin_s[0] = Ntheta;
+		dGsdprin_s[0] = Nphi;
+		dFsdprin_s[2] = dGsdprin_s[2] = -1.;
+		TmpDe->multi(dGsdprin_s, De_dGsdprin_s);
+		//PrinDe->multi(dGsdprin_s, De_dGsdprin_s);//
+		TmpValue1 = 0.;
+		for(i=0; i<Size; i++)
+			TmpValue1 += dFsdprin_s[i]*De_dGsdprin_s[i];
+		for(i=0; i<Size; i++)
+			rsp[i] = De_dGsdprin_s[i]/TmpValue1;
+
+		dFtdprin_s[0] = dGtdprin_s[0] = 1.;
+		TmpDe->multi(dGtdprin_s, De_dGtdprin_s);
+		//PrinDe->multi(dGtdprin_s, De_dGtdprin_s);//
+		TmpValue2 = 0.;
+		for(i=0; i<Size; i++)
+			TmpValue2 += dFtdprin_s[i]*De_dGtdprin_s[i];
+		for(i=0; i<Size; i++)
+			rtp[i] = De_dGtdprin_s[i]/TmpValue2;
+
+		double tmp_shearsurf=Ntheta*tmp_prin_str[0]-tmp_prin_str[2]-csn;
+		double tmp_tensionsurf=tmp_prin_str[0]-tension;
+		if(((tmp_tensionsurf)==0&&(tmp_shearsurf)<=0)||((tmp_tensionsurf)<=0&&(tmp_shearsurf)==0))
+			mm = 0.;
+		else 
+			if(prin_str[0]!=tmp_prin_str[0])				
+			{
+				mm = (tension-tmp_prin_str[0])/(prin_str[0]-tmp_prin_str[0]);
+				if(mm>=0 && mm<=1)
+				{
+					double tmp_prin_str_3 = tmp_prin_str[2] + mm*(prin_str[2]-tmp_prin_str[2]);
+					if (tmp_prin_str_3 < (Ntheta*tension-csn)||tmp_prin_str_3>tension)
+						mm = (csn+tmp_prin_str[2]-Ntheta*tmp_prin_str[0])
+						/(Ntheta*(prin_str[0]-tmp_prin_str[0])-(prin_str[2]-tmp_prin_str[2]));
+				}
+				else
+					mm=(csn+tmp_prin_str[2]-Ntheta*tmp_prin_str[0])
+						/(Ntheta*(prin_str[0]-tmp_prin_str[0])-(prin_str[2]-tmp_prin_str[2]));
+			}
+			else
+				mm = (csn+tmp_prin_str[2]-Ntheta*tmp_prin_str[0])
+					/(Ntheta*(prin_str[0]-tmp_prin_str[0])-(prin_str[2]-tmp_prin_str[2]));
+				
+
+		Cal_Inv_Matrix(Size, TmpDe, Inv_De);
+		//Cal_Inv_Matrix(Size, PrinDe, Inv_De);
+
+		t1 = CalVar_t(l1, l1g, Inv_De, prin_str, sig1R, Size);
+		t2 = CalVar_t(l2, l2g, Inv_De, prin_str, sig2R, Size);
+		t1r1 = CalVar_t(l1R, l1R, Inv_De, prin_str, sig1R, Size);
+		t1ra = CalVar_t(l1R, l1R, Inv_De, prin_str, sigaR, Size);
+		t2r2 = CalVar_t(l2R, l2R, Inv_De, prin_str, sig2R, Size);
+		t2ra = CalVar_t(l2R, l2R, Inv_De, prin_str, sigaR, Size);
+		t3r1 = CalVar_t(l3R, l3R, Inv_De, prin_str, sig1R, Size);
+		t3r2 = CalVar_t(l3R, l3R, Inv_De, prin_str, sig2R, Size);
+
+		P_12 = CalVarP(rsp, l1, prin_str, sig1R);
+		P_31 = CalVarP(rsp, l2, prin_str, sig2R);
+		P_41 = CalVarP(rsp, l3R, prin_str, sig1R);
+		P_63 = 0;
+		P_45 = CalVarP(rsp, rtp, prin_str, sig1R);
+		P_64 = CalVarP(rsp, rtp, prin_str, sig2R);
+		P_52 = 0;
+		P_85 = 0;
+		P_74 = CalVarP(rtp, l3R, prin_str, sig1R);
+		P_78 = CalVarP(rtp, l1R, prin_str, sig1R);
+		P_98 = 0;
+		P_X7 = CalVarP(rtp, l2R, prin_str, sig2R);
+
+		if( P_12>=0 && P_31<=0 && P_41<=0 )	//return to fmc
+		{
+			double tmpvalue=0.;
+			Matrix *tmpMatrix2 = new Matrix (Size,Size);
+			Matrix *dGds_dFds = new Matrix (Size,Size);
+			for(i=0; i<3; i++)
+			{
+				tmpvalue += dFsdprin_s[i]*(prin_str[i]-sigA[i]);
+			}
+			for(i=0; i<3; i++)
+			{
+				prin_str0[i] = prin_str[i];
+				prin_str[i] -= tmpvalue*rsp[i];
+				dStressP[i] = prin_str[i] - prin_str0[i];
+			}
+			Inv_De->multi(dStressP,dStrainP);
+			for(i=0; i<3; i++)
+				for(j=0; j<3; j++)
+					(*dGds_dFds)(i,j) = rsp[i]*dFsdprin_s[j];		//(D*dGds/(dFds*D*dGds))*dFds
+			dGds_dFds->multi(*TmpDe, *tmpMatrix2);
+			//dGds_dFds->multi(*PrinDe, *tmpMatrix2);
+			*TmpDe -= *tmpMatrix2;
+			//*PrinDe -= *tmpMatrix2;
+			for(i=3; i<Size; i++)
+				(*TmpDe)(i,i) = G;
+			//*TmpDe = *PrinDe;
+
+			delete tmpMatrix2;
+			delete dGds_dFds;
+		}
+		else if( P_12<0 && t1<0 )		//return to l1
+		{
+			for(i=0; i<3; i++)
+			{
+				prin_str0[i] = prin_str[i];
+				prin_str[i] = t1*l1[i] + sig1R[i];
+				dStressP[i] = prin_str[i] - prin_str0[i];
+			}
+			Inv_De->multi(dStressP,dStrainP);					//dstrainP = D-1 * dstressp
+			VecCrossProduct(dStrainP,l1g,cVec);					//cVec = dstrainP X l1g
+
+			CalDep_l(l1, l1g, Inv_De, Dep_l, 1);				//Dep_l = l*lgT/(lT*D-1*lg)
+			CalDep_l(cVec, cVec, Inv_De, dDep_l, fkt2);			//dDep_l = fkt2*cVec*cVecT/(cVecT*D-1*cVec)
+			*TmpDe=(0.);
+			for(i=0; i<3; i++)
+				for(j=0; j<3; j++)
+					(*TmpDe)(i,j) = (*Dep_l)(i,j)+(*dDep_l)(i,j);
+			for(i=3; i<Size; i++)
+				(*TmpDe)(i,i) = G;
+
+		}
+		else if( P_31>0 && t2<0 )		//return to l2
+		{
+			for(i=0; i<3; i++)
+			{
+				prin_str0[i] = prin_str[i];
+				prin_str[i] = t2*l2[i] + sig2R[i];
+				dStressP[i] = prin_str[i] - prin_str0[i];
+			}
+			Inv_De->multi(dStressP,dStrainP);
+			VecCrossProduct(dStrainP,l2g,cVec);
+			CalDep_l(l2, l2g, Inv_De, Dep_l, fkt2);
+			CalDep_l(cVec, cVec, Inv_De, dDep_l, fkt2);
+			*TmpDe=(0.);
+			for(i=0; i<3; i++)
+				for(j=0; j<3; j++)
+					(*TmpDe)(i,j) = (*Dep_l)(i,j)+(*dDep_l)(i,j);
+			for(i=3; i<Size; i++)
+				(*TmpDe)(i,i) = G;
+
+		}
+		else if( P_41>0 && P_74<0 && t3r2>0 && t3r1<0 )		//return to l3R
+		{
+			for(i=0; i<3; i++)
+			{
+				prin_str0[i] = prin_str[i];
+				prin_str[i] = t3r1*l3R[i] + sig1R[i];
+				dStressP[i] = prin_str[i] - prin_str0[i];
+			}
+			Inv_De->multi(dStressP,dStrainP);
+			VecCrossProduct(dStrainP,l3R,cVec);
+			CalDep_l(l3R, l3R, Inv_De, Dep_l, fkt2);
+			CalDep_l(cVec, cVec, Inv_De, dDep_l, fkt2);
+			*TmpDe=(0.);
+			for(i=0; i<3; i++)
+				for(j=0; j<3; j++)
+					(*TmpDe)(i,j) = (*Dep_l)(i,j)+(*dDep_l)(i,j);
+			for(i=3; i<Size; i++)
+				(*TmpDe)(i,i) = G;
+		}
+		else if( P_74>=0 && P_78>=0 )		//return to ft, && P_X7<=0
+		{
+			double tmpvalue=0.;
+			Matrix *tmpMatrix2 = new Matrix (Size,Size);
+			Matrix *dGds_dFds = new Matrix (Size,Size);
+			for(i=0; i<3; i++)
+				tmpvalue += dFtdprin_s[i]*(prin_str[i]-sigaR[i]);
+			for(i=0; i<3; i++)
+			{
+				prin_str0[i] = prin_str[i];
+				prin_str[i] -= tmpvalue*rtp[i];
+				dStressP[i] = prin_str[i] - prin_str0[i];
+			}
+			Inv_De->multi(dStressP,dStrainP);
+			
+			for(i=0; i<3; i++)
+			  for(j=0; j<3; j++)
+					(*dGds_dFds)(i,j) = rtp[i]*dFtdprin_s[j];
+			dGds_dFds->multi(*TmpDe, *tmpMatrix2);
+			//dGds_dFds->multi(*PrinDe, *tmpMatrix2);
+			*TmpDe -= *tmpMatrix2;
+			//*PrinDe -= *tmpMatrix2;
+			for(i=0; i<3; i++)
+				for(j=0; j<3; j++)
+					if((*TmpDe)(i,j)==0)
+						(*TmpDe)(i,j)=(*Dep)(i,j)*1e-9;//avoid "0" in Dep
+			for(i=3; i<Size; i++)
+				(*TmpDe)(i,i) = G;
+			//*TmpDe = *PrinDe;
+			//TmpDe->Write();
+			//*TmpDe = *Dep;				//to be improved
+			delete tmpMatrix2;
+			delete dGds_dFds;
+		}
+		//else if(P_X7>0 && t2r2>0 && t2ra<0)			//return to l2R
+		//{
+		//	for(i=0; i<3; i++)
+		//	{
+		//		prin_str0[i] = prin_str[i];
+		//		prin_str[i] = t2r2*l2R[i] + sig2R[i];
+		//		dStressP[i] = prin_str[i] - prin_str0[i];
+		//	}
+		//	Inv_De->multi(dStressP,dStrainP);
+		//	VecCrossProduct(dStrainP,l2R,cVec);
+		//	CalDep_l(l2R, l2R, Inv_De, Dep_l, fkt2);
+		//	CalDep_l(cVec, cVec, Inv_De, dDep_l, fkt2);
+		//	*TmpDe=(0.);
+		//	for(i=0; i<3; i++)
+		//		for(j=0; j<3; j++)
+		//			(*TmpDe)(i,j) = (*Dep_l)(i,j)+(*dDep_l)(i,j);
+		//	for(i=3; i<Size; i++)
+		//		(*TmpDe)(i,i) = G;
+		//}
+		else if( P_78<0 && t1r1>0 && t1ra<0 )		//return to l1R
+		{
+			for(i=0; i<3; i++)
+			{
+				prin_str0[i] = prin_str[i];
+				prin_str[i] = t1r1*l1R[i] + sig1R[i];
+				dStressP[i] = prin_str[i] - prin_str0[i];
+			}
+			Inv_De->multi(dStressP,dStrainP);
+			VecCrossProduct(dStrainP,l1R,cVec);
+			CalDep_l(l1R, l1R, Inv_De, Dep_l, fkt2);
+			CalDep_l(cVec, cVec, Inv_De, dDep_l, fkt2);
+			*TmpDe=(0.);
+			for(i=0; i<3; i++)
+				for(j=0; j<3; j++)
+					(*TmpDe)(i,j) = (*Dep_l)(i,j)+(*dDep_l)(i,j);
+			for(i=3; i<Size; i++)
+				(*TmpDe)(i,i) = G;
+		}
+		else if( t2ra>=0 && t1ra>=0 )		//return to sigRa
+		{
+			double tmpvalue=0.;
+			Matrix *dGds_dFds = new Matrix (Size,Size);
+
+			for(i=0; i<3; i++)
+			{
+				prin_str0[i] = prin_str[i];
+				prin_str[i] = sigaR[i];
+				dStressP[i] = prin_str[i]-prin_str0[i];
+			}
+			Inv_De->multi(dStressP,dStrainP);
+			for(i=0; i<3; i++)
+				for(j=0; j<3; j++)
+					(*dGds_dFds)(i,j) = dStressP[i]*dStressP[j];
+			tmpvalue = 0.;
+			for(i=0; i<3; i++)
+				tmpvalue +=dStrainP[i]*dStressP[i];
+			*dGds_dFds /=tmpvalue;
+			*TmpDe -= *dGds_dFds;
+			//*PrinDe -= *dGds_dFds;
+			*TmpDe *= fkt1;
+			//*PrinDe *= fkt1;
+
+			for(i=3; i<Size; i++)
+				(*TmpDe)(i,i) = G;
+			//*TmpDe = *PrinDe;
+
+			delete dGds_dFds;
+		}
+		else if(t3r1>=0)				//return to sig1R
+		{
+			double tmpvalue=0.;
+			Matrix *dGds_dFds = new Matrix (Size,Size);
+
+			for(i=0; i<3; i++)
+			{
+				prin_str0[i] = prin_str[i];
+				prin_str[i] = sig1R[i];
+				dStressP[i] = prin_str[i]-prin_str0[i];
+			}
+			Inv_De->multi(dStressP,dStrainP);
+			for(i=0; i<3; i++)
+				for(j=0; j<3; j++)
+					(*dGds_dFds)(i,j) = dStressP[i]*dStressP[j];
+			tmpvalue = 0.;
+			for(i=0; i<3; i++)
+				tmpvalue +=dStrainP[i]*dStressP[i];
+			*dGds_dFds /=tmpvalue;
+			*TmpDe -= *dGds_dFds;
+			//*PrinDe -= *dGds_dFds;
+			*TmpDe *= fkt1;
+			//*PrinDe *= fkt1;
+			//*TmpDe = *PrinDe;
+			for(i=3; i<Size; i++)
+				(*TmpDe)(i,i) = G;
+			delete dGds_dFds;
+		}
+		else if(t3r2<=0)		//return to sig2R
+		{
+			double tmpvalue=0.;
+			Matrix *dGds_dFds = new Matrix (Size,Size);
+
+			for(i=0; i<3; i++)
+			{
+				prin_str0[i] = prin_str[i];
+				prin_str[i] = sig2R[i];
+				dStressP[i] = prin_str[i]-prin_str0[i];
+			}
+			Inv_De->multi(dStressP,dStrainP);
+			for(i=0; i<3; i++)
+				for(j=0; j<3; j++)
+					(*dGds_dFds)(i,j) = dStressP[i]*dStressP[j];
+			tmpvalue = 0.;
+			for(i=0; i<3; i++)
+				tmpvalue +=dStrainP[i]*dStressP[i];
+			*dGds_dFds /=tmpvalue;
+			*TmpDe -= *dGds_dFds;
+			//*PrinDe -= *dGds_dFds;
+			*TmpDe *= fkt1;
+			//*PrinDe *= fkt1;
+			//*TmpDe = *PrinDe;
+			for(i=3; i<Size; i++)
+				(*TmpDe)(i,i) = G;
+			delete dGds_dFds;
+		}
+		//update prin str to normal coordinate
+		for(i=0; i<Size; i++)
+			TryStress[i]=0.;
+		*ConstitutiveMatrix = (0.);
+
+		TransMatrixA_T->multi(prin_str, TryStress);			//updated stress
+/*
+		if(fabs((prin_str0[0]-prin_str0[1])/prin_str[0])<MKleinsteZahl)
+			(*TMatrix)(3,3) = 0.;
+		else
+			(*TMatrix)(3,3)=(prin_str[0]-prin_str[1])/(prin_str0[0]-prin_str0[1]);
+		if(Size==6){
+			if(fabs((prin_str0[0]-prin_str0[2])/prin_str[0])<MKleinsteZahl)
+				(*TMatrix)(4,4) = 0.;
+			else
+				(*TMatrix)(4,4)=(prin_str[0]-prin_str[2])/(prin_str0[0]-prin_str0[2]);
+			if(fabs((prin_str0[1]-prin_str0[2])/prin_str[1])<MKleinsteZahl)
+				(*TMatrix)(5,5) = 0.;
+			else
+				(*TMatrix)(5,5)=(prin_str[1]-prin_str[2])/(prin_str0[1]-prin_str0[2]);
+		}
+		for(i=3; i<Size; i++)
+			(*TmpDe)(i,i)=(*TMatrix)(i,i)*G;
+*/
+		TransMatrixA_T->multi(*TmpDe, *TransMatrixA, *ConstitutiveMatrix);		//updated Depc
+
+		for(i=0; i<Size; i++)
+			for(j=0; j<Size; j++)
+				(*ConstitutiveMatrix)(i,j) = mm*(*Dep)(i,j) + (1 - mm)*(*ConstitutiveMatrix)(i,j);
+		ep += sqrt(2.0/3.0*(TensorMutiplication2(dStrainP, dStrainP, Dim)));	//updated eff plas strain
+		//ConstitutiveMatrix->Write();
+		//if (mm<LoadFactor)
+		//	LoadFactor = mm;//WX subincrement. not sure
+
+	}
+	else
+	{
+		for(i=0; i<Size; i++)
+			TryStress[i] += dstrs[i];
+	}
+
+	if(Update>0)
+	{
+		(*ele_val->pStrain)(GPiGPj) = ep;
+	}
+
+	if(TransMatrixA) delete TransMatrixA;
+	if(TransMatrixA_T) delete TransMatrixA_T;
+	if(Inv_TransA) delete Inv_TransA;
+	if(Inv_TransA_T) delete Inv_TransA_T;
+	if(TmpDe) delete TmpDe;
+	//if(PrinDe) delete PrinDe;
+	if(Inv_De) delete Inv_De;
+	if(TMatrix) delete TMatrix;
+	if(TmpMatrix) delete TmpMatrix;
+	if(Dep_l) delete Dep_l;
+	if(dDep_l) delete dDep_l;
+
+	return 	yield;
+}
+
+//WX: calculte prin. stress and direc.
+void CSolidProperties::CalPrinStrDir(double *stress, double *prin_str, double *prin_dir, int Dim)
+{ 
+	int i,j,p,q,u,w,t,s,l;
+    double fm,cn,sn,omega,x,y,d;
+	double eps = 1e-12, TmpValue1;
+	int jt = 100;
+	int n = 3;
+	double a[9] = {0.}, v[9] = {0.}; 
+	int Tmp[3] = {0}, TmpValue2;
+	l=1;
+	p = 0;
+	q = 0;
+	for(i=0; i<3; i++)
+	{
+		a[i+i*n]=stress[i];
+	}
+	a[1]=stress[3];
+	a[3]=a[1];
+	
+	if(Dim==2)
+	{
+		a[2]=0;
+		a[6]=0;
+		a[5]=0;
+		a[7]=0;
+	}
+	else
+	{
+		a[2]=stress[4];
+		a[6]=a[2];
+		a[5]=stress[5];
+		a[7]=a[5];
+	}
+
+
+    for (i=0; i<=n-1; i++)
+	{ 
+	v[i*n+i]=1.0;
+        for (j=0; j<=n-1; j++)
+		{
+		if (i!=j) 
+			{
+			v[i*n+j]=0.0;
+			}
+		}
+	}
+    while (1==1)
+	{ 
+		fm=0.0;
+        for (i=0; i<=n-1; i++)
+		{
+			for (j=0; j<=n-1; j++)
+			{ 
+				d=fabs(a[i*n+j]);
+				if ((i!=j)&&(d>fm))
+				{ 
+					fm=d; 
+					p=i; 
+					q=j;
+				}
+			}
+		}
+        if (fm<eps)  
+		{
+			break;
+		}
+        if (l>jt)  
+		{
+			break;
+		}
+        l=l+1;
+        u=p*n+q; 
+		w=p*n+p; 
+		t=q*n+p; 
+		s=q*n+q;
+        x=-a[u];
+		y=(a[s]-a[w])/2.0;
+        omega=x/sqrt(x*x+y*y);
+        if (y<0.0)
+		{
+			omega=-omega;
+		}
+        sn=1.0+sqrt(1.0-omega*omega);
+        sn=omega/sqrt(2.0*sn);
+        cn=sqrt(1.0-sn*sn);
+        fm=a[w];
+        a[w]=fm*cn*cn+a[s]*sn*sn+a[u]*omega;
+        a[s]=fm*sn*sn+a[s]*cn*cn-a[u]*omega;
+        a[u]=0.0;
+		a[t]=0.0;
+        for (j=0; j<=n-1; j++)
+		{
+			if ((j!=p)&&(j!=q))
+			{ 
+				u=p*n+j;
+				w=q*n+j;
+				fm=a[u];
+				a[u]=fm*cn+a[w]*sn;
+				a[w]=-fm*sn+a[w]*cn;
+			}
+		}
+        for (i=0; i<=n-1; i++)
+		{
+			if ((i!=p)&&(i!=q))
+            { 
+				u=i*n+p; 
+				w=i*n+q;
+				fm=a[u];
+				a[u]=fm*cn+a[w]*sn;
+				a[w]=-fm*sn+a[w]*cn;
+            }
+		}
+        for (i=0; i<=n-1; i++)
+		{ 
+			u=i*n+p; 
+			w=i*n+q;
+            fm=v[u];
+            v[u]=fm*cn+v[w]*sn;
+            v[w]=-fm*sn+v[w]*cn;
+		}
+	}
+
+	for(i=0; i<3; i++)
+	{
+		prin_str[i]=a[i*n+i];
+		Tmp[i]=i;
+	}
+	
+	for (i=0; i<3; i++)
+	{
+		for (j=i+1; j<3; j++)
+		{
+			if(prin_str[i]<prin_str[j])
+			{
+				TmpValue1 = prin_str[i];
+				prin_str[i] = prin_str[j];
+				prin_str[j] = TmpValue1;
+				TmpValue2 = Tmp[i];
+				Tmp[i] = Tmp[j];
+				Tmp[j] = TmpValue2;
+			}
+		}
+	}
+
+	for(i=0;i<3;i++)
+		for(j=0;j<3;j++)
+			prin_dir[j*3+i] = v[j*3+Tmp[i]];
+	
+}
+
+//WX: calculate transform matrix between normal stress and principal stress
+void CSolidProperties::CalTransMatrixA(double *v, Matrix *A, int Size)
+{
+	if(Size==4)
+	{
+		//row 1
+		(*A)(0,0) = v[0]*v[0];
+		(*A)(0,1) = v[3]*v[3];
+		(*A)(0,2) = v[6]*v[6];
+		(*A)(0,3) = v[0]*v[3];
+		//row 2
+		(*A)(1,0) = v[1]*v[1];
+		(*A)(1,1) = v[4]*v[4];
+		(*A)(1,2) = v[7]*v[7];
+		(*A)(1,3) = v[1]*v[4];
+		//row 3
+		(*A)(2,0) = v[2]*v[2];
+		(*A)(2,1) = v[5]*v[5];
+		(*A)(2,2) = v[8]*v[8];
+		(*A)(2,3) = v[2]*v[5];
+		//row 4
+		(*A)(3,0) = 2*v[0]*v[1];
+		(*A)(3,1) = 2*v[3]*v[4];
+		(*A)(3,2) = 2*v[6]*v[7];
+		(*A)(3,3) = v[0]*v[4]+v[1]*v[3];
+	}
+	else
+	{
+		//row 1
+		(*A)(0,0) = v[0]*v[0];
+		(*A)(0,1) = v[3]*v[3];
+		(*A)(0,2) = v[6]*v[6];
+		(*A)(0,3) = v[0]*v[3];
+		(*A)(0,4) = v[0]*v[6];
+		(*A)(0,5) = v[3]*v[6];
+		//row 2
+		(*A)(1,0) = v[1]*v[1];
+		(*A)(1,1) = v[4]*v[4];
+		(*A)(1,2) = v[7]*v[7];
+		(*A)(1,3) = v[1]*v[4];
+		(*A)(1,4) = v[7]*v[1];
+		(*A)(1,5) = v[4]*v[7];
+		//row 3
+		(*A)(2,0) = v[2]*v[2];
+		(*A)(2,1) = v[5]*v[5];
+		(*A)(2,2) = v[8]*v[8];
+		(*A)(2,3) = v[2]*v[5];
+		(*A)(2,4) = v[2]*v[8];
+		(*A)(2,5) = v[5]*v[8];
+		//row 4
+		(*A)(3,0) = 2*v[0]*v[1];
+		(*A)(3,1) = 2*v[3]*v[4];
+		(*A)(3,2) = 2*v[6]*v[7];
+		(*A)(3,3) = v[0]*v[4]+v[1]*v[3];
+		(*A)(3,4) = v[6]*v[1]+v[7]*v[0];
+		(*A)(3,5) = v[3]*v[7]+v[4]*v[6];
+		//row 5
+		(*A)(4,0) = 2*v[2]*v[0];
+		(*A)(4,1) = 2*v[5]*v[3];
+		(*A)(4,2) = 2*v[8]*v[6];
+		(*A)(4,3) = v[2]*v[3]+v[0]*v[5];
+		(*A)(4,4) = v[8]*v[0]+v[6]*v[2];
+		(*A)(4,5) = v[5]*v[6]+v[3]*v[8];
+		//row 6
+		(*A)(5,0) = 2*v[1]*v[2];
+		(*A)(5,1) = 2*v[4]*v[5];
+		(*A)(5,2) = 2*v[7]*v[8];
+		(*A)(5,3) = v[1]*v[5]+v[2]*v[4];
+		(*A)(5,4) = v[7]*v[2]+v[8]*v[1];
+		(*A)(5,5) = v[4]*v[8]+v[7]*v[5];
+	}
+}
+//calculate P for mohr coulmob return mapping
+double CSolidProperties::CalVarP(double *vec1, double *vec2, double *sigma_B, double *sigma_l)
+{
+
+	return (vec1[1]*vec2[2]-vec1[2]*vec2[1])*(sigma_B[0]-sigma_l[0])+(vec1[2]*vec2[0]-vec1[0]*vec2[2])*(sigma_B[1]-sigma_l[1])
+	+(vec1[0]*vec2[1]-vec1[1]*vec2[0])*(sigma_B[2]-sigma_l[2]);
+}
+//calculate factor t for mohr coulmob
+double CSolidProperties::CalVar_t(double *vecl, double *veclg, Matrix *D, double *sigma_B, double *sigma_l, int Size)
+{
+	double TmpVec[6] = {0.};
+	double deltaStr[6] = {0.};
+	double TmpVal=0.;
+	double TmpVal2=0.;
+	D->multi(vecl, TmpVec);
+	for(int i=0; i<Size; i++)
+	{
+		TmpVal += veclg[i]*TmpVec[i];
+		TmpVec[i] = 0.;
+	}
+
+	for(int i=0; i<Size; i++)
+		deltaStr[i] = sigma_B[i]-sigma_l[i];
+	D->multi(deltaStr, TmpVec);
+	for(int i=0; i<Size; i++)
+		TmpVal2 += veclg[i]*TmpVec[i];
+	return TmpVal2/TmpVal;
+}
+//calculate the cross product of two vectors
+void CSolidProperties::VecCrossProduct(double *vec1, double *vec2, double *result_vec)
+{
+	result_vec[0] = vec1[1]*vec2[2]-vec1[2]*vec2[1];
+	result_vec[1] = -vec1[0]*vec2[2]+vec1[2]*vec2[0];
+	result_vec[2] = vec1[0]*vec2[1]+vec1[1]*vec1[0];
+}
+//calculate constitutive matrix when return to a line
+void CSolidProperties::CalDep_l(double *vecl, double *veclg, Matrix *D, Matrix *Dep_l, double fkt)
+{
+	double TmpVec[6]={0.};
+	double TmpVal = 0.;
+	D->multi(veclg, TmpVec);
+	for(int i=0; i<3; i++)
+	{
+		for(int j=0; j<3; j++)
+			(*Dep_l)(i,j)=vecl[i]*veclg[j];
+
+		TmpVal += vecl[i]*TmpVec[i];
+	}
+	*Dep_l /=TmpVal;
+}
+
+void CSolidProperties::TangentialMohrShear(Matrix *Dep)
+{
+	*Dep = *ConstitutiveMatrix;
+}
+
+void CSolidProperties::TangentialMohrTension(Matrix *Dep)
+{
+	*Dep = *ConstitutiveMatrix;
+}
+//WX: calculate inverse matrix
+void CSolidProperties::Cal_Inv_Matrix(int Size, Matrix *MatrixA, Matrix *xx)
+{
+  int i,j, k, jj, lk, j_col;  //i_row,
+  double var, R;
+  int L[6];
+  double rhs[6];
+  Matrix AA(Size, Size);
+  AA=*MatrixA;
+
+
+  for(i=0; i<Size; i++)
+  {
+     L[i] = i;
+     var = 0.0;
+     for(j=0; j<Size; j++)
+     {
+        if(fabs(AA(i,j))>var) var = fabs(AA(i,j));
+        L[i] = i;
+     }
+
+	 for(j_col=0; j_col<Size; j_col++)
+	 {
+		 (*xx)(i,j_col)=var;
+	 }
+  }
+
+  for(k=0; k<Size-1; k++)
+  {
+     var = 0.0;
+     jj=0;
+     for(i=k; i<Size; i++)
+     {
+        R = fabs(AA(L[i], k)/(*xx)(L[i],j_col));
+
+        if(R>var)
+        {
+           jj = i;
+           var = R;
+        }
+     }
+     lk = L[jj];
+     L[jj] = L[k];
+     L[k] = lk;
+
+     for(i=k+1; i<Size; i++)
+     {
+        var = AA(L[i], k)/AA(lk, k);
+
+        for(j=k+1; j<Size; j++)
+        {
+           AA(L[i],j) -= var*AA(lk, j);
+        }
+        AA(L[i], k) = var;
+     }
+  }
+
+
+  for(j_col=0; j_col<Size; j_col++)
+  {
+	  for(i=0;i<Size;i++)
+	  {
+		  rhs[i]=0.;
+		  if(i==j_col)
+			  rhs[i]=1.;
+	  }
+
+
+		  /* Back substituting */
+		  for(k=0; k<Size-1; k++)
+		  {
+			  for(i=k+1; i<Size; i++)
+			  {
+				  rhs[L[i]] -= AA(L[i], k)*rhs[L[k]];
+			  }
+		  }
+		  (*xx)(Size-1,j_col) = rhs[L[Size-1]]/AA(L[Size-1], Size-1);
+		  for(i=Size-2; i>=0; i--)
+		  {
+			  var = rhs[L[i]];
+			  for(j=i+1; j<Size; j++)
+			  {
+				  var -= AA(L[i], j)*(*xx)(j,j_col);
+			  }
+			  (*xx)(i,j_col) = var/AA(L[i], i);
+		  }
+  }
+}
 
    /**************************************************************************
     ROCKFLOW - Funktion: CSolidProperties::ConsistentTangentialDP

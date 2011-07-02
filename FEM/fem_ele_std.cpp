@@ -1375,6 +1375,8 @@ namespace FiniteElement
                biot_val = SolidProp->biot_const;
                poro_val = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 
+               if(SolidProp->K==0)   //WX: if HM Partitioned, K still 0 here
+                  SolidProp->K=SolidProp->E/3/(1-2*SolidProp->PoissonRatio);
                val += poro_val * (FluidProp->drho_dp / rho_val) \
                   + (biot_val - poro_val) * (1.0 - biot_val) / SolidProp->K;
                // Will handle the dual porosity version later...
@@ -1581,8 +1583,12 @@ namespace FiniteElement
             // Water vapour pressure
             if(diffusion)                         //28.05.2008. WW
                val = (1.0-Sw)*poro*GasProp->molar_mass/(GAS_CONSTANT*TG*rhow);
-            else
-               val = 0.;
+            else                                  //WX: 02.2011
+            {
+               if(!T_Process)
+                  TG=293;
+               val = (1.0-Sw)*poro*GasProp->molar_mass/(GAS_CONSTANT*TG*rhow);
+            }
             break;
       }
       return val;
@@ -2273,6 +2279,7 @@ namespace FiniteElement
       int i=0;
       double *tensor = NULL;
       double mat_fac = 1.0, m_fac=0.;
+      double fac_perm=1.;	//WX: factor for Permeability as funktion of pressure, strain, etc ... 05.2010
       double expfactor, D_gw, D_ga;
       expfactor = D_gw = D_ga =0.0;
       double dens_arg[3];                         //08.05.2008 WW
@@ -2285,6 +2292,15 @@ namespace FiniteElement
       int Index = MeshElement->GetIndex();
       //
       ComputeShapefct(1);                         //  12.3.2007 WW
+
+      //WX: 11.05.2010
+      PG = interpolate(NodalVal1);
+      PG2 = interpolate(NodalVal_p2);
+      //WX: cal factor for permeability 11.05.2010
+      CFiniteElementStd *h_fem;
+      h_fem = this;
+      fac_perm = MediaProp->PermeabilityFunctionPressure(Index, PG2);
+      fac_perm *= MediaProp->PermeabilityFunctionStrain(Index,nnodes,h_fem);
       //======================================================================
       for(i=0; i<dim*dim; i++)
          mat[i] = 0.0;
@@ -2298,7 +2314,7 @@ namespace FiniteElement
             mat_fac = MediaProp->PermeabilitySaturationFunction(Sw,0) \
                / FluidProp->Viscosity();
             for(i=0; i<dim*dim; i++)
-               mat[i] = -tensor[i] * mat_fac*time_unit_factor;
+               mat[i] = -tensor[i] * mat_fac*time_unit_factor*fac_perm;    //WX:05.2010
             // For velocity caculation
             if(!Gravity)
             {
@@ -2377,7 +2393,7 @@ namespace FiniteElement
                mat_fac += m_fac;
             //
             for(i=0; i<dim*dim; i++)
-               mat[i] = tensor[i] * mat_fac*time_unit_factor;
+               mat[i] = tensor[i] * mat_fac*time_unit_factor * fac_perm;//WX:05.2010
             //
             if((!Gravity)&&diffusion)
             {
@@ -2399,6 +2415,9 @@ namespace FiniteElement
                mat[i*dim+i] = D_ga;
             break;
          case 3:
+            //WX: for Cal_Velocity, rho_ga muss be calculated again before used. 11.05.2010
+            dens_arg[0] = PG2;
+            rho_ga = GasProp->Density(dens_arg);
             //
             tensor = MediaProp->PermeabilityTensor(Index);
             mat_fac = rho_ga*MediaProp->PermeabilitySaturationFunction(Sw,1) \
@@ -2409,7 +2428,7 @@ namespace FiniteElement
                mat_fac *= rho_ga/rhow;            //29.04.2009 WW
             //
             for(i=0; i<dim*dim; i++)
-               mat[i] = tensor[i] * mat_fac*time_unit_factor;
+               mat[i] = tensor[i] * mat_fac*time_unit_factor*fac_perm; //WX:05.2010
             if((!Gravity)&&diffusion)
             {
                D_ga = tort*rho_g*COMP_MOL_MASS_WATER*GasProp->molar_mass*M_g*M_g/rhow;
@@ -4301,7 +4320,7 @@ namespace FiniteElement
                            (*Laplace)(i_plus_in_times_nnodes,j_plus_jn_times_nnodes) += fkt_times_dshapefct__k_times_nnodes_plus_i__ \
                               * mat[dim_times_k_plus_l] * dshapefct[l_times_nnodes_plus_j];
                            /*
-                                             (*Laplace)(i+in*nnodes,j+jn*nnodes) += fkt * dshapefct[k*nnodes+i] \ 
+                                             (*Laplace)(i+in*nnodes,j+jn*nnodes) += fkt * dshapefct[k*nnodes+i] \
                                                 * mat[dim*k+l] * dshapefct[l*nnodes+j];
                                              if(Index < 10) {cout << " i, j, k, l, nnodes, dim: " << i << ", " << j << ", " << k << ", " << l << ", " << nnodes << ", " << dim << ". fkt, dshapefct[k*nnodes+i], mat[dim*k+l], dshapefct[l*nnodes+j]: ";
                                              cout << fkt << ", " << dshapefct[k*nnodes+i] << ", " << mat[dim*k+l] << ", " << dshapefct[l*nnodes+j] << endl;}
@@ -5408,10 +5427,12 @@ namespace FiniteElement
                   gp_ele->Velocity(i, gp) += mat[dim*i+j]*vel[j]/time_unit_factor;
             }
             CalCoefLaplace2(true,3);
+            double coef_tmp;	//WX:08.2010.
+            coef_tmp = rhow/rho_ga;
             for (i = 0; i < dim; i++)
             {
                for(j=0; j<dim; j++)
-                  gp_ele->Velocity_g(i, gp) -= mat[dim*i+j]*vel_g[j]/time_unit_factor;
+                  gp_ele->Velocity_g(i, gp) -= coef_tmp * mat[dim*i+j]*vel_g[j]/time_unit_factor;//WX:modified.08.2010
             }
          }
          else                                     // 02.2010. WW
@@ -7729,7 +7750,9 @@ namespace FiniteElement
             //average
             EV = avgEV;
          }
-
+		 //for(j=i_s; j<i_e; j++)
+            //EV += NodalVal1[j];
+         //EV /=(i_e-i_s);	//WX:09.2010. Use average value for nodes.
          // Average value of the contribution of ell neighbor elements
          EV /= dbuff[i];
          EV += m_pcs->GetNodeValue(nodes[i],idx_vel[idof]);
@@ -7749,6 +7772,9 @@ namespace FiniteElement
                //average
                EV1 = avgEV1;
             }
+            //for(j=i_s; j<i_e; j++)
+               //EV += NodalVal1[j];
+            //EV /=(i_e-i_s);	//WX:09.2010. Use average value for nodes.
             //
             EV1 /= dbuff[i];
             EV1 += m_pcs->GetNodeValue(nodes[i],idx_v2);

@@ -88,7 +88,9 @@ GeoInfo (), geo_name (""), _curve_index (-1)
    conditional = false;
    time_dep_interpol = false;
    epsilon = 1e-9;                                //NW
-
+   time_contr_curve = -1;                         //WX
+   bcExcav = -1;                                  //WX
+   MatGr = -1;                                    //WX
 }
 
 
@@ -280,6 +282,13 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
             //				geo_type_name = "VOLUME";
             setGeoType (GEOLIB::VOLUME);
          }
+		 //MATERIAL GROUP wx:03.2011
+		 if (sub_string.find("MATERIAL_DOMAIN") != std::string::npos)
+		 {
+			 in>>MatGr;
+			 in.clear();
+			 geo_type_name = "MATERIAL_DOMAIN";
+		 }
       }
       //....................................................................
                                                   //PCH
@@ -435,6 +444,22 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
       {
          in.str(GetLineFromFile1(bc_file));
          in >> epsilon;
+         in.clear();
+      }
+      //....................................................................
+      //aktive state of the bc is time controlled  WX
+	  if (line_string.find("$TIME_CONTROLLED_AKTIVE") != std::string::npos)
+      {
+         in.str(GetLineFromFile1(bc_file));
+         in >> time_contr_curve;
+         in.clear();
+      }
+      //....................................................................
+      //bc for excated boundaries WX
+	  if (line_string.find("$EXCAVATION") != std::string::npos)
+      {
+         in.str(GetLineFromFile1(bc_file));
+         in >> bcExcav >> MatGr;
          in.clear();
       }
       //....................................................................
@@ -877,6 +902,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* m_pcs, int ShiftInNodeVector,
 	const std::string& this_pv_name)
 {
 	//	long number_of_nodes = 0;
+    long i, j;//WX
 	long *nodes = NULL;
 	std::vector<long> nodes_vector;
 	std::vector<double> node_value;
@@ -927,6 +953,59 @@ void CBoundaryConditionsGroup::Set(CRFProcess* m_pcs, int ShiftInNodeVector,
 				== primary_variable)) {
 
 			cont = false;
+
+            //------------------------------------------------------------------
+            if (m_bc->getExcav()>0||m_bc->geo_type_name.find("MATERIAL_DOMAIN") == 0)
+				//WX: 01.2011. boundary conditions for excavation. 03.2011. Material domain BC
+            {
+               //GEOGetNodesInMaterialDomain(m_msh, m_bc->getExcavMatGr(),nodes_vector, quadratic);
+			   long ii, Size;
+			   int nn = 0;
+			   bool exist;
+			   CElem* elem = NULL;
+			   nodes_vector.resize(0);
+			   for (ii = 0; ii < (long)m_msh->ele_vector.size(); ii++)
+			   {
+				   elem = m_msh->ele_vector[ii];
+				   nn = elem->GetNodesNumber(quadratic);
+				   if(elem->GetPatchIndex()==m_bc->getExcavMatGr())
+				   {
+					   Size = (int)nodes_vector.size();
+					   for(i=0; i<nn; i++)
+					   {
+						   exist = false;
+						   for(j=0; j<Size; j++)
+						   {
+							   if(elem->GetNodeIndex(i)==nodes_vector[j])
+							   {
+								   exist = true;
+								   break;
+							   }
+						   }
+						   if(!exist) nodes_vector.push_back(elem->GetNodeIndex(i));
+					   }
+				   }
+			   }
+
+               for (i = 0; i < (long) nodes_vector.size(); i++) 	//possible nodes
+               //for(int j=0; j<m_msh->nod_vector[nodes_vector[i]]->connected_elements.size(); j++){
+               //if(m_msh->ele_vector[m_msh->nod_vector[nodes_vector[i]]->connected_elements[j]]->GetPatchIndex()==m_bc->getExcavMatGr())
+               {
+                  m_node_value = new CBoundaryConditionNode();
+                  m_node_value->msh_node_number = -1;
+                  m_node_value->msh_node_number = nodes_vector[i]+ ShiftInNodeVector; //nodes[i];
+                  m_node_value->geo_node_number = nodes_vector[i]; //nodes[i];
+                  m_node_value->node_value = m_bc->geo_node_value;
+                  m_node_value->pcs_pv_name = _pcs_pv_name; //YD/WW
+                  m_node_value->CurveIndex = m_bc->getCurveIndex();
+                  m_pcs->bc_node.push_back(m_bc); //WW
+                  m_pcs->bc_node_value.push_back(m_node_value); //WW
+                  //j=m_msh->nod_vector[nodes_vector[i]]->connected_elements.size(); //only on material group boundary is selected
+               }
+			   ++p_bc;
+               continue;
+            }
+            //------------------------------------------------------------------
 
 			if (m_bc->getGeoType() == GEOLIB::POINT) {
 				m_node_value = new CBoundaryConditionNode;

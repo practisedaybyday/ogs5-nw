@@ -576,6 +576,7 @@ class CRFProcess : public ProcessInfo
       void CalcELEMassFluxes();
       //WW   double GetELEValue(long index,double*gp,double theta,string nod_fct_name);
       void CheckMarkedElement();                  //WW
+      void CheckExcavedElement();                 //WX
       // Configuration 3 - ELE matrices
       void CreateELEMatricesPointer(void);
       // Equation system
@@ -719,6 +720,11 @@ class CRFProcess : public ProcessInfo
       bool m_bCheckEQS;                           //OK
       void Delete();                              //OK
       bool m_bCheck;                              //OK
+      int ExcavMaterialGroup;                     //WX
+      int ExcavDirection;                         //WX
+      int ExcavCurve;                             //WX
+      double ExcavBeginCoordinate;                //WX
+      int PCS_ExcavState;                         //WX
 #ifdef USE_MPI                                 //WW
       void Print_CPU_time_byAssembly(std::ostream &os=std::cout) const
       {

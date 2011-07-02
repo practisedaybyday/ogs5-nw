@@ -326,6 +326,8 @@ namespace Mesh_Group
          double courant;
          double neumann;                          // MSH topology
 
+         int GetExcavState() {return excavated;};	//WX:01.2011 get excavation state
+         void SetExcavState(const int ExcavState) {excavated = ExcavState;};  //WX:01.2011 set excavation state
       private:
          // Members
          // ID
@@ -365,6 +367,8 @@ namespace Mesh_Group
          //		angle[2] translation along z'' axis.
          double *angle;                           // Dymanic allocate memory.  WW
          //WW double MatT[9];
+
+         int excavated;	//WX:01.2011 excavation state
 
          // -- Methods
          int GetElementFaces1D(int *FaceNode);

@@ -282,6 +282,7 @@ namespace process
       if(hasAnyProcessDeactivatedSubdomains || NumDeactivated_SubDomains>0||num_type_name.find("EXCAVATION")!=string::npos)
          //if(NumDeactivated_SubDomains>0||num_type_name.find("EXCAVATION")!=string::npos)
          CheckMarkedElement();
+	  CheckMarkedElement();//WX:04.2011 always check marked elements
       // MarkNodesForGlobalAssembly();
 
       counter++;                                  // Times of this method  to be called
@@ -443,7 +444,7 @@ namespace process
 
          // For p-u monolitic scheme. If first step (counter==1), take initial value
          if(pcs_deformation%11 == 0&&!fem_dm->dynamic)
-            InitializeNewtonSteps(1); // p=0
+           InitializeNewtonSteps(1); // p=0
          //
          // Initialize inremental displacement: w=0
          InitializeNewtonSteps(0);
@@ -493,7 +494,7 @@ namespace process
             /*
             #ifdef MFC
                     CString m_str;
-                    m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\ 
+                    m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\
                                   aktuelle_zeit,pcs_type_name.c_str(),l,ite_steps);
                     pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
             #endif
@@ -699,7 +700,18 @@ namespace process
          if(msp_vector[l]->excavated)
             deact_dom.push_back(l);
       }
-      if((int)deact_dom.size()>0)
+	  if(ExcavMaterialGroup>=0&&PCS_ExcavState<0)	//WX:01.2010.update pcs excav state
+      {
+         for(l=0; l<(long)m_msh->ele_vector.size();l++)
+         {
+            if((m_msh->ele_vector[l]->GetExcavState()>0)&&!(m_msh->ele_vector[l]->GetMark()))
+            {
+               PCS_ExcavState = 1;
+               break;
+            }
+         }
+      }
+      if((int)deact_dom.size()>0||PCS_ExcavState>0)   //WX:01.2011 modified for coupled excavation
       {
 
          //	  MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  //abort();}
@@ -727,6 +739,12 @@ namespace process
                   break;
                }
             }
+            if(ExcavMaterialGroup>=0)//WX
+               if(elem->GetExcavState()>=0)
+               {
+                  elem->MarkingAll(false);
+                  done = true;
+               }
             if(done)
                continue;
             else
@@ -1181,7 +1199,7 @@ namespace process
       eqs_x = eqs->x;
 #endif
 
-      if(type == 41) 
+      if(type == 41)
 	  {
          for (i = 0; i < pcs_number_of_primary_nvals; i++)
          {
@@ -1202,7 +1220,7 @@ namespace process
                      GetNodeValue(j, ColIndex-1));
             }
           }
-		  return; 
+		  return;
 	  }
 
       //
@@ -1404,11 +1422,11 @@ namespace process
       // If monolithic scheme for p-u coupling,  p_i-->p_0 only
       if(pcs_deformation%11 == 0&&ty>0)
       {
-         
+
          start = problem_dimension_dm;
          for (i = 0; i < start; i++)
            shift += num_nodes_p_var[i];
-         
+
          //TODO: end = problem_dimension_dm;
       }
       for (i = start; i < end; i++)
@@ -2289,7 +2307,7 @@ namespace process
          //
          // {		MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  abort();}
          // DumpEqs("rf_pcs1.txt");
-         /* 
+         /*
           ofstream Dum("rf_pcs_omp.txt", ios::out); // WW
           eqs_new->Write(Dum);
           Dum.close();

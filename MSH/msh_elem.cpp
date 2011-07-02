@@ -46,6 +46,7 @@ namespace Mesh_Group
       gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
       normal_vector = NULL;
       area = 1.0;                                 //WW
+      excavated = -1;                             //WX
    }
    /**************************************************************************
    MSHLib-Method:
@@ -73,6 +74,7 @@ namespace Mesh_Group
       gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
       area = 1.0;                                 //WW area = 1.0
       normal_vector = NULL;
+      excavated = -1;                             //WX
    }
 
    /**************************************************************************
@@ -94,6 +96,7 @@ namespace Mesh_Group
       tranform_tensor = NULL;
       angle = NULL;
       normal_vector = NULL;
+      excavated = -1;                             //WX
       //
       switch(owner->geo_type)
       {
