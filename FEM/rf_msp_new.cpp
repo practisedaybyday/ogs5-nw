@@ -679,6 +679,9 @@ namespace SolidProp
       dGds = NULL;
       D_dFds = NULL;
       D_dGds = NULL;
+      dFtds = NULL;//WX
+      dGtds = NULL;//WX
+      ConstitutiveMatrix = NULL;//WX
       // Curve variable type
       // 0: Time
       // 1: ...
