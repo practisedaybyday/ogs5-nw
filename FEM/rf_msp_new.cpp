@@ -320,7 +320,7 @@ namespace SolidProp
             }
             in_sd.clear();
          }
-         
+
          //....................................................................
                                                   // subkeyword found
          if(line_string.find("$ELASTICITY")!=string::npos)
@@ -516,7 +516,9 @@ namespace SolidProp
                   D_dFds = new double[6];
                   D_dGds = new double[6];
                }
-               Size = 6;
+               Size = 5;
+               if(Plasticity_type == 11)
+                  Size = 6;
                /*
                Material parameters for Cam-Clay model
                i : parameter
@@ -690,7 +692,7 @@ namespace SolidProp
       D_tran = NULL;                              //UJG/WW
 
       // Thermal conductivity tensor (default: iso)
-      thermal_conductivity_tensor_type = 0; 
+      thermal_conductivity_tensor_type = 0;
       thermal_conductivity_tensor_dim = 1;
       thermal_conductivity_tensor[0] = 1.0;
    }
@@ -2765,8 +2767,8 @@ int CSolidProperties::DirectStressIntegrationMOHR(const int GPiGPj, const Elemen
 		double tmp_tensionsurf=tmp_prin_str[0]-tension;
 		if(((tmp_tensionsurf)==0&&(tmp_shearsurf)<=0)||((tmp_tensionsurf)<=0&&(tmp_shearsurf)==0))
 			mm = 0.;
-		else 
-			if(prin_str[0]!=tmp_prin_str[0])				
+		else
+			if(prin_str[0]!=tmp_prin_str[0])
 			{
 				mm = (tension-tmp_prin_str[0])/(prin_str[0]-tmp_prin_str[0]);
 				if(mm>=0 && mm<=1)
@@ -2783,7 +2785,7 @@ int CSolidProperties::DirectStressIntegrationMOHR(const int GPiGPj, const Elemen
 			else
 				mm = (csn+tmp_prin_str[2]-Ntheta*tmp_prin_str[0])
 					/(Ntheta*(prin_str[0]-tmp_prin_str[0])-(prin_str[2]-tmp_prin_str[2]));
-				
+
 
 		Cal_Inv_Matrix(Size, TmpDe, Inv_De);
 		//Cal_Inv_Matrix(Size, PrinDe, Inv_De);
@@ -2914,7 +2916,7 @@ int CSolidProperties::DirectStressIntegrationMOHR(const int GPiGPj, const Elemen
 				dStressP[i] = prin_str[i] - prin_str0[i];
 			}
 			Inv_De->multi(dStressP,dStrainP);
-			
+
 			for(i=0; i<3; i++)
 			  for(j=0; j<3; j++)
 					(*dGds_dFds)(i,j) = rtp[i]*dFtdprin_s[j];
@@ -3121,13 +3123,13 @@ int CSolidProperties::DirectStressIntegrationMOHR(const int GPiGPj, const Elemen
 
 //WX: calculte prin. stress and direc.
 void CSolidProperties::CalPrinStrDir(double *stress, double *prin_str, double *prin_dir, int Dim)
-{ 
+{
 	int i,j,p,q,u,w,t,s,l;
     double fm,cn,sn,omega,x,y,d;
 	double eps = 1e-12, TmpValue1;
 	int jt = 100;
 	int n = 3;
-	double a[9] = {0.}, v[9] = {0.}; 
+	double a[9] = {0.}, v[9] = {0.};
 	int Tmp[3] = {0}, TmpValue2;
 	l=1;
 	p = 0;
@@ -3138,7 +3140,7 @@ void CSolidProperties::CalPrinStrDir(double *stress, double *prin_str, double *p
 	}
 	a[1]=stress[3];
 	a[3]=a[1];
-	
+
 	if(Dim==2)
 	{
 		a[2]=0;
@@ -3156,44 +3158,44 @@ void CSolidProperties::CalPrinStrDir(double *stress, double *prin_str, double *p
 
 
     for (i=0; i<=n-1; i++)
-	{ 
+	{
 	v[i*n+i]=1.0;
         for (j=0; j<=n-1; j++)
 		{
-		if (i!=j) 
+		if (i!=j)
 			{
 			v[i*n+j]=0.0;
 			}
 		}
 	}
     while (1==1)
-	{ 
+	{
 		fm=0.0;
         for (i=0; i<=n-1; i++)
 		{
 			for (j=0; j<=n-1; j++)
-			{ 
+			{
 				d=fabs(a[i*n+j]);
 				if ((i!=j)&&(d>fm))
-				{ 
-					fm=d; 
-					p=i; 
+				{
+					fm=d;
+					p=i;
 					q=j;
 				}
 			}
 		}
-        if (fm<eps)  
+        if (fm<eps)
 		{
 			break;
 		}
-        if (l>jt)  
+        if (l>jt)
 		{
 			break;
 		}
         l=l+1;
-        u=p*n+q; 
-		w=p*n+p; 
-		t=q*n+p; 
+        u=p*n+q;
+		w=p*n+p;
+		t=q*n+p;
 		s=q*n+q;
         x=-a[u];
 		y=(a[s]-a[w])/2.0;
@@ -3213,7 +3215,7 @@ void CSolidProperties::CalPrinStrDir(double *stress, double *prin_str, double *p
         for (j=0; j<=n-1; j++)
 		{
 			if ((j!=p)&&(j!=q))
-			{ 
+			{
 				u=p*n+j;
 				w=q*n+j;
 				fm=a[u];
@@ -3224,8 +3226,8 @@ void CSolidProperties::CalPrinStrDir(double *stress, double *prin_str, double *p
         for (i=0; i<=n-1; i++)
 		{
 			if ((i!=p)&&(i!=q))
-            { 
-				u=i*n+p; 
+            {
+				u=i*n+p;
 				w=i*n+q;
 				fm=a[u];
 				a[u]=fm*cn+a[w]*sn;
@@ -3233,8 +3235,8 @@ void CSolidProperties::CalPrinStrDir(double *stress, double *prin_str, double *p
             }
 		}
         for (i=0; i<=n-1; i++)
-		{ 
-			u=i*n+p; 
+		{
+			u=i*n+p;
 			w=i*n+q;
             fm=v[u];
             v[u]=fm*cn+v[w]*sn;
@@ -3247,7 +3249,7 @@ void CSolidProperties::CalPrinStrDir(double *stress, double *prin_str, double *p
 		prin_str[i]=a[i*n+i];
 		Tmp[i]=i;
 	}
-	
+
 	for (i=0; i<3; i++)
 	{
 		for (j=i+1; j<3; j++)
@@ -3267,7 +3269,7 @@ void CSolidProperties::CalPrinStrDir(double *stress, double *prin_str, double *p
 	for(i=0;i<3;i++)
 		for(j=0;j<3;j++)
 			prin_dir[j*3+i] = v[j*3+Tmp[i]];
-	
+
 }
 
 //WX: calculate transform matrix between normal stress and principal stress
