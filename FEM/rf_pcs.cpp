@@ -1818,6 +1818,11 @@ std::ios::pos_type CRFProcess::Read(std::ifstream *pcs_file)
             this->Phase_Transition_Model = 1;
          continue;
       }
+      if(line_string.find("$TIME_CONTROLLED_EXCAVATION")== 0)//WX:07.2011
+	  {
+            *pcs_file >> ExcavMaterialGroup >> ExcavDirection >> ExcavBeginCoordinate >> ExcavCurve;
+			continue;
+	  }
       //....................................................................
    }
    //----------------------------------------------------------------------
@@ -5358,7 +5363,7 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
          CNode * node;
          CElem * elem;
          //unsigned int counter;	//void warning
-         onExBoundary = false;	//WX:01.2011
+         onExBoundary = true;	//WX:01.2011
          excavated = false;
          double node_coordinate[3]={0.};
          node = m_msh->nod_vector[m_bc_node->geo_node_number];
@@ -5371,13 +5376,18 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
          if((node_coordinate[ExcavDirection]-(GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)-ExcavBeginCoordinate))<0.001)
          {
             excavated = true;
+			double* tmp_ele_coor = NULL;
             for(unsigned int j=0; j<node->getConnectedElementIDs().size(); j++)
             {
                elem = m_msh->ele_vector[node->getConnectedElementIDs()[j]];
+			   tmp_ele_coor = elem->GetGravityCenter();
                //if(elem->GetPatchIndex()!=ExcavMaterialGroup){
-               if(elem->GetExcavState()==-1)
+               //if(elem->GetExcavState()==-1)
+			   if(elem->GetPatchIndex()!=ExcavMaterialGroup)
+				   continue;
+			   else if (tmp_ele_coor[ExcavDirection]-(GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)-ExcavBeginCoordinate)<0.001)
                {
-                  onExBoundary = true;
+                  onExBoundary = false;
                   //tmp_counter1++;
                         break;
                }

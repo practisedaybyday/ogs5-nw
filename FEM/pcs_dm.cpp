@@ -758,7 +758,8 @@ namespace process
                m_msh->nod_vector[l]->getConnectedElementIDs().pop_back();
          }
 
-         for (size_t l = 0; l < mesh_node_vector_size; l++)
+		 size_t mesh_ele_vector_size (m_msh->ele_vector.size());
+         for (size_t l = 0; l < mesh_ele_vector_size; l++)//WX:07.2011 error fixed
          {
             elem = m_msh->ele_vector[l];
             if(!elem->GetMark()) continue;

@@ -1022,19 +1022,39 @@ namespace FiniteElement
       //
 
       // -------------------------------12.2009.  WW
-      excavation = false;
-      if(smat->excavation>0&&MeshElement->GetMark())
-      {
-         int  valid;
-         if(GetCurveValue(smat->excavation,0,aktuelle_zeit,&valid)<1.0)
-         {
-            excavation = true;
-            smat->excavated = true;               // To be ... 12.2009. WW
-            *(eleV_DM->Stress) = 0.;
-         }
-         else
-            smat->excavated = false;              // To be ... 12.2009. WW
-      }
+	  if(pcs->ite_steps==1)
+	  {
+		  excavation = false;
+		  if((smat->excavation>0||pcs->ExcavMaterialGroup>-1)&&MeshElement->GetMark())
+		  {
+			  int  valid;
+			  if(smat->excavation>0)
+			  {
+				  if(GetCurveValue(smat->excavation,0,aktuelle_zeit,&valid)<1.0)
+				  {
+					  excavation = true;
+					  smat->excavated = true;               // To be ... 12.2009. WW
+					  *(eleV_DM->Stress) = 0.;
+				  }
+				  else
+					  smat->excavated = false;              // To be ... 12.2009. WW
+			  }
+			  if(pcs->ExcavMaterialGroup==MeshElement->GetPatchIndex())//WX:07.2011
+			  {
+				  double* ele_center = NULL;
+				  ele_center = MeshElement->GetGravityCenter();
+				  if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)>
+					  (ele_center[pcs->ExcavDirection])&&(ele_center[pcs->ExcavDirection]-pcs->ExcavBeginCoordinate)>-0.001)
+				  {
+					  excavation=true;
+					  *(eleV_DM->Stress) = 0.;
+					  MeshElement->SetExcavState(1);
+				  }
+
+			  }
+
+		  }
+	  }
       //----------------------------------------------------
 
       if(enhanced_strain_dm&&ele_value_dm[MeshElement->GetIndex()]->Localized)
@@ -1108,6 +1128,22 @@ namespace FiniteElement
                      break;
                   }
                }
+               else if(pcs->ExcavMaterialGroup>-1)
+			   {
+				   double* ele_center = NULL;
+				   ele_center = elem->GetGravityCenter();
+				   if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)<
+					  (ele_center[pcs->ExcavDirection]))
+				   {
+					   onExBoundary = true;
+					   break;
+				   }
+				   else if (elem->GetPatchIndex()!=pcs->ExcavMaterialGroup)
+				   {
+					   onExBoundary = true;
+					   break;
+				   }
+			   }//WX:07.2011
                else
                {
                   onExBoundary = true;
@@ -1363,6 +1399,8 @@ namespace FiniteElement
                {
                   val_n = h_pcs->GetNodeValue(nodes[i],idx_P1);
                   //                AuxNodal[i] = LoadFactor*( val_n -Max(pcs->GetNodeValue(nodes[i],idx_P0),0.0));
+				  if(pcs->PCS_ExcavState==1)
+					  val_n -= h_pcs->GetNodeValue(nodes[i],idx_P1-1);//WX:07.2011 for HM excavation
                   AuxNodal[i] = LoadFactor*val_n;
                }
                break;
@@ -1479,6 +1517,68 @@ namespace FiniteElement
       {
          for (j=0;j<nnodesHQ;j++)
             b_rhs[eqs_number[j]+NodeShift[i]] -= (*RHS)(i*nnodesHQ+j);
+      }
+	  //WX:07.2011 if not on excav boundary, RHS=0
+      int valid = 0;
+      if (excavation)
+      {
+         excavation = true;
+         bool onExBoundary = false;
+
+         CNode * node;
+         CElem * elem;
+         CSolidProperties* smat_e;
+
+         for (int i = 0; i < nnodesHQ; i++)
+         {
+            node = MeshElement->nodes[i];
+            onExBoundary = false;
+            const size_t n_elements (node->getConnectedElementIDs().size());
+            for (size_t j = 0; j < n_elements; j++)
+            {
+               elem = pcs->m_msh->ele_vector[node->getConnectedElementIDs()[j]];
+               if (!elem->GetMark()) continue;
+
+               smat_e = msp_vector[elem->GetPatchIndex()];
+               if (smat_e->excavation > 0)
+               {
+                  if (fabs(GetCurveValue(smat_e->excavation, 0,
+                     aktuelle_zeit, &valid) - 1.0) < DBL_MIN)
+                  {
+                     onExBoundary = true;
+                     break;
+                  }
+               }
+               else if(pcs->ExcavMaterialGroup>-1)
+			   {
+				   double* ele_center = NULL;
+				   ele_center = elem->GetGravityCenter();
+				   if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)<
+					  (ele_center[pcs->ExcavDirection]))
+				   {
+					   onExBoundary = true;
+					   break;
+				   }
+				   else if (elem->GetPatchIndex()!=pcs->ExcavMaterialGroup)
+				   {
+					   onExBoundary = true;
+					   break;
+				   }
+			   }
+			   else
+               {
+                  onExBoundary = true;
+                  break;
+               }
+            }
+
+            if (!onExBoundary)
+            {
+               for (int j = 0; j < dim; j++)
+                   b_rhs[eqs_number[i]+NodeShift[j]]= 0.0;
+            }
+
+         }
       }
    }
    /***************************************************************************
