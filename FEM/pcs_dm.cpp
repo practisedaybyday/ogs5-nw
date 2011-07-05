@@ -282,7 +282,7 @@ namespace process
       if(hasAnyProcessDeactivatedSubdomains || NumDeactivated_SubDomains>0||num_type_name.find("EXCAVATION")!=string::npos)
          //if(NumDeactivated_SubDomains>0||num_type_name.find("EXCAVATION")!=string::npos)
          CheckMarkedElement();
-	  CheckMarkedElement();//WX:04.2011 always check marked elements
+	  //CheckMarkedElement();//WX:04.2011 always check marked elements
       // MarkNodesForGlobalAssembly();
 
       counter++;                                  // Times of this method  to be called
