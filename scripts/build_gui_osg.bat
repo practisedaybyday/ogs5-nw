@@ -19,6 +19,6 @@ devenv OGS-5-GUI.sln /Build Release
 cmake ..
 devenv OGS-5-GUI.sln /Build Release /Project PACKAGE
 del CMakeCache.txt
-cmake -DOGS_USE_QT=ON -DOGS_PACKAGING=ON -DOGS_PACKAGING_ZIP=ON ..
+cmake -DOGS_USE_QT=ON -DOGS_USE_OPENSG=ON -DOGS_PACKAGING=ON -DOGS_PACKAGING_ZIP=ON ..
 cmake ..
 devenv OGS-5-GUI.sln /Build Release /Project PACKAGE
