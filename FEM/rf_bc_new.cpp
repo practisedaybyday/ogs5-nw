@@ -448,7 +448,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
       }
       //....................................................................
       //aktive state of the bc is time controlled  WX
-	  if (line_string.find("$TIME_CONTROLLED_AKTIVE") != std::string::npos)
+	  if (line_string.find("$TIME_CONTROLLED_ACTIVE") != std::string::npos)
       {
          in.str(GetLineFromFile1(bc_file));
          in >> time_contr_curve;
