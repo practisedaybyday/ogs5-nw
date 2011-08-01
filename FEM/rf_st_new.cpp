@@ -896,7 +896,11 @@ std::string this_pv_name)
          if (source_term->getProcessType() == MASS_TRANSPORT)
             if ( cp_vec[cp_name_2_idx[convertPrimaryVariableToString(source_term->getProcessPrimaryVariable())]]->getProcess() != m_pcs )
                continue;
-
+         //-- 23.02.3009. WW
+         if (source_term->getProcessDistributionType()==FiniteElement::DIRECT) {
+           source_term->DirectAssign(ShiftInNodeVector);
+           continue;
+         }
          if ((convertProcessTypeToString (source_term->getProcessType ()).compare(pcs_type_name) == 0)
             && (convertPrimaryVariableToString(source_term->getProcessPrimaryVariable()).compare(pcs_pv_name) == 0))
             // if ( source_term->getProcess() == m_pcs )

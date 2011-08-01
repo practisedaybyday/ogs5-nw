@@ -289,6 +289,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
 			 in.clear();
 			 geo_type_name = "MATERIAL_DOMAIN";
 		 }
+         in.clear();
       }
       //....................................................................
                                                   //PCH
@@ -1006,7 +1007,13 @@ void CBoundaryConditionsGroup::Set(CRFProcess* m_pcs, int ShiftInNodeVector,
                continue;
             }
             //------------------------------------------------------------------
-
+            //-- 23.02.3009. WW
+            if (m_bc->getProcessDistributionType()== FiniteElement::DIRECT) {
+              m_bc->DirectAssign(ShiftInNodeVector);
+              ++p_bc;
+              continue;
+            }
+            //................................................................
 			if (m_bc->getGeoType() == GEOLIB::POINT) {
 				m_node_value = new CBoundaryConditionNode;
 				// Get MSH node number
