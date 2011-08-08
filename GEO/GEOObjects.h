@@ -195,7 +195,7 @@ public:
 	 * merge geometries
 	 * @param names the names of the geometries that are to be merged
 	 */
-	void mergeGeometries (std::vector<std::string> const & names);
+	void mergeGeometries (std::vector<std::string> const & names, std::string &merged_geo_name);
 
 	/** constructor */
 	GEOObjects();
