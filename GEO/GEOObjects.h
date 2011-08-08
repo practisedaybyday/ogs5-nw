@@ -188,11 +188,14 @@ public:
 	/// Returns the names of all geometry vectors.
 	void getGeometryNames (std::vector<std::string>& names) const;
 
-	/// @brief Prints the names of all geometry vectors on std out.
-	void printGeometryNames () const;
-
 	/// Returns the names of all station vectors.
 	void getStationNames(std::vector<std::string>& names) const;
+
+	/**
+	 * merge geometries
+	 * @param names the names of the geometries that are to be merged
+	 */
+	void mergeGeometries (std::vector<std::string> const & names);
 
 	/** constructor */
 	GEOObjects();
