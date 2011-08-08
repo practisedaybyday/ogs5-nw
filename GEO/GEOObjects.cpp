@@ -362,12 +362,51 @@ void GEOObjects::getGeometryNames (std::vector<std::string>& names) const
 	}
 }
 
-void GEOObjects::printGeometryNames () const
+void GEOObjects::mergeGeometries (std::vector<std::string> const & geo_names)
 {
-	for (std::vector<PointVec*>::const_iterator it(_pnt_vecs.begin());	it != _pnt_vecs.end(); it++) {
-		if ((*it)->getType() == PointVec::POINT)
-			std::cout << (*it)->getName() << std::endl;
+	std::vector<size_t> pnt_offsets(geo_names.size(), 0);
+
+	// *** merge points
+	std::vector<GEOLIB::Point*>* merged_points (new std::vector<GEOLIB::Point*>);
+	for (size_t j(0); j<geo_names.size(); j++) {
+		const std::vector<GEOLIB::Point*>* pnts (this->getPointVec(geo_names[j]));
+		if (pnts) {
+			// do not consider stations
+			if (dynamic_cast<GEOLIB::Station*>((*pnts)[0]) == NULL) {
+				for (size_t k(0); k<pnts->size(); k++) {
+					merged_points->push_back (new GEOLIB::Point (((*pnts)[k])->getData()));
+				}
+				pnt_offsets[j+1] = pnts->size();
+				pnt_offsets[j+1] += pnt_offsets[j];
+			} else {
+				pnt_offsets[j+1] = pnt_offsets[j];
+			}
+		}
 	}
+
+	std::string merged_geo_name ("MergedGeo");
+	this->addPointVec (merged_points, merged_geo_name);
+	std::vector<size_t> const& id_map (this->getPointVecObj(merged_geo_name)->getIDMap ());
+
+	// *** merge polylines
+	std::vector<GEOLIB::Polyline*> *merged_polylines (new std::vector<GEOLIB::Polyline*>);
+	for (size_t j(0); j<geo_names.size(); j++) {
+		const std::vector<GEOLIB::Polyline*>* plys (this->getPolylineVec(geo_names[j]));
+		if (plys) {
+			for (size_t k(0); k<plys->size(); k++) {
+				GEOLIB::Polyline* kth_ply_new(new GEOLIB::Polyline (*merged_points));
+				GEOLIB::Polyline const*const kth_ply_old ((*plys)[k]);
+				const size_t size_of_kth_ply (kth_ply_old->getNumberOfPoints());
+				// copy point ids from old ply to new ply (considering the offset)
+				for (size_t i(0); i<size_of_kth_ply; i++) {
+					kth_ply_new->addPoint (id_map[pnt_offsets[j]+kth_ply_old->getPointID(i)]);
+				}
+				merged_polylines->push_back (kth_ply_new);
+			}
+		}
+	}
+	this->addPolylineVec (merged_polylines, merged_geo_name);
 }
+
 
 } // namespace
