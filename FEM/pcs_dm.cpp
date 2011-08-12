@@ -152,10 +152,7 @@ namespace process
       for(i=0; i<(int)msp_vector.size(); i++)
          msp_vector[i]->CalculateTransformMatrixFromNormalVector(problem_dimension_dm);
 
-      // Initialize linear solver
-#ifndef NEW_EQS                             //WW
-      InitEQS();
-#endif
+
       if(!msp_vector.size())                      //OK
          return;
       InitialMBuffer();
@@ -206,12 +203,16 @@ namespace process
          bufferSize = GetPrimaryVNumber()*m_msh->GetNodesNumber(true);
          if(H_Process)
             HM_Stagered = true;
-      } else if(GetObjType()==41)
-      bufferSize = (GetPrimaryVNumber()-1)*m_msh->GetNodesNumber(true)+
-               m_msh->GetNodesNumber(false);
+      } 
+	  else if(GetObjType()==41)
+         bufferSize = (GetPrimaryVNumber()-1)*m_msh->GetNodesNumber(true)+
+             m_msh->GetNodesNumber(false);
+	  else if (GetObjType()==42)
+         bufferSize = (GetPrimaryVNumber()-2)*m_msh->GetNodesNumber(true)+
+             2*m_msh->GetNodesNumber(false);
 
       //Allocate memory for  temporal array
-      if(type != 42)
+	  if(m_num->nls_method != 2)
          ARRAY =  new double[bufferSize];
 
       // Allocate memory for element variables
@@ -282,7 +283,6 @@ namespace process
       if(hasAnyProcessDeactivatedSubdomains || NumDeactivated_SubDomains>0||num_type_name.find("EXCAVATION")!=string::npos)
          //if(NumDeactivated_SubDomains>0||num_type_name.find("EXCAVATION")!=string::npos)
          CheckMarkedElement();
-	  //CheckMarkedElement();//WX:04.2011 always check marked elements
       // MarkNodesForGlobalAssembly();
 
       counter++;                                  // Times of this method  to be called
@@ -333,7 +333,7 @@ namespace process
 
       */
 
-      if(CouplingIterations==0&&type!=42)
+	  if(CouplingIterations==0&&m_num->nls_method!=2)
          StoreLastSolution();                     //u_n-->temp
       //  Reset stress for each coupling step when partitioned scheme is applied to HM
       if(H_Process&&(type/10!=4))
@@ -442,12 +442,9 @@ namespace process
          //TEST     else if(fluid)   LoadFactor = (double)l/(double)number_of_load_steps;
          */
 
-         // For p-u monolitic scheme. If first step (counter==1), take initial value
-         if(pcs_deformation%11 == 0&&!fem_dm->dynamic)
-           InitializeNewtonSteps(1); // p=0
          //
          // Initialize inremental displacement: w=0
-         InitializeNewtonSteps(0);
+         InitializeNewtonSteps();
          //
          // Begin Newton-Raphson steps
          if(elasticity!=1)
@@ -549,7 +546,7 @@ namespace process
 #ifdef NEW_EQS
             if(!elasticity)  Norm = eqs_new->NormRHS();
 #else
-            if(!elasticity)  Norm = CalcNormOfRHS(eqs);
+            if(!elasticity)  Norm = NormOfUnkonwn_orRHS(false);
 #endif
 #endif
             if(!elasticity)
@@ -560,7 +557,7 @@ namespace process
 #ifdef NEW_EQS
                NormU = eqs_new->NormX();
 #else
-               NormU = NormOfUnkonwn();
+               NormU = NormOfUnkonwn_orRHS();
 #endif
 
                if(ite_steps==1&&CouplingIterations==0)
@@ -612,7 +609,7 @@ namespace process
 #endif
                if(Error>100.0&&ite_steps>1)
                {
-                  printf ("\n  Attention: Newton-Raphson step has diverged. Programme halt!\n");
+                  printf ("\n  Attention: Newton-Raphson step is diverged. Programme halt!\n");
                   exit(1);
                }
                if(InitialNorm<10*Tolerance_global_Newton)
@@ -1052,8 +1049,7 @@ namespace process
       //
       cout<<"\n ***Excavation simulation: 2. Excavating..."<<endl;
       counter = 0;
-      InitializeNewtonSteps(0);
-      InitializeNewtonSteps(2);
+      InitializeNewtonSteps(true);
       GravityForce = false;
       //
       ReleaseLoadingByExcavation();
@@ -1225,49 +1221,43 @@ namespace process
 	  }
 
       //
-      for (i = 0; i < pcs_number_of_primary_nvals; i++)
+      for (i = 0; i < problem_dimension_dm; i++)
       {
          number_of_nodes = num_nodes_p_var[i];
          //
          ColIndex = p_var_index[i]-1 ;
-         if(i<problem_dimension_dm||(i>=problem_dimension_dm&&fem_dm->dynamic))
+         ///  Update Newton step: w = w+dw
+         if(u_type == 0)
          {
-            ///  Update Newton step: w = w+dw
-            if(u_type == 0)
-            {
-               for(j=0; j<number_of_nodes; j++)
-                  SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+eqs_x[j+shift]*damp);
-            }
-            else
-            {
-               for(j=0; j<number_of_nodes; j++)
-                  SetNodeValue(j,ColIndex+1, GetNodeValue(j,ColIndex+1)+GetNodeValue(j,ColIndex));
-            }
-
+             for(j=0; j<number_of_nodes; j++)
+                SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+eqs_x[j+shift]*damp);
+             shift += number_of_nodes;
          }
-         else                                     /// Pressure
+         else
          {
-            if(m_num->nls_method>0)               //Newton-Raphson. 06.09.2010. WW
-            {
-               /// $p_{n+1}=p_{n+1}+\Delta p$ is already performed when type = 0
-               if(u_type == 1)
-                  return;
-               for(j=0; j<number_of_nodes; j++)
-               {
-                  //SetNodeValue(j,ColIndex, ARRAY[j+shift]);
-                  SetNodeValue(j,ColIndex+1, GetNodeValue(j,ColIndex+1)+eqs_x[j+shift]*damp);
-               }
-
-            }
-            else
-            {
-               /// Linear HM coupling with monolithic scheme.
-               for(j=0; j<number_of_nodes; j++)
-                  SetNodeValue(j,ColIndex+1, eqs_x[j+shift]*damp);
-            }
+             for(j=0; j<number_of_nodes; j++)
+                SetNodeValue(j,ColIndex+1, GetNodeValue(j,ColIndex+1)+GetNodeValue(j,ColIndex));
          }
-         shift += number_of_nodes;
       }
+       
+      if(type == 42&&m_num->nls_method>0) //H2M, Newton-Raphson. 06.09.2010. WW
+	  {
+	      /// $p_{n+1}=p_{n+1}+\Delta p$ is already performed when type = 0
+          if(u_type == 1)
+              return;
+       
+		  for (i = problem_dimension_dm; i < pcs_number_of_primary_nvals; i++)
+          {
+             number_of_nodes = num_nodes_p_var[i];
+             //
+             ColIndex = p_var_index[i];
+
+             for(j=0; j<number_of_nodes; j++)
+                 SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex) + eqs_x[j+shift]*damp);
+
+             shift += number_of_nodes;
+          }
+	  }	   
    }
 
    /**************************************************************************
@@ -1288,10 +1278,10 @@ namespace process
    Programmaenderungen:
    10/2002   WW   Erste Version
    11/2007   WW   Change to fit the new equation class
-
+   06/2007   WW   Rewrite
    **************************************************************************/
    void CRFProcessDeformation::
-      InitializeNewtonSteps(const int ty)
+      InitializeNewtonSteps(const bool ini_excav)
    {
       long i, j;
       long number_of_nodes;
@@ -1301,22 +1291,47 @@ namespace process
       start = 0;
       end = pcs_number_of_primary_nvals;
       //
-      // If monolithic scheme for p-u coupling, initialize p-->0 only
-      if(pcs_deformation%11 == 0&&ty==1)
-        start = problem_dimension_dm;
-      /// Liquid flow and deformation. 06.09.2010. WW
-      //if(type/10==4&&!fem_dm->dynamic)
-      //   end = problem_dimension_dm;
 
-      //
+      /// u_0 = 0
+      if(type == 42)  // H2M
+         end = problem_dimension_dm;
       for (i = start; i < end; i++)
       {
-         Col = p_var_index[i];
-         if(ty==0) Col -= 1;
+         Col = p_var_index[i]-1;
          number_of_nodes=num_nodes_p_var[i];
          for (j=0; j<number_of_nodes; j++)
             SetNodeValue(j, Col, 0.0);
       }
+
+      
+	  /// Dynamic: plus p_0 = 0 
+	  if(type==41 && !fem_dm->dynamic)
+	  {
+		 // p_1 = 0  
+         for (i = problem_dimension_dm; i < end; i++)
+         {
+            Col = p_var_index[i]; 
+            number_of_nodes=num_nodes_p_var[i];
+            for (j=0; j<number_of_nodes; j++)
+               SetNodeValue(j, Col, 0.0);
+         }
+	  }
+
+	  /// Excavation: plus u_1 = 0; 
+	  if(ini_excav)
+	  {
+		 // p_1 = 0  
+         for (i = 0; i < problem_dimension_dm; i++)
+         {
+            Col = p_var_index[i];
+            number_of_nodes=num_nodes_p_var[i];
+            for (j=0; j<number_of_nodes; j++)
+               SetNodeValue(j, Col, 0.0);
+         }
+
+	  }
+
+       
    }
 
    /**************************************************************************
@@ -1501,27 +1516,46 @@ namespace process
 
    Programmaenderungen:
    10/2002   WW   Erste Version
+   07/2011   WW  
 
    **************************************************************************/
 #ifndef NEW_EQS
-   double CRFProcessDeformation::NormOfUnkonwn()
+   double CRFProcessDeformation::NormOfUnkonwn_orRHS(bool isUnknowns)
    {
       int i, j;
-      int unknown_vector_dimension;
       long number_of_nodes;
+	  long v_shift = 0;
       double NormW = 0.0;
+	  double val;
 
+#ifdef G_DEBUG
       if (!eqs) {printf(" \n Warning: solver not defined, exit from loop_ww.cc"); exit(1);}
-      /* Ergebnisse eintragen */
-      unknown_vector_dimension = GetUnknownVectorDimensionLinearSolver(eqs);
-      for (i = 0; i < unknown_vector_dimension; i++)
+#endif
+      
+      double *vec = NULL;
+      if(isUnknowns)
+		 vec = eqs->x;
+	  else
+		 vec = eqs->b;
+      
+	  int end = pcs_number_of_primary_nvals;
+      if(fem_dm->dynamic)
+          end = problem_dimension_dm;
+
+      for (i = 0; i < end; i++)
       {
-         number_of_nodes=eqs->unknown_node_numbers[i];
+         number_of_nodes = num_nodes_p_var[i];
          for(j=0; j<number_of_nodes; j++)
-            NormW += eqs->x[number_of_nodes*i+j]*eqs->x[number_of_nodes*i+j];
+		 {
+			val =  vec[v_shift+j];  
+            NormW += val*val;
+		 }
+
+		 v_shift += number_of_nodes; 
       }
       return sqrt(NormW);
    }
+
 #endif
    /**************************************************************************
     ROCKFLOW - Funktion: MaxiumLoadRatio
@@ -2291,7 +2325,7 @@ namespace process
       else
       {
          GlobalAssembly_DM();
-
+	 
          if(type/10==4)                           // p-u monolithic scheme
          {
             // if(!fem_dm->dynamic)   ///
@@ -2299,15 +2333,16 @@ namespace process
             // 2.
             // Assemble pressure eqs
             // Changes for OpenMP
-            GlobalAssembly_std();
+            GlobalAssembly_std(true);
             // if(!fem_dm->dynamic)
             //   RecoverSolution(2);  // p_i-->p_0
          }
 
          //----------------------------------------------------------------------
          //
-         // {		MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  abort();}
-         // DumpEqs("rf_pcs1.txt");
+         // {			 MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
+
+		 // DumpEqs("rf_pcs1.txt");
          /*
           ofstream Dum("rf_pcs_omp.txt", ios::out); // WW
           eqs_new->Write(Dum);
@@ -2318,6 +2353,8 @@ namespace process
          IncorporateSourceTerms();
          //DumpEqs("rf_pcs2.txt");
 
+         // {				 MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
+
          /// If not JFNK or if JFNK but the Newton step is greater than one. 11.11.2010. WW
          if(!(m_num->nls_method==2&&ite_steps==1))
          {
@@ -2327,7 +2364,7 @@ namespace process
             else
                CalcBC_or_SecondaryVariable_Dynamics(true);
          }
-         //  {	 MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  //abort();}
+         //  {				 MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x);  //abort();}
          //
 
 #define atest_dump

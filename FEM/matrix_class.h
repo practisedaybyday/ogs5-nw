@@ -27,6 +27,7 @@ using Mesh_Group::CFEMesh;
 namespace Math_Group
 {
 
+   using namespace std;
    class Matrix
    {
       public:
@@ -296,10 +297,12 @@ namespace Math_Group
 
 #ifdef NEW_EQS
    //
+/// Sparse matrix storage type //04.2011. WW
+   enum StorageType { CRS, JDS};
    class SparseTable
    {
       public:
-         SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm=false);
+         SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm=false, StorageType stype = JDS);
          SparseTable(CPARDomain &m_dom, bool quadratic, bool symm=false);
          ~SparseTable();
          void Write(std::ostream &os=std::cout);
@@ -314,6 +317,7 @@ namespace Math_Group
          long size_entry_column;
          long max_columns;
          long rows;
+         StorageType storage_type;  //04.2011. WW
          friend class CSparseMatrix;
    };
    //08.2007 WW
@@ -345,6 +349,7 @@ namespace Math_Group
          // Access to members
          double& operator() (const long i, const long j=0) const;
          //
+         StorageType GetStorageType() const {return storage_type;}  //05.2011. WW
          long Dim() const {return DOF*rows;}
          int Dof() const {return DOF;}
          void SetDOF(const int dof_n)             //_new. 02/2010. WW
@@ -372,7 +377,9 @@ namespace Math_Group
       private:
          // Data
          double *entry;
-         mutable double zero_e;
+         mutable double zero_e; 
+        /// 0. 03.2011. WW
+        StorageType storage_type; 
          //
          bool symmetry;
          // Topology mapping from data array to matrix. All are only pointers to the

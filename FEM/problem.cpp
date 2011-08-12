@@ -901,7 +901,7 @@ void Problem::Euler_TimeDiscretize()
 
    std::cout<<"----------------------------------------------------\n";
    std::cout<<"|Acccepted step times |"<<accepted_times;
-   std::cout<<"  |Rejected step times |"<<rejected_times<<std::endl;
+   std::cout<<"|Rejected step times  |"<<rejected_times<<std::endl;
    std::cout<<"----------------------------------------------------\n";
    //
 }
@@ -2413,10 +2413,13 @@ inline double Problem::Deformation()
    dm_pcs = (CRFProcessDeformation *)(m_pcs);
    error = dm_pcs->Execute(loop_index);
    //Error
-   if (dm_pcs->type==41)
+   if (dm_pcs->type/10==4)
    {
       m_pcs->cal_integration_point_value = true;
       dm_pcs->CalIntegrationPointValue();
+
+	  if(dm_pcs->type==42) // H2M. 07.2011. WW
+        dm_pcs->CalcSecondaryVariablesUnsaturatedFlow(); 
    }
    return error;
 }

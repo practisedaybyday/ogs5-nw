@@ -149,6 +149,8 @@ namespace FiniteElement
          Matrix *AuxMatrix2;                      //NW
          Matrix *Stiffness;
          Matrix *PressureC;
+         Matrix *PressureC_S;                     // Function of S
+         Matrix *PressureC_S_dp;                     // Function of S and ds_dp
          SymMatrix *Mass;                         // For dynamic analysis
          Vec *RHS;
          // Global RHS. 08.2010. WW
@@ -222,6 +224,7 @@ namespace FiniteElement
 
          // Assembly local stiffness matrix
          void GlobalAssembly_Stiffness();
+         void GlobalAssembly_PressureCoupling(Matrix *pCMatrix, double fct, const int phase = 0);
          void GlobalAssembly_RHS();
 
          //----------- Enhanced element ----------------
@@ -234,6 +237,7 @@ namespace FiniteElement
          friend class process::CRFProcessDeformation;
 
          // Auxillarary vector
+         double *AuxNodal0;
          double *AuxNodal;
          double *AuxNodal_S0;
          double *AuxNodal_S;

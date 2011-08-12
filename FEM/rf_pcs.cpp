@@ -626,24 +626,35 @@ void CRFProcess::Create()
    //WW  phase=1;
    //CRFProcess *m_pcs = NULL;                      //
    // create EQS
-   if (type == 4)
+   /// Configure EQS (old matrx) . WW 06.2011
+   if (   getProcessType() == DEFORMATION 
+       || getProcessType() == DEFORMATION_FLOW 
+       || getProcessType() == DEFORMATION_H2 )
    {
-      eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF, DOF
-         * m_msh->GetNodesNumber(true));
-      InitializeLinearSolver(eqs, m_num);
-      PCS_Solver.push_back(eqs);                  //WW
-   }
-   else if (type == 41)
-   {
-      if (num_type_name.find("EXCAVATION") != string::npos)
-         eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF - 1, DOF
-            * m_msh->GetNodesNumber(true));
-      else
-         eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF,
-            (DOF - 1) * m_msh->GetNodesNumber(true)
-            + m_msh->GetNodesNumber(false));
-      InitializeLinearSolver(eqs, m_num);
-      PCS_Solver.push_back(eqs);                  //WW
+       if ( getProcessType() == DEFORMATION )   
+           eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF, DOF
+                                       * m_msh->GetNodesNumber(true));
+       else if (getProcessType() == DEFORMATION_FLOW)
+       {
+           if (num_type_name.find("EXCAVATION") != string::npos)
+              eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF - 1, DOF
+                                        * m_msh->GetNodesNumber(true));
+           else
+              eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF,
+                                          (DOF - 1) * m_msh->GetNodesNumber(true) 
+                                                  + m_msh->GetNodesNumber(false));
+       }
+       else if (getProcessType() == DEFORMATION_H2)
+       {
+           if(m_num->nls_method == 1) 
+              eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF,
+                                  (DOF - 2) * m_msh->GetNodesNumber(true) 
+                                            + 2*m_msh->GetNodesNumber(false));
+
+       }
+       InitializeLinearSolver(eqs, m_num);
+       PCS_Solver.push_back(eqs);    
+       size_unknowns = eqs->dim;                                 
    }
    else
    {
@@ -2105,7 +2116,7 @@ void CRFProcess::Config(void)
       ConfigMassTransport();
    }
    //	if (_pcs_type_name.find("DEFORMATION") != string::npos)
-   if (isDeformationProcess(this->getProcessType()))
+   if (isDeformationProcess(getProcessType()))
       ConfigDeformation();
    //	if (_pcs_type_name.find("FLUID_MOMENTUM") != string::npos
    if (this->getProcessType() == FLUID_MOMENTUM)
@@ -3828,6 +3839,7 @@ Programming:
 05/2007 WW DOF>1, unerrelaxation for Picard, and removing the old or spurious stuff
 12/2007 WW Classes of sparse matrix (jagged diagonal storage) and linear solver
 and parellelisation of them
+07/2011 WW Add Newton-Rahson and reduce #ifdef
 last modified:
 **************************************************************************/
 double CRFProcess::Execute()
@@ -3838,7 +3850,16 @@ double CRFProcess::Execute()
    int i;
    long j, k = 0, g_nnodes = 0;                   //07.01.07 WW
 
-   //----------------------------------------------------------------------
+   pcs_error = DBL_MAX;
+
+   double *eqs_x = NULL;
+#ifdef NEW_EQS
+   eqs_x = eqs_new->x;
+#else
+   eqs_x = eqs->x;  
+#endif
+
+
 #ifdef USE_MPI                                 //WW
    long global_eqs_dim = pcs_number_of_primary_nvals*m_msh->GetNodesNumber(false);
    CPARDomain *dom = dom_vector[myrank];
@@ -3862,6 +3883,7 @@ double CRFProcess::Execute()
       dom->eqs->SetDOF(pcs_number_of_primary_nvals);
       dom->ConfigEQS(m_num, global_eqs_dim);
    }
+   // TEST eqs_new->Initialize();
 #else
    // Also allocate temporary memory for linear solver. WW
    {
@@ -3903,19 +3925,19 @@ double CRFProcess::Execute()
 #endif
          CheckMarkedElement();
    m_msh->SwitchOnQuadraticNodes(false);
-   for (i = 0; i < pcs_number_of_primary_nvals; i++)
+
+   // If not Newton-Raphson method. 20.07.2011. WW
+   if(m_num->nls_method <1 )
    {
+      for (i = 0; i < pcs_number_of_primary_nvals; i++)
+      {
                                                   //new time
-      nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
-      g_nnodes = m_msh->GetNodesNumber(false);    //WW
-      for (j = 0; j < g_nnodes; j++)              //WW
-#ifdef NEW_EQS
-         // New EQS  WW
-         eqs_new->x[j+i*g_nnodes] = GetNodeValue(m_msh->Eqs2Global_NodeIndex[j],nidx1);
-#else
-      eqs->x[j + i * g_nnodes] = GetNodeValue(
-         m_msh->Eqs2Global_NodeIndex[j], nidx1);
-#endif
+         nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
+         g_nnodes = m_msh->GetNodesNumber(false);    //WW
+         for (j = 0; j < g_nnodes; j++)              //WW
+             eqs_x[j + i * g_nnodes] = GetNodeValue(
+                 m_msh->Eqs2Global_NodeIndex[j], nidx1);
+	  } 
    }
    /*---------------------------------------------------------------------*/
    /* 1 Calc element matrices */
@@ -3992,14 +4014,7 @@ double CRFProcess::Execute()
          for(j=0;j<g_nnodes;j++)
          {
             k = m_msh->Eqs2Global_NodeIndex[j];
-            //         val_n = GetNodeValue(k,nidx1);
-#ifdef NEW_EQS
-            SetNodeValue(k,nidx1,eqs_new->x[j+i*g_nnodes]);
-            //         eqs_new->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW
-#else
-            SetNodeValue(k,nidx1,eqs->x[j+i*g_nnodes]);
-            //         eqs->x[j+i*g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW
-#endif
+            SetNodeValue(k,nidx1,eqs_x[j+i*g_nnodes]);
          }
       }
 
@@ -4024,12 +4039,7 @@ double CRFProcess::Execute()
          for(j=0;j<g_nnodes;j++)
          {
             k = m_msh->Eqs2Global_NodeIndex[j];
-#ifdef NEW_EQS
-            // New EQS  WW
-            eqs_new->x[j+i*g_nnodes] = GetNodeValue(k,nidx1);
-#else
-            eqs->x[j+i*g_nnodes] = GetNodeValue(k,nidx1);
-#endif
+            eqs_x[j+i*g_nnodes] = GetNodeValue(k,nidx1);
          }
       }
 
@@ -4060,6 +4070,14 @@ double CRFProcess::Execute()
       eqs_new->Solver(this->m_num);               //NW
 #else
       eqs_new->Solver();
+
+
+         string fname = FileName + "_equation_results.txt";
+	     ofstream dum(fname.c_str(), ios::out|ios::trunc);
+		 eqs_new->Write(dum);
+	     exit(1);
+
+
 #endif
 #endif
 #else
@@ -4072,33 +4090,9 @@ double CRFProcess::Execute()
    // Error calculation
    //----------------------------------------------------------------------
    double val_n = 0.;                             //03.04.2007.  WW
-   // NEWTON
-   if (m_num->nls_method_name.find("NEWTON") != string::npos)
-   {
-      double Val;
-      pcs_error = 0.0;
 
-      // MSH data
-      nidx1 = GetNodeValueIndex("HEAD") + 1;
-      //for(long nn=0;nn<NodeListSize(); nn++)  {
-      for (long nn = 0; nn < (long) m_msh->nod_vector.size(); nn++)
-      {
-#ifdef NEW_EQS
-         Val = GetNodeValue(nn,nidx1)+ eqs_new->x[nn];
-#else
-         Val = GetNodeValue(nn, nidx1) + eqs->x[nn];
-#endif
-         pcs_error = max(pcs_error, fabs(Val - GetNodeValue(nn, nidx1)));
-         SetNodeValue(nn, nidx1, Val);
-      }
-#ifdef USE_MPI                              //WW
-      if(myrank==0)
-#endif
-                                                  //OK7
-         cout << "      PCS error: " << pcs_error << endl;
-   }                                              // NEWTON
-   //----------------------------------------------------------------------
-   else                                           //PICARD
+   // Remove the errror caculation for the Newton-Method. 07.2011. WW
+   if (m_num->nls_method_name.find("PICARD") != string::npos)                                          //PICARD
    {
       //......................................................................
       pcs_error = CalcIterationNODError(1);       //OK4105//WW4117
@@ -4117,14 +4111,8 @@ double CRFProcess::Execute()
          {
             k = m_msh->Eqs2Global_NodeIndex[j];
             val_n = GetNodeValue(k, nidx1);       //03.04.2009. WW
-#ifdef NEW_EQS
-            SetNodeValue(k,nidx1,relax*val_n+(1.0-relax)*eqs_new->x[j+i*g_nnodes]);
-            eqs_new->x[j+i*g_nnodes] = val_n;     // Used for time stepping. 03.04.2009. WW
-#else
-            SetNodeValue(k, nidx1, relax * val_n + (1.0 - relax) * eqs->x[j
-               + i * g_nnodes]);
-            eqs->x[j + i * g_nnodes] = val_n;     // Used for time stepping. 03.04.2009. WW
-#endif
+            SetNodeValue(k, nidx1, relax * val_n + (1.0 - relax) * eqs_x[j + i * g_nnodes]);
+            eqs_x[j + i * g_nnodes] = val_n;     // Used for time stepping. 03.04.2009. WW
          }
       }
    }                                              // END PICARD
@@ -4159,7 +4147,7 @@ void CRFProcess::CopyU_n(double *temp_v)
       /// H2M with monilithic scheme. 02.2011. WW
       if(type == 42)
       {
-         nidx1 = p_var_index[i];
+         nidx1 = p_var_index[i]+1;
          g_nnodes = num_nodes_p_var[i];
       }
       else
@@ -4176,39 +4164,6 @@ void CRFProcess::CopyU_n(double *temp_v)
 }
 
 
-/*************************************************************************
-ROCKFLOW - Function:
-Task: Initialize the equation system
-Programming:
- 05/2003 OK/WW Implementation
- 08/2003 WW    Changes for momolithic coupled equations
-last modified:
-**************************************************************************/
-#ifndef NEW_EQS                                   //WW 07.11.2008
-void CRFProcess::InitEQS()
-{
-   int i;
-   eqs->unknown_vector_indeces = \
-      (int*) Malloc(pcs_number_of_primary_nvals*sizeof(int));
-   eqs->unknown_node_numbers = \
-      (long*) Malloc(pcs_number_of_primary_nvals*sizeof(long));
-   eqs->unknown_update_methods = \
-      (int*) Malloc(pcs_number_of_primary_nvals*sizeof(long));
-
-   for(i=0;i<pcs_number_of_primary_nvals;i++)
-   {
-      eqs->unknown_vector_indeces[i] = GetNodeValueIndex(pcs_primary_function_name[i])+1;
-      eqs->unknown_node_numbers[i] = m_msh->GetNodesNumber(true);
-      eqs->unknown_update_methods[i] = 2;         //For Newton-Raphson method. WW
-      if(type==41)                                // Monolithic scheme for p-u coupled equation
-      {
-         if(i==pcs_number_of_primary_nvals-1)
-            eqs->unknown_node_numbers[i] = m_msh->GetNodesNumber(false);
-         eqs->unknown_update_methods[i] = 0;
-      }
-   }
-}
-#endif
 /*************************************************************************
 ROCKFLOW - Function:
 Task: Calculate element matrices
@@ -4702,12 +4657,26 @@ void CRFProcess::GlobalAssembly()
       SetCPL();                                   //OK
 #endif
       IncorporateBoundaryConditions();
-      // ofstream Dum("rf_pcs.txt", ios::out); // WW
+       
+	  //ofstream Dum("rf_pcs.txt", ios::out); // WW
       // eqs_new->Write(Dum);   Dum.close();
+
+#define nOUTPUT_EQS_BIN
+#ifdef OUTPUT_EQS_BIN
+	  string fname = FileName + "_equation.bin";
+	  ofstream dum_bin(fname.c_str(), ios::out|ios::binary|ios::trunc);
+	  if(dum_bin.good())
+	  {
+	     eqs_new->Write_BIN(dum_bin);
+         dum_bin.close();
+	     exit(1);
+	  } 
+#endif
       //
       //
-      // 	  MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
-      //   	  MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
+
+	  //	  MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
+
    }
 }
 
@@ -4718,7 +4687,7 @@ void CRFProcess::GlobalAssembly()
 
      24.11.2010. WW
 */
-void CRFProcess::GlobalAssembly_std(bool Check2D3D)
+void CRFProcess::GlobalAssembly_std(bool is_quad, bool Check2D3D)
 {
    long i;
    CElem* elem = NULL;
@@ -4729,7 +4698,7 @@ void CRFProcess::GlobalAssembly_std(bool Check2D3D)
       if (!elem->GetMark())                       // Marked for use
          continue;                                // For OpenMP. WW
 
-      elem->SetOrder(false);
+      elem->SetOrder(is_quad);
       fem->ConfigElement(elem,Check2D3D);
       fem->Assembly();
 
@@ -4805,6 +4774,7 @@ void CRFProcess::CalIntegrationPointValue()
       || getProcessType() == MULTI_PHASE_FLOW
       || getProcessType() == GROUNDWATER_FLOW
       || getProcessType() == TWO_PHASE_FLOW
+      || getProcessType() == DEFORMATION_H2 // 07.2011. WW
       || getProcessType() == AIR_FLOW
       || getProcessType() == PS_GLOBAL
       || getProcessType() == PTC_FLOW)            //AKS/NB
@@ -5541,7 +5511,10 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
                /// p_{n+1} = p_b,
                //  SetNodeValue(m_bc_node->geo_node_number, idx0++, bc_value);
                /// dp = u_b-u_n
-               bc_value -=  GetNodeValue(m_bc_node->geo_node_number, ++idx0);
+               //bc_value -=  GetNodeValue(m_bc_node->geo_node_number, ++idx0);
+			   SetNodeValue(m_bc_node->geo_node_number, idx0, bc_value);
+			   SetNodeValue(m_bc_node->geo_node_number, idx0+1, bc_value);
+               bc_value = 0.;
             }
 
          }
@@ -5553,7 +5526,7 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
          if(m_num->nls_method==2)
          {
             bc_JFNK new_bc_entry;
-            new_bc_entry.var_idx = idx0;
+            new_bc_entry.var_idx = idx0+1;
             new_bc_entry.bc_node = m_bc_node->geo_node_number;
             new_bc_entry.bc_eqs_idx = bc_eqs_index;
             new_bc_entry.bc_value = bc_value;
@@ -5751,7 +5724,7 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank, const int axis)
                bc_eqs_index = m_msh->nod_vector[bc_msh_node]->GetEquationIndex();
             //..............................................................
             // NEWTON WW
-            if(m_num->nls_method_name.find("NEWTON")!=string::npos
+            if(m_num->nls_method>=1 //_name.find("NEWTON")!=string::npos
                || type==4||type==41  )            //Solution is in the manner of increment !
             {
                idx0 = GetNodeValueIndex(convertPrimaryVariableToString(m_bc->getProcessPrimaryVariable()));
@@ -5858,7 +5831,7 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank, const int axis)
                bc_eqs_index = m_msh->nod_vector[bc_msh_node]->GetEquationIndex();
             //..............................................................
             // NEWTON WW
-            if(m_num->nls_method_name.find("NEWTON")!=string::npos
+            if(m_num->nls_method>=1  //_name.find("NEWTON")!=string::npos
                || type==4||type==41  )            //Solution is in the manner of increment !
             {
                idx0 = GetNodeValueIndex(convertPrimaryVariableToString(m_bc->getProcessPrimaryVariable()).c_str());
@@ -5961,7 +5934,7 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank, const int axis)
                bc_eqs_index = m_msh->nod_vector[bc_msh_node]->GetEquationIndex();
             //..............................................................
             // NEWTON WW
-            if(m_num->nls_method_name.find("NEWTON")!=std::string::npos
+            if(m_num->nls_method>=1 //_name.find("NEWTON")!=std::string::npos
                || type==4||type==41  )            //Solution is in the manner of increment !
             {
                idx0 = GetNodeValueIndex(convertPrimaryVariableToString(m_bc->getProcessPrimaryVariable()).c_str());
@@ -6766,6 +6739,9 @@ void CRFProcess::CalcSecondaryVariables(bool initial)
          CalcSecondaryVariablesUnsaturatedFlow(initial);
          break;
       case DEFORMATION || DEFORMATION_FLOW || DEFORMATION_DYNAMIC:
+         if (type == 42) //H2M                                                  //WW
+            CalcSecondaryVariablesUnsaturatedFlow(initial);
+
          break;
       case PS_GLOBAL:
          CalcSecondaryVariablesPSGLOBAL();        //WW
@@ -6926,7 +6902,7 @@ int GetRFProcessNumPhases(void)
 int GetRFProcessProcessing(char* rfpp_type)
 {
    bool pcs_flow = false;
-   bool pcs_deformation = false;
+   bool pcs_deform = false;
    CRFProcess* m_pcs = NULL;
    size_t no_processes = pcs_vector.size();
    for (size_t i = 0; i < no_processes; i++)
@@ -6934,7 +6910,7 @@ int GetRFProcessProcessing(char* rfpp_type)
       m_pcs = pcs_vector[i];
       //		if (m_pcs->_pcs_type_name.find("DEFORMATION") != string::npos)
       if (isDeformationProcess (m_pcs->getProcessType()))
-         pcs_deformation = true;
+         pcs_deform = true;
       //		if (m_pcs->_pcs_type_name.find("FLOW") != string::npos)
       if (isFlowProcess (m_pcs->getProcessType()))
          pcs_flow = true;
@@ -6942,7 +6918,7 @@ int GetRFProcessProcessing(char* rfpp_type)
 
    if (strcmp(rfpp_type, "SD") == 0)
    {
-      if (pcs_flow && pcs_deformation)
+      if (pcs_flow && pcs_deform)
          return 1;
    } else
    cout << "GetRFProcessProcessing - to be removed" << endl;
@@ -7501,11 +7477,33 @@ Programing:
 04/2007 WW Remove the spurious stuff
 08/2008 WW Time step size control (First)
 12/2008 WW Time step size control (Update)
+07/2011 WW Newton-Raphson method
 **************************************************************************/
 double CRFProcess::ExecuteNonLinear()
 {
    double nonlinear_iteration_error=0.0;
+
+   //-------------------------------------------------
+   /// For the Newton-Raphson method.  21.01.2011. WW
+   double damping, norm_x0, norm_b0, norm_x, norm_b;
+   double error_x1, error_b1, error_x2, error_b2, error; 
+   double *eqs_x = NULL; //
+   double *eqs_b = NULL; //
+   bool auto_tctr_break;
+
+   int i, k, nidx1;
+   size_t j, g_nnodes;
+
+   string delim = " ";
+   damping = 1.0;
+   norm_x0 = norm_b0 = norm_x = norm_b = 0.; 
+   error = 1.;
+   error_x2 = error_b2 = DBL_MAX; 
+   //-------------------------------------------------
+
 #ifdef NEW_EQS
+   eqs_x = eqs_new->x;
+   eqs_b = eqs_new->b;
    configured_in_nonlinearloop = true;
    // Also allocate temporary memory for linear solver. WW
    //
@@ -7519,31 +7517,178 @@ double CRFProcess::ExecuteNonLinear()
    eqs_new->ConfigNumerics(m_num);
 #endif
    //
+#else
+    eqs_x = eqs->x;  
+    eqs_b = eqs->b;  
 #endif
    //..................................................................
    // PI time step size control. 29.08.2008. WW
-   if(Tim->GetTimeStepCrtlType()>0)
+   if(Tim->GetTimeStepCrtlType()>0 )
       CopyU_n(aproblem->GetBufferArray());
+
    if (hasAnyProcessDeactivatedSubdomains)
       this->CheckMarkedElement();                 //NW
+
+
    for(iter_nlin=0;iter_nlin<pcs_nonlinear_iterations;iter_nlin++)
    {
       cout << "    PCS non-linear iteration: " << iter_nlin << "/"
          << pcs_nonlinear_iterations << endl;
+
+	  auto_tctr_break = false;
+
       nonlinear_iteration_error = Execute();
-      if(mobile_nodes_flag ==1)
-         PCSMoveNOD();
-      if(!Tim)                                    //OK
-         continue;
-      if(nonlinear_iteration_error < pcs_nonlinear_iteration_tolerance)
+
+      // Error caculation for the Newton-Raphson method. 07.2011. WW
+      // Norn of RHS and r
+      if (m_num->nls_method == 1)
       {
-         Tim->repeat = false;                     //OK/YD
+         double val;
+
+
+		 norm_x = norm_b = 0.; 
+         // Calculate the norm of x and b
+         for (i = 0; i < pcs_number_of_primary_nvals; i++)
+         {
+            g_nnodes = m_msh->GetNodesNumber(false);
+            for (j = 0; j < g_nnodes; j++)
+            {
+               val = eqs_x[j+ i * g_nnodes];
+               norm_x += val*val;
+               val = eqs_b[j+ i * g_nnodes];
+               norm_b += val*val;
+            }
+         }
+         norm_x = sqrt(norm_x);
+         norm_b = sqrt(norm_b);
+
+		 // Initial norm
+		 if(iter_nlin == 0)
+		 {
+            norm_x0 = norm_x;
+            norm_b0 = norm_b;
+               
+		 }
+		 else // Check the convergence
+		 {
+            error_x1 = norm_x/norm_x0; 
+            error_b1 = norm_b/norm_b0; 
+            
+            if(norm_x<pcs_nonlinear_iteration_tolerance&&error_x1>norm_x)
+               error_x1 = norm_x;
+            if(norm_b<pcs_nonlinear_iteration_tolerance&&error_b1>norm_b)
+               error_b1 = norm_b;
+           
+			error = max(error_x1, error_b1); 
+
+			// Compute damping for Newton-Raphson step
+            damping=1.0;
+
+            if(error_x1/error_x2>1.0e-1||error_b1/error_b2>1.0e-1)
+              damping=0.5;
+
+             if(error>100.0&&iter_nlin>1)
+             {
+				 // if automatic time control
+                 if(Tim->GetTimeStepCrtlType()>0)
+				 {
+					 auto_tctr_break = true;
+				 }
+				 else
+				 {
+                    cout<<"Attention: Newton-Raphson step is diverged. Programme halt!"<<endl;
+                    exit(1);                   
+				 }
+				 
+             }
+
+              error_x2 = error_x1;
+              error_b2 = error_b1;
+
+			   			   
+
+		 }
+
+         if(auto_tctr_break)
+			 break;
+ 
+
+		 bool is_converged = false;
+         if(norm_x0<pcs_nonlinear_iteration_tolerance)
+	     { 
+			error = norm_x0;
+            is_converged = true;
+	     }
+         if(norm_b0<10*pcs_nonlinear_iteration_tolerance)
+	     {
+			error = norm_b0;
+            is_converged = true;
+	     }
+         if(norm_b<0.001*norm_b0)
+            is_converged = true;
+         if(error<=pcs_nonlinear_iteration_tolerance)
+            is_converged = true;
+
+
+#ifdef USE_MPI
+        if(myrank==0)
+        {
+#endif
+            //Screan printing:
+            cout<<"\n------------------------------------------------------------------ "<<endl;
+            cout<<"*** Newton-Raphson steps: "<<iter_nlin<<endl;
+            cout.width(10);
+            cout.precision(3);
+            //           cout.setf(ios::fixed, ios::floatfield);
+            cout.setf(ios::scientific);
+            cout<<"\nError     "<<delim
+                <<"RHS Norm 0"<<delim<<"RHS Norm  "<<delim<<"Unknowns Norm"
+                <<delim<<"Damping"<<endl;
+            cout<<error<<delim<<norm_b0<<delim
+                <<norm_b<<delim<<norm_x<<"   "<<delim<<damping<<endl;
+            cout<<"------------------------------------------------------------------ "<<endl;
+#ifdef USE_MPI
+         }
+#endif
+
+			   
+		         // Calculate the norm of x and b
+         for (i = 0; i < pcs_number_of_primary_nvals; i++)
+         {
+             nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
+             g_nnodes = m_msh->GetNodesNumber(false); 
+             for (j = 0; j < g_nnodes; j++)
+             {
+                 k = m_msh->Eqs2Global_NodeIndex[j];
+                 SetNodeValue(k, nidx1, GetNodeValue(k, nidx1) + damping*eqs_x[j+ i * g_nnodes]);
+             }
+         }
+
+
+		 nonlinear_iteration_error = error;
+
+		 if(is_converged)
+             break;
+
+	  }
+	  else
+	  {
+
+          if(mobile_nodes_flag ==1)
+             PCSMoveNOD();
+          if(!Tim)                                    //OK
+             continue;
+          if(nonlinear_iteration_error < pcs_nonlinear_iteration_tolerance)
+          {
+             Tim->repeat = false;                     //OK/YD
                                                   //OK/YD
-         Tim->nonlinear_iteration_error = nonlinear_iteration_error;
-         break;
-      }
-      else
-         Tim->repeat = true;                      //OK/YD
+             Tim->nonlinear_iteration_error = nonlinear_iteration_error;
+             break;
+          }
+          else
+             Tim->repeat = true;                      //OK/YD
+     }
+   
    }
    // PI time step size control. 27.08.2008. WW
    if(Tim->GetTimeStepCrtlType()>0)
@@ -7938,9 +8083,9 @@ void CRFProcess::CopyTimestepNODValues(bool forward)
       //WW
       //		if (_pcs_type_name.find("RICHARDS") != string::npos || type == 1212) { //Multiphase. WW
                                                   //Multiphase. WW
-      if (this->getProcessType() == RICHARDS_FLOW || type == 1212)
+      if (this->getProcessType() == RICHARDS_FLOW || type == 1212 ||type ==42)
       {
-         if (j == 1 && type == 1212)              // Multiphase. WW
+         if (j == 1 && (type == 1212||type ==42))              // Multiphase. WW
             continue;
          if (j == 0)
             nidx0 = GetNodeValueIndex("SATURATION1");
@@ -8113,7 +8258,7 @@ Programming:
 **************************************************************************/
 void CRFProcess::CalcSecondaryVariablesUnsaturatedFlow(bool initial)
 {
-   int ii;
+   int ii, jj;
    long i;
    double p_cap;
    int idxp,idxcp,idxS;
@@ -8121,7 +8266,7 @@ void CRFProcess::CalcSecondaryVariablesUnsaturatedFlow(bool initial)
    vector<string> secondSNames;
    vector<string> secondCPNames;
    secondSNames.push_back("SATURATION1");
-   if(type==1212)                                 // Multiphase flow
+   if(type==1212||type==42)                                 // Multiphase flow
       secondCPNames.push_back("PRESSURE1");
    else
       secondCPNames.push_back("PRESSURE_CAP1");
@@ -8138,9 +8283,12 @@ void CRFProcess::CalcSecondaryVariablesUnsaturatedFlow(bool initial)
    for(ii=0;ii<(int)secondSNames.size();ii++)
    {
       idxS = GetNodeValueIndex(secondSNames[ii].c_str())+1;
-      if(type==1212)                              // Multiphase flow
+      if(type==1212||type ==42)                              // Multiphase flow
       {
-         idxcp = GetNodeValueIndex(pcs_primary_function_name[ii])+1;
+         jj = ii;
+         if(type ==42)
+           jj += problem_dimension_dm;
+         idxcp = GetNodeValueIndex(pcs_primary_function_name[jj])+1;
          idxp = GetNodeValueIndex("PRESSURE_W");
       }
       else
@@ -8154,7 +8302,7 @@ void CRFProcess::CalcSecondaryVariablesUnsaturatedFlow(bool initial)
       {
          // Copy the new saturation to the old level
          //
-         if(type==1212)                           // Multiphase flow
+         if(type==1212||type==42)                           // Multiphase flow
          {
             // p_w = p_g-p_c
             p_cap = GetNodeValue(i,idxcp+2)-GetNodeValue(i,idxcp);
@@ -10994,28 +11142,46 @@ void CRFProcess::PI_TimeStepSize(double *u_n)
    for(ii=0; ii<pcs_number_of_primary_nvals; ii++)
    {
       nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii])+1;
-      g_nnodes =m_msh->GetNodesNumber(false);     //DOF>1, WW
+      g_nnodes =m_msh->GetNodesNumber(false);     
       size_x += g_nnodes;
-      for(j=0;j<g_nnodes;j++)
-      {
-         k = m_msh->Eqs2Global_NodeIndex[j];
-         l = j+ii*g_nnodes;
-         x0 = u_n[l];
-         x1 = GetNodeValue(k,nidx1);
-         err += pow( (x1- u_n0[l])/(Atol+Rtol*max(fabs(x0),fabs(x1))),2);
-      }
+
+	  // if Newton-Raphson
+	  if(m_num->nls_method >= 1) 
+	  {
+         for(j=0;j<g_nnodes;j++)
+         {
+            k = m_msh->Eqs2Global_NodeIndex[j];
+            l = j+ii*g_nnodes;
+            x0 = u_n[l];
+            x1 = GetNodeValue(k,nidx1);
+            err += pow( u_n0[l]/(Atol+Rtol*max(fabs(x0),fabs(x1))),2);
+         }
+	  }
+	  else
+	  {     
+         for(j=0;j<g_nnodes;j++)
+         {
+            k = m_msh->Eqs2Global_NodeIndex[j];
+            l = j+ii*g_nnodes;
+            x0 = u_n[l];
+            x1 = GetNodeValue(k,nidx1);
+            err += pow( (x1- u_n0[l])/(Atol+Rtol*max(fabs(x0),fabs(x1))),2);
+         }
+	  }
    }
    err = sqrt(err/(double)size_x);
 #endif
+
+
    //----------------------------------------------------------------------
    //
    //Set the reject factor for the first timestep BG
-   if (Tim->step_current == 1)
-      Tim->reject_factor = 1;
+   //if (Tim->step_current == 1)
+   //   Tim->reject_factor = 1;
 
    //compute hnew with the resriction: 0.2<=hnew/h<=6.0;
    fac = max(factor2,min(factor1,pow(err,0.25)/sfactor));
-   hnew = dt/fac*Tim->reject_factor;              // BG, use the reject factor to lower timestep after rejection BG
+   hnew = dt/fac; //*Tim->reject_factor;              // BG, use the reject factor to lower timestep after rejection BG
 
    //determine if the error is small enough
    if(err<=1.0e0)                                 //step is accept
@@ -11035,7 +11201,8 @@ void CRFProcess::PI_TimeStepSize(double *u_n)
          Tim->SetHacc(hacc);
          Tim->setErracc(erracc);
       }
-      if(fabs(hnew)>hmax) hnew = hmax;
+      if(fabs(hnew)>hmax)
+         hnew = hmax;
       if(!accepted)
          hnew = min(fabs(hnew), dt);
       Tim->SetTimeStep(fabs(hnew));
@@ -11049,10 +11216,10 @@ void CRFProcess::PI_TimeStepSize(double *u_n)
    }                                              //end if(err<=1.0e0)
    else
    {
-      Tim->reject_factor = 1;                     //BG; if the time step is rejected the next timestep increase is reduced by the reject factor (choose reject factor between 0.1 and 0.9); 1.0 means no change
+      //WW Tim->reject_factor = 1;                     //BG; if the time step is rejected the next timestep increase is reduced by the reject factor (choose reject factor between 0.1 and 0.9); 1.0 means no change
       reject_steps++;
       accepted = false;
-      hnew = hnew / Tim->reject_factor;           //BG
+      //WW hnew = hnew / Tim->reject_factor;           //BG
       Tim->SetTimeStep(hnew);
       Tim->time_step_vector.push_back(hnew);      //BG
       if(reject_steps>100&&accept_steps==0)

@@ -72,7 +72,7 @@ CNumerics::CNumerics(string name)
    m_cols = 5;                                    // 06.2010. WW
    // NLS - Nonlinear Solver
    nls_method_name = "PICARD";
-   nls_method = 0;                                // Default, Picard. 1: Newton
+   nls_method = -1;                                // Default linear, 0: Picard. 1: Newton
    nls_max_iterations = 1;                        //OK
    nls_error_tolerance = 1.0e-4;
    nls_error_tolerance_local = 1.0e-10;           //For element level
@@ -130,7 +130,7 @@ Programing:
 **************************************************************************/
 CNumerics::~CNumerics(void)
 {
-   if(DynamicDamping) delete DynamicDamping;
+   if(DynamicDamping) delete [] DynamicDamping;
    DynamicDamping = NULL;
 }
 
@@ -488,42 +488,6 @@ void CNumerics::Write(fstream* num_file)
 // LINEAR_SOLVER
 //////////////////////////////////////////////////////////////////////////
 #ifndef NEW_EQS                                   //WW. 06.11.2008
-/**************************************************************************
- ROCKFLOW - Funktion: NormOfUnkonwn
-
- Aufgabe:
-   Compute the norm of RHS of a linear equation
-
- Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   E: LINEAR_SOLVER * ls: linear solver
-
- Ergebnis:
-   - double - Eucleadian Norm
-
-Programmaenderungen:
-12/2002   WW   Erste Version
-
-**************************************************************************/
-double CalcNormOfRHS(LINEAR_SOLVER*ls)
-{
-   int i, j;
-   int unknown_vector_dimension;
-   long number_of_nodes;
-   double NormW = 0.0;
-
-   if (!ls) {printf(" \n Warning: solver not defined, exit from loop_ww.cc"); exit(1);}
-   /* Ergebnisse eintragen */
-   unknown_vector_dimension = GetUnknownVectorDimensionLinearSolver(ls);
-   for (i = 0; i < unknown_vector_dimension; i++)
-   {
-      number_of_nodes=ls->unknown_node_numbers[i];
-      for(j=0; j<number_of_nodes; j++)
-         NormW += ls->b[number_of_nodes*i+j]*ls->b[number_of_nodes*i+j];
-
-   }
-   return sqrt(NormW);
-}
-
 
 /*************************************************************************
  ROCKFLOW - Funktion: SetZeroLinearSolver

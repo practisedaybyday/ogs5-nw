@@ -56,13 +56,13 @@ namespace process
          //
          void SetInitialGuess_EQS_VEC();
          void UpdateIterativeStep(const double damp, const int u_type);
-         void InitializeNewtonSteps(const int ty);
+         void InitializeNewtonSteps(const bool ini_excav = false);
          double NormOfUpdatedNewton();
          void StoreLastSolution(const int ty=0);
          void RecoverSolution(const int ty=0);
          double NormOfDisp();
 #ifndef NEW_EQS
-         double NormOfUnkonwn();
+         double NormOfUnkonwn_orRHS(bool isUnknowns = true);
 #endif
          // Stress
          // For partitioned HM coupled scheme

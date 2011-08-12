@@ -8,8 +8,35 @@ last modified:
 #ifndef rf_mfp_new_INC
 #define rf_mfp_new_INC
 
+#include <string>
 //#include "rfmat_cp.h"//AKS
+
 class CompProperties;
+
+/*!
+\class hash_table
+ 
+ WW 07.2011 
+*/
+using namespace std;
+class Hash_Table
+{
+   public:
+     Hash_Table(string f_name);
+     ~Hash_Table();
+    
+     double CalcValue(double *var, const int var_id) const;
+
+   private:
+ 	 ///Hash. Test. 08.2011. WW
+     int num_par;
+     int num_var;
+
+	 vector<string> names; 
+     vector<double> hash_row_par;
+     vector<int> table_section_ends;
+     vector<double*> hash_table_data;     
+};
 
 /*---------------------------------------------------------------*/
 //namespace FiniteElement {class CElement;}
@@ -18,20 +45,6 @@ namespace FiniteElement {class CFiniteElementStd;}
 using FiniteElement::CFiniteElementStd;
 class CFluidProperties
 {
-   private:
-      // State variables
-      double primary_variable[10];                //WW
-      double primary_variable_t0[10];             //CMCD
-      double primary_variable_t1[10];             //CMCD
-      CRFProcess *mfp_pcs;
-      // CElement *m_element;
-      //
-      bool cal_gravity;                           //YD/WW
-      // FEM
-                                                  //WW
-      friend class  FiniteElement::CFiniteElementStd;
-      // PCS
-      CRFProcess *m_pcs;                          //OK4704
    public:
 
       int fluid_id;                               // specification of substance (NB JUN 09)
@@ -172,6 +185,22 @@ class CFluidProperties
 						  double CaldZdT(double p, double T); //AKS
 
    private:
+      // State variables
+      double primary_variable[10];                //WW
+      double primary_variable_t0[10];             //CMCD
+      double primary_variable_t1[10];             //CMCD
+      // CElement *m_element;
+      //
+      bool cal_gravity;                           //YD/WW
+      // FEM
+                                                  //WW
+      friend class  FiniteElement::CFiniteElementStd;
+      // PCS
+      CRFProcess *m_pcs;                          //OK4704
+      CRFProcess *mfp_pcs;
+
+      Hash_Table *scatter_data;  //WW
+
       double GasViscosity_Reichenberg_1971(double,double);
                                                   //AKS
       double GasViscosity_Chung_1988(long idx_elem, double,double);

@@ -80,7 +80,7 @@ namespace FiniteElement
          // 4. Gravity term
          void CalcGravity();
          // 5. Strain coupling matrix
-         void CalcStrainCoupling();
+         void CalcStrainCoupling(const int phase = 0);
          // 6. Thermal coupling
          void CalcRHS_by_ThermalDiffusion();
          // 7. Advection matrix
@@ -134,18 +134,18 @@ namespace FiniteElement
          void CalcOverlandUpwindedCoefficients(double** amat, double* ckwr, double axx, double ayy);
          //
                                                   //CB added by CB: 090507
-         inline void UpwindAlphaMass(double *alpha);
+         void UpwindAlphaMass(double *alpha);
                                                   //CB added by CB: 090507
-         inline void UpwindUnitCoord(int p, int point, int ind);
+         void UpwindUnitCoord(int p, int point, int ind);
          int UpwindElement(int option, int phase);// PCH
                                                   //CB added by CB: 090507
-         inline void UpwindSummandMass(const int gp, int& gp_r, int& gp_s, int& gp_t, double *alpha, double *summand);
+         void UpwindSummandMass(const int gp, int& gp_r, int& gp_s, int& gp_t, double *alpha, double *summand);
                                                   //NW
-         inline double CalcSUPGCoefficient(double*vel,int ip);
+         double CalcSUPGCoefficient(double*vel,int ip);
                                                   //NW
-         inline void CalcSUPGWeightingFunction(double*vel, int ip, double &tau, double*v_dN);
+         void CalcSUPGWeightingFunction(double*vel, int ip, double &tau, double*v_dN);
                                                   //NW
-         inline double CalcSUPGEffectiveElemenetLength(double *vel);
+         double CalcSUPGEffectiveElemenetLength(double *vel);
          // Gauss value
          void ExtropolateGauss(CRFProcess *m_pcs, const int idof);
          //
@@ -219,43 +219,48 @@ namespace FiniteElement
          //
          void Config();
          //
-         inline double CalCoefMass();
+         double CalCoefMass();
                                                   // 25.2.2007 WW
-         inline double CalCoefMass2(int dof_index);
-         inline double CalCoefMassPTC(int dof_index);
+         double CalCoefMass2(int dof_index);
+         double CalCoefMassPTC(int dof_index);
                                                   // 03.3.2009 PCH
-         inline double CalCoefMassPSGLOBAL(int dof_index);
-         inline void CalCoefLaplace(bool Gravity, int ip=0);
+         double CalCoefMassPSGLOBAL(int dof_index);
+         void CalCoefLaplace(bool Gravity, int ip=0);
                                                   // 10 2008 PCH
-         inline void CalCoefLaplaceMultiphase(int phase, int ip=0);
-         inline void CalCoefLaplace2(bool Gravity, int dof_index);
+         void CalCoefLaplaceMultiphase(int phase, int ip=0);
+         void CalCoefLaplace2(bool Gravity, int dof_index);
                                                   // AKS/NB
-         inline void CalCoefLaplacePTC(int dof_index);
-         inline void CalCoefLaplacePSGLOBAL(bool Gravity, int dof_index);
-         inline double CalCoefAdvection();        //SB4200 OK/CMCD
+         void CalCoefLaplacePTC(int dof_index);
+         void CalCoefLaplacePSGLOBAL(bool Gravity, int dof_index);
+         double CalCoefAdvection();        //SB4200 OK/CMCD
                                                   //AKS/NB
-         inline double CalCoefAdvectionPTC(int dof_index);
-         inline double CalCoefStorage();          //SB4200
-         inline double CalCoefContent();
-         inline double CalCoefStrainCouping();
-         inline double  CalcCoefDualTransfer();
+         double CalCoefAdvectionPTC(int dof_index);
+         double CalCoefStorage();          //SB4200
+         double CalCoefContent();
+         double CalCoefStrainCouping(const int phase = 0);
+
+		 double  CalcCoefDualTransfer();
                                                   // 27.2.2007 WW
-         inline double CalCoef_RHS_T_MPhase(int dof_index);
-         inline double CalCoef_RHS_PTC(int dof_index);
+         double CalCoef_RHS_T_MPhase(int dof_index);
+         double CalCoef_RHS_PTC(int dof_index);
                                                   // 27.2.2007 WW
-         inline double CalCoef_RHS_M_MPhase(int dof_index);
-         inline double CalCoef_RHS_PSGLOBAL(int dof_index);
+         double CalCoef_RHS_M_MPhase(int dof_index);
+         double CalCoef_RHS_PSGLOBAL(int dof_index);
                                                   //  NB
-         inline double CalCoef_RHS_T_PSGlobal(int dof_index);
+         double CalCoef_RHS_T_PSGlobal(int dof_index);
                                                   // 03.2007 PCH
-         inline void CalCoef_RHS_Pc(int dof_index);
+         void CalCoef_RHS_Pc(int dof_index);
                                                   //AKS
-         inline double CalCoef_RHS_AIR_FLOW(int dof_index);
+         double CalCoef_RHS_AIR_FLOW(int dof_index);
                                                   //AKS
-         inline double CalCoef_RHS_HEAT_TRANSPORT(int dof_index);
+         double CalCoef_RHS_HEAT_TRANSPORT(int dof_index);
                                                   //AKS
-         inline double CalCoef_RHS_HEAT_TRANSPORT2(int dof_index);
-         inline void CalNodalEnthalpy();
+         double CalCoef_RHS_HEAT_TRANSPORT2(int dof_index);
+         void CalNodalEnthalpy();
+
+         void ComputeAdditionalJacobi_H2(); //WW
+         void ComputeAdditionalJacobi_Richards(); //WW
+
          //-----------------------------------------------------
          // Process type
          //L: Liquid flow
@@ -278,7 +283,9 @@ namespace FiniteElement
          void AssembleParabolicEquationNewton();
                                                   // JOD
          void AssembleParabolicEquationNewtonJacobian(double** jacob, double* Haa, double* HaaOld, double axx, double ayy, double** amat, double ast, double* swold, double* residuall, int* iups);
-         inline void Assemble_strainCPL();        // Assembly of strain coupling
+         void Assemble_strainCPL(const int phase = 0);        // Assembly of strain coupling
+         void Assemble_strainCPL_Matrix(const double fac, const int phase = 0);
+
          void AssembleMassMatrix(int option);     // PCH
          // Assembly of RHS by Darcy's gravity term
          void Assemble_Gravity();
@@ -298,6 +305,8 @@ namespace FiniteElement
          void AssembleRHSVector();                //OK
          void AssembleCapillaryEffect();          // PCH
                                                   // PCH for debugging
+
+		 void Add2GlolbalMatrixII(const int block_cols = 2);               //WW. 06.2011
          void PrintTheSetOfElementMatrices(std::string mark);
          // Friend classes, 01/07, WW
          friend class ::CMediumProperties;

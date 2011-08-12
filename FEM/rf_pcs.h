@@ -176,6 +176,9 @@ class CRFProcess : public ProcessInfo
       bool compute_domain_face_normal;            //WW
       int continuum;
       bool continuum_ic;
+
+	  std::vector<std::string> pcs_type_name_vector;
+
    protected:                                     //WW
       friend class FiniteElement::CFiniteElementStd;
       friend class FiniteElement::CFiniteElementVec;
@@ -432,10 +435,7 @@ class CRFProcess : public ProcessInfo
       int pcs_number;
       int mobile_nodes_flag;
 
-   private:
-      std::vector<std::string> pcs_type_name_vector;
-
-   public:
+ 
       int pcs_type_number;
       int type;
       int GetObjType() const {return type;}
@@ -585,7 +585,7 @@ class CRFProcess : public ProcessInfo
       void AllocateLocalMatrixMemory();
       virtual void GlobalAssembly();              // Make as a virtul function. //10.09.201l. WW
       /// For all PDEs excluding that for deformation. 24.11.2010l. WW
-      void GlobalAssembly_std(bool Check2D3D = false);
+      void GlobalAssembly_std(bool is_quad, bool Check2D3D = false);
       /// Assemble EQS for deformation process.
       virtual void GlobalAssembly_DM() {};
 #if defined (NEW_EQS) && defined(JFNK_H2M)
@@ -605,9 +605,11 @@ class CRFProcess : public ProcessInfo
       bool cal_integration_point_value;           //WW
       void CalGPVelocitiesfromFluidMomentum();    //SB 4900
       bool use_velocities_for_transport;          //SB4900
-      //---
+ 
+	  //---
       double Execute();
       double ExecuteNonLinear();
+
       virtual void CalculateElementMatrices(void) ;
       void DDCAssembleGlobalMatrix();
       virtual void AssembleSystemMatrixNew(void);
@@ -631,7 +633,6 @@ class CRFProcess : public ProcessInfo
       void EQSInitialize();
       void EQSSolver(double* x);                  // PCH
 #else
-      void InitEQS();
       int ExecuteLinearSolver(void);
       int ExecuteLinearSolver(LINEAR_SOLVER *eqs);
 #endif

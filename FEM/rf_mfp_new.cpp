@@ -86,6 +86,7 @@ CFluidProperties::CFluidProperties(void)
    Fem_Ele_Std = NULL;
    // WW
    molar_mass = COMP_MOL_MASS_AIR;
+   scatter_data = NULL;
 }
 
 
@@ -103,6 +104,9 @@ CFluidProperties::~CFluidProperties(void)
       component_vector[i] = NULL;
    }
    component_vector.clear();
+
+   if(scatter_data) //WW
+     delete scatter_data;
 }
 
 
@@ -3257,7 +3261,7 @@ Programing:
 double CFluidProperties::CaldZdT(double p,double T)
 {
    std::vector<double> roots;
-   double a, a0,daa,w, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;                   
+   double a, a0,daa, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;                   
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor;
@@ -3427,3 +3431,129 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
    return variables ;
 }
 
+
+//-----------------------------------------------------
+//  
+/*!
+   \brief constructor of class Hash_Table
+     
+    Read data and fill the member data
+
+	WW 07.2011 
+*/
+Hash_Table::Hash_Table(string f_name)
+{
+   string aline;
+   std::stringstream ss;
+   int i_buff = 0.;
+   int i, length;
+
+   f_name = FilePath +  f_name;
+   ifstream ins(f_name.c_str());
+   if(!ins.good())
+   {
+      cout<<"File "<<f_name<<" cannot openned. Program exit ";
+	  exit(1);
+   } 
+   
+   getline(ins, aline); 
+   if(aline.find("Varaiable_Number")!=string::npos)
+   {
+      ss.str(aline);
+      ss>>aline>>num_var;
+	  ss.clear();
+   }
+   else
+   {
+      cout<<"Number of varaiables are not defined. Program exit ";
+	  exit(1);
+   }
+
+   num_par = 2;
+   num_var -= 2;
+   length = num_par+num_var;
+
+   names.resize(length); 
+   getline(ins, aline); 
+   ss.str(aline);
+   for(i=0; i<length; i++)
+     ss>>names[i];
+   ss.clear();
+
+   int counter = 0;
+   double par = 0.;
+   table_section_ends.push_back(0);
+   while(!ins.eof())
+   {
+      getline(ins, aline); 
+	  if(aline.find("...")!=string::npos)
+	  {
+	     table_section_ends.push_back(counter+1);
+		 hash_row_par.push_back(par);
+	     continue;
+	  }  
+      if(aline.find("---")!=string::npos)
+         break;
+  
+	  double *data_vp = new double[length-1];
+	  hash_table_data.push_back(data_vp);
+
+	  ss.str(aline);
+      ss>>par;
+      for(i=0; i<length-1; i++) 
+         ss>>data_vp[i];
+	  ss.clear();
+
+      counter++;
+   }
+
+}
+/*!
+   \brief desconstructor of class Hash_Table
+     
+
+	WW 07.2011 
+*/
+Hash_Table::~Hash_Table()
+{
+	while(hash_table_data.size()>0)
+	{
+       delete [] hash_table_data[hash_table_data.size()-1];
+	   hash_table_data.pop_back();
+	}
+}
+
+/*!
+   \brief desconstructor of class Hash_Table
+     
+
+	WW 07.2011 
+*/
+double Hash_Table::CalcValue(double *var, const int var_id) const
+{
+    size_t i, j, k;
+	double *data_0, *data_1;
+	double val_e[4];
+
+	if(var[0]<hash_row_par[0])
+       var[0] = hash_row_par[0]; 
+	if(var[0]>hash_row_par[hash_row_par.size()-1])
+       var[0] = hash_row_par[hash_row_par.size()-1]; 
+    
+    for(i=0; i<hash_row_par.size()-1; i++)
+	{
+        if((var[0]>=hash_row_par[i])&&(var[0]<hash_row_par[i+1]))
+		{         
+            for(j=0; j<2; j++)
+			{
+               data_0 = hash_table_data[i+j];
+               for(k=table_section_ends[i+j]; k<table_section_ends[i+j+1]; k++)
+			   {
+                   
+			   }
+			}
+			break; 
+		}
+	}
+	return 0.;
+}

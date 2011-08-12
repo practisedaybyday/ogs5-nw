@@ -44,7 +44,7 @@ namespace FiniteElement
 
    //  Constructor of class Element_DM
    CFiniteElementVec::CFiniteElementVec(process::CRFProcessDeformation *dm_pcs, const int C_Sys_Flad, const int order)
-      :CElement(C_Sys_Flad, order), pcs(dm_pcs), b_rhs(NULL)
+      :CElement(C_Sys_Flad, order), pcs(dm_pcs), PressureC(NULL), PressureC_S(NULL), PressureC_S_dp(NULL), b_rhs(NULL)
    {
       int i;
       excavation = false;                         // 12.2009. WW
@@ -62,6 +62,7 @@ namespace FiniteElement
       if(dim==3)
          ns = 6;
       //  10.11.2010. WW
+      AuxNodal0 = new double[8];
       AuxNodal = new double[8];
       AuxNodal_S0 = new double[8];
       AuxNodal_S = new double[8];
@@ -230,7 +231,6 @@ namespace FiniteElement
       *B_matrix = 0.0;
       *B_matrix_T = 0.0;
 
-      PressureC = NULL;
       if(pcs->Memory_Type==0)                     // Do not store local matrices
       {
          Stiffness = new Matrix(60,60);
@@ -274,7 +274,14 @@ namespace FiniteElement
             } else if (h_pcs->type == 14 || h_pcs->type == 22)
             Flow_Type = 1;
             else if (h_pcs->type == 1212||h_pcs->type==42)
+			{
                Flow_Type = 2;                     //25.04.2008.  WW
+
+			   // 07.2011. WW
+			   PressureC_S = new Matrix(60,20);                   
+               if(pcs->m_num->nls_method == 1) // Newton-raphson. WW
+                   PressureC_S_dp = new Matrix(60,20); 
+			}
             // WW idx_P0 = pcs->GetNodeValueIndex("POROPRESSURE0");
             break;
             //		} else if (pcs_vector[i]->pcs_type_name.find("PS_GLOBAL") != string::npos) {
@@ -383,10 +390,8 @@ namespace FiniteElement
       {
          delete Stiffness;
          delete RHS;
-         if(F_Flag) delete PressureC;
          Stiffness = NULL;
          RHS = NULL;
-         PressureC = NULL;
       }
 
       if(enhanced_strain_dm)
@@ -407,6 +412,11 @@ namespace FiniteElement
          PDB = NULL;
          DtD = NULL;
       }
+
+      //11.07.2011. WW
+	  if(PressureC) delete PressureC;
+	  if(PressureC_S) delete PressureC_S;
+	  if(PressureC_S_dp) delete PressureC_S_dp;
 
       B_matrix = NULL;
       B_matrix_T = NULL;
@@ -513,8 +523,12 @@ namespace FiniteElement
          // If local matrices are not stored, resize the matrix
          size = dim*nnodesHQ;
          Stiffness->LimitSize(size, size);
-         if(F_Flag)
+         if(PressureC)
             PressureC->LimitSize(size, nnodes);
+         if(PressureC_S)
+            PressureC_S->LimitSize(size, nnodes);
+         if(PressureC_S_dp)
+            PressureC_S_dp->LimitSize(size, nnodes);
          RHS->LimitSize(size);
 
       }
@@ -523,7 +537,7 @@ namespace FiniteElement
          EleMat = pcs->Ele_Matrices[Index];
          Stiffness = EleMat->GetStiffness();
          RHS = EleMat->GetRHS();
-         if(F_Flag)
+         if(PressureC)
             PressureC = EleMat->GetCouplingMatrixA();
       }
 
@@ -781,8 +795,8 @@ namespace FiniteElement
       const Matrix *p_D)
    {
       int i, j, k, l;
-      double rho, fac, dN_dx;
-      fac = 0.0;
+      double rho, fac, fac1, fac2, dN_dx, f_buff;
+      fac = fac1 = fac2 = f_buff= 0.0;
       dN_dx=0.0;
       rho = CalDensity();
       const int nnodesHQ = this->nnodesHQ;
@@ -853,14 +867,26 @@ namespace FiniteElement
       //---------------------------------------------------------
       // Assemble coupling matrix
       //---------------------------------------------------------
-      // SM -> DM - Kopplungsgroe?n
-      // Gauss-Punkte, Quadratische Ans?ze fuer Verschiebungen
-      // Lineare fuer den Druck
       // LoadFactor: factor of incremental loading, prescibed in rf_pcs.cpp
 
-      if(F_Flag&&!PreLoad)
+      if((PressureC||PressureC_S||PressureC_S_dp)&&!PreLoad) // 07.2011 WW
       {
-         fac = LoadFactor* fkt;
+	
+		 fac = LoadFactor* fkt;
+
+		 // 07.2011. WW 
+         if(PressureC_S||PressureC_S_dp) 
+		 { 
+			// Pressure 1  
+			fac2 = interpolate(AuxNodal0); 
+			// Saturation of phase 1  
+		    fac1 = m_mmp->SaturationCapillaryPressureFunction(fac2,0);
+		    if(PressureC_S_dp)
+			{
+               fac2 = fac1 + fac2 * m_mmp->SaturationPressureDependency(fac1, m_mfp->Density(), 1.0);
+			}
+		 }
+
          if(axisymmetry)
          {
             for (k=0;k<nnodesHQ;k++)
@@ -871,7 +897,14 @@ namespace FiniteElement
                   {
                      dN_dx = dshapefctHQ[nnodesHQ*j+k];
                      if(j==0) dN_dx += shapefctHQ[k]/Radius;
-                     (*PressureC)(nnodesHQ*j+k,l) += fac*dN_dx * shapefct[l];
+
+                     f_buff = fac*dN_dx * shapefct[l];
+                     (*PressureC)(nnodesHQ*j+k,l) += f_buff;
+					 if(PressureC_S)
+                        (*PressureC_S)(nnodesHQ*j+k,l) += f_buff*fac1;
+					 if(PressureC_S_dp)
+                        (*PressureC_S_dp)(nnodesHQ*j+k,l) += f_buff*fac2;
+
                   }
                }
             }
@@ -883,7 +916,15 @@ namespace FiniteElement
                for (l=0;l<nnodes;l++)
                {
                   for(j=0; j<ele_dim; j++)
-                     (*PressureC)(nnodesHQ*j+k,l) += fac*dshapefctHQ[nnodesHQ*j+k] * shapefct[l];
+				  { 
+                     f_buff = fac*dshapefctHQ[nnodesHQ*j+k] * shapefct[l];
+					 (*PressureC)(nnodesHQ*j+k,l) += f_buff;
+                     if(PressureC_S)
+                        (*PressureC_S)(nnodesHQ*j+k,l) += f_buff*fac1;
+                     if(PressureC_S_dp)
+                        (*PressureC_S_dp)(nnodesHQ*j+k,l) += f_buff*fac2;
+
+				  }
                }
             }
          }
@@ -942,12 +983,17 @@ namespace FiniteElement
 
       (*RHS) = 0.0;
       (*Stiffness) = 0.0;
-      if(F_Flag)
+	  // 07.2011. WW
+      if(PressureC)
          (*PressureC) = 0.0;
+      if(PressureC_S)
+         (*PressureC_S) = 0.0;
+      if(PressureC_S_dp)
+         (*PressureC_S_dp) = 0.0;
 
       if(m_dom)
       {
-         for(i=0; i<4; i++)
+         for(i=0; i<static_cast<int>(pcs->GetPrimaryVNumber()); i++)  //06.2011. WW
             NodeShift[i]=m_dom->shift[i];
          for(i=0;i<nnodesHQ;i++)
             eqs_number[i] = element_nodes_dom[i];
@@ -1003,7 +1049,10 @@ namespace FiniteElement
          if(Flow_Type==2 || Flow_Type==3)         //09.10.2009 PCH
          {
             for(i=0; i<nnodes; i++)
+			{
+               AuxNodal0[i] = h_pcs->GetNodeValue(nodes[i], idx_P1);
                AuxNodal2[i] = h_pcs->GetNodeValue(nodes[i], idx_P2);
+			}
          }
                                                   //12.03.2008 WW
          if((Flow_Type==1||Flow_Type==2)&&(smat->SwellingPressureType==3||smat->SwellingPressureType==4))
@@ -1079,6 +1128,17 @@ namespace FiniteElement
             {
                (*pcs->matrix_file) << "Pressue coupling matrix: " << std::endl;
                PressureC->Write(*pcs->matrix_file);
+            }
+			// 07.2011. WW
+            if(PressureC_S)
+            {
+               (*pcs->matrix_file) << "Saturation depedent pressue coupling matrix: " << std::endl;
+               PressureC_S->Write(*pcs->matrix_file);
+            }
+            if(PressureC_S_dp)
+            {
+               (*pcs->matrix_file) << "Jacobi pressue coupling matrix: " << std::endl;
+               PressureC_S_dp->Write(*pcs->matrix_file);
             }
          }
       }
@@ -1256,6 +1316,7 @@ namespace FiniteElement
             }                                     // loop j
          }                                        // loop i
       }
+
       // Assemble stiffness matrix
       for (i = 0; i < nnodesHQ; i++)
       {
@@ -1279,10 +1340,71 @@ namespace FiniteElement
       //TEST OUT
       //Stiffness->Write();
 
+      if(PressureC)
+	  { 
+          i = 0; // phase
+          if(Flow_Type == 2)     // Multi-phase-flow
+			 i = 1;  
+		  GlobalAssembly_PressureCoupling(PressureC, f2*biot, i);
+	  }
+	  // H2: p_g- S_w*p_c
+      if(PressureC_S)
+         GlobalAssembly_PressureCoupling(PressureC_S, -f2*biot, 0); 
+      if(PressureC_S_dp)
+         GlobalAssembly_PressureCoupling(PressureC_S_dp, -f2*biot, 0); 
+
+
+	  
+      /*
       // Assemble coupling matrix
-      if(Flow_Type>=0&&D_Flag == 41)              // Monolithic scheme
-      {                                           // Add pressure coupling matrix to the stifness matrix
+      if(Flow_Type>=0&&pcs->type/40 == 1)              // Monolithic scheme
+      {    
+             
          f2 *= biot;
+
+         double fact_NR = 0.;
+         if(pcs->m_num->nls_method == 1) // If Newton-Raphson method
+         {
+            if(Flow_Type == 2)     // Multi-phase-flow: p_g-Sw*p_c
+            {
+
+               // P_g related:
+               for (i=0;i<nnodesHQ;i++)
+               {
+                  for (j=0;j<nnodes;j++)
+                  {
+                     for(k=0; k<ele_dim; k++)
+#ifdef NEW_EQS
+                      (*A)(NodeShift[k]+eqs_number[i], NodeShift[dim+1]+eqs_number[j])
+                          += f2*(*PressureC)(nnodesHQ*k+i,j);
+#else
+                       MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim+1]+eqs_number[j],\
+                               f2*(*PressureC)(nnodesHQ*k+i,j));
+#endif
+                  }
+               }
+
+
+			   
+               fact_NR = 0.0;
+               for (i=0;i<nnodes;i++)
+               {
+                  fact_NR += AuxNodal_S[i];  /// Sw
+
+                  /// dS_dPcPc 
+                  fact_NR += m_mmp->SaturationPressureDependency(AuxNodal_S[i], m_mfp->Density(), 
+                          1.0)*h_pcs->GetNodeValue(nodes[i],idx_P1);
+               }
+
+               fact_NR /= static_cast<double>(nnodes);
+                              
+               f2 *= -1.0*fact_NR;
+			   
+            }  
+         }
+
+
+         // Add pressure coupling matrix to the stifness matrix
          for (i=0;i<nnodesHQ;i++)
          {
             for (j=0;j<nnodes;j++)
@@ -1297,11 +1419,56 @@ namespace FiniteElement
 #endif
             }
          }
-      }
+         
+          
 
+      }
+*/
       //TEST OUT
       //PressureC->Write();
    }
+   //--------------------------------------------------------------------------
+   /*!
+      \brief Assembe the pressure coupling matrix 
+	  
+	    to the global stiffness matrix in the monolithic scheme
+
+
+	   \param pCMatrix: the matrix
+	   \param fct: factor
+	   \param phase: phasse index
+
+       07.2011. WW
+   */    
+    void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix *pCMatrix, double fct, const int phase)
+	{
+        int i, j, k;
+#if defined(NEW_EQS)
+        CSparseMatrix *A = NULL;
+        if(m_dom)
+           A = m_dom->eqsH->A;
+        else
+           A = pcs->eqs_new->A;
+#endif
+
+		int dim_shift = dim + phase;
+         // Add pressure coupling matrix to the stifness matrix
+         for (i=0;i<nnodesHQ;i++)
+         {
+            for (j=0;j<nnodes;j++)
+            {
+               for(k=0; k<ele_dim; k++)
+#ifdef NEW_EQS
+                  (*A)(NodeShift[k]+eqs_number[i], NodeShift[dim_shift]+eqs_number[j])
+                  += fct*(*pCMatrix)(nnodesHQ*k+i,j);
+#else
+               MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim_shift]+eqs_number[j],\
+                  fct*(*pCMatrix)(nnodesHQ*k+i,j));
+#endif
+            }
+         }
+
+	}
 
    /***************************************************************************
       GeoSys - Funktion:
@@ -1431,35 +1598,12 @@ namespace FiniteElement
                }
                break;
             case 2:                               // Multi-phase-flow: p_g-Sw*p_c
-               for (i=0;i<nnodes;i++)
-               {
-			      double bishop_coef = 1.;        //bishop
-				  double S_e = 1.;
-			      switch(smat->bishop_model)
-				  {
-				  case 1:
-					  bishop_coef = smat->bishop_model_value;
-					  break;
-				  case 2:
-					  S_e = (AuxNodal_S[i]-m_mmp->saturation_res[0])/(1-m_mmp->saturation_res[0]-m_mmp->saturation_res[1]);
-					  bishop_coef = pow(S_e, smat->bishop_model_value);
-					  break;
-				  default:
-					  break;
-				  }
-				  if(smat->bishop_model==1 || smat->bishop_model==2)// pg-bishop*pc 05.2011 WX
-					  val_n = h_pcs->GetNodeValue(nodes[i],idx_P2)
-					     -bishop_coef*h_pcs->GetNodeValue(nodes[i],idx_P1);
-				  else
-					  val_n = h_pcs->GetNodeValue(nodes[i],idx_P2)// pg - Sw*pc
-                         -AuxNodal_S[i]*h_pcs->GetNodeValue(nodes[i],idx_P1);
-                  val_n = h_pcs->GetNodeValue(nodes[i],idx_P2)
-                     -AuxNodal_S[i]*h_pcs->GetNodeValue(nodes[i],idx_P1);
-                  if(biot<0.0&&val_n<0.0)
-                     AuxNodal[i] = 0.0;
-                  else
-                     AuxNodal[i] = val_n*LoadFactor;
-               }
+               // 07.2011. WW
+               for (i=0;i<dim*nnodesHQ;i++)
+                 AuxNodal1[i] = 0.0;
+               
+			   PressureC->multi(AuxNodal2, AuxNodal1);
+			   PressureC_S->multi(AuxNodal0, AuxNodal1, -1.0);
                break;
             case 3:                               // Multi-phase-flow: SwPw+SgPg	// PCH 05.05.2009
                for (i=0;i<nnodes;i++)
@@ -1489,9 +1633,12 @@ namespace FiniteElement
          }
 
          // Coupling effect to RHS
-         for (i=0;i<dim*nnodesHQ;i++)
-            AuxNodal1[i] = 0.0;
-         PressureC->multi(AuxNodal, AuxNodal1);
+         if(Flow_Type!=2) // 07.2011. WW
+		 {
+            for (i=0;i<dim*nnodesHQ;i++)
+               AuxNodal1[i] = 0.0;
+            PressureC->multi(AuxNodal, AuxNodal1);
+		 }  
          for (i=0;i<dim*nnodesHQ;i++)
             (*RHS)(i) -= fabs(biot)*AuxNodal1[i];
       }                                           // End if partioned

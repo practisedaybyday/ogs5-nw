@@ -169,7 +169,6 @@ extern LINEAR_SOLVER *CreateLinearSolver(long store, long dim);
 extern LINEAR_SOLVER *CreateLinearSolverDim(long store, int unknown_vector_dimension, long dim);
 extern void ConfigSolverProperties(void);
 //
-extern double CalcNormOfRHS(LINEAR_SOLVER*);
 //
 extern int GetUnknownVectorDimensionLinearSolver(LINEAR_SOLVER*);
 #endif                                            //ifndef NEW_EQS //WW 07.11.2008

@@ -9,7 +9,7 @@ Programing:
 // to integer values.  #undef'ing these can cause obscure problems
 // with other include files (such as iostream), so we instead use
 // #error to indicate a fatal error.  Users can either #undef
-// the names before including mpi.h or include mpi.h *before* stdio.h
+// the names before including mpi.h or include mpi.h *before* stdio.h 
 // or iostream.
 #if defined(USE_MPI)
 #include <mpi.h>
@@ -369,6 +369,10 @@ namespace Math_Group
       //
          for(long i=0; i<size_A; i++)
          os<<setw(10)<<i<<" "<<setw(15)<<b[i]<<endl;
+
+		 os<<" x : " <<endl;
+         for(long i=0; i<size_A; i++)
+         os<<setw(10)<<i<<" "<<setw(15)<<x[i]<<endl;
    }
    /**************************************************************************
    Task: Linear equation::Write
@@ -383,6 +387,24 @@ namespace Math_Group
          for(long i=0; i<A->Dim(); i++)
          os<<setw(15)<<b[i]<<endl;
    }
+//**************************************************************************
+/*!
+    \brief Write the equation into a binary file
+     
+     Programing:
+     03/2011 WW
+*/
+//**************************************************************************
+void Linear_EQS::Write_BIN(ostream &os)   
+{
+ 
+  if((A->GetStorageType() != CRS )||(!A))
+    return;
+   
+  A->Write_BIN(os);  
+  os.write((char*) b, A->Dim()*sizeof(double)); 
+}
+
    /**************************************************************************
    Task: Linear equation::Write
    Programing:

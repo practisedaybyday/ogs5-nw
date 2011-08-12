@@ -7,13 +7,14 @@
  programming:
   22/08/2004  WW
 ==========================================================================*/
-
+ 
 /// Matrix
 #include <iomanip>
 #include <cfloat>
 #include <cmath>
 //
 #include "matrix_class.h"
+#include "mathlib.h"
 //
 #ifdef NEW_EQS
 #include "msh_mesh.h"
@@ -1376,9 +1377,11 @@ namespace Math_Group
                08/2007 WW
                10/2007 WW
                02/2008 PCH  Compressed Row Storage with LIS option
+               03/2010 WW: CRS storage for matrix algbraic
             ********************************************************************
             */
-            SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm):symmetry(symm)
+SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType stype)
+             :symmetry(symm), storage_type(stype)
             {
                long i=0, j=0, ii=0, jj=0;
                long lbuff0=0, lbuff1=0;
@@ -1388,17 +1391,25 @@ namespace Math_Group
                                                   // In sparse table, = number of nodes
                rows = a_mesh->GetNodesNumber(quadratic);
                size_entry_column = 0;
+   diag_entry = new long[rows]; 
 
-               //
-               row_index_mapping_n2o = new long[rows];
-               row_index_mapping_o2n = new long[rows];
-               diag_entry = new long[rows];
+   if(storage_type == JDS)
+   {
+      row_index_mapping_n2o = new long[rows]; 
+      row_index_mapping_o2n = new long[rows];
+   }
+   else if (storage_type == CRS)
+   {
+      row_index_mapping_n2o = NULL; 
+      row_index_mapping_o2n = NULL;
+   }
 
                if(symmetry)
                {
                   larraybuffer = new long *[rows];
                   for(i=0; i<rows; i++)
                   {
+        if(storage_type == JDS)
                      row_index_mapping_n2o[i] = i;
                      // 'diag_entry' used as a temporary array
                      // to store the number of nodes connected to this node
@@ -1415,10 +1426,47 @@ namespace Math_Group
                         if(i<=jj)
                            a_mesh->nod_vector[i]->connected_nodes.push_back(jj);
                      }
+     }
+   }
 
-                  }
-               }
+   
+   /// CRS storage
+   if(storage_type == CRS)
+   {
+      /// num_column_entries saves vector ptr of CRS 
+      num_column_entries = new long[rows+1];
 
+      vector<long> A_index;
+      long col_index;
+
+      for(i=0; i<rows; i++)
+      {
+         num_column_entries[i] = (long)A_index.size();
+ 
+         for(j=0; j<(long)a_mesh->nod_vector[i]->connected_nodes.size(); j++)
+         {
+            col_index = a_mesh->nod_vector[i]->connected_nodes[j];
+             
+            /// If linear element is used
+            if((!quadratic)&&(col_index>=rows))
+               continue;
+           
+            if(i == col_index)
+               diag_entry[i] = (long)A_index.size();
+            A_index.push_back(col_index);
+         }
+      }
+      
+      size_entry_column = (long)A_index.size(); 
+      num_column_entries[rows] = size_entry_column;
+
+      entry_column = new long[size_entry_column]; 
+      for(i=0; i<size_entry_column; i++)
+        entry_column[i] = A_index[i];
+
+   }   
+   else if(storage_type == JDS)
+   {
                //
                //--- Sort, from that has maximum connect nodes to that has minimum connect nodes
                //
@@ -1502,6 +1550,7 @@ namespace Math_Group
                      lbuff0++;
                   }
                }
+   }
 
                // For the case of symmetry matrix
                if(symmetry)
@@ -1534,6 +1583,7 @@ namespace Math_Group
             {
                long i=0, j=0, ii=0, jj=0;
                long lbuff0=0, lbuff1=0;
+   storage_type = JDS;
                //
                rows = m_dom.GetDomainNodes(quadratic);
                size_entry_column = 0;
@@ -1653,41 +1703,59 @@ namespace Math_Group
                Create sparse matrix table
                08/2007 WW
                10/2007 WW
+               5/2011 WW  CRS storage
             ********************************************************************/
             void SparseTable::Write(std::ostream &os)
             {
                long i, k, counter=0;
-               os<<"Symmetry: "<<symmetry<<std::endl;
-               os<<"\n*** Row index  "<<std::endl;
-               for (i = 0; i < rows; i++)
-                  os<<row_index_mapping_n2o[i]+1<<std::endl;
-               //
-               os<<"\n*** Sparse entry  "<<std::endl;
-               for (k = 0; k < max_columns; k++)
-               {
-                  os<<"--Column: "<<k+1<<std::endl;
-                  for (i = 0; i < num_column_entries[k]; i++)
-                  {
-                     os<<entry_column[counter]+1<<std::endl;;
-                     counter++;
-                  }
-                  os<<std::endl;
-               }
-            }
+
+   os.width(10);
+   os<<"Symmetry: "<<symmetry<<endl;
+   os<<"\n*** Row index  "<<endl;
+ 
+   if(storage_type == CRS)
+   {
+      os<<"\n*** Sparse entry  "<<endl;
+      for (i = 0; i < rows; i++)
+      {
+          for (k = num_column_entries[i]; k < num_column_entries[i+1]; k++)
+             os<<entry_column[k]+1<<" ";
+          os<<endl; 
+      }
+   } 
+   else if(storage_type == JDS)
+   {
+      for (i = 0; i < rows; i++)
+        os<<row_index_mapping_n2o[i]+1<<endl;
+      // 
+      os<<"\n*** Sparse entry  "<<endl;
+      for (k = 0; k < max_columns; k++)
+      {
+         os<<"--Column: "<<k+1<<endl;
+         for (i = 0; i < num_column_entries[k]; i++)
+         {          
+            os<<entry_column[counter]+1<<endl;;
+            counter++;
+         } 
+         os<<endl;        
+      } 
+   } 
+}    
 
             /*\!
              ********************************************************************
                Create sparse matrix table
                08/2007 WW
                10/2007 WW
+               5/2011 WW  CRS storage
             ********************************************************************/
             SparseTable::~SparseTable()
             {
-               delete [] entry_column;
-               delete [] num_column_entries;
-               delete [] row_index_mapping_n2o;
-               delete [] row_index_mapping_o2n;
-               delete [] diag_entry;
+  if(entry_column) delete [] entry_column;
+  if(num_column_entries) delete [] num_column_entries; 
+  if(row_index_mapping_n2o) delete [] row_index_mapping_n2o;    
+  if(row_index_mapping_o2n) delete [] row_index_mapping_o2n;    
+  if(diag_entry) delete [] diag_entry;
                entry_column = NULL;
                num_column_entries = NULL;
                row_index_mapping_n2o = NULL;
@@ -1711,6 +1779,7 @@ namespace Math_Group
                size_entry_column = sparse_table.size_entry_column;
                max_columns = sparse_table.max_columns;
                rows = sparse_table.rows;
+  storage_type = sparse_table.storage_type;  //WW
                // Topology mapping from data array to matrix
                // Only refer address
                entry_column = sparse_table.entry_column;
@@ -1792,6 +1861,7 @@ namespace Math_Group
                Desstructor of sparse matrix
                08/2007 WW
                10/2007 WW
+               5/2011 WW  CRS storage
             ********************************************************************/
             double& CSparseMatrix::operator() (const long i, const long j) const
             {
@@ -1802,38 +1872,56 @@ namespace Math_Group
                   abort();
                }
 #endif
-               long ii, jj, ir, jr, k, row_in_parse_table, counter;
-               ii = i;
-               jj = j;
-               if(symmetry)
-               {
-                  if(i>j)
-                  {
-                     ii = j;
-                     jj = i;
-                  }
-               }
-               ir = ii%rows;
-               jr = jj%rows;
-               ii /= rows;
-               jj /= rows;
-               //
-               row_in_parse_table = row_index_mapping_o2n[ir];
-               counter = row_in_parse_table;
-               for (k = 0; k < max_columns; k++)
-               {
-                  if(row_in_parse_table>=num_column_entries[k])
-                     return zero_e;
-                  if(entry_column[counter]==jr)
-                     break;                       // Found the entry
-                  counter += num_column_entries[k];
-               }
-               if(counter>=size_entry_column)
-                  return zero_e;
-               //  Zero entry;
-               k = (ii*DOF+jj)*size_entry_column+counter;
-               return entry[k];                   //
-            }
+  long ii, jj, ir, jr, k;
+  ii = i;
+  jj = j;
+  if(symmetry)
+  {
+    if(i>j)
+    {
+      ii = j;
+      jj = i;
+    }       
+  }
+  ir = ii%rows;
+  jr = jj%rows;
+  ii /= rows;
+  jj /= rows;
+  //
+  k = -1;
+
+  if(storage_type==JDS)
+  { 
+     long row_in_parse_table, counter;
+     row_in_parse_table = row_index_mapping_o2n[ir];
+     counter = row_in_parse_table;
+     for (k = 0; k < max_columns; k++)
+     {
+        if(row_in_parse_table>=num_column_entries[k]) 
+          return zero_e;
+        if(entry_column[counter]==jr)
+          break;  // Found the entry  
+        counter += num_column_entries[k]; 
+     }
+     if(counter>=size_entry_column)
+       return zero_e;
+     //  Zero entry;  
+     k = (ii*DOF+jj)*size_entry_column+counter;
+  }
+  else if(storage_type==CRS)
+  {
+     /// Left boundary of this row: num_column_entries[ir]
+     /// Right boundary of this row: num_column_entries[ir+1]
+     /// Search target is jr
+     k = binarySearch(entry_column, jr, num_column_entries[ir], num_column_entries[ir+1]); 
+     if(k==-1)
+       return zero_e; 
+
+     k = (ii*DOF+jj)*size_entry_column+k;
+  }
+  
+  return entry[k]; // 
+} 
             /*\!
              ********************************************************************
                Desstructor of sparse matrix
@@ -1932,50 +2020,136 @@ namespace Math_Group
                Output sparse matrix
                08/2007 WW
                10/2007 WW
+   03/2011 WW  CRS
             ********************************************************************/
             void CSparseMatrix::Write(std::ostream &os)
             {
                //
                long i, k, ii, jj, row_in_parse_table, counter;
                os<<"*** Non-zero entries of matrix:  "<<std::endl;
-               os.width(10);
-               os.precision(6);
-               //
-               for(ii=0; ii<DOF; ii++)
-               {
-                  for(i=0; i<rows; i++)
-                  {
-                     row_in_parse_table = row_index_mapping_o2n[i];
-                     for(jj=0; jj<DOF; jj++)
-                     {
-                        counter = row_in_parse_table;
-                        for (k = 0; k < max_columns; k++)
-                        {
-                           if(row_in_parse_table<num_column_entries[k])
-                           {
-                              //TEST
-                              //if(fabs(entry[(ii*DOF+jj)*size_entry_column+counter])>DBL_EPSILON) //DBL_EPSILON)
-                              os<<std::setw(10)<<ii*rows+i<<" "
-                                 <<std::setw(10)<< jj*rows+entry_column[counter]<<" "
-                                 <<std::setw(15)<<entry[(ii*DOF+jj)*size_entry_column+counter]<<std::endl;
-                              counter += num_column_entries[k];
-                           }
-                           else
-                              break;
-                        }
-                     }
-                  }
-               }
+  os.width(14);
+  os.precision(8); 
+  // 
+  if(storage_type == CRS )
+  {
+     for(ii=0; ii<DOF; ii++)
+     {
+       for(i=0; i<rows; i++)
+       {
+         for(jj=0; jj<DOF; jj++)
+         {
+           for (k = num_column_entries[i]; k < num_column_entries[i+1]; k++)
+           {
+//TEST
+                // if(fabs(entry[(ii*DOF+jj)*size_entry_column+counter])>DBL_MIN) //DBL_EPSILON)
+               os<<setw(10)<<ii*rows+i<<" "
+                 <<setw(10)<< jj*rows+entry_column[k]<<" "
+                 <<setw(15)<<entry[(ii*DOF+jj)*size_entry_column+k]<<endl;  
             }
+         }
+       }
+     }
+  }
+  else if(storage_type == JDS )
+  {
+     for(ii=0; ii<DOF; ii++)
+     {
+       for(i=0; i<rows; i++)
+       {
+         row_in_parse_table = row_index_mapping_o2n[i];
+         for(jj=0; jj<DOF; jj++)
+         {
+           counter = row_in_parse_table;
+           for (k = 0; k < max_columns; k++)
+           {
+             if(row_in_parse_table<num_column_entries[k])
+             {
+//TEST
+                // if(fabs(entry[(ii*DOF+jj)*size_entry_column+counter])>DBL_MIN) //DBL_EPSILON)
+               os<<setw(10)<<ii*rows+i<<" "
+                 <<setw(10)<< jj*rows+entry_column[counter]<<" "
+                 <<setw(15)<<entry[(ii*DOF+jj)*size_entry_column+counter]<<endl;  
+               counter += num_column_entries[k];
+             }
+             else
+               break; 
+           }
+         }
+       }
+     }
+   }
+}
+//--------------------------------------------------------------
+/*!
+   \brief Write matrix to a binary file
+   
+   03.2011. WW
+*/
+void CSparseMatrix::Write_BIN(ostream &os)
+{
+  if(storage_type == JDS )
+     return; 
+  //
+  if(DOF == 1)
+  {
+     os.write((char*) &rows, sizeof(long));
+     os.write((char*) num_column_entries, (rows+1)*sizeof(long));
+     os.write((char*) entry_column, num_column_entries[rows]*sizeof(long));
+     os.write((char*) entry, num_column_entries[rows]*sizeof(double));
+  }
+  else
+  {
+     long i, k, ii, jj, size;
+     long *ptr;
+     long *A_index;
+     double *A_value;
+     
+     ptr = new long[DOF*rows+1];
+     size = DOF*DOF*num_column_entries[rows];
+     A_index = new long[size];
+     A_value = new double[size];
 
-            /*\!
-             ********************************************************************
+     long counter = 0;
+     
+     for(ii=0; ii<DOF; ii++)
+     {
+       for(i=0; i<rows; i++)
+       {
+         ptr[ii*rows+i] = counter;
+         for(jj=0; jj<DOF; jj++)
+         {
+           for (k = num_column_entries[i]; k < num_column_entries[i+1]; k++)
+           {
+               A_index[counter] = jj*rows+entry_column[k];
+               A_value[counter] = entry[(ii*DOF+jj)*size_entry_column+k];
+               counter++; 
+            }
+         }
+       }
+     }
+     ptr[DOF*rows] = counter;
+
+     ii = DOF*rows;
+     os.write((char*) &ii, sizeof(long));
+     os.write((char*) ptr, (ii+1)*sizeof(long));
+     os.write((char*) A_index, size*sizeof(long));
+     os.write((char*) A_value, size*sizeof(double));
+
+     delete [] ptr;
+     delete [] A_index;
+     delete [] A_value;
+
+  }
+}
+
+             /********************************************************************
                Perform A*x
                Arguments:
                   vec_sr: M*vec_s-->vec_r
                01/2006 WW
                08/2007 WW
                10/2007 WW
+   03/2011 WW      CRS storage
             ********************************************************************/
             void CSparseMatrix::multiVec(double *vec_s, double *vec_r)
             {
@@ -1986,53 +2160,101 @@ namespace Math_Group
                counter=0;
                if(DOF>1)
                {
-                  // Although this piece of code can deal with the case
-                  // of DOF = 1, we also prepare a special piece of code for
-                  // the case of DOF = 1 just for efficiency
-                  for (k = 0; k < max_columns; k++)
-                  {
-                     for (i = 0; i < num_column_entries[k]; i++)
-                     {
-                        ii = row_index_mapping_n2o[i];
-                        jj=entry_column[counter];
-                        for(idof=0; idof<DOF; idof++)
-                        {
-                           kk = idof*rows+ii;
-                           for(jdof=0; jdof<DOF; jdof++)
-                           {
-                              ll = jdof*rows+jj;
-                              j = (idof*DOF+jdof)*size_entry_column+counter;
-                              vec_r[kk] += entry[j]*vec_s[ll];
-                              if(symmetry&(kk!=ll))
-                                 vec_r[ll] += entry[j]*vec_s[kk];
-                           }
-                        }
-                        counter++;
-                     }
-                  }
-               }
-               else                               // DOF = 1
-               {
-                  for (k = 0; k < max_columns; k++)
-                  {
-                     for (i = 0; i < num_column_entries[k]; i++)
-                     {
-                        ii = row_index_mapping_n2o[i];
-                        jj=entry_column[counter];
-                        vec_r[ii] += entry[counter]*vec_s[jj];
-                        if(symmetry&(ii!=jj))
-                           vec_r[jj] += entry[counter]*vec_s[ii];
-                        counter++;
-                     }
-                  }
-               }
-            }
+    // Although this piece of code can deal with the case
+    // of DOF = 1, we also prepare a special piece of code for
+    // the case of DOF = 1 just for efficiency
+    if(storage_type==CRS)
+    {
+       /// ptr is num_column_entries
+       for (ii = 0; ii < rows; ii++)
+       {
+          for (j = num_column_entries[ii]; j < num_column_entries[ii+1]; j++)
+          {          
+             jj=entry_column[j];
+             for(idof=0; idof<DOF; idof++)
+             {
+                kk = idof*rows+ii;
+                for(jdof=0; jdof<DOF; jdof++)
+                {
+                  ll = jdof*rows+jj; 
+                  k = (idof*DOF+jdof)*size_entry_column+j;
+                  vec_r[kk] += entry[k]*vec_s[ll];
+                  if(symmetry&(kk!=ll))
+                     vec_r[ll] += entry[k]*vec_s[kk];
+                }
+             }
+          }         
+       }
+        
+    }
+    else if(storage_type==JDS)
+    { 
+       for (k = 0; k < max_columns; k++)
+       {
+          for (i = 0; i < num_column_entries[k]; i++)
+          {          
+             ii = row_index_mapping_n2o[i];  
+             jj=entry_column[counter];
+             for(idof=0; idof<DOF; idof++)
+             {
+                kk = idof*rows+ii;
+                for(jdof=0; jdof<DOF; jdof++)
+                {
+                  ll = jdof*rows+jj; 
+                  j = (idof*DOF+jdof)*size_entry_column+counter;
+                  vec_r[kk] += entry[j]*vec_s[ll];
+                  if(symmetry&(kk!=ll))
+                     vec_r[ll] += entry[j]*vec_s[kk];
+                }
+             }
+             counter++;
+          }         
+       }
+    }
+
+  }
+  else  // DOF = 1
+  {
+    if(storage_type==CRS)
+    {
+       /// ptr is num_column_entries
+       for (ii = 0; ii < rows; ii++)
+       {
+          for (j = num_column_entries[ii]; j < num_column_entries[ii+1]; j++)
+          {          
+             jj=entry_column[j];
+             vec_r[ii] += entry[j]*vec_s[jj];
+             if(symmetry&(ii!=jj))
+                 vec_r[jj] += entry[j]*vec_s[ii];
+          }         
+       }
+        
+    }
+    else if(storage_type==JDS)
+    {
+       for (k = 0; k < max_columns; k++)
+       {
+          for (i = 0; i < num_column_entries[k]; i++)
+          {          
+             ii = row_index_mapping_n2o[i];  
+             jj=entry_column[counter];
+             vec_r[ii] += entry[counter]*vec_s[jj];
+             if(symmetry&(ii!=jj))
+                vec_r[jj] += entry[counter]*vec_s[ii];
+             counter++;
+          }         
+       }
+     }
+  }
+}
+
             /*\!
              ********************************************************************
                Perform A^T*x
                Arguments:
                   vec_sr: M^T*vec_s-->vec_r
                10/2010 WW
+   03/2011 WW      CRS storage
             ********************************************************************/
             void CSparseMatrix::Trans_MultiVec(double *vec_s, double *vec_r)
             {
@@ -2045,45 +2267,90 @@ namespace Math_Group
                {
                   // Although this piece of code can deal with the case
                   // of DOF = 1, we also prepare a special piece of code for
-                  // the case of DOF = 1 just for efficiency
-                  for (k = 0; k < max_columns; k++)
-                  {
-                     for (i = 0; i < num_column_entries[k]; i++)
-                     {
-                        ii = row_index_mapping_n2o[i];
-                        jj=entry_column[counter];
-                        for(idof=0; idof<DOF; idof++)
-                        {
-                           kk = idof*rows+ii;
-                           for(jdof=0; jdof<DOF; jdof++)
-                           {
-                              ll = jdof*rows+jj;
-                              j = (idof*DOF+jdof)*size_entry_column+counter;
-                              vec_r[ll] += entry[j]*vec_s[kk];
-                              if(symmetry&(kk!=ll))
-                                 vec_r[kk] += entry[j]*vec_s[ll];
-                           }
-                        }
-                        counter++;
-                     }
-                  }
-               }
-               else                               // DOF = 1
-               {
-                  for (k = 0; k < max_columns; k++)
-                  {
-                     for (i = 0; i < num_column_entries[k]; i++)
-                     {
-                        ii = row_index_mapping_n2o[i];
-                        jj=entry_column[counter];
-                        vec_r[jj] += entry[counter]*vec_s[ii];
-                        if(symmetry&(ii!=jj))
-                           vec_r[ii] += entry[counter]*vec_s[jj];
-                        counter++;
-                     }
-                  }
-               }
-            }
+    // the case of DOF = 1 just for efficiency
+    if(storage_type==CRS)
+    {
+       /// ptr is num_column_entries
+       for (ii = 0; ii < rows; ii++)
+       {
+          for (j = num_column_entries[ii]; j < num_column_entries[ii+1]; j++)
+          {          
+             jj=entry_column[j];
+             for(idof=0; idof<DOF; idof++)
+             {
+                kk = idof*rows+ii;
+                for(jdof=0; jdof<DOF; jdof++)
+                {
+                  ll = jdof*rows+jj; 
+                  k = (idof*DOF+jdof)*size_entry_column+j;
+                  vec_r[ll] += entry[k]*vec_s[kk];
+                  if(symmetry&(kk!=ll))
+                     vec_r[kk] += entry[k]*vec_s[ll];
+                }
+             }
+          }         
+       }
+        
+    }
+    else if(storage_type==JDS)
+    {
+       for (k = 0; k < max_columns; k++)
+       {
+          for (i = 0; i < num_column_entries[k]; i++)
+          {          
+             ii = row_index_mapping_n2o[i];  
+             jj=entry_column[counter];
+             for(idof=0; idof<DOF; idof++)
+             {
+                kk = idof*rows+ii;
+                for(jdof=0; jdof<DOF; jdof++)
+                {
+                  ll = jdof*rows+jj; 
+                  j = (idof*DOF+jdof)*size_entry_column+counter;
+                  vec_r[ll] += entry[j]*vec_s[kk];
+                  if(symmetry&(kk!=ll))
+                     vec_r[kk] += entry[j]*vec_s[ll];
+                }
+             }
+             counter++;
+          }         
+       }
+     }
+  }
+  else  // DOF = 1
+  {
+    if(storage_type==CRS)
+    {
+       /// ptr is num_column_entries
+       for (ii = 0; ii < rows; ii++)
+       {
+          for (j = num_column_entries[ii]; j < num_column_entries[ii+1]; j++)
+          {          
+             jj=entry_column[j];
+             vec_r[jj] += entry[j]*vec_s[ii];
+             if(symmetry&(ii!=jj))
+                 vec_r[ii] += entry[j]*vec_s[jj];
+          }         
+       }
+        
+    }
+    else if(storage_type==JDS)
+    {
+       for (k = 0; k < max_columns; k++)
+       {
+          for (i = 0; i < num_column_entries[k]; i++)
+          {          
+             ii = row_index_mapping_n2o[i];  
+             jj=entry_column[counter];
+             vec_r[jj] += entry[counter]*vec_s[ii];
+             if(symmetry&(ii!=jj))
+                vec_r[ii] += entry[counter]*vec_s[jj];
+             counter++;
+          }         
+       }
+    }
+  }
+}
             /*\!
              ********************************************************************
                Set
@@ -2093,65 +2360,108 @@ namespace Math_Group
                     b_i -= A(i,k)b_k  // b_k is given
                Programm:
                10/2007 WW
+   03/2011 WW  CRS storage
             ********************************************************************/
             void CSparseMatrix::Diagonize(const long idiag, const double b_given, double *b)
             {
                //
                double vdiag = 0.;
-               long i, k, ii, jj, i0, j0, row_in_parse_table, counter;
-               long id = idiag%rows;
-               ii = idiag/rows;
-               // Row is zero
-               row_in_parse_table = row_index_mapping_o2n[id];
-               counter = row_in_parse_table;
-               for (k = 0; k < max_columns; k++)
-               {
-                  if(row_in_parse_table<num_column_entries[k])
-                  {
-                     j0=entry_column[counter];
-                     for(jj=0; jj<DOF; jj++)
-                     {
-                        if(id==j0&&jj==ii)
-                           vdiag = entry[(ii*DOF+jj)*size_entry_column+counter];
-                        else
-                           entry[(ii*DOF+jj)*size_entry_column+counter] = 0.;
-                     }
-                     counter += num_column_entries[k];
-                  }
-                  else
-                     break;
-               }
-               //
-               counter=0;
-               for (k = 0; k < max_columns; k++)
-               {
-                  for (i = 0; i < num_column_entries[k]; i++)
-                  {
-                     i0 = row_index_mapping_n2o[i];
-                     /*
-                     if(i0 == id)
-                     {
-                       counter++;
-                       continue;
-                     }
-                     */
-                     j0=entry_column[counter];
-                     if(j0 == id)
-                     {
-                        for(jj=0; jj<DOF; jj++)
-                        {
-                           if(i0 == j0&&ii==jj) continue;
-                           b[jj*rows+i0] -= entry[(jj*DOF+ii)*size_entry_column+counter]*b_given;
-                           entry[(jj*DOF+ii)*size_entry_column+counter] = 0.;
-                           // Room for symmetry case
-                        }
-                     }
-                     //
-                     counter++;
-                  }
-               }
-               b[idiag] = vdiag*b_given;
-            }
+  long i, j, k, ii, jj, j0;
+  long id = idiag%rows;
+  ii = idiag/rows;
+
+  if(storage_type == CRS)
+  {
+     /// Diagonal entry and the row where the diagonal entry exists
+     j = diag_entry[id]; 
+     vdiag = entry[(ii*DOF+ii)*size_entry_column+j];
+     /// Row where the diagonal entry exists 
+     for(jj=0; jj<DOF; jj++)
+     {
+        for(k=num_column_entries[id]; k<num_column_entries[id+1]; k++)
+        {
+           j0=entry_column[k];
+           if(id==j0&&jj==ii)  // Diagonal entry
+              continue; 
+           entry[(ii*DOF+jj)*size_entry_column+k] = 0.; 
+        }
+     }    
+     
+     /// Clean column id                
+     for (i = 0; i < rows; i++)
+     {
+        j = binarySearch(entry_column, id, num_column_entries[i], num_column_entries[i+1]); 
+        if(j == -1)
+           continue;
+        j0=entry_column[j];
+
+        for(jj=0; jj<DOF; jj++)
+        {
+           if(i == j0&&ii==jj) continue; 
+           k = (jj*DOF+ii)*size_entry_column+j;
+           b[jj*rows+i] -= entry[k]*b_given; 
+           entry[k] = 0.; 
+           // Room for symmetry case
+        }           
+     }      
+  }
+  else if(storage_type == JDS)
+  {
+     long i0, row_in_parse_table, counter;
+
+     // Row is zero
+     row_in_parse_table = row_index_mapping_o2n[id];
+     counter = row_in_parse_table;
+     for (k = 0; k < max_columns; k++)
+     {
+        if(row_in_parse_table<num_column_entries[k])
+        {
+           j0=entry_column[counter];
+           for(jj=0; jj<DOF; jj++)
+           {
+              if(id==j0&&jj==ii)   
+                vdiag = entry[(ii*DOF+jj)*size_entry_column+counter];
+              else  
+                entry[(ii*DOF+jj)*size_entry_column+counter] = 0.;
+           }
+           counter += num_column_entries[k];
+        }
+        else
+           break;
+     }
+     //
+     counter=0;
+     for (k = 0; k < max_columns; k++)
+     {
+       for (i = 0; i < num_column_entries[k]; i++)
+       {          
+         i0 = row_index_mapping_n2o[i]; 
+         /*
+         if(i0 == id)
+         {
+           counter++;
+           continue; 
+         }
+         */
+         j0=entry_column[counter];
+         if(j0 == id)
+         {
+            for(jj=0; jj<DOF; jj++)
+            {
+               if(i0 == j0&&ii==jj) continue; 
+               j = (jj*DOF+ii)*size_entry_column+counter;
+               b[jj*rows+i0] -= entry[j]*b_given; 
+               entry[j] = 0.; 
+               // Room for symmetry case
+            }           
+         } 
+         //
+         counter++;
+       }         
+     }
+  }
+  b[idiag] = vdiag*b_given;
+}
 
             /*\!
              ********************************************************************

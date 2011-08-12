@@ -904,7 +904,7 @@ void COutput::WriteTECNodeData(fstream &tec_file)
                                                   //WW
                      m_msh->nod_vector[j]->GetIndex(), NodeIndex[k]);
                   tec_file << val_n << " ";
-                  if (m_pcs->type == 1212 && _nod_value_vector[k].find(
+                  if ((m_pcs->type == 1212||m_pcs->type == 42) && _nod_value_vector[k].find(
                                                   //WW
                      "SATURATION") != string::npos)
                                                   //WW
@@ -987,7 +987,7 @@ void COutput::WriteTECHeader(fstream &tec_file,int e_type, string e_type_name)
       pcs = GetPCS(_nod_value_vector[k]);
       if (pcs != NULL)
       {
-         if (pcs->type == 1212 && _nod_value_vector[k].find("SATURATION")
+         if ((pcs->type == 1212 || pcs->type == 42 )&& _nod_value_vector[k].find("SATURATION")
             != string::npos)
             tec_file << ", SATURATION2";
       }

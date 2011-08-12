@@ -6,7 +6,7 @@ Programing:
 **************************************************************************/
 #ifndef eqs_class_INC
 #define eqs_class_INC
-
+ 
 #include "Configure.h"
 
 // NEW_EQS To be removed
@@ -14,7 +14,7 @@ Programing:
 #include<iostream>
 #include<vector>
 #include<cmath>
-//
+// 
 
 #ifdef LIS
 #include "lis.h"
@@ -34,6 +34,8 @@ class CPARDomain;
 //
 namespace Math_Group
 {
+   using namespace std;
+
    class SparseTable;
    //
    class Linear_EQS
@@ -114,6 +116,7 @@ namespace Math_Group
          void Write(std::ostream &os=std::cout);
          void WriteRHS(std::ostream &os=std::cout);
          void WriteX(std::ostream &os=std::cout);
+         void Write_BIN(ostream &os);    
       private:                                    // Dot not remove this!
          CSparseMatrix *A;
          double *b;

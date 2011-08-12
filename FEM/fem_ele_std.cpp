@@ -542,7 +542,7 @@ namespace FiniteElement
          }
          if(dm_pcs->type/10==4)
          {
-            for(int i=0; i<5; i++)
+            for(size_t i=0; i<pcs->GetPrimaryVNumber(); i++)
                NodeShift[i] = Shift[i];
          }
       }
@@ -1303,7 +1303,7 @@ namespace FiniteElement
    Task: Calculate nodal enthalpy
    Programming: WW 09/2005
    **************************************************************************/
-   inline void CFiniteElementStd::CalNodalEnthalpy()
+   void CFiniteElementStd::CalNodalEnthalpy()
    {
       int i;
       double temp, dT;
@@ -1343,7 +1343,7 @@ namespace FiniteElement
    11/2005 CMCD Heat capacity function included in mmp
    01/2007 OK Two-phase flow
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoefMass()
+   double CFiniteElementStd::CalCoefMass()
    {
       int Index = MeshElement->GetIndex();
       double val = 0.0;
@@ -1514,7 +1514,7 @@ namespace FiniteElement
    02/2007 WW Multi-phase flow
    05/2008 WW Generalization
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoefMass2(int dof_index)
+   double CFiniteElementStd::CalCoefMass2(int dof_index)
    {
       int Index = MeshElement->GetIndex();
       double val = 0.0;
@@ -1600,7 +1600,7 @@ namespace FiniteElement
    Implementaion:
    03/2011 AKS /  NB
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoefMassPTC(int dof_index)
+   double CFiniteElementStd::CalCoefMassPTC(int dof_index)
    {
       int Index = MeshElement->GetIndex();
       double val = 0.0;
@@ -1644,7 +1644,7 @@ namespace FiniteElement
    Programing:
    03/2009 PCH Multi-phase flow
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoefMassPSGLOBAL(int dof_index)
+   double CFiniteElementStd::CalCoefMassPSGLOBAL(int dof_index)
    {
       int Index = MeshElement->GetIndex();
       double val = 0.0;
@@ -1703,7 +1703,7 @@ namespace FiniteElement
    07/2005 WW Change for geometry element object
    last modification:
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoefStorage()
+   double CFiniteElementStd::CalCoefStorage()
    {
       int Index = MeshElement->GetIndex();
       double val = 0.0;
@@ -1767,7 +1767,7 @@ namespace FiniteElement
    07/2005 WW Change for geometry element object
    last modification:
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoefContent()
+   double CFiniteElementStd::CalCoefContent()
    {
       int Index = MeshElement->GetIndex();
       double val = 0.0;
@@ -1837,7 +1837,7 @@ namespace FiniteElement
    01/2007 OK Two-phase flow
    10/2008 PCH Two-phase flow modified
    **************************************************************************/
-   inline void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
+   void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
    {
       int i=0;
       double dens_arg[3];                         //AKS
@@ -2202,7 +2202,7 @@ namespace FiniteElement
    Programing:
    10/2008 PCH Implementation
    **************************************************************************/
-   inline void CFiniteElementStd::CalCoefLaplaceMultiphase(int phase, int ip)
+   void CFiniteElementStd::CalCoefLaplaceMultiphase(int phase, int ip)
    {
       ip = ip;                                    //OK411
 
@@ -2274,7 +2274,7 @@ namespace FiniteElement
    02/2007 WW Implementation
    last modification:
    **************************************************************************/
-   inline void CFiniteElementStd::CalCoefLaplace2(bool Gravity,  int dof_index)
+   void CFiniteElementStd::CalCoefLaplace2(bool Gravity,  int dof_index)
    {
       int i=0;
       double *tensor = NULL;
@@ -2450,7 +2450,7 @@ namespace FiniteElement
    03/2011 AKS /  NB
    last modification:
    **************************************************************************/
-   inline void CFiniteElementStd::CalCoefLaplacePTC(int dof_index)
+   void CFiniteElementStd::CalCoefLaplacePTC(int dof_index)
    {
       int i=0;
       double *tensor = NULL;
@@ -2498,7 +2498,7 @@ namespace FiniteElement
    03/2009 PCH Implementation
    last modification:
    **************************************************************************/
-   inline void CFiniteElementStd::CalCoefLaplacePSGLOBAL(bool Gravity,  int dof_index)
+   void CFiniteElementStd::CalCoefLaplacePSGLOBAL(bool Gravity,  int dof_index)
    {
       int i=0;
       double *tensor = NULL;
@@ -2729,8 +2729,8 @@ namespace FiniteElement
    05/2007 CB
    last modification:
    **************************************************************************/
-   //inline void CFiniteElementStd::UpwindUnitCoord(int p, int point, int ind, double *rupw, double *supw, double *tupw)
-   inline void CFiniteElementStd::UpwindUnitCoord(int p, int point, int ind)
+   //void CFiniteElementStd::UpwindUnitCoord(int p, int point, int ind, double *rupw, double *supw, double *tupw)
+   void CFiniteElementStd::UpwindUnitCoord(int p, int point, int ind)
    {
       p = p;                                      //OK411
       //Laufvariablen
@@ -3064,7 +3064,7 @@ namespace FiniteElement
    09/2005 SB
    last modification:
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoefAdvection()
+   double CFiniteElementStd::CalCoefAdvection()
    {
       double val = 0.0;
       double dens_arg[3];                         //AKS
@@ -3124,7 +3124,7 @@ namespace FiniteElement
     09/2005 SB
     last modification:
     **************************************************************************/
-   inline double CFiniteElementStd::CalCoefAdvectionPTC(int dof_index)
+   double CFiniteElementStd::CalCoefAdvectionPTC(int dof_index)
    {
       int Index = MeshElement->GetIndex();
       double val = 0.0;
@@ -3171,7 +3171,7 @@ namespace FiniteElement
    01/2005   WW/OK    Erste Version
    07/2005 WW Change for geometry element object
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoefStrainCouping()
+   double CFiniteElementStd::CalCoefStrainCouping(const int phase)
    {
       double val = 0.0;
       /*
@@ -3196,17 +3196,23 @@ namespace FiniteElement
             break;
          case C:                                  // Componental flow
             break;
-         case H:                                  // heat transport
-            break;
-         case M:                                  // Mass transport
-            break;
          case O:                                  // Overland flow
             break;
          case R:                                  // Richard flow
-            val = interpolate(NodalVal_Sat);      // Water saturation
-         case A:
+            return interpolate(NodalVal_Sat);      // Water saturation
             break;
-            break;
+		 case V:
+            if(phase == 0)
+			{			 
+	           PG = interpolate(NodalVal1);  
+		       Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+			   val = Sw;
+			}
+			else
+			  val = 1.-Sw; 	  
+			return val;
+            break;  
+
       }
       return val;
    }
@@ -3343,7 +3349,7 @@ namespace FiniteElement
    12/2009 NW
    last modification:
    **************************************************************************/
-   inline double CFiniteElementStd::CalcSUPGCoefficient(double*vel,int ip)
+   double CFiniteElementStd::CalcSUPGCoefficient(double*vel,int ip)
    {
       //--------------------------------------------------------------------
       // Collect following information to determine SUPG coefficient
@@ -3449,7 +3455,7 @@ namespace FiniteElement
    12/2009 NW
    last modification:
    **************************************************************************/
-   inline void CFiniteElementStd::CalcSUPGWeightingFunction(double *vel, int ip, double &tau, double *v_dN)
+   void CFiniteElementStd::CalcSUPGWeightingFunction(double *vel, int ip, double &tau, double *v_dN)
    {
       if (pcs->m_num->ele_supg_method==0)
       {
@@ -3474,7 +3480,7 @@ namespace FiniteElement
    12/2009 NW
    last modification:
    **************************************************************************/
-   inline double CFiniteElementStd::CalcSUPGEffectiveElemenetLength(double *vel)
+   double CFiniteElementStd::CalcSUPGEffectiveElemenetLength(double *vel)
    {
       vel = vel;                                  //OK411
       double L = 0.0;
@@ -3542,7 +3548,7 @@ namespace FiniteElement
    05/2007 CB
    last modification:
    **************************************************************************/
-   inline void CFiniteElementStd::UpwindAlphaMass(double *alpha)
+   void CFiniteElementStd::UpwindAlphaMass(double *alpha)
    {
       //Laufvariablen
       static long i, j;                           //, k, l;
@@ -3748,7 +3754,7 @@ namespace FiniteElement
    05/2007 CB
    last modification:
    **************************************************************************/
-   inline void CFiniteElementStd::UpwindSummandMass(const int gp, int& gp_r, int& gp_s, int& gp_t, double *alpha, double *summand)
+   void CFiniteElementStd::UpwindSummandMass(const int gp, int& gp_r, int& gp_s, int& gp_t, double *alpha, double *summand)
 
    {
       int i, k;
@@ -4424,7 +4430,7 @@ namespace FiniteElement
    10/2006 YD Implementation
    01/2007 WW Fundamental changes
    **************************************************************************/
-   inline double  CFiniteElementStd::CalcCoefDualTransfer()
+   double  CFiniteElementStd::CalcCoefDualTransfer()
    {
       double Sm=0.0, Sf=0.0, ExFac=0.0;
       double pm=0.0, pf=0.0, matrix_conductivity, val=0;
@@ -4833,7 +4839,7 @@ namespace FiniteElement
       Programming:
       01/2005   WW
    **************************************************************************/
-   void CFiniteElementStd::CalcStrainCoupling()
+   void CFiniteElementStd::CalcStrainCoupling(const int phase)
    {
       int i,k,l,kl, gp, gp_r, gp_s, gp_t;
       double fkt, du=0.0;
@@ -4849,7 +4855,7 @@ namespace FiniteElement
             ComputeShapefct(1);
             ComputeShapefct(2);
             //
-            fkt *= CalCoefStrainCouping();
+            fkt *= CalCoefStrainCouping(phase);
             for(i=0; i<dim; i++ )
             {
                for (k=0;k<nnodes;k++)
@@ -4867,6 +4873,17 @@ namespace FiniteElement
       }
       setOrder(1);
       // StrainCoupling->Write();
+
+ 	  /// Ouput the matrix, 07.2011. WW
+      if(pcs->matrix_file)
+      {
+         (*pcs->matrix_file) << "---Strain couping matrix: " << endl;
+         StrainCoupling->Write(*pcs->matrix_file);
+      }
+
+
+
+
    }
 
    /***************************************************************************
@@ -6175,23 +6192,30 @@ namespace FiniteElement
    **************************************************************************/
    void CFiniteElementStd::AssembleParabolicEquation()
    {
-      int i,j, ii, jj;
+      int i, ii;
       int ii_sh;
-      long i_sh, kk;
+      long i_sh;
       // NUM
       double relax0, relax1;
       //----------------------------------------------------------------------
       long dm_shift = 0 , cshift = 0;             //WW 05.01.07
 
+	  bool H2_mono = false; // 15. 07.2011. WW
+      if(PcsType==V || PcsType==P|| PcsType==S)  
+         H2_mono = true;
+
       //WW 05.01.07
       relax0 = pcs->m_num->nls_relaxation;        //WW
+
       relax1 = 1.0;
       if(relax0<DBL_MIN)
          relax0 = 1.0;
       relax1 = 1.0-relax0;
+
+
       //
-      cshift = 0;
-      if(pcs->dof>1)
+
+	  if(pcs->dof>1)
          cshift = NodeShift[pcs->continuum];
       if(pcs->type/10==4)
          dm_shift = problem_dimension_dm;
@@ -6210,7 +6234,7 @@ namespace FiniteElement
       //----------------------------------------------------------------------
       // Initialize.
       // if (pcs->Memory_Type==2) skip the these initialization
-      if(PcsType==V || PcsType==P|| PcsType==S)   //PCH
+      if(H2_mono)   
          (*Mass2) = 0.0;
       else
          (*Mass) = 0.0;
@@ -6288,7 +6312,7 @@ namespace FiniteElement
       //Mass matrix
       if(pcs->PartialPS != 1)                     // PCH if not partial-pressure-based
       {
-         if(PcsType==V || PcsType==P|| PcsType==S)//PCH
+         if(H2_mono)
             *StiffMatrix    = *Mass2;
          else
             *StiffMatrix    = *Mass;
@@ -6322,16 +6346,14 @@ namespace FiniteElement
          for (i=0;i<nnodes; i++)
             NodalVal[i+nnodes] = 0.0;
       }
+      if(pcs->m_num->nls_method>0&&(!dynamic)) //Newton method
+        StiffMatrix->multi(NodalVal1, NodalVal, -1.0);
+
       /// If JFNK. 10.08.2010 WW
 #if  defined(NEW_EQS) && defined(JFNK_H2M)
       if(pcs->m_num->nls_method==2)
       {
 
-         if(PcsType==V)                           // For DOF>1: 27.2.2007 WW
-         {
-            for (i=0;i<nnodes; i++)
-               NodalVal1[i+nnodes] = pcs->GetNodeValue(nodes[i],idxp21);
-         }
          StiffMatrix->multi(NodalVal1, NodalVal, -1.0);
 
          /// Save diagnal entry for Jacobi preconditioner. 02.2011. WW
@@ -6392,60 +6414,7 @@ namespace FiniteElement
       {
          //----------------------------------------------------------------------
          // Add local matrix to global matrix
-#if defined(NEW_EQS)
-         CSparseMatrix *A = NULL;                 //WW
-         if(m_dom)
-            A = m_dom->eqs->A;
-         else
-            A = pcs->eqs_new->A;
-#endif
-         if(PcsType==V || PcsType==P|| PcsType==S)// For DOF>1: 03.03.2009 PCH
-         {
-            int  jj_sh;
-            long  j_sh=0;
-            for(ii=0;ii<2;ii++)
-            {
-               i_sh = NodeShift[ii+dm_shift];
-               ii_sh = ii*nnodes;
-               for(jj=0;jj<2;jj++)
-               {
-                  j_sh = NodeShift[jj+dm_shift];
-                  jj_sh = jj*nnodes;
-                  for(i=0;i<nnodes;i++)
-                  {
-                     kk = i_sh+eqs_number[i];     // 02.2011. WW
-                     for(j=0;j<nnodes;j++)
-                     {
-#ifdef NEW_EQS
-                        (*A)(kk, j_sh+eqs_number[j]) += \
-                           (*StiffMatrix)(i+ii_sh,j+jj_sh);
-#else
-                        MXInc(kk, j_sh+eqs_number[j],\
-                           (*StiffMatrix)(i+ii_sh,j+jj_sh));
-#endif
-                     }
-                  }
-               }
-            }
-         }
-         else
-         {
-            cshift += NodeShift[dm_shift];        //WW 05.01.07
-            for(i=0;i<nnodes;i++)
-            {
-               kk = cshift+eqs_number[i];         // 02.2011. WW
-               for(j=0;j<nnodes;j++)
-               {
-#ifdef NEW_EQS
-                  (*A)(kk, cshift+eqs_number[j]) += \
-                     (*StiffMatrix)(i,j);
-#else
-                  MXInc(kk, cshift+eqs_number[j],\
-                     (*StiffMatrix)(i,j));
-#endif
-               }
-            }
-         }
+         Add2GlolbalMatrixII();
       }
       //======================================================================
       // Assemble local RHS vector:
@@ -6493,12 +6462,8 @@ namespace FiniteElement
          idx = idxp20;
       for (i=0;i<nnodes; i++)
          NodalVal0[i] = pcs->GetNodeValue(nodes[i],idx);
-      if(PcsType==V)                              // For DOF>1: 27.2.2007 WW
-      {
-         for (i=0;i<nnodes; i++)
-            NodalVal0[i+nnodes] = pcs->GetNodeValue(nodes[i],idxp20);
-      }
-      if(PcsType==S)                              // For DOF>1: 27.2.2007 WW
+
+	  if(PcsType==S)                              // For DOF>1: 27.2.2007 WW
       {
          for (i=0;i<nnodes; i++)
          {
@@ -6535,8 +6500,9 @@ namespace FiniteElement
          }
          Laplace->multi(NodalVal0, NodalVal, -1.0);
       }
+
       //
-      if(PcsType==V || PcsType==P|| PcsType==S)   // For DOF>1: 03.03.2009 PCH
+      if(H2_mono) 
       {
          for(ii=0;ii<2;ii++)
          {
@@ -6551,6 +6517,7 @@ namespace FiniteElement
       }
       else
       {
+		 cshift += NodeShift[dm_shift];   
          for (i=0;i<nnodes;i++)
          {
             eqs_rhs[cshift + eqs_number[i]] += NodalVal[i];
@@ -6559,6 +6526,90 @@ namespace FiniteElement
       }
       //
    }
+    //------------------------------------------------------
+    /*!
+	  \brief Add the local stiff matrix to the global one
+
+	   22.06.2011. WW
+	*/
+    //------------------------------------------------------
+    void  CFiniteElementStd::Add2GlolbalMatrixII(const int block_cols)
+	{
+        long dm_shift = 0, cshift = 0; 
+  
+        if(pcs->dof>1)
+           cshift = NodeShift[pcs->continuum];
+        if(pcs->type/10==4)
+           dm_shift = problem_dimension_dm;
+
+
+        int  i, j, ii, jj, ii_sh;
+        long  i_sh, kk;
+#if defined(NEW_EQS)
+         CSparseMatrix *A = NULL;                 //WW
+         if(m_dom)
+            A = m_dom->eqs->A;
+         else
+            A = pcs->eqs_new->A;
+#endif
+		 // For DOF>1: 
+         if(PcsType==V || PcsType==P|| PcsType==S)
+         {
+            int  jj_sh;
+            long  j_sh=0;
+            for(ii=0;ii<2;ii++)
+            {
+               i_sh = NodeShift[ii+dm_shift];
+               ii_sh = ii*nnodes;
+               for(jj=0;jj<block_cols;jj++)
+               {
+                  j_sh = NodeShift[jj+dm_shift];
+                  jj_sh = jj*nnodes;
+                  for(i=0;i<nnodes;i++)
+                  {
+                     kk = i_sh+eqs_number[i];     // 02.2011. WW
+                     for(j=0;j<nnodes;j++)
+                     {
+#ifdef NEW_EQS
+                        (*A)(kk, j_sh+eqs_number[j]) += \
+                           (*StiffMatrix)(i+ii_sh,j+jj_sh);
+#else
+                        MXInc(kk, j_sh+eqs_number[j],\
+                           (*StiffMatrix)(i+ii_sh,j+jj_sh));
+#endif
+                     }
+                  }
+               }
+            }
+         }
+         else
+         {
+            cshift += NodeShift[dm_shift];        //WW 05.01.07
+            for(i=0;i<nnodes;i++)
+            {
+               kk = cshift+eqs_number[i];         // 02.2011. WW
+               for(j=0;j<nnodes;j++)
+               {
+#ifdef NEW_EQS
+                  (*A)(kk, cshift+eqs_number[j]) += \
+                     (*StiffMatrix)(i,j);
+#else
+                  MXInc(kk, cshift+eqs_number[j],\
+                     (*StiffMatrix)(i,j));
+#endif
+               }
+            }
+         }
+         
+
+		 if(pcs->matrix_file)
+		 {
+            (*pcs->matrix_file) << "Stiffness: " <<endl;
+            StiffMatrix->Write(*pcs->matrix_file);
+            (*pcs->matrix_file) <<endl;
+		 }
+
+ 	}
    /**************************************************************************
    FEMLib-Method:
    Task:
@@ -7034,16 +7085,22 @@ namespace FiniteElement
       01/2005   WW/OK
       05/2005   WW dyn
       07/2005   WW Change due to geometry element object
+	  06/2011   WW for multi-phase flow
    **************************************************************************/
-   void CFiniteElementStd::Assemble_strainCPL()
+   void CFiniteElementStd::Assemble_strainCPL(const int phase)
    {
       int i, j;
+	  int shift_index;
       double *u_n = NULL;                         // Dynamic
       double fac;
       int Residual = -1;
 
+	  shift_index = problem_dimension_dm + phase;  
+
       fac = 1.0 / dt;
-      if(D_Flag != 41)
+     
+	  if(dm_pcs->type != 41)
+      //if(D_Flag != 41)
          Residual = 0;
       else                                        // Mono
       {
@@ -7062,7 +7119,7 @@ namespace FiniteElement
       for (i=nnodes;i<nnodesHQ;i++)
          nodes[i] = MeshElement->nodes_index[i];
       (*StrainCoupling) = 0.0;
-      CalcStrainCoupling();
+      CalcStrainCoupling(phase);
       //	if(D_Flag != 41&&aktueller_zeitschritt>1)
       if(Residual>=0)
       {                                           // Incorparate this after the first time step
@@ -7123,14 +7180,30 @@ namespace FiniteElement
          // Add RHS
          for (i=0;i<nnodes;i++)
          {
-            eqs_rhs[NodeShift[problem_dimension_dm] + eqs_number[i]]
+            eqs_rhs[NodeShift[shift_index] + eqs_number[i]]
                += NodalVal[i];
             (*RHS)(i+LocalShift) +=  NodalVal[i];
          }
       }
       // Monolithic scheme.
-      if(D_Flag == 41)
-      {
+      // if(D_Flag == 41)
+      if(dm_pcs->type == 41) // 06.2011. WW
+         Assemble_strainCPL_Matrix(fac, phase);
+
+
+       
+   }
+   //**************************************************************************
+   /*!
+      \brief Assemble the local strain coupling matrix to the golbal one
+
+	  28.11.2011 WW
+   */
+   //**************************************************************************
+   void CFiniteElementStd::Assemble_strainCPL_Matrix(const double fac, const int phase)
+   {
+	   int i, j; 
+	   int shift_index;
 #if defined(NEW_EQS)
          CSparseMatrix *A = NULL;
          if(m_dom)
@@ -7139,30 +7212,31 @@ namespace FiniteElement
             A = pcs->eqs_new->A;
 #endif
          // if Richard, StrainCoupling should be multiplied with -1.
+         shift_index = problem_dimension_dm + phase;
          for(i=0;i<nnodes;i++)
          {
             for(j=0;j<nnodesHQ;j++)
             {
 #ifdef NEW_EQS
-               (*A)(NodeShift[problem_dimension_dm] + eqs_number[i],
+               (*A)(NodeShift[shift_index] + eqs_number[i],
                   eqs_number[j]+NodeShift[0]) += (*StrainCoupling)(i,j)*fac;
-               (*A)(NodeShift[problem_dimension_dm] + eqs_number[i],
+               (*A)(NodeShift[shift_index] + eqs_number[i],
                   eqs_number[j]+NodeShift[1]) += (*StrainCoupling)(i,j+nnodesHQ)*fac;
                if(problem_dimension_dm==3)
-                  (*A)(NodeShift[problem_dimension_dm] + eqs_number[i],
+                  (*A)(NodeShift[shift_index] + eqs_number[i],
                   eqs_number[j]+NodeShift[2]) += (*StrainCoupling)(i,j+2*nnodesHQ)*fac;
 #else
-               MXInc(NodeShift[problem_dimension_dm] + eqs_number[i],
+               MXInc(NodeShift[shift_index] + eqs_number[i],
                   eqs_number[j]+NodeShift[0],(*StrainCoupling)(i,j)*fac);
-               MXInc(NodeShift[problem_dimension_dm] + eqs_number[i],
+               MXInc(NodeShift[shift_index] + eqs_number[i],
                   eqs_number[j]+NodeShift[1], (*StrainCoupling)(i,j+nnodesHQ)*fac);
                if(problem_dimension_dm==3)
-                  MXInc(NodeShift[problem_dimension_dm] + eqs_number[i],
+                  MXInc(NodeShift[shift_index] + eqs_number[i],
                      eqs_number[j]+NodeShift[2], (*StrainCoupling)(i,j+2*nnodesHQ)*fac);
 #endif
             }
          }
-      }
+      
    }
 
    /**************************************************************************
@@ -7353,7 +7427,11 @@ namespace FiniteElement
       if(PcsType==V)                              // 25.2.2007
       {
          for(i=0;i<nnodes;i++)
+		 {	 		  
             NodalVal_p2[i] = pcs->GetNodeValue(nodes[i],idxp21);
+            NodalVal0[i+nnodes] = pcs->GetNodeValue(nodes[i],idxp20);
+            NodalVal1[i+nnodes] = pcs->GetNodeValue(nodes[i],idxp21);
+		 }
       }
       if(PcsType==S)                              // 25.2.2007
       {
@@ -7397,12 +7475,18 @@ namespace FiniteElement
    07/2007 WW Nonisothermal multi-phase flow
    10/2007 OK Two-phase flow
    08/2008 WW Extract the configuration of material properties and knowns as
-   a single inline function
+   a single function
    **************************************************************************/
    void CFiniteElementStd::Assembly()
    {
       int i;
       Config();                                   //26.08.2008
+
+      // If output matrices and vectors. 07.2011. WW
+      if(pcs->Write_Matrix)
+        (*pcs->matrix_file) << "### Element: " << Index << endl;
+
+
       //======================================================================
       switch(PcsType)
       {
@@ -7487,6 +7571,9 @@ namespace FiniteElement
             Assemble_Gravity();
             if(dm_pcs)
                Assemble_strainCPL();
+
+            if(pcs->m_num->nls_method == 1) // Newton-Raphson. 07.2011. WW 
+              ComputeAdditionalJacobi_Richards();
             break;
             //....................................................................
          case F:                                  // Fluid Momentum - Assembly handled in Assembly in Fluid_Momentum file
@@ -7499,13 +7586,31 @@ namespace FiniteElement
             if(MediaProp->heat_diffusion_model==273 && cpl_pcs )
                Assemble_RHS_AIR_FLOW();           // n*drho/dt + Nabla.[rho*k/mu rho g]//AKS
             break;
-         case V:                                  // Multi-phase flow 24.02.2007 WW
+         case V:
+			 //TEST 			 dm_pcs = NULL;
+			 // Multi-phase flow 24.02.2007 WW
             AssembleParabolicEquation();
             Assemble_Gravity();
             if(cpl_pcs&&MediaProp->heat_diffusion_model==273)
                Assemble_RHS_T_MPhaseFlow();
             if(dm_pcs)
-               Assemble_RHS_M();
+				Assemble_RHS_M();
+			if(pcs->m_num->nls_method == 1) // Newton-Raphson. 06.2011. WW 
+			{
+		       ComputeAdditionalJacobi_H2();
+			   
+			   if(dm_pcs)
+     		   {
+                  (*StrainCoupling) = 0.0;
+			      CalcStrainCoupling(0); 
+			      Assemble_strainCPL_Matrix(1.0, 0); //Phase 0
+				
+				  (*StrainCoupling) = 0.0;
+			      CalcStrainCoupling(1); 
+ 			      Assemble_strainCPL_Matrix(1.0, 1); //Phase 1
+			   } 
+			   
+			}
             break;
 
          case P:                                  // PS_GLOBAL for Multi-phase flow 03.03 2009 PCH
@@ -7533,12 +7638,10 @@ namespace FiniteElement
       }
 
       //----------------------------------------------------------------------
-      // Irregulaere Knoten eliminieren
       //----------------------------------------------------------------------
       // Output matrices
       if(pcs->Write_Matrix)
       {
-         (*pcs->matrix_file) << "### Element: " << Index << endl;
          (*pcs->matrix_file) << "---Mass matrix: " << endl;
          if(Mass)
             Mass->Write(*pcs->matrix_file);
@@ -7552,16 +7655,8 @@ namespace FiniteElement
             (*pcs->matrix_file) << "---Advective matrix: " << endl;
             Advection->Write(*pcs->matrix_file);
          }
-         if(StrainCoupling)
-         {
-            (*pcs->matrix_file) << "---Strain couping matrix: " << endl;
-            StrainCoupling->Write(*pcs->matrix_file);
-         }
          (*pcs->matrix_file) << "---RHS: " <<endl;
          RHS->Write(*pcs->matrix_file);
-         (*pcs->matrix_file) <<endl;
-         (*pcs->matrix_file) << "Stiffness: " <<endl;
-         StiffMatrix->Write(*pcs->matrix_file);
          (*pcs->matrix_file) <<endl;
       }
    }
@@ -8231,7 +8326,7 @@ namespace FiniteElement
    02/2007 WW Implementation
    last modification:
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoef_RHS_T_MPhase(int dof_index)
+   double CFiniteElementStd::CalCoef_RHS_T_MPhase(int dof_index)
    {
       double val = 0.0, D_gw=0.0, D_ga=0.0;
       double expfactor=0.0,dens_arg[3];
@@ -8308,7 +8403,7 @@ namespace FiniteElement
       02/2007 WW Implementation
       last modification:
       **************************************************************************/
-   inline double CFiniteElementStd::CalCoef_RHS_PTC(int dof_index)
+   double CFiniteElementStd::CalCoef_RHS_PTC(int dof_index)
    {
       double val = 0.0;                           //, D_gw=0.0, D_ga=0.0; unused
       // double expfactor=0.0,dens_arg[3]; unused
@@ -8342,7 +8437,7 @@ namespace FiniteElement
 
    last modification:
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoef_RHS_T_PSGlobal(int dof_index)
+   double CFiniteElementStd::CalCoef_RHS_T_PSGlobal(int dof_index)
    {
       double val = 0.0;                           //OK411 D_gw=0.0, D_ga=0.0;
       //OK411 double expfactor=0.0;
@@ -8383,7 +8478,7 @@ namespace FiniteElement
    03/2009 PCH Implementation
    last modification:
    **************************************************************************/
-   inline void CFiniteElementStd::CalCoef_RHS_Pc(int dof_index)
+   void CFiniteElementStd::CalCoef_RHS_Pc(int dof_index)
    {
       int i=0;
       double *tensor = NULL;
@@ -8426,7 +8521,7 @@ namespace FiniteElement
    03/2009 PCH Implementation
    last modification:
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoef_RHS_PSGLOBAL(int dof_index)
+   double CFiniteElementStd::CalCoef_RHS_PSGLOBAL(int dof_index)
    {
       double val = 0.0;
       double k_rel=0.0;                           //OK411 mat_fac=0.0;
@@ -8466,7 +8561,7 @@ namespace FiniteElement
    last modification:
    **************************************************************************/
 
-   inline double CFiniteElementStd::CalCoef_RHS_AIR_FLOW(int dof_index)
+   double CFiniteElementStd::CalCoef_RHS_AIR_FLOW(int dof_index)
    {
       double val=0.0;
       int Index = MeshElement->GetIndex();
@@ -8495,7 +8590,7 @@ namespace FiniteElement
    last modification:
    **************************************************************************/
 
-   inline double CFiniteElementStd::CalCoef_RHS_HEAT_TRANSPORT(int dof_index)
+   double CFiniteElementStd::CalCoef_RHS_HEAT_TRANSPORT(int dof_index)
    {
       double val=0.0, rho_g=0.0, rho_0=0.0;
       int Index = MeshElement->GetIndex();
@@ -8753,16 +8848,30 @@ namespace FiniteElement
       for (i = 0; i < dof_n*nnodes; i++) NodalVal[i] = 0.0;
       for (i=nnodes;i<nnodesHQ;i++)
          nodes[i] = MeshElement->nodes_index[i];
-      for (i=0;i<nnodesHQ;i++)
-      {
-         NodalVal2[i] = ( dm_pcs->GetNodeValue(nodes[i],Idx_dm1[0])
-            -dm_pcs->GetNodeValue(nodes[i],Idx_dm0[0]));
-         NodalVal3[i] = ( dm_pcs->GetNodeValue(nodes[i],Idx_dm1[1])
-            -dm_pcs->GetNodeValue(nodes[i],Idx_dm0[1]));
-         if(dim==3)                               // 3D.
-            NodalVal4[i] = ( dm_pcs->GetNodeValue(nodes[i],Idx_dm1[2])
-               -dm_pcs->GetNodeValue(nodes[i],Idx_dm0[2]));
-      }
+
+	  if(dm_pcs->m_num->nls_method > 0) // Newton
+	  {
+        for (i=0;i<nnodesHQ;i++)
+        {
+           NodalVal2[i] = dm_pcs->GetNodeValue(nodes[i],Idx_dm1[0]);
+           NodalVal3[i] = dm_pcs->GetNodeValue(nodes[i],Idx_dm1[1]);
+           if(dim==3)                               // 3D.
+              NodalVal4[i] = dm_pcs->GetNodeValue(nodes[i],Idx_dm1[2]);
+        }
+	  }
+	  else
+	  {
+        for (i=0;i<nnodesHQ;i++)
+        {
+           NodalVal2[i] =  dm_pcs->GetNodeValue(nodes[i],Idx_dm1[0])
+              -dm_pcs->GetNodeValue(nodes[i],Idx_dm0[0]);
+           NodalVal3[i] =  dm_pcs->GetNodeValue(nodes[i],Idx_dm1[1])
+              -dm_pcs->GetNodeValue(nodes[i],Idx_dm0[1]);
+           if(dim==3)                               // 3D.
+              NodalVal4[i] = dm_pcs->GetNodeValue(nodes[i],Idx_dm1[2])
+                 -dm_pcs->GetNodeValue(nodes[i],Idx_dm0[2]);
+        }
+	  }
       //======================================================================
       SetHighOrderNodes();
       //
@@ -8779,6 +8888,7 @@ namespace FiniteElement
          //ComputeShapefct(2);
          ComputeGradShapefct(2);
          grad_du = 0.0;
+		 //axi
          for (i=0;i<nnodesHQ;i++)
          {
             grad_du += dshapefctHQ[i]*NodalVal2[i]+dshapefctHQ[i+nnodesHQ]*NodalVal3[i];
@@ -8798,7 +8908,7 @@ namespace FiniteElement
       //
       int ii_sh;
       long i_sh;
-      for(ii=0;ii<pcs->dof;ii++)
+      for(ii=0;ii<dof_n;ii++)
       {
          i_sh = NodeShift[ii+dm_shift];
          ii_sh = ii*nnodes;
@@ -9001,7 +9111,7 @@ namespace FiniteElement
    last modification:
    **************************************************************************/
 
-   inline double CFiniteElementStd::CalCoef_RHS_HEAT_TRANSPORT2(int dof_index)
+   double CFiniteElementStd::CalCoef_RHS_HEAT_TRANSPORT2(int dof_index)
    {
       int i;
       // TF unused variable - comment fix compile warning
@@ -9179,7 +9289,7 @@ namespace FiniteElement
    05/2008 WW Generalization
    last modification:
    **************************************************************************/
-   inline double CFiniteElementStd::CalCoef_RHS_M_MPhase(int dof_index)
+   double CFiniteElementStd::CalCoef_RHS_M_MPhase(int dof_index)
    {
       double val = 0.0;
       double expfactor=0.0;

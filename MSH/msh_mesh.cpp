@@ -4064,28 +4064,46 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
     MSHLib-Method:
     Programing:
     11/2007 WW Implementation
+	04/2011 WW CRS storage
     **************************************************************************/
    void CFEMesh::CreateSparseTable()
    {
-      // Symmetry case is skipped.
-      // 1. Sparse_graph_H for high order interpolation. Up to now, deformation
-      if(NodesNumber_Linear!=NodesNumber_Quadratic)
-         sparse_graph_H = new SparseTable(this, true);
-      // 2. M coupled with other processes with linear element
-      if(sparse_graph_H)
-      {
-         if((int)pcs_vector.size()>1)
-            sparse_graph = new SparseTable(this, false);
-      }
-      // 3. For process with linear elements
-      else
-         sparse_graph = new SparseTable(this, false);
+  
 
-      //sparse_graph->Write();
-      //  sparse_graph_H->Write();
-      //
-      //ofstream Dum("sparse.txt", ios::out);
-      //sparse_graph_H->Write(Dum);
+  Math_Group::StorageType stype;
+  stype = Math_Group::JDS;
+  for(int i=0; i<(int)num_vector.size(); i++)
+  {
+     if(num_vector[i]->ls_storage_method == 100)
+     {
+        stype = Math_Group::CRS;
+        break;
+     }
+  }
+
+    
+  // Symmetry case is skipped.
+  // 1. Sparse_graph_H for high order interpolation. Up to now, deformation
+  if(NodesNumber_Linear!=NodesNumber_Quadratic)   
+    sparse_graph_H = new SparseTable(this, true, false, stype);
+  // 2. M coupled with other processes with linear element
+  if(sparse_graph_H)
+  { 
+     if((int)pcs_vector.size()>1)
+      sparse_graph = new SparseTable(this, false, false, stype);
+  }
+  // 3. For process with linear elements
+  else
+    sparse_graph = new SparseTable(this, false, false, stype);
+
+     
+  //  sparse_graph->Write();
+  //  sparse_graph_H->Write();
+  //
+  //ofstream Dum("sparse.txt", ios::out); 
+  //sparse_graph_H->Write(Dum);
+
+
    }
 #endif                                         //#ifndef NON_PROCESS  // 05.03.2010 WW
 #endif

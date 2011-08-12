@@ -58,6 +58,7 @@ set( SOURCES
 	eos.cpp
 	fem_ele.cpp
 	fem_ele_std.cpp
+	fem_ele_std1.cpp
 	fem_ele_vec.cpp
 	femlib.cpp
 	FEMCondition.cpp
