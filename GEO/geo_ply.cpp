@@ -491,6 +491,10 @@ void GEOReadPolylines(const std::string &file_name_path_base) {
 	while (!gli_file.eof()) {
 		gli_file.getline(line, MAX_ZEILEN);
 		line_string = line;
+
+		if(line_string.find("#STOP")!=string::npos) //11.08.2011. WW
+           break;
+
 		//----------------------------------------------------------------------
 		if (line_string.find("#POLYLINE") != string::npos) { // keyword found
 			m_polyline = new CGLPolyline();

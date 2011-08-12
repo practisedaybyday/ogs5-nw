@@ -538,6 +538,7 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo)
 	std::string tag;
 	while (tag.find("#POINTS") == std::string::npos && !in.eof()) {
 		getline (in, tag);
+       
 	}
 
 	// read names of points into vector of strings

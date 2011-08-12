@@ -2567,7 +2567,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
       for(i=0; i<(int)neighb_pcs->m_msh->grid_neighbors.size(); i++)
       {
          neighb_grid = neighb_pcs->m_msh->grid_neighbors[i];
-         if(neighb_grid->getNeighbor_Name().find("�SECTOR_SOIL")!=std::string::npos)
+         if(neighb_grid->getNeighbor_Name().find("SECTOR_SOIL")!=std::string::npos)
             break;
          neighb_grid = NULL;
       }

@@ -7587,12 +7587,17 @@ double CRFProcess::ExecuteNonLinear()
             if(error_x1/error_x2>1.0e-1||error_b1/error_b2>1.0e-1)
               damping=0.5;
 
-             if(error>100.0&&iter_nlin>1)
+             if(error>10.0&&iter_nlin>1)
              {
 				 // if automatic time control
                  if(Tim->GetTimeStepCrtlType()>0)
 				 {
 					 auto_tctr_break = true;
+
+					 //Tim->SetTimeStep(0.25*Tim->GetTimeStep());
+                     PI_TimeStepSize(aproblem->GetBufferArray());
+					 accepted = false;
+					 return error;
 				 }
 				 else
 				 {
@@ -7625,7 +7630,10 @@ double CRFProcess::ExecuteNonLinear()
             is_converged = true;
 	     }
          if(norm_b<0.001*norm_b0)
-            is_converged = true;
+		 {
+             error = norm_b;
+			 is_converged = true;
+		 }
          if(error<=pcs_nonlinear_iteration_tolerance)
             is_converged = true;
 
