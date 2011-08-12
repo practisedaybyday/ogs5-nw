@@ -152,7 +152,6 @@ namespace process
       for(i=0; i<(int)msp_vector.size(); i++)
          msp_vector[i]->CalculateTransformMatrixFromNormalVector(problem_dimension_dm);
 
-
       if(!msp_vector.size())                      //OK
          return;
       InitialMBuffer();
@@ -203,16 +202,16 @@ namespace process
          bufferSize = GetPrimaryVNumber()*m_msh->GetNodesNumber(true);
          if(H_Process)
             HM_Stagered = true;
-      } 
-	  else if(GetObjType()==41)
+      }
+      else if(GetObjType()==41)
          bufferSize = (GetPrimaryVNumber()-1)*m_msh->GetNodesNumber(true)+
-             m_msh->GetNodesNumber(false);
-	  else if (GetObjType()==42)
+               m_msh->GetNodesNumber(false);
+      else if (GetObjType()==42)
          bufferSize = (GetPrimaryVNumber()-2)*m_msh->GetNodesNumber(true)+
-             2*m_msh->GetNodesNumber(false);
+               2*m_msh->GetNodesNumber(false);
 
       //Allocate memory for  temporal array
-	  if(m_num->nls_method != 2)
+      if(m_num->nls_method != 2)
          ARRAY =  new double[bufferSize];
 
       // Allocate memory for element variables
@@ -333,7 +332,7 @@ namespace process
 
       */
 
-	  if(CouplingIterations==0&&m_num->nls_method!=2)
+      if(CouplingIterations==0&&m_num->nls_method!=2)
          StoreLastSolution();                     //u_n-->temp
       //  Reset stress for each coupling step when partitioned scheme is applied to HM
       if(H_Process&&(type/10!=4))
@@ -491,7 +490,7 @@ namespace process
             /*
             #ifdef MFC
                     CString m_str;
-                    m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\
+                    m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\ 
                                   aktuelle_zeit,pcs_type_name.c_str(),l,ite_steps);
                     pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
             #endif
@@ -697,7 +696,7 @@ namespace process
          if(msp_vector[l]->excavated)
             deact_dom.push_back(l);
       }
-	  if(ExcavMaterialGroup>=0&&PCS_ExcavState<0)	//WX:01.2010.update pcs excav state
+      if(ExcavMaterialGroup>=0&&PCS_ExcavState<0) //WX:01.2010.update pcs excav state
       {
          for(l=0; l<(long)m_msh->ele_vector.size();l++)
          {
@@ -708,7 +707,8 @@ namespace process
             }
          }
       }
-      if((int)deact_dom.size()>0||PCS_ExcavState>0)   //WX:01.2011 modified for coupled excavation
+                                                  //WX:01.2011 modified for coupled excavation
+      if((int)deact_dom.size()>0||PCS_ExcavState>0)
       {
 
          //	  MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  //abort();}
@@ -736,12 +736,12 @@ namespace process
                   break;
                }
             }
-            if(ExcavMaterialGroup>=0)//WX
+            if(ExcavMaterialGroup>=0)             //WX
                if(elem->GetExcavState()>=0)
-               {
-                  elem->MarkingAll(false);
-                  done = true;
-               }
+            {
+               elem->MarkingAll(false);
+               done = true;
+            }
             if(done)
                continue;
             else
@@ -755,8 +755,9 @@ namespace process
                m_msh->nod_vector[l]->getConnectedElementIDs().pop_back();
          }
 
-		 size_t mesh_ele_vector_size (m_msh->ele_vector.size());
-         for (size_t l = 0; l < mesh_ele_vector_size; l++)//WX:07.2011 error fixed
+         size_t mesh_ele_vector_size (m_msh->ele_vector.size());
+                                                  //WX:07.2011 error fixed
+         for (size_t l = 0; l < mesh_ele_vector_size; l++)
          {
             elem = m_msh->ele_vector[l];
             if(!elem->GetMark()) continue;
@@ -1197,7 +1198,7 @@ namespace process
 #endif
 
       if(type == 41)
-	  {
+      {
          for (i = 0; i < pcs_number_of_primary_nvals; i++)
          {
             number_of_nodes = num_nodes_p_var[i];
@@ -1216,9 +1217,9 @@ namespace process
                   SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+
                      GetNodeValue(j, ColIndex-1));
             }
-          }
-		  return;
-	  }
+         }
+         return;
+      }
 
       //
       for (i = 0; i < problem_dimension_dm; i++)
@@ -1229,35 +1230,35 @@ namespace process
          ///  Update Newton step: w = w+dw
          if(u_type == 0)
          {
-             for(j=0; j<number_of_nodes; j++)
-                SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+eqs_x[j+shift]*damp);
-             shift += number_of_nodes;
+            for(j=0; j<number_of_nodes; j++)
+               SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+eqs_x[j+shift]*damp);
+            shift += number_of_nodes;
          }
          else
          {
-             for(j=0; j<number_of_nodes; j++)
-                SetNodeValue(j,ColIndex+1, GetNodeValue(j,ColIndex+1)+GetNodeValue(j,ColIndex));
+            for(j=0; j<number_of_nodes; j++)
+               SetNodeValue(j,ColIndex+1, GetNodeValue(j,ColIndex+1)+GetNodeValue(j,ColIndex));
          }
       }
-       
-      if(type == 42&&m_num->nls_method>0) //H2M, Newton-Raphson. 06.09.2010. WW
-	  {
-	      /// $p_{n+1}=p_{n+1}+\Delta p$ is already performed when type = 0
-          if(u_type == 1)
-              return;
-       
-		  for (i = problem_dimension_dm; i < pcs_number_of_primary_nvals; i++)
-          {
-             number_of_nodes = num_nodes_p_var[i];
-             //
-             ColIndex = p_var_index[i];
 
-             for(j=0; j<number_of_nodes; j++)
-                 SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex) + eqs_x[j+shift]*damp);
+      if(type == 42&&m_num->nls_method>0)         //H2M, Newton-Raphson. 06.09.2010. WW
+      {
+         /// $p_{n+1}=p_{n+1}+\Delta p$ is already performed when type = 0
+         if(u_type == 1)
+            return;
 
-             shift += number_of_nodes;
-          }
-	  }	   
+         for (i = problem_dimension_dm; i < pcs_number_of_primary_nvals; i++)
+         {
+            number_of_nodes = num_nodes_p_var[i];
+            //
+            ColIndex = p_var_index[i];
+
+            for(j=0; j<number_of_nodes; j++)
+               SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex) + eqs_x[j+shift]*damp);
+
+            shift += number_of_nodes;
+         }
+      }
    }
 
    /**************************************************************************
@@ -1293,7 +1294,7 @@ namespace process
       //
 
       /// u_0 = 0
-      if(type == 42)  // H2M
+      if(type == 42)                              // H2M
          end = problem_dimension_dm;
       for (i = start; i < end; i++)
       {
@@ -1303,24 +1304,23 @@ namespace process
             SetNodeValue(j, Col, 0.0);
       }
 
-      
-	  /// Dynamic: plus p_0 = 0 
-	  if(type==41 && !fem_dm->dynamic)
-	  {
-		 // p_1 = 0  
+      /// Dynamic: plus p_0 = 0
+      if(type==41 && !fem_dm->dynamic)
+      {
+         // p_1 = 0
          for (i = problem_dimension_dm; i < end; i++)
          {
-            Col = p_var_index[i]; 
+            Col = p_var_index[i];
             number_of_nodes=num_nodes_p_var[i];
             for (j=0; j<number_of_nodes; j++)
                SetNodeValue(j, Col, 0.0);
          }
-	  }
+      }
 
-	  /// Excavation: plus u_1 = 0; 
-	  if(ini_excav)
-	  {
-		 // p_1 = 0  
+      /// Excavation: plus u_1 = 0;
+      if(ini_excav)
+      {
+         // p_1 = 0
          for (i = 0; i < problem_dimension_dm; i++)
          {
             Col = p_var_index[i];
@@ -1329,9 +1329,8 @@ namespace process
                SetNodeValue(j, Col, 0.0);
          }
 
-	  }
+      }
 
-       
    }
 
    /**************************************************************************
@@ -1441,7 +1440,7 @@ namespace process
 
          start = problem_dimension_dm;
          for (i = 0; i < start; i++)
-           shift += num_nodes_p_var[i];
+            shift += num_nodes_p_var[i];
 
          //TODO: end = problem_dimension_dm;
       }
@@ -1516,7 +1515,7 @@ namespace process
 
    Programmaenderungen:
    10/2002   WW   Erste Version
-   07/2011   WW  
+   07/2011   WW
 
    **************************************************************************/
 #ifndef NEW_EQS
@@ -1524,38 +1523,37 @@ namespace process
    {
       int i, j;
       long number_of_nodes;
-	  long v_shift = 0;
+      long v_shift = 0;
       double NormW = 0.0;
-	  double val;
+      double val;
 
 #ifdef G_DEBUG
       if (!eqs) {printf(" \n Warning: solver not defined, exit from loop_ww.cc"); exit(1);}
 #endif
-      
+
       double *vec = NULL;
       if(isUnknowns)
-		 vec = eqs->x;
-	  else
-		 vec = eqs->b;
-      
-	  int end = pcs_number_of_primary_nvals;
+         vec = eqs->x;
+      else
+         vec = eqs->b;
+
+      int end = pcs_number_of_primary_nvals;
       if(fem_dm->dynamic)
-          end = problem_dimension_dm;
+         end = problem_dimension_dm;
 
       for (i = 0; i < end; i++)
       {
          number_of_nodes = num_nodes_p_var[i];
          for(j=0; j<number_of_nodes; j++)
-		 {
-			val =  vec[v_shift+j];  
+         {
+            val =  vec[v_shift+j];
             NormW += val*val;
-		 }
+         }
 
-		 v_shift += number_of_nodes; 
+         v_shift += number_of_nodes;
       }
       return sqrt(NormW);
    }
-
 #endif
    /**************************************************************************
     ROCKFLOW - Funktion: MaxiumLoadRatio
@@ -2325,7 +2323,7 @@ namespace process
       else
       {
          GlobalAssembly_DM();
-	 
+
          if(type/10==4)                           // p-u monolithic scheme
          {
             // if(!fem_dm->dynamic)   ///
@@ -2342,7 +2340,7 @@ namespace process
          //
          // {			 MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
 
-		 // DumpEqs("rf_pcs1.txt");
+         // DumpEqs("rf_pcs1.txt");
          /*
           ofstream Dum("rf_pcs_omp.txt", ios::out); // WW
           eqs_new->Write(Dum);

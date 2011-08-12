@@ -274,14 +274,14 @@ namespace FiniteElement
             } else if (h_pcs->type == 14 || h_pcs->type == 22)
             Flow_Type = 1;
             else if (h_pcs->type == 1212||h_pcs->type==42)
-			{
+            {
                Flow_Type = 2;                     //25.04.2008.  WW
 
-			   // 07.2011. WW
-			   PressureC_S = new Matrix(60,20);                   
-               if(pcs->m_num->nls_method == 1) // Newton-raphson. WW
-                   PressureC_S_dp = new Matrix(60,20); 
-			}
+               // 07.2011. WW
+               PressureC_S = new Matrix(60,20);
+               if(pcs->m_num->nls_method == 1)    // Newton-raphson. WW
+                  PressureC_S_dp = new Matrix(60,20);
+            }
             // WW idx_P0 = pcs->GetNodeValueIndex("POROPRESSURE0");
             break;
             //		} else if (pcs_vector[i]->pcs_type_name.find("PS_GLOBAL") != string::npos) {
@@ -414,9 +414,9 @@ namespace FiniteElement
       }
 
       //11.07.2011. WW
-	  if(PressureC) delete PressureC;
-	  if(PressureC_S) delete PressureC_S;
-	  if(PressureC_S_dp) delete PressureC_S_dp;
+      if(PressureC) delete PressureC;
+      if(PressureC_S) delete PressureC_S;
+      if(PressureC_S_dp) delete PressureC_S_dp;
 
       B_matrix = NULL;
       B_matrix_T = NULL;
@@ -869,23 +869,24 @@ namespace FiniteElement
       //---------------------------------------------------------
       // LoadFactor: factor of incremental loading, prescibed in rf_pcs.cpp
 
-      if((PressureC||PressureC_S||PressureC_S_dp)&&!PreLoad) // 07.2011 WW
+                                                  // 07.2011 WW
+      if((PressureC||PressureC_S||PressureC_S_dp)&&!PreLoad)
       {
-	
-		 fac = LoadFactor* fkt;
 
-		 // 07.2011. WW 
-         if(PressureC_S||PressureC_S_dp) 
-		 { 
-			// Pressure 1  
-			fac2 = interpolate(AuxNodal0); 
-			// Saturation of phase 1  
-		    fac1 = m_mmp->SaturationCapillaryPressureFunction(fac2,0);
-		    if(PressureC_S_dp)
-			{
+         fac = LoadFactor* fkt;
+
+         // 07.2011. WW
+         if(PressureC_S||PressureC_S_dp)
+         {
+            // Pressure 1
+            fac2 = interpolate(AuxNodal0);
+            // Saturation of phase 1
+            fac1 = m_mmp->SaturationCapillaryPressureFunction(fac2,0);
+            if(PressureC_S_dp)
+            {
                fac2 = fac1 + fac2 * m_mmp->SaturationPressureDependency(fac1, m_mfp->Density(), 1.0);
-			}
-		 }
+            }
+         }
 
          if(axisymmetry)
          {
@@ -900,9 +901,9 @@ namespace FiniteElement
 
                      f_buff = fac*dN_dx * shapefct[l];
                      (*PressureC)(nnodesHQ*j+k,l) += f_buff;
-					 if(PressureC_S)
+                     if(PressureC_S)
                         (*PressureC_S)(nnodesHQ*j+k,l) += f_buff*fac1;
-					 if(PressureC_S_dp)
+                     if(PressureC_S_dp)
                         (*PressureC_S_dp)(nnodesHQ*j+k,l) += f_buff*fac2;
 
                   }
@@ -916,15 +917,15 @@ namespace FiniteElement
                for (l=0;l<nnodes;l++)
                {
                   for(j=0; j<ele_dim; j++)
-				  { 
+                  {
                      f_buff = fac*dshapefctHQ[nnodesHQ*j+k] * shapefct[l];
-					 (*PressureC)(nnodesHQ*j+k,l) += f_buff;
+                     (*PressureC)(nnodesHQ*j+k,l) += f_buff;
                      if(PressureC_S)
                         (*PressureC_S)(nnodesHQ*j+k,l) += f_buff*fac1;
                      if(PressureC_S_dp)
                         (*PressureC_S_dp)(nnodesHQ*j+k,l) += f_buff*fac2;
 
-				  }
+                  }
                }
             }
          }
@@ -983,7 +984,7 @@ namespace FiniteElement
 
       (*RHS) = 0.0;
       (*Stiffness) = 0.0;
-	  // 07.2011. WW
+      // 07.2011. WW
       if(PressureC)
          (*PressureC) = 0.0;
       if(PressureC_S)
@@ -993,7 +994,8 @@ namespace FiniteElement
 
       if(m_dom)
       {
-         for(i=0; i<static_cast<int>(pcs->GetPrimaryVNumber()); i++)  //06.2011. WW
+                                                  //06.2011. WW
+         for(i=0; i<static_cast<int>(pcs->GetPrimaryVNumber()); i++)
             NodeShift[i]=m_dom->shift[i];
          for(i=0;i<nnodesHQ;i++)
             eqs_number[i] = element_nodes_dom[i];
@@ -1049,10 +1051,10 @@ namespace FiniteElement
          if(Flow_Type==2 || Flow_Type==3)         //09.10.2009 PCH
          {
             for(i=0; i<nnodes; i++)
-			{
+            {
                AuxNodal0[i] = h_pcs->GetNodeValue(nodes[i], idx_P1);
                AuxNodal2[i] = h_pcs->GetNodeValue(nodes[i], idx_P2);
-			}
+            }
          }
                                                   //12.03.2008 WW
          if((Flow_Type==1||Flow_Type==2)&&(smat->SwellingPressureType==3||smat->SwellingPressureType==4))
@@ -1071,39 +1073,40 @@ namespace FiniteElement
       //
 
       // -------------------------------12.2009.  WW
-	  if(pcs->ite_steps==1)
-	  {
-		  excavation = false;
-		  if((smat->excavation>0||pcs->ExcavMaterialGroup>-1)&&MeshElement->GetMark())
-		  {
-			  int  valid;
-			  if(smat->excavation>0)
-			  {
-				  if(GetCurveValue(smat->excavation,0,aktuelle_zeit,&valid)<1.0)
-				  {
-					  excavation = true;
-					  smat->excavated = true;               // To be ... 12.2009. WW
-					  *(eleV_DM->Stress) = 0.;
-				  }
-				  else
-					  smat->excavated = false;              // To be ... 12.2009. WW
-			  }
-			  if(pcs->ExcavMaterialGroup==MeshElement->GetPatchIndex())//WX:07.2011
-			  {
-				  double* ele_center = NULL;
-				  ele_center = MeshElement->GetGravityCenter();
-				  if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)>
-					  (ele_center[pcs->ExcavDirection])&&(ele_center[pcs->ExcavDirection]-pcs->ExcavBeginCoordinate)>-0.001)
-				  {
-					  excavation=true;
-					  *(eleV_DM->Stress) = 0.;
-					  MeshElement->SetExcavState(1);
-				  }
+      if(pcs->ite_steps==1)
+      {
+         excavation = false;
+         if((smat->excavation>0||pcs->ExcavMaterialGroup>-1)&&MeshElement->GetMark())
+         {
+            int  valid;
+            if(smat->excavation>0)
+            {
+               if(GetCurveValue(smat->excavation,0,aktuelle_zeit,&valid)<1.0)
+               {
+                  excavation = true;
+                  smat->excavated = true;         // To be ... 12.2009. WW
+                  *(eleV_DM->Stress) = 0.;
+               }
+               else
+                  smat->excavated = false;        // To be ... 12.2009. WW
+            }
+                                                  //WX:07.2011
+            if(pcs->ExcavMaterialGroup==MeshElement->GetPatchIndex())
+            {
+               double* ele_center = NULL;
+               ele_center = MeshElement->GetGravityCenter();
+               if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)>
+                  (ele_center[pcs->ExcavDirection])&&(ele_center[pcs->ExcavDirection]-pcs->ExcavBeginCoordinate)>-0.001)
+               {
+                  excavation=true;
+                  *(eleV_DM->Stress) = 0.;
+                  MeshElement->SetExcavState(1);
+               }
 
-			  }
+            }
 
-		  }
-	  }
+         }
+      }
       //----------------------------------------------------
 
       if(enhanced_strain_dm&&ele_value_dm[MeshElement->GetIndex()]->Localized)
@@ -1129,7 +1132,7 @@ namespace FiniteElement
                (*pcs->matrix_file) << "Pressue coupling matrix: " << std::endl;
                PressureC->Write(*pcs->matrix_file);
             }
-			// 07.2011. WW
+            // 07.2011. WW
             if(PressureC_S)
             {
                (*pcs->matrix_file) << "Saturation depedent pressue coupling matrix: " << std::endl;
@@ -1189,21 +1192,21 @@ namespace FiniteElement
                   }
                }
                else if(pcs->ExcavMaterialGroup>-1)
-			   {
-				   double* ele_center = NULL;
-				   ele_center = elem->GetGravityCenter();
-				   if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)<
-					  (ele_center[pcs->ExcavDirection]))
-				   {
-					   onExBoundary = true;
-					   break;
-				   }
-				   else if (elem->GetPatchIndex()!=pcs->ExcavMaterialGroup)
-				   {
-					   onExBoundary = true;
-					   break;
-				   }
-			   }//WX:07.2011
+               {
+                  double* ele_center = NULL;
+                  ele_center = elem->GetGravityCenter();
+                  if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)<
+                     (ele_center[pcs->ExcavDirection]))
+                  {
+                     onExBoundary = true;
+                     break;
+                  }
+                  else if (elem->GetPatchIndex()!=pcs->ExcavMaterialGroup)
+                  {
+                     onExBoundary = true;
+                     break;
+                  }
+               }                                  //WX:07.2011
                else
                {
                   onExBoundary = true;
@@ -1341,134 +1344,126 @@ namespace FiniteElement
       //Stiffness->Write();
 
       if(PressureC)
-	  { 
-          i = 0; // phase
-          if(Flow_Type == 2)     // Multi-phase-flow
-			 i = 1;  
-		  GlobalAssembly_PressureCoupling(PressureC, f2*biot, i);
-	  }
-	  // H2: p_g- S_w*p_c
+      {
+         i = 0;                                   // phase
+         if(Flow_Type == 2)                       // Multi-phase-flow
+            i = 1;
+         GlobalAssembly_PressureCoupling(PressureC, f2*biot, i);
+      }
+      // H2: p_g- S_w*p_c
       if(PressureC_S)
-         GlobalAssembly_PressureCoupling(PressureC_S, -f2*biot, 0); 
+         GlobalAssembly_PressureCoupling(PressureC_S, -f2*biot, 0);
       if(PressureC_S_dp)
-         GlobalAssembly_PressureCoupling(PressureC_S_dp, -f2*biot, 0); 
+         GlobalAssembly_PressureCoupling(PressureC_S_dp, -f2*biot, 0);
 
-
-	  
       /*
       // Assemble coupling matrix
       if(Flow_Type>=0&&pcs->type/40 == 1)              // Monolithic scheme
-      {    
-             
+      {
+
          f2 *= biot;
 
          double fact_NR = 0.;
          if(pcs->m_num->nls_method == 1) // If Newton-Raphson method
          {
             if(Flow_Type == 2)     // Multi-phase-flow: p_g-Sw*p_c
-            {
+      {
 
-               // P_g related:
-               for (i=0;i<nnodesHQ;i++)
-               {
-                  for (j=0;j<nnodes;j++)
-                  {
-                     for(k=0; k<ele_dim; k++)
-#ifdef NEW_EQS
-                      (*A)(NodeShift[k]+eqs_number[i], NodeShift[dim+1]+eqs_number[j])
-                          += f2*(*PressureC)(nnodesHQ*k+i,j);
-#else
-                       MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim+1]+eqs_number[j],\
-                               f2*(*PressureC)(nnodesHQ*k+i,j));
-#endif
-                  }
-               }
+      // P_g related:
+      for (i=0;i<nnodesHQ;i++)
+      {
+      for (j=0;j<nnodes;j++)
+      {
+      for(k=0; k<ele_dim; k++)
+      #ifdef NEW_EQS
+      (*A)(NodeShift[k]+eqs_number[i], NodeShift[dim+1]+eqs_number[j])
+      += f2*(*PressureC)(nnodesHQ*k+i,j);
+      #else
+      MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim+1]+eqs_number[j],\ 
+      f2*(*PressureC)(nnodesHQ*k+i,j));
+      #endif
+      }
+      }
 
+      fact_NR = 0.0;
+      for (i=0;i<nnodes;i++)
+      {
+      fact_NR += AuxNodal_S[i];  /// Sw
 
-			   
-               fact_NR = 0.0;
-               for (i=0;i<nnodes;i++)
-               {
-                  fact_NR += AuxNodal_S[i];  /// Sw
+      /// dS_dPcPc
+      fact_NR += m_mmp->SaturationPressureDependency(AuxNodal_S[i], m_mfp->Density(),
+      1.0)*h_pcs->GetNodeValue(nodes[i],idx_P1);
+      }
 
-                  /// dS_dPcPc 
-                  fact_NR += m_mmp->SaturationPressureDependency(AuxNodal_S[i], m_mfp->Density(), 
-                          1.0)*h_pcs->GetNodeValue(nodes[i],idx_P1);
-               }
+      fact_NR /= static_cast<double>(nnodes);
 
-               fact_NR /= static_cast<double>(nnodes);
-                              
-               f2 *= -1.0*fact_NR;
-			   
-            }  
-         }
-
-
-         // Add pressure coupling matrix to the stifness matrix
-         for (i=0;i<nnodesHQ;i++)
-         {
-            for (j=0;j<nnodes;j++)
-            {
-               for(k=0; k<ele_dim; k++)
-#ifdef NEW_EQS
-                  (*A)(NodeShift[k]+eqs_number[i], NodeShift[dim]+eqs_number[j])
-                  += f2*(*PressureC)(nnodesHQ*k+i,j);
-#else
-               MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim]+eqs_number[j],\
-                  f2*(*PressureC)(nnodesHQ*k+i,j));
-#endif
-            }
-         }
-         
-          
+      f2 *= -1.0*fact_NR;
 
       }
-*/
+      }
+
+      // Add pressure coupling matrix to the stifness matrix
+      for (i=0;i<nnodesHQ;i++)
+      {
+      for (j=0;j<nnodes;j++)
+      {
+      for(k=0; k<ele_dim; k++)
+      #ifdef NEW_EQS
+      (*A)(NodeShift[k]+eqs_number[i], NodeShift[dim]+eqs_number[j])
+      += f2*(*PressureC)(nnodesHQ*k+i,j);
+      #else
+      MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim]+eqs_number[j],\ 
+      f2*(*PressureC)(nnodesHQ*k+i,j));
+      #endif
+      }
+      }
+
+      }
+      */
       //TEST OUT
       //PressureC->Write();
    }
    //--------------------------------------------------------------------------
    /*!
-      \brief Assembe the pressure coupling matrix 
-	  
-	    to the global stiffness matrix in the monolithic scheme
+      \brief Assembe the pressure coupling matrix
 
+       to the global stiffness matrix in the monolithic scheme
 
-	   \param pCMatrix: the matrix
-	   \param fct: factor
-	   \param phase: phasse index
+      \param pCMatrix: the matrix
+      \param fct: factor
+      \param phase: phasse index
 
        07.2011. WW
-   */    
-    void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix *pCMatrix, double fct, const int phase)
-	{
-        int i, j, k;
+   */
+   void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix *pCMatrix, double fct, const int phase)
+   {
+      int i, j, k;
 #if defined(NEW_EQS)
-        CSparseMatrix *A = NULL;
-        if(m_dom)
-           A = m_dom->eqsH->A;
-        else
-           A = pcs->eqs_new->A;
+      CSparseMatrix *A = NULL;
+      if(m_dom)
+         A = m_dom->eqsH->A;
+      else
+         A = pcs->eqs_new->A;
 #endif
 
-		int dim_shift = dim + phase;
-         // Add pressure coupling matrix to the stifness matrix
-         for (i=0;i<nnodesHQ;i++)
+      int dim_shift = dim + phase;
+      // Add pressure coupling matrix to the stifness matrix
+      for (i=0;i<nnodesHQ;i++)
+      {
+         for (j=0;j<nnodes;j++)
          {
-            for (j=0;j<nnodes;j++)
-            {
-               for(k=0; k<ele_dim; k++)
+            for(k=0; k<ele_dim; k++)
 #ifdef NEW_EQS
-                  (*A)(NodeShift[k]+eqs_number[i], NodeShift[dim_shift]+eqs_number[j])
-                  += fct*(*pCMatrix)(nnodesHQ*k+i,j);
+               (*A)(NodeShift[k]+eqs_number[i], NodeShift[dim_shift]+eqs_number[j])
+               += fct*(*pCMatrix)(nnodesHQ*k+i,j);
 #else
-               MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim_shift]+eqs_number[j],\
-                  fct*(*pCMatrix)(nnodesHQ*k+i,j));
+            MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim_shift]+eqs_number[j],\
+               fct*(*pCMatrix)(nnodesHQ*k+i,j));
 #endif
-            }
          }
+      }
 
-	}
+   }
 
    /***************************************************************************
       GeoSys - Funktion:
@@ -1566,8 +1561,9 @@ namespace FiniteElement
                {
                   val_n = h_pcs->GetNodeValue(nodes[i],idx_P1);
                   //                AuxNodal[i] = LoadFactor*( val_n -Max(pcs->GetNodeValue(nodes[i],idx_P0),0.0));
-				  if(pcs->PCS_ExcavState==1)
-					  val_n -= h_pcs->GetNodeValue(nodes[i],idx_P1-1);//WX:07.2011 for HM excavation
+                  if(pcs->PCS_ExcavState==1)
+                                                  //WX:07.2011 for HM excavation
+                     val_n -= h_pcs->GetNodeValue(nodes[i],idx_P1-1);
                   AuxNodal[i] = LoadFactor*val_n;
                }
                break;
@@ -1600,10 +1596,10 @@ namespace FiniteElement
             case 2:                               // Multi-phase-flow: p_g-Sw*p_c
                // 07.2011. WW
                for (i=0;i<dim*nnodesHQ;i++)
-                 AuxNodal1[i] = 0.0;
-               
-			   PressureC->multi(AuxNodal2, AuxNodal1);
-			   PressureC_S->multi(AuxNodal0, AuxNodal1, -1.0);
+                  AuxNodal1[i] = 0.0;
+
+               PressureC->multi(AuxNodal2, AuxNodal1);
+               PressureC_S->multi(AuxNodal0, AuxNodal1, -1.0);
                break;
             case 3:                               // Multi-phase-flow: SwPw+SgPg	// PCH 05.05.2009
                for (i=0;i<nnodes;i++)
@@ -1633,12 +1629,12 @@ namespace FiniteElement
          }
 
          // Coupling effect to RHS
-         if(Flow_Type!=2) // 07.2011. WW
-		 {
+         if(Flow_Type!=2)                         // 07.2011. WW
+         {
             for (i=0;i<dim*nnodesHQ;i++)
                AuxNodal1[i] = 0.0;
             PressureC->multi(AuxNodal, AuxNodal1);
-		 }  
+         }
          for (i=0;i<dim*nnodesHQ;i++)
             (*RHS)(i) -= fabs(biot)*AuxNodal1[i];
       }                                           // End if partioned
@@ -1665,7 +1661,7 @@ namespace FiniteElement
          for (j=0;j<nnodesHQ;j++)
             b_rhs[eqs_number[j]+NodeShift[i]] -= (*RHS)(i*nnodesHQ+j);
       }
-	  //WX:07.2011 if not on excav boundary, RHS=0
+      //WX:07.2011 if not on excav boundary, RHS=0
       int valid = 0;
       if (excavation)
       {
@@ -1697,22 +1693,22 @@ namespace FiniteElement
                   }
                }
                else if(pcs->ExcavMaterialGroup>-1)
-			   {
-				   double* ele_center = NULL;
-				   ele_center = elem->GetGravityCenter();
-				   if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)<
-					  (ele_center[pcs->ExcavDirection]))
-				   {
-					   onExBoundary = true;
-					   break;
-				   }
-				   else if (elem->GetPatchIndex()!=pcs->ExcavMaterialGroup)
-				   {
-					   onExBoundary = true;
-					   break;
-				   }
-			   }
-			   else
+               {
+                  double* ele_center = NULL;
+                  ele_center = elem->GetGravityCenter();
+                  if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)<
+                     (ele_center[pcs->ExcavDirection]))
+                  {
+                     onExBoundary = true;
+                     break;
+                  }
+                  else if (elem->GetPatchIndex()!=pcs->ExcavMaterialGroup)
+                  {
+                     onExBoundary = true;
+                     break;
+                  }
+               }
+               else
                {
                   onExBoundary = true;
                   break;
@@ -1722,7 +1718,7 @@ namespace FiniteElement
             if (!onExBoundary)
             {
                for (int j = 0; j < dim; j++)
-                   b_rhs[eqs_number[i]+NodeShift[j]]= 0.0;
+                  b_rhs[eqs_number[i]+NodeShift[j]]= 0.0;
             }
 
          }
@@ -1803,7 +1799,7 @@ namespace FiniteElement
       }
       //
 
-      if(PModel==1||PModel==10||PModel==11)//WX:modified for DP with tension cutoff
+      if(PModel==1||PModel==10||PModel==11)       //WX:modified for DP with tension cutoff
          smat->CalulateCoefficent_DP();
       //
       if(PModel!=3&&smat->Youngs_mode!=2)         // modified due to transverse isotropic elasticity: UJG 24.11.2009
@@ -1822,8 +1818,8 @@ namespace FiniteElement
             *De = *(smat->getD_tran());           // UJG/WW
       }
 
-	  if(PModel==5)
-		  smat->CalculateCoefficent_HOEKBROWN();//WX:02.2011
+      if(PModel==5)
+         smat->CalculateCoefficent_HOEKBROWN();   //WX:02.2011
       /*
        string fname=FileName+"_D.txt";
        ofstream out_f(fname.c_str());
@@ -1932,36 +1928,36 @@ namespace FiniteElement
                   dPhi = 1.0;
                }
                break;
-            case 11:	//WX: 08.2010
-				{
-					double mm = 0.;       //WX:09.2010. for DP with Tension.
-					switch(smat->DirectStressIntegrationDPwithTension(gp, De, eleV_DM, dstress, update, mm))
-					{
-					case 1:
-						{
-							*ConsistDep = *De;
-							smat->TangentialDP2(ConsistDep);
-							dPhi = 1.0;
-						}
-						break;
-					case 2:
-						{
-							*ConsistDep = *De;
-							smat->TangentialDPwithTension(ConsistDep, mm);
-							dPhi = 1.0;
-						}
-						break;
-					case 3:
-						{
-							*ConsistDep = *De;
-							smat->TangentialDPwithTensionCorner(ConsistDep, mm);
-							dPhi = 1.0;
-						}
-						break;
-					default: break;
-					}
-					break;
-				}
+            case 11:                              //WX: 08.2010
+            {
+               double mm = 0.;                    //WX:09.2010. for DP with Tension.
+               switch(smat->DirectStressIntegrationDPwithTension(gp, De, eleV_DM, dstress, update, mm))
+               {
+                  case 1:
+                  {
+                     *ConsistDep = *De;
+                     smat->TangentialDP2(ConsistDep);
+                     dPhi = 1.0;
+                  }
+                  break;
+                  case 2:
+                  {
+                     *ConsistDep = *De;
+                     smat->TangentialDPwithTension(ConsistDep, mm);
+                     dPhi = 1.0;
+                  }
+                  break;
+                  case 3:
+                  {
+                     *ConsistDep = *De;
+                     smat->TangentialDPwithTensionCorner(ConsistDep, mm);
+                     dPhi = 1.0;
+                  }
+                  break;
+                  default: break;
+               }
+               break;
+            }
             case 2:                               // Rotational hardening model
                // Compute stesses and plastic multi-plier
                dPhi = 0.0;
@@ -2003,24 +1999,25 @@ namespace FiniteElement
 
                dPhi = 1.0;
                break;
-            case 4:	// Mohr-Coloumb	//WX:10.2010
+            case 4:                               // Mohr-Coloumb	//WX:10.2010
                if(smat->DirectStressIntegrationMOHR(gp, eleV_DM, dstress, update, De))
                {
                   *ConsistDep = *De;
-                  smat->TangentialMohrShear(ConsistDep);		//also for tension
+                                                  //also for tension
+                  smat->TangentialMohrShear(ConsistDep);
                   //ConsistDep->Write();
                   dPhi = 1.0;
                }
                break;
-			/*case 5:
-				if(smat->StressIntegrationHoekBrown(gp, eleV_DM, dstress, update, De))
-				{
-                  *ConsistDep = *De;
-                  smat->TangentialHoekBrown(ConsistDep);		//also for tension
-                  //ConsistDep->Write();
-                  dPhi = 1.0;
-				}
-				break;*/
+               /*case 5:
+                  if(smat->StressIntegrationHoekBrown(gp, eleV_DM, dstress, update, De))
+                  {
+                        *ConsistDep = *De;
+                        smat->TangentialHoekBrown(ConsistDep);		//also for tension
+                        //ConsistDep->Write();
+                        dPhi = 1.0;
+                  }
+                  break;*/
          }
          // --------------------------------------------------------------------
          // Stress increment by heat, swelling, or heat

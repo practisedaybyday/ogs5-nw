@@ -12,10 +12,10 @@
 // Problems
 #include "rf_mmp_new.h"
 
-#include "pcs_dm.h"                             
+#include "pcs_dm.h"
 #include "rfmat_cp.h"
 
-#ifndef NEW_EQS                                  
+#ifndef NEW_EQS
 #include "matrix.h"
 #endif
 
@@ -30,51 +30,49 @@ using Math_Group::CSparseMatrix;
 using namespace std;
 namespace FiniteElement
 {
-	/*!
-	  \brief Compute the additional term of Jacobian
-           
+   /*!
+     \brief Compute the additional term of Jacobian
+
           for the Newton-Raphson method for the p-p scheme.
 
-		  07.2011. WW
-       
-	*/
-	void CFiniteElementStd::ComputeAdditionalJacobi_H2()
-	{
+        07.2011. WW
 
-	   int i, j, k, l; //, m;     
-	   int dm_shift = problem_dimension_dm;
-       // ---- Gauss integral
-       int gp_r=0,gp_s=0,gp_t=0; 
-       double fkt, mat_fac;
-	   double perturb = sqrt(DBL_EPSILON);
-	   double *tensor, *p2, *p2_0; 
-	   double S1,  vsc1, vsc2;
-	   double dkdp1, dkdp2;
-	   //double phi_dP_dt, d_ds_dp, phi_dP_dt_g;
+   */
+   void CFiniteElementStd::ComputeAdditionalJacobi_H2()
+   {
 
-       double relax = pcs->m_num->nls_relaxation;
+      int i, j, k, l;                             //, m;
+      int dm_shift = problem_dimension_dm;
+      // ---- Gauss integral
+      int gp_r=0,gp_s=0,gp_t=0;
+      double fkt, mat_fac;
+      double perturb = sqrt(DBL_EPSILON);
+      double *tensor, *p2, *p2_0;
+      double S1,  vsc1, vsc2;
+      double dkdp1, dkdp2;
+      //double phi_dP_dt, d_ds_dp, phi_dP_dt_g;
 
-	   double gradPw[3], gradPg[3];
-	   double f_buff;     
-	   double vw[3], vg[3];
-	   const double g_constant = 9.81; 
+      double relax = pcs->m_num->nls_relaxation;
 
-       double dens_arg[3];                    
-       dens_arg[1] = 293.15;
+      double gradPw[3], gradPg[3];
+      double f_buff;
+      double vw[3], vg[3];
+      const double g_constant = 9.81;
 
-	   p2_0 = NodalVal0 + nnodes;
-	   p2 = NodalVal1 + nnodes;
-       // Material
-       mat_fac = 0.0;
+      double dens_arg[3];
+      dens_arg[1] = 293.15;
 
-       
+      p2_0 = NodalVal0 + nnodes;
+      p2 = NodalVal1 + nnodes;
+      // Material
+      mat_fac = 0.0;
 
-	   *StiffMatrix = 0.;
+      *StiffMatrix = 0.;
 
-       //======================================================================
-       // Loop over Gauss points
-       for (gp = 0; gp < nGaussPoints; gp++)
-       {
+      //======================================================================
+      // Loop over Gauss points
+      for (gp = 0; gp < nGaussPoints; gp++)
+      {
          //---------------------------------------------------------
          //  Get local coordinates and weights
          //  Compute Jacobian matrix and its determinate
@@ -85,187 +83,180 @@ namespace FiniteElement
 
          //poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
          tensor = MediaProp->PermeabilityTensor(Index);
-		 PG = interpolate(NodalVal1);  
-		 PG2 = interpolate(p2);  
-		 Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
-		 S1 = Sw + perturb;  //MediaProp->SaturationCapillaryPressureFunction(PG+perturb,0); 
-   
-		 dens_arg[0] = PG;   
-         rhow = FluidProp->Density(dens_arg);
-         dens_arg[0] = PG2;   
-		 rho_ga = GasProp->Density(dens_arg);
-         vsc1 = FluidProp->Viscosity();
-		 vsc2 = GasProp->Viscosity();
+         PG = interpolate(NodalVal1);
+         PG2 = interpolate(p2);
+         Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+         S1 = Sw + perturb;                       //MediaProp->SaturationCapillaryPressureFunction(PG+perturb,0);
 
+         dens_arg[0] = PG;
+         rhow = FluidProp->Density(dens_arg);
+         dens_arg[0] = PG2;
+         rho_ga = GasProp->Density(dens_arg);
+         vsc1 = FluidProp->Viscosity();
+         vsc2 = GasProp->Viscosity();
 
          //dSdp = MediaProp->SaturationPressureDependency(Sw, rhow, pcs->m_num->ls_theta);
-		 dSdp = (MediaProp->SaturationCapillaryPressureFunction(PG+perturb,0) - Sw)/perturb;
+         dSdp = (MediaProp->SaturationCapillaryPressureFunction(PG+perturb,0) - Sw)/perturb;
 
-
-		 
          // Velocity
          for (i = 0; i < dim; i++)
          {
             gradPw[i] = 0.0;
-            gradPg[i] = 0.;	
+            gradPg[i] = 0.;
             for(j=0; j<nnodes; j++)
-			{
+            {
                gradPw[i] += (p2[j]-NodalVal1[j])*dshapefct[i*nnodes+j];
                gradPg[i] += p2[j]*dshapefct[i*nnodes+j];
-			}
+            }
          }
 
-         if((coordinate_system)%10==2)         
-		 {
+         if((coordinate_system)%10==2)
+         {
             gradPw[dim-1] += g_constant*rhow;
             gradPg[dim-1] += g_constant*rho_ga;
-		 }
+         }
 
-		 dkdp1 = dSdp*( MediaProp->PermeabilitySaturationFunction(S1,0)
-			      -MediaProp->PermeabilitySaturationFunction(Sw,0))/perturb;
-		 dkdp2 = dSdp*( MediaProp->PermeabilitySaturationFunction(S1,1)
-			      -MediaProp->PermeabilitySaturationFunction(Sw,1))/perturb;
+         dkdp1 = dSdp*( MediaProp->PermeabilitySaturationFunction(S1,0)
+            -MediaProp->PermeabilitySaturationFunction(Sw,0))/perturb;
+         dkdp2 = dSdp*( MediaProp->PermeabilitySaturationFunction(S1,1)
+            -MediaProp->PermeabilitySaturationFunction(Sw,1))/perturb;
 
          for (i = 0; i < dim; i++)
          {
             vw[i] = 0.0;
-            vg[i] = 0.;	
+            vg[i] = 0.;
             for(j=0; j<dim; j++)
-			{
-			   vw[i] += tensor[i*dim+j]*gradPw[j];
+            {
+               vw[i] += tensor[i*dim+j]*gradPw[j];
                vg[i] += tensor[i*dim+j]*gradPg[j];
-			}
+            }
             vw[i] *= dkdp1*time_unit_factor/ vsc1;
-            vg[i] *= dkdp2*rho_ga*time_unit_factor/(vsc2*rhow);	
+            vg[i] *= dkdp2*rho_ga*time_unit_factor/(vsc2*rhow);
 
          }
-         
-		 /// For the Laplace 
+
+         /// For the Laplace
          for (i = 0; i < nnodes; i++)
          {
-			l = i +nnodes;  
+            l = i +nnodes;
             for (j = 0; j < nnodes; j++)
             {
-				//m = j+nnodes; 
-				for (k = 0; k < dim; k++)  
-				{
-				   f_buff = fkt*dshapefct[k*nnodes+i]*shapefct[j];	  
-                   (*StiffMatrix)(i,j) += f_buff*vw[k];
-                   (*StiffMatrix)(l,j) += f_buff*vg[k];
-				}
-             }
+               //m = j+nnodes;
+               for (k = 0; k < dim; k++)
+               {
+                  f_buff = fkt*dshapefct[k*nnodes+i]*shapefct[j];
+                  (*StiffMatrix)(i,j) += f_buff*vw[k];
+                  (*StiffMatrix)(l,j) += f_buff*vg[k];
+               }
+            }
          }
- 
+
 #define Take_Deformation_to_Jacobian
 #ifdef Take_Deformation_to_Jacobian
 
-		 // d(dS/dp)/dS  may not be available.
-		 // Instead dS = dS(p)/dp * dp 
-		 /*
-		 // Mass related
-         /// d(dS/dp)/dS 
-         d_ds_dp = ( MediaProp->SaturationPressureDependency(S1, rhow, pcs->m_num->ls_theta) - dSdp)/perturb;
+         // d(dS/dp)/dS  may not be available.
+         // Instead dS = dS(p)/dp * dp
+         /*
+         // Mass related
+           /// d(dS/dp)/dS
+           d_ds_dp = ( MediaProp->SaturationPressureDependency(S1, rhow, pcs->m_num->ls_theta) - dSdp)/perturb;
 
-         phi_dP_dt = 0.;
-		 phi_dP_dt_g = 0.;
-         for(i=0; i<nnodes; i++)
-		 {
-		    phi_dP_dt += (NodalVal1[i] - NodalVal0[i]) * shapefct[i];
-		    phi_dP_dt_g += (p2[i] - p2_0[i]) * shapefct[i];
-		 }
-		 phi_dP_dt *= poro*dSdp*d_ds_dp/dt; 
-		 phi_dP_dt_g *= poro*dSdp*d_ds_dp/dt; 
+           phi_dP_dt = 0.;
+         phi_dP_dt_g = 0.;
+           for(i=0; i<nnodes; i++)
+         {
+            phi_dP_dt += (NodalVal1[i] - NodalVal0[i]) * shapefct[i];
+            phi_dP_dt_g += (p2[i] - p2_0[i]) * shapefct[i];
+         }
+         phi_dP_dt *= poro*dSdp*d_ds_dp/dt;
+         phi_dP_dt_g *= poro*dSdp*d_ds_dp/dt;
          */
 
          if(dm_pcs)
-		 {
-           // setOrder(2);
-		   // GetGaussData(gp, gp_r, gp_s, gp_t);
-           // ComputeGradShapefct(2);                 
-           // setOrder(1);
+         {
+            // setOrder(2);
+            // GetGaussData(gp, gp_r, gp_s, gp_t);
+            // ComputeGradShapefct(2);
+            // setOrder(1);
 
-      	    /// if deformation is coupled
-	        vw[0]  = 0.; // Here for dSdp*grad u/dt
+            /// if deformation is coupled
+            vw[0]  = 0.;                          // Here for dSdp*grad u/dt
             for (i=0;i<nnodes;i++)
-//            for (i=0;i<nnodesHQ;i++)
+               //            for (i=0;i<nnodesHQ;i++)
             {
                vw[0]  += NodalVal2[i]*dshapefct[i]+NodalVal3[i]*dshapefct[i+nnodes];
-//               vw[0]  += NodalVal2[i]*dshapefctHQ[i]+NodalVal3[i]*dshapefctHQ[i+nnodesHQ];
+               //               vw[0]  += NodalVal2[i]*dshapefctHQ[i]+NodalVal3[i]*dshapefctHQ[i+nnodesHQ];
                if(dim==3)                         // 3D.
-//                  vw[0]  +=   NodalVal4[i]*dshapefctHQ[2*nnodesHQ+i];
+                  //                  vw[0]  +=   NodalVal4[i]*dshapefctHQ[2*nnodesHQ+i];
                   vw[0]  +=   NodalVal4[i]*dshapefct[2*nnodes+i];
 
             }
-            vw[0]  *= dSdp/dt; 
-		 } 
-		 else
+            vw[0]  *= dSdp/dt;
+         }
+         else
             vw[0] = 0.;
 
-
-
-		 for (i = 0; i < nnodes; i++)
+         for (i = 0; i < nnodes; i++)
          {
-			l = i +nnodes;  
+            l = i +nnodes;
             for (j = 0; j < nnodes; j++)
             {
-				//m = j+nnodes; 
-                f_buff = fkt*shapefct[i]*shapefct[j];
-                //(*StiffMatrix)(i,j) += f_buff*(phi_dP_dt+vw[0]);
-                //(*StiffMatrix)(l,j) -= rho_ga*f_buff*(phi_dP_dt_g+vw[0])/rhow;
-                (*StiffMatrix)(i,j) += f_buff*vw[0];
-                (*StiffMatrix)(l,j) -= rho_ga*f_buff*vw[0]/rhow;
-             }
-          }
+               //m = j+nnodes;
+               f_buff = fkt*shapefct[i]*shapefct[j];
+               //(*StiffMatrix)(i,j) += f_buff*(phi_dP_dt+vw[0]);
+               //(*StiffMatrix)(l,j) -= rho_ga*f_buff*(phi_dP_dt_g+vw[0])/rhow;
+               (*StiffMatrix)(i,j) += f_buff*vw[0];
+               (*StiffMatrix)(l,j) -= rho_ga*f_buff*vw[0]/rhow;
+            }
+         }
 #endif
 
       }                                           // loop gauss points
 
-	  Add2GlolbalMatrixII(1);
+      Add2GlolbalMatrixII(1);
 
-	 // StiffMatrix->Write();
+      // StiffMatrix->Write();
 
-	}	
+   }
 
-	//------------------------------------------------------------------
-	/*!
-	  \brief Compute the additional term of Jacobian
-           
+   //------------------------------------------------------------------
+   /*!
+     \brief Compute the additional term of Jacobian
+
           for the Newton-Raphson method for the p-p scheme.
 
-		  07.2011. WW
-       
-	*/
-	void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
-	{
+        07.2011. WW
 
-	   int i, j, k; //, m;     
-	   int dm_shift = problem_dimension_dm;
-       // ---- Gauss integral
-       int gp_r=0,gp_s=0,gp_t=0; 
-       double fkt, mat_fac;
-	   double perturb = sqrt(DBL_EPSILON);
-	   double *tensor; 
-	   double S1,  vsc1;
-	   double dkdp1;
-	   //double phi_dP_dt, d_ds_dp, phi_dP_dt_g;
+   */
+   void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
+   {
 
-       double relax = pcs->m_num->nls_relaxation;
+      int i, j, k;                                //, m;
+      int dm_shift = problem_dimension_dm;
+      // ---- Gauss integral
+      int gp_r=0,gp_s=0,gp_t=0;
+      double fkt, mat_fac;
+      double perturb = sqrt(DBL_EPSILON);
+      double *tensor;
+      double S1,  vsc1;
+      double dkdp1;
+      //double phi_dP_dt, d_ds_dp, phi_dP_dt_g;
 
-	   double gradPw[3];
-	   double vw[3];
-	   const double g_constant = 9.81; 
+      double relax = pcs->m_num->nls_relaxation;
 
-       // Material
-       mat_fac = 0.0;
+      double gradPw[3];
+      double vw[3];
+      const double g_constant = 9.81;
 
-       
+      // Material
+      mat_fac = 0.0;
 
-	   *StiffMatrix = 0.;
+      *StiffMatrix = 0.;
 
-       //======================================================================
-       // Loop over Gauss points
-       for (gp = 0; gp < nGaussPoints; gp++)
-       {
+      //======================================================================
+      // Loop over Gauss points
+      for (gp = 0; gp < nGaussPoints; gp++)
+      {
          //---------------------------------------------------------
          //  Get local coordinates and weights
          //  Compute Jacobian matrix and its determinate
@@ -275,17 +266,15 @@ namespace FiniteElement
          ComputeGradShapefct(1);                  // Linear interpolation function
 
          tensor = MediaProp->PermeabilityTensor(Index);
-		 PG = -interpolate(NodalVal1);  
-		 Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
-		 S1 = Sw + perturb;  //MediaProp->SaturationCapillaryPressureFunction(PG+perturb,0); 
-   
+         PG = -interpolate(NodalVal1);
+         Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+         S1 = Sw + perturb;                       //MediaProp->SaturationCapillaryPressureFunction(PG+perturb,0);
+
          vsc1 = FluidProp->Viscosity();
 
          //dSdp = MediaProp->SaturationPressureDependency(Sw, rhow, pcs->m_num->ls_theta);
-		 dSdp = (MediaProp->SaturationCapillaryPressureFunction(PG+perturb,0) - Sw)/perturb;
+         dSdp = (MediaProp->SaturationCapillaryPressureFunction(PG+perturb,0) - Sw)/perturb;
 
-
-		 
          // Velocity
          for (i = 0; i < dim; i++)
          {
@@ -294,76 +283,72 @@ namespace FiniteElement
                gradPw[i] += NodalVal1[j]*dshapefct[i*nnodes+j];
          }
 
-         if((coordinate_system)%10==2)         
+         if((coordinate_system)%10==2)
             gradPw[dim-1] += g_constant*rhow;
 
-		 dkdp1 = dSdp*( MediaProp->PermeabilitySaturationFunction(S1,0)
-			      -MediaProp->PermeabilitySaturationFunction(Sw,0))/perturb;
+         dkdp1 = dSdp*( MediaProp->PermeabilitySaturationFunction(S1,0)
+            -MediaProp->PermeabilitySaturationFunction(Sw,0))/perturb;
 
          for (i = 0; i < dim; i++)
          {
             vw[i] = 0.0;
             for(j=0; j<dim; j++)
                vw[i] += tensor[i*dim+j]*gradPw[j];
-           
-			vw[i] *= dkdp1*time_unit_factor/ vsc1;
+
+            vw[i] *= dkdp1*time_unit_factor/ vsc1;
          }
-         
-		 /// For the Laplace 
+
+         /// For the Laplace
          for (i = 0; i < nnodes; i++)
          {
             for (j = 0; j < nnodes; j++)
             {
-				//m = j+nnodes; 
-				for (k = 0; k < dim; k++)  
-                   (*StiffMatrix)(i,j) += fkt*dshapefct[k*nnodes+i]*shapefct[j]*vw[k];
-             }
+               //m = j+nnodes;
+               for (k = 0; k < dim; k++)
+                  (*StiffMatrix)(i,j) += fkt*dshapefct[k*nnodes+i]*shapefct[j]*vw[k];
+            }
          }
- 
+
 #define Take_Deformation_to_Jacobian
 #ifdef Take_Deformation_to_Jacobian
 
          if(dm_pcs)
-		 {
-           // setOrder(2);
-		   // GetGaussData(gp, gp_r, gp_s, gp_t);
-           // ComputeGradShapefct(2);                 
-           // setOrder(1);
+         {
+            // setOrder(2);
+            // GetGaussData(gp, gp_r, gp_s, gp_t);
+            // ComputeGradShapefct(2);
+            // setOrder(1);
 
-      	    /// if deformation is coupled
-	        vw[0]  = 0.; // Here for dSdp*grad u/dt
+            /// if deformation is coupled
+            vw[0]  = 0.;                          // Here for dSdp*grad u/dt
             for (i=0;i<nnodes;i++)
-//            for (i=0;i<nnodesHQ;i++)
+               //            for (i=0;i<nnodesHQ;i++)
             {
                vw[0]  += NodalVal2[i]*dshapefct[i]+NodalVal3[i]*dshapefct[i+nnodes];
-//               vw[0]  += NodalVal2[i]*dshapefctHQ[i]+NodalVal3[i]*dshapefctHQ[i+nnodesHQ];
+               //               vw[0]  += NodalVal2[i]*dshapefctHQ[i]+NodalVal3[i]*dshapefctHQ[i+nnodesHQ];
                if(dim==3)                         // 3D.
-//                  vw[0]  +=   NodalVal4[i]*dshapefctHQ[2*nnodesHQ+i];
+                  //                  vw[0]  +=   NodalVal4[i]*dshapefctHQ[2*nnodesHQ+i];
                   vw[0]  +=   NodalVal4[i]*dshapefct[2*nnodes+i];
 
             }
-            vw[0]  *= dSdp/dt; 
-		 } 
-		 else
+            vw[0]  *= dSdp/dt;
+         }
+         else
             vw[0] = 0.;
 
-
-
-		 for (i = 0; i < nnodes; i++)
+         for (i = 0; i < nnodes; i++)
          {
             for (j = 0; j < nnodes; j++)
-              (*StiffMatrix)(i,j) += fkt*shapefct[i]*shapefct[j]*vw[0];
-          }
+               (*StiffMatrix)(i,j) += fkt*shapefct[i]*shapefct[j]*vw[0];
+         }
 #endif
 
       }                                           // loop gauss points
 
-	  Add2GlolbalMatrixII(1);
+      Add2GlolbalMatrixII(1);
 
-	 // StiffMatrix->Write();
+      // StiffMatrix->Write();
 
-	}	
+   }
 
-
-
-} // namespace
+}                                                 // namespace
