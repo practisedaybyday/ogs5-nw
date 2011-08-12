@@ -20,6 +20,10 @@ Programing:
 #include "geo_lib.h"
 #include "geo_mathlib.h"
 
+// File path. 11.08.2011 WW
+#include "makros.h"
+
+
 using namespace std;
 
 //GSP
@@ -1126,6 +1130,7 @@ void Surface::ReadTIN(const std::string &tin_file_name)
   //----------------------------------------------------------------------
   // File handling
   string tin_file_name_path;
+  /*  //11.08.2011 WW
   //  tin_file_name_path = FileName;  //WW/JOD // LB: commented out to compile GEO without dependency on FEM
   basic_string <char>::size_type indexCh1a;
   indexCh1a = tin_file_name_path.find_last_of("\\");
@@ -1138,7 +1143,9 @@ void Surface::ReadTIN(const std::string &tin_file_name)
   }
   else     //   \ does not exist, RELEASE case
     tin_file_name_path = tin_file_name;
+ */
 
+  tin_file_name_path = FilePath+tin_file_name; // 11.08.2011. WW
   ifstream tin_file (tin_file_name_path.data(),ios::in);
   if (!tin_file.good()) return;
   tin_file.seekg(0L,ios::beg);

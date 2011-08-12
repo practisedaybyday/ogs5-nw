@@ -19,6 +19,7 @@ class CompProperties;
  WW 07.2011 
 */
 using namespace std;
+#ifdef MFP_TEST
 class Hash_Table
 {
    public:
@@ -37,7 +38,7 @@ class Hash_Table
      vector<int> table_section_ends;
      vector<double*> hash_table_data;     
 };
-
+#endif
 /*---------------------------------------------------------------*/
 //namespace FiniteElement {class CElement;}
 //using FiniteElement::CElement;
@@ -199,7 +200,9 @@ class CFluidProperties
       CRFProcess *m_pcs;                          //OK4704
       CRFProcess *mfp_pcs;
 
+#ifdef MFP_TEST
       Hash_Table *scatter_data;  //WW
+#endif
 
       double GasViscosity_Reichenberg_1971(double,double);
                                                   //AKS

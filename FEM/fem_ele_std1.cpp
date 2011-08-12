@@ -42,7 +42,7 @@ namespace FiniteElement
    {
 
       int i, j, k, l;                             //, m;
-      int dm_shift = problem_dimension_dm;
+      //int dm_shift = problem_dimension_dm;
       // ---- Gauss integral
       int gp_r=0,gp_s=0,gp_t=0;
       double fkt, mat_fac;
@@ -232,7 +232,7 @@ namespace FiniteElement
    {
 
       int i, j, k;                                //, m;
-      int dm_shift = problem_dimension_dm;
+      //int dm_shift = problem_dimension_dm;
       // ---- Gauss integral
       int gp_r=0,gp_s=0,gp_t=0;
       double fkt, mat_fac;

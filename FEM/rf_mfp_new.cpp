@@ -86,7 +86,10 @@ CFluidProperties::CFluidProperties(void)
    Fem_Ele_Std = NULL;
    // WW
    molar_mass = COMP_MOL_MASS_AIR;
+
+#ifdef MFP_TEST //WW
    scatter_data = NULL;
+#endif
 }
 
 
@@ -105,8 +108,10 @@ CFluidProperties::~CFluidProperties(void)
    }
    component_vector.clear();
 
+#ifdef MFP_TEST
    if(scatter_data) //WW
      delete scatter_data;
+#endif
 }
 
 
@@ -3431,7 +3436,7 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
    return variables ;
 }
 
-
+#ifdef MFP_TEST
 //-----------------------------------------------------
 //  
 /*!
@@ -3557,3 +3562,4 @@ double Hash_Table::CalcValue(double *var, const int var_id) const
 	}
 	return 0.;
 }
+#endif //#ifdef MFP_TEST
