@@ -34,11 +34,12 @@ public:
 	~GMSHInterface ();
 	/**
 	 * writes the geometric data (Points, Polylines, Surfaces) into a file of the GMSH format
-	 * @param proj_name
-	 * @param geo
+	 * @param proj_name Name of the geometry that will be included in the geo-file
+	 * @param geo Container for geometric information
+	 * @parem useStationsAsContraints If true, station data is included as constraints for meshing of surfaces (via addStationsAsConstraints()).
 	 * @return if the file stream can be opened the method returns true, else it returns false
 	 */
-	bool writeGMSHInputFile(const std::string &proj_name, const GEOLIB::GEOObjects& geo);
+	bool writeGMSHInputFile(const std::string &proj_name, const GEOLIB::GEOObjects& geo, bool useStationsAsContraints = false);
 
 	/**
 	 * Method writes selected data to the stream (opened from constructor) employing a Quadtree for
@@ -82,6 +83,8 @@ private:
 	std::list<size_t> findHolesInsidePolygon(const std::vector<GEOLIB::Polyline*> *plys, size_t i, std::map<size_t,size_t> geo2gmsh_polygon_id_map);
 	GEOLIB::Polygon* getBoundingPolygon (std::vector<GEOLIB::Polyline*> const & all_polylines, size_t &bp_idx) const;
 	void writeBoundingPolygon (GEOLIB::Polygon const * const bounding_polygon );
+	/// Add station points as constraints to the current geometry
+	void addStationsAsConstraints(const std::string &proj_name, const GEOLIB::GEOObjects& geo, std::map<size_t,size_t> geo2gmsh_surface_id_map);
 	size_t _n_pnt_offset;
 	size_t _n_lines;
 	size_t _n_plane_sfc;

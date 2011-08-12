@@ -93,9 +93,6 @@ public:
 		return writeSTNFile (QString::fromStdString(fname), QString::fromStdString(stn_name));
 	}
 
-	/// Writes borehole-specific data to a station-xml-file.
-	void writeBoreholeData(QDomDocument &doc, QDomElement &boreholeTag, GEOLIB::StationBorehole* borehole) const;
-
 private:
 	/// Reads GEOLIB::Point-objects from an xml-file
 	void readPoints    ( const QDomNode &pointsRoot, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *pnt_names );
@@ -114,6 +111,9 @@ private:
 
 	/// Read the details of various FEM Conditions from an xml-file
 	void readConditions( const QDomNode &condRoot, std::vector<FEMCondition*> &conditions, const QString &geoName, FEMCondition::CondType type);
+
+	/// Writes borehole-specific data to a station-xml-file.
+	void writeBoreholeData(QDomDocument &doc, QDomElement &boreholeTag, GEOLIB::StationBorehole* borehole) const;
 
 	/// Checks if a hash for the given data file exists to skip the time-consuming validation part.
 	/// If a hash file exists _and_ the hash of the data file is the same as the content of the hash file the validation is skipped
