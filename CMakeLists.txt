@@ -98,7 +98,7 @@ ENDIF(OGS_FEM_JFNK)
 
 IF(OGS_FEM_MPI)
         MESSAGE (STATUS  "Configuring for FEM command line with MPI" )
-	IF (WIN32)
+	IF (WIN32) #TEST
 		#MESSAGE (FATAL_ERROR "Aborting: MPI is only supported under UNIX/LINUX!")
 		FIND_PACKAGE(MPI)
 		IF(MPI_FOUND)		
