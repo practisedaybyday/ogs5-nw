@@ -918,6 +918,13 @@ std::string this_pv_name)
                SetDMN(source_term, ShiftInNodeVector);
             if (source_term->fct_name.size() > 0)
                fct_name = source_term->fct_name;
+
+			// Recovery this functionality. 12.08.2011 WW
+            // MSH types //OK4310
+            if(source_term->msh_type_name.compare("NODE")==0) 
+			    source_term->SetNOD();
+
+
          }                                        // end pcs name & pv
       }                                           // end st loop
    }                                              // end msh

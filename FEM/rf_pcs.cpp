@@ -4050,9 +4050,11 @@ double CRFProcess::Execute()
       clock_t cpu_time=0;                         //WW
       cpu_time = -clock();
 #endif
-      this->femFCTmode = true;
-      GlobalAssembly();
-      this->femFCTmode = false;
+      femFCTmode = true;
+      
+	  GlobalAssembly();
+      
+	  femFCTmode = false;
 #ifdef USE_MPI
       cpu_time += clock();
       cpu_time_assembly += cpu_time;
@@ -4642,11 +4644,10 @@ void CRFProcess::GlobalAssembly()
          }
       }
 
-      if (this->femFCTmode)                       //NW
-      {
-         this->AddFCT_CorrectionVector();
-      }
-      //	  MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
+      if (femFCTmode)                       //NW
+         AddFCT_CorrectionVector();
+
+	  //	  MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
       //eqs_new->Write();
       IncorporateSourceTerms();
 #ifdef GEM_REACT
@@ -4676,7 +4677,7 @@ void CRFProcess::GlobalAssembly()
       //
       //
 
-      //	  MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
+      //		  MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 
    }
 }

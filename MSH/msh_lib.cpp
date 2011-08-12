@@ -95,6 +95,7 @@ Programing:
 10/2005 OK BINARY
 08/2010 KR deleted binary mesh read
 03/2011 KR cleaned up code
+08/2011 WW Recovery multi-mesh
 **************************************************************************/
 
 CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj, std::string* unique_name)
@@ -107,7 +108,9 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    {
       fem_msh = new CFEMesh();
       GMSH2MSH(msh_file_name.c_str(), fem_msh);
-      return fem_msh;
+      fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
+
+	  return fem_msh;
    }
 
    std::ifstream msh_file_ascii (msh_file_name.data(),std::ios::in);
@@ -125,12 +128,15 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    {
 		fem_msh = new CFEMesh(geo_obj, unique_name);
 		fem_msh->Read(&msh_file_ascii);
+        fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
+
    }
    else // RFI mesh file
    {
 	    msh_file_ascii.seekg(0L,std::ios::beg);
 		fem_msh = new CFEMesh(geo_obj, unique_name);
 		Read_RFI(msh_file_ascii, fem_msh);
+        fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
    }
 
    msh_file_ascii.close();

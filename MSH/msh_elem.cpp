@@ -205,6 +205,8 @@ namespace Mesh_Group
          edges_orientation[i] = 1;
       }
       area = 1.0;                                 //WW
+
+	  excavated = -1;     //12.08.2011. WW     
    }
 
 CElem::CElem(CElem const &elem) :

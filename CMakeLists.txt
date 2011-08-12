@@ -63,12 +63,12 @@ MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_USE_OPEN
 ### OGS version information. Adjust these if you release a new version. ###
 ###########################################################################
 SET (OGS_VERSION_MAJOR 5)
-SET (OGS_VERSION_MINOR 1)
-SET (OGS_VERSION_PATCH 07)
-SET (OGS_RELEASE_PERSONS "WX")
+SET (OGS_VERSION_MINOR 2)
+SET (OGS_VERSION_PATCH 00)
+SET (OGS_RELEASE_PERSONS "WW")
 SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}(${OGS_RELEASE_PERSONS})")
 # should we use ISO dates: 2010-12-31 ?
-SET (OGS_DATE "02.07.2011")
+SET (OGS_DATE "12.08.2011")
 
 ### Compiler setup ###
 INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
@@ -97,11 +97,36 @@ IF(OGS_FEM_JFNK)
 ENDIF(OGS_FEM_JFNK)
 
 IF(OGS_FEM_MPI)
-	MESSAGE (STATUS  "Configuring for FEM command line with MPI" )
-	STRING (REGEX MATCH mpi MPI_COMPILER_SET ${CMAKE_CXX_COMPILER})
-	IF (NOT MPI_COMPILER_SET)
+        MESSAGE (STATUS  "Configuring for FEM command line with MPI" )
+	IF (WIN32)
+		#MESSAGE (FATAL_ERROR "Aborting: MPI is only supported under UNIX/LINUX!")
+		FIND_PACKAGE(MPI)
+		IF(MPI_FOUND)		
+			SET(CMAKE_C_COMPILER mpicc)
+			SET(CMAKE_CXX_COMPILER mpicxx)
+		ELSE(MPI_FOUND)
+			MESSAGE (FATAL_ERROR "Aborting: MPI implementation is not found!")
+		ENDIF(MPI_FOUND)			
+	ENDIF(WIN32)
+	IF(UNIX)
+		FIND_PACKAGE(MPI)
+		IF(MPI_FOUND)		
+			SET(CMAKE_C_COMPILER ${MPI_COMPILER})
+			SET(CMAKE_CXX_COMPILER ${MPI_COMPILER})
+			ADD_DEFINITIONS(-DNEW_EQS -DUSE_MPI)    			
+		ELSE(MPI_FOUND)
+			MESSAGE (FATAL_ERROR "Aborting: MPI implementation is not found!")
+		ENDIF(MPI_FOUND)			
+	ENDIF(UNIX)
+	
+
+
+#	MESSAGE (STATUS  "Configuring for FEM command line with MPI" )
+#	STRING (REGEX MATCH mpi MPI_COMPILER_SET ${CMAKE_CXX_COMPILER})
+#	IF (NOT MPI_COMPILER_SET)
 		MESSAGE (WARNING "Make sure that you specified the mpi c and c++ compiler on the command line. E.g. cmake -DOGS_FEM_MPI=ON -DCMAKE_C_COMPILER=/opt/openmpi-1.4.1/bin/mpicc -DCMAKE_CXX_COMPILER=/opt/openmpi-1.4.1/bin/mpic++ ..")
-	ENDIF ()
+#	ENDIF ()
+
 	SET( PRJ_EXT "-MPI" )
 	SET(PARALLEL_USE_MPI ON CACHE BOOL "Use Message Passing Interface")
 	MARK_AS_ADVANCED(PARALLEL_USE_MPI)
