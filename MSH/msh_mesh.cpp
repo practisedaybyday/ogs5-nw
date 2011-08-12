@@ -307,9 +307,11 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
     12/2005 OK MAT_TYPE
 	03/2011 KR cleaned up code
     **************************************************************************/
-   void CFEMesh::Read(std::ifstream *fem_file)
+   bool CFEMesh::Read(std::ifstream *fem_file) 
    {
       std::string line_string;
+      
+	  bool more_mesh = false; //12.08.2011. WW 
 
       while (!fem_file->eof())
       {
@@ -318,8 +320,15 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 		 // check keywords
          if (line_string.find("#STOP") != std::string::npos)
          {
-            return;
+            more_mesh = false; //12.08.2011. WW 
+			break; 
          }
+         if (line_string.find("#FEM_MSH") != std::string::npos) //12.08.2011. WW 
+         {
+            more_mesh = true; 
+			break; 
+         }
+
          else if (line_string.find("$PCS_TYPE") != std::string::npos)
          {
             *fem_file >> pcs_name >> std::ws;     //WW
@@ -385,6 +394,8 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
             *fem_file >> _n_msh_layer >> std::ws;
          }
       }
+
+	  return more_mesh;
    }
 
    /**************************************************************************
