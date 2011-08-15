@@ -279,7 +279,7 @@ namespace FiniteElement
 
                // 07.2011. WW
                PressureC_S = new Matrix(60,20);
-               if(pcs->m_num->nls_method == 1)    // Newton-raphson. WW
+               if(pcs->m_num->nls_method == 1&&h_pcs->type==42)    // Newton-raphson. WW
                   PressureC_S_dp = new Matrix(60,20);
             }
             // WW idx_P0 = pcs->GetNodeValueIndex("POROPRESSURE0");
@@ -1238,6 +1238,7 @@ namespace FiniteElement
       }
 
       GlobalAssembly_Stiffness();
+
       return true;
    }
 
@@ -1342,6 +1343,8 @@ namespace FiniteElement
 
       //TEST OUT
       //Stiffness->Write();
+      if(pcs->type/40 != 1) // Not monolithic scheme
+         return; 
 
       if(PressureC)
       {
@@ -1595,11 +1598,32 @@ namespace FiniteElement
                break;
             case 2:                               // Multi-phase-flow: p_g-Sw*p_c
                // 07.2011. WW
+               
                for (i=0;i<dim*nnodesHQ;i++)
                   AuxNodal1[i] = 0.0;
+               
+			   /*
+               for (i=0;i<nnodes;i++)
+			   {
+                  if(AuxNodal0[i]<0.0)
+                    AuxNodal0[i] = 0.;
+			   }   
 
-               PressureC->multi(AuxNodal2, AuxNodal1);
-               PressureC_S->multi(AuxNodal0, AuxNodal1, -1.0);
+               PressureC->multi(AuxNodal2, AuxNodal1, LoadFactor);
+               PressureC_S->multi(AuxNodal0, AuxNodal1, -1.0*LoadFactor);
+               */
+
+			   
+               for (i=0;i<nnodes;i++)
+               {
+                  val_n = h_pcs->GetNodeValue(nodes[i],idx_P2)
+                     -AuxNodal_S[i]*h_pcs->GetNodeValue(nodes[i],idx_P1);
+                  if(biot<0.0&&val_n<0.0)
+                     AuxNodal[i] = 0.0;
+                  else
+                     AuxNodal[i] = val_n*LoadFactor;
+               }
+               PressureC->multi(AuxNodal, AuxNodal1);
                break;
             case 3:                               // Multi-phase-flow: SwPw+SgPg	// PCH 05.05.2009
                for (i=0;i<nnodes;i++)
