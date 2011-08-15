@@ -378,7 +378,7 @@ CRFProcess::~CRFProcess(void)
       m_nod_val = st_node_value[i];
       //OK delete st_node_value[i];
       //OK st_node_value[i] = NULL;
-      if(m_nod_val->check_me)                     //OK
+      if(m_nod_val->check_me&&m_nod_val) //Added &&m_nod_val for RSM model. 15.08.2011. WW     //OK
       {
          m_nod_val->check_me = false;
          delete m_nod_val;
