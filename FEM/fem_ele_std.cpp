@@ -1520,7 +1520,12 @@ namespace FiniteElement
       double val = 0.0;
       double expfactor = 0.0;
       double dens_arg[3];                         //08.05.2008 WW
-      bool diffusion = false;                     //08.05.2008 WW
+      double pert = sqrt(DBL_EPSILON);            //15.08.2011. WW 
+	  double den_g_d = 0;
+
+	  bool diffusion = false;                     //08.05.2008 WW
+
+
       if(MediaProp->heat_diffusion_model==273&&cpl_pcs)
          diffusion = true;
       dens_arg[1] = 293.15;
@@ -1580,15 +1585,13 @@ namespace FiniteElement
             val *= poro;
             break;
          case 3:                                  //
-            // Water vapour pressure
-            if(diffusion)                         //28.05.2008. WW
-               val = (1.0-Sw)*poro*GasProp->molar_mass/(GAS_CONSTANT*TG*rhow);
-            else                                  //WX: 02.2011
-            {
-               if(!T_Process)
-                  TG=293;
-               val = (1.0-Sw)*poro*GasProp->molar_mass/(GAS_CONSTANT*TG*rhow);
-            }
+            // Approximation of d dens_g/dp_g 16.08.2011. WW
+            dens_arg[0] = PG2 + pert;
+            if(diffusion)     
+              dens_arg[1] = TG;
+			/// d dens_g/dp_g:
+            val = (1.0-Sw)*(GasProp->Density(dens_arg) - rho_ga)/(pert*rhow);
+
             break;
       }
       return val;

@@ -171,6 +171,14 @@ namespace FiniteElement
          phi_dP_dt *= poro*dSdp*d_ds_dp/dt;
          phi_dP_dt_g *= poro*dSdp*d_ds_dp/dt;
          */
+ 
+         double ddens_g_dt;
+         dens_arg[0] = PG2;
+         rho_ga = GasProp->Density(dens_arg);
+         dens_arg[0] = interpolate(p2_0);
+         ddens_g_dt = -poro*dSdp*(rho_ga - GasProp->Density(dens_arg))/dt;
+         ddens_g_dt /= rhow; 
+
 
          if(dm_pcs)
          {
@@ -205,6 +213,9 @@ namespace FiniteElement
                f_buff = fkt*shapefct[i]*shapefct[j];
                //(*StiffMatrix)(i,j) += f_buff*(phi_dP_dt+vw[0]);
                //(*StiffMatrix)(l,j) -= rho_ga*f_buff*(phi_dP_dt_g+vw[0])/rhow;
+
+               (*StiffMatrix)(l,j) += f_buff*ddens_g_dt;
+
                (*StiffMatrix)(i,j) += f_buff*vw[0];
                (*StiffMatrix)(l,j) -= rho_ga*f_buff*vw[0]/rhow;
             }
