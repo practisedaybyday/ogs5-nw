@@ -8845,11 +8845,12 @@ namespace FiniteElement
       if(pcs->type/10==4)
          dm_shift = problem_dimension_dm;
       //----------------------------------------------------------------------
-      for (i = 0; i < dof_n*nnodes; i++) NodalVal[i] = 0.0;
+      for (i = 0; i < dof_n*nnodes; i++)
+         NodalVal[i] = 0.0;
       for (i=nnodes;i<nnodesHQ;i++)
          nodes[i] = MeshElement->nodes_index[i];
 
-	  if(dm_pcs->m_num->nls_method > 0) // Newton
+	  if(dm_pcs->type == 42 ) // Monolitihc scheme. 
 	  {
         for (i=0;i<nnodesHQ;i++)
         {

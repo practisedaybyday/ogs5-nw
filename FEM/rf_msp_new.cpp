@@ -698,6 +698,8 @@ namespace SolidProp
       thermal_conductivity_tensor_type = 0;
       thermal_conductivity_tensor_dim = 1;
       thermal_conductivity_tensor[0] = 1.0;
+
+	  bishop_model = -1; //15.08.2011. WW
    }
    CSolidProperties::~CSolidProperties()
    {

@@ -1602,28 +1602,55 @@ namespace FiniteElement
                for (i=0;i<dim*nnodesHQ;i++)
                   AuxNodal1[i] = 0.0;
                
-			   /*
-               for (i=0;i<nnodes;i++)
+			   if(smat->bishop_model>0)
 			   {
-                  if(AuxNodal0[i]<0.0)
-                    AuxNodal0[i] = 0.;
-			   }   
-
-               PressureC->multi(AuxNodal2, AuxNodal1, LoadFactor);
-               PressureC_S->multi(AuxNodal0, AuxNodal1, -1.0*LoadFactor);
-               */
-
-			   
-               for (i=0;i<nnodes;i++)
+                  for (i=0;i<nnodes;i++)
+                  {
+                     double bishop_coef = 1.;        //bishop
+                     double S_e = 1.;
+                     switch(smat->bishop_model)
+                     {
+                        case 1:
+                           bishop_coef = smat->bishop_model_value;
+                           break;
+                        case 2:
+                           S_e = (AuxNodal_S[i]-m_mmp->saturation_res[0])/(1-m_mmp->saturation_res[0]-m_mmp->saturation_res[1]);
+                           bishop_coef = pow(S_e, smat->bishop_model_value);
+                           break;
+                        default:
+                           break;
+				     }
+                     if(smat->bishop_model==1 || smat->bishop_model==2)// pg-bishop*pc 05.2011 WX
+                         val_n = h_pcs->GetNodeValue(nodes[i],idx_P2)
+                                 -bishop_coef*h_pcs->GetNodeValue(nodes[i],idx_P1);
+                     else
+                         val_n = h_pcs->GetNodeValue(nodes[i],idx_P2)// pg - Sw*pc
+                                  -AuxNodal_S[i]*h_pcs->GetNodeValue(nodes[i],idx_P1);
+                     val_n = h_pcs->GetNodeValue(nodes[i],idx_P2)
+                              -AuxNodal_S[i]*h_pcs->GetNodeValue(nodes[i],idx_P1);
+                     if(biot<0.0&&val_n<0.0)
+                         AuxNodal[i] = 0.0;
+                     else
+                         AuxNodal[i] = val_n*LoadFactor;
+                  }
+                  
+                  PressureC->multi(AuxNodal, AuxNodal1);
+			   }
+			   else
                {
-                  val_n = h_pcs->GetNodeValue(nodes[i],idx_P2)
-                     -AuxNodal_S[i]*h_pcs->GetNodeValue(nodes[i],idx_P1);
-                  if(biot<0.0&&val_n<0.0)
-                     AuxNodal[i] = 0.0;
-                  else
-                     AuxNodal[i] = val_n*LoadFactor;
+                  /*
+                  for (i=0;i<nnodes;i++)
+	              {
+                     if(AuxNodal0[i]<0.0)
+                        AuxNodal0[i] = 0.;
+                  }   
+                  */
+
+                  PressureC->multi(AuxNodal2, AuxNodal1, LoadFactor);
+                  PressureC_S->multi(AuxNodal0, AuxNodal1, -1.0*LoadFactor);
+
                }
-               PressureC->multi(AuxNodal, AuxNodal1);
+               
                break;
             case 3:                               // Multi-phase-flow: SwPw+SgPg	// PCH 05.05.2009
                for (i=0;i<nnodes;i++)
