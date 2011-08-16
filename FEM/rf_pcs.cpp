@@ -299,6 +299,8 @@ ele_val_name_vector (std::vector<std::string>())
    this->FCT_AFlux = NULL;                        //NW
    ExcavMaterialGroup = -1;                       //01.2010 WX
    PCS_ExcavState = -1;                           //WX
+
+   isRSM = false; //WW
 }
 
 
@@ -373,19 +375,24 @@ CRFProcess::~CRFProcess(void)
    //----------------------------------------------------------------------
    // ST:
    CNodeValue* m_nod_val = NULL;
-   for(i=0;i<(int)st_node_value.size();i++)
-   {
-      m_nod_val = st_node_value[i];
-      //OK delete st_node_value[i];
-      //OK st_node_value[i] = NULL;
-      if(m_nod_val->check_me&&m_nod_val) //Added &&m_nod_val for RSM model. 15.08.2011. WW     //OK
+
+   //Added &&m_nod_val for RSM model. 15.08.2011. WW  
+   if(!isRSM)
+   {  
+      for(i=0;i<(int)st_node_value.size();i++)
       {
-         m_nod_val->check_me = false;
-         delete m_nod_val;
-         m_nod_val = NULL;
-      }
+         m_nod_val = st_node_value[i];
+         //OK delete st_node_value[i];
+         //OK st_node_value[i] = NULL;
+         if(m_nod_val->check_me)    //OK
+         {
+            m_nod_val->check_me = false;
+            delete m_nod_val;
+            m_nod_val = NULL;
+         }
+	  }
+      st_node_value.clear();
    }
-   st_node_value.clear();
    //----------------------------------------------------------------------
    for(i=0; i<(int)bc_node_value.size(); i++)
    {

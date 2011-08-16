@@ -2471,6 +2471,8 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
       // Create local RICHARDS process
       std::cout << "    Create local RICHARDS process" << std::endl;
       m_pcs_local = new CRFProcess();
+	  m_pcs_local->isRSM = true; //WW 
+
       //    m_pcs_local->pcs_type_name = m_pcs_global->pcs_type_name;
                                                   // TF
       m_pcs_local->setProcessType (m_pcs_global->getProcessType());

@@ -177,6 +177,8 @@ class CRFProcess : public ProcessInfo
       int continuum;
       bool continuum_ic;
 
+      bool isRSM; // WW
+
 	  std::vector<std::string> pcs_type_name_vector;
 
    protected:                                     //WW

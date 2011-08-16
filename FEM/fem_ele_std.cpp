@@ -1591,7 +1591,6 @@ namespace FiniteElement
               dens_arg[1] = TG;
 			/// d dens_g/dp_g:
             val = (1.0-Sw)*(GasProp->Density(dens_arg) - rho_ga)/(pert*rhow);
-
             break;
       }
       return val;
