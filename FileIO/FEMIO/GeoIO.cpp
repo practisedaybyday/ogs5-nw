@@ -67,6 +67,13 @@ void GeoIO::readGeoInfo (GeoInfo* geo_info, std::ifstream& in_str, std::string& 
 		strstream >> geo_name;
 		strstream.clear();
 	}
+	//WW/JOD
+	if (geo_type_name.find("COLUMN") != std::string::npos) {
+		geo_info->setGeoType(GEOLIB::COLUMN);
+		strstream >> geo_name;
+		strstream.clear();
+	}
+
 }
 
 }

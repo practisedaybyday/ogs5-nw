@@ -42,6 +42,8 @@ std::string GeoInfo::getGeoTypeAsString () const
          return "VOLUME";
       case GEOLIB::GEODOMAIN:
          return "DOMAIN";
+	  case GEOLIB::COLUMN:
+         return "COLUMN";
       default:
          return "";
    }
