@@ -1521,9 +1521,8 @@ namespace FiniteElement
       double expfactor = 0.0;
       double dens_arg[3];                         //08.05.2008 WW
       double pert = sqrt(DBL_EPSILON);            //15.08.2011. WW 
-	  double den_g_d = 0;
 
-	  bool diffusion = false;                     //08.05.2008 WW
+      bool diffusion = false;                     //08.05.2008 WW
 
 
       if(MediaProp->heat_diffusion_model==273&&cpl_pcs)
@@ -1652,11 +1651,9 @@ namespace FiniteElement
       double val = 0.0;
       double P,T;
       //OK411 double expfactor = 0.0;
-      double dens_arg[3];                         //08.05.2008 WW
       bool diffusion = false;                     //08.05.2008 WW
       if(MediaProp->heat_diffusion_model==273&&cpl_pcs)
          diffusion = true;
-      dens_arg[1] = 293.15;
       //
       if(pcs->m_num->ele_mass_lumping)
          ComputeShapefct(1);

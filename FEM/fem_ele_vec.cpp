@@ -1526,7 +1526,7 @@ namespace FiniteElement
       double fact, val_n=0.0;
       double *a_n = NULL;
       double biot = 1.0;
-      double dent_w = 1000.0;
+      //WW double dent_w = 1000.0;
       bool Residual;
       Residual = false;
       fact = 1.0;
@@ -1571,7 +1571,7 @@ namespace FiniteElement
                }
                break;
             case 10:                              // Ground_flow. Will be merged to case 0
-               dent_w =  m_mfp->Density();
+               //WW dent_w =  m_mfp->Density();
                for (i=0;i<nnodes;i++)
                   AuxNodal[i] = LoadFactor*h_pcs->GetNodeValue(nodes[i],idx_P1);
                break;

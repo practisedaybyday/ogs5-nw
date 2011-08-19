@@ -34,7 +34,7 @@
 #include "EarClippingTriangulation.h"
 
 // For file path
-//#include "makros.h"
+#include "makros.h"
 
 using namespace GEOLIB;
 
@@ -319,8 +319,8 @@ std::string readSurface(std::istream &in,
 		//....................................................................
 		if (line.find("$TIN") != std::string::npos) { // subkeyword found
 			in >> line; // read value (file name)
-			line = path + line;
-//			line = FilePath + line; //WW
+//			line = path + line;
+			line = FilePath + line; //WW
 //			if (type == 1) std::cerr << "reading tin file " << line << " ... " << std::flush;
 			sfc = new Surface(pnt_vec);
 

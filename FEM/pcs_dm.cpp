@@ -270,7 +270,7 @@ namespace process
       //const int defaultSteps=100;
       int MaxIteration=m_num->nls_max_iterations;
       int elasticity=0;
-      int monolithic=0;
+      //int monolithic=0;
       //
       string delim = " | ";
       //----------------------------------------------------------
@@ -297,7 +297,7 @@ namespace process
       // For monolithic scheme
       if(type/10 == 4)                            // Modified at 05.07.2010 WW
       {
-         monolithic=1;
+ //        monolithic=1;
          number_of_load_steps = 1;
       }
       // system matrix
@@ -807,7 +807,7 @@ namespace process
    {
       const int LenMat=7;
       size_t i;
-      int j, k, gp, NGS, NGSS, MatGroup, n_dom;
+      int j, k, gp, NGS,  MatGroup, n_dom;
       int PModel = 1;
       int gp_r=0, gp_s=0, gp_t=0;
       //  double z=0.0;
@@ -818,7 +818,7 @@ namespace process
       CInitialCondition *m_ic = NULL;
       std::vector<CInitialCondition *> stress_ic(6);
 
-      double M_cam = 0.0;
+      //double M_cam = 0.0;
       double pc0 = 0.0;
       double OCR = 1.0;
       n_dom = k= 0;
@@ -884,7 +884,7 @@ namespace process
 
             if(PModel==3)
             {
-               M_cam = (*SMat->data_Plasticity)(0);
+               //WW M_cam = (*SMat->data_Plasticity)(0);
                pc0 = (*SMat->data_Plasticity)(3); // The initial preconsolidation pressure
                                                   // Void ratio
                *(eleV_DM->e_i) = (*SMat->data_Plasticity)(4);
@@ -913,7 +913,7 @@ namespace process
             //if 2D //ToDo: Set option for 3D
             // Loop over Gauss points
             NGS = fem_dm->GetNumGaussPoints();
-            NGSS = fem_dm->GetNumGaussSamples();
+           //WW NGSS = fem_dm->GetNumGaussSamples();
 
             for (gp = 0; gp < NGS; gp++)
             {
@@ -1580,7 +1580,7 @@ namespace process
    //#define Modified_B_matrix
    double CRFProcessDeformation::CaclMaxiumLoadRatio(void)
    {
-      int j,gp, gp_r, gp_s, gp_t;
+      int j,gp, gp_r, gp_s; //, gp_t;
       int PModel = 1;
       long i = 0;
       double  *dstrain;
@@ -1603,7 +1603,7 @@ namespace process
 
       int NGS, NGPS;
 
-      gp_t = 0;
+      //gp_t = 0;
 
       for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
       {
@@ -2063,7 +2063,7 @@ namespace process
    long CRFProcessDeformation::MarkBifurcatedNeighbor(const int PathIndex)
    {
       int j;
-      int f1, f2, nb, numf, numf1, nfnode;
+      int f1, f2, nb,  numf1;
       long index, Extended;
       bool adjacent, onPath;
       ElementValue_DM *eleV_DM, *eleV_DM1;
@@ -2084,7 +2084,7 @@ namespace process
       elem = m_msh->ele_vector[index];
       eleV_DM = ele_value_dm[index];
 
-      numf = elem->GetFacesNumber();
+      // numf = elem->GetFacesNumber();
 
       n1[0] = cos(eleV_DM->orientation[0]);
       n1[1] = sin(eleV_DM->orientation[0]);
@@ -2093,7 +2093,7 @@ namespace process
       xA[1] = (*eleV_DM->NodesOnPath)(1,1);
       xA[2] = (*eleV_DM->NodesOnPath)(2,1);
 
-      nfnode = elem->GetElementFaceNodes(f1, Face_node);
+      //nfnode = elem->GetElementFaceNodes(f1, Face_node);
 
       // Check discintinuity path goes to which neighbor
       elem1 = elem->neighbors[f1];

@@ -224,7 +224,7 @@ class CRFProcess : public ProcessInfo
       friend class CTimeDiscretization;
       CTimeDiscretization *Tim;                   //time
       bool femFCTmode;                            //NW
-      void CopyU_n(double *temp_v);               //29.08.2008. WW
+      void CopyU_n();               //29.08.2008. WW
       // Time unit factor
       double time_unit_factor;
       int NumDeactivated_SubDomains;
@@ -661,7 +661,7 @@ class CRFProcess : public ProcessInfo
                                                   //WW. 05.2009
       void Integration(std::vector<double> &node_velue);
       // Auto time step size control. WW
-      void PI_TimeStepSize(double *u_n);          //WW
+      void PI_TimeStepSize();          //WW
       bool TimeStepAccept() const { return accepted;}
       void SetDefaultTimeStepAccepted() { accepted = true;}
       // USER

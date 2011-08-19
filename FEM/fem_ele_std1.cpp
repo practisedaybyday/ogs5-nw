@@ -45,7 +45,7 @@ namespace FiniteElement
       //int dm_shift = problem_dimension_dm;
       // ---- Gauss integral
       int gp_r=0,gp_s=0,gp_t=0;
-      double fkt, mat_fac;
+      double fkt;
       double perturb = sqrt(DBL_EPSILON);
       double *tensor, *p2, *p2_0;
       double S1,  vsc1, vsc2;
@@ -64,8 +64,6 @@ namespace FiniteElement
 
       p2_0 = NodalVal0 + nnodes;
       p2 = NodalVal1 + nnodes;
-      // Material
-      mat_fac = 0.0;
 
       *StiffMatrix = 0.;
 
@@ -246,7 +244,7 @@ namespace FiniteElement
       //int dm_shift = problem_dimension_dm;
       // ---- Gauss integral
       int gp_r=0,gp_s=0,gp_t=0;
-      double fkt, mat_fac;
+      double fkt; //, mat_fac;
       double perturb = sqrt(DBL_EPSILON);
       double *tensor;
       double S1,  vsc1;
@@ -259,8 +257,6 @@ namespace FiniteElement
       double vw[3];
       const double g_constant = 9.81;
 
-      // Material
-      mat_fac = 0.0;
 
       *StiffMatrix = 0.;
 

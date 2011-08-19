@@ -763,7 +763,7 @@ void Problem::PCSRestart()
       return;
    }
 
-   int nidx0, nidx1;
+   int nidx0; //, nidx1;
    for (size_t i = 0; i < no_processes; i++)
    {
       CRFProcess *m_pcs = pcs_vector[i];
@@ -772,7 +772,7 @@ void Problem::PCSRestart()
          // timelevel=0;
          nidx0 = m_pcs->GetNodeValueIndex(m_pcs->GetPrimaryVName(j));
          // timelevel= 1;
-         nidx1 = nidx0 + 1;
+         //WW nidx1 = nidx0 + 1;
          //OK411      CopyNodeVals(nidx1,nidx0);
       }
    }
@@ -1905,7 +1905,7 @@ inline double Problem::GroundWaterFlow()
    CRFProcess *neighb_pcs = total_processes[2];
    std::vector<double> border_flux;
    int idx_flux =0, idx_flux_this;
-   int no_local_nodes;
+   //WW int no_local_nodes;
 
    long i;
    if(neighb_pcs)
@@ -1931,7 +1931,7 @@ inline double Problem::GroundWaterFlow()
       CSourceTerm *m_st = NULL;
       CNodeValue *m_nod_val = NULL;
       long l = 0, m = 0;
-      no_local_nodes = neighb_pcs->m_msh->getNumberOfMeshLayers()+1;
+      //WW no_local_nodes = neighb_pcs->m_msh->getNumberOfMeshLayers()+1;
 
       if(aktueller_zeitschritt==1)
       {
@@ -2662,7 +2662,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
             m_nod_val = m_pcs_local->st_node_value[(int)m_pcs_local->st_node_value.size()-1];
          }
          long *local_indxs = NULL;
-         local_indxs = neighb_grid->getBorderNodeIndicies();
+         //WW local_indxs = neighb_grid->getBorderNodeIndicies();
          m_nod_val->msh_node_number = no_local_nodes-1;
          m_nod_val->geo_node_number = no_local_nodes-1;
          //       m_nod_val->node_value = -neighb_pcs->GetNodeValue(local_indxs[i], neighb_pcs->GetNodeValueIndex("VELOCITY_Z1"))

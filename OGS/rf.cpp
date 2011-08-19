@@ -46,7 +46,7 @@
 #endif
 #include "problem.h"
 
-Problem *aproblem = NULL;
+
 /* Deklarationen */
 int main ( int argc, char *argv[] );
 void ShowSwitches ( void );
@@ -220,7 +220,7 @@ int main ( int argc, char *argv[] )
   else if(indexChLinux!=std::string::npos)
      FilePath = FileName.substr(0,indexChLinux)+"/";
   // ---------------------------WW
-  aproblem = new Problem(dateiname);
+  Problem *aproblem = new Problem(dateiname);
   aproblem->Euler_TimeDiscretize();
   delete aproblem;
   aproblem = NULL;

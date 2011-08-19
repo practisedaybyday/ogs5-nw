@@ -4147,10 +4147,13 @@ Programming:
  11/2008 WW Update
 last modified:
 **************************************************************************/
-void CRFProcess::CopyU_n(double *temp_v)
+void CRFProcess::CopyU_n()
 {
    int i, nidx1;
    long g_nnodes, j, k;
+
+   double *temp_v = _problem->GetBufferArray(); // 18.08.2011. WW 
+
    for(i=0; i<pcs_number_of_primary_nvals; i++)
    {
       /// H2M with monilithic scheme. 02.2011. WW
@@ -7533,7 +7536,7 @@ double CRFProcess::ExecuteNonLinear()
    //..................................................................
    // PI time step size control. 29.08.2008. WW
    if(Tim->GetTimeStepCrtlType()>0 )
-      CopyU_n(aproblem->GetBufferArray());
+	   CopyU_n();
 
    if (hasAnyProcessDeactivatedSubdomains)
       this->CheckMarkedElement();                 //NW
@@ -7602,7 +7605,7 @@ double CRFProcess::ExecuteNonLinear()
                   auto_tctr_break = true;
 
                   //Tim->SetTimeStep(0.25*Tim->GetTimeStep());
-                  PI_TimeStepSize(aproblem->GetBufferArray());
+                  PI_TimeStepSize();
                   accepted = false;
                   return error;
                }
@@ -7701,7 +7704,7 @@ double CRFProcess::ExecuteNonLinear()
    }
    // PI time step size control. 27.08.2008. WW
    if(Tim->GetTimeStepCrtlType()>0)
-      PI_TimeStepSize(aproblem->GetBufferArray());
+      PI_TimeStepSize();
    // 8 Calculate secondary variables
    if(accepted)                                   // 27.08.2008. WW
       CalcSecondaryVariables();                   // Moved here from Execute() WW
@@ -11016,7 +11019,7 @@ Programming:
 10/2008 WW Node value criteria (test)
 03/2009 WW Euclidean norm
 **************************************************************************/
-void CRFProcess::PI_TimeStepSize(double *u_n)
+void CRFProcess::PI_TimeStepSize()
 {
    //----------------------------------------------------------------------
    //----------------------------------------------------------------------
@@ -11027,6 +11030,8 @@ void CRFProcess::PI_TimeStepSize(double *u_n)
    double factor2;                                // 1/hmax
    double sfactor = 0.9;
    double reject_factor;                          // BG
+
+   double *u_n = _problem->GetBufferArray();
    //
    //
    hmax = Tim->GetMaximumTSizeRestric();
