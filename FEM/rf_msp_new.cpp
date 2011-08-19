@@ -58,7 +58,7 @@ namespace SolidProp
       std::ios::pos_type position;
       //  ios::pos_type position0;
       std::string sub_string;
-      bool new_subkeyword = false;
+      //WW bool new_subkeyword = false;
       std::string dollar("$");
       std::string delimiter_type(":");
       std::stringstream in_sd;
@@ -69,7 +69,7 @@ namespace SolidProp
       // Schleife ueber alle Phasen bzw. Komponenten
       while (!new_keyword)
       {
-         new_subkeyword = false;
+	//WW new_subkeyword = false;
 
          position = msp_file->tellg();
          if(!GetLineFromFile(buffer,msp_file)) break;
@@ -2052,18 +2052,20 @@ namespace SolidProp
    int CSolidProperties::DirectStressIntegrationDPwithTension(const int GPiGPj, Matrix *De,
                 const ElementValue_DM *ele_val, double *TryStress, const int Update, double &mm)
    {
-      int i = 0, j = 0, m=0, m_max=100;
+     int i = 0, j = 0; //, m=0, m_max=100;
       double I1 = 0.0;
-      double sy0, sy, ep, dlambda=0.0, tmpvalue=0., tmpvalue2=0., sqrtJ2I1;	//dTaun, dSign,
+      //WW double sy0, 
+      //WW double sy, ep, dlambda=0.0, tmpvalue=0., tmpvalue2=0., sqrtJ2I1;	//dTaun, dSign,
+      double sy, ep, tmpvalue=0., sqrtJ2I1;	//dTaun, dSign,
       double F = 0.0, Ft = 0, yy; //, yl; Ft: tension failure WX: 11.08.2010
-      double R=1.0;
+      //WW double R=1.0;
       double sqrtJ2 = 0.0;
-      double A_H = 0.0, domA=0.0;
+      //WW double A_H = 0.0, domA=0.0;
       double dstrs[6];
       double dTempStr[6] ={0.}, dTempStr2[6] ={0.}, TmpStress0[6] ={0}, dStrainP[6] = {0.};
-      bool ploading = false;
+      //WW bool ploading = false;
       const int Size = ele_val->Stress->Rows();
-      double H=0;	//
+      //WW double H=0;	//
       int failurestate = 0;
 
      //static double DevStress[6];
@@ -2099,10 +2101,10 @@ namespace SolidProp
 
       F = sy - yy;
       Ft = I1/3 - tension;	//WX: 11.08.2010  tension strength.
-      double Tau_P = (BetaN*Y0 - 3*Al*tension)/sqrt(2.0);
-      double Al_P = sqrt(1+4.5*Al*Al) - (3 * Al / (sqrt(2.0)));
-      H = sqrtJ2/sqrt(2.0) - Tau_P - (Al_P * (I1/3 - tension));	//WX:16.09.2010.correct H.
-      sy0 = (*ele_val->y_surface)(GPiGPj);
+      //WW double Tau_P = (BetaN*Y0 - 3*Al*tension)/sqrt(2.0);
+      //WW double Al_P = sqrt(1+4.5*Al*Al) - (3 * Al / (sqrt(2.0)));
+      //WW  H = sqrtJ2/sqrt(2.0) - Tau_P - (Al_P * (I1/3. - tension));	//WX:16.09.2010.correct H.
+      //WW sy0 = (*ele_val->y_surface)(GPiGPj);
 
       if(tmpvalue==0)
       	  Ft = F = -1;
@@ -2391,7 +2393,7 @@ namespace SolidProp
 				  Matrix *M_ds = new Matrix (Size,Size);	//dGsds*dFsdsT
 
 				  tmpvalue = 0.;		//dFsdsT*De*dGsds
-				  tmpvalue2 =0.;		//dFtdsT*De*dGtds
+				  //WW			  tmpvalue2 =0.;		//dFtdsT*De*dGtds
 
 				  for(i=0;i<3;i++)
 					  for(j=0;j<3;j++)
@@ -2722,8 +2724,10 @@ int CSolidProperties::DirectStressIntegrationMOHR(const int GPiGPj, const Elemen
 	}
 	if((shearsurf>0)||(tensionsurf>0))
 	{
-		double P_12, P_31, P_41, P_63, P_64, P_52, P_85, P_74, P_78, P_98, P_45, P_X7;
-		double t1, t2, t1ra ,t1r1, t2ra, t2r2, t3r1, t3r2;
+            //WW double P_12, P_31, P_41, P_63, P_64, P_52, P_85, P_74, P_78, P_98, P_45, P_X7;
+		double P_12, P_31, P_41, P_74, P_78;
+		//WW double t1, t2, t1ra ,t1r1, t2ra, t2r2, t3r1, t3r2;
+		double t1, t2, t1ra ,t1r1, t2ra, t3r1, t3r2;
 		double fkt1, fkt2;
 		double mm = 0.;
 
@@ -2799,7 +2803,8 @@ int CSolidProperties::DirectStressIntegrationMOHR(const int GPiGPj, const Elemen
 		t2 = CalVar_t(l2, l2g, Inv_De, prin_str, sig2R, Size);
 		t1r1 = CalVar_t(l1R, l1R, Inv_De, prin_str, sig1R, Size);
 		t1ra = CalVar_t(l1R, l1R, Inv_De, prin_str, sigaR, Size);
-		t2r2 = CalVar_t(l2R, l2R, Inv_De, prin_str, sig2R, Size);
+		//WW t2r2 = CalVar_t(l2R, l2R, Inv_De, prin_str, sig2R, Size);
+		CalVar_t(l2R, l2R, Inv_De, prin_str, sig2R, Size);
 		t2ra = CalVar_t(l2R, l2R, Inv_De, prin_str, sigaR, Size);
 		t3r1 = CalVar_t(l3R, l3R, Inv_De, prin_str, sig1R, Size);
 		t3r2 = CalVar_t(l3R, l3R, Inv_De, prin_str, sig2R, Size);
@@ -2807,15 +2812,18 @@ int CSolidProperties::DirectStressIntegrationMOHR(const int GPiGPj, const Elemen
 		P_12 = CalVarP(rsp, l1, prin_str, sig1R);
 		P_31 = CalVarP(rsp, l2, prin_str, sig2R);
 		P_41 = CalVarP(rsp, l3R, prin_str, sig1R);
-		P_63 = 0;
-		P_45 = CalVarP(rsp, rtp, prin_str, sig1R);
-		P_64 = CalVarP(rsp, rtp, prin_str, sig2R);
-		P_52 = 0;
-		P_85 = 0;
+		//WW P_63 = 0;
+		//WW P_45 = CalVarP(rsp, rtp, prin_str, sig1R);
+	        CalVarP(rsp, rtp, prin_str, sig1R);
+		//WW P_64 = CalVarP(rsp, rtp, prin_str, sig2R);
+		CalVarP(rsp, rtp, prin_str, sig2R);
+	 	//WW P_52 = 0;
+		//WW	P_85 = 0;
 		P_74 = CalVarP(rtp, l3R, prin_str, sig1R);
 		P_78 = CalVarP(rtp, l1R, prin_str, sig1R);
-		P_98 = 0;
-		P_X7 = CalVarP(rtp, l2R, prin_str, sig2R);
+		//WW	P_98 = 0;
+		//WW P_X7 = CalVarP(rtp, l2R, prin_str, sig2R);
+		CalVarP(rtp, l2R, prin_str, sig2R);
 
 		if( P_12>=0 && P_31<=0 && P_41<=0 )	//return to fmc
 		{
@@ -3412,7 +3420,7 @@ void CSolidProperties::TangentialMohrTension(Matrix *Dep)
 //WX: calculate inverse matrix
 void CSolidProperties::Cal_Inv_Matrix(int Size, Matrix *MatrixA, Matrix *xx)
 {
-  int i,j, k, jj, lk, j_col;  //i_row,
+  int i,j, k, jj, lk, j_col = 0;  //i_row,
   double var, R;
   int L[6];
   double rhs[6];

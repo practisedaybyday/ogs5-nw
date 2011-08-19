@@ -763,14 +763,14 @@ void Problem::PCSRestart()
       return;
    }
 
-   int nidx0; //, nidx1;
+   //WW int nidx0; //, nidx1;
    for (size_t i = 0; i < no_processes; i++)
    {
       CRFProcess *m_pcs = pcs_vector[i];
       for (size_t j = 0; j < m_pcs->GetPrimaryVNumber(); j++)
       {
          // timelevel=0;
-         nidx0 = m_pcs->GetNodeValueIndex(m_pcs->GetPrimaryVName(j));
+         //WW nidx0 = m_pcs->GetNodeValueIndex(m_pcs->GetPrimaryVName(j));
          // timelevel= 1;
          //WW nidx1 = nidx0 + 1;
          //OK411      CopyNodeVals(nidx1,nidx0);
@@ -2434,7 +2434,7 @@ FEMLib-Method:
 07/2008 WW Extract from LOPTimeLoop_PCS();
 05.2009 WW For surface-soil-ground coupled model
 **************************************************************************/
-inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
+inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess *m_pcs_global)
 {
    int j,k;
    long i;
@@ -2481,6 +2481,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
       m_pcs_local->Write_Matrix = m_pcs_global->Write_Matrix;
       m_pcs_local->pcs_type_number = (int)pcs_vector.size();
       m_pcs_local->Config();
+	  m_pcs_local->setProblemObjectPointer(m_pcs_global->getProblemObjectPointer()); //WW 18.08.2011. WW
       //--------------------------------------------------------------------
       // Create local MSH
       m_msh_local = new CFEMesh(m_pcs_global->m_msh->getGEOObjects(), m_pcs_global->m_msh->getProjectName());
@@ -2661,7 +2662,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess*m_pcs_global)
             m_st = m_pcs_local->st_node[(int)m_pcs_local->st_node.size()-1];
             m_nod_val = m_pcs_local->st_node_value[(int)m_pcs_local->st_node_value.size()-1];
          }
-         long *local_indxs = NULL;
+         //WW long *local_indxs = NULL;
          //WW local_indxs = neighb_grid->getBorderNodeIndicies();
          m_nod_val->msh_node_number = no_local_nodes-1;
          m_nod_val->geo_node_number = no_local_nodes-1;

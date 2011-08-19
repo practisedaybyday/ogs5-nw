@@ -211,32 +211,36 @@ void RandomWalk::InterpolateVelocity(Particle* A)
    // Let's solve pore velocity.
    // It is simple because Sw stuff automatically handles in Richards Flow.
    // Thus, I only divide Darcy velocity by porosity only to get pore velocity.
-   CMediumProperties *MediaProp = mmp_vector[theEle->GetPatchIndex()];
+   //WW CMediumProperties *MediaProp = mmp_vector[theEle->GetPatchIndex()];
+   /* //WW
    double porosity = 0.0;
    if(MediaProp->porosity > 10-6)
       porosity = MediaProp->porosity;             // This is for simple one.
    else
                                                   // This will get you porosity.
          porosity = MediaProp->porosity_model_values[0];
+   */
    // I guess for Dual Porocity stuff,
    // this code should be revisited.
 
    if(nnode == 4)
    {
       // Get physical coordinates of four corner points
-      double x[4], y[4], z[4];
-      double vx[4], vy[4], vz[4];
+     double x[4], y[4]; //WW, z[4];
+     //WW double vx[4], vy[4], vz[4];
       for(int i=0; i<nnode; ++i)
       {
          CNode* theNode = NULL;
          theNode = theEle->GetNode(i);
          x[i] = theNode->X();
          y[i] = theNode->Y();
+         /* //WW
          z[i] = theNode->Z();
 
          vx[i] = m_pcs->GetNodeValue(theEle->GetNodeIndex(i),m_pcs->GetNodeValueIndex("VELOCITY1_X")+1)/porosity;
          vy[i] = m_pcs->GetNodeValue(theEle->GetNodeIndex(i),m_pcs->GetNodeValueIndex("VELOCITY1_Y")+1)/porosity;
          vz[i] = m_pcs->GetNodeValue(theEle->GetNodeIndex(i),m_pcs->GetNodeValueIndex("VELOCITY1_Z")+1)/porosity;
+         */
       }
 
       // solve for Jm at xm = (xhat,yhat)=(1/2,1/2) <- RT0
@@ -391,13 +395,15 @@ void RandomWalk::TracePathlineInThisElement(Particle* A)
    // Let's solve pore velocity.
    // It is simple because Sw stuff automatically handles in Richards Flow.
    // Thus, I only divide Darcy velocity by porosity only to get pore velocity.
-   CMediumProperties *MediaProp = mmp_vector[theEle->GetPatchIndex()];
+   //WW CMediumProperties *MediaProp = mmp_vector[theEle->GetPatchIndex()];
+   /*   //WW 
    double porosity = 0.0;
    if(MediaProp->porosity > 10-6)
       porosity = MediaProp->porosity;             // This is for simple one.
    else
                                                   // This will get you porosity.
          porosity = MediaProp->porosity_model_values[0];
+   */ 
    // I guess for Dual Porocity stuff,
    // this code should be revisited.
 
@@ -833,6 +839,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          // Let's solve pore velocity.
          // It is simple because Sw stuff automatically handles in Richards Flow.
          // Thus, I only divide Darcy velocity by porosity only to get pore velocity.
+         /*//WW
          CMediumProperties *MediaProp = mmp_vector[theEle->GetPatchIndex()];
          double porosity = 0.0;
          if(MediaProp->porosity > 10-6)
@@ -840,6 +847,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          else
                                                   // This will get you porosity.
             porosity = MediaProp->porosity_model_values[0];
+	 */ 
          // I guess for Dual Porocity stuff,
          // this code should be revisited.
 
@@ -850,6 +858,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          theEle->GetEdges(theEdgesOfThisElement);
 
          // Get physical coordinates of four corner points
+         /* //WW
          double x[8], y[8], z[8];
          double vx[8], vy[8], vz[8];
          for(int i=0; i<nnode; ++i)
@@ -864,6 +873,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
             vy[i] = m_pcs->GetNodeValue(theEle->GetNodeIndex(i),m_pcs->GetNodeValueIndex("VELOCITY1_Y")+1)/porosity;
             vz[i] = m_pcs->GetNodeValue(theEle->GetNodeIndex(i),m_pcs->GetNodeValueIndex("VELOCITY1_Z")+1)/porosity;
          }
+         */
 
          // Mount the nodes of the edge
          vec<CNode*>theNodesOfThisEdge(3);
@@ -1002,6 +1012,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          // Let's solve pore velocity.
          // It is simple because Sw stuff automatically handles in Richards Flow.
          // Thus, I only divide Darcy velocity by porosity only to get pore velocity.
+         /* //WW
          CMediumProperties *MediaProp = mmp_vector[theEle->GetPatchIndex()];
          double porosity = 0.0;
          if(MediaProp->porosity > 10-6)
@@ -1009,6 +1020,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          else
                                                   // This will get you porosity.
             porosity = MediaProp->porosity_model_values[0];
+	 */
          // I guess for Dual Porocity stuff,
          // this code should be revisited.
 
@@ -1020,19 +1032,21 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          theEle->GetEdges(theEdgesOfThisElement);
 
          // Get physical coordinates of four corner points
-         double x[4], y[4], z[4];
-         double vx[4], vy[4], vz[4];
+         double x[4], y[4]; //, z[4];
+         //WW double vx[4], vy[4], vz[4];
          for(int i=0; i<nnode; ++i)
          {
             CNode* theNode = NULL;
             theNode = theEle->GetNode(i);
             x[i] = theNode->X();
             y[i] = theNode->Y();
+            /*  //WW
             z[i] = theNode->Z();
 
             vx[i] = m_pcs->GetNodeValue(theEle->GetNodeIndex(i),m_pcs->GetNodeValueIndex("VELOCITY1_X")+1)/porosity;
             vy[i] = m_pcs->GetNodeValue(theEle->GetNodeIndex(i),m_pcs->GetNodeValueIndex("VELOCITY1_Y")+1)/porosity;
             vz[i] = m_pcs->GetNodeValue(theEle->GetNodeIndex(i),m_pcs->GetNodeValueIndex("VELOCITY1_Z")+1)/porosity;
+            */
          }
          // solve for Jm at xm = (xhat,yhat)=(1/2,1/2) <- RT0
          double Jm;
@@ -1506,8 +1520,8 @@ int RandomWalk::SolveForDisplacementByDerivativeOfDispersion(Particle* A, double
 
    // Solve for the derivative of velocity first
    // statusForDeivativeOfVelocity is never further used down the code.
-   int statusForDeivativeOfVelocity = -10;
-   statusForDeivativeOfVelocity = SolveForDerivativeOfVelocity(A);
+   //WW int statusForDeivativeOfVelocity = -10;
+   //WW statusForDeivativeOfVelocity = SolveForDerivativeOfVelocity(A);
 
    // Solve for the tensor of dispersion derivatives
    // Extract the dispersivities from the group that the particle belongs
@@ -3095,11 +3109,12 @@ int RandomWalk::SolveForNextPosition(Particle* A, Particle* B)
       if(RWPTMode < 2 || RWPTMode > 3)            // whenever dispersion is on
          RandomWalkDrift(Z, ele_dim);
 
-      int dDStatus = 1;
+      //WW int dDStatus = 1;
       // If the mode is for heterogeneous media
       if(RWPTMode%2 == 1)
          // This currently only return TRUE (1)
-         dDStatus = SolveForDisplacementByDerivativeOfDispersion(A, dD);
+        //WW dDStatus = SolveForDisplacementByDerivativeOfDispersion(A, dD);
+         SolveForDisplacementByDerivativeOfDispersion(A, dD);
 
       // Let's get the local vector for particle velocity
       double V[3]; V[0] = V[1] = V[2] = 0.0;
@@ -3544,7 +3559,7 @@ int RandomWalk::IsTheParticleInThisElement(Particle* A)
       // Getting the number of the edges in the element that Particle P belongs
       int nEdges = theElement->GetEdgesNumber();
       int countOfInterception = 0;
-      int parallel = 0;
+      //WW int parallel = 0;
       // Loop over the edges
       for(int i=0; i< nEdges; ++i)
       {
@@ -3583,8 +3598,8 @@ int RandomWalk::IsTheParticleInThisElement(Particle* A)
 
          if(status == 0)                          // Not intersect but extension intersects
             ;
-         else if(status == -1)                    // Parallel
-            parallel = 1;
+         //WW else if(status == -1)                    // Parallel
+         //WW   parallel = 1;
          else if(status == 1)
             ++countOfInterception;                // single intersection
          else if(status == 2)                     // Overlap just do nothing
@@ -4568,8 +4583,8 @@ void RandomWalk::buildFDMIndex(void)
    double xmax, ymax, zmax;
    double xmin, ymin, zmin;
    double x,y,z;
-   long i,j,k,iel,ic,jc,kc;
-   long ne, nels;
+   long i,j,k,iel,ic,jc,kc, nels;
+   //WW long ne, nels;
    int index;
    neFDM = -1;
 
@@ -4638,7 +4653,7 @@ void RandomWalk::buildFDMIndex(void)
    nx = (int)floor(xrw_range/dx)+1;
    ny = (int)floor(yrw_range/dy)+1;
    nz = (int)floor(zrw_range/dz)+1;
-   ne = nx*ny*nz;
+   //WW ne = nx*ny*nz;
    nels = m_msh->ele_vector.size();
 
    for(k=0; k<nz; k++)                            // loop over the dummy element set

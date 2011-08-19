@@ -269,7 +269,7 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream *mmp_file)
    std::ios::pos_type position;
    std::string dollar("$");
    std::string hash("#");
-   bool new_subkeyword = false;
+   //WW bool new_subkeyword = false;
    bool new_keyword = false;
    std::string m_string;
    // WW
@@ -284,7 +284,7 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream *mmp_file)
 
    while (!new_keyword)
    {
-      new_subkeyword = false;
+     //WW new_subkeyword = false;
       position = mmp_file->tellg();
       line_string = GetLineFromFile1(mmp_file);
       if(line_string.size() < 1) break;
@@ -3941,7 +3941,7 @@ double saturation,double temperature, double *porosity_sw)
 
    double mat_mp_m, beta;
    double porosity = 0.0;
-   static double theta;
+   //WW static double theta;
    double porosity_n, porosity_IL, d_porosity, \
       density_rock, fmon, porosity_max;
    double n_sw, det_n_sw;
@@ -3956,7 +3956,7 @@ double saturation,double temperature, double *porosity_sw)
    static double F_const=96484.6, epsilon_0=8.854e-12;
    static double R=8.314510, psi=1.0;
    /* Fluid properies */
-   int phase=1;
+   //WW int phase=1;
 
    //--------------------------------------------------------------------
    // MMP medium properties
@@ -3979,8 +3979,8 @@ double saturation,double temperature, double *porosity_sw)
    porosity_min = porosity_model_values[7];       /*minimal porosity after swelling compaction*/
 
    /* Field v0ariables */
-   theta = m_pcs->m_num->ls_theta;
-   phase=1;
+   //WW theta = m_pcs->m_num->ls_theta;
+   //WW phase=1;
    satu = saturation;                             /*only for fluid, phase=1*/
 
    /*-----------------------------------------------------------------------*/
@@ -4447,13 +4447,14 @@ double CMediumProperties::PermeabilityFunctionPressure(long index, double PG2)
 double CMediumProperties::PermeabilityFunctionStrain(long index, int nnodes, CFiniteElementStd *h_fem) //WW:02.08.2010
 {
    double fac_perm_strain = 1.;
-   int ele_index, gueltig;
-   CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) this;
+   //WW int ele_index, 
+   int gueltig;
+   //WW CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) this;
 
    switch(permeability_strain_model){
       case 1:
          {
-         double strain_temp[3] = {0}, strain_temp_pls = 0, vol_strain_temp = 0;
+         double strain_temp[3] = {0}, vol_strain_temp = 0;
          //ElementValue_DM *e_valDM = NULL;
          //CFiniteElementVec *e_valVec = NULL;
          int idx_temp[3];
@@ -4467,7 +4468,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index, int nnodes, CFi
          //m_msp = msp_vector[group];
          //int PModel = m_msp->Plastictity();
 
-         ele_index = index;
+         //WW ele_index = index;
 
          idx_temp[0] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
          idx_temp[1] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
@@ -4519,13 +4520,13 @@ double CMediumProperties::PermeabilityFunctionStrain(long index, int nnodes, CFi
             fac_perm_strain = GetCurveValue(permeability_strain_model_value[1], 0, strainp, &gueltig);
          else
          {
-            double strain_temp[3] = {0}, strain_temp_pls = 0, vol_strain_temp = 0;
+            double strain_temp[3] = {0}, vol_strain_temp = 0;
             int idx_temp[3];
             int dim = m_pcs->m_msh->GetCoordinateFlag()/10;
             if (dim==2)
                if(h_fem->axisymmetry)
                   dim=3;
-            ele_index = index;
+            //WW ele_index = index;
 
             idx_temp[0] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
             idx_temp[1] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
@@ -4566,13 +4567,13 @@ double CMediumProperties::PermeabilityFunctionStrain(long index, int nnodes, CFi
                tmpfkt=1.;
          }
 
-         double strain_temp[3] = {0}, strain_temp_pls = 0, vol_strain_temp = 0;
+         double strain_temp[3] = {0}, vol_strain_temp = 0;
          int idx_temp[3];
          int dim = m_pcs->m_msh->GetCoordinateFlag()/10;
          if (dim==2)
             if(h_fem->axisymmetry)
                dim=3;
-         ele_index = index;
+         //WW ele_index = index;
 
          idx_temp[0] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
          idx_temp[1] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
@@ -5479,9 +5480,11 @@ double CMediumProperties::SaturationPressureDependency
    static double capillary_pressure,capillary_pressure1,capillary_pressure2;
    static double saturation1,saturation2;
    static double dS,dS_dp,dpc;
-   double S_e, m, n, alpha;
+   //WW double S_e, 
+   double  m, n, alpha;
    int phase = 0;
-   S_e=m=n=alpha=0.0;
+   //WW S_e=
+   m=n=alpha=0.0;
    //----------------------------------------------------------------------
    // Vollsaettigung?
    mode = 2;
@@ -5547,9 +5550,10 @@ double CMediumProperties::PressureSaturationDependency
 
    density_fluid = density_fluid;                 //OK411
 
-   static double capillary_pressure,capillary_pressure1,capillary_pressure2;
+   //WW static double capillary_pressure,
+   double capillary_pressure1,capillary_pressure2;
    static double saturation1,saturation2;
-   static double dS,dpc;
+   static double dS; //WW,dpc;
    // static double dS_dp;
    // 01.3.2007 WW
    double S_e, m, n, alpha, dPcdSe;
@@ -5574,7 +5578,7 @@ double CMediumProperties::PressureSaturationDependency
             saturation2 = saturation + dS;
             capillary_pressure2 = CapillaryPressureFunction(number,NULL,theta,phase,saturation2);
                                                   //OK4105
-            dpc = capillary_pressure1 - capillary_pressure2;
+            //WW dpc = capillary_pressure1 - capillary_pressure2;
          }
          while((dS > MKleinsteZahl) && (capillary_pressure2 < MKleinsteZahl / 100.));
 
@@ -5590,7 +5594,7 @@ double CMediumProperties::PressureSaturationDependency
             saturation2 = saturation + dS;
             capillary_pressure2 = CapillaryPressureFunction(number,NULL,theta,phase,saturation2);
                                                   //OK4105
-            dpc = capillary_pressure1 - capillary_pressure2;
+            //WW dpc = capillary_pressure1 - capillary_pressure2;
          }
          while((dS > MKleinsteZahl) && (capillary_pressure2 < MKleinsteZahl / 100.));
 
@@ -6337,7 +6341,7 @@ long GetNearestHetVal2(long EleIndex, CFEMesh *m_msh, vector <double> xvals,  ve
 
    (void)mmpvals;
    long i, nextele, no_values;
-   double ex, ey, ez, dist, dist1, dist2;
+   double ex, ey, ez, dist, dist1; //WW , dist2;
    double x, y, z;
    double* center = NULL;
    Mesh_Group::CElem* m_ele = NULL;
@@ -6345,7 +6349,7 @@ long GetNearestHetVal2(long EleIndex, CFEMesh *m_msh, vector <double> xvals,  ve
 
    x=0.0; y=0.0; z=0.0;
    dist = 10000000.0;                             //Startwert
-   dist2 = 0.01;                                  // Abstand zwischen eingelesenen Knoten und Geometrieknoten-RF;
+   //WW dist2 = 0.01;                                  // Abstand zwischen eingelesenen Knoten und Geometrieknoten-RF;
    // Achtung, doppelbelegung möglich bei kleinen Gitterabständen
    nextele = -1;
 
@@ -6389,7 +6393,7 @@ double GetAverageHetVal2(long EleIndex, CFEMesh *m_msh, vector <double> xvals,  
    double xp[3],yp[3];
    double value;
    double NumberOfValues;
-   double InvNumberOfValues;
+   //WW double InvNumberOfValues;
    CGLPoint *m_point = NULL;
    Mesh_Group::CElem* m_ele = NULL;
    long   no_values = (long) xvals.size();
@@ -6409,7 +6413,7 @@ double GetAverageHetVal2(long EleIndex, CFEMesh *m_msh, vector <double> xvals,  
    //-----------------------------------------------------------------------
    //Find data points in the element
    NumberOfValues = 0;
-   InvNumberOfValues = 0;
+   //WW InvNumberOfValues = 0;
    m_point = new CGLPoint;
 
    average = -1;
@@ -7390,8 +7394,9 @@ double CMediumProperties::PorosityVolumetricChemicalReaction(long index)
 double CMediumProperties::PorosityVolStrain(long index, double val0, CFiniteElementStd *assem )
 {
 	double val = val0, vol_strain_temp = 0., strain_temp[3]={0.}, strain_nodes[20] = {0.};
-	int idx_temp[3]={0}, ele_index, nnodes = assem->nnodes;
-	CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) this;
+	//WW int idx_temp[3]={0}, ele_index, nnodes = assem->nnodes;
+	int idx_temp[3]={0}, nnodes = assem->nnodes;
+	//WW CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) this;
          int dim = m_pcs->m_msh->GetCoordinateFlag()/10;
          if (dim==2)
             if(assem->axisymmetry)
@@ -7399,7 +7404,7 @@ double CMediumProperties::PorosityVolStrain(long index, double val0, CFiniteElem
 	idx_temp[0] = assem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
 	idx_temp[1] = assem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
 	idx_temp[2] = assem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
-	ele_index = index;
+	//WW ele_index = index;
 	for (int j=0; j<dim; j++)
 	{
 		for (int i=0; i<nnodes; i++)
@@ -7718,11 +7723,11 @@ double CMediumProperties::StorageFunction(long index,double *gp,double theta)
    //double sigma1,sigma2,sigma3;
    //double a1,a2,a3,b1,b2,b3;
    //double normx,normy,normz,normlen;
-   double dircosl, dircosm, dircosn;
+   //WW double dircosl,  dircosm, dircosn;
    //double tot_norm_stress, eff_norm_stress;
    //int material_group;
    //double x_mid, y_mid, z_mid, x_bore, y_bore, z_bore, distance;
-   dircosl = dircosm = dircosn = 0.0;             //Initialise variable
+   //WW dircosl =    dircosm =    dircosn = 0.0;             //Initialise variable
    // static int nidx0,nidx1;
    //double primary_variable[10];		//OK To Do
    //int count_nodes;

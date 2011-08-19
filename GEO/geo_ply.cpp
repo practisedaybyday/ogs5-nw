@@ -1009,7 +1009,7 @@ void GEOWritePolylines(char* file_name) {
  **************************************************************************/
 void GEORemovePLY(CGLPolyline*m_ply) {
 	CGLPolyline* m_ply_this = NULL;
-	std::vector<CGLPolyline*>::const_iterator p_ply = polyline_vector.begin();
+	//WW std::vector<CGLPolyline*>::const_iterator p_ply = polyline_vector.begin();
 	for (int i = 0; i < (int) polyline_vector.size(); i++) {
 		m_ply_this = polyline_vector[i];
 		if (m_ply_this->getName().compare(m_ply->getName()) == 0) {

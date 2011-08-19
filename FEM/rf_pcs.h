@@ -301,7 +301,7 @@ class CRFProcess : public ProcessInfo
        * get access to the instance of class Problem
        * @return
        */
-      const Problem* getProblemObjectPointer () const;
+      Problem* getProblemObjectPointer () const;
       std::string geo_type;                       //OK
       std::string geo_type_name;                  //OK
       //....................................................................

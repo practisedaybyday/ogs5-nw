@@ -1807,7 +1807,7 @@ namespace FiniteElement
       gp_t = 0;
       double fkt=0.0;
 
-      double *DevStress ;
+      //WW double *DevStress ;
       const int PModel = smat->Plasticity_type;
       double dPhi = 0.0;                          // Sclar factor for the plastic strain
       //  double J2=0.0;
@@ -1967,7 +1967,7 @@ namespace FiniteElement
                   if(smat->StressIntegrationDP(gp, eleV_DM, dstress, dPhi, update))
 #endif
             {
-               DevStress = smat->devS;
+	      //WW DevStress = smat->devS;
                smat->ConsistentTangentialDP(ConsistDep, dPhi, ele_dim);
             }
             break;
@@ -2382,7 +2382,7 @@ namespace FiniteElement
    **************************************************************************/
    void CFiniteElementVec::ExtropolateGuassStress()
    {
-      int i, j, gp_r, gp_s, gp_t;
+     int i, j, gp_r, gp_s, gp_t;
       // int l1,l2,l3,l4; //, counter;
       double ESxx, ESyy, ESzz, ESxy, ESxz, ESyz, Pls;
       double avgESxx, avgESyy, avgESzz, avgESxy, avgESxz, avgESyz, avgPls;
@@ -2394,7 +2394,7 @@ namespace FiniteElement
       for(i=0; i<nnodes; i++)
          dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
       //
-      gp = gp_r=gp_s=gp_t=gp=0;
+      gp = gp_r = gp_s = gp_t = 0;
       eleV_DM = ele_value_dm[MeshElement->GetIndex()];
       if(eleV_DM->pStrain)                        //08.02.2008 WW
          idx_pls =  pcs->GetNodeValueIndex("STRAIN_PLS");
@@ -2764,7 +2764,7 @@ namespace FiniteElement
       int i,j,k;
       int MatGroup;
 
-      double ep, p, normXi, n1, n2;
+      double ep, p, normXi, n2;
 
       // For enhanced strain element
       double h_loc, detA, h_tol=1.0e-5;
@@ -2880,7 +2880,7 @@ namespace FiniteElement
                if(!Localizing)
                {
                   for(i=0; i<3; i++) dstress[i]+= p/3.0;
-                  n1 = (dstress[0]*cos(0.5*pai+OriJ[0])+dstress[1]*sin(0.5*pai+OriJ[0]))/normXi;
+                  //WW n1 = (dstress[0]*cos(0.5*pai+OriJ[0])+dstress[1]*sin(0.5*pai+OriJ[0]))/normXi;
                   n2 = (dstress[0]*cos(0.5*pai+OriJ[1])+dstress[1]*sin(0.5*pai+OriJ[1]))/normXi;
                   if(n2>0.0)
                   {
@@ -2914,7 +2914,7 @@ namespace FiniteElement
    **************************************************************************/
    int CFiniteElementVec::IntersectionPoint(const int O_edge, const double *NodeA, double *NodeB  )
    {
-      int i,j, k, numf, nfnode;
+     int i,j, k, numf; //, nfnode;
 
       static double k1, k2, n1, n2, xA[3],xB[3];
       static int Face_node[8];                    // Only 2D
@@ -2933,7 +2933,8 @@ namespace FiniteElement
          k=-1;
          if(i!=O_edge)
          {
-            nfnode = MeshElement->GetElementFaceNodes(i, Face_node);
+	   //WW nfnode = 
+            MeshElement->GetElementFaceNodes(i, Face_node);
 
             xA[0] = X[Face_node[0]];
             xA[1] = Y[Face_node[0]];
@@ -2977,7 +2978,8 @@ namespace FiniteElement
             for(j=0; j<numf; j++)
             {
                if(j==k) continue;
-               nfnode = MeshElement->GetElementFaceNodes(j, Face_node);
+               //WW nfnode = 
+               MeshElement->GetElementFaceNodes(j, Face_node);
                xA[0] = X[Face_node[0]];
                xA[1] = Y[Face_node[0]];
                xA[2] = Z[Face_node[0]];

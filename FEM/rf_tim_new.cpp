@@ -771,7 +771,7 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
    double GP[3];
    static double Node_Sat[8];
    double buffer;
-   int no_time_steps;
+   //WW int no_time_steps;
    //WW  int no_processes =(int)pcs_vector.size();
    CFluidProperties *m_mfp = NULL;
    m_mfp = MFPGet("LIQUID");                      //WW
@@ -798,7 +798,7 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
          case RICHARDS_FLOW:                      // TF
          {
             idxS = m_pcs->GetNodeValueIndex("SATURATION1");
-            no_time_steps = 1000000000;           //OK (int)(1.0e10);
+            //WW no_time_steps = 1000000000;           //OK (int)(1.0e10);
             time_step_length = 1.e10;
             size_t mmp_vector_size = mmp_vector.size();
             for (size_t m = 0; m < mmp_vector_size; m++)
@@ -1149,7 +1149,7 @@ double CTimeDiscretization::AdaptiveFirstTimeStepEstimate(void)
    CElem* elem = NULL;
    static double Node_p[8];
    double p_ini, buff = 0.0;
-   int no_time_steps;
+   //WW int no_time_steps;
    safty_coe = 5.0;
    p_ini = 1.0e-10;
 
@@ -1165,7 +1165,7 @@ double CTimeDiscretization::AdaptiveFirstTimeStepEstimate(void)
          case RICHARDS_FLOW:                      // TF
          {
             int idxp = m_pcs->GetNodeValueIndex("PRESSURE1") + 1;
-            no_time_steps = 1000000000;           //OK (int)(1e10);
+            //WW no_time_steps = 1000000000;           //OK (int)(1e10);
             time_step_length = 1.e10;
             for (size_t i = 0; i < m_pcs->m_msh->ele_vector.size(); i++)
             {

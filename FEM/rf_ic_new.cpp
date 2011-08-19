@@ -513,6 +513,9 @@ void CInitialCondition::Set(int nidx)
       case GEOLIB::VOLUME:
          std::cout << "WARNING: CInitialCondition::Set - ToDo" << endl;
          break;
+      case GEOLIB::COLUMN:
+         std::cout << "WARNING: CInitialCondition::Set - ToDo" << endl;
+         break;
       case GEOLIB::GEODOMAIN:
          SetDomain(nidx);
          break;
@@ -612,6 +615,9 @@ void CInitialCondition::SetEle(int nidx)
          std::cout << "Warning CInitialCondition::Set - ToDo" << std::endl;
          break;
       case GEOLIB::VOLUME:
+         std::cout << "Warning CInitialCondition::Set - ToDo" << std::endl;
+         break;
+      case GEOLIB::COLUMN:
          std::cout << "Warning CInitialCondition::Set - ToDo" << std::endl;
          break;
       case GEOLIB::GEODOMAIN:
@@ -1050,7 +1056,7 @@ void CInitialCondition::SetDomainEle(int nidx)
 {
    int k;
    long i;
-   double ele_val=0.0;
+   //WW double ele_val=0.0;
    std::vector<long>ele_vector;
    CFEMesh* m_msh = this->getProcess()->m_msh;
    k=0;
@@ -1083,7 +1089,7 @@ void CInitialCondition::SetDomainEle(int nidx)
                if(m_ele->GetMark() && m_ele->GetPatchIndex() == subdom_index[k] )
                {
                   this->getProcess()->SetElementValue(i, nidx, subdom_ic[k]);
-                  ele_val = this->getProcess()->GetElementValue(i, nidx);
+                  //WW ele_val = this->getProcess()->GetElementValue(i, nidx);
                }
             }
          }

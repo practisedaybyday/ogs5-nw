@@ -103,7 +103,7 @@ void Surface::output(FILE* geo_file, int &p_index, int &l_index,
     CGLPoint *CGPnt = NULL;
     CGLPoint *CGPnt0 = NULL;
     CGLLine *CGLn0 = NULL;
-    CGLLine *CGLn1 = NULL;
+    //WW CGLLine *CGLn1 = NULL;
     CGLLine *CGLn = NULL;
 
 	//First entity: points
@@ -239,7 +239,7 @@ void Surface::output(FILE* geo_file, int &p_index, int &l_index,
 		  pl = p_pline->line_vector.begin();
 		  count = 0;
           CGLn0 = NULL;
-          CGLn1 = NULL;
+          //WW CGLn1 = NULL;
      	  while(pl!=p_pline->line_vector.end()) {
              CGLn = *pl;
 
@@ -285,7 +285,7 @@ void Surface::output(FILE* geo_file, int &p_index, int &l_index,
   		  count = (int)p_pline->line_vector.size();//CC
 		  Size0 = (int)p_pline->point_vector.size();
 		  CGLn0 = NULL;
-		  CGLn1 = NULL;
+		  //WW 	  CGLn1 = NULL;
      	  while(pl!=p_pline->line_vector.begin()) {//CC
 	         --pl;
 			 count--;
@@ -590,7 +590,7 @@ void Surface::PolylineOrientation()
     CGLLine *m_line=NULL;
 
     CGLLine *line_end=NULL;
-    CGLLine *line_begin=NULL;
+    //WW CGLLine *line_begin=NULL;
 
    // list<CGLPolyline*>::const_iterator p = polyline_of_surface_list.begin();
 std::vector<CGLPolyline*>::iterator p =polyline_of_surface_vector.begin();
@@ -622,7 +622,7 @@ std::vector<CGLPolyline*>::iterator p =polyline_of_surface_vector.begin();
 
 	  polyline_of_surface_orient.push_back(orient);
 //if it is the first polyline
-	  line_begin = *pl;
+	  //WW   line_begin = *pl;
       if(orient==1)
 	  {
    	    while(pl!=p_pline->line_vector.end()) {//CC
@@ -1745,7 +1745,7 @@ Programing:
 void GEORemoveSFC(Surface*m_sfc)
 {
   Surface* m_sfc_this = NULL;
-  vector<Surface*>::const_iterator p_sfc = surface_vector.begin();
+  //WW vector<Surface*>::const_iterator p_sfc = surface_vector.begin();
   for(int i=0;i<(int)surface_vector.size();i++){
     m_sfc_this = surface_vector[i];
     if(m_sfc_this->name.compare(m_sfc->name)==0){

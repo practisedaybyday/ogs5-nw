@@ -2069,7 +2069,7 @@ namespace process
       ElementValue_DM *eleV_DM, *eleV_DM1;
       DisElement *disEle;
       static double n1[2],n2[2], xA[3],xB[3];
-      static int Face_node[8];                    // Only 2D
+      //WW static int Face_node[8];                    // Only 2D
       Mesh_Group::CElem* elem;
       Mesh_Group::CElem* elem1;
 

@@ -1179,7 +1179,7 @@ namespace FiniteElement
    void CFiniteElementStd::CalcOverlandCoefficientsLine(double* head, double* axx, double* ast )
    {
 
-      double dx, dy, dzx;
+     double dx, dy; //WW, dzx;
       double delt, dhds;
       double fric, width, eslope, slope_exp;
 
@@ -1189,7 +1189,7 @@ namespace FiniteElement
 
       dx = X[1] - X[0];
       dy = Y[1] - Y[0];
-      dzx = Z[1] - Z[0];
+      //WW dzx = Z[1] - Z[0];
       delt = sqrt(dx*dx + dy*dy);
       dhds = fabs( (head[0] - head[1]) / delt );
 
@@ -1651,9 +1651,9 @@ namespace FiniteElement
       double val = 0.0;
       double P,T;
       //OK411 double expfactor = 0.0;
-      bool diffusion = false;                     //08.05.2008 WW
-      if(MediaProp->heat_diffusion_model==273&&cpl_pcs)
-         diffusion = true;
+      //WW bool diffusion = false;                     //08.05.2008 WW
+      //WWif(MediaProp->heat_diffusion_model==273&&cpl_pcs)
+      //WW  diffusion = true;
       //
       if(pcs->m_num->ele_mass_lumping)
          ComputeShapefct(1);
@@ -3551,28 +3551,29 @@ namespace FiniteElement
    {
       //Laufvariablen
       static long i, j;                           //, k, l;
-      int no_phases;
+      //WW int no_phases;
 
       //static long *element_nodes;
-      double gp[3], v_rst[3], v_tot[3];
-      static double zeta;
+      //WW double gp[3], 
+      double v_rst[3], v_tot[3];
+      //WW static double zeta;
       //static double *velovec, vg, v[2], vt[2], v_rs[2];
       //static double alpha_adv[3];
       double upwind_para;
-      double upwind_meth;
+      //WW double upwind_meth;
       // Numerik
-      zeta = 0.0;
-      gp[0]=0.0;   gp[1]=0.0;   gp[2]=0.0;
+      //WW zeta = 0.0;
+      //WW gp[0]=0.0;   gp[1]=0.0;   gp[2]=0.0;
 
       int ind = MeshElement->GetIndex();
       ElementValue* gp_ele = ele_gp_value[ind];
       //  TF ununsed: MshElemType::type eletyp = MeshElement->GetElementType();
 
       // Elementdaten und globale Modellparameter
-      no_phases =(int)mfp_vector.size();
+      //WW no_phases =(int)mfp_vector.size();
       //
       upwind_para = pcs->m_num->ele_upwinding;
-      upwind_meth = pcs->m_num->ele_upwind_method;
+      //WW upwind_meth = pcs->m_num->ele_upwind_method;
 
       // alpha initialisieren
       MNulleVec(alpha, 3);
@@ -5500,17 +5501,19 @@ namespace FiniteElement
    void  CFiniteElementStd::Cal_GP_Velocity_FM(int *i_ind)
    {
       int i, i_dim;
+      /* //WW
       static double vel_g_old[3]=
       {
          0.0,0.0,0.0
       }
-      , vel_g[3]=
+      */
+      double vel_g[3]=
       {
          0.0,0.0,0.0
       };
       // ---- Gauss integral
-      int gp_r=0, gp_s=0, gp_t=0;
-      double fkt=0.0;                             //OK411 coef = 0.0
+      //WW int gp_r=0, gp_s=0, gp_t=0;
+      //WW double fkt=0.0;                             //OK411 coef = 0.0
       int i_idx;
       // Get fluid_momentum process
       CRFProcess *m_pcs_fm =  PCSGet("FLUID_MOMENTUM");
@@ -5522,12 +5525,12 @@ namespace FiniteElement
       {
          // Get gauss point data
          // GetGaussData(gp, gp_r, gp_s, gp_t);
-         fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+         //WW fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
          // Compute the shape function for interpolation within element
          ComputeShapefct(1);
 
          // Save former gp velocity
-         for(i_dim=0;i_dim<dim;i_dim++) vel_g_old[i_dim] = gp_ele->Velocity(i_dim,gp);
+         //WW  for(i_dim=0;i_dim<dim;i_dim++) vel_g_old[i_dim] = gp_ele->Velocity(i_dim,gp);
 
          // Interpolate velocity from nodes to gauss point for all three velocity components
          for(i_dim=0;i_dim< dim;i_dim++)
@@ -5628,8 +5631,8 @@ namespace FiniteElement
          0.0,0.0,0.0
       };
       // ---- Gauss integral
-      int gp_r=0, gp_s=0, gp_t=0;
-      double fkt=0.0;                             //OK411 coef = 0.0
+      //WW int gp_r=0, gp_s=0, gp_t=0;
+      //WW double fkt=0.0;                             //OK411 coef = 0.0
       int i_idx;
       ostringstream temp;
       string tempstring;
@@ -5649,7 +5652,7 @@ namespace FiniteElement
 
             // Get gauss point data
             // GetGaussData(gp, gp_r, gp_s, gp_t);
-            fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+            //WW fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
             // Compute the shape function for interpolation within element
             ComputeShapefct(1);
 
@@ -5920,8 +5923,8 @@ namespace FiniteElement
       };
       //double n_vel_x[8], n_vel_y[8], n_vel_z[8];
       // ---- Gauss integral
-      int gp_r=0, gp_s=0, gp_t=0;
-      double fkt=0.0;
+      //WW int gp_r=0, gp_s=0, gp_t=0;
+      //WW double fkt=0.0;
       //  int i_idx;
       double value[3], value_old[3];
       ostringstream temp;
@@ -5942,7 +5945,7 @@ namespace FiniteElement
       {
          // Get gauss point data
          // GetGaussData(gp, gp_r, gp_s, gp_t);
-         fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+         //WW fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
          // Compute the shape function for interpolation within element
          ComputeShapefct(1);
 
@@ -5977,7 +5980,7 @@ namespace FiniteElement
          }
 
          // Data for Test Output
-         if (output_average = true)
+         if (output_average == true) //WW
          {
             for(i_dim=0;i_dim<dim;i_dim++)
             {
@@ -7251,9 +7254,9 @@ namespace FiniteElement
       // ---- Gauss integral
       int gp;
       int gp_r=0,gp_s=0,gp_t=0;
-      double fkt,mat_fac;
+      double fkt; //WW ,mat_fac;
       // Material
-      mat_fac = 1.0;
+      //WW mat_fac = 1.0;
 
 #if defined(NEW_EQS)
       CSparseMatrix *A = NULL;                    //PCH
@@ -9388,8 +9391,8 @@ namespace FiniteElement
                idx_pw = pcs_p->GetNodeValueIndex("PRESSURE1");
                idx_pc = pcs_p->GetNodeValueIndex("PRESSURE_CAP");
                idx_fv = pcs_s->GetNodeValueIndex("SATURATION2");
-               CMediumProperties *m_mmp = NULL;
-               m_mmp = mmp_vector[0];
+               //WW CMediumProperties *m_mmp = NULL;
+               //WW m_mmp = mmp_vector[0];
                for(i=0;i<nnodes;i++)
                {
                   Sw = 1.0 - pcs_s->GetNodeValue(nodes[i],idx_fv+1);

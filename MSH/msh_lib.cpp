@@ -657,7 +657,7 @@ Programing:
 void MSHLayerWriteTecplot()
 {
    MshElemType::type ele_type = MshElemType::INVALID;
-   long no_nodes;
+   //WW long no_nodes;
    long no_elements;
    std::string delimiter(", ");
    CElem* m_ele = NULL;
@@ -680,8 +680,7 @@ void MSHLayerWriteTecplot()
       {
          sprintf(no_layer_char, "%lu", static_cast<long unsigned>(k) + 1);
          no_layer_str = no_layer_char;
-         no_nodes = (long) m_msh->nod_vector.size() / (m_msh->getNumberOfMeshLayers()
-            + 1);
+         //WW no_nodes = (long) m_msh->nod_vector.size() / (m_msh->getNumberOfMeshLayers() + 1);
          no_elements = (long) m_msh->ele_vector.size() / m_msh->getNumberOfMeshLayers();
          // Test ele_type
          if (no_elements > 0)
@@ -1562,9 +1561,9 @@ void MSHDefineMobile(CRFProcess*m_pcs)
          //VOLUME
          if(m_mat_mp->geo_type_name.find("VOLUME")!=std::string::npos)
          {
-            CGLVolume *m_volume = NULL;
+	   //WW CGLVolume *m_volume = NULL;
                                                   //CC 10/05
-            m_volume = GEOGetVOL(m_mat_mp->geo_name);
+           //WW  m_volume = GEOGetVOL(m_mat_mp->geo_name);
             //ToDo TK
             //OK411 mobile_nodes =GetPointsInVolume(m_volume,&no_mobile_nodes);//CC 10/05
          }

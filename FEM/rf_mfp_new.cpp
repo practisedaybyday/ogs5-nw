@@ -131,7 +131,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
    std::string hash("#");
    std::ios::pos_type position;
    std::string sub_string;
-   bool new_subkeyword = false;
+   //WW bool new_subkeyword = false;
    std::string dollar("$");
    std::string delimiter_type(":");
    std::stringstream in;
@@ -139,7 +139,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
    // Schleife ueber alle Phasen bzw. Komponenten
    while (!new_keyword)
    {
-      new_subkeyword = false;
+     //WW new_subkeyword = false;
       position = mfp_file->tellg();
       //SB    mfp_file->getline(buffer,MAX_ZEILE);
       //SB    line_string = buffer;
@@ -211,7 +211,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
                                                   // subkeyword found
       if(line_string.find("$DENSITY")!=string::npos)
       {
-         new_subkeyword = false;
+	//WW new_subkeyword = false;
          in.str(GetLineFromFile1(mfp_file));
          in >> density_model;
          if(density_model==0)                     // rho = f(x)
@@ -1173,8 +1173,8 @@ double CFluidProperties::Viscosity(double* variables)
    CRFProcess* m_pcs = NULL;
 
    //----------------------------------------------------------------------
-   bool New = false;                              // To be
-   if(fem_msh_vector.size()>0) New = true;
+   //WW bool New = false;                              // To be
+   //WW if(fem_msh_vector.size()>0) New = true;
 
    //----------------------------------------------------------------------
    if(variables)                                  //OK4709: faster data access
@@ -1507,15 +1507,15 @@ double CFluidProperties::PhaseChange()
 {
    int gueltig = -1;
    double heat_capacity_phase_change = 0;
-   double pressure, saturation, temperature;
+   double pressure; //WW , saturation, temperature;
    double density_vapor, humi, drdT;
    double H1,H0,T0,T_1;                           //T1 defined at 662 in steam67???
 
    //......................................................................
    CalPrimaryVariable(specific_heat_capacity_pcs_name_vector);
    pressure = primary_variable[0];
-   temperature =  primary_variable[1];
-   saturation = primary_variable[2];
+   //WW temperature =  primary_variable[1];
+   //WW saturation = primary_variable[2];
 
    if(heat_capacity_model == 3)
    {
@@ -2293,9 +2293,9 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
 {
    Conc = Conc;
    int i, j;
-   double TauTC, PiiTC, Nabla, Delta, Nabla0, Nabla1, Nabla2;
+   double TauTC, Nabla, Delta, Nabla0, Nabla1, Nabla2;
    double heat_conductivity, Rho, temperature_average, pressure_average, viscosity;
-   double Rhostar, TstarTC, Lambdastar, Pstar1;
+   double Rhostar, TstarTC, Lambdastar; //WW, Pstar1;
    double nZero[4];
    double n[5][6];
    double A1,A2,A3,A4,A5,A6,A7,A8;                /*constants*/
@@ -2327,12 +2327,12 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    Lambdastar = 0.4945;
    Rhostar = 317.763;
    TstarTC = 647.226;
-   Pstar1 = 22.115e-6;
+   //WW Pstar1 = 22.115e-6;
 
    /*BEGIN: reduced dimensions*/
    TauTC = TstarTC / temperature_average;
    //Delta = Rho / Rhostar;
-   PiiTC = pressure_average / Pstar1;
+   //WW PiiTC = pressure_average / Pstar1;
    /*END: reduced dimensions*/
 
    nGamma[1] = 0.14632971213167;
@@ -2486,7 +2486,7 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    Lambdastar = 0.4945;
    Rhostar = 317.763;
    TstarTC = 647.226;
-   Pstar1 = 22.115e6;
+   //WW Pstar1 = 22.115e6;
 
    nZero[0] = 0.1e1;
    nZero[1] = 0.6978267e1;
@@ -2532,7 +2532,7 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    /*BEGIN: reduced dimensions*/
    TauTC = TstarTC / temperature_average;
    Delta = Rho / Rhostar;
-   PiiTC = pressure_average / Pstar1;
+   //WW PiiTC = pressure_average / Pstar1;
    /*END: reduced dimensions*/
 
    /*BEGIN: Nabla0*/
@@ -2668,13 +2668,13 @@ double CFluidProperties::MATCalcFluidHeatCapacityMethod2(double Press, double Te
    double GammaPi, GammaPiTau, GammaPiPi, GammaTauTau;
    double L[35],J[35],n[35];
    int i;
-   double salinity;
-   double Cp, Cv;
+   //WW double salinity;
+   double Cp; //WW , Cv;
 
    pressure_average = Press;
    temperature_average = TempK;
 
-   salinity=C_0;
+   //WW salinity=C_0;
 
    Tstar = 1386;
 
@@ -2835,7 +2835,7 @@ double CFluidProperties::MATCalcFluidHeatCapacityMethod2(double Press, double Te
 
    /*BEGIN: Fluid isochoric heat capacity*/
                                                   /* Cv is not used currently 9.2003*/
-   Cv = (- (pow(Tau,2))* (GammaTauTau) + pow(GammaPi - Tau * (GammaPiTau),2) / GammaPiPi) * GazConst;
+   //WW Cv = (- (pow(Tau,2))* (GammaTauTau) + pow(GammaPi - Tau * (GammaPiTau),2) / GammaPiPi) * GazConst;
    /*BEGIN: Fluid isochoric heat capacity*/
 
    return Cp;

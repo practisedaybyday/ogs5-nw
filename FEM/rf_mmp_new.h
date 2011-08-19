@@ -241,7 +241,7 @@ class CMediumProperties
       double heat_conductivity_tensor[9];
       int fct_number;                             // functions
       double permeability_saturation_model_values[2];
-      double capillary_pressure_model_values[1];
+      double capillary_pressure_model_values[2];
       double permeability_exp[1];                 // JOD
       double permeability_alpha[1];               // JOD
       int heat_diffusion_model;
