@@ -684,7 +684,7 @@ Programmaenderungen:
 double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFProcess* m_pcs)
 {
    (void)theta;
-   //WW long group;
+   long group;
    int  p_idx = -1, t_idx = -1;
    /*int dependence = 0; */
    double diffusion_coefficient = -1.0;
@@ -709,9 +709,9 @@ double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFPro
    p_idx = p_idx;
    t_idx = t_idx;
 
-   //WW group = m_pcs->m_msh->ele_vector[index]->GetPatchIndex();
-   //WW CMediumProperties *m_mat_mp = NULL;
-   //WW m_mat_mp = mmp_vector[group];
+   group = m_pcs->m_msh->ele_vector[index]->GetPatchIndex();
+   CMediumProperties *m_mat_mp = NULL;
+   m_mat_mp = mmp_vector[group];
    k = diffusion_model_values;
 
    switch (diffusion_model)
