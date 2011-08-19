@@ -11,12 +11,14 @@
 #include "ProcessInfo.h"
 #include "DistributionInfo.h"
 #include "GeoObject.h"
+#include "Point.h"
 
 #include <vector>
 
 class CBoundaryCondition;
 class CInitialCondition;
 class CSourceTerm;
+
 
 /** 
  * \brief Adapter class for handling FEM Conditions in the user Interface
@@ -115,7 +117,10 @@ public:
 	size_t getTimType() const {return _tim_type; };
 	void setTimType(size_t value) { _tim_type = value; };
 
+	static std::vector<FEMCondition*> SourceTerm::createDirectSourceTerms(const std::vector<CSourceTerm*> &st_vector, const std::string &geo_name, const std::vector<GEOLIB::Point*> *new_points);
+
 private:
+	static void getDirectNodeValues(const std::string &filename, std::vector< std::pair<size_t, double> > &node_values);
 	size_t _tim_type;
 };
 

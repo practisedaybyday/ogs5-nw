@@ -354,6 +354,7 @@ std::string readSurface(std::istream &in,
 					}
 //					if (type == 0 || type == -1)
 //						std::cerr << "reading Polygon " << ply_vec_names[ply_id] << std::endl;
+					else std::cerr << "unknown polyline type " << type << "... " << std::endl;
 				}
 				in >> line;
 			}

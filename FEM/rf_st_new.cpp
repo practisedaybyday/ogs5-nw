@@ -3453,7 +3453,7 @@ std::vector<size_t>& conditional_nodes) const
  GeoSys source term function:
  02/2009 WW Implementation
  **************************************************************************/
-inline void CSourceTerm::DirectAssign(long ShiftInNodeVector)
+void CSourceTerm::DirectAssign(long ShiftInNodeVector)
 {
    std::string line_string;
    std::string st_file_name;
