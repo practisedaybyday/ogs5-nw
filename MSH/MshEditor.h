@@ -7,6 +7,7 @@
 #define MSHEDITOR_H
 
 #include <vector>
+#include <cstddef>
 
 namespace MeshLib
 {
