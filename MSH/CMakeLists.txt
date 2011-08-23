@@ -2,9 +2,11 @@
 
 set( SOURCES
 	admin.h
+	GridAdapter.h
 	msh_core.h
 	msh_edge.h
 	msh_elem.h
+	msh_faces.h
 	msh_lib.h
 	msh_mesh.h
 	msh_node.h
@@ -16,10 +18,12 @@ set( SOURCES
 	MeshQualityNormalisedArea.h
 	MeshQualityNormalisedVolumes.h
 	MeshQualityEquiAngleSkew.h
-	msh_faces.h
+	
+	GridAdapter.cpp
 	msh_core.cpp
 	msh_edge.cpp
 	msh_elem.cpp
+	msh_faces.cpp
 	msh_gen.cpp
 	msh_lib.cpp
 	msh_mat.cpp
@@ -34,7 +38,6 @@ set( SOURCES
 	MeshQualityNormalisedVolumes.cpp
 	MeshQualityEquiAngleSkew.cpp
 	#msh_pnt.cpp		# references removed elements.h nodes.h
-	msh_faces.cpp
 	
 	Delaunay/DT_Matrix.h
 	Delaunay/tricommon.h

@@ -64,12 +64,6 @@ public:
 	/// Sets the name for the mesh.
 	void setName(const std::string &name) { _name = name; };
 
-	/// Converts greyscale image to quad mesh
-	static MeshLib::CFEMesh* convertImgToMesh(vtkImageData* img, const std::pair<double,double> &origin, const double &scalingFactor);
-
-	/// Converts a vtkUnstructuredGrid object to a CFEMesh
-	static MeshLib::CFEMesh* convertUnstructuredGrid(vtkUnstructuredGrid* grid);
-
 private:
 	/// Converts an FEM Mesh to a list of nodes and elements.
 	int convertCFEMesh(const MeshLib::CFEMesh* mesh);
@@ -82,8 +76,6 @@ private:
 
 	/// Converts a GridAdapter into an CFEMesh.
 	const MeshLib::CFEMesh* toCFEMesh() const;
-
-	static MeshLib::CElem* createElement(size_t node1, size_t node2, size_t node3);
 
 	std::string _name;
 	std::vector<GEOLIB::Point*> *_nodes;

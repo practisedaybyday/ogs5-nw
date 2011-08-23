@@ -19,6 +19,11 @@ class CBoundaryCondition;
 class CInitialCondition;
 class CSourceTerm;
 
+//class GEOObjects;
+class GridAdapter;
+#include "GEOObjects.h"
+
+
 
 /** 
  * \brief Adapter class for handling FEM Conditions in the user Interface
@@ -120,7 +125,7 @@ public:
 	static std::vector<FEMCondition*> createDirectSourceTerms(const std::vector<CSourceTerm*> &st_vector, const std::string &geo_name, const std::vector<GEOLIB::Point*> *new_points);
 
 private:
-	static void getDirectNodeValues(const std::string &filename, std::vector< std::pair<size_t, double> > &node_values);
+	static void getDirectNodeValues(const std::string &filename, std::vector< std::pair<size_t, double> > &nodes_values);
 	size_t _tim_type;
 };
 
