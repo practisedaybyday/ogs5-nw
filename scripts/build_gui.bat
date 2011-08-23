@@ -11,7 +11,8 @@ rd /S /Q build_gui
 :: Build
 mkdir build_gui
 cd build_gui
-cmake -G "Visual Studio 8 2005" -DOGS_USE_QT=ON -DOGS_PACKAGING=ON ..
+rem cmake -G "Visual Studio 8 2005" -DOGS_USE_QT=ON -DOGS_PACKAGING=ON ..
+cmake -DOGS_USE_QT=ON -DOGS_PACKAGING=ON ..
 cmake ..
 devenv OGS-5-GUI.sln /Build Release
 
@@ -19,6 +20,7 @@ devenv OGS-5-GUI.sln /Build Release
 cmake ..
 devenv OGS-5-GUI.sln /Build Release /Project PACKAGE
 del CMakeCache.txt
-cmake -G "Visual Studio 8 2005" -DOGS_USE_QT=ON -DOGS_PACKAGING=ON -DOGS_PACKAGING_ZIP=ON ..
+rem cmake -G "Visual Studio 8 2005" -DOGS_USE_QT=ON -DOGS_PACKAGING=ON -DOGS_PACKAGING_ZIP=ON ..
+cmake -DOGS_USE_QT=ON -DOGS_PACKAGING=ON -DOGS_PACKAGING_ZIP=ON ..
 cmake ..
 devenv OGS-5-GUI.sln /Build Release /Project PACKAGE
