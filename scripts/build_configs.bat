@@ -14,7 +14,7 @@ mkdir Release
 :: Build FEM
 mkdir build_fem
 cd build_fem
-cmake -DOGS_FEM=ON -DOGS_DONT_USE_QT=ON ..
+cmake -G "Visual Studio 8 2005" "-DOGS_FEM=ON -DOGS_DONT_USE_QT=ON ..
 cmake ..
 devenv OGS-FEM-5.sln /Build Release
 cd bin\Release
@@ -24,7 +24,7 @@ cd ..\..\..\
 :: Build FEM_GEMS
 mkdir build_gems
 cd build_gems
-cmake -DOGS_FEM_GEMS=ON -DOGS_DONT_USE_QT=ON ..
+cmake -G "Visual Studio 8 2005" -DOGS_FEM_GEMS=ON -DOGS_DONT_USE_QT=ON ..
 cmake ..
 devenv OGS-FEM-5-GEMS.sln /Build Release
 cd bin\Release
@@ -35,7 +35,7 @@ cd ..\..\..\
 :: Build FEM_PQC
 mkdir build_pqc
 cd build_pqc
-cmake -DOGS_FEM_PQC=ON -DOGS_DONT_USE_QT=ON ..
+cmake -G "Visual Studio 8 2005" -DOGS_FEM_PQC=ON -DOGS_DONT_USE_QT=ON ..
 cmake ..
 devenv OGS-FEM-5-PQC.sln /Build Release
 cd bin\Release
@@ -46,7 +46,7 @@ cd ..\..\..\
 :: Build FEM_BRNS
 mkdir build_brns
 cd build_brns
-cmake -DOGS_FEM_BRNS=ON -DOGS_DONT_USE_QT=ON ..
+cmake -G "Visual Studio 8 2005" -DOGS_FEM_BRNS=ON -DOGS_DONT_USE_QT=ON ..
 cmake ..
 devenv OGS-FEM-5-BRNS.sln /Build Release
 cd bin\Release
@@ -57,7 +57,7 @@ cd ..\..\..\
 :: Build FEM_LIS
 mkdir build_lis
 cd build_lis
-cmake -DOGS_FEM_LIS=ON -DOGS_DONT_USE_QT=ON ..
+cmake -G "Visual Studio 8 2005" -DOGS_FEM_LIS=ON -DOGS_DONT_USE_QT=ON ..
 cmake ..
 devenv OGS-FEM-5-LIS.sln /Build Release
 cd bin\Release
