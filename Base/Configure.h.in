@@ -35,7 +35,7 @@
 #cmakedefine HAVE_64_BIT
 
 #cmakedefine HAVE_PTHREADS
-#cmakedefine PROCESSOR_COUNT "${PROCESSOR_COUNT}"
+#cmakedefine PROCESSOR_COUNT ${PROCESSOR_COUNT}
 
 #cmakedefine Shapelib_FOUND
 #cmakedefine libgeotiff_FOUND
