@@ -5,7 +5,7 @@ call setup_vs.bat %1
 cd ..
 
 :: Cleanup
-rd /S /Q Release build_fem build_gems build_pqc build_brns
+rd /S /Q Release build_fem build_gems build_pqc build_brns build_lis
 
 :: Executables will copied to Release directory
 mkdir Release
