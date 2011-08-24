@@ -10,7 +10,7 @@
 #include "msh_mesh.h"
 
 using namespace Mesh_Group;
-
+using namespace std;
 
 
 /// FEFLOW Model Ascii File Format (*.fem) - Version 5.4
@@ -30,7 +30,7 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
   std::vector<GEOLIB::Point*> *points = NULL;
   std::vector<GEOLIB::Polyline*> *lines = NULL;
 
-  string line_string;
+  std::string line_string;
   std::stringstream line_stream;
   CNode *m_nod = NULL;
   double x[12] = {};
