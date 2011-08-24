@@ -68,7 +68,7 @@ cd ..\..\..\
 :: Build FEM_LIS
 mkdir build_lis
 cd build_lis
-cmake -G %generator%" -DOGS_FEM_LIS=ON -DOGS_DONT_USE_QT=ON ..
+cmake -G %generator% -DOGS_FEM_LIS=ON -DOGS_DONT_USE_QT=ON ..
 cmake ..
 devenv OGS-FEM-5-LIS.sln /Build Release
 cd bin\Release
