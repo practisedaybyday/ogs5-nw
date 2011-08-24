@@ -19,6 +19,21 @@ namespace Mesh_Group
    MSHLib-Method:
    Task:
    Programing:
+   08/2011 NW Implementation
+   **************************************************************************/
+  CNode::CNode(size_t Index) :
+  CCore(Index), epsilon (0.0), free_surface (-1), selected (0),
+    patch_area (-1.0), crossroad (0), eqs_index(-1)
+   {
+     coordinate[0] = 0.0;
+     coordinate[1] = 0.0;
+     coordinate[2] = 0.0;
+   }
+
+   /**************************************************************************
+   MSHLib-Method:
+   Task:
+   Programing:
    06/2005 WW Implementation
    **************************************************************************/
    CNode::CNode(size_t Index, double x, double y, double z) :

@@ -773,19 +773,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
       //----------------------------------------------------------------------
       // Gravity center
       for (size_t e = 0; e < e_size; e++)
-      {
-         CElem* elem = ele_vector[e];
-         size_t nnodes0 = elem->nnodes;
-         for (size_t i = 0; i < nnodes0; i++)            // Nodes
-         {
-            elem->gravity_center[0] += elem->nodes[i]->X();
-            elem->gravity_center[1] += elem->nodes[i]->Y();
-            elem->gravity_center[2] += elem->nodes[i]->Z();
-         }
-         elem->gravity_center[0] /= (double) nnodes0;
-         elem->gravity_center[1] /= (double) nnodes0;
-         elem->gravity_center[2] /= (double) nnodes0;
-      }
+        ele_vector[e]->ComputeGravityCenter(); //NW
       //----------------------------------------------------------------------
 
       //TEST WW
@@ -1205,7 +1193,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
     07/2005 WW Write by member methods of geometry objects.
     12/2005 OK MAT_TYPE
     **************************************************************************/
-   void CFEMesh::Write(std::fstream*fem_msh_file) const
+   void CFEMesh::Write(std::fstream*fem_msh_file, bool append_stop) const
    {
       long i;
       //--------------------------------------------------------------------
@@ -1248,6 +1236,8 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
       *fem_msh_file << "  ";
       *fem_msh_file << _n_msh_layer << std::endl;
       //--------------------------------------------------------------------
+      if (append_stop)
+        *fem_msh_file << "#STOP";
    }
 
 #ifndef NON_GEO

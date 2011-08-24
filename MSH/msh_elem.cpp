@@ -1530,4 +1530,20 @@ void CElem::Read(std::istream& is, int fileType)
       this->nodes_index.resize(nnodes);
    }
 
+   // NW
+   double* CElem::ComputeGravityCenter()
+   {
+     const size_t nnodes0 = this->nnodes;
+     for (size_t i = 0; i < nnodes0; i++)            // Nodes
+     {
+       gravity_center[0] += nodes[i]->X();
+       gravity_center[1] += nodes[i]->Y();
+       gravity_center[2] += nodes[i]->Z();
+     }
+     gravity_center[0] /= (double) nnodes0;
+     gravity_center[1] /= (double) nnodes0;
+     gravity_center[2] /= (double) nnodes0;
+     return gravity_center;
+   }
+
 }                                                 // namespace Mesh_Group

@@ -74,6 +74,7 @@ namespace Mesh_Group
          {
             return gravity_center;
          }
+         double* ComputeGravityCenter();
          int GetPatchIndex() const
          {
             return patch_index;

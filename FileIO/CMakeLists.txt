@@ -6,6 +6,7 @@ SET( SOURCES
 	OGSIOVer4.cpp
 	PetrelInterface.cpp	
 	StationIO.cpp
+	FEFLOWInterface.cpp	
 	#FEMIO.cpp
 	FEMIO/GeoIO.cpp
 	MeshIO/OGSMeshIO.cpp
@@ -20,6 +21,7 @@ SET( HEADERS
 	OGSIOVer4.h
 	PetrelInterface.h
 	StationIO.h
+	FEFLOWInterface.h	
 	#FEMIO.h
 	FEMIO/GeoIO.h
 	MathIO/CRSIO.h
