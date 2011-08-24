@@ -6,7 +6,6 @@ SET( SOURCES
 	OGSIOVer4.cpp
 	PetrelInterface.cpp	
 	StationIO.cpp
-	FEFLOWInterface.cpp	
 	#FEMIO.cpp
 	FEMIO/GeoIO.cpp
 	MeshIO/OGSMeshIO.cpp
@@ -21,7 +20,6 @@ SET( HEADERS
 	OGSIOVer4.h
 	PetrelInterface.h
 	StationIO.h
-	FEFLOWInterface.h	
 	#FEMIO.h
 	FEMIO/GeoIO.h
 	MathIO/CRSIO.h
@@ -44,6 +42,8 @@ ENDIF (Shapelib_FOUND)
 IF (QT4_FOUND)
 	SET( HEADERS ${HEADERS} XMLInterface.h )
 	SET (SOURCES ${SOURCES} XMLInterface.cpp )
+	SET( HEADERS ${HEADERS} FEFLOWInterface.h )
+	SET (SOURCES ${SOURCES} FEFLOWInterface.cpp )
 ENDIF (QT4_FOUND)
 
 # Create the library
