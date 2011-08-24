@@ -11,6 +11,9 @@
 #include "rf_st_new.h"
 #include "ProcessInfo.h"
 
+#include "GEOObjects.h" //for SourceTerm
+#include "GridAdapter.h"
+
 FEMCondition::FEMCondition(const std::string &geometry_name, CondType t) 
 : _type(t), _geoObject(NULL), _geoName("[unspecified]"), _associated_geometry(geometry_name)
 {
@@ -85,15 +88,16 @@ SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
 	else std::cout << "Error in SourceTerm() - Unknown Process Distribution Type \"" << FiniteElement::convertDisTypeToString(st.getProcessDistributionType()) << "\"..." << std::endl;
 }
 
-std::vector<FEMCondition*> SourceTerm::createDirectSourceTerms(const std::vector<CSourceTerm*> &st_vector, const std::string &geo_name, const std::vector<GEOLIB::Point*> *new_points)
+std::vector<FEMCondition*> SourceTerm::createDirectSourceTerms(const std::vector<CSourceTerm*> &st_vector, const std::string &geo_name)
 {
 	// read source term file and make sure it's really DIRECT-STs
 	std::vector<FEMCondition*> conditions;
-	
+
+	size_t count(1);
 	for (std::vector<CSourceTerm*>::const_iterator it = st_vector.begin(); it != st_vector.end(); ++it)
-	{
-		if ((*it)->getProcessDistributionType() == FiniteElement::DIRECT)
-		{
+ 	{
+ 		if ((*it)->getProcessDistributionType() == FiniteElement::DIRECT)
+ 		{
 			std::vector< std::pair<size_t, double> > node_values;
 			SourceTerm::getDirectNodeValues((*it)->fname, node_values);
 
@@ -109,15 +113,16 @@ std::vector<FEMCondition*> SourceTerm::createDirectSourceTerms(const std::vector
 				st->setGeoType(GEOLIB::POINT);
 				st->setGeoName(out.str());
 				st->setProcessDistributionType(FiniteElement::CONSTANT);
-				st->setDisValue( node_values[i].second );
+				st->setDisValue( count /*node_values[i].second*/ );
 				conditions.push_back(st);
 			}
-		}
-		else 
-			std::cout << "Error: no DIRECT distribution type" << std::endl;
-	}
-	return conditions;
-}
+			count++;
+ 		}
+ 		else 
+ 			std::cout << "Error: no DIRECT distribution type" << std::endl;
+ 	}
+ 	return conditions;
+ }
 
 void SourceTerm::getDirectNodeValues(const std::string &filename, std::vector< std::pair<size_t, double> > &node_values)
 {
