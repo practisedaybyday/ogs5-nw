@@ -88,7 +88,7 @@ SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
 	else std::cout << "Error in SourceTerm() - Unknown Process Distribution Type \"" << FiniteElement::convertDisTypeToString(st.getProcessDistributionType()) << "\"..." << std::endl;
 }
 
-std::vector<FEMCondition*> SourceTerm::createDirectSourceTerms(const std::vector<CSourceTerm*> &st_vector, const std::string &geo_name, const std::vector<GEOLIB::Point*> *new_points)
+std::vector<FEMCondition*> SourceTerm::createDirectSourceTerms(const std::vector<CSourceTerm*> &st_vector, const std::string &geo_name)
 {
 	// read source term file and make sure it's really DIRECT-STs
 	std::vector<FEMCondition*> conditions;
