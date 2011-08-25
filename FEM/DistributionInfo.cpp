@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <sstream>
-
+#include <cstring>
 
 #include "DistributionInfo.h"
 

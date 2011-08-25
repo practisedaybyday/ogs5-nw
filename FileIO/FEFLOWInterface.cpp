@@ -230,8 +230,9 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
         (*pt)[2] = (*pt)[1];
         (*pt)[1] = .0;
       }
-      _geoObjects->addPointVec(points, string("Feflow"));
-      _geoObjects->addPolylineVec(lines, string("Feflow"));
+      string str("Feflow");
+      _geoObjects->addPointVec(points, str);
+      _geoObjects->addPolylineVec(lines, str);
     }
   }
 
