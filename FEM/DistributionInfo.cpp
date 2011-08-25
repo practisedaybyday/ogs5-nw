@@ -40,7 +40,7 @@ FiniteElement::DistributionType DistributionInfo::getProcessDistributionType () 
 
   WW 24.08.2011
 */
-LinearFunctionData::LinearFunctionData(ifstream &ins, const size_t num_var)
+LinearFunctionData::LinearFunctionData(ifstream &ins, const int num_var)
 {
    string str_buff;
    vector<string> tokens;

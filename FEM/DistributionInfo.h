@@ -49,7 +49,7 @@ class DistributionInfo
 class LinearFunctionData
 {
    public: 
-     LinearFunctionData(ifstream &ins, const size_t num_var = -1);
+     LinearFunctionData(ifstream &ins, const int num_var = -1);
      ~LinearFunctionData();
 
      double getValue(const int dom_i, const double x, const double y, const double z) const;
