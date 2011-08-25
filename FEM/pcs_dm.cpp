@@ -931,7 +931,7 @@ namespace process
                      {
                         if(MatGroup!=m_ic->GetDomain(k)) continue;
                         (*eleV_DM->Stress)(j, gp) =
-                           m_ic->DistributionFuntion(k, xyz[0],xyz[1], xyz[2]);
+                           m_ic->getLinearFunction()->getValue(k, xyz[0],xyz[1], xyz[2]);
                         (*eleV_DM->Stress0)(j, gp) =  (*eleV_DM->Stress)(j, gp);
                      }
                   }

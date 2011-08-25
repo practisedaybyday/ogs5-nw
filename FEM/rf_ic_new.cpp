@@ -39,7 +39,7 @@ Task:
 Programing:
 08/2004 OK Implementation
 **************************************************************************/
-CInitialCondition::CInitialCondition()
+CInitialCondition::CInitialCondition(): dis_linear_f(NULL)
 {
    //  geo_type_name = "DOMAIN";
    this->setProcessDistributionType(FiniteElement::CONSTANT);
@@ -48,7 +48,7 @@ CInitialCondition::CInitialCondition()
    // m_node->node_value = 0.0;
    SubNumber=0;
    this->setProcess(NULL);                        //OK
-   a0=b0=c0=d0=NULL;                              //WW
+
    m_msh = NULL;                                  //OK
 }
 
@@ -70,11 +70,8 @@ CInitialCondition::~CInitialCondition(void)
    node_value_vector.clear();
 */
    //WW
-   if(a0) delete [] a0;
-   if(b0) delete [] b0;
-   if(c0) delete [] c0;
-   if(d0) delete [] d0;
-   a0=b0=c0=d0=NULL;
+   if(dis_linear_f) delete dis_linear_f;
+   dis_linear_f = NULL;
 }
 
 
@@ -357,62 +354,14 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
             if (geo_type_name.find("SUB") != string::npos)
             {
                *ic_file >> SubNumber;
-               if (convertPrimaryVariableToString(this->getProcessPrimaryVariable()).find("STRESS") != string::npos)
-                  //     ||dis_type_name.find("FUNCTION")!=string::npos) //01.07.2008 WW
+               if (convertPrimaryVariableToString(this->getProcessPrimaryVariable()).find("STRESS") != string::npos
+                  ||getProcessDistributionType() == FiniteElement::FUNCTION) //01.07.2008 WW
                {
-                  string str_buff;
-                  vector<string> tokens;
-                  stringstream buff;
-                  char *pch;
-                  char seps[] = "+\n";
-                  char seps1[] = "*";
-                  double f_buff;
-                  a0 = new double[SubNumber];
-                  b0 = new double[SubNumber];
-                  c0 = new double[SubNumber];
-                  d0 = new double[SubNumber];
-                  for (size_t i = 0; i < SubNumber; i++)
-                  {
-                     a0[i] = b0[i] = c0[i] = d0[i] = 0.0;
-                     *ic_file >> ibuf >> str_buff >> ws;
-                     subdom_index.push_back(ibuf);
-                     pch = strtok(const_cast<char*> (str_buff.c_str()),
-                        seps);
-                     buff << pch;
-                     buff >> a0[i];
-                     buff.clear();
-                     while (pch != NULL)
-                     {
-                        pch = strtok(NULL, seps);
-                        if (pch == NULL)
-                           break;
-                        string token = pch;
-                        tokens.push_back(token);
-                     }
-                     for (size_t k=0; k < tokens.size(); k++)
-                     {
-                        pch = strtok(
-                           const_cast<char*> (tokens[k].c_str()),
-                           seps1);
-                        buff << pch;
-                        buff >> f_buff;
-                        buff.clear();
-                        pch = strtok(NULL, seps1);
-                        switch (pch[0])
-                        {
-                           case 'x':
-                              b0[i] = f_buff;
-                              break;
-                           case 'y':
-                              c0[i] = f_buff;
-                              break;
-                           case 'z':
-                              d0[i] = f_buff;
-                              break;
-                        }
-                     }
-                     tokens.clear();
-                  }
+                  // 24.08.2011. WW
+                  dis_linear_f = new LinearFunctionData(*ic_file, SubNumber); 
+				  size_t *sd_idx = dis_linear_f->getSubDomIndex();
+                  for (size_t i = 0; i < SubNumber; i++)   
+                    subdom_index.push_back(sd_idx[i]);
                }
                else
                {
@@ -953,16 +902,14 @@ void CInitialCondition::SetDomain(int nidx)
                }
             }
          }
-         /* KR not used
-          else if(dis_type_name.find("FUNCTION")!=string::npos) //01.07.2008 WW
-          {
-          for(i=0;i<(int)nodes_vector.size();i++)
-          {
-          CNode *thisNode = m_msh->nod_vector[nodes_vector[i]];
-          this->getProcess()->SetNodeValue(nodes_vector[i],nidx,DistributionFuntion(k, thisNode->X(),thisNode->Y(), thisNode->Z()));
+		 else if(getProcessDistributionType() == FiniteElement::FUNCTION) //01.07.2008 WW
+         {
+             for(i=0;i<(int)nodes_vector.size();i++)
+             {
+                CNode *thisNode = m_msh->nod_vector[nodes_vector[i]];
+				getProcess()->SetNodeValue(nodes_vector[i],nidx,dis_linear_f->getValue(k, thisNode->X(),thisNode->Y(), thisNode->Z()));
+             }
           }
-          }
-          */
          else
          {
             for (i = 0; i < nodes_vector.size(); i++)

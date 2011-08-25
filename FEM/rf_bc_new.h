@@ -127,6 +127,8 @@ class CBoundaryCondition : public ProcessInfo, public GeoInfo, public Distributi
       std::string fct_name;
       bool conditional;
 
+      LinearFunctionData *dis_linear_f;           //24.8.2011. WW
+
                                                   //WW
       void SurfaceInterpolation(CRFProcess* m_pcs, std::vector<long>& nodes_on_sfc, std::vector<double>& node_value_vector);
       inline void DirectAssign(long ShiftInNodeVector);

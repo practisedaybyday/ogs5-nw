@@ -187,6 +187,7 @@ namespace FiniteElement
       if (dis_type_string.compare("SYSTEM_DEPENDENT") == 0) return SYSTEM_DEPENDENT;
       if (dis_type_string.compare("PRECIPITATION") == 0) return PRECIPITATION;
       if (dis_type_string.compare("DIRECT") == 0) return DIRECT;
+      if (dis_type_string.compare("FUNCTION") == 0) return FUNCTION;  //24.08.2011. WW
       else
       {
          std::cout << "convertDisType #" << dis_type_string << "# not found"
@@ -214,6 +215,7 @@ namespace FiniteElement
       if (dis_type == SYSTEM_DEPENDENT) return "SYSTEM_DEPENDENT";
       if (dis_type == PRECIPITATION) return "PRECIPITATION";
       if (dis_type == DIRECT) return "DIRECT";
+      if (dis_type == FUNCTION) return "FUNCTION"; //24.08.2011. WW
 
       return "INVALID_DIS_TYPE";
    }

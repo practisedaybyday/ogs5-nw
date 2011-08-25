@@ -81,7 +81,7 @@ std::vector<CBoundaryCondition*> bc_db_vector;
  01/2004 OK Implementation
  **************************************************************************/
 CBoundaryCondition::CBoundaryCondition() :
-GeoInfo (), geo_name (""), _curve_index (-1)
+GeoInfo (), geo_name (""), _curve_index (-1), dis_linear_f(NULL)
 {
    this->setProcessDistributionType(FiniteElement::INVALID_DIS_TYPE);
    // FCT
@@ -106,6 +106,10 @@ CBoundaryCondition::~CBoundaryCondition()
    node_number_vector.clear();
    geo_node_number = -1;
    geo_node_value = 0.0;
+
+   //WW
+   if(dis_linear_f) delete dis_linear_f;
+   dis_linear_f = NULL;
 }
 
 
@@ -322,6 +326,13 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
             in >> geo_node_value;                 //sub_line
             in.clear();
          }
+         // If a linear function is given. 25.08.2011. WW 
+         if (line_string.find("FUNCTION") != std::string::npos)
+         {
+            setProcessDistributionType(FiniteElement::FUNCTION);
+            in.clear();
+            dis_linear_f = new LinearFunctionData(*bc_file);
+         }
          if (line_string.find("LINEAR") != std::string::npos)
          {
             this->setProcessDistributionType(FiniteElement::LINEAR);
@@ -350,6 +361,13 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
             }
             //        bc_file->ignore(MAX_ZEILE,'\n');
          }
+         if (line_string.find("FUNCTION") != std::string::npos) //24.08.2011. WW
+         {
+            in.clear();
+            dis_linear_f = new LinearFunctionData(*bc_file);
+			setProcessDistributionType(FiniteElement::FUNCTION);
+		 }
+
          /* KR not used
          if (line_string.find("PERIODIC") != string::npos) { // JOD
             dis_type_name = "PERIODIC";
@@ -914,6 +932,10 @@ void CBoundaryConditionsGroup::Set(CRFProcess* m_pcs, int ShiftInNodeVector,
 	bool quadratic = false;
 	bool cont = false; //WW
 
+    CNode *a_node = NULL; //25.08.2011. WW 
+	double x, y , z;
+    x = y = z = 0.;
+
 	if (!this_pv_name.empty()) _pcs_pv_name = this_pv_name;
 	CFEMesh* m_msh = m_pcs->m_msh;
 	// Tests //OK
@@ -1026,7 +1048,16 @@ void CBoundaryConditionsGroup::Set(CRFProcess* m_pcs, int ShiftInNodeVector,
 
 				m_node_value->conditional = cont;
 				m_node_value->CurveIndex = m_bc->getCurveIndex();
-				m_node_value->node_value = m_bc->geo_node_value;
+          
+				// Get value from a linear function. 25.08.2011. WW
+				if (m_bc->getProcessDistributionType() == FiniteElement::FUNCTION) 
+                { 
+                   a_node = m_msh->nod_vector[m_node_value->geo_node_number];
+				   m_node_value->node_value = m_bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
+				}
+				else
+                   m_node_value->node_value = m_bc->geo_node_value;
+
 				m_node_value->msh_node_number = m_node_value->geo_node_number
 						+ ShiftInNodeVector; //WW
 				//YD/WW
@@ -1075,6 +1106,37 @@ void CBoundaryConditionsGroup::Set(CRFProcess* m_pcs, int ShiftInNodeVector,
 							m_pcs->bc_node_value.push_back(m_node_value);
 							//WW group_vector.push_back(m_node_value);
 							//WW bc_group_vector.push_back(m_bc); //OK
+						}
+					}
+
+					// Get value from a linear function. 25.06.2011. WW
+					if (m_bc->getProcessDistributionType() == FiniteElement::FUNCTION)
+                    {
+						// 08/2010 TF
+						double msh_min_edge_length = m_msh->getMinEdgeLength();
+						m_msh->setMinEdgeLength(m_polyline->epsilon);
+						std::vector<size_t> my_nodes_vector;
+						m_msh->GetNODOnPLY(ply, my_nodes_vector);
+						m_msh->setMinEdgeLength(msh_min_edge_length);
+
+						nodes_vector.clear();
+						for (size_t k(0); k < my_nodes_vector.size(); k++)
+							nodes_vector.push_back(my_nodes_vector[k]);
+
+						// for some benchmarks we need the vector entries sorted by index
+						std::sort (nodes_vector.begin(), nodes_vector.end());
+
+						const size_t nodes_vector_size (nodes_vector.size());
+						for (size_t i(0); i < nodes_vector_size; i++) {
+							m_node_value = new CBoundaryConditionNode();
+							m_node_value->msh_node_number = nodes_vector[i] + ShiftInNodeVector;
+							m_node_value->geo_node_number = nodes_vector[i];
+                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
+                            m_node_value->node_value = m_bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
+							m_node_value->CurveIndex = m_bc->getCurveIndex();
+							m_node_value->pcs_pv_name = _pcs_pv_name;
+							m_pcs->bc_node.push_back(m_bc);
+							m_pcs->bc_node_value.push_back(m_node_value);
 						}
 					}
 
@@ -1201,9 +1263,16 @@ void CBoundaryConditionsGroup::Set(CRFProcess* m_pcs, int ShiftInNodeVector,
 						//WW
 						if (m_bc->getProcessDistributionType()
 								== FiniteElement::LINEAR)
-
 							m_node_value->node_value = node_value[i];
-						else m_node_value->node_value = m_bc->geo_node_value;
+
+						if (m_bc->getProcessDistributionType() // 25.08.2011. WW
+							== FiniteElement::FUNCTION)
+						{
+                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
+                            m_node_value->node_value = m_bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
+                        }
+						else 
+                      		m_node_value->node_value = m_bc->geo_node_value;
 						m_node_value->CurveIndex = m_bc->getCurveIndex();
 						//OK
 						m_bc->node_number_vector = nodes_vector;

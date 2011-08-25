@@ -78,7 +78,8 @@ std::vector<NODE_HISTORY*> node_history_vector;   //CMCD
  01/2004 OK Implementation
  **************************************************************************/
 CSourceTerm::CSourceTerm() :
-ProcessInfo(), GeoInfo(), _coupled (false), _sub_dom_idx(-1), GIS_shape_head(NULL)
+ProcessInfo(), GeoInfo(), _coupled (false), _sub_dom_idx(-1), 
+       dis_linear_f(NULL), GIS_shape_head(NULL)
                                                   // 07.06.2010, 03.2010. WW
 {
    CurveIndex = -1;
@@ -120,6 +121,10 @@ CSourceTerm::~CSourceTerm()
       delete [] GIS_shape_head;
       GIS_shape_head = NULL;
    }
+   //WW
+   if(dis_linear_f) delete dis_linear_f;
+   dis_linear_f = NULL;
+
    //WW---------------------------------------
 }
 
@@ -394,6 +399,12 @@ void CSourceTerm::ReadDistributionType(std::ifstream *st_file)
       if (this->getGeoType() == GEOLIB::POLYLINE)
          analytical_processes_polylines.push_back(geo_name);
       in.clear();
+   }
+   // If a linear function is given. 25.08.2011. WW 
+   if (getProcessDistributionType() == FiniteElement::FUNCTION)
+   {
+      in.clear();
+      dis_linear_f = new LinearFunctionData(*st_file);
    }
 
    if (this->getProcessDistributionType() == FiniteElement::LINEAR || this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
@@ -3161,6 +3172,17 @@ std::vector<double>& ply_nod_val_vector) const
                m_msh->face_vector[i]->GetOwner()->GetIndex());
       }                                           // end faces
    }                                              // end system dependent
+   else if (distype == FiniteElement::FUNCTION) // 25.08.2011. WW
+   {
+      CNode * a_node;
+      for (size_t i = 0; i < number_of_nodes; i++)
+      {
+         a_node = m_msh->nod_vector[ply_nod_vector[i]];          
+         ply_nod_val_vector[i] = st->dis_linear_f->getValue(a_node->X(), a_node->Y(), a_node->Z());
+      }
+      
+   }
+
    else                                           //WW
    {
       for (size_t i = 0; i < number_of_nodes; i++)
@@ -3229,6 +3251,7 @@ std::vector<double>& ply_nod_val_vector) const
  Task:
  Programing:
  11/2007 JOD
+ 08/2011 WW  Distributed by a linear function
  last modification:
  **************************************************************************/
 void CSourceTermGroup::SetSurfaceNodeValueVector(CSourceTerm* st,
@@ -3288,7 +3311,20 @@ std::vector<double>&sfc_nod_val_vector)
          st->DomainIntegration(m_msh, sfc_nod_vector, sfc_nod_val_vector);
       else if (m_msh->GetMaxElementDim() == 3)    // For all meshes with 3-D elements
          st->FaceIntegration(m_msh, sfc_nod_vector, sfc_nod_val_vector);
-   }                                              // end neumann
+   }
+
+   else if (st->getProcessDistributionType() == FiniteElement::FUNCTION) // 25.08.2011. WW
+   {
+      CNode * a_node;
+      for (size_t j = 0; j < sfc_nod_vector.size(); j++)
+      {
+         a_node = m_msh->nod_vector[sfc_nod_vector[j]];          
+         sfc_nod_val_vector[j] = st->dis_linear_f->getValue(a_node->X(), a_node->Y(), a_node->Z());
+      }
+      
+   }
+
+   // end neumann
 
 }
 

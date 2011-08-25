@@ -161,7 +161,8 @@ namespace FiniteElement
       GREEN_AMPT,                                 // ST
       SYSTEM_DEPENDENT,                           // ST
       PRECIPITATION,
-      DIRECT
+      DIRECT,
+      FUNCTION    	
       // Sort of Neumann BC //WW
    };
 

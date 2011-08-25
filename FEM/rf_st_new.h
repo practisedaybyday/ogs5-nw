@@ -168,6 +168,9 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       int fct_method;
       std::string fct_name;
 
+      LinearFunctionData *dis_linear_f;           //24.8.2011. WW
+
+
       bool analytical;                            //2x?
       size_t number_of_terms;
       size_t _max_no_terms;                       // used only once in a global in rf_st_new
