@@ -68,6 +68,36 @@ CBoundaryConditionNode::CBoundaryConditionNode()
 }
 
 
+/**************************************************************************
+FEMLib-Method:
+Task: destructor
+Programing:
+08/2011 WW Implementation
+**************************************************************************/
+void CBoundaryConditionNode::Read(std::istream& is)
+{
+   is>>geo_node_number;
+   is>>msh_node_number;
+   is>> CurveIndex ;
+   is>> node_value ;
+   is>> std::ws;
+}
+/**************************************************************************
+FEMLib-Method:
+Task: destructor
+Programing:
+08/2011 WW Implementation
+**************************************************************************/
+void CBoundaryConditionNode::Write(std::ostream& os) const
+{
+   std::string deli = "  ";
+   os<<geo_node_number<<deli;
+   os<<msh_node_number<<deli;
+   os<< CurveIndex <<deli;
+   os<< node_value <<deli;
+   os<<std::endl;
+}
+
 //==========================================================================
 std::list<CBoundaryCondition*> bc_list;
 std::vector<std::string> bc_db_head;
@@ -361,12 +391,6 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_fname)
             }
             //        bc_file->ignore(MAX_ZEILE,'\n');
          }
-         if (line_string.find("FUNCTION") != std::string::npos) //24.08.2011. WW
-         {
-            in.clear();
-            dis_linear_f = new LinearFunctionData(*bc_file);
-			setProcessDistributionType(FiniteElement::FUNCTION);
-		 }
 
          /* KR not used
          if (line_string.find("PERIODIC") != string::npos) { // JOD

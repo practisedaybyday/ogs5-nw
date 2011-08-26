@@ -252,11 +252,12 @@ class CRFProcess : public ProcessInfo
       void Def_Variable_MultiPhaseFlow();
       bool Write_Matrix;
       std::fstream *matrix_file;
-      // Write RHS from source or Neumann BC terms to file
+      // Write RHS from source or Neumann BC terms or BC to file
       // 0: Do nothing
       // 1: Write
       // 2: Read
       int WriteSourceNBC_RHS;
+      int WriteProcessed_BC;
       // Write the current solutions/Read the previous solutions WW
       // -1, default. Do nothing
       // 1. Write
@@ -264,8 +265,11 @@ class CRFProcess : public ProcessInfo
       // 3 read and write
       int reload;
       long nwrite_restart;
-      inline void  WriteRHS_of_ST_NeumannBC();
-      inline void  ReadRHS_of_ST_NeumannBC();
+      void  WriteRHS_of_ST_NeumannBC();
+      void  ReadRHS_of_ST_NeumannBC();
+      void  Write_Processed_BC(); // 05.08.2011. WW
+      void  Read_Processed_BC(); // 05.08.2011. WW
+
       friend bool PCSRead(std::string);
       //....................................................................
       // 1-GEO

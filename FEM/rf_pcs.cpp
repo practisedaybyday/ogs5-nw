@@ -733,26 +733,35 @@ void CRFProcess::Create()
       // BC - create BC groups for each process
       cout << "->Create BC" << '\n';
       CBoundaryConditionsGroup *m_bc_group = NULL;
-      for (int i = 0; i < DOF; i++)
-      {
-         //OKm_bc_group = BCGetGroup(_pcs_type_name,pcs_primary_function_name[i]);
-         //OKif(!m_bc_group){
-         BCGroupDelete(pcs_type_name, pcs_primary_function_name[i]);
-         m_bc_group = new CBoundaryConditionsGroup();
+
+      //25.08.2011. WW
+      if(WriteProcessed_BC == 2)
+         Read_Processed_BC();
+	  else
+	  {
+         for (int i = 0; i < DOF; i++)
+         {
+            //OKm_bc_group = BCGetGroup(_pcs_type_name,pcs_primary_function_name[i]);
+            //OKif(!m_bc_group){
+            BCGroupDelete(pcs_type_name, pcs_primary_function_name[i]);
+            m_bc_group = new CBoundaryConditionsGroup();
                                                   //OK
-         m_bc_group->setProcessTypeName(pcs_type_name);
-         m_bc_group->setProcessPrimaryVariableName(
-            pcs_primary_function_name[i]);        //OK
-         m_bc_group->Set(this, Shift[i]);
+            m_bc_group->setProcessTypeName(pcs_type_name);
+            m_bc_group->setProcessPrimaryVariableName(
+               pcs_primary_function_name[i]);        //OK
+            m_bc_group->Set(this, Shift[i]);
 
-         bc_group_list.push_back(m_bc_group);     //Useless, to be removed. WW
-         m_bc_group = NULL;
-         //OK}
-      }
-      if (bc_node_value.size() < 1)               //WW
-         cout << "Warning: no boundary conditions specified for "
-            << pcs_type_name << endl;
+            bc_group_list.push_back(m_bc_group);     //Useless, to be removed. WW
+            m_bc_group = NULL;
+            //OK}
+         }
+         if (bc_node_value.size() < 1)               //WW
+            cout << "Warning: no boundary conditions specified for "
+                 << pcs_type_name << endl;
 
+         if(WriteProcessed_BC == 1)
+            Write_Processed_BC();
+     }
       // ST - create ST groups for each process
       cout << "->Create ST" << '\n';
       CSourceTermGroup *m_st_group = NULL;
@@ -942,7 +951,7 @@ Programing:
 04/2006 WW
 last modified:
 **************************************************************************/
-inline void CRFProcess::WriteRHS_of_ST_NeumannBC()
+void CRFProcess::WriteRHS_of_ST_NeumannBC()
 {
    std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
    std::string m_file_name = FileName + "_" + pcs_type_name + "_ST_RHS.asc";
@@ -979,7 +988,7 @@ Programing:
 03/2006 WW
 last modified: 04/2006
 **************************************************************************/
-inline void CRFProcess::ReadRHS_of_ST_NeumannBC()
+void CRFProcess::ReadRHS_of_ST_NeumannBC()
 {
    std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
    std::string m_file_name = FileName + "_" + pcs_type_name + "_ST_RHS.asc";
@@ -1005,6 +1014,76 @@ inline void CRFProcess::ReadRHS_of_ST_NeumannBC()
    }
    is.close();
 }
+
+/**************************************************************************
+FEMLib-Method:
+Task: Write the contribution of ST or Neumann BC to RHS to a file after
+      integration
+Programing:
+08/2011 WW
+**************************************************************************/
+void CRFProcess::Read_Processed_BC()
+{
+   std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
+   std::string m_file_name = FileName + "_" + pcs_type_name + "_eqs_BC.asc";
+   std::ifstream is(m_file_name.c_str(), std::ios::in);
+   if (!is.good())
+   {
+      cout << "File " << m_file_name << " is not found" << endl;
+      abort();
+   }
+
+   std::string s_buffer;
+   getline(is, s_buffer);
+   getline(is, s_buffer);
+   getline(is, s_buffer);
+   size_t size;
+   is >> size >> ws;
+   bc_node_value.clear();
+   for (size_t i = 0; i < size; i++)
+   {
+      CBoundaryConditionNode *cnodev = new CBoundaryConditionNode();
+      cnodev->Read(is);
+      bc_node_value.push_back(cnodev);
+   }
+   is.close();
+}
+
+/**************************************************************************
+FEMLib-Method:
+Task: Write the contribution of ST or Neumann BC to RHS to a file after
+      integration
+Programing:
+08/2011 WW
+**************************************************************************/
+void CRFProcess::Write_Processed_BC()
+{
+   std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
+   std::string m_file_name = FileName + "_" + pcs_type_name + "_eqs_BC.asc";
+   std::ofstream os(m_file_name.c_str(), ios::trunc | ios::out);
+   if (!os.good())
+   {
+      cout << "Failure to open file: " << m_file_name << endl;
+      abort();
+   }
+
+   os << "$PCS_TYPE  " << endl;
+
+   os << pcs_type_name << endl;
+   os << "geo_node_number  ";
+   os << "msh_node_number  ";
+   os << "CurveIndex ";
+   os << "node_value ";
+   os << endl;
+   os.setf(std::ios::scientific, std::ios::floatfield);
+   os.precision(14);
+   const size_t bc_node_value_size(bc_node_value.size());
+   os << bc_node_value_size << endl;
+   for (size_t i = 0; i < bc_node_value_size; i++)
+      bc_node_value[i]->Write(os);
+   os.close();
+}
+
 
 
 /**************************************************************************
@@ -1707,6 +1786,14 @@ std::ios::pos_type CRFProcess::Read(std::ifstream *pcs_file)
          pcs_file->ignore(MAX_ZEILE, '\n');
          continue;
       }
+      if (line_string.find("$PROCESSED_BC") != string::npos) //25.08.2011. WW
+      {
+         *pcs_file >> WriteProcessed_BC;        
+         pcs_file->ignore(MAX_ZEILE, '\n');
+         continue;
+      }
+
+	  
       //....................................................................
                                                   // subkeyword found
       if (line_string.find("$MEMORY_TYPE") != string::npos)
