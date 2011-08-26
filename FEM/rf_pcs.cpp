@@ -277,6 +277,7 @@ ele_val_name_vector (std::vector<std::string>())
    m_bCheckEQS = false;                           //OK
    //
    write_boundary_condition = false;              //15.01.2008. WW
+   WriteProcessed_BC = -1;                         //26.08.2011. WW
    accepted = true;                               //25.08.2008. WW
    accept_steps = 0;                              //27.08.1008. WW
    reject_steps = 0;                              //27.08.1008. WW
