@@ -152,8 +152,10 @@ namespace process
       for(i=0; i<(int)msp_vector.size(); i++)
          msp_vector[i]->CalculateTransformMatrixFromNormalVector(problem_dimension_dm);
 
-      if(!msp_vector.size())                      //OK
+      if(!msp_vector.size()) {
+         std::cout << "***ERROR: MSP data not found!" << std::endl;
          return;
+      }
       InitialMBuffer();
       InitGauss();
       ////////////////////////////////////
