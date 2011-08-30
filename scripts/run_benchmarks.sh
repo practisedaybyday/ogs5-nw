@@ -58,8 +58,10 @@ cat benchOut.txt
 
 cd scripts
 # Send emails on errors
-#if [ "$HOSTNAME" -eq "dev2.intern.ufz.de" ] ; then
+eval $(stat -s ./../svnInfo.txt)
+if [ "$st_size" > "0" ] ; then
+  echo "Running process_benchmark_job.rb"
   ruby process_benchmark_job.rb ./../svnInfo.txt ./../benchOut.txt $HUDSON_EMAIL $1
-#fi
+fi
 
 set -e >/dev/null
