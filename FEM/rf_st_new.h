@@ -27,6 +27,7 @@ namespace process                                 //WW
 
 namespace MeshLib
 {
+	class CFEMesh;
 	class MeshNodesAlongPolyline;
 }
 
