@@ -33,12 +33,11 @@ class CInitialCondition : public ProcessInfo, public GeoInfo, public Distributio
       size_t SubNumber;                           //WW
       std::vector<int> subdom_index;              //WW
       std::vector<double> subdom_ic;              //WW
-      // Coefficents for linear distribution function
-      // f = a0+b0*x+c0*y+d0*z
-      double *a0, *b0, *c0, *d0;                  //WW
       std::string fname;                          //17.11.2009. PCH
-   private:
-      // REMOVE CANDIDATE
+       
+	  LinearFunctionData *dis_linear_f;           //24.8.2011. WW
+  
+	  // REMOVE CANDIDATE
       std::string geo_name;                       // TF 05/2010
 	  double geo_node_value;					//KR
    public:
@@ -54,11 +53,6 @@ class CInitialCondition : public ProcessInfo, public GeoInfo, public Distributio
       void SetByNodeIndex(int);                   // 19.11.2009 PCH
       void SetPolyline(int);
       void SetSurface(int);
-      double DistributionFuntion(const int dom_i, const double x, const double y,
-         const double z)                          //WW
-      {
-         return a0[dom_i] + b0[dom_i] * x + c0[dom_i] * y + d0[dom_i] * z;
-      }
       void SetPoint(int);                         //MX
       //void SetMaterialDomain(int); //MX
       double gradient_ref_depth;
@@ -79,6 +73,9 @@ class CInitialCondition : public ProcessInfo, public GeoInfo, public Distributio
       void Set(int);
       void SetEle(int);                           //MX
       void SetDomainEle(int);                     //MX
+
+	  LinearFunctionData *getLinearFunction() const { return dis_linear_f; }  
+
 	  Mesh_Group::CFEMesh* m_msh;
 };
 

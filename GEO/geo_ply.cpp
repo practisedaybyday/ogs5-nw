@@ -491,6 +491,10 @@ void GEOReadPolylines(const std::string &file_name_path_base) {
 	while (!gli_file.eof()) {
 		gli_file.getline(line, MAX_ZEILEN);
 		line_string = line;
+
+		if(line_string.find("#STOP")!=string::npos) //11.08.2011. WW
+           break;
+
 		//----------------------------------------------------------------------
 		if (line_string.find("#POLYLINE") != string::npos) { // keyword found
 			m_polyline = new CGLPolyline();
@@ -1005,7 +1009,7 @@ void GEOWritePolylines(char* file_name) {
  **************************************************************************/
 void GEORemovePLY(CGLPolyline*m_ply) {
 	CGLPolyline* m_ply_this = NULL;
-	std::vector<CGLPolyline*>::const_iterator p_ply = polyline_vector.begin();
+	//WW std::vector<CGLPolyline*>::const_iterator p_ply = polyline_vector.begin();
 	for (int i = 0; i < (int) polyline_vector.size(); i++) {
 		m_ply_this = polyline_vector[i];
 		if (m_ply_this->getName().compare(m_ply->getName()) == 0) {

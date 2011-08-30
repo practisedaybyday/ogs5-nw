@@ -52,6 +52,8 @@ namespace SolidProp
          double s_tol;                            //16.06.2008 WW
          double f_tol;                            //16.06.2008 WW
          double biot_const;
+		 int bishop_model;                        //05.2011 WX
+		 double bishop_model_value;               //05.2011 WX
          double grav_const;                       //WW
          Matrix *data_Density;
          //
@@ -113,6 +115,9 @@ namespace SolidProp
          double *dGds;
          double *D_dFds;
          double *D_dGds;
+         double *dFtds;                           //WX: 08.2010
+         double *dGtds;                           //WX: 08.2010
+         Matrix *ConstitutiveMatrix;              //WX: 08.2010
          // Mini linear solver
          void Gauss_Elimination(const int DimE, Matrix& AA, int *L,  double *xx);
          void Gauss_Back(const int DimE, Matrix& AA, double * rhs, int *L, double *xx);
@@ -222,7 +227,12 @@ namespace SolidProp
          void ConsistentTangentialDP(Matrix *Dep, const double dPhi, const int Dim);
          bool DirectStressIntegrationDP(const int GPiGPj,
             const ElementValue_DM *ele_val, double *TryStress, const int Update);
+         int DirectStressIntegrationDPwithTension(const int GPiGPj, Matrix *De,
+            const ElementValue_DM *ele_val, double *TryStress, const int Update, double &mm);//WX
          void TangentialDP(Matrix *Dep);
+         void TangentialDP2(Matrix *Dep);//WX
+         void TangentialDPwithTension(Matrix *Dep, double mm);//WX
+         void TangentialDPwithTensionCorner(Matrix *Dep, double mm);//WX
          // 2.2 Single yield surface model
          void dF_dNStress(double *dFdS, const double *DevS, const double *S_Invariants,
             const double *MatN1, const int LengthStrs);
@@ -267,7 +277,39 @@ namespace SolidProp
          double BetaN;
          double Hard;
          double Hard_Loc;
+		 double tension;		//WX:08.2010 Tension strength
 
+		 //4. Mohr-Coulomb	//WX: 11.2010. Mohr-Coulomb model
+		 double Ntheta;
+		 double Nphi;
+		 double csn;
+		 void CalculateCoefficent_MOHR(double ep);
+		 void CalPrinStrs(double *stresses, double *prin_stresses, int Size);
+		 void CalPrinDir(double *prin_str, double *stress, double *v, int Size);
+		 void CalTransMatrixA(double *v, Matrix *A, int Size);
+		 int DirectStressIntegrationMOHR(const int GPiGPj, const ElementValue_DM *ele_val, 
+		     double *TryStress, const int Update, Matrix *Dep );
+		 int MohrCheckFailure(double *NormStr, int &failurestate, int Size);
+		 void TangentialMohrShear(Matrix *Dep);
+		 void TangentialMohrTension(Matrix *Dep);
+		 void Cal_Inv_Matrix(int Size, Matrix *MatrixA, Matrix *xx);
+		 double CalVarP(double *vec1, double *vec2, double *sigma_B, double *sigma_l);
+		 double CalVar_t(double *vecl, double *veclg, Matrix *D, double *sigma_B, double *sigma_l, int Size);
+		 void CalDep_l(double *vecl, double *veclg, Matrix *D, Matrix *Dep_l, double fkt);
+		 void VecCrossProduct(double *vec1, double *vec2, double *result_vec);
+
+		 //5. Hoek-Brown WX
+		 double HoekB_a;
+		 double HoekB_s;
+		 double HoekB_mb;
+		 double HoekB_sigci;
+		 double HoekB_tens;
+		 double HoekB_cohe;
+		 void CalculateCoefficent_HOEKBROWN();
+		 int StressIntegrationHoekBrown(const int GPiGPj, const ElementValue_DM *ele_val,
+			 double *TryStress, const int Update, Matrix *Dep );
+		 void TangentialHoekBrown(Matrix *Dep);
+		 void CalPrinStrDir(double *stress, double *prin_str, double *prin_dir, int Dim);
                                                   //WW
          std::vector<std::string>  capacity_pcs_name_vector;
                                                   //WW

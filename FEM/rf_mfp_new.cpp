@@ -86,6 +86,10 @@ CFluidProperties::CFluidProperties(void)
    Fem_Ele_Std = NULL;
    // WW
    molar_mass = COMP_MOL_MASS_AIR;
+
+#ifdef MFP_TEST //WW
+   scatter_data = NULL;
+#endif
 }
 
 
@@ -103,6 +107,11 @@ CFluidProperties::~CFluidProperties(void)
       component_vector[i] = NULL;
    }
    component_vector.clear();
+
+#ifdef MFP_TEST
+   if(scatter_data) //WW
+     delete scatter_data;
+#endif
 }
 
 
@@ -122,7 +131,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
    std::string hash("#");
    std::ios::pos_type position;
    std::string sub_string;
-   bool new_subkeyword = false;
+   //WW bool new_subkeyword = false;
    std::string dollar("$");
    std::string delimiter_type(":");
    std::stringstream in;
@@ -130,7 +139,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
    // Schleife ueber alle Phasen bzw. Komponenten
    while (!new_keyword)
    {
-      new_subkeyword = false;
+     //WW new_subkeyword = false;
       position = mfp_file->tellg();
       //SB    mfp_file->getline(buffer,MAX_ZEILE);
       //SB    line_string = buffer;
@@ -202,7 +211,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
                                                   // subkeyword found
       if(line_string.find("$DENSITY")!=string::npos)
       {
-         new_subkeyword = false;
+	//WW new_subkeyword = false;
          in.str(GetLineFromFile1(mfp_file));
          in >> density_model;
          if(density_model==0)                     // rho = f(x)
@@ -1164,8 +1173,8 @@ double CFluidProperties::Viscosity(double* variables)
    CRFProcess* m_pcs = NULL;
 
    //----------------------------------------------------------------------
-   bool New = false;                              // To be
-   if(fem_msh_vector.size()>0) New = true;
+   //WW bool New = false;                              // To be
+   //WW if(fem_msh_vector.size()>0) New = true;
 
    //----------------------------------------------------------------------
    if(variables)                                  //OK4709: faster data access
@@ -1498,15 +1507,15 @@ double CFluidProperties::PhaseChange()
 {
    int gueltig = -1;
    double heat_capacity_phase_change = 0;
-   double pressure, saturation, temperature;
+   double pressure; //WW , saturation, temperature;
    double density_vapor, humi, drdT;
    double H1,H0,T0,T_1;                           //T1 defined at 662 in steam67???
 
    //......................................................................
    CalPrimaryVariable(specific_heat_capacity_pcs_name_vector);
    pressure = primary_variable[0];
-   temperature =  primary_variable[1];
-   saturation = primary_variable[2];
+   //WW temperature =  primary_variable[1];
+   //WW saturation = primary_variable[2];
 
    if(heat_capacity_model == 3)
    {
@@ -2284,9 +2293,9 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
 {
    Conc = Conc;
    int i, j;
-   double TauTC, PiiTC, Nabla, Delta, Nabla0, Nabla1, Nabla2;
+   double TauTC, Nabla, Delta, Nabla0, Nabla1, Nabla2;
    double heat_conductivity, Rho, temperature_average, pressure_average, viscosity;
-   double Rhostar, TstarTC, Lambdastar, Pstar1;
+   double Rhostar, TstarTC, Lambdastar; //WW, Pstar1;
    double nZero[4];
    double n[5][6];
    double A1,A2,A3,A4,A5,A6,A7,A8;                /*constants*/
@@ -2318,12 +2327,12 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    Lambdastar = 0.4945;
    Rhostar = 317.763;
    TstarTC = 647.226;
-   Pstar1 = 22.115e-6;
+   //WW Pstar1 = 22.115e-6;
 
    /*BEGIN: reduced dimensions*/
    TauTC = TstarTC / temperature_average;
    //Delta = Rho / Rhostar;
-   PiiTC = pressure_average / Pstar1;
+   //WW PiiTC = pressure_average / Pstar1;
    /*END: reduced dimensions*/
 
    nGamma[1] = 0.14632971213167;
@@ -2477,7 +2486,7 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    Lambdastar = 0.4945;
    Rhostar = 317.763;
    TstarTC = 647.226;
-   Pstar1 = 22.115e6;
+   //WW Pstar1 = 22.115e6;
 
    nZero[0] = 0.1e1;
    nZero[1] = 0.6978267e1;
@@ -2523,7 +2532,7 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    /*BEGIN: reduced dimensions*/
    TauTC = TstarTC / temperature_average;
    Delta = Rho / Rhostar;
-   PiiTC = pressure_average / Pstar1;
+   //WW PiiTC = pressure_average / Pstar1;
    /*END: reduced dimensions*/
 
    /*BEGIN: Nabla0*/
@@ -2659,13 +2668,13 @@ double CFluidProperties::MATCalcFluidHeatCapacityMethod2(double Press, double Te
    double GammaPi, GammaPiTau, GammaPiPi, GammaTauTau;
    double L[35],J[35],n[35];
    int i;
-   double salinity;
-   double Cp, Cv;
+   //WW double salinity;
+   double Cp; //WW , Cv;
 
    pressure_average = Press;
    temperature_average = TempK;
 
-   salinity=C_0;
+   //WW salinity=C_0;
 
    Tstar = 1386;
 
@@ -2826,7 +2835,7 @@ double CFluidProperties::MATCalcFluidHeatCapacityMethod2(double Press, double Te
 
    /*BEGIN: Fluid isochoric heat capacity*/
                                                   /* Cv is not used currently 9.2003*/
-   Cv = (- (pow(Tau,2))* (GammaTauTau) + pow(GammaPi - Tau * (GammaPiTau),2) / GammaPiPi) * GazConst;
+   //WW Cv = (- (pow(Tau,2))* (GammaTauTau) + pow(GammaPi - Tau * (GammaPiTau),2) / GammaPiPi) * GazConst;
    /*BEGIN: Fluid isochoric heat capacity*/
 
    return Cp;
@@ -3257,7 +3266,7 @@ Programing:
 double CFluidProperties::CaldZdT(double p,double T)
 {
    std::vector<double> roots;
-   double a, a0,daa,w, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;                   
+   double a, a0,daa, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;                   
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor;
@@ -3427,3 +3436,130 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
    return variables ;
 }
 
+#ifdef MFP_TEST
+//-----------------------------------------------------
+//  
+/*!
+   \brief constructor of class Hash_Table
+     
+    Read data and fill the member data
+
+	WW 07.2011 
+*/
+Hash_Table::Hash_Table(string f_name)
+{
+   string aline;
+   std::stringstream ss;
+   int i_buff = 0.;
+   int i, length;
+
+   f_name = FilePath +  f_name;
+   ifstream ins(f_name.c_str());
+   if(!ins.good())
+   {
+      cout<<"File "<<f_name<<" cannot openned. Program exit ";
+	  exit(1);
+   } 
+   
+   getline(ins, aline); 
+   if(aline.find("Varaiable_Number")!=string::npos)
+   {
+      ss.str(aline);
+      ss>>aline>>num_var;
+	  ss.clear();
+   }
+   else
+   {
+      cout<<"Number of varaiables are not defined. Program exit ";
+	  exit(1);
+   }
+
+   num_par = 2;
+   num_var -= 2;
+   length = num_par+num_var;
+
+   names.resize(length); 
+   getline(ins, aline); 
+   ss.str(aline);
+   for(i=0; i<length; i++)
+     ss>>names[i];
+   ss.clear();
+
+   int counter = 0;
+   double par = 0.;
+   table_section_ends.push_back(0);
+   while(!ins.eof())
+   {
+      getline(ins, aline); 
+	  if(aline.find("...")!=string::npos)
+	  {
+	     table_section_ends.push_back(counter+1);
+		 hash_row_par.push_back(par);
+	     continue;
+	  }  
+      if(aline.find("---")!=string::npos)
+         break;
+  
+	  double *data_vp = new double[length-1];
+	  hash_table_data.push_back(data_vp);
+
+	  ss.str(aline);
+      ss>>par;
+      for(i=0; i<length-1; i++) 
+         ss>>data_vp[i];
+	  ss.clear();
+
+      counter++;
+   }
+
+}
+/*!
+   \brief desconstructor of class Hash_Table
+     
+
+	WW 07.2011 
+*/
+Hash_Table::~Hash_Table()
+{
+	while(hash_table_data.size()>0)
+	{
+       delete [] hash_table_data[hash_table_data.size()-1];
+	   hash_table_data.pop_back();
+	}
+}
+
+/*!
+   \brief desconstructor of class Hash_Table
+     
+
+	WW 07.2011 
+*/
+double Hash_Table::CalcValue(double *var, const int var_id) const
+{
+    size_t i, j, k;
+	double *data_0, *data_1;
+	double val_e[4];
+
+	if(var[0]<hash_row_par[0])
+       var[0] = hash_row_par[0]; 
+	if(var[0]>hash_row_par[hash_row_par.size()-1])
+       var[0] = hash_row_par[hash_row_par.size()-1]; 
+    
+    for(i=0; i<hash_row_par.size()-1; i++)
+	{
+        if((var[0]>=hash_row_par[i])&&(var[0]<hash_row_par[i+1]))
+		{         
+            for(j=0; j<2; j++)
+			{
+               data_0 = hash_table_data[i+j];
+               for(k=table_section_ends[i+j]; k<table_section_ends[i+j+1]; k++)
+			   {
+                   
+			   }
+			}
+			break; 
+		}
+	}
+	return 0.;
+}
+#endif //#ifdef MFP_TEST

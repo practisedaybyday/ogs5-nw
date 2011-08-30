@@ -45,8 +45,8 @@ class CSourceTermGroup;
 class CSourceTerm;
 class CNodeValue;
 class Problem;                                    //WW
-class CECLIPSEData;		//BG Coupling to Eclipse
-class CDUMUXData;		//BG Coupling to DuMux
+class CECLIPSEData;                               //BG Coupling to Eclipse
+class CDUMUXData;                                 //BG Coupling to DuMux
 using FiniteElement::CFiniteElementStd;
 using FiniteElement::CFiniteElementVec;
 using FiniteElement::ElementMatrix;
@@ -91,33 +91,46 @@ typedef struct
 
 typedef struct
 {
-	std::string name;      //fluid name
-	double temperature;
-	double pressure;
-	double density;   //density g/cm^3
-	double viscosity; //viscosity mPa.s
-	double volume;    //volume cm^3
-	double mass;      //weight g
-	double CO2;       //mole of CO2
-	double H2O;       //mole of H2O
-	double NaCl;      //mole of NaCl
+   std::string name;                              //fluid name
+   double temperature;
+   double pressure;
+   double density;                                //density g/cm^3
+   double viscosity;                              //viscosity mPa.s
+   double volume;                                 //volume cm^3
+   double mass;                                   //weight g
+   double CO2;                                    //mole of CO2
+   double H2O;                                    //mole of H2O
+   double NaCl;                                   //mole of NaCl
 }Phase_Properties;
 
 typedef struct
 {
-	double B;
-	double C;
-	double D;
-	double E;
-	double F;
-	double b;
-	double G;
-	double Vc;
-	double V2,V3,V5,V6;
-	double Tc,Pc;
-	double M;
-	int id;
+   double B;
+   double C;
+   double D;
+   double E;
+   double F;
+   double b;
+   double G;
+   double Vc;
+   double V2,V3,V5,V6;
+   double Tc,Pc;
+   double M;
+   int id;
 }VirialCoefficients;
+
+#ifdef JFNK_H2M
+/// Dirchlet BC at node. 09.2010. WW
+typedef struct
+{
+   int var_idx;
+   bool incremental;
+   long bc_eqs_idx;
+   long bc_node;
+   double bc_value;
+   double bc_value0;
+} bc_JFNK;
+#endif
 
 //MB moved inside the Process object
 //extern vector<double*>nod_val_vector; //OK
@@ -163,14 +176,25 @@ class CRFProcess : public ProcessInfo
       bool compute_domain_face_normal;            //WW
       int continuum;
       bool continuum_ic;
+
+      bool isRSM; // WW
+
+	  std::vector<std::string> pcs_type_name_vector;
+
    protected:                                     //WW
       friend class FiniteElement::CFiniteElementStd;
       friend class FiniteElement::CFiniteElementVec;
       friend class FiniteElement::ElementValue;
       friend class ::CSourceTermGroup;
       friend class ::Problem;
-      friend class CECLIPSEData; //BG
-      friend class CDUMUXData; //SBG
+      friend class CECLIPSEData;                  //BG
+      friend class CDUMUXData;                    //SBG
+      /// Number of nodes to a primary variable. 11.08.2010. WW
+      int *p_var_index;
+      long *num_nodes_p_var;
+
+      /// Size of unknowns. 02.2011. WW
+      long size_unknowns;
       // Assembler
       CFiniteElementStd *fem;
       // Time step control
@@ -183,10 +207,10 @@ class CRFProcess : public ProcessInfo
       // ELE
       std::vector<FiniteElement::ElementMatrix*> Ele_Matrices;
       //Global matrix
-      Math_Group::Vec *Gl_Vec; //NW
-      Math_Group::Vec *Gl_Vec1; //NW
-      Math_Group::Vec *Gl_ML; //NW
-      Math_Group::SparseMatrixDOK *FCT_AFlux; //NW
+      Math_Group::Vec *Gl_Vec;                    //NW
+      Math_Group::Vec *Gl_Vec1;                   //NW
+      Math_Group::Vec *Gl_ML;                     //NW
+      Math_Group::SparseMatrixDOK *FCT_AFlux;     //NW
       /**
        * Storage type for all element matrices and vectors
        * Cases:
@@ -198,11 +222,9 @@ class CRFProcess : public ProcessInfo
       int additioanl2ndvar_print;                 //WW
       // TIM
       friend class CTimeDiscretization;
-   public:                                        //OK
       CTimeDiscretization *Tim;                   //time
-      bool femFCTmode; //NW
-   protected:                                     //WW
-      void CopyU_n(double *temp_v);               //29.08.2008. WW
+      bool femFCTmode;                            //NW
+      void CopyU_n();               //29.08.2008. WW
       // Time unit factor
       double time_unit_factor;
       int NumDeactivated_SubDomains;
@@ -227,15 +249,15 @@ class CRFProcess : public ProcessInfo
       // Write indices of the nodes with boundary conditons
       bool write_boundary_condition;              //15.01.2008. WW
       // Element matrices output
-   public:                                        //OK
+      void Def_Variable_MultiPhaseFlow();
       bool Write_Matrix;
-   protected:                                     //WW
       std::fstream *matrix_file;
-      // Write RHS from source or Neumann BC terms to file
+      // Write RHS from source or Neumann BC terms or BC to file
       // 0: Do nothing
       // 1: Write
       // 2: Read
       int WriteSourceNBC_RHS;
+      int WriteProcessed_BC;
       // Write the current solutions/Read the previous solutions WW
       // -1, default. Do nothing
       // 1. Write
@@ -243,17 +265,36 @@ class CRFProcess : public ProcessInfo
       // 3 read and write
       int reload;
       long nwrite_restart;
-      inline void  WriteRHS_of_ST_NeumannBC();
-      inline void  ReadRHS_of_ST_NeumannBC();
+      void  WriteRHS_of_ST_NeumannBC();
+      void  ReadRHS_of_ST_NeumannBC();
+      void  Write_Processed_BC(); // 05.08.2011. WW
+      void  Read_Processed_BC(); // 05.08.2011. WW
+
       friend bool PCSRead(std::string);
       //....................................................................
       // 1-GEO
+      int ite_steps;                              ///Newton step index;
+#ifdef JFNK_H2M
+
+      /// Norn of F for Newton method
+      double norm_F0;
+      /// Buffer array for JFNK, 13.08.2010. WW
+      bool JFNK_precond;
+      double *norm_u_JFNK;
+      double *array_u_JFNK;
+      double *array_Fu_JFNK;
+      std::vector<bc_JFNK> BC_JFNK;
+#endif
    public:
-      void CO2_H2O_NaCl_VLE_isobaric(double T, double P, Phase_Properties &vapor, Phase_Properties &liquid, Phase_Properties &solid, int f);  // BG, DL Calculate phase transition of CO2
-	  void CO2_H2O_NaCl_VLE_isochoric(Phase_Properties &vapor, Phase_Properties &liquid, Phase_Properties &solid, int f);  // BG, DL Calculate phase transition of CO2
-	  void Phase_Transition_CO2(CRFProcess *m_pcs, int Step);  // BG, NB Calculate phase transition of CO2
-	  int Phase_Transition_Model; //BG, NB flag of Phase_Transition_Model (1...CO2-H2O-NaCl)
-	  void CalculateFluidDensitiesAndViscositiesAtNodes(CRFProcess *m_pcs);  // BG 11/2010 Sets the initial conditions for multi phase flow if Phase_Transition_CO2 is used
+                                                  // BG, DL Calculate phase transition of CO2
+      void CO2_H2O_NaCl_VLE_isobaric(double T, double P, Phase_Properties &vapor, Phase_Properties &liquid, Phase_Properties &solid, int f);
+                                                  // BG, DL Calculate phase transition of CO2
+      void CO2_H2O_NaCl_VLE_isochoric(Phase_Properties &vapor, Phase_Properties &liquid, Phase_Properties &solid, int f);
+                                                  // BG, NB Calculate phase transition of CO2
+      void Phase_Transition_CO2(CRFProcess *m_pcs, int Step);
+      int Phase_Transition_Model;                 //BG, NB flag of Phase_Transition_Model (1...CO2-H2O-NaCl)
+                                                  // BG 11/2010 Sets the initial conditions for multi phase flow if Phase_Transition_CO2 is used
+      void CalculateFluidDensitiesAndViscositiesAtNodes(CRFProcess *m_pcs);
       /**
        * Sets the value for pointer _problem.
        * @param problem the value for _problem
@@ -264,7 +305,7 @@ class CRFProcess : public ProcessInfo
        * get access to the instance of class Problem
        * @return
        */
-      const Problem* getProblemObjectPointer () const;
+      Problem* getProblemObjectPointer () const;
       std::string geo_type;                       //OK
       std::string geo_type_name;                  //OK
       //....................................................................
@@ -299,7 +340,6 @@ class CRFProcess : public ProcessInfo
       {
          return orig_size;
       }
-
 
       //....................................................................
       // 7-MFP
@@ -387,24 +427,21 @@ class CRFProcess : public ProcessInfo
       void Add_GEMS_Water_ST(long idx, double val);
       void SetSTWaterGemSubDomain(int myrank);
       // ECLIPSE interface:
-      CDUMUXData *DuMuxData; //SBG
-      CECLIPSEData *EclipseData; //BG
+      CDUMUXData *DuMuxData;                      //SBG
+      CECLIPSEData *EclipseData;                  //BG
       void CalGPVelocitiesfromECLIPSE(std::string path, int timestep, int phase_index, std::string phase);
-	  std::string simulator; // which solver to use, i.e. GeoSys, ECLIPSE or DuMux
-      std::string simulator_path; // path for executable of external simulator
-      std::string simulator_model_path; // path to exclipse input data file (*.data), with extension
-      bool PrecalculatedFiles;     // defines if Eclipse or dumux is calculated or if precalculated files are used
-      std::string simulator_well_path; // path to well schedule ( *.well), with extension
+      std::string simulator;                      // which solver to use, i.e. GeoSys, ECLIPSE or DuMux
+      std::string simulator_path;                 // path for executable of external simulator
+      std::string simulator_model_path;           // path to exclipse input data file (*.data), with extension
+      bool PrecalculatedFiles;                    // defines if Eclipse or dumux is calculated or if precalculated files are used
+      std::string simulator_well_path;            // path to well schedule ( *.well), with extension
       //....................................................................
       // Construction / destruction
       char pcs_name[MAX_ZEILE];                   //string pcs_name;
       int pcs_number;
       int mobile_nodes_flag;
 
-   private:
-      std::vector<std::string> pcs_type_name_vector;
-
-   public:
+ 
       int pcs_type_number;
       int type;
       int GetObjType() const {return type;}
@@ -453,7 +490,7 @@ class CRFProcess : public ProcessInfo
 #endif
       std::string num_type_name;
       int  rwpt_app;
-	  int  srand_seed;
+      int  srand_seed;
       const char *pcs_num_name[2];                //For monolithic scheme
       double pcs_nonlinear_iteration_tolerance;
       int pcs_nonlinear_iterations;               //OK
@@ -512,7 +549,7 @@ class CRFProcess : public ProcessInfo
       void ConfigRandomWalk();
       void ConfigMultiPhaseFlow();
       void ConfigPS_Global();                     // PCH
-      void ConfigPTC_FLOW();                     // AKS/NB
+      void ConfigPTC_FLOW();                      // AKS/NB
       // Configuration 1 - NOD
 #ifndef NEW_EQS                                //WW. 07.11.2008
       void ConfigNODValues1(void);
@@ -545,22 +582,40 @@ class CRFProcess : public ProcessInfo
       void CalcELEMassFluxes();
       //WW   double GetELEValue(long index,double*gp,double theta,string nod_fct_name);
       void CheckMarkedElement();                  //WW
+      void CheckExcavedElement();                 //WX
       // Configuration 3 - ELE matrices
       void CreateELEMatricesPointer(void);
       // Equation system
       //---WW
       CFiniteElementStd* GetAssember () { return fem; }
       void AllocateLocalMatrixMemory();
-      void GlobalAssembly();                      //NEW
-      void AddFCT_CorrectionVector(); //NW
+      virtual void GlobalAssembly();              // Make as a virtul function. //10.09.201l. WW
+      /// For all PDEs excluding that for deformation. 24.11.2010l. WW
+      void GlobalAssembly_std(bool is_quad, bool Check2D3D = false);
+      /// Assemble EQS for deformation process.
+      virtual void GlobalAssembly_DM() {};
+#if defined (NEW_EQS) && defined(JFNK_H2M)
+      /// Jacobian free methid to calculate J*v.
+                                                  //11.08.2010.
+      void Jacobian_Multi_Vector_JFNK(double *v = NULL, double *Jv=NULL);
+      /// Recovery du from the temporary vector.
+      void Recovery_du_JFNK();                    //02.11.2010.
+      /// Line serach for Newton method.
+      double LineSearch();                        //10.12.2010.
+      /// Force term control for inexact Newton method. 01.2011.
+      bool ForceTermCriterion(double *Jdx, const int num_iteration);
+#endif
+      void AddFCT_CorrectionVector();             //NW
       void ConfigureCouplingForLocalAssemblier();
       void CalIntegrationPointValue();
       bool cal_integration_point_value;           //WW
       void CalGPVelocitiesfromFluidMomentum();    //SB 4900
       bool use_velocities_for_transport;          //SB4900
-      //---
+ 
+	  //---
       double Execute();
       double ExecuteNonLinear();
+
       virtual void CalculateElementMatrices(void) ;
       void DDCAssembleGlobalMatrix();
       virtual void AssembleSystemMatrixNew(void);
@@ -584,14 +639,15 @@ class CRFProcess : public ProcessInfo
       void EQSInitialize();
       void EQSSolver(double* x);                  // PCH
 #else
-      void InitEQS();
       int ExecuteLinearSolver(void);
       int ExecuteLinearSolver(LINEAR_SOLVER *eqs);
 #endif
+
+      CTimeDiscretization *GetTimeStepping() const {return Tim;}
       //Time Control
       double timebuffer;                          //YD
       // this is times of non-linear iterations
-      int iter_nlin;                              //YD //HS rename to avoid confusion; 
+      int iter_nlin;                              //YD //HS rename to avoid confusion;
       // this is times of linear iterations
       int iter_lin;
       // Specials
@@ -609,7 +665,7 @@ class CRFProcess : public ProcessInfo
                                                   //WW. 05.2009
       void Integration(std::vector<double> &node_velue);
       // Auto time step size control. WW
-      void PI_TimeStepSize(double *u_n);          //WW
+      void PI_TimeStepSize();          //WW
       bool TimeStepAccept() const { return accepted;}
       void SetDefaultTimeStepAccepted() { accepted = true;}
       // USER
@@ -671,6 +727,11 @@ class CRFProcess : public ProcessInfo
       bool m_bCheckEQS;                           //OK
       void Delete();                              //OK
       bool m_bCheck;                              //OK
+      int ExcavMaterialGroup;                     //WX
+      int ExcavDirection;                         //WX
+      int ExcavCurve;                             //WX
+      double ExcavBeginCoordinate;                //WX
+      int PCS_ExcavState;                         //WX
 #ifdef USE_MPI                                 //WW
       void Print_CPU_time_byAssembly(std::ostream &os=std::cout) const
       {

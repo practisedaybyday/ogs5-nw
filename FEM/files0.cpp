@@ -180,10 +180,8 @@ int ReadData ( char *dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
    FEMDeleteAll();                                // KR moved from FEMRead()
    CFEMesh* msh = FEMRead(dateiname, &geo_obj, &unique_name);
    if (msh)                                       //KR
-   {
-      fem_msh_vector.push_back(msh);
       CompleteMesh();                             //WW
-   }
+
    //SBOK4209 MSHWrite(dateiname);
    // PCTRead is bounded by msh
    PCTRead(dateiname);                            // PCH

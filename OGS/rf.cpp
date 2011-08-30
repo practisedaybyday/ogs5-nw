@@ -46,7 +46,7 @@
 #endif
 #include "problem.h"
 
-Problem *aproblem = NULL;
+
 /* Deklarationen */
 int main ( int argc, char *argv[] );
 void ShowSwitches ( void );
@@ -120,7 +120,7 @@ int main ( int argc, char *argv[] )
   if( argc > 1 && modelRoot == "" ) // non-interactive mode and no model given
     exit(0);                         // e.g. just wanted the build info
 
-  char *dateiname;
+  char *dateiname = NULL;
 #ifdef SUPERCOMPUTER
 // *********************************************************************
 // buffered output ... important for performance on cray
@@ -220,7 +220,7 @@ int main ( int argc, char *argv[] )
   else if(indexChLinux!=std::string::npos)
      FilePath = FileName.substr(0,indexChLinux)+"/";
   // ---------------------------WW
-  aproblem = new Problem(dateiname);
+  Problem *aproblem = new Problem(dateiname);
   aproblem->Euler_TimeDiscretize();
   delete aproblem;
   aproblem = NULL;

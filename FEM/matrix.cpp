@@ -2519,13 +2519,13 @@ void MXRandbed(long ir, double Ri, double *ReSei)
       break;
       case 5:                                     //WW/PA  08/02/2006
       {
-         long dim1;
+	//WW long dim1;
          long ii, jj, jr;
          Mesh_Group::CFEMesh* m_msh = NULL;
          CNode *m_nod_i = NULL;
          CNode *m_nod_j = NULL;
          m_msh = FEMGet("GROUNDWATER_FLOW");
-         dim1 = m_msh->NodesInUsage();
+         //WW dim1 = m_msh->NodesInUsage();
          ii = m_msh->Eqs2Global_NodeIndex[ir];
          m_nod_i = m_msh->nod_vector[ii];
          ReSei[ir] = Ri*MXGet(ir,ir);

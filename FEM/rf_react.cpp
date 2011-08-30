@@ -696,7 +696,8 @@ void REACT::CalculateReactionRates(void)
    /* Calculate Rates */
 
    int comp, i;
-   double teta, help=0.0, maxi, dc, delta_t;
+   //WW double teta, help=0.0, maxi, dc, delta_t;
+   double teta, help=0.0, maxi, delta_t;
 
    CTimeDiscretization *m_tim = NULL;
    if(time_vector.size()>0)
@@ -729,6 +730,7 @@ void REACT::CalculateReactionRates(void)
       }
 
       /* Reaction - Number dC */
+      /* //WW
       for(i=0;i<this->nodenumber;i++)
       {
          if(fabs(maxi)< MKleinsteZahl)
@@ -737,6 +739,7 @@ void REACT::CalculateReactionRates(void)
             dc = this->rate[comp][i]*delta_t/maxi;
          //SB:todo		MTM2SetElementDamkohlerNumNew(i,0,comp,dc);
       }
+      */
    }                                              /* end for(comp=... */
 }
 
@@ -753,7 +756,7 @@ void REACT::CalculateReactionRates(void)
 void REACT::SetConcentrationResults(void)
 {
    /*  */
-   int comp, timelevel, np, idx;
+  int comp, idx; //WW, timelevel, np;
    long i;
    string name;
    CRFProcess *m_pcs = NULL;
@@ -761,8 +764,8 @@ void REACT::SetConcentrationResults(void)
    //Fix Process here ??
    //Rücksrache mit Sebastian
 
-   timelevel = 1;                                 // concentrations are in new timelevel
-   np = (int)pcs_vector.size();
+   //WW timelevel = 1;                                 // concentrations are in new timelevel
+   //WW np = (int)pcs_vector.size();
    /*  SB4218
     for(comp=0; comp<this->number_of_comp;comp++){
        for(i=0;i<this->nodenumber;i++){
@@ -795,13 +798,13 @@ void REACT::SetConcentrationResults(void)
 **************************************************************************/
 void REACT::SetConcentrationResultsEle(void)
 {
-   int comp, timelevel, np, idx;
+  int comp,idx; //WW, timelevel, np,;
    long i;
    string name;
    CRFProcess *m_pcs = NULL;
 
-   timelevel = 1;                                 // concentrations are in new timelevel
-   np = (int)pcs_vector.size();
+   //WW timelevel = 1;                                 // concentrations are in new timelevel
+   //WW np = (int)pcs_vector.size();
 
    for(comp=0; comp<this->number_of_comp;comp++)
    {
@@ -851,9 +854,9 @@ int REACT::ReadReactionModel(FILE *File)
 {
    int n_master_species = 0;
    int n_equi_phases = 0;
-   int n_ion_exchange = 0;
-   int beginn = 0, p = 0;
-   int pos;
+   int n_ion_exchange = 0, p = 0;
+   //WW int beginn = 0, p = 0;
+   //WW int pos;
    int nj;
    char str[256], *sub, *sub1;
 
@@ -874,8 +877,8 @@ int REACT::ReadReactionModel(FILE *File)
    while (fgets(str, 256, indatei))
    {
       /* Schleife ueber Keyword Solution */
-      pos = 0;
-      beginn = 1;
+      //WW pos = 0;
+      //WW beginn = 1;
       p = 0;
       while ((!strstr(str, "END")) && (!strstr(str, "#ende"))
          && StringReadStr(&sub, str, &p))
@@ -1007,12 +1010,12 @@ int REACT::ReadReactionModelNew( ifstream *pqc_infile)
    int n_ion_exchange=0;
    int n_gas_species=0;
    int idx;
-   int nj;
+   //WW int nj;
    char line[MAX_ZEILE];
    string line_string, dummy, speciesname;
    CRFProcess* m_pcs = NULL;
    std::stringstream in;
-   int pH_found = 0;                              // Hplus_found = 0, count = -1;
+   //WW int pH_found = 0;                              // Hplus_found = 0, count = -1;
 
    /* File handling */
    pqc_infile->seekg(0L,ios::beg);
@@ -1063,7 +1066,7 @@ int REACT::ReadReactionModelNew( ifstream *pqc_infile)
                }
                else if (line_string.find("pH") != string::npos)
                {
-                  pH_found = 1;
+		 //WW pH_found = 1;
                   //                    cout << " pH found in GeoSys species" << endl;
                   if (line_string.find("charge") != string::npos) this->rcml_pH_charge=1;
                }
@@ -1232,7 +1235,7 @@ int REACT::ReadReactionModelNew( ifstream *pqc_infile)
 
    if((this->gamma_Hplus > 0)) cout << " pH found and H+ found, pH for PHREEQC input is calculated using gamma_H+ and [H+] " << gamma_Hplus << endl;
 
-   nj=rcml_number_of_master_species + rcml_number_of_equi_phases + rcml_number_of_ion_exchanges + rcml_number_of_gas_species;
+   //WW nj=rcml_number_of_master_species + rcml_number_of_equi_phases + rcml_number_of_ion_exchanges + rcml_number_of_gas_species;
    cout << " Found in *.pqc file: " << rcml_number_of_master_species << " master species (excluding pH, H+ and pe), " ;
    cout << rcml_number_of_equi_phases << " equilibrium phases,  " << rcml_number_of_ion_exchanges << " ion exchangers and " ;
    cout << rcml_number_of_gas_species << " gas species " << endl;
@@ -1264,7 +1267,8 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
 
    int i=0, np;
    int nn=0,nep=0, nj=0, nk=0;
-   int beginn=0, p=0, found;
+   //WW int beginn=0, 
+   int p=0, found;
    int pH_flag=-1, pe_flag=-1, iheat;
    int pos,j;
    double dvalue, d_help;
@@ -1295,7 +1299,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
       //    DisplayMsgLn(str);
 
       pos=0;
-      beginn=1;
+      //WW beginn=1;
       p=0;
       while ((!strstr(str, "END")) && (!strstr(str, "#ende")) && StrOnlyReadStr(sub, str, f, TFString, &p))
       {
@@ -1467,7 +1471,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
                FilePrintString(f, "Warnung:Concentration of master species not found in *.rfd file!!!");
             }
             pos=0;
-            beginn=1;
+            //WW beginn=1;
             p=0;
          }                                        /*if_SOLUTION*/
 
@@ -2023,8 +2027,8 @@ while(!pqc_infile.eof())
 
       // get height of node z
       CFEMesh* m_msh = fem_msh_vector[0];         //SB: ToDo hart gesetzt
-      Mesh_Group::CNode* m_nod = NULL;
-      m_nod = m_msh->nod_vector[index];
+      //WW Mesh_Group::CNode* m_nod = NULL;
+      //WW m_nod = m_msh->nod_vector[index];
       z = m_msh->nod_vector[index]->Z();
 
       // get piezometric hight h
@@ -2398,7 +2402,7 @@ int REACT::ReadOutputPhreeqcNew(void)
    char str[4000];
    double dval, dval1;
    string speciesname;
-   CRFProcess* m_pcs = NULL;
+   //WW CRFProcess* m_pcs = NULL;
    int n1, n2, n3, n4, dix=0;
    CTimeDiscretization *m_tim = NULL;
 
@@ -2466,7 +2470,7 @@ int REACT::ReadOutputPhreeqcNew(void)
             j++;
             if(this->gamma_Hplus > 0)
             {
-               m_pcs = pcs_vector[pqc_process[j]];
+	      //WW m_pcs = pcs_vector[pqc_process[j]];
                //				if(index<2) cout << " H+: " <<  dval << ", ";
                pcs_vector[pqc_process[j]]->SetNodeValue(index,pqc_index[j]+dix,dval);
             }
@@ -2474,7 +2478,7 @@ int REACT::ReadOutputPhreeqcNew(void)
          if(ein >> dval)                          // read pe
          {
             j++;
-            m_pcs = pcs_vector[pqc_process[j]];
+            //WW m_pcs = pcs_vector[pqc_process[j]];
             //				if(index <2) cout << " pe: " <<  dval << endl;
             pcs_vector[pqc_process[j]]->SetNodeValue(index,pqc_index[j]+dix,dval);
          }

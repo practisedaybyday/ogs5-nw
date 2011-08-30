@@ -42,6 +42,8 @@ ENDIF (Shapelib_FOUND)
 IF (QT4_FOUND)
 	SET( HEADERS ${HEADERS} XMLInterface.h )
 	SET (SOURCES ${SOURCES} XMLInterface.cpp )
+	SET( HEADERS ${HEADERS} FEFLOWInterface.h )
+	SET (SOURCES ${SOURCES} FEFLOWInterface.cpp )
 ENDIF (QT4_FOUND)
 
 # Create the library

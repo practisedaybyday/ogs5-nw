@@ -224,11 +224,11 @@ typeExponentialNumber CECLIPSEData::RoundEXP(double Number, int Decimalplaces)
 	typeExponentialNumber Result;
 	int Exponent;
 	double tempNumber;
-	int sign;
+	//WW int sign;
 
-	sign = 1;
-	if (Number < 0)
-		sign = -1;
+	//WW sign = 1;
+	//WW if (Number < 0)
+	//WW	sign = -1;
 
 	Exponent = 0;
 	tempNumber = fabs(Number);
@@ -758,7 +758,7 @@ int CECLIPSEData::ReadDataFromInputFile(std::string Filename) {
 	std::stringstream in;
 	double density;
 	bool error;
-	bool success = false;
+	//WW bool success = false;
 	std::string dummy_rate,dummy_zeile,rest_zeile, name, phase, open_flag, control_mode;
 	int jj = 0;
 
@@ -805,7 +805,7 @@ int CECLIPSEData::ReadDataFromInputFile(std::string Filename) {
 		// Read Well Data
 		if (this->existWells == true) {
 			if (tempstring.compare("WCONINJE") == 0) {
-				success = true;
+			  //WW			success = true;
 				long zeilen = 0;
 
 				do {
@@ -845,11 +845,11 @@ void CECLIPSEData::ReadWellData(std::string Filename_Wells) {
 	char Line[MAX_ZEILEN];
 	std::string tempstring;
 	std::stringstream line;
-	bool error = false;
+	//WW bool error = false;
 	streampos position;
 	std::string dollar("$");
 	std::string hash("#");
-	bool new_subkeyword = false;
+	//WW bool new_subkeyword = false;
 	// bool new_keyword = false; // unused
 
 	std::string tempstring_name;
@@ -868,7 +868,7 @@ void CECLIPSEData::ReadWellData(std::string Filename_Wells) {
 
 	if (!in){
 		std::cout << "File not found." << std::endl;
-		error = true;
+		//WW	error = true;
 	}
 	else {
 		while (!in.eof()) {
@@ -905,7 +905,7 @@ void CECLIPSEData::ReadWellData(std::string Filename_Wells) {
 					 break;
 					}
 					if(tempstring.find("$")!=string::npos){
-						new_subkeyword = true;
+					  //WW					new_subkeyword = true;
 						break;
 					}
 					in.seekg(position);
@@ -1529,7 +1529,7 @@ void CECLIPSEData::CalculateRSfromMassFraction_E300(){
 	double time;
 	double xw_CO2_liquid;
 	double RS;
-	int index_xw_CO2_liquid;
+	//WW int index_xw_CO2_liquid;
 	int index_density_liquid;
 	double rho_liquid;
 
@@ -1537,7 +1537,7 @@ void CECLIPSEData::CalculateRSfromMassFraction_E300(){
 
 	cout << "        CalculatePhaseFlux() ";
 
-	index_xw_CO2_liquid = this->GetVariableIndex("XMF2");
+	//WW index_xw_CO2_liquid = this->GetVariableIndex("XMF2");
 	index_density_liquid = this->GetVariableIndex("DENW");
 
 	if ((index_density_liquid < 0)) {
@@ -2294,7 +2294,7 @@ bool CECLIPSEData::GetFlowForFaces(int phase_index)
 	long number_elements;
 	long element_index;
 	long variable_index;
-	long time_index;
+	//WW long time_index;
 	double vz=1.0; // Sign
 	clock_t start,finish;
 	double time;
@@ -2321,7 +2321,7 @@ bool CECLIPSEData::GetFlowForFaces(int phase_index)
 		// right face (x)
 		if (m_face->model_axis == "I+"){
 			element_index = m_face->connected_elements[0];
-			time_index = 0;
+			//WW		time_index = 0;
 			if (this->RadialModellJpos == true){
 
 				if (this->Phases[phase_index] == "WATER") variable_index = this->GetVariableIndex("FLOWATJ+");
@@ -2392,7 +2392,7 @@ bool CECLIPSEData::GetFlowForFaces(int phase_index)
 					}
 				}
 			}
-			time_index = 0;
+			//WW		time_index = 0;
 			if (variable_index < 0) {
 				cout << "There are no variables!" << endl;
 				system("Pause");
@@ -2418,7 +2418,7 @@ bool CECLIPSEData::GetFlowForFaces(int phase_index)
 					}
 				}
 			}
-			time_index = 0;
+			//WW		time_index = 0;
 			if (variable_index < 0) {
 				cout << "There are no variables!" << endl;
 				system("Pause");
@@ -2504,7 +2504,7 @@ bool CECLIPSEData::GetVelForFaces(void)
 	long number_elements;
 	long element_index;
 	long variable_index;
-	long time_index;
+	//WW long time_index;
 
 	for (unsigned long i = 0; i < this->faces.size(); i++) {
 		m_face = this->faces[i];
@@ -2516,7 +2516,7 @@ bool CECLIPSEData::GetVelForFaces(void)
 		// right face (x)
 		if (m_face->model_axis == "I+"){
 			element_index = m_face->connected_elements[0];
-			time_index = 0;
+			//WW		time_index = 0;
 			variable_index = this->GetVariableIndex("VELWATI+");
 			if (variable_index < 0)
 				return false;
@@ -2527,7 +2527,7 @@ bool CECLIPSEData::GetVelForFaces(void)
 		if (m_face->model_axis == "J+"){
 			element_index = m_face->connected_elements[0];
 			variable_index = this->GetVariableIndex("VELWATJ+");
-			time_index = 0;
+			//WW		time_index = 0;
 			if (variable_index < 0)
 				return false;
 			m_face->v_norm = this->Data[element_index][variable_index];
@@ -2537,7 +2537,7 @@ bool CECLIPSEData::GetVelForFaces(void)
 		if (m_face->model_axis == "K+"){
 			element_index = m_face->connected_elements[0];
 			variable_index = this->GetVariableIndex("VELWATK+");
-			time_index = 0;
+			//WW		time_index = 0;
 			if (variable_index < 0)
 				return false;
 			m_face->v_norm = this->Data[element_index][variable_index];
@@ -2616,7 +2616,7 @@ bool CECLIPSEData::MakeNodeVector(void)
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
 	//CFaces *m_face=NULL;
 	CNode* m_node = NULL;
-	double weights_xyz[3];
+	//WW double weights_xyz[3];
 	CPointData_ECL* m_NodeData = NULL;
 	m_NodeData = new CPointData_ECL;
 	vector <double> temp_q;
@@ -2661,7 +2661,7 @@ bool CECLIPSEData::MakeNodeVector(void)
 			m_NodeData->phase_pressure[k] = -1.0E+99;
 			m_NodeData->phase_saturation[k] = -1.0E+99;
 			m_NodeData->phase_density[k] = -1.0E+99;
-			weights_xyz[k] = 0.0;
+			//WW		weights_xyz[k] = 0.0;
 		}
 
 
@@ -2940,25 +2940,27 @@ void CECLIPSEData::InterpolateDataFromBlocksToNodes(CRFProcess *m_pcs, std::stri
 	CECLIPSEBlock *m_block = NULL;
 	CNode* m_node = NULL;
 	//CFaces *m_face=NULL;
-	double distance;
+	//WW double distance;
 	double volume;
 	double weight;
 	//double weights_xyz[3];
 	double sum_weights, sum_weights_density;
-	double pressure, saturation, sat, phase_pressure, phase_press, gas_dissolved, gas_dis;
+	//WW double pressure, 
+        double saturation, sat, phase_pressure, phase_press, gas_dissolved, gas_dis;
 	double den, density;
 	//double press;
 	//double velocity_x1, velo_x1, velocity_y1, velo_y1, velocity_z1, velo_z1;
 	CPointData_ECL* m_NodeData = NULL;
 	//m_NodeData = new CPointData;
-	long variable_index_pressure = -1, variable_index_phase_pressure = -1, variable_index_saturation = -1, time_index = 0, variable_index_Gas_dissolved = -1, variable_index_Gas_density = -1, variable_index_Water_density = -1, variable_index_Oil_density = -1;
+        //WW long variable_index_pressure = -1, variable_index_phase_pressure = -1, variable_index_saturation = -1, time_index = 0, variable_index_Gas_dissolved = -1, variable_index_Gas_density = -1, variable_index_Water_density = -1, variable_index_Oil_density = -1;
+	long variable_index_phase_pressure = -1, variable_index_saturation = -1, variable_index_Gas_dissolved = -1, variable_index_Gas_density = -1, variable_index_Water_density = -1, variable_index_Oil_density = -1;
 	//long variable_index_velocity_x1, variable_index_velocity_y1, variable_index_velocity_z1;
 
 	start = clock();
 
 	cout << "        InterpolateDataFromBlocksToNodes()";
 
-	variable_index_pressure = this->GetVariableIndex("PRESSURE");
+	//WW variable_index_pressure = this->GetVariableIndex("PRESSURE");
 
 	//get saturation index if there are more than 1 phases
 	if (this->Phases[phase_index] == "WATER") {
@@ -3000,12 +3002,12 @@ void CECLIPSEData::InterpolateDataFromBlocksToNodes(CRFProcess *m_pcs, std::stri
 		}
 	}
 
-	time_index = 0;
+	//WW time_index = 0;
 
 	for (unsigned long i = 0; i < m_msh->nod_vector.size(); i++) {
 		//Get the node
 		m_node = m_msh->nod_vector[i];
-		pressure = 0.0;
+		//WW	pressure = 0.0;
 		phase_pressure = 0.0;
 		saturation = 0.0;
 		sum_weights = 0.0;
@@ -3015,7 +3017,8 @@ void CECLIPSEData::InterpolateDataFromBlocksToNodes(CRFProcess *m_pcs, std::stri
 
 		// sum the distance weighted data from each connected block
 		for (unsigned int j = 0; j < m_node->getConnectedElementIDs().size(); j++) {
-			distance =  weight = 0.0;
+		  //WW distance = 0.0;
+		        weight = 0.0;
 			m_block  =  this->eclgrid[m_node->getConnectedElementIDs()[j]];
 
 			//calculate representive volume of the considered node in each connected element for weighting
@@ -3218,9 +3221,9 @@ void CECLIPSEData::InterpolateGeosysVelocitiesToNodes(CRFProcess *m_pcs, double 
 	//double *vel_nod;
 	double distance, weight, sum_w ;
 	double* grav_c;
-	double PoreVel, theta;
+	double PoreVel; //WW , theta;
 
-	theta = m_pcs->m_num->ls_theta;
+	//WW theta = m_pcs->m_num->ls_theta;
 
 	// initialize data structures
 	for(i=0;i<3;i++)
@@ -3941,7 +3944,7 @@ Modification:
 -------------------------------------------------------------------------*/
 int CECLIPSEData::WriteDataBackToEclipse(CRFProcess *m_pcs, std::string folder){
 	std::string Filename;
-	int phase1, phase2;
+	//WW int phase1, phase2;
 	CRFProcess *n_pcs = NULL;
 	//int indexProcess;
 	int indexConcentration;
@@ -3970,13 +3973,13 @@ int CECLIPSEData::WriteDataBackToEclipse(CRFProcess *m_pcs, std::string folder){
 
 	switch(int(this->Phases.size())) {
 		case 2:
-			phase1 = 0;
-			phase2 = 1;
+		  //WW	phase1 = 0;
+		  //WW	phase2 = 1;
 			break;
 		case 3:
 			// Assumption that there are 3 phases but water is only used for the boundaries -> the oil and gas phase are the relevant one for the exchange with OGS
-			phase1 = 1;
-			phase2 = 2;
+		  //WW	phase1 = 1;
+		  //WW	phase2 = 2;
 			break;
 		default:
 			cout << "There are not more than 3 phases possible!" << endl;

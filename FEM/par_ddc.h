@@ -79,7 +79,7 @@ class CPARDomain
       //
 #endif
       //
-      long shift[4];                              //WW
+      long shift[5];                              //WW
       // Equation
 #ifdef NEW_EQS                                 //WW
       SparseTable *sparse_graph;

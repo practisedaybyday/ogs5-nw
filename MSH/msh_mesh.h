@@ -139,10 +139,10 @@ namespace Mesh_Group
             _min_edge_length = val;
          }
 
-         void Read(std::ifstream*);
+         bool Read(std::ifstream*);
 
          friend class FileIO::OGSMeshIO;
-         void Write(std::fstream*) const;
+         void Write(std::fstream*, bool append_stop=false) const;
          std::ios::pos_type GMSReadTIN(std::ifstream*);
          //
          void ConstructGrid();

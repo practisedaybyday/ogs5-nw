@@ -531,7 +531,7 @@ void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep
     vector<string> files = vector<string>();
 	CReadTextfiles_DuMux *TextFile;
 	string tempstring;
-	bool saturation_water, saturation_gas, saturation_oil;
+	//WW bool saturation_water,  saturation_gas,  bool saturation_oil;
 	clock_t start,finish;
 	double time;
 	int column;
@@ -541,7 +541,7 @@ void CDUMUXData::ReadDuMuxData(CRFProcess *m_pcs, string Filename, long Timestep
 
 	start = clock();
 
-	saturation_water = saturation_gas = saturation_oil = false;
+	//WW saturation_water =  saturation_gas =    saturation_oil = false;
 
 	cout << "        ReadDuMuxData() ";
 

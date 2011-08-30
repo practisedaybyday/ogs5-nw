@@ -14,6 +14,7 @@ Programing:
 #include "geo_vol.h"
 #include "../FEM/files0.h"
 
+using namespace std; //11.08.2011. WW
 //------------------------------------------------------------------------
 std::vector<CGLVolume*> volume_vector;//CC
 //////////////////////////////////////////////////////////////////////////
@@ -62,6 +63,9 @@ void GEOReadVolumes(std::string file_name_path_base)
   while (!gli_file.eof()) {
     gli_file.getline(line,MAX_ZEILEN);
     line_string = line;
+    if(line_string.find("#STOP")!=string::npos) //11.08.2011. WW
+        break;
+
     //----------------------------------------------------------------------
     if(line_string.find("#VOLUME")!=std::string::npos) { // keyword found
       m_volume = new CGLVolume();

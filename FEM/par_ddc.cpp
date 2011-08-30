@@ -325,7 +325,7 @@ Programing:
 CPARDomain::CPARDomain(void)
 {
    ID =(int)dom_vector.size();
-   for(int i=0; i<4; i++)                         //WW
+   for(int i=0; i<5; i++)                         //WW
       shift[i] = 0;
    quadratic = false;                             //WW
 #ifdef NEW_EQS
