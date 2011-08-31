@@ -5,10 +5,10 @@
  */
 
 #include "FEMCondition.h"
+#include "ProcessInfo.h"
 
-#include "rf_bc_new.h"
-#include "rf_ic_new.h"
-#include "rf_st_new.h"
+#include "GEOObjects.h" //for SourceTerm
+#include "GridAdapter.h"
 
 FEMCondition::FEMCondition(const std::string &geometry_name, CondType t) 
 : _type(t), _geoObject(NULL), _geoName("[unspecified]"), _associated_geometry(geometry_name)
@@ -41,31 +41,3 @@ void FEMCondition::setLinearDisValues(const std::vector<int> &point_ids, const s
 	}
 }
 
-
-BoundaryCondition::BoundaryCondition(const CBoundaryCondition &bc, const std::string &geometry_name)
-: FEMCondition(geometry_name, bc.getProcessType(), bc.getProcessPrimaryVariable(), bc.getGeoType(), bc.getGeoName(), 
-			   bc.getProcessDistributionType(), FEMCondition::BOUNDARY_CONDITION)
-{
-	if (this->getProcessDistributionType() == FiniteElement::CONSTANT || this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN) 
-		this->setDisValue(bc.getGeoNodeValue());
-	else if (this->getProcessDistributionType() == FiniteElement::LINEAR || this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN) 
-		this->setLinearDisValues(bc.getPointsWithDistribedBC(), bc.getDistribedBC());
-}
-
-InitialCondition::InitialCondition(const CInitialCondition &ic, const std::string &geometry_name)
-: FEMCondition(geometry_name, ic.getProcessType(), ic.getProcessPrimaryVariable(), ic.getGeoType(), (ic.getGeoType() == GEOLIB::GEODOMAIN) ? "Domain" : ic.getGeoName(), 
-			   ic.getProcessDistributionType(), FEMCondition::INITIAL_CONDITION)
-{
-	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
-		this->setDisValue(ic.getGeoNodeValue());
-}
-
-SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
-: FEMCondition(geometry_name, st.getProcessType(), st.getProcessPrimaryVariable(), st.getGeoType(), st.getGeoName(), 
-			   st.getProcessDistributionType(), FEMCondition::SOURCE_TERM)
-{
-	if (this->getProcessDistributionType() == FiniteElement::CONSTANT || this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN) 
-		this->setDisValue(st.getGeoNodeValue());
-	else if (this->getProcessDistributionType() == FiniteElement::LINEAR || this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN) 
-		this->setLinearDisValues(st.getPointsWithDistribedST(), st.getDistribedST());
-}

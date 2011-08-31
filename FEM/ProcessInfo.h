@@ -72,7 +72,7 @@ class ProcessInfo
        * Get a pointer to an object of type CRFProcess.
        * @return a pointer to an object of type CRFProcess
        */
-      CRFProcess* getProcess ();
+      CRFProcess* getProcess () const;
 
       virtual ~ProcessInfo();
 

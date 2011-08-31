@@ -24,6 +24,10 @@ last modified
 
 class CNodeValue;
 
+namespace MeshLib {
+	class CFEMesh;
+}
+
 /**
  * class for handling initial conditions
  */

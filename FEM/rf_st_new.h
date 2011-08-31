@@ -27,6 +27,7 @@ namespace process                                 //WW
 
 namespace MeshLib
 {
+	class CFEMesh;
 	class MeshNodesAlongPolyline;
 }
 
@@ -83,7 +84,7 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       void SetNOD();
 
                                                   //23.02.2009. WW
-      inline void DirectAssign(const long ShiftInNodeVector);
+      void DirectAssign(const long ShiftInNodeVector);
                                                   //03.2010. WW
       std::string DirectAssign_Precipitation(double current_time);
 
@@ -135,6 +136,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
 
       int getSubDomainIndex () const { return _sub_dom_idx; }
 
+	  std::string fname;
+
    private:                                       // TF, KR
       void ReadDistributionType(std::ifstream *st_file);
       void ReadGeoType(std::ifstream *st_file, const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name);
@@ -174,7 +177,6 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       std::string nodes_file;
       int msh_node_number;
       std::string msh_type_name;
-      std::string fname;
       std::vector<int> PointsHaveDistribedBC;
       std::vector<double> DistribedBC;
       std::vector<double> node_value_vectorArea;

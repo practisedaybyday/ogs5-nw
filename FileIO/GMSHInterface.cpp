@@ -677,7 +677,7 @@ void GMSHInterface::writeBoundingPolygon (GEOLIB::Polygon const * const bounding
 
 void GMSHInterface::addStationsAsConstraints(const std::string &proj_name, const GEOLIB::GEOObjects& geo, std::map<size_t,size_t> geo2gmsh_surface_id_map)
 {
-	const std::vector<GEOLIB::Point*> *pnts (geo.getPointVec (proj_name));
+	//const std::vector<GEOLIB::Point*> *pnts (geo.getPointVec (proj_name));
 	const std::vector<GEOLIB::Polyline*> *plys (geo.getPolylineVec (proj_name));
 	
 	std::vector<GEOLIB::Point*> station_points;

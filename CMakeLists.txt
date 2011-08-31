@@ -80,7 +80,14 @@ SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}
 SET (OGS_DATE "24.05.2011")
 
 # Check for number of processors
-CHECK_PROCESSOR_COUNT()
+INCLUDE(ProcessorCount)
+ProcessorCount(PROCESSOR_COUNT)
+IF(PROCESSOR_COUNT EQUAL 0)
+	MESSAGE(WARNING "Processor count could not be detected. Setting to one processor.")
+	SET(PROCESSOR_COUNT 1)
+ELSE()
+	MESSAGE(STATUS "Number of processors: ${PROCESSOR_COUNT}")
+ENDIF() # PROCESSOR_COUNT 
 
 ### General project setup ###
 INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
