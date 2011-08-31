@@ -132,7 +132,11 @@ ENDIF(PARALLEL_USE_OPENMP)
 
 IF(PARALLEL_USE_MPI)
 	IF (WIN32)
-		MESSAGE (FATAL_ERROR "Aborting: MPI is only supported under UNIX/LINUX!")			
+#		MESSAGE (FATAL_ERROR "Aborting: MPI is only supported under UNIX/LINUX!")			
+		add_definitions(
+			-DMPICH_IGNORE_CXX_SEEK
+		)
+#		target_link_libraries( FEM mpi )
 	ENDIF(WIN32)
 	IF(UNIX)
 
