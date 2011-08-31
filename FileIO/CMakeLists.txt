@@ -63,6 +63,7 @@ INCLUDE_DIRECTORIES(
 	./FEMIO
 	./MathIO
 	./MeshIO
+	./GeoIO
 	../Base
 	../FEM
 	../GEO

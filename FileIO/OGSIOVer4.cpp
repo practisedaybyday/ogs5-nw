@@ -562,7 +562,7 @@ void writeGLIFileV4 (const std::string& fname, const std::string& geo_name, cons
 	if (plys_vec) {
 		const std::vector<GEOLIB::Polyline*>* plys (plys_vec->getVector());
 		std::cout << plys->size () << " polylines to file " << fname << std::endl;
-		const std::vector<size_t>& pnt_id_map (geo.getPointVecObj(geo_name)->getIDMap());
+//		const std::vector<size_t>& pnt_id_map (geo.getPointVecObj(geo_name)->getIDMap());
 		for (size_t k(0); k<plys->size(); k++) {
 			os << "#POLYLINE" << std::endl;
 			os << " $NAME " << std::endl << "  " << k << std::endl; // plys_vec->getNameOfElement ((*plys)[k]) << std::endl;

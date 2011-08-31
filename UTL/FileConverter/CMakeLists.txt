@@ -21,7 +21,8 @@ IF (Shapelib_FOUND)
 	TARGET_LINK_LIBRARIES( ConvertSHPToGLI
 		FEM
 	        MSH
-        	#GEO
+	        MSHGEOTOOLS
+        	GEO
 	        MathLib
         	FileIO
 	        Base
@@ -74,7 +75,8 @@ IF (QT4_FOUND)
 	TARGET_LINK_LIBRARIES (generateBCandGLI 
 		FEM
 		MSH
-		#GEO
+		MSHGEOTOOLS
+		GEO
 		MathLib
 		FileIO
 		Base
@@ -86,7 +88,8 @@ IF (QT4_FOUND)
 	TARGET_LINK_LIBRARIES (generateBCFromPolyline
 		FEM
 		MSH
-		#GEO
+		MSHGEOTOOLS
+		GEO
 		MathLib
 		FileIO
 		Base

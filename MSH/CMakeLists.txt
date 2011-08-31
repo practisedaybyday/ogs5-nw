@@ -111,6 +111,7 @@ add_library( MSH STATIC ${SOURCES} )
 
 target_link_libraries (
 	MSH
+	FEM
 	FileIO
 	GEO
 	${CMAKE_THREAD_LIBS_INIT}
