@@ -13,6 +13,7 @@ SET( SOURCES
 	FEMIO/BoundaryConditionIO.cpp
 	MeshIO/OGSMeshIO.cpp
 	MeshIO/LegacyVtkInterface.cpp
+	GeoIO/Gmsh2GeoIO.cpp
 )
 
 # Header files
@@ -31,6 +32,7 @@ SET( HEADERS
 	MathIO/CRSIO.h
 	MeshIO/OGSMeshIO.h
 	MeshIO/LegacyVtkInterface.h
+	GeoIO/Gmsh2GeoIO.h
 )
 
 IF (OGS_USE_NETCDF)

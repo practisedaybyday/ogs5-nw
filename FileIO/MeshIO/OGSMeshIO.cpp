@@ -5,12 +5,13 @@
  */
 
 #include "MeshIO/OGSMeshIO.h"
+#include "GEOObjects.h"
 #include "msh_mesh.h"
 #include "msh_lib.h"
 
 namespace FileIO {
 
-MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string fileName)
+MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string const& fname)
 {
 	std::cout << "FEMRead ... " << std::flush;
 /*
@@ -21,7 +22,7 @@ MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string fileName)
 */
 	FEMDeleteAll();
 
-	MeshLib::CFEMesh* msh = FEMRead(fileName.substr(0, fileName.length()-4));
+	MeshLib::CFEMesh* msh = FEMRead(fname.substr(0, fname.length()-4));
 	if (msh)
 	{
 /*
@@ -48,10 +49,9 @@ MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string fileName)
 		return msh;
 	}
 
-    std::cout << "Failed to load the mesh file: " << fileName << std::endl;
+    std::cout << "Failed to load the mesh file: " << fname << std::endl;
 	return NULL;
 }
-
 
 void OGSMeshIO::write(MeshLib::CFEMesh const * mesh, std::ofstream &out)
 {

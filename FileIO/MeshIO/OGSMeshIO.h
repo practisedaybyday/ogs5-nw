@@ -19,7 +19,7 @@ namespace FileIO {
 class OGSMeshIO {
 public:
 	/// Read a OGS mesh from file.
-	static MeshLib::CFEMesh* loadMeshFromFile(std::string fileName);
+	static MeshLib::CFEMesh* loadMeshFromFile(std::string const& fileName);
 
 	/// Write an OGS msh to a file.
 	static void write (MeshLib::CFEMesh const * mesh, std::ofstream &out);

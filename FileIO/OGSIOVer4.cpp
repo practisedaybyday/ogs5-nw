@@ -567,7 +567,8 @@ void writeGLIFileV4 (const std::string& fname, const std::string& geo_name, cons
 			os << " $NAME " << std::endl << "  " << k << std::endl; // plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
 			os << " $POINTS" << std::endl;
 			for (size_t j(0); j<(*plys)[k]->getNumberOfPoints(); j++) {
-				os << "  " << pnt_id_map[((*plys)[k])->getPointID(j)] << std::endl;
+//				os << "  " << pnt_id_map[((*plys)[k])->getPointID(j)] << std::endl;
+				os << "  " << ((*plys)[k])->getPointID(j) << std::endl;
 			}
 		}
 	}
@@ -577,11 +578,12 @@ void writeGLIFileV4 (const std::string& fname, const std::string& geo_name, cons
 		const std::vector<GEOLIB::Polyline*>* plys (plys_vec->getVector());
 		std::cout << plys->size () << " closed polylines as surfaces to file " << fname << std::endl;
 		for (size_t k(0); k<plys->size(); k++) {
-			if ((*plys)[k]->isClosed())
-			os << "#SURFACE" << std::endl;
-			os << " $NAME " << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
-			os << " $TYPE " << std::endl << "  0" << std::endl;
-			os << " $POLYLINES" << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
+			if ((*plys)[k]->isClosed()) {
+				os << "#SURFACE" << std::endl;
+				os << " $NAME " << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
+				os << " $TYPE " << std::endl << "  0" << std::endl;
+				os << " $POLYLINES" << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
+			}
 		}
 	}
 
