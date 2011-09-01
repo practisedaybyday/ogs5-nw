@@ -28,9 +28,8 @@ OPTION(OGS_USE_QT "User interface configuration" OFF)
 OPTION(OGS_FEM_LIS "Library of Iterative Solvers for Linear Systems configuration" OFF)
 OPTION(OGS_FEM_MKL "Math kernel library configuration" OFF)
 
-IF (UNIX) # Only supported on Linux
-	OPTION(OGS_FEM_MPI "Message passing interface configuration" OFF)
-ENDIF (UNIX)
+# supported on Linux and Windows
+OPTION(OGS_FEM_MPI "Message passing interface configuration" OFF)
 
 # Set default configuration when no other config is given
 IF (NOT OGS_FEM AND NOT OGS_FEM_SP AND NOT OGS_FEM_GEMS AND NOT OGS_FEM_PQC AND NOT OGS_FEM_BRNS AND NOT OGS_FEM_CHEMAPP AND NOT OGS_FEM_LIS AND NOT OGS_FEM_MKL AND NOT OGS_FEM_MPI AND NOT OGS_USE_QT)
@@ -98,10 +97,12 @@ ENDIF(OGS_FEM_JFNK)
 
 IF(OGS_FEM_MPI)
 	MESSAGE (STATUS  "Configuring for FEM command line with MPI" )
-	STRING (REGEX MATCH mpi MPI_COMPILER_SET ${CMAKE_CXX_COMPILER})
-	IF (NOT MPI_COMPILER_SET)
-		MESSAGE (FATAL_ERROR "Aborting. Make sure that you specified the mpi c and c++ compiler on the command line. E.g. cmake -DOGS_FEM_MPI=ON -DCMAKE_C_COMPILER=/opt/openmpi-1.4.1/bin/mpicc -DCMAKE_CXX_COMPILER=/opt/openmpi-1.4.1/bin/mpic++ ..")
-	ENDIF ()
+	IF (UNIX)
+		STRING (REGEX MATCH mpi MPI_COMPILER_SET ${CMAKE_CXX_COMPILER})
+		IF (NOT MPI_COMPILER_SET)
+			MESSAGE (FATAL_ERROR "Aborting. Make sure that you specified the mpi c and c++ compiler on the command line. E.g. cmake -DOGS_FEM_MPI=ON -DCMAKE_C_COMPILER=/opt/openmpi-1.4.1/bin/mpicc -DCMAKE_CXX_COMPILER=/opt/openmpi-1.4.1/bin/mpic++ ..")
+		ENDIF ()
+	ENDIF (UNIX)
 
 	SET( PRJ_EXT "-MPI" )
 	SET(PARALLEL_USE_MPI ON CACHE BOOL "Use Message Passing Interface")
