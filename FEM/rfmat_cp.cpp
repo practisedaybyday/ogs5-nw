@@ -711,7 +711,7 @@ double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFPro
 
    group = m_pcs->m_msh->ele_vector[index]->GetPatchIndex();
 #ifdef GEM_REACT
-   MediumProperties *m_mat_mp (mmp_vector[group]);
+   CMediumProperties *m_mat_mp (mmp_vector[group]);
 #endif
 
    k = diffusion_model_values;
