@@ -1167,9 +1167,10 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						//WW
 						if (bc->getProcessDistributionType()
 								== FiniteElement::LINEAR)
-							m_node_value->node_value = node_value[i];
-
-						if (bc->getProcessDistributionType() // 25.08.2011. WW
+                        {
+                          m_node_value->node_value = node_value[i];
+                        }
+						else if (bc->getProcessDistributionType() // 25.08.2011. WW
 							== FiniteElement::FUNCTION)
 						{
                             a_node = m_msh->nod_vector[m_node_value->geo_node_number];
