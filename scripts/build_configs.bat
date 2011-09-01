@@ -65,4 +65,15 @@ ren ogs.exe ogs_lis.exe
 copy /Y ogs_lis.exe ..\..\..\Release\
 cd ..\..\..\
 
+:: Build FEM_MPI
+mkdir build_mpi
+cd build_mpi
+cmake -G %generator% -DOGS_FEM_MPI=ON -DOGS_DONT_USE_QT=ON -DMPI_LIBRARY:FILEPATH="C:/Program Files (x86)/MPICH2/lib/mpi.lib" -DMPI_INCLUDE_PATH:PATH="C:/Program Files (x86)/MPICH2/include" -DMPIEXEC:FILEPATH="C:/Program Files (x86)/MPICH2/bin/mpiexec.exe" ..
+cmake ..
+devenv OGS-FEM-5-MPI.sln /Build Release
+cd bin\Release
+ren ogs.exe ogs_mpi.exe
+copy /Y ogs_mpi.exe ..\..\..\Release\
+cd ..\..\..\
+
 cd scripts
