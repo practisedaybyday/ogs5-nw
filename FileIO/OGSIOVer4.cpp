@@ -398,7 +398,8 @@ std::string readSurface(std::istream &in,
 std::string readSurfaces(std::istream &in,
 		std::vector<Surface*> &sfc_vec, std::map<std::string, size_t>& sfc_names,
 		const std::vector<Polyline*> &ply_vec, const std::map<std::string,size_t>& ply_vec_names,
-		std::vector<Point*> &pnt_vec)
+		std::vector<Point*> &pnt_vec,
+		const std::string &path)
 {
 	if (!in.good()) {
 		std::cerr << "*** readSurfaces input stream error " << std::endl;
@@ -535,7 +536,7 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo)
 	std::map<std::string,size_t> *sfc_names (new std::map<std::string,size_t>);
 	if (tag.find("#SURFACE") != std::string::npos && in) {
 		std::cout << "read surfaces from stream ... " << std::flush;
-		tag = readSurfaces(in, *sfc_vec, *sfc_names, *ply_vec, *ply_names, *pnt_vec);
+		tag = readSurfaces(in, *sfc_vec, *sfc_names, *ply_vec, *ply_names, *pnt_vec, path);
 		std::cout << " ok, " << sfc_vec->size() << " surfaces read"
 				<< std::endl;
 	} else
