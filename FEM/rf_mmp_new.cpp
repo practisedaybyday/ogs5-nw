@@ -125,6 +125,10 @@ CMediumProperties::CMediumProperties(void)
    vol_bio_model = 0;
    foc = 0.0;
    fixed_saturation = 1.;//WX
+
+
+   permeability_pressure_model = -1;  //01.09.2011. WW
+   permeability_strain_model = -1;    //01.09.2011. WW
 #ifdef RFW_FRACTURE
    frac_num = 0;
    fracs_set = 0;
@@ -4110,9 +4114,9 @@ double* CMediumProperties::PermeabilityTensor(long index)
 
          tensor[0] = m_msh->ele_vector[index]->mat_vector(perm_index);
                                                   //CMCD
-         int edx = m_pcs->GetElementValueIndex("PERMEABILITY");
+         //01.09.2011 WW.  int edx = m_pcs->GetElementValueIndex("PERMEABILITY");
                                                   //CMCD
-         m_pcs->SetElementValue(index,edx,tensor[0]);
+         //01.09.2011 WW.   m_pcs->SetElementValue(index,edx,tensor[0]);
       }
       else if ( permeability_model == 3 )
       {                                           // HS: 11.2008, for K-C relationship
