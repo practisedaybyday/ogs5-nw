@@ -141,6 +141,10 @@ IF (LIBPQC)
   ENDIF (LIBPQC_DEBUG)
 ENDIF (LIBPQC)
 
+IF (PARALLEL_USE_MPI)
+	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+ENDIF (PARALLEL_USE_MPI)
+
 # Create the library
 add_library( FEM STATIC ${SOURCES} )
 
@@ -179,7 +183,8 @@ if (WIN32)
 		target_link_libraries( FEM ca_vc_e )
 	endif (OGS_FEM_CHEMAPP)
 	if (PARALLEL_USE_MPI)
-		target_link_libraries( FEM mpi )
+		SET( CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${MPI_COMPILE_FLAGS} )
+		target_link_libraries( FEM ${MPI_LIBRARIES} )
 	endif (PARALLEL_USE_MPI)
 endif (WIN32)
 

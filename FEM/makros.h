@@ -13,6 +13,7 @@
 #define makros_INC
 
 #include "Configure.h"
+#include "BuildInfo.h"
 
 /* Global benoetigte Header */
 //#include <stdlib.h>
