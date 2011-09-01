@@ -2298,8 +2298,11 @@ namespace FiniteElement
       //WX: cal factor for permeability 11.05.2010
       CFiniteElementStd *h_fem;
       h_fem = this;
-      fac_perm = MediaProp->PermeabilityFunctionPressure(Index, PG2);
-      fac_perm *= MediaProp->PermeabilityFunctionStrain(Index,nnodes,h_fem);
+
+      if(MediaProp->permeability_pressure_model>0) //01.09.2011. WW
+        fac_perm = MediaProp->PermeabilityFunctionPressure(Index, PG2);
+	  if(MediaProp->permeability_strain_model>0) //01.09.2011. WW
+        fac_perm *= MediaProp->PermeabilityFunctionStrain(Index,nnodes,h_fem);
       //======================================================================
       for(i=0; i<dim*dim; i++)
          mat[i] = 0.0;
