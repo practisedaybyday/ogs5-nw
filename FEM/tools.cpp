@@ -451,8 +451,8 @@ int FctCurves(char *data, int found, FILE * f)
             anz = 0l;
             while (StrTestDouble(&data[p += pos]))
             {
-               ok = (StrReadDouble(&d1, &data[p], f, TFDouble, &pos) && ok);
-               ok = (StrReadDouble(&d2, &data[p += pos], f, TFDouble, &pos) && ok);
+               ok = (StrReadDouble(&d1, &data[p], f, &pos) && ok);
+               ok = (StrReadDouble(&d2, &data[p += pos], f, &pos) && ok);
                LineFeed(f);
                anz++;
                stuetz = (StuetzStellen *) Realloc(stuetz, (anz * sizeof(StuetzStellen)));

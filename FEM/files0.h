@@ -56,7 +56,7 @@ FctTestLong func, int *pos );
 extern int StrReadFloat ( float *x, char *s, FILE *f,
 FctTestFloat func, int *pos );
 /* Liest Float-Wert aus String und schreibt Protokoll in Datei */
-extern int StrReadDouble ( double *x, char *s, FILE *f,FctTestDouble func, int *pos );
+extern int StrReadDouble ( double *x, char *s, FILE *f, int *pos );
 /* Liest Double-Wert aus String und schreibt Protokoll in Datei */
 extern int StrReadString ( char **x, char *s, FILE *f,
 FctTestString func, int *pos );
@@ -97,7 +97,7 @@ extern int StringReadStr ( char **x, char *s, int *pos );
 //extern int TFInt ( int *x, FILE *f );
 //extern int TFLong ( long *x, FILE *f );
 //extern int TFFloat ( float *x, FILE *f );
-extern int TFDouble ( double *x, FILE *f );
+//extern int TFDouble ( double *x, FILE *f );
 //extern int TFDoubleNew (char *s, FILE *f );
 extern int TFString ( char *x, FILE *f );
 

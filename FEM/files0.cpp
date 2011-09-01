@@ -436,38 +436,38 @@ void CURWrite()
  **************************************************************************/
 string GetLineFromFile1(ifstream *ein)
 {
-	return readNonBlankLineFromInputStream(*ein);
-//   string line, zeile = "";
-//   int fertig=0, i=0, j=0;
-//   char zeile1[MAX_ZEILEN];
-//   line ="";                                      //WW
-//   //----------------------------------------------------------------------
-//   while(fertig<1)
-//   {
-//      if(ein->getline(zeile1,MAX_ZEILEN))         //Zeile lesen
-//      {
-//         line = zeile1;                           //character in string umwandeln
-//         i = (int) line.find_first_not_of(" ",0); //Anf�ngliche Leerzeichen �berlesen, i=Position des ersten Nichtleerzeichens im string
-//         j = (int) line.find(";",i) ;             //Nach Kommentarzeichen ; suchen. j = Position des Kommentarzeichens, j=-1 wenn es keines gibt.
-//         if(j!=i)fertig = 1;                      //Wenn das erste nicht-leerzeichen ein Kommentarzeichen ist, zeile �berlesen. Sonst ist das eine Datenzeile
-//         if((i != -1))
-//            zeile = line.substr(i,j-i);           //Ab erstem nicht-Leerzeichen bis Kommentarzeichen rauskopieren in neuen substring, falls Zeile nicht leer ist
-//         i = (int) zeile.find_last_not_of(" ");   // Suche nach dem letzten Zeichen, dass kein Leerzeichen ist
-//         if(i>=0)
-//         {
-//            //		  line.clear(); // = "";
-//            line = zeile.substr(0,i+1);           // Leerzeichen am Ende rausschneiden
-//            //		  zeile.clear(); // = "";
-//            zeile = line;
-//         }
-//      }
-//      else                                        //end of file found
-//      {
-//         fertig=1;
-//      }
-//   }                                              // end while(...)
-//   //----------------------------------------------------------------------
-//   return zeile;
+//	return readNonBlankLineFromInputStream(*ein);
+   string line, zeile = "";
+   int fertig=0, i=0, j=0;
+   char zeile1[MAX_ZEILEN];
+   line ="";                                      //WW
+   //----------------------------------------------------------------------
+   while(fertig<1)
+   {
+      if(ein->getline(zeile1,MAX_ZEILEN))         //Zeile lesen
+      {
+         line = zeile1;                           //character in string umwandeln
+         i = (int) line.find_first_not_of(" ",0); //Anf�ngliche Leerzeichen �berlesen, i=Position des ersten Nichtleerzeichens im string
+         j = (int) line.find(";",i) ;             //Nach Kommentarzeichen ; suchen. j = Position des Kommentarzeichens, j=-1 wenn es keines gibt.
+         if(j!=i)fertig = 1;                      //Wenn das erste nicht-leerzeichen ein Kommentarzeichen ist, zeile �berlesen. Sonst ist das eine Datenzeile
+         if((i != -1))
+            zeile = line.substr(i,j-i);           //Ab erstem nicht-Leerzeichen bis Kommentarzeichen rauskopieren in neuen substring, falls Zeile nicht leer ist
+         i = (int) zeile.find_last_not_of(" ");   // Suche nach dem letzten Zeichen, dass kein Leerzeichen ist
+         if(i>=0)
+         {
+            //		  line.clear(); // = "";
+            line = zeile.substr(0,i+1);           // Leerzeichen am Ende rausschneiden
+            //		  zeile.clear(); // = "";
+            zeile = line;
+         }
+      }
+      else                                        //end of file found
+      {
+         fertig=1;
+      }
+   }                                              // end while(...)
+   //----------------------------------------------------------------------
+   return zeile;
 }
 
 
@@ -598,9 +598,8 @@ int FilePrintDouble ( FILE *f, double x )
    03/1994     MSR        Erste Version
                                                                           */
 /**************************************************************************/
-int StrReadDouble ( double *x, char *s, FILE *f, FctTestDouble func, int *pos )
+int StrReadDouble ( double *x, char *s, FILE *f, int *pos )
 {
-   int test;
    *x = 0.0;
    if (sscanf(s," %lf%n",x,pos)<=0)
    {
@@ -610,8 +609,6 @@ int StrReadDouble ( double *x, char *s, FILE *f, FctTestDouble func, int *pos )
    }
    else
    {
-      test = func(x,f);
-
       /* CT: Protokolformat geaendert */
       if ((fabs(*x)<100000.)&&(fabs(*x)>=0.1))
       {
@@ -622,7 +619,7 @@ int StrReadDouble ( double *x, char *s, FILE *f, FctTestDouble func, int *pos )
          fprintf(f," %e ",*x);
       }
 
-      return test;
+      return 1;
    }
 }
 
@@ -785,10 +782,10 @@ int LineFeed ( FILE *f )
 }
 
 
-int TFDouble ( double *x, FILE *f )
-{
-   return 1;
-}
+//int TFDouble ( double *x, FILE *f )
+//{
+//   return 1;
+//}
 
 
 int TFString ( char *x, FILE *f )

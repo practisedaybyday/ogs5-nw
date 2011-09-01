@@ -1419,7 +1419,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
                            DisplayMsgLn("pH is not included in the transport but will be calculated in the reaction");
                            pH_flag=1;
                            p=0;
-                           StrReadDouble(&dvalue, &str[p+=pos], f, TFDouble, &pos);
+                           StrReadDouble(&dvalue, &str[p+=pos], f, &pos);
                            StrReadStr(s, &str[p+=pos], f, TFString, &pos);
                            FilePrintString(f, " # comp ");
                            FilePrintInt(f, rcml_number_of_master_species+1);
@@ -1454,7 +1454,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
                         {
                            DisplayMsgLn("pe is not included in the transport but will be calculated in the reaction");
                            pe_flag=1;
-                           StrReadDouble(&dvalue, &str[pos], f, TFDouble, &pos);
+                           StrReadDouble(&dvalue, &str[pos], f, &pos);
                            FilePrintString(f, " # comp ");
                            FilePrintInt(f, rcml_number_of_master_species+2);
                            LineFeed(f);
@@ -1517,7 +1517,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
                p=0;
                StrReadStr(s, &str[p+=pos], f, TFString, &pos);
                if (strcmp(s,"")==0) break;
-               StrReadDouble(&dvalue, &str[pos], f, TFDouble, &pos);
+               StrReadDouble(&dvalue, &str[pos], f, &pos);
 
                /* find the mass of each phase from val_in*/
                for (i=0;i<np;i++)
