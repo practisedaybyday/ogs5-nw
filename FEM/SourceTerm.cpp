@@ -8,12 +8,12 @@
 #include "rf_st_new.h"
 
 SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
-: FEMCondition(geometry_name, st.getProcessType(), st.getProcessPrimaryVariable(), st.getGeoType(), st.getGeoName(), 
+: FEMCondition(geometry_name, st.getProcessType(), st.getProcessPrimaryVariable(), st.getGeoType(), st.getGeoName(),
 			   st.getProcessDistributionType(), FEMCondition::SOURCE_TERM)
 {
-	if (this->getProcessDistributionType() == FiniteElement::CONSTANT || this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN) 
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT || this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
 		this->setDisValue(st.getGeoNodeValue());
-	else if (this->getProcessDistributionType() == FiniteElement::LINEAR || this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN) 
+	else if (this->getProcessDistributionType() == FiniteElement::LINEAR || this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
 		this->setLinearDisValues(st.getPointsWithDistribedST(), st.getDistribedST());
 	else std::cout << "Error in SourceTerm() - Unknown Process Distribution Type \"" << FiniteElement::convertDisTypeToString(st.getProcessDistributionType()) << "\"..." << std::endl;
 }
@@ -48,7 +48,7 @@ std::vector<FEMCondition*> SourceTerm::createDirectSourceTerms(const std::vector
 			}
 			count++;
  		}
- 		else 
+ 		else
  			std::cout << "Error: no DIRECT distribution type" << std::endl;
  	}
  	return conditions;

@@ -51,10 +51,12 @@ set( SOURCES
 	GeoInfo.h
 	ProcessInfo.h
 	DistributionInfo.h
+	LinearFunctionData.h
 	Output.h
 	GeoInfo.cpp
 	ProcessInfo.cpp
 	DistributionInfo.cpp
+	LinearFunctionData.cpp
 	Stiff_Bulirsch-Stoer.cpp
 	BoundaryCondition.cpp
 	break.cpp

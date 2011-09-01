@@ -21,7 +21,8 @@ class BoundaryConditionIO;
 #include "GEOObjects.h"
 #include "GeoInfo.h"                              // TF
 #include "ProcessInfo.h"                          // KR
-#include "DistributionInfo.h"                     // TF
+#include "DistributionInfo.h" // TF
+#include "LinearFunctionData.h" // TF
 
 // GEOLib
 //#include "geo_ply.h"
@@ -199,9 +200,9 @@ class CBoundaryConditionNode                      //OK raus
       //FCT
       int conditional;                            //OK
       CBoundaryConditionNode();
-    
-      // 25.08.2011. WW 
-	  void Read(std::istream& is); 
+
+      // 25.08.2011. WW
+	  void Read(std::istream& is);
 	  void Write(std::ostream& os) const;
 
 };

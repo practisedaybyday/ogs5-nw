@@ -42,7 +42,7 @@ void Gmsh2GeoIO::loadMeshAsGeometry (std::string & fname, GEOLIB::GEOObjects* ge
 		// parse id
 		size_t pos_beg(0);
 		size_t pos_end (line.find(" "));
-		size_t id (str2number<size_t>(line.substr(pos_beg, pos_end-pos_beg)));
+		// the sub string line.substr(pos_beg, pos_end-pos_beg) represents the id
 		// parse x coordinate
 		pos_beg = pos_end+1;
 		pos_end = line.find(" ", pos_beg);
@@ -74,7 +74,7 @@ void Gmsh2GeoIO::loadMeshAsGeometry (std::string & fname, GEOLIB::GEOObjects* ge
 		// parse id
 		size_t pos_beg(0);
 		size_t pos_end (line.find(" "));
-		size_t id (str2number<size_t>(line.substr(pos_beg, pos_end-pos_beg)));
+		// the sub string line.substr(pos_beg, pos_end-pos_beg) represents the id
 		// parse element type
 		pos_beg = pos_end+1;
 		pos_end = line.find(" ", pos_beg);

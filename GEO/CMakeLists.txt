@@ -3,7 +3,7 @@ set( SOURCES
 	AxisAlignedBoundingBox.cpp
 	BruteForceClosestPair.cpp
 	Color.cpp
-	DivideAndConquerClosestPair.cpp
+#	DivideAndConquerClosestPair.cpp
 	geo_dom.cpp
 	geo_lib.cpp
 	geo_lin.cpp
@@ -32,7 +32,7 @@ set( HEADERS
 	BruteForceClosestPair.h
 	ClosestPair.h
 	Color.h
-	DivideAndConquerClosestPair.h
+#	DivideAndConquerClosestPair.h
 	geo_dom.h
 	geo_lib.h
 	geo_lin.h

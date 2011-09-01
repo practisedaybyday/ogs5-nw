@@ -13,7 +13,8 @@ last modified
 // FEM
 #include "GeoInfo.h"                              // TF
 #include "ProcessInfo.h"                          // TF
-#include "DistributionInfo.h"                     // TF
+#include "DistributionInfo.h" // TF
+#include "LinearFunctionData.h" // TF
 
 class CNodeValue;
 class CGLPolyline;
