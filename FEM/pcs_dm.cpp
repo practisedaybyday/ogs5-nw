@@ -74,22 +74,16 @@ namespace process
       counter(0), InitialNorm(0.0)
 
    {
-      unknown_vector_indeces = NULL;
-      unknown_node_numbers = NULL;
       error_k0 = 1.0e10;
    }
 
    CRFProcessDeformation::~CRFProcessDeformation()
    {
-      if(ARRAY) ARRAY = (double *) Free(ARRAY);
+      if(ARRAY) delete [] ARRAY;
       if(fem_dm) delete fem_dm;
-      if(unknown_vector_indeces) delete [] unknown_vector_indeces;
-      if(unknown_node_numbers) delete [] unknown_node_numbers;
 
       fem_dm = NULL;
       ARRAY = NULL;
-      unknown_vector_indeces = NULL;
-      unknown_node_numbers = NULL;
       // Release memory for element variables
       // alle stationaeren Matrizen etc. berechnen
       long i;
@@ -142,7 +136,7 @@ namespace process
       fem_dm->SetGaussPointNumber(m_num->ele_gauss_points);
       //
       // Monolithic scheme
-      if(type==41) fem =  new CFiniteElementStd(this, Axisymm*m_msh->GetCoordinateFlag());
+      if(type/10==4) fem =  new CFiniteElementStd(this, Axisymm*m_msh->GetCoordinateFlag());
       //
       dm_pcs_number = pcs_number;
       //
@@ -152,26 +146,16 @@ namespace process
          Tolerance_global_Newton = m_num->nls_error_tolerance;
       }
       //
-      unknown_vector_indeces = new int[pcs_number_of_primary_nvals];
-      unknown_node_numbers = new long[problem_dimension_dm+1];
-      for(i=0;i<pcs_number_of_primary_nvals;i++)
-         unknown_vector_indeces[i] = GetNodeValueIndex(pcs_primary_function_name[i])+1;
-      for(i=0;i<problem_dimension_dm;i++)
-         unknown_node_numbers[i] = m_msh->GetNodesNumber(true);
-      if(type==41)
-         unknown_node_numbers[problem_dimension_dm] = m_msh->GetNodesNumber(false);
 
       //Initialize material transform tensor for tansverse isotropic elasticity
       //UJG/WW. 25.11.2009
       for(i=0; i<(int)msp_vector.size(); i++)
          msp_vector[i]->CalculateTransformMatrixFromNormalVector(problem_dimension_dm);
 
-      // Initialize linear solver
-#ifndef NEW_EQS                             //WW
-      InitEQS();
-#endif
-      if(!msp_vector.size())                      //OK
+      if(!msp_vector.size()) {
+         std::cout << "***ERROR: MSP data not found!" << std::endl;
          return;
+      }
       InitialMBuffer();
       InitGauss();
       ////////////////////////////////////
@@ -220,12 +204,17 @@ namespace process
          bufferSize = GetPrimaryVNumber()*m_msh->GetNodesNumber(true);
          if(H_Process)
             HM_Stagered = true;
-      } else if(GetObjType()==41)
-      bufferSize = (GetPrimaryVNumber()-1)*m_msh->GetNodesNumber(true)+
+      }
+      else if(GetObjType()==41)
+         bufferSize = (GetPrimaryVNumber()-1)*m_msh->GetNodesNumber(true)+
                m_msh->GetNodesNumber(false);
+      else if (GetObjType()==42)
+         bufferSize = (GetPrimaryVNumber()-2)*m_msh->GetNodesNumber(true)+
+               2*m_msh->GetNodesNumber(false);
 
       //Allocate memory for  temporal array
-      ARRAY = (double*) Malloc(bufferSize*sizeof(double));
+      if(m_num->nls_method != 2)
+         ARRAY =  new double[bufferSize];
 
       // Allocate memory for element variables
       MeshLib::CElem* elem = NULL;
@@ -280,12 +269,10 @@ namespace process
       double NormU, Norm= 0.0, Error1, Error=0.0;
       double ErrorU1, ErrorU=0.0;
 
-      int ite_steps = 0;
-
       //const int defaultSteps=100;
       int MaxIteration=m_num->nls_max_iterations;
       int elasticity=0;
-      int monolithic=0;
+      //int monolithic=0;
       //
       string delim = " | ";
       //----------------------------------------------------------
@@ -310,9 +297,9 @@ namespace process
       }
 
       // For monolithic scheme
-      if(type == 41)
+      if(type/10 == 4)                            // Modified at 05.07.2010 WW
       {
-         monolithic=1;
+ //        monolithic=1;
          number_of_load_steps = 1;
       }
       // system matrix
@@ -347,10 +334,10 @@ namespace process
 
       */
 
-      if(CouplingIterations==0)
+      if(CouplingIterations==0&&m_num->nls_method!=2)
          StoreLastSolution();                     //u_n-->temp
       //  Reset stress for each coupling step when partitioned scheme is applied to HM
-      if(H_Process&&(type!=41))
+      if(H_Process&&(type/10!=4))
          ResetCouplingStep();
       //
       // Compute the maxium ratio of load increment and
@@ -456,17 +443,14 @@ namespace process
          //TEST     else if(fluid)   LoadFactor = (double)l/(double)number_of_load_steps;
          */
 
-         // For p-u monolitic scheme. If first step (counter==1), take initial value
-         if(pcs_deformation%11 == 0&&!fem_dm->dynamic)
-            InitializeNewtonSteps(1);             // p=0
          //
          // Initialize inremental displacement: w=0
-         InitializeNewtonSteps(0);
+         InitializeNewtonSteps();
          //
          // Begin Newton-Raphson steps
          if(elasticity!=1)
          {
-            ite_steps = 0;
+            //ite_steps = 0;
             Error = 1.0e+8;
             ErrorU = 1.0e+8;
             Norm = 1.0e+8;
@@ -483,6 +467,7 @@ namespace process
             }
 #endif
          }
+         ite_steps = 0;
          while(ite_steps<MaxIteration)
          {
             ite_steps++;
@@ -490,6 +475,14 @@ namespace process
 #ifdef NEW_EQS                        //WW
 #ifndef USE_MPI
             eqs_new->Initialize();                //27.11.2007 WW
+#endif
+#ifdef JFNK_H2M
+            /// If JFNK method (1.09.2010. WW):
+            if(m_num->nls_method==2)
+            {
+               Jacobian_Multi_Vector_JFNK();
+               eqs_new->setPCS(this);
+            }
 #endif
 #else
             SetZeroLinearSolver(eqs);
@@ -499,7 +492,7 @@ namespace process
             /*
             #ifdef MFC
                     CString m_str;
-                    m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\
+                    m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\ 
                                   aktuelle_zeit,pcs_type_name.c_str(),l,ite_steps);
                     pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
             #endif
@@ -508,13 +501,14 @@ namespace process
             clock_t cpu_time=0;                   //WW
             cpu_time = -clock();
 #endif
-            GlobalAssembly();
+            if(m_num->nls_method!=2)              // Not JFNK method. 05.08.2010. WW
+               GlobalAssembly();
 #ifdef USE_MPI
             cpu_time += clock();
             cpu_time_assembly += cpu_time;
 #endif
             //
-            if(monolithic == 0)
+            if(type!=41)
                SetInitialGuess_EQS_VEC();
 #ifdef MFC
             m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Solve equation system",\
@@ -553,7 +547,7 @@ namespace process
 #ifdef NEW_EQS
             if(!elasticity)  Norm = eqs_new->NormRHS();
 #else
-            if(!elasticity)  Norm = CalcNormOfRHS(eqs);
+            if(!elasticity)  Norm = NormOfUnkonwn_orRHS(false);
 #endif
 #endif
             if(!elasticity)
@@ -564,7 +558,7 @@ namespace process
 #ifdef NEW_EQS
                NormU = eqs_new->NormX();
 #else
-               NormU = NormOfUnkonwn();
+               NormU = NormOfUnkonwn_orRHS();
 #endif
 
                if(ite_steps==1&&CouplingIterations==0)
@@ -586,6 +580,14 @@ namespace process
                //           if(Error/Error1>1.0e-1) damping=0.5;
                if(Error/Error1>1.0e-1||ErrorU/ErrorU1>1.0e-1) damping=0.5;
                if(ErrorU<Error) Error = ErrorU;
+#if defined(NEW_EQS)&&defined(JFNK_H2M)
+               /// If JFNK, get w from the buffer
+               if(m_num->nls_method==2)
+               {
+                  //damping = LineSearch();
+                  Recovery_du_JFNK();
+               }
+#endif
 #ifdef USE_MPI
                if(myrank==0)
                {
@@ -606,16 +608,15 @@ namespace process
 #ifdef USE_MPI
                }
 #endif
+               if(Error>100.0&&ite_steps>1)
+               {
+                  printf ("\n  Attention: Newton-Raphson step is diverged. Programme halt!\n");
+                  exit(1);
+               }
                if(InitialNorm<10*Tolerance_global_Newton)
                   break;
                if(Norm<0.001*InitialNorm) break;
                if(Error<=Tolerance_global_Newton) break;
-
-               if(Error>100.0&&ite_steps>1)
-               {
-                  printf ("\n  Attention: Newton-Raphson step has diverged. Programme halt!\n");
-                  abort();
-               }
 
             }
             // w = w+dw for Newton-Raphson
@@ -635,11 +636,12 @@ namespace process
          if(elasticity!=1)
             cout<<"Newton-Raphson (DM) terminated"<<endl;
 
-      }                                           // Load step
+      }
+      // Load step
       //
       // For coupling control
       Error = 0.0;
-      if(type!=41)                                // Partitioned scheme
+      if(type/10!=4)                              // Partitioned scheme
       {
          for(size_t n=0; n<m_msh->GetNodesNumber(true); n++)
          {
@@ -670,7 +672,8 @@ namespace process
       }
 #endif
       // Recovery the old solution.  Temp --> u_n	for flow proccess
-      RecoverSolution();
+      if(m_num->nls_method!=2)
+         RecoverSolution();
       //
 #ifdef NEW_EQS                              //WW
 #if defined(USE_MPI)
@@ -695,7 +698,19 @@ namespace process
          if(msp_vector[l]->excavated)
             deact_dom.push_back(l);
       }
-      if((int)deact_dom.size()>0)
+      if(ExcavMaterialGroup>=0&&PCS_ExcavState<0) //WX:01.2010.update pcs excav state
+      {
+         for(l=0; l<(long)m_msh->ele_vector.size();l++)
+         {
+            if((m_msh->ele_vector[l]->GetExcavState()>0)&&!(m_msh->ele_vector[l]->GetMark()))
+            {
+               PCS_ExcavState = 1;
+               break;
+            }
+         }
+      }
+                                                  //WX:01.2011 modified for coupled excavation
+      if((int)deact_dom.size()>0||PCS_ExcavState>0)
       {
 
          //	  MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  //abort();}
@@ -723,6 +738,12 @@ namespace process
                   break;
                }
             }
+            if(ExcavMaterialGroup>=0)             //WX
+               if(elem->GetExcavState()>=0)
+            {
+               elem->MarkingAll(false);
+               done = true;
+            }
             if(done)
                continue;
             else
@@ -730,12 +751,16 @@ namespace process
          }
 
          size_t mesh_node_vector_size (m_msh->nod_vector.size());
-         for (size_t l = 0; l < mesh_node_vector_size; l++) {
+         for (size_t l = 0; l < mesh_node_vector_size; l++)
+         {
             while(m_msh->nod_vector[l]->getConnectedElementIDs().size())
                m_msh->nod_vector[l]->getConnectedElementIDs().pop_back();
          }
 
-         for (size_t l = 0; l < mesh_node_vector_size; l++) {
+         size_t mesh_ele_vector_size (m_msh->ele_vector.size());
+                                                  //WX:07.2011 error fixed
+         for (size_t l = 0; l < mesh_ele_vector_size; l++)
+         {
             elem = m_msh->ele_vector[l];
             if(!elem->GetMark()) continue;
             for(i=0; i<elem->GetNodesNumber(m_msh->getOrder()); i++)
@@ -784,7 +809,7 @@ namespace process
    {
       const int LenMat=7;
       size_t i;
-      int j, k, gp, NGS, NGSS, MatGroup, n_dom;
+      int j, k, gp, NGS,  MatGroup, n_dom;
       int PModel = 1;
       int gp_r=0, gp_s=0, gp_t=0;
       //  double z=0.0;
@@ -795,7 +820,7 @@ namespace process
       CInitialCondition *m_ic = NULL;
       std::vector<CInitialCondition *> stress_ic(6);
 
-      double M_cam = 0.0;
+      //double M_cam = 0.0;
       double pc0 = 0.0;
       double OCR = 1.0;
       n_dom = k= 0;
@@ -861,7 +886,7 @@ namespace process
 
             if(PModel==3)
             {
-               M_cam = (*SMat->data_Plasticity)(0);
+               //WW M_cam = (*SMat->data_Plasticity)(0);
                pc0 = (*SMat->data_Plasticity)(3); // The initial preconsolidation pressure
                                                   // Void ratio
                *(eleV_DM->e_i) = (*SMat->data_Plasticity)(4);
@@ -890,7 +915,7 @@ namespace process
             //if 2D //ToDo: Set option for 3D
             // Loop over Gauss points
             NGS = fem_dm->GetNumGaussPoints();
-            NGSS = fem_dm->GetNumGaussSamples();
+           //WW NGSS = fem_dm->GetNumGaussSamples();
 
             for (gp = 0; gp < NGS; gp++)
             {
@@ -908,7 +933,7 @@ namespace process
                      {
                         if(MatGroup!=m_ic->GetDomain(k)) continue;
                         (*eleV_DM->Stress)(j, gp) =
-                           m_ic->DistributionFuntion(k, xyz[0],xyz[1], xyz[2]);
+                           m_ic->getLinearFunction()->getValue(k, xyz[0],xyz[1], xyz[2]);
                         (*eleV_DM->Stress0)(j, gp) =  (*eleV_DM->Stress)(j, gp);
                      }
                   }
@@ -1027,8 +1052,7 @@ namespace process
       //
       cout<<"\n ***Excavation simulation: 2. Excavating..."<<endl;
       counter = 0;
-      InitializeNewtonSteps(0);
-      InitializeNewtonSteps(2);
+      InitializeNewtonSteps(true);
       GravityForce = false;
       //
       ReleaseLoadingByExcavation();
@@ -1077,9 +1101,9 @@ namespace process
       shift = 0;
       for (i = 0; i < pcs_number_of_primary_nvals; i++)
       {
-         number_of_nodes = unknown_node_numbers[i];
+         number_of_nodes = num_nodes_p_var[i];
          for(j=0; j<number_of_nodes; j++)
-            SetNodeValue(j, unknown_vector_indeces[i], ARRAY[shift+j]);
+            SetNodeValue(j, p_var_index[i], ARRAY[shift+j]);
          shift += number_of_nodes;
       }
    }
@@ -1111,11 +1135,12 @@ namespace process
     Programmaenderungen:
       02/2000   OK   aus TransferNodeValuesToVectorLinearSolver abgeleitet
       07/2005   WW  aus  TransferNodeValuesToVectorLinearSolver(OK)
+   11/2010   WW  Modification for H2M
    *************************************************************************/
    void CRFProcessDeformation::SetInitialGuess_EQS_VEC()
    {
       int i;
-      long j;
+      long j, v_idx = 0;
       long number_of_nodes;
       long shift=0;
       double *eqs_x = NULL;
@@ -1126,9 +1151,17 @@ namespace process
 #endif
       for (i = 0; i < pcs_number_of_primary_nvals; i++)
       {
-         number_of_nodes = unknown_node_numbers[i];
-         for(j=0; j<number_of_nodes; j++)
-            eqs_x[shift+j] = GetNodeValue(j, unknown_vector_indeces[i]-1);
+         number_of_nodes = num_nodes_p_var[i];
+         v_idx = p_var_index[i];
+         if(i<problem_dimension_dm)
+         {
+            v_idx--;
+            for(j=0; j<number_of_nodes; j++)
+               eqs_x[shift+j] = GetNodeValue(j, v_idx);
+         }
+         else
+            for(j=0; j<number_of_nodes; j++)
+               eqs_x[shift+j] = 0.;
          shift += number_of_nodes;
       }
    }
@@ -1152,37 +1185,80 @@ namespace process
    10/2002   WW   Erste Version
    11/2007   WW   Change to fit the new equation class
    **************************************************************************/
-   void CRFProcessDeformation::UpdateIterativeStep(const double damp, const int Type)
+   void CRFProcessDeformation::UpdateIterativeStep(const double damp, const int u_type)
    {
       int i, j;
       long shift=0;
       long number_of_nodes;
       int ColIndex = 0;
-      int Colshift = 1;
       double *eqs_x = NULL;
+
 #if defined(NEW_EQS)
       eqs_x = eqs_new->x;
 #else
       eqs_x = eqs->x;
 #endif
-      //
-      for (i = 0; i < pcs_number_of_primary_nvals; i++)
+
+      if(type == 41)
       {
-         number_of_nodes = unknown_node_numbers[i];
-         //
-         if(Type==0)
+         for (i = 0; i < pcs_number_of_primary_nvals; i++)
          {
-            ColIndex = unknown_vector_indeces[i]-Colshift ;
+            number_of_nodes = num_nodes_p_var[i];
+            //
+            if(u_type==0)
+            {
+               ColIndex = p_var_index[i]-1 ;
+               for(j=0; j<number_of_nodes; j++)
+                  SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+eqs_x[j+shift]*damp);
+               shift+=number_of_nodes;
+            }
+            else
+            {
+               ColIndex = p_var_index[i];
+               for(j=0; j<number_of_nodes; j++)
+                  SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+
+                     GetNodeValue(j, ColIndex-1));
+            }
+         }
+         return;
+      }
+
+      //
+      for (i = 0; i < problem_dimension_dm; i++)
+      {
+         number_of_nodes = num_nodes_p_var[i];
+         //
+         ColIndex = p_var_index[i]-1 ;
+         ///  Update Newton step: w = w+dw
+         if(u_type == 0)
+         {
             for(j=0; j<number_of_nodes; j++)
                SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+eqs_x[j+shift]*damp);
-            shift+=number_of_nodes;
+            shift += number_of_nodes;
          }
          else
          {
-            ColIndex = unknown_vector_indeces[i];
             for(j=0; j<number_of_nodes; j++)
-               SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex)+
-                  GetNodeValue(j, ColIndex-Colshift));
+               SetNodeValue(j,ColIndex+1, GetNodeValue(j,ColIndex+1)+GetNodeValue(j,ColIndex));
+         }
+      }
+
+      if(type == 42&&m_num->nls_method>0)         //H2M, Newton-Raphson. 06.09.2010. WW
+      {
+         /// $p_{n+1}=p_{n+1}+\Delta p$ is already performed when type = 0
+         if(u_type == 1)
+            return;
+
+         for (i = problem_dimension_dm; i < pcs_number_of_primary_nvals; i++)
+         {
+            number_of_nodes = num_nodes_p_var[i];
+            //
+            ColIndex = p_var_index[i];
+
+            for(j=0; j<number_of_nodes; j++)
+               SetNodeValue(j,ColIndex, GetNodeValue(j,ColIndex) + eqs_x[j+shift]*damp);
+
+            shift += number_of_nodes;
          }
       }
    }
@@ -1205,10 +1281,10 @@ namespace process
    Programmaenderungen:
    10/2002   WW   Erste Version
    11/2007   WW   Change to fit the new equation class
-
+   06/2007   WW   Rewrite
    **************************************************************************/
    void CRFProcessDeformation::
-      InitializeNewtonSteps(const int type)
+      InitializeNewtonSteps(const bool ini_excav)
    {
       long i, j;
       long number_of_nodes;
@@ -1218,18 +1294,45 @@ namespace process
       start = 0;
       end = pcs_number_of_primary_nvals;
       //
-      // If monolithic scheme for p-u coupling, initialize p-->0 only
-      if(pcs_deformation%11 == 0&&type==1)
-         start = problem_dimension_dm;
-      //
+
+      /// u_0 = 0
+      if(type == 42)                              // H2M
+         end = problem_dimension_dm;
       for (i = start; i < end; i++)
       {
-         Col = unknown_vector_indeces[i];
-         if(type==0) Col -= 1;
-         number_of_nodes=unknown_node_numbers[i];
+         Col = p_var_index[i]-1;
+         number_of_nodes=num_nodes_p_var[i];
          for (j=0; j<number_of_nodes; j++)
             SetNodeValue(j, Col, 0.0);
       }
+
+      /// Dynamic: plus p_0 = 0
+      if(type==41 && !fem_dm->dynamic)
+      {
+         // p_1 = 0
+         for (i = problem_dimension_dm; i < end; i++)
+         {
+            Col = p_var_index[i];
+            number_of_nodes=num_nodes_p_var[i];
+            for (j=0; j<number_of_nodes; j++)
+               SetNodeValue(j, Col, 0.0);
+         }
+      }
+
+      /// Excavation: plus u_1 = 0;
+      if(ini_excav)
+      {
+         // p_1 = 0
+         for (i = 0; i < problem_dimension_dm; i++)
+         {
+            Col = p_var_index[i];
+            number_of_nodes=num_nodes_p_var[i];
+            for (j=0; j<number_of_nodes; j++)
+               SetNodeValue(j, Col, 0.0);
+         }
+
+      }
+
    }
 
    /**************************************************************************
@@ -1258,10 +1361,10 @@ namespace process
       //
       for (i = 0; i < pcs_number_of_primary_nvals; i++)
       {
-         number_of_nodes = unknown_node_numbers[i];
+         number_of_nodes = num_nodes_p_var[i];
          for(j=0; j<number_of_nodes; j++)
          {
-            val = GetNodeValue(j,  unknown_vector_indeces[i]-Colshift);
+            val = GetNodeValue(j,  p_var_index[i]-Colshift);
             NormW += val*val;
          }
       }
@@ -1295,11 +1398,11 @@ namespace process
       // Displacement
       for (i = 0; i < pcs_number_of_primary_nvals; i++)
       {
-         number_of_nodes = unknown_node_numbers[i];
+         number_of_nodes = num_nodes_p_var[i];
          for(j=0; j<number_of_nodes; j++)
          {
             ARRAY[shift+j] =
-               GetNodeValue(j, unknown_vector_indeces[i]-ty);
+               GetNodeValue(j, p_var_index[i]-ty);
          }
          shift += number_of_nodes;
       }
@@ -1322,7 +1425,7 @@ namespace process
    **************************************************************************/
    void CRFProcessDeformation::RecoverSolution(const int ty)
    {
-      int i, j;
+      int i, j, idx;
       long number_of_nodes;
       int Colshift = 1;
       long shift=0;
@@ -1336,27 +1439,31 @@ namespace process
       // If monolithic scheme for p-u coupling,  p_i-->p_0 only
       if(pcs_deformation%11 == 0&&ty>0)
       {
+
          start = problem_dimension_dm;
          for (i = 0; i < start; i++)
-            shift += unknown_node_numbers[i];
+            shift += num_nodes_p_var[i];
+
+         //TODO: end = problem_dimension_dm;
       }
       for (i = start; i < end; i++)
       {
-         number_of_nodes = unknown_node_numbers[i];
+         number_of_nodes = num_nodes_p_var[i];
+         idx =  p_var_index[i]-Colshift;
          for(j=0; j<number_of_nodes; j++)
          {
             if(ty<2)
             {
                if(ty==1)
-                  tem =  GetNodeValue(j, unknown_vector_indeces[i]-Colshift);
-               SetNodeValue(j, unknown_vector_indeces[i]-Colshift, ARRAY[shift+j]);
+                  tem =  GetNodeValue(j, idx);
+               SetNodeValue(j, idx, ARRAY[shift+j]);
                if(ty==1) ARRAY[shift+j] = tem;
             }
             else if(ty==2)
             {
                tem = ARRAY[shift+j];
-               ARRAY[shift+j] = GetNodeValue(j, unknown_vector_indeces[i]-Colshift);
-               SetNodeValue(j,  unknown_vector_indeces[i]-Colshift,  tem);
+               ARRAY[shift+j] = GetNodeValue(j, idx);
+               SetNodeValue(j,  idx,  tem);
             }
          }
          shift += number_of_nodes;
@@ -1386,11 +1493,11 @@ namespace process
       //
       for (i = 0; i < pcs_number_of_primary_nvals; i++)
       {
-         number_of_nodes = unknown_node_numbers[i];
+         number_of_nodes = num_nodes_p_var[i];
          for(j=0; j<number_of_nodes; j++)
          {
-            Norm1 += GetNodeValue(j, unknown_vector_indeces[i])
-               *GetNodeValue(j, unknown_vector_indeces[i]);
+            Norm1 += GetNodeValue(j, p_var_index[i])
+               *GetNodeValue(j, p_var_index[i]);
          }
       }
       return Norm1;
@@ -1410,24 +1517,42 @@ namespace process
 
    Programmaenderungen:
    10/2002   WW   Erste Version
+   07/2011   WW
 
    **************************************************************************/
 #ifndef NEW_EQS
-   double CRFProcessDeformation::NormOfUnkonwn()
+   double CRFProcessDeformation::NormOfUnkonwn_orRHS(bool isUnknowns)
    {
       int i, j;
-      int unknown_vector_dimension;
       long number_of_nodes;
+      long v_shift = 0;
       double NormW = 0.0;
+      double val;
 
+#ifdef G_DEBUG
       if (!eqs) {printf(" \n Warning: solver not defined, exit from loop_ww.cc"); exit(1);}
-      /* Ergebnisse eintragen */
-      unknown_vector_dimension = GetUnknownVectorDimensionLinearSolver(eqs);
-      for (i = 0; i < unknown_vector_dimension; i++)
+#endif
+
+      double *vec = NULL;
+      if(isUnknowns)
+         vec = eqs->x;
+      else
+         vec = eqs->b;
+
+      int end = pcs_number_of_primary_nvals;
+      if(fem_dm->dynamic)
+         end = problem_dimension_dm;
+
+      for (i = 0; i < end; i++)
       {
-         number_of_nodes=eqs->unknown_node_numbers[i];
+         number_of_nodes = num_nodes_p_var[i];
          for(j=0; j<number_of_nodes; j++)
-            NormW += eqs->x[number_of_nodes*i+j]*eqs->x[number_of_nodes*i+j];
+         {
+            val =  vec[v_shift+j];
+            NormW += val*val;
+         }
+
+         v_shift += number_of_nodes;
       }
       return sqrt(NormW);
    }
@@ -1457,7 +1582,7 @@ namespace process
    //#define Modified_B_matrix
    double CRFProcessDeformation::CaclMaxiumLoadRatio(void)
    {
-      int j,gp, gp_r, gp_s, gp_t;
+      int j,gp, gp_r, gp_s; //, gp_t;
       int PModel = 1;
       long i = 0;
       double  *dstrain;
@@ -1480,7 +1605,7 @@ namespace process
 
       int NGS, NGPS;
 
-      gp_t = 0;
+      //gp_t = 0;
 
       for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
       {
@@ -1940,13 +2065,13 @@ namespace process
    long CRFProcessDeformation::MarkBifurcatedNeighbor(const int PathIndex)
    {
       int j;
-      int f1, f2, nb, numf, numf1, nfnode;
+      int f1, f2, nb,  numf1;
       long index, Extended;
       bool adjacent, onPath;
       ElementValue_DM *eleV_DM, *eleV_DM1;
       DisElement *disEle;
       static double n1[2],n2[2], xA[3],xB[3];
-      static int Face_node[8];                    // Only 2D
+      //WW static int Face_node[8];                    // Only 2D
       MeshLib::CElem* elem;
       MeshLib::CElem* elem1;
 
@@ -1961,7 +2086,7 @@ namespace process
       elem = m_msh->ele_vector[index];
       eleV_DM = ele_value_dm[index];
 
-      numf = elem->GetFacesNumber();
+      // numf = elem->GetFacesNumber();
 
       n1[0] = cos(eleV_DM->orientation[0]);
       n1[1] = sin(eleV_DM->orientation[0]);
@@ -1970,7 +2095,7 @@ namespace process
       xA[1] = (*eleV_DM->NodesOnPath)(1,1);
       xA[2] = (*eleV_DM->NodesOnPath)(2,1);
 
-      nfnode = elem->GetElementFaceNodes(f1, Face_node);
+      //nfnode = elem->GetElementFaceNodes(f1, Face_node);
 
       // Check discintinuity path goes to which neighbor
       elem1 = elem->neighbors[f1];
@@ -2134,10 +2259,7 @@ namespace process
    **************************************************************************/
    void CRFProcessDeformation::GlobalAssembly()
    {
-      //----------------------------------------------------------------------
-      long i;
-      MeshLib::CElem* elem = NULL;
-#ifdef USE_MPI
+      #ifdef USE_MPI
       if(dom_vector.size()>0)
       {
          std::cout << "      Domain Decomposition " << myrank  << '\n';
@@ -2200,61 +2322,94 @@ namespace process
       // STD
       else
       {
-         for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
+         GlobalAssembly_DM();
+
+         if(type/10==4)                           // p-u monolithic scheme
          {
-            elem = m_msh->ele_vector[i];
-            if (elem->GetMark())                  // Marked for use
-            {
-               elem->SetOrder(true);
-               fem_dm->ConfigElement(elem);
-               fem_dm->LocalAssembly(0);
-            }
-         }
-         if(type==41)                             // p-u monolithic scheme
-         {
-            if(!fem_dm->dynamic)
-               RecoverSolution(1);                // p_i-->p_0
+            // if(!fem_dm->dynamic)   ///
+            //  RecoverSolution(1);  // p_i-->p_0
             // 2.
             // Assemble pressure eqs
-            for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
-            {
-               elem = m_msh->ele_vector[i];
-               if (elem->GetMark())               // Marked for use
-               {
-                  fem->ConfigElement(elem);
-                  fem->Assembly();
-               }
-            }
-            if(!fem_dm->dynamic)
-               RecoverSolution(2);                // p_i-->p_0
+            // Changes for OpenMP
+            GlobalAssembly_std(true);
+            // if(!fem_dm->dynamic)
+            //   RecoverSolution(2);  // p_i-->p_0
          }
+
          //----------------------------------------------------------------------
          //
-         // {		MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  abort();}
+         // {			 MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
+
          // DumpEqs("rf_pcs1.txt");
          /*
-         ofstream Dum("rf_pcs.txt", ios::out); // WW
-         eqs_new->Write(Dum);
-         Dum.close();
-         */
+          ofstream Dum("rf_pcs_omp.txt", ios::out); // WW
+          eqs_new->Write(Dum);
+          Dum.close();
+          */
 
          // Apply Neumann BC
          IncorporateSourceTerms();
          //DumpEqs("rf_pcs2.txt");
-         // Apply Dirchlete bounday condition
-         if(!fem_dm->dynamic)
-            IncorporateBoundaryConditions();
-         else
-            CalcBC_or_SecondaryVariable_Dynamics(true);
-         // 	 {	    MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  //abort();}
-         //
-         /*
-         ofstream Dum("rf_pcs.txt", ios::out); // WW
-         eqs_new->Write(Dum);
-         Dum.close();  //   abort();
-         */
-      }
 
+         // {				 MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
+
+         /// If not JFNK or if JFNK but the Newton step is greater than one. 11.11.2010. WW
+         if(!(m_num->nls_method==2&&ite_steps==1))
+         {
+            // Apply Dirchlete bounday condition
+            if(!fem_dm->dynamic)
+               IncorporateBoundaryConditions();
+            else
+               CalcBC_or_SecondaryVariable_Dynamics(true);
+         }
+         //  {			 MXDumpGLS("rf_pcs_dm1.txt",1,eqs->b,eqs->x);  //abort();}
+         // 
+
+#define atest_dump
+#ifdef test_dump
+         string fname = FileName+"rf_pcs_omp.txt";
+         ofstream Dum1(fname.c_str(), ios::out);  // WW
+         eqs_new->Write(Dum1);
+         Dum1.close();                            //   abort();
+#endif
+
+#define  atest_bin_dump
+#ifdef test_bin_dump                     //WW
+         string fname = FileName+".eqiation_binary.bin";
+
+         ofstream Dum1(fname.data(), ios::out|ios::binary|ios::trunc);
+         if(Dum1.good())
+            eqs_new->Write_BIN(Dum1);
+         Dum1.close();
+#endif
+         //
+      }
+   }
+
+   /*!  \brief Assembe matrix and vectors
+         for deformation process
+
+         24.11.2010. WW
+   */
+   void CRFProcessDeformation::GlobalAssembly_DM()
+   {
+      long i;
+      MeshLib::CElem* elem = NULL;
+      /// If JFNK method. 10.08.2010. WW
+      //   if(m_num->nls_method==2&&ite_steps==1)
+      //      IncorporateBoundaryConditions();
+
+      for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
+      {
+         elem = m_msh->ele_vector[i];
+         if (!elem->GetMark())                    // Marked for use
+            continue;
+
+         elem->SetOrder(true);
+         fem_dm->ConfigElement(elem);
+         fem_dm->LocalAssembly(0);
+
+      }
    }
 
    /**************************************************************************

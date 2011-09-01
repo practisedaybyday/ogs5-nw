@@ -246,7 +246,7 @@ int SpRichardson(double *b, double *x, long n)
 {
    double *r,*s;
    double eps = cg_eps;
-   int k = 0, max_iter = 0;
+   int k = 0; //WW, max_iter = 0;
    double r0norm = 1., b0norm = 1., x0norm = 1.;
 
    if (linear_error_type == 5)
@@ -258,8 +258,9 @@ int SpRichardson(double *b, double *x, long n)
    if (vorkond)
       MXVorkond(0, x, b);
 
-   if (cg_maxiter > 0)
-      max_iter = cg_maxiter;
+   //WW if (cg_maxiter > 0)
+   //WW   max_iter = cg_maxiter;
+
    //OK411    if (cg_maxiter == -1)
    //OK411        max_iter = NodeListLength;
 
@@ -1588,7 +1589,7 @@ int SpBICGSTAB(double *b, double *x, long n)
    register long i;                               /* schnellere Vektoroperationen, Ra, 3/2000 */
    int k = 0, max_iter = 0, repeat = 0;
    double r0norm = 0., b0norm = 0., x0norm = 0., tt, ts, rsv;
-   double error_rel;
+   //WW double error_rel;
    //MXDumpGLS("rf_pcs.txt",1,b,x); abort();
    /* Ggf. starten der Vorkonditionierung */
    if (vorkond)
@@ -1654,7 +1655,7 @@ int SpBICGSTAB(double *b, double *x, long n)
    }
    //OK
    r0norm = VEKNORM_BICGSTAB(r,n);
-   error_rel = r0norm/eps;
+   //WW error_rel = r0norm/eps;
    //WW    cout << "\n  SpBICGSTAB iteration: 0/" << max_iter << " Error: " << error_rel << endl;
 #ifdef TESTLOES4
    DisplayMsg("eps = ");
@@ -1764,7 +1765,7 @@ int SpBICGSTAB(double *b, double *x, long n)
       printf("\n%ld %f %f %f %f %f",(long)k,x[(long)(n*.1)],x[(long)(n*.3)],x[(long)(n*.5)],x[(long)(n*.7)],x[(long)(n*.9)]);
 #endif
       //OK
-      error_rel = VEKNORM_BICGSTAB(r2,n)/eps;
+      //WW error_rel = VEKNORM_BICGSTAB(r2,n)/eps;
       //WW  	printf("\r        SpBICGSTAB iteration: %i/%i Error: %f",k,max_iter,error_rel);
       if (linear_error_type == 4)
          eps = cg_eps * (VEKNORM_BICGSTAB(x, n));
@@ -3276,17 +3277,17 @@ last modified: OK 28.06.1999 Dummy-Zuweisungen
 int SpNEWTON(double *b, double *x, long n, void (*f) (double *b, double *x, double dummy), long ind)
 /*int SpNEWTON ( double *b, double *x, long n, void (*f)(), long ind ) */
 {
-   double ddummy;
-   long ldummy;
-   void (*g) (double *b, double *x, double dummy);
+  //WW double ddummy;
+  //WW long ldummy;
+  //WW void (*g) (double *b, double *x, double dummy);
 
    DisplayMsgLn("Newton noch nicht implementiert !!! ");
-
-   ddummy = b[0];
-   ddummy = x[0];
-   ldummy = n;
-   ldummy = ind;
-   g = f;
+  
+   //WW ddummy = b[0];
+   //WW ddummy = x[0];
+   //WW ldummy = n;
+   //WW ldummy = ind;
+   //WW g = f;
 
    return nonlinear_maxiter;
 

@@ -1148,8 +1148,8 @@ Programming:
 double GetMatrixValue(double var1, double var2, std::string caption, int *gueltig)
 {
    CFunction * matrix;
-   int anz_variables;
-   int anz_data, dim_x, dim_y;
+   //WW int anz_variables, anz_data;
+   int dim_x, dim_y;
    int i1 = 0;
    int i2 = 0;
    int j1 = 0;
@@ -1159,12 +1159,12 @@ double GetMatrixValue(double var1, double var2, std::string caption, int *guelti
    double zx1y1,zx2y1,zx1y2,zx2y2;
 
    matrix = FCTGet(caption);
-   anz_variables = (int)matrix->variable_names_vector.size();
+   //WW anz_variables = (int)matrix->variable_names_vector.size();
    //dim_x = matrix->matrix_dimension_x;
    //dim_y = matrix->matrix_dimension_y;
    dim_x = matrix->matrix_dimension[0];           //NB 4.8.01
    dim_y = matrix->matrix_dimension[1];           //NB
-   anz_data = (int)matrix->variable_data_vector.size()-dim_x-dim_y;
+   //WW anz_data = (int)matrix->variable_data_vector.size()-dim_x-dim_y;
    //----------------------------------------------------------------------
    if (var1<*matrix->variable_data_vector[0])     //is var1 smaller then the smallest argument?
    {

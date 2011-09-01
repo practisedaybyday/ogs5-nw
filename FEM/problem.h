@@ -127,6 +127,5 @@ class Problem
       std::string _geo_name;                      // TF
 };
 
-extern Problem *aproblem;
 extern bool MODCreate();                          //OK
 #endif

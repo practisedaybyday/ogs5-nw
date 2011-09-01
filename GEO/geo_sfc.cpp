@@ -20,6 +20,10 @@ Programing:
 #include "geo_lib.h"
 #include "geo_mathlib.h"
 
+// File path. 11.08.2011 WW
+#include "makros.h"
+
+
 using namespace std;
 
 //GSP
@@ -99,7 +103,7 @@ void Surface::output(FILE* geo_file, int &p_index, int &l_index,
     CGLPoint *CGPnt = NULL;
     CGLPoint *CGPnt0 = NULL;
     CGLLine *CGLn0 = NULL;
-    CGLLine *CGLn1 = NULL;
+    //WW CGLLine *CGLn1 = NULL;
     CGLLine *CGLn = NULL;
 
 	//First entity: points
@@ -235,7 +239,7 @@ void Surface::output(FILE* geo_file, int &p_index, int &l_index,
 		  pl = p_pline->line_vector.begin();
 		  count = 0;
           CGLn0 = NULL;
-          CGLn1 = NULL;
+          //WW CGLn1 = NULL;
      	  while(pl!=p_pline->line_vector.end()) {
              CGLn = *pl;
 
@@ -281,7 +285,7 @@ void Surface::output(FILE* geo_file, int &p_index, int &l_index,
   		  count = (int)p_pline->line_vector.size();//CC
 		  Size0 = (int)p_pline->point_vector.size();
 		  CGLn0 = NULL;
-		  CGLn1 = NULL;
+		  //WW 	  CGLn1 = NULL;
      	  while(pl!=p_pline->line_vector.begin()) {//CC
 	         --pl;
 			 count--;
@@ -586,7 +590,7 @@ void Surface::PolylineOrientation()
     CGLLine *m_line=NULL;
 
     CGLLine *line_end=NULL;
-    CGLLine *line_begin=NULL;
+    //WW CGLLine *line_begin=NULL;
 
    // list<CGLPolyline*>::const_iterator p = polyline_of_surface_list.begin();
 std::vector<CGLPolyline*>::iterator p =polyline_of_surface_vector.begin();
@@ -618,7 +622,7 @@ std::vector<CGLPolyline*>::iterator p =polyline_of_surface_vector.begin();
 
 	  polyline_of_surface_orient.push_back(orient);
 //if it is the first polyline
-	  line_begin = *pl;
+	  //WW   line_begin = *pl;
       if(orient==1)
 	  {
    	    while(pl!=p_pline->line_vector.end()) {//CC
@@ -970,6 +974,9 @@ void GEOReadSurfaces(const std::string &file_name_path_base)
   while (!gli_file.eof()) {
     gli_file.getline(line,MAX_ZEILEN);
     line_string = line;
+    if(line_string.find("#STOP")!=string::npos) //11.08.2011. WW
+        break;
+
     //----------------------------------------------------------------------
     if(line_string.find("#SURFACE")!=string::npos) { // keyword found
       m_surface = new Surface();
@@ -1123,6 +1130,7 @@ void Surface::ReadTIN(const std::string &tin_file_name)
   //----------------------------------------------------------------------
   // File handling
   string tin_file_name_path;
+  /*  //11.08.2011 WW
   //  tin_file_name_path = FileName;  //WW/JOD // LB: commented out to compile GEO without dependency on FEM
   basic_string <char>::size_type indexCh1a;
   indexCh1a = tin_file_name_path.find_last_of("\\");
@@ -1135,7 +1143,9 @@ void Surface::ReadTIN(const std::string &tin_file_name)
   }
   else     //   \ does not exist, RELEASE case
     tin_file_name_path = tin_file_name;
+ */
 
+  tin_file_name_path = FilePath+tin_file_name; // 11.08.2011. WW
   ifstream tin_file (tin_file_name_path.data(),ios::in);
   if (!tin_file.good()) return;
   tin_file.seekg(0L,ios::beg);
@@ -1735,7 +1745,7 @@ Programing:
 void GEORemoveSFC(Surface*m_sfc)
 {
   Surface* m_sfc_this = NULL;
-  vector<Surface*>::const_iterator p_sfc = surface_vector.begin();
+  //WW vector<Surface*>::const_iterator p_sfc = surface_vector.begin();
   for(int i=0;i<(int)surface_vector.size();i++){
     m_sfc_this = surface_vector[i];
     if(m_sfc_this->name.compare(m_sfc->name)==0){

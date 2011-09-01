@@ -485,7 +485,7 @@ void OUTData(double time_current, int time_step_number)
          }
 
          stringstream stm;
-         string pvd_vtk_file_name, vtk_file_name;
+         string pvd_vtk_file_name; //, vtk_file_name;
 
          switch (m_out->getGeoType())
          {
@@ -499,19 +499,20 @@ void OUTData(double time_current, int time_step_number)
                   vtk->InitializePVD(m_out->file_base_name, pcs_type, vtk_appended);
                }
                // Set VTU file name and path
-               vtk_file_name = m_out->file_base_name;
+               //vtk_file_name = m_out->file_base_name;
                //				if (m_out->pcs_type_name.size() > 0) // PCS
                ////				if (m_out->getProcessType() != INVALID_PROCESS)
                //					vtk_file_name += "_" + convertProcessTypeToString (m_out->getProcessType());
                pvd_vtk_file_name = vtk->pvd_vtk_file_name_base;
                stm << time_step_number;
-               vtk_file_name += stm.str() + ".vtu";
+               //vtk_file_name += stm.str() + ".vtu";
                pvd_vtk_file_name += stm.str() + ".vtu";
+               //vtk_file_name = pvd_vtk_file_name;
                // Output
                if (OutputBySteps)
                {
                   OutputBySteps = false;
-                  vtk->WriteXMLUnstructuredGrid(vtk_file_name, m_out,
+                  vtk->WriteXMLUnstructuredGrid(pvd_vtk_file_name, m_out,
                      time_step_number);
                   VTK_Info dat;
                   dat.timestep = m_out->getTime();
@@ -525,7 +526,7 @@ void OUTData(double time_current, int time_step_number)
                   {
                      if (time_current >= m_out->time_vector[j])
                      {
-                        vtk->WriteXMLUnstructuredGrid(vtk_file_name, m_out,
+                        vtk->WriteXMLUnstructuredGrid(pvd_vtk_file_name, m_out,
                            time_step_number);
                         m_out->time_vector.erase(m_out->time_vector.begin()
                            + j);

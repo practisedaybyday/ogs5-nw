@@ -93,7 +93,8 @@ void GEOLIB_Clear_GeoLib_Data ()
 void GEO_Delete_DoublePoints()
 {
 	int j = 0, k = 0;
-	long pointsvectorsize, linesvectorsize;
+        long pointsvectorsize;
+	//WW long pointsvectorsize, linesvectorsize;
 	long number_of_polylinepoints;
 	long check_point;
 	vector<CGLPoint*> gli_points_vector;
@@ -102,7 +103,7 @@ void GEO_Delete_DoublePoints()
 
 	vector<CGLLine*> gli_lines_vector;
 	gli_lines_vector = GEOLIB_GetGLILines_Vector();
-	linesvectorsize = (long) gli_lines_vector.size();
+	//WW linesvectorsize = (long) gli_lines_vector.size();
 
 	CGLPolyline *gl_polyline = NULL;
 	vector<CGLPolyline*> polyline_vector;
@@ -281,14 +282,15 @@ void GEO_Get_Min_Max_Distance_of_polyline_neighbor_points()
 
 
 	int i=0, j=0, l=0;
-	long pointsvectorsize, polylinesvectorsize;
+	//WW long pointsvectorsize
+        long polylinesvectorsize;
 	long number_of_polylinepoints;
-	long check_point;
+	//WW long check_point;
     double x1=0.0,y1=0.0,z1=0.0,seg_length=0.0;
     double x2=0.0,y2=0.0,z2=0.0;
 	vector<CGLPoint*> gli_points_vector;
 	gli_points_vector = GetPointsVector();
-    pointsvectorsize =(long)gli_points_vector.size();
+	//WW pointsvectorsize =(long)gli_points_vector.size();
 
 	CGLPolyline *gl_polyline = NULL;
     vector<CGLPolyline*> polyline_vector;
@@ -321,11 +323,11 @@ void GEO_Get_Min_Max_Distance_of_polyline_neighbor_points()
             {
                 if (j<number_of_polylinepoints-1)
                 {
-                check_point = gl_polyline->point_vector[j]->id;
+		  //WW check_point = gl_polyline->point_vector[j]->id;
                 x1 = gl_polyline->point_vector[j]->x;
                 y1 = gl_polyline->point_vector[j]->y;
                 z1 = gl_polyline->point_vector[j]->z;
-                check_point = gl_polyline->point_vector[j+1]->id;
+                //WW check_point = gl_polyline->point_vector[j+1]->id;
                 x2 = gl_polyline->point_vector[j+1]->x;
                 y2 = gl_polyline->point_vector[j+1]->y;
                 z2 = gl_polyline->point_vector[j+1]->z;
@@ -342,11 +344,11 @@ void GEO_Get_Min_Max_Distance_of_polyline_neighbor_points()
                 }
                 if (j>0)
                 {
-                check_point = gl_polyline->point_vector[j]->id;
+		  //WW check_point = gl_polyline->point_vector[j]->id;
                 x1 = gl_polyline->point_vector[j]->x;
                 y1 = gl_polyline->point_vector[j]->y;
                 z1 = gl_polyline->point_vector[j]->z;
-                check_point = gl_polyline->point_vector[j-1]->id;
+                //WW check_point = gl_polyline->point_vector[j-1]->id;
                 x2 = gl_polyline->point_vector[j-1]->x;
                 y2 = gl_polyline->point_vector[j-1]->y;
                 z2 = gl_polyline->point_vector[j-1]->z;
@@ -386,7 +388,7 @@ void GEO_Get_Min_Distance_of_neighbor_points()
 
 
 	int i=0, j=0;
-	long check_point;
+	//WW long check_point;
     double x1=0.0,y1=0.0,z1=0.0,seg_length=0.0;
     double x2=0.0,y2=0.0,z2=0.0;
 	vector<CGLPoint*> gli_points_vector;
@@ -407,11 +409,11 @@ void GEO_Get_Min_Distance_of_neighbor_points()
 
             if (gli_points_vector[i]->id !=  gli_points_vector[j]->id)
             {
-                check_point = gli_points_vector[i]->id;
+	      //WW check_point = gli_points_vector[i]->id;
                 x1 = gli_points_vector[i]->x;
                 y1 = gli_points_vector[i]->y;
                 z1 = gli_points_vector[i]->z;
-                check_point = gli_points_vector[j]->id;
+                //WW check_point = gli_points_vector[j]->id;
                 x2 = gli_points_vector[j]->x;
                 y2 = gli_points_vector[j]->y;
                 z2 = gli_points_vector[j]->z;
@@ -497,14 +499,15 @@ double GEO_Get_Min_PolySeg_length()
 
 
 	int j=0, l=0, hit=0;
-	long pointsvectorsize, polylinesvectorsize;
+	//WW long pointsvectorsize, 
+        long polylinesvectorsize;
 	long number_of_polylinepoints;
-	long check_point;
+	//WW long check_point;
     double x1=0.0,y1=0.0,z1=0.0,seg_length=0.0;
     double x2=0.0,y2=0.0,z2=0.0,seg_length_saved=0.0;
 	vector<CGLPoint*> gli_points_vector;
 	gli_points_vector = GetPointsVector();
-    pointsvectorsize =(long)gli_points_vector.size();
+	//WW pointsvectorsize =(long)gli_points_vector.size();
 
 	CGLPolyline *gl_polyline = NULL;
     vector<CGLPolyline*> polyline_vector;
@@ -522,12 +525,12 @@ double GEO_Get_Min_PolySeg_length()
 		number_of_polylinepoints = (long)gl_polyline->point_vector.size();
 		for (j=0;j<number_of_polylinepoints-1;j++)
 		{
-            check_point = gl_polyline->point_vector[j]->id;
+		  //WW check_point = gl_polyline->point_vector[j]->id;
             x1 = gl_polyline->point_vector[j]->x;
             y1 = gl_polyline->point_vector[j]->y;
             z1 = gl_polyline->point_vector[j]->z;
 
-            check_point = gl_polyline->point_vector[j+1]->id;
+            //WW check_point = gl_polyline->point_vector[j+1]->id;
             x2 = gl_polyline->point_vector[j+1]->x;
             y2 = gl_polyline->point_vector[j+1]->y;
             z2 = gl_polyline->point_vector[j+1]->z;
@@ -566,14 +569,15 @@ double GEO_Get_Max_PolySeg_length()
 
 
 	int j=0, l=0, hit=0;
-	long pointsvectorsize, polylinesvectorsize;
+	//WW long pointsvectorsize, 
+        long polylinesvectorsize;
 	long number_of_polylinepoints;
-	long check_point;
+	//WW long check_point;
     double x1=0.0,y1=0.0,z1=0.0,seg_length=0.0;
     double x2=0.0,y2=0.0,z2=0.0,seg_length_saved=0.0;
 	vector<CGLPoint*> gli_points_vector;
 	gli_points_vector = GetPointsVector();
-    pointsvectorsize =(long)gli_points_vector.size();
+	//WW pointsvectorsize =(long)gli_points_vector.size();
 
 	CGLPolyline *gl_polyline = NULL;
     vector<CGLPolyline*> polyline_vector;
@@ -591,12 +595,12 @@ double GEO_Get_Max_PolySeg_length()
 		number_of_polylinepoints = (long)gl_polyline->point_vector.size();
 		for (j=0;j<number_of_polylinepoints-1;j++)
 		{
-            check_point = gl_polyline->point_vector[j]->id;
+		  //WW check_point = gl_polyline->point_vector[j]->id;
             x1 = gl_polyline->point_vector[j]->x;
             y1 = gl_polyline->point_vector[j]->y;
             z1 = gl_polyline->point_vector[j]->z;
 
-            check_point = gl_polyline->point_vector[j+1]->id;
+            //WW check_point = gl_polyline->point_vector[j+1]->id;
             x2 = gl_polyline->point_vector[j+1]->x;
             y2 = gl_polyline->point_vector[j+1]->y;
             z2 = gl_polyline->point_vector[j+1]->z;
@@ -634,12 +638,13 @@ void GEO_Polylines_per_Point()
 {
 	int j=0, l=0;
     int nb_of_ply;
-	long pointsvectorsize, polylinesvectorsize;
+    //WW long pointsvectorsize, 
+        long polylinesvectorsize;
 	long number_of_polylinepoints;
 	long check_point;
 	vector<CGLPoint*> gli_points_vector;
 	gli_points_vector = GetPointsVector();
-    pointsvectorsize =(long)gli_points_vector.size();
+	//WW pointsvectorsize =(long)gli_points_vector.size();
 
 	CGLPolyline *gl_polyline = NULL;
     vector<CGLPolyline*> polyline_vector;
@@ -692,18 +697,19 @@ void GEO_Set_Poly_Seg_Length(double min_seg_length, double max_seg_length)
 {
 	int j=0, l=0, k=0, i=0;
     int j_old=0;
-	long pointsvectorsize, polylinesvectorsize;
-	long number_of_polylinepoints;
+    //long pointsvectorsize, 
+        long polylinesvectorsize;
+	//WW long number_of_polylinepoints;
 	long check_point;
     int nb_of_ply, nb_of_ply_1st, nb_of_ply_2nd;
     double x1=0.0,y1=0.0,z1=0.0,seg_length=0.0,seg_length_old=0.0;
     double x2=0.0,y2=0.0,z2=0.0;
-    double e_x,e_y,e_z,pmax_x,pmax_y,pmax_z,pmin_x,pmin_y,pmin_z;
+    double e_x,e_y,e_z,pmax_x,pmax_y,pmax_z; //WW ,pmin_x,pmin_y,pmin_z;
     long check_point_id_1,check_point_id_2,check_point_id_3,check_point_id_4;
     CGLPoint* m_point = NULL;
     vector<CGLPoint*> gli_points_vector;
 	gli_points_vector = GetPointsVector();
-    pointsvectorsize =(long)gli_points_vector.size();
+	//WW pointsvectorsize =(long)gli_points_vector.size();
 
 	CGLPolyline *gl_polyline = NULL;
     vector<CGLPolyline*> polyline_vector;
@@ -748,9 +754,9 @@ void GEO_Set_Poly_Seg_Length(double min_seg_length, double max_seg_length)
             pmax_y = y1+(max_seg_length* e_y);
             pmax_z = z1+(max_seg_length* e_z);
             /*Calculation Point with min distance*/
-            pmin_x = x1+(min_seg_length* e_x);
-            pmin_y = y1+(min_seg_length* e_y);
-            pmin_z = z1+(min_seg_length* e_z);
+            //pmin_x = x1+(min_seg_length* e_x);
+            //pmin_y = y1+(min_seg_length* e_y);
+            //pmin_z = z1+(min_seg_length* e_z);
 
             if (seg_length < min_seg_length)/*Delete */
             {
@@ -761,7 +767,7 @@ void GEO_Set_Poly_Seg_Length(double min_seg_length, double max_seg_length)
                 nb_of_ply = gli_points_vector[check_point]->nb_of_ply;
                 gl_polyline->point_vector.erase(gl_polyline->point_vector.begin()+j+1);
                 j--;
-                number_of_polylinepoints = (long)gl_polyline->point_vector.size();
+                //WW number_of_polylinepoints = (long)gl_polyline->point_vector.size();
                 }
                 else
                 {
@@ -769,7 +775,7 @@ void GEO_Set_Poly_Seg_Length(double min_seg_length, double max_seg_length)
                 nb_of_ply = gli_points_vector[check_point]->nb_of_ply;
                 gl_polyline->point_vector.erase(gl_polyline->point_vector.begin()+j);
                 j--;
-                number_of_polylinepoints = (long)gl_polyline->point_vector.size();
+                //WW number_of_polylinepoints = (long)gl_polyline->point_vector.size();
                 }
 
                 if (nb_of_ply > 1)
@@ -813,7 +819,7 @@ void GEO_Set_Poly_Seg_Length(double min_seg_length, double max_seg_length)
 
                 gl_polyline->point_vector.insert(gl_polyline->point_vector.begin()+j+1,gli_points_vector.end()-1,gli_points_vector.end());
 
-                number_of_polylinepoints = (long)gl_polyline->point_vector.size();
+                //WW number_of_polylinepoints = (long)gl_polyline->point_vector.size();
 
 
                 if (nb_of_ply_1st > 1 && nb_of_ply_2nd > 1)

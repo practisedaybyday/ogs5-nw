@@ -3456,11 +3456,11 @@ double CKinReact::GetDensity(int comp, long index)
 
    double dens = 0.;
    long group, phase;
-   CRFProcess *m_pcs = NULL;
+   //WW CRFProcess *m_pcs = NULL;
 
    group = index;                                 // avoid warning
    // Get process
-   m_pcs = PCSGet("MASS_TRANSPORT", cp_vec[comp]->compname);
+   //WW m_pcs = PCSGet("MASS_TRANSPORT", cp_vec[comp]->compname);
    //theta = m_pcs->m_num->ls_theta;
    phase = cp_vec[comp]->transport_phase;
 

@@ -298,6 +298,7 @@ extern void GradShapeFunctionPyraHQ13(double *dN, const double *u);
 
 extern double pai;
 
+extern long binarySearch(long *arr, long target, long start, long end); 
 //WW Cubic spline
 //WW
 double ComputeDetTri(const double *x1, const double *x2,

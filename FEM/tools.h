@@ -130,4 +130,11 @@ extern void DestroyLongMatrix(LMATRIX *lm);
 extern void CURRead(string);                      //WW
 extern string ext_file_name;
 #endif
+
+/// Release the memory of arrary allocated by using 'new'. WW. 31.08.2010
+template<class num> void  DeleteArray(num *an_array)
+{
+   if(an_array) delete [] an_array;
+   an_array = NULL;
+}
 #endif

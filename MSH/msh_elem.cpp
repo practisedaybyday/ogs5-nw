@@ -46,6 +46,7 @@ namespace MeshLib
       gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
       normal_vector = NULL;
       area = 1.0;                                 //WW
+      excavated = -1;                             //WX
    }
    /**************************************************************************
    MSHLib-Method:
@@ -73,6 +74,7 @@ namespace MeshLib
       gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
       area = 1.0;                                 //WW area = 1.0
       normal_vector = NULL;
+      excavated = -1;                             //WX
    }
 
    /**************************************************************************
@@ -94,6 +96,7 @@ namespace MeshLib
       tranform_tensor = NULL;
       angle = NULL;
       normal_vector = NULL;
+      excavated = -1;                             //WX
       //
       switch(owner->geo_type)
       {
@@ -201,6 +204,8 @@ namespace MeshLib
          edges_orientation[i] = 1;
       }
       area = 1.0;                                 //WW
+
+	  excavated = -1;     //12.08.2011. WW     
    }
 
 CElem::CElem(CElem const &elem) :
@@ -1523,16 +1528,22 @@ void CElem::Read(std::istream& is, int fileType)
             std::cerr << "CElem::setElementProperties MshElemType not handled" << std::endl;
       }
       this->nodes_index.resize(nnodes);
-	  this->neighbors.resize(nfaces);
-      for(size_t i=0; i<nfaces; i++)
-         neighbors[i] = NULL;
-	  edges.resize(nedges);
-      edges_orientation.resize(nedges);
-      for(size_t i=0; i<nedges; i++)
-      {
-         edges[i] = NULL;
-         edges_orientation[i] = 1;
-      }
+   }
+
+   // NW
+   double* CElem::ComputeGravityCenter()
+   {
+     const size_t nnodes0 = this->nnodes;
+     for (size_t i = 0; i < nnodes0; i++)            // Nodes
+     {
+       gravity_center[0] += nodes[i]->X();
+       gravity_center[1] += nodes[i]->Y();
+       gravity_center[2] += nodes[i]->Z();
+     }
+     gravity_center[0] /= (double) nnodes0;
+     gravity_center[1] /= (double) nnodes0;
+     gravity_center[2] /= (double) nnodes0;
+     return gravity_center;
    }
 
 }                                                 // namespace MeshLib

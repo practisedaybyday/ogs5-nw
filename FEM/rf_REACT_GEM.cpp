@@ -570,7 +570,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
 
                   exit ( 1 );
                }
-				else if ( m_NodeStatusCH[i] == BAD_GEM_AIA )
+				else if ( m_NodeStatusCH[i] == BAD_GEM_SIA)
                {
                   cout << "error: Initial GEMs run after Read GEMS gives bad result..proceed in any case " << i << endl;
                }
@@ -776,6 +776,10 @@ short REACT_GEM::Init_Nodes ( string Project_path )
 
                   exit ( 1 );
                }
+	       else if ( m_NodeStatusCH[in] == BAD_GEM_AIA || m_NodeStatusCH[in] == BAD_GEM_SIA)
+                  {
+                      cout << "error: Initial GEMs run after Read GEMS gives bad result..proceed in any case " << i << endl;
+                   }
                else
                {
                   cout << " sucess with second try.... "<<  endl;
@@ -826,6 +830,11 @@ short REACT_GEM::Init_Nodes ( string Project_path )
 
                   exit ( 1 );
                }
+	       else if ( m_NodeStatusCH[in] == BAD_GEM_AIA || m_NodeStatusCH[in] == BAD_GEM_SIA)
+               {
+                  cout << "error: Initial GEMs run after Read GEMS gives bad result..proceed in any case " << i << endl;
+               }
+
                else
                {
 				cout << " sucess with second try.... "<<  endl;
@@ -1040,7 +1049,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
 
             // if (m_pcs->m_msh->nod_vector[in]->onBoundary() == false) {
             // Setting Independent Component
-            if ( m_NodeStatusCH[in] == OK_GEM_AIA || m_NodeStatusCH[in] == OK_GEM_SIA )
+            if ( m_NodeStatusCH[in] == OK_GEM_AIA || m_NodeStatusCH[in] == OK_GEM_SIA || m_NodeStatusCH[in] == BAD_GEM_AIA || m_NodeStatusCH[in] == BAD_GEM_SIA)
             {
 			if ( flag_transport_b == 0 ) REACT_GEM::SetDCValue_MT ( in , timelevel , & ( m_xDC[in*nDC] ) );
 			else REACT_GEM::SetBValue_MT ( in , timelevel , & ( m_soluteB[in*nIC] ) );
@@ -1107,7 +1116,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
       {
          nNodes = GetNodeNumber_MT();
          nElems = GetElemNumber_MT();
-         long /*i,j,ii,*/in,ii,idummy,node_fail=0, repeated_fail=0;
+         long /*i,ii,*/j,in,ii,idummy,node_fail=0, repeated_fail=0;
          double oldvolume;
 
 #ifdef USE_MPI_GEMS
@@ -1162,20 +1171,37 @@ short REACT_GEM::Init_Nodes ( string Project_path )
 			}
 
 
-			if ( ! ( m_NodeStatusCH[in] == OK_GEM_AIA || m_NodeStatusCH[in] == OK_GEM_SIA ) )   // ups...failed..try again without SIMPLEX
+			if ( ! ( m_NodeStatusCH[in] == OK_GEM_AIA || m_NodeStatusCH[in] == OK_GEM_SIA || m_NodeStatusCH[in] == BAD_GEM_AIA || m_NodeStatusCH[in] == BAD_GEM_SIA) )   // ups...failed..try again without SIMPLEX
 			{
+				cout << "Error: Main Loop failed when running GEM on Node #" << in << "." << " Returned Error Code: " << m_NodeStatusCH[in] ;
+				cout << " or GEM weird result at node " << in << " volume " <<  dBR->Vs << " old volume " <<oldvolume;
+				cout  << " repeat calculations and change kinetic constraintsby 0.1%" << endl;
+				// change a bit the kinetic constraints -> make the system less stiff 
+				   for ( j=0;j<nDC;j++ )
+				    {
+					m_dll[in*nDC+j]=0.999*m_dll[in*nDC+j]-1.0e-6;                        // make smaller
+					if (m_dll[in*nDC+j]<0.0) m_dll[in*nDC+j]=0.0;
+					m_dul[in*nDC+j]=1.001*m_dul[in*nDC+j]+1.0e-6;                    // make bigger
+				     }
+				     REACT_GEM::SetReactInfoBackGEM ( in ); // needs to be done to 
+				m_Node->GEM_write_dbr ( "dbr_for_crash_node_fail1.txt" );
+
+// run GEMS again				
 				dBR->NodeStatusCH = NEED_GEM_AIA;
 				m_NodeStatusCH[in] = m_Node->GEM_run ( false );
+				m_Node->GEM_write_dbr ( "dbr_for_crash_node_fail2.txt" );
+			  
 			}
 
 // test for bad GEMS and for volume changes bigger than 10% ...maximum 5 failed nodes per process.....
+
 			if (
-			    ! ( m_NodeStatusCH[in] == OK_GEM_AIA || m_NodeStatusCH[in] == OK_GEM_SIA ) ||
+			    ! ( m_NodeStatusCH[in] == OK_GEM_AIA || m_NodeStatusCH[in] == OK_GEM_SIA || m_NodeStatusCH[in] == BAD_GEM_AIA || m_NodeStatusCH[in] == BAD_GEM_SIA ) ||
 			    ( ( ( abs ( oldvolume-dBR->Vs ) /oldvolume ) >0.1 ) && ( flowflag != 3 ) ) // not for Richards flow
 			)
 			{
-				cout << "Error: Main Loop failed when running GEM on Node #" << in << "." << endl << "Returned Error Code: " << m_NodeStatusCH[in] ;
-				cout << " or GEM weird result at node " << in << " volume " <<  dBR->Vs << " old volume " <<oldvolume << endl;
+				cout << "Error: Main Loop failed when running GEM on Node #" << in << "." << " Returned Error Code: " << m_NodeStatusCH[in] ;
+				cout << " or GEM weird result at node " << in << " volume " <<  dBR->Vs << " old volume " <<oldvolume;
 				cout  << " continue with last good solution for this node" << endl;
 				m_Node->GEM_write_dbr ( "dbr_for_crash_node_fail.txt" );
 				m_Node->GEM_print_ipm ( "ipm_for_crash_node_fail.txt" );
@@ -3063,19 +3089,20 @@ void REACT_GEM::CalcLimits ( long in )
                // do some corrections
                // kinetic_model==2 only dissolution (no precipitation)
                // kinetic_mocel==3 only precipitation (no dissolution)
-					if ( ( m_kin[ii].kinetic_model==2 ) && ( m_dul[in*nDC+j] > m_xDC[in*nDC+j] ) ) {m_dul[in*nDC+j]= m_xDC[in*nDC+j];}
+	       if ( ( m_kin[ii].kinetic_model==2 ) && ( m_dul[in*nDC+j] > m_xDC[in*nDC+j] ) ) {m_dul[in*nDC+j]= m_xDC[in*nDC+j];}
                if ( ( m_kin[ii].kinetic_model==3 ) && ( m_dll[in*nDC+j] < m_xDC[in*nDC+j] ) ) m_dll[in*nDC+j]= m_xDC[in*nDC+j];
 
                if ( ( m_xDC[in*nDC+j] < 1.0e-6 ) && ( omega_phase[in*nPH+k] >=1.0001 ) && ( m_dul[in*nDC+j]<1.0e-6 ) )
                {
                   m_dul[in*nDC+j]=1.0e-6;         // allow some kind of precipitation...based on saturation index for component value...here we set 10-6 mol per m^3 ..which is maybe 10-10 per litre ...?
-                  m_dll[in*nDC+j]=m_dul[in*nDC+j];
+                  m_dll[in*nDC+j]=0.0;
                }
-                                                  // no negative masses allowed
+               if ( m_dll[in*nDC+j] > m_dul[in*nDC+j] ) m_dll[in*nDC+j]=m_dul[in*nDC+j]; // dll should be always lower than dul
+		// no negative masses allowed
                if ( m_dll[in*nDC+j] < 0.0 ) m_dll[in*nDC+j]=0.0;
                                                   // no negative masses allowed..give some freedom
-               if ( m_dul[in*nDC+j] <= 0.0 ) m_dul[in*nDC+j]=1.0e-6;
-               if ( m_dll[in*nDC+j] > m_dul[in*nDC+j] ) m_dll[in*nDC+j]=m_dul[in*nDC+j];
+               if ( m_dul[in*nDC+j] <= 0.0 ) {m_dul[in*nDC+j]=1.0e-6;m_dll[in*nDC+j]=0.0;};
+
 
             }
 
@@ -3568,6 +3595,7 @@ void REACT_GEM::WriteVTKGEMValues ( fstream &vtk_file )
   double bdummy=0.0;
    // this is point data
 
+  
     for ( j=0 ; j < nIC; j++ )
                 {
                 vtk_file << "SCALARS " << dCH->ICNL[j] << " double 1" << endl;
@@ -3593,7 +3621,7 @@ void REACT_GEM::WriteVTKGEMValues ( fstream &vtk_file )
       //....................................................................
       for ( j=0;j<nNodes;j++ )
       {
-         vtk_file <<" "<<  m_xDC[j*nDC + i ] << endl;
+         vtk_file <<" "<<  (float) m_xDC[j*nDC + i ] << endl;
       }
    }
    // eh, pe, pH, Nodeporosity

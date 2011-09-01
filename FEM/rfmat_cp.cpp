@@ -866,9 +866,9 @@ double CompProperties::CalcDiffusionCoefficientCP_Method1(long index, double T, 
    int count = 0;
    double t = aktuelle_zeit;
    double msol, Vs;
-   double Dm, Daq, Dg;
+   double Dm, Daq; //WW, Dg;
    double Kb, Rm;
-   int curve;
+   //WW int curve;
    double mg = 28.97;                             /* Mol.-Gew. Luft [g/mol] */
    double Vg = 20.1;                              /* molares Volumen von Luft [cm^3/mol] */
 
@@ -902,7 +902,7 @@ double CompProperties::CalcDiffusionCoefficientCP_Method1(long index, double T, 
          if (count < 1)
             return 0.0;
          Dm = k[0];
-         curve = (int) k[1];
+         //WW curve = (int) k[1];
          return Dm;
       }
       case 3:                                     /* Worch, 1993 */
@@ -946,7 +946,8 @@ double CompProperties::CalcDiffusionCoefficientCP_Method1(long index, double T, 
          m = k[0];
          V = k[1];
          Vg = 20.1;                               /* Molares Volumen von Luft [cm?/mol] */
-         Dg = (0.001 * pow(T, 1.75) * sqrt(1. / mg + 1. / m)) / (p * pow(pow(Vg, 1. / 3.) + pow(V, 1. / 3.), 2.)) * 1.e-4;
+         //WW Dg = (0.001 * pow(T, 1.75) * sqrt(1. / mg + 1. / m)) / (p * pow(pow(Vg, 1. / 3.) + pow(V, 1. / 3.), 2.)) * 1.e-4;
+         return (0.001 * pow(T, 1.75) * sqrt(1. / mg + 1. / m)) / (p * pow(pow(Vg, 1. / 3.) + pow(V, 1. / 3.), 2.)) * 1.e-4; //WW
       }
    }
    DisplayMsgLn("Unknown diffusion model specified!");

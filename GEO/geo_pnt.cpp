@@ -209,6 +209,9 @@ void GEOReadPoints(const std::string &file_name_path_base)
 	while (!dat_in.eof()) {
 		dat_in.getline(line,MAX_ZEILEN);
 		line_string = line;
+        
+		if(line_string.find("#STOP")!=string::npos) //11.08.2011. WW
+           break;
 		if(line_string.find("#POINTS")!=string::npos)
 		{
 			while (ok){

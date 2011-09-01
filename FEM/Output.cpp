@@ -903,7 +903,7 @@ void COutput::WriteTECNodeData(fstream &tec_file)
                                                   //WW
                      m_msh->nod_vector[j]->GetIndex(), NodeIndex[k]);
                   tec_file << val_n << " ";
-                  if (m_pcs->type == 1212 && _nod_value_vector[k].find(
+                  if ((m_pcs->type == 1212||m_pcs->type == 42) && _nod_value_vector[k].find(
                                                   //WW
                      "SATURATION") != string::npos)
                                                   //WW
@@ -986,7 +986,7 @@ void COutput::WriteTECHeader(fstream &tec_file,int e_type, string e_type_name)
       pcs = GetPCS(_nod_value_vector[k]);
       if (pcs != NULL)
       {
-         if (pcs->type == 1212 && _nod_value_vector[k].find("SATURATION")
+         if ((pcs->type == 1212 || pcs->type == 42 )&& _nod_value_vector[k].find("SATURATION")
             != string::npos)
             tec_file << ", SATURATION2";
       }
@@ -1278,6 +1278,7 @@ double COutput::NODWritePLYDataTEC(int number)
       }
    }
 
+   /* //WW
    // VEL
    int v_eidx[3];
    CRFProcess* m_pcs_flow (PCSGetFlow());
@@ -1295,6 +1296,7 @@ double COutput::NODWritePLYDataTEC(int number)
       v_eidx[1] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Y");
       v_eidx[2] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Z");
    }
+   */
 
 //   for (size_t i = 0; i < 3; i++)
 //   {
@@ -2380,6 +2382,8 @@ void COutput::ELEWriteSFC_TECHeader(fstream &tec_file)
 void COutput::ELEWriteSFC_TECData(fstream &tec_file)
 {
    tec_file << "COutput::ELEWriteSFC_TECData - implementation not finished" << endl;
+
+   /* // Make it as comment to avoid compilation warnings. 18.082011 WW
    long i;
    int j;
    MeshLib::CElem* m_ele = NULL;
@@ -2406,12 +2410,15 @@ void COutput::ELEWriteSFC_TECData(fstream &tec_file)
             v[1] = m_pcs->GetElementValue(m_ele->GetIndex(),nidx[1]);
             v[2] = m_pcs->GetElementValue(m_ele->GetIndex(),nidx[2]);
             m_ele_neighbor->SetNormalVector();
+             
             v_n = v[0]*m_ele_neighbor->normal_vector[0] \
                + v[1]*m_ele_neighbor->normal_vector[1] \
                + v[2]*m_ele_neighbor->normal_vector[2];
+	    
          }
       }
    }
+   */
    //--------------------------------------------------------------------
 }
 
@@ -3189,6 +3196,9 @@ void COutput::checkConsistency ()
                   std::cout << "VOLUME " << getGeoName() << std::endl;
                   break;
                case GEOLIB::GEODOMAIN:
+                  std::cout << "DOMAIN " << getGeoName() << std::endl;
+                  break;
+               case GEOLIB::COLUMN:
                   std::cout << "DOMAIN " << getGeoName() << std::endl;
                   break;
                case GEOLIB::INVALID:

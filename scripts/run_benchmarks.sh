@@ -20,17 +20,17 @@ if  [ "$1" = "ex" ]; then
 	cd .. >/dev/null
 	
 	cd build_brns
-	ctest -R 'EXCEED' -E 'AllTests|FILE' -j 32 > ../benchOut.txt
+	ctest -R 'EXCEED' -E 'AllTests|FILE' -j 32 >> ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' >> ../benchOut.txt
 	cd .. >/dev/null
 	
 	cd build_pqc
-	ctest -R 'EXCEED' -E 'AllTests|FILE' -j 32 > ../benchOut.txt
+	ctest -R 'EXCEED' -E 'AllTests|FILE' -j 32 >> ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' >> ../benchOut.txt
 	cd .. >/dev/null
 	
 	cd build_gems
-	ctest -R 'EXCEED' -E 'AllTests|FILE' -j 32 > ../benchOut.txt
+	ctest -R 'EXCEED' -E 'AllTests|FILE' -j 32 >> ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' >> ../benchOut.txt
 else
 	ctest -E 'JOD|AllTests|FILE|EXCEED' -j 32 > ../benchOut.txt

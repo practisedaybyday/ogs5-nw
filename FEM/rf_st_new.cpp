@@ -2132,7 +2132,7 @@ CNodeValue* cnodev)
    double leakance, deltaZ;
    int phase = 0;                                 // RESTRICTION for mfp !!!!!!!
 
-   CElem *m_ele = NULL;
+   //WW CElem *m_ele = NULL;
    long msh_ele;
    int group, nidx;
    CRFProcess* m_pcs_cond = NULL;
@@ -2191,7 +2191,7 @@ CNodeValue* cnodev)
 
       msh_ele
          = m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->getConnectedElementIDs()[0];
-      m_ele = m_pcs_cond->m_msh->ele_vector[msh_ele];
+      //WW m_ele = m_pcs_cond->m_msh->ele_vector[msh_ele];
       group = m_pcs_cond->m_msh->ele_vector[msh_ele]->GetPatchIndex();
 
       //sat = mmp_vector[group]->SaturationCapillaryPressureFunction( -pressure0, 0);
@@ -2225,7 +2225,7 @@ CNodeValue* cnodev)
       }
       //////////////////////////
 
-      double inf_cap, supplyRate, rainfall;
+      double inf_cap, supplyRate; //WW, rainfall;
       long
          bc_eqs_index =
          m_pcs_this->m_msh->nod_vector[cnodev->msh_node_number]->GetEquationIndex();
@@ -2242,7 +2242,7 @@ CNodeValue* cnodev)
 
       msh_ele
          = m_pcs_this->m_msh->nod_vector[cnodev->msh_node_number]->getConnectedElementIDs()[0];
-      m_ele = m_pcs_this->m_msh->ele_vector[msh_ele];
+      //WW m_ele = m_pcs_this->m_msh->ele_vector[msh_ele];
       group = m_pcs_this->m_msh->ele_vector[msh_ele]->GetPatchIndex();
 
       //sat = mmp_vector[group]->SaturationCapillaryPressureFunction( -pressure0, phase);
@@ -2254,11 +2254,12 @@ CNodeValue* cnodev)
       // use of relative permeability for second node (absolute perm. for top node !!!!)
 
       // calculate infiltration capacity
+      /* //WW 
       if (aktuelle_zeit < m_st->rainfall_duration)
          rainfall = m_st->rainfall;
       else
          rainfall = 0;
-
+      */
       inf_cap = (depth + deltaZ - pressure1 / gamma) * (cond0 + cond1) / (2
          * deltaZ);
       supplyRate = m_st->rainfall;                //+ (depth ) / dt; // dt = timeStep
@@ -3527,7 +3528,7 @@ std::string CSourceTerm::DirectAssign_Precipitation(double current_time)
    size = (int)precip_times.size();
    stepA = 0.;
    stepB = 0.;
-   if(current_time < m_pcs->Tim->time_start||fabs(current_time - m_pcs->Tim->time_start)<DBL_MIN)
+   if(current_time < m_pcs->GetTimeStepping()->time_start||fabs(current_time - m_pcs->GetTimeStepping()->time_start)<DBL_MIN)
    {
       fileA = precip_files[0];
       stepB = -1.;
