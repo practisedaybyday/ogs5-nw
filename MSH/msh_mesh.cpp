@@ -1742,7 +1742,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
     **************************************************************************/
    void CFEMesh::GetNODOnSFC_TIN(Surface*m_sfc, std::vector<long>&msh_nod_vector)
    {
-      double angle_sum, dist;
+      double dist;
       double tolerance = 0.001;
       double min_mesh_dist = 0.0;
       double tri_point1[3], tri_point2[3], tri_point3[3], checkpoint[3];
@@ -1931,7 +1931,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 */
             if (dist <= tolerance && dist >= -tolerance)
             {
-               angle_sum = AngleSumPointInsideTriangle(checkpoint, tri_point1,
+               AngleSumPointInsideTriangle(checkpoint, tri_point1,
                   tri_point2, tri_point3, min_mesh_dist);
 			   /* KR
                if (angle_sum > 359)

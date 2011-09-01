@@ -529,7 +529,7 @@ int iTriangulatePolygon_TRI(
 		vector<Cp_dbl2> *Pnt2List,	// [i/o] polygon
 		vector<Cp_dtri> *Tri2List )	// [i/o] list of triangles
 {
-	int i, j, k, nTri, nPoints;
+	int i, j, k, nPoints;
 	Cp_dtri tri;
 
 	nPoints = (int)Pnt2List->size( );
@@ -543,7 +543,7 @@ int iTriangulatePolygon_TRI(
 				Pnt2List->at( j ).GetID( ), Pnt2List->at( k ).GetID( ) );
 			Tri2List->push_back( tri );
 			Pnt2List->erase( Pnt2List->begin( ) + j );
-			nTri = iTriangulatePolygon_TRI( Pnt2List, Tri2List );
+			iTriangulatePolygon_TRI( Pnt2List, Tri2List );
 			break;
 		}
 	}
@@ -568,7 +568,6 @@ void StartPolygonTri_TRI(
 		vector<Cp_dbl2> *Pnt2List,	// [i]
 		vector<Cp_dtri> *Tri2List )
 {
-	int nTri;
 	Cp_dbl2 ep;
 	vector<Cp_dbl2> PntList;
 	vector<Cp_dbl2>::iterator Iter;
@@ -582,7 +581,7 @@ void StartPolygonTri_TRI(
 
 	// --- do the triangulation ---
 	Tri2List->clear( );
-	nTri = iTriangulatePolygon_TRI( &PntList, Tri2List );
+	iTriangulatePolygon_TRI( &PntList, Tri2List );
 
 	// --- Done ---
 	
@@ -1308,7 +1307,7 @@ int iListConvex_TRI(
 		vector<Cp_dtri> *TriVector )	// [i/o] 
 {
 	short sFound, sPseudoFound;
-	int iRot, iPrev, iCur, i, j, nNbr, iNbr, jNbr, nCnv, iCnv, iCnvNext, iNext;
+	int iPrev, iCur, i, j, nNbr, iNbr, jNbr, nCnv, iCnv, iCnvNext, iNext;
 	int iTri, nTri;
 	double dAngle=0.0, dMinAngle=0.0;
 	Cp_dbl2 Ptr0, Ptr1, Ptr2;
@@ -1439,7 +1438,7 @@ int iListConvex_TRI(
 
 	// --- triangulate the polygon ---
 	Tri2List.clear( );
-	iRot = iPolygonRotDirection( &Ply2List );
+	iPolygonRotDirection( &Ply2List );
 	if( !bPolygonSwapRotation( &Ply2List, true ) ) goto PIX_EXIT;
 	StartPolygonTri_TRI( &Ply2List, &Tri2List );
 

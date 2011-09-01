@@ -286,8 +286,7 @@ std::string readSurface(std::istream &in,
 		std::vector<Polygon*> &polygon_vec,
 		std::vector<Surface*> &sfc_vec, std::map<std::string,size_t>& sfc_names,
 		const std::vector<Polyline*> &ply_vec, const std::map<std::string, size_t>& ply_vec_names,
-		std::vector<Point*> &pnt_vec,
-		const std::string &path)
+		std::vector<Point*> &pnt_vec)
 {
 	std::string line;
 	Surface *sfc(NULL);
@@ -409,7 +408,7 @@ std::string readSurfaces(std::istream &in,
 
 	while (!in.eof() && tag.find("#SURFACE") != std::string::npos) {
 		size_t n_polygons (polygon_vec.size());
-		tag = readSurface(in, polygon_vec, sfc_vec, sfc_names, ply_vec, ply_vec_names, pnt_vec, path);
+		tag = readSurface(in, polygon_vec, sfc_vec, sfc_names, ply_vec, ply_vec_names, pnt_vec);
 		if (n_polygons < polygon_vec.size()) {
 			// subdivide polygon in simple polygons
 			GEOLIB::Surface *sfc (GEOLIB::Surface::createSurface (*(dynamic_cast<GEOLIB::Polyline*>(polygon_vec[polygon_vec.size()-1]))));

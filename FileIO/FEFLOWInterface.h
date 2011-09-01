@@ -49,7 +49,7 @@ public:
 
 private:
   //void readSuperMesh(std::ifstream &feflow_file, FEFLOW_FEM_CLASS &fem_class, FEFLOW_FEM_DIM &fem_dim, std::vector<GEOLIB::Point*> *points, std::vector<GEOLIB::Polyline*> *lines);
-  void readSuperMesh(std::ifstream &feflow_file, FEFLOW_FEM_CLASS &fem_class, FEFLOW_FEM_DIM &fem_dim, std::vector<GEOLIB::Point*> **points, std::vector<GEOLIB::Polyline*> **lines);
+  void readSuperMesh(std::ifstream &feflow_file, FEFLOW_FEM_CLASS &fem_class, std::vector<GEOLIB::Point*> **points, std::vector<GEOLIB::Polyline*> **lines);
   void setMaterialID(MeshLib::CFEMesh * m_msh, std::vector<GEOLIB::Polyline*> *lines);
 
   GEOLIB::GEOObjects* _geoObjects;

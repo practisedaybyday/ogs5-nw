@@ -10916,11 +10916,7 @@ void CreateEQS_LinearSolver()
    for(i=0;i<pcs_vector.size();i++)
    {
       m_pcs = pcs_vector[i];
-<<<<<<< HEAD
-      if(m_pcs->type==1212)                        //Important for parallel computing. 24.1.2011 WW
-=======
       if(m_pcs->type==1212)                       //Important for parallel computing. 24.1.2011 WW
->>>>>>> master
       {
          dof_nonDM = m_pcs->GetPrimaryVNumber();
          dof = dof_nonDM;
