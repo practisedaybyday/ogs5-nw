@@ -1301,7 +1301,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
       pos=0;
       //WW beginn=1;
       p=0;
-      while ((!strstr(str, "END")) && (!strstr(str, "#ende")) && StrOnlyReadStr(sub, str, f, TFString, &p))
+      while ((!strstr(str, "END")) && (!strstr(str, "#ende")) && StrOnlyReadStr(sub, str, f, /*TFString,*/ &p))
       {
          LineFeed(f);
          found=0;
@@ -1332,7 +1332,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
                {
                   //                DisplayMsgLn(" # comp found ");
                   //sscanf(str, "%s");
-                  StrReadStr(s, str, f, TFString, &pos);
+                  StrReadStr(s, str, f, /*TFString,*/ &pos);
 
                   /* SB: temperature introduced */
                   if(strcmp(s,"temp")==0)
@@ -1420,7 +1420,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
                            pH_flag=1;
                            p=0;
                            StrReadDouble(&dvalue, &str[p+=pos], f, &pos);
-                           StrReadStr(s, &str[p+=pos], f, TFString, &pos);
+                           StrReadStr(s, &str[p+=pos], f, /*TFString,*/ &pos);
                            FilePrintString(f, " # comp ");
                            FilePrintInt(f, rcml_number_of_master_species+1);
                            LineFeed(f);
@@ -1515,7 +1515,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
             {
                pos=0;
                p=0;
-               StrReadStr(s, &str[p+=pos], f, TFString, &pos);
+               StrReadStr(s, &str[p+=pos], f, /*TFString,*/ &pos);
                if (strcmp(s,"")==0) break;
                StrReadDouble(&dvalue, &str[pos], f, &pos);
 
@@ -1622,7 +1622,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
             {
                pos=0;
                p=0;
-               StrReadStr(s, &str[p+=pos], f, TFString, &pos);
+               StrReadStr(s, &str[p+=pos], f, /*TFString,*/ &pos);
 
                /* find the mass of each phase from val_in*/
                for (i=0;i<np;i++)
@@ -1679,10 +1679,10 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
                {
                   FilePrintString(f, str);
                   p=0;
-                  StrOnlyReadStr(sub, str, f, TFString, &p);
+                  StrOnlyReadStr(sub, str, f, /*TFString,*/ &p);
                   if (!strcmp(sub, "-file"))
                   {
-                     StrOnlyReadStr(sub, &str[p], f, TFString, &p);
+                     StrOnlyReadStr(sub, &str[p], f, /*TFString,*/ &p);
                      /* SB: moved to structure rcml
                                          strcpy(fsout, sub);
                      */

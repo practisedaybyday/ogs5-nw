@@ -82,11 +82,11 @@ int CGLDomain::Read(char *data,FILE *f)
     // Check sub keywords
     sub = new char[(int)strlen(data) + 2];
     while (StrReadSubKeyword(sub, data, p += pos, &begin, &p)) {
-      ok = StrReadStr(name, sub, f, TFString, &p_sub) && ok;
+      ok = StrReadStr(name, sub, f, /*TFString,*/ &p_sub) && ok;
       pos = 0;
       //-----------------------------------------------------------------
       if (!strcmp(name, "$NAME")) {
-        ok = (StrReadStr(name,&sub[p_sub],f,TFString,&pos) && ok);
+        ok = (StrReadStr(name,&sub[p_sub],f,/*TFString,*/ &pos) && ok);
         LineFeed(f);
         m_domain->name = name;
       }
