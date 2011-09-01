@@ -62,6 +62,7 @@ set( SOURCES
 	eos.cpp
 	fem_ele.cpp
 	fem_ele_std.cpp
+	fem_ele_std1.cpp
 	fem_ele_vec.cpp
 	femlib.cpp
 	FEMCondition.cpp
@@ -102,11 +103,14 @@ set( SOURCES
 )
 
 ## New sparse class. WW
-IF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS)
+IF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK )
 	SET( SOURCES ${SOURCES} equation_class.h equation_class.cpp )
-ELSE(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS)
+    IF(OGS_FEM_JFNK)
+       SET( SOURCES ${SOURCES} rf_pcs1.cpp ) 
+    ENDIF(OGS_FEM_JFNK)	
+ELSE(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK)
 	SET( SOURCES ${SOURCES} solver.h solver.cpp matrix.h matrix.cpp)
-ENDIF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS)
+ENDIF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK)
 
 
 IF(OGS_FEM_GEMS)
@@ -163,6 +167,43 @@ IF (LIBPQC)
 	PQC
 )
 ENDIF (LIBPQC)
+
+if (WIN32)
+	if (OGS_FEM_GEMS)
+		target_link_libraries( FEM debug GEMS3_dbg optimized GEMS3_rl ) 
+	endif (OGS_FEM_GEMS)
+	if (LIS)
+		target_link_libraries( FEM ${LIS_LIBRARIES} ) 
+		set_target_properties( FEM PROPERTIES LINK_FLAGS "/NODEFAULTLIB:libcmt" )
+	endif (LIS)
+	if (MKL)
+		target_link_libraries( FEM ${MKL_LIBRARIES} )
+	endif (MKL)
+	if (OGS_FEM_BRNS)
+		target_link_libraries( FEM BrnsDll )
+	endif (OGS_FEM_BRNS)
+	if (OGS_FEM_CHEMAPP)
+		target_link_libraries( FEM ca_vc_e )
+	endif (OGS_FEM_CHEMAPP)
+endif (WIN32)
+
+if (UNIX)
+	if (OGS_FEM_GEMS)
+		target_link_libraries( FEM gemipm2k )
+	endif (OGS_FEM_GEMS)
+	
+	if (OGS_FEM_BRNS)
+		target_link_libraries( FEM dl )
+	endif (OGS_FEM_BRNS)
+
+	if (LIS)
+		target_link_libraries( FEM ${LIS_LIBRARIES} )
+	endif (LIS)
+	
+	if (MKL)
+		target_link_libraries( FEM ${MKL_LIBRARIES} )
+	endif (MKL)
+endif (UNIX)
 
 IF (OGS_FEM_CHEMAPP)
 	INCLUDE_DIRECTORIES ( ../EQL )

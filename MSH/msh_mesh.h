@@ -140,10 +140,9 @@ namespace MeshLib
             _min_edge_length = val;
          }
 
-         void Read(std::ifstream*);
+         bool Read(std::ifstream*);
 
          friend class FileIO::OGSMeshIO;
-
          std::ios::pos_type GMSReadTIN(std::ifstream*);
          //
          void ConstructGrid();
@@ -330,6 +329,7 @@ namespace MeshLib
          int GetCoordinateFlag() const { return coordinate_system; };
          void FillTransformMatrix();
 
+	void RenumberNodesForGlobalAssembly();
          /**
           * returns the vector storing pointers to all nodes (class CNode) of the mesh
           * @return

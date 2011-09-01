@@ -78,7 +78,6 @@ public:
 	{
 		return _curve_index;
 	}
-	;
 
 	bool isPeriodic() const // TF 07/2010
 	{
@@ -109,7 +108,7 @@ public:
 	{
 		return geo_node_value;
 	}
-	; //KR
+	//KR
 
 	const std::vector<std::string>& getPointsFCTNames() const
 	{
@@ -125,10 +124,13 @@ public:
 		return _msh_type_name;
 	}
 
+    int getExcav() {return bcExcav;};                     //WX:12.2010 get bc excav model
+    int getExcavMatGr() {return MatGr;};             //WX:12.2010 get excav material group
+    int getTimeContrCurve() {return time_contr_curve;};   //WX:12.2010 get bc ativity controlled curve
+
+
 private:
-
 	std::vector<std::string> _PointsFCTNames;
-
 	std::vector<int> _PointsHaveDistribedBC;
 	std::vector<double> _DistribedBC;
 
@@ -161,6 +163,8 @@ private:
 	std::string fct_name;
 	bool conditional;
 
+	LinearFunctionData *dis_linear_f;           //24.8.2011. WW
+
 	//WW
 	void SurfaceInterpolation(CRFProcess* m_pcs,
 			std::vector<long>& nodes_on_sfc,
@@ -172,6 +176,12 @@ private:
 	// MSH
 	long _msh_node_number;
 	std::string _msh_type_name; //OK4105
+
+    // Excavation WX:12.2010
+    int bcExcav;
+    int MatGr;
+    // aktive state is controlled by time curve WX:01.2011
+    int time_contr_curve;
 };
 
 class CBoundaryConditionNode                      //OK raus
@@ -189,6 +199,11 @@ class CBoundaryConditionNode                      //OK raus
       //FCT
       int conditional;                            //OK
       CBoundaryConditionNode();
+    
+      // 25.08.2011. WW 
+	  void Read(std::istream& is); 
+	  void Write(std::ostream& os) const;
+
 };
 
 class CBoundaryConditionsGroup

@@ -312,9 +312,11 @@ void CFEMesh::computeMinEdgeLength ()
     12/2005 OK MAT_TYPE
 	03/2011 KR cleaned up code
     **************************************************************************/
-   void CFEMesh::Read(std::ifstream *fem_file)
+   bool CFEMesh::Read(std::ifstream *fem_file) 
    {
       std::string line_string;
+      
+	  bool more_mesh = false; //12.08.2011. WW 
 
       while (!fem_file->eof())
       {
@@ -323,8 +325,15 @@ void CFEMesh::computeMinEdgeLength ()
 		 // check keywords
          if (line_string.find("#STOP") != std::string::npos)
          {
-            return;
+            more_mesh = false; //12.08.2011. WW 
+			break; 
          }
+         if (line_string.find("#FEM_MSH") != std::string::npos) //12.08.2011. WW 
+         {
+            more_mesh = true; 
+			break; 
+         }
+
          else if (line_string.find("$PCS_TYPE") != std::string::npos)
          {
             *fem_file >> pcs_name >> std::ws;     //WW
@@ -390,6 +399,8 @@ void CFEMesh::computeMinEdgeLength ()
             *fem_file >> _n_msh_layer >> std::ws;
          }
       }
+
+	  return more_mesh;
    }
 
    /**************************************************************************
@@ -767,22 +778,7 @@ void CFEMesh::computeMinEdgeLength ()
       //----------------------------------------------------------------------
       // Gravity center
       for (size_t e = 0; e < e_size; e++)
-      {
-         CElem* elem = ele_vector[e];
-         size_t nnodes0 = elem->nnodes;
-         for (size_t i = 0; i < nnodes0; i++)            // Nodes
-         {
-            elem->gravity_center[0] += elem->nodes[i]->X();
-            elem->gravity_center[1] += elem->nodes[i]->Y();
-            elem->gravity_center[2] += elem->nodes[i]->Z();
-         }
-         elem->gravity_center[0] /= (double) nnodes0;
-         elem->gravity_center[1] /= (double) nnodes0;
-         elem->gravity_center[2] /= (double) nnodes0;
-      }
-
-      // init _min_edge_length
-      //computeMinEdgeLength();
+        ele_vector[e]->ComputeGravityCenter(); //NW
       //----------------------------------------------------------------------
 
       //TEST WW
@@ -1129,6 +1125,127 @@ void CFEMesh::computeMinEdgeLength ()
       }
    }
 
+   /**************************************************************************
+    FEMLib-Method:
+    Task:  Renumbering nodes corresponding to the activiate of elements
+    Programing:
+    05/2005 WW Implementation
+    **************************************************************************/
+   void CFEMesh::RenumberNodesForGlobalAssembly()
+   {
+      CElem* elem = NULL;
+      Eqs2Global_NodeIndex.clear();
+	  size_t nNodes(nod_vector.size());
+      for (size_t l = 0; l < nNodes; l++)
+         nod_vector[l]->SetEquationIndex(-1);
+
+      size_t el_0 (0);
+      // Lower order
+	  size_t nElems(ele_vector.size());
+      for (size_t l = 0; l < nElems; l++)
+      {
+         elem = ele_vector[l];
+         if (elem->GetMark())                     // Marked for use
+         {
+		    int nVert (elem->GetVertexNumber());
+            for (int i = 0; i < nVert; i++)
+            {
+               if (elem->nodes[i]->GetEquationIndex() < 0)
+               {
+                  elem->nodes[i]->SetEquationIndex(el_0);
+                  Eqs2Global_NodeIndex.push_back(elem->nodes[i]->GetIndex());
+                  el_0++;
+               } else
+               continue;
+            }
+         }
+      }
+      size_t el (el_0);
+      if (!getOrder())
+      {
+         NodesNumber_Linear = el_0;
+         NodesNumber_Quadratic = el;
+         return;
+      }
+      // High order
+      for (size_t l = 0; l < nElems; l++)
+      {
+         elem = ele_vector[l];
+         if (elem->GetMark())                     // Marked for use
+         {
+			int nElemNodes (elem->GetNodesNumber(true));
+            for (int i = elem->GetVertexNumber(); i < nElemNodes; i++)
+            {
+               if (elem->nodes[i]->GetEquationIndex() < 0)
+               {
+                  elem->nodes[i]->SetEquationIndex(el);
+                  Eqs2Global_NodeIndex.push_back(elem->nodes[i]->GetIndex());
+                  el++;
+               } else
+               continue;
+            }
+         }
+      }
+      NodesNumber_Linear = el_0;
+      NodesNumber_Quadratic = el;
+   }
+
+   /**************************************************************************
+    FEMLib-Method:
+    Task:
+    Programing:
+    03/2005 OK Implementation
+    07/2005 WW Write by member methods of geometry objects.
+    12/2005 OK MAT_TYPE
+    **************************************************************************/
+/*
+   void CFEMesh::Write(std::fstream*fem_msh_file, bool append_stop) const
+   {
+      long i;
+      //--------------------------------------------------------------------
+      //KEYWORD
+      *fem_msh_file << "#FEM_MSH" << std::endl;
+      //--------------------------------------------------------------------
+      // PCS
+      *fem_msh_file << " $PCS_TYPE" << std::endl;
+      *fem_msh_file << "  ";
+      *fem_msh_file << pcs_name << std::endl;
+      //--------------------------------------------------------------------
+      // MAT
+      if (geo_name.size() > 0)
+      {
+         *fem_msh_file << " $GEO_TYPE" << std::endl;
+         *fem_msh_file << "  ";
+                                                  //OK10_4310
+         *fem_msh_file << geo_type_name << " " << geo_name << std::endl;
+      }
+      //--------------------------------------------------------------------
+      // NODES
+      *fem_msh_file << " $NODES" << std::endl;
+      *fem_msh_file << "  ";
+                                                  //WW
+      *fem_msh_file << GetNodesNumber(false) << std::endl;
+      for (i = 0; i < (long) nod_vector.size(); i++)
+         nod_vector[i]->Write(*fem_msh_file);     //WW
+      //--------------------------------------------------------------------
+      // ELEMENTS
+      *fem_msh_file << " $ELEMENTS" << std::endl;
+      *fem_msh_file << "  ";
+      *fem_msh_file << (long) ele_vector.size() << std::endl;
+      for (i = 0; i < (long) ele_vector.size(); i++)
+      {
+         ele_vector[i]->SetIndex(i);              //20.01.06 WW/TK
+         ele_vector[i]->WriteIndex(*fem_msh_file);//WW
+      }
+      //--------------------------------------------------------------------
+      *fem_msh_file << " $LAYER" << std::endl;
+      *fem_msh_file << "  ";
+      *fem_msh_file << _n_msh_layer << std::endl;
+      //--------------------------------------------------------------------
+      if (append_stop)
+        *fem_msh_file << "#STOP";
+   }
+*/
 
 #ifndef NON_GEO
 /**************************************************************************
@@ -1144,17 +1261,24 @@ long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
 #ifdef HAVE_PTHREADS
 	/* thread version */
 	pthread_t thread0, thread1, thread2, thread3;
-	int iret0, iret1, iret2, iret3;
+	//WW int iret0, iret1, iret2, iret3;
 
 	ThreadParameter *thread_param0 (new ThreadParameter (pnt, 0, static_cast<size_t>(nodes_in_usage/4.0), nod_vector, 0));
 	ThreadParameter *thread_param1 (new ThreadParameter(pnt, static_cast<size_t>(nodes_in_usage/4.0), static_cast<size_t>(nodes_in_usage/2.0), nod_vector, 1));
 	ThreadParameter *thread_param2 (new ThreadParameter(pnt, static_cast<size_t>(nodes_in_usage/2.0), static_cast<size_t>(3*nodes_in_usage/4.0), nod_vector, 2));
 	ThreadParameter *thread_param3 (new ThreadParameter(pnt, static_cast<size_t>(3.0*nodes_in_usage/4.0), nodes_in_usage, nod_vector, 3));
 
+        /* //WW
 	iret0 = pthread_create( &thread0, NULL, threadGetDist, thread_param0);
 	iret1 = pthread_create( &thread1, NULL, threadGetDist, thread_param1);
 	iret2 = pthread_create( &thread2, NULL, threadGetDist, thread_param2);
 	iret3 = pthread_create( &thread3, NULL, threadGetDist, thread_param3);
+        */
+
+	pthread_create( &thread0, NULL, threadGetDist, thread_param0);
+	pthread_create( &thread1, NULL, threadGetDist, thread_param1);
+	pthread_create( &thread2, NULL, threadGetDist, thread_param2);
+	pthread_create( &thread3, NULL, threadGetDist, thread_param3);
 
 	pthread_join( thread0, NULL);
 	pthread_join( thread1, NULL);
@@ -2046,7 +2170,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
    void CFEMesh::GetNODOnPLY_XY(CGLPolyline*m_ply, std::vector<long>&msh_nod_vector)
    {
       long j, k, l;
-      double pt1[3], line1[3], line2[3], pt0[3];
+      double pt1[3], line1[3], line2[3]; //WW , pt0[3];
       double mult_eps = 1.0;
       double dist1p, dist2p, *length, laenge;
       long anz_relevant = 0;
@@ -2066,9 +2190,9 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
       //
       length = (double*) Malloc(sizeof(double)
          * (long) m_ply->point_vector.size());
-      pt0[0] = m_ply->point_vector[0]->x;
-      pt0[1] = m_ply->point_vector[0]->y;
-      pt0[2] = 0.0;
+      //WW pt0[0] = m_ply->point_vector[0]->x;
+      //WW pt0[1] = m_ply->point_vector[0]->y;
+      //WW pt0[2] = 0.0;
       /* */
       for (k = 0; k < (long) m_ply->point_vector.size() - 1; k++)
       {
@@ -2481,8 +2605,10 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
       const size_t nn = 6;
       int j, nes;
       size_t *element_nodes = NULL;
-      double nx[6], ny[6], nz[6];
-      double dx[3], dy[3], dz[3];
+      //WW double nx[6], ny[6], 
+      double nz[6];
+      //WW double dx[3], dy[3],;
+      double dz[3];
       double newz;
       int row (Layer);
       int NRowsToShift;
@@ -2523,8 +2649,8 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
             CountNLayers = _n_msh_layer;
             for (size_t i = 0; i < nn; i++)
             {
-               nx[i] = nod_vector[m_ele->nodes_index[i]]->X();
-               ny[i] = nod_vector[m_ele->nodes_index[i]]->Y();
+	      //WW nx[i] = nod_vector[m_ele->nodes_index[i]]->X();
+              //WW  ny[i] = nod_vector[m_ele->nodes_index[i]]->Y();
                nz[i] = nod_vector[m_ele->nodes_index[i]]->Z();
             }
             nes = 0;
@@ -2540,8 +2666,8 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
             {
                for (size_t i = 0; i < 3; i++)
                {
-                  dx[i] = (nx[i + 3] - nx[i]) / (float) NSubLayers;
-                  dy[i] = (ny[i + 3] - ny[i]) / (float) NSubLayers;
+		 //WW dx[i] = (nx[i + 3] - nx[i]) / (float) NSubLayers;
+		 //WW dy[i] = (ny[i + 3] - ny[i]) / (float) NSubLayers;
                   dz[i] = (nz[i + 3] - nz[i]) / (float) NSubLayers;
                }
                // Create new nodes
@@ -2940,28 +3066,46 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
     MSHLib-Method:
     Programing:
     11/2007 WW Implementation
+	04/2011 WW CRS storage
     **************************************************************************/
    void CFEMesh::CreateSparseTable()
    {
-      // Symmetry case is skipped.
-      // 1. Sparse_graph_H for high order interpolation. Up to now, deformation
-      if(NodesNumber_Linear!=NodesNumber_Quadratic)
-         sparse_graph_H = new SparseTable(this, true);
-      // 2. M coupled with other processes with linear element
-      if(sparse_graph_H)
-      {
-         if((int)pcs_vector.size()>1)
-            sparse_graph = new SparseTable(this, false);
-      }
-      // 3. For process with linear elements
-      else
-         sparse_graph = new SparseTable(this, false);
+  
 
-      //sparse_graph->Write();
-      //  sparse_graph_H->Write();
-      //
-      //ofstream Dum("sparse.txt", ios::out);
-      //sparse_graph_H->Write(Dum);
+  Math_Group::StorageType stype;
+  stype = Math_Group::JDS;
+  for(int i=0; i<(int)num_vector.size(); i++)
+  {
+     if(num_vector[i]->ls_storage_method == 100)
+     {
+        stype = Math_Group::CRS;
+        break;
+     }
+  }
+
+    
+  // Symmetry case is skipped.
+  // 1. Sparse_graph_H for high order interpolation. Up to now, deformation
+  if(NodesNumber_Linear!=NodesNumber_Quadratic)   
+    sparse_graph_H = new SparseTable(this, true, false, stype);
+  // 2. M coupled with other processes with linear element
+  if(sparse_graph_H)
+  { 
+     if((int)pcs_vector.size()>1)
+      sparse_graph = new SparseTable(this, false, false, stype);
+  }
+  // 3. For process with linear elements
+  else
+    sparse_graph = new SparseTable(this, false, false, stype);
+
+     
+  //  sparse_graph->Write();
+  //  sparse_graph_H->Write();
+  //
+  //ofstream Dum("sparse.txt", ios::out); 
+  //sparse_graph_H->Write(Dum);
+
+
    }
 #endif                                         //#ifndef NON_PROCESS  // 05.03.2010 WW
 #endif

@@ -139,13 +139,13 @@ void ExtractMeshNodes::getTopMeshNodesAlongPolylineAsPoints(
 	std::vector<GEOLIB::PointWithID> nodes_as_points;
 	this->getOrthogonalProjectedMeshNodesAlongPolyline (polyline, nodes_as_points);
 
-	std::ofstream out ("MeshNodesAsPoints.gli");
-	out << "#POINTS" << std::endl;
-	for (size_t k(0); k<nodes_as_points.size(); k++) {
-		out << k << " " << nodes_as_points[k] << " $NAME MeshNodeID" << nodes_as_points[k].getID () << std::endl;
-	}
-	out << "#STOP" << std::endl;
-	out.close();
+//	std::ofstream out ("MeshNodesAsPoints.gli");
+//	out << "#POINTS" << std::endl;
+//	for (size_t k(0); k<nodes_as_points.size(); k++) {
+//		out << k << " " << nodes_as_points[k] << " $NAME MeshNodeID" << nodes_as_points[k].getID () << std::endl;
+//	}
+//	out << "#STOP" << std::endl;
+//	out.close();
 
 	double eps (std::numeric_limits<double>::epsilon());
 	// collect data (lowest points with same x and y coodinates)
@@ -185,6 +185,7 @@ void ExtractMeshNodes::getPolygonFromPolyline (const GEOLIB::Polyline& polyline,
 {
 	std::vector<GEOLIB::Point*> top_polygon_pnts;
 	this->getTopMeshNodesAlongPolylineAsPoints (polyline, top_polygon_pnts);
+
 	std::vector<GEOLIB::Point*> bottom_polygon_pnts;
 	this->getBottomMeshNodesAlongPolylineAsPoints (polyline, bottom_polygon_pnts);
 
@@ -198,6 +199,7 @@ void ExtractMeshNodes::getPolygonFromPolyline (const GEOLIB::Polyline& polyline,
 	polygon = new GEOLIB::Polygon (*(geo_obj->getPointVec (name)));
 
 	std::vector<GEOLIB::Point*> const* original_pnts (geo_obj->getPointVec(name));
+
 	// *** add ids of new points to polygon
 	// for top polyline sort points along polyline
 	size_t s (top_ids->size());
@@ -230,6 +232,22 @@ void ExtractMeshNodes::getPolygonFromPolyline (const GEOLIB::Polyline& polyline,
 	// close polygon
 	polygon->addPoint (polygon->getPointID(0));
 	polygon->initialise();
+
+	//
+//	std::ofstream out ("SurfaceBC.gli");
+//	out << "#POINTS" << std::endl;
+//	for (size_t k(0); k<polygon->getNumberOfPoints(); k++) {
+//		out << k << " " << *(polygon->getPoint(k)) << std::endl;
+//	}
+//	out << "POLYLINE" << std::endl;
+//	out << "\t$NAME" << std::endl;
+//	out << "\t\tPolygonForBC" << std::endl;
+//	out << "\t$POINTS" << std::endl;
+//	for (size_t k(0); k<polygon->getNumberOfPoints(); k++) {
+//		out << "\t" << k << std::endl;
+//	}
+//	out << "#STOP" << std::endl;
+//	out.close ();
 
 	delete top_ids;
 	delete bottom_ids;

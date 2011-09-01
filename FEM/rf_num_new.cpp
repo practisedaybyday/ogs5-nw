@@ -69,9 +69,10 @@ CNumerics::CNumerics(string name)
    ls_theta = 1.0;
    ls_precond = 1;
    ls_storage_method = 2;                         //OK41
+   m_cols = 5;                                    // 06.2010. WW
    // NLS - Nonlinear Solver
    nls_method_name = "PICARD";
-   nls_method = 0;                                // Default, Picard. 1: Newton
+   nls_method = -1;                                // Default linear, 0: Picard. 1: Newton
    nls_max_iterations = 1;                        //OK
    nls_error_tolerance = 1.0e-4;
    nls_error_tolerance_local = 1.0e-10;           //For element level
@@ -88,9 +89,9 @@ CNumerics::CNumerics(string name)
    ele_supg_method = 0;                           //NW
    ele_supg_method_length = 0;                    //NW
    ele_supg_method_diffusivity = 0;               //NW
-  fct_method = -1; //NW
-  fct_prelimiter_type = 0; //NW
-  fct_const_alpha = -1.0; //NW
+   fct_method = -1;                               //NW
+   fct_prelimiter_type = 0;                       //NW
+   fct_const_alpha = -1.0;                        //NW
    //----------------------------------------------------------------------
    // Deformation
    GravityProfile = 0;
@@ -129,7 +130,7 @@ Programing:
 **************************************************************************/
 CNumerics::~CNumerics(void)
 {
-   if(DynamicDamping) delete DynamicDamping;
+   if(DynamicDamping) delete [] DynamicDamping;
    DynamicDamping = NULL;
 }
 
@@ -246,9 +247,19 @@ ios::pos_type CNumerics::Read(ifstream *num_file)
          line.str(GetLineFromFile1(num_file));
          line >> nls_method_name;
          line >> nls_error_tolerance;
+         nls_method = 0;
          if(nls_method_name.find("NEWTON")!=string::npos)
+         {
+            nls_method = 1;
             line>>nls_error_tolerance_local;
-         nls_method = 1;
+         }
+         // 07.2010. WW
+         ///  Jacobian free Newton-Krylov method
+         if(nls_method_name.find("JFNK")!=string::npos)
+         {
+            nls_method = 2;
+            line>>nls_error_tolerance_local;
+         }
          line >> nls_max_iterations;
          line >> nls_relaxation;
          line.clear();
@@ -265,6 +276,9 @@ ios::pos_type CNumerics::Read(ifstream *num_file)
          line >> ls_theta;
          line >> ls_precond;
          line >> ls_storage_method;
+         /// For GMRES. 06.2010. WW
+         if(ls_method==13)
+            line>>m_cols;
          line.clear();
          continue;
       }
@@ -335,16 +349,18 @@ ios::pos_type CNumerics::Read(ifstream *num_file)
          line.clear();
          continue;
       }
-    //Flux corrected transport by Kuzmin (2009)
-    if(line_string.find("$FEM_FCT")!=string::npos) { // NW
-	  line.str(GetLineFromFile1(num_file));
-      line >> fct_method;          //1: linearized FCT
-      line >> fct_prelimiter_type; //0: just cancel, 1: minmod, 2: superbee
-      line >> fct_const_alpha;     //-1: off, [0.0,1.0] 0: Upwind, 1: Galerkin
-      line.clear();
-      cout << "->FEM_FCT method is selected." << endl;
-      continue;
-    }
+      //Flux corrected transport by Kuzmin (2009)
+                                                  // NW
+      if(line_string.find("$FEM_FCT")!=string::npos)
+      {
+         line.str(GetLineFromFile1(num_file));
+         line >> fct_method;                      //1: linearized FCT
+         line >> fct_prelimiter_type;             //0: just cancel, 1: minmod, 2: superbee
+         line >> fct_const_alpha;                 //-1: off, [0.0,1.0] 0: Upwind, 1: Galerkin
+         line.clear();
+         cout << "->FEM_FCT method is selected." << endl;
+         continue;
+      }
 
       //....................................................................
       /*
@@ -472,42 +488,6 @@ void CNumerics::Write(fstream* num_file)
 // LINEAR_SOLVER
 //////////////////////////////////////////////////////////////////////////
 #ifndef NEW_EQS                                   //WW. 06.11.2008
-/**************************************************************************
- ROCKFLOW - Funktion: NormOfUnkonwn
-
- Aufgabe:
-   Compute the norm of RHS of a linear equation
-
- Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   E: LINEAR_SOLVER * ls: linear solver
-
- Ergebnis:
-   - double - Eucleadian Norm
-
-Programmaenderungen:
-12/2002   WW   Erste Version
-
-**************************************************************************/
-double CalcNormOfRHS(LINEAR_SOLVER*ls)
-{
-   int i, j;
-   int unknown_vector_dimension;
-   long number_of_nodes;
-   double NormW = 0.0;
-
-   if (!ls) {printf(" \n Warning: solver not defined, exit from loop_ww.cc"); exit(1);}
-   /* Ergebnisse eintragen */
-   unknown_vector_dimension = GetUnknownVectorDimensionLinearSolver(ls);
-   for (i = 0; i < unknown_vector_dimension; i++)
-   {
-      number_of_nodes=ls->unknown_node_numbers[i];
-      for(j=0; j<number_of_nodes; j++)
-         NormW += ls->b[number_of_nodes*i+j]*ls->b[number_of_nodes*i+j];
-
-   }
-   return sqrt(NormW);
-}
-
 
 /*************************************************************************
  ROCKFLOW - Funktion: SetZeroLinearSolver
@@ -939,8 +919,8 @@ void SetLinearSolverType(LINEAR_SOLVER* ls ,CNumerics *m_num)
          ls->LinearSolver = SpUMF;
          break;
       default:
-        cout << "***ERROR in SetLinearSolverType(): Specified linear solver type (" << m_num->ls_method << ") is not supported. " << endl;
-        exit(1);
+         cout << "***ERROR in SetLinearSolverType(): Specified linear solver type (" << m_num->ls_method << ") is not supported. " << endl;
+         exit(1);
    }
 
 }

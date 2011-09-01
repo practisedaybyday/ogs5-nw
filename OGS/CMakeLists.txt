@@ -42,43 +42,6 @@ TARGET_LINK_LIBRARIES( ogs
 	${CMAKE_THREAD_LIBS_INIT}
 )
 
-if (WIN32)
-	if (OGS_FEM_GEMS)
-		target_link_libraries( ogs debug GEMS3_dbg optimized GEMS3_rl ) 
-	endif (OGS_FEM_GEMS)
-	if (LIS)
-		target_link_libraries( ogs ${LIS_LIBRARIES} ) 
-		set_target_properties( ogs PROPERTIES LINK_FLAGS "/NODEFAULTLIB:libcmt" )
-	endif (LIS)
-	if (MKL)
-		target_link_libraries( ogs ${MKL_LIBRARIES} )
-	endif (MKL)
-	if (OGS_FEM_BRNS)
-		target_link_libraries( ogs BrnsDll )
-	endif (OGS_FEM_BRNS)
-	if (OGS_FEM_CHEMAPP)
-		target_link_libraries( ogs ca_vc_e )
-	endif (OGS_FEM_CHEMAPP)
-endif (WIN32)
-
-if (UNIX)
-	if (OGS_FEM_GEMS)
-		target_link_libraries( ogs gemipm2k )
-	endif (OGS_FEM_GEMS)
-	
-	if (OGS_FEM_BRNS)
-		target_link_libraries( ogs dl )
-	endif (OGS_FEM_BRNS)
-
-	if (LIS)
-		target_link_libraries( ogs ${LIS_LIBRARIES} )
-	endif (LIS)
-	
-	if (MKL)
-		target_link_libraries( ogs ${MKL_LIBRARIES} )
-	endif (MKL)
-endif (UNIX)
-
 
 ####################
 ### Installation ###

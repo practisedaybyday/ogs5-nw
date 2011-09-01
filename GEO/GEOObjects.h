@@ -194,6 +194,7 @@ public:
 	/**
 	 * merge geometries
 	 * @param names the names of the geometries that are to be merged
+	 * @param merged_geo_name the name of the resulting geometry
 	 */
 	void mergeGeometries (std::vector<std::string> const & names, std::string &merged_geo_name);
 

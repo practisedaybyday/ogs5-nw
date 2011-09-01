@@ -22,6 +22,8 @@ class CNumerics
    private:
       // cf. Computational Geomachanics pp.62 WW
       double *DynamicDamping;
+      /// For GMRES solver. 30.06.2010. WW
+      long  m_cols;
    public:
       // method
       std::string method_name;                    //OK
@@ -58,10 +60,10 @@ class CNumerics
       int ele_supg_method;                        //NW
       int ele_supg_method_length;                 //NW
       int ele_supg_method_diffusivity;            //NW
-    //FEM-FCT
-    int fct_method; //NW
-    unsigned int fct_prelimiter_type; //NW
-    double fct_const_alpha; //NW
+      //FEM-FCT
+      int fct_method;                             //NW
+      unsigned int fct_prelimiter_type;           //NW
+      double fct_const_alpha;                     //NW
       // Deformation
       int GravityProfile;
       // LAGRANGE method //OK
@@ -79,6 +81,8 @@ class CNumerics
       double GetDynamicDamping_beta2 () const {return DynamicDamping[1];}
       double GetDynamicDamping_bbeta () const {return DynamicDamping[2];}
       //
+      /// For GMRES. WW
+      long Get_m() const {return m_cols;}
       CNumerics(std::string);
       ~CNumerics(void);
       std::ios::pos_type Read(std::ifstream*);
@@ -165,7 +169,6 @@ extern LINEAR_SOLVER *CreateLinearSolver(long store, long dim);
 extern LINEAR_SOLVER *CreateLinearSolverDim(long store, int unknown_vector_dimension, long dim);
 extern void ConfigSolverProperties(void);
 //
-extern double CalcNormOfRHS(LINEAR_SOLVER*);
 //
 extern int GetUnknownVectorDimensionLinearSolver(LINEAR_SOLVER*);
 #endif                                            //ifndef NEW_EQS //WW 07.11.2008

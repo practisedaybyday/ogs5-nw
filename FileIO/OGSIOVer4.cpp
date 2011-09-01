@@ -33,6 +33,9 @@
 #include "AnalyticalGeometry.h"
 #include "EarClippingTriangulation.h"
 
+// For file path
+#include "makros.h"
+
 using namespace GEOLIB;
 
 namespace FileIO {
@@ -316,9 +319,11 @@ std::string readSurface(std::istream &in,
 		//....................................................................
 		if (line.find("$TIN") != std::string::npos) { // subkeyword found
 			in >> line; // read value (file name)
-			line = path + line;
+//			line = path + line;
+			line = FilePath + line; //WW
 //			if (type == 1) std::cerr << "reading tin file " << line << " ... " << std::flush;
 			sfc = new Surface(pnt_vec);
+
 			readTINFile(line, sfc, pnt_vec);
 //			std::cout << "ok" << std::endl;
 		}
@@ -493,6 +498,7 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo)
 	std::string tag;
 	while (tag.find("#POINTS") == std::string::npos && !in.eof()) {
 		getline (in, tag);
+       
 	}
 
 	// read names of points into vector of strings
@@ -562,13 +568,14 @@ void writeGLIFileV4 (const std::string& fname, const std::string& geo_name, cons
 	if (plys_vec) {
 		const std::vector<GEOLIB::Polyline*>* plys (plys_vec->getVector());
 		std::cout << plys->size () << " polylines to file " << fname << std::endl;
-		const std::vector<size_t>& pnt_id_map (geo.getPointVecObj(geo_name)->getIDMap());
+//		const std::vector<size_t>& pnt_id_map (geo.getPointVecObj(geo_name)->getIDMap());
 		for (size_t k(0); k<plys->size(); k++) {
 			os << "#POLYLINE" << std::endl;
 			os << " $NAME " << std::endl << "  " << k << std::endl; // plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
 			os << " $POINTS" << std::endl;
 			for (size_t j(0); j<(*plys)[k]->getNumberOfPoints(); j++) {
-				os << "  " << pnt_id_map[((*plys)[k])->getPointID(j)] << std::endl;
+//				os << "  " << pnt_id_map[((*plys)[k])->getPointID(j)] << std::endl;
+				os << "  " << ((*plys)[k])->getPointID(j) << std::endl;
 			}
 		}
 	}
@@ -578,11 +585,12 @@ void writeGLIFileV4 (const std::string& fname, const std::string& geo_name, cons
 		const std::vector<GEOLIB::Polyline*>* plys (plys_vec->getVector());
 		std::cout << plys->size () << " closed polylines as surfaces to file " << fname << std::endl;
 		for (size_t k(0); k<plys->size(); k++) {
-			if ((*plys)[k]->isClosed())
-			os << "#SURFACE" << std::endl;
-			os << " $NAME " << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
-			os << " $TYPE " << std::endl << "  0" << std::endl;
-			os << " $POLYLINES" << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
+			if ((*plys)[k]->isClosed()) {
+				os << "#SURFACE" << std::endl;
+				os << " $NAME " << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
+				os << " $TYPE " << std::endl << "  0" << std::endl;
+				os << " $POLYLINES" << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
+			}
 		}
 	}
 

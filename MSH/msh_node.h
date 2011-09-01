@@ -37,11 +37,7 @@ namespace MeshLib
 	     std::vector <double> distance_to_connected_faces; // BG, 09/2010,  necessary for coupling to Eclipse
 
          /** constructor */
-         CNode(size_t Index) :
-         CCore(Index), free_surface (-1),
-            patch_area (-1.0), crossroad (false), eqs_index(-1)
-            {}
-
+         CNode(size_t Index);
          CNode(size_t Index, double x, double y, double z = 0.0);
          CNode(size_t Index, const CNode* parent);//NW
          ~CNode() {}

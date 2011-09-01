@@ -726,10 +726,10 @@ namespace FiniteElement
                                                   // Weights
             fkt *= MXPGaussFktTri(nGauss,gp_r)*MXPGaussFkt(gp_t, gp_s);
             break;
-       case MshElemType::PYRAMID: // Pyramid 
-  		  fkt = computeJacobian(Order);
-          fkt *= unit[3];                       // Weights
-          break;
+         case MshElemType::PYRAMID: // Pyramid 
+  		    fkt = computeJacobian(Order);
+            fkt *= unit[3];                       // Weights
+            break;
          default:
             std::cerr << "CElement::GetGaussData invalid mesh element type given" << std::endl;
       }

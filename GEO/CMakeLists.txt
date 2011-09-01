@@ -83,6 +83,7 @@ include_directories(
 target_link_libraries (
 	GEO
 	Base
+	FEM
 	MathLib
 )
 

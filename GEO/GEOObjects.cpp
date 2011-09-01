@@ -405,6 +405,30 @@ void GEOObjects::mergeGeometries (std::vector<std::string> const & geo_names, st
 		}
 	}
 	this->addPolylineVec (merged_polylines, merged_geo_name);
+
+
+	// *** merge surfaces
+	std::vector<GEOLIB::Surface*> *merged_sfcs (new std::vector<GEOLIB::Surface*>);
+	for (size_t j(0); j<geo_names.size(); j++) {
+		const std::vector<GEOLIB::Surface*>* sfcs (this->getSurfaceVec(geo_names[j]));
+		if (sfcs) {
+			for (size_t k(0); k<sfcs->size(); k++) {
+				GEOLIB::Surface* kth_sfc_new(new GEOLIB::Surface (*merged_points));
+				GEOLIB::Surface const*const kth_sfc_old ((*sfcs)[k]);
+				const size_t size_of_kth_sfc (kth_sfc_old->getNTriangles());
+				// copy point ids from old ply to new ply (considering the offset)
+				for (size_t i(0); i<size_of_kth_sfc; i++) {
+					const GEOLIB::Triangle* tri ((*kth_sfc_old)[i]);
+					const size_t id0 (id_map[pnt_offsets[j]+(*tri)[0]]);
+					const size_t id1 (id_map[pnt_offsets[j]+(*tri)[1]]);
+					const size_t id2 (id_map[pnt_offsets[j]+(*tri)[2]]);
+					kth_sfc_new->addTriangle (id0, id1, id2);
+				}
+				merged_sfcs->push_back (kth_sfc_new);
+			}
+		}
+	}
+	this->addSurfaceVec (merged_sfcs, merged_geo_name);
 }
 
 

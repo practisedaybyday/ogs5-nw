@@ -11,7 +11,7 @@ Programing:
 #include <cmath>
 
 #define MKleinsteZahlen std::numeric_limits<double>::min()
-#define MAX_ZEILEN 256 //2048 OK
+#define MAX_ZEILEN 2048 // 256 //2048 OK
 #define CSV_FILE_EXTENSIONS ".csv"
 #define TEC_FILE_EXTENSIONS ".tec"
 

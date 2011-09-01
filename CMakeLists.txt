@@ -22,6 +22,7 @@ INCLUDE (CMakeConfiguration/Find.cmake)
 # Configurations
 OPTION(OGS_FEM "Default configuration" OFF)
 OPTION(OGS_FEM_SP "Sparse matrix configuration" OFF)
+OPTION(OGS_FEM_JFNK "Jacobi free Newton-Krylov method for H2M problem" OFF)
 OPTION(OGS_FEM_GEMS "GEMS configuration" OFF)
 OPTION(OGS_FEM_PQC "Phreeqc configuration" OFF)
 OPTION(OGS_FEM_BRNS "BRNS configuration" OFF)
@@ -72,12 +73,12 @@ MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_USE_OPEN
 ### OGS version information. Adjust these if you release a new version. ###
 ###########################################################################
 SET (OGS_VERSION_MAJOR 5)
-SET (OGS_VERSION_MINOR 1)
-SET (OGS_VERSION_PATCH 05)
-SET (OGS_RELEASE_PERSONS "NW")
+SET (OGS_VERSION_MINOR 2)
+SET (OGS_VERSION_PATCH 02)
+SET (OGS_RELEASE_PERSONS "WW")
 SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}(${OGS_RELEASE_PERSONS})")
 # should we use ISO dates: 2010-12-31 ?
-SET (OGS_DATE "24.05.2011")
+SET (OGS_DATE "26.08.2011")
 
 # Check for number of processors
 INCLUDE(ProcessorCount)
@@ -102,9 +103,20 @@ IF(OGS_FEM_SP)
 	ADD_DEFINITIONS(-DNEW_EQS)
 ENDIF(OGS_FEM_SP)
 
+IF(OGS_FEM_JFNK)
+	MESSAGE (STATUS  "Configuring for Jacobi free Newton-Krylov method for H2M problem" )	
+	SET( PRJ_EXT "-SP_JFNK" )
+	ADD_DEFINITIONS(-DNEW_EQS)
+	ADD_DEFINITIONS(-DJFNK_H2M)
+ENDIF(OGS_FEM_JFNK)
+
 IF(OGS_FEM_MPI)
 	MESSAGE (STATUS  "Configuring for FEM command line with MPI" )
-MESSAGE (WARNING "Make sure that you specified the mpi c and c++ compiler on the command line. E.g. cmake -DOGS_FEM_MPI=ON -DCMAKE_C_COMPILER=/opt/openmpi-1.4.1/bin/mpicc -DCMAKE_CXX_COMPILER=/opt/openmpi-1.4.1/bin/mpic++ ..")
+	STRING (REGEX MATCH mpi MPI_COMPILER_SET ${CMAKE_CXX_COMPILER})
+	IF (NOT MPI_COMPILER_SET)
+		MESSAGE (FATAL_ERROR "Aborting. Make sure that you specified the mpi c and c++ compiler on the command line. E.g. cmake -DOGS_FEM_MPI=ON -DCMAKE_C_COMPILER=/opt/openmpi-1.4.1/bin/mpicc -DCMAKE_CXX_COMPILER=/opt/openmpi-1.4.1/bin/mpic++ ..")
+	ENDIF ()
+
 	SET( PRJ_EXT "-MPI" )
 	SET(PARALLEL_USE_MPI ON CACHE BOOL "Use Message Passing Interface")
 	MARK_AS_ADVANCED(PARALLEL_USE_MPI)

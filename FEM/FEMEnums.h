@@ -18,7 +18,7 @@
 enum ProcessType
 {
    INVALID_PROCESS = 0,                           //!< INVALID_PROCESS
-   PTC_FLOW,									  // Fluid flow coupled with heat transport
+   PTC_FLOW,                                      // Fluid flow coupled with heat transport
    AIR_FLOW,                                      //!< AIR_FLOW
    /// M process, single/multi-phase flow
    DEFORMATION,                                   //!< DEFORMATION
@@ -44,7 +44,9 @@ enum ProcessType
    /// H process, incompressible flow
    RICHARDS_FLOW,                                 //!< RICHARDS_FLOW
    /// H2 process, compressible flow
-   TWO_PHASE_FLOW                                 //!< TWO_PHASE_FLOW
+   TWO_PHASE_FLOW,                                //!< TWO_PHASE_FLOW
+   /// H2M monolithic
+   DEFORMATION_H2                                 //!< DEFORMATION_H2
 };
 
 /**
@@ -138,28 +140,31 @@ PrimaryVariable convertPrimaryVariable ( const std::string& pcs_pv_string );
  */
 std::string convertPrimaryVariableToString ( PrimaryVariable pcs_pv );
 
-namespace FiniteElement {
+namespace FiniteElement
+{
 
-enum DistributionType {
-	INVALID_DIS_TYPE = 0,
-	ANALYTICAL, // ST
-	AVERAGE,
-	CONSTANT, // IC, BC, ST
-	CONSTANT_GEO,
-	GRADIENT, // IC
-	RESTART, // IC
-	LINEAR, // BC, ST
-	POINT, // BC
-	CONSTANT_NEUMANN, // ST
-	LINEAR_NEUMANN, // ST
-	NORMALDEPTH, // ST
-	CRITICALDEPTH, // ST
-	GREEN_AMPT, // ST
-	SYSTEM_DEPENDENT, // ST
-	PRECIPITATION,
-	DIRECT
-// Sort of Neumann BC //WW
-};
+   enum DistributionType
+   {
+      INVALID_DIS_TYPE = 0,
+      ANALYTICAL,                                 // ST
+      AVERAGE,
+      CONSTANT,                                   // IC, BC, ST
+      CONSTANT_GEO,
+      GRADIENT,                                   // IC
+      RESTART,                                    // IC
+      LINEAR,                                     // BC, ST
+      POINT,                                      // BC
+      CONSTANT_NEUMANN,                           // ST
+      LINEAR_NEUMANN,                             // ST
+      NORMALDEPTH,                                // ST
+      CRITICALDEPTH,                              // ST
+      GREEN_AMPT,                                 // ST
+      SYSTEM_DEPENDENT,                           // ST
+      PRECIPITATION,
+      DIRECT,
+      FUNCTION    	
+      // Sort of Neumann BC //WW
+   };
 
 /**
  * \brief Converts the given string into the appropriate enum value.

@@ -223,7 +223,9 @@ double CalcPyramidVolume(double *x,double *y,double *z)
   x[3]=-1.0; y[3]=-1.0; z[3]=0.0;
   x[4]=0.0; y[4]=0.0; z[4]=1.0;
 */
-  double hight,volume;
+  //double hight
+  double volume;
+ 
   double p1[3],p2[3],p3[3],p5[3],proj[3];
   //--------------------------------------------------------------
   // tet version
@@ -231,7 +233,9 @@ double CalcPyramidVolume(double *x,double *y,double *z)
   p2[0]=x[1]; p2[1]=y[1]; p2[2]=z[1];
   p3[0]=x[2]; p3[1]=y[2]; p3[2]=z[2];
   p5[0]=x[4]; p5[1]=y[4]; p5[2]=z[4];
-  hight = MCalcProjectionOfPointOnPlane(p5,p1,p2,p3,proj);
+
+  //WW hight = 
+  MCalcProjectionOfPointOnPlane(p5,p1,p2,p3,proj);
   double xt[4],yt[4],zt[4];
   double volume1,volume2,volume3,volume4;
   xt[0]= x[0]; xt[1]= x[1]; xt[2]= x[4]; xt[3]= proj[0];

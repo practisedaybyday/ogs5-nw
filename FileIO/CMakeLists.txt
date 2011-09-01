@@ -13,6 +13,7 @@ SET( SOURCES
 	FEMIO/BoundaryConditionIO.cpp
 	MeshIO/OGSMeshIO.cpp
 	MeshIO/LegacyVtkInterface.cpp
+	GeoIO/Gmsh2GeoIO.cpp
 )
 
 # Header files
@@ -31,6 +32,7 @@ SET( HEADERS
 	MathIO/CRSIO.h
 	MeshIO/OGSMeshIO.h
 	MeshIO/LegacyVtkInterface.h
+	GeoIO/Gmsh2GeoIO.h
 )
 
 IF (OGS_USE_NETCDF)
@@ -48,6 +50,8 @@ ENDIF (Shapelib_FOUND)
 IF (QT4_FOUND)
 	SET( HEADERS ${HEADERS} XMLInterface.h )
 	SET (SOURCES ${SOURCES} XMLInterface.cpp )
+	SET( HEADERS ${HEADERS} FEFLOWInterface.h )
+	SET (SOURCES ${SOURCES} FEFLOWInterface.cpp )
 ENDIF (QT4_FOUND)
 
 # Create the library
@@ -61,6 +65,7 @@ INCLUDE_DIRECTORIES(
 	./FEMIO
 	./MathIO
 	./MeshIO
+	./GeoIO
 	../Base
 	../FEM
 	../GEO

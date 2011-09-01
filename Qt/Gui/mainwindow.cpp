@@ -57,6 +57,8 @@
 #include "GMSHInterface.h"
 #include "GMSInterface.h"
 #include "NetCDFInterface.h"    //YW  07.2010
+#include "GeoIO/Gmsh2GeoIO.h"
+#include "FEFLOWInterface.h"
 
 #include "StringTools.h"
 
@@ -701,6 +703,8 @@ QMenu* MainWindow::createImportFilesMenu()
 #endif
 	QAction* vtkFiles = importFiles->addAction("&VTK Files...");
 	connect( vtkFiles, SIGNAL(triggered()), this, SLOT(importVtk()) );
+    QAction* feflowFiles = importFiles->addAction("&FEFLOW Files...");
+    connect( feflowFiles, SIGNAL(triggered()), this, SLOT(importFeflow()) );
 
 	return importFiles;
 }
@@ -853,6 +857,30 @@ void MainWindow::importVtk()
 			settings.setValue("lastOpenedFileDirectory", dir.absolutePath());
 		}
 	}
+}
+
+void MainWindow::importFeflow()
+{
+  QSettings settings("UFZ", "OpenGeoSys-5");
+  QString fileName = QFileDialog::getOpenFileName(this,
+    "Select FEFLOW file(s) to import", settings.value(
+    "lastOpenedFileDirectory").toString(),
+    "FEFLOW files (*.fem);;");
+  if (!fileName.isEmpty()) {
+    FEFLOWInterface feflowIO(_geoModels);
+    MeshLib::CFEMesh *msh = feflowIO.readFEFLOWModelFile(fileName.toStdString());
+    if (msh) {
+      string str = fileName.toStdString();
+      _meshModels->addMesh(msh, str);
+      QDir dir = QDir(fileName);
+      settings.setValue("lastOpenedFileDirectory", dir.absolutePath());
+      //_geoModels->modified("Feflow");
+      updateDataViews();
+    } else {
+      OGSError::box("Failed to load a FEFLOW file.");
+    }
+  }
+  emit fileUsed(fileName);
 }
 
 void MainWindow::showPropertiesDialog(std::string name)
@@ -1081,13 +1109,36 @@ void MainWindow::showVisalizationPrefsDialog()
 
 void MainWindow::FEMTestStart()
 {
-	std::vector<std::string> geo_names;
-	_geoModels->getGeometryNames (geo_names);
-//	_geoModels->getStationNames (geo_names);
+//	// *** begin test CFEMesh::GetNODOnSFC ()
+//	{
+//		// get the surface
+//		std::vector<std::string> geo_names;
+//		_geoModels->getGeometryNames (geo_names);
+//		std::vector<GEOLIB::Surface*> const* sfcs (_geoModels->getSurfaceVec(geo_names[0]));
+//		GEOLIB::Surface const* sfc ((*sfcs)[0]);
+//
+//		std::string mesh_name ("/home/fischeth/Desktop/data/TestData/RectangleVictor/rectangle.msh");
+//		MeshLib::CFEMesh const* mesh (_project.getMesh (mesh_name));
+//
+//		std::vector<size_t> mesh_node_ids;
+//		mesh->GetNODOnSFC(sfc, mesh_node_ids);
+//		std::cout << mesh_node_ids.size() << " mesh nodes found" << std::endl;
+//		for (size_t k(0); k<mesh_node_ids.size(); k++) {
+//			std::cout << mesh_node_ids[k] << "\t" << std::flush;
+//		}
+//		std::cout << std::endl;
+//	}
+//	// *** end test CFEMesh::GetNODOnSFC ()
 
-	std::string merge_name("MergedGeometry");
-	_geoModels->mergeGeometries (geo_names, merge_name);
+//	// *** begin test merge geometries
+//	std::vector<std::string> geo_names;
+//	_geoModels->getGeometryNames (geo_names);
+//	std::string merge_name("MergedGeometry");
+//	_geoModels->mergeGeometries (geo_names, merge_name);
+//	// *** end test merge geometries
 
+//	std::string fname_mesh ("SurfaceBC.msh");
+//	FileIO::Gmsh2GeoIO::loadMeshAsGeometry(fname_mesh, _geoModels);
 
 //	{
 //		std::ofstream os ("Points5000000.gli");

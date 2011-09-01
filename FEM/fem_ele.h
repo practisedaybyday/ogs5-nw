@@ -24,7 +24,7 @@ class CRFProcess;
 namespace FiniteElement
 {
 
-   struct ExtrapolationMethod 
+   struct ExtrapolationMethod
    {
       enum type
       {
@@ -95,7 +95,7 @@ namespace FiniteElement
          bool isTemperatureCoupling() const {return T_Flag;}
          bool isFluidPressureCoupling() const {return F_Flag;}
          int isDeformationCoupling() const {return D_Flag;}
-		          int isConcentrationCoupling() const {return C_Flag;}
+         int isConcentrationCoupling() const {return C_Flag;}
 
          // Interpolate Gauss values
          double interpolate (double *nodalVal, const int order =1) const;
@@ -166,7 +166,7 @@ namespace FiniteElement
          // Pointer to the gradient of Quadratic interpolation function
          VoidFuncDXCDX GradShapeFunctionHQ;
          // Coupling
-         int NodeShift[4];
+         int NodeShift[5];
          // Displacement column indeces in the node value table
          int Idx_dm0[3];
          int Idx_dm1[3];
@@ -175,7 +175,7 @@ namespace FiniteElement
 
          // Coupling flag
          bool T_Flag;                             // Temperature
-		          bool C_Flag;                             // Concentration
+         bool C_Flag;                             // Concentration
          bool F_Flag;                             // Fluid
          int D_Flag;                              // Deformation
          int PT_Flag;                             // Particle Tracking Random Walk
@@ -201,7 +201,6 @@ namespace FiniteElement
          double Z[20];
          double node_val[20];
          double dbuff[20];
-
 
          ExtrapolationMethod::type extrapo_method;
          ExtrapolationMethod::type GetExtrapoMethod() {return extrapo_method;};
