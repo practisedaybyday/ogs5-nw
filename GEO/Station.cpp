@@ -137,7 +137,7 @@ bool Station::inSelection(const std::vector<PropertyBounds> &bounds)
 ////////////////////////
 
 StationBorehole::StationBorehole(double x, double y, double z) :
-	Station (x,y,z)
+	Station (x,y,z), _zCoord(0), _depth(0), _date(0)
 {
 	_type = Station::BOREHOLE;
 	addProperty("date", &StationBorehole::getDate, &StationBorehole::setDate);
@@ -329,7 +329,7 @@ StationBorehole* StationBorehole::createStation(const std::string &name, double 
 	(*station)[1]   = y;
 	(*station)[2]   = z;
 	station->_depth = depth;
-	station->_date  = xmlDate2double(date);
+	if (date.compare("0000-00-00")) station->_date  = xmlDate2double(date);
 	return station;
 }
 

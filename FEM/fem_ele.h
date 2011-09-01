@@ -18,7 +18,7 @@
 //#include "matrix_class.h"
 
 namespace Math_Group{ class SymMatrix; class Matrix; typedef Matrix Vec;}
-namespace Mesh_Group{ class CElem; class CNode; class CEdge; }
+namespace MeshLib{ class CElem; class CNode; class CEdge; }
 class CRFProcess;
 
 namespace FiniteElement
@@ -38,9 +38,9 @@ namespace FiniteElement
    using Math_Group::Matrix;
    using Math_Group::Vec;
 
-   using Mesh_Group::CNode;
-   using Mesh_Group::CEdge;
-   using Mesh_Group::CElem;
+   using MeshLib::CNode;
+   using MeshLib::CEdge;
+   using MeshLib::CElem;
 
    class CElement
    {

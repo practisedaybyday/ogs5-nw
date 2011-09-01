@@ -7,7 +7,7 @@ last modified
 **************************************************************************/
 #include "msh_core.h"
 
-namespace Mesh_Group
+namespace MeshLib
 {
 
    /**************************************************************************
@@ -21,4 +21,4 @@ namespace Mesh_Group
    index (id), boundary_type ('I'), mark (true), quadratic (false)
       {}
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib

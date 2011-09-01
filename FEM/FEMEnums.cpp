@@ -34,7 +34,6 @@ ProcessType convertProcessType ( const std::string& pcs_type_string )
    else
    {
       std::cout << "WARNING in convertProcessType: process type #" << pcs_type_string << "# unknown" << std::endl;
-      exit (1);
    }
    return INVALID_PROCESS;
 }

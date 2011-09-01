@@ -3,9 +3,9 @@
 #include <vector>
 using namespace std;
 
-namespace  Mesh_Group{class CFEMesh; }
-using  Mesh_Group::CFEMesh;
-extern vector<Mesh_Group::CFEMesh*> fem_msh_vector;
+namespace  MeshLib{class CFEMesh; }
+using  MeshLib::CFEMesh;
+extern vector<MeshLib::CFEMesh*> fem_msh_vector;
 
 extern bool FEMRead(string);
 #endif

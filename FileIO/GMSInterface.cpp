@@ -41,7 +41,8 @@ int GMSInterface::readBoreholesFromGMS(std::vector<GEOLIB::Point*> *boreholes, c
 				(*pnt)[1] = strtod((++it)->c_str(), 0);
 				(*pnt)[2] = strtod((++it)->c_str(), 0);
 				newBorehole->addSoilLayer((*pnt)[0], (*pnt)[1], (*pnt)[2], sName);
-				sName = (*(++it));
+				//if (fields.size()>4)
+					sName = (*(++it));
 				depth=(*pnt)[2];
 			}
 			else // add new borehole
@@ -69,8 +70,9 @@ int GMSInterface::readBoreholesFromGMS(std::vector<GEOLIB::Point*> *boreholes, c
 		newBorehole->setDepth((*newBorehole)[2]-depth);
 		boreholes->push_back(newBorehole);
 	}
-
 	in.close();
+
+	if (boreholes->empty()) return 0;
 	return 1;
 }
 
@@ -200,7 +202,7 @@ std::vector<std::string> GMSInterface::readSoilIDfromFile(const std::string &fil
 }
 
 
-Mesh_Group::CFEMesh* GMSInterface::readGMS3DMMesh(std::string filename)
+MeshLib::CFEMesh* GMSInterface::readGMS3DMMesh(std::string filename)
 {
 	std::string buffer("");
 
@@ -220,11 +222,11 @@ Mesh_Group::CFEMesh* GMSInterface::readGMS3DMMesh(std::string filename)
 	}
 
 	std::cout << "Read GMS-3DM data...";
-	Mesh_Group::CFEMesh* mesh (new Mesh_Group::CFEMesh());
+	MeshLib::CFEMesh* mesh (new MeshLib::CFEMesh());
 
 	while (!in.eof())
 	{
-		Mesh_Group::CElem* elem = new Mesh_Group::CElem();
+		MeshLib::CElem* elem = new MeshLib::CElem();
 		std::string element_id("");
 		in >> element_id;
 
@@ -260,7 +262,7 @@ Mesh_Group::CFEMesh* GMSInterface::readGMS3DMMesh(std::string filename)
 			elem->SetNodeIndex(2, node_index[3]);
 			elem->SetNodeIndex(3, node_index[4]);
 
-			Mesh_Group::CElem* elem2 = new Mesh_Group::CElem(mesh->ele_vector.size()-1, elem);
+			MeshLib::CElem* elem2 = new MeshLib::CElem(mesh->ele_vector.size()-1, elem);
 			elem2->SetNodeIndex(0, node_index[1]);
 			elem2->SetNodeIndex(1, node_index[2]);
 			elem2->SetNodeIndex(2, node_index[3]);
@@ -272,7 +274,7 @@ Mesh_Group::CFEMesh* GMSInterface::readGMS3DMMesh(std::string filename)
 			int i;
 			double xyz[3];
 			in >> i;
-			Mesh_Group::CNode* node = new Mesh_Group::CNode(i-1);
+			MeshLib::CNode* node = new MeshLib::CNode(i-1);
 			in >> xyz[0] >> xyz[1] >> xyz[2] >> std::ws;
 			node->SetCoordinates(xyz);
 			mesh->nod_vector.push_back(node);

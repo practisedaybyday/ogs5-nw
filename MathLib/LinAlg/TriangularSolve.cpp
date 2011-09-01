@@ -7,7 +7,7 @@
 
 #include "Matrix.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 void forwardSolve (const Matrix <double> &L, double* b)
 {
@@ -23,17 +23,31 @@ void forwardSolve (const Matrix <double> &L, double* b)
 	}
 }
 
-void backwardSolve (const Matrix <double> &U, double* y)
+void backwardSolve (const Matrix <double> &mat, double* b)
 {
 	double t;
-	size_t m (U.getNRows()), n(U.getNCols());
+	size_t m (mat.getNRows()), n(mat.getNCols());
 	for (int r=m-1; r>=0; r--) {
 		t = 0.0;
 		for (size_t c=r+1; c<n; c++) {
-			t += U(r,c)*y[c];
+			t += mat(r,c)*b[c];
 		}
-		y[r] = (y[r]-t) / U(r,r);
+		b[r] = (b[r]-t) / mat(r,r);
 	}
 }
 
-} // end namespace MATHLIB
+void backwardSolve ( Matrix<double> const& mat, double* x, double* b)
+{
+	size_t n_cols (mat.getNCols());
+	for (int r = (n_cols - 1); r >= 0; r--) {
+		double t = 0.0;
+
+		for (size_t c = r+1; c < n_cols; c++) {
+			t += mat(r,c) * b[c];
+		}
+		x[r] = (b[r] - t) / mat(r, r);
+	}
+}
+
+
+} // end namespace MathLib

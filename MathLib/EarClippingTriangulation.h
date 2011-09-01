@@ -15,10 +15,10 @@
 #include "Polygon.h"
 #include "Triangle.h"
 
-// MATHLIB
+// MathLib
 #include "AnalyticalGeometry.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 class EarClippingTriangulation {
 public:
@@ -51,9 +51,9 @@ private:
 	 */
 	std::list<GEOLIB::Triangle> _triangles;
 
-	MATHLIB::Orientation _original_orient;
+	MathLib::Orientation _original_orient;
 };
 
-} // end namespace MATHLIB
+} // end namespace MathLib
 
 #endif /* EARCLIPPINGTRIANGULATION_H_ */

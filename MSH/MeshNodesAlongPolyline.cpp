@@ -14,10 +14,10 @@
 
 #include <algorithm>
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 MeshNodesAlongPolyline::MeshNodesAlongPolyline(
-		GEOLIB::Polyline const * const ply, Mesh_Group::CFEMesh const * mesh) :
+		GEOLIB::Polyline const * const ply, MeshLib::CFEMesh const * mesh) :
 	_ply(ply), _mesh(mesh), _linear_nodes (0)
 {
 	std::vector<CNode*> const& mesh_nodes (mesh->getNodeVector());
@@ -40,7 +40,7 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 				// is the orthogonal projection of the j-th node to the
 				// line g(lambda) = _ply->getPoint(k) + lambda * (_ply->getPoint(k+1) - _ply->getPoint(k))
 				// at the k-th line segment of the polyline, i.e. 0 <= lambda <= 1?
-				if (MATHLIB::calcProjPntToLineAndDists(mesh_nodes[j]->getData(), (_ply->getPoint(k))->getData(), (_ply->getPoint(k+1))->getData(),
+				if (MathLib::calcProjPntToLineAndDists(mesh_nodes[j]->getData(), (_ply->getPoint(k))->getData(), (_ply->getPoint(k+1))->getData(),
 						lambda, dist) <= min_edge_length) {
 					if (0 <= lambda && lambda <= 1) {
 						if (mesh_nodes[j]->GetIndex() < n_linear_order_nodes) {

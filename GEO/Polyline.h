@@ -12,7 +12,7 @@
 #include "GeoObject.h"
 #include "Point.h"
 
-// MATHLIB
+// MathLib
 #include "MathTools.h"
 
 #include <vector>
@@ -72,7 +72,7 @@ public:
 
 	/// Constructs one polyline from a vector of connected polylines.
 	/// All polylines in this vector need to reference the same point vector.
-	static Polyline* contructPolylineFromSegments(const std::vector<Polyline*> &ply_vec, double prox = 0.0);
+	static Polyline* constructPolylineFromSegments(const std::vector<Polyline*> &ply_vec, double prox = 0.0);
 
 	/**
 	 * returns the number of points,
@@ -88,6 +88,13 @@ public:
 	 * in the point vector
 	 */
 	size_t getPointID(size_t i) const;
+
+	/**
+	 * Changes a point index for one point in a line
+	 * @param idx Index of point in line
+	 * @param id ID of point in PointVec object
+	 */
+	void setPointID(size_t idx, size_t id);
 
 	/** \brief const access operator for the access to the i-th point of the polyline.
 	 */

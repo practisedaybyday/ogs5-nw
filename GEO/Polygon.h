@@ -47,6 +47,9 @@ public:
 	 * @return
 	 */
 	Polygon(const Polyline &ply, bool init = true);
+
+	Polygon (const std::vector<Point*>& pnt_vec);
+
 	virtual ~Polygon();
 
 	/**

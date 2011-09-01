@@ -1,7 +1,7 @@
 // Classes for interface GeoSys - ECLIPSE
 #include <vector>
 //#define MAX_ZEILEN 512
-//using namespace std;
+
 class CRFProcess;
 #include "rf_pcs.h"
 #include "msh_faces.h"
@@ -14,8 +14,8 @@ typedef struct
 // KB: neue Struktur zum Einlesen der Brunnendatei, siehe CECLIPSEData::ReadWellData()
 struct structWell { /* deklariert den Strukturtyp well, wird beim Einlesen von .well-File neu aufgerufen */
 	std::string name;
-    vector <double> time;
-    vector <string> rate;
+    std::vector <double> time;
+    std::vector <std::string> rate;
 	std::string phase;
 	std::string open_flag;
 	std::string control_mode;
@@ -31,18 +31,18 @@ public:
 	long row;
 	long column;
 	long layer;
-	vector <double> x_coordinates;
-	vector <double> y_coordinates;
-	vector <double> z_coordinates;
+	std::vector <double> x_coordinates;
+	std::vector <double> y_coordinates;
+	std::vector <double> z_coordinates;
 	double x_barycentre;
 	double y_barycentre;
 	double z_barycentre;
 	int active;
 	double volume;
-	vector <long> connected_faces;
-	
-	vector <long> NeighbourElement;
-	vector <long> ConnectedBoundaryCondition;
+	std::vector <long> connected_faces;
+
+	std::vector <long> NeighbourElement;
+	std::vector <long> ConnectedBoundaryCondition;
 
 	CECLIPSEBlock(long Nodelength, long Facelength);
 	~CECLIPSEBlock();
@@ -54,20 +54,20 @@ public:
 class CReadTextfiles_ECL {
 
 public:
-    vector <string> Data;
-	vector <vector <string> > Data_separated;
+    std::vector <std::string> Data;
+	std::vector <std::vector <std::string> > Data_separated;
     long NumberOfRows;
-	vector <string> SplittedString;
-	vector <string> Header;
+	std::vector <std::string> SplittedString;
+	std::vector <std::string> Header;
 
 	CReadTextfiles_ECL();		//Konstruktor
 	~CReadTextfiles_ECL();		//Desturktor
 
-	bool Read_Text(string Filename);
+	bool Read_Text(std::string Filename);
 
-	void SplitStrings(const string str, string delimiter);
+	void SplitStrings(const std::string str, std::string delimiter);
 
-	bool Read_SeparatedText(string Filename, string delimiter);
+	bool Read_SeparatedText(std::string Filename, std::string delimiter);
 
 	//vector <string> Header;
  //   vector <string> Data;
@@ -85,7 +85,7 @@ public:
 	CWriteTextfiles_ECL();		//Konstruktor
 	~CWriteTextfiles_ECL();		//Desturktor
 
-	void Write_Text(std::string Filename, vector<std::string> Text);
+	void Write_Text(std::string Filename, std::vector<std::string> Text);
 };
 
 class CPointData_ECL {
@@ -100,10 +100,10 @@ public:
 	double CO2inLiquid;
 	double NaClinLiquid;
 	double deltaDIC;
-	vector <double> phase_pressure;
-	vector <double> phase_saturation;
-	vector <double> phase_density;
-	vector <vector <double> > q;
+	std::vector <double> phase_pressure;
+	std::vector <double> phase_saturation;
+	std::vector <double> phase_density;
+	std::vector <std::vector <double> > q;
 
 	CPointData_ECL() {x = 0; y = 0; z = 0;}
 	~CPointData_ECL() {}
@@ -146,25 +146,25 @@ public:
 	bool existWells;
 	bool UsePrecalculatedFiles;
 
-	vector <CECLIPSEBlock*> eclgrid;
-	vector <string> SplittedString;
-	vector <string> Variables;
-	vector <CFaces*> faces;
-	vector <CPointData_ECL*> NodeData;
-	vector <CBoundaryConditions*> BC;
-	vector <structWell*> ecl_well;
+	std::vector <CECLIPSEBlock*> eclgrid;
+	std::vector <std::string> SplittedString;
+	std::vector <std::string> Variables;
+	std::vector <CFaces*> faces;
+	std::vector <CPointData_ECL*> NodeData;
+	std::vector <CBoundaryConditions*> BC;
+	std::vector <structWell*> ecl_well;
 
 	double ** Data;	//array of points, times and variables
-	vector <string> WellRates; // KB, abspeichern der neuen Raten für einen bestimmten Zeitschritt
+	std::vector <std::string> WellRates; // KB, abspeichern der neuen Raten fï¿½r einen bestimmten Zeitschritt
 
-	vector <long> output_x;
-	vector <long> output_y;
-	vector <long> output_z;
-	vector <long> output_time;
-	vector <long> CorrespondingEclipseElement;
-    vector <long> CorrespondingGeosysElement;
-	vector <string> Phases;
-	vector <string> Components;
+	std::vector <long> output_x;
+	std::vector <long> output_y;
+	std::vector <long> output_z;
+	std::vector <long> output_time;
+	std::vector <long> CorrespondingEclipseElement;
+    std::vector <long> CorrespondingGeosysElement;
+	std::vector <std::string> Phases;
+	std::vector <std::string> Components;
 	long a [8][2];//2D Array um Keywords abzuspeichern
 
 	CECLIPSEData();
@@ -183,7 +183,7 @@ public:
 
 	bool CheckIfFileExists(std::string strFilename);
 
-	bool ReplaceASectionInFile(std::string Filename, std::string Keyword, vector <std::string> Data, bool CheckLengthOfSection);
+	bool ReplaceASectionInFile(std::string Filename, std::string Keyword, std::vector <std::string> Data, bool CheckLengthOfSection);
 
 	bool ReplaceWellRate(std::string Filename, std::string Keyword_well);
 
@@ -195,17 +195,19 @@ public:
 
 	void DetermineNeighbourElements(std::string Filename);
 
-	bool ReadBoundaryData(int index_boundary, vector <string> Data);
+	bool ReadBoundaryData(int index_boundary, std::vector <std::string> Data);
 
 	int ReadDataFromInputFile(std::string Filename);
 
 	bool ReadPositionBoundaryCondition(std::string Filename);
 
 	bool CorrespondingElements(void);
-	
+
 	bool CompareElementsGeosysEclipse(void);
 
-	double CalculateDistanceBetween2Points(double Point1[3], double Point2[3]);
+	// TF commented out method since we have already functions for computing the distance
+	// between points
+//	double CalculateDistanceBetween2Points(double Point1[3], double Point2[3]);
 
 	bool CreateFaces(void);
 
@@ -233,7 +235,7 @@ public:
 	void WriteDataToGeoSys(CRFProcess *m_pcs, std::string folder);
 
 	bool CleanUpEclipseFiles(std::string folder, std::string projectname);
-	
+
 	int RunEclipse(long Timestep, CRFProcess *m_pcs);
 
 	void ReadWellData(std::string Filename_Wells);

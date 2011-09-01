@@ -2053,8 +2053,8 @@ short REACT_GEM::Init_Nodes ( string Project_path )
          volume = 0.0;
          number_of_nodes = 0;
 
-         CNode* m_Node;
-         CElem* m_Elem;
+         MeshLib::CNode* m_Node;
+         MeshLib::CElem* m_Elem;
 
          // get the pointer to current node;
          m_Node =  m_pcs->m_msh->nod_vector[Idx_Node];
@@ -2085,8 +2085,8 @@ short REACT_GEM::Init_Nodes ( string Project_path )
          long i,idx_Node;
          int j, number_of_nodes;
          double pormin=2.0,pormax=0.0;
-         CNode* m_Node;
-         CElem* m_Elem;
+         MeshLib::CNode* m_Node;
+         MeshLib::CElem* m_Elem;
 
          for ( i=0 ; i < nElems ; i++ )
          {

@@ -51,7 +51,7 @@ public:
 	 * @param points pointer to a vector of GEOLIB::Pointers -
 	 * PointVec will take the ownership of the vector,
 	 * i.e. delete the points and the vector itself
-	 * @param names the names to the points -
+	 * @param name_id_map the names to the points -
 	 * PointVec will take the ownership of the vector, i.e. it
 	 * deletes the names
 	 * @param type the type of the point, \sa enum PointType
@@ -64,9 +64,13 @@ public:
 	~PointVec ();
 
 	/**
-	 * Method adds a Point to the vector and takes the ownership.
-	 * */
-	void push_back (Point *pnt);
+	 * Method adds a Point to the (internal) standard vector and takes the ownership.
+	 * If the given point is already included in the vector, the point will be destroyed and
+	 * the id of the existing point will be returned.
+	 * @param pnt the pointer to the Point
+	 * @return the id of the point within the internal vector
+	 */
+	size_t push_back (Point *pnt);
 
 	/**
 	 * push_back adds new elements at the end of the vector _pnt_vec.

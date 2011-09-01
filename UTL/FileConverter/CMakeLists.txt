@@ -21,7 +21,8 @@ IF (Shapelib_FOUND)
 	TARGET_LINK_LIBRARIES( ConvertSHPToGLI
 		FEM
 	        MSH
-        	#GEO
+	        MSHGEOTOOLS
+        	GEO
 	        MathLib
         	FileIO
 	        Base
@@ -53,12 +54,29 @@ IF (OGS_USE_OPENSG AND VTK_FOUND AND Boost_FOUND)
 	
 ENDIF () # OGS_USE_OPENSG AND VTK_FOUND AND Boost_FOUND
 
+## Gli to VTK file converter ##
+IF(VTK_FOUND AND Boost_FOUND)
+	
+	INCLUDE( ${VTK_USE_FILE} )
+	
+	ADD_EXECUTABLE (ConvertGliToVtk ConvertGliToVtk.cpp)
+	
+	INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} ../../Qt/VtkVis )
+	TARGET_LINK_LIBRARIES ( ConvertGliToVtk FileIO VtkVis vtkRendering ${Boost_LIBRARIES} )
+	
+	IF (OGS_PACKAGING)
+		INSTALL ( TARGETS ConvertGliToVtk RUNTIME DESTINATION bin COMPONENT ConvertGliToVtk )
+	ENDIF (OGS_PACKAGING)
+	
+ENDIF() # VTK_FOUND AND Boost_FOUND
+
 IF (QT4_FOUND)
 	ADD_EXECUTABLE (generateBCandGLI generateBCandGLI.cpp )
 	TARGET_LINK_LIBRARIES (generateBCandGLI 
 		FEM
 		MSH
-		#GEO
+		MSHGEOTOOLS
+		GEO
 		MathLib
 		FileIO
 		Base
@@ -70,7 +88,8 @@ IF (QT4_FOUND)
 	TARGET_LINK_LIBRARIES (generateBCFromPolyline
 		FEM
 		MSH
-		#GEO
+		MSHGEOTOOLS
+		GEO
 		MathLib
 		FileIO
 		Base

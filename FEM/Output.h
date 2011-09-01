@@ -1,5 +1,5 @@
 /**
- * \file Output.h
+ * \file FEM/Output.h
  * 05/04/2011 LB Refactoring: Moved from rf_out_new.h
  */
 
@@ -14,7 +14,7 @@
 #include <vector>
 #include <iostream>
 
-namespace Mesh_Group{class CFEMesh;}
+namespace MeshLib{class CFEMesh;}
 namespace GEOLIB{class GEOObjects;}
 class CVTK;
 
@@ -73,7 +73,7 @@ class COutput: public GeoInfo, public ProcessInfo, public DistributionInfo
        */
       const std::string& getGeoName() const;      // TF 05/2010
 
-      Mesh_Group::CFEMesh* getMesh ()                         // TF
+      MeshLib::CFEMesh* getMesh ()                         // TF
       {
          return m_msh;
       }
@@ -176,7 +176,7 @@ class COutput: public GeoInfo, public ProcessInfo, public DistributionInfo
       double out_amplifier;                       //WW to amplify output
                                                   //WW/OK
 
-      Mesh_Group::CFEMesh* m_msh;
+      MeshLib::CFEMesh* m_msh;
       int nSteps;                                 // After each nSteps, make output
 
       CVTK* vtk;

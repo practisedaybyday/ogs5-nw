@@ -19,10 +19,15 @@ last modified
 #include "GeoInfo.h"                              // TF
 #include "ProcessInfo.h"                          // KR
 #include "DistributionInfo.h"                     // TF
+#include "LinearFunctionData.h" // TF
 
 //#include "rf_pcs.h"
 
 class CNodeValue;
+
+namespace MeshLib {
+	class CFEMesh;
+}
 
 /**
  * class for handling initial conditions
@@ -34,14 +39,14 @@ class CInitialCondition : public ProcessInfo, public GeoInfo, public Distributio
       std::vector<int> subdom_index;              //WW
       std::vector<double> subdom_ic;              //WW
       std::string fname;                          //17.11.2009. PCH
-       
+
 	  LinearFunctionData *dis_linear_f;           //24.8.2011. WW
-  
+
 	  // REMOVE CANDIDATE
       std::string geo_name;                       // TF 05/2010
 	  double geo_node_value;					//KR
    public:
-	  const std::string& getGeoName () const { return geo_name; }; //KR 
+	  const std::string& getGeoName () const { return geo_name; }; //KR
 	  double getGeoNodeValue() const { return geo_node_value; }; //KR
 
 	  int GetNumDom() const { return (int) subdom_index.size(); };                                           //WW
@@ -73,10 +78,9 @@ class CInitialCondition : public ProcessInfo, public GeoInfo, public Distributio
       void Set(int);
       void SetEle(int);                           //MX
       void SetDomainEle(int);                     //MX
+	  LinearFunctionData *getLinearFunction() const { return dis_linear_f; }
 
-	  LinearFunctionData *getLinearFunction() const { return dis_linear_f; }  
-
-	  Mesh_Group::CFEMesh* m_msh;
+	  MeshLib::CFEMesh* m_msh;
 };
 
 class CInitialConditionGroup

@@ -578,7 +578,7 @@ void CRFProcess::InterpolateTempGP(CRFProcess *m_pcs, std::string name)
    static double Node_T[8];
    int index1;                                    //idxp,idxcp,idxS;
    CMediumProperties* m_mmp = NULL;
-   CElem* elem =NULL;
+   MeshLib::CElem* elem =NULL;
    index1 = m_pcs->GetElementValueIndex(name)+1;  //->fem->interpolate(
 
    for (i=0;i<(long) m_pcs->m_msh->ele_vector.size();i++)
@@ -630,7 +630,7 @@ void CRFProcess::ExtropolateTempGP(CRFProcess *m_pcs, std::string name)
    double T_sum=0.0;
    int index1, index_nod;                         //idxp,idxcp,idxS;
    CMediumProperties* m_mmp = NULL;
-   CElem* elem =NULL;
+   MeshLib::CElem* elem =NULL;
 
    index1 = m_pcs->GetElementValueIndex(name)+1;  //->fem->interpolate(
    index_nod = m_pcs->GetNodeValueIndex(name)+1;
@@ -1267,7 +1267,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
 
    int i=0, np;
    int nn=0,nep=0, nj=0, nk=0;
-   //WW int beginn=0, 
+   //WW int beginn=0,
    int p=0, found;
    int pH_flag=-1, pe_flag=-1, iheat;
    int pos,j;
@@ -1419,7 +1419,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
                            DisplayMsgLn("pH is not included in the transport but will be calculated in the reaction");
                            pH_flag=1;
                            p=0;
-                           StrReadDouble(&dvalue, &str[p+=pos], f, TFDouble, &pos);
+                           StrReadDouble(&dvalue, &str[p+=pos], f, &pos);
                            StrReadStr(s, &str[p+=pos], f, TFString, &pos);
                            FilePrintString(f, " # comp ");
                            FilePrintInt(f, rcml_number_of_master_species+1);
@@ -1454,7 +1454,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
                         {
                            DisplayMsgLn("pe is not included in the transport but will be calculated in the reaction");
                            pe_flag=1;
-                           StrReadDouble(&dvalue, &str[pos], f, TFDouble, &pos);
+                           StrReadDouble(&dvalue, &str[pos], f, &pos);
                            FilePrintString(f, " # comp ");
                            FilePrintInt(f, rcml_number_of_master_species+2);
                            LineFeed(f);
@@ -1517,7 +1517,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
                p=0;
                StrReadStr(s, &str[p+=pos], f, TFString, &pos);
                if (strcmp(s,"")==0) break;
-               StrReadDouble(&dvalue, &str[pos], f, TFDouble, &pos);
+               StrReadDouble(&dvalue, &str[pos], f, &pos);
 
                /* find the mass of each phase from val_in*/
                for (i=0;i<np;i++)
@@ -2027,7 +2027,7 @@ while(!pqc_infile.eof())
 
       // get height of node z
       CFEMesh* m_msh = fem_msh_vector[0];         //SB: ToDo hart gesetzt
-      //WW Mesh_Group::CNode* m_nod = NULL;
+      //WW MeshLib::CNode* m_nod = NULL;
       //WW m_nod = m_msh->nod_vector[index];
       z = m_msh->nod_vector[index]->Z();
 
@@ -3341,7 +3341,7 @@ int REACT::WriteInputPhreeqcLib(long index, stringstream* out_buff, int* nl)
 
          // get height of node z
          CFEMesh* m_msh = fem_msh_vector[0];      //SB: ToDo hart gesetzt
-         Mesh_Group::CNode* m_nod = NULL;
+         MeshLib::CNode* m_nod = NULL;
          m_nod = m_msh->nod_vector[index];
          z = m_msh->nod_vector[index]->Z();
 

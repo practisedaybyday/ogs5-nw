@@ -8,11 +8,11 @@
 #ifndef DENSEDIRECTLINEARSOLVER_H_
 #define DENSEDIRECTLINEARSOLVER_H_
 
-#include <DirectLinearSolver.h>
+#include "DirectLinearSolver.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
-class DenseDirectLinearSolver: public MATHLIB::DirectLinearSolver {
+class DenseDirectLinearSolver: public MathLib::DirectLinearSolver {
 public:
 	DenseDirectLinearSolver() {};
 	virtual ~DenseDirectLinearSolver() {};

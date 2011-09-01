@@ -183,11 +183,11 @@ class RandomWalk
       int RouletteWheelSelection(double *chances, int numOfCases);
 
       // Transform coordinates
-      void ToTheXYPlane(CElem* E, double* X);
+      void ToTheXYPlane(MeshLib::CElem* E, double* X);
       void ToTheXYPlane(int idx, double* X);
-      void ToTheRealPlane(CElem* E, double* X);
+      void ToTheRealPlane(MeshLib::CElem* E, double* X);
       void ToTheRealPlane(int idx, double* X);
-      void SolveAnglesOfTheElment(CElem* E);
+      void SolveAnglesOfTheElment(MeshLib::CElem* E);
       void IsoparametricMappingQuadfromPtoR(int index, double* R);
       void IsoparametricMappingQuadfromRtoP(int index, double* P);
       double TA(double Gx,double uT, double uA, double xTA);
@@ -222,11 +222,11 @@ class RandomWalk
       double yrw_range;
       double zrw_range;
 
-      double ComputeVolume(Particle* A, CElem* m_ele);
-      double ComputeVolume(Particle* A, Particle* element, CElem* m_ele);
+      double ComputeVolume(Particle* A, MeshLib::CElem* m_ele);
+      double ComputeVolume(Particle* A, Particle* element, MeshLib::CElem* m_ele);
       void CopyParticleCoordToArray(Particle* A, double* x1buff, double* x2buff, double* x3buff, double* x4buff);
 
-      void GetNodeOfMiniFEMforTheEdge(CNode* theNode, Mesh_Group::CEdge* theEdge, Particle* A);
+	  void GetNodeOfMiniFEMforTheEdge(MeshLib::CNode* theNode, MeshLib::CEdge* theEdge, Particle* A);
 
       int G_intersect_line_segments (
          double ax1,double ay1, double ax2,double ay2,
@@ -246,5 +246,5 @@ class RandomWalk
 };
 
 extern void PCTRead(std::string);
-extern void DATWriteParticleFile(int);
+void DATWriteParticleFile(int);
 #endif                                            //OK

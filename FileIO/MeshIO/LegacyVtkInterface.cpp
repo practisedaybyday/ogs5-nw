@@ -24,7 +24,7 @@
 #include <string>
 using namespace std;
 
-LegacyVtkInterface::LegacyVtkInterface(Mesh_Group::CFEMesh* mesh,
+LegacyVtkInterface::LegacyVtkInterface(MeshLib::CFEMesh* mesh,
 	std::vector<std::string> pointArrayNames,
 	std::vector<std::string> cellArrayNames,
 	std::vector<std::string> materialPropertyArrayNames,
@@ -51,7 +51,7 @@ Programing:
 09/2006 KG44 Output for MPI - correct OUTPUT not yet implemented
 12/2008 NW Remove ios::app, Add PCS name to VTK file name
 **************************************************************************/
-void LegacyVtkInterface::WriteDataVTK(int number, float simulation_time, std::string baseFilename) const
+void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time, std::string baseFilename) const
 {
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
 	char tf_name[10];
@@ -98,7 +98,7 @@ void LegacyVtkInterface::WriteDataVTK(int number, float simulation_time, std::st
 }
 
 
-void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number, float simulation_time) const
+void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number, double simulation_time) const
 {
 	
 	vtk_file << "# vtk DataFile Version 3.0" << endl;
@@ -119,12 +119,12 @@ void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number,
 
 void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file) const
 {
-	std::vector<Mesh_Group::CNode*> pointVector = _mesh->getNodeVector();
+	std::vector<MeshLib::CNode*> pointVector = _mesh->getNodeVector();
 	vtk_file << "POINTS "<< pointVector.size() << " double" << endl;
 
 	for(size_t i = 0; i < pointVector.size() ; i++)
 	{
-		CNode* m_nod = pointVector[i];
+		MeshLib::CNode* m_nod = pointVector[i];
 		vtk_file << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << endl;
 	}
 }
@@ -138,7 +138,7 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 	long numAllPoints =0;
 	for(size_t i=0; i < numCells; i++)
 	{
-		CElem* ele = _mesh->ele_vector[i];
+		MeshLib::CElem* ele = _mesh->ele_vector[i];
 		numAllPoints = numAllPoints + (ele->GetNodesNumber(false)) + 1;
 	}
 
@@ -146,7 +146,7 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 	vtk_file << "CELLS " << numCells << " " << numAllPoints << endl;
 	for(size_t i=0; i < numCells; i++)
 	{
-		CElem* ele = _mesh->ele_vector[i];
+		MeshLib::CElem* ele = _mesh->ele_vector[i];
 
 		// Write number of points per cell
 		switch(ele->GetElementType())
@@ -182,7 +182,7 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 
 	for(size_t i=0; i < numCells; i++)
 	{
-		CElem* ele = _mesh->ele_vector[i];
+		MeshLib::CElem* ele = _mesh->ele_vector[i];
 
 		// Write vtk cell type number (see vtkCellType.h)
 		switch(ele->GetElementType())
@@ -341,7 +341,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 				vtk_file << "VECTORS permeability double " << endl;
 				for (int j = 0l; j < (long) _mesh->ele_vector.size(); j++)
 				{
-					CElem* ele = _mesh->ele_vector[j];
+					MeshLib::CElem* ele = _mesh->ele_vector[j];
 					CMediumProperties* MediaProp = mmp_vector[ele->GetPatchIndex()];
 					for (size_t i = 0; i < 3; i++)
 						vtk_file << MediaProp->PermeabilityTensor(j)[i * 3 + i] << " ";
@@ -376,7 +376,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 		wroteAnyEleData = true;
 		for (size_t i = 0; i < _mesh->ele_vector.size(); i++)
 		{
-			CElem* ele = _mesh->ele_vector[i];
+			MeshLib::CElem* ele = _mesh->ele_vector[i];
 			double mat_value = 0.0;
 			switch (mmp_id)
 			{
@@ -402,7 +402,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 		vtk_file << "LOOKUP_TABLE default" << endl;
 		for (size_t i = 0; i < _mesh->ele_vector.size(); i++)
 		{
-			CElem* ele = _mesh->ele_vector[i];
+			MeshLib::CElem* ele = _mesh->ele_vector[i];
 			vtk_file << ele->GetPatchIndex() << endl;
 		}
 	}

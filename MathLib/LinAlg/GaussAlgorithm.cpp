@@ -9,7 +9,7 @@
 #include "GaussAlgorithm.h"
 #include "swap.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 GaussAlgorithm::GaussAlgorithm (Matrix <double> &A) :
 	_mat (A), _n(_mat.getNRows()), _perm (new size_t [_n])
@@ -63,4 +63,4 @@ void GaussAlgorithm::permuteRHS (double* b) const
 	}
 }
 
-} // end namespace MATHLIB
+} // end namespace MathLib

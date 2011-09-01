@@ -201,7 +201,7 @@ void RandomWalk::InterpolateVelocity(Particle* A)
    //	}
 
    // Mount the element fromthe first particle from particles initially
-   CElem* theEle = m_msh->ele_vector[A->elementIndex];
+   MeshLib::CElem* theEle = m_msh->ele_vector[A->elementIndex];
    //OK411 double tolerance = 1e-8;
 
    // If a quad element,
@@ -230,7 +230,7 @@ void RandomWalk::InterpolateVelocity(Particle* A)
      //WW double vx[4], vy[4], vz[4];
       for(int i=0; i<nnode; ++i)
       {
-         CNode* theNode = NULL;
+         MeshLib::CNode* theNode = NULL;
          theNode = theEle->GetNode(i);
          x[i] = theNode->X();
          y[i] = theNode->Y();
@@ -248,10 +248,10 @@ void RandomWalk::InterpolateVelocity(Particle* A)
       Jm = 0.5*(x[0]*y[1]-y[0]*x[1]+x[1]*y[2]-y[1]*x[2]+y[0]*x[3]-x[0]*y[3]+x[2]*y[3]-y[2]*x[3]);
 
       // Mount the edges of the element
-      vec<CEdge*>theEdgesOfThisElement(nnode);
+	  vec<MeshLib::CEdge*>theEdgesOfThisElement(nnode);
       theEle->GetEdges(theEdgesOfThisElement);
       // Mount the nodes of the edge
-      vec<CNode*>theNodesOfThisEdge(3);
+      vec<MeshLib::CNode*>theNodesOfThisEdge(3);
 
       // Solve for proper index in reference space
       double* Ecenter=theEle->GetGravityCenter();
@@ -385,7 +385,7 @@ void RandomWalk::TracePathlineInThisElement(Particle* A)
    //	}
 
    // Mount the element fromthe first particle from particles initially
-   CElem* theEle = m_msh->ele_vector[A->elementIndex];
+   MeshLib::CElem* theEle = m_msh->ele_vector[A->elementIndex];
    // double tolerance = 1e-8;
 
    // If a quad element,
@@ -410,10 +410,10 @@ void RandomWalk::TracePathlineInThisElement(Particle* A)
    if(nnode == 4)
    {
       // Mount the edges of the element
-      vec<CEdge*>theEdgesOfThisElement(nnode);
+	  vec<MeshLib::CEdge*>theEdgesOfThisElement(nnode);
       theEle->GetEdges(theEdgesOfThisElement);
       // Mount the nodes of the edge
-      vec<CNode*>theNodesOfThisEdge(3);
+      vec<MeshLib::CNode*>theNodesOfThisEdge(3);
 
       // Let's do Pollock's method here.
       // Solve for the reference position of this particle;
@@ -606,9 +606,9 @@ void RandomWalk::InterpolateVelocityOfTheParticleByInverseDistance(Particle* A)
    //			m_msh = FEMGet("GROUNDWATER_FLOW");
    //	}
 
-   CElem* m_ele = m_msh->ele_vector[A->elementIndex];
+   MeshLib::CElem* m_ele = m_msh->ele_vector[A->elementIndex];
    // Set the pointer that leads to the nodes of element
-   CNode* node = NULL;
+   MeshLib::CNode* node = NULL;
 
    // Let's get the hydraulic conductivity first.
    CMediumProperties *MediaProp = mmp_vector[m_ele->GetPatchIndex()];
@@ -746,7 +746,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
 
    // Let's allocate some memory for miniFEM
    CFEMesh* m_mini (new CFEMesh(m_msh->getGEOObjects(), m_msh->getProjectName()));
-   CElem* miniEle = new CElem();
+   MeshLib::CElem* miniEle = new MeshLib::CElem();
 
    if(option == 0)                                // FDM method
    {
@@ -764,7 +764,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
       if(eleIndex != -10)
       {
          A->elementIndex = eleIndex;
-         CElem* m_ele = m_msh->ele_vector[eleIndex];
+         MeshLib::CElem* m_ele = m_msh->ele_vector[eleIndex];
 
          int nnode = m_ele->GetEdgesNumber();
 
@@ -789,7 +789,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          // int nnodes = m_ele->GetVertexNumber();
 
          // Mount the edges of the element
-         vec<CEdge*>theEdgesOfThisElement(nnode);
+		 vec<MeshLib::CEdge*>theEdgesOfThisElement(nnode);
          m_ele->GetEdges(theEdgesOfThisElement);
 
          double E1[3], E2[3], E3[3], E4[3];       // mid points of each edge
@@ -825,7 +825,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
    else if(option == 1)                           // miniFEM Way
    {
       m_pcs = PCSGet("FLUID_MOMENTUM");
-      CElem* theEle = m_msh->ele_vector[A->elementIndex];
+      MeshLib::CElem* theEle = m_msh->ele_vector[A->elementIndex];
       int eleIndex = A->elementIndex;
       // Set the pointer that leads to the nodes of element
 
@@ -854,7 +854,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          // Get the number of nodes
 
          // Mount the edges of the element
-         vec<CEdge*>theEdgesOfThisElement(nnode);
+		 vec<MeshLib::CEdge*>theEdgesOfThisElement(nnode);
          theEle->GetEdges(theEdgesOfThisElement);
 
          // Get physical coordinates of four corner points
@@ -863,7 +863,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          double vx[8], vy[8], vz[8];
          for(int i=0; i<nnode; ++i)
          {
-            CNode* theNode = NULL;
+            MeshLib::CNode* theNode = NULL;
             theNode = theEle->GetNode(i);
             x[i] = theNode->X();
             y[i] = theNode->Y();
@@ -876,13 +876,13 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          */
 
          // Mount the nodes of the edge
-         vec<CNode*>theNodesOfThisEdge(3);
+         vec<MeshLib::CNode*>theNodesOfThisEdge(3);
 
          // MiniFEM for 2D elements starts here
          // Find all the nodes for miniFEM first
          if(nnode == 4)                           // Quad
          {
-            CNode* theNode = NULL;
+            MeshLib::CNode* theNode = NULL;
             // Node 0 for miniFEM for quad
             theNode = theEle->GetNode(0);
             m_mini->nod_vector.push_back(theNode);
@@ -940,7 +940,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
             // Assemble
             fem = new CFiniteElementStd(m_pcs, m_msh->GetCoordinateFlag());
             // I am going to create global matrix here
-            CElem* elem = NULL;
+            MeshLib::CElem* elem = NULL;
             for(int d=0; d < 2; ++d)
             {
                /* Initializations */
@@ -998,7 +998,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
    else                                           // Real Space and reference space way
    {
       m_pcs = PCSGet("FLUID_MOMENTUM");
-      CElem* theEle = m_msh->ele_vector[A->elementIndex];
+      MeshLib::CElem* theEle = m_msh->ele_vector[A->elementIndex];
       int eleIndex = A->elementIndex;
       // Set the pointer that leads to the nodes of element
       //OK411 CNode* node = NULL;
@@ -1028,7 +1028,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          //OK411 int nnodes = theEle->GetVertexNumber();
 
          // Mount the edges of the element
-         vec<CEdge*>theEdgesOfThisElement(nnode);
+		 vec<MeshLib::CEdge*>theEdgesOfThisElement(nnode);
          theEle->GetEdges(theEdgesOfThisElement);
 
          // Get physical coordinates of four corner points
@@ -1036,7 +1036,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          //WW double vx[4], vy[4], vz[4];
          for(int i=0; i<nnode; ++i)
          {
-            CNode* theNode = NULL;
+            MeshLib::CNode* theNode = NULL;
             theNode = theEle->GetNode(i);
             x[i] = theNode->X();
             y[i] = theNode->Y();
@@ -1053,7 +1053,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          Jm = 0.5*(x[0]*y[1]-y[0]*x[1]+x[1]*y[2]-y[1]*x[2]+y[0]*x[3]-x[0]*y[3]+x[2]*y[3]-y[2]*x[3]);
 
          // Mount the nodes of the edge
-         vec<CNode*>theNodesOfThisEdge(3);
+         vec<MeshLib::CNode*>theNodesOfThisEdge(3);
 
          // Solve for proper index in reference space
          double* Ecenter=theEle->GetGravityCenter();
@@ -1160,7 +1160,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
 }
 
 
-void RandomWalk::GetNodeOfMiniFEMforTheEdge(CNode* theNode, CEdge* theEdge, Particle* A)
+void RandomWalk::GetNodeOfMiniFEMforTheEdge(MeshLib::CNode* theNode, MeshLib::CEdge* theEdge, Particle* A)
 {
    double x[2], y[2];                             // Just for two nodes of the edge
 
@@ -1194,18 +1194,18 @@ last modification:
 int RandomWalk::IsParticleOnTheEdge(Particle* A)
 {
    double tolerance = 1e-6;
-   CElem* theEle = m_msh->ele_vector[A->elementIndex];
+   MeshLib::CElem* theEle = m_msh->ele_vector[A->elementIndex];
    int nnode = theEle->GetVertexNumber();
 
    // If element is triangle or quadrilateral.
    if(nnode == 3 || nnode == 4)
    {
       // Mount the edges of the element
-      vec<CEdge*>theEdgesOfThisElement(nnode);
+	  vec<MeshLib::CEdge*>theEdgesOfThisElement(nnode);
       theEle->GetEdges(theEdgesOfThisElement);
 
       double x1[3], x2[3];                        //OK411 , v[3];
-      vec<CNode*>theNodesOfThisEdge(3);
+      vec<MeshLib::CNode*>theNodesOfThisEdge(3);
 
       for(int i=0; i< nnode; ++i)
       {
@@ -1287,7 +1287,7 @@ double* RandomWalk::InterpolateLocationOfTheParticleByBilinear(Particle* A, doub
    if(eleIndex != -10)
    {
       A->elementIndex = eleIndex;
-      CElem* m_ele = m_msh->ele_vector[eleIndex];
+      MeshLib::CElem* m_ele = m_msh->ele_vector[eleIndex];
 
       int nnode = m_ele->GetEdgesNumber();
 
@@ -1304,7 +1304,7 @@ double* RandomWalk::InterpolateLocationOfTheParticleByBilinear(Particle* A, doub
       //OK411 int nnodes = m_ele->GetVertexNumber();
 
       // Mount the edges of the element
-      vec<CEdge*>theEdgesOfThisElement(nnode);
+	  vec<MeshLib::CEdge*>theEdgesOfThisElement(nnode);
       m_ele->GetEdges(theEdgesOfThisElement);
 
       double E1[3], E2[3], E3[3], E4[3];          // mid points of each edge
@@ -1402,9 +1402,9 @@ last modification:
 int RandomWalk::SolveForTwoIntersectionsInTheElement(Particle* A, double* P1, double* P2, int axis)
 {
    // Get the element that the particle belongs
-   CElem* m_ele = m_msh->ele_vector[A->elementIndex];
+   MeshLib::CElem* m_ele = m_msh->ele_vector[A->elementIndex];
    // Set the pointer that leads to the nodes of element
-   CNode* node = NULL;
+   MeshLib::CNode* node = NULL;
 
    // Get the number of nodes
    int nnodes = m_ele->GetVertexNumber();
@@ -1529,7 +1529,7 @@ int RandomWalk::SolveForDisplacementByDerivativeOfDispersion(Particle* A, double
    // This should be checked if the dispersivity gets correctly.
    CMediumProperties *m_mat_mp = NULL;
    double alphaL = 0.0, alphaT = 0.0;
-   CElem* m_ele = m_msh->ele_vector[A->elementIndex];
+   MeshLib::CElem* m_ele = m_msh->ele_vector[A->elementIndex];
    int group = m_ele->GetPatchIndex();
    m_mat_mp = mmp_vector[group];
    alphaL = m_mat_mp->mass_dispersion_longitudinal;
@@ -1586,7 +1586,7 @@ int RandomWalk::SolveForDerivativeOfVelocity(Particle* A)
 {
    int status = -10;                              // Set to be meaningliss in the beginning
    m_msh = fem_msh_vector[0];
-   CElem* m_ele = m_msh->ele_vector[A->elementIndex];
+   MeshLib::CElem* m_ele = m_msh->ele_vector[A->elementIndex];
 
    // If not 1D,
    if(m_ele->GetElementType()!=MshElemType::LINE)
@@ -1730,7 +1730,7 @@ Task:Compute the volume of the object
 Programing:
 09/2005 PCH Implementation
  **************************************************************************/
-double RandomWalk::ComputeVolume(Particle* A, CElem* m_ele)
+double RandomWalk::ComputeVolume(Particle* A, MeshLib::CElem* m_ele)
 {
    double x1buff[3];
    double x2buff[3];
@@ -1739,7 +1739,7 @@ double RandomWalk::ComputeVolume(Particle* A, CElem* m_ele)
    double volume = 0.0;
    double* PieceOfVolume = NULL;
 
-   CNode* node = NULL;
+   MeshLib::CNode* node = NULL;
 
    double A2buff[3];
 
@@ -2066,7 +2066,7 @@ Task:Compute the volume of the object via the particle inside of the object
 Programing:
 09/2005 PCH Implementation
  **************************************************************************/
-double RandomWalk::ComputeVolume(Particle* A, Particle* element, CElem* m_ele)
+double RandomWalk::ComputeVolume(Particle* A, Particle* element, MeshLib::CElem* m_ele)
 {
    double x1buff[3];
    double x2buff[3];
@@ -2588,7 +2588,7 @@ void RandomWalk::ConcPTFile(const char *file_name)
    double MaxX = -1e6, MinX = 1e6;
    for(int i=0; i < (int)m_msh->nod_vector.size(); ++i)
    {
-      CNode* thisNode = m_msh->nod_vector[i];
+      MeshLib::CNode* thisNode = m_msh->nod_vector[i];
       if(MaxX < thisNode->X())
          MaxX = thisNode->X();
       if(MinX > thisNode->X())
@@ -2647,7 +2647,7 @@ void RandomWalk::RandomlyDriftAway(Particle* A, double dt, double* delta, int ty
    type = type;
    dt =dt;
 
-   CElem* m_ele = m_msh->ele_vector[A->elementIndex];
+   MeshLib::CElem* m_ele = m_msh->ele_vector[A->elementIndex];
 
    // Let's generate three random components N(0,1) and use it to compute deltaOfX
    double Z[3];
@@ -2779,7 +2779,7 @@ void RandomWalk::SolveDispersionCoefficient(Particle* A)
    //		else if( m_pcs->pcs_type_name.find("GROUNDWATER_FLOW")!=string::npos)
    //			m_msh = FEMGet("GROUNDWATER_FLOW");
    //	}
-   CElem* m_ele = m_msh->ele_vector[A->elementIndex];
+   MeshLib::CElem* m_ele = m_msh->ele_vector[A->elementIndex];
    int group = m_ele->GetPatchIndex();
    m_mat_mp = mmp_vector[group];
    alphaL = m_mat_mp->mass_dispersion_longitudinal;
@@ -2871,7 +2871,7 @@ int RandomWalk::SolveForNextPosition(Particle* A, Particle* B)
    //		else if( m_pcs->pcs_type_name.find("GROUNDWATER_FLOW")!=string::npos)
    //			m_msh = FEMGet("GROUNDWATER_FLOW");
    //	}
-   CElem* theElement = m_msh->ele_vector[B->elementIndex];
+   MeshLib::CElem* theElement = m_msh->ele_vector[B->elementIndex];
 
    // Getting the number of the edges in the element that Particle P belongs
    int nEdges = theElement->GetEdgesNumber();
@@ -2894,11 +2894,11 @@ int RandomWalk::SolveForNextPosition(Particle* A, Particle* B)
       for(int i=0; i< nEdges; ++i)
       {
          // Get the edges of the element
-         vec<CEdge*> theEdges(nEdges);
+		 vec<MeshLib::CEdge*> theEdges(nEdges);
          theElement->GetEdges(theEdges);
 
          // Get the nodes of the edge
-         vec<CNode*> theNodes(3);
+         vec<MeshLib::CNode*> theNodes(3);
          theEdges[i]->GetNodes(theNodes);
 
          double p1[3], p2[3], p3[3], p4[3];
@@ -3157,7 +3157,7 @@ void RandomWalk::GetDisplacement(Particle* B, double* Z, double* V, double* dD, 
    //		else if( m_pcs->pcs_type_name.find("GROUNDWATER_FLOW")!=string::npos)
    //			m_msh = FEMGet("GROUNDWATER_FLOW");
    //	}
-   CElem* theElement = m_msh->ele_vector[B->elementIndex];
+   MeshLib::CElem* theElement = m_msh->ele_vector[B->elementIndex];
    int ele_dim = theElement->GetDimension();
    double Dxx = 0.0, Dxy = 0.0, Dxz = 0.0, Dyx = 0.0, Dyy = 0.0, Dyz = 0.0, Dzx = 0.0, Dzy = 0.0, Dzz = 0.0;
 
@@ -3333,7 +3333,7 @@ int RandomWalk::GetTheElementOfTheParticle(Particle* Pold, Particle* Pnew)
    {
 #endif
 
-      CElem* theElement = m_msh->ele_vector[Pold->elementIndex];
+      MeshLib::CElem* theElement = m_msh->ele_vector[Pold->elementIndex];
       // Let's check this element first.
       index = IsTheParticleInThisElement(Pold);
       if(index != -1)
@@ -3342,10 +3342,10 @@ int RandomWalk::GetTheElementOfTheParticle(Particle* Pold, Particle* Pnew)
       // First find the edge of the previous element
       // Mount the edges of the element
       int nnode = theElement->GetEdgesNumber();
-      vec<CEdge*>theEdgesOfThisElement(nnode);
+	  vec<MeshLib::CEdge*>theEdgesOfThisElement(nnode);
       theElement->GetEdges(theEdgesOfThisElement);
       // Mount the nodes of the edge
-      vec<CNode*>theNodesOfThisEdge(3);
+      vec<MeshLib::CNode*>theNodesOfThisEdge(3);
 
       for(int i=0; i< nnode; ++i)
       {
@@ -3437,7 +3437,7 @@ int RandomWalk::GetTheElementOfTheParticleFromNeighbor(Particle* A)
    {
 #endif
 
-      CElem* theElement = m_msh->ele_vector[A->elementIndex];
+      MeshLib::CElem* theElement = m_msh->ele_vector[A->elementIndex];
       // Let's check this element first.
       index = IsTheParticleInThisElement(A);
       if(index != -1)
@@ -3449,7 +3449,7 @@ int RandomWalk::GetTheElementOfTheParticleFromNeighbor(Particle* A)
       // First meighbor's search around the main element
       for(int i=0; i<theElement->GetFacesNumber(); ++i)
       {
-         CElem* thisNeighbor = theElement->GetNeighbor(i);
+         MeshLib::CElem* thisNeighbor = theElement->GetNeighbor(i);
 
          // If element type has more dimension than line.
          if(thisNeighbor->GetElementType() != MshElemType::LINE)
@@ -3463,7 +3463,7 @@ int RandomWalk::GetTheElementOfTheParticleFromNeighbor(Particle* A)
             // Second, search the neighbor's neighbor
             for(int j=0; j<thisNeighbor->GetFacesNumber(); ++j)
             {
-               CElem* theNeighborsNeighbor = thisNeighbor->GetNeighbor(j);
+               MeshLib::CElem* theNeighborsNeighbor = thisNeighbor->GetNeighbor(j);
 
                if(theNeighborsNeighbor->GetElementType() != MshElemType::LINE)
                {
@@ -3476,7 +3476,7 @@ int RandomWalk::GetTheElementOfTheParticleFromNeighbor(Particle* A)
                   // Third, search the neighbor's neighbor's neighbor
                   for(int k=0; k< theNeighborsNeighbor->GetFacesNumber(); ++k)
                   {
-                     CElem* theNeighborsNeighborsNeighbor = theNeighborsNeighbor->GetNeighbor(k);
+                     MeshLib::CElem* theNeighborsNeighborsNeighbor = theNeighborsNeighbor->GetNeighbor(k);
 
                      if(theNeighborsNeighborsNeighbor->GetElementType() != MshElemType::LINE)
                      {
@@ -3496,7 +3496,7 @@ int RandomWalk::GetTheElementOfTheParticleFromNeighbor(Particle* A)
       int numberOfElements = (int)m_msh->ele_vector.size();
       for(int i=0; i< numberOfElements; ++i)
       {
-         CElem* thisElement = m_msh->ele_vector[i];
+         MeshLib::CElem* thisElement = m_msh->ele_vector[i];
 
          if(thisElement->GetElementType() != MshElemType::LINE)
          {
@@ -3550,7 +3550,7 @@ int RandomWalk::IsTheParticleInThisElement(Particle* A)
    //		else if( m_pcs->pcs_type_name.find("GROUNDWATER_FLOW")!=string::npos)
    //			m_msh = FEMGet("GROUNDWATER_FLOW");
    //	}
-   CElem* theElement = m_msh->ele_vector[A->elementIndex];
+   MeshLib::CElem* theElement = m_msh->ele_vector[A->elementIndex];
 
    int ele_dim = theElement->GetDimension();
 
@@ -3564,11 +3564,11 @@ int RandomWalk::IsTheParticleInThisElement(Particle* A)
       for(int i=0; i< nEdges; ++i)
       {
          // Get the edges of the element
-         vec<CEdge*> theEdges(nEdges);
+		 vec<MeshLib::CEdge*> theEdges(nEdges);
          theElement->GetEdges(theEdges);
 
          // Get the nodes of the edge
-         vec<CNode*> theNodes(3);
+         vec<MeshLib::CNode*> theNodes(3);
          theEdges[i]->GetNodes(theNodes);
 
          double p1[3], p2[3], p3[3], p4[3];
@@ -3626,11 +3626,11 @@ int RandomWalk::IsTheParticleInThisElement(Particle* A)
       // Since this is 1D, I'll do exhaustive search.
       // Checking the coordinateflag for proper solution.
       int coordinateflag = m_msh->GetCoordinateFlag();
-      CNode* p1 = NULL; CNode* p2=NULL;
+      MeshLib::CNode* p1 = NULL; MeshLib::CNode* p2=NULL;
                                                   //OK411??? long
       for(int i=0; i< (int)m_msh->ele_vector.size(); ++i)
       {
-         CElem* theEle = m_msh->ele_vector[i];
+         MeshLib::CElem* theEle = m_msh->ele_vector[i];
          if(coordinateflag == 10)                 // x only
          {
             p1 = m_msh->nod_vector[theEle->GetNodeIndex(0)];
@@ -3898,7 +3898,7 @@ void RandomWalk::IsoparametricMappingQuadfromPtoR(int index, double* R)
    //			m_msh = FEMGet("GROUNDWATER_FLOW");
    //	}
    // Mount the element fromthe first particle from particles initially
-   CElem* theEle = m_msh->ele_vector[index];
+   MeshLib::CElem* theEle = m_msh->ele_vector[index];
    double tolerance = 1e-8;
 
    // If a quad element,
@@ -3910,7 +3910,7 @@ void RandomWalk::IsoparametricMappingQuadfromPtoR(int index, double* R)
       double x[4], y[4];
       for(int i=0; i<nnode; ++i)
       {
-         CNode* theNode = NULL;
+         MeshLib::CNode* theNode = NULL;
          theNode = theEle->GetNode(i);
          x[i] = theNode->X();
          y[i] = theNode->Y();
@@ -4081,7 +4081,7 @@ void RandomWalk::IsoparametricMappingQuadfromRtoP(int index, double* P)
    //			m_msh = FEMGet("GROUNDWATER_FLOW");
    //	}
    // Mount the element fromthe first particle from particles initially
-   CElem* theEle = m_msh->ele_vector[index];
+   MeshLib::CElem* theEle = m_msh->ele_vector[index];
    //OK411 double tolerance = 1e-8;
 
    // If a quad element,
@@ -4093,7 +4093,7 @@ void RandomWalk::IsoparametricMappingQuadfromRtoP(int index, double* P)
       double x[4], y[4];
       for(int i=0; i<nnode; ++i)
       {
-         CNode* theNode = NULL;
+         MeshLib::CNode* theNode = NULL;
          theNode = theEle->GetNode(i);
          x[i] = theNode->X();
          y[i] = theNode->Y();
@@ -4147,12 +4147,12 @@ void RandomWalk::DoJointEffectOfElementInitially(void)
    {
       // Mount the element fromthe first particle from particles initially
       int eleIdx = m_msh->PT->X[p].Now.elementIndex;
-      CElem* theEle = m_msh->ele_vector[eleIdx];
+      MeshLib::CElem* theEle = m_msh->ele_vector[eleIdx];
       // Let's get the number of edges in the element and mount them
       int numOfEdgeIntheElement = theEle->GetEdgesNumber();
-      vec<CEdge*> theEdges(numOfEdgeIntheElement);
+	  vec<MeshLib::CEdge*> theEdges(numOfEdgeIntheElement);
       theEle->GetEdges(theEdges);
-      CEdge* theJoint = NULL;
+	  MeshLib::CEdge* theJoint = NULL;
 
       // Now, 1. find the joint out of theses edges
       for(int i=0; i<numOfEdgeIntheElement; ++i)
@@ -4165,10 +4165,10 @@ void RandomWalk::DoJointEffectOfElementInitially(void)
       // 2. Get multiple planes out of the joint
       // Now we need one of crossroad from the joint
       // Get the nodes of the edge
-      vec<CNode*> theNodes(3);
+      vec<MeshLib::CNode*> theNodes(3);
       theJoint->GetNodes(theNodes);
       // I will use the first node of the joint as a crossroad
-      CNode* crossnode = theNodes[0];
+      MeshLib::CNode* crossnode = theNodes[0];
       // Let's mount the crossroad class
       CrossRoad* crossroad = NULL;
       for(int i=0; i < (int)(m_msh->fm_pcs->crossroads.size()); ++i)
@@ -4192,11 +4192,11 @@ void RandomWalk::DoJointEffectOfElementInitially(void)
 
 
 /**************************************************************************
-Task: ToTheXYPlane(CElem* E, double* X)
+Task: ToTheXYPlane(MeshLib::CElem* E, double* X)
 Programing: This function rotate-transforms the vector to be on the xy plane
 02/2006 PCH
  **************************************************************************/
-void RandomWalk::ToTheXYPlane(CElem* E, double* X)
+void RandomWalk::ToTheXYPlane(MeshLib::CElem* E, double* X)
 {
    double x[3], xx[3];
 
@@ -4242,7 +4242,7 @@ void RandomWalk::ToTheXYPlane(int idx, double* X)
    //		else if( m_pcs->pcs_type_name.find("GROUNDWATER_FLOW")!=string::npos)
    //			m_msh = FEMGet("GROUNDWATER_FLOW");
    //	}
-   CElem* E = m_msh->ele_vector[idx];
+   MeshLib::CElem* E = m_msh->ele_vector[idx];
 
    double x[3], xx[3];
 
@@ -4270,12 +4270,12 @@ void RandomWalk::ToTheXYPlane(int idx, double* X)
 
 
 /**************************************************************************
-Task: ToTheRealPlane(CElem* E, double* X)
+Task: ToTheRealPlane(MeshLib::CElem* E, double* X)
 Programing: This function transform the vector on the xy plane to the
          original plane of the element in 3D.
 02/2006 PCH
  **************************************************************************/
-void RandomWalk::ToTheRealPlane(CElem* E, double* X)
+void RandomWalk::ToTheRealPlane(MeshLib::CElem* E, double* X)
 {
    double x[3], xx[3];
 
@@ -4321,7 +4321,7 @@ void RandomWalk::ToTheRealPlane(int idx, double* X)
    //		else if( m_pcs->pcs_type_name.find("GROUNDWATER_FLOW")!=string::npos)
    //			m_msh = FEMGet("GROUNDWATER_FLOW");
    //	}
-   CElem* E = m_msh->ele_vector[idx];
+   MeshLib::CElem* E = m_msh->ele_vector[idx];
 
    double x[3], xx[3];
 
@@ -4349,11 +4349,11 @@ void RandomWalk::ToTheRealPlane(int idx, double* X)
 
 
 /**************************************************************************
-Task: SolveAnglesOfTheElment(CElem* E)
+Task: SolveAnglesOfTheElment(MeshLib::CElem* E)
 Programing: This function solves two angles for rotation transformation
 02/2006 PCH
  **************************************************************************/
-void RandomWalk::SolveAnglesOfTheElment(CElem* E)
+void RandomWalk::SolveAnglesOfTheElment(MeshLib::CElem* E)
 {
    CFEMesh* m_msh = NULL;
    if(fem_msh_vector.size()==0)

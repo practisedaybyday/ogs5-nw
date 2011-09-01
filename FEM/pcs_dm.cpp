@@ -92,7 +92,7 @@ namespace process
       if(reload==1||reload==3)
          WriteGaussPointStress();
       //
-      Mesh_Group::CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
       {
          elem = m_msh->ele_vector[i];
@@ -217,7 +217,7 @@ namespace process
          ARRAY =  new double[bufferSize];
 
       // Allocate memory for element variables
-      Mesh_Group::CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
       {
          elem = m_msh->ele_vector[i];
@@ -719,8 +719,8 @@ namespace process
          // 07.04.2010 WW
          size_t i;
          bool done;
-         CElem *elem = NULL;
-         CNode *node = NULL;
+         MeshLib::CElem *elem = NULL;
+         MeshLib::CNode *node = NULL;
          ElementValue_DM *eleV_DM = NULL;
          for (l = 0; l < (long)m_msh->ele_vector.size(); l++)
          {
@@ -863,7 +863,7 @@ namespace process
          for(j=0; j<NS+1; j++)
             SetNodeValue(i, Idx_Strain[j], 0.0);
       }
-      Mesh_Group::CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       for (i = 0; i < m_msh->ele_vector.size(); i++)
       {
          elem = m_msh->ele_vector[i];
@@ -1591,7 +1591,7 @@ namespace process
       double MaxS = 0.000001;
       double EffS = 0.0;
 
-      Mesh_Group::CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       ElementValue_DM *eleV_DM = NULL;
       CSolidProperties *SMat = NULL;
 
@@ -1780,7 +1780,7 @@ namespace process
       long i = 0;
       int Idx_Stress[7];
       const long LowOrderNodes= m_msh->GetNodesNumber(false);
-      Mesh_Group::CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
 
       // Clean nodal stresses
       NS =4;
@@ -1848,7 +1848,7 @@ namespace process
       intP = 0;
 
       // Check all element for bifurcation
-      Mesh_Group::CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       for (l = 0; l < (long)m_msh->ele_vector.size(); l++)
       {
          elem = m_msh->ele_vector[l];
@@ -2072,8 +2072,8 @@ namespace process
       DisElement *disEle;
       static double n1[2],n2[2], xA[3],xB[3];
       //WW static int Face_node[8];                    // Only 2D
-      Mesh_Group::CElem* elem;
-      Mesh_Group::CElem* elem1;
+      MeshLib::CElem* elem;
+      MeshLib::CElem* elem1;
 
       double pd1, pd2;
 
@@ -2192,7 +2192,7 @@ namespace process
    void CRFProcessDeformation:: DomainAssembly(CPARDomain* m_dom)
    {
       long i;
-      CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
 #ifdef NEW_EQS
       m_dom->InitialEQS(this);
 #else
@@ -2259,9 +2259,7 @@ namespace process
    **************************************************************************/
    void CRFProcessDeformation::GlobalAssembly()
    {
-      //----------------------------------------------------------------------
-
-#ifdef USE_MPI
+      #ifdef USE_MPI
       if(dom_vector.size()>0)
       {
          std::cout << "      Domain Decomposition " << myrank  << '\n';
@@ -2396,7 +2394,7 @@ namespace process
    void CRFProcessDeformation::GlobalAssembly_DM()
    {
       long i;
-      CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       /// If JFNK method. 10.08.2010. WW
       //   if(m_num->nls_method==2&&ite_steps==1)
       //      IncorporateBoundaryConditions();
@@ -2425,7 +2423,7 @@ namespace process
    void CRFProcessDeformation::UpdateStress()
    {
       long i;
-      CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       /*
       long j, irank;
       j = 0;
@@ -2499,7 +2497,7 @@ namespace process
       ElementValue_DM *eleV_DM = NULL;
 
       long ActiveElements = 0;
-      Mesh_Group::CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
       {
          elem = m_msh->ele_vector[i];
@@ -2617,7 +2615,7 @@ namespace process
       exist = false;                              // 16.02
       // 1. De-active host domain to be exvacated
       actElements = 0;
-      CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       for (i = 0; i < (long) m_msh->ele_vector.size(); i++)
       {
          elem = m_msh->ele_vector[i];
@@ -2777,7 +2775,7 @@ namespace process
       ElementValue_DM *eval_DM;
 
       // Over all elements
-      CElem* elem = NULL;
+      MeshLib::CElem* elem = NULL;
       for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
       {
          elem = m_msh->ele_vector[i];

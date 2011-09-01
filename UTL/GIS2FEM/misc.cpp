@@ -2,7 +2,7 @@
 #include "misc.h"
 
 #include "msh_mesh.h"
-vector<Mesh_Group::CFEMesh*> fem_msh_vector;
+vector<MeshLib::CFEMesh*> fem_msh_vector;
 
 /**************************************************************************
 FEMLib-Method: 

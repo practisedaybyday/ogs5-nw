@@ -7,10 +7,11 @@ INCLUDE_DIRECTORIES(
 	../../MathLib
 	../../FEM
 	../../MSH
+	../../MSHGEOTOOLS
 )
 
 # Create executables
-ADD_EXECUTABLE( ExtractMeshNodes mainExtractMeshNodes.cpp ExtractMeshNodes.h ExtractMeshNodes.cpp )
+ADD_EXECUTABLE( ExtractMeshNodes mainExtractMeshNodes.cpp )
 ADD_EXECUTABLE( ModifyMeshProperties mainModifyMeshProperties.cpp ModifyMeshProperties.h ModifyMeshProperties.cpp )
 ADD_EXECUTABLE( filterMeshNodes filterMeshNodes.cpp )
 ADD_EXECUTABLE( extractSurface mainExtractSurface.cpp ExtractSurface.h ExtractSurface.cpp )
@@ -18,6 +19,7 @@ ADD_EXECUTABLE( extractSurface mainExtractSurface.cpp ExtractSurface.h ExtractSu
 TARGET_LINK_LIBRARIES( ExtractMeshNodes
 	GEO
 	MSH
+	MSHGEOTOOLS
 	FileIO
 	FEM
 	OGSProject

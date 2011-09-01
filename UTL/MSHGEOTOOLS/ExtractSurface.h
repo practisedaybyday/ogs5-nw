@@ -19,7 +19,7 @@
 // MSH
 #include "msh_mesh.h"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 class ExtractSurface {
 public:

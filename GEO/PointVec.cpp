@@ -19,6 +19,7 @@ PointVec::PointVec (const std::string& name, std::vector<Point*>* points,
 	size_t number_of_all_input_pnts (_pnt_vec->size());
 
 	makePntsUnique (_pnt_vec, _pnt_id_map);
+
 	if (number_of_all_input_pnts - _pnt_vec->size() > 0)
 		std::cerr << "WARNING: there are " << number_of_all_input_pnts - _pnt_vec->size() << " double points" << std::endl;
 //	calculateShortestDistance ();
@@ -35,9 +36,10 @@ PointVec::~PointVec ()
 	delete _name_id_map;
 }
 
-void PointVec::push_back (Point *pnt)
+size_t PointVec::push_back (Point *pnt)
 {
 	_pnt_id_map.push_back (uniqueInsert(pnt));
+	return _pnt_id_map[_pnt_id_map.size()-1];
 }
 
 void PointVec::push_back (Point *pnt, const std::string& name)
@@ -45,7 +47,7 @@ void PointVec::push_back (Point *pnt, const std::string& name)
 	std::map<std::string,size_t>::const_iterator it (_name_id_map->find (name));
 	if (it != _name_id_map->end()) {
 		std::cerr << "ERROR: PointVec::push_back (): two points with the same name" << std::endl;
-		exit (1);
+		return;
 	}
 
 	size_t id (uniqueInsert (pnt));
@@ -56,29 +58,29 @@ void PointVec::push_back (Point *pnt, const std::string& name)
 size_t PointVec::uniqueInsert (Point* pnt)
 {
 	size_t n (_pnt_vec->size()), k;
-	bool nfound (true);
-	double eps (sqrt(std::numeric_limits<double>::min()));
-	for (k=0; k<n && nfound; k++) {
+	const double eps (std::numeric_limits<double>::epsilon());
+	for (k=0; k<n; k++) {
 		if (fabs((*((*_pnt_vec)[k]))[0]-(*pnt)[0]) < eps
 				&&  fabs( (*((*_pnt_vec)[k]))[1]-(*pnt)[1]) < eps
 				&&  fabs( (*((*_pnt_vec)[k]))[2]-(*pnt)[2]) < eps) {
-			nfound = false;
+			break;
 		}
 	}
-	if(nfound) {
+
+	if(k==n) {
 		_pnt_vec->push_back (pnt);
-		k++;
-		// update largest and shortest distances
+		// update shortest distance and bounding box
 		for (size_t i(0); i<n; i++) {
-			double sqr_dist (MATHLIB::sqrDist((*_pnt_vec)[i], (*_pnt_vec)[n]));
-			if (sqr_dist < _sqr_shortest_dist) _sqr_shortest_dist = sqr_dist;
+			double sqr_dist (MathLib::sqrDist((*_pnt_vec)[i], (*_pnt_vec)[n]));
+			if (sqr_dist < _sqr_shortest_dist)
+				_sqr_shortest_dist = sqr_dist;
 			aabb.update (*((*_pnt_vec)[n]));
 		}
+		return n;
 	}
-	if (k<n) {
-		delete pnt;
-		pnt = NULL;
-	}
+
+	delete pnt;
+	pnt = NULL;
 	return k;
 }
 
@@ -214,30 +216,35 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector
 		else it++;
 	}
 
-	// renumber id-mapping - part I
+	// renumber id-mapping
 	size_t cnt (0);
 	for (size_t k(0); k<n_pnts_in_file; k++) {
 		if (pnt_id_map[k] == k) { // point not removed, if necessary: id change
 			pnt_id_map[k] = cnt;
 			cnt++;
+		} else {
+			pnt_id_map[k] = pnt_id_map[pnt_id_map[k]];
 		}
 	}
 
-	// renumber id-mapping - part II
-	size_t n_unique_pnts(pnt_vec->size());
-	for (size_t k(1); k < n_pnts_in_file; k++) {
-		size_t j(pnt_id_map[k]);
-		while (j != pnt_id_map[j] && j > n_unique_pnts)
-			j = pnt_id_map[j];
-		pnt_id_map[k] = j;
-	}
+	// KR correct renumbering of indices
+//	size_t cnt(0);
+//	std::map<size_t, size_t> reg_ids;
+//	for (size_t k(0); k < n_pnts_in_file; k++) {
+//		if (pnt_id_map[k] == k) {
+//			reg_ids.insert(std::pair<size_t, size_t>(k, cnt));
+//			cnt++;
+//		} else reg_ids.insert(std::pair<size_t, size_t>(k, reg_ids[pnt_id_map[k]]));
+//	}
+//	for (size_t k(0); k < n_pnts_in_file; k++)
+//		pnt_id_map[k] = reg_ids[k];
 }
 
 void PointVec::calculateShortestDistance ()
 {
 	size_t i, j;
 	BruteForceClosestPair (*_pnt_vec, i, j);
-	_sqr_shortest_dist = MATHLIB::sqrDist ((*_pnt_vec)[i], (*_pnt_vec)[j]);
+	_sqr_shortest_dist = MathLib::sqrDist ((*_pnt_vec)[i], (*_pnt_vec)[j]);
 }
 
 void PointVec::calculateAxisAlignedBoundingBox ()

@@ -94,7 +94,7 @@ ENDMACRO(COPY_FILE_INTO_EXECUTABLE_DIRECTORY)
 # ogsConfiguration E.g. "OGS_FEM"
 # Additional arguments add output files to compare
 FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration)
-  
+
   SET (CONFIG_MATCH FALSE)
   IF (${ogsConfiguration} STREQUAL "OGS_FEM" AND OGS_FEM)
     SET (CONFIG_MATCH TRUE)
@@ -129,6 +129,14 @@ FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration)
     ELSE (WIN32)
       SET (ogsExe ${EXECUTABLE_OUTPUT_PATH}/ogs)
     ENDIF(WIN32)
+
+    # Set timeout
+    STRING(REGEX MATCH "EXCEEDING" benchmarkExceeding ${benchmarkName})
+    IF(benchmarkExceeding)
+    	SET(THIS_BENCHMARK_TIMEOUT ${EXCEEDING_BENCHMARK_TIMEOUT})
+    ELSE()
+		SET(THIS_BENCHMARK_TIMEOUT ${BENCHMARK_TIMEOUT})
+    ENDIF()
     
     STRING (REGEX MATCH "[^/]+$" benchmarkStrippedName ${benchmarkName})
     STRING (LENGTH ${benchmarkName} benchmarkNameLength)
@@ -143,6 +151,9 @@ FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration)
     FOREACH (entry ${ARGN})
 	SET (FILES_TO_DELETE "${FILES_TO_DELETE} ${entry}")
     ENDFOREACH (entry ${ARGN})
+	IF(OGS_PROFILE)
+		SET (FILES_TO_DELETE "${FILES_TO_DELETE} gmon.out")
+	ENDIF()
 
     # Adds a benchmark run. This calls AddTest.cmake to execute several steps.
     ADD_TEST (
@@ -153,6 +164,11 @@ FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration)
 	-DbenchmarkStrippedName=${benchmarkStrippedName}
 	-DbenchmarkDir=${benchmarkDir}
 	-DFILES_TO_DELETE=${FILES_TO_DELETE}
+	-DOGS_PROFILE=${OGS_PROFILE}
+	-DOGS_OUTPUT_PROFILE=${OGS_OUTPUT_PROFILE}
+	-DGPROF_PATH=${GPROF_PATH}
+	-DDOT_TOOL_PATH=${DOT_TOOL_PATH}
+	-DBENCHMARK_TIMEOUT=${THIS_BENCHMARK_TIMEOUT}
 	-P ${PROJECT_SOURCE_DIR}/CMakeConfiguration/AddBenchmark.cmake
     )
     
@@ -237,46 +253,3 @@ FUNCTION(CHECK_CONFIG)
 	ENDIF (counter GREATER 1)
 	
 ENDFUNCTION()
-
-# Sets variable PROCESSOR_COUNT
-# Can be used with: cmake --build .
-#FUNCTION(CHECK_PROCESSOR_COUNT)
-MACRO(CHECK_PROCESSOR_COUNT)
-	
-	IF(NOT DEFINED PROCESSOR_COUNT)
-
-	  # Unknown:
-	  SET(PROCESSOR_COUNT 0)
-
-	  # Linux:
-	  SET(cpuinfo_file "/proc/cpuinfo")
-	  IF(EXISTS "${cpuinfo_file}")
-	    FILE(STRINGS "${cpuinfo_file}" procs REGEX "^processor.: [0-9]+$")
-	    LIST(LENGTH procs PROCESSOR_COUNT)
-	  ENDIF()
-
-	  # Mac:
-	  IF(APPLE)
-	    FIND_PROGRAM(cmd_sys_pro "system_profiler")
-	    IF(cmd_sys_pro)
-	      EXECUTE_PROCESS(COMMAND ${cmd_sys_pro} OUTPUT_VARIABLE info)
-	      STRING(REGEX REPLACE "^.*Total Number Of Cores: ([0-9]+).*$" "\\1"
-	        PROCESSOR_COUNT "${info}")
-	    ENDIF()
-	  ENDIF()
-
-	  # Windows:
-	  IF(WIN32)
-	    SET(PROCESSOR_COUNT "$ENV{NUMBER_OF_PROCESSORS}")
-	  ENDIF()
-
-	ENDIF()
-	
-#	IF(PROCESSOR_COUNT)
-#	  SET(CTEST_BUILD_FLAGS "-j${PROCESSOR_COUNT}")
-#	ENDIF()
-	
-	# MESSAGE(STATUS "No. of processors: ${PROCESSOR_COUNT}")
-	
-ENDMACRO()
-#ENDFUNCTION()

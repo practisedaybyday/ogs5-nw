@@ -88,7 +88,20 @@ public:
 			}
 		}
 
-		_pnts.push_back (pnt);
+		// check if point is already in quadtree
+		bool pnt_in_quadtree (false);
+		double equal_pnt_dist (MathLib::fastpow(2.0, _depth) * fabs(_ll[0] - _ur[0]) * 1e-6);
+		for (size_t k(0); k<_pnts.size() && !pnt_in_quadtree; k++) {
+			const double sqr_dist (MathLib::fastpow((*(_pnts[k]))[0] - (*pnt)[0], 2) + MathLib::fastpow((*(_pnts[k]))[1] - (*pnt)[1], 2));
+			if (sqr_dist < equal_pnt_dist) {
+				pnt_in_quadtree = true;
+			}
+		}
+		if (!pnt_in_quadtree) {
+			_pnts.push_back (pnt);
+		} else {
+			return false;
+		}
 
 		if (_pnts.size () > _max_points_per_node) {
 			splitNode ();

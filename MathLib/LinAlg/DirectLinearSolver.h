@@ -8,11 +8,12 @@
 #ifndef DIRECTLINEARSOLVER_H_
 #define DIRECTLINEARSOLVER_H_
 
-#include <LinearSolver.h>
+#include "LinearSolver.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
-class DirectLinearSolver: public MATHLIB::LinearSolver {
+class DirectLinearSolver : public MathLib::LinearSolver
+{
 public:
 	DirectLinearSolver() {};
 	virtual ~DirectLinearSolver() {};

@@ -19,6 +19,7 @@
  * @param key the key for the element
  * @param beg beginning index in the sorted vector of elements
  * @param end ending index in the sorted vector of elements
+ * @param array the vector of elements
  * @return the id of the element in the vector or, if not found,
  * the value std::numeric_limits<size_t>::max()
  */

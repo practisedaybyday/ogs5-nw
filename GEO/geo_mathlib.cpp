@@ -11,7 +11,7 @@ Programing:
 #include "mathlib.h" //WW  
 
 /**************************************************************************/
-/* GEO MATHLIB - Funktion: EuklVek3dDist
+/* GEO MathLib - Funktion: EuklVek3dDist
                                                                           */
 /* Aufgabe:
    Berechnet den Abstand zwischen x und y in der Euklidischen Norm
@@ -34,7 +34,7 @@ double EuklVek3dDist ( double *x, double *y)
 }
 
 /**************************************************************************/
-/* GEO MATHLIB - Funktion: EuklVek3dDistCoor
+/* GEO MathLib - Funktion: EuklVek3dDistCoor
                                                                           */
 /* Aufgabe:
    Berechnet den Abstand zwischen x und y in der Euklidischen Norm
@@ -59,7 +59,7 @@ double EuklVek3dDistCoor ( double x1, double y1, double z1, \
   return sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1));
 }
 /**************************************************************************/
-/* GEO MATHLIB - Funktion: Vek3dDistCoor
+/* GEO MathLib - Funktion: Vek3dDistCoor
                                                                           */
 /* Aufgabe:
    Berechnet den Abstand zwischen x und y in der Norm 0,1 und 2
@@ -99,7 +99,7 @@ double Vek3dDistCoor ( double x1, double y1, double z1, \
   }
 }
 /**************************************************************************
-   GEO MATHLIB - Funktion: M3KreuzProdukt
+   GEO MathLib - Funktion: M3KreuzProdukt
    Aufgabe:
            Kreuzprodukt zweier 3D-Vektoren
    Formalparameter:
@@ -121,7 +121,7 @@ int M3KreuzProdukt(double *vec1, double *vec2, double *vec)
 }
 
 /***************************************************************************
-   GEO MATHLIB - Funktion: MSkalarprodukt
+   GEO MathLib - Funktion: MSkalarprodukt
    Aufgabe:
            Berechnung des Skalarprodukts aus zwei beliebig grossen
            Vektoren
@@ -153,7 +153,7 @@ double MSkalarprodukt(double *vec1, double *vec2, long g)
 
 }                               /* extern double MSkalarprodukt */
 /***************************************************************************
-   GEO MATHLIB - Funktion: M4Determinante
+   GEO MathLib - Funktion: M4Determinante
    Aufgabe:
            Berechnung der Determinante einer 4x4-Matrix
            nach der Regel von Sarrus
@@ -316,7 +316,7 @@ double CalcPrismVolume(double *x,double *y,double *z)
   return prism;
 }
 /***************************************************************************
-   GEO MATHLIB - Funktion:  MCalcProjectionOfPointOnPlane
+   GEO MathLib - Funktion:  MCalcProjectionOfPointOnPlane
 
    Aufgabe:
            Ermittelt den Projektionspunkt eines Punktes auf einer Flaeche (Lotpunkt)
@@ -380,7 +380,7 @@ double MCalcProjectionOfPointOnPlane(double *pt, double *e1, double *e2, double 
 }
 
 /***************************************************************************
-   GEO MATHLIB - Funktion: M3Determinante
+   GEO MathLib - Funktion: M3Determinante
    Aufgabe:
            Berechnung der Determinante einer 3x3-Matrix
            nach der Regel von Sarrus

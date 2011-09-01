@@ -896,8 +896,8 @@ Modification:
 -------------------------------------------------------------------------*/
 double CFluidProperties::GetElementValueFromNodes(long ElementIndex, int GPIndex, int PhaseIndex, int VariableIndex) {
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-	CElem *m_ele = NULL;
-	CNode* m_node = NULL;
+	MeshLib::CElem *m_ele = NULL;
+	MeshLib::CNode* m_node = NULL;
 	CRFProcess *m_pcs;
 	double var, variable;
 	int variable_index = 0, nNodes;
@@ -3406,7 +3406,7 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
          {
             m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
             mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew( idx_elem, m_pcs );
-	components_properties[i] =  Fluid_Heat_Conductivity(Density(dens_arg), T, 2*i + 0.25*(i*i- i*i*i));
+	components_properties[i] =  Fluid_Heat_Conductivity(Density(dens_arg), T, (int)(2*i + 0.25*(i*i- i*i*i)));
             variables += mass_fraction[i]*components_properties[i];
          }
          break;
@@ -3426,7 +3426,7 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
 	{
 	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
 	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew( idx_elem, m_pcs );
-	components_properties[i] =  Fluid_Viscosity(Density(dens_arg), T, p, 2*i + 0.25*(i*i- i*i*i));
+	components_properties[i] =  Fluid_Viscosity(Density(dens_arg), T, p, (int)(2*i + 0.25*(i*i- i*i*i)));
             variables += mass_fraction[i]*components_properties[i];
          }
          break;

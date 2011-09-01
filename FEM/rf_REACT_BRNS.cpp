@@ -661,8 +661,8 @@ void REACT_BRNS::ConvPorosityNodeValue2Elem ( int i_timestep )
    long i,idx_Node;
    size_t j, number_of_nodes;
    double pormin=2.0,pormax=0.0;
-   CNode* m_Node;
-   CElem* m_Elem;
+   MeshLib::CNode* m_Node;
+   MeshLib::CElem* m_Elem;
 
    for ( i=0 ; i < nElems ; i++ )
    {

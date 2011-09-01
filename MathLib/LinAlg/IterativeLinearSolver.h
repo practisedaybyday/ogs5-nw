@@ -10,9 +10,9 @@
 
 #include <LinearSolver.h>
 
-namespace MATHLIB {
+namespace MathLib {
 
-class IterativeLinearSolver: public MATHLIB::LinearSolver {
+class IterativeLinearSolver: public MathLib::LinearSolver {
 public:
 	IterativeLinearSolver() {};
 	virtual ~IterativeLinearSolver() {};

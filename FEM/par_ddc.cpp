@@ -146,8 +146,8 @@ void CountDoms2Nodes(CRFProcess *m_pcs)
    size_t i,j,k;
    long n_index=0;
    CPARDomain *m_dom = NULL;
-   CNode *anode = NULL;
-   CElem *elem = NULL;
+   MeshLib::CNode *anode = NULL;
+   MeshLib::CElem *elem = NULL;
    CFEMesh *a_msh = m_pcs->m_msh;
 
    //Average of nodal Neumann BCs contributed by nodes from different domains
@@ -603,8 +603,8 @@ void CPARDomain::CreateElements(const bool quadr)
    long i,k;
    int j, nNodes, nNodesHQ;
    long *elem_nodes=NULL;
-   Mesh_Group::CElem* m_ele = NULL;
-   Mesh_Group::CNode* m_nod = NULL;
+   MeshLib::CElem* m_ele = NULL;
+   MeshLib::CNode* m_nod = NULL;
    //*** Buffer for acceleration. 14.09.2007 WW:
                                                   // As long buffer
    node_connected_doms.resize((long)m_msh->nod_vector.size());
@@ -673,7 +673,7 @@ void CPARDomain::NodeConnectedNodes()
 {
    int k, i_buff;
    long i, j, long_buff;
-   CNode* m_nod = NULL;
+   MeshLib::CNode* m_nod = NULL;
    vector<long> nodes2node;
    // node_connected_doms as buffer to accelarate the computation
    // 14.09.2007 WW
@@ -956,8 +956,8 @@ void CPARDomain::WriteTecplot(string msh_name)
    //--------------------------------------------------------------------
    // MSH
    CFEMesh* m_msh = NULL;
-   CNode* m_nod = NULL;
-   CElem* m_ele = NULL;
+   MeshLib::CNode* m_nod = NULL;
+   MeshLib::CElem* m_ele = NULL;
    m_msh = FEMGet(msh_name);
    if(!m_msh)
       return;
@@ -1090,7 +1090,7 @@ void FindNodesOnInterface(CFEMesh *m_msh, bool quadr)
 
    long *elem_nodes=NULL;
    //
-   Mesh_Group::CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    //
    CPARDomain *m_dom = NULL;
    vector<long> boundary_nodes;

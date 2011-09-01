@@ -10,10 +10,12 @@ set( HEADERS
 	LinearInterpolation.h
 	EarClippingTriangulation.h
 	# directory LinAlg
+	LinAlg/VectorNorms.h
 	LinAlg/LinearSolver.h
 	LinAlg/DirectLinearSolver.h
 	LinAlg/DenseDirectLinearSolver.h
 	LinAlg/GaussAlgorithm.h
+#	LinAlg/HouseholderAlgorithm.h
 	LinAlg/TriangularSolve.h
 	LinAlg/IterativeLinearSolver.h
 )
@@ -28,6 +30,7 @@ set( SOURCES
 	# directory LinAlg
 	LinAlg/GaussAlgorithm.cpp
 	LinAlg/TriangularSolve.cpp
+#	LinAlg/HouseholderAlgorithm.cpp
 )
 
 # Create the library

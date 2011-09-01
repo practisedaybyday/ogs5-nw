@@ -7,7 +7,7 @@
 #include "NetCDFInterface.h"
 
 using namespace GEOLIB;
-using namespace Mesh_Group;
+using namespace MeshLib;
 
 /* Names of variables. */
 #define DIM_RLAT "rlat"
@@ -150,7 +150,7 @@ CFEMesh* NetCDFInterface::createMeshFromPoints(std::vector<GEOLIB::Point*>* poin
 	size_t nNodes = points_vec->size();
 	for (size_t i=0; i<nNodes; i++)
 	{
-		Mesh_Group::CNode* node = new Mesh_Group::CNode(i);
+		MeshLib::CNode* node = new MeshLib::CNode(i);
 	    double coords[3] = {(*(*points_vec)[i])[0], (*(*points_vec)[i])[1], (*(*points_vec)[i])[2]};;
 	    node->SetCoordinates(coords);     
 	    mesh->nod_vector.push_back(node);
@@ -162,7 +162,7 @@ CFEMesh* NetCDFInterface::createMeshFromPoints(std::vector<GEOLIB::Point*>* poin
       for (size_t j = 0; j < NRLON-1; j++)
       {
         size_t n_Elems = i * NRLON + j;
-		Mesh_Group::CElem* elem = new Mesh_Group::CElem();
+		MeshLib::CElem* elem = new MeshLib::CElem();
 		elem->setElementProperties(MshElemType::QUAD);
   	    // Assignment for the element nodes
 		elem->nodes_index[0] = (long) (n_Elems);

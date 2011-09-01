@@ -45,7 +45,7 @@ int main (int argc, char *argv[])
 	if (tmp.find (".msh") != std::string::npos)
 		file_base_name = tmp.substr (0, tmp.size()-4);
 
-	Mesh_Group::CFEMesh* mesh (FEMRead(file_base_name));
+	MeshLib::CFEMesh* mesh (FEMRead(file_base_name));
 	if (!mesh) {
 		std::cerr << "could not read mesh from file " << std::endl;
 		return -1;
@@ -71,7 +71,7 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
-	Mesh_Group::ExtractSurface extract_surface (mesh);
+	MeshLib::ExtractSurface extract_surface (mesh);
 	const size_t n_plys (plys->size());
 
 	ProjectData *project_data (new ProjectData);

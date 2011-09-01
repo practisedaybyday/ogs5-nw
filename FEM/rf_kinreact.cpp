@@ -305,9 +305,9 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
 	bool ok = true;
 
 	// CB reaction deactivation
-	CElem* m_dnele = NULL;
-	CElem* m_snele = NULL;
-	CNode* m_dnnod = NULL;
+	MeshLib::CElem* m_dnele = NULL;
+	MeshLib::CElem* m_snele = NULL;
+	MeshLib::CNode* m_dnnod = NULL;
 	vector<int> ReactNeighborNodes;
 	vec<long> secnnodesindices(8);
 	vec<long> primnnodesindices(8);
@@ -826,8 +826,8 @@ void KRConfig(const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
 
 		/********************************************************/
 		//Get foc average of connected elements
-		CNode* m_nod = NULL;
-		CElem* m_ele = NULL;
+		MeshLib::CNode* m_nod = NULL;
+		MeshLib::CElem* m_ele = NULL;
 		for (size_t l = 0; l < mesh_node_vector_size; l++)
 			m_krd->node_foc.push_back(1.0);
 		for (size_t l = 0; l < mesh_node_vector_size; l++) {
@@ -3332,8 +3332,8 @@ double CKinReact::GetPhaseVolumeAtNode(long node, double theta, int phase)
 {
 
    CMediumProperties *m_mat_mp = NULL;
-   CNode* m_nod = NULL;
-   CElem* m_ele = NULL;
+   MeshLib::CNode* m_nod = NULL;
+   MeshLib::CElem* m_ele = NULL;
    //OK411 CRFProcess *m_pcs = NULL;
    CFEMesh* m_msh = fem_msh_vector[0];            //SB: ToDo hart gesetzt
 
@@ -4345,8 +4345,8 @@ bool KNaplDissCheck(void)
 double CKinReact::GetNodePoreVelocity(long node)
 {
 
-   CNode* m_nod = NULL;
-   CElem* m_ele = NULL;
+   MeshLib::CNode* m_nod = NULL;
+   MeshLib::CElem* m_ele = NULL;
    CRFProcess *m_pcs = NULL;
    CFEMesh* m_msh = fem_msh_vector[0];            //SB: ToDo hart gesetzt
    CMediumProperties *m_mat_mp = NULL;

@@ -9,6 +9,9 @@ PROJECT(tmp)
 ### CMake setup ###
 INCLUDE(CMakeConfiguration/CMakeSetup.cmake)
 
+### Compiler setup ###
+INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
+
 ### Find directories and libraries ###
 INCLUDE (CMakeConfiguration/Find.cmake)
 
@@ -54,7 +57,14 @@ OPTION(OGS_USE_OPENSG "VTK to OpenSG converter" OFF)
 OPTION(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OFF)
 OPTION(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OFF)
 OPTION(OGS_BUILD_INFO "Should build information be generated" ON)
-OPTION (CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
+OPTION(CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
+IF(GCC AND GPROF_PATH)
+	OPTION(OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
+	IF(OGS_PROFILE AND DOT_TOOL_PATH)
+		OPTION(OGS_OUTPUT_PROFILE "Enables pdf output of profiling results." OFF)
+	ENDIF() # OGS_PROFILE AND DOT_TOOL_PATH
+ENDIF() # GCC AND GPROF_PATH
+OPTION (OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
 
 MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_USE_OPENSG OGS_USE_VRPN OGS_VRED_PLUGIN OGS_BUILD_INFO CMAKE_CMD_ARGS)
 
@@ -69,11 +79,15 @@ SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}
 # should we use ISO dates: 2010-12-31 ?
 SET (OGS_DATE "26.08.2011")
 
-### Compiler setup ###
-INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
-
 # Check for number of processors
-CHECK_PROCESSOR_COUNT()
+INCLUDE(ProcessorCount)
+ProcessorCount(PROCESSOR_COUNT)
+IF(PROCESSOR_COUNT EQUAL 0)
+	MESSAGE(WARNING "Processor count could not be detected. Setting to one processor.")
+	SET(PROCESSOR_COUNT 1)
+ELSE()
+	MESSAGE(STATUS "Number of processors: ${PROCESSOR_COUNT}")
+ENDIF() # PROCESSOR_COUNT 
 
 ### General project setup ###
 INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
@@ -196,6 +210,7 @@ ADD_SUBDIRECTORY( Base )
 ADD_SUBDIRECTORY( MathLib )
 ADD_SUBDIRECTORY( GEO )
 ADD_SUBDIRECTORY( MSH )
+ADD_SUBDIRECTORY( MSHGEOTOOLS )
 ADD_SUBDIRECTORY( FEM )
 IF(OGS_FEM_GEMS)
 	ADD_SUBDIRECTORY( GEM )
@@ -256,6 +271,8 @@ IF (OGS_CMAKE_DEBUG)
 ENDIF (OGS_CMAKE_DEBUG)	
 
 IF (BENCHMARK_DIR_FOUND)
+	SET(BENCHMARK_TIMEOUT 1800) # in s, 30 minutes timeout on normal benchmarks
+	SET(EXCEEDING_BENCHMARK_TIMEOUT 86400) # 1 day timeout on exceeding benchmarks
 	STRING (COMPARE EQUAL "$ENV{HOSTNAME}" "dev2.intern.ufz.de" HOST_IS_DEV2)
 	MESSAGE (STATUS "Benchmarking through CTest enabled")
 	IF (${HOST_IS_DEV2})
@@ -275,3 +292,25 @@ IF (OGS_BUILD_UTILITIES)
 	ADD_SUBDIRECTORY (UTL/FileConverter/)
 	ADD_SUBDIRECTORY (tests/GEO/)
 ENDIF (OGS_BUILD_UTILITIES)
+
+## Documentation ##
+IF(DOXYGEN_FOUND)
+	OPTION(DOCS_GENERATE_DIAGRAMS "Use the DOT tool to generate class diagrams." OFF)
+	OPTION(DOCS_GENERATE_CALL_GRAPHS "Generate call dependency graphs." OFF)
+	OPTION(DOCS_GENERATE_COLLABORATION_GRAPHS "Generate collaboration graphs." OFF)
+	IF(DOT_TOOL_PATH AND DOCS_GENERATE_DIAGRAMS)
+		SET(DOT_FOUND "YES" CACHE INTERNAL "")
+	ENDIF() # DOT_TOOL_PATH AND DOCS_GENERATE_DIAGRAMS
+	IF(DOCS_GENERATE_CALL_GRAPHS)
+		SET(DOCS_GENERATE_CALL_GRAPHS_STRING "YES" CACHE INTERNAL "")
+	ENDIF() # DOCS_GENERATE_CALL_GRAPHS
+	IF(DOCS_GENERATE_COLLABORATION_GRAPHS)
+		SET(DOCS_GENERATE_COLLABORATION_GRAPHS_STRING "YES" CACHE INTERNAL "")
+	ENDIF() # DOCS_GENERATE_COLLABORATION_GRAPHS
+	GET_FILENAME_COMPONENT(DOT_TOOL_PATH_ONLY ${DOT_TOOL_PATH} PATH)
+	CONFIGURE_FILE(scripts/doxygen/Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile)
+	ADD_CUSTOM_TARGET(doc ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+		COMMENT "Generating source code documentation with Doxygen." VERBATIM)
+ENDIF() # DOXYGEN_FOUND
+

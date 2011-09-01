@@ -1,11 +1,11 @@
 /**************************************************************************
 GeoLib - Object: Domain
-Task: 
+Task:
 Programing:
 09/2003 OK Implementation
 09/2005 CC GeoLib2
 **************************************************************************/
-#include <stdio.h> 
+#include <stdio.h>
 #include <string.h>
 // C++ STL
 // GeoLib
@@ -28,7 +28,7 @@ long CGLDomain::Insert(CGLDomain *m_domain)
 
 /**************************************************************************
 GeoLib-Method: CGLDomain::GetList
-Task: 
+Task:
 Programing:
 09/2003 OK Implementation
 **************************************************************************/
@@ -93,13 +93,13 @@ int CGLDomain::Read(char *data,FILE *f)
       //-----------------------------------------------------------------
       if (!strcmp(name, "$COORDINATES")) {
         pos_s = 0;
-        ok = (StrReadDouble(&ddummy,&sub[p_sub+=pos_s],f,TFDouble,&pos_s) && ok);
+        ok = (StrReadDouble(&ddummy,&sub[p_sub+=pos_s],f,&pos_s) && ok);
         m_domain->x_min = ddummy;
-        ok = (StrReadDouble(&ddummy,&sub[p_sub+=pos_s],f,TFDouble,&pos_s) && ok);
+        ok = (StrReadDouble(&ddummy,&sub[p_sub+=pos_s],f,&pos_s) && ok);
         m_domain->x_max = ddummy;
-        ok = (StrReadDouble(&ddummy,&sub[p_sub+=pos_s],f,TFDouble,&pos_s) && ok);
+        ok = (StrReadDouble(&ddummy,&sub[p_sub+=pos_s],f,&pos_s) && ok);
         m_domain->y_min = ddummy;
-        ok = (StrReadDouble(&ddummy,&sub[p_sub+=pos_s],f,TFDouble,&pos_s) && ok);
+        ok = (StrReadDouble(&ddummy,&sub[p_sub+=pos_s],f,&pos_s) && ok);
         m_domain->y_max = ddummy;
         LineFeed(f);
       }
@@ -133,7 +133,7 @@ CGLDomain* CGLDomain::Get(std::string name)
   std::vector<CGLDomain*>::iterator p = domain_vector.begin();//CC
   while(p!=domain_vector.end()) {
     m_domain = *p;
-    if(m_domain->name==name) { 
+    if(m_domain->name==name) {
       return m_domain;
     }
     ++p;

@@ -1412,8 +1412,8 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs)
 
    //Testoutput amount of co2 in model domain
    CFEMesh* m_msh = fem_msh_vector[0];            //SB: ToDo hart gesetzt
-   Mesh_Group::CElem* m_ele = NULL;
-   Mesh_Group::CNode* m_node = NULL;
+   MeshLib::CElem* m_ele = NULL;
+   MeshLib::CNode* m_node = NULL;
    CMediumProperties *m_mat_mp = NULL;
    ostringstream temp;
    double mass_CO2_gas, mass_CO2_water, mass_CO2;
@@ -1533,7 +1533,7 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs)
 
    //Testoutput amount of co2 in model domain calculated at nodes-DuMux
    //double element_volume;
-   vec<CNode*> ele_nodes(8);
+   Math_Group::vec<MeshLib::CNode*> ele_nodes(8);
 
    path = m_pcs->file_name_base;
    position = int(path.find_last_of("\\"));
@@ -1574,7 +1574,7 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs)
       saturation_CO2 = 0;
       node_volume = 0;
 
-      density_CO2 = m_pcs->DuMuxData->NodeData[i]->phase_density[1];
+      density_CO2 = m_pcs->DuMuxData->NodeData[i]->getPhaseDensity()[1];
 
       for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++)
       {
@@ -1588,11 +1588,11 @@ void Problem::TestOutputDuMux(CRFProcess *m_pcs)
          node_volume = node_volume + m_ele->GetVolume() / 8 * porosity;
       }
 
-      saturation_water = m_pcs->DuMuxData->NodeData[i]->phase_saturation[0];
+      saturation_water = m_pcs->DuMuxData->NodeData[i]->getPhaseSaturation()[0];
       saturation_CO2 = 1 - saturation_water;
 
       //concentration_CO2_water = pcs_vector[m_pcs->DuMuxData->ProcessIndex_CO2inLiquid]->GetNodeValue(i, indexConcentration_CO2);
-      concentration_CO2_water =m_pcs->DuMuxData->NodeData[i]->CO2inLiquid * m_pcs->DuMuxData->NodeData[i]->phase_density[0] / (m_pcs->DuMuxData->Molweight_CO2 * 1e-3);
+      concentration_CO2_water =m_pcs->DuMuxData->NodeData[i]->getCO2InLiquid() * m_pcs->DuMuxData->NodeData[i]->getPhaseDensity()[0] / (m_pcs->DuMuxData->Molweight_CO2 * 1e-3);
 
       mass_CO2_gas = mass_CO2_gas + node_volume * saturation_CO2 * density_CO2;
       mass_CO2_water = mass_CO2_water + node_volume * saturation_water * concentration_CO2_water * m_pcs->DuMuxData->Molweight_CO2 * 0.001;
@@ -1637,8 +1637,8 @@ void Problem::TestOutputEclipse(CRFProcess *m_pcs)
 {
    //Testoutput amount of co2 in model domain calculated at nodes
    CFEMesh* m_msh = fem_msh_vector[0];            //SB: ToDo hart gesetzt
-   Mesh_Group::CElem* m_ele = NULL;
-   Mesh_Group::CNode* m_node = NULL;
+   MeshLib::CElem* m_ele = NULL;
+   MeshLib::CNode* m_node = NULL;
    CMediumProperties *m_mat_mp = NULL;
    ostringstream temp;
    double mass_CO2_gas, mass_CO2_water, mass_CO2;
@@ -1752,7 +1752,7 @@ void Problem::TestOutputEclipse(CRFProcess *m_pcs)
 
    //Testoutput amount of co2 in model domain calculated at elements
    double element_volume;
-   vec<CNode*> ele_nodes(8);
+   Math_Group::vec<MeshLib::CNode*> ele_nodes(8);
 
    path = m_pcs->file_name_base;
    position = int(path.find_last_of("\\"));
@@ -1900,8 +1900,8 @@ inline double Problem::GroundWaterFlow()
    if(!m_pcs->selected) return error;             //12.12.2008 WW
 
    //----- For the coupling with the soil column approach. 05.2009. WW
-   GridsTopo *neighb_grid = NULL;
-   GridsTopo *neighb_grid_this = NULL;
+   MeshLib::GridsTopo *neighb_grid = NULL;
+   MeshLib::GridsTopo *neighb_grid_this = NULL;
    CRFProcess *neighb_pcs = total_processes[2];
    std::vector<double> border_flux;
    int idx_flux =0, idx_flux_this;
@@ -2438,14 +2438,14 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess *m_pcs_global)
 {
    int j,k;
    long i;
-   CElem* m_ele = NULL;
-   CNode* m_nod = NULL;
+   MeshLib::CElem* m_ele = NULL;
+   MeshLib::CNode* m_nod = NULL;
    int no_local_elements = m_pcs_global->m_msh->getNumberOfMeshLayers();
    int no_local_nodes = no_local_elements + 1;
    long g_element_number,g_node_number;
    CFEMesh* m_msh_local = NULL;
    CRFProcess* m_pcs_local = NULL;
-   vec<CNode*>ele_nodes(20);
+   Math_Group::vec<MeshLib::CNode*>ele_nodes(20);
    double value;
 #if defined(USE_MPI_REGSOIL)
    double *values;
@@ -2457,8 +2457,8 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess *m_pcs_global)
    int idxp  = m_pcs_global->GetNodeValueIndex("PRESSURE1") + timelevel;
    //WW int idxcp = m_pcs_global->GetNodeValueIndex("PRESSURE_CAP") + timelevel;
    int idxS  = m_pcs_global->GetNodeValueIndex("SATURATION1") + timelevel;
-   CElem* m_ele_local = NULL;
-   CNode* m_nod_local = NULL;
+   MeshLib::CElem* m_ele_local = NULL;
+   MeshLib::CNode* m_nod_local = NULL;
 
 #if defined(USE_MPI_REGSOIL)
    values      = new double[no_local_nodes];      // Should be more sophisticated
@@ -2493,7 +2493,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess *m_pcs_global)
       for(j=0;j<no_local_elements;j++)
       {
          m_ele = m_pcs_global->m_msh->ele_vector[j];
-         m_ele_local = new CElem(j,m_ele);
+         m_ele_local = new MeshLib::CElem(j,m_ele);
          for(k=0;k<2;k++)                         // ele_type
             m_ele_local->nodes_index[k] = j+k;
          m_msh_local->ele_vector[j] = m_ele_local;
@@ -2503,7 +2503,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess *m_pcs_global)
       for(j=0;j<no_local_nodes;j++)
       {
          m_nod = m_pcs_global->m_msh->nod_vector[j];
-         m_nod_local = new CNode(j,m_nod->X(),m_nod->Y(),m_nod->Z());
+         m_nod_local = new MeshLib::CNode(j,m_nod->X(),m_nod->Y(),m_nod->Z());
          //m_nod_local = m_nod;
          m_msh_local->nod_vector[j] = m_nod_local;
          m_msh_local->nod_vector[j]->SetEquationIndex(j);
@@ -2562,7 +2562,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess *m_pcs_global)
 
    //--- For couping with ground flow process. WW
    int idx_v;
-   GridsTopo *neighb_grid = NULL;
+   MeshLib::GridsTopo *neighb_grid = NULL;
    CRFProcess *neighb_pcs = total_processes[1];
 
    if(neighb_pcs)

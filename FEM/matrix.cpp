@@ -88,9 +88,9 @@ Speichermodell 2 vereinfacht
 // MSHLib
 #include "msh_node.h"
 #include "msh_mesh.h"
-extern Mesh_Group::CFEMesh* FEMGet(const std::string&);
+extern MeshLib::CFEMesh* FEMGet(const std::string&);
 
-using Mesh_Group::CNode;
+using MeshLib::CNode;
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -236,7 +236,7 @@ typedef struct
    /*  0: initialisiert */
    /*  1: aik eingespeichert oder veraendert, */
    /*  2: ILU-Zerlegung gelaufen */
-   int l34_Aik;                                   /* LÂnge von Aik */
+   int l34_Aik;                                   /* Lï¿½nge von Aik */
    /* 2: symmetrisch, 4: unsymmetrisch */
    int i34_Bik;                                   /* Start Bik (Preconditioner) innerhalb aik */
    /* 1: symmetrisch, 2: unsymmetrisch */
@@ -1489,7 +1489,7 @@ double M5Get(long i, long j)
    long k,dim1;
    long ii, jj;
 
-   Mesh_Group::CFEMesh* m_msh = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    CNode *m_nod_i = NULL;
    //  CNode *m_nod_j = NULL;
    m_msh = FEMGet("GROUNDWATER_FLOW");
@@ -1523,7 +1523,7 @@ int M5Set(long i, long j, double e_val)
    long k, dim1;
    long ii, jj;
    e_val = e_val;                                 //OK411
-   Mesh_Group::CFEMesh* m_msh = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    CNode *m_nod_i = NULL;
    //  CNode *m_nod_j = NULL;
    m_msh = FEMGet("GROUNDWATER_FLOW");
@@ -1769,7 +1769,7 @@ int M5Inc(long i, long j, double aij_inc)
    long k, dim1;
    long ii, jj;
 
-   Mesh_Group::CFEMesh* m_msh = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    CNode *m_nod_i = NULL;
    //  CNode *m_nod_j = NULL;
    m_msh = FEMGet("GROUNDWATER_FLOW");
@@ -1803,7 +1803,7 @@ int M5Inc(long i, long j, double aij_inc)
 void Write_Matrix_M5(double *b, ostream& os)
 {
   long i,j , dim1;
-  Mesh_Group::CFEMesh* m_msh = NULL;
+  MeshLib::CFEMesh* m_msh = NULL;
   m_msh = FEMGet("GROUNDWATER_FLOW");
 
 #ifdef SX
@@ -1841,7 +1841,7 @@ void *M5CreateMatrix(long param1, long param2, long param3)
    long k, index, Size, dim1;                     //OK
    /*------------------------------------------------------------*/
    jd_ptr_max = 0;
-   Mesh_Group::CFEMesh* m_msh = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    m_msh = FEMGet("GROUNDWATER_FLOW");
 #ifdef SX
 #pragma cdir nodep
@@ -2134,7 +2134,7 @@ void M5MatVek(double *b, double *erg)
    int i, dim1;                                   //k,
    int j, num;
    long col_len;
-   Mesh_Group::CFEMesh* m_msh = NULL;             //WW
+   MeshLib::CFEMesh* m_msh = NULL;             //WW
    m_msh = FEMGet("GROUNDWATER_FLOW");
    dim1 = m_msh->NodesInUsage();
 
@@ -2521,7 +2521,7 @@ void MXRandbed(long ir, double Ri, double *ReSei)
       {
 	//WW long dim1;
          long ii, jj, jr;
-         Mesh_Group::CFEMesh* m_msh = NULL;
+         MeshLib::CFEMesh* m_msh = NULL;
          CNode *m_nod_i = NULL;
          CNode *m_nod_j = NULL;
          m_msh = FEMGet("GROUNDWATER_FLOW");

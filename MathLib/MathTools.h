@@ -13,7 +13,7 @@
 #include <limits>
 #include "Point.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 /**
  * standard inner product in R^3
@@ -24,7 +24,7 @@ namespace MATHLIB {
 template<class T>
 double scpr(const T* v0, const T* v1, size_t n) {
 	long double res(0.0);
-	for (size_t k(0); k < n; k++)
+	for (size_t k(0); k<n; k++)
 		res += v0[k] * v1[k];
 	return (double) res;
 }
@@ -74,13 +74,30 @@ double sqrDist(const double* p0, const double* p1);
 float normalize(float min, float max, float val);
 
 /**
- * computes the angle between the edges p0,p1 and p1,p2
+ * Let \f$p_0, p_1, p_2 \in \mathbb{R}^3\f$. The function getAngle
+ * computes the angle between the edges \f$(p_0,p_1)\f$ and \f$(p_1,p_2)\f$
  * @param p0 start point of edge 0
  * @param p1 end point of edge 0 and start point of edge 1
  * @param p2 end point of edge 1
  * @return the angle between the edges
  */
 double getAngle (const double p0[3], const double p1[3], const double p2[3]);
+
+/**
+ * simple power function that takes as a second argument an integer instead of a float
+ * @param base basis of the expression
+ * @param exp exponent of the expression
+ * @return base^exp
+ */
+template <typename T>
+T fastpow (T base, size_t exp)
+{
+	T result (base);
+	for (size_t k(0); k<exp; k++) {
+		result *= result;
+	}
+	return result;
+}
 
 } // namespace
 

@@ -6642,7 +6642,7 @@ FEMLib-Method:
 **************************************************************************/
 void MSPWrite(std::string base_file_name)
 {
-   CSolidProperties* m_msp = NULL;
+    SolidProp::CSolidProperties* m_msp = NULL;
    //----------------------------------------------------------------------
    // File handling
    std::fstream msp_file;
@@ -6684,9 +6684,9 @@ void MSPStandardKeywords()
 FEMLib-Method:
 07/2007 OK Implementation
 **************************************************************************/
-CSolidProperties* MSPGet(std::string mat_name)
+SolidProp::CSolidProperties* MSPGet(std::string mat_name)
 {
-   CSolidProperties *m_msp = NULL;
+   SolidProp::CSolidProperties *m_msp = NULL;
    for(int i=0;i<(int)msp_vector.size();i++)
    {
       m_msp = msp_vector[i];

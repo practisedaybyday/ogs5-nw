@@ -109,10 +109,10 @@ int XMLInterface::readProjectFile(const QString &fileName)
 		else if (fileList.at(i).nodeName().compare("msh") == 0)
 		{
 			std::string msh_name = path.toStdString() + fileList.at(i).toElement().text().toStdString();
-			Mesh_Group::CFEMesh* msh = FileIO::OGSMeshIO::loadMeshFromFile(msh_name);
+			MeshLib::CFEMesh* msh = FileIO::OGSMeshIO::loadMeshFromFile(msh_name);
 			QFileInfo fi(QString::fromStdString(msh_name));
 			std::string name = fi.fileName().toStdString();
-			_project->addMesh(msh, name); 
+			_project->addMesh(msh, name);
 			//GridAdapter msh(fileList.at(i).toElement().text().toStdString());
 			// TODO gridadapter to mesh-models
 		}
@@ -236,6 +236,7 @@ void XMLInterface::readSurfaces( const QDomNode &surfacesRoot, std::vector<GEOLI
 		if (surface.hasAttribute("id"))
 		{
 			surfaces->push_back(new GEOLIB::Surface(*points));
+
 			if (surface.hasAttribute("name")) sfc_names->insert( std::pair<std::string, size_t>(surface.attribute("name").toStdString(), surfaces->size()-1) );
 
 			QDomElement element = surface.firstChildElement();
@@ -501,15 +502,15 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 	}
 
 	// MSH
-	const std::map<std::string, Mesh_Group::CFEMesh*> msh_vec = _project->getMeshObjects();
-	for (std::map<std::string, Mesh_Group::CFEMesh*>::const_iterator it(msh_vec.begin());	it != msh_vec.end(); ++it)
+	const std::map<std::string, MeshLib::CFEMesh*> msh_vec = _project->getMeshObjects();
+	for (std::map<std::string, MeshLib::CFEMesh*>::const_iterator it(msh_vec.begin());	it != msh_vec.end(); ++it)
 	{
 		// write mesh file
 		QString fileName(path + QString::fromStdString(it->first));
-		std::fstream* out = new std::fstream(fileName.toStdString().c_str(), std::fstream::out);
-		if (out->is_open()) {
-			(it->second)->Write(out);
-			out->close();
+		std::ofstream out (fileName.toStdString().c_str(), std::fstream::out);
+		if (out.is_open()) {
+			FileIO::OGSMeshIO::write (it->second, out);
+			out.close();
 		}
 		else
 			std::cout << "MshTabWidget::saveMeshFile() - Could not create file..." << std::endl;
@@ -741,10 +742,13 @@ void XMLInterface::writeBoreholeData(QDomDocument &doc, QDomElement &boreholeTag
 	boreholeTag.appendChild(stationDepthTag);
 	QDomText stationDepthText = doc.createTextNode(QString::number(borehole->getDepth(), 'f'));
 	stationDepthTag.appendChild(stationDepthText);
-	QDomElement stationDateTag = doc.createElement("bdate");
-	boreholeTag.appendChild(stationDateTag);
-	QDomText stationDateText = doc.createTextNode(QString::fromStdString(date2string(borehole->getDate())));
-	stationDateTag.appendChild(stationDateText);
+	if (borehole->getDate() != 0)
+	{
+		QDomElement stationDateTag = doc.createElement("bdate");
+		boreholeTag.appendChild(stationDateTag);
+		QDomText stationDateText = doc.createTextNode(QString::fromStdString(date2string(borehole->getDate())));
+		stationDateTag.appendChild(stationDateText);
+	}
 
 	std::vector<GEOLIB::Point*> profile = borehole->getProfile();
 	std::vector<std::string> soilNames = borehole->getSoilNames();

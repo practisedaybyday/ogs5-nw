@@ -10,7 +10,7 @@
 
 #include "MeshQualityChecker.h"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 class MeshQualityShortestLongestRatio : public MeshQualityChecker {
 public:

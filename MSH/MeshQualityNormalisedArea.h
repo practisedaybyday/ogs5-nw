@@ -9,7 +9,7 @@
 
 #include "MeshQualityChecker.h"
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 class MeshQualityNormalisedArea : public MeshQualityChecker {
 public:

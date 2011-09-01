@@ -15,7 +15,7 @@
 #include <stdexcept>
 #include <iostream>
 
-namespace MATHLIB {
+namespace MathLib {
 
 
 /**
@@ -287,6 +287,6 @@ std::ostream& operator<< (std::ostream &os, const Matrix<T> &mat)
 	return os;
 }
 
-} // end namespace MATHLIB
+} // end namespace MathLib
 
 #endif

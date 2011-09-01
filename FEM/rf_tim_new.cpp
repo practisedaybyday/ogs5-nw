@@ -765,7 +765,7 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
 {
    CMediumProperties* m_mmp = NULL;
    CRFProcess* m_pcs = NULL;
-   CElem* elem = NULL;
+   MeshLib::CElem* elem = NULL;
    int idxS;
    long group;
    double GP[3];
@@ -871,9 +871,9 @@ double CTimeDiscretization::CourantTimeControl(void)
    CRFProcess *m_pcs = NULL;
    CFEMesh* m_msh = NULL;
    ElementValue* gp_ele =NULL;
-   CElem* m_ele =NULL;
-   CNode* m_nod1 = NULL;
-   CNode* m_nod2 = NULL;
+   MeshLib::CElem* m_ele =NULL;
+   MeshLib::CNode* m_nod1 = NULL;
+   MeshLib::CNode* m_nod2 = NULL;
 
    long iel;
    int i, j, k, nds;
@@ -1099,7 +1099,7 @@ double CTimeDiscretization::CheckCourant(void)
    if (!m_pcs) return 0.0;
    int pcs_no = m_pcs->pcs_number;
    CMediumProperties* m_mmp = NULL;
-   CElem* elem =NULL;
+   MeshLib::CElem* elem =NULL;
    ElementValue* gp_ele;
    long critical_element_no = -1;
    double recommended_time_step = 0.0;
@@ -1146,7 +1146,7 @@ Programing:
 double CTimeDiscretization::AdaptiveFirstTimeStepEstimate(void)
 {
    CNumerics *m_num (num_vector[0]);
-   CElem* elem = NULL;
+   MeshLib::CElem* elem = NULL;
    static double Node_p[8];
    double p_ini, buff = 0.0;
    //WW int no_time_steps;
@@ -1430,7 +1430,7 @@ double CTimeDiscretization::MaxTimeStep()
    double max_diff_time_step=1.0e+100,Dm,dummy,max_adv_time_step=1.0e+100;
    double theta=0.0;                              // direction zero...no anisotropy
    CRFProcess* this_pcs=NULL;
-   CElem* melem=NULL;
+   MeshLib::CElem* melem=NULL;
 
    CMediumProperties *m_mat_mp = NULL;
    // Get the pointer to a proper PCS. ..we assume that all transport processes use the same diffusion coefficient

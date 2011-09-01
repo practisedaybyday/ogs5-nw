@@ -5,19 +5,13 @@
  */
 
 #include "MeshIO/OGSMeshIO.h"
+#include "GEOObjects.h"
 #include "msh_mesh.h"
 #include "msh_lib.h"
 
 namespace FileIO {
 
-OGSMeshIO::OGSMeshIO()
-{}
-
-OGSMeshIO::~OGSMeshIO()
-{}
-
-
-Mesh_Group::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string fileName)
+MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string const& fname)
 {
 	std::cout << "FEMRead ... " << std::flush;
 /*
@@ -28,7 +22,7 @@ Mesh_Group::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string fileName)
 */
 	FEMDeleteAll();
 
-	CFEMesh* msh = FEMRead(fileName.substr(0, fileName.length()-4));
+	MeshLib::CFEMesh* msh = FEMRead(fname.substr(0, fname.length()-4));
 	if (msh)
 	{
 /*
@@ -55,12 +49,11 @@ Mesh_Group::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string fileName)
 		return msh;
 	}
 
-    std::cout << "Failed to load a mesh file: " << fileName << std::endl;
+    std::cout << "Failed to load the mesh file: " << fname << std::endl;
 	return NULL;
 }
 
-
-void OGSMeshIO::write(Mesh_Group::CFEMesh const * mesh, std::ofstream &out) const
+void OGSMeshIO::write(MeshLib::CFEMesh const * mesh, std::ofstream &out)
 {
 	out << "#FEM_MSH" << std::endl;
 
@@ -77,11 +70,11 @@ void OGSMeshIO::write(Mesh_Group::CFEMesh const * mesh, std::ofstream &out) cons
 
 	out << "$ELEMENTS" << std::endl << "  ";
 	const size_t ele_vector_size (mesh->ele_vector.size());
-	const double epsilon (sqrt(fabs(std::numeric_limits<double>::min())));
+	const double epsilon (std::numeric_limits<double>::epsilon());
 	std::vector<bool> non_null_element (ele_vector_size, true);
 	size_t non_null_elements (0);
 	for (size_t i(0); i < ele_vector_size; i++) {
-		if ((mesh->ele_vector[i])->calcVolume() < epsilon) {
+		if ((mesh->ele_vector[i])->calcVolume() < epsilon) { // || (mesh->ele_vector[i])->GetElementType() == MshElemType::LINE) {
 			non_null_element[i] = false;
 		} else {
 			non_null_elements++;

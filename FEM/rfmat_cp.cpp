@@ -39,10 +39,10 @@ using namespace std;
 #endif
 using SolidProp::CSolidProperties;
 /* Vector auf CompProperties , globale Zugriffe */
-// vector <CompProperties*> cp_vec; 
-// do not need this anymore, use global map structure instead. 
+// vector <CompProperties*> cp_vec;
+// do not need this anymore, use global map structure instead.
 std::map <int, CompProperties*> cp_vec;
-std::map <std::string, int> cp_name_2_idx; 
+std::map <std::string, int> cp_name_2_idx;
 
 /*========================================================================*/
 /* Component Properties                                                  */
@@ -54,14 +54,14 @@ Task: CompProperties Constructor
 Programing:
 02/2004 SB Implementation
 **************************************************************************/
-CompProperties::CompProperties(/* int n // HS we do not need this. */) 
+CompProperties::CompProperties(/* int n // HS we do not need this. */)
 :idx(std::numeric_limits<size_t>::max())
 {
-   // if ( idx != std::numeric_limits<size_t>::max() ) // this means idx is set. 
+   // if ( idx != std::numeric_limits<size_t>::max() ) // this means idx is set.
 
    // compname = name1; // HS it will be loaded later.
-   mobil = 1;           // by default, set to mobile species. 
-   transport_phase = 0; // by default, set to the 1st phase. 
+   mobil = 1;           // by default, set to mobile species.
+   transport_phase = 0; // by default, set to the 1st phase.
    fluid_phase = 0;     // by default, set to water
 
    diffusion_model = -1;
@@ -139,24 +139,24 @@ bool CPRead(std::string file_base_name)
          m_cp->file_base_name = file_base_name;
          position = m_cp->Read(&cp_file);
          // HS the index of this component is filled
-         // one after another by its sequence in mcp file. 
+         // one after another by its sequence in mcp file.
          m_cp->idx = cp_vec.size();
-         cp_name_2_idx[m_cp->compname] = m_cp->idx; 
+         cp_name_2_idx[m_cp->compname] = m_cp->idx;
          cp_vec[m_cp->idx] = m_cp;
-         m_cp = NULL; 
+         m_cp = NULL;
          cp_file.seekg(position,ios::beg);
       }                                           // keyword found
    }                                              // eof
    // immediately check if enough PCS objects are available
-   size_t pcs_mt_count = 0; 
+   size_t pcs_mt_count = 0;
    size_t pcs_rwpt_count = 0;
-   size_t i; 
+   size_t i;
    for ( i=0; i < pcs_vector.size() ; i++ )
    {
-       if ( pcs_vector[i]->getProcessType() == MASS_TRANSPORT ) pcs_mt_count++;   
-       if ( pcs_vector[i]->getProcessType() == RANDOM_WALK ) pcs_rwpt_count++;   
+       if ( pcs_vector[i]->getProcessType() == MASS_TRANSPORT ) pcs_mt_count++;
+       if ( pcs_vector[i]->getProcessType() == RANDOM_WALK ) pcs_rwpt_count++;
    }
-   if ( pcs_rwpt_count == 0) // HS, no random walk detected. 
+   if ( pcs_rwpt_count == 0) // HS, no random walk detected.
    {
    if ( pcs_mt_count != cp_vec.size() || pcs_mt_count != cp_name_2_idx.size() )
    {
@@ -165,14 +165,14 @@ bool CPRead(std::string file_base_name)
    }
    else
    {
-       // and then link MCP with the PCS. 
+       // and then link MCP with the PCS.
        std::map <int, CompProperties*>::iterator cp_iter = cp_vec.begin();
        for ( i=0; i < pcs_vector.size() ; i++ )
        {
            if ( pcs_vector[i]->getProcessType() == MASS_TRANSPORT )
            {
                cp_iter->second->setProcess( pcs_vector[i] );
-               ++cp_iter; 
+               ++cp_iter;
            }
        }
    }   // end of else
@@ -710,8 +710,10 @@ double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFPro
    t_idx = t_idx;
 
    group = m_pcs->m_msh->ele_vector[index]->GetPatchIndex();
-   CMediumProperties *m_mat_mp = NULL;
-   m_mat_mp = mmp_vector[group];
+#ifdef GEM_REACT
+   CMediumProperties *m_mat_mp (mmp_vector[group]);
+#endif
+
    k = diffusion_model_values;
 
    switch (diffusion_model)
@@ -788,7 +790,7 @@ double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFPro
       case 9:                                     /*  De is calculated independently from element porosity. We use node porosity values with with Archies law De = Dp * poros^m   and do a harmonic average of the node diffusion coefficients!   as Dp is part of the dispersion tensor, we  modify Dp -> Dp=Dp0*poro^(m-1)*/
       {
 
-         CElem* m_Elem;
+         MeshLib::CElem* m_Elem;
 
          if (count_of_diffusion_model_values < 2)
             return 0.0;
@@ -1257,7 +1259,7 @@ double CompProperties::CalcElementMeanConcNew (long index, CRFProcess* m_pcs)
    static double val, val1, val2;
    double theta;                                  //GetNumericalTimeCollocation("TRANSPORT");
    //  CFEMesh* m_msh = m_pcs->m_msh; // Get mesh from Process
-   CElem* elem =NULL;
+   MeshLib::CElem* elem =NULL;
 
    elem = m_pcs->m_msh->ele_vector[index];
    nn = elem->GetVertexNumber();

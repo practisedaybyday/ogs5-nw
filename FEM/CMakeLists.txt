@@ -2,6 +2,7 @@
 
 set( SOURCES
 	Stiff_Bulirsch-Stoer.h
+	BoundaryCondition.h
 	break.h
 	display.h
 	eos.h
@@ -12,6 +13,7 @@ set( SOURCES
 	FEMEnums.h
 	femlib.h
 	files0.h
+	InitialCondition.h
 	intrface.h
 	makros.h
 	mathlib.h
@@ -39,6 +41,7 @@ set( SOURCES
 	rf_tim_new.h
 	rfmat_cp.h
 	solver.h
+	SourceTerm.h
 	timer.h
 	tools.h
 	vtk.h
@@ -48,11 +51,14 @@ set( SOURCES
 	GeoInfo.h
 	ProcessInfo.h
 	DistributionInfo.h
+	LinearFunctionData.h
 	Output.h
 	GeoInfo.cpp
 	ProcessInfo.cpp
 	DistributionInfo.cpp
+	LinearFunctionData.cpp
 	Stiff_Bulirsch-Stoer.cpp
+	BoundaryCondition.cpp
 	break.cpp
 	display.cpp
 	eos.cpp
@@ -64,6 +70,7 @@ set( SOURCES
 	FEMCondition.cpp
 	FEMEnums.cpp
 	files0.cpp
+	InitialCondition.cpp
 	#intrface.cpp
 	mathlib.cpp
 	matrix_class.cpp
@@ -88,6 +95,7 @@ set( SOURCES
 	rf_st_new.cpp
 	rf_tim_new.cpp
 	rfmat_cp.cpp	
+	SourceTerm.cpp
 	timer.cpp
 	tools.cpp
 	vtk.cpp
@@ -122,6 +130,7 @@ include_directories(
 	../GEO
 	../FileIO
 	../FileIO/MeshIO
+	../FileIO/FEMIO
 	../MSH
 	../GEM
 	../OGSProject

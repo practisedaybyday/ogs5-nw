@@ -904,9 +904,9 @@ void CInitialCondition::SetDomain(int nidx)
          }
 		 else if(getProcessDistributionType() == FiniteElement::FUNCTION) //01.07.2008 WW
          {
-             for(i=0;i<(int)nodes_vector.size();i++)
+             for(i=0;i<nodes_vector.size();i++)
              {
-                CNode *thisNode = m_msh->nod_vector[nodes_vector[i]];
+                MeshLib::CNode *thisNode = m_msh->nod_vector[nodes_vector[i]];
 				getProcess()->SetNodeValue(nodes_vector[i],nidx,dis_linear_f->getValue(k, thisNode->X(),thisNode->Y(), thisNode->Z()));
              }
           }
@@ -1007,7 +1007,7 @@ void CInitialCondition::SetDomainEle(int nidx)
    std::vector<long>ele_vector;
    CFEMesh* m_msh = this->getProcess()->m_msh;
    k=0;
-   CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
 
    if(SubNumber==0)                               //only for constant values
    {

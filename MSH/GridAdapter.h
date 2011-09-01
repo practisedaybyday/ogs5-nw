@@ -14,7 +14,7 @@
 class vtkImageData; // For conversion from Image to QuadMesh
 class vtkUnstructuredGrid; // For conversion vom vtk to ogs mesh
 
-namespace Mesh_Group
+namespace MeshLib
 {
 	class CFEMesh;
 	class CNode;
@@ -36,7 +36,7 @@ public:
 
 
 	/// Constructor using a FEM-Mesh Object as source
-	GridAdapter(const Mesh_Group::CFEMesh* mesh = NULL);
+	GridAdapter(const MeshLib::CFEMesh* mesh = NULL);
 
 	/// Constructor using a MSH-file as source
 	GridAdapter(const std::string &filename);
@@ -56,7 +56,7 @@ public:
 	const std::vector<Element*> *getElements(size_t matID) const;
 
 	/// Returns the grid as a CFEMesh for use in OGS-FEM
-	const Mesh_Group::CFEMesh* getCFEMesh() const;
+	const MeshLib::CFEMesh* getCFEMesh() const;
 
 	/// Returns the name of the mesh.
 	const std::string getName() const { return _name; };
@@ -64,15 +64,9 @@ public:
 	/// Sets the name for the mesh.
 	void setName(const std::string &name) { _name = name; };
 
-	/// Converts greyscale image to quad mesh
-	static Mesh_Group::CFEMesh* convertImgToMesh(vtkImageData* img, const std::pair<double,double> &origin, const double &scalingFactor);
-
-	/// Converts a vtkUnstructuredGrid object to a CFEMesh
-	static Mesh_Group::CFEMesh* convertUnstructuredGrid(vtkUnstructuredGrid* grid);
-
 private:
 	/// Converts an FEM Mesh to a list of nodes and elements.
-	int convertCFEMesh(const Mesh_Group::CFEMesh* mesh);
+	int convertCFEMesh(const MeshLib::CFEMesh* mesh);
 
 	/// Reads a MSH file into a list of nodes and elements.
 	int readMeshFromFile(const std::string &filename);
@@ -81,14 +75,12 @@ private:
 	MshElemType::type getElementType(const std::string &t) const;
 
 	/// Converts a GridAdapter into an CFEMesh.
-	const Mesh_Group::CFEMesh* toCFEMesh() const;
-
-	static Mesh_Group::CElem* createElement(size_t node1, size_t node2, size_t node3);
+	const MeshLib::CFEMesh* toCFEMesh() const;
 
 	std::string _name;
 	std::vector<GEOLIB::Point*> *_nodes;
 	std::vector<Element*> *_elems;
-	const Mesh_Group::CFEMesh* _mesh;
+	const MeshLib::CFEMesh* _mesh;
 };
 
 #endif // GRIDADAPTER_H

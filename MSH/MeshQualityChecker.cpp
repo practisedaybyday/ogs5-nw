@@ -9,7 +9,7 @@
 #include "msh_elem.h"
 #include <cmath>
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 MeshQualityChecker::MeshQualityChecker(CFEMesh const * const mesh) :
 	_mesh (mesh), _static_histogramm (100, 0)
@@ -22,7 +22,7 @@ MeshQualityChecker::MeshQualityChecker(CFEMesh const * const mesh) :
 void MeshQualityChecker::getHistogramm (std::vector<size_t>& histogramm) const
 {
 	// get all elements of mesh
-	const std::vector<Mesh_Group::CElem*>& msh_elem (_mesh->getElementVector());
+	const std::vector<MeshLib::CElem*>& msh_elem (_mesh->getElementVector());
 
 	const size_t msh_elem_size (msh_elem.size());
 	const size_t histogramm_size (histogramm.size()-1);

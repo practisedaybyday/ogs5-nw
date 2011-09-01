@@ -13,7 +13,7 @@ last modified
 #include "mathlib.h"                              //OK
 
 //========================================================================
-namespace Mesh_Group
+namespace MeshLib
 {
    /**************************************************************************
    MSHLib-Method:
@@ -62,7 +62,7 @@ namespace Mesh_Group
    Programing:
    06/2005 WW Implementation
    **************************************************************************/
-   double CEdge::Length()
+   double CEdge::getLength() const
    {
       double dx, dy, dz;
       dx = nodes_of_edges[1]->X()-nodes_of_edges[0]->X();
@@ -163,4 +163,4 @@ namespace Mesh_Group
       //return edge_vector;
    }
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib

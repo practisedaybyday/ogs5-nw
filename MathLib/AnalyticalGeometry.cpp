@@ -26,7 +26,7 @@
 #include "Matrix.h" // for transformation matrix
 #include "max.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 Orientation getOrientation (const double& p0_x, const double& p0_y,
 	const double& p1_x, const double& p1_y,
@@ -70,8 +70,8 @@ bool lineSegmentIntersect (const GEOLIB::Point& a, const GEOLIB::Point& b,
 		// vector (D-C) is not parallel to x-axis
 		if (fabs(mat(0,1)) >= eps) {
 			// vector (B-A) is not parallel to x-axis
-			// \$f(B-A)\f$ and \$f(D-C)\f$ are parallel iff there exists
-			// a constant \f$c\f$ such that \$f(B-A) = c (D-C)\f$
+			// \f$(B-A)\f$ and \f$(D-C)\f$ are parallel iff there exists
+			// a constant \f$c\f$ such that \f$(B-A) = c (D-C)\f$
 			if (fabs (mat(0,0) / mat(0,1) - mat(1,0) / mat(1,1)) < eps * fabs (mat(0,0) / mat(0,1)))
 				return false;
 		}
@@ -125,14 +125,14 @@ bool lineSegmentsIntersect (const GEOLIB::Polyline* ply, size_t &idx0, size_t &i
 bool isPointInTriangle (const double p[3], const double a[3], const double b[3], const double c[3])
 {
 	// criterion: p-b = u0 * (b - a) + u1 * (b - c); 0 <= u0, u1 <= 1, u0+u1 <= 1
-	MATHLIB::Matrix<double> mat (2,2);
+	MathLib::Matrix<double> mat (2,2);
 	mat(0,0) = a[0] - b[0];
 	mat(0,1) = c[0] - b[0];
 	mat(1,0) = a[1] - b[1];
 	mat(1,1) = c[1] - b[1];
 	double rhs[2] = {p[0]-b[0], p[1]-b[1]};
 
-	MATHLIB::GaussAlgorithm gauss (mat);
+	MathLib::GaussAlgorithm gauss (mat);
 	gauss.execute (rhs);
 
 	if (0 <= rhs[0] && rhs[0] <= 1 && 0 <= rhs[1] && rhs[1] <= 1 && rhs[0] + rhs[1] <= 1) return true;
@@ -196,18 +196,20 @@ void rotatePointsToXY(Vector &plane_normal,
 	rot_mat(2, 1) = plane_normal[1] * h2;
 	rot_mat(2, 2) = plane_normal[2] * h2;
 
-	double *tmp (new double[3]);
+	double *tmp (NULL);
 	size_t n_pnts(pnts.size());
 	for (size_t k(0); k < n_pnts; k++) {
 		tmp = rot_mat * pnts[k]->getData();
 		for (size_t j(0); j < 3; j++)
 			(*(pnts[k]))[j] = tmp[j];
+		delete [] tmp;
 	}
 
 	tmp = rot_mat * plane_normal.getData();
-	for (size_t j(0); j < 3; j++) plane_normal[j] = tmp[j];
+	for (size_t j(0); j < 3; j++)
+		plane_normal[j] = tmp[j];
 
 	delete [] tmp;
 }
 
-} // end namespace MATHLIB
+} // end namespace MathLib

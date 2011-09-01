@@ -29,7 +29,7 @@
 #include "PointVec.h"
 #include "PolylineSmoother.h"
 
-// MATHLIB
+// MathLib
 #include "AnalyticalGeometry.h"
 #include "EarClippingTriangulation.h"
 
@@ -287,7 +287,7 @@ std::string readSurface(std::istream &in,
 		std::vector<Surface*> &sfc_vec, std::map<std::string,size_t>& sfc_names,
 		const std::vector<Polyline*> &ply_vec, const std::map<std::string, size_t>& ply_vec_names,
 		std::vector<Point*> &pnt_vec,
-		const std::string &path)
+		std::string const& path)
 {
 	std::string line;
 	Surface *sfc(NULL);
@@ -319,8 +319,10 @@ std::string readSurface(std::istream &in,
 		//....................................................................
 		if (line.find("$TIN") != std::string::npos) { // subkeyword found
 			in >> line; // read value (file name)
-//			line = path + line;
-			line = FilePath + line; //WW
+			line = path + line;
+//			line = FilePath + line; //WW - TF: sorry WW I do not like global variables in my code.
+			// What is the problem with my code? Please talk to me about problems in my code!
+			// If we want to disable global variables we should not introduce new dependencies!
 //			if (type == 1) std::cerr << "reading tin file " << line << " ... " << std::flush;
 			sfc = new Surface(pnt_vec);
 
@@ -335,9 +337,9 @@ std::string readSurface(std::istream &in,
 		if (line.find("$POLYLINES") != std::string::npos) { // subkeyword found
 			// read the name of the polyline(s)
 			in >> line;
-			while (!in.eof() && line.size() != 0 && (line.find("#")
-					== std::string::npos) && (line.find("$")
-					== std::string::npos)) {
+			while (!in.eof() && line.size() != 0
+					&& (line.find("#")== std::string::npos)
+					&& (line.find("$") == std::string::npos)) {
 				// we did read the name of a polyline -> search the id for polyline
 				std::map<std::string,size_t>::const_iterator it (ply_vec_names.find (line));
 				if (it != ply_vec_names.end())
@@ -359,6 +361,7 @@ std::string readSurface(std::istream &in,
 					}
 //					if (type == 0 || type == -1)
 //						std::cerr << "reading Polygon " << ply_vec_names[ply_id] << std::endl;
+					else std::cerr << "unknown polyline type " << type << "... " << std::endl;
 				}
 				in >> line;
 			}
@@ -411,29 +414,12 @@ std::string readSurfaces(std::istream &in,
 		tag = readSurface(in, polygon_vec, sfc_vec, sfc_names, ply_vec, ply_vec_names, pnt_vec, path);
 		if (n_polygons < polygon_vec.size()) {
 			// subdivide polygon in simple polygons
-			polygon_vec[polygon_vec.size()-1]->computeListOfSimplePolygons ();
-
-			// create surfaces from simple polygons
-			const std::list<GEOLIB::Polygon*>& list_of_simple_polygons (polygon_vec[polygon_vec.size()-1]->getListOfSimplePolygons());
-			for (std::list<GEOLIB::Polygon*>::const_iterator simple_polygon_it (list_of_simple_polygons.begin());
-				simple_polygon_it != list_of_simple_polygons.end(); ++simple_polygon_it) {
-
-				std::list<GEOLIB::Triangle> triangles;
-				std::cout << "triangulation of surface: ... " << std::flush;
-				MATHLIB::EarClippingTriangulation(*simple_polygon_it, triangles);
-				std::cout << "done - " << triangles.size () << " triangles " << std::endl;
-
-				Surface *sfc(new Surface(pnt_vec));
-				// add Triangles to Surface
-				std::list<GEOLIB::Triangle>::const_iterator it (triangles.begin());
-				while (it != triangles.end()) {
-					sfc->addTriangle ((*it)[0], (*it)[1], (*it)[2]);
-					it++;
-				}
-				sfc_vec.push_back (sfc);
-			}
-
+			GEOLIB::Surface *sfc (GEOLIB::Surface::createSurface (*(dynamic_cast<GEOLIB::Polyline*>(polygon_vec[polygon_vec.size()-1]))));
+			sfc_vec.push_back (sfc);
 		}
+	}
+	for (size_t k(0); k<polygon_vec.size(); k++) {
+		delete polygon_vec[k];
 	}
 	std::cout << "readSurfaces: number of read polygons  " << polygon_vec.size() << std::endl;
 
@@ -485,7 +471,7 @@ std::string readSurfaces(std::istream &in,
 //			simple_polygon_it != list_of_simple_polygons.end(); simple_polygon_it++) {
 //
 //			std::list<GEOLIB::Triangle> triangles;
-//			MATHLIB::earClippingTriangulationOfPolygon(*simple_polygon_it, triangles);
+//			MathLib::earClippingTriangulationOfPolygon(*simple_polygon_it, triangles);
 //			std::cout << "done - " << triangles.size () << " triangles " << std::endl;
 //
 //			Surface *sfc(new Surface(pnt_vec));
@@ -497,35 +483,6 @@ std::string readSurfaces(std::istream &in,
 //			}
 //			sfc_vec.push_back (sfc);
 //		}
-//	}
-
-//	// test only
-//	GEOLIB::PolylineSmoother ply_smoother;
-//
-//	for (size_t k(0); k<ply_vec.size(); k++) {
-//		GEOLIB::Polyline *smoothed_ply (ply_smoother.execute (*(ply_vec[k])));
-//		std::cout << "original Polyline has " << (ply_vec[k])->getNumberOfPoints() << " points,";
-//		std::cout << "smoothed polyline has " << smoothed_ply->getNumberOfPoints () << " points" << std::endl;
-//
-//		// write smooth polyline to file
-//		if ((ply_vec[k])->getNumberOfPoints() > 6000) {
-//			std::ofstream os ("SmoothedPolyline.gli");
-//			os << "#POINTS" << std::endl;
-//			os.precision (20);
-//			for (size_t j(0); j<smoothed_ply->getNumberOfPoints(); j++) {
-//				os << j << " " << *((*smoothed_ply)[j]) << std::endl;
-//			}
-//
-//			os << "#POLYLINE" << std::endl;
-//			os << " $NAME " << std::endl << "  " << k << std::endl;
-//			os << " $POINTS" << std::endl;
-//			for (size_t j(0); j<smoothed_ply->getNumberOfPoints(); j++) {
-//				os << "  " << j << std::endl;
-//			}
-//			os.close ();
-//		}
-//
-//		delete smoothed_ply;
 //	}
 
 	return tag;
@@ -543,7 +500,6 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo)
 	std::string tag;
 	while (tag.find("#POINTS") == std::string::npos && !in.eof()) {
 		getline (in, tag);
-       
 	}
 
 	// read names of points into vector of strings
@@ -613,13 +569,14 @@ void writeGLIFileV4 (const std::string& fname, const std::string& geo_name, cons
 	if (plys_vec) {
 		const std::vector<GEOLIB::Polyline*>* plys (plys_vec->getVector());
 		std::cout << plys->size () << " polylines to file " << fname << std::endl;
-		const std::vector<size_t>& pnt_id_map (geo.getPointVecObj(geo_name)->getIDMap());
+//		const std::vector<size_t>& pnt_id_map (geo.getPointVecObj(geo_name)->getIDMap());
 		for (size_t k(0); k<plys->size(); k++) {
 			os << "#POLYLINE" << std::endl;
 			os << " $NAME " << std::endl << "  " << k << std::endl; // plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
 			os << " $POINTS" << std::endl;
 			for (size_t j(0); j<(*plys)[k]->getNumberOfPoints(); j++) {
-				os << "  " << pnt_id_map[((*plys)[k])->getPointID(j)] << std::endl;
+//				os << "  " << pnt_id_map[((*plys)[k])->getPointID(j)] << std::endl;
+				os << "  " << ((*plys)[k])->getPointID(j) << std::endl;
 			}
 		}
 	}
@@ -629,11 +586,12 @@ void writeGLIFileV4 (const std::string& fname, const std::string& geo_name, cons
 		const std::vector<GEOLIB::Polyline*>* plys (plys_vec->getVector());
 		std::cout << plys->size () << " closed polylines as surfaces to file " << fname << std::endl;
 		for (size_t k(0); k<plys->size(); k++) {
-			if ((*plys)[k]->isClosed())
-			os << "#SURFACE" << std::endl;
-			os << " $NAME " << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
-			os << " $TYPE " << std::endl << "  0" << std::endl;
-			os << " $POLYLINES" << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
+			if ((*plys)[k]->isClosed()) {
+				os << "#SURFACE" << std::endl;
+				os << " $NAME " << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
+				os << " $TYPE " << std::endl << "  0" << std::endl;
+				os << " $POLYLINES" << std::endl << "  " << k << std::endl; //plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
+			}
 		}
 	}
 

@@ -9,7 +9,7 @@
 #include "Polygon.h"
 #include "msh_mesh.h"
 
-using namespace Mesh_Group;
+using namespace MeshLib;
 using namespace std;
 
 
@@ -25,8 +25,8 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
   CFEMesh *m_msh = NULL;
   m_msh = new CFEMesh();
 
-  FEFLOW_FEM_CLASS fem_class = {0};
-  FEFLOW_FEM_DIM fem_dim = {0};
+  FEFLOW_FEM_CLASS fem_class = {0,0,0,0,0,0,0,0};
+  FEFLOW_FEM_DIM fem_dim = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   std::vector<GEOLIB::Point*> *points = NULL;
   std::vector<GEOLIB::Polyline*> *lines = NULL;
 
@@ -203,7 +203,7 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
     // SUPERMESH
     else if(line_string.compare("SUPERMESH")==0)
     {
-      this->readSuperMesh(feflow_file, fem_class, fem_dim, &points, &lines);
+      this->readSuperMesh(feflow_file, fem_class, &points, &lines);
     }
     //....................................................................
   } // is line empty
@@ -244,7 +244,7 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
 
 
 //
-void FEFLOWInterface::readSuperMesh(std::ifstream &feflow_file, FEFLOW_FEM_CLASS &fem_class, FEFLOW_FEM_DIM &fem_dim, std::vector<GEOLIB::Point*> **p_points, std::vector<GEOLIB::Polyline*> **p_lines)
+void FEFLOWInterface::readSuperMesh(std::ifstream &feflow_file, FEFLOW_FEM_CLASS &fem_class, std::vector<GEOLIB::Point*> **p_points, std::vector<GEOLIB::Polyline*> **p_lines)
 {
   /* Example
   <?xml version="1.0" encoding="utf-8" standalone="no" ?>

@@ -21,7 +21,7 @@ last modified
 
 
 //========================================================================
-namespace Mesh_Group
+namespace MeshLib
 {
    /**************************************************************************
    MSHLib-Method:
@@ -141,8 +141,8 @@ namespace Mesh_Group
             owner->nodes_index[faceIndex_loc[i]];
          nodes[i] = owner->nodes[faceIndex_loc[i]];
                                                   //18.02.2009. cf. changes in mapping & generation. WW
-         if((nodes[i]->boundary_type != '0')&&(nodes[i]->boundary_type != '1'))
-            nodes[i]->boundary_type = 'B';
+         if((nodes[i]->GetBoundaryType() != '0')&&(nodes[i]->GetBoundaryType() != '1'))
+            nodes[i]->SetBoundaryType('B');
       }
       // Face edges
       ne = owner->GetEdgesNumber();
@@ -180,7 +180,6 @@ namespace Mesh_Group
    CElem::CElem(size_t Index, CElem* m_ele_parent) :
    CCore(Index), normal_vector(NULL)
    {
-      int i;
       //  static int faceIndex_loc[10];
       //  static int edgeIndex_loc[10];
       gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
@@ -195,11 +194,11 @@ namespace Mesh_Group
       //----------------------------------------------------------------------
       // Initialize topological properties
       neighbors.resize(nfaces);
-      for(i=0; i<nfaces; i++)
+      for(size_t i=0; i<nfaces; i++)
          neighbors[i] = NULL;
       edges.resize(nedges);
       edges_orientation.resize(nedges);
-      for(i=0; i<nedges; i++)
+      for(size_t i=0; i<nedges; i++)
       {
          edges[i] = NULL;
          edges_orientation[i] = 1;
@@ -301,7 +300,7 @@ CElem::CElem(CElem const &elem) :
       double xx[3];
       double yy[3];
       double zz[3];
-      tranform_tensor = new Matrix(3,3);
+      tranform_tensor = new Math_Group::Matrix(3,3);
       if(geo_type==MshElemType::LINE)
       {
          // x"_vec
@@ -524,6 +523,7 @@ void CElem::Read(std::istream& is, int fileType)
 		break;
 	case 7: // GMSH 2008
 		size_t nb_tags;
+
 		is >> index >> et >> nb_tags >> idummy >> gmsh_patch_index;
 		patch_index = gmsh_patch_index;
 		for (size_t j = 2; j < nb_tags; j++) {
@@ -532,6 +532,7 @@ void CElem::Read(std::istream& is, int fileType)
 		switch (et) {
 		case 1:
 			geo_type = MshElemType::LINE;
+			patch_index = 0; // KR: can line elements have material ids?
 			nnodes = 2;
 			break;
 		case 2:
@@ -664,11 +665,11 @@ void CElem::Read(std::istream& is, int fileType)
 	//----------------------------------------------------------------------
 	// Initialize topological properties
 	neighbors.resize(nfaces);
-	for (int i = 0; i < nfaces; i++)
+	for (size_t i = 0; i < nfaces; i++)
 		neighbors[i] = NULL;
 	edges.resize(nedges);
 	edges_orientation.resize(nedges);
-	for (int i = 0; i < nedges; i++) {
+	for (size_t i = 0; i < nedges; i++) {
 		edges[i] = NULL;
 		edges_orientation[i] = 1;
 	}
@@ -678,11 +679,11 @@ void CElem::Read(std::istream& is, int fileType)
    {
       // Initialize topological properties
       neighbors.resize(nfaces);
-      for(int i=0; i<nfaces; i++)
+      for(size_t i=0; i<nfaces; i++)
          neighbors[i] = NULL;
       edges.resize(nedges);
       edges_orientation.resize(nedges);
-      for(int i=0; i<nedges; i++)
+      for(size_t i=0; i<nedges; i++)
       {
          edges[i] = NULL;
          edges_orientation[i] = 1;
@@ -769,7 +770,7 @@ void CElem::Read(std::istream& is, int fileType)
    void CElem::WriteNeighbors(std::ostream &os) const
    {
       os<<"Neighbors of "<<index<<std::endl;
-      for(int i=0; i<nfaces; i++)
+      for(size_t i=0; i<nfaces; i++)
          neighbors[i]->WriteAll(os);
       os<<"End neighbors of "<<index<<std::endl<<std::endl;;
    }
@@ -782,14 +783,13 @@ void CElem::Read(std::istream& is, int fileType)
    **************************************************************************/
    void CElem:: MarkingAll(bool makop)
    {
-      int i;
-      mark=makop;
+      this->mark=makop;
       int SizeV = nnodes;
       if(quadratic) SizeV = nnodesHQ;
-      for (i=0; i< SizeV;i++)
-         nodes[i]->mark = mark;
-      for (i=0; i< nedges;i++)
-         edges[i]->mark = mark;
+      for (int i=0; i< SizeV;i++)
+         nodes[i]->SetMark(makop);
+      for (size_t i=0; i< nedges;i++)
+         edges[i]->SetMark(makop);
    }
    /**************************************************************************
    MSHLib-Method:
@@ -797,7 +797,7 @@ void CElem::Read(std::istream& is, int fileType)
    Programing:
    06/2005 WW Implementation
    **************************************************************************/
-   void CElem::SetNodes(vec<CNode*>&  ele_nodes, bool ReSize)
+   void CElem::SetNodes(Math_Group::vec<CNode*>&  ele_nodes, bool ReSize)
    {
       int SizeV = nnodes;
       if(quadratic) SizeV = nnodesHQ;
@@ -1546,4 +1546,4 @@ void CElem::Read(std::istream& is, int fileType)
      return gravity_center;
    }
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib

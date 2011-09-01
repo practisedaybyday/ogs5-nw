@@ -17,10 +17,9 @@
 #include <map>
 #include <vector>
 #ifdef NEW_EQS
-namespace Mesh_Group {class CFEMesh;}
+namespace MeshLib {class CFEMesh;}
 //08.2007 WW
 class CPARDomain;
-using Mesh_Group::CFEMesh;
 #endif
 //#define OverLoadNEW_DELETE
 
@@ -302,7 +301,7 @@ namespace Math_Group
    class SparseTable
    {
       public:
-         SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm=false, StorageType stype = JDS);
+		 SparseTable(MeshLib::CFEMesh *a_mesh, bool quadratic, bool symm=false, StorageType stype = JDS);
          SparseTable(CPARDomain &m_dom, bool quadratic, bool symm=false);
          ~SparseTable();
          void Write(std::ostream &os=std::cout);

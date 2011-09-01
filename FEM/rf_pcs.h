@@ -14,6 +14,7 @@ Programing:
 
 // MSHLib
 #include "msh_lib.h"
+
 // PCSLib
 #include "ProcessInfo.h"
 #include "rf_num_new.h"
@@ -32,7 +33,7 @@ namespace FiniteElement
 }
 
 
-namespace Mesh_Group {class CFEMesh;}
+namespace MeshLib {class CFEMesh;}
 
 #ifdef NEW_EQS                                    //WW
 namespace Math_Group {class Linear_EQS;}
@@ -51,7 +52,7 @@ using FiniteElement::CFiniteElementStd;
 using FiniteElement::CFiniteElementVec;
 using FiniteElement::ElementMatrix;
 using FiniteElement::ElementValue;
-using Mesh_Group::CFEMesh;
+using MeshLib::CFEMesh;
 //---------------------------------------------------------------------------
 
 #define PCS_FILE_EXTENSION ".pcs"
@@ -563,7 +564,7 @@ class CRFProcess : public ProcessInfo
       void AssembleParabolicEquationRHSVector();  //OK
       // 15-EQS
                                                   //(vector<long>&); //OK
-      void AssembleParabolicEquationRHSVector(CNode*);
+	  void AssembleParabolicEquationRHSVector(MeshLib::CNode*);
 #endif
       double CalcIterationNODError(int method);   //OK
                                                   // Add bool forward = true. WW

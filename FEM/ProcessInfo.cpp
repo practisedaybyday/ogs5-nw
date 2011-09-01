@@ -46,7 +46,7 @@ PrimaryVariable ProcessInfo::getProcessPrimaryVariable () const
 }
 
 
-CRFProcess* ProcessInfo::getProcess ()
+CRFProcess* ProcessInfo::getProcess () const
 {
    return _pcs;
 }

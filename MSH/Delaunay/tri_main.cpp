@@ -6,7 +6,7 @@ static bool bStartTriangle_TRI(
 		std::vector<Cp_dtri> *TriList,		// [i] list of triangles
 		int				iUseConvexHul )	// [i] 1:YES,0:NO)
 {	
-	bool bRet, bRetCode = false;
+	bool bRetCode = false;
 	int iChPoints, i, j, k, opoints, npoints, nInPoints;
 	int *iBelongCount = NULL;
 	int *iBoxSorted = NULL;
@@ -117,7 +117,7 @@ static bool bStartTriangle_TRI(
 
 	// --- generate pseudo pointsÇî≠ê∂Ç∑ÇÈ ---
 	
-	bRet = bSetPseudoPoints_TRI( opoints, Pnt2List );
+	bSetPseudoPoints_TRI( opoints, Pnt2List );
 
 	// --- BOX-sort points ---
 	
@@ -127,7 +127,7 @@ static bool bStartTriangle_TRI(
 		goto PIX_EXIT;
 	}
 
-	bRet = bBoxSortPoint_TRI( opoints, Pnt2List, iBoxSorted );
+	bBoxSortPoint_TRI( opoints, Pnt2List, iBoxSorted );
 
 	// --- START!! constructing neighbour and triangle list. ---
 
@@ -168,7 +168,7 @@ static bool bStartTriangle_TRI(
 	// --- reconstruct triangle list ---
 
 	fprintf( stdout, "\rWriting %d Triangles....", (int)TriVector.size( ) );
-	bRet = bResetTriangleList_TRI( nInPoints, &PntTable, &TriVector, TriList );
+	bResetTriangleList_TRI( nInPoints, &PntTable, &TriVector, TriList );
 	fprintf( stdout, "Done.\n" );
 
 	// --- Done ---
@@ -196,7 +196,6 @@ PIX_EXIT:
 		int		iUseConvexHul )	// [i] 1:YES,0:NO
 {
 	bool bRet, bRetCode = false;
-	int nTri;
 	std::vector<Cp_dbl2> Pnt2List;	
 	std::vector<Cp_dbl3> Pnt3List;	
 	std::vector<Cp_dtri> TriList;	
@@ -208,7 +207,6 @@ PIX_EXIT:
 	// --- start triangulation ---
 	
 	bStartTriangle_TRI( &Pnt2List, &TriList, iUseConvexHul );
-	nTri = (int)TriList.size( );
 
 	// --- save triangles ---
 

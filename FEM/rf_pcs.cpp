@@ -67,6 +67,7 @@ Programing:
 #include "rf_fct.h"
 //#include "femlib.h"
 #include "rf_node.h"
+#include "rf_msp_new.h"
 
 /*-----------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------*/
@@ -106,7 +107,7 @@ REACT_BRNS *m_vec_BRNS;
 #include "LinearInterpolation.h"
 
 using namespace std;
-using namespace Mesh_Group;
+using namespace MeshLib;
 using namespace Math_Group;
 
 /*-------------------- ITPACKV    ---------------------------*/
@@ -163,8 +164,8 @@ bool pcs_created = false;
 
 namespace process{class CRFProcessDeformation;}
 using process::CRFProcessDeformation;
-using Mesh_Group::CNode;
-using Mesh_Group::CElem;
+using MeshLib::CNode;
+using MeshLib::CElem;
 using FiniteElement::ElementValue;
 using Math_Group::vec;
 
@@ -4913,7 +4914,7 @@ Programming:
 void CRFProcess::CalGPVelocitiesfromFluidMomentum()
 {
    long i;
-   Mesh_Group::CElem* elem = NULL;
+   MeshLib::CElem* elem = NULL;
    int i_ind[3];
 
    cout << "      CalGPVelocitiesfromFluidMomentum()" << endl;
@@ -7824,7 +7825,7 @@ void CRFProcess::Extropolation_GaussValue()
    long i = 0;
    int idx[3];
    // const long LowOrderNodes= m_msh->GetNodesNumber(false);
-   Mesh_Group::CElem* elem = NULL;
+   MeshLib::CElem* elem = NULL;
 
    //
    NS =m_msh->GetCoordinateFlag()/10;
@@ -7903,7 +7904,7 @@ void CRFProcess::Extropolation_MatValue()
    if (continuum_vector.size() == 2)
       continuum = 1;
 
-   Mesh_Group::CElem* elem = NULL;
+   MeshLib::CElem* elem = NULL;
    for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
    {
       elem = m_msh->ele_vector[i];
@@ -7986,8 +7987,8 @@ void CRFProcess::CalcFluxesForCoupling(void)
    int idxFLUX;
    int idxHead_GW;
    int idxHead_OLF;
-   Mesh_Group::CElem* m_ele_GW = NULL;
-   Mesh_Group::CElem* m_ele_OLF = NULL;
+   MeshLib::CElem* m_ele_GW = NULL;
+   MeshLib::CElem* m_ele_OLF = NULL;
 
    // Get processes
    CRFProcess* m_pcs_GW(PCSGet(GROUNDWATER_FLOW));
@@ -9371,7 +9372,7 @@ double CRFProcess::CalcELEFluxes(const GEOLIB::Polyline* const ply)
          if (m_edg->GetMark())
          {
             m_edg->SetNormalVector(m_ele->normal_vector, edg_normal_vector);
-            edg_length = m_edg->Length();
+            edg_length = m_edg->getLength();
             m_edg->GetEdgeVector(edge_vector);
          }
       }
@@ -11728,7 +11729,7 @@ void CRFProcess::UpdateTransientBC()
          }
       }
       std::vector<double> interpol_res;
-      MATHLIB::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, interpol_res);
+      MathLib::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, interpol_res);
 
       for (long k = start_i; k < end_i; k++)
       {
@@ -11872,7 +11873,7 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path, int timestep, int phase
    (void)path;                                    // unused
    (void)timestep;                                // unused
    long i;
-   Mesh_Group::CElem* elem = NULL;
+   MeshLib::CElem* elem = NULL;
    clock_t start,finish;
    double time;
 
@@ -12713,8 +12714,8 @@ void CRFProcess::CO2_H2O_NaCl_VLE_isochoric(Phase_Properties &vapor, Phase_Prope
 void CRFProcess::CalculateFluidDensitiesAndViscositiesAtNodes(CRFProcess *m_pcs)
 {
    CFEMesh* m_msh = fem_msh_vector[0];            //SB: ToDo hart gesetzt
-   Mesh_Group::CElem* m_ele = NULL;
-   Mesh_Group::CNode* m_node = NULL;
+   MeshLib::CElem* m_ele = NULL;
+   MeshLib::CNode* m_node = NULL;
    double saturation_gas, saturation_liquid;
    double Molweight_CO2, Molweight_H2O, Molweight_NaCl;
    double Density_gas, Density_liquid, Density_pureCO2, Viscosity_liquid, Viscosity_gas;
@@ -12990,8 +12991,8 @@ void CRFProcess::CalculateFluidDensitiesAndViscositiesAtNodes(CRFProcess *m_pcs)
 void CRFProcess::Phase_Transition_CO2(CRFProcess *m_pcs, int Step)
 {
    CFEMesh* m_msh = fem_msh_vector[0];            //SB: ToDo hart gesetzt
-   Mesh_Group::CElem* m_ele = NULL;
-   Mesh_Group::CNode* m_node = NULL;
+   MeshLib::CElem* m_ele = NULL;
+   MeshLib::CNode* m_node = NULL;
    double saturation_gas, saturation_liquid;
    double Molweight_CO2, Molweight_H2O, Molweight_NaCl;
                                                   // ,Density_liquid_old, Density_purewater, Density_pureCO2; unused

@@ -10,8 +10,8 @@
 #include <string>
 #include <limits>
 
-/** Types of physical processes supported by OpenGeoSys
- * if you change this enum, make sure you apply the changes to
+/** \brief Types of physical processes supported by OpenGeoSys.
+ * If you change this enum, make sure you apply the changes to
  * the functions convertPorcessType(), convertProcessTypeToString(),
  *  isFlowProcess() and isDeformationProcess()
  */
@@ -50,35 +50,35 @@ enum ProcessType
 };
 
 /**
- * convert the given string into the appropriate enum value
+ * \brief Convert the given string into the appropriate enum value.
  * @param pcs_type_string string describing a process type
  * @return enum value describing process type
  */
 ProcessType convertProcessType ( const std::string& pcs_type_string );
 
 /**
- * convert the given enum value into the appropriate string
+ * \brief Convert the given enum value into the appropriate string.
  * @param pcs_type process type described by the enum ProcessType
  * @return string describing the process type
  */
 std::string convertProcessTypeToString ( ProcessType pcs_type );
 
 /**
- * checks if the given pcs_type variable corresponds to a flow type of the enum ProcessType
+ * \brief Checks if the given pcs_type variable corresponds to a flow type of the enum ProcessType.
  * @param pcs_type value of enum ProcessType
  * @return true if pcs_type describes a flow process, else false
  */
 bool isFlowProcess (ProcessType pcs_type);
 
 /**
- * checks if the given pcs_type variable corresponds to a deformation type of the enum ProcessType
+ * \brief Checks if the given pcs_type variable corresponds to a deformation type of the enum ProcessType.
  * @param pcs_type value of enum ProcessType
  * @return true if pcs_type describes a deformation process, else false
  */
 bool isDeformationProcess (ProcessType pcs_type);
 
 /**
- * \enum contains all values for primary variables actually handled by OGS
+ * \brief Contains all values for primary variables actually handled by OGS.
  */
 enum PrimaryVariable
 {
@@ -126,7 +126,7 @@ enum PrimaryVariable
 };
 
 /**
- * Converts the given string into the appropriate enum value.
+ * \brief Converts the given string into the appropriate enum value.
  * @param pcs_pv_string string describing the primary variable
  * @return enum value describing the primary variable of the process
  */
@@ -134,7 +134,7 @@ enum PrimaryVariable
 PrimaryVariable convertPrimaryVariable ( const std::string& pcs_pv_string );
 
 /**
- * Converts the given enum value into the appropriate string.
+ * \brief Converts the given enum value into the appropriate string.
  * @param pcs_pv primary variable described by the enum ProcessType
  * @return string describing the process type
  */
@@ -166,18 +166,19 @@ namespace FiniteElement
       // Sort of Neumann BC //WW
    };
 
-   /**
-    * Converts the given string into the appropriate enum value.
-    * @param pcs_pv_string string describing the primary variable
-    * @return enum value describing the primary variable of the process
-    */
-   DistributionType convertDisType(const std::string& dis_type_string);
+/**
+ * \brief Converts the given string into the appropriate enum value.
+ * @param pcs_pv_string string describing the primary variable
+ * @return enum value describing the primary variable of the process
+ */
+DistributionType convertDisType(const std::string& dis_type_string);
 
-   /**
-    * Converts the given enum value into the appropriate string.
-    * @param pcs_pv primary variable described by the enum ProcessType
-    * @return string describing the process type
-    */
-   std::string convertDisTypeToString(DistributionType dis_type);
-}                                                 // end namespace FiniteElement
+/**
+ * \brief Converts the given enum value into the appropriate string.
+ * @param pcs_pv primary variable described by the enum ProcessType
+ * @return string describing the process type
+ */
+std::string convertDisTypeToString(DistributionType dis_type);
+} // end namespace FiniteElement
+
 #endif                                            //FEMENUMS_H

@@ -13,7 +13,8 @@ last modified
 // FEM
 #include "GeoInfo.h"                              // TF
 #include "ProcessInfo.h"                          // TF
-#include "DistributionInfo.h"                     // TF
+#include "DistributionInfo.h" // TF
+#include "LinearFunctionData.h" // TF
 
 class CNodeValue;
 class CGLPolyline;
@@ -24,10 +25,10 @@ namespace process                                 //WW
 {
    class CRFProcessDeformation;
 };
-using process::CRFProcessDeformation;             //WW
 
-namespace Mesh_Group
+namespace MeshLib
 {
+	class CFEMesh;
 	class MeshNodesAlongPolyline;
 }
 
@@ -49,9 +50,9 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       std::ios::pos_type Read(std::ifstream *in, const GEOLIB::GEOObjects & geo_obj, const std::string & unique_name);
       void Write(std::fstream*);
 
-	  void EdgeIntegration(Mesh_Group::CFEMesh *m_msh, const std::vector<long> & nodes_on_ply, std::vector<double> & node_value_vector) const;
-      void FaceIntegration(Mesh_Group::CFEMesh *m_msh, std::vector<long> & nodes_on_sfc, std::vector<double> & node_value_vector);
-      void DomainIntegration(Mesh_Group::CFEMesh *m_msh, const std::vector<long> & nodes_in_dom, std::vector<double> & node_value_vector) const;
+	  void EdgeIntegration(MeshLib::CFEMesh *m_msh, const std::vector<long> & nodes_on_ply, std::vector<double> & node_value_vector) const;
+      void FaceIntegration(MeshLib::CFEMesh *m_msh, std::vector<long> & nodes_on_sfc, std::vector<double> & node_value_vector);
+      void DomainIntegration(MeshLib::CFEMesh *m_msh, const std::vector<long> & nodes_in_dom, std::vector<double> & node_value_vector) const;
 
       void SetNOD2MSHNOD(std::vector<long> & nodes, std::vector<long> & conditional_nodes);
 
@@ -80,20 +81,11 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
 
       void SetNodeValues(const std::vector<long> & nodes, const std::vector<long> & nodes_cond,
     		  const std::vector<double> & node_values, int ShiftInNodeVector); // used only in sourcetermgroup
-      /**
-       * the only difference to the previous SetNodeValues() method is the change of vector type from long to size_t
-       * @param nodes
-       * @param nodes_cond
-       * @param node_values
-       * @param ShiftInNodeVector
-       */
-//      void SetNodeValues(const std::vector<size_t>& nodes, const std::vector<size_t>& nodes_cond,
-//         const std::vector<double>& node_values, int ShiftInNodeVector);
 
       void SetNOD();
 
                                                   //23.02.2009. WW
-      inline void DirectAssign(const long ShiftInNodeVector);
+      void DirectAssign(const long ShiftInNodeVector);
                                                   //03.2010. WW
       std::string DirectAssign_Precipitation(double current_time);
 
@@ -145,6 +137,8 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
 
       int getSubDomainIndex () const { return _sub_dom_idx; }
 
+	  std::string fname;
+
    private:                                       // TF, KR
       void ReadDistributionType(std::ifstream *st_file);
       void ReadGeoType(std::ifstream *st_file, const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name);
@@ -187,7 +181,6 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
       std::string nodes_file;
       int msh_node_number;
       std::string msh_type_name;
-      std::string fname;
       std::vector<int> PointsHaveDistribedBC;
       std::vector<double> DistribedBC;
       std::vector<double> node_value_vectorArea;
@@ -235,8 +228,8 @@ class CSourceTermGroup
       std::string pcs_name;
       std::string pcs_type_name;                  //OK
       std::string pcs_pv_name;                    //OK
-      Mesh_Group::CFEMesh* m_msh;
-      Mesh_Group::CFEMesh* m_msh_cond;
+      MeshLib::CFEMesh* m_msh;
+      MeshLib::CFEMesh* m_msh_cond;
       //WW    std::vector<CSourceTerm*>st_group_vector; //OK
       //WW double GetConditionalNODValue(int,CSourceTerm*); //OK
       //WW double GetRiverNODValue(int,CSourceTerm*, long msh_node); //MB

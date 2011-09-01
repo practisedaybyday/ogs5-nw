@@ -2565,6 +2565,7 @@ void CSparseMatrix::Write_BIN(ostream &os)
 
          }                                        // Namespace
 
+
          using Math_Group::vec;
          using Math_Group::SymMatrix;
 

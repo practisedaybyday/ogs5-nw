@@ -31,7 +31,7 @@ public:
 	static int writeSoilIDTable(const std::vector<std::string> &soilID, const std::string &filename);
 
 	/// Reads a GMS *.3dm file and converts it to an CFEMesh.
-	static Mesh_Group::CFEMesh* readGMS3DMMesh(std::string file_name);
+	static MeshLib::CFEMesh* readGMS3DMMesh(std::string file_name);
 
 private:
 	/**

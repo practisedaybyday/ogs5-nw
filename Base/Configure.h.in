@@ -28,13 +28,14 @@
 #cmakedefine OGS_PYTHON
 #cmakedefine MSVC
 #cmakedefine OGS_USE_OPENSG
+#cmakedefine OGS_USE_QT
 
 #cmakedefine OGS_USE_VRPN
 
 #cmakedefine HAVE_64_BIT
 
 #cmakedefine HAVE_PTHREADS
-#cmakedefine PROCESSOR_COUNT "${PROCESSOR_COUNT}"
+#cmakedefine PROCESSOR_COUNT ${PROCESSOR_COUNT}
 
 #cmakedefine Shapelib_FOUND
 #cmakedefine libgeotiff_FOUND

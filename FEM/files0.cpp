@@ -85,6 +85,7 @@ void CURWrite();                                  //OK
 
 // FileIO
 #include "OGSIOVer4.h"
+#include "readNonBlankLineFromInputStream.h"
 //#include "FEMIO.h"
 
 using namespace std;
@@ -166,7 +167,7 @@ int ReadData ( char *dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
    ICRead(dateiname, geo_obj, unique_name);
    OUTRead(dateiname, geo_obj, unique_name);
    TIMRead(dateiname);
-  
+
    MSPRead(dateiname);
    MMPRead(dateiname);
    RCRead(dateiname);
@@ -435,7 +436,7 @@ void CURWrite()
  **************************************************************************/
 string GetLineFromFile1(ifstream *ein)
 {
-
+//	return readNonBlankLineFromInputStream(*ein);
    string line, zeile = "";
    int fertig=0, i=0, j=0;
    char zeile1[MAX_ZEILEN];
@@ -597,9 +598,8 @@ int FilePrintDouble ( FILE *f, double x )
    03/1994     MSR        Erste Version
                                                                           */
 /**************************************************************************/
-int StrReadDouble ( double *x, char *s, FILE *f, FctTestDouble func, int *pos )
+int StrReadDouble ( double *x, char *s, FILE *f, int *pos )
 {
-   int test;
    *x = 0.0;
    if (sscanf(s," %lf%n",x,pos)<=0)
    {
@@ -609,8 +609,6 @@ int StrReadDouble ( double *x, char *s, FILE *f, FctTestDouble func, int *pos )
    }
    else
    {
-      test = func(x,f);
-
       /* CT: Protokolformat geaendert */
       if ((fabs(*x)<100000.)&&(fabs(*x)>=0.1))
       {
@@ -621,7 +619,7 @@ int StrReadDouble ( double *x, char *s, FILE *f, FctTestDouble func, int *pos )
          fprintf(f," %e ",*x);
       }
 
-      return test;
+      return 1;
    }
 }
 
@@ -784,22 +782,14 @@ int LineFeed ( FILE *f )
 }
 
 
-int TFDouble ( double *x, FILE *f )
-{
-   double dummy;
-   FILE fdummy;
-   dummy = *x;
-   fdummy = *f;
-   return 1;
-}
+//int TFDouble ( double *x, FILE *f )
+//{
+//   return 1;
+//}
 
 
 int TFString ( char *x, FILE *f )
 {
-   char dummy;
-   FILE fdummy;
-   dummy = *x;
-   fdummy = *f;
    return 1;
 }
 

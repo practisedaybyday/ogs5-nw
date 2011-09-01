@@ -11,7 +11,7 @@
 #include <vector>
 #include <limits>
 
-namespace MATHLIB {
+namespace MathLib {
 
 class LinearInterpolation {
 public:
@@ -26,6 +26,6 @@ private:
 	const std::vector<double>& _values_at_supp_pnts;
 };
 
-} // end namespace MATHLIB
+} // end namespace MathLib
 
 #endif /* LINEARINTERPOLATION_H_ */

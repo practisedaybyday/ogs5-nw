@@ -48,7 +48,7 @@ using Math_Group::SparseTable;
 #endif
 
 //------------------------------------------------------------------------
-namespace Mesh_Group
+namespace MeshLib
 {
 
 #ifndef NON_GEO
@@ -87,7 +87,8 @@ namespace Mesh_Group
          CFEMesh(GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
 
          /// Copy-Constructor.
-         CFEMesh(const CFEMesh* mesh);
+		 /// Note that this is not a real copy-constructor. It copies only nodes and elements and calls ConstructGrid() afterwards.
+         CFEMesh(CFEMesh const& mesh);
 
          /// Destructor
          ~CFEMesh();
@@ -142,13 +143,12 @@ namespace Mesh_Group
          bool Read(std::ifstream*);
 
          friend class FileIO::OGSMeshIO;
-         void Write(std::fstream*, bool append_stop=false) const;
          std::ios::pos_type GMSReadTIN(std::ifstream*);
          //
          void ConstructGrid();
          void GenerateHighOrderNodes();
          //
-         void RenumberNodesForGlobalAssembly();
+//         void RenumberNodesForGlobalAssembly();
          // For number of nodes
          int GetMaxElementDim() const
          {
@@ -200,19 +200,6 @@ namespace Mesh_Group
           * */
 
          /**
-          * \callgraph
-          * \callergraph
-          * \brief depreciated method
-          * @param ply CGLPolyline
-          * @param msh_nod_vector
-          */
-         void GetNODOnPLY(CGLPolyline* ply, std::vector<long>& msh_nod_vector) const;
-         /**
-          * \brief depreciated method
-          */
-         void GetNodesOnArc(CGLPolyline*m_ply, std::vector<long>&msh_nod_vector);
-
-         /**
           * \brief depreciated method - uses old surface class
           */
          void GetNODOnPLY_XY(CGLPolyline*m_ply, std::vector<long>&msh_nod_vector);
@@ -224,21 +211,11 @@ namespace Mesh_Group
          /**
           * \brief depreciated method
           */
-         void CreateLineELEFromPLY(CGLPolyline*, int, CFEMesh*);
-         /**
-          * \brief depreciated method
-          */
          void CreateLineELEFromPLY(CGLPolyline*);
          /**
           * \brief depreciated method
           */
          void CreateLayerPolylines(CGLPolyline*); //OK
-         /**
-          * \brief depreciated method
-          */
-                                                  //OK
-         void GetELEOnPLY(CGLPolyline *, std::vector<long>&) const;
-
 
          // GEO-SFC
          /**
@@ -248,7 +225,7 @@ namespace Mesh_Group
          /**
           * \brief depreciated method
           */
-         void GetNODOnSFC_PLY(Surface*, std::vector<long>&);
+         void GetNODOnSFC_PLY(Surface const*, std::vector<long>&) const;
          /**
           * \brief depreciated method
           */
@@ -272,18 +249,6 @@ namespace Mesh_Group
           * \brief depreciated method
           */
          void CreateQuadELEFromSFC(Surface*);
-         /**
-          * \brief depreciated method
-          */
-                                                  //TK
-         void CopySelectedNodes(std::vector<long>&msh_nod_vector);
-
-         // REMOVE CANDIDATE
-         /**
-          * \brief depreciated method
-          */
-         void CreateLineELEFromSFC();             //OK
-         // GEO-VOL
 
          /**
           * GetNODOnPNT searchs the nearest node to the geometric point
@@ -322,17 +287,6 @@ namespace Mesh_Group
           * */
          void GetNODOnPLY(const GEOLIB::Polyline* const ply, std::vector<long>& msh_nod_vector);
 
-         //	/**
-         //	 * \brief get nodes near the circle arc described by the middle point m, the arc start point a
-         //	 * and the arc end point b.
-         //	 *
-         //	 * If the angle is to small (a == b) then all mesh nodes within the annulus defined by
-         //	 * the inner radius \f$ \|(a-m) \| - min\_edge\_length \f$ and the outer radius
-         //	 * \f$\|(a-m) \| + min\_edge\_length \f$ are pushed in msh_nod_vector
-         //	 */
-         //	void GetNodesOnArc(const GEOLIB::Point* a, const GEOLIB::Point* m,
-         //			const GEOLIB::Point* b, std::vector<size_t>& msh_nod_vector) const;
-
          /**
           * \brief gives the indices of CElement elements, which have an edge
           * in common with the polyline.
@@ -368,53 +322,45 @@ namespace Mesh_Group
 #ifndef NON_GEO
          // TRI->PRIS
          void CreatePriELEFromTri(int, double);
-         // TRI->LINE
-         void CreateLineELEFromTri();             //OK
-         void CreateLineELEFromTriELE();          //OK
+
 #endif
 
          // Coordinate system
          int GetCoordinateFlag() const { return coordinate_system; };
          void FillTransformMatrix();
 
+	void RenumberNodesForGlobalAssembly();
          /**
           * returns the vector storing pointers to all nodes (class CNode) of the mesh
           * @return
           */
-         const std::vector<Mesh_Group::CNode*>& getNodeVector () const { return nod_vector; }
+         const std::vector<MeshLib::CNode*>& getNodeVector () const { return nod_vector; }
 
          // All nodes - should be private!!!
-         std::vector<Mesh_Group::CNode*> nod_vector;
+         std::vector<MeshLib::CNode*> nod_vector;
 
          // All edges
-         std::vector<Mesh_Group::CEdge*> edge_vector;
+         std::vector<MeshLib::CEdge*> edge_vector;
          // All surface faces
-         std::vector<Mesh_Group::CElem*> face_vector;
+         std::vector<MeshLib::CElem*> face_vector;
          // All surface normal
          std::vector<double*> face_normal;        //YD
 
-         const std::vector<Mesh_Group::CElem*>& getElementVector () const { return ele_vector; }
+         const std::vector<MeshLib::CElem*>& getElementVector () const { return ele_vector; }
          /**
           * all elements stored in this vector
           * */
-         std::vector<Mesh_Group::CElem*> ele_vector;
+         std::vector<MeshLib::CElem*> ele_vector;
          // Nodes in usage
          // To record eqs_index->global node index
          std::vector<long> Eqs2Global_NodeIndex;
 
                                                   //OK
          void PrismRefine(int Layer, int subdivision);
-         //	void EdgeLengthMinMax(); //OK
-         // TF the following two methods are not used, at least in the standard config
-         //	void SetMATGroupFromVOLLayer(CGLVolume*); //OK
-         //	void SetMATGroupsFromVOLLayer(); //OK
-                                                  //OK
+
          void ConnectedNodes(bool quadratic) const;
                                                   //WW
          void ConnectedElements2Node(bool quadratic = false);
-         //	void CreateSurfaceTINfromTri(Surface*); //OK
-         //	void CreateLayerSurfaceTINsfromPris(Surface*); //OK
-         // MAT
                                                   //OK
          std::vector<std::string> mat_names_vector;
          void DefineMobileNodes(CRFProcess*);     //OK
@@ -456,7 +402,7 @@ namespace Mesh_Group
 #endif
          void MarkInterface_mHM_Hydro_3D();       //07.06.2010. WW
          void mHM2NeumannBC();
-         /// Comptute \int {f} a dA on top surface.
+         /// Comptute int {f} a dA on top surface.
          void TopSurfaceIntegration();
 
       private:
@@ -469,7 +415,7 @@ namespace Mesh_Group
           * identifier for geometry
           */
          std::string* _geo_name;
-         std::vector<Mesh_Group::MeshNodesAlongPolyline> _mesh_nodes_along_polylines;
+         std::vector<MeshLib::MeshNodesAlongPolyline> _mesh_nodes_along_polylines;
 
          MshElemType::type _ele_type;
          size_t _n_msh_layer;                     //OK
@@ -482,6 +428,10 @@ namespace Mesh_Group
          size_t _msh_n_prisms;
          size_t _msh_n_pyras;
 
+         /**
+          * method initializes the minimal edge length that is used in search algorithms
+          */
+         void computeMinEdgeLength();
          double _min_edge_length;                 //TK
 
          // Process friends
@@ -528,15 +478,10 @@ namespace Mesh_Group
 #endif
 
 #ifndef NON_GEO                             //WW
-         // LINE
-         void CheckMarkedEdgesOnPolyLine(CGLPolyline*m_polyline,
-            std::vector<long> &ele_vector_at_ply);//NW
          void CreateLineElementsFromMarkedEdges(CFEMesh*m_msh_ply,
             std::vector<long> &ele_vector_at_ply);//NW
-                                                  //NW
-         bool HasSameCoordinatesNode(CNode* nod, long &node_no);
 #endif                                      // #ifndef NON_GEO //WW
    };
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib
 #endif

@@ -9,24 +9,24 @@
 #define GAUSSALGORITHM_H_
 
 #include <cstddef>
-#include "Matrix.h"
+#include "../Matrix.h"
 #include "DenseDirectLinearSolver.h"
 #include "TriangularSolve.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 /**
  * This is a class for the direct solution of (dense) systems of
- * linear equations, \$fA x = b\f$. During the construction of
+ * linear equations, \f$A x = b\f$. During the construction of
  * the object the matrix A is factorized in matrices L and U using
  * Gauss-Elimination with partial pivoting (rows are exchanged). In doing so
  * the entries of A change! The solution for a specific
  * right hand side is computed by the method execute().
  */
-class GaussAlgorithm : public MATHLIB::DenseDirectLinearSolver {
+class GaussAlgorithm : public MathLib::DenseDirectLinearSolver {
 public:
 	/**
-	 * A direct solver for the (dense) linear system \$fA x = b\f$.
+	 * A direct solver for the (dense) linear system \f$A x = b\f$.
 	 * @param A at the beginning the matrix A, at the end of the construction
 	 * of the object the matrix contains the factor L (without the diagonal)
 	 * in the strictly lower part and the factor U in the upper part.
@@ -41,7 +41,7 @@ public:
 	~GaussAlgorithm();
 
 	/**
-	 * Method solves the linear system \$fA x = b\f$ (based on the LU factorization)
+	 * Method solves the linear system \f$A x = b\f$ (based on the LU factorization)
 	 * using forward solve and backward solve
 	 * @param b at the beginning the right hand side, at the end the solution
 	 */
@@ -73,6 +73,6 @@ private:
 	int* _pivot_idx;
 };
 
-} // end namespace MATHLIB
+} // end namespace MathLib
 
 #endif /* GAUSSALGORITHM_H_ */

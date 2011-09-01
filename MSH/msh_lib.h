@@ -10,16 +10,12 @@ last modified
 
 #include "msh_mesh.h"
 
-using Mesh_Group::CFEMesh;
-using Mesh_Group::CElem;
-using Mesh_Group::CNode;
-
-extern std::vector<Mesh_Group::CFEMesh*> fem_msh_vector;
-extern CFEMesh* FEMGet(const std::string &msh_name);
+extern std::vector<MeshLib::CFEMesh*> fem_msh_vector;
+extern MeshLib::CFEMesh* FEMGet(const std::string &msh_name);
                                                   //OK
-extern void MSHCreateNOD2ELERelations(Mesh_Group::CFEMesh*);
+extern void MSHCreateNOD2ELERelations(MeshLib::CFEMesh*);
 
-extern CFEMesh* FEMRead(const std::string& , GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
+extern MeshLib::CFEMesh* FEMRead(const std::string& , GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
 
 extern void MSHWrite(std::string);
 extern void CompleteMesh();                       //WW
@@ -31,7 +27,7 @@ extern void FEMDeleteAll();
 //KR extern double msh_z_min,msh_z_max;                //OK
 //KR extern double msh_x_mid,msh_y_mid,msh_z_mid;      //OK
 // Might be removed
-void Read_RFI(std::istream& msh_file, CFEMesh* m_msh);
+void Read_RFI(std::istream& msh_file, MeshLib::CFEMesh* m_msh);
 extern void MSHAssignMATGroup2Elements(std::string);
 extern void MSHCreateQuadsFromPLY(CGLPolyline*,int);
 //OK411 extern void MSHCreatePrismsFromTriangles();
@@ -54,7 +50,7 @@ extern void DATWriteRFIFile(const char *file_name);
 extern void DATWriteParticleFile(int);            // PCH
 extern void MSHWriteVOL2TEC(std::string);         //OK
 //KR extern bool msh_file_binary; //OK
-extern void GMSH2MSH(const char*,CFEMesh*);
+extern void GMSH2MSH(const char*, MeshLib::CFEMesh*);
                                                   //TK
 extern void Mesh_Single_Surface(std::string surface_name, const char *file_name_const_char);
 //extern void Select_Nodes_Elements_by_TINFile(const char *file_name_const_char);
@@ -63,10 +59,10 @@ extern void GMSH2TIN(const char *file_name_const_char);
 extern void MSHLayerWriteTecplot();               //OK
 
                                                   //OK
-extern CFEMesh* MSHGet(const std::string &mat_type_name);
+extern MeshLib::CFEMesh* MSHGet(const std::string &mat_type_name);
                                                   //OK
-extern CFEMesh* MSHGet(const std::string &pcs_type_name,const std::string &mat_type_name);
-extern CFEMesh* MSHGetGEO(std::string);           //OK
+extern MeshLib::CFEMesh* MSHGet(const std::string &pcs_type_name,const std::string &mat_type_name);
+extern MeshLib::CFEMesh* MSHGetGEO(std::string);           //OK
 extern int MSHSetMaxMMPGroups();                  //OK
 extern bool MSHTestMATGroups();                   //OK
 #ifdef RFW_FRACTURE
@@ -84,7 +80,7 @@ extern long* MSHGetNodesClose(long*,CGLPolyline*);//OK411
 
 extern long* GetPointsIn(Surface*,long*);         //OK411
                                                   //OK411
-extern void GEOGetNodesInMaterialDomain(CFEMesh*, const int, std::vector<long>&, bool);
+extern void GEOGetNodesInMaterialDomain(MeshLib::CFEMesh*, const int, std::vector<long>&, bool);
 extern void SetRFIPointsClose(CGLLine*);          //OK411
                                                   //OK411
 extern void MSHGetNodesClose(std::vector<long>&,CGLPoint*);

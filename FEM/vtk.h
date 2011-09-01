@@ -7,12 +7,10 @@
 
 class COutput;
 
-namespace Mesh_Group
+namespace MeshLib
 {
    class CFEMesh;
 }
-
-using namespace Mesh_Group;
 
 typedef struct
 {
@@ -56,12 +54,12 @@ class CVTK
       unsigned char GetVTKCellType(const MshElemType::type ele_type);
       bool WriteDataArrayHeader(std::fstream &fin, VTK_XML_DATA_TYPE data_type, const std::string &str_name, int nr_components, const std::string &str_format, long offset=-1);
       bool WriteDataArrayFooter(std::fstream &fin);
-      inline bool WriteMeshNodes(std::fstream &fin, bool output_data, CFEMesh *m_msh, long &offset);
-      inline bool WriteMeshElementConnectivity(std::fstream &fin, bool output_data, CFEMesh *m_msh, long &offset, long &sum_ele_components);
-      inline bool WriteMeshElementOffset(std::fstream &fin, bool output_data, CFEMesh *m_msh, long &offset);
-      inline bool WriteMeshElementType(std::fstream &fin, bool output_data, CFEMesh *m_msh, long &offset);
-      inline bool WriteNodalValue(std::fstream &fin, bool output_data, COutput *out, CFEMesh *m_msh, long &offset);
-      inline bool WriteElementValue(std::fstream &fin, bool output_data, COutput *out, CFEMesh *m_msh, long &offset);
+      inline bool WriteMeshNodes(std::fstream &fin, bool output_data, MeshLib::CFEMesh *m_msh, long &offset);
+      inline bool WriteMeshElementConnectivity(std::fstream &fin, bool output_data, MeshLib::CFEMesh *m_msh, long &offset, long &sum_ele_components);
+      inline bool WriteMeshElementOffset(std::fstream &fin, bool output_data, MeshLib::CFEMesh *m_msh, long &offset);
+      inline bool WriteMeshElementType(std::fstream &fin, bool output_data, MeshLib::CFEMesh *m_msh, long &offset);
+      inline bool WriteNodalValue(std::fstream &fin, bool output_data, COutput *out, MeshLib::CFEMesh *m_msh, long &offset);
+      inline bool WriteElementValue(std::fstream &fin, bool output_data, COutput *out, MeshLib::CFEMesh *m_msh, long &offset);
 
       //util
       template <typename T> void write_value_binary(std::fstream &fin, T val);

@@ -120,7 +120,7 @@ int main ( int argc, char *argv[] )
   if( argc > 1 && modelRoot == "" ) // non-interactive mode and no model given
     exit(0);                         // e.g. just wanted the build info
 
-  char *dateiname = NULL;
+  char *dateiname(NULL);
 #ifdef SUPERCOMPUTER
 // *********************************************************************
 // buffered output ... important for performance on cray
@@ -183,7 +183,7 @@ int main ( int argc, char *argv[] )
     }
   else                               // non-interactive mode
     {
-      if ( argc == 2 )               // a model root was supplied 
+      if ( argc == 2 )               // a model root was supplied
 	{
 	  dateiname = (char *) Malloc((int)strlen(argv[1])+1);
 	  dateiname = strcpy(dateiname,argv[1]);

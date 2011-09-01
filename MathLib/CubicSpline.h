@@ -11,7 +11,7 @@
 #include <vector>
 #include <cstddef>
 
-namespace MATHLIB {
+namespace MathLib {
 
 class CubicSpline {
 public:
@@ -29,6 +29,6 @@ private:
 	void computeCoefficents();
 };
 
-} // end namespace MATHLIB
+} // end namespace MathLib
 
 #endif /* CUBICSPLINE_H_ */

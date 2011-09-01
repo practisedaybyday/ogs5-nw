@@ -451,8 +451,8 @@ int FctCurves(char *data, int found, FILE * f)
             anz = 0l;
             while (StrTestDouble(&data[p += pos]))
             {
-               ok = (StrReadDouble(&d1, &data[p], f, TFDouble, &pos) && ok);
-               ok = (StrReadDouble(&d2, &data[p += pos], f, TFDouble, &pos) && ok);
+               ok = (StrReadDouble(&d1, &data[p], f, &pos) && ok);
+               ok = (StrReadDouble(&d2, &data[p += pos], f, &pos) && ok);
                LineFeed(f);
                anz++;
                stuetz = (StuetzStellen *) Realloc(stuetz, (anz * sizeof(StuetzStellen)));
@@ -532,7 +532,7 @@ int FctReadHeterogeneousFields(char *name_file, CMediumProperties *m_mat_mp)
    int EleStart = -1;
    int EleEnd = -1;
    long NumberOfElementsPerLayer = -1;
-   Mesh_Group::CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    //------------------------------------------------------------------------
    DisplayMsgLn("Input file Heterogeneous Fields ");
    //------------------------------------------------------------------------
@@ -855,7 +855,7 @@ double GetAverageHetVal(long EleIndex, CFEMesh *m_msh, long no_values, double **
    double NumberOfValues;
    //  double InvNumberOfValues;
    CGLPoint *m_point = NULL;
-   Mesh_Group::CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    j = 0;                                         //only for 1 value
    //-----------------------------------------------------------------------
    //Get element data
@@ -926,7 +926,7 @@ long GetNearestHetVal(long EleIndex, CFEMesh *m_msh, long no_values, double ** i
    double ex, ey, ez, dist, dist1;                //WW, dist2;
    double x, y, z;
    double* center = NULL;
-   Mesh_Group::CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    //----------------------------------------------------------------------
    // MB ToDo
    //EleIndex = -1;

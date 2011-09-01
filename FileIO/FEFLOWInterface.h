@@ -45,12 +45,12 @@ public:
   /// Constructor
   FEFLOWInterface(GEOLIB::GEOObjects* geoObjects) : _geoObjects(geoObjects) {};
 
-  Mesh_Group::CFEMesh* readFEFLOWModelFile(const std::string &filename);
+  MeshLib::CFEMesh* readFEFLOWModelFile(const std::string &filename);
 
 private:
   //void readSuperMesh(std::ifstream &feflow_file, FEFLOW_FEM_CLASS &fem_class, FEFLOW_FEM_DIM &fem_dim, std::vector<GEOLIB::Point*> *points, std::vector<GEOLIB::Polyline*> *lines);
-  void readSuperMesh(std::ifstream &feflow_file, FEFLOW_FEM_CLASS &fem_class, FEFLOW_FEM_DIM &fem_dim, std::vector<GEOLIB::Point*> **points, std::vector<GEOLIB::Polyline*> **lines);
-  void setMaterialID(Mesh_Group::CFEMesh * m_msh, std::vector<GEOLIB::Polyline*> *lines);
+  void readSuperMesh(std::ifstream &feflow_file, FEFLOW_FEM_CLASS &fem_class, std::vector<GEOLIB::Point*> **points, std::vector<GEOLIB::Polyline*> **lines);
+  void setMaterialID(MeshLib::CFEMesh * m_msh, std::vector<GEOLIB::Polyline*> *lines);
 
   GEOLIB::GEOObjects* _geoObjects;
 

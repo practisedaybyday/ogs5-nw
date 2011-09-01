@@ -22,7 +22,7 @@ namespace FiniteElement
 }
 
 
-namespace Mesh_Group
+namespace MeshLib
 {
 
    //------------------------------------------------------------------------
@@ -92,5 +92,5 @@ namespace Mesh_Group
 
    };
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib
 #endif

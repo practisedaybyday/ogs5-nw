@@ -20,7 +20,7 @@
 #define M_PI_2 1.57079632679489661923
 #endif
 
-namespace Mesh_Group {
+namespace MeshLib {
 
 MeshQualityEquiAngleSkew::MeshQualityEquiAngleSkew(CFEMesh const * const mesh) :
 	MeshQualityChecker(mesh), M_PI_THIRD (M_PI/3.0), TWICE_M_PI (2*M_PI)
@@ -32,7 +32,7 @@ MeshQualityEquiAngleSkew::~MeshQualityEquiAngleSkew()
 void MeshQualityEquiAngleSkew::check ()
 {
 	// get all elements of mesh
-	const std::vector<Mesh_Group::CElem*>& msh_elem(_mesh->getElementVector());
+	const std::vector<MeshLib::CElem*>& msh_elem(_mesh->getElementVector());
 
 	for (size_t k(0); k < msh_elem.size(); k++) {
 		switch (msh_elem[k]->GetElementType()) {
@@ -177,19 +177,19 @@ void MeshQualityEquiAngleSkew::getMinMaxAngleFromQuad (
 		double const * const n2, double const * const n3,
 		double &min_angle, double &max_angle) const
 {
-	double angle (MATHLIB::getAngle (n3, n0, n1));
+	double angle (MathLib::getAngle (n3, n0, n1));
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 
-	angle = MATHLIB::getAngle (n0, n1, n2);
+	angle = MathLib::getAngle (n0, n1, n2);
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 
-	angle = MATHLIB::getAngle (n1, n2, n3);
+	angle = MathLib::getAngle (n1, n2, n3);
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 
-	angle = MATHLIB::getAngle (n2, n3, n0);
+	angle = MathLib::getAngle (n2, n3, n0);
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 }
@@ -198,17 +198,17 @@ void MeshQualityEquiAngleSkew::getMinMaxAngleFromTriangle(double const * const n
 		double const * const n1, double const * const n2, double &min_angle,
 		double &max_angle) const
 {
-	double angle (MATHLIB::getAngle (n2, n0, n1));
+	double angle (MathLib::getAngle (n2, n0, n1));
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 
-	angle = MATHLIB::getAngle (n0, n1, n2);
+	angle = MathLib::getAngle (n0, n1, n2);
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 
-	angle = MATHLIB::getAngle (n1, n2, n0);
+	angle = MathLib::getAngle (n1, n2, n0);
 	if (angle < min_angle) min_angle = angle;
 	if (angle > max_angle) max_angle = angle;
 }
 
-} // end namespace Mesh_Group
+} // end namespace MeshLib

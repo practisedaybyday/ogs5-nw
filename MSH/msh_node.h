@@ -15,17 +15,12 @@ last modified
 // MSHLib
 #include "msh_core.h"
 
-namespace Mesh_Group
+namespace MeshLib
 {
-   using Math_Group::SymMatrix;
-   using Math_Group::vec;
-   using Math_Group::Vec;
-
    // Class definition
    class CNode: public CCore
    {
       public:
-         double epsilon;
          int free_surface;                        //MB ??? mobile
 
          std::vector<long> connected_nodes;       //OK
@@ -36,9 +31,8 @@ namespace Mesh_Group
          std::vector<long> connected_planes;      // PCH
 
          //GUI control variables
-         int selected;
          double patch_area;                       //OK4310
-         int crossroad;                           // PCH: Make theses privates can be done later on.
+         bool crossroad;                           //KR changed to bool // PCH: Make theses privates can be done later on.
 	     std::vector <long> connected_faces;		// BG, 09/2010, necessary for coupling to Eclipse, index of faces where the node is part of it
 	     std::vector <double> distance_to_connected_faces; // BG, 09/2010,  necessary for coupling to Eclipse
 
@@ -56,7 +50,6 @@ namespace Mesh_Group
          double X() const { return coordinate[0]; };
          double Y() const { return coordinate[1]; };
          double Z() const { return coordinate[2]; };
-	     double* GetCoordinates() {return coordinate;} // BG, 09/2010, necesary for coupling to Eclipse
 
          void Coordinates(double *xyz) const
          {
@@ -65,7 +58,10 @@ namespace Mesh_Group
          }
 
          // 04/2010 TF
-         /** returns the coordinates of the mesh node */
+         /**
+          * returns the coordinates of the mesh node
+          * @return the coordinates of this mesh node
+          */
          const double* getData () const { return coordinate; }
 
          // Set functions
@@ -84,16 +80,15 @@ namespace Mesh_Group
          std::vector<size_t> const & getConnectedElementIDs () const { return _connected_elements; }
          std::vector<size_t> & getConnectedElementIDs () { return _connected_elements; }
 
-      private:
+   private:
     	  std::vector<size_t> _connected_elements;
-//    	  std::vector<long> connected_elements;
          // Members
          long eqs_index;                          // renumber
          double coordinate[3];
 
-         friend class CElem;
+         //friend class CElem;
 
    };
 
-}                                                 // namespace Mesh_Group
+}                                                 // namespace MeshLib
 #endif

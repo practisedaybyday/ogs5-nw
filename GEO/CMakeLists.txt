@@ -1,6 +1,9 @@
 # Source files
 set( SOURCES
+	AxisAlignedBoundingBox.cpp
+	BruteForceClosestPair.cpp
 	Color.cpp
+#	DivideAndConquerClosestPair.cpp
 	geo_dom.cpp
 	geo_lib.cpp
 	geo_lin.cpp
@@ -9,25 +12,27 @@ set( SOURCES
 	geo_pnt.cpp
 	geo_sfc.cpp
 	geo_vol.cpp
+	GEOObjects.cpp
+	GeoType.cpp
 	Point.cpp
+	PointVec.cpp
+	Polygon.cpp
 	Polyline.cpp
 	PolylineSmoother.cpp
-	Polygon.cpp
 	ProjectData.cpp
 	SimplePolygonTree.cpp
-	Surface.cpp
-	AxisAlignedBoundingBox.cpp
 	Station.cpp
-	GEOObjects.cpp
-	PointVec.cpp
-	GeoType.cpp
-	BruteForceClosestPair.cpp
-	DivideAndConquerClosestPair.cpp
+	Surface.cpp
+	Triangle.cpp
 )
 
 # Header files
 set( HEADERS
+	AxisAlignedBoundingBox.h
+	BruteForceClosestPair.h
+	ClosestPair.h
 	Color.h
+#	DivideAndConquerClosestPair.h
 	geo_dom.h
 	geo_lib.h
 	geo_lin.h
@@ -36,30 +41,26 @@ set( HEADERS
 	geo_pnt.h
 	geo_sfc.h	
 	geo_vol.h
-	AxisAlignedBoundingBox.h
-	TemplatePoint.h
+	GeoObject.h
+	GEOObjects.h
+	GeoType.h
 	Point.h
+	PointVec.h
 	PointWithID.h
+	Polygon.h
 	Polyline.h
 	PolylineSmoother.h
-	Polygon.h
-	ProjectData.h
-	SimplePolygonTree.h
-	Triangle.h
-	Surface.h
-	PointVec.h
-	TemplateVec.h
 	PolylineVec.h
-	SurfaceVec.h
+	ProjectData.h
 	PropertyBounds.h
-	Station.h	
-	GEOObjects.h
-	GeoObject.h
-	GeoType.h
 	QuadTree.h
-	ClosestPair.h
-	BruteForceClosestPair.h
-	DivideAndConquerClosestPair.h
+	SimplePolygonTree.h
+	Station.h
+	Surface.h
+	SurfaceVec.h
+	TemplatePoint.h
+	TemplateVec.h
+	Triangle.h
 )
 
 # Create the library
@@ -82,6 +83,7 @@ include_directories(
 target_link_libraries (
 	GEO
 	Base
+	FEM
 	MathLib
 )
 

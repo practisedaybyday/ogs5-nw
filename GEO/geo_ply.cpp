@@ -7,7 +7,7 @@
 #include "../FEM/files0.h"
 #include "geo_lib.h"
 
-// MATHLIB
+// MathLib
 #include "CubicSpline.h"
 
 using namespace std;
@@ -695,13 +695,13 @@ void InterpolationAlongPolyline(CGLPolyline *plyL, std::vector<double>& bcNodalV
 	}
 
 	// Spline interpolation
-	std::cout << "MATHLIB::CubicSpline input data: " << std::endl;
+	std::cout << "MathLib::CubicSpline input data: " << std::endl;
 	for (size_t k(0); k<ss0.size(); k++) {
 		std::cout << "\t" << ss0[k] << " " << bVal[k] << std::endl;
 	}
-	std::cout << "end MATHLIB::CubicSpline input data" << std::endl;
+	std::cout << "end MathLib::CubicSpline input data" << std::endl;
 
-	MATHLIB::CubicSpline *csp = new MATHLIB::CubicSpline(ss0, bVal);
+	MathLib::CubicSpline *csp = new MathLib::CubicSpline(ss0, bVal);
 
 	// Interpolate
 	size_t number_of_nodes(bcNodalValue.size()), i;
@@ -709,11 +709,11 @@ void InterpolationAlongPolyline(CGLPolyline *plyL, std::vector<double>& bcNodalV
 		bcNodalValue[plyL->getOrderedPoints()[i]] = csp->interpolation(
 				plyL->getSBuffer()[i]);
 	}
-	std::cout << "MATHLIB::CubicSpline results: " << std::endl;
+	std::cout << "MathLib::CubicSpline results: " << std::endl;
 	for (size_t k(0); k<plyL->getSBuffer().size(); k++) {
 		std::cout << "\t" << plyL->getOrderedPoints()[k] << " " << plyL->getSBuffer()[k] << " " << bcNodalValue[plyL->getOrderedPoints()[k]] << " (bcNodalValue[" << plyL->getOrderedPoints()[k] << "])" << std::endl;
 	}
-	std::cout << "end MATHLIB::CubicSpline results" << std::endl;
+	std::cout << "end MathLib::CubicSpline results" << std::endl;
 
 
 	// Release the memory

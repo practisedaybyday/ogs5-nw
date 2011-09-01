@@ -34,7 +34,7 @@ extern int ReadRFIFile(std::string g_strFileNameBase);
 #include "rf_pcs.h"
 #include "gs_project.h"
 
-std::vector<Mesh_Group::CFEMesh*>fem_msh_vector;
+std::vector<MeshLib::CFEMesh*>fem_msh_vector;
 
 #define FEM_FILE_EXTENSION ".msh"
 
@@ -177,8 +177,8 @@ void Read_RFI(std::istream& msh_file,CFEMesh* m_msh)
    double x,y,z;
    std::string strbuffer;
 
-   CNode* node = NULL;
-   CElem* elem = NULL;
+   MeshLib::CNode* node = NULL;
+   MeshLib::CElem* elem = NULL;
    //----------------------------------------------------------------------
    while (End)
    {
@@ -189,12 +189,12 @@ void Read_RFI(std::istream& msh_file,CFEMesh* m_msh)
       for(i=0;i<NumNodes;i++)
       {
          msh_file>>id>>x>>y>>z>>std::ws;
-         node = new CNode(id,x,y,z);
+         node = new MeshLib::CNode(id,x,y,z);
          m_msh->nod_vector.push_back(node);
       }
       for(i=0;i<NumElements; i++)
       {
-         elem = new CElem(i);
+         elem = new MeshLib::CElem(i);
          elem->Read(msh_file, 1);
          m_msh->ele_vector.push_back(elem);
       }
@@ -228,31 +228,17 @@ last modification:
 **************************************************************************/
 void MSHWrite(std::string file_base_name)
 {
-   CFEMesh* m_fem_msh = NULL;
-   std::string sub_line;
-   std::string line_string;
-   //----------------------------------------------------------------------
    // File handling
    std::string fem_msh_file_name = file_base_name + FEM_FILE_EXTENSION;
-   std::fstream fem_msh_file;
-   std::string msh_file_test_name = file_base_name + "_test" + FEM_FILE_EXTENSION;
-   std::fstream msh_file_test;
-   for(size_t i=0; i<fem_msh_vector.size(); i++)
-   {
-      m_fem_msh = fem_msh_vector[i];
-   }
-   fem_msh_file.open(fem_msh_file_name.c_str(),std::ios::trunc|std::ios::out);
+   std::ofstream fem_msh_file (fem_msh_file_name.c_str(),std::ios::trunc|std::ios::out);
+
    if(!fem_msh_file.good()) return;
    fem_msh_file.setf(std::ios::scientific,std::ios::floatfield);
    fem_msh_file.precision(12);
 
-   //----------------------------------------------------------------------
-   for(size_t i=0; i<fem_msh_vector.size(); i++)
-   {
-      m_fem_msh = fem_msh_vector[i];
-      m_fem_msh->Write(&fem_msh_file);
+   for(size_t i=0; i<fem_msh_vector.size(); i++) {
+      FileIO::OGSMeshIO::write (fem_msh_vector[i], fem_msh_file);
    }
-   //----------------------------------------------------------------------
    fem_msh_file << "#STOP";
    fem_msh_file.close();
 }
@@ -265,7 +251,7 @@ Programing:
 03/2005 OK Implementation
 last modification:
 **************************************************************************/
-CFEMesh* FEMGet(const std::string &msh_name)
+MeshLib::CFEMesh* FEMGet(const std::string &msh_name)
 {
    size_t no_msh = fem_msh_vector.size();
    // If there is only one msh file available, use it for all process. WW
@@ -352,7 +338,7 @@ void MSHWriteVOL2TEC(std::string m_msh_name)
    int vol_number = -1;
    Surface* m_sfc = NULL;
    //--------------------------------------------------------------------
-   CFEMesh* m_msh (FEMGet(m_msh_name));
+   MeshLib::CFEMesh* m_msh (FEMGet(m_msh_name));
    if(!m_msh)
       return;
    long no_nodes = (long)m_msh->nod_vector.size();
@@ -393,7 +379,7 @@ void MSHWriteVOL2TEC(std::string m_msh_name)
       vol_file << "VARIABLES = X,Y,Z,VOL" << std::endl;
       //--------------------------------------------------------------------
       long no_mat_elements = 0;
-      CElem* m_ele = NULL;
+      MeshLib::CElem* m_ele = NULL;
       vec<long>node_indeces(6);
       for(i=jb;i<je;i++)
       {
@@ -479,7 +465,7 @@ void MSHWriteTecplot()
    long no_elements;
    std::string delimiter(", ");
    long i;
-   CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    vec<long> node_indeces(8);
    //----------------------------------------------------------------------
    // File handling
@@ -489,7 +475,7 @@ void MSHWriteTecplot()
    if (m_gsp)
       file_path = m_gsp->path + "MSH";
    //----------------------------------------------------------------------
-   CFEMesh* m_msh = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    for (int j = 0; j < (int) fem_msh_vector.size(); j++)
    {
       m_msh = fem_msh_vector[j];
@@ -660,7 +646,7 @@ void MSHLayerWriteTecplot()
    //WW long no_nodes;
    long no_elements;
    std::string delimiter(", ");
-   CElem* m_ele = NULL;
+   MeshLib::CElem* m_ele = NULL;
    vec<long> node_indeces(8);
    std::string no_layer_str;
    char no_layer_char[3];
@@ -672,7 +658,7 @@ void MSHLayerWriteTecplot()
    if (m_gsp)
       file_path = m_gsp->path;
    //----------------------------------------------------------------------
-   CFEMesh* m_msh = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    for (int j = 0; j < (int) fem_msh_vector.size(); j++)
    {
       m_msh = fem_msh_vector[j];
@@ -830,9 +816,9 @@ MSHLib-Method:
 12/2005 OK Implementation
 07/2007 OK PCS
 **************************************************************************/
-CFEMesh* MSHGet(const std::string &geo_name)
+MeshLib::CFEMesh* MSHGet(const std::string &geo_name)
 {
-   CFEMesh* m_msh = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    for(int i=0;i<(int)fem_msh_vector.size();i++)
    {
       m_msh = fem_msh_vector[i];
@@ -855,9 +841,9 @@ Task:
 Programing:
 12/2005 OK Implementation
 **************************************************************************/
-CFEMesh* MSHGet(const std::string &pcs_type_name,const std::string &geo_name)
+MeshLib::CFEMesh* MSHGet(const std::string &pcs_type_name,const std::string &geo_name)
 {
-   CFEMesh* m_msh = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    for(int i=0;i<(int)fem_msh_vector.size();i++)
    {
       m_msh = fem_msh_vector[i];
@@ -875,14 +861,14 @@ CFEMesh* MSHGet(const std::string &pcs_type_name,const std::string &geo_name)
 PCSLib-Method:
 12/2005 OK Implementation
 **************************************************************************/
-CFEMesh* MSHGetGEO(std::string geo_name)
+MeshLib::CFEMesh* MSHGetGEO(std::string geo_name)
 {
    int no_msh = (int)fem_msh_vector.size();
    // If there is only one msh file available, use it for all process. WW
-   if(no_msh==1)
+   if (no_msh==1)
       return fem_msh_vector[0];                   //WW
    //----------------------------------------------------------------------
-   CFEMesh* m_msh = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    for(int i=0;i<no_msh;i++)
    {
       m_msh = fem_msh_vector[i];
@@ -900,8 +886,8 @@ CFEMesh* MSHGetGEO(std::string geo_name)
  Aufgabe:
    Get the nodes shared by 2 elements
  Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   E: const CElem* elem1 and elem2  :  element pointers
-   R: vec<CNode*> nodes  :  a vector containing pointers to the matching (i.e. common) nodes
+   E: const MeshLib::CElem* elem1 and elem2  :  element pointers
+   R: vec<MeshLib::CNode*> nodes  :  a vector containing pointers to the matching (i.e. common) nodes
  Ergebnis:
    Returns the value true if elements are actually neighbors(i.e. have nodes in common),
    otherwise returns false
@@ -909,11 +895,11 @@ CFEMesh* MSHGetGEO(std::string geo_name)
 05/2005 RFW Implementierung
 05/2006 RFW �nderung
 ***************************************************************************************/
-bool MSHGetCommonNodes(CElem* elem1, CElem* elem2, vector<CNode*>& nodes)
+bool MSHGetCommonNodes(MeshLib::CElem* elem1, MeshLib::CElem* elem2, vector<MeshLib::CNode*>& nodes)
 {
    nodes.clear();
    bool neighbor = false;
-   vec<CNode*> nodes1, nodes2;
+   vec<MeshLib::CNode*> nodes1, nodes2;
    int numnodes1, numnodes2;
    if(elem1!=NULL && elem2!=NULL)                 //RFW 19/05/2005
    {
@@ -961,10 +947,10 @@ void MSHSetFractureElements(void)
    std::cout << "Location 0 MSHSetFractureElements\n";
    //** TEST *************
    int group, frac_exists=0;
-   CElem *elem = NULL;
+   MeshLib::CElem *elem = NULL;
    CGLPolyline *frac_top = NULL, *frac_bot = NULL;
    CMediumProperties *m_mmp = NULL;
-   CFEMesh* m_msh = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    group = -1;                                    //WW
    vector<long> bound_elements;
    vector<double> node_x, node_y;
@@ -1187,8 +1173,8 @@ void MSHSetFractureElements(void)
 ***************************************************************************/
 void MSHResetFractureElements(void)
 {
-   CElem *elem = NULL;
-   CFEMesh* m_msh = NULL;
+   MeshLib::CElem *elem = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    m_msh = fem_msh_vector[0];                     //this isn't great
 
                                                   //loop 3, all elements
@@ -1216,9 +1202,9 @@ Programming:
 **************************************************************************/
 long MSHWhatElemIsPointIn(double x, double y, long index)
 {
-   CElem* elem = NULL;                            //PointElementNow
+   MeshLib::CElem* elem = NULL;                            //PointElementNow
    vec<CElem*> neighbors(10);
-   CFEMesh* m_msh = NULL;
+   MeshLib::CFEMesh* m_msh = NULL;
    m_msh = fem_msh_vector[0];                     // Something must be done later on here.
    //need a pointer for node
    bool inside = false, in_domain = false;
@@ -1429,7 +1415,7 @@ bool CompleteMesh(std::string pcs_name)
    08/2005     MB
                                                                           */
 /**************************************************************************/
-long MSHGetNextNode (long startnode, CFEMesh* m_msh)
+long MSHGetNextNode (long startnode, MeshLib::CFEMesh* m_msh)
 {
    size_t NumberOfNodes (m_msh->nod_vector.size());
    long NumberOfNodesPerLayer = NumberOfNodes / (m_msh->getNumberOfMeshLayers () + 1);
@@ -1456,7 +1442,7 @@ long MSHGetNextNode (long startnode, CFEMesh* m_msh)
    08/2005     MB msh
                                                                           */
 /**************************************************************************/
-void MSHSelectFreeSurfaceNodes (CFEMesh* m_msh)
+void MSHSelectFreeSurfaceNodes (MeshLib::CFEMesh* m_msh)
 {
    // Number of nodes per node layer
 	size_t NumberOfNodesPerLayer = m_msh->nod_vector.size()
@@ -1603,7 +1589,7 @@ Programming:
 09/2002   MB   First Version
 08/2005   MB   m_msh
 **************************************************************************/
-long* MSHGetNodesInColumn(long nextnode, int anz_zeilen, CFEMesh* m_msh)
+long* MSHGetNodesInColumn(long nextnode, int anz_zeilen, MeshLib::CFEMesh* m_msh)
 {
    int i;
    long startnode;
@@ -1643,7 +1629,6 @@ void MSHMoveNODUcFlow (CRFProcess*m_pcs)
 {
    long nextnode = -1;
    long startnode;
-   int index, index2;
    long node;
    int anz_zeilen = 0;
    int i;
@@ -1661,8 +1646,7 @@ void MSHMoveNODUcFlow (CRFProcess*m_pcs)
    for (node = 0; node < NumberOfNodesPerLayer; node++)
    {
 
-      index = m_pcs->m_msh->nod_vector[node]->free_surface;
-      if (index == 1)
+      if (m_pcs->m_msh->nod_vector[node]->free_surface == 1)
       {
          /* Z�hlen der Zeilen (-> anz_zeilen) */
          anz_zeilen = 0;
@@ -1674,9 +1658,7 @@ void MSHMoveNODUcFlow (CRFProcess*m_pcs)
             nextnode = MSHGetNextNode (startnode, m_pcs->m_msh);
 
             /* Test2: Geh�rt der n�chste Knoten zu unterer Reihe ==> Abbruch */
-            index2 = m_pcs->m_msh->nod_vector[nextnode]->free_surface;
-
-            if (index2 == 2)
+            if (m_pcs->m_msh->nod_vector[nextnode]->free_surface == 2)
             {
                xxflag = 1;
             }
@@ -2127,12 +2109,11 @@ Task: Get element nodes in a material domain
 Programing:
 10/2004 WW Implementation
 **************************************************************************/
-//using Mesh_Group::CElem;
 void GEOGetNodesInMaterialDomain(CFEMesh* m_msh, const int MatIndex, std::vector<long>& Nodes, bool Order)
 {
    int i, nn;
    long e, j, Size;
-   CElem* elem = NULL;
+   MeshLib::CElem* elem = NULL;
    bool exist;
    nn =0;
    Size = 0;

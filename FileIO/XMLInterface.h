@@ -30,7 +30,7 @@ class XMLInterface
 public:
 	/**
 	 * Constructor
-	 * \param geoObjects An GEOObject that into which data will be read or from which data will be written.
+	 * \param project Project data.
 	 * \param schemaFile An XML schema file (*.xsd) that defines the structure of a valid data file.
 	 */
 	XMLInterface(ProjectData* project, const std::string &schemaFile);
@@ -45,7 +45,7 @@ public:
 	void setSchema(const std::string &schemaName);
 
 	/// Reads an xml-file containing a GeoSys project.
-	/// Project files currently cover only geo- and station data. This will be expanded in the future.
+	/// Project files currently cover only geo-, msh- and station-data. This will be expanded in the future.
 	int readProjectFile(const QString &fileName);
 
 	/// Reads an xml-file containing geometric object definitions into the GEOObjects used in the contructor
@@ -58,12 +58,12 @@ public:
 	int readFEMCondFile(std::vector<FEMCondition*> &conditions, const QString &fileName, const QString &geoName);
 
 	/// Writes a GeoSys project file containing all data that is currently loaded.
-	/// Project files currently cover only geo- and station data. This will be expanded in the future.
+	/// Project files currently cover only geo-, msh- and station-data. This will be expanded in the future.
 	int writeProjectFile(const QString &fileName) const;
 
 	/**
 	 * Writes geometric data from GEOObjects to an xml-file (using the QString version)
-	 * \param file The file into which the data will be written.
+	 * \param filename The file into which the data will be written.
 	 * \param gliName The name of the GEOOBjects that will be written into the file.
 	 */
 	void writeGLIFile(const std::string &filename, const std::string &gliName) const
@@ -73,7 +73,7 @@ public:
 
 	/**
 	 * Writes geometric data from GEOObjects to an xml-file
-	 * \param file The file into which the data will be written.
+	 * \param filename The file into which the data will be written.
 	 * \param gliName The name of the GEOOBjects that will be written into the file.
 	 */
 	void writeGLIFile(const QString &filename, const QString &gliName) const;
@@ -93,9 +93,6 @@ public:
 		return writeSTNFile (QString::fromStdString(fname), QString::fromStdString(stn_name));
 	}
 
-	/// Writes borehole-specific data to a station-xml-file.
-	void writeBoreholeData(QDomDocument &doc, QDomElement &boreholeTag, GEOLIB::StationBorehole* borehole) const;
-
 private:
 	/// Reads GEOLIB::Point-objects from an xml-file
 	void readPoints    ( const QDomNode &pointsRoot, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *pnt_names );
@@ -114,6 +111,9 @@ private:
 
 	/// Read the details of various FEM Conditions from an xml-file
 	void readConditions( const QDomNode &condRoot, std::vector<FEMCondition*> &conditions, const QString &geoName, FEMCondition::CondType type);
+
+	/// Writes borehole-specific data to a station-xml-file.
+	void writeBoreholeData(QDomDocument &doc, QDomElement &boreholeTag, GEOLIB::StationBorehole* borehole) const;
 
 	/// Checks if a hash for the given data file exists to skip the time-consuming validation part.
 	/// If a hash file exists _and_ the hash of the data file is the same as the content of the hash file the validation is skipped

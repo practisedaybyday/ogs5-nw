@@ -7,7 +7,7 @@
 
 #include "LinkedTriangle.h"
 
-namespace MATHLIB {
+namespace MathLib {
 
 LinkedTriangle::LinkedTriangle(std::vector<GEOLIB::Point*> const &pnt_vec,
 		size_t pnt_a, size_t pnt_b, size_t pnt_c, LinkedTriangle* tri_a,
@@ -30,9 +30,9 @@ void LinkedTriangle::setNeighborTriangle(size_t idx, LinkedTriangle* tri)
 
 void LinkedTriangle::setNeighborTriangleByPointIdx (size_t idx, LinkedTriangle* tri)
 {
-	if (idx == m_pnt_ids[0]) setNeighborTriangle (0, tri);
+	if (idx == _pnt_ids[0]) setNeighborTriangle (0, tri);
 	else {
-		if (idx == m_pnt_ids[1]) setNeighborTriangle (1, tri);
+		if (idx == _pnt_ids[1]) setNeighborTriangle (1, tri);
 		else setNeighborTriangle (2, tri);
 	}
 }
@@ -53,9 +53,9 @@ size_t LinkedTriangle::getIdxOfNeighborTriangle(LinkedTriangle* tri)
 
 size_t LinkedTriangle::getIdxOfPoint (size_t i) const
 {
-	if (m_pnt_ids[0] == i) return 0;
-	if (m_pnt_ids[1] == i) return 1;
-	if (m_pnt_ids[2] == i) return 2;
+	if (_pnt_ids[0] == i) return 0;
+	if (_pnt_ids[1] == i) return 1;
+	if (_pnt_ids[2] == i) return 2;
 	return 3;
 }
 
@@ -80,4 +80,4 @@ std::ostream& operator<< (std::ostream &os, const LinkedTriangle &tri)
 	return os;
 }
 
-} // end namespace MATHLIB
+} // end namespace MathLib

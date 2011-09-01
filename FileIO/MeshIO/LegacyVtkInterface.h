@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace Mesh_Group
+namespace MeshLib
 {
    class CFEMesh;
 }
@@ -22,7 +22,7 @@ class ProcessInfo;
 class LegacyVtkInterface
 {	
 public:
-	LegacyVtkInterface(Mesh_Group::CFEMesh* mesh,
+	LegacyVtkInterface(MeshLib::CFEMesh* mesh,
 		std::vector<std::string> pointArrayNames,
 		std::vector<std::string> cellArrayNames,
 		std::vector<std::string> materialPropertyArrayNames,
@@ -30,10 +30,10 @@ public:
 		ProcessInfo* processInfo);
 	virtual ~LegacyVtkInterface();
 	
-	void WriteDataVTK(int number, float simulation_time, std::string baseFilename) const;
+	void WriteDataVTK(int number, double simulation_time, std::string baseFilename) const;
 
 protected:
-	void WriteVTKHeader(std::fstream&, int, float) const;
+	void WriteVTKHeader(std::fstream&, int, double) const;
 	void WriteVTKPointData(std::fstream&) const;
 	void WriteVTKCellData(std::fstream&) const;
 	void WriteVTKDataArrays(std::fstream&) const;
@@ -42,7 +42,7 @@ protected:
 	// Copied from COutput
 	CRFProcess* GetPCS_ELE(const std::string &var_name) const;
 	
-	Mesh_Group::CFEMesh* _mesh;
+	MeshLib::CFEMesh* _mesh;
 	std::string _processType;
 	std::vector<std::string> _pointArrayNames;
 	std::vector<std::string> _cellArrayNames;
