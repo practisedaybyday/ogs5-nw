@@ -94,11 +94,11 @@ extern int StringReadLong ( long *x, char *s, int *pos );
 extern int StringReadStr ( char **x, char *s, int *pos );
 
 /* allgemeine Dummy-Testfunktionen */
-extern int TFInt ( int *x, FILE *f );
-extern int TFLong ( long *x, FILE *f );
-extern int TFFloat ( float *x, FILE *f );
+//extern int TFInt ( int *x, FILE *f );
+//extern int TFLong ( long *x, FILE *f );
+//extern int TFFloat ( float *x, FILE *f );
 extern int TFDouble ( double *x, FILE *f );
-extern int TFDoubleNew (char *s, FILE *f );
+//extern int TFDoubleNew (char *s, FILE *f );
 extern int TFString ( char *x, FILE *f );
 
 extern char *ReadString ( void );

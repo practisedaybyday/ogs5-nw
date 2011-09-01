@@ -1267,7 +1267,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
 
    int i=0, np;
    int nn=0,nep=0, nj=0, nk=0;
-   //WW int beginn=0, 
+   //WW int beginn=0,
    int p=0, found;
    int pH_flag=-1, pe_flag=-1, iheat;
    int pos,j;

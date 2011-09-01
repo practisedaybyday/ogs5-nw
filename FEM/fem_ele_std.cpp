@@ -1521,7 +1521,7 @@ namespace FiniteElement
       double val = 0.0;
       double expfactor = 0.0;
       double dens_arg[3];                         //08.05.2008 WW
-      double pert = sqrt(DBL_EPSILON);            //15.08.2011. WW 
+      double pert = sqrt(DBL_EPSILON);            //15.08.2011. WW
 
       bool diffusion = false;                     //08.05.2008 WW
 
@@ -1587,7 +1587,7 @@ namespace FiniteElement
          case 3:                                  //
             // Approximation of d dens_g/dp_g 16.08.2011. WW
             dens_arg[0] = PG2 + pert;
-            if(diffusion)     
+            if(diffusion)
               dens_arg[1] = TG;
 			/// d dens_g/dp_g:
             val = (1.0-Sw)*poro*(GasProp->Density(dens_arg) - rho_ga)/(pert*rhow);
@@ -3203,15 +3203,15 @@ namespace FiniteElement
             break;
 		 case V:
             if(phase == 0)
-			{			 
-	           PG = interpolate(NodalVal1);  
+			{
+	           PG = interpolate(NodalVal1);
 		       Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
 			   val = Sw;
 			}
 			else
-			  val = 1.-Sw; 	  
+			  val = 1.-Sw;
 			return val;
-            break;  
+            break;
 
       }
       return val;
@@ -3555,7 +3555,7 @@ namespace FiniteElement
       //WW int no_phases;
 
       //static long *element_nodes;
-      //WW double gp[3], 
+      //WW double gp[3],
       double v_rst[3], v_tot[3];
       //WW static double zeta;
       //static double *velovec, vg, v[2], vt[2], v_rs[2];
@@ -6204,7 +6204,7 @@ namespace FiniteElement
       long dm_shift = 0 , cshift = 0;             //WW 05.01.07
 
 	  bool H2_mono = false; // 15. 07.2011. WW
-      if(PcsType==V || PcsType==P|| PcsType==S)  
+      if(PcsType==V || PcsType==P|| PcsType==S)
          H2_mono = true;
 
       //WW 05.01.07
@@ -6237,7 +6237,7 @@ namespace FiniteElement
       //----------------------------------------------------------------------
       // Initialize.
       // if (pcs->Memory_Type==2) skip the these initialization
-      if(H2_mono)   
+      if(H2_mono)
          (*Mass2) = 0.0;
       else
          (*Mass) = 0.0;
@@ -6505,7 +6505,7 @@ namespace FiniteElement
       }
 
       //
-      if(H2_mono) 
+      if(H2_mono)
       {
          for(ii=0;ii<2;ii++)
          {
@@ -6520,7 +6520,7 @@ namespace FiniteElement
       }
       else
       {
-		 cshift += NodeShift[dm_shift];   
+		 cshift += NodeShift[dm_shift];
          for (i=0;i<nnodes;i++)
          {
             eqs_rhs[cshift + eqs_number[i]] += NodalVal[i];
@@ -6538,8 +6538,8 @@ namespace FiniteElement
     //------------------------------------------------------
     void  CFiniteElementStd::Add2GlolbalMatrixII(const int block_cols)
 	{
-        long dm_shift = 0, cshift = 0; 
-  
+        long dm_shift = 0, cshift = 0;
+
         if(pcs->dof>1)
            cshift = NodeShift[pcs->continuum];
         if(pcs->type/10==4)
@@ -6555,7 +6555,7 @@ namespace FiniteElement
          else
             A = pcs->eqs_new->A;
 #endif
-		 // For DOF>1: 
+		 // For DOF>1:
          if(PcsType==V || PcsType==P|| PcsType==S)
          {
             int  jj_sh;
@@ -6603,7 +6603,7 @@ namespace FiniteElement
                }
             }
          }
-         
+
 
 		 if(pcs->matrix_file)
 		 {
@@ -7098,10 +7098,10 @@ namespace FiniteElement
       double fac;
       int Residual = -1;
 
-	  shift_index = problem_dimension_dm + phase;  
+	  shift_index = problem_dimension_dm + phase;
 
       fac = 1.0 / dt;
-     
+
 	  if(dm_pcs->type != 41)
       //if(D_Flag != 41)
          Residual = 0;
@@ -7194,7 +7194,7 @@ namespace FiniteElement
          Assemble_strainCPL_Matrix(fac, phase);
 
 
-       
+
    }
    //**************************************************************************
    /*!
@@ -7205,7 +7205,7 @@ namespace FiniteElement
    //**************************************************************************
    void CFiniteElementStd::Assemble_strainCPL_Matrix(const double fac, const int phase)
    {
-	   int i, j; 
+	   int i, j;
 	   int shift_index;
 #if defined(NEW_EQS)
          CSparseMatrix *A = NULL;
@@ -7239,7 +7239,7 @@ namespace FiniteElement
 #endif
             }
          }
-      
+
    }
 
    /**************************************************************************
@@ -7430,7 +7430,7 @@ namespace FiniteElement
       if(PcsType==V)                              // 25.2.2007
       {
          for(i=0;i<nnodes;i++)
-		 {	 		  
+		 {
             NodalVal_p2[i] = pcs->GetNodeValue(nodes[i],idxp21);
             NodalVal0[i+nnodes] = pcs->GetNodeValue(nodes[i],idxp20);
             NodalVal1[i+nnodes] = pcs->GetNodeValue(nodes[i],idxp21);
@@ -7575,7 +7575,7 @@ namespace FiniteElement
             if(dm_pcs)
                Assemble_strainCPL();
 
-            if(pcs->m_num->nls_method == 1) // Newton-Raphson. 07.2011. WW 
+            if(pcs->m_num->nls_method == 1) // Newton-Raphson. 07.2011. WW
               ComputeAdditionalJacobi_Richards();
             break;
             //....................................................................
@@ -7598,21 +7598,21 @@ namespace FiniteElement
                Assemble_RHS_T_MPhaseFlow();
             if(dm_pcs)
 				Assemble_RHS_M();
-			if(pcs->m_num->nls_method == 1) // Newton-Raphson. 06.2011. WW 
+			if(pcs->m_num->nls_method == 1) // Newton-Raphson. 06.2011. WW
 			{
 		       ComputeAdditionalJacobi_H2();
-			   
+
 			   if(dm_pcs)
      		   {
                   (*StrainCoupling) = 0.0;
-			      CalcStrainCoupling(0); 
+			      CalcStrainCoupling(0);
 			      Assemble_strainCPL_Matrix(1.0, 0); //Phase 0
-				
+
 				  (*StrainCoupling) = 0.0;
-			      CalcStrainCoupling(1); 
+			      CalcStrainCoupling(1);
  			      Assemble_strainCPL_Matrix(1.0, 1); //Phase 1
-			   } 
-			   
+			   }
+
 			}
             break;
 
@@ -8770,15 +8770,18 @@ namespace FiniteElement
       int ndx_p_cap = pcs->GetNodeValueIndex("PRESSURE_CAP");
       //----------------------------------------------------------------------
 
-      double temp[20];
+//      double temp[20];
 
       for (i = 0; i < dof_n*nnodes; i++)
       {
-         temp[i] = NodalVal[i] = 0.0;
+//         temp[i] = NodalVal[i] = 0.0;
+         NodalVal[i] = 0.0;
          NodalVal1[i] = 0.0;
       }
       for (i = 0; i < nnodes; i++)
-         temp[i+dof_n] = NodalVal1[i+dof_n] = -pcs->GetNodeValue(nodes[i],ndx_p_cap);
+//        temp[i+dof_n] = NodalVal1[i+dof_n] = -pcs->GetNodeValue(nodes[i],ndx_p_cap);
+    	  NodalVal1[i+dof_n] = -pcs->GetNodeValue(nodes[i],ndx_p_cap);
+
 
       //======================================================================
       // Loop over Gauss points
@@ -8811,8 +8814,8 @@ namespace FiniteElement
          }
       }
 
-      for(i=0; i<2*nnodes; ++i)
-         temp[i]=NodalVal[i];
+//      for(i=0; i<2*nnodes; ++i)
+//         temp[i]=NodalVal[i];
 
       int ii_sh;
       long i_sh;
@@ -8853,7 +8856,7 @@ namespace FiniteElement
       for (i=nnodes;i<nnodesHQ;i++)
          nodes[i] = MeshElement->nodes_index[i];
 
-	  if(dm_pcs->type == 42 ) // Monolitihc scheme. 
+	  if(dm_pcs->type == 42 ) // Monolitihc scheme.
 	  {
         for (i=0;i<nnodesHQ;i++)
         {
@@ -9363,7 +9366,8 @@ namespace FiniteElement
       for(i=0;i<nnodes;i++)
          NodalVal[i] = 0.0;
 
-      double temp[8];
+      // TF fixed warning -Wunused-but-set-variable
+//      double temp[8];
 
       switch(PcsType)
       {
@@ -9445,8 +9449,9 @@ namespace FiniteElement
             //....................................................................
       }
 
-      for(i=0;i<nnodes;i++)
-         temp[i]=NodalVal[i];
+      // TF fixed warning -Wunused-but-set-variable
+//      for(i=0;i<nnodes;i++)
+//         temp[i]=NodalVal[i];
 
       //----------------------------------------------------------------------
       // Store RHS contribution
