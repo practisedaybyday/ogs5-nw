@@ -101,6 +101,11 @@ include_directories(
 	../OGSProject
 )
 
+
+IF (PARALLEL_USE_MPI)
+	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+ENDIF (PARALLEL_USE_MPI)
+
 # Create the library
 add_library( MSH STATIC ${SOURCES} )
 

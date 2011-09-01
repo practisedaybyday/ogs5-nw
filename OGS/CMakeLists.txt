@@ -25,6 +25,11 @@ if (Shapelib_FOUND)
 endif (Shapelib_FOUND)
 
 
+IF (PARALLEL_USE_MPI)
+	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+ENDIF (PARALLEL_USE_MPI)
+
+
 # Create the library
 ADD_EXECUTABLE( ogs
 	${SOURCES}
