@@ -286,7 +286,8 @@ std::string readSurface(std::istream &in,
 		std::vector<Polygon*> &polygon_vec,
 		std::vector<Surface*> &sfc_vec, std::map<std::string,size_t>& sfc_names,
 		const std::vector<Polyline*> &ply_vec, const std::map<std::string, size_t>& ply_vec_names,
-		std::vector<Point*> &pnt_vec)
+		std::vector<Point*> &pnt_vec,
+		std::string const& path)
 {
 	std::string line;
 	Surface *sfc(NULL);
@@ -318,8 +319,10 @@ std::string readSurface(std::istream &in,
 		//....................................................................
 		if (line.find("$TIN") != std::string::npos) { // subkeyword found
 			in >> line; // read value (file name)
-//			line = path + line;
-			line = FilePath + line; //WW
+			line = path + line;
+//			line = FilePath + line; //WW - TF: sorry WW I do not like global variables in my code.
+			// What is the problem with my code? Please talk to me about problems in my code!
+			// If we want to disable global variables we should not introduce new dependencies!
 //			if (type == 1) std::cerr << "reading tin file " << line << " ... " << std::flush;
 			sfc = new Surface(pnt_vec);
 
@@ -408,7 +411,7 @@ std::string readSurfaces(std::istream &in,
 
 	while (!in.eof() && tag.find("#SURFACE") != std::string::npos) {
 		size_t n_polygons (polygon_vec.size());
-		tag = readSurface(in, polygon_vec, sfc_vec, sfc_names, ply_vec, ply_vec_names, pnt_vec);
+		tag = readSurface(in, polygon_vec, sfc_vec, sfc_names, ply_vec, ply_vec_names, pnt_vec, path);
 		if (n_polygons < polygon_vec.size()) {
 			// subdivide polygon in simple polygons
 			GEOLIB::Surface *sfc (GEOLIB::Surface::createSurface (*(dynamic_cast<GEOLIB::Polyline*>(polygon_vec[polygon_vec.size()-1]))));
@@ -497,7 +500,6 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo)
 	std::string tag;
 	while (tag.find("#POINTS") == std::string::npos && !in.eof()) {
 		getline (in, tag);
-       
 	}
 
 	// read names of points into vector of strings
