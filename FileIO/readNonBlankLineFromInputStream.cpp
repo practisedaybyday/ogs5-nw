@@ -9,14 +9,13 @@
 
 std::string readNonBlankLineFromInputStream(std::istream & in)
 {
-	if (in.eof()) return "";
-
 	std::string line;
+
 	bool not_finished (true);
 	while (not_finished) {
 		// read line
 		getline(in, line);
-		if (!in.fail()) {
+		if (!in.eof() && !in.fail() && !in.bad()) {
 			// skip initial space characters
 			std::string::size_type i (line.find_first_not_of(" ", 0));
 			// search comment symbol ;

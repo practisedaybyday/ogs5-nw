@@ -1420,7 +1420,7 @@ int REACT::ReadInputPhreeqc(long index, FILE *fpqc, FILE *Fphinp)
                            pH_flag=1;
                            p=0;
                            StrReadDouble(&dvalue, &str[p+=pos], f, &pos);
-                           StrReadStr(s, &str[p+=pos], f, /*TFString,*/ &pos);
+                           StrReadStr(s, &str[p+=pos], f, TFString, &pos);
                            FilePrintString(f, " # comp ");
                            FilePrintInt(f, rcml_number_of_master_species+1);
                            LineFeed(f);
