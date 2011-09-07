@@ -788,17 +788,10 @@ int LineFeed ( FILE *f )
 //}
 
 
-<<<<<<< HEAD
-//int TFString ( char *x, FILE *f )
-//{
-//   return 1;
-//}
-=======
 int TFString ( char *x, FILE *f )
 {
    return 1;
 }
->>>>>>> b9c779cbd689aa15afe8ecd278fb04051dcc4e51
 
 
 /**************************************************************************
