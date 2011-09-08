@@ -45,17 +45,15 @@ CHECK_CONFIG()
 
 # Additional options
 OPTION(OGS_PACKAGING "Creating installers / packages" OFF)
-IF (OGS_PACKAGING)
-	OPTION (OGS_PACKAGING_ZIP "Do you want to package as zip?" OFF)
-ENDIF (OGS_PACKAGING)
+OPTION_REQUIRES(OGS_PACKAGING_ZIP "Do you want to package as zip?" OGS_PACKAGING)
 OPTION(OGS_PYTHON "Enable python scripting interface" OFF)
 OPTION(OGS_BUILD_UTILITIES "Build additional utility programs?" OFF)
 OPTION(OGS_CMAKE_DEBUG "Show additional cmake debug information" OFF)
 OPTION(OGS_ONE_BIG_GTEST "Should all gtests be collected to one ctest" ON)
 OPTION(OGS_USE_NETCDF "NetCDF interface" OFF)
-OPTION(OGS_USE_OPENSG "VTK to OpenSG converter" OFF)
-OPTION(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OFF)
-OPTION(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OFF)
+OPTION_REQUIRES(OGS_USE_OPENSG "VTK to OpenSG converter" OGS_USE_QT)
+OPTION_REQUIRES(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OGS_USE_QT)
+OPTION_REQUIRES(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OGS_USE_QT)
 OPTION(OGS_BUILD_INFO "Should build information be generated" ON)
 OPTION(CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
 IF(GCC AND GPROF_PATH)
@@ -66,7 +64,7 @@ IF(GCC AND GPROF_PATH)
 ENDIF() # GCC AND GPROF_PATH
 OPTION (OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
 
-MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_USE_OPENSG OGS_USE_VRPN OGS_VRED_PLUGIN OGS_BUILD_INFO CMAKE_CMD_ARGS)
+MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_BUILD_INFO CMAKE_CMD_ARGS)
 
 ###########################################################################
 ### OGS version information. Adjust these if you release a new version. ###
