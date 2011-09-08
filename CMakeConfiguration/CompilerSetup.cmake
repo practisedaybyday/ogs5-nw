@@ -1,3 +1,6 @@
+INCLUDE(SetDefaultBuildType)
+SET_DEFAULT_BUILD_TYPE(Debug)
+
 IF (WIN32)
 	## For Visual Studio compiler
 	IF (MSVC)
