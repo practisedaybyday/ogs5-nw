@@ -1,10 +1,10 @@
 #### OGS-5 Project ####
 
 # Specify minimum CMake version
-cmake_minimum_required(VERSION 2.6) # or set to 2.4 for older systems (like JUGENE...)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 # Project name is set later
-PROJECT(tmp)
+PROJECT(OGS)
 
 ### CMake setup ###
 INCLUDE(CMakeConfiguration/CMakeSetup.cmake)
@@ -96,13 +96,11 @@ ENDIF(OGS_FEM)
 
 IF(OGS_FEM_SP)
 	MESSAGE (STATUS	 "Configuring for FEM command line with new sparse matrix" )	
-	SET( PRJ_EXT "-SP" )
 	ADD_DEFINITIONS(-DNEW_EQS)
 ENDIF(OGS_FEM_SP)
 
 IF(OGS_FEM_JFNK)
 	MESSAGE (STATUS	 "Configuring for Jacobi free Newton-Krylov method for H2M problem" ) 
-	SET( PRJ_EXT "-SP_JFNK" )
 	ADD_DEFINITIONS(-DNEW_EQS -DJFNK_H2M)
 ENDIF(OGS_FEM_JFNK)
 
@@ -115,7 +113,6 @@ IF(OGS_FEM_MPI)
 		ENDIF ()
 	ENDIF (UNIX)
 
-	SET( PRJ_EXT "-MPI" )
 	SET(PARALLEL_USE_MPI ON CACHE BOOL "Use Message Passing Interface")
 	MARK_AS_ADVANCED(PARALLEL_USE_MPI)
 	ADD_DEFINITIONS(-DUSE_MPI -DNEW_EQS)
@@ -123,7 +120,6 @@ ENDIF(OGS_FEM_MPI)
 
 IF(OGS_FEM_GEMS)
 	MESSAGE (STATUS	 "Configuring for FEM command line with GEMS" )
-	SET( PRJ_EXT "-GEMS" )
 	ADD_DEFINITIONS(-DNO_ERROR_CONTROL -DGEM_REACT -DGEMlib -DIPMGEMPLUGIN
 		-DNEW_EQS)
 	IF (MSVC)
@@ -138,7 +134,6 @@ ENDIF(OGS_FEM_GEMS)
 
 IF(OGS_FEM_PQC)
 	MESSAGE (STATUS	 "Configuring for FEM command line with PQC" )	
-	SET( PRJ_EXT "-PQC" )
 	MESSAGE (STATUS "Configuration: g++ and LIBPHREEQC")
 	ADD_DEFINITIONS(-DLIBPHREEQC -D_POSIX_SOURCE -DNO_ERROR_CONTROL -DNEW_EQS)
 	ADD_SUBDIRECTORY ( PQC )
@@ -149,7 +144,6 @@ ENDIF(OGS_FEM_PQC)
 
 IF(OGS_FEM_BRNS)
 	MESSAGE (STATUS	 "Configuring for FEM command line with BRNS" )
-	SET( PRJ_EXT "-BRNS" )
 	ADD_DEFINITIONS(-DNEW_EQS -DBRNS -DNO_ERROR_CONTROL -D_POSIX_SOURCE)
 	IF(PARALLEL_USE_MPI)
 			ADD_DEFINITIONS(-DUSE_MPI_BRNS)
@@ -158,7 +152,6 @@ ENDIF(OGS_FEM_BRNS)
 
 IF(OGS_FEM_LIS)
 	MESSAGE (STATUS	 "Configuring for FEM command line with LIS" )
-	SET( PRJ_EXT "-LIS" )
 	ADD_DEFINITIONS(-DNEW_EQS -DIPMGEMPLUGIN)
 	SET(PARALLEL_USE_OPENMP ON CACHE BOOL "Use Library of Iterative Solvers")
 	SET(LIS ON CACHE BOOL "Use Library of Iterative Solvers")
@@ -167,7 +160,6 @@ ENDIF(OGS_FEM_LIS)
 
 IF(OGS_FEM_MKL)
 	MESSAGE (STATUS	 "Configuring for FEM command line with MKL" )
-	SET( PRJ_EXT "-MKL" )
 	ADD_DEFINITIONS(-DNO_ERROR_CONTROL -DNEW_EQS)
 	SET(PARALLEL_USE_OPENMP ON CACHE BOOL "Use Library of Iterative Solvers")
 	SET(LIS ON CACHE BOOL "Use Library of Iterative Solvers")
@@ -177,7 +169,6 @@ ENDIF(OGS_FEM_MKL)
 
 IF(OGS_FEM_CHEMAPP)
 	MESSAGE (STATUS	 "Configuring for FEM command line with CHEMAPP" )
-	SET( PRJ_EXT "-CHEMAPP" )
 	ADD_DEFINITIONS(-DCHEMAPP)
 ENDIF(OGS_FEM_CHEMAPP)
 
@@ -206,13 +197,6 @@ IF(OGS_USE_QT)
 		ADD_DEFINITIONS (-D__STDC_FORMAT_MACROS)	# for OpenSG compiling
 	ENDIF()
 	 ADD_SUBDIRECTORY( Qt )
-ENDIF(OGS_USE_QT)
-
-# Project name
-IF(OGS_USE_QT)
-	PROJECT( OGS-${OGS_VERSION_MAJOR}-GUI )
-ELSE(OGS_USE_QT)
-	PROJECT( OGS-FEM-${OGS_VERSION_MAJOR}${PRJ_EXT} )
 ENDIF(OGS_USE_QT)
 
 # Create Configure.h
