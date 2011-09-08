@@ -6,6 +6,7 @@ LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Load addional modules
 INCLUDE(UseBackportedModules)
 INCLUDE(OptionRequires)
+INCLUDE(CppcheckTargets)
 
 # Adds useful macros and variables
 INCLUDE( CMakeConfiguration/Macros.cmake )

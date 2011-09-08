@@ -6,7 +6,6 @@
 #ifndef XMLINTERFACE_H
 #define XMLINTERFACE_H
 
-#include "Configure.h"
 #include "ProjectData.h"
 
 #include <QXmlStreamReader>

@@ -10,7 +10,6 @@ Programing:
            and parellelisation of them
 02/2008 PCH OpenMP parallelization for Lis matrix solver
 **************************************************************************/
-#include "Configure.h"
 #include "FEMEnums.h"
 #include "Output.h"
 

@@ -8,8 +8,6 @@ last modified
 #ifndef rf_st_new_INC
 #define rf_st_new_INC
 
-#include "Configure.h"
-
 // FEM
 #include "GeoInfo.h"                              // TF
 #include "ProcessInfo.h"                          // TF

@@ -7,8 +7,6 @@ Programing:
 #ifndef pcs_dm_INC
 #define pcs_dm_INC
 
-#include "Configure.h"
-
 #include <vector>
 
 #include "rf_pcs.h"

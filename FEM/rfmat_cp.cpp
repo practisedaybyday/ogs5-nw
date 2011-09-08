@@ -8,8 +8,6 @@
    10/2004   SB  First Implemented
                                                                           */
 /**************************************************************************/
-#include "Configure.h"
-
 #ifdef WINDOWS
 #pragma warning (disable:4786)                    /*Visual C++ 6.0*/
 #endif

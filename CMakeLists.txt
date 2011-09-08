@@ -1,7 +1,7 @@
 #### OGS-5 Project ####
 
 # Specify minimum CMake version
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6.2)
 
 # Project name is set later
 PROJECT(OGS)

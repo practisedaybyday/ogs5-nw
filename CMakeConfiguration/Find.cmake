@@ -164,6 +164,10 @@ IF(PARALLEL_USE_MPI)
 	ENDIF(UNIX)
 ENDIF(PARALLEL_USE_MPI)
 
+######################
+### Find tools     ###
+######################
+
 # Find dot tool from graphviz
 FIND_PROGRAM(DOT_TOOL_PATH dot DOC "Dot tool from graphviz")
 
@@ -172,3 +176,5 @@ FIND_PACKAGE(Doxygen)
 
 # Find gnu profiler gprof
 FIND_PROGRAM(GPROF_PATH gprof DOC "GNU profiler gprof")
+
+FIND_PACKAGE(cppcheck)

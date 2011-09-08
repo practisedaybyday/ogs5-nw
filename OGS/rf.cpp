@@ -17,6 +17,7 @@
 /**
  * the preprocessor directive RFW_FRACTURE is only useable until version 4.11 of OGS
  * */
+#include "Configure.h"
 
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL) || defined(USE_MPI_GEMS)
 #include <mpi.h>
