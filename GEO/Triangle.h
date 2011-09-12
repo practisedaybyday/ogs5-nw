@@ -75,6 +75,14 @@ public:
 		return containsPoint (pnt.getData());
 	}
 
+	/**
+	 * projects the triangle points to the x-y-plane and
+	 * checks if point pnt is contained into the triangle
+	 * @param pnt the point to test for
+	 * @return true, if the point is into the projected triangle
+	 */
+	bool containsPoint2D (const double *pnt) const;
+
 protected:
 	/** a vector of pointers to points */
 	const std::vector<Point*> &_pnts;
@@ -83,6 +91,8 @@ protected:
 	bool _initialized;
 	double _longest_edge;
 };
+
+void getPlaneCoefficients(Triangle const& tri, double c[3]);
 
 } // end namespace GEOLIB
 

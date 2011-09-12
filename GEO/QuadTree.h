@@ -245,18 +245,29 @@ public:
 		}
 	}
 
-private :
+	QuadTree<POINT> const * const getFather ()
+	{
+		return _father;
+	}
+
+	QuadTree<POINT> const * const getChild (Quadrant quadrant) const
+	{
+		return _childs[quadrant];
+	}
+
+
+private:
+	QuadTree<POINT> * getChild (Quadrant quadrant)
+	{
+		return _childs[quadrant];
+	}
+
 	bool isLeaf () const { return _is_leaf; }
 
 	bool isChild (QuadTree<POINT> const * const tree, Quadrant quadrant) const
 	{
 		if (_childs[quadrant] == tree) return true;
 		return false;
-	}
-
-	QuadTree<POINT> * getChild (Quadrant quadrant) const
-	{
-		return _childs[quadrant];
 	}
 
 	QuadTree<POINT>* getNorthNeighbor () const

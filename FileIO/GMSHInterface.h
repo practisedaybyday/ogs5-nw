@@ -61,10 +61,16 @@ public:
 			size_t number_of_point_per_quadtree_node = 10,
 			double mesh_density_scaling = 0.3, double mesh_density_scaling_station_pnts = 0.05);
 
+	/**
+	 * Method writes selected data to the stream (opened from constructor) for mesh generation.
+	 *
+	 * @param geo object managing all geometric information
+	 * @param selected_geometries geometric information that should be included into the mesh process
+	 * @param mesh_density The mesh density at a point.
+	 */
 	void writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 				std::vector<std::string> const & selected_geometries,
 				double mesh_density);
-
 
 	void writeGMSHPoints(const std::vector<GEOLIB::Point*>& pnt_vec);
 	void writeGMSHPolyline (const GEOLIB::Polyline* ply, const size_t offset);

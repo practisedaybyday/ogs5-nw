@@ -24,6 +24,7 @@ set( SOURCES
 	Station.cpp
 	Surface.cpp
 	Triangle.cpp
+	Raster.cpp
 )
 
 # Header files
@@ -61,6 +62,7 @@ set( HEADERS
 	TemplatePoint.h
 	TemplateVec.h
 	Triangle.h
+	Raster.h
 )
 
 # Create the library

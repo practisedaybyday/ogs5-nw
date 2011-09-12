@@ -138,7 +138,7 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name, const GEOLI
 		}
 	}
 
-	if (useStationsAsContraints) 
+	if (useStationsAsContraints)
 	{
 		this->addStationsAsConstraints(proj_name, geo, geo2gmsh_surface_id_map);
 	}
@@ -161,7 +161,7 @@ std::list<size_t> GMSHInterface::findHolesInsidePolygon(const std::vector<GEOLIB
 			bool isInside(true);
 			for (size_t k=0; k<line->getNumberOfPoints(); k++)
 			{
-				if (!polygon.isPntInPolygon(*(line->getPoint(k)))) 
+				if (!polygon.isPntInPolygon(*(line->getPoint(k))))
 				{
 					isInside = false;
 					break;
@@ -193,7 +193,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 	// check file stream
 	if (! _out) return;
 
-	std::cout << "GMSHInterface::writeGMSHInputFile " << std::endl;
+	std::cout << "GMSHInterface::writeGMSHInputFile adaptive " << std::endl;
 
 	std::vector<GEOLIB::Point*> all_points;
 	std::vector<GEOLIB::Polyline*> all_polylines;
@@ -382,7 +382,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 	// write Steiner points
 	std::list<GEOLIB::QuadTree<GEOLIB::Point>*> leaf_list;
 	quad_tree.getLeafs (leaf_list);
-	_out << "// write Steiner points" << std::endl;
+	_out << "// Steiner points" << std::endl;
 	for (std::list<GEOLIB::QuadTree<GEOLIB::Point>*>::const_iterator it (leaf_list.begin());
 		it != leaf_list.end(); it++) {
 		if ((*it)->getPoints().empty()) {
@@ -391,19 +391,73 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 			(*it)->getSquarePoints (ll, rr);
 			GEOLIB::Point mid_point (0.5*(rr[0]+ll[0]), 0.5*(rr[1]+ll[1]), 0.5*(rr[2]+ll[2]));
 			if (bounding_polygon->isPntInPolygon (mid_point)) {
-				_out << "Point(" << _n_pnt_offset << ") = {" << mid_point[0] << ","
-							<< mid_point[1] << "," << mid_point[2]
-							<< "," << 0.5*(rr[0]-ll[0])
-							<< "};" << std::endl;
-				_out << "Point {" << _n_pnt_offset << "} In Surface {" << _n_plane_sfc-1 << "};" << std::endl;
-				_n_pnt_offset++;
+				std::vector<GEOLIB::Point*> const& leaf_pnts ((*it)->getPoints());
+				double z_average (0);
+				const size_t n_leaf_pnts (leaf_pnts.size());
+				if (n_leaf_pnts > 0) {
+					for (size_t k(0); k<n_leaf_pnts; k++) {
+						z_average += (*(leaf_pnts[k]))[2];
+					}
+					z_average /= n_leaf_pnts;
+				} else {
+					GEOLIB::QuadTree<GEOLIB::Point> const * const father ((*it)->getFather());
+					if (father) {
+						std::vector<GEOLIB::Point*> const& pnts_father (father->getPoints());
+
+						if (pnts_father.size() > 0) {
+							for (size_t k(0); k<pnts_father.size(); k++) {
+								z_average += (*(pnts_father[k]))[2];
+							}
+							z_average /= pnts_father.size();
+							std::cout << "DEBUG: pnts_father > 0 in GMSHInterface::writeAllDataToGMSHInputFile while writing Steiner points" << std::endl;
+						} else {
+							GEOLIB::QuadTree<GEOLIB::Point> const * const child_ne (father->getChild (GEOLIB::QuadTree<GEOLIB::Point>::NE));
+							std::vector<GEOLIB::Point*> const& leaf_pnts_ne (child_ne->getPoints());
+							for (size_t k(0); k<leaf_pnts_ne.size(); k++) {
+								z_average += (*(leaf_pnts_ne[k]))[2];
+							}
+
+							GEOLIB::QuadTree<GEOLIB::Point> const * const child_nw (father->getChild (GEOLIB::QuadTree<GEOLIB::Point>::NW));
+							std::vector<GEOLIB::Point*> const& leaf_pnts_nw (child_nw->getPoints());
+							for (size_t k(0); k<leaf_pnts_nw.size(); k++) {
+								z_average += (*(leaf_pnts_nw[k]))[2];
+							}
+
+							GEOLIB::QuadTree<GEOLIB::Point> const * const child_sw (father->getChild (GEOLIB::QuadTree<GEOLIB::Point>::SW));
+							std::vector<GEOLIB::Point*> const& leaf_pnts_sw (child_sw->getPoints());
+							for (size_t k(0); k<leaf_pnts_sw.size(); k++) {
+								z_average += (*(leaf_pnts_sw[k]))[2];
+							}
+
+							GEOLIB::QuadTree<GEOLIB::Point> const * const child_se (father->getChild (GEOLIB::QuadTree<GEOLIB::Point>::SE));
+							std::vector<GEOLIB::Point*> const& leaf_pnts_se (child_se->getPoints());
+							for (size_t k(0); k<leaf_pnts_se.size(); k++) {
+								z_average += (*(leaf_pnts_se[k]))[2];
+							}
+							size_t n_pnts (leaf_pnts_ne.size() + leaf_pnts_nw.size() + leaf_pnts_sw.size() + leaf_pnts_se.size());
+							if (n_pnts > 0) {
+								z_average /= n_pnts;
+							} else {
+								std::cout << "DEBUG: n_pnts == 0 in GMSHInterface::writeAllDataToGMSHInputFile while writing Steiner points" << std::endl;
+							}
+						}
+					}
+				}
+				if (z_average < -1) {
+					mid_point[2] = z_average;
+					_out << "Point(" << _n_pnt_offset << ") = {" << mid_point[0] << ","
+								<< mid_point[1] << "," << mid_point[2]
+								<< "," << 0.5*(rr[0]-ll[0])
+								<< "};" << std::endl;
+					_out << "Point {" << _n_pnt_offset << "} In Surface {" << _n_plane_sfc-1 << "};" << std::endl;
+					_n_pnt_offset++;
+				}
 			}
 
 		}
 	}
 	std::cout << "ok" << std::endl;
 }
-
 
 void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 		std::vector<std::string> const & selected_geometries,
@@ -434,11 +488,10 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 				<< "};" << std::endl;
 		}
 	}
-	_n_pnt_offset += n;
-
 	std::cout << "write bounding polygon ... " << std::flush;
 	// write bounding polygon
 	writeBoundingPolygon (bounding_polygon);
+	_n_pnt_offset += n;
 
 	// write all other polylines as constraints
 	const size_t n_polylines (all_polylines.size());
@@ -529,7 +582,6 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 	std::cout << "ok" << std::endl;
 }
 
-
 bool GMSHInterface::isGMSHMeshFile (const std::string& fname)
 {
 	std::ifstream input (fname.c_str());
@@ -588,20 +640,24 @@ void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
 		std::cout << "ok" << std::endl;
 #endif
 
-		// insert points into vector all_points
-		all_points.insert (all_points.end(), pnts->begin(), pnts->end());
+		if (pnts) {
+			// insert points into vector all_points
+			all_points.insert (all_points.end(), pnts->begin(), pnts->end());
 
-		for (size_t k(0); k<plys->size(); k++) {
-			size_t pos (all_polylines.size());
-			// insert new polyline
-			all_polylines.push_back (new GEOLIB::Polyline (all_points));
-			// copy points
-			for (size_t j(0); j<(*plys)[k]->getNumberOfPoints(); j++) {
-				// set points of polyline
-				(all_polylines[pos])->addPoint (pnt_offset + ((*plys)[k])->getPointID(j));
+			if (plys) {
+				for (size_t k(0); k<plys->size(); k++) {
+					size_t pos (all_polylines.size());
+					// insert new polyline
+					all_polylines.push_back (new GEOLIB::Polyline (all_points));
+					// copy points
+					for (size_t j(0); j<(*plys)[k]->getNumberOfPoints(); j++) {
+						// set points of polyline
+						(all_polylines[pos])->addPoint (pnt_offset + ((*plys)[k])->getPointID(j));
+					}
+				}
 			}
+			pnt_offset += pnts->size();
 		}
-		pnt_offset += pnts->size();
 	}
 
 	for (std::vector<std::string>::const_iterator it (geo_station_names.begin());
@@ -659,8 +715,8 @@ void GMSHInterface::writeBoundingPolygon (GEOLIB::Polygon const * const bounding
 	size_t s (bounding_polygon->getNumberOfPoints());
 	// write line segments (= Line) of the polyline
 	for (size_t j(0); j<s-1; j++) {
-		_out << "Line(" << _n_lines+j << ") = {" <<  bounding_polygon->getPointID(j) << ","
-				<< bounding_polygon->getPointID(j+1) << "};" << std::endl;
+		_out << "Line(" << _n_lines+j << ") = {" <<  _n_pnt_offset + bounding_polygon->getPointID(j) << ","
+				<< _n_pnt_offset + bounding_polygon->getPointID(j+1) << "};" << std::endl;
 	}
 	// write the line segments contained in the polyline (=Line Loop)
 	_out << "Line Loop (" << _n_lines + s - 1 << ") = {";
@@ -679,14 +735,14 @@ void GMSHInterface::addStationsAsConstraints(const std::string &proj_name, const
 {
 	//const std::vector<GEOLIB::Point*> *pnts (geo.getPointVec (proj_name));
 	const std::vector<GEOLIB::Polyline*> *plys (geo.getPolylineVec (proj_name));
-	
+
 	std::vector<GEOLIB::Point*> station_points;
 	std::vector<std::string> stn_names;
 	geo.getStationNames(stn_names);
 	// find station vectors
 	for (size_t i=0; i<stn_names.size(); i++)
 	{
-		const std::vector<GEOLIB::Point*> *stn (geo.getStationVec(stn_names[i])); 
+		const std::vector<GEOLIB::Point*> *stn (geo.getStationVec(stn_names[i]));
 		size_t nPoints = stn->size();
 		for (size_t j=0; j<nPoints; j++)
 			station_points.push_back((*stn)[j]);
