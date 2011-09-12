@@ -436,42 +436,38 @@ void CURWrite()
  **************************************************************************/
 string GetLineFromFile1(ifstream *ein)
 {
-	return readNonBlankLineFromInputStream(*ein);
-////	std::string my_zeile = readNonBlankLineFromInputStream(*ein);
-////	std::cout << "readNonBlankLineFromInputStream: " << my_zeile << std::endl;
-////	return my_zeile;
-//   string line, zeile = "";
-//
-//   int fertig=0, i=0, j=0;
-//   char zeile1[MAX_ZEILEN];
-//   line ="";                                      //WW
-//   //----------------------------------------------------------------------
-//   while(fertig<1)
-//   {
-//      if(ein->getline(zeile1,MAX_ZEILEN))         //Zeile lesen
-//      {
-//         line = zeile1;                           //character in string umwandeln
-//         i = (int) line.find_first_not_of(" ",0); //Anf�ngliche Leerzeichen �berlesen, i=Position des ersten Nichtleerzeichens im string
-//         j = (int) line.find(";",i) ;             //Nach Kommentarzeichen ; suchen. j = Position des Kommentarzeichens, j=-1 wenn es keines gibt.
-//         if(j!=i)fertig = 1;                      //Wenn das erste nicht-leerzeichen ein Kommentarzeichen ist, zeile �berlesen. Sonst ist das eine Datenzeile
-//         if((i != -1))
-//            zeile = line.substr(i,j-i);           //Ab erstem nicht-Leerzeichen bis Kommentarzeichen rauskopieren in neuen substring, falls Zeile nicht leer ist
-//         i = (int) zeile.find_last_not_of(" ");   // Suche nach dem letzten Zeichen, dass kein Leerzeichen ist
-//         if(i>=0)
-//         {
-//            //		  line.clear(); // = "";
-//            line = zeile.substr(0,i+1);           // Leerzeichen am Ende rausschneiden
-//            //		  zeile.clear(); // = "";
-//            zeile = line;
-//         }
-//      }
-//      else                                        //end of file found
-//      {
-//         fertig=1;
-//      }
-//   }                                              // end while(...)
-//   //----------------------------------------------------------------------
-//   return zeile;
+//	return readNonBlankLineFromInputStream(*ein);
+   string line, zeile = "";
+   int fertig=0, i=0, j=0;
+   char zeile1[MAX_ZEILEN];
+   line ="";                                      //WW
+   //----------------------------------------------------------------------
+   while(fertig<1)
+   {
+      if(ein->getline(zeile1,MAX_ZEILEN))         //Zeile lesen
+      {
+         line = zeile1;                           //character in string umwandeln
+         i = (int) line.find_first_not_of(" ",0); //Anf�ngliche Leerzeichen �berlesen, i=Position des ersten Nichtleerzeichens im string
+         j = (int) line.find(";",i) ;             //Nach Kommentarzeichen ; suchen. j = Position des Kommentarzeichens, j=-1 wenn es keines gibt.
+         if(j!=i)fertig = 1;                      //Wenn das erste nicht-leerzeichen ein Kommentarzeichen ist, zeile �berlesen. Sonst ist das eine Datenzeile
+         if((i != -1))
+            zeile = line.substr(i,j-i);           //Ab erstem nicht-Leerzeichen bis Kommentarzeichen rauskopieren in neuen substring, falls Zeile nicht leer ist
+         i = (int) zeile.find_last_not_of(" ");   // Suche nach dem letzten Zeichen, dass kein Leerzeichen ist
+         if(i>=0)
+         {
+            //		  line.clear(); // = "";
+            line = zeile.substr(0,i+1);           // Leerzeichen am Ende rausschneiden
+            //		  zeile.clear(); // = "";
+            zeile = line;
+         }
+      }
+      else                                        //end of file found
+      {
+         fertig=1;
+      }
+   }                                              // end while(...)
+   //----------------------------------------------------------------------
+   return zeile;
 }
 
 
@@ -792,10 +788,10 @@ int LineFeed ( FILE *f )
 //}
 
 
-//int TFString ( char *x, FILE *f )
-//{
-//   return 1;
-//}
+int TFString ( char *x, FILE *f )
+{
+   return 1;
+}
 
 
 /**************************************************************************
