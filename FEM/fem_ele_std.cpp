@@ -791,6 +791,12 @@ namespace FiniteElement
          GasProp = MFPGet("GAS");
          if (GasProp) GasProp->Fem_Ele_Std = this;
       }
+      if (SolidProp && FluidProp) { //NW
+          if(D_Flag>0  && FluidProp->Density()>MKleinsteZahl)
+          {
+            SolidProp->Calculate_Lame_Constant();
+          }
+      }
       //----------------------------------------------------------------------
       // MCP
       //----------------------------------------------------------------------
