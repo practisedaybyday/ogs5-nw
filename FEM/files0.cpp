@@ -837,8 +837,7 @@ void remove_white_space(std::string *buffer)
 /**************************************************************************/
 int StrReadStr ( char *x, char *s, FILE *f, /*FctTestString func,*/ int *pos )
 {
-   int test;
-
+//   int test;
    x[0] = '\0';
    if (sscanf(s," %s%n",x,pos)<=0)
    {
@@ -949,7 +948,7 @@ int StrTestHash ( char *s, int *pos )
                                                   /*MX*/
 int StrOnlyReadStr ( char *x, char *s, FILE *f, /*FctTestString func,*/ int *pos )
 {
-   int test;
+//   int test;
 
    x[0] = '\0';
    if (sscanf(s," %s%n",x,pos)<=0)
