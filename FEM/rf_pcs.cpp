@@ -2258,49 +2258,13 @@ last modified:
 **************************************************************************/
 void CRFProcess::ConfigLiquidFlow()
 {
-   pcs_num_name[0] = "PRESSURE0";
-   pcs_sol_name = "LINEAR_SOLVER_PROPERTIES_PRESSURE1";
-   // NOD values
-   pcs_number_of_primary_nvals = 1;
+   //pcs_num_name[0] = "PRESSURE0";
+   //pcs_sol_name = "LINEAR_SOLVER_PROPERTIES_PRESSURE1";
+   pcs_number_of_primary_nvals = 0;
    pcs_number_of_secondary_nvals = 0;
-   pcs_primary_function_name[0] = "PRESSURE1";
-   pcs_primary_function_unit[0] = "Pa";
-   // ELE values
-   pcs_number_of_evals = 6;
-   pcs_eval_name[0] = "VOLUME";
-   pcs_eval_unit[0] = "m3";
-   pcs_eval_name[1] = "VELOCITY1_X";
-   pcs_eval_unit[1] = "m/s";
-   pcs_eval_name[2] = "VELOCITY1_Y";
-   pcs_eval_unit[2] = "m/s";
-   pcs_eval_name[3] = "VELOCITY1_Z";
-   pcs_eval_unit[3] = "m/s";
-   pcs_eval_name[4] = "POROSITY";                 //MX, test for n=n(c), 04.2005
-   pcs_eval_unit[4] = "-";
-   pcs_eval_name[5] = "PERMEABILITY";             //JTARON 2010 -- need this for index call of heterogeneous permeability
-   pcs_eval_unit[5] = "m2";
-   //----------------------------------------------------------------------
-   // Secondary variables
-   pcs_number_of_secondary_nvals = 0;             //WW
-   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "HEAD";
-   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m";
-   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-   pcs_number_of_secondary_nvals++;               //WW
-   //WW
-   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_X1";
-   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
-   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-   pcs_number_of_secondary_nvals++;               //WW
-   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Y1";
-   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
-   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-   pcs_number_of_secondary_nvals++;               //WW
-   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Z1";
-   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
-   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-   pcs_number_of_secondary_nvals++;               //WW
+   pcs_number_of_evals = 0;
+   Def_Variable_LiquidFlow(); //NW
 
-   //WW / TF
    // Output material parameters
    configMaterialParameters();
 }
@@ -2931,6 +2895,7 @@ void CRFProcess::VariableStaticProblem()
    // NOD Primary functions
    pcs_number_of_primary_nvals = 2;               //OK distinguish 2/3D problems, problem_dimension_dm;
    dm_number_of_primary_nvals = 2;
+   pcs_number_of_evals = 0;
    pcs_primary_function_name[0] = "DISPLACEMENT_X1";
    pcs_primary_function_name[1] = "DISPLACEMENT_Y1";
    pcs_primary_function_unit[0] = "m";
@@ -3008,9 +2973,10 @@ void CRFProcess::VariableStaticProblem()
 
    if(type==41)
    {                                              //Monolithic scheme
-      pcs_primary_function_name[pcs_number_of_primary_nvals] = "PRESSURE1";
-      pcs_primary_function_unit[pcs_number_of_primary_nvals] = "Pa";
-      pcs_number_of_primary_nvals++;
+      Def_Variable_LiquidFlow();
+
+      // Output material parameters
+      configMaterialParameters();
    }
    else if (type==42)                             //Monolithic scheme H2M. 03.08.2010. WW
    {
@@ -3444,6 +3410,58 @@ void CRFProcess:: Def_Variable_MultiPhaseFlow()
    pcs_number_of_secondary_nvals++;
 }
 
+////////////////////////////////////////////////////////////////////////////
+//
+///  Define variables of liquid flow model  (NW 09.2011)
+//
+////////////////////////////////////////////////////////////////////////////
+void CRFProcess:: Def_Variable_LiquidFlow()
+{
+      // 1.1 primary variables
+      pcs_primary_function_name[pcs_number_of_primary_nvals] = "PRESSURE1";
+      pcs_primary_function_unit[pcs_number_of_primary_nvals] = "Pa";
+      pcs_number_of_primary_nvals++;
+
+      // 1.2 secondary variables
+      pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "HEAD";
+      pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m";
+      pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+      pcs_number_of_secondary_nvals++;
+	  pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_X1";
+	  pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+	  pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+	  pcs_number_of_secondary_nvals++;
+	  pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Y1";
+	  pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+	  pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+	  pcs_number_of_secondary_nvals++;
+	  pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Z1";
+	  pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+	  pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+	  pcs_number_of_secondary_nvals++;
+
+      // 1.3 elemental variables
+	  //pcs_number_of_evals = 0;
+      pcs_eval_name[pcs_number_of_evals] = "VOLUME";
+      pcs_eval_unit[pcs_number_of_evals] = "m3";
+	  pcs_number_of_evals++;
+      pcs_eval_name[pcs_number_of_evals] = "VELOCITY1_X";
+	  pcs_eval_unit[pcs_number_of_evals] = "m/s";
+	  pcs_number_of_evals++;
+	  pcs_eval_name[pcs_number_of_evals] = "VELOCITY1_Y";
+	  pcs_eval_unit[pcs_number_of_evals] = "m/s";
+	  pcs_number_of_evals++;
+	  pcs_eval_name[pcs_number_of_evals] = "VELOCITY1_Z";
+	  pcs_eval_unit[pcs_number_of_evals] = "m/s";
+	  pcs_number_of_evals++;
+      pcs_eval_name[pcs_number_of_evals] = "POROSITY";                 //MX, test for n=n(c), 04.2005
+      pcs_eval_unit[pcs_number_of_evals] = "-";
+	  pcs_number_of_evals++;
+      pcs_eval_name[pcs_number_of_evals] = "PERMEABILITY";             //JTARON 2010 -- need this for index call of heterogeneous permeability
+      pcs_eval_unit[pcs_number_of_evals] = "m2";
+	  pcs_number_of_evals++;
+
+}
 
 /**************************************************************************
 FEMLib-Method: For non-isothermal multi-phase flow
@@ -4881,7 +4899,9 @@ void CRFProcess::CalIntegrationPointValue()
       || getProcessType() == DEFORMATION_H2       // 07.2011. WW
       || getProcessType() == AIR_FLOW
       || getProcessType() == PS_GLOBAL
-      || getProcessType() == PTC_FLOW)            //AKS/NB
+      || getProcessType() == PTC_FLOW            //AKS/NB
+      || getProcessType() == DEFORMATION_FLOW   //NW
+      )
       cal_integration_point_value = true;
    if (!cal_integration_point_value)
       return;
