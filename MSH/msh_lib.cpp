@@ -140,7 +140,7 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
           // if(line_string.find("#FEM_MSH")!=std::string::npos)
                fem_msh = new CFEMesh(geo_obj, unique_name);
               more_mesh = fem_msh->Read(&msh_file_ascii);
-              fem_msh_vector.push_back(fem_msh); 
+              fem_msh_vector.push_back(fem_msh);
 			  if(!more_mesh)
                 break;
 		   }

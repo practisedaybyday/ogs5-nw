@@ -27,6 +27,7 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 	size_t n_nodes (mesh->GetNodesNumber (true));
 
 	std::vector<size_t> msh_node_higher_order_ids;
+	std::vector<double> dist_of_proj_higher_order_node_from_ply_start;
 
 	// repeat until at least one relevant node was found
 	while (_msh_node_ids.empty()) {
@@ -44,13 +45,19 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 						lambda, dist) <= min_edge_length) {
 					if (0 <= lambda && lambda <= 1) {
 						if (mesh_nodes[j]->GetIndex() < n_linear_order_nodes) {
+							// check if node id is already in the vector
 							if (std::find (_msh_node_ids.begin(), _msh_node_ids.end(), mesh_nodes[j]->GetIndex()) == _msh_node_ids.end()) {
 								_msh_node_ids.push_back(mesh_nodes[j]->GetIndex());
 								_dist_of_proj_node_from_ply_start.push_back (act_length_of_ply+dist);
 								_linear_nodes++;
 							}
-						} else
-							msh_node_higher_order_ids.push_back (mesh_nodes[j]->GetIndex());
+						} else {
+							// check if node id is already in the vector
+							if (std::find (msh_node_higher_order_ids.begin(), msh_node_higher_order_ids.end(), mesh_nodes[j]->GetIndex()) == msh_node_higher_order_ids.end()) {
+								msh_node_higher_order_ids.push_back (mesh_nodes[j]->GetIndex());
+								dist_of_proj_higher_order_node_from_ply_start.push_back (act_length_of_ply+dist);
+							}
+						}
 					} // end if lambda
 				}
 			} // end node loop
@@ -73,6 +80,9 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 	// assign/append higher order nodes at the end of vector _msh_node_ids
 	for (size_t k(0); k<msh_node_higher_order_ids.size(); k++)
 		_msh_node_ids.push_back (msh_node_higher_order_ids[k]);
+	// append distances for higher order nodes at the end of vector _dist_of_proj_node_from_ply_start
+	for (size_t k(0); k<dist_of_proj_higher_order_node_from_ply_start.size(); k++)
+		_dist_of_proj_node_from_ply_start.push_back (dist_of_proj_higher_order_node_from_ply_start[k]);
 }
 
 const std::vector<size_t>& MeshNodesAlongPolyline::getNodeIDs () const

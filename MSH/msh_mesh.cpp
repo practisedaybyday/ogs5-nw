@@ -312,11 +312,11 @@ void CFEMesh::computeMinEdgeLength ()
     12/2005 OK MAT_TYPE
 	03/2011 KR cleaned up code
     **************************************************************************/
-   bool CFEMesh::Read(std::ifstream *fem_file) 
+   bool CFEMesh::Read(std::ifstream *fem_file)
    {
       std::string line_string;
-      
-	  bool more_mesh = false; //12.08.2011. WW 
+
+	  bool more_mesh = false; //12.08.2011. WW
 
       while (!fem_file->eof())
       {
@@ -325,13 +325,13 @@ void CFEMesh::computeMinEdgeLength ()
 		 // check keywords
          if (line_string.find("#STOP") != std::string::npos)
          {
-            more_mesh = false; //12.08.2011. WW 
-			break; 
+            more_mesh = false; //12.08.2011. WW
+			break;
          }
-         if (line_string.find("#FEM_MSH") != std::string::npos) //12.08.2011. WW 
+         if (line_string.find("#FEM_MSH") != std::string::npos) //12.08.2011. WW
          {
-            more_mesh = true; 
-			break; 
+            more_mesh = true;
+			break;
          }
 
          else if (line_string.find("$PCS_TYPE") != std::string::npos)
@@ -1423,10 +1423,8 @@ void CFEMesh::getPointsForInterpolationAlongPolyline (const GEOLIB::Polyline* co
 {
   // search for nodes along polyline in previous computed polylines
   std::vector<MeshNodesAlongPolyline>::const_iterator it (_mesh_nodes_along_polylines.begin());
-  for (; it != _mesh_nodes_along_polylines.end(); it++)
-  {
-	 if (it->getPolyline() == ply)
-	 {
+  for (; it != _mesh_nodes_along_polylines.end(); it++) {
+	 if (it->getPolyline() == ply) {
 		// copy points from object into vector
 		for (size_t k(0); k<it->getDistOfProjNodeFromPlyStart().size(); k++)
 		   points.push_back (it->getDistOfProjNodeFromPlyStart()[k]);
@@ -2605,7 +2603,7 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
       const size_t nn = 6;
       int j, nes;
       size_t *element_nodes = NULL;
-      //WW double nx[6], ny[6], 
+      //WW double nx[6], ny[6],
       double nz[6];
       //WW double dx[3], dy[3],;
       double dz[3];
@@ -3070,7 +3068,7 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
     **************************************************************************/
    void CFEMesh::CreateSparseTable()
    {
-  
+
 
   Math_Group::StorageType stype;
   stype = Math_Group::JDS;
@@ -3083,14 +3081,14 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
      }
   }
 
-    
+
   // Symmetry case is skipped.
   // 1. Sparse_graph_H for high order interpolation. Up to now, deformation
-  if(NodesNumber_Linear!=NodesNumber_Quadratic)   
+  if(NodesNumber_Linear!=NodesNumber_Quadratic)
     sparse_graph_H = new SparseTable(this, true, false, stype);
   // 2. M coupled with other processes with linear element
   if(sparse_graph_H)
-  { 
+  {
      if((int)pcs_vector.size()>1)
       sparse_graph = new SparseTable(this, false, false, stype);
   }
@@ -3098,11 +3096,11 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
   else
     sparse_graph = new SparseTable(this, false, false, stype);
 
-     
+
   //  sparse_graph->Write();
   //  sparse_graph_H->Write();
   //
-  //ofstream Dum("sparse.txt", ios::out); 
+  //ofstream Dum("sparse.txt", ios::out);
   //sparse_graph_H->Write(Dum);
 
 
