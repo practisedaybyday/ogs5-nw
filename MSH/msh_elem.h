@@ -183,6 +183,9 @@ namespace MeshLib
 		 }
 
          void SetNodes(Math_Group::vec<CNode*>& ele_nodes, bool ReSize = false);
+
+         void setNodes(std::vector<CNode*> const& ele_nodes);
+
          int GetNodesNumber_H() const
          {
             return nnodesHQ;

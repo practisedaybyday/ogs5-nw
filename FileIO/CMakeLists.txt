@@ -13,6 +13,7 @@ SET( SOURCES
 	FEMIO/BoundaryConditionIO.cpp
 	MeshIO/OGSMeshIO.cpp
 	MeshIO/LegacyVtkInterface.cpp
+	MeshIO/TetGenInterface.cpp
 	GeoIO/Gmsh2GeoIO.cpp
 )
 
@@ -32,6 +33,7 @@ SET( HEADERS
 	MathIO/CRSIO.h
 	MeshIO/OGSMeshIO.h
 	MeshIO/LegacyVtkInterface.h
+	MeshIO/TetGenInterface.h
 	GeoIO/Gmsh2GeoIO.h
 )
 

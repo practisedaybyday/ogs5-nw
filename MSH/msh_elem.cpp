@@ -205,7 +205,7 @@ namespace MeshLib
       }
       area = 1.0;                                 //WW
 
-	  excavated = -1;     //12.08.2011. WW     
+	  excavated = -1;     //12.08.2011. WW
    }
 
 CElem::CElem(CElem const &elem) :
@@ -812,6 +812,20 @@ void CElem::Read(std::istream& is, int fileType)
          nodes_index[i] = nodes[i]->GetIndex();
       }
    }
+
+void CElem::setNodes(std::vector<CNode*> const& ele_nodes)
+{
+	if (nodes.Size() != ele_nodes.size()) {
+		nodes.resize(ele_nodes.size());
+		nodes_index.resize(ele_nodes.size());
+	}
+
+	for (size_t k(0); k<ele_nodes.size(); k++) {
+		nodes[k] = ele_nodes[k];
+		nodes_index[k] = ele_nodes[k]->GetIndex();
+	}
+}
+
    /**************************************************************************
    MSHLib-Method:
    Task:
@@ -1199,12 +1213,12 @@ void CElem::Read(std::istream& is, int fileType)
   GetElementFacesPyra
   Task: Get local indeces of a element face nodes
   Augs.:
-          const int Face :  Local index of element face 
+          const int Face :  Local index of element face
           const int order:  1 Linear. 2, quadratic
           int *FaceNode  :  Local index of face nodes
   Return: number of nodes of a face
   Programing:
-  01/2010 NW  
+  01/2010 NW
   **************************************************************************/
   int CElem::GetElementFacesPyramid(const int Face, int *FaceNode)
   {
