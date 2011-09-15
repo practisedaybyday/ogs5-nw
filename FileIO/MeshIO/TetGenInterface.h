@@ -60,12 +60,9 @@ private:
 	 * @param ins the input stream (input)
 	 * @param n_nodes the number of nodes to read (input)
 	 * @param dim the spatial dimension of the node (input)
-	 * @param n_attributes the number of attributes (input)
-	 * @param boundary_markers have the nodes boundary information that should be read (input)
 	 * @return true, if the nodes are read, false if the method detects an error
 	 */
-	bool parseNodes(std::ifstream& ins, size_t n_nodes, size_t dim,
-			size_t n_attributes, bool boundary_markers);
+	bool parseNodes(std::ifstream& ins, size_t n_nodes, size_t dim);
 
 	/**
 	 * Method reads the elements from stream and stores them in the element vector of the mesh class.
