@@ -684,7 +684,6 @@ Programmaenderungen:
 double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFProcess* m_pcs)
 {
    (void)theta;
-   long group;
    int  p_idx = -1, t_idx = -1;
    /*int dependence = 0; */
    double diffusion_coefficient = -1.0;
@@ -709,8 +708,8 @@ double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFPro
    p_idx = p_idx;
    t_idx = t_idx;
 
-   group = m_pcs->m_msh->ele_vector[index]->GetPatchIndex();
 #ifdef GEM_REACT
+   const long group (m_pcs->m_msh->ele_vector[index]->GetPatchIndex());
    CMediumProperties *m_mat_mp (mmp_vector[group]);
 #endif
 
