@@ -925,7 +925,6 @@ long GetNearestHetVal(long EleIndex, CFEMesh *m_msh, long no_values, double ** i
    long i, nextele;
    double ex, ey, ez, dist, dist1;                //WW, dist2;
    double x, y, z;
-   double* center = NULL;
    MeshLib::CElem* m_ele = NULL;
    //----------------------------------------------------------------------
    // MB ToDo
@@ -939,7 +938,7 @@ long GetNearestHetVal(long EleIndex, CFEMesh *m_msh, long no_values, double ** i
    nextele = -1;
    //Get element data
    m_ele = m_msh->ele_vector[EleIndex];
-   center = m_ele->GetGravityCenter();
+   double const* center = m_ele->GetGravityCenter();
    x = center[0];
    y = center[1];
    z = center[2];

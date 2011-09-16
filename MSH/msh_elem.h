@@ -68,7 +68,8 @@ namespace MeshLib
          {
             return ele_dim;
          }
-         double* GetGravityCenter()
+         // 09/2011 TF made method const
+         double const* GetGravityCenter() const
          {
             return gravity_center;
          }

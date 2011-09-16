@@ -1,7 +1,7 @@
 /**
  * \file FEM/Output.cpp
  * 05/04/2011 LB Refactoring: Moved from rf_out_new.h
- * 
+ *
  * Implementation of Output class
  */
 
@@ -1116,13 +1116,12 @@ void COutput::WriteELEValuesTECData(fstream &tec_file)
    vector<int> ele_value_index_vector(no_ele_values);
    GetELEValuesIndexVector(ele_value_index_vector);
 
-   double* xyz;
    MeshLib::CElem* m_ele = NULL;
    FiniteElement::ElementValue* gp_ele = NULL;
    for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
    {
       m_ele = m_msh->ele_vector[i];
-      xyz = m_ele->GetGravityCenter();
+      double const* xyz(m_ele->GetGravityCenter());
       tec_file << xyz[0] << " " << xyz[1] << " " << xyz[2] << " ";
       if (out_element_vel)                        //WW
       {
@@ -2410,11 +2409,11 @@ void COutput::ELEWriteSFC_TECData(fstream &tec_file)
             v[1] = m_pcs->GetElementValue(m_ele->GetIndex(),nidx[1]);
             v[2] = m_pcs->GetElementValue(m_ele->GetIndex(),nidx[2]);
             m_ele_neighbor->SetNormalVector();
-             
+
             v_n = v[0]*m_ele_neighbor->normal_vector[0] \
                + v[1]*m_ele_neighbor->normal_vector[1] \
                + v[2]*m_ele_neighbor->normal_vector[2];
-	    
+
          }
       }
    }

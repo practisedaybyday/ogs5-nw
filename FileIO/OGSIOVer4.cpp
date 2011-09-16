@@ -27,14 +27,10 @@
 
 // for tests only
 #include "PointVec.h"
-#include "PolylineSmoother.h"
 
 // MathLib
 #include "AnalyticalGeometry.h"
 #include "EarClippingTriangulation.h"
-
-// For file path
-#include "makros.h"
 
 using namespace GEOLIB;
 

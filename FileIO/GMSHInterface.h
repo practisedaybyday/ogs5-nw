@@ -76,7 +76,7 @@ public:
 	void writeGMSHPolyline (const GEOLIB::Polyline* ply, const size_t offset);
 	void writeGMSHPolylines(const std::vector<GEOLIB::Polyline*>& ply_vec);
 	size_t writeGMSHPolygon(const GEOLIB::Polygon& polygon, const size_t offset);
-	void writePlaneSurface (const std::list<size_t> polygon_list);
+	void writePlaneSurface (std::list<size_t> const & polygon_list);
 
 	static bool isGMSHMeshFile (const std::string& fname);
 

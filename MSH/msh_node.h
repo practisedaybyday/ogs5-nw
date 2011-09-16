@@ -51,18 +51,18 @@ namespace MeshLib
          double Y() const { return coordinate[1]; };
          double Z() const { return coordinate[2]; };
 
-         void Coordinates(double *xyz) const
-         {
-            for (size_t i = 0; i < 3; i++)
-               xyz[i] = coordinate[i];
-         }
+//         void Coordinates(double *xyz) const
+//         {
+//            for (size_t i = 0; i < 3; i++)
+//               xyz[i] = coordinate[i];
+//         }
 
          // 04/2010 TF
          /**
           * returns the coordinates of the mesh node
           * @return the coordinates of this mesh node
           */
-         const double* getData () const { return coordinate; }
+         double const* getData () const { return coordinate; }
 
          // Set functions
          void SetX(double argX) { coordinate[0] = argX; };

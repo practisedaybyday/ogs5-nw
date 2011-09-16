@@ -4451,7 +4451,7 @@ double CMediumProperties::PermeabilityFunctionPressure(long index, double PG2)
 double CMediumProperties::PermeabilityFunctionStrain(long index, int nnodes, CFiniteElementStd *h_fem) //WW:02.08.2010
 {
    double fac_perm_strain = 1.;
-   //WW int ele_index, 
+   //WW int ele_index,
    int gueltig;
    //WW CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) this;
 
@@ -5484,7 +5484,7 @@ double CMediumProperties::SaturationPressureDependency
    static double capillary_pressure,capillary_pressure1,capillary_pressure2;
    static double saturation1,saturation2;
    static double dS,dS_dp,dpc;
-   //WW double S_e, 
+   //WW double S_e,
    double  m, n, alpha;
    int phase = 0;
    //WW S_e=
@@ -6342,12 +6342,10 @@ Programing:
 **************************************************************************/
 long GetNearestHetVal2(long EleIndex, CFEMesh *m_msh, vector <double> xvals,  vector <double> yvals,  vector <double> zvals,  vector <double> mmpvals)
 {
-
    (void)mmpvals;
    long i, nextele, no_values;
    double ex, ey, ez, dist, dist1; //WW , dist2;
    double x, y, z;
-   double* center = NULL;
    MeshLib::CElem* m_ele = NULL;
    no_values = (long) xvals.size();
 
@@ -6359,7 +6357,7 @@ long GetNearestHetVal2(long EleIndex, CFEMesh *m_msh, vector <double> xvals,  ve
 
    //Get element data
    m_ele = m_msh->ele_vector[EleIndex];
-   center = m_ele->GetGravityCenter();
+   double const* center (m_ele->GetGravityCenter());
    x = center[0];
    y = center[1];
    z = center[2];

@@ -378,9 +378,9 @@ CRFProcess::~CRFProcess(void)
    // ST:
    CNodeValue* m_nod_val = NULL;
 
-   //Added &&m_nod_val for RSM model. 15.08.2011. WW  
+   //Added &&m_nod_val for RSM model. 15.08.2011. WW
    if(!isRSM)
-   {  
+   {
       for(i=0;i<(int)st_node_value.size();i++)
       {
          m_nod_val = st_node_value[i];
@@ -1790,12 +1790,12 @@ std::ios::pos_type CRFProcess::Read(std::ifstream *pcs_file)
       }
       if (line_string.find("$PROCESSED_BC") != string::npos) //25.08.2011. WW
       {
-         *pcs_file >> WriteProcessed_BC;        
+         *pcs_file >> WriteProcessed_BC;
          pcs_file->ignore(MAX_ZEILE, '\n');
          continue;
       }
 
-	  
+
       //....................................................................
                                                   // subkeyword found
       if (line_string.find("$MEMORY_TYPE") != string::npos)
@@ -2715,7 +2715,7 @@ void CRFProcess::ConfigMassTransport()
    //  sprintf(pcs_primary_function_name[0], "%s%li","CONCENTRATION",comp);
    //----------------------------------------------------------------------
    // Tests
-   //WW int size; 
+   //WW int size;
    //WW  size = (int)cp_vec.size();
    //int comb;                                      //OK411
    //comb = pcs_component_number;
@@ -3909,8 +3909,7 @@ void CRFProcess::CheckExcavedElement()
       elem = m_msh->ele_vector[l];
       if(elem->GetPatchIndex()==ExcavMaterialGroup&&elem->GetMark())
       {
-         double* ele_center = NULL;
-         ele_center = elem->GetGravityCenter();
+         double const* ele_center(elem->GetGravityCenter());
          if((GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)+ExcavBeginCoordinate)>(ele_center[ExcavDirection])
             &&(ele_center[ExcavDirection]-ExcavBeginCoordinate)>-0.001)
          {
@@ -4147,9 +4146,9 @@ double CRFProcess::Execute()
       cpu_time = -clock();
 #endif
       femFCTmode = true;
-      
+
 	  GlobalAssembly();
-      
+
 	  femFCTmode = false;
 #ifdef USE_MPI
       cpu_time += clock();
@@ -4241,7 +4240,7 @@ void CRFProcess::CopyU_n()
    int i, nidx1;
    long g_nnodes, j, k;
 
-   double *temp_v = _problem->GetBufferArray(); // 18.08.2011. WW 
+   double *temp_v = _problem->GetBufferArray(); // 18.08.2011. WW
 
    for(i=0; i<pcs_number_of_primary_nvals; i++)
    {
@@ -5439,9 +5438,8 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
          //unsigned int counter;	//void warning
          //WW onExBoundary = true;                     //WX:01.2011
          excavated = false;
-         double node_coordinate[3]={0.};
          node = m_msh->nod_vector[m_bc_node->geo_node_number];
-         node->Coordinates(node_coordinate);
+         double const* node_coordinate (node->getData()); //Coordinates(node_coordinate);
          //tmp_counter3++;
          //counter = 0;
          /*if((node_coordinate[ExcavDirection]-(GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)-ExcavBeginCoordinate)<0.001
@@ -5450,11 +5448,10 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
          if((node_coordinate[ExcavDirection]-(GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)-ExcavBeginCoordinate))<0.001)
          {
             excavated = true;
-            double* tmp_ele_coor = NULL;
             for(unsigned int j=0; j<node->getConnectedElementIDs().size(); j++)
             {
                elem = m_msh->ele_vector[node->getConnectedElementIDs()[j]];
-               tmp_ele_coor = elem->GetGravityCenter();
+               double const* tmp_ele_coor (elem->GetGravityCenter());
                //if(elem->GetPatchIndex()!=ExcavMaterialGroup){
                //if(elem->GetExcavState()==-1)
                if(elem->GetPatchIndex()!=ExcavMaterialGroup)
@@ -9491,7 +9488,6 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
    vec<CEdge*>ele_edges_vector(15);
    int j;
    double aux_vector[3];
-   double* gravity_center = NULL;
    double check_sign;
    //----------------------------------------------------------------------
    // Element velocity
@@ -9535,7 +9531,7 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
       {
          //------------------------------------------------------------------
          // line elements
-         case MshElemType::LINE:
+         case MshElemType::LINE: {
             v[1] = GetElementValue(m_ele->GetIndex(),v_eidx[0]);
             v[0] = GetElementValue(m_ele->GetIndex(),v_eidx[1]);
             if(m_nod->getConnectedElementIDs().size()==1)
@@ -9543,7 +9539,7 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
                m_ele->SetMark(true);
                break;
             }
-            gravity_center = m_ele->GetGravityCenter();
+            double const* gravity_center(m_ele->GetGravityCenter());
             aux_vector[0] = gravity_center[0] - m_nod->X();
             aux_vector[1] = gravity_center[1] - m_nod->Y();
             aux_vector[2] = gravity_center[2] - m_nod->Z();
@@ -9551,6 +9547,7 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
             if(check_sign<0.0)
                m_ele->SetMark(true);
             break;
+         }
             //------------------------------------------------------------------
             // tri elements
          case MshElemType::TRIANGLE:
@@ -9602,9 +9599,9 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
             break;
             //------------------------------------------------------------------
             // tri elements
-         case MshElemType::TRIANGLE:
+         case MshElemType::TRIANGLE: {
             m_edg->GetEdgeMidPoint(edge_mid_point);
-            gravity_center = m_ele->GetGravityCenter();
+            double const* gravity_center(m_ele->GetGravityCenter());
             aux_vector[0] = gravity_center[0] - edge_mid_point[0];
             aux_vector[1] = gravity_center[1] - edge_mid_point[1];
             aux_vector[2] = gravity_center[2] - edge_mid_point[2];
@@ -9616,6 +9613,7 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
                fem->AssembleParabolicEquationRHSVector();
             }
             break;
+         }
             //----------------------------------------------------------------
             // ToDo
          default:
@@ -11896,7 +11894,7 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path, int timestep, int phase
          //Test Output
          tempstring="";
          temp.str(""); temp.clear(); temp << i; tempstring = temp.str();
-         double* gc = elem->GetGravityCenter();
+         double const* gc(elem->GetGravityCenter());
          temp.str(""); temp.clear(); temp << gc[0]; tempstring += "; " + temp.str();
          temp.str(""); temp.clear(); temp << gc[1]; tempstring += "; " + temp.str();
          temp.str(""); temp.clear(); temp << gc[2]; tempstring += "; " + temp.str();
@@ -12150,7 +12148,7 @@ VirialCoefficients DuansVirialCoefficients(int Fluid, double T)
 {
    double a[15];
    double Tc,Pc,M;
-   double R=83.14467;                             // cmÃÂ?bar/(K* mol)
+   double R=83.14467;                             // cmï¿½ï¿½?bar/(K* mol)
    //CVirialCoefficients x;	//BG
    VirialCoefficients x;                          //BG
    DuansParameter(Fluid,a,&Tc,&Pc,&M);

@@ -125,7 +125,6 @@ void CFEMesh::CreateLineELEFromQuad(int m_numberofprismlayers,double m_thickness
    long size;
    long no_quad_elements = (long)ele_vector.size();
    //long no_quad_nodes = (long)nod_vector.size();
-   double* center = NULL;
    MeshLib::CElem* m_quad_ele = NULL;
    MeshLib::CElem* m_ele = NULL;
 
@@ -165,7 +164,7 @@ void CFEMesh::CreateLineELEFromQuad(int m_numberofprismlayers,double m_thickness
          m_ele->nodes_index[1] = m_ele->nodes_index[0]+ 1;
          m_msh_line->ele_vector.push_back(m_ele);
          //
-         center = m_quad_ele->GetGravityCenter();
+         double const* center(m_quad_ele->GetGravityCenter());
          x = center[0];
          y = center[1];
          z = center[2];

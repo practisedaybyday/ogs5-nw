@@ -9,8 +9,6 @@
 
 // MathLib
 #include "LinAlg/GaussAlgorithm.h"
-//#include "LinAlg/HouseholderAlgorithm.h"
-//#include "LinAlg/TriangularSolve.h"
 #include "MathTools.h"
 #include "Matrix.h"
 #include "Vector3.h"
@@ -19,7 +17,11 @@ namespace GEOLIB {
 
 Triangle::Triangle (std::vector<Point *> const &pnt_vec) :
 	_pnts(pnt_vec), _initialized (false), _longest_edge (0.0)
-{}
+{
+	_pnt_ids[0] = std::numeric_limits<size_t>::max();
+	_pnt_ids[1] = std::numeric_limits<size_t>::max();
+	_pnt_ids[2] = std::numeric_limits<size_t>::max();
+}
 
 Triangle::Triangle (std::vector<Point *> const &pnt_vec, size_t pnt_a, size_t pnt_b, size_t pnt_c) :
 	_pnts(pnt_vec), _initialized (true), _longest_edge (0.0)

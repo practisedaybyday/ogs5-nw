@@ -1312,32 +1312,30 @@ long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
 #endif
 }
 
-   /**************************************************************************
-    FEMLib-Method:
-    Task: Ermittelt das nahliegende Element
-    Programing:
-    03/2010 TF implementation based on long CFEMesh::GetNODOnPNT(CGLPoint*m_pnt)
-    by MB
-    **************************************************************************/
-   long CFEMesh::GetNearestELEOnPNT(const GEOLIB::Point* const pnt) const
-   {
-      long nextele(-1);
-      double dist(std::numeric_limits<double>::max()), dist1;
-      double* center(NULL);
+ /**************************************************************************
+ FEMLib-Method:
+ Task: Ermittelt das nahliegende Element
+ Programing:
+ 03/2010 TF implementation based on long CFEMesh::GetNODOnPNT(CGLPoint*m_pnt)
+ by MB
+ **************************************************************************/
+long CFEMesh::GetNearestELEOnPNT(const GEOLIB::Point* const pnt) const
+{
+	long nextele(-1);
+	double dist(std::numeric_limits<double>::max()), dist1;
 
-      for (size_t i = 0; i < ele_vector.size(); i++)
-      {
-         center = ele_vector[i]->GetGravityCenter();
-         dist1 = 0.0;
-         for (size_t k(0); k<3; k++) dist1 += (center[k]-(*pnt)[k]) * (center[k]-(*pnt)[k]);
-         if (dist1 < dist)
-         {
-            dist = dist1;
-            nextele = i;
-         }
-      }
-      return nextele;
-   }
+	for (size_t i = 0; i < ele_vector.size(); i++) {
+		double const* center(ele_vector[i]->GetGravityCenter());
+		dist1 = 0.0;
+		for (size_t k(0); k < 3; k++)
+			dist1 += (center[k] - (*pnt)[k]) * (center[k] - (*pnt)[k]);
+		if (dist1 < dist) {
+			dist = dist1;
+			nextele = i;
+		}
+	}
+	return nextele;
+}
 
    //WW. (x1-x0).(x2-x0)
    inline double dotProduction(const double *x1, const double *x2,
@@ -2932,7 +2930,6 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
       double v1[3], v2[3], v3[3];
       double patch_area;
       double x0, y0, z0;
-      double* gravity_center;
       CNode* m_nod = NULL;
       CNode* m_nod1 = NULL;
       CNode* m_nod2 = NULL;
@@ -2971,7 +2968,7 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
                }
             }
             //..................................................................
-            gravity_center = m_ele->GetGravityCenter();
+            double const* gravity_center(m_ele->GetGravityCenter());
             v2[0] = gravity_center[0] - m_nod->X();
             v2[1] = gravity_center[1] - m_nod->Y();
             v2[2] = gravity_center[2] - m_nod->Z();

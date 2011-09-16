@@ -173,12 +173,12 @@ std::list<size_t> GMSHInterface::findHolesInsidePolygon(const std::vector<GEOLIB
 	return polygon_list;
 }
 
-void GMSHInterface::writePlaneSurface (std::list<size_t> polygon_list)
+void GMSHInterface::writePlaneSurface (std::list<size_t> const& polygon_list)
 {
 	_out << "Plane Surface (" << _n_plane_sfc << ") = {" << std::flush;
 	std::list<size_t>::const_iterator it (polygon_list.begin());
 	_out << *it << std::flush;
-	for (it++; it != polygon_list.end(); it++)
+	for (++it; it != polygon_list.end(); ++it)
 		_out << ", " << *it << std::flush;
 	_out << "};" << std::endl;
 	_n_plane_sfc++;

@@ -389,7 +389,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
 
          }
          if(viscosity_model==18)			// BG, NB calculated node viscosities from the phase transition model
-         { 
+         {
          }
 
          //    mfp_file->ignore(MAX_ZEILE,'\n');
@@ -520,7 +520,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
          in >> critical_pressure;
 		 in >> critical_temperature;
 		 in >> acentric_factor;
-		 in >> MOLAR_MASS_GAS; 
+		 in >> MOLAR_MASS_GAS;
 		 }
          in.clear();
          continue;
@@ -806,7 +806,7 @@ double CFluidProperties::Density(double* variables)
          case 14:                                 //AKS empiricaly extented Ideal gas Eq for real gas // it has used with fractional mass transport Eq.//
             density = MixtureSubProperity(5, (long)  variables[2], variables[0], variables[1])* variables[0] / (CalCopressibility((long)  variables[2], variables[0], variables[1] )*variables[1] * GAS_CONSTANT) ;
             break;
-		 case 15:                               
+		 case 15:
             density = variables[0]*MOLAR_MASS_GAS/(CalCopressibility_PTC(variables[0], variables[1])*GAS_CONSTANT*variables[1]);
 			          break;
 	  case 18:	//using calculated densities at nodes from the phase transition model, BG, NB 11/2010
@@ -875,8 +875,8 @@ double CFluidProperties::Density(double* variables)
             break;
          case 14:                                 //AKS empiricaly extented Ideal gas Eq for real gas
             density = MixtureSubProperity(5, (long)  variables[2], variables[0], variables[1])* variables[0] / (CalCopressibility((long)  variables[2], variables[0], variables[1] )*variables[1] * GAS_CONSTANT) ;
-               break; 
-		 case 15:                             
+               break;
+		 case 15:
             density = variables[0]*MOLAR_MASS_GAS/(CalCopressibility_PTC(variables[0], variables[1])*GAS_CONSTANT*variables[1]);
 			          break;
          default:
@@ -902,12 +902,11 @@ double CFluidProperties::GetElementValueFromNodes(long ElementIndex, int GPIndex
 	double var, variable;
 	int variable_index = 0, nNodes;
 	double distance, weight, sum_weights;
-	double *gravity_centre;
 	Math_Group::vec <long>vec_nod_index(8);
 
 	variable = 0;
 
-	m_pcs= PCSGet("MULTI_PHASE_FLOW"); 
+	m_pcs= PCSGet("MULTI_PHASE_FLOW");
 	//check if PHASE_TRANSITION is used for the process
 	if ((density_model == 18) || (viscosity_model == 18)) {
 		if (m_pcs->Phase_Transition_Model != 1) {
@@ -961,7 +960,7 @@ double CFluidProperties::GetElementValueFromNodes(long ElementIndex, int GPIndex
 			//Get the connected node
 			m_node = m_msh->nod_vector[vec_nod_index[i]];
 			//calculate distance between the node and the barycentre
-			gravity_centre = m_ele->GetGravityCenter();
+			double const* gravity_centre(m_ele->GetGravityCenter());
 			distance =  (gravity_centre[0] - m_node->X())*(gravity_centre[0] - m_node->X());
 			distance += (gravity_centre[1] - m_node->Y())*(gravity_centre[1] - m_node->Y());
 			distance += (gravity_centre[2] - m_node->Z())*(gravity_centre[2] - m_node->Z());
@@ -3207,8 +3206,8 @@ Programing:
 double CFluidProperties::CalCopressibility_PTC(double p,double T)
 {
    std::vector<double> roots;
-   double a, a0, b, A, B, R=8314.41;                   
-   double z1, z2, z3, h; 
+   double a, a0, b, A, B, R=8314.41;
+   double z1, z2, z3, h;
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=(1+(0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor)*(1-pow(T/Tc,0.5)));
@@ -3219,7 +3218,7 @@ double CFluidProperties::CalCopressibility_PTC(double p,double T)
    z1=-(1-B);
    z2=(A-3*pow(B,2)-2*B);
    z3=-(A*B-pow(B,2)-pow(B,3));
-   NsPol3(z1,z2,z3,&roots);                     
+   NsPol3(z1,z2,z3,&roots);
    if(p > Pc && T < Tc)
    {
    h=FindMin(roots);
@@ -3240,7 +3239,7 @@ Programing:
 double CFluidProperties::CaldZdP(double p,double T)
 {
    std::vector<double> roots;
-   double a, a0, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdP;                   
+   double a, a0, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdP;
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor;
@@ -3266,7 +3265,7 @@ Programing:
 double CFluidProperties::CaldZdT(double p,double T)
 {
    std::vector<double> roots;
-   double a, a0,daa, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;                   
+   double a, a0,daa, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor;
@@ -3438,13 +3437,13 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
 
 #ifdef MFP_TEST
 //-----------------------------------------------------
-//  
+//
 /*!
    \brief constructor of class Hash_Table
-     
+
     Read data and fill the member data
 
-	WW 07.2011 
+	WW 07.2011
 */
 Hash_Table::Hash_Table(string f_name)
 {
@@ -3459,9 +3458,9 @@ Hash_Table::Hash_Table(string f_name)
    {
       cout<<"File "<<f_name<<" cannot openned. Program exit ";
 	  exit(1);
-   } 
-   
-   getline(ins, aline); 
+   }
+
+   getline(ins, aline);
    if(aline.find("Varaiable_Number")!=string::npos)
    {
       ss.str(aline);
@@ -3478,8 +3477,8 @@ Hash_Table::Hash_Table(string f_name)
    num_var -= 2;
    length = num_par+num_var;
 
-   names.resize(length); 
-   getline(ins, aline); 
+   names.resize(length);
+   getline(ins, aline);
    ss.str(aline);
    for(i=0; i<length; i++)
      ss>>names[i];
@@ -3490,22 +3489,22 @@ Hash_Table::Hash_Table(string f_name)
    table_section_ends.push_back(0);
    while(!ins.eof())
    {
-      getline(ins, aline); 
+      getline(ins, aline);
 	  if(aline.find("...")!=string::npos)
 	  {
 	     table_section_ends.push_back(counter+1);
 		 hash_row_par.push_back(par);
 	     continue;
-	  }  
+	  }
       if(aline.find("---")!=string::npos)
          break;
-  
+
 	  double *data_vp = new double[length-1];
 	  hash_table_data.push_back(data_vp);
 
 	  ss.str(aline);
       ss>>par;
-      for(i=0; i<length-1; i++) 
+      for(i=0; i<length-1; i++)
          ss>>data_vp[i];
 	  ss.clear();
 
@@ -3515,9 +3514,9 @@ Hash_Table::Hash_Table(string f_name)
 }
 /*!
    \brief desconstructor of class Hash_Table
-     
 
-	WW 07.2011 
+
+	WW 07.2011
 */
 Hash_Table::~Hash_Table()
 {
@@ -3530,9 +3529,9 @@ Hash_Table::~Hash_Table()
 
 /*!
    \brief desconstructor of class Hash_Table
-     
 
-	WW 07.2011 
+
+	WW 07.2011
 */
 double Hash_Table::CalcValue(double *var, const int var_id) const
 {
@@ -3541,23 +3540,23 @@ double Hash_Table::CalcValue(double *var, const int var_id) const
 	double val_e[4];
 
 	if(var[0]<hash_row_par[0])
-       var[0] = hash_row_par[0]; 
+       var[0] = hash_row_par[0];
 	if(var[0]>hash_row_par[hash_row_par.size()-1])
-       var[0] = hash_row_par[hash_row_par.size()-1]; 
-    
+       var[0] = hash_row_par[hash_row_par.size()-1];
+
     for(i=0; i<hash_row_par.size()-1; i++)
 	{
         if((var[0]>=hash_row_par[i])&&(var[0]<hash_row_par[i+1]))
-		{         
+		{
             for(j=0; j<2; j++)
 			{
                data_0 = hash_table_data[i+j];
                for(k=table_section_ends[i+j]; k<table_section_ends[i+j+1]; k++)
 			   {
-                   
+
 			   }
 			}
-			break; 
+			break;
 		}
 	}
 	return 0.;

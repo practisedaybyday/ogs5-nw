@@ -536,7 +536,6 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
       {
          // For the velocity of the node that has more than one connected planes.
          double Vmag = 0.0;
-         double* CenterOfEle = NULL;
          // Mount cross
          CrossRoad* thisCross;
          thisCross = new CrossRoad();
@@ -560,7 +559,7 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
                   thisCross->plane[j].norm[k] = norm[k] = m_msh->ele_vector[index]->getTransformTensor(k+6);
 
             // Store the position vector defined below
-            CenterOfEle = m_msh->ele_vector[index]->GetGravityCenter();
+            double const* CenterOfEle(m_msh->ele_vector[index]->GetGravityCenter());
             thisCross->plane[j].Eele[0] = CenterOfEle[0] - thisNode->X();
             thisCross->plane[j].Eele[1] = CenterOfEle[1] - thisNode->Y();
             thisCross->plane[j].Eele[2] = CenterOfEle[2] - thisNode->Z();
@@ -656,7 +655,6 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
          // Construct Joint vectors
          // For the velocity of the edge that has more than one connected planes.
          double Vmag = 0.0;
-         double* CenterOfEle = NULL;
          CrossRoad* thisJoint;
          thisJoint = new CrossRoad();
          thisJoint->numOfThePlanes = (int)m_msh->edge_vector[i]->connected_elements.size();
@@ -678,7 +676,7 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
                   thisJoint->plane[j].norm[k] = norm[k] = m_msh->ele_vector[index]->getTransformTensor(k+6);
 
             // Store the position vector defined below
-            CenterOfEle = m_msh->ele_vector[index]->GetGravityCenter();
+            double const* CenterOfEle(m_msh->ele_vector[index]->GetGravityCenter());
             // I am using the center position of the joint
             thisJoint->plane[j].Eele[0] = CenterOfEle[0] - (theNodesOfThisEdge[0]->X()+theNodesOfThisEdge[1]->X())/2.0;
             thisJoint->plane[j].Eele[1] = CenterOfEle[1] - (theNodesOfThisEdge[0]->Y()+theNodesOfThisEdge[1]->Y())/2.0;
@@ -870,7 +868,6 @@ void DATWriteHETFile(const char *file_name)
 {
    FILE *tet_file = NULL;
    char tet_file_name[MAX_ZEILE];
-   double* center = NULL;
    CFEMesh* m_msh = NULL;
    m_msh = fem_msh_vector[0];                     // Something must be done later on here.
    MeshLib::CElem* elem = NULL;
@@ -881,7 +878,7 @@ void DATWriteHETFile(const char *file_name)
    for (int i = 0; i < (long)m_msh->ele_vector.size(); i++)
    {
       elem = m_msh->ele_vector[i];
-      center = elem->GetGravityCenter();
+      double const* center(elem->GetGravityCenter());
 
       fprintf(tet_file, "%17.12e %17.12e %17.12e %17.12e\n",
          center[0], center[1], center[2], elem->mat_vector(0)*1e7);

@@ -18,7 +18,6 @@ set( SOURCES
 	PointVec.cpp
 	Polygon.cpp
 	Polyline.cpp
-	PolylineSmoother.cpp
 	ProjectData.cpp
 	SimplePolygonTree.cpp
 	Station.cpp
@@ -50,7 +49,6 @@ set( HEADERS
 	PointWithID.h
 	Polygon.h
 	Polyline.h
-	PolylineSmoother.h
 	PolylineVec.h
 	ProjectData.h
 	PropertyBounds.h

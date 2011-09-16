@@ -254,7 +254,7 @@ void RandomWalk::InterpolateVelocity(Particle* A)
       vec<MeshLib::CNode*>theNodesOfThisEdge(3);
 
       // Solve for proper index in reference space
-      double* Ecenter=theEle->GetGravityCenter();
+      double const* Ecenter=theEle->GetGravityCenter();
       double u[4];                                // Edge flux in reference space
       for(int i=0; i<4; ++i)
          u[i] = 0.0;
@@ -396,14 +396,14 @@ void RandomWalk::TracePathlineInThisElement(Particle* A)
    // It is simple because Sw stuff automatically handles in Richards Flow.
    // Thus, I only divide Darcy velocity by porosity only to get pore velocity.
    //WW CMediumProperties *MediaProp = mmp_vector[theEle->GetPatchIndex()];
-   /*   //WW 
+   /*   //WW
    double porosity = 0.0;
    if(MediaProp->porosity > 10-6)
       porosity = MediaProp->porosity;             // This is for simple one.
    else
                                                   // This will get you porosity.
          porosity = MediaProp->porosity_model_values[0];
-   */ 
+   */
    // I guess for Dual Porocity stuff,
    // this code should be revisited.
 
@@ -847,7 +847,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          else
                                                   // This will get you porosity.
             porosity = MediaProp->porosity_model_values[0];
-	 */ 
+	 */
          // I guess for Dual Porocity stuff,
          // this code should be revisited.
 
@@ -1056,7 +1056,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          vec<MeshLib::CNode*>theNodesOfThisEdge(3);
 
          // Solve for proper index in reference space
-         double* Ecenter=theEle->GetGravityCenter();
+         double const* Ecenter=theEle->GetGravityCenter();
          double u[4];                             // Edge flux in reference space
          for(int i=0; i<4; ++i)
             u[i] = 0.0;
@@ -4419,7 +4419,7 @@ void RandomWalk::SolveAnglesOfTheElment(MeshLib::CElem* E)
 
    // Solve for the translation.
    // I'll use the center of the element for this translation.
-   double* center = E->GetGravityCenter();
+   double const* center = E->GetGravityCenter();
    double x[3], xx[3];
    // Get the norm of the element plane and do some initialization
    for(int k=0; k<3; ++k)
@@ -4579,7 +4579,6 @@ Modified:: 03/2010 JTARON ... re-designed and expanded to 3-D
  **************************************************************************/
 void RandomWalk::buildFDMIndex(void)
 {
-   double* center = NULL;
    double xmax, ymax, zmax;
    double xmin, ymin, zmin;
    double x,y,z;
@@ -4656,33 +4655,30 @@ void RandomWalk::buildFDMIndex(void)
    //WW ne = nx*ny*nz;
    nels = m_msh->ele_vector.size();
 
-   for(k=0; k<nz; k++)                            // loop over the dummy element set
-   {
-      for(j=0; j<ny; j++)
-      {
-         for(i=0; i<nx; i++)
-         {
-            FDMIndex one;                         // store dummy index by default, initialize class vector
-            one.i = i;
-            one.j = j;
-            one.k = k;
-            one.eleIndex = -5;                    // eleIndex -5 is dummy index different from -10
-            for(iel=0; iel<nels; iel++)           // loop over mesh elements, assign them to dummy elements
-            {
-               center = m_msh->ele_vector[iel]->GetGravityCenter();
-               ic = (int)floor((center[0]-pnt_x_min)/dx);
-               jc = (int)floor((center[1]-pnt_y_min)/dy);
-               kc = (int)floor((center[2]-pnt_z_min)/dz);
-               if(ic!=i || jc!=j || kc!=k)
-                  continue;
-               one.eleIndex = iel;
-               break;
-            }
-            indexFDM.push_back(one);
-            neFDM += 1;
-         }
-      }
-   }
+   for (k = 0; k < nz; k++) // loop over the dummy element set
+	{
+		for (j = 0; j < ny; j++) {
+			for (i = 0; i < nx; i++) {
+				FDMIndex one; // store dummy index by default, initialize class vector
+				one.i = i;
+				one.j = j;
+				one.k = k;
+				one.eleIndex = -5; // eleIndex -5 is dummy index different from -10
+				for (iel = 0; iel < nels; iel++) // loop over mesh elements, assign them to dummy elements
+				{
+					double const* center = m_msh->ele_vector[iel]->GetGravityCenter();
+					ic = (int) floor((center[0] - pnt_x_min) / dx);
+					jc = (int) floor((center[1] - pnt_y_min) / dy);
+					kc = (int) floor((center[2] - pnt_z_min) / dz);
+					if (ic != i || jc != j || kc != k) continue;
+					one.eleIndex = iel;
+					break;
+				}
+				indexFDM.push_back(one);
+				neFDM += 1;
+			}
+		}
+	}
 }
 
 
