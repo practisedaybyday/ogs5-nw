@@ -22,19 +22,22 @@ Some functions and derivations as shown in [Span&Wagner 1994]
 ***********************************************************************/
 double theta_fn (double tau, double A, double delta, double beta)
 {
-   return (1-tau)+A*pow(pow(delta-1,2),1/(2*beta));
+	return (1-tau)+A*pow((delta-1)*(delta-1),1/(2*beta));
+// TF  return (1-tau)+A*pow(pow(delta-1,2),1/(2*beta));
 }
 
 
 double phi_fn (double C, double delta, double D, double tau)
 {
-   return exp (-C*pow(delta-1,2)-D*pow(tau-1,2));
+   return exp(-C*(delta-1)*(delta-1) - D * (tau-1) * (tau-1));
+// TF  return exp (-C*pow(delta-1,2)-D*pow(tau-1,2));
 }
 
 
 double delta_fn (double theta_fn, double B, double delta, double alpha)
 {
-   return pow(theta_fn,2)+B*pow(pow(delta-1,2),alpha);
+	return theta_fn * theta_fn + B * pow((delta-1) * (delta-1),alpha);
+// TF  return pow(theta_fn,2)+B*pow(pow(delta-1,2),alpha);
 }
 
 
@@ -46,21 +49,31 @@ double dDELTApowb_ddelta (double b, double delta_fn, double dDELTA_deriv)
 
 double dDELTA_ddelta (double delta, double A, double theta_fn, double beta, double B, double a)
 {
-   return   ((delta-1)*(A*theta_fn*2/beta*pow(pow((delta-1),2),(1/(2*beta)-1))+2*B*a*pow(pow((delta-1),2),(a-1))));
+   return ((delta-1)*(A*theta_fn*2/beta*pow((delta-1)*(delta-1),(1/(2*beta)-1))+2*B*a*pow((delta-1)*(delta-1),(a-1))));
+//   return ((delta-1)*(A*theta_fn*2/beta*pow(pow((delta-1),2),(1/(2*beta)-1))+2*B*a*pow(pow((delta-1),2),(a-1))));
 }
 
 
 double d2DELTA_ddelta2 (double delta, double dDELTA_deriv, double A, double theta_fn, double beta, double B, double a)
 {
-   return 1/(delta-1)*dDELTA_deriv+pow((delta-1),2)*
-      (4*B*a*(a-1)*pow(pow((delta-1),2),(a-2))+2*pow(A,2)*pow((1/beta),2)*pow(pow(pow((delta-1),2),(1/(2*beta)-1)),2)
-      +A*theta_fn*4/beta*(1/(2*beta)-1)*pow(pow((delta-1),2),(1/(2*beta)-2)));
+	const double delta_m1(delta - 1);
+	const double delta_m1_quad((delta_m1) * (delta_m1));
+	const double t0 (pow(delta_m1_quad, (1 / (2*beta ) - 1)));
+	return 1 / (delta - 1) * dDELTA_deriv + delta_m1_quad * (4* B
+			* a * (a - 1) * pow(delta_m1_quad, (a - 2)) + 2* A * A
+			* pow((1 / beta), 2) * t0*t0 + A * theta_fn * 4 / beta * (1 / (2* beta ) - 1)
+			* pow(delta_m1_quad,(1/(2*beta)-2)));
+
+//   return 1/(delta-1)*dDELTA_deriv+pow((delta-1),2)*
+//      (4*B*a*(a-1)*pow(pow((delta-1),2),(a-2))+2*pow(A,2)*pow((1/beta),2)*pow(pow(pow((delta-1),2),(1/(2*beta)-1)),2)
+//      +A*theta_fn*4/beta*(1/(2*beta)-1)*pow(pow((delta-1),2),(1/(2*beta)-2)));
 }
 
 
 double d2DELTApowb_ddelta2 (double b,double delta_fn,double d2DELTA_deriv,double dDELTA_deriv)
 {
-   return b*(pow(delta_fn,(b-1))*d2DELTA_deriv+(b-1)*pow(delta_fn,(b-2))*pow(dDELTA_deriv,2));
+   return b*(pow(delta_fn,(b-1))*d2DELTA_deriv+(b-1)*pow(delta_fn,(b-2))* dDELTA_deriv * dDELTA_deriv);
+//   return b*(pow(delta_fn,(b-1))*d2DELTA_deriv+(b-1)*pow(delta_fn,(b-2))*pow(dDELTA_deriv,2));
 }
 
 
@@ -84,7 +97,8 @@ double d2phi_dtau2 (double D,double tau, double phi_fn)
 
 double d2phi_ddelta2 (double C,double delta, double phi_fn)
 {
-   return (2*C*pow((delta-1),2)-1)*2*C*phi_fn;
+	return (2 * C * (delta-1) * (delta-1) -1) * 2 * C * phi_fn;
+//   return (2*C*pow((delta-1),2)-1)*2*C*phi_fn;
 }
 
 
@@ -96,14 +110,20 @@ double dDELTA_dtau (double theta_fn, double b, double delta_fn)
 
 double d2DELTA_dtau2 (double b, double delta_fn, double theta_fn)
 {
-   return 2*b*pow(delta_fn,(b-1))+4*pow(theta_fn,2)*b*(b-1)*pow(delta_fn,(b-2));
+   return 2* b * pow(delta_fn, (b - 1)) + 4* theta_fn * theta_fn * b * (b - 1)
+			* pow(delta_fn, (b - 2));
+//   return 2*b*pow(delta_fn,(b-1))+4*pow(theta_fn,2)*b*(b-1)*pow(delta_fn,(b-2));
 }
 
 
 double d2DELTApowb_ddeltadtau (double A,double b,double beta,double delta_fn,double delta,double theta_fn,double dDELTA_deriv)
 {
-   return -A*b*2/beta*pow(delta_fn,(b-1))*(delta-1)*pow(pow((delta-1),2),(1/(2*beta)-1))
-      -2*theta_fn*b*(b-1)*pow(delta_fn,(b-2))*dDELTA_deriv;
+	   return -A * b * 2 / beta * pow(delta_fn, (b - 1)) * (delta - 1) * pow(
+			(delta - 1)*(delta - 1), (1 / (2* beta ) - 1)) - 2* theta_fn * b * (b - 1)
+			* pow(delta_fn, (b - 2)) * dDELTA_deriv;
+
+//   return -A*b*2/beta*pow(delta_fn,(b-1))*(delta-1)*pow(pow((delta-1),2),(1/(2*beta)-1))
+//      -2*theta_fn*b*(b-1)*pow(delta_fn,(b-2))*dDELTA_deriv;
 }
 
 
