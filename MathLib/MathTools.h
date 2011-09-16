@@ -93,8 +93,9 @@ template <typename T>
 T fastpow (T base, size_t exp)
 {
 	T result (base);
-	for (size_t k(0); k<exp; k++) {
-		result *= result;
+	if (exp == 0) result = static_cast<T>(1);
+	for (size_t k(1); k<exp; k++) {
+		result *= base;
 	}
 	return result;
 }

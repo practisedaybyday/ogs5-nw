@@ -148,37 +148,35 @@ double CFluidProperties::phi_r_d (double rho, double T, int c)
    tau = Tc/T;
    delta = rho/rhoc;
 
-   for (i=0; i<limit[3]; i++)
-   {
-      if (i<limit[0])
+   for (i = 0; i < limit[3]; i++) {
+		if (i < limit[0]) {
+			phi_a = phi_a + (K[0][i] * K[1][i] * pow(delta, (K[1][i] - 1))
+					* pow(tau, K[2][i]));
+		} else {
+			if (i < limit[1]) {
+				phi_b = phi_b + (K[0][i] * exp(-pow(delta, K[3][i])) * (pow(
+						delta, K[1][i] - 1) * pow(tau, K[2][i]) * (K[1][i]
+						- K[3][i] * pow(delta, K[3][i]))));
+			} else if (i < limit[2]) {
+				phi_c = phi_c + (K[0][i] * pow(delta, K[1][i]) * pow(tau,
+						K[2][i]) * exp(-K[10][i] * MathLib::fastpow(delta - K[13][i], 2)
+						- K[11][i] * MathLib::fastpow(tau - K[12][i], 2)) * (K[1][i] / delta
+						- 2* K [10][i] * (delta - K[13][i])));
+			} else if (i < limit[3]) {
+				THETA = theta_fn(tau, K[6][i], delta, K[11][i]);
+				DELTA = delta_fn(THETA, K[7][i], delta, K[4][i]);
+				PHI = phi_fn(K[8][i], delta, K[9][i], tau);
+				dDELTA_deriv = dDELTA_ddelta(delta, K[6][i], THETA, K[11][i],
+						K[7][i], K[4][i]);
+				dDELTApowbddelta = dDELTApowb_ddelta(K[5][i], DELTA,
+						dDELTA_deriv);
+				DPHI = dphi_ddelta(K[8][i], delta, PHI);
 
-         phi_a=phi_a+(K[0][i]*K[1][i]*pow(delta,(K[1][i]-1))*pow(tau,K[2][i]));
-
-      else if (i<limit[1])
-
-         phi_b=phi_b+(K[0][i]*exp(-pow(delta,K[3][i]))*(pow(delta,K[1][i]-1)*
-               pow(tau,K[2][i])*(K[1][i]-K[3][i]*pow(delta,K[3][i]))));
-
-      else if (i<limit[2])
-
-         phi_c=phi_c+(K[0][i]*pow(delta,K[1][i])*pow(tau,K[2][i])*
-               exp(-K[10][i]*pow(delta-K[13][i],2)-K[11][i]*pow(tau-K[12][i],2))*(K[1][i]
-               /delta-2*K[10][i]*(delta-K[13][i])));
-
-      else if (i<limit[3])
-      {
-
-         THETA  = theta_fn (tau,K[6][i],delta,K[11][i]);
-         DELTA  = delta_fn (THETA,K[7][i],delta,K[4][i]);
-         PHI    = phi_fn (K[8][i],delta,K[9][i],tau);
-         dDELTA_deriv = dDELTA_ddelta(delta,K[6][i],THETA,K[11][i],K[7][i],K[4][i]);
-         dDELTApowbddelta = dDELTApowb_ddelta(K[5][i],DELTA,dDELTA_deriv);
-         DPHI   = dphi_ddelta (K[8][i],delta,PHI);
-
-         phi_d=phi_d+K[0][i]*(pow(DELTA,K[5][i])*(PHI+delta*DPHI)+dDELTApowbddelta*delta*PHI);
-
-      }
-   }
+				phi_d = phi_d + K[0][i] * (pow(DELTA, K[5][i]) * (PHI + delta
+						* DPHI) + dDELTApowbddelta * delta * PHI);
+			}
+		}
+	}
    return phi_a+phi_b+phi_c+phi_d;
 }
 
@@ -215,9 +213,9 @@ double CFluidProperties::phi_r_tt (double rho, double T, int c)
       else if (i<limit[2])
 
          phi_c = phi_c+ (K[0][i]*pow(delta,K[1][i])*pow(tau,K[2][i])*
-               exp(-K[10][i]*pow((delta-K[13][i]),2)-K[11][i]*pow((tau-K[12][i]),2))
+               exp(-K[10][i]*MathLib::fastpow((delta-K[13][i]),2)-K[11][i]*MathLib::fastpow((tau-K[12][i]),2))
                *(pow((K[2][i]/tau-2*K[11][i]*(tau-K[12][i])),2)-K[2][i]
-               /pow(tau,2)-2*K[11][i]));
+               /MathLib::fastpow(tau,2)-2*K[11][i]));
 
       else if (i<limit[3])
       {
@@ -272,8 +270,8 @@ double CFluidProperties::phi_0_tt (double T, int c)
    int i;
 
    tau = Tc/T;
-   phi_d = k[0][2]/pow(tau,2);
-   for (i=3; i<8; i++) phi_e=phi_e+(k[0][i]*pow(k[1][i],2)*exp(-k[1][i]*tau)*pow(1-exp(-k[1][i]*tau),-2));
+   phi_d = k[0][2]/MathLib::fastpow(tau,2);
+   for (i=3; i<8; i++) phi_e=phi_e+(k[0][i]*MathLib::fastpow(k[1][i],2)*exp(-k[1][i]*tau)*pow(1-exp(-k[1][i]*tau),-2));
 
    return 0-phi_d-phi_e;
 }
@@ -308,7 +306,7 @@ double CFluidProperties::phi_r_t (double rho, double T,int c)
    for (i=limit[1];i<limit[2];i++)
    {
       phi_c = phi_c + (K[0][i]*pow(delta,K[1][i])*pow(tau,(K[2][i]))*
-         exp(-K[10][i]*pow((delta-K[13][i]),2)-K[11][i]*pow((tau-K[12][i]),2))*
+         exp(-K[10][i]*MathLib::fastpow((delta-K[13][i]),2)-K[11][i]*MathLib::fastpow((tau-K[12][i]),2))*
          (K[2][i]/tau-2*K[11][i]*(tau-K[12][i])));
 
    }
@@ -361,7 +359,7 @@ double CFluidProperties::phi_r_dt (double rho, double T, int c)
    {
 
       phi_c = phi_c + ((K[0][i]*pow(delta,K[1][i])*pow(tau,K[2][i])*exp(
-         -K[10][i]*pow((delta-K[13][i]),2)-K[11][i]*pow((  tau-K[12][i]),2)))*
+         -K[10][i]*MathLib::fastpow((delta-K[13][i]),2)-K[11][i]*MathLib::fastpow((  tau-K[12][i]),2)))*
 
          (K[1][i]/delta-2*K[10][i]*(delta-K[13][i]))*
          (K[2][i]/tau-2*K[11][i]*(tau-K[12][i])));
@@ -421,9 +419,9 @@ double CFluidProperties::phi_r_dd (double rho, double T, int c)
    {
       phi_c = phi_c + ((K[0][i]*pow(tau,K[2][i]))*
          exp(-K[10][i]*pow((delta-K[13][i]),2)-K[11][i]*
-         pow((tau-K[12][i]),2))*(
-         (-2*K[10][i]*pow(delta,K[1][i])+4*pow(K[10][i],2)*pow(delta,K[1][i])*
-         pow((delta-K[13][i]),2))+
+        		 MathLib::fastpow((tau-K[12][i]),2))*(
+         (-2*K[10][i]*pow(delta,K[1][i])+4*MathLib::fastpow(K[10][i],2)*pow(delta,K[1][i])*
+        		 MathLib::fastpow((delta-K[13][i]),2))+
          (-4*K[1][i]*K[10][i]*pow(delta,(K[1][i]-1))*(delta-K[13][i])+
          K[1][i]*(K[1][i]-1)*pow(delta,(K[1][i]-2)))));
 
@@ -578,7 +576,7 @@ double isochoric_heat_capacity (double rho, double T, int c)
    a=MFPGet(c);
 
    //	thermal_properties (fluid, rhoc, Tc, R);
-   cv = -(pow((a->Tc/T),2)*(a->phi_0_tt(T,c)+a->phi_r_tt(rho,T,c)))*a->Rs;
+   cv = -(MathLib::fastpow((a->Tc/T),2)*(a->phi_0_tt(T,c)+a->phi_r_tt(rho,T,c)))*a->Rs;
 
    return cv;
 }
@@ -609,9 +607,9 @@ double isobaric_heat_capacity (double rho, double T, int c)
    tau = mfp_prop->Tc/T;
    delta = rho/mfp_prop->rhoc;
 
-   cp = (-pow(tau,2)*(mfp_prop->phi_0_tt(T,c)+mfp_prop->phi_r_tt(rho,T,c))
+   cp = (-MathLib::fastpow(tau,2)*(mfp_prop->phi_0_tt(T,c)+mfp_prop->phi_r_tt(rho,T,c))
       +(pow((1+delta*mfp_prop->phi_r_d(rho,T,c)-delta*tau*mfp_prop->phi_r_dt(rho,T,c)),2))
-      /((1+2*delta*mfp_prop->phi_r_d(rho,T,c)+pow(delta,2)*mfp_prop->phi_r_dd(rho,T,c))))*mfp_prop->Rs;
+      /((1+2*delta*mfp_prop->phi_r_d(rho,T,c)+MathLib::fastpow(delta,2)*mfp_prop->phi_r_dd(rho,T,c))))*mfp_prop->Rs;
 
    return cp;
 }
@@ -661,11 +659,12 @@ double co2_viscosity (double rho, double T)
 
    for (i=0; i<5; i++)
    {
-      psi = psi + a[i] * pow(log (t_r),(i));
+      psi = psi + a[i] * MathLib::fastpow(log (t_r),(i));
    }
    psi = exp (psi);
 
-   eta_0 = 1.00697 * pow (T,0.5) / psi;
+// TF   eta_0 = 1.00697 * pow (T,0.5) / psi;
+   eta_0 = 1.00697 * sqrt(T) / psi;
    d_eta = 0;
 
    // deriving the excess viscosity d_eta(rho,T)
@@ -674,9 +673,9 @@ double co2_viscosity (double rho, double T)
    {
       for (j=0; j<5; j++)
       {
-         b[i] = b[i] + d[i][j]/pow(t_r,j);
+         b[i] = b[i] + d[i][j]/MathLib::fastpow(t_r,j);
       }
-      d_eta = d_eta + b[i] * pow(rho,i+1);
+      d_eta = d_eta + b[i] * MathLib::fastpow(rho,i+1);
    }
 
    // deriving dynamic viscosity as sum of eta_o(T) and d_eta(rho,T)
@@ -727,22 +726,24 @@ double co2_heat_conductivity (double rho, double T)
 
    c_int_k = (1 + exp(-183.5/T))*sum_c;
 
-   r = pow((2*c_int_k/5),(0.5));
+// TF  r = pow((2*c_int_k/5),(0.5));
+   r = sqrt(2*c_int_k/5);
 
    T_r = T/251.196;
 
    for (i=0;i<8;i++)
    {
-      G_fn = G_fn + (b[i]/pow(T_r,i));
+      G_fn = G_fn + (b[i]/MathLib::fastpow(T_r,i));
    }
 
    r =
 
-      lamda_0 = (0.475598*pow(T,0.5)*(1+pow(r,2)))/G_fn;
+// TF      lamda_0 = (0.475598*pow(T,0.5)*(1+pow(r,2)))/G_fn;
+   lamda_0 = (0.475598*sqrt(T)*(1+MathLib::fastpow(r,2)))/G_fn;
 
    for (i=1;i<5;i++)
    {
-      delta_lamda = delta_lamda + d[i]*pow(rho,i);
+      delta_lamda = delta_lamda + d[i]*MathLib::fastpow(rho,i);
    }
 
    lamda = (lamda_0 + delta_lamda)/1000;
@@ -762,7 +763,7 @@ double ch4_viscosity_295K (double p)
    double h;
 
    p=p/100000;
-   h=(-3.7091411E-14*pow(p,4)+9.1937114E-10*pow(p,3)-6.6099446E-06*pow(p,2)+4.8400147E-02*p+1.0934694E+01)/1.0e6;
+   h=(-3.7091411E-14*MathLib::fastpow(p,4)+9.1937114E-10*MathLib::fastpow(p,3)-6.6099446E-06*MathLib::fastpow(p,2)+4.8400147E-02*p+1.0934694E+01)/1.0e6;
 
    return h;
 }
@@ -798,18 +799,18 @@ double h2o_viscosity_IAPWS (double rho, double T)
 
    for(i=0;i<4;i++)
    {
-      sum1=sum1+(H[i]/(pow(T,i)));
+      sum1=sum1+(H[i]/(MathLib::fastpow(T,i)));
    }
 
-   my_0 = 100*pow(T,0.5)/sum1;
+   my_0 = 100*sqrt(T)/sum1;
 
    for(i=0;i<6;i++)
    {
       for (j=0;j<7;j++)
       {
-         sum3 = sum3 + h[i][j]*pow(rho-1,j);
+         sum3 = sum3 + h[i][j]*MathLib::fastpow(rho-1,j);
       }
-      sum2= sum2 + (pow(1/T-1,i) * sum3);
+      sum2= sum2 + (MathLib::fastpow(1/T-1,i) * sum3);
       sum3 = 0;
    }
 
@@ -959,7 +960,7 @@ double melting_pressure_co2(double T,double Tt,double pt)
    a[0]=1955.539;                                 //CO2
    a[1]=2055.4593;
 
-   p= (1+a[0]*(T/Tt-1)+a[1]*pow((T/Tt-1),2))*pt;
+   p= (1+a[0]*(T/Tt-1)+a[1]*MathLib::fastpow((T/Tt-1),2))*pt;
 
    return p;
 }
@@ -995,16 +996,16 @@ double preos(double T, double P, int c)
    // Peng Robinson EOS:
    // P= R*T / (V-b) - a*alpha / (V^2+2bV-b^2)   where V = MM/rho
 
-   a=0.457235*pow(Ru,2)*pow(Tc,2)/pc;
+   a=0.457235*MathLib::fastpow(Ru,2)*MathLib::fastpow(Tc,2)/pc;
    b=0.077796*Ru*Tc/pc;
    P=P/1000;                                      //P in kPa
-   alpha=pow((1+(0.37464+1.5422*omega-0.26992*pow(omega,2))*(1-pow((T/Tc),0.5))),2);
+   alpha=MathLib::fastpow((1+(0.37464+1.5422*omega-0.26992*MathLib::fastpow(omega,2))*(1-sqrt(T/Tc))),2);
 
    //EOS in the form: 0 = rho^3 + z1*rho^2 + z2*rho + z3
 
-   z1=(MM*a*alpha-3*MM*pow(b,2)*P-2*MM*Ru*T*b)/(b*(P*pow(b,2)+b*Ru*T-a*alpha));
-   z2=(pow(MM,2)*(b*P-Ru*T))/(b*(P*pow(b,2)+b*Ru*T-a*alpha));
-   z3=(pow(MM,3)*P)/(b*(P*pow(b,2)+b*Ru*T-a*alpha));
+   z1=(MM*a*alpha-3*MM*MathLib::fastpow(b,2)*P-2*MM*Ru*T*b)/(b*(P*MathLib::fastpow(b,2)+b*Ru*T-a*alpha));
+   z2=(MathLib::fastpow(MM,2)*(b*P-Ru*T))/(b*(P*MathLib::fastpow(b,2)+b*Ru*T-a*alpha));
+   z3=(MathLib::fastpow(MM,3)*P)/(b*(P*MathLib::fastpow(b,2)+b*Ru*T-a*alpha));
 
    NsPol3(z1,z2,z3,&roots);                       //derives the roots of the polynomial
 
@@ -1057,15 +1058,15 @@ double rkeos(double T, double P, int c)
    // Redlich-Kwong EOS:
    // P= R*T (1+y+y^2-y^3)/ v(1-y^3) - a / (T^0.5*v(cv+b)   where V = MM/rho and y = b / (4v)
 
-   a=27*pow(Ru,2)*pow(Tc,2.5)/(64*pc);
+   a=27*MathLib::fastpow(Ru,2)*pow(Tc,2.5)/(64*pc);
    b=0.0866*Ru*Tc/pc;
    P=P/100000;                                    //P in bar
 
    //EOS in the form: 0 = vm^3 + z1*vm^2 + z2*vm + z3
 
    z1=-Ru*T/P;
-   z2=-(Ru*T*b/P-a/(pow(T,0.5)*P)+pow(b,2));
-   z3=-a*b/(pow(T,0.5)*P);
+   z2=-(Ru*T*b/P-a/(sqrt(T)*P)+MathLib::fastpow(b,2));
+   z3=-a*b/(sqrt(T)*P);
 
    NsPol3(z1,z2,z3,&roots);                       //derives the roots of the polynomial
 
@@ -1100,8 +1101,8 @@ double rkeos(double T, double P, double MM, double a, double b)
    // 0 = vm^3 + z1*vm^2 + z2*vm + z3
 
    z1=-Ru*T/P;
-   z2=-(Ru*T*b/P-a/(pow(T,0.5)*P)+pow(b,2));
-   z3=-a*b/(pow(T,0.5)*P);
+   z2=-(Ru*T*b/P-a/(sqrt(T)*P)+MathLib::fastpow(b,2));
+   z3=-a*b/(sqrt(T)*P);
 
    NsPol3(z1,z2,z3,&roots);                       //derives the roots of the polynomial
 
@@ -1155,11 +1156,11 @@ double h2o_heat_conductivity_IAPWS_ind (double rho, double T)
 
    for (i=0;i<4;i++)
    {
-      sum1=sum1 + a[i]*pow(T,i);
+      sum1=sum1 + a[i]*MathLib::fastpow(T,i);
    }
 
-   lamda_0 = pow(T,0.5)*sum1;
-   lamda_1 = b[0] + b[1]*rho + b[2]* exp(B[0]*pow(rho+B[1],2));
+   lamda_0 = sqrt(T)*sum1;
+   lamda_1 = b[0] + b[1]*rho + b[2]* exp(B[0]*MathLib::fastpow(rho+B[1],2));
 
    dT = fabs(T-1)+C[3];
    Q = 2 + (C[4]/pow(dT,3./5.));
@@ -1169,9 +1170,9 @@ double h2o_heat_conductivity_IAPWS_ind (double rho, double T)
    else
       S = C[5]/pow(dT,3./5.);
 
-   lamda_2 = (d[0]/pow(T,10.)+d[1])*pow(rho,9./5.)*exp(C[0]*(1-pow(rho,14./5.)))
+   lamda_2 = (d[0]/MathLib::fastpow(T,10)+d[1])*pow(rho,9./5.)*exp(C[0]*(1-pow(rho,14./5.)))
       + d[2]*S*pow(rho,Q)*exp((Q/(1.+Q))*(1-pow(rho,(1.+Q))))
-      + d[3]*exp(C[1]*pow(T,3./2.)+C[2]/pow(rho,5.));
+      + d[3]*exp(C[1]*pow(T,3./2.)+C[2]/MathLib::fastpow(rho,5));
 
    lamda = (lamda_0 + lamda_1 + lamda_2);         // lamda in [W/m/K]
 
@@ -1194,7 +1195,8 @@ double ch4_viscosity (double rho, double T)
 {
    double eta, eta_0, eta_ex;
    double t,delta,tau,Omega=0;
-   double C[9],r[11],s[11],g[11];
+   double C[9],s[11],g[11];
+   size_t r[11]; // TF
    double sum1=0,sum2=0;
    int unsigned i;
 
@@ -1216,19 +1218,19 @@ double ch4_viscosity (double rho, double T)
    }
    Omega = 1/Omega;
 
-   eta_0 = 10.5*pow(t,0.5)/Omega;
+   eta_0 = 10.5*sqrt(t)/Omega;
 
    delta = rho/10.139;
    tau = 190.551/T;
 
    for (i=0;i<9;i++)
    {
-      sum1 = sum1 + g[i]*pow(delta,r[i])*pow(tau,s[i]);
+      sum1 = sum1 + g[i]*MathLib::fastpow(delta,r[i])*pow(tau,s[i]);
    }
 
    for (i=9;i<11;i++)
    {
-      sum2 = sum2 + g[i]*pow(delta,r[i])*pow(tau,s[i]);
+      sum2 = sum2 + g[i]*MathLib::fastpow(delta,r[i])*pow(tau,s[i]);
    }
 
    eta_ex = 12.149 * sum1 * pow(1+sum2,-1.0);
@@ -1253,7 +1255,8 @@ double ch4_heat_conductivity (double rho, double T)
 {
    double lamda, eta_0, lamda_0, lamda_ex;
    double t,delta,tau,Omega=0,epsilon,beta;
-   double C[9],Q[6],r[7],s[7],j[7],f[2],H[6],J[5];
+   double C[9],Q[6],j[7],f[2],H[6],J[5];
+   size_t r[7],s[7];
    double sum=0,phi_id_tt,f_int;
    double P_sigma,Z_c,delta_star,T_star,rho_sigma_v;
 
@@ -1290,10 +1293,10 @@ double ch4_heat_conductivity (double rho, double T)
    }
    Omega = 1/Omega;
 
-   eta_0 = 10.5*pow(t,0.5)/Omega;                 // (Eq. 10a)
+   eta_0 = 10.5*sqrt(t)/Omega;                 // (Eq. 10a)
 
    phi_id_tt = - Q[0]+ 4*Q[1]/9  * pow(tau,-1./3.) + 10*Q[2]/9 * pow(tau,-2./3.) + 2*Q[3]*pow(tau,-1)
-      - Q[4]*pow(Q[5],2)* pow(tau,2)* exp (Q[5]*tau) * pow((exp (Q[5]*tau)-1),-2);
+      - Q[4]*MathLib::fastpow(Q[5],2)* MathLib::fastpow(tau,2)* exp (Q[5]*tau) * pow((exp (Q[5]*tau)-1),-2);
 
    f_int = f[0] + (f[1]/t);
 
@@ -1304,7 +1307,7 @@ double ch4_heat_conductivity (double rho, double T)
    P_sigma = P_c * exp(H[0]*T_star/(1-T_star)+H[1]*T_star+H[2]*pow(T_star,epsilon)+H[3]*pow(T_star,2)+H[4]*pow(T_star,3));
    Z_c = P_c/(R*T_c*rho_c);
 
-   rho_sigma_v = P_sigma/(R*T) * (1+P_sigma*pow(tau,8)*(Z_c-1)/P_c*(1+(J[0]*pow(T_star,beta)+J[1]*pow(T_star,2*beta)+J[2]*(T_star+pow(T_star,4))+J[3]*pow(T_star,2))
+   rho_sigma_v = P_sigma/(R*T) * (1+P_sigma*MathLib::fastpow(tau,8)*(Z_c-1)/P_c*(1+(J[0]*pow(T_star,beta)+J[1]*pow(T_star,2*beta)+J[2]*(T_star+MathLib::fastpow(T_star,4))+J[3]*MathLib::fastpow(T_star,2))
       /(1+J[4]*T_star)));                         // (Eq. 5)
 
    if ((T<T_c)&&(rho<rho_c))                      // (Eq. 16)
@@ -1314,11 +1317,11 @@ double ch4_heat_conductivity (double rho, double T)
 
    for (i=0;i<7;i++)                              // (Eq. 17)
    {
-      sum = sum + j[i]*pow(delta,r[i])*pow(tau,s[i]);
+      sum = sum + j[i]*MathLib::fastpow(delta,r[i])*MathLib::fastpow(tau,s[i]);
    }
 
                                                   // (Eq. 17)
-   lamda_ex = 6.29638 * ( sum + j[6]*pow(delta,2)/delta_star);
+   lamda_ex = 6.29638 * ( sum + j[6]*MathLib::fastpow(delta,2)/delta_star);
 
    lamda = (lamda_0 + lamda_ex)/1000;             //lamda in [W/m/K]
 
@@ -1376,17 +1379,17 @@ double n2_viscosity (double rho, double T)
 
    for (i=0;i<5;i++)
    {
-      Omega = Omega + A[i]*pow(log(T_star),i);
+      Omega = Omega + A[i]*MathLib::fastpow(log(T_star),i);
    }
 
    Omega = exp (Omega);
 
                                                   //eta in [Pa*s]
-   eta_0 = c1 * pow(c2*T,0.5) / (pow(sigma,2)*Omega);
+   eta_0 = c1 * sqrt(c2*T) / (MathLib::fastpow(sigma,2)*Omega);
 
    for (i=2;i<5;i++)
    {
-      sum = sum + C[i]*pow(rho,i-1);
+      sum = sum + C[i]*MathLib::fastpow(rho,i-1);
    }
 
                                                   //
@@ -1462,7 +1465,7 @@ double n2_heat_conductivity (double rho, double T)
    {
       sum = sum + f[i]*pow(T,(i-3));
    }
-   c_v0 = R * (sum + ((f[7]*pow((f[8]/T),2)*(exp((f[8]/T))))/(pow(exp ((f[8]/T)) -1,2))-1));
+   c_v0 = R * (sum + ((f[7]*MathLib::fastpow((f[8]/T),2)*(exp((f[8]/T))))/(MathLib::fastpow(exp ((f[8]/T)) -1,2))-1));
    sum = 0;
 
    double cvint;
@@ -1471,12 +1474,12 @@ double n2_heat_conductivity (double rho, double T)
    // dilute gas viscosity
    for (i=0;i<5;i++)
    {
-      Omega = Omega + A[i]*pow(log(T_star),i);
+      Omega = Omega + A[i]*MathLib::fastpow(log(T_star),i);
    }
    Omega = exp (Omega);
 
                                                   //eta in [Pa*s]
-   eta_0 = 1e6*(c1 * pow(c2*T,0.5) / (pow(sigma,2)*Omega));
+   eta_0 = 1e6*(c1 * sqrt(c2*T) / (MathLib::fastpow(sigma,2)*Omega));
 
    F = eta_0 * k * N_A / (M*1000);
 
@@ -1487,7 +1490,7 @@ double n2_heat_conductivity (double rho, double T)
    sum = 0;
    for (i=0;i<4;i++)
    {
-      sum = sum + C[i]*pow(rho,(i+1));
+      sum = sum + C[i]*MathLib::fastpow(rho,(i+1));
    }
 
    lamda_r = sum*CCF;
@@ -1522,11 +1525,11 @@ double vapour_pressure_IF97(double T)
 
    theta = T+n9/(T-n10);
 
-   A =    pow(theta,2.0)+n1*theta+n2;
-   B = n3*pow(theta,2.0)+n4*theta+n5;
-   C = n6*pow(theta,2.0)+n7*theta+n8;
+   A =    MathLib::fastpow(theta,2)+n1*theta+n2;
+   B = n3*MathLib::fastpow(theta,2)+n4*theta+n5;
+   C = n6*MathLib::fastpow(theta,2)+n7*theta+n8;
    double h;
-   h=pow((2.0*C/(-B+pow((B*B-4.0*A*C),0.5))),4.0)*10.0;
+   h=MathLib::fastpow((2.0*C/(-B+sqrt(B*B-4.0*A*C))),4)*10.0;
    return h;
 }
 
@@ -1550,7 +1553,7 @@ double vapour_pressure_ch4(double T)
    n1=-6.036219; n2= 1.409359; n3=-0.4945199; n4=-1.443048;
 
    theta = (1-T/Tc);
-   h=Tc/T*(n1*theta+n2*pow(theta,1.5)+n3*pow(theta,2)+n4*pow(theta,4.5));
+   h=Tc/T*(n1*theta+n2*pow(theta,1.5)+n3*MathLib::fastpow(theta,2)+n4*pow(theta,4.5));
 
    return exp(h)*pc;;
 }
@@ -1575,7 +1578,7 @@ double vapour_pressure_h2o(double T)
 
    theta = (1-T/Tc);
 
-   h=Tc/T*(a1*theta+a2*pow(theta,1.5)+a3*pow(theta,3)+a4*pow(theta,3.5)+a5*pow(theta,4)+a6*pow(theta,7));
+   h=Tc/T*(a1*theta+a2*pow(theta,1.5)+a3*MathLib::fastpow(theta,3)+a4*pow(theta,3.5)+a5*MathLib::fastpow(theta,4)+a6*MathLib::fastpow(theta,7));
 
    return exp(h)*pc;;
 }
@@ -1859,7 +1862,7 @@ double liquid_saturation_density_ch4(double T)
    n1=1.9906389; n2= -0.78756197; n3=0.036976723;
 
    theta = (1-T/Tc);
-   h=(n1*pow(theta,0.354)+n2*pow(theta,0.5)+n3*pow(theta,(5./2.)));
+   h=(n1*pow(theta,0.354)+n2*sqrt(theta)+n3*pow(theta,(5./2.)));
 
    return exp(h)*rhoc;;
 }
@@ -1909,7 +1912,7 @@ double vapour_pressure_n2(double T)
    n1=-6.12445284; n2=1.26327220; n3=-0.765910082; n4=-1.77570564;
 
    theta = (1-T/Tc);
-   h=(Tc/T)*(n1*theta+n2*pow(theta,(1.5))+n3*pow(theta,(2.5))+n4*pow(theta,(5.)));
+   h=(Tc/T)*(n1*theta+n2*pow(theta,(1.5))+n3*pow(theta,(2.5))+n4*MathLib::fastpow(theta,(5)));
 
    return exp(h)*pc;
 }
