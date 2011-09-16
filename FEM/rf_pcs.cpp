@@ -1527,7 +1527,12 @@ bool PCSRead(std::string file_base_name)
                if (pname.find("DYNAMIC") != string::npos)
                   m_pcs->pcs_type_name_vector[0] = "DYNAMIC";
             }
+         } else if (m_pcs->getProcessType()==DEFORMATION_FLOW) {
+             //NW
+             std::cout << "***Error: DEFORMATION_FLOW is vague definition." << std::endl;
+             exit(0);
          }
+
 
          m_pcs->pcs_number = pcs_vector.size();
          //RelocateDeformationProcess(m_pcs);
