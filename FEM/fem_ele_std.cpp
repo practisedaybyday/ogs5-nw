@@ -2125,7 +2125,7 @@ namespace FiniteElement
                MMultVecMat(v2,dim,invJacobian,dim,dim,Gradz,dim);
                w[0] = GradH[0] + Gradz[0];
                w[1] = GradH[1] + Gradz[1];
-               chezy4 = pow(chezy,4);
+               chezy4 = MathLib::fastpow(chezy,4);
                Ss = ((w[0] * w[0]) / chezy4) +  ((w[1] * w[1]) / chezy4);
                Ss = pow(Ss,0.25);
                if (fabs(Ss) < 1.0e-7)
@@ -3395,7 +3395,7 @@ namespace FiniteElement
             double tmp_diff = 0.0;
             for (int i=0; i<dim; i++)
             {
-               tmp_diff = pow(dispersion_tensor[i+i*dim], 2.0);
+               tmp_diff = MathLib::fastpow(dispersion_tensor[i+i*dim], 2);
             }
             diff = sqrt(tmp_diff);
          }
@@ -3444,7 +3444,9 @@ namespace FiniteElement
          {
             // taking into account time step
             //          tau = 1.0 / sqrt(pow(2.0/dt ,2.0)+pow(2.0*v_mag/ele_len,2.0));
-            tau = 1.0 / sqrt(pow(2.0/dt ,2.0)+pow(2.0*v_mag/ele_len,2.0)+pow(4.0*diff/(ele_len*ele_len),2.0));
+            tau = 1.0 / sqrt(MathLib::fastpow(2.0 / dt, 2) + MathLib::fastpow(2.0
+				* v_mag / ele_len, 2) + MathLib::fastpow(4.0 * diff / (ele_len * ele_len),
+				2));
          }
          break;
       }
@@ -4732,7 +4734,7 @@ namespace FiniteElement
          humi = exp(PG/(GAS_CONSTANT_V*TG*rhow));
          Dv = tort*(1.0-Sw)*poro*2.16e-5*pow(TG/T_KILVIN_ZERO, 1.8);
          rhov = humi*FluidProp->vaporDensity(TG);
-         drdT= (FluidProp->vaporDensity_derivative(TG)*humi-rhov*PG/(GAS_CONSTANT_V*rhow*pow(TG, 2.0)))/rhow;
+         drdT= (FluidProp->vaporDensity_derivative(TG)*humi-rhov*PG/(GAS_CONSTANT_V*rhow*MathLib::fastpow(TG,2)))/rhow;
          Dtv = time_unit_factor*Dv*drdT;
 
          //    }
@@ -8213,7 +8215,7 @@ namespace FiniteElement
          NGPoints=3;
       else if(ele_type==MshElemType::TETRAHEDRON)
          NGPoints=15;
-      else NGPoints = (int)pow((double)NGP, (double)ele_dim);
+      else NGPoints = (int)MathLib::fastpow(NGP, ele_dim);
 
       //WW Velocity.resize(m_pcs->m_msh->GetCoordinateFlag()/10, NGPoints);
       Velocity.resize(3, NGPoints);
