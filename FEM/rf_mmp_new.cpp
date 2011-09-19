@@ -2221,8 +2221,8 @@ int phase)
          //permeability_saturation = pow(saturation_eff,2.)
          //                        * (1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase]));
          // YD Advances in Water Resource 19 (1995) 25-38
-         permeability_saturation = pow(saturation_eff,0.5) \
-            * pow(1.-pow(1-pow(saturation_eff,1./saturation_exp[phase]),saturation_exp[phase]),2.0);
+         permeability_saturation = sqrt(saturation_eff) \
+            * MathLib::fastpow(1.-pow(1-pow(saturation_eff,1./saturation_exp[phase]),saturation_exp[phase]),2);
          permeability_saturation = MRange(0.,permeability_saturation,1.);
          break;
       case 5:                                     // Haverkamp Problem: aus SOIL SCI. SOC. AM. J., VOL. 41, 1977, Pages 285ff
@@ -2249,8 +2249,8 @@ int phase)
          //
          saturation_eff = (saturation - saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
          //MX relperm[1] = pow(s_eff, 0.5) * pow((1 - pow((1 - pow(s_eff, 1. / m)), m)),2.0);
-         permeability_saturation = pow(saturation_eff,0.5) \
-            * pow((1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase])),2.0);
+         permeability_saturation = sqrt(saturation_eff) \
+            * MathLib::fastpow((1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase])),2);
          permeability_saturation = MRange(0.,permeability_saturation,1.);
          break;
       case 15:                                    //MX Van Genuchten: Gas aus Water Resour. Res. VOL. 23, pp2197-2206 1987
@@ -2263,7 +2263,7 @@ int phase)
          //
          saturation_eff = (saturation - saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
          //MX relperm[1] = pow((1-s_eff), 0.5) * pow((1 - pow(s_eff, 1. / m)),2m);
-         permeability_saturation = pow((1-saturation_eff),0.5) \
+         permeability_saturation = sqrt((1-saturation_eff)) \
             * pow((1.-pow(saturation_eff,1./saturation_exp[phase])),2.0*saturation_exp[phase]);
          permeability_saturation = MRange(0.,permeability_saturation,1.);
          break;
@@ -2281,8 +2281,8 @@ int phase)
          //permeability_saturation = pow(saturation_eff,2.)
          //                        * (1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase]));
 
-         permeability_saturation = pow(saturation_eff,0.5) \
-            * pow(1.-pow(1-pow(saturation_eff,1./permeability_exp[phase]),permeability_exp[phase]),2.0);
+         permeability_saturation = sqrt(saturation_eff) \
+            * MathLib::fastpow(1.-pow(1-pow(saturation_eff,1./permeability_exp[phase]),permeability_exp[phase]),2);
          permeability_saturation = MRange(0.,permeability_saturation,1.);
          break;
       default:
@@ -2380,9 +2380,9 @@ int phase)
          //permeability_saturation = pow(saturation_eff,2.)
          //                        * (1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase]));
          // YD Advances in Water Resource 19 (1995) 25-38
-         permeability_saturation = pow(saturation_eff,0.5) \
-            * pow(1.-pow(1-pow(saturation_eff,1./saturation_exp[phase]),
-            saturation_exp[phase]),2.0);
+         permeability_saturation = sqrt(saturation_eff) \
+            * MathLib::fastpow(1.-pow(1-pow(saturation_eff,1./saturation_exp[phase]),
+            saturation_exp[phase]),2);
          permeability_saturation = MRange(0.,permeability_saturation,1.);
          break;
       case 44:                                    // Van Genuchtenfor non wetting fluid (e.g. gas):  WW
@@ -2415,7 +2415,7 @@ int phase)
             saturation = saturation_res[0] + MKleinsteZahl;
          //
          saturation_eff = (saturation - saturation_res[0]) / (1.-saturation_res[0]-saturation_res[1]);
-         permeability_saturation = pow(1.0-saturation_eff, 2.0)*
+         permeability_saturation = MathLib::fastpow(1.0-saturation_eff, 2)*
             (1.0-pow(saturation_eff,(2.0+saturation_exp[phase])/saturation_exp[phase]));
          permeability_saturation = MRange(permeability_tensor[9],permeability_saturation,1.);
          break;
@@ -2437,8 +2437,8 @@ int phase)
          //
          saturation_eff = (saturation - saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
          //MX relperm[1] = pow(s_eff, 0.5) * pow((1 - pow((1 - pow(s_eff, 1. / m)), m)),2.0);
-         permeability_saturation = pow(saturation_eff,0.5) \
-            * pow((1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase])),2.0);
+         permeability_saturation = sqrt(saturation_eff) \
+            * MathLib::fastpow((1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase])),2);
          permeability_saturation = MRange(0.,permeability_saturation,1.);
          break;
       case 15:                                    //MX Van Genuchten: Gas aus Water Resour. Res. VOL. 23, pp2197-2206 1987
@@ -2451,7 +2451,7 @@ int phase)
          //
          saturation_eff = (saturation - saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
          //MX relperm[1] = pow((1-s_eff), 0.5) * pow((1 - pow(s_eff, 1. / m)),2m);
-         permeability_saturation = pow((1-saturation_eff),0.5) \
+         permeability_saturation = sqrt(1-saturation_eff) \
             * pow((1.-pow(saturation_eff,1./saturation_exp[phase])),2.0*saturation_exp[phase]);
          permeability_saturation = MRange(0.,permeability_saturation,1.);
          break;
@@ -2469,8 +2469,8 @@ int phase)
          //permeability_saturation = pow(saturation_eff,2.)
          //                        * (1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase]));
          // YD Advances in Water Resource 19 (1995) 25-38
-         permeability_saturation = pow(saturation_eff,0.5) \
-            * pow(1.-pow(1-pow(saturation_eff,1./permeability_exp[phase]),permeability_exp[phase]),2.0);
+         permeability_saturation = sqrt(saturation_eff) \
+            * MathLib::fastpow(1.-pow(1-pow(saturation_eff,1./permeability_exp[phase]),permeability_exp[phase]),2);
          permeability_saturation = MRange(0.,permeability_saturation,1.);
 
          break;
@@ -2767,7 +2767,7 @@ double* CMediumProperties::HeatConductivityTensor(int number)
       dA=COMP_MOL_MASS_WATER*dPc/(rhow*GAS_CONSTANT);
       dp_gw=q/(H_vap*rho_gw*mat_fac_g*1.0e-13) ;
       dB=-dp_gw/p_gw;
-      dT=(B*dA - A*dB)/(pow(B,2)+(0/TG));
+      dT=(B*dA - A*dB)/(MathLib::fastpow(B,2)+(0/TG));
       heat_conductivity_fluids = 2*q/dT;
       Kx[0]=heat_conductivity_fluids;
       if(GravityOn)
@@ -2776,7 +2776,7 @@ double* CMediumProperties::HeatConductivityTensor(int number)
          dA=COMP_MOL_MASS_WATER*dPc/(rhow*GAS_CONSTANT);
          dp_gw -= rho_g*gravity_constant;
          dB=-dp_gw/p_gw;
-         dT=(B*dA - A*dB)/(pow(B,2)+(0/TG));
+         dT=(B*dA - A*dB)/(MathLib::fastpow(B,2)+(0/TG));
          heat_conductivity_fluids = 2*q/dT;
          Kx[dimen-1]=heat_conductivity_fluids;
       }
@@ -4246,9 +4246,9 @@ double* CMediumProperties::PermeabilityTensor(long index)
 
             // then relative permeability change
             k_rel = permeability_porosity_model_values[2] * \
-               pow( ( n_rel - permeability_porosity_model_values[0] )/(1 - permeability_porosity_model_values[0]) , 3.0) \
+            MathLib::fastpow( ( n_rel - permeability_porosity_model_values[0] )/(1 - permeability_porosity_model_values[0]), 3) \
                + ( 1 - permeability_porosity_model_values[2] ) * \
-               pow( ( n_rel - permeability_porosity_model_values[0] )/(1 - permeability_porosity_model_values[0]) , 2.0);
+               MathLib::fastpow( ( n_rel - permeability_porosity_model_values[0] )/(1 - permeability_porosity_model_values[0]) , 2);
             // finially permeability
             k_new = k_rel * permeability_porosity_model_values[1];
             // save new permeability
@@ -4686,9 +4686,9 @@ double CMediumProperties::PermeabilityFracAperture(long index)
                   {
                      for(i=0; i!=(int)aperture_list.size(); ++i)
                      {
-                        Sum_Squared_Diffs += pow((aperture_list[i] - ApertureAvg),2);
+                        Sum_Squared_Diffs += MathLib::fastpow((aperture_list[i] - ApertureAvg),2);
                      }
-                     Std_Dev = pow((Sum_Squared_Diffs/(double)aperture_list.size()),0.5);
+                     Std_Dev = sqrt(Sum_Squared_Diffs/(double)aperture_list.size());
                   }
                   else Std_Dev = 0;
 
@@ -4700,7 +4700,7 @@ double CMediumProperties::PermeabilityFracAperture(long index)
                   tortuosity_corr = (1-c)/(1+c);
                   if(Std_Dev < 0.73*ApertureAvg)
                   {
-                     roughness_corr = 1 - 1.5*pow(Std_Dev,2.0)/pow(ApertureAvg, 2.0);
+                     roughness_corr = 1 - 1.5*MathLib::fastpow(Std_Dev,2)/MathLib::fastpow(ApertureAvg, 2);
                   }
                   else
                   {
@@ -4739,16 +4739,16 @@ double CMediumProperties::PermeabilityFracAperture(long index)
                   {
                      for(i=0; i!=(int)aperture_list.size(); ++i)
                      {
-                        Sum_Squared_Diffs += pow((aperture_list[i] - ApertureAvg),2);
+                        Sum_Squared_Diffs += MathLib::fastpow((aperture_list[i] - ApertureAvg),2);
                      }
-                     Std_Dev = pow((Sum_Squared_Diffs/(double)aperture_list.size()),0.5);
+                     Std_Dev = sqrt(Sum_Squared_Diffs/(double)aperture_list.size());
                   }
 
                   //calculating the peremability, permeability is the average fracture perm, normalised_perm is the perm of the current frac element
                   c = closed/total_count;         //closed fraction
                   if(Std_Dev < 0.73*ApertureAvg)
                   {
-                     roughness_corr = 1 - 1.5*pow(Std_Dev,2.0)/pow(ApertureAvg, 2.0);
+                     roughness_corr = 1 - 1.5*MathLib::fastpow(Std_Dev,2)/MathLib::fastpow(ApertureAvg, 2);
                   }
                   else
                   {
@@ -4799,7 +4799,7 @@ double CMediumProperties::PermeabilityFracAperture(long index)
             }                                     //end of switch case
             //the values are stored in the mmp
 
-            permeability = (  pow(ApertureAvg, 2.0) / 12  ) * tortuosity_corr * roughness_corr;
+            permeability = (  MathLib::fastpow(ApertureAvg, 2) / 12  ) * tortuosity_corr * roughness_corr;
             normalised_perm = permeability * ApertureAvg / (elem->GetAperture());
 
             m_mmp->frac_perm[elem->GetFracNum()] = permeability;
@@ -5079,7 +5079,7 @@ double CMediumProperties::CalculateFracAperture(MeshLib::CElem* elem, double del
          ytop = intercept[1];
          ybot = intercept[3];
 
-         aperture = sqrt(  pow( (intercept[3]-intercept[1]),2 )  +  pow( (intercept[2]-intercept[0]),2 )  );
+         aperture = sqrt(  MathLib::fastpow( (intercept[3]-intercept[1]) )  +  MathLib::fastpow( (intercept[2]-intercept[0]))  );
 
          elem->SetAperture(aperture);
 
@@ -6556,7 +6556,7 @@ void CMediumProperties::CalStressPermeabilityFactor2(double *kfac, const double 
    {
       ia = (i+1)%3;
       ib = (i+2)%3;
-      kfac[i] = 0.5*(pow(b[ia],3.0)+pow(b[ib],3.0))/pow(b0,3.0);
+      kfac[i] = 0.5*(MathLib::fastpow(b[ia],3)+MathLib::fastpow(b[ib],3))/MathLib::fastpow(b0,3);
    }
 }
 
@@ -6608,7 +6608,7 @@ void CMediumProperties::CalStressPermeabilityFactor3(double *kfac)
       ah[i] = am*am;
       if(ah[i]>am) ah[i] = am;
       //
-      c_coefficient[21+i] = ah[i]/pow(JRC,2.5);
+      c_coefficient[21+i] = ah[i]/MathLib::fastpow(sqrt(JRC),5);
    }
    kfac[0] = ah[0]*ah[0]/(ah0_h*ah0_h);
    if(geo_dimension==2)
@@ -6795,7 +6795,7 @@ double CMediumProperties::KozenyCarman(double k0, double n0, double n)
    {
       rt = k0 ;
 
-      rt *=pow( n / n0 , 3 );
+      rt *=MathLib::fastpow( n / n0 , 3 );
    }
 
    return rt;
@@ -6821,9 +6821,9 @@ double CMediumProperties::KozenyCarman_normalized(double k0, double n0, double n
    {
       rt = k0 ;
 
-      rt *=pow( n / n0 , 3 );
+      rt *=MathLib::fastpow( n / n0 , 3 );
 
-      rt *=pow( (1 - n0) / (1 - n) , 2);
+      rt *=MathLib::fastpow( (1 - n0) / (1 - n) , 2);
    }
 
    return rt;
@@ -8313,7 +8313,7 @@ double CMediumProperties::PermeabilityPressureFunctionMethod1(long index,double 
          normx=a2*b3-a3*b2;
          normy=a3*b1-a1*b3;
          normz=a1*b2-a2*b1;
-         normlen=sqrt(pow(normx,2.0)+pow(normy,2.0)+pow(normz,2.0));
+         normlen=sqrt(MathLib::fastpow(normx,2)+MathLib::fastpow(normy,2)+MathLib::fastpow(normz,2));
          dircosl= normy/normlen;
          dircosm= normz/normlen;
          dircosn= normx/normlen;
@@ -8330,7 +8330,7 @@ double CMediumProperties::PermeabilityPressureFunctionMethod1(long index,double 
          normx=a2*b3-a3*b2;
          normy=a3*b1-a1*b3;
          normz=a1*b2-a2*b1;
-         normlen=sqrt(pow(normx,2.0)+pow(normy,2.0)+pow(normz,2.0));
+         normlen=sqrt(MathLib::fastpow(normx,2)+MathLib::fastpow(normy,2)+MathLib::fastpow(normz,2));
          dircosl= normy/normlen;
          dircosm= normz/normlen;
          dircosn= normx/normlen;
@@ -8347,7 +8347,7 @@ double CMediumProperties::PermeabilityPressureFunctionMethod1(long index,double 
          normx=a2*b3-a3*b2;
          normy=a3*b1-a1*b3;
          normz=a1*b2-a2*b1;
-         normlen=sqrt(pow(normx,2.0)+pow(normy,2.0)+pow(normz,2.0));
+         normlen=sqrt(MathLib::fastpow(normx,2)+MathLib::fastpow(normy,2)+MathLib::fastpow(normz,2));
          dircosl= normy/normlen;
          dircosm= normz/normlen;
          dircosn= normx/normlen;
@@ -8477,7 +8477,7 @@ double CMediumProperties::PermeabilityPressureFunctionMethod2(long index,double 
          normx=a2*b3-a3*b2;
          normy=a3*b1-a1*b3;
          normz=a1*b2-a2*b1;
-         normlen=sqrt(pow(normx,2.0)+pow(normy,2.0)+pow(normz,2.0));
+         normlen=sqrt(MathLib::fastpow(normx,2)+MathLib::fastpow(normy,2)+MathLib::fastpow(normz,2));
          dircosl= normy/normlen;
          dircosm= normz/normlen;
          dircosn= normx/normlen;
@@ -8494,7 +8494,7 @@ double CMediumProperties::PermeabilityPressureFunctionMethod2(long index,double 
          normx=a2*b3-a3*b2;
          normy=a3*b1-a1*b3;
          normz=a1*b2-a2*b1;
-         normlen=sqrt(pow(normx,2.0)+pow(normy,2.0)+pow(normz,2.0));
+         normlen=sqrt(MathLib::fastpow(normx,2)+MathLib::fastpow(normy,2)+MathLib::fastpow(normz,2));
          dircosl= normy/normlen;
          dircosm= normz/normlen;
          dircosn= normx/normlen;
@@ -8511,7 +8511,7 @@ double CMediumProperties::PermeabilityPressureFunctionMethod2(long index,double 
          normx=a2*b3-a3*b2;
          normy=a3*b1-a1*b3;
          normz=a1*b2-a2*b1;
-         normlen=sqrt(pow(normx,2.0)+pow(normy,2.0)+pow(normz,2.0));
+         normlen=sqrt(MathLib::fastpow(normx,2)+MathLib::fastpow(normy,2)+MathLib::fastpow(normz,2));
          dircosl= normy/normlen;
          dircosm= normz/normlen;
          dircosn= normx/normlen;
@@ -8530,7 +8530,7 @@ double CMediumProperties::PermeabilityPressureFunctionMethod2(long index,double 
       y_bore = permeability_pressure_model_values[5];
       z_bore = permeability_pressure_model_values[6];
 
-      distance = pow(pow((x_mid-x_bore),2.0) + pow((y_mid-y_bore),2.0) + pow((z_mid-z_bore),2.0),0.5);
+      distance = sqrt(MathLib::fastpow((x_mid-x_bore),2) + MathLib::fastpow((y_mid-y_bore),2) + MathLib::fastpow((z_mid-z_bore),2));
 
       /*Calcualtion of stress according to Ito & Zoback 2000 for KTB hole*/
 
