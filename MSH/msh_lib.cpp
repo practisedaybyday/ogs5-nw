@@ -108,7 +108,7 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    {
       fem_msh = new CFEMesh();
       GMSH2MSH(msh_file_name.c_str(), fem_msh);
-      fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
+      //fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
 
 	  return fem_msh;
    }
@@ -129,15 +129,15 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    {
 		fem_msh = new CFEMesh(geo_obj, unique_name);
 		more_mesh = fem_msh->Read(&msh_file_ascii);
-        fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
-
+        //fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
+/*
 		//Multi-mesh 12.08.2011 WW
 		if(more_mesh)
 		{
            while(!msh_file_ascii.eof())
            {
            //getline(msh_file_ascii, line_string);
-          // if(line_string.find("#FEM_MSH")!=std::string::npos)
+           // if(line_string.find("#FEM_MSH")!=std::string::npos)
                fem_msh = new CFEMesh(geo_obj, unique_name);
               more_mesh = fem_msh->Read(&msh_file_ascii);
               fem_msh_vector.push_back(fem_msh);
@@ -147,13 +147,14 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
          //  if(line_string.find("#STOP")!=std::string::npos)
          //     break;
 		}
+*/
    }
    else // RFI mesh file
    {
 	    msh_file_ascii.seekg(0L,std::ios::beg);
 		fem_msh = new CFEMesh(geo_obj, unique_name);
 		Read_RFI(msh_file_ascii, fem_msh);
-        fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
+        //fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
    }
 
    msh_file_ascii.close();
