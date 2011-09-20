@@ -13,6 +13,9 @@
 // GEOLIB
 #include "GEOObjects.h"
 #include "Polygon.h"
+//#include "Point.h"
+#include "QuadTree.h"
+
 
 namespace FileIO {
 
@@ -72,7 +75,7 @@ public:
 				std::vector<std::string> const & selected_geometries,
 				double mesh_density);
 
-	void writeGMSHPoints(const std::vector<GEOLIB::Point*>& pnt_vec);
+	void writeGMSHPoints(const std::vector<GEOLIB::Point*>& pnt_vec, GEOLIB::QuadTree<GEOLIB::Point> *quad_tree = NULL);
 	void writeGMSHPolyline (const GEOLIB::Polyline* ply, const size_t offset);
 	void writeGMSHPolylines(const std::vector<GEOLIB::Polyline*>& ply_vec);
 	size_t writeGMSHPolygon(const GEOLIB::Polygon& polygon, const size_t offset);
@@ -81,6 +84,7 @@ public:
 	static bool isGMSHMeshFile (const std::string& fname);
 
 private:
+	GEOLIB::QuadTree<GEOLIB::Point> *createQuadTreeFromPoints(std::vector<GEOLIB::Point*> points, size_t number_of_point_per_quadtree_node);
 	void fetchGeometries (GEOLIB::GEOObjects const & geo,
 			std::vector<std::string> const & selected_geometries,
 			std::vector<GEOLIB::Point*>& all_points,
@@ -88,9 +92,11 @@ private:
 			std::vector<GEOLIB::Point*>& all_stations) const;
 	std::list<size_t> findHolesInsidePolygon(const std::vector<GEOLIB::Polyline*> *plys, size_t i, std::map<size_t,size_t> geo2gmsh_polygon_id_map);
 	GEOLIB::Polygon* getBoundingPolygon (std::vector<GEOLIB::Polyline*> const & all_polylines, size_t &bp_idx) const;
+	std::vector<GEOLIB::Point*> getStationPoints(const GEOLIB::GEOObjects &geo_objects);
+	std::vector<GEOLIB::Point*> getSteinerPoints(GEOLIB::QuadTree<GEOLIB::Point> *quad_tree);
 	void writeBoundingPolygon (GEOLIB::Polygon const * const bounding_polygon );
-	/// Add station points as constraints to the current geometry
-	void addStationsAsConstraints(const std::string &proj_name, const GEOLIB::GEOObjects& geo, std::map<size_t,size_t> geo2gmsh_surface_id_map);
+	/// Adds a point-array (such as stations) as constraints to the geometry given by proj_name.
+	void addPointsAsConstraints(const std::vector<GEOLIB::Point*> &points, const std::vector<GEOLIB::Polyline*> &polylines, std::map<size_t,size_t> geo2gmsh_surface_id_map, GEOLIB::QuadTree<GEOLIB::Point> *quad_tree = NULL);
 	size_t _n_pnt_offset;
 	size_t _n_lines;
 	size_t _n_plane_sfc;

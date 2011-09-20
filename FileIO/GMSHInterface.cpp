@@ -47,16 +47,23 @@ GMSHInterface::~GMSHInterface ()
 	_out.close ();
 }
 
-void GMSHInterface::writeGMSHPoints(const std::vector<GEOLIB::Point*>& pnt_vec)
+void GMSHInterface::writeGMSHPoints(const std::vector<GEOLIB::Point*> &pnt_vec, GEOLIB::QuadTree<GEOLIB::Point> *quad_tree)
 {
 	// write points
 //	float characteristic_len (10.0);
-	size_t n (pnt_vec.size());
+	const size_t n (pnt_vec.size());
 	for (size_t k(0); k<n; k++) {
 		_out << "Point(" << _n_pnt_offset + k << ") = {" << (*(pnt_vec[k]))[0] << ","
-			<< (*(pnt_vec[k]))[1] << "," << (*(pnt_vec[k]))[2]
-//			<< "," << characteristic_len
-			<< "};" << std::endl;
+			<< (*(pnt_vec[k]))[1] << "," << (*(pnt_vec[k]))[2];
+
+		if (quad_tree)
+		{
+			GEOLIB::Point ll, ur;
+			quad_tree->getLeaf(*(pnt_vec[k]), ll, ur);
+			_out << "," << (0.5 * (ur[0]-ll[0]));
+		}
+		
+		_out << "};" << std::endl;
 	}
 	_n_pnt_offset += n;
 }
@@ -108,11 +115,24 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name, const GEOLI
 	// check file stream
 	if (!_out) return false;
 
+	// create a quad tree for generate steiner points. this makes sure that the resulting geometry will be suitable for a FEM mesh.
+	GEOLIB::QuadTree<GEOLIB::Point> *quad_tree = this->createQuadTreeFromPoints(*pnts, 2);
+
+	std::vector<GEOLIB::Point*> station_points;
+	if (useStationsAsContraints)
+	{
+		station_points = this->getStationPoints(geo);
+		for (size_t k(0); k<station_points.size(); k++) {
+			quad_tree->addPoint (station_points[k]);
+		}
+	}
+
+	quad_tree->balance();
+
 	// write points
 	writeGMSHPoints (*pnts);
 
 	// write Polylines
-	//writeGMSHPolylines (*plys);
 	std::map<size_t,size_t> geo2gmsh_polygon_id_map;
 	std::map<size_t,size_t> geo2gmsh_surface_id_map;
 
@@ -140,8 +160,14 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name, const GEOLI
 
 	if (useStationsAsContraints)
 	{
-		this->addStationsAsConstraints(proj_name, geo, geo2gmsh_surface_id_map);
+		this->addPointsAsConstraints(station_points, *plys, geo2gmsh_surface_id_map);
 	}
+
+	std::vector<GEOLIB::Point*> steiner_points = this->getSteinerPoints(quad_tree);
+	this->addPointsAsConstraints(steiner_points, *plys, geo2gmsh_surface_id_map);
+
+	delete quad_tree;
+	for (size_t i=0; i<steiner_points.size(); i++) delete steiner_points[i];
 
 	std::cerr << "ok" << std::endl;
 
@@ -185,26 +211,8 @@ void GMSHInterface::writePlaneSurface (std::list<size_t> const& polygon_list)
 	//_polygon_list.clear();
 }
 
-void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
-		std::vector<std::string> const & selected_geometries,
-		size_t number_of_point_per_quadtree_node,
-		double mesh_density_scaling, double mesh_density_scaling_station_pnts)
+GEOLIB::QuadTree<GEOLIB::Point>* GMSHInterface::createQuadTreeFromPoints(std::vector<GEOLIB::Point*> all_points, size_t number_of_point_per_quadtree_node)
 {
-	// check file stream
-	if (! _out) return;
-
-	std::cout << "GMSHInterface::writeGMSHInputFile adaptive " << std::endl;
-
-	std::vector<GEOLIB::Point*> all_points;
-	std::vector<GEOLIB::Polyline*> all_polylines;
-	std::vector<GEOLIB::Point*> all_stations;
-	fetchGeometries (geo, selected_geometries, all_points, all_polylines, all_stations);
-
-	// search bounding polygon
-	size_t bp_idx (0); // bounding polygon index
-	GEOLIB::Polygon* bounding_polygon (getBoundingPolygon(all_polylines, bp_idx));
-	if (!bounding_polygon) return;
-
 	// *** QuadTree - determining bounding box
 #ifndef NDEBUG
 	std::cout << "computing axis aligned bounding box for quadtree ... " << std::flush;
@@ -225,7 +233,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 #ifndef NDEBUG
 	std::cout << "creating quadtree ... " << std::flush;
 #endif
-	GEOLIB::QuadTree<GEOLIB::Point> quad_tree (ll, ur, number_of_point_per_quadtree_node);
+	GEOLIB::QuadTree<GEOLIB::Point> *quad_tree = new GEOLIB::QuadTree<GEOLIB::Point>(ll, ur, number_of_point_per_quadtree_node);
 	std::cout << "ok" << std::endl;
 
 	// *** QuadTree - insert points
@@ -233,18 +241,43 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 	std::cout << "inserting " << all_points.size() << " points into quadtree ... " << std::flush;
 #endif
 	for (size_t k(0); k < all_points.size(); k++) {
-		quad_tree.addPoint (all_points[k]);
+		quad_tree->addPoint (all_points[k]);
 	}
 #ifndef NDEBUG
 	std::cout << "ok" << std::endl;
 #endif
+
+	return quad_tree;
+}
+
+void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
+		std::vector<std::string> const & selected_geometries,
+		size_t number_of_point_per_quadtree_node,
+		double mesh_density_scaling, double mesh_density_scaling_station_pnts)
+{
+	// check file stream
+	if (! _out) return;
+
+	std::cout << "GMSHInterface::writeGMSHInputFile adaptive " << std::endl;
+
+	std::vector<GEOLIB::Point*> all_points;
+	std::vector<GEOLIB::Polyline*> all_polylines;
+	std::vector<GEOLIB::Point*> all_stations;
+	fetchGeometries (geo, selected_geometries, all_points, all_polylines, all_stations);
+
+	// search bounding polygon
+	size_t bp_idx (0); // bounding polygon index
+	GEOLIB::Polygon* bounding_polygon (getBoundingPolygon(all_polylines, bp_idx));
+	if (!bounding_polygon) return;
+
+	GEOLIB::QuadTree<GEOLIB::Point> *quad_tree = this->createQuadTreeFromPoints(all_points, number_of_point_per_quadtree_node);
 
 	// *** QuadTree - insert stations
 #ifndef NDEBUG
 	std::cout << "inserting " << all_stations.size() << " stations into quadtree ... " << std::flush;
 #endif
 	for (size_t k(0); k<all_stations.size(); k++) {
-		quad_tree.addPoint (all_stations[k]);
+		quad_tree->addPoint (all_stations[k]);
 	}
 #ifndef NDEBUG
 	std::cout << "ok" << std::endl;
@@ -254,7 +287,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 #ifndef NDEBUG
 	std::cout << "balancing quadtree ... " << std::flush;
 #endif
-	quad_tree.balance ();
+	quad_tree->balance ();
 #ifndef NDEBUG
 	std::cout << "ok" << std::endl;
 #endif
@@ -264,7 +297,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 	for (size_t k(0); k<n; k++) {
 		if (bounding_polygon->isPntInPolygon (*(all_points[k]))) {
 			GEOLIB::Point ll, ur;
-			quad_tree.getLeaf (*(all_points[k]), ll, ur);
+			quad_tree->getLeaf (*(all_points[k]), ll, ur);
 			double mesh_density (mesh_density_scaling * (ur[0]-ll[0]));
 			_out << "Point(" << _n_pnt_offset + k << ") = {" << (*(all_points[k]))[0] << ","
 				<< (*(all_points[k]))[1] << "," << (*(all_points[k]))[2]
@@ -320,7 +353,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 							if (s != NULL) {
 								// write new point as gmsh geo point with mesh density from existing point
 								GEOLIB::Point ll, ur;
-								quad_tree.getLeaf (*(all_polylines[k])->getPoint(j), ll, ur);
+								quad_tree->getLeaf (*(all_polylines[k])->getPoint(j), ll, ur);
 								double mesh_density (0.3*(ur[0]-ll[0])); // scaling with 0.3 - do not know if this is a good value
 								_out << "Point(" << _n_pnt_offset << ") = {" << (*s)[0] << ","
 									<< (*s)[1] << "," << (*s)[2] << "," << mesh_density
@@ -340,7 +373,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 							if (s != NULL) {
 								// write new point as gmsh geo point with mesh density from existing point
 								GEOLIB::Point ll, ur;
-								quad_tree.getLeaf (*(all_polylines[k])->getPoint(j+1), ll, ur);
+								quad_tree->getLeaf (*(all_polylines[k])->getPoint(j+1), ll, ur);
 								double mesh_density (0.3*(ur[0]-ll[0])); // scaling with 0.3 - do not know if this is a good value
 								_out << "Point(" << _n_pnt_offset << ") = {" << (*s)[0] << ","
 									<< (*s)[1] << "," << (*s)[2] << "," << mesh_density
@@ -369,7 +402,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 	for (size_t k(0); k<n_stations; k++) {
 		if (bounding_polygon->isPntInPolygon (*(all_stations[k]))) {
 			GEOLIB::Point ll, ur;
-			quad_tree.getLeaf (*(all_stations[k]), ll, ur);
+			quad_tree->getLeaf (*(all_stations[k]), ll, ur);
 			double mesh_density (mesh_density_scaling_station_pnts * (ur[0]-ll[0]));
 			_out << "Point(" << _n_pnt_offset+k << ") = {" << (*(all_stations[k]))[0] << ","
 				<< (*(all_stations[k]))[1] << "," << (*(all_stations[k]))[2] << "," << mesh_density
@@ -381,7 +414,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 
 	// write Steiner points
 	std::list<GEOLIB::QuadTree<GEOLIB::Point>*> leaf_list;
-	quad_tree.getLeafs (leaf_list);
+	quad_tree->getLeafs (leaf_list);
 	_out << "// Steiner points" << std::endl;
 	for (std::list<GEOLIB::QuadTree<GEOLIB::Point>*>::const_iterator it (leaf_list.begin());
 		it != leaf_list.end(); it++) {
@@ -456,6 +489,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 
 		}
 	}
+	delete quad_tree;
 	std::cout << "ok" << std::endl;
 }
 
@@ -731,41 +765,26 @@ void GMSHInterface::writeBoundingPolygon (GEOLIB::Polygon const * const bounding
 	std::cout << "ok" << std::endl;
 }
 
-void GMSHInterface::addStationsAsConstraints(const std::string &proj_name, const GEOLIB::GEOObjects& geo, std::map<size_t,size_t> geo2gmsh_surface_id_map)
+void GMSHInterface::addPointsAsConstraints(const std::vector<GEOLIB::Point*> &points, const std::vector<GEOLIB::Polyline*> &polylines, std::map<size_t,size_t> geo2gmsh_surface_id_map, GEOLIB::QuadTree<GEOLIB::Point> *quad_tree)
 {
-	//const std::vector<GEOLIB::Point*> *pnts (geo.getPointVec (proj_name));
-	const std::vector<GEOLIB::Polyline*> *plys (geo.getPolylineVec (proj_name));
-
-	std::vector<GEOLIB::Point*> station_points;
-	std::vector<std::string> stn_names;
-	geo.getStationNames(stn_names);
-	// find station vectors
-	for (size_t i=0; i<stn_names.size(); i++)
-	{
-		const std::vector<GEOLIB::Point*> *stn (geo.getStationVec(stn_names[i]));
-		size_t nPoints = stn->size();
-		for (size_t j=0; j<nPoints; j++)
-			station_points.push_back((*stn)[j]);
-	}
-
 	std::vector<GEOLIB::Polygon*> polygons;
-	for (size_t j=0; j<plys->size(); j++)
+	for (size_t j=0; j<polylines.size(); j++)
 	{
-		if ((*plys)[j]->isClosed())
+		if (polylines[j]->isClosed())
 		{
-			GEOLIB::Polygon* pgn = new GEOLIB::Polygon(*(*plys)[j]);
+			GEOLIB::Polygon* pgn = new GEOLIB::Polygon(*polylines[j]);
 			polygons.push_back(pgn);
 			//geo2gmsh_surface_id_map[polygons.size()-1] = geo2gmsh_surface_id_map[j]; // this should be the same as above but do you wanna take the risk?
 		}
 	}
 
-	size_t nPoints = station_points.size();
+	size_t nPoints = points.size();
 	for (size_t i=0; i<nPoints; i++)
 	{
 		std::list<size_t> surrounding_polygons;
 		for (size_t j=0; j<polygons.size(); j++)
 		{
-			if (polygons[j]->isPntInPolygon(*(station_points[i])))
+			if (polygons[j]->isPntInPolygon(*(points[i])))
 				surrounding_polygons.push_back(j);
 		}
 
@@ -777,18 +796,59 @@ void GMSHInterface::addStationsAsConstraints(const std::string &proj_name, const
 				{
 					if (it != jt)
 					{
-						if (polygons[*it]->isPolylineInPolygon(*(polygons[*jt]))) jt = surrounding_polygons.erase(jt);
-						else ++jt;
+						if (polygons[*it]->isPolylineInPolygon(*(polygons[*jt]))) it = surrounding_polygons.erase(it);
+						else ++it;
 					}
 					else ++jt;
 				}
 			}
 
 			_n_pnt_offset++;
-			_out << "Point(" << _n_pnt_offset << ") = {" << (*station_points[i])[0] << "," << (*station_points[i])[1] << "," << (*station_points[i])[2] << "};" << std::endl;
+			_out << "Point(" << _n_pnt_offset << ") = {" << (*points[i])[0] << "," << (*points[i])[1] << "," << (*points[i])[2];
+			if (quad_tree)
+			{
+				GEOLIB::Point ll, ur;
+				quad_tree->getLeaf(*(points[i]), ll, ur);
+				_out << "," << (0.3 * (ur[0]-ll[0]));
+			}
+			_out << "};" << std::endl;
 			_out << "Point {" << _n_pnt_offset << "} In Surface {" << geo2gmsh_surface_id_map[*(surrounding_polygons.begin())] << "};" << std::endl;
 		}
 	}
+}
+
+
+std::vector<GEOLIB::Point*> GMSHInterface::getStationPoints(const GEOLIB::GEOObjects &geo)
+{
+	std::vector<GEOLIB::Point*> station_points;
+	std::vector<std::string> stn_names;
+	geo.getStationNames(stn_names);
+
+	for (std::vector<std::string>::const_iterator it (stn_names.begin()); it != stn_names.end(); ++it) {
+		const std::vector<GEOLIB::Point*> *pnts (geo.getPointVec (*it));
+		station_points.insert (station_points.end(), pnts->begin(), pnts->end());
+	}
+	return station_points;
+}
+
+std::vector<GEOLIB::Point*> GMSHInterface::getSteinerPoints(GEOLIB::QuadTree<GEOLIB::Point> *quad_tree)
+{
+	std::vector<GEOLIB::Point*> steiner_points;
+	std::list<GEOLIB::QuadTree<GEOLIB::Point>*> leaf_list;
+	quad_tree->getLeafs (leaf_list);
+	_out << "// Steiner points" << std::endl;
+	for (std::list<GEOLIB::QuadTree<GEOLIB::Point>*>::const_iterator it (leaf_list.begin()); it != leaf_list.end(); it++) 
+	{
+		if ((*it)->getPoints().empty()) 
+		{
+			// compute point from square
+			GEOLIB::Point ll, rr;
+			(*it)->getSquarePoints (ll, rr);
+			GEOLIB::Point* mid_point = new GEOLIB::Point(0.5*(rr[0]+ll[0]), 0.5*(rr[1]+ll[1]), 0.5*(rr[2]+ll[2]));
+			steiner_points.push_back(mid_point);
+		}
+	}
+	return steiner_points;
 }
 
 } // end namespace FileIO
