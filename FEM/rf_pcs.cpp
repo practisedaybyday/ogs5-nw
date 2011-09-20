@@ -11258,7 +11258,7 @@ void CRFProcess::PI_TimeStepSize()
             l = j+ii*g_nnodes;
             x0 = u_n[l];
             x1 = GetNodeValue(k,nidx1);
-            err += pow( u_n0[l]/(Atol+Rtol*max(fabs(x0),fabs(x1))),2);
+            err += MathLib::fastpow( u_n0[l]/(Atol+Rtol*max(fabs(x0),fabs(x1))),2);
          }
       }
       else
@@ -11269,7 +11269,7 @@ void CRFProcess::PI_TimeStepSize()
             l = j+ii*g_nnodes;
             x0 = u_n[l];
             x1 = GetNodeValue(k,nidx1);
-            err += pow( (x1- u_n0[l])/(Atol+Rtol*max(fabs(x0),fabs(x1))),2);
+            err += MathLib::fastpow( (x1- u_n0[l])/(Atol+Rtol*max(fabs(x0),fabs(x1))),2);
          }
       }
    }
