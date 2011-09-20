@@ -13,7 +13,7 @@
 #include "swap.h"
 
 // FileIO
-#include <GMSHInterface.h>
+#include "GMSHInterface.h"
 
 // GEOLIB
 #include "Point.h"
@@ -22,11 +22,15 @@
 #include "SimplePolygonTree.h"
 #include "QuadTree.h"
 
+// MSH
+#include "msh_elem.h"
+#include "msh_mesh.h"
+
 namespace FileIO {
 
 GMSHInterface::GMSHInterface (const std::string &fname) :
 	_n_pnt_offset (0),
-	_n_lines (0), // _n_line_loops (0),
+	_n_lines (0),
 	_n_plane_sfc(0)
 {
 	// open file
@@ -582,30 +586,6 @@ void GMSHInterface::writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 	std::cout << "ok" << std::endl;
 }
 
-bool GMSHInterface::isGMSHMeshFile (const std::string& fname)
-{
-	std::ifstream input (fname.c_str());
-
-	if (!input) {
-		std::cerr << "GMSHInterface::isGMSHMeshFile could not open file " << fname << std::endl;
-		return false;
-	}
-
-	std::string header_first_line;
-	input >> header_first_line;
-	if (header_first_line.find ("$MeshFormat") != std::string::npos) {
-		// read version
-		std::string version;
-		getline (input, version);
-		getline (input, version);
-		std::cerr << "found GMSH mesh file version: " << version << std::endl;
-		input.close ();
-		return true;
-	}
-
-	return false;
-}
-
 void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
 		std::vector<std::string> const & selected_geometries,
 		std::vector<GEOLIB::Point*>& all_points,
@@ -789,6 +769,104 @@ void GMSHInterface::addStationsAsConstraints(const std::string &proj_name, const
 			_out << "Point {" << _n_pnt_offset << "} In Surface {" << geo2gmsh_surface_id_map[*(surrounding_polygons.begin())] << "};" << std::endl;
 		}
 	}
+}
+
+bool GMSHInterface::isGMSHMeshFile (const std::string& fname)
+{
+	std::ifstream input (fname.c_str());
+
+	if (!input) {
+		std::cerr << "GMSHInterface::isGMSHMeshFile could not open file " << fname << std::endl;
+		return false;
+	}
+
+	std::string header_first_line;
+	input >> header_first_line;
+	if (header_first_line.find ("$MeshFormat") != std::string::npos) {
+		// read version
+		std::string version;
+		getline (input, version);
+		getline (input, version);
+		std::cerr << "found GMSH mesh file version: " << version << std::endl;
+		input.close ();
+		return true;
+	}
+
+	return false;
+}
+
+void GMSHInterface::readGMSHMesh(std::string const& fname,
+		MeshLib::CFEMesh* mesh)
+{
+	std::string line;
+	std::ifstream in (fname.c_str(), std::ios::in);
+	getline(in, line); // Node keyword
+
+	if (line.find("$MeshFormat") != std::string::npos) {
+		getline(in, line); // version-number file-type data-size
+		getline(in, line); //$EndMeshFormat
+		getline(in, line); //$Nodes Keywords
+
+		size_t n_nodes(0);
+		size_t n_elements(0);
+		while (line.find("$EndElements") == std::string::npos) {
+			// Node data
+			long id;
+			double x, y, z;
+			in >> n_nodes >> std::ws;
+			for (size_t i = 0; i < n_nodes; i++) {
+				in >> id >> x >> y >> z >> std::ws;
+				mesh->nod_vector.push_back(new MeshLib::CNode(id, x, y, z));
+			}
+			getline(in, line); // End Node keyword $EndNodes
+
+			// Element data
+			getline(in, line); // Element keyword $Elements
+			in >> n_elements >> std::ws; // number-of-elements
+			for (size_t i = 0; i < n_elements; i++) {
+				MeshLib::CElem* elem (new MeshLib::CElem(i));
+				elem->Read(in, 7);
+				if (elem->GetElementType() != MshElemType::INVALID)
+					mesh->ele_vector.push_back(elem);
+			}
+			getline(in, line); // END keyword
+
+			// correct indices TF
+			const size_t n_elements(mesh->ele_vector.size());
+			for (size_t k(0); k < n_elements; k++) {
+				mesh->ele_vector[k]->SetIndex(k);
+			}
+
+			// ordering nodes and closing gaps TK
+			std::vector<size_t> gmsh_id;
+			size_t counter(0);
+			for (size_t i = 0; i < mesh->nod_vector.size(); i++) {
+				const size_t diff = mesh->nod_vector[i]->GetIndex() - counter;
+				if (diff == 0) {
+					gmsh_id.push_back(i);
+					counter++;
+				} else {
+					for (size_t j = 0; j < diff; j++) {
+						gmsh_id.push_back(i);
+						counter++;
+					}
+					i--;
+				}
+			}
+
+			for (size_t i = 0; i < mesh->ele_vector.size(); i++) {
+				for (long j = 0; j < mesh->ele_vector[i]->GetVertexNumber(); j++) {
+					mesh->ele_vector[i]->nodes_index[j] = gmsh_id[mesh->ele_vector[i]->GetNodeIndex(j)+1];
+				}
+			}
+			for (size_t i = 0; i < mesh->nod_vector.size(); i++) {
+				mesh->nod_vector[i]->SetIndex(i);
+			}
+			// END OF: ordering nodes and closing gaps TK
+
+		} /*End while*/
+	}
+	in.close();
 }
 
 } // end namespace FileIO

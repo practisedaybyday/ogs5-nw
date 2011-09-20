@@ -179,10 +179,11 @@ int ReadData ( char *dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
    NUMRead(dateiname);
 
    FEMDeleteAll();                                // KR moved from FEMRead()
-   CFEMesh* msh = FEMRead(dateiname, &geo_obj, &unique_name);
-   if (msh)                                       //KR
+   std::vector<CFEMesh*> mesh_vec;
+   FEMRead(dateiname, mesh_vec, &geo_obj, &unique_name);
+   if (!mesh_vec.empty())                                       //KR
    {
-      fem_msh_vector.push_back(msh);	// re-inserted by KR
+      fem_msh_vector.insert(fem_msh_vector.end(), mesh_vec.begin(), mesh_vec.end());	// re-inserted by KR
       CompleteMesh();                             //WW
    }
 
@@ -199,7 +200,7 @@ int ReadData ( char *dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 
    msgdat = (char *)Free(msgdat);
 
-   if (msh) return 100;
+   if (!mesh_vec.empty()) return 100;
 
    return 1;
 }
