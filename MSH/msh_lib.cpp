@@ -96,28 +96,25 @@ Programing:
 08/2010 KR deleted binary mesh read
 03/2011 KR cleaned up code
 08/2011 WW Recovery multi-mesh
+09/2011 TF changed signature of function in order to read more than one mesh
 **************************************************************************/
-
-CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj, std::string* unique_name)
+void FEMRead(const std::string &file_base_name,
+		std::vector<CFEMesh*>& mesh_vec, GEOLIB::GEOObjects* geo_obj, std::string* unique_name)
 {
-   CFEMesh *fem_msh (NULL);
-   std::string msh_file_name = file_base_name + FEM_FILE_EXTENSION;
+   CFEMesh *mesh (NULL);
+   std::string msh_file_name (file_base_name + FEM_FILE_EXTENSION);
 
    // test if this is a GMSH mesh
-   if (FileIO::GMSHInterface::isGMSHMeshFile (msh_file_name))
-   {
-      fem_msh = new CFEMesh();
-      GMSH2MSH(msh_file_name.c_str(), fem_msh);
-      //fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
-
-	  return fem_msh;
+   if (FileIO::GMSHInterface::isGMSHMeshFile (msh_file_name)) {
+      mesh = new CFEMesh();
+      GMSH2MSH(msh_file_name.c_str(), mesh);
+      mesh_vec.push_back(mesh);
    }
 
    std::ifstream msh_file_ascii (msh_file_name.data(),std::ios::in);
    if (!msh_file_ascii.is_open())
    {
 	   std::cout << "CFEMesh::FEMRead() - Could not open file...\n";
-	   return NULL;
    }
 
    std::cout << "MSHRead:  ASCII file" << std::endl;
@@ -127,38 +124,35 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    bool more_mesh = false; //12.08.2011. WW
    if(line_string.find("#FEM_MSH")!=std::string::npos)	// OGS mesh file
    {
-		fem_msh = new CFEMesh(geo_obj, unique_name);
-		more_mesh = fem_msh->Read(&msh_file_ascii);
-        //fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
-/*
+		mesh = new CFEMesh(geo_obj, unique_name);
+		more_mesh = mesh->Read(&msh_file_ascii);
+        mesh_vec.push_back(mesh); // TF
+
 		//Multi-mesh 12.08.2011 WW
-		if(more_mesh)
-		{
+		if(more_mesh) {
            while(!msh_file_ascii.eof())
            {
            //getline(msh_file_ascii, line_string);
            // if(line_string.find("#FEM_MSH")!=std::string::npos)
-               fem_msh = new CFEMesh(geo_obj, unique_name);
-              more_mesh = fem_msh->Read(&msh_file_ascii);
-              fem_msh_vector.push_back(fem_msh);
+              mesh = new CFEMesh(geo_obj, unique_name);
+              more_mesh = mesh->Read(&msh_file_ascii);
+              mesh_vec.push_back(mesh); // TF
 			  if(!more_mesh)
                 break;
 		   }
          //  if(line_string.find("#STOP")!=std::string::npos)
          //     break;
 		}
-*/
    }
    else // RFI mesh file
    {
 	    msh_file_ascii.seekg(0L,std::ios::beg);
-		fem_msh = new CFEMesh(geo_obj, unique_name);
-		Read_RFI(msh_file_ascii, fem_msh);
-        //fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
+		mesh = new CFEMesh(geo_obj, unique_name);
+		Read_RFI(msh_file_ascii, mesh);
+        mesh_vec.push_back(mesh); //12.08.2011 WW
    }
 
    msh_file_ascii.close();
-   return fem_msh;
 }
 
 

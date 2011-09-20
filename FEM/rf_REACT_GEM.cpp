@@ -1176,21 +1176,21 @@ short REACT_GEM::Init_Nodes ( string Project_path )
 				cout << "Error: Main Loop failed when running GEM on Node #" << in << "." << " Returned Error Code: " << m_NodeStatusCH[in] ;
 				cout << " or GEM weird result at node " << in << " volume " <<  dBR->Vs << " old volume " <<oldvolume;
 				cout  << " repeat calculations and change kinetic constraintsby 0.1%" << endl;
-				// change a bit the kinetic constraints -> make the system less stiff 
+				// change a bit the kinetic constraints -> make the system less stiff
 				   for ( j=0;j<nDC;j++ )
 				    {
 					m_dll[in*nDC+j]=0.999*m_dll[in*nDC+j]-1.0e-6;                        // make smaller
 					if (m_dll[in*nDC+j]<0.0) m_dll[in*nDC+j]=0.0;
 					m_dul[in*nDC+j]=1.001*m_dul[in*nDC+j]+1.0e-6;                    // make bigger
 				     }
-				     REACT_GEM::SetReactInfoBackGEM ( in ); // needs to be done to 
+				     REACT_GEM::SetReactInfoBackGEM ( in ); // needs to be done to
 				m_Node->GEM_write_dbr ( "dbr_for_crash_node_fail1.txt" );
 
-// run GEMS again				
+// run GEMS again
 				dBR->NodeStatusCH = NEED_GEM_AIA;
 				m_NodeStatusCH[in] = m_Node->GEM_run ( false );
 				m_Node->GEM_write_dbr ( "dbr_for_crash_node_fail2.txt" );
-			  
+
 			}
 
 // test for bad GEMS and for volume changes bigger than 10% ...maximum 5 failed nodes per process.....
@@ -2512,7 +2512,7 @@ double REACT_GEM::KozenyCarman ( double k0, double n0, double n )
    {
       rt = k0 ;
 
-      rt *=pow ( n / n0 , 3 );
+      rt *= MathLib::fastpow ( n / n0 , 3 );
    }
 
    return rt;
@@ -2531,9 +2531,9 @@ double REACT_GEM::KozenyCarman_normalized ( double k0, double n0, double n )
    {
       rt = k0 ;
 
-      rt *=pow ( n / n0 , 3 );
+      rt *=MathLib::fastpow ( n / n0 , 3 );
 
-      rt *=pow ( ( 1 - n0 ) / ( 1 - n ) , 2 );
+      rt *=MathLib::fastpow ( ( 1 - n0 ) / ( 1 - n ) , 2 );
    }
 
    return rt;
@@ -3595,7 +3595,7 @@ void REACT_GEM::WriteVTKGEMValues ( fstream &vtk_file )
   double bdummy=0.0;
    // this is point data
 
-  
+
     for ( j=0 ; j < nIC; j++ )
                 {
                 vtk_file << "SCALARS " << dCH->ICNL[j] << " double 1" << endl;

@@ -20,33 +20,31 @@ MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string const& fname)
 	myTimer.start();
 #endif
 */
-	FEMDeleteAll();
-
-	MeshLib::CFEMesh* msh = FEMRead(fname.substr(0, fname.length()-4));
-	if (msh)
-	{
+	std::vector<MeshLib::CFEMesh*> mesh_vec;
+	FEMRead(fname.substr(0, fname.length()-4), mesh_vec);
+	if (!mesh_vec.empty()) {
 /*
 #ifndef NDEBUG
 		QTime constructTimer;
 		constructTimer.start();
 #endif
 */
-		msh->ConstructGrid();
+		mesh_vec[mesh_vec.size()-1]->ConstructGrid();
 
-		std::cout << "Nr. Nodes: " << msh->nod_vector.size() << std::endl;
-		std::cout << "Nr. Elements: " << msh->ele_vector.size() << std::endl;
+		std::cout << "Nr. Nodes: " << mesh_vec[mesh_vec.size()-1]->nod_vector.size() << std::endl;
+		std::cout << "Nr. Elements: " << mesh_vec[mesh_vec.size()-1]->ele_vector.size() << std::endl;
 /*
 #ifndef NDEBUG
 		std::cout << "constructGrid time: " << constructTimer.elapsed() << " ms" << std::endl;
 #endif
 */
-		msh->FillTransformMatrix();
+		mesh_vec[mesh_vec.size()-1]->FillTransformMatrix();
 /*
 #ifndef NDEBUG
 		std::cout << "Loading time: " << myTimer.elapsed() << " ms" << std::endl;
 #endif
 */
-		return msh;
+		return mesh_vec[mesh_vec.size()-1];
 	}
 
     std::cout << "Failed to load the mesh file: " << fname << std::endl;

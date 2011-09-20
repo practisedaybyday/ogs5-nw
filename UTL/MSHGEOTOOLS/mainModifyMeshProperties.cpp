@@ -45,11 +45,13 @@ int main (int argc, char *argv[])
 	if (tmp.find (".msh") != std::string::npos)
 		file_base_name = tmp.substr (0, tmp.size()-4);
 
-	MeshLib::CFEMesh* mesh (FEMRead(file_base_name));
-	if (!mesh) {
+	std::vector<MeshLib::CFEMesh*> mesh_vec;
+	FEMRead(file_base_name, mesh_vec);
+	if (mesh_vec.empty()) {
 		std::cerr << "could not read mesh from file " << std::endl;
 		return -1;
 	}
+	MeshLib::CFEMesh* mesh (mesh_vec[mesh_vec.size()-1]);
 
 	// *** read geometry
 	tmp = argv[3];

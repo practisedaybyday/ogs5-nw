@@ -17,6 +17,10 @@
 #include "QuadTree.h"
 
 
+namespace MeshLib {
+class CFEMesh;
+}
+
 namespace FileIO {
 
 /**
@@ -81,7 +85,19 @@ public:
 	size_t writeGMSHPolygon(const GEOLIB::Polygon& polygon, const size_t offset);
 	void writePlaneSurface (std::list<size_t> const & polygon_list);
 
+	/**
+	 * checks if there is a GMSH mesh file header
+	 * @param fname the file name of the mesh (including the path)
+	 * @return true, if the file seems to be a valid GMSH file, else false
+	 */
 	static bool isGMSHMeshFile (const std::string& fname);
+	/**
+	 * reads a mesh created by GMSH - this implementation is based on the former function GMSH2MSH
+	 * @param fname the file name of the mesh (including the path)
+	 * @param mesh the new mesh
+	 * @return
+	 */
+	static void readGMSHMesh (std::string const& fname, MeshLib::CFEMesh* mesh);
 
 private:
 	GEOLIB::QuadTree<GEOLIB::Point> *createQuadTreeFromPoints(std::vector<GEOLIB::Point*> points, size_t number_of_point_per_quadtree_node);
@@ -101,7 +117,6 @@ private:
 	size_t _n_lines;
 	size_t _n_plane_sfc;
 	std::ofstream _out;
-	//std::list<size_t> _polygon_list;
 };
 
 }
