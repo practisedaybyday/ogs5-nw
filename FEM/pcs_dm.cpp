@@ -492,7 +492,7 @@ namespace process
             /*
             #ifdef MFC
                     CString m_str;
-                    m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\ 
+                    m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\
                                   aktuelle_zeit,pcs_type_name.c_str(),l,ite_steps);
                     pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
             #endif
@@ -2363,7 +2363,7 @@ namespace process
                CalcBC_or_SecondaryVariable_Dynamics(true);
          }
          //  {			 MXDumpGLS("rf_pcs_dm1.txt",1,eqs->b,eqs->x);  //abort();}
-         // 
+         //
 
 #define atest_dump
 #ifdef test_dump
@@ -2793,7 +2793,7 @@ namespace process
     Programmaenderungen:
       05/2005  WW  Erste Version
       letzte Aenderung:
-
+   09/2011 TF substituted pow by fastpow
    **************************************************************************/
    bool CRFProcessDeformation::CalcBC_or_SecondaryVariable_Dynamics(bool BC)
    {
@@ -2920,8 +2920,8 @@ namespace process
             else
             {
                // Bit operator
-               if(!(bc_type[bc_eqs_index]&(int)pow(2.0, (double)j)))
-                  bc_type[bc_eqs_index] += (int)pow(2.0, (double)j);
+               if (!(bc_type[bc_eqs_index] & (int)MathLib::fastpow(2, j)))
+            	   bc_type[bc_eqs_index] += (int)MathLib::fastpow(2, j);
                if(j<problem_dimension_dm)         // Disp
                {
                   SetNodeValue(bc_eqs_index, idx_disp[j], bc_value);
@@ -2955,8 +2955,8 @@ namespace process
          for(k=0; k<problem_dimension_dm; k++)
          {
             // If boundary
-            if(bc_type[i]&(int)pow(2.0, (double)k))
-               continue;                          //u
+            if (bc_type[i] & (int) MathLib::fastpow(2, k))
+            	continue;                          //u
             //
             v = GetNodeValue(i, idx_disp[k]);
             v += GetNodeValue(i, idx_vel[k])*dt
@@ -2964,7 +2964,7 @@ namespace process
                +m_num->GetDynamicDamping_beta2()
                *GetNodeValue(i, idx_acc0[k]));
             SetNodeValue(i, idx_disp[k], v);
-            if(bc_type[i]&(int)pow(2.0, (double)(k+problem_dimension_dm)))
+            if(bc_type[i] & (int)MathLib::fastpow(2, k+problem_dimension_dm))
                continue;
             // v
             v = GetNodeValue(i, idx_vel[k]);
@@ -2978,7 +2978,7 @@ namespace process
 
       for(i=0; i<m_msh->GetNodesNumber(false); i++)
       {
-         if(bc_type[i]&(int)pow(2.0, (double)(nv-1)))
+         if(bc_type[i] & (int)MathLib::fastpow(2, (nv-1)))
             continue;
          v = GetNodeValue(i, idx_pre);
          v +=  ARRAY[i+Shift[problem_dimension_dm]]*dt

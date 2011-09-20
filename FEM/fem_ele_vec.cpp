@@ -3382,7 +3382,7 @@ namespace FiniteElement
          NGPoints=5;                              //15
       else if(ele_type==MshElemType::PRISM)
          NGPoints=6;                              //9
-      else NGPoints = (int)pow((double)NGP, (double)ele_dim);
+      else NGPoints = MathLib::fastpow(NGP, ele_dim);
 
       Stress0 = new Matrix(LengthBS, NGPoints);
       Stress_i = new Matrix(LengthBS, NGPoints);
