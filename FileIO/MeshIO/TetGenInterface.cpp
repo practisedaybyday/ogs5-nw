@@ -130,7 +130,7 @@ bool TetGenInterface::parseNodes(std::ifstream& ins, size_t n_nodes, size_t dim)
 {
 	size_t pos_beg, pos_end;
 	std::string line;
-	double *coordinates (new double[dim]);
+	double *coordinates (static_cast<double*> (alloca (sizeof(double) * dim)));
 
 	for (size_t k(0); k<n_nodes && !ins.fail(); k++) {
 		getline (ins, line);
@@ -147,7 +147,6 @@ bool TetGenInterface::parseNodes(std::ifstream& ins, size_t n_nodes, size_t dim)
 						_zero_based_idx = true;
 				} else {
 					std::cout << "error reading id of node " << k << " in TetGenInterface::parseNodes" << std::endl;
-					delete [] coordinates;
 					return false;
 				}
 				// read coordinates
@@ -160,7 +159,6 @@ bool TetGenInterface::parseNodes(std::ifstream& ins, size_t n_nodes, size_t dim)
 						coordinates[i] = str2number<double>(line.substr(pos_beg, pos_end-pos_beg));
 					} else {
 						std::cout << "error reading coordinate " << i << " of node " << k << " in TetGenInterface::parseNodes" << std::endl;
-						delete [] coordinates;
 						return false;
 					}
 				}
@@ -173,12 +171,10 @@ bool TetGenInterface::parseNodes(std::ifstream& ins, size_t n_nodes, size_t dim)
 			}
 		} else {
 			std::cout << "error reading node " << k << " in TetGenInterface::parseNodes" << std::endl;
-			delete [] coordinates;
 			return false;
 		}
 	}
 
-	delete [] coordinates;
 	return true;
 }
 
@@ -249,7 +245,7 @@ bool TetGenInterface::parseElements(std::ifstream& ins, size_t n_tets, size_t n_
 {
 	size_t pos_beg, pos_end;
 	std::string line;
-	size_t *ids (new size_t[n_nodes_per_tet]);
+	size_t *ids (static_cast<size_t*>(alloca (sizeof (size_t) * n_nodes_per_tet)));
 
 	for (size_t k(0); k<n_tets && !ins.fail(); k++) {
 		getline (ins, line);
@@ -264,7 +260,6 @@ bool TetGenInterface::parseElements(std::ifstream& ins, size_t n_tets, size_t n_
 					id = str2number<size_t>(line.substr(pos_beg, pos_end-pos_beg));
 				} else {
 					std::cout << "error reading id of tetrahedra " << k << " in TetGenInterface::parseElements" << std::endl;
-					delete [] ids;
 					return false;
 				}
 				// read node ids
@@ -277,7 +272,6 @@ bool TetGenInterface::parseElements(std::ifstream& ins, size_t n_tets, size_t n_
 						ids[i] = str2number<size_t>(line.substr(pos_beg, pos_end-pos_beg));
 					} else {
 						std::cout << "error reading node " << i << " of tetrahedra " << k << " in TetGenInterface::parseElements" << std::endl;
-						delete [] ids;
 						return false;
 					}
 				}
@@ -290,9 +284,9 @@ bool TetGenInterface::parseElements(std::ifstream& ins, size_t n_tets, size_t n_
 				// since CFEMesh is our friend we can access private data of mesh
 				MeshLib::CElem* elem (new MeshLib::CElem(id));
 				elem->setElementProperties (MshElemType::TETRAHEDRON, false);
-				std::vector<MeshLib::CNode*> ele_nodes;
+				std::vector<MeshLib::CNode*> ele_nodes(n_nodes_per_tet);
 				for (size_t i(0); i<n_nodes_per_tet; i++) {
-					ele_nodes.push_back (_mesh->nod_vector[ids[i]]);
+					ele_nodes[i] = _mesh->nod_vector[ids[i]];
 				}
 
 				elem->setNodes (ele_nodes);
@@ -307,18 +301,15 @@ bool TetGenInterface::parseElements(std::ifstream& ins, size_t n_tets, size_t n_
 						elem->setPatchIndex (str2number<int>(line.substr(pos_beg, pos_end-pos_beg)));
 					} else {
 						std::cout << "error reading region attribute of tetrahedra " << k << " in TetGenInterface::parseElements" << std::endl;
-						delete [] ids;
 						return false;
 					}
 				}
 			}
 		} else {
 			std::cout << "error reading node " << k << " in TetGenInterface::parseElements" << std::endl;
-			delete [] ids;
 			return false;
 		}
 	}
-	delete [] ids;
 	return true;
 }
 

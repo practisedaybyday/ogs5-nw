@@ -1287,19 +1287,19 @@ void NsPol3 (double p, double q, double r, vector<double>*roots)
    double nz;
    int i;
 
-   b=pow((p/3),2);
+   b=MathLib::fastpow((p/3),2);
    a=q/3-b;
    b=b*p/3+0.5*(r-p/3*q);
-   h=pow(fabs(a),0.5);
+   h=sqrt(fabs(a));
 
    if (b<0) h=-h;
 
-   D = pow(a,3)+pow(b,2);
+   D = MathLib::fastpow(a,3)+MathLib::fastpow(b,2);
 
    if (D<=(-eps))
    {
       nz=3;
-      phi=acos(b/pow(h,3))/3;
+      phi=acos(b/MathLib::fastpow(h,3))/3;
       z[0]=2*h*cos(pi/3-phi)-p/3;
       z[1]=2*h*cos(pi/3+phi)-p/3;
       z[2]=-2*h*cos(phi)-p/3;
@@ -1315,8 +1315,8 @@ void NsPol3 (double p, double q, double r, vector<double>*roots)
       nz=1;
       if(a>=eps)
       {
-         b=b/pow(h,3);
-         phi=log(b+pow(pow(b,2)+1,0.5))/3;
+         b=b/MathLib::fastpow(h,3);
+         phi=log(b+sqrt(MathLib::fastpow(b,2)+1))/3;
          z[0]=-2*h*sinh(phi)-p/3;
       } else if(a>(-eps))
       {
@@ -1329,8 +1329,8 @@ void NsPol3 (double p, double q, double r, vector<double>*roots)
       }
       else
       {
-         b=b/pow(h,3);
-         phi=log(b+pow(pow(b,2)-1,0.5))/3;
+         b=b/MathLib::fastpow(h,3);
+         phi=log(b+sqrt(MathLib::fastpow(b,2)-1))/3;
          z[0]=-2*h*cosh(phi)-p/3;
       }
    }

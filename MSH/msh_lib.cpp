@@ -1127,7 +1127,7 @@ void MSHSetFractureElements(void)
             //calculating segment length
             point_x[0]=frac_top->point_vector[k+1]->x;    point_y[0]=frac_top->point_vector[k+1]->y;
             point_x[1]=frac_top->point_vector[k]->x;        point_y[1]=frac_top->point_vector[k]->y;
-            seg_length = sqrt(   pow( (point_x[1]-point_x[0]), 2 ) + pow( (point_y[1]-point_y[0]), 2 )   );
+            seg_length = sqrt(MathLib::fastpow( (point_x[1]-point_x[0]), 2 ) + MathLib::fastpow( (point_y[1]-point_y[0]), 2) );
 
                                                   //loop6, over elements in segment
             for(long l=0; l<(long)segment_elements[j][k].size(); ++l)
