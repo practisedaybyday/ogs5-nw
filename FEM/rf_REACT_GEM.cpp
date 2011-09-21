@@ -37,7 +37,6 @@
 // int size;
 // int myrank;
 #endif
-#include "Configure.h"
 
 #include "rf_REACT_GEM.h"
 #include "rf_pcs.h"

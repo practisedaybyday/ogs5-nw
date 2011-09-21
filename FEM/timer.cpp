@@ -12,8 +12,6 @@
 09/1999     AH         Funktionen: TGetTime und TGetTicksPerSecond global.
 11/1999     C.Thorenz  Beliebige Anzahl Zeitspeicher
 **************************************************************************/
-#include "Configure.h"
-
 #include "makros.h"
 #include "timer.h"
 #include <vector>

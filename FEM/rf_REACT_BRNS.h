@@ -1,8 +1,6 @@
 #ifndef RF_REACT_BRNS_H
 #define RF_REACT_BRNS_H
 
-#include "Configure.h"
-
 #include "rf_pcs.h"
 #include "rfmat_cp.h"
 #include "rf_mfp_new.h"

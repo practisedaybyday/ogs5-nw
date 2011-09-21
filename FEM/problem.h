@@ -5,8 +5,6 @@
 #ifndef problem_INC
 #define problem_INC
 
-#include "Configure.h"
-
 #include <vector>
 class CRFProcess;
 

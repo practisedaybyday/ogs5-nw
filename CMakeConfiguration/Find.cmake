@@ -42,6 +42,9 @@ ENDIF (LIB_DIR_FOUND)
 ######################
 FIND_PACKAGE (PythonInterp)
 FIND_PACKAGE( Shapelib )
+IF(Shapelib_FOUND)
+	ADD_DEFINITIONS(-DShapelib_FOUND)
+ENDIF() # Shapelib_FOUND
 
 ## pthread ##
 SET ( CMAKE_THREAD_PREFER_PTHREAD On )
@@ -49,6 +52,7 @@ FIND_PACKAGE( Threads )
 IF ( CMAKE_USE_PTHREADS_INIT )
 	SET (HAVE_PTHREADS TRUE)
 	MESSAGE (STATUS "pthread library found." )
+ADD_DEFINITIONS(-DHAVE_PTHREADS)
 ENDIF (CMAKE_USE_PTHREADS_INIT )
 
 ## boost (see FindBoost.cmake for more options) ##
@@ -160,6 +164,10 @@ IF(PARALLEL_USE_MPI)
 	ENDIF(UNIX)
 ENDIF(PARALLEL_USE_MPI)
 
+######################
+### Find tools     ###
+######################
+
 # Find dot tool from graphviz
 FIND_PROGRAM(DOT_TOOL_PATH dot DOC "Dot tool from graphviz")
 
@@ -168,3 +176,5 @@ FIND_PACKAGE(Doxygen)
 
 # Find gnu profiler gprof
 FIND_PROGRAM(GPROF_PATH gprof DOC "GNU profiler gprof")
+
+FIND_PACKAGE(cppcheck)

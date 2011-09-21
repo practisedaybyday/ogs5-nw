@@ -40,4 +40,3 @@ IF(OGS_BUILD_CORRECT_SCIENTIFIC)
 	# Create utility executable
 	add_executable( correctScientificNotation CorrectScientificNotationMain.cpp )
 ENDIF(OGS_BUILD_CORRECT_SCIENTIFIC)
-

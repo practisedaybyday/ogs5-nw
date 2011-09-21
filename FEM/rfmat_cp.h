@@ -13,7 +13,6 @@
 #ifndef rfmat_cp_INC
 #define rfmat_cp_INC
 
-#include "Configure.h"
 #include "ProcessInfo.h"
 #define CP_FILE_EXTENSION ".mcp"                  /* File extension for component properties input file */
 #include <fstream>

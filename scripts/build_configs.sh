@@ -35,7 +35,7 @@ do
 	mkdir -p $build_dir && cd $build_dir
 
 	# Run CMake
-	../scripts/cmake.ogs.sh -D$config_cmake=ON -DOGS_DONT_USE_QT=ON $cmake_args ..
+	../scripts/cmake.ogs.sh -D$config_cmake=ON -DOGS_DONT_USE_QT=ON -DCMAKE_BUILD_TYPE=Release $cmake_args ..
 	../scripts/cmake.ogs.sh ..
 
 	# Build

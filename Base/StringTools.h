@@ -1,8 +1,6 @@
 #ifndef STRINGTOOLS_H
 #define STRINGTOOLS_H
 
-#include "Configure.h"
-
 #include <string>
 #include <list>
 #include <sstream>

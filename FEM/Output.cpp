@@ -7,6 +7,7 @@
 
 // ** INCLUDES **
 #include "Output.h"
+#include "Configure.h"
 
 #include <string>
 #include <fstream>

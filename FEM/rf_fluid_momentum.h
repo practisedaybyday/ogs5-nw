@@ -4,8 +4,6 @@
 //   written by PCH, 05/2005
 ////////////////////////////////////////////////////////////////
 
-#include "Configure.h"
-
 // C++ STL
 #include <list>
 #include <string>
