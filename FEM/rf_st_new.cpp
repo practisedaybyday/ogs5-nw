@@ -2387,8 +2387,8 @@ void GetCriticalDepthNODValue(double &value, CSourceTerm* m_st, long msh_node)
    }
    else
    {
-      flowdepth3 = MathLib::fastpow(flowdepth, 3);
-      flowdepth3_epsilon = MathLib::fastpow(flowdepth + epsilon, 3);
+      flowdepth3 = pow(flowdepth, 3);
+      flowdepth3_epsilon = pow(flowdepth + epsilon, 3);
       width = value;
       if (m_pcs_this->m_msh->GetMaxElementDim() == 1)
       {
@@ -2442,10 +2442,10 @@ void GetNormalDepthNODValue(double &value, CSourceTerm* st, long msh_node)
          std::cout << "!!!!! give slope for NORMAL DEPTH in st-file !!!!!"
             << std::endl;
 
-      double elementlength = sqrt(MathLib::sqrDist(m_ele->GetNode(1)->getData(), m_ele->GetNode(0)->getData()));
-//    		  MathLib::fastpow(m_ele->GetNode(1)->X()- m_ele->GetNode(0)->X(), 2)
-//    		  + MathLib::fastpow(m_ele->GetNode(1)->Y()-m_ele->GetNode(0)->Y(), 2)
-//    		  + MathLib::fastpow(m_ele->GetNode(1)->Z() - m_ele->GetNode(0)->Z(), 2));
+      double elementlength = sqrt(pow(m_ele->GetNode(1)->X() 
+   	 	         - m_ele->GetNode(0)->X(), 2.) + pow(m_ele->GetNode(1)->Y() 
+	 	         - m_ele->GetNode(0)->Y(), 2.) + pow(m_ele->GetNode(1)->Z() 
+	 	         - m_ele->GetNode(0)->Z(), 2.)); 
       S_0 = (m_ele->GetNode(1)->Z() - m_ele->GetNode(0)->Z()) / elementlength;
       if (S_0 < 0)
          S_0 = -S_0;
