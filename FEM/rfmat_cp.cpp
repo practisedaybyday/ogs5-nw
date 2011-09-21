@@ -948,7 +948,7 @@ double CompProperties::CalcDiffusionCoefficientCP_Method1(long index, double T, 
          V = k[1];
          Vg = 20.1;                               /* Molares Volumen von Luft [cm?/mol] */
          //WW Dg = (0.001 * pow(T, 1.75) * sqrt(1. / mg + 1. / m)) / (p * pow(pow(Vg, 1. / 3.) + pow(V, 1. / 3.), 2.)) * 1.e-4;
-         return (0.001 * pow(T, 1.75) * sqrt(1. / mg + 1. / m)) / (p * pow(pow(Vg, 1. / 3.) + pow(V, 1. / 3.), 2.)) * 1.e-4; //WW
+         return (0.001 * pow(T, 1.75) * sqrt(1. / mg + 1. / m)) / (p * MathLib::fastpow(pow(Vg, 1. / 3.) + pow(V, 1. / 3.), 2)) * 1.e-4; //WW
       }
    }
    DisplayMsgLn("Unknown diffusion model specified!");
@@ -1207,7 +1207,7 @@ double CompProperties::CalcElementRetardationFactorNew( long index, double *gp, 
          retard = 1. + (1.-porosity)*density_rock*isotherm/porosity;
          break;
       case 3:                                     /* Langmuir Isotherm */
-         isotherm = isotherm_model_values[0] * isotherm_model_values[1] / pow((1 + isotherm_model_values[0] * fabs(conc)),2.0);
+         isotherm = isotherm_model_values[0] * isotherm_model_values[1] / MathLib::fastpow((1 + isotherm_model_values[0] * fabs(conc)),2);
                                                   //CMCD moved here
          retard = 1. + (1.-porosity)*density_rock*isotherm/porosity;
          break;
