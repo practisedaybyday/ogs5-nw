@@ -930,8 +930,8 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
                  SetDMN(source_term, ShiftInNodeVector);
              if (source_term->fct_name.size() > 0)
                  fct_name = source_term->fct_name;
-			 if(source_term->getGeoType () == GEOLIB::COLUMN)  //WW/JOD. 17.08.2011
-			     SetCOL(source_term, ShiftInNodeVector);
+             if(source_term->getGeoType () == GEOLIB::COLUMN)  //WW/JOD. 17.08.2011
+                 SetCOL(source_term, ShiftInNodeVector);
 
 			 // Recovery this functionality. 12.08.2011 WW 
 			// MSH types //OK4310 
