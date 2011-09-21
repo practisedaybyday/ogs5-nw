@@ -10,7 +10,7 @@
 
 #include "Polygon.h"
 // FileIO
-#include "GMSHInterface.h"
+#include "MeshIO/GMSHInterface.h"
 
 namespace GEOLIB {
 

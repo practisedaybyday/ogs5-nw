@@ -16,7 +16,7 @@ Programing:
 #include "mathlib.h"
 
 // FileIO
-#include "GMSHInterface.h"
+#include "MeshIO/GMSHInterface.h"
 
 // PCSLib
 #include "rf_pcs.h"

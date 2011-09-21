@@ -11,7 +11,7 @@ Programing:
 #include <vector>
 
 // FileIO
-#include "GMSHInterface.h"
+#include "MeshIO/GMSHInterface.h"
 
 // GEOLib
 #include "geo_lib.h"
