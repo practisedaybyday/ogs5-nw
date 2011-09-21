@@ -80,7 +80,7 @@ std::vector<NODE_HISTORY*> node_history_vector;   //CMCD
  01/2004 OK Implementation
  **************************************************************************/
 CSourceTerm::CSourceTerm() :
-	ProcessInfo(), GeoInfo(), _coupled (false), _sub_dom_idx(-1), GIS_shape_head(NULL)
+	ProcessInfo(), GeoInfo(), _coupled (false), _sub_dom_idx(-1), dis_linear_f(NULL), GIS_shape_head(NULL)
                                                   // 07.06.2010, 03.2010. WW
 {
    CurveIndex = -1;
@@ -122,6 +122,10 @@ CSourceTerm::~CSourceTerm()
       delete [] GIS_shape_head;
       GIS_shape_head = NULL;
    }
+   //WW
+   if(dis_linear_f) delete dis_linear_f;
+   dis_linear_f = NULL;
+
    //WW---------------------------------------
 }
 
@@ -926,6 +930,9 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
                  SetDMN(source_term, ShiftInNodeVector);
              if (source_term->fct_name.size() > 0)
                  fct_name = source_term->fct_name;
+			 if(source_term->getGeoType () == GEOLIB::COLUMN)  //WW/JOD. 17.08.2011
+			     SetCOL(source_term, ShiftInNodeVector);
+
 			 // Recovery this functionality. 12.08.2011 WW 
 			// MSH types //OK4310 
 			if(source_term->msh_type_name.compare("NODE")==0)  
@@ -2387,8 +2394,8 @@ void GetCriticalDepthNODValue(double &value, CSourceTerm* m_st, long msh_node)
    }
    else
    {
-      flowdepth3 = pow(flowdepth, 3);
-      flowdepth3_epsilon = pow(flowdepth + epsilon, 3);
+      flowdepth3 = pow(flowdepth, 3.);
+      flowdepth3_epsilon = pow(flowdepth + epsilon, 3.);
       width = value;
       if (m_pcs_this->m_msh->GetMaxElementDim() == 1)
       {
