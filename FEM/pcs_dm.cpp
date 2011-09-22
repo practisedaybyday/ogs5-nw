@@ -1313,6 +1313,19 @@ namespace process
          number_of_nodes=num_nodes_p_var[i];
          for (j=0; j<number_of_nodes; j++)
             SetNodeValue(j, Col, 0.0);
+
+         if(fem_dm->dynamic) 
+           continue;
+
+         ///*
+         if(type == 41 && i>=problem_dimension_dm) // HM mono
+         {
+            Col++;         
+            for (j=0; j<number_of_nodes; j++)
+               SetNodeValue(j, Col, 0.0);
+         }
+         //*/
+
       }
 
       /// Dynamic: plus p_0 = 0
