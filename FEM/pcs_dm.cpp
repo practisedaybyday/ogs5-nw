@@ -90,7 +90,11 @@ namespace process
       // Write Gauss stress // TEST for excavation analysis
       //   if(reload==1)
       if(reload==1||reload==3)
+      {
          WriteGaussPointStress();
+         if(type == 41) // mono-deformation-liquid
+	   WriteSolution();
+      }
       //
       MeshLib::CElem* elem = NULL;
       for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
@@ -1005,7 +1009,12 @@ namespace process
          }
       }
       // Reload the stress results of the previous simulation
-      if(reload>=2) ReadGaussPointStress();
+      if(reload>=2)
+      {
+        ReadGaussPointStress();
+        if(type == 41) // mono-deformation-liquid
+          WriteSolution();
+      }
       // For excavation simulation. Moved here on 05.09.2007 WW
       if (num_type_name.find("EXCAVATION")!=0)
          Extropolation_GaussValue();

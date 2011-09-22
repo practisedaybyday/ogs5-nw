@@ -5640,10 +5640,10 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
                /// p_{n+1} = p_b,
                //  SetNodeValue(m_bc_node->geo_node_number, idx0++, bc_value);
                /// dp = u_b-u_n
-               //bc_value -=  GetNodeValue(m_bc_node->geo_node_number, ++idx0);
-               SetNodeValue(m_bc_node->geo_node_number, idx0, bc_value);
-               SetNodeValue(m_bc_node->geo_node_number, idx0+1, bc_value);
-               bc_value = 0.;
+               bc_value -=  GetNodeValue(m_bc_node->geo_node_number, ++idx0);
+	       // SetNodeValue(m_bc_node->geo_node_number, idx0, bc_value);
+               //SetNodeValue(m_bc_node->geo_node_number, idx0+1, bc_value);
+               //bc_value = 0.;
             }
 
          }
