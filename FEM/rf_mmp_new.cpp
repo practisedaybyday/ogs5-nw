@@ -1974,7 +1974,6 @@ void CMediumProperties::WriteTecplot(std::string msh_name)
    //--------------------------------------------------------------------
    // MSH
    CFEMesh* m_msh = NULL;
-   MeshLib::CNode* m_nod = NULL;
    MeshLib::CElem* m_ele = NULL;
    m_msh = FEMGet(msh_name);
    if(!m_msh)

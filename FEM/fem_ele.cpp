@@ -126,7 +126,6 @@ namespace FiniteElement
    {
       int i;
       CNode *a_node = NULL;                       //07.04.2009. WW
-      CNode *a_node0 = NULL;                      //07.04.2009. WW
       MeshElement = MElement;
       Index = MeshElement->GetIndex();
       nnodes = MeshElement->nnodes;

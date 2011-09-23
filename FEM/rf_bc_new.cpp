@@ -827,8 +827,6 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 	bool quadratic = false;
 	bool cont = false; //WW
 
-    MeshLib::CNode *a_node = NULL; //25.08.2011. WW
-
 	if (!this_pv_name.empty()) _pcs_pv_name = this_pv_name;
 	CFEMesh* m_msh = pcs->m_msh;
 	// Tests //OK

@@ -1321,7 +1321,7 @@ void NsPol3 (double p, double q, double r, vector<double>*roots)
          z[0]=-2*h*sinh(phi)-p/3;
       } else if(a>(-eps))
       {
-         z[0]=pow((2*abs(b)),1/3);
+         z[0]=pow((2*abs(b)),1./3.);
          if (b>0)
          {
             z[0]=-z[0];;

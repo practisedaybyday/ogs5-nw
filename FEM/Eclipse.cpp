@@ -1776,7 +1776,6 @@ bool CECLIPSEData::CompareElementsGeosysEclipse(){
 	MeshLib::CElem* m_ele = NULL;
 	CFEMesh* m_msh = fem_msh_vector[0];
 	Math_Group::vec<MeshLib::CNode*> ele_nodes(8);
-	MeshLib::CNode* a_node=NULL;
 	clock_t start,finish;
 	double time;
 	double epsilon = 1e-7;
@@ -2631,7 +2630,6 @@ bool CECLIPSEData::MakeNodeVector(void)
 {
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
 	//CFaces *m_face=NULL;
-	MeshLib::CNode* m_node = NULL;
 	//WW double weights_xyz[3];
 	CPointData_ECL* m_NodeData = NULL;
 	m_NodeData = new CPointData_ECL;

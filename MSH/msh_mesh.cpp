@@ -1848,7 +1848,7 @@ void CFEMesh::GetNODOnSFC_TIN(Surface*m_sfc, std::vector<long>&msh_nod_vector)
 		long i, j, m, fnode;
 		const int nNodes = NodesInUsage();
 		int faceIndex_loc[10];
-		double gC[3], p1[3], p2[3];
+		double p1[3], p2[3];
 		double dist, R, dc1, dc2;
 		CElem* elem = NULL;
 		CNode* cnode = NULL;
@@ -2477,7 +2477,6 @@ void CFEMesh::GetNODOnSFC_TIN(Surface*m_sfc, std::vector<long>&msh_nod_vector)
 		int NRows (_n_msh_layer + 1);
 		int CountNLayers;
 		CNode* m_nod = NULL;
-		double xyz[3];
 		const int NSubLayers = subdivision + 1; //OK
 		const size_t NumElement0 (ele_vector.size());
 		//NodeListSize() / (NLayers+1);
@@ -2795,8 +2794,6 @@ void CFEMesh::GetNODOnSFC_TIN(Surface*m_sfc, std::vector<long>&msh_nod_vector)
 		double patch_area;
 		double x0, y0, z0;
 		CNode* m_nod = NULL;
-		CNode* m_nod1 = NULL;
-		CNode* m_nod2 = NULL;
 		CElem* m_ele = NULL;
 		//----------------------------------------------------------------------
 		size_t nNodes (nod_vector.size());
@@ -3482,7 +3479,6 @@ void CFEMesh::GetNODOnSFC_TIN(Surface*m_sfc, std::vector<long>&msh_nod_vector)
 	{
 		int k;
 		long nx, ny;
-		double x, y;
 		double node_val[8];
 
 		CNode *node;
@@ -3591,7 +3587,6 @@ void CFEMesh::GetNODOnSFC_TIN(Surface*m_sfc, std::vector<long>&msh_nod_vector)
 		long i;
 		CElem *elem;
 		CElem *own_elem;
-		CNode *node;
 		double cent[3];
 		double fac;
 		double tol = 1.e-9;

@@ -872,8 +872,6 @@ double CTimeDiscretization::CourantTimeControl(void)
    CFEMesh* m_msh = NULL;
    ElementValue* gp_ele =NULL;
    MeshLib::CElem* m_ele =NULL;
-   MeshLib::CNode* m_nod1 = NULL;
-   MeshLib::CNode* m_nod2 = NULL;
 
    long iel;
    int i, j, k, nds;

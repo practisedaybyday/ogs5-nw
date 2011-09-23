@@ -11937,10 +11937,13 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path, int timestep, int phase
 //* returns the third root of a number x, -inf < x < inf
 //* Programming: NB, Sep10
 //*****************************************************************************/
-double W3( double x)
+inline double W3( double x)
 {
-   double s=pow(x*x,0.5);
-   return pow(s,1./3.)*x/s;
+   if (x < 0) {
+	   return -pow(fabs(x), 1./3.);
+   } else {
+	   return pow(x, 1./3.);
+   }
 }
 
 

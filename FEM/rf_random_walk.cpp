@@ -1742,8 +1742,6 @@ double RandomWalk::ComputeVolume(Particle* A, MeshLib::CElem* m_ele)
    double volume = 0.0;
    double* PieceOfVolume = NULL;
 
-   MeshLib::CNode* node = NULL;
-
    double A2buff[3];
 
    A2buff[0] = A->x; A2buff[1] = A->y; A2buff[2] = A->z;
@@ -3712,11 +3710,9 @@ int RandomWalk::IsTheParticleInThisElement(Particle* A)
       // Since this is 1D, I'll do exhaustive search.
       // Checking the coordinateflag for proper solution.
       int coordinateflag = m_msh->GetCoordinateFlag();
-      MeshLib::CNode* p1 = NULL; MeshLib::CNode* p2=NULL;
                                                   //OK411??? long
       for(int i=0; i< (int)m_msh->ele_vector.size(); ++i)
       {
-         MeshLib::CElem* theEle = m_msh->ele_vector[i];
          double const*const pnt1 (m_msh->nod_vector[m_msh->ele_vector[i]->GetNodeIndex(0)]->getData());
          double const*const pnt2 (m_msh->nod_vector[m_msh->ele_vector[i]->GetNodeIndex(1)]->getData());
          if(coordinateflag == 10)                 // x only
