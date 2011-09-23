@@ -13,7 +13,6 @@
 #define msh_mesh_INC
 
 // C++
-#include "Configure.h"
 #include <string>
 
 /** depreciated includes of GEOLib */

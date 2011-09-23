@@ -6,6 +6,7 @@
  */
 
 // ** INCLUDES **
+#include "Configure.h"
 #include <gtest/gtest.h>
 
 #include <string>
@@ -19,8 +20,6 @@
 
 // FileIO
 #include "OGSIOVer4.h"
-
-#include "Configure.h"
 
 TEST(GEO, PointInPolygon)
 {

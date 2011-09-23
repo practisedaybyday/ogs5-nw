@@ -11,7 +11,7 @@
    01/2002     MK         Umleitung der DisplayX-Funktionen in MSG-Datei
                           Ausnahmen: DisplayStartMsg/DisplayEndMsg                                                  */
 /**************************************************************************/
-
+#include "Configure.h"
 #include "makros.h"
 #include "display.h"
 extern FILE *OpenMsgFile(void);

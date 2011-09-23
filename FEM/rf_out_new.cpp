@@ -5,6 +5,7 @@ Programing:
 06/2004 OK Implementation
 last modified:
 **************************************************************************/
+#include "Configure.h"
 #include "makros.h"
 // C++ STL
 #include <cfloat>
@@ -15,8 +16,6 @@ last modified:
 #include <fstream>
 #include <iostream>
 using namespace std;
-
-#include "Configure.h"
 
 // Base
 #include "StringTools.h"

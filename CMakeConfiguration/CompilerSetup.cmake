@@ -1,10 +1,13 @@
+INCLUDE(ResetConfigurations)        # To Debug, Release, RelWithDbgInfo
+INCLUDE(SetDefaultBuildType)
+SET_DEFAULT_BUILD_TYPE(Debug)
+INCLUDE(MSVCMultipleProcessCompile) # /MP Switch for VS
+
 IF (WIN32)
 	## For Visual Studio compiler
 	IF (MSVC)
-		ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-		ADD_DEFINITIONS(-D_CRT_NONSTDC_NO_WARNINGS)
-		ADD_DEFINITIONS(-D_CRT_XNONSTDC_NO_WARNINGS)
-		SET ( CMAKE_CONFIGURATION_TYPES "Release;Debug" CACHE TYPE INTERNAL FORCE )
+		ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS
+		  -D_CRT_XNONSTDC_NO_WARNINGS)
 		# Sets warning level 3 and ignores some warnings
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /wd4290")
 		SET(GCC OFF)
@@ -26,9 +29,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 	# -g
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wall -Wextra -Woverloaded-virtual -fno-nonansi-builtins")
 	# would be cool: -Woverloaded-virtual, would be overkill: -Weffc++
-        ADD_DEFINITIONS(
-		-DGCC
-	)
+        ADD_DEFINITIONS(-DGCC)
 	IF (OGS_PROFILE)
 		IF( NOT CMAKE_BUILD_TYPE STREQUAL "Debug" )
 			MESSAGE(Warning "When using profiling you should set CMAKE_BUILD_TYPE to Debug.")

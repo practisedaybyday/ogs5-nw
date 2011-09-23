@@ -4,6 +4,7 @@ if( CMAKE_SIZEOF_VOID_P EQUAL 4 )
  set( BITS 32 )
 else( CMAKE_SIZEOF_VOID_P EQUAL 4 )
  set( HAVE_64_BIT 1 )
+ add_definitions(-DHAVE_64_BIT)
  set( BITS 64)
 endif( CMAKE_SIZEOF_VOID_P EQUAL 4 )
 

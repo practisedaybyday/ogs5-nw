@@ -16,6 +16,7 @@
 #include <QTextCodec>
 #include <QCryptographicHash>
 #include <QtXml/QDomDocument>
+#include "Configure.h"
 #if OGS_QT_VERSION > 45
 	#include <QtXmlPatterns/QXmlSchema>
 	#include <QtXmlPatterns/QXmlSchemaValidator>

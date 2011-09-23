@@ -9,8 +9,6 @@
 #ifndef RF_REACT_GEM_H
 #define RF_REACT_GEM_H
 
-#include "Configure.h"
-
 #ifdef GEM_REACT
 
 #include <time.h>

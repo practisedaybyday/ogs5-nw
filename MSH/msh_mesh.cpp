@@ -5,8 +5,6 @@
  08/2005 WW/OK Encapsulation from rf_ele_msh
  last modified
  **************************************************************************/
-#include "Configure.h"
-
 #include <cmath>
 #include <cfloat>
 #include <vector>
