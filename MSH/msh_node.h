@@ -48,9 +48,9 @@ namespace MeshLib
          bool operator ==(const CNode& n);
 
          // Get functions
-//         double X() const { return coordinate[0]; };
-//         double Y() const { return coordinate[1]; };
-//         double Z() const { return coordinate[2]; };
+         double X() const { return coordinate[0]; };
+         double Y() const { return coordinate[1]; };
+         double Z() const { return coordinate[2]; };
 
 //         void Coordinates(double *xyz) const
 //         {
@@ -63,7 +63,7 @@ namespace MeshLib
           * returns the coordinates of the mesh node
           * @return the coordinates of this mesh node
           */
-         double const* getData () const { return coordinate; }
+         inline double const* getData () const { return coordinate; }
 
          // Set functions
          void SetX(double argX) { coordinate[0] = argX; };
