@@ -961,9 +961,10 @@ double CFluidProperties::GetElementValueFromNodes(long ElementIndex, int GPIndex
 			m_node = m_msh->nod_vector[vec_nod_index[i]];
 			//calculate distance between the node and the barycentre
 			double const* gravity_centre(m_ele->GetGravityCenter());
-			distance =  (gravity_centre[0] - m_node->X())*(gravity_centre[0] - m_node->X());
-			distance += (gravity_centre[1] - m_node->Y())*(gravity_centre[1] - m_node->Y());
-			distance += (gravity_centre[2] - m_node->Z())*(gravity_centre[2] - m_node->Z());
+			double const*const pnt (m_node->getData());
+			distance =  (gravity_centre[0] - pnt[0])*(gravity_centre[0] - pnt[0]);
+			distance += (gravity_centre[1] - pnt[1])*(gravity_centre[1] - pnt[1]);
+			distance += (gravity_centre[2] - pnt[2])*(gravity_centre[2] - pnt[2]);
 			distance =  sqrt(distance);
 
 			//Weight of each face depending on distance

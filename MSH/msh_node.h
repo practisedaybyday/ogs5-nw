@@ -39,6 +39,7 @@ namespace MeshLib
          /** constructor */
          CNode(size_t Index);
          CNode(size_t Index, double x, double y, double z = 0.0);
+         CNode(size_t Index, double const* coordinates);
          CNode(size_t Index, const CNode* parent);//NW
          ~CNode() {}
 
@@ -47,9 +48,9 @@ namespace MeshLib
          bool operator ==(const CNode& n);
 
          // Get functions
-         double X() const { return coordinate[0]; };
-         double Y() const { return coordinate[1]; };
-         double Z() const { return coordinate[2]; };
+//         double X() const { return coordinate[0]; };
+//         double Y() const { return coordinate[1]; };
+//         double Z() const { return coordinate[2]; };
 
 //         void Coordinates(double *xyz) const
 //         {

@@ -8017,10 +8017,7 @@ void CRFProcess::CalcFluxesForCoupling(void)
       // ToDo safe somewhere else so that this has to be done only once
       //-----------------------------------------------------------------
       // Get Nearest GW and OLF Element
-      GEOLIB::Point pnt;
-      pnt[0] = m_msh->nod_vector[IndexBottomNode]->X();
-      pnt[1] = m_msh->nod_vector[IndexBottomNode]->Y();
-      pnt[2] = m_msh->nod_vector[IndexBottomNode]->Z();
+      GEOLIB::Point pnt (m_msh->nod_vector[IndexBottomNode]->getData());
 
       long EleNumber = m_msh_GW->GetNearestELEOnPNT(&pnt);
 
@@ -8037,7 +8034,7 @@ void CRFProcess::CalcFluxesForCoupling(void)
          NodeIndex_OLF = m_ele_OLF->GetNodeIndex(j);
 
          AverageZ_GW += m_pcs_GW->GetNodeValue(NodeIndex_GW, idxHead_GW);
-         AverageZ_OLF += m_msh_OLF->nod_vector[NodeIndex_OLF]->Z();
+         AverageZ_OLF += m_msh_OLF->nod_vector[NodeIndex_OLF]->getData()[2];
       }
       AverageZ_GW = AverageZ_GW / NoOfGWNodes;
       AverageZ_OLF = AverageZ_OLF / NoOfGWNodes;
@@ -9540,9 +9537,10 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
                break;
             }
             double const* gravity_center(m_ele->GetGravityCenter());
-            aux_vector[0] = gravity_center[0] - m_nod->X();
-            aux_vector[1] = gravity_center[1] - m_nod->Y();
-            aux_vector[2] = gravity_center[2] - m_nod->Z();
+            double const*const pnt (m_nod->getData());
+            aux_vector[0] = gravity_center[0] - pnt[0];
+            aux_vector[1] = gravity_center[1] - pnt[1];
+            aux_vector[2] = gravity_center[2] - pnt[2];
             check_sign = MSkalarprodukt(v,aux_vector,3);
             if(check_sign<0.0)
                m_ele->SetMark(true);
@@ -11062,7 +11060,6 @@ void CRFProcess::WriteBC()
    }
    os.setf(ios::scientific, ios::floatfield);
    os.precision(12);
-   CNode *anode = NULL;
    long nindex = 0;
    if (size_bc > 0)
    {
@@ -11072,11 +11069,16 @@ void CRFProcess::WriteBC()
       for (size_t i = 0; i < size_bc; i++)
       {
          nindex = bc_node_value[i]->geo_node_number;
-         anode = m_msh->nod_vector[nindex];
+//         anode = m_msh->nod_vector[nindex];
+//         os << nindex << "  " << bc_node_value[i]->pcs_pv_name << " "
+//            << std::setw(14) << anode->X() << " " << std::setw(14) << anode->Y()
+//            << " " << std::setw(14) << anode->Z() << " " << std::setw(14)
+//            << bc_node_value[i]->node_value << endl;
+         double const*const pnt (m_msh->nod_vector[nindex]->getData());
          os << nindex << "  " << bc_node_value[i]->pcs_pv_name << " "
-            << std::setw(14) << anode->X() << " " << std::setw(14) << anode->Y()
-            << " " << std::setw(14) << anode->Z() << " " << std::setw(14)
-            << bc_node_value[i]->node_value << endl;
+                     << std::setw(14) << pnt[0] << " " << std::setw(14) << pnt[1]
+                     << " " << std::setw(14) << pnt[2] << " " << std::setw(14)
+                     << bc_node_value[i]->node_value << endl;
       }
    }
    if (size_st > 0)
@@ -11088,12 +11090,18 @@ void CRFProcess::WriteBC()
       for (size_t i = 0; i < size_st; i++)
       {
          nindex = st_node_value[i]->geo_node_number;
-         anode = m_msh->nod_vector[nindex];
-         os << nindex << "  " << convertPrimaryVariableToString(
-            st_node[i]->getProcessPrimaryVariable()) << " " << std::setw(14)
-            << anode->X() << " " << std::setw(14) << anode->Y() << " "
-            << std::setw(14) << anode->Z() << " " << std::setw(14)
-            << st_node_value[i]->node_value << endl;
+//         anode = m_msh->nod_vector[nindex];
+//         os << nindex << "  " << convertPrimaryVariableToString(
+//            st_node[i]->getProcessPrimaryVariable()) << " " << std::setw(14)
+//            << anode->X() << " " << std::setw(14) << anode->Y() << " "
+//            << std::setw(14) << anode->Z() << " " << std::setw(14)
+//            << st_node_value[i]->node_value << endl;
+         double const*const pnt (m_msh->nod_vector[nindex]->getData());
+		  os << nindex << "  " << convertPrimaryVariableToString(
+			 st_node[i]->getProcessPrimaryVariable()) << " " << std::setw(14)
+			 << pnt[0] << " " << std::setw(14) << pnt[1] << " "
+			 << std::setw(14) << pnt[2] << " " << std::setw(14)
+			 << st_node_value[i]->node_value << endl;
       }
    }
    os << "#STOP" << endl;
@@ -11473,7 +11481,6 @@ void CRFProcess::UpdateTransientBC()
          int node_xmin, node_xmax, node_ymin, node_ymax;
          long m, n, mm, nn, l;
          CElem *elem;
-         CNode *node;
          double *cent;
          double vel_av[3], x1[3], x2[3], x3[3], sub_area[3], area, tol_a;
 
@@ -11527,31 +11534,25 @@ void CRFProcess::UpdateTransientBC()
             /// Find the range of this element
             x_min = y_min = 1.e+20;
             x_max = y_max = -1.e+20;
-            for(k=0; k<nnodes; k++)
-            {
-               node = elem->nodes[k];
-
-               if(node->X()<x_min)
-               {
-                  x_min = node->X();
-                  node_xmin = k;
-               }
-               if(node->X()>x_max)
-               {
-                  x_max = node->X();
-                  node_xmax = k;
-               }
-               if(node->Y()<y_min)
-               {
-                  y_min = node->Y();
-                  node_ymin = k;
-               }
-               if(node->Y()>y_max)
-               {
-                  y_max = node->Y();
-                  node_ymax = k;
-               }
-            }
+            for (k = 0; k < nnodes; k++) {
+            	double const*const pnt(elem->nodes[k]->getData());
+				if (pnt[0] < x_min) {
+					x_min = pnt[0];
+					node_xmin = k;
+				}
+				if (pnt[0] > x_max) {
+					x_max = pnt[0];
+					node_xmax = k;
+				}
+				if (pnt[1] < y_min) {
+					y_min = pnt[1];
+					node_ymin = k;
+				}
+				if (pnt[1] > y_max) {
+					y_max = pnt[1];
+					node_ymax = k;
+				}
+			}
 
             /// Determine the cells that this element covers. 05.10. 2010
             col_min = (long)((x_min-g_para[2])/g_para[4]);
@@ -11559,15 +11560,15 @@ void CRFProcess::UpdateTransientBC()
             col_max = (long)((x_max-g_para[2])/g_para[4]);
             row_max = nrow -(long)((y_min-g_para[3])/g_para[4]);
 
-            node = elem->nodes[0];
-            x1[0] = node->X();
-            x1[1] = node->Y();
-            node = elem->nodes[1];
-            x2[0] = node->X();
-            x2[1] = node->Y();
-            node = elem->nodes[2];
-            x3[0] = node->X();
-            x3[1] = node->Y();
+            double const*const pnt1 (elem->nodes[0]->getData());
+            x1[0] = pnt1[0];
+            x1[1] = pnt1[1];
+            double const*const pnt2 (elem->nodes[1]->getData());
+            x2[0] = pnt2[0];
+            x2[1] = pnt2[1];
+            double const*const pnt3 (elem->nodes[2]->getData());
+            x3[0] = pnt3[0];
+            x3[1] = pnt3[1];
 
             x3[2] = x2[2] = x1[2] = 0.;
             cent[2] = 0.;
@@ -11588,27 +11589,27 @@ void CRFProcess::UpdateTransientBC()
 
                   if(cent[0]<x_min)
                   {
-                     node = elem->nodes[node_xmin];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                     double const*const pnt (elem->nodes[node_xmin]->getData());
+                     cent[0] = pnt[0];
+                     cent[1] = pnt[1];
                   }
                   if(cent[0]>x_max)
                   {
-                     node = elem->nodes[node_xmax];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                     double const*const pnt (elem->nodes[node_xmax]->getData());
+                     cent[0] = pnt[0];
+                     cent[1] = pnt[1];
                   }
                   if(cent[1]<y_min)
                   {
-                     node = elem->nodes[node_ymin];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                	 double const*const pnt (elem->nodes[node_ymin]->getData());
+					 cent[0] = pnt[0];
+					 cent[1] = pnt[1];
                   }
                   if(cent[1]<y_max)
                   {
-                     node = elem->nodes[node_ymax];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                 	 double const*const pnt (elem->nodes[node_ymax]->getData());
+ 					 cent[0] = pnt[0];
+ 					 cent[1] = pnt[1];
                   }
 
                   /// Check whether this point is in this element.

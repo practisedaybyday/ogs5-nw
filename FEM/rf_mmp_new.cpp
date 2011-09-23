@@ -2003,10 +2003,8 @@ void CMediumProperties::WriteTecplot(std::string msh_name)
       << "F = FEPOINT" << ", " << "ET = BRICK" << std::endl;
    for(i=0;i<no_nodes;i++)
    {
-      m_nod = m_msh->nod_vector[i];
-      mat_file \
-         << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << " " \
-         << number << std::endl;
+     double const*const pnt (m_msh->nod_vector[i]->getData());
+      mat_file << pnt[0] << " " << pnt[1] << " " << pnt[2] << " " << number << std::endl;
    }
    j=0;
    for(i=0;i<(long)m_msh->ele_vector.size();i++)
@@ -6252,8 +6250,9 @@ void CMediumProperties::WriteTecplotDistributedProperties()
    for (i = 0; i < (long) m_msh->nod_vector.size(); i++)
    {
       m_nod = m_msh->nod_vector[i];
-      mat_file << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z();
-      for (j = 0; j < (int) m_msh->mat_names_vector.size(); j++)
+      double const*const pnt (m_nod->getData());
+      mat_file << pnt[0] << " " << pnt[1] << " " << pnt[2];
+      for (size_t j = 0; j < m_msh->mat_names_vector.size(); j++)
       {
          m_mat_prop_nod = 0.0;
          for (k = 0; k < (int) m_nod->getConnectedElementIDs().size(); k++)
@@ -6407,8 +6406,9 @@ double GetAverageHetVal2(long EleIndex, CFEMesh *m_msh, vector <double> xvals,  
    m_ele = m_msh->ele_vector[EleIndex];
    for(j=0;j<3; j++)
    {
-      xp[j] = m_ele->GetNode(j)->X();
-      yp[j] = m_ele->GetNode(j)->Y();
+	  double const*const pnt(m_ele->GetNode(j)->getData());
+      xp[j] = pnt[0];
+      yp[j] = pnt[1];
       //zp[j] = 0.0;
    }
 

@@ -150,10 +150,9 @@ int main (int argc, char *argv[])
 				out_mesh_nodes_as_pnts << "#POINTS" << std::endl;
 				const size_t ids0_size (ids0.size());
 				for (size_t k(0); k<ids0_size; k++) {
+					double const*const pnt (mesh->getNodeVector()[ids0[k]]->getData());
 					out_mesh_nodes_as_pnts << k << " "
-						<< mesh->getNodeVector()[ids0[k]]->X() << " "
-						<< mesh->getNodeVector()[ids0[k]]->Y() << " "
-						<< mesh->getNodeVector()[ids0[k]]->Z() << std::endl;
+						<< pnt[0] << " " << pnt[1] << " " << pnt[2] << std::endl;
 				}
 				out_mesh_nodes_as_pnts << "#STOP" << std::endl;
 				out_mesh_nodes_as_pnts.close();

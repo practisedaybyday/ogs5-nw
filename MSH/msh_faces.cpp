@@ -21,7 +21,8 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-void CPlaneEquation::CalculatePlaneEquationFrom3Points(double Point1[3], double Point2[3], double Point3[3]) {
+void CPlaneEquation::CalculatePlaneEquationFrom3Points(const double Point1[3], const double Point2[3], const double Point3[3])
+{
 	//Set the initial point
 	this->Point[0] = Point1[0];
 	this->Point[1] = Point1[1];
@@ -58,7 +59,8 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-bool CPlaneEquation::CheckIfPointInPlane(double Point[3]) {
+bool CPlaneEquation::CheckIfPointInPlane(const double Point[3])
+{
 	(void)Point;
 	//the point is included in the normal equation of the plane, it is part of the plane if the equation is fullfilled
 	if (this->Lambda_NormalEquation == this->Point[0] * this->normal_vector[0] + this->Point[1] * this->normal_vector[1] + this->Point[2] * this->normal_vector[2])
@@ -94,7 +96,7 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-bool CFaces::Calculate_FaceGravityCentre(double Point1[3], double Point2[3], double Point3[3], double Point4[3]){
+bool CFaces::Calculate_FaceGravityCentre(const double Point1[3], const double Point2[3], const double Point3[3], const double Point4[3]){
 	//Order of the faces: 0..left(x); 1..right(x); 2..front(y); 3..back(y); 4..bottom(z); 5..top(z)
 	if (this->connected_nodes.size()>4){
 		std::cout << "Error: The face has more than 4 corner points!" << std::endl;
@@ -221,20 +223,16 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-bool CFaces::CreateFace(MeshLib::CNode* Point1, MeshLib::CNode* Point2, MeshLib::CNode* Point3, MeshLib::CNode* Point4){
-	double coord_Point1[3];
-	double coord_Point2[3];
-	double coord_Point3[3];
-	double coord_Point4[3];
-
+bool CFaces::CreateFace(MeshLib::CNode* Point1, MeshLib::CNode* Point2, MeshLib::CNode* Point3, MeshLib::CNode* Point4)
+{
 	//Set nodes of the face
 	this->SetNodes(Point1, Point2, Point3, Point4);
 
 	//Calculate the plane equation
-	coord_Point1[0] = this->connected_nodes[0]->X(); coord_Point1[1] = this->connected_nodes[0]->Y(); coord_Point1[2] = this->connected_nodes[0]->Z();
-	coord_Point2[0] = this->connected_nodes[1]->X(); coord_Point2[1] = this->connected_nodes[1]->Y(); coord_Point2[2] = this->connected_nodes[1]->Z();
-	coord_Point3[0] = this->connected_nodes[2]->X(); coord_Point3[1] = this->connected_nodes[2]->Y(); coord_Point3[2] = this->connected_nodes[2]->Z();
-	coord_Point4[0] = this->connected_nodes[3]->X(); coord_Point4[1] = this->connected_nodes[3]->Y(); coord_Point4[2] = this->connected_nodes[3]->Z();
+	double const*const coord_Point1 (this->connected_nodes[0]->getData());
+	double const*const coord_Point2 (this->connected_nodes[1]->getData());
+	double const*const coord_Point3 (this->connected_nodes[2]->getData());
+	double const*const coord_Point4 (this->connected_nodes[3]->getData());
 
 	this->PlaneEquation = new CPlaneEquation();
 	this->PlaneEquation->CalculatePlaneEquationFrom3Points(coord_Point1, coord_Point2, coord_Point3);

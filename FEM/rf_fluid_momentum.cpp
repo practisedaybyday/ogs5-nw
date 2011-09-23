@@ -560,9 +560,10 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
 
             // Store the position vector defined below
             double const* CenterOfEle(m_msh->ele_vector[index]->GetGravityCenter());
-            thisCross->plane[j].Eele[0] = CenterOfEle[0] - thisNode->X();
-            thisCross->plane[j].Eele[1] = CenterOfEle[1] - thisNode->Y();
-            thisCross->plane[j].Eele[2] = CenterOfEle[2] - thisNode->Z();
+            double const*const coords (thisNode->getData());
+            thisCross->plane[j].Eele[0] = CenterOfEle[0] - coords[0]; // thisNode->X();
+            thisCross->plane[j].Eele[1] = CenterOfEle[1] - coords[1]; // thisNode->Y();
+            thisCross->plane[j].Eele[2] = CenterOfEle[2] - coords[2]; // thisNode->Z();
 
             // Solve the velocity contribution for this plane.
             CrossProduction(V,norm,VxNorm);
@@ -678,9 +679,14 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
             // Store the position vector defined below
             double const* CenterOfEle(m_msh->ele_vector[index]->GetGravityCenter());
             // I am using the center position of the joint
-            thisJoint->plane[j].Eele[0] = CenterOfEle[0] - (theNodesOfThisEdge[0]->X()+theNodesOfThisEdge[1]->X())/2.0;
-            thisJoint->plane[j].Eele[1] = CenterOfEle[1] - (theNodesOfThisEdge[0]->Y()+theNodesOfThisEdge[1]->Y())/2.0;
-            thisJoint->plane[j].Eele[2] = CenterOfEle[2] - (theNodesOfThisEdge[0]->Z()+theNodesOfThisEdge[1]->Z())/2.0;
+//            thisJoint->plane[j].Eele[0] = CenterOfEle[0] - (theNodesOfThisEdge[0]->X()+theNodesOfThisEdge[1]->X())/2.0;
+//            thisJoint->plane[j].Eele[1] = CenterOfEle[1] - (theNodesOfThisEdge[0]->Y()+theNodesOfThisEdge[1]->Y())/2.0;
+//            thisJoint->plane[j].Eele[2] = CenterOfEle[2] - (theNodesOfThisEdge[0]->Z()+theNodesOfThisEdge[1]->Z())/2.0;
+            double const* const pnt0(theNodesOfThisEdge[0]->getData());
+			double const* const pnt1(theNodesOfThisEdge[1]->getData());
+			thisJoint->plane[j].Eele[0] = CenterOfEle[0] - (pnt0[0] + pnt1[0]) / 2.0;
+			thisJoint->plane[j].Eele[1] = CenterOfEle[1] - (pnt0[1] + pnt1[1]) / 2.0;
+			thisJoint->plane[j].Eele[2] = CenterOfEle[2] - (pnt0[2] + pnt1[2]) / 2.0;
 
             // Solve the velocity contribution for this plane.
             CrossProduction(V,norm,VxNorm);
@@ -760,16 +766,18 @@ void CFluidMomentum::SolveForEdgeVelocity(void)
    {
       m_msh->edge_vector[i]->GetNodes(theNodesOfThisEdge);
 
-      double VectorOfEdge[3], MagOfVector;        // Norma vector of the edge
-      VectorOfEdge[0] = theNodesOfThisEdge[1]->X() - theNodesOfThisEdge[0]->X();
-      VectorOfEdge[1] = theNodesOfThisEdge[1]->Y() - theNodesOfThisEdge[0]->Y();
+      double const*const coords1 (theNodesOfThisEdge[1]->getData());
+      double const*const coords0 (theNodesOfThisEdge[0]->getData());
+      // Norma vector of the edge
+      double VectorOfEdge[3] = {coords1[0] - coords0[0], coords1[1] - coords0[1], 0.0};
 
       // Note MagOfVector is never zero
-      MagOfVector = sqrt(VectorOfEdge[0]*VectorOfEdge[0] + VectorOfEdge[1]*VectorOfEdge[1]);
+      double MagOfVector = sqrt(VectorOfEdge[0]*VectorOfEdge[0] + VectorOfEdge[1]*VectorOfEdge[1]);
       // Now VectorOfEdge is unit vector
       VectorOfEdge[0] = VectorOfEdge[0] / MagOfVector;
       VectorOfEdge[1] = VectorOfEdge[1] / MagOfVector;
       VectorOfEdge[2] = 0.0;
+      // TF Why not simply set to one at this points, i.e. MagOfVector = 1.0?
       MagOfVector = sqrt(VectorOfEdge[0]*VectorOfEdge[0] + VectorOfEdge[1]*VectorOfEdge[1]);
 
       // Geting velocity on two ending nodes of the edge

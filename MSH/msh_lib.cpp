@@ -386,9 +386,10 @@ void MSHWriteVOL2TEC(std::string m_msh_name)
             x=0.0; y=0.0; z=0.0;
             for(j=0;j<6;j++)
             {
-               x += m_msh->nod_vector[node_indeces[j]]->X();
-               y += m_msh->nod_vector[node_indeces[j]]->Y();
-               z += m_msh->nod_vector[node_indeces[j]]->Z();
+            	double const*const pnt (m_msh->nod_vector[node_indeces[j]]->getData());
+               x += pnt[0];
+               y += pnt[1];
+               z += pnt[2];
             }
             x /= double(6);
             y /= double(6);
@@ -410,8 +411,8 @@ void MSHWriteVOL2TEC(std::string m_msh_name)
          << "F = FEPOINT" << ", " << "ET = BRICK" << std::endl;
       for(i=0;i<no_nodes;i++)
       {
-         vol_file \
-            << m_msh->nod_vector[i]->X() << " " << m_msh->nod_vector[i]->Y() << " " << m_msh->nod_vector[i]->Z() << " " << vol_number << std::endl;
+    	  double const*const pnt_i(m_msh->nod_vector[i]->getData());
+         vol_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << " " << vol_number << std::endl;
       }
       for(long i=jb;i<je;i++)
       {
@@ -422,9 +423,10 @@ void MSHWriteVOL2TEC(std::string m_msh_name)
             x=0.0; y=0.0; z=0.0;
             for(j=0;j<6;j++)
             {
-               x += m_msh->nod_vector[node_indeces[j]]->X();
-               y += m_msh->nod_vector[node_indeces[j]]->Y();
-               z += m_msh->nod_vector[node_indeces[j]]->Z();
+            	 double const*const pnt_j(m_msh->nod_vector[node_indeces[j]]->getData());
+               x += pnt_j[0];
+               y += pnt_j[1];
+               z += pnt_j[2];
             }
             x /= double(6);
             y /= double(6);
@@ -502,9 +504,8 @@ void MSHWriteTecplot()
             msh_file << "ET = QUADRILATERAL" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -518,11 +519,9 @@ void MSHWriteTecplot()
             //..................................................................
          case MshElemType::QUAD:
             msh_file << "ET = QUADRILATERAL" << std::endl;
-            for (i = 0; i < no_nodes; i++)
-            {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            for (i = 0; i < no_nodes; i++) {
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+				msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -536,11 +535,9 @@ void MSHWriteTecplot()
             //..................................................................
          case MshElemType::HEXAHEDRON:
             msh_file << "ET = BRICK" << std::endl;
-            for (i = 0; i < no_nodes; i++)
-            {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            for (i = 0; i < no_nodes; i++) {
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+            	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -558,9 +555,8 @@ void MSHWriteTecplot()
             msh_file << "ET = TRIANGLE" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+            	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -575,9 +571,8 @@ void MSHWriteTecplot()
             msh_file << "ET = TETRAHEDRON" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+            	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -593,9 +588,8 @@ void MSHWriteTecplot()
             msh_file << "ET = BRICK" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+            	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -688,12 +682,10 @@ void MSHLayerWriteTecplot()
             //..................................................................
             case MshElemType::LINE:
                msh_file << "ET = QUADRILATERAL" << std::endl;
-               for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
-               {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
-               }
+               for (size_t i = 0; i < m_msh->nod_vector.size(); i++) {
+					double const* const pnt_i(m_msh->nod_vector[i]->getData());
+					msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
+				}
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
                   m_ele = m_msh->ele_vector[i];
@@ -708,9 +700,8 @@ void MSHLayerWriteTecplot()
                msh_file << "ET = QUADRILATERAL" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
+               	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -726,9 +717,8 @@ void MSHLayerWriteTecplot()
                msh_file << "ET = BRICK" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
+               	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -747,9 +737,8 @@ void MSHLayerWriteTecplot()
                msh_file << "ET = TRIANGLE" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
+               	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -764,9 +753,8 @@ void MSHLayerWriteTecplot()
                msh_file << "ET = TETRAHEDRON" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
+               	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -782,9 +770,8 @@ void MSHLayerWriteTecplot()
                msh_file << "ET = BRICK" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
+               	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -1684,7 +1671,7 @@ void MSHMoveNODUcFlow (CRFProcess*m_pcs)
 
          if(m_pcs_OLF!=NULL)
          {
-            SurfaceZ = m_pcs_OLF->m_msh->nod_vector[strang[0]]->Z();
+            SurfaceZ = m_pcs_OLF->m_msh->nod_vector[strang[0]]->getData()[2];
             if (head > SurfaceZ)
             {
                head = SurfaceZ;
@@ -1692,7 +1679,7 @@ void MSHMoveNODUcFlow (CRFProcess*m_pcs)
          }
 
          /* Set minimum thickness */
-         z_bottom = m_pcs->m_msh->nod_vector[strang[anz_zeilen]]->Z();
+         z_bottom = m_pcs->m_msh->nod_vector[strang[anz_zeilen]]->getData()[2];
          if(head - z_bottom < MinThickness)
             head = z_bottom + MinThickness;
 

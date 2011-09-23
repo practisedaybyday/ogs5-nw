@@ -1004,10 +1004,12 @@ void CPARDomain::WriteTecplot(string msh_name)
    //......................................................................
    for(i=0;i<no_nodes;i++)
    {
-      m_nod = m_msh->nod_vector[i];
-      dom_file \
-         << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << " " \
-         << ID << endl;
+		double const*const coords (m_msh->nod_vector[i]->getData());
+        dom_file << coords[0] << " " << coords[1] << " " << coords[2] << " " << ID << endl;
+//      m_nod = m_msh->nod_vector[i];
+//      dom_file \
+//         << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << " " \
+//         << ID << endl;
    }
    //......................................................................
    for(i=0;i<(long)elements.size();i++)

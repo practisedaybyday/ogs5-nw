@@ -47,8 +47,8 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 	std::vector<GEOLIB::PointWithID*> points_inside_polygon;
 	const size_t number_of_mesh_nodes (mesh_nodes.size());
 	for (size_t j(0); j<number_of_mesh_nodes; j++) {
-		if (polygon.isPntInPolygon (mesh_nodes[j]->X(), mesh_nodes[j]->Y(), 0.0)) {
-			points_inside_polygon.push_back (new GEOLIB::PointWithID (mesh_nodes[j]->X(), mesh_nodes[j]->Y(), mesh_nodes[j]->Z(), j));
+		if (polygon.isPntInPolygon (mesh_nodes[j]->getData())) {
+			points_inside_polygon.push_back (new GEOLIB::PointWithID (mesh_nodes[j]->getData(), j));
 		}
 		// initialize id_map
 		id_map.push_back (std::numeric_limits<size_t>::max());

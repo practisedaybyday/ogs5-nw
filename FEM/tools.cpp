@@ -862,8 +862,9 @@ double GetAverageHetVal(long EleIndex, CFEMesh *m_msh, long no_values, double **
    m_ele = m_msh->ele_vector[EleIndex];
    for(j=0;j<3; j++)
    {
-      xp[j] = m_ele->GetNode(j)->X();
-      yp[j] = m_ele->GetNode(j)->Y();
+	   double const*const pnt(m_ele->GetNode(j)->getData());
+      xp[j] = pnt[0];
+      yp[j] = pnt[1];
       //zp[j] = 0.0;
    }
    //-----------------------------------------------------------------------
