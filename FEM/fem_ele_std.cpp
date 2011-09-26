@@ -3395,7 +3395,7 @@ namespace FiniteElement
             double tmp_diff = 0.0;
             for (int i=0; i<dim; i++)
             {
-               tmp_diff = MathLib::fastpow(dispersion_tensor[i+i*dim], 2);
+               tmp_diff = dispersion_tensor[i+i*dim] * dispersion_tensor[i+i*dim];
             }
             diff = sqrt(tmp_diff);
          }
@@ -3444,9 +3444,9 @@ namespace FiniteElement
          {
             // taking into account time step
             //          tau = 1.0 / sqrt(pow(2.0/dt ,2.0)+pow(2.0*v_mag/ele_len,2.0));
-            tau = 1.0 / sqrt(MathLib::fastpow(2.0 / dt, 2) + MathLib::fastpow(2.0
-				* v_mag / ele_len, 2) + MathLib::fastpow(4.0 * diff / (ele_len * ele_len),
-				2));
+            tau = 1.0 / sqrt((2.0 / dt)*(2.0 / dt)
+            		+ (2.0 * v_mag / ele_len)*(2.0 * v_mag / ele_len)
+            		+ (4.0 * diff / (ele_len * ele_len)) * (4.0 * diff / (ele_len * ele_len)));
          }
          break;
       }
@@ -4734,7 +4734,7 @@ namespace FiniteElement
          humi = exp(PG/(GAS_CONSTANT_V*TG*rhow));
          Dv = tort*(1.0-Sw)*poro*2.16e-5*pow(TG/T_KILVIN_ZERO, 1.8);
          rhov = humi*FluidProp->vaporDensity(TG);
-         drdT= (FluidProp->vaporDensity_derivative(TG)*humi-rhov*PG/(GAS_CONSTANT_V*rhow*MathLib::fastpow(TG,2)))/rhow;
+         drdT= (FluidProp->vaporDensity_derivative(TG)*humi-rhov*PG/(GAS_CONSTANT_V*rhow*TG*TG))/rhow;
          Dtv = time_unit_factor*Dv*drdT;
 
          //    }

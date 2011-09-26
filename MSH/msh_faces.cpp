@@ -43,7 +43,7 @@ void CPlaneEquation::CalculatePlaneEquationFrom3Points(const double Point1[3], c
 	this->normal_vector[2] = this->vector1[0] * this->vector2[1] - this->vector1[1] * this->vector2[0];
 
 	//norm the normal vector to 1
-	double norm = sqrt(MathLib::fastpow(this->normal_vector[0],2) + MathLib::fastpow(this->normal_vector[1],2) + MathLib::fastpow(this->normal_vector[2],2));
+	double norm = sqrt(MathLib::scpr(this->normal_vector, this->normal_vector, 3));
 	this->normal_vector[0] = 1. / norm * this->normal_vector[0];
 	this->normal_vector[1] = 1. / norm * this->normal_vector[1];
 	this->normal_vector[2] = 1. / norm * this->normal_vector[2];
@@ -123,7 +123,9 @@ bool CFaces::Calculate_FaceGravityCentre(const double Point1[3], const double Po
 	vec_b[2] = Point3[2] - Point1[2];
 
 	// Area of the first triangle = half of the cross product of the 2 vectors
-	double a1 = 0.5 * sqrt(MathLib::fastpow(vec_a[1]*vec_b[2] - vec_a[2]*vec_b[1],2) + MathLib::fastpow(vec_a[2]*vec_b[0] - vec_a[0]*vec_b[2],2) + MathLib::fastpow(vec_a[0]*vec_b[1] - vec_a[1]*vec_b[0],2));
+	double a1 = 0.5 * sqrt((vec_a[1]*vec_b[2] - vec_a[2]*vec_b[1]) * (vec_a[1]*vec_b[2] - vec_a[2]*vec_b[1])
+			+ (vec_a[2]*vec_b[0] - vec_a[0]*vec_b[2]) * (vec_a[2]*vec_b[0] - vec_a[0]*vec_b[2])
+			+ (vec_a[0]*vec_b[1] - vec_a[1]*vec_b[0]) * (vec_a[0]*vec_b[1] - vec_a[1]*vec_b[0]));
 
 	// Centroid of the second triangle
 
@@ -138,7 +140,9 @@ bool CFaces::Calculate_FaceGravityCentre(const double Point1[3], const double Po
 	vec_c[2] = Point4[2] - Point1[2];
 
 	// Area of the second triangle
-	double a2 = 0.5 * sqrt(MathLib::fastpow(vec_c[1]*vec_b[2] - vec_c[2]*vec_b[1],2) + MathLib::fastpow(vec_c[2]*vec_b[0] - vec_c[0]*vec_b[2],2) + MathLib::fastpow(vec_c[0]*vec_b[1] - vec_c[1]*vec_b[0],2));
+	double a2 = 0.5 * sqrt((vec_c[1]*vec_b[2] - vec_c[2]*vec_b[1]) * (vec_c[1]*vec_b[2] - vec_c[2]*vec_b[1])
+			+ (vec_c[2]*vec_b[0] - vec_c[0]*vec_b[2]) * (vec_c[2]*vec_b[0] - vec_c[0]*vec_b[2])
+			+ (vec_c[0]*vec_b[1] - vec_c[1]*vec_b[0]) * (vec_c[0]*vec_b[1] - vec_c[1]*vec_b[0]));
 
 	// Centroid of the 4-sided polygon
 	if ((a1 + a2) > 0) {
