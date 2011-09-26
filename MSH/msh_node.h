@@ -48,9 +48,9 @@ namespace MeshLib
          bool operator ==(const CNode& n);
 
          // Get functions
-         double X() const { return coordinate[0]; };
-         double Y() const { return coordinate[1]; };
-         double Z() const { return coordinate[2]; };
+//         double X() const { return coordinate[0]; };
+//         double Y() const { return coordinate[1]; };
+//         double Z() const { return coordinate[2]; };
 
 //         void Coordinates(double *xyz) const
 //         {

@@ -3343,7 +3343,7 @@ int REACT::WriteInputPhreeqcLib(long index, stringstream* out_buff, int* nl)
          CFEMesh* m_msh = fem_msh_vector[0];      //SB: ToDo hart gesetzt
          MeshLib::CNode* m_nod = NULL;
          m_nod = m_msh->nod_vector[index];
-         z = m_msh->nod_vector[index]->Z();
+         z = m_msh->nod_vector[index]->getData()[2];
 
          // get piezometric hight h
          m_pcs = PCSGet("GROUNDWATER_FLOW");

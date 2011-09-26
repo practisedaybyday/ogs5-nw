@@ -2209,15 +2209,14 @@ CNodeValue* cnodev)
 
       value *= area;
    }                                              // end overland
-   else                                           // Richards
-   {
-
-      ///// get number of second mesh node, provisional implementation
-      double epsilon = 1.e-5;
-      for (size_t i = 0; i < m_pcs_this->m_msh->nod_vector.size(); i++) {
-    	  double const*const pnt_i (m_pcs_this->m_msh->nod_vector[i]->getData());
+   else { // Richards
+		///// get number of second mesh node, provisional implementation
+		double epsilon = 1.e-5;
+		for (size_t i = 0; i < m_pcs_this->m_msh->nod_vector.size(); i++) {
+			double const* const pnt_i(
+					m_pcs_this->m_msh->nod_vector[i]->getData());
 			if (pnt_i[0] - xyz_this[0] < epsilon) {
-				if (pnt_i[1] - xyz_this[1]	< epsilon) {
+				if (pnt_i[1] - xyz_this[1] < epsilon) {
 					if (pnt_i[2] - (xyz_this[2] - deltaZ) < epsilon) {
 						msh_node_2nd = i;
 					}
