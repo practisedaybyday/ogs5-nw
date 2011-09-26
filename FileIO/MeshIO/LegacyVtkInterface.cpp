@@ -119,13 +119,14 @@ void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number,
 
 void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file) const
 {
-	std::vector<MeshLib::CNode*> pointVector = _mesh->getNodeVector();
+	const std::vector<MeshLib::CNode*> pointVector = _mesh->getNodeVector();
 	vtk_file << "POINTS "<< pointVector.size() << " double" << endl;
 
-	for(size_t i = 0; i < pointVector.size() ; i++)
+	const size_t n_pnts (pointVector.size());
+	for(size_t i = 0; i < n_pnts ; i++)
 	{
-		MeshLib::CNode* m_nod = pointVector[i];
-		vtk_file << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << endl;
+		double const*const coords (pointVector[i]->getData());
+		vtk_file << coords[0] << " " << coords[1] << " " << coords[2] << endl;
 	}
 }
 

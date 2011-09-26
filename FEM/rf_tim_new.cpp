@@ -872,8 +872,6 @@ double CTimeDiscretization::CourantTimeControl(void)
    CFEMesh* m_msh = NULL;
    ElementValue* gp_ele =NULL;
    MeshLib::CElem* m_ele =NULL;
-   MeshLib::CNode* m_nod1 = NULL;
-   MeshLib::CNode* m_nod2 = NULL;
 
    long iel;
    int i, j, k, nds;
@@ -898,12 +896,17 @@ double CTimeDiscretization::CourantTimeControl(void)
       {
          for(j=i+1; j<nds; j++)
          {
-            m_nod1 = m_msh->nod_vector[m_ele->nodes_index[i]];
-            m_nod2 = m_msh->nod_vector[m_ele->nodes_index[j]];
+//        	 m_nod1 = m_msh->nod_vector[m_ele->nodes_index[i]];
+//        	 m_nod2 = m_msh->nod_vector[m_ele->nodes_index[j]];
+//             dx_temp[0] = (m_nod1->X()-m_nod2->X())*(m_nod1->X()-m_nod2->X());
+//             dx_temp[1] = (m_nod1->Y()-m_nod2->Y())*(m_nod1->Y()-m_nod2->Y());
+//             dx_temp[2] = (m_nod1->Z()-m_nod2->Z())*(m_nod1->Z()-m_nod2->Z());
 
-            dx_temp[0] = (m_nod1->X()-m_nod2->X())*(m_nod1->X()-m_nod2->X());
-            dx_temp[1] = (m_nod1->Y()-m_nod2->Y())*(m_nod1->Y()-m_nod2->Y());
-            dx_temp[2] = (m_nod1->Z()-m_nod2->Z())*(m_nod1->Z()-m_nod2->Z());
+            double const*const pnt1 (m_msh->nod_vector[m_ele->nodes_index[i]]->getData());
+            double const*const pnt2 (m_msh->nod_vector[m_ele->nodes_index[j]]->getData());
+            dx_temp[0] = (pnt1[0]-pnt2[0])*(pnt1[0]-pnt2[0]);
+            dx_temp[1] = (pnt1[1]-pnt2[1])*(pnt1[1]-pnt2[1]);
+            dx_temp[2] = (pnt1[2]-pnt2[2])*(pnt1[2]-pnt2[2]);
 
             if(i==0&&j==1)
                VCopy(dx,dx_temp,3);               //					copy dx_temp onto dx: first iteration
@@ -1015,7 +1018,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
    for (size_t n_p = 0; n_p < pcs_vector.size(); n_p++)
    {
        m_pcs = pcs_vector[n_p];
-       
+
        if (m_pcs->getProcessType() == pcs_type)  //compare process type and type name from Tim object
        {
            iprocs++;
@@ -1060,7 +1063,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
                    }
                    if ( ((imflag == 1) && ( m_pcs->iter_lin  <= time_adapt_tim_vector[0] ) ))
                    {
-                       imflag=2; 
+                       imflag=2;
                    }
                    break;
            }

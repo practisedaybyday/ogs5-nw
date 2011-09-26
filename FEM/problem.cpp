@@ -2417,7 +2417,7 @@ inline double Problem::Deformation()
       dm_pcs->CalIntegrationPointValue();
 
 	  if(dm_pcs->type==42) // H2M. 07.2011. WW
-        dm_pcs->CalcSecondaryVariablesUnsaturatedFlow(); 
+        dm_pcs->CalcSecondaryVariablesUnsaturatedFlow();
    }
    return error;
 }
@@ -2469,7 +2469,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess *m_pcs_global)
       // Create local RICHARDS process
       std::cout << "    Create local RICHARDS process" << std::endl;
       m_pcs_local = new CRFProcess();
-	  m_pcs_local->isRSM = true; //WW 
+	  m_pcs_local->isRSM = true; //WW
 
       //    m_pcs_local->pcs_type_name = m_pcs_global->pcs_type_name;
                                                   // TF
@@ -2500,8 +2500,8 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess *m_pcs_global)
       m_msh_local->Eqs2Global_NodeIndex.resize(no_local_nodes);
       for(j=0;j<no_local_nodes;j++)
       {
-         m_nod = m_pcs_global->m_msh->nod_vector[j];
-         m_nod_local = new MeshLib::CNode(j,m_nod->X(),m_nod->Y(),m_nod->Z());
+// TF        m_nod = m_pcs_global->m_msh->nod_vector[j];
+         m_nod_local = new MeshLib::CNode(j,m_pcs_global->m_msh->nod_vector[j]->getData());
          //m_nod_local = m_nod;
          m_msh_local->nod_vector[j] = m_nod_local;
          m_msh_local->nod_vector[j]->SetEquationIndex(j);
@@ -2919,9 +2919,11 @@ inline void Problem::ASMCalcNodeWDepth(CRFProcess *m_pcs)
    nidx = m_pcs->GetNodeValueIndex("HEAD")+1;
    nidy = m_pcs->GetNodeValueIndex("WDEPTH");
    nidz = m_pcs->GetNodeValueIndex("COUPLING");
-   for(long nn=0;nn<(long)m_pcs->m_msh->nod_vector.size();nn++)
+
+   const size_t n_nodes (m_pcs->m_msh->nod_vector.size());
+   for(size_t nn=0;nn<n_nodes;nn++)
    {
-      WDepth = m_pcs->GetNodeValue(nn, nidx) - m_pcs->m_msh->nod_vector[nn]->Z();
+      WDepth = m_pcs->GetNodeValue(nn, nidx) - m_pcs->m_msh->nod_vector[nn]->getData()[2];
                                                   // JOD only needed for GREEN_AMPT source term
       m_pcs->SetNodeValue(nn,nidz, m_pcs->GetNodeValue(nn,nidz+1) );
       if (WDepth < 0.0)

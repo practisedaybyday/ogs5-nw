@@ -126,7 +126,6 @@ namespace FiniteElement
    {
       int i;
       CNode *a_node = NULL;                       //07.04.2009. WW
-      CNode *a_node0 = NULL;                      //07.04.2009. WW
       MeshElement = MElement;
       Index = MeshElement->GetIndex();
       nnodes = MeshElement->nnodes;
@@ -143,15 +142,19 @@ namespace FiniteElement
       {
          if(dim!=ele_dim)
          {
-            a_node0 = MeshElement->nodes[0];      //07.04.2007. WW
+//            a_node0 = MeshElement->nodes[0];      //07.04.2007. WW
+            double const*const coords_node_0 (MeshElement->nodes[0]->getData());
             for(i=0; i<nNodes; i++)
             {
-               double dx, dy, dz;
-               a_node = MeshElement->nodes[i];    //07.04.2007. WW
-               dy = dz = 0.;
-               dx = a_node->X()-a_node0->X();
-               dy = a_node->Y()-a_node0->Y();
-               dz = a_node->Z()-a_node0->Z();
+               double const*const coords_node_i (MeshElement->nodes[i]->getData());
+//               a_node = MeshElement->nodes[i];    //07.04.2007. WW
+//               dy = dz = 0.;
+//               dx = a_node->X()-a_node0->X();
+//               dy = a_node->Y()-a_node0->Y();
+//               dz = a_node->Z()-a_node0->Z();
+               double dx (coords_node_i[0] - coords_node_0[0]);
+               double dy (coords_node_i[1] - coords_node_0[1]);
+               double dz (coords_node_i[2] - coords_node_0[2]);
 
                X[i] =  (*MeshElement->tranform_tensor)(0,0)*dx
                   +(*MeshElement->tranform_tensor)(1,0)*dy
@@ -159,7 +162,8 @@ namespace FiniteElement
                Y[i] =  (*MeshElement->tranform_tensor)(0,1)*dx
                   +(*MeshElement->tranform_tensor)(1,1)*dy
                   +(*MeshElement->tranform_tensor)(2,1)*dz;
-               Z[i] =  a_node->Z();
+//               Z[i] =  a_node->Z();
+               Z[i] = coords_node_i[2];
             }
             done = true;
          }
@@ -173,10 +177,14 @@ namespace FiniteElement
                      for(i=0; i<nNodes; i++)
                      {
                                                   //07.04.2007. WW
-                        a_node = MeshElement->nodes[i];
-                        X[i] = a_node->Y();
-                        Y[i] = a_node->X();
-                        Z[i] = a_node->Z();
+//                        a_node = MeshElement->nodes[i];
+//                        X[i] = a_node->Y();
+//                        Y[i] = a_node->X();
+//                        Z[i] = a_node->Z();
+                        double const*const coords_node_i (MeshElement->nodes[i]->getData());
+                        X[i] = coords_node_i[1];
+						Y[i] = coords_node_i[0];
+						Z[i] = coords_node_i[2];
                      }
                      done = true;
                   }
@@ -185,10 +193,14 @@ namespace FiniteElement
                      for(i=0; i<nNodes; i++)
                      {
                                                   //07.04.2007. WW
-                        a_node = MeshElement->nodes[i];
-                        X[i] = a_node->Z();
-                        Y[i] = a_node->Y();
-                        Z[i] = a_node->X();
+//                        a_node = MeshElement->nodes[i];
+//                        X[i] = a_node->Z();
+//                        Y[i] = a_node->Y();
+//                        Z[i] = a_node->X();
+                        double const*const coords_node_i (MeshElement->nodes[i]->getData());
+						X[i] = coords_node_i[2];
+						Y[i] = coords_node_i[1];
+						Z[i] = coords_node_i[0];
                      }
                      done = true;
                   }
@@ -199,10 +211,14 @@ namespace FiniteElement
                      for(i=0; i<nNodes; i++)
                      {
                                                   //07.04.2007. WW
-                        a_node = MeshElement->nodes[i];
-                        X[i] = a_node->X();
-                        Y[i] = a_node->Z();
-                        Z[i] = a_node->Y();
+//                        a_node = MeshElement->nodes[i];
+//                        X[i] = a_node->X();
+//                        Y[i] = a_node->Z();
+//                        Z[i] = a_node->Y();
+                        double const*const coords_node_i (MeshElement->nodes[i]->getData());
+						X[i] = coords_node_i[0];
+						Y[i] = coords_node_i[2];
+						Z[i] = coords_node_i[1];
                      }
                      done = true;
                   }
@@ -216,9 +232,10 @@ namespace FiniteElement
          for(i=0; i<nNodes; i++)
          {
             a_node = MeshElement->nodes[i];       //07.04.2007. WW
-            X[i] = a_node->X();
-            Y[i] = a_node->Y();
-            Z[i] = a_node->Z();
+            double const*const coords (a_node->getData());
+            X[i] = coords[0];
+            Y[i] = coords[1];
+            Z[i] = coords[2];
          }
       }
    }
@@ -323,7 +340,7 @@ namespace FiniteElement
             GradShapeFunctionHQ = GradShapeFunctionPriHQ;
             extrapo_method = ExtrapolationMethod::EXTRAPO_AVERAGE;
             return;
-     case 7: // Pyramid 
+     case 7: // Pyramid
        ele_dim =3;
        if (Order==1)
          nGaussPoints = nGauss = 5;
@@ -726,7 +743,7 @@ namespace FiniteElement
                                                   // Weights
             fkt *= MXPGaussFktTri(nGauss,gp_r)*MXPGaussFkt(gp_t, gp_s);
             break;
-         case MshElemType::PYRAMID: // Pyramid 
+         case MshElemType::PYRAMID: // Pyramid
   		    fkt = computeJacobian(Order);
             fkt *= unit[3];                       // Weights
             break;
@@ -1130,7 +1147,7 @@ namespace FiniteElement
          case MshElemType::LINE:
             break;
          default:
-            unit[0] = unit[1] = unit[2] = 0.; //07.01.2011. WW 
+            unit[0] = unit[1] = unit[2] = 0.; //07.01.2011. WW
             break;
       }
    }

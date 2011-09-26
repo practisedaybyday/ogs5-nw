@@ -2102,7 +2102,7 @@ namespace FiniteElement
             Hav = 0.0;
             for(i=0;i<nnodes;i++)
             {
-               z[i] = MeshElement->nodes[i]->Z();
+               z[i] = MeshElement->nodes[i]->getData()[2];
                Hn[i] = pcs->GetNodeValue(MeshElement->nodes_index[i],nidx1) - z[i];
                if (Hn[i] < 0.0) {Hn[i] = 0.0;}
                Hav += Hn[i]/(double)nnodes;
@@ -3395,7 +3395,7 @@ namespace FiniteElement
             double tmp_diff = 0.0;
             for (int i=0; i<dim; i++)
             {
-               tmp_diff = MathLib::fastpow(dispersion_tensor[i+i*dim], 2);
+               tmp_diff = dispersion_tensor[i+i*dim] * dispersion_tensor[i+i*dim];
             }
             diff = sqrt(tmp_diff);
          }
@@ -3444,9 +3444,9 @@ namespace FiniteElement
          {
             // taking into account time step
             //          tau = 1.0 / sqrt(pow(2.0/dt ,2.0)+pow(2.0*v_mag/ele_len,2.0));
-            tau = 1.0 / sqrt(MathLib::fastpow(2.0 / dt, 2) + MathLib::fastpow(2.0
-				* v_mag / ele_len, 2) + MathLib::fastpow(4.0 * diff / (ele_len * ele_len),
-				2));
+            tau = 1.0 / sqrt((2.0 / dt)*(2.0 / dt)
+            		+ (2.0 * v_mag / ele_len)*(2.0 * v_mag / ele_len)
+            		+ (4.0 * diff / (ele_len * ele_len)) * (4.0 * diff / (ele_len * ele_len)));
          }
          break;
       }
@@ -4734,7 +4734,7 @@ namespace FiniteElement
          humi = exp(PG/(GAS_CONSTANT_V*TG*rhow));
          Dv = tort*(1.0-Sw)*poro*2.16e-5*pow(TG/T_KILVIN_ZERO, 1.8);
          rhov = humi*FluidProp->vaporDensity(TG);
-         drdT= (FluidProp->vaporDensity_derivative(TG)*humi-rhov*PG/(GAS_CONSTANT_V*rhow*MathLib::fastpow(TG,2)))/rhow;
+         drdT= (FluidProp->vaporDensity_derivative(TG)*humi-rhov*PG/(GAS_CONSTANT_V*rhow*TG*TG))/rhow;
          Dtv = time_unit_factor*Dv*drdT;
 
          //    }
@@ -4798,43 +4798,53 @@ namespace FiniteElement
          switch(dim)
          {
             case 1:
-               for(i=0; i<nNodes; i++)
-               {
-                  X[i] = MeshElement->nodes[i]->Z();
-                  Y[i] = MeshElement->nodes[i]->Y();
-                  Z[i] = MeshElement->nodes[i]->X();
-               }
+			for (i = 0; i < nNodes; i++) {
+//				X[i] = MeshElement->nodes[i]->Z();
+//				Y[i] = MeshElement->nodes[i]->Y();
+//				Z[i] = MeshElement->nodes[i]->X();
+				double const*const coords (MeshElement->nodes[i]->getData());
+				X[i] = coords[2];
+				Y[i] = coords[1];
+				Z[i] = coords[0];
+			}
                break;
-            case 2:
-               for(i=0; i<nNodes; i++)
-               {
-                  X[i] = MeshElement->nodes[i]->X();
-                  Y[i] = MeshElement->nodes[i]->Z();
-                  Z[i] = MeshElement->nodes[i]->Y();
-               }
-               break;
-            case 3:
-               for(i=nnodes; i<nnodesHQ; i++)
-               {
-                  X[i] = MeshElement->nodes[i]->X();
-                  Y[i] = MeshElement->nodes[i]->Y();
-                  Z[i] = MeshElement->nodes[i]->Z();
-               }
+		case 2:
+			for (i = 0; i < nNodes; i++) {
+//				X[i] = MeshElement->nodes[i]->X();
+//				Y[i] = MeshElement->nodes[i]->Z();
+//				Z[i] = MeshElement->nodes[i]->Y();
+				double const*const coords (MeshElement->nodes[i]->getData());
+				X[i] = coords[0];
+				Y[i] = coords[2];
+				Z[i] = coords[1];
+			}
+			break;
+		case 3:
+			for (i = nnodes; i < nnodesHQ; i++) {
+//				X[i] = MeshElement->nodes[i]->X();
+//				Y[i] = MeshElement->nodes[i]->Y();
+//				Z[i] = MeshElement->nodes[i]->Z();
+				double const*const coords (MeshElement->nodes[i]->getData());
+				X[i] = coords[0];
+				Y[i] = coords[1];
+				Z[i] = coords[2];
+			}
 
-         }
+		}
       }
-      else
-      {
-         if(dim==1||dim==2)
-         {
-            for(i=nnodes; i<nnodesHQ; i++)
-            {
-               X[i] = MeshElement->nodes[i]->X();
-               Y[i] = MeshElement->nodes[i]->Y();
-               Z[i] = MeshElement->nodes[i]->Z();
-            }
-         }
-      }
+      else {
+		if (dim == 1 || dim == 2) {
+			for (i = nnodes; i < nnodesHQ; i++) {
+//				X[i] = MeshElement->nodes[i]->X();
+//				Y[i] = MeshElement->nodes[i]->Y();
+//				Z[i] = MeshElement->nodes[i]->Z();
+				double const*const coords (MeshElement->nodes[i]->getData());
+				X[i] = coords[0];
+				Y[i] = coords[1];
+				Z[i] = coords[2];
+			}
+		}
+	}
    }
    /***************************************************************************
       GeoSys - Funktion:
@@ -6149,7 +6159,7 @@ namespace FiniteElement
             //***************************************
                   NodalVal2[i] += fktG*dshapefct[k*nnodes+j]
                                                   //NW  dshapefct[dimension*nnodes+j] -> dshapefct[k*nnodes+j]
-               *mat[dim*dimension+k]* shapefct[i] * MeshElement->nodes[j]->Z();
+               *mat[dim*dimension+k]* shapefct[i] * MeshElement->nodes[j]->getData()[2];
          }
       }
 

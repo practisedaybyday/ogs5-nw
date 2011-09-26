@@ -113,7 +113,17 @@ extern DMATRIX *CreateDoubleMatrix(long row, long col);
 extern void DestroyDoubleMatrix(DMATRIX *dm);
 extern double FindMin (std::vector<double>Vec);   //NB 4.9.05
 extern double FindMax (std::vector<double>Vec);   //NB 4.9.05
-                                                  //NB 4.9.05
+
+/**
+ * Author: NB 4.9.05
+ * Finds all real roots of a third grade polynomial in the form:
+ * P(x) = x^3 + px^2 + qx + r
+ * employing the <a href="http://de.wikipedia.org/wiki/Kubische_Gleichung#Analytische_Bestimmung_reeller_L.C3.B6sungen">Cardano method</a>
+ * @param p coefficient of cubic equation
+ * @param q coefficient of cubic equation
+ * @param r coefficient of cubic equation
+ * @param t vector contains the roots
+ */
 extern void NsPol3 (double p, double q, double r, std::vector<double>*t);
 
 typedef struct

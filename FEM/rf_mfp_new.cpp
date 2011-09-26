@@ -961,9 +961,10 @@ double CFluidProperties::GetElementValueFromNodes(long ElementIndex, int GPIndex
 			m_node = m_msh->nod_vector[vec_nod_index[i]];
 			//calculate distance between the node and the barycentre
 			double const* gravity_centre(m_ele->GetGravityCenter());
-			distance =  (gravity_centre[0] - m_node->X())*(gravity_centre[0] - m_node->X());
-			distance += (gravity_centre[1] - m_node->Y())*(gravity_centre[1] - m_node->Y());
-			distance += (gravity_centre[2] - m_node->Z())*(gravity_centre[2] - m_node->Z());
+			double const*const pnt (m_node->getData());
+			distance =  (gravity_centre[0] - pnt[0])*(gravity_centre[0] - pnt[0]);
+			distance += (gravity_centre[1] - pnt[1])*(gravity_centre[1] - pnt[1]);
+			distance += (gravity_centre[2] - pnt[2])*(gravity_centre[2] - pnt[2]);
 			distance =  sqrt(distance);
 
 			//Weight of each face depending on distance
@@ -1354,7 +1355,7 @@ double CFluidProperties::GasViscosity_Chung_1988(long idx_elem, double p,double 
 
    my0 = (4.0785e-05)*sqrt(M*T)*Fc/(pow(Vc,0.6666)*Omega);
    myk = my0*(1.0/G2 + A6*Y);
-   myp = ( (3.6344e-05)*sqrt(M*Tc)/pow(Vc, 0.6666) )*A7*Y*Y*G2*exp(A8 + A9*(1.0 / T_str) + A10*1.0/MathLib::fastpow(T_str, 2));
+   myp = ( (3.6344e-05)*sqrt(M*Tc)/pow(Vc, 0.6666) )*A7*Y*Y*G2*exp(A8 + A9*(1.0 / T_str) + A10*1.0/(T_str * T_str));
    my = 0.1*(myp + myk);                          // g/(cm.s)=0.1 Pa.s
    return my;
 }
@@ -1545,7 +1546,7 @@ double CFluidProperties::PhaseChange()
          humi = exp( pressure /( GAS_CONSTANT_V * temperature_buffer * Density() ) );
          density_vapor = humi * Density();
          drdT = ( vaporDensity_derivative( temperature_buffer )* humi \
-            - density_vapor * pressure / ( GAS_CONSTANT_V * Density() * MathLib::fastpow( temperature_buffer, 2 ) ) ) / Density();
+            - density_vapor * pressure / ( GAS_CONSTANT_V * Density() * (temperature_buffer * temperature_buffer) ) ) / Density();
          H1 =  latent_heat + specific_heat_capacity * ( temperature_buffer - T_Latent1);
          heat_capacity_phase_change = H1*drdT;
       }
@@ -2250,7 +2251,7 @@ double CFluidProperties::LiquidViscosity_CMCD(double Press,double TempK,double C
    sum1=1.0*A1;
 //   sum2=pow((0.65-0.01*TempK),1)*A2;
    sum2=(0.65-0.01*TempK)*A2;
-   sum3=MathLib::fastpow((0.65-0.01*TempK),2)*A3;
+   sum3=(0.65-0.01*TempK)*(0.65-0.01*TempK)*A3;
    sum4=MathLib::fastpow((0.65-0.01*TempK),3)*A4;
    sum5=MathLib::fastpow((0.65-0.01*TempK),4)*A5;
    sum6=MathLib::fastpow((0.65-0.01*TempK),5)*A6;
@@ -2470,8 +2471,8 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    /*END: Calculation of GammaPiPi*/
 
    /*BEGIN:Calculation of derivative*/
-   First_derivative = ((TstarTilda) * (Pstar) * ((GammaPiTau)*(Tstar) - (GammaPi) * (temperature_average))) / (PstarTilda * MathLib::fastpow(temperature_average,2) * GammaPiPi),
-      Second_derivative = ((-1) * (PstarTilda) * (GammaPiPi) ) / ( (RhostarTilda) * (temperature_average) * (GazConst) * (MathLib::fastpow(GammaPi,2)));
+   First_derivative = ((TstarTilda) * (Pstar) * ((GammaPiTau)*(Tstar) - (GammaPi) * (temperature_average))) / (PstarTilda * temperature_average*temperature_average * GammaPiPi),
+      Second_derivative = ((-1) * (PstarTilda) * (GammaPiPi) ) / ( (RhostarTilda) * (temperature_average) * (GazConst) * ((GammaPi*GammaPi)));
    /*End:Calculation of derivative*/
 
    /*BEGIN: Calculation of density*/
@@ -2592,7 +2593,7 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    sum1=A1;
 // TF  sum2=pow((0.65-0.01*TempK),1)*A2;
    sum2=(0.65-0.01*TempK)*A2;
-   sum3=MathLib::fastpow((0.65-0.01*TempK),2)*A3;
+   sum3=(0.65-0.01*TempK)*(0.65-0.01*TempK)*A3;
    sum4=MathLib::fastpow((0.65-0.01*TempK),3)*A4;
    sum5=MathLib::fastpow((0.65-0.01*TempK),4)*A5;
    sum6=MathLib::fastpow((0.65-0.01*TempK),5)*A6;
@@ -2615,7 +2616,7 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    /* End of viscosity function*/
 
    /*BEGIN: Nabla2*/
-   Nabla2 = 0.0013848 / ((viscosity)/55.071e-6) * (1.0/MathLib::fastpow(TauTC*Delta,2)) * (MathLib::fastpow(First_derivative,2)) * (pow((Delta * (Second_derivative)),0.4678)) * (sqrt(Delta)) * exp(-18.66 * (MathLib::fastpow((1/TauTC-1),2)) - (MathLib::fastpow(Delta-1,4)));
+   Nabla2 = 0.0013848 / ((viscosity)/55.071e-6) * (1.0/(TauTC*Delta)*(TauTC*Delta)) * (First_derivative*First_derivative) * (pow((Delta * (Second_derivative)),0.4678)) * (sqrt(Delta)) * exp(-18.66 * ((1/TauTC-1)*(1/TauTC-1)) - (MathLib::fastpow(Delta-1,4)));
    /*END: Nabla2*/
 
    /*BEGIN: Nabla => heat_conductivity*/
@@ -2832,7 +2833,7 @@ double CFluidProperties::MATCalcFluidHeatCapacityMethod2(double Press, double Te
    /*************************************************************************************************/
 
    /*BEGIN: Fluid isobaric heat capacity*/
-   Cp = - (MathLib::fastpow(Tau,2))* (GammaTauTau) * (GazConst);
+   Cp = - (Tau*Tau)* (GammaTauTau) * (GazConst);
    /*END: Fluid isobaric heat capacity*/
 
    /*BEGIN: Fluid isochoric heat capacity*/
@@ -3190,8 +3191,8 @@ double CFluidProperties::CalCopressibility(long idx_elem, double p,double T)
    A=a*p/(R*R*T*T);
    B=b*p/(R*T);
    z1=-(1-B);
-   z2=(A-3*MathLib::fastpow(B,2)-2*B);
-   z3=-(A*B-MathLib::fastpow(B,2)-MathLib::fastpow(B,3));
+   z2=(A-3*(B*B)-2*B);
+   z3=-(A*B-(B*B)-MathLib::fastpow(B,3));
    NsPol3(z1,z2,z3,&roots);                       //derives the roots of the polynomial
    //if(p < Pc)
    h=FindMax(roots);
@@ -3219,8 +3220,8 @@ double CFluidProperties::CalCopressibility_PTC(double p,double T)
    A=a*p/(R*R*T*T);
    B=b*p/(R*T);
    z1=-(1-B);
-   z2=(A-3*MathLib::fastpow(B,2)-2*B);
-   z3=-(A*B-MathLib::fastpow(B,2)-MathLib::fastpow(B,3));
+   z2=(A-3*(B*B)-2*B);
+   z3=-(A*B-(B*B)-MathLib::fastpow(B,3));
    NsPol3(z1,z2,z3,&roots);
    if(p > Pc && T < Tc)
    {
@@ -3246,7 +3247,7 @@ double CFluidProperties::CaldZdP(double p,double T)
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor;
-   a = (0.45724*R*R*Tc*Tc/Pc)*MathLib::fastpow((1+a0*(1-sqrt(T/Tc))), 2);
+   a = (0.45724*R*R*Tc*Tc/Pc)*((1+a0*(1-sqrt(T/Tc)))*(1+a0*(1-sqrt(T/Tc))));
    b=0.07780*R*Tc/Pc;
    A=a*p/(R*R*T*T);
    B=b*p/(R*T);
@@ -3272,7 +3273,7 @@ double CFluidProperties::CaldZdT(double p,double T)
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor;
-   a = (0.45724*R*R*Tc*Tc/Pc)*MathLib::fastpow((1+a0*(1-sqrt(T/Tc))), 2);
+   a = (0.45724*R*R*Tc*Tc/Pc)*((1+a0*(1-sqrt(T/Tc))) * (1+a0*(1-sqrt(T/Tc))));
    daa= (0.45724*R*R*Tc*Tc/Pc)*(1+a0*(1-sqrt(T/Tc)))*(-0.5 / sqrt(Tc*T));
    b=0.07780*R*Tc/Pc;
    A=a*p/(R*R*T*T);

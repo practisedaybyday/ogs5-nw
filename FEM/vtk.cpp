@@ -382,25 +382,23 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
    {
       if (output_data)
       {
-         MeshLib::CNode *nod = NULL;
          if (!useBinary)
          {
-            for (long i=0; i<(long)msh->nod_vector.size(); i++)
-            {
-               nod = msh->nod_vector[i];
-               fin << "          " << nod->X() << " " << nod->Y() << " " << nod->Z() << endl;
+            for (size_t i=0; i<msh->nod_vector.size(); i++) {
+               double const*const pnt (msh->nod_vector[i]->getData());
+               fin << "          " << pnt[0] << " " << pnt[1] << " " << pnt[2] << endl;
             }
          }
          else
          {
                                                   //OK411
             write_value_binary<unsigned int>(fin, sizeof(double)*3*(long)msh->nod_vector.size());
-            for (long i=0; i<(long)msh->nod_vector.size(); i++)
+            for (size_t i=0; i<msh->nod_vector.size(); i++)
             {
-               nod = msh->nod_vector[i];
-               write_value_binary(fin,  nod->X());
-               write_value_binary(fin,  nod->Y());
-               write_value_binary(fin,  nod->Z());
+               double const*const pnt (msh->nod_vector[i]->getData());
+               write_value_binary(fin, pnt[0]);
+               write_value_binary(fin, pnt[1]);
+               write_value_binary(fin, pnt[2]);
             }
          }
       }

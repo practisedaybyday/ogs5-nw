@@ -241,7 +241,7 @@ double *mato, long mo, long no);
 //extern double MCalcDistancePointToPoint(double *pt1,double *pt2);
 extern double MCalcDistancePointToLine(double *pt,double *l1,double *l2);
 extern double MCalcProjectionOfPointOnLine(double *pt1,double *pt2,double *pt3,double *pt4);
-extern double MCalcDistancePointToPlane(double *pt,double *e1,double *e2,double *e3);
+extern double MCalcDistancePointToPlane(double const*const pt,double *e1,double *e2,double *e3);
 //extern double MCalcProjectionOfPointOnPlane(double *pt, double *e1, double *e2, double *e3, double *proj);
 #endif
 
@@ -298,7 +298,7 @@ extern void GradShapeFunctionPyraHQ13(double *dN, const double *u);
 
 extern double pai;
 
-extern long binarySearch(long *arr, long target, long start, long end); 
+extern long binarySearch(long *arr, long target, long start, long end);
 //WW Cubic spline
 //WW
 double ComputeDetTri(const double *x1, const double *x2,

@@ -1917,9 +1917,13 @@ namespace process
             for(i=0; i<nn; i++)
             {
                // Coordinates of all element nodes
-               xn[i] = elem->nodes[i]->X();
-               yn[i] = elem->nodes[i]->Y();
-               zn[i] = elem->nodes[i]->Z();
+//               xn[i] = elem->nodes[i]->X();
+//               yn[i] = elem->nodes[i]->Y();
+//               zn[i] = elem->nodes[i]->Z();
+               double const*const coords (elem->nodes[i]->getData());
+               xn[i] = coords[0];
+               yn[i] = coords[1];
+               zn[i] = coords[2];
             }
             // Elements which have one only boundary face are chosen as seed element
             bFaces = -1;

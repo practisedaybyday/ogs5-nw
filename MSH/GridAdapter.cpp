@@ -45,7 +45,7 @@ int GridAdapter::convertCFEMesh(const MeshLib::CFEMesh* mesh)
 	size_t nNodes = mesh->nod_vector.size();
 	for (size_t i=0; i<nNodes; i++)
 	{
-		GEOLIB::Point* pnt = new GEOLIB::Point(mesh->nod_vector[i]->X(), mesh->nod_vector[i]->Y(), mesh->nod_vector[i]->Z());
+		GEOLIB::Point* pnt = new GEOLIB::Point(mesh->nod_vector[i]->getData());
 		_nodes->push_back(pnt);
 	}
 

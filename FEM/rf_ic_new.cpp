@@ -225,7 +225,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
          if ( this->getProcessType() == MASS_TRANSPORT )
          {
              // HS set the pointer to MCP based on component name.
-             // first do a check whether this name is existing and unique. 
+             // first do a check whether this name is existing and unique.
              if ( cp_name_2_idx.count( tmp ) == 1 )
              {
                  setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
@@ -234,7 +234,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
              else
              {
                  DisplayErrorMsg("Error: In reading IC file, the input component names are not found in MCP file!!!");
-                 exit(1);             
+                 exit(1);
              }
          }
          else
@@ -253,7 +253,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
          std::string tmp;
          in >> tmp;
          // HS set the pointer to MCP based on component name.
-         // first do a check whether this name is existing and unique. 
+         // first do a check whether this name is existing and unique.
          if ( cp_name_2_idx.count( tmp ) == 1 )
          {
              setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
@@ -262,7 +262,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
          else
          {
              DisplayErrorMsg("Error: In reading BC file, the input component names are not found in MCP file!!!");
-             exit(1);             
+             exit(1);
          }
          in.clear();
          continue;
@@ -358,9 +358,9 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
                   ||getProcessDistributionType() == FiniteElement::FUNCTION) //01.07.2008 WW
                {
                   // 24.08.2011. WW
-                  dis_linear_f = new LinearFunctionData(*ic_file, SubNumber); 
+                  dis_linear_f = new LinearFunctionData(*ic_file, SubNumber);
 				  size_t *sd_idx = dis_linear_f->getSubDomIndex();
-                  for (size_t i = 0; i < SubNumber; i++)   
+                  for (size_t i = 0; i < SubNumber; i++)
                     subdom_index.push_back(sd_idx[i]);
                }
                else
@@ -655,9 +655,9 @@ void CInitialCondition::SetSurface(int nidx)
          {
             msh_node = sfc_nod_vector[i];
             if(onZ == 1)                          //2D
-               node_depth = m_msh->nod_vector[msh_node]->Y();
+               node_depth = m_msh->nod_vector[msh_node]->getData()[1];
             else if(onZ == 2)                     //3D
-               node_depth = m_msh->nod_vector[msh_node]->Z();
+               node_depth = m_msh->nod_vector[msh_node]->getData()[2];
             else
             {
                cout << "Error in CInitialCondition::SetSurface - dis_type: " << convertDisTypeToString(this->getProcessDistributionType()) << "don't know If 2D or 3D"<<  endl;
@@ -733,7 +733,7 @@ void CInitialCondition::SetDomain(int nidx)
                                                   //OK MSH
             for (i = 0; i < this->getProcess()->m_msh->GetNodesNumber(false); i++)
             {
-               node_val = geo_node_value + this->getProcess()->m_msh->nod_vector[i]->Z();
+               node_val = geo_node_value + this->getProcess()->m_msh->nod_vector[i]->getData()[2];
                this->getProcess()->SetNodeValue(i, nidx, node_val);
             }
          }
@@ -755,9 +755,9 @@ void CInitialCondition::SetDomain(int nidx)
          for (i = 0; i < m_msh->GetNodesNumber(true); i++)
          {
             if (onZ == 1)                         //2D
-               node_depth = m_msh->nod_vector[i]->Y();
+               node_depth = m_msh->nod_vector[i]->getData()[1];
             if (onZ == 2)                         //3D
-               node_depth = m_msh->nod_vector[i]->Z();
+               node_depth = m_msh->nod_vector[i]->getData()[2];
             node_val = gradient_ref_depth_gradient * (gradient_ref_depth
                - node_depth) + gradient_ref_depth_value;
             this->getProcess()->SetNodeValue(
@@ -889,11 +889,9 @@ void CInitialCondition::SetDomain(int nidx)
                for (i = 0; i < nodes_vector.size(); i++)
                {
                   if (onZ == 1)                   //2D
-                     node_depth
-                        = m_msh->nod_vector[nodes_vector[i]]->Y();
+                     node_depth = m_msh->nod_vector[nodes_vector[i]]->getData()[1];
                   if (onZ == 2)                   //2D
-                     node_depth
-                        = m_msh->nod_vector[nodes_vector[i]]->Z();
+                     node_depth = m_msh->nod_vector[nodes_vector[i]]->getData()[2];
                   node_val = ((gradient_ref_depth_gradient)
                      * (gradient_ref_depth - node_depth))
                      + gradient_ref_depth_value;
@@ -906,8 +904,10 @@ void CInitialCondition::SetDomain(int nidx)
          {
              for(i=0;i<nodes_vector.size();i++)
              {
-                MeshLib::CNode *thisNode = m_msh->nod_vector[nodes_vector[i]];
-				getProcess()->SetNodeValue(nodes_vector[i],nidx,dis_linear_f->getValue(k, thisNode->X(),thisNode->Y(), thisNode->Z()));
+//                MeshLib::CNode *thisNode = m_msh->nod_vector[nodes_vector[i]];
+//                getProcess()->SetNodeValue(nodes_vector[i],nidx,dis_linear_f->getValue(k, thisNode->X(),thisNode->Y(), thisNode->Z()));
+                double const*const pnt(m_msh->nod_vector[nodes_vector[i]]->getData());
+				getProcess()->SetNodeValue(nodes_vector[i],nidx,dis_linear_f->getValue(k, pnt[0],pnt[1],pnt[2]));
              }
           }
          else
@@ -1011,7 +1011,7 @@ void CInitialCondition::SetDomainEle(int nidx)
 
    if(SubNumber==0)                               //only for constant values
    {
-   
+
       //KR ele_val = node_value_vector[0]->node_value;
       for(i=0;i<(long)m_msh->ele_vector.size();i++)
       {

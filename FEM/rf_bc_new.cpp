@@ -269,7 +269,7 @@ std::ios::pos_type CBoundaryCondition::Read(std::ifstream *bc_file,
             in >> geo_node_value;                 //sub_line
             in.clear();
          }
-         // If a linear function is given. 25.08.2011. WW 
+         // If a linear function is given. 25.08.2011. WW
          if (line_string.find("FUNCTION") != std::string::npos)
          {
             setProcessDistributionType(FiniteElement::FUNCTION);
@@ -827,8 +827,6 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 	bool quadratic = false;
 	bool cont = false; //WW
 
-    MeshLib::CNode *a_node = NULL; //25.08.2011. WW 
-
 	if (!this_pv_name.empty()) _pcs_pv_name = this_pv_name;
 	CFEMesh* m_msh = pcs->m_msh;
 	// Tests //OK
@@ -940,12 +938,15 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 
 				m_node_value->conditional = cont;
 				m_node_value->CurveIndex = bc->getCurveIndex();
-          
+
 				// Get value from a linear function. 25.08.2011. WW
-				if (bc->getProcessDistributionType() == FiniteElement::FUNCTION) 
-                { 
-                   a_node = m_msh->nod_vector[m_node_value->geo_node_number];
-				   m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
+				if (bc->getProcessDistributionType() == FiniteElement::FUNCTION) {
+//                  a_node = m_msh->nod_vector[m_node_value->geo_node_number];
+//					m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
+					double const * const coords(
+									m_msh->nod_vector[m_node_value->geo_node_number]->getData());
+					m_node_value->node_value = bc->dis_linear_f->getValue(
+							coords[0], coords[1], coords[2]);
 				}
 				else
                    m_node_value->node_value = bc->geo_node_value;
@@ -1023,8 +1024,11 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 							m_node_value = new CBoundaryConditionNode();
 							m_node_value->msh_node_number = nodes_vector[i] + ShiftInNodeVector;
 							m_node_value->geo_node_number = nodes_vector[i];
-                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
-                            m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
+//                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
+//                            m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
+                            double const*const coords (m_msh->nod_vector[m_node_value->geo_node_number]->getData());
+							m_node_value->node_value = bc->dis_linear_f->getValue(coords[0], coords[1], coords[2]);
+
 							m_node_value->CurveIndex = bc->getCurveIndex();
 							m_node_value->pcs_pv_name = _pcs_pv_name;
 							pcs->bc_node.push_back(bc);
@@ -1165,18 +1169,20 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						//YD/WW
 						m_node_value->pcs_pv_name = _pcs_pv_name;
 						//WW
-						if (bc->getProcessDistributionType()
-								== FiniteElement::LINEAR)
+						if (bc->getProcessDistributionType() == FiniteElement::LINEAR)
                         {
                           m_node_value->node_value = node_value[i];
                         }
 						else if (bc->getProcessDistributionType() // 25.08.2011. WW
 							== FiniteElement::FUNCTION)
 						{
-                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
-                            m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
+//                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
+//                            m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
+                            double const*const coords(m_msh->nod_vector[m_node_value->geo_node_number]->getData());
+                            m_node_value->node_value = bc->dis_linear_f->getValue(coords[0], coords[1], coords[2]);
+
                         }
-						else 
+						else
                       		m_node_value->node_value = bc->geo_node_value;
 						m_node_value->CurveIndex = bc->getCurveIndex();
 						//OK
@@ -1455,7 +1461,7 @@ void CBoundaryCondition::SurfaceInterpolation(CRFProcess* m_pcs, std::vector<lon
    //NW. Default tolerance is 1e-9 but it can be changed in a BC file.
    double Tol = this->epsilon;
    bool Passed;
-   double gC[3], p1[3], p2[3], pn[3], vn[3], unit[3], NTri[3];
+   double gC[3], p1[3], p2[3], vn[3], unit[3], NTri[3];
    //
    CGLPolyline* m_polyline = NULL;
    Surface *m_surface = NULL;
@@ -1467,9 +1473,10 @@ void CBoundaryCondition::SurfaceInterpolation(CRFProcess* m_pcs, std::vector<lon
 
    for (j = 0; j < (long)nodes_on_sfc.size(); j++)
    {
-      pn[0] = m_pcs->m_msh->nod_vector[nodes_on_sfc[j]]->X();
-      pn[1] = m_pcs->m_msh->nod_vector[nodes_on_sfc[j]]->Y();
-      pn[2] = m_pcs->m_msh->nod_vector[nodes_on_sfc[j]]->Z();
+//      pn[0] = m_pcs->m_msh->nod_vector[nodes_on_sfc[j]]->X();
+//      pn[1] = m_pcs->m_msh->nod_vector[nodes_on_sfc[j]]->Y();
+//      pn[2] = m_pcs->m_msh->nod_vector[nodes_on_sfc[j]]->Z();
+	   double const*const pn (m_pcs->m_msh->nod_vector[nodes_on_sfc[j]]->getData());
       node_value_vector[j] = 0.0;
       Passed = false;
       // nodes close to first polyline
