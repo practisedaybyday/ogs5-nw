@@ -70,7 +70,7 @@ FILESIZE=$(stat -c %s ./../svnInfo.txt)
 if [ "$FILESIZE" > "0" ] ; then
   echo "Running process_benchmark_job.rb"
   cd process_benchmark_job
-  ruby process_benchmark_job.rb ./../svnInfo.txt ./../benchOut.txt $HUDSON_EMAIL $1
+  ruby process_benchmark_job.rb ./../../svnInfo.txt ./../../benchOut.txt $HUDSON_EMAIL $1
   cd ..
 fi
 
