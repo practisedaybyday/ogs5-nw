@@ -6,8 +6,16 @@ rm -rf ../../benchmarks/results/*.html
 # Goto sources directory
 cd .. >/dev/null
 
-# Get svn information
-svn info > svnInfo.txt
+if [ -d ".svn" ]; then
+	# Get svn information
+	svn info > svnInfo.txt
+else if [ -d ".git" ]; then
+	# Get git information
+	git log HEAD~1..HEAD > svnInfo.txt
+else
+	echo "Aborting: Version information not found."
+	exit 1
+fi
 
 # Don´t abort on errors
 set +e >/dev/null

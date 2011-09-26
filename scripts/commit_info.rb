@@ -9,7 +9,9 @@ Sequel::Model.unrestrict_primary_key
 # Create a table if it not exists
 $DB.create_table? :commit_infos do
   primary_key     :revision
+  Fixnum          :is_svn_commit
   Time            :date
+  Time            :read_date
   String          :branch
   foreign_key     :author_id, :table => :authors
 end
@@ -26,30 +28,57 @@ class CommitInfoLoader
   def new?
     @new
   end
+  
+  attr_accessor :commit_info
 
   def initialize(filename)
 
     @new = true
 
     File.open(filename, 'r') do |file|
+      
+      first_line = file.gets
+      if first_line =~ /Path:/
+        svn = true
+      elsif first_line =~ /commit/
+        git = true
+      end
+      
       revision = 0
       author = nil
       date = nil
+      read_date = Time.now
       branch = nil
+      is_svn_commit = 0
 
-      while line = file.gets
-        line.scan(/svn\/ogs\/([\S]+)\//) do |match|
-          branch = match[0]
+      if svn
+        is_svn_commit = 1
+        while line = file.gets
+          line.scan(/svn\/ogs\/([\S]+)\//) do |match|
+            branch = match[0]
+          end
+          line.scan(/Revision:\s([0-9]+)/) do |match|
+            revision = match[0].to_i
+          end
+          line.scan(/Last Changed Author:\s([\w]+)/) do |match|
+            author_name = match[0]
+            author = Author[:svn_user => author_name]
+          end
+          line.scan(/Last Changed Date:\s([0-9]{4}-[0-9]{2}-[0-9]{2}\s[0-9]{2}:[0-9]{2}:[0-9]{2})/) do |match|
+            date = Time.parse(match[0])
+          end
         end
-        line.scan(/Revision:\s([0-9]+)/) do |match|
-          revision = match[0].to_i
-        end
-        line.scan(/Last Changed Author:\s([\w]+)/) do |match|
-          author_name = match[0]
-          author = Author[:svn_user => author_name]
-        end
-        line.scan(/Last Changed Date:\s([0-9]{4}-[0-9]{2}-[0-9]{2}\s[0-9]{2}:[0-9]{2}:[0-9]{2})/) do |match|
-          date = Time.parse(match[0])
+      elsif git
+        while line = file.gets
+          line.scan(/commit ([\S]{40,40})/) do |match|
+            revision = match[0]
+          end
+          line.scan(/Author:\s([\S\s]+)\s</) do |match|
+            author = Author[:name => match[0]]
+          end
+          line.scan(/Date:[\s]+([\s\S]+)/) do |match|
+            date = Time.parse(match[0])
+          end
         end
       end
 
@@ -59,7 +88,9 @@ class CommitInfoLoader
       else
         commit_info = CommitInfo.create(:revision => revision,
                                         :date => date,
-                                        :branch => branch)
+                                        :read_date => read_date,
+                                        :branch => branch,
+                                        :is_svn_commit => is_svn_commit)
         commit_info.author = author
         commit_info.save
       end

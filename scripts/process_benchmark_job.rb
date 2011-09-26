@@ -21,7 +21,7 @@ require 'csv'
 class BenchmarkInfoProcessor
 
   # Use BenchmarkInfoProcessor(new_revision) or BenchmarkInfoProcessor(new_revision, old_revision)
-  def initialize(*args)
+  def initialize(commit_info)
 
     @actual_benchmark_runs = []
     @last_benchmark_runs = []
@@ -29,17 +29,12 @@ class BenchmarkInfoProcessor
     @crashed_benchmarks = []
     @new_failed_benchmarks = []
     @fixed_benchmarks = []
-
-    if args.size == 0
-      @new_commit_info = CommitInfo.last
-    else
-      @new_commit_info = CommitInfo.filter(:revision => args[0].to_i).last
-    end
-
-    if args.size == 2
-      @old_commit_info = CommitInfo.filter(:revision => args[1].to_i).last
-    else
+    
+    @new_commit_info = commit_info
+    if commit_info.is_svn_commit == 1
       @old_commit_info = CommitInfo.filter(:revision < @new_commit_info.revision).order(:revision).last
+    else
+      @old_commit_info = CommitInfo.filter(:read_date < @new_commit_info.read_date).order(:read_date).last
     end
 
     puts "Comparing benchmarks of revision #{@old_commit_info.revision} and revision #{@new_commit_info.revision}:" if $debug
@@ -242,7 +237,7 @@ else
 
     if File.exists?(ARGV[1])
       # read benchmark job output
-      BenchmarkRunsLoader.new(ARGV[1])
+      BenchmarkRunsLoader.new(ARGV[1], ci.commit_info)
     else
       puts "File #{ARGV[1]} does not exist!"
       Process.exit 1
@@ -253,9 +248,9 @@ else
   end
 
   ### Process info ###
-  bi = BenchmarkInfoProcessor.new
+  bi = BenchmarkInfoProcessor.new(ci.commit_info)
   bi.write_statistics_to_csv("#{File.dirname(ARGV[0])}/benchSummary.csv")
-  bi.send_email if ci.new?
+  #bi.send_email if ci.new?
   bi.print_summary
 
   ## Generate plots ##
