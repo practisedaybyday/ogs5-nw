@@ -9,7 +9,7 @@ cd .. >/dev/null
 if [ -d ".svn" ]; then
 	# Get svn information
 	svn info > svnInfo.txt
-else if [ -d ".git" ]; then
+elif [ -d ".git" ]; then
 	# Get git information
 	git log HEAD~1..HEAD > svnInfo.txt
 else

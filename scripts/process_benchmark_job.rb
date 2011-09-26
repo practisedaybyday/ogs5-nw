@@ -237,7 +237,12 @@ else
 
     if File.exists?(ARGV[1])
       # read benchmark job output
-      BenchmarkRunsLoader.new(ARGV[1], ci.commit_info)
+      if  ci.commit_info
+        BenchmarkRunsLoader.new(ARGV[1], ci.commit_info)
+      else
+        puts "Aborting: Commit already processed."
+        Process.exit 1
+      end
     else
       puts "File #{ARGV[1]} does not exist!"
       Process.exit 1

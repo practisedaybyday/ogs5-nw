@@ -61,6 +61,7 @@ class BenchmarkRunsLoader
 
   def initialize(filename, commit_info)
     @bench_test_infos = []
+    puts commit_info
     puts "Loading benchmark job from #{filename}"
     File.open(filename, 'r') do |file|
       num_test_project_lines = 0

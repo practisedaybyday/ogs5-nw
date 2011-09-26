@@ -9,6 +9,7 @@ Sequel::Model.unrestrict_primary_key
 # Create a table if it not exists
 $DB.create_table? :commit_infos do
   primary_key     :revision
+  String          :git_revision
   Fixnum          :is_svn_commit
   Time            :date
   Time            :read_date
@@ -29,14 +30,17 @@ class CommitInfoLoader
     @new
   end
   
-  attr_accessor :commit_info
+  attr_reader :commit_info
 
   def initialize(filename)
 
     @new = true
 
+    puts filename
     File.open(filename, 'r') do |file|
       
+      svn = false
+      git = false
       first_line = file.gets
       if first_line =~ /Path:/
         svn = true
@@ -45,6 +49,7 @@ class CommitInfoLoader
       end
       
       revision = 0
+      git_revision = ""
       author = nil
       date = nil
       read_date = Time.now
@@ -69,10 +74,12 @@ class CommitInfoLoader
           end
         end
       elsif git
+        first_line.scan(/commit ([\S]{40,40})/) do |match|
+          git_revision = match[0]
+          # Get only first 16 chars and convert to integer
+          revision = git_revision[0,16].to_i(16)
+        end
         while line = file.gets
-          line.scan(/commit ([\S]{40,40})/) do |match|
-            revision = match[0]
-          end
           line.scan(/Author:\s([\S\s]+)\s</) do |match|
             author = Author[:name => match[0]]
           end
@@ -84,15 +91,23 @@ class CommitInfoLoader
 
       if CommitInfo[:revision => revision]
         @new = false
-        puts "Commit info of revision #{revision} already read."
+	if svn
+          puts "Commit info of revision #{revision} already read."  
+        else
+	  puts "Commit info of revision #{git_revision} already read."
+	end
       else
-        commit_info = CommitInfo.create(:revision => revision,
+        puts revision
+        puts git_revision
+        puts read_date
+        @commit_info = CommitInfo.create(:revision => revision,
+                                        :git_revision => git_revision,
                                         :date => date,
                                         :read_date => read_date,
                                         :branch => branch,
                                         :is_svn_commit => is_svn_commit)
-        commit_info.author = author
-        commit_info.save
+        @commit_info.author = author
+        @commit_info.save
       end
 
     end
