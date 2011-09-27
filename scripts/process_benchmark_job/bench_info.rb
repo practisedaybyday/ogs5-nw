@@ -61,7 +61,6 @@ class BenchmarkRunsLoader
 
   def initialize(filename, commit_info)
     @bench_test_infos = []
-    puts commit_info
     puts "Loading benchmark job from #{filename}"
     File.open(filename, 'r') do |file|
       num_test_project_lines = 0
@@ -108,7 +107,13 @@ class BenchmarkRunsLoader
 
             #puts "Add Benchmark: #{name}, crashed #{crashed} "
           else
-            bench = BenchmarkRun[:name => name, :commit_info_id => CommitInfo.last.revision]
+            # Get previous benchmark run
+            bench= nil
+            if commit_info.is_svn_commit
+              bench = BenchmarkRun[:name => name, :commit_info_id => CommitInfo.last.revision]
+            else
+              bench = BenchmarkRun[:name => name, :commit_info_id => CommitInfo.filter(:read_date < commit_info.read_date).order(:read_date).last]
+            end
             if bench
               bench.passed = !crashed
               bench.save
