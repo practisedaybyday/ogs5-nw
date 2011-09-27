@@ -42,6 +42,7 @@ extern ios::pos_type GetNextSubKeyword(ifstream* file,string* line, bool* keywor
 #endif
 #include "mathlib.h"
 #include "rf_pcs.h"
+#include "StringTools.h"
 // GeoSys-MSHLib
 
 extern size_t max_dim;                            //OK411 todo
@@ -70,6 +71,7 @@ CNumerics::CNumerics(string name)
    ls_precond = 1;
    ls_storage_method = 2;                         //OK41
    m_cols = 5;                                    // 06.2010. WW
+   ls_extra_arg = ""; //NW
    // NLS - Nonlinear Solver
    nls_method_name = "PICARD";
    nls_method = -1;                                // Default linear, 0: Picard. 1: Newton
@@ -281,6 +283,12 @@ ios::pos_type CNumerics::Read(ifstream *num_file)
             line>>m_cols;
          line.clear();
          continue;
+      }
+      //....................................................................
+      if(line_string.find("$EXTERNAL_SOLVER_OPTION")!=string::npos) { // subkeyword found
+        ls_extra_arg = GetLineFromFile1(num_file);
+        trim(ls_extra_arg);
+        continue;
       }
       //....................................................................
                                                   // subkeyword found

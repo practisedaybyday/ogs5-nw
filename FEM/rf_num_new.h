@@ -38,6 +38,7 @@ class CNumerics
       double ls_theta;
       int ls_precond;
       int ls_storage_method;
+      std::string ls_extra_arg; //NW
       // LS - Linear Solver
       std::string nls_method_name;
       int nls_method;                             // Picard or Newton
