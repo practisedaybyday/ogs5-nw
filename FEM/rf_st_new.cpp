@@ -3135,11 +3135,10 @@ void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st,
 	} // end system dependent
    else if (distype == FiniteElement::FUNCTION) // 25.08.2011. WW 
    { 
-      CNode * a_node; 
       for (size_t i = 0; i < number_of_nodes; i++) 
-      { 
-         a_node = m_msh->nod_vector[ply_nod_vector[i]];           
-         ply_nod_val_vector[i] = st->dis_linear_f->getValue(a_node->X(), a_node->Y(), a_node->Z()); 
+      {  
+         double const*const pnt (m_msh->nod_vector[ply_nod_vector[i]]->getData());
+         ply_nod_val_vector[i] = st->dis_linear_f->getValue(pnt[0], pnt[1], pnt[2]); 
       } 
    } 
 	else //WW
@@ -3270,11 +3269,10 @@ void CSourceTermGroup::SetSurfaceNodeValueVector(CSourceTerm* st,
    }                                              // end neumann
   else if (st->getProcessDistributionType() == FiniteElement::FUNCTION) // 25.08.2011. WW 
    { 
-      CNode * a_node; 
       for (size_t j = 0; j < sfc_nod_vector.size(); j++) 
-      { 
-         a_node = m_msh->nod_vector[sfc_nod_vector[j]];           
-         sfc_nod_val_vector[j] = st->dis_linear_f->getValue(a_node->X(), a_node->Y(), a_node->Z()); 
+      {         
+         double const*const pnt (m_msh->nod_vector[sfc_nod_vector[j]]->getData());
+         sfc_nod_val_vector[j] = st->dis_linear_f->getValue(pnt[0], pnt[1], pnt[2]);
       } 
    } 
 
