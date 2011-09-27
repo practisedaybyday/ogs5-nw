@@ -282,15 +282,20 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
 		    //KR node_value_vector.push_back(m_node);
             in >> geo_node_value;
          }
-         if (this->getProcessDistributionType() == FiniteElement::GRADIENT)
+         else if (this->getProcessDistributionType() == FiniteElement::GRADIENT)
          {
             in >> gradient_ref_depth;             //CMCD
             in >> gradient_ref_depth_value;       //CMCD
             in >> gradient_ref_depth_gradient;    //CMCD
          }
-         if (this->getProcessDistributionType() == FiniteElement::RESTART)
+         else if (this->getProcessDistributionType() == FiniteElement::RESTART)
          {
             in >> rfr_file_name;
+         }
+         else if (this->getProcessDistributionType() == FiniteElement::DIRECT) 
+         {
+             in >> fname;
+             fname = FilePath + fname;
          }
          in.clear();
          continue;
@@ -447,39 +452,38 @@ Programing:
 **************************************************************************/
 void CInitialCondition::Set(int nidx)
 {
-   switch(getGeoType())
-   {
-      case GEOLIB::POINT:
-         SetPoint(nidx);
-         std::cout << "WARNING: CInitialCondition::Set - ToDo" << endl;
-         break;
-      case GEOLIB::POLYLINE:
-         SetPolyline(nidx);
-         break;
-      case GEOLIB::SURFACE:
-         SetSurface(nidx);
-         break;
-      case GEOLIB::VOLUME:
-         std::cout << "WARNING: CInitialCondition::Set - ToDo" << endl;
-         break;
-      case GEOLIB::COLUMN:
-         std::cout << "WARNING: CInitialCondition::Set - ToDo" << endl;
-         break;
-      case GEOLIB::GEODOMAIN:
-         SetDomain(nidx);
-         break;
-      case GEOLIB::INVALID:
-         std::cout << "WARNING: CInitialCondition::Set - invalid geo type" << endl;
-         break;
-   }
-
-   /* KR not used in benchmarks
-      // Direct assign by node indeces 17.11.2009 PCH
-      if(dis_type_name.find("DIRECT")!=string::npos)
-     {
-         SetByNodeIndex(nidx);
-      }
-   */
+    if (getProcessDistributionType()==FiniteElement::DIRECT)  //NW recover
+    {
+        SetByNodeIndex(nidx);
+    } 
+    else
+    {
+        switch(getGeoType())
+        {
+        case GEOLIB::POINT:
+            SetPoint(nidx);
+            std::cout << "WARNING: CInitialCondition::Set - ToDo" << endl;
+            break;
+        case GEOLIB::POLYLINE:
+            SetPolyline(nidx);
+            break;
+        case GEOLIB::SURFACE:
+            SetSurface(nidx);
+            break;
+        case GEOLIB::VOLUME:
+            std::cout << "WARNING: CInitialCondition::Set - ToDo" << endl;
+            break;
+        case GEOLIB::COLUMN:
+            std::cout << "WARNING: CInitialCondition::Set - ToDo" << endl;
+            break;
+        case GEOLIB::GEODOMAIN:
+            SetDomain(nidx);
+            break;
+        case GEOLIB::INVALID:
+            std::cout << "WARNING: CInitialCondition::Set - invalid geo type" << endl;
+            break;
+        }
+    }
 }
 
 

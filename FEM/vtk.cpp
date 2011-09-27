@@ -380,12 +380,13 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
 
    bool CVTK::WriteMeshNodes(std::fstream &fin, bool output_data, CFEMesh *msh, long &offset)
    {
+      const size_t n_msh_nodes = msh->GetNodesNumber(false);
       if (output_data)
       {
          MeshLib::CNode *nod = NULL;
          if (!useBinary)
          {
-            for (long i=0; i<(long)msh->nod_vector.size(); i++)
+            for (size_t i=0; i<n_msh_nodes; i++)
             {
                nod = msh->nod_vector[i];
                fin << "          " << nod->X() << " " << nod->Y() << " " << nod->Z() << endl;
@@ -394,8 +395,8 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
          else
          {
                                                   //OK411
-            write_value_binary<unsigned int>(fin, sizeof(double)*3*(long)msh->nod_vector.size());
-            for (long i=0; i<(long)msh->nod_vector.size(); i++)
+            write_value_binary<unsigned int>(fin, sizeof(double)*3*n_msh_nodes);
+            for (size_t i=0; i<n_msh_nodes; i++)
             {
                nod = msh->nod_vector[i];
                write_value_binary(fin,  nod->X());
@@ -407,7 +408,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
       else if (useBinary)
       {
                                                   //OK411
-         offset += (long)msh->nod_vector.size()*sizeof(double)*3 + SIZE_OF_BLOCK_LENGTH_TAG;
+         offset += n_msh_nodes*sizeof(double)*3 + SIZE_OF_BLOCK_LENGTH_TAG;
       }
 
       return true;

@@ -150,14 +150,17 @@ namespace FiniteElement
       //	if (pcs->pcs_type_name.find("AIR") != string::npos) //OK // TF commented out
       if (pcs->getProcessType () == AIR_FLOW)     //OK
          pcsT = 'A';
-      if (pcs->getProcessType () == PTC_FLOW)     //OK
+      else if (pcs->getProcessType () == PTC_FLOW)     //OK
          pcsT = 'S';
       //	if (pcs->pcs_type_name.find("MULTI") != string::npos) // 24.02.2007 WW
                                                   // 24.02.2007 WW
-      if (pcs->getProcessType () == MULTI_PHASE_FLOW)
+      else if (pcs->getProcessType () == MULTI_PHASE_FLOW)
          pcsT = 'V';                              // Non-isothermal multiphase flow
-      if(pcs->getProcessType () == DEFORMATION_H2)// 09.08.2010 WW
+      else if(pcs->getProcessType () == DEFORMATION_H2)// 09.08.2010 WW
          pcsT = 'V';                              // Non-isothermal multiphase flow
+      else if(pcs->getProcessType () == DEFORMATION_FLOW) // NW
+         pcsT = 'L';
+
       switch (pcsT)
       {
          default:
@@ -790,6 +793,12 @@ namespace FiniteElement
          //FluidProp = mfp_vector[0];
          GasProp = MFPGet("GAS");
          if (GasProp) GasProp->Fem_Ele_Std = this;
+      }
+      if (SolidProp && FluidProp) { //NW
+          if(D_Flag>0  && FluidProp->Density()>MKleinsteZahl)
+          {
+            SolidProp->Calculate_Lame_Constant();
+          }
       }
       //----------------------------------------------------------------------
       // MCP

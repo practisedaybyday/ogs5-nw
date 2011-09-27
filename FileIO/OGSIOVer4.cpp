@@ -33,8 +33,6 @@
 #include "AnalyticalGeometry.h"
 #include "EarClippingTriangulation.h"
 
-// For file path
-#include "makros.h"
 
 using namespace GEOLIB;
 
@@ -320,9 +318,6 @@ std::string readSurface(std::istream &in,
 		if (line.find("$TIN") != std::string::npos) { // subkeyword found
 			in >> line; // read value (file name)
 			line = path + line;
-//			line = FilePath + line; //WW - TF: sorry WW I do not like global variables in my code.
-			// What is the problem with my code? Please talk to me about problems in my code!
-			// If we want to disable global variables we should not introduce new dependencies!
 //			if (type == 1) std::cerr << "reading tin file " << line << " ... " << std::flush;
 			sfc = new Surface(pnt_vec);
 
@@ -516,6 +511,8 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo)
 
 	// extract path for reading external files
 	size_t pos(fname.rfind("/"));
+        if(pos==std::string::npos)
+            pos = fname.rfind("\\");
 	std::string path(fname.substr(0, pos + 1));
 
 	// read names of plys into temporary string-vec
