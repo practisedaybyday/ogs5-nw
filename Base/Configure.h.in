@@ -11,6 +11,7 @@
 
 #cmakedefine OGS_VERSION "${OGS_VERSION}"
 #cmakedefine OGS_DATE "${OGS_DATE}"
+#cmakedefine QT_USE_QTXMLPATTERNS
 
 // for tests
 #cmakedefine OGS_EXECUTABLE "${OGS_EXECUTABLE}"
