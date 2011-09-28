@@ -1208,7 +1208,7 @@ namespace process
       eqs_x = eqs->x;
 #endif
 
-      if(type == 41)
+	  if(type == 41&&fem_dm->dynamic)
       {
          for (i = 0; i < pcs_number_of_primary_nvals; i++)
          {
@@ -1252,7 +1252,8 @@ namespace process
          }
       }
 
-      if(type == 42&&m_num->nls_method>0)         //H2M, Newton-Raphson. 06.09.2010. WW
+      //if(type == 42&&m_num->nls_method>0)         //H2M, Newton-Raphson. 06.09.2010. WW
+      if(type/10 == 4)         //H2M, HM. 28.09.2011. WW
       {
          /// $p_{n+1}=p_{n+1}+\Delta p$ is already performed when type = 0
          if(u_type == 1)
@@ -1297,7 +1298,7 @@ namespace process
    {
       long i, j;
       long number_of_nodes;
-      int Col = 0, start, end;
+      int col0, Col = 0, start, end;
       //
       //
       start = 0;
@@ -1307,39 +1308,46 @@ namespace process
       /// u_0 = 0
       if(type == 42)                              // H2M
          end = problem_dimension_dm;
-      for (i = start; i < end; i++)
-      {
-         Col = p_var_index[i]-1;
-         number_of_nodes=num_nodes_p_var[i];
-         for (j=0; j<number_of_nodes; j++)
-            SetNodeValue(j, Col, 0.0);
-
-         if(fem_dm->dynamic) 
-           continue;
-
-         ///*
-         if(type == 41 && i>=problem_dimension_dm) // HM mono
-         {
-            Col++;         
-            for (j=0; j<number_of_nodes; j++)
-               SetNodeValue(j, Col, 0.0);
-         }
-         //*/
-
-      }
 
       /// Dynamic: plus p_0 = 0
       if(type==41 && !fem_dm->dynamic)
       {
          // p_1 = 0
-         for (i = problem_dimension_dm; i < end; i++)
+         for (i = 1; i < pcs_number_of_primary_nvals; i++)
          {
             Col = p_var_index[i];
+            col0 = Col-1;
+            number_of_nodes=num_nodes_p_var[i];
+            if(i<problem_dimension_dm)
+			{
+               for (j=0; j<number_of_nodes; j++)
+			   {      
+                  //SetNodeValue(j, Col, 0.0);
+                  SetNodeValue(j, col0, 0.0);
+               }
+            }
+            else
+		    {
+               for (j=0; j<number_of_nodes; j++)
+                  SetNodeValue(j, Col, 0.0);
+			}
+         }
+      }
+	  else // non HM monolithic
+	  {
+         for (i = start; i < end; i++)
+         {
+            Col = p_var_index[i]-1;
             number_of_nodes=num_nodes_p_var[i];
             for (j=0; j<number_of_nodes; j++)
                SetNodeValue(j, Col, 0.0);
+
+            if(fem_dm->dynamic) 
+              continue;
          }
-      }
+	  }
+
+
 
       /// Excavation: plus u_1 = 0;
       if(ini_excav)
