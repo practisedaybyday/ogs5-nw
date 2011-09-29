@@ -1313,28 +1313,31 @@ namespace process
       if(type==41 && !fem_dm->dynamic)
       {
          // p_1 = 0
-         for (i = 1; i < pcs_number_of_primary_nvals; i++)
+         for (i = 0; i < pcs_number_of_primary_nvals; i++)
          {
             Col = p_var_index[i];
             col0 = Col-1;
             number_of_nodes=num_nodes_p_var[i];
             if(i<problem_dimension_dm)
-			{
+            {
                for (j=0; j<number_of_nodes; j++)
-			   {      
+               {      
                   //SetNodeValue(j, Col, 0.0);
                   SetNodeValue(j, col0, 0.0);
                }
             }
             else
-		    {
+            {
+                if(m_num->nls_method>0)  // If newton. 29.09.2011. WW
+                   continue;
+
                for (j=0; j<number_of_nodes; j++)
                   SetNodeValue(j, Col, 0.0);
-			}
+            }
          }
       }
-	  else // non HM monolithic
-	  {
+      else // non HM monolithic
+      {
          for (i = start; i < end; i++)
          {
             Col = p_var_index[i]-1;
@@ -1345,7 +1348,7 @@ namespace process
             if(fem_dm->dynamic) 
               continue;
          }
-	  }
+      }
 
 
 
