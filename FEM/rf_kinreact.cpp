@@ -3114,7 +3114,7 @@ void derivs(double t, double c[], double dcdt[], int n, long node)
             //	for (i=0; i<nexchange; i++)	{
             Sp1 = m_kr->ex_species[0] + 1;
             porosity1 = m_kr->GetReferenceVolume(Sp1 - 1, node);
-
+            density1 = m_kr->GetDensity(Sp1 - 1, node);
             Sp2 = m_kr->ex_species[1] + 1;
             porosity2 = m_kr->GetReferenceVolume(Sp2 - 1, node);
 
@@ -3136,7 +3136,7 @@ void derivs(double t, double c[], double dcdt[], int n, long node)
                exchange = -c[Sp1] / dt;
 
             dcdt[Sp1] += exchange;
-            dcdt[Sp2] += -exchange * porosity1 / porosity2;
+            dcdt[Sp2] += -exchange * porosity1 / porosity2 * density1;
             //	}
 
          }                                        // ende if exType == langmuir
@@ -4074,6 +4074,7 @@ long node)
             // calculated already occupied surfaces above
             Sp1 = m_kr->ex_species[0] + 1;
             porosity1 = m_kr->GetReferenceVolume(Sp1 - 1, node);
+            density1 = m_kr->GetDensity(Sp1 - 1, node);
             Sp2 = m_kr->ex_species[1] + 1;
             porosity2 = m_kr->GetReferenceVolume(Sp2 - 1, node);
             kadsorb = m_kr->ex_param[0];
@@ -4083,9 +4084,9 @@ long node)
             //      occupiedSurface is calculated just above
             adsorb = kadsorb * (totalSurface - occupiedSurface[surfaceID]);
             dfdc[Sp1][Sp1] += -kdesorb;
-            dfdc[Sp2][Sp1] += kdesorb * porosity1 / porosity2;
+            dfdc[Sp2][Sp1] += kdesorb * porosity1 / porosity2 * density1;
             dfdc[Sp1][Sp2] += adsorb;
-            dfdc[Sp2][Sp2] += -adsorb * porosity1 / porosity2;
+            dfdc[Sp2][Sp2] += -adsorb * porosity1 / porosity2 * density1;
             // additional derivatives due to occupied surface
             for (j = 0; j < nreactions; j++)
             {
@@ -4099,7 +4100,7 @@ long node)
                   {
                      dfdc[Sp1][SpX] += -kadsorb * c[Sp2];
                      dfdc[Sp2][SpX] += kadsorb * c[Sp2] * porosity1
-                        / porosity2;
+                        / porosity2 * density1;
                   }
                }
             }
