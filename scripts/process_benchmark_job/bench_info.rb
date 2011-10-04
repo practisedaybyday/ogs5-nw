@@ -117,6 +117,7 @@ class BenchmarkRunsLoader
             if bench
               bench.passed = !crashed
               bench.save
+              puts "Benchmark #{bench.name}: passed = not #{crashed}"
             else
               puts line
             end
