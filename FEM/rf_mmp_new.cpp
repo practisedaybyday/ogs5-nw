@@ -3751,8 +3751,8 @@ double CMediumProperties::Porosity(long number,double theta)
             if (isFlowProcess(pcs_vector[i]->getProcessType()))
             {
                idx=pcs_vector[i]->GetElementValueIndex ( "POROSITY" );
-               porosity = pcs_vector[i]->GetElementValue(number, idx);
-               if (porosity <1.e-6 || porosity > 1.0) {cout <<"Porosity: error getting porosity for model 15. porosity: " <<porosity << " at node "<< number << endl; porosity = porosity_model_values[0];}
+               porosity = pcs_vector[i]->GetElementValue(number, idx+1); // always return new/actual value
+               if (porosity <0.0 || porosity > 1.0) {cout <<"Porosity: error getting porosity for model 15. porosity: " <<porosity << " at node "<< number << endl; porosity = porosity_model_values[0];}
             }
          }
 

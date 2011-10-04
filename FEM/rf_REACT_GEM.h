@@ -285,9 +285,11 @@ class REACT_GEM
 *      12,13, 14  double n_1, n_2, n_3; // exponents for acidic neutral and base cases for species one
 *      append for each species another set of n_1, n_2, n_3 (up to 10 sets -> up to ten species)
 */
-			double kinetic_parameters[41];
+	 double kinetic_parameters[41];
          int surface_model;                       // currently only 1 implemented
          double surface_area[10];
+	 int ss_endmembers; // special model for solid solutions...only read for kinetic model == 5
+	 double *ss_scaling;
       } Kinetic_GEMS;
 
       vector<Kinetic_GEMS> m_kin;

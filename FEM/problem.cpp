@@ -1063,77 +1063,91 @@ Modification:
 -------------------------------------------------------------------------*/
 void Problem::PostCouplingLoop()
 {
-   CRFProcess *m_pcs = NULL;
-   if(total_processes[12])
-   {
-      CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *)(total_processes[12]);
-      if(H_Process&&dm_pcs->type/10!=4)           // HM partitioned scheme
-         dm_pcs->ResetTimeStep();
-      dm_pcs->Extropolation_GaussValue();
-   }
+ CRFProcess *m_pcs = NULL;
+    if (total_processes[12])
+    {
+        CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *)(total_processes[12]);
+        if (H_Process&&dm_pcs->type/10!=4)          // HM partitioned scheme
+            dm_pcs->ResetTimeStep();
+        dm_pcs->Extropolation_GaussValue();
+    }
 
-   //CB new NAPL and Water Saturations after reactions for Two_Phase_Flow and NAPL-Dissolution
-   //WW if(MASS_TRANSPORT_Process) // if(MASS_TRANSPORT_Process&&NAPL_Dissolution) //CB Todo
-                                                  // 12.2008. WW
-   if(transport_processes.size()>0&&total_processes[3])
-      if (KNaplDissCheck())                       // Check if NAPLdissolution is modeled
-         CalcNewNAPLSat(total_processes[3]);
+    //CB new NAPL and Water Saturations after reactions for Two_Phase_Flow and NAPL-Dissolution
+    //WW if(MASS_TRANSPORT_Process) // if(MASS_TRANSPORT_Process&&NAPL_Dissolution) //CB Todo
+    // 12.2008. WW
+    if (transport_processes.size()>0&&total_processes[3])
+        if (KNaplDissCheck())                       // Check if NAPLdissolution is modeled
+            CalcNewNAPLSat(total_processes[3]);
 
-   /* CB 21/09 The next fct. was necessary in 4.08. Still needed here? I think so
-   // for TWO_PHASE_FLOW the new time step results for secondary variables
-   // PRESSURE2 and SATURATION1 are not copied below in the function
-   // CopyTimestepNODValues(); but I can do it here:
-   if (m_pcs = PCSGet("TWO_PHASE_FLOW"))
-      CopyTimestepNODValuesSVTPhF();
-   */
+    /* CB 21/09 The next fct. was necessary in 4.08. Still needed here? I think so
+    // for TWO_PHASE_FLOW the new time step results for secondary variables
+    // PRESSURE2 and SATURATION1 are not copied below in the function
+    // CopyTimestepNODValues(); but I can do it here:
+    if (m_pcs = PCSGet("TWO_PHASE_FLOW"))
+       CopyTimestepNODValuesSVTPhF();
+    */
 
-   //  Update the results
-   for(int i=0;i<(int)pcs_vector.size();i++)
-   {
-      m_pcs = pcs_vector[i];
-      if (hasAnyProcessDeactivatedSubdomains)     //NW
-         m_pcs->CheckMarkedElement();
+    //  Update the results
+    for (int i=0;i<(int)pcs_vector.size();i++)
+    {
+        m_pcs = pcs_vector[i];
+        if (hasAnyProcessDeactivatedSubdomains)     //NW
+            m_pcs->CheckMarkedElement();
 #if defined(USE_MPI)                        // 18.10.2007 WW
-      if(myrank==0)
-      {
+        if (myrank==0)
+        {
 #endif
-         m_pcs->WriteSolution();                  //WW
+            m_pcs->WriteSolution();                  //WW
 #ifdef GEM_REACT
-         if (i==0)                                // for GEM_REACT we also need information on porosity (node porosity internally stored in Gems process)!....do it only once and it does not matter for which process ! ....we assume that the first pcs process is the flow process...if reload not defined for every process, restarting with gems will not work in any case
-         {
+            if (i==0)                                // for GEM_REACT we also need information on porosity (node porosity internally stored in Gems process)!....do it only once and it does not matter for which process ! ....we assume that the first pcs process is the flow process...if reload not defined for every process, restarting with gems will not work in any case
+            {
 
-            if (( m_pcs->reload==1 || m_pcs->reload==3 ) && !(( aktueller_zeitschritt % m_pcs->nwrite_restart  ) > 0) ) m_vec_GEM->WriteReloadGem();
-         }
+                if (( m_pcs->reload==1 || m_pcs->reload==3 ) && !(( aktueller_zeitschritt % m_pcs->nwrite_restart  ) > 0) ) m_vec_GEM->WriteReloadGem();
+            }
 #endif
 #if defined(USE_MPI)                     // 18.10.2007 WW
-      }
+        }
 #endif
 
-      m_pcs->Extropolation_MatValue();            //WW
-      if(m_pcs->cal_integration_point_value)      //WW
-         m_pcs->Extropolation_GaussValue();
-                                                  //BG
-      if ((m_pcs->simulator == "ECLIPSE") || (m_pcs->simulator == "DUMUX"))
-         m_pcs->Extropolation_GaussValue();
-      m_pcs->CopyTimestepNODValues();             //MB
+        m_pcs->Extropolation_MatValue();            //WW
+        if (m_pcs->cal_integration_point_value)     //WW
+            m_pcs->Extropolation_GaussValue();
+        //BG
+        if ((m_pcs->simulator == "ECLIPSE") || (m_pcs->simulator == "DUMUX"))
+            m_pcs->Extropolation_GaussValue();
+        m_pcs->CopyTimestepNODValues();             //MB
 #define SWELLING
 #ifdef SWELLING
-                                                  //MX ToDo//CMCD here is a bug in j=7
-      for(int j=0;j<m_pcs->pcs_number_of_evals;j++)
-      {
-         int nidx0 =  m_pcs->GetElementValueIndex(m_pcs->pcs_eval_name[j]);
-         int nidx1 =  m_pcs->GetElementValueIndex(m_pcs->pcs_eval_name[j])+1;
-         for(long l=0;l<(long)m_pcs->m_msh->ele_vector.size();l++)
-            m_pcs->SetElementValue(l,nidx0, m_pcs->GetElementValue(l,nidx1));
-      }
+ //MX ToDo//CMCD here is a bug in j=7
+        for (int j=0;j<m_pcs->pcs_number_of_evals;j++)
+        {
+
+            if (strcmp(m_pcs->pcs_eval_name[j],"POROSITY")) { //if strings are equal the result is zero
+                int nidx0 =  m_pcs->GetElementValueIndex(m_pcs->pcs_eval_name[j]);
+                int nidx1 =  m_pcs->GetElementValueIndex(m_pcs->pcs_eval_name[j])+1;
+                for (long l=0;l<(long)m_pcs->m_msh->ele_vector.size();l++)
+                    m_pcs->SetElementValue(l,nidx0, m_pcs->GetElementValue(l,nidx1));
+            }
+            else // this is only executed for porosities
+            {
+#ifdef GEM_REACT
+                // do nothing as porosity update is handled by REACT_GEMS after!! flow and transport solution
+#else
+                int nidx0 =  m_pcs->GetElementValueIndex(m_pcs->pcs_eval_name[j]);
+                int nidx1 =  m_pcs->GetElementValueIndex(m_pcs->pcs_eval_name[j])+1;
+                for (long l=0;l<(long)m_pcs->m_msh->ele_vector.size();l++)
+                    m_pcs->SetElementValue(l,nidx0, m_pcs->GetElementValue(l,nidx1));
 #endif
-   }
-   // WW
+            }
+        }
+#endif        
+    }
+// WW
 #ifndef NEW_EQS                                //WW. 07.11.2008
-   if(total_processes[1])
-      total_processes[1]->AssembleParabolicEquationRHSVector();
+if (total_processes[1])
+    total_processes[1]->AssembleParabolicEquationRHSVector();
 #endif
-   LOPCalcELEResultants();
+LOPCalcELEResultants();
 }
 
 
