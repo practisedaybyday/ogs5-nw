@@ -302,9 +302,7 @@ bool CDUMUXData::MakeNodeVector(void)
 			// create new instance of CPointData
 //			m_NodeData = new CPointData_DuMux;
 			PointDuMux* node_data (new PointDuMux (
-					m_msh->nod_vector[i]->X(),
-					m_msh->nod_vector[i]->Y(),
-					m_msh->nod_vector[i]->Z(),
+					m_msh->nod_vector[i]->getData(),
 					-1.0E+99, // temperature
 					-1.0E+99, // CO2 in liquid
 					-1.0E+99 // NaCl in liquid
@@ -354,7 +352,6 @@ int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timest
 	string DOScommand;
 	std::ostringstream temp;
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-	MeshLib::CNode* a_node;
 	double value;
 	double timestep_length;
 	//CRFProcess *n_pcs = NULL;
@@ -413,13 +410,13 @@ int CDUMUXData::WriteInputForDuMux(CRFProcess *m_pcs, string Folder, long Timest
 		// get index of species concentration in nodevaluevector of this process
 		indexConcentration_DIC = pcs_vector[this->ProcessIndex_CO2inLiquid]->GetNodeValueIndex(pcs_vector[this->ProcessIndex_CO2inLiquid]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
 		//indexConcentration_NaCl_dissolved = pcs_vector[indexProcess_NaCl_dissolved]->GetNodeValueIndex(pcs_vector[indexProcess_NaCl_dissolved]->pcs_primary_function_name[0]) + 1; // +1: new timelevel
-		for(unsigned long i = 0; i < m_msh->nod_vector.size(); i++){
-			a_node = m_msh->nod_vector[i];
+		for(unsigned long i = 0; i < m_msh->nod_vector.size(); i++) {
+			double const*const pnt (m_msh->nod_vector[i]->getData());
 			temp.precision(12);
 			temp.str(""); temp.clear(); temp << i; tempstring = temp.str();
-			temp.str(""); temp.clear(); temp << a_node->X(); tempstring += " " + temp.str();
-			temp.str(""); temp.clear(); temp << a_node->Y(); tempstring += " " + temp.str();
-			temp.str(""); temp.clear(); temp << a_node->Z(); tempstring += " " + temp.str();
+			temp.str(""); temp.clear(); temp << pnt[0]; tempstring += " " + temp.str();
+			temp.str(""); temp.clear(); temp << pnt[1]; tempstring += " " + temp.str();
+			temp.str(""); temp.clear(); temp << pnt[2]; tempstring += " " + temp.str();
 
 			// TF commented out since we want to use the improved PointDuMux class
 //			value = pcs_vector[this->ProcessIndex_CO2inLiquid]->GetNodeValue(i, indexConcentration_DIC) * (this->Molweight_CO2 / 1000) / this->NodeData[i]->phase_density[0];

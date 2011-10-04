@@ -9,6 +9,11 @@
 # 2009-2010 Ryan Pavlik <rpavlik@iastate.edu> <abiryan@ryand.net>
 # http://academic.cleardefinition.com
 # Iowa State University HCI Graduate Program/VRAC
+#
+# Copyright Iowa State University 2009-2010.
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE_1_0.txt or copy at
+# http://www.boost.org/LICENSE_1_0.txt)
 
 if(TARGET quat)
 	# Look for the header file.
@@ -18,9 +23,6 @@ if(TARGET quat)
 	set(QUATLIB_LIBRARY "quat")
 
 else()
-	#IF(WIN32)
-	#	SET(QUATLIB_ROOT_DIR ${VRPN_ROOT_DIR})
-	#ENDIF()
 	set(QUATLIB_ROOT_DIR
 		"${QUATLIB_ROOT_DIR}"
 		CACHE
@@ -33,8 +35,18 @@ else()
 
 	if("${CMAKE_SIZEOF_VOID_P}" MATCHES "8")
 		set(_libsuffixes lib64 lib)
+
+		# 64-bit dir: only set on win64
+		file(TO_CMAKE_PATH "$ENV{ProgramW6432}" _progfiles)
 	else()
 		set(_libsuffixes lib)
+		if(NOT "$ENV{ProgramFiles(x86)}" STREQUAL "")
+			# 32-bit dir: only set on win64
+			file(TO_CMAKE_PATH "$ENV{ProgramFiles(x86)}" _progfiles)
+		else()
+			# 32-bit dir on win32, useless to us on win64
+			file(TO_CMAKE_PATH "$ENV{ProgramFiles}" _progfiles)
+		endif()
 	endif()
 
 	# Look for the header file.
@@ -46,8 +58,8 @@ else()
 		PATH_SUFFIXES
 		include
 		PATHS
-		"C:/Program Files/quatlib/include"
-		"../quat")
+		"${_progfiles}/VRPN"
+		"${_progfiles}/quatlib")
 
 	# Look for the library.
 	find_library(QUATLIB_LIBRARY
@@ -59,9 +71,8 @@ else()
 		PATH_SUFFIXES
 		${_libsuffixes}
 		PATHS
-		"C:/Program Files/quatlib/lib"
-		"../buildquat"
-		"../buildquat/release")
+		"${_progfiles}/VRPN"
+		"${_progfiles}/quatlib")
 endif()
 
 # handle the QUIETLY and REQUIRED arguments and set QUATLIB_FOUND to TRUE if

@@ -37,7 +37,6 @@
 // int size;
 // int myrank;
 #endif
-#include "Configure.h"
 
 #include "rf_REACT_GEM.h"
 #include "rf_pcs.h"
@@ -2533,7 +2532,7 @@ double REACT_GEM::KozenyCarman_normalized ( double k0, double n0, double n )
 
       rt *=MathLib::fastpow ( n / n0 , 3 );
 
-      rt *=MathLib::fastpow ( ( 1 - n0 ) / ( 1 - n ) , 2 );
+      rt *= ( 1 - n0 ) / ( 1 - n ) * ( 1 - n0 ) / ( 1 - n );
    }
 
    return rt;

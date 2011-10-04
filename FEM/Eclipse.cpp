@@ -1776,7 +1776,6 @@ bool CECLIPSEData::CompareElementsGeosysEclipse(){
 	MeshLib::CElem* m_ele = NULL;
 	CFEMesh* m_msh = fem_msh_vector[0];
 	Math_Group::vec<MeshLib::CNode*> ele_nodes(8);
-	MeshLib::CNode* a_node=NULL;
 	clock_t start,finish;
 	double time;
 	double epsilon = 1e-7;
@@ -1802,29 +1801,37 @@ bool CECLIPSEData::CompareElementsGeosysEclipse(){
 		//	cout << a_node->X() << " " << a_node->Y() << " " << a_node->Z() << " ECL " << this->eclgrid[i]->x_coordinates[j] << " " << this->eclgrid[i]->y_coordinates[j]  << " " << this->eclgrid[i]->z_coordinates[j] << endl;
 		//}
 		//A loop can't be used because the order of nodes is not equal
-		a_node = ele_nodes[0];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[0]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[0]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[0]) > epsilon)
+
+		double const* pnt (ele_nodes[0]->getData());
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[0]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[0]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[0]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[1];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[1]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[1]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[1]) > epsilon)
+
+		pnt = ele_nodes[1]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[1]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[1]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[1]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[2];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[3]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[3]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[3]) > epsilon)
+
+		pnt = ele_nodes[2]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[3]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[3]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[3]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[3];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[2]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[2]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[2]) > epsilon)
+
+		pnt = ele_nodes[3]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[2]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[2]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[2]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[4];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[4]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[4]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[4]) > epsilon)
+
+		pnt = ele_nodes[4]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[4]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[4]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[4]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[5];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[5]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[5]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[5]) > epsilon)
+
+		pnt = ele_nodes[5]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[5]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[5]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[5]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[6];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[7]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[7]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[7]) > epsilon)
+
+		pnt = ele_nodes[6]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[7]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[7]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[7]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[7];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[6]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[6]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[6]) > epsilon)
+
+		pnt = ele_nodes[7]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[6]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[6]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[6]) > epsilon)
 			ElementIsEqual = false;
 
 		if (ElementIsEqual == false) {
@@ -2623,7 +2630,6 @@ bool CECLIPSEData::MakeNodeVector(void)
 {
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
 	//CFaces *m_face=NULL;
-	MeshLib::CNode* m_node = NULL;
 	//WW double weights_xyz[3];
 	CPointData_ECL* m_NodeData = NULL;
 	m_NodeData = new CPointData_ECL;
@@ -2648,12 +2654,12 @@ bool CECLIPSEData::MakeNodeVector(void)
   if(this->NodeData.size() < 1)
   for (unsigned long i = 0; i < m_msh->nod_vector.size(); i++) {
 		// create new instance of CPointData
-		m_NodeData = new CPointData_ECL;
+		m_NodeData = new CPointData_ECL (m_msh->nod_vector[i]->getData());
 		//Get the node
-		m_node = m_msh->nod_vector[i];
-		m_NodeData->x = m_node->X();
-		m_NodeData->y = m_node->Y();
-		m_NodeData->z = m_node->Z();
+// TF		m_node = m_msh->nod_vector[i];
+// TF		m_NodeData->x = m_node->X();
+// TF		m_NodeData->y = m_node->Y();
+// TF		m_NodeData->z = m_node->Z();
 		m_NodeData->phase_pressure.resize(3);
 		m_NodeData->phase_saturation.resize(3);
 		m_NodeData->phase_density.resize(3);

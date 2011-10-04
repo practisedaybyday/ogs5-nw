@@ -43,6 +43,12 @@ public:
 		_CO2_in_liquid (CO2_in_liquid), _NaCl_in_Liquid (NaCl_in_liquid)
 	{}
 
+	PointDuMux (double const*const coords, double temperature,
+			double CO2_in_liquid, double NaCl_in_liquid) :
+		GEOLIB::Point (coords), _temperature (temperature),
+		_CO2_in_liquid (CO2_in_liquid), _NaCl_in_Liquid (NaCl_in_liquid)
+	{}
+
 	double getTemperature() const { return _temperature; }
 	double getCO2InLiquid() const { return _CO2_in_liquid; }
 	double getNaClInLiquid() const { return _NaCl_in_Liquid; }

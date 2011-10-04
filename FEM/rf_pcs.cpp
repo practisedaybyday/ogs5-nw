@@ -10,7 +10,6 @@ Programing:
            and parellelisation of them
 02/2008 PCH OpenMP parallelization for Lis matrix solver
 **************************************************************************/
-#include "Configure.h"
 #include "FEMEnums.h"
 #include "Output.h"
 
@@ -1527,7 +1526,12 @@ bool PCSRead(std::string file_base_name)
                if (pname.find("DYNAMIC") != string::npos)
                   m_pcs->pcs_type_name_vector[0] = "DYNAMIC";
             }
+         } else if (m_pcs->getProcessType()==DEFORMATION_FLOW) {
+             //NW
+             std::cout << "***Error: DEFORMATION_FLOW is vague definition." << std::endl;
+             exit(0);
          }
+
 
          m_pcs->pcs_number = pcs_vector.size();
          //RelocateDeformationProcess(m_pcs);
@@ -2258,49 +2262,13 @@ last modified:
 **************************************************************************/
 void CRFProcess::ConfigLiquidFlow()
 {
-   pcs_num_name[0] = "PRESSURE0";
-   pcs_sol_name = "LINEAR_SOLVER_PROPERTIES_PRESSURE1";
-   // NOD values
-   pcs_number_of_primary_nvals = 1;
+   //pcs_num_name[0] = "PRESSURE0";
+   //pcs_sol_name = "LINEAR_SOLVER_PROPERTIES_PRESSURE1";
+   pcs_number_of_primary_nvals = 0;
    pcs_number_of_secondary_nvals = 0;
-   pcs_primary_function_name[0] = "PRESSURE1";
-   pcs_primary_function_unit[0] = "Pa";
-   // ELE values
-   pcs_number_of_evals = 6;
-   pcs_eval_name[0] = "VOLUME";
-   pcs_eval_unit[0] = "m3";
-   pcs_eval_name[1] = "VELOCITY1_X";
-   pcs_eval_unit[1] = "m/s";
-   pcs_eval_name[2] = "VELOCITY1_Y";
-   pcs_eval_unit[2] = "m/s";
-   pcs_eval_name[3] = "VELOCITY1_Z";
-   pcs_eval_unit[3] = "m/s";
-   pcs_eval_name[4] = "POROSITY";                 //MX, test for n=n(c), 04.2005
-   pcs_eval_unit[4] = "-";
-   pcs_eval_name[5] = "PERMEABILITY";             //JTARON 2010 -- need this for index call of heterogeneous permeability
-   pcs_eval_unit[5] = "m2";
-   //----------------------------------------------------------------------
-   // Secondary variables
-   pcs_number_of_secondary_nvals = 0;             //WW
-   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "HEAD";
-   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m";
-   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-   pcs_number_of_secondary_nvals++;               //WW
-   //WW
-   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_X1";
-   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
-   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-   pcs_number_of_secondary_nvals++;               //WW
-   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Y1";
-   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
-   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-   pcs_number_of_secondary_nvals++;               //WW
-   pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Z1";
-   pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
-   pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-   pcs_number_of_secondary_nvals++;               //WW
+   pcs_number_of_evals = 0;
+   Def_Variable_LiquidFlow(); //NW
 
-   //WW / TF
    // Output material parameters
    configMaterialParameters();
 }
@@ -2931,6 +2899,7 @@ void CRFProcess::VariableStaticProblem()
    // NOD Primary functions
    pcs_number_of_primary_nvals = 2;               //OK distinguish 2/3D problems, problem_dimension_dm;
    dm_number_of_primary_nvals = 2;
+   pcs_number_of_evals = 0;
    pcs_primary_function_name[0] = "DISPLACEMENT_X1";
    pcs_primary_function_name[1] = "DISPLACEMENT_Y1";
    pcs_primary_function_unit[0] = "m";
@@ -3008,9 +2977,10 @@ void CRFProcess::VariableStaticProblem()
 
    if(type==41)
    {                                              //Monolithic scheme
-      pcs_primary_function_name[pcs_number_of_primary_nvals] = "PRESSURE1";
-      pcs_primary_function_unit[pcs_number_of_primary_nvals] = "Pa";
-      pcs_number_of_primary_nvals++;
+      Def_Variable_LiquidFlow();
+
+      // Output material parameters
+      configMaterialParameters();
    }
    else if (type==42)                             //Monolithic scheme H2M. 03.08.2010. WW
    {
@@ -3444,6 +3414,58 @@ void CRFProcess:: Def_Variable_MultiPhaseFlow()
    pcs_number_of_secondary_nvals++;
 }
 
+////////////////////////////////////////////////////////////////////////////
+//
+///  Define variables of liquid flow model  (NW 09.2011)
+//
+////////////////////////////////////////////////////////////////////////////
+void CRFProcess:: Def_Variable_LiquidFlow()
+{
+      // 1.1 primary variables
+      pcs_primary_function_name[pcs_number_of_primary_nvals] = "PRESSURE1";
+      pcs_primary_function_unit[pcs_number_of_primary_nvals] = "Pa";
+      pcs_number_of_primary_nvals++;
+
+      // 1.2 secondary variables
+      pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "HEAD";
+      pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m";
+      pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+      pcs_number_of_secondary_nvals++;
+	  pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_X1";
+	  pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+	  pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+	  pcs_number_of_secondary_nvals++;
+	  pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Y1";
+	  pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+	  pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+	  pcs_number_of_secondary_nvals++;
+	  pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Z1";
+	  pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+	  pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+	  pcs_number_of_secondary_nvals++;
+
+      // 1.3 elemental variables
+	  //pcs_number_of_evals = 0;
+      pcs_eval_name[pcs_number_of_evals] = "VOLUME";
+      pcs_eval_unit[pcs_number_of_evals] = "m3";
+	  pcs_number_of_evals++;
+      pcs_eval_name[pcs_number_of_evals] = "VELOCITY1_X";
+	  pcs_eval_unit[pcs_number_of_evals] = "m/s";
+	  pcs_number_of_evals++;
+	  pcs_eval_name[pcs_number_of_evals] = "VELOCITY1_Y";
+	  pcs_eval_unit[pcs_number_of_evals] = "m/s";
+	  pcs_number_of_evals++;
+	  pcs_eval_name[pcs_number_of_evals] = "VELOCITY1_Z";
+	  pcs_eval_unit[pcs_number_of_evals] = "m/s";
+	  pcs_number_of_evals++;
+      pcs_eval_name[pcs_number_of_evals] = "POROSITY";                 //MX, test for n=n(c), 04.2005
+      pcs_eval_unit[pcs_number_of_evals] = "-";
+	  pcs_number_of_evals++;
+      pcs_eval_name[pcs_number_of_evals] = "PERMEABILITY";             //JTARON 2010 -- need this for index call of heterogeneous permeability
+      pcs_eval_unit[pcs_number_of_evals] = "m2";
+	  pcs_number_of_evals++;
+
+}
 
 /**************************************************************************
 FEMLib-Method: For non-isothermal multi-phase flow
@@ -4880,7 +4902,9 @@ void CRFProcess::CalIntegrationPointValue()
       || getProcessType() == DEFORMATION_H2       // 07.2011. WW
       || getProcessType() == AIR_FLOW
       || getProcessType() == PS_GLOBAL
-      || getProcessType() == PTC_FLOW)            //AKS/NB
+      || getProcessType() == PTC_FLOW            //AKS/NB
+      || getProcessType() == DEFORMATION_FLOW   //NW
+      )
       cal_integration_point_value = true;
    if (!cal_integration_point_value)
       return;
@@ -5612,10 +5636,10 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
                /// p_{n+1} = p_b,
                //  SetNodeValue(m_bc_node->geo_node_number, idx0++, bc_value);
                /// dp = u_b-u_n
-               //bc_value -=  GetNodeValue(m_bc_node->geo_node_number, ++idx0);
-               SetNodeValue(m_bc_node->geo_node_number, idx0, bc_value);
-               SetNodeValue(m_bc_node->geo_node_number, idx0+1, bc_value);
-               bc_value = 0.;
+               bc_value -=  GetNodeValue(m_bc_node->geo_node_number, ++idx0);
+	       // SetNodeValue(m_bc_node->geo_node_number, idx0, bc_value);
+               //SetNodeValue(m_bc_node->geo_node_number, idx0+1, bc_value);
+               //bc_value = 0.;
             }
 
          }
@@ -8017,10 +8041,7 @@ void CRFProcess::CalcFluxesForCoupling(void)
       // ToDo safe somewhere else so that this has to be done only once
       //-----------------------------------------------------------------
       // Get Nearest GW and OLF Element
-      GEOLIB::Point pnt;
-      pnt[0] = m_msh->nod_vector[IndexBottomNode]->X();
-      pnt[1] = m_msh->nod_vector[IndexBottomNode]->Y();
-      pnt[2] = m_msh->nod_vector[IndexBottomNode]->Z();
+      GEOLIB::Point pnt (m_msh->nod_vector[IndexBottomNode]->getData());
 
       long EleNumber = m_msh_GW->GetNearestELEOnPNT(&pnt);
 
@@ -8037,7 +8058,7 @@ void CRFProcess::CalcFluxesForCoupling(void)
          NodeIndex_OLF = m_ele_OLF->GetNodeIndex(j);
 
          AverageZ_GW += m_pcs_GW->GetNodeValue(NodeIndex_GW, idxHead_GW);
-         AverageZ_OLF += m_msh_OLF->nod_vector[NodeIndex_OLF]->Z();
+         AverageZ_OLF += m_msh_OLF->nod_vector[NodeIndex_OLF]->getData()[2];
       }
       AverageZ_GW = AverageZ_GW / NoOfGWNodes;
       AverageZ_OLF = AverageZ_OLF / NoOfGWNodes;
@@ -9540,9 +9561,10 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
                break;
             }
             double const* gravity_center(m_ele->GetGravityCenter());
-            aux_vector[0] = gravity_center[0] - m_nod->X();
-            aux_vector[1] = gravity_center[1] - m_nod->Y();
-            aux_vector[2] = gravity_center[2] - m_nod->Z();
+            double const*const pnt (m_nod->getData());
+            aux_vector[0] = gravity_center[0] - pnt[0];
+            aux_vector[1] = gravity_center[1] - pnt[1];
+            aux_vector[2] = gravity_center[2] - pnt[2];
             check_sign = MSkalarprodukt(v,aux_vector,3);
             if(check_sign<0.0)
                m_ele->SetMark(true);
@@ -11062,7 +11084,6 @@ void CRFProcess::WriteBC()
    }
    os.setf(ios::scientific, ios::floatfield);
    os.precision(12);
-   CNode *anode = NULL;
    long nindex = 0;
    if (size_bc > 0)
    {
@@ -11072,11 +11093,16 @@ void CRFProcess::WriteBC()
       for (size_t i = 0; i < size_bc; i++)
       {
          nindex = bc_node_value[i]->geo_node_number;
-         anode = m_msh->nod_vector[nindex];
+//         anode = m_msh->nod_vector[nindex];
+//         os << nindex << "  " << bc_node_value[i]->pcs_pv_name << " "
+//            << std::setw(14) << anode->X() << " " << std::setw(14) << anode->Y()
+//            << " " << std::setw(14) << anode->Z() << " " << std::setw(14)
+//            << bc_node_value[i]->node_value << endl;
+         double const*const pnt (m_msh->nod_vector[nindex]->getData());
          os << nindex << "  " << bc_node_value[i]->pcs_pv_name << " "
-            << std::setw(14) << anode->X() << " " << std::setw(14) << anode->Y()
-            << " " << std::setw(14) << anode->Z() << " " << std::setw(14)
-            << bc_node_value[i]->node_value << endl;
+                     << std::setw(14) << pnt[0] << " " << std::setw(14) << pnt[1]
+                     << " " << std::setw(14) << pnt[2] << " " << std::setw(14)
+                     << bc_node_value[i]->node_value << endl;
       }
    }
    if (size_st > 0)
@@ -11088,12 +11114,18 @@ void CRFProcess::WriteBC()
       for (size_t i = 0; i < size_st; i++)
       {
          nindex = st_node_value[i]->geo_node_number;
-         anode = m_msh->nod_vector[nindex];
-         os << nindex << "  " << convertPrimaryVariableToString(
-            st_node[i]->getProcessPrimaryVariable()) << " " << std::setw(14)
-            << anode->X() << " " << std::setw(14) << anode->Y() << " "
-            << std::setw(14) << anode->Z() << " " << std::setw(14)
-            << st_node_value[i]->node_value << endl;
+//         anode = m_msh->nod_vector[nindex];
+//         os << nindex << "  " << convertPrimaryVariableToString(
+//            st_node[i]->getProcessPrimaryVariable()) << " " << std::setw(14)
+//            << anode->X() << " " << std::setw(14) << anode->Y() << " "
+//            << std::setw(14) << anode->Z() << " " << std::setw(14)
+//            << st_node_value[i]->node_value << endl;
+         double const*const pnt (m_msh->nod_vector[nindex]->getData());
+		  os << nindex << "  " << convertPrimaryVariableToString(
+			 st_node[i]->getProcessPrimaryVariable()) << " " << std::setw(14)
+			 << pnt[0] << " " << std::setw(14) << pnt[1] << " "
+			 << std::setw(14) << pnt[2] << " " << std::setw(14)
+			 << st_node_value[i]->node_value << endl;
       }
    }
    os << "#STOP" << endl;
@@ -11258,7 +11290,7 @@ void CRFProcess::PI_TimeStepSize()
             l = j+ii*g_nnodes;
             x0 = u_n[l];
             x1 = GetNodeValue(k,nidx1);
-            err += MathLib::fastpow( u_n0[l]/(Atol+Rtol*max(fabs(x0),fabs(x1))),2);
+            err += pow( u_n0[l]/(Atol+Rtol*max(fabs(x0),fabs(x1))),2);
          }
       }
       else
@@ -11269,7 +11301,7 @@ void CRFProcess::PI_TimeStepSize()
             l = j+ii*g_nnodes;
             x0 = u_n[l];
             x1 = GetNodeValue(k,nidx1);
-            err += MathLib::fastpow( (x1- u_n0[l])/(Atol+Rtol*max(fabs(x0),fabs(x1))),2);
+            err += pow( (x1- u_n0[l])/(Atol+Rtol*max(fabs(x0),fabs(x1))),2);
          }
       }
    }
@@ -11473,7 +11505,6 @@ void CRFProcess::UpdateTransientBC()
          int node_xmin, node_xmax, node_ymin, node_ymax;
          long m, n, mm, nn, l;
          CElem *elem;
-         CNode *node;
          double *cent;
          double vel_av[3], x1[3], x2[3], x3[3], sub_area[3], area, tol_a;
 
@@ -11527,31 +11558,25 @@ void CRFProcess::UpdateTransientBC()
             /// Find the range of this element
             x_min = y_min = 1.e+20;
             x_max = y_max = -1.e+20;
-            for(k=0; k<nnodes; k++)
-            {
-               node = elem->nodes[k];
-
-               if(node->X()<x_min)
-               {
-                  x_min = node->X();
-                  node_xmin = k;
-               }
-               if(node->X()>x_max)
-               {
-                  x_max = node->X();
-                  node_xmax = k;
-               }
-               if(node->Y()<y_min)
-               {
-                  y_min = node->Y();
-                  node_ymin = k;
-               }
-               if(node->Y()>y_max)
-               {
-                  y_max = node->Y();
-                  node_ymax = k;
-               }
-            }
+            for (k = 0; k < nnodes; k++) {
+            	double const*const pnt(elem->nodes[k]->getData());
+				if (pnt[0] < x_min) {
+					x_min = pnt[0];
+					node_xmin = k;
+				}
+				if (pnt[0] > x_max) {
+					x_max = pnt[0];
+					node_xmax = k;
+				}
+				if (pnt[1] < y_min) {
+					y_min = pnt[1];
+					node_ymin = k;
+				}
+				if (pnt[1] > y_max) {
+					y_max = pnt[1];
+					node_ymax = k;
+				}
+			}
 
             /// Determine the cells that this element covers. 05.10. 2010
             col_min = (long)((x_min-g_para[2])/g_para[4]);
@@ -11559,15 +11584,15 @@ void CRFProcess::UpdateTransientBC()
             col_max = (long)((x_max-g_para[2])/g_para[4]);
             row_max = nrow -(long)((y_min-g_para[3])/g_para[4]);
 
-            node = elem->nodes[0];
-            x1[0] = node->X();
-            x1[1] = node->Y();
-            node = elem->nodes[1];
-            x2[0] = node->X();
-            x2[1] = node->Y();
-            node = elem->nodes[2];
-            x3[0] = node->X();
-            x3[1] = node->Y();
+            double const*const pnt1 (elem->nodes[0]->getData());
+            x1[0] = pnt1[0];
+            x1[1] = pnt1[1];
+            double const*const pnt2 (elem->nodes[1]->getData());
+            x2[0] = pnt2[0];
+            x2[1] = pnt2[1];
+            double const*const pnt3 (elem->nodes[2]->getData());
+            x3[0] = pnt3[0];
+            x3[1] = pnt3[1];
 
             x3[2] = x2[2] = x1[2] = 0.;
             cent[2] = 0.;
@@ -11588,27 +11613,27 @@ void CRFProcess::UpdateTransientBC()
 
                   if(cent[0]<x_min)
                   {
-                     node = elem->nodes[node_xmin];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                     double const*const pnt (elem->nodes[node_xmin]->getData());
+                     cent[0] = pnt[0];
+                     cent[1] = pnt[1];
                   }
                   if(cent[0]>x_max)
                   {
-                     node = elem->nodes[node_xmax];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                     double const*const pnt (elem->nodes[node_xmax]->getData());
+                     cent[0] = pnt[0];
+                     cent[1] = pnt[1];
                   }
                   if(cent[1]<y_min)
                   {
-                     node = elem->nodes[node_ymin];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                	 double const*const pnt (elem->nodes[node_ymin]->getData());
+					 cent[0] = pnt[0];
+					 cent[1] = pnt[1];
                   }
                   if(cent[1]<y_max)
                   {
-                     node = elem->nodes[node_ymax];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                 	 double const*const pnt (elem->nodes[node_ymax]->getData());
+ 					 cent[0] = pnt[0];
+ 					 cent[1] = pnt[1];
                   }
 
                   /// Check whether this point is in this element.
@@ -11937,10 +11962,13 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path, int timestep, int phase
 //* returns the third root of a number x, -inf < x < inf
 //* Programming: NB, Sep10
 //*****************************************************************************/
-double W3( double x)
+inline double W3( double x)
 {
-   double s=pow(x*x,0.5);
-   return pow(s,1./3.)*x/s;
+   if (x < 0) {
+	   return -pow(fabs(x), 1./3.);
+   } else {
+	   return pow(x, 1./3.);
+   }
 }
 
 

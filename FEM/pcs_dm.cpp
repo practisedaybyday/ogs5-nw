@@ -90,7 +90,11 @@ namespace process
       // Write Gauss stress // TEST for excavation analysis
       //   if(reload==1)
       if(reload==1||reload==3)
+      {
          WriteGaussPointStress();
+         if(type == 41) // mono-deformation-liquid
+	   WriteSolution();
+      }
       //
       MeshLib::CElem* elem = NULL;
       for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
@@ -1005,7 +1009,12 @@ namespace process
          }
       }
       // Reload the stress results of the previous simulation
-      if(reload>=2) ReadGaussPointStress();
+      if(reload>=2)
+      {
+        ReadGaussPointStress();
+        if(type == 41) // mono-deformation-liquid
+          WriteSolution();
+      }
       // For excavation simulation. Moved here on 05.09.2007 WW
       if (num_type_name.find("EXCAVATION")!=0)
          Extropolation_GaussValue();
@@ -1304,6 +1313,19 @@ namespace process
          number_of_nodes=num_nodes_p_var[i];
          for (j=0; j<number_of_nodes; j++)
             SetNodeValue(j, Col, 0.0);
+
+         if(fem_dm->dynamic) 
+           continue;
+
+         ///*
+         if(type == 41 && i>=problem_dimension_dm) // HM mono
+         {
+            Col++;         
+            for (j=0; j<number_of_nodes; j++)
+               SetNodeValue(j, Col, 0.0);
+         }
+         //*/
+
       }
 
       /// Dynamic: plus p_0 = 0
@@ -1917,9 +1939,13 @@ namespace process
             for(i=0; i<nn; i++)
             {
                // Coordinates of all element nodes
-               xn[i] = elem->nodes[i]->X();
-               yn[i] = elem->nodes[i]->Y();
-               zn[i] = elem->nodes[i]->Z();
+//               xn[i] = elem->nodes[i]->X();
+//               yn[i] = elem->nodes[i]->Y();
+//               zn[i] = elem->nodes[i]->Z();
+               double const*const coords (elem->nodes[i]->getData());
+               xn[i] = coords[0];
+               yn[i] = coords[1];
+               zn[i] = coords[2];
             }
             // Elements which have one only boundary face are chosen as seed element
             bFaces = -1;

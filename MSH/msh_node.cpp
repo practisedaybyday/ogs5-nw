@@ -22,7 +22,7 @@ namespace MeshLib
    08/2011 NW Implementation
    **************************************************************************/
   CNode::CNode(size_t Index) :
-  CCore(Index), free_surface (-1), 
+  CCore(Index), free_surface (-1),
     patch_area (-1.0), crossroad (0), eqs_index(-1)
    {
      coordinate[0] = 0.0;
@@ -42,6 +42,14 @@ namespace MeshLib
       coordinate[0] = x;
       coordinate[1] = y;
       coordinate[2] = z;
+   }
+
+   CNode::CNode(size_t Index, double const* coordinates) :
+   CCore(Index), free_surface (-1), patch_area (-1.0), crossroad (false), eqs_index (-1)
+   {
+      coordinate[0] = coordinates[0];
+      coordinate[1] = coordinates[1];
+      coordinate[2] = coordinates[2];
    }
 
    /**************************************************************************

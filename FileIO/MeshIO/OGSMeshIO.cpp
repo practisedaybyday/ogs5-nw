@@ -59,11 +59,10 @@ void OGSMeshIO::write(MeshLib::CFEMesh const * mesh, std::ofstream &out)
 
 	out << "$NODES" << std::endl << "  ";
 	out << mesh->GetNodesNumber(false) << std::endl;
-	for (size_t i(0); i < mesh->nod_vector.size(); i++) {
-		out << i
-			<< " " << mesh->nod_vector[i]->X()
-			<< " " << mesh->nod_vector[i]->Y()
-			<< " " << mesh->nod_vector[i]->Z() << std::endl;
+	const size_t n_nodes(mesh->nod_vector.size());
+	for (size_t i(0); i < n_nodes; i++) {
+		double const*const coords (mesh->nod_vector[i]->getData());
+		out << i << " " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
 	}
 
 	out << "$ELEMENTS" << std::endl << "  ";

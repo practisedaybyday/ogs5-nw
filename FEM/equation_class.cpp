@@ -711,6 +711,8 @@ void Linear_EQS::Write_BIN(ostream &os)
       }
       else                                        // LIS parallel solver
       {
+         std::cout << "------------------------------------------------------------------" << std::endl;
+         std::cout << "*** LIS solver computation" << std::endl;
          int i, iter, ierr, size;
          // Fix for the fluid_momentum Dof
             size = A->Size()*A->Dof();
@@ -729,7 +731,7 @@ void Linear_EQS::Write_BIN(ostream &os)
 
          // Matrix solver and Precondition can be handled better way.
             char solver_options[MAX_ZEILE], tol_option[MAX_ZEILE];
-            sprintf(solver_options, "-i %d -p %d",m_num->ls_method, m_num->ls_precond);
+            sprintf(solver_options, "-i %d -p %d %s",m_num->ls_method, m_num->ls_precond, m_num->ls_extra_arg.c_str()); 
          // tolerance and other setting parameters are same
                                                   //NW add max iteration counts
             sprintf(tol_option, "-tol %e -maxiter %d",m_num->ls_error_tolerance, m_num->ls_max_iterations);
@@ -753,6 +755,7 @@ void Linear_EQS::Write_BIN(ostream &os)
 
             ierr = lis_solver_set_option(solver_options,solver);
             ierr = lis_solver_set_option(tol_option,solver);
+            ierr = lis_solver_set_option("-print mem",solver);
             ierr = lis_solve(AA,bb,xx,solver);
             ierr = lis_solver_get_iters(solver,&iter);
          //NW
@@ -776,6 +779,7 @@ void Linear_EQS::Write_BIN(ostream &os)
             lis_vector_destroy(bb);
             lis_vector_destroy(xx);
             lis_solver_destroy(solver);
+            std::cout << "------------------------------------------------------------------" << std::endl;
       }
 
       return -1;                                  // This right now is meaningless.

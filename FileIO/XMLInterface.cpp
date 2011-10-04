@@ -16,10 +16,11 @@
 #include <QTextCodec>
 #include <QCryptographicHash>
 #include <QtXml/QDomDocument>
-#if OGS_QT_VERSION > 45
+#include "Configure.h"
+#ifdef QT_USE_QTXMLPATTERNS
 	#include <QtXmlPatterns/QXmlSchema>
 	#include <QtXmlPatterns/QXmlSchemaValidator>
-#endif // QT_VERSION > 45
+#endif // QT_USE_QTXMLPATTERNS
 
 #include <QTime>
 
@@ -30,7 +31,7 @@ XMLInterface::XMLInterface(ProjectData* project, const std::string &schemaFile)
 
 int XMLInterface::isValid(const QString &fileName) const
 {
-#if OGS_QT_VERSION > 45
+#ifdef QT_USE_QTXMLPATTERNS
 	QXmlSchema schema;
 	schema.load( QUrl::fromLocalFile((QString::fromStdString(_schemaName))) );
 
@@ -54,7 +55,7 @@ int XMLInterface::isValid(const QString &fileName) const
     Q_UNUSED (fileName);
 	std::cout << "XMLInterface: XML schema validation skipped. Qt 4.6 is required for validation." << std::endl;
 	return 1;
-#endif // QT_VERSION > 45
+#endif // QT_USE_QTXMLPATTERNS
 }
 
 void XMLInterface::setSchema(const std::string &schemaName)

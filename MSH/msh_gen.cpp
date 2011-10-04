@@ -91,9 +91,10 @@ void CFEMesh::CreatePriELEFromTri(int no_layer,double layer_thickness)
                   hempel = 3;
                   hampel = 1;
                }
-               m_ele->nodes[k]->SetX(nod_vector[m_tri_ele->GetNodeIndex(k-hempel)]->X());
-               m_ele->nodes[k]->SetY(nod_vector[m_tri_ele->GetNodeIndex(k-hempel)]->Y());
-               m_ele->nodes[k]->SetZ(nod_vector[m_tri_ele->GetNodeIndex(k-hempel)]->Z() - (j+hampel)*layer_thickness);
+               double const*const pnt (nod_vector[m_tri_ele->GetNodeIndex(k-hempel)]->getData());
+               m_ele->nodes[k]->SetX(pnt[0]);
+               m_ele->nodes[k]->SetY(pnt[1]);
+               m_ele->nodes[k]->SetZ(pnt[2] - (j+hampel)*layer_thickness);
             }
             else
             {
@@ -267,9 +268,10 @@ void CFEMesh::CreateHexELEFromQuad(int no_layer,double layer_thickness)
                   hempel = 4;
                   hampel = 1;
                }
-               m_ele->nodes[k]->SetX(nod_vector[m_quad_ele->GetNodeIndex(k-hempel)]->X());
-               m_ele->nodes[k]->SetY(nod_vector[m_quad_ele->GetNodeIndex(k-hempel)]->Y());
-               m_ele->nodes[k]->SetZ(nod_vector[m_quad_ele->GetNodeIndex(k-hempel)]->Z() - (j+hampel)*layer_thickness);
+               double const*const pnt (nod_vector[m_quad_ele->GetNodeIndex(k-hempel)]->getData());
+               m_ele->nodes[k]->SetX(pnt[0]);
+               m_ele->nodes[k]->SetY(pnt[1]);
+               m_ele->nodes[k]->SetZ(pnt[2] - (j+hampel)*layer_thickness);
             }
             else
             {

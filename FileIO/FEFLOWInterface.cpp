@@ -219,7 +219,7 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
     if (m_msh) {
       for (size_t i=0; i<m_msh->nod_vector.size(); i++) {
         CNode* nod = m_msh->nod_vector[i];
-        nod->SetZ(nod->Y());
+        nod->SetZ(nod->getData()[1]);
         nod->SetY(0.0);
       }
     }

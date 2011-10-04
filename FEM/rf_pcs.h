@@ -8,8 +8,6 @@ Programing:
 #ifndef rf_pcs_INC
 #define rf_pcs_INC
 
-#include "Configure.h"
-
 #include "makros.h"
 
 // MSHLib
@@ -250,6 +248,7 @@ class CRFProcess : public ProcessInfo
       // Write indices of the nodes with boundary conditons
       bool write_boundary_condition;              //15.01.2008. WW
       // Element matrices output
+      void Def_Variable_LiquidFlow();
       void Def_Variable_MultiPhaseFlow();
       bool Write_Matrix;
       std::fstream *matrix_file;

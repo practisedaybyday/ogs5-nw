@@ -76,7 +76,7 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 	// 1 copy all mesh nodes to GEOLIB::Points
 	std::vector<GEOLIB::Point*> mesh_nodes_as_points;
 	for (size_t j(0); j<msh_nodes.size(); j++) {
-		mesh_nodes_as_points.push_back (new GEOLIB::Point (msh_nodes[j]->X(), msh_nodes[j]->Y(), msh_nodes[j]->Z()));
+		mesh_nodes_as_points.push_back (new GEOLIB::Point (msh_nodes[j]->getData()));
 	}
 	// 2 rotate the Points
 	MathLib::rotatePointsToXY(plane_normal_polygon, mesh_nodes_as_points);

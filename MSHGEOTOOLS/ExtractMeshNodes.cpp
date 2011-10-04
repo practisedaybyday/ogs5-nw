@@ -35,7 +35,7 @@ void ExtractMeshNodes::writeMeshNodeIDs (std::ostream& os, std::ostream& gli_out
 
 	for (size_t j(0); j<msh_nodes.size(); j++) {
 		if (msh_nodes[j]->Interior()) {
-			GEOLIB::Point pnt (msh_nodes[j]->X(), msh_nodes[j]->Y(), 0);
+			GEOLIB::Point pnt (msh_nodes[j]->getData());
 			if (polygon.isPntInPolygon(pnt)) {
 				node_indices.push_back (j);
 			}
@@ -47,7 +47,8 @@ void ExtractMeshNodes::writeMeshNodeIDs (std::ostream& os, std::ostream& gli_out
 	}
 
 	for (size_t k(0); k<node_indices.size(); k++) {
-		gli_out << k + _gli_pnt_offset << " " << msh_nodes[node_indices[k]]->X() << " " <<  msh_nodes[node_indices[k]]->Y() << " " << msh_nodes[node_indices[k]]->Z() << std::endl;
+		double const*const coords (msh_nodes[node_indices[k]]->getData());
+		gli_out << k + _gli_pnt_offset << " " << coords[0] << " " <<  coords[1] << " " << coords[2] << std::endl;
 	}
 	_gli_pnt_offset += node_indices.size();
 }
@@ -61,9 +62,9 @@ void ExtractMeshNodes::writeTopSurfaceMeshNodeIDs (std::ostream& os, std::ostrea
 
 	for (size_t j(0); j<msh_nodes.size(); j++) {
 //		if (msh_nodes[j]->Interior()) {
-			GEOLIB::Point pnt (msh_nodes[j]->X(), msh_nodes[j]->Y(), 0);
+			GEOLIB::Point pnt (msh_nodes[j]->getData());
 			if (polygon.isPntInPolygon(pnt)) {
-				nodes_as_points.push_back (GEOLIB::PointWithID (msh_nodes[j]->X(), msh_nodes[j]->Y(), msh_nodes[j]->Z(), j));
+				nodes_as_points.push_back (GEOLIB::PointWithID (msh_nodes[j]->getData(), j));
 			}
 //		}
 	}
@@ -118,9 +119,9 @@ void ExtractMeshNodes::getOrthogonalProjectedMeshNodesAlongPolyline (
 	for (size_t k(0); k<number_of_ply_pnts; k++) {
 		GEOLIB::Point proj_ply_pnt ((*(polyline.getPoint(k)))[0], (*(polyline.getPoint(k)))[1], 0.0);
 		for (size_t j(0); j<number_of_msh_nodes; j++) {
-			GEOLIB::Point mesh_pnt (msh_nodes[j]->X(), msh_nodes[j]->Y(), 0);
+			GEOLIB::Point mesh_pnt (msh_nodes[j]->getData());
 			if (MathLib::sqrDist (&mesh_pnt, &proj_ply_pnt) < std::numeric_limits<double>::epsilon()) {
-				nodes_as_points.push_back (GEOLIB::PointWithID (msh_nodes[j]->X(), msh_nodes[j]->Y(), msh_nodes[j]->Z(), j));
+				nodes_as_points.push_back (GEOLIB::PointWithID (msh_nodes[j]->getData(), j));
 			}
 		}
 	}
@@ -262,7 +263,7 @@ void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream&
 	std::vector<size_t> node_ids;
 
 	for (size_t j(0); j<msh_nodes.size(); j++) {
-		GEOLIB::Point pnt (msh_nodes[j]->X(), msh_nodes[j]->Y(), 0);
+		GEOLIB::Point pnt (msh_nodes[j]->getData());
 		if (polygon.isPntInPolygon(pnt)) {
 			node_ids.push_back (j);
 		}
@@ -305,9 +306,9 @@ void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream&
 	n_nodes = 0;
 	gli_out.precision (14);
 	for (std::vector<size_t>::const_iterator it (node_ids.begin()); it != node_ids.end(); it++) {
+		double const*const pnt (msh_nodes[*it]->getData());
 		gli_out << n_nodes + _gli_pnt_offset << " " << std::scientific
-			<< msh_nodes[*it]->X() << " " << msh_nodes[*it]->Y()<< " " << msh_nodes[*it]->Z()
-			<< " $NAME " << *it << std::endl;
+			<< pnt[0] << " " << pnt[1] << " " << pnt[2] << " $NAME " << *it << std::endl;
 		n_nodes++;
 	}
 	_gli_pnt_offset += n_nodes;
@@ -323,7 +324,7 @@ void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream&
 
 	const size_t n_holes (holes.size());
 	for (size_t j(0); j<msh_nodes.size(); j++) {
-		GEOLIB::Point pnt (msh_nodes[j]->X(), msh_nodes[j]->Y(), 0);
+		GEOLIB::Point pnt (msh_nodes[j]->getData());
 		if (bounding_polygon.isPntInPolygon(pnt)) {
 			bool is_not_in_hole (true);
 
@@ -374,9 +375,9 @@ void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os, std::ostream&
 	n_nodes = 0;
 	gli_out.precision (14);
 	for (std::vector<size_t>::const_iterator it (node_ids.begin()); it != node_ids.end(); it++) {
+		double const*const pnt (msh_nodes[*it]->getData());
 		gli_out << n_nodes + _gli_pnt_offset << " " << std::scientific
-			<< msh_nodes[*it]->X() << " " << msh_nodes[*it]->Y()<< " " << msh_nodes[*it]->Z()
-			<< " $NAME " << *it << std::endl;
+			<< pnt[0] << " " << pnt[1] << " " << pnt[2] << " $NAME " << *it << std::endl;
 		n_nodes++;
 	}
 	_gli_pnt_offset += n_nodes;
@@ -388,11 +389,11 @@ void ExtractMeshNodes::writeNearestMeshNodeToPoint (std::ostream& os, std::ostre
 	size_t node_id (_msh->GetNODOnPNT (&pnt));
 	os << node_id << std::endl;
 
+	double const*const coords ((_msh->getNodeVector()[node_id])->getData());
+
 	gli_out.precision (14);
 	gli_out << _gli_pnt_offset << " " << std::scientific
-		<< (_msh->getNodeVector()[node_id])->X() << " "
-		<< (_msh->getNodeVector()[node_id])->Y() << " "
-		<< (_msh->getNodeVector()[node_id])->Z() << std::endl;
+		<< coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
 
 	_gli_pnt_offset++;
 }

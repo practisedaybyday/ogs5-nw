@@ -6,8 +6,16 @@ rm -rf ../../benchmarks/results/*.html
 # Goto sources directory
 cd .. >/dev/null
 
-# Get svn information
-svn info > svnInfo.txt
+if [ -d ".svn" ]; then
+	# Get svn information
+	svn info > svnInfo.txt
+elif [ -d ".git" ]; then
+	# Get git information
+	git log HEAD~1..HEAD > svnInfo.txt
+else
+	echo "Aborting: Version information not found."
+	exit 1
+fi
 
 # Don´t abort on errors
 set +e >/dev/null
@@ -61,7 +69,9 @@ cd scripts
 FILESIZE=$(stat -c %s ./../svnInfo.txt)
 if [ "$FILESIZE" > "0" ] ; then
   echo "Running process_benchmark_job.rb"
-  ruby process_benchmark_job.rb ./../svnInfo.txt ./../benchOut.txt $HUDSON_EMAIL $1
+  cd process_benchmark_job
+  ruby process_benchmark_job.rb ./../../svnInfo.txt ./../../benchOut.txt $HUDSON_EMAIL $1
+  cd ..
 fi
 
 set -e >/dev/null

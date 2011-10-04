@@ -80,7 +80,7 @@ std::vector<NODE_HISTORY*> node_history_vector;   //CMCD
  01/2004 OK Implementation
  **************************************************************************/
 CSourceTerm::CSourceTerm() :
-	ProcessInfo(), GeoInfo(), _coupled (false), _sub_dom_idx(-1), GIS_shape_head(NULL)
+	ProcessInfo(), GeoInfo(), _coupled (false), _sub_dom_idx(-1), dis_linear_f(NULL), GIS_shape_head(NULL)
                                                   // 07.06.2010, 03.2010. WW
 {
    CurveIndex = -1;
@@ -122,6 +122,10 @@ CSourceTerm::~CSourceTerm()
       delete [] GIS_shape_head;
       GIS_shape_head = NULL;
    }
+   //WW
+   if(dis_linear_f) delete dis_linear_f;
+   dis_linear_f = NULL;
+
    //WW---------------------------------------
 }
 
@@ -1240,7 +1244,7 @@ std::vector<double>&node_value_vector) const
                      {
                         radius = 0.0;
                         for (ii = 0; ii < 3; ii++)
-                           radius += Shfct[ii] * e_nodes[ii]->X();
+                           radius += Shfct[ii] * e_nodes[ii]->getData()[0];
                         Weight *= radius;         //2.0*pai*radius;
                      }
                      NVal[G2L[e_nodes[k]->GetIndex()]] += 0.5 * (v1 + v2
@@ -1286,7 +1290,7 @@ std::vector<double>&node_value_vector) const
                      {
                         radius = 0.0;
                         for (ii = 0; ii < 2; ii++)
-                           radius += Shfct[ii] * e_nodes[ii]->X();
+                           radius += Shfct[ii] * e_nodes[ii]->getData()[0];
                         Weight *= radius;         //2.0*pai*radius;
                      }
                      NVal[G2L[e_nodes[k]->GetIndex()]] += 0.5 * (v1 + v2
@@ -1349,7 +1353,7 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long>&nodes_on_sfc,
       double Tol = 1.0e-9;
       bool Passed;
       const int Size = (int) nodes_on_sfc.size();
-      double gC[3], p1[3], p2[3], pn[3], vn[3], unit[3], NTri[3];
+      double gC[3], p1[3], p2[3], vn[3], unit[3], NTri[3];
 
       CGLPolyline* m_polyline = NULL;
       Surface *m_surface = NULL;
@@ -1361,9 +1365,10 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long>&nodes_on_sfc,
 
       for (j = 0; j < Size; j++)
       {
-         pn[0] = msh->nod_vector[nodes_on_sfc[j]]->X();
-         pn[1] = msh->nod_vector[nodes_on_sfc[j]]->Y();
-         pn[2] = msh->nod_vector[nodes_on_sfc[j]]->Z();
+    	  double const*const pn (msh->nod_vector[nodes_on_sfc[j]]->getData());
+//         pn[0] = msh->nod_vector[nodes_on_sfc[j]]->X();
+//         pn[1] = msh->nod_vector[nodes_on_sfc[j]]->Y();
+//         pn[2] = msh->nod_vector[nodes_on_sfc[j]]->Z();
          node_value_vector[j] = 0.0;
          Passed = false;
          // nodes close to first polyline
@@ -1877,7 +1882,7 @@ void GetGreenAmptNODValue(double &value, CSourceTerm* m_st, long msh_node)
 
    wdepth = std::max(0., m_pcs_this->GetNodeValue(msh_node,
       m_pcs_this->GetNodeValueIndex("HEAD") + 1)
-      - m_msh->nod_vector[msh_node]->Z());
+      - m_msh->nod_vector[msh_node]->getData()[2]);
    conductivity = m_st->constant;
    suction = m_st->sorptivity + wdepth;           // water depth included
    Theta = m_st->moistureDeficit * suction;
@@ -2087,7 +2092,7 @@ CNodeValue* cnodev)
 double GetRelativeCouplingPermeability(const CRFProcess* pcs, double head, const CSourceTerm* source_term, long msh_node)
 {
    double relPerm;
-   double z = pcs->m_msh->nod_vector[msh_node]->Z();
+   double z = pcs->m_msh->nod_vector[msh_node]->getData()[2];
 
    //	if (pcs->pcs_type_name == "OVERLAND_FLOW") {
    if (pcs->getProcessType() == OVERLAND_FLOW)
@@ -2163,9 +2168,9 @@ CNodeValue* cnodev)
                                                   // phase  = 0 !!!!
    gamma = mfp_vector[0]->Density() * GRAVITY_CONSTANT;
    long msh_node_2nd;
-   double x_this = m_pcs_this->m_msh->nod_vector[cnodev->msh_node_number]->X();
-   double y_this = m_pcs_this->m_msh->nod_vector[cnodev->msh_node_number]->Y();
-   double z_this = m_pcs_this->m_msh->nod_vector[cnodev->msh_node_number]->Z();
+   double const* const xyz_this (m_pcs_this->m_msh->nod_vector[cnodev->msh_node_number]->getData());
+//   double y_this = m_pcs_this->m_msh->nod_vector[cnodev->msh_node_number]->Y();
+//   double z_this = m_pcs_this->m_msh->nod_vector[cnodev->msh_node_number]->Z();
 
    msh_node_2nd = -1;                             //WW
 
@@ -2177,24 +2182,22 @@ CNodeValue* cnodev)
 
       ///// get number of second mesh node, provisional implementation
       double epsilon = 1.e-5;
-      double
-         x_cond =
-         m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->X();
-      double
-         y_cond =
-         m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->Y();
-      double
-         z_cond =
-         m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->Z();
+//      double x_cond = m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->X();
+//      double y_cond = m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->Y();
+//      double z_cond = m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->Z();
+      double const* const xyz_cond (m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->getData());
 
-      for (int i = 0; i < (long) m_pcs_cond->m_msh->nod_vector.size(); i++)
-      {
-         if (m_pcs_cond->m_msh->nod_vector[i]->X() - x_cond < epsilon)
-            if (m_pcs_cond->m_msh->nod_vector[i]->Y() - y_cond < epsilon)
-               if (m_pcs_cond->m_msh->nod_vector[i]->Z() - (z_cond
-            - deltaZ) < epsilon)
-                  msh_node_2nd = i;
-      }
+      for (size_t i = 0; i < m_pcs_cond->m_msh->nod_vector.size(); i++) {
+			double const* const pnt_i(
+					m_pcs_cond->m_msh->nod_vector[i]->getData());
+			if (pnt_i[0] - xyz_cond[0] < epsilon) {
+				if (pnt_i[1] - xyz_cond[1] < epsilon) {
+					if (pnt_i[2] - (xyz_cond[2] - deltaZ) < epsilon) {
+						msh_node_2nd = i;
+					}
+				}
+			}
+		}
       //////////////////////////
 
       nidx = m_pcs_cond->GetNodeValueIndex("PRESSURE1") + 1;
@@ -2227,28 +2230,27 @@ CNodeValue* cnodev)
 
       value *= area;
    }                                              // end overland
-   else                                           // Richards
-   {
-
-      ///// get number of second mesh node, provisional implementation
-      double epsilon = 1.e-5;
-      for (int i = 0; i < (long) m_pcs_this->m_msh->nod_vector.size(); i++)
-      {
-         if (m_pcs_this->m_msh->nod_vector[i]->X() - x_this < epsilon)
-            if (m_pcs_this->m_msh->nod_vector[i]->Y() - y_this < epsilon)
-               if (m_pcs_this->m_msh->nod_vector[i]->Z() - (z_this
-            - deltaZ) < epsilon)
-                  msh_node_2nd = i;
-      }
+   else { // Richards
+		///// get number of second mesh node, provisional implementation
+		double epsilon = 1.e-5;
+		for (size_t i = 0; i < m_pcs_this->m_msh->nod_vector.size(); i++) {
+			double const* const pnt_i(
+					m_pcs_this->m_msh->nod_vector[i]->getData());
+			if (pnt_i[0] - xyz_this[0] < epsilon) {
+				if (pnt_i[1] - xyz_this[1] < epsilon) {
+					if (pnt_i[2] - (xyz_this[2] - deltaZ) < epsilon) {
+						msh_node_2nd = i;
+					}
+				}
+			}
+		}
       //////////////////////////
 
       double inf_cap, supplyRate; //WW, rainfall;
       long
          bc_eqs_index =
          m_pcs_this->m_msh->nod_vector[cnodev->msh_node_number]->GetEquationIndex();
-      double
-         z_cond =
-         m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->Z();
+      double z_cond = m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->getData()[2];
       depth = std::max(0., m_pcs_cond->GetNodeValue(
          cnodev->msh_node_number_conditional,
          m_pcs_cond->GetNodeValueIndex("HEAD") + 1) - z_cond);
@@ -2377,7 +2379,7 @@ void GetCriticalDepthNODValue(double &value, CSourceTerm* m_st, long msh_node)
    m_pcs_this = PCSGet(convertProcessTypeToString(m_st->getProcessType()));
    long nidx1 = m_pcs_this->GetNodeValueIndex("HEAD") + 1;
    flowdepth = m_pcs_this->GetNodeValue(msh_node, nidx1)
-      - m_pcs_this->m_msh->nod_vector[msh_node]->Z() - m_st->rill_height;
+      - m_pcs_this->m_msh->nod_vector[msh_node]->getData()[2] - m_st->rill_height;
 
    if (flowdepth < 0.0)
    {
@@ -2446,14 +2448,14 @@ void GetNormalDepthNODValue(double &value, CSourceTerm* st, long msh_node)
 //    		  MathLib::fastpow(m_ele->GetNode(1)->X()- m_ele->GetNode(0)->X(), 2)
 //    		  + MathLib::fastpow(m_ele->GetNode(1)->Y()-m_ele->GetNode(0)->Y(), 2)
 //    		  + MathLib::fastpow(m_ele->GetNode(1)->Z() - m_ele->GetNode(0)->Z(), 2));
-      S_0 = (m_ele->GetNode(1)->Z() - m_ele->GetNode(0)->Z()) / elementlength;
+      S_0 = (m_ele->GetNode(1)->getData()[2] - m_ele->GetNode(0)->getData()[2]) / elementlength;
       if (S_0 < 0)
          S_0 = -S_0;
    } else
    S_0 = st->getNormalDepthSlope();
 
    double flowdepth = pcs_this->GetNodeValue(msh_node, 1)
-      - mesh->nod_vector[msh_node]->Z() - st->rill_height;
+      - mesh->nod_vector[msh_node]->getData()[2] - st->rill_height;
    double flowdepth_epsilon = flowdepth + epsilon;
    if (flowdepth < 0.0)
    {
@@ -3130,11 +3132,10 @@ void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st,
 	} // end system dependent
    else if (distype == FiniteElement::FUNCTION) // 25.08.2011. WW 
    { 
-      CNode * a_node; 
       for (size_t i = 0; i < number_of_nodes; i++) 
-      { 
-         a_node = m_msh->nod_vector[ply_nod_vector[i]];           
-         ply_nod_val_vector[i] = st->dis_linear_f->getValue(a_node->X(), a_node->Y(), a_node->Z()); 
+      {  
+         double const*const pnt (m_msh->nod_vector[ply_nod_vector[i]]->getData());
+         ply_nod_val_vector[i] = st->dis_linear_f->getValue(pnt[0], pnt[1], pnt[2]); 
       } 
    } 
 	else //WW
@@ -3265,11 +3266,10 @@ void CSourceTermGroup::SetSurfaceNodeValueVector(CSourceTerm* st,
    }                                              // end neumann
   else if (st->getProcessDistributionType() == FiniteElement::FUNCTION) // 25.08.2011. WW 
    { 
-      CNode * a_node; 
       for (size_t j = 0; j < sfc_nod_vector.size(); j++) 
-      { 
-         a_node = m_msh->nod_vector[sfc_nod_vector[j]];           
-         sfc_nod_val_vector[j] = st->dis_linear_f->getValue(a_node->X(), a_node->Y(), a_node->Z()); 
+      {         
+         double const*const pnt (m_msh->nod_vector[sfc_nod_vector[j]]->getData());
+         sfc_nod_val_vector[j] = st->dis_linear_f->getValue(pnt[0], pnt[1], pnt[2]);
       } 
    } 
 
@@ -3450,38 +3450,36 @@ void CSourceTerm::SetNodeValues(const std::vector<long>& nodes, const std::vecto
 //}
 
 void CSourceTerm::SetNOD2MSHNOD(std::vector<long>& nodes,
-std::vector<long>& conditional_nodes)
+		std::vector<long>& conditional_nodes)
 {
-   CFEMesh* m_msh_cond(FEMGet(pcs_type_name_cond));
-   CFEMesh* m_msh_this(FEMGet(convertProcessTypeToString(getProcessType())));
+	CFEMesh* m_msh_cond(FEMGet(pcs_type_name_cond));
+	CFEMesh* m_msh_this(FEMGet(convertProcessTypeToString(getProcessType())));
 
-   GEOLIB::Point pnt;
-   for (size_t i = 0; i < nodes.size(); i++)
-   {
-      pnt[0] = m_msh_this->nod_vector[nodes[i]]->X();
-      pnt[1] = m_msh_this->nod_vector[nodes[i]]->Y();
-      pnt[2] = m_msh_this->nod_vector[nodes[i]]->Z();
+	for (size_t i = 0; i < nodes.size(); i++) {
+		const GEOLIB::Point pnt(m_msh_this->nod_vector[nodes[i]]->getData());
+//      pnt[0] = m_msh_this->nod_vector[nodes[i]]->X();
+//      pnt[1] = m_msh_this->nod_vector[nodes[i]]->Y();
+//      pnt[2] = m_msh_this->nod_vector[nodes[i]]->Z();
 
-      conditional_nodes[i] = m_msh_cond->GetNODOnPNT(&pnt);
-   }
+		conditional_nodes[i] = m_msh_cond->GetNODOnPNT(&pnt);
+	}
 }
 
 
 void CSourceTerm::SetNOD2MSHNOD(const std::vector<size_t>& nodes,
-std::vector<size_t>& conditional_nodes) const
+		std::vector<size_t>& conditional_nodes) const
 {
-   CFEMesh* m_msh_cond(FEMGet(pcs_type_name_cond));
-   CFEMesh* m_msh_this(FEMGet(convertProcessTypeToString(getProcessType())));
+	CFEMesh* m_msh_cond(FEMGet(pcs_type_name_cond));
+	CFEMesh* m_msh_this(FEMGet(convertProcessTypeToString(getProcessType())));
 
-   GEOLIB::Point pnt;
-   for (size_t i = 0; i < nodes.size(); i++)
-   {
-      pnt[0] = m_msh_this->nod_vector[nodes[i]]->X();
-      pnt[1] = m_msh_this->nod_vector[nodes[i]]->Y();
-      pnt[2] = m_msh_this->nod_vector[nodes[i]]->Z();
+	for (size_t i = 0; i < nodes.size(); i++) {
+		const GEOLIB::Point pnt(m_msh_this->nod_vector[nodes[i]]->getData());
+//		pnt[0] = m_msh_this->nod_vector[nodes[i]]->X();
+//		pnt[1] = m_msh_this->nod_vector[nodes[i]]->Y();
+//		pnt[2] = m_msh_this->nod_vector[nodes[i]]->Z();
 
-      conditional_nodes[i] = m_msh_cond->GetNODOnPNT(&pnt);
-   }
+		conditional_nodes[i] = m_msh_cond->GetNODOnPNT(&pnt);
+	}
 }
 
 
@@ -4050,9 +4048,9 @@ CSourceTerm* m_st, CNodeValue* cnodev)
    m_pcs_cond = PCSGet(m_st->pcs_type_name_cond);
                                                   // only one phase
    gamma = mfp_vector[0]->Density() * GRAVITY_CONSTANT;
-   *z_this = m_pcs_this->m_msh->nod_vector[cnodev->msh_node_number]->Z();
+   *z_this = m_pcs_this->m_msh->nod_vector[cnodev->msh_node_number]->getData()[2];
    *z_cond
-      = m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->Z();
+      = m_pcs_cond->m_msh->nod_vector[cnodev->msh_node_number_conditional]->getData()[2];
    nidx = m_pcs_this->GetNodeValueIndex (convertPrimaryVariableToString (m_st->getProcessPrimaryVariable())) + 1;
    nidx_cond = m_pcs_cond->GetNodeValueIndex(m_st->pcs_pv_name_cond) + 1;
    *h_this = m_pcs_this->GetNodeValue(cnodev->msh_node_number, nidx);
@@ -4072,7 +4070,7 @@ CSourceTerm* m_st, CNodeValue* cnodev)
                * (m_pcs_this->GetNodeValue(
                cnodev->msh_node_numbers_averaging[i],
                nidx)
-               - m_pcs_this->m_msh->nod_vector[cnodev->msh_node_numbers_averaging[i]]->Z());
+               - m_pcs_this->m_msh->nod_vector[cnodev->msh_node_numbers_averaging[i]]->getData()[2]);
 
          *h_averaged += *z_cond;
          *z_this = *z_cond;

@@ -11,33 +11,12 @@
 
 #cmakedefine OGS_VERSION "${OGS_VERSION}"
 #cmakedefine OGS_DATE "${OGS_DATE}"
+#cmakedefine QT_USE_QTXMLPATTERNS
 
 // for tests
 #cmakedefine OGS_EXECUTABLE "${OGS_EXECUTABLE}"
 #define PUT_TMP_DIR_IN "${PROJECT_BINARY_DIR}/tests/"
 
-#cmakedefine LIS
-#cmakedefine MKL
-#cmakedefine BRNS
-#cmakedefine GEM_REACT
-
-#cmakedefine _POSIX_SOURCE
-#cmakedefine NO_ERROR_CONTROL
-
-#cmakedefine OGS_VRED_PLUGIN
-#cmakedefine OGS_PYTHON
-#cmakedefine MSVC
-#cmakedefine OGS_USE_OPENSG
-#cmakedefine OGS_USE_QT
-
-#cmakedefine OGS_USE_VRPN
-
-#cmakedefine HAVE_64_BIT
-
-#cmakedefine HAVE_PTHREADS
 #cmakedefine PROCESSOR_COUNT ${PROCESSOR_COUNT}
-
-#cmakedefine Shapelib_FOUND
-#cmakedefine libgeotiff_FOUND
 
 #endif // CONFIGURE_H

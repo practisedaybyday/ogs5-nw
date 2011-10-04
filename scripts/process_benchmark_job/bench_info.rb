@@ -59,7 +59,7 @@ class BenchmarkRunsLoader
 
   attr_reader :bench_test_infos
 
-  def initialize(filename)
+  def initialize(filename, commit_info)
     @bench_test_infos = []
     puts "Loading benchmark job from #{filename}"
     File.open(filename, 'r') do |file|
@@ -89,7 +89,7 @@ class BenchmarkRunsLoader
           # Even test runs are benchmarks, otherwise file compares
           if (num_test_project_lines-1) % 2 == 0
 
-            duplicate_entry = BenchmarkRun.filter(:commit_info_id => CommitInfo.last.revision, :name => name)
+            duplicate_entry = BenchmarkRun.filter(:commit_info_id => commit_info.revision, :name => name)
             if duplicate_entry.all.length > 0
               puts "Duplicate benchmark run entry"
               next
@@ -98,7 +98,7 @@ class BenchmarkRunsLoader
             # Check benchmark time
             time = line.scan(/\s+([0-9]+\.[0-9]+)\s+sec/)[0].to_s.to_f
 
-            benchmark_run = BenchmarkRun.create(:commit_info => CommitInfo.last,
+            benchmark_run = BenchmarkRun.create(:commit_info => commit_info,
                                                 :time => time,
                                                 :crashed => crashed,
                                                 :name => name,
@@ -107,7 +107,13 @@ class BenchmarkRunsLoader
 
             #puts "Add Benchmark: #{name}, crashed #{crashed} "
           else
-            bench = BenchmarkRun[:name => name, :commit_info_id => CommitInfo.last.revision]
+            # Get previous benchmark run
+            bench= nil
+            if commit_info.is_svn_commit
+              bench = BenchmarkRun[:name => name, :commit_info_id => CommitInfo.last.revision]
+            else
+              bench = BenchmarkRun[:name => name, :commit_info_id => CommitInfo.filter(:read_date < commit_info.read_date).order(:read_date).last]
+            end
             if bench
               bench.passed = !crashed
               bench.save
