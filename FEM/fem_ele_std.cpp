@@ -1781,7 +1781,7 @@ namespace FiniteElement
       int Index = MeshElement->GetIndex();
       double val = 0.0;
       double dS = 0.0;
-      double nodeval0, nodeval1;
+      double nodeval0, nodeval1, porval0, porval1;
       int tr_phase=0;                             // SB, BG
       //CompProperties *m_cp = NULL; //SB4200
       string name;
@@ -1805,8 +1805,17 @@ namespace FiniteElement
             break;
          case M:                                  // Mass transport //SB4200
          {
-                                                  // Porosity
-            val = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
+                                                  //kg44 added changing Porosity for GEMS coupling
+            
+
+#ifdef GEM_REACT
+	    // kg44 for GEMS coupling this should be updated to arbitrary flow processes
+            porval0 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(GROUNDWATER_FLOW)->GetElementValueIndex("POROSITY"));// for GEMS we need old and new porosity!
+	    porval1 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(GROUNDWATER_FLOW)->GetElementValueIndex("POROSITY")+1); 
+#else 
+            porval0 = MediaProp->Porosity(Index,pcs->m_num->ls_theta); // get porosity..this is the "old" behaviour without GEMS coupling
+	    porval1 = porval0; // mimic no porosity change
+#endif
             // Get saturation change:
             // Get saturation change, depending on phase // SB, BG
             tr_phase = cp_vec[this->pcs->pcs_component_number]->transport_phase;
@@ -1817,9 +1826,9 @@ namespace FiniteElement
                nodeval0 = 1.0- nodeval0;
                nodeval1 = 1.0- nodeval1;
             }                                     // SB, BG
-            dS = nodeval1 - nodeval0;             // 1/dt accounted for in assemble function
+            dS = porval1 * nodeval1 - porval0 * nodeval0;             // 1/dt accounted for in assemble function
             //		if(Index == 195) cout << val << "Sat_old = " << nodeval0 << ", Sa_new: "<< nodeval1<< ", dS: " << dS << endl;
-            val*= dS;
+            val= dS;
             break;
          }
          case O:                                  // Liquid flow
