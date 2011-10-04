@@ -139,10 +139,7 @@ typedef struct
    int max_col;                                   /* Groesste Spaltennummer */
    long *index;                                   /* Index fuer Spalteneintraege */
    double *wert;                                  /* Spalteneintraege */
-}
-
-
-M2_Zeile;
+} M2_Zeile;
 
 typedef struct
 {
@@ -150,10 +147,7 @@ typedef struct
    long max_size;
    long NumDif;                                   /* max. Differenz |Spalten-Zeilennummer| */
    M2_Zeile *zeile;                               /* Eintraege in den Zeilen; Diagonale in zeile[0] */
-}
-
-
-Modell2;
+} Modell2;
 
 typedef struct
 {
@@ -210,10 +204,7 @@ typedef struct
 {                                                 /* einzelner Eintrag in der Spalte k mit Index i */
    long Index;
    double Aik[4];
-}
-
-
-M34_aik;
+} M34_aik;
 
 typedef struct
 {                                                 /* Spalte k der Obermatrix (Zeile k der Untermatrix) */
@@ -221,10 +212,7 @@ typedef struct
    int anz;                                       /* Anzahl eingespeicherter Aik (ohne Diagonale) */
    long rechts;                                   /* rechts[k]: letzte Spalte j, die ein Akj enthaelt */
    M34_aik *Ak;                                   /* Spalten/Zeilenelemente */
-}
-
-
-M34_Spalte;
+} M34_Spalte;
 
 typedef struct
 {
@@ -243,10 +231,7 @@ typedef struct
    double *Diag;                                  /* Akk als Vektor */
    double *PreD;                                  /* Bkk (ILU-Preconditioner) */
    M34_Spalte *Spalte;                            /* Obermatrixspalten (Untermatrixzeilen) */
-}
-
-
-Modell34;
+} Modell34;
 
 /* Die nachfolgenden Makros dienen der besseren Lesbarkeit (Kuerze!)
    des Codes. Sie werden am Ende dieser Quelle saemtlich undefiniert!

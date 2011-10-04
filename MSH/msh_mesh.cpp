@@ -860,10 +860,10 @@ void CFEMesh::GenerateHighOrderNodes()
 			if (!done) {
 				double const* const pnt0(thisEdge0->GetNode(0)->getData());
 				double const* const pnt1(thisEdge0->GetNode(1)->getData());
-				aNode = new CNode((long) nod_vector.size());
-				aNode->SetX(0.5 * (pnt0[0] + pnt1[0]));
-				aNode->SetY(0.5 * (pnt0[1] + pnt1[1]));
-				aNode->SetZ(0.5 * (pnt0[2] + pnt1[2]));
+				aNode = new CNode((long) nod_vector.size(), 0.5 * (pnt0[0] + pnt1[0]), 0.5 * (pnt0[1] + pnt1[1]), 0.5 * (pnt0[2] + pnt1[2]));
+//				aNode->SetX(0.5 * (pnt0[0] + pnt1[0]));
+//				aNode->SetY(0.5 * (pnt0[1] + pnt1[1]));
+//				aNode->SetZ(0.5 * (pnt0[2] + pnt1[2]));
 				e_nodes0[nnodes0] = aNode;
 				thisEdge0->SetNode(2, aNode);
 				nnodes0++;

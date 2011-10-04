@@ -17,7 +17,6 @@
 
 namespace MathLib {
 
-
 /**
  * Matrix represents a dense matrix for a numeric data type.
  */
@@ -88,7 +87,7 @@ public:
     */
    void write (std::ostream& out) const;
 
-   T* getData () { return data; }
+   T const* getData () { return data; }
 
 private:
    // zero based addressing, but Fortran storage layout
