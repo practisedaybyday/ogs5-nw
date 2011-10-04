@@ -11031,27 +11031,25 @@ Programming:
 #include <iomanip>
 void CRFProcess::DumpEqs(string file_name)
 {
-   int ii;
-   long i, j, k, m;
    fstream eqs_out;
-   CNode *node;
    eqs_out.open(file_name.c_str(), ios::out );
    eqs_out.setf(ios::scientific, ios::floatfield);
    setw(14);
    eqs_out.precision(14);
    //
    long nnode = eqs->dim/eqs->unknown_vector_dimension;
-   for(i=0; i<eqs->dim; i++)
+   for(long i=0; i<eqs->dim; i++)
    {
-      m = i%nnode;
-      node = m_msh->nod_vector[m];
-      for(ii=0; ii<eqs->unknown_vector_dimension; ii++)
+      CNode const*const node (m_msh->nod_vector[i%nnode]);
+      std::vector<size_t> const& connected_nodes (node->getConnectedNodes());
+      const size_t n_connected_nodes (connected_nodes.size());
+      for(int ii=0; ii<eqs->unknown_vector_dimension; ii++)
       {
-         for(j=0; j<(long)node->connected_nodes.size(); j++)
+         for(size_t j=0; j<n_connected_nodes; j++)
          {
-            k = node->connected_nodes[j];
-            k = ii*nnode+k;
-            if(k>=eqs->dim)  continue;
+            const long k = ii*nnode+connected_nodes[j];
+            if(k>=eqs->dim)
+            	continue;
             eqs_out<<i<<"  "<<k<<"  "<<MXGet(i,k)<<endl;
          }
       }

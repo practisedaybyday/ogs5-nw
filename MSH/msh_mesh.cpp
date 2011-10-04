@@ -2676,18 +2676,18 @@ void CFEMesh::GetNODOnSFC_TIN(Surface*m_sfc, std::vector<long>&msh_nod_vector)
 				for (size_t l = 0; l < n_quadratic_node; l++)
 				{
 					exist = false;
-					size_t n_connected_nodes (nod->connected_nodes.size());
+					size_t n_connected_nodes (nod->getConnectedNodes().size());
 					//WW
 					for (size_t k = 0; k < n_connected_nodes; k++)
 					{
-						if (nod->connected_nodes[k] == ele->nodes_index[l])
+						if (nod->getConnectedNodes()[k] == ele->nodes_index[l])
 						{
 							exist = true;
 							break;
 						}
 					}
 					if (!exist) //WW
-					nod->connected_nodes.push_back(ele->nodes_index[l]);
+					nod->getConnectedNodes().push_back(ele->nodes_index[l]);
 				}
 			}
 		}
@@ -2697,16 +2697,16 @@ void CFEMesh::GetNODOnSFC_TIN(Surface*m_sfc, std::vector<long>&msh_nod_vector)
 		for (size_t i = 0; i < nod_vector.size(); i++)
 		{
 			CNode *nod = nod_vector[i];
-			size_t n_connected_nodes = nod->connected_nodes.size();
+			size_t n_connected_nodes = nod->getConnectedNodes().size();
 			for (size_t k = 0; k < n_connected_nodes; k++)
 			{
 				for (size_t l = k; l < n_connected_nodes; l++)
 				{
-					if (nod->connected_nodes[l] < nod->connected_nodes[k])
+					if (nod->getConnectedNodes()[l] < nod->getConnectedNodes()[k])
 					{
-						long n = nod->connected_nodes[k];
-						nod->connected_nodes[k] = nod->connected_nodes[l];
-						nod->connected_nodes[l] = n;
+						const size_t n (nod->getConnectedNodes()[k]);
+						nod->getConnectedNodes()[k] = nod->getConnectedNodes()[l];
+						nod->getConnectedNodes()[l] = n;
 					}
 				}
 			}
