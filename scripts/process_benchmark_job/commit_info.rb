@@ -91,11 +91,11 @@ class CommitInfoLoader
 
       if CommitInfo[:revision => revision]
         @new = false
-	if svn
+	      if svn
           puts "Commit info of revision #{revision} already read."  
         else
-	  puts "Commit info of revision #{git_revision} already read."
-	end
+	        puts "Commit info of git revision #{git_revision} and revision #{revision} already read."
+	      end
       else
         puts revision
         puts git_revision
