@@ -3197,9 +3197,6 @@ void COutput::checkConsistency ()
                case GEOLIB::GEODOMAIN:
                   std::cout << "DOMAIN " << getGeoName() << std::endl;
                   break;
-               case GEOLIB::COLUMN:
-                  std::cout << "DOMAIN " << getGeoName() << std::endl;
-                  break;
                case GEOLIB::INVALID:
                   std::cout << "WARNING: COutput::checkConsistency - invalid geo type" << endl;
                   break;

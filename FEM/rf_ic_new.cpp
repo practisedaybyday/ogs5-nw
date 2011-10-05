@@ -292,7 +292,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name)
          {
             in >> rfr_file_name;
          }
-         else if (this->getProcessDistributionType() == FiniteElement::DIRECT) 
+         else if (this->getProcessDistributionType() == FiniteElement::DIRECT)
          {
              in >> fname;
              fname = FilePath + fname;
@@ -455,7 +455,7 @@ void CInitialCondition::Set(int nidx)
     if (getProcessDistributionType()==FiniteElement::DIRECT)  //NW recover
     {
         SetByNodeIndex(nidx);
-    } 
+    }
     else
     {
         switch(getGeoType())
@@ -471,9 +471,6 @@ void CInitialCondition::Set(int nidx)
             SetSurface(nidx);
             break;
         case GEOLIB::VOLUME:
-            std::cout << "WARNING: CInitialCondition::Set - ToDo" << endl;
-            break;
-        case GEOLIB::COLUMN:
             std::cout << "WARNING: CInitialCondition::Set - ToDo" << endl;
             break;
         case GEOLIB::GEODOMAIN:
@@ -568,9 +565,6 @@ void CInitialCondition::SetEle(int nidx)
          std::cout << "Warning CInitialCondition::Set - ToDo" << std::endl;
          break;
       case GEOLIB::VOLUME:
-         std::cout << "Warning CInitialCondition::Set - ToDo" << std::endl;
-         break;
-      case GEOLIB::COLUMN:
          std::cout << "Warning CInitialCondition::Set - ToDo" << std::endl;
          break;
       case GEOLIB::GEODOMAIN:
