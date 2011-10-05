@@ -1481,7 +1481,7 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
                      lbuff0 = 0;
                      for(j=0; j<diag_entry[i]; j++)
                      {
-                        if(a_mesh->nod_vector[i]->getConnectedNodes()[j]<rows)
+                        if(a_mesh->nod_vector[i]->getConnectedNodes()[j]<static_cast<size_t>(rows))
                            lbuff0++;
                      }
                      diag_entry[i] = lbuff0;
