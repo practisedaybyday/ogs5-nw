@@ -52,6 +52,8 @@ MeshLib::CFEMesh* TetGenInterface::readTetGenMesh (std::string const& nodes_fnam
 		return NULL;
 	}
 
+	_mesh->InitialNodesNumber();
+
 	if (!readElementsFromStream (ins_ele)) {
 		delete _mesh;
 		return NULL;
