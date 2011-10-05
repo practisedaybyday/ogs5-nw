@@ -192,7 +192,7 @@ Subject: #{subject}
 #{message}
 END_OF_MESSAGE
 
-  	Net::SMTP.start('mr1.ufz.de',
+  	Net::SMTP.start('imap.leipzig.ufz.de',
                     25,
                     'localhost.localdomain',
                     'bilke', $password, :plain) do |smtp|
