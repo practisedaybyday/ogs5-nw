@@ -76,8 +76,8 @@ class CommitInfoLoader
       elsif git
         first_line.scan(/commit ([\S]{40,40})/) do |match|
           git_revision = match[0]
-          # Get only first 14 chars and convert to integer
-          revision = git_revision[0,14].to_i(16)
+          # Get only first 12 chars and convert to integer
+          revision = git_revision[0,12].to_i(16)
         end
         while line = file.gets
           line.scan(/Author:\s([\S\s]+)\s</) do |match|
@@ -91,11 +91,11 @@ class CommitInfoLoader
 
       if CommitInfo[:revision => revision]
         @new = false
-	if svn
+	      if svn
           puts "Commit info of revision #{revision} already read."  
         else
-	  puts "Commit info of revision #{git_revision} already read."
-	end
+	        puts "Commit info of git revision #{git_revision} and revision #{revision} already read."
+	      end
       else
         puts revision
         puts git_revision
