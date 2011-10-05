@@ -2680,7 +2680,7 @@ void CFEMesh::GetNODOnSFC_TIN(Surface*m_sfc, std::vector<long>&msh_nod_vector)
 					//WW
 					for (size_t k = 0; k < n_connected_nodes; k++)
 					{
-						if (nod->getConnectedNodes()[k] == ele->nodes_index[l])
+						if (nod->getConnectedNodes()[k] == static_cast<size_t>(ele->nodes_index[l]))
 						{
 							exist = true;
 							break;

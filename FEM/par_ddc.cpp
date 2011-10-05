@@ -685,12 +685,11 @@ void CPARDomain::NodeConnectedNodes()
 
 	const size_t n_nodes(nodes.size());
 	for (size_t i = 0; i < n_nodes; i++) {
-		MeshLib::CNode const* const node_i(m_msh->nod_vector[nodes[i]]);
 		nodes2node.clear();
 		std::vector<size_t> const& connected_nodes(m_msh->nod_vector[nodes[i]]->getConnectedNodes());
 		const size_t n_connected_nodes(connected_nodes.size());
 		for (size_t k = 0; k < n_connected_nodes; k++) {
-			size_t j = node_connected_doms[connected_nodes[k]];
+			int j = node_connected_doms[connected_nodes[k]];
 			if (j > -1)
 				nodes2node.push_back(j);
 		}

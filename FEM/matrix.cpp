@@ -1744,10 +1744,8 @@ void M1MatVek(double *vektor, double *ergebnis)
 //WW/PA 08/02/2006
 int M5Inc(long i, long j, double aij_inc)
 {
-	long k, dim1;
-
 	MeshLib::CFEMesh const* const mesh(FEMGet("GROUNDWATER_FLOW"));
-	dim1 = mesh->NodesInUsage();
+	const long dim1(mesh->NodesInUsage());
 
 #ifdef ERROR_CONTROL
 	if ((i >= dim1) || (j >= dim1) || (i < 0) || (j < 0)) MX_Exit("M5Inc", 2);
