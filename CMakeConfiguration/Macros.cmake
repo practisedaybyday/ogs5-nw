@@ -190,14 +190,6 @@ FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration)
     	    ${authorName}_${benchmarkNameUnderscore}.html
     	    ../
     	  )
-    	# compare files with builtin cmake command
-    	ELSE (PYTHONINTERP_FOUND)
-    	  FOREACH (OUTPUTFILE ${ARGN})
-    	    ADD_TEST (
-    	      ${authorName}_FILECOMPARE_${OUTPUTFILE}
-    	      ${CMAKE_COMMAND} -E compare_files ${PROJECT_SOURCE_DIR}/../benchmarks/${OUTPUTFILE} ${PROJECT_SOURCE_DIR}/../benchmarks_ref/${OUTPUTFILE}
-    	    )
-    	  ENDFOREACH (OUTPUTFILE ${ARGN})
     	ENDIF (PYTHONINTERP_FOUND)
 	ENDIF(HOST_IS_DEV2)
   
