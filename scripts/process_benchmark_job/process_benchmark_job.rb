@@ -253,7 +253,7 @@ else
   ### Process info ###
   bi = BenchmarkInfoProcessor.new(ci.commit_info)
   bi.write_statistics_to_csv("#{File.dirname(ARGV[0])}/benchSummary.csv")
-  #bi.send_email if ci.new?
+  bi.send_email if ci.new?
   bi.print_summary
 
   ## Generate plots ##

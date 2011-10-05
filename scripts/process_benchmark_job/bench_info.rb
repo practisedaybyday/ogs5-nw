@@ -109,17 +109,17 @@ class BenchmarkRunsLoader
           else
             # Get previous benchmark run
             bench= nil
-            if commit_info.is_svn_commit
+            if commit_info.is_svn_commit == 1
               bench = BenchmarkRun[:name => name, :commit_info_id => CommitInfo.last.revision]
             else
-              bench = BenchmarkRun[:name => name, :commit_info_id => CommitInfo.filter(:read_date < commit_info.read_date).order(:read_date).last.revision]
+              bench = BenchmarkRun[:name => name, :commit_info_id => CommitInfo.order(:read_date).last.revision]
             end
             if bench
               bench.passed = !crashed
-              bench.save
-              puts "Benchmark #{bench.name}: passed = not #{crashed}"
+              bench.save_changes
+              #puts "Benchmark #{bench.name}: passed = not #{crashed}"
             else
-              puts line
+              puts "Benchmark not found: #{line}"
             end
           end
         end
