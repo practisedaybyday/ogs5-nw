@@ -6,14 +6,14 @@
    importiert. Sie enthaelt globale Preprozessor-Definitionen und
    importiert weitere, (fast) ueberall benoetigte Header.
 
-                                                                          */
+ */
 /**************************************************************************/
 
 #ifndef makros_INC
 #define makros_INC
 
-#include "Configure.h"
 #include "BuildInfo.h"
+#include "Configure.h"
 
 /* Global benoetigte Header */
 //#include <stdlib.h>
@@ -218,7 +218,7 @@
      MVekNormMax : Maximumnorm
    Diese Normen muessen hier fuer die verschiedenen Loeser eingetragen
    werden !!!
-*/
+ */
 #define VEKNORM_BICG MVekNorm2
 /* Norm fuer SpBICG-Loeser */
 #define VEKNORM_BICGSTAB MVekNorm2
@@ -270,7 +270,7 @@
 #define noOPEN_MP
 /* Definitionen von Konstanten, die bei manchen Compilern benoetigt werden */
 #ifndef NULL
-#define NULL ((void *)0)
+#define NULL ((void*)0)
 #endif
 #ifndef TRUE
 #define TRUE (0 == 0)
@@ -283,10 +283,10 @@
 #endif
 
 /* Feste Zahlen fuer Genauigkeitspruefungen etc. */
-#define Mdrittel  (1.0/3.0)
+#define Mdrittel  (1.0 / 3.0)
 #define MKleinsteZahl DBL_EPSILON
 #define MFastNull DBL_MIN
-#define MSqrt2Over3  sqrt(2.0/3.0)
+#define MSqrt2Over3  sqrt(2.0 / 3.0)
 
 /* CBLAS oder MKL_CBLAS verwenden? Wenn ja, wo? */
 #define noCBLAS
@@ -321,13 +321,13 @@
 #define Max(A,B) ((A) > (B) ? (A) : (B))
 
 /*
-#ifndef min
-#define min(A,B) ((A) < (B) ? (A) : (B))
-#endif
-#ifndef max
-#define max(A,B) ((A) > (B) ? (A) : (B))
-#endif
-*/
+   #ifndef min
+   #define min(A,B) ((A) < (B) ? (A) : (B))
+   #endif
+   #ifndef max
+   #define max(A,B) ((A) > (B) ? (A) : (B))
+   #endif
+ */
 #define MAX_ZEILE 2048
 /* max. Laenge einer UCD-Zeile; bei Leseproblemen vergroessern */
 

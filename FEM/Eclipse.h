@@ -3,8 +3,8 @@
 //#define MAX_ZEILEN 512
 
 class CRFProcess;
-#include "rf_pcs.h"
 #include "msh_faces.h"
+#include "rf_pcs.h"
 
 typedef struct
 {
@@ -12,20 +12,20 @@ typedef struct
 	int Exponent;
 }typeExponentialNumber;
 // KB: neue Struktur zum Einlesen der Brunnendatei, siehe CECLIPSEData::ReadWellData()
-struct structWell { /* deklariert den Strukturtyp well, wird beim Einlesen von .well-File neu aufgerufen */
-	std::string name;
-    std::vector <double> time;
-    std::vector <std::string> rate;
-	std::string phase;
-	std::string open_flag;
-	std::string control_mode;
+struct structWell   /* deklariert den Strukturtyp well, wird beim Einlesen von .well-File neu aufgerufen */
+{std::string name;
+ std::vector <double> time;
+ std::vector <std::string> rate;
+ std::string phase;
+ std::string open_flag;
+ std::string control_mode;
 	//std::string dummy_rate;
 	//std::string dummy_zeile;
 	//std::string rest_zeile;
 };
 
-class CECLIPSEBlock {
-
+class CECLIPSEBlock
+{
 public:
 	long index;
 	long row;
@@ -51,17 +51,17 @@ public:
 	void CalculateFaceCentres(void);
 };
 
-class CReadTextfiles_ECL {
-
+class CReadTextfiles_ECL
+{
 public:
-    std::vector <std::string> Data;
+	std::vector <std::string> Data;
 	std::vector <std::vector <std::string> > Data_separated;
-    long NumberOfRows;
+	long NumberOfRows;
 	std::vector <std::string> SplittedString;
 	std::vector <std::string> Header;
 
-	CReadTextfiles_ECL();		//Konstruktor
-	~CReadTextfiles_ECL();		//Desturktor
+	CReadTextfiles_ECL(); //Konstruktor
+	~CReadTextfiles_ECL(); //Desturktor
 
 	bool Read_Text(std::string Filename);
 
@@ -70,8 +70,8 @@ public:
 	bool Read_SeparatedText(std::string Filename, std::string delimiter);
 
 	//vector <string> Header;
- //   vector <string> Data;
- //   long NumberOfRows;
+	//   vector <string> Data;
+	//   long NumberOfRows;
 
 	//CReadTextfiles();		//Konstruktor
 	//~CReadTextfiles();		//Desturktor
@@ -79,16 +79,17 @@ public:
 	//bool Read_Text(std::string Filename);
 };
 
-class CWriteTextfiles_ECL {
-
+class CWriteTextfiles_ECL
+{
 public:
-	CWriteTextfiles_ECL();		//Konstruktor
-	~CWriteTextfiles_ECL();		//Desturktor
+	CWriteTextfiles_ECL(); //Konstruktor
+	~CWriteTextfiles_ECL(); //Desturktor
 
 	void Write_Text(std::string Filename, std::vector<std::string> Text);
 };
 
-class CPointData_ECL {
+class CPointData_ECL
+{
 public:
 	double x;
 	double y;
@@ -105,23 +106,41 @@ public:
 	std::vector <double> phase_density;
 	std::vector <std::vector <double> > q;
 
-	CPointData_ECL() {x = 0; y = 0; z = 0;}
-	CPointData_ECL(double const*const pnt) {x = pnt[0]; y = pnt[1]; z = pnt[2];}
+	CPointData_ECL()
+	{
+		x = 0;
+		y = 0;
+		z = 0;
+	}
+	CPointData_ECL(double const* const pnt)
+	{
+		x = pnt[0];
+		y = pnt[1];
+		z = pnt[2];
+	}
 	~CPointData_ECL() {}
 };
 
-class CBoundaryConditions {
+class CBoundaryConditions
+{
 public:
 	int index;
 	int number;
 	long connected_element;
 	std::string boundary_position;
 	double value[4];
-	CBoundaryConditions() {index = -1; number = -1; connected_element = -1; boundary_position = "";}
+	CBoundaryConditions()
+	{
+		index = -1;
+		number = -1;
+		connected_element = -1;
+		boundary_position = "";
+	}
 	~CBoundaryConditions() {}
 };
 
-class CECLIPSEData {
+class CECLIPSEData
+{
 public:
 	long elements;
 	long rows;
@@ -135,9 +154,9 @@ public:
 	bool Radial_I;
 	bool RadialModellIpos;
 	bool RadialModellJpos;
-	double Molweight_CO2;		// [g/mol]
-	double Molweight_H2O;		// [g/mol]
-	double Molweight_NaCl;		// [g/mol]
+	double Molweight_CO2; // [g/mol]
+	double Molweight_H2O; // [g/mol]
+	double Molweight_NaCl; // [g/mol]
 	double SurfaceCO2Density;
 	bool E100;
 	double sumCO2removed;
@@ -155,7 +174,7 @@ public:
 	std::vector <CBoundaryConditions*> BC;
 	std::vector <structWell*> ecl_well;
 
-	double ** Data;	//array of points, times and variables
+	double** Data; //array of points, times and variables
 	std::vector <std::string> WellRates; // KB, abspeichern der neuen Raten f�r einen bestimmten Zeitschritt
 
 	std::vector <long> output_x;
@@ -163,10 +182,10 @@ public:
 	std::vector <long> output_z;
 	std::vector <long> output_time;
 	std::vector <long> CorrespondingEclipseElement;
-    std::vector <long> CorrespondingGeosysElement;
+	std::vector <long> CorrespondingGeosysElement;
 	std::vector <std::string> Phases;
 	std::vector <std::string> Components;
-	long a [8][2];//2D Array um Keywords abzuspeichern
+	long a [8][2]; //2D Array um Keywords abzuspeichern
 
 	CECLIPSEData();
 	~CECLIPSEData();
@@ -174,7 +193,7 @@ public:
 	int GetVariableIndex(std::string Variablename);
 
 	void SplitStrings(const std::string str,
-                      std::string delimiter);
+	                  std::string delimiter);
 
 	double Round(double Number, int Decimalplaces);
 
@@ -184,13 +203,16 @@ public:
 
 	bool CheckIfFileExists(std::string strFilename);
 
-	bool ReplaceASectionInFile(std::string Filename, std::string Keyword, std::vector <std::string> Data, bool CheckLengthOfSection);
+	bool ReplaceASectionInFile(std::string Filename,
+	                           std::string Keyword,
+	                           std::vector <std::string> Data,
+	                           bool CheckLengthOfSection);
 
 	bool ReplaceWellRate(std::string Filename, std::string Keyword_well);
 
-	int WriteDataBackToEclipse(CRFProcess *m_pcs, std::string projectname);
+	int WriteDataBackToEclipse(CRFProcess* m_pcs, std::string projectname);
 
-	std::string ExecuteEclipse(long Timestep, CRFProcess *m_pcs, std::string folder);
+	std::string ExecuteEclipse(long Timestep, CRFProcess* m_pcs, std::string folder);
 
 	void ReadEclipseGrid(std::string Filename);
 
@@ -227,17 +249,21 @@ public:
 
 	bool CalcBlockBudget(int phase_index);
 
-	void InterpolateDataFromFacesToNodes(long ele_nr, double* n_vel_x, double* n_vel_y, double* n_vel_z, int phase_index);
+	void InterpolateDataFromFacesToNodes(long ele_nr,
+	                                     double* n_vel_x,
+	                                     double* n_vel_y,
+	                                     double* n_vel_z,
+	                                     int phase_index);
 
-	void InterpolateDataFromBlocksToNodes(CRFProcess *m_pcs, std::string path, int phase_index);
+	void InterpolateDataFromBlocksToNodes(CRFProcess* m_pcs, std::string path, int phase_index);
 
-	void InterpolateGeosysVelocitiesToNodes(CRFProcess *m_pcs, double *vel_nod, long node);
+	void InterpolateGeosysVelocitiesToNodes(CRFProcess* m_pcs, double* vel_nod, long node);
 
-	void WriteDataToGeoSys(CRFProcess *m_pcs, std::string folder);
+	void WriteDataToGeoSys(CRFProcess* m_pcs, std::string folder);
 
 	bool CleanUpEclipseFiles(std::string folder, std::string projectname);
 
-	int RunEclipse(long Timestep, CRFProcess *m_pcs);
+	int RunEclipse(long Timestep, CRFProcess* m_pcs);
 
 	void ReadWellData(std::string Filename_Wells);
 };

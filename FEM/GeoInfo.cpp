@@ -24,13 +24,13 @@ GeoInfo::~GeoInfo()
 
 GEOLIB::GEOTYPE GeoInfo::getGeoType () const
 {
-   return _geo_type;
+	return _geo_type;
 }
-
 
 std::string GeoInfo::getGeoTypeAsString () const
 {
-   switch (_geo_type) {
+	switch (_geo_type)
+	{
 	case GEOLIB::POINT:
 		return "POINT";
 	case GEOLIB::POLYLINE:
@@ -46,20 +46,17 @@ std::string GeoInfo::getGeoTypeAsString () const
 	}
 }
 
-
 void GeoInfo::setGeoType (GEOLIB::GEOTYPE geo_type)
 {
-   _geo_type = geo_type;
+	_geo_type = geo_type;
 }
-
 
 const GEOLIB::GeoObject* GeoInfo::getGeoObj () const
 {
-   return _geo_obj;
+	return _geo_obj;
 }
-
 
 void GeoInfo::setGeoObj (const GEOLIB::GeoObject* geo_obj)
 {
-   _geo_obj = geo_obj;
+	_geo_obj = geo_obj;
 }
