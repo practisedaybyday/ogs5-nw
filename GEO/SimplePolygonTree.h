@@ -12,15 +12,16 @@
 // FileIO
 #include "MeshIO/GMSHInterface.h"
 
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 /**
  * \brief This class computes and stores the topological relations between
  * polygons and geometric objects like Point and Polyline.
  *
  * It is used to generate a proper input file for gmsh.
  */
-class SimplePolygonTree {
+class SimplePolygonTree
+{
 public:
 	SimplePolygonTree(const Polygon* polygon, SimplePolygonTree* parent = NULL);
 	virtual ~SimplePolygonTree();
@@ -51,7 +52,6 @@ private:
  * @param list_of_simple_polygon_trees
  */
 void createPolygonTree (std::list<SimplePolygonTree*>& list_of_simple_polygon_trees);
-
 }
 
 #endif /* SIMPLEPOLYGONTREE_H_ */

@@ -1,10 +1,11 @@
 #ifndef gl_lin_INC
 #define gl_lin_INC
 
-#include "geo_pnt.h" 
+#include "geo_pnt.h"
 
 /*---------------------------------------------------------------*/
-class CGLLine {
+class CGLLine
+{
 private:
 	bool marked; // For mesh
 	friend class Surface; //WW
@@ -12,15 +13,15 @@ private:
 public:
 	CGLLine(void);
 	~CGLLine(void);
-	CGLPoint *m_point1;
-	CGLPoint *m_point2;
+	CGLPoint* m_point1;
+	CGLPoint* m_point2;
 	std::string name;
 	double value;
 	long mesh_index, gli_line_id; // mesh_index: unique index for mesh
 	long point1, point2;
 	int orientation;
 	double epsilon;
-	long *msh_nodes;
+	long* msh_nodes;
 	long no_msh_nodes;
 	int mat_group;
 	int display_mode;
@@ -28,8 +29,8 @@ public:
 	std::vector<double*> nodes_coor_vector;
 	//Method
 	CGLLine* GEOGetLine(long);
-	CGLLine *CheckLineOutPut();
-	CGLLine *Exists();
+	CGLLine* CheckLineOutPut();
+	CGLLine* Exists();
 	// void SetRFIPointsClose();//MSH + geomathlib
 	//void CreateMSHLines(void);//MSH
 };

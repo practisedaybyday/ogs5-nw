@@ -9,11 +9,11 @@
 #define AXISALIGNEDBOUNDINGBOX_H_
 
 #include "Point.h"
-#include <vector>
 #include <limits>
+#include <vector>
 
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 /**
  *
  * \ingroup GEOLIB
@@ -31,7 +31,7 @@ public:
 	/**
 	 * construction of object using vector of points
 	 * */
-	AABB ( const std::vector<GEOLIB::Point*> *points );
+	AABB ( const std::vector<GEOLIB::Point*>* points );
 
 	void update (GEOLIB::Point const & pnt);
 	/**
@@ -42,7 +42,7 @@ public:
 	/**
 	 * update axis aligned bounding box
 	 */
-	void update (const double *pnt)
+	void update (const double* pnt)
 	{
 		update (pnt[0], pnt[1], pnt[2]);
 	}
@@ -51,18 +51,23 @@ public:
 	 * check if point is in the axis aligned bounding box
 	 * (employing containsPoint (double x, double y, double z))
 	 */
-	bool containsPoint (GEOLIB::Point const & pnt, double eps = std::numeric_limits<double>::epsilon()) const;
+	bool containsPoint (GEOLIB::Point const & pnt,
+	                    double eps = std::numeric_limits<double>::epsilon()) const;
 
 	/**
 	 * wrapper for GEOLIB::Point
 	 */
-	bool containsPoint (const double *pnt, double eps = std::numeric_limits<double>::epsilon()) const;
+	bool containsPoint (const double* pnt, double eps =
+	                            std::numeric_limits<double>::epsilon()) const;
 
 	/**
 	 * check if point described by its coordinates x, y, z is in
 	 * the axis aligned bounding box
 	 */
-	bool containsPoint (double x, double y, double z, double eps = std::numeric_limits<double>::epsilon()) const;
+	bool containsPoint (double x,
+	                    double y,
+	                    double z,
+	                    double eps = std::numeric_limits<double>::epsilon()) const;
 
 	GEOLIB::Point getMinPoint () const { return _min_pnt; }
 	GEOLIB::Point getMaxPoint () const { return _max_pnt; }
@@ -71,7 +76,6 @@ private:
 	GEOLIB::Point _min_pnt;
 	GEOLIB::Point _max_pnt;
 };
-
 } // end namespace
 
 #endif /* AXISALIGNEDBOUNDINGBOX_H_ */
