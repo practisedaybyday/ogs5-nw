@@ -8,10 +8,13 @@
 #ifndef rf_mfp_new_INC
 #define rf_mfp_new_INC
 
+#include <iostream>
 #include <string>
+#include <vector>
 //#include "rfmat_cp.h"//AKS
 
 class CompProperties;
+class CRFProcess;
 
 /*!
    \class hash_table

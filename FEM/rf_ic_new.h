@@ -25,6 +25,10 @@
 
 class CNodeValue;
 
+namespace GEOLIB
+{
+class GEOObjects;
+}
 namespace MeshLib
 {
 class CFEMesh;

@@ -14,6 +14,7 @@
 /* Schutz gegen mehrfaches Einfuegen */
 
 /* Andere oeffentlich benutzte Module */
+#include "prototyp.h"
 
 /* Deklarationen */
 

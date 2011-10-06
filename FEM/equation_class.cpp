@@ -22,7 +22,9 @@
 #include <cfloat>
 // NEW_EQS To be removed
 #ifdef NEW_EQS                                    //1.11.2007 WW
+#include "rf_pcs.h"
 #include <iomanip>
+
 
 #ifdef LIS                                        // 07.02.2008 PCH
 #include "lis.h"

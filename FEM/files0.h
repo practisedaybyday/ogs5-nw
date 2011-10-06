@@ -7,8 +7,8 @@
 
 /* Andere oeffentlich benutzte Module */
 #include "Configure.h"
-//#include <cstdio>
-//#include <string>
+#include <cstdio>
+#include <string>
 //#include <fstream>
 
 typedef int (*FctTestInt)( int*, FILE* );
