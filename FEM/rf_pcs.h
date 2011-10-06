@@ -18,6 +18,9 @@ Programing:
 #include "rf_num_new.h"
 #include "rf_bc_new.h"
 #include "rf_tim_new.h"
+
+#include "SparseMatrixDOK.h"
+
 //#include "rf_st_new.h"//CMCD 02_06
 // C++ STL
 //#include <fstream>
@@ -38,7 +41,7 @@ namespace Math_Group {class Linear_EQS;}
 using Math_Group::Linear_EQS;
 #endif
 
-using Math_Group::SparseMatrixDOK;
+//using Math_Group::SparseMatrixDOK;
 //
 class CSourceTermGroup;
 class CSourceTerm;
@@ -441,7 +444,7 @@ class CRFProcess : public ProcessInfo
       int pcs_number;
       int mobile_nodes_flag;
 
- 
+
       int pcs_type_number;
       int type;
       int GetObjType() const {return type;}
@@ -611,7 +614,7 @@ class CRFProcess : public ProcessInfo
       bool cal_integration_point_value;           //WW
       void CalGPVelocitiesfromFluidMomentum();    //SB 4900
       bool use_velocities_for_transport;          //SB4900
- 
+
 	  //---
       double Execute();
       double ExecuteNonLinear();

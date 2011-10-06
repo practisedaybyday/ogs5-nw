@@ -18,6 +18,7 @@ set( SOURCES
 	makros.h
 	mathlib.h
 	matrix_class.h
+	SparseMatrixDOK.h
 	memory.h
 	par_ddc.h
 	pcs_dm.h
@@ -74,6 +75,7 @@ set( SOURCES
 	#intrface.cpp
 	mathlib.cpp
 	matrix_class.cpp
+	SparseMatrixDOK.cpp
 	memory.cpp
 	par_ddc.cpp
 	pcs_dm.cpp
