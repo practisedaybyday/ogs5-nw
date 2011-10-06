@@ -16,6 +16,8 @@
 #include "rf_mmp_new.h"
 #include "rf_msp_new.h"
 
+#include "SparseMatrixDOK.h"
+
 #include "pcs_dm.h"                               // displacement coupled
 #include "rfmat_cp.h"
 // Steps
@@ -1806,13 +1808,13 @@ namespace FiniteElement
          case M:                                  // Mass transport //SB4200
          {
                                                   //kg44 added changing Porosity for GEMS coupling
-            
+
 
 #ifdef GEM_REACT
 	    // kg44 for GEMS coupling this should be updated to arbitrary flow processes
             porval0 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(GROUNDWATER_FLOW)->GetElementValueIndex("POROSITY"));// for GEMS we need old and new porosity!
-	    porval1 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(GROUNDWATER_FLOW)->GetElementValueIndex("POROSITY")+1); 
-#else 
+	    porval1 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(GROUNDWATER_FLOW)->GetElementValueIndex("POROSITY")+1);
+#else
             porval0 = MediaProp->Porosity(Index,pcs->m_num->ls_theta); // get porosity..this is the "old" behaviour without GEMS coupling
 	    porval1 = porval0; // mimic no porosity change
 #endif
@@ -6666,7 +6668,7 @@ namespace FiniteElement
       //----------------------------------------------------------------------
       // FCT method
       //----------------------------------------------------------------------
-      SparseMatrixDOK *FCT_Flux = this->pcs->FCT_AFlux;
+      Math_Group::SparseMatrixDOK *FCT_Flux = this->pcs->FCT_AFlux;
       Vec *ML = this->pcs->Gl_ML;
 
       //----------------------------------------------------------------------

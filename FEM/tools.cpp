@@ -1148,6 +1148,7 @@ Programming:
 double GetMatrixValue(double var1, double var2, std::string caption, int *gueltig)
 {
    CFunction * matrix;
+
    //WW int anz_variables, anz_data;
    int dim_x, dim_y;
    int i1 = 0;
@@ -1239,7 +1240,9 @@ double GetMatrixValue(double var1, double var2, std::string caption, int *guelti
    zx2y1= *matrix->variable_data_vector[(j1-dim_x)*dim_x+(i2+dim_x+dim_y)];
    zx1y2= *matrix->variable_data_vector[(j2-dim_x)*dim_x+(i1+dim_x+dim_y)];
    zx2y2= *matrix->variable_data_vector[(j2-dim_x)*dim_x+(i2+dim_x+dim_y)];
-   return   interpol (y1,y2,interpol (x1,x2,zx1y1,zx2y1,  var1),interpol (x1,y1,zx1y2,zx2y2,  var1),var2);
+
+   double ergebnis = interpol (y1,y2,interpol (x1,x2,zx1y1,zx2y1,  var1),interpol (x1,y1,zx1y2,zx2y2,  var1),var2);
+   return ergebnis;
 }
 
 

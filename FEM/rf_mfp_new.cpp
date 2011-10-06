@@ -2971,33 +2971,31 @@ double MFPGetNodeValue(long node,const string &mfp_name, int phase_number)
    int val_idx=0;                                 // for later use, NB case 'V': mfp_id = 0; //VISCOSITY
    switch (mfp_name[0])
    {
-      case 'V': mfp_id = 0;                       //VISCOSITY
-      if(m_mfp->viscosity_pcs_name_vector.size()<1)
-         {pcs_name1 = "PRESSURE1";}
-         else
-      {
-         pcs_name1 = m_mfp->viscosity_pcs_name_vector[0];
-      }
-      if(m_mfp->viscosity_pcs_name_vector.size()<2)
-         {pcs_name2 = "TEMPERATURE1";}
-         else
-      {
-         pcs_name2 = m_mfp->viscosity_pcs_name_vector[1];
-      }
-      break;
-      case 'D': mfp_id = 1;                       //DENSITY
-      if(m_mfp->density_pcs_name_vector.size()<1)
-         {pcs_name1 = "PRESSURE1";}
-         else
-      {
-         pcs_name1 = m_mfp->density_pcs_name_vector[0];
-      }
-      if(m_mfp->density_pcs_name_vector.size()<2)
-         {pcs_name2 = "TEMPERATURE1";}
-         else
-      {
-         pcs_name2 = m_mfp->density_pcs_name_vector[1];
-      }
+   case 'V':
+		mfp_id = 0; //VISCOSITY
+		if (m_mfp->viscosity_pcs_name_vector.size() < 1) {
+			pcs_name1 = "PRESSURE1";
+		} else {
+			pcs_name1 = m_mfp->viscosity_pcs_name_vector[0];
+		}
+		if (m_mfp->viscosity_pcs_name_vector.size() < 2) {
+			pcs_name2 = "TEMPERATURE1";
+		} else {
+			pcs_name2 = m_mfp->viscosity_pcs_name_vector[1];
+		}
+		break;
+	case 'D':
+		mfp_id = 1; //DENSITY
+		if (m_mfp->density_pcs_name_vector.size() < 1) {
+			pcs_name1 = "PRESSURE1";
+		} else {
+			pcs_name1 = m_mfp->density_pcs_name_vector[0];
+		}
+		if (m_mfp->density_pcs_name_vector.size() < 2) {
+			pcs_name2 = "TEMPERATURE1";
+		} else {
+			pcs_name2 = m_mfp->density_pcs_name_vector[1];
+		}
       break;
       case 'H': mfp_id = 2;                       //HEAT_CONDUCTIVITY
       if(m_mfp->heat_conductivity_pcs_name_vector.size()<1)
