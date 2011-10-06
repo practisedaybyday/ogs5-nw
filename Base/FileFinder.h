@@ -15,7 +15,7 @@ class FileFinder
 {
 public:
 	/// Constructor
-	FileFinder() {};
+	FileFinder() {}
 
 	/**
 	 * \brief Adds another directory to the search-space.
@@ -23,9 +23,9 @@ public:
 	 */
 	void addDirectory(std::string dir)
 	{
-		if (dir[dir.size()-1] != '/') dir.append("/");
+		if (dir[dir.size() - 1] != '/') dir.append("/");
 		_directories.push_back(dir);
-	};
+	}
 
 	/**
 	 * Given a filename, this method will return the complete path where this file can be found.
@@ -34,8 +34,10 @@ public:
 	 */
 	std::string getPath(std::string filename)
 	{
-		if (_directories.empty()) std::cout << "Error: FileFinder::getPath() -- directory list is empty." << std::endl;
-		for (std::list<std::string>::iterator it = _directories.begin(); it != _directories.end(); ++it)
+		if (_directories.empty()) std::cout <<
+			"Error: FileFinder::getPath() -- directory list is empty." << std::endl;
+		for (std::list<std::string>::iterator it = _directories.begin();
+		     it != _directories.end(); ++it)
 		{
 			std::string testDir(*it);
 			std::ifstream is(testDir.append(filename).c_str());
@@ -43,12 +45,10 @@ public:
 		}
 		std::cout << "Error: FileFinder::getPath() -- file not found." << std::endl;
 		return filename;
-	};
+	}
 
 private:
 
 	std::list<std::string> _directories;
-
-
 };
 #endif // FILEFINDER_H
