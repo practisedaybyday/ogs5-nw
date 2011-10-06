@@ -8,22 +8,24 @@
 #ifndef GocadInterface_H_
 #define GocadInterface_H_
 
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
 #include "Point.h"
 #include "Polyline.h"
 
-namespace GEOLIB {
+namespace GEOLIB
+{
 class GEOObjects;
 }
 
-namespace FileIO {
-
-class GocadInterface {
+namespace FileIO
+{
+class GocadInterface
+{
 public:
-	GocadInterface(const std::string &fname, GEOLIB::GEOObjects *geo_obj);
+	GocadInterface(const std::string &fname, GEOLIB::GEOObjects* geo_obj);
 	~GocadInterface();
 
 private:
@@ -40,7 +42,6 @@ private:
 	std::vector<GEOLIB::Polyline*>* _ply_vec;
 	static const size_t MAX_COLS_PER_ROW = 256;
 };
-
 } // end namespace
 
 #endif /* GocadInterface_H_ */

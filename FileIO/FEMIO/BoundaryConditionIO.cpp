@@ -10,11 +10,11 @@
 
 // FileIO
 #include "BoundaryConditionIO.h"
-#include "ProcessIO.h"
 #include "GeoIO.h"
+#include "ProcessIO.h"
 
-namespace FileIO {
-
+namespace FileIO
+{
 //CBoundaryCondition* BoundaryConditionIO::read(std::istream& in_str,
 //		GEOLIB::GEOObjects const& geo_obj, std::string const& unique_fname)
 //{
@@ -201,7 +201,7 @@ namespace FileIO {
 //}
 
 void BoundaryConditionIO::write(std::ostream& out,
-		CBoundaryCondition const& bc)
+                                CBoundaryCondition const& bc)
 {
 	// keyword
 	out << "#BOUNDARY_CONDITION" << std::endl;
@@ -209,11 +209,11 @@ void BoundaryConditionIO::write(std::ostream& out,
 	// process and primary variable
 	out << "\t$PCS_TYPE" << std::endl;
 	out << "\t\t" << convertProcessTypeToString(bc.getProcessType())
-			<< std::endl;
+	    << std::endl;
 
 	out << "\t$PRIMARY_VARIABLE" << std::endl;
 	out << "\t\t" << convertPrimaryVariableToString(
-			bc.getProcessPrimaryVariable()) << std::endl;
+	        bc.getProcessPrimaryVariable()) << std::endl;
 
 	// geometry
 	out << "\t$GEO_TYPE" << std::endl;
@@ -222,23 +222,21 @@ void BoundaryConditionIO::write(std::ostream& out,
 	// distribution type
 	out << "\t$DIS_TYPE" << std::endl;
 	out << "\t\t" << convertDisTypeToString(bc.getProcessDistributionType());
-	if (bc.getProcessDistributionType() == FiniteElement::CONSTANT) {
+	if (bc.getProcessDistributionType() == FiniteElement::CONSTANT)
 		out << "\t\t" << bc.geo_node_value << std::endl;
-	} else {
-		if (bc.getProcessDistributionType() == FiniteElement::LINEAR) {
-			out << "\t\t" << bc._PointsHaveDistribedBC.size() << std::endl;
-			for (size_t i = 0; i < bc._PointsHaveDistribedBC.size(); i++) {
-				out << "\t\t" << bc._PointsHaveDistribedBC[i] << "  "
-						<< bc._DistribedBC[i] << std::endl;
-			}
-		}
+	else if (bc.getProcessDistributionType() == FiniteElement::LINEAR)
+	{
+		out << "\t\t" << bc._PointsHaveDistribedBC.size() << std::endl;
+		for (size_t i = 0; i < bc._PointsHaveDistribedBC.size(); i++)
+			out << "\t\t" << bc._PointsHaveDistribedBC[i] << "  "
+			    << bc._DistribedBC[i] << std::endl;
 	}
 
 	// function name
-	if (!bc.fct_name.empty()) {
+	if (!bc.fct_name.empty())
+	{
 		out << "\t$FCT_TYPE" << std::endl;
 		out << "\t\t" << bc.fct_name << std::endl;
 	}
 }
-
 } // end namespace FileIO

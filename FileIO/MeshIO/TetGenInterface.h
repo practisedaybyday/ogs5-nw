@@ -9,16 +9,18 @@
 #define TETGENINTERFACE_H_
 
 // forward declaration of mesh class
-namespace MeshLib {
+namespace MeshLib
+{
 class CFEMesh;
 }
 
-namespace FileIO {
-
+namespace FileIO
+{
 /**
  * class TetGenInterface is used to read meshes created by <a href="http://tetgen.berlios.de/">TetGen</a>
  */
-class TetGenInterface {
+class TetGenInterface
+{
 public:
 	TetGenInterface();
 	virtual ~TetGenInterface();
@@ -29,7 +31,8 @@ public:
 	 * @param ele_fname file name of the elements file
 	 * @return on success the method returns a (pointer to a) CFEMesh, else the method returns NULL
 	 */
-	MeshLib::CFEMesh* readTetGenMesh (std::string const& nodes_fname, std::string const& ele_fname);
+	MeshLib::CFEMesh* readTetGenMesh (std::string const& nodes_fname,
+	                                  std::string const& ele_fname);
 	/** in order to have a direct access to the
 	 * data structures for nodes and elements we make
 	 * class TetGenInterface a friend of the mesh class
@@ -54,7 +57,7 @@ private:
 	 * @return true, if the file header is read, false if the method detects an error
 	 */
 	bool parseNodesFileHeader(std::string &line, size_t& n_nodes, size_t& dim,
-			size_t& n_attributes, bool& boundary_markers) const;
+	                          size_t& n_attributes, bool& boundary_markers) const;
 	/**
 	 * method parses the lines reading the nodes from TetGen nodes file
 	 * @param ins the input stream (input)
@@ -80,7 +83,7 @@ private:
 	 * @return
 	 */
 	bool parseElementsFileHeader(std::string &line, size_t& n_tets, size_t& n_nodes_per_tet,
-			bool& region_attribute) const;
+	                             bool& region_attribute) const;
 	/**
 	 * Method parses the tetrahedras and put them in the element vector of the mesh class.
 	 * @param ins the input stream
@@ -90,18 +93,17 @@ private:
 	 * @return true, if the tetrahedras are read, false if the method detects an error
 	 */
 	bool parseElements(std::ifstream& ins, size_t n_tets, size_t n_nodes_per_tet,
-			bool region_attribute);
+	                   bool region_attribute);
 
 	/**
-	* the mesh that is returned if all data is read
-	*/
+	 * the mesh that is returned if all data is read
+	 */
 	MeshLib::CFEMesh* _mesh;
 	/**
 	 * the value is true if the indexing is zero based, else false
 	 */
 	bool _zero_based_idx;
 };
-
 }
 
 #endif /* TETGENINTERFACE_H_ */

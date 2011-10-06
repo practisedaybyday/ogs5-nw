@@ -21,15 +21,15 @@ public:
 	/// Connection between ESRI type system for shape files and OGS GEOLIB.
 	enum OGSType
 	{
-		UNDEFINED	= 0,
-		POINT		= 1,
-		STATION		= 2,
-		POLYLINE	= 3,
-		POLYGON		= 4
+		UNDEFINED   = 0,
+		POINT       = 1,
+		STATION     = 2,
+		POLYLINE    = 3,
+		POLYGON     = 4
 	};
 
 	/// Constructor
-	SHPInterface(GEOLIB::GEOObjects* geoObjects) : _geoObjects(geoObjects) {};
+	SHPInterface(GEOLIB::GEOObjects* geoObjects) : _geoObjects(geoObjects) {}
 
 	/// Reads the header of the shape file.
 	bool readSHPInfo(const std::string &filename, int &shapeType, int &numberOfEntities);
@@ -50,10 +50,9 @@ private:
 	/// Reads lines into a vector of Polyline and Surface objects.
 	void readPolygons  (const SHPHandle &hSHP, int numberOfElements, std::string listName);
 
-	void adjustPolylines (std::vector<GEOLIB::Polyline*> *lines, std::vector<size_t>  id_map);
+	void adjustPolylines (std::vector<GEOLIB::Polyline*>* lines, std::vector<size_t>  id_map);
 
 	GEOLIB::GEOObjects* _geoObjects;
-
 };
 
 #endif //SHPINTERFACE_H

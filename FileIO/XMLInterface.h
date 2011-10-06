@@ -10,7 +10,6 @@
 
 #include <QXmlStreamReader>
 
-
 class FEMCondition;
 
 class QFile;
@@ -54,7 +53,9 @@ public:
 	int readSTNFile(const QString &fileName);
 
 	/// Reads an xml-file containing containing FEM Conditions such as Boundary- or Initial Conditions
-	int readFEMCondFile(std::vector<FEMCondition*> &conditions, const QString &fileName, const QString &geoName);
+	int readFEMCondFile(std::vector<FEMCondition*> &conditions,
+	                    const QString &fileName,
+	                    const QString &geoName);
 
 	/// Writes a GeoSys project file containing all data that is currently loaded.
 	/// Project files currently cover only geo-, msh- and station-data. This will be expanded in the future.
@@ -94,25 +95,40 @@ public:
 
 private:
 	/// Reads GEOLIB::Point-objects from an xml-file
-	void readPoints    ( const QDomNode &pointsRoot, std::vector<GEOLIB::Point*> *points, std::map<std::string, size_t> *pnt_names );
+	void readPoints    ( const QDomNode &pointsRoot,
+	                     std::vector<GEOLIB::Point*>* points,
+	                     std::map<std::string, size_t>* pnt_names );
 
 	/// Reads GEOLIB::Polyline-objects from an xml-file
-	void readPolylines ( const QDomNode &polylinesRoot, std::vector<GEOLIB::Polyline*> *polylines, std::vector<GEOLIB::Point*> *points, const std::vector<size_t> &pnt_id_map, std::map<std::string, size_t> *ply_names );
+	void readPolylines ( const QDomNode &polylinesRoot,
+	                     std::vector<GEOLIB::Polyline*>* polylines,
+	                     std::vector<GEOLIB::Point*>* points,
+	                     const std::vector<size_t> &pnt_id_map,
+	                     std::map<std::string, size_t>* ply_names );
 
 	/// Reads GEOLIB::Surface-objects from an xml-file
-	void readSurfaces  ( const QDomNode &surfacesRoot, std::vector<GEOLIB::Surface*> *surfaces, std::vector<GEOLIB::Point*> *points, const std::vector<size_t> &pnt_id_map, std::map<std::string, size_t> *sfc_names );
+	void readSurfaces  ( const QDomNode &surfacesRoot,
+	                     std::vector<GEOLIB::Surface*>* surfaces,
+	                     std::vector<GEOLIB::Point*>* points,
+	                     const std::vector<size_t> &pnt_id_map,
+	                     std::map<std::string, size_t>* sfc_names );
 
 	/// Reads GEOLIB::Station- or StationBorehole-objects from an xml-file
-	void readStations  ( const QDomNode &stationsRoot, std::vector<GEOLIB::Point*> *stations );
+	void readStations  ( const QDomNode &stationsRoot, std::vector<GEOLIB::Point*>* stations );
 
 	/// Reads the stratigraphy of a borehole from an xml-file
 	void readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationBorehole* borehole );
 
 	/// Read the details of various FEM Conditions from an xml-file
-	void readConditions( const QDomNode &condRoot, std::vector<FEMCondition*> &conditions, const QString &geoName, FEMCondition::CondType type);
+	void readConditions( const QDomNode &condRoot,
+	                     std::vector<FEMCondition*> &conditions,
+	                     const QString &geoName,
+	                     FEMCondition::CondType type);
 
 	/// Writes borehole-specific data to a station-xml-file.
-	void writeBoreholeData(QDomDocument &doc, QDomElement &boreholeTag, GEOLIB::StationBorehole* borehole) const;
+	void writeBoreholeData(QDomDocument &doc,
+	                       QDomElement &boreholeTag,
+	                       GEOLIB::StationBorehole* borehole) const;
 
 	/// Checks if a hash for the given data file exists to skip the time-consuming validation part.
 	/// If a hash file exists _and_ the hash of the data file is the same as the content of the hash file the validation is skipped

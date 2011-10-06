@@ -8,8 +8,8 @@
 #ifndef READNONBLANKLINEFROMINPUTSTREAM_H_
 #define READNONBLANKLINEFROMINPUTSTREAM_H_
 
-#include <string>
 #include <istream>
+#include <string>
 
 /**
  * read a non blank line from given input stream

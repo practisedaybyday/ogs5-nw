@@ -8,22 +8,23 @@
 #ifndef CRSIO_H_
 #define CRSIO_H_
 
-namespace FileIO {
-
+namespace FileIO
+{
 template<class T> void
 writeCompressedStorageFmt (std::ostream &os, unsigned n, unsigned* iA, unsigned* jA, T* A)
 {
-  os.write((char*) &n, sizeof(unsigned));
-  os.write((char*) iA, (n+1)*sizeof(unsigned));
-  os.write((char*) jA, iA[n]*sizeof(unsigned));
-  os.write((char*) A, iA[n]*sizeof(T));
+	os.write((char*) &n, sizeof(unsigned));
+	os.write((char*) iA, (n + 1) * sizeof(unsigned));
+	os.write((char*) jA, iA[n] * sizeof(unsigned));
+	os.write((char*) A, iA[n] * sizeof(T));
 }
 
 template<class T> void readCompressedStorageFmt(std::istream &is, unsigned &n,
-		unsigned* &iA, unsigned* &jA, T* &A)
+                                                unsigned* &iA, unsigned* &jA, T* &A)
 {
 	is.read((char*) &n, sizeof(unsigned));
-	if (iA != NULL) {
+	if (iA != NULL)
+	{
 		delete[] iA;
 		delete[] jA;
 		delete[] A;
@@ -42,23 +43,26 @@ template<class T> void readCompressedStorageFmt(std::istream &is, unsigned &n,
 
 #ifndef NDEBUG
 	// do simple checks
-	if (iA[0] != 0) std::cerr << std::endl
-			<< "CRS matrix: array iA doesn't start with 0" << std::endl;
+	if (iA[0] != 0)
+		std::cerr << std::endl
+		          << "CRS matrix: array iA doesn't start with 0" << std::endl;
 
 	unsigned i = 0;
 	while (i < iA[n] && jA[i] < n)
 		++i;
-	if (i < iA[n]) std::cerr << std::endl << "CRS matrix: the " << i
-			<< "th entry of jA has the value " << jA[i]
-			<< ", which is out of bounds." << std::endl;
+	if (i < iA[n])
+		std::cerr << std::endl << "CRS matrix: the " << i
+		          << "th entry of jA has the value " << jA[i]
+		          << ", which is out of bounds." << std::endl;
 #endif
 }
 
 template<class T> void readCompressedStorageFmt(std::istream &is, long &n,
-		long* &iA, long* &jA, T* &A, T* &rhs)
+                                                long* &iA, long* &jA, T* &A, T* &rhs)
 {
 	is.read((char*) &n, sizeof(long));
-	if (iA != NULL) {
+	if (iA != NULL)
+	{
 		delete[] iA;
 		delete[] jA;
 		delete[] A;
@@ -82,18 +86,19 @@ template<class T> void readCompressedStorageFmt(std::istream &is, long &n,
 
 #ifndef NDEBUG
 	// do simple checks
-	if (iA[0] != 0) std::cerr << std::endl
-			<< "CRS matrix: array iA doesn't start with 0" << std::endl;
+	if (iA[0] != 0)
+		std::cerr << std::endl
+		          << "CRS matrix: array iA doesn't start with 0" << std::endl;
 
 	long i = 0;
 	while (i < iA[n] && jA[i] < n)
 		++i;
-	if (i < iA[n]) std::cerr << std::endl << "CRS matrix: the " << i
-			<< "th entry of jA has the value " << jA[i]
-			<< ", which is out of bounds." << std::endl;
+	if (i < iA[n])
+		std::cerr << std::endl << "CRS matrix: the " << i
+		          << "th entry of jA has the value " << jA[i]
+		          << ", which is out of bounds." << std::endl;
 #endif
 }
-
 } // end namespace FileIO
 
 #endif /* CRSIO_H_ */

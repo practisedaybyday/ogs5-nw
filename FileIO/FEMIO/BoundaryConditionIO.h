@@ -18,9 +18,10 @@
 // FEM
 #include "rf_bc_new.h"
 
-namespace FileIO {
-
-class BoundaryConditionIO {
+namespace FileIO
+{
+class BoundaryConditionIO
+{
 public:
 //	static CBoundaryCondition* read (std::istream& in,
 //			GEOLIB::GEOObjects const& geo_obj,
@@ -30,7 +31,6 @@ public:
 
 	friend class CBoundaryCondition;
 };
-
 }
 
 #endif /* BOUNDARYCONDITIONIO_H_ */

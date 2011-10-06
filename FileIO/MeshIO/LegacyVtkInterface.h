@@ -12,7 +12,7 @@
 
 namespace MeshLib
 {
-   class CFEMesh;
+class CFEMesh;
 }
 class CRFProcess;
 class ProcessInfo;
@@ -20,16 +20,16 @@ class ProcessInfo;
 /// @brief Writes a legacy ascii vtk file of a mesh.
 // TODO decouple from COutput
 class LegacyVtkInterface
-{	
+{
 public:
 	LegacyVtkInterface(MeshLib::CFEMesh* mesh,
-		std::vector<std::string> pointArrayNames,
-		std::vector<std::string> cellArrayNames,
-		std::vector<std::string> materialPropertyArrayNames,
-		std::string meshTypeName,
-		ProcessInfo* processInfo);
+	                   std::vector<std::string> pointArrayNames,
+	                   std::vector<std::string> cellArrayNames,
+	                   std::vector<std::string> materialPropertyArrayNames,
+	                   std::string meshTypeName,
+	                   ProcessInfo* processInfo);
 	virtual ~LegacyVtkInterface();
-	
+
 	void WriteDataVTK(int number, double simulation_time, std::string baseFilename) const;
 
 protected:
@@ -41,7 +41,7 @@ protected:
 
 	// Copied from COutput
 	CRFProcess* GetPCS_ELE(const std::string &var_name) const;
-	
+
 	MeshLib::CFEMesh* _mesh;
 	std::string _processType;
 	std::vector<std::string> _pointArrayNames;

@@ -10,21 +10,22 @@
 
 #include <fstream>
 
-namespace MeshLib {
+namespace MeshLib
+{
 class CFEMesh;
 }
 
-namespace FileIO {
-
-class OGSMeshIO {
+namespace FileIO
+{
+class OGSMeshIO
+{
 public:
 	/// Read a OGS mesh from file.
 	static MeshLib::CFEMesh* loadMeshFromFile(std::string const& fileName);
 
 	/// Write an OGS msh to a file.
-	static void write (MeshLib::CFEMesh const * mesh, std::ofstream &out);
+	static void write (MeshLib::CFEMesh const* mesh, std::ofstream &out);
 };
-
 } // end namespace FileIO
 
 #endif /* OGSMESHIO_H_ */
