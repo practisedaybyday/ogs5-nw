@@ -7,8 +7,8 @@
 
 #include "MathTools.h"
 
-namespace MathLib {
-
+namespace MathLib
+{
 void crossProd(const double u[3], const double v[3], double r[3])
 {
 	r[0] = u[1] * v[2] - u[2] * v[1];
@@ -17,7 +17,7 @@ void crossProd(const double u[3], const double v[3], double r[3])
 }
 
 double calcProjPntToLineAndDists(const double p[3], const double a[3],
-		const double b[3], double &lambda, double &d0)
+                                 const double b[3], double &lambda, double &d0)
 {
 	// g (lambda) = a + lambda v, v = b-a
 	double v[3] = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
@@ -27,7 +27,8 @@ double calcProjPntToLineAndDists(const double p[3], const double a[3],
 
 	// compute projected point
 	double proj_pnt[3];
-	for (size_t k(0); k<3; k++) proj_pnt[k] = a[k] + lambda * v[k];
+	for (size_t k(0); k < 3; k++)
+		proj_pnt[k] = a[k] + lambda * v[k];
 
 	d0 = sqrt (sqrDist (proj_pnt, a));
 
@@ -53,21 +54,20 @@ double sqrDist(const double* p0, const double* p1)
 
 bool checkDistance(GEOLIB::Point const &p0, GEOLIB::Point const &p1, double squaredDistance)
 {
-	return (sqrDist(&p0, &p1) < squaredDistance);
+	return sqrDist(&p0, &p1) < squaredDistance;
 }
 
 float normalize(float min, float max, float val)
 {
-	return ((val-min)/static_cast<float>(max-min));
+	return (val - min) / static_cast<float>(max - min);
 }
 
 double getAngle (const double p0[3], const double p1[3], const double p2[3])
 {
-	const double v0[3] = {p0[0]-p1[0], p0[1]-p1[1], p0[2]-p1[2]};
-	const double v1[3] = {p2[0]-p1[0], p2[1]-p1[1], p2[2]-p1[2]};
+	const double v0[3] = {p0[0] - p1[0], p0[1] - p1[1], p0[2] - p1[2]};
+	const double v1[3] = {p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]};
 
 	// apply Cauchy Schwarz inequality
 	return acos (scpr (v0,v1,3) / (sqrt(scpr(v0,v0,3)) * sqrt(scpr (v1,v1,3))));
 }
-
 } // namespace
