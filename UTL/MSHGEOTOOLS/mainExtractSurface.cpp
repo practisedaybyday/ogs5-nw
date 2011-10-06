@@ -13,29 +13,31 @@
 
 // GEO
 #include "GEOObjects.h"
-#include "PolylineVec.h"
 #include "Polygon.h"
+#include "PolylineVec.h"
 #include "ProjectData.h"
 
 // MSH
-#include "msh_mesh.h"
 #include "msh_lib.h" // for FEMRead
+#include "msh_mesh.h"
 
 // STL
 #include <string>
-Problem *aproblem = NULL;
+Problem* aproblem = NULL;
 
-
-int main (int argc, char *argv[])
+int main (int argc, char* argv[])
 {
-	if (argc < 5) {
-		std::cout << "Usage: " << argv[0] << " --mesh ogs_meshfile --geometry ogs_geometry" << std::endl;
+	if (argc < 5)
+	{
+		std::cout << "Usage: " << argv[0] <<
+		" --mesh ogs_meshfile --geometry ogs_geometry" << std::endl;
 		return -1;
 	}
 
 	// *** read mesh
 	std::string tmp (argv[1]);
-	if (tmp.find ("--mesh") == std::string::npos) {
+	if (tmp.find ("--mesh") == std::string::npos)
+	{
 		std::cout << "could not extract mesh file name" << std::endl;
 		return -1;
 	}
@@ -43,30 +45,33 @@ int main (int argc, char *argv[])
 	tmp = argv[2];
 	std::string file_base_name (tmp);
 	if (tmp.find (".msh") != std::string::npos)
-		file_base_name = tmp.substr (0, tmp.size()-4);
+		file_base_name = tmp.substr (0, tmp.size() - 4);
 
 	std::vector<MeshLib::CFEMesh*> mesh_vec;
 	FEMRead(file_base_name, mesh_vec);
-	if (mesh_vec.empty()) {
+	if (mesh_vec.empty())
+	{
 		std::cerr << "could not read mesh from file " << std::endl;
 		return -1;
 	}
-	MeshLib::CFEMesh* mesh (mesh_vec[mesh_vec.size()-1]);
+	MeshLib::CFEMesh* mesh (mesh_vec[mesh_vec.size() - 1]);
 
 	// *** read geometry
 	tmp = argv[3];
-	if (tmp.find ("--geometry") == std::string::npos) {
+	if (tmp.find ("--geometry") == std::string::npos)
+	{
 		std::cout << "could not extract geometry file name" << std::endl;
 		return -1;
 	}
 
-	GEOLIB::GEOObjects *geo (new GEOLIB::GEOObjects);
+	GEOLIB::GEOObjects* geo (new GEOLIB::GEOObjects);
 	tmp = argv[4];
 	FileIO::readGLIFileV4(tmp, geo);
 
 	// *** get Polygon
 	const std::vector<GEOLIB::Polyline*>* plys (geo->getPolylineVec (tmp));
-	if (!plys) {
+	if (!plys)
+	{
 		std::cout << "could not get vector of polylines" << std::endl;
 		delete mesh;
 		delete geo;
@@ -76,16 +81,18 @@ int main (int argc, char *argv[])
 	MeshLib::ExtractSurface extract_surface (mesh);
 	const size_t n_plys (plys->size());
 
-	ProjectData *project_data (new ProjectData);
+	ProjectData* project_data (new ProjectData);
 	project_data->setGEOObjects (geo);
 	XMLInterface xml_out (project_data, "OpenGeoSysGLI.xsd");
-	for (size_t k(0); k<n_plys; k++) {
+	for (size_t k(0); k < n_plys; k++)
+	{
 		GEOLIB::Polygon polygon (*((*plys)[k]));
-		std::vector<GEOLIB::Point*> *sfc_pnts (new std::vector<GEOLIB::Point*>);
-		std::vector<GEOLIB::Surface*> *surfaces (new std::vector<GEOLIB::Surface*>);
+		std::vector<GEOLIB::Point*>* sfc_pnts (new std::vector<GEOLIB::Point*>);
+		std::vector<GEOLIB::Surface*>* surfaces (new std::vector<GEOLIB::Surface*>);
 		GEOLIB::Surface* surface (extract_surface.extractSurface(polygon, *sfc_pnts));
 		surfaces->push_back (surface);
-		std::cout << "number of triangles in surface " << k << ": " <<  surface->getNTriangles() << std::endl;
+		std::cout << "number of triangles in surface " << k << ": " <<
+		surface->getNTriangles() << std::endl;
 
 		std::string fname ("PointsForSurface");
 		fname += number2str (k);
@@ -95,7 +102,7 @@ int main (int argc, char *argv[])
 		std::string out_fname ("Surface");
 		out_fname += number2str (k);
 		out_fname += ".gml";
-		xml_out.writeGLIFile (out_fname , fname);
+		xml_out.writeGLIFile (out_fname, fname);
 	}
 
 	delete mesh;
