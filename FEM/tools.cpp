@@ -862,8 +862,9 @@ double GetAverageHetVal(long EleIndex, CFEMesh *m_msh, long no_values, double **
    m_ele = m_msh->ele_vector[EleIndex];
    for(j=0;j<3; j++)
    {
-      xp[j] = m_ele->GetNode(j)->X();
-      yp[j] = m_ele->GetNode(j)->Y();
+	   double const*const pnt(m_ele->GetNode(j)->getData());
+      xp[j] = pnt[0];
+      yp[j] = pnt[1];
       //zp[j] = 0.0;
    }
    //-----------------------------------------------------------------------
@@ -925,7 +926,6 @@ long GetNearestHetVal(long EleIndex, CFEMesh *m_msh, long no_values, double ** i
    long i, nextele;
    double ex, ey, ez, dist, dist1;                //WW, dist2;
    double x, y, z;
-   double* center = NULL;
    MeshLib::CElem* m_ele = NULL;
    //----------------------------------------------------------------------
    // MB ToDo
@@ -939,7 +939,7 @@ long GetNearestHetVal(long EleIndex, CFEMesh *m_msh, long no_values, double ** i
    nextele = -1;
    //Get element data
    m_ele = m_msh->ele_vector[EleIndex];
-   center = m_ele->GetGravityCenter();
+   double const* center = m_ele->GetGravityCenter();
    x = center[0];
    y = center[1];
    z = center[2];
@@ -1148,6 +1148,7 @@ Programming:
 double GetMatrixValue(double var1, double var2, std::string caption, int *gueltig)
 {
    CFunction * matrix;
+
    //WW int anz_variables, anz_data;
    int dim_x, dim_y;
    int i1 = 0;
@@ -1239,7 +1240,9 @@ double GetMatrixValue(double var1, double var2, std::string caption, int *guelti
    zx2y1= *matrix->variable_data_vector[(j1-dim_x)*dim_x+(i2+dim_x+dim_y)];
    zx1y2= *matrix->variable_data_vector[(j2-dim_x)*dim_x+(i1+dim_x+dim_y)];
    zx2y2= *matrix->variable_data_vector[(j2-dim_x)*dim_x+(i2+dim_x+dim_y)];
-   return   interpol (y1,y2,interpol (x1,x2,zx1y1,zx2y1,  var1),interpol (x1,y1,zx1y2,zx2y2,  var1),var2);
+
+   double ergebnis = interpol (y1,y2,interpol (x1,x2,zx1y1,zx2y1,  var1),interpol (x1,y1,zx1y2,zx2y2,  var1),var2);
+   return ergebnis;
 }
 
 
@@ -1288,19 +1291,19 @@ void NsPol3 (double p, double q, double r, vector<double>*roots)
    double nz;
    int i;
 
-   b=pow((p/3),2);
+   b=(p/3)*(p/3);
    a=q/3-b;
    b=b*p/3+0.5*(r-p/3*q);
-   h=pow(fabs(a),0.5);
+   h=sqrt(fabs(a));
 
    if (b<0) h=-h;
 
-   D = pow(a,3)+pow(b,2);
+   D = MathLib::fastpow(a,3)+b*b;
 
    if (D<=(-eps))
    {
       nz=3;
-      phi=acos(b/pow(h,3))/3;
+      phi=acos(b/MathLib::fastpow(h,3))/3;
       z[0]=2*h*cos(pi/3-phi)-p/3;
       z[1]=2*h*cos(pi/3+phi)-p/3;
       z[2]=-2*h*cos(phi)-p/3;
@@ -1316,12 +1319,12 @@ void NsPol3 (double p, double q, double r, vector<double>*roots)
       nz=1;
       if(a>=eps)
       {
-         b=b/pow(h,3);
-         phi=log(b+pow(pow(b,2)+1,0.5))/3;
+         b=b/MathLib::fastpow(h,3);
+         phi=log(b+sqrt(b*b+1))/3;
          z[0]=-2*h*sinh(phi)-p/3;
       } else if(a>(-eps))
       {
-         z[0]=pow((2*abs(b)),1/3);
+         z[0]=pow((2*abs(b)),1./3.);
          if (b>0)
          {
             z[0]=-z[0];;
@@ -1330,8 +1333,8 @@ void NsPol3 (double p, double q, double r, vector<double>*roots)
       }
       else
       {
-         b=b/pow(h,3);
-         phi=log(b+pow(pow(b,2)-1,0.5))/3;
+         b=b/MathLib::fastpow(h,3);
+         phi=log(b+sqrt(b*b-1))/3;
          z[0]=-2*h*cosh(phi)-p/3;
       }
    }

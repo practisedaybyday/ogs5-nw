@@ -106,6 +106,7 @@ public:
 	std::vector <std::vector <double> > q;
 
 	CPointData_ECL() {x = 0; y = 0; z = 0;}
+	CPointData_ECL(double const*const pnt) {x = pnt[0]; y = pnt[1]; z = pnt[2];}
 	~CPointData_ECL() {}
 };
 

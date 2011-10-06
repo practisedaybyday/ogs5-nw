@@ -139,10 +139,7 @@ typedef struct
    int max_col;                                   /* Groesste Spaltennummer */
    long *index;                                   /* Index fuer Spalteneintraege */
    double *wert;                                  /* Spalteneintraege */
-}
-
-
-M2_Zeile;
+} M2_Zeile;
 
 typedef struct
 {
@@ -150,10 +147,7 @@ typedef struct
    long max_size;
    long NumDif;                                   /* max. Differenz |Spalten-Zeilennummer| */
    M2_Zeile *zeile;                               /* Eintraege in den Zeilen; Diagonale in zeile[0] */
-}
-
-
-Modell2;
+} Modell2;
 
 typedef struct
 {
@@ -210,10 +204,7 @@ typedef struct
 {                                                 /* einzelner Eintrag in der Spalte k mit Index i */
    long Index;
    double Aik[4];
-}
-
-
-M34_aik;
+} M34_aik;
 
 typedef struct
 {                                                 /* Spalte k der Obermatrix (Zeile k der Untermatrix) */
@@ -221,10 +212,7 @@ typedef struct
    int anz;                                       /* Anzahl eingespeicherter Aik (ohne Diagonale) */
    long rechts;                                   /* rechts[k]: letzte Spalte j, die ein Akj enthaelt */
    M34_aik *Ak;                                   /* Spalten/Zeilenelemente */
-}
-
-
-M34_Spalte;
+} M34_Spalte;
 
 typedef struct
 {
@@ -243,10 +231,7 @@ typedef struct
    double *Diag;                                  /* Akk als Vektor */
    double *PreD;                                  /* Bkk (ILU-Preconditioner) */
    M34_Spalte *Spalte;                            /* Obermatrixspalten (Untermatrixzeilen) */
-}
-
-
-Modell34;
+} Modell34;
 
 /* Die nachfolgenden Makros dienen der besseren Lesbarkeit (Kuerze!)
    des Codes. Sie werden am Ende dieser Quelle saemtlich undefiniert!
@@ -1486,27 +1471,22 @@ double M34Get(long i1, long k1)
 //WW/PA 08/02/2006
 double M5Get(long i, long j)
 {
-   long k,dim1;
-   long ii, jj;
-
-   MeshLib::CFEMesh* m_msh = NULL;
-   CNode *m_nod_i = NULL;
-   //  CNode *m_nod_j = NULL;
-   m_msh = FEMGet("GROUNDWATER_FLOW");
-   dim1 = m_msh->NodesInUsage();
+   MeshLib::CFEMesh const*const mesh (FEMGet("GROUNDWATER_FLOW"));
+   const long dim1 = mesh->NodesInUsage();
 
 #ifdef ERROR_CONTROL
    if ((i >= dim1) || (j >= dim1) || (i < 0) || (j < 0))
       MX_Exit("M5Get", 2);
 #endif
 
-   ii = m_msh->Eqs2Global_NodeIndex[i];
-   jj = m_msh->Eqs2Global_NodeIndex[j];
-   m_nod_i = m_msh->nod_vector[ii];
-   //
-   for(k=0; k<(int)m_nod_i->connected_nodes.size(); k++)
+   const size_t jj (mesh->Eqs2Global_NodeIndex[j]);
+   CNode const*const nod_i (mesh->nod_vector[mesh->Eqs2Global_NodeIndex[i]]);
+   std::vector<size_t> const& connected_nodes (nod_i->getConnectedNodes());
+   const size_t n_connected_nodes (connected_nodes.size());
+
+   for(size_t k=0; k<n_connected_nodes; k++)
    {
-      if(m_nod_i->connected_nodes[k]==jj)
+      if(connected_nodes[k] == jj)
       {
          //TEST WW		return  jdiag[m_nod_i->m5_index[k]];
          break;
@@ -1520,27 +1500,25 @@ double M5Get(long i, long j)
 //WW/PA 08/02/2006
 int M5Set(long i, long j, double e_val)
 {
-   long k, dim1;
-   long ii, jj;
+   long dim1;
    e_val = e_val;                                 //OK411
-   MeshLib::CFEMesh* m_msh = NULL;
-   CNode *m_nod_i = NULL;
+   MeshLib::CFEMesh const*const mesh(FEMGet("GROUNDWATER_FLOW"));
    //  CNode *m_nod_j = NULL;
-   m_msh = FEMGet("GROUNDWATER_FLOW");
-   dim1 = m_msh->NodesInUsage();
+   dim1 = mesh->NodesInUsage();
 
 #ifdef ERROR_CONTROL
    if ((i >= dim1) || (j >= dim1) || (i < 0) || (j < 0))
       MX_Exit("M5Get", 2);
 #endif
 
-   ii = m_msh->Eqs2Global_NodeIndex[i];
-   jj = m_msh->Eqs2Global_NodeIndex[j];
-   m_nod_i = m_msh->nod_vector[ii];
-   //
-   for(k=0; k<(int)m_nod_i->connected_nodes.size(); k++)
+   const size_t jj (mesh->Eqs2Global_NodeIndex[j]);
+   CNode const*const nod_i (mesh->nod_vector[mesh->Eqs2Global_NodeIndex[i]]);
+   std::vector<size_t> const& connected_nodes (nod_i->getConnectedNodes());
+   const size_t n_connected_nodes (connected_nodes.size());
+
+   for(size_t k=0; k<n_connected_nodes; k++)
    {
-      if(m_nod_i->connected_nodes[k]==jj)
+      if(connected_nodes[k]==jj)
       {
          //TEST WW			jdiag[m_nod_i->m5_index[k]] = e_val;
          break;
@@ -1766,35 +1744,25 @@ void M1MatVek(double *vektor, double *ergebnis)
 //WW/PA 08/02/2006
 int M5Inc(long i, long j, double aij_inc)
 {
-   long k, dim1;
-   long ii, jj;
-
-   MeshLib::CFEMesh* m_msh = NULL;
-   CNode *m_nod_i = NULL;
-   //  CNode *m_nod_j = NULL;
-   m_msh = FEMGet("GROUNDWATER_FLOW");
-   dim1 = m_msh->NodesInUsage();
+	MeshLib::CFEMesh const* const mesh(FEMGet("GROUNDWATER_FLOW"));
+	const long dim1(mesh->NodesInUsage());
 
 #ifdef ERROR_CONTROL
-   if ((i >= dim1) || (j >= dim1) || (i < 0) || (j < 0))
-      MX_Exit("M5Inc", 2);
+	if ((i >= dim1) || (j >= dim1) || (i < 0) || (j < 0)) MX_Exit("M5Inc", 2);
 #endif
-   if (fabs(aij_inc)<MKleinsteZahl)
-      return 0;                                   /* Abbruch bei Nullwert */
+	if (fabs(aij_inc) < MKleinsteZahl) return 0; /* Abbruch bei Nullwert */
 
-   ii = m_msh->Eqs2Global_NodeIndex[i];
-   jj = m_msh->Eqs2Global_NodeIndex[j];
-   m_nod_i = m_msh->nod_vector[ii];
-   //
-   for(k=0; k<(int)m_nod_i->connected_nodes.size(); k++)
-   {
-      if(m_nod_i->connected_nodes[k]==jj)
-      {
-         //TEST WW			 jdiag[m_nod_i->m5_index[k]] += aij_inc;
-         break;
-      }
-   }
-   return 1;
+	const size_t jj(mesh->Eqs2Global_NodeIndex[j]);
+	CNode const* const nod_i(mesh->nod_vector[mesh->Eqs2Global_NodeIndex[i]]);
+	std::vector<size_t> const& connected_nodes(nod_i->getConnectedNodes());
+	const size_t n_connected_nodes(connected_nodes.size());
+	for (size_t k = 0; k < n_connected_nodes; k++) {
+		if (connected_nodes[k] == jj) {
+			//TEST WW			 jdiag[m_nod_i->m5_index[k]] += aij_inc;
+			break;
+		}
+	}
+	return 1;
 }
 
 
@@ -1853,7 +1821,7 @@ void *M5CreateMatrix(long param1, long param2, long param3)
 
       index = m_msh->Eqs2Global_NodeIndex[k];     //
                                                   //WW
-      Size = (int)m_msh->nod_vector[index]->connected_nodes.size();
+      Size = (int)m_msh->nod_vector[index]->getConnectedNodes().size();
       if ( Size > jd_ptr_max )
          jd_ptr_max = Size;
 #ifdef SX
@@ -1881,7 +1849,7 @@ void *M5CreateMatrix(long param1, long param2, long param3)
    {
       index = m_msh->Eqs2Global_NodeIndex[k];     //
                                                   //WW
-      Size = (int)m_msh->nod_vector[index]->connected_nodes.size();
+      Size = (int)m_msh->nod_vector[index]->getConnectedNodes().size();
       for (i = 0; i < Size; i++)
          jd_ptr[i]++;
    }
@@ -1891,7 +1859,7 @@ void *M5CreateMatrix(long param1, long param2, long param3)
       //	  printf("Zeil2(%d).anz=%d\n",k,Zeil2(k).anz);
       index = m_msh->Eqs2Global_NodeIndex[k];     //
                                                   //       Zeil2(k).anz;
-      jd_ptr1[k]= (int)m_msh->nod_vector[index]->connected_nodes.size();
+      jd_ptr1[k]= (int)m_msh->nod_vector[index]->getConnectedNodes().size();
       jd_ptr2[k]=k;
    }
 
@@ -1948,7 +1916,7 @@ void *M5CreateMatrix(long param1, long param2, long param3)
          ii = jd_ptr2[i];
          index =  m_msh->Eqs2Global_NodeIndex[ii];
          //			 col_ind[count1] =   m_msh->go[m_msh->nod_vector[index]->connected_nodes[k]];
-         col_i = m_msh->nod_vector[index]->connected_nodes[k];
+         col_i = m_msh->nod_vector[index]->getConnectedNodes()[k];
          col_ind[count1] = m_msh->nod_vector[col_i]->GetEquationIndex();
          jj = col_ind[count1] ;
          //TEST WW				 m_msh->nod_vector[index]->m5_index[k]=count1;
@@ -2520,19 +2488,19 @@ void MXRandbed(long ir, double Ri, double *ReSei)
       case 5:                                     //WW/PA  08/02/2006
       {
 	//WW long dim1;
-         long ii, jj, jr;
-         MeshLib::CFEMesh* m_msh = NULL;
-         CNode *m_nod_i = NULL;
+         long jr;
+         MeshLib::CFEMesh const*const mesh(FEMGet("GROUNDWATER_FLOW"));
          CNode *m_nod_j = NULL;
-         m_msh = FEMGet("GROUNDWATER_FLOW");
          //WW dim1 = m_msh->NodesInUsage();
-         ii = m_msh->Eqs2Global_NodeIndex[ir];
-         m_nod_i = m_msh->nod_vector[ii];
          ReSei[ir] = Ri*MXGet(ir,ir);
-         for(k=0; k<(int)m_nod_i->connected_nodes.size(); k++)
+
+     	CNode const* const nod_i(mesh->nod_vector[mesh->Eqs2Global_NodeIndex[i]]);
+     	std::vector<size_t> const& connected_nodes(nod_i->getConnectedNodes());
+     	const size_t n_connected_nodes(connected_nodes.size());
+
+         for(size_t k=0; k<n_connected_nodes; k++)
          {
-            jj = m_nod_i->connected_nodes[k];
-            m_nod_j=m_msh->nod_vector[jj];
+            m_nod_j=mesh->nod_vector[connected_nodes[k]];
             jr = m_nod_j->GetEquationIndex();
             if(ir==jr) continue;
             MXSet(ir,jr,0.0);

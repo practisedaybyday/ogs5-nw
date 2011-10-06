@@ -56,20 +56,19 @@ namespace MeshLib
          nodes_of_edges[i] = ed.nodes_of_edges[i];
    }
 
-   /**************************************************************************
-   MSHLib-Method:
-   Task:
-   Programing:
-   06/2005 WW Implementation
-   **************************************************************************/
-   double CEdge::getLength() const
-   {
-      double dx, dy, dz;
-      dx = nodes_of_edges[1]->X()-nodes_of_edges[0]->X();
-      dy = nodes_of_edges[1]->Y()-nodes_of_edges[0]->Y();
-      dz = nodes_of_edges[1]->Z()-nodes_of_edges[0]->Z();
-      return sqrt(dx*dx+dy*dy+dz*dz);
-   }
+/**************************************************************************
+ MSHLib-Method:
+ Task:
+ Programing:
+ 06/2005 WW Implementation
+ **************************************************************************/
+double CEdge::getLength() const
+{
+	double const*const pnt0(nodes_of_edges[0]->getData());
+	double const*const pnt1(nodes_of_edges[1]->getData());
+	double const dx (pnt1[0]-pnt0[0]), dy(pnt1[1]-pnt0[1]), dz(pnt1[2]-pnt0[2]);
+	return sqrt(dx * dx + dy * dy + dz * dz);
+}
 
    /**************************************************************************
    MSHLib-Method:
@@ -135,32 +134,30 @@ namespace MeshLib
       NormalizeVector(normal_vector,3);
    }
 
-   /**************************************************************************
-   MSHLib-Method:
-   08/2006 OK Implementation
-   **************************************************************************/
-   void CEdge::GetEdgeVector(double*edge_vector)
-   {
-      // Edge vector
-      //double edge_vector[3];
-      edge_vector[0] = nodes_of_edges[1]->X()-nodes_of_edges[0]->X();
-      edge_vector[1] = nodes_of_edges[1]->Y()-nodes_of_edges[0]->Y();
-      edge_vector[2] = nodes_of_edges[1]->Z()-nodes_of_edges[0]->Z();
-      //return edge_vector;
-   }
+/**************************************************************************
+ MSHLib-Method:
+ 08/2006 OK Implementation
+ **************************************************************************/
+void CEdge::GetEdgeVector(double*edge_vector)
+{
+	double const*const pnt0(nodes_of_edges[0]->getData());
+	double const*const pnt1(nodes_of_edges[1]->getData());
+	edge_vector[0] = pnt1[0]-pnt0[0]; // nodes_of_edges[1]->X() - nodes_of_edges[0]->X();
+	edge_vector[1] = pnt1[1]-pnt0[1]; // nodes_of_edges[1]->Y() - nodes_of_edges[0]->Y();
+	edge_vector[2] = pnt1[2]-pnt0[2]; // nodes_of_edges[1]->Z() - nodes_of_edges[0]->Z();
+}
 
-   /**************************************************************************
-   MSHLib-Method:
-   08/2006 OK Implementation
-   **************************************************************************/
-   void CEdge::GetEdgeMidPoint(double*edge_vector)
-   {
-      // Edge vector
-      //double edge_vector[3];
-      edge_vector[0] = 0.5*(nodes_of_edges[1]->X()+nodes_of_edges[0]->X());
-      edge_vector[1] = 0.5*(nodes_of_edges[1]->Y()+nodes_of_edges[0]->Y());
-      edge_vector[2] = 0.5*(nodes_of_edges[1]->Z()+nodes_of_edges[0]->Z());
-      //return edge_vector;
-   }
+/**************************************************************************
+ MSHLib-Method:
+ 08/2006 OK Implementation
+ **************************************************************************/
+void CEdge::GetEdgeMidPoint(double*edge_vector)
+{
+	double const* const pnt0(nodes_of_edges[0]->getData());
+	double const* const pnt1(nodes_of_edges[1]->getData());
+	edge_vector[0] = 0.5 * (pnt1[0] + pnt0[0]);
+	edge_vector[1] = 0.5 * (pnt1[1] + pnt0[1]);
+	edge_vector[2] = 0.5 * (pnt1[2] + pnt0[2]);
+}
 
 }                                                 // namespace MeshLib

@@ -58,11 +58,9 @@ FctTestFloat func, int *pos );
 /* Liest Float-Wert aus String und schreibt Protokoll in Datei */
 extern int StrReadDouble ( double *x, char *s, FILE *f, int *pos );
 /* Liest Double-Wert aus String und schreibt Protokoll in Datei */
-extern int StrReadString ( char **x, char *s, FILE *f,
-FctTestString func, int *pos );
+extern int StrReadString ( char **x, char *s, FILE *f, /*FctTestString func,*/ int *pos );
 /* Liest Zeichenkette aus String und schreibt Protokoll in Datei */
-extern int StrReadStr ( char *x, char *s, FILE *f,
-FctTestString func, int *pos );
+extern int StrReadStr ( char *x, char *s, FILE *f, /*FctTestString func,*/ int *pos );
 /* Liest Zeichenkette aus String und schreibt Protokoll in Datei */
 extern int StrTestInt ( char *s );
 /* Testet, ob in s noch ein Integer kommt; 0:=nein */
@@ -113,7 +111,7 @@ extern void GetRFINodesData ();
 #define MAX_NAME 80
 
                                                   /*MX*/
-extern int StrOnlyReadStr ( char *x, char *s, FILE *f, FctTestString func, int *pos );
+extern int StrOnlyReadStr ( char *x, char *s, FILE *f, /*FctTestString func,*/ int *pos );
 
 extern std::string get_sub_string(const std::string&,const std::string&,int,int*);
 extern void remove_white_space(std::string*);

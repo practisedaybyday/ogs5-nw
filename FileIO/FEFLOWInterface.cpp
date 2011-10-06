@@ -39,12 +39,12 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
   bool isXZplane = false;
 
 
-  while(!feflow_file.eof()) 
+  while(!feflow_file.eof())
   {
     line_string = GetLineFromFile1(&feflow_file);
     //....................................................................
     // CLASS
-    if(line_string.find("CLASS")!=string::npos) 
+    if(line_string.find("CLASS")!=string::npos)
     {
       line_stream.str(GetLineFromFile1(&feflow_file));
       // problem class, time mode, problem orientation, dimension, nr. layers for 3D, saturation switch, precision of results, precision of coordinates
@@ -53,7 +53,7 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
     }
     //....................................................................
     // DIMENS
-    else if(line_string.compare("DIMENS")==0) 
+    else if(line_string.compare("DIMENS")==0)
     {
       // DIMENS
       line_stream.str(GetLineFromFile1(&feflow_file));
@@ -72,7 +72,7 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
     else if(line_string.compare("NODE")==0)
     {
       CElem *m_ele = NULL;
-      for(long i=0; i<fem_dim.n_elements; i++) 
+      for(long i=0; i<fem_dim.n_elements; i++)
       {
         m_ele = new CElem();
         //m_ele->SetElementType(fem_dim.n_nodes_of_element);
@@ -102,9 +102,9 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
               if (n>=fem_dim.n_nodes) break;
               m_nod = m_msh->nod_vector[n];
               if (k==0)
-                m_nod->SetX(x[j]); 
+                m_nod->SetX(x[j]);
               else
-                m_nod->SetY(x[j]); 
+                m_nod->SetY(x[j]);
             } else {
               for(int l=0;l<fem_class.n_layers3d+1;l++) {
                 long n = i*12 + l*no_nodes_per_layer + j;
@@ -112,9 +112,9 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
                 if(nn>=fem_dim.n_nodes) break;
                 m_nod = m_msh->nod_vector[n];
                 if (k==0)
-                  m_nod->SetX(x[j]); 
+                  m_nod->SetX(x[j]);
                 else
-                  m_nod->SetY(x[j]); 
+                  m_nod->SetY(x[j]);
               }
             }
           }
@@ -142,7 +142,7 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
           //n = i+l*no_nodes_per_layer;
           long n = n0-1 + l*no_nodes_per_layer;
           m_nod = m_msh->nod_vector[n];
-          m_nod->SetZ(z); 
+          m_nod->SetZ(z);
         }
         line_string = GetLineFromFile1(&feflow_file);
         line_stream.str(line_string);
@@ -219,7 +219,7 @@ CFEMesh* FEFLOWInterface::readFEFLOWModelFile(const std::string &filename)
     if (m_msh) {
       for (size_t i=0; i<m_msh->nod_vector.size(); i++) {
         CNode* nod = m_msh->nod_vector[i];
-        nod->SetZ(nod->Y());
+        nod->SetZ(nod->getData()[1]);
         nod->SetY(0.0);
       }
     }
@@ -311,7 +311,7 @@ void FEFLOWInterface::readSuperMesh(std::ifstream &feflow_file, FEFLOW_FEM_CLASS
   if (nodesEle.isNull()) return;
   {
     QString str = nodesEle.attribute("count");
-    const long n_points = str.toLong(); 
+    const long n_points = str.toLong();
     points->resize(n_points);
     //fixed
     QDomElement xmlEle = nodesEle.firstChildElement("fixed");
@@ -386,7 +386,7 @@ void FEFLOWInterface::setMaterialID( CFEMesh * m_msh, std::vector<GEOLIB::Polyli
 {
   for (size_t i=0; i<m_msh->ele_vector.size(); i++) {
     CElem *e = m_msh->ele_vector[i];
-    double *gpt = e->GetGravityCenter();
+    double const* gpt = e->GetGravityCenter();
     int matId = 0;
     for (size_t j=0; j<lines->size(); j++) {
       GEOLIB::Polyline* poly = (*lines)[j];

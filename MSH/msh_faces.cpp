@@ -1,6 +1,10 @@
 #include "msh_faces.h"
 #include "math.h"
 #include "stdlib.h"
+
+// MathLib
+#include "MathTools.h"
+
 /*-------------------------------------------------------------------------
 Constructor and Destructor of the class CECLIPSEData
 -------------------------------------------------------------------------*/
@@ -17,7 +21,8 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-void CPlaneEquation::CalculatePlaneEquationFrom3Points(double Point1[3], double Point2[3], double Point3[3]) {
+void CPlaneEquation::CalculatePlaneEquationFrom3Points(const double Point1[3], const double Point2[3], const double Point3[3])
+{
 	//Set the initial point
 	this->Point[0] = Point1[0];
 	this->Point[1] = Point1[1];
@@ -38,7 +43,7 @@ void CPlaneEquation::CalculatePlaneEquationFrom3Points(double Point1[3], double 
 	this->normal_vector[2] = this->vector1[0] * this->vector2[1] - this->vector1[1] * this->vector2[0];
 
 	//norm the normal vector to 1
-	double norm = sqrt(pow(this->normal_vector[0],2.) + pow(this->normal_vector[1],2.) + pow(this->normal_vector[2],2.));
+	double norm = sqrt(MathLib::scpr(this->normal_vector, this->normal_vector, 3));
 	this->normal_vector[0] = 1. / norm * this->normal_vector[0];
 	this->normal_vector[1] = 1. / norm * this->normal_vector[1];
 	this->normal_vector[2] = 1. / norm * this->normal_vector[2];
@@ -54,7 +59,8 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-bool CPlaneEquation::CheckIfPointInPlane(double Point[3]) {
+bool CPlaneEquation::CheckIfPointInPlane(const double Point[3])
+{
 	(void)Point;
 	//the point is included in the normal equation of the plane, it is part of the plane if the equation is fullfilled
 	if (this->Lambda_NormalEquation == this->Point[0] * this->normal_vector[0] + this->Point[1] * this->normal_vector[1] + this->Point[2] * this->normal_vector[2])
@@ -90,7 +96,7 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-bool CFaces::Calculate_FaceGravityCentre(double Point1[3], double Point2[3], double Point3[3], double Point4[3]){
+bool CFaces::Calculate_FaceGravityCentre(const double Point1[3], const double Point2[3], const double Point3[3], const double Point4[3]){
 	//Order of the faces: 0..left(x); 1..right(x); 2..front(y); 3..back(y); 4..bottom(z); 5..top(z)
 	if (this->connected_nodes.size()>4){
 		std::cout << "Error: The face has more than 4 corner points!" << std::endl;
@@ -117,11 +123,13 @@ bool CFaces::Calculate_FaceGravityCentre(double Point1[3], double Point2[3], dou
 	vec_b[2] = Point3[2] - Point1[2];
 
 	// Area of the first triangle = half of the cross product of the 2 vectors
-	double a1 = 0.5 * sqrt(pow(vec_a[1]*vec_b[2] - vec_a[2]*vec_b[1],2) + pow(vec_a[2]*vec_b[0] - vec_a[0]*vec_b[2],2) + pow(vec_a[0]*vec_b[1] - vec_a[1]*vec_b[0],2));
+	double a1 = 0.5 * sqrt((vec_a[1]*vec_b[2] - vec_a[2]*vec_b[1]) * (vec_a[1]*vec_b[2] - vec_a[2]*vec_b[1])
+			+ (vec_a[2]*vec_b[0] - vec_a[0]*vec_b[2]) * (vec_a[2]*vec_b[0] - vec_a[0]*vec_b[2])
+			+ (vec_a[0]*vec_b[1] - vec_a[1]*vec_b[0]) * (vec_a[0]*vec_b[1] - vec_a[1]*vec_b[0]));
 
 	// Centroid of the second triangle
 
-	///Änderung Bastian Point1 -> Point2 geändert
+	///ï¿½nderung Bastian Point1 -> Point2 geï¿½ndert
 	double xc2 = (Point1[0] + Point4[0] + Point3[0])/3.;
 	double yc2 = (Point1[1] + Point4[1] + Point3[1])/3.;
 	double zc2 = (Point1[2] + Point4[2] + Point3[2])/3.;
@@ -132,7 +140,9 @@ bool CFaces::Calculate_FaceGravityCentre(double Point1[3], double Point2[3], dou
 	vec_c[2] = Point4[2] - Point1[2];
 
 	// Area of the second triangle
-	double a2 = 0.5 * sqrt(pow(vec_c[1]*vec_b[2] - vec_c[2]*vec_b[1],2) + pow(vec_c[2]*vec_b[0] - vec_c[0]*vec_b[2],2.) + pow(vec_c[0]*vec_b[1] - vec_c[1]*vec_b[0],2.));
+	double a2 = 0.5 * sqrt((vec_c[1]*vec_b[2] - vec_c[2]*vec_b[1]) * (vec_c[1]*vec_b[2] - vec_c[2]*vec_b[1])
+			+ (vec_c[2]*vec_b[0] - vec_c[0]*vec_b[2]) * (vec_c[2]*vec_b[0] - vec_c[0]*vec_b[2])
+			+ (vec_c[0]*vec_b[1] - vec_c[1]*vec_b[0]) * (vec_c[0]*vec_b[1] - vec_c[1]*vec_b[0]));
 
 	// Centroid of the 4-sided polygon
 	if ((a1 + a2) > 0) {
@@ -178,24 +188,24 @@ Modification:
 -------------------------------------------------------------------------*/
 void CFaces::Calculate_components_of_a_vector(int flag, int phase_index, bool Radialmodell)
 {
-	double* normal_vector; 
+	double* normal_vector;
 	normal_vector = this->PlaneEquation->GetNormalVector();
 	// contoll that normalvector is positiv in all directions, is only valid if it is no radial model
 	if (Radialmodell == false) {
-		if((this->model_axis == "I+")||(this->model_axis == "I-")) 
+		if((this->model_axis == "I+")||(this->model_axis == "I-"))
 			if(normal_vector[0] < 0.0){
 				std::cout << "Error at the normal vector. The i-component is not positiv!" << std::endl;
 				//system("Pause");
 				exit(1);
 			}
-		if((this->model_axis == "J+")||(this->model_axis == "J-")) 
+		if((this->model_axis == "J+")||(this->model_axis == "J-"))
 			if(normal_vector[1] < 0.0){
 				std::cout << "Error at the normal vector. The j-component is not positiv!" << std::endl;
 				//system("Pause");
 				exit(1);
 			}
 	}
-	if((this->model_axis == "K+")||(this->model_axis == "K-")) 
+	if((this->model_axis == "K+")||(this->model_axis == "K-"))
 		if(normal_vector[2] < 0.0){
 			std::cout << "Error at the normal vector. The k-component is not positiv!" << std::endl;
 			//system("Pause");
@@ -204,8 +214,8 @@ void CFaces::Calculate_components_of_a_vector(int flag, int phase_index, bool Ra
 
 	for (int i = 0; i < 3; i++) {
 		//cout << this->q[i] << " " << normal_vector[i] << " ";
-		if(flag == 0) this->phases[phase_index]->q[i] = this->phases[phase_index]->q_norm * normal_vector[i]; 
-		if(flag == 1) this->vel[i] = this->v_norm * fabs(normal_vector[i]); 
+		if(flag == 0) this->phases[phase_index]->q[i] = this->phases[phase_index]->q_norm * normal_vector[i];
+		if(flag == 1) this->vel[i] = this->v_norm * fabs(normal_vector[i]);
 		//cout << this->q[i] << endl;
 	}
 }
@@ -217,21 +227,17 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-bool CFaces::CreateFace(MeshLib::CNode* Point1, MeshLib::CNode* Point2, MeshLib::CNode* Point3, MeshLib::CNode* Point4){
-	double coord_Point1[3];
-	double coord_Point2[3];
-	double coord_Point3[3];
-	double coord_Point4[3];
-
+bool CFaces::CreateFace(MeshLib::CNode* Point1, MeshLib::CNode* Point2, MeshLib::CNode* Point3, MeshLib::CNode* Point4)
+{
 	//Set nodes of the face
 	this->SetNodes(Point1, Point2, Point3, Point4);
 
 	//Calculate the plane equation
-	coord_Point1[0] = this->connected_nodes[0]->X(); coord_Point1[1] = this->connected_nodes[0]->Y(); coord_Point1[2] = this->connected_nodes[0]->Z();
-	coord_Point2[0] = this->connected_nodes[1]->X(); coord_Point2[1] = this->connected_nodes[1]->Y(); coord_Point2[2] = this->connected_nodes[1]->Z();
-	coord_Point3[0] = this->connected_nodes[2]->X(); coord_Point3[1] = this->connected_nodes[2]->Y(); coord_Point3[2] = this->connected_nodes[2]->Z();
-	coord_Point4[0] = this->connected_nodes[3]->X(); coord_Point4[1] = this->connected_nodes[3]->Y(); coord_Point4[2] = this->connected_nodes[3]->Z();
-	
+	double const*const coord_Point1 (this->connected_nodes[0]->getData());
+	double const*const coord_Point2 (this->connected_nodes[1]->getData());
+	double const*const coord_Point3 (this->connected_nodes[2]->getData());
+	double const*const coord_Point4 (this->connected_nodes[3]->getData());
+
 	this->PlaneEquation = new CPlaneEquation();
 	this->PlaneEquation->CalculatePlaneEquationFrom3Points(coord_Point1, coord_Point2, coord_Point3);
 

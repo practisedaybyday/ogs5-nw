@@ -2054,7 +2054,7 @@ namespace SolidProp
    {
      int i = 0, j = 0; //, m=0, m_max=100;
       double I1 = 0.0;
-      //WW double sy0, 
+      //WW double sy0,
       //WW double sy, ep, dlambda=0.0, tmpvalue=0., tmpvalue2=0., sqrtJ2I1;	//dTaun, dSign,
       double sy, ep, tmpvalue=0., sqrtJ2I1;	//dTaun, dSign,
       double F = 0.0, Ft = 0, yy; //, yl; Ft: tension failure WX: 11.08.2010
@@ -3916,7 +3916,7 @@ void CSolidProperties::Cal_Inv_Matrix(int Size, Matrix *MatrixA, Matrix *xx)
 
       if(Stress_Inv[1]>0.0)
       {
-         ang = Stress_Inv[2]/pow(Stress_Inv[1],1.5);
+         ang = Stress_Inv[2]/MathLib::fastpow(sqrt(Stress_Inv[1]), 3);
 
          PHI = Stress_Inv[1]*pow(1+Mat_n[5]*ang, Mat_n[6])+0.5*Mat_n[0]*I_p2
             +Mat_n[2]*Mat_n[2]*I_p4;
@@ -3983,7 +3983,7 @@ void CSolidProperties::Cal_Inv_Matrix(int Size, Matrix *MatrixA, Matrix *xx)
 
             I_p2 = I_n1*I_n1;
             I_p4 = I_p2*I_p2;
-            ang = Stress_Inv[2]/pow(Stress_Inv[1],1.5);
+            ang = Stress_Inv[2]/MathLib::fastpow(sqrt(Stress_Inv[1]),3);
             PHI = sqrt(Stress_Inv[1]*pow(1+Mat_n1[5]*ang, Mat_n1[6])+0.5*Mat_n1[0]*I_p2
                +Mat_n1[2]*Mat_n1[2]*I_p4);
             // The yield function
@@ -4050,7 +4050,7 @@ void CSolidProperties::Cal_Inv_Matrix(int Size, Matrix *MatrixA, Matrix *xx)
 
                I_p2 = I_n1*I_n1;
                I_p4 = I_p2*I_p2;
-               ang = Stress_Inv[2]/pow(Stress_Inv[1],1.5);
+               ang = Stress_Inv[2]/MathLib::fastpow(sqrt(Stress_Inv[1]),3);
                PHI = sqrt(Stress_Inv[1]*pow(1+Mat_n1[5]*ang, Mat_n1[6])+0.5*Mat_n1[0]*I_p2
                   +Mat_n1[2]*Mat_n1[2]*I_p4);
                PSI = sqrt(Stress_Inv[1]/psi1+0.5*Mat_n1[0]*I_p2+Mat_n1[2]*Mat_n1[2]*I_p4);
@@ -4650,7 +4650,7 @@ void CSolidProperties::Cal_Inv_Matrix(int Size, Matrix *MatrixA, Matrix *xx)
       {
          dFdS[i] -= 1.5*S_Invariants[2]*DevS[i]/S_Invariants[1];
          if(i<3)  dFdS[i] -= 2.0*S_Invariants[1]/3.0;
-         dFdS[i] /= pow(S_Invariants[1],1.5);
+         dFdS[i] /= MathLib::fastpow(sqrt(S_Invariants[1]), 3);
       }
       /* 1.3 dF/ds   ..  */
       for(i=0; i<LengthStrs; i++)

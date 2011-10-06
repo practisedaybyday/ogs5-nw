@@ -205,7 +205,7 @@ namespace MeshLib
       }
       area = 1.0;                                 //WW
 
-	  excavated = -1;     //12.08.2011. WW     
+	  excavated = -1;     //12.08.2011. WW
    }
 
 CElem::CElem(CElem const &elem) :
@@ -243,7 +243,7 @@ CElem::CElem(CElem const &elem) :
 	// copy nodes
 	nodes.resize ((int)((elem.nodes).Size()));
 	for (size_t k(0); k<(elem.nodes).Size() ; k++) {
-		nodes[k] = new CNode ((elem.nodes[k])->GetIndex(), (elem.nodes[k])->X(), (elem.nodes[k])->Y(), (elem.nodes[k])->Z());
+		nodes[k] = new CNode ((elem.nodes[k])->GetIndex(), (elem.nodes[k])->getData());
 	}
 
 	// copy edges
@@ -301,66 +301,72 @@ CElem::CElem(CElem const &elem) :
       double yy[3];
       double zz[3];
       tranform_tensor = new Math_Group::Matrix(3,3);
-      if(geo_type==MshElemType::LINE)
-      {
-         // x"_vec
-         xx[0] = nodes[1]->X()-nodes[0]->X();
-         xx[1] = nodes[1]->Y()-nodes[0]->Y();
-         xx[2] = nodes[1]->Z()-nodes[0]->Z();
-         NormalizeVector(xx,3);
-         // an arbitrary vector
-         for(size_t i=0; i<3; i++)
-            yy[i] = 0.0;
-                                                  //WW. 06.11.2007
-         if(fabs(xx[0])>0.0 && fabs(xx[1])+fabs(xx[2]) < DBL_MIN)
-            yy[2] = 1.0;
-         else if (fabs(xx[1])>0.0 && fabs(xx[0])+fabs(xx[2])<DBL_MIN)
-            yy[0] = 1.0;
-         else if (fabs(xx[2])>0.0 && fabs(xx[0])+fabs(xx[1])<DBL_MIN)
-            yy[1] = 1.0;
-         else
-         {
-            for(size_t i=0; i<3; i++)
-            {
-               if(fabs(xx[i])>0.0)
-               {
-                  yy[i] = - xx[i];
-                  break;
-               }
-            }
-         }
-         // z"_vec
-         CrossProduction(xx,yy,zz);
-         NormalizeVector(zz,3);
-         // y"_vec
-         CrossProduction(zz,xx,yy);
-         NormalizeVector(yy,3);
-      }
-      else if (geo_type==MshElemType::QUAD || geo_type==MshElemType::TRIANGLE)
-      {
-         // x"_vec
-         xx[0] = nodes[1]->X()-nodes[0]->X();
-         xx[1] = nodes[1]->Y()-nodes[0]->Y();
-         xx[2] = nodes[1]->Z()-nodes[0]->Z();
-         NormalizeVector(xx,3);
-         // a vector on the plane
-         yy[0] = nodes[2]->X()-nodes[1]->X();
-         yy[1] = nodes[2]->Y()-nodes[1]->Y();
-         yy[2] = nodes[2]->Z()-nodes[1]->Z();
-         // z"_vec. off plane
-         CrossProduction(xx,yy,zz);
-         NormalizeVector(zz,3);
-         // y"_vec
-         CrossProduction(zz,xx,yy);
-         NormalizeVector(yy,3);
-      }
-      for(size_t i=0; i<3; i++)
-      {
-         (*tranform_tensor)(i,0) = xx[i];
-         (*tranform_tensor)(i,1) = yy[i];
-         (*tranform_tensor)(i,2) = zz[i];
-      }
-   }
+      if (geo_type == MshElemType::LINE) {
+		// x"_vec
+		double const* const pnt0(nodes[0]->getData());
+		double const* const pnt1(nodes[1]->getData());
+		xx[0] = pnt1[0] - pnt0[0];
+		xx[1] = pnt1[1] - pnt0[1];
+		xx[2] = pnt1[2] - pnt0[2];
+		NormalizeVector(xx, 3);
+		// an arbitrary vector
+		for (size_t i = 0; i < 3; i++)
+			yy[i] = 0.0;
+		//WW. 06.11.2007
+		if (fabs(xx[0]) > 0.0 && fabs(xx[1]) + fabs(xx[2]) < DBL_MIN)
+			yy[2] = 1.0;
+		else if (fabs(xx[1]) > 0.0 && fabs(xx[0]) + fabs(xx[2]) < DBL_MIN)
+			yy[0] = 1.0;
+		else if (fabs(xx[2]) > 0.0 && fabs(xx[0]) + fabs(xx[1]) < DBL_MIN)
+			yy[1] = 1.0;
+		else {
+			for (size_t i = 0; i < 3; i++) {
+				if (fabs(xx[i]) > 0.0) {
+					yy[i] = -xx[i];
+					break;
+				}
+			}
+		}
+		// z"_vec
+		CrossProduction(xx, yy, zz);
+		NormalizeVector(zz, 3);
+		// y"_vec
+		CrossProduction(zz, xx, yy);
+		NormalizeVector(yy, 3);
+	} else {
+		if (geo_type == MshElemType::QUAD || geo_type == MshElemType::TRIANGLE) {
+			// x"_vec
+//			xx[0] = nodes[1]->X() - nodes[0]->X();
+//			xx[1] = nodes[1]->Y() - nodes[0]->Y();
+//			xx[2] = nodes[1]->Z() - nodes[0]->Z();
+			double const* const pnt0(nodes[0]->getData());
+			double const* const pnt1(nodes[1]->getData());
+			xx[0] = pnt1[0] - pnt0[0];
+			xx[1] = pnt1[1] - pnt0[1];
+			xx[2] = pnt1[2] - pnt0[2];
+			NormalizeVector(xx, 3);
+			// a vector on the plane
+//			yy[0] = nodes[2]->X() - nodes[1]->X();
+//			yy[1] = nodes[2]->Y() - nodes[1]->Y();
+//			yy[2] = nodes[2]->Z() - nodes[1]->Z();
+			double const* const pnt2(nodes[2]->getData());
+			yy[0] = pnt2[0] - pnt1[0];
+			yy[1] = pnt2[1] - pnt1[1];
+			yy[2] = pnt2[2] - pnt1[2];
+			// z"_vec. off plane
+			CrossProduction(xx, yy, zz);
+			NormalizeVector(zz, 3);
+			// y"_vec
+			CrossProduction(zz, xx, yy);
+			NormalizeVector(yy, 3);
+		}
+	}
+	for (size_t i = 0; i < 3; i++) {
+		(*tranform_tensor)(i, 0) = xx[i];
+		(*tranform_tensor)(i, 1) = yy[i];
+		(*tranform_tensor)(i, 2) = zz[i];
+	}
+}
    /**************************************************************************
    MSHLib-Method:
    Task:
@@ -746,21 +752,18 @@ void CElem::Read(std::istream& is, int fileType)
    Programing:
    06/2005 WW Implementation
    **************************************************************************/
-   void CElem::WriteAll(std::ostream &os) const
-   {
-      std::string deli = "  ";
-      os<<index<<deli<<patch_index<<deli<<GetName()<<deli;
-      //if(index==0)
-      os<<"Index X Y Z: "<<std::endl;
-      for(size_t i=0; i<nodes.Size(); i++)
-      {
-         os<<nodes_index[i]
-            <<deli<<nodes[i]->X()
-            <<deli<<nodes[i]->Y()
-            <<deli<<nodes[i]->Z()<<std::endl;
-      }
+void CElem::WriteAll(std::ostream &os) const
+{
+	std::string deli = "  ";
+	os << index << deli << patch_index << deli << GetName() << deli;
+	os << "Index X Y Z: " << std::endl;
+	for (size_t i = 0; i < nodes.Size(); i++) {
+		double const*const pnt_i(nodes[i]->getData());
+		os << nodes_index[i] << deli << pnt_i[0] << deli << pnt_i[1]
+				<< deli << pnt_i[2] << std::endl;
+	}
+}
 
-   }
    /**************************************************************************
    MSHLib-Method:
    Task:
@@ -812,6 +815,20 @@ void CElem::Read(std::istream& is, int fileType)
          nodes_index[i] = nodes[i]->GetIndex();
       }
    }
+
+void CElem::setNodes(std::vector<CNode*> const& ele_nodes)
+{
+	if (nodes.Size() != ele_nodes.size()) {
+		nodes.resize(ele_nodes.size());
+		nodes_index.resize(ele_nodes.size());
+	}
+
+	for (size_t k(0); k<ele_nodes.size(); k++) {
+		nodes[k] = ele_nodes[k];
+		nodes_index[k] = ele_nodes[k]->GetIndex();
+	}
+}
+
    /**************************************************************************
    MSHLib-Method:
    Task:
@@ -1199,12 +1216,12 @@ void CElem::Read(std::istream& is, int fileType)
   GetElementFacesPyra
   Task: Get local indeces of a element face nodes
   Augs.:
-          const int Face :  Local index of element face 
+          const int Face :  Local index of element face
           const int order:  1 Linear. 2, quadratic
           int *FaceNode  :  Local index of face nodes
   Return: number of nodes of a face
   Programing:
-  01/2010 NW  
+  01/2010 NW
   **************************************************************************/
   int CElem::GetElementFacesPyramid(const int Face, int *FaceNode)
   {
@@ -1351,9 +1368,11 @@ void CElem::Read(std::istream& is, int fileType)
 
 	  if (this->geo_type == MshElemType::LINE)                  // Line
 	  {
-		  double xDiff = nodes[nnodes-1]->X()-nodes[0]->X();
-		  double yDiff = nodes[nnodes-1]->Y()-nodes[0]->Y();
-		  double zDiff = nodes[nnodes-1]->Z()-nodes[0]->Z();
+		  double const*const pnt0 (nodes[0]->getData());
+		  double const*const pnt (nodes[nnodes-1]->getData());
+		  double xDiff = pnt[0]-pnt0[0];
+		  double yDiff = pnt[1]-pnt0[1];
+		  double zDiff = pnt[2]-pnt0[2];
 		  elemVolume = sqrt(xDiff*xDiff + yDiff*yDiff + zDiff*zDiff); //CMCD kg44 reactivated
 	  }
 	  else if (this->geo_type == MshElemType::TRIANGLE)
@@ -1415,19 +1434,32 @@ void CElem::Read(std::istream& is, int fileType)
          //----plane normal----------------------------
          // tranform_tensor = new Matrix(3,3);
          // face"_vec
-         face[0] = nodes[index1]->X()-nodes[index0]->X();
-         face[1] = nodes[index1]->Y()-nodes[index0]->Y();
-         face[2] = nodes[index1]->Z()-nodes[index0]->Z();
+		 double const* pnt0(nodes[index0]->getData());
+		 double const* pnt1(nodes[index1]->getData());
+         face[0] = pnt1[0] - pnt0[0];
+         face[1] = pnt1[1] - pnt0[1];
+         face[2] = pnt1[2] - pnt0[2];
+
          // x"_vec
-         xx[0] = nodes[1]->X()-nodes[0]->X();
-         xx[1] = nodes[1]->Y()-nodes[0]->Y();
-         xx[2] = nodes[1]->Z()-nodes[0]->Z();
+//         xx[0] = nodes[1]->X()-nodes[0]->X();
+//         xx[1] = nodes[1]->Y()-nodes[0]->Y();
+//         xx[2] = nodes[1]->Z()-nodes[0]->Z();
+         pnt0 = nodes[0]->getData();
+         pnt1 = nodes[1]->getData();
+         xx[0] = pnt1[0] - pnt0[0];
+         xx[1] = pnt1[1] - pnt0[1];
+         xx[2] = pnt1[2] - pnt0[2];
          //NormalizeVector(xx,3);
          // a vector on the plane
-         yy[0] = nodes[2]->X()-nodes[1]->X();
-         yy[1] = nodes[2]->Y()-nodes[1]->Y();
-         yy[2] = nodes[2]->Z()-nodes[1]->Z();
+//         yy[0] = nodes[2]->X()-nodes[1]->X();
+//         yy[1] = nodes[2]->Y()-nodes[1]->Y();
+//         yy[2] = nodes[2]->Z()-nodes[1]->Z();
+         double const* pnt2(nodes[2]->getData());
+         yy[0] = pnt2[0] - pnt1[0];
+         yy[1] = pnt2[1] - pnt1[1];
+         yy[2] = pnt2[2] - pnt1[2];
          // z"_vec
+
          CrossProduction(xx,yy,zz);
          NormalizeVector(zz,3);
          // y"_vec
@@ -1440,28 +1472,25 @@ void CElem::Read(std::istream& is, int fileType)
       }
    }
 
-   /**************************************************************************
-   MSHLib-Method:
-   06/2006 OK Implementation
-   **************************************************************************/
-   void CElem::SetNormalVector()
-   {
-      double v1[3],v2[3];
-      if(!normal_vector)
-         normal_vector = new double[3];           //WW
+/**************************************************************************
+MSHLib-Method:
+06/2006 OK Implementation
+**************************************************************************/
+void CElem::SetNormalVector()
+{
+  if(!normal_vector)
+	 normal_vector = new double[3];           //WW
 
-      if (this->GetElementType() == MshElemType::TRIANGLE)
-      {
-         v1[0] = nodes[1]->X() - nodes[0]->X();
-         v1[1] = nodes[1]->Y() - nodes[0]->Y();
-         v1[2] = nodes[1]->Z() - nodes[0]->Z();
-         v2[0] = nodes[2]->X() - nodes[0]->X();
-         v2[1] = nodes[2]->Y() - nodes[0]->Y();
-         v2[2] = nodes[2]->Z() - nodes[0]->Z();
-         CrossProduction(v1,v2,normal_vector);
-         NormalizeVector(normal_vector,3);
-      }
-   }
+  if (this->GetElementType() == MshElemType::TRIANGLE) {
+	  double const*const p0 (nodes[0]->getData());
+	  double const*const p1 (nodes[1]->getData());
+	  double const*const p2 (nodes[2]->getData());
+	  const double v1[3] = {p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]};
+	  const double v2[3] = {p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2]};
+	 CrossProduction(v1,v2,normal_vector);
+	 NormalizeVector(normal_vector,3);
+  }
+}
 
    // KR 2010/11/16
    void CElem::setElementProperties(MshElemType::type t, bool isFace)
@@ -1530,20 +1559,20 @@ void CElem::Read(std::istream& is, int fileType)
       this->nodes_index.resize(nnodes);
    }
 
-   // NW
-   double* CElem::ComputeGravityCenter()
-   {
-     const size_t nnodes0 = this->nnodes;
-     for (size_t i = 0; i < nnodes0; i++)            // Nodes
-     {
-       gravity_center[0] += nodes[i]->X();
-       gravity_center[1] += nodes[i]->Y();
-       gravity_center[2] += nodes[i]->Z();
-     }
-     gravity_center[0] /= (double) nnodes0;
-     gravity_center[1] /= (double) nnodes0;
-     gravity_center[2] /= (double) nnodes0;
-     return gravity_center;
-   }
+// NW
+double* CElem::ComputeGravityCenter()
+{
+	const size_t nnodes0 = this->nnodes;
+	for (size_t i = 0; i < nnodes0; i++) {           // Nodes
+		double const*const pnt (nodes[i]->getData());
+	   gravity_center[0] += pnt[0];
+	   gravity_center[1] += pnt[1];
+	   gravity_center[2] += pnt[2];
+	}
+	gravity_center[0] /= (double) nnodes0;
+	gravity_center[1] /= (double) nnodes0;
+	gravity_center[2] /= (double) nnodes0;
+	return gravity_center;
+}
 
 }                                                 // namespace MeshLib

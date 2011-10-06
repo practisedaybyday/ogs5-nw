@@ -1093,8 +1093,7 @@ namespace FiniteElement
                                                   //WX:07.2011
             if(pcs->ExcavMaterialGroup==MeshElement->GetPatchIndex())
             {
-               double* ele_center = NULL;
-               ele_center = MeshElement->GetGravityCenter();
+               double const* ele_center (MeshElement->GetGravityCenter());
                if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)>
                   (ele_center[pcs->ExcavDirection])&&(ele_center[pcs->ExcavDirection]-pcs->ExcavBeginCoordinate)>-0.001)
                {
@@ -1193,8 +1192,7 @@ namespace FiniteElement
                }
                else if(pcs->ExcavMaterialGroup>-1)
                {
-                  double* ele_center = NULL;
-                  ele_center = elem->GetGravityCenter();
+                  double const* ele_center(elem->GetGravityCenter());
                   if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)<
                      (ele_center[pcs->ExcavDirection]))
                   {
@@ -1344,7 +1342,7 @@ namespace FiniteElement
       //TEST OUT
       //Stiffness->Write();
       if(pcs->type/40 != 1) // Not monolithic scheme
-         return; 
+         return;
 
       if(PressureC)
       {
@@ -1382,7 +1380,7 @@ namespace FiniteElement
       (*A)(NodeShift[k]+eqs_number[i], NodeShift[dim+1]+eqs_number[j])
       += f2*(*PressureC)(nnodesHQ*k+i,j);
       #else
-      MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim+1]+eqs_number[j],\ 
+      MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim+1]+eqs_number[j],\
       f2*(*PressureC)(nnodesHQ*k+i,j));
       #endif
       }
@@ -1415,7 +1413,7 @@ namespace FiniteElement
       (*A)(NodeShift[k]+eqs_number[i], NodeShift[dim]+eqs_number[j])
       += f2*(*PressureC)(nnodesHQ*k+i,j);
       #else
-      MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim]+eqs_number[j],\ 
+      MXInc(NodeShift[k]+eqs_number[i], NodeShift[dim]+eqs_number[j],\
       f2*(*PressureC)(nnodesHQ*k+i,j));
       #endif
       }
@@ -1598,10 +1596,10 @@ namespace FiniteElement
                break;
             case 2:                               // Multi-phase-flow: p_g-Sw*p_c
                // 07.2011. WW
-               
+
                for (i=0;i<dim*nnodesHQ;i++)
                   AuxNodal1[i] = 0.0;
-               
+
 			   if(smat->bishop_model>0)
 			   {
                   for (i=0;i<nnodes;i++)
@@ -1633,7 +1631,7 @@ namespace FiniteElement
                      else
                          AuxNodal[i] = val_n*LoadFactor;
                   }
-                  
+
                   PressureC->multi(AuxNodal, AuxNodal1);
 			   }
 			   else
@@ -1643,14 +1641,14 @@ namespace FiniteElement
 	              {
                      if(AuxNodal0[i]<0.0)
                         AuxNodal0[i] = 0.;
-                  }   
+                  }
                   */
 
                   PressureC->multi(AuxNodal2, AuxNodal1, LoadFactor);
                   PressureC_S->multi(AuxNodal0, AuxNodal1, -1.0*LoadFactor);
 
                }
-               
+
                break;
             case 3:                               // Multi-phase-flow: SwPw+SgPg	// PCH 05.05.2009
                for (i=0;i<nnodes;i++)
@@ -1745,8 +1743,7 @@ namespace FiniteElement
                }
                else if(pcs->ExcavMaterialGroup>-1)
                {
-                  double* ele_center = NULL;
-                  ele_center = elem->GetGravityCenter();
+                  double const* ele_center(elem->GetGravityCenter());
                   if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,&valid)+pcs->ExcavBeginCoordinate)<
                      (ele_center[pcs->ExcavDirection]))
                   {
@@ -2933,7 +2930,7 @@ namespace FiniteElement
          k=-1;
          if(i!=O_edge)
          {
-	   //WW nfnode = 
+	   //WW nfnode =
             MeshElement->GetElementFaceNodes(i, Face_node);
 
             xA[0] = X[Face_node[0]];
@@ -2978,7 +2975,7 @@ namespace FiniteElement
             for(j=0; j<numf; j++)
             {
                if(j==k) continue;
-               //WW nfnode = 
+               //WW nfnode =
                MeshElement->GetElementFaceNodes(j, Face_node);
                xA[0] = X[Face_node[0]];
                xA[1] = Y[Face_node[0]];
@@ -3385,7 +3382,7 @@ namespace FiniteElement
          NGPoints=5;                              //15
       else if(ele_type==MshElemType::PRISM)
          NGPoints=6;                              //9
-      else NGPoints = (int)pow((double)NGP, (double)ele_dim);
+      else NGPoints = MathLib::fastpow(NGP, ele_dim);
 
       Stress0 = new Matrix(LengthBS, NGPoints);
       Stress_i = new Matrix(LengthBS, NGPoints);

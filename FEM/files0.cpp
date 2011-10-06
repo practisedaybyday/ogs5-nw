@@ -179,9 +179,13 @@ int ReadData ( char *dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
    NUMRead(dateiname);
 
    FEMDeleteAll();                                // KR moved from FEMRead()
-   CFEMesh* msh = FEMRead(dateiname, &geo_obj, &unique_name);
-   if (msh)                                       //KR
+   std::vector<CFEMesh*> mesh_vec;
+   FEMRead(dateiname, mesh_vec, &geo_obj, &unique_name);
+   if (!mesh_vec.empty())                                       //KR
+   {
+      fem_msh_vector.insert(fem_msh_vector.end(), mesh_vec.begin(), mesh_vec.end());	// re-inserted by KR
       CompleteMesh();                             //WW
+   }
 
    //SBOK4209 MSHWrite(dateiname);
    // PCTRead is bounded by msh
@@ -196,7 +200,7 @@ int ReadData ( char *dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 
    msgdat = (char *)Free(msgdat);
 
-   if (msh) return 100;
+   if (!mesh_vec.empty()) return 100;
 
    return 1;
 }
@@ -835,10 +839,9 @@ void remove_white_space(std::string *buffer)
    08/2000     CT        Erste Version
                                                                           */
 /**************************************************************************/
-int StrReadStr ( char *x, char *s, FILE *f, FctTestString func, int *pos )
+int StrReadStr ( char *x, char *s, FILE *f, /*FctTestString func,*/ int *pos )
 {
-   int test;
-
+//   int test;
    x[0] = '\0';
    if (sscanf(s," %s%n",x,pos)<=0)
    {
@@ -848,9 +851,11 @@ int StrReadStr ( char *x, char *s, FILE *f, FctTestString func, int *pos )
    }
    else
    {
-      test = func(x,f);
-      fprintf(f,"%s ",x);
-      return test;
+//      test = func(x,f);
+//      fprintf(f,"%s ",x);
+//      return test;
+	   fprintf(f,"%s ",x);
+	   return 1;
    }
 }
 
@@ -945,9 +950,9 @@ int StrTestHash ( char *s, int *pos )
                                                                           */
 /**************************************************************************/
                                                   /*MX*/
-int StrOnlyReadStr ( char *x, char *s, FILE *f, FctTestString func, int *pos )
+int StrOnlyReadStr ( char *x, char *s, FILE *f, /*FctTestString func,*/ int *pos )
 {
-   int test;
+//   int test;
 
    x[0] = '\0';
    if (sscanf(s," %s%n",x,pos)<=0)
@@ -957,8 +962,9 @@ int StrOnlyReadStr ( char *x, char *s, FILE *f, FctTestString func, int *pos )
    }
    else
    {
-      test = func(x,f);
-      return test;
+//      test = func(x,f);
+//      return test;
+	   return 1;
    }
 }
 

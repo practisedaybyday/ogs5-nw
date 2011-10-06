@@ -8,8 +8,6 @@
    10/2004   SB  First Implemented
                                                                           */
 /**************************************************************************/
-#include "Configure.h"
-
 #ifdef WINDOWS
 #pragma warning (disable:4786)                    /*Visual C++ 6.0*/
 #endif
@@ -684,7 +682,6 @@ Programmaenderungen:
 double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFProcess* m_pcs)
 {
    (void)theta;
-   long group;
    int  p_idx = -1, t_idx = -1;
    /*int dependence = 0; */
    double diffusion_coefficient = -1.0;
@@ -709,8 +706,8 @@ double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFPro
    p_idx = p_idx;
    t_idx = t_idx;
 
-   group = m_pcs->m_msh->ele_vector[index]->GetPatchIndex();
 #ifdef GEM_REACT
+   const long group (m_pcs->m_msh->ele_vector[index]->GetPatchIndex());
    CMediumProperties *m_mat_mp (mmp_vector[group]);
 #endif
 
@@ -949,7 +946,7 @@ double CompProperties::CalcDiffusionCoefficientCP_Method1(long index, double T, 
          V = k[1];
          Vg = 20.1;                               /* Molares Volumen von Luft [cm?/mol] */
          //WW Dg = (0.001 * pow(T, 1.75) * sqrt(1. / mg + 1. / m)) / (p * pow(pow(Vg, 1. / 3.) + pow(V, 1. / 3.), 2.)) * 1.e-4;
-         return (0.001 * pow(T, 1.75) * sqrt(1. / mg + 1. / m)) / (p * pow(pow(Vg, 1. / 3.) + pow(V, 1. / 3.), 2.)) * 1.e-4; //WW
+         return (0.001 * pow(T, 1.75) * sqrt(1. / mg + 1. / m)) / (p * MathLib::fastpow(pow(Vg, 1. / 3.) + pow(V, 1. / 3.), 2)) * 1.e-4; //WW
       }
    }
    DisplayMsgLn("Unknown diffusion model specified!");
@@ -1208,7 +1205,7 @@ double CompProperties::CalcElementRetardationFactorNew( long index, double *gp, 
          retard = 1. + (1.-porosity)*density_rock*isotherm/porosity;
          break;
       case 3:                                     /* Langmuir Isotherm */
-         isotherm = isotherm_model_values[0] * isotherm_model_values[1] / pow((1 + isotherm_model_values[0] * fabs(conc)),2.0);
+         isotherm = isotherm_model_values[0] * isotherm_model_values[1] / MathLib::fastpow((1 + isotherm_model_values[0] * fabs(conc)),2);
                                                   //CMCD moved here
          retard = 1. + (1.-porosity)*density_rock*isotherm/porosity;
          break;

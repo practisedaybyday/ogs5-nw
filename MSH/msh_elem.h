@@ -68,7 +68,8 @@ namespace MeshLib
          {
             return ele_dim;
          }
-         double* GetGravityCenter()
+         // 09/2011 TF made method const
+         double const* GetGravityCenter() const
          {
             return gravity_center;
          }
@@ -183,6 +184,9 @@ namespace MeshLib
 		 }
 
          void SetNodes(Math_Group::vec<CNode*>& ele_nodes, bool ReSize = false);
+
+         void setNodes(std::vector<CNode*> const& ele_nodes);
+
          int GetNodesNumber_H() const
          {
             return nnodesHQ;

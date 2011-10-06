@@ -15,7 +15,7 @@ std::string readNonBlankLineFromInputStream(std::istream & in)
 	while (not_finished) {
 		// read line
 		getline(in, line);
-		if (!in.eof() && !in.fail() && !in.bad()) {
+		if (!in.fail()) {
 			// skip initial space characters
 			std::string::size_type i (line.find_first_not_of(" ", 0));
 			// search comment symbol ;

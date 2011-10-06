@@ -8,11 +8,6 @@
 #ifndef GEOINFO_H_
 #define GEOINFO_H_
 
-// STL
-//#include <cstddef>
-//#include <string>
-//#include <limits>
-
 // GEO
 #include "GeoType.h"
 #include "GeoObject.h"

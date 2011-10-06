@@ -10,7 +10,6 @@ Programing:
            and parellelisation of them
 02/2008 PCH OpenMP parallelization for Lis matrix solver
 **************************************************************************/
-#include "Configure.h"
 #include "FEMEnums.h"
 #include "Output.h"
 
@@ -378,9 +377,9 @@ CRFProcess::~CRFProcess(void)
    // ST:
    CNodeValue* m_nod_val = NULL;
 
-   //Added &&m_nod_val for RSM model. 15.08.2011. WW  
+   //Added &&m_nod_val for RSM model. 15.08.2011. WW
    if(!isRSM)
-   {  
+   {
       for(i=0;i<(int)st_node_value.size();i++)
       {
          m_nod_val = st_node_value[i];
@@ -1795,12 +1794,12 @@ std::ios::pos_type CRFProcess::Read(std::ifstream *pcs_file)
       }
       if (line_string.find("$PROCESSED_BC") != string::npos) //25.08.2011. WW
       {
-         *pcs_file >> WriteProcessed_BC;        
+         *pcs_file >> WriteProcessed_BC;
          pcs_file->ignore(MAX_ZEILE, '\n');
          continue;
       }
 
-	  
+
       //....................................................................
                                                   // subkeyword found
       if (line_string.find("$MEMORY_TYPE") != string::npos)
@@ -2684,7 +2683,7 @@ void CRFProcess::ConfigMassTransport()
    //  sprintf(pcs_primary_function_name[0], "%s%li","CONCENTRATION",comp);
    //----------------------------------------------------------------------
    // Tests
-   //WW int size; 
+   //WW int size;
    //WW  size = (int)cp_vec.size();
    //int comb;                                      //OK411
    //comb = pcs_component_number;
@@ -3932,8 +3931,7 @@ void CRFProcess::CheckExcavedElement()
       elem = m_msh->ele_vector[l];
       if(elem->GetPatchIndex()==ExcavMaterialGroup&&elem->GetMark())
       {
-         double* ele_center = NULL;
-         ele_center = elem->GetGravityCenter();
+         double const* ele_center(elem->GetGravityCenter());
          if((GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)+ExcavBeginCoordinate)>(ele_center[ExcavDirection])
             &&(ele_center[ExcavDirection]-ExcavBeginCoordinate)>-0.001)
          {
@@ -4170,9 +4168,9 @@ double CRFProcess::Execute()
       cpu_time = -clock();
 #endif
       femFCTmode = true;
-      
+
 	  GlobalAssembly();
-      
+
 	  femFCTmode = false;
 #ifdef USE_MPI
       cpu_time += clock();
@@ -4264,7 +4262,7 @@ void CRFProcess::CopyU_n()
    int i, nidx1;
    long g_nnodes, j, k;
 
-   double *temp_v = _problem->GetBufferArray(); // 18.08.2011. WW 
+   double *temp_v = _problem->GetBufferArray(); // 18.08.2011. WW
 
    for(i=0; i<pcs_number_of_primary_nvals; i++)
    {
@@ -5464,9 +5462,8 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
          //unsigned int counter;	//void warning
          //WW onExBoundary = true;                     //WX:01.2011
          excavated = false;
-         double node_coordinate[3]={0.};
          node = m_msh->nod_vector[m_bc_node->geo_node_number];
-         node->Coordinates(node_coordinate);
+         double const* node_coordinate (node->getData()); //Coordinates(node_coordinate);
          //tmp_counter3++;
          //counter = 0;
          /*if((node_coordinate[ExcavDirection]-(GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)-ExcavBeginCoordinate)<0.001
@@ -5475,11 +5472,10 @@ void CRFProcess::IncorporateBoundaryConditions(const int rank)
          if((node_coordinate[ExcavDirection]-(GetCurveValue(ExcavCurve,0,aktuelle_zeit,&valid)-ExcavBeginCoordinate))<0.001)
          {
             excavated = true;
-            double* tmp_ele_coor = NULL;
             for(unsigned int j=0; j<node->getConnectedElementIDs().size(); j++)
             {
                elem = m_msh->ele_vector[node->getConnectedElementIDs()[j]];
-               tmp_ele_coor = elem->GetGravityCenter();
+               double const* tmp_ele_coor (elem->GetGravityCenter());
                //if(elem->GetPatchIndex()!=ExcavMaterialGroup){
                //if(elem->GetExcavState()==-1)
                if(elem->GetPatchIndex()!=ExcavMaterialGroup)
@@ -8045,10 +8041,7 @@ void CRFProcess::CalcFluxesForCoupling(void)
       // ToDo safe somewhere else so that this has to be done only once
       //-----------------------------------------------------------------
       // Get Nearest GW and OLF Element
-      GEOLIB::Point pnt;
-      pnt[0] = m_msh->nod_vector[IndexBottomNode]->X();
-      pnt[1] = m_msh->nod_vector[IndexBottomNode]->Y();
-      pnt[2] = m_msh->nod_vector[IndexBottomNode]->Z();
+      GEOLIB::Point pnt (m_msh->nod_vector[IndexBottomNode]->getData());
 
       long EleNumber = m_msh_GW->GetNearestELEOnPNT(&pnt);
 
@@ -8065,7 +8058,7 @@ void CRFProcess::CalcFluxesForCoupling(void)
          NodeIndex_OLF = m_ele_OLF->GetNodeIndex(j);
 
          AverageZ_GW += m_pcs_GW->GetNodeValue(NodeIndex_GW, idxHead_GW);
-         AverageZ_OLF += m_msh_OLF->nod_vector[NodeIndex_OLF]->Z();
+         AverageZ_OLF += m_msh_OLF->nod_vector[NodeIndex_OLF]->getData()[2];
       }
       AverageZ_GW = AverageZ_GW / NoOfGWNodes;
       AverageZ_OLF = AverageZ_OLF / NoOfGWNodes;
@@ -9516,7 +9509,6 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
    vec<CEdge*>ele_edges_vector(15);
    int j;
    double aux_vector[3];
-   double* gravity_center = NULL;
    double check_sign;
    //----------------------------------------------------------------------
    // Element velocity
@@ -9560,7 +9552,7 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
       {
          //------------------------------------------------------------------
          // line elements
-         case MshElemType::LINE:
+         case MshElemType::LINE: {
             v[1] = GetElementValue(m_ele->GetIndex(),v_eidx[0]);
             v[0] = GetElementValue(m_ele->GetIndex(),v_eidx[1]);
             if(m_nod->getConnectedElementIDs().size()==1)
@@ -9568,14 +9560,16 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
                m_ele->SetMark(true);
                break;
             }
-            gravity_center = m_ele->GetGravityCenter();
-            aux_vector[0] = gravity_center[0] - m_nod->X();
-            aux_vector[1] = gravity_center[1] - m_nod->Y();
-            aux_vector[2] = gravity_center[2] - m_nod->Z();
+            double const* gravity_center(m_ele->GetGravityCenter());
+            double const*const pnt (m_nod->getData());
+            aux_vector[0] = gravity_center[0] - pnt[0];
+            aux_vector[1] = gravity_center[1] - pnt[1];
+            aux_vector[2] = gravity_center[2] - pnt[2];
             check_sign = MSkalarprodukt(v,aux_vector,3);
             if(check_sign<0.0)
                m_ele->SetMark(true);
             break;
+         }
             //------------------------------------------------------------------
             // tri elements
          case MshElemType::TRIANGLE:
@@ -9627,9 +9621,9 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
             break;
             //------------------------------------------------------------------
             // tri elements
-         case MshElemType::TRIANGLE:
+         case MshElemType::TRIANGLE: {
             m_edg->GetEdgeMidPoint(edge_mid_point);
-            gravity_center = m_ele->GetGravityCenter();
+            double const* gravity_center(m_ele->GetGravityCenter());
             aux_vector[0] = gravity_center[0] - edge_mid_point[0];
             aux_vector[1] = gravity_center[1] - edge_mid_point[1];
             aux_vector[2] = gravity_center[2] - edge_mid_point[2];
@@ -9641,6 +9635,7 @@ void CRFProcess::AssembleParabolicEquationRHSVector(CNode*m_nod)
                fem->AssembleParabolicEquationRHSVector();
             }
             break;
+         }
             //----------------------------------------------------------------
             // ToDo
          default:
@@ -11036,27 +11031,25 @@ Programming:
 #include <iomanip>
 void CRFProcess::DumpEqs(string file_name)
 {
-   int ii;
-   long i, j, k, m;
    fstream eqs_out;
-   CNode *node;
    eqs_out.open(file_name.c_str(), ios::out );
    eqs_out.setf(ios::scientific, ios::floatfield);
    setw(14);
    eqs_out.precision(14);
    //
    long nnode = eqs->dim/eqs->unknown_vector_dimension;
-   for(i=0; i<eqs->dim; i++)
+   for(long i=0; i<eqs->dim; i++)
    {
-      m = i%nnode;
-      node = m_msh->nod_vector[m];
-      for(ii=0; ii<eqs->unknown_vector_dimension; ii++)
+      CNode const*const node (m_msh->nod_vector[i%nnode]);
+      std::vector<size_t> const& connected_nodes (node->getConnectedNodes());
+      const size_t n_connected_nodes (connected_nodes.size());
+      for(int ii=0; ii<eqs->unknown_vector_dimension; ii++)
       {
-         for(j=0; j<(long)node->connected_nodes.size(); j++)
+         for(size_t j=0; j<n_connected_nodes; j++)
          {
-            k = node->connected_nodes[j];
-            k = ii*nnode+k;
-            if(k>=eqs->dim)  continue;
+            const long k = ii*nnode+connected_nodes[j];
+            if(k>=eqs->dim)
+            	continue;
             eqs_out<<i<<"  "<<k<<"  "<<MXGet(i,k)<<endl;
          }
       }
@@ -11089,7 +11082,6 @@ void CRFProcess::WriteBC()
    }
    os.setf(ios::scientific, ios::floatfield);
    os.precision(12);
-   CNode *anode = NULL;
    long nindex = 0;
    if (size_bc > 0)
    {
@@ -11099,11 +11091,16 @@ void CRFProcess::WriteBC()
       for (size_t i = 0; i < size_bc; i++)
       {
          nindex = bc_node_value[i]->geo_node_number;
-         anode = m_msh->nod_vector[nindex];
+//         anode = m_msh->nod_vector[nindex];
+//         os << nindex << "  " << bc_node_value[i]->pcs_pv_name << " "
+//            << std::setw(14) << anode->X() << " " << std::setw(14) << anode->Y()
+//            << " " << std::setw(14) << anode->Z() << " " << std::setw(14)
+//            << bc_node_value[i]->node_value << endl;
+         double const*const pnt (m_msh->nod_vector[nindex]->getData());
          os << nindex << "  " << bc_node_value[i]->pcs_pv_name << " "
-            << std::setw(14) << anode->X() << " " << std::setw(14) << anode->Y()
-            << " " << std::setw(14) << anode->Z() << " " << std::setw(14)
-            << bc_node_value[i]->node_value << endl;
+                     << std::setw(14) << pnt[0] << " " << std::setw(14) << pnt[1]
+                     << " " << std::setw(14) << pnt[2] << " " << std::setw(14)
+                     << bc_node_value[i]->node_value << endl;
       }
    }
    if (size_st > 0)
@@ -11115,12 +11112,18 @@ void CRFProcess::WriteBC()
       for (size_t i = 0; i < size_st; i++)
       {
          nindex = st_node_value[i]->geo_node_number;
-         anode = m_msh->nod_vector[nindex];
-         os << nindex << "  " << convertPrimaryVariableToString(
-            st_node[i]->getProcessPrimaryVariable()) << " " << std::setw(14)
-            << anode->X() << " " << std::setw(14) << anode->Y() << " "
-            << std::setw(14) << anode->Z() << " " << std::setw(14)
-            << st_node_value[i]->node_value << endl;
+//         anode = m_msh->nod_vector[nindex];
+//         os << nindex << "  " << convertPrimaryVariableToString(
+//            st_node[i]->getProcessPrimaryVariable()) << " " << std::setw(14)
+//            << anode->X() << " " << std::setw(14) << anode->Y() << " "
+//            << std::setw(14) << anode->Z() << " " << std::setw(14)
+//            << st_node_value[i]->node_value << endl;
+         double const*const pnt (m_msh->nod_vector[nindex]->getData());
+		  os << nindex << "  " << convertPrimaryVariableToString(
+			 st_node[i]->getProcessPrimaryVariable()) << " " << std::setw(14)
+			 << pnt[0] << " " << std::setw(14) << pnt[1] << " "
+			 << std::setw(14) << pnt[2] << " " << std::setw(14)
+			 << st_node_value[i]->node_value << endl;
       }
    }
    os << "#STOP" << endl;
@@ -11500,7 +11503,6 @@ void CRFProcess::UpdateTransientBC()
          int node_xmin, node_xmax, node_ymin, node_ymax;
          long m, n, mm, nn, l;
          CElem *elem;
-         CNode *node;
          double *cent;
          double vel_av[3], x1[3], x2[3], x3[3], sub_area[3], area, tol_a;
 
@@ -11554,31 +11556,25 @@ void CRFProcess::UpdateTransientBC()
             /// Find the range of this element
             x_min = y_min = 1.e+20;
             x_max = y_max = -1.e+20;
-            for(k=0; k<nnodes; k++)
-            {
-               node = elem->nodes[k];
-
-               if(node->X()<x_min)
-               {
-                  x_min = node->X();
-                  node_xmin = k;
-               }
-               if(node->X()>x_max)
-               {
-                  x_max = node->X();
-                  node_xmax = k;
-               }
-               if(node->Y()<y_min)
-               {
-                  y_min = node->Y();
-                  node_ymin = k;
-               }
-               if(node->Y()>y_max)
-               {
-                  y_max = node->Y();
-                  node_ymax = k;
-               }
-            }
+            for (k = 0; k < nnodes; k++) {
+            	double const*const pnt(elem->nodes[k]->getData());
+				if (pnt[0] < x_min) {
+					x_min = pnt[0];
+					node_xmin = k;
+				}
+				if (pnt[0] > x_max) {
+					x_max = pnt[0];
+					node_xmax = k;
+				}
+				if (pnt[1] < y_min) {
+					y_min = pnt[1];
+					node_ymin = k;
+				}
+				if (pnt[1] > y_max) {
+					y_max = pnt[1];
+					node_ymax = k;
+				}
+			}
 
             /// Determine the cells that this element covers. 05.10. 2010
             col_min = (long)((x_min-g_para[2])/g_para[4]);
@@ -11586,15 +11582,15 @@ void CRFProcess::UpdateTransientBC()
             col_max = (long)((x_max-g_para[2])/g_para[4]);
             row_max = nrow -(long)((y_min-g_para[3])/g_para[4]);
 
-            node = elem->nodes[0];
-            x1[0] = node->X();
-            x1[1] = node->Y();
-            node = elem->nodes[1];
-            x2[0] = node->X();
-            x2[1] = node->Y();
-            node = elem->nodes[2];
-            x3[0] = node->X();
-            x3[1] = node->Y();
+            double const*const pnt1 (elem->nodes[0]->getData());
+            x1[0] = pnt1[0];
+            x1[1] = pnt1[1];
+            double const*const pnt2 (elem->nodes[1]->getData());
+            x2[0] = pnt2[0];
+            x2[1] = pnt2[1];
+            double const*const pnt3 (elem->nodes[2]->getData());
+            x3[0] = pnt3[0];
+            x3[1] = pnt3[1];
 
             x3[2] = x2[2] = x1[2] = 0.;
             cent[2] = 0.;
@@ -11615,27 +11611,27 @@ void CRFProcess::UpdateTransientBC()
 
                   if(cent[0]<x_min)
                   {
-                     node = elem->nodes[node_xmin];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                     double const*const pnt (elem->nodes[node_xmin]->getData());
+                     cent[0] = pnt[0];
+                     cent[1] = pnt[1];
                   }
                   if(cent[0]>x_max)
                   {
-                     node = elem->nodes[node_xmax];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                     double const*const pnt (elem->nodes[node_xmax]->getData());
+                     cent[0] = pnt[0];
+                     cent[1] = pnt[1];
                   }
                   if(cent[1]<y_min)
                   {
-                     node = elem->nodes[node_ymin];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                	 double const*const pnt (elem->nodes[node_ymin]->getData());
+					 cent[0] = pnt[0];
+					 cent[1] = pnt[1];
                   }
                   if(cent[1]<y_max)
                   {
-                     node = elem->nodes[node_ymax];
-                     cent[0] = node->X();
-                     cent[1] = node->Y();
+                 	 double const*const pnt (elem->nodes[node_ymax]->getData());
+ 					 cent[0] = pnt[0];
+ 					 cent[1] = pnt[1];
                   }
 
                   /// Check whether this point is in this element.
@@ -11921,7 +11917,7 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path, int timestep, int phase
          //Test Output
          tempstring="";
          temp.str(""); temp.clear(); temp << i; tempstring = temp.str();
-         double* gc = elem->GetGravityCenter();
+         double const* gc(elem->GetGravityCenter());
          temp.str(""); temp.clear(); temp << gc[0]; tempstring += "; " + temp.str();
          temp.str(""); temp.clear(); temp << gc[1]; tempstring += "; " + temp.str();
          temp.str(""); temp.clear(); temp << gc[2]; tempstring += "; " + temp.str();
@@ -11964,10 +11960,13 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path, int timestep, int phase
 //* returns the third root of a number x, -inf < x < inf
 //* Programming: NB, Sep10
 //*****************************************************************************/
-double W3( double x)
+inline double W3( double x)
 {
-   double s=pow(x*x,0.5);
-   return pow(s,1./3.)*x/s;
+   if (x < 0) {
+	   return -pow(fabs(x), 1./3.);
+   } else {
+	   return pow(x, 1./3.);
+   }
 }
 
 
@@ -12175,7 +12174,7 @@ VirialCoefficients DuansVirialCoefficients(int Fluid, double T)
 {
    double a[15];
    double Tc,Pc,M;
-   double R=83.14467;                             // cmÃÂ?bar/(K* mol)
+   double R=83.14467;                             // cmï¿½ï¿½?bar/(K* mol)
    //CVirialCoefficients x;	//BG
    VirialCoefficients x;                          //BG
    DuansParameter(Fluid,a,&Tc,&Pc,&M);

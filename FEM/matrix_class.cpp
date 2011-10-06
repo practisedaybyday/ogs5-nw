@@ -7,7 +7,7 @@
  programming:
   22/08/2004  WW
 ==========================================================================*/
- 
+
 /// Matrix
 #include <iomanip>
 #include <cfloat>
@@ -762,611 +762,6 @@ namespace Math_Group
       for (int i=0; i<_size; i++) _entry[i] = v._entry[i];
    }
 
-   //-----------------------------------------------------
-   // SparseMatrixDOK
-                                                  //:Matrix(0)
-   SparseMatrixDOK::SparseMatrixDOK(size_t _nrows, size_t _ncols)
-   {
-      nrows = _nrows;
-      ncols = _ncols;
-      size = nrows*ncols;
-      //data = new double[dim];
-      nrows0 = nrows;
-      ncols0 = ncols;
-      //    for(int i=0; i<size; i++) data[i] = 0.0;
-      mat_row.resize(_nrows);
-      mat_col.resize(_ncols);
-      dummy_zero = 0.0;
-      non_zero_entry_size = 0;
-      is_constructed = false;
-#ifdef LIS
-      ptr = NULL;
-      col_idx = NULL;
-      entry_index = NULL;
-#endif
-   }
-
-   SparseMatrixDOK::SparseMatrixDOK(size_t dim)   //:Matrix(0)
-   {
-      nrows = ncols = dim;
-      size = dim;
-      //    data = new double[dim];
-      nrows0 = ncols0 = dim;
-      //    for(int i=0; i<size; i++) data[i] = 0.0;
-      mat_row.resize(dim);
-      mat_col.resize(dim);
-      dummy_zero = 0.0;
-      non_zero_entry_size = 0;
-      is_constructed = false;
-#ifdef LIS
-      ptr = NULL;
-      col_idx = NULL;
-      entry_index = NULL;
-#endif
-   }
-
-   SparseMatrixDOK::SparseMatrixDOK()             //:Matrix(0)
-   {
-      //   Sym = true;
-      nrows = 0;
-      ncols = 0;
-      nrows0 = 0;
-      ncols0 = 0;
-      size = 0;
-      //   data = 0;
-      dummy_zero = 0.0;
-      non_zero_entry_size = 0;
-      is_constructed = false;
-#ifdef LIS
-      ptr = NULL;
-      col_idx = NULL;
-      entry_index = NULL;
-#endif
-   }
-
-   SparseMatrixDOK::~SparseMatrixDOK()
-   {
-#ifdef LIS
-      if (ptr) delete [] ptr;
-      ptr = NULL;
-      if (col_idx) delete [] col_idx;
-      col_idx = NULL;
-      if (entry_index) delete [] entry_index;
-      entry_index = NULL;
-#endif
-   }
-
-                                                  //:Matrix(0)
-   SparseMatrixDOK::SparseMatrixDOK(const SparseMatrixDOK& m)
-   {
-      Sym = m.Sym;
-      nrows = m.nrows;
-      ncols = m.ncols;
-      nrows0 = m.nrows0;
-      ncols0 = m.ncols0;
-      size = m.size;
-      //   data = new double[size];
-      //for(int i=0; i<size; i++) data[i] = 0.0;
-      dummy_zero = 0.0;
-      non_zero_entry_size = m.non_zero_entry_size;
-#ifdef LIS
-      ptr = m.ptr;
-      col_idx = m.col_idx;
-      entry_index = m.entry_index;
-#endif
-   }
-
-   SparseMatrixDOK& SparseMatrixDOK::operator = (double a)
-   {
-      //    for(int i=0; i<size; i++) data[i] = a;
-
-      row_iter ii;
-      col_iter jj;
-
-      const row_iter row_end = this->mat_row.end();
-
-      for(ii=this->mat_row.begin(); ii!=row_end; ii++)
-      {
-         const col_iter col_end = (*ii).end();
-         for(jj=(*ii).begin(); jj!=col_end; jj++)
-         {
-            //        for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
-            (*jj).second = a;
-         }
-      }
-
-      return *this;
-   }
-   void SparseMatrixDOK::operator *= (double a)
-   {
-      row_iter ii;
-      col_iter jj;
-
-      for(ii=this->mat_row.begin(); ii!=this->mat_row.end(); ii++)
-      {
-         for(jj=(*ii).begin(); jj!=(*ii).end(); jj++)
-         {
-            //        for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
-            (*jj).second *= a;
-         }
-      }
-   }
-   void SparseMatrixDOK::operator += (double a)
-   {
-      row_iter ii;
-      col_iter jj;
-      const row_iter row_end = this->mat_row.end();
-
-      for(ii=this->mat_row.begin(); ii!=row_end; ii++)
-      {
-         const col_iter col_end = (*ii).end();
-         for(jj=(*ii).begin(); jj!=col_end; jj++)
-         {
-            //        for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
-            (*jj).second += a;
-         }
-      }
-   }
-
-   //
-   void SparseMatrixDOK::operator = (const SparseMatrixDOK& m)
-   {
-#ifdef gDEBUG
-      if(nrows!=m.Rows()||ncols!=m.Cols())
-      {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
-         abort();
-      }
-#endif
-      const mat_t &tmp_mat = m.mat_row;
-      col_t *col;
-      mat_t::const_iterator ii;
-      col_t::const_iterator jj;
-
-      //for(ii=tmp_mat.begin(); ii!=tmp_mat.end(); ii++){
-      //    for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
-      //      this->mat[(*ii).first][(*jj).first] = (*jj).second;
-      //    }
-      //}
-
-      for(size_t i=0; i<this->nrows; i++)
-      {
-         col = const_cast<col_t*>(&tmp_mat[i]);
-         for(jj=col->begin(); jj!=col->end(); jj++)
-         {
-            this->mat_row[i][(*jj).first] = (*jj).second;
-         }
-      }
-
-   }
-
-   //
-   void SparseMatrixDOK::operator += (const SparseMatrixDOK& m)
-   {
-#ifdef gDEBUG
-      if(nrows!=m.Rows())
-      {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
-         abort();
-      }
-#endif
-      const mat_t &tmp_mat = m.mat_row;
-      //col_t *col;
-      //mat_t::const_iterator ii;
-      //col_t::const_iterator jj;
-
-      //for(ii=m.mat.begin(); ii!=m.mat.end(); ii++){
-      //    for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
-      //      this->mat[(*ii).first][(*jj).first] += (*jj).second;
-      //    }
-      //}
-
-      const long n_rows = (long)this->nrows;
-#ifdef _OPENMP
-#pragma omp parallel for                    //default(none) //shared(tmp_mat)
-#endif
-      for(long i=0; i<n_rows; i++)
-      {
-         col_t &this_col = this->mat_row[i];
-         const col_t *col = const_cast<col_t*>(&tmp_mat[i]);
-         const col_t::const_iterator &col_end = col->end();
-
-         for(col_t::const_iterator jj=col->begin(); jj!=col_end; jj++)
-         {
-            this_col[(*jj).first] += (*jj).second;
-            //this->mat_row[i][(*jj).first] += (*jj).second;
-         }
-      }
-   }
-
-   //
-   void SparseMatrixDOK::operator -= (const SparseMatrixDOK& m)
-   {
-#ifdef gDEBUG
-      if(nrows!=m.Rows())                         //Assertion, will be removed
-      {
-         cout<<"\n The sizes of the two matrices are not matched"<<endl;
-         abort();
-      }
-#endif
-      const mat_t &tmp_mat = m.mat_row;
-      col_t *col;
-      mat_t::const_iterator ii;
-      col_t::const_iterator jj;
-
-      //for(ii=m.mat.begin(); ii!=m.mat.end(); ii++){
-      //    for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
-      //      this->mat[(*ii).first][(*jj).first] -= (*jj).second;
-      //    }
-      //}
-
-      for(size_t i=0; i<this->nrows; i++)
-      {
-         col = const_cast<col_t*>(&tmp_mat[i]);
-         for(jj=col->begin(); jj!=col->end(); jj++)
-         {
-            this->mat_row[i][(*jj).first] -= (*jj).second;
-         }
-      }
-
-   }
-   //
-                                                  //const
-   double& SparseMatrixDOK::operator() (size_t i, size_t j)
-   {
-#ifdef gDEBUG
-      if(i>=nrows||j>=nrows)
-      {
-         cout<<"\n Index exceeds the size of the matrix"<<endl;
-         abort();
-      }
-#endif
-
-      return this->mat_row[i][j];
-   }
-
-   double& SparseMatrixDOK::operator() (size_t i) //const
-   {
-#ifdef gDEBUG
-      if(i>=size)
-      {
-         cout<<"\n Index exceeds the size of the matrix"<<endl;
-         abort();
-      }
-#endif
-
-      return mat_row[i][i];
-   }
-
-   void  SparseMatrixDOK::LimitSize(size_t nRows, size_t nCols)
-   {
-#ifdef gDEBUG
-      if(nRows>nrows0||nCols>ncols0)
-      {
-         cout<<"\n Given size exceeds the original size of the matrix"<<endl;
-         abort();
-      }
-#endif
-      nrows = nRows;
-      ncols = nCols;
-      size = nRows*nCols;
-   }
-
-   long SparseMatrixDOK::SizeOfNonZeroEntries()
-   {
-      return non_zero_entry_size;
-   }
-
-   void SparseMatrixDOK::CalculateNonZeroEntries()
-   {
-      row_iter ii;
-      col_iter jj;
-
-      long cnt = 0;
-
-      for(ii=this->mat_row.begin(); ii!=this->mat_row.end(); ii++)
-      {
-         cnt += (*ii).size();
-      }
-
-      non_zero_entry_size = cnt;
-   }
-
-   /*****************************************************************//**
-      Set
-           A(ii,ii) = x_i,
-           A(ii, j) = 0., j!=ii
-           A(i, ii) = 0., i!=ii
-           b_i -= A(i,k)b_k  // b_k is given
-      Programm:
-      10/2007 WW
-   ********************************************************************/
-   void SparseMatrixDOK::Diagonize(size_t idiag, const double b_given, double *b)
-   {
-      row_iter ii;
-      col_iter jj;
-
-      if (!this->is_constructed)
-      {
-         std::cout << "-> Constructing colmun info in SparseMatrixDOK::Diagonize()" << std::endl;
-         const size_t n_rows = this->mat_row.size();
-         for(size_t i=0; i<n_rows; i++)
-         {
-            col_t &i_mat = this->mat_row[i];
-            col_t::const_iterator itr_end = i_mat.end();
-            //#ifdef USE_HASHMAP
-            //      const col_id_itr colid_end = set_col_id[cnt_rows].end();
-            //      for(col_id_itr kk=set_col_id[cnt_rows].begin(); kk!=colid_end; kk++){
-            //        jj = ii->find(*kk);
-            //#else
-            for(jj=i_mat.begin(); jj!=itr_end; jj++)
-            {
-               //#endif
-               this->mat_col[(*jj).first].push_back(i);
-            }
-         }
-         is_constructed = true;
-      }
-
-      double vdiag = .0;
-
-      col_t &i_mat = this->mat_row[idiag];
-      for(jj=i_mat.begin(); jj!=i_mat.end(); jj++)
-      {
-         if ((*jj).first==idiag)
-         {
-            vdiag = (*jj).second;
-         }
-         else
-         {
-            (*jj).second = 0.0;
-         }
-      }
-
-      mat_col_t::iterator itr_col_diag = this->mat_col.begin()+idiag;
-      const size_t n_itr_col_diag = itr_col_diag->size();
-      for (size_t i=0; i<n_itr_col_diag; i++)
-      {
-         size_t row_id = (*itr_col_diag)[i];
-         if (row_id==idiag) continue;
-         jj = this->mat_row[row_id].find(idiag);
-         b[row_id] -= (*jj).second*b_given;
-         (*jj).second = 0.0;
-      }
-
-      //for (size_t i=0; i<this->mat_row.size(); i++) {
-      //  if (i==idiag) continue;
-      //  col_t &i_mat = this->mat_row[i];
-      //  for(jj=i_mat.begin(); jj!=i_mat.end(); jj++){
-      //    if ((*jj).first==idiag) {
-      //      b[i] -= (*jj).second*b_given;
-      //      (*jj).second = 0.0;
-      //    } else if ((*jj).first > idiag) {
-      //      break;
-      //    }
-      //  }
-      //}
-
-      b[idiag] = vdiag*b_given;
-   }
-
-   void SparseMatrixDOK::multiVec(double *vec_s, double *vec_r)
-   {
-      (void)vec_s;                                // unused
-      (void)vec_r;                                // unused
-      std::cout << "***ERROR: SparseMatrixDOK::multiVec() is not implemented yet." << std::endl;
-   }
-
-   void SparseMatrixDOK::Write(std::ostream &os, int format)
-   {
-      row_iter ii;
-      col_iter jj;
-
-#ifdef USE_HASHMAP
-      if (this->set_col_id.size()==0)
-         this->ConstructSortedColumnID();
-#endif
-
-      //
-      if (format == 0)
-      {
-         os<<"*** Non-zero entries of matrix:  "<<std::endl;
-         //os.width(25);
-         //os.precision(10);
-
-         os.setf(std::ios_base::scientific, std::ios_base::floatfield);
-         os.precision(20);
-
-         for (size_t i=0; i<this->mat_row.size(); i++)
-         {
-#ifdef USE_HASHMAP
-            for(col_id_itr kk=set_col_id[i].begin(); kk!=set_col_id[i].end(); kk++)
-            {
-               jj = this->mat_row[i].find(*kk);
-#else
-               for(jj=this->mat_row[i].begin(); jj!=this->mat_row[i].end(); jj++)
-               {
-#endif
-                  os<<std::setw(10)<<i+1<<" "
-                     <<std::setw(10)<<(*jj).first+1<<" "
-                     <<std::setw(15)<<(*jj).second<<std::endl;
-               }
-            }
-
-            os.unsetf(std::ios_base::scientific);
-            //
-         }                                        //
-         else if (format==1)
-         {
-            os << Dim() << std::endl;
-            os.setf(std::ios::scientific);
-            //os.width(25);
-            os.precision(10);
-
-            for (size_t i=0; i<this->mat_row.size(); i++)
-            {
-               for (size_t j=0; j<this->mat_row.size(); j++)
-               {
-                  jj = this->mat_row[i].find(j);
-                  double v = 0.0;
-                  if (jj!=this->mat_row[i].end())
-                  {
-                     v = jj->second;
-                  }
-                  os << v << " ";
-               }
-
-               os << std::endl;
-            }                                     //
-         }
-      }
-
-      bool SparseMatrixDOK::IsSymmetry()
-      {
-         row_iter ii;
-         col_iter jj, jj2;
-#define ZERO_TOLERANCE 1.E-6
-         //
-         for (size_t i=0; i<this->mat_row.size(); i++)
-         {
-            for(jj=this->mat_row[i].begin(); jj!=this->mat_row[i].end(); jj++)
-            {
-               if (jj->first<i) continue;
-               jj2 = this->mat_row[jj->first].find(i);
-               if (jj2 != this->mat_row[jj->first].end())
-               {
-                  double diff = jj->second - jj2->second;
-                  //if (jj->second != jj2->second) {
-                  if (fabs(diff) > ZERO_TOLERANCE)
-                  {
-                     std::cout << "->unsymmetry: " << i << " - " << jj->first << std::endl;
-                     return false;
-                  }
-                  //} else if (jj->second!=0.0) {
-               }
-               else
-               {
-                  std::cout << "->unsymmetry: " << i << " - " << jj->first << std::endl;
-                  return false;
-               }
-            }
-         }
-
-         return true;
-      }
-
-#ifdef USE_HASHMAP
-      void SparseMatrixDOK::ConstructSortedColumnID()
-      {
-         if (this->set_col_id.size()>0)
-         {
-            cout << "->SparseMatrixDOK::ConstructSortedColumnID() - Already sorted" << endl;
-            return;
-         }
-         cout << "->SparseMatrixDOK::ConstructSortedColumnID()" << endl;
-
-         // Construct list of sorted col id
-         const size_t n_row = this->mat_row.size();
-         this->set_col_id.resize(n_row);
-         for (size_t i=0; i<n_row; i++)
-         {
-            col_t::const_iterator col_end = this->mat_row[i].end();
-            col_id_t &colid = this->set_col_id[i];
-            for(col_iter jj=this->mat_row[i].begin(); jj!=col_end; jj++)
-            {
-               colid.insert((*jj).first);
-            }
-         }
-
-      }
-#endif
-
-#ifdef LIS
-      void SparseMatrixDOK::ConstructCRSstructure()
-      {
-         //
-#ifdef USE_HASHMAP
-         if (this->set_col_id.size()==0)
-            this->ConstructSortedColumnID();
-#endif
-
-         // ptr:         an integer array with a length of n + 1, which stores the starting
-         //              points of the rows of the arrays value and index.
-         // col_idx:     an integer array with a length of nnz, which stores the column
-         //              numbers of the nonzero elements stored in the array value.
-         // entry_index: ?
-         const long total_matrix_length = nrows;
-         const long total_matrix_entry_size = non_zero_entry_size;
-
-         this->ptr = new int[total_matrix_length+1];
-         this->col_idx = new int[total_matrix_entry_size];
-         this->entry_index = new int[total_matrix_entry_size];
-
-         long counter_ptr = 0, counter_col_idx = 0;
-         long I,J,K;
-
-         row_iter ii;
-         col_iter jj;
-         long cnt_row = 0;
-
-         for (ii=this->mat_row.begin(); ii!=this->mat_row.end(); ii++)
-         {
-            ptr[cnt_row++] = counter_ptr;         // starting point of the row
-#ifdef USE_HASHMAP
-            col_id_t &colid = this->set_col_id[cnt_row-1];
-            for (col_id_itr kk=colid.begin(); kk!=colid.end(); kk++)
-            {
-               jj = ii->find(*kk);
-#else
-               for (jj=(*ii).begin(); jj!=(*ii).end(); jj++)
-               {
-#endif
-                  I = cnt_row;                    // row in global matrix
-                  J = (*jj).first;                // column in global matrix
-                  K = counter_ptr;                // index in entry
-
-                  this->col_idx[counter_col_idx] = J;
-                  this->entry_index[counter_col_idx] = K;
-
-                  ++counter_ptr;
-                  ++counter_col_idx;
-               }
-            }
-            ptr[total_matrix_length] = counter_ptr;
-
-         }
-
-         int SparseMatrixDOK::GetCRSValue(double* v)
-         {
-            int success =1;
-
-            row_iter ii;
-            col_iter jj;
-            long cnt = 0;
-            long cnt_rows = 0;
-
-            const row_iter row_end = this->mat_row.end();
-
-            for(ii=this->mat_row.begin(); ii!=row_end; ii++)
-            {
-#ifdef USE_HASHMAP
-               const col_id_itr colid_end = set_col_id[cnt_rows].end();
-               for(col_id_itr kk=set_col_id[cnt_rows].begin(); kk!=colid_end; kk++)
-               {
-                  jj = ii->find(*kk);
-#else
-                  const col_iter col_end = (*ii).end();
-                  for(jj=(*ii).begin(); jj!=col_end; jj++)
-                  {
-#endif
-                     v[cnt++] = (*jj).second;
-                  }
-                  cnt_rows++;
-               }
-
-               return success;
-            }
-#endif
 
             ////////////////////////////////////////////////////////////
 #ifdef NEW_EQS
@@ -1391,16 +786,16 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
                                                   // In sparse table, = number of nodes
                rows = a_mesh->GetNodesNumber(quadratic);
                size_entry_column = 0;
-   diag_entry = new long[rows]; 
+   diag_entry = new long[rows];
 
    if(storage_type == JDS)
    {
-      row_index_mapping_n2o = new long[rows]; 
+      row_index_mapping_n2o = new long[rows];
       row_index_mapping_o2n = new long[rows];
    }
    else if (storage_type == CRS)
    {
-      row_index_mapping_n2o = NULL; 
+      row_index_mapping_n2o = NULL;
       row_index_mapping_o2n = NULL;
    }
 
@@ -1413,27 +808,27 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
                      row_index_mapping_n2o[i] = i;
                      // 'diag_entry' used as a temporary array
                      // to store the number of nodes connected to this node
-                     lbuff1 = (long)a_mesh->nod_vector[i]->connected_nodes.size();
+                     lbuff1 = (long)a_mesh->nod_vector[i]->getConnectedNodes().size();
                      larraybuffer[i] = new long[lbuff1+1];
                      //
                      larraybuffer[i][0] = lbuff1;
                      for(j=0; j<lbuff1; j++)
-                        larraybuffer[i][j+1] = a_mesh->nod_vector[i]->connected_nodes[j];
-                     a_mesh->nod_vector[i]->connected_nodes.clear();
+                        larraybuffer[i][j+1] = a_mesh->nod_vector[i]->getConnectedNodes()[j];
+                     a_mesh->nod_vector[i]->getConnectedNodes().clear();
                      for(j=0; j<lbuff1; j++)
                      {
                         jj = larraybuffer[i][j+1];
                         if(i<=jj)
-                           a_mesh->nod_vector[i]->connected_nodes.push_back(jj);
+                           a_mesh->nod_vector[i]->getConnectedNodes().push_back(jj);
                      }
      }
    }
 
-   
+
    /// CRS storage
    if(storage_type == CRS)
    {
-      /// num_column_entries saves vector ptr of CRS 
+      /// num_column_entries saves vector ptr of CRS
       num_column_entries = new long[rows+1];
 
       vector<long> A_index;
@@ -1442,29 +837,29 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
       for(i=0; i<rows; i++)
       {
          num_column_entries[i] = (long)A_index.size();
- 
-         for(j=0; j<(long)a_mesh->nod_vector[i]->connected_nodes.size(); j++)
+
+         for(j=0; j<(long)a_mesh->nod_vector[i]->getConnectedNodes().size(); j++)
          {
-            col_index = a_mesh->nod_vector[i]->connected_nodes[j];
-             
+            col_index = a_mesh->nod_vector[i]->getConnectedNodes()[j];
+
             /// If linear element is used
             if((!quadratic)&&(col_index>=rows))
                continue;
-           
+
             if(i == col_index)
                diag_entry[i] = (long)A_index.size();
             A_index.push_back(col_index);
          }
       }
-      
-      size_entry_column = (long)A_index.size(); 
+
+      size_entry_column = (long)A_index.size();
       num_column_entries[rows] = size_entry_column;
 
-      entry_column = new long[size_entry_column]; 
+      entry_column = new long[size_entry_column];
       for(i=0; i<size_entry_column; i++)
         entry_column[i] = A_index[i];
 
-   }   
+   }
    else if(storage_type == JDS)
    {
                //
@@ -1475,13 +870,13 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
                   row_index_mapping_n2o[i] = i;
                   // 'diag_entry' used as a temporary array
                   // to store the number of nodes connected to this node
-                  diag_entry[i] = (long)a_mesh->nod_vector[i]->connected_nodes.size();
+                  diag_entry[i] = (long)a_mesh->nod_vector[i]->getConnectedNodes().size();
                   if(!quadratic)
                   {
                      lbuff0 = 0;
                      for(j=0; j<diag_entry[i]; j++)
                      {
-                        if(a_mesh->nod_vector[i]->connected_nodes[j]<rows)
+                        if(a_mesh->nod_vector[i]->getConnectedNodes()[j]<static_cast<size_t>(rows))
                            lbuff0++;
                      }
                      diag_entry[i] = lbuff0;
@@ -1539,7 +934,7 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
                                                   // ii is the real row index of this entry in matrix
                      ii = row_index_mapping_n2o[j];
                      // jj is the real column index of this entry in matrix
-                     jj = a_mesh->nod_vector[ii]->connected_nodes[i];
+                     jj = a_mesh->nod_vector[ii]->getConnectedNodes()[i];
                      entry_column[lbuff0] = jj;
 
                      // Till to this stage, 'diag_entry' is really used to store indices of the diagonal entries.
@@ -1558,10 +953,10 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
                   for(i=0; i<rows; i++)
                   {
                      lbuff0 = larraybuffer[i][0];
-                     a_mesh->nod_vector[i]->connected_nodes.resize(lbuff0);
+                     a_mesh->nod_vector[i]->getConnectedNodes().resize(lbuff0);
                      //
                      for(j=0; j<lbuff0; j++)
-                        a_mesh->nod_vector[i]->connected_nodes[j] = larraybuffer[i][j+1];
+                        a_mesh->nod_vector[i]->getConnectedNodes()[j] = larraybuffer[i][j+1];
                   }
                   for(i=0; i<rows; i++)
                   {
@@ -1712,7 +1107,7 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
    os.width(10);
    os<<"Symmetry: "<<symmetry<<endl;
    os<<"\n*** Row index  "<<endl;
- 
+
    if(storage_type == CRS)
    {
       os<<"\n*** Sparse entry  "<<endl;
@@ -1720,27 +1115,27 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
       {
           for (k = num_column_entries[i]; k < num_column_entries[i+1]; k++)
              os<<entry_column[k]+1<<" ";
-          os<<endl; 
+          os<<endl;
       }
-   } 
+   }
    else if(storage_type == JDS)
    {
       for (i = 0; i < rows; i++)
         os<<row_index_mapping_n2o[i]+1<<endl;
-      // 
+      //
       os<<"\n*** Sparse entry  "<<endl;
       for (k = 0; k < max_columns; k++)
       {
          os<<"--Column: "<<k+1<<endl;
          for (i = 0; i < num_column_entries[k]; i++)
-         {          
+         {
             os<<entry_column[counter]+1<<endl;;
             counter++;
-         } 
-         os<<endl;        
-      } 
-   } 
-}    
+         }
+         os<<endl;
+      }
+   }
+}
 
             /*\!
              ********************************************************************
@@ -1752,9 +1147,9 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
             SparseTable::~SparseTable()
             {
   if(entry_column) delete [] entry_column;
-  if(num_column_entries) delete [] num_column_entries; 
-  if(row_index_mapping_n2o) delete [] row_index_mapping_n2o;    
-  if(row_index_mapping_o2n) delete [] row_index_mapping_o2n;    
+  if(num_column_entries) delete [] num_column_entries;
+  if(row_index_mapping_n2o) delete [] row_index_mapping_n2o;
+  if(row_index_mapping_o2n) delete [] row_index_mapping_o2n;
   if(diag_entry) delete [] diag_entry;
                entry_column = NULL;
                num_column_entries = NULL;
@@ -1881,7 +1276,7 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
     {
       ii = j;
       jj = i;
-    }       
+    }
   }
   ir = ii%rows;
   jr = jj%rows;
@@ -1891,21 +1286,21 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
   k = -1;
 
   if(storage_type==JDS)
-  { 
+  {
      long row_in_parse_table, counter;
      row_in_parse_table = row_index_mapping_o2n[ir];
      counter = row_in_parse_table;
      for (k = 0; k < max_columns; k++)
      {
-        if(row_in_parse_table>=num_column_entries[k]) 
+        if(row_in_parse_table>=num_column_entries[k])
           return zero_e;
         if(entry_column[counter]==jr)
-          break;  // Found the entry  
-        counter += num_column_entries[k]; 
+          break;  // Found the entry
+        counter += num_column_entries[k];
      }
      if(counter>=size_entry_column)
        return zero_e;
-     //  Zero entry;  
+     //  Zero entry;
      k = (ii*DOF+jj)*size_entry_column+counter;
   }
   else if(storage_type==CRS)
@@ -1913,15 +1308,15 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
      /// Left boundary of this row: num_column_entries[ir]
      /// Right boundary of this row: num_column_entries[ir+1]
      /// Search target is jr
-     k = binarySearch(entry_column, jr, num_column_entries[ir], num_column_entries[ir+1]); 
+     k = binarySearch(entry_column, jr, num_column_entries[ir], num_column_entries[ir+1]);
      if(k==-1)
-       return zero_e; 
+       return zero_e;
 
      k = (ii*DOF+jj)*size_entry_column+k;
   }
-  
-  return entry[k]; // 
-} 
+
+  return entry[k]; //
+}
             /*\!
              ********************************************************************
                Desstructor of sparse matrix
@@ -2028,8 +1423,8 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
                long i, k, ii, jj, row_in_parse_table, counter;
                os<<"*** Non-zero entries of matrix:  "<<std::endl;
   os.width(14);
-  os.precision(8); 
-  // 
+  os.precision(8);
+  //
   if(storage_type == CRS )
   {
      for(ii=0; ii<DOF; ii++)
@@ -2044,7 +1439,7 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
                 // if(fabs(entry[(ii*DOF+jj)*size_entry_column+counter])>DBL_MIN) //DBL_EPSILON)
                os<<setw(10)<<ii*rows+i<<" "
                  <<setw(10)<< jj*rows+entry_column[k]<<" "
-                 <<setw(15)<<entry[(ii*DOF+jj)*size_entry_column+k]<<endl;  
+                 <<setw(15)<<entry[(ii*DOF+jj)*size_entry_column+k]<<endl;
             }
          }
        }
@@ -2068,11 +1463,11 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
                 // if(fabs(entry[(ii*DOF+jj)*size_entry_column+counter])>DBL_MIN) //DBL_EPSILON)
                os<<setw(10)<<ii*rows+i<<" "
                  <<setw(10)<< jj*rows+entry_column[counter]<<" "
-                 <<setw(15)<<entry[(ii*DOF+jj)*size_entry_column+counter]<<endl;  
+                 <<setw(15)<<entry[(ii*DOF+jj)*size_entry_column+counter]<<endl;
                counter += num_column_entries[k];
              }
              else
-               break; 
+               break;
            }
          }
        }
@@ -2082,13 +1477,13 @@ SparseTable::SparseTable(CFEMesh *a_mesh, bool quadratic, bool symm, StorageType
 //--------------------------------------------------------------
 /*!
    \brief Write matrix to a binary file
-   
+
    03.2011. WW
 */
 void CSparseMatrix::Write_BIN(ostream &os)
 {
   if(storage_type == JDS )
-     return; 
+     return;
   //
   if(DOF == 1)
   {
@@ -2103,14 +1498,14 @@ void CSparseMatrix::Write_BIN(ostream &os)
      long *ptr;
      long *A_index;
      double *A_value;
-     
+
      ptr = new long[DOF*rows+1];
      size = DOF*DOF*num_column_entries[rows];
      A_index = new long[size];
      A_value = new double[size];
 
      long counter = 0;
-     
+
      for(ii=0; ii<DOF; ii++)
      {
        for(i=0; i<rows; i++)
@@ -2122,7 +1517,7 @@ void CSparseMatrix::Write_BIN(ostream &os)
            {
                A_index[counter] = jj*rows+entry_column[k];
                A_value[counter] = entry[(ii*DOF+jj)*size_entry_column+k];
-               counter++; 
+               counter++;
             }
          }
        }
@@ -2169,38 +1564,38 @@ void CSparseMatrix::Write_BIN(ostream &os)
        for (ii = 0; ii < rows; ii++)
        {
           for (j = num_column_entries[ii]; j < num_column_entries[ii+1]; j++)
-          {          
+          {
              jj=entry_column[j];
              for(idof=0; idof<DOF; idof++)
              {
                 kk = idof*rows+ii;
                 for(jdof=0; jdof<DOF; jdof++)
                 {
-                  ll = jdof*rows+jj; 
+                  ll = jdof*rows+jj;
                   k = (idof*DOF+jdof)*size_entry_column+j;
                   vec_r[kk] += entry[k]*vec_s[ll];
                   if(symmetry&(kk!=ll))
                      vec_r[ll] += entry[k]*vec_s[kk];
                 }
              }
-          }         
+          }
        }
-        
+
     }
     else if(storage_type==JDS)
-    { 
+    {
        for (k = 0; k < max_columns; k++)
        {
           for (i = 0; i < num_column_entries[k]; i++)
-          {          
-             ii = row_index_mapping_n2o[i];  
+          {
+             ii = row_index_mapping_n2o[i];
              jj=entry_column[counter];
              for(idof=0; idof<DOF; idof++)
              {
                 kk = idof*rows+ii;
                 for(jdof=0; jdof<DOF; jdof++)
                 {
-                  ll = jdof*rows+jj; 
+                  ll = jdof*rows+jj;
                   j = (idof*DOF+jdof)*size_entry_column+counter;
                   vec_r[kk] += entry[j]*vec_s[ll];
                   if(symmetry&(kk!=ll))
@@ -2208,7 +1603,7 @@ void CSparseMatrix::Write_BIN(ostream &os)
                 }
              }
              counter++;
-          }         
+          }
        }
     }
 
@@ -2221,28 +1616,28 @@ void CSparseMatrix::Write_BIN(ostream &os)
        for (ii = 0; ii < rows; ii++)
        {
           for (j = num_column_entries[ii]; j < num_column_entries[ii+1]; j++)
-          {          
+          {
              jj=entry_column[j];
              vec_r[ii] += entry[j]*vec_s[jj];
              if(symmetry&(ii!=jj))
                  vec_r[jj] += entry[j]*vec_s[ii];
-          }         
+          }
        }
-        
+
     }
     else if(storage_type==JDS)
     {
        for (k = 0; k < max_columns; k++)
        {
           for (i = 0; i < num_column_entries[k]; i++)
-          {          
-             ii = row_index_mapping_n2o[i];  
+          {
+             ii = row_index_mapping_n2o[i];
              jj=entry_column[counter];
              vec_r[ii] += entry[counter]*vec_s[jj];
              if(symmetry&(ii!=jj))
                 vec_r[jj] += entry[counter]*vec_s[ii];
              counter++;
-          }         
+          }
        }
      }
   }
@@ -2274,38 +1669,38 @@ void CSparseMatrix::Write_BIN(ostream &os)
        for (ii = 0; ii < rows; ii++)
        {
           for (j = num_column_entries[ii]; j < num_column_entries[ii+1]; j++)
-          {          
+          {
              jj=entry_column[j];
              for(idof=0; idof<DOF; idof++)
              {
                 kk = idof*rows+ii;
                 for(jdof=0; jdof<DOF; jdof++)
                 {
-                  ll = jdof*rows+jj; 
+                  ll = jdof*rows+jj;
                   k = (idof*DOF+jdof)*size_entry_column+j;
                   vec_r[ll] += entry[k]*vec_s[kk];
                   if(symmetry&(kk!=ll))
                      vec_r[kk] += entry[k]*vec_s[ll];
                 }
              }
-          }         
+          }
        }
-        
+
     }
     else if(storage_type==JDS)
     {
        for (k = 0; k < max_columns; k++)
        {
           for (i = 0; i < num_column_entries[k]; i++)
-          {          
-             ii = row_index_mapping_n2o[i];  
+          {
+             ii = row_index_mapping_n2o[i];
              jj=entry_column[counter];
              for(idof=0; idof<DOF; idof++)
              {
                 kk = idof*rows+ii;
                 for(jdof=0; jdof<DOF; jdof++)
                 {
-                  ll = jdof*rows+jj; 
+                  ll = jdof*rows+jj;
                   j = (idof*DOF+jdof)*size_entry_column+counter;
                   vec_r[ll] += entry[j]*vec_s[kk];
                   if(symmetry&(kk!=ll))
@@ -2313,7 +1708,7 @@ void CSparseMatrix::Write_BIN(ostream &os)
                 }
              }
              counter++;
-          }         
+          }
        }
      }
   }
@@ -2325,28 +1720,28 @@ void CSparseMatrix::Write_BIN(ostream &os)
        for (ii = 0; ii < rows; ii++)
        {
           for (j = num_column_entries[ii]; j < num_column_entries[ii+1]; j++)
-          {          
+          {
              jj=entry_column[j];
              vec_r[jj] += entry[j]*vec_s[ii];
              if(symmetry&(ii!=jj))
                  vec_r[ii] += entry[j]*vec_s[jj];
-          }         
+          }
        }
-        
+
     }
     else if(storage_type==JDS)
     {
        for (k = 0; k < max_columns; k++)
        {
           for (i = 0; i < num_column_entries[k]; i++)
-          {          
-             ii = row_index_mapping_n2o[i];  
+          {
+             ii = row_index_mapping_n2o[i];
              jj=entry_column[counter];
              vec_r[jj] += entry[counter]*vec_s[ii];
              if(symmetry&(ii!=jj))
                 vec_r[ii] += entry[counter]*vec_s[jj];
              counter++;
-          }         
+          }
        }
     }
   }
@@ -2373,37 +1768,37 @@ void CSparseMatrix::Write_BIN(ostream &os)
   if(storage_type == CRS)
   {
      /// Diagonal entry and the row where the diagonal entry exists
-     j = diag_entry[id]; 
+     j = diag_entry[id];
      vdiag = entry[(ii*DOF+ii)*size_entry_column+j];
-     /// Row where the diagonal entry exists 
+     /// Row where the diagonal entry exists
      for(jj=0; jj<DOF; jj++)
      {
         for(k=num_column_entries[id]; k<num_column_entries[id+1]; k++)
         {
            j0=entry_column[k];
            if(id==j0&&jj==ii)  // Diagonal entry
-              continue; 
-           entry[(ii*DOF+jj)*size_entry_column+k] = 0.; 
+              continue;
+           entry[(ii*DOF+jj)*size_entry_column+k] = 0.;
         }
-     }    
-     
-     /// Clean column id                
+     }
+
+     /// Clean column id
      for (i = 0; i < rows; i++)
      {
-        j = binarySearch(entry_column, id, num_column_entries[i], num_column_entries[i+1]); 
+        j = binarySearch(entry_column, id, num_column_entries[i], num_column_entries[i+1]);
         if(j == -1)
            continue;
         j0=entry_column[j];
 
         for(jj=0; jj<DOF; jj++)
         {
-           if(i == j0&&ii==jj) continue; 
+           if(i == j0&&ii==jj) continue;
            k = (jj*DOF+ii)*size_entry_column+j;
-           b[jj*rows+i] -= entry[k]*b_given; 
-           entry[k] = 0.; 
+           b[jj*rows+i] -= entry[k]*b_given;
+           entry[k] = 0.;
            // Room for symmetry case
-        }           
-     }      
+        }
+     }
   }
   else if(storage_type == JDS)
   {
@@ -2419,9 +1814,9 @@ void CSparseMatrix::Write_BIN(ostream &os)
            j0=entry_column[counter];
            for(jj=0; jj<DOF; jj++)
            {
-              if(id==j0&&jj==ii)   
+              if(id==j0&&jj==ii)
                 vdiag = entry[(ii*DOF+jj)*size_entry_column+counter];
-              else  
+              else
                 entry[(ii*DOF+jj)*size_entry_column+counter] = 0.;
            }
            counter += num_column_entries[k];
@@ -2434,13 +1829,13 @@ void CSparseMatrix::Write_BIN(ostream &os)
      for (k = 0; k < max_columns; k++)
      {
        for (i = 0; i < num_column_entries[k]; i++)
-       {          
-         i0 = row_index_mapping_n2o[i]; 
+       {
+         i0 = row_index_mapping_n2o[i];
          /*
          if(i0 == id)
          {
            counter++;
-           continue; 
+           continue;
          }
          */
          j0=entry_column[counter];
@@ -2448,16 +1843,16 @@ void CSparseMatrix::Write_BIN(ostream &os)
          {
             for(jj=0; jj<DOF; jj++)
             {
-               if(i0 == j0&&ii==jj) continue; 
+               if(i0 == j0&&ii==jj) continue;
                j = (jj*DOF+ii)*size_entry_column+counter;
-               b[jj*rows+i0] -= entry[j]*b_given; 
-               entry[j] = 0.; 
+               b[jj*rows+i0] -= entry[j]*b_given;
+               entry[j] = 0.;
                // Room for symmetry case
-            }           
-         } 
+            }
+         }
          //
          counter++;
-       }         
+       }
      }
   }
   b[idiag] = vdiag*b_given;

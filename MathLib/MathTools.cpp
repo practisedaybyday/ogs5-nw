@@ -41,13 +41,13 @@ double sqrNrm2 (const GEOLIB::Point* p0)
 
 double sqrDist (const GEOLIB::Point* p0, const GEOLIB::Point* p1)
 {
-	double v[3] = {(*p1)[0] - (*p0)[0], (*p1)[1] - (*p0)[1], (*p1)[2] - (*p0)[2]};
+	const double v[3] = {(*p1)[0] - (*p0)[0], (*p1)[1] - (*p0)[1], (*p1)[2] - (*p0)[2]};
 	return scpr (v, v, 3);
 }
 
 double sqrDist(const double* p0, const double* p1)
 {
-	double v[3] = {p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]};
+	const double v[3] = {p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]};
 	return scpr (v, v, 3);
 }
 

@@ -671,41 +671,35 @@ Programing:
 **************************************************************************/
 void CPARDomain::NodeConnectedNodes()
 {
-   int k, i_buff;
-   long i, j, long_buff;
-   MeshLib::CNode* m_nod = NULL;
-   vector<long> nodes2node;
-   // node_connected_doms as buffer to accelarate the computation
-   // 14.09.2007 WW
-   for(i=0; i<(long)m_msh->nod_vector.size(); i++)
-      node_connected_doms[i] = -1;
-   for(j=0; j<(long)nodes.size(); j++)
-   {
-      i = nodes[j];
-      m_nod = m_msh->nod_vector[i];
-      node_connected_doms[m_nod->GetIndex()] = j;
-   }
+	vector<long> nodes2node;
+	// node_connected_doms as buffer to accelerate the computation
+	// 14.09.2007 WW
+	const size_t n_mesh_nodes (m_msh->nod_vector.size());
+	for (size_t i = 0; i < n_mesh_nodes; i++) {
+		node_connected_doms[i] = -1;
+	}
 
-   //----------------------------------------------------------------------
-   for(i=0;i<(long)nodes.size();i++)
-   {
-      m_nod = m_msh->nod_vector[nodes[i]];
-      nodes2node.clear();
-      for(k=0; k<(int)m_nod->connected_nodes.size(); k++)
-      {
-         long_buff = m_nod->connected_nodes[k];
-         j = node_connected_doms[long_buff];
-         if(j>-1)
-            nodes2node.push_back(j);
-      }
-      i_buff = (int)nodes2node.size();
-      long  *nodes_to_node = new long[i_buff];
-      for(k=0; k<i_buff; k++)
-         nodes_to_node[k] = nodes2node[k];
-      node_conneted_nodes.push_back(nodes_to_node);
-      num_nodes2_node.push_back(i_buff);
-   }
-   //----------------------------------------------------------------------
+	for (size_t j = 0; j < nodes.size(); j++) {
+		node_connected_doms[m_msh->nod_vector[nodes[j]]->GetIndex()] = j;
+	}
+
+	const size_t n_nodes(nodes.size());
+	for (size_t i = 0; i < n_nodes; i++) {
+		nodes2node.clear();
+		std::vector<size_t> const& connected_nodes(m_msh->nod_vector[nodes[i]]->getConnectedNodes());
+		const size_t n_connected_nodes(connected_nodes.size());
+		for (size_t k = 0; k < n_connected_nodes; k++) {
+			int j = node_connected_doms[connected_nodes[k]];
+			if (j > -1)
+				nodes2node.push_back(j);
+		}
+		const size_t i_buff (nodes2node.size());
+		long *nodes_to_node = new long[i_buff];
+		for (size_t k = 0; k < i_buff; k++)
+			nodes_to_node[k] = nodes2node[k];
+		node_conneted_nodes.push_back(nodes_to_node);
+		num_nodes2_node.push_back(i_buff);
+	}
 }
 
 
@@ -956,7 +950,6 @@ void CPARDomain::WriteTecplot(string msh_name)
    //--------------------------------------------------------------------
    // MSH
    CFEMesh* m_msh = NULL;
-   MeshLib::CNode* m_nod = NULL;
    MeshLib::CElem* m_ele = NULL;
    m_msh = FEMGet(msh_name);
    if(!m_msh)
@@ -1004,10 +997,10 @@ void CPARDomain::WriteTecplot(string msh_name)
    //......................................................................
    for(i=0;i<no_nodes;i++)
    {
-      m_nod = m_msh->nod_vector[i];
-      dom_file \
-         << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << " " \
-         << ID << endl;
+		double const*const coords (m_msh->nod_vector[i]->getData());
+        dom_file << coords[0] << " " << coords[1] << " " << coords[2] << " " << ID << endl;
+//      m_nod = m_msh->nod_vector[i];
+//      dom_file << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << " " << ID << endl;
    }
    //......................................................................
    for(i=0;i<(long)elements.size();i++)

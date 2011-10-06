@@ -16,6 +16,8 @@
 #include "rf_mmp_new.h"
 #include "rf_msp_new.h"
 
+#include "SparseMatrixDOK.h"
+
 #include "pcs_dm.h"                               // displacement coupled
 #include "rfmat_cp.h"
 // Steps
@@ -1806,13 +1808,13 @@ namespace FiniteElement
          case M:                                  // Mass transport //SB4200
          {
                                                   //kg44 added changing Porosity for GEMS coupling
-            
+
 
 #ifdef GEM_REACT
 	    // kg44 for GEMS coupling this should be updated to arbitrary flow processes
             porval0 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(GROUNDWATER_FLOW)->GetElementValueIndex("POROSITY"));// for GEMS we need old and new porosity!
-	    porval1 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(GROUNDWATER_FLOW)->GetElementValueIndex("POROSITY")+1); 
-#else 
+	    porval1 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(GROUNDWATER_FLOW)->GetElementValueIndex("POROSITY")+1);
+#else
             porval0 = MediaProp->Porosity(Index,pcs->m_num->ls_theta); // get porosity..this is the "old" behaviour without GEMS coupling
 	    porval1 = porval0; // mimic no porosity change
 #endif
@@ -2120,7 +2122,7 @@ namespace FiniteElement
             Hav = 0.0;
             for(i=0;i<nnodes;i++)
             {
-               z[i] = MeshElement->nodes[i]->Z();
+               z[i] = MeshElement->nodes[i]->getData()[2];
                Hn[i] = pcs->GetNodeValue(MeshElement->nodes_index[i],nidx1) - z[i];
                if (Hn[i] < 0.0) {Hn[i] = 0.0;}
                Hav += Hn[i]/(double)nnodes;
@@ -2143,7 +2145,7 @@ namespace FiniteElement
                MMultVecMat(v2,dim,invJacobian,dim,dim,Gradz,dim);
                w[0] = GradH[0] + Gradz[0];
                w[1] = GradH[1] + Gradz[1];
-               chezy4 = pow(chezy,4);
+               chezy4 = MathLib::fastpow(chezy,4);
                Ss = ((w[0] * w[0]) / chezy4) +  ((w[1] * w[1]) / chezy4);
                Ss = pow(Ss,0.25);
                if (fabs(Ss) < 1.0e-7)
@@ -3413,7 +3415,7 @@ namespace FiniteElement
             double tmp_diff = 0.0;
             for (int i=0; i<dim; i++)
             {
-               tmp_diff = pow(dispersion_tensor[i+i*dim], 2.0);
+               tmp_diff = dispersion_tensor[i+i*dim] * dispersion_tensor[i+i*dim];
             }
             diff = sqrt(tmp_diff);
          }
@@ -3462,7 +3464,9 @@ namespace FiniteElement
          {
             // taking into account time step
             //          tau = 1.0 / sqrt(pow(2.0/dt ,2.0)+pow(2.0*v_mag/ele_len,2.0));
-            tau = 1.0 / sqrt(pow(2.0/dt ,2.0)+pow(2.0*v_mag/ele_len,2.0)+pow(4.0*diff/(ele_len*ele_len),2.0));
+            tau = 1.0 / sqrt((2.0 / dt)*(2.0 / dt)
+            		+ (2.0 * v_mag / ele_len)*(2.0 * v_mag / ele_len)
+            		+ (4.0 * diff / (ele_len * ele_len)) * (4.0 * diff / (ele_len * ele_len)));
          }
          break;
       }
@@ -4750,7 +4754,7 @@ namespace FiniteElement
          humi = exp(PG/(GAS_CONSTANT_V*TG*rhow));
          Dv = tort*(1.0-Sw)*poro*2.16e-5*pow(TG/T_KILVIN_ZERO, 1.8);
          rhov = humi*FluidProp->vaporDensity(TG);
-         drdT= (FluidProp->vaporDensity_derivative(TG)*humi-rhov*PG/(GAS_CONSTANT_V*rhow*pow(TG, 2.0)))/rhow;
+         drdT= (FluidProp->vaporDensity_derivative(TG)*humi-rhov*PG/(GAS_CONSTANT_V*rhow*TG*TG))/rhow;
          Dtv = time_unit_factor*Dv*drdT;
 
          //    }
@@ -4814,43 +4818,53 @@ namespace FiniteElement
          switch(dim)
          {
             case 1:
-               for(i=0; i<nNodes; i++)
-               {
-                  X[i] = MeshElement->nodes[i]->Z();
-                  Y[i] = MeshElement->nodes[i]->Y();
-                  Z[i] = MeshElement->nodes[i]->X();
-               }
+			for (i = 0; i < nNodes; i++) {
+//				X[i] = MeshElement->nodes[i]->Z();
+//				Y[i] = MeshElement->nodes[i]->Y();
+//				Z[i] = MeshElement->nodes[i]->X();
+				double const*const coords (MeshElement->nodes[i]->getData());
+				X[i] = coords[2];
+				Y[i] = coords[1];
+				Z[i] = coords[0];
+			}
                break;
-            case 2:
-               for(i=0; i<nNodes; i++)
-               {
-                  X[i] = MeshElement->nodes[i]->X();
-                  Y[i] = MeshElement->nodes[i]->Z();
-                  Z[i] = MeshElement->nodes[i]->Y();
-               }
-               break;
-            case 3:
-               for(i=nnodes; i<nnodesHQ; i++)
-               {
-                  X[i] = MeshElement->nodes[i]->X();
-                  Y[i] = MeshElement->nodes[i]->Y();
-                  Z[i] = MeshElement->nodes[i]->Z();
-               }
+		case 2:
+			for (i = 0; i < nNodes; i++) {
+//				X[i] = MeshElement->nodes[i]->X();
+//				Y[i] = MeshElement->nodes[i]->Z();
+//				Z[i] = MeshElement->nodes[i]->Y();
+				double const*const coords (MeshElement->nodes[i]->getData());
+				X[i] = coords[0];
+				Y[i] = coords[2];
+				Z[i] = coords[1];
+			}
+			break;
+		case 3:
+			for (i = nnodes; i < nnodesHQ; i++) {
+//				X[i] = MeshElement->nodes[i]->X();
+//				Y[i] = MeshElement->nodes[i]->Y();
+//				Z[i] = MeshElement->nodes[i]->Z();
+				double const*const coords (MeshElement->nodes[i]->getData());
+				X[i] = coords[0];
+				Y[i] = coords[1];
+				Z[i] = coords[2];
+			}
 
-         }
+		}
       }
-      else
-      {
-         if(dim==1||dim==2)
-         {
-            for(i=nnodes; i<nnodesHQ; i++)
-            {
-               X[i] = MeshElement->nodes[i]->X();
-               Y[i] = MeshElement->nodes[i]->Y();
-               Z[i] = MeshElement->nodes[i]->Z();
-            }
-         }
-      }
+      else {
+		if (dim == 1 || dim == 2) {
+			for (i = nnodes; i < nnodesHQ; i++) {
+//				X[i] = MeshElement->nodes[i]->X();
+//				Y[i] = MeshElement->nodes[i]->Y();
+//				Z[i] = MeshElement->nodes[i]->Z();
+				double const*const coords (MeshElement->nodes[i]->getData());
+				X[i] = coords[0];
+				Y[i] = coords[1];
+				Z[i] = coords[2];
+			}
+		}
+	}
    }
    /***************************************************************************
       GeoSys - Funktion:
@@ -6165,7 +6179,7 @@ namespace FiniteElement
             //***************************************
                   NodalVal2[i] += fktG*dshapefct[k*nnodes+j]
                                                   //NW  dshapefct[dimension*nnodes+j] -> dshapefct[k*nnodes+j]
-               *mat[dim*dimension+k]* shapefct[i] * MeshElement->nodes[j]->Z();
+               *mat[dim*dimension+k]* shapefct[i] * MeshElement->nodes[j]->getData()[2];
          }
       }
 
@@ -6654,7 +6668,7 @@ namespace FiniteElement
       //----------------------------------------------------------------------
       // FCT method
       //----------------------------------------------------------------------
-      SparseMatrixDOK *FCT_Flux = this->pcs->FCT_AFlux;
+      Math_Group::SparseMatrixDOK *FCT_Flux = this->pcs->FCT_AFlux;
       Vec *ML = this->pcs->Gl_ML;
 
       //----------------------------------------------------------------------
@@ -8231,7 +8245,7 @@ namespace FiniteElement
          NGPoints=3;
       else if(ele_type==MshElemType::TETRAHEDRON)
          NGPoints=15;
-      else NGPoints = (int)pow((double)NGP, (double)ele_dim);
+      else NGPoints = (int)MathLib::fastpow(NGP, ele_dim);
 
       //WW Velocity.resize(m_pcs->m_msh->GetCoordinateFlag()/10, NGPoints);
       Velocity.resize(3, NGPoints);

@@ -1,6 +1,5 @@
 # Source files
 SET( SOURCES
-	GMSHInterface.cpp
 	GMSInterface.cpp
 	GocadInterface.cpp
 	OGSIOVer4.cpp
@@ -11,14 +10,15 @@ SET( SOURCES
 	FEMIO/GeoIO.cpp
 	FEMIO/ProcessIO.cpp
 	FEMIO/BoundaryConditionIO.cpp
-	MeshIO/OGSMeshIO.cpp
+	MeshIO/GMSHInterface.cpp
 	MeshIO/LegacyVtkInterface.cpp
+	MeshIO/OGSMeshIO.cpp
+	MeshIO/TetGenInterface.cpp
 	GeoIO/Gmsh2GeoIO.cpp
 )
 
 # Header files
 SET( HEADERS
-	GMSHInterface.h
 	GMSInterface.h
 	GocadInterface.h
 	OGSIOVer4.h
@@ -30,8 +30,10 @@ SET( HEADERS
 	FEMIO/ProcessIO.h
 	FEMIO/BoundaryConditionIO.h
 	MathIO/CRSIO.h
-	MeshIO/OGSMeshIO.h
+	MeshIO/GMSHInterface.h
 	MeshIO/LegacyVtkInterface.h
+	MeshIO/OGSMeshIO.h
+	MeshIO/TetGenInterface.h
 	GeoIO/Gmsh2GeoIO.h
 )
 

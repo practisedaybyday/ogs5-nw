@@ -15,11 +15,11 @@ public:
 	CPlaneEquation();
 	~CPlaneEquation();
 
-	void CalculatePlaneEquationFrom3Points(double Point1[3], double Point2[3], double Point3[3]);
+	void CalculatePlaneEquationFrom3Points(const double Point1[3], const double Point2[3], const double Point3[3]);
 
 	double* GetNormalVector() {return normal_vector;}
 
-	bool CheckIfPointInPlane(double Point[3]);
+	bool CheckIfPointInPlane(const double Point[3]);
 };
 
 class CFlowData {
@@ -56,7 +56,7 @@ public:
 	CFaces(int number_phases);
 	~CFaces();
 
-	bool Calculate_FaceGravityCentre(double Point1[3], double Point2[3], double Point3[3], double Point4[3]);
+	bool Calculate_FaceGravityCentre(const double Point1[3], const double Point2[3], const double Point3[3], const double Point4[3]);
 
 	double* GetFaceGravityCentre() {return gravity_centre;}
 

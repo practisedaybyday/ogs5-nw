@@ -70,14 +70,6 @@ INCLUDE_DIRECTORIES (
 )
 
 
-IF (LIBPQC_DEBUG)
-  SET(CMAKE_C_FLAGS "-O0 -ggdb -Wall")
-  ADD_DEFINITIONS ( "-DMDL_DEBUG" )
-ELSE (LIBPQC_DEBUG)
-  SET(CMAKE_C_FLAGS "-O3 -Wall")  
-ENDIF (LIBPQC_DEBUG)
-
-
 # Create the library
 add_library( PQC STATIC
 	      ${SOURCES}

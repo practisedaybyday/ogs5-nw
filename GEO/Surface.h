@@ -14,11 +14,9 @@
 #include "Point.h"
 #include "Polyline.h"
 #include "Triangle.h"
-
+#include "AxisAlignedBoundingBox.h"
 
 namespace GEOLIB {
-
-class AABB;
 
 /**
  * \ingroup GEOLIB
@@ -56,12 +54,19 @@ public:
 	bool isPntInBV (const double *pnt, double eps = std::numeric_limits<double>::epsilon()) const;
 
 	/**
-	 * is the given point located in the surface
+	 * is the given point pnt located in the surface
+	 * @param pnt the point
+	 * @return true if the point is contained in the surface
 	 */
 	bool isPntInSfc (const double *pnt) const;
 
 	const std::vector<Point*> *getPointVec() const { return &_sfc_pnts; };
 
+	/**
+	 * method allows access to the internal axis aligned bounding box
+	 * @return axis aligned bounding box
+	 */
+	AABB const & getAABB () const { return _bv; }
 
 protected:
 	/** a vector of pointers to Points */
@@ -69,7 +74,7 @@ protected:
 	/** position of pointers to the geometric points */
 	std::vector<Triangle*> _sfc_triangles;
 	/** bounding volume is an axis aligned bounding box */
-	AABB *_bv;
+	AABB _bv;
 };
 
 }

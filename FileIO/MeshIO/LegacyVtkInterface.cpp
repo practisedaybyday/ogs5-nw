@@ -1,7 +1,7 @@
 /**
  * \file LegacyVtkInterface.cpp
  * 05/04/2011 LB Initial implementation
- * 
+ *
  * Implementation of LegacyVtkInterface class
  */
 
@@ -63,7 +63,7 @@ void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time, std::s
 		cout << "Warning in LegacyVtkInterface::WriteVTKNodes - no MSH data" << endl;
 		return;
 	}
-	
+
 	if (_processType.compare("INVALID_PROCESS") != 0)
 		baseFilename += "_" + _processType;
 
@@ -100,12 +100,12 @@ void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time, std::s
 
 void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number, double simulation_time) const
 {
-	
+
 	vtk_file << "# vtk DataFile Version 3.0" << endl;
 	vtk_file << "Unstructured Grid from OpenGeoSys" << endl;
 	vtk_file << "ASCII"  << endl;
 	vtk_file << "DATASET UNSTRUCTURED_GRID"  << endl;
-	
+
 	// time information
 	// see http://www.visitusers.org/index.php?title=Time_and_Cycle_in_VTK_files
 	vtk_file << "FIELD TimesAndCycles 2" << endl;
@@ -119,13 +119,14 @@ void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number,
 
 void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file) const
 {
-	std::vector<MeshLib::CNode*> pointVector = _mesh->getNodeVector();
+	const std::vector<MeshLib::CNode*> pointVector = _mesh->getNodeVector();
 	vtk_file << "POINTS "<< pointVector.size() << " double" << endl;
 
-	for(size_t i = 0; i < pointVector.size() ; i++)
+	const size_t n_pnts (pointVector.size());
+	for(size_t i = 0; i < n_pnts ; i++)
 	{
-		MeshLib::CNode* m_nod = pointVector[i];
-		vtk_file << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << endl;
+		double const*const coords (pointVector[i]->getData());
+		vtk_file << coords[0] << " " << coords[1] << " " << coords[2] << endl;
 	}
 }
 
@@ -292,7 +293,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 	// Saturation 2 for 1212 pp - scheme. 01.04.2009. WW
 	// ---------------------------------------------------------------------
 	CRFProcess* pcs = NULL;
-	if (_pointArrayNames.size() > 0)                        //SB added
+	if (!_pointArrayNames.empty())                        //SB added
 		pcs = PCSGet(_pointArrayNames[0], true);
 	if (pcs && pcs->type == 1212)
 	{
@@ -315,14 +316,14 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 	if (!_cellArrayNames.empty())
 	{
 		CRFProcess* pcs = this->GetPCS_ELE(_cellArrayNames[0]);
-		
+
 		std::vector<int> ele_value_index_vector(_cellArrayNames.size());
 		if (_cellArrayNames[0].size() > 0)
 		{
 		   for (size_t i = 0; i < _cellArrayNames.size(); i++)
 			  ele_value_index_vector[i] = pcs->GetElementValueIndex(_cellArrayNames[i]);
 		}
-		
+
 		vtk_file << "CELL_DATA " << (long) _mesh->ele_vector.size() << endl;
 		wroteAnyEleData = true;
 	//....................................................................
@@ -364,7 +365,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 	}
 	//======================================================================
 	// MAT data
-	if (_materialPropertyArrayNames.size() > 0)
+	if (! _materialPropertyArrayNames.empty())
 	{
 		int mmp_id = -1;
 		if (_materialPropertyArrayNames[0].compare("POROSITY") == 0)

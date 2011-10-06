@@ -37,7 +37,6 @@
 // int size;
 // int myrank;
 #endif
-#include "Configure.h"
 
 #include "rf_REACT_GEM.h"
 #include "rf_pcs.h"
@@ -1186,11 +1185,11 @@ short REACT_GEM::Init_Nodes ( string Project_path )
 				REACT_GEM::SetReactInfoBackGEM ( in ); // needs to be done to 
 				m_Node->GEM_write_dbr ( "dbr_for_crash_node_fail1.txt" );
 
-// run GEMS again				
+// run GEMS again
 				dBR->NodeStatusCH = NEED_GEM_AIA;
 				m_NodeStatusCH[in] = m_Node->GEM_run ( false );
 				m_Node->GEM_write_dbr ( "dbr_for_crash_node_fail2.txt" );
-			  
+
 			}
 
 // test for bad GEMS and for volume changes bigger than 10% ...maximum 5 failed nodes per process.....
@@ -2512,7 +2511,7 @@ double REACT_GEM::KozenyCarman ( double k0, double n0, double n )
    {
       rt = k0 ;
 
-      rt *=pow ( n / n0 , 3 );
+      rt *= MathLib::fastpow ( n / n0 , 3 );
    }
 
    return rt;
@@ -2531,9 +2530,9 @@ double REACT_GEM::KozenyCarman_normalized ( double k0, double n0, double n )
    {
       rt = k0 ;
 
-      rt *=pow ( n / n0 , 3 );
+      rt *=MathLib::fastpow ( n / n0 , 3 );
 
-      rt *=pow ( ( 1 - n0 ) / ( 1 - n ) , 2 );
+      rt *= ( 1 - n0 ) / ( 1 - n ) * ( 1 - n0 ) / ( 1 - n );
    }
 
    return rt;
@@ -3632,7 +3631,7 @@ void REACT_GEM::WriteVTKGEMValues ( fstream &vtk_file )
   double bdummy=0.0;
    // this is point data
 
-  
+
     for ( j=0 ; j < nIC; j++ )
                 {
                 vtk_file << "SCALARS " << dCH->ICNL[j] << " double 1" << endl;

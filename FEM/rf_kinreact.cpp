@@ -3327,121 +3327,105 @@ double CKinReact::GetReferenceVolume(int comp, long index)
 /* 0 pore space, 1 solid phase, 2 bio phase                               */
 /* DS-TBC                                                                 */
 /* 09/2009     CB         Introduced new C++ concept, Data structures     */
+/* 09/2011	TF hanged access to coordinates of mesh node,
+	- substituted access to mesh_element from pointer to direct access into the vector
+	- made the mesh node a const pointer
+	- made the pointer to the mesh const, made the mesh itself const
+	- substituted pow(x,2) by x*x
+	- reduced scope of loop variable i
+	- moved declaration of gravity center to appropriate place			  */
 /**************************************************************************/
-double CKinReact::GetPhaseVolumeAtNode(long node, double theta, int phase)
+double CKinReact::GetPhaseVolumeAtNode(long node_number, double theta, int phase)
 {
+	CFEMesh const*const mesh (fem_msh_vector[0]); //SB: ToDo hart gesetzt
 
-   CMediumProperties *m_mat_mp = NULL;
-   MeshLib::CNode* m_nod = NULL;
-   MeshLib::CElem* m_ele = NULL;
-   //OK411 CRFProcess *m_pcs = NULL;
-   CFEMesh* m_msh = fem_msh_vector[0];            //SB: ToDo hart gesetzt
+	long idx = 0, elem; //OK411
+	double distance, weight, sum_w = 0;
+	double vol = 0, poro = 0;
 
-   long idx = 0, i, el, elem, group;              //OK411
-   double coord[3];
-   double distance, weight, sum_w;
-   double* grav_c;
-   double vol = 0, poro = 0;
+	// get Indices for phase 1 or 2, only if heterogeneous porosity model = 11, i.e. vol_mat_model = vol_bio_model = 2
+	long group = 0; //SB todo group = m_ele->GetPatchIndex(); Todo CB
+	CMediumProperties *m_mat_mp(mmp_vector[group]);
+	if (m_mat_mp->vol_bio_model == 2 && m_mat_mp->vol_mat_model == 2) {
+		switch (phase) {
+		case 1: //solid phase
+			// Get VOL_MAT index
+			for (idx = 0; idx < (int) m_mat_mp->m_msh->mat_names_vector.size(); idx++) {
+				if (m_mat_mp->m_msh->mat_names_vector[idx].compare("VOL_MAT")
+						== 0) break;
+			}
+			break;
+		case 2: //bio phase
+			// Get VOL_BIO index
+			for (idx = 0; idx < (int) m_mat_mp->m_msh->mat_names_vector.size(); idx++) {
+				if (m_mat_mp->m_msh->mat_names_vector[idx].compare("VOL_BIO") == 0) break;
+			}
+			break;
+		default:
+			break;
+		}
+	}
 
-   // get Indices for phase 1 or 2, only if heterogeneous porosity model = 11, i.e. vol_mat_model = vol_bio_model = 2
-   group = 0;                                     //SB todo group = m_ele->GetPatchIndex(); Todo CB
-   m_mat_mp = mmp_vector[group];
-   if (m_mat_mp->vol_bio_model == 2 && m_mat_mp->vol_mat_model == 2)
-   {
-      switch (phase)
-      {
-         case 1:                                  //solid phase
-            // Get VOL_MAT index
-            for (idx = 0; idx < (int) m_mat_mp->m_msh->mat_names_vector.size(); idx++)
-            {
-               if (m_mat_mp->m_msh->mat_names_vector[idx].compare("VOL_MAT")
-                  == 0)
-                  break;
-            }
-            break;
-         case 2:                                  //bio phase
-            // Get VOL_BIO index
-            for (idx = 0; idx < (int) m_mat_mp->m_msh->mat_names_vector.size(); idx++)
-            {
-               if (m_mat_mp->m_msh->mat_names_vector[idx].compare("VOL_BIO")
-                  == 0)
-                  break;
-            }
-            break;
-         default:
-            break;
-      }
-   }
+	// Get node coordinates
+	MeshLib::CNode const*const node (mesh->nod_vector[node_number]);
+	double const* const coord = node->getData(); // Coordinates(coord);
 
-   // initialize data structures
-   for (i = 0; i < 3; i++)
-      coord[i] = 0;
-   sum_w = 0;
+	for (size_t el = 0; el < node->getConnectedElementIDs().size(); el++) {
+		// initialize for each connected element
+		distance = weight = poro = 0;
+		// Get the connected element
+		elem = node->getConnectedElementIDs()[el]; // element index
+		MeshLib::CElem const*const m_ele (mesh->ele_vector[elem]);
+		//get the phase volume of current element elem
+		group = 0; // group = m_ele->GetPatchIndex(); Todo CB
+		m_mat_mp = mmp_vector[group];
+		switch (phase) {
+		case 0: //pore space
+			// CB Now provides also heterogeneous porosity, model 11
+			poro = m_mat_mp->Porosity(elem, theta);
+			break;
+		case 1: //solid phase
+			if (m_mat_mp->vol_mat_model == 1) // homogeneous
+				poro = m_mat_mp->vol_mat;
+			else if (m_mat_mp->vol_mat_model == 2)// CB heterogeneous
+				poro = m_ele->mat_vector(idx);
+			else cout
+					<< "Warning! No valid VOL_MAT model in CKinReact::GetPhaseVolumeAtNode, vol_mat_model ="
+					<< m_mat_mp->vol_mat_model << endl;
+			break;
+		case 2: //bio phase
+			if (m_mat_mp->vol_bio_model == 1) // homogeneous
+				poro = m_mat_mp->vol_bio;
+			else if (m_mat_mp->vol_bio_model == 2)// CB heterogeneous
+				poro = m_ele->mat_vector(idx);
+			else cout
+					<< "Warning! No valid VOL_BIO model in CKinReact::GetPhaseVolumeAtNode, vol_bio_model ="
+					<< m_mat_mp->vol_bio_model << endl;
+			break;
+		case 3: // NAPL phase (refers to REV)
+			poro = 1.0;
+			break;
+		default:
+			cout << "Error in CKinReact::GetPhaseVolumeAtNode: no valid phase"
+					<< endl;
+			break;
+		}
+		// calculate distance node <-> element center of gravity
+		double const* grav_c (m_ele->GetGravityCenter());
+		for (size_t i = 0; i < 3; i++)
+			distance += (coord[i] - grav_c[i]) * (coord[i] - grav_c[i]); //pow((coord[i] - grav_c[i]), 2);
+		// linear inverse distance weight = 1/(distance)
+		distance = sqrt(distance); // for quadratic interpolation uncomment this line
+		weight = (1 / distance);
+		sum_w += weight;
+		// add the weighted phase volume
+		vol += poro * weight;
+	} // loop over connected elements
 
-   // Get node coordinates
-   m_nod = m_msh->nod_vector[node];
-   m_nod->Coordinates(coord);
+	// normalize weighted sum by sum_of_weights sum_w
+	vol *= 1 / sum_w;
 
-   for (el = 0; el < (int) m_nod->getConnectedElementIDs().size(); el++)
-   {
-      // initialize for each connected element
-      distance = weight = poro = 0;
-      // Get the connected element
-      elem = m_nod->getConnectedElementIDs()[el];       // element index
-      m_ele = m_msh->ele_vector[elem];
-      //get the phase volume of current element elem
-      group = 0;                                  // group = m_ele->GetPatchIndex(); Todo CB
-      m_mat_mp = mmp_vector[group];
-      switch (phase)
-      {
-         case 0:                                  //pore space
-                                                  // CB Now provides also heterogeneous porosity, model 11
-            poro = m_mat_mp->Porosity(elem, theta);
-            break;
-         case 1:                                  //solid phase
-            if (m_mat_mp->vol_mat_model == 1)     // homogeneous
-               poro = m_mat_mp->vol_mat;
-            else if (m_mat_mp->vol_mat_model == 2)// CB heterogeneous
-               poro = m_ele->mat_vector(idx);
-            else
-               cout
-                  << "Warning! No valid VOL_MAT model in CKinReact::GetPhaseVolumeAtNode, vol_mat_model ="
-                  << m_mat_mp->vol_mat_model << endl;
-            break;
-         case 2:                                  //bio phase
-            if (m_mat_mp->vol_bio_model == 1)     // homogeneous
-               poro = m_mat_mp->vol_bio;
-            else if (m_mat_mp->vol_bio_model == 2)// CB heterogeneous
-               poro = m_ele->mat_vector(idx);
-            else
-               cout
-                  << "Warning! No valid VOL_BIO model in CKinReact::GetPhaseVolumeAtNode, vol_bio_model ="
-                  << m_mat_mp->vol_bio_model << endl;
-            break;
-         case 3:                                  // NAPL phase (refers to REV)
-            poro = 1.0;
-            break;
-         default:
-            cout << "Error in CKinReact::GetPhaseVolumeAtNode: no valid phase"
-               << endl;
-            break;
-      }
-      // calculate distance node <-> element center of gravity
-      grav_c = m_ele->GetGravityCenter();
-      for (i = 0; i < 3; i++)
-         distance += pow((coord[i] - grav_c[i]), 2);
-      // linear inverse distance weight = 1/(distance)
-      distance = sqrt(distance);                  // for quadratic interpolation uncomment this line
-      weight = (1 / distance);
-      sum_w += weight;
-      // add the weighted phase volume
-      vol += poro * weight;
-   }                                              // loop over connected elements
-
-   // normalize weighted sum by sum_of_weights sum_w
-   vol *= 1 / sum_w;
-
-   return vol;
+	return vol;
 }
 
 
@@ -4342,97 +4326,87 @@ bool KNaplDissCheck(void)
  Programing:
  08/2008 CB Implementation
  10/2010 TF changed access to process type
+ 09/2011 TF changed access to coordinates of mesh node,
+	- substituted access to mesh_element from pointer to direct access into the vector
+	- made the mesh node a const pointer
+	- made the pointer to the mesh const, made the mesh itself const
+	- substituted pow(x,2) by x*x
+	- reduced scope of some loop variables
  **************************************************************************/
-double CKinReact::GetNodePoreVelocity(long node)
+double CKinReact::GetNodePoreVelocity(long node_number)
 {
+	CRFProcess *pcs(PCSGetFlow());
+	CFEMesh const*const msh(fem_msh_vector[0]); //SB: ToDo hart gesetzt
 
-   MeshLib::CNode* m_nod = NULL;
-   MeshLib::CElem* m_ele = NULL;
-   CRFProcess *m_pcs = NULL;
-   CFEMesh* m_msh = fem_msh_vector[0];            //SB: ToDo hart gesetzt
-   CMediumProperties *m_mat_mp = NULL;
+	long group;
+	long elem;
+	long idxVx, idxVy, idxVz, idxs1;
+	double vel_nod[3], vel_ele[3];
+	double distance, weight, sum_w(0);
+	double PoreVel(0), poro(0), satu = 1.0; // default
+	double theta = pcs->m_num->ls_theta;
 
-   long i;
-   long group;
-   long el, elem;
-   long idxVx, idxVy, idxVz, idxs1;
-   double coord[3], vel_nod[3], vel_ele[3];
-   double distance, weight, sum_w;
-   double* grav_c;
-   double PoreVel, poro, satu, theta;
+	// Get node saturation of mobile (water) phase
+	if (pcs->getProcessType() == TWO_PHASE_FLOW) {
+		if (pcs->pcs_type_number == 0) {
+			// this is the saturation equation
+			pcs = pcs_vector[pcs->pcs_number + 1];
+		}
+		// Sat of water phase
+		idxs1 = pcs->GetNodeValueIndex("SATURATION1");
+		satu = pcs->GetNodeValue(node_number, idxs1);
+	} else if (pcs->getProcessType() == RICHARDS_FLOW) {
+		// Sat of water phase
+		idxs1 = pcs->GetNodeValueIndex("SATURATION1");
+		satu = pcs->GetNodeValue(node_number, idxs1);
+	}
 
-   m_pcs = PCSGetFlow();
-   theta = m_pcs->m_num->ls_theta;
+	// initialize data structures
+	for (size_t i = 0; i < 3; i++)
+		vel_nod[i] = vel_ele[i] = 0;
 
-   // Get node saturation of mobile (water) phase
-   satu = 1.0;                                    // default
-   //	if (m_pcs->pcs_type_name.compare("TWO_PHASE_FLOW") == 0) { TF
-   if (m_pcs->getProcessType () == TWO_PHASE_FLOW)
-   {
-      if (m_pcs->pcs_type_number == 0)
-                                                  // this is the saturation equation
-            m_pcs = pcs_vector[m_pcs->pcs_number + 1];
-                                                  // Sat of water phase
-      idxs1 = m_pcs->GetNodeValueIndex("SATURATION1");
-      satu = m_pcs->GetNodeValue(node, idxs1);
-      //	} else if (m_pcs->pcs_type_name.compare("RICHARDS_FLOW") == 0) {
-   }
-   else if (m_pcs->getProcessType () == RICHARDS_FLOW)
-   {
-                                                  // Sat of water phase
-      idxs1 = m_pcs->GetNodeValueIndex("SATURATION1");
-      satu = m_pcs->GetNodeValue(node, idxs1);
-   }
+	// Get node coordinates
+	MeshLib::CNode const* const node(msh->nod_vector[node_number]);
+	double const* const coord(node->getData()); // Coordinates(coord);
+	// get the indices of velocity of flow process
+	pcs = PCSGet("TWO_PHASE_FLOW");
+	idxVx = pcs->GetElementValueIndex("VELOCITY1_X");
+	idxVy = pcs->GetElementValueIndex("VELOCITY1_Y");
+	idxVz = pcs->GetElementValueIndex("VELOCITY1_Z");
 
-   // initialize data structures
-   for (i = 0; i < 3; i++)
-      coord[i] = vel_nod[i] = vel_ele[i] = 0;
-   sum_w = PoreVel = 0;
+	for (size_t el = 0; el < node->getConnectedElementIDs().size(); el++) {
+		distance = weight = 0; // initialize for each connected element
+		elem = node->getConnectedElementIDs()[el];
 
-   // Get node coordinates
-   m_nod = m_msh->nod_vector[node];
-   m_nod->Coordinates(coord);
-   // get the indices of velocity of flow process
-   m_pcs = PCSGet("TWO_PHASE_FLOW");
-   idxVx = m_pcs->GetElementValueIndex("VELOCITY1_X");
-   idxVy = m_pcs->GetElementValueIndex("VELOCITY1_Y");
-   idxVz = m_pcs->GetElementValueIndex("VELOCITY1_Z");
+		//get the porosity of current element elem
+		group = 0; //SB todo group = m_ele->GetPatchIndex(); Todo CB
+		poro = (mmp_vector[group])->Porosity(elem, theta); // CB Now provides also heterogeneous porosity, model 11
+		// get the velocity components of element elem and divide by porosity
+		vel_ele[0] = pcs->GetElementValue(elem, idxVx) / poro;
+		vel_ele[1] = pcs->GetElementValue(elem, idxVy) / poro;
+		vel_ele[2] = pcs->GetElementValue(elem, idxVz) / poro;
+		// calculate distance node <-> element center of gravity
+		double const* grav_c (msh->ele_vector[elem]->GetGravityCenter());
+		for (size_t i = 0; i < 3; i++)
+			distance += (coord[i] - grav_c[i]) * (coord[i] - grav_c[i]); //pow((coord[i] - grav_c[i]), 2);
+		// linear inverse distance weight = 1/(distance)
+		distance = sqrt(distance); // for quadratic interpolation uncomment this line
+		weight = (1 / distance);
+		sum_w += weight;
+		for (size_t i = 0; i < 3; i++) {
+			// the 3 velocity components
+			vel_nod[i] += vel_ele[i] * weight;
+		}
+	}
+	// normalize weighted sum by sum_of_weights sum_w
+	for (size_t i = 0; i < 3; i++)
+		vel_nod[i] *= 1 / sum_w;
+	// absolute value of velocity vector and divide by saturation
+	for (size_t i = 0; i < 3; i++)
+		PoreVel += vel_nod[i] * vel_nod[i]; //pow(vel_nod[i], 2);
+	PoreVel = sqrt(PoreVel) / satu;
 
-   for (el = 0; el < (int) m_nod->getConnectedElementIDs().size(); el++)
-   {
-      distance = weight = 0;                      // initialize for each connected element
-      elem = m_nod->getConnectedElementIDs()[el];
-      m_ele = m_msh->ele_vector[elem];
-
-      //get the porosity of current element elem
-      group = 0;                                  //SB todo group = m_ele->GetPatchIndex(); Todo CB
-      m_mat_mp = mmp_vector[group];
-      poro = m_mat_mp->Porosity(elem, theta);     // CB Now provides also heterogeneous porosity, model 11
-      // get the velocity components of element elem and divide by porosity
-      vel_ele[0] = m_pcs->GetElementValue(elem, idxVx) / poro;
-      vel_ele[1] = m_pcs->GetElementValue(elem, idxVy) / poro;
-      vel_ele[2] = m_pcs->GetElementValue(elem, idxVz) / poro;
-      // calculate distance node <-> element center of gravity
-      grav_c = m_ele->GetGravityCenter();
-      for (i = 0; i < 3; i++)
-         distance += pow((coord[i] - grav_c[i]), 2);
-      // linear inverse distance weight = 1/(distance)
-      distance = sqrt(distance);                  // for quadratic interpolation uncomment this line
-      weight = (1 / distance);
-      sum_w += weight;
-      for (i = 0; i < 3; i++)
-         // the 3 velocity components
-         vel_nod[i] += vel_ele[i] * weight;
-   }
-   // vormalize weighted sum by sum_of_weights sum_w
-   for (i = 0; i < 3; i++)
-      vel_nod[i] *= 1 / sum_w;
-   // absolute value of velocity vector and divide by saturation
-   for (i = 0; i < 3; i++)
-      PoreVel += pow(vel_nod[i], 2);
-   PoreVel = sqrt(PoreVel) / satu;
-
-   return PoreVel;
+	return PoreVel;
 }
 
 
@@ -4643,9 +4617,8 @@ void CKinReactData::ReactDeactPlotFlagsToTec()
 		aus << ", N=" << nnodes << ", E=" << nele << " F=FEPOINT, ET="
 				<< eleType << endl;
 
-		double coord[3];
 		for (size_t i = 0; i < nnodes; i++) {
-			(m_msh->nod_vector[i])->Coordinates(coord);
+			double const* coord = (m_msh->nod_vector[i])->getData(); // Coordinates(coord);
 			aus << coord[0] << " " << coord[1] << " " << coord[2] << " ";
 			if (is_a_CCBC[i] == true)
 				aus << 0 << endl;

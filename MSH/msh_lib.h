@@ -15,7 +15,20 @@ extern MeshLib::CFEMesh* FEMGet(const std::string &msh_name);
                                                   //OK
 extern void MSHCreateNOD2ELERelations(MeshLib::CFEMesh*);
 
-extern MeshLib::CFEMesh* FEMRead(const std::string& , GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
+MeshLib::CFEMesh* FEMRead(const std::string& , GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
+/**
+ * reads a mesh. The following formats are possible:
+ * <ol>
+ * <li>native OGS meshes</li>
+ * <li>TetGen</li>
+ * <li>GMSH</li>
+ * </ol>
+ * @param mesh_fname file name of the mesh
+ * @param mesh_vec a vector, the new mesh will be put in this vector
+ * @param geo_obj object, that manages the geometric entities
+ * @param unique_name the name of geometric data
+ */
+void FEMRead(const std::string& mesh_fname, std::vector<MeshLib::CFEMesh*>& mesh_vec, GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
 
 extern void MSHWrite(std::string);
 extern void CompleteMesh();                       //WW

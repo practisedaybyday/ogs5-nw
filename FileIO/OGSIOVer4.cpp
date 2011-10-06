@@ -27,12 +27,10 @@
 
 // for tests only
 #include "PointVec.h"
-#include "PolylineSmoother.h"
 
 // MathLib
 #include "AnalyticalGeometry.h"
 #include "EarClippingTriangulation.h"
-
 
 using namespace GEOLIB;
 
@@ -318,7 +316,6 @@ std::string readSurface(std::istream &in,
 		if (line.find("$TIN") != std::string::npos) { // subkeyword found
 			in >> line; // read value (file name)
 			line = path + line;
-//			if (type == 1) std::cerr << "reading tin file " << line << " ... " << std::flush;
 			sfc = new Surface(pnt_vec);
 
 			readTINFile(line, sfc, pnt_vec);
@@ -354,9 +351,6 @@ std::string readSurface(std::istream &in,
 						std::cerr << "vertical surface - reading not implemented"
 												<< std::endl;
 					}
-//					if (type == 0 || type == -1)
-//						std::cerr << "reading Polygon " << ply_vec_names[ply_id] << std::endl;
-					else std::cerr << "unknown polyline type " << type << "... " << std::endl;
 				}
 				in >> line;
 			}
@@ -510,9 +504,13 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo)
 		geo->addPointVec(pnt_vec, unique_name, pnt_id_names_map); // KR: insert into GEOObjects if not empty
 
 	// extract path for reading external files
-	size_t pos(fname.rfind("/"));
-        if(pos==std::string::npos)
-            pos = fname.rfind("\\");
+	size_t pos(fname.rfind("/")); // linux, mac delimiter
+	if (pos == std::string::npos) {
+		pos = fname.rfind("\\"); // windows delimiter
+		if (pos == std::string::npos) {
+			pos = fname.length() - 1;
+		}
+	}
 	std::string path(fname.substr(0, pos + 1));
 
 	// read names of plys into temporary string-vec

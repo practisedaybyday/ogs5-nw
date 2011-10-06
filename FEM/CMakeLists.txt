@@ -18,6 +18,7 @@ set( SOURCES
 	makros.h
 	mathlib.h
 	matrix_class.h
+	SparseMatrixDOK.h
 	memory.h
 	par_ddc.h
 	pcs_dm.h
@@ -74,6 +75,7 @@ set( SOURCES
 	#intrface.cpp
 	mathlib.cpp
 	matrix_class.cpp
+	SparseMatrixDOK.cpp
 	memory.cpp
 	par_ddc.cpp
 	pcs_dm.cpp
@@ -140,15 +142,9 @@ IF (LIS)
   INCLUDE_DIRECTORIES(${LIS_INCLUDE_DIR})
 ENDIF (LIS)
 
-IF (LIBPQC)
-  INCLUDE_DIRECTORIES(
-    ../PQC
-    )
-  ADD_DEFINITIONS ( -DLIBPHREEQC )
-  IF (LIBPQC_DEBUG)
-    ADD_DEFINITIONS ( -DMDL_DEBUG )
-  ENDIF (LIBPQC_DEBUG)
-ENDIF (LIBPQC)
+IF(OGS_FEM_PQC)
+  INCLUDE_DIRECTORIES(../PQC)
+ENDIF (OGS_FEM_PQC)
 
 IF (PARALLEL_USE_MPI)
 	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
@@ -166,13 +162,9 @@ target_link_libraries(
 	OGSProject
 )
 
-IF (LIBPQC)
-   target_link_libraries( FEM
-	GEO
-	MSH
-	PQC
-)
-ENDIF (LIBPQC)
+IF(OGS_FEM_PQC)
+   target_link_libraries(FEM PQC)
+ENDIF(OGS_FEM_PQC)
 
 if (WIN32)
 	if (OGS_FEM_GEMS)

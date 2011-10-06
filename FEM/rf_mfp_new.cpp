@@ -389,7 +389,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
 
          }
          if(viscosity_model==18)			// BG, NB calculated node viscosities from the phase transition model
-         { 
+         {
          }
 
          //    mfp_file->ignore(MAX_ZEILE,'\n');
@@ -520,7 +520,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream *mfp_file)
          in >> critical_pressure;
 		 in >> critical_temperature;
 		 in >> acentric_factor;
-		 in >> MOLAR_MASS_GAS; 
+		 in >> MOLAR_MASS_GAS;
 		 }
          in.clear();
          continue;
@@ -806,7 +806,7 @@ double CFluidProperties::Density(double* variables)
          case 14:                                 //AKS empiricaly extented Ideal gas Eq for real gas // it has used with fractional mass transport Eq.//
             density = MixtureSubProperity(5, (long)  variables[2], variables[0], variables[1])* variables[0] / (CalCopressibility((long)  variables[2], variables[0], variables[1] )*variables[1] * GAS_CONSTANT) ;
             break;
-		 case 15:                               
+		 case 15:
             density = variables[0]*MOLAR_MASS_GAS/(CalCopressibility_PTC(variables[0], variables[1])*GAS_CONSTANT*variables[1]);
 			          break;
 	  case 18:	//using calculated densities at nodes from the phase transition model, BG, NB 11/2010
@@ -875,8 +875,8 @@ double CFluidProperties::Density(double* variables)
             break;
          case 14:                                 //AKS empiricaly extented Ideal gas Eq for real gas
             density = MixtureSubProperity(5, (long)  variables[2], variables[0], variables[1])* variables[0] / (CalCopressibility((long)  variables[2], variables[0], variables[1] )*variables[1] * GAS_CONSTANT) ;
-               break; 
-		 case 15:                             
+               break;
+		 case 15:
             density = variables[0]*MOLAR_MASS_GAS/(CalCopressibility_PTC(variables[0], variables[1])*GAS_CONSTANT*variables[1]);
 			          break;
          default:
@@ -902,12 +902,11 @@ double CFluidProperties::GetElementValueFromNodes(long ElementIndex, int GPIndex
 	double var, variable;
 	int variable_index = 0, nNodes;
 	double distance, weight, sum_weights;
-	double *gravity_centre;
 	Math_Group::vec <long>vec_nod_index(8);
 
 	variable = 0;
 
-	m_pcs= PCSGet("MULTI_PHASE_FLOW"); 
+	m_pcs= PCSGet("MULTI_PHASE_FLOW");
 	//check if PHASE_TRANSITION is used for the process
 	if ((density_model == 18) || (viscosity_model == 18)) {
 		if (m_pcs->Phase_Transition_Model != 1) {
@@ -961,10 +960,11 @@ double CFluidProperties::GetElementValueFromNodes(long ElementIndex, int GPIndex
 			//Get the connected node
 			m_node = m_msh->nod_vector[vec_nod_index[i]];
 			//calculate distance between the node and the barycentre
-			gravity_centre = m_ele->GetGravityCenter();
-			distance =  (gravity_centre[0] - m_node->X())*(gravity_centre[0] - m_node->X());
-			distance += (gravity_centre[1] - m_node->Y())*(gravity_centre[1] - m_node->Y());
-			distance += (gravity_centre[2] - m_node->Z())*(gravity_centre[2] - m_node->Z());
+			double const* gravity_centre(m_ele->GetGravityCenter());
+			double const*const pnt (m_node->getData());
+			distance =  (gravity_centre[0] - pnt[0])*(gravity_centre[0] - pnt[0]);
+			distance += (gravity_centre[1] - pnt[1])*(gravity_centre[1] - pnt[1]);
+			distance += (gravity_centre[2] - pnt[2])*(gravity_centre[2] - pnt[2]);
 			distance =  sqrt(distance);
 
 			//Weight of each face depending on distance
@@ -1347,15 +1347,15 @@ double CFluidProperties::GasViscosity_Chung_1988(long idx_elem, double p,double 
    M = MixtureSubProperity(5, idx_elem, p, T);    // mixture_molecular_weight
    T_str = T/MixtureSubProperity(3, idx_elem, p, T);
                                                   // mixture_critical_volume UNIT: m3/kmole
-   Vc = pow(MixtureSubProperity(2, idx_elem, p, T)/0.809, 3.0);
+   Vc = MathLib::fastpow(MixtureSubProperity(2, idx_elem, p, T)/0.809, 3);
    Y = Density(dens_arg)*Vc/(M*6000.0);
-   G1 = (1 - 0.5*Y)*pow((1-Y), -3.0);
+   G1 = (1 - 0.5*Y)*1.0/MathLib::fastpow((1-Y), 3);
    G2 = ((A1*(1 - exp(-A4*Y))/Y) + A2*G1*exp(A5*Y)+ A3*G1)/(A1*A4 + A2 + A3);
    Omega = A*pow(T_str, -B) + C*exp(-T_str*D) + E*exp(-T_str*F) + G*pow(T_str, B)*sin(S*pow(T_str, W) - H);
 
-   my0 = (4.0785e-05)*pow(M*T, 0.5)*Fc/(pow(Vc,0.6666)*Omega);
-   myk = my0*(pow(G2, -1.0) + A6*Y);
-   myp = ( (3.6344e-05)*pow(M*Tc, 0.5)/pow(Vc, 0.6666) )*A7*Y*Y*G2*exp(A8 + A9*pow(T_str, -1.0) + A10*pow(T_str, -2.0));
+   my0 = (4.0785e-05)*sqrt(M*T)*Fc/(pow(Vc,0.6666)*Omega);
+   myk = my0*(1.0/G2 + A6*Y);
+   myp = ( (3.6344e-05)*sqrt(M*Tc)/pow(Vc, 0.6666) )*A7*Y*Y*G2*exp(A8 + A9*(1.0 / T_str) + A10*1.0/(T_str * T_str));
    my = 0.1*(myp + myk);                          // g/(cm.s)=0.1 Pa.s
    return my;
 }
@@ -1546,7 +1546,7 @@ double CFluidProperties::PhaseChange()
          humi = exp( pressure /( GAS_CONSTANT_V * temperature_buffer * Density() ) );
          density_vapor = humi * Density();
          drdT = ( vaporDensity_derivative( temperature_buffer )* humi \
-            - density_vapor * pressure / ( GAS_CONSTANT_V * Density() * pow( temperature_buffer, 2.0 ) ) ) / Density();
+            - density_vapor * pressure / ( GAS_CONSTANT_V * Density() * (temperature_buffer * temperature_buffer) ) ) / Density();
          H1 =  latent_heat + specific_heat_capacity * ( temperature_buffer - T_Latent1);
          heat_capacity_phase_change = H1*drdT;
       }
@@ -2247,14 +2247,16 @@ double CFluidProperties::LiquidViscosity_CMCD(double Press,double TempK,double C
    /*end of units conversion*/
 
    /*Calculation of the saturation pressure*/
-   sum1=pow((0.65-0.01*TempK),0)*A1;
-   sum2=pow((0.65-0.01*TempK),1)*A2;
-   sum3=pow((0.65-0.01*TempK),2)*A3;
-   sum4=pow((0.65-0.01*TempK),3)*A4;
-   sum5=pow((0.65-0.01*TempK),4)*A5;
-   sum6=pow((0.65-0.01*TempK),5)*A6;
-   sum7=pow((0.65-0.01*TempK),6)*A7;
-   sum8=pow((0.65-0.01*TempK),7)*A8;
+//   sum1=pow((0.65-0.01*TempK),0)*A1;
+   sum1=1.0*A1;
+//   sum2=pow((0.65-0.01*TempK),1)*A2;
+   sum2=(0.65-0.01*TempK)*A2;
+   sum3=(0.65-0.01*TempK)*(0.65-0.01*TempK)*A3;
+   sum4=MathLib::fastpow((0.65-0.01*TempK),3)*A4;
+   sum5=MathLib::fastpow((0.65-0.01*TempK),4)*A5;
+   sum6=MathLib::fastpow((0.65-0.01*TempK),5)*A6;
+   sum7=MathLib::fastpow((0.65-0.01*TempK),6)*A7;
+   sum8=MathLib::fastpow((0.65-0.01*TempK),7)*A8;
 
                                                   /*intermediate value*/
    exponent = sum1+sum2+sum3+sum4+sum5+sum6+sum7+sum8;
@@ -2267,7 +2269,7 @@ double CFluidProperties::LiquidViscosity_CMCD(double Press,double TempK,double C
    my_Zero = 243.18e-7 * (pow(10.,(247.8/(TempK-140)))) * (1+(Pbar-PsatBar)*1.0467e-6 * (TempK-305));
 
    /*Viscosity of saline water in Pa-S*/
-   viscosity = my_Zero * (1-0.00187* (pow(Salinity,0.5)) + 0.000218* (pow(Salinity,2.5))+(pow(TempF,0.5)-0.0135*TempF)*(0.00276*Salinity-0.000344* (pow(Salinity,1.5))));
+   viscosity = my_Zero * (1-0.00187* (sqrt(Salinity)) + 0.000218* (MathLib::fastpow(sqrt(Salinity),5))+(sqrt(TempF)-0.0135*TempF)*(0.00276*Salinity-0.000344* (MathLib::fastpow(sqrt(Salinity),3))));
    return viscosity;
 }
 
@@ -2469,8 +2471,8 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    /*END: Calculation of GammaPiPi*/
 
    /*BEGIN:Calculation of derivative*/
-   First_derivative = ((TstarTilda) * (Pstar) * ((GammaPiTau)*(Tstar) - (GammaPi) * (temperature_average))) / (PstarTilda * pow(temperature_average,2) * GammaPiPi),
-      Second_derivative = ((-1) * (PstarTilda) * (GammaPiPi) ) / ( (RhostarTilda) * (temperature_average) * (GazConst) * (pow(GammaPi,2)));
+   First_derivative = ((TstarTilda) * (Pstar) * ((GammaPiTau)*(Tstar) - (GammaPi) * (temperature_average))) / (PstarTilda * temperature_average*temperature_average * GammaPiPi),
+      Second_derivative = ((-1) * (PstarTilda) * (GammaPiPi) ) / ( (RhostarTilda) * (temperature_average) * (GazConst) * ((GammaPi*GammaPi)));
    /*End:Calculation of derivative*/
 
    /*BEGIN: Calculation of density*/
@@ -2539,23 +2541,22 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    Nabla0 = 0;
    for (i=0; i<=3;i++)
    {
-      Nabla0 = Nabla0 + (nZero[i]) * (pow(TauTC,i));
+      Nabla0 = Nabla0 + (nZero[i]) * (MathLib::fastpow(TauTC,i));
    }
 
-   Nabla0 = Nabla0 * (pow(TauTC, 0.5));
+   Nabla0 = Nabla0 * (sqrt(TauTC));
    Nabla0 = 1 / Nabla0;
    /*END: Nabla0*/
 
    /*BEGIN: Nabla1*/
    Nabla1 = 0;
-   for (i=0; i<=4;i++)
-   {
-      for (j=0; j<=5;j++)
-      {
-         Nabla1 = Nabla1 + (n[i][j]) * (pow((TauTC-1),i)) * (pow((Delta-1),j));
-      }
+   for (i = 0; i <= 4; i++) {
+		const double t(MathLib::fastpow(TauTC - 1, i)); // TF
+		for (j = 0; j <= 5; j++) {
+			Nabla1 = Nabla1 + (n[i][j]) * (t * MathLib::fastpow(Delta - 1, j));
+		}
+	}
 
-   }
    Nabla1 = Delta * (Nabla1);
    Nabla1 = exp(Nabla1);
    /*END: Nabla1*/
@@ -2588,14 +2589,16 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    /*end of units conversion*/
 
    /*Calculation of the saturation pressure*/
-   sum1=pow((0.65-0.01*TempK),0)*A1;
-   sum2=pow((0.65-0.01*TempK),1)*A2;
-   sum3=pow((0.65-0.01*TempK),2)*A3;
-   sum4=pow((0.65-0.01*TempK),3)*A4;
-   sum5=pow((0.65-0.01*TempK),4)*A5;
-   sum6=pow((0.65-0.01*TempK),5)*A6;
-   sum7=pow((0.65-0.01*TempK),6)*A7;
-   sum8=pow((0.65-0.01*TempK),7)*A8;
+// TF   sum1=pow((0.65-0.01*TempK),0)*A1;
+   sum1=A1;
+// TF  sum2=pow((0.65-0.01*TempK),1)*A2;
+   sum2=(0.65-0.01*TempK)*A2;
+   sum3=(0.65-0.01*TempK)*(0.65-0.01*TempK)*A3;
+   sum4=MathLib::fastpow((0.65-0.01*TempK),3)*A4;
+   sum5=MathLib::fastpow((0.65-0.01*TempK),4)*A5;
+   sum6=MathLib::fastpow((0.65-0.01*TempK),5)*A6;
+   sum7=MathLib::fastpow((0.65-0.01*TempK),6)*A7;
+   sum8=MathLib::fastpow((0.65-0.01*TempK),7)*A8;
 
                                                   /*intermediate value*/
    exponent = sum1+sum2+sum3+sum4+sum5+sum6+sum7+sum8;
@@ -2608,12 +2611,12 @@ double CFluidProperties::MATCalcHeatConductivityMethod2(double Press, double Tem
    my_Zero = 243.18e-7 * (pow(10.,(247.8/(TempK-140)))) * (1+(Pbar-PsatBar)*1.0467e-6 * (TempK-305));
 
    /*Viscosity of saline water in Pa-S*/
-   viscosity = my_Zero * (1-0.00187* (pow(Salinity,0.5)) + 0.000218* (pow(Salinity,2.5))+(pow(TempF,0.5)-0.0135*TempF)*(0.00276*Salinity-0.000344* (pow(Salinity,1.5))));
+   viscosity = my_Zero * (1-0.00187* (sqrt(Salinity)) + 0.000218* (MathLib::fastpow(sqrt(Salinity),5))+(sqrt(TempF)-0.0135*TempF)*(0.00276*Salinity-0.000344* (MathLib::fastpow(sqrt(Salinity),3))));
 
    /* End of viscosity function*/
 
    /*BEGIN: Nabla2*/
-   Nabla2 = 0.0013848 / ((viscosity)/55.071e-6) * (pow(((TauTC)*(Delta)),(-2))) * (pow(First_derivative,2)) * (pow((Delta * (Second_derivative)),0.4678)) * (pow(Delta,0.5)) * exp(-18.66 * (pow((1/TauTC-1),2)) - (pow(Delta-1,4)));
+   Nabla2 = 0.0013848 / ((viscosity)/55.071e-6) * (1.0/(TauTC*Delta)*(TauTC*Delta)) * (First_derivative*First_derivative) * (pow((Delta * (Second_derivative)),0.4678)) * (sqrt(Delta)) * exp(-18.66 * ((1/TauTC-1)*(1/TauTC-1)) - (MathLib::fastpow(Delta-1,4)));
    /*END: Nabla2*/
 
    /*BEGIN: Nabla => heat_conductivity*/
@@ -2830,7 +2833,7 @@ double CFluidProperties::MATCalcFluidHeatCapacityMethod2(double Press, double Te
    /*************************************************************************************************/
 
    /*BEGIN: Fluid isobaric heat capacity*/
-   Cp = - (pow(Tau,2))* (GammaTauTau) * (GazConst);
+   Cp = - (Tau*Tau)* (GammaTauTau) * (GazConst);
    /*END: Fluid isobaric heat capacity*/
 
    /*BEGIN: Fluid isochoric heat capacity*/
@@ -2968,33 +2971,31 @@ double MFPGetNodeValue(long node,const string &mfp_name, int phase_number)
    int val_idx=0;                                 // for later use, NB case 'V': mfp_id = 0; //VISCOSITY
    switch (mfp_name[0])
    {
-      case 'V': mfp_id = 0;                       //VISCOSITY
-      if(m_mfp->viscosity_pcs_name_vector.size()<1)
-         {pcs_name1 = "PRESSURE1";}
-         else
-      {
-         pcs_name1 = m_mfp->viscosity_pcs_name_vector[0];
-      }
-      if(m_mfp->viscosity_pcs_name_vector.size()<2)
-         {pcs_name2 = "TEMPERATURE1";}
-         else
-      {
-         pcs_name2 = m_mfp->viscosity_pcs_name_vector[1];
-      }
-      break;
-      case 'D': mfp_id = 1;                       //DENSITY
-      if(m_mfp->density_pcs_name_vector.size()<1)
-         {pcs_name1 = "PRESSURE1";}
-         else
-      {
-         pcs_name1 = m_mfp->density_pcs_name_vector[0];
-      }
-      if(m_mfp->density_pcs_name_vector.size()<2)
-         {pcs_name2 = "TEMPERATURE1";}
-         else
-      {
-         pcs_name2 = m_mfp->density_pcs_name_vector[1];
-      }
+   case 'V':
+		mfp_id = 0; //VISCOSITY
+		if (m_mfp->viscosity_pcs_name_vector.size() < 1) {
+			pcs_name1 = "PRESSURE1";
+		} else {
+			pcs_name1 = m_mfp->viscosity_pcs_name_vector[0];
+		}
+		if (m_mfp->viscosity_pcs_name_vector.size() < 2) {
+			pcs_name2 = "TEMPERATURE1";
+		} else {
+			pcs_name2 = m_mfp->viscosity_pcs_name_vector[1];
+		}
+		break;
+	case 'D':
+		mfp_id = 1; //DENSITY
+		if (m_mfp->density_pcs_name_vector.size() < 1) {
+			pcs_name1 = "PRESSURE1";
+		} else {
+			pcs_name1 = m_mfp->density_pcs_name_vector[0];
+		}
+		if (m_mfp->density_pcs_name_vector.size() < 2) {
+			pcs_name2 = "TEMPERATURE1";
+		} else {
+			pcs_name2 = m_mfp->density_pcs_name_vector[1];
+		}
       break;
       case 'H': mfp_id = 2;                       //HEAT_CONDUCTIVITY
       if(m_mfp->heat_conductivity_pcs_name_vector.size()<1)
@@ -3188,8 +3189,8 @@ double CFluidProperties::CalCopressibility(long idx_elem, double p,double T)
    A=a*p/(R*R*T*T);
    B=b*p/(R*T);
    z1=-(1-B);
-   z2=(A-3*pow(B,2)-2*B);
-   z3=-(A*B-pow(B,2)-pow(B,3));
+   z2=(A-3*(B*B)-2*B);
+   z3=-(A*B-(B*B)-MathLib::fastpow(B,3));
    NsPol3(z1,z2,z3,&roots);                       //derives the roots of the polynomial
    //if(p < Pc)
    h=FindMax(roots);
@@ -3207,19 +3208,19 @@ Programing:
 double CFluidProperties::CalCopressibility_PTC(double p,double T)
 {
    std::vector<double> roots;
-   double a, a0, b, A, B, R=8314.41;                   
-   double z1, z2, z3, h; 
+   double a, a0, b, A, B, R=8314.41;
+   double z1, z2, z3, h;
    double Tc=critical_temperature;
    double Pc=critical_pressure;
-   a0=(1+(0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor)*(1-pow(T/Tc,0.5)));
+   a0=(1+(0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor)*(1-sqrt(T/Tc)));
    a = 0.45724*R*R*Tc*Tc*a0*a0/Pc;
    b=0.07780*R*Tc/Pc;
    A=a*p/(R*R*T*T);
    B=b*p/(R*T);
    z1=-(1-B);
-   z2=(A-3*pow(B,2)-2*B);
-   z3=-(A*B-pow(B,2)-pow(B,3));
-   NsPol3(z1,z2,z3,&roots);                     
+   z2=(A-3*(B*B)-2*B);
+   z3=-(A*B-(B*B)-MathLib::fastpow(B,3));
+   NsPol3(z1,z2,z3,&roots);
    if(p > Pc && T < Tc)
    {
    h=FindMin(roots);
@@ -3240,11 +3241,11 @@ Programing:
 double CFluidProperties::CaldZdP(double p,double T)
 {
    std::vector<double> roots;
-   double a, a0, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdP;                   
+   double a, a0, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdP;
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor;
-   a = (0.45724*R*R*Tc*Tc/Pc)*pow((1+a0*(1-pow(T/Tc,0.5))), 2);
+   a = (0.45724*R*R*Tc*Tc/Pc)*((1+a0*(1-sqrt(T/Tc)))*(1+a0*(1-sqrt(T/Tc))));
    b=0.07780*R*Tc/Pc;
    A=a*p/(R*R*T*T);
    B=b*p/(R*T);
@@ -3266,12 +3267,12 @@ Programing:
 double CFluidProperties::CaldZdT(double p,double T)
 {
    std::vector<double> roots;
-   double a, a0,daa, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;                   
+   double a, a0,daa, b, A, dA, B, dB, X, Y, R=8314.41, z, dZdT;
    double Tc=critical_temperature;
    double Pc=critical_pressure;
    a0=0.37464+1.54226*acentric_factor-0.2699*acentric_factor*acentric_factor;
-   a = (0.45724*R*R*Tc*Tc/Pc)*pow((1+a0*(1-pow(T/Tc,0.5))), 2);
-   daa= (0.45724*R*R*Tc*Tc/Pc)*(1+a0*(1-pow(T/Tc,0.5)))*(-0.5*pow(Tc*T, -0.5));
+   a = (0.45724*R*R*Tc*Tc/Pc)*((1+a0*(1-sqrt(T/Tc))) * (1+a0*(1-sqrt(T/Tc))));
+   daa= (0.45724*R*R*Tc*Tc/Pc)*(1+a0*(1-sqrt(T/Tc)))*(-0.5 / sqrt(Tc*T));
    b=0.07780*R*Tc/Pc;
    A=a*p/(R*R*T*T);
    B=b*p/(R*T);
@@ -3310,7 +3311,7 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
             w[i]=this->component_vector[i]->acentric_factor;
             pc[i]=this->component_vector[i]->critical_pressure;
             tc[i]=this->component_vector[i]->critical_teperature;
-            fact[i]=(1+(0.37464+1.54226*w[i]-0.2699*w[i]*w[i])*(1-pow(T/tc[i],0.5)));
+            fact[i]=(1+(0.37464+1.54226*w[i]-0.2699*w[i]*w[i])*(1-sqrt(T/tc[i])));
             components_properties[i] = 0.45724*R*R*tc[i]*tc[i]*fact[i]*fact[i]/pc[i];
             for (int j=0 ; j < component_number ; j++)
             {
@@ -3319,10 +3320,10 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
                w[j]=this->component_vector[j]->acentric_factor;
                pc[j]=this->component_vector[j]->critical_pressure;
                tc[j]=this->component_vector[j]->critical_teperature;
-               fact[j]=(1+(0.37464+1.54226*w[j]-0.2699*w[j]*w[j])*(1-pow(T/tc[j],0.5)));
+               fact[j]=(1+(0.37464+1.54226*w[j]-0.2699*w[j]*w[j])*(1-sqrt(T/tc[j])));
                components_properties[j] = 0.45724*R*R*tc[j]*tc[j]*fact[j]*fact[j]/pc[j];
 
-               variables += mass_fraction[i]*mass_fraction[j]*pow(components_properties[i]*components_properties[j],0.5) ;
+               variables += mass_fraction[i]*mass_fraction[j]*sqrt(components_properties[i]*components_properties[j]) ;
             }
          }
          break;
@@ -3340,47 +3341,49 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
          }
          break;
 
-      case 2 :                                    // potential parameter 'sigma'
-         for (int i=0 ; i < component_number ; i++)
-         {
-            m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
-            if (m_pcs)
-               mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew( idx_elem, m_pcs );
-            components_properties[i] =pow(pow(0.809, 3.0)*this->component_vector[i]->critical_volume,0.5);
+      case 2: { // potential parameter 'sigma'
+		const double temp(MathLib::fastpow(0.809, 3));
+		for (int i = 0; i < component_number; i++) {
+			m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
+			if (m_pcs)
+				mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew(idx_elem, m_pcs);
+			components_properties[i] = sqrt(temp * this->component_vector[i]->critical_volume);
 
-            for (int j=0 ; j < component_number ; j++)
-            {
-               m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
-               mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew( idx_elem, m_pcs );
-               components_properties[j] = pow(pow(0.809, 3.0)*this->component_vector[j]->critical_volume,0.5);
+			for (int j = 0; j < component_number; j++) {
+				m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
+				mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew(idx_elem, m_pcs);
+				components_properties[j] = sqrt(temp * this->component_vector[j]->critical_volume);
 
-               variables += mass_fraction[i]*mass_fraction[j]*components_properties[i]*components_properties[j];
-            }
-         }
-         variables = pow(variables, 0.3333);
-         break;
-
+				variables += mass_fraction[i] * mass_fraction[j] * components_properties[i] * components_properties[j];
+			}
+		}
+		variables = pow(variables, 0.3333);
+		break;
+	}
       case 3 :                                    // energy parameter 'epsilon'
+      {
+    	  const double temp(MathLib::fastpow(0.809, 3));
+
          for (int i=0 ; i < component_number ; i++)
          {
             m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
             if (m_pcs)
                mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew( idx_elem, m_pcs );
-            components_properties[i] = pow((this->component_vector[i]->critical_teperature/1.2593)*pow(0.809, 3.0)*this->component_vector[i]->critical_volume, 0.5);
+            components_properties[i] = sqrt((this->component_vector[i]->critical_teperature/1.2593)*temp*this->component_vector[i]->critical_volume);
 
             for (int j=0 ; j < component_number ; j++)
             {
                m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
                mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew( idx_elem, m_pcs );
-               components_properties[j] =pow((this->component_vector[j]->critical_teperature/1.2593)*pow(0.809, 3.0)*this->component_vector[j]->critical_volume, 0.5);
+               components_properties[j] = sqrt((this->component_vector[j]->critical_teperature/1.2593)*temp*this->component_vector[j]->critical_volume);
 
                variables += mass_fraction[i]*mass_fraction[j]*components_properties[i]*components_properties[j];
             }
          }
-         ax=pow(MixtureSubProperity(2, idx_elem, p, T), 3.0);
+         ax=MathLib::fastpow(MixtureSubProperity(2, idx_elem, p, T), 3);
          variables /= ax;
          break;
-
+      }
       case 4 :                                    // acentric factor 'w'
          for (int i=0 ; i < component_number ; i++)
          {
@@ -3438,13 +3441,13 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
 
 #ifdef MFP_TEST
 //-----------------------------------------------------
-//  
+//
 /*!
    \brief constructor of class Hash_Table
-     
+
     Read data and fill the member data
 
-	WW 07.2011 
+	WW 07.2011
 */
 Hash_Table::Hash_Table(string f_name)
 {
@@ -3459,9 +3462,9 @@ Hash_Table::Hash_Table(string f_name)
    {
       cout<<"File "<<f_name<<" cannot openned. Program exit ";
 	  exit(1);
-   } 
-   
-   getline(ins, aline); 
+   }
+
+   getline(ins, aline);
    if(aline.find("Varaiable_Number")!=string::npos)
    {
       ss.str(aline);
@@ -3478,8 +3481,8 @@ Hash_Table::Hash_Table(string f_name)
    num_var -= 2;
    length = num_par+num_var;
 
-   names.resize(length); 
-   getline(ins, aline); 
+   names.resize(length);
+   getline(ins, aline);
    ss.str(aline);
    for(i=0; i<length; i++)
      ss>>names[i];
@@ -3490,22 +3493,22 @@ Hash_Table::Hash_Table(string f_name)
    table_section_ends.push_back(0);
    while(!ins.eof())
    {
-      getline(ins, aline); 
+      getline(ins, aline);
 	  if(aline.find("...")!=string::npos)
 	  {
 	     table_section_ends.push_back(counter+1);
 		 hash_row_par.push_back(par);
 	     continue;
-	  }  
+	  }
       if(aline.find("---")!=string::npos)
          break;
-  
+
 	  double *data_vp = new double[length-1];
 	  hash_table_data.push_back(data_vp);
 
 	  ss.str(aline);
       ss>>par;
-      for(i=0; i<length-1; i++) 
+      for(i=0; i<length-1; i++)
          ss>>data_vp[i];
 	  ss.clear();
 
@@ -3515,9 +3518,9 @@ Hash_Table::Hash_Table(string f_name)
 }
 /*!
    \brief desconstructor of class Hash_Table
-     
 
-	WW 07.2011 
+
+	WW 07.2011
 */
 Hash_Table::~Hash_Table()
 {
@@ -3530,9 +3533,9 @@ Hash_Table::~Hash_Table()
 
 /*!
    \brief desconstructor of class Hash_Table
-     
 
-	WW 07.2011 
+
+	WW 07.2011
 */
 double Hash_Table::CalcValue(double *var, const int var_id) const
 {
@@ -3541,23 +3544,23 @@ double Hash_Table::CalcValue(double *var, const int var_id) const
 	double val_e[4];
 
 	if(var[0]<hash_row_par[0])
-       var[0] = hash_row_par[0]; 
+       var[0] = hash_row_par[0];
 	if(var[0]>hash_row_par[hash_row_par.size()-1])
-       var[0] = hash_row_par[hash_row_par.size()-1]; 
-    
+       var[0] = hash_row_par[hash_row_par.size()-1];
+
     for(i=0; i<hash_row_par.size()-1; i++)
 	{
         if((var[0]>=hash_row_par[i])&&(var[0]<hash_row_par[i+1]))
-		{         
+		{
             for(j=0; j<2; j++)
 			{
                data_0 = hash_table_data[i+j];
                for(k=table_section_ends[i+j]; k<table_section_ends[i+j+1]; k++)
 			   {
-                   
+
 			   }
 			}
-			break; 
+			break;
 		}
 	}
 	return 0.;

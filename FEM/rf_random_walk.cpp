@@ -230,10 +230,9 @@ void RandomWalk::InterpolateVelocity(Particle* A)
      //WW double vx[4], vy[4], vz[4];
       for(int i=0; i<nnode; ++i)
       {
-         MeshLib::CNode* theNode = NULL;
-         theNode = theEle->GetNode(i);
-         x[i] = theNode->X();
-         y[i] = theNode->Y();
+         double const*const pnt (theEle->GetNode(i)->getData());
+         x[i] = pnt[0];
+         y[i] = pnt[1];
          /* //WW
          z[i] = theNode->Z();
 
@@ -254,7 +253,7 @@ void RandomWalk::InterpolateVelocity(Particle* A)
       vec<MeshLib::CNode*>theNodesOfThisEdge(3);
 
       // Solve for proper index in reference space
-      double* Ecenter=theEle->GetGravityCenter();
+      double const* Ecenter=theEle->GetGravityCenter();
       double u[4];                                // Edge flux in reference space
       for(int i=0; i<4; ++i)
          u[i] = 0.0;
@@ -264,9 +263,10 @@ void RandomWalk::InterpolateVelocity(Particle* A)
          // Get the nodes of the edge i
          theEdgesOfThisElement[i]->GetNodes(theNodesOfThisEdge);
 
-         double node1[3], node2[3];
-         node1[0] = theNodesOfThisEdge[0]->X(); node1[1] = theNodesOfThisEdge[0]->Y();
-         node2[0] = theNodesOfThisEdge[1]->X(); node2[1] = theNodesOfThisEdge[1]->Y();
+         double node1[3] = {(theNodesOfThisEdge[0]->getData())[0], (theNodesOfThisEdge[0]->getData())[1], 0.0};
+         double node2[3] = {(theNodesOfThisEdge[1]->getData())[0], (theNodesOfThisEdge[1]->getData())[1], 0.0};
+// TF         node1[0] = theNodesOfThisEdge[0]->X(); node1[1] = theNodesOfThisEdge[0]->Y();
+// TF        node2[0] = theNodesOfThisEdge[1]->X(); node2[1] = theNodesOfThisEdge[1]->Y();
          // Get the referece position of these two ending points of the edge
          IsoparametricMappingQuadfromPtoR(A->elementIndex, node1);
          IsoparametricMappingQuadfromPtoR(A->elementIndex, node2);
@@ -396,14 +396,14 @@ void RandomWalk::TracePathlineInThisElement(Particle* A)
    // It is simple because Sw stuff automatically handles in Richards Flow.
    // Thus, I only divide Darcy velocity by porosity only to get pore velocity.
    //WW CMediumProperties *MediaProp = mmp_vector[theEle->GetPatchIndex()];
-   /*   //WW 
+   /*   //WW
    double porosity = 0.0;
    if(MediaProp->porosity > 10-6)
       porosity = MediaProp->porosity;             // This is for simple one.
    else
                                                   // This will get you porosity.
          porosity = MediaProp->porosity_model_values[0];
-   */ 
+   */
    // I guess for Dual Porocity stuff,
    // this code should be revisited.
 
@@ -424,11 +424,12 @@ void RandomWalk::TracePathlineInThisElement(Particle* A)
       theEdgesOfThisElement[0]->GetNodes(theNodesOfThisEdge);
       //	x0 = theNodesOfThisEdge[0]->X();
       x0 =R[0];
-      x1 = theNodesOfThisEdge[1]->X();
+      double const*const pnt(theNodesOfThisEdge[1]->getData());
+      x1 = pnt[0];
       theEdgesOfThisElement[1]->GetNodes(theNodesOfThisEdge);
       //	y0 = theNodesOfThisEdge[0]->Y();
       y0 =R[1];
-      y1 = theNodesOfThisEdge[1]->Y();
+      y1 = pnt[1];
 
       double Fx0,Fx1,Fy0,Fy1;                     // Flux at each edge in physical space
       Fx0 = theEdgesOfThisElement[3]->GetVelocity(0);
@@ -607,8 +608,6 @@ void RandomWalk::InterpolateVelocityOfTheParticleByInverseDistance(Particle* A)
    //	}
 
    MeshLib::CElem* m_ele = m_msh->ele_vector[A->elementIndex];
-   // Set the pointer that leads to the nodes of element
-   MeshLib::CNode* node = NULL;
 
    // Let's get the hydraulic conductivity first.
    CMediumProperties *MediaProp = mmp_vector[m_ele->GetPatchIndex()];
@@ -631,8 +630,8 @@ void RandomWalk::InterpolateVelocityOfTheParticleByInverseDistance(Particle* A)
    // Get the cooridinate of the nodes in the element
    for(int i=0; i< nnodes; ++i)
    {
-      node = m_ele->GetNode(i);
-      vertex[i].x = node->X(); vertex[i].y = node->Y(); vertex[i].z = node->Z();
+      double const*const coords (m_ele->GetNode(i)->getData());
+      vertex[i].x = coords[0]; vertex[i].y = coords[1]; vertex[i].z = coords[2];
 
       // Compute the each distance
       double x= vertex[i].x-A->x; double y= vertex[i].y-A->y; double z= vertex[i].z-A->z;
@@ -847,7 +846,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          else
                                                   // This will get you porosity.
             porosity = MediaProp->porosity_model_values[0];
-	 */ 
+	 */
          // I guess for Dual Porocity stuff,
          // this code should be revisited.
 
@@ -1036,10 +1035,9 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          //WW double vx[4], vy[4], vz[4];
          for(int i=0; i<nnode; ++i)
          {
-            MeshLib::CNode* theNode = NULL;
-            theNode = theEle->GetNode(i);
-            x[i] = theNode->X();
-            y[i] = theNode->Y();
+            double const*const pnt (theEle->GetNode(i)->getData());
+            x[i] = pnt[0];
+            y[i] = pnt[1];
             /*  //WW
             z[i] = theNode->Z();
 
@@ -1056,7 +1054,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
          vec<MeshLib::CNode*>theNodesOfThisEdge(3);
 
          // Solve for proper index in reference space
-         double* Ecenter=theEle->GetGravityCenter();
+         double const* Ecenter=theEle->GetGravityCenter();
          double u[4];                             // Edge flux in reference space
          for(int i=0; i<4; ++i)
             u[i] = 0.0;
@@ -1066,9 +1064,10 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
             // Get the nodes of the edge i
             theEdgesOfThisElement[i]->GetNodes(theNodesOfThisEdge);
 
-            double node1[3], node2[3];
-            node1[0] = theNodesOfThisEdge[0]->X(); node1[1] = theNodesOfThisEdge[0]->Y();
-            node2[0] = theNodesOfThisEdge[1]->X(); node2[1] = theNodesOfThisEdge[1]->Y();
+            double node1[3] = {theNodesOfThisEdge[0]->getData()[0], theNodesOfThisEdge[0]->getData()[1], 0.0};
+            double node2[3] = {theNodesOfThisEdge[1]->getData()[0], theNodesOfThisEdge[1]->getData()[1], 0.0};
+// TF           node1[0] = theNodesOfThisEdge[0]->X(); node1[1] = theNodesOfThisEdge[0]->Y();
+// TF           node2[0] = theNodesOfThisEdge[1]->X(); node2[1] = theNodesOfThisEdge[1]->Y();
             // Get the referece position of these two ending points of the edge
             IsoparametricMappingQuadfromPtoR(A->elementIndex, node1);
             IsoparametricMappingQuadfromPtoR(A->elementIndex, node2);
@@ -1160,26 +1159,29 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
 }
 
 
-void RandomWalk::GetNodeOfMiniFEMforTheEdge(MeshLib::CNode* theNode, MeshLib::CEdge* theEdge, Particle* A)
+void RandomWalk::GetNodeOfMiniFEMforTheEdge(MeshLib::CNode* theNode,
+		MeshLib::CEdge* theEdge, Particle* A)
 {
-   double x[2], y[2];                             // Just for two nodes of the edge
+	// Just for two nodes of the edge
+	double x[2] = {theEdge->GetNode(0)->getData()[0], theEdge->GetNode(0)->getData()[1]};
+	double y[2] = {theEdge->GetNode(1)->getData()[0], theEdge->GetNode(1)->getData()[1]};
 
-   theNode = theEdge->GetNode(0);
-   x[0] = theNode->X(); y[0] = theNode->Y();
-   theNode = theEdge->GetNode(1);
-   x[1] = theNode->X(); y[1] = theNode->Y();
+	// Two rules. The angle is perpendicular. So the dot product is zero
+	// The particle is on this edge. Line equation
+	// a = x1-x2, b=y1-y2, aa=ax0+by0, bb=bx1-ay1
+	double a, b, aa, bb;
+	a = x[0] - x[1];
+	b = y[0] - y[1];
+	aa = a * A->x + b * A->y;
+	bb = b * x[0] - a * y[0];
+	double det = -a * a - b * b;
+	double X, Y;
+	X = -(a * aa + b * bb) / det;
+	Y = (-b * aa + a * bb) / det;
 
-   // Two rules. The angle is perpendicular. So the dot product is zero
-   // The particle is on this edge. Line equation
-   // a = x1-x2, b=y1-y2, aa=ax0+by0, bb=bx1-ay1
-   double a, b, aa, bb;
-   a = x[0]-x[1]; b=y[0]-y[1];
-   aa = a*A->x + b*A->y; bb = b*x[0] - a*y[0];
-   double det = - a*a - b*b;
-   double X, Y;
-   X = -(a*aa + b*bb)/det; Y = (-b*aa+a*bb)/det;
-
-   theNode->SetX(X); theNode->SetY(Y); theNode->SetZ(0.0);
+	theNode->SetX(X);
+	theNode->SetY(Y);
+	theNode->SetZ(0.0);
 }
 
 
@@ -1204,18 +1206,20 @@ int RandomWalk::IsParticleOnTheEdge(Particle* A)
 	  vec<MeshLib::CEdge*>theEdgesOfThisElement(nnode);
       theEle->GetEdges(theEdgesOfThisElement);
 
-      double x1[3], x2[3];                        //OK411 , v[3];
+//      double x1[3], x2[3];                        //OK411 , v[3];
       vec<MeshLib::CNode*>theNodesOfThisEdge(3);
 
       for(int i=0; i< nnode; ++i)
       {
          theEdgesOfThisElement[i]->GetNodes(theNodesOfThisEdge);
-         x1[0]=theNodesOfThisEdge[0]->X();
-         x1[1]=theNodesOfThisEdge[0]->Y();
-         x1[2]=theNodesOfThisEdge[0]->Z();
-         x2[0]=theNodesOfThisEdge[1]->X();
-         x2[1]=theNodesOfThisEdge[1]->Y();
-         x2[2]=theNodesOfThisEdge[1]->Z();
+         double const*const x1 (theNodesOfThisEdge[0]->getData());
+//         x1[0]=pnt1[0];
+//         x1[1]=pnt1[1];
+//         x1[2]=pnt1[2];
+         double const*const x2 (theNodesOfThisEdge[1]->getData());
+//         x2[0]=pnt2[0];
+//         x2[1]=pnt2[1];
+//         x2[2]=pnt2[2];
 
          double x2x1[3], x1x0[3];
          x2x1[0] = x2[0]-x1[0]; x2x1[1] = x2[1]-x1[1]; x2x1[2] = x2[2]-x1[2];
@@ -1421,8 +1425,7 @@ int RandomWalk::SolveForTwoIntersectionsInTheElement(Particle* A, double* P1, do
    for(int i=0; i< nnodes; ++i)
    {
       node = m_ele->GetNode(i);
-      double X[3];
-      X[0] = node->X(); X[1] = node->Y(); X[2] = node->Z();
+      double X[3] = {node->getData()[0], node->getData()[1], node->getData()[2]};
       ToTheXYPlane(m_ele, X);
       vertex[i].x = X[0]; vertex[i].y = X[1]; vertex[i].z = X[2];
    }
@@ -1732,37 +1735,35 @@ Programing:
  **************************************************************************/
 double RandomWalk::ComputeVolume(Particle* A, MeshLib::CElem* m_ele)
 {
-   double x1buff[3];
-   double x2buff[3];
-   double x3buff[3];
-   double x4buff[3];
+//   double x1buff[3];
+//   double x2buff[3];
+//   double x3buff[3];
+//   double x4buff[3];
    double volume = 0.0;
    double* PieceOfVolume = NULL;
-
-   MeshLib::CNode* node = NULL;
 
    double A2buff[3];
 
    A2buff[0] = A->x; A2buff[1] = A->y; A2buff[2] = A->z;
 
    // If this is not a line element, get three verteces.
-   if(m_ele->GetElementType()!=MshElemType::LINE)
-   {
-      node = m_ele->GetNode(0);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-
-      node = m_ele->GetNode(1);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-
-      node = m_ele->GetNode(2);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
-   }
+//   if(m_ele->GetElementType()!=MshElemType::LINE)
+//   {
+//      node = m_ele->GetNode(0);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//
+//      node = m_ele->GetNode(1);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//
+//      node = m_ele->GetNode(2);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+//   }
 
    //LINES = 1
    if (m_ele->GetElementType() == MshElemType::LINE)
@@ -1770,10 +1771,8 @@ double RandomWalk::ComputeVolume(Particle* A, MeshLib::CElem* m_ele)
       PieceOfVolume = new double[2]();
       for(int i=0; i<2; ++i)
       {
-         node = m_ele->GetNode(i);
-         x2buff[0] = node->X() - A2buff[0];
-         x2buff[1] = node->Y() - A2buff[1];
-         x2buff[2] = node->Z() - A2buff[2];
+         double const*const pnt(m_ele->GetNode(i)->getData());
+         double x2buff[3] = {pnt[0] - A2buff[0], pnt[1] - A2buff[1], pnt[2] - A2buff[2]};
          PieceOfVolume[i] = sqrt(x2buff[0]*x2buff[0]+x2buff[1]*x2buff[1]+x2buff[2]*x2buff[2]) ;
          volume += PieceOfVolume[i];
       }
@@ -1783,10 +1782,14 @@ double RandomWalk::ComputeVolume(Particle* A, MeshLib::CElem* m_ele)
    {
       PieceOfVolume = new double[4]();
 
-      node = m_ele->GetNode(3);
-      x4buff[0] = node->X();
-      x4buff[1] = node->Y();
-      x4buff[2] = node->Z();
+//      node = m_ele->GetNode(3);
+//      x4buff[0] = node->X();
+//      x4buff[1] = node->Y();
+//      x4buff[2] = node->Z();
+      double const*const x1buff(m_ele->GetNode(0)->getData());
+      double const*const x2buff(m_ele->GetNode(1)->getData());
+      double const*const x3buff(m_ele->GetNode(2)->getData());
+      double const*const x4buff(m_ele->GetNode(3)->getData());
 
       PieceOfVolume[0] = ComputeDetTri(x1buff, x2buff, A2buff) ;
       PieceOfVolume[1] = ComputeDetTri(x2buff, x3buff, A2buff) ;
@@ -1802,124 +1805,160 @@ double RandomWalk::ComputeVolume(Particle* A, MeshLib::CElem* m_ele)
       PieceOfVolume = new double[12]();
 
       // 2,1,4,3 face
-      node = m_ele->GetNode(1);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-      node = m_ele->GetNode(0);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-      node = m_ele->GetNode(3);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
-      node = m_ele->GetNode(2);
-      x4buff[0] = node->X();
-      x4buff[1] = node->Y();
-      x4buff[2] = node->Z();
+//      node = m_ele->GetNode(1);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//      node = m_ele->GetNode(0);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//      node = m_ele->GetNode(3);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+//      node = m_ele->GetNode(2);
+//      x4buff[0] = node->X();
+//      x4buff[1] = node->Y();
+//      x4buff[2] = node->Z();
+
+      double const*const x1buff(m_ele->GetNode(1)->getData());
+      double const*const x2buff(m_ele->GetNode(0)->getData());
+      double const*const x3buff(m_ele->GetNode(3)->getData());
+      double const*const x4buff(m_ele->GetNode(2)->getData());
+
       PieceOfVolume[0] = ComputeDetTex(A2buff, x1buff, x2buff, x4buff) ;
       PieceOfVolume[1] = ComputeDetTex(A2buff, x2buff, x3buff, x4buff) ;
 
       // 5,6,7,8 face
-      node = m_ele->GetNode(4);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-      node = m_ele->GetNode(5);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-      node = m_ele->GetNode(6);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
-      node = m_ele->GetNode(7);
-      x4buff[0] = node->X();
-      x4buff[1] = node->Y();
-      x4buff[2] = node->Z();
-      PieceOfVolume[2] = ComputeDetTex(A2buff, x1buff, x2buff, x4buff) ;
-      PieceOfVolume[3] = ComputeDetTex(A2buff, x2buff, x3buff, x4buff) ;
+//      node = m_ele->GetNode(4);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//      node = m_ele->GetNode(5);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//      node = m_ele->GetNode(6);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+//      node = m_ele->GetNode(7);
+//      x4buff[0] = node->X();
+//      x4buff[1] = node->Y();
+//      x4buff[2] = node->Z();
+
+      double const*const x1buff1(m_ele->GetNode(4)->getData());
+      double const*const x2buff1(m_ele->GetNode(5)->getData());
+      double const*const x3buff1(m_ele->GetNode(6)->getData());
+      double const*const x4buff1(m_ele->GetNode(7)->getData());
+
+      PieceOfVolume[2] = ComputeDetTex(A2buff, x1buff1, x2buff1, x4buff1) ;
+      PieceOfVolume[3] = ComputeDetTex(A2buff, x2buff1, x3buff1, x4buff1) ;
 
       // 1,5,8,4 face
-      node = m_ele->GetNode(0);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-      node = m_ele->GetNode(4);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-      node = m_ele->GetNode(7);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
-      node = m_ele->GetNode(3);
-      x4buff[0] = node->X();
-      x4buff[1] = node->Y();
-      x4buff[2] = node->Z();
-      PieceOfVolume[4] = ComputeDetTex(A2buff, x1buff, x2buff, x4buff) ;
-      PieceOfVolume[5] = ComputeDetTex(A2buff, x2buff, x3buff, x4buff) ;
+//      node = m_ele->GetNode(0);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//      node = m_ele->GetNode(4);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//      node = m_ele->GetNode(7);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+//      node = m_ele->GetNode(3);
+//      x4buff[0] = node->X();
+//      x4buff[1] = node->Y();
+//      x4buff[2] = node->Z();
+
+      double const*const x1buff2(m_ele->GetNode(0)->getData());
+      double const*const x2buff2(m_ele->GetNode(4)->getData());
+      double const*const x3buff2(m_ele->GetNode(7)->getData());
+      double const*const x4buff2(m_ele->GetNode(3)->getData());
+
+      PieceOfVolume[4] = ComputeDetTex(A2buff, x1buff2, x2buff2, x4buff2) ;
+      PieceOfVolume[5] = ComputeDetTex(A2buff, x2buff2, x3buff2, x4buff2) ;
 
       // 8,7,3,4 face
-      node = m_ele->GetNode(7);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-      node = m_ele->GetNode(6);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-      node = m_ele->GetNode(2);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
-      node = m_ele->GetNode(3);
-      x4buff[0] = node->X();
-      x4buff[1] = node->Y();
-      x4buff[2] = node->Z();
-      PieceOfVolume[6] = ComputeDetTex(A2buff, x1buff, x2buff, x4buff) ;
-      PieceOfVolume[7] = ComputeDetTex(A2buff, x2buff, x3buff, x4buff) ;
+//      node = m_ele->GetNode(7);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//      node = m_ele->GetNode(6);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//      node = m_ele->GetNode(2);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+//      node = m_ele->GetNode(3);
+//      x4buff[0] = node->X();
+//      x4buff[1] = node->Y();
+//      x4buff[2] = node->Z();
+
+      double const*const x1buff3(m_ele->GetNode(7)->getData());
+      double const*const x2buff3(m_ele->GetNode(6)->getData());
+      double const*const x3buff3(m_ele->GetNode(2)->getData());
+      double const*const x4buff3(m_ele->GetNode(3)->getData());
+
+      PieceOfVolume[6] = ComputeDetTex(A2buff, x1buff3, x2buff3, x4buff3);
+      PieceOfVolume[7] = ComputeDetTex(A2buff, x2buff3, x3buff3, x4buff3) ;
 
       // 2,3,7,6 face
-      node = m_ele->GetNode(1);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-      node = m_ele->GetNode(2);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-      node = m_ele->GetNode(6);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
-      node = m_ele->GetNode(5);
-      x4buff[0] = node->X();
-      x4buff[1] = node->Y();
-      x4buff[2] = node->Z();
-      PieceOfVolume[8] = ComputeDetTex(A2buff, x1buff, x2buff, x4buff) ;
-      PieceOfVolume[9] = ComputeDetTex(A2buff, x2buff, x3buff, x4buff) ;
+//      node = m_ele->GetNode(1);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//      node = m_ele->GetNode(2);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//      node = m_ele->GetNode(6);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+//      node = m_ele->GetNode(5);
+//      x4buff[0] = node->X();
+//      x4buff[1] = node->Y();
+//      x4buff[2] = node->Z();
+
+      double const*const x1buff4(m_ele->GetNode(1)->getData());
+      double const*const x2buff4(m_ele->GetNode(2)->getData());
+      double const*const x3buff4(m_ele->GetNode(6)->getData());
+      double const*const x4buff4(m_ele->GetNode(5)->getData());
+
+      PieceOfVolume[8] = ComputeDetTex(A2buff, x1buff4, x2buff4, x4buff4) ;
+      PieceOfVolume[9] = ComputeDetTex(A2buff, x2buff4, x3buff4, x4buff4) ;
 
       // 1,2,6,5 face
-      node = m_ele->GetNode(0);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-      node = m_ele->GetNode(1);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-      node = m_ele->GetNode(5);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
-      node = m_ele->GetNode(4);
-      x4buff[0] = node->X();
-      x4buff[1] = node->Y();
-      x4buff[2] = node->Z();
-      PieceOfVolume[10] = ComputeDetTex(A2buff, x1buff, x2buff, x4buff) ;
-      PieceOfVolume[11] = ComputeDetTex(A2buff, x2buff, x3buff, x4buff) ;
+//      node = m_ele->GetNode(0);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//      node = m_ele->GetNode(1);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//      node = m_ele->GetNode(5);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+//      node = m_ele->GetNode(4);
+//      x4buff[0] = node->X();
+//      x4buff[1] = node->Y();
+//      x4buff[2] = node->Z();
+
+      double const*const x1buff5(m_ele->GetNode(0)->getData());
+      double const*const x2buff5(m_ele->GetNode(1)->getData());
+      double const*const x3buff5(m_ele->GetNode(5)->getData());
+      double const*const x4buff5(m_ele->GetNode(4)->getData());
+
+      PieceOfVolume[10] = ComputeDetTex(A2buff, x1buff5, x2buff5, x4buff5) ;
+      PieceOfVolume[11] = ComputeDetTex(A2buff, x2buff5, x3buff5, x4buff5) ;
 
       for(int i=0; i<12; ++i)
          volume += PieceOfVolume[i];
@@ -1928,6 +1967,10 @@ double RandomWalk::ComputeVolume(Particle* A, MeshLib::CElem* m_ele)
    if (m_ele->GetElementType() == MshElemType::TRIANGLE)
    {
       PieceOfVolume = new double[3]();
+
+      double const*const x1buff(m_ele->GetNode(0)->getData());
+      double const*const x2buff(m_ele->GetNode(1)->getData());
+      double const*const x3buff(m_ele->GetNode(2)->getData());
 
       PieceOfVolume[0] = ComputeDetTri(x1buff, x2buff, A2buff) ;
       PieceOfVolume[1] = ComputeDetTri(x2buff, x3buff, A2buff) ;
@@ -1941,10 +1984,15 @@ double RandomWalk::ComputeVolume(Particle* A, MeshLib::CElem* m_ele)
    {
       PieceOfVolume = new double[4]();
 
-      node = m_ele->GetNode(3);
-      x4buff[0] = node->X();
-      x4buff[1] = node->Y();
-      x4buff[2] = node->Z();
+//      node = m_ele->GetNode(3);
+//      x4buff[0] = node->X();
+//      x4buff[1] = node->Y();
+//      x4buff[2] = node->Z();
+
+      double const*const x1buff(m_ele->GetNode(0)->getData());
+      double const*const x2buff(m_ele->GetNode(1)->getData());
+      double const*const x3buff(m_ele->GetNode(2)->getData());
+      double const*const x4buff(m_ele->GetNode(3)->getData());
 
       PieceOfVolume[0] = ComputeDetTex(A2buff, x1buff, x2buff, x3buff) ;
       PieceOfVolume[1] = ComputeDetTex(A2buff, x1buff, x3buff, x4buff) ;
@@ -1960,94 +2008,122 @@ double RandomWalk::ComputeVolume(Particle* A, MeshLib::CElem* m_ele)
       PieceOfVolume = new double[8]();
 
       // 2,1,3 face
-      node = m_ele->GetNode(1);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-      node = m_ele->GetNode(0);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-      node = m_ele->GetNode(2);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
+//      node = m_ele->GetNode(1);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//      node = m_ele->GetNode(0);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//      node = m_ele->GetNode(2);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+
+      double const*const x1buff(m_ele->GetNode(1)->getData());
+      double const*const x2buff(m_ele->GetNode(0)->getData());
+      double const*const x3buff(m_ele->GetNode(2)->getData());
+
       PieceOfVolume[0] = ComputeDetTex(A2buff, x1buff, x2buff, x3buff) ;
 
       // 4,5,6 face
-      node = m_ele->GetNode(3);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-      node = m_ele->GetNode(4);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-      node = m_ele->GetNode(5);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
-      PieceOfVolume[1] = ComputeDetTex(A2buff, x1buff, x2buff, x3buff) ;
+//      node = m_ele->GetNode(3);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//      node = m_ele->GetNode(4);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//      node = m_ele->GetNode(5);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+
+      double const*const x1buff1(m_ele->GetNode(3)->getData());
+      double const*const x2buff1(m_ele->GetNode(4)->getData());
+      double const*const x3buff1(m_ele->GetNode(5)->getData());
+
+      PieceOfVolume[1] = ComputeDetTex(A2buff, x1buff1, x2buff1, x3buff1);
 
       // 1,4,6,3 face
-      node = m_ele->GetNode(0);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-      node = m_ele->GetNode(3);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-      node = m_ele->GetNode(5);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
-      node = m_ele->GetNode(2);
-      x4buff[0] = node->X();
-      x4buff[1] = node->Y();
-      x4buff[2] = node->Z();
-      PieceOfVolume[2] = ComputeDetTex(A2buff, x1buff, x2buff, x4buff) ;
-      PieceOfVolume[3] = ComputeDetTex(A2buff, x2buff, x3buff, x4buff) ;
+//      node = m_ele->GetNode(0);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//      node = m_ele->GetNode(3);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//      node = m_ele->GetNode(5);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+//      node = m_ele->GetNode(2);
+//      x4buff[0] = node->X();
+//      x4buff[1] = node->Y();
+//      x4buff[2] = node->Z();
+
+      double const*const x1buff2(m_ele->GetNode(0)->getData());
+      double const*const x2buff2(m_ele->GetNode(3)->getData());
+      double const*const x3buff2(m_ele->GetNode(5)->getData());
+      double const*const x4buff2(m_ele->GetNode(2)->getData());
+
+      PieceOfVolume[2] = ComputeDetTex(A2buff, x1buff2, x2buff2, x4buff2);
+      PieceOfVolume[3] = ComputeDetTex(A2buff, x2buff2, x3buff2, x4buff2);
 
       // 2,5,4,1 face
-      node = m_ele->GetNode(1);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-      node = m_ele->GetNode(4);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-      node = m_ele->GetNode(3);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
-      node = m_ele->GetNode(0);
-      x4buff[0] = node->X();
-      x4buff[1] = node->Y();
-      x4buff[2] = node->Z();
-      PieceOfVolume[4] = ComputeDetTex(A2buff, x1buff, x2buff, x4buff) ;
-      PieceOfVolume[5] = ComputeDetTex(A2buff, x2buff, x3buff, x4buff) ;
+//      node = m_ele->GetNode(1);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//      node = m_ele->GetNode(4);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//      node = m_ele->GetNode(3);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+//      node = m_ele->GetNode(0);
+//      x4buff[0] = node->X();
+//      x4buff[1] = node->Y();
+//      x4buff[2] = node->Z();
+
+      double const*const x1buff3(m_ele->GetNode(1)->getData());
+      double const*const x2buff3(m_ele->GetNode(4)->getData());
+      double const*const x3buff3(m_ele->GetNode(3)->getData());
+      double const*const x4buff3(m_ele->GetNode(0)->getData());
+
+      PieceOfVolume[4] = ComputeDetTex(A2buff, x1buff3, x2buff3, x4buff3) ;
+      PieceOfVolume[5] = ComputeDetTex(A2buff, x2buff3, x3buff3, x4buff3) ;
 
       // 5,2,3,6 face
-      node = m_ele->GetNode(4);
-      x1buff[0] = node->X();
-      x1buff[1] = node->Y();
-      x1buff[2] = node->Z();
-      node = m_ele->GetNode(1);
-      x2buff[0] = node->X();
-      x2buff[1] = node->Y();
-      x2buff[2] = node->Z();
-      node = m_ele->GetNode(2);
-      x3buff[0] = node->X();
-      x3buff[1] = node->Y();
-      x3buff[2] = node->Z();
-      node = m_ele->GetNode(5);
-      x4buff[0] = node->X();
-      x4buff[1] = node->Y();
-      x4buff[2] = node->Z();
-      PieceOfVolume[6] = ComputeDetTex(A2buff, x1buff, x2buff, x4buff) ;
-      PieceOfVolume[7] = ComputeDetTex(A2buff, x2buff, x3buff, x4buff) ;
+//      node = m_ele->GetNode(4);
+//      x1buff[0] = node->X();
+//      x1buff[1] = node->Y();
+//      x1buff[2] = node->Z();
+//      node = m_ele->GetNode(1);
+//      x2buff[0] = node->X();
+//      x2buff[1] = node->Y();
+//      x2buff[2] = node->Z();
+//      node = m_ele->GetNode(2);
+//      x3buff[0] = node->X();
+//      x3buff[1] = node->Y();
+//      x3buff[2] = node->Z();
+//      node = m_ele->GetNode(5);
+//      x4buff[0] = node->X();
+//      x4buff[1] = node->Y();
+//      x4buff[2] = node->Z();
+
+      double const*const x1buff4(m_ele->GetNode(4)->getData());
+      double const*const x2buff4(m_ele->GetNode(1)->getData());
+      double const*const x3buff4(m_ele->GetNode(2)->getData());
+      double const*const x4buff4(m_ele->GetNode(5)->getData());
+
+      PieceOfVolume[6] = ComputeDetTex(A2buff, x1buff4, x2buff4, x4buff4) ;
+      PieceOfVolume[7] = ComputeDetTex(A2buff, x2buff4, x3buff4, x4buff4) ;
 
       for(int i=0; i<8; ++i)
          volume += PieceOfVolume[i];
@@ -2586,13 +2662,14 @@ void RandomWalk::ConcPTFile(const char *file_name)
    int gridDensity = 0;
    // Search Max and Min of each axis
    double MaxX = -1e6, MinX = 1e6;
-   for(int i=0; i < (int)m_msh->nod_vector.size(); ++i)
+   for(size_t i=0; i < m_msh->nod_vector.size(); ++i)
    {
-      MeshLib::CNode* thisNode = m_msh->nod_vector[i];
-      if(MaxX < thisNode->X())
-         MaxX = thisNode->X();
-      if(MinX > thisNode->X())
-         MinX = thisNode->X();
+// TF	   MeshLib::CNode* thisNode = m_msh->nod_vector[i]
+      double x_coord(m_msh->nod_vector[i]->getData()[0]);
+      if(MaxX < x_coord)
+         MaxX = x_coord;
+      if(MinX > x_coord)
+         MinX = x_coord;
    }
 
    gridDensity = (int)(MaxX - MinX);
@@ -2904,9 +2981,10 @@ int RandomWalk::SolveForNextPosition(Particle* A, Particle* B)
          double p1[3], p2[3], p3[3], p4[3];
          // RWPT - IM
          // Two points in the edge
-         double X1[3], X2[3];
-         X1[0] = theNodes[0]->X(); X1[1] = theNodes[0]->Y(); X1[2] = theNodes[0]->Z();
-         X2[0] = theNodes[1]->X(); X2[1] = theNodes[1]->Y(); X2[2] = theNodes[1]->Z();
+         double X1[3] = {theNodes[0]->getData()[0], theNodes[0]->getData()[1], theNodes[0]->getData()[2]};
+         double X2[3] = {theNodes[1]->getData()[0], theNodes[1]->getData()[1], theNodes[1]->getData()[2]};
+//         X1[0] = theNodes[0]->X(); X1[1] = theNodes[0]->Y(); X1[2] = theNodes[0]->Z();
+//         X2[0] = theNodes[1]->X(); X2[1] = theNodes[1]->Y(); X2[2] = theNodes[1]->Z();
          ToTheXYPlane(theElement, X1); ToTheXYPlane(theElement, X2);
          for(int j=0; j<3; ++j)
          {
@@ -3355,9 +3433,11 @@ int RandomWalk::GetTheElementOfTheParticle(Particle* Pold, Particle* Pnew)
          double p1[3], p2[3], p3[3], p4[3];
          // RWPT - IM
          // Two points in the edge
-         double X1[3], X2[3];
-         X1[0] = theNodesOfThisEdge[0]->X(); X1[1] = theNodesOfThisEdge[0]->Y(); X1[2] = theNodesOfThisEdge[0]->Z();
-         X2[0] = theNodesOfThisEdge[1]->X(); X2[1] = theNodesOfThisEdge[1]->Y(); X2[2] = theNodesOfThisEdge[1]->Z();
+         double X1[3] = {theNodesOfThisEdge[0]->getData()[0], theNodesOfThisEdge[0]->getData()[1], theNodesOfThisEdge[0]->getData()[2]};
+         double X2[3] = {theNodesOfThisEdge[1]->getData()[0], theNodesOfThisEdge[1]->getData()[1], theNodesOfThisEdge[1]->getData()[2]};
+//         double X1[3], X2[3];
+//         X1[0] = theNodesOfThisEdge[0]->X(); X1[1] = theNodesOfThisEdge[0]->Y(); X1[2] = theNodesOfThisEdge[0]->Z();
+//         X2[0] = theNodesOfThisEdge[1]->X(); X2[1] = theNodesOfThisEdge[1]->Y(); X2[2] = theNodesOfThisEdge[1]->Z();
 #ifdef TWODINTHREED
          ToTheXYPlane(theElement, X1); ToTheXYPlane(theElement, X2);
 #endif
@@ -3574,9 +3654,13 @@ int RandomWalk::IsTheParticleInThisElement(Particle* A)
          double p1[3], p2[3], p3[3], p4[3];
          // RWPT - IM
          // Two points in the edge
-         double X1[3], X2[3];
-         X1[0] = theNodes[0]->X(); X1[1] = theNodes[0]->Y(); X1[2] = theNodes[0]->Z();
-         X2[0] = theNodes[1]->X(); X2[1] = theNodes[1]->Y(); X2[2] = theNodes[1]->Z();
+
+         double X1[3] = {theNodes[0]->getData()[0], theNodes[0]->getData()[1], theNodes[0]->getData()[2]};
+         double X2[3] = {theNodes[1]->getData()[0], theNodes[1]->getData()[1], theNodes[1]->getData()[2]};
+
+//         double X1[3], X2[3];
+//         X1[0] = theNodes[0]->X(); X1[1] = theNodes[0]->Y(); X1[2] = theNodes[0]->Z();
+//         X2[0] = theNodes[1]->X(); X2[1] = theNodes[1]->Y(); X2[2] = theNodes[1]->Z();
          ToTheXYPlane(theElement, X1); ToTheXYPlane(theElement, X2);
          for(int j=0; j<3; ++j)
          {
@@ -3626,37 +3710,31 @@ int RandomWalk::IsTheParticleInThisElement(Particle* A)
       // Since this is 1D, I'll do exhaustive search.
       // Checking the coordinateflag for proper solution.
       int coordinateflag = m_msh->GetCoordinateFlag();
-      MeshLib::CNode* p1 = NULL; MeshLib::CNode* p2=NULL;
                                                   //OK411??? long
       for(int i=0; i< (int)m_msh->ele_vector.size(); ++i)
       {
-         MeshLib::CElem* theEle = m_msh->ele_vector[i];
+         double const*const pnt1 (m_msh->nod_vector[m_msh->ele_vector[i]->GetNodeIndex(0)]->getData());
+         double const*const pnt2 (m_msh->nod_vector[m_msh->ele_vector[i]->GetNodeIndex(1)]->getData());
          if(coordinateflag == 10)                 // x only
          {
-            p1 = m_msh->nod_vector[theEle->GetNodeIndex(0)];
-            p2 = m_msh->nod_vector[theEle->GetNodeIndex(1)];
-            if( (A->x >= p1->X() && A->x < p2->X()) ||
-               (A->x >= p2->X() && A->x < p1->X()) )
+            if( (A->x >= pnt1[0] && A->x < pnt2[0]) ||
+               (A->x >= pnt2[0] && A->x < pnt1[0]) )
             {
                return i;
             }
          }
          else if(coordinateflag == 11)            // y only
          {
-            p1 = m_msh->nod_vector[theEle->GetNodeIndex(0)];
-            p2 = m_msh->nod_vector[theEle->GetNodeIndex(1)];
-            if( (A->y >= p1->Y() && A->y < p2->Y()) ||
-               (A->y >= p2->Y() && A->y < p1->Y()) )
+            if( (A->y >= pnt1[1] && A->y < pnt2[1]) ||
+               (A->y >= pnt2[1] && A->y < pnt1[1]) )
             {
                return i;
             }
          }
          else if(coordinateflag == 12)            // z only
          {
-            p1 = m_msh->nod_vector[theEle->GetNodeIndex(0)];
-            p2 = m_msh->nod_vector[theEle->GetNodeIndex(1)];
-            if( (A->z >= p1->Z() && A->z < p2->Z()) ||
-               (A->z >= p2->Z() && A->z < p1->Z()) )
+            if( (A->z >= pnt1[2] && A->z < pnt2[2]) ||
+               (A->z >= pnt2[2] && A->z < pnt1[2]) )
             {
                return i;
             }
@@ -3910,10 +3988,9 @@ void RandomWalk::IsoparametricMappingQuadfromPtoR(int index, double* R)
       double x[4], y[4];
       for(int i=0; i<nnode; ++i)
       {
-         MeshLib::CNode* theNode = NULL;
-         theNode = theEle->GetNode(i);
-         x[i] = theNode->X();
-         y[i] = theNode->Y();
+         double const*const coords(theEle->GetNode(i)->getData());
+         x[i] = coords[0];
+         y[i] = coords[1];
       }
 
       // Some coeff's for convenience
@@ -4093,10 +4170,9 @@ void RandomWalk::IsoparametricMappingQuadfromRtoP(int index, double* P)
       double x[4], y[4];
       for(int i=0; i<nnode; ++i)
       {
-         MeshLib::CNode* theNode = NULL;
-         theNode = theEle->GetNode(i);
-         x[i] = theNode->X();
-         y[i] = theNode->Y();
+         double const*const coords (theEle->GetNode(i)->getData());
+         x[i] = coords[0];
+         y[i] = coords[1];
       }
 
       double phat[3];
@@ -4419,7 +4495,7 @@ void RandomWalk::SolveAnglesOfTheElment(MeshLib::CElem* E)
 
    // Solve for the translation.
    // I'll use the center of the element for this translation.
-   double* center = E->GetGravityCenter();
+   double const* center = E->GetGravityCenter();
    double x[3], xx[3];
    // Get the norm of the element plane and do some initialization
    for(int k=0; k<3; ++k)
@@ -4579,10 +4655,8 @@ Modified:: 03/2010 JTARON ... re-designed and expanded to 3-D
  **************************************************************************/
 void RandomWalk::buildFDMIndex(void)
 {
-   double* center = NULL;
    double xmax, ymax, zmax;
    double xmin, ymin, zmin;
-   double x,y,z;
    long i,j,k,iel,ic,jc,kc, nels;
    //WW long ne, nels;
    int index;
@@ -4625,21 +4699,22 @@ void RandomWalk::buildFDMIndex(void)
    xmin=ymin=zmin=1e+12;
    for(index=0; index<4; index++)                 // 4 nodes because FDM method only for equa-sized quads
    {
-      x = m_msh->nod_vector[m_msh->ele_vector[0]->GetNodeIndex(index)]->X();
-      y = m_msh->nod_vector[m_msh->ele_vector[0]->GetNodeIndex(index)]->Y();
-      z = m_msh->nod_vector[m_msh->ele_vector[0]->GetNodeIndex(index)]->Z();
-      if(x>xmax)
-         xmax=x;
-      if(x<xmin)
-         xmin=x;
-      if(y>ymax)
-         ymax=y;
-      if(y<ymin)
-         ymin=y;
-      if(z>zmax)
-         zmax=z;
-      if(z<zmin)
-         zmin=z;
+//      x = m_msh->nod_vector[m_msh->ele_vector[0]->GetNodeIndex(index)]->X();
+//      y = m_msh->nod_vector[m_msh->ele_vector[0]->GetNodeIndex(index)]->Y();
+//      z = m_msh->nod_vector[m_msh->ele_vector[0]->GetNodeIndex(index)]->Z();
+      double const*const xyz (m_msh->nod_vector[m_msh->ele_vector[0]->GetNodeIndex(index)]->getData());
+      if(xyz[0]>xmax)
+         xmax=xyz[0];
+      if(xyz[0]<xmin)
+         xmin=xyz[0];
+      if(xyz[1]>ymax)
+         ymax=xyz[1];
+      if(xyz[1]<ymin)
+         ymin=xyz[1];
+      if(xyz[2]>zmax)
+         zmax=xyz[2];
+      if(xyz[2]<zmin)
+         zmin=xyz[2];
    }
    dx = xmax - xmin;
    dy = ymax - ymin;
@@ -4656,33 +4731,30 @@ void RandomWalk::buildFDMIndex(void)
    //WW ne = nx*ny*nz;
    nels = m_msh->ele_vector.size();
 
-   for(k=0; k<nz; k++)                            // loop over the dummy element set
-   {
-      for(j=0; j<ny; j++)
-      {
-         for(i=0; i<nx; i++)
-         {
-            FDMIndex one;                         // store dummy index by default, initialize class vector
-            one.i = i;
-            one.j = j;
-            one.k = k;
-            one.eleIndex = -5;                    // eleIndex -5 is dummy index different from -10
-            for(iel=0; iel<nels; iel++)           // loop over mesh elements, assign them to dummy elements
-            {
-               center = m_msh->ele_vector[iel]->GetGravityCenter();
-               ic = (int)floor((center[0]-pnt_x_min)/dx);
-               jc = (int)floor((center[1]-pnt_y_min)/dy);
-               kc = (int)floor((center[2]-pnt_z_min)/dz);
-               if(ic!=i || jc!=j || kc!=k)
-                  continue;
-               one.eleIndex = iel;
-               break;
-            }
-            indexFDM.push_back(one);
-            neFDM += 1;
-         }
-      }
-   }
+   for (k = 0; k < nz; k++) // loop over the dummy element set
+	{
+		for (j = 0; j < ny; j++) {
+			for (i = 0; i < nx; i++) {
+				FDMIndex one; // store dummy index by default, initialize class vector
+				one.i = i;
+				one.j = j;
+				one.k = k;
+				one.eleIndex = -5; // eleIndex -5 is dummy index different from -10
+				for (iel = 0; iel < nels; iel++) // loop over mesh elements, assign them to dummy elements
+				{
+					double const* center = m_msh->ele_vector[iel]->GetGravityCenter();
+					ic = (int) floor((center[0] - pnt_x_min) / dx);
+					jc = (int) floor((center[1] - pnt_y_min) / dy);
+					kc = (int) floor((center[2] - pnt_z_min) / dz);
+					if (ic != i || jc != j || kc != k) continue;
+					one.eleIndex = iel;
+					break;
+				}
+				indexFDM.push_back(one);
+				neFDM += 1;
+			}
+		}
+	}
 }
 
 

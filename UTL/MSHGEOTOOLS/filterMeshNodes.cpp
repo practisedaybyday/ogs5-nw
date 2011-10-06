@@ -135,22 +135,24 @@ int main (int argc, char *argv[])
 				tmp = tmp.substr (0, tmp.size()-4);
 
 			std::cout << "reading mesh " << tmp << " ... " << std::flush;
-			MeshLib::CFEMesh* mesh (FEMRead(tmp));
-			std::cout << "done" << std::endl;
-			if (!mesh) {
+
+			std::vector<MeshLib::CFEMesh*> mesh_vec;
+			FEMRead(tmp, mesh_vec);
+			if (mesh_vec.empty()) {
 				std::cerr << "could not read mesh from file " << std::endl;
 				return -1;
 			}
+			std::cout << "done" << std::endl;
+			MeshLib::CFEMesh* mesh (mesh_vec[mesh_vec.size()-1]);
 
 			std::ofstream out_mesh_nodes_as_pnts ("MeshNodesAsPntsWW.gli");
 			if (out_mesh_nodes_as_pnts) {
 				out_mesh_nodes_as_pnts << "#POINTS" << std::endl;
 				const size_t ids0_size (ids0.size());
 				for (size_t k(0); k<ids0_size; k++) {
+					double const*const pnt (mesh->getNodeVector()[ids0[k]]->getData());
 					out_mesh_nodes_as_pnts << k << " "
-						<< mesh->getNodeVector()[ids0[k]]->X() << " "
-						<< mesh->getNodeVector()[ids0[k]]->Y() << " "
-						<< mesh->getNodeVector()[ids0[k]]->Z() << std::endl;
+						<< pnt[0] << " " << pnt[1] << " " << pnt[2] << std::endl;
 				}
 				out_mesh_nodes_as_pnts << "#STOP" << std::endl;
 				out_mesh_nodes_as_pnts.close();

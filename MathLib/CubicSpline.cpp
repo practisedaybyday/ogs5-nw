@@ -5,10 +5,12 @@
  *      Author: TF (moved class CubicSpline from geo_mathlib.{h.cpp})
  */
 
-#include "CubicSpline.h"
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
+
+#include "CubicSpline.h"
+#include "MathTools.h"
 
 namespace MathLib {
 
@@ -170,8 +172,8 @@ void CubicSpline::computeCoefficents()
 			cc[0] = cc[2] / (xx[3] - xx[1]) - cc[1] / (xx[2] - xx[0]);
 			cc[n - 1] = cc[n - 2] / (xx[n - 1] - xx[n - 3]) - cc[n - 3] / (xx[n
 					- 2] - xx[n - 4]);
-			cc[0] = cc[0] * pow(dd[0], 2.0) / (xx[3] - xx[0]);
-			cc[n - 1] = -cc[n - 1] * pow(dd[n - 2], 2.0) / (xx[n - 1] - xx[n
+			cc[0] = cc[0] * fastpow(dd[0], 2) / (xx[3] - xx[0]);
+			cc[n - 1] = -cc[n - 1] * fastpow(dd[n - 2], 2) / (xx[n - 1] - xx[n
 					- 4]);
 		}
 

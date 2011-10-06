@@ -227,7 +227,7 @@ int MGleichDouble(double zahl1, double zahl2, double tol)
    ROCKFLOW - Funktion: MOmega1D
    Aufgabe:
            Berechnet Ansatzfunktion (r).
-                        /       \ 
+                        /       \
                      1  | (1-r) |
             Omega = --- |       |
                      2  | (1+r) |
@@ -265,7 +265,7 @@ int MOmega1D(double *vf, double r)
    ROCKFLOW - Funktion: MOmega2D
    Aufgabe:
            Berechnet Ansatzfunktion (r,s).
-                        / (1+r)(1+s) \ 
+                        / (1+r)(1+s) \
                         |            |
                      1  | (1-r)(1+s) |
             Omega = --- |            |
@@ -307,7 +307,7 @@ int MOmega2D(double *vf, double r, double s)
    ROCKFLOW - Funktion: MOmega3D
    Aufgabe:
            Berechnet Ansatzfunktion (r,s).
-                        / (1+r)(1+s)(1+t) \ 
+                        / (1+r)(1+s)(1+t) \
                         | (1-r)(1+s)(1+t) |
                      1  | (1-r)(1-s)(1+t) |
             Omega = --- | (1+r)(1-s)(1+t) |
@@ -354,7 +354,7 @@ int MOmega3D(double *vf, double r, double s, double t)
    ROCKFLOW - Funktion: MOmega2DTriangle
    Aufgabe:
            Berechnet Ansatzfunktion (r,s).
-                        / (1+r)(1+s) \ 
+                        / (1+r)(1+s) \
                         |            |
                      1  | (1-r)(1+s) |
             Omega = --- |            |
@@ -656,7 +656,7 @@ int MPhi3D_SUPG(double *vf, double r, double s, double t, double *alpha)
    Aufgabe:
            Berechnet Gradient eines 2D Vektorfeldes,
            dessen Ansatzfunktion (Vektor) bekannt ist (r,s).
-                        /                            \ 
+                        /                            \
                      1  | +(1+s) -(1+s) -(1-s) +(1-s) |
       grad (omega)= --- |                             |
                      4  | +(1+r) +(1-r) -(1-r) -(1+r) |
@@ -2752,7 +2752,7 @@ Aenderungen/Korrekturen:
 02/2000   C. Thorenz      Erste Version
 
 **************************************************************************/
-double MCalcDistancePointToPlane(double *pt,double *e1,double *e2,double *e3)
+double MCalcDistancePointToPlane(double const*const pt,double *e1,double *e2,double *e3)
 {
 
    int i;
@@ -3851,10 +3851,10 @@ Last modified:
 void SamplePointPyramid5(const int nsample, double *SPoint)
 {
   static const double g1 = 0.584237394672177188; //=8/5*sqrt(2/15)
-  static const double g2 = -2.0/3.0; 
-  static const double g3 = 2.0/5.0; 
-  static const double w1 = 81.0/100.0; 
-  static const double w2 = 125.0/27.0; 
+  static const double g2 = -2.0/3.0;
+  static const double g3 = 2.0/5.0;
+  static const double w1 = 81.0/100.0;
+  static const double w2 = 125.0/27.0;
 
  switch(nsample)
  {
@@ -3888,7 +3888,7 @@ void SamplePointPyramid5(const int nsample, double *SPoint)
    SPoint[2] = g3;
    SPoint[3] = w2;          // Weight
    break;
- default: 
+ default:
    break;
 
  }
@@ -3903,17 +3903,17 @@ Last modified:
 **************************************************************************/
 void SamplePointPyramid13(const int nsample, double *SPoint)
 {
-  static const double g1 = 0.673931986207731726; 
-  static const double g2 = 0.610639618865075532; 
-  static const double g3 = 0.580939660561084423; 
-  static const double g4 =-0.142857142857142857; 
-  static const double g5 =-0.321428571428571429; 
-  static const double g6 = 0.524394036075370072; 
+  static const double g1 = 0.673931986207731726;
+  static const double g2 = 0.610639618865075532;
+  static const double g3 = 0.580939660561084423;
+  static const double g4 =-0.142857142857142857;
+  static const double g5 =-0.321428571428571429;
+  static const double g6 = 0.524394036075370072;
   static const double g7 =-0.830065359477124183;
-  static const double w1 = 0.515003019323671498; 
-  static const double w2 = 0.257183745242064659; 
-  static const double w3 = 2.474004977113405936; 
-  static const double w4 = 0.419515737191525950; 
+  static const double w1 = 0.515003019323671498;
+  static const double w2 = 0.257183745242064659;
+  static const double w3 = 2.474004977113405936;
+  static const double w4 = 0.419515737191525950;
 
   switch(nsample)
   {
@@ -3995,17 +3995,17 @@ void SamplePointPyramid13(const int nsample, double *SPoint)
     SPoint[2] = g7;
     SPoint[3] = w4;          // Weight
     break;
-  default: 
+  default:
     break;
 
   }
 }
 void SamplePointPyramid8(const int i, double *SPoint)
 {
-  static const double g1=sqrt((double)1.0/3.0); 
-  static const double g2=(2.0*sqrt(10.0)-5.0)/15.0; 
+  static const double g1=sqrt((double)1.0/3.0);
+  static const double g2=(2.0*sqrt(10.0)-5.0)/15.0;
   static const double g3=-2.0/3.0-g2;
-  static const double w1=5.0*(68.0+5.0*sqrt(10.0))/432.0; 
+  static const double w1=5.0*(68.0+5.0*sqrt(10.0))/432.0;
   static const double w2=85.0/54.0-w1;
 
   switch(i)
@@ -4439,17 +4439,17 @@ void GradShapeFunctionQuadHQ(double *dN9, const double *u)
 
 /***************************************************************************
    Aufgabe:
-        Compute the shape function for numerical intergral of linear  
-   quadratic quadralateral element. 
+        Compute the shape function for numerical intergral of linear
+   quadratic quadralateral element.
    Formalparameter:
-      E: 
-	    double * N8       : Array of size 8, to store the value of shape 
-                               function 
-        const  double *u  : Pointer to a 2 dimension array for 
+      E:
+	    double * N8       : Array of size 8, to store the value of shape
+                               function
+        const  double *u  : Pointer to a 2 dimension array for
                                the unit coordinates
 
    Programming:
-   01/2010     NW Implementation        
+   01/2010     NW Implementation
  **************************************************************************/
 void GradShapeFunctionQuadHQ8(double *dN8, const double *u)
 {
@@ -4625,7 +4625,7 @@ void GradShapeFunctionTetHQ(double *dN10, const double *x)
    ROCKFLOW - Funktion: MOmega3D-ShapeFunctionHex
    Aufgabe:
            Berechnet Ansatzfunktion (r,s).
-                        / (1+r)(1+s)(1+t) \ 
+                        / (1+r)(1+s)(1+t) \
                         | (1-r)(1+s)(1+t) |
                      1  | (1-r)(1-s)(1+t) |
             N8 = --- | (1+r)(1-s)(1+t) |
@@ -5098,23 +5098,23 @@ void GradShapeFunctionPriHQ(double *dN, const double *x)
 /***************************************************************************
    GEOSYS/ROCKFLOW - Funktion: ShapeFunctionPyra
    Task:
-        Compute the gradient of shape functions 
-        for the 5 node pyramid element           
+        Compute the gradient of shape functions
+        for the 5 node pyramid element
    Arguments:
-      E: 
-        const  double *x  : Pointer to a 3 dimension array for 
+      E:
+        const  double *x  : Pointer to a 3 dimension array for
                             the unit coordinates
       R:
-	    double * N     : Array of size 5, to store the value of shape 
+	    double * N     : Array of size 5, to store the value of shape
                             function of 5 nodes
    Programming:
-   01/2010     NW  
+   01/2010     NW
  **************************************************************************/
 void ShapeFunctionPyra(double *N, const double *x)
 {
     const double r = x[0];
     const double s = x[1];
-    const double t = x[2];    
+    const double t = x[2];
 
     N[0] = 0.125*(1-r)*(1-s)*(1-t);
     N[1] = 0.125*(1+r)*(1-s)*(1-t);
@@ -5126,23 +5126,23 @@ void ShapeFunctionPyra(double *N, const double *x)
 /***************************************************************************
    GEOSYS/ROCKFLOW - Funktion: ShapeFunctionPyraHQ
    Task:
-        Compute the gradient of shape functions 
-        for the 13 node pyramid element           
+        Compute the gradient of shape functions
+        for the 13 node pyramid element
    Arguments:
-      E: 
-        const  double *x  : Pointer to a 3 dimension array for 
+      E:
+        const  double *x  : Pointer to a 3 dimension array for
                             the unit coordinates
       R:
-	    double * N     : Array of size 13, to store the value of shape 
+	    double * N     : Array of size 13, to store the value of shape
                             function of 13 nodes
    Programming:
-   01/2010     NW           
+   01/2010     NW
  **************************************************************************/
 void ShapeFunctionPyraHQ13(double *N, const double *x)
 {
     const double r = x[0];
     const double s = x[1];
-    const double t = x[2];    
+    const double t = x[2];
 
     N[0]  = -0.0625*(1.0-r)*(1.0-s)*(1.0-t)*(4.0+3.0*r+3.0*s+2.0*r*s+2.0*t+r*t+s*t+2.0*r*s*t);
     N[1]  = -0.0625*(1.0+r)*(1.0-s)*(1.0-t)*(4.0-3.0*r+3.0*s-2.0*r*s+2.0*t-r*t+s*t-2.0*r*s*t);
@@ -5162,26 +5162,26 @@ void ShapeFunctionPyraHQ13(double *N, const double *x)
 /***************************************************************************
    GEOSYS/ROCKFLOW - Funktion: GradShapeFunctionPri
    Task:
-        Compute the gradient of shape functions 
-        for the 6 node prism element           
+        Compute the gradient of shape functions
+        for the 6 node prism element
    Arguments:
-      E: 
-        const  double *x  : Pointer to a 3 dimension array for 
+      E:
+        const  double *x  : Pointer to a 3 dimension array for
                             the unit coordinates
       R:
-	    double * N     : Array of size 18, to store the value of the grandient 
-		                 shape functions 
+	    double * N     : Array of size 18, to store the value of the grandient
+		                 shape functions
                           0--5: dN/dL1
                          6--11: dN/dL2
                         12--17: dN/dt
    Programming:
-   08/2005     WW           
+   08/2005     WW
  **************************************************************************/
 void GradShapeFunctionPyra(double *dN, const double *x)
 {
     const double r = x[0];
     const double s = x[1];
-    const double t = x[2];    
+    const double t = x[2];
     //  dN/dL1
     dN[0] = -0.125*(1.0-s)*(1.0-t);
     dN[1] =  0.125*(1.0-s)*(1.0-t);
@@ -5204,26 +5204,26 @@ void GradShapeFunctionPyra(double *dN, const double *x)
 
 /***************************************************************************
    GEOSYS/ROCKFLOW - Funktion: GradShapeFunctionPyraHQ
-        Compute the gradient of shape functions 
-        for the 13 node pyramid element           
+        Compute the gradient of shape functions
+        for the 13 node pyramid element
    Arguments:
-      E: 
-        const  double *x  : Pointer to a 3 dimension array for 
+      E:
+        const  double *x  : Pointer to a 3 dimension array for
                             the unit coordinates
       R:
-	    double * N     : Array of size 18, to store the value of the grandient 
-		                 shape functions 
+	    double * N     : Array of size 18, to store the value of the grandient
+		                 shape functions
                           0--15: dN/dL1
                          16--29: dN/dL2
                          30--44: dN/dt
    Programming:
-   08/2005     WW           
+   08/2005     WW
 **************************************************************************/
 void GradShapeFunctionPyraHQ13(double *dN, const double *x)
 {
     const double r = x[0];
     const double s = x[1];
-    const double t = x[2]; 
+    const double t = x[2];
     //---dN/dr
     dN[0]  =  0.0625*(1.0-s)*(1.0-t)*(1.0+6.0*r+s+4.0*r*s+t+2.0*r*t-s*t+4.0*r*s*t);
     dN[1]  = -0.0625*(1.0-s)*(1.0-t)*(1.0-6.0*r+s-4.0*r*s+t-2.0*r*t-s*t-4.0*r*s*t);
@@ -5435,24 +5435,24 @@ double MinMod(double v1, double v2)
 
 /**************************************************************************
 MSHLib-Method:
-Task: Flux limiter function: Superbee 
+Task: Flux limiter function: Superbee
 Programing:
 04/2010 NW Implementation
 **************************************************************************/
 double SuperBee(double v1, double v2)
-{  
-  if (v1*v2 < 0.0) return 0.0;  
-  //max{min{2|a|, |b|},min{|a|, 2|b|}}.  
-  double a1 = std::min(2.0*fabs(v1), fabs(v2));  
-  double a2 = std::min(fabs(v1), 2.0*fabs(v2));  
-  double ret = std::max(a1,a2);  
-  if (v1 > 0.0) return ret;  
+{
+  if (v1*v2 < 0.0) return 0.0;
+  //max{min{2|a|, |b|},min{|a|, 2|b|}}.
+  double a1 = std::min(2.0*fabs(v1), fabs(v2));
+  double a2 = std::min(fabs(v1), 2.0*fabs(v2));
+  double ret = std::max(a1,a2);
+  if (v1 > 0.0) return ret;
   else return -ret;
 }
 
 /**************************************************************************
 MSHLib-Method:
-Task: Flux limiter function: Superbee 
+Task: Flux limiter function: Superbee
 Programing:
 04/2010 NW Implementation
 **************************************************************************/
@@ -5472,19 +5472,19 @@ double GetFCTADiff(double K_ij, double K_ji)
 /*!
     \brief Binary search a array
      The array must be sorted
-     
-     \param arr     an array 
+
+     \param arr     an array
      \param target  searched index
-     \param start   the start index of the array 
+     \param start   the start index of the array
      \parm  end     the end index of the array
-     
+
      By WW. 03.2011
-    
+
 */
-long binarySearch(long *arr, long target, long start, long end) 
+long binarySearch(long *arr, long target, long start, long end)
 {
    long middle;
-   while (start <= end) 
+   while (start <= end)
    {
       middle = (start + end) / 2;
       if (arr[middle] == target)

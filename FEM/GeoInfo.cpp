@@ -30,23 +30,20 @@ GEOLIB::GEOTYPE GeoInfo::getGeoType () const
 
 std::string GeoInfo::getGeoTypeAsString () const
 {
-   switch (_geo_type)
-   {
-      case GEOLIB::POINT:
-         return "POINT";
-      case GEOLIB::POLYLINE:
-         return "POLYLINE";
-      case GEOLIB::SURFACE:
-         return "SURFACE";
-      case GEOLIB::VOLUME:
-         return "VOLUME";
-      case GEOLIB::GEODOMAIN:
-         return "DOMAIN";
-	  case GEOLIB::COLUMN:
-         return "COLUMN";
-      default:
-         return "";
-   }
+   switch (_geo_type) {
+	case GEOLIB::POINT:
+		return "POINT";
+	case GEOLIB::POLYLINE:
+		return "POLYLINE";
+	case GEOLIB::SURFACE:
+		return "SURFACE";
+	case GEOLIB::VOLUME:
+		return "VOLUME";
+	case GEOLIB::GEODOMAIN:
+		return "DOMAIN";
+	default:
+		return "";
+	}
 }
 
 

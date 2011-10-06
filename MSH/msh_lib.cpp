@@ -11,7 +11,7 @@ Programing:
 #include <vector>
 
 // FileIO
-#include "GMSHInterface.h"
+#include "MeshIO/GMSHInterface.h"
 
 // GEOLib
 #include "geo_lib.h"
@@ -96,28 +96,25 @@ Programing:
 08/2010 KR deleted binary mesh read
 03/2011 KR cleaned up code
 08/2011 WW Recovery multi-mesh
+09/2011 TF changed signature of function in order to read more than one mesh
 **************************************************************************/
-
-CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj, std::string* unique_name)
+void FEMRead(const std::string &file_base_name,
+		std::vector<CFEMesh*>& mesh_vec, GEOLIB::GEOObjects* geo_obj, std::string* unique_name)
 {
-   CFEMesh *fem_msh (NULL);
-   std::string msh_file_name = file_base_name + FEM_FILE_EXTENSION;
+   CFEMesh *mesh (NULL);
+   std::string msh_file_name (file_base_name + FEM_FILE_EXTENSION);
 
    // test if this is a GMSH mesh
-   if (FileIO::GMSHInterface::isGMSHMeshFile (msh_file_name))
-   {
-      fem_msh = new CFEMesh();
-      GMSH2MSH(msh_file_name.c_str(), fem_msh);
-      fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
-
-	  return fem_msh;
+   if (FileIO::GMSHInterface::isGMSHMeshFile (msh_file_name)) {
+      mesh = new CFEMesh();
+      GMSH2MSH(msh_file_name.c_str(), mesh);
+      mesh_vec.push_back(mesh);
    }
 
    std::ifstream msh_file_ascii (msh_file_name.data(),std::ios::in);
    if (!msh_file_ascii.is_open())
    {
 	   std::cout << "CFEMesh::FEMRead() - Could not open file...\n";
-	   return NULL;
    }
 
    std::cout << "MSHRead:  ASCII file" << std::endl;
@@ -127,20 +124,19 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    bool more_mesh = false; //12.08.2011. WW
    if(line_string.find("#FEM_MSH")!=std::string::npos)	// OGS mesh file
    {
-		fem_msh = new CFEMesh(geo_obj, unique_name);
-		more_mesh = fem_msh->Read(&msh_file_ascii);
-        fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
+		mesh = new CFEMesh(geo_obj, unique_name);
+		more_mesh = mesh->Read(&msh_file_ascii);
+        mesh_vec.push_back(mesh); // TF
 
 		//Multi-mesh 12.08.2011 WW
-		if(more_mesh)
-		{
+		if(more_mesh) {
            while(!msh_file_ascii.eof())
            {
            //getline(msh_file_ascii, line_string);
-          // if(line_string.find("#FEM_MSH")!=std::string::npos)
-               fem_msh = new CFEMesh(geo_obj, unique_name);
-              more_mesh = fem_msh->Read(&msh_file_ascii);
-              fem_msh_vector.push_back(fem_msh); 
+           // if(line_string.find("#FEM_MSH")!=std::string::npos)
+              mesh = new CFEMesh(geo_obj, unique_name);
+              more_mesh = mesh->Read(&msh_file_ascii);
+              mesh_vec.push_back(mesh); // TF
 			  if(!more_mesh)
                 break;
 		   }
@@ -151,13 +147,12 @@ CFEMesh* FEMRead(const std::string &file_base_name, GEOLIB::GEOObjects* geo_obj,
    else // RFI mesh file
    {
 	    msh_file_ascii.seekg(0L,std::ios::beg);
-		fem_msh = new CFEMesh(geo_obj, unique_name);
-		Read_RFI(msh_file_ascii, fem_msh);
-        fem_msh_vector.push_back(fem_msh); //12.08.2011 WW
+		mesh = new CFEMesh(geo_obj, unique_name);
+		Read_RFI(msh_file_ascii, mesh);
+        mesh_vec.push_back(mesh); //12.08.2011 WW
    }
 
    msh_file_ascii.close();
-   return fem_msh;
 }
 
 
@@ -391,9 +386,10 @@ void MSHWriteVOL2TEC(std::string m_msh_name)
             x=0.0; y=0.0; z=0.0;
             for(j=0;j<6;j++)
             {
-               x += m_msh->nod_vector[node_indeces[j]]->X();
-               y += m_msh->nod_vector[node_indeces[j]]->Y();
-               z += m_msh->nod_vector[node_indeces[j]]->Z();
+            	double const*const pnt (m_msh->nod_vector[node_indeces[j]]->getData());
+               x += pnt[0];
+               y += pnt[1];
+               z += pnt[2];
             }
             x /= double(6);
             y /= double(6);
@@ -415,8 +411,8 @@ void MSHWriteVOL2TEC(std::string m_msh_name)
          << "F = FEPOINT" << ", " << "ET = BRICK" << std::endl;
       for(i=0;i<no_nodes;i++)
       {
-         vol_file \
-            << m_msh->nod_vector[i]->X() << " " << m_msh->nod_vector[i]->Y() << " " << m_msh->nod_vector[i]->Z() << " " << vol_number << std::endl;
+    	  double const*const pnt_i(m_msh->nod_vector[i]->getData());
+         vol_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << " " << vol_number << std::endl;
       }
       for(long i=jb;i<je;i++)
       {
@@ -427,9 +423,10 @@ void MSHWriteVOL2TEC(std::string m_msh_name)
             x=0.0; y=0.0; z=0.0;
             for(j=0;j<6;j++)
             {
-               x += m_msh->nod_vector[node_indeces[j]]->X();
-               y += m_msh->nod_vector[node_indeces[j]]->Y();
-               z += m_msh->nod_vector[node_indeces[j]]->Z();
+            	 double const*const pnt_j(m_msh->nod_vector[node_indeces[j]]->getData());
+               x += pnt_j[0];
+               y += pnt_j[1];
+               z += pnt_j[2];
             }
             x /= double(6);
             y /= double(6);
@@ -507,9 +504,8 @@ void MSHWriteTecplot()
             msh_file << "ET = QUADRILATERAL" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -523,11 +519,9 @@ void MSHWriteTecplot()
             //..................................................................
          case MshElemType::QUAD:
             msh_file << "ET = QUADRILATERAL" << std::endl;
-            for (i = 0; i < no_nodes; i++)
-            {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            for (i = 0; i < no_nodes; i++) {
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+				msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -541,11 +535,9 @@ void MSHWriteTecplot()
             //..................................................................
          case MshElemType::HEXAHEDRON:
             msh_file << "ET = BRICK" << std::endl;
-            for (i = 0; i < no_nodes; i++)
-            {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            for (i = 0; i < no_nodes; i++) {
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+            	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -563,9 +555,8 @@ void MSHWriteTecplot()
             msh_file << "ET = TRIANGLE" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+            	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -580,9 +571,8 @@ void MSHWriteTecplot()
             msh_file << "ET = TETRAHEDRON" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+            	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -598,9 +588,8 @@ void MSHWriteTecplot()
             msh_file << "ET = BRICK" << std::endl;
             for (i = 0; i < no_nodes; i++)
             {
-               msh_file << m_msh->nod_vector[i]->X() << " "
-                  << m_msh->nod_vector[i]->Y() << " "
-                  << m_msh->nod_vector[i]->Z() << std::endl;
+            	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+            	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
             }
             for (i = 0; i < no_elements; i++)
             {
@@ -693,12 +682,10 @@ void MSHLayerWriteTecplot()
             //..................................................................
             case MshElemType::LINE:
                msh_file << "ET = QUADRILATERAL" << std::endl;
-               for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
-               {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
-               }
+               for (size_t i = 0; i < m_msh->nod_vector.size(); i++) {
+					double const* const pnt_i(m_msh->nod_vector[i]->getData());
+					msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
+				}
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
                   m_ele = m_msh->ele_vector[i];
@@ -713,9 +700,8 @@ void MSHLayerWriteTecplot()
                msh_file << "ET = QUADRILATERAL" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
+               	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -731,9 +717,8 @@ void MSHLayerWriteTecplot()
                msh_file << "ET = BRICK" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
+               	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -752,9 +737,8 @@ void MSHLayerWriteTecplot()
                msh_file << "ET = TRIANGLE" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
+               	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -769,9 +753,8 @@ void MSHLayerWriteTecplot()
                msh_file << "ET = TETRAHEDRON" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
+               	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -787,9 +770,8 @@ void MSHLayerWriteTecplot()
                msh_file << "ET = BRICK" << std::endl;
                for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
                {
-                  msh_file << m_msh->nod_vector[i]->X() << " "
-                     << m_msh->nod_vector[i]->Y() << " "
-                     << m_msh->nod_vector[i]->Z() << std::endl;
+               	double const*const pnt_i(m_msh->nod_vector[i]->getData());
+               	msh_file << pnt_i[0] << " " << pnt_i[1] << " " << pnt_i[2] << std::endl;
                }
                for (size_t i = k * no_elements; i < (k + 1) * no_elements; i++)
                {
@@ -1132,7 +1114,7 @@ void MSHSetFractureElements(void)
             //calculating segment length
             point_x[0]=frac_top->point_vector[k+1]->x;    point_y[0]=frac_top->point_vector[k+1]->y;
             point_x[1]=frac_top->point_vector[k]->x;        point_y[1]=frac_top->point_vector[k]->y;
-            seg_length = sqrt(   pow( (point_x[1]-point_x[0]), 2 ) + pow( (point_y[1]-point_y[0]), 2 )   );
+            seg_length = sqrt((point_x[1]-point_x[0]) * (point_x[1]-point_x[0]) + (point_y[1]-point_y[0])*(point_y[1]-point_y[0]));
 
                                                   //loop6, over elements in segment
             for(long l=0; l<(long)segment_elements[j][k].size(); ++l)
@@ -1689,7 +1671,7 @@ void MSHMoveNODUcFlow (CRFProcess*m_pcs)
 
          if(m_pcs_OLF!=NULL)
          {
-            SurfaceZ = m_pcs_OLF->m_msh->nod_vector[strang[0]]->Z();
+            SurfaceZ = m_pcs_OLF->m_msh->nod_vector[strang[0]]->getData()[2];
             if (head > SurfaceZ)
             {
                head = SurfaceZ;
@@ -1697,7 +1679,7 @@ void MSHMoveNODUcFlow (CRFProcess*m_pcs)
          }
 
          /* Set minimum thickness */
-         z_bottom = m_pcs->m_msh->nod_vector[strang[anz_zeilen]]->Z();
+         z_bottom = m_pcs->m_msh->nod_vector[strang[anz_zeilen]]->getData()[2];
          if(head - z_bottom < MinThickness)
             head = z_bottom + MinThickness;
 

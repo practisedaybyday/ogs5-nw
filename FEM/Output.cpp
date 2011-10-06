@@ -1,12 +1,13 @@
 /**
  * \file FEM/Output.cpp
  * 05/04/2011 LB Refactoring: Moved from rf_out_new.h
- * 
+ *
  * Implementation of Output class
  */
 
 // ** INCLUDES **
 #include "Output.h"
+#include "Configure.h"
 
 #include <string>
 #include <fstream>
@@ -799,7 +800,6 @@ OK ??? too many specifics
 void COutput::WriteTECNodeData(fstream &tec_file)
 {
    const size_t nName(_nod_value_vector.size());
-   double x[3];
    double val_n = 0.;                             //WW
    int nidx, nidx_dm[3];
    vector<int> NodeIndex(nName);
@@ -836,12 +836,13 @@ void COutput::WriteTECNodeData(fstream &tec_file)
       else
          nidx_dm[2] = -1;
    }
-   for (size_t j = 0l; j < m_msh->GetNodesNumber(false); j++)
+   for (size_t j = 0; j < m_msh->GetNodesNumber(false); j++)
    {
       // XYZ
-      x[0] = m_msh->nod_vector[j]->X();
-      x[1] = m_msh->nod_vector[j]->Y();
-      x[2] = m_msh->nod_vector[j]->Z();
+	   double x[3] = {(m_msh->nod_vector[j]->getData())[0], (m_msh->nod_vector[j]->getData())[1], (m_msh->nod_vector[j]->getData())[2]};
+//      x[0] = m_msh->nod_vector[j]->X();
+//      x[1] = m_msh->nod_vector[j]->Y();
+//      x[2] = m_msh->nod_vector[j]->Z();
       // Amplifying DISPLACEMENTs
       if (M_Process || MH_Process)                //WW
       {
@@ -869,8 +870,7 @@ void COutput::WriteTECNodeData(fstream &tec_file)
                   timelevel = 0;
                   for (size_t m = 0; m < m_pcs->nod_val_name_vector.size(); m++)
                   {
-                     if (m_pcs->nod_val_name_vector[m].compare(
-                        nod_value_name) == 0)
+                     if (m_pcs->nod_val_name_vector[m].compare(nod_value_name) == 0)
                      {
                         m_pcs_out = PCSGet(MASS_TRANSPORT, nod_value_name);
                         if (!m_pcs_out)
@@ -1116,13 +1116,12 @@ void COutput::WriteELEValuesTECData(fstream &tec_file)
    vector<int> ele_value_index_vector(no_ele_values);
    GetELEValuesIndexVector(ele_value_index_vector);
 
-   double* xyz;
    MeshLib::CElem* m_ele = NULL;
    FiniteElement::ElementValue* gp_ele = NULL;
    for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
    {
       m_ele = m_msh->ele_vector[i];
-      xyz = m_ele->GetGravityCenter();
+      double const* xyz(m_ele->GetGravityCenter());
       tec_file << xyz[0] << " " << xyz[1] << " " << xyz[2] << " ";
       if (out_element_vel)                        //WW
       {
@@ -1763,15 +1762,15 @@ void COutput::WriteRFOHeader(fstream &rfo_file)
 
 void COutput::WriteRFONodes(fstream &rfo_file)
 {
-   //0 101 100
-   rfo_file << 0 << " " << (long)m_msh->nod_vector.size() << " " << (long)m_msh->ele_vector.size() << endl;
-   //0 0.00000000000000 0.00000000000000 0.00000000000000
-   MeshLib::CNode* m_nod = NULL;
-   for(long i=0;i<(long)m_msh->nod_vector.size();i++)
-   {
-      m_nod = m_msh->nod_vector[i];
-      rfo_file << i << " " << m_nod->X() << " " << m_nod->Y() << " " << m_nod->Z() << " " << endl;
-   }
+	//0 101 100
+	rfo_file << 0 << " " << m_msh->nod_vector.size() << " "
+			<< m_msh->ele_vector.size() << std::endl;
+	//0 0.00000000000000 0.00000000000000 0.00000000000000
+	for (size_t i = 0; i < m_msh->nod_vector.size(); i++) {
+		double const*const pnt_i (m_msh->nod_vector[i]->getData());
+		rfo_file << i << " " << pnt_i[0] << " " << pnt_i[1] << " "
+				<< pnt_i[2] << " " << std::endl;
+	}
 }
 
 
@@ -1924,11 +1923,11 @@ void COutput::NODWriteSFCDataTEC(int number)
    if (m_sfc)
    {
       m_msh->GetNODOnSFC(m_sfc, nodes_vector);
-      for (size_t i = 0; i < m_msh->nod_vector.size(); i++)
-      {
-         tec_file << m_msh->nod_vector[i]->X() << " ";
-         tec_file << m_msh->nod_vector[i]->Y() << " ";
-         tec_file << m_msh->nod_vector[i]->Z() << " ";
+      for (size_t i = 0; i < m_msh->nod_vector.size(); i++) {
+    	  double const*const pnt_i (m_msh->nod_vector[i]->getData());
+         tec_file << pnt_i[0] << " ";
+         tec_file << pnt_i[1] << " ";
+         tec_file << pnt_i[2] << " ";
          for (size_t k = 0; k < _nod_value_vector.size(); k++)
          {
             int nidx = m_pcs->GetNodeValueIndex(_nod_value_vector[k]) + 1;
@@ -2410,11 +2409,11 @@ void COutput::ELEWriteSFC_TECData(fstream &tec_file)
             v[1] = m_pcs->GetElementValue(m_ele->GetIndex(),nidx[1]);
             v[2] = m_pcs->GetElementValue(m_ele->GetIndex(),nidx[2]);
             m_ele_neighbor->SetNormalVector();
-             
+
             v_n = v[0]*m_ele_neighbor->normal_vector[0] \
                + v[1]*m_ele_neighbor->normal_vector[1] \
                + v[2]*m_ele_neighbor->normal_vector[2];
-	    
+
          }
       }
    }
@@ -2625,12 +2624,11 @@ void COutput::ELEWritePLY_TECData(fstream &tec_file)
          if (m_edg->GetMark())
          {
             m_edg->GetNodes(edge_nodes);
-            edge_mid_vector[0] = 0.5 * (edge_nodes[1]->X()
-               + edge_nodes[0]->X());
-            edge_mid_vector[1] = 0.5 * (edge_nodes[1]->Y()
-               + edge_nodes[0]->Y());
-            edge_mid_vector[2] = 0.5 * (edge_nodes[1]->Z()
-               + edge_nodes[0]->Z());
+            double const*const pnt0(edge_nodes[0]->getData());
+            double const*const pnt1(edge_nodes[1]->getData());
+            edge_mid_vector[0] = 0.5 * (pnt1[0] + pnt0[0]);
+            edge_mid_vector[1] = 0.5 * (pnt1[1] + pnt0[1]);
+            edge_mid_vector[2] = 0.5 * (pnt1[2] + pnt0[2]);
          }
       }
       tec_file << edge_mid_vector[0] << " " << edge_mid_vector[1] << " "
@@ -2791,9 +2789,10 @@ void COutput::NODWriteLAYDataTEC(int time_step_number)
          jl = j + j * m_msh->getNumberOfMeshLayers() + l;
          //..................................................................
          // XYZ
-         tec_file << m_msh->nod_vector[jl]->X() << " ";
-         tec_file << m_msh->nod_vector[jl]->Y() << " ";
-         tec_file << m_msh->nod_vector[jl]->Z() << " ";
+         double const*const pnt (m_msh->nod_vector[jl]->getData());
+         tec_file << pnt[0] << " ";
+         tec_file << pnt[1] << " ";
+         tec_file << pnt[2] << " ";
          tec_file << jl << " ";
          //..................................................................
          for (size_t k = 0; k < nName; k++)
@@ -3094,7 +3093,6 @@ Programing:
 void COutput::WriteTECNodePCONData(fstream &tec_file)
 {
    const size_t nName (_pcon_value_vector.size());
-   double x[3];
    int nidx_dm[3];
    std::vector<int> PconIndex(nName);
 
@@ -3127,9 +3125,10 @@ void COutput::WriteTECNodePCONData(fstream &tec_file)
    for (size_t j = 0l; j < m_msh->GetNodesNumber(false); j++)
    {
       // XYZ
-      x[0] = m_msh->nod_vector[j]->X();
-      x[1] = m_msh->nod_vector[j]->Y();
-      x[2] = m_msh->nod_vector[j]->Z();
+	   double x[3] = {m_msh->nod_vector[j]->getData()[0], m_msh->nod_vector[j]->getData()[1],m_msh->nod_vector[j]->getData()[2]};
+//      x[0] = m_msh->nod_vector[j]->X();
+//      x[1] = m_msh->nod_vector[j]->Y();
+//      x[2] = m_msh->nod_vector[j]->Z();
       // Amplifying DISPLACEMENTs
       if (M_Process || MH_Process)                //WW
       {
@@ -3196,9 +3195,6 @@ void COutput::checkConsistency ()
                   std::cout << "VOLUME " << getGeoName() << std::endl;
                   break;
                case GEOLIB::GEODOMAIN:
-                  std::cout << "DOMAIN " << getGeoName() << std::endl;
-                  break;
-               case GEOLIB::COLUMN:
                   std::cout << "DOMAIN " << getGeoName() << std::endl;
                   break;
                case GEOLIB::INVALID:

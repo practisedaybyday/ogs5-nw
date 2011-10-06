@@ -90,9 +90,9 @@ public:
 
 		// check if point is already in quadtree
 		bool pnt_in_quadtree (false);
-		double equal_pnt_dist (MathLib::fastpow(2.0, _depth) * fabs(_ll[0] - _ur[0]) * 1e-6);
+		double equal_pnt_dist (MathLib::fastpow(2, _depth) * fabs(_ll[0] - _ur[0]) * 1e-6);
 		for (size_t k(0); k<_pnts.size() && !pnt_in_quadtree; k++) {
-			const double sqr_dist (MathLib::fastpow((*(_pnts[k]))[0] - (*pnt)[0], 2) + MathLib::fastpow((*(_pnts[k]))[1] - (*pnt)[1], 2));
+			const double sqr_dist (MathLib::sqrDist(_pnts[k]->getData(), pnt->getData()));
 			if (sqr_dist < equal_pnt_dist) {
 				pnt_in_quadtree = true;
 			}
@@ -245,18 +245,29 @@ public:
 		}
 	}
 
-private :
+	QuadTree<POINT> const * getFather ()
+	{
+		return _father;
+	}
+
+	QuadTree<POINT> const * getChild (Quadrant quadrant) const
+	{
+		return _childs[quadrant];
+	}
+
+
+private:
+	QuadTree<POINT> * getChild (Quadrant quadrant)
+	{
+		return _childs[quadrant];
+	}
+
 	bool isLeaf () const { return _is_leaf; }
 
 	bool isChild (QuadTree<POINT> const * const tree, Quadrant quadrant) const
 	{
 		if (_childs[quadrant] == tree) return true;
 		return false;
-	}
-
-	QuadTree<POINT> * getChild (Quadrant quadrant) const
-	{
-		return _childs[quadrant];
 	}
 
 	QuadTree<POINT>* getNorthNeighbor () const

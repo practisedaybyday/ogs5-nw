@@ -21,7 +21,7 @@ namespace MathLib {
  * \param v1 array of type T representing the vector
  * \param n the size of the array
  * */
-template<class T>
+template<class T> inline
 double scpr(const T* v0, const T* v1, size_t n) {
 	long double res(0.0);
 	for (size_t k(0); k<n; k++)
@@ -89,12 +89,13 @@ double getAngle (const double p0[3], const double p1[3], const double p2[3]);
  * @param exp exponent of the expression
  * @return base^exp
  */
-template <typename T>
+template <typename T> inline
 T fastpow (T base, size_t exp)
 {
 	T result (base);
-	for (size_t k(0); k<exp; k++) {
-		result *= result;
+	if (exp == 0) result = static_cast<T>(1);
+	for (size_t k(1); k<exp; k++) {
+		result *= base;
 	}
 	return result;
 }

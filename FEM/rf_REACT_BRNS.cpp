@@ -1,5 +1,3 @@
-#include "Configure.h"
-
 #include "rf_REACT_BRNS.h"
 #include "rf_pcs.h"
 #include "rfmat_cp.h"
@@ -437,9 +435,9 @@ void REACT_BRNS::RUN(double time_step)
 #endif
    {
       // Check out if this node is on the boundary - A fixed boundary condition
-      pos_x = m_pcs->m_msh->nod_vector[i]->X();
-      pos_y = m_pcs->m_msh->nod_vector[i]->Y();
-      pos_z = m_pcs->m_msh->nod_vector[i]->Z();
+      pos_x = m_pcs->m_msh->nod_vector[i]->getData()[0];
+      pos_y = m_pcs->m_msh->nod_vector[i]->getData()[1];
+      pos_z = m_pcs->m_msh->nod_vector[i]->getData()[2];
 
       //------------------------
       // Prepare porosity and waterSaturation values (weighted sums?), or move to Buffer<->GSRF methods

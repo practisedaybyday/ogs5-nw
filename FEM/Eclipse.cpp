@@ -1716,8 +1716,8 @@ Return: nothing
 Programming: 09/2009 BG
 Modification:
 -------------------------------------------------------------------------*/
-bool CECLIPSEData::CorrespondingElements(void){
-  double *grav_c;
+bool CECLIPSEData::CorrespondingElements()
+{
   MeshLib::CElem* m_ele = NULL;
   CFEMesh* m_msh = fem_msh_vector[0];
 
@@ -1740,7 +1740,7 @@ bool CECLIPSEData::CorrespondingElements(void){
   for (unsigned long i = 0; i < m_msh->ele_vector.size(); i++){
     for (long j = 0; j < this->elements; j++){
 	  m_ele = m_msh->ele_vector[i];
-      grav_c = m_ele->GetGravityCenter();
+      double const* grav_c(m_ele->GetGravityCenter());
 	  //check if coordinates of the gravity centre are equal
 	  if ((grav_c[0] == this->eclgrid[j]->x_barycentre) && (grav_c[1] == this->eclgrid[j]->y_barycentre) && (grav_c[2] == -this->eclgrid[j]->z_barycentre)) {
         CorrespondingEclipseElement[i] = j;
@@ -1776,7 +1776,6 @@ bool CECLIPSEData::CompareElementsGeosysEclipse(){
 	MeshLib::CElem* m_ele = NULL;
 	CFEMesh* m_msh = fem_msh_vector[0];
 	Math_Group::vec<MeshLib::CNode*> ele_nodes(8);
-	MeshLib::CNode* a_node=NULL;
 	clock_t start,finish;
 	double time;
 	double epsilon = 1e-7;
@@ -1802,29 +1801,37 @@ bool CECLIPSEData::CompareElementsGeosysEclipse(){
 		//	cout << a_node->X() << " " << a_node->Y() << " " << a_node->Z() << " ECL " << this->eclgrid[i]->x_coordinates[j] << " " << this->eclgrid[i]->y_coordinates[j]  << " " << this->eclgrid[i]->z_coordinates[j] << endl;
 		//}
 		//A loop can't be used because the order of nodes is not equal
-		a_node = ele_nodes[0];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[0]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[0]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[0]) > epsilon)
+
+		double const* pnt (ele_nodes[0]->getData());
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[0]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[0]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[0]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[1];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[1]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[1]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[1]) > epsilon)
+
+		pnt = ele_nodes[1]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[1]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[1]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[1]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[2];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[3]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[3]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[3]) > epsilon)
+
+		pnt = ele_nodes[2]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[3]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[3]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[3]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[3];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[2]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[2]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[2]) > epsilon)
+
+		pnt = ele_nodes[3]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[2]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[2]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[2]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[4];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[4]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[4]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[4]) > epsilon)
+
+		pnt = ele_nodes[4]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[4]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[4]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[4]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[5];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[5]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[5]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[5]) > epsilon)
+
+		pnt = ele_nodes[5]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[5]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[5]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[5]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[6];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[7]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[7]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[7]) > epsilon)
+
+		pnt = ele_nodes[6]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[7]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[7]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[7]) > epsilon)
 			ElementIsEqual = false;
-		a_node = ele_nodes[7];
-		if (fabs(a_node->X() - this->eclgrid[i]->x_coordinates[6]) > epsilon || fabs(a_node->Y() - this->eclgrid[i]->y_coordinates[6]) > epsilon  || fabs(a_node->Z() - -this->eclgrid[i]->z_coordinates[6]) > epsilon)
+
+		pnt = ele_nodes[7]->getData();
+		if (fabs(pnt[0] - this->eclgrid[i]->x_coordinates[6]) > epsilon || fabs(pnt[1] - this->eclgrid[i]->y_coordinates[6]) > epsilon  || fabs(pnt[2] - -this->eclgrid[i]->z_coordinates[6]) > epsilon)
 			ElementIsEqual = false;
 
 		if (ElementIsEqual == false) {
@@ -1832,7 +1839,7 @@ bool CECLIPSEData::CompareElementsGeosysEclipse(){
 		}
 
 		//Get the gravity centre of the element from geosys
-		double* gc = m_ele->GetGravityCenter();
+		double const* gc(m_ele->GetGravityCenter());
 		this->eclgrid[i]->x_barycentre = gc[0];
 		this->eclgrid[i]->y_barycentre = gc[1];
 		this->eclgrid[i]->z_barycentre = gc[2];
@@ -2623,7 +2630,6 @@ bool CECLIPSEData::MakeNodeVector(void)
 {
 	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
 	//CFaces *m_face=NULL;
-	MeshLib::CNode* m_node = NULL;
 	//WW double weights_xyz[3];
 	CPointData_ECL* m_NodeData = NULL;
 	m_NodeData = new CPointData_ECL;
@@ -2648,12 +2654,12 @@ bool CECLIPSEData::MakeNodeVector(void)
   if(this->NodeData.size() < 1)
   for (unsigned long i = 0; i < m_msh->nod_vector.size(); i++) {
 		// create new instance of CPointData
-		m_NodeData = new CPointData_ECL;
+		m_NodeData = new CPointData_ECL (m_msh->nod_vector[i]->getData());
 		//Get the node
-		m_node = m_msh->nod_vector[i];
-		m_NodeData->x = m_node->X();
-		m_NodeData->y = m_node->Y();
-		m_NodeData->z = m_node->Z();
+// TF		m_node = m_msh->nod_vector[i];
+// TF		m_NodeData->x = m_node->X();
+// TF		m_NodeData->y = m_node->Y();
+// TF		m_NodeData->z = m_node->Z();
 		m_NodeData->phase_pressure.resize(3);
 		m_NodeData->phase_saturation.resize(3);
 		m_NodeData->phase_density.resize(3);
@@ -2953,7 +2959,7 @@ void CECLIPSEData::InterpolateDataFromBlocksToNodes(CRFProcess *m_pcs, std::stri
 	double weight;
 	//double weights_xyz[3];
 	double sum_weights, sum_weights_density;
-	//WW double pressure, 
+	//WW double pressure,
         double saturation, sat, phase_pressure, phase_press, gas_dissolved, gas_dis;
 	double den, density;
 	//double press;
@@ -3216,67 +3222,65 @@ Task: Returns the Nodevelocity of Geosys; v at the node as a inverse distance
 Return: Velocity
 Programming: 11/2009 BG based on CB
 Modification:
+09/2011	TF changed access to coordinates of mesh node,
+	- substituted access to mesh_element from pointer to direct access into the vector
+	- made the mesh node a const pointer
+	- made the pointer to the mesh const, made the mesh itself const
+	- substituted pow(x,2) by x*x
 -------------------------------------------------------------------------*/
-void CECLIPSEData::InterpolateGeosysVelocitiesToNodes(CRFProcess *m_pcs, double *vel_nod, long node){
-	MeshLib::CNode* m_nod = NULL;
-	MeshLib::CElem* m_ele = NULL;
-	CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
+void CECLIPSEData::InterpolateGeosysVelocitiesToNodes(CRFProcess *m_pcs,
+		double *vel_nod, long node_number)
+{
+	CFEMesh const* const mesh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
+	long elem;
+	double vel_ele[3];
+	double distance, weight, sum_w (0.0);
+	double PoreVel(0.0); //WW , theta;
 
-	long i;
-	long el, elem;
-	long idxVx, idxVy, idxVz; //, idxs1;
-	double coord[3], vel_ele[3];
 	//double *vel_nod;
-	double distance, weight, sum_w ;
-	double* grav_c;
-	double PoreVel; //WW , theta;
-
 	//WW theta = m_pcs->m_num->ls_theta;
 
 	// initialize data structures
-	for(i=0;i<3;i++)
-		coord[i]=vel_nod[i]=vel_ele[i]=0;
-	sum_w = PoreVel = 0;
+	for (size_t i = 0; i < 3; i++)
+		vel_nod[i] = vel_ele[i] = 0;
 
 	// Get node coordinates
-	m_nod = m_msh->nod_vector[node];
-	m_nod->Coordinates(coord);
+	MeshLib::CNode const* node(mesh->nod_vector[node_number]);
+	double const* const coord(node->getData()); //Coordinates(coord);
 	// get the indices of velocity of flow process
-	idxVx = m_pcs->GetElementValueIndex("VELOCITY1_X") + 1;
-	idxVy = m_pcs->GetElementValueIndex("VELOCITY1_Y") + 1;
-	idxVz = m_pcs->GetElementValueIndex("VELOCITY1_Z") + 1;
+	long idxVx = m_pcs->GetElementValueIndex("VELOCITY1_X") + 1;
+	long idxVy = m_pcs->GetElementValueIndex("VELOCITY1_Y") + 1;
+	long idxVz = m_pcs->GetElementValueIndex("VELOCITY1_Z") + 1;
 
-	for(el=0;el<(int)m_nod->getConnectedElementIDs().size();el++){
+	for (size_t el = 0; el < node->getConnectedElementIDs().size(); el++) {
 		distance = weight = 0; // initialize for each connected element
-		elem = m_nod->getConnectedElementIDs()[el];
-		m_ele = m_msh->ele_vector[elem];
+		elem = node->getConnectedElementIDs()[el];
 
 		// get the velocity components of element elem
 		// if idxVx = 0 it implies that the index for this parameter doesn't exist
-		if (idxVx!=0) vel_ele[0] = m_pcs->GetElementValue(elem, idxVx);
-		if (idxVy!=0) vel_ele[1] = m_pcs->GetElementValue(elem, idxVy);
-		if (idxVz!=0) vel_ele[2] = m_pcs->GetElementValue(elem, idxVz);
+		if (idxVx != 0) vel_ele[0] = m_pcs->GetElementValue(elem, idxVx);
+		if (idxVy != 0) vel_ele[1] = m_pcs->GetElementValue(elem, idxVy);
+		if (idxVz != 0) vel_ele[2] = m_pcs->GetElementValue(elem, idxVz);
 		// calculate distance node <-> element center of gravity
-		grav_c = m_ele->GetGravityCenter();
-		for(i=0;i<3;i++)
-		  distance += pow((coord[i]-grav_c[i]),2);
+		double const* grav_c(mesh->ele_vector[elem]->GetGravityCenter());
+		for (size_t i = 0; i < 3; i++)
+			distance += (coord[i] - grav_c[i]) * (coord[i] - grav_c[i]); // TF pow((coord[i]-grav_c[i]),2);
 		// linear inverse distance weight = 1/(distance)
 		distance = sqrt(distance);// for quadratic interpolation uncomment this line
-		weight=(1/distance);
+		weight = (1 / distance);
 		sum_w += weight;
-		for(i=0;i<3;i++)
-		  // the 3 velocity components
-		  vel_nod[i] += vel_ele[i]*weight;
+		for (size_t i = 0; i < 3; i++)
+			// the 3 velocity components
+			vel_nod[i] += vel_ele[i] * weight;
 	}
 	// normalize weighted sum by sum_of_weights sum_w
-	for(i=0;i<3;i++)
-		vel_nod[i] *= 1/sum_w;
+	const double sum_w_inv(1.0 / sum_w);
+	for (size_t i = 0; i < 3; i++)
+		vel_nod[i] *= sum_w_inv;
 	// absolute value of velocity vector
-	for(i=0;i<3;i++)
-		PoreVel += pow(vel_nod[i],2);
+	for (size_t i = 0; i < 3; i++)
+		PoreVel += vel_nod[i] * vel_nod[i]; // TF pow(vel_nod[i],2);
 	PoreVel = sqrt(PoreVel);
-
-//	return vel_nod;
 }
 
 /*-------------------------------------------------------------------------

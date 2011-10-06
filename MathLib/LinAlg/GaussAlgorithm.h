@@ -67,10 +67,6 @@ private:
 	 * the permutation of the rows
 	 */
 	size_t* _perm;
-	/**
-	 * the pivot index
-	 */
-	int* _pivot_idx;
 };
 
 } // end namespace MathLib

@@ -18,12 +18,12 @@ set( SOURCES
 	PointVec.cpp
 	Polygon.cpp
 	Polyline.cpp
-	PolylineSmoother.cpp
 	ProjectData.cpp
 	SimplePolygonTree.cpp
 	Station.cpp
 	Surface.cpp
 	Triangle.cpp
+	Raster.cpp
 )
 
 # Header files
@@ -49,7 +49,6 @@ set( HEADERS
 	PointWithID.h
 	Polygon.h
 	Polyline.h
-	PolylineSmoother.h
 	PolylineVec.h
 	ProjectData.h
 	PropertyBounds.h
@@ -61,6 +60,7 @@ set( HEADERS
 	TemplatePoint.h
 	TemplateVec.h
 	Triangle.h
+	Raster.h
 )
 
 # Create the library
