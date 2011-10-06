@@ -10,18 +10,17 @@
 
 #include "MeshQualityChecker.h"
 
-namespace MeshLib {
-
-class MeshQualityNormalisedVolumes : public MeshQualityChecker {
+namespace MeshLib
+{
+class MeshQualityNormalisedVolumes : public MeshQualityChecker
+{
 public:
-	MeshQualityNormalisedVolumes(CFEMesh const * const mesh);
-	virtual ~MeshQualityNormalisedVolumes() {};
+	MeshQualityNormalisedVolumes(CFEMesh const* const mesh);
+	virtual ~MeshQualityNormalisedVolumes() {}
 
 	virtual void check ();
 	virtual void getHistogramm (std::vector<size_t>& histogramm) const;
-
 };
-
 }
 
 #endif /* MESHQUALITYNORMALISEDVOLUMES_H_ */

@@ -1,56 +1,52 @@
 /*
 
-			dtm_gptriangle.h
-			>GpTriangle Class
-			>>based Group Class
-			>>manage all triangle elements
+            dtm_gptriangle.h
+            >GpTriangle Class
+            >>based Group Class
+            >>manage all triangle elements
 
-			last update : 2003.12.08			by t.manabe
+            last update : 2003.12.08			by t.manabe
 
-  */
+ */
 
 #ifndef DTM_GPTRIANGLE_H
-#define DTM_GPTRIANGLE_H	2
+#define DTM_GPTRIANGLE_H    2
 
-#include<deque>
+#include <deque>
 
 using namespace std;
 
-#include"dtm_node.h"
-#include"dtm_triangle.h"
-#include"dtm_group.h"
+#include "dtm_group.h"
+#include "dtm_node.h"
+#include "dtm_triangle.h"
 
-namespace dtm{
+namespace dtm
+{
+class GpTriangle    :   public Group
+{
+private:
+	deque<Triangle*>triangle;
 
+public:
+	/* constructor and destructor */
 
-	class GpTriangle	:	public Group
-	{
-	private:
-		deque<Triangle*>triangle;
+	GpTriangle();
+	~GpTriangle();
 
-	public:
-		/* constructor and destructor */
+	/* override of Group methods */
 
-		GpTriangle();
-		~GpTriangle();
+	virtual int getSize();
+	virtual void clear();
+	virtual int erase(int id);
 
+	/* original meshods */
 
-		/* override of Group methods */
+	virtual Triangle* getTriangle(int index);
+	virtual Triangle* makeNewTriangle(Node* nd1,Node* nd2,Node* nd3);
 
-		virtual int getSize();
-		virtual void clear();
-		virtual int erase(int id);
-
-
-		/* original meshods */
-
-		virtual Triangle* getTriangle(int index);
-		virtual Triangle* makeNewTriangle(Node *nd1,Node *nd2,Node *nd3);
-
-		//
-		virtual void view();
-	};
-
+	//
+	virtual void view();
+};
 }
 
 #endif

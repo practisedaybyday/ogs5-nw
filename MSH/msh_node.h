@@ -1,16 +1,16 @@
 /**************************************************************************
-MSHLib - Object:
-Task:
-Programing:
-08/2005 WW/OK Encapsulation from rf_ele_msh
-last modified
+   MSHLib - Object:
+   Task:
+   Programing:
+   08/2005 WW/OK Encapsulation from rf_ele_msh
+   last modified
 **************************************************************************/
 #ifndef msh_node_INC
 #define msh_node_INC
 
+#include "matrix_class.h"
 #include <string>
 #include <vector>
-#include "matrix_class.h"
 
 // MSHLib
 #include "msh_core.h"
@@ -18,7 +18,8 @@ last modified
 namespace MeshLib
 {
 // Class definition
-class CNode: public CCore {
+class CNode : public CCore
+{
 public:
 	int free_surface; //MB ??? mobile
 	// The vector to store the representative element index.
@@ -37,7 +38,7 @@ public:
 	CNode(size_t Index);
 	CNode(size_t Index, double x, double y, double z = 0.0);
 	CNode(size_t Index, double const* coordinates);
-	CNode(size_t Index, const CNode* parent);//NW
+	CNode(size_t Index, const CNode* parent); //NW
 	~CNode()
 	{
 	}
@@ -124,6 +125,5 @@ private:
 	std::vector<size_t> _connected_nodes; //OK
 	std::vector<size_t> _connected_elements;
 };
-
 }                                                 // namespace MeshLib
 #endif

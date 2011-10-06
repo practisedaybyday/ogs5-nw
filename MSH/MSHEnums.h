@@ -23,7 +23,7 @@ struct MshElemType
 		TRIANGLE = 4,
 		TETRAHEDRON = 5,
 		PRISM = 6,
-        PYRAMID = 7,
+		PYRAMID = 7,
 		INVALID = -1
 	};
 };

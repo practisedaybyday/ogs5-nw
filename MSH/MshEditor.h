@@ -6,12 +6,12 @@
 #ifndef MSHEDITOR_H
 #define MSHEDITOR_H
 
-#include <vector>
 #include <cstddef>
+#include <vector>
 
 namespace MeshLib
 {
-	class CFEMesh;
+class CFEMesh;
 }
 
 /**
@@ -20,14 +20,13 @@ namespace MeshLib
 class MshEditor
 {
 public:
-	MshEditor() {};
-	~MshEditor() {};
+	MshEditor() {}
+	~MshEditor() {}
 
-	static MeshLib::CFEMesh* removeMeshNodes(MeshLib::CFEMesh* mesh, const std::vector<size_t> &nodes);
+	static MeshLib::CFEMesh* removeMeshNodes(MeshLib::CFEMesh* mesh,
+	                                         const std::vector<size_t> &nodes);
 
 private:
-
-
 };
 
 #endif //MSHEDITOR_H
