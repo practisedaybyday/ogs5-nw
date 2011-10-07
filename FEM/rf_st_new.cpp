@@ -401,12 +401,12 @@ void CSourceTerm::ReadDistributionType(std::ifstream *st_file)
       in.clear();
    }
 
-	// If a linear function is given. 25.08.2011. WW  
-	if (getProcessDistributionType() == FiniteElement::FUNCTION) 
-	{ 
-	  in.clear(); 
-	  dis_linear_f = new LinearFunctionData(*st_file); 
-	} 
+	// If a linear function is given. 25.08.2011. WW
+	if (getProcessDistributionType() == FiniteElement::FUNCTION)
+	{
+	  in.clear();
+	  dis_linear_f = new LinearFunctionData(*st_file);
+	}
 
    if (this->getProcessDistributionType() == FiniteElement::LINEAR || this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
    {
@@ -908,11 +908,11 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
          if (source_term->getProcessType() == MASS_TRANSPORT)
              if ( cp_vec[cp_name_2_idx[convertPrimaryVariableToString(source_term->getProcessPrimaryVariable())]]->getProcess() != m_pcs )
                  continue;
-          //-- 23.02.3009. WW 
-         if (source_term->getProcessDistributionType()==FiniteElement::DIRECT) { 
-           source_term->DirectAssign(ShiftInNodeVector); 
-           continue; 
-         } 
+          //-- 23.02.3009. WW
+         if (source_term->getProcessDistributionType()==FiniteElement::DIRECT) {
+           source_term->DirectAssign(ShiftInNodeVector);
+           continue;
+         }
 
          if ((convertProcessTypeToString (source_term->getProcessType ()).compare(pcs_type_name) == 0)
             && (convertPrimaryVariableToString(source_term->getProcessPrimaryVariable()).compare(pcs_pv_name) == 0))
@@ -930,10 +930,10 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
                  SetDMN(source_term, ShiftInNodeVector);
              if (source_term->fct_name.size() > 0)
                  fct_name = source_term->fct_name;
-			 // Recovery this functionality. 12.08.2011 WW 
-			// MSH types //OK4310 
-			if(source_term->msh_type_name.compare("NODE")==0)  
-				source_term->SetNOD(); 
+			 // Recovery this functionality. 12.08.2011 WW
+			// MSH types //OK4310
+			if(source_term->msh_type_name.compare("NODE")==0)
+				source_term->SetNOD();
          }                                        // end pcs name & pv
       }                                           // end st loop
    }                                              // end msh
@@ -2391,6 +2391,7 @@ void GetCriticalDepthNODValue(double &value, CSourceTerm* m_st, long msh_node)
    {
       flowdepth3 = MathLib::fastpow(flowdepth, 3);
       flowdepth3_epsilon = MathLib::fastpow(flowdepth + epsilon, 3);
+
       width = value;
       if (m_pcs_this->m_msh->GetMaxElementDim() == 1)
       {
@@ -2445,7 +2446,7 @@ void GetNormalDepthNODValue(double &value, CSourceTerm* st, long msh_node)
             << std::endl;
 
       double elementlength = sqrt(MathLib::sqrDist(m_ele->GetNode(1)->getData(), m_ele->GetNode(0)->getData()));
-//    		  MathLib::fastpow(m_ele->GetNode(1)->X()- m_ele->GetNode(0)->X(), 2)
+//    		  (MathLib::fastpow(m_ele->GetNode(1)->X()- m_ele->GetNode(0)->X(), 2)
 //    		  + MathLib::fastpow(m_ele->GetNode(1)->Y()-m_ele->GetNode(0)->Y(), 2)
 //    		  + MathLib::fastpow(m_ele->GetNode(1)->Z() - m_ele->GetNode(0)->Z(), 2));
       S_0 = (m_ele->GetNode(1)->getData()[2] - m_ele->GetNode(0)->getData()[2]) / elementlength;
@@ -3130,14 +3131,14 @@ void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st,
 					m_msh->face_vector[i]->GetOwner()->GetIndex());
 		} // end faces
 	} // end system dependent
-   else if (distype == FiniteElement::FUNCTION) // 25.08.2011. WW 
-   { 
-      for (size_t i = 0; i < number_of_nodes; i++) 
-      {  
+   else if (distype == FiniteElement::FUNCTION) // 25.08.2011. WW
+   {
+      for (size_t i = 0; i < number_of_nodes; i++)
+      {
          double const*const pnt (m_msh->nod_vector[ply_nod_vector[i]]->getData());
-         ply_nod_val_vector[i] = st->dis_linear_f->getValue(pnt[0], pnt[1], pnt[2]); 
-      } 
-   } 
+         ply_nod_val_vector[i] = st->dis_linear_f->getValue(pnt[0], pnt[1], pnt[2]);
+      }
+   }
 	else //WW
 	{
 		for (size_t i = 0; i < number_of_nodes; i++) {
@@ -3264,14 +3265,14 @@ void CSourceTermGroup::SetSurfaceNodeValueVector(CSourceTerm* st,
       else if (m_msh->GetMaxElementDim() == 3)    // For all meshes with 3-D elements
          st->FaceIntegration(m_msh, sfc_nod_vector, sfc_nod_val_vector);
    }                                              // end neumann
-  else if (st->getProcessDistributionType() == FiniteElement::FUNCTION) // 25.08.2011. WW 
-   { 
-      for (size_t j = 0; j < sfc_nod_vector.size(); j++) 
-      {         
+  else if (st->getProcessDistributionType() == FiniteElement::FUNCTION) // 25.08.2011. WW
+   {
+      for (size_t j = 0; j < sfc_nod_vector.size(); j++)
+      {
          double const*const pnt (m_msh->nod_vector[sfc_nod_vector[j]]->getData());
          sfc_nod_val_vector[j] = st->dis_linear_f->getValue(pnt[0], pnt[1], pnt[2]);
-      } 
-   } 
+      }
+   }
 
 }
 
