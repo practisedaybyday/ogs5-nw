@@ -45,16 +45,6 @@ class BenchmarkRun < Sequel::Model( :benchmark_runs )
 end
 
 
-#run = BenchmarkRun.create(:time => 1.0, :crashed => false, :name => 'BenchName',
-#                          :config => 'fem')
-#run.author = Author[:svn_user => 'bilke']
-#run.commit_info = CommitInfo[:revision => 7144]
-#run.passed = true
-#run.save
-#
-#BenchmarkRun.each {|row| row.inspect2}
-#puts BenchmarkRun.length
-
 class BenchmarkRunsLoader
 
   attr_reader :bench_test_infos
@@ -115,7 +105,7 @@ class BenchmarkRunsLoader
               bench = BenchmarkRun[:name => name, :commit_info_id => CommitInfo.order(:read_date).last.revision]
             end
             if bench
-              bench.passed = !crashed
+              bench.passed = !(bench.crashed)
               bench.save_changes
               #puts "Benchmark #{bench.name}: passed = not #{crashed}"
             else
