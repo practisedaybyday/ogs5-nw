@@ -134,7 +134,7 @@ class BenchmarkEmail
 
     # Write email to commiter if something has changed
     if new_failed_benchmarks.length > 0 or fixed_benchmarks.length > 0
-      author = Author[:id => CommitInfo.last.author.id]
+      author = Author[:id => CommitInfo.order(:read_date).last.author.id]
       msg = "Hello #{author.name},\n\n"
 
       nice_verbs = ['awesome', 'brilliant', 'great', 'gorgeous']
@@ -169,7 +169,7 @@ class BenchmarkEmail
         end
       end
 
-      #puts msg
+      puts "Sending email to #{author.name} <#{author.email}>"
       send_email('Hudson Build Server', 'lars.bilke@ufz.de',
                  author.email, author.name,
                  'Benchmark report', msg) if $password
