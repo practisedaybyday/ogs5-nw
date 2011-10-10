@@ -751,9 +751,6 @@ short REACT_GEM::Init_Nodes ( string Project_path )
             // now we calculate kinetic constraints for GEMS!
             REACT_GEM::CalcLimitsInitial ( in );  //switched of for debug...
 
-		// hayekit ..set ab-solid to zero initially
-                m_dll[in*nDC+nDC-2]=0.0;
-                m_dul[in*nDC+nDC-2]=0.0;
             //Get data
             REACT_GEM::SetReactInfoBackGEM ( in );// this is necessary, otherwise the correct data is not available
 
