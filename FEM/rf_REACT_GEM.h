@@ -142,7 +142,7 @@ class REACT_GEM
       int flag_porosity_change;                   //0-porosity change not coupled into transport; 1=coupled;
       int flag_coupling_hydrology;                //0-without coupling; 1=with coupling;
       int flag_permeability_porosity;             //0-no coupling; 1-Kozeny-Carman; 2-Kozeny-Carman normalized;
-      int flag_gem_smart;                         // shall we work with faster simplex for GEM?
+      int flag_calculate_boundary_nodes;          // set to zero to avoid precipitation/dissolution (porosity change) at boundary nodes 
       int gem_pressure_flag;                      //shall we give a constant user defined pressure to gems?
       int flag_transport_b;                       //1: transport only dissolved components of b vector; 0: transport full speciation
 		long m_max_failed_nodes; ///maximum number of failed nodes
