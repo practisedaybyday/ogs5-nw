@@ -6,6 +6,11 @@
 #ifndef FILEFINDER_H
 #define FILEFINDER_H
 
+#include <fstream>
+#include <iostream>
+#include <list>
+#include <string>
+
 /**
  * FileFinder stores a list of directories and will return the complete path
  * for a given filename if the corresponding file is found in any of these
