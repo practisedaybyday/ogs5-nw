@@ -242,42 +242,48 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 	{
 		string arrayName = _pointArrayNames[k];
 		// Write x, y and z arrays as vectors
-		if (arrayName.find("X") != string::npos)
+		if (arrayName.find("_X") != string::npos && _pointArrayNames[k + 1].find("_Y"))
 		{
+			size_t numComponents = 2;
+			if (_pointArrayNames[k + 2].find("_Z"))
+				numComponents = 3;
+			
 			vtk_file << "VECTORS " <<
 			arrayName.substr(0, arrayName.size() - 2) << " double" << endl;
 			string arrayNames[3];
 			arrayNames[0] = arrayName;
 			arrayNames[1] = arrayName.substr(0, arrayName.size() - 1).append("Y");
-			arrayNames[2] = arrayName.substr(0, arrayName.size() - 1).append("Z");
+			if (numComponents == 3)
+				arrayNames[2] = arrayName.substr(0, arrayName.size() - 1).append("Z");
 
 			double vector3[3];
 			for (long j = 0l; j < numNodes; j++)
 			{
-				for(int component = 0; component < 3; ++component)
+				for(size_t component = 0; component < numComponents; ++component)
 				{
 					CRFProcess* pcs = PCSGet(arrayNames[component], true);
 					if (!pcs)
 						continue;
-					nod_value_index_vector[k] = pcs->GetNodeValueIndex(
-					        arrayName);
+					nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName);
 					for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
-						if (arrayName.compare(pcs->
-						                      pcs_primary_function_name[i])
-						    == 0)
+						if (arrayName.compare(pcs->pcs_primary_function_name[i]) == 0)
 						{
 							nod_value_index_vector[k]++;
 							break;
 						}
 					vector3[component] = pcs->GetNodeValue(
 					        _mesh->nod_vector[j]->GetIndex(),
-					        nod_value_index_vector
-					        [k]);
+					        nod_value_index_vector[k]);
 				}
-				vtk_file << vector3[0] << " " << vector3[1] << " " << vector3[2] <<
-				endl;
+				if (numComponents == 2)
+					vtk_file << vector3[0] << " " << vector3[1] << endl;
+				else
+					vtk_file << vector3[0] << " " << vector3[1] << " " << vector3[2] <<	endl;
 			}
-			k += 2;
+			if (numComponents == 2)
+				k += 1;
+			else
+				k += 2;
 		}
 		else
 		{
