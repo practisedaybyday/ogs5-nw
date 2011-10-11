@@ -3,20 +3,20 @@
 
 //class CRFProcess;
 //#include "rf_pcs.h"
-#include "fem_ele_std.h"
 #include "fem_ele.h"
+#include "fem_ele_std.h"
 
-class CReadTextfiles_DuMux {
-
+class CReadTextfiles_DuMux
+{
 public:
-    std::vector <std::string> Data;
-    std::vector <std::vector <std::string> > Data_separated;
-    long NumberOfRows;
-    std::vector <std::string> SplittedString;
-    std::vector <std::string> Header;
+	std::vector <std::string> Data;
+	std::vector <std::vector <std::string> > Data_separated;
+	long NumberOfRows;
+	std::vector <std::string> SplittedString;
+	std::vector <std::string> Header;
 
-	CReadTextfiles_DuMux();		//Konstruktor
-	~CReadTextfiles_DuMux();		//Desturktor
+	CReadTextfiles_DuMux(); //Konstruktor
+	~CReadTextfiles_DuMux(); //Desturktor
 
 	bool Read_Text(std::string Filename);
 
@@ -25,11 +25,11 @@ public:
 	bool Read_SeparatedText(std::string Filename, std::string delimiter);
 };
 
-class CWriteTextfiles_DuMux {
-
+class CWriteTextfiles_DuMux
+{
 public:
-	CWriteTextfiles_DuMux();		//Konstruktor
-	~CWriteTextfiles_DuMux();		//Desturktor
+	CWriteTextfiles_DuMux(); //Konstruktor
+	~CWriteTextfiles_DuMux(); //Desturktor
 
 	void Write_Text(std::string Filename, std::vector<std::string> Text);
 };
@@ -38,13 +38,13 @@ class PointDuMux : public GEOLIB::Point
 {
 public:
 	PointDuMux (double x, double y, double z, double temperature,
-			double CO2_in_liquid, double NaCl_in_liquid) :
+	            double CO2_in_liquid, double NaCl_in_liquid) :
 		GEOLIB::Point (x,y,z), _temperature (temperature),
 		_CO2_in_liquid (CO2_in_liquid), _NaCl_in_Liquid (NaCl_in_liquid)
 	{}
 
-	PointDuMux (double const*const coords, double temperature,
-			double CO2_in_liquid, double NaCl_in_liquid) :
+	PointDuMux (double const* const coords, double temperature,
+	            double CO2_in_liquid, double NaCl_in_liquid) :
 		GEOLIB::Point (coords), _temperature (temperature),
 		_CO2_in_liquid (CO2_in_liquid), _NaCl_in_Liquid (NaCl_in_liquid)
 	{}
@@ -93,9 +93,8 @@ private:
 //	~CPointData_DuMux() {}
 //};
 
-
-class CDUMUXData {
-
+class CDUMUXData
+{
 public:
 	CDUMUXData();
 	~CDUMUXData();
@@ -108,7 +107,7 @@ public:
 	int ProcessIndex_NaClinLiquid;
 	bool Windows_System;
 	bool UsePrecalculatedFiles;
-	double Molweight_CO2;		// [g/mol]
+	double Molweight_CO2; // [g/mol]
 	double TotalSimulationTime;
 
 	//CFiniteElementStd* GetAssembler() {return fem; }
@@ -119,14 +118,13 @@ public:
 
 	bool MakeNodeVector(void);
 
-	void ExecuteDuMux(CRFProcess *m_pcs, std::string folder);
+	void ExecuteDuMux(CRFProcess* m_pcs, std::string folder);
 
-	int WriteInputForDuMux(CRFProcess *m_pcs, std::string Pathname, long Timestep);
+	int WriteInputForDuMux(CRFProcess* m_pcs, std::string Pathname, long Timestep);
 
-	void ReadDuMuxData(CRFProcess *m_pcs, std::string Pathname, long Timestep);
+	void ReadDuMuxData(CRFProcess* m_pcs, std::string Pathname, long Timestep);
 
-	void WriteDataToGeoSys(CRFProcess *m_pcs);
+	void WriteDataToGeoSys(CRFProcess* m_pcs);
 
-	int RunDuMux(long Timestep, CRFProcess *m_pcs);
-
+	int RunDuMux(long Timestep, CRFProcess* m_pcs);
 };

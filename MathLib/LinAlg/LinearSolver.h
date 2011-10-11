@@ -8,17 +8,17 @@
 #ifndef LINEARSOLVER_H_
 #define LINEARSOLVER_H_
 
-namespace MathLib {
-
+namespace MathLib
+{
 /**
  * Base class for all linear solver classes.
  */
-class LinearSolver {
+class LinearSolver
+{
 public:
-	LinearSolver() {};
-	virtual ~LinearSolver() {};
+	LinearSolver() {}
+	virtual ~LinearSolver() {}
 };
-
 }
 
 #endif /* LINEARSOLVER_H_ */

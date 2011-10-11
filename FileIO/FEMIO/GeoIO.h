@@ -18,15 +18,15 @@
 // GEO
 #include "GEOObjects.h"
 
-
-namespace FileIO {
-
+namespace FileIO
+{
 /**
  * Small class to read/write geometric information.
  * At the moment only the read-part is implemented.
  * ToDo: implement write part.
  */
-class GeoIO {
+class GeoIO
+{
 public:
 	/**
 	 * @brief read geometric information from different files.
@@ -46,10 +46,12 @@ public:
 	 * @param unique_geo_name identifier of the geometric data within the geometric manager GEOObjects
 	 * @return false if an error occured, else true
 	 */
-	static bool readGeoInfo (GeoInfo* geo_info, std::istream& in_str, std::string& geo_name,
-			const GEOLIB::GEOObjects& geo_obj, const std::string& unique_geo_name);
+	static bool readGeoInfo (GeoInfo* geo_info,
+	                         std::istream& in_str,
+	                         std::string& geo_name,
+	                         const GEOLIB::GEOObjects& geo_obj,
+	                         const std::string& unique_geo_name);
 };
-
 } // ned namespace FileIO
 
 #endif /* GEOIO_H_ */

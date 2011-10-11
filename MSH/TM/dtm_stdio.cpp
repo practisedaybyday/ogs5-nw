@@ -1,34 +1,33 @@
 /*
 
-			dtm_stdio.h
-			>input and output
+            dtm_stdio.h
+            >input and output
 
-			last update : 2003.11.01		by t.manabe
+            last update : 2003.11.01		by t.manabe
 
-*/
+ */
 
 #include "stdafx.h" /* MFC */
 
+#include "dtm_stdio.h"
 
-#include"dtm_stdio.h"
-
-namespace dtm{
-
+namespace dtm
+{
 // inpDtm3dPoint
 
-bool inpDtm3dPoint(char *fname,Crowd *crowd)
+bool inpDtm3dPoint(char* fname,Crowd* crowd)
 {
 	int i;
 	int tmpn,tmpid;
 	double tmpx,tmpy,tmpz;
-	
+
 	ifstream in(fname);
-	if(!in) {
+	if(!in)
 		return false;
-	}
 
 	in >> tmpn;
-	for(i=0;i<tmpn;i++) {
+	for(i = 0; i < tmpn; i++)
+	{
 		in >> tmpid;
 		in >> tmpx;
 		in >> tmpy;
@@ -43,26 +42,25 @@ bool inpDtm3dPoint(char *fname,Crowd *crowd)
 	return true;
 }
 
-
 // inpDtm3dTetra
 
-bool inpDtm3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
+bool inpDtm3dTetra(char* fname,Tetgen* tetgen,Crowd* crowd)
 {
 	int i;
 	int tmpn,tmpid;
 	double tmpx,tmpy,tmpz;
 	int tt0,tt1,tt2,tt3;
-	Node *n0,*n1,*n2,*n3;
-	Tetra *tet;
+	Node* n0,* n1,* n2,* n3;
+	Tetra* tet;
 
 	ifstream in(fname);
-	if(!in) {
+	if(!in)
 		return false;
-	}
 
 	in >> tmpn;
 
-	for(i=0;i<tmpn;i++) {
+	for(i = 0; i < tmpn; i++)
+	{
 		in >> tmpid;
 		in >> tmpx;
 		in >> tmpy;
@@ -71,16 +69,17 @@ bool inpDtm3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
 	}
 
 	in >> tmpn;
-	for(i=0;i<tmpn;i++) {
+	for(i = 0; i < tmpn; i++)
+	{
 		in >> tmpid;
 		in >> tt0;
 		in >> tt1;
 		in >> tt2;
 		in >> tt3;
-		n0 = crowd->getNode(tt0-1);
-		n1 = crowd->getNode(tt1-1);
-		n2 = crowd->getNode(tt2-1);
-		n3 = crowd->getNode(tt3-1);
+		n0 = crowd->getNode(tt0 - 1);
+		n1 = crowd->getNode(tt1 - 1);
+		n2 = crowd->getNode(tt2 - 1);
+		n3 = crowd->getNode(tt3 - 1);
 		tet = tetgen->makeNewTetra(n0,n1,n2,n3);
 		tet->setVolume();
 	}
@@ -92,26 +91,25 @@ bool inpDtm3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
 	return true;
 }
 
-
 // inpDtm3dTriangle
 
-bool inpDtm3dTriangle(char *fname,Surface *surface,Crowd *crowd)
+bool inpDtm3dTriangle(char* fname,Surface* surface,Crowd* crowd)
 {
 	int i;
 	int tmpn,tmpid;
 	double tmpx,tmpy,tmpz;
 	int tt0,tt1,tt2;
-	Node *n0,*n1,*n2;
-	Triangle *tri;
+	Node* n0,* n1,* n2;
+	Triangle* tri;
 
 	ifstream in(fname);
-	if(!in) {
+	if(!in)
 		return false;
-	}
 
 	in >> tmpn;
 
-	for(i=0;i<tmpn;i++) {
+	for(i = 0; i < tmpn; i++)
+	{
 		in >> tmpid;
 		in >> tmpx;
 		in >> tmpy;
@@ -120,14 +118,15 @@ bool inpDtm3dTriangle(char *fname,Surface *surface,Crowd *crowd)
 	}
 
 	in >> tmpn;
-	for(i=0;i<tmpn;i++) {
+	for(i = 0; i < tmpn; i++)
+	{
 		in >> tmpid;
 		in >> tt0;
 		in >> tt1;
 		in >> tt2;
-		n0 = crowd->getNode(tt0-1);
-		n1 = crowd->getNode(tt1-1);
-		n2 = crowd->getNode(tt2-1);
+		n0 = crowd->getNode(tt0 - 1);
+		n1 = crowd->getNode(tt1 - 1);
+		n2 = crowd->getNode(tt2 - 1);
 		tri = surface->makeNewTriangle(n0,n1,n2);
 	}
 
@@ -138,27 +137,26 @@ bool inpDtm3dTriangle(char *fname,Surface *surface,Crowd *crowd)
 	return true;
 }
 
-
 // inpDtm3dTriangleWithDensity
 
-bool inpDtm3dTriangleWithDensity(char *fname,Surface *surface,Crowd *crowd)
+bool inpDtm3dTriangleWithDensity(char* fname,Surface* surface,Crowd* crowd)
 {
 	int i;
 	int tmpn,tmpid;
 	double tmpx,tmpy,tmpz;
 	double tmpd;
 	int tt0,tt1,tt2;
-	Node *n0,*n1,*n2;
-	Triangle *tri;
+	Node* n0,* n1,* n2;
+	Triangle* tri;
 
 	ifstream in(fname);
-	if(!in) {
+	if(!in)
 		return false;
-	}
 
 	in >> tmpn;
 
-	for(i=0;i<tmpn;i++) {
+	for(i = 0; i < tmpn; i++)
+	{
 		in >> tmpid;
 		in >> tmpx;
 		in >> tmpy;
@@ -168,17 +166,17 @@ bool inpDtm3dTriangleWithDensity(char *fname,Surface *surface,Crowd *crowd)
 	}
 
 	in >> tmpn;
-	for(i=0;i<tmpn;i++) {
+	for(i = 0; i < tmpn; i++)
+	{
 		in >> tmpid;
 		in >> tt0;
 		in >> tt1;
 		in >> tt2;
-		n0 = crowd->getNode(tt0-1);
-		n1 = crowd->getNode(tt1-1);
-		n2 = crowd->getNode(tt2-1);
+		n0 = crowd->getNode(tt0 - 1);
+		n1 = crowd->getNode(tt1 - 1);
+		n2 = crowd->getNode(tt2 - 1);
 		tri = surface->makeNewTriangle(n0,n1,n2);
 	}
-
 
 	crowd->initstd();
 	crowd->initDensity();
@@ -188,20 +186,18 @@ bool inpDtm3dTriangleWithDensity(char *fname,Surface *surface,Crowd *crowd)
 	return true;
 }
 
-
 // outRfi3dTriangle
 
-bool outRfi3dTriangle(char *fname,Surface *surface,Crowd *crowd,char *version)
+bool outRfi3dTriangle(char* fname,Surface* surface,Crowd* crowd,char* version)
 {
 	int i,j;
-	Node *tmpnd;
-	Triangle *tri;
+	Node* tmpnd;
+	Triangle* tri;
 	int n;
-	
+
 	ofstream out(fname);
-	if(!out) {
+	if(!out)
 		return false;
-	}
 
 	out << "#0#0#0#0#0.000000#0#";
 	out << version;
@@ -211,21 +207,24 @@ bool outRfi3dTriangle(char *fname,Surface *surface,Crowd *crowd,char *version)
 	out << crowd->getSize() << " ";
 	out << surface->getSize() << "\n";
 	n = crowd->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		tmpnd = crowd->getNode(i);
-		out << tmpnd->getId()-1 << " ";
+		out << tmpnd->getId() - 1 << " ";
 		out << tmpnd->getX() << " ";
 		out << tmpnd->getY() << " ";
 		out << tmpnd->getZ() << "\n";
 	}
 	n = surface->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		tri = surface->getTriangle(i);
-		out << tri->getId()-1 << " 0 -1 tri";
-		for(j=0;j<3;j++) {
+		out << tri->getId() - 1 << " 0 -1 tri";
+		for(j = 0; j < 3; j++)
+		{
 			tmpnd = tri->getNode(j);
 			out << " ";
-			out << tmpnd->getId()-1;
+			out << tmpnd->getId() - 1;
 		}
 		out << "\n";
 	}
@@ -237,69 +236,69 @@ bool outRfi3dTriangle(char *fname,Surface *surface,Crowd *crowd,char *version)
 
 // outRfi3dTetra
 
-bool outMSH3dTetra(char *fname,Tetgen* tetgen,Crowd* crowd)
+bool outMSH3dTetra(char* fname,Tetgen* tetgen,Crowd* crowd)
 {
 	int i,j;
-	Node *tmpnd;
-	Tetra *ptet;
+	Node* tmpnd;
+	Tetra* ptet;
 	int n;
-	
+
 	ofstream out(fname);
-	if(!out) {
+	if(!out)
 		return false;
-	}
 
 	out << "#FEM_MSH\n";
 	out << " $PCS_TYPE\n";
 	out << "  NO_PCS\n";
 	out << " $NODES\n";
 	out << crowd->getSize() << "\n";
-   	n = crowd->getSize();
-	for(i=0;i<n;i++) {
+	n = crowd->getSize();
+	for(i = 0; i < n; i++)
+	{
 		tmpnd = crowd->getNode(i);
-		out << tmpnd->getId()-1 << " ";
+		out << tmpnd->getId() - 1 << " ";
 		out << tmpnd->getX() << " ";
 		out << tmpnd->getY() << " ";
 		out << tmpnd->getZ() << "\n";
 	}
 	out << " $ELEMENTS\n";
-    out << tetgen->getSize() << "\n";
+	out << tetgen->getSize() << "\n";
 	n = tetgen->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		ptet = tetgen->getTetra(i);
-		out << ptet->getId()-1 <<  " "<< ptet->getDomain() << " -1 tet";
-		for(j=0;j<4;j++) {
+		out << ptet->getId() - 1 <<  " " << ptet->getDomain() << " -1 tet";
+		for(j = 0; j < 4; j++)
+		{
 			tmpnd = ptet->getNode(j);
 			out << " ";
-			out << tmpnd->getId()-1;
+			out << tmpnd->getId() - 1;
 		}
 		out << "\n";
 	}
 	out << "#STOP\n";
 	out.close();
 
-
 	return true;
 }
 
-
 // outDtm3dTetra
 
-bool outDtm3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
+bool outDtm3dTetra(char* fname,Tetgen* tetgen,Crowd* crowd)
 {
 	int i,j;
-	Node *tmpnd;
-	Tetra *ptet;
+	Node* tmpnd;
+	Tetra* ptet;
 	int n;
-	
+
 	ofstream out(fname);
-	if(!out) {
+	if(!out)
 		return false;
-	}
 
 	out << crowd->getSize() << "\n";
 	n = crowd->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		tmpnd = crowd->getNode(i);
 		out << tmpnd->getId() << " ";
 		out << tmpnd->getX() << " ";
@@ -308,10 +307,12 @@ bool outDtm3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
 	}
 	out << tetgen->getSize() << "\n";
 	n = tetgen->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		ptet = tetgen->getTetra(i);
 		out << ptet->getId() << " ";
-		for(j=0;j<4;j++) {
+		for(j = 0; j < 4; j++)
+		{
 			tmpnd = ptet->getNode(j);
 			out << tmpnd->getId() << " ";
 		}
@@ -320,29 +321,27 @@ bool outDtm3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
 
 	out.close();
 
-
 	return true;
 }
 
-
 // outDli3dTetra
 
-bool outDli3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
+bool outDli3dTetra(char* fname,Tetgen* tetgen,Crowd* crowd)
 {
 	int i,j;
-	Node *tmpnd;
-	Tetra *ptet;
+	Node* tmpnd;
+	Tetra* ptet;
 	int n;
-	
+
 	ofstream out(fname);
-	if(!out) {
+	if(!out)
 		return false;
-	}
 
 	out << crowd->getSize() << " ";
 	out << tetgen->getSize() << " 0 1 0\n";
 	n = crowd->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		tmpnd = crowd->getNode(i);
 		out << tmpnd->getId() << " ";
 		out << tmpnd->getX() << " ";
@@ -351,11 +350,13 @@ bool outDli3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
 		out << tmpnd->getDensity() << "\n";
 	}
 	n = tetgen->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		ptet = tetgen->getTetra(i);
 		out << ptet->getId() << " ";
 		out << ptet->getDomain() << " 0 TET ";
-		for(j=0;j<4;j++) {
+		for(j = 0; j < 4; j++)
+		{
 			tmpnd = ptet->getNode(j);
 			out << tmpnd->getId() << " ";
 		}
@@ -367,23 +368,22 @@ bool outDli3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
 	return true;
 }
 
-
-bool outDli3dTriangle(char *fname,Surface *surface,Crowd *crowd)
+bool outDli3dTriangle(char* fname,Surface* surface,Crowd* crowd)
 {
 	int i,j;
-	Node *tmpnd;
-	Triangle *ptri;
+	Node* tmpnd;
+	Triangle* ptri;
 	int n;
-	
+
 	ofstream out(fname);
-	if(!out) {
+	if(!out)
 		return false;
-	}
 
 	out << crowd->getSize() << " ";
 	out << surface->getSize() << "0 1 0\n";
 	n = crowd->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		tmpnd = crowd->getNode(i);
 		out << tmpnd->getId() << " ";
 		out << tmpnd->getX() << " ";
@@ -392,12 +392,14 @@ bool outDli3dTriangle(char *fname,Surface *surface,Crowd *crowd)
 		out << tmpnd->getDensity() << "\n";
 	}
 	n = surface->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		ptri = surface->getTriangle(i);
 		out << ptri->getId() << " ";
 		out << ptri->getDomain() << " ";
 		out << ptri->getType() << " TRI ";
-		for(j=0;j<3;j++) {
+		for(j = 0; j < 3; j++)
+		{
 			tmpnd = ptri->getNode(j);
 			out << tmpnd->getId() << " ";
 		}
@@ -406,31 +408,29 @@ bool outDli3dTriangle(char *fname,Surface *surface,Crowd *crowd)
 
 	out.close();
 
-
 	return true;
 
 	//return true;
 }
 
-
 // outAvs3dTetra
 
-bool outAvs3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
+bool outAvs3dTetra(char* fname,Tetgen* tetgen,Crowd* crowd)
 {
 	int i,j;
-	Node *tmpnd;
-	Tetra *ptet;
+	Node* tmpnd;
+	Tetra* ptet;
 	int n;
-	
+
 	ofstream out(fname);
-	if(!out) {
+	if(!out)
 		return false;
-	}
 
 	out << crowd->getSize() << " ";
 	out << tetgen->getSize() << " 1 0 0\n";
 	n = crowd->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		tmpnd = crowd->getNode(i);
 		out << tmpnd->getId() << " ";
 		out << tmpnd->getX() << " ";
@@ -438,10 +438,12 @@ bool outAvs3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
 		out << tmpnd->getZ() << "\n";
 	}
 	n = tetgen->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		ptet = tetgen->getTetra(i);
 		out << ptet->getId() << " 1 tet ";
-		for(j=0;j<4;j++) {
+		for(j = 0; j < 4; j++)
+		{
 			tmpnd = ptet->getNode(j);
 			out << tmpnd->getId() << " ";
 		}
@@ -450,7 +452,8 @@ bool outAvs3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
 	out << " 1 1\n";
 	out << " z_coordinates,\n";
 	n = crowd->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		tmpnd = crowd->getNode(i);
 		out << tmpnd->getId() << " ";
 		out << tmpnd->getZ() << "\n";
@@ -461,24 +464,22 @@ bool outAvs3dTetra(char *fname,Tetgen *tetgen,Crowd *crowd)
 	return true;
 }
 
-
-
-bool outAvs3dTetraWithType(char *fname,Tetgen *tetgen,Crowd *crowd)
+bool outAvs3dTetraWithType(char* fname,Tetgen* tetgen,Crowd* crowd)
 {
 	int i,j;
-	Node *tmpnd;
-	Tetra *ptet;
+	Node* tmpnd;
+	Tetra* ptet;
 	int n;
-	
+
 	ofstream out(fname);
-	if(!out) {
+	if(!out)
 		return false;
-	}
 
 	out << crowd->getSize() << " ";
 	out << tetgen->getSize() << " 1 1 0\n";
 	n = crowd->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		tmpnd = crowd->getNode(i);
 		out << tmpnd->getId() << " ";
 		out << tmpnd->getX() << " ";
@@ -486,10 +487,12 @@ bool outAvs3dTetraWithType(char *fname,Tetgen *tetgen,Crowd *crowd)
 		out << tmpnd->getZ() << "\n";
 	}
 	n = tetgen->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		ptet = tetgen->getTetra(i);
 		out << ptet->getId() << " 1 tet ";
-		for(j=0;j<4;j++) {
+		for(j = 0; j < 4; j++)
+		{
 			tmpnd = ptet->getNode(j);
 			out << tmpnd->getId() << " ";
 		}
@@ -497,7 +500,8 @@ bool outAvs3dTetraWithType(char *fname,Tetgen *tetgen,Crowd *crowd)
 	}
 	out << " 1 1\n";
 	out << " z_coordinates,\n";
-	for(i=0;i<crowd->getSize();i++) {
+	for(i = 0; i < crowd->getSize(); i++)
+	{
 		tmpnd = crowd->getNode(i);
 		out << tmpnd->getId() << " ";
 		out << tmpnd->getZ() << "\n";
@@ -505,7 +509,8 @@ bool outAvs3dTetraWithType(char *fname,Tetgen *tetgen,Crowd *crowd)
 	out << " 1 1\n";
 	out << " type,\n";
 	n = tetgen->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		ptet = tetgen->getTetra(i);
 		out << i << " ";
 		out << ptet->getDomain();
@@ -517,25 +522,23 @@ bool outAvs3dTetraWithType(char *fname,Tetgen *tetgen,Crowd *crowd)
 	return true;
 }
 
-
-
 // outDtm3dTriangle
 
-bool outDtm3dTriangle(char *fname,Surface* surface,Crowd *crowd)
+bool outDtm3dTriangle(char* fname,Surface* surface,Crowd* crowd)
 {
 	int i,j;
-	Node *tmpnd;
-	Triangle *ptri;
+	Node* tmpnd;
+	Triangle* ptri;
 	int n;
-	
+
 	ofstream out(fname);
-	if(!out) {
+	if(!out)
 		return false;
-	}
 
 	out << crowd->getSize() << "\n";
 	n = crowd->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		tmpnd = crowd->getNode(i);
 		out << tmpnd->getId() << " ";
 		out << tmpnd->getX() << " ";
@@ -544,10 +547,12 @@ bool outDtm3dTriangle(char *fname,Surface* surface,Crowd *crowd)
 	}
 	out << surface->getSize() << "\n";
 	n = surface->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		ptri = surface->getTriangle(i);
 		out << ptri->getId() << " ";
-		for(j=0;j<3;j++) {
+		for(j = 0; j < 3; j++)
+		{
 			tmpnd = ptri->getNode(j);
 			out << tmpnd->getId() << " ";
 		}
@@ -556,29 +561,27 @@ bool outDtm3dTriangle(char *fname,Surface* surface,Crowd *crowd)
 
 	out.close();
 
-
 	return true;
 }
 
-
 // outAvs3dTriangle
 
-bool outAvs3dTriangle(char *fname,Surface *surface,Crowd *crowd)
+bool outAvs3dTriangle(char* fname,Surface* surface,Crowd* crowd)
 {
 	int i,j;
-	Node *tmpnd;
-	Triangle *ptri;
+	Node* tmpnd;
+	Triangle* ptri;
 	int n;
-	
+
 	ofstream out(fname);
-	if(!out) {
+	if(!out)
 		return false;
-	}
 
 	out << crowd->getSize() << " ";
 	out << surface->getSize() << " 1 1 0\n";
 	n = crowd->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		tmpnd = crowd->getNode(i);
 		out << tmpnd->getId() << " ";
 		out << tmpnd->getX() << " ";
@@ -586,10 +589,12 @@ bool outAvs3dTriangle(char *fname,Surface *surface,Crowd *crowd)
 		out << tmpnd->getZ() << "\n";
 	}
 	n = surface->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		ptri = surface->getTriangle(i);
 		out << ptri->getId() << " 1 tri ";
-		for(j=0;j<3;j++) {
+		for(j = 0; j < 3; j++)
+		{
 			tmpnd = ptri->getNode(j);
 			out << tmpnd->getId() << " ";
 		}
@@ -598,7 +603,8 @@ bool outAvs3dTriangle(char *fname,Surface *surface,Crowd *crowd)
 	out << " 1 1\n";
 	out << " z_coordinates,\n";
 	n = crowd->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		tmpnd = crowd->getNode(i);
 		out << tmpnd->getId() << " ";
 		out << tmpnd->getZ() << "\n";
@@ -606,11 +612,12 @@ bool outAvs3dTriangle(char *fname,Surface *surface,Crowd *crowd)
 	out << " 1 1\n";
 	out << " type,\n";
 	n = surface->getSize();
-	for(i=0;i<n;i++) {
+	for(i = 0; i < n; i++)
+	{
 		ptri = surface->getTriangle(i);
-		out << i+1 << " ";
+		out << i + 1 << " ";
 		out << ptri->getDomain();
-	//	out << ptri->getType();
+		//	out << ptri->getType();
 		out << "\n";
 	}
 
@@ -618,17 +625,6 @@ bool outAvs3dTriangle(char *fname,Surface *surface,Crowd *crowd)
 
 	return true;
 }
-
-
-
-
 }
-
-
-
-
-
-
-
 
 //////////////////////////////////////////////////////////////////EOF

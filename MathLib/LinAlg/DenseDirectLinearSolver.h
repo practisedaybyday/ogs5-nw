@@ -10,14 +10,14 @@
 
 #include "DirectLinearSolver.h"
 
-namespace MathLib {
-
-class DenseDirectLinearSolver: public MathLib::DirectLinearSolver {
+namespace MathLib
+{
+class DenseDirectLinearSolver : public MathLib::DirectLinearSolver
+{
 public:
-	DenseDirectLinearSolver() {};
-	virtual ~DenseDirectLinearSolver() {};
+	DenseDirectLinearSolver() {}
+	virtual ~DenseDirectLinearSolver() {}
 };
-
 }
 
 #endif /* DENSEDIRECTLINEARSOLVER_H_ */

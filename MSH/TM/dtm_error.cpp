@@ -1,42 +1,36 @@
 /*
 
-			error.cpp
-			>
+            error.cpp
+            >
 
-			last update : 2003.09.24
+            last update : 2003.09.24
 
-*/
-
+ */
 
 #include "stdafx.h" /* MFC */
 
+#include "dtm_error.h"
 
-#include"dtm_error.h"
-
-namespace dtm{
-
+namespace dtm
+{
 /*
 
-void errorView(string where,string how)
-{
-	cout << "*** ERROR ***\n";
-	cout << "where : " << where << "\n";
-	cout << "how   : " << how << "\n";
+   void errorView(string where,string how)
+   {
+    cout << "*** ERROR ***\n";
+    cout << "where : " << where << "\n";
+    cout << "how   : " << how << "\n";
 
-	return;
+    return;
+   }
+
+
+   void errorExit()
+   {
+    exit(1);
+   }
+
+ */
 }
-
-
-void errorExit()
-{
-	exit(1);
-}
-
-*/
-}
-
-
-
-
 
 //////////////////////////////////////////////////////////////////EOF

@@ -9,16 +9,16 @@
 
 #include "MeshQualityChecker.h"
 
-namespace MeshLib {
-
-class MeshQualityNormalisedArea : public MeshQualityChecker {
+namespace MeshLib
+{
+class MeshQualityNormalisedArea : public MeshQualityChecker
+{
 public:
-	MeshQualityNormalisedArea(CFEMesh const * const mesh);
-	virtual ~MeshQualityNormalisedArea() {};
+	MeshQualityNormalisedArea(CFEMesh const* const mesh);
+	virtual ~MeshQualityNormalisedArea() {}
 
 	virtual void check ();
 };
-
 }
 
 #endif /* MESHQUALITYNORMALISEDAREA_H_ */

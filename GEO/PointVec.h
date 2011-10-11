@@ -5,25 +5,24 @@
  *      Author: TF / KR
  */
 
-
 // GEOLIB
+#include "AxisAlignedBoundingBox.h"
 #include "Point.h"
 #include "Station.h"
-#include "AxisAlignedBoundingBox.h"
 
 // Base
-#include "quicksort.h"
 #include "binarySearch.h"
+#include "quicksort.h"
 
-#include <vector>
-#include <string>
 #include <map>
+#include <string>
+#include <vector>
 
 #ifndef POINTVEC_H_
 #define POINTVEC_H_
 
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 /**
  * \ingroup GEOLIB
  *
@@ -57,8 +56,9 @@ public:
 	 * @param type the type of the point, \sa enum PointType
 	 * @return an object of type PointVec
 	 */
-	PointVec (const std::string& name, std::vector<Point*>* points, std::map<std::string, size_t>* name_id_map = NULL,
-				PointType type = PointVec::POINT);
+	PointVec (const std::string& name, std::vector<Point*>* points,
+	          std::map<std::string, size_t>* name_id_map = NULL,
+	          PointType type = PointVec::POINT);
 
 	/** Destructor deletes all Points of this PointVec. */
 	~PointVec ();
@@ -70,14 +70,14 @@ public:
 	 * @param pnt the pointer to the Point
 	 * @return the id of the point within the internal vector
 	 */
-	size_t push_back (Point *pnt);
+	size_t push_back (Point* pnt);
 
 	/**
 	 * push_back adds new elements at the end of the vector _pnt_vec.
 	 * @param pnt a pointer to the point, PointVec takes ownership of the point
 	 * @param name the name of the point
 	 */
-	void push_back (Point *pnt, const std::string& name);
+	void push_back (Point* pnt, const std::string& name);
 
 	/**
 	 * get the actual number of Points
@@ -95,7 +95,7 @@ public:
 	 */
 	const std::vector<Point*>* getVector () const { return _pnt_vec; }
 
-	std::vector<Point*> *filterStations(const std::vector<PropertyBounds> &bounds) const;
+	std::vector<Point*>* filterStations(const std::vector<PropertyBounds> &bounds) const;
 
 	/** sets the name of the object
 	 * \param n the name as standard string */
@@ -159,7 +159,7 @@ private:
 	// this way the compiler does not create a (possible unwanted) assignment operator
 	PointVec& operator= (const PointVec& rhs);
 
-	size_t uniqueInsert (Point *pnt);
+	size_t uniqueInsert (Point* pnt);
 
 	/**
 	 * pointer to a vector of pointers to Points
@@ -167,7 +167,7 @@ private:
 	 * The destructor of PointVec will delete all GEOLIB::Points
 	 * inside the vector.
 	 */
-	std::vector<Point*> *_pnt_vec;
+	std::vector<Point*>* _pnt_vec;
 	/**
 	 * used to store the name associated with a point
 	 */
@@ -194,7 +194,6 @@ private:
 	void calculateAxisAlignedBoundingBox ();
 	AABB aabb;
 };
-
 } // end namespace
 
 #endif /* POINTVEC_H_ */

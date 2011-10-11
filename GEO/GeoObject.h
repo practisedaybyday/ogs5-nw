@@ -8,20 +8,20 @@
 #ifndef GEOOBJECT_H_
 #define GEOOBJECT_H_
 
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 /**
  * \ingroup GEOLIB
  *
  * \brief Base class for classes Point, Polyline, Surface.
  */
 
-class GeoObject {
+class GeoObject
+{
 public:
-	GeoObject() {};
-	virtual ~GeoObject() {};
+	GeoObject() {}
+	virtual ~GeoObject() {}
 };
-
 } // end namespace GEOLIB
 
 #endif /* GEOOBJECT_H_ */

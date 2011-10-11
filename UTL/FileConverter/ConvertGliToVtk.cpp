@@ -6,18 +6,18 @@
  */
 
 // ** INCLUDES **
-#include "OGSIOVer4.h"
 #include "GEOObjects.h"
+#include "OGSIOVer4.h"
 #include "Point.h"
 #include "VtkPointsSource.h"
 
-#include <iostream>
-#include <vector>
 #include <boost/filesystem/operations.hpp>
 #include <boost/regex.hpp>
+#include <iostream>
+#include <vector>
 
-#include <vtkSmartPointer.h>
 #include <vtkPolyDataWriter.h>
+#include <vtkSmartPointer.h>
 
 using namespace boost::filesystem;
 using namespace std;
@@ -28,13 +28,13 @@ void replaceExt(string& s, const string& newExt)
 {
 	string::size_type i = s.rfind('.', s.length());
 	if (i != string::npos)
-		s.replace(i+1, newExt.length(), newExt);
+		s.replace(i + 1, newExt.length(), newExt);
 }
 
 // Converts gli to vtk. (atm only points)
 // No arguments: batch convert all gli files
 // file argument: convert only the specified file
-int main (int argc, char const *argv[])
+int main (int argc, char const* argv[])
 {
 	vector<string> filenames;
 	if (argc == 2)
@@ -52,18 +52,16 @@ int main (int argc, char const *argv[])
 		}
 	}
 
-
 	vtkPolyDataWriter* writer = vtkPolyDataWriter::New();
-
 
 	for (vector<string>::const_iterator it = filenames.begin(); it != filenames.end(); ++it)
 	{
 		string filename(*it);
 		cout << "Opening file " << filename << " ... " << endl << flush;
 
-		GEOLIB::GEOObjects *geo (new GEOLIB::GEOObjects);
+		GEOLIB::GEOObjects* geo (new GEOLIB::GEOObjects);
 		FileIO::readGLIFileV4(filename, geo);
-		const std::vector< Point * > * pnts = geo->getPointVec(filename);
+		const std::vector< Point* >* pnts = geo->getPointVec(filename);
 		if (pnts)
 		{
 			string vtkFilename = filename;
@@ -83,7 +81,6 @@ int main (int argc, char const *argv[])
 	}
 
 	writer->Delete(); // TODO crashes
-
 
 	cout << "File conversion finished" << endl;
 

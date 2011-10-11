@@ -1,7 +1,7 @@
 /**
  * \file ConvertVtkToOsg.cpp
  * 25/10/2010 LB Initial implementation
- * 
+ *
  * Implementation of ConvertVtkToOsg utility
  */
 
@@ -10,26 +10,26 @@
 
 #include <iostream>
 
-#include <vtkSmartPointer.h>
+#include <vtkDataSetMapper.h>
 #include <vtkGenericDataObjectReader.h>
-#include <vtkXMLPolyDataReader.h>
+#include <vtkGeometryFilter.h>
+#include <vtkImageDataGeometryFilter.h>
+#include <vtkImageMapper.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkPolyDataNormals.h>
+#include <vtkSmartPointer.h>
 #include <vtkXMLImageDataReader.h>
+#include <vtkXMLPolyDataReader.h>
 #include <vtkXMLRectilinearGridReader.h>
 #include <vtkXMLStructuredGridReader.h>
 #include <vtkXMLUnstructuredGridReader.h>
-#include <vtkImageMapper.h>
-#include <vtkDataSetMapper.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkGeometryFilter.h>
-#include <vtkPolyDataNormals.h>
-#include <vtkImageDataGeometryFilter.h>
 
 #include <OpenSG/OSGSceneFileHandler.h>
 #include <OpenSG/OSGSwitch.h>
 
-#include <vector>
 #include <boost/filesystem/operations.hpp>
 #include <boost/regex.hpp>
+#include <vector>
 using namespace boost::filesystem;
 using namespace std;
 
@@ -38,7 +38,7 @@ void replaceExt(string& s, const string& newExt)
 {
 	string::size_type i = s.rfind('.', s.length());
 	if (i != string::npos)
-		s.replace(i+1, newExt.length(), newExt);
+		s.replace(i + 1, newExt.length(), newExt);
 }
 
 // Get file extension
@@ -46,14 +46,14 @@ string getFileExt(const string& s)
 {
 	size_t i = s.rfind('.', s.length());
 	if (i != string::npos)
-		return (s.substr(i+1, s.length() - i));
-	return ("");
+		return s.substr(i + 1, s.length() - i);
+	return "";
 }
 
 // No arguments: batch convert all vt* files
 // switch argument: batch convert all vt* files into one osb file with a switch
 // file argument: convert only the specified file
-int main (int argc, char const *argv[])
+int main (int argc, char const* argv[])
 {
 	vector<string> filenames;
 	bool useSwitch = false;
@@ -78,7 +78,7 @@ int main (int argc, char const *argv[])
 	}
 
 	OSG::osgInit(0, NULL);
-	
+
 	vtkPolyDataMapper* mapper = vtkPolyDataMapper::New();
 	OSG::NodePtr switchNode = OSG::Node::create();
 	OSG::SwitchPtr switchCore = OSG::Switch::create();
@@ -88,7 +88,6 @@ int main (int argc, char const *argv[])
 	beginEditCP(switchNode);
 	switchNode->setCore(switchCore);
 	endEditCP(switchNode);
-
 
 	for (vector<string>::const_iterator it = filenames.begin(); it != filenames.end(); ++it)
 	{
@@ -101,21 +100,24 @@ int main (int argc, char const *argv[])
 		if (fileExt.find("vti") != string::npos)
 		{
 			reader = vtkXMLImageDataReader::New();
-			vtkSmartPointer<vtkImageDataGeometryFilter> geoFilter = vtkSmartPointer<vtkImageDataGeometryFilter>::New();
+			vtkSmartPointer<vtkImageDataGeometryFilter> geoFilter =
+			        vtkSmartPointer<vtkImageDataGeometryFilter>::New();
 			geoFilter->SetInputConnection(reader->GetOutputPort());
 			mapper->SetInputConnection(geoFilter->GetOutputPort());
 		}
 		if (fileExt.find("vtr") != string::npos)
 		{
 			reader = vtkXMLRectilinearGridReader::New();
-			vtkSmartPointer<vtkGeometryFilter> geoFilter = vtkSmartPointer<vtkGeometryFilter>::New();
+			vtkSmartPointer<vtkGeometryFilter> geoFilter =
+			        vtkSmartPointer<vtkGeometryFilter>::New();
 			geoFilter->SetInputConnection(reader->GetOutputPort());
 			mapper->SetInputConnection(geoFilter->GetOutputPort());
 		}
 		else if (fileExt.find("vts") != string::npos)
 		{
 			reader = vtkXMLStructuredGridReader::New();
-			vtkSmartPointer<vtkGeometryFilter> geoFilter = vtkSmartPointer<vtkGeometryFilter>::New();
+			vtkSmartPointer<vtkGeometryFilter> geoFilter =
+			        vtkSmartPointer<vtkGeometryFilter>::New();
 			geoFilter->SetInputConnection(reader->GetOutputPort());
 			mapper->SetInputConnection(geoFilter->GetOutputPort());
 		}
@@ -127,7 +129,8 @@ int main (int argc, char const *argv[])
 		else if (fileExt.find("vtu") != string::npos)
 		{
 			reader = vtkXMLUnstructuredGridReader::New();
-			vtkSmartPointer<vtkGeometryFilter> geoFilter = vtkSmartPointer<vtkGeometryFilter>::New();
+			vtkSmartPointer<vtkGeometryFilter> geoFilter =
+			        vtkSmartPointer<vtkGeometryFilter>::New();
 			geoFilter->SetInputConnection(reader->GetOutputPort());
 			mapper->SetInputConnection(geoFilter->GetOutputPort());
 		}
@@ -140,17 +143,18 @@ int main (int argc, char const *argv[])
 				mapper->SetInputConnection(oldStyleReader->GetOutputPort());
 			else
 			{
-				vtkSmartPointer<vtkGeometryFilter> geoFilter = vtkSmartPointer<vtkGeometryFilter>::New();
+				vtkSmartPointer<vtkGeometryFilter> geoFilter =
+				        vtkSmartPointer<vtkGeometryFilter>::New();
 				geoFilter->SetInputConnection(oldStyleReader->GetOutputPort());
 				mapper->SetInputConnection(geoFilter->GetOutputPort());
 			}
 		}
 		else
 		{
-			cout << "Not a valid vtk file ending (vti, vtr, vts, vtp, vtu, vtk)" << endl;
+			cout << "Not a valid vtk file ending (vti, vtr, vts, vtp, vtu, vtk)" <<
+			endl;
 			return 1;
 		}
-
 
 		if (fileExt.find("vtk") == string::npos)
 		{
@@ -172,11 +176,13 @@ int main (int argc, char const *argv[])
 		}
 		else
 			OSG::SceneFileHandler::the().write(node, filename.c_str());
-		
+
 		actor->ClearOsg();
 		actor->Delete();
-		if (reader) reader->Delete();
-		if (oldStyleReader) oldStyleReader->Delete();
+		if (reader)
+			reader->Delete();
+		if (oldStyleReader)
+			oldStyleReader->Delete();
 	}
 	if (useSwitch)
 	{
@@ -187,8 +193,8 @@ int main (int argc, char const *argv[])
 	//mapper->Delete(); // TODO crashes
 
 	OSG::osgExit();
-	
+
 	cout << "File conversion finished" << endl;
-	
+
 	return 0;
 }

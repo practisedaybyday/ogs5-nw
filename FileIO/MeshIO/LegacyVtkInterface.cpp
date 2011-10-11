@@ -8,34 +8,34 @@
 // ** INCLUDES **
 #include "LegacyVtkInterface.h"
 
-#include "msh_mesh.h"
-#include "msh_lib.h"
-#include "rf_pcs.h"
-#include "rf_mmp_new.h" // this is for class CMediumProperties, what else???
+#include "FEMEnums.h"
+#include "ProcessInfo.h"
 #include "fem_ele_std.h"
 #include "matrix_class.h"
+#include "msh_lib.h"
+#include "msh_mesh.h"
+#include "rf_mmp_new.h" // this is for class CMediumProperties, what else???
 #include "rf_pcs.h"
-#include "ProcessInfo.h"
-#include "FEMEnums.h"
+#include "rf_pcs.h"
 #ifdef GEM_REACT
-	#include "rf_REACT_GEM.h"
+#include "rf_REACT_GEM.h"
 #endif // GEM_REACT
 
 #include <string>
 using namespace std;
 
 LegacyVtkInterface::LegacyVtkInterface(MeshLib::CFEMesh* mesh,
-	std::vector<std::string> pointArrayNames,
-	std::vector<std::string> cellArrayNames,
-	std::vector<std::string> materialPropertyArrayNames,
-	std::string meshTypeName,
-	ProcessInfo* processInfo)
-: _mesh(mesh),
-  _pointArrayNames(pointArrayNames),
-  _cellArrayNames(cellArrayNames),
-  _materialPropertyArrayNames(materialPropertyArrayNames),
-  _meshTypeName(meshTypeName),
-  _processInfo(processInfo)
+                                       std::vector<std::string> pointArrayNames,
+                                       std::vector<std::string> cellArrayNames,
+                                       std::vector<std::string> materialPropertyArrayNames,
+                                       std::string meshTypeName,
+                                       ProcessInfo* processInfo)
+	: _mesh(mesh),
+	  _pointArrayNames(pointArrayNames),
+	  _cellArrayNames(cellArrayNames),
+	  _materialPropertyArrayNames(materialPropertyArrayNames),
+	  _meshTypeName(meshTypeName),
+	  _processInfo(processInfo)
 {
 	_processType = convertProcessTypeToString(processInfo->getProcessType());
 	_mesh = FEMGet(_processType);
@@ -44,14 +44,15 @@ LegacyVtkInterface::LegacyVtkInterface(MeshLib::CFEMesh* mesh,
 LegacyVtkInterface::~LegacyVtkInterface() {}
 
 /**************************************************************************
-FEMLib-Method:
-Task:
-Programing:
-04/2006 KG44 Implementation
-09/2006 KG44 Output for MPI - correct OUTPUT not yet implemented
-12/2008 NW Remove ios::app, Add PCS name to VTK file name
+   FEMLib-Method:
+   Task:
+   Programing:
+   04/2006 KG44 Implementation
+   09/2006 KG44 Output for MPI - correct OUTPUT not yet implemented
+   12/2008 NW Remove ios::app, Add PCS name to VTK file name
 **************************************************************************/
-void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time, std::string baseFilename) const
+void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time,
+                                      std::string baseFilename) const
 {
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
 	char tf_name[10];
@@ -84,8 +85,8 @@ void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time, std::s
 	vtk_file.seekg(0L,ios::beg);
 #ifdef SUPERCOMPUTER
 // kg44 buffer the output
-	char mybuffer [MY_IO_BUFSIZE*MY_IO_BUFSIZE];
-	vtk_file.rdbuf()->pubsetbuf(mybuffer,MY_IO_BUFSIZE*MY_IO_BUFSIZE);
+	char mybuffer [MY_IO_BUFSIZE * MY_IO_BUFSIZE];
+	vtk_file.rdbuf()->pubsetbuf(mybuffer,MY_IO_BUFSIZE * MY_IO_BUFSIZE);
 //
 #endif
 
@@ -97,10 +98,10 @@ void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time, std::s
 	vtk_file.close();
 }
 
-
-void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number, double simulation_time) const
+void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file,
+                                        int time_step_number,
+                                        double simulation_time) const
 {
-
 	vtk_file << "# vtk DataFile Version 3.0" << endl;
 	vtk_file << "Unstructured Grid from OpenGeoSys" << endl;
 	vtk_file << "ASCII"  << endl;
@@ -113,31 +114,28 @@ void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file, int time_step_number,
 	vtk_file << simulation_time << endl;
 	vtk_file << "CYLCE 1 1 long" << endl;
 	vtk_file << time_step_number << endl;
-
 }
-
 
 void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file) const
 {
 	const std::vector<MeshLib::CNode*> pointVector = _mesh->getNodeVector();
-	vtk_file << "POINTS "<< pointVector.size() << " double" << endl;
+	vtk_file << "POINTS " << pointVector.size() << " double" << endl;
 
 	const size_t n_pnts (pointVector.size());
-	for(size_t i = 0; i < n_pnts ; i++)
+	for(size_t i = 0; i < n_pnts; i++)
 	{
-		double const*const coords (pointVector[i]->getData());
+		double const* const coords (pointVector[i]->getData());
 		vtk_file << coords[0] << " " << coords[1] << " " << coords[2] << endl;
 	}
 }
-
 
 void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 {
 	size_t numCells = _mesh->ele_vector.size();
 
 	// count overall length of element vector
-	long numAllPoints =0;
-	for(size_t i=0; i < numCells; i++)
+	long numAllPoints = 0;
+	for(size_t i = 0; i < numCells; i++)
 	{
 		MeshLib::CElem* ele = _mesh->ele_vector[i];
 		numAllPoints = numAllPoints + (ele->GetNodesNumber(false)) + 1;
@@ -145,30 +143,37 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 
 	// write elements
 	vtk_file << "CELLS " << numCells << " " << numAllPoints << endl;
-	for(size_t i=0; i < numCells; i++)
+	for(size_t i = 0; i < numCells; i++)
 	{
 		MeshLib::CElem* ele = _mesh->ele_vector[i];
 
 		// Write number of points per cell
 		switch(ele->GetElementType())
 		{
-			case MshElemType::LINE:
-				vtk_file << "2"; break;
-			case MshElemType::QUAD:
-				vtk_file << "4"; break;
-			case MshElemType::HEXAHEDRON:
-				vtk_file << "8"; break;
-			case MshElemType::TRIANGLE:
-				vtk_file << "3"; break;
-			case MshElemType::TETRAHEDRON:
-				vtk_file << "4"; break;
-			case MshElemType::PRISM:
-				vtk_file << "6"; break;
-            case MshElemType::PYRAMID:
-              vtk_file << "5"; break;
-			default:
-				cerr << "COutput::WriteVTKElementData MshElemType not handled" << endl;
-				break;
+		case MshElemType::LINE:
+			vtk_file << "2";
+			break;
+		case MshElemType::QUAD:
+			vtk_file << "4";
+			break;
+		case MshElemType::HEXAHEDRON:
+			vtk_file << "8";
+			break;
+		case MshElemType::TRIANGLE:
+			vtk_file << "3";
+			break;
+		case MshElemType::TETRAHEDRON:
+			vtk_file << "4";
+			break;
+		case MshElemType::PRISM:
+			vtk_file << "6";
+			break;
+		case MshElemType::PYRAMID:
+			vtk_file << "5";
+			break;
+		default:
+			cerr << "COutput::WriteVTKElementData MshElemType not handled" << endl;
+			break;
 		}
 
 		for(size_t j = 0; j < ele->GetNodesNumber(false); j++)
@@ -181,44 +186,50 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 	// write cell types
 	vtk_file << "CELL_TYPES " << numCells << endl;
 
-	for(size_t i=0; i < numCells; i++)
+	for(size_t i = 0; i < numCells; i++)
 	{
 		MeshLib::CElem* ele = _mesh->ele_vector[i];
 
 		// Write vtk cell type number (see vtkCellType.h)
 		switch(ele->GetElementType())
 		{
-			case MshElemType::LINE:
-				vtk_file << "3" << endl; break;
-			case MshElemType::QUAD:
-				vtk_file << "9" << endl; break;
-			case MshElemType::HEXAHEDRON:
-				vtk_file << "12" << endl; break;
-			case MshElemType::TRIANGLE:
-				vtk_file << "5" << endl; break;
-			case MshElemType::TETRAHEDRON:
-				vtk_file << "10" << endl; break;
-			case MshElemType::PRISM: // VTK_WEDGE
-				vtk_file << "13" << endl; break;
-            case MshElemType::PYRAMID:
-              vtk_file << "14" << endl; break;
-			default:
-				cerr << "COutput::WriteVTKElementData MshElemType not handled" << endl;
-				break;
+		case MshElemType::LINE:
+			vtk_file << "3" << endl;
+			break;
+		case MshElemType::QUAD:
+			vtk_file << "9" << endl;
+			break;
+		case MshElemType::HEXAHEDRON:
+			vtk_file << "12" << endl;
+			break;
+		case MshElemType::TRIANGLE:
+			vtk_file << "5" << endl;
+			break;
+		case MshElemType::TETRAHEDRON:
+			vtk_file << "10" << endl;
+			break;
+		case MshElemType::PRISM: // VTK_WEDGE
+			vtk_file << "13" << endl;
+			break;
+		case MshElemType::PYRAMID:
+			vtk_file << "14" << endl;
+			break;
+		default:
+			cerr << "COutput::WriteVTKElementData MshElemType not handled" << endl;
+			break;
 		}
 	}
 	vtk_file << endl;
 }
 
-
 /**************************************************************************
-FEMLib-Method:
-Task:
-Programing:
-04/2006 kg44 Implementation
-10/2006 WW Output secondary variables
-08/2008 OK MAT values
-06/2009 WW/OK WriteELEVelocity for different coordinate systems
+   FEMLib-Method:
+   Task:
+   Programing:
+   04/2006 kg44 Implementation
+   10/2006 WW Output secondary variables
+   08/2008 OK MAT values
+   06/2009 WW/OK WriteELEVelocity for different coordinate systems
 **************************************************************************/
 void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 {
@@ -233,7 +244,8 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 		// Write x, y and z arrays as vectors
 		if (arrayName.find("X") != string::npos)
 		{
-			vtk_file << "VECTORS " << arrayName.substr(0, arrayName.size() - 2) << " double" << endl;
+			vtk_file << "VECTORS " <<
+			arrayName.substr(0, arrayName.size() - 2) << " double" << endl;
 			string arrayNames[3];
 			arrayNames[0] = arrayName;
 			arrayNames[1] = arrayName.substr(0, arrayName.size() - 1).append("Y");
@@ -247,19 +259,23 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 					CRFProcess* pcs = PCSGet(arrayNames[component], true);
 					if (!pcs)
 						continue;
-					nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName);
+					nod_value_index_vector[k] = pcs->GetNodeValueIndex(
+					        arrayName);
 					for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
-					{
-						if (arrayName.compare(pcs->pcs_primary_function_name[i]) == 0)
+						if (arrayName.compare(pcs->
+						                      pcs_primary_function_name[i])
+						    == 0)
 						{
 							nod_value_index_vector[k]++;
 							break;
 						}
-					}
-					vector3[component] = pcs->GetNodeValue(_mesh->nod_vector[j]->GetIndex(),
-						nod_value_index_vector[k]);
+					vector3[component] = pcs->GetNodeValue(
+					        _mesh->nod_vector[j]->GetIndex(),
+					        nod_value_index_vector
+					        [k]);
 				}
-				vtk_file << vector3[0] << " " << vector3[1] << " " << vector3[2] << endl;
+				vtk_file << vector3[0] << " " << vector3[1] << " " << vector3[2] <<
+				endl;
 			}
 			k += 2;
 		}
@@ -270,30 +286,27 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 				continue;
 			nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName);
 			for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
-			{
 				if (arrayName.compare(pcs->pcs_primary_function_name[i]) == 0)
 				{
 					nod_value_index_vector[k]++;
 					break;
 				}
-			}
 			vtk_file << "SCALARS " << arrayName << " double 1" << endl;
 			vtk_file << "LOOKUP_TABLE default" << endl;
 
 			for (long j = 0l; j < numNodes; j++)
-			{
 				if (nod_value_index_vector[k] > -1)
-					vtk_file << pcs->GetNodeValue(_mesh->nod_vector[j]->GetIndex(),
-					nod_value_index_vector[k])
+					vtk_file << pcs->GetNodeValue(
+					        _mesh->nod_vector[j]->GetIndex(),
+					        nod_value_index_vector[k])
 					<< endl;
-			}
 		}
 	}
 	//======================================================================
 	// Saturation 2 for 1212 pp - scheme. 01.04.2009. WW
 	// ---------------------------------------------------------------------
 	CRFProcess* pcs = NULL;
-	if (!_pointArrayNames.empty())                        //SB added
+	if (!_pointArrayNames.empty())                    //SB added
 		pcs = PCSGet(_pointArrayNames[0], true);
 	if (pcs && pcs->type == 1212)
 	{
@@ -308,33 +321,32 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 	}
 //kg44 GEM node data
 #ifdef GEM_REACT
-	m_vec_GEM->WriteVTKGEMValues(vtk_file);        //kg44 export GEM internal variables like speciateion vector , phases etc
+	m_vec_GEM->WriteVTKGEMValues(vtk_file);    //kg44 export GEM internal variables like speciateion vector , phases etc
 #endif
 	// ELEMENT DATA
 	// ---------------------------------------------------------------------
-	bool wroteAnyEleData = false;                  //NW
+	bool wroteAnyEleData = false;              //NW
 	if (!_cellArrayNames.empty())
 	{
 		CRFProcess* pcs = this->GetPCS_ELE(_cellArrayNames[0]);
 
 		std::vector<int> ele_value_index_vector(_cellArrayNames.size());
 		if (_cellArrayNames[0].size() > 0)
-		{
-		   for (size_t i = 0; i < _cellArrayNames.size(); i++)
-			  ele_value_index_vector[i] = pcs->GetElementValueIndex(_cellArrayNames[i]);
-		}
+			for (size_t i = 0; i < _cellArrayNames.size(); i++)
+				ele_value_index_vector[i] = pcs->GetElementValueIndex(
+				        _cellArrayNames[i]);
 
 		vtk_file << "CELL_DATA " << (long) _mesh->ele_vector.size() << endl;
 		wroteAnyEleData = true;
-	//....................................................................
-	//
+		//....................................................................
+		//
 		for (size_t k = 0; k < _cellArrayNames.size(); k++)
 		{
 			// JTARON 2010, "VELOCITY" should only write as vector, scalars handled elswhere
 			if (_cellArrayNames[k].compare("VELOCITY") == 0)
 			{
 				vtk_file << "VECTORS velocity double " << endl;
-				this->WriteELEVelocity(vtk_file);           //WW/OK
+				this->WriteELEVelocity(vtk_file); //WW/OK
 			}
 			// PRINT CHANGING (OR CONSTANT) PERMEABILITY TENSOR?   // JTARON 2010
 			else if (_cellArrayNames[k].compare("PERMEABILITY") == 0)
@@ -343,9 +355,11 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 				for (int j = 0l; j < (long) _mesh->ele_vector.size(); j++)
 				{
 					MeshLib::CElem* ele = _mesh->ele_vector[j];
-					CMediumProperties* MediaProp = mmp_vector[ele->GetPatchIndex()];
+					CMediumProperties* MediaProp =
+					        mmp_vector[ele->GetPatchIndex()];
 					for (size_t i = 0; i < 3; i++)
-						vtk_file << MediaProp->PermeabilityTensor(j)[i * 3 + i] << " ";
+						vtk_file <<
+						MediaProp->PermeabilityTensor(j)[i * 3 + i] << " ";
 					vtk_file << endl;
 				}
 			}
@@ -353,19 +367,20 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 			{
 				// NOW REMAINING SCALAR DATA  // JTARON 2010, reconfig
 				vtk_file << "SCALARS " << _cellArrayNames[k] << " double 1"
-					<< endl;
+				         << endl;
 				vtk_file << "LOOKUP_TABLE default" << endl;
 				for (size_t i = 0; i < _mesh->ele_vector.size(); i++)
 					vtk_file << pcs->GetElementValue(i,
-					ele_value_index_vector[k]) << endl;
+					                                 ele_value_index_vector[k])
+					         << endl;
 			}
 		}
-	//--------------------------------------------------------------------
+		//--------------------------------------------------------------------
 		ele_value_index_vector.clear();
 	}
 	//======================================================================
 	// MAT data
-	if (! _materialPropertyArrayNames.empty())
+	if (!_materialPropertyArrayNames.empty())
 	{
 		int mmp_id = -1;
 		if (_materialPropertyArrayNames[0].compare("POROSITY") == 0)
@@ -381,12 +396,12 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 			double mat_value = 0.0;
 			switch (mmp_id)
 			{
-				case 0:
-					mat_value = mmp_vector[ele->GetPatchIndex()]->Porosity(i, 0.0);
-					break;
-				default:
-					cout << "COutput::WriteVTKValues: no MMP values specified" << endl;
-					break;
+			case 0:
+				mat_value = mmp_vector[ele->GetPatchIndex()]->Porosity(i, 0.0);
+				break;
+			default:
+				cout << "COutput::WriteVTKValues: no MMP values specified" << endl;
+				break;
 			}
 			vtk_file << mat_value << endl;
 		}
@@ -395,7 +410,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 	if (mmp_vector.size() > 1)
 	{
 		// write header for cell data
-		if (!wroteAnyEleData)                       //NW: check whether the header has been already written
+		if (!wroteAnyEleData)               //NW: check whether the header has been already written
 			vtk_file << "CELL_DATA " << _mesh->ele_vector.size() << endl;
 		wroteAnyEleData = true;
 
@@ -410,40 +425,40 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 }
 
 /**************************************************************************
-FEMLib-Method:
-06/2009 WW/OK Implementation
+   FEMLib-Method:
+   06/2009 WW/OK Implementation
 **************************************************************************/
 inline void LegacyVtkInterface::WriteELEVelocity(fstream &vtk_file) const
 {
 	int vel_ind[3] = {0, 1, 2};
 
 	// 1D
-	if(_mesh->GetCoordinateFlag()/10==1)
+	if(_mesh->GetCoordinateFlag() / 10 == 1)
 	{
 		// 0 y 0
-		if(_mesh->GetCoordinateFlag()%10==1)
+		if(_mesh->GetCoordinateFlag() % 10 == 1)
 		{
 			vel_ind[0] = 1;
 			vel_ind[1] = 0;
 		}
 		// 0 0 z
-		else if(_mesh->GetCoordinateFlag()%10==2)
+		else if(_mesh->GetCoordinateFlag() % 10 == 2)
 		{
 			vel_ind[0] = 2;
 			vel_ind[2] = 0;
 		}
 	}
 	// 2D
-	if(_mesh->GetCoordinateFlag()/10==2)
+	if(_mesh->GetCoordinateFlag() / 10 == 2)
 	{
 		// 0 y z
-		if(_mesh->GetCoordinateFlag()%10==1)
+		if(_mesh->GetCoordinateFlag() % 10 == 1)
 		{
 			vel_ind[0] = 1;
 			vel_ind[1] = 2;
 		}
 		// x 0 z
-		else if(_mesh->GetCoordinateFlag()%10==2)
+		else if(_mesh->GetCoordinateFlag() % 10 == 2)
 		{
 			vel_ind[0] = 0;
 			vel_ind[1] = 2;
@@ -451,9 +466,9 @@ inline void LegacyVtkInterface::WriteELEVelocity(fstream &vtk_file) const
 		}
 	}
 
-	for(long i=0;i<(long)_mesh->ele_vector.size();i++)
+	for(long i = 0; i < (long)_mesh->ele_vector.size(); i++)
 	{
-		for(int k=0; k<3; k++)
+		for(int k = 0; k < 3; k++)
 			vtk_file << ele_gp_value[i]->Velocity(vel_ind[k],0) << " ";
 		vtk_file << endl;
 	}
@@ -469,17 +484,15 @@ CRFProcess* LegacyVtkInterface::GetPCS_ELE(const string &var_name) const
 		pcs = PCSGet(_meshTypeName);
 
 	if (!pcs)
-	{
-	   for (size_t i = 0; i < pcs_vector.size(); i++)
-	   {
-		  pcs = pcs_vector[i];
-		  for (int j = 0; j < pcs->pcs_number_of_evals; j++)
-		  {
-			 pcs_var_name = pcs->pcs_eval_name[j];
-			 if (pcs_var_name.compare(var_name) == 0)
-				return pcs;
-		  }
-	   }
-	}
+		for (size_t i = 0; i < pcs_vector.size(); i++)
+		{
+			pcs = pcs_vector[i];
+			for (int j = 0; j < pcs->pcs_number_of_evals; j++)
+			{
+				pcs_var_name = pcs->pcs_eval_name[j];
+				if (pcs_var_name.compare(var_name) == 0)
+					return pcs;
+			}
+		}
 	return pcs;
 }

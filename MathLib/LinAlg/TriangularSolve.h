@@ -10,8 +10,8 @@
 
 #include "../Matrix.h"
 
-namespace MathLib {
-
+namespace MathLib
+{
 /**
  * solves the \f$n \times n\f$ triangular linear system \f$L \cdot y = b\f$,
  * assumes \f$L_{ii} = 1.0\f$, \f$i=1,...,n\f$, \f$b\f$ is destroyed
@@ -37,7 +37,6 @@ void backwardSolve (const Matrix <double> &U, double* y);
  * @param b the right hand side
  */
 void backwardSolve ( Matrix<double> const& mat, double* x, double* b);
-
 } // end namespace MathLib
 
 #endif /* TRIANGULARSOLVE_H_ */

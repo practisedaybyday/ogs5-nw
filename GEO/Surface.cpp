@@ -8,23 +8,23 @@
 #include <list>
 
 // GEOLIB
-#include "Surface.h"
 #include "AxisAlignedBoundingBox.h"
 #include "Polygon.h"
+#include "Surface.h"
 
 // MathLib
 #include "AnalyticalGeometry.h"
 #include "EarClippingTriangulation.h"
 
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 Surface::Surface (const std::vector<Point*> &pnt_vec) :
 	GeoObject(), _sfc_pnts(pnt_vec), _bv()
 {}
 
 Surface::~Surface ()
 {
-	for (size_t k(0); k<_sfc_triangles.size(); k++)
+	for (size_t k(0); k < _sfc_triangles.size(); k++)
 		delete _sfc_triangles[k];
 }
 
@@ -39,23 +39,28 @@ void Surface::addTriangle (size_t pnt_a, size_t pnt_b, size_t pnt_c)
 
 Surface* Surface::createSurface(const Polyline &ply)
 {
-	if (!ply.isClosed()) {
-		std::cout << "Error in Surface::createSurface() - Polyline is not closed..." << std::cout;
+	if (!ply.isClosed())
+	{
+		std::cout << "Error in Surface::createSurface() - Polyline is not closed..." <<
+		std::cout;
 		return NULL;
 	}
 
-	if (ply.getNumberOfPoints() > 2) {
+	if (ply.getNumberOfPoints() > 2)
+	{
 		// create empty surface
-		Surface *sfc(new Surface(ply.getPointsVec()));
+		Surface* sfc(new Surface(ply.getPointsVec()));
 
 		Polygon* polygon (new Polygon (ply));
 		polygon->computeListOfSimplePolygons ();
 
 		// create surfaces from simple polygons
-		const std::list<GEOLIB::Polygon*>& list_of_simple_polygons (polygon->getListOfSimplePolygons());
-		for (std::list<GEOLIB::Polygon*>::const_iterator simple_polygon_it (list_of_simple_polygons.begin());
-			simple_polygon_it != list_of_simple_polygons.end(); ++simple_polygon_it) {
-
+		const std::list<GEOLIB::Polygon*>& list_of_simple_polygons (
+		        polygon->getListOfSimplePolygons());
+		for (std::list<GEOLIB::Polygon*>::const_iterator simple_polygon_it (
+		             list_of_simple_polygons.begin());
+		     simple_polygon_it != list_of_simple_polygons.end(); ++simple_polygon_it)
+		{
 			std::list<GEOLIB::Triangle> triangles;
 			std::cout << "triangulation of surface: ... " << std::flush;
 			MathLib::EarClippingTriangulation(*simple_polygon_it, triangles);
@@ -63,18 +68,22 @@ Surface* Surface::createSurface(const Polyline &ply)
 
 			// add Triangles to Surface
 			std::list<GEOLIB::Triangle>::const_iterator it (triangles.begin());
-			while (it != triangles.end()) {
+			while (it != triangles.end())
+			{
 				sfc->addTriangle ((*it)[0], (*it)[1], (*it)[2]);
 				it++;
 			}
 		}
 		delete polygon;
 		return sfc;
-	} else {
-		std::cout << "Error in Surface::createSurface() - Polyline consists of less than three points and therefore cannot be triangulated..." << std::cout;
+	}
+	else
+	{
+		std::cout <<
+		"Error in Surface::createSurface() - Polyline consists of less than three points and therefore cannot be triangulated..."
+		          << std::cout;
 		return NULL;
 	}
-
 }
 
 size_t Surface::getNTriangles () const
@@ -88,20 +97,18 @@ const Triangle* Surface::operator[] (size_t i) const
 	return _sfc_triangles[i];
 }
 
-bool Surface::isPntInBV (const double *pnt, double eps) const
+bool Surface::isPntInBV (const double* pnt, double eps) const
 {
 	return _bv.containsPoint (pnt, eps);
 }
 
-bool Surface::isPntInSfc (const double *pnt) const
+bool Surface::isPntInSfc (const double* pnt) const
 {
 	bool nfound (true);
-	for (size_t k(0); k<_sfc_triangles.size() && nfound; k++) {
-		if (_sfc_triangles[k]->containsPoint (pnt)) {
+	for (size_t k(0); k < _sfc_triangles.size() && nfound; k++)
+		if (_sfc_triangles[k]->containsPoint (pnt))
 			nfound = false;
-		}
-	}
+
 	return !nfound;
 }
-
 } // end namespace

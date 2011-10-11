@@ -6,9 +6,9 @@
  */
 
 // STL
+#include <cstddef>
 #include <limits>
 #include <vector>
-#include <cstddef>
 
 #ifndef BINARYSEARCH_H_
 #define BINARYSEARCH_H_
@@ -26,16 +26,15 @@
 template <class T>
 size_t searchElement (const T& key, size_t beg, size_t end, const std::vector<T>& array)
 {
-	if (beg >= end) return std::numeric_limits<size_t>::max();
-	size_t m ((end+beg)/2);
+	if (beg >= end)
+		return std::numeric_limits<size_t>::max();
+	size_t m ((end + beg) / 2);
 
-	if (key == array[m]) {
+	if (key == array[m])
 		return m;
-	}
-	if (key < array[m]) {
+	if (key < array[m])
 		return searchElement (key, beg, m, array);
-	}
-	return searchElement (key, m+1, end, array);
+	return searchElement (key, m + 1, end, array);
 }
 
 size_t searchElement (double const& val, size_t beg, size_t end, const std::vector<double>& array);

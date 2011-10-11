@@ -15,12 +15,13 @@
 // MathLib
 #include "MathTools.h"
 
-#include <vector>
 #include <cmath>
+#include <vector>
 
-namespace GEOLIB {
-
-class Location {
+namespace GEOLIB
+{
+class Location
+{
 public:
 	enum type {
 		LEFT,
@@ -72,7 +73,8 @@ public:
 
 	/// Constructs one polyline from a vector of connected polylines.
 	/// All polylines in this vector need to reference the same point vector.
-	static Polyline* constructPolylineFromSegments(const std::vector<Polyline*> &ply_vec, double prox = 0.0);
+	static Polyline* constructPolylineFromSegments(const std::vector<Polyline*> &ply_vec,
+	                                               double prox = 0.0);
 
 	/**
 	 * returns the number of points,
@@ -132,8 +134,10 @@ protected:
 	 */
 	Location::type getLocationOfPoint (size_t k, GEOLIB::Point const & pnt) const;
 
-	static bool pointsAreIdentical(const std::vector<Point*> &pnt_vec, size_t i, size_t j, double prox);
-
+	static bool pointsAreIdentical(const std::vector<Point*> &pnt_vec,
+	                               size_t i,
+	                               size_t j,
+	                               double prox);
 
 	/** a reference to the vector of pointers to the geometric points */
 	const std::vector<Point*> &_ply_pnts;
@@ -149,7 +153,6 @@ protected:
 std::ostream& operator<< (std::ostream &os, const Polyline &pl);
 
 bool containsEdge (const Polyline& ply, size_t id0, size_t id1);
-
 } // end namespace
 
 #endif /* POLYLINE_H_ */

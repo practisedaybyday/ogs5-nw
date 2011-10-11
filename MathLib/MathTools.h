@@ -8,13 +8,13 @@
 #ifndef MATHTOOLS_H_
 #define MATHTOOLS_H_
 
-#include <vector>
+#include "Point.h"
 #include <cmath>
 #include <limits>
-#include "Point.h"
+#include <vector>
 
-namespace MathLib {
-
+namespace MathLib
+{
 /**
  * standard inner product in R^3
  * \param v0 array of type T representing the vector
@@ -22,9 +22,10 @@ namespace MathLib {
  * \param n the size of the array
  * */
 template<class T> inline
-double scpr(const T* v0, const T* v1, size_t n) {
+double scpr(const T* v0, const T* v1, size_t n)
+{
 	long double res(0.0);
-	for (size_t k(0); k<n; k++)
+	for (size_t k(0); k < n; k++)
 		res += v0[k] * v1[k];
 	return (double) res;
 }
@@ -50,7 +51,7 @@ void crossProd (const double u[3], const double v[3], double r[3]);
  * \returns the distance between p and the orthogonal projection of p
  */
 double calcProjPntToLineAndDists(const double p[3], const double a[3],
-		const double b[3], double &lambda, double &d0);
+                                 const double b[3], double &lambda, double &d0);
 
 /**
  * Checks if two points are within a given distance of each other
@@ -93,13 +94,12 @@ template <typename T> inline
 T fastpow (T base, size_t exp)
 {
 	T result (base);
-	if (exp == 0) result = static_cast<T>(1);
-	for (size_t k(1); k<exp; k++) {
+	if (exp == 0)
+		result = static_cast<T>(1);
+	for (size_t k(1); k < exp; k++)
 		result *= base;
-	}
 	return result;
 }
-
 } // namespace
 
 #endif /* MATHTOOLS_H_ */

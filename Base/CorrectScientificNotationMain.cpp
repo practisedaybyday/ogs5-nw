@@ -1,6 +1,6 @@
 /**
  * 28/5/2010 LB Initial implementation
- * 
+ *
  */
 #include "StringTools.h"
 

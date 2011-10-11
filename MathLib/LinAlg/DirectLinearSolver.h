@@ -10,15 +10,14 @@
 
 #include "LinearSolver.h"
 
-namespace MathLib {
-
+namespace MathLib
+{
 class DirectLinearSolver : public MathLib::LinearSolver
 {
 public:
-	DirectLinearSolver() {};
-	virtual ~DirectLinearSolver() {};
+	DirectLinearSolver() {}
+	virtual ~DirectLinearSolver() {}
 };
-
 }
 
 #endif /* DIRECTLINEARSOLVER_H_ */

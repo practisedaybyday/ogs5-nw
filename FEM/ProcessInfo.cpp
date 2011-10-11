@@ -5,52 +5,46 @@
  *      Author: TF
  */
 
-#include <ProcessInfo.h>
 #include "rf_pcs.h"
+#include <ProcessInfo.h>
 
 ProcessInfo::ProcessInfo() :
-_pcs_type (INVALID_PROCESS), _pcs_pv (INVALID_PV), _pcs (NULL)
+	_pcs_type (INVALID_PROCESS), _pcs_pv (INVALID_PV), _pcs (NULL)
 {}
 
 ProcessInfo::ProcessInfo (ProcessType pcs_type, PrimaryVariable pcs_pv, CRFProcess* pcs) :
-_pcs_type (pcs_type), _pcs_pv (pcs_pv), _pcs (pcs)
+	_pcs_type (pcs_type), _pcs_pv (pcs_pv), _pcs (pcs)
 {}
 
 void ProcessInfo::setProcessType (ProcessType pcs_type)
 {
-   _pcs_type = pcs_type;
+	_pcs_type = pcs_type;
 }
-
 
 void ProcessInfo::setProcessPrimaryVariable (PrimaryVariable pcs_pv)
 {
-   _pcs_pv = pcs_pv;
+	_pcs_pv = pcs_pv;
 }
-
 
 void ProcessInfo::setProcess (CRFProcess* pcs)
 {
-   _pcs = pcs;
+	_pcs = pcs;
 }
-
 
 ProcessType ProcessInfo::getProcessType () const
 {
-   return _pcs_type;
+	return _pcs_type;
 }
-
 
 PrimaryVariable ProcessInfo::getProcessPrimaryVariable () const
 {
-   return _pcs_pv;
+	return _pcs_pv;
 }
-
 
 CRFProcess* ProcessInfo::getProcess () const
 {
-   return _pcs;
+	return _pcs;
 }
-
 
 ProcessInfo::~ProcessInfo()
 {}

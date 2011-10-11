@@ -10,7 +10,7 @@
                       memory-Aufruf, um Aufrufstellen zu lokalisieren.
      MEMORY_REALLOC : Ersetzt Realloc durch Malloc und Free und speichert
                       Daten um
-                                                                          */
+ */
 /**************************************************************************/
 
 #ifndef memory_INC
@@ -34,16 +34,16 @@ extern long MemoryTestInTimeArea( void );
 /* Gibt Groesse des aktuell durch Addressen eingegrenzten Bereichs zurueck */
 
 #ifndef MEMORY_STR
-extern void *Malloc ( long bytes );
+extern void* Malloc ( long bytes );
 /* Ersetzt malloc */
-extern void *Free ( void *block );
+extern void* Free ( void* block );
 /* Ersetzt free, muss in der Form >> x = Free(x); << benutzt werden */
-extern void *Realloc ( void *block, long bytes );
+extern void* Realloc ( void* block, long bytes );
 /* Ersetzt realloc, muss in der Form >> x = Realloc(x,i); << benutzt werden */
 #else
-extern void *MAlloc ( long bytes, char *datei, int zeile );
-extern void *FRee ( void *block, char *datei, int zeile );
-extern void *REalloc ( void *block, long bytes, char *datei, int zeile );
+extern void* MAlloc ( long bytes, char* datei, int zeile );
+extern void* FRee ( void* block, char* datei, int zeile );
+extern void* REalloc ( void* block, long bytes, char* datei, int zeile );
 /* Funktionen wie oben, nur mit Aufrufstellenkennzeichnung */
 #endif
 #endif
