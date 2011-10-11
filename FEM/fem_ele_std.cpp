@@ -1933,7 +1933,8 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 		break;
 	case L:                               // Liquid flow
 		tensor = MediaProp->PermeabilityTensor(Index);
-		if (ele_dim != dim)
+		//if (ele_dim != dim)
+        if (dim > MediaProp->geo_dimension)
 		{
 			Matrix local_tensor(dim,dim);
 			Matrix temp_tensor(dim,dim);
@@ -2000,6 +2001,35 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 		   else{
 		 */
 		tensor = MediaProp->PermeabilityTensor(Index);
+            //TK/NW 10.10.2011
+            if (dim > MediaProp->geo_dimension)
+            {
+               Matrix local_tensor(dim,dim);
+               Matrix temp_tensor(dim,dim);
+               Matrix t_transform_tensor(*MeshElement->tranform_tensor);
+               MeshElement->tranform_tensor->GetTranspose(t_transform_tensor);
+               Matrix global_tensor(dim,dim);
+               for (i=0; i<ele_dim; i++)
+                  for (int j=0; j<ele_dim; j++)
+                     local_tensor(i,j) = tensor[j+i*ele_dim];
+               //cout << "K':" << endl; local_tensor.Write();
+               local_tensor.multi(t_transform_tensor, temp_tensor);
+               for (i=0; i<dim; i++)
+               {
+                  for (int j=0; j<dim; j++)
+                     for (int k=0; k<dim; k++)
+                        global_tensor(i,j)+=(*MeshElement->tranform_tensor)(i,k)*temp_tensor(k,j);
+               }
+               //cout << "K:" << endl; global_tensor.Write();
+               for(i=0; i<dim; i++)
+               {
+                  for(int j=0; j<dim; j++)
+                  {
+                     tensor[dim*i+j] = global_tensor(i,j);
+                  }
+               }
+            }
+            //TK/NW 10.10.2011
 		for(i = 0; i < dim * dim; i++)
 			//16.10.2009 .WW
 			mat[i] = tensor[i] * time_unit_factor;
