@@ -5,7 +5,7 @@
    Stellt allgemeine Funktionszeiger bereit.
 
    letzte Aenderung:  RK   03/2003
-                                                                          */
+ */
 /**************************************************************************/
 
 #ifndef intrface_INC
@@ -14,6 +14,7 @@
 /* Schutz gegen mehrfaches Einfuegen */
 
 /* Andere oeffentlich benutzte Module */
+#include "prototyp.h"
 
 /* Deklarationen */
 
@@ -25,7 +26,7 @@ extern VoidFuncLDXD SetElementJacobiMatrix;
 
 extern DoubleXFuncLDX GetElementJacobiMatrix;
 /* Liefert die inverse Jakobi-Matrix und deren Determinatne
-im Zentrum des Elements number */
+   im Zentrum des Elements number */
 
 extern VoidFuncLong DeleteElementJacobiMatrix;
 /* Erdet den Jacobi-Matrix-Zeiger des Elements number */

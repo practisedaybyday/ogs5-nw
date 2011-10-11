@@ -16,19 +16,25 @@
 /**
  * \brief Manages the import and export of Aquaveo GMS files into and out of GEOLIB.
  */
-class GMSInterface {
+class GMSInterface
+{
 public:
 	/// Exports borehole data from all boreholes in a list to a file in GMS-format. (Note: there are some hardcoded tmp-files in the method that you might need to change!)
-	static void writeBoreholesToGMS(const std::vector<GEOLIB::Point*> *stations, const std::string &filename);
+	static void writeBoreholesToGMS(const std::vector<GEOLIB::Point*>* stations,
+	                                const std::string &filename);
 
 	/// Imports borehole data from a file in GMS-format.
-	static int readBoreholesFromGMS(std::vector<GEOLIB::Point*> *boreholes, const std::string &filename);
+	static int readBoreholesFromGMS(std::vector<GEOLIB::Point*>* boreholes,
+	                                const std::string &filename);
 
 	/// Exports borehole data from one borehole to a file in GMS-format.
-	static int writeBoreholeToGMS(const GEOLIB::StationBorehole* station, const std::string &filename, std::vector<std::string> &soilID);
+	static int writeBoreholeToGMS(const GEOLIB::StationBorehole* station,
+	                              const std::string &filename,
+	                              std::vector<std::string> &soilID);
 
 	/// Writes a file that assigns each soilID-index in the GMS export file a name.
-	static int writeSoilIDTable(const std::vector<std::string> &soilID, const std::string &filename);
+	static int writeSoilIDTable(const std::vector<std::string> &soilID,
+	                            const std::string &filename);
 
 	/// Reads a GMS *.3dm file and converts it to an CFEMesh.
 	static MeshLib::CFEMesh* readGMS3DMMesh(std::string file_name);
@@ -45,9 +51,6 @@ private:
 
 	/// Finds the ID assigned to soilName or creates a new one ( this method is called from writeBoreholeToGMS() )
 	static size_t getSoilID(std::vector<std::string> &soilID, std::string &soilName);
-
-
 };
-
 
 #endif /* GMSINTERFACE_H_ */

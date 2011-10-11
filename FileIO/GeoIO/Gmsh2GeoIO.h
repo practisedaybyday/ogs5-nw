@@ -10,13 +10,15 @@
 
 #include <string>
 
-namespace GEOLIB {
-	class GEOObjects;
+namespace GEOLIB
+{
+class GEOObjects;
 }
 
-namespace FileIO {
-
-class Gmsh2GeoIO {
+namespace FileIO
+{
+class Gmsh2GeoIO
+{
 public:
 	/**
 	 * load a surface mesh (gmsh format) as a geometric surface
@@ -26,7 +28,6 @@ public:
 	 */
 	static void loadMeshAsGeometry (std::string & fname, GEOLIB::GEOObjects* geo);
 };
-
 } // end namespace FileIO
 
 #endif /* GMSH2GEOIO_H_ */

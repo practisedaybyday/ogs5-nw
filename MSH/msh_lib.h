@@ -1,9 +1,9 @@
 /**************************************************************************
-MSHLib - Object:
-Task:
-Programing:
-08/2005 WW/OK Encapsulation from rf_ele_msh
-last modified
+   MSHLib - Object:
+   Task:
+   Programing:
+   08/2005 WW/OK Encapsulation from rf_ele_msh
+   last modified
 **************************************************************************/
 #ifndef msh_lib_INC
 #define msh_lib_INC
@@ -12,10 +12,12 @@ last modified
 
 extern std::vector<MeshLib::CFEMesh*> fem_msh_vector;
 extern MeshLib::CFEMesh* FEMGet(const std::string &msh_name);
-                                                  //OK
+//OK
 extern void MSHCreateNOD2ELERelations(MeshLib::CFEMesh*);
 
-MeshLib::CFEMesh* FEMRead(const std::string& , GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
+MeshLib::CFEMesh* FEMRead(const std::string&,
+                          GEOLIB::GEOObjects* geo_obj = NULL,
+                          std::string* unique_name = NULL);
 /**
  * reads a mesh. The following formats are possible:
  * <ol>
@@ -28,7 +30,10 @@ MeshLib::CFEMesh* FEMRead(const std::string& , GEOLIB::GEOObjects* geo_obj = NUL
  * @param geo_obj object, that manages the geometric entities
  * @param unique_name the name of geometric data
  */
-void FEMRead(const std::string& mesh_fname, std::vector<MeshLib::CFEMesh*>& mesh_vec, GEOLIB::GEOObjects* geo_obj = NULL, std::string* unique_name = NULL);
+void FEMRead(const std::string& mesh_fname,
+             std::vector<MeshLib::CFEMesh*>& mesh_vec,
+             GEOLIB::GEOObjects* geo_obj = NULL,
+             std::string* unique_name = NULL);
 
 extern void MSHWrite(std::string);
 extern void CompleteMesh();                       //WW
@@ -59,21 +64,21 @@ extern void MSH2MATPris();
 extern void MSHAssignMATGroup2HexsElements();
 extern void MSHDestroy();
 extern void MSHDelete(std::string);
-extern void DATWriteRFIFile(const char *file_name);
+extern void DATWriteRFIFile(const char* file_name);
 extern void DATWriteParticleFile(int);            // PCH
 extern void MSHWriteVOL2TEC(std::string);         //OK
 //KR extern bool msh_file_binary; //OK
 extern void GMSH2MSH(const char*, MeshLib::CFEMesh*);
-                                                  //TK
-extern void Mesh_Single_Surface(std::string surface_name, const char *file_name_const_char);
+//TK
+extern void Mesh_Single_Surface(std::string surface_name, const char* file_name_const_char);
 //extern void Select_Nodes_Elements_by_TINFile(const char *file_name_const_char);
 extern void Clear_Selected_Nodes_Elements();
-extern void GMSH2TIN(const char *file_name_const_char);
+extern void GMSH2TIN(const char* file_name_const_char);
 extern void MSHLayerWriteTecplot();               //OK
 
-                                                  //OK
+//OK
 extern MeshLib::CFEMesh* MSHGet(const std::string &mat_type_name);
-                                                  //OK
+//OK
 extern MeshLib::CFEMesh* MSHGet(const std::string &pcs_type_name,const std::string &mat_type_name);
 extern MeshLib::CFEMesh* MSHGetGEO(std::string);           //OK
 extern int MSHSetMaxMMPGroups();                  //OK
@@ -82,12 +87,12 @@ extern bool MSHTestMATGroups();                   //OK
 extern bool MSHGetCommonNodes(CElem*, CElem*, vector<CNode*>&);
 extern void MSHSetFractureElements(void);
 extern void MSHResetFractureElements(void);
-                                                  //RFW
+//RFW
 extern long MSHWhatElemIsPointIn(double x, double y, long index);
 #endif
 extern void MSHDefineMobile(CRFProcess*);         //OK411
 extern void MSHMoveNODUcFlow (CRFProcess*);       //OK411
-extern long* MSHGetNodesClose(long*,CGLPolyline*);//OK411
+extern long* MSHGetNodesClose(long*,CGLPolyline*); //OK411
 
 //extern bool IsPointInSurface(Surface*,CGLPoint*); //OK411
 

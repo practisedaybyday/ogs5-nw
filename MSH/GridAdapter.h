@@ -4,7 +4,6 @@
  *
  */
 
-
 #ifndef GRIDADAPTER_H
 #define GRIDADAPTER_H
 
@@ -16,8 +15,8 @@ class vtkUnstructuredGrid; // For conversion vom vtk to ogs mesh
 
 namespace MeshLib
 {
-	class CFEMesh;
-	class CNode;
+class CFEMesh;
+class CNode;
 }
 
 /**
@@ -29,11 +28,10 @@ public:
 	/// An element structure consisting of a number of nodes and a MshElemType
 	typedef struct
 	{
-		MshElemType::type	type;
-		size_t				material;
+		MshElemType::type type;
+		size_t material;
 		std::vector<size_t> nodes;
 	} Element;
-
 
 	/// Constructor using a FEM-Mesh Object as source
 	GridAdapter(const MeshLib::CFEMesh* mesh = NULL);
@@ -47,22 +45,22 @@ public:
 	size_t getNumberOfMaterials() const;
 
 	/// Returns the vector of nodes.
-	const std::vector<GEOLIB::Point*> *getNodes() const { return _nodes; }
+	const std::vector<GEOLIB::Point*>* getNodes() const { return _nodes; }
 
 	/// Returns the vector of elements.
-	const std::vector<Element*> *getElements() const { return _elems; }
+	const std::vector<Element*>* getElements() const { return _elems; }
 
 	/// Return a vector of elements for one material group only.
-	const std::vector<Element*> *getElements(size_t matID) const;
+	const std::vector<Element*>* getElements(size_t matID) const;
 
 	/// Returns the grid as a CFEMesh for use in OGS-FEM
 	const MeshLib::CFEMesh* getCFEMesh() const;
 
 	/// Returns the name of the mesh.
-	const std::string getName() const { return _name; };
+	const std::string getName() const { return _name; }
 
 	/// Sets the name for the mesh.
-	void setName(const std::string &name) { _name = name; };
+	void setName(const std::string &name) { _name = name; }
 
 private:
 	/// Converts an FEM Mesh to a list of nodes and elements.
@@ -78,8 +76,8 @@ private:
 	const MeshLib::CFEMesh* toCFEMesh() const;
 
 	std::string _name;
-	std::vector<GEOLIB::Point*> *_nodes;
-	std::vector<Element*> *_elems;
+	std::vector<GEOLIB::Point*>* _nodes;
+	std::vector<Element*>* _elems;
 	const MeshLib::CFEMesh* _mesh;
 };
 

@@ -1,62 +1,55 @@
 /*
 
-			dtm_neighbor.h
-			>Neighbor class for Triangle
+            dtm_neighbor.h
+            >Neighbor class for Triangle
 
-			last update : 2003.12.03			by t.manabe
+            last update : 2003.12.03			by t.manabe
 
-  */
-
+ */
 
 #ifndef DTM_NEIGHBOR_H
-#define DTM_NEIGHBOR_H	2
+#define DTM_NEIGHBOR_H  2
 
-#include"dtm_error.h"
+#include "dtm_error.h"
 //#include"dtm_figure.h"
 //#include"dtm_triangle.h"
 
-namespace dtm{
+namespace dtm
+{
+class Triangle;
 
-	class Triangle;
+class Neighbor
+{
+private:
+	unsigned int array_size;
+	unsigned int number_of_element;
+	Triangle** element_array;
 
+public:
+	/* constructor and destructor */
 
-	class Neighbor 
-	{
-		private:
-			unsigned int array_size;
-			unsigned int number_of_element;
-			Triangle **element_array;
+	Neighbor();
+	Neighbor(Triangle* elm);
+	Neighbor(const Neighbor& op);
+	~Neighbor();
 
-		public:
-			/* constructor and destructor */
+	/* original methods */
 
-			Neighbor();
-			Neighbor(Triangle *elm);
-			Neighbor(const Neighbor& op);
-			~Neighbor();
+	int getNumberOfElement() const { return number_of_element; }
+	int getArraySize() const { return array_size; }
 
+	Triangle* getElement(int index) const;
+	int resetElement(int index,Triangle* elm);
+	int pushElement(Triangle* elm);
+	int eraseElement(int index);
+	int eraseElement(Triangle* elm);
+	void clearElement();
 
-			/* original methods */
+	Neighbor& operator=(const Neighbor& op);
 
-			int getNumberOfElement() const { return number_of_element; }
-			int getArraySize() const { return array_size; }
-
-			Triangle* getElement(int index) const;
-			int resetElement(int index,Triangle *elm);
-			int pushElement(Triangle *elm);
-			int eraseElement(int index);
-			int eraseElement(Triangle *elm);
-			void clearElement();
-
-			Neighbor& operator=(const Neighbor& op);
-
-			//for debug
-			//void view();
-	};
-
-
-
-
+	//for debug
+	//void view();
+};
 }
 
 #endif

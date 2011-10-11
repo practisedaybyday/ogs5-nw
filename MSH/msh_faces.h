@@ -1,9 +1,10 @@
 #include "msh_core.h"
+#include "msh_node.h"
 #include <string>
 #include <vector>
-#include "msh_node.h"
 
-class CPlaneEquation {
+class CPlaneEquation
+{
 private:
 	double Point[3];
 	double vector1[3];
@@ -15,18 +16,24 @@ public:
 	CPlaneEquation();
 	~CPlaneEquation();
 
-	void CalculatePlaneEquationFrom3Points(const double Point1[3], const double Point2[3], const double Point3[3]);
+	void CalculatePlaneEquationFrom3Points(const double Point1[3],
+	                                       const double Point2[3],
+	                                       const double Point3[3]);
 
-	double* GetNormalVector() {return normal_vector;}
+	double* GetNormalVector() {return normal_vector; }
 
 	bool CheckIfPointInPlane(const double Point[3]);
 };
 
-class CFlowData {
+class CFlowData
+{
 public:
 	double q[3];
 	double q_norm;
-	CFlowData() {q_norm = 0; q[0] = 0; q[1] = 0; q[2] = 0;}
+	CFlowData() {q_norm = 0;
+		     q[0] = 0;
+		     q[1] = 0;
+		     q[2] = 0; }
 	~CFlowData() {}
 };
 
@@ -39,7 +46,7 @@ private:
 	std::vector <MeshLib::CNode*> connected_nodes;
 
 public:
-	CPlaneEquation *PlaneEquation;
+	CPlaneEquation* PlaneEquation;
 	long index;
 	std::vector <long> connected_elements;
 	std::string model_axis;
@@ -56,16 +63,24 @@ public:
 	CFaces(int number_phases);
 	~CFaces();
 
-	bool Calculate_FaceGravityCentre(const double Point1[3], const double Point2[3], const double Point3[3], const double Point4[3]);
+	bool Calculate_FaceGravityCentre(const double Point1[3],
+	                                 const double Point2[3],
+	                                 const double Point3[3],
+	                                 const double Point4[3]);
 
-	double* GetFaceGravityCentre() {return gravity_centre;}
+	double* GetFaceGravityCentre() {return gravity_centre; }
 
-	void SetNodes(MeshLib::CNode* Point1, MeshLib::CNode* Point2, MeshLib::CNode* Point3, MeshLib::CNode* Point4);
+	void SetNodes(MeshLib::CNode* Point1,
+	              MeshLib::CNode* Point2,
+	              MeshLib::CNode* Point3,
+	              MeshLib::CNode* Point4);
 
 	void SetElements(std::vector <long> element_indices);
 
-	bool CreateFace(MeshLib::CNode* Point1, MeshLib::CNode* Point2, MeshLib::CNode* Point3, MeshLib::CNode* Point4);
+	bool CreateFace(MeshLib::CNode* Point1,
+	                MeshLib::CNode* Point2,
+	                MeshLib::CNode* Point3,
+	                MeshLib::CNode* Point4);
 
 	void Calculate_components_of_a_vector(int flag, int phase_index, bool Radialmodell);
-
 };

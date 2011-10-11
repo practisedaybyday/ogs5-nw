@@ -12,16 +12,17 @@
 #include "ProcessIO.h"
 #include "readNonBlankLineFromInputStream.h"
 
-namespace FileIO {
-
+namespace FileIO
+{
 bool ProcessIO::readProcessInfo (std::istream& in_str, ProcessType& pcs_type)
 {
 	std::stringstream ss_in (readNonBlankLineFromInputStream (in_str));
 	std::string tmp;
 	ss_in >> tmp;
 	pcs_type = convertProcessType(tmp);
-	if (pcs_type == INVALID_PROCESS) return false;
-	else return true;
+	if (pcs_type == INVALID_PROCESS)
+		return false;
+	else
+		return true;
 }
-
 }

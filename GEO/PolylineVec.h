@@ -8,11 +8,11 @@
 #ifndef POLYLINEVEC_H_
 #define POLYLINEVEC_H_
 
-#include "TemplateVec.h"
 #include "Polyline.h"
+#include "TemplateVec.h"
 
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 /**
  * \ingroup GEOLIB
  *
@@ -21,7 +21,6 @@ namespace GEOLIB {
  * */
 
 typedef TemplateVec<Polyline> PolylineVec;
-
 } // end namespace
 
 #endif /* POLYLINEVEC_H_ */

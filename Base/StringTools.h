@@ -1,13 +1,12 @@
 #ifndef STRINGTOOLS_H
 #define STRINGTOOLS_H
 
-#include <string>
-#include <list>
-#include <sstream>
+#include <ctype.h>
 #include <fstream>
 #include <iostream>
-#include <ctype.h>
-
+#include <list>
+#include <sstream>
+#include <string>
 
 /**
  *   Splits a string into a list of strings.
@@ -24,7 +23,9 @@ std::list<std::string> splitString(const std::string &str, char delim);
  *  \param stringToReplace Search and replace in this string
  *  \return The modified string
  */
-std::string replaceString(const std::string &searchString, const std::string &replaceString, std::string stringToReplace);
+std::string replaceString(const std::string &searchString,
+                          const std::string &replaceString,
+                          std::string stringToReplace);
 
 /**
  *   Converts a number (double, float, int, ...) into a string
@@ -55,7 +56,7 @@ template<typename T> T str2number (const std::string &str)
 /**
  * Strip whitespace (or other characters) from the beginning and end of a string.
  */
-void trim(std::string &str, char ch=' ');
+void trim(std::string &str, char ch = ' ');
 
 #ifdef MSVC
 void correctScientificNotation(std::string filename, size_t precision = 0);

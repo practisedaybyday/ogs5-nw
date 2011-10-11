@@ -6,19 +6,18 @@
 #ifndef GEO_STATION_H
 #define GEO_STATION_H
 
-#include <string>
 #include <list>
-#include <vector>
 #include <map>
+#include <string>
+#include <vector>
 
-#include "Polyline.h"
-#include "Point.h"
 #include "Color.h"
+#include "Point.h"
+#include "Polyline.h"
 #include "PropertyBounds.h"
 
-
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 /**
  * \ingroup GEOLIB
  *
@@ -41,22 +40,21 @@ namespace GEOLIB {
  */
 class Station : public Point
 {
-
 protected:
 
 	//typedef double (Station::*getFct)();
 	//typedef void (Station::*setFct)(double);
 
 	/**
-	 * \brief Container for station-properties. 
+	 * \brief Container for station-properties.
 	 * Each property consists of a name, a get- and a set-function.
 	 * Please refer to Station::addProperty for details.
 	 */
 	struct STNProperty
 	{
 		std::string name;
-		double (*get)(void*);
-		void (*set)(void*, double);
+		double (* get)(void*);
+		void (* set)(void*, double);
 	};
 
 public:
@@ -77,10 +75,13 @@ public:
 	 * \param name The name of the station.
 	 * \param color The color of the station in visualisation.
 	 */
-	Station(double x = 0.0, double y = 0.0, double z = 0.0, std::string name = "", Color* const color = new Color(0,128,0));
+	Station(double x = 0.0,
+	        double y = 0.0,
+	        double z = 0.0,
+	        std::string name = "",
+	        Color* const color = new Color(0,128,0));
 
 	Station(Point* coords, std::string name = "", Color* const color = new Color(0,128,0));
-
 
 	virtual ~Station();
 
@@ -102,7 +103,7 @@ public:
 	 * \param set A function pointer to a static write function for the variable referred to by pname
 	 * \return
 	 */
-	void addProperty(std::string pname, double (*get)(void*), void (*set)(void*, double));
+	void addProperty(std::string pname, double (* get)(void*), void (* set)(void*, double));
 
 	/// Sets colour for this station
 	void setColor(unsigned char r, unsigned char g, unsigned char b);
@@ -134,7 +135,6 @@ public:
 	/// Creates a new station object based on the given parameters.
 	static Station* createStation(const std::string &name, double x, double y, double z);
 
-
 protected:
 	/**
 	 * \brief Returns the x-coordinate of this station. See the detailed documentation for getX() concerning the syntax.
@@ -148,31 +148,33 @@ protected:
 	 * \param stnObject A pointer to the station object for which the x-coordinate should be returned, usually (void*)this will work fine.
 	 * \return The x-coordinate for this station.
 	 */
-	static double getX(void* stnObject) { Station* stn = (Station*)stnObject; return (*stn)[0]; }
+	static double getX(void* stnObject) { Station* stn = (Station*)stnObject;
+		                              return (*stn)[0]; }
 	/// Returns the y-coordinate of this station. See the detailed documentation for getX concerning the syntax.
-	static double getY(void* stnObject) { Station* stn = (Station*)stnObject; return (*stn)[1]; }
+	static double getY(void* stnObject) { Station* stn = (Station*)stnObject;
+		                              return (*stn)[1]; }
 	/// Returns the z-coordinate of this station. See the detailed documentation for getX concerning the syntax.
-	static double getZ(void* stnObject) { Station* stn = (Station*)stnObject; return (*stn)[2]; }
+	static double getZ(void* stnObject) { Station* stn = (Station*)stnObject;
+		                              return (*stn)[2]; }
 	/// Sets the x-coordinate for this station. See the detailed documentation for getX concerning the syntax.
-	static void setX(void* stnObject, double val) { Station* stn = (Station*)stnObject; (*stn)[0]=val; }
+	static void setX(void* stnObject, double val) { Station* stn = (Station*)stnObject;
+		                                        (*stn)[0] = val; }
 	/// Sets the y-coordinate for this station. See the detailed documentation for getX concerning the syntax.
-	static void setY(void* stnObject, double val) { Station* stn = (Station*)stnObject; (*stn)[1]=val; }
+	static void setY(void* stnObject, double val) { Station* stn = (Station*)stnObject;
+		                                        (*stn)[1] = val; }
 	/// Sets the z-coordinate for this station. See the detailed documentation for getX concerning the syntax.
-	static void setZ(void* stnObject, double val) { Station* stn = (Station*)stnObject; (*stn)[2]=val; }
-
+	static void setZ(void* stnObject, double val) { Station* stn = (Station*)stnObject;
+		                                        (*stn)[2] = val; }
 
 	std::string _name;
-	StationType _type;	// GeoSys Station Type
+	StationType _type; // GeoSys Station Type
 	std::vector<STNProperty> _properties;
-
 
 private:
 	Color* _color;
 };
 
-
 /********* Boreholes *********/
-
 
 /**
  * \brief A borehole as a geometric object.
@@ -181,7 +183,6 @@ private:
  */
 class StationBorehole : public Station
 {
-
 public:
 	/** constructor initialises the borehole with the given coordinates */
 	StationBorehole(double x = 0.0, double y = 0.0, double z = 0.0);
@@ -191,7 +192,12 @@ public:
 	static StationBorehole* createStation(const std::string &line);
 
 	/// Creates a new borehole object based on the given parameters.
-	static StationBorehole* createStation(const std::string &name, double x, double y, double z, double depth, std::string date = "");
+	static StationBorehole* createStation(const std::string &name,
+	                                      double x,
+	                                      double y,
+	                                      double z,
+	                                      double depth,
+	                                      std::string date = "");
 
 	/// Reads the stratigraphy for a specified station from a file
 	static int addStratigraphy(const std::string &path, StationBorehole* borehole);
@@ -203,7 +209,7 @@ public:
 	 * Be very careful when using this method -- it is pretty fast but it checks nothing and just
 	 * assumes that everything is in right order and will work out fine!
 	 */
-	static int addStratigraphies(const std::string &path, std::vector<Point*> *boreholes);
+	static int addStratigraphies(const std::string &path, std::vector<Point*>* boreholes);
 
 	/// Finds the given string in the vector of soil-names
 	int find(const std::string &str);
@@ -236,33 +242,40 @@ public:
 	 */
 	void addSoilLayer ( double x, double y, double z, const std::string &soil_name);
 
-
-
 protected:
 	/// Returns the depth of this borehole. Please see the documentation for Station::getX for details concerning the syntax.
-	static double getDepth(void* stnObject)  { StationBorehole* stn = (StationBorehole*)stnObject; return stn->_depth; }
+	static double getDepth(void* stnObject)  { StationBorehole* stn =
+		                                           (StationBorehole*)stnObject;
+		                                   return stn->_depth; }
 	/// Returns the date this borehole has been drilled. Please see the documentation for Station::getX for details concerning the syntax.
-	static double getDate(void* stnObject)  { StationBorehole* stn = (StationBorehole*)stnObject; return stn->_date; }
+	static double getDate(void* stnObject)  { StationBorehole* stn =
+		                                          (StationBorehole*)stnObject;
+		                                  return stn->_date; }
 	/// Sets the depth of this borehole. Please see the documentation for Station::getX for details concerning the syntax.
-	static void setDepth(void* stnObject, double val) { StationBorehole* stn = (StationBorehole*)stnObject; stn->_depth = val; }
+	static void setDepth(void* stnObject, double val) { StationBorehole* stn =
+		                                                    (StationBorehole*)stnObject;
+		                                            stn->_depth = val; }
 	/// Sets the date when this borehole has been drilled. Please see the documentation for Station::getX for details concerning the syntax.
-	static void setDate(void* stnObject, double val) { StationBorehole* stn = (StationBorehole*)stnObject; stn->_date = val; }
+	static void setDate(void* stnObject, double val) { StationBorehole* stn =
+		                                                   (StationBorehole*)stnObject;
+		                                           stn->_date = val; }
 
 private:
 	/// Adds a layer for the specified borehole profile based on the information given in the stringlist
 	static int addLayer(std::list<std::string> fields, StationBorehole* borehole);
 
 	/// Creates fake stratigraphies of only one layer with a thickness equal to the borehole depth
-	static void createSurrogateStratigraphies(std::vector<Point*> *boreholes);
+	static void createSurrogateStratigraphies(std::vector<Point*>* boreholes);
 
 	/// Reads the specified file containing borehole stratigraphies into an vector of stringlists
-	static int readStratigraphyFile(const std::string &path, std::vector<std::list<std::string> > &data);
+	static int readStratigraphyFile(const std::string &path,
+	                                std::vector<std::list<std::string> > &data);
 
 	//long profile_type;
 	//std::vector<long> _soilType;
 	double _zCoord; // height at which the borehole officially begins (this might _not_ be the actual elevation)
-	double _depth;	// depth of the borehole
-	double _date;	// date when the borehole has been drilled
+	double _depth; // depth of the borehole
+	double _date; // date when the borehole has been drilled
 
 	/// Contains the names for all the soil layers
 	std::vector<std::string> _soilName;
@@ -270,7 +283,6 @@ private:
 	/// Contains the points for the lower boundaries of all layers
 	std::vector<Point*> _profilePntVec;
 };
-
 } // namespace
 
 #endif // GEO_STATION_H

@@ -14,8 +14,8 @@
 // GEOLIB
 #include "Point.h"
 
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 class ClosestPair
 {
 public:
@@ -28,7 +28,6 @@ protected:
 	size_t _id0;
 	size_t _id1;
 };
-
 } // end namespace GEOLIB
 
 #endif /* CLOSESTPAIR_H_ */

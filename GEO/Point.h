@@ -2,15 +2,15 @@
  *  Point.h
  *  Created on: Jan 12, 2010
  *      Author: TF
-**************************************************************************/
+ **************************************************************************/
 
 #ifndef POINT_H_
 #define POINT_H_
 
 #include "TemplatePoint.h"
 
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 /**
  * \ingroup GEOLIB
  */
@@ -40,7 +40,6 @@ bool lessY (Point const & p0, Point const & p1);
  * @return true if the z coordinate of p0 is smaller equal the z coordinate of p1, else false
  */
 bool lessZ (Point const & p0, Point const & p1);
-
 }
 
 /**

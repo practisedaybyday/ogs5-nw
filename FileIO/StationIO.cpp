@@ -4,11 +4,14 @@
  *
  */
 
-#include <fstream>
 #include "StationIO.h"
 #include "StringTools.h"
+#include <fstream>
 
-int StationIO::readStationFile(const std::string &path, std::string &name, std::vector<GEOLIB::Point*> *stations, GEOLIB::Station::StationType type )
+int StationIO::readStationFile(const std::string &path,
+                               std::string &name,
+                               std::vector<GEOLIB::Point*>* stations,
+                               GEOLIB::Station::StationType type )
 {
 	int returnValue = 1;
 	std::string line;
@@ -16,16 +19,17 @@ int StationIO::readStationFile(const std::string &path, std::string &name, std::
 	std::ifstream in( path.c_str() );
 
 	if (!in.is_open())
-    {
+	{
 		std::cout << "StationIO::readFromFile() - Could not open file...\n";
 		return 0;
 	}
 
 	/* try to find a name for the list in the first line of the file */
 	getline(in, line);
-	if ((line.substr(0,1)).compare("!")==0)
-		name = line.substr( 1, line.length()-1 );
-	else in.seekg(0);	// sets stream to the beginning of the file
+	if ((line.substr(0,1)).compare("!") == 0)
+		name = line.substr( 1, line.length() - 1 );
+	else
+		in.seekg(0);  // sets stream to the beginning of the file
 
 	/* read all stations */
 	while ( getline(in, line) )
@@ -37,40 +41,40 @@ int StationIO::readStationFile(const std::string &path, std::string &name, std::
 			newStation = GEOLIB::StationBorehole::createStation(line);
 
 		if (newStation)
-		{
 			//newStation->setList(name);
 			stations->push_back(newStation);
-		}
 		else
 			returnValue = -1;
 	}
 
 	in.close();
 
-    return returnValue;
+	return returnValue;
 }
 
-
-
-
-
-void StationIO::writeStratigraphyTable(const std::vector<GEOLIB::Point*> *boreholes, const std::string &filename)
+void StationIO::writeStratigraphyTable(const std::vector<GEOLIB::Point*>* boreholes,
+                                       const std::string &filename)
 {
 	size_t maxIterations = 1;
 	std::ofstream out( filename.c_str(), std::ios::out );
 
-	for (size_t j=0; j<boreholes->size(); j++) {
+	for (size_t j = 0; j < boreholes->size(); j++)
 		out << static_cast<GEOLIB::StationBorehole*>((*boreholes)[j])->getName() << "\t";
-	}
 	out << std::endl;
 
-	for (size_t i=0; i<maxIterations; i++) {
-		for (size_t j=0; j<boreholes->size(); j++) {
-			std::vector<std::string> soilNames  = static_cast<GEOLIB::StationBorehole*>((*boreholes)[j])->getSoilNames();
+	for (size_t i = 0; i < maxIterations; i++)
+	{
+		for (size_t j = 0; j < boreholes->size(); j++)
+		{
+			std::vector<std::string> soilNames  =
+			        static_cast<GEOLIB::StationBorehole*>((*boreholes)[j])->
+			        getSoilNames();
 			if (!soilNames.empty())
 			{
-				if (i==0 && maxIterations < soilNames.size()) maxIterations = soilNames.size();
-				if (i<soilNames.size()) out << soilNames[i];
+				if (i == 0 && maxIterations < soilNames.size())
+					maxIterations = soilNames.size();
+				if (i < soilNames.size())
+					out << soilNames[i];
 			}
 			out << "\t";
 		}

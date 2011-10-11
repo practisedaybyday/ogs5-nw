@@ -10,11 +10,12 @@
 
 #include "Polygon.h"
 
-namespace MeshLib {
-
+namespace MeshLib
+{
 class CFEMesh;
 
-class ModifyMeshProperties {
+class ModifyMeshProperties
+{
 public:
 	ModifyMeshProperties(CFEMesh* msh);
 	virtual ~ModifyMeshProperties();
@@ -23,7 +24,6 @@ public:
 private:
 	CFEMesh* _mesh;
 };
-
 }
 
 #endif /* MODIFYMESHPROPERTIES_H_ */

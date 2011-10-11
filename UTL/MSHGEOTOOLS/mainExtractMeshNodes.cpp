@@ -13,36 +13,39 @@
 #include "problem.h"
 
 // MSH
-#include "msh_mesh.h"
 #include "msh_lib.h" // for FEMRead
+#include "msh_mesh.h"
 
 // MSHGEOTOOLS
 #include "ExtractMeshNodes.h"
 
 // GEO
 #include "GEOObjects.h"
-#include "PolylineVec.h"
 #include "Polygon.h"
+#include "PolylineVec.h"
 
 // FileIO
 #include "OGSIOVer4.h"
 
-Problem *aproblem = NULL;
+Problem* aproblem = NULL;
 
 // MathLib
 #include "Matrix.h"
 #include "Vector3.h"
 
-int main (int argc, char *argv[])
+int main (int argc, char* argv[])
 {
-	if (argc < 5) {
-		std::cout << "Usage: " << argv[0] << " --mesh ogs_meshfile --geometry ogs_geometry" << std::endl;
+	if (argc < 5)
+	{
+		std::cout << "Usage: " << argv[0] <<
+		" --mesh ogs_meshfile --geometry ogs_geometry" << std::endl;
 		return -1;
 	}
 
 	// *** read mesh
 	std::string tmp (argv[1]);
-	if (tmp.find ("--mesh") == std::string::npos) {
+	if (tmp.find ("--mesh") == std::string::npos)
+	{
 		std::cout << "could not extract mesh file name" << std::endl;
 		return -1;
 	}
@@ -50,25 +53,27 @@ int main (int argc, char *argv[])
 	tmp = argv[2];
 	std::string file_base_name (tmp);
 	if (tmp.find (".msh") != std::string::npos)
-		file_base_name = tmp.substr (0, tmp.size()-4);
+		file_base_name = tmp.substr (0, tmp.size() - 4);
 
 	std::vector<MeshLib::CFEMesh*> mesh_vec;
 	FEMRead(file_base_name, mesh_vec);
-	if (mesh_vec.empty()) {
+	if (mesh_vec.empty())
+	{
 		std::cerr << "could not read mesh from file " << std::endl;
 		return -1;
 	}
-	MeshLib::CFEMesh* mesh (mesh_vec[mesh_vec.size()-1]);
+	MeshLib::CFEMesh* mesh (mesh_vec[mesh_vec.size() - 1]);
 	mesh->ConstructGrid();
 
 	// *** read geometry
 	tmp = argv[3];
-	if (tmp.find ("--geometry") == std::string::npos) {
+	if (tmp.find ("--geometry") == std::string::npos)
+	{
 		std::cout << "could not extract geometry file name" << std::endl;
 		return -1;
 	}
 
-	GEOLIB::GEOObjects *geo (new GEOLIB::GEOObjects);
+	GEOLIB::GEOObjects* geo (new GEOLIB::GEOObjects);
 	tmp = argv[4];
 	FileIO::readGLIFileV4(tmp, geo);
 
@@ -95,7 +100,8 @@ int main (int argc, char *argv[])
 
 	// *** get Polygon
 	const std::vector<GEOLIB::Polyline*>* plys (geo->getPolylineVec (tmp));
-	if (!plys) {
+	if (!plys)
+	{
 		std::cout << "could not get vector of polylines" << std::endl;
 		delete mesh;
 		delete geo;
@@ -107,11 +113,14 @@ int main (int argc, char *argv[])
 	// *** generate a orthogonal surface from polyline
 	std::vector<GEOLIB::Polyline*> polylines;
 	const size_t n_plys (plys->size());
-	for (size_t k(0); k<n_plys; k++) {
+	for (size_t k(0); k < n_plys; k++)
+	{
 		bool closed ((*plys)[k]->isClosed());
-		if (!closed && k == 19) {
-			std::cout << "converting polyline " << k << " to closed polyline" << std::endl;
-			GEOLIB::Polygon *polygon (NULL);
+		if (!closed && k == 19)
+		{
+			std::cout << "converting polyline " << k << " to closed polyline" <<
+			std::endl;
+			GEOLIB::Polygon* polygon (NULL);
 			extract_mesh_nodes.getPolygonFromPolyline(*((*plys)[k]), geo, tmp, polygon);
 			polylines.push_back (polygon);
 		}

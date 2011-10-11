@@ -10,7 +10,8 @@
 
 #include "Point.h"
 
-namespace GEOLIB {
+namespace GEOLIB
+{
 /**
  * class PointWithID is derived from class Point in
  * order to extend the class Point with an ID.
@@ -22,10 +23,9 @@ public:
 		Point (x0, x1, x2), _id (id)
 	{}
 
-	PointWithID (double const*const coords, size_t id) :
+	PointWithID (double const* const coords, size_t id) :
 		Point (coords), _id (id)
 	{}
-
 
 	size_t getID () const { return _id; }
 

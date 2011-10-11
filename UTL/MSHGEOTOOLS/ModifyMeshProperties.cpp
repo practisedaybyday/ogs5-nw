@@ -15,9 +15,9 @@
 #include "Polygon.h"
 
 // MSH
-#include "msh_node.h"
 #include "msh_elem.h"
 #include "msh_mesh.h"
+#include "msh_node.h"
 
 // MathLib
 #include "AnalyticalGeometry.h"
@@ -25,8 +25,8 @@
 // STL
 #include <fstream>
 
-namespace MeshLib {
-
+namespace MeshLib
+{
 ModifyMeshProperties::ModifyMeshProperties(CFEMesh* msh) :
 	_mesh (msh)
 {}
@@ -42,9 +42,8 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 	// *** rotate polygon to xy_plane
 	// 1 copy all points
 	std::vector<GEOLIB::Point*> polygon_points;
-	for (size_t k(0); k<polygon.getNumberOfPoints(); k++) {
+	for (size_t k(0); k < polygon.getNumberOfPoints(); k++)
 		polygon_points.push_back (new GEOLIB::Point (*(polygon[k])));
-	}
 	// 2 rotate points
 	MathLib::Vector plane_normal_polygon(0.0, 0.0, 0.0);
 	double d_polygon (0.0);
@@ -55,9 +54,8 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 
 	// 3 create new polygon
 	GEOLIB::Polyline rot_polyline (polygon_points);
-	for (size_t k(0); k<polygon.getNumberOfPoints(); k++) {
+	for (size_t k(0); k < polygon.getNumberOfPoints(); k++)
 		rot_polyline.addPoint (k);
-	}
 	rot_polyline.addPoint (0);
 	GEOLIB::Polygon rot_polygon (rot_polyline);
 
@@ -75,9 +73,8 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 	// *** rotate mesh nodes to xy-plane
 	// 1 copy all mesh nodes to GEOLIB::Points
 	std::vector<GEOLIB::Point*> mesh_nodes_as_points;
-	for (size_t j(0); j<msh_nodes.size(); j++) {
+	for (size_t j(0); j < msh_nodes.size(); j++)
 		mesh_nodes_as_points.push_back (new GEOLIB::Point (msh_nodes[j]->getData()));
-	}
 	// 2 rotate the Points
 	MathLib::rotatePointsToXY(plane_normal_polygon, mesh_nodes_as_points);
 
@@ -86,7 +83,8 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 
 	// *** perform search and modify mesh
 	const size_t msh_elem_size (msh_elem.size());
-	for (size_t j(0); j<msh_elem_size; j++) {
+	for (size_t j(0); j < msh_elem_size; j++)
+	{
 		// indices of nodes of the j-th element
 		const Math_Group::vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
 		size_t k;
@@ -101,23 +99,17 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 //		}
 
 		size_t cnt (0);
-		for (k = 0; k<nodes_indices.Size(); k++) {
-			if (rot_polygon.isPntInPolygon(*(mesh_nodes_as_points[nodes_indices[k]]))) {
+		for (k = 0; k < nodes_indices.Size(); k++)
+			if (rot_polygon.isPntInPolygon(*(mesh_nodes_as_points[nodes_indices[k]])))
 				cnt++;
-			}
-		}
 
-		if (cnt >= 1) {
+		if (cnt >= 1)
 			msh_elem[j]->setPatchIndex (mat_id);
-		}
 	}
 
-	for (size_t k(0); k<polygon_points.size(); k++) {
+	for (size_t k(0); k < polygon_points.size(); k++)
 		delete polygon_points[k];
-	}
-	for (size_t j(0); j<mesh_nodes_as_points.size(); j++) {
+	for (size_t j(0); j < mesh_nodes_as_points.size(); j++)
 		delete mesh_nodes_as_points[j];
-	}
 }
-
 }

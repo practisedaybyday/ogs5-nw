@@ -1,7 +1,7 @@
 /**************************************************************************
- ROCKFLOW - Modul: timer.h
+   ROCKFLOW - Modul: timer.h
 
- Aufgabe:
+   Aufgabe:
    Funktionen zur Laufzeitermittlung im Testbetrieb.
 **************************************************************************/
 
@@ -47,37 +47,36 @@ extern void TDestroyTimers(void);
 /* Weitere externe Objekte */
 
 /* Interface fuer AMG-Loeser */
-extern void ctime_(float *time);
+extern void ctime_(float* time);
 
 //SB_time
 
 class CClockTime
 {
-   private:
-   public:
-      CClockTime(void);
-      ~CClockTime(void);
-      std::vector <double> time_flow;
-      std::vector <double> time_transport;
-      std::vector <double> time_kinreact;
-      std::vector <double> time_equireact;
-      double time_total_flow;
-      double time_total_transport;
-      double time_total_kinreact;
-      double time_total_equireact;
-      double delta_clocktime;
-      clock_t start;
-      clock_t end;
+private:
+public:
+	CClockTime(void);
+	~CClockTime(void);
+	std::vector <double> time_flow;
+	std::vector <double> time_transport;
+	std::vector <double> time_kinreact;
+	std::vector <double> time_equireact;
+	double time_total_flow;
+	double time_total_transport;
+	double time_total_kinreact;
+	double time_total_equireact;
+	double delta_clocktime;
+	clock_t start;
+	clock_t end;
 
-      void StopTime(const std::string &name="");
-      void StartTime(void);
-      void PrintTimes(void);
+	void StopTime(const std::string &name = "");
+	void StartTime(void);
+	void PrintTimes(void);
 
-      long time1;
-      long time2;
-      double difftime;
-
+	long time1;
+	long time2;
+	double difftime;
 };
 extern void CreateClockTime(void);
-extern std::vector <CClockTime *> ClockTimeVec;
+extern std::vector <CClockTime*> ClockTimeVec;
 #endif

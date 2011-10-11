@@ -19,18 +19,19 @@
 // MSH
 #include "msh_mesh.h"
 
-namespace MeshLib {
-
-class ExtractSurface {
+namespace MeshLib
+{
+class ExtractSurface
+{
 public:
-	ExtractSurface(CFEMesh const * msh);
+	ExtractSurface(CFEMesh const* msh);
 
-	GEOLIB::Surface* extractSurface (GEOLIB::Polygon const & ply, std::vector<GEOLIB::Point*>& pnts) const;
+	GEOLIB::Surface* extractSurface (GEOLIB::Polygon const & ply,
+	                                 std::vector<GEOLIB::Point*>& pnts) const;
 
 private:
-	CFEMesh const * _mesh;
+	CFEMesh const* _mesh;
 };
-
 }
 
 #endif /* EXTRACTSURFACE_H_ */

@@ -15,8 +15,8 @@
 #include "AxisAlignedBoundingBox.h"
 #include "Polyline.h"
 
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 /**
  * \ingroup GEOLIB
  */
@@ -24,13 +24,14 @@ namespace GEOLIB {
 /**
  * edge classification
  */
-class EdgeType {
-	public:
-		enum value {
-			TOUCHING,  //!< TOUCHING
-			CROSSING,  //!< CROSSING
-			INESSENTIAL//!< INESSENTIAL
-		};
+class EdgeType
+{
+public:
+	enum value {
+		TOUCHING, //!< TOUCHING
+		CROSSING, //!< CROSSING
+		INESSENTIAL //!< INESSENTIAL
+	};
 };
 
 /**
@@ -74,7 +75,8 @@ public:
 	 */
 	bool isPntInPolygon (double x, double y, double z) const;
 	bool isPolylineInPolygon (const Polyline& ply) const;
-	GEOLIB::Point* getIntersectionPointPolygonLine (GEOLIB::Point const & a, GEOLIB::Point const & b) const;
+	GEOLIB::Point* getIntersectionPointPolygonLine (GEOLIB::Point const & a,
+	                                                GEOLIB::Point const & b) const;
 	void computeListOfSimplePolygons ();
 	const std::list<Polygon*>& getListOfSimplePolygons ();
 
@@ -96,9 +98,10 @@ private:
 	AABB _aabb;
 };
 
-GEOLIB::Polygon* createPolygonFromCircle (GEOLIB::Point const& middle_pnt, double radius,
-		std::vector<GEOLIB::Point*> & pnts, size_t resolution = 12);
-
+GEOLIB::Polygon* createPolygonFromCircle (GEOLIB::Point const& middle_pnt,
+                                          double radius,
+                                          std::vector<GEOLIB::Point*> & pnts,
+                                          size_t resolution = 12);
 } // end namespace GEOLIB
 
 #endif /* POLYGON_H_ */

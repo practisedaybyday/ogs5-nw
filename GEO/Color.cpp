@@ -12,11 +12,11 @@
 #include "Color.h"
 #include "StringTools.h"
 
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 Color* getRandomColor()
 {
-	return new Color((rand()%5)*50, (rand()%5)*50, (rand()%5)*50);
+	return new Color((rand() % 5) * 50, (rand() % 5) * 50, (rand() % 5) * 50);
 }
 
 int readColorLookupTable(std::map<std::string, Color*> &colors, const std::string &filename)
@@ -34,9 +34,9 @@ int readColorLookupTable(std::map<std::string, Color*> &colors, const std::strin
 	while ( getline(in, line) )
 	{
 		std::list<std::string> fields = splitString(line, '\t');
-		Color *c = new Color();
+		Color* c = new Color();
 
-		if (fields.size()>=4)
+		if (fields.size() >= 4)
 		{
 			id = fields.front();
 			fields.pop_front();
@@ -47,7 +47,8 @@ int readColorLookupTable(std::map<std::string, Color*> &colors, const std::strin
 			(*c)[2] = atoi(fields.front().c_str());
 			colors.insert(std::pair<std::string, Color*>(id, c));
 		}
-		else delete c;
+		else
+			delete c;
 	}
 
 	return 1;
@@ -55,11 +56,10 @@ int readColorLookupTable(std::map<std::string, Color*> &colors, const std::strin
 
 const Color* getColor(const std::string &id, std::map<std::string, Color*> &colors)
 {
-	for (std::map<std::string, Color*>::const_iterator it=colors.begin(); it !=colors.end(); ++it)
-	{
+	for (std::map<std::string, Color*>::const_iterator it = colors.begin(); it != colors.end();
+	     ++it)
 		if (id.compare(it->first) == 0)
 			return it->second;
-	}
 	std::cout << "Key \"" << id << "\" not found in color lookup table..." << std::endl;
 	Color* c = getRandomColor();
 	colors.insert(std::pair<std::string, Color*>(id, c));
@@ -72,5 +72,4 @@ const Color* getColor(double id, std::map<std::string, GEOLIB::Color*> &colors)
 	stream << id;
 	return getColor(stream.str(), colors);
 }
-
 }

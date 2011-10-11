@@ -11,8 +11,8 @@
 // GEOLIB
 #include "Polyline.h"
 
-namespace MeshLib {
-
+namespace MeshLib
+{
 // forward declaration
 class CFEMesh;
 
@@ -22,13 +22,14 @@ class CFEMesh;
  * The mesh nodes are sorted as follow:
  * [ ... ids of sorted linear nodes ... | ... ids of unsorted higher order nodes ]
  */
-class MeshNodesAlongPolyline {
+class MeshNodesAlongPolyline
+{
 public:
-	MeshNodesAlongPolyline(GEOLIB::Polyline const * const ply, CFEMesh const * mesh);
+	MeshNodesAlongPolyline(GEOLIB::Polyline const* const ply, CFEMesh const* mesh);
 	const std::vector<size_t>& getNodeIDs () const;
 	const GEOLIB::Polyline* getPolyline () const;
 	size_t getNumberOfLinearNodes () const;
-    std::vector<double> const & getDistOfProjNodeFromPlyStart() const;
+	std::vector<double> const & getDistOfProjNodeFromPlyStart() const;
 
 private:
 	const GEOLIB::Polyline* _ply;
@@ -37,7 +38,6 @@ private:
 	std::vector<size_t> _msh_node_ids;
 	std::vector<double> _dist_of_proj_node_from_ply_start;
 };
-
 }
 
 #endif /* MESHNODESALONGPOLYLINE_H_ */

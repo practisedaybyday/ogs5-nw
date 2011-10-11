@@ -8,13 +8,13 @@
 #ifndef GAUSSALGORITHM_H_
 #define GAUSSALGORITHM_H_
 
-#include <cstddef>
 #include "../Matrix.h"
 #include "DenseDirectLinearSolver.h"
 #include "TriangularSolve.h"
+#include <cstddef>
 
-namespace MathLib {
-
+namespace MathLib
+{
 /**
  * This is a class for the direct solution of (dense) systems of
  * linear equations, \f$A x = b\f$. During the construction of
@@ -23,7 +23,8 @@ namespace MathLib {
  * the entries of A change! The solution for a specific
  * right hand side is computed by the method execute().
  */
-class GaussAlgorithm : public MathLib::DenseDirectLinearSolver {
+class GaussAlgorithm : public MathLib::DenseDirectLinearSolver
+{
 public:
 	/**
 	 * A direct solver for the (dense) linear system \f$A x = b\f$.
@@ -45,7 +46,7 @@ public:
 	 * using forward solve and backward solve
 	 * @param b at the beginning the right hand side, at the end the solution
 	 */
-	void execute (double *b) const;
+	void execute (double* b) const;
 
 private:
 	/**
@@ -68,7 +69,6 @@ private:
 	 */
 	size_t* _perm;
 };
-
 } // end namespace MathLib
 
 #endif /* GAUSSALGORITHM_H_ */

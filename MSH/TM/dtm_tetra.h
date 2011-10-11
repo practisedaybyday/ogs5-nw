@@ -1,129 +1,125 @@
 /*
 
-			dtm_tetra.h
-			>class Tetra
-			>>based Figure Class
+            dtm_tetra.h
+            >class Tetra
+            >>based Figure Class
 
-			last update : 2003.12.17			by t.manabe
+            last update : 2003.12.17			by t.manabe
 
-*/
+ */
 
 #pragma warning (disable : 4786) //for bug of Visual C++ 6.0
 
 #ifndef DTM_TETRA_H
-#define DTM_TETRA_H	2
+#define DTM_TETRA_H 2
 
-#include<iostream>
+#include <iostream>
 
-#include"dtm_error.h"
-#include"dtm_node.h"
-#include"dtm_figure.h"
+#include "dtm_error.h"
+#include "dtm_figure.h"
+#include "dtm_node.h"
 //#include"dtm_polyhedron.h"
 
-#include"dtm_calculate.h"
-
+#include "dtm_calculate.h"
 
 using namespace std;
 
-namespace dtm{
+namespace dtm
+{
+class Tetra :   public Figure       //Tetra : Figure(node=4)
+{
+private:
+	Tetra* neighbor[4]; //neighbors of tetra
 
-	class Tetra :	public Figure	//Tetra : Figure(node=4)
+	double volume;      //volume of tetra
+	double radius;      //out boundary sphere radius
+	double value;       //value of tetra
+
+	Point center;       //center point of out boundary sphere
+
+	bool flg_vol;       //flg:volume is latest = 1, not = 0
+	bool flg_sph;       //flg:sphere is latest = 1, not = 0
+	bool flg_lg;        //flg:length is latest = 1, not = 0
+
+public:
+	/* constructor and destructor */
+
+	Tetra();
+	Tetra(int id);
+	Tetra(int id,Node* p0,Node* p1,Node* p2,Node* p3);
+	~Tetra();
+
+	/* override of Figure methos */
+
+	void renew()
 	{
-	private:
-		Tetra* neighbor[4];	//neighbors of tetra
+		flg_vol = false;
+		flg_sph = false;
+		flg_lg = false;
+	}
 
-		double volume;		//volume of tetra
-		double radius;		//out boundary sphere radius
-		double value;		//value of tetra
+	double getValue()
+	{
+		if(!flg_lg) setLength();
+		return value;
+	}
 
-		Point center;		//center point of out boundary sphere
+	Point getCenterOfGravity();
 
-		bool flg_vol;		//flg:volume is latest = 1, not = 0
-		bool flg_sph;		//flg:sphere is latest = 1, not = 0
-		bool flg_lg;		//flg:length is latest = 1, not = 0
+	/* original methods */
 
+	void resetTetra(int id,Node* p0,Node* p1,Node* p2,Node* p3);
+	void resetNode(Node* p0,Node* p1,Node* p2,Node* p3);
 
-	public:
-		/* constructor and destructor */
+	void setSphere();
+	Point* getCenter()
+	{
+		if(!flg_sph) setSphere();
+		return &center;
+	}
+	double getRadius()
+	{
+		if(!flg_sph) setSphere();
+		return radius;
+	}
 
-		Tetra();
-		Tetra(int id);
-		Tetra(int id,Node *p0,Node *p1,Node *p2,Node *p3);
-		~Tetra();	
+	void setLength();
 
+	/*  */
 
-		/* override of Figure methos */
+	double setVolume();
+	double setVolume(double vol)
+	{
+		volume = vol;
+		flg_vol = true;
+		flg_sph = false;
+		return volume;
+	}
+	double getVolume()
+	{
+		if(!flg_vol) setVolume();
+		return volume;
+	}
 
-		void renew(){
-			flg_vol = false;
-			flg_sph = false;
-			flg_lg = false;
-		}
+	void resetNeighborElement(int index,Tetra* ptet);
+	Tetra* getNeighborElement(int index);
+	int getConection(Tetra* ptet);
 
-		double getValue(){
-			if(!flg_lg) setLength();
-			return value;
-		}
+	/* friend function */
 
-		Point getCenterOfGravity();
+	friend bool operator==(Tetra &op1,Tetra &op2)
+	{
+		return op1.getId() == op2.getId();
+	}
 
-
-		/* original methods */
-
-
-		void resetTetra(int id,Node *p0,Node *p1,Node *p2,Node *p3);
-		void resetNode(Node *p0,Node *p1,Node *p2,Node *p3);
-
-		void setSphere();
-		Point* getCenter(){
-			if(!flg_sph) setSphere();
-			return &center;
-		}
-		double getRadius(){
-			if(!flg_sph) setSphere();
-			return radius;
-		}
-
-		void setLength();
-
-		/*  */
-
-		double setVolume();
-		double setVolume(double vol){
-			volume = vol;
-			flg_vol = true;
-			flg_sph = false;
-			return volume;
-		}
-		double getVolume(){
-			if(!flg_vol) setVolume();
-			return volume;
-		}
-
-		void resetNeighborElement(int index,Tetra *ptet);
-		Tetra* getNeighborElement(int index);
-		int getConection(Tetra *ptet);
-
-
-		/* friend function */
-
-		friend bool operator==(Tetra &op1,Tetra &op2){
-			return (op1.getId() == op2.getId());
-		}
-
-		///for debug///
-		void view();
-		void viewVolume();
-		void viewSphere();
-		///////////////
-	};
-
-
+	///for debug///
+	void view();
+	void viewVolume();
+	void viewSphere();
+	///////////////
+};
 }
 
-
-
 #endif
-
 
 //////////////////////////////////////////////////////////////////EOF

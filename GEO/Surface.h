@@ -10,14 +10,14 @@
 
 #include <vector>
 
+#include "AxisAlignedBoundingBox.h"
 #include "GeoObject.h"
 #include "Point.h"
 #include "Polyline.h"
 #include "Triangle.h"
-#include "AxisAlignedBoundingBox.h"
 
-namespace GEOLIB {
-
+namespace GEOLIB
+{
 /**
  * \ingroup GEOLIB
  *
@@ -28,7 +28,7 @@ namespace GEOLIB {
 class Surface : public GeoObject
 {
 public:
-	Surface	(const std::vector<Point*> &pnt_vec);
+	Surface (const std::vector<Point*> &pnt_vec);
 	virtual ~Surface ();
 
 	/**
@@ -45,22 +45,23 @@ public:
 	size_t getNTriangles () const;
 
 	/** \brief const access operator for the access to the i-th Triangle of the surface.
-	*/
+	 */
 	const Triangle* operator[] (size_t i) const;
 
 	/**
 	 * is the given point in the bounding volume of the surface
 	 */
-	bool isPntInBV (const double *pnt, double eps = std::numeric_limits<double>::epsilon()) const;
+	bool isPntInBV (const double* pnt, double eps =
+	                        std::numeric_limits<double>::epsilon()) const;
 
 	/**
 	 * is the given point pnt located in the surface
 	 * @param pnt the point
 	 * @return true if the point is contained in the surface
 	 */
-	bool isPntInSfc (const double *pnt) const;
+	bool isPntInSfc (const double* pnt) const;
 
-	const std::vector<Point*> *getPointVec() const { return &_sfc_pnts; };
+	const std::vector<Point*>* getPointVec() const { return &_sfc_pnts; }
 
 	/**
 	 * method allows access to the internal axis aligned bounding box
@@ -76,7 +77,6 @@ protected:
 	/** bounding volume is an axis aligned bounding box */
 	AABB _bv;
 };
-
 }
 
 #endif /* SURFACE_H_ */

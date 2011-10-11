@@ -2,8 +2,8 @@
 /* Deklarationen */
 
 #include <math.h>
-#include <stdio.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #define MAXSTEP 20000
@@ -13,4 +13,4 @@
 
 /* externe Funktionen */
 extern void derivs(double x, double y[], double dydx[], int n, long node);
-extern void jacobn(double x, double y[], double dfdx[], double **dfdy, int n, long node);
+extern void jacobn(double x, double y[], double dfdx[], double** dfdy, int n, long node);

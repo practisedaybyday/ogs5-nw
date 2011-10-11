@@ -3,7 +3,9 @@
 #include <vector>
 using namespace std;
 
-namespace  MeshLib{class CFEMesh; }
+namespace  MeshLib
+{class CFEMesh;
+}
 using  MeshLib::CFEMesh;
 extern vector<MeshLib::CFEMesh*> fem_msh_vector;
 

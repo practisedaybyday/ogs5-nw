@@ -14,12 +14,13 @@
 // FEM
 #include "FEMEnums.h"
 
-namespace FileIO {
-
+namespace FileIO
+{
 /**
  * Small class to read process information.
  */
-class ProcessIO {
+class ProcessIO
+{
 public:
 	/**
 	 * read process information from various file type:
@@ -35,7 +36,6 @@ public:
 	 */
 	static bool readProcessInfo (std::istream& in_str, ProcessType& pcs_type);
 };
-
 }
 
 #endif /* PROCESSIO_H_ */
