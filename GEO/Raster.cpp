@@ -41,8 +41,7 @@ double* Raster::getRasterFromSurface(Surface const& sfc, size_t &n_x_pnts, size_
 	for (size_t r(0); r < n_x_pnts; r++)
 		for (size_t c(0); c < n_y_pnts; c++)
 		{
-			const double test_pnt[3] =
-			{ ll[0] + r * _cell_size, ll[1] + c * _cell_size, 0};
+			const double test_pnt[3] = { ll[0] + r * _cell_size, ll[1] + c * _cell_size, 0};
 			for (k = 0; k < n_triangles; k++)
 				if (sfc[k]->containsPoint2D(test_pnt))
 				{
