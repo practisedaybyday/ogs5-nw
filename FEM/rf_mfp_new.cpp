@@ -211,11 +211,11 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 			in.str(GetLineFromFile1(mfp_file));
 			in >> density_model;
 			if(density_model == 0) // rho = f(x)
-
 				in >> rho_fct_name;
-			if(density_model == 1) // rho = const
 
+			if(density_model == 1) // rho = const
 				in >> rho_0;
+
 			if(density_model == 2) // rho(p) = rho_0*(1+beta_p*(p-p_0))
 			{
 				in >> rho_0;
@@ -295,7 +295,6 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 					arg2 = "TEMPERATURE1";
 				}
 				else if (arg2.length() == 0) // if only PRESSURE argument is given
-
 					arg2 = "TEMPERATURE1";
 
 				density_pcs_name_vector.push_back(arg1);
@@ -544,7 +543,6 @@ bool MFPRead(std::string file_base_name)
 		if(line_string.find("#FLUID_PROPERTIES") != std::string::npos)
 		{
 			m_mfp = new CFluidProperties();
-			m_mfp->file_base_name = file_base_name;
 			position = m_mfp->Read(&mfp_file);
 			m_mfp->phase = (int)mfp_vector.size(); //OK4108
 			mfp_vector.push_back(m_mfp);
