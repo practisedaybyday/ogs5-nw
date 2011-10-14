@@ -41,8 +41,8 @@ if  [ "$1" = "ex" ]; then
 	ctest -R 'EXCEED' -E 'AllTests|FILE' -j 32 >> ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' >> ../benchOut.txt
 else
-	ctest -E 'JOD|AllTests|FILE|EXCEED' -j 32 > ../benchOut.txt
-	ctest -R 'FILECOMPARE' -E 'JOD|EXCEED' >> ../benchOut.txt
+	ctest -E 'AllTests|FILE|EXCEED' -j 32 > ../benchOut.txt
+	ctest -R 'FILECOMPARE' -E 'EXCEED' >> ../benchOut.txt
 	cd .. >/dev/null
 	
 	cd build_brns
