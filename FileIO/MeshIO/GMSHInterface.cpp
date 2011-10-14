@@ -333,10 +333,11 @@ void GMSHInterface::writeAllDataToGMSHInputFile (
 			     << "," << mesh_density
 			     << "};" << std::endl;
 		}
-	_n_pnt_offset += n;
 
 	// write the bounding polygon
 	writeBoundingPolygon ( bounding_polygon );
+
+	_n_pnt_offset += n;
 
 	// write all other polylines as constraints
 	const size_t n_polylines (all_polylines.size());
