@@ -9,6 +9,10 @@
 
 #include "FEMCondition.h"
 
+/**
+ * \brief Adapter class for handling boundary conditions in the user Interface
+ * \sa FEMCondition
+ */
 class BoundaryCondition : public FEMCondition
 {
 public:

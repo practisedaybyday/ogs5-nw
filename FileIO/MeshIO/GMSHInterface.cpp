@@ -110,7 +110,8 @@ size_t GMSHInterface::writeGMSHPolygon(const GEOLIB::Polygon& polygon, const siz
 
 bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name,
                                        const GEOLIB::GEOObjects& geo,
-                                       bool useStationsAsContraints)
+                                       bool useStationsAsContraints,
+									   bool useSteinerPoints)
 {
 	std::cerr << "GMSHInterface::writeGMSHInputFile " << std::endl;
 	std::cerr << "get data from geo ... " << std::flush;
@@ -169,12 +170,15 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name,
 	if (useStationsAsContraints)
 		this->addPointsAsConstraints(station_points, *plys, geo2gmsh_surface_id_map);
 
-	std::vector<GEOLIB::Point*> steiner_points = this->getSteinerPoints(quad_tree);
-	this->addPointsAsConstraints(steiner_points, *plys, geo2gmsh_surface_id_map);
+	if (useSteinerPoints)
+	{
+		std::vector<GEOLIB::Point*> steiner_points = this->getSteinerPoints(quad_tree);
+		this->addPointsAsConstraints(steiner_points, *plys, geo2gmsh_surface_id_map);
+		for (size_t i = 0; i < steiner_points.size(); i++)
+			delete steiner_points[i];
+	}
 
 	delete quad_tree;
-	for (size_t i = 0; i < steiner_points.size(); i++)
-		delete steiner_points[i];
 
 	std::cerr << "ok" << std::endl;
 

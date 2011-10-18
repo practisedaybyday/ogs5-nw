@@ -45,11 +45,13 @@ public:
 	 * @param proj_name Name of the geometry that will be included in the geo-file
 	 * @param geo Container for geometric information
 	 * @parem useStationsAsContraints If true, station data is included as constraints for meshing of surfaces (via addStationsAsConstraints()).
+	 * @parem useSteinerPoints If true, additional points will be generated based on a quadtree such that a certained pre-defined point-density is set.
 	 * @return if the file stream can be opened the method returns true, else it returns false
 	 */
 	bool writeGMSHInputFile(const std::string &proj_name,
 	                        const GEOLIB::GEOObjects& geo,
-	                        bool useStationsAsContraints = false);
+	                        bool useStationsAsContraints = false,
+							bool useSteinerPoints = false);
 
 	/**
 	 * Method writes selected data to the stream (opened from constructor) employing a Quadtree for

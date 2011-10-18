@@ -9,6 +9,10 @@
 
 #include "FEMCondition.h"
 
+/**
+ * \brief Adapter class for handling boundary conditions in the user Interface
+ * \sa FEMCondition
+ */
 class SourceTerm : public FEMCondition
 {
 public:
@@ -20,6 +24,7 @@ public:
 	size_t getTimType() const {return _tim_type; }
 	void setTimType(size_t value) { _tim_type = value; }
 
+	/// Reads DIRECT source terms and creates conditions located on points that coincide with mesh nodes.
 	static std::vector<FEMCondition*> createDirectSourceTerms(
 	        const std::vector<CSourceTerm*> &st_vector,
 	        const std::string &geo_name);
