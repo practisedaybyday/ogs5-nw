@@ -108,6 +108,7 @@ void FEMRead(const std::string &file_base_name,
 		mesh = new CFEMesh();
 		GMSH2MSH(msh_file_name.c_str(), mesh);
 		mesh_vec.push_back(mesh);
+		return;
 	}
 
 	std::ifstream msh_file_ascii (msh_file_name.data(),std::ios::in);

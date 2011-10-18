@@ -127,7 +127,6 @@ public:
 	double T_Latent1, T_Latent2, latent_heat;
 	int heat_phase_change_curve;
 	// IO
-	std::string file_base_name;
 	int mode;
 	// PCS  YD
 	std::vector<std::string>density_pcs_name_vector;
@@ -204,9 +203,7 @@ private:
 	// FEM
 	//WW
 	friend class FiniteElement::CFiniteElementStd;
-	// PCS
-	CRFProcess* m_pcs;                    //OK4704
-	CRFProcess* mfp_pcs;
+
 
 #ifdef MFP_TEST
 	Hash_Table* scatter_data; //WW

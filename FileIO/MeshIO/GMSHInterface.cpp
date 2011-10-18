@@ -325,7 +325,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (
 
 	// *** GMSH - write all non-station points
 	const size_t n (all_points.size());
-	for (size_t k(0); k < n; k++)
+	for (size_t k(0); k < n; k++) {
 		if (bounding_polygon->isPntInPolygon (*(all_points[k])))
 		{
 			GEOLIB::Point ll, ur;
@@ -337,10 +337,13 @@ void GMSHInterface::writeAllDataToGMSHInputFile (
 			     << "," << mesh_density
 			     << "};" << std::endl;
 		}
-	_n_pnt_offset += n;
+	}
 
 	// write the bounding polygon
 	writeBoundingPolygon ( bounding_polygon );
+
+	// apply offset changes here
+	_n_pnt_offset += n;
 
 	// write all other polylines as constraints
 	const size_t n_polylines (all_polylines.size());
@@ -385,10 +388,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (
 					// check if first point of polyline is inside bounding polygon
 					if (j == 0)
 						begin_line_pnt_inside_polygon =
-						        bounding_polygon->isPntInPolygon (*(
-						                                                  all_polylines
-						                                                  [
-						                                                          k])->getPoint(j));
+						        bounding_polygon->isPntInPolygon (*(all_polylines[k])->getPoint(j));
 					// check if end point of the line is inside bounding polygon
 					end_line_pnt_inside_polygon =
 					        bounding_polygon->isPntInPolygon (
@@ -399,8 +399,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (
 					{
 						_out << "Line(" << _n_lines + j << ") = {" <<
 						(all_polylines[k])->getPointID(j) << ","
-						     << (all_polylines[k])->getPointID(j +
-						                                  1) << "};" <<
+						     << (all_polylines[k])->getPointID(j + 1) << "};" <<
 						std::endl;
 						// write line as constraint
 						_out << "Line {" << _n_lines + j <<
@@ -637,8 +636,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (
 							if (n_pnts > 0)
 								z_average /= n_pnts;
 							else
-								std::cout <<
-								"DEBUG: n_pnts == 0 in GMSHInterface::writeAllDataToGMSHInputFile while writing Steiner points"
+								std::cerr << "DEBUG: n_pnts == 0 in GMSHInterface::writeAllDataToGMSHInputFile while writing Steiner points"
 								          << std::endl;
 						}
 					}
