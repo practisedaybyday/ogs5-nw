@@ -1,6 +1,6 @@
 # Source files
 
-set( SOURCES
+set( SOURCES_FEM
 	admin.h
 	GridAdapter.h
 	msh_core.h
@@ -13,11 +13,6 @@ set( SOURCES
 	MshEditor.h
 	MSHEnums.h
 	MeshNodesAlongPolyline.h
-	MeshQualityChecker.h
-	MeshQualityShortestLongestRatio.h
-	MeshQualityNormalisedArea.h
-	MeshQualityNormalisedVolumes.h
-	MeshQualityEquiAngleSkew.h
 	
 	GridAdapter.cpp
 	msh_core.cpp
@@ -32,20 +27,8 @@ set( SOURCES
 	MshEditor.cpp
 	MSHEnums.cpp
 	MeshNodesAlongPolyline.cpp
-	MeshQualityChecker.cpp
-	MeshQualityShortestLongestRatio.cpp
-	MeshQualityNormalisedArea.cpp
-	MeshQualityNormalisedVolumes.cpp
-	MeshQualityEquiAngleSkew.cpp
 	#msh_pnt.cpp		# references removed elements.h nodes.h
 	
-	Delaunay/DT_Matrix.h
-	Delaunay/tricommon.h
-	Delaunay/tri_algebra.cpp
-	Delaunay/tri_geometry.cpp
-	Delaunay/tri_main.cpp
-	Delaunay/tri_triangulation.cpp
-	Delaunay/tri_utility.cpp
 	
 	#NW/delaunay2D.h
 	#NW/delaunay3D.h
@@ -94,6 +77,33 @@ set( SOURCES
 	#TM/dtmesh.cpp
 	#TM/main.cpp
 )
+
+if(OGS_USE_QT) #By WW
+   set( SOURCES 
+        ${SOURCES_FEM}
+		MeshQualityChecker.h
+		MeshQualityShortestLongestRatio.h
+		MeshQualityNormalisedArea.h
+		MeshQualityNormalisedVolumes.h
+		MeshQualityEquiAngleSkew.h
+		MeshQualityChecker.cpp
+		MeshQualityShortestLongestRatio.cpp
+		MeshQualityNormalisedArea.cpp
+		MeshQualityNormalisedVolumes.cpp
+		MeshQualityEquiAngleSkew.cpp
+        
+		Delaunay/DT_Matrix.h
+		Delaunay/tricommon.h
+		Delaunay/tri_algebra.cpp
+		Delaunay/tri_geometry.cpp
+		Delaunay/tri_main.cpp
+		Delaunay/tri_triangulation.cpp
+		Delaunay/tri_utility.cpp        
+        )
+else (OGS_USE_QT)
+		set( SOURCES ${SOURCES_FEM})
+endif (OGS_USE_QT)
+
 
 include_directories(
 	.

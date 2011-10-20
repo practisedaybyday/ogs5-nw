@@ -74,6 +74,7 @@ CRFProcessDeformation()
 
 {
 	error_k0 = 1.0e10;
+	idata_type = none;
 }
 
 CRFProcessDeformation::~CRFProcessDeformation()
@@ -90,7 +91,8 @@ CRFProcessDeformation::~CRFProcessDeformation()
 	long i;
 	// Write Gauss stress // TEST for excavation analysis
 	//   if(reload==1)
-	if(reload == 1 || reload == 3)
+	//if(reload == 1 || reload == 3)
+	if(idata_type == write_all_binary || idata_type == read_write )	
 	{
 		WriteGaussPointStress();
 		if(type == 41) // mono-deformation-liquid
@@ -187,6 +189,16 @@ void CRFProcessDeformation::Initialization()
 	if(fem_dm->dynamic)
 		CalcBC_or_SecondaryVariable_Dynamics();
 
+	// Control for reading and writing solution 
+    if(reload == 1)
+       idata_type = write_all_binary;
+    if(reload == 2)
+       idata_type = read_all_binary;
+    if(reload == 3)
+       idata_type = read_write;
+
+
+
 	//TEST
 	//   De_ActivateElement(false);
 }
@@ -205,7 +217,7 @@ void CRFProcessDeformation::InitialMBuffer()
 		abort();
 	}
 
-	int bufferSize (0);
+	size_t bufferSize (0);
 	bool HM_Stagered = false;
 	if(GetObjType() == 4)
 	{
@@ -1032,11 +1044,12 @@ void CRFProcessDeformation::InitGauss(void)
 		}
 	}
 	// Reload the stress results of the previous simulation
-	if(reload >= 2)
+	//if(reload >= 2)
+	if(idata_type == read_all_binary || idata_type == read_write )	
 	{
 		ReadGaussPointStress();
 		if(type == 41) // mono-deformation-liquid
-			WriteSolution();
+			ReadSolution();
 	}
 	// For excavation simulation. Moved here on 05.09.2007 WW
 	if (num_type_name.find("EXCAVATION") != 0)
@@ -1070,7 +1083,8 @@ void CRFProcessDeformation::CreateInitialState4Excavation()
 	}
 	Idx_Strain[NS] = GetNodeValueIndex("STRAIN_PLS");
 	// For excavation simulation. Moved here on 05.09.2007 WW
-	if(reload < 2 && reload != -1000)
+	if((idata_type == write_all_binary || idata_type == none)  && reload != -1000 )	
+	//	if(reload < 2 && reload != -1000)
 	{
 		GravityForce = true;
 		cout << "\n ***Excavation simulation: 1. Establish initial stress profile..." <<
@@ -2582,7 +2596,7 @@ void CRFProcessDeformation::WriteGaussPointStress()
    ROCKFLOW - Funktion: ReadGaussPointStress()
 
    Aufgabe:
-   Read Gauss point stresses to a file
+   Read Gauss point stresses 
 
    Programmaenderungen:
    03/2005  WW  Erste Version
@@ -2614,6 +2628,40 @@ void CRFProcessDeformation::ReadGaussPointStress()
 	//
 	file_stress.close();
 }
+
+
+/**************************************************************************
+   ROCKFLOW - Funktion: ReadGaussPointStress()
+
+   Aufgabe:
+   Read element-wise stress data
+
+   Programmaenderungen:
+   10/2011  WW  Erste Version
+   letzte Aenderung:
+
+**************************************************************************/
+void CRFProcessDeformation::ReadElementStress()
+{
+	long i, index, ActiveElements;
+	string StressFileName = FileName + ".ele_stress.asc";
+	fstream file_stress (StressFileName.data());
+	ElementValue_DM* eleV_DM = NULL;
+	//
+	file_stress>>ActiveElements;
+	for (i = 0; i < ActiveElements; i++)
+	{
+		file_stress>>index;
+		eleV_DM = ele_value_dm[index];
+		eleV_DM->ReadElementStressASCI(file_stress);
+		(*eleV_DM->Stress) = (*eleV_DM->Stress0);
+		if(eleV_DM->Stress_j)
+			(*eleV_DM->Stress_j) = (*eleV_DM->Stress);
+	}
+	//
+	file_stress.close();
+}
+
 
 /**************************************************************************
    ROCKFLOW - Funktion: ReleaseLoadingByExcavation()
