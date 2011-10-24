@@ -6426,7 +6426,7 @@ void CSolidProperties::CalPrimaryVariable(vector<string>& pcs_name_vector)
 	if(!Fem_Ele_Std)                      //OK
 		return;
 
-	for(int i = 0; i < (int)pcs_name_vector.size(); i++)
+	for(size_t i = 0; i < pcs_name_vector.size(); i++)
 	{
 		m_pcs = PCSGet(pcs_name_vector[i],true);
 		if (!m_pcs)

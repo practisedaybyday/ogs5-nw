@@ -21,12 +21,11 @@ class CRFProcess;
 
    WW 07.2011
  */
-using namespace std;
 #ifdef MFP_TEST
 class Hash_Table
 {
 public:
-	Hash_Table(string f_name);
+	Hash_Table(std::string f_name);
 	~Hash_Table();
 
 	double CalcValue(double* var, const int var_id) const;
@@ -36,7 +35,7 @@ private:
 	int num_par;
 	int num_var;
 
-	vector<string> names;
+	vector<std::string> names;
 	vector<double> hash_row_par;
 	vector<int> table_section_ends;
 	vector<double*> hash_table_data;

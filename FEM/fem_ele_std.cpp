@@ -732,7 +732,7 @@ void CFiniteElementStd::SetMaterial(int phase)
 	if(msp_vector.size() > 0)
 	{
 		SolidProp = msp_vector[mmp_index];
-		SolidProp->m_pcs = pcs;   //NW
+		//KR not used: SolidProp->m_pcs = pcs;   //NW
 		SolidProp->Fem_Ele_Std = this; //CMCD for Decovalex
 	}
 

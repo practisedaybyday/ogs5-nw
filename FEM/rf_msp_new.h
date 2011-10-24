@@ -131,8 +131,7 @@ private:
 	int thermal_conductivity_tensor_dim;
 	double thermal_conductivity_tensor[9];
 	std::string thermal_conductivity_tensor_type_name;
-	// Handles. May be used by GUI
-	std::string solid_name;
+
 	//-------------------------------------------------------------
 	// Numeric
 	double CalulateValue(const Matrix* data, const double x) const;
@@ -160,7 +159,6 @@ public:
 	//CMCD
 	FiniteElement::CFiniteElementStd* Fem_Ele_Std;
 	std::string name;
-	CRFProcess* m_pcs;                    //NW
 	// IO
 	std::string file_base_name;
 	// Output
