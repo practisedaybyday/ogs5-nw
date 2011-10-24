@@ -3378,15 +3378,14 @@ double CKinReact::GetPhaseVolumeAtNode(long node_number, double theta, int phase
 		{
 		case 1: //solid phase
 			// Get VOL_MAT index
-			for (idx = 0; idx < (int) m_mat_mp->m_msh->mat_names_vector.size(); idx++)
-				if (m_mat_mp->m_msh->mat_names_vector[idx].compare("VOL_MAT")
-				    == 0)
+			for (idx = 0; idx < mesh->mat_names_vector.size(); idx++)
+				if (mesh->mat_names_vector[idx].compare("VOL_MAT") == 0)
 					break;
 			break;
 		case 2: //bio phase
 			// Get VOL_BIO index
-			for (idx = 0; idx < (int) m_mat_mp->m_msh->mat_names_vector.size(); idx++)
-				if (m_mat_mp->m_msh->mat_names_vector[idx].compare("VOL_BIO") == 0)
+			for (idx = 0; idx < mesh->mat_names_vector.size(); idx++)
+				if (mesh->mat_names_vector[idx].compare("VOL_BIO") == 0)
 					break;
 			break;
 		default:

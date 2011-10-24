@@ -35,6 +35,7 @@ using namespace std;
 #include "rf_tim_new.h"
 #include "solver.h"
 #include "tools.h"
+#include "mathlib.h"
 
 /* AMG-Solver */
 #ifdef AMG1R5

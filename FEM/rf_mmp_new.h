@@ -54,8 +54,9 @@ private:
 	                                                                 double*);
 	// Permeability
 	// Permeabilty stress corrector WW
-	int permeability_stress_mode;
 	double* c_coefficient;
+	unsigned geo_dimension;
+	int permeability_stress_mode;
 	//
 	//CMCD 9/2004 GeoSys 4
 	double PermeabilityPressureFunctionMethod1(long,double );
@@ -67,7 +68,6 @@ private:
 	double PermeabilityPressureFunctionMethod4(long,double, double );
 	friend class CMediumPropertiesGroup;
 public:
-	//-------------------------------------------
 	// Methods
 	CMediumProperties(void);              // constructor
 	~CMediumProperties(void);             // destructor
@@ -150,23 +150,23 @@ public:
 	void WriteTecplotDistributedProperties(); //OK
 	//-------------------------------------------
 	// Properties
+private:
 	// PCS
 	std::string pcs_type_name;            //YD
+public:
 	CRFProcess* m_pcs;                    //OK
-	CRFProcess* m_pcs_tmp;                //HS
 	std::vector<std::string>pcs_name_vector;
 private:
 	std::vector<std::string> porosity_pcs_name_vector;
+	CFEMesh* _mesh; //OK
 public:
 	//....................................................................
 	//GEO
 	std::string geo_type_name;
 	std::string geo_name;
 	std::vector<std::string>geo_name_vector; //OK
-	int geo_dimension;
 	double geo_area;
 	std::string geo_area_file;            //OK
-	CFEMesh* m_msh;                       //OK
 	//....................................................................
 	double density;
 	std::string name;
