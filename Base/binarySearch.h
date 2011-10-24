@@ -38,5 +38,6 @@ size_t searchElement (const T& key, size_t beg, size_t end, const std::vector<T>
 }
 
 size_t searchElement (double const& val, size_t beg, size_t end, const std::vector<double>& array);
+size_t searchElement (double const& val, size_t beg, size_t end, const std::vector<double*>& array);
 
 #endif /* BINARYSEARCH_H_ */

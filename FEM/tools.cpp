@@ -1112,6 +1112,120 @@ double interpol (double x1, double x2, double zx1, double zx2, double xn)
 }
 
 /**********************************************************************
+Function GetMatrixValue (double var1, double var2, int *gueltig)
+
+This function reads a data matrix with two independent arguments and
+function values in an FCT-File and returns the value corresponding to
+var1 and var2. If var1 and var2 are not in the matrix, the function
+returns a value interpolated between both arguments.
+
+Programming:
+11-2011 NB/TF
+***********************************************************************/
+double GetMatrixValue(double var1, double var2, std::string caption, int *gueltig)
+{
+	CFunction * matrix;
+	//WW int anz_variables, anz_data;
+	int dim_x, dim_y;
+	int i1 = 0;
+	int i2 = 0;
+	int j1 = 0;
+	int j2 = 0;
+
+	matrix = FCTGet(caption);
+	dim_x = matrix->matrix_dimension[0]; //NB 4.8.01
+	dim_y = matrix->matrix_dimension[1]; //NB
+
+	int rangeV1[2], rangeV2[2];
+
+	rangeV1[0] = 0;
+	rangeV1[1] = dim_x - 1;
+	rangeV2[0] = dim_x;
+	rangeV2[1] = dim_x + dim_y - 1;
+
+	if (var1 < *matrix->variable_data_vector[0]) //is var1 smaller then the smallest argument?
+	{
+		*gueltig = 0;
+		i1 = i2 = 0;
+	} else if (var1 > *matrix->variable_data_vector[dim_x - 1]) //is var1 larger then largest argument?
+	{
+		*gueltig = 0;
+		i1 = i2 = dim_x - 1;
+	} else {
+		i1 = searchElement(var1, 0, dim_x - 1, matrix->variable_data_vector);
+		i2 = i1 + 1;
+	}
+
+	if (var2 < *matrix->variable_data_vector[dim_x]) //is var1 smaller then the smallest argument?
+	{
+		*gueltig = 0;
+		j1 = j2 = dim_x;
+	} else if (var2 > *matrix->variable_data_vector[dim_y + dim_x - 1]) //is var1 larger then largest argument?
+	{
+		*gueltig = 0;
+		j1 = j2 = dim_y + dim_x - 1;
+	} else {
+		j1 = searchElement(var2, dim_x, dim_y + dim_x - 1, matrix->variable_data_vector);
+		j2 = j1 + 1;
+	}
+
+	if (fabs(var1 - *matrix->variable_data_vector[i1]) < std::numeric_limits<double>::epsilon()) // var 1 is in the matrix
+	{
+		if (fabs(var2 - *matrix->variable_data_vector[j1]) < std::numeric_limits<double>::epsilon()) // var 2 is in the matrix
+		{
+
+			return *matrix->variable_data_vector[dim_x + dim_y + i1 + (j1 - dim_x) * dim_x];
+		} else // only v1 is in the matrix
+		{
+			double zx1y1, zx1y2;
+			double y1, y2;
+			zx1y1 = *matrix->variable_data_vector[dim_x + dim_y + i1 + (j1 - dim_x) * dim_x];
+			zx1y2 = *matrix->variable_data_vector[dim_x + dim_y + i1 + (j2 - dim_x) * dim_x];
+			y1 = *matrix->variable_data_vector[j1];
+			y2 = *matrix->variable_data_vector[j2];
+
+			return interpol(y1, y2, zx1y1, zx1y2, var2);
+		}
+	} else // v1 is not in the matrix
+	{
+		if (fabs(var2 - *matrix->variable_data_vector[dim_x + j1])
+						< std::numeric_limits<double>::epsilon()) // only var 2 is in the matrix
+		{
+			double zx1y1, zx2y1;
+			double x1, x2;
+			zx1y1 = *matrix->variable_data_vector[dim_x + dim_y + i1 + (j1 - dim_x) * dim_x];
+			zx2y1 = *matrix->variable_data_vector[dim_x + dim_y + i2 + (j1 - dim_x) * dim_x];
+			x1 = *matrix->variable_data_vector[i1];
+			x2 = *matrix->variable_data_vector[i2];
+
+			return interpol(x1, x2, zx1y1, zx2y1, var1);
+		}
+
+		else // neither var1 nor var2 are in the matrix
+		{
+			double interp1, interp2;
+			double zx1y1, zx2y1, zx1y2, zx2y2;
+			double x1, x2, y1, y2;
+			zx1y1 = *matrix->variable_data_vector[dim_x + dim_y + i1 + (j1 - dim_x) * dim_x];
+			zx2y1 = *matrix->variable_data_vector[dim_x + dim_y + i2 + (j1 - dim_x) * dim_x];
+			zx1y2 = *matrix->variable_data_vector[dim_x + dim_y + i1 + (j2 - dim_x) * dim_x];
+			zx2y2 = *matrix->variable_data_vector[dim_x + dim_y + i2 + (j2 - dim_x) * dim_x];
+
+			x1 = *matrix->variable_data_vector[i1];
+			x2 = *matrix->variable_data_vector[i2];
+			y1 = *matrix->variable_data_vector[j1];
+			y2 = *matrix->variable_data_vector[j2];
+
+			interp1 = interpol(x1, x2, zx1y1, zx2y1, var1);
+			interp2 = interpol(x1, x2, zx1y2, zx2y2, var1);
+
+			return interpol(y1, y2, interp1, interp2, var2);
+		}
+	}
+}
+
+
+/**********************************************************************
    Function GetMatrixValue (double var1, double var2, int *gueltig)
 
    This function reads a data matrix with two independent arguments and
@@ -1122,107 +1236,107 @@ double interpol (double x1, double x2, double zx1, double zx2, double xn)
    Programming:
    08/2008 NB
  ***********************************************************************/
-double GetMatrixValue(double var1, double var2, std::string caption, int* gueltig)
-{
-	CFunction* matrix;
-	//WW int anz_variables, anz_data;
-	int dim_x, dim_y;
-	int i1 = 0;
-	int i2 = 0;
-	int j1 = 0;
-	int j2 = 0;
-	int counter;
-	double x1 = 0.0,x2 = 0.0,y1 = 0.0,y2 = 0.0; //OK411
-	double zx1y1,zx2y1,zx1y2,zx2y2;
-
-	matrix = FCTGet(caption);
-	//WW anz_variables = (int)matrix->variable_names_vector.size();
-	//dim_x = matrix->matrix_dimension_x;
-	//dim_y = matrix->matrix_dimension_y;
-	dim_x = matrix->matrix_dimension[0];  //NB 4.8.01
-	dim_y = matrix->matrix_dimension[1];  //NB
-	//WW anz_data = (int)matrix->variable_data_vector.size()-dim_x-dim_y;
-	//----------------------------------------------------------------------
-	if (var1 < *matrix->variable_data_vector[0]) //is var1 smaller then the smallest argument?
-	{
-		x1 = x2 = *matrix->variable_data_vector[0];
-		*gueltig = 0;
-		i1 = i2 = 0;
-	}
-	else
-	//is var1 larger then largest argument?
-	if (var1 > *matrix->variable_data_vector[dim_x - 1])
-	{
-		x1 = x2 = *matrix->variable_data_vector[dim_x - 1];
-		*gueltig = 0;
-		i1 = i2 = dim_x - 1;
-	}
-	else
-		for (counter = 0; counter < dim_x; counter++)
-		{
-			//does var1 fit an argument in the matrix exactly?
-			if (var1 == *matrix->variable_data_vector[counter])
-			{
-				x1 = x2 = *matrix->variable_data_vector[counter];
-				i1 = i2 = counter;
-				break;
-			}
-			else
-			//var1 is between two arguments in the matrix
-			if (var1 < *matrix->variable_data_vector[counter])
-			{
-				x1 = *matrix->variable_data_vector[counter - 1];
-				x2 = *matrix->variable_data_vector[counter];
-				i2 = counter;
-				i1 = i2 - 1;
-				break;
-			}
-		}
-	//same procedure for var2:
-	if (var2 < *matrix->variable_data_vector[dim_x])
-	{
-		y1 = y2 = *matrix->variable_data_vector[dim_x];
-		*gueltig = 0;
-		j1 = j2 = dim_x;
-	}
-	else
-	if (var2 > *matrix->variable_data_vector[dim_x + dim_y - 1])
-	{
-		y1 = y2 = *matrix->variable_data_vector[dim_x + dim_y - 1];
-		*gueltig = 0;
-		j1 = j2 = dim_x + dim_y - 1;
-	}
-	else
-		for (counter = dim_x; counter < dim_x + dim_y; counter++)
-		{
-			if (var2 == *matrix->variable_data_vector[counter])
-			{
-				y1 = y2 = *matrix->variable_data_vector[counter];
-				j1 = j2 = counter;
-				break;
-			}
-			else
-			if (var2 < *matrix->variable_data_vector[counter])
-			{
-				y1 = *matrix->variable_data_vector[counter - 1];
-				y2 = *matrix->variable_data_vector[counter];
-				j2 = counter;
-				j1 = j2 - 1;
-				break;
-			}
-		}
-	//getting the corresponding Z values for the arguments from the data vector
-	zx1y1 = *matrix->variable_data_vector[(j1 - dim_x) * dim_x + (i1 + dim_x + dim_y)];
-	zx2y1 = *matrix->variable_data_vector[(j1 - dim_x) * dim_x + (i2 + dim_x + dim_y)];
-	zx1y2 = *matrix->variable_data_vector[(j2 - dim_x) * dim_x + (i1 + dim_x + dim_y)];
-	zx2y2 = *matrix->variable_data_vector[(j2 - dim_x) * dim_x + (i2 + dim_x + dim_y)];
-	return interpol (y1,y2,
-	                 interpol (x1,x2,zx1y1,zx2y1,  var1),interpol (x1,
-	                                                               y1,
-	                                                               zx1y2,
-	                                                               zx2y2,
-	                                                               var1),var2);
-}
+//double GetMatrixValue(double var1, double var2, std::string caption, int* gueltig)
+//{
+//	CFunction* matrix;
+//	//WW int anz_variables, anz_data;
+//	int dim_x, dim_y;
+//	int i1 = 0;
+//	int i2 = 0;
+//	int j1 = 0;
+//	int j2 = 0;
+//	int counter;
+//	double x1 = 0.0,x2 = 0.0,y1 = 0.0,y2 = 0.0; //OK411
+//	double zx1y1,zx2y1,zx1y2,zx2y2;
+//
+//	matrix = FCTGet(caption);
+//	//WW anz_variables = (int)matrix->variable_names_vector.size();
+//	//dim_x = matrix->matrix_dimension_x;
+//	//dim_y = matrix->matrix_dimension_y;
+//	dim_x = matrix->matrix_dimension[0];  //NB 4.8.01
+//	dim_y = matrix->matrix_dimension[1];  //NB
+//	//WW anz_data = (int)matrix->variable_data_vector.size()-dim_x-dim_y;
+//	//----------------------------------------------------------------------
+//	if (var1 < *matrix->variable_data_vector[0]) //is var1 smaller then the smallest argument?
+//	{
+//		x1 = x2 = *matrix->variable_data_vector[0];
+//		*gueltig = 0;
+//		i1 = i2 = 0;
+//	}
+//	else
+//	//is var1 larger then largest argument?
+//	if (var1 > *matrix->variable_data_vector[dim_x - 1])
+//	{
+//		x1 = x2 = *matrix->variable_data_vector[dim_x - 1];
+//		*gueltig = 0;
+//		i1 = i2 = dim_x - 1;
+//	}
+//	else
+//		for (counter = 0; counter < dim_x; counter++)
+//		{
+//			//does var1 fit an argument in the matrix exactly?
+//			if (var1 == *matrix->variable_data_vector[counter])
+//			{
+//				x1 = x2 = *matrix->variable_data_vector[counter];
+//				i1 = i2 = counter;
+//				break;
+//			}
+//			else
+//			//var1 is between two arguments in the matrix
+//			if (var1 < *matrix->variable_data_vector[counter])
+//			{
+//				x1 = *matrix->variable_data_vector[counter - 1];
+//				x2 = *matrix->variable_data_vector[counter];
+//				i2 = counter;
+//				i1 = i2 - 1;
+//				break;
+//			}
+//		}
+//	//same procedure for var2:
+//	if (var2 < *matrix->variable_data_vector[dim_x])
+//	{
+//		y1 = y2 = *matrix->variable_data_vector[dim_x];
+//		*gueltig = 0;
+//		j1 = j2 = dim_x;
+//	}
+//	else
+//	if (var2 > *matrix->variable_data_vector[dim_x + dim_y - 1])
+//	{
+//		y1 = y2 = *matrix->variable_data_vector[dim_x + dim_y - 1];
+//		*gueltig = 0;
+//		j1 = j2 = dim_x + dim_y - 1;
+//	}
+//	else
+//		for (counter = dim_x; counter < dim_x + dim_y; counter++)
+//		{
+//			if (var2 == *matrix->variable_data_vector[counter])
+//			{
+//				y1 = y2 = *matrix->variable_data_vector[counter];
+//				j1 = j2 = counter;
+//				break;
+//			}
+//			else
+//			if (var2 < *matrix->variable_data_vector[counter])
+//			{
+//				y1 = *matrix->variable_data_vector[counter - 1];
+//				y2 = *matrix->variable_data_vector[counter];
+//				j2 = counter;
+//				j1 = j2 - 1;
+//				break;
+//			}
+//		}
+//	//getting the corresponding Z values for the arguments from the data vector
+//	zx1y1 = *matrix->variable_data_vector[(j1 - dim_x) * dim_x + (i1 + dim_x + dim_y)];
+//	zx2y1 = *matrix->variable_data_vector[(j1 - dim_x) * dim_x + (i2 + dim_x + dim_y)];
+//	zx1y2 = *matrix->variable_data_vector[(j2 - dim_x) * dim_x + (i1 + dim_x + dim_y)];
+//	zx2y2 = *matrix->variable_data_vector[(j2 - dim_x) * dim_x + (i2 + dim_x + dim_y)];
+//	return interpol (y1,y2,
+//	                 interpol (x1,x2,zx1y1,zx2y1,  var1),interpol (x1,
+//	                                                               y1,
+//	                                                               zx1y2,
+//	                                                               zx2y2,
+//	                                                               var1),var2);
+//}
 
 /****************************************************************************
  * Finds and returns the positive minimum of a vector.
