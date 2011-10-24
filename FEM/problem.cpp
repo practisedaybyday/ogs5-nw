@@ -1192,7 +1192,7 @@ inline double Problem::LiquidFlow()
 		// call ECLIPSE interface
 		success = m_pcs->EclipseData->RunEclipse(m_pcs->Tim->step_current, m_pcs);
 		if (success == 0)
-			cout << "Error running Eclipse!" << endl;
+			std::cout << "Error running Eclipse!" << std::endl;
 		if(m_pcs->tim_type_name.compare("STEADY") == 0)
 			m_pcs->selected = false;
 	}
@@ -1204,7 +1204,7 @@ inline double Problem::LiquidFlow()
 		// call DUMUX interface
 		success = m_pcs->DuMuxData->RunDuMux(m_pcs->Tim->step_current, m_pcs);
 		if (success == 0)
-			cout << "Error running DuMux!" << endl;
+			std::cout << "Error running DuMux!" << std::endl;
 	}
 
 	return error;
@@ -1327,7 +1327,7 @@ inline double Problem::MultiPhaseFlow()
 	{
 		if (m_pcs->Tim->step_current == 1)
 		{
-			cout << " The Viscosity is not calculated yet!!!" << endl;
+			std::cout << " The Viscosity is not calculated yet!!!" << std::endl;
 			m_pcs->CalculateFluidDensitiesAndViscositiesAtNodes(m_pcs);
 		}
 		else
@@ -1353,7 +1353,7 @@ inline double Problem::MultiPhaseFlow()
 		success = m_pcs->EclipseData->RunEclipse(m_pcs->Tim->step_current, m_pcs);
 		if (success == 0)
 		{
-			cout << "Error running Eclipse!" << endl;
+			std::cout << "Error running Eclipse!" << std::endl;
 			system("Pause");
 			exit(0);
 		}
@@ -1365,7 +1365,7 @@ inline double Problem::MultiPhaseFlow()
 		// call DUMUX interface
 		success = m_pcs->DuMuxData->RunDuMux(m_pcs->Tim->step_current, m_pcs);
 		if (success == 0)
-			cout << "Error running DuMux!" << endl;
+			std::cout << "Error running DuMux!" << std::endl;
 	}
 	//CO2-Phase_Transition BG, NB
 	if ((m_pcs->Phase_Transition_Model == 1) && ((m_pcs->simulator.compare("GEOSYS") == 0)))
@@ -1378,20 +1378,20 @@ inline double Problem::MultiPhaseFlow()
 			FluidProp = MFPGet("LIQUID");
 			if ((FluidProp->density_model != 18) || (FluidProp->viscosity_model != 18))
 			{
-				cout <<
+				std::cout <<
 				"If the Phase_Transition_Model is used the density model and the viscosity model should be 18!"
-				     << endl;
-				cout << "The run is terminated now ..." << endl;
+				     << std::endl;
+				std::cout << "The run is terminated now ..." << std::endl;
 				system("Pause");
 				exit(0);
 			}
 			FluidProp = MFPGet("GAS");
 			if ((FluidProp->density_model != 18) || (FluidProp->viscosity_model != 18))
 			{
-				cout <<
+				std::cout <<
 				"If the Phase_Transition_Model is used the density model and the viscosity model should be 18!"
-				     << endl;
-				cout << "The run is terminated now ..." << endl;
+				     << std::endl;
+				std::cout << "The run is terminated now ..." << std::endl;
 				system("Pause");
 				exit(0);
 			}
@@ -1426,17 +1426,17 @@ void Problem::TestOutputDuMux(CRFProcess* m_pcs)
 	MeshLib::CElem* m_ele = NULL;
 	MeshLib::CNode* m_node = NULL;
 	CMediumProperties* m_mat_mp = NULL;
-	ostringstream temp;
+	std::ostringstream temp;
 	double mass_CO2_gas, mass_CO2_water, mass_CO2;
 	int index;
 	double saturation_CO2;
 	double saturation_water;
 	double node_volume;
 	double time;
-	string tempstring;
-	vector <string> vec_string;
+	std::string tempstring;
+	std::vector <std::string> vec_string;
 	//int position;
-	string path;
+	std::string path;
 	double density_CO2;
 	double porosity = 0.0;
 	int variable_index;
@@ -1447,7 +1447,7 @@ void Problem::TestOutputDuMux(CRFProcess* m_pcs)
 
 	path = m_pcs->file_name_base;
 	int position = int(path.find_last_of("\\"));
-	string path_new;
+	std::string path_new;
 	path_new = path.substr(0,position);
 	//position = int(path_new.find_last_of("\\"));
 	//path_new = path_new.substr(0,position);
@@ -1691,17 +1691,17 @@ void Problem::TestOutputEclipse(CRFProcess* m_pcs)
 	MeshLib::CElem* m_ele = NULL;
 	MeshLib::CNode* m_node = NULL;
 	CMediumProperties* m_mat_mp = NULL;
-	ostringstream temp;
+	std::ostringstream temp;
 	double mass_CO2_gas, mass_CO2_water, mass_CO2;
 	int index;
 	double saturation_CO2;
 	double saturation_water;
 	double node_volume;
 	double time;
-	string tempstring;
-	vector <string> vec_string;
+	std::string tempstring;
+	std::vector <std::string> vec_string;
 	//int position;
-	string path;
+	std::string path;
 	double density_CO2;
 	double porosity = 0.0;
 	int variable_index;
@@ -1712,7 +1712,7 @@ void Problem::TestOutputEclipse(CRFProcess* m_pcs)
 
 	path = m_pcs->file_name_base;
 	int position = int(path.find_last_of("\\"));
-	string path_new;
+	std::string path_new;
 	path_new = path.substr(0,position);
 	//position = int(path_new.find_last_of("\\"));
 	//path_new = path_new.substr(0,position);
