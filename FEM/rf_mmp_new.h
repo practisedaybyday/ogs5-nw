@@ -239,7 +239,6 @@ public:
 	int m_color[3];
 	bool selected;
 	int mode;
-	std::string het_file_name;            //SB
 	// surface water
 	// JOD
 	double friction_coefficient, friction_exp_slope, friction_exp_depth;
