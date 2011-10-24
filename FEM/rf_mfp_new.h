@@ -52,7 +52,6 @@ using FiniteElement::CFiniteElementStd;
 class CFluidProperties
 {
 public:
-
 	int fluid_id;                         // specification of substance (NB JUN 09)
 	double rhoc;                          //critical_density; //NB
 	double Tc;                            //critical_temperature;

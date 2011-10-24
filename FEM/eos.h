@@ -1,3 +1,6 @@
+#ifndef EOS_H_
+#define EOS_H_
+
 //#include <math.h>
 //#include <fstream>
 //#include <iostream>
@@ -55,3 +58,7 @@ double liquid_saturation_density_n2(double T);
 double vapour_saturation_density_n2(double T);
 double vapour_saturation_density_co2(double T);
 double liquid_saturation_density_co2(double T);
+
+double DuansMixingRule(double T, double P, double x, int fluid1, int fluid2, bool neu);
+
+#endif

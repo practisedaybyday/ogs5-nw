@@ -65,21 +65,19 @@ using FiniteElement::ElementValue_DM;
    02/2004 OK Implementation
    last modification:
 **************************************************************************/
-CMediumProperties::CMediumProperties(void)
+CMediumProperties::CMediumProperties() :
+	geo_dimension(0), _mesh (NULL)
 {
 	name = "DEFAULT";
 	mode = 0;
 	selected = false;
 	m_pcs = NULL;                         //OK
 	// GEO
-	geo_dimension = 0;
 	geo_area = 1.0;                       //OK
 	porosity_model = -1;
 	porosity_model_values[0] = 0.1;
 	tortuosity_model = -1;
 	tortuosity_model_values[0] = 1.;
-	// MSH
-	m_msh = NULL;                         //OK
 	// flow
 	storage_model = -1;
 	storage_model_values[0] = 0.;
@@ -1928,7 +1926,6 @@ void MMPWriteTecplot(std::string msh_name)
 **************************************************************************/
 void CMediumProperties::WriteTecplot(std::string msh_name)
 {
-	long i,j;
 	std::string element_type;
 	//----------------------------------------------------------------------
 	// GSP
@@ -1944,40 +1941,39 @@ void CMediumProperties::WriteTecplot(std::string msh_name)
 	mat_file.precision(12);
 	//--------------------------------------------------------------------
 	// MSH
-	CFEMesh* m_msh = NULL;
 	MeshLib::CElem* m_ele = NULL;
-	m_msh = FEMGet(msh_name);
-	if(!m_msh)
+	_mesh = FEMGet(msh_name);
+	if(!_mesh)
 		return;
 	//--------------------------------------------------------------------
 	if (!mat_file.good())
 		return;
 	mat_file.seekg(0L,std::ios::beg);
 	//--------------------------------------------------------------------
-	j = 0;
-	for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+	long j = 0;
+	for(size_t i = 0; i < _mesh->ele_vector.size(); i++)
 	{
-		m_ele = m_msh->ele_vector[i];
+		m_ele = _mesh->ele_vector[i];
 		if(m_ele->GetPatchIndex() == number)
 			j++;
 	}
 	long no_elements = j - 1;
 	//--------------------------------------------------------------------
 	mat_file << "VARIABLES = X,Y,Z,MAT" << std::endl;
-	long no_nodes = (long)m_msh->nod_vector.size();
+	const size_t no_nodes (_mesh->nod_vector.size());
 	mat_file << "ZONE T = " << name << ", " \
 	         << "N = " << no_nodes << ", " \
 	         << "E = " << no_elements << ", " \
 	         << "F = FEPOINT" << ", " << "ET = BRICK" << std::endl;
-	for(i = 0; i < no_nodes; i++)
+	for(size_t i = 0; i < no_nodes; i++)
 	{
-		double const* const pnt (m_msh->nod_vector[i]->getData());
+		double const* const pnt (_mesh->nod_vector[i]->getData());
 		mat_file << pnt[0] << " " << pnt[1] << " " << pnt[2] << " " << number << std::endl;
 	}
 	j = 0;
-	for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+	for(size_t i = 0; i < _mesh->ele_vector.size(); i++)
 	{
-		m_ele = m_msh->ele_vector[i];
+		m_ele = _mesh->ele_vector[i];
 		if(m_ele->GetPatchIndex() == number)
 		{
 			switch(m_ele->GetElementType())
@@ -2132,7 +2128,6 @@ double CMediumProperties::PermeabilitySaturationFunction(long number,double* gp,
 	int gueltig;
 	//---------------------------------------------------------------------
 	if(mode == 2)                         // Given value
-
 		saturation = argument;
 	else
 	{
@@ -3823,7 +3818,7 @@ double CMediumProperties::Porosity(long number,double theta)
 		break;
 	case 11:                              // n = temp const, but spatially distributed CB
 		//porosity = porosity_model_values[0];
-		porosity = m_msh->ele_vector[number]->mat_vector(por_index);
+		porosity = _mesh->ele_vector[number]->mat_vector(por_index);
 		break;
 	case 12:                              // n = n0 + vol_strain, WX: 03.2011
 		porosity = PorosityVolStrain(number, porosity_model_values[0], assem);
@@ -4212,7 +4207,7 @@ double* CMediumProperties::PermeabilityTensor(long index)
 					break;
 			// end of getting the index---------------------------------------------------------
 
-			tensor[0] = m_msh->ele_vector[index]->mat_vector(perm_index);
+			tensor[0] = _mesh->ele_vector[index]->mat_vector(perm_index);
 			//CMCD
 			//01.09.2011 WW.  int edx = m_pcs->GetElementValueIndex("PERMEABILITY");
 			//CMCD
@@ -4281,21 +4276,20 @@ double* CMediumProperties::PermeabilityTensor(long index)
 			// if first time step, do nothing. otherwise,
 			if ( aktueller_zeitschritt > 1 )
 			{
+				CRFProcess* pcs_tmp(NULL);
 				for (size_t i = 0; i < pcs_vector.size(); i++)
 				{
-					m_pcs_tmp = pcs_vector[i];
-					//	                if ( m_pcs_tmp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0 ||
-					//                                   m_pcs_tmp->pcs_type_name.compare("LIQUID_FLOW") == 0)
-					if ( m_pcs_tmp->getProcessType () == GROUNDWATER_FLOW ||
-					     m_pcs_tmp->getProcessType () == LIQUID_FLOW)
+					pcs_tmp = pcs_vector[i];
+					if ( pcs_tmp->getProcessType () == GROUNDWATER_FLOW ||
+					     pcs_tmp->getProcessType () == LIQUID_FLOW)
 						break;
 				}
 				// get index
-				idx_k = m_pcs_tmp->GetElementValueIndex("PERMEABILITY");
-				idx_n = m_pcs_tmp->GetElementValueIndex("POROSITY");
+				idx_k = pcs_tmp->GetElementValueIndex("PERMEABILITY");
+				idx_n = pcs_tmp->GetElementValueIndex("POROSITY");
 
 				// get values of n.
-				n_new = m_pcs_tmp->GetElementValue( index, idx_n + 1 );
+				n_new = pcs_tmp->GetElementValue( index, idx_n + 1 );
 
 				// calculate new permeability
 				// k_rel(n) = n_rel^{19/6}
@@ -4317,21 +4311,22 @@ double* CMediumProperties::PermeabilityTensor(long index)
 			// if first time step, do nothing. otherwise,
 			if ( aktueller_zeitschritt > 1 )
 			{
+				CRFProcess* pcs_tmp(NULL);
 				for (size_t i = 0; i < pcs_vector.size(); i++)
 				{
-					m_pcs_tmp = pcs_vector[i];
+					pcs_tmp = pcs_vector[i];
 					//	                if ( m_pcs_tmp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0 ||
 					//                                   m_pcs_tmp->pcs_type_name.compare("LIQUID_FLOW") == 0) TF
-					if ( m_pcs_tmp->getProcessType () == GROUNDWATER_FLOW ||
-					     m_pcs_tmp->getProcessType () == LIQUID_FLOW)
+					if ( pcs_tmp->getProcessType () == GROUNDWATER_FLOW ||
+					     pcs_tmp->getProcessType () == LIQUID_FLOW)
 						break;
 				}
 				// get index
-				idx_k = m_pcs_tmp->GetElementValueIndex("PERMEABILITY");
-				idx_n = m_pcs_tmp->GetElementValueIndex("POROSITY");
+				idx_k = pcs_tmp->GetElementValueIndex("PERMEABILITY");
+				idx_n = pcs_tmp->GetElementValueIndex("POROSITY");
 
 				// get values of n.
-				n_new = m_pcs_tmp->GetElementValue( index, idx_n + 1 );
+				n_new = pcs_tmp->GetElementValue( index, idx_n + 1 );
 
 				// calculate new permeability
 				// k_rel(n) = n_rel^{19/6}
@@ -4339,20 +4334,10 @@ double* CMediumProperties::PermeabilityTensor(long index)
 				n_rel = n_new / permeability_porosity_model_values[0];
 
 				// then relative permeability change
-				const double temp (
-				        ( n_rel -
-				          permeability_porosity_model_values[0] ) /
-				        (1 - permeability_porosity_model_values[0]));
-				k_rel = permeability_porosity_model_values[2] * \
-				        MathLib::fastpow(
-				        ( n_rel -
-				          permeability_porosity_model_values[0] )
-				        /
-				        (1 -
-				         permeability_porosity_model_values[0]),
-				        3) \
-				        + ( 1 -
-				            permeability_porosity_model_values[2] ) * temp * temp;
+				const double temp (( n_rel - permeability_porosity_model_values[0] ) / (1 - permeability_porosity_model_values[0]));
+				k_rel = permeability_porosity_model_values[2] *
+					MathLib::fastpow((n_rel - permeability_porosity_model_values[0] ) / (1 - permeability_porosity_model_values[0]),3)
+					+ ( 1 - permeability_porosity_model_values[2] ) * temp * temp;
 				// finially permeability
 				k_new = k_rel * permeability_porosity_model_values[1];
 				// save new permeability
@@ -4366,21 +4351,22 @@ double* CMediumProperties::PermeabilityTensor(long index)
 			// if first time step, do nothing. otherwise,
 			if ( aktueller_zeitschritt > 1 )
 			{
+				CRFProcess* pcs_tmp(NULL);
 				for (size_t i = 0; i < pcs_vector.size(); i++)
 				{
-					m_pcs_tmp = pcs_vector[i];
+					pcs_tmp = pcs_vector[i];
 					//	                if ( m_pcs_tmp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0 ||
 					//	                                m_pcs_tmp->pcs_type_name.compare("LIQUID_FLOW") == 0) TF
-					if ( m_pcs_tmp->getProcessType() == GROUNDWATER_FLOW ||
-					     m_pcs_tmp->getProcessType () == LIQUID_FLOW)
+					if ( pcs_tmp->getProcessType() == GROUNDWATER_FLOW ||
+							pcs_tmp->getProcessType () == LIQUID_FLOW)
 						break;
 				}
 				// get index
-				idx_k = m_pcs_tmp->GetElementValueIndex("PERMEABILITY");
-				idx_n = m_pcs_tmp->GetElementValueIndex("POROSITY");
+				idx_k = pcs_tmp->GetElementValueIndex("PERMEABILITY");
+				idx_n = pcs_tmp->GetElementValueIndex("POROSITY");
 
 				// get values of n.
-				n_new = m_pcs_tmp->GetElementValue( index, idx_n + 1 );
+				n_new = pcs_tmp->GetElementValue( index, idx_n + 1 );
 
 				// calculate new permeability
 				// k_rel(n) = n_rel^{19/6}
@@ -4513,11 +4499,8 @@ double CMediumProperties::PermeabilityFunctionPressure(long index, double PG2)
 	case 10: //WX: case 10, factor directly calculated from curve. 05.2010
 		if (m_pcs->getProcessType() == MULTI_PHASE_FLOW)
 			//WX: now it's only works for Multi_Phase_Flow. 05.2010
-			fac_perm_pressure = GetCurveValue(
-			        (int)permeability_pressure_model_values[0],
-			        0,
-			        PG2,
-			        &gueltig);
+			fac_perm_pressure = GetCurveValue((int) permeability_pressure_model_values[0], 0, PG2,
+						&gueltig);
 		//WX: PG2 = gas pressue. 11.05.2010
 		break;
 	default:
@@ -5566,15 +5549,15 @@ void CMediumProperties::SetConstantELEarea(double area, int group)
 	if (area != 1.0)
 		for (i = 0; i < no_processes; i++)
 		{
-			m_msh = FEMGet(convertProcessTypeToString (pcs_vector[i]->getProcessType()));
-			if(!m_msh)
+			_mesh = FEMGet(convertProcessTypeToString (pcs_vector[i]->getProcessType()));
+			if(!_mesh)
 				return;  //WW
-			no_ele = (long) m_msh->ele_vector.size();
+			no_ele = (long) _mesh->ele_vector.size();
 			for(j = 0; j < no_ele; j++)
 			{
-				ele_group = m_msh->ele_vector[j]->GetPatchIndex();
+				ele_group = _mesh->ele_vector[j]->GetPatchIndex();
 				if (ele_group == group)
-					m_msh->ele_vector[j]->SetFluxArea(area);
+					_mesh->ele_vector[j]->SetFluxArea(area);
 			}
 		}
 }
@@ -5648,8 +5631,8 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 		{
 			line_string = GetLineFromFile1(&mmp_property_file);
 			mmp_property_mesh = line_string;
-			m_msh = FEMGet(line_string);
-			if(!m_msh)
+			_mesh = FEMGet(line_string);
+			if(!_mesh)
 			{
 				cout <<
 				"CMediumProperties::SetDistributedELEProperties: no MSH data" <<
@@ -5664,7 +5647,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 			element_area = false;
 			mmp_property_file >> mmp_property_name;
 			cout << mmp_property_name << endl;
-			m_msh->mat_names_vector.push_back(mmp_property_name);
+			_mesh->mat_names_vector.push_back(mmp_property_name);
 			if (mmp_property_name == "GEOMETRY_AREA")
 				element_area = true;
 			continue;
@@ -5705,9 +5688,9 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 					mmpvals.push_back(mmpv);
 				}
 				// sort values to mesh
-				for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+				for(i = 0; i < (long)_mesh->ele_vector.size(); i++)
 				{
-					m_ele_geo = m_msh->ele_vector[i];
+					m_ele_geo = _mesh->ele_vector[i];
 					mat_vector_size = m_ele_geo->mat_vector.Size();
 					// CB Store old values as they are set to zero after resizing
 					for(j = 0; j < mat_vector_size; j++)
@@ -5722,7 +5705,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 						// Search for all elements of the mesh, which is the nearest given value in the input file
 						// Return value ihet is the index of the het. val in the mmpval-vector
 						ihet = GetNearestHetVal2(i,
-						                         m_msh,
+						                         _mesh,
 						                         xvals,
 						                         yvals,
 						                         zvals,
@@ -5733,7 +5716,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 					if(mmp_property_dis_type[0] == 'G')
 					{
 						mmpv = GetAverageHetVal2(i,
-						                         m_msh,
+						                         _mesh,
 						                         xvals,
 						                         yvals,
 						                         zvals,
@@ -5743,9 +5726,9 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 				}
 				break;
 			case 'E':     // Element data
-				for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+				for(i = 0; i < (long)_mesh->ele_vector.size(); i++)
 				{
-					m_ele_geo = m_msh->ele_vector[i];
+					m_ele_geo = _mesh->ele_vector[i];
 					mmp_property_file >> ddummy >> mmp_property_value;
 					mat_vector_size = m_ele_geo->mat_vector.Size();
 					if (mat_vector_size > 0)
@@ -5768,7 +5751,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 						        mmp_property_value;
 					}
 					if (element_area)
-						m_msh->ele_vector[i]->SetFluxArea(
+						_mesh->ele_vector[i]->SetFluxArea(
 						        mmp_property_value);
 					if(line_string.empty())
 					{
@@ -5790,10 +5773,10 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 	// CB now set VOL_MAT & VOL_BIO as heterogeneous values, if defined as model 2 and het Porosity
 	if( (mmp_property_name == "POROSITY") && (this->vol_bio_model == 2) )
 	{
-		m_msh->mat_names_vector.push_back("VOL_BIO");
-		for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+		_mesh->mat_names_vector.push_back("VOL_BIO");
+		for(i = 0; i < (long)_mesh->ele_vector.size(); i++)
 		{
-			m_ele_geo = m_msh->ele_vector[i]; // Get the element
+			m_ele_geo = _mesh->ele_vector[i]; // Get the element
 			mat_vec_size = m_ele_geo->mat_vector.Size();
 			// CB Store old values as they are set to zero after resizing
 			for(j = 0; j < mat_vec_size; j++)
@@ -5809,19 +5792,19 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 	}
 	if( (mmp_property_name == "POROSITY") && (this->vol_mat_model == 2) )
 	{
-		m_msh->mat_names_vector.push_back("VOL_MAT");
+		_mesh->mat_names_vector.push_back("VOL_MAT");
 		// Get the porosity index
-		for(por_index = 0; por_index < (int)m_msh->mat_names_vector.size(); por_index++)
-			if(m_msh->mat_names_vector[por_index].compare("POROSITY") == 0)
+		for(por_index = 0; por_index < (int)_mesh->mat_names_vector.size(); por_index++)
+			if(_mesh->mat_names_vector[por_index].compare("POROSITY") == 0)
 				break;
 		// Get the vol_bio index
-		for(vol_bio_index = 0; vol_bio_index < (int)m_msh->mat_names_vector.size();
+		for(vol_bio_index = 0; vol_bio_index < (int)_mesh->mat_names_vector.size();
 		    vol_bio_index++)
-			if(m_msh->mat_names_vector[vol_bio_index].compare("VOL_BIO") == 0)
+			if(_mesh->mat_names_vector[vol_bio_index].compare("VOL_BIO") == 0)
 				break;
-		for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+		for(i = 0; i < (long)_mesh->ele_vector.size(); i++)
 		{
-			m_ele_geo = m_msh->ele_vector[i]; // Get the element
+			m_ele_geo = _mesh->ele_vector[i]; // Get the element
 			mat_vec_size = m_ele_geo->mat_vector.Size();
 			// CB Store old values as they are set to zero after resizing
 			for(j = 0; j < mat_vec_size; j++)
@@ -5843,10 +5826,10 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 	// File handling
 
 	// CB
-	for(k = 0; k < (int)m_msh->mat_names_vector.size(); k++)
+	for(k = 0; k < (int)_mesh->mat_names_vector.size(); k++)
 	{
 		//file_name +="_sorted";
-		outfile = m_msh->mat_names_vector[k] + "_sorted";
+		outfile = _mesh->mat_names_vector[k] + "_sorted";
 		ofstream mmp_property_file_out(outfile.data());
 		if(!mmp_property_file_out.good())
 		{
@@ -5860,12 +5843,12 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 		//mmp_property_file_out << "$MSH_TYPE" << endl << "  " << mmp_property_mesh << endl;
 		//mmp_property_file_out << "$MMP_TYPE" << endl << "  " << "PERMEABILITY" << endl;
 		mmp_property_file_out << "$MMP_TYPE" << endl << "  " <<
-		m_msh->mat_names_vector[k] << endl;
+		_mesh->mat_names_vector[k] << endl;
 		mmp_property_file_out << "$DIS_TYPE" << endl << "  " << "ELEMENT" << endl;
 		mmp_property_file_out << "$DATA" << endl;
-		for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+		for(i = 0; i < (long)_mesh->ele_vector.size(); i++)
 		{
-			m_ele_geo = m_msh->ele_vector[i];
+			m_ele_geo = _mesh->ele_vector[i];
 			mmp_property_file_out << i << "  " << m_ele_geo->mat_vector(k) << endl;
 		}
 		mmp_property_file_out << "#STOP" << endl;
@@ -5897,11 +5880,11 @@ void CMediumProperties::WriteTecplotDistributedProperties()
 	// MSH
 	MeshLib::CNode* m_nod = NULL;
 	MeshLib::CElem* m_ele = NULL;
-	if (!m_msh)
+	if (!_mesh)
 		return;
 	//--------------------------------------------------------------------
 	// File handling
-	string mat_file_name = path + name + "_" + m_msh->pcs_name + "_PROPERTIES"
+	string mat_file_name = path + name + "_" + _mesh->pcs_name + "_PROPERTIES"
 	                       + TEC_FILE_EXTENSION;
 	fstream mat_file(mat_file_name.data(), ios::trunc | ios::out);
 	mat_file.setf(ios::scientific, ios::floatfield);
@@ -5910,9 +5893,9 @@ void CMediumProperties::WriteTecplotDistributedProperties()
 		return;
 	mat_file.seekg(0L, ios::beg);
 	//--------------------------------------------------------------------
-	if ((long) m_msh->ele_vector.size() > 0)
+	if ((long) _mesh->ele_vector.size() > 0)
 	{
-		m_ele = m_msh->ele_vector[0];
+		m_ele = _mesh->ele_vector[0];
 		switch (m_ele->GetElementType())
 		{
 		case MshElemType::LINE:
@@ -5943,26 +5926,26 @@ void CMediumProperties::WriteTecplotDistributedProperties()
 	//--------------------------------------------------------------------
 	// Header
 	mat_file << "VARIABLES = X,Y,Z";
-	for (j = 0; j < (int) m_msh->mat_names_vector.size(); j++)
-		mat_file << "," << m_msh->mat_names_vector[j];
+	for (j = 0; j < (int) _mesh->mat_names_vector.size(); j++)
+		mat_file << "," << _mesh->mat_names_vector[j];
 	mat_file << endl;
 	mat_file << "ZONE T = " << name << ", " << "N = "
-	         << (long) m_msh->nod_vector.size() << ", " << "E = "
-	         << (long) m_msh->ele_vector.size() << ", " << "F = FEPOINT" << ", "
+	         << (long) _mesh->nod_vector.size() << ", " << "E = "
+	         << (long) _mesh->ele_vector.size() << ", " << "F = FEPOINT" << ", "
 	         << "ET = " << element_type << endl;
 	//--------------------------------------------------------------------
 	// Nodes
-	for (i = 0; i < (long) m_msh->nod_vector.size(); i++)
+	for (i = 0; i < (long) _mesh->nod_vector.size(); i++)
 	{
-		m_nod = m_msh->nod_vector[i];
+		m_nod = _mesh->nod_vector[i];
 		double const* const pnt (m_nod->getData());
 		mat_file << pnt[0] << " " << pnt[1] << " " << pnt[2];
-		for (size_t j = 0; j < m_msh->mat_names_vector.size(); j++)
+		for (size_t j = 0; j < _mesh->mat_names_vector.size(); j++)
 		{
 			m_mat_prop_nod = 0.0;
 			for (k = 0; k < (int) m_nod->getConnectedElementIDs().size(); k++)
 			{
-				m_ele = m_msh->ele_vector[m_nod->getConnectedElementIDs()[k]];
+				m_ele = _mesh->ele_vector[m_nod->getConnectedElementIDs()[k]];
 				m_mat_prop_nod += m_ele->mat_vector(j);
 			}
 			m_mat_prop_nod /= (int) m_nod->getConnectedElementIDs().size();
@@ -5972,9 +5955,9 @@ void CMediumProperties::WriteTecplotDistributedProperties()
 	}
 	//--------------------------------------------------------------------
 	// Elements
-	for (i = 0; i < (long) m_msh->ele_vector.size(); i++)
+	for (i = 0; i < (long) _mesh->ele_vector.size(); i++)
 	{
-		m_ele = m_msh->ele_vector[i];
+		m_ele = _mesh->ele_vector[i];
 		//OK if(m_ele->GetPatchIndex()==number) {
 		switch (m_ele->GetElementType())
 		{
