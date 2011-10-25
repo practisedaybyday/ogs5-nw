@@ -4538,10 +4538,10 @@ void CFiniteElementStd:: Assemble_DualTransfer()
 		//  Compute Jacobian matrix and its determination
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
-		mat_fac = CalcCoefDualTransfer();
-		mat_fac *= fkt;
 		// Material
-		ComputeShapefct(1);       // Linear interpolation function
+		ComputeShapefct(1);       // Moved here by NW 25.10.2011
+        mat_fac = CalcCoefDualTransfer();
+        mat_fac *= fkt;
 		// Calculate mass matrix
 		for (i = 0; i < nnodes; i++)
 			for (j = 0; j < nnodes; j++)
@@ -4695,12 +4695,12 @@ void CFiniteElementStd::CalcAdvection()
 		//  Compute Jacobian matrix and its determinate
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
-		mat_factor = CalCoefAdvection(); //T
 		//---------------------------------------------------------
 		// Compute geometry
 		ComputeGradShapefct(1);   // Linear interpolation function....dNJ-1....var dshapefct
 		ComputeShapefct(1);       // Linear interpolation N....var shapefct
 		//---------------------------------------------------------
+        mat_factor = CalCoefAdvection(); // this should be called after calculating shape functions. NW
 		//Velocity
 		vel[0] = mat_factor * gp_ele->Velocity(0, gp);
 		vel[1] = mat_factor * gp_ele->Velocity(1, gp);

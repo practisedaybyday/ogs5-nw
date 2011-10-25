@@ -1503,9 +1503,10 @@ void CFiniteElementVec::ComputeMass()
 		//  Compute Jacobian matrix and its determinate
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+        ComputeShapefct(1); //need for density calculation
+        ComputeShapefct(2);       // Quadratic interpolation function
 		fkt *= CalDensity();
 
-		ComputeShapefct(2);       // Quadratic interpolation function
 		for(i = 0; i < nnodesHQ; i++)
 			for(j = 0; j < nnodesHQ; j++)
 			{
