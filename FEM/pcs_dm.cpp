@@ -135,6 +135,18 @@ CRFProcessDeformation::~CRFProcessDeformation()
  **************************************************************************/
 void CRFProcessDeformation::Initialization()
 {
+    //-- NW 25.10.2011
+    // this section has to be executed at latest before calling InitGauss()
+    // Control for reading and writing solution 
+    if(reload == 1)
+        idata_type = write_all_binary;
+    if(reload == 2)
+        idata_type = read_all_binary;
+    if(reload == 3)
+        idata_type = read_write;
+    //--
+
+
 	// Local assembliers
 	// An instaniate of CFiniteElementVec
 	int i, Axisymm = 1;                   // ani-axisymmetry
@@ -188,16 +200,6 @@ void CRFProcessDeformation::Initialization()
 	///////////////////////////
 	if(fem_dm->dynamic)
 		CalcBC_or_SecondaryVariable_Dynamics();
-
-	// Control for reading and writing solution 
-    if(reload == 1)
-       idata_type = write_all_binary;
-    if(reload == 2)
-       idata_type = read_all_binary;
-    if(reload == 3)
-       idata_type = read_write;
-
-
 
 	//TEST
 	//   De_ActivateElement(false);
