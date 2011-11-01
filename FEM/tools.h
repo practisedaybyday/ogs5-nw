@@ -73,7 +73,7 @@ extern int Signum(double);
 double InterpolateElementNodesValues ( long index, long idx );
 extern int FctCurves ( char* data, int found, FILE* f );
 //SB
-extern int FctReadHeterogeneousPermeabilityField(char* name_file);
+//extern int FctReadHeterogeneousPermeabilityField(char* name_file);
 //SB
 long GetNearestElement(double x,double y,double z, int* help);
 //SB

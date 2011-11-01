@@ -15,6 +15,9 @@
 //#include <vector>
 //#include <fstream>
 
+// GeoLib
+#include "GeoType.h"
+
 // PCSLib
 #include "rf_pcs.h"
 
@@ -148,7 +151,13 @@ public:
 	void SetDistributedELEProperties(std::string);
 
 	void WriteTecplotDistributedProperties(); //OK
-	//-------------------------------------------
+
+	/**
+	 * the type of the geometric entity, the material property is assigned to
+	 * @return a value of the enum GEOLIB::GEOTYPE
+	 */
+	GEOLIB::GEOTYPE getGeoType() const { return _geo_type; }
+
 	// Properties
 private:
 	// PCS
@@ -159,15 +168,19 @@ public:
 private:
 	std::vector<std::string> porosity_pcs_name_vector;
 	CFEMesh* _mesh; //OK
+
+	/**
+	 * attribute describes the type of the geometric entity the
+	 * material property is assigned to
+	 */
+	GEOLIB::GEOTYPE _geo_type;
 public:
-	//....................................................................
 	//GEO
-	std::string geo_type_name;
 	std::string geo_name;
 	std::vector<std::string>geo_name_vector; //OK
 	double geo_area;
 	std::string geo_area_file;            //OK
-	//....................................................................
+
 	double density;
 	std::string name;
 	int number;

@@ -15,9 +15,10 @@ extern MeshLib::CFEMesh* FEMGet(const std::string &msh_name);
 //OK
 extern void MSHCreateNOD2ELERelations(MeshLib::CFEMesh*);
 
-MeshLib::CFEMesh* FEMRead(const std::string&,
-                          GEOLIB::GEOObjects* geo_obj = NULL,
-                          std::string* unique_name = NULL);
+//MeshLib::CFEMesh* FEMRead(const std::string& fname,
+//                          GEOLIB::GEOObjects* geo_obj = NULL,
+//                          std::string* unique_name = NULL);
+
 /**
  * reads a mesh. The following formats are possible:
  * <ol>
@@ -83,13 +84,7 @@ extern MeshLib::CFEMesh* MSHGet(const std::string &pcs_type_name,const std::stri
 extern MeshLib::CFEMesh* MSHGetGEO(std::string);           //OK
 extern int MSHSetMaxMMPGroups();                  //OK
 extern bool MSHTestMATGroups();                   //OK
-#ifdef RFW_FRACTURE
-extern bool MSHGetCommonNodes(CElem*, CElem*, vector<CNode*>&);
-extern void MSHSetFractureElements(void);
-extern void MSHResetFractureElements(void);
-//RFW
-extern long MSHWhatElemIsPointIn(double x, double y, long index);
-#endif
+
 extern void MSHDefineMobile(CRFProcess*);         //OK411
 extern void MSHMoveNODUcFlow (CRFProcess*);       //OK411
 extern long* MSHGetNodesClose(long*,CGLPolyline*); //OK411
