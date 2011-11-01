@@ -22,6 +22,8 @@
 #include "Color.h"
 #include "Station.h"
 
+#include "GeoType.h"
+
 namespace GEOLIB
 {
 ///
@@ -89,6 +91,13 @@ public:
 	 * @return the PointVec object stored in GEOObjects
 	 */
 	const PointVec* getPointVecObj(const std::string &name) const;
+
+	/// Returns a pointer to a PointVec object for the given name.
+	PointVec* getPointVecObj(const std::string &name)
+	{
+		return const_cast<PointVec*>(static_cast<const GEOObjects&>(*this).
+		                                getPointVecObj(name));
+	}
 
 	/** If there exists no dependencies the point vector with the given
 	 * name from GEOObjects will be removed and the method returns true,
@@ -197,8 +206,10 @@ public:
 	/// Returns the names of all geometry vectors.
 	void getGeometryNames (std::vector<std::string>& names) const;
 
+	const std::string getElementNameByID(const std::string &geometry_name, GEOLIB::GEOTYPE type, size_t id) const;
+
 	/// Returns the names of all station vectors.
-	void getStationNames(std::vector<std::string>& names) const;
+	void getStationVectorNames(std::vector<std::string>& names) const;
 
 	/**
 	 * merge geometries

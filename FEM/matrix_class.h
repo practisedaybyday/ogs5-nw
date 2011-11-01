@@ -27,7 +27,7 @@ class CPARDomain;
 
 namespace Math_Group
 {
-using namespace std;
+
 class Matrix
 {
 public:

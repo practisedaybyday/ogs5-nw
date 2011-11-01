@@ -145,6 +145,12 @@ public:
 	double getShortestPointDistance () const;
 	const GEOLIB::AABB& getAxisAlignedBoundingBox () const;
 
+	/// Returns the name of an element given the element id.
+	const std::string getNameOfElementByID (size_t id) const;
+
+	/// Sets the given name for the element of the given ID.
+	void setNameForElement(size_t id, std::string name);
+
 private:
 	void makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector<size_t> &pnt_id_map);
 

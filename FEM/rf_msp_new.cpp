@@ -6422,6 +6422,7 @@ void CSolidProperties::AddStain_by_HL_ODS(const ElementValue_DM* ele_val, double
 void CSolidProperties::CalPrimaryVariable(vector<string>& pcs_name_vector)
 {
 	CRFProcess* m_pcs = NULL;
+
 	int nidx0,nidx1;
 	if(!Fem_Ele_Std)                      //OK
 		return;
