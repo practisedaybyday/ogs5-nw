@@ -2544,7 +2544,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
 	int j,k;
 	long i;
 	MeshLib::CElem* m_ele = NULL;
-	MeshLib::CNode* m_nod = NULL;
+// TF not used	MeshLib::CNode* m_nod = NULL;
 	int no_local_elements = m_pcs_global->m_msh->getNumberOfMeshLayers();
 	int no_local_nodes = no_local_elements + 1;
 	long g_element_number,g_node_number;
@@ -2694,7 +2694,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
 		for(j = 0; j < no_local_nodes; j++)
 		{
 			g_node_number = j + (i * no_local_nodes);
-			m_nod = m_pcs_global->m_msh->nod_vector[g_node_number];
+// TF not used			m_nod = m_pcs_global->m_msh->nod_vector[g_node_number];
 			m_nod_local = m_msh_local->nod_vector[j];
 			//m_nod_local = m_nod;
 			m_nod_local->getConnectedElementIDs().push_back(i);
