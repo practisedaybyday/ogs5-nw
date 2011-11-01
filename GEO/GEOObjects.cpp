@@ -360,7 +360,7 @@ bool GEOObjects::isPntVecUsed (const std::string &name) const
 	return false;
 }
 
-void GEOObjects::getStationNames(std::vector<std::string>& names) const
+void GEOObjects::getStationVectorNames(std::vector<std::string>& names) const
 {
 	for (std::vector<PointVec*>::const_iterator it(_pnt_vecs.begin()); it != _pnt_vecs.end();
 	     it++)
@@ -375,6 +375,26 @@ void GEOObjects::getGeometryNames (std::vector<std::string>& names) const
 	     it++)
 		if ((*it)->getType() == PointVec::POINT)
 			names.push_back((*it)->getName());
+}
+
+const std::string GEOObjects::getElementNameByID(const std::string &geometry_name, GEOLIB::GEOTYPE type, size_t id) const
+{
+	std::string name("");
+	switch (type)
+	{
+		case GEOLIB::POINT:
+			this->getPointVecObj(geometry_name)->getNameOfElementByID(id, name);
+			break;
+		case GEOLIB::POLYLINE:
+			this->getPolylineVecObj(geometry_name)->getNameOfElementByID(id, name);
+			break;
+		case GEOLIB::SURFACE:
+			this->getSurfaceVecObj(geometry_name)->getNameOfElementByID(id, name);
+			break;
+		default:
+			std::cout << "No valid GEOTYPE given." << std::endl;
+	}
+	return name;
 }
 
 void GEOObjects::mergeGeometries (std::vector<std::string> const & geo_names,

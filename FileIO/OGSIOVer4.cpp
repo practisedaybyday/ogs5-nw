@@ -671,7 +671,7 @@ void writeAllDataToGLIFileV4 (const std::string& fname, const GEOLIB::GEOObjects
 
 	// writing all stations
 	std::vector<std::string> stn_names;
-	geo.getStationNames (stn_names);
+	geo.getStationVectorNames (stn_names);
 	for (size_t j(0); j < stn_names.size(); j++)
 	{
 		os.precision (20);

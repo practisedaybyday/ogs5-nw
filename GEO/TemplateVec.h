@@ -86,6 +86,7 @@ public:
 		else return false;
 	}
 
+	/// Returns an element with the given name.
 	const T* getElementByName (const std::string& name) const
 	{
 		size_t id;
@@ -122,6 +123,7 @@ public:
 		return false;
 	}
 
+	/// Return the name of an element based on its ID.
 	void setNameOfElementByID (size_t id, std::string& element_name)
 	{
 		if (!_name_id_map) return;
@@ -145,6 +147,7 @@ public:
 		return false;
 	}
 
+	/// Adds a new element to the vector.
 	void push_back (T* data_element, std::string const* const name = NULL)
 	{
 		_data_vec->push_back (data_element);
@@ -156,6 +159,21 @@ public:
 			_name_id_map->insert (std::pair<std::string,size_t>(*name,
 			                                                    _data_vec->size() - 1));
 		}
+	}
+
+	/// Sets the given name for the element of the given ID.
+	void setNameForElement(size_t id, std::string name)
+	{
+		if ( !_name_id_map->empty())
+		{
+			std::map<std::string, size_t>::iterator it=_name_id_map->begin();
+			while (it->second != id)
+				++it;
+			if (it!=_name_id_map->end())
+				_name_id_map->erase(it); //check if old name already exists and delete it
+		}
+		if (!name.empty()) 
+			this->_name_id_map->insert(std::pair<std::string, size_t>(name, id));	//insert new or revised name
 	}
 
 private:

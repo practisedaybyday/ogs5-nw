@@ -1070,7 +1070,7 @@ std::vector<GEOLIB::Point*> GMSHInterface::getStationPoints(const GEOLIB::GEOObj
 {
 	std::vector<GEOLIB::Point*> station_points;
 	std::vector<std::string> stn_names;
-	geo.getStationNames(stn_names);
+	geo.getStationVectorNames(stn_names);
 
 	for (std::vector<std::string>::const_iterator it (stn_names.begin()); it != stn_names.end();
 	     ++it)

@@ -693,7 +693,7 @@ int XMLInterface::writeProjectFile(const QString &fileName) const
 
 	// STN
 	std::vector<std::string> stnNames;
-	geoObjects->getStationNames(stnNames);
+	geoObjects->getStationVectorNames(stnNames);
 	for (std::vector<std::string>::const_iterator it(stnNames.begin()); it != stnNames.end();
 	     ++it)
 	{
