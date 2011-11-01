@@ -510,324 +510,324 @@ int FctCurves(char* data, int found, FILE* f)
 	return ok;
 }
 
-/**************************************************************************/
-/* ROCKFLOW - Funktion: FctReadHeterogeneousFields
- */
-/* Aufgabe:
-   Liest zu jedem Knoten einen Wert der Permeabilität ein.
-   Identifikation über Koordinaten
- */
-/* Ergebnis:
-    0 bei Fehler, sonst 1
- */
-/* Programmaenderungen:
-    09/2003     SB  First Version
-   01/2004     SB  Verallgemeinert auf beliebig viele Parameter
-    06/2005     MB  msh / layer
-    08/2005     MB $NUM_TYPE NEW
- */
-/**************************************************************************/
-int FctReadHeterogeneousFields(char* name_file, CMediumProperties* m_mat_mp)
-{
-	int ok = 0, method;
-	double* convertfact, * values, * defaultvalues, ** invals;
-	long i, j, no_values, nof, ihet;
-	int* help;
-	char zeile[MAX_ZEILE], outname[80];
-	string line;
-	int interpolation_option = 1;
-	ifstream ein;
-	ofstream out, out1;
-	std::stringstream in;
-	long NumberOfElements;
-	CFEMesh* m_msh = NULL;
-	int layer = 1;
-	int material_properties_index = -1;
-	int EleStart = -1;
-	int EleEnd = -1;
-	long NumberOfElementsPerLayer = -1;
-	MeshLib::CElem* m_ele = NULL;
-	//------------------------------------------------------------------------
-	DisplayMsgLn("Input file Heterogeneous Fields ");
-	//------------------------------------------------------------------------
-	// File handling
-	ein.open(name_file);
-	if(!ein)
-	{
-		//DisplayMsgLn(" ERROR opening file with heterogeneous fields!");
-		//DisplayMsgLn(" File does not exist.");
-		cout << " FctReadHeterogeneousFields" << endl;
-		cout << " Cannot find " << name_file << endl;
-		exit(1);
-	}
-	//------------------------------------------------------------------------
-	// Read MSH data
-	string line_string;
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	in >> line_string;
-	in.clear();
-	if(line_string.find("$MSH_TYPE") != string::npos)
-	{
-		GetLineFromFile(zeile,&ein);
-		in.str((string)zeile);
-		in >> line_string;
-		in.clear();
-		m_msh = FEMGet(line_string);
-		if(!m_msh)
-			cout << "FctReadHeterogeneousFields: no MSH data" << endl;
-	}
-	//------------------------------------------------------------------------
-	// Read Interpolation option
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	in >> line_string;
-	in.clear();
-	if(line_string.find("$INTERPOLATION") != string::npos)
-	{
-		GetLineFromFile(zeile,&ein);
-		in.str((string)zeile);
-		in >> line_string;
-		in.clear();
-		if(line_string.find("NEAREST_VALUE") != string::npos)
-			interpolation_option = 1;
-		if(line_string.find("GEOMETRIC_MEAN") != string::npos)
-			interpolation_option = 2;
-	}
-	//------------------------------------------------------------------------
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	in >> nof;
-	in.clear();
-	hf = Createhetfields(nof,name_file);
-	//------------------------------------------------------------------------
-	convertfact = (double*)Malloc(nof * sizeof(double));
-	values = (double*) Malloc(nof * sizeof(double));
-	defaultvalues = (double*) Malloc(nof * sizeof(double));
-	for(i = 0; i < nof; i++)
-	{
-		convertfact[i] = 0.0;
-		defaultvalues[i] = 0.0;
-	}
-	//------------------------------------------------------------------------
-	GetLineFromFile(zeile,&ein);
-	line = (string ) zeile;
-	in.str(line);
-	for(i = 0; i < nof; i++)
-	{
-		in >> outname;
-		set_hetfields_name(hf,i,outname);
-
-		//set material_properties_index
-		if(line.find("permeability") == 0)
-			material_properties_index = 0;
-		if(line.find("porosity") == 0)
-			material_properties_index = 1;
-	}
-	in.clear();
-	//------------------------------------------------------------------------
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	for(i = 0; i < nof; i++)
-		in >> convertfact[i];
-	in.clear();
-	//------------------------------------------------------------------------
-	// read default
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	for(i = 0; i < nof; i++)
-		in >> defaultvalues[i];
-	in.clear();
-	// for(i=0;i<nof;i++)
-	//  defaultvalues[i] *= convertfact[i]; MB->SB finde ich eher verwirrend ?
-	//------------------------------------------------------------------------
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	in >> no_values >> method;
-	in.clear();
-	//------------------------------------------------------------------------
-	NumberOfElements = (long)m_msh->ele_vector.size();
-	//------------------------------------------------------------------------
-	NumberOfElementsPerLayer = NumberOfElements / m_msh->getNumberOfMeshLayers();
-
-	//layers
-	if(m_mat_mp->geo_type_name.compare("LAYER") == 0)
-	{
-		char* temp = strdup(m_mat_mp->geo_name.c_str());
-		layer = atoi(temp);
-		EleStart = (layer - 1) * NumberOfElementsPerLayer;
-		EleEnd = layer * NumberOfElementsPerLayer;
-	}
-	//complete mesh
-	if(m_mat_mp->geo_type_name.compare("DOMAIN") == 0)
-	{
-		layer = 1;
-		EleStart = 0;
-		EleEnd = NumberOfElementsPerLayer;
-	}
-	//Warning
-	if(no_values < NumberOfElementsPerLayer)
-		DisplayMsgLn(
-		        "Warning! Fewer element values in File for heterogeneous permeability field than elements in element list");
-	//------------------------------------------------------------------------
-	/* field (int) for helping sort */
-	help = (int*) Malloc(NumberOfElements * sizeof(int));
-	for(i = 0; i < NumberOfElements; i++)
-		help[i] = 0;
-
-	/* initialize element values in element list; this is for the case, if not for all
-	   elements values are given in the input file */
-
-	//WW double test1;
-	//WW double test2;
-	//WW double test;
-	for(i = EleStart; i < EleEnd; i++)
-	{
-		m_ele = m_msh->ele_vector[i];
-		if (m_ele->mat_vector.Size() == 0)
-			m_ele->mat_vector.resize(2);
-		m_ele->mat_vector(material_properties_index) = defaultvalues[0];
-		// test1 = m_ele->mat_vector(0);
-	}
-	m_ele = m_msh->ele_vector[0];
-	//WW test1 = m_ele->mat_vector(0);
-	//WW test2 = m_ele->mat_vector(1);
-	//------------------------------------------------------------------------
-	//METHOD = 0:  read in unsorted values for coordinates and distribute to corresponding elements */
-	if(method == 0)
-	{
-		// allocate storage to read in file with het values and initialize
-		invals = (double**) Malloc((no_values) * sizeof(double*));
-		for(i = 0; i < no_values; i++)
-			invals[i] = (double*) Malloc((3 + nof + 1) * sizeof(double));
-		// initialize
-		for(i = 0; i < no_values; i++)
-			for(j = 0; j < (3 + nof + 1); j++) //+1 wegen GetAverageHetVal
-				invals[i][j] = 0.0;
-
-		//------------------------------------------------------------------------
-		// read values
-		for(i = 0; i < no_values; i++)
-		{
-			GetLineFromFile(zeile,&ein);
-			in.str((string) zeile);
-			//		in >> x >> y >> z ;
-			in >> invals[i][0] >> invals[i][1] >> invals[i][2];
-			for(j = 0; j < nof; j++)
-				in >> invals[i][j + 3];
-			in.clear();
-
-			// convert values by convertfact
-			for(j = 0; j < nof; j++)
-				invals[i][j + 3] = invals[i][j + 3] * convertfact[j];
-		}                         // end for read values
-
-		//------------------------------------------------------------------------
-		// element loop
-		for(i = EleStart; i < EleEnd; i++)
-		{
-			//.....................................................................
-			//Get the values that are nearest to element mid point
-			if(interpolation_option == 1)
-			{
-				ihet = GetNearestHetVal(i, m_msh, no_values, invals);
-				if(ihet < 0)
-					DisplayMsgLn(" Error getting nearest het_value location");
-				else
-					for(j = 0; j < nof; j++)
-						values[j] = invals[ihet][j + 3];
-				//DisplayMsg(" Het Val for element: "); DisplayLong(i); DisplayMsg(" with coordinates ");
-				//DisplayDouble(x,0,0); DisplayMsg(", "); DisplayDouble(y,0,0); DisplayMsg(", "); DisplayDouble(z,0,0); DisplayMsg("       found at: ");
-				//DisplayDouble(invals[ihet][0],0,0); DisplayMsg(", "); DisplayDouble(invals[ihet][1],0,0); DisplayMsg(", "); DisplayDouble(invals[ihet][2],0,0); DisplayMsgLn(". ");
-			}
-			//.....................................................................
-			//Get all values in Element and calculate the geometric mean
-			if(interpolation_option == 2)
-			{
-				values[0] = GetAverageHetVal(i, m_msh, no_values, invals);
-
-				DisplayMsgLn(" AverageHetVal ");
-				DisplayMsg(" Element ");
-				DisplayDouble(i,0,0);
-				DisplayMsg("  Value: ");
-				DisplayDouble(values[0],0,0);
-			}
-			// save values
-			m_ele = m_msh->ele_vector[i];
-			m_ele->mat_vector(material_properties_index) = values[0];
-		}                         //end for element loop
-		ein.close();
-		// free storage for input values
-		invals = (double**) Free(invals);
-		//------------------------------------------------------------------------
-		//------------------------------------------------------------------------
-		//  OUT   write out fields sorted by element number
-		//------------------------------------------------------------------------
-		// Header
-		sprintf(outname,"%s%i",name_file,1);
-		out.open(outname);
-		out << "$MSH_TYPE" << endl;
-		out << "  GROUNDWATER_FLOW" << endl; //ToDo as variable
-		//out << "$LAYER" << endl;
-		//out << "  " << layer << endl;
-		out << "$INTERPOLATION" << endl;
-		out << "  GEOMETRIC_MEAN" << endl; //ToDo as variable
-		/* Field name */
-		out << nof << endl;
-		for(i = 0; i < nof; i++)
-			out << get_hetfields_name(hf,i) << ' ';
-		out << endl;
-		/* conversion factor is one in this case */
-		for(i = 0; i < nof; i++)
-			out << 1.0 << ' ';
-		out << endl;
-		// default values
-		for(i = 0; i < nof; i++)
-			out << defaultvalues[i] << ' ';
-		out << endl;
-		//out << NumberOfElements << ' ' << 1 << endl;
-		out << NumberOfElementsPerLayer << ' ' << 1 << endl;
-
-		out.setf(ios::scientific);
-		out.precision(5);
-
-		//------------------------------------------------------------------------
-		// Element data
-		for(i = EleStart; i < EleEnd; i++)
-		{
-			m_ele = m_msh->ele_vector[i];
-			for(j = 0; j < nof; j++)
-				out << m_ele->mat_vector(material_properties_index) << ' ';
-			out << endl;
-		}
-		out.close();
-	}                                     /* end if (method == 0) */
-	//------------------------------------------------------------------------
-	//METHOD = 1:  read in one sorted column, index is element number no conversion, no sorting
-	if(method == 1)
-	{
-		for(i = EleStart; i < EleEnd; i++)
-		{
-			GetLineFromFile(zeile,&ein);
-			in.str((string)zeile);
-			for(j = 0; j < nof; j++)
-				in >> values[j];
-			in.clear();
-			m_ele = m_msh->ele_vector[i];
-			m_ele->mat_vector(material_properties_index) = values[0];
-			//WW  test = m_ele->mat_vector(material_properties_index);
-		}
-		ein.close();
-	}                                     /* end if (method == 1) */
-
-	/* data structures deallocate */
-	convertfact = (double*) Free(convertfact);
-	values = (double*) Free(values);
-	defaultvalues = (double*) Free(defaultvalues);
-	help = (int*) Free(help);
-
-	return ok;
-}
+///**************************************************************************/
+///* ROCKFLOW - Funktion: FctReadHeterogeneousFields
+// */
+///* Aufgabe:
+//   Liest zu jedem Knoten einen Wert der Permeabilität ein.
+//   Identifikation über Koordinaten
+// */
+///* Ergebnis:
+//    0 bei Fehler, sonst 1
+// */
+///* Programmaenderungen:
+//    09/2003     SB  First Version
+//   01/2004     SB  Verallgemeinert auf beliebig viele Parameter
+//    06/2005     MB  msh / layer
+//    08/2005     MB $NUM_TYPE NEW
+// */
+///**************************************************************************/
+//int FctReadHeterogeneousFields(char* name_file, CMediumProperties* m_mat_mp)
+//{
+//	int ok = 0, method;
+//	double* convertfact, * values, * defaultvalues, ** invals;
+//	long i, j, no_values, nof, ihet;
+//	int* help;
+//	char zeile[MAX_ZEILE], outname[80];
+//	string line;
+//	int interpolation_option = 1;
+//	ifstream ein;
+//	ofstream out, out1;
+//	std::stringstream in;
+//	long NumberOfElements;
+//	CFEMesh* m_msh = NULL;
+//	int layer = 1;
+//	int material_properties_index = -1;
+//	int EleStart = -1;
+//	int EleEnd = -1;
+//	long NumberOfElementsPerLayer = -1;
+//	MeshLib::CElem* m_ele = NULL;
+//	//------------------------------------------------------------------------
+//	DisplayMsgLn("Input file Heterogeneous Fields ");
+//	//------------------------------------------------------------------------
+//	// File handling
+//	ein.open(name_file);
+//	if(!ein)
+//	{
+//		//DisplayMsgLn(" ERROR opening file with heterogeneous fields!");
+//		//DisplayMsgLn(" File does not exist.");
+//		cout << " FctReadHeterogeneousFields" << endl;
+//		cout << " Cannot find " << name_file << endl;
+//		exit(1);
+//	}
+//	//------------------------------------------------------------------------
+//	// Read MSH data
+//	string line_string;
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	in >> line_string;
+//	in.clear();
+//	if(line_string.find("$MSH_TYPE") != string::npos)
+//	{
+//		GetLineFromFile(zeile,&ein);
+//		in.str((string)zeile);
+//		in >> line_string;
+//		in.clear();
+//		m_msh = FEMGet(line_string);
+//		if(!m_msh)
+//			cout << "FctReadHeterogeneousFields: no MSH data" << endl;
+//	}
+//	//------------------------------------------------------------------------
+//	// Read Interpolation option
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	in >> line_string;
+//	in.clear();
+//	if(line_string.find("$INTERPOLATION") != string::npos)
+//	{
+//		GetLineFromFile(zeile,&ein);
+//		in.str((string)zeile);
+//		in >> line_string;
+//		in.clear();
+//		if(line_string.find("NEAREST_VALUE") != string::npos)
+//			interpolation_option = 1;
+//		if(line_string.find("GEOMETRIC_MEAN") != string::npos)
+//			interpolation_option = 2;
+//	}
+//	//------------------------------------------------------------------------
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	in >> nof;
+//	in.clear();
+//	hf = Createhetfields(nof,name_file);
+//	//------------------------------------------------------------------------
+//	convertfact = (double*)Malloc(nof * sizeof(double));
+//	values = (double*) Malloc(nof * sizeof(double));
+//	defaultvalues = (double*) Malloc(nof * sizeof(double));
+//	for(i = 0; i < nof; i++)
+//	{
+//		convertfact[i] = 0.0;
+//		defaultvalues[i] = 0.0;
+//	}
+//	//------------------------------------------------------------------------
+//	GetLineFromFile(zeile,&ein);
+//	line = (string ) zeile;
+//	in.str(line);
+//	for(i = 0; i < nof; i++)
+//	{
+//		in >> outname;
+//		set_hetfields_name(hf,i,outname);
+//
+//		//set material_properties_index
+//		if(line.find("permeability") == 0)
+//			material_properties_index = 0;
+//		if(line.find("porosity") == 0)
+//			material_properties_index = 1;
+//	}
+//	in.clear();
+//	//------------------------------------------------------------------------
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	for(i = 0; i < nof; i++)
+//		in >> convertfact[i];
+//	in.clear();
+//	//------------------------------------------------------------------------
+//	// read default
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	for(i = 0; i < nof; i++)
+//		in >> defaultvalues[i];
+//	in.clear();
+//	// for(i=0;i<nof;i++)
+//	//  defaultvalues[i] *= convertfact[i]; MB->SB finde ich eher verwirrend ?
+//	//------------------------------------------------------------------------
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	in >> no_values >> method;
+//	in.clear();
+//	//------------------------------------------------------------------------
+//	NumberOfElements = (long)m_msh->ele_vector.size();
+//	//------------------------------------------------------------------------
+//	NumberOfElementsPerLayer = NumberOfElements / m_msh->getNumberOfMeshLayers();
+//
+//	//layers
+//	if(m_mat_mp->geo_type_name.compare("LAYER") == 0)
+//	{
+//		char* temp = strdup(m_mat_mp->geo_name.c_str());
+//		layer = atoi(temp);
+//		EleStart = (layer - 1) * NumberOfElementsPerLayer;
+//		EleEnd = layer * NumberOfElementsPerLayer;
+//	}
+//	//complete mesh
+//	if(m_mat_mp->geo_type_name.compare("DOMAIN") == 0)
+//	{
+//		layer = 1;
+//		EleStart = 0;
+//		EleEnd = NumberOfElementsPerLayer;
+//	}
+//	//Warning
+//	if(no_values < NumberOfElementsPerLayer)
+//		DisplayMsgLn(
+//		        "Warning! Fewer element values in File for heterogeneous permeability field than elements in element list");
+//	//------------------------------------------------------------------------
+//	/* field (int) for helping sort */
+//	help = (int*) Malloc(NumberOfElements * sizeof(int));
+//	for(i = 0; i < NumberOfElements; i++)
+//		help[i] = 0;
+//
+//	/* initialize element values in element list; this is for the case, if not for all
+//	   elements values are given in the input file */
+//
+//	//WW double test1;
+//	//WW double test2;
+//	//WW double test;
+//	for(i = EleStart; i < EleEnd; i++)
+//	{
+//		m_ele = m_msh->ele_vector[i];
+//		if (m_ele->mat_vector.Size() == 0)
+//			m_ele->mat_vector.resize(2);
+//		m_ele->mat_vector(material_properties_index) = defaultvalues[0];
+//		// test1 = m_ele->mat_vector(0);
+//	}
+//	m_ele = m_msh->ele_vector[0];
+//	//WW test1 = m_ele->mat_vector(0);
+//	//WW test2 = m_ele->mat_vector(1);
+//	//------------------------------------------------------------------------
+//	//METHOD = 0:  read in unsorted values for coordinates and distribute to corresponding elements */
+//	if(method == 0)
+//	{
+//		// allocate storage to read in file with het values and initialize
+//		invals = (double**) Malloc((no_values) * sizeof(double*));
+//		for(i = 0; i < no_values; i++)
+//			invals[i] = (double*) Malloc((3 + nof + 1) * sizeof(double));
+//		// initialize
+//		for(i = 0; i < no_values; i++)
+//			for(j = 0; j < (3 + nof + 1); j++) //+1 wegen GetAverageHetVal
+//				invals[i][j] = 0.0;
+//
+//		//------------------------------------------------------------------------
+//		// read values
+//		for(i = 0; i < no_values; i++)
+//		{
+//			GetLineFromFile(zeile,&ein);
+//			in.str((string) zeile);
+//			//		in >> x >> y >> z ;
+//			in >> invals[i][0] >> invals[i][1] >> invals[i][2];
+//			for(j = 0; j < nof; j++)
+//				in >> invals[i][j + 3];
+//			in.clear();
+//
+//			// convert values by convertfact
+//			for(j = 0; j < nof; j++)
+//				invals[i][j + 3] = invals[i][j + 3] * convertfact[j];
+//		}                         // end for read values
+//
+//		//------------------------------------------------------------------------
+//		// element loop
+//		for(i = EleStart; i < EleEnd; i++)
+//		{
+//			//.....................................................................
+//			//Get the values that are nearest to element mid point
+//			if(interpolation_option == 1)
+//			{
+//				ihet = GetNearestHetVal(i, m_msh, no_values, invals);
+//				if(ihet < 0)
+//					DisplayMsgLn(" Error getting nearest het_value location");
+//				else
+//					for(j = 0; j < nof; j++)
+//						values[j] = invals[ihet][j + 3];
+//				//DisplayMsg(" Het Val for element: "); DisplayLong(i); DisplayMsg(" with coordinates ");
+//				//DisplayDouble(x,0,0); DisplayMsg(", "); DisplayDouble(y,0,0); DisplayMsg(", "); DisplayDouble(z,0,0); DisplayMsg("       found at: ");
+//				//DisplayDouble(invals[ihet][0],0,0); DisplayMsg(", "); DisplayDouble(invals[ihet][1],0,0); DisplayMsg(", "); DisplayDouble(invals[ihet][2],0,0); DisplayMsgLn(". ");
+//			}
+//			//.....................................................................
+//			//Get all values in Element and calculate the geometric mean
+//			if(interpolation_option == 2)
+//			{
+//				values[0] = GetAverageHetVal(i, m_msh, no_values, invals);
+//
+//				DisplayMsgLn(" AverageHetVal ");
+//				DisplayMsg(" Element ");
+//				DisplayDouble(i,0,0);
+//				DisplayMsg("  Value: ");
+//				DisplayDouble(values[0],0,0);
+//			}
+//			// save values
+//			m_ele = m_msh->ele_vector[i];
+//			m_ele->mat_vector(material_properties_index) = values[0];
+//		}                         //end for element loop
+//		ein.close();
+//		// free storage for input values
+//		invals = (double**) Free(invals);
+//		//------------------------------------------------------------------------
+//		//------------------------------------------------------------------------
+//		//  OUT   write out fields sorted by element number
+//		//------------------------------------------------------------------------
+//		// Header
+//		sprintf(outname,"%s%i",name_file,1);
+//		out.open(outname);
+//		out << "$MSH_TYPE" << endl;
+//		out << "  GROUNDWATER_FLOW" << endl; //ToDo as variable
+//		//out << "$LAYER" << endl;
+//		//out << "  " << layer << endl;
+//		out << "$INTERPOLATION" << endl;
+//		out << "  GEOMETRIC_MEAN" << endl; //ToDo as variable
+//		/* Field name */
+//		out << nof << endl;
+//		for(i = 0; i < nof; i++)
+//			out << get_hetfields_name(hf,i) << ' ';
+//		out << endl;
+//		/* conversion factor is one in this case */
+//		for(i = 0; i < nof; i++)
+//			out << 1.0 << ' ';
+//		out << endl;
+//		// default values
+//		for(i = 0; i < nof; i++)
+//			out << defaultvalues[i] << ' ';
+//		out << endl;
+//		//out << NumberOfElements << ' ' << 1 << endl;
+//		out << NumberOfElementsPerLayer << ' ' << 1 << endl;
+//
+//		out.setf(ios::scientific);
+//		out.precision(5);
+//
+//		//------------------------------------------------------------------------
+//		// Element data
+//		for(i = EleStart; i < EleEnd; i++)
+//		{
+//			m_ele = m_msh->ele_vector[i];
+//			for(j = 0; j < nof; j++)
+//				out << m_ele->mat_vector(material_properties_index) << ' ';
+//			out << endl;
+//		}
+//		out.close();
+//	}                                     /* end if (method == 0) */
+//	//------------------------------------------------------------------------
+//	//METHOD = 1:  read in one sorted column, index is element number no conversion, no sorting
+//	if(method == 1)
+//	{
+//		for(i = EleStart; i < EleEnd; i++)
+//		{
+//			GetLineFromFile(zeile,&ein);
+//			in.str((string)zeile);
+//			for(j = 0; j < nof; j++)
+//				in >> values[j];
+//			in.clear();
+//			m_ele = m_msh->ele_vector[i];
+//			m_ele->mat_vector(material_properties_index) = values[0];
+//			//WW  test = m_ele->mat_vector(material_properties_index);
+//		}
+//		ein.close();
+//	}                                     /* end if (method == 1) */
+//
+//	/* data structures deallocate */
+//	convertfact = (double*) Free(convertfact);
+//	values = (double*) Free(values);
+//	defaultvalues = (double*) Free(defaultvalues);
+//	help = (int*) Free(help);
+//
+//	return ok;
+//}
 
 /**************************************************************************
    MSHLib-Method: GetAverageHetVal

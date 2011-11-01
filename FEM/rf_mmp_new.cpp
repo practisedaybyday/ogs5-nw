@@ -66,7 +66,7 @@ using FiniteElement::ElementValue_DM;
    last modification:
 **************************************************************************/
 CMediumProperties::CMediumProperties() :
-	geo_dimension(0), _mesh (NULL)
+	geo_dimension(0), _mesh (NULL), _geo_type (GEOLIB::GEODOMAIN)
 {
 	name = "DEFAULT";
 	mode = 0;
@@ -107,7 +107,7 @@ CMediumProperties::CMediumProperties() :
 	mass_dispersion_longitudinal = 0.0;
 	heat_diffusion_model = -1;            //WW
 	geo_area = 1.0;
-	geo_type_name = "DOMAIN";             //OK
+//	geo_type_name = "DOMAIN";             //OK
 	                                      //WW
 	saturation_max[0] = saturation_max[1] = saturation_max[2] = 1.0;
 	//WW
@@ -311,24 +311,6 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		//subkeyword found
 		if(line_string.find("$GEO_TYPE") != std::string::npos)
 		{
-			/*
-			      in.str(GetLineFromFile1(mmp_file));
-			      in >> geo_type_name;
-			      in.clear();
-			      if(geo_type_name.compare("DOMAIN")==0)
-			        continue;
-			      while(!(geo_name.find("$")!=string::npos)&&(!(geo_name.find("#")!=string::npos)))
-			      {
-			        position = mmp_file->tellg();
-			        in.str(GetLineFromFile1(mmp_file));
-			        in >> geo_name;
-			   in.clear();
-			   if(!(geo_name.find("$")!=string::npos))
-			   geo_name_vector.push_back(geo_name);
-			   }
-			   mmp_file->seekg(position,ios::beg);
-			   continue;
-			 */
 			while(!(m_string.find("$") != std::string::npos) &&
 			      (!(m_string.find("#") != std::string::npos)))
 			{
@@ -339,7 +321,8 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 				if(!(m_string.find("$") != std::string::npos) &&
 				   (!(m_string.find("#") != std::string::npos)))
 				{
-					geo_type_name = m_string;
+//					geo_type_name = m_string;
+					_geo_type = GEOLIB::convertGeoType (m_string);
 					geo_name_vector.push_back(geo_name);
 				}
 			}
@@ -1713,7 +1696,8 @@ void CMediumProperties::Write(std::fstream* mmp_file)
 	}
 	//--------------------------------------------------------------------
 	//GEO_TYPE
-	if(geo_type_name.compare("DOMAIN") == 0) //OK
+//	if(geo_type_name.compare("DOMAIN") == 0) //OK
+	if(_geo_type == GEOLIB::GEODOMAIN) // OK / TF
 	{
 		*mmp_file << " $GEO_TYPE" << endl;
 		*mmp_file << "  DOMAIN" << endl;
@@ -1724,7 +1708,8 @@ void CMediumProperties::Write(std::fstream* mmp_file)
 		for(int i = 0; i < (int)geo_name_vector.size(); i++)
 		{
 			*mmp_file << "  ";
-			*mmp_file << geo_type_name;
+//			*mmp_file << geo_type_name;
+			*mmp_file << GEOLIB::convertGeoTypeToString(_geo_type);
 			*mmp_file << " ";
 			*mmp_file << geo_name_vector[i] << endl;
 		}
