@@ -2817,7 +2817,7 @@ void CKinReactData::Biodegradation(long node, double eps, double hmin,
 	{
 		m_kb = KinBlob_vector[r];
 		d50 = m_kb->d50;
-		DiffusionAQ = mfp_vector[0]->diffusion; // CB Todo: this should be a component property => Sherwood is component dependent
+		DiffusionAQ = mfp_vector[0]->getDiffusion(); // CB Todo: this should be a component property => Sherwood is component dependent
 		DensityAQ = mfp_vector[0]->Density();
 		ViscosityAQ = mfp_vector[0]->Viscosity();
 		Reynolds = DensityAQ * PoreVelocity * d50 / ViscosityAQ;
@@ -3365,7 +3365,8 @@ double CKinReact::GetPhaseVolumeAtNode(long node_number, double theta, int phase
 {
 	CFEMesh const* const mesh (fem_msh_vector[0]); //SB: ToDo hart gesetzt
 
-	long idx = 0, elem; //OK411
+	size_t idx = 0;
+	long elem; //OK411
 	double distance, weight, sum_w = 0;
 	double vol = 0, poro = 0;
 

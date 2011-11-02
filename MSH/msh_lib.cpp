@@ -22,10 +22,6 @@
 #include "mathlib.h"
 #include "rf_mmp_new.h"                           //OK411
 
-#ifdef RFW_FRACTURE
-#include "rf_mmp_new.h"
-#endif
-
 // WW extern void RFConfigRenumber(void);
 #ifndef NEW_EQS                                   //WW. 07.11.2008
 extern void ConfigRenumberProperties(void);
@@ -1004,10 +1000,10 @@ void MSHDefineMobile(CRFProcess* m_pcs)
 				//ToDo einlesen von domains ????
 				for(size_t nodes = 0; nodes < m_pcs->m_msh->nod_vector.size(); nodes++)
 				{
-					mobile_nodes =
-					        (long*) Realloc(mobile_nodes,sizeof(long) * (nodes + 1));
+					mobile_nodes = (long*) Realloc(mobile_nodes,sizeof(long) * (nodes + 1));
 					mobile_nodes[nodes] = nodes;
 				}
+				i = m_pcs->m_msh->nod_vector.size();
 				no_mobile_nodes = (long)m_pcs->m_msh->nod_vector.size();
 			}
 

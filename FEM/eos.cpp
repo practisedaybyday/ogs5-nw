@@ -151,10 +151,8 @@ double d2phi_ddeltadtau (double C,double D,double delta,double tau,double phi_fn
    A derivation of the free energy function phi
    last change: NB JUN 09
  ***********************************************************************/
-double CFluidProperties::phi_r_d (double rho, double T, int c)
+double CFluidProperties::phi_r_d (double rho, double T) const
 {
-	c = c;                                //OK411
-
 	double phi_a = 0,phi_b = 0,phi_c = 0,phi_d = 0;
 	double delta,tau,DELTA,THETA,PHI,DPHI,dDELTA_deriv,dDELTApowbddelta;
 	int i;
@@ -201,9 +199,8 @@ double CFluidProperties::phi_r_d (double rho, double T, int c)
    A derivation of the free energy function phi
    last change: NB JUN 09
  ***********************************************************************/
-double CFluidProperties::phi_r_tt (double rho, double T, int c)
+double CFluidProperties::phi_r_tt (double rho, double T) const
 {
-	c = c;                                //OK411
 	//CFluidProperties *FP;
 	double phi_a = 0,phi_b = 0,phi_c = 0,phi_d = 0;
 	double delta,tau,THETA,PHI,DELTA,DDELTA,D2DELTA,DPHI,D2PHI;
@@ -217,30 +214,16 @@ double CFluidProperties::phi_r_tt (double rho, double T, int c)
 	for (i = 0; i < limit[3]; i++)
 	{
 		if (i < limit[0])
-
-			phi_a = phi_a + (K[0][i] * K[2][i] * (K[2][i] - 1) * pow(delta,K[1][i]) *
-			                 pow(tau,(K[2][i] - 2)));
-
+			phi_a = phi_a + (K[0][i] * K[2][i] * (K[2][i] - 1) * pow(delta, K[1][i]) * pow(tau,
+							(K[2][i] - 2)));
 		else if (i < limit[1])
-
-			phi_b = phi_b + (K[0][i] * K[2][i] * (K[2][i] - 1) *
-			                 pow(delta,
-			                     K[1][i]) *
-			                 pow(tau,(K[2][i] - 2)) * exp(-pow(delta,K[3][i])));
-
+			phi_b = phi_b + (K[0][i] * K[2][i] * (K[2][i] - 1) * pow(delta, K[1][i]) * pow(tau,
+							(K[2][i] - 2)) * exp(-pow(delta, K[3][i])));
 		else if (i < limit[2])
-
-			phi_c = phi_c + (K[0][i] * pow(delta,K[1][i]) * pow(tau,K[2][i]) *
-			                 exp(-K[10][i] *
-			                     ((delta -
-			                       K[13][i]) *
-			                      (delta -
-			                       K[13][i])) - K[11][i] *
-			                     ((tau - K[12][i]) * (tau - K[12][i])))
-			                 * (pow((K[2][i] / tau - 2 * K[11][i] * (tau - K[12][i])),
-			                        2) - K[2][i]
-			                    / (tau * tau) - 2 * K[11][i]));
-
+			phi_c = phi_c + (K[0][i] * pow(delta, K[1][i]) * pow(tau, K[2][i]) * exp(-K[10][i]
+							* ((delta - K[13][i]) * (delta - K[13][i])) - K[11][i] * ((tau
+							- K[12][i]) * (tau - K[12][i]))) * (pow((K[2][i] / tau - 2 * K[11][i]
+							* (tau - K[12][i])), 2) - K[2][i] / (tau * tau) - 2 * K[11][i]));
 		else if (i < limit[3])
 		{
 			THETA  = theta_fn (tau,K[6][i],delta,K[11][i]);
@@ -264,9 +247,8 @@ double CFluidProperties::phi_r_tt (double rho, double T, int c)
    A derivation of the free energy function phi
    last change: NB JUN 09
  ***********************************************************************/
-double CFluidProperties::phi_0_t (double T,int c)
+double CFluidProperties::phi_0_t (double T) const
 {
-	c = c;                                //OK411
 	double phi_c = 0,phi_d = 0,phi_e = 0;
 	double tau;
 	int i;
@@ -286,9 +268,8 @@ double CFluidProperties::phi_0_t (double T,int c)
    A derivation of the free energy function phi
    last change: NB JUN 09
  ***********************************************************************/
-double CFluidProperties::phi_0_tt (double T, int c)
+double CFluidProperties::phi_0_tt (double T) const
 {
-	c = c;                                //OK411
 	double phi_d = 0,phi_e = 0;
 	double tau;
 	int i;
@@ -307,10 +288,8 @@ double CFluidProperties::phi_0_tt (double T, int c)
    A derivation of the free energy function phi
    last change: NB JUN 09
  ***********************************************************************/
-double CFluidProperties::phi_r_t (double rho, double T,int c)
+double CFluidProperties::phi_r_t (double rho, double T) const
 {
-	c = c;                                //OK411
-
 	double phi_a = 0,phi_b = 0,phi_c = 0,phi_d = 0,h;
 	int i;
 	double delta,tau;
@@ -350,9 +329,8 @@ double CFluidProperties::phi_r_t (double rho, double T,int c)
    A derivation of the free energy function phi
    last change: NB 4.9.05
  ***********************************************************************/
-double CFluidProperties::phi_r_dt (double rho, double T, int c)
+double CFluidProperties::phi_r_dt (double rho, double T) const
 {
-	c = c;                                //OK411
 	double phi_a = 0,phi_b = 0,phi_c = 0,phi_d = 0;
 	int i;
 	double delta,tau;
@@ -424,9 +402,8 @@ double CFluidProperties::phi_r_dt (double rho, double T, int c)
    A derivation of the free energy function phi
    last change: NB 4.9.05
  ***********************************************************************/
-double CFluidProperties::phi_r_dd (double rho, double T, int c)
+double CFluidProperties::phi_r_dd (double rho, double T) const
 {
-	c = c;                                //OK411
 	double phi_a = 0,phi_b = 0,phi_c = 0,phi_d = 0;
 	int i;
 	double delta,tau;
@@ -514,15 +491,11 @@ double CFluidProperties::phi_r_dd (double rho, double T, int c)
  ***********************************************************************/
 double pressure (double rho, double T, int c)
 {
-	CFluidProperties* a;
-	double P,R,rhoc;
-	a = MFPGet(c);
-	rhoc = a->rhoc;
-	R = a->Rs;
+	CFluidProperties const*const fluid_prop (MFPGet(c));
+	const double rhoc(fluid_prop->getCriticalDensity());
+	const double R(fluid_prop->getSpecificGasConstant());
 
-	P = (1 + (rho / rhoc) * a->phi_r_d(rho,T,c)) * rho * R * T;
-
-	return P;
+	return (1 + (rho / rhoc) * fluid_prop->phi_r_d(rho,T)) * rho * R * T;
 }
 
 /**********************************************************************
@@ -547,18 +520,16 @@ double pressure (double rho, double T, int c)
  ***********************************************************************/
 double density (double P, double rho0, double T, double prec, int c)
 {
-	CFluidProperties* a;
+	CFluidProperties const*const fluid_prop (MFPGet(c));
 	int iterations = 0;
-	double rho = 0.0,p0,rhoc,R;           //OK411
-
-	a = MFPGet(c);
-	rhoc = a->rhoc;
-	R = a->Rs;
+	double rho = 0.0,p0;           //OK411
+	const double rhoc(fluid_prop->getCriticalDensity());
+	const double R(fluid_prop->getSpecificGasConstant());
 
 	p0 = 0;
 	while (fabs(P - p0) > prec)           //change to fabs. 15.09.2008 WW
 	{
-		rho = P / ((1 + (rho0 / rhoc) * a->phi_r_d(rho0,T,c)) * R * T);
+		rho = P / ((1 + (rho0 / rhoc) * fluid_prop->phi_r_d(rho0,T)) * R * T);
 		p0  = pressure(rho0,T,c);
 		rho0 = rho;
 		iterations++;
@@ -585,20 +556,13 @@ double density (double P, double rho0, double T, double prec, int c)
  ***********************************************************************/
 double enthalpy (double rho, double T, int c)
 {
-	CFluidProperties* a;
-	double h,R;
-	double tau, delta;
+	CFluidProperties const*const fluid_prop (MFPGet(c));
+	const double tau (fluid_prop->getCriticalTemperature()/T);
+	const double delta(rho / fluid_prop->getCriticalDensity());
+	const double R(fluid_prop->getSpecificGasConstant());
 
-	a = MFPGet(c);
-
-	tau = a->Tc / T;
-	delta = rho / a->rhoc;
-	R = a->Rs;
-
-	h =
-	        (1 + tau *
-	         (a->phi_0_t(T,c) + a->phi_r_t(rho,T,c)) + delta * a->phi_r_d(rho,T,c)) * R * T;
-
+	double h = (1 + tau * (fluid_prop->phi_0_t(T) + fluid_prop->phi_r_t(rho,T))
+	        	+ delta * fluid_prop->phi_r_d(rho,T)) * R * T;
 	return h;
 }
 
@@ -619,13 +583,11 @@ double enthalpy (double rho, double T, int c)
  ***********************************************************************/
 double isochoric_heat_capacity (double rho, double T, int c)
 {
-	CFluidProperties* a;
-	double cv;
-
-	a = MFPGet(c);
-
+	CFluidProperties const*const fluid_prop (MFPGet(c));
 	//	thermal_properties (fluid, rhoc, Tc, R);
-	cv = -((a->Tc / T) * (a->Tc / T) * (a->phi_0_tt(T,c) + a->phi_r_tt(rho,T,c))) * a->Rs;
+	const double h ((fluid_prop->getCriticalTemperature() / T));
+	double cv = -(h * h * (fluid_prop->phi_0_tt(T) + fluid_prop->phi_r_tt(rho,T)))
+		* fluid_prop->getSpecificGasConstant();
 
 	return cv;
 }
@@ -647,21 +609,14 @@ double isochoric_heat_capacity (double rho, double T, int c)
 
 double isobaric_heat_capacity (double rho, double T, int c)
 {
-	CFluidProperties* mfp_prop;
-	double cp,delta,tau;
-	//	double cp,delta,tau;
-	mfp_prop = MFPGet(c);
+	CFluidProperties const*const fluid_prop (MFPGet(c));
+	const double tau (fluid_prop->getCriticalTemperature() / T);
+	const double delta (rho / fluid_prop->getCriticalDensity());
 
-	tau = mfp_prop->Tc / T;
-	delta = rho / mfp_prop->rhoc;
-
-	cp = (-tau * tau * (mfp_prop->phi_0_tt(T,c) + mfp_prop->phi_r_tt(rho,T,c))
-	      + (pow((1 + delta *
-	              mfp_prop->phi_r_d(rho,T,c) - delta * tau * mfp_prop->phi_r_dt(rho,T,c)),2))
-	      / ((1 + 2 * delta *
-	          mfp_prop->phi_r_d(rho,T,
-	                            c) + delta * delta *
-	          mfp_prop->phi_r_dd(rho,T,c)))) * mfp_prop->Rs;
+	double cp = (-tau * tau * (fluid_prop->phi_0_tt(T) + fluid_prop->phi_r_tt(rho, T)) +
+					(pow((1	+ delta * fluid_prop->phi_r_d(rho, T) - delta * tau * fluid_prop->phi_r_dt(
+					rho, T)), 2)) / ((1 + 2 * delta * fluid_prop->phi_r_d(rho, T) + delta
+					* delta * fluid_prop->phi_r_dd(rho,T)))) * fluid_prop->getSpecificGasConstant();
 
 	return cp;
 }
@@ -1045,34 +1000,27 @@ double preos(double T, double P, int c)
 	//int i;
 	mfp_prop = MFPGet (c);
 
-	Ru = mfp_prop->Ru;                    //universal gas constant
-	MM = mfp_prop->molar_mass;
-	Tc = mfp_prop->Tc;                    // critical temperature
-	pc = mfp_prop->pc / 1000;             //critical pressure
-	omega = mfp_prop->omega;              // azentric factor
+	Ru = mfp_prop->getUniversalGasConstant();
+	MM = mfp_prop->getMolarMass();
+	Tc = mfp_prop->getCriticalTemperature();
+	pc = mfp_prop->getCriticalPressure() / 1000;
+	omega = mfp_prop->getAzentricFactor();              // azentric factor
 
 	// Peng Robinson EOS:
 	// P= R*T / (V-b) - a*alpha / (V^2+2bV-b^2)   where V = MM/rho
 
 	a = 0.457235 * Ru * Ru * Tc * Tc / pc;
 	b = 0.077796 * Ru * Tc / pc;
-	P = P / 1000;                         //P in kPa
-	alpha =
-	        ((1 +
-	          (0.37464 + 1.5422 * omega - 0.26992 * omega *
-	           omega) *
-	          (1 -
-	           sqrt(T /
-	                Tc)))) *
-	        ((1 + (0.37464 + 1.5422 * omega - 0.26992 * omega * omega) * (1 - sqrt(T / Tc))));
+	P = P / 1000; //P in kPa
+	alpha = ((1 + (0.37464 + 1.5422 * omega - 0.26992 * omega * omega) * (1 - sqrt(T / Tc)))) * ((1
+					+ (0.37464 + 1.5422 * omega - 0.26992 * omega * omega) * (1 - sqrt(T / Tc))));
 
 	//EOS in the form: 0 = rho^3 + z1*rho^2 + z2*rho + z3
 
-	z1 =
-	        (MM * a * alpha - 3 * MM *
-	         pow(b,2) * P - 2 * MM * Ru * T * b) / (b * (P * pow(b,2) + b * Ru * T - a * alpha));
-	z2 = (pow(MM,2) * (b * P - Ru * T)) / (b * (P * pow(b,2) + b * Ru * T - a * alpha));
-	z3 = (MathLib::fastpow(MM,3) * P) / (b * (P * b * b + b * Ru * T - a * alpha));
+	z1 = (MM * a * alpha - 3 * MM * pow(b, 2) * P - 2 * MM * Ru * T * b) / (b * (P * pow(b, 2) + b
+					* Ru * T - a * alpha));
+	z2 = (pow(MM, 2) * (b * P - Ru * T)) / (b * (P * pow(b, 2) + b * Ru * T - a * alpha));
+	z3 = (MathLib::fastpow(MM, 3) * P) / (b * (P * b * b + b * Ru * T - a * alpha));
 
 	NsPol3(z1,z2,z3,&roots);              //derives the roots of the polynomial
 
@@ -1108,19 +1056,18 @@ double rkeos(double T, double P, int c)
 	double z1,z2,z3,h;
 	vector<double> roots;
 
-	CFluidProperties* mfp_prop;
+	CFluidProperties const*const mfp_prop(MFPGet(c));
 
 	double a,b,Tc,pc,MM;
 	double Ru;
 
 	if (P < 0)
 		P = 100000;               // set pressure to 1atm if unstable NB
-	mfp_prop = MFPGet (c);
 
-	Ru = mfp_prop->Ru * 10;               //universal gas constant [bar cm3/mol/K]
-	MM = mfp_prop->molar_mass;
-	Tc = mfp_prop->Tc;                    // critical temperature
-	pc = mfp_prop->pc / 100000;           //critical pressure
+	Ru = mfp_prop->getUniversalGasConstant() * 10; //universal gas constant [bar cm3/mol/K]
+	MM = mfp_prop->getMolarMass();
+	Tc = mfp_prop->getCriticalTemperature();
+	pc = mfp_prop->getCriticalPressure() / 100000;           //critical pressure
 
 	// Redlich-Kwong EOS:
 	// P= R*T (1+y+y^2-y^3)/ v(1-y^3) - a / (T^0.5*v(cv+b)   where V = MM/rho and y = b / (4v)
