@@ -2872,7 +2872,7 @@ double* CMediumProperties::HeatDispersionTensorNew(int ip)
 	}
 	else
 		fluid_density = m_mfp->Density();
-	heat_capacity_fluids = m_mfp->specific_heat_capacity;
+	heat_capacity_fluids = m_mfp->getSpecificHeatCapacity();
 
 	//Global Velocity
 	double velocity[3] = {0.,0.,0.};

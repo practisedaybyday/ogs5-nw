@@ -12382,7 +12382,7 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path,
 			{
 				// Get reference temperature if no heat transport is used
 				FluidProp = MFPGet("LIQUID");
-				temperature = FluidProp->T_0;
+				temperature = FluidProp->getReferenceTemperature();
 			}
 			else
 			{
@@ -12681,7 +12681,7 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path,
 				// Get reference temperature if no heat transport is used
 				FluidProp = MFPGet("LIQUID");
 				gas.temperature = liquid.temperature = solid.temperature =
-				                                               FluidProp->T_0;
+				                                               FluidProp->getReferenceTemperature();
 			}
 			else
 			{

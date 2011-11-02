@@ -2817,7 +2817,7 @@ void CKinReactData::Biodegradation(long node, double eps, double hmin,
 	{
 		m_kb = KinBlob_vector[r];
 		d50 = m_kb->d50;
-		DiffusionAQ = mfp_vector[0]->diffusion; // CB Todo: this should be a component property => Sherwood is component dependent
+		DiffusionAQ = mfp_vector[0]->getDiffusion(); // CB Todo: this should be a component property => Sherwood is component dependent
 		DensityAQ = mfp_vector[0]->Density();
 		ViscosityAQ = mfp_vector[0]->Viscosity();
 		Reynolds = DensityAQ * PoreVelocity * d50 / ViscosityAQ;
