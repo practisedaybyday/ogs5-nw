@@ -52,6 +52,8 @@ using FiniteElement::CFiniteElementStd;
 
 class CFluidProperties
 {
+	friend bool MFPRead(std::string);
+
 public:
 	double getCriticalDensity() const { return rhoc; }
 	double getCriticalTemperature() const { return Tc; }
