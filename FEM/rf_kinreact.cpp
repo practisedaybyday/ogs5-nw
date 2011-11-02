@@ -3365,7 +3365,8 @@ double CKinReact::GetPhaseVolumeAtNode(long node_number, double theta, int phase
 {
 	CFEMesh const* const mesh (fem_msh_vector[0]); //SB: ToDo hart gesetzt
 
-	long idx = 0, elem; //OK411
+	size_t idx = 0;
+	long elem; //OK411
 	double distance, weight, sum_w = 0;
 	double vol = 0, poro = 0;
 

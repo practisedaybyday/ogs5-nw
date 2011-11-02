@@ -148,7 +148,7 @@ public:
 	}
 
 	/// Adds a new element to the vector.
-	void push_back (T* data_element, std::string const* const name = NULL)
+	virtual void push_back (T* data_element, std::string const* const name = NULL)
 	{
 		_data_vec->push_back (data_element);
 		if (name == NULL) return;
@@ -156,14 +156,16 @@ public:
 		{
 			if (_name_id_map == NULL)
 				_name_id_map = new std::map <std::string, size_t>;
-			_name_id_map->insert (std::pair<std::string,size_t>(*name,
-			                                                    _data_vec->size() - 1));
+			_name_id_map->insert (std::pair<std::string,size_t>(*name, _data_vec->size() - 1));
 		}
 	}
 
 	/// Sets the given name for the element of the given ID.
-	void setNameForElement(size_t id, std::string name)
+	void setNameForElement(size_t id, std::string const& name)
 	{
+		if (_name_id_map == NULL)
+			_name_id_map = new std::map<std::string, size_t>;
+
 		if ( !_name_id_map->empty())
 		{
 			std::map<std::string, size_t>::iterator it=_name_id_map->begin();
@@ -172,11 +174,13 @@ public:
 			if (it!=_name_id_map->end())
 				_name_id_map->erase(it); //check if old name already exists and delete it
 		}
-		if (!name.empty())
-			this->_name_id_map->insert(std::pair<std::string, size_t>(name, id));	//insert new or revised name
+		if (!name.empty()) {
+			//insert new or revised name
+			_name_id_map->insert(std::pair<std::string, size_t>(name, id));
+		}
 	}
 
-private:
+protected:
 	/** copy constructor doesn't have an implementation */
 	// compiler does not create a (possible unwanted) copy constructor
 	TemplateVec (const TemplateVec &);
