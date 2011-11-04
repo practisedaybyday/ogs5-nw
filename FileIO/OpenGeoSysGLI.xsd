@@ -38,6 +38,14 @@
     <xs:attribute name="name" type="xs:string" />
   </xs:complexType>
 
+  <!-- definition of volumes -->
+  <xs:complexType name="volumeType">
+    <xs:sequence>
+      <xs:element name="sfc" type="xs:nonNegativeInteger" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:nonNegativeInteger" use="required" />
+    <xs:attribute name="name" type="xs:string" />
+  </xs:complexType>
 
   <!-- definition of file content -->
   <xs:element name="OpenGeoSysGLI">
@@ -71,6 +79,15 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
+
+        <!-- definition of volumes -->
+        <xs:element name="volumes" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="volume" type="volumeType" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>     
       
       </xs:sequence>
     </xs:complexType>
