@@ -2106,7 +2106,7 @@ double CMediumProperties::PermeabilitySaturationFunction(long number,double* gp,
 		return 1.0;
 	}
 	//  if(!(m_pcs->pcs_type_name.compare("RICHARDS_FLOW")==0)&&no_fluid_phases!=2) TF
-	if(!(m_pcs->getProcessType () == RICHARDS_FLOW) && no_fluid_phases != 2)
+	if(!(m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW) && no_fluid_phases != 2)
 		return 1.0;
 	// static int nidx0,nidx1;
 	double saturation = 0.0,saturation_eff; //OK411
@@ -2314,7 +2314,7 @@ double CMediumProperties::PermeabilitySaturationFunction(const double Saturation
 		return 1.0;
 	}
 	//  if(!(m_pcs->pcs_type_name.find("RICHARDS")!=string::npos) && no_fluid_phases!=2) TF
-	if(!(m_pcs->getProcessType () == RICHARDS_FLOW) && no_fluid_phases != 2)
+	if(!(m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW) && no_fluid_phases != 2)
 		return 1.0;
 	double saturation, saturation_eff;
 	int gueltig;
@@ -3838,8 +3838,8 @@ double CMediumProperties::Porosity(long number,double theta)
 				pcs_temp = pcs_vector[i];
 				//	            if ( pcs_temp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0 ||
 				//                     pcs_temp->pcs_type_name.compare("LIQUID_FLOW") == 0         ) {
-				if ( pcs_temp->getProcessType() == GROUNDWATER_FLOW
-				     || pcs_temp->getProcessType() == LIQUID_FLOW)
+				if ( pcs_temp->getProcessType() == FiniteElement::GROUNDWATER_FLOW
+				     || pcs_temp->getProcessType() == FiniteElement::LIQUID_FLOW)
 				{
 					int idx;
 					idx = pcs_temp->GetElementValueIndex ( "POROSITY" );
@@ -3983,10 +3983,10 @@ double CMediumProperties::Porosity(CElement* assem)
 		{
 			pcs_temp = pcs_vector[i];
 			//			if ((pcs_temp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0) || (pcs_temp->pcs_type_name.compare("RICHARDS_FLOW") == 0)||(pcs_temp->pcs_type_name.compare("MULTI_PHASE_FLOW") == 0))
-			if ( (pcs_temp->getProcessType() == GROUNDWATER_FLOW)
-			     || (pcs_temp->getProcessType() == RICHARDS_FLOW)
+			if ( (pcs_temp->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
+			     || (pcs_temp->getProcessType() == FiniteElement::RICHARDS_FLOW)
 			     // TF
-			     || (pcs_temp->getProcessType() == MULTI_PHASE_FLOW) )
+			     || (pcs_temp->getProcessType() == FiniteElement::MULTI_PHASE_FLOW) )
 			{
 				int idx = pcs_temp->GetElementValueIndex ( "POROSITY" );
 				porosity = pcs_temp->GetElementValue(number, idx);
@@ -4265,8 +4265,8 @@ double* CMediumProperties::PermeabilityTensor(long index)
 				for (size_t i = 0; i < pcs_vector.size(); i++)
 				{
 					pcs_tmp = pcs_vector[i];
-					if ( pcs_tmp->getProcessType () == GROUNDWATER_FLOW ||
-					     pcs_tmp->getProcessType () == LIQUID_FLOW)
+					if ( pcs_tmp->getProcessType () == FiniteElement::GROUNDWATER_FLOW ||
+					     pcs_tmp->getProcessType () == FiniteElement::LIQUID_FLOW)
 						break;
 				}
 				// get index
@@ -4302,8 +4302,8 @@ double* CMediumProperties::PermeabilityTensor(long index)
 					pcs_tmp = pcs_vector[i];
 					//	                if ( m_pcs_tmp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0 ||
 					//                                   m_pcs_tmp->pcs_type_name.compare("LIQUID_FLOW") == 0) TF
-					if ( pcs_tmp->getProcessType () == GROUNDWATER_FLOW ||
-					     pcs_tmp->getProcessType () == LIQUID_FLOW)
+					if ( pcs_tmp->getProcessType () == FiniteElement::GROUNDWATER_FLOW ||
+					     pcs_tmp->getProcessType () == FiniteElement::LIQUID_FLOW)
 						break;
 				}
 				// get index
@@ -4342,8 +4342,8 @@ double* CMediumProperties::PermeabilityTensor(long index)
 					pcs_tmp = pcs_vector[i];
 					//	                if ( m_pcs_tmp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0 ||
 					//	                                m_pcs_tmp->pcs_type_name.compare("LIQUID_FLOW") == 0) TF
-					if ( pcs_tmp->getProcessType() == GROUNDWATER_FLOW ||
-							pcs_tmp->getProcessType () == LIQUID_FLOW)
+					if ( pcs_tmp->getProcessType() == FiniteElement::GROUNDWATER_FLOW ||
+							pcs_tmp->getProcessType () == FiniteElement::LIQUID_FLOW)
 						break;
 				}
 				// get index
@@ -4482,7 +4482,7 @@ double CMediumProperties::PermeabilityFunctionPressure(long index, double PG2)
 	switch(permeability_pressure_model)
 	{
 	case 10: //WX: case 10, factor directly calculated from curve. 05.2010
-		if (m_pcs->getProcessType() == MULTI_PHASE_FLOW)
+		if (m_pcs->getProcessType() == FiniteElement::MULTI_PHASE_FLOW)
 			//WX: now it's only works for Multi_Phase_Flow. 05.2010
 			fac_perm_pressure = GetCurveValue((int) permeability_pressure_model_values[0], 0, PG2,
 						&gueltig);

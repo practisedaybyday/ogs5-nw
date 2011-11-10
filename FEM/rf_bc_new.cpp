@@ -195,14 +195,14 @@ std::ios::pos_type CBoundaryCondition::Read(std::ifstream* bc_file,
 			in.str(readNonBlankLineFromInputStream(*bc_file));
 			std::string tmp;
 			in >> tmp;    // _pcs_pv_name;
-			if ( this->_pcs_type == MASS_TRANSPORT )
+			if ( this->_pcs_type == FiniteElement::MASS_TRANSPORT )
 			{
 				// HS set the pointer to MCP based on component name.
 				// a check whether this name is existing and unique.
 				if ( cp_name_2_idx.count( tmp ) == 1 )
 				{
 					setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
-					setProcessPrimaryVariable( CONCENTRATION );
+					setProcessPrimaryVariable( FiniteElement::CONCENTRATION );
 				}
 				else
 				{
@@ -214,7 +214,7 @@ std::ios::pos_type CBoundaryCondition::Read(std::ifstream* bc_file,
 			else
 			{
 				setProcess( PCSGet( this->getProcessType() ) );
-				setProcessPrimaryVariable (convertPrimaryVariable (tmp));
+				setProcessPrimaryVariable (FiniteElement::convertPrimaryVariable (tmp));
 			}
 			in.clear();
 		}
@@ -225,14 +225,14 @@ std::ios::pos_type CBoundaryCondition::Read(std::ifstream* bc_file,
 			in.str(readNonBlankLineFromInputStream(*bc_file));
 			std::string tmp;
 			in >> tmp;    // _pcs_pv_name;
-			if ( this->_pcs_type == MASS_TRANSPORT )
+			if ( this->_pcs_type == FiniteElement::MASS_TRANSPORT )
 			{
 				// HS set the pointer to MCP based on component name.
 				// check whether this name is existing and unique.
 				if ( cp_name_2_idx.count( tmp ) == 1 )
 				{
 					setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
-					setProcessPrimaryVariable( CONCENTRATION );
+					setProcessPrimaryVariable( FiniteElement::CONCENTRATION );
 				}
 				else
 				{
@@ -859,7 +859,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 		pcs->m_msh->SwitchOnQuadraticNodes(quadratic);
 	}
 
-	PrimaryVariable primary_variable(convertPrimaryVariable(_pcs_pv_name));
+	FiniteElement::PrimaryVariable primary_variable(FiniteElement::convertPrimaryVariable(_pcs_pv_name));
 	std::list<CBoundaryCondition*>::const_iterator p_bc = bc_list.begin();
 	while (p_bc != bc_list.end())
 	{
@@ -1552,7 +1552,7 @@ CBoundaryCondition* BCGet(const std::string& pcs_type_name)
 	while (p_bc != bc_list.end())
 	{
 		m_bc = *p_bc;
-		if (m_bc->getProcessType() == convertProcessType(pcs_type_name))
+		if (m_bc->getProcessType() == FiniteElement::convertProcessType(pcs_type_name))
 			return m_bc;
 		++p_bc;
 	}

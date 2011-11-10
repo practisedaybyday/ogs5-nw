@@ -148,18 +148,18 @@ double RandomWalk::randomZeroToOne(void)
 CFEMesh* RandomWalk::selectMeshForFluidMomentumProcess ()
 {
 	size_t n_pcs (pcs_vector.size());
-	ProcessType pcs_type;
+	FiniteElement::ProcessType pcs_type;
 	CFEMesh* msh (NULL);
 
 	for(size_t i = 0; i < n_pcs; ++i)
 	{
 		pcs_type = pcs_vector[i]->getProcessType();
 		// Select the mesh whose process name has the mesh for Fluid_Momentum
-		if (pcs_type == RICHARDS_FLOW)
+		if (pcs_type == FiniteElement::RICHARDS_FLOW)
 			msh = FEMGet("RICHARDS_FLOW");
-		else if (pcs_type == LIQUID_FLOW)
+		else if (pcs_type == FiniteElement::LIQUID_FLOW)
 			msh = FEMGet("LIQUID_FLOW");
-		else if (pcs_type == GROUNDWATER_FLOW)
+		else if (pcs_type == FiniteElement::GROUNDWATER_FLOW)
 			msh = FEMGet("GROUNDWATER_FLOW");
 	}
 
@@ -4963,19 +4963,19 @@ void RandomWalk::buildFDMIndex(void)
 	{
 		m_pcs = pcs_vector[index];
 		//		if( m_pcs->pcs_type_name.find("RICHARDS_FLOW")!=string::npos){
-		if( m_pcs->getProcessType () == RICHARDS_FLOW)
+		if( m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW)
 		{
 			m_msh = FEMGet("RICHARDS_FLOW");
 			break;
 		}
 		//		else if( m_pcs->pcs_type_name.find("LIQUID_FLOW")!=string::npos){
-		else if( m_pcs->getProcessType () == LIQUID_FLOW)
+		else if( m_pcs->getProcessType () == FiniteElement::LIQUID_FLOW)
 		{
 			m_msh = FEMGet("LIQUID_FLOW");
 			break;
 		}
 		//		else if( m_pcs->pcs_type_name.find("GROUNDWATER_FLOW")!=string::npos){
-		else if( m_pcs->getProcessType() == GROUNDWATER_FLOW)
+		else if( m_pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 		{
 			m_msh = FEMGet("GROUNDWATER_FLOW");
 			break;
@@ -5272,20 +5272,20 @@ void DATWriteParticleFile(int current_time_step)
 	for(size_t i = 0; i < pcs_vector_size; ++i)
 	{
 		//		m_pcs = pcs_vector[i];
-		ProcessType pcs_type = pcs_vector[i]->getProcessType();
+		const FiniteElement::ProcessType pcs_type(pcs_vector[i]->getProcessType());
 		//		if( m_pcs->pcs_type_name.find("RICHARDS_FLOW")!=string::npos){
-		if( pcs_type == RICHARDS_FLOW)
+		if( pcs_type == FiniteElement::RICHARDS_FLOW)
 		{
 			m_msh = FEMGet("RICHARDS_FLOW");
 			break;
 		}
 		//		else if( m_pcs->pcs_type_name.find("LIQUID_FLOW")!=string::npos){
-		else if( pcs_type == LIQUID_FLOW)
+		else if( pcs_type == FiniteElement::LIQUID_FLOW)
 		{
 			m_msh = FEMGet("LIQUID_FLOW");
 			break;
 		}
-		else if( pcs_type == GROUNDWATER_FLOW)
+		else if( pcs_type == FiniteElement::GROUNDWATER_FLOW)
 		{
 			m_msh = FEMGet("GROUNDWATER_FLOW");
 			break;

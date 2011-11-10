@@ -127,7 +127,7 @@ long REACT_BRNS::GetNodesNumber(void)
 	{
 		m_pcs = pcs_vector[i];
 		//		if (m_pcs->pcs_type_name.compare("MASS_TRANSPORT")==0) {
-		if (m_pcs->getProcessType() == MASS_TRANSPORT)
+		if (m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
 		{
 			number = (long) m_pcs->m_msh->GetNodesNumber(false);
 			return number;
@@ -145,7 +145,7 @@ long REACT_BRNS::GetElemNumber(void)
 	{
 		m_pcs = pcs_vector[i];
 		//		if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) ==0 ) {
-		if ( m_pcs->getProcessType() == MASS_TRANSPORT)
+		if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
 		{
 			number = ( long ) m_pcs->m_msh->ele_vector.size();
 			return number;
@@ -659,25 +659,25 @@ int REACT_BRNS::GetFlowType_MT ( void )
 	{
 		m_pcs = pcs_vector[i];
 		//		if ( m_pcs->pcs_type_name.compare ( "GROUNDWATER_FLOW" ) ==0 ) {
-		if ( m_pcs->getProcessType() == GROUNDWATER_FLOW)
+		if ( m_pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 		{
 			m_flow_pcs = m_pcs;
 			return 1;
 		}
 		//		else if ( m_pcs->pcs_type_name.compare ( "LIQUID_FLOW" ) ==0 ) {
-		else if ( m_pcs->getProcessType() == LIQUID_FLOW )
+		else if ( m_pcs->getProcessType() == FiniteElement::LIQUID_FLOW )
 		{
 			m_flow_pcs = m_pcs;
 			return 2;
 		}
 		//		else if ( m_pcs->pcs_type_name.compare ( "RICHARDS_FLOW" ) ==0 ) {
-		else if ( m_pcs->getProcessType() == RICHARDS_FLOW )
+		else if ( m_pcs->getProcessType() == FiniteElement::RICHARDS_FLOW )
 		{
 			m_flow_pcs = m_pcs;
 			return 3;
 		}
 		//		else if ( m_pcs->pcs_type_name.compare ( "TWO_PHASE_FLOW" ) ==0 ) {
-		else if ( m_pcs->getProcessType() == TWO_PHASE_FLOW  )
+		else if ( m_pcs->getProcessType() == FiniteElement::TWO_PHASE_FLOW  )
 		{
 			m_flow_pcs = m_pcs;
 			return 4;

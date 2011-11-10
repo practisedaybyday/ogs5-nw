@@ -10,6 +10,8 @@
 #include <limits>
 #include <string>
 
+namespace FiniteElement
+{
 /** \brief Types of physical processes supported by OpenGeoSys.
  * If you change this enum, make sure you apply the changes to
  * the functions convertPorcessType(), convertProcessTypeToString(),
@@ -140,8 +142,6 @@ PrimaryVariable convertPrimaryVariable ( const std::string& pcs_pv_string );
  */
 std::string convertPrimaryVariableToString ( PrimaryVariable pcs_pv );
 
-namespace FiniteElement
-{
 enum DistributionType
 {
 	INVALID_DIS_TYPE = 0,

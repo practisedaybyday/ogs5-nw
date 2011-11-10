@@ -575,13 +575,12 @@ void XMLInterface::readConditions( const QDomNode &listRoot,
 		for (int i = 0; i < condProperties.count(); i++)
 		{
 			if (condProperties.at(i).nodeName().compare("ProcessType") == 0)
-				c->setProcessType(convertProcessType(condProperties.at(i).toElement()
+				c->setProcessType(FiniteElement::convertProcessType(condProperties.at(i).toElement()
 				                                     .text().toStdString()));
 			if (condProperties.at(i).nodeName().compare("PrimaryVariable") == 0)
-				c->setProcessPrimaryVariable(convertPrimaryVariable(condProperties.
-				                                                    at(i).toElement()
-				                                                    .text().
-				                                                    toStdString()));
+				c->setProcessPrimaryVariable(
+						FiniteElement::convertPrimaryVariable(
+							condProperties.at(i).toElement().text().toStdString()));
 			if (condProperties.at(i).nodeName().compare("GeoType") == 0)
 			{
 				QDomNodeList geoProps = condProperties.at(i).childNodes();

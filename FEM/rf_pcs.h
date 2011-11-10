@@ -792,7 +792,7 @@ extern CRFProcess* PCSGet(const std::string&);
  * @param pcs_type process type
  * @return a pointer the the appropriate process or NULL (if not found)
  */
-CRFProcess* PCSGet (ProcessType pcs_type);        // TF
+CRFProcess* PCSGet (FiniteElement::ProcessType pcs_type);        // TF
 
 extern CRFProcess* PCSGetNew(const std::string&,const std::string&);
 extern void PCSDelete();
@@ -812,7 +812,7 @@ extern CRFProcess* PCSGet(const std::string&,const std::string&);
  * @return
  */
 // TF
-CRFProcess* PCSGet(ProcessType pcs_type, const std::string &pv_name);
+CRFProcess* PCSGet(FiniteElement::ProcessType pcs_type, const std::string &pv_name);
 
 //OK
 extern CRFProcess* PCSGet(const std::string&,bool);

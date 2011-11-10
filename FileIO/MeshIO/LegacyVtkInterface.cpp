@@ -247,7 +247,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 			size_t numComponents = 2;
 			if (_pointArrayNames[k + 2].find("_Z"))
 				numComponents = 3;
-			
+
 			vtk_file << "VECTORS " <<
 			arrayName.substr(0, arrayName.size() - 2) << " double" << endl;
 			string arrayNames[3];
@@ -484,7 +484,7 @@ CRFProcess* LegacyVtkInterface::GetPCS_ELE(const string &var_name) const
 {
 	string pcs_var_name;
 	CRFProcess* pcs = NULL;
-	if (_processInfo->getProcessType() != INVALID_PROCESS)
+	if (_processInfo->getProcessType() != FiniteElement::INVALID_PROCESS)
 		pcs = PCSGet(_processInfo->getProcessType());
 	else if (_meshTypeName.size() > 0)
 		pcs = PCSGet(_meshTypeName);

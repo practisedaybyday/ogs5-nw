@@ -1426,9 +1426,9 @@ int CDUMUXData::RunDuMux(long Timestep, CRFProcess* m_pcs)
 	//define number of phases
 	if (Timestep == 1)
 	{
-		if (m_pcs->getProcessType() == LIQUID_FLOW)
+		if (m_pcs->getProcessType() == FiniteElement::LIQUID_FLOW)
 			this->Phases.push_back("Water");
-		if (m_pcs->getProcessType() == MULTI_PHASE_FLOW)
+		if (m_pcs->getProcessType() == FiniteElement::MULTI_PHASE_FLOW)
 		{
 			this->Phases.push_back("WATER");
 			this->Phases.push_back("GAS");

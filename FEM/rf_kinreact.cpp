@@ -3322,7 +3322,7 @@ double CKinReact::GetReferenceVolume(int comp, long index)
 		// --> Get node saturation of mobile (water) phase, required for all exchange processes
 		double saturation = 1.0; // default
 		CRFProcess* pcs_flow = PCSGetFlow();
-		if (pcs_flow->getProcessType() == TWO_PHASE_FLOW)
+		if (pcs_flow->getProcessType() == FiniteElement::TWO_PHASE_FLOW)
 		{
 			if (pcs_flow->pcs_type_number == 0)
 				// this is the saturation equation
@@ -3331,7 +3331,7 @@ double CKinReact::GetReferenceVolume(int comp, long index)
 			idx = pcs_flow->GetNodeValueIndex("SATURATION1");
 			saturation = pcs_flow->GetNodeValue(index, idx);
 		}
-		else if (pcs_flow->getProcessType() == RICHARDS_FLOW)
+		else if (pcs_flow->getProcessType() == FiniteElement::RICHARDS_FLOW)
 		{
 			// Sat of water phase
 			idx = pcs_flow->GetNodeValueIndex("SATURATION1");
@@ -4386,7 +4386,7 @@ double CKinReact::GetNodePoreVelocity(long node_number)
 	double theta = pcs->m_num->ls_theta;
 
 	// Get node saturation of mobile (water) phase
-	if (pcs->getProcessType() == TWO_PHASE_FLOW)
+	if (pcs->getProcessType() == FiniteElement::TWO_PHASE_FLOW)
 	{
 		if (pcs->pcs_type_number == 0)
 			// this is the saturation equation
@@ -4395,7 +4395,7 @@ double CKinReact::GetNodePoreVelocity(long node_number)
 		idxs1 = pcs->GetNodeValueIndex("SATURATION1");
 		satu = pcs->GetNodeValue(node_number, idxs1);
 	}
-	else if (pcs->getProcessType() == RICHARDS_FLOW)
+	else if (pcs->getProcessType() == FiniteElement::RICHARDS_FLOW)
 	{
 		// Sat of water phase
 		idxs1 = pcs->GetNodeValueIndex("SATURATION1");

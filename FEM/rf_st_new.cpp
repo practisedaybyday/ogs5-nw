@@ -203,14 +203,14 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
          std::string tmp;
          in >> tmp;
 
-         if ( this->getProcessType() == MASS_TRANSPORT )
+         if ( this->getProcessType() == FiniteElement::MASS_TRANSPORT )
          {
              // HS set the pointer to MCP based on component name.
              // first do a check whether this name is existing and unique.
              if ( cp_name_2_idx.count( tmp ) == 1 )
              {
                  setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
-                 setProcessPrimaryVariable( CONCENTRATION );
+                 setProcessPrimaryVariable( FiniteElement::CONCENTRATION );
              }
              else
              {
@@ -221,7 +221,7 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
          else
          {
              setProcess( PCSGet( this->getProcessType() ) );
-             setProcessPrimaryVariable (convertPrimaryVariable (tmp));
+             setProcessPrimaryVariable (FiniteElement::convertPrimaryVariable (tmp));
          }
          in.clear();
          continue;
@@ -238,7 +238,7 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
          if ( cp_name_2_idx.count( tmp ) == 1 )
          {
              setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
-             setProcessPrimaryVariable( CONCENTRATION );
+             setProcessPrimaryVariable( FiniteElement::CONCENTRATION );
          }
          else
          {
@@ -516,7 +516,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
 {
    FileIO::GeoIO::readGeoInfo(this, *st_file, geo_name, geo_obj, unique_name);
 
-   if (getProcessPrimaryVariable() == EXCAVATION) //WW
+   if (getProcessPrimaryVariable() == FiniteElement::EXCAVATION) //WW
    {
       std::stringstream strstr;
       strstr.str(GetLineFromFile1(st_file));
@@ -905,7 +905,7 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
          if (source_term->isCoupled())
             m_msh_cond = FEMGet(source_term->pcs_type_name_cond);
 
-         if (source_term->getProcessType() == MASS_TRANSPORT)
+         if (source_term->getProcessType() == FiniteElement::MASS_TRANSPORT)
              if ( cp_vec[cp_name_2_idx[convertPrimaryVariableToString(source_term->getProcessPrimaryVariable())]]->getProcess() != m_pcs )
                  continue;
           //-- 23.02.3009. WW
@@ -1940,9 +1940,9 @@ void GetCouplingNODValue(double &value, CSourceTerm* st, CNodeValue* cnodev)
    //		cout << "Error in GetCouplingNODValue";
 
    if (st->isCoupled() ||
-      st->getProcessType() == GROUNDWATER_FLOW ||
-      st->getProcessType() == RICHARDS_FLOW ||
-      st->getProcessType() == OVERLAND_FLOW)
+      st->getProcessType() == FiniteElement::GROUNDWATER_FLOW ||
+      st->getProcessType() == FiniteElement::RICHARDS_FLOW ||
+      st->getProcessType() == FiniteElement::OVERLAND_FLOW)
       GetCouplingNODValuePicard(value, st, cnodev);
    else
       std::cout << "Error in GetCouplingNODValue";
@@ -1989,10 +1989,10 @@ CNodeValue* cnodev)
                                                   // hydrostatic overland pressure
    value = CalcCouplingValue(condArea, h_this, h_cond_shifted, z_cond, m_st);
 
-   if (m_st->getProcessType() == RICHARDS_FLOW)
+   if (m_st->getProcessType() == FiniteElement::RICHARDS_FLOW)
       condArea /= gamma;
 
-   if (m_st->getProcessType() == GROUNDWATER_FLOW && h_this < z_cond
+   if (m_st->getProcessType() == FiniteElement::GROUNDWATER_FLOW && h_this < z_cond
       && m_st->pcs_type_name_cond == "OVERLAND_FLOW")
       condArea = 0;
 
@@ -2095,7 +2095,7 @@ double GetRelativeCouplingPermeability(const CRFProcess* pcs, double head, const
    double z = pcs->m_msh->nod_vector[msh_node]->getData()[2];
 
    //	if (pcs->pcs_type_name == "OVERLAND_FLOW") {
-   if (pcs->getProcessType() == OVERLAND_FLOW)
+   if (pcs->getProcessType() == FiniteElement::OVERLAND_FLOW)
    {
       double sat = (head - z) / std::max(1.e-6, source_term->rill_height);
       if (sat > 1)
@@ -2106,10 +2106,10 @@ double GetRelativeCouplingPermeability(const CRFProcess* pcs, double head, const
          relPerm = pow(sat, 2* (1 - sat));
    }
    //	else if( pcs->pcs_type_name == "GROUNDWATER_FLOW")
-   else if( pcs->getProcessType() == GROUNDWATER_FLOW)
+   else if( pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
       relPerm = 1;
    //	else if( pcs->pcs_type_name == "RICHARDS_FLOW") {
-   else if( pcs->getProcessType() == RICHARDS_FLOW)
+   else if( pcs->getProcessType() == FiniteElement::RICHARDS_FLOW)
    {
       /*CElem *m_ele = NULL;
        long msh_ele;
@@ -2177,7 +2177,7 @@ CNodeValue* cnodev)
    cond0 = leakance * deltaZ;
    cond1 = cond0;
 
-   if (m_st->getProcessType () == OVERLAND_FLOW)
+   if (m_st->getProcessType () == FiniteElement::OVERLAND_FLOW)
    {
 
       ///// get number of second mesh node, provisional implementation
@@ -3320,7 +3320,7 @@ void CSourceTerm::SetNodeValues(const std::vector<long>& nodes, const std::vecto
       {
          m_nod_val->msh_node_number_conditional = nodes_cond[i];
                                                   // JOD 4.10.01
-         if ((getProcessType() == OVERLAND_FLOW || getProcessType() == GROUNDWATER_FLOW)
+         if ((getProcessType() == FiniteElement::OVERLAND_FLOW || getProcessType() == FiniteElement::GROUNDWATER_FLOW)
         		 && node_averaging)
          {
             double weights = 0;
@@ -4058,7 +4058,7 @@ CSourceTerm* m_st, CNodeValue* cnodev)
    *h_cond = m_pcs_cond->GetNodeValue(cnodev->msh_node_number_conditional,
       nidx_cond);
 
-   if (m_st->getProcessType() == OVERLAND_FLOW)
+   if (m_st->getProcessType() == FiniteElement::OVERLAND_FLOW)
    {
       if (m_st->node_averaging)                   // shift overland node on soil column top, averaging over nodes
       {
@@ -4106,7 +4106,7 @@ CSourceTerm* m_st, CNodeValue* cnodev)
       else
          *h_shifted = *h_cond;
 
-      if (m_st->getProcessPrimaryVariable() == PRESSURE)
+      if (m_st->getProcessPrimaryVariable() == FiniteElement::PRESSURE)
       {
          *h_this /= gamma;
          *h_this += *z_this;
@@ -4124,7 +4124,7 @@ double CalcCouplingValue(double factor, double h_this, double h_cond,
 double z_cond, CSourceTerm* m_st)
 {
 
-   if (m_st->getProcessType() == OVERLAND_FLOW)
+   if (m_st->getProcessType() == FiniteElement::OVERLAND_FLOW)
    {
       if (m_st->no_surface_water_pressure)        // 4.10.01
          return factor * (h_cond - z_cond);
@@ -4133,7 +4133,7 @@ double z_cond, CSourceTerm* m_st)
    }                                              // richards & groundwater flow
    else
    {
-      if (m_st->getProcessType() == GROUNDWATER_FLOW)
+      if (m_st->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
       {
          if (h_this < z_cond && m_st->pcs_type_name_cond == "OVERLAND_FLOW")
             return factor * (h_cond - z_cond);

@@ -537,7 +537,7 @@ void CRFProcess::Create()
 	if (m_msh)                            //OK->MB please shift to Config()
 
 		//		if (_pcs_type_name.compare("GROUNDWATER_FLOW") == 0)
-		if (this->getProcessType() == GROUNDWATER_FLOW)
+		if (this->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 			MSHDefineMobile(this);
 	//----------------------------------------------------------------------------
 	int DOF = GetPrimaryVNumber();        //OK should be PCS member variable
@@ -562,7 +562,7 @@ void CRFProcess::Create()
 	// NUM_NEW
 	std::cout << "->Create NUM" << std::endl;
 	//	if (pcs_type_name.compare("RANDOM_WALK")) { // PCH RWPT does not need this.
-	if (this->getProcessType() != RANDOM_WALK) // PCH RWPT does not need this.
+	if (this->getProcessType() != FiniteElement::RANDOM_WALK) // PCH RWPT does not need this.
 	{
 		CNumerics* m_num_tmp = NULL;
 		size_t no_numerics(num_vector.size());
@@ -619,14 +619,14 @@ void CRFProcess::Create()
 	//CRFProcess *m_pcs = NULL;                      //
 	// create EQS
 	/// Configure EQS (old matrx) . WW 06.2011
-	if (   getProcessType() == DEFORMATION
-	       || getProcessType() == DEFORMATION_FLOW
-	       || getProcessType() == DEFORMATION_H2 )
+	if (   getProcessType() == FiniteElement::DEFORMATION
+	       || getProcessType() == FiniteElement::DEFORMATION_FLOW
+	       || getProcessType() == FiniteElement::DEFORMATION_H2 )
 	{
-		if ( getProcessType() == DEFORMATION )
+		if ( getProcessType() == FiniteElement::DEFORMATION )
 			eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF, DOF
 			                            * m_msh->GetNodesNumber(true));
-		else if (getProcessType() == DEFORMATION_FLOW)
+		else if (getProcessType() == FiniteElement::DEFORMATION_FLOW)
 		{
 			if (num_type_name.find("EXCAVATION") != string::npos)
 				eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF - 1, DOF
@@ -636,7 +636,7 @@ void CRFProcess::Create()
 				                            (DOF - 1) * m_msh->GetNodesNumber(true)
 				                            + m_msh->GetNodesNumber(false));
 		}
-		else if (getProcessType() == DEFORMATION_H2)
+		else if (getProcessType() == FiniteElement::DEFORMATION_H2)
 			if(m_num->nls_method == 1)
 				eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF,
 				                            (DOF - 2) * m_msh->GetNodesNumber(true)
@@ -1188,7 +1188,7 @@ void CRFProcess::setIC_danymic_problems()
 		{
 			m_ic = ic_vector[j];
 			if(m_ic->getProcessPrimaryVariable() ==
-			   convertPrimaryVariable(function_name[i]))
+				FiniteElement::convertPrimaryVariable(function_name[i]))
 				m_ic->Set(nidx);
 		}
 	}
@@ -1493,13 +1493,13 @@ bool PCSRead(std::string file_base_name)
 				            "DEFORMATION") != string::npos)
 				{
 					//					m_pcs->_pcs_type_name = "DEFORMATION_FLOW";
-					m_pcs->setProcessType (DEFORMATION_FLOW);
+					m_pcs->setProcessType (FiniteElement::DEFORMATION_FLOW);
 					MH_Process = true; // MH monolithic scheme
 					if (pname.find("DYNAMIC") != string::npos)
 						m_pcs->pcs_type_name_vector[0] = "DYNAMIC";
 				}
 			}
-			else if (m_pcs->getProcessType() == DEFORMATION_FLOW)
+			else if (m_pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW)
 			{
 				//NW
 				std::cout << "***Error: DEFORMATION_FLOW is vague definition." <<
@@ -1625,7 +1625,7 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 				line_stream.str(line_string);
 				std::string pcs_type_name;
 				line_stream >> pcs_type_name;
-				this->setProcessType (convertProcessType(pcs_type_name));
+				this->setProcessType (FiniteElement::convertProcessType(pcs_type_name));
 				line_stream.clear();
 
 				//				if (_pcs_type_name.find("FLOW") != string::npos) {
@@ -1635,7 +1635,7 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 					H_Process = true;
 				}
 				//				if (_pcs_type_name.compare("PS_GLOBAL") == 0) {
-				if (this->getProcessType() == PS_GLOBAL)
+				if (this->getProcessType() == FiniteElement::PS_GLOBAL)
 					H_Process = true;
 				//				if (_pcs_type_name.compare("FLUID_FLOW") == 0) {
 				//					_pcs_type_name = "LIQUID_FLOW";
@@ -1649,23 +1649,23 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 						pcs_no_fluid_phases = 1;
 				}
 				//				if (_pcs_type_name.compare("MASS_TRANSPORT") == 0) {
-				if (this->getProcessType() == MASS_TRANSPORT)
+				if (this->getProcessType() == FiniteElement::MASS_TRANSPORT)
 				{
 					H_Process = true;
 					MASS_TRANSPORT_Process = true;
 					pcs_no_components++;
-					this->setProcessPrimaryVariable(CONCENTRATION);
+					this->setProcessPrimaryVariable(FiniteElement::CONCENTRATION);
 				}
 				//				if (_pcs_type_name.find("HEAT") != string::npos)
-				if (this->getProcessType() == HEAT_TRANSPORT)
+				if (this->getProcessType() == FiniteElement::HEAT_TRANSPORT)
 					T_Process = true;
 				pcs_type_name_vector.push_back(pcs_type_name);
 
 				//				if (_pcs_type_name.compare("FLUID_MOMENTUM") == 0) {
-				if (this->getProcessType() == FLUID_MOMENTUM)
+				if (this->getProcessType() == FiniteElement::FLUID_MOMENTUM)
 					FLUID_MOMENTUM_Process = true;
 				//				if (_pcs_type_name.compare("RANDOM_WALK") == 0) {
-				if (this->getProcessType() == RANDOM_WALK)
+				if (this->getProcessType() == FiniteElement::RANDOM_WALK)
 					RANDOM_WALK_Process = true;
 			}
 		/*
@@ -1847,7 +1847,7 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 		if (line_string.find("$USE_VELOCITIES_FOR_TRANSPORT") != string::npos)
 		{
 			// Only for fluid momentum process
-			if (this->getProcessType () == FLUID_MOMENTUM)
+			if (this->getProcessType () == FiniteElement::FLUID_MOMENTUM)
 				use_velocities_for_transport = true;
 			continue;
 		}
@@ -1972,7 +1972,7 @@ void CRFProcess::Write(std::fstream* pcs_file)
 **************************************************************************/
 CRFProcess* PCSGet(const std::string &pcs_type_name)
 {
-	ProcessType pcs_type(convertProcessType(pcs_type_name));
+	FiniteElement::ProcessType pcs_type(FiniteElement::convertProcessType(pcs_type_name));
 	for (size_t i = 0; i < pcs_vector.size(); i++)
 		//		m_pcs = pcs_vector[i];
 		//		if(m_pcs->pcs_type_name.compare(pcs_type_name)==0) { TF
@@ -1982,7 +1982,7 @@ CRFProcess* PCSGet(const std::string &pcs_type_name)
 	return NULL;
 }
 
-CRFProcess* PCSGet(ProcessType pcs_type)
+CRFProcess* PCSGet(FiniteElement::ProcessType pcs_type)
 {
 	for (size_t i = 0; i < pcs_vector.size(); i++)
 		if (pcs_vector[i]->getProcessType() == pcs_type)
@@ -2003,7 +2003,7 @@ CRFProcess* PCSGetNew(const string &pcs_type_name, const string &primary_variabl
 {
 	CRFProcess* m_pcs_return = NULL;
 
-	ProcessType pcs_type (convertProcessType (pcs_type_name));
+	FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (pcs_type_name));
 
 	int matches = 0;
 	for (size_t i = 0; i < pcs_vector.size(); i++)
@@ -2102,20 +2102,20 @@ void CRFProcess::Config(void)
 		continuum_vector.push_back(1.0);
 
 	//	if (_pcs_type_name.compare("LIQUID_FLOW") == 0) {
-	if (this->getProcessType() == LIQUID_FLOW || this->getProcessType() == FLUID_FLOW)
+	if (this->getProcessType() == FiniteElement::LIQUID_FLOW || this->getProcessType() == FiniteElement::FLUID_FLOW)
 	{
 		std::cout << "CRFProcess::Config LIQUID_FLOW" << std::endl;
 		type = 1;
 		ConfigLiquidFlow();
 	}
 	//	if (_pcs_type_name.compare("GROUNDWATER_FLOW") == 0) {
-	if (this->getProcessType() == GROUNDWATER_FLOW)
+	if (this->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 	{
 		type = 1;
 		ConfigGroundwaterFlow();
 	}
 	//	if (_pcs_type_name.compare("RICHARDS_FLOW") == 0) {
-	if (this->getProcessType() == RICHARDS_FLOW)
+	if (this->getProcessType() == FiniteElement::RICHARDS_FLOW)
 	{
 		if (continuum_vector.size() > 1)
 		{
@@ -2127,20 +2127,20 @@ void CRFProcess::Config(void)
 		ConfigUnsaturatedFlow();
 	}
 	//	if (_pcs_type_name.compare("OVERLAND_FLOW") == 0) {
-	if (this->getProcessType() == OVERLAND_FLOW)
+	if (this->getProcessType() == FiniteElement::OVERLAND_FLOW)
 	{
 		type = 66;
 		max_dim = 1;
 		ConfigGroundwaterFlow();
 	}
 	//	if (_pcs_type_name.compare("AIR_FLOW") == 0) { //OK
-	if (this->getProcessType() == AIR_FLOW) //OK
+	if (this->getProcessType() == FiniteElement::AIR_FLOW) //OK
 	{
 		type = 5;
 		ConfigGasFlow();
 	}
 	//	if (_pcs_type_name.compare("TWO_PHASE_FLOW") == 0) {
-	if (this->getProcessType() == TWO_PHASE_FLOW)
+	if (this->getProcessType() == FiniteElement::TWO_PHASE_FLOW)
 	{
 		type = 12;
 		ConfigMultiphaseFlow();
@@ -2151,13 +2151,13 @@ void CRFProcess::Config(void)
 	//		ConfigNonIsothermalFlow();
 	//	}
 	//	if (_pcs_type_name.compare("HEAT_TRANSPORT") == 0) {
-	if (this->getProcessType() == HEAT_TRANSPORT)
+	if (this->getProcessType() == FiniteElement::HEAT_TRANSPORT)
 	{
 		type = 3;
 		ConfigHeatTransport();
 	}
 	//	if (_pcs_type_name.compare("MASS_TRANSPORT") == 0) {
-	if (this->getProcessType() == MASS_TRANSPORT)
+	if (this->getProcessType() == FiniteElement::MASS_TRANSPORT)
 	{
 		type = 2;
 		ConfigMassTransport();
@@ -2166,30 +2166,30 @@ void CRFProcess::Config(void)
 	if (isDeformationProcess(getProcessType()))
 		ConfigDeformation();
 	//	if (_pcs_type_name.find("FLUID_MOMENTUM") != string::npos
-	if (this->getProcessType() == FLUID_MOMENTUM)
+	if (this->getProcessType() == FiniteElement::FLUID_MOMENTUM)
 	{
 		type = 55;                //WW
 		ConfigFluidMomentum();
 	}
 	//	if (_pcs_type_name.find("RANDOM_WALK") != string::npos) {
-	if (this->getProcessType() == RANDOM_WALK)
+	if (this->getProcessType() == FiniteElement::RANDOM_WALK)
 	{
 		type = 55;                //WW
 		ConfigRandomWalk();
 	}
 	//	if (_pcs_type_name.find("MULTI_PHASE_FLOW") != string::npos) {//24.02.2007 WW
-	if (this->getProcessType() == MULTI_PHASE_FLOW) //24.02.2007 WW
+	if (this->getProcessType() == FiniteElement::MULTI_PHASE_FLOW) //24.02.2007 WW
 	{
 		type = 1212;
 		ConfigMultiPhaseFlow();
 	}
 	//	if (_pcs_type_name.find("PS_GLOBAL") != string::npos) {//24.02.2007 WW
-	if (this->getProcessType() == PS_GLOBAL) //24.02.2007 WW
+	if (this->getProcessType() == FiniteElement::PS_GLOBAL) //24.02.2007 WW
 	{
 		type = 1313;
 		ConfigPS_Global();
 	}
-	if (this->getProcessType() == PTC_FLOW) //24.02.2007 WW
+	if (this->getProcessType() == FiniteElement::PTC_FLOW) //24.02.2007 WW
 	{
 		type = 1111;
 		ConfigPTC_FLOW();
@@ -2735,10 +2735,10 @@ void CRFProcess::ConfigDeformation()
 	type = 4;
 	//	if (_pcs_type_name.find("DEFORMATION") != string::npos
 	//			&& _pcs_type_name.find("FLOW") != string::npos) {
-	if (getProcessType() == DEFORMATION_FLOW || getProcessType() == DEFORMATION_H2 )
+	if (getProcessType() == FiniteElement::DEFORMATION_FLOW || getProcessType() == FiniteElement::DEFORMATION_H2 )
 	{
 		type = 41;
-		if (getProcessType() == DEFORMATION_H2 )
+		if (getProcessType() == FiniteElement::DEFORMATION_H2 )
 			type = 42;
 		cpl_type_name = "MONOLITHIC";
 		pcs_deformation = 11;
@@ -2752,7 +2752,7 @@ void CRFProcess::ConfigDeformation()
 		num = num_vector[ii];
 		if (num->pcs_type_name.find("DEFORMATION") != string::npos)
 		{
-			num->pcs_type_name = convertProcessTypeToString(this->getProcessType());
+			num->pcs_type_name = FiniteElement::convertProcessTypeToString(this->getProcessType());
 			if(num->nls_method >= 1) // Newton-Raphson
 			{
 				pcs_deformation = 101;
@@ -3889,7 +3889,7 @@ double CRFProcess::Execute()
 	cout << "    ->Process " << pcs_number << ": " << convertProcessTypeToString (
 	        this->getProcessType()) << endl;
 	//	if (! this->_pcs_type_name.compare("MASS_TRANSPORT")) {
-	if (this->getProcessType() == MASS_TRANSPORT)
+	if (this->getProcessType() == FiniteElement::MASS_TRANSPORT)
 	{
 		cout << "      for " << this->pcs_primary_function_name[0];
 		cout << " pcs_component_number " << this->pcs_component_number;
@@ -4668,7 +4668,7 @@ void CRFProcess::GlobalAssembly()
 
 #ifdef GEM_REACT
 		//		if ( _pcs_type_name.compare("MASS_TRANSPORT") == 0 && aktueller_zeitschritt > 1 && this->m_num->cpl_iterations > 1)
-		if ( this->getProcessType() == MASS_TRANSPORT && aktueller_zeitschritt > 1 &&
+		if ( this->getProcessType() == FiniteElement::MASS_TRANSPORT && aktueller_zeitschritt > 1 &&
 		     this->m_num->cpl_iterations > 1)
 			IncorporateSourceTerms_GEMS();
 #endif
@@ -4784,15 +4784,15 @@ void CRFProcess::CalIntegrationPointValue()
 	//			"TWO_PHASE_FLOW") != string::npos
 	//			|| _pcs_type_name.find("AIR_FLOW") != string::npos
 	//			|| _pcs_type_name.find("PS_GLOBAL") != string::npos) //WW/CB
-	if (getProcessType() == LIQUID_FLOW || getProcessType() == RICHARDS_FLOW
-	    || getProcessType() == MULTI_PHASE_FLOW
-	    || getProcessType() == GROUNDWATER_FLOW
-	    || getProcessType() == TWO_PHASE_FLOW
-	    || getProcessType() == DEFORMATION_H2 // 07.2011. WW
-	    || getProcessType() == AIR_FLOW
-	    || getProcessType() == PS_GLOBAL
-	    || getProcessType() == PTC_FLOW  //AKS/NB
-	    || getProcessType() == DEFORMATION_FLOW //NW
+	if (getProcessType() == FiniteElement::LIQUID_FLOW || getProcessType() == FiniteElement::RICHARDS_FLOW
+	    || getProcessType() == FiniteElement::MULTI_PHASE_FLOW
+	    || getProcessType() == FiniteElement::GROUNDWATER_FLOW
+	    || getProcessType() == FiniteElement::TWO_PHASE_FLOW
+	    || getProcessType() == FiniteElement::DEFORMATION_H2 // 07.2011. WW
+	    || getProcessType() == FiniteElement::AIR_FLOW
+	    || getProcessType() == FiniteElement::PS_GLOBAL
+	    || getProcessType() == FiniteElement::PTC_FLOW  //AKS/NB
+	    || getProcessType() == FiniteElement::DEFORMATION_FLOW //NW
 	    )
 		cal_integration_point_value = true;
 	if (!cal_integration_point_value)
@@ -4810,7 +4810,7 @@ void CRFProcess::CalIntegrationPointValue()
 		}
 	}
 	//	if (_pcs_type_name.find("TWO_PHASE_FLOW") != string::npos) //WW/CB
-	if (getProcessType() == TWO_PHASE_FLOW) //WW/CB
+	if (getProcessType() == FiniteElement::TWO_PHASE_FLOW) //WW/CB
 		cal_integration_point_value = false;
 }
 
@@ -4831,7 +4831,7 @@ void CRFProcess::CalGPVelocitiesfromFluidMomentum()
 	cout << "      CalGPVelocitiesfromFluidMomentum()" << endl;
 
 	// Get fluid_momentum process
-	CRFProcess* m_pcs_fm =  PCSGet(FLUID_MOMENTUM);
+	CRFProcess* m_pcs_fm =  PCSGet(FiniteElement::FLUID_MOMENTUM);
 
 	//  check all possibilities for grid orientation (ccord_flag)
 	int coordinateflag = this->m_msh->GetCoordinateFlag();
@@ -6548,7 +6548,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 	void RelocateDeformationProcess(CRFProcess* m_pcs)
 	{
 		//   string pcs_name_dm = m_pcs->_pcs_type_name;
-		ProcessType pcs_name_dm (m_pcs->getProcessType());
+		FiniteElement::ProcessType pcs_name_dm (m_pcs->getProcessType());
 
 		string num_type_name_dm;
 		// Numerics
@@ -6603,52 +6603,52 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		{
 			switch (pcs_vector[i]->getProcessType())
 			{
-			case LIQUID_FLOW:
+			case FiniteElement::LIQUID_FLOW:
 				pcs_problem_type = "LIQUID_FLOW";
 				break;
-			case OVERLAND_FLOW:
+			case FiniteElement::OVERLAND_FLOW:
 				pcs_problem_type = "OVERLAND_FLOW";
 				break;
-			case GROUNDWATER_FLOW:
+			case FiniteElement::GROUNDWATER_FLOW:
 				pcs_problem_type = "GROUNDWATER_FLOW";
 				break;
-			case TWO_PHASE_FLOW:
+			case FiniteElement::TWO_PHASE_FLOW:
 				pcs_problem_type = "TWO_PHASE_FLOW";
 				break;
-			case RICHARDS_FLOW: //MX test 04.2005
+			case FiniteElement::RICHARDS_FLOW: //MX test 04.2005
 				pcs_problem_type = "RICHARDS_FLOW";
 				break;
-			case DEFORMATION:
+			case FiniteElement::DEFORMATION:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "DEFORMATION";
 				else
 					pcs_problem_type += "+DEFORMATION";
 				break;
-			case DEFORMATION_FLOW:
+			case FiniteElement::DEFORMATION_FLOW:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "DEFORMATION";
 				else
 					pcs_problem_type += "+DEFORMATION";
 				break;
-			case HEAT_TRANSPORT:
+			case FiniteElement::HEAT_TRANSPORT:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "HEAT_TRANSPORT";
 				else
 					pcs_problem_type += "+HEAT_TRANSPORT";
 				break;
-			case MASS_TRANSPORT:
+			case FiniteElement::MASS_TRANSPORT:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "MASS_TRANSPORT";
 				else
 					pcs_problem_type += "+MASS_TRANSPORT";
 				break;
-			case FLUID_MOMENTUM:
+			case FiniteElement::FLUID_MOMENTUM:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "FLUID_MOMENTUM";
 				else
 					pcs_problem_type += "+FLUID_MOMENTUM";
 				break;
-			case RANDOM_WALK:
+			case FiniteElement::RANDOM_WALK:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "RANDOM_WALK";
 				else
@@ -6846,22 +6846,22 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 		switch (getProcessType())
 		{
-		case LIQUID_FLOW:
+		case FiniteElement::LIQUID_FLOW:
 			break;
-		case GROUNDWATER_FLOW:
+		case FiniteElement::GROUNDWATER_FLOW:
 			break;
-		case TWO_PHASE_FLOW:
+		case FiniteElement::TWO_PHASE_FLOW:
 			break;
-		case RICHARDS_FLOW:       // Richards flow
+		case FiniteElement::RICHARDS_FLOW:       // Richards flow
 			// WW
 			CalcSecondaryVariablesUnsaturatedFlow(initial);
 			break;
-		case DEFORMATION || DEFORMATION_FLOW || DEFORMATION_DYNAMIC:
+		case FiniteElement::DEFORMATION || FiniteElement::DEFORMATION_FLOW || FiniteElement::DEFORMATION_DYNAMIC:
 			if (type == 42) //H2M                                                  //WW
 				CalcSecondaryVariablesUnsaturatedFlow(initial);
 
 			break;
-		case PS_GLOBAL:
+		case FiniteElement::PS_GLOBAL:
 			CalcSecondaryVariablesPSGLOBAL(); //WW
 			break;
 		default:
@@ -6936,7 +6936,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			{
 				m_pcs = pcs_vector[i];
 				//	if(m_pcs->_pcs_type_name.compare("MASS_TRANSPORT") == 0){ // if this is mass transport // TF
-				if(m_pcs->getProcessType() == MASS_TRANSPORT)
+				if(m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
 				{
 					j = m_pcs->GetProcessComponentNumber();
 					//WW k = cp_vec[j]->transport_phase;
@@ -7337,7 +7337,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		}
 
 		// Suppress the following error message when Fluid Momentum process is on.
-		CRFProcess* m_pcs = PCSGet(FLUID_MOMENTUM);
+		CRFProcess* m_pcs = PCSGet(FiniteElement::FLUID_MOMENTUM);
 		if (m_pcs)
 			;             // Don't print any error message.
 		else
@@ -7382,7 +7382,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		// HS, for MASS_TRANSPORT PCS,
 		// it is not necessary to use PrimaryVarible as second check.
 		// nidx will give the proper IC pointer.
-		if ( this->getProcessType() == MASS_TRANSPORT )
+		if ( this->getProcessType() == FiniteElement::MASS_TRANSPORT )
 			for (int i = 0; i < pcs_number_of_primary_nvals; i++)
 			{
 				int nidx = GetNodeValueIndex(pcs_primary_function_name[i]);
@@ -7405,7 +7405,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			for (int i = 0; i < pcs_number_of_primary_nvals; i++)
 			{
 				int nidx = GetNodeValueIndex(pcs_primary_function_name[i]);
-				PrimaryVariable pv_i (convertPrimaryVariable(
+				FiniteElement::PrimaryVariable pv_i (FiniteElement::convertPrimaryVariable(
 				                              pcs_primary_function_name[i]));
 				for (size_t j = 0; j < ic_vector.size(); j++)
 				{
@@ -7960,7 +7960,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 **************************************************************************/
 	void PCSDelete(const std::string &m_pcs_type_name)
 	{
-		ProcessType pcs_type (convertProcessType (m_pcs_type_name));
+		FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (m_pcs_type_name));
 		CRFProcess* m_pcs = NULL;
 		for (size_t i = 0; i < pcs_vector.size(); i++)
 		{
@@ -8026,13 +8026,13 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		MeshLib::CElem* m_ele_OLF = NULL;
 
 		// Get processes
-		CRFProcess* m_pcs_GW(PCSGet(GROUNDWATER_FLOW));
+		CRFProcess* m_pcs_GW(PCSGet(FiniteElement::GROUNDWATER_FLOW));
 		if (!m_pcs_GW)            //OK
 		{
 			cout << "Fatal error: no GROUNDWATER_FLOW process" << endl;
 			return;
 		}
-		CRFProcess* m_pcs_OLF(PCSGet(OVERLAND_FLOW));
+		CRFProcess* m_pcs_OLF(PCSGet(FiniteElement::OVERLAND_FLOW));
 		if (!m_pcs_OLF)           //OK
 		{
 			cout << "Fatal error: no OVERLAND_FLOW process" << endl;
@@ -8180,7 +8180,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
 			SetNodeValue(l, nidx0, GetNodeValue(l, nidx0 + 1));
 		//	if (_pcs_type_name.find("RICHARDS") != string::npos) { //WW
-		if (this->getProcessType() == RICHARDS_FLOW) //WW
+		if (this->getProcessType() == FiniteElement::RICHARDS_FLOW) //WW
 		{
 			nidx0 = GetNodeValueIndex("SATURATION1");
 			for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
@@ -8216,7 +8216,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			//WW
 			//		if (_pcs_type_name.find("RICHARDS") != string::npos || type == 1212) { //Multiphase. WW
 			//Multiphase. WW
-			if (this->getProcessType() == RICHARDS_FLOW || type == 1212 || type == 42)
+			if (this->getProcessType() == FiniteElement::RICHARDS_FLOW || type == 1212 || type == 42)
 			{
 				if (j == 1 && (type == 1212 || type == 42)) // Multiphase. WW
 					continue;
@@ -8246,7 +8246,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 **************************************************************************/
 	int PCSGetPCSIndex(const string &pcs_type_name, const string &comp_name)
 	{
-		ProcessType pcs_type (convertProcessType (pcs_type_name));
+		FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (pcs_type_name));
 
 		CRFProcess* m_pcs = NULL;
 		int i, pcs_no;
@@ -8282,7 +8282,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 **************************************************************************/
 	CRFProcess* PCSGet(const std::string &pcs_type_name, const std::string &comp_name)
 	{
-		ProcessType pcs_type (convertProcessType (pcs_type_name));
+		FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (pcs_type_name));
 		size_t no_processes (pcs_vector.size());
 		for (size_t i = 0; i < no_processes; i++)
 			//		if (pcs_vector[i]->pcs_type_name.compare(pcs_type_name) == 0) { // TF
@@ -8294,7 +8294,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		return NULL;
 	}
 
-	CRFProcess* PCSGet(ProcessType pcs_type, const std::string &comp_name)
+	CRFProcess* PCSGet(FiniteElement::ProcessType pcs_type, const std::string &comp_name)
 	{
 		size_t no_processes (pcs_vector.size());
 		for (size_t i = 0; i < no_processes; i++)
@@ -8347,13 +8347,13 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		for (size_t i = 0; i < no_processes; i++)
 		{
 			//		if (pcs_vector[i]->_pcs_type_name == "LIQUID_FLOW") { // TF
-			if (pcs_vector[i]->getProcessType () == LIQUID_FLOW)
+			if (pcs_vector[i]->getProcessType () == FiniteElement::LIQUID_FLOW)
 			{
 				m_pcs = pcs_vector[i];
 				found = true;
 			}
 			//		if (pcs_vector[i]->_pcs_type_name == "GROUNDWATER_FLOW") {
-			if (pcs_vector[i]->getProcessType() == GROUNDWATER_FLOW)
+			if (pcs_vector[i]->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 			{
 				m_pcs = pcs_vector[i];
 				found = true;
@@ -8735,7 +8735,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			}
 			break;
 		case 12:                  // Two_phase_Flow
-			m_pcs = PCSGet(TWO_PHASE_FLOW);
+			m_pcs = PCSGet(FiniteElement::TWO_PHASE_FLOW);
 			if(m_pcs)
 			{
 				if(m_pcs->pcs_type_number == 0)
@@ -8746,7 +8746,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			}
 			break;
 		case 22:                  // Richards flow
-			m_pcs = PCSGet(RICHARDS_FLOW);
+			m_pcs = PCSGet(FiniteElement::RICHARDS_FLOW);
 			if(m_pcs)
 			{
 				idx = m_pcs->GetNodeValueIndex(var_name) + timelevel;
@@ -8786,7 +8786,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		CRFProcess* m_pcs = NULL;
 
 		// Get process by process name
-		ProcessType pcs_type (convertProcessType (pcs_name));
+		FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (pcs_name));
 		m_pcs = PCSGet(pcs_type);
 		if (m_pcs)
 		{
@@ -8893,10 +8893,10 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 		switch (this->getProcessType())
 		{
-		case MASS_TRANSPORT:
+		case FiniteElement::MASS_TRANSPORT:
 			PrimaryVariableReloadTransport();
 			break;
-		case RICHARDS_FLOW:
+		case FiniteElement::RICHARDS_FLOW:
 			PrimaryVariableReloadRichards();
 			break;
 		default:
@@ -9127,7 +9127,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 		//	if (_pcs_type_name.compare("RICHARDS_FLOW") == 0
 		//				&& m_msh_cpl->pcs_name.compare("OVERLAND_FLOW") == 0) { // ToDo
-		if (this->getProcessType() == RICHARDS_FLOW
+		if (this->getProcessType() == FiniteElement::RICHARDS_FLOW
 		    // ToDo
 		    && m_msh_cpl->pcs_name.compare("OVERLAND_FLOW") == 0)
 		{
@@ -9191,7 +9191,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 		//	if (_pcs_type_name.compare("GROUNDWATER_FLOW") == 0
 		//				&& m_msh_cpl->pcs_name.compare("OVERLAND_FLOW") == 0) { // ToDo
-		if (this->getProcessType() == GROUNDWATER_FLOW
+		if (this->getProcessType() == FiniteElement::GROUNDWATER_FLOW
 		    // ToDo
 		    && m_msh_cpl->pcs_name.compare("OVERLAND_FLOW") == 0)
 		{
@@ -9322,7 +9322,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		if (isFlowProcess (this->getProcessType()))
 			m_pcs_flow = this;
 		else
-			m_pcs_flow = PCSGet(GROUNDWATER_FLOW);
+			m_pcs_flow = PCSGet(FiniteElement::GROUNDWATER_FLOW);
 
 		int v_eidx[3];
 		v_eidx[0] = m_pcs_flow->GetElementValueIndex("VELOCITY1_X");
@@ -9384,12 +9384,12 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 			switch (this->getProcessType())
 			{
-			case GROUNDWATER_FLOW:
+			case FiniteElement::GROUNDWATER_FLOW:
 				// Volume flux = v_n * l^e * z^e
 				for (size_t j = 0; j < 3; j++)
 					f[j] = vn_vec[j]* edg_length* m_ele->GetFluxArea();
 				break;
-			case MASS_TRANSPORT:
+			case FiniteElement::MASS_TRANSPORT:
 				// Mass flux = v_n * l^e * z^e * C^e
 				C_ele = 0.0;
 				for (size_t j = 0; j < m_ele->GetNodesNumber(false); j++)
@@ -9426,7 +9426,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 	{
 		// If not FLUID_MOMENTUM,
 		//	if (_pcs_type_name.compare("RANDOM_WALK") != 0) {
-		if (this->getProcessType() != RANDOM_WALK)
+		if (this->getProcessType() != FiniteElement::RANDOM_WALK)
 		{
 			int eidx[3];
 			eidx[0] = GetElementValueIndex("VELOCITY1_X");
@@ -9494,7 +9494,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		if(isFlowProcess(this->getProcessType()))
 			m_pcs_flow = this;
 		else
-			m_pcs_flow = PCSGet(GROUNDWATER_FLOW);
+			m_pcs_flow = PCSGet(FiniteElement::GROUNDWATER_FLOW);
 		v_eidx[0] = m_pcs_flow->GetElementValueIndex("VELOCITY1_X");
 		v_eidx[1] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Y");
 		v_eidx[2] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Z");
@@ -9714,7 +9714,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		{
 			n_pcs = pcs_vector[i];
 			//     if(n_pcs->_pcs_type_name.compare("MASS_TRANSPORT")==0){ // TF
-			if(n_pcs->getProcessType () == MASS_TRANSPORT)
+			if(n_pcs->getProcessType () == FiniteElement::MASS_TRANSPORT)
 			{
 				j = n_pcs->GetProcessComponentNumber();
 				if(cp_vec[j]->transport_phase == 3) // is in napl
@@ -9851,7 +9851,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		{
 			n_pcs = pcs_vector[i];
 			//	  if(n_pcs->_pcs_type_name.compare("MASS_TRANSPORT")==0){
-			if (n_pcs->getProcessType () == MASS_TRANSPORT)
+			if (n_pcs->getProcessType () == FiniteElement::MASS_TRANSPORT)
 			{
 				j = n_pcs->GetProcessComponentNumber();
 				if (cp_vec[j]->transport_phase == 3) // is in NAPL component
@@ -9940,7 +9940,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		{
 			m_pcs = pcs_vector[j];
 			//		if (m_pcs->_pcs_type_name.compare("TWO_PHASE_FLOW") != 0)
-			if (m_pcs->getProcessType () == TWO_PHASE_FLOW)
+			if (m_pcs->getProcessType () == FiniteElement::TWO_PHASE_FLOW)
 				break;
 			if (j == 0)
 				// old timelevel
@@ -10435,7 +10435,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		bool succeed = true;
 		//OK->MB please shift to Config()
 		//	if (_pcs_type_name.compare("GROUNDWATER_FLOW") == 0)
-		if (this->getProcessType() == GROUNDWATER_FLOW)
+		if (this->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 			MSHDefineMobile(this);
 		//
 		if (type == 4 || type == 41)
@@ -10705,7 +10705,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		for(size_t i = 0; i < PCS_Solver.size(); i++)
 		{
 			eqs = PCS_Solver[i];
-			ProcessType pcs_type (convertProcessType (eqs->pcs_type_name));
+			FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (eqs->pcs_type_name));
 			m_pcs = PCSGet(pcs_type);
 			if(eqs->unknown_vector_indeces)
 				eqs->unknown_vector_indeces = \
@@ -10945,7 +10945,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				// PCH: DOF Handling for FLUID_MOMENTUM in case that the LIS and PARDISO solvers
 				// are chosen.
 				//				if(m_pcs->_pcs_type_name.compare("FLUID_MOMENTUM")==0)
-				if(m_pcs->getProcessType() == FLUID_MOMENTUM)
+				if(m_pcs->getProcessType() == FiniteElement::FLUID_MOMENTUM)
 					dof_nonDM = 1;
 			}
 		}

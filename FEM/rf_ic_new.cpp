@@ -210,7 +210,7 @@ ios::pos_type CInitialCondition::Read(std::ifstream* ic_file,
 			in.str(GetLineFromFile1(ic_file));
 			std::string tmp;
 			in >> tmp;    // pcs_type_name;
-			this->setProcessType(convertProcessType(tmp));
+			this->setProcessType(FiniteElement::convertProcessType(tmp));
 			in.clear();
 			continue;
 		}
@@ -221,14 +221,14 @@ ios::pos_type CInitialCondition::Read(std::ifstream* ic_file,
 			in.str(GetLineFromFile1(ic_file));
 			std::string tmp;
 			in >> tmp;    // pcs_pv_name;
-			if ( this->getProcessType() == MASS_TRANSPORT )
+			if ( this->getProcessType() == FiniteElement::MASS_TRANSPORT )
 			{
 				// HS set the pointer to MCP based on component name.
 				// first do a check whether this name is existing and unique.
 				if ( cp_name_2_idx.count( tmp ) == 1 )
 				{
 					setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
-					setProcessPrimaryVariable( CONCENTRATION );
+					setProcessPrimaryVariable( FiniteElement::CONCENTRATION );
 				}
 				else
 				{
@@ -240,7 +240,7 @@ ios::pos_type CInitialCondition::Read(std::ifstream* ic_file,
 			else
 			{
 				setProcess( PCSGet( this->getProcessType() ) );
-				setProcessPrimaryVariable (convertPrimaryVariable (tmp));
+				setProcessPrimaryVariable (FiniteElement::convertPrimaryVariable (tmp));
 			}
 			in.clear();
 			continue;
@@ -257,7 +257,7 @@ ios::pos_type CInitialCondition::Read(std::ifstream* ic_file,
 			if ( cp_name_2_idx.count( tmp ) == 1 )
 			{
 				setProcess(cp_vec[cp_name_2_idx[tmp]]->getProcess() );
-				setProcessPrimaryVariable( CONCENTRATION );
+				setProcessPrimaryVariable( FiniteElement::CONCENTRATION );
 			}
 			else
 			{
@@ -726,7 +726,7 @@ void CInitialCondition::SetDomain(int nidx)
 		if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
 		{
 			// if (this->getProcess()->pcs_type_name.compare("OVERLAND_FLOW") == 0)
-			if (this->getProcess()->getProcessType() == OVERLAND_FLOW)
+			if (this->getProcess()->getProcessType() == FiniteElement::OVERLAND_FLOW)
 				//OK MSH
 				for (i = 0; i < this->getProcess()->m_msh->GetNodesNumber(false);
 				     i++)
@@ -1047,7 +1047,7 @@ CInitialCondition* ICGet(string ic_name)
 	for(int i = 0; i < (int)ic_vector.size(); i++)
 	{
 		m_ic = ic_vector[i];
-		if(m_ic->getProcessType() == convertProcessType(ic_name))
+		if(m_ic->getProcessType() == FiniteElement::convertProcessType(ic_name))
 			return m_ic;
 	}
 	return NULL;

@@ -9,6 +9,8 @@
 #include <cstdlib>
 #include <iostream>
 
+namespace FiniteElement
+{
 ProcessType convertProcessType ( const std::string& pcs_type_string )
 {
 	if (pcs_type_string.compare ("LIQUID_FLOW") == 0)
@@ -253,8 +255,6 @@ std::string convertPrimaryVariableToString ( PrimaryVariable pcs_pv )
 	return "INVALID_PRIMARY_VARIABLE";
 }
 
-namespace FiniteElement
-{
 DistributionType convertDisType(const std::string& dis_type_string)
 {
 	if (dis_type_string.compare("CONSTANT") == 0)
@@ -339,4 +339,4 @@ std::string convertDisTypeToString(DistributionType dis_type)
 
 	return "INVALID_DIS_TYPE";
 }
-}                                                 // end namespace FiniteElement
+} // end namespace FiniteElement

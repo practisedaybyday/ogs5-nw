@@ -1869,7 +1869,7 @@ double MFPCalcFluidsHeatConductivity(long index,double* gp,double theta, CFinite
 	{
 		m_pcs = pcs_vector[i];
 		//    if(m_pcs->pcs_type_name.find("RICHARDS_FLOW"))
-		if(m_pcs->getProcessType () == RICHARDS_FLOW)
+		if(m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW)
 			no_fluids = 1;
 	}
 	//YD-----------
