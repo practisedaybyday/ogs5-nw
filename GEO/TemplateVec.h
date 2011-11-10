@@ -168,11 +168,12 @@ public:
 
 		if ( !_name_id_map->empty())
 		{
-			std::map<std::string, size_t>::iterator it=_name_id_map->begin();
-			while (it->second != id && it != _name_id_map->end())
-				++it;
-			if (it!=_name_id_map->end())
-				_name_id_map->erase(it); //check if old name already exists and delete it
+			for (std::map<std::string, size_t>::iterator it = _name_id_map->begin(); it != _name_id_map->end(); ++it)
+				if (it->second == id)
+				{
+					_name_id_map->erase(it); //check if old name already exists and delete it
+					break;
+				}
 		}
 		if (!name.empty()) {
 			//insert new or revised name
