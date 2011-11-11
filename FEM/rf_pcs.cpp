@@ -7273,7 +7273,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    03/2005 OK Implementation
    last modified:
 **************************************************************************/
-	double CRFProcess::GetNodeValue(long n,int nidx)
+	double CRFProcess::GetNodeValue(size_t n,int nidx)
 	{
 		double value;
 #ifdef gDEBUG
@@ -7294,7 +7294,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    09/2005 PCH Implementation
    last modified:
 **************************************************************************/
-	double CRFProcess::GetElementValue(long n,int nidx)
+	double CRFProcess::GetElementValue(size_t n,int nidx)
 	{
 		double value;
 #ifdef gDEBUG
@@ -8506,9 +8506,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				for(int i = 0; i < NumOfNeighborElements; ++i)
 				{
 					// Mount neighboring elemenets and get the corresponding material group one by one.
-					int eleIdx = thisNode->getConnectedElementIDs()[i];
+					size_t eleIdx = thisNode->getConnectedElementIDs()[i];
 					CElem* thisEle = m_msh->ele_vector[eleIdx];
-					int matgrp = thisEle->GetPatchIndex();
+					size_t matgrp = thisEle->GetPatchIndex();
 					mmp = mmp_vector[matgrp];
 					mmp->mode = 2;
 					sum += 1.0 / sat2;

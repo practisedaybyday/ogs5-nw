@@ -536,7 +536,7 @@ public:
 	                                      //OK
 	std::vector<std::string> nod_val_name_vector;
 	void SetNodeValue(long,int,double);   //OK
-	double GetNodeValue(long,int);        //OK
+	double GetNodeValue(size_t,int);        //OK
 	int GetNodeValueIndex(const std::string&); //OK
 	//-----------------------------
 
@@ -547,7 +547,7 @@ private:
 public:
 	std::vector<double*> ele_val_vector;  //PCH
 	void SetElementValue(long,int,double); //PCH
-	double GetElementValue(long,int);     //PCH
+	double GetElementValue(size_t,int);     //PCH
 	                                      //PCH
 	int GetElementValueIndex(const std::string&);
 	//CB-----------------------------

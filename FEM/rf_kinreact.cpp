@@ -1104,7 +1104,7 @@ bool CKinReact::Read(std::ifstream* rfd_file,
 	bool new_keyword = false, new_subkeyword = false;
 	std::stringstream in;
 	MonodSubstruct* m_monod = NULL, * m_inhibit = NULL, * m_production = NULL;
-	long index, index1;
+	size_t index, index1;
 	double dval;
 	// CB 10/09
 	std::string s_geo_type, s_geo_name;
@@ -1856,7 +1856,7 @@ bool CKinBlob::Read(ifstream* rfd_file,
 	string line_string, line_str1, s_geo_type, s_geo_name;
 	string hash("#"), dollar("$");
 	bool new_keyword = false, OK = true;
-	long index, index1;
+	size_t index, index1;
 	double d_inivalue;
 	std::stringstream in;
 
@@ -2243,7 +2243,7 @@ bool CKinReactData::Read(ifstream* rfd_file,
 	bool new_keyword = false, OK = true;
 	string hash("#"), dollar("$");
 	std::stringstream in;
-	long index, index1;
+	size_t index, index1;
 	int /* count_surf, */ surf_id;
 	string s_geo_type, s_geo_name;
 

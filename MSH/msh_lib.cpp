@@ -1107,7 +1107,7 @@ void MSHMoveNODUcFlow (CRFProcess* m_pcs)
 	int xxflag;
 	int nidy;
 	// Number of nodes per node layer
-	const long NumberOfNodesPerLayer (
+	const size_t NumberOfNodesPerLayer (
 	        m_pcs->m_msh->nod_vector.size() / (m_pcs->m_msh->getNumberOfMeshLayers() + 1));
 	double MinThickness = 1e-1;               //OKMB
 	double z_bottom;                          //OKMB
