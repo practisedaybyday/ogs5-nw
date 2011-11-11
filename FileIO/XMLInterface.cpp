@@ -29,7 +29,7 @@ XMLInterface::XMLInterface(ProjectData* project, const std::string &schemaFile)
 {
 }
 
-int XMLInterface::isValid(const QString &fileName) const
+const int XMLInterface::isValid(const QString &fileName) const
 {
 #ifdef QT_USE_QTXMLPATTERNS
 	QXmlSchema schema;
@@ -68,7 +68,7 @@ void XMLInterface::setSchema(const std::string &schemaName)
 	_schemaName = schemaName;
 }
 
-int XMLInterface::readProjectFile(const QString &fileName)
+const int XMLInterface::readProjectFile(const QString &fileName)
 {
 	QFile* file = new QFile(fileName);
 	QFileInfo fi(fileName);
@@ -134,7 +134,7 @@ int XMLInterface::readProjectFile(const QString &fileName)
 	return 1;
 }
 
-int XMLInterface::readGLIFile(const QString &fileName)
+const int XMLInterface::readGLIFile(const QString &fileName)
 {
 	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	std::string gliName("[NN]");
@@ -337,7 +337,7 @@ void XMLInterface::readSurfaces( const QDomNode &surfacesRoot,
 		sfc_names = NULL;             // if names-map is empty, set it to NULL because it is not needed
 }
 
-int XMLInterface::readSTNFile(const QString &fileName)
+const int XMLInterface::readSTNFile(const QString &fileName)
 {
 	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	QFile* file = new QFile(fileName);
@@ -506,7 +506,7 @@ void XMLInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationB
 	}
 }
 
-int XMLInterface::readFEMCondFile(std::vector<FEMCondition*> &conditions,
+const int XMLInterface::readFEMCondFile(std::vector<FEMCondition*> &conditions,
                                   const QString &fileName,
                                   const QString &geoName)
 {
@@ -575,26 +575,19 @@ void XMLInterface::readConditions( const QDomNode &listRoot,
 		for (int i = 0; i < condProperties.count(); i++)
 		{
 			if (condProperties.at(i).nodeName().compare("ProcessType") == 0)
-				c->setProcessType(FiniteElement::convertProcessType(condProperties.at(i).toElement()
-				                                     .text().toStdString()));
+				c->setProcessType(FiniteElement::convertProcessType(condProperties.at(i).toElement().text().toStdString()));
 			if (condProperties.at(i).nodeName().compare("PrimaryVariable") == 0)
-				c->setProcessPrimaryVariable(
-						FiniteElement::convertPrimaryVariable(
-							condProperties.at(i).toElement().text().toStdString()));
+				c->setProcessPrimaryVariable(FiniteElement::convertPrimaryVariable(condProperties.at(i).toElement().text().toStdString()));
+
 			if (condProperties.at(i).nodeName().compare("GeoType") == 0)
 			{
 				QDomNodeList geoProps = condProperties.at(i).childNodes();
 				for (int j = 0; j < geoProps.count(); j++)
 				{
 					if (geoProps.at(j).nodeName().compare("geoObject") == 0)
-						c->setGeoType(GEOLIB::convertGeoType(geoProps.at(j)
-						                                     .toElement().
-						                                     text().
-						                                     toStdString()));
+						c->setGeoType(GEOLIB::convertGeoType(geoProps.at(j).toElement().text().toStdString()));
 					if (geoProps.at(j).nodeName().compare("geoName") == 0)
-						c->setGeoName(geoProps.at(
-						                      j).toElement().text().
-						              toStdString());
+						c->setGeoName(geoProps.at(j).toElement().text().toStdString());
 				}
 			}
 			if (condProperties.at(i).nodeName().compare("DisType") == 0)
@@ -603,16 +596,9 @@ void XMLInterface::readConditions( const QDomNode &listRoot,
 				for (int j = 0; j < distProps.count(); j++)
 				{
 					if (distProps.at(j).nodeName().compare("disName") == 0)
-						c->setProcessDistributionType(
-						        FiniteElement::convertDisType(distProps.at(
-						                                              j).
-						                                      toElement().
-						                                      text().
-						                                      toStdString()));
+						c->setProcessDistributionType(FiniteElement::convertDisType(distProps.at(j).toElement().text().toStdString()));
 					if (distProps.at(j).nodeName().compare("disValue") == 0)
-						c->setDisValue(strtod(distProps.at(j).toElement().
-						                      text().toStdString().c_str(),
-						                      0));
+						c->setDisValue(strtod(distProps.at(j).toElement().text().toStdString().c_str(), 0));
 				}
 			}
 		}
@@ -621,7 +607,7 @@ void XMLInterface::readConditions( const QDomNode &listRoot,
 	}
 }
 
-int XMLInterface::writeProjectFile(const QString &fileName) const
+const int XMLInterface::writeProjectFile(const QString &fileName) const
 {
 	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	std::fstream stream(fileName.toStdString().c_str(), std::ios::out);
@@ -858,7 +844,7 @@ void XMLInterface::writeGLIFile(const QString &filename, const QString &gliName)
 	std::cout << "done." << std::endl;
 }
 
-int XMLInterface::writeSTNFile(const QString &filename, const QString &stnName) const
+const int XMLInterface::writeSTNFile(const QString &filename, const QString &stnName) const
 {
 	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	std::fstream stream(filename.toStdString().c_str(), std::ios::out);
@@ -969,7 +955,7 @@ void XMLInterface::writeBoreholeData(QDomDocument &doc,
 	}
 }
 
-int XMLInterface::insertStyleFileDefinition(const QString &fileName) const
+const int XMLInterface::insertStyleFileDefinition(const QString &fileName) const
 {
 	std::string path = fileName.toStdString();
 	std::fstream stream(path.c_str());

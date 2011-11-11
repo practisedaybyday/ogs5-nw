@@ -15,7 +15,7 @@ class GEOModels;
 class MshModel;
 class ElementTreeModel;
 class StationTreeModel;
-class ConditionModel;
+class ProcessModel;
 class VtkVisPipeline;
 class DatabaseConnection;
 class VisPrefsDialog;
@@ -79,8 +79,10 @@ protected slots:
 	void openDatabaseConnection();
 	void openRecentFile();
 	void about();
+	/// Call dialog for creating or modifying FEM conditions.
+	void showCondSetupDialog(const std::string &geometry_name, const GEOLIB::GEOTYPE object_type, size_t id);
 	/// Allows setting the name for a geometric object
-	void showGeoNameDialog(const std::string &geometry_name, const std::string &object_type, size_t id);
+	void showGeoNameDialog(const std::string &geometry_name, const GEOLIB::GEOTYPE object_type, size_t id);
 	/// Calls the diagram prefs dialog from the Tools menu.
 	void showDiagramPrefsDialog();
 	/// Calls the diagram prefs dialog from the station list (i.e. for a specific station).
@@ -124,7 +126,7 @@ private:
 	GEOModels* _geoModels;
 	MshModel* _meshModels;
 	ElementTreeModel* _elementModel;
-	ConditionModel* _conditionModel;
+	ProcessModel* _processModel;
 	ProjectData _project;
 	VtkVisPipeline* _vtkVisPipeline;
 	QList<QRect> _screenGeometries;

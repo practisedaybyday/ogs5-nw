@@ -218,6 +218,11 @@ public:
 	 */
 	void mergeGeometries (std::vector<std::string> const & names, std::string &merged_geo_name);
 
+	/// Returns the geo object for a geometric item of the given name and type for the associated geometry.
+	const GEOLIB::GeoObject* const getGEOObject(const std::string &geo_name,
+	                                      GEOLIB::GEOTYPE type,
+	                                      const std::string &obj_name) const;
+
 	/** constructor */
 	GEOObjects();
 	/** destructor */

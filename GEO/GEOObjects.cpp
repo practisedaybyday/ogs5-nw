@@ -471,4 +471,19 @@ void GEOObjects::mergeGeometries (std::vector<std::string> const & geo_names,
 	}
 	this->addSurfaceVec (merged_sfcs, merged_geo_name);
 }
+
+const GEOLIB::GeoObject* const GEOObjects::getGEOObject(const std::string &geo_name,
+                                                            GEOLIB::GEOTYPE type,
+                                                            const std::string &obj_name) const
+{
+	if (type == GEOLIB::POINT)
+		return this->getPointVecObj(geo_name)->getElementByName(obj_name);
+	else if (type == GEOLIB::POLYLINE)
+		return this->getPolylineVecObj(geo_name)->getElementByName(obj_name);
+	else if (type == GEOLIB::SURFACE)
+		return this->getSurfaceVecObj(geo_name)->getElementByName(obj_name);
+	return NULL;
+}
+
+
 } // namespace

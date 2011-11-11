@@ -2,13 +2,11 @@
 set( SOURCES
 	ColorTableModel.cpp
 	ColorTableView.cpp
-	ConditionModel.cpp
-	ConditionTabWidget.cpp
-	ConditionView.cpp
 	DatabaseConnection.cpp
 	DataView.cpp
 	DBConnectionDialog.cpp
 	ElementTreeModel.cpp
+	FEMConditionSetupDialog.cpp
 	GEOModels.cpp
 	GeoTabWidget.cpp
 	GeoTreeModel.cpp
@@ -16,6 +14,7 @@ set( SOURCES
 	GMSHPrefsDialog.cpp
 	LineEditDialog.cpp
 	ListPropertiesDialog.cpp
+	ModellingTabWidget.cpp
 	ModelTreeItem.cpp
 	MshEditDialog.cpp
 	MshItem.cpp
@@ -24,6 +23,8 @@ set( SOURCES
 	MshQualitySelectionDialog.cpp
 	MshTabWidget.cpp
 	OGSRaster.cpp
+	ProcessModel.cpp
+	ProcessView.cpp
 	QueryResultsDialog.cpp
 	SetNameDialog.cpp
 	StationTabWidget.cpp
@@ -35,13 +36,11 @@ set( SOURCES
 set( MOC_HEADERS
 	ColorTableModel.h
 	ColorTableView.h
-	ConditionModel.h
-	ConditionTabWidget.h
-	ConditionView.h
 	DatabaseConnection.h
 	DataView.h
 	DBConnectionDialog.h
 	ElementTreeModel.h
+	FEMConditionSetupDialog.h
 	GEOModels.h
 	GeoTabWidget.h
 	GeoTreeModel.h
@@ -49,10 +48,13 @@ set( MOC_HEADERS
 	GMSHPrefsDialog.h
 	LineEditDialog.h
 	ListPropertiesDialog.h
+	ModellingTabWidget.h
 	MshEditDialog.h
 	MshModel.h
 	MshQualitySelectionDialog.h
 	MshTabWidget.h
+	ProcessModel.h
+	ProcessView.h
 	QueryResultsDialog.h
 	SetNameDialog.h
 	StationTabWidget.h
@@ -63,7 +65,7 @@ set( MOC_HEADERS
 # Header files
 set( HEADERS
 	BaseItem.h
-	CondItem.h
+	ProcessItem.h
 	CondObjectListItem.h
 	GeoObjectListItem.h
 	GeoTreeItem.h
@@ -75,12 +77,13 @@ set( HEADERS
 
 # UI files
 set( UIS
-	ConditionTabWidgetBase.ui
 	DatabaseResultView.ui
 	DBConnection.ui
+	FEMConditionSetup.ui
 	GeoTabWidgetBase.ui
 	GMSHPrefs.ui
 	LineEdit.ui
+	ModellingTabWidgetBase.ui
 	MshEdit.ui
 	MshQualitySelection.ui
 	MshTabWidgetBase.ui

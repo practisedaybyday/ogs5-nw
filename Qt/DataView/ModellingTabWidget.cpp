@@ -1,16 +1,16 @@
 /**
- * \file ConditionTabWidget.cpp
+ * \file ModellingTabWidget.cpp
  * 2010/12/14 KR Initial implementation
  *
  * Implementation of StationTabWidget
  */
 
 // ** INCLUDES **
-#include "ConditionModel.h"
-#include "ConditionTabWidget.h"
+#include "ProcessModel.h"
+#include "ModellingTabWidget.h"
 #include "TreeItem.h"
 
-ConditionTabWidget::ConditionTabWidget( QWidget* parent /*= 0*/ )
+ModellingTabWidget::ModellingTabWidget( QWidget* parent /*= 0*/ )
 	: QWidget(parent)
 {
 	setupUi(this);

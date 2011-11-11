@@ -19,6 +19,8 @@ public:
 	SourceTerm(const std::string &geometry_name)
 		: FEMCondition(geometry_name, FEMCondition::SOURCE_TERM), _tim_type(0) {}
 	SourceTerm(const CSourceTerm &st, const std::string &geometry_name);
+	SourceTerm(const FEMCondition &cond)
+		: FEMCondition(cond, FEMCondition::SOURCE_TERM) {};
 	~SourceTerm() {}
 
 	size_t getTimType() const {return _tim_type; }
