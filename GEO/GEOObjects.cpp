@@ -472,7 +472,7 @@ void GEOObjects::mergeGeometries (std::vector<std::string> const & geo_names,
 	this->addSurfaceVec (merged_sfcs, merged_geo_name);
 }
 
-const GEOLIB::GeoObject* const GEOObjects::getGEOObject(const std::string &geo_name,
+const GEOLIB::GeoObject* GEOObjects::getGEOObject(const std::string &geo_name,
                                                             GEOLIB::GEOTYPE type,
                                                             const std::string &obj_name) const
 {

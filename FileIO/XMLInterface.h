@@ -34,32 +34,32 @@ public:
 	XMLInterface(ProjectData* project, const std::string &schemaFile);
 
 	/// As QXMLStreamWriter seems currently unable to include style-file links into xml-files, this method will workaround this issue and include the stylefile link.
-	const int insertStyleFileDefinition(const QString &fileName) const;
+	int insertStyleFileDefinition(const QString &fileName) const;
 
 	/// Check if the given xml-file is valid considering the schema-file used in the constructor
-	const int isValid(const QString &fileName) const;
+	int isValid(const QString &fileName) const;
 
 	/// Sets the schema filename used to check if xml files are valid.
 	void setSchema(const std::string &schemaName);
 
 	/// Reads an xml-file containing a GeoSys project.
 	/// Project files currently cover only geo-, msh- and station-data. This will be expanded in the future.
-	const int readProjectFile(const QString &fileName);
+	int readProjectFile(const QString &fileName);
 
 	/// Reads an xml-file containing geometric object definitions into the GEOObjects used in the contructor
-	const int readGLIFile(const QString &fileName);
+	int readGLIFile(const QString &fileName);
 
 	/// Reads an xml-file containing station object definitions into the GEOObjects used in the contructor
-	const int readSTNFile(const QString &fileName);
+	int readSTNFile(const QString &fileName);
 
 	/// Reads an xml-file containing containing FEM Conditions such as Boundary- or Initial Conditions
-	const int readFEMCondFile(std::vector<FEMCondition*> &conditions,
+	int readFEMCondFile(std::vector<FEMCondition*> &conditions,
 	                    const QString &fileName,
 	                    const QString &geoName);
 
 	/// Writes a GeoSys project file containing all data that is currently loaded.
 	/// Project files currently cover only geo-, msh- and station-data. This will be expanded in the future.
-	const int writeProjectFile(const QString &fileName) const;
+	int writeProjectFile(const QString &fileName) const;
 
 	/**
 	 * Writes geometric data from GEOObjects to an xml-file (using the QString version)
@@ -82,19 +82,19 @@ public:
 	 * \param filename The filename for the file into which the data will be written.
 	 * \param stnName The name of the station vector that will be written into the file.
 	 */
-	const int writeSTNFile(const QString &filename, const QString &stnName) const;
+	int writeSTNFile(const QString &filename, const QString &stnName) const;
 	/**
 	 * Writes geometric data from GEOObjects to an xml-file (using QString version)
 	 * \param fname The filename for the file into which the data will be written.
 	 * \param stn_name The name of the station vector that will be written into the file.
 	 */
-	const int writeSTNFile(std::string const& fname, std::string const &stn_name) const
+	int writeSTNFile(std::string const& fname, std::string const &stn_name) const
 	{
 		return writeSTNFile (QString::fromStdString(fname), QString::fromStdString(stn_name));
 	}
 
 	/// Writes an xml-file containing containing FEM Conditions such as Boundary- or Initial Conditions
-	const int readFEMCondFile(const QString &fileName, const QString &geoName);
+	int readFEMCondFile(const QString &fileName, const QString &geoName);
 
 private:
 	/// Reads GEOLIB::Point-objects from an xml-file

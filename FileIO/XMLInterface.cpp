@@ -29,7 +29,7 @@ XMLInterface::XMLInterface(ProjectData* project, const std::string &schemaFile)
 {
 }
 
-const int XMLInterface::isValid(const QString &fileName) const
+int XMLInterface::isValid(const QString &fileName) const
 {
 #ifdef QT_USE_QTXMLPATTERNS
 	QXmlSchema schema;
@@ -68,7 +68,7 @@ void XMLInterface::setSchema(const std::string &schemaName)
 	_schemaName = schemaName;
 }
 
-const int XMLInterface::readProjectFile(const QString &fileName)
+int XMLInterface::readProjectFile(const QString &fileName)
 {
 	QFile* file = new QFile(fileName);
 	QFileInfo fi(fileName);
@@ -134,7 +134,7 @@ const int XMLInterface::readProjectFile(const QString &fileName)
 	return 1;
 }
 
-const int XMLInterface::readGLIFile(const QString &fileName)
+int XMLInterface::readGLIFile(const QString &fileName)
 {
 	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	std::string gliName("[NN]");
@@ -337,7 +337,7 @@ void XMLInterface::readSurfaces( const QDomNode &surfacesRoot,
 		sfc_names = NULL;             // if names-map is empty, set it to NULL because it is not needed
 }
 
-const int XMLInterface::readSTNFile(const QString &fileName)
+int XMLInterface::readSTNFile(const QString &fileName)
 {
 	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	QFile* file = new QFile(fileName);
@@ -506,7 +506,7 @@ void XMLInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationB
 	}
 }
 
-const int XMLInterface::readFEMCondFile(std::vector<FEMCondition*> &conditions,
+int XMLInterface::readFEMCondFile(std::vector<FEMCondition*> &conditions,
                                   const QString &fileName,
                                   const QString &geoName)
 {
@@ -606,7 +606,7 @@ void XMLInterface::readConditions( const QDomNode &listRoot,
 	}
 }
 
-const int XMLInterface::writeProjectFile(const QString &fileName) const
+int XMLInterface::writeProjectFile(const QString &fileName) const
 {
 	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	std::fstream stream(fileName.toStdString().c_str(), std::ios::out);
@@ -843,7 +843,7 @@ void XMLInterface::writeGLIFile(const QString &filename, const QString &gliName)
 	std::cout << "done." << std::endl;
 }
 
-const int XMLInterface::writeSTNFile(const QString &filename, const QString &stnName) const
+int XMLInterface::writeSTNFile(const QString &filename, const QString &stnName) const
 {
 	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	std::fstream stream(filename.toStdString().c_str(), std::ios::out);
@@ -954,7 +954,7 @@ void XMLInterface::writeBoreholeData(QDomDocument &doc,
 	}
 }
 
-const int XMLInterface::insertStyleFileDefinition(const QString &fileName) const
+int XMLInterface::insertStyleFileDefinition(const QString &fileName) const
 {
 	std::string path = fileName.toStdString();
 	std::fstream stream(path.c_str());
