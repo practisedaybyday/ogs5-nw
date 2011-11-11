@@ -76,7 +76,7 @@ public:
 		return gravity_center;
 	}
 	double* ComputeGravityCenter();
-	int GetPatchIndex() const
+	size_t GetPatchIndex() const
 	{
 		return patch_index;
 	}                                         //MatGroup
@@ -238,13 +238,13 @@ public:
 			edges_orientation[i] = ori_edg[i];
 	}
 	void GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes);
-	int GetEdgesNumber() const
+	size_t GetEdgesNumber() const
 	{
 		return nedges;
 	}
 	//------------------------------------------------------------------
 	// Faces
-	int GetFacesNumber() const
+	size_t GetFacesNumber() const
 	{
 		return nfaces;
 	}
@@ -353,7 +353,7 @@ private:
 	double volume;
 	double gravity_center[3];
 	int grid_adaptation;                      // Flag for grid adapting.
-	int patch_index;
+	size_t patch_index;
 	/*
 	   // Since m_tim->CheckCourant() is deactivated, the following member are
 	   // put in comment.

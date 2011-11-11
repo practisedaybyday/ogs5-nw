@@ -289,7 +289,7 @@ void SparseMatrixDOK::LimitSize(size_t nRows, size_t nCols)
 	size = nRows * nCols;
 }
 
-long SparseMatrixDOK::SizeOfNonZeroEntries()
+size_t SparseMatrixDOK::SizeOfNonZeroEntries()
 {
 	return non_zero_entry_size;
 }

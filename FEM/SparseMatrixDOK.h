@@ -58,7 +58,7 @@ public:
 		return mat_row;
 	}
 	;
-	long SizeOfNonZeroEntries();
+	size_t SizeOfNonZeroEntries();
 	void CalculateNonZeroEntries();
 
 	//void resize(const int dim);
