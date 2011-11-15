@@ -41,10 +41,18 @@ void GEOObjects::addPointVec(std::vector<Point*>* points,
 bool GEOObjects::appendPointVec(std::vector<Point*> const& new_points,
                                 std::string const &name, std::vector<size_t>* ids)
 {
-	int idx = this->exists(name);
+	// search vector
+	size_t idx (0);
+	bool nfound (true);
+	for (idx = 0; idx < _pnt_vecs.size() && nfound; idx++)
+		if ( (_pnt_vecs[idx]->getName()).compare (name) == 0 )
+			nfound = false;
+	//int idx = this->exists(name);
 
-	if (idx>=0)
+	//if (idx>=0)
+	if (!nfound)
 	{
+		idx--;
 		size_t n_new_pnts (new_points.size());
 		// append points
 		if (ids)
@@ -63,8 +71,12 @@ bool GEOObjects::appendPointVec(std::vector<Point*> const& new_points,
 
 const std::vector<Point*>* GEOObjects::getPointVec(const std::string &name) const
 {
-	int idx = this->exists(name);
-	if (idx>=0) return _pnt_vecs[idx]->getVector();
+	//int idx = this->exists(name);
+	//if (idx>=0) return _pnt_vecs[idx]->getVector();
+	size_t size (_pnt_vecs.size());
+	for (size_t i = 0; i < size; i++)
+		if (_pnt_vecs[i]->getName().compare(name) == 0)
+			return _pnt_vecs[i]->getVector();
 	std::cout << "GEOObjects::getPointVec() - No entry found with name \"" << name << "\"." <<
 	std::endl;
 	return NULL;
@@ -72,8 +84,12 @@ const std::vector<Point*>* GEOObjects::getPointVec(const std::string &name) cons
 
 const PointVec* GEOObjects::getPointVecObj(const std::string &name) const
 {
-	int idx = this->exists(name);
-	if (idx>=0) return _pnt_vecs[idx];
+	//int idx = this->exists(name);
+	//if (idx>=0) return _pnt_vecs[idx];
+	size_t size (_pnt_vecs.size());
+	for (size_t i = 0; i < size; i++)
+		if (_pnt_vecs[i]->getName().compare(name) == 0)
+			return _pnt_vecs[i];
 	std::cout << "GEOObjects::getPointVecObj() - No entry found with name \"" << name << "\"." <<
 	std::endl;
 	return NULL;
