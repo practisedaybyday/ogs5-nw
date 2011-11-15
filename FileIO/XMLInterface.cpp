@@ -578,9 +578,9 @@ void XMLInterface::readConditions( const QDomNode &listRoot,
 					for (int j = 0; j < processProps.count(); j++)
 					{
 						if (processProps.at(j).nodeName().compare("Type") == 0)
-							c->setProcessType(convertProcessType(processProps.at(j).toElement().text().toStdString()));
+							c->setProcessType(FiniteElement::convertProcessType(processProps.at(j).toElement().text().toStdString()));
 						else if (processProps.at(j).nodeName().compare("Variable") == 0)
-							c->setProcessPrimaryVariable(convertPrimaryVariable(processProps.at(j).toElement().text().toStdString()));
+							c->setProcessPrimaryVariable(FiniteElement::convertPrimaryVariable(processProps.at(j).toElement().text().toStdString()));
 					}
 				}
 				else if (condProperties.at(i).nodeName().compare("Geometry") == 0)
