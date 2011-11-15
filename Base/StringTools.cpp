@@ -22,7 +22,7 @@ std::string replaceString(const std::string &searchString,
                           std::string stringToReplace)
 {
 	std::string::size_type pos = stringToReplace.find(searchString, 0);
-	size_t intLengthSearch = searchString.length();
+	int intLengthSearch = searchString.length();
 
 	while (std::string::npos != pos)
 	{
@@ -99,7 +99,7 @@ void correctScientificNotation(std::string filename, size_t precision)
 				if(exponentSize > 4)
 				{
 					// Erase the leading zero considering trailing characters
-					size_t i = wordSize - 1;
+					int i = wordSize - 1;
 					while (!isdigit(word[i]))
 						--i;
 
