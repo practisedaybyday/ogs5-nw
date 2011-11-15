@@ -9,19 +9,19 @@
 #include <ProcessInfo.h>
 
 ProcessInfo::ProcessInfo() :
-	_pcs_type (INVALID_PROCESS), _pcs_pv (INVALID_PV), _pcs (NULL)
+	_pcs_type (FiniteElement::INVALID_PROCESS), _pcs_pv (FiniteElement::INVALID_PV), _pcs (NULL)
 {}
 
-ProcessInfo::ProcessInfo (ProcessType pcs_type, PrimaryVariable pcs_pv, CRFProcess* pcs) :
+ProcessInfo::ProcessInfo (FiniteElement::ProcessType pcs_type, FiniteElement::PrimaryVariable pcs_pv, CRFProcess* pcs) :
 	_pcs_type (pcs_type), _pcs_pv (pcs_pv), _pcs (pcs)
 {}
 
-void ProcessInfo::setProcessType (ProcessType pcs_type)
+void ProcessInfo::setProcessType (FiniteElement::ProcessType pcs_type)
 {
 	_pcs_type = pcs_type;
 }
 
-void ProcessInfo::setProcessPrimaryVariable (PrimaryVariable pcs_pv)
+void ProcessInfo::setProcessPrimaryVariable (FiniteElement::PrimaryVariable pcs_pv)
 {
 	_pcs_pv = pcs_pv;
 }
@@ -31,12 +31,12 @@ void ProcessInfo::setProcess (CRFProcess* pcs)
 	_pcs = pcs;
 }
 
-ProcessType ProcessInfo::getProcessType () const
+FiniteElement::ProcessType ProcessInfo::getProcessType () const
 {
 	return _pcs_type;
 }
 
-PrimaryVariable ProcessInfo::getProcessPrimaryVariable () const
+FiniteElement::PrimaryVariable ProcessInfo::getProcessPrimaryVariable () const
 {
 	return _pcs_pv;
 }

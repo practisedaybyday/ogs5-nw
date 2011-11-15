@@ -11,6 +11,8 @@
 #include <string>
 #include <list>
 
+namespace FiniteElement
+{
 /** \brief Types of physical processes supported by OpenGeoSys.
  * If you change this enum, make sure you apply the changes to
  * the functions convertPorcessType(), convertProcessTypeToString(),
@@ -48,7 +50,6 @@ enum ProcessType
 	RICHARDS_FLOW,                        //!< RICHARDS_FLOW
 	/// H2 process, compressible flow
 	TWO_PHASE_FLOW,                       //!< TWO_PHASE_FLOW
-
 	// make sure that this is always the last entry (important for iterating over the enum entries)!
 	PROCESS_END
 };
@@ -130,7 +131,6 @@ enum PrimaryVariable
 	VELOCITY1_X,
 	VELOCITY1_Y,
 	VELOCITY1_Z,
-
 	// make sure that this is always the last entry (important for iterating over the enum entries)!
 	PV_END
 };
@@ -153,8 +153,6 @@ std::string convertPrimaryVariableToString ( PrimaryVariable pcs_pv );
 /// Returns a list of strings containing all entries in the PrimaryVariable enum.
 const std::list<std::string> getAllPrimaryVariableNames();
 
-namespace FiniteElement
-{
 enum DistributionType
 {
 	INVALID_DIS_TYPE = 0,
@@ -176,7 +174,6 @@ enum DistributionType
 	PRECIPITATION,
 	SYSTEM_DEPENDENT,                     // ST
 	// Sort of Neumann BC //WW
-
 	// make sure that this is always the last entry (important for iterating over the enum entries)!
 	DIS_END
 };

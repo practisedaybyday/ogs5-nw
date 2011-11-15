@@ -108,17 +108,17 @@ double CFluidMomentum::Execute()
 
 		// Select the mesh whose process name has the mesh for Fluid_Momentum
 		//		if( m_pcs->pcs_type_name.find("RICHARDS_FLOW")!=string::npos) TF
-		if( m_pcs->getProcessType () == RICHARDS_FLOW)
+		if( m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW)
 			m_msh = FEMGet("RICHARDS_FLOW");
 		//		else if( m_pcs->pcs_type_name.find("LIQUID_FLOW")!=string::npos) TF
-		else if( m_pcs->getProcessType () == LIQUID_FLOW)
+		else if( m_pcs->getProcessType () == FiniteElement::LIQUID_FLOW)
 			m_msh = FEMGet("LIQUID_FLOW");
 		//		else if( m_pcs->pcs_type_name.find("GROUNDWATER_FLOW")!=string::npos) TF
-		else if( m_pcs->getProcessType () == GROUNDWATER_FLOW)
+		else if( m_pcs->getProcessType () == FiniteElement::GROUNDWATER_FLOW)
 			m_msh = FEMGet("GROUNDWATER_FLOW");
 
 		//		if(m_pcs->pcs_type_name.find("FLUID_MOMENTUM")!=string::npos) TF
-		if(m_pcs->getProcessType () == FLUID_MOMENTUM)
+		if(m_pcs->getProcessType () == FiniteElement::FLUID_MOMENTUM)
 			SolveDarcyVelocityOnNode();
 	}
 
@@ -413,13 +413,13 @@ void CFluidMomentum::ConstructFractureNetworkTopology()
 
 		// Select the mesh whose process name has the mesh for Fluid_Momentum
 		//		if( m_pcs->pcs_type_name.find("RICHARDS_FLOW")!=string::npos) TF
-		if( m_pcs->getProcessType () == RICHARDS_FLOW)
+		if( m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW)
 			m_msh = FEMGet("RICHARDS_FLOW");
 		//		else if( m_pcs->pcs_type_name.find("LIQUID_FLOW")!=string::npos) TF
-		else if( m_pcs->getProcessType () == LIQUID_FLOW)
+		else if( m_pcs->getProcessType () == FiniteElement::LIQUID_FLOW)
 			m_msh = FEMGet("LIQUID_FLOW");
 		//		else if( m_pcs->pcs_type_name.find("GROUNDWATER_FLOW")!=string::npos) TF
-		else if( m_pcs->getProcessType () == GROUNDWATER_FLOW)
+		else if( m_pcs->getProcessType () == FiniteElement::GROUNDWATER_FLOW)
 			m_msh = FEMGet("GROUNDWATER_FLOW");
 	}
 	m_pcs = PCSGet("FLUID_MOMENTUM");

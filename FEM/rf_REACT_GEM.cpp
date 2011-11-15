@@ -1139,14 +1139,14 @@ short REACT_GEM::Init_Nodes ( string Project_path )
 				cout << "Error: Main Loop failed when running GEM on Node #" << in << "." << " Returned Error Code: " << m_NodeStatusCH[in] ;
 				cout << " or GEM weird result at node " << in << " volume " <<  dBR->Vs << " old volume " <<oldvolume;
 				cout  << " repeat calculations and change kinetic constraintsby 0.1%" << endl;
-				// change a bit the kinetic constraints -> make the system less stiff 
+				// change a bit the kinetic constraints -> make the system less stiff
 				for ( j=0;j<nDC;j++ )
 				{
 					m_dll[in*nDC+j]=0.999*m_dll[in*nDC+j]-1.0e-6;                        // make smaller
 					if (m_dll[in*nDC+j]<0.0) m_dll[in*nDC+j]=0.0;
 					m_dul[in*nDC+j]=1.001*m_dul[in*nDC+j]+1.0e-6;                    // make bigger
 				}
-				REACT_GEM::SetReactInfoBackGEM ( in ); // needs to be done to 
+				REACT_GEM::SetReactInfoBackGEM ( in ); // needs to be done to
 				m_Node->GEM_write_dbr ( "dbr_for_crash_node_fail1.txt" );
 
 // run GEMS again
@@ -1247,7 +1247,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
                m_pcs = pcs_vector[i];
                //                if ( m_pcs->pcs_type_name.compare ( "HEAT_TRANSPORT" ) == 0 ) {
                                                   // TF
-               if ( m_pcs->getProcessType() == HEAT_TRANSPORT )
+               if ( m_pcs->getProcessType() == FiniteElement::HEAT_TRANSPORT )
                {
                   return 1;
                }
@@ -1262,25 +1262,25 @@ short REACT_GEM::Init_Nodes ( string Project_path )
             {
                m_pcs = pcs_vector[i];
                //                if ( m_pcs->pcs_type_name.compare ( "GROUNDWATER_FLOW" ) ==0 ) {
-               if ( m_pcs->getProcessType() == GROUNDWATER_FLOW)
+               if ( m_pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
                {
                   m_flow_pcs = m_pcs;
                   return 1;
                   //                } else if ( m_pcs->pcs_type_name.compare ( "LIQUID_FLOW" ) ==0 ) {
                }
-               else if ( m_pcs->getProcessType() == LIQUID_FLOW)
+               else if ( m_pcs->getProcessType() == FiniteElement::LIQUID_FLOW)
                {
                   m_flow_pcs = m_pcs;
                   return 2;
                   //                } else if ( m_pcs->pcs_type_name.compare ( "RICHARDS_FLOW" ) ==0 ) {
                }
-               else if ( m_pcs->getProcessType() == RICHARDS_FLOW)
+               else if ( m_pcs->getProcessType() == FiniteElement::RICHARDS_FLOW)
                {
                   m_flow_pcs = m_pcs;
                   return 3;
                   //                } else if ( m_pcs->pcs_type_name.compare ( "MULTI_PHASE_FLOW" ) ==0 ) {
                }
-               else if ( m_pcs->getProcessType() == MULTI_PHASE_FLOW )
+               else if ( m_pcs->getProcessType() == FiniteElement::MULTI_PHASE_FLOW )
                {
                }
                m_flow_pcs = m_pcs;
@@ -1302,7 +1302,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
             {
                m_pcs = pcs_vector[i];
                //		if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) ==0 ) {
-               if ( m_pcs->getProcessType() == MASS_TRANSPORT )
+               if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT )
                {
                   number = ( long ) m_pcs->m_msh->GetNodesNumber ( false );
                   return number;
@@ -1320,7 +1320,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
             {
                m_pcs = pcs_vector[i];
                //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) ==0 ) {
-               if ( m_pcs->getProcessType() == MASS_TRANSPORT)
+               if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
                {
                   number = ( long ) m_pcs->m_msh->ele_vector.size();
                   return number;
@@ -1572,7 +1572,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
             {
                m_pcs = pcs_vector[i];
                //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-               if ( m_pcs->getProcessType() == MASS_TRANSPORT)
+               if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
                {
                   if ( strcmp ( m_pcs->pcs_primary_function_name[0],m_component.c_str() ) == 0 )
                   {
@@ -1603,7 +1603,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
             {
                m_pcs = pcs_vector[i+1];           // dangerous!!
                //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-               if ( m_pcs->getProcessType() == MASS_TRANSPORT )
+               if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT )
                {
                   //if ( m_pcs->m_msh->nod_vector[node_Index]->onBoundary() == false ) // do not update values for boundary node?
 
@@ -1632,7 +1632,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
             {
                m_pcs = pcs_vector[i+1];           // dangerous!!
                //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-               if ( m_pcs->getProcessType() == MASS_TRANSPORT)
+               if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
                {
                   //if ( m_pcs->m_msh->nod_vector[node_Index]->onBoundary() == false ) // do not update values for boundary node?
 
@@ -1659,7 +1659,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
 
             m_pcs = pcs_vector[iDc+1];            // dangerous!!
             //        if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-            if ( m_pcs->getProcessType() == MASS_TRANSPORT)
+            if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
             {
 
                str = m_pcs->pcs_primary_function_name[0];
@@ -1694,7 +1694,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
             {
                m_pcs = pcs_vector[i];
                //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-               if ( m_pcs->getProcessType() == MASS_TRANSPORT)
+               if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
                {
 
                   x_Component = -1;
@@ -1726,7 +1726,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
                m_pcs = pcs_vector[i+1];
 
                //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-               if ( m_pcs->getProcessType() == MASS_TRANSPORT)
+               if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
                {
                   str = m_pcs->pcs_primary_function_name[0];
                   if ( str.compare ( "pH" ) != 0 && str.compare ( "pe" ) != 0 && str.compare ( "Eh" ) != 0 && str.compare ( "NodePorosity" ) != 0 )
@@ -1763,7 +1763,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
                m_pcs = pcs_vector[i+1];
 
                //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-               if ( m_pcs->getProcessType() == MASS_TRANSPORT)
+               if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
                {
                   str = m_pcs->pcs_primary_function_name[0];
                   if ( flag_iterative_scheme > 0 )
@@ -2026,7 +2026,7 @@ short REACT_GEM::Init_Nodes ( string Project_path )
 	               // push back porosities
                 SetPorosityValue_MT ( i , m_porosity_Elem[i] , i_timestep );
 	     }
-           else 
+           else
 	     {
             m_Elem =  m_pcs->m_msh->ele_vector[i];
 
@@ -2217,15 +2217,15 @@ void REACT_GEM::MassToConcentration( long in,int i_failed )   //attention second
       {
          i = in*nIC + j;
          m_bIC[i] -= m_bPS[j];                    // B vector without solute
-         if (flag_coupling_hydrology)  
-	 { 
+         if (flag_coupling_hydrology)
+	 {
 	   m_bPS[j] *=skal_faktor;                  // completely newly scaled first phase ...only for coupling with hydraulics
 	 }
-	 else 
+	 else
 	 {  // this is necessary for not coupling with hydrology, but porosity change or water is used by gems....
             if ( idx_hydrogen == j )   m_bPS[j] *=skal_faktor ;
             if ( idx_oxygen == j )  m_bPS[j] *=skal_faktor  ;
-	 } 
+	 }
       }
       // for ( j=0 ; j <= idx_water; j++ )
 	j=idx_water;
@@ -2712,21 +2712,21 @@ ios::pos_type REACT_GEM::Read ( std::ifstream *gem_file )
             cout << "surface area " << d_kin.surface_area[0] << endl;
          }
          in.clear();
-	 
+
 	 if (d_kin.kinetic_model == 5) { // model 5 is for solid solutions, needed parameters are the number of endmembers and the surface area for each endmember
 	   // next line are SS parameters
            in.str ( GetLineFromFile1 ( gem_file ) );
 	   in >> d_kin.ss_endmembers;
-	   try 
+	   try
 	   {
 	     d_kin.ss_scaling = new double[d_kin.ss_endmembers];
-	   }	 
+	   }
   	   catch(bad_alloc)
 	   {
 	     cout << "Reading Gems input: problem while allocating memory for Solid Solution scaling parameters" << endl;
 	     exit(1);
 	   }
-	   
+
 	  for (j=0;j<d_kin.ss_endmembers;j++) in >> d_kin.ss_scaling[j];
 	 }
 	// push back vector

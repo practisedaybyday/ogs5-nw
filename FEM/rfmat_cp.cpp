@@ -75,8 +75,8 @@ CompProperties::CompProperties(/* int n // HS we do not need this. */)
 	bubble_velocity[0] = bubble_velocity[1] = bubble_velocity[2] = 0.0;
 	file_base_name = "nix";
 
-	this->setProcessType( MASS_TRANSPORT );
-	this->setProcessPrimaryVariable( CONCENTRATION );
+	this->setProcessType( FiniteElement::MASS_TRANSPORT );
+	this->setProcessPrimaryVariable( FiniteElement::CONCENTRATION );
 }
 
 /**************************************************************************
@@ -148,9 +148,9 @@ bool CPRead(std::string file_base_name)
 	size_t i;
 	for ( i = 0; i < pcs_vector.size(); i++ )
 	{
-		if ( pcs_vector[i]->getProcessType() == MASS_TRANSPORT )
+		if ( pcs_vector[i]->getProcessType() == FiniteElement::MASS_TRANSPORT )
 			pcs_mt_count++;
-		if ( pcs_vector[i]->getProcessType() == RANDOM_WALK )
+		if ( pcs_vector[i]->getProcessType() == FiniteElement::RANDOM_WALK )
 			pcs_rwpt_count++;
 	}
 	if ( pcs_rwpt_count == 0) // HS, no random walk detected.
@@ -166,7 +166,7 @@ bool CPRead(std::string file_base_name)
 			// and then link MCP with the PCS.
 			std::map <int, CompProperties*>::iterator cp_iter = cp_vec.begin();
 			for ( i = 0; i < pcs_vector.size(); i++ )
-				if ( pcs_vector[i]->getProcessType() == MASS_TRANSPORT )
+				if ( pcs_vector[i]->getProcessType() == FiniteElement::MASS_TRANSPORT )
 				{
 					cp_iter->second->setProcess( pcs_vector[i] );
 					++cp_iter;

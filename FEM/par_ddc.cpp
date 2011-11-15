@@ -1282,8 +1282,8 @@ void DOMCreate()
 			{
 				m_pcs = pcs_vector[i];
 				//if(m_pcs->pcs_type_name.find("DEFORMATION")!=string::npos) { // TF 10/2010
-				if(m_pcs->getProcessType () == DEFORMATION ||
-				   m_pcs->getProcessType() == DEFORMATION_FLOW)
+				if(m_pcs->getProcessType () == FiniteElement::DEFORMATION ||
+				   m_pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW)
 				{
 					DOF_gt_one = true;
 					break;

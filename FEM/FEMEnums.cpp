@@ -9,6 +9,8 @@
 #include <cstdlib>
 #include <iostream>
 
+namespace FiniteElement
+{
 ProcessType convertProcessType ( const std::string& pcs_type_string )
 {
 	if (pcs_type_string.compare ("LIQUID_FLOW") == 0)
@@ -291,9 +293,6 @@ const std::list<std::string> getAllPrimaryVariableNames()
 	return enum_names;
 }
 
-
-namespace FiniteElement
-{
 DistributionType convertDisType(const std::string& dis_type_string)
 {
 	if (dis_type_string.compare("CONSTANT") == 0)
@@ -391,4 +390,4 @@ const std::list<std::string> getAllDistributionNames()
 	return enum_names;
 }
 
-}                                                 // end namespace FiniteElement
+} // end namespace FiniteElement
