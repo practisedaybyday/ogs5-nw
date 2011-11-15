@@ -207,8 +207,7 @@ PrimaryVariable convertPrimaryVariable ( const std::string& pcs_pv_string )
 		return STRAIN_PLS;
 	else
 	{
-		std::cout << "convertPrimaryVariable #" << pcs_pv_string << "# not found" <<
-		std::endl;
+		std::cout << "convertPrimaryVariable #" << pcs_pv_string << "# not found" << std::endl;
 		exit (1);
 	}
 	return INVALID_PV;

@@ -257,7 +257,7 @@ MeshLib::CFEMesh* GMSInterface::readGMS3DMMesh(std::string filename)
 		}
 		else if ((element_id.compare("E4P") == 0) || (element_id.compare("E5P") == 0)) // KR both versions exist!
 		{
-			int i(0);
+			size_t i(0);
 			long node_index[5];
 			elem->SetElementType(MshElemType::TETRAHEDRON);
 			elem->Read(in, 8);

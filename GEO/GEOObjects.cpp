@@ -41,16 +41,10 @@ void GEOObjects::addPointVec(std::vector<Point*>* points,
 bool GEOObjects::appendPointVec(std::vector<Point*> const& new_points,
                                 std::string const &name, std::vector<size_t>* ids)
 {
-	// search vector
-	size_t idx (0);
-	bool nfound (true);
-	for (idx = 0; idx < _pnt_vecs.size() && nfound; idx++)
-		if ( (_pnt_vecs[idx]->getName()).compare (name) == 0 )
-			nfound = false;
+	int idx = this->exists(name);
 
-	if (!nfound)
+	if (idx>=0)
 	{
-		idx--;
 		size_t n_new_pnts (new_points.size());
 		// append points
 		if (ids)
@@ -69,10 +63,8 @@ bool GEOObjects::appendPointVec(std::vector<Point*> const& new_points,
 
 const std::vector<Point*>* GEOObjects::getPointVec(const std::string &name) const
 {
-	size_t size (_pnt_vecs.size());
-	for (size_t i = 0; i < size; i++)
-		if (_pnt_vecs[i]->getName().compare(name) == 0)
-			return _pnt_vecs[i]->getVector();
+	int idx = this->exists(name);
+	if (idx>=0) return _pnt_vecs[idx]->getVector();
 	std::cout << "GEOObjects::getPointVec() - No entry found with name \"" << name << "\"." <<
 	std::endl;
 	return NULL;
@@ -80,11 +72,9 @@ const std::vector<Point*>* GEOObjects::getPointVec(const std::string &name) cons
 
 const PointVec* GEOObjects::getPointVecObj(const std::string &name) const
 {
-	size_t size (_pnt_vecs.size());
-	for (size_t i = 0; i < size; i++)
-		if (_pnt_vecs[i]->getName().compare(name) == 0)
-			return _pnt_vecs[i];
-	std::cout << "GEOObjects::getPointVec() - No entry found with name \"" << name << "\"." <<
+	int idx = this->exists(name);
+	if (idx>=0) return _pnt_vecs[idx];
+	std::cout << "GEOObjects::getPointVecObj() - No entry found with name \"" << name << "\"." <<
 	std::endl;
 	return NULL;
 }
@@ -483,6 +473,15 @@ const GEOLIB::GeoObject* GEOObjects::getGEOObject(const std::string &geo_name,
 	else if (type == GEOLIB::SURFACE)
 		return this->getSurfaceVecObj(geo_name)->getElementByName(obj_name);
 	return NULL;
+}
+
+int GEOObjects::exists(const std::string &geometry_name) const
+{
+	size_t size (_pnt_vecs.size());
+	for (size_t i = 0; i < size; i++)
+		if (_pnt_vecs[i]->getName().compare(geometry_name) == 0)
+			return i;
+	return -1;
 }
 
 

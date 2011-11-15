@@ -108,9 +108,7 @@ void SHPInterface::readPolylines(const SHPHandle &hSHP, int numberOfElements, st
 		{
 			int firstPnt = *(hSHPObject->panPartStart + p);
 			int lastPnt  =
-			        (p <
-			         (noOfParts -
-			          1)) ? *(hSHPObject->panPartStart + p + 1) : noOfPoints;
+			        (p < (noOfParts - 1)) ? *(hSHPObject->panPartStart + p + 1) : noOfPoints;
 
 			GEOLIB::Polyline* line = new GEOLIB::Polyline(*points);
 

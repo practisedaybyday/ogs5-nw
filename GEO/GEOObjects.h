@@ -203,6 +203,9 @@ public:
 	 */
 	const SurfaceVec* getSurfaceVecObj(const std::string &name) const;
 
+	/// Returns -1 if no geometry of the given name exists or die index of the geometry in _pnt_vecs otherwise
+	int exists(const std::string &geometry_name) const;
+
 	/// Returns the names of all geometry vectors.
 	void getGeometryNames (std::vector<std::string>& names) const;
 

@@ -22,7 +22,7 @@ std::string replaceString(const std::string &searchString,
                           std::string stringToReplace)
 {
 	std::string::size_type pos = stringToReplace.find(searchString, 0);
-	int intLengthSearch = searchString.length();
+	size_t intLengthSearch = searchString.length();
 
 	while (std::string::npos != pos)
 	{
@@ -44,6 +44,20 @@ void trim(std::string &str, char ch)
 	}
 	else
 		str.erase(str.begin(), str.end());
+}
+
+std::string getFileNameFromPath(const std::string &str)
+{
+	std::string::size_type beg1 = str.find_last_of('/');
+	std::string::size_type beg2 = str.find_last_of('\\');
+	std::string::size_type beg;
+	if (beg1 == std::string::npos && beg2 == std::string::npos) beg = 0;
+	else if (beg1 == std::string::npos) beg = beg2;
+	else if (beg2 == std::string::npos) beg = beg1;
+	else beg = (beg1<beg2) ? beg2 : beg1;
+	std::string file ( str.substr(beg+1) );
+	std::string::size_type end  = file.find_last_of('.');
+	return file.substr(0,end);
 }
 
 #ifdef MSVC
@@ -85,7 +99,7 @@ void correctScientificNotation(std::string filename, size_t precision)
 				if(exponentSize > 4)
 				{
 					// Erase the leading zero considering trailing characters
-					int i = wordSize - 1;
+					size_t i = wordSize - 1;
 					while (!isdigit(word[i]))
 						--i;
 

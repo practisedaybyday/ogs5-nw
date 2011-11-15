@@ -134,7 +134,7 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 	size_t numCells = _mesh->ele_vector.size();
 
 	// count overall length of element vector
-	long numAllPoints = 0;
+	size_t numAllPoints = 0;
 	for(size_t i = 0; i < numCells; i++)
 	{
 		MeshLib::CElem* ele = _mesh->ele_vector[i];

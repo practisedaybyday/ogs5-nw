@@ -53,9 +53,7 @@ public:
 	int readSTNFile(const QString &fileName);
 
 	/// Reads an xml-file containing containing FEM Conditions such as Boundary- or Initial Conditions
-	int readFEMCondFile(std::vector<FEMCondition*> &conditions,
-	                    const QString &fileName,
-	                    const QString &geoName);
+	int readFEMCondFile(std::vector<FEMCondition*> &conditions, const QString &fileName);
 
 	/// Writes a GeoSys project file containing all data that is currently loaded.
 	/// Project files currently cover only geo-, msh- and station-data. This will be expanded in the future.
@@ -125,7 +123,6 @@ private:
 	/// Read the details of various FEM Conditions from an xml-file
 	void readConditions( const QDomNode &condRoot,
 	                     std::vector<FEMCondition*> &conditions,
-	                     const QString &geoName,
 	                     FEMCondition::CondType type);
 
 	/// Writes borehole-specific data to a station-xml-file.
