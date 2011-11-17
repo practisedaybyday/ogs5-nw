@@ -11,6 +11,7 @@ QT_VERSION="qt-everywhere-opensource-src-4.7.4"
 VTK_VERSION="vtk-5.8.0"
 SHAPELIB_VERSION="shapelib-1.3.0b2"
 LIBGEOTIFF_VERSION="libgeotiff-1.3.0"
+INSTANTCLIENT_VERSION="instantclient_11_2"
 
 ## Windows specific
 if [ "$OSTYPE" == 'msys' ]; then
@@ -33,23 +34,37 @@ if [ "$OSTYPE" == 'msys' ]; then
 		else
 			# Compile
 			
-			# TODO: -mp flag for multiprocessor compiling?
 			if [ $LIB_DEBUG ]; then
 				QT_CONFIGURATION="-debug-and-release"
 			else
 				QT_CONFIGURATION="-release"
+			fi
+
+			# Get instantclient
+			QT_SQL_ARGS=""
+			if [ $QT_SQL ]; then
+				if [ ! -d instantclient ]; then
+					if [ "$ARCHITECTURE" == "x64" ]; then
+						wget --no-check-certificate https://github.com/downloads/ufz/devguide/instantclient_11_2_x64.zip
+						7za x instantclient_11_2_x64.zip
+						mv instantclient_11_2/ instantclient/
+						rm instantclient_11_2_x64.zip
+					fi
+				fi
+				QT_SQL_ARGS="-qt-sql-oci -I %cd%\..\instantclient\sdk\include -L %cd%\..\instantclient\sdk\lib\msvc"
 			fi
 			
 			cd qt
 
 			echo " \
 			\"$WIN_DEVENV_PATH\\..\\..\\VC\\vcvarsall.bat\" $WIN_ARCHITECTURE &&\
-			echo y | configure -opensource -no-accessibility -no-dsp -no-vcproj -no-phonon -no-webkit -no-scripttools -nomake demos -nomake examples $QT_CONFIGURATION &&\
+			echo y | configure -opensource -no-accessibility -no-dsp -no-vcproj -no-phonon -no-webkit -no-scripttools -nomake demos -nomake examples $QT_CONFIGURATION $QT_SQL_ARGS &&\
 			jom && nmake clean &&\
 			exit\
 			" > build.bat
 
 			$COMSPEC \/k build.bat
+			QT_WAS_BUILT=true
 		fi
 		
 		export PATH=$PATH:$LIBS_LOCATION/qt/bin
@@ -151,3 +166,5 @@ if [ "$OSTYPE" == 'msys' ]; then
 		$COMSPEC \/k build.bat
 	fi
 fi
+
+cd $SOURCE_LOCATION/scripts/setup

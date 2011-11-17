@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Parse options
-while getopts ":a:d" opt; do
+while getopts ":a:d:s" opt; do
 	case $opt in
 		a)
 			if [ "$OPTARG" == "x32" ]; then
@@ -27,6 +27,10 @@ while getopts ":a:d" opt; do
 			echo "Third party library debug builds enabled."
 			LIB_DEBUG=true
 			;;
+		s)
+			echo "Qt SQL bindings enabled."
+			QT_SQL=true
+			;;
 	esac
 done
 
@@ -36,3 +40,12 @@ SOURCE_LOCATION="$SOURCE_LOCATION/../.."
 source setup_prerequisites.sh
 
 source setup_libraries.sh
+
+source setup_builds.sh
+
+if [ $QT_WAS_BUILT ]; then
+	echo "Important note: Make sure to add the Qt environment variables!"
+	if [ $QT_SQL ]; then
+		echo "Important note: Make sure to add the instantclient directory to the PATH!"
+	fi
+fi
