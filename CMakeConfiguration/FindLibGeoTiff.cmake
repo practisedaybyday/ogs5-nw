@@ -14,7 +14,7 @@ if (NOT libgeotiff_FOUND)
 			PATHS	/usr/include
 				/usr/include/libgeotiff
 				/usr/include/geotiff
-				${CMAKE_SOURCE_DIR}/../Libs/libgeotiff
+				${CMAKE_SOURCE_DIR}/../Libs/libgeotiff-1.3.0
 				C:/OGS_Libs/libgeotiff
 				$ENV{OGS_LIBS}/libgeotiff)
 
@@ -22,7 +22,7 @@ if (NOT libgeotiff_FOUND)
 		NAMES geotiff
 		PATHS	/usr/lib64
 			/usr/lib
-			${CMAKE_SOURCE_DIR}/../Libs/libgeotiff
+			${CMAKE_SOURCE_DIR}/../Libs/libgeotiff-1.3.0
 			C:/OGS_Libs/libgeotiff
 			$ENV{OGS_LIBS}/libgeotiff)
 
