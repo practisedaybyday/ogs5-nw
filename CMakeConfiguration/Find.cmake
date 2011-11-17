@@ -14,7 +14,7 @@ ELSE()
 	FIND_PATH (EXAMPLEDATA_DIR_FOUND points.gli ${PROJECT_SOURCE_DIR}/../ExampleData)
 ENDIF()
 
-FIND_PATH (OGS_LIBS_DIR_FOUND geotiff.lib ${PROJECT_SOURCE_DIR}/../Libs/libgeotiff-1.3.0)
+FIND_PATH (OGS_LIBS_DIR_FOUND geotiff.lib ${PROJECT_SOURCE_DIR}/../Libs/libgeotiff)
 
 # Find precompiled libraries (for BRNS GEMS LIS)
 FIND_PATH (OGS_PRECOMPILED_LIBS_DIR_FOUND GEMS3_rl.lib ${PROJECT_SOURCE_DIR}/../Libs/precompiled)
@@ -65,7 +65,7 @@ FIND_PACKAGE( Boost COMPONENTS filesystem system regex)
 
 ## VTK ##
 IF (OGS_LIBS_DIR_FOUND)
-	SET (VTK_DIR ${PROJECT_SOURCE_DIR}/../Libs/vtk-5.8.0/build)
+	SET (VTK_DIR ${PROJECT_SOURCE_DIR}/../Libs/VTK/build)
 ENDIF () # OGS_LIBS_DIR_FOUND
 FIND_PACKAGE( VTK )
 
