@@ -48,12 +48,13 @@ cmake $SOURCE_LOCATION
 ## Windows specific
 if [ "$OSTYPE" == 'msys' ]; then
 	# Installer
-	$COMSPEC \/c "devenv OGS.sln /Build Release /Project PACKAGE"
+	C:/Windows/system32/cmd.exe \/c "devenv OGS.sln /Build Release /Project PACKAGE"
 	rm CMakeCache.txt
 	# Zip
 	cmake -DOGS_USE_QT=ON -DOGS_PACKAGING=ON -DOGS_PACKAGING_ZIP=ON -G "$CMAKE_GENERATOR" $SOURCE_LOCATION
 	cmake $SOURCE_LOCATION
-	$COMSPEC \/c "devenv OGS.sln /Build Release /Project PACKAGE"
+	C:/Windows/system32/cmd.exe \/c "devenv OGS.sln /Build Release /Project PACKAGE"
+exit
 else
 	make -j
 	cmake $SOURCE_LOCATION
@@ -61,4 +62,4 @@ else
 	make package
 fi
 
-cd "$SOURCE_LOCATION/scripts/setup"
+cd "$SOURCE_LOCATION/scripts/build"
