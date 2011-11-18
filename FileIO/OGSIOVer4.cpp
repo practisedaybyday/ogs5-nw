@@ -535,8 +535,8 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo)
 	tag = readPoints(in, pnt_vec, zero_based_idx, pnt_id_names_map);
 	std::cout << " ok, " << pnt_vec->size() << " points read" << std::endl;
 
-	//std::string unique_name(getFileNameFromPath(fname));
-	std::string unique_name(fname);
+	std::string unique_name(getFileNameFromPath(fname, true));
+	//std::string unique_name(fname);
 	if (!pnt_vec->empty())
 		geo->addPointVec(pnt_vec, unique_name, pnt_id_names_map);  // KR: insert into GEOObjects if not empty
 
