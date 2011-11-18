@@ -23,10 +23,6 @@ while getopts ":a:d:s" opt; do
 			echo "Option -$OPTARG requires an argument."
 			exit 1
 			;;
-		d)
-			echo "Third party library debug builds enabled."
-			LIB_DEBUG=true
-			;;
 		s)
 			echo "Qt SQL bindings enabled."
 			QT_SQL=true
