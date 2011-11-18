@@ -24,7 +24,7 @@ if [ "$OSTYPE" == 'msys' ]; then
 			mv $QT_VERSION/ qt/
 			rm $QT_VERSION.zip
 		
-		elif [ -f qt/bin/qmake.exe -a -f qt/bin/QtGui4.dll ]; then
+		elif [ -f qt/bin/qmake.exe -a -f qt/bin/QtGui4.dll -a -f qt/bin/QtGuid4.dll ]; then
 			# Already installed
 			QT_FOUND=true
 		fi
@@ -33,12 +33,7 @@ if [ "$OSTYPE" == 'msys' ]; then
 			echo "Qt already installed in $LIBS_LOCATION/qt"
 		else
 			# Compile
-			
-			if [ $LIB_DEBUG ]; then
-				QT_CONFIGURATION="-debug-and-release"
-			else
-				QT_CONFIGURATION="-release"
-			fi
+			QT_CONFIGURATION="-debug-and-release"
 
 			# Get instantclient
 			QT_SQL_ARGS=""
