@@ -2,11 +2,10 @@
 
 SOURCE_LOCATION=`pwd`
 SOURCE_LOCATION="$SOURCE_LOCATION/../.."
-BUILD_LOCATION="$SOURCE_LOCATION/$1"
 
 # Parse options
 if [ "$OSTYPE" == 'msys' ]; then
-	while getopts ":a" opt; do
+	while getopts "a:d:" opt; do
 		case $opt in
 			a)
 				if [ "$OPTARG" == "x32" ]; then
@@ -19,6 +18,9 @@ if [ "$OSTYPE" == 'msys' ]; then
 					echo "$OPTARG is not a valid argument. Specify x32 or x64."
 					exit 1
 				fi
+				;;
+			d)
+				BUILD_LOCATION="$SOURCE_LOCATION/$OPTARG"
 				;;
 			\?)
 				echo "Invalid option: -$OPTARG"
