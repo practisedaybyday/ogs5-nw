@@ -46,7 +46,7 @@ void trim(std::string &str, char ch)
 		str.erase(str.begin(), str.end());
 }
 
-std::string getFileNameFromPath(const std::string &str)
+std::string getFileNameFromPath(const std::string &str, bool with_extension)
 {
 	std::string::size_type beg1 = str.find_last_of('/');
 	std::string::size_type beg2 = str.find_last_of('\\');
@@ -56,6 +56,8 @@ std::string getFileNameFromPath(const std::string &str)
 	else if (beg2 == std::string::npos) beg = beg1;
 	else beg = (beg1<beg2) ? beg2 : beg1;
 	std::string file ( str.substr(beg+1) );
+	if (with_extension) return file;
+	// cut extension
 	std::string::size_type end  = file.find_last_of('.');
 	return file.substr(0,end);
 }
