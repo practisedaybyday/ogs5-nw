@@ -21,10 +21,13 @@ if [ "$ARCHITECTURE" == "x64" ]; then
 	CMAKE_GENERATOR="$CMAKE_GENERATOR Win64"
 fi
 
+DEVENV_EXE="${WIN_DEVENV_PATH}devenv"
+
 # Replace backslashes in WIN_DEVENV_PATH
 DEVENV_PATH=$(echo "$WIN_DEVENV_PATH" | awk '{ gsub(/\\/, "/"); print }')
 DEVENV_PATH=$(echo "$DEVENV_PATH" | awk '{ gsub(/C:\//, "/c/"); print }')
 
 echo "Visual Studio found: $DEVENV_PATH"
+echo "Devenv: $DEVENV_EXE"
 echo "CMake Generator: $CMAKE_GENERATOR"
 export PATH=$PATH:$DEVENV_PATH

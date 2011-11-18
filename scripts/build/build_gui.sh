@@ -4,35 +4,33 @@ SOURCE_LOCATION=`pwd`
 SOURCE_LOCATION="$SOURCE_LOCATION/../.."
 
 # Parse options
-if [ "$OSTYPE" == 'msys' ]; then
-	while getopts "a:d:" opt; do
-		case $opt in
-			a)
-				if [ "$OPTARG" == "x32" ]; then
-					ARCHITECTURE="x32"
-					WIN_ARCHITECTURE="x86"
-				elif [ "$OPTARG" == "x64" ]; then
-					ARCHITECTURE="x64"
-					WIN_ARCHITECTURE="x64"
-				else
-					echo "$OPTARG is not a valid argument. Specify x32 or x64."
-					exit 1
-				fi
-				;;
-			d)
-				BUILD_LOCATION="$SOURCE_LOCATION/$OPTARG"
-				;;
-			\?)
-				echo "Invalid option: -$OPTARG"
+while getopts "a:d:" opt; do
+	case $opt in
+		a)
+			if [ "$OPTARG" == "x32" ]; then
+				ARCHITECTURE="x32"
+				WIN_ARCHITECTURE="x86"
+			elif [ "$OPTARG" == "x64" ]; then
+				ARCHITECTURE="x64"
+				WIN_ARCHITECTURE="x64"
+			else
+				echo "$OPTARG is not a valid argument. Specify x32 or x64."
 				exit 1
-				;;
-			:)
-				echo "Option -$OPTARG requires an argument."
-				exit 1
-				;;
-		esac
-	done
-fi
+			fi
+			;;
+		d)
+			BUILD_LOCATION="$SOURCE_LOCATION/$OPTARG"
+			;;
+		\?)
+			echo "Invalid option: -$OPTARG"
+			exit 1
+			;;
+		:)
+			echo "Option -$OPTARG requires an argument."
+			exit 1
+			;;
+	esac
+done
 
 # Cleanup
 rm -rf $BUILD_LOCATION
@@ -48,17 +46,17 @@ cmake $SOURCE_LOCATION
 ## Windows specific
 if [ "$OSTYPE" == 'msys' ]; then
 	# Installer
-	C:/Windows/system32/cmd.exe \/c "devenv OGS.sln /Build Release /Project PACKAGE"
+	C:/Windows/system32/cmd.exe \/c "$DEVENV_EXE OGS.sln /Build Release /Project PACKAGE"
 	rm CMakeCache.txt
 	# Zip
 	cmake -DOGS_USE_QT=ON -DOGS_PACKAGING=ON -DOGS_PACKAGING_ZIP=ON -G "$CMAKE_GENERATOR" $SOURCE_LOCATION
 	cmake $SOURCE_LOCATION
-	C:/Windows/system32/cmd.exe \/c "devenv OGS.sln /Build Release /Project PACKAGE"
+	C:/Windows/system32/cmd.exe \/c "$DEVENV_EXE OGS.sln /Build Release /Project PACKAGE"
 exit
 else
-	make -j
+	make
 	cmake $SOURCE_LOCATION
-	make -j
+	make
 	make package
 fi
 
