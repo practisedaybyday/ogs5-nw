@@ -455,6 +455,13 @@ void CFEMesh::ConstructGrid()
 
 	// Compute neighbors and edges
 	size_t e_size(ele_vector.size());
+
+	// 2011-11-21 TF
+	// initializing attributes of objects - why is this not done in the constructot?
+	for (size_t e = 0; e < e_size; e++) {
+		ele_vector[e]->InitializeMembers();
+	}
+
 	for (size_t e = 0; e < e_size; e++)
 	{
 		CElem* elem(ele_vector[e]);
