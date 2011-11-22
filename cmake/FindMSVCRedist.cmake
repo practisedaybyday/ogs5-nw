@@ -5,7 +5,7 @@ IF (MSVC)
   if (MSVC90)
     set(VCVERS 9)
   endif()
-  if (MSVC100)
+  if (MSVC10)
 	set(VCVERS 10)
   endif()
   
@@ -31,7 +31,7 @@ IF (MSVC)
   if(${VCVERS} EQUAL 10)
     set(SDKVERS "v7.0A")
   endif()
-  IF(MSVC${VCVERS}0)
+  IF(MSVC${VCVERS}0 OR MSVC${VCVERS})
     FIND_PROGRAM(MSVC_REDIST NAMES
 vcredist_${CMAKE_MSVC_ARCH}/vcredist_${CMAKE_MSVC_ARCH}.exe
       PATHS
@@ -44,5 +44,5 @@ vcredist_${CMAKE_MSVC_ARCH}/vcredist_${CMAKE_MSVC_ARCH}.exe
     INSTALL(PROGRAMS ${MSVC_REDIST} COMPONENT msvc_redist DESTINATION bin)
     SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "ExecWait '\\\"$INSTDIR\\\\bin\\\\${vcredist_name}\\\"'")
     message(STATUS "MSVC_REDIST: ${MSVC_REDIST}")
-  ENDIF(MSVC${VCVERS}0)
+  ENDIF(MSVC${VCVERS}0 OR MSVC${VCVERS})
 ENDIF ()
