@@ -80,10 +80,10 @@ void GMSHInterface::writeGMSHPolyline (const GEOLIB::Polyline* ply, const size_t
 	size_t local_offset (this->_n_pnt_offset - offset);
 	size_t s (ply->getNumberOfPoints());
 	// write line segments (= Line) of the polyline
-	for (size_t j(0); j < s - 1; j++)
-		_out << "Line(" << _n_lines + j << ") = {" << local_offset + ply->getPointID(j) <<
-		","
-		     << local_offset + ply->getPointID(j + 1) << "};" << std::endl;
+	for (size_t j(0); j < s - 1; j++) {
+		_out << "Line(" << _n_lines + j << ") = {" << local_offset + ply->getPointID(j) << ","
+						<< local_offset + ply->getPointID(j + 1) << "};" << std::endl;
+	}
 	// write the line segments contained in the polyline (=Line Loop)
 	_out << "Line Loop (" << _n_lines + s - 1 << ") = {";
 	for (size_t j(0); j < s - 2; j++)
@@ -159,10 +159,8 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name,
 	for (size_t i = 0; i < plys->size(); i++)
 		if ((*plys)[i]->isClosed())
 		{
-			std::list<size_t> polygon_list = findHolesInsidePolygon(
-			        plys,
-			        i,
-			        geo2gmsh_polygon_id_map);
+			std::list<size_t> polygon_list = findHolesInsidePolygon(plys, i,
+							geo2gmsh_polygon_id_map);
 			this->writePlaneSurface(polygon_list);
 			geo2gmsh_surface_id_map[i] = _n_plane_sfc - 1;
 		}
@@ -186,9 +184,7 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name,
 }
 
 std::list<size_t> GMSHInterface::findHolesInsidePolygon(const std::vector<GEOLIB::Polyline*>* plys,
-                                                        size_t i,
-                                                        std::map<size_t,
-                                                                 size_t> geo2gmsh_polygon_id_map)
+				size_t i, std::map<size_t,size_t> const& geo2gmsh_polygon_id_map)
 {
 	GEOLIB::Polygon polygon(*((*plys)[i]));
 	std::list<size_t> polygon_list;
@@ -275,8 +271,7 @@ GEOLIB::QuadTree<GEOLIB::Point>* GMSHInterface::createQuadTreeFromPoints(
 
 void GMSHInterface::writeAllDataToGMSHInputFile (
         GEOLIB::GEOObjects& geo,
-        std::vector<std::string> const &
-        selected_geometries,
+        std::vector<std::string> const &selected_geometries,
         size_t number_of_point_per_quadtree_node,
         double mesh_density_scaling,
         double mesh_density_scaling_station_pnts)
