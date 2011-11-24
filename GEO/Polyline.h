@@ -65,7 +65,7 @@ public:
 	void addPoint(size_t pos);
 
 	/**
-	 * Closes a polyline by adding a line sement that connects start- and end-point.
+	 * Closes a polyline by adding a line segment that connects start- and end-point.
 	 * \param ply A Polyline containing at least three points.
 	 * \result A polygon.
 	 */
@@ -122,6 +122,7 @@ public:
 	 */
 	const std::vector<double>& getLengthVec () const;
 
+	friend bool operator==(Polyline const& lhs, Polyline const& rhs);
 protected:
 	/**
 	 * 2D method - ignores z coordinate. It calculates the location
@@ -150,9 +151,18 @@ protected:
 };
 
 /** overload the output operator for class Polyline */
-std::ostream& operator<< (std::ostream &os, const Polyline &pl);
+std::ostream& operator<< (std::ostream &os, Polyline const& pl);
 
 bool containsEdge (const Polyline& ply, size_t id0, size_t id1);
+
+/**
+ * comparison operator
+ * @param lhs first polyline
+ * @param rhs second polyline
+ * @return true, if the polylines consists of the same sequence of line segments
+ */
+bool operator==(Polyline const& lhs, Polyline const& rhs);
+
 } // end namespace
 
 #endif /* POLYLINE_H_ */

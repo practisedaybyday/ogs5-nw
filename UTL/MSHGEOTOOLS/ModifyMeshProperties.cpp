@@ -87,7 +87,7 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 	{
 		// indices of nodes of the j-th element
 		const Math_Group::vec<long>& nodes_indices (msh_elem[j]->GetNodeIndeces ());
-		size_t k;
+//		size_t k;
 //		for (k = 0; k<nodes_indices.Size(); k++) {
 //			if (! rot_polygon.isPntInPolygon(*(mesh_nodes_as_points[nodes_indices[k]]))) {
 //				break;
@@ -98,13 +98,29 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 //			msh_elem[j]->setPatchIndex (mat_id);
 //		}
 
-		size_t cnt (0);
-		for (k = 0; k < nodes_indices.Size(); k++)
-			if (rot_polygon.isPntInPolygon(*(mesh_nodes_as_points[nodes_indices[k]])))
-				cnt++;
+//		size_t cnt (0);
+//		for (k = 0; k < nodes_indices.Size(); k++)
+//			if (rot_polygon.isPntInPolygon(*(mesh_nodes_as_points[nodes_indices[k]])))
+//				cnt++;
+//
+//		if (cnt >= 2)
+//			msh_elem[j]->setPatchIndex (mat_id);
 
-		if (cnt >= 1)
+		double center[3] = {0.0, 0.0, 0.0};
+		for (size_t k(0); k < nodes_indices.Size(); k++) {
+			center[0] += (*(mesh_nodes_as_points[nodes_indices[k]]))[0];
+			center[1] += (*(mesh_nodes_as_points[nodes_indices[k]]))[1];
+//			center[2] += (*(mesh_nodes_as_points[nodes_indices[k]]))[2];
+		}
+		center[0] /= nodes_indices.Size();
+		center[1] /= nodes_indices.Size();
+//		center[2] /= nodes_indices.Size();
+
+//		std::cout << "center of element " << j << ": " << center[0] << ", " << center[1] << ", " << center[2] << std::endl;
+
+		if (rot_polygon.isPntInPolygon(center[0], center[1], center[2])) {
 			msh_elem[j]->setPatchIndex (mat_id);
+		}
 	}
 
 	for (size_t k(0); k < polygon_points.size(); k++)
