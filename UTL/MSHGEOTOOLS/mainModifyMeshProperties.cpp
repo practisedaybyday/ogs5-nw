@@ -28,10 +28,10 @@ Problem* aproblem = NULL;
 
 int main (int argc, char* argv[])
 {
-	if (argc < 7)
+	if (argc < 9)
 	{
 		std::cout << "Usage: " << argv[0] <<
-		" --mesh ogs_meshfile --geometry ogs_geometry --material_id id" << std::endl;
+		" --mesh ogs_meshfile --geometry ogs_geometry --polygon_id id --material_id id" << std::endl;
 		return -1;
 	}
 
@@ -88,8 +88,19 @@ int main (int argc, char* argv[])
 		return -1;
 	}
 
-	// *** get material id
+	// *** get polygon id
 	tmp = argv[5];
+	if (tmp.find ("--polygon_id") == std::string::npos)
+	{
+		std::cout << "could not read polygon id" << std::endl;
+		delete mesh;
+		delete geo;
+		return -1;
+	}
+	size_t polygon_id (atoi (argv[6]));
+
+	// *** get material id
+	tmp = argv[7];
 	if (tmp.find ("--material") == std::string::npos)
 	{
 		std::cout << "could not read material id" << std::endl;
@@ -97,9 +108,9 @@ int main (int argc, char* argv[])
 		delete geo;
 		return -1;
 	}
-	size_t material_id (atoi (argv[6]));
+	size_t material_id (atoi (argv[8]));
 
-	GEOLIB::Polygon polygon (*((*plys)[0]));
+	GEOLIB::Polygon polygon (*((*plys)[polygon_id]));
 	MeshLib::ModifyMeshProperties modify_mesh_nodes (mesh);
 
 	modify_mesh_nodes.setMaterial (polygon, material_id);

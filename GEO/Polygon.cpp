@@ -424,4 +424,79 @@ GEOLIB::Polygon* createPolygonFromCircle (GEOLIB::Point const& middle_pnt, doubl
 
 	return polygon;
 }
+
+bool operator==(Polygon const& lhs, Polygon const& rhs)
+{
+	if (lhs.getNumberOfPoints() != rhs.getNumberOfPoints())
+		return false;
+
+	const size_t n(lhs.getNumberOfPoints());
+	const size_t start_pnt(lhs.getPointID(0));
+
+	// search start point of first polygon in second polygon
+	bool nfound(true);
+	size_t k(0);
+	for (; k < n-1 && nfound; k++) {
+		if (start_pnt == rhs.getPointID(k)) {
+			nfound = false;
+			break;
+		}
+	}
+
+	// case: start point not found in second polygon
+	if (nfound) return false;
+
+	// *** determine direction
+	// opposite direction
+	if (k == n-2) {
+		for (k=1; k<n-1; k++) {
+			if (lhs.getPointID(k) != rhs.getPointID(n-1-k)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	// same direction - start point of first polygon at arbitrary position in second polygon
+	if (lhs.getPointID(1) == rhs.getPointID(k+1)) {
+		size_t j(k+2);
+		for (; j<n-1; j++) {
+			if (lhs.getPointID(j-k) != rhs.getPointID(j)) {
+				return false;
+			}
+		}
+		j=0; // new start point at second polygon
+		for (; j<k+1; j++) {
+			if (lhs.getPointID(n-(k+2)+j+1) != rhs.getPointID(j)) {
+				return false;
+			}
+		}
+		return true;
+	} else {
+		// opposite direction with start point of first polygon at arbitrary position
+		// *** ATTENTION
+		std::cerr << "operator==(Polygon const& lhs, Polygon const& rhs) - not tested case (implementation is probably buggy) - please contact thomas.fischer@ufz.de mentioning the problem" << std::endl;
+		// in second polygon
+		if (lhs.getPointID(1) == rhs.getPointID(k-1)) {
+			size_t j(k-2);
+			for (; j>0; j--) {
+				if (lhs.getPointID(k-2-j) != rhs.getPointID(j)) {
+					return false;
+				}
+			}
+			// new start point at second polygon - the point n-1 of a polygon is equal to the
+			// first point of the polygon (for this reason: n-2)
+			j=n-2;
+			for (; j>k-1; j--) {
+				if (lhs.getPointID(n-2+j+k-2) != rhs.getPointID(j)) {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+
 } // end namespace GEOLIB

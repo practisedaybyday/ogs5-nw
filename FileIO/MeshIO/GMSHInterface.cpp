@@ -56,7 +56,6 @@ void GMSHInterface::writeGMSHPoints(const std::vector<GEOLIB::Point*> &pnt_vec,
                                     GEOLIB::QuadTree<GEOLIB::Point>* quad_tree)
 {
 	// write points
-//	float characteristic_len (10.0);
 	const size_t n (pnt_vec.size());
 	for (size_t k(0); k < n; k++)
 	{
@@ -75,10 +74,14 @@ void GMSHInterface::writeGMSHPoints(const std::vector<GEOLIB::Point*> &pnt_vec,
 	_n_pnt_offset += n;
 }
 
-void GMSHInterface::writeGMSHPolyline (const GEOLIB::Polyline* ply, const size_t offset)
+void GMSHInterface::writeGMSHPolyline(std::vector<GEOLIB::Polyline*> const& ply_vec, size_t ply_id, size_t offset)
 {
 	size_t local_offset (this->_n_pnt_offset - offset);
+	GEOLIB::Polyline const*const ply (ply_vec[ply_id]);
 	size_t s (ply->getNumberOfPoints());
+
+	_ply_id_gmsh_line_mapping.push_back(PolylineGMSHMapping(ply_id, _n_lines, _n_lines+s-2));
+
 	// write line segments (= Line) of the polyline
 	for (size_t j(0); j < s - 1; j++) {
 		_out << "Line(" << _n_lines + j << ") = {" << local_offset + ply->getPointID(j) << ","
@@ -95,16 +98,16 @@ void GMSHInterface::writeGMSHPolyline (const GEOLIB::Polyline* ply, const size_t
 void GMSHInterface::writeGMSHPolylines(const std::vector<GEOLIB::Polyline*>& ply_vec)
 {
 	size_t n (ply_vec.size());
-	for (size_t k(0); k < n; k++)
+	for (size_t k(0); k < n; k++) {
 		// write k-th polyline
-		writeGMSHPolyline (ply_vec[k], 0);
+		writeGMSHPolyline (ply_vec, k, 0);
+	}
 	_out << std::endl;
 }
 
-size_t GMSHInterface::writeGMSHPolygon(const GEOLIB::Polygon& polygon, const size_t offset)
+size_t GMSHInterface::writeGMSHPolygon(const std::vector<GEOLIB::Polyline*>& ply_vec, size_t id, size_t offset)
 {
-	writeGMSHPolyline (&polygon, offset);
-	//_polygon_list.push_back (_n_lines-1);
+	writeGMSHPolyline (ply_vec, id, offset);
 	return _n_lines - 1;
 }
 
@@ -138,7 +141,7 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name,
 	quad_tree->balance();
 
 	// write points
-	writeGMSHPoints (*pnts);
+	writeGMSHPoints (*pnts, quad_tree);
 
 	// write Polylines
 	std::map<size_t,size_t> geo2gmsh_polygon_id_map;
@@ -148,30 +151,90 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name,
 	{
 		if ((*plys)[i]->isClosed())
 		{
-			GEOLIB::Polygon polygon(*((*plys)[i]));
-			size_t polygon_id = this->writeGMSHPolygon(polygon, pnts->size());
-			geo2gmsh_polygon_id_map[i] = polygon_id;
+			GEOLIB::Polygon const& polygon(*((*plys)[i]));
+			// omit creating polygons twice
+			size_t k(0);
+			for (k=0; k<i; k++) {
+				GEOLIB::Polygon const& test_polygon(*((*plys)[k]));
+				if (polygon == test_polygon) {
+					k = i+1;
+				}
+			}
+			// k==i means polygon is not yet written
+			if (k == i) {
+				size_t polygon_id = this->writeGMSHPolygon(*plys, i, pnts->size());
+				geo2gmsh_polygon_id_map[i] = polygon_id;
+			}
 		}
 		else
-			this->writeGMSHPolyline((*plys)[i], pnts->size());
+			this->writeGMSHPolyline(*plys, i, pnts->size());
 	}
 
 	for (size_t i = 0; i < plys->size(); i++)
-		if ((*plys)[i]->isClosed())
-		{
-			std::list<size_t> polygon_list = findHolesInsidePolygon(plys, i,
-							geo2gmsh_polygon_id_map);
-			this->writePlaneSurface(polygon_list);
-			geo2gmsh_surface_id_map[i] = _n_plane_sfc - 1;
+		if ((*plys)[i]->isClosed()) {
+			std::list<size_t> polygon_list(findHolesInsidePolygon(plys, i));
+
+			// search for holes that are twice
+			std::list<size_t>::iterator it_i(polygon_list.begin());
+			while (it_i != polygon_list.end()) {
+				std::list<size_t>::iterator it_j (it_i);
+				it_j++;
+				while (it_j != polygon_list.end()) {
+					bool erased(false);
+					GEOLIB::Polygon const& polygon_i(*((*plys)[*it_i]));
+					GEOLIB::Polygon const& polygon_j(*((*plys)[*it_j]));
+					if (polygon_i == polygon_j) {
+						it_j = polygon_list.erase(it_j);
+						erased = true;
+					}
+					if (! erased)
+						it_j++;
+				}
+				it_i++;
+			}
+			// end search for holes that are twice
+
+			// is polygon a hole?
+			size_t j(0);
+			if (!isPolygonInOtherPolygon(plys, i, j)) {
+				std::list<size_t> polygon_list_gmsh;
+				// apply polygon id mapping (ogs geometry -> gmsh)
+				for (std::list<size_t>::iterator it(polygon_list.begin()); it!=polygon_list.end(); it++) {
+					polygon_list_gmsh.push_back ((geo2gmsh_polygon_id_map.find(*it))->second);
+				}
+
+				bool write_holes (false);
+				this->writePlaneSurface(polygon_list_gmsh, write_holes);
+				geo2gmsh_surface_id_map[i] = _n_plane_sfc - 1;
+				// write holes as constraints
+				if (!write_holes && polygon_list.size() > 1) {
+					std::list<size_t>::const_iterator it(polygon_list.begin());
+					for (it++; it != polygon_list.end(); it++) {
+						_out << "// adding constraints" << std::endl;
+
+						// search polygon in _ply_id_gmsh_line_mapping
+						size_t k(0);
+						const size_t ply_id_gmsh_line_mapping_size(_ply_id_gmsh_line_mapping.size());
+						for (; k<ply_id_gmsh_line_mapping_size; k++) {
+							if (_ply_id_gmsh_line_mapping[k]._ply_id == *it) {
+								for (size_t l(_ply_id_gmsh_line_mapping[k]._gmsh_line_start_id); l<_ply_id_gmsh_line_mapping[k]._gmsh_line_end_id; l++) {
+									_out << "Line {" << l << "} In Surface {" << _n_plane_sfc-1 << "};" << std::endl;
+								}
+								break;
+							}
+						}
+					}
+				}
+			}
 		}
 
 	if (useStationsAsContraints)
-		this->addPointsAsConstraints(station_points, *plys, geo2gmsh_surface_id_map);
+		this->addPointsAsConstraints(station_points, *plys, geo2gmsh_surface_id_map, quad_tree, 0.8);
 
 	if (useSteinerPoints)
 	{
 		std::vector<GEOLIB::Point*> steiner_points = this->getSteinerPoints(quad_tree);
-		this->addPointsAsConstraints(steiner_points, *plys, geo2gmsh_surface_id_map);
+		this->addPointsAsConstraints(steiner_points, *plys, geo2gmsh_surface_id_map, quad_tree, 0.3);
 		for (size_t i = 0; i < steiner_points.size(); i++)
 			delete steiner_points[i];
 	}
@@ -184,11 +247,11 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name,
 }
 
 std::list<size_t> GMSHInterface::findHolesInsidePolygon(const std::vector<GEOLIB::Polyline*>* plys,
-				size_t i, std::map<size_t,size_t> const& geo2gmsh_polygon_id_map)
+				size_t i) const
 {
 	GEOLIB::Polygon polygon(*((*plys)[i]));
 	std::list<size_t> polygon_list;
-	polygon_list.push_back(geo2gmsh_polygon_id_map[i]);
+	polygon_list.push_back(i);
 	for (size_t j = 0; j < plys->size(); j++) // check if polygons are located completely inside the given polygon
 
 		if ((i != j) && ((*plys)[j]->isClosed()))
@@ -202,21 +265,49 @@ std::list<size_t> GMSHInterface::findHolesInsidePolygon(const std::vector<GEOLIB
 					break;
 				}
 			if (isInside)
-				polygon_list.push_back(geo2gmsh_polygon_id_map[j]);
+				polygon_list.push_back(j);
 		}
 	return polygon_list;
 }
 
-void GMSHInterface::writePlaneSurface (std::list<size_t> const& polygon_list)
+bool GMSHInterface::isPolygonInOtherPolygon(const std::vector<GEOLIB::Polyline*>* plys, size_t i, size_t &j) const
+{
+	if (! ((*plys)[i])->isClosed())
+		return false;
+
+	GEOLIB::Polygon const& ply_i(*((*plys)[i])); // polygon to test with
+	const size_t n_pnts_ply_i(ply_i.getNumberOfPoints());
+	const size_t n_plys(plys->size());
+	bool is_not_hole(true);
+	// check other polygons
+	for (j = 0; j < n_plys && is_not_hole; j++) {
+		if ((i != j) && (((*plys)[j])->isClosed())) {
+			GEOLIB::Polygon const& ply_j(*((*plys)[j]));
+			bool is_hole_in_ply_j(true);
+			for (size_t k(0); k < n_pnts_ply_i && is_hole_in_ply_j; k++) {
+				if (!ply_j.isPntInPolygon(*(ply_i.getPoint(k)))) {
+					is_hole_in_ply_j = false;
+				}
+			}
+			if (is_hole_in_ply_j) {
+				is_not_hole = false;
+			}
+		}
+	}
+	return ! is_not_hole;
+}
+
+void GMSHInterface::writePlaneSurface (std::list<size_t> const& polygon_list, bool respect_holes)
 {
 	_out << "Plane Surface (" << _n_plane_sfc << ") = {" << std::flush;
 	std::list<size_t>::const_iterator it (polygon_list.begin());
 	_out << *it << std::flush;
-	for (++it; it != polygon_list.end(); ++it)
-		_out << ", " << *it << std::flush;
+	if (respect_holes) {
+		for (++it; it != polygon_list.end(); ++it)
+			_out << ", " << *it << std::flush;
+	}
 	_out << "};" << std::endl;
 	_n_plane_sfc++;
-	//_polygon_list.clear();
 }
 
 GEOLIB::QuadTree<GEOLIB::Point>* GMSHInterface::createQuadTreeFromPoints(
@@ -1005,7 +1096,8 @@ void GMSHInterface::writeBoundingPolygon (GEOLIB::Polygon const* const bounding_
 void GMSHInterface::addPointsAsConstraints(const std::vector<GEOLIB::Point*> &points,
                                            const std::vector<GEOLIB::Polyline*> &polylines,
                                            std::map<size_t,size_t> geo2gmsh_surface_id_map,
-                                           GEOLIB::QuadTree<GEOLIB::Point>* quad_tree)
+                                           GEOLIB::QuadTree<GEOLIB::Point>* quad_tree,
+                                           double mesh_density)
 {
 	std::vector<GEOLIB::Polygon*> polygons;
 	for (size_t j = 0; j < polylines.size(); j++)
@@ -1033,9 +1125,7 @@ void GMSHInterface::addPointsAsConstraints(const std::vector<GEOLIB::Point*> &po
 				{
 					if (it != jt)
 					{
-						if (polygons[*it]->isPolylineInPolygon(*(polygons[*
-						                                                  jt
-						                                         ])))
+						if (polygons[*it]->isPolylineInPolygon(*(polygons[*jt])))
 							it = surrounding_polygons.erase(it);
 						else
 							++it;
@@ -1051,7 +1141,7 @@ void GMSHInterface::addPointsAsConstraints(const std::vector<GEOLIB::Point*> &po
 			{
 				GEOLIB::Point ll, ur;
 				quad_tree->getLeaf(*(points[i]), ll, ur);
-				_out << "," << (0.3 * (ur[0] - ll[0]));
+				_out << "," << (mesh_density * (ur[0] - ll[0]));
 			}
 			_out << "};" << std::endl;
 			_out << "Point {" << _n_pnt_offset << "} In Surface {" <<
