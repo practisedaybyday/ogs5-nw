@@ -75,7 +75,8 @@ int main (int argc, char* argv[])
 
 	GEOLIB::GEOObjects* geo (new GEOLIB::GEOObjects);
 	tmp = argv[4];
-	FileIO::readGLIFileV4(tmp, geo);
+	std::string unique_name;
+	FileIO::readGLIFileV4(tmp, geo, unique_name);
 
 //	{
 //		const std::vector<GEOLIB::Point*>* pnts (geo->getPointVec (tmp));

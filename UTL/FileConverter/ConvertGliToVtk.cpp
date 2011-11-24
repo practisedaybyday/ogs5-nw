@@ -60,7 +60,8 @@ int main (int argc, char const* argv[])
 		cout << "Opening file " << filename << " ... " << endl << flush;
 
 		GEOLIB::GEOObjects* geo (new GEOLIB::GEOObjects);
-		FileIO::readGLIFileV4(filename, geo);
+		std::string unique_name;
+		FileIO::readGLIFileV4(filename, geo, unique_name);
 		const std::vector< Point* >* pnts = geo->getPointVec(filename);
 		if (pnts)
 		{
