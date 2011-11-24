@@ -6,13 +6,7 @@
 #ifndef XMLGSPINTERFACE_H
 #define XMLGSPINTERFACE_H
 
-#include "ProjectData.h"
 #include "XMLInterface.h"
-
-class QFile;
-class QDomDocument;
-class QDomNode;
-class QDomElement;
 
 /**
  * \brief Reads and writes project information to and from XML files.

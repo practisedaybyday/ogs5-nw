@@ -5,10 +5,6 @@
 
 #include "XmlGmlInterface.h"
 
-#include <QFileInfo>
-#include <iostream>
-
-#include "Configure.h"
 #include <QFile>
 #include <QTextCodec>
 #include <QtXml/QDomDocument>

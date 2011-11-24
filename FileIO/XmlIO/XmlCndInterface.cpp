@@ -4,14 +4,8 @@
  */
 
 #include "XmlCndInterface.h"
-
 #include "FEMCondition.h"
 
-#include <QFileInfo>
-#include <iostream>
-
-#include "Configure.h"
-#include <QCryptographicHash>
 #include <QFile>
 #include <QTextCodec>
 #include <QtXml/QDomDocument>

@@ -6,14 +6,10 @@
 #include "ProjectData.h"
 #include "XMLInterface.h"
 
-#include <QFileInfo>
-#include <iostream>
-
 #include "Configure.h"
+
 #include <QCryptographicHash>
-#include <QFile>
-#include <QTextCodec>
-#include <QtXml/QDomDocument>
+#include <QFileInfo>
 #ifdef QT_USE_QTXMLPATTERNS
 #include <QtXmlPatterns/QXmlSchema>
 #include <QtXmlPatterns/QXmlSchemaValidator>

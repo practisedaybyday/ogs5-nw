@@ -6,7 +6,6 @@
 #ifndef XMLSTNINTERFACE_H
 #define XMLSTNINTERFACE_H
 
-#include "ProjectData.h"
 #include "XMLInterface.h"
 
 /**

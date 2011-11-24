@@ -6,7 +6,6 @@
 #ifndef XMLCNDINTERFACE_H
 #define XMLCNDINTERFACE_H
 
-#include "ProjectData.h"
 #include "XMLInterface.h"
 
 class FEMCondition;

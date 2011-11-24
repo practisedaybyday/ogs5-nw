@@ -4,20 +4,11 @@
  */
 
 #include "XmlStnInterface.h"
-
 #include "DateTools.h"
-#include "ProjectData.h"
 
-#include <QFileInfo>
-#include <iostream>
-
-#include "Configure.h"
-#include <QCryptographicHash>
 #include <QFile>
-#include <QTextCodec>
 #include <QtXml/QDomDocument>
 
-#include <QTime>
 
 XmlStnInterface::XmlStnInterface(ProjectData* project, const std::string &schemaFile)
 : XMLInterface(project, schemaFile)

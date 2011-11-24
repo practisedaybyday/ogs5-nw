@@ -6,13 +6,7 @@
 #ifndef XMLGMLINTERFACE_H
 #define XMLGMLINTERFACE_H
 
-#include "ProjectData.h"
 #include "XMLInterface.h"
-
-class QFile;
-class QDomDocument;
-class QDomNode;
-class QDomElement;
 
 /**
  * \brief Reads and writes GeoObjects to and from XML files.

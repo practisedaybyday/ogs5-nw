@@ -9,16 +9,8 @@
 #include "XmlStnInterface.h"
 #include "XmlCndInterface.h"
 
-
-#include "ProjectData.h"
-
 #include <QFileInfo>
-#include <iostream>
-
-#include "Configure.h"
-#include <QCryptographicHash>
 #include <QFile>
-#include <QTextCodec>
 #include <QtXml/QDomDocument>
 
 XmlGspInterface::XmlGspInterface(ProjectData* project, const std::string &schemaFile)
