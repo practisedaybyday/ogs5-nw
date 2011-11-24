@@ -7,16 +7,7 @@ SOURCE_LOCATION="$SOURCE_LOCATION/../.."
 while getopts "a:d:" opt; do
 	case $opt in
 		a)
-			if [ "$OPTARG" == "x32" ]; then
-				ARCHITECTURE="x32"
-				WIN_ARCHITECTURE="x86"
-			elif [ "$OPTARG" == "x64" ]; then
-				ARCHITECTURE="x64"
-				WIN_ARCHITECTURE="x64"
-			else
-				echo "$OPTARG is not a valid argument. Specify x32 or x64."
-				exit 1
-			fi
+			source $SOURCE_LOCATION/scripts/base/architecture_option_win.sh
 			;;
 		d)
 			BUILD_LOCATION="$SOURCE_LOCATION/$OPTARG"
@@ -32,32 +23,29 @@ while getopts "a:d:" opt; do
 	esac
 done
 
-# Cleanup
-rm -rf $BUILD_LOCATION
-mkdir -p $BUILD_LOCATION && cd $BUILD_LOCATION
-
-# Configure compiler
+source $SOURCE_LOCATION/scripts/base/check_architecture_option_win.sh
+source $SOURCE_LOCATION/scripts/base/check_and_cleanup_build_directory.sh
 source $SOURCE_LOCATION/scripts/base/configure_compiler.sh
 
-# CMake
-cmake -DOGS_USE_QT=ON -DOGS_PACKAGING=ON -DDOCS_GENERATE_DIAGRAMS=ON -DDOCS_GENERATE_COLLABORATION_GRAPHS=ON -DCMAKE_BUILD_TYPE=Release -G "$CMAKE_GENERATOR" $SOURCE_LOCATION
-cmake $SOURCE_LOCATION
+CMAKE_ARGS=""
+BUILD_ARGS=""
 
-## Windows specific
 if [ "$OSTYPE" == 'msys' ]; then
-	# Installer
-	$COMSPEC \/c "devenv OGS.sln /Build Release /Project PACKAGE"
-	rm CMakeCache.txt
-	# Zip
-	cmake -DOGS_USE_QT=ON -DOGS_PACKAGING=ON -DOGS_PACKAGING_ZIP=ON -G "$CMAKE_GENERATOR" $SOURCE_LOCATION
-	cmake $SOURCE_LOCATION
-	$COMSPEC \/c "devenv OGS.sln /Build Release /Project PACKAGE"
-exit
-else
-	make
-	cmake $SOURCE_LOCATION
-	make
-	make package
+	CMAKE_ARGS="-DOGS_PACKAGING_ZIP=ON"
+fi
+if [ "$OSTYPE" != 'msys' ]; then
+	BUILD_ARGS="-- -j $NUM_PROCESSORS"
 fi
 
+cmake $CMAKE_ARGS -DOGS_USE_QT=ON -DOGS_PACKAGING=ON -DDOCS_GENERATE_DIAGRAMS=ON -DDOCS_GENERATE_COLLABORATION_GRAPHS=ON -DCMAKE_BUILD_TYPE=Release -G "$CMAKE_GENERATOR" $SOURCE_LOCATION
+cmake $SOURCE_LOCATION
+
+cmake --build . --config Release $BUILD_ARGS
+cmake $SOURCE_LOCATION
+cmake --build . --config Release --target package $BUILD_ARGS
+
 cd "$SOURCE_LOCATION/scripts/build"
+
+if [ "$OSTYPE" == 'msys' ]; then
+	exit 0
+fi
