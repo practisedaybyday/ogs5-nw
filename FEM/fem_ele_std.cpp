@@ -1938,6 +1938,10 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 		{
 			Matrix local_tensor(dim,dim);
 			Matrix temp_tensor(dim,dim);
+            if (MeshElement->tranform_tensor==NULL) {
+                std::cout << "***Error: Geometric dimension in MMP is not consistent with element." << std::endl;
+                exit(0);
+            }
 			Matrix t_transform_tensor(*MeshElement->tranform_tensor);
 			MeshElement->tranform_tensor->GetTranspose(t_transform_tensor);
 			Matrix global_tensor(dim,dim);
