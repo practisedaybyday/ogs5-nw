@@ -24,6 +24,7 @@ public:
 	std::vector<VTK_Info> vec_dataset;
 	std::string pvd_file_name;
 	std::string pvd_vtk_file_name_base;
+    std::string pvd_vtk_file_path_base;
 	double useBinary;
 
 	enum VTK_XML_DATA_TYPE { Int8, UInt8, Int16, UInt16, Int32, UInt32, Int64, UInt64, Float32,

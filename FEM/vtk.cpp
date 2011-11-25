@@ -52,10 +52,14 @@ bool CVTK::InitializePVD(const string &file_base_name, const string &pcs_type_na
 			ibegin = is;
 		ibegin += 1;
 		this->pvd_vtk_file_name_base = file_base_name.substr(ibegin);
+        this->pvd_vtk_file_path_base = file_base_name.substr(0, ibegin);
 	}
 	else
+    {
 		this->pvd_vtk_file_name_base = file_base_name;
-	if (pcs_type_name.size() > 0)         // PCS
+        this->pvd_vtk_file_path_base = "";
+    }
+	if (pcs_type_name.size() > 0)        // PCS
 		this->pvd_vtk_file_name_base += "_" + pcs_type_name;
 
 	this->useBinary = binary;
@@ -557,62 +561,70 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 	if (out->m_pcs != NULL)
 		m_pcs = out->m_pcs;
 
-	string str_format;
+ 	string str_format;
 	if (!this->useBinary)
 		str_format = "ascii";
 	else
 		str_format = "appended";
 
+    bool isXZplane = (msh->GetCoordinateFlag()==22);
+    bool is3D = (msh->GetCoordinateFlag() / 10 == 3);
 	bool outNodeVelocity = false;
+    bool outNodeDisplacement = false;
 
 	//Nodal values
 	for (int i = 0; i < (int) out->_nod_value_vector.size(); i++)
 	{
+        const string &internal_val_name = out->_nod_value_vector[i];
+        const string &external_val_name = out->_alias_nod_value_vector[i];
 		//is velocity
-		if (out->_nod_value_vector[i].find("VELOCITY") != string::npos)
+		if (internal_val_name.find("VELOCITY") != string::npos)
 		{
 			outNodeVelocity = true;
 			continue;
 		}
+        if (internal_val_name.find("DISPLACEMENT") != string::npos)
+        {
+            outNodeDisplacement = true;
+            continue;
+        }
 		//    if (out->m_pcs == NULL || out->pcs_type_name.compare("NO_PCS")==0)
 		if (out->m_pcs == NULL || out->getProcessType() == NO_PCS)
-			m_pcs = PCSGet(out->_nod_value_vector[i], true);
+			m_pcs = PCSGet(internal_val_name, true);
 		if (!m_pcs)
 			continue;
-		NodeIndex[i] = m_pcs->GetNodeValueIndex(out->_nod_value_vector[i]);
+
+		NodeIndex[i] = m_pcs->GetNodeValueIndex(internal_val_name);
 		if (NodeIndex[i] < 0)
 			continue;
 
+
 		if (!useBinary || !output_data)
-			WriteDataArrayHeader(fin, type_Double, out->_nod_value_vector[i],
-			                     0, str_format, offset);
+			WriteDataArrayHeader(fin, type_Double, external_val_name, 0, str_format, offset);
 
 		if (output_data)
 		{
 			for (size_t j = 0; j < m_pcs->GetPrimaryVNumber(); j++)
-				if (out->_nod_value_vector[i].compare(
-				            m_pcs->pcs_primary_function_name[j]) == 0)
-				{
-					NodeIndex[i]++;
+				if (internal_val_name.compare(m_pcs->pcs_primary_function_name[j]) == 0) {
+					NodeIndex[i]++; //current step
 					break;
 				}
-			if (!useBinary)
-			{
+			if (!useBinary) {
 				fin << "          ";
-				for (size_t j = 0; j < msh->GetNodesNumber(false); j++)
-					fin << m_pcs->GetNodeValue(msh->nod_vector[j]->GetIndex(),
-					                           NodeIndex[i]) << " ";
-				fin << endl;
+			} else {
+				write_value_binary<unsigned int> (fin, sizeof(double)* msh->GetNodesNumber(false));
 			}
-			else
-			{
-				write_value_binary<unsigned int> (fin, sizeof(double)
-				                                  * msh->GetNodesNumber(false));
-				for (size_t j = 0; j < msh->GetNodesNumber(false); j++)
-					write_value_binary(fin, m_pcs->GetNodeValue(
-					                           msh->nod_vector[j]->GetIndex(),
-					                           NodeIndex[i]));
-			}
+            for (size_t j = 0; j < msh->GetNodesNumber(false); j++) {
+                double v = m_pcs->GetNodeValue(msh->nod_vector[j]->GetIndex(), NodeIndex[i]);
+                if (!useBinary) {
+                    fin << v << " ";
+                } else {
+                    write_value_binary(fin, v);
+                }
+            }
+            if (!useBinary) {
+                fin << endl;
+            }
 		}
 		else
 			offset += msh->GetNodesNumber(false) * sizeof(double)
@@ -628,24 +640,26 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 		unsigned int velocity_id = 0;
 		for (int i = 0; i < (int) out->_nod_value_vector.size(); i++)
 		{
-			if (out->_nod_value_vector[i].find("VELOCITY_X1") != string::npos)
+            const string &internal_val_name = out->_nod_value_vector[i];
+            const string &external_val_name = out->_alias_nod_value_vector[i];
+			if (internal_val_name.find("VELOCITY_X1") != string::npos)
 			{
 				if (out->m_pcs == NULL)
-					m_pcs = PCSGet(out->_nod_value_vector[i], true);
+					m_pcs = PCSGet(internal_val_name, true);
 				velocity_id = 0;
 			}
-			else if (out->_nod_value_vector[i].find("VELOCITY_X2")
+			else if (internal_val_name.find("VELOCITY_X2")
 			         != string::npos)
 			{
 				if (out->m_pcs == NULL)
-					m_pcs = PCSGet(out->_nod_value_vector[i], true);
+					m_pcs = PCSGet(internal_val_name, true);
 				velocity_id = 1;
 			}
-			else if (out->_nod_value_vector[i].find("VELOCITY1_X")
+			else if (internal_val_name.find("VELOCITY1_X")
 			         != string::npos)
 			{
 				if (out->m_pcs == NULL)
-					m_pcs = PCSGet(out->_nod_value_vector[i], true);
+					m_pcs = PCSGet(internal_val_name, true);
 				velocity_id = 2;
 			}
 			else
@@ -673,10 +687,17 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 					{
 						fin << m_pcs->GetNodeValue(
 						        msh->nod_vector[j]->GetIndex(), ix) << " ";
-						fin << m_pcs->GetNodeValue(
-						        msh->nod_vector[j]->GetIndex(), iy) << " ";
-						fin << m_pcs->GetNodeValue(
-						        msh->nod_vector[j]->GetIndex(), iz) << " ";
+                        if (!isXZplane) {
+                            fin << m_pcs->GetNodeValue(
+                                msh->nod_vector[j]->GetIndex(), iy) << " ";
+                            fin << m_pcs->GetNodeValue(
+                                msh->nod_vector[j]->GetIndex(), iz) << " ";
+                        } else {
+                            fin << m_pcs->GetNodeValue(
+                                msh->nod_vector[j]->GetIndex(), iz) << " ";
+                            fin << m_pcs->GetNodeValue(
+                                msh->nod_vector[j]->GetIndex(), iy) << " ";
+                        }
 					}
 					fin << endl;
 				}
@@ -690,12 +711,21 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 						write_value_binary(fin, m_pcs->GetNodeValue(
 						                           msh->nod_vector[j]->
 						                           GetIndex(), ix));
-						write_value_binary(fin, m_pcs->GetNodeValue(
-						                           msh->nod_vector[j]->
-						                           GetIndex(), iy));
-						write_value_binary(fin, m_pcs->GetNodeValue(
-						                           msh->nod_vector[j]->
-						                           GetIndex(), iz));
+                        if (!isXZplane) {
+                            write_value_binary(fin, m_pcs->GetNodeValue(
+                                msh->nod_vector[j]->
+                                GetIndex(), iy));
+                            write_value_binary(fin, m_pcs->GetNodeValue(
+                                msh->nod_vector[j]->
+                                GetIndex(), iz));
+                        } else {
+                            write_value_binary(fin, m_pcs->GetNodeValue(
+                                msh->nod_vector[j]->
+                                GetIndex(), iz));
+                            write_value_binary(fin, m_pcs->GetNodeValue(
+                                msh->nod_vector[j]->
+                                GetIndex(), iy));
+                        }
 					}
 				}
 			}
@@ -707,7 +737,79 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 				WriteDataArrayFooter(fin);
 		}
 	}
-	return true;
+
+    //Displacement
+    if (outNodeDisplacement)
+    {
+        unsigned int disp_id = 0;
+        for (int i = 0; i < (int)out->_nod_value_vector.size(); i++)
+        {
+            const string &internal_val_name = out->_nod_value_vector[i];
+            const string &external_val_name = out->_alias_nod_value_vector[i];
+            if (internal_val_name.find("DISPLACEMENT_X1") != string::npos)
+            {
+                if (out->m_pcs == NULL)
+                    m_pcs = PCSGet(internal_val_name,true);
+                disp_id = 0;
+            }
+            else
+                continue;
+            if(!m_pcs)
+                continue;
+
+            if (!useBinary || !output_data)
+                WriteDataArrayHeader(fin, this->type_Double, "DISPLACEMENT", 3, str_format, offset);
+            if (output_data)
+            {
+                int var_id[3] = {};
+                var_id[0] = m_pcs->GetNodeValueIndex("DISPLACEMENT_X1");
+                var_id[1] = m_pcs->GetNodeValueIndex("DISPLACEMENT_Y1");
+                var_id[2] = -1;
+                if (is3D) {
+                    var_id[2] = m_pcs->GetNodeValueIndex("DISPLACEMENT_Z1");
+                } else if (isXZplane) {
+                    var_id[1] = -1;
+                    var_id[2] = m_pcs->GetNodeValueIndex("DISPLACEMENT_Y1");
+                }
+                //
+                if (!useBinary) {
+                    fin << "          ";
+                } else {
+                    write_value_binary<unsigned int>(fin, sizeof(double)*msh->GetNodesNumber(false)*3);
+                }
+                double u[3] = {};
+                for(size_t j = 0l; j < msh->GetNodesNumber(false); j++)
+                {
+                    for (size_t k=0; k<3; k++) {
+                        if (var_id[k]<0)
+                            u[k] = .0;
+                        else
+                            u[k] =  m_pcs->GetNodeValue(msh->nod_vector[j]->GetIndex(), var_id[k]);
+                    }
+
+                    if (!useBinary) {
+                        for (size_t k=0; k<3; k++)
+                            fin << u[k] << " ";
+                    } else {
+                        for (size_t k=0; k<3; k++)
+                            write_value_binary(fin, u[k]);
+                    }
+                }
+                if (!useBinary) {
+                    fin << endl;
+                } else {
+                    write_value_binary<unsigned int>(fin, sizeof(double)*msh->GetNodesNumber(false)*3);
+                }
+            }
+            else
+                offset += msh->GetNodesNumber(false) * 3 * sizeof(double) +
+                SIZE_OF_BLOCK_LENGTH_TAG;
+            if (!useBinary || !output_data)
+                WriteDataArrayFooter(fin);
+        }
+    }
+
+    return true;
 }
 
 bool CVTK::WriteElementValue(std::fstream &fin,
@@ -721,6 +823,8 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 		out->GetELEValuesIndexVector(ele_value_index_vector);
 	CRFProcess* m_pcs = NULL;
 	MeshLib::CElem* ele = NULL;
+
+    bool isXZplane = (msh->GetCoordinateFlag()==22);
 
 	string str_format;
 	if (!this->useBinary)
@@ -770,7 +874,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 			WriteDataArrayFooter(fin);
 	}
 
-	//Element veolocity
+	//Element velocity
 	if (outEleVelocity)
 	{
 		if (!useBinary || !output_data)
@@ -786,8 +890,13 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 				{
 					ele_gp_value[i]->getIPvalue_vec(0, ele_vel);
 					fin << ele_vel[0] << " ";
-					fin << ele_vel[1] << " ";
-					fin << ele_vel[2] << " ";
+                    if (!isXZplane) {
+                        fin << ele_vel[1] << " ";
+                        fin << ele_vel[2] << " ";
+                    } else {
+                        fin << ele_vel[2] << " ";
+                        fin << ele_vel[1] << " ";
+                    }
 				}
 				fin << endl;
 			}
@@ -799,9 +908,14 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 				for(long i = 0; i < (long)msh->ele_vector.size(); i++)
 				{
 					ele_gp_value[i]->getIPvalue_vec(0, ele_vel);
-					write_value_binary(fin, ele_vel[0]);
-					write_value_binary(fin, ele_vel[1]);
-					write_value_binary(fin, ele_vel[2]);
+                    write_value_binary(fin, ele_vel[0]);
+                    if (!isXZplane) {
+                        write_value_binary(fin, ele_vel[1]);
+                        write_value_binary(fin, ele_vel[2]);
+                    } else {
+                        write_value_binary(fin, ele_vel[2]);
+                        write_value_binary(fin, ele_vel[1]);
+                    }
 				}
 			}
 		}
@@ -835,16 +949,29 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 						        pch_pcs->
 						        GetElementValueIndex("VELOCITY1_X") +
 						        1) << " ";
-						fin << pch_pcs->GetElementValue(
-						        i,
-						        pch_pcs->
-						        GetElementValueIndex("VELOCITY1_Y") +
-						        1) << " ";
-						fin << pch_pcs->GetElementValue(
-						        i,
-						        pch_pcs->
-						        GetElementValueIndex("VELOCITY1_Z") +
-						        1) << " ";
+                        if (!isXZplane) {
+                            fin << pch_pcs->GetElementValue(
+                                i,
+                                pch_pcs->
+                                GetElementValueIndex("VELOCITY1_Y") +
+                                1) << " ";
+                            fin << pch_pcs->GetElementValue(
+                                i,
+                                pch_pcs->
+                                GetElementValueIndex("VELOCITY1_Z") +
+                                1) << " ";
+                        } else {
+                            fin << pch_pcs->GetElementValue(
+                                i,
+                                pch_pcs->
+                                GetElementValueIndex("VELOCITY1_Z") +
+                                1) << " ";
+                            fin << pch_pcs->GetElementValue(
+                                i,
+                                pch_pcs->
+                                GetElementValueIndex("VELOCITY1_Y") +
+                                1) << " ";
+                        }
 					}
 					fin << endl;
 				}
@@ -862,20 +989,30 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 						                                            GetElementValueIndex(
 						                                                    "VELOCITY1_X")
 						                                            + 1));
-						write_value_binary(fin,
-						                   pch_pcs->GetElementValue(i,
-						                                            pch_pcs
-						                                            ->
-						                                            GetElementValueIndex(
-						                                                    "VELOCITY1_Y")
-						                                            + 1));
-						write_value_binary(fin,
-						                   pch_pcs->GetElementValue(i,
-						                                            pch_pcs
-						                                            ->
-						                                            GetElementValueIndex(
-						                                                    "VELOCITY1_Z")
-						                                            + 1));
+                        if (!isXZplane) {
+                            write_value_binary(fin,
+                                pch_pcs->GetElementValue(i,
+                                pch_pcs
+                                ->
+                                GetElementValueIndex(
+                                "VELOCITY1_Y")
+                                + 1));
+                            write_value_binary(fin,
+                                pch_pcs->GetElementValue(i,
+                                pch_pcs
+                                ->
+                                GetElementValueIndex(
+                                "VELOCITY1_Z")
+                                + 1));
+                        } else {
+                            write_value_binary(fin,
+                                pch_pcs->GetElementValue(i,
+                                pch_pcs
+                                ->
+                                GetElementValueIndex(
+                                "VELOCITY1_Z")
+                                + 1));
+                        }
 					}
 				}
 			}

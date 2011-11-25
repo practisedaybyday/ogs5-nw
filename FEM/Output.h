@@ -52,6 +52,7 @@ public:
 	 * This means up to now, that data for missing processes is not written.
 	 */
 	void checkConsistency();              // CB (refactored by TF)
+    void setInternalVarialbeNames(MeshLib::CFEMesh *msh);
 
 	void GetNodeIndexVector(std::vector<int>&); //OK
 	void SetNODFluxAtPLY();               //OK
@@ -152,6 +153,7 @@ public:
 	                               true, bool mesh = true) const; // 09/2010 TF
 
 	std::vector<std::string> _nod_value_vector;
+    std::vector<std::string> _alias_nod_value_vector;
 	// MAT values
 	std::vector<std::string> mmp_value_vector; //OK
 	std::vector<std::string> mfp_value_vector; //OK
