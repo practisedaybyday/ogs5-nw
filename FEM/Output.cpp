@@ -181,7 +181,8 @@ ios::pos_type COutput::Read(std::ifstream& in_str,
 					break;  //SB: empty line
 				in.str(line_string);
 				in >> name;
-				_alias_nod_value_vector.push_back(name);
+				//_alias_nod_value_vector.push_back(name);
+                _nod_value_vector.push_back(name);
 				in.clear();
 			}
 
@@ -3147,6 +3148,7 @@ void COutput::checkConsistency ()
 **************************************************************************/
 void COutput::setInternalVarialbeNames(CFEMesh *msh)
 {
+#if 0
     if (_alias_nod_value_vector.empty())
         return;
     bool isXZplane = (msh->GetCoordinateFlag()==22);
@@ -3182,7 +3184,43 @@ void COutput::setInternalVarialbeNames(CFEMesh *msh)
             _nod_value_vector.push_back(_alias_nod_value_vector[j]);
         }
     }
+#else
+    if (_nod_value_vector.empty())
+        return;
+    bool isXZplane = (msh->GetCoordinateFlag()==22);
+    bool isPVD = (dat_type_name.compare("PVD") == 0); //currently only for PVD
 
+    if (isXZplane && isPVD) {
+        std::cout << "-> recognized XZ plane for PVD output." << std::endl;
+        map<string,string> map_output_variable_name;
+        map_output_variable_name.insert(pair<string, string>("DISPLACEMENT_Y1", "DISPLACEMENT_Z1" ));
+        map_output_variable_name.insert(pair<string, string>("DISPLACEMENT_Z1", "DISPLACEMENT_Y1" ));
+        map_output_variable_name.insert(pair<string, string>("STRESS_XY", "STRESS_XZ" ));
+        map_output_variable_name.insert(pair<string, string>("STRESS_YY", "STRESS_ZZ" ));
+        map_output_variable_name.insert(pair<string, string>("STRESS_ZZ", "STRESS_YY" ));
+        map_output_variable_name.insert(pair<string, string>("STRESS_XZ", "STRESS_XY" ));
+        map_output_variable_name.insert(pair<string, string>("STRAIN_XY", "STRAIN_XZ" ));
+        map_output_variable_name.insert(pair<string, string>("STRAIN_YY", "STRAIN_ZZ" ));
+        map_output_variable_name.insert(pair<string, string>("STRAIN_ZZ", "STRAIN_YY" ));
+        map_output_variable_name.insert(pair<string, string>("STRAIN_XZ", "STRAIN_XY"  ));
+        map_output_variable_name.insert(pair<string, string>("VELOCITY_Y1", "VELOCITY_Z1"));
+        map_output_variable_name.insert(pair<string, string>("VELOCITY_Z1", "VELOCITY_Y1"));
+        map_output_variable_name.insert(pair<string, string>("VELOCITY_Y2", "VELOCITY_Z2"));
+        map_output_variable_name.insert(pair<string, string>("VELOCITY_Z2", "VELOCITY_Y2"));
+
+        for (size_t j = 0; j < _nod_value_vector.size(); j++) {
+            if (map_output_variable_name.count(_nod_value_vector[j])>0) {
+                _alias_nod_value_vector.push_back(map_output_variable_name[_nod_value_vector[j]]);
+            } else {
+                _alias_nod_value_vector.push_back(_nod_value_vector[j]);
+            }
+        }
+    } else {
+        for (size_t j = 0; j < _nod_value_vector.size(); j++) {
+            _alias_nod_value_vector.push_back(_nod_value_vector[j]);
+        }
+    }
+#endif
 }
 
 void COutput::addInfoToFileName (std::string& file_name, bool geo, bool process, bool mesh) const
