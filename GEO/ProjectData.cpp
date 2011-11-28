@@ -64,7 +64,7 @@ const ProcessInfo* ProjectData::getProcess(FiniteElement::ProcessType type) cons
 
 bool ProjectData::removeProcess(FiniteElement::ProcessType type)
 {
-	for (std::vector<ProcessInfo*>::const_iterator it = _pcs_vec.begin(); it != _pcs_vec.end(); ++it)
+	for (std::vector<ProcessInfo*>::iterator it = _pcs_vec.begin(); it != _pcs_vec.end(); ++it)
 		if ((*it)->getProcessType() == type)
 		{
 
