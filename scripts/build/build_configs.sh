@@ -79,7 +79,7 @@ do
 	cmake -G "$CMAKE_GENERATOR" $SOURCE_LOCATION
 
 	# Build
-	#cmake --build . --config Release $BUILD_ARGS
+	cmake --build . --config Release $BUILD_ARGS
 
 	# Remember exit code
 	if [ "${?}" -ne "0" ] ; then
