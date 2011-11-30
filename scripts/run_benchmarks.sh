@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SOURCE_LOCATION=`pwd`
-SOURCE_LOCATION="$SOURCE_LOCATION/../.."
+SOURCE_LOCATION="$SOURCE_LOCATION/.."
 source $SOURCE_LOCATION/scripts/base/configure_compiler.sh
 
 # Parse options
@@ -79,12 +79,13 @@ cd $BUILD_LOCATION >/dev/null
 # Print results
 cat benchOut.txt
 
-cd scripts
+cd $SOURCE_LOCATION/scripts
 # Send emails on errors
 FILESIZE=$(stat -c %s $BUILD_LOCATION/svnInfo.txt)
 if [ "$FILESIZE" > "0" ] ; then
   echo "Running process_benchmark_job.rb"
-  cd process_benchmark_job
+  cd process_bengit d
+chmark_job
   ruby process_benchmark_job.rb $BUILD_LOCATION/svnInfo.txt $BUILD_LOCATION/benchOut.txt $HUDSON_EMAIL $1
   cd ..
 fi
