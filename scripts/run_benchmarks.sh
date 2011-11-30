@@ -84,7 +84,7 @@ cd $SOURCE_LOCATION/scripts
 FILESIZE=$(stat -c %s $BUILD_LOCATION/svnInfo.txt)
 if [ "$FILESIZE" > "0" ] ; then
   echo "Running process_benchmark_job.rb"
-  cd process_bengit d
+  cd process_benchmark_job
 chmark_job
   ruby process_benchmark_job.rb $BUILD_LOCATION/svnInfo.txt $BUILD_LOCATION/benchOut.txt $HUDSON_EMAIL $1
   cd ..
