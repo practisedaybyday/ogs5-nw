@@ -1765,7 +1765,7 @@ void COutput::WriteRFOElements(fstream &rfo_file)
 		         << " -1 " \
 		         << m_ele->GetName() << " ";
 		for(j = 0; j < m_ele->GetNodesNumber(false); j++)
-			rfo_file << m_ele->nodes_index[j] << " ";
+			rfo_file << m_ele->getNodeIndices()[j] << " ";
 		rfo_file << endl;
 	}
 }

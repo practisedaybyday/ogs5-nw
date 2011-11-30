@@ -21,6 +21,8 @@ public:
 	 */
 	XmlGspInterface(ProjectData* project, const std::string &schemaFile);
 
+	virtual ~XmlGspInterface() {};
+
 	/// Reads an xml-file containing a GeoSys project.
 	/// Project files currently cover only geo-, msh- and station-data. This will be expanded in the future.
 	int readFile(const QString &fileName);

@@ -883,9 +883,9 @@ double CTimeDiscretization::CourantTimeControl(void)
 //             dx_temp[2] = (m_nod1->Z()-m_nod2->Z())*(m_nod1->Z()-m_nod2->Z());
 
 				double const* const pnt1 (
-				        m_msh->nod_vector[m_ele->nodes_index[i]]->getData());
+				        m_msh->nod_vector[m_ele->getNodeIndices()[i]]->getData());
 				double const* const pnt2 (
-				        m_msh->nod_vector[m_ele->nodes_index[j]]->getData());
+				        m_msh->nod_vector[m_ele->getNodeIndices()[j]]->getData());
 				dx_temp[0] = (pnt1[0] - pnt2[0]) * (pnt1[0] - pnt2[0]);
 				dx_temp[1] = (pnt1[1] - pnt2[1]) * (pnt1[1] - pnt2[1]);
 				dx_temp[2] = (pnt1[2] - pnt2[2]) * (pnt1[2] - pnt2[2]);

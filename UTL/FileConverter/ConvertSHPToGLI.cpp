@@ -17,7 +17,8 @@
 #include "StringTools.h"
 
 // FileIO
-#include "XMLInterface.h"
+#include "XmlIO/XmlGmlInterface.h"
+#include "XmlIO/XmlStnInterface.h"
 
 // GEO
 #include "GEOObjects.h"
@@ -116,11 +117,14 @@ void convertPoints (DBFHandle dbf_handle,
 		schema_name = "OpenGeoSysGLI.xsd";
 	ProjectData* project_data (new ProjectData);
 	project_data->setGEOObjects (geo_objs);
-	XMLInterface xml (project_data, schema_name);
-	if (station)
-		xml.writeSTNFile(out_fname, points_group_name);
-	else
-		xml.writeGLIFile(out_fname, points_group_name);
+	XmlGmlInterface xml (project_data, schema_name);
+	if (station) {
+		XmlStnInterface xml (project_data, schema_name);
+		xml.writeFile(out_fname, points_group_name);
+	} else {
+		XmlGmlInterface xml (project_data, schema_name);
+		xml.writeFile(out_fname, points_group_name);
+	}
 
 	delete project_data;
 }

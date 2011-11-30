@@ -32,8 +32,7 @@ ExtractSurface::ExtractSurface(CFEMesh const* msh) :
 GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
                                                 std::vector<GEOLIB::Point*>& pnts) const
 {
-	if (!pnts.empty())
-	{
+	if (!pnts.empty()) {
 		for (size_t k(0); k < pnts.size(); k++)
 			delete pnts[k];
 		pnts.clear();
@@ -46,8 +45,7 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 	std::vector<size_t> id_map;
 	std::vector<GEOLIB::PointWithID*> points_inside_polygon;
 	const size_t number_of_mesh_nodes (mesh_nodes.size());
-	for (size_t j(0); j < number_of_mesh_nodes; j++)
-	{
+	for (size_t j(0); j < number_of_mesh_nodes; j++) {
 		if (polygon.isPntInPolygon (mesh_nodes[j]->getData()))
 			points_inside_polygon.push_back (new GEOLIB::PointWithID (mesh_nodes[j]->
 			                                                          getData(), j));

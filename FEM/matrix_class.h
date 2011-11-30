@@ -160,8 +160,8 @@ public:
 	virtual void Write(std::ostream& os = std::cout) const;
 
 protected:
-	T* _entry;
 	size_t _size;
+	T* _entry;
 };
 
 template<> class vec<void*>
