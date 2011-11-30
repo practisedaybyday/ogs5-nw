@@ -1937,8 +1937,8 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 		{
 			Matrix local_tensor(dim,dim);
 			Matrix temp_tensor(dim,dim);
-			Matrix t_transform_tensor(*MeshElement->tranform_tensor);
-			MeshElement->tranform_tensor->GetTranspose(t_transform_tensor);
+			Matrix t_transform_tensor(*MeshElement->transform_tensor);
+			MeshElement->transform_tensor->GetTranspose(t_transform_tensor);
 			Matrix global_tensor(dim,dim);
 			for (i = 0; i < ele_dim; i++)
 				for (int j = 0; j < ele_dim; j++)
@@ -1950,7 +1950,7 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 					for (int k = 0; k < dim; k++)
 						global_tensor(i,
 						              j) +=
-						        (*MeshElement->tranform_tensor)(i,
+						        (*MeshElement->transform_tensor)(i,
 						                                        k) *
 						        temp_tensor(
 						                k,
@@ -5569,18 +5569,18 @@ void CFiniteElementStd::Cal_Velocity()
 								vel_g[i] += rho_g *
 								            gravity_constant *
 								            (*MeshElement->
-								             tranform_tensor)(i, k)
+								             transform_tensor)(i, k)
 								            * (*MeshElement->
-								               tranform_tensor)(2,
+								               transform_tensor)(2,
 								                                k);
 							if(PcsType == P) // PCH 05.2009
 								vel_g[i] += coef *
 								            GasProp->Density() /
 								            FluidProp->Density() *
 								            (*MeshElement->
-								             tranform_tensor)(i, k)
+								             transform_tensor)(i, k)
 								            * (*MeshElement->
-								               tranform_tensor)(2,
+								               transform_tensor)(2,
 								                                k);
 						}
 				}
@@ -6018,12 +6018,12 @@ void CFiniteElementStd::Cal_Velocity_2()
 			for(i = 0; i < dim; i++)
 				for(j = 0; j < ele_dim; j++)
 				{
-					vel[i] += coef * (*MeshElement->tranform_tensor)(i, k)
-					          * (*MeshElement->tranform_tensor)(2, k);
+					vel[i] += coef * (*MeshElement->transform_tensor)(i, k)
+					          * (*MeshElement->transform_tensor)(2, k);
 					if(PcsType == V)
 						vel_g[i] += rho_g * gravity_constant *
-						            (*MeshElement->tranform_tensor)(i, k)
-						            * (*MeshElement->tranform_tensor)(2, k);
+						            (*MeshElement->transform_tensor)(i, k)
+						            * (*MeshElement->transform_tensor)(2, k);
 				}
 		}                         // To be correctted
 		else

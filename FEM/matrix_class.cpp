@@ -607,9 +607,9 @@ void DiagonalMatrix::LimitSize(size_t dim)
    05/2005  WW
    ==========================================================================*/
 //1.
-template<class T>  vec<T>:: vec(const int argSize) : _size(argSize)
+template<class T> vec<T>::vec(int argSize) :
+	_size(argSize), _entry (new T[argSize])
 {
-	_entry = new T[argSize];
 #ifdef gDEBUG
 	if (!_entry)
 	{
@@ -618,11 +618,10 @@ template<class T>  vec<T>:: vec(const int argSize) : _size(argSize)
 	}
 #endif
 }
-template<class T>  vec<T>:: vec(const vec<T>& v)
-{
-	_size = v.Size();
-	resize(_size);
 
+template<class T>  vec<T>::vec(const vec<T>& v) :
+	_size(v.Size()), _entry (new T[v.Size()])
+{
 #ifdef gDEBUG
 	if (!_entry)
 	{
@@ -634,7 +633,7 @@ template<class T>  vec<T>:: vec(const vec<T>& v)
 		_entry[i] = v._entry[i];
 }
 
-template<class T> vec<T>:: ~vec()
+template<class T> vec<T>::~vec()
 {
 	delete[] _entry;
 	_entry = 0;

@@ -11691,18 +11691,18 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 								cell_data_v[l] =  1000.0 *
 								                 (vel_av[0] *
 								                  (*elem->
-								                   tranform_tensor)(
+								                   transform_tensor)(
 								                          0,2)
 								                  +
 								                  vel_av[1] *
 								                  (*elem->
-								                   tranform_tensor)(
+								                   transform_tensor)(
 								                          1,2)
 								                  // 1000*:  m-->mm
 								                  +
 								                  vel_av[2] *
 								                  (*elem->
-								                   tranform_tensor)(
+								                   transform_tensor)(
 								                          2,2));
 							}
 						}

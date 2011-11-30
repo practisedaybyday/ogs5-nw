@@ -1965,53 +1965,53 @@ void CMediumProperties::WriteTecplot(std::string msh_name)
 			{
 			case MshElemType::LINE:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[1] + 1 << " " << m_ele->nodes_index[0] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[1] + 1 << " " << m_ele->getNodeIndices()[0] +
 				1 << std::endl;
 				j++;
 				element_type = "ET = QUADRILATERAL";
 				break;
 			case MshElemType::QUAD:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << " " << m_ele->nodes_index[3] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << " " << m_ele->getNodeIndices()[3] +
 				1 << std::endl;
 				j++;
 				element_type = "ET = QUADRILATERAL";
 				break;
 			case MshElemType::HEXAHEDRON:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << " " << m_ele->nodes_index[3] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << " " << m_ele->getNodeIndices()[3] +
 				1 << " " \
-				<< m_ele->nodes_index[4] + 1 << " " << m_ele->nodes_index[5] + 1 <<
-				" " << m_ele->nodes_index[6] + 1 << " " << m_ele->nodes_index[7] +
+				<< m_ele->getNodeIndices()[4] + 1 << " " << m_ele->getNodeIndices()[5] + 1 <<
+				" " << m_ele->getNodeIndices()[6] + 1 << " " << m_ele->getNodeIndices()[7] +
 				1 << std::endl;
 				j++;
 				element_type = "ET = BRICK";
 				break;
 			case MshElemType::TRIANGLE:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << endl;
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << endl;
 				j++;
 				element_type = "ET = TRIANGLE";
 				break;
 			case MshElemType::TETRAHEDRON:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << " " << m_ele->nodes_index[3] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << " " << m_ele->getNodeIndices()[3] +
 				1 << std::endl;
 				j++;
 				element_type = "ET = TETRAHEDRON";
 				break;
 			case MshElemType::PRISM:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[0] + 1 <<
-				" " << m_ele->nodes_index[1] + 1 << " " << m_ele->nodes_index[2] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[0] + 1 <<
+				" " << m_ele->getNodeIndices()[1] + 1 << " " << m_ele->getNodeIndices()[2] +
 				1 << " " \
-				<< m_ele->nodes_index[3] + 1 << " " << m_ele->nodes_index[3] + 1 <<
-				" " << m_ele->nodes_index[4] + 1 << " " << m_ele->nodes_index[5] +
+				<< m_ele->getNodeIndices()[3] + 1 << " " << m_ele->getNodeIndices()[3] + 1 <<
+				" " << m_ele->getNodeIndices()[4] + 1 << " " << m_ele->getNodeIndices()[5] +
 				1 << std::endl;
 				j++;
 				element_type = "ET = BRICK";
@@ -4535,7 +4535,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 		{
 			for (int i = 0; i < nnodes; i++)
 				strain_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-				        h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i],
+				        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
 				        idx_temp[j]);
 			strain_temp[j] = h_fem->interpolate(strain_nodes);
 		}
@@ -4560,7 +4560,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 		idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
 		for(int i = 0; i < nnodes; i++)
 			strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-			        h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i],
+			        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
 			        idStrainP);
 		strainp = h_fem->interpolate(strainp_nodes);
 		fac_perm_strain = GetCurveValue(permeability_strain_model_value[0],
@@ -4579,7 +4579,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 		idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
 		for(int i = 0; i < nnodes; i++)
 			strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-			        h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i],
+			        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
 			        idStrainP);
 		strainp = h_fem->interpolate(strainp_nodes);
 		if(strainp > 0)
@@ -4608,7 +4608,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 				for (int i = 0; i < nnodes; i++)
 					strain_nodes[i] = h_fem->dm_pcs->GetNodeValue(
 					        h_fem->dm_pcs->m_msh->ele_vector[index]->
-					        nodes_index
+					        getNodeIndices()
 					        [i],
 					        idx_temp[j]);
 				strain_temp[j] = h_fem->interpolate(strain_nodes);
@@ -4635,7 +4635,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 		idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
 		for(int i = 0; i < nnodes; i++)
 			strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-			        h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i],
+			        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
 			        idStrainP);
 		strainp = h_fem->interpolate(strainp_nodes);
 		if(strainp > 0.)
@@ -4666,7 +4666,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 		{
 			for (int i = 0; i < nnodes; i++)
 				strain_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-				        h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i],
+				        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
 				        idx_temp[j]);
 			strain_temp[j] = h_fem->interpolate(strain_nodes);
 		}
@@ -5947,52 +5947,52 @@ void CMediumProperties::WriteTecplotDistributedProperties()
 		switch (m_ele->GetElementType())
 		{
 		case MshElemType::LINE:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[0] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[0] + 1 << endl;
 			element_type = "QUADRILATERAL";
 			break;
 		case MshElemType::QUAD:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[2] + 1 << " "
-			         << m_ele->nodes_index[3] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[2] + 1 << " "
+			         << m_ele->getNodeIndices()[3] + 1 << endl;
 			element_type = "QUADRILATERAL";
 			break;
 		case MshElemType::HEXAHEDRON:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[2] + 1 << " "
-			         << m_ele->nodes_index[3] + 1 << " "
-			         << m_ele->nodes_index[4] + 1 << " "
-			         << m_ele->nodes_index[5] + 1 << " "
-			         << m_ele->nodes_index[6] + 1 << " "
-			         << m_ele->nodes_index[7] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[2] + 1 << " "
+			         << m_ele->getNodeIndices()[3] + 1 << " "
+			         << m_ele->getNodeIndices()[4] + 1 << " "
+			         << m_ele->getNodeIndices()[5] + 1 << " "
+			         << m_ele->getNodeIndices()[6] + 1 << " "
+			         << m_ele->getNodeIndices()[7] + 1 << endl;
 			element_type = "BRICK";
 			break;
 		case MshElemType::TRIANGLE:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[2] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[2] + 1 << endl;
 			element_type = "TRIANGLE";
 			break;
 		case MshElemType::TETRAHEDRON:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[2] + 1 << " "
-			         << m_ele->nodes_index[3] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[2] + 1 << " "
+			         << m_ele->getNodeIndices()[3] + 1 << endl;
 			element_type = "TETRAHEDRON";
 			break;
 		case MshElemType::PRISM:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[2] + 1 << " "
-			         << m_ele->nodes_index[3] + 1 << " "
-			         << m_ele->nodes_index[3] + 1 << " "
-			         << m_ele->nodes_index[4] + 1 << " "
-			         << m_ele->nodes_index[5] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[2] + 1 << " "
+			         << m_ele->getNodeIndices()[3] + 1 << " "
+			         << m_ele->getNodeIndices()[3] + 1 << " "
+			         << m_ele->getNodeIndices()[4] + 1 << " "
+			         << m_ele->getNodeIndices()[5] + 1 << endl;
 			element_type = "BRICK";
 			break;
 		default:
@@ -7089,7 +7089,7 @@ double CMediumProperties::PorosityVolStrain(long index, double val0, CFiniteElem
 		for (int i = 0; i < nnodes; i++)
 			strain_nodes[i] = assem->dm_pcs->GetNodeValue(
 			        assem->dm_pcs->m_msh->ele_vector[index]-> \
-			        nodes_index[i],
+			        getNodeIndices()[i],
 			        idx_temp[j]);
 		strain_temp[j] = assem->interpolate(strain_nodes);
 	}

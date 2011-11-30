@@ -1285,7 +1285,7 @@ void GMSHInterface::readGMSHMesh(std::string const& fname,
 
 			for (size_t i = 0; i < mesh->ele_vector.size(); i++)
 				for (long j = 0; j < mesh->ele_vector[i]->GetVertexNumber(); j++)
-					mesh->ele_vector[i]->nodes_index[j] =
+					mesh->ele_vector[i]->getNodeIndices()[j] =
 					        gmsh_id[mesh->ele_vector[i]->GetNodeIndex(j) + 1];
 
 			for (size_t i = 0; i < mesh->nod_vector.size(); i++)

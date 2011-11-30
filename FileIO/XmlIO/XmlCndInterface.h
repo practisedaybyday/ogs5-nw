@@ -23,17 +23,20 @@ public:
 	 */
 	XmlCndInterface(ProjectData* project, const std::string &schemaFile);
 
+	~XmlCndInterface() {};
+
 	/// Dummy function so class hierarchy works. This needs to be implemented later.
 	int readFile(const QString &fileName)
 	{
+		Q_UNUSED(fileName)
 		std::cout << "There is currently no implementation for XmlCndInterface::readFile(const QString&)." << std::endl;
 		return 0;
 	}
 
-	/// Reads an xml-file containing containing FEM Conditions such as Boundary- or Initial Conditions
+	/// Reads an xml-file containing FEM Conditions such as Boundary- or Initial Conditions
 	int readFile(std::vector<FEMCondition*> &conditions, const QString &fileName);
 
-	/// Writes an xml-file containing containing FEM Conditions such as Boundary- or Initial Conditions
+	/// Writes an xml-file containing FEM Conditions such as Boundary- or Initial Conditions
 	int writeFile(const QString &fileName, const QString &geoName) const;
 
 private:

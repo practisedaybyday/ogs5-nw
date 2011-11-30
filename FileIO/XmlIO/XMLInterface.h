@@ -30,6 +30,8 @@ public:
 	 */
 	XMLInterface(ProjectData* project, const std::string &schemaFile);
 
+	virtual ~XMLInterface() {};
+
 	/// As QXMLStreamWriter seems currently unable to include style-file links into xml-files, this method will workaround this issue and include the stylefile link.
 	int insertStyleFileDefinition(const QString &fileName) const;
 

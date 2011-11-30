@@ -158,12 +158,12 @@ void CElement::ConfigElement(CElem* MElement, bool FaceIntegration)
 				double dy (coords_node_i[1] - coords_node_0[1]);
 				double dz (coords_node_i[2] - coords_node_0[2]);
 
-				X[i] =  (*MeshElement->tranform_tensor)(0,0) * dx
-				       + (*MeshElement->tranform_tensor)(1,0) * dy
-				       + (*MeshElement->tranform_tensor)(2,0) * dz;
-				Y[i] =  (*MeshElement->tranform_tensor)(0,1) * dx
-				       + (*MeshElement->tranform_tensor)(1,1) * dy
-				       + (*MeshElement->tranform_tensor)(2,1) * dz;
+				X[i] =  (*MeshElement->transform_tensor)(0,0) * dx
+				       + (*MeshElement->transform_tensor)(1,0) * dy
+				       + (*MeshElement->transform_tensor)(2,0) * dz;
+				Y[i] =  (*MeshElement->transform_tensor)(0,1) * dx
+				       + (*MeshElement->transform_tensor)(1,1) * dy
+				       + (*MeshElement->transform_tensor)(2,1) * dz;
 //               Z[i] =  a_node->Z();
 				Z[i] = coords_node_i[2];
 			}
@@ -897,8 +897,8 @@ void CElement::ComputeGradShapefct(const int order)
 		for(i = 0; i < nNodes; i++)
 		{
 			for(j = 1; j < dim; j++)
-				dN[j * nNodes + i] = (*MeshElement->tranform_tensor)(j) * dN[i];
-			dN[i] *= (*MeshElement->tranform_tensor)(0);
+				dN[j * nNodes + i] = (*MeshElement->transform_tensor)(j) * dN[i];
+			dN[i] *= (*MeshElement->transform_tensor)(0);
 		}
 	// 2D element in 3D
 	if(dim == 3 && ele_dim == 2)
@@ -912,7 +912,7 @@ void CElement::ComputeGradShapefct(const int order)
 				for(k = 0; k < ele_dim; k++)
 					dN[j * nNodes +
 					   i] +=
-					        (*MeshElement->tranform_tensor)(j,
+					        (*MeshElement->transform_tensor)(j,
 					                                        k) *
 					        dShapefct[k * nNodes + i];
 			}

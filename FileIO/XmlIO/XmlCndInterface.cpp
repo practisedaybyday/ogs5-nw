@@ -129,5 +129,7 @@ void XmlCndInterface::readConditions( const QDomNode &listRoot,
 
 int XmlCndInterface::writeFile(const QString &fileName, const QString &geoName) const
 {
+	Q_UNUSED(fileName)
+	Q_UNUSED(geoName)
 	return 0;
 }
