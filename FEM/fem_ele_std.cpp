@@ -1854,11 +1854,9 @@ double CFiniteElementStd::CalCoefContent()
 
 #ifdef GEM_REACT
 		// kg44 for GEMS coupling this should be updated to arbitrary flow processes
-		porval0 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(
-		                                                            GROUNDWATER_FLOW)->
+		porval0 = PCSGetFlow()->GetElementValue(Index,PCSGetFlow()->
 		                                                    GetElementValueIndex("POROSITY"));                    // for GEMS we need old and new porosity!
-		porval1 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(
-		                                                            GROUNDWATER_FLOW)->
+		porval1 = PCSGetFlow()->GetElementValue(Index,PCSGetFlow()->
 		                                                    GetElementValueIndex(
 		                                                            "POROSITY") + 1);
 #else
