@@ -29,7 +29,7 @@ int XmlGspInterface::readFile(const QString &fileName)
 
 	if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		std::cout << "XMLInterface::readProjectFile() - Can't open xml-file " <<
+		std::cout << "XmlGspInterface::readFile() - Can't open xml-file " <<
 		fileName.toStdString() << "." << std::endl;
 		delete file;
 		return 0;
@@ -45,7 +45,7 @@ int XmlGspInterface::readFile(const QString &fileName)
 	QDomElement docElement = doc.documentElement(); //OpenGeoSysProject
 	if (docElement.nodeName().compare("OpenGeoSysProject"))
 	{
-		std::cout << "XMLInterface::readProjectFile() - Unexpected XML root." << std::endl;
+		std::cout << "XmlGspInterface::readFile() - Unexpected XML root." << std::endl;
 		delete file;
 		return 0;
 	}
@@ -91,7 +91,7 @@ int XmlGspInterface::writeFile(const QString &fileName, const QString &tmp) cons
 	QString path(fi.absolutePath() + "/");
 	if (!stream.is_open())
 	{
-		std::cout << "XMLInterface::writeProjectFile() - Could not open file...\n";
+		std::cout << "XmlGspInterface::writeFile() - Could not open file...\n";
 		return 0;
 	}
 
@@ -174,7 +174,7 @@ int XmlGspInterface::writeFile(const QString &fileName, const QString &tmp) cons
 			fileNameTag.appendChild(fileNameText);
 		}
 		else
-			std::cout << "XMLInterface::writeProjectFile() -  Error writing file: " <<
+			std::cout << "XmlGspInterface::writeFile() -  Error writing file: " <<
 			name.toStdString() << std::endl;
 	}
 
