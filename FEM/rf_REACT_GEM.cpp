@@ -817,8 +817,8 @@ short REACT_GEM::Init_RUN()
         // m_Node->na->GEM_print_ipm ( "ipm_for_debug.txt" );
         // scale data so that second pass gives the normalized volume of 1m^3
 
-        if ( ! ( m_flow_pcs->GetRestartFlag() >=2 ) ) // we do not need this for complete restart, it might even kill convergence for kinetically controlled runs
-        {
+ //       if ( ! ( m_flow_pcs->GetRestartFlag() >=2 ) ) // we do not need this for complete restart, it might even kill convergence for kinetically controlled runs
+ //       {
 
 
             for ( j=0;j<nIC;j++ )
@@ -878,7 +878,7 @@ short REACT_GEM::Init_RUN()
 
             REACT_GEM::GetReactInfoFromGEM ( in );// this we need also for restart runs
 
-        }
+ //       }
 
         // calculate the chemical porosity
         if ( m_flow_pcs->GetRestartFlag() <2 ) REACT_GEM::CalcPorosity ( in ); //during init it should be always done, except for restart !!!
@@ -3644,7 +3644,7 @@ void REACT_GEM::WriteVTKGEMValues ( fstream &vtk_file )
             else if ( idx_oxygen == j )  bdummy +=  m_xDC[k*nDC + idx_water]  ;
 
             bdummy+=m_bIC[k*nIC + j]; //add the solids
-            vtk_file <<" "<< ( float ) bdummy << endl; // and output
+            vtk_file <<" "<<  bdummy << endl; // and output
         }
     }
 
@@ -3656,7 +3656,7 @@ void REACT_GEM::WriteVTKGEMValues ( fstream &vtk_file )
         //....................................................................
         for ( j=0;j<nNodes;j++ )
         {
-            vtk_file <<" "<< m_xDC[j*nDC + i ] << endl;
+            vtk_file <<" "<< ( float ) m_xDC[j*nDC + i ] << endl;
         }
     }
     // eh, pe, pH, Nodeporosity
