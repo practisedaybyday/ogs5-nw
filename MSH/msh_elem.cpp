@@ -22,20 +22,15 @@ namespace MeshLib
    Programing:
    06/2005 WW Implementation
 **************************************************************************/
-CElem::CElem(size_t Index) : CCore(Index), normal_vector(NULL)
+CElem::CElem(size_t Index) 
+: CCore(Index), normal_vector(NULL), /*geo_type(t), */owner(NULL), ele_dim(1),
+	nnodes(0), nnodesHQ(0), nodes(nnodes), nodes_index(nnodes),
+	patch_index(0), transform_tensor(NULL), angle(NULL)
 {
 	grid_adaptation = -1;
-	nnodes = 0;
-	nnodesHQ = 0;
-	ele_dim = 1;                              // Dimension of element
-	patch_index = 0;
-	//
 	volume = 0.0;
 	face_index = -1;
 	no_faces_on_surface = 0;
-	owner = NULL;
-	transform_tensor = NULL;
-	angle = NULL;
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
 	normal_vector = NULL;
 	area = 1.0;                               //WW
@@ -226,7 +221,7 @@ CElem::CElem(CElem const &elem) :
 	grid_adaptation (elem.grid_adaptation),
 	patch_index (elem.patch_index),
 	area (elem.area),
-	angle (new double)
+	angle (new double(*(elem.angle)))
 {
 	for (size_t k(0); k < 3; k++)
 	{
@@ -245,7 +240,7 @@ CElem::CElem(CElem const &elem) :
 //		edges[k] = new CNode ((elem.nodes[k])->GetIndex(), (elem.nodes[k])->X(), (elem.nodes[k])->Y(), (elem.nodes[k])->Z());
 //	}
 
-	*angle = *(elem.angle);
+	//*angle = *(elem.angle);
 	// copy transform tensor
 //	Matrix * transform_tensor;
 
@@ -258,7 +253,7 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, int
 	CCore(0), normal_vector(NULL), geo_type(t), owner(NULL), ele_dim(2),
 	nnodes(3), nnodesHQ(6), nodes(nnodes), nodes_index(nnodes),
 	nedges(3), edges(nedges), edges_orientation(nedges),
-	nfaces(3), patch_index(mat), transform_tensor(NULL), neighbors(nfaces)
+	nfaces(3), patch_index(mat), transform_tensor(NULL), neighbors(nfaces), angle(NULL)
 {
 	nodes_index[0] = node0;
 	nodes_index[1] = node1;
@@ -278,7 +273,7 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, siz
 	CCore(0), normal_vector(NULL), geo_type(t), owner(NULL), ele_dim(2),
 	nnodes(4), nnodesHQ(9), nodes(nnodes), nodes_index(nnodes),
 	nedges(4), edges(nedges), edges_orientation(nedges),
-	nfaces(4), patch_index(mat), transform_tensor(NULL), neighbors(nfaces)
+	nfaces(4), patch_index(mat), transform_tensor(NULL), neighbors(nfaces), angle(NULL)
 {
 	nodes_index[0] = node0;
 	nodes_index[1] = node1;

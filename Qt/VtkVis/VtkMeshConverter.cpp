@@ -19,6 +19,8 @@
 #include <vtkCellData.h>
 #include <vtkUnstructuredGrid.h>
 
+#include <QTime>
+
 MeshLib::CFEMesh* VtkMeshConverter::convertImgToMesh(vtkImageData* img,
                                                      const std::pair<double,double> &origin,
                                                      const double &scalingFactor,
@@ -96,6 +98,8 @@ MeshLib::CFEMesh* VtkMeshConverter::convertImgToMesh(vtkImageData* img,
 			}
 		}
 
+		QTime myTimer0;
+		myTimer0.start();
 	// set mesh elements
 	for (size_t i = 0; i < imgWidth; i++)
 		for (size_t j = 0; j < imgHeight; j++)
@@ -121,6 +125,7 @@ MeshLib::CFEMesh* VtkMeshConverter::convertImgToMesh(vtkImageData* img,
 			}
 		}
 
+		std::cout << myTimer0.elapsed() << " ms" << std::endl;
 	mesh->ConstructGrid();
 	delete [] pixVal;
 	delete [] visNodes;
@@ -130,24 +135,23 @@ MeshLib::CFEMesh* VtkMeshConverter::convertImgToMesh(vtkImageData* img,
 
 MeshLib::CElem* VtkMeshConverter::createElement(MshElemType::type t, int mat, size_t node1, size_t node2, size_t node3, size_t node4)
 {
-//	MeshLib::CElem* elem(new MeshLib::CElem);
-////	const size_t nNodes = (t == MshElemType::QUAD) ? 4 : 3;
-//	elem->setElementProperties(t);
-//	elem->SetNodeIndex(0, node1);
-//	elem->SetNodeIndex(1, node2);
-//	elem->SetNodeIndex(2, node3);
-//	if (t ==  MshElemType::QUAD)
-//		elem->SetNodeIndex(3, node4);
-//	elem->SetPatchIndex(mat);
-//	elem->InitializeMembers();
-//	return elem;
-
+	MeshLib::CElem* elem(new MeshLib::CElem);
+	elem->setElementProperties(t);
+	elem->SetNodeIndex(0, node1);
+	elem->SetNodeIndex(1, node2);
+	elem->SetNodeIndex(2, node3);
+	if (t ==  MshElemType::QUAD)
+		elem->SetNodeIndex(3, node4);
+	elem->SetPatchIndex(mat);
+	elem->InitializeMembers();
+	return elem;
+/*
 	if (t == MshElemType::QUAD) {
 		return new MeshLib::CElem (t, node1, node2, node3, node4, mat);
 	} else {
 		return new MeshLib::CElem (t, node1, node2, node3, mat);
 	}
-
+*/
 }
 
 MeshLib::CFEMesh* VtkMeshConverter::convertUnstructuredGrid(vtkUnstructuredGrid* grid)

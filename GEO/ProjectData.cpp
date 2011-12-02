@@ -104,24 +104,42 @@ const FEMCondition* ProjectData::getCondition(const std::string &geo_name,
 	return NULL;
 }
 
-const std::vector<FEMCondition*> ProjectData::getConditions(const std::string &geo_name,
-                                                            FEMCondition::CondType type) const
+const std::vector<FEMCondition*> ProjectData::getConditions(FiniteElement::ProcessType pcs_type,
+															std::string geo_name,
+                                                            FEMCondition::CondType cond_type) const
 {
+	// if all 
+	if (pcs_type == FiniteElement::INVALID_PROCESS && geo_name.empty() && cond_type == FEMCondition::UNSPECIFIED)
+		return _cond_vec;
+
+	// else: filter according to parameters
 	std::vector<FEMCondition*> conds;
 	for (std::vector<FEMCondition*>::const_iterator it = _cond_vec.begin(); it != _cond_vec.end(); ++it)
-		if ((*it)->getAssociatedGeometryName().compare(geo_name) == 0)
-			if ( (type == FEMCondition::UNSPECIFIED) || ((*it)->getCondType() == type) )
+	{
+		if ( ((pcs_type == FiniteElement::INVALID_PROCESS) || (pcs_type == ((*it)->getProcessType()))) &&
+			 ((geo_name.empty() || ((*it)->getAssociatedGeometryName().compare(geo_name) == 0))) &&
+			 ((cond_type == FEMCondition::UNSPECIFIED) || ((*it)->getCondType() == cond_type)) )
 				conds.push_back(*it);
+	}
 
 	return conds;
 }
 
-void ProjectData::removeConditions(const FiniteElement::ProcessType pcs_type, const FEMCondition::CondType cond_type)
+void ProjectData::removeConditions(FiniteElement::ProcessType pcs_type, std::string geo_name, FEMCondition::CondType cond_type)
 {
+	// if all
+	if (pcs_type == FiniteElement::INVALID_PROCESS && geo_name.empty() && cond_type == FEMCondition::UNSPECIFIED)
+	{
+		for (size_t i=0; i<_cond_vec.size(); i++) delete _cond_vec[i];
+		return;
+	}
+
+	// else: filter according to parameters
 	for (std::vector<FEMCondition*>::iterator it = _cond_vec.begin(); it != _cond_vec.end(); )
 	{
-		if ( ((*it)->getProcessType() == pcs_type) && 
-			 ( ((*it)->getCondType() == cond_type) || cond_type == FEMCondition::UNSPECIFIED) )
+		if ( ((pcs_type == FiniteElement::INVALID_PROCESS) || (pcs_type == ((*it)->getProcessType()))) &&
+			 ((geo_name.empty() || ((*it)->getAssociatedGeometryName().compare(geo_name) == 0))) &&
+			 ((cond_type == FEMCondition::UNSPECIFIED) || ((*it)->getCondType() == cond_type)) )
 		{
 			delete *it;
 			it = _cond_vec.erase(it);

@@ -66,10 +66,9 @@ public:
 	                                 const std::string &cond_name) const;
 
 	/// Returns all FEM Conditions with the given type from a certain geometry.
-	const std::vector<FEMCondition*> getConditions(
-	        const std::string &geo_name,
-	        FEMCondition::CondType type =
-	                FEMCondition::UNSPECIFIED) const;
+	const std::vector<FEMCondition*> getConditions(FiniteElement::ProcessType pcs_type = FiniteElement::INVALID_PROCESS,
+												   std::string geo_name = "",
+												   FEMCondition::CondType type = FEMCondition::UNSPECIFIED) const;
 
 	/// Removes the FEM Condition set on a GeoObject with the given name and type from a certain geometry.
 	virtual bool removeCondition(const std::string &geo_name,
@@ -77,7 +76,9 @@ public:
 	                             const std::string &cond_name);
 
 	/// Removes all FEM Conditions with the given type from the given process
-	virtual void removeConditions(const FiniteElement::ProcessType pcs_type, FEMCondition::CondType cond_type = FEMCondition::UNSPECIFIED);
+	virtual void removeConditions(FiniteElement::ProcessType pcs_type = FiniteElement::INVALID_PROCESS, 
+								  std::string geo_name = "",
+								  FEMCondition::CondType cond_type = FEMCondition::UNSPECIFIED);
 
 	/// Checks if the name of the mesh is already exists, if so it generates a unique name.
 	bool isUniqueMeshName(std::string &name);

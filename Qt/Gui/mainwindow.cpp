@@ -79,6 +79,7 @@
 #include <QDesktopWidget>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QObject>
 #include <QSettings>
 
 // VTK includes
@@ -156,6 +157,8 @@ MainWindow::MainWindow(QWidget* parent /* = 0*/)
 			this, SLOT(showCondSetupDialog(const std::string&, const GEOLIB::GEOTYPE, size_t)));
 	connect(geoTabWidget->treeView, SIGNAL(loadFEMCondFileRequested(std::string)),
 	        this, SLOT(loadFEMConditions(std::string))); // add FEM Conditions
+	connect(geoTabWidget->treeView, SIGNAL(saveFEMConditionsRequested(QString, QString)),
+	        this, SLOT(writeFEMConditionsToFile(QString, QString)));
 	connect(_geoModels, SIGNAL(geoDataAdded(GeoTreeModel *, std::string, GEOLIB::GEOTYPE)),
 	        this, SLOT(updateDataViews()));
 	connect(_geoModels, SIGNAL(geoDataRemoved(GeoTreeModel *, std::string, GEOLIB::GEOTYPE)),
@@ -170,13 +173,12 @@ MainWindow::MainWindow(QWidget* parent /* = 0*/)
 	        _elementModel, SLOT(clearView()));
 	connect(mshTabWidget->treeView, SIGNAL(qualityCheckRequested(VtkMeshSource*)),
 	        this, SLOT(showMshQualitySelectionDialog(VtkMeshSource*)));
-	connect(mshTabWidget->treeView,
-	        SIGNAL(requestDIRECTSourceTerms(const std::vector<GEOLIB::Point*>*)),
+	connect(mshTabWidget->treeView, SIGNAL(requestDIRECTSourceTerms(const std::vector<GEOLIB::Point*>*)),
 	        this, SLOT(loadDIRECTSourceTerms(const std::vector<GEOLIB::Point*>*)));
 
-	// Setup connections for condition model to GUI
-	connect(modellingTabWidget->treeView, SIGNAL(conditionsRemoved(const FiniteElement::ProcessType, const FEMCondition::CondType)),
-	        _processModel, SLOT(removeFEMConditions(const FiniteElement::ProcessType, const FEMCondition::CondType)));
+	// Setup connections for process model to GUI
+	connect(modellingTabWidget->treeView, SIGNAL(conditionsRemoved(const FiniteElement::ProcessType, const std::string&, const FEMCondition::CondType)),
+	        _processModel, SLOT(removeFEMConditions(const FiniteElement::ProcessType, const std::string&, const FEMCondition::CondType)));
 	connect(modellingTabWidget->treeView, SIGNAL(processRemoved(const FiniteElement::ProcessType)),
 	        _processModel, SLOT(removeProcess(const FiniteElement::ProcessType)));
 	connect(modellingTabWidget, SIGNAL(requestNewProcess()),
@@ -860,15 +862,9 @@ void MainWindow::importPetrel()
 {
 	QSettings settings("UFZ", "OpenGeoSys-5");
 	QStringList sfc_file_names = QFileDialog::getOpenFileNames(
-	        this,
-	        "Select surface data file(s) to import",
-	        "",
-	        "Petrel files (*)");
+	        this, "Select surface data file(s) to import", "", "Petrel files (*)");
 	QStringList well_path_file_names = QFileDialog::getOpenFileNames(
-	        this,
-	        "Select well path data file(s) to import",
-	        "",
-	        "Petrel files (*)");
+	        this, "Select well path data file(s) to import", "", "Petrel files (*)");
 	if (sfc_file_names.size() != 0 || well_path_file_names.size() != 0)
 	{
 		loadPetrelFiles(sfc_file_names, well_path_file_names);
@@ -1043,6 +1039,13 @@ void MainWindow::loadFEMConditionsFromFile(const QString &fileName, std::string 
 	}
 }
 
+void MainWindow::writeFEMConditionsToFile(QString geoName, QString fileName)
+{
+	std::string schemaName(_fileFinder.getPath("OpenGeoSysCond.xsd"));
+	XmlCndInterface xml(&_project, schemaName);
+	xml.writeFile(fileName, geoName);
+}
+
 void MainWindow::writeGeometryToFile(QString gliName, QString fileName)
 {
 	std::string schemaName(_fileFinder.getPath("OpenGeoSysGLI.xsd"));
@@ -1202,8 +1205,8 @@ void MainWindow::showCondSetupDialog(const std::string &geometry_name, const GEO
 
 void MainWindow::showNewProcessDialog()
 {
-	NewProcessDialog dlg(_project);
-	connect(&dlg, SIGNAL(addProcess(ProcessInfo*)),
+	NewProcessDialog dlg;
+	connect(&dlg , SIGNAL(addProcess(ProcessInfo*)),
 	        _processModel, SLOT(addProcess(ProcessInfo*)));
 	dlg.exec();
 }

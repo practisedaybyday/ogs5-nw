@@ -22,7 +22,7 @@ int XmlGmlInterface::readFile(const QString &fileName)
 	QFile* file = new QFile(fileName);
 	if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		std::cout << "XMLInterface::readGLIFile() - Can't open xml-file " <<
+		std::cout << "XmlGmlInterface::readFile() - Can't open xml-file " <<
 		fileName.toStdString() << "." << std::endl;
 		delete file;
 		return 0;
@@ -46,7 +46,7 @@ int XmlGmlInterface::readFile(const QString &fileName)
 	QDomElement docElement = doc.documentElement(); //OpenGeoSysGLI
 	if (docElement.nodeName().compare("OpenGeoSysGLI"))
 	{
-		std::cout << "XMLInterface::readGLIFile() - Unexpected XML root." << std::endl;
+		std::cout << "XmlGmlInterface::readFile() - Unexpected XML root." << std::endl;
 		delete file;
 		return 0;
 	}
@@ -112,7 +112,7 @@ void XmlGmlInterface::readPoints( const QDomNode &pointsRoot,
 		}
 		else
 			std::cout <<
-			"XMLInterface::readPoints() - Attribute missing in <point> tag ..." <<
+			"XmlGmlInterface::readPoints() - Attribute missing in <point> tag ..." <<
 			std::endl;
 
 		point = point.nextSiblingElement();
@@ -152,7 +152,7 @@ void XmlGmlInterface::readPolylines( const QDomNode &polylinesRoot,
 		}
 		else
 			std::cout <<
-			"XMLInterface::readPolylines() - Attribute missing in <polyline> tag ..."
+			"XmlGmlInterface::readPolylines() - Attribute missing in <polyline> tag ..."
 			          <<
 			std::endl;
 
@@ -201,14 +201,14 @@ void XmlGmlInterface::readSurfaces( const QDomNode &surfacesRoot,
 				}
 				else
 					std::cout <<
-					"XMLInterface::readSurfaces() - Attribute missing in <element> tag ..."
+					"XmlGmlInterface::readSurfaces() - Attribute missing in <element> tag ..."
 					          << std::endl;
 				element = element.nextSiblingElement();
 			}
 		}
 		else
 			std::cout <<
-			"XMLInterface::readSurfaces() - Attribute missing in <surface> tag ..." <<
+			"XmlGmlInterface::readSurfaces() - Attribute missing in <surface> tag ..." <<
 			std::endl;
 
 		surface = surface.nextSiblingElement();

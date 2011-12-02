@@ -21,7 +21,7 @@ int XmlStnInterface::readFile(const QString &fileName)
 	QFile* file = new QFile(fileName);
 	if (!file->open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		std::cout << "XMLInterface::readSTNFile() - Can't open xml-file." << std::endl;
+		std::cout << "XmlStnInterface::readFile() - Can't open xml-file." << std::endl;
 		delete file;
 		return 0;
 	}
@@ -36,7 +36,7 @@ int XmlStnInterface::readFile(const QString &fileName)
 	QDomElement docElement = doc.documentElement(); //root element, used for identifying file-type
 	if (docElement.nodeName().compare("OpenGeoSysSTN"))
 	{
-		std::cout << "XMLInterface::readSTNFile() - Unexpected XML root." << std::endl;
+		std::cout << "XmlStnInterface::readFile() - Unexpected XML root." << std::endl;
 		delete file;
 		return 0;
 	}
@@ -144,7 +144,7 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 		}
 		else
 			std::cout <<
-			"XMLInterface::readStations() - Attribute missing in <station> tag ..." <<
+			"XmlStnInterface::readStations() - Attribute missing in <station> tag ..." <<
 			std::endl;
 		station = station.nextSiblingElement();
 	}
@@ -178,7 +178,7 @@ void XmlStnInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::Stati
 		}
 		else
 			std::cout <<
-			"XMLInterface::readStratigraphy() - Attribute missing in <horizon> tag ..."
+			"XmlStnInterface::readStratigraphy() - Attribute missing in <horizon> tag ..."
 			          << std::endl;
 		horizon = horizon.nextSiblingElement();
 	}
@@ -190,7 +190,7 @@ int XmlStnInterface::writeFile(const QString &filename, const QString &stnName) 
 	std::fstream stream(filename.toStdString().c_str(), std::ios::out);
 	if (!stream.is_open())
 	{
-		std::cout << "XMLInterface::writeSTNFile() - Could not open file...\n";
+		std::cout << "XmlStnInterface::writeFile() - Could not open file...\n";
 		return 0;
 	}
 	stream << "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"; // xml definition

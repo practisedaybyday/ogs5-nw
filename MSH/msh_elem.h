@@ -58,10 +58,10 @@ public:
 	/**
 	 * constructor for a quad element
 	 * @param t have to be MshElemType::QUAD
-	 * @param node0 first node of triangle
-	 * @param node1 second node of triangle
-	 * @param node2 third node of triangle
-	 * @param node3 fourth node of triangle
+	 * @param node0 first node of quad
+	 * @param node1 second node of quad
+	 * @param node2 third node of quad
+	 * @param node3 fourth node of quad
 	 * @param mat number of material
 	 * @return a mesh element object
 	 */
