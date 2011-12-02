@@ -182,15 +182,18 @@ CFEMesh* NetCDFInterface::createMeshFromPoints(std::vector<GEOLIB::Point*>* poin
 		for (size_t j = 0; j < NRLON - 1; j++)
 		{
 			size_t n_Elems = i * NRLON + j;
-			MeshLib::CElem* elem = new MeshLib::CElem();
-			elem->setElementProperties(MshElemType::QUAD);
-			// Assignment for the element nodes
-			elem->nodes_index[0] = (long) (n_Elems);
-			elem->nodes_index[1] = (long) (n_Elems + 1);
-			elem->nodes_index[2] = (long) (n_Elems + NRLON + 1);
-			elem->nodes_index[3] = (long) (n_Elems + NRLON);
-			// Initialize topological properties
-			elem->InitializeMembers();
+			// TF 11/2011 - using instead the constructor
+//			MeshLib::CElem* elem = new MeshLib::CElem();
+//			elem->setElementProperties(MshElemType::QUAD);
+//			// Assignment for the element nodes
+//			elem->nodes_index[0] = (long) (n_Elems);
+//			elem->nodes_index[1] = (long) (n_Elems + 1);
+//			elem->nodes_index[2] = (long) (n_Elems + NRLON + 1);
+//			elem->nodes_index[3] = (long) (n_Elems + NRLON);
+//			// Initialize topological properties
+//			elem->InitializeMembers();
+			MeshLib::CElem* elem = new MeshLib::CElem(MshElemType::QUAD, n_Elems, n_Elems + 1, n_Elems + NRLON + 1, n_Elems + NRLON, 0);
+
 			mesh->ele_vector.push_back(elem);
 		}
 	// Establish topology of a grid

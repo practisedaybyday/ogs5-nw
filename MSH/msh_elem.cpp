@@ -14,11 +14,6 @@
 //WW#include "MSHEnums.h" // KR 2010/11/15
 #include "msh_elem.h"
 
-#ifdef RFW_FRACTURE
-#include "rf_pcs.h"                               //RFW 06/2006
-#endif
-
-//========================================================================
 namespace MeshLib
 {
 /**************************************************************************
@@ -27,20 +22,15 @@ namespace MeshLib
    Programing:
    06/2005 WW Implementation
 **************************************************************************/
-CElem::CElem(size_t Index) : CCore(Index), normal_vector(NULL)
+CElem::CElem(size_t Index) 
+: CCore(Index), normal_vector(NULL), /*geo_type(t), */owner(NULL), ele_dim(1),
+	nnodes(0), nnodesHQ(0), nodes(nnodes), nodes_index(nnodes),
+	patch_index(0), transform_tensor(NULL), angle(NULL)
 {
 	grid_adaptation = -1;
-	nnodes = 0;
-	nnodesHQ = 0;
-	ele_dim = 1;                              // Dimension of element
-	patch_index = 0;
-	//
 	volume = 0.0;
 	face_index = -1;
 	no_faces_on_surface = 0;
-	owner = NULL;
-	tranform_tensor = NULL;
-	angle = NULL;
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
 	normal_vector = NULL;
 	area = 1.0;                               //WW
@@ -67,7 +57,7 @@ CElem::CElem() : CCore(0), normal_vector(NULL)
 	no_faces_on_surface = 0;
 	owner = NULL;
 	nodes.resize(8);                          // Nodes of face
-	tranform_tensor = NULL;
+	transform_tensor = NULL;
 	angle = NULL;
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
 	area = 1.0;                               //WW area = 1.0
@@ -91,7 +81,7 @@ CElem::CElem(size_t Index, CElem* onwer, int Face) :
 	n = owner->GetElementFaceNodes(Face, faceIndex_loc);
 	face_index = Face;
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
-	tranform_tensor = NULL;
+	transform_tensor = NULL;
 	angle = NULL;
 	normal_vector = NULL;
 	excavated = -1;                           //WX
@@ -181,7 +171,7 @@ CElem::CElem(size_t Index, CElem* m_ele_parent) :
 	//  static int faceIndex_loc[10];
 	//  static int edgeIndex_loc[10];
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
-	tranform_tensor = NULL;
+	transform_tensor = NULL;
 	angle = NULL;
 	this->setElementProperties(m_ele_parent->geo_type);
 
@@ -189,7 +179,7 @@ CElem::CElem(size_t Index, CElem* m_ele_parent) :
 	quadratic = m_ele_parent->quadratic;
 
 	boundary_type = 'I';
-	//----------------------------------------------------------------------
+
 	// Initialize topological properties
 	neighbors.resize(nfaces);
 	for(size_t i = 0; i < nfaces; i++)
@@ -231,7 +221,7 @@ CElem::CElem(CElem const &elem) :
 	grid_adaptation (elem.grid_adaptation),
 	patch_index (elem.patch_index),
 	area (elem.area),
-	angle (new double)
+	angle (new double(*(elem.angle)))
 {
 	for (size_t k(0); k < 3; k++)
 	{
@@ -250,12 +240,54 @@ CElem::CElem(CElem const &elem) :
 //		edges[k] = new CNode ((elem.nodes[k])->GetIndex(), (elem.nodes[k])->X(), (elem.nodes[k])->Y(), (elem.nodes[k])->Z());
 //	}
 
-	*angle = *(elem.angle);
+	//*angle = *(elem.angle);
 	// copy transform tensor
-//	Matrix * tranform_tensor;
+//	Matrix * transform_tensor;
 
 	// copy neighbors
 //	vec<CElem*> neighbors;
+}
+
+
+CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, int mat) :
+	CCore(0), normal_vector(NULL), geo_type(t), owner(NULL), ele_dim(2),
+	nnodes(3), nnodesHQ(6), nodes(nnodes), nodes_index(nnodes),
+	nedges(3), edges(nedges), edges_orientation(nedges),
+	nfaces(3), patch_index(mat), transform_tensor(NULL), neighbors(nfaces), angle(NULL)
+{
+	nodes_index[0] = node0;
+	nodes_index[1] = node1;
+	nodes_index[2] = node2;
+
+	// Initialize topological properties
+	for(size_t i = 0; i < nfaces; i++)
+		neighbors[i] = NULL;
+	for(size_t i = 0; i < nedges; i++)
+	{
+		edges[i] = NULL;
+		edges_orientation[i] = 1;
+	}
+}
+
+CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, size_t node3, int mat) :
+	CCore(0), normal_vector(NULL), geo_type(t), owner(NULL), ele_dim(2),
+	nnodes(4), nnodesHQ(9), nodes(nnodes), nodes_index(nnodes),
+	nedges(4), edges(nedges), edges_orientation(nedges),
+	nfaces(4), patch_index(mat), transform_tensor(NULL), neighbors(nfaces), angle(NULL)
+{
+	nodes_index[0] = node0;
+	nodes_index[1] = node1;
+	nodes_index[2] = node2;
+	nodes_index[3] = node3;
+
+	// Initialize topological properties
+	for(size_t i = 0; i < nfaces; i++)
+		neighbors[i] = NULL;
+	for(size_t i = 0; i < nedges; i++)
+	{
+		edges[i] = NULL;
+		edges_orientation[i] = 1;
+	}
 }
 
 /**************************************************************************
@@ -275,13 +307,13 @@ CElem::~CElem()
 	mat_vector.resize(0);
 	edges_orientation.resize(0);
 	owner = NULL;
-	if(tranform_tensor)
-		delete tranform_tensor;
-	tranform_tensor = NULL;
+	if(transform_tensor)
+		delete transform_tensor;
+	transform_tensor = NULL;
 	if(angle)
 		delete [] angle;
 	angle = NULL;
-	tranform_tensor = NULL;
+	transform_tensor = NULL;
 	if (normal_vector)
 		delete [] normal_vector;
 	normal_vector = NULL;
@@ -295,13 +327,13 @@ CElem::~CElem()
 **************************************************************************/
 void CElem::FillTransformMatrix()
 {
-	if(tranform_tensor)
+	if(transform_tensor)
 		return;
 
 	double xx[3];
 	double yy[3];
 	double zz[3];
-	tranform_tensor = new Math_Group::Matrix(3,3);
+	transform_tensor = new Math_Group::Matrix(3,3);
 	if (geo_type == MshElemType::LINE)
 	{
 		// x"_vec
@@ -366,9 +398,9 @@ void CElem::FillTransformMatrix()
 	}
 	for (size_t i = 0; i < 3; i++)
 	{
-		(*tranform_tensor)(i, 0) = xx[i];
-		(*tranform_tensor)(i, 1) = yy[i];
-		(*tranform_tensor)(i, 2) = zz[i];
+		(*transform_tensor)(i, 0) = xx[i];
+		(*transform_tensor)(i, 1) = yy[i];
+		(*transform_tensor)(i, 2) = zz[i];
 	}
 }
 /**************************************************************************
@@ -382,7 +414,7 @@ double CElem::getTransformTensor(int idx)
 	//WW
 	int i = idx % 3;
 	int j = idx / 3;
-	return (*tranform_tensor)(i,j);
+	return (*transform_tensor)(i,j);
 	//return MatT[idx];
 }
 
@@ -1465,7 +1497,7 @@ void CElem::FaceNormal(int index0, int index1, double* face)
 		double zz[3];
 
 		//----plane normal----------------------------
-		// tranform_tensor = new Matrix(3,3);
+		// transform_tensor = new Matrix(3,3);
 		// face"_vec
 		double const* pnt0(nodes[index0]->getData());
 		double const* pnt1(nodes[index1]->getData());

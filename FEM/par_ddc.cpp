@@ -990,48 +990,48 @@ void DOMCreate()
 			{
 			case MshElemType::LINE:
 				dom_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[1] + 1 << " " << m_ele->nodes_index[0] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[1] + 1 << " " << m_ele->getNodeIndices()[0] +
 				1 << endl;
 				element_type = "ET = QUADRILATERAL";
 				break;
 			case MshElemType::QUAD:
 				dom_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << " " << m_ele->nodes_index[3] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << " " << m_ele->getNodeIndices()[3] +
 				1 << endl;
 				element_type = "ET = QUADRILATERAL";
 				break;
 			case MshElemType::HEXAHEDRON:
 				dom_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << " " << m_ele->nodes_index[3] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << " " << m_ele->getNodeIndices()[3] +
 				1 << " " \
-				<< m_ele->nodes_index[4] + 1 << " " << m_ele->nodes_index[5] + 1 <<
-				" " << m_ele->nodes_index[6] + 1 << " " << m_ele->nodes_index[7] +
+				<< m_ele->getNodeIndices()[4] + 1 << " " << m_ele->getNodeIndices()[5] + 1 <<
+				" " << m_ele->getNodeIndices()[6] + 1 << " " << m_ele->getNodeIndices()[7] +
 				1 << endl;
 				element_type = "ET = BRICK";
 				break;
 			case MshElemType::TRIANGLE:
 				dom_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << endl;
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << endl;
 				element_type = "ET = TRIANGLE";
 				break;
 			case MshElemType::TETRAHEDRON:
 				dom_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << " " << m_ele->nodes_index[3] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << " " << m_ele->getNodeIndices()[3] +
 				1 << endl;
 				element_type = "ET = TETRAHEDRON";
 				break;
 			case MshElemType::PRISM:
 				dom_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[0] + 1 <<
-				" " << m_ele->nodes_index[1] + 1 << " " << m_ele->nodes_index[2] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[0] + 1 <<
+				" " << m_ele->getNodeIndices()[1] + 1 << " " << m_ele->getNodeIndices()[2] +
 				1 << " " \
-				<< m_ele->nodes_index[3] + 1 << " " << m_ele->nodes_index[3] + 1 <<
-				" " << m_ele->nodes_index[4] + 1 << " " << m_ele->nodes_index[5] +
+				<< m_ele->getNodeIndices()[3] + 1 << " " << m_ele->getNodeIndices()[3] + 1 <<
+				" " << m_ele->getNodeIndices()[4] + 1 << " " << m_ele->getNodeIndices()[5] +
 				1 << endl;
 				element_type = "ET = BRICK";
 				break;

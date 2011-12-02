@@ -85,6 +85,7 @@ int XmlGspInterface::readFile(const QString &fileName)
 
 int XmlGspInterface::writeFile(const QString &fileName, const QString &tmp) const
 {
+	Q_UNUSED(tmp)
 	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 	std::fstream stream(fileName.toStdString().c_str(), std::ios::out);
 	QFileInfo fi(fileName);

@@ -177,7 +177,7 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 		}
 
 		for(size_t j = 0; j < ele->GetNodesNumber(false); j++)
-			vtk_file << " " << ele->nodes_index[j];
+			vtk_file << " " << ele->getNodeIndices()[j];
 
 		vtk_file << endl;
 	}

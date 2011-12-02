@@ -2601,7 +2601,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
 			m_ele = m_pcs_global->m_msh->ele_vector[j];
 			m_ele_local = new MeshLib::CElem(j,m_ele);
 			for(k = 0; k < 2; k++) // ele_type
-				m_ele_local->nodes_index[k] = j + k;
+				m_ele_local->getNodeIndices()[k] = j + k;
 			m_msh_local->ele_vector[j] = m_ele_local;
 		}
 		m_msh_local->nod_vector.resize(no_local_nodes);

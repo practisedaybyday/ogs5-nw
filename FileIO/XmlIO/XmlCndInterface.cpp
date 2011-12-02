@@ -120,7 +120,6 @@ void XmlCndInterface::readConditions( const QDomNode &listRoot,
 		}
 		else
 		{
-			//bool cancelLoading = OGSError();
 			std::cout << "Error loading FEM Conditions: No geometry \"" << geometry_name << "\" found." << std::endl;
 		}
 		cond = cond.nextSiblingElement();
@@ -144,7 +143,7 @@ int XmlCndInterface::writeFile(const QString &fileName, const QString &geoName, 
 	root.setAttribute( "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance" );
 	root.setAttribute( "xsi:noNamespaceSchemaLocation", "http://141.65.34.25/OpenGeoSysCND.xsd" );
 
-	const std::vector<FEMCondition*> conditions (_project->getConditions(geoName.toStdString(), type) );
+	const std::vector<FEMCondition*> conditions (_project->getConditions(FiniteElement::INVALID_PROCESS, geoName.toStdString(), type) );
 
 	if (conditions.empty()) return 1;
 

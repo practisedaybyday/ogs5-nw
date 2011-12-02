@@ -21,6 +21,8 @@ public:
 	 */
 	XmlGmlInterface(ProjectData* project, const std::string &schemaFile);
 
+	virtual ~XmlGmlInterface() {};
+
 	/// Reads an xml-file containing geometric object definitions into the GEOObjects used in the contructor
 	int readFile(const QString &fileName);
 
