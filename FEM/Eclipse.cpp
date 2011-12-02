@@ -698,15 +698,13 @@ void CECLIPSEData::DetermineNeighbourElements(string Projectname)
 		for (size_t i = 0; i < this->eclgrid.size(); i++)
 			for (size_t j = i + 1; j < this->eclgrid.size(); j++)
 			{
-				param = j + (i * this->eclgrid.size());
+				param = static_cast<double>(j + (i * this->eclgrid.size()));
 				param /= 1000;
 				fractpart = modf (param, &intpart);
 				if (fractpart == 0)
 				{
-					param = 100 *
-					        (j + i *
-					         this->eclgrid.size()) /
-					        (this->eclgrid.size() * this->eclgrid.size());
+					param = static_cast<double>(100 * (j + i * this->eclgrid.size()) /
+					        (this->eclgrid.size() * this->eclgrid.size()));
 					cout << "              " << Round(param, 3) << " %" << endl;
 				}
 				if (this->eclgrid[i]->layer == this->eclgrid[j]->layer)
