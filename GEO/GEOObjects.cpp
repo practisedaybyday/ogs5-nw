@@ -52,9 +52,7 @@ bool GEOObjects::appendPointVec(std::vector<Point*> const& new_points,
 	int idx = this->exists(name);
 
 	if (idx>=0)
-//	if (!nfound)
 	{
-		idx--;
 		size_t n_new_pnts (new_points.size());
 		// append points
 		if (ids)

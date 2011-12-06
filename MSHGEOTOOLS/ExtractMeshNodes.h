@@ -89,9 +89,8 @@ public:
 	 * @param ply computation along the polyline ply
 	 * @param bottom_points the bottom mesh nodes as points
 	 */
-	void getBottomMeshNodesAlongPolylineAsPoints (const GEOLIB::Polyline& ply,
-	                                              std::vector<GEOLIB::Point*>& bottom_points)
-	const;
+	void getBottomMeshNodesAlongPolylineAsPoints(const GEOLIB::Polyline& ply,
+					std::vector<GEOLIB::Point*>& bottom_points) const;
 
 	/**
 	 * computes the mesh nodes along a polyline belonging to the top surface
@@ -116,6 +115,18 @@ public:
 	                            GEOLIB::GEOObjects* geo_obj, std::string const& name,
 	                            GEOLIB::Polygon* &polygon) const;
 
+	/**
+	 * get a polyline that is projected to the appropriate "layer" into the mesh
+	 * @param ply_in polyline that can have arbitrary z coordinates
+	 * @param geo_obj pointer to a GEOLIB::GEOObjects object (used for returning the data)
+	 * @param name the name of the new data
+	 * @param ply_out polyline with points that have the same x- and y-coordinates,
+	 * the z-coordinate is set from the layer
+	 * @param layer "layer" of the mesh
+	 */
+	void getProjectedPolylineFromPolyline(GEOLIB::Polyline const& ply_in,
+					GEOLIB::GEOObjects* geo_obj, std::string const& name,
+                    GEOLIB::Polyline* &ply_out, size_t layer = 0) const;
 private:
 	/**
 	 * This method searchs all mesh nodes with the same x and y coordinates
