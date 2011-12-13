@@ -70,8 +70,9 @@ void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time,
 		baseFilename += "_" + _processType;
 
 	stringstream ss;
-	ss << setw(4) << number;  // setw(4) sets the number of digits to be used
-	                          // and creates leading zeros if necessary
+	// setw(4) sets the number of digits to be used
+	// and creates leading zeros if necessary
+	ss << setw(4) << setfill('0') << number;  
 	baseFilename += ss.str();
 	baseFilename += ".vtk";
 
