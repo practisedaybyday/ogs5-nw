@@ -52,7 +52,7 @@ std::vector<FEMCondition*> SourceTerm::createDirectSourceTerms(
 				st->setProcessPrimaryVariable((*it)->getProcessPrimaryVariable());
 				st->setGeoType(GEOLIB::POINT);
 				st->setGeoName(out.str());
-				st->setProcessDistributionType(FiniteElement::CONSTANT);
+				st->setProcessDistributionType(FiniteElement::DIRECT);
 				st->setDisValue( /*count*/ node_values[i].second);
 				conditions.push_back(st);
 			}
