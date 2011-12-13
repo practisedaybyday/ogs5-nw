@@ -22,7 +22,7 @@
 namespace FileIO
 {
 TetGenInterface::TetGenInterface() :
-	_mesh (NULL), _zero_based_idx (true)
+	_mesh (NULL), _zero_based_idx (false)
 {
 }
 
@@ -344,9 +344,9 @@ bool TetGenInterface::parseElements(std::ifstream& ins, size_t n_tets, size_t n_
 				MeshLib::CElem* elem (new MeshLib::CElem(id));
 				elem->setElementProperties (MshElemType::TETRAHEDRON, false);
 				std::vector<MeshLib::CNode*> ele_nodes(n_nodes_per_tet);
-				for (size_t i(0); i < n_nodes_per_tet; i++)
+				for (size_t i(0); i < n_nodes_per_tet; i++) {
 					ele_nodes[i] = _mesh->nod_vector[ids[i]];
-
+				}
 				elem->setNodes (ele_nodes);
 				_mesh->ele_vector.push_back(elem);
 				// read region attribute - this is something like material group
@@ -364,11 +364,8 @@ bool TetGenInterface::parseElements(std::ifstream& ins, size_t n_tets, size_t n_
 						                                             - pos_beg)));
 					else
 					{
-						std::cout <<
-						"error reading region attribute of tetrahedra "
-						          << k <<
-						" in TetGenInterface::parseElements" <<
-						std::endl;
+						std::cout << "error reading region attribute of tetrahedra " << k
+										<< " in TetGenInterface::parseElements" << std::endl;
 						return false;
 					}
 				}
@@ -376,8 +373,7 @@ bool TetGenInterface::parseElements(std::ifstream& ins, size_t n_tets, size_t n_
 		}
 		else
 		{
-			std::cout << "error reading node " << k <<
-			" in TetGenInterface::parseElements" << std::endl;
+			std::cout << "error reading node " << k << " in TetGenInterface::parseElements" << std::endl;
 			return false;
 		}
 	}
