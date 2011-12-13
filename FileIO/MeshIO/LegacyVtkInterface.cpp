@@ -22,6 +22,7 @@
 #endif // GEM_REACT
 
 #include <string>
+#include <iomanip>
 using namespace std;
 
 LegacyVtkInterface::LegacyVtkInterface(MeshLib::CFEMesh* mesh,
@@ -69,7 +70,7 @@ void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time,
 		baseFilename += "_" + _processType;
 
 	stringstream ss;
-	ss << std::setw(4) << number;  // setw(4) sets the number of digits to be used
+	ss << setw(4) << number;  // setw(4) sets the number of digits to be used
 	                          // and creates leading zeros if necessary
 	baseFilename += ss.str();
 	baseFilename += ".vtk";
