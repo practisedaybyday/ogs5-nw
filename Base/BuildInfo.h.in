@@ -10,6 +10,7 @@
 #cmakedefine CMAKE_CMD_ARGS "${CMAKE_CMD_ARGS}"
 #cmakedefine SVN_REVISION "${SVN_REVISION}"
 #cmakedefine GIT_COMMIT_INFO "${GIT_COMMIT_INFO}"
+#cmakedefine GIT_BRANCH_INFO "${GIT_BRANCH_INFO}"
 #cmakedefine BUILD_TIMESTAMP "${BUILD_TIMESTAMP}"
 #cmakedefine CMAKE_RUN_TIMESTAMP ""
 #cmakedefine SYSTEM_INFO "${CMAKE_SYSTEM}-x${BITS}"
