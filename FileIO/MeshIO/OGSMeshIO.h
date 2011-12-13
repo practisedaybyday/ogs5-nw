@@ -13,6 +13,7 @@
 namespace MeshLib
 {
 class CFEMesh;
+class CElem;
 }
 
 namespace FileIO
@@ -25,6 +26,8 @@ public:
 
 	/// Write an OGS msh to a file.
 	static void write (MeshLib::CFEMesh const* mesh, std::ofstream &out);
+private:
+	static void writeElementsExceptLines (std::vector<MeshLib::CElem*> const& ele_vec, std::ofstream &out);
 };
 } // end namespace FileIO
 
