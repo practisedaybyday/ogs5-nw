@@ -189,7 +189,7 @@ public:
 		NodesNumber_Quadratic = NodesNumber_Linear = nod_vector.size();
 	}
 
-	void setNumberOfElementsFromElementsVectorSize ()
+	void setNumberOfNodesFromNodesVectorSize ()
 	{
 		NodesNumber_Linear = nod_vector.size();
 	}
