@@ -31,6 +31,13 @@ class CPARDomain;
 
 namespace process
 {
+
+enum InitDataReadWriteType {none, read_write, read_all_binary, write_all_binary,
+                                  read_all_asci, write_all_asci,      
+                                  read_stress_binary, write_stress_binary,
+                                  read_displacement, write_displacement,
+                                  read_pressure, write_pressure};
+
 // Elasto-plastic Deformation
 class CRFProcessDeformation : public CRFProcess
 {
@@ -84,6 +91,7 @@ public:
 	// Write stresses
 	void WriteGaussPointStress();
 	void ReadGaussPointStress();
+	void ReadElementStress();
 
 	// Access members
 	CFiniteElementVec* GetFEM_Assembler() const {return fem_dm; }
@@ -97,6 +105,8 @@ private:
 	double InitialNorm;
 	double InitialNormU;
 	double InitialNormU0;
+
+	InitDataReadWriteType idata_type;
 
 	//
 	double error_k0;

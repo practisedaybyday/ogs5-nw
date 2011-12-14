@@ -1503,9 +1503,10 @@ void CFiniteElementVec::ComputeMass()
 		//  Compute Jacobian matrix and its determinate
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+        ComputeShapefct(1); //need for density calculation
+        ComputeShapefct(2);       // Quadratic interpolation function
 		fkt *= CalDensity();
 
-		ComputeShapefct(2);       // Quadratic interpolation function
 		for(i = 0; i < nnodesHQ; i++)
 			for(j = 0; j < nnodesHQ; j++)
 			{
@@ -3524,6 +3525,25 @@ void ElementValue_DM::Read_BIN(std::fstream& is)
 	is.read((char*)(&tract_j), sizeof(tract_j));
 	is.read((char*)(&Localized), sizeof(Localized));
 }
+
+
+// 10/2011 WW
+void ElementValue_DM::ReadElementStressASCI(std::fstream& is)
+{
+	size_t i,j;
+    size_t ns = Stress0->Rows(); 
+    size_t nGS = Stress0->Cols(); 
+
+	for(i=0; i<ns; i++)
+	{
+		is>>(*Stress0)(i, 0);
+		for(j=1; j<nGS; j++)
+			(*Stress0)(i, j) = (*Stress0)(i, 0);
+	}
+
+	*Stress_i = *Stress0;
+}
+
 
 void ElementValue_DM::ResetStress(bool cpl_loop)
 {

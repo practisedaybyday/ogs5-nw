@@ -1854,11 +1854,9 @@ double CFiniteElementStd::CalCoefContent()
 
 #ifdef GEM_REACT
 		// kg44 for GEMS coupling this should be updated to arbitrary flow processes
-		porval0 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(
-		                                                            GROUNDWATER_FLOW)->
+		porval0 = PCSGetFlow()->GetElementValue(Index,PCSGetFlow()->
 		                                                    GetElementValueIndex("POROSITY"));                    // for GEMS we need old and new porosity!
-		porval1 = PCSGet(GROUNDWATER_FLOW)->GetElementValue(Index,PCSGet(
-		                                                            GROUNDWATER_FLOW)->
+		porval1 = PCSGetFlow()->GetElementValue(Index,PCSGetFlow()->
 		                                                    GetElementValueIndex(
 		                                                            "POROSITY") + 1);
 #else
@@ -1933,12 +1931,17 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 		break;
 	case L:                               // Liquid flow
 		tensor = MediaProp->PermeabilityTensor(Index);
-		if (ele_dim != dim)
+		//if (ele_dim != dim)
+        if (dim > MediaProp->geo_dimension)
 		{
 			Matrix local_tensor(dim,dim);
 			Matrix temp_tensor(dim,dim);
-			Matrix t_transform_tensor(*MeshElement->transform_tensor);
-			MeshElement->transform_tensor->GetTranspose(t_transform_tensor);
+            if (MeshElement->tranform_tensor==NULL) {
+                std::cout << "***Error: Geometric dimension in MMP is not consistent with element." << std::endl;
+                exit(0);
+            }
+			Matrix t_transform_tensor(*MeshElement->tranform_tensor);
+			MeshElement->tranform_tensor->GetTranspose(t_transform_tensor);
 			Matrix global_tensor(dim,dim);
 			for (i = 0; i < ele_dim; i++)
 				for (int j = 0; j < ele_dim; j++)
@@ -2000,6 +2003,35 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 		   else{
 		 */
 		tensor = MediaProp->PermeabilityTensor(Index);
+            //TK/NW 10.10.2011
+            if (dim > MediaProp->geo_dimension)
+            {
+               Matrix local_tensor(dim,dim);
+               Matrix temp_tensor(dim,dim);
+               Matrix t_transform_tensor(*MeshElement->tranform_tensor);
+               MeshElement->tranform_tensor->GetTranspose(t_transform_tensor);
+               Matrix global_tensor(dim,dim);
+               for (i=0; i<ele_dim; i++)
+                  for (int j=0; j<ele_dim; j++)
+                     local_tensor(i,j) = tensor[j+i*ele_dim];
+               //cout << "K':" << endl; local_tensor.Write();
+               local_tensor.multi(t_transform_tensor, temp_tensor);
+               for (i=0; i<dim; i++)
+               {
+                  for (int j=0; j<dim; j++)
+                     for (int k=0; k<dim; k++)
+                        global_tensor(i,j)+=(*MeshElement->tranform_tensor)(i,k)*temp_tensor(k,j);
+               }
+               //cout << "K:" << endl; global_tensor.Write();
+               for(i=0; i<dim; i++)
+               {
+                  for(int j=0; j<dim; j++)
+                  {
+                     tensor[dim*i+j] = global_tensor(i,j);
+                  }
+               }
+            }
+            //TK/NW 10.10.2011
 		for(i = 0; i < dim * dim; i++)
 			//16.10.2009 .WW
 			mat[i] = tensor[i] * time_unit_factor;
@@ -4508,10 +4540,10 @@ void CFiniteElementStd:: Assemble_DualTransfer()
 		//  Compute Jacobian matrix and its determination
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
-		mat_fac = CalcCoefDualTransfer();
-		mat_fac *= fkt;
 		// Material
-		ComputeShapefct(1);       // Linear interpolation function
+		ComputeShapefct(1);       // Moved here by NW 25.10.2011
+        mat_fac = CalcCoefDualTransfer();
+        mat_fac *= fkt;
 		// Calculate mass matrix
 		for (i = 0; i < nnodes; i++)
 			for (j = 0; j < nnodes; j++)
@@ -4665,12 +4697,12 @@ void CFiniteElementStd::CalcAdvection()
 		//  Compute Jacobian matrix and its determinate
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
-		mat_factor = CalCoefAdvection(); //T
 		//---------------------------------------------------------
 		// Compute geometry
 		ComputeGradShapefct(1);   // Linear interpolation function....dNJ-1....var dshapefct
 		ComputeShapefct(1);       // Linear interpolation N....var shapefct
 		//---------------------------------------------------------
+        mat_factor = CalCoefAdvection(); // this should be called after calculating shape functions. NW
 		//Velocity
 		vel[0] = mat_factor * gp_ele->Velocity(0, gp);
 		vel[1] = mat_factor * gp_ele->Velocity(1, gp);

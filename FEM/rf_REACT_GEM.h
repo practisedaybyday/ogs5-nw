@@ -132,7 +132,6 @@ class REACT_GEM
 
       //---flags------
       int initialized_flag;                       //0 - not initialized 1 - initialized
-      int flag_node_element_based;                // 0 - node based; 1 - element based;
       int flag_iterative_scheme;                  // 0 - sequential non-iterative scheme;
       // 1 - standard iterative scheme;
       // 2 - symetric iterative scheme;
