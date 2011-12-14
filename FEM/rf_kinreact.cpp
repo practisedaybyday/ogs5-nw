@@ -1104,7 +1104,7 @@ bool CKinReact::Read(std::ifstream* rfd_file,
 	bool new_keyword = false, new_subkeyword = false;
 	std::stringstream in;
 	MonodSubstruct* m_monod = NULL, * m_inhibit = NULL, * m_production = NULL;
-	long index, index1;
+	size_t index, index1;
 	double dval;
 	// CB 10/09
 	std::string s_geo_type, s_geo_name;
@@ -1856,7 +1856,7 @@ bool CKinBlob::Read(ifstream* rfd_file,
 	string line_string, line_str1, s_geo_type, s_geo_name;
 	string hash("#"), dollar("$");
 	bool new_keyword = false, OK = true;
-	long index, index1;
+	size_t index, index1;
 	double d_inivalue;
 	std::stringstream in;
 
@@ -2243,7 +2243,7 @@ bool CKinReactData::Read(ifstream* rfd_file,
 	bool new_keyword = false, OK = true;
 	string hash("#"), dollar("$");
 	std::stringstream in;
-	long index, index1;
+	size_t index, index1;
 	int /* count_surf, */ surf_id;
 	string s_geo_type, s_geo_name;
 
@@ -2817,7 +2817,7 @@ void CKinReactData::Biodegradation(long node, double eps, double hmin,
 	{
 		m_kb = KinBlob_vector[r];
 		d50 = m_kb->d50;
-		DiffusionAQ = mfp_vector[0]->diffusion; // CB Todo: this should be a component property => Sherwood is component dependent
+		DiffusionAQ = mfp_vector[0]->getDiffusion(); // CB Todo: this should be a component property => Sherwood is component dependent
 		DensityAQ = mfp_vector[0]->Density();
 		ViscosityAQ = mfp_vector[0]->Viscosity();
 		Reynolds = DensityAQ * PoreVelocity * d50 / ViscosityAQ;
@@ -3322,7 +3322,7 @@ double CKinReact::GetReferenceVolume(int comp, long index)
 		// --> Get node saturation of mobile (water) phase, required for all exchange processes
 		double saturation = 1.0; // default
 		CRFProcess* pcs_flow = PCSGetFlow();
-		if (pcs_flow->getProcessType() == TWO_PHASE_FLOW)
+		if (pcs_flow->getProcessType() == FiniteElement::TWO_PHASE_FLOW)
 		{
 			if (pcs_flow->pcs_type_number == 0)
 				// this is the saturation equation
@@ -3331,7 +3331,7 @@ double CKinReact::GetReferenceVolume(int comp, long index)
 			idx = pcs_flow->GetNodeValueIndex("SATURATION1");
 			saturation = pcs_flow->GetNodeValue(index, idx);
 		}
-		else if (pcs_flow->getProcessType() == RICHARDS_FLOW)
+		else if (pcs_flow->getProcessType() == FiniteElement::RICHARDS_FLOW)
 		{
 			// Sat of water phase
 			idx = pcs_flow->GetNodeValueIndex("SATURATION1");
@@ -3365,7 +3365,8 @@ double CKinReact::GetPhaseVolumeAtNode(long node_number, double theta, int phase
 {
 	CFEMesh const* const mesh (fem_msh_vector[0]); //SB: ToDo hart gesetzt
 
-	long idx = 0, elem; //OK411
+	size_t idx = 0;
+	long elem; //OK411
 	double distance, weight, sum_w = 0;
 	double vol = 0, poro = 0;
 
@@ -3378,15 +3379,14 @@ double CKinReact::GetPhaseVolumeAtNode(long node_number, double theta, int phase
 		{
 		case 1: //solid phase
 			// Get VOL_MAT index
-			for (idx = 0; idx < (int) m_mat_mp->m_msh->mat_names_vector.size(); idx++)
-				if (m_mat_mp->m_msh->mat_names_vector[idx].compare("VOL_MAT")
-				    == 0)
+			for (idx = 0; idx < mesh->mat_names_vector.size(); idx++)
+				if (mesh->mat_names_vector[idx].compare("VOL_MAT") == 0)
 					break;
 			break;
 		case 2: //bio phase
 			// Get VOL_BIO index
-			for (idx = 0; idx < (int) m_mat_mp->m_msh->mat_names_vector.size(); idx++)
-				if (m_mat_mp->m_msh->mat_names_vector[idx].compare("VOL_BIO") == 0)
+			for (idx = 0; idx < mesh->mat_names_vector.size(); idx++)
+				if (mesh->mat_names_vector[idx].compare("VOL_BIO") == 0)
 					break;
 			break;
 		default:
@@ -4386,7 +4386,7 @@ double CKinReact::GetNodePoreVelocity(long node_number)
 	double theta = pcs->m_num->ls_theta;
 
 	// Get node saturation of mobile (water) phase
-	if (pcs->getProcessType() == TWO_PHASE_FLOW)
+	if (pcs->getProcessType() == FiniteElement::TWO_PHASE_FLOW)
 	{
 		if (pcs->pcs_type_number == 0)
 			// this is the saturation equation
@@ -4395,7 +4395,7 @@ double CKinReact::GetNodePoreVelocity(long node_number)
 		idxs1 = pcs->GetNodeValueIndex("SATURATION1");
 		satu = pcs->GetNodeValue(node_number, idxs1);
 	}
-	else if (pcs->getProcessType() == RICHARDS_FLOW)
+	else if (pcs->getProcessType() == FiniteElement::RICHARDS_FLOW)
 	{
 		// Sat of water phase
 		idxs1 = pcs->GetNodeValueIndex("SATURATION1");

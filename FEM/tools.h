@@ -31,7 +31,8 @@ typedef struct                                    /* fuer Kurven (Kurven) */
 
 extern double GetCurveValue ( int, int, double, int*);
 //NB
-extern double GetMatrixValue (double, double, std::string, int*);
+//extern double GetMatrixValue (double, double, std::string, int*);
+double GetMatrixValue(double var1, double var2, std::string caption, int *gueltig);
 extern double GetCurveValueInverse ( int, int, double, int*);
 extern double GetCurveDerivative(int kurve, int methode, double punkt, int* gueltig);
 extern Kurven* kurven;                            /* Feld mit Kurven */
@@ -72,7 +73,7 @@ extern int Signum(double);
 double InterpolateElementNodesValues ( long index, long idx );
 extern int FctCurves ( char* data, int found, FILE* f );
 //SB
-extern int FctReadHeterogeneousPermeabilityField(char* name_file);
+//extern int FctReadHeterogeneousPermeabilityField(char* name_file);
 //SB
 long GetNearestElement(double x,double y,double z, int* help);
 //SB

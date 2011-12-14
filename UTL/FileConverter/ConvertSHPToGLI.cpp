@@ -17,7 +17,8 @@
 #include "StringTools.h"
 
 // FileIO
-#include "XMLInterface.h"
+#include "XmlIO/XmlGmlInterface.h"
+#include "XmlIO/XmlStnInterface.h"
 
 // GEO
 #include "GEOObjects.h"
@@ -68,37 +69,27 @@ void convertPoints (DBFHandle dbf_handle,
 	points->reserve (n_records);
 
 	std::string name;
-	for (int k = 0; k < n_records; k++)
-	{
-		double x (DBFReadDoubleAttribute( dbf_handle, k, x_id));
-		double y (DBFReadDoubleAttribute( dbf_handle, k, y_id));
-		double z (0.0);
-		if (z_id != std::numeric_limits<size_t>::max())
-			z = DBFReadDoubleAttribute( dbf_handle, k, z_id);
+	for (int k = 0; k < n_records; k++) {
+		double x(DBFReadDoubleAttribute(dbf_handle, k, x_id));
+		double y(DBFReadDoubleAttribute(dbf_handle, k, y_id));
+		double z(0.0);
+		if (z_id != std::numeric_limits<size_t>::max()) z = DBFReadDoubleAttribute(dbf_handle, k,
+						z_id);
 
 		name = "";
-		if (!name_component_ids.empty())
-		{
+		if (!name_component_ids.empty()) {
 			for (size_t j(0); j < name_component_ids.size(); j++)
-				if (name_component_ids[j] != std::numeric_limits<size_t>::max())
-				{
-					name += DBFReadStringAttribute( dbf_handle,
-					                                k,
-					                                name_component_ids[j]);
+				if (name_component_ids[j] != std::numeric_limits<size_t>::max()) {
+					name += DBFReadStringAttribute(dbf_handle, k, name_component_ids[j]);
 					name += " ";
 				}
-		}
-		else
-			name = number2str(k);
+		} else name = number2str(k);
 
-		if (station)
-		{
-			GEOLIB::Station* pnt (GEOLIB::Station::createStation(name, x, y, z));
+		if (station) {
+			GEOLIB::Station* pnt(GEOLIB::Station::createStation(name, x, y, z));
 			points->push_back(pnt);
-		}
-		else
-		{
-			GEOLIB::Point* pnt (new GEOLIB::Point( x, y, z));
+		} else {
+			GEOLIB::Point* pnt(new GEOLIB::Point(x, y, z));
 			points->push_back(pnt);
 		}
 	}
@@ -116,11 +107,14 @@ void convertPoints (DBFHandle dbf_handle,
 		schema_name = "OpenGeoSysGLI.xsd";
 	ProjectData* project_data (new ProjectData);
 	project_data->setGEOObjects (geo_objs);
-	XMLInterface xml (project_data, schema_name);
-	if (station)
-		xml.writeSTNFile(out_fname, points_group_name);
-	else
-		xml.writeGLIFile(out_fname, points_group_name);
+	XmlGmlInterface xml (project_data, schema_name);
+	if (station) {
+		XmlStnInterface xml (project_data, schema_name);
+		xml.writeFile(out_fname, points_group_name);
+	} else {
+		XmlGmlInterface xml (project_data, schema_name);
+		xml.writeFile(out_fname, points_group_name);
+	}
 
 	delete project_data;
 }

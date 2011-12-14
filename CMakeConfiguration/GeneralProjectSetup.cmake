@@ -28,26 +28,42 @@ IF (OGS_BUILD_INFO)
 	      )
 	    if( build_timestamp )
 	       set( BUILD_TIMESTAMP "${build_timestamp}" )
-	       message( STATUS "Build timestamp: ${BUILD_TIMESTAMP}" )
+	       # message( STATUS "Build timestamp: ${BUILD_TIMESTAMP}" )
 	    endif()
 	  find_package( Git )
 	  if(GIT_FOUND)
+	    # Get git commit
 	    execute_process(
-	      COMMAND "git" "describe" "--always"
-	      COMMAND "xargs" "-Ixx" "git" "name-rev" "xx"
+	      COMMAND "git" "log" "--name-status" "HEAD^..HEAD"
+	      COMMAND "grep" "-m" "1" "commit"
 	      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	      OUTPUT_VARIABLE git_commit_info
 	      OUTPUT_STRIP_TRAILING_WHITESPACE
 	      ERROR_VARIABLE not_git_repo
 	      )
 	    if( git_commit_info )
-	      message( STATUS "Git commit: " ${git_commit_info} )
+	      # message( STATUS "Git commit: " ${git_commit_info} )
 	      set( GIT_COMMIT_INFO "${git_commit_info}" )
 	    else( git_commit_info )
 	      if( not_git_repo )
 		message( STATUS "Git not versioning the source" )
 	      endif( not_git_repo )
 	    endif( git_commit_info )
+	    
+	    # Get git branch
+			execute_process(
+				COMMAND "git" "branch"
+				COMMAND "grep" "\\*"
+				WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+				OUTPUT_STRIP_TRAILING_WHITESPACE
+				OUTPUT_VARIABLE git_branch_info)
+			if (git_branch_info)
+				set (GIT_BRANCH_INFO "${git_branch_info}")
+			else(git_branch_info)
+				message(STATUS "Git branch could not be determined!")
+			endif(git_branch_info)
+	  else( GIT_FOUND )
+		MESSAGE(STATUS "Git not found!")
 	  endif( GIT_FOUND )
 	endif( NOT MSVC )
 ENDIF (OGS_BUILD_INFO)

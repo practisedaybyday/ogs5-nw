@@ -9,7 +9,7 @@
 
 // FileIO
 #include "OGSIOVer4.h"
-#include "XMLInterface.h"
+#include "XmlIO/XmlGmlInterface.h"
 
 // GEO
 #include "GEOObjects.h"
@@ -66,7 +66,8 @@ int main (int argc, char* argv[])
 
 	GEOLIB::GEOObjects* geo (new GEOLIB::GEOObjects);
 	tmp = argv[4];
-	FileIO::readGLIFileV4(tmp, geo);
+	std::string unique_name;
+	FileIO::readGLIFileV4(tmp, geo, unique_name);
 
 	// *** get Polygon
 	const std::vector<GEOLIB::Polyline*>* plys (geo->getPolylineVec (tmp));
@@ -83,7 +84,7 @@ int main (int argc, char* argv[])
 
 	ProjectData* project_data (new ProjectData);
 	project_data->setGEOObjects (geo);
-	XMLInterface xml_out (project_data, "OpenGeoSysGLI.xsd");
+	XmlGmlInterface xml_out (project_data, "OpenGeoSysGLI.xsd");
 	for (size_t k(0); k < n_plys; k++)
 	{
 		GEOLIB::Polygon polygon (*((*plys)[k]));
@@ -102,7 +103,7 @@ int main (int argc, char* argv[])
 		std::string out_fname ("Surface");
 		out_fname += number2str (k);
 		out_fname += ".gml";
-		xml_out.writeGLIFile (out_fname, fname);
+		xml_out.writeFile (out_fname, fname);
 	}
 
 	delete mesh;

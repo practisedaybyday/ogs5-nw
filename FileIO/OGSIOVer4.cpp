@@ -514,7 +514,7 @@ std::string readSurfaces(std::istream &in,
 	return tag;
 }
 
-void readGLIFileV4(const std::string& fname, GEOObjects* geo)
+void readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& unique_name)
 {
 	std::cout << "GEOLIB::readGLIFile open stream from file " << fname
 	          << " ... " << std::flush;
@@ -535,7 +535,7 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo)
 	tag = readPoints(in, pnt_vec, zero_based_idx, pnt_id_names_map);
 	std::cout << " ok, " << pnt_vec->size() << " points read" << std::endl;
 
-	std::string unique_name(fname);
+	unique_name = getFileNameFromPath(fname, true);
 	if (!pnt_vec->empty())
 		geo->addPointVec(pnt_vec, unique_name, pnt_id_names_map);  // KR: insert into GEOObjects if not empty
 
@@ -671,7 +671,7 @@ void writeAllDataToGLIFileV4 (const std::string& fname, const GEOLIB::GEOObjects
 
 	// writing all stations
 	std::vector<std::string> stn_names;
-	geo.getStationNames (stn_names);
+	geo.getStationVectorNames (stn_names);
 	for (size_t j(0); j < stn_names.size(); j++)
 	{
 		os.precision (20);

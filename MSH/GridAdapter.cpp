@@ -65,7 +65,7 @@ int GridAdapter::convertCFEMesh(const MeshLib::CFEMesh* mesh)
 		if (newElem->type != MshElemType::INVALID)
 		{
 			std::vector<long> elemNodes;
-			nElemNodes = mesh->ele_vector[i]->nodes_index.Size();
+			nElemNodes = mesh->ele_vector[i]->getNodeIndices().Size();
 			for (size_t j = 0; j < nElemNodes; j++)
 				newElem->nodes.push_back(mesh->ele_vector[i]->GetNodeIndex(j));
 

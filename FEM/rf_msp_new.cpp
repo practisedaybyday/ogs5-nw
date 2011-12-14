@@ -406,13 +406,6 @@ std::ios::pos_type CSolidProperties::Read(std::ifstream* msp_file)
 				>> (*data_Youngs)(4) >> (*data_Youngs)(5) >> (*data_Youngs)(6);
 				in_sd.clear();
 				break;
-#ifdef RFW_FRACTURE
-			case 2:       // = f(aperture), for fracture material groups, RFW 04/2005,  RFW 09/12/2005
-				data_Youngs = new Matrix(3);
-				in_sd >> (*data_Youngs)(0) >> (*data_Youngs)(1) >> (*data_Youngs)(2);
-				in_sd.clear();
-				break;
-#endif
 			}
 		}
 		//....................................................................
@@ -1159,7 +1152,6 @@ void CSolidProperties::HeatConductivityTensor(const int dim, double* tensor, int
    Programing:
    08/2004 WW Implementation
 **************************************************************************/
-#ifndef RFW_FRACTURE
 double CSolidProperties::Youngs_Modulus(double refence)
 {
 	double val = 0.0;
@@ -1174,64 +1166,6 @@ double CSolidProperties::Youngs_Modulus(double refence)
 	}
 	return val;
 }
-#endif
-
-#ifdef RFW_FRACTURE
-//RFW changed
-double CSolidProperties::Youngs_Modulus(CElem* elem, double refence)
-{
-	double val = 0.0;
-
-	switch(Youngs_mode)
-	{
-	case 0:
-		val = CalulateValue(data_Youngs, refence);
-		break;
-	case 1:
-		val = (*data_Youngs)(0);
-		break;
-	case 2:
-		double E1 = (*data_Youngs)(0);
-		double E2 = (*data_Youngs)(1);
-		double min_aperture = (*data_Youngs)(2);
-		double step_size = min_aperture / 10;
-
-		CMediumProperties* m_mmp = NULL;
-		m_mmp = mmp_vector[elem->GetPatchIndex()];
-		double aperture = m_mmp->CalculateFracAperture(elem, step_size);
-
-		if (  (aperture > (min_aperture + 0.00000001))  ||  (aperture == -10) )
-			val = E1;
-		else
-			val = E2;
-
-		break;
-	}
-	return val;
-}
-#endif
-
-#ifdef RFW_FRACTURE
-/**************************************************************************
-   FEMLib-Method: CSolidProperties::Youngs_Min_Aper(const double refence = 0.0) const
-   Task: Get minimum aperture value for fracture deformation
-   Programing:
-   07/2005 RFW Implementation
-**************************************************************************/
-//RFW 07/2005
-double CSolidProperties::Get_Youngs_Min_Aperture(CElem* elem)
-{
-	int group = elem->GetPatchIndex();
-	CSolidProperties* mat_pointer;
-	Matrix* data;
-	double min_aperture;
-
-	mat_pointer = msp_vector[group];
-	data = mat_pointer->data_Youngs;
-	min_aperture = (*data)(2);
-	return min_aperture;
-}
-#endif
 
 //-------------------------------------------------------------------------
 // Kronecker function
@@ -1249,7 +1183,6 @@ double CSolidProperties::Kronecker(const int ii, const int jj)
    Programing:
    08/2004 WW Implementation
 **************************************************************************/
-#ifndef RFW_FRACTURE
 void CSolidProperties::Calculate_Lame_Constant()
 {
 	double nv = Poisson_Ratio();
@@ -1258,19 +1191,7 @@ void CSolidProperties::Calculate_Lame_Constant()
 	G = 0.5 * E / (1. + nv);
 	K = (3.0 * Lambda + 2.0 * G) / 3.0;
 }
-#endif
-#ifdef RFW_FRACTURE
-//with a CElem pointer, for the fracture deformation Youngs Modulus is element specific, not material specific
-//RFW changed
-void CSolidProperties::Calculate_Lame_Constant( CElem* elem)
-{
-	E = Youngs_Modulus(elem);             // RFW 06/2006
-	Lambda = E * Poisson_Ratio() /
-	         ((1. + Poisson_Ratio()) * (1. - 2. * Poisson_Ratio()));
-	G = 0.5 * E / (1. + Poisson_Ratio());
-	K = (3.0 * Lambda + 2.0 * G) / 3.0;
-}
-#endif
+
 /*************************************************************************
    ROCKFLOW - Funktion: CSolidProperties::ElasticConsitutive
 
@@ -1513,25 +1434,12 @@ void CSolidProperties::CalculateTransformMatrixFromNormalVector(const int Dimens
 		return;
 	}
 
-	double e1[3] =
-	{
-		0.0
-	}
-	,e2[3] =
-	{
-		0.0
-	}
-	,e3[3] =
-	{
-		0.0
-	};
+	double e1[3] = {0.0}, e2[3] = {0.0}, e3[3] = {0.0};
 
 	double nx = (*data_Youngs)(4);
 	double ny = (*data_Youngs)(5);
 	double nz = (*data_Youngs)(6);
-	double Disk = 1.0, t1, t2, t3, ax(1.0), ay(0.0), az(0.0);
-
-	t1 = t2 = t3 = 0.;
+	double Disk(1.0), t1(0.0), t2(0.0), t3(0.0), ax(1.0), ay(0.0), az(0.0);
 
 	// rotation matrix for vectors: UJG 25.11.2009
 	Matrix* Crotv = new Matrix(Dimension,Dimension);
@@ -6514,11 +6422,12 @@ void CSolidProperties::AddStain_by_HL_ODS(const ElementValue_DM* ele_val, double
 void CSolidProperties::CalPrimaryVariable(vector<string>& pcs_name_vector)
 {
 	CRFProcess* m_pcs = NULL;
+
 	int nidx0,nidx1;
 	if(!Fem_Ele_Std)                      //OK
 		return;
 
-	for(int i = 0; i < (int)pcs_name_vector.size(); i++)
+	for(size_t i = 0; i < pcs_name_vector.size(); i++)
 	{
 		m_pcs = PCSGet(pcs_name_vector[i],true);
 		if (!m_pcs)

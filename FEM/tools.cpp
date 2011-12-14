@@ -510,324 +510,324 @@ int FctCurves(char* data, int found, FILE* f)
 	return ok;
 }
 
-/**************************************************************************/
-/* ROCKFLOW - Funktion: FctReadHeterogeneousFields
- */
-/* Aufgabe:
-   Liest zu jedem Knoten einen Wert der Permeabilität ein.
-   Identifikation über Koordinaten
- */
-/* Ergebnis:
-    0 bei Fehler, sonst 1
- */
-/* Programmaenderungen:
-    09/2003     SB  First Version
-   01/2004     SB  Verallgemeinert auf beliebig viele Parameter
-    06/2005     MB  msh / layer
-    08/2005     MB $NUM_TYPE NEW
- */
-/**************************************************************************/
-int FctReadHeterogeneousFields(char* name_file, CMediumProperties* m_mat_mp)
-{
-	int ok = 0, method;
-	double* convertfact, * values, * defaultvalues, ** invals;
-	long i, j, no_values, nof, ihet;
-	int* help;
-	char zeile[MAX_ZEILE], outname[80];
-	string line;
-	int interpolation_option = 1;
-	ifstream ein;
-	ofstream out, out1;
-	std::stringstream in;
-	long NumberOfElements;
-	CFEMesh* m_msh = NULL;
-	int layer = 1;
-	int material_properties_index = -1;
-	int EleStart = -1;
-	int EleEnd = -1;
-	long NumberOfElementsPerLayer = -1;
-	MeshLib::CElem* m_ele = NULL;
-	//------------------------------------------------------------------------
-	DisplayMsgLn("Input file Heterogeneous Fields ");
-	//------------------------------------------------------------------------
-	// File handling
-	ein.open(name_file);
-	if(!ein)
-	{
-		//DisplayMsgLn(" ERROR opening file with heterogeneous fields!");
-		//DisplayMsgLn(" File does not exist.");
-		cout << " FctReadHeterogeneousFields" << endl;
-		cout << " Cannot find " << name_file << endl;
-		exit(1);
-	}
-	//------------------------------------------------------------------------
-	// Read MSH data
-	string line_string;
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	in >> line_string;
-	in.clear();
-	if(line_string.find("$MSH_TYPE") != string::npos)
-	{
-		GetLineFromFile(zeile,&ein);
-		in.str((string)zeile);
-		in >> line_string;
-		in.clear();
-		m_msh = FEMGet(line_string);
-		if(!m_msh)
-			cout << "FctReadHeterogeneousFields: no MSH data" << endl;
-	}
-	//------------------------------------------------------------------------
-	// Read Interpolation option
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	in >> line_string;
-	in.clear();
-	if(line_string.find("$INTERPOLATION") != string::npos)
-	{
-		GetLineFromFile(zeile,&ein);
-		in.str((string)zeile);
-		in >> line_string;
-		in.clear();
-		if(line_string.find("NEAREST_VALUE") != string::npos)
-			interpolation_option = 1;
-		if(line_string.find("GEOMETRIC_MEAN") != string::npos)
-			interpolation_option = 2;
-	}
-	//------------------------------------------------------------------------
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	in >> nof;
-	in.clear();
-	hf = Createhetfields(nof,name_file);
-	//------------------------------------------------------------------------
-	convertfact = (double*)Malloc(nof * sizeof(double));
-	values = (double*) Malloc(nof * sizeof(double));
-	defaultvalues = (double*) Malloc(nof * sizeof(double));
-	for(i = 0; i < nof; i++)
-	{
-		convertfact[i] = 0.0;
-		defaultvalues[i] = 0.0;
-	}
-	//------------------------------------------------------------------------
-	GetLineFromFile(zeile,&ein);
-	line = (string ) zeile;
-	in.str(line);
-	for(i = 0; i < nof; i++)
-	{
-		in >> outname;
-		set_hetfields_name(hf,i,outname);
-
-		//set material_properties_index
-		if(line.find("permeability") == 0)
-			material_properties_index = 0;
-		if(line.find("porosity") == 0)
-			material_properties_index = 1;
-	}
-	in.clear();
-	//------------------------------------------------------------------------
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	for(i = 0; i < nof; i++)
-		in >> convertfact[i];
-	in.clear();
-	//------------------------------------------------------------------------
-	// read default
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	for(i = 0; i < nof; i++)
-		in >> defaultvalues[i];
-	in.clear();
-	// for(i=0;i<nof;i++)
-	//  defaultvalues[i] *= convertfact[i]; MB->SB finde ich eher verwirrend ?
-	//------------------------------------------------------------------------
-	GetLineFromFile(zeile,&ein);
-	in.str((string ) zeile);
-	in >> no_values >> method;
-	in.clear();
-	//------------------------------------------------------------------------
-	NumberOfElements = (long)m_msh->ele_vector.size();
-	//------------------------------------------------------------------------
-	NumberOfElementsPerLayer = NumberOfElements / m_msh->getNumberOfMeshLayers();
-
-	//layers
-	if(m_mat_mp->geo_type_name.compare("LAYER") == 0)
-	{
-		char* temp = strdup(m_mat_mp->geo_name.c_str());
-		layer = atoi(temp);
-		EleStart = (layer - 1) * NumberOfElementsPerLayer;
-		EleEnd = layer * NumberOfElementsPerLayer;
-	}
-	//complete mesh
-	if(m_mat_mp->geo_type_name.compare("DOMAIN") == 0)
-	{
-		layer = 1;
-		EleStart = 0;
-		EleEnd = NumberOfElementsPerLayer;
-	}
-	//Warning
-	if(no_values < NumberOfElementsPerLayer)
-		DisplayMsgLn(
-		        "Warning! Fewer element values in File for heterogeneous permeability field than elements in element list");
-	//------------------------------------------------------------------------
-	/* field (int) for helping sort */
-	help = (int*) Malloc(NumberOfElements * sizeof(int));
-	for(i = 0; i < NumberOfElements; i++)
-		help[i] = 0;
-
-	/* initialize element values in element list; this is for the case, if not for all
-	   elements values are given in the input file */
-
-	//WW double test1;
-	//WW double test2;
-	//WW double test;
-	for(i = EleStart; i < EleEnd; i++)
-	{
-		m_ele = m_msh->ele_vector[i];
-		if (m_ele->mat_vector.Size() == 0)
-			m_ele->mat_vector.resize(2);
-		m_ele->mat_vector(material_properties_index) = defaultvalues[0];
-		// test1 = m_ele->mat_vector(0);
-	}
-	m_ele = m_msh->ele_vector[0];
-	//WW test1 = m_ele->mat_vector(0);
-	//WW test2 = m_ele->mat_vector(1);
-	//------------------------------------------------------------------------
-	//METHOD = 0:  read in unsorted values for coordinates and distribute to corresponding elements */
-	if(method == 0)
-	{
-		// allocate storage to read in file with het values and initialize
-		invals = (double**) Malloc((no_values) * sizeof(double*));
-		for(i = 0; i < no_values; i++)
-			invals[i] = (double*) Malloc((3 + nof + 1) * sizeof(double));
-		// initialize
-		for(i = 0; i < no_values; i++)
-			for(j = 0; j < (3 + nof + 1); j++) //+1 wegen GetAverageHetVal
-				invals[i][j] = 0.0;
-
-		//------------------------------------------------------------------------
-		// read values
-		for(i = 0; i < no_values; i++)
-		{
-			GetLineFromFile(zeile,&ein);
-			in.str((string) zeile);
-			//		in >> x >> y >> z ;
-			in >> invals[i][0] >> invals[i][1] >> invals[i][2];
-			for(j = 0; j < nof; j++)
-				in >> invals[i][j + 3];
-			in.clear();
-
-			// convert values by convertfact
-			for(j = 0; j < nof; j++)
-				invals[i][j + 3] = invals[i][j + 3] * convertfact[j];
-		}                         // end for read values
-
-		//------------------------------------------------------------------------
-		// element loop
-		for(i = EleStart; i < EleEnd; i++)
-		{
-			//.....................................................................
-			//Get the values that are nearest to element mid point
-			if(interpolation_option == 1)
-			{
-				ihet = GetNearestHetVal(i, m_msh, no_values, invals);
-				if(ihet < 0)
-					DisplayMsgLn(" Error getting nearest het_value location");
-				else
-					for(j = 0; j < nof; j++)
-						values[j] = invals[ihet][j + 3];
-				//DisplayMsg(" Het Val for element: "); DisplayLong(i); DisplayMsg(" with coordinates ");
-				//DisplayDouble(x,0,0); DisplayMsg(", "); DisplayDouble(y,0,0); DisplayMsg(", "); DisplayDouble(z,0,0); DisplayMsg("       found at: ");
-				//DisplayDouble(invals[ihet][0],0,0); DisplayMsg(", "); DisplayDouble(invals[ihet][1],0,0); DisplayMsg(", "); DisplayDouble(invals[ihet][2],0,0); DisplayMsgLn(". ");
-			}
-			//.....................................................................
-			//Get all values in Element and calculate the geometric mean
-			if(interpolation_option == 2)
-			{
-				values[0] = GetAverageHetVal(i, m_msh, no_values, invals);
-
-				DisplayMsgLn(" AverageHetVal ");
-				DisplayMsg(" Element ");
-				DisplayDouble(i,0,0);
-				DisplayMsg("  Value: ");
-				DisplayDouble(values[0],0,0);
-			}
-			// save values
-			m_ele = m_msh->ele_vector[i];
-			m_ele->mat_vector(material_properties_index) = values[0];
-		}                         //end for element loop
-		ein.close();
-		// free storage for input values
-		invals = (double**) Free(invals);
-		//------------------------------------------------------------------------
-		//------------------------------------------------------------------------
-		//  OUT   write out fields sorted by element number
-		//------------------------------------------------------------------------
-		// Header
-		sprintf(outname,"%s%i",name_file,1);
-		out.open(outname);
-		out << "$MSH_TYPE" << endl;
-		out << "  GROUNDWATER_FLOW" << endl; //ToDo as variable
-		//out << "$LAYER" << endl;
-		//out << "  " << layer << endl;
-		out << "$INTERPOLATION" << endl;
-		out << "  GEOMETRIC_MEAN" << endl; //ToDo as variable
-		/* Field name */
-		out << nof << endl;
-		for(i = 0; i < nof; i++)
-			out << get_hetfields_name(hf,i) << ' ';
-		out << endl;
-		/* conversion factor is one in this case */
-		for(i = 0; i < nof; i++)
-			out << 1.0 << ' ';
-		out << endl;
-		// default values
-		for(i = 0; i < nof; i++)
-			out << defaultvalues[i] << ' ';
-		out << endl;
-		//out << NumberOfElements << ' ' << 1 << endl;
-		out << NumberOfElementsPerLayer << ' ' << 1 << endl;
-
-		out.setf(ios::scientific);
-		out.precision(5);
-
-		//------------------------------------------------------------------------
-		// Element data
-		for(i = EleStart; i < EleEnd; i++)
-		{
-			m_ele = m_msh->ele_vector[i];
-			for(j = 0; j < nof; j++)
-				out << m_ele->mat_vector(material_properties_index) << ' ';
-			out << endl;
-		}
-		out.close();
-	}                                     /* end if (method == 0) */
-	//------------------------------------------------------------------------
-	//METHOD = 1:  read in one sorted column, index is element number no conversion, no sorting
-	if(method == 1)
-	{
-		for(i = EleStart; i < EleEnd; i++)
-		{
-			GetLineFromFile(zeile,&ein);
-			in.str((string)zeile);
-			for(j = 0; j < nof; j++)
-				in >> values[j];
-			in.clear();
-			m_ele = m_msh->ele_vector[i];
-			m_ele->mat_vector(material_properties_index) = values[0];
-			//WW  test = m_ele->mat_vector(material_properties_index);
-		}
-		ein.close();
-	}                                     /* end if (method == 1) */
-
-	/* data structures deallocate */
-	convertfact = (double*) Free(convertfact);
-	values = (double*) Free(values);
-	defaultvalues = (double*) Free(defaultvalues);
-	help = (int*) Free(help);
-
-	return ok;
-}
+///**************************************************************************/
+///* ROCKFLOW - Funktion: FctReadHeterogeneousFields
+// */
+///* Aufgabe:
+//   Liest zu jedem Knoten einen Wert der Permeabilität ein.
+//   Identifikation über Koordinaten
+// */
+///* Ergebnis:
+//    0 bei Fehler, sonst 1
+// */
+///* Programmaenderungen:
+//    09/2003     SB  First Version
+//   01/2004     SB  Verallgemeinert auf beliebig viele Parameter
+//    06/2005     MB  msh / layer
+//    08/2005     MB $NUM_TYPE NEW
+// */
+///**************************************************************************/
+//int FctReadHeterogeneousFields(char* name_file, CMediumProperties* m_mat_mp)
+//{
+//	int ok = 0, method;
+//	double* convertfact, * values, * defaultvalues, ** invals;
+//	long i, j, no_values, nof, ihet;
+//	int* help;
+//	char zeile[MAX_ZEILE], outname[80];
+//	string line;
+//	int interpolation_option = 1;
+//	ifstream ein;
+//	ofstream out, out1;
+//	std::stringstream in;
+//	long NumberOfElements;
+//	CFEMesh* m_msh = NULL;
+//	int layer = 1;
+//	int material_properties_index = -1;
+//	int EleStart = -1;
+//	int EleEnd = -1;
+//	long NumberOfElementsPerLayer = -1;
+//	MeshLib::CElem* m_ele = NULL;
+//	//------------------------------------------------------------------------
+//	DisplayMsgLn("Input file Heterogeneous Fields ");
+//	//------------------------------------------------------------------------
+//	// File handling
+//	ein.open(name_file);
+//	if(!ein)
+//	{
+//		//DisplayMsgLn(" ERROR opening file with heterogeneous fields!");
+//		//DisplayMsgLn(" File does not exist.");
+//		cout << " FctReadHeterogeneousFields" << endl;
+//		cout << " Cannot find " << name_file << endl;
+//		exit(1);
+//	}
+//	//------------------------------------------------------------------------
+//	// Read MSH data
+//	string line_string;
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	in >> line_string;
+//	in.clear();
+//	if(line_string.find("$MSH_TYPE") != string::npos)
+//	{
+//		GetLineFromFile(zeile,&ein);
+//		in.str((string)zeile);
+//		in >> line_string;
+//		in.clear();
+//		m_msh = FEMGet(line_string);
+//		if(!m_msh)
+//			cout << "FctReadHeterogeneousFields: no MSH data" << endl;
+//	}
+//	//------------------------------------------------------------------------
+//	// Read Interpolation option
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	in >> line_string;
+//	in.clear();
+//	if(line_string.find("$INTERPOLATION") != string::npos)
+//	{
+//		GetLineFromFile(zeile,&ein);
+//		in.str((string)zeile);
+//		in >> line_string;
+//		in.clear();
+//		if(line_string.find("NEAREST_VALUE") != string::npos)
+//			interpolation_option = 1;
+//		if(line_string.find("GEOMETRIC_MEAN") != string::npos)
+//			interpolation_option = 2;
+//	}
+//	//------------------------------------------------------------------------
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	in >> nof;
+//	in.clear();
+//	hf = Createhetfields(nof,name_file);
+//	//------------------------------------------------------------------------
+//	convertfact = (double*)Malloc(nof * sizeof(double));
+//	values = (double*) Malloc(nof * sizeof(double));
+//	defaultvalues = (double*) Malloc(nof * sizeof(double));
+//	for(i = 0; i < nof; i++)
+//	{
+//		convertfact[i] = 0.0;
+//		defaultvalues[i] = 0.0;
+//	}
+//	//------------------------------------------------------------------------
+//	GetLineFromFile(zeile,&ein);
+//	line = (string ) zeile;
+//	in.str(line);
+//	for(i = 0; i < nof; i++)
+//	{
+//		in >> outname;
+//		set_hetfields_name(hf,i,outname);
+//
+//		//set material_properties_index
+//		if(line.find("permeability") == 0)
+//			material_properties_index = 0;
+//		if(line.find("porosity") == 0)
+//			material_properties_index = 1;
+//	}
+//	in.clear();
+//	//------------------------------------------------------------------------
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	for(i = 0; i < nof; i++)
+//		in >> convertfact[i];
+//	in.clear();
+//	//------------------------------------------------------------------------
+//	// read default
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	for(i = 0; i < nof; i++)
+//		in >> defaultvalues[i];
+//	in.clear();
+//	// for(i=0;i<nof;i++)
+//	//  defaultvalues[i] *= convertfact[i]; MB->SB finde ich eher verwirrend ?
+//	//------------------------------------------------------------------------
+//	GetLineFromFile(zeile,&ein);
+//	in.str((string ) zeile);
+//	in >> no_values >> method;
+//	in.clear();
+//	//------------------------------------------------------------------------
+//	NumberOfElements = (long)m_msh->ele_vector.size();
+//	//------------------------------------------------------------------------
+//	NumberOfElementsPerLayer = NumberOfElements / m_msh->getNumberOfMeshLayers();
+//
+//	//layers
+//	if(m_mat_mp->geo_type_name.compare("LAYER") == 0)
+//	{
+//		char* temp = strdup(m_mat_mp->geo_name.c_str());
+//		layer = atoi(temp);
+//		EleStart = (layer - 1) * NumberOfElementsPerLayer;
+//		EleEnd = layer * NumberOfElementsPerLayer;
+//	}
+//	//complete mesh
+//	if(m_mat_mp->geo_type_name.compare("DOMAIN") == 0)
+//	{
+//		layer = 1;
+//		EleStart = 0;
+//		EleEnd = NumberOfElementsPerLayer;
+//	}
+//	//Warning
+//	if(no_values < NumberOfElementsPerLayer)
+//		DisplayMsgLn(
+//		        "Warning! Fewer element values in File for heterogeneous permeability field than elements in element list");
+//	//------------------------------------------------------------------------
+//	/* field (int) for helping sort */
+//	help = (int*) Malloc(NumberOfElements * sizeof(int));
+//	for(i = 0; i < NumberOfElements; i++)
+//		help[i] = 0;
+//
+//	/* initialize element values in element list; this is for the case, if not for all
+//	   elements values are given in the input file */
+//
+//	//WW double test1;
+//	//WW double test2;
+//	//WW double test;
+//	for(i = EleStart; i < EleEnd; i++)
+//	{
+//		m_ele = m_msh->ele_vector[i];
+//		if (m_ele->mat_vector.Size() == 0)
+//			m_ele->mat_vector.resize(2);
+//		m_ele->mat_vector(material_properties_index) = defaultvalues[0];
+//		// test1 = m_ele->mat_vector(0);
+//	}
+//	m_ele = m_msh->ele_vector[0];
+//	//WW test1 = m_ele->mat_vector(0);
+//	//WW test2 = m_ele->mat_vector(1);
+//	//------------------------------------------------------------------------
+//	//METHOD = 0:  read in unsorted values for coordinates and distribute to corresponding elements */
+//	if(method == 0)
+//	{
+//		// allocate storage to read in file with het values and initialize
+//		invals = (double**) Malloc((no_values) * sizeof(double*));
+//		for(i = 0; i < no_values; i++)
+//			invals[i] = (double*) Malloc((3 + nof + 1) * sizeof(double));
+//		// initialize
+//		for(i = 0; i < no_values; i++)
+//			for(j = 0; j < (3 + nof + 1); j++) //+1 wegen GetAverageHetVal
+//				invals[i][j] = 0.0;
+//
+//		//------------------------------------------------------------------------
+//		// read values
+//		for(i = 0; i < no_values; i++)
+//		{
+//			GetLineFromFile(zeile,&ein);
+//			in.str((string) zeile);
+//			//		in >> x >> y >> z ;
+//			in >> invals[i][0] >> invals[i][1] >> invals[i][2];
+//			for(j = 0; j < nof; j++)
+//				in >> invals[i][j + 3];
+//			in.clear();
+//
+//			// convert values by convertfact
+//			for(j = 0; j < nof; j++)
+//				invals[i][j + 3] = invals[i][j + 3] * convertfact[j];
+//		}                         // end for read values
+//
+//		//------------------------------------------------------------------------
+//		// element loop
+//		for(i = EleStart; i < EleEnd; i++)
+//		{
+//			//.....................................................................
+//			//Get the values that are nearest to element mid point
+//			if(interpolation_option == 1)
+//			{
+//				ihet = GetNearestHetVal(i, m_msh, no_values, invals);
+//				if(ihet < 0)
+//					DisplayMsgLn(" Error getting nearest het_value location");
+//				else
+//					for(j = 0; j < nof; j++)
+//						values[j] = invals[ihet][j + 3];
+//				//DisplayMsg(" Het Val for element: "); DisplayLong(i); DisplayMsg(" with coordinates ");
+//				//DisplayDouble(x,0,0); DisplayMsg(", "); DisplayDouble(y,0,0); DisplayMsg(", "); DisplayDouble(z,0,0); DisplayMsg("       found at: ");
+//				//DisplayDouble(invals[ihet][0],0,0); DisplayMsg(", "); DisplayDouble(invals[ihet][1],0,0); DisplayMsg(", "); DisplayDouble(invals[ihet][2],0,0); DisplayMsgLn(". ");
+//			}
+//			//.....................................................................
+//			//Get all values in Element and calculate the geometric mean
+//			if(interpolation_option == 2)
+//			{
+//				values[0] = GetAverageHetVal(i, m_msh, no_values, invals);
+//
+//				DisplayMsgLn(" AverageHetVal ");
+//				DisplayMsg(" Element ");
+//				DisplayDouble(i,0,0);
+//				DisplayMsg("  Value: ");
+//				DisplayDouble(values[0],0,0);
+//			}
+//			// save values
+//			m_ele = m_msh->ele_vector[i];
+//			m_ele->mat_vector(material_properties_index) = values[0];
+//		}                         //end for element loop
+//		ein.close();
+//		// free storage for input values
+//		invals = (double**) Free(invals);
+//		//------------------------------------------------------------------------
+//		//------------------------------------------------------------------------
+//		//  OUT   write out fields sorted by element number
+//		//------------------------------------------------------------------------
+//		// Header
+//		sprintf(outname,"%s%i",name_file,1);
+//		out.open(outname);
+//		out << "$MSH_TYPE" << endl;
+//		out << "  GROUNDWATER_FLOW" << endl; //ToDo as variable
+//		//out << "$LAYER" << endl;
+//		//out << "  " << layer << endl;
+//		out << "$INTERPOLATION" << endl;
+//		out << "  GEOMETRIC_MEAN" << endl; //ToDo as variable
+//		/* Field name */
+//		out << nof << endl;
+//		for(i = 0; i < nof; i++)
+//			out << get_hetfields_name(hf,i) << ' ';
+//		out << endl;
+//		/* conversion factor is one in this case */
+//		for(i = 0; i < nof; i++)
+//			out << 1.0 << ' ';
+//		out << endl;
+//		// default values
+//		for(i = 0; i < nof; i++)
+//			out << defaultvalues[i] << ' ';
+//		out << endl;
+//		//out << NumberOfElements << ' ' << 1 << endl;
+//		out << NumberOfElementsPerLayer << ' ' << 1 << endl;
+//
+//		out.setf(ios::scientific);
+//		out.precision(5);
+//
+//		//------------------------------------------------------------------------
+//		// Element data
+//		for(i = EleStart; i < EleEnd; i++)
+//		{
+//			m_ele = m_msh->ele_vector[i];
+//			for(j = 0; j < nof; j++)
+//				out << m_ele->mat_vector(material_properties_index) << ' ';
+//			out << endl;
+//		}
+//		out.close();
+//	}                                     /* end if (method == 0) */
+//	//------------------------------------------------------------------------
+//	//METHOD = 1:  read in one sorted column, index is element number no conversion, no sorting
+//	if(method == 1)
+//	{
+//		for(i = EleStart; i < EleEnd; i++)
+//		{
+//			GetLineFromFile(zeile,&ein);
+//			in.str((string)zeile);
+//			for(j = 0; j < nof; j++)
+//				in >> values[j];
+//			in.clear();
+//			m_ele = m_msh->ele_vector[i];
+//			m_ele->mat_vector(material_properties_index) = values[0];
+//			//WW  test = m_ele->mat_vector(material_properties_index);
+//		}
+//		ein.close();
+//	}                                     /* end if (method == 1) */
+//
+//	/* data structures deallocate */
+//	convertfact = (double*) Free(convertfact);
+//	values = (double*) Free(values);
+//	defaultvalues = (double*) Free(defaultvalues);
+//	help = (int*) Free(help);
+//
+//	return ok;
+//}
 
 /**************************************************************************
    MSHLib-Method: GetAverageHetVal
@@ -1112,6 +1112,120 @@ double interpol (double x1, double x2, double zx1, double zx2, double xn)
 }
 
 /**********************************************************************
+Function GetMatrixValue (double var1, double var2, int *gueltig)
+
+This function reads a data matrix with two independent arguments and
+function values in an FCT-File and returns the value corresponding to
+var1 and var2. If var1 and var2 are not in the matrix, the function
+returns a value interpolated between both arguments.
+
+Programming:
+11-2011 NB/TF
+***********************************************************************/
+double GetMatrixValue(double var1, double var2, std::string caption, int *gueltig)
+{
+	CFunction * matrix;
+	//WW int anz_variables, anz_data;
+	int dim_x, dim_y;
+	int i1 = 0;
+	int i2 = 0;
+	int j1 = 0;
+	int j2 = 0;
+
+	matrix = FCTGet(caption);
+	dim_x = matrix->matrix_dimension[0]; //NB 4.8.01
+	dim_y = matrix->matrix_dimension[1]; //NB
+
+	int rangeV1[2], rangeV2[2];
+
+	rangeV1[0] = 0;
+	rangeV1[1] = dim_x - 1;
+	rangeV2[0] = dim_x;
+	rangeV2[1] = dim_x + dim_y - 1;
+
+	if (var1 < *matrix->variable_data_vector[0]) //is var1 smaller then the smallest argument?
+	{
+		*gueltig = 0;
+		i1 = i2 = 0;
+	} else if (var1 > *matrix->variable_data_vector[dim_x - 1]) //is var1 larger then largest argument?
+	{
+		*gueltig = 0;
+		i1 = i2 = dim_x - 1;
+	} else {
+		i1 = searchElement(var1, 0, dim_x - 1, matrix->variable_data_vector);
+		i2 = i1 + 1;
+	}
+
+	if (var2 < *matrix->variable_data_vector[dim_x]) //is var1 smaller then the smallest argument?
+	{
+		*gueltig = 0;
+		j1 = j2 = dim_x;
+	} else if (var2 > *matrix->variable_data_vector[dim_y + dim_x - 1]) //is var1 larger then largest argument?
+	{
+		*gueltig = 0;
+		j1 = j2 = dim_y + dim_x - 1;
+	} else {
+		j1 = searchElement(var2, dim_x, dim_y + dim_x - 1, matrix->variable_data_vector);
+		j2 = j1 + 1;
+	}
+
+	if (fabs(var1 - *matrix->variable_data_vector[i1]) < std::numeric_limits<double>::epsilon()) // var 1 is in the matrix
+	{
+		if (fabs(var2 - *matrix->variable_data_vector[j1]) < std::numeric_limits<double>::epsilon()) // var 2 is in the matrix
+		{
+
+			return *matrix->variable_data_vector[dim_x + dim_y + i1 + (j1 - dim_x) * dim_x];
+		} else // only v1 is in the matrix
+		{
+			double zx1y1, zx1y2;
+			double y1, y2;
+			zx1y1 = *matrix->variable_data_vector[dim_x + dim_y + i1 + (j1 - dim_x) * dim_x];
+			zx1y2 = *matrix->variable_data_vector[dim_x + dim_y + i1 + (j2 - dim_x) * dim_x];
+			y1 = *matrix->variable_data_vector[j1];
+			y2 = *matrix->variable_data_vector[j2];
+
+			return interpol(y1, y2, zx1y1, zx1y2, var2);
+		}
+	} else // v1 is not in the matrix
+	{
+		if (fabs(var2 - *matrix->variable_data_vector[dim_x + j1])
+						< std::numeric_limits<double>::epsilon()) // only var 2 is in the matrix
+		{
+			double zx1y1, zx2y1;
+			double x1, x2;
+			zx1y1 = *matrix->variable_data_vector[dim_x + dim_y + i1 + (j1 - dim_x) * dim_x];
+			zx2y1 = *matrix->variable_data_vector[dim_x + dim_y + i2 + (j1 - dim_x) * dim_x];
+			x1 = *matrix->variable_data_vector[i1];
+			x2 = *matrix->variable_data_vector[i2];
+
+			return interpol(x1, x2, zx1y1, zx2y1, var1);
+		}
+
+		else // neither var1 nor var2 are in the matrix
+		{
+			double interp1, interp2;
+			double zx1y1, zx2y1, zx1y2, zx2y2;
+			double x1, x2, y1, y2;
+			zx1y1 = *matrix->variable_data_vector[dim_x + dim_y + i1 + (j1 - dim_x) * dim_x];
+			zx2y1 = *matrix->variable_data_vector[dim_x + dim_y + i2 + (j1 - dim_x) * dim_x];
+			zx1y2 = *matrix->variable_data_vector[dim_x + dim_y + i1 + (j2 - dim_x) * dim_x];
+			zx2y2 = *matrix->variable_data_vector[dim_x + dim_y + i2 + (j2 - dim_x) * dim_x];
+
+			x1 = *matrix->variable_data_vector[i1];
+			x2 = *matrix->variable_data_vector[i2];
+			y1 = *matrix->variable_data_vector[j1];
+			y2 = *matrix->variable_data_vector[j2];
+
+			interp1 = interpol(x1, x2, zx1y1, zx2y1, var1);
+			interp2 = interpol(x1, x2, zx1y2, zx2y2, var1);
+
+			return interpol(y1, y2, interp1, interp2, var2);
+		}
+	}
+}
+
+
+/**********************************************************************
    Function GetMatrixValue (double var1, double var2, int *gueltig)
 
    This function reads a data matrix with two independent arguments and
@@ -1122,107 +1236,107 @@ double interpol (double x1, double x2, double zx1, double zx2, double xn)
    Programming:
    08/2008 NB
  ***********************************************************************/
-double GetMatrixValue(double var1, double var2, std::string caption, int* gueltig)
-{
-	CFunction* matrix;
-	//WW int anz_variables, anz_data;
-	int dim_x, dim_y;
-	int i1 = 0;
-	int i2 = 0;
-	int j1 = 0;
-	int j2 = 0;
-	int counter;
-	double x1 = 0.0,x2 = 0.0,y1 = 0.0,y2 = 0.0; //OK411
-	double zx1y1,zx2y1,zx1y2,zx2y2;
-
-	matrix = FCTGet(caption);
-	//WW anz_variables = (int)matrix->variable_names_vector.size();
-	//dim_x = matrix->matrix_dimension_x;
-	//dim_y = matrix->matrix_dimension_y;
-	dim_x = matrix->matrix_dimension[0];  //NB 4.8.01
-	dim_y = matrix->matrix_dimension[1];  //NB
-	//WW anz_data = (int)matrix->variable_data_vector.size()-dim_x-dim_y;
-	//----------------------------------------------------------------------
-	if (var1 < *matrix->variable_data_vector[0]) //is var1 smaller then the smallest argument?
-	{
-		x1 = x2 = *matrix->variable_data_vector[0];
-		*gueltig = 0;
-		i1 = i2 = 0;
-	}
-	else
-	//is var1 larger then largest argument?
-	if (var1 > *matrix->variable_data_vector[dim_x - 1])
-	{
-		x1 = x2 = *matrix->variable_data_vector[dim_x - 1];
-		*gueltig = 0;
-		i1 = i2 = dim_x - 1;
-	}
-	else
-		for (counter = 0; counter < dim_x; counter++)
-		{
-			//does var1 fit an argument in the matrix exactly?
-			if (var1 == *matrix->variable_data_vector[counter])
-			{
-				x1 = x2 = *matrix->variable_data_vector[counter];
-				i1 = i2 = counter;
-				break;
-			}
-			else
-			//var1 is between two arguments in the matrix
-			if (var1 < *matrix->variable_data_vector[counter])
-			{
-				x1 = *matrix->variable_data_vector[counter - 1];
-				x2 = *matrix->variable_data_vector[counter];
-				i2 = counter;
-				i1 = i2 - 1;
-				break;
-			}
-		}
-	//same procedure for var2:
-	if (var2 < *matrix->variable_data_vector[dim_x])
-	{
-		y1 = y2 = *matrix->variable_data_vector[dim_x];
-		*gueltig = 0;
-		j1 = j2 = dim_x;
-	}
-	else
-	if (var2 > *matrix->variable_data_vector[dim_x + dim_y - 1])
-	{
-		y1 = y2 = *matrix->variable_data_vector[dim_x + dim_y - 1];
-		*gueltig = 0;
-		j1 = j2 = dim_x + dim_y - 1;
-	}
-	else
-		for (counter = dim_x; counter < dim_x + dim_y; counter++)
-		{
-			if (var2 == *matrix->variable_data_vector[counter])
-			{
-				y1 = y2 = *matrix->variable_data_vector[counter];
-				j1 = j2 = counter;
-				break;
-			}
-			else
-			if (var2 < *matrix->variable_data_vector[counter])
-			{
-				y1 = *matrix->variable_data_vector[counter - 1];
-				y2 = *matrix->variable_data_vector[counter];
-				j2 = counter;
-				j1 = j2 - 1;
-				break;
-			}
-		}
-	//getting the corresponding Z values for the arguments from the data vector
-	zx1y1 = *matrix->variable_data_vector[(j1 - dim_x) * dim_x + (i1 + dim_x + dim_y)];
-	zx2y1 = *matrix->variable_data_vector[(j1 - dim_x) * dim_x + (i2 + dim_x + dim_y)];
-	zx1y2 = *matrix->variable_data_vector[(j2 - dim_x) * dim_x + (i1 + dim_x + dim_y)];
-	zx2y2 = *matrix->variable_data_vector[(j2 - dim_x) * dim_x + (i2 + dim_x + dim_y)];
-	return interpol (y1,y2,
-	                 interpol (x1,x2,zx1y1,zx2y1,  var1),interpol (x1,
-	                                                               y1,
-	                                                               zx1y2,
-	                                                               zx2y2,
-	                                                               var1),var2);
-}
+//double GetMatrixValue(double var1, double var2, std::string caption, int* gueltig)
+//{
+//	CFunction* matrix;
+//	//WW int anz_variables, anz_data;
+//	int dim_x, dim_y;
+//	int i1 = 0;
+//	int i2 = 0;
+//	int j1 = 0;
+//	int j2 = 0;
+//	int counter;
+//	double x1 = 0.0,x2 = 0.0,y1 = 0.0,y2 = 0.0; //OK411
+//	double zx1y1,zx2y1,zx1y2,zx2y2;
+//
+//	matrix = FCTGet(caption);
+//	//WW anz_variables = (int)matrix->variable_names_vector.size();
+//	//dim_x = matrix->matrix_dimension_x;
+//	//dim_y = matrix->matrix_dimension_y;
+//	dim_x = matrix->matrix_dimension[0];  //NB 4.8.01
+//	dim_y = matrix->matrix_dimension[1];  //NB
+//	//WW anz_data = (int)matrix->variable_data_vector.size()-dim_x-dim_y;
+//	//----------------------------------------------------------------------
+//	if (var1 < *matrix->variable_data_vector[0]) //is var1 smaller then the smallest argument?
+//	{
+//		x1 = x2 = *matrix->variable_data_vector[0];
+//		*gueltig = 0;
+//		i1 = i2 = 0;
+//	}
+//	else
+//	//is var1 larger then largest argument?
+//	if (var1 > *matrix->variable_data_vector[dim_x - 1])
+//	{
+//		x1 = x2 = *matrix->variable_data_vector[dim_x - 1];
+//		*gueltig = 0;
+//		i1 = i2 = dim_x - 1;
+//	}
+//	else
+//		for (counter = 0; counter < dim_x; counter++)
+//		{
+//			//does var1 fit an argument in the matrix exactly?
+//			if (var1 == *matrix->variable_data_vector[counter])
+//			{
+//				x1 = x2 = *matrix->variable_data_vector[counter];
+//				i1 = i2 = counter;
+//				break;
+//			}
+//			else
+//			//var1 is between two arguments in the matrix
+//			if (var1 < *matrix->variable_data_vector[counter])
+//			{
+//				x1 = *matrix->variable_data_vector[counter - 1];
+//				x2 = *matrix->variable_data_vector[counter];
+//				i2 = counter;
+//				i1 = i2 - 1;
+//				break;
+//			}
+//		}
+//	//same procedure for var2:
+//	if (var2 < *matrix->variable_data_vector[dim_x])
+//	{
+//		y1 = y2 = *matrix->variable_data_vector[dim_x];
+//		*gueltig = 0;
+//		j1 = j2 = dim_x;
+//	}
+//	else
+//	if (var2 > *matrix->variable_data_vector[dim_x + dim_y - 1])
+//	{
+//		y1 = y2 = *matrix->variable_data_vector[dim_x + dim_y - 1];
+//		*gueltig = 0;
+//		j1 = j2 = dim_x + dim_y - 1;
+//	}
+//	else
+//		for (counter = dim_x; counter < dim_x + dim_y; counter++)
+//		{
+//			if (var2 == *matrix->variable_data_vector[counter])
+//			{
+//				y1 = y2 = *matrix->variable_data_vector[counter];
+//				j1 = j2 = counter;
+//				break;
+//			}
+//			else
+//			if (var2 < *matrix->variable_data_vector[counter])
+//			{
+//				y1 = *matrix->variable_data_vector[counter - 1];
+//				y2 = *matrix->variable_data_vector[counter];
+//				j2 = counter;
+//				j1 = j2 - 1;
+//				break;
+//			}
+//		}
+//	//getting the corresponding Z values for the arguments from the data vector
+//	zx1y1 = *matrix->variable_data_vector[(j1 - dim_x) * dim_x + (i1 + dim_x + dim_y)];
+//	zx2y1 = *matrix->variable_data_vector[(j1 - dim_x) * dim_x + (i2 + dim_x + dim_y)];
+//	zx1y2 = *matrix->variable_data_vector[(j2 - dim_x) * dim_x + (i1 + dim_x + dim_y)];
+//	zx2y2 = *matrix->variable_data_vector[(j2 - dim_x) * dim_x + (i2 + dim_x + dim_y)];
+//	return interpol (y1,y2,
+//	                 interpol (x1,x2,zx1y1,zx2y1,  var1),interpol (x1,
+//	                                                               y1,
+//	                                                               zx1y2,
+//	                                                               zx2y2,
+//	                                                               var1),var2);
+//}
 
 /****************************************************************************
  * Finds and returns the positive minimum of a vector.

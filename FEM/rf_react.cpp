@@ -326,12 +326,12 @@ void REACT::CreateREACT(void)
 	for (size_t i = 0; i < vector_size; i++)
 	{
 		//		CRFProcess *m_pcs = pcs_vector[i];
-		ProcessType pcs_type (pcs_vector[i]->getProcessType());
+		const FiniteElement::ProcessType pcs_type (pcs_vector[i]->getProcessType());
 		//		if (m_pcs->pcs_type_name.compare("MASS_TRANSPORT") == 0)
-		if (pcs_type == MASS_TRANSPORT)
+		if (pcs_type == FiniteElement::MASS_TRANSPORT)
 			np++;
 		//		if (m_pcs->pcs_type_name.compare("HEAT_TRANSPORT") == 0)
-		if (pcs_type == HEAT_TRANSPORT)
+		if (pcs_type == FiniteElement::HEAT_TRANSPORT)
 			heatflag = 1;
 		nodenumber = pcs_vector[i]->m_msh->GetNodesNumber(false);
 		elenumber = (long) pcs_vector[i]->m_msh->ele_vector.size();
@@ -413,7 +413,7 @@ void REACT::InitREACT(void)
 		m_pcs = pcs_vector[j];
 		//		if (m_pcs->pcs_type_name.compare("MASS_TRANSPORT") == 0) { // if it is a mass transport process
 		// if it is a mass transport process
-		if (m_pcs->getProcessType () == MASS_TRANSPORT)
+		if (m_pcs->getProcessType () == FiniteElement::MASS_TRANSPORT)
 		{
 			comp = m_pcs->pcs_component_number; // get component number
 			                                    // get component name
@@ -490,7 +490,7 @@ void REACT::InitREACT0()
 	{
 		pcs = pcs_vector[j];
 		//		if (pcs->pcs_type_name.compare("MASS_TRANSPORT") == 0) { // if it is a mass transport process
-		if (pcs->getProcessType () == MASS_TRANSPORT)
+		if (pcs->getProcessType () == FiniteElement::MASS_TRANSPORT)
 		{
 			int comp = pcs->pcs_component_number; // get component number
 			                                      // get component name
@@ -504,7 +504,7 @@ void REACT::InitREACT0()
 				ic = ic_vector[j];
 				ic->setProcess(pcs);
 				if (ic->getProcessPrimaryVariable()
-				    == convertPrimaryVariable(this->name[comp]))
+				    == FiniteElement::convertPrimaryVariable(this->name[comp]))
 				{
 					int nidxe = pcs->GetElementValueIndex(this->name[comp]);
 					ic->SetEle(nidxe); //set IC to elements for reactions //MX 06/2006
@@ -893,8 +893,7 @@ int REACT::ReadReactionModel(FILE* File)
 						{
 							m_pcs = pcs_vector[i];
 							//							if (m_pcs->pcs_type_name.find("HEAT_TRANSPORT") != string::npos) {
-							if (m_pcs->getProcessType () ==
-							    HEAT_TRANSPORT)
+							if (m_pcs->getProcessType () == FiniteElement::HEAT_TRANSPORT)
 							{
 								//			  if(GetRFProcessProcessingAndActivation("HT"))
 								this->rcml_heat_flag = 1;
@@ -1063,7 +1062,7 @@ int REACT::ReadReactionModelNew( ifstream* pqc_infile)
 					{
 						m_pcs = pcs_vector[i];
 						//					if (m_pcs->pcs_type_name.find("HEAT_TRANSPORT") != string::npos) {
-						if (m_pcs->getProcessType() == HEAT_TRANSPORT)
+						if (m_pcs->getProcessType() == FiniteElement::HEAT_TRANSPORT)
 						{
 							this->rcml_heat_flag = 1;
 							break;
@@ -2744,7 +2743,7 @@ void REACT::GetTransportResults(void)
 	{
 		pcs = pcs_vector[j];
 		//		if (pcs->pcs_type_name.compare("MASS_TRANSPORT") == 0) { // if it is a mass transport process
-		if (pcs->getProcessType() == MASS_TRANSPORT)
+		if (pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
 		{
 			int comp = pcs->pcs_component_number; // get component number
 			for (long i = 0; i < nodenumber; i++)
@@ -3024,7 +3023,7 @@ void REACT::GetTransportResults2Element()
 		pcs = pcs_vector[j];
 		//		if (pcs->pcs_type_name.compare("MASS_TRANSPORT") == 0) { // if it is a mass transport process
 		// if it is a mass transport process
-		if (pcs->getProcessType () == MASS_TRANSPORT)
+		if (pcs->getProcessType () == FiniteElement::MASS_TRANSPORT)
 		{
 			int comp = pcs->pcs_component_number; // get component number
 			std::string cname (pcs->pcs_primary_function_name[0]);

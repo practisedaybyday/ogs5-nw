@@ -20,6 +20,7 @@
 /* Speicherverwaltung */
 //#include <string.h>
 #include <string>
+
 /* Zeichenketten */
 //#include <float.h>
 /* Floating-Point */

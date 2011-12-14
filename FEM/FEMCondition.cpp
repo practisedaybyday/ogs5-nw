@@ -11,26 +11,30 @@
 #include "GridAdapter.h"
 
 FEMCondition::FEMCondition(const std::string &geometry_name, CondType t)
-	: _type(t), _geoObject(NULL), _geoName("[unspecified]"), _associated_geometry(geometry_name)
+	: _type(t), _geoName("[unspecified]"), _associated_geometry(geometry_name)
 {
-	this->setProcessType(INVALID_PROCESS);
-	this->setProcessPrimaryVariable(INVALID_PV);
+	this->setProcessType(FiniteElement::INVALID_PROCESS);
+	this->setProcessPrimaryVariable(FiniteElement::INVALID_PV);
 	this->setGeoType(GEOLIB::INVALID);
 	this->setProcessDistributionType(FiniteElement::INVALID_DIS_TYPE);
 }
 
-FEMCondition::FEMCondition(const std::string &geometry_name,
-                           ProcessType pt,
-                           PrimaryVariable pv,
-                           GEOLIB::GEOTYPE gt,
-                           const std::string &gn,
-                           FiniteElement::DistributionType dt,
-                           CondType ct)
-	: ProcessInfo(pt, pv,
-	              NULL),
-	  GeoInfo(gt,
-	          NULL), DistributionInfo(dt), _type(ct), _geoObject(NULL), _geoName(gn),
-	  _associated_geometry(geometry_name)
+FEMCondition::FEMCondition(const std::string &geometry_name, FiniteElement::ProcessType pt,
+				FiniteElement::PrimaryVariable pv, GEOLIB::GEOTYPE gt, const std::string &gn,
+				FiniteElement::DistributionType dt, CondType ct)
+	: ProcessInfo(pt, pv, NULL),  GeoInfo(gt, NULL), DistributionInfo(dt), _type(ct),
+	  _geoName(gn), _associated_geometry(geometry_name)
+{
+}
+
+FEMCondition::FEMCondition(const FEMCondition &cond, CondType t)
+	: ProcessInfo(cond.getProcessType(), cond.getProcessPrimaryVariable(), NULL),
+	  GeoInfo(cond.getGeoType(), cond.getGeoObj()),
+	  DistributionInfo(cond.getProcessDistributionType()),
+	  _type(t),
+	  _geoName(cond.getGeoName()),
+	  _disValue(cond.getDisValue()),
+	  _associated_geometry(cond.getAssociatedGeometryName())
 {
 }
 

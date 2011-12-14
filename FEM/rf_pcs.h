@@ -536,7 +536,7 @@ public:
 	                                      //OK
 	std::vector<std::string> nod_val_name_vector;
 	void SetNodeValue(long,int,double);   //OK
-	double GetNodeValue(long,int);        //OK
+	double GetNodeValue(size_t,int);        //OK
 	int GetNodeValueIndex(const std::string&); //OK
 	//-----------------------------
 
@@ -547,7 +547,7 @@ private:
 public:
 	std::vector<double*> ele_val_vector;  //PCH
 	void SetElementValue(long,int,double); //PCH
-	double GetElementValue(long,int);     //PCH
+	double GetElementValue(size_t,int);     //PCH
 	                                      //PCH
 	int GetElementValueIndex(const std::string&);
 	//CB-----------------------------
@@ -792,7 +792,7 @@ extern CRFProcess* PCSGet(const std::string&);
  * @param pcs_type process type
  * @return a pointer the the appropriate process or NULL (if not found)
  */
-CRFProcess* PCSGet (ProcessType pcs_type);        // TF
+CRFProcess* PCSGet (FiniteElement::ProcessType pcs_type);        // TF
 
 extern CRFProcess* PCSGetNew(const std::string&,const std::string&);
 extern void PCSDelete();
@@ -812,7 +812,7 @@ extern CRFProcess* PCSGet(const std::string&,const std::string&);
  * @return
  */
 // TF
-CRFProcess* PCSGet(ProcessType pcs_type, const std::string &pv_name);
+CRFProcess* PCSGet(FiniteElement::ProcessType pcs_type, const std::string &pv_name);
 
 //OK
 extern CRFProcess* PCSGet(const std::string&,bool);

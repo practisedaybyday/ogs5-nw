@@ -762,15 +762,15 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
 		switch (m_pcs->getProcessType()) // TF
 		{
 		//		case 'G': // kg44 groudnwater flow ---if steady state, time step should be greater zero...transient flow does not work with adaptive stepping
-		case GROUNDWATER_FLOW:    // TF, if steady state, time step should be greater zero...transient flow does not work with adaptive stepping
+		case FiniteElement::GROUNDWATER_FLOW:    // TF, if steady state, time step should be greater zero...transient flow does not work with adaptive stepping
 			time_step_length = min_time_step; // take min time step as conservative best guess for testing
 			break;
 		//		case 'M': // kg44 Mass transport ---if steady state, time step should be greater zero..
-		case MASS_TRANSPORT:      // TF, if steady state, time step should be greater zero..
+		case FiniteElement::MASS_TRANSPORT:      // TF, if steady state, time step should be greater zero..
 			time_step_length = min_time_step; // take min time step as conservative best guess for testing
 			break;
 		//		case 'R': // Richards
-		case RICHARDS_FLOW:       // TF
+		case FiniteElement::RICHARDS_FLOW:       // TF
 		{
 			idxS = m_pcs->GetNodeValueIndex("SATURATION1");
 			//WW no_time_steps = 1000000000;           //OK (int)(1.0e10);
@@ -883,9 +883,9 @@ double CTimeDiscretization::CourantTimeControl(void)
 //             dx_temp[2] = (m_nod1->Z()-m_nod2->Z())*(m_nod1->Z()-m_nod2->Z());
 
 				double const* const pnt1 (
-				        m_msh->nod_vector[m_ele->nodes_index[i]]->getData());
+				        m_msh->nod_vector[m_ele->getNodeIndices()[i]]->getData());
 				double const* const pnt2 (
-				        m_msh->nod_vector[m_ele->nodes_index[j]]->getData());
+				        m_msh->nod_vector[m_ele->getNodeIndices()[j]]->getData());
 				dx_temp[0] = (pnt1[0] - pnt2[0]) * (pnt1[0] - pnt2[0]);
 				dx_temp[1] = (pnt1[1] - pnt2[1]) * (pnt1[1] - pnt2[1]);
 				dx_temp[2] = (pnt1[2] - pnt2[2]) * (pnt1[2] - pnt2[2]);
@@ -946,7 +946,7 @@ double CTimeDiscretization::NeumannTimeControl(void)
 		//				case 'R': // Richards
 		switch (m_pcs->getProcessType()) // TF
 		{
-		case RICHARDS_FLOW:
+		case FiniteElement::RICHARDS_FLOW:
 			time_step_length = time_step_length_neumann;
 			break;
 		default:
@@ -992,7 +992,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 	}
 #endif
 	// TF
-	ProcessType pcs_type (convertProcessType (pcs_type_name));
+	const FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (pcs_type_name));
 	for (size_t n_p = 0; n_p < pcs_vector.size(); n_p++)
 	{
 		m_pcs = pcs_vector[n_p];
@@ -1007,7 +1007,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 				std::cout << "Fatal error: No valid PCS type" << std::endl;
 				break;
 			//			case 'R': // Richards
-			case RICHARDS_FLOW: // TF
+			case FiniteElement::RICHARDS_FLOW: // TF
 				if ( (imflag > 0) &&
 				     ( m_pcs->iter_lin  >=
 				       time_adapt_tim_vector[time_adapt_tim_vector.size() - 1] ) )
@@ -1025,7 +1025,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 				}
 				break;
 			//			case 'G': //Groundwater flow
-			case GROUNDWATER_FLOW: // TF
+			case FiniteElement::GROUNDWATER_FLOW: // TF
 				// iterdum=MMax(iterdum,m_pcs->iter);
 				imflag = 1;
 				if ( (imflag > 0) && ( m_pcs->iter_lin  >= time_adapt_tim_vector[1] ) )
@@ -1039,7 +1039,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 					imflag = 2;
 				break;
 			//			case 'M': // Mass transport
-			case MASS_TRANSPORT: // TF
+			case FiniteElement::MASS_TRANSPORT: // TF
 				iterdum = std::max(iterdum, m_pcs->iter_lin);
 				if ( (imflag > 0) && ( m_pcs->iter_lin  >= time_adapt_tim_vector[1] ) )
 				{
@@ -1162,7 +1162,7 @@ double CTimeDiscretization::AdaptiveFirstTimeStepEstimate(void)
 		switch (m_pcs->getProcessType()) // TF
 		{
 		//  case 'R': // Richards
-		case RICHARDS_FLOW:       // TF
+		case FiniteElement::RICHARDS_FLOW:       // TF
 		{
 			int idxp = m_pcs->GetNodeValueIndex("PRESSURE1") + 1;
 			//WW no_time_steps = 1000000000;           //OK (int)(1e10);
@@ -1193,11 +1193,11 @@ double CTimeDiscretization::AdaptiveFirstTimeStepEstimate(void)
 			break;
 		}
 		//		case 'M': // kg44 mass transport
-		case MASS_TRANSPORT:      // TF
+		case FiniteElement::MASS_TRANSPORT:      // TF
 			time_step_length = min_time_step; // take min time step as conservative best guess for testing
 			break;
 		//		case 'G': // kg44 groudnwater flow ---if steady state, time step should be greater zeor...transient flow does not work with adaptive stepping
-		case GROUNDWATER_FLOW:    // if steady state, time step should be greater zero ... transient flow does not work with adaptive stepping
+		case FiniteElement::GROUNDWATER_FLOW:    // if steady state, time step should be greater zero ... transient flow does not work with adaptive stepping
 			time_step_length = min_time_step; // take min time step as conservative best guess for testing
 			break;
 		default:
@@ -1230,7 +1230,7 @@ double CTimeDiscretization::ErrorControlAdaptiveTimeControl(void)
 			std::cout << "Fatal error: No valid PCS type" << std::endl;
 			break;
 		//		case 'R': // Richards, accepted and refused time step
-		case RICHARDS_FLOW:       // accepted and refused time step
+		case FiniteElement::RICHARDS_FLOW:       // accepted and refused time step
 			//nonlinear_iteration_error = m_pcs->nonlinear_iteration_error;
 			if (repeat)
 				time_step_length *= MMax(safty_coe * sqrt(

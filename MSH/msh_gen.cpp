@@ -380,7 +380,7 @@ void GMSH2MSH(const char* filename,CFEMesh* m_msh)
 					                      + 1];
 					//m_msh->ele_vector[i]->nodes[j]->SetIndex(new_node_id);/*global*/
 					/*local*/
-					m_msh->ele_vector[i]->nodes_index[j] = new_node_id;
+					m_msh->ele_vector[i]->getNodeIndices()[j] = new_node_id;
 				}
 			for (i = 0; i < (int) m_msh->nod_vector.size(); i++)
 				m_msh->nod_vector[i]->SetIndex(i);

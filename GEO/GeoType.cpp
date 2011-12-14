@@ -19,6 +19,8 @@ GEOTYPE convertGeoType (const std::string& geo_type_str)
 		return SURFACE;
 	if (geo_type_str.compare ("VOLUME") == 0)
 		return VOLUME;
+	if (geo_type_str.compare ("DOMAIN") == 0)
+		return GEODOMAIN;
 	if (geo_type_str.compare ("GEODOMAIN") == 0)
 		return GEODOMAIN;
 	return INVALID;

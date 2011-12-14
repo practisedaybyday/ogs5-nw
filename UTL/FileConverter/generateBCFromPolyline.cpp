@@ -11,7 +11,7 @@
 #include "ProjectData.h"
 
 // FileIO
-#include "XMLInterface.h"
+#include "XmlIO/XmlGmlInterface.h"
 
 #include "problem.h"
 Problem* aproblem = NULL;
@@ -34,9 +34,9 @@ int main (int argc, char* argv[])
 	        "/home/fischeth/workspace/OGS-FirstFloor/sources/FileIO/OpenGeoSysGLI.xsd");
 	ProjectData* project_data (new ProjectData);
 	project_data->setGEOObjects (geo_objs);
-	XMLInterface xml(project_data, schema_name);
+	XmlGmlInterface xml(project_data, schema_name);
 	std::string fname (argv[1]);
-	xml.readGLIFile(QString::fromStdString (fname));
+	xml.readFile(QString::fromStdString (fname));
 
 	std::vector<std::string> geo_names;
 	geo_objs->getGeometryNames (geo_names);

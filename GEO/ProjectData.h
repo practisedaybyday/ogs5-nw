@@ -7,6 +7,7 @@
 #define PROJECTDATA_H_
 
 #include "FEMCondition.h"
+#include "FEMEnums.h"
 #include "GEOObjects.h"
 #include "msh_mesh.h"
 
@@ -44,10 +45,19 @@ public:
 	/// Removes the mesh with the given name.
 	virtual bool removeMesh(const std::string &name);
 
+	/// Adds a new process
+	virtual void addProcess(ProcessInfo* pcs);
+
+	/// Returns a process of the given type
+	const ProcessInfo* getProcess(FiniteElement::ProcessType type) const;
+
+	/// Removes a process of the given type
+	virtual bool removeProcess(FiniteElement::ProcessType type);
+
 	/// Adds a new FEM Condition
 	virtual void addCondition(FEMCondition* cond);
 
-	/// Adds a new FEM Condition
+	/// Adds new FEM Conditions
 	virtual void addConditions(std::vector<FEMCondition*> conds);
 
 	/// Returns the FEM Condition set on a GeoObject with the given name and type from a certain geometry.
@@ -56,19 +66,19 @@ public:
 	                                 const std::string &cond_name) const;
 
 	/// Returns all FEM Conditions with the given type from a certain geometry.
-	const std::vector<FEMCondition*> getConditions(
-	        const std::string &geo_name,
-	        FEMCondition::CondType type =
-	                FEMCondition::UNSPECIFIED) const;
+	const std::vector<FEMCondition*> getConditions(FiniteElement::ProcessType pcs_type = FiniteElement::INVALID_PROCESS,
+												   std::string geo_name = "",
+												   FEMCondition::CondType type = FEMCondition::UNSPECIFIED) const;
 
 	/// Removes the FEM Condition set on a GeoObject with the given name and type from a certain geometry.
 	virtual bool removeCondition(const std::string &geo_name,
 	                             GEOLIB::GEOTYPE type,
 	                             const std::string &cond_name);
 
-	/// Removes all FEM Conditions with the given type from a certain geometry
-	virtual void removeConditions(const std::string &geo_name,
-	                              FEMCondition::CondType type = FEMCondition::UNSPECIFIED);
+	/// Removes all FEM Conditions with the given type from the given process
+	virtual void removeConditions(FiniteElement::ProcessType pcs_type = FiniteElement::INVALID_PROCESS, 
+								  std::string geo_name = "",
+								  FEMCondition::CondType cond_type = FEMCondition::UNSPECIFIED);
 
 	/// Checks if the name of the mesh is already exists, if so it generates a unique name.
 	bool isUniqueMeshName(std::string &name);
@@ -76,6 +86,7 @@ public:
 private:
 	GEOLIB::GEOObjects* _geoObjects;
 	std::map<std::string, MeshLib::CFEMesh*> _msh_vec;
+	std::vector<ProcessInfo*> _pcs_vec;
 	std::vector<FEMCondition*> _cond_vec;
 };
 

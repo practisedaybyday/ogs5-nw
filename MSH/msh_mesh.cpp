@@ -455,6 +455,13 @@ void CFEMesh::ConstructGrid()
 
 	// Compute neighbors and edges
 	size_t e_size(ele_vector.size());
+
+	// 2011-11-21 TF
+	// initializing attributes of objects - why is this not done in the constructot?
+	for (size_t e = 0; e < e_size; e++) {
+		ele_vector[e]->InitializeMembers();
+	}
+
 	for (size_t e = 0; e < e_size; e++)
 	{
 		CElem* elem(ele_vector[e]);
@@ -3099,7 +3106,7 @@ void CFEMesh::SetNetworkIntersectionNodes()
 			continue;
 		m_ele = ele_vector[m_nod->getConnectedElementIDs()[0]];
 		for (k = 0; k < 3; k++)
-			nr1[k] = (*m_ele->tranform_tensor)(2, k);
+			nr1[k] = (*m_ele->transform_tensor)(2, k);
 		//....................................................................
 		// Compare element normal vectors
 		for (j = 1; j < (int) m_nod->getConnectedElementIDs().size(); j++)
@@ -3107,7 +3114,7 @@ void CFEMesh::SetNetworkIntersectionNodes()
 			e = m_nod->getConnectedElementIDs()[j];
 			m_ele1 = ele_vector[e];
 			for (k = 0; k < 3; k++)
-				nr2[k] = (*m_ele1->tranform_tensor)(2, k);
+				nr2[k] = (*m_ele1->transform_tensor)(2, k);
 			CrossProduction(nr1, nr2, v3);
 			/* KR
 			   if (MBtrgVec(v3, 3) > eps)
@@ -3844,9 +3851,9 @@ void CFEMesh::MarkInterface_mHM_Hydro_3D()
 		elem->ComputeVolume();
 		elem->FillTransformMatrix();
 		/// Compute the normal to this surface element
-		fac = cent[0] * (*elem->tranform_tensor)(0,2)
-		      + cent[1] * (*elem->tranform_tensor)(1,2)
-		      + cent[2] * (*elem->tranform_tensor)(2,2);
+		fac = cent[0] * (*elem->transform_tensor)(0,2)
+		      + cent[1] * (*elem->transform_tensor)(1,2)
+		      + cent[2] * (*elem->transform_tensor)(2,2);
 		if(fac > 0.0)
 			fac = -1.0;
 		else
@@ -3854,11 +3861,11 @@ void CFEMesh::MarkInterface_mHM_Hydro_3D()
 		//////
 
 		/// If n.z>0
-		if((*elem->tranform_tensor)(2,2) * fac > tol)
+		if((*elem->transform_tensor)(2,2) * fac > tol)
 		{
 			elem->SetMark(true);
 			for(k = 0; k < 3; k++)
-				(*elem->tranform_tensor)(k,2) *= fac;
+				(*elem->transform_tensor)(k,2) *= fac;
 
 #ifdef output_top_z
 			for(k = 0; k < elem->nnodes; k++)

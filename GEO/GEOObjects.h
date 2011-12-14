@@ -22,6 +22,8 @@
 #include "Color.h"
 #include "Station.h"
 
+#include "GeoType.h"
+
 namespace GEOLIB
 {
 ///
@@ -89,6 +91,13 @@ public:
 	 * @return the PointVec object stored in GEOObjects
 	 */
 	const PointVec* getPointVecObj(const std::string &name) const;
+
+	/// Returns a pointer to a PointVec object for the given name.
+	PointVec* getPointVecObj(const std::string &name)
+	{
+		return const_cast<PointVec*>(static_cast<const GEOObjects&>(*this).
+		                                getPointVecObj(name));
+	}
 
 	/** If there exists no dependencies the point vector with the given
 	 * name from GEOObjects will be removed and the method returns true,
@@ -194,11 +203,16 @@ public:
 	 */
 	const SurfaceVec* getSurfaceVecObj(const std::string &name) const;
 
+	/// Returns -1 if no geometry of the given name exists or die index of the geometry in _pnt_vecs otherwise
+	int exists(const std::string &geometry_name) const;
+
 	/// Returns the names of all geometry vectors.
 	void getGeometryNames (std::vector<std::string>& names) const;
 
+	const std::string getElementNameByID(const std::string &geometry_name, GEOLIB::GEOTYPE type, size_t id) const;
+
 	/// Returns the names of all station vectors.
-	void getStationNames(std::vector<std::string>& names) const;
+	void getStationVectorNames(std::vector<std::string>& names) const;
 
 	/**
 	 * merge geometries
@@ -206,6 +220,11 @@ public:
 	 * @param merged_geo_name the name of the resulting geometry
 	 */
 	void mergeGeometries (std::vector<std::string> const & names, std::string &merged_geo_name);
+
+	/// Returns the geo object for a geometric item of the given name and type for the associated geometry.
+	const GEOLIB::GeoObject* getGEOObject(const std::string &geo_name,
+	                                      GEOLIB::GEOTYPE type,
+	                                      const std::string &obj_name) const;
 
 	/** constructor */
 	GEOObjects();

@@ -151,10 +151,8 @@ double d2phi_ddeltadtau (double C,double D,double delta,double tau,double phi_fn
    A derivation of the free energy function phi
    last change: NB JUN 09
  ***********************************************************************/
-double CFluidProperties::phi_r_d (double rho, double T, int c)
+double CFluidProperties::phi_r_d (double rho, double T) const
 {
-	c = c;                                //OK411
-
 	double phi_a = 0,phi_b = 0,phi_c = 0,phi_d = 0;
 	double delta,tau,DELTA,THETA,PHI,DPHI,dDELTA_deriv,dDELTApowbddelta;
 	int i;
@@ -170,37 +168,13 @@ double CFluidProperties::phi_r_d (double rho, double T, int c)
 		else
 		{
 			if (i < limit[1])
-				phi_b = phi_b + (K[0][i] * exp(-pow(delta, K[3][i])) * (pow(
-				                                                                delta,
-				                                                                K[1
-				                                                                ][i
-				                                                                ] -
-				                                                                1)
-				                                                        * pow(tau,
-				                                                              K[2][i]) * (K[1][i]
-				                                                                          -
-				                                                                          K
-				                                                                          [
-				                                                                                  3
-				                                                                          ]
-				                                                                          [
-				                                                                                  i] * pow(delta, K[3][i]))));
+				phi_b = phi_b + (K[0][i] * exp(-pow(delta, K[3][i])) * (pow(delta, K[1][i] - 1)
+								* pow(tau, K[2][i]) * (K[1][i] - K[3][i] * pow(delta, K[3][i]))));
 			else if (i < limit[2])
-				phi_c = phi_c + (K[0][i] * pow(delta, K[1][i]) * pow(tau,
-				                                                     K[2][i]) *
-				                 exp(-K[10][i] *
-				                     (delta - K[13][i]) * (delta - K[13][i])
-				                     -
-				                     K[11][i] *
-				                     (tau -
-				                      K[12][i]) *
-				                     (tau - K[12][i])) * (K[1][i] / delta
-				                                          -
-				                                          2
-				                                          * K [
-				                                                  10][
-				                                                  i] *
-				                                          (delta - K[13][i])));
+				phi_c = phi_c + (K[0][i] * pow(delta, K[1][i]) * pow(tau, K[2][i]) * exp(-K[10][i]
+								* (delta - K[13][i]) * (delta - K[13][i]) - K[11][i] * (tau
+								- K[12][i]) * (tau - K[12][i])) * (K[1][i] / delta - 2 * K[10][i]
+								* (delta - K[13][i])));
 			else if (i < limit[3])
 			{
 				THETA = theta_fn(tau, K[6][i], delta, K[11][i]);
@@ -225,9 +199,8 @@ double CFluidProperties::phi_r_d (double rho, double T, int c)
    A derivation of the free energy function phi
    last change: NB JUN 09
  ***********************************************************************/
-double CFluidProperties::phi_r_tt (double rho, double T, int c)
+double CFluidProperties::phi_r_tt (double rho, double T) const
 {
-	c = c;                                //OK411
 	//CFluidProperties *FP;
 	double phi_a = 0,phi_b = 0,phi_c = 0,phi_d = 0;
 	double delta,tau,THETA,PHI,DELTA,DDELTA,D2DELTA,DPHI,D2PHI;
@@ -241,30 +214,16 @@ double CFluidProperties::phi_r_tt (double rho, double T, int c)
 	for (i = 0; i < limit[3]; i++)
 	{
 		if (i < limit[0])
-
-			phi_a = phi_a + (K[0][i] * K[2][i] * (K[2][i] - 1) * pow(delta,K[1][i]) *
-			                 pow(tau,(K[2][i] - 2)));
-
+			phi_a = phi_a + (K[0][i] * K[2][i] * (K[2][i] - 1) * pow(delta, K[1][i]) * pow(tau,
+							(K[2][i] - 2)));
 		else if (i < limit[1])
-
-			phi_b = phi_b + (K[0][i] * K[2][i] * (K[2][i] - 1) *
-			                 pow(delta,
-			                     K[1][i]) *
-			                 pow(tau,(K[2][i] - 2)) * exp(-pow(delta,K[3][i])));
-
+			phi_b = phi_b + (K[0][i] * K[2][i] * (K[2][i] - 1) * pow(delta, K[1][i]) * pow(tau,
+							(K[2][i] - 2)) * exp(-pow(delta, K[3][i])));
 		else if (i < limit[2])
-
-			phi_c = phi_c + (K[0][i] * pow(delta,K[1][i]) * pow(tau,K[2][i]) *
-			                 exp(-K[10][i] *
-			                     ((delta -
-			                       K[13][i]) *
-			                      (delta -
-			                       K[13][i])) - K[11][i] *
-			                     ((tau - K[12][i]) * (tau - K[12][i])))
-			                 * (pow((K[2][i] / tau - 2 * K[11][i] * (tau - K[12][i])),
-			                        2) - K[2][i]
-			                    / (tau * tau) - 2 * K[11][i]));
-
+			phi_c = phi_c + (K[0][i] * pow(delta, K[1][i]) * pow(tau, K[2][i]) * exp(-K[10][i]
+							* ((delta - K[13][i]) * (delta - K[13][i])) - K[11][i] * ((tau
+							- K[12][i]) * (tau - K[12][i]))) * (pow((K[2][i] / tau - 2 * K[11][i]
+							* (tau - K[12][i])), 2) - K[2][i] / (tau * tau) - 2 * K[11][i]));
 		else if (i < limit[3])
 		{
 			THETA  = theta_fn (tau,K[6][i],delta,K[11][i]);
@@ -288,9 +247,8 @@ double CFluidProperties::phi_r_tt (double rho, double T, int c)
    A derivation of the free energy function phi
    last change: NB JUN 09
  ***********************************************************************/
-double CFluidProperties::phi_0_t (double T,int c)
+double CFluidProperties::phi_0_t (double T) const
 {
-	c = c;                                //OK411
 	double phi_c = 0,phi_d = 0,phi_e = 0;
 	double tau;
 	int i;
@@ -310,9 +268,8 @@ double CFluidProperties::phi_0_t (double T,int c)
    A derivation of the free energy function phi
    last change: NB JUN 09
  ***********************************************************************/
-double CFluidProperties::phi_0_tt (double T, int c)
+double CFluidProperties::phi_0_tt (double T) const
 {
-	c = c;                                //OK411
 	double phi_d = 0,phi_e = 0;
 	double tau;
 	int i;
@@ -331,10 +288,8 @@ double CFluidProperties::phi_0_tt (double T, int c)
    A derivation of the free energy function phi
    last change: NB JUN 09
  ***********************************************************************/
-double CFluidProperties::phi_r_t (double rho, double T,int c)
+double CFluidProperties::phi_r_t (double rho, double T) const
 {
-	c = c;                                //OK411
-
 	double phi_a = 0,phi_b = 0,phi_c = 0,phi_d = 0,h;
 	int i;
 	double delta,tau;
@@ -346,20 +301,14 @@ double CFluidProperties::phi_r_t (double rho, double T,int c)
 	for (i = 0; i < limit[0]; i++)
 		phi_a = phi_a + (K[0][i] * K[2][i] * pow(delta,K[1][i]) * pow(tau,(K[2][i] - 1)));
 
-	for  (i = limit[0]; i < limit[1]; i++)
-		phi_b = phi_b +
-		        (K[0][i] * K[2][i] *
-		         pow(delta,K[1][i]) * pow(tau,(K[2][i] - 1)) * exp(-pow(delta,K[3][i])));
+	for (i = limit[0]; i < limit[1]; i++)
+		phi_b = phi_b + (K[0][i] * K[2][i] * pow(delta, K[1][i]) * pow(tau, (K[2][i] - 1)) * exp(
+						-pow(delta, K[3][i])));
 
 	for (i = limit[1]; i < limit[2]; i++)
-		phi_c = phi_c + (K[0][i] * pow(delta,K[1][i]) * pow(tau,(K[2][i])) *
-		                 exp(-K[10][i] *
-		                     ((delta -
-		                       K[13][i]) *
-		                      (delta -
-		                       K[13][i])) - K[11][i] *
-		                     (tau - K[12][i]) * (tau - K[12][i])) *
-		                 (K[2][i] / tau - 2 * K[11][i] * (tau - K[12][i])));
+		phi_c = phi_c + (K[0][i] * pow(delta, K[1][i]) * pow(tau, (K[2][i])) * exp(-K[10][i]
+						* ((delta - K[13][i]) * (delta - K[13][i])) - K[11][i] * (tau - K[12][i])
+						* (tau - K[12][i])) * (K[2][i] / tau - 2 * K[11][i] * (tau - K[12][i])));
 
 	for (i = limit[2]; i < limit[3]; i++)
 	{
@@ -380,9 +329,8 @@ double CFluidProperties::phi_r_t (double rho, double T,int c)
    A derivation of the free energy function phi
    last change: NB 4.9.05
  ***********************************************************************/
-double CFluidProperties::phi_r_dt (double rho, double T, int c)
+double CFluidProperties::phi_r_dt (double rho, double T) const
 {
-	c = c;                                //OK411
 	double phi_a = 0,phi_b = 0,phi_c = 0,phi_d = 0;
 	int i;
 	double delta,tau;
@@ -454,9 +402,8 @@ double CFluidProperties::phi_r_dt (double rho, double T, int c)
    A derivation of the free energy function phi
    last change: NB 4.9.05
  ***********************************************************************/
-double CFluidProperties::phi_r_dd (double rho, double T, int c)
+double CFluidProperties::phi_r_dd (double rho, double T) const
 {
-	c = c;                                //OK411
 	double phi_a = 0,phi_b = 0,phi_c = 0,phi_d = 0;
 	int i;
 	double delta,tau;
@@ -544,15 +491,11 @@ double CFluidProperties::phi_r_dd (double rho, double T, int c)
  ***********************************************************************/
 double pressure (double rho, double T, int c)
 {
-	CFluidProperties* a;
-	double P,R,rhoc;
-	a = MFPGet(c);
-	rhoc = a->rhoc;
-	R = a->Rs;
+	CFluidProperties const*const fluid_prop (MFPGet(c));
+	const double rhoc(fluid_prop->getCriticalDensity());
+	const double R(fluid_prop->getSpecificGasConstant());
 
-	P = (1 + (rho / rhoc) * a->phi_r_d(rho,T,c)) * rho * R * T;
-
-	return P;
+	return (1 + (rho / rhoc) * fluid_prop->phi_r_d(rho,T)) * rho * R * T;
 }
 
 /**********************************************************************
@@ -577,18 +520,16 @@ double pressure (double rho, double T, int c)
  ***********************************************************************/
 double density (double P, double rho0, double T, double prec, int c)
 {
-	CFluidProperties* a;
+	CFluidProperties const*const fluid_prop (MFPGet(c));
 	int iterations = 0;
-	double rho = 0.0,p0,rhoc,R;           //OK411
-
-	a = MFPGet(c);
-	rhoc = a->rhoc;
-	R = a->Rs;
+	double rho = 0.0,p0;           //OK411
+	const double rhoc(fluid_prop->getCriticalDensity());
+	const double R(fluid_prop->getSpecificGasConstant());
 
 	p0 = 0;
 	while (fabs(P - p0) > prec)           //change to fabs. 15.09.2008 WW
 	{
-		rho = P / ((1 + (rho0 / rhoc) * a->phi_r_d(rho0,T,c)) * R * T);
+		rho = P / ((1 + (rho0 / rhoc) * fluid_prop->phi_r_d(rho0,T)) * R * T);
 		p0  = pressure(rho0,T,c);
 		rho0 = rho;
 		iterations++;
@@ -615,20 +556,13 @@ double density (double P, double rho0, double T, double prec, int c)
  ***********************************************************************/
 double enthalpy (double rho, double T, int c)
 {
-	CFluidProperties* a;
-	double h,R;
-	double tau, delta;
+	CFluidProperties const*const fluid_prop (MFPGet(c));
+	const double tau (fluid_prop->getCriticalTemperature()/T);
+	const double delta(rho / fluid_prop->getCriticalDensity());
+	const double R(fluid_prop->getSpecificGasConstant());
 
-	a = MFPGet(c);
-
-	tau = a->Tc / T;
-	delta = rho / a->rhoc;
-	R = a->Rs;
-
-	h =
-	        (1 + tau *
-	         (a->phi_0_t(T,c) + a->phi_r_t(rho,T,c)) + delta * a->phi_r_d(rho,T,c)) * R * T;
-
+	double h = (1 + tau * (fluid_prop->phi_0_t(T) + fluid_prop->phi_r_t(rho,T))
+	        	+ delta * fluid_prop->phi_r_d(rho,T)) * R * T;
 	return h;
 }
 
@@ -649,13 +583,11 @@ double enthalpy (double rho, double T, int c)
  ***********************************************************************/
 double isochoric_heat_capacity (double rho, double T, int c)
 {
-	CFluidProperties* a;
-	double cv;
-
-	a = MFPGet(c);
-
+	CFluidProperties const*const fluid_prop (MFPGet(c));
 	//	thermal_properties (fluid, rhoc, Tc, R);
-	cv = -((a->Tc / T) * (a->Tc / T) * (a->phi_0_tt(T,c) + a->phi_r_tt(rho,T,c))) * a->Rs;
+	const double h ((fluid_prop->getCriticalTemperature() / T));
+	double cv = -(h * h * (fluid_prop->phi_0_tt(T) + fluid_prop->phi_r_tt(rho,T)))
+		* fluid_prop->getSpecificGasConstant();
 
 	return cv;
 }
@@ -677,21 +609,14 @@ double isochoric_heat_capacity (double rho, double T, int c)
 
 double isobaric_heat_capacity (double rho, double T, int c)
 {
-	CFluidProperties* mfp_prop;
-	double cp,delta,tau;
-	//	double cp,delta,tau;
-	mfp_prop = MFPGet(c);
+	CFluidProperties const*const fluid_prop (MFPGet(c));
+	const double tau (fluid_prop->getCriticalTemperature() / T);
+	const double delta (rho / fluid_prop->getCriticalDensity());
 
-	tau = mfp_prop->Tc / T;
-	delta = rho / mfp_prop->rhoc;
-
-	cp = (-tau * tau * (mfp_prop->phi_0_tt(T,c) + mfp_prop->phi_r_tt(rho,T,c))
-	      + (pow((1 + delta *
-	              mfp_prop->phi_r_d(rho,T,c) - delta * tau * mfp_prop->phi_r_dt(rho,T,c)),2))
-	      / ((1 + 2 * delta *
-	          mfp_prop->phi_r_d(rho,T,
-	                            c) + delta * delta *
-	          mfp_prop->phi_r_dd(rho,T,c)))) * mfp_prop->Rs;
+	double cp = (-tau * tau * (fluid_prop->phi_0_tt(T) + fluid_prop->phi_r_tt(rho, T)) +
+					(pow((1	+ delta * fluid_prop->phi_r_d(rho, T) - delta * tau * fluid_prop->phi_r_dt(
+					rho, T)), 2)) / ((1 + 2 * delta * fluid_prop->phi_r_d(rho, T) + delta
+					* delta * fluid_prop->phi_r_dd(rho,T)))) * fluid_prop->getSpecificGasConstant();
 
 	return cp;
 }
@@ -1075,34 +1000,27 @@ double preos(double T, double P, int c)
 	//int i;
 	mfp_prop = MFPGet (c);
 
-	Ru = mfp_prop->Ru;                    //universal gas constant
-	MM = mfp_prop->molar_mass;
-	Tc = mfp_prop->Tc;                    // critical temperature
-	pc = mfp_prop->pc / 1000;             //critical pressure
-	omega = mfp_prop->omega;              // azentric factor
+	Ru = mfp_prop->getUniversalGasConstant();
+	MM = mfp_prop->getMolarMass();
+	Tc = mfp_prop->getCriticalTemperature();
+	pc = mfp_prop->getCriticalPressure() / 1000;
+	omega = mfp_prop->getAzentricFactor();              // azentric factor
 
 	// Peng Robinson EOS:
 	// P= R*T / (V-b) - a*alpha / (V^2+2bV-b^2)   where V = MM/rho
 
 	a = 0.457235 * Ru * Ru * Tc * Tc / pc;
 	b = 0.077796 * Ru * Tc / pc;
-	P = P / 1000;                         //P in kPa
-	alpha =
-	        ((1 +
-	          (0.37464 + 1.5422 * omega - 0.26992 * omega *
-	           omega) *
-	          (1 -
-	           sqrt(T /
-	                Tc)))) *
-	        ((1 + (0.37464 + 1.5422 * omega - 0.26992 * omega * omega) * (1 - sqrt(T / Tc))));
+	P = P / 1000; //P in kPa
+	alpha = ((1 + (0.37464 + 1.5422 * omega - 0.26992 * omega * omega) * (1 - sqrt(T / Tc)))) * ((1
+					+ (0.37464 + 1.5422 * omega - 0.26992 * omega * omega) * (1 - sqrt(T / Tc))));
 
 	//EOS in the form: 0 = rho^3 + z1*rho^2 + z2*rho + z3
 
-	z1 =
-	        (MM * a * alpha - 3 * MM *
-	         pow(b,2) * P - 2 * MM * Ru * T * b) / (b * (P * pow(b,2) + b * Ru * T - a * alpha));
-	z2 = (pow(MM,2) * (b * P - Ru * T)) / (b * (P * pow(b,2) + b * Ru * T - a * alpha));
-	z3 = (MathLib::fastpow(MM,3) * P) / (b * (P * b * b + b * Ru * T - a * alpha));
+	z1 = (MM * a * alpha - 3 * MM * pow(b, 2) * P - 2 * MM * Ru * T * b) / (b * (P * pow(b, 2) + b
+					* Ru * T - a * alpha));
+	z2 = (pow(MM, 2) * (b * P - Ru * T)) / (b * (P * pow(b, 2) + b * Ru * T - a * alpha));
+	z3 = (MathLib::fastpow(MM, 3) * P) / (b * (P * b * b + b * Ru * T - a * alpha));
 
 	NsPol3(z1,z2,z3,&roots);              //derives the roots of the polynomial
 
@@ -1138,19 +1056,18 @@ double rkeos(double T, double P, int c)
 	double z1,z2,z3,h;
 	vector<double> roots;
 
-	CFluidProperties* mfp_prop;
+	CFluidProperties const*const mfp_prop(MFPGet(c));
 
 	double a,b,Tc,pc,MM;
 	double Ru;
 
 	if (P < 0)
 		P = 100000;               // set pressure to 1atm if unstable NB
-	mfp_prop = MFPGet (c);
 
-	Ru = mfp_prop->Ru * 10;               //universal gas constant [bar cm3/mol/K]
-	MM = mfp_prop->molar_mass;
-	Tc = mfp_prop->Tc;                    // critical temperature
-	pc = mfp_prop->pc / 100000;           //critical pressure
+	Ru = mfp_prop->getUniversalGasConstant() * 10; //universal gas constant [bar cm3/mol/K]
+	MM = mfp_prop->getMolarMass();
+	Tc = mfp_prop->getCriticalTemperature();
+	pc = mfp_prop->getCriticalPressure() / 100000;           //critical pressure
 
 	// Redlich-Kwong EOS:
 	// P= R*T (1+y+y^2-y^3)/ v(1-y^3) - a / (T^0.5*v(cv+b)   where V = MM/rho and y = b / (4v)
@@ -3261,3 +3178,560 @@ void CFluidProperties::therm_prop (string caption)
 		break;
 	}
 }
+
+//****************************************************************************
+//* task: find compressibility factor of a mixture component
+//*  note: P in bar! (1e5 Pa)
+//* Programming: NB, Sep10
+//*****************************************************************************/
+//double DuanMixCompressibility(double T,double P,double V,CVirialCoefficients w)
+double DuanMixCompressibility(double T, double P, double V, VirialCoefficients w)
+{
+	double R = 83.14472;
+	return P * V / R / T - 1 - w.B / V - w.C / (V * V) - w.D / (V * V * V * V) - w.E / (V * V * V
+					* V * V) - w.F / (V * V) * (w.b + w.G / (V * V)) * exp(-w.G / (V * V));
+}
+
+//****************************************************************************
+//* returns the third root of a number x, -inf < x < inf
+//* Programming: NB, Sep10
+//*****************************************************************************/
+inline double W3( double x)
+{
+	if (x < 0)
+		return -pow(fabs(x), 1. / 3.);
+	else
+		return pow(x, 1. / 3.);
+}
+
+//****************************************************************************
+//* binary mixing coefficient for water and co2 , Duan 1992
+//* Programming: NB, Sep10
+//*****************************************************************************/
+	double k_co2_h20(int number, double T)
+	{
+		if (T < 373.15)
+		{
+			switch (number)
+			{
+			case 1: return 0.20611 + 0.0006 * T;
+			case 2: return 0.8023278 - 0.0022206 * T + 184.76824 / T;
+			case 3: return 1.80544 - 0.0032605 * T;
+			default: return 1;
+			}
+		}
+		else if (T > 673.15)
+		{
+			switch (number)
+			{
+			case 1: return 3.131 - 5.0624e-03 * T + 1.8641e-06 * T * T - 31.409 / T;
+			case 2: return -46.646 + 4.2877e-02 * T - 1.0892e-05 * T * T + 1.5782e+04 /
+				       T;
+			case 3: return 0.9;
+			default: return 1;
+			}
+		}
+		else if (T < 495.15)
+		{
+			switch (number)
+			{
+			case 1: return -10084.5042 - 4.27134485 * T + 256477.783 / T +
+				       0.00166997474 * T * T + 1816.78 * log(T);
+			case 2: return 9.000263 - 0.00623494 * T - 2307.7125 / T;
+			case 3: return -74.1163 + 0.1800496 * T - 1.40904946e-4 * T * T +
+				       101305246 / T;
+			default: return 1;
+			}
+		}
+		else
+			switch (number)
+			{
+			case 1: return -0.3568 + 7.8888e-4 * T + 333.399 / T;
+			case 2: return -19.97444 + 0.0192515 * T + 5707.4229 / T;
+			case 3: return 12.1308 - 0.0099489 * T - 3042.09583 / T;
+			default: return 1;
+			}
+		cout << " This text should not be printed, something is wrong!" << endl;
+		return 0;
+	}
+
+//****************************************************************************
+//* binary mixing coefficient for co2 and methane , Duan 1992
+//* Programming: NB, Sep10
+//*****************************************************************************/
+	double k_co2_ch4 (int number, double T)
+	{
+		if (T < 304)
+		{
+			switch (number)
+			{
+			case 1: return 0.38;
+			case 2: return 1.74094 - 0.0058903 * T;
+			case 3: return 1.59;
+			default: return 1;
+			}
+		}
+		else if (T > 498)
+			return 1;
+		else
+		{
+			switch (number)
+			{
+			case 1: return 1.1;
+			case 2: return 3.211 - 0.00158 * T - 537.814 / T;
+			//case 3: return -0.7;
+			case 3: return 1.80544 - 0.0032605 * T; // aus F90
+				// case 3: return 12.1308 -0.0099489*T - 3042.09583/T; aus F90
+			}
+		}
+		cout << " This text should not be printed, something is wrong!" << endl;
+		return 0;
+	}
+
+//****************************************************************************
+//* binary mixing coefficient for water and methane , Duan 1992
+//* Programming: NB, Sep10
+//*****************************************************************************/
+	double k_ch4_h2o (int number, double T)
+	{
+		(void)number;
+		(void)T;
+		// Not implemented yet! If you feel constrained to change this, you'll find the correlation in Duan, Moller and Weare ,1992.
+		return 1;
+	}
+
+//****************************************************************************
+//* Parameters for Water, CO2 and Methane for Duan EOS
+//*
+//* Programming: NB, Sep10
+//*****************************************************************************/
+	void DuansParameter(int fluid, double a[14], double* Tc, double* Pc, double* M)
+	{
+		switch (fluid)
+		{
+		case 0:                   //CO2, Duan 1992
+			*Tc = 304.1282;
+			*Pc = 73.77300; //bar
+			*M = 44.01;   // g/mol
+			a[0] =  8.99288497e-2;
+			a[1] = -4.94783127e-1;
+			a[2] =  4.77922245e-2;
+			a[3] =  1.03808883e-2;
+			a[4] = -2.82516861e-2;
+			a[5] =  9.49887563e-2;
+			a[6] =  5.20600880e-4;
+			a[7] = -2.93540971e-4;
+			a[8] = -1.77265112e-3;
+			a[9] = -2.51101973e-5;
+			a[10] = 8.93353441e-5;
+			a[11] = 7.88998563e-5;
+			a[12] = -1.66727022e-2;
+			a[13] = 1.398;
+			a[14] = 2.96e-2;
+			break;
+		case 1:                   //H2O Duan 1992
+			*Tc = 647.25;
+			*Pc = 221.19000; //bar
+			*M = 18.01;   // g/mol
+			a[0] =  8.64449220E-02;
+			a[1] =  -3.96918955E-01;
+			a[2] =  -5.73334886E-02;
+			a[3] =  -2.93893000E-04;
+			a[4] =  -4.15775512E-03;
+			a[5] =  1.99496791E-02;
+			a[6] =  1.18901426E-04;
+			a[7] =  1.55212063E-04;
+			a[8] =  -1.06855859E-04;
+			a[9] =  -4.93197687E-06;
+			a[10] =  -2.73739155E-06;
+			a[11] =   2.65571238E-06;
+			a[12] =  8.96079018E-03;
+			a[13] =  4.02000000E+00;
+			a[14] =  2.57000000E-02;
+			break;
+		case 2:                   //CH4 Duan 1992
+			*Tc = 190.6;
+			*Pc = 46.41000; //bar
+			*M = 16.04;   // g/mol
+			a[0] = 8.72553928E-02;
+			a[1] = -7.52599476E-01;
+			a[2] = 3.75419887E-01;
+			a[3] = 1.07291342E-02;
+			a[4] = 5.49626360E-03;
+			a[5] = -1.84772802E-02;
+			a[6] = 3.18993183E-04;
+			a[7] = 2.11079375E-04;
+			a[8] = 2.01682801E-05;
+			a[9] = -1.65606189E-05;
+			a[10] = 1.19614546E-04;
+			a[11] = -1.08087289E-04;
+			a[12] = 4.48262295E-02;
+			a[13] = 7.5397E-01;
+			a[14] = 7.7167E-02;
+			break;
+		case 5:                   // h20 Duan 2006
+			*Tc = 647.25;
+			*Pc = 22119000; // bar
+			*M = 18.01;   // g/mol
+			a[0] = 4.38269941e-02;
+			a[1] = -1.68244362e-01;
+			a[2] = -2.36923373e-01;
+			a[3] = 1.13027462e-02;
+			a[4] = -7.67764181e-02;
+			a[5] = 9.71820593e-02;
+			a[6] = 6.62674916e-05;
+			a[7] = 1.06637349e-03;
+			a[8] = -1.23265258e-03;
+			a[9] = -8.93953948e-06;
+			a[10] = -3.88124606e-05;
+			a[11] = 5.61510206e-05;
+			a[12] = 7.51274488e-03;
+			a[13] = 2.51598931e+00;
+			a[14] = 3.94000000e-02;
+			break;
+		case 6:                   // co2 Duan 2006
+			*Tc = 304.1282;
+			*Pc = 7377300; // bar
+			*M = 18.01;   // g/mol
+			a[0] = 1.14400435e-01;
+			a[1] = -9.38526684e-01;
+			a[2] = 7.21857006e-01;
+			a[3] = 8.81072902e-03;
+			a[4] = 6.36473911e-02;
+			a[5] = -7.70822213e-02;
+			a[6] = 9.01506064e-04;
+			a[7] = -6.81834166e-03;
+			a[8] = 7.32364258e-03;
+			a[9] = -1.10288237e-04;
+			a[10] = 1.26524193e-03;
+			a[11] = -1.49730823e-03;
+			a[12] = 7.81940730e-03;
+			a[13] = -4.22918013e+00;
+			a[14] = 1.58500000e-01;
+			break;
+
+		default: break;
+		}
+	}
+
+
+//****************************************************************************
+//* this function calls the binary mixing parameter for a certain condition
+//*
+//* Programming: NB, Sep10
+//*****************************************************************************/
+double bip (int number, int fluid_a, int fluid_b, int i, int j, int k, double T)
+{
+	//number : k1, k2 or k3
+	//fluid_a, fluid_b: a-b, b-c, a-c have different binary interaction parameters
+	//i,j,k  : needed for mixing rule
+	// T : bip depends on Temperature
+
+	if ( ((number == 1) &&
+		  (i == j)) || (((number == 2) || (number == 3)) && ((i == j) && (i == k))) )
+		return 1;
+	else
+		switch (fluid_a + fluid_b)
+		{
+		case (1):     // 2+3=5 --> CO2+H2O (duan 1992) or 0+1=1 --> CO2+H20 fo high pressure range, duan 2006
+			return k_co2_h20(number, T);
+		case (5):     // 2+3=5 --> CO2+H2O (duan 1992) or 0+1=1 --> CO2+H20 fo high pressure range, duan 2006
+			return k_co2_h20(number, T);
+
+		case 6:       // 2+4=6 --> CO2+CH4
+			return k_co2_ch4(number,T);
+		case 7:       // 3+4=7 --> CH4+H2O
+			return k_co2_ch4(number, T);
+		default:
+			return 1;
+		}
+	cout << " This text should not be printed, something is wrong!" << endl;
+	return 0;
+}
+
+//****************************************************************************
+//* task: calculate the virial coefficients of Duans EOS for a certain fluid at
+//* a temperature T
+//* Programming: NB, Sep10
+//*****************************************************************************/
+//CVirialCoefficients DuansVirialCoefficients(int Fluid, double T)
+VirialCoefficients DuansVirialCoefficients(int Fluid, double T)
+{
+	double a[15];
+	double Tc, Pc, M;
+	double R = 83.14467; // cm��?bar/(K* mol)
+	//CVirialCoefficients x;	//BG
+	VirialCoefficients x; //BG
+	DuansParameter(Fluid, a, &Tc, &Pc, &M);
+	double Tr = T / Tc;
+
+	x.B = a[0] + a[1] / (Tr * Tr) + a[2] / (Tr * Tr * Tr);
+	x.C = a[3] + a[4] / (Tr * Tr) + a[5] / (Tr * Tr * Tr);
+	x.D = a[6] + a[7] / (Tr * Tr) + a[8] / (Tr * Tr * Tr);
+	x.E = a[9] + a[10] / (Tr * Tr) + a[11] / (Tr * Tr * Tr);
+	x.F = a[12] / (Tr * Tr * Tr);
+	x.b = a[13];
+	x.G = a[14];
+	x.Tc = Tc;
+	x.Pc = Pc;
+	x.Vc = R * Tc / Pc;
+	x.M = M;
+	x.id = Fluid;
+
+	return x;
+}
+
+//****************************************************************************
+//* this function mixes all virial coefficients of two fluids for DUAN EOS with
+//* respect to temperature and mole fraction
+//*
+//* Input: fluid number A and B (see DuanParameter() for respective numbers)
+//*              T:   Temparature
+//*        x_0: mole fraction of fluid A
+//*
+//* Programming: NB, Sep10
+//*****************************************************************************/
+//void MixDuansVirialCoefficients(CVirialCoefficients fluid_a, CVirialCoefficients fluid_b, double T, double x_0, CVirialCoefficients*mix)
+	void MixDuansVirialCoefficients(VirialCoefficients fluid_a,
+	                                VirialCoefficients fluid_b,
+	                                double T,
+	                                double x_0,
+	                                VirialCoefficients* mix)
+	{
+		// this code may look weird, I tried to avoid functions like pow() to increase speed
+
+		double Bij,Cij,Dij,Eij,Fij,Gij;
+		double Vcij;
+		double B[2],C[2],D[2],E[2],F[2],G[2],bi[2],MM[2];
+		double Vc[2];
+		double x[2];
+
+		double BVc = 0;
+		double CVc = 0;
+		double DVc = 0;
+		double EVc = 0;
+		double FVc = 0;
+		double b = 0;
+		double GVc = 0;
+
+		double Vcr = 0;
+		double M = 0;
+
+		double V2,V3,V5,V6;
+
+		Vc[0] = fluid_a.Vc;
+		Vc[1] = fluid_b.Vc;
+		MM[0] = fluid_a.M;
+		MM[1] = fluid_b.M;
+
+		B[0] = fluid_a.B;
+		B[1] = fluid_b.B;
+		C[0] = fluid_a.C;
+		C[1] = fluid_b.C;
+		D[0] = fluid_a.D;
+		D[1] = fluid_b.D;
+		E[0] = fluid_a.E;
+		E[1] = fluid_b.E;
+		F[0] = fluid_a.F;
+		F[1] = fluid_b.F;
+		bi[0] = fluid_a.b;
+		bi[1] = fluid_b.b;
+		G[0] = fluid_a.G;
+		G[1] = fluid_b.G;
+
+		x[0] = x_0;
+		x[1] = 1 - x[0];
+
+		for (int i = 0; i < 2; i++)
+		{
+			b += x[i] * bi[i];
+			Vcr += x[i] * Vc[i];
+			M += x[i] * MM[i];
+			for (int j = 0; j < 2; j++)
+			{
+				double B1 = ((W3(B[i]) + W3(B[j])) / 2);
+				double F1 = ((W3(F[i]) + W3(F[j])) / 2);
+				V2 = ((W3(Vc[i]) + W3(Vc[j])) / 2);
+
+				Bij = B1 * B1 * B1 * bip(1,fluid_a.id,fluid_b.id,i,j,0,T);
+				Fij = F1 * F1 * F1;
+				Vcij = V2 * V2 * V2;
+				BVc += x[i] * x[j] * Bij * Vcij;
+				FVc += x[i] * x[j] * Fij * Vcij * Vcij;
+				for (int k = 0; k < 2; k++)
+				{
+					double C1 = ((W3(C[i]) + W3(C[j]) + W3(C[k])) / 3);
+					double G1 = ((W3(G[i]) + W3(G[j]) + W3(G[k])) / 3);
+					V3 = ((W3(Vc[i]) + W3(Vc[j]) + W3(Vc[k])) / 3);
+					Cij = C1 * C1 * C1 * bip(2,fluid_a.id,fluid_b.id,i,j,k,T);
+					Gij = G1 * G1 * G1 * bip(3,fluid_a.id,fluid_b.id,i,j,k,T);
+					Vcij = V3 * V3 * V3;
+					CVc += x[i] * x[j] * x[k] * Cij * Vcij * Vcij;
+					GVc += x[i] * x[j] * x[k] * Gij * Vcij * Vcij;
+					for (int l = 0; l < 2; l++)
+						for (int m = 0; m < 2; m++)
+						{
+							double D1 =
+							        ((W3(D[i]) + W3(D[j]) + W3(D[k]) +
+							          W3(D[l]) + W3(D[m])) / 5);
+							V5 =
+							        ((W3(Vc[i]) + W3(Vc[j]) +
+							          W3(Vc[k]) +
+							          W3(Vc[l]) + W3(Vc[m])) / 5);
+							Dij = D1 * D1 * D1;
+							Vcij = V5 * V5 * V5;
+							DVc += x[i] * x[j] * x[k] * x[l] * x[m] *
+							       Dij * Vcij * Vcij * Vcij * Vcij;
+							for (int n = 0; n < 2; n++)
+							{
+								double E1 =
+								        ((W3(E[i]) + W3(E[j]) +
+								          W3(E[k]) +
+								          W3(E[l]) + W3(E[m]) +
+								          W3(E[n])) / 6);
+								V6 =
+								        ((W3(Vc[i]) + W3(Vc[j]) +
+								          W3(Vc[k]) + W3(Vc[l]) +
+								          W3(Vc[m]) +
+								          W3(Vc[n])) / 6);
+								Eij = E1 * E1 * E1;
+								Vcij = V6 * V6 * V6;
+								EVc += x[i] * x[j] * x[k] * x[l] *
+								       x[m] * x[n] * Eij * Vcij *
+								       Vcij *
+								       Vcij * Vcij * Vcij;
+							} //ijklmn
+						} //ijklm
+				} //ijk
+			}             //ij
+		}                         //i
+
+		mix->B = BVc;
+		mix->C = CVc;
+		mix->D = DVc;
+		mix->E = EVc;
+		mix->F = FVc;
+		mix->b = b;
+		mix->G = GVc;
+		mix->M = M;
+		mix->Vc = Vcr;
+	}
+
+//****************************************************************************
+//* task: returns the density of a mixture of two gases (fluid1 and fluid2),
+//*  where:
+//*     T : Temperature [K]
+//*   P : Pressure [Pa]
+//*   x : mole fraction of fluid1
+//*
+//*  Programming: NB, Sep10
+//*****************************************************************************/
+double DuansMixingRule(double T, double P, double x, int fluid1, int fluid2, bool neu)
+{
+	(void) neu; // unused
+	P /= 1e5;
+	//CVirialCoefficients u,v,w;
+	VirialCoefficients u, v, w;
+
+	u = DuansVirialCoefficients(fluid1, T);
+	v = DuansVirialCoefficients(fluid2, T);
+	MixDuansVirialCoefficients(u, v, T, x, &w);
+
+	double V1, V2;
+	int n = 0;
+	double V;
+
+	double R = 83.14467;
+
+	double dev_1, dev_2, dev;
+
+	V1 = 6.0;
+	dev_1 = DuanMixCompressibility(T, P, V1, w);
+	V = V1;
+
+	//while (true) {
+	//	V = V + 2.0;
+	//	n++;
+	//	dev = DuansCompressibility(T,P,V,w);
+
+	//	if (V<=50){
+	//		if (dev <= dev_1)
+	//		{
+	//			V1=V;
+	//			dev_1=dev;
+	//		} }else
+	//		{
+	//			//cout << " loop 1 left after " << n << " circles "<< endl;
+	//			break;
+	//		}
+	//}*/
+
+	for (int i = (int) V1; i < 51; i += 2) {
+		V += 2;
+		dev = DuanMixCompressibility(T, P, V, w);
+		if (dev <= dev_1) {
+			V1 = V;
+			dev_1 = dev;
+		}
+	}
+
+	// Find the first maximum point as V_2
+	V2 = V1;
+	dev_2 = DuanMixCompressibility(T, P, V2, w);
+	V = V2;
+
+	n = 0;
+	while (true) {
+		n++;
+		V = V + 2.0;
+		dev = DuanMixCompressibility(T, P, V, w);
+
+		if (V <= max(R * T / P, 1000.0)) {
+			if (dev > dev_2) {
+				V2 = V;
+				dev_2 = dev;
+			} else
+			//cout << " loop 2 left after " << n << " circles "<< endl;
+			break;
+			//goto l400;
+		} else
+		//cout << " loop 2 left after " << n << " circles "<< endl;
+		break;
+	}
+
+	// Get the solution of volume with divition method
+	n = 0;
+	while (true) {
+		dev_1 = DuanMixCompressibility(T, P, V1, w);
+		dev_2 = DuanMixCompressibility(T, P, V2, w);
+
+		if ((dev_1 * dev_2) > 0.0)
+			V2 = V2 + 1;
+
+		else {
+			V = (V1 + V2) / 2.0;
+
+			dev = DuanMixCompressibility(T, P, V, w);
+
+			if (fabs(dev) < 1.0e-5)
+			//cout << " returning after " << n << " iterations " << endl;
+			return w.M / V * 1000;
+
+			if ((dev_1 * dev) > 0.0)
+				V1 = V;
+			else if (dev_2 * dev > 0.0) V2 = V;
+			n++;
+			if (n > 1000) {
+				cout << " max it reached " << endl;
+				return -1; // Max it
+			}
+		}
+	}
+
+	cout << "This should not happen. Call NB at TUD!" << endl;
+	return -1;
+}
+
+
+
+

@@ -45,11 +45,13 @@ public:
 	 * @param proj_name Name of the geometry that will be included in the geo-file
 	 * @param geo Container for geometric information
 	 * @parem useStationsAsContraints If true, station data is included as constraints for meshing of surfaces (via addStationsAsConstraints()).
+	 * @parem useSteinerPoints If true, additional points will be generated based on a quadtree such that a certained pre-defined point-density is set.
 	 * @return if the file stream can be opened the method returns true, else it returns false
 	 */
 	bool writeGMSHInputFile(const std::string &proj_name,
 	                        const GEOLIB::GEOObjects& geo,
-	                        bool useStationsAsContraints = false);
+	                        bool useStationsAsContraints = false,
+							bool useSteinerPoints = false);
 
 	/**
 	 * Method writes selected data to the stream (opened from constructor) employing a Quadtree for
@@ -85,10 +87,10 @@ public:
 
 	void writeGMSHPoints(const std::vector<GEOLIB::Point*>& pnt_vec,
 	                     GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = NULL);
-	void writeGMSHPolyline (const GEOLIB::Polyline* ply, const size_t offset);
+	void writeGMSHPolyline (std::vector<GEOLIB::Polyline*> const& plys, size_t ply_id, size_t offset);
 	void writeGMSHPolylines(const std::vector<GEOLIB::Polyline*>& ply_vec);
-	size_t writeGMSHPolygon(const GEOLIB::Polygon& polygon, const size_t offset);
-	void writePlaneSurface (std::list<size_t> const & polygon_list);
+	size_t writeGMSHPolygon(std::vector<GEOLIB::Polyline*> const& ply_vec, size_t ply_id, size_t offset);
+	void writePlaneSurface (std::list<size_t> const & polygon_list, bool respect_holes);
 
 	/**
 	 * checks if there is a GMSH mesh file header
@@ -113,9 +115,15 @@ private:
 	                      std::vector<GEOLIB::Point*>& all_points,
 	                      std::vector<GEOLIB::Polyline*>& all_polylines,
 	                      std::vector<GEOLIB::Point*>& all_stations) const;
-	std::list<size_t> findHolesInsidePolygon(const std::vector<GEOLIB::Polyline*>* plys,
-	                                         size_t i,
-	                                         std::map<size_t,size_t> geo2gmsh_polygon_id_map);
+	std::list<size_t> findHolesInsidePolygon(const std::vector<GEOLIB::Polyline*>* plys, size_t i) const;
+	/**
+	 * Method tests if the i-th polygon is included in any other polygon.
+	 * @param plys the vector of polylines (closed polylines are considered as polygon)
+	 * @param i the polygon for the test
+	 * @param j if the method returns true, the j-th polygon contains the i-th polygon
+	 * @return true, if polygon is in an other polygon included, else false
+	 */
+	bool isPolygonInOtherPolygon(const std::vector<GEOLIB::Polyline*>* plys, size_t i, size_t &j) const;
 	GEOLIB::Polygon* getBoundingPolygon (std::vector<GEOLIB::Polyline*> const & all_polylines,
 	                                     size_t &bp_idx) const;
 	std::vector<GEOLIB::Point*> getStationPoints(const GEOLIB::GEOObjects &geo_objects);
@@ -125,11 +133,30 @@ private:
 	void addPointsAsConstraints(const std::vector<GEOLIB::Point*> &points,
 	                            const std::vector<GEOLIB::Polyline*> &polylines,
 	                            std::map<size_t,size_t> geo2gmsh_surface_id_map,
-	                            GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = NULL);
+	                            GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = NULL,
+	                            double mesh_density = 0.5);
 	size_t _n_pnt_offset;
 	size_t _n_lines;
 	size_t _n_plane_sfc;
 	std::ofstream _out;
+
+	/**
+	 * this private class is for storing meta data, i.e. the mapping between
+	 * polyline id, the number of the first and the last line segments
+	 * in gmsh file that are describing the polyline in the gmsh file
+	 */
+	struct PolylineGMSHMapping {
+		PolylineGMSHMapping (size_t ply_id, size_t start_id, size_t end_id) :
+			_ply_id (ply_id), _gmsh_line_start_id(start_id), _gmsh_line_end_id(end_id)
+		{}
+		size_t _ply_id;
+		size_t _gmsh_line_start_id;
+		size_t _gmsh_line_end_id;
+	};
+	/**
+	 * vector contains the mapping between polyline ids and first and last segment in gmsh file
+	 */
+	std::vector<PolylineGMSHMapping> _ply_id_gmsh_line_mapping;
 };
 }
 

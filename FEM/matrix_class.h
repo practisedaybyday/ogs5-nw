@@ -27,7 +27,7 @@ class CPARDomain;
 
 namespace Math_Group
 {
-using namespace std;
+
 class Matrix
 {
 public:
@@ -150,8 +150,8 @@ public:
 	virtual void operator = (T v) { for (size_t i = 0; i < _size; i++) _entry[i] = v; }
 	virtual void operator = (const vec<T>&);
 	virtual void resize(int newh);
-	virtual T& operator[] (int i) { return (T &)_entry[i]; }
-	virtual const T& operator[] (int i) const {return (const T &)_entry[i]; }
+	virtual T& operator[] (size_t i) { return (T &)_entry[i]; }
+	virtual const T& operator[] (size_t i) const {return (const T &)_entry[i]; }
 	virtual size_t Size() const { return _size; }
 
 	T* Entry()        { return _entry; }
@@ -160,8 +160,8 @@ public:
 	virtual void Write(std::ostream& os = std::cout) const;
 
 protected:
-	T* _entry;
 	size_t _size;
+	T* _entry;
 };
 
 template<> class vec<void*>
@@ -176,8 +176,8 @@ public:
 	void operator = (void* v)
 	{ for (size_t i = 0; i < _size; i++) _entry[i] = v; }
 	void operator = (const vec<void*>& v);
-	void*& operator[] (int i) { return _entry[i]; }
-	const void*& operator[] (int i) const { return (const void* &)_entry[i]; }
+	void*& operator[] (size_t i) { return _entry[i]; }
+	const void*& operator[] (size_t i) const { return (const void* &)_entry[i]; }
 
 	// Access to memebers
 	void** Entry()          { return _entry; }
@@ -204,8 +204,8 @@ public:
 	// Operator
 	void operator = (T* v) { for (size_t i = 0; i < _size; i++) _entry[i] = v; }
 	void operator = (const vec<T*>& v);
-	T*& operator[] (int i) { return (T * &)_entry[i]; }
-	const T*& operator[] (int i) const {return (const T * &)_entry[i]; }
+	T*& operator[] (size_t i) { return (T * &)_entry[i]; }
+	const T*& operator[] (size_t i) const {return (const T * &)_entry[i]; }
 
 	T** Entry()        { return _entry; }
 	T** Entry()  const { return (const T**)_entry; }

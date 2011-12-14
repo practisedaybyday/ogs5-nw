@@ -44,6 +44,29 @@ public:
 	 */
 	CElem (CElem const &elem);
 
+	/**
+	 * constructor for a triangle element
+	 * @param t have to be MshElemType::TRIANGLE
+	 * @param node0 first node of triangle
+	 * @param node1 second node of triangle
+	 * @param node2 third node of triangle
+	 * @param mat number of material
+	 * @return a mesh element object
+	 */
+	CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, int mat);
+
+	/**
+	 * constructor for a quad element
+	 * @param t have to be MshElemType::QUAD
+	 * @param node0 first node of quad
+	 * @param node1 second node of quad
+	 * @param node2 third node of quad
+	 * @param node3 fourth node of quad
+	 * @param mat number of material
+	 * @return a mesh element object
+	 */
+	CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, size_t node3, int mat);
+
 	~CElem();
 
 	//------------------------------------------------------------------
@@ -76,7 +99,7 @@ public:
 		return gravity_center;
 	}
 	double* ComputeGravityCenter();
-	int GetPatchIndex() const
+	size_t GetPatchIndex() const
 	{
 		return patch_index;
 	}                                         //MatGroup
@@ -135,7 +158,6 @@ public:
 	std::string GetName() const;
 	//------------------------------------------------------------------
 	// Nodes
-	Math_Group::vec<long> nodes_index;
 	void GetNodeIndeces(Math_Group::vec<long>& node_index) const
 	{
 		for (int i = 0; i < (int) nodes_index.Size(); i++)
@@ -148,6 +170,8 @@ public:
 			node_indices.push_back (nodes_index[i]);
 	}
 
+	Math_Group::vec<long> & getNodeIndices() { return nodes_index; }
+	Math_Group::vec<long> const& getNodeIndices() const { return nodes_index; }
 	/**
 	 * const access to the vector nodes_index
 	 * @return a const reference to the vector
@@ -238,13 +262,13 @@ public:
 			edges_orientation[i] = ori_edg[i];
 	}
 	void GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes);
-	int GetEdgesNumber() const
+	size_t GetEdgesNumber() const
 	{
 		return nedges;
 	}
 	//------------------------------------------------------------------
 	// Faces
-	int GetFacesNumber() const
+	size_t GetFacesNumber() const
 	{
 		return nfaces;
 	}
@@ -340,20 +364,23 @@ private:
 	CElem* owner;
 	// Geometrical properties
 	int ele_dim;                              // Dimension of element
+
 	int nnodes;
 	int nnodesHQ;
-	//
 	Math_Group::vec<CNode*> nodes;
+	Math_Group::vec<long> nodes_index;
+
 	size_t nedges;
 	Math_Group::vec<CEdge*> edges;
 	Math_Group::vec<int> edges_orientation;
+
 	size_t nfaces;
 	int no_faces_on_surface;
 	int face_index;                           // Local face index for the instance for face
 	double volume;
 	double gravity_center[3];
 	int grid_adaptation;                      // Flag for grid adapting.
-	int patch_index;
+	size_t patch_index;
 	/*
 	   // Since m_tim->CheckCourant() is deactivated, the following member are
 	   // put in comment.
@@ -364,7 +391,7 @@ private:
 	double area;                              //Flux area
 	//
 	// MSH topology
-	Math_Group::Matrix* tranform_tensor;
+	Math_Group::Matrix* transform_tensor;
 	Math_Group::vec<CElem*> neighbors;
 	//vec<CElem*> sons;
 	// double angle[3];	// PCH, angle[0] rotation along y axis

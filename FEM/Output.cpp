@@ -72,7 +72,7 @@ COutput::COutput(size_t id) :
 
 void COutput::init()
 {
-	if (getProcessType () == INVALID_PROCESS)
+	if (getProcessType () == FiniteElement::INVALID_PROCESS)
 	{
 		std::cerr <<
 		"COutput::init(): could not initialize process pointer (process type INVALID_PROCESS) and appropriate mesh"
@@ -341,7 +341,7 @@ ios::pos_type COutput::Read(std::ifstream& in_str,
 		{
 			std::string tmp_pcs_type_name;
 			in_str >> tmp_pcs_type_name;
-			setProcessType(convertProcessType(tmp_pcs_type_name));
+			setProcessType(FiniteElement::convertProcessType(tmp_pcs_type_name));
 			in_str.ignore(MAX_ZEILE, '\n');
 			/* // Comment by WW
 			   // Remove files
@@ -564,7 +564,7 @@ void COutput::NODWriteDOMDataTEC()
 		tec_file_name = file_base_name + "_" + "domain";
 		if(msh_type_name.size() > 0) // MultiMSH
 			tec_file_name += "_" + msh_type_name;
-		if(getProcessType() != INVALID_PROCESS) // PCS
+		if(getProcessType() != FiniteElement::INVALID_PROCESS) // PCS
 			tec_file_name += "_" + convertProcessTypeToString(getProcessType());
 		//======================================================================
 		switch (te)               //NW
@@ -857,7 +857,7 @@ void COutput::WriteTECNodeData(fstream &tec_file)
 		// NOD values
 		// Mass transport
 		//     if(pcs_type_name.compare("MASS_TRANSPORT")==0){
-		if (getProcessType() == MASS_TRANSPORT)
+		if (getProcessType() == FiniteElement::MASS_TRANSPORT)
 			for (size_t i = 0; i < _nod_value_vector.size(); i++)
 			{
 				std::string nod_value_name = _nod_value_vector[i];
@@ -865,7 +865,7 @@ void COutput::WriteTECNodeData(fstream &tec_file)
 				{
 					m_pcs = pcs_vector[l];
 					//					if (m_pcs->pcs_type_name.compare("MASS_TRANSPORT") == 0) {
-					if (m_pcs->getProcessType () == MASS_TRANSPORT)
+					if (m_pcs->getProcessType () == FiniteElement::MASS_TRANSPORT)
 					{
 						timelevel = 0;
 						for (size_t m = 0;
@@ -873,7 +873,7 @@ void COutput::WriteTECNodeData(fstream &tec_file)
 							if (m_pcs->nod_val_name_vector[m].compare(
 							            nod_value_name) == 0)
 							{
-								m_pcs_out = PCSGet(MASS_TRANSPORT,
+								m_pcs_out = PCSGet(FiniteElement::MASS_TRANSPORT,
 								                   nod_value_name);
 								if (!m_pcs_out)
 									continue;
@@ -1034,7 +1034,7 @@ void COutput::ELEWriteDOMDataTEC()
 	// File handling
 	//......................................................................
 	string tec_file_name = file_base_name + "_domain" + "_ele";
-	if(getProcessType () != INVALID_PROCESS) // PCS
+	if(getProcessType () != FiniteElement::INVALID_PROCESS) // PCS
 		// 09/2010 TF msh_type_name;
 		tec_file_name += "_" + convertProcessTypeToString (getProcessType());
 	if(msh_type_name.size() > 1)          // MSH
@@ -1120,9 +1120,9 @@ void COutput::WriteELEValuesTECData(fstream &tec_file)
 		tec_file << xyz[0] << " " << xyz[1] << " " << xyz[2] << " ";
 		if (out_element_vel)      //WW
 		{
-			if (PCSGet(FLUID_MOMENTUM)) // PCH 16.11 2009
+			if (PCSGet(FiniteElement::FLUID_MOMENTUM)) // PCH 16.11 2009
 			{
-				CRFProcess* pch_pcs = PCSGet(FLUID_MOMENTUM);
+				CRFProcess* pch_pcs = PCSGet(FiniteElement::FLUID_MOMENTUM);
 
 				tec_file << pch_pcs->GetElementValue(i,
 				                                     pch_pcs->GetElementValueIndex(
@@ -1208,7 +1208,7 @@ double COutput::NODWritePLYDataTEC(int number)
 	// File handling
 	std::string tec_file_name = file_base_name + "_ply_" + geo_name + "_t"
 	                            + number2str<size_t> (_id); //OK4709
-	if (getProcessType() != INVALID_PROCESS)
+	if (getProcessType() != FiniteElement::INVALID_PROCESS)
 		tec_file_name += "_" + convertProcessTypeToString(getProcessType());
 	if (msh_type_name.size() > 0)
 		tec_file_name += "_" + msh_type_name;
@@ -1256,7 +1256,7 @@ double COutput::NODWritePLYDataTEC(int number)
 		m_msh->SwitchOnQuadraticNodes(false);  //WW
 
 	// PCS
-	if (getProcessType() == INVALID_PROCESS)
+	if (getProcessType() == FiniteElement::INVALID_PROCESS)
 		m_pcs = NULL;
 	else
 		m_pcs = PCSGet(getProcessType());
@@ -1530,7 +1530,7 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 		tec_file << " VARIABLES = \"TIME \" ";
 
 		//    if(pcs_type_name.compare("RANDOM_WALK")==0)
-		if (getProcessType() == RANDOM_WALK)
+		if (getProcessType() == FiniteElement::RANDOM_WALK)
 			tec_file << "leavingParticles ";
 		for (size_t k = 0; k < no_variables; k++) //WW
 		{
@@ -1600,7 +1600,7 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 	tec_file << time_current << " ";
 	//......................................................................
 	// NOD values
-	if (getProcessType() == RANDOM_WALK)
+	if (getProcessType() == FiniteElement::RANDOM_WALK)
 		tec_file << m_msh->PT->leavingParticles << " ";
 	int timelevel;
 	CRFProcess* m_pcs_out = NULL;
@@ -1613,7 +1613,7 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 	                             static_cast<const GEOLIB::Point*> (getGeoObj())));
 
 	// Mass transport
-	if (getProcessType() == MASS_TRANSPORT)
+	if (getProcessType() == FiniteElement::MASS_TRANSPORT)
 		for (size_t i = 0; i < _nod_value_vector.size(); i++)
 		{
 			std::string nod_value_name = _nod_value_vector[i];
@@ -1621,7 +1621,7 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 			{
 				m_pcs = pcs_vector[l];
 				//				if (m_pcs->pcs_type_name.compare("MASS_TRANSPORT") == 0) { TF
-				if (m_pcs->getProcessType() == MASS_TRANSPORT)
+				if (m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
 				{
 					timelevel = 0;
 					for (size_t m = 0; m < m_pcs->nod_val_name_vector.size();
@@ -1631,7 +1631,7 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 						{
 							//							m_pcs_out = PCSGet(pcs_type_name, nod_value_name);
 							m_pcs_out
-							        = PCSGet(MASS_TRANSPORT,
+							        = PCSGet(FiniteElement::MASS_TRANSPORT,
 							                 nod_value_name);
 							if (timelevel == 1)
 							{
@@ -1655,8 +1655,8 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 		for (size_t i = 0; i < _nod_value_vector.size(); i++)
 		{
 			// PCS
-			if (!(_nod_value_vector[i].compare("FLUX") == 0) || getProcessType()
-			    == OVERLAND_FLOW) //JOD separate infiltration flux output in overland flow
+			if (!(_nod_value_vector[i].compare("FLUX") == 0)
+				|| getProcessType() == FiniteElement::OVERLAND_FLOW) //JOD separate infiltration flux output in overland flow
 
 				m_pcs = GetPCS(_nod_value_vector[i]);
 			else
@@ -1672,8 +1672,8 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 			}
 			//..................................................................
 			// PCS
-			if (!(_nod_value_vector[i].compare("FLUX") == 0) || getProcessType()
-			    == OVERLAND_FLOW) // JOD separate infiltration flux output in overland flow
+			if (!(_nod_value_vector[i].compare("FLUX") == 0)
+				|| getProcessType() == FiniteElement::OVERLAND_FLOW) // JOD separate infiltration flux output in overland flow
 			{
 				//-----------------------------------------WW
 				double val_n = m_pcs->GetNodeValue(msh_node_number,
@@ -1769,7 +1769,7 @@ void COutput::WriteRFOElements(fstream &rfo_file)
 		         << " -1 " \
 		         << m_ele->GetName() << " ";
 		for(j = 0; j < m_ele->GetNodesNumber(false); j++)
-			rfo_file << m_ele->nodes_index[j] << " ";
+			rfo_file << m_ele->getNodeIndices()[j] << " ";
 		rfo_file << endl;
 	}
 }
@@ -1934,9 +1934,9 @@ void COutput::NODWriteSFCAverageDataTEC(double time_current,int time_step_number
 	int idx = -1;
 	double t_flux = 0.0;
 	double node_conc = 0.0;
-	CRFProcess* m_pcs_gw (PCSGet(GROUNDWATER_FLOW));
+	CRFProcess* m_pcs_gw (PCSGet(FiniteElement::GROUNDWATER_FLOW));
 	if (!m_pcs_gw)
-		PCSGet(LIQUID_FLOW);
+		PCSGet(FiniteElement::LIQUID_FLOW);
 	//--------------------------------------------------------------------
 	// Tests
 	Surface* m_sfc = NULL;
@@ -2020,7 +2020,7 @@ void COutput::NODWriteSFCAverageDataTEC(double time_current,int time_step_number
 		for (size_t i = 0; i < _nod_value_vector.size(); i++)
 		{
 			//Specified currently for MASS_TRANSPORT only.
-			m_pcs = PCSGet(MASS_TRANSPORT, _nod_value_vector[i]);
+			m_pcs = PCSGet(FiniteElement::MASS_TRANSPORT, _nod_value_vector[i]);
 			node_value_index_vector[i] = m_pcs->GetNodeValueIndex(
 			        _nod_value_vector[i]) + 1;
 			m_pcs->m_msh->GetNODOnSFC(m_sfc, sfc_nodes_vector);
@@ -2072,12 +2072,12 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 {
 	CRFProcess* pcs = NULL;
 	const size_t nName = _nod_value_vector.size();
-	if (getProcessType() != INVALID_PROCESS)
+	if (getProcessType() != FiniteElement::INVALID_PROCESS)
 	{
 		pcs = PCSGet(getProcessType());
 		for (size_t k = 0; k < nName; k++)
 		{
-			if (getProcessType () == MASS_TRANSPORT)
+			if (getProcessType () == FiniteElement::MASS_TRANSPORT)
 				pcs = PCSGet(getProcessType(), _nod_value_vector[k]);
 			if (!pcs)
 			{
@@ -2153,7 +2153,7 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 CRFProcess* COutput::GetPCS(const string &var_name)
 {
 	CRFProcess* m_pcs = NULL;
-	if(getProcessType () != INVALID_PROCESS)
+	if(getProcessType () != FiniteElement::INVALID_PROCESS)
 		m_pcs = PCSGet(getProcessType());
 	else if(msh_type_name.size() > 0)
 		m_pcs = PCSGet(msh_type_name);
@@ -2165,7 +2165,7 @@ CRFProcess* COutput::GetPCS(const string &var_name)
 // 09/2010 TF
 CRFProcess* COutput::GetPCS()
 {
-	if(getProcessType () != INVALID_PROCESS)
+	if(getProcessType () != FiniteElement::INVALID_PROCESS)
 	{
 		if (getProcess() != NULL)
 			return getProcess();
@@ -2190,7 +2190,7 @@ CRFProcess* COutput::GetPCS_ELE(const string &var_name)
 	//----------------------------------------------------------------------
 	//  if(pcs_type_name.size()>0)
 	//    m_pcs = PCSGet(pcs_type_name);
-	if (getProcessType() != INVALID_PROCESS)
+	if (getProcessType() != FiniteElement::INVALID_PROCESS)
 		m_pcs = PCSGet(getProcessType());
 	else if (msh_type_name.size() > 0)
 		m_pcs = PCSGet(msh_type_name);
@@ -2374,14 +2374,14 @@ void COutput::ELEWriteSFC_TECData(fstream &tec_file)
 **************************************************************************/
 void COutput::CalcELEFluxes()
 {
-	ProcessType pcs_type (getProcessType());
-	if (pcs_type == INVALID_PROCESS)      // WW moved it here.
+	const FiniteElement::ProcessType pcs_type (getProcessType());
+	if (pcs_type == FiniteElement::INVALID_PROCESS)      // WW moved it here.
 
 		//WW cout << "Warning in COutput::CalcELEFluxes(): no PCS data" << endl;
 		return;
 
 	CRFProcess* pcs = PCSGet(getProcessType());
-	if (isDeformationProcess(pcs_type) || !isFlowProcess (pcs_type)
+	if (FiniteElement::isDeformationProcess(pcs_type) || !isFlowProcess (pcs_type)
 	    //WW
 	    || pcs->m_msh->geo_name.find("REGIONAL") != string::npos)
 		return;
@@ -2441,7 +2441,7 @@ void COutput::ELEWritePLY_TEC()
 	tec_file_name += "_ELE";
 	//  if(pcs_type_name.size()>1) // PCS
 	//    tec_file_name += "_" + pcs_type_name;
-	if(getProcessType () != INVALID_PROCESS) // PCS
+	if(getProcessType () != FiniteElement::INVALID_PROCESS) // PCS
 		tec_file_name += "_" + convertProcessTypeToString (getProcessType ());
 
 	if(msh_type_name.size() > 1)          // MSH
@@ -2515,7 +2515,7 @@ void COutput::ELEWritePLY_TECData(fstream &tec_file)
 	if (isFlowProcess(pcs->getProcessType ()))
 		m_pcs_flow = pcs;
 	else
-		m_pcs_flow = PCSGet(GROUNDWATER_FLOW);
+		m_pcs_flow = PCSGet(FiniteElement::GROUNDWATER_FLOW);
 
 	v_eidx[0] = m_pcs_flow->GetElementValueIndex("VELOCITY1_X");
 	v_eidx[1] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Y");
@@ -2587,7 +2587,7 @@ void COutput::TIMValue_TEC(double tim_value)
 	tec_file_name += "_TIM";
 	//  if(pcs_type_name.size()>1) // PCS
 	//    tec_file_name += "_" + pcs_type_name;
-	if(getProcessType () != INVALID_PROCESS) // PCS
+	if(getProcessType () != FiniteElement::INVALID_PROCESS) // PCS
 		tec_file_name += "_" + convertProcessTypeToString (getProcessType());
 	if(msh_type_name.size() > 1)          // MSH
 		tec_file_name += "_" + msh_type_name;
@@ -2781,7 +2781,7 @@ void COutput::PCONWriteDOMDataTEC()
 			tec_file_name += "_" + msh_type_name;
 		//  if(pcs_type_name.size()>0) // PCS
 		//    tec_file_name += "_" + pcs_type_name;
-		if(getProcessType () != INVALID_PROCESS) // PCS
+		if(getProcessType () != FiniteElement::INVALID_PROCESS) // PCS
 			tec_file_name += "_" + convertProcessTypeToString (getProcessType());
 		//======================================================================
 		switch (te)               //NW
@@ -3231,8 +3231,8 @@ void COutput::addInfoToFileName (std::string& file_name, bool geo, bool process,
 		file_name += geo_name;
 
 	// add process type name
-	if (getProcessType() != INVALID_PROCESS && process)
-		file_name += "_" + convertProcessTypeToString (getProcessType());
+	if (getProcessType() != FiniteElement::INVALID_PROCESS && process)
+		file_name += "_" + FiniteElement::convertProcessTypeToString (getProcessType());
 
 	// add mesh type name
 	if (msh_type_name.size() > 0 && mesh)

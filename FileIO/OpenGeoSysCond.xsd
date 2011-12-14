@@ -5,12 +5,18 @@
   <!-- definition of "CondType" -->
   <xs:complexType name="CondType">
     <xs:sequence>
-      <xs:element name="ProcessType" type="xs:string" maxOccurs="1" />
-      <xs:element name="PrimaryVariable" type="xs:string" maxOccurs="1" />
-      <xs:element name="GeoType" maxOccurs="1">
+      <xs:element name="Process" maxOccurs="1">
         <xs:complexType>
           <xs:all>
-            <xs:element name="geoObject">
+            <xs:element name="Type" type="xs:string" maxOccurs="1" />
+            <xs:element name="Variable" type="xs:string" maxOccurs="1" />
+          </xs:all>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Geometry" maxOccurs="1">
+        <xs:complexType>
+          <xs:all>
+            <xs:element name="Type" maxOccurs="1" >
               <xs:simpleType>
 	        <xs:restriction base="xs:string">
 	          <xs:enumeration value="POINT"/>
@@ -21,19 +27,20 @@
 	        </xs:restriction>
               </xs:simpleType>
             </xs:element>
-            <xs:element name="geoName" type="xs:string" />
+            <xs:element name="Name" type="xs:string" maxOccurs="1" />
           </xs:all>
         </xs:complexType>
       </xs:element>
-      <xs:element name="DisType" maxOccurs="1">
+      <xs:element name="Distribution" maxOccurs="1">
         <xs:complexType>
           <xs:all>
-            <xs:element name="disName" type="xs:string" />
-            <xs:element name="disValue" type="xs:decimal" />
+            <xs:element name="Type" type="xs:string" maxOccurs="1" />
+            <xs:element name="Value" type="xs:decimal" maxOccurs="1" />
           </xs:all>
         </xs:complexType>
       </xs:element>
     </xs:sequence>
+    <xs:attribute name="geometry" type="xs:string" use="required" />
   </xs:complexType>
   
   

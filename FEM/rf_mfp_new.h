@@ -21,12 +21,11 @@ class CRFProcess;
 
    WW 07.2011
  */
-using namespace std;
 #ifdef MFP_TEST
 class Hash_Table
 {
 public:
-	Hash_Table(string f_name);
+	Hash_Table(std::string f_name);
 	~Hash_Table();
 
 	double CalcValue(double* var, const int var_id) const;
@@ -36,7 +35,7 @@ private:
 	int num_par;
 	int num_var;
 
-	vector<string> names;
+	vector<std::string> names;
 	vector<double> hash_row_par;
 	vector<int> table_section_ends;
 	vector<double*> hash_table_data;
@@ -45,15 +44,38 @@ private:
 /*---------------------------------------------------------------*/
 //namespace FiniteElement {class CElement;}
 //using FiniteElement::CElement;
-namespace FiniteElement
-{class CFiniteElementStd;
+namespace FiniteElement {
+	class CFiniteElementStd;
 }
+
 using FiniteElement::CFiniteElementStd;
+
 class CFluidProperties
 {
-public:
+	friend bool MFPRead(std::string);
 
-	int fluid_id;                         // specification of substance (NB JUN 09)
+public:
+	double getCriticalDensity() const { return rhoc; }
+	double getCriticalTemperature() const { return Tc; }
+	double getCriticalPressure() const { return pc; }
+	double getSpecificGasConstant() const { return Rs; }
+	double getMolarMass() const { return molar_mass; }
+	double getUniversalGasConstant() const { return Ru; }
+	/**
+	 * get the acentric factor for Peng-Robinson EOS (omega)
+	 * @return omega
+	 */
+	double getAzentricFactor() const { return omega; }
+	double getDiffusion() const { return diffusion; }
+	double getSpecificHeatCapacity() const { return specific_heat_capacity; }
+
+	/**
+	 * get the reference temperature
+	 * @return
+	 */
+	double getReferenceTemperature() const { return T_0; }
+
+private:
 	double rhoc;                          //critical_density; //NB
 	double Tc;                            //critical_temperature;
 	double pc;                            //critical_pressure;
@@ -63,71 +85,104 @@ public:
 	double Ru;                            //universal_gas_constant;
 	double omega;                         // azentric factor for Peng-Robinson EOS
 	double molar_mass;
-	std::string name;
-	std::string fluid_name;               //NB4801
-	// Limits and coefficients for free Helmholtz Energy, NB JUN 09
-	int limit[5];
-	double k [2][8];
-	double K [14][56];
-	// compressibility
-	int compressibility_model_pressure;   //NB
-	int compressibility_model_temperature; //NB
-	int compressibility_pressure;         //NB
-	int compressibility_temperature;      //NB
 	double beta_T; //AKS
-	double critical_pressure;     //aks
-	double critical_temperature;    //aks
-	double acentric_factor;
-	double MOLAR_MASS_GAS; //aks
 
-	int phase;
-
-	// FEM
-	CFiniteElementStd* Fem_Ele_Std;
-	long node;                            //OK4704
-	// Density
-	int density_model;
+	/**
+	 * density
+	 */
 	double rho_0;
+	/**
+	 * density deviated with respect to the pressure
+	 */
 	double drho_dp;
+	/**
+	 * density deviated with respect to the temperature
+	 */
 	double drho_dT;
-
+	/**
+	 * density deviated with respect to the concentration
+	 */
 	double drho_dC;
-	std::string rho_fct_name;
+
+	double diffusion; /*SB:2p */
+
 	// Viscosity
-	int viscosity_model;
 	double viscosity;
 	double my_0;
 	double dmy_dp;
 	double dmy_dT;
 	double dmy_dC;
-	std::string my_fct_name;
-	// Thermal properties
 
+	// Thermal properties
 	double specific_heat_capacity;
-	std::string heat_capacity_fct_name;
-	int heat_conductivity_model;
 	double heat_conductivity;
-	std::string heat_conductivity_fct_name;
-	int heat_diffusion_model;             //AKS
 	double temperature_buffer;            //YD, shifted to public JOD
+
+	// State variables
+	double p_0;
+	/**
+	 * state variable: reference temperature
+	 */
+	double T_0;
+	double C_0;
+	double Z;
+
+	// Chemical properties
+	double T_Latent1, T_Latent2, latent_heat;
+
+public:
+	int fluid_id;                         // specification of substance (NB JUN 09)
+	std::string name;
+private:
+	std::string fluid_name;               //NB4801
+
+	// compressibility
+	int compressibility_model_pressure;   //NB
+	int compressibility_model_temperature; //NB
+	int compressibility_pressure;         //NB
+	int compressibility_temperature;      //NB
+
+	int phase;
+
+private:
+	// Limits and coefficients for free Helmholtz Energy, NB JUN 09
+	int limit[5];
+	double k [2][8];
+	double K [14][56];
+
+public:
+	// FEM
+	CFiniteElementStd* Fem_Ele_Std;
+	long node;                            //OK4704
+	// Density
+	int density_model;
+
+	// TF 11/2011 - used only in read- and write-method
+//	std::string _rho_fct_name;
+
+	// Viscosity
+	int viscosity_model;
+	// TF 11/2011 - used only in read- and write-method
+//	std::string _my_fct_name;
+	// Thermal properties
+	// TF 11/2011 - used only in read- and write-method
+//	std::string heat_capacity_fct_name;
+	int heat_conductivity_model;
+	// TF 11/2011 - used only in read- and write-method
+//	std::string heat_conductivity_fct_name;
+	int heat_diffusion_model;             //AKS
 	int heat_capacity_model;              //YD, shifted to public JOD
 	// Electrical properties
 	int electric_conductivity_model;
 	int electric_conductivity_num_val;
 	double* electric_conductivity_val;
 	// Chemical properties
-	std::string dif_fct_name;
+	// TF 11/2011 - only in read-method used
+//	std::string dif_fct_name;
 	int diffusion_model;                  /* SB:p2 */
-	double diffusion;                     /*SB:2p */
-	// State variables
-	double p_0;
-	double T_0;
-	double C_0;
-	double Z;
-	double T_Latent1, T_Latent2, latent_heat;
+
 	int heat_phase_change_curve;
 	// IO
-	std::string file_base_name;
 	int mode;
 	// PCS  YD
 	std::vector<std::string>density_pcs_name_vector;
@@ -137,17 +192,18 @@ public:
 	std::vector<std::string>enthalpy_pcs_name_vector;
 	//AKS
 	std::vector<CompProperties*>component_vector;
-	// DAT
-	//string dat_type_name;
-	//string dat_name;
+
 	// FCT
-	std::string fct_pcs_name;
-	std::string fct_name;
-	//
+	// TF 11/2011 - not used
+//	std::string fct_pcs_name;
+	// TF 11/2011 - not used
+//	std::string fct_name;
+
+public:
 	CFluidProperties(void);
 	~CFluidProperties(void);
 	std::ios::pos_type Read(std::ifstream*);
-	void Write(std::ofstream*);
+	void Write(std::ofstream*) const;
 	void CalPrimaryVariable(std::vector<std::string>& pcs_name_vector);
 	// Add an argument: double* variables = NULL. 28.05.2008 WW
 	double Density(double* variables = NULL);
@@ -180,13 +236,13 @@ public:
 		return heat_capacity_model;
 	}
 	// Derivations of free Helmholtz energy, NB JUN 09
-	double phi_r_d (double rho, double T, int c);
-	double phi_r_tt (double rho, double T, int c);
-	double phi_0_t (double T,int c);
-	double phi_r_t (double rho, double T,int c);
-	double phi_r_dt (double rho, double T, int c);
-	double phi_r_dd (double rho, double T, int c);
-	double phi_0_tt (double T, int c);
+	double phi_r_d (double rho, double T) const;
+	double phi_r_tt (double rho, double T) const;
+	double phi_0_t (double T) const;
+	double phi_r_t (double rho, double T) const;
+	double phi_r_dt (double rho, double T) const;
+	double phi_r_dd (double rho, double T) const;
+	double phi_0_tt (double T) const;
 	//AKS
 	double CalCopressibility(long idx_elem, double p, double T);
 	double CalCopressibility_PTC(double p, double T); //AKS
@@ -198,15 +254,11 @@ private:
 	double primary_variable[10];          //WW
 	double primary_variable_t0[10];       //CMCD
 	double primary_variable_t1[10];       //CMCD
-	// CElement *m_element;
-	//
 	bool cal_gravity;                     //YD/WW
 	// FEM
 	//WW
 	friend class FiniteElement::CFiniteElementStd;
-	// PCS
-	CRFProcess* m_pcs;                    //OK4704
-	CRFProcess* mfp_pcs;
+
 
 #ifdef MFP_TEST
 	Hash_Table* scatter_data; //WW

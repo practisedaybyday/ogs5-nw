@@ -58,6 +58,13 @@ template<typename T> T str2number (const std::string &str)
  */
 void trim(std::string &str, char ch = ' ');
 
+/**
+ * Extract the filename from a path
+ */
+std::string getFileNameFromPath(const std::string &str, bool with_extension = false);
+
+
+
 #ifdef MSVC
 void correctScientificNotation(std::string filename, size_t precision = 0);
 #endif

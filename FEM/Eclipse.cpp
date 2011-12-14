@@ -695,18 +695,16 @@ void CECLIPSEData::DetermineNeighbourElements(string Projectname)
 
 		//Determine neighboured Elements
 		//Order of the faces: 0..left(x); 1..right(x); 2..front(y); 3..back(y); 4..top(z); 5..bottom(z)
-		for (unsigned long i = 0; i < this->eclgrid.size(); i++)
-			for (unsigned long j = i + 1; j < this->eclgrid.size(); j++)
+		for (size_t i = 0; i < this->eclgrid.size(); i++)
+			for (size_t j = i + 1; j < this->eclgrid.size(); j++)
 			{
-				param = j + (i * this->eclgrid.size());
+				param = static_cast<double>(j + (i * this->eclgrid.size()));
 				param /= 1000;
 				fractpart = modf (param, &intpart);
 				if (fractpart == 0)
 				{
-					param = 100 *
-					        (j + i *
-					         this->eclgrid.size()) /
-					        (this->eclgrid.size() * this->eclgrid.size());
+					param = static_cast<double>(100 * (j + i * this->eclgrid.size()) /
+					        (this->eclgrid.size() * this->eclgrid.size()));
 					cout << "              " << Round(param, 3) << " %" << endl;
 				}
 				if (this->eclgrid[i]->layer == this->eclgrid[j]->layer)
@@ -3910,7 +3908,7 @@ void CECLIPSEData::InterpolateGeosysVelocitiesToNodes(CRFProcess* m_pcs,
                                                       double* vel_nod, long node_number)
 {
 	CFEMesh const* const mesh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
-	long elem;
+	size_t elem;
 	double vel_ele[3];
 	double distance, weight, sum_w (0.0);
 	double PoreVel(0.0); //WW , theta;

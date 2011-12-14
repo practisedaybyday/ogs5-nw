@@ -65,6 +65,7 @@
 //#include "gs_project.h"
 #include "rf_fct.h"
 //#include "femlib.h"
+#include "eos.h"
 #include "rf_msp_new.h"
 #include "rf_node.h"
 
@@ -536,7 +537,7 @@ void CRFProcess::Create()
 	if (m_msh)                            //OK->MB please shift to Config()
 
 		//		if (_pcs_type_name.compare("GROUNDWATER_FLOW") == 0)
-		if (this->getProcessType() == GROUNDWATER_FLOW)
+		if (this->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 			MSHDefineMobile(this);
 	//----------------------------------------------------------------------------
 	int DOF = GetPrimaryVNumber();        //OK should be PCS member variable
@@ -561,7 +562,7 @@ void CRFProcess::Create()
 	// NUM_NEW
 	std::cout << "->Create NUM" << std::endl;
 	//	if (pcs_type_name.compare("RANDOM_WALK")) { // PCH RWPT does not need this.
-	if (this->getProcessType() != RANDOM_WALK) // PCH RWPT does not need this.
+	if (this->getProcessType() != FiniteElement::RANDOM_WALK) // PCH RWPT does not need this.
 	{
 		CNumerics* m_num_tmp = NULL;
 		size_t no_numerics(num_vector.size());
@@ -618,14 +619,14 @@ void CRFProcess::Create()
 	//CRFProcess *m_pcs = NULL;                      //
 	// create EQS
 	/// Configure EQS (old matrx) . WW 06.2011
-	if (   getProcessType() == DEFORMATION
-	       || getProcessType() == DEFORMATION_FLOW
-	       || getProcessType() == DEFORMATION_H2 )
+	if (   getProcessType() == FiniteElement::DEFORMATION
+	       || getProcessType() == FiniteElement::DEFORMATION_FLOW
+	       || getProcessType() == FiniteElement::DEFORMATION_H2 )
 	{
-		if ( getProcessType() == DEFORMATION )
+		if ( getProcessType() == FiniteElement::DEFORMATION )
 			eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF, DOF
 			                            * m_msh->GetNodesNumber(true));
-		else if (getProcessType() == DEFORMATION_FLOW)
+		else if (getProcessType() == FiniteElement::DEFORMATION_FLOW)
 		{
 			if (num_type_name.find("EXCAVATION") != string::npos)
 				eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF - 1, DOF
@@ -635,7 +636,7 @@ void CRFProcess::Create()
 				                            (DOF - 1) * m_msh->GetNodesNumber(true)
 				                            + m_msh->GetNodesNumber(false));
 		}
-		else if (getProcessType() == DEFORMATION_H2)
+		else if (getProcessType() == FiniteElement::DEFORMATION_H2)
 			if(m_num->nls_method == 1)
 				eqs = CreateLinearSolverDim(m_num->ls_storage_method, DOF,
 				                            (DOF - 2) * m_msh->GetNodesNumber(true)
@@ -1187,7 +1188,7 @@ void CRFProcess::setIC_danymic_problems()
 		{
 			m_ic = ic_vector[j];
 			if(m_ic->getProcessPrimaryVariable() ==
-			   convertPrimaryVariable(function_name[i]))
+				FiniteElement::convertPrimaryVariable(function_name[i]))
 				m_ic->Set(nidx);
 		}
 	}
@@ -1492,13 +1493,13 @@ bool PCSRead(std::string file_base_name)
 				            "DEFORMATION") != string::npos)
 				{
 					//					m_pcs->_pcs_type_name = "DEFORMATION_FLOW";
-					m_pcs->setProcessType (DEFORMATION_FLOW);
+					m_pcs->setProcessType (FiniteElement::DEFORMATION_FLOW);
 					MH_Process = true; // MH monolithic scheme
 					if (pname.find("DYNAMIC") != string::npos)
 						m_pcs->pcs_type_name_vector[0] = "DYNAMIC";
 				}
 			}
-			else if (m_pcs->getProcessType() == DEFORMATION_FLOW)
+			else if (m_pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW)
 			{
 				//NW
 				std::cout << "***Error: DEFORMATION_FLOW is vague definition." <<
@@ -1624,7 +1625,7 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 				line_stream.str(line_string);
 				std::string pcs_type_name;
 				line_stream >> pcs_type_name;
-				this->setProcessType (convertProcessType(pcs_type_name));
+				this->setProcessType (FiniteElement::convertProcessType(pcs_type_name));
 				line_stream.clear();
 
 				//				if (_pcs_type_name.find("FLOW") != string::npos) {
@@ -1634,7 +1635,7 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 					H_Process = true;
 				}
 				//				if (_pcs_type_name.compare("PS_GLOBAL") == 0) {
-				if (this->getProcessType() == PS_GLOBAL)
+				if (this->getProcessType() == FiniteElement::PS_GLOBAL)
 					H_Process = true;
 				//				if (_pcs_type_name.compare("FLUID_FLOW") == 0) {
 				//					_pcs_type_name = "LIQUID_FLOW";
@@ -1648,23 +1649,23 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 						pcs_no_fluid_phases = 1;
 				}
 				//				if (_pcs_type_name.compare("MASS_TRANSPORT") == 0) {
-				if (this->getProcessType() == MASS_TRANSPORT)
+				if (this->getProcessType() == FiniteElement::MASS_TRANSPORT)
 				{
 					H_Process = true;
 					MASS_TRANSPORT_Process = true;
 					pcs_no_components++;
-					this->setProcessPrimaryVariable(CONCENTRATION);
+					this->setProcessPrimaryVariable(FiniteElement::CONCENTRATION);
 				}
 				//				if (_pcs_type_name.find("HEAT") != string::npos)
-				if (this->getProcessType() == HEAT_TRANSPORT)
+				if (this->getProcessType() == FiniteElement::HEAT_TRANSPORT)
 					T_Process = true;
 				pcs_type_name_vector.push_back(pcs_type_name);
 
 				//				if (_pcs_type_name.compare("FLUID_MOMENTUM") == 0) {
-				if (this->getProcessType() == FLUID_MOMENTUM)
+				if (this->getProcessType() == FiniteElement::FLUID_MOMENTUM)
 					FLUID_MOMENTUM_Process = true;
 				//				if (_pcs_type_name.compare("RANDOM_WALK") == 0) {
-				if (this->getProcessType() == RANDOM_WALK)
+				if (this->getProcessType() == FiniteElement::RANDOM_WALK)
 					RANDOM_WALK_Process = true;
 			}
 		/*
@@ -1846,7 +1847,7 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 		if (line_string.find("$USE_VELOCITIES_FOR_TRANSPORT") != string::npos)
 		{
 			// Only for fluid momentum process
-			if (this->getProcessType () == FLUID_MOMENTUM)
+			if (this->getProcessType () == FiniteElement::FLUID_MOMENTUM)
 				use_velocities_for_transport = true;
 			continue;
 		}
@@ -1971,7 +1972,7 @@ void CRFProcess::Write(std::fstream* pcs_file)
 **************************************************************************/
 CRFProcess* PCSGet(const std::string &pcs_type_name)
 {
-	ProcessType pcs_type(convertProcessType(pcs_type_name));
+	FiniteElement::ProcessType pcs_type(FiniteElement::convertProcessType(pcs_type_name));
 	for (size_t i = 0; i < pcs_vector.size(); i++)
 		//		m_pcs = pcs_vector[i];
 		//		if(m_pcs->pcs_type_name.compare(pcs_type_name)==0) { TF
@@ -1981,7 +1982,7 @@ CRFProcess* PCSGet(const std::string &pcs_type_name)
 	return NULL;
 }
 
-CRFProcess* PCSGet(ProcessType pcs_type)
+CRFProcess* PCSGet(FiniteElement::ProcessType pcs_type)
 {
 	for (size_t i = 0; i < pcs_vector.size(); i++)
 		if (pcs_vector[i]->getProcessType() == pcs_type)
@@ -2002,7 +2003,7 @@ CRFProcess* PCSGetNew(const string &pcs_type_name, const string &primary_variabl
 {
 	CRFProcess* m_pcs_return = NULL;
 
-	ProcessType pcs_type (convertProcessType (pcs_type_name));
+	FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (pcs_type_name));
 
 	int matches = 0;
 	for (size_t i = 0; i < pcs_vector.size(); i++)
@@ -2101,20 +2102,20 @@ void CRFProcess::Config(void)
 		continuum_vector.push_back(1.0);
 
 	//	if (_pcs_type_name.compare("LIQUID_FLOW") == 0) {
-	if (this->getProcessType() == LIQUID_FLOW || this->getProcessType() == FLUID_FLOW)
+	if (this->getProcessType() == FiniteElement::LIQUID_FLOW || this->getProcessType() == FiniteElement::FLUID_FLOW)
 	{
 		std::cout << "CRFProcess::Config LIQUID_FLOW" << std::endl;
 		type = 1;
 		ConfigLiquidFlow();
 	}
 	//	if (_pcs_type_name.compare("GROUNDWATER_FLOW") == 0) {
-	if (this->getProcessType() == GROUNDWATER_FLOW)
+	if (this->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 	{
 		type = 1;
 		ConfigGroundwaterFlow();
 	}
 	//	if (_pcs_type_name.compare("RICHARDS_FLOW") == 0) {
-	if (this->getProcessType() == RICHARDS_FLOW)
+	if (this->getProcessType() == FiniteElement::RICHARDS_FLOW)
 	{
 		if (continuum_vector.size() > 1)
 		{
@@ -2126,20 +2127,20 @@ void CRFProcess::Config(void)
 		ConfigUnsaturatedFlow();
 	}
 	//	if (_pcs_type_name.compare("OVERLAND_FLOW") == 0) {
-	if (this->getProcessType() == OVERLAND_FLOW)
+	if (this->getProcessType() == FiniteElement::OVERLAND_FLOW)
 	{
 		type = 66;
 		max_dim = 1;
 		ConfigGroundwaterFlow();
 	}
 	//	if (_pcs_type_name.compare("AIR_FLOW") == 0) { //OK
-	if (this->getProcessType() == AIR_FLOW) //OK
+	if (this->getProcessType() == FiniteElement::AIR_FLOW) //OK
 	{
 		type = 5;
 		ConfigGasFlow();
 	}
 	//	if (_pcs_type_name.compare("TWO_PHASE_FLOW") == 0) {
-	if (this->getProcessType() == TWO_PHASE_FLOW)
+	if (this->getProcessType() == FiniteElement::TWO_PHASE_FLOW)
 	{
 		type = 12;
 		ConfigMultiphaseFlow();
@@ -2150,13 +2151,13 @@ void CRFProcess::Config(void)
 	//		ConfigNonIsothermalFlow();
 	//	}
 	//	if (_pcs_type_name.compare("HEAT_TRANSPORT") == 0) {
-	if (this->getProcessType() == HEAT_TRANSPORT)
+	if (this->getProcessType() == FiniteElement::HEAT_TRANSPORT)
 	{
 		type = 3;
 		ConfigHeatTransport();
 	}
 	//	if (_pcs_type_name.compare("MASS_TRANSPORT") == 0) {
-	if (this->getProcessType() == MASS_TRANSPORT)
+	if (this->getProcessType() == FiniteElement::MASS_TRANSPORT)
 	{
 		type = 2;
 		ConfigMassTransport();
@@ -2165,30 +2166,30 @@ void CRFProcess::Config(void)
 	if (isDeformationProcess(getProcessType()))
 		ConfigDeformation();
 	//	if (_pcs_type_name.find("FLUID_MOMENTUM") != string::npos
-	if (this->getProcessType() == FLUID_MOMENTUM)
+	if (this->getProcessType() == FiniteElement::FLUID_MOMENTUM)
 	{
 		type = 55;                //WW
 		ConfigFluidMomentum();
 	}
 	//	if (_pcs_type_name.find("RANDOM_WALK") != string::npos) {
-	if (this->getProcessType() == RANDOM_WALK)
+	if (this->getProcessType() == FiniteElement::RANDOM_WALK)
 	{
 		type = 55;                //WW
 		ConfigRandomWalk();
 	}
 	//	if (_pcs_type_name.find("MULTI_PHASE_FLOW") != string::npos) {//24.02.2007 WW
-	if (this->getProcessType() == MULTI_PHASE_FLOW) //24.02.2007 WW
+	if (this->getProcessType() == FiniteElement::MULTI_PHASE_FLOW) //24.02.2007 WW
 	{
 		type = 1212;
 		ConfigMultiPhaseFlow();
 	}
 	//	if (_pcs_type_name.find("PS_GLOBAL") != string::npos) {//24.02.2007 WW
-	if (this->getProcessType() == PS_GLOBAL) //24.02.2007 WW
+	if (this->getProcessType() == FiniteElement::PS_GLOBAL) //24.02.2007 WW
 	{
 		type = 1313;
 		ConfigPS_Global();
 	}
-	if (this->getProcessType() == PTC_FLOW) //24.02.2007 WW
+	if (this->getProcessType() == FiniteElement::PTC_FLOW) //24.02.2007 WW
 	{
 		type = 1111;
 		ConfigPTC_FLOW();
@@ -2734,10 +2735,10 @@ void CRFProcess::ConfigDeformation()
 	type = 4;
 	//	if (_pcs_type_name.find("DEFORMATION") != string::npos
 	//			&& _pcs_type_name.find("FLOW") != string::npos) {
-	if (getProcessType() == DEFORMATION_FLOW || getProcessType() == DEFORMATION_H2 )
+	if (getProcessType() == FiniteElement::DEFORMATION_FLOW || getProcessType() == FiniteElement::DEFORMATION_H2 )
 	{
 		type = 41;
-		if (getProcessType() == DEFORMATION_H2 )
+		if (getProcessType() == FiniteElement::DEFORMATION_H2 )
 			type = 42;
 		cpl_type_name = "MONOLITHIC";
 		pcs_deformation = 11;
@@ -2751,7 +2752,7 @@ void CRFProcess::ConfigDeformation()
 		num = num_vector[ii];
 		if (num->pcs_type_name.find("DEFORMATION") != string::npos)
 		{
-			num->pcs_type_name = convertProcessTypeToString(this->getProcessType());
+			num->pcs_type_name = FiniteElement::convertProcessTypeToString(this->getProcessType());
 			if(num->nls_method >= 1) // Newton-Raphson
 			{
 				pcs_deformation = 101;
@@ -3888,7 +3889,7 @@ double CRFProcess::Execute()
 	cout << "    ->Process " << pcs_number << ": " << convertProcessTypeToString (
 	        this->getProcessType()) << endl;
 	//	if (! this->_pcs_type_name.compare("MASS_TRANSPORT")) {
-	if (this->getProcessType() == MASS_TRANSPORT)
+	if (this->getProcessType() == FiniteElement::MASS_TRANSPORT)
 	{
 		cout << "      for " << this->pcs_primary_function_name[0];
 		cout << " pcs_component_number " << this->pcs_component_number;
@@ -4667,7 +4668,7 @@ void CRFProcess::GlobalAssembly()
 
 #ifdef GEM_REACT
 		//		if ( _pcs_type_name.compare("MASS_TRANSPORT") == 0 && aktueller_zeitschritt > 1 && this->m_num->cpl_iterations > 1)
-		if ( this->getProcessType() == MASS_TRANSPORT && aktueller_zeitschritt > 1 &&
+		if ( this->getProcessType() == FiniteElement::MASS_TRANSPORT && aktueller_zeitschritt > 1 &&
 		     this->m_num->cpl_iterations > 1)
 			IncorporateSourceTerms_GEMS();
 #endif
@@ -4783,15 +4784,15 @@ void CRFProcess::CalIntegrationPointValue()
 	//			"TWO_PHASE_FLOW") != string::npos
 	//			|| _pcs_type_name.find("AIR_FLOW") != string::npos
 	//			|| _pcs_type_name.find("PS_GLOBAL") != string::npos) //WW/CB
-	if (getProcessType() == LIQUID_FLOW || getProcessType() == RICHARDS_FLOW
-	    || getProcessType() == MULTI_PHASE_FLOW
-	    || getProcessType() == GROUNDWATER_FLOW
-	    || getProcessType() == TWO_PHASE_FLOW
-	    || getProcessType() == DEFORMATION_H2 // 07.2011. WW
-	    || getProcessType() == AIR_FLOW
-	    || getProcessType() == PS_GLOBAL
-	    || getProcessType() == PTC_FLOW  //AKS/NB
-	    || getProcessType() == DEFORMATION_FLOW //NW
+	if (getProcessType() == FiniteElement::LIQUID_FLOW || getProcessType() == FiniteElement::RICHARDS_FLOW
+	    || getProcessType() == FiniteElement::MULTI_PHASE_FLOW
+	    || getProcessType() == FiniteElement::GROUNDWATER_FLOW
+	    || getProcessType() == FiniteElement::TWO_PHASE_FLOW
+	    || getProcessType() == FiniteElement::DEFORMATION_H2 // 07.2011. WW
+	    || getProcessType() == FiniteElement::AIR_FLOW
+	    || getProcessType() == FiniteElement::PS_GLOBAL
+	    || getProcessType() == FiniteElement::PTC_FLOW  //AKS/NB
+	    || getProcessType() == FiniteElement::DEFORMATION_FLOW //NW
 	    )
 		cal_integration_point_value = true;
 	if (!cal_integration_point_value)
@@ -4809,7 +4810,7 @@ void CRFProcess::CalIntegrationPointValue()
 		}
 	}
 	//	if (_pcs_type_name.find("TWO_PHASE_FLOW") != string::npos) //WW/CB
-	if (getProcessType() == TWO_PHASE_FLOW) //WW/CB
+	if (getProcessType() == FiniteElement::TWO_PHASE_FLOW) //WW/CB
 		cal_integration_point_value = false;
 }
 
@@ -4830,7 +4831,7 @@ void CRFProcess::CalGPVelocitiesfromFluidMomentum()
 	cout << "      CalGPVelocitiesfromFluidMomentum()" << endl;
 
 	// Get fluid_momentum process
-	CRFProcess* m_pcs_fm =  PCSGet(FLUID_MOMENTUM);
+	CRFProcess* m_pcs_fm =  PCSGet(FiniteElement::FLUID_MOMENTUM);
 
 	//  check all possibilities for grid orientation (ccord_flag)
 	int coordinateflag = this->m_msh->GetCoordinateFlag();
@@ -6547,7 +6548,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 	void RelocateDeformationProcess(CRFProcess* m_pcs)
 	{
 		//   string pcs_name_dm = m_pcs->_pcs_type_name;
-		ProcessType pcs_name_dm (m_pcs->getProcessType());
+		FiniteElement::ProcessType pcs_name_dm (m_pcs->getProcessType());
 
 		string num_type_name_dm;
 		// Numerics
@@ -6602,52 +6603,52 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		{
 			switch (pcs_vector[i]->getProcessType())
 			{
-			case LIQUID_FLOW:
+			case FiniteElement::LIQUID_FLOW:
 				pcs_problem_type = "LIQUID_FLOW";
 				break;
-			case OVERLAND_FLOW:
+			case FiniteElement::OVERLAND_FLOW:
 				pcs_problem_type = "OVERLAND_FLOW";
 				break;
-			case GROUNDWATER_FLOW:
+			case FiniteElement::GROUNDWATER_FLOW:
 				pcs_problem_type = "GROUNDWATER_FLOW";
 				break;
-			case TWO_PHASE_FLOW:
+			case FiniteElement::TWO_PHASE_FLOW:
 				pcs_problem_type = "TWO_PHASE_FLOW";
 				break;
-			case RICHARDS_FLOW: //MX test 04.2005
+			case FiniteElement::RICHARDS_FLOW: //MX test 04.2005
 				pcs_problem_type = "RICHARDS_FLOW";
 				break;
-			case DEFORMATION:
+			case FiniteElement::DEFORMATION:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "DEFORMATION";
 				else
 					pcs_problem_type += "+DEFORMATION";
 				break;
-			case DEFORMATION_FLOW:
+			case FiniteElement::DEFORMATION_FLOW:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "DEFORMATION";
 				else
 					pcs_problem_type += "+DEFORMATION";
 				break;
-			case HEAT_TRANSPORT:
+			case FiniteElement::HEAT_TRANSPORT:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "HEAT_TRANSPORT";
 				else
 					pcs_problem_type += "+HEAT_TRANSPORT";
 				break;
-			case MASS_TRANSPORT:
+			case FiniteElement::MASS_TRANSPORT:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "MASS_TRANSPORT";
 				else
 					pcs_problem_type += "+MASS_TRANSPORT";
 				break;
-			case FLUID_MOMENTUM:
+			case FiniteElement::FLUID_MOMENTUM:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "FLUID_MOMENTUM";
 				else
 					pcs_problem_type += "+FLUID_MOMENTUM";
 				break;
-			case RANDOM_WALK:
+			case FiniteElement::RANDOM_WALK:
 				if (pcs_problem_type.empty())
 					pcs_problem_type = "RANDOM_WALK";
 				else
@@ -6845,22 +6846,22 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 		switch (getProcessType())
 		{
-		case LIQUID_FLOW:
+		case FiniteElement::LIQUID_FLOW:
 			break;
-		case GROUNDWATER_FLOW:
+		case FiniteElement::GROUNDWATER_FLOW:
 			break;
-		case TWO_PHASE_FLOW:
+		case FiniteElement::TWO_PHASE_FLOW:
 			break;
-		case RICHARDS_FLOW:       // Richards flow
+		case FiniteElement::RICHARDS_FLOW:       // Richards flow
 			// WW
 			CalcSecondaryVariablesUnsaturatedFlow(initial);
 			break;
-		case DEFORMATION || DEFORMATION_FLOW || DEFORMATION_DYNAMIC:
+		case FiniteElement::DEFORMATION || FiniteElement::DEFORMATION_FLOW || FiniteElement::DEFORMATION_DYNAMIC:
 			if (type == 42) //H2M                                                  //WW
 				CalcSecondaryVariablesUnsaturatedFlow(initial);
 
 			break;
-		case PS_GLOBAL:
+		case FiniteElement::PS_GLOBAL:
 			CalcSecondaryVariablesPSGLOBAL(); //WW
 			break;
 		default:
@@ -6935,7 +6936,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			{
 				m_pcs = pcs_vector[i];
 				//	if(m_pcs->_pcs_type_name.compare("MASS_TRANSPORT") == 0){ // if this is mass transport // TF
-				if(m_pcs->getProcessType() == MASS_TRANSPORT)
+				if(m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
 				{
 					j = m_pcs->GetProcessComponentNumber();
 					//WW k = cp_vec[j]->transport_phase;
@@ -7272,7 +7273,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    03/2005 OK Implementation
    last modified:
 **************************************************************************/
-	double CRFProcess::GetNodeValue(long n,int nidx)
+	double CRFProcess::GetNodeValue(size_t n,int nidx)
 	{
 		double value;
 #ifdef gDEBUG
@@ -7293,7 +7294,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    09/2005 PCH Implementation
    last modified:
 **************************************************************************/
-	double CRFProcess::GetElementValue(long n,int nidx)
+	double CRFProcess::GetElementValue(size_t n,int nidx)
 	{
 		double value;
 #ifdef gDEBUG
@@ -7336,7 +7337,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		}
 
 		// Suppress the following error message when Fluid Momentum process is on.
-		CRFProcess* m_pcs = PCSGet(FLUID_MOMENTUM);
+		CRFProcess* m_pcs = PCSGet(FiniteElement::FLUID_MOMENTUM);
 		if (m_pcs)
 			;             // Don't print any error message.
 		else
@@ -7381,7 +7382,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		// HS, for MASS_TRANSPORT PCS,
 		// it is not necessary to use PrimaryVarible as second check.
 		// nidx will give the proper IC pointer.
-		if ( this->getProcessType() == MASS_TRANSPORT )
+		if ( this->getProcessType() == FiniteElement::MASS_TRANSPORT )
 			for (int i = 0; i < pcs_number_of_primary_nvals; i++)
 			{
 				int nidx = GetNodeValueIndex(pcs_primary_function_name[i]);
@@ -7404,7 +7405,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			for (int i = 0; i < pcs_number_of_primary_nvals; i++)
 			{
 				int nidx = GetNodeValueIndex(pcs_primary_function_name[i]);
-				PrimaryVariable pv_i (convertPrimaryVariable(
+				FiniteElement::PrimaryVariable pv_i (FiniteElement::convertPrimaryVariable(
 				                              pcs_primary_function_name[i]));
 				for (size_t j = 0; j < ic_vector.size(); j++)
 				{
@@ -7959,7 +7960,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 **************************************************************************/
 	void PCSDelete(const std::string &m_pcs_type_name)
 	{
-		ProcessType pcs_type (convertProcessType (m_pcs_type_name));
+		FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (m_pcs_type_name));
 		CRFProcess* m_pcs = NULL;
 		for (size_t i = 0; i < pcs_vector.size(); i++)
 		{
@@ -8025,13 +8026,13 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		MeshLib::CElem* m_ele_OLF = NULL;
 
 		// Get processes
-		CRFProcess* m_pcs_GW(PCSGet(GROUNDWATER_FLOW));
+		CRFProcess* m_pcs_GW(PCSGet(FiniteElement::GROUNDWATER_FLOW));
 		if (!m_pcs_GW)            //OK
 		{
 			cout << "Fatal error: no GROUNDWATER_FLOW process" << endl;
 			return;
 		}
-		CRFProcess* m_pcs_OLF(PCSGet(OVERLAND_FLOW));
+		CRFProcess* m_pcs_OLF(PCSGet(FiniteElement::OVERLAND_FLOW));
 		if (!m_pcs_OLF)           //OK
 		{
 			cout << "Fatal error: no OVERLAND_FLOW process" << endl;
@@ -8179,7 +8180,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
 			SetNodeValue(l, nidx0, GetNodeValue(l, nidx0 + 1));
 		//	if (_pcs_type_name.find("RICHARDS") != string::npos) { //WW
-		if (this->getProcessType() == RICHARDS_FLOW) //WW
+		if (this->getProcessType() == FiniteElement::RICHARDS_FLOW) //WW
 		{
 			nidx0 = GetNodeValueIndex("SATURATION1");
 			for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
@@ -8215,7 +8216,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			//WW
 			//		if (_pcs_type_name.find("RICHARDS") != string::npos || type == 1212) { //Multiphase. WW
 			//Multiphase. WW
-			if (this->getProcessType() == RICHARDS_FLOW || type == 1212 || type == 42)
+			if (this->getProcessType() == FiniteElement::RICHARDS_FLOW || type == 1212 || type == 42)
 			{
 				if (j == 1 && (type == 1212 || type == 42)) // Multiphase. WW
 					continue;
@@ -8245,7 +8246,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 **************************************************************************/
 	int PCSGetPCSIndex(const string &pcs_type_name, const string &comp_name)
 	{
-		ProcessType pcs_type (convertProcessType (pcs_type_name));
+		FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (pcs_type_name));
 
 		CRFProcess* m_pcs = NULL;
 		int i, pcs_no;
@@ -8281,7 +8282,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 **************************************************************************/
 	CRFProcess* PCSGet(const std::string &pcs_type_name, const std::string &comp_name)
 	{
-		ProcessType pcs_type (convertProcessType (pcs_type_name));
+		FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (pcs_type_name));
 		size_t no_processes (pcs_vector.size());
 		for (size_t i = 0; i < no_processes; i++)
 			//		if (pcs_vector[i]->pcs_type_name.compare(pcs_type_name) == 0) { // TF
@@ -8293,7 +8294,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		return NULL;
 	}
 
-	CRFProcess* PCSGet(ProcessType pcs_type, const std::string &comp_name)
+	CRFProcess* PCSGet(FiniteElement::ProcessType pcs_type, const std::string &comp_name)
 	{
 		size_t no_processes (pcs_vector.size());
 		for (size_t i = 0; i < no_processes; i++)
@@ -8346,13 +8347,13 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		for (size_t i = 0; i < no_processes; i++)
 		{
 			//		if (pcs_vector[i]->_pcs_type_name == "LIQUID_FLOW") { // TF
-			if (pcs_vector[i]->getProcessType () == LIQUID_FLOW)
+			if (pcs_vector[i]->getProcessType () == FiniteElement::LIQUID_FLOW)
 			{
 				m_pcs = pcs_vector[i];
 				found = true;
 			}
 			//		if (pcs_vector[i]->_pcs_type_name == "GROUNDWATER_FLOW") {
-			if (pcs_vector[i]->getProcessType() == GROUNDWATER_FLOW)
+			if (pcs_vector[i]->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 			{
 				m_pcs = pcs_vector[i];
 				found = true;
@@ -8505,9 +8506,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				for(int i = 0; i < NumOfNeighborElements; ++i)
 				{
 					// Mount neighboring elemenets and get the corresponding material group one by one.
-					int eleIdx = thisNode->getConnectedElementIDs()[i];
+					size_t eleIdx = thisNode->getConnectedElementIDs()[i];
 					CElem* thisEle = m_msh->ele_vector[eleIdx];
-					int matgrp = thisEle->GetPatchIndex();
+					size_t matgrp = thisEle->GetPatchIndex();
 					mmp = mmp_vector[matgrp];
 					mmp->mode = 2;
 					sum += 1.0 / sat2;
@@ -8734,7 +8735,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			}
 			break;
 		case 12:                  // Two_phase_Flow
-			m_pcs = PCSGet(TWO_PHASE_FLOW);
+			m_pcs = PCSGet(FiniteElement::TWO_PHASE_FLOW);
 			if(m_pcs)
 			{
 				if(m_pcs->pcs_type_number == 0)
@@ -8745,7 +8746,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			}
 			break;
 		case 22:                  // Richards flow
-			m_pcs = PCSGet(RICHARDS_FLOW);
+			m_pcs = PCSGet(FiniteElement::RICHARDS_FLOW);
 			if(m_pcs)
 			{
 				idx = m_pcs->GetNodeValueIndex(var_name) + timelevel;
@@ -8785,7 +8786,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		CRFProcess* m_pcs = NULL;
 
 		// Get process by process name
-		ProcessType pcs_type (convertProcessType (pcs_name));
+		FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (pcs_name));
 		m_pcs = PCSGet(pcs_type);
 		if (m_pcs)
 		{
@@ -8892,10 +8893,10 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 		switch (this->getProcessType())
 		{
-		case MASS_TRANSPORT:
+		case FiniteElement::MASS_TRANSPORT:
 			PrimaryVariableReloadTransport();
 			break;
-		case RICHARDS_FLOW:
+		case FiniteElement::RICHARDS_FLOW:
 			PrimaryVariableReloadRichards();
 			break;
 		default:
@@ -9126,7 +9127,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 		//	if (_pcs_type_name.compare("RICHARDS_FLOW") == 0
 		//				&& m_msh_cpl->pcs_name.compare("OVERLAND_FLOW") == 0) { // ToDo
-		if (this->getProcessType() == RICHARDS_FLOW
+		if (this->getProcessType() == FiniteElement::RICHARDS_FLOW
 		    // ToDo
 		    && m_msh_cpl->pcs_name.compare("OVERLAND_FLOW") == 0)
 		{
@@ -9190,7 +9191,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 		//	if (_pcs_type_name.compare("GROUNDWATER_FLOW") == 0
 		//				&& m_msh_cpl->pcs_name.compare("OVERLAND_FLOW") == 0) { // ToDo
-		if (this->getProcessType() == GROUNDWATER_FLOW
+		if (this->getProcessType() == FiniteElement::GROUNDWATER_FLOW
 		    // ToDo
 		    && m_msh_cpl->pcs_name.compare("OVERLAND_FLOW") == 0)
 		{
@@ -9321,7 +9322,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		if (isFlowProcess (this->getProcessType()))
 			m_pcs_flow = this;
 		else
-			m_pcs_flow = PCSGet(GROUNDWATER_FLOW);
+			m_pcs_flow = PCSGet(FiniteElement::GROUNDWATER_FLOW);
 
 		int v_eidx[3];
 		v_eidx[0] = m_pcs_flow->GetElementValueIndex("VELOCITY1_X");
@@ -9383,12 +9384,12 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 			switch (this->getProcessType())
 			{
-			case GROUNDWATER_FLOW:
+			case FiniteElement::GROUNDWATER_FLOW:
 				// Volume flux = v_n * l^e * z^e
 				for (size_t j = 0; j < 3; j++)
 					f[j] = vn_vec[j]* edg_length* m_ele->GetFluxArea();
 				break;
-			case MASS_TRANSPORT:
+			case FiniteElement::MASS_TRANSPORT:
 				// Mass flux = v_n * l^e * z^e * C^e
 				C_ele = 0.0;
 				for (size_t j = 0; j < m_ele->GetNodesNumber(false); j++)
@@ -9425,7 +9426,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 	{
 		// If not FLUID_MOMENTUM,
 		//	if (_pcs_type_name.compare("RANDOM_WALK") != 0) {
-		if (this->getProcessType() != RANDOM_WALK)
+		if (this->getProcessType() != FiniteElement::RANDOM_WALK)
 		{
 			int eidx[3];
 			eidx[0] = GetElementValueIndex("VELOCITY1_X");
@@ -9493,7 +9494,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		if(isFlowProcess(this->getProcessType()))
 			m_pcs_flow = this;
 		else
-			m_pcs_flow = PCSGet(GROUNDWATER_FLOW);
+			m_pcs_flow = PCSGet(FiniteElement::GROUNDWATER_FLOW);
 		v_eidx[0] = m_pcs_flow->GetElementValueIndex("VELOCITY1_X");
 		v_eidx[1] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Y");
 		v_eidx[2] = m_pcs_flow->GetElementValueIndex("VELOCITY1_Z");
@@ -9713,7 +9714,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		{
 			n_pcs = pcs_vector[i];
 			//     if(n_pcs->_pcs_type_name.compare("MASS_TRANSPORT")==0){ // TF
-			if(n_pcs->getProcessType () == MASS_TRANSPORT)
+			if(n_pcs->getProcessType () == FiniteElement::MASS_TRANSPORT)
 			{
 				j = n_pcs->GetProcessComponentNumber();
 				if(cp_vec[j]->transport_phase == 3) // is in napl
@@ -9850,7 +9851,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		{
 			n_pcs = pcs_vector[i];
 			//	  if(n_pcs->_pcs_type_name.compare("MASS_TRANSPORT")==0){
-			if (n_pcs->getProcessType () == MASS_TRANSPORT)
+			if (n_pcs->getProcessType () == FiniteElement::MASS_TRANSPORT)
 			{
 				j = n_pcs->GetProcessComponentNumber();
 				if (cp_vec[j]->transport_phase == 3) // is in NAPL component
@@ -9939,7 +9940,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		{
 			m_pcs = pcs_vector[j];
 			//		if (m_pcs->_pcs_type_name.compare("TWO_PHASE_FLOW") != 0)
-			if (m_pcs->getProcessType () == TWO_PHASE_FLOW)
+			if (m_pcs->getProcessType () == FiniteElement::TWO_PHASE_FLOW)
 				break;
 			if (j == 0)
 				// old timelevel
@@ -10434,7 +10435,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		bool succeed = true;
 		//OK->MB please shift to Config()
 		//	if (_pcs_type_name.compare("GROUNDWATER_FLOW") == 0)
-		if (this->getProcessType() == GROUNDWATER_FLOW)
+		if (this->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 			MSHDefineMobile(this);
 		//
 		if (type == 4 || type == 41)
@@ -10704,7 +10705,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		for(size_t i = 0; i < PCS_Solver.size(); i++)
 		{
 			eqs = PCS_Solver[i];
-			ProcessType pcs_type (convertProcessType (eqs->pcs_type_name));
+			FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (eqs->pcs_type_name));
 			m_pcs = PCSGet(pcs_type);
 			if(eqs->unknown_vector_indeces)
 				eqs->unknown_vector_indeces = \
@@ -10944,7 +10945,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				// PCH: DOF Handling for FLUID_MOMENTUM in case that the LIS and PARDISO solvers
 				// are chosen.
 				//				if(m_pcs->_pcs_type_name.compare("FLUID_MOMENTUM")==0)
-				if(m_pcs->getProcessType() == FLUID_MOMENTUM)
+				if(m_pcs->getProcessType() == FiniteElement::FLUID_MOMENTUM)
 					dof_nonDM = 1;
 			}
 		}
@@ -11690,18 +11691,18 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 								cell_data_v[l] =  1000.0 *
 								                 (vel_av[0] *
 								                  (*elem->
-								                   tranform_tensor)(
+								                   transform_tensor)(
 								                          0,2)
 								                  +
 								                  vel_av[1] *
 								                  (*elem->
-								                   tranform_tensor)(
+								                   transform_tensor)(
 								                          1,2)
 								                  // 1000*:  m-->mm
 								                  +
 								                  vel_av[2] *
 								                  (*elem->
-								                   tranform_tensor)(
+								                   transform_tensor)(
 								                          2,2));
 							}
 						}
@@ -11924,657 +11925,90 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    09/2009 SB BG Implementation
 
  **************************************************************************/
-	void CRFProcess::CalGPVelocitiesfromECLIPSE(string path,
-	                                            int timestep,
-	                                            int phase_index,
-	                                            string phase)
+void CRFProcess::CalGPVelocitiesfromECLIPSE(string path,
+											int timestep,
+											int phase_index,
+											string phase)
+{
+	(void)path;               // unused
+	(void)timestep;           // unused
+	long i;
+	MeshLib::CElem* elem = NULL;
+	clock_t start,finish;
+	double time;
+
+	start = clock();
+
+	cout << "        CalGPVelocitiesfromECLIPSE() ";
+
+	//Test Output
+	vector <string> vec_string;
+	string tempstring;
+	ostringstream temp;
+	vec_string.push_back(
+			"Element; X; Y; Z; v_Geosys_x; v_Geosys_y; v_Geosys_z; v_Eclipse_x; v_Eclipse_y; v_Eclipse_z");
+
+	// Loop over all elements
+	for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
 	{
-		(void)path;               // unused
-		(void)timestep;           // unused
-		long i;
-		MeshLib::CElem* elem = NULL;
-		clock_t start,finish;
-		double time;
-
-		start = clock();
-
-		cout << "        CalGPVelocitiesfromECLIPSE() ";
-
-		//Test Output
-		vector <string> vec_string;
-		string tempstring;
-		ostringstream temp;
-		vec_string.push_back(
-		        "Element; X; Y; Z; v_Geosys_x; v_Geosys_y; v_Geosys_z; v_Eclipse_x; v_Eclipse_y; v_Eclipse_z");
-
-		// Loop over all elements
-		for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
+		elem = m_msh->ele_vector[i]; // get element
+		if (elem->GetMark()) // Marked for use
 		{
-			elem = m_msh->ele_vector[i]; // get element
-			if (elem->GetMark()) // Marked for use
-			{
-				//Test Output
-				tempstring = "";
-				temp.str("");
-				temp.clear();
-				temp << i;
-				tempstring = temp.str();
-				double const* gc(elem->GetGravityCenter());
-				temp.str("");
-				temp.clear();
-				temp << gc[0];
-				tempstring += "; " + temp.str();
-				temp.str("");
-				temp.clear();
-				temp << gc[1];
-				tempstring += "; " + temp.str();
-				temp.str("");
-				temp.clear();
-				temp << gc[2];
-				tempstring += "; " + temp.str();
+			//Test Output
+			tempstring = "";
+			temp.str("");
+			temp.clear();
+			temp << i;
+			tempstring = temp.str();
+			double const* gc(elem->GetGravityCenter());
+			temp.str("");
+			temp.clear();
+			temp << gc[0];
+			tempstring += "; " + temp.str();
+			temp.str("");
+			temp.clear();
+			temp << gc[1];
+			tempstring += "; " + temp.str();
+			temp.str("");
+			temp.clear();
+			temp << gc[2];
+			tempstring += "; " + temp.str();
 
-				// Configure Element for interpolation of node velocities to GP velocities
-				fem->ConfigElement(elem);
-				// Interpolate from nodes to GP of actual element
-				//cout << "Element: " << i << endl;
-				tempstring = fem->Cal_GP_Velocity_ECLIPSE(tempstring,
-				                                          true,
-				                                          phase_index,
-				                                          phase);
+			// Configure Element for interpolation of node velocities to GP velocities
+			fem->ConfigElement(elem);
+			// Interpolate from nodes to GP of actual element
+			//cout << "Element: " << i << endl;
+			tempstring = fem->Cal_GP_Velocity_ECLIPSE(tempstring,
+													  true,
+													  phase_index,
+													  phase);
 
-				// Test Output
-				vec_string.push_back(tempstring);
-			}
-		}                         // end element loop
-
-		// // Test Output
-		// if (timestep == 1 || timestep % 10 == 0 ) {
-		//int position = path.find_last_of("\\");
-		//path = path.substr(0,position);
-		//position = path.find_last_of("\\");
-		//path = path.substr(0,position);
-		//temp.str(""); temp.clear(); temp << timestep; tempstring = temp.str();
-		//string aus_file = path + "\\CheckVelocity_" + phase + "_" + tempstring + ".csv";
-		//ofstream aus;
-		//aus.open(aus_file.data(),ios::out);
-		//for (i = 0; i < vec_string.size(); i++) {
-		//	aus << vec_string[i] << endl;
-		//}
-		//aus.close();
-		//}
-
-		finish = clock();
-		time = (double(finish) - double(start)) / CLOCKS_PER_SEC;
-		cout << "         Time: " << time << " seconds." << endl;
-	}
-
-//****************************************************************************
-//* returns the third root of a number x, -inf < x < inf
-//* Programming: NB, Sep10
-//*****************************************************************************/
-	inline double W3( double x)
-	{
-		if (x < 0)
-			return -pow(fabs(x), 1. / 3.);
-		else
-			return pow(x, 1. / 3.);
-	}
-
-//****************************************************************************
-//* binary mixing coefficient for water and co2 , Duan 1992
-//* Programming: NB, Sep10
-//*****************************************************************************/
-	double k_co2_h20(int number, double T)
-	{
-		if (T < 373.15)
-		{
-			switch (number)
-			{
-			case 1: return 0.20611 + 0.0006 * T;
-			case 2: return 0.8023278 - 0.0022206 * T + 184.76824 / T;
-			case 3: return 1.80544 - 0.0032605 * T;
-			default: return 1;
-			}
+			// Test Output
+			vec_string.push_back(tempstring);
 		}
-		else if (T > 673.15)
-		{
-			switch (number)
-			{
-			case 1: return 3.131 - 5.0624e-03 * T + 1.8641e-06 * T * T - 31.409 / T;
-			case 2: return -46.646 + 4.2877e-02 * T - 1.0892e-05 * T * T + 1.5782e+04 /
-				       T;
-			case 3: return 0.9;
-			default: return 1;
-			}
-		}
-		else if (T < 495.15)
-		{
-			switch (number)
-			{
-			case 1: return -10084.5042 - 4.27134485 * T + 256477.783 / T +
-				       0.00166997474 * T * T + 1816.78 * log(T);
-			case 2: return 9.000263 - 0.00623494 * T - 2307.7125 / T;
-			case 3: return -74.1163 + 0.1800496 * T - 1.40904946e-4 * T * T +
-				       101305246 / T;
-			default: return 1;
-			}
-		}
-		else
-			switch (number)
-			{
-			case 1: return -0.3568 + 7.8888e-4 * T + 333.399 / T;
-			case 2: return -19.97444 + 0.0192515 * T + 5707.4229 / T;
-			case 3: return 12.1308 - 0.0099489 * T - 3042.09583 / T;
-			default: return 1;
-			}
-		cout << " This text should not be printed, something is wrong!" << endl;
-		return 0;
-	}
+	}                         // end element loop
 
-//****************************************************************************
-//* binary mixing coefficient for co2 and methane , Duan 1992
-//* Programming: NB, Sep10
-//*****************************************************************************/
-	double k_co2_ch4 (int number, double T)
-	{
-		if (T < 304)
-		{
-			switch (number)
-			{
-			case 1: return 0.38;
-			case 2: return 1.74094 - 0.0058903 * T;
-			case 3: return 1.59;
-			default: return 1;
-			}
-		}
-		else if (T > 498)
-			return 1;
-		else
-		{
-			switch (number)
-			{
-			case 1: return 1.1;
-			case 2: return 3.211 - 0.00158 * T - 537.814 / T;
-			//case 3: return -0.7;
-			case 3: return 1.80544 - 0.0032605 * T; // aus F90
-				// case 3: return 12.1308 -0.0099489*T - 3042.09583/T; aus F90
-			}
-		}
-		cout << " This text should not be printed, something is wrong!" << endl;
-		return 0;
-	}
+	// // Test Output
+	// if (timestep == 1 || timestep % 10 == 0 ) {
+	//int position = path.find_last_of("\\");
+	//path = path.substr(0,position);
+	//position = path.find_last_of("\\");
+	//path = path.substr(0,position);
+	//temp.str(""); temp.clear(); temp << timestep; tempstring = temp.str();
+	//string aus_file = path + "\\CheckVelocity_" + phase + "_" + tempstring + ".csv";
+	//ofstream aus;
+	//aus.open(aus_file.data(),ios::out);
+	//for (i = 0; i < vec_string.size(); i++) {
+	//	aus << vec_string[i] << endl;
+	//}
+	//aus.close();
+	//}
 
-//****************************************************************************
-//* binary mixing coefficient for water and methane , Duan 1992
-//* Programming: NB, Sep10
-//*****************************************************************************/
-	double k_ch4_h2o (int number, double T)
-	{
-		(void)number;
-		(void)T;
-		// Not implemented yet! If you feel constrained to change this, you'll find the correlation in Duan, Moller and Weare ,1992.
-		return 1;
-	}
+	finish = clock();
+	time = (double(finish) - double(start)) / CLOCKS_PER_SEC;
+	cout << "         Time: " << time << " seconds." << endl;
+}
 
-//****************************************************************************
-//* this function calls the binary mixing parameter for a certain condition
-//*
-//* Programming: NB, Sep10
-//*****************************************************************************/
-	double bip (int number, int fluid_a, int fluid_b, int i, int j, int k, double T)
-	{
-		//number : k1, k2 or k3
-		//fluid_a, fluid_b: a-b, b-c, a-c have different binary interaction parameters
-		//i,j,k  : needed for mixing rule
-		// T : bip depends on Temperature
-
-		if ( ((number == 1) &&
-		      (i == j)) || (((number == 2) || (number == 3)) && ((i == j) && (i == k))) )
-			return 1;
-		else
-			switch (fluid_a + fluid_b)
-			{
-			case (1):     // 2+3=5 --> CO2+H2O (duan 1992) or 0+1=1 --> CO2+H20 fo high pressure range, duan 2006
-				return k_co2_h20(number, T);
-			case (5):     // 2+3=5 --> CO2+H2O (duan 1992) or 0+1=1 --> CO2+H20 fo high pressure range, duan 2006
-				return k_co2_h20(number, T);
-
-			case 6:       // 2+4=6 --> CO2+CH4
-				return k_co2_ch4(number,T);
-			case 7:       // 3+4=7 --> CH4+H2O
-				return k_co2_ch4(number, T);
-			default:
-				return 1;
-			}
-		cout << " This text should not be printed, something is wrong!" << endl;
-		return 0;
-	}
-
-//****************************************************************************
-//* Parameters for Water, CO2 and Methane for Duan EOS
-//*
-//* Programming: NB, Sep10
-//*****************************************************************************/
-	void DuansParameter(int fluid, double a[14], double* Tc, double* Pc, double* M)
-	{
-		switch (fluid)
-		{
-		case 0:                   //CO2, Duan 1992
-			*Tc = 304.1282;
-			*Pc = 73.77300; //bar
-			*M = 44.01;   // g/mol
-			a[0] =  8.99288497e-2;
-			a[1] = -4.94783127e-1;
-			a[2] =  4.77922245e-2;
-			a[3] =  1.03808883e-2;
-			a[4] = -2.82516861e-2;
-			a[5] =  9.49887563e-2;
-			a[6] =  5.20600880e-4;
-			a[7] = -2.93540971e-4;
-			a[8] = -1.77265112e-3;
-			a[9] = -2.51101973e-5;
-			a[10] = 8.93353441e-5;
-			a[11] = 7.88998563e-5;
-			a[12] = -1.66727022e-2;
-			a[13] = 1.398;
-			a[14] = 2.96e-2;
-			break;
-		case 1:                   //H2O Duan 1992
-			*Tc = 647.25;
-			*Pc = 221.19000; //bar
-			*M = 18.01;   // g/mol
-			a[0] =  8.64449220E-02;
-			a[1] =  -3.96918955E-01;
-			a[2] =  -5.73334886E-02;
-			a[3] =  -2.93893000E-04;
-			a[4] =  -4.15775512E-03;
-			a[5] =  1.99496791E-02;
-			a[6] =  1.18901426E-04;
-			a[7] =  1.55212063E-04;
-			a[8] =  -1.06855859E-04;
-			a[9] =  -4.93197687E-06;
-			a[10] =  -2.73739155E-06;
-			a[11] =   2.65571238E-06;
-			a[12] =  8.96079018E-03;
-			a[13] =  4.02000000E+00;
-			a[14] =  2.57000000E-02;
-			break;
-		case 2:                   //CH4 Duan 1992
-			*Tc = 190.6;
-			*Pc = 46.41000; //bar
-			*M = 16.04;   // g/mol
-			a[0] = 8.72553928E-02;
-			a[1] = -7.52599476E-01;
-			a[2] = 3.75419887E-01;
-			a[3] = 1.07291342E-02;
-			a[4] = 5.49626360E-03;
-			a[5] = -1.84772802E-02;
-			a[6] = 3.18993183E-04;
-			a[7] = 2.11079375E-04;
-			a[8] = 2.01682801E-05;
-			a[9] = -1.65606189E-05;
-			a[10] = 1.19614546E-04;
-			a[11] = -1.08087289E-04;
-			a[12] = 4.48262295E-02;
-			a[13] = 7.5397E-01;
-			a[14] = 7.7167E-02;
-			break;
-		case 5:                   // h20 Duan 2006
-			*Tc = 647.25;
-			*Pc = 22119000; // bar
-			*M = 18.01;   // g/mol
-			a[0] = 4.38269941e-02;
-			a[1] = -1.68244362e-01;
-			a[2] = -2.36923373e-01;
-			a[3] = 1.13027462e-02;
-			a[4] = -7.67764181e-02;
-			a[5] = 9.71820593e-02;
-			a[6] = 6.62674916e-05;
-			a[7] = 1.06637349e-03;
-			a[8] = -1.23265258e-03;
-			a[9] = -8.93953948e-06;
-			a[10] = -3.88124606e-05;
-			a[11] = 5.61510206e-05;
-			a[12] = 7.51274488e-03;
-			a[13] = 2.51598931e+00;
-			a[14] = 3.94000000e-02;
-			break;
-		case 6:                   // co2 Duan 2006
-			*Tc = 304.1282;
-			*Pc = 7377300; // bar
-			*M = 18.01;   // g/mol
-			a[0] = 1.14400435e-01;
-			a[1] = -9.38526684e-01;
-			a[2] = 7.21857006e-01;
-			a[3] = 8.81072902e-03;
-			a[4] = 6.36473911e-02;
-			a[5] = -7.70822213e-02;
-			a[6] = 9.01506064e-04;
-			a[7] = -6.81834166e-03;
-			a[8] = 7.32364258e-03;
-			a[9] = -1.10288237e-04;
-			a[10] = 1.26524193e-03;
-			a[11] = -1.49730823e-03;
-			a[12] = 7.81940730e-03;
-			a[13] = -4.22918013e+00;
-			a[14] = 1.58500000e-01;
-			break;
-
-		default: break;
-		}
-	}
-
-//****************************************************************************
-//* task: calculate the virial coefficients of Duans EOS for a certain fluid at
-//* a temperature T
-//* Programming: NB, Sep10
-//*****************************************************************************/
-//CVirialCoefficients DuansVirialCoefficients(int Fluid, double T)
-	VirialCoefficients DuansVirialCoefficients(int Fluid, double T)
-	{
-		double a[15];
-		double Tc,Pc,M;
-		double R = 83.14467;      // cm��?bar/(K* mol)
-		//CVirialCoefficients x;	//BG
-		VirialCoefficients x;     //BG
-		DuansParameter(Fluid,a,&Tc,&Pc,&M);
-		double Tr = T / Tc;
-
-		x.B = a[0] + a[1] / (Tr * Tr) + a[2] / (Tr * Tr * Tr);
-		x.C = a[3] + a[4] / (Tr * Tr) + a[5] / (Tr * Tr * Tr);
-		x.D = a[6] + a[7] / (Tr * Tr) + a[8] / (Tr * Tr * Tr);
-		x.E = a[9] + a[10] / (Tr * Tr) + a[11] / (Tr * Tr * Tr);
-		x.F = a[12] / (Tr * Tr * Tr);
-		x.b = a[13];
-		x.G = a[14];
-		x.Tc = Tc;
-		x.Pc = Pc;
-		x.Vc = R * Tc / Pc;
-		x.M = M;
-		x.id = Fluid;
-
-		return x;
-	}
-
-//****************************************************************************
-//* task: find compressibility factor of a mixture component
-//*  note: P in bar! (1e5 Pa)
-//* Programming: NB, Sep10
-//*****************************************************************************/
-//double DuanMixCompressibility(double T,double P,double V,CVirialCoefficients w)
-	double DuanMixCompressibility(double T,double P,double V,VirialCoefficients w)
-	{
-		double R = 83.14472;
-		return P * V / R / T - 1 - w.B / V - w.C /
-		       (V *
-		        V) - w.D /
-		       (V * V * V *
-		        V) - w.E /
-		       (V * V * V * V *
-		        V) - w.F / (V * V) * (w.b + w.G / (V * V) ) * exp(-w.G / (V * V));
-	}
-
-//****************************************************************************
-//* this function mixes all virial coefficients of two fluids for DUAN EOS with
-//* respect to temperature and mole fraction
-//*
-//* Input: fluid number A and B (see DuanParameter() for respective numbers)
-//*              T:   Temparature
-//*        x_0: mole fraction of fluid A
-//*
-//* Programming: NB, Sep10
-//*****************************************************************************/
-//void MixDuansVirialCoefficients(CVirialCoefficients fluid_a, CVirialCoefficients fluid_b, double T, double x_0, CVirialCoefficients*mix)
-	void MixDuansVirialCoefficients(VirialCoefficients fluid_a,
-	                                VirialCoefficients fluid_b,
-	                                double T,
-	                                double x_0,
-	                                VirialCoefficients* mix)
-	{
-		// this code may look weird, I tried to avoid functions like pow() to increase speed
-
-		double Bij,Cij,Dij,Eij,Fij,Gij;
-		double Vcij;
-		double B[2],C[2],D[2],E[2],F[2],G[2],bi[2],MM[2];
-		double Vc[2];
-		double x[2];
-
-		double BVc = 0;
-		double CVc = 0;
-		double DVc = 0;
-		double EVc = 0;
-		double FVc = 0;
-		double b = 0;
-		double GVc = 0;
-
-		double Vcr = 0;
-		double M = 0;
-
-		double V2,V3,V5,V6;
-
-		Vc[0] = fluid_a.Vc;
-		Vc[1] = fluid_b.Vc;
-		MM[0] = fluid_a.M;
-		MM[1] = fluid_b.M;
-
-		B[0] = fluid_a.B;
-		B[1] = fluid_b.B;
-		C[0] = fluid_a.C;
-		C[1] = fluid_b.C;
-		D[0] = fluid_a.D;
-		D[1] = fluid_b.D;
-		E[0] = fluid_a.E;
-		E[1] = fluid_b.E;
-		F[0] = fluid_a.F;
-		F[1] = fluid_b.F;
-		bi[0] = fluid_a.b;
-		bi[1] = fluid_b.b;
-		G[0] = fluid_a.G;
-		G[1] = fluid_b.G;
-
-		x[0] = x_0;
-		x[1] = 1 - x[0];
-
-		for (int i = 0; i < 2; i++)
-		{
-			b += x[i] * bi[i];
-			Vcr += x[i] * Vc[i];
-			M += x[i] * MM[i];
-			for (int j = 0; j < 2; j++)
-			{
-				double B1 = ((W3(B[i]) + W3(B[j])) / 2);
-				double F1 = ((W3(F[i]) + W3(F[j])) / 2);
-				V2 = ((W3(Vc[i]) + W3(Vc[j])) / 2);
-
-				Bij = B1 * B1 * B1 * bip(1,fluid_a.id,fluid_b.id,i,j,0,T);
-				Fij = F1 * F1 * F1;
-				Vcij = V2 * V2 * V2;
-				BVc += x[i] * x[j] * Bij * Vcij;
-				FVc += x[i] * x[j] * Fij * Vcij * Vcij;
-				for (int k = 0; k < 2; k++)
-				{
-					double C1 = ((W3(C[i]) + W3(C[j]) + W3(C[k])) / 3);
-					double G1 = ((W3(G[i]) + W3(G[j]) + W3(G[k])) / 3);
-					V3 = ((W3(Vc[i]) + W3(Vc[j]) + W3(Vc[k])) / 3);
-					Cij = C1 * C1 * C1 * bip(2,fluid_a.id,fluid_b.id,i,j,k,T);
-					Gij = G1 * G1 * G1 * bip(3,fluid_a.id,fluid_b.id,i,j,k,T);
-					Vcij = V3 * V3 * V3;
-					CVc += x[i] * x[j] * x[k] * Cij * Vcij * Vcij;
-					GVc += x[i] * x[j] * x[k] * Gij * Vcij * Vcij;
-					for (int l = 0; l < 2; l++)
-						for (int m = 0; m < 2; m++)
-						{
-							double D1 =
-							        ((W3(D[i]) + W3(D[j]) + W3(D[k]) +
-							          W3(D[l]) + W3(D[m])) / 5);
-							V5 =
-							        ((W3(Vc[i]) + W3(Vc[j]) +
-							          W3(Vc[k]) +
-							          W3(Vc[l]) + W3(Vc[m])) / 5);
-							Dij = D1 * D1 * D1;
-							Vcij = V5 * V5 * V5;
-							DVc += x[i] * x[j] * x[k] * x[l] * x[m] *
-							       Dij * Vcij * Vcij * Vcij * Vcij;
-							for (int n = 0; n < 2; n++)
-							{
-								double E1 =
-								        ((W3(E[i]) + W3(E[j]) +
-								          W3(E[k]) +
-								          W3(E[l]) + W3(E[m]) +
-								          W3(E[n])) / 6);
-								V6 =
-								        ((W3(Vc[i]) + W3(Vc[j]) +
-								          W3(Vc[k]) + W3(Vc[l]) +
-								          W3(Vc[m]) +
-								          W3(Vc[n])) / 6);
-								Eij = E1 * E1 * E1;
-								Vcij = V6 * V6 * V6;
-								EVc += x[i] * x[j] * x[k] * x[l] *
-								       x[m] * x[n] * Eij * Vcij *
-								       Vcij *
-								       Vcij * Vcij * Vcij;
-							} //ijklmn
-						} //ijklm
-				} //ijk
-			}             //ij
-		}                         //i
-
-		mix->B = BVc;
-		mix->C = CVc;
-		mix->D = DVc;
-		mix->E = EVc;
-		mix->F = FVc;
-		mix->b = b;
-		mix->G = GVc;
-		mix->M = M;
-		mix->Vc = Vcr;
-	}
-
-//****************************************************************************
-//* task: returns the density of a mixture of two gases (fluid1 and fluid2),
-//*  where:
-//*     T : Temperature [K]
-//*   P : Pressure [Pa]
-//*   x : mole fraction of fluid1
-//*
-//*  Programming: NB, Sep10
-//*****************************************************************************/
-	double DuansMixingRule(double T, double P, double x, int fluid1, int fluid2, bool neu)
-	{
-		(void)neu;                // unused
-		P /= 1e5;
-		//CVirialCoefficients u,v,w;
-		VirialCoefficients u,v,w;
-
-		u = DuansVirialCoefficients(fluid1,T);
-		v = DuansVirialCoefficients(fluid2,T);
-		MixDuansVirialCoefficients(u,v,T,x,&w);
-
-		double V1,V2;
-		int n = 0;
-		double V;
-
-		double R = 83.14467;
-
-		double dev_1,dev_2,dev;
-
-		V1 = 6.0;
-		dev_1 = DuanMixCompressibility(T,P,V1,w);
-		V = V1;
-
-		//while (true) {
-		//	V = V + 2.0;
-		//	n++;
-		//	dev = DuansCompressibility(T,P,V,w);
-
-		//	if (V<=50){
-		//		if (dev <= dev_1)
-		//		{
-		//			V1=V;
-		//			dev_1=dev;
-		//		} }else
-		//		{
-		//			//cout << " loop 1 left after " << n << " circles "<< endl;
-		//			break;
-		//		}
-		//}*/
-
-		for (int i = (int)V1; i < 51; i += 2)
-		{
-			V += 2;
-			dev = DuanMixCompressibility(T,P,V,w);
-			if (dev <= dev_1)
-			{
-				V1 = V;
-				dev_1 = dev;
-			}
-		}
-
-		// Find the first maximum point as V_2
-		V2 = V1;
-		dev_2 = DuanMixCompressibility(T,P,V2,w);
-		V = V2;
-
-		n = 0;
-		while(true)
-		{
-			n++;
-			V = V + 2.0;
-			dev = DuanMixCompressibility(T,P,V,w);
-
-			if (V <= max(R * T / P,1000.0))
-			{
-				if (dev > dev_2)
-				{
-					V2 = V;
-					dev_2 = dev;
-				}
-				else
-					//cout << " loop 2 left after " << n << " circles "<< endl;
-					break;
-				//goto l400;
-			}
-			else
-				//cout << " loop 2 left after " << n << " circles "<< endl;
-				break;
-		}
-
-		// Get the solution of volume with divition method
-		n = 0;
-		while (true)
-		{
-			dev_1 = DuanMixCompressibility(T,P,V1,w);
-			dev_2 = DuanMixCompressibility(T,P,V2,w);
-
-			if ((dev_1 * dev_2) > 0.0)
-				V2 = V2 + 1;
-
-			else
-			{
-				V = ( V1 + V2 ) / 2.0;
-
-				dev = DuanMixCompressibility(T,P,V,w);
-
-				if (fabs(dev) < 1.0e-5)
-					//cout << " returning after " << n << " iterations " << endl;
-					return w.M / V * 1000;
-
-				if ((dev_1 * dev) > 0.0)
-					V1 = V;
-				else if (dev_2 * dev > 0.0)
-					V2 = V;
-				n++;
-				if (n > 1000)
-				{
-					cout << " max it reached " << endl;
-					return -1; // Max it
-				}
-			}
-		}
-
-		cout << "This should not happen. Call NB at TUD!" << endl;
-		return -1;
-	}
 
 //-------------------------------------------------------------------------
 //GeoSys - Function: CO2_H2O_NaCl_VLE_isobaric
@@ -12948,7 +12382,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			{
 				// Get reference temperature if no heat transport is used
 				FluidProp = MFPGet("LIQUID");
-				temperature = FluidProp->T_0;
+				temperature = FluidProp->getReferenceTemperature();
 			}
 			else
 			{
@@ -13116,12 +12550,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					x_CO2 = n_CO2 / (n_CO2 + n_H2O); // mole fraction of CO2 [mol/mol]
 					//WW x_H2O = n_H2O / (n_CO2 + n_H2O);      // mole fraction of H2O [mol/mol]
 					// ToDo: reorganisation of the code [kg/m³]
-					Density_gas = DuansMixingRule(temperature,
-					                              pressure * 1e5,
-					                              x_CO2,
-					                              0,
-					                              1,
-					                              0);
+					Density_gas = DuansMixingRule(temperature, pressure * 1e5, x_CO2, 0, 1, 0);
 					//cout.precision(8);
 					//cout << "Iteration: " << j << " estimated: " << temp_density << " calculated: " << Density_gas << " a: " << a  << " b: " << b << endl;
 
@@ -13252,7 +12681,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				// Get reference temperature if no heat transport is used
 				FluidProp = MFPGet("LIQUID");
 				gas.temperature = liquid.temperature = solid.temperature =
-				                                               FluidProp->T_0;
+				                                               FluidProp->getReferenceTemperature();
 			}
 			else
 			{

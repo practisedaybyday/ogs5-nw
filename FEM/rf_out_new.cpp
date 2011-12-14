@@ -493,8 +493,8 @@ void OUTData(double time_current, int time_step_number)
 				if (time_step_number == 0)
 				{
 					std::string pcs_type ("");
-					if (m_out->getProcessType() != INVALID_PROCESS)
-						pcs_type = convertProcessTypeToString (
+					if (m_out->getProcessType() != FiniteElement::INVALID_PROCESS)
+						pcs_type = FiniteElement::convertProcessTypeToString (
 						        m_out->getProcessType());
 					vtk->InitializePVD(m_out->file_base_name,
 					                   pcs_type,
@@ -604,7 +604,7 @@ void OUTDelete()
 **************************************************************************/
 COutput* OUTGet(const std::string & out_name)
 {
-	ProcessType pcs_type (convertProcessType (out_name));
+	FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (out_name));
 	for (size_t i = 0; i < out_vector.size(); i++)
 		if (out_vector[i]->getProcessType() == pcs_type)
 			return out_vector[i];

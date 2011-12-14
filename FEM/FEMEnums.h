@@ -9,7 +9,10 @@
 
 #include <limits>
 #include <string>
+#include <list>
 
+namespace FiniteElement
+{
 /** \brief Types of physical processes supported by OpenGeoSys.
  * If you change this enum, make sure you apply the changes to
  * the functions convertPorcessType(), convertProcessTypeToString(),
@@ -18,20 +21,21 @@
 enum ProcessType
 {
 	INVALID_PROCESS = 0,                  //!< INVALID_PROCESS
-	PTC_FLOW,                             // Fluid flow coupled with heat transport
 	AIR_FLOW,                             //!< AIR_FLOW
 	/// M process, single/multi-phase flow
 	DEFORMATION,                          //!< DEFORMATION
 	DEFORMATION_DYNAMIC,                  //!< ...
 	/// C process, single/multi-phase flow
 	DEFORMATION_FLOW,                     //!< DEFORMATION_FLOW
+	/// H2M monolithic
+	DEFORMATION_H2,                        //!< DEFORMATION_H2
+	FLUID_FLOW,
+	FLUID_MOMENTUM,                       // BC only
+	FLUX,
 	/// H process, incompressible flow
 	GROUNDWATER_FLOW,                     //!< GROUNDWATER_FLOW
 	/// T process, single/multi-phase flow
 	HEAT_TRANSPORT,                       //!< HEAT_TRANSPORT
-	FLUID_FLOW,
-	FLUID_MOMENTUM,                       // BC only
-	FLUX,
 	/// H process, incompressible flow
 	LIQUID_FLOW,                          //!< LIQUID_FLOW
 	MASS_TRANSPORT,                       //!< MASS_TRANSPORT
@@ -40,13 +44,14 @@ enum ProcessType
 	/// H process, incompressible flow
 	OVERLAND_FLOW,                        //!< OVERLAND_FLOW
 	PS_GLOBAL,                            //!< PS_GLOBAL
+	PTC_FLOW,                             // Fluid flow coupled with heat transport
 	RANDOM_WALK,                          //!< RANDOM_WALK
 	/// H process, incompressible flow
 	RICHARDS_FLOW,                        //!< RICHARDS_FLOW
 	/// H2 process, compressible flow
 	TWO_PHASE_FLOW,                       //!< TWO_PHASE_FLOW
-	/// H2M monolithic
-	DEFORMATION_H2                        //!< DEFORMATION_H2
+	// make sure that this is always the last entry (important for iterating over the enum entries)!
+	PROCESS_END
 };
 
 /**
@@ -77,41 +82,34 @@ bool isFlowProcess (ProcessType pcs_type);
  */
 bool isDeformationProcess (ProcessType pcs_type);
 
+/// Returns a list of strings containing all entries in the ProcessType enum.
+const std::list<std::string> getAllProcessNames();
+
 /**
  * \brief Contains all values for primary variables actually handled by OGS.
  */
 enum PrimaryVariable
 {
 	INVALID_PV  = 0,                      //!< INVALID_PV
-	/// Flow (phase)
-	PRESSURE,                             //!< PRESSURE
-	PRESSURE2,                            //!< PRESSURE2
-	PRESSURE_RATE1,                       // OUT
-	SATURATION,                           //!< SATURATION
-	SATURATION2,                          //!< SATURATION2
-	/// Heat transport
-	TEMPERATURE,                          //!< TEMPERATURE
+	ACCELERATION_X1,                      //!< ACCELERATION_X1
+	ACCELERATION_Y1,                      //!< ACCELERATION_Y1
+	ACCELERATION_Z1,                      //!< ACCELERATION_Z1
+	/// Mass transport
+	CONCENTRATION,                        //!< CONCENTRATION
 	/// Deformation
 	DISPLACEMENT_X,                       //!< DISPLACEMENT_X
 	/// Deformation
 	DISPLACEMENT_Y,                       //!< DISPLACEMENT_Y
 	/// Deformation
 	DISPLACEMENT_Z,                       //!< DISPLACEMENT_Z
-	/// Mass transport
-	CONCENTRATION,                        //!< CONCENTRATION
+	EXCAVATION,                           // ST
 	HEAD,                                 //!< HEAD
-	VELOCITY_DM_X,                        //!< VELOCITY_DM_X
-	VELOCITY_DM_Y,                        //!< VELOCITY_DM_Y
-	VELOCITY_DM_Z,                        //!< VELOCITY_DM_Z
-	VELOCITY1_X,
-	VELOCITY1_Y,
-	VELOCITY1_Z,
-	STRESS_XX,                            // IC
-	STRESS_XY,                            // IC
-	STRESS_XZ,                            // IC
-	STRESS_YY,                            // IC
-	STRESS_YZ,                            // IC
-	STRESS_ZZ,                            // IC
+	/// Flow (phase)
+	PRESSURE,                             //!< PRESSURE
+	PRESSURE2,                            //!< PRESSURE2
+	PRESSURE_RATE1,                       // OUT
+	SATURATION,                           //!< SATURATION
+	SATURATION2,                          //!< SATURATION2
 	STRAIN_XX,                            // Output
 	STRAIN_XY,                            // Output
 	STRAIN_XZ,                            // Output
@@ -119,10 +117,22 @@ enum PrimaryVariable
 	STRAIN_YZ,                            // Output
 	STRAIN_ZZ,                            // Output
 	STRAIN_PLS,                           // Output
-	ACCELERATION_X1,                      //!< ACCELERATION_X1
-	ACCELERATION_Y1,                      //!< ACCELERATION_Y1
-	ACCELERATION_Z1,                      //!< ACCELERATION_Z1
-	EXCAVATION,                           // ST
+	STRESS_XX,                            // IC
+	STRESS_XY,                            // IC
+	STRESS_XZ,                            // IC
+	STRESS_YY,                            // IC
+	STRESS_YZ,                            // IC
+	STRESS_ZZ,                            // IC
+	/// Heat transport
+	TEMPERATURE,                          //!< TEMPERATURE
+	VELOCITY_DM_X,                        //!< VELOCITY_DM_X
+	VELOCITY_DM_Y,                        //!< VELOCITY_DM_Y
+	VELOCITY_DM_Z,                        //!< VELOCITY_DM_Z
+	VELOCITY1_X,
+	VELOCITY1_Y,
+	VELOCITY1_Z,
+	// make sure that this is always the last entry (important for iterating over the enum entries)!
+	PV_END
 };
 
 /**
@@ -140,8 +150,9 @@ PrimaryVariable convertPrimaryVariable ( const std::string& pcs_pv_string );
  */
 std::string convertPrimaryVariableToString ( PrimaryVariable pcs_pv );
 
-namespace FiniteElement
-{
+/// Returns a list of strings containing all entries in the PrimaryVariable enum.
+const std::list<std::string> getAllPrimaryVariableNames();
+
 enum DistributionType
 {
 	INVALID_DIS_TYPE = 0,
@@ -149,20 +160,22 @@ enum DistributionType
 	AVERAGE,
 	CONSTANT,                             // IC, BC, ST
 	CONSTANT_GEO,
+	CONSTANT_NEUMANN,                     // ST
+	CRITICALDEPTH,                        // ST
+	DIRECT,
+	FUNCTION,
 	GRADIENT,                             // IC
+	GREEN_AMPT,                           // ST
 	RESTART,                              // IC
 	LINEAR,                               // BC, ST
-	POINT,                                // BC
-	CONSTANT_NEUMANN,                     // ST
 	LINEAR_NEUMANN,                       // ST
 	NORMALDEPTH,                          // ST
-	CRITICALDEPTH,                        // ST
-	GREEN_AMPT,                           // ST
-	SYSTEM_DEPENDENT,                     // ST
+	POINT,                                // BC
 	PRECIPITATION,
-	DIRECT,
-	FUNCTION
+	SYSTEM_DEPENDENT,                     // ST
 	// Sort of Neumann BC //WW
+	// make sure that this is always the last entry (important for iterating over the enum entries)!
+	DIS_END
 };
 
 /**
@@ -178,6 +191,10 @@ DistributionType convertDisType(const std::string& dis_type_string);
  * @return string describing the process type
  */
 std::string convertDisTypeToString(DistributionType dis_type);
+
+/// Returns a list of strings containing all entries in the DistributionType enum.
+const std::list<std::string> getAllDistributionNames();
+
 } // end namespace FiniteElement
 
 #endif                                            //FEMENUMS_H

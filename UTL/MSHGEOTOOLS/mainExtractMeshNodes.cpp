@@ -33,6 +33,60 @@ Problem* aproblem = NULL;
 #include "Matrix.h"
 #include "Vector3.h"
 
+void getMeshNodesFromLayerAlongPolyline(MeshLib::CFEMesh *const mesh, GEOLIB::GEOObjects* geo,
+				std::string const& name, size_t ply_id, size_t layer, std::vector<size_t> &mesh_ids)
+{
+	// *** get polyline from geo
+	std::vector<GEOLIB::Polyline*> const* polylines(geo->getPolylineVecObj(name)->getVector());
+	if (polylines->size() <= ply_id) {
+		std::cout << "the given polyline id is greater than the number of polylines ("
+						<< polylines->size() << ")" << std::endl;
+		return;
+	}
+
+	GEOLIB::Polyline const*const ply_in((*polylines)[ply_id]);
+	GEOLIB::Polyline* ply_out(NULL);
+
+	MeshLib::ExtractMeshNodes extract_mesh_nodes (mesh);
+	extract_mesh_nodes.getProjectedPolylineFromPolyline(*ply_in, geo, name, ply_out, layer);
+	mesh->GetNODOnPLY(ply_out, mesh_ids);
+
+	delete ply_out;
+}
+
+
+void writeMeshNodes(MeshLib::CFEMesh const* const mesh, std::vector<size_t> const& node_ids,
+				std::string const& fname_ids, std::string const& fname_gli, bool write_gli)
+{
+	std::ofstream os (fname_ids.c_str());
+	if (!os) {
+		std::cout << "could not open file " << fname_ids << " for writing mesh node ids" << std::endl;
+		return;
+	}
+
+	const size_t node_ids_size (node_ids.size());
+	for (size_t k(0); k<node_ids_size; k++) {
+		os << node_ids[k] << std::endl;
+	}
+	os.close();
+
+	if (write_gli) {
+		os.open(fname_gli.c_str());
+		if (!os) {
+			std::cout << "could not open file " << fname_gli << " for writing gli points" << std::endl;
+			return;
+		}
+		std::vector<MeshLib::CNode*> const& nodes (mesh->getNodeVector());
+		os << "#POINTS" << std::endl;
+		for (size_t k(0); k<node_ids_size; k++) {
+			double const*const node(nodes[node_ids[k]]->getData());
+			os << k << " " << node[0] << " " << node[1] << " " << node[2] << std::endl;
+		}
+		os << "#STOP" << std::endl;
+		os.close();
+	}
+}
+
 int main (int argc, char* argv[])
 {
 	if (argc < 5)
@@ -75,7 +129,8 @@ int main (int argc, char* argv[])
 
 	GEOLIB::GEOObjects* geo (new GEOLIB::GEOObjects);
 	tmp = argv[4];
-	FileIO::readGLIFileV4(tmp, geo);
+	std::string unique_name;
+	FileIO::readGLIFileV4(tmp, geo, unique_name);
 
 //	{
 //		const std::vector<GEOLIB::Point*>* pnts (geo->getPointVec (tmp));
@@ -99,7 +154,7 @@ int main (int argc, char* argv[])
 //	}
 
 	// *** get Polygon
-	const std::vector<GEOLIB::Polyline*>* plys (geo->getPolylineVec (tmp));
+	const std::vector<GEOLIB::Polyline*>* plys (geo->getPolylineVec (unique_name));
 	if (!plys)
 	{
 		std::cout << "could not get vector of polylines" << std::endl;
@@ -108,26 +163,33 @@ int main (int argc, char* argv[])
 		return -1;
 	}
 
-	MeshLib::ExtractMeshNodes extract_mesh_nodes (mesh);
+	std::vector<size_t> mesh_ids;
+	size_t ply_id (0);
+	size_t layer(1);
+	getMeshNodesFromLayerAlongPolyline(mesh, geo, unique_name, ply_id, layer, mesh_ids);
+	writeMeshNodes(mesh, mesh_ids, "MeshIDs.txt", "MeshNodesAsPoints.gli", true);
 
-	// *** generate a orthogonal surface from polyline
-	std::vector<GEOLIB::Polyline*> polylines;
-	const size_t n_plys (plys->size());
-	for (size_t k(0); k < n_plys; k++)
-	{
-		bool closed ((*plys)[k]->isClosed());
-		if (!closed && k == 19)
-		{
-			std::cout << "converting polyline " << k << " to closed polyline" <<
-			std::endl;
-			GEOLIB::Polygon* polygon (NULL);
-			extract_mesh_nodes.getPolygonFromPolyline(*((*plys)[k]), geo, tmp, polygon);
-			polylines.push_back (polygon);
-		}
-	}
-
-	geo->appendPolylineVec (polylines, tmp);
-	FileIO::writeGLIFileV4 ("New.gli", tmp, *geo);
+	//*** extract surface out of mesh
+//	MeshLib::ExtractMeshNodes extract_mesh_nodes (mesh);
+//
+//	// *** generate a surface from polyline
+//	std::vector<GEOLIB::Polyline*> polylines;
+//	const size_t n_plys (plys->size());
+//	for (size_t k(0); k < n_plys; k++)
+//	{
+//		bool closed ((*plys)[k]->isClosed());
+//		if (!closed && k == 19)
+//		{
+//			std::cout << "converting polyline " << k << " to closed polyline" <<
+//			std::endl;
+//			GEOLIB::Polygon* polygon (NULL);
+//			extract_mesh_nodes.getPolygonFromPolyline(*((*plys)[k]), geo, tmp, polygon);
+//			polylines.push_back (polygon);
+//		}
+//	}
+//
+//	geo->appendPolylineVec (polylines, tmp);
+//	FileIO::writeGLIFileV4 ("New.gli", tmp, *geo);
 
 	// *** search mesh nodes for direct assigning bc, st or ic
 //	std::string fname ("MeshIDs.txt");

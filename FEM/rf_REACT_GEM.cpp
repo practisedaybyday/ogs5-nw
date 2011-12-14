@@ -1280,7 +1280,7 @@ int REACT_GEM::GetHeatFlag_MT ( void )
         m_pcs = pcs_vector[i];
         //                if ( m_pcs->pcs_type_name.compare ( "HEAT_TRANSPORT" ) == 0 ) {
         // TF
-        if ( m_pcs->getProcessType() == HEAT_TRANSPORT )
+        if ( m_pcs->getProcessType() == FiniteElement::HEAT_TRANSPORT )
         {
             return 1;
         }
@@ -1295,25 +1295,25 @@ int REACT_GEM::GetFlowType_MT ( void )
     {
         m_pcs = pcs_vector[i];
         //                if ( m_pcs->pcs_type_name.compare ( "GROUNDWATER_FLOW" ) ==0 ) {
-        if ( m_pcs->getProcessType() == GROUNDWATER_FLOW )
+        if ( m_pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW )
         {
             m_flow_pcs = m_pcs;
             return 1;
             //                } else if ( m_pcs->pcs_type_name.compare ( "LIQUID_FLOW" ) ==0 ) {
         }
-        else if ( m_pcs->getProcessType() == LIQUID_FLOW )
+        else if ( m_pcs->getProcessType() == FiniteElement::LIQUID_FLOW )
         {
             m_flow_pcs = m_pcs;
             return 2;
             //                } else if ( m_pcs->pcs_type_name.compare ( "RICHARDS_FLOW" ) ==0 ) {
         }
-        else if ( m_pcs->getProcessType() == RICHARDS_FLOW )
+        else if ( m_pcs->getProcessType() == FiniteElement::RICHARDS_FLOW )
         {
             m_flow_pcs = m_pcs;
             return 3;
             //                } else if ( m_pcs->pcs_type_name.compare ( "MULTI_PHASE_FLOW" ) ==0 ) {
         }
-        else if ( m_pcs->getProcessType() == MULTI_PHASE_FLOW )
+        else if ( m_pcs->getProcessType() == FiniteElement::MULTI_PHASE_FLOW )
         {
         }
         m_flow_pcs = m_pcs;
@@ -1335,7 +1335,7 @@ long REACT_GEM::GetNodeNumber_MT ( void )
     {
         m_pcs = pcs_vector[i];
         //		if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) ==0 ) {
-        if ( m_pcs->getProcessType() == MASS_TRANSPORT )
+        if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT )
         {
             number = ( long ) m_pcs->m_msh->GetNodesNumber ( false );
             return number;
@@ -1353,7 +1353,7 @@ long REACT_GEM::GetElemNumber_MT ( void )
     {
         m_pcs = pcs_vector[i];
         //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) ==0 ) {
-        if ( m_pcs->getProcessType() == MASS_TRANSPORT )
+        if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT )
         {
             number = ( long ) m_pcs->m_msh->ele_vector.size();
             return number;
@@ -1601,7 +1601,7 @@ double REACT_GEM::GetComponentValue_MT ( long node_Index, string m_component, in
     {
         m_pcs = pcs_vector[i];
         //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-        if ( m_pcs->getProcessType() == MASS_TRANSPORT )
+        if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT )
         {
             if ( strcmp ( m_pcs->pcs_primary_function_name[0],m_component.c_str() ) == 0 )
             {
@@ -1632,7 +1632,7 @@ short REACT_GEM::GetDCValue_MT ( long node_Index, int timelevel, double* m_DC, d
     {
         m_pcs = pcs_vector[i+1];           // dangerous!!
         //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-        if ( m_pcs->getProcessType() == MASS_TRANSPORT )
+        if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT )
         {
             //if ( m_pcs->m_msh->nod_vector[node_Index]->onBoundary() == false ) // do not update values for boundary node?
 
@@ -1661,7 +1661,7 @@ short REACT_GEM::GetBValue_MT ( long node_Index, int timelevel, double* m_solute
     {
         m_pcs = pcs_vector[i+1];           // dangerous!!
         //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-        if ( m_pcs->getProcessType() == MASS_TRANSPORT )
+        if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT )
         {
             //if ( m_pcs->m_msh->nod_vector[node_Index]->onBoundary() == false ) // do not update values for boundary node?
 
@@ -1688,7 +1688,7 @@ double REACT_GEM::GetDCValueSpecies_MT ( long node_Index, int timelevel, int iDc
 
     m_pcs = pcs_vector[iDc+1];            // dangerous!!
     //        if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-    if ( m_pcs->getProcessType() == MASS_TRANSPORT )
+    if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT )
     {
 
         str = m_pcs->pcs_primary_function_name[0];
@@ -1723,7 +1723,7 @@ short REACT_GEM::GetSoComponentValue_MT ( long node_Index, int timelevel, double
     {
         m_pcs = pcs_vector[i];
         //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-        if ( m_pcs->getProcessType() == MASS_TRANSPORT )
+        if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT )
         {
 
             x_Component = -1;
@@ -1755,7 +1755,7 @@ short REACT_GEM::SetDCValue_MT ( long node_Index, int timelevel, double* m_DC )
         m_pcs = pcs_vector[i+1];
 
         //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-        if ( m_pcs->getProcessType() == MASS_TRANSPORT )
+        if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT )
         {
             str = m_pcs->pcs_primary_function_name[0];
             if ( str.compare ( "pH" ) != 0 && str.compare ( "pe" ) != 0 && str.compare ( "Eh" ) != 0 && str.compare ( "NodePorosity" ) != 0 )
@@ -1792,7 +1792,7 @@ short REACT_GEM::SetBValue_MT ( long node_Index, int timelevel, double* m_solute
         m_pcs = pcs_vector[i+1];
 
         //                if ( m_pcs->pcs_type_name.compare ( "MASS_TRANSPORT" ) == 0 ) {
-        if ( m_pcs->getProcessType() == MASS_TRANSPORT )
+        if ( m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT )
         {
             str = m_pcs->pcs_primary_function_name[0];
             if ( flag_iterative_scheme > 0 )

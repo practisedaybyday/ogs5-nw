@@ -11,7 +11,7 @@
 #include "SurfaceVec.h"
 
 // FileIO
-#include "XMLInterface.h"
+#include "XmlIO/XmlGmlInterface.h"
 
 #include "problem.h"
 Problem* aproblem = NULL;
@@ -30,9 +30,9 @@ int main (int argc, char* argv[])
 	project_data->setGEOObjects (geo_objs);
 	std::string schema_name(
 	        "/home/fischeth/workspace/OGS-FirstFloor/sources/FileIO/OpenGeoSysGLI.xsd");
-	XMLInterface xml(project_data, schema_name);
+	XmlGmlInterface xml(project_data, schema_name);
 	std::string fname (argv[1]);
-	xml.readGLIFile(QString::fromStdString (fname));
+	xml.readFile(QString::fromStdString (fname));
 
 	std::vector<std::string> geo_names;
 	geo_objs->getGeometryNames (geo_names);

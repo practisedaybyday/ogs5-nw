@@ -105,7 +105,7 @@ SparseMatrixDOK::SparseMatrixDOK(const SparseMatrixDOK& m)
 #endif
 }
 
-SparseMatrixDOK& SparseMatrixDOK::operator =(double a)
+SparseMatrixDOK& SparseMatrixDOK::operator=(double a)
 {
 	//    for(int i=0; i<size; i++) data[i] = a;
 
@@ -124,7 +124,7 @@ SparseMatrixDOK& SparseMatrixDOK::operator =(double a)
 
 	return *this;
 }
-void SparseMatrixDOK::operator *=(double a)
+void SparseMatrixDOK::operator*=(double a)
 {
 	row_iter ii;
 	col_iter jj;
@@ -136,7 +136,7 @@ void SparseMatrixDOK::operator *=(double a)
 		}
 	}
 }
-void SparseMatrixDOK::operator +=(double a)
+void SparseMatrixDOK::operator+=(double a)
 {
 	row_iter ii;
 	col_iter jj;
@@ -152,7 +152,7 @@ void SparseMatrixDOK::operator +=(double a)
 }
 
 //
-void SparseMatrixDOK::operator =(const SparseMatrixDOK& m)
+void SparseMatrixDOK::operator=(const SparseMatrixDOK& m)
 {
 #ifdef gDEBUG
 	if(nrows!=m.Rows()||ncols!=m.Cols())
@@ -182,7 +182,7 @@ void SparseMatrixDOK::operator =(const SparseMatrixDOK& m)
 }
 
 //
-void SparseMatrixDOK::operator +=(const SparseMatrixDOK& m)
+void SparseMatrixDOK::operator+=(const SparseMatrixDOK& m)
 {
 #ifdef gDEBUG
 	if(nrows!=m.Rows())
@@ -219,7 +219,7 @@ void SparseMatrixDOK::operator +=(const SparseMatrixDOK& m)
 }
 
 //
-void SparseMatrixDOK::operator -=(const SparseMatrixDOK& m)
+void SparseMatrixDOK::operator-=(const SparseMatrixDOK& m)
 {
 #ifdef gDEBUG
 	if(nrows!=m.Rows()) //Assertion, will be removed
@@ -289,7 +289,7 @@ void SparseMatrixDOK::LimitSize(size_t nRows, size_t nCols)
 	size = nRows * nCols;
 }
 
-long SparseMatrixDOK::SizeOfNonZeroEntries()
+size_t SparseMatrixDOK::SizeOfNonZeroEntries()
 {
 	return non_zero_entry_size;
 }
@@ -557,36 +557,36 @@ void SparseMatrixDOK::ConstructCRSstructure()
 
 	}
 
-	int SparseMatrixDOK::GetCRSValue(double* v)
+int SparseMatrixDOK::GetCRSValue(double* v)
+{
+	int success =1;
+
+	row_iter ii;
+	col_iter jj;
+	long cnt = 0;
+	long cnt_rows = 0;
+
+	const row_iter row_end = this->mat_row.end();
+
+	for(ii=this->mat_row.begin(); ii!=row_end; ii++)
 	{
-		int success =1;
-
-		row_iter ii;
-		col_iter jj;
-		long cnt = 0;
-		long cnt_rows = 0;
-
-		const row_iter row_end = this->mat_row.end();
-
-		for(ii=this->mat_row.begin(); ii!=row_end; ii++)
-		{
 #ifdef USE_HASHMAP
-			const col_id_itr colid_end = set_col_id[cnt_rows].end();
-			for(col_id_itr kk=set_col_id[cnt_rows].begin(); kk!=colid_end; kk++)
-			{
-				jj = ii->find(*kk);
+		const col_id_itr colid_end = set_col_id[cnt_rows].end();
+		for(col_id_itr kk=set_col_id[cnt_rows].begin(); kk!=colid_end; kk++)
+		{
+			jj = ii->find(*kk);
 #else
-				const col_iter col_end = (*ii).end();
-				for(jj=(*ii).begin(); jj!=col_end; jj++)
-				{
+			const col_iter col_end = (*ii).end();
+			for(jj=(*ii).begin(); jj!=col_end; jj++)
+			{
 #endif
-					v[cnt++] = (*jj).second;
-				}
-				cnt_rows++;
+				v[cnt++] = (*jj).second;
 			}
-
-			return success;
+			cnt_rows++;
 		}
+
+		return success;
+	}
 #endif
 
 } // end namespace Math_Group

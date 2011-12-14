@@ -607,9 +607,9 @@ void DiagonalMatrix::LimitSize(size_t dim)
    05/2005  WW
    ==========================================================================*/
 //1.
-template<class T>  vec<T>:: vec(const int argSize) : _size(argSize)
+template<class T> vec<T>::vec(int argSize) :
+	_size(argSize), _entry (new T[argSize])
 {
-	_entry = new T[argSize];
 #ifdef gDEBUG
 	if (!_entry)
 	{
@@ -618,11 +618,10 @@ template<class T>  vec<T>:: vec(const int argSize) : _size(argSize)
 	}
 #endif
 }
-template<class T>  vec<T>:: vec(const vec<T>& v)
-{
-	_size = v.Size();
-	resize(_size);
 
+template<class T>  vec<T>::vec(const vec<T>& v) :
+	_size(v.Size()), _entry (new T[v.Size()])
+{
 #ifdef gDEBUG
 	if (!_entry)
 	{
@@ -634,7 +633,7 @@ template<class T>  vec<T>:: vec(const vec<T>& v)
 		_entry[i] = v._entry[i];
 }
 
-template<class T> vec<T>:: ~vec()
+template<class T> vec<T>::~vec()
 {
 	delete[] _entry;
 	_entry = 0;
@@ -833,7 +832,7 @@ SparseTable::SparseTable(CFEMesh* a_mesh, bool quadratic, bool symm, StorageType
 		/// num_column_entries saves vector ptr of CRS
 		num_column_entries = new long[rows + 1];
 
-		vector<long> A_index;
+		std::vector<long> A_index;
 		long col_index;
 
 		for(i = 0; i < rows; i++)
@@ -1095,34 +1094,34 @@ void SparseTable::Write(std::ostream &os)
 	long i, k, counter = 0;
 
 	os.width(10);
-	os << "Symmetry: " << symmetry << endl;
-	os << "\n*** Row index  " << endl;
+	os << "Symmetry: " << symmetry << std::endl;
+	os << "\n*** Row index  " << std::endl;
 
 	if(storage_type == CRS)
 	{
-		os << "\n*** Sparse entry  " << endl;
+		os << "\n*** Sparse entry  " << std::endl;
 		for (i = 0; i < rows; i++)
 		{
 			for (k = num_column_entries[i]; k < num_column_entries[i + 1]; k++)
 				os << entry_column[k] + 1 << " ";
-			os << endl;
+			os << std::endl;
 		}
 	}
 	else if(storage_type == JDS)
 	{
 		for (i = 0; i < rows; i++)
-			os << row_index_mapping_n2o[i] + 1 << endl;
+			os << row_index_mapping_n2o[i] + 1 << std::endl;
 		//
-		os << "\n*** Sparse entry  " << endl;
+		os << "\n*** Sparse entry  " << std::endl;
 		for (k = 0; k < max_columns; k++)
 		{
-			os << "--Column: " << k + 1 << endl;
+			os << "--Column: " << k + 1 << std::endl;
 			for (i = 0; i < num_column_entries[k]; i++)
 			{
-				os << entry_column[counter] + 1 << endl;
+				os << entry_column[counter] + 1 << std::endl;
 				counter++;
 			}
-			os << endl;
+			os << std::endl;
 		}
 	}
 }
@@ -1429,12 +1428,10 @@ void CSparseMatrix::Write(std::ostream &os)
 					     k < num_column_entries[i + 1]; k++)
 //TEST
 						// if(fabs(entry[(ii*DOF+jj)*size_entry_column+counter])>DBL_MIN) //DBL_EPSILON)
-						os << setw(10) << ii * rows + i << " "
-						   << setw(10) << jj * rows + entry_column[k] <<
-						" "
-						   << setw(15) <<
-						entry[(ii * DOF +
-						       jj) * size_entry_column + k] << endl;
+						os << std::setw(10) << ii * rows + i << " "
+						   << std::setw(10) << jj * rows + entry_column[k] << " "
+						   << std::setw(15) <<
+						entry[(ii * DOF + jj) * size_entry_column + k] << std::endl;
 
 	else if(storage_type == JDS )
 	{
@@ -1451,13 +1448,13 @@ void CSparseMatrix::Write(std::ostream &os)
 						{
 //TEST
 							// if(fabs(entry[(ii*DOF+jj)*size_entry_column+counter])>DBL_MIN) //DBL_EPSILON)
-							os << setw(10) << ii * rows + i << " "
-							   << setw(10) << jj * rows +
+							os << std::setw(10) << ii * rows + i << " "
+							   << std::setw(10) << jj * rows +
 							entry_column[counter] << " "
-							   << setw(15) <<
+							   << std::setw(15) <<
 							entry[(ii * DOF +
 							       jj) * size_entry_column +
-							      counter] << endl;
+							      counter] << std::endl;
 							counter += num_column_entries[k];
 						}
 						else
@@ -1473,7 +1470,7 @@ void CSparseMatrix::Write(std::ostream &os)
 
    03.2011. WW
  */
-void CSparseMatrix::Write_BIN(ostream &os)
+void CSparseMatrix::Write_BIN(std::ostream &os)
 {
 	if(storage_type == JDS )
 		return;

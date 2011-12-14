@@ -80,6 +80,7 @@ public:
 	void computeListOfSimplePolygons ();
 	const std::list<Polygon*>& getListOfSimplePolygons ();
 
+	friend bool operator==(Polygon const& lhs, Polygon const& rhs);
 private:
 	/**
 	 * get the type of edge with respect to the given point (2d method!)
@@ -98,10 +99,27 @@ private:
 	AABB _aabb;
 };
 
+/**
+ * function creates a approximated circle area around a given point
+ * @param middle_pnt the middle point of the circle
+ * @param radius the radius of the circle
+ * @param pnts (output) points that are used to approximate the circle
+ * @param resolution number of point to use for approximation
+ * @return a pointer to a polygon
+ */
 GEOLIB::Polygon* createPolygonFromCircle (GEOLIB::Point const& middle_pnt,
                                           double radius,
                                           std::vector<GEOLIB::Point*> & pnts,
                                           size_t resolution = 12);
+
+/**
+ * comparison operator for polygons
+ * @param lhs the first polygon
+ * @param rhs the second polygon
+ * @return true, if the polygons describe the same geometrical object
+ */
+bool operator==(Polygon const& lhs, Polygon const& rhs);
+
 } // end namespace GEOLIB
 
 #endif /* POLYGON_H_ */

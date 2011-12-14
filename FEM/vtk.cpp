@@ -556,7 +556,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 	std::vector<int> NodeIndex(out->_nod_value_vector.size());
 	//  if (out->m_pcs == NULL && out->pcs_type_name.compare("NO_PCS")!=0)
 	//      out->m_pcs = PCSGet(out->pcs_type_name);
-	if (out->m_pcs == NULL && out->getProcessType() == NO_PCS)
+	if (out->m_pcs == NULL && out->getProcessType() == FiniteElement::NO_PCS)
 		out->m_pcs = PCSGet(out->getProcessType());
 	if (out->m_pcs != NULL)
 		m_pcs = out->m_pcs;
@@ -589,7 +589,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
             continue;
         }
 		//    if (out->m_pcs == NULL || out->pcs_type_name.compare("NO_PCS")==0)
-		if (out->m_pcs == NULL || out->getProcessType() == NO_PCS)
+		if (out->m_pcs == NULL || out->getProcessType() == FiniteElement::NO_PCS)
 			m_pcs = PCSGet(internal_val_name, true);
 		if (!m_pcs)
 			continue;
@@ -927,7 +927,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 			WriteDataArrayFooter(fin);
 
 		//    if(out->pcs_type_name.compare("FLUID_MOMENTUM")==0)
-		if(out->getProcessType () == FLUID_MOMENTUM)
+		if(out->getProcessType () == FiniteElement::FLUID_MOMENTUM)
 		{
 			if (!useBinary || !output_data)
 				WriteDataArrayHeader(fin,

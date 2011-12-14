@@ -15,6 +15,9 @@
 //#include <vector>
 //#include <fstream>
 
+// GeoLib
+#include "GeoType.h"
+
 // PCSLib
 #include "rf_pcs.h"
 
@@ -54,8 +57,9 @@ private:
 	                                                                 double*);
 	// Permeability
 	// Permeabilty stress corrector WW
-	int permeability_stress_mode;
 	double* c_coefficient;
+	unsigned geo_dimension;
+	int permeability_stress_mode;
 	//
 	//CMCD 9/2004 GeoSys 4
 	double PermeabilityPressureFunctionMethod1(long,double );
@@ -67,7 +71,6 @@ private:
 	double PermeabilityPressureFunctionMethod4(long,double, double );
 	friend class CMediumPropertiesGroup;
 public:
-	//-------------------------------------------
 	// Methods
 	CMediumProperties(void);              // constructor
 	~CMediumProperties(void);             // destructor
@@ -81,9 +84,6 @@ public:
 	void Write(std::fstream*);
 	void WriteTecplot(std::string);
 	double* PermeabilityTensor(long index);
-#ifdef RFW_FRACTURE
-	double RelativePermeability (long index); //RW/CMCD03/06
-#endif
 	//CMCD 9/2004 GeoSys 4
 	double Porosity(FiniteElement::CElement* assem = NULL);
 	//CMCD 9/2004 GeoSys 4
@@ -116,11 +116,6 @@ public:
 	void CalStressPermeabilityFactor3(double* kfac);
 	void CalStressPermeabilityFactor3_Coef(); //WW
 	void CalStressPermeabilityFactor4(double* kfac, double);
-#ifdef RFW_FRACTURE
-	double PermeabilityFracAperture(long index); //RFW 07/2005
-	                                             //RFW 04/2005
-	double CalculateFracAperture(CElem* elem, double search_step);
-#endif
 	//CMCD 9/2004 GeoSys 4
 	double CapillaryPressureFunction(long number,
 	                                 double* gp,
@@ -156,26 +151,36 @@ public:
 	void SetDistributedELEProperties(std::string);
 
 	void WriteTecplotDistributedProperties(); //OK
-	//-------------------------------------------
+
+	/**
+	 * the type of the geometric entity, the material property is assigned to
+	 * @return a value of the enum GEOLIB::GEOTYPE
+	 */
+	GEOLIB::GEOTYPE getGeoType() const { return _geo_type; }
+
 	// Properties
+private:
 	// PCS
 	std::string pcs_type_name;            //YD
+public:
 	CRFProcess* m_pcs;                    //OK
-	CRFProcess* m_pcs_tmp;                //HS
 	std::vector<std::string>pcs_name_vector;
 private:
 	std::vector<std::string> porosity_pcs_name_vector;
+	CFEMesh* _mesh; //OK
+
+	/**
+	 * attribute describes the type of the geometric entity the
+	 * material property is assigned to
+	 */
+	GEOLIB::GEOTYPE _geo_type;
 public:
-	//....................................................................
 	//GEO
-	std::string geo_type_name;
 	std::string geo_name;
 	std::vector<std::string>geo_name_vector; //OK
-	int geo_dimension;
 	double geo_area;
 	std::string geo_area_file;            //OK
-	CFEMesh* m_msh;                       //OK
-	//....................................................................
+
 	double density;
 	std::string name;
 	int number;
@@ -205,23 +210,6 @@ public:
 	int permeability_tensor_type;
 	int tortuosity_tensor_type;
 
-#ifdef RFW_FRACTURE
-	//RW/CMCD 03/06
-	vector<string > relative_permeability_function;
-#endif
-
-#ifdef RFW_FRACTURE
-	//---------------------------  RFW 07/2005
-	string frac_perm_average_type;
-	string roughness;
-	//---------------------------  RFW 11/2005
-	long frac_num, fracs_set;
-	vector<string> frac_names;
-	vector<double> frac_perm;
-	vector<double> avg_aperture;
-	vector<double> closed_fraction;
-	//---------------------------  RFW 11/2005
-#endif
 	int permeability_pressure_model;
 	double permeability_pressure_model_values[10];
 	double permeability_pressure_rel;
@@ -264,7 +252,6 @@ public:
 	int m_color[3];
 	bool selected;
 	int mode;
-	std::string het_file_name;            //SB
 	// surface water
 	// JOD
 	double friction_coefficient, friction_exp_slope, friction_exp_depth;

@@ -37,14 +37,15 @@ public:
 		SOURCE_TERM        = 3
 	};
 
-	FEMCondition(const std::string &geometry_name, CondType = UNSPECIFIED);
+	FEMCondition(const std::string &geometry_name, CondType t = UNSPECIFIED);
 	FEMCondition(const std::string &geometry_name,
-	             ProcessType pt = INVALID_PROCESS,
-	             PrimaryVariable pv = INVALID_PV,
-	             GEOLIB::GEOTYPE gt = GEOLIB::INVALID,
-	             const std::string &gn = "[unspecified]",
-	             FiniteElement::DistributionType dt = FiniteElement::INVALID_DIS_TYPE,
-	             CondType ct = UNSPECIFIED);
+					FiniteElement::ProcessType pt = FiniteElement::INVALID_PROCESS,
+					FiniteElement::PrimaryVariable pv =	FiniteElement::INVALID_PV,
+					GEOLIB::GEOTYPE gt = GEOLIB::INVALID,
+					const std::string &gn = "[unspecified]",
+					FiniteElement::DistributionType dt = FiniteElement::INVALID_DIS_TYPE, CondType ct = UNSPECIFIED);
+	FEMCondition(const FEMCondition &cond, CondType t);
+
 	~FEMCondition() {}
 
 	/// Returns the type of the FEM Condition (i.e. BC, IC or ST)
@@ -81,7 +82,6 @@ public:
 
 protected:
 	CondType _type;
-	GEOLIB::GeoObject* _geoObject;
 	std::string _geoName;
 	std::vector<double> _disValue;
 	std::string _associated_geometry;

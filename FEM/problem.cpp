@@ -462,7 +462,7 @@ Problem::~Problem()
 inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 {
 	//	if (m_pcs->pcs_type_name.compare("LIQUID_FLOW") == 0) {
-	if (m_pcs->getProcessType() == LIQUID_FLOW)
+	if (m_pcs->getProcessType() == FiniteElement::LIQUID_FLOW)
 	{
 		if (!activefunc)
 			return 0;
@@ -471,7 +471,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 0;
 		//	} else if (m_pcs->pcs_type_name.compare("GROUNDWATER_FLOW") == 0) {
 	}
-	else if (m_pcs->getProcessType() == GROUNDWATER_FLOW)
+	else if (m_pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 	{
 		if (!activefunc)
 			return 1;
@@ -480,7 +480,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 1;
 		//	} else if (m_pcs->pcs_type_name.compare("RICHARDS_FLOW") == 0) {
 	}
-	else if (m_pcs->getProcessType() == RICHARDS_FLOW)
+	else if (m_pcs->getProcessType() == FiniteElement::RICHARDS_FLOW)
 	{
 		if (!activefunc)
 			return 2;
@@ -489,7 +489,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 2;
 		//	} else if (m_pcs->pcs_type_name.compare("TWO_PHASE_FLOW") == 0) {
 	}
-	else if (m_pcs->getProcessType() == TWO_PHASE_FLOW)
+	else if (m_pcs->getProcessType() == FiniteElement::TWO_PHASE_FLOW)
 	{
 		if (!activefunc)
 			return 3;
@@ -498,7 +498,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 3;
 		//	} else if (m_pcs->pcs_type_name.compare("MULTI_PHASE_FLOW") == 0) {
 	}
-	else if (m_pcs->getProcessType() == MULTI_PHASE_FLOW)
+	else if (m_pcs->getProcessType() == FiniteElement::MULTI_PHASE_FLOW)
 	{
 		if (!activefunc)
 			return 4;
@@ -514,7 +514,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		//		return 5;
 		//	} else if (m_pcs->pcs_type_name.compare("OVERLAND_FLOW") == 0) {
 	}
-	else if (m_pcs->getProcessType() == OVERLAND_FLOW)
+	else if (m_pcs->getProcessType() == FiniteElement::OVERLAND_FLOW)
 	{
 		if (!activefunc)
 			return 6;
@@ -523,7 +523,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 6;
 		//	} else if (m_pcs->pcs_type_name.compare("AIR_FLOW") == 0) {
 	}
-	else if (m_pcs->getProcessType() == AIR_FLOW)
+	else if (m_pcs->getProcessType() == FiniteElement::AIR_FLOW)
 	{
 		if (!activefunc)
 			return 7;
@@ -532,7 +532,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 7;
 		//	} else if (m_pcs->pcs_type_name.compare("HEAT_TRANSPORT") == 0) {
 	}
-	else if (m_pcs->getProcessType() == HEAT_TRANSPORT)
+	else if (m_pcs->getProcessType() == FiniteElement::HEAT_TRANSPORT)
 	{
 		if (!activefunc)
 			return 8;
@@ -541,7 +541,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 8;
 		//	} else if (m_pcs->pcs_type_name.compare("FLUID_MOMENTUM") == 0) {
 	}
-	else if (m_pcs->getProcessType() == FLUID_MOMENTUM)
+	else if (m_pcs->getProcessType() == FiniteElement::FLUID_MOMENTUM)
 	{
 		if (!activefunc)
 			return 9;
@@ -550,7 +550,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 9;
 		//	} else if (m_pcs->pcs_type_name.compare("RANDOM_WALK") == 0) {
 	}
-	else if (m_pcs->getProcessType() == RANDOM_WALK)
+	else if (m_pcs->getProcessType() == FiniteElement::RANDOM_WALK)
 	{
 		if (!activefunc)
 			return 10;
@@ -559,7 +559,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 10;
 		//	} else if (m_pcs->pcs_type_name.compare("MASS_TRANSPORT") == 0) {
 	}
-	else if (m_pcs->getProcessType() == MASS_TRANSPORT)
+	else if (m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
 	{
 		if (!activefunc)
 			return 11;
@@ -577,7 +577,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 12;
 		//	} else if (m_pcs->pcs_type_name.find("PS_GLOBAL") != string::npos) {
 	}
-	else if (m_pcs->getProcessType() == PS_GLOBAL)
+	else if (m_pcs->getProcessType() == FiniteElement::PS_GLOBAL)
 	{
 		//    if(!activefunc) return 13;
 		if (!activefunc)
@@ -586,7 +586,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		active_processes[3] = &Problem::PS_Global;
 		return 3;
 	}
-	else if (m_pcs->getProcessType() == PTC_FLOW)
+	else if (m_pcs->getProcessType() == FiniteElement::PTC_FLOW)
 	{
 		if (!activefunc)
 			return 5;
@@ -650,11 +650,11 @@ void Problem::SetActiveProcesses()
 		m_pcs = pcs_vector[k];
 		//		if (m_pcs->pcs_type_name.compare("MASS_TRANSPORT") == 0)
 		// TF
-		if (m_pcs->getProcessType() == MASS_TRANSPORT)
+		if (m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
 			transport_processes.push_back(m_pcs);
 		//		if (m_pcs->pcs_type_name.compare("TWO_PHASE_FLOW") == 0) //09.01.2008. WW
 		// TF
-		if (m_pcs->getProcessType() == TWO_PHASE_FLOW)
+		if (m_pcs->getProcessType() == FiniteElement::TWO_PHASE_FLOW)
 			multiphase_processes.push_back(m_pcs);
 	}
 }
@@ -699,12 +699,12 @@ void Problem::PCSCreate()
 	for (size_t i = 0; i < no_processes; i++)
 	{
 		std::cout << "............................................." << std::endl;
-		ProcessType pcs_type (pcs_vector[i]->getProcessType());
-		std::cout << "Create: " << convertProcessTypeToString (pcs_type) << std::endl;
+		FiniteElement::ProcessType pcs_type (pcs_vector[i]->getProcessType());
+		std::cout << "Create: " << FiniteElement::convertProcessTypeToString (pcs_type) << std::endl;
 		//		if (!pcs_vector[i]->pcs_type_name.compare("MASS_TRANSPORT")) {
 		//YS   // TF
-		if (pcs_type != MASS_TRANSPORT && pcs_type != FLUID_MOMENTUM && pcs_type !=
-		    RANDOM_WALK)
+		if (pcs_type != FiniteElement::MASS_TRANSPORT && pcs_type != FiniteElement::FLUID_MOMENTUM
+						&& pcs_type != FiniteElement::RANDOM_WALK)
 		{
 			std::cout << " for " << pcs_vector[i]->pcs_primary_function_name[0] << " ";
 			std::cout << " pcs_component_number " <<
@@ -1192,7 +1192,7 @@ inline double Problem::LiquidFlow()
 		// call ECLIPSE interface
 		success = m_pcs->EclipseData->RunEclipse(m_pcs->Tim->step_current, m_pcs);
 		if (success == 0)
-			cout << "Error running Eclipse!" << endl;
+			std::cout << "Error running Eclipse!" << std::endl;
 		if(m_pcs->tim_type_name.compare("STEADY") == 0)
 			m_pcs->selected = false;
 	}
@@ -1204,7 +1204,7 @@ inline double Problem::LiquidFlow()
 		// call DUMUX interface
 		success = m_pcs->DuMuxData->RunDuMux(m_pcs->Tim->step_current, m_pcs);
 		if (success == 0)
-			cout << "Error running DuMux!" << endl;
+			std::cout << "Error running DuMux!" << std::endl;
 	}
 
 	return error;
@@ -1327,7 +1327,7 @@ inline double Problem::MultiPhaseFlow()
 	{
 		if (m_pcs->Tim->step_current == 1)
 		{
-			cout << " The Viscosity is not calculated yet!!!" << endl;
+			std::cout << " The Viscosity is not calculated yet!!!" << std::endl;
 			m_pcs->CalculateFluidDensitiesAndViscositiesAtNodes(m_pcs);
 		}
 		else
@@ -1353,7 +1353,7 @@ inline double Problem::MultiPhaseFlow()
 		success = m_pcs->EclipseData->RunEclipse(m_pcs->Tim->step_current, m_pcs);
 		if (success == 0)
 		{
-			cout << "Error running Eclipse!" << endl;
+			std::cout << "Error running Eclipse!" << std::endl;
 			system("Pause");
 			exit(0);
 		}
@@ -1365,7 +1365,7 @@ inline double Problem::MultiPhaseFlow()
 		// call DUMUX interface
 		success = m_pcs->DuMuxData->RunDuMux(m_pcs->Tim->step_current, m_pcs);
 		if (success == 0)
-			cout << "Error running DuMux!" << endl;
+			std::cout << "Error running DuMux!" << std::endl;
 	}
 	//CO2-Phase_Transition BG, NB
 	if ((m_pcs->Phase_Transition_Model == 1) && ((m_pcs->simulator.compare("GEOSYS") == 0)))
@@ -1378,20 +1378,20 @@ inline double Problem::MultiPhaseFlow()
 			FluidProp = MFPGet("LIQUID");
 			if ((FluidProp->density_model != 18) || (FluidProp->viscosity_model != 18))
 			{
-				cout <<
+				std::cout <<
 				"If the Phase_Transition_Model is used the density model and the viscosity model should be 18!"
-				     << endl;
-				cout << "The run is terminated now ..." << endl;
+				     << std::endl;
+				std::cout << "The run is terminated now ..." << std::endl;
 				system("Pause");
 				exit(0);
 			}
 			FluidProp = MFPGet("GAS");
 			if ((FluidProp->density_model != 18) || (FluidProp->viscosity_model != 18))
 			{
-				cout <<
+				std::cout <<
 				"If the Phase_Transition_Model is used the density model and the viscosity model should be 18!"
-				     << endl;
-				cout << "The run is terminated now ..." << endl;
+				     << std::endl;
+				std::cout << "The run is terminated now ..." << std::endl;
 				system("Pause");
 				exit(0);
 			}
@@ -1426,17 +1426,17 @@ void Problem::TestOutputDuMux(CRFProcess* m_pcs)
 	MeshLib::CElem* m_ele = NULL;
 	MeshLib::CNode* m_node = NULL;
 	CMediumProperties* m_mat_mp = NULL;
-	ostringstream temp;
+	std::ostringstream temp;
 	double mass_CO2_gas, mass_CO2_water, mass_CO2;
 	int index;
 	double saturation_CO2;
 	double saturation_water;
 	double node_volume;
 	double time;
-	string tempstring;
-	vector <string> vec_string;
+	std::string tempstring;
+	std::vector <std::string> vec_string;
 	//int position;
-	string path;
+	std::string path;
 	double density_CO2;
 	double porosity = 0.0;
 	int variable_index;
@@ -1447,7 +1447,7 @@ void Problem::TestOutputDuMux(CRFProcess* m_pcs)
 
 	path = m_pcs->file_name_base;
 	int position = int(path.find_last_of("\\"));
-	string path_new;
+	std::string path_new;
 	path_new = path.substr(0,position);
 	//position = int(path_new.find_last_of("\\"));
 	//path_new = path_new.substr(0,position);
@@ -1691,17 +1691,17 @@ void Problem::TestOutputEclipse(CRFProcess* m_pcs)
 	MeshLib::CElem* m_ele = NULL;
 	MeshLib::CNode* m_node = NULL;
 	CMediumProperties* m_mat_mp = NULL;
-	ostringstream temp;
+	std::ostringstream temp;
 	double mass_CO2_gas, mass_CO2_water, mass_CO2;
 	int index;
 	double saturation_CO2;
 	double saturation_water;
 	double node_volume;
 	double time;
-	string tempstring;
-	vector <string> vec_string;
+	std::string tempstring;
+	std::vector <std::string> vec_string;
 	//int position;
-	string path;
+	std::string path;
 	double density_CO2;
 	double porosity = 0.0;
 	int variable_index;
@@ -1712,7 +1712,7 @@ void Problem::TestOutputEclipse(CRFProcess* m_pcs)
 
 	path = m_pcs->file_name_base;
 	int position = int(path.find_last_of("\\"));
-	string path_new;
+	std::string path_new;
 	path_new = path.substr(0,position);
 	//position = int(path_new.find_last_of("\\"));
 	//path_new = path_new.substr(0,position);
@@ -2390,15 +2390,15 @@ inline double Problem::RandomWalker()
 			// Select the mesh whose process name has the mesh for Fluid_Momentum
 			//			if( m_pcs->pcs_type_name.find("RICHARDS_FLOW")!=string::npos)
 			// TF
-			if( m_pcs->getProcessType () == RICHARDS_FLOW)
+			if( m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW)
 				m_msh = FEMGet("RICHARDS_FLOW");
 			//			else if( m_pcs->pcs_type_name.find("LIQUID_FLOW")!=string::npos)
 			// TF
-			else if( m_pcs->getProcessType () == LIQUID_FLOW)
+			else if( m_pcs->getProcessType () == FiniteElement::LIQUID_FLOW)
 				m_msh = FEMGet("LIQUID_FLOW");
 			//			else if( m_pcs->pcs_type_name.find("GROUNDWATER_FLOW")!=string::npos)
 			// TF
-			else if( m_pcs->getProcessType () == GROUNDWATER_FLOW)
+			else if( m_pcs->getProcessType () == FiniteElement::GROUNDWATER_FLOW)
 				m_msh = FEMGet("GROUNDWATER_FLOW");
 		}
 
@@ -2544,7 +2544,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
 	int j,k;
 	long i;
 	MeshLib::CElem* m_ele = NULL;
-	MeshLib::CNode* m_nod = NULL;
+// TF not used	MeshLib::CNode* m_nod = NULL;
 	int no_local_elements = m_pcs_global->m_msh->getNumberOfMeshLayers();
 	int no_local_nodes = no_local_elements + 1;
 	long g_element_number,g_node_number;
@@ -2601,7 +2601,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
 			m_ele = m_pcs_global->m_msh->ele_vector[j];
 			m_ele_local = new MeshLib::CElem(j,m_ele);
 			for(k = 0; k < 2; k++) // ele_type
-				m_ele_local->nodes_index[k] = j + k;
+				m_ele_local->getNodeIndices()[k] = j + k;
 			m_msh_local->ele_vector[j] = m_ele_local;
 		}
 		m_msh_local->nod_vector.resize(no_local_nodes);
@@ -2694,7 +2694,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
 		for(j = 0; j < no_local_nodes; j++)
 		{
 			g_node_number = j + (i * no_local_nodes);
-			m_nod = m_pcs_global->m_msh->nod_vector[g_node_number];
+// TF not used			m_nod = m_pcs_global->m_msh->nod_vector[g_node_number];
 			m_nod_local = m_msh_local->nod_vector[j];
 			//m_nod_local = m_nod;
 			m_nod_local->getConnectedElementIDs().push_back(i);

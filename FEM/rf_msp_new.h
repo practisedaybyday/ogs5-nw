@@ -131,8 +131,7 @@ private:
 	int thermal_conductivity_tensor_dim;
 	double thermal_conductivity_tensor[9];
 	std::string thermal_conductivity_tensor_type_name;
-	// Handles. May be used by GUI
-	std::string solid_name;
+
 	//-------------------------------------------------------------
 	// Numeric
 	double CalulateValue(const Matrix* data, const double x) const;
@@ -160,7 +159,6 @@ public:
 	//CMCD
 	FiniteElement::CFiniteElementStd* Fem_Ele_Std;
 	std::string name;
-	CRFProcess* m_pcs;                    //NW
 	// IO
 	std::string file_base_name;
 	// Output
@@ -210,12 +208,7 @@ public:
 	// Manipulators of data
 	//-------------------------------------------------------------
 	// 1. Elasticity
-#ifndef RFW_FRACTURE
 	void Calculate_Lame_Constant();
-#endif
-#ifdef RFW_FRACTURE
-	void  Calculate_Lame_Constant(CElem* elem);
-#endif
 	// For thermal elastic model
 	void ElasticConsitutive(const int Dimension, Matrix* D_e) const;
 	// For transverse isotropic linear elasticity: UJG 24.11.2009

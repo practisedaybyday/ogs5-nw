@@ -871,17 +871,17 @@ void CRFProcessDeformation::InitGauss(void)
 	for(j = 0; j < (long)ic_vector.size(); j++)
 	{
 		m_ic = ic_vector[j];
-		if (m_ic->getProcessPrimaryVariable() == STRESS_XX)
+		if (m_ic->getProcessPrimaryVariable() == FiniteElement::STRESS_XX)
 			stress_ic[0] = m_ic;
-		if (m_ic->getProcessPrimaryVariable() == STRESS_YY)
+		if (m_ic->getProcessPrimaryVariable() == FiniteElement::STRESS_YY)
 			stress_ic[1] = m_ic;
-		if (m_ic->getProcessPrimaryVariable() == STRESS_ZZ)
+		if (m_ic->getProcessPrimaryVariable() == FiniteElement::STRESS_ZZ)
 			stress_ic[2] = m_ic;
-		if (m_ic->getProcessPrimaryVariable() == STRESS_XY)
+		if (m_ic->getProcessPrimaryVariable() == FiniteElement::STRESS_XY)
 			stress_ic[3] = m_ic;
-		if (m_ic->getProcessPrimaryVariable() == STRESS_XZ)
+		if (m_ic->getProcessPrimaryVariable() == FiniteElement::STRESS_XZ)
 			stress_ic[4] = m_ic;
-		if (m_ic->getProcessPrimaryVariable() == STRESS_YZ)
+		if (m_ic->getProcessPrimaryVariable() == FiniteElement::STRESS_YZ)
 			stress_ic[5] = m_ic;
 	}
 	int ccounter = 0;
@@ -2699,7 +2699,7 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 	for (k = 0; k < SizeSt; k++)
 	{
 		m_st = st_vector[k];
-		if (m_st->getProcessPrimaryVariable () == EXCAVATION)
+		if (m_st->getProcessPrimaryVariable () == FiniteElement::EXCAVATION)
 		{
 			// ---- 16.01.2009 WW
 			exist = false;
@@ -2781,7 +2781,7 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 	{
 		// Get nodes on cave surface
 		m_st = st_vector[k];
-		if (m_st->getProcessPrimaryVariable () != EXCAVATION)
+		if (m_st->getProcessPrimaryVariable () != FiniteElement::EXCAVATION)
 			continue;
 		if (m_st->getGeoType () == GEOLIB::POLYLINE)
 		{

@@ -9,6 +9,8 @@
 #include <cstdlib>
 #include <iostream>
 
+namespace FiniteElement
+{
 ProcessType convertProcessType ( const std::string& pcs_type_string )
 {
 	if (pcs_type_string.compare ("LIQUID_FLOW") == 0)
@@ -122,6 +124,19 @@ bool isDeformationProcess (ProcessType pcs_type)
 	return false;
 }
 
+const std::list<std::string> getAllProcessNames()
+{
+	size_t count(1);
+	std::list<std::string> enum_names;
+
+	while (count != PROCESS_END)
+	{
+		enum_names.push_back( convertProcessTypeToString(static_cast<ProcessType>(count++)) );
+	}
+	return enum_names;
+}
+
+
 PrimaryVariable convertPrimaryVariable ( const std::string& pcs_pv_string )
 {
 	if (pcs_pv_string.compare ("PRESSURE1") == 0)
@@ -178,10 +193,23 @@ PrimaryVariable convertPrimaryVariable ( const std::string& pcs_pv_string )
 		return ACCELERATION_Z1;
 	if (pcs_pv_string.compare ("EXCAVATION") == 0)
 		return EXCAVATION;
+	if (pcs_pv_string.compare ("STRAIN_XX") == 0)
+		return STRAIN_XX;
+	if (pcs_pv_string.compare ("STRAIN_XY") == 0)
+		return STRAIN_XY;
+	if (pcs_pv_string.compare ("STRAIN_XZ") == 0)
+		return STRAIN_XZ;
+	if (pcs_pv_string.compare ("STRAIN_YY") == 0)
+		return STRAIN_YY;
+	if (pcs_pv_string.compare ("STRAIN_YZ") == 0)
+		return STRAIN_YZ;
+	if (pcs_pv_string.compare ("STRAIN_ZZ") == 0)
+		return STRAIN_ZZ;
+	if (pcs_pv_string.compare ("STRAIN_PLS") == 0)
+		return STRAIN_PLS;
 	else
 	{
-		std::cout << "convertPrimaryVariable #" << pcs_pv_string << "# not found" <<
-		std::endl;
+		std::cout << "convertPrimaryVariable #" << pcs_pv_string << "# not found" << std::endl;
 		exit (1);
 	}
 	return INVALID_PV;
@@ -235,13 +263,13 @@ std::string convertPrimaryVariableToString ( PrimaryVariable pcs_pv )
 		return "STRESS_YZ";
 	if (pcs_pv == STRESS_ZZ)
 		return "STRESS_ZZ";
-	//	if (pcs_pv == STRAIN_XX) return "STRAIN_XX";
-	//	if (pcs_pv == STRAIN_XY) return "STRAIN_XY";
-	//	if (pcs_pv == STRAIN_XZ) return "STRAIN_XZ";
-	//	if (pcs_pv == STRAIN_YY) return "STRAIN_YY";
-	//	if (pcs_pv == STRAIN_YZ) return "STRAIN_YZ";
-	//	if (pcs_pv == STRAIN_ZZ) return "STRAIN_ZZ";
-	//	if (pcs_pv == STRAIN_PLS) return "STRAIN_PLS";
+	if (pcs_pv == STRAIN_XX) return "STRAIN_XX";
+	if (pcs_pv == STRAIN_XY) return "STRAIN_XY";
+	if (pcs_pv == STRAIN_XZ) return "STRAIN_XZ";
+	if (pcs_pv == STRAIN_YY) return "STRAIN_YY";
+	if (pcs_pv == STRAIN_YZ) return "STRAIN_YZ";
+	if (pcs_pv == STRAIN_ZZ) return "STRAIN_ZZ";
+	if (pcs_pv == STRAIN_PLS) return "STRAIN_PLS";
 	if (pcs_pv == ACCELERATION_X1)
 		return "ACCELERATION_X1";
 	if (pcs_pv == ACCELERATION_Y1)
@@ -253,8 +281,18 @@ std::string convertPrimaryVariableToString ( PrimaryVariable pcs_pv )
 	return "INVALID_PRIMARY_VARIABLE";
 }
 
-namespace FiniteElement
+const std::list<std::string> getAllPrimaryVariableNames()
 {
+	size_t count(1);
+	std::list<std::string> enum_names;
+
+	while (count != PV_END)
+	{
+		enum_names.push_back( convertPrimaryVariableToString(static_cast<PrimaryVariable>(count++)) );
+	}
+	return enum_names;
+}
+
 DistributionType convertDisType(const std::string& dis_type_string)
 {
 	if (dis_type_string.compare("CONSTANT") == 0)
@@ -339,4 +377,17 @@ std::string convertDisTypeToString(DistributionType dis_type)
 
 	return "INVALID_DIS_TYPE";
 }
-}                                                 // end namespace FiniteElement
+
+const std::list<std::string> getAllDistributionNames()
+{
+	size_t count(1);
+	std::list<std::string> enum_names;
+
+	while (count != DIS_END)
+	{
+		enum_names.push_back( convertDisTypeToString(static_cast<DistributionType>(count++)) );
+	}
+	return enum_names;
+}
+
+} // end namespace FiniteElement

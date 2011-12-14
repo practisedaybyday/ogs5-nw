@@ -50,9 +50,9 @@ std::vector<CFluidProperties*>mfp_vector;
    Programing:
    08/2004 OK Implementation
 **************************************************************************/
-CFluidProperties::CFluidProperties(void)
+CFluidProperties::CFluidProperties() :
+	name ("WATER")
 {
-	name = "WATER";
 	phase = 0;
 	// Density
 	density_model = 1;
@@ -210,12 +210,13 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 			//WW new_subkeyword = false;
 			in.str(GetLineFromFile1(mfp_file));
 			in >> density_model;
-			if(density_model == 0) // rho = f(x)
+			// TF - _rho_fct_name is only used for writing it back to the file
+//			if(density_model == 0) // rho = f(x)
+//				in >> _rho_fct_name;
 
-				in >> rho_fct_name;
 			if(density_model == 1) // rho = const
-
 				in >> rho_0;
+
 			if(density_model == 2) // rho(p) = rho_0*(1+beta_p*(p-p_0))
 			{
 				in >> rho_0;
@@ -295,7 +296,6 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 					arg2 = "TEMPERATURE1";
 				}
 				else if (arg2.length() == 0) // if only PRESSURE argument is given
-
 					arg2 = "TEMPERATURE1";
 
 				density_pcs_name_vector.push_back(arg1);
@@ -323,9 +323,9 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 		{
 			in.str(GetLineFromFile1(mfp_file));
 			in >> viscosity_model;
-			if(viscosity_model == 0) // my = fct(x)
-
-				in >> my_fct_name;
+			// TF 11/2011 - used only in read- and write-method
+//			if(viscosity_model == 0) // my = fct(x)
+//				in >> _my_fct_name;
 			if(viscosity_model == 1) // my = const
 
 				in >> my_0;
@@ -387,9 +387,9 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 		{
 			in.str(GetLineFromFile1(mfp_file));
 			in >> heat_capacity_model;
-			if(heat_capacity_model == 0) // c = fct(x)
-
-				in >> heat_capacity_fct_name;
+			// TF 11/2011 - used only in read- and write-method
+//			if(heat_capacity_model == 0) // c = fct(x)
+//				in >> heat_capacity_fct_name;
 			if(heat_capacity_model == 1) // c = const
 			{
 				in >> specific_heat_capacity;
@@ -432,9 +432,9 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 		{
 			in.str(GetLineFromFile1(mfp_file));
 			in >> heat_conductivity_model;
-			if(heat_conductivity_model == 0) // my = fct(x)
-
-				in >> heat_conductivity_fct_name;
+			// TF 11/2011 - used only in read- and write-method
+//			if(heat_conductivity_model == 0) // my = fct(x)
+//				in >> heat_conductivity_fct_name;
 			if(heat_conductivity_model == 1) // my = const
 
 				in >> heat_conductivity;
@@ -469,9 +469,9 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 		{
 			in.str(GetLineFromFile1(mfp_file));
 			in >> diffusion_model;
-			if(diffusion_model == 0) // D = fct(x)
-
-				in >> dif_fct_name;
+			// TF 11/2011 - only read - not used
+//			if(diffusion_model == 0) // D = fct(x)
+//				in >> dif_fct_name;
 			if(diffusion_model == 1) // D = const //MX
 
 				in >> diffusion;
@@ -493,10 +493,10 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 			{
 				in.str(GetLineFromFile1(mfp_file));
 				in >> beta_T;
-				in >> critical_pressure;
-				in >> critical_temperature;
-				in >> acentric_factor;
-				in >> MOLAR_MASS_GAS;
+				in >> pc;
+				in >> Tc;
+				in >> omega;
+				in >> molar_mass;
 			}
 			in.clear();
 			continue;
@@ -544,7 +544,6 @@ bool MFPRead(std::string file_base_name)
 		if(line_string.find("#FLUID_PROPERTIES") != std::string::npos)
 		{
 			m_mfp = new CFluidProperties();
-			m_mfp->file_base_name = file_base_name;
 			position = m_mfp->Read(&mfp_file);
 			m_mfp->phase = (int)mfp_vector.size(); //OK4108
 			mfp_vector.push_back(m_mfp);
@@ -587,7 +586,7 @@ bool MFPRead(std::string file_base_name)
    11/2004 SB Implementation
    last modification:
 **************************************************************************/
-void CFluidProperties::Write(std::ofstream* mfp_file)
+void CFluidProperties::Write(std::ofstream* mfp_file) const
 {
 	//KEYWORD
 	*mfp_file << "#FLUID_PROPERTIES" << std::endl;
@@ -596,28 +595,32 @@ void CFluidProperties::Write(std::ofstream* mfp_file)
 	*mfp_file << " $DAT_TYPE" << std::endl;
 	*mfp_file << "  " << name << std::endl;
 	*mfp_file << " $DENSITY" << std::endl;
-	if(density_model == 0)
-		*mfp_file << "  " << density_model << " " << rho_fct_name << std::endl;
+	// TF 11/2011 - _rho_fct_name is used only here and in the read-method
+//	if(density_model == 0)
+//		*mfp_file << "  " << density_model << " " << _rho_fct_name << std::endl;
 	if(density_model == 1)
 		*mfp_file << "  " << density_model << " " << rho_0 << std::endl;
 	//todo
 	*mfp_file << " $VISCOSITY" << endl;
-	if(viscosity_model == 0)
-		*mfp_file << "  " << viscosity_model << " " << my_fct_name << std::endl;
+	// TF 11/2011 - used only in read- and write-method
+//	if(viscosity_model == 0)
+//		*mfp_file << "  " << viscosity_model << " " << _my_fct_name << std::endl;
 	if(viscosity_model == 1)
 		*mfp_file << "  " << viscosity_model << " " << my_0 << std::endl;
 	//todo
 	*mfp_file << " $SPECIFIC_HEAT_CAPACITY" << endl;
-	if(heat_capacity_model == 0)
-		*mfp_file << "  " << heat_capacity_model << " " << heat_capacity_fct_name <<
-		std::endl;
+	// TF 11/2011 - used only in read- and write-method
+//	if(heat_capacity_model == 0)
+//		*mfp_file << "  " << heat_capacity_model << " " << heat_capacity_fct_name <<
+//		std::endl;
 	if(heat_capacity_model == 1)
 		*mfp_file << "  " << heat_capacity_model << " " << specific_heat_capacity <<
 		std::endl;
 	*mfp_file << " $SPECIFIC_HEAT_CONDUCTIVITY" << endl;
-	if(heat_conductivity_model == 0)
-		*mfp_file << "  " << heat_conductivity_model << " " <<
-		heat_conductivity_fct_name << std::endl;
+	// TF 11/2011 - used only in read- and write-method
+//	if(heat_conductivity_model == 0)
+//		*mfp_file << "  " << heat_conductivity_model << " " <<
+//		heat_conductivity_fct_name << std::endl;
 	if(heat_conductivity_model == 1)
 		*mfp_file << "  " << heat_conductivity_model << " " << heat_conductivity <<
 		std::endl;
@@ -811,7 +814,7 @@ double CFluidProperties::Density(double* variables)
 			                             variables[1] ) * variables[1] * GAS_CONSTANT);
 			break;
 		case 15:
-			density = variables[0] * MOLAR_MASS_GAS /
+			density = variables[0] * molar_mass/
 			          (CalCopressibility_PTC(variables[0],
 			                                 variables[1]) * GAS_CONSTANT *
 			           variables[1]);
@@ -908,7 +911,7 @@ double CFluidProperties::Density(double* variables)
 			                             variables[1] ) * variables[1] * GAS_CONSTANT);
 			break;
 		case 15:
-			density = variables[0] * MOLAR_MASS_GAS /
+			density = variables[0] * molar_mass /
 			          (CalCopressibility_PTC(variables[0],
 			                                 variables[1]) * GAS_CONSTANT *
 			           variables[1]);
@@ -1866,7 +1869,7 @@ double MFPCalcFluidsHeatConductivity(long index,double* gp,double theta, CFinite
 	{
 		m_pcs = pcs_vector[i];
 		//    if(m_pcs->pcs_type_name.find("RICHARDS_FLOW"))
-		if(m_pcs->getProcessType () == RICHARDS_FLOW)
+		if(m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW)
 			no_fluids = 1;
 	}
 	//YD-----------
@@ -3258,21 +3261,19 @@ double CFluidProperties::CalCopressibility_PTC(double p,double T)
 	std::vector<double> roots;
 	double a, a0, b, A, B, R = 8314.41;
 	double z1, z2, z3, h;
-	double Tc = critical_temperature;
-	double Pc = critical_pressure;
 	a0 =
 	        (1 +
-	         (0.37464 + 1.54226 * acentric_factor - 0.2699 * acentric_factor *
-	      acentric_factor) * (1 - sqrt(T / Tc)));
-	a = 0.45724 * R * R * Tc * Tc * a0 * a0 / Pc;
-	b = 0.07780 * R * Tc / Pc;
+	         (0.37464 + 1.54226 * omega - 0.2699 * omega *
+	      omega) * (1 - sqrt(T / Tc)));
+	a = 0.45724 * R * R * Tc * Tc * a0 * a0 / pc;
+	b = 0.07780 * R * Tc / pc;
 	A = a * p / (R * R * T * T);
 	B = b * p / (R * T);
 	z1 = -(1 - B);
 	z2 = (A - 3 * (B * B) - 2 * B);
 	z3 = -(A * B - (B * B) - MathLib::fastpow(B,3));
 	NsPol3(z1,z2,z3,&roots);
-	if(p > Pc && T < Tc)
+	if(p > pc && T < Tc)
 		h = FindMin(roots);
 	else
 		h = FindMax(roots);
@@ -3288,13 +3289,11 @@ double CFluidProperties::CaldZdP(double p,double T)
 {
 	std::vector<double> roots;
 	double a, a0, b, A, dA, B, dB, X, Y, R = 8314.41, z, dZdP;
-	double Tc = critical_temperature;
-	double Pc = critical_pressure;
-	a0 = 0.37464 + 1.54226 * acentric_factor - 0.2699 * acentric_factor * acentric_factor;
+	a0 = 0.37464 + 1.54226 * omega - 0.2699 * omega * omega;
 	a =
 	        (0.45724 * R * R * Tc * Tc /
-	         Pc) * ((1 + a0 * (1 - sqrt(T / Tc))) * (1 + a0 * (1 - sqrt(T / Tc))));
-	b = 0.07780 * R * Tc / Pc;
+	         pc) * ((1 + a0 * (1 - sqrt(T / Tc))) * (1 + a0 * (1 - sqrt(T / Tc))));
+	b = 0.07780 * R * Tc / pc;
 	A = a * p / (R * R * T * T);
 	B = b * p / (R * T);
 	dA = a / (R * R * T * T);
@@ -3316,16 +3315,14 @@ double CFluidProperties::CaldZdT(double p,double T)
 {
 	std::vector<double> roots;
 	double a, a0,daa, b, A, dA, B, dB, X, Y, R = 8314.41, z, dZdT;
-	double Tc = critical_temperature;
-	double Pc = critical_pressure;
-	a0 = 0.37464 + 1.54226 * acentric_factor - 0.2699 * acentric_factor * acentric_factor;
+	a0 = 0.37464 + 1.54226 * omega - 0.2699 * omega * omega;
 	a =
 	        (0.45724 * R * R * Tc * Tc /
-	         Pc) * ((1 + a0 * (1 - sqrt(T / Tc))) * (1 + a0 * (1 - sqrt(T / Tc))));
+	         pc) * ((1 + a0 * (1 - sqrt(T / Tc))) * (1 + a0 * (1 - sqrt(T / Tc))));
 	daa =
 	        (0.45724 * R * R * Tc * Tc /
-	         Pc) * (1 + a0 * (1 - sqrt(T / Tc))) * (-0.5 / sqrt(Tc * T));
-	b = 0.07780 * R * Tc / Pc;
+	         pc) * (1 + a0 * (1 - sqrt(T / Tc))) * (-0.5 / sqrt(Tc * T));
+	b = 0.07780 * R * Tc / pc;
 	A = a * p / (R * R * T * T);
 	B = b * p / (R * T);
 	dA = -(2 * p * a / (R * R * T * T * T)) + (p * daa / (R * R * T * T));

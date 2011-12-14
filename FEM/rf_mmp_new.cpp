@@ -28,9 +28,6 @@ extern double gravity_constant;
 // this
 #include "rf_mmp_new.h"
 //#include "rf_react.h"
-#ifdef RFW_FRACTURE
-#include "fem_ele.h"
-#endif
 #include "gs_project.h"
 // Gauss point veclocity
 #include "fem_ele_std.h"
@@ -68,21 +65,19 @@ using FiniteElement::ElementValue_DM;
    02/2004 OK Implementation
    last modification:
 **************************************************************************/
-CMediumProperties::CMediumProperties(void)
+CMediumProperties::CMediumProperties() :
+	geo_dimension(0), _mesh (NULL), _geo_type (GEOLIB::GEODOMAIN)
 {
 	name = "DEFAULT";
 	mode = 0;
 	selected = false;
 	m_pcs = NULL;                         //OK
 	// GEO
-	geo_dimension = 0;
 	geo_area = 1.0;                       //OK
 	porosity_model = -1;
 	porosity_model_values[0] = 0.1;
 	tortuosity_model = -1;
 	tortuosity_model_values[0] = 1.;
-	// MSH
-	m_msh = NULL;                         //OK
 	// flow
 	storage_model = -1;
 	storage_model_values[0] = 0.;
@@ -112,7 +107,7 @@ CMediumProperties::CMediumProperties(void)
 	mass_dispersion_longitudinal = 0.0;
 	heat_diffusion_model = -1;            //WW
 	geo_area = 1.0;
-	geo_type_name = "DOMAIN";             //OK
+//	geo_type_name = "DOMAIN";             //OK
 	                                      //WW
 	saturation_max[0] = saturation_max[1] = saturation_max[2] = 1.0;
 	//WW
@@ -127,10 +122,6 @@ CMediumProperties::CMediumProperties(void)
 
 	permeability_pressure_model = -1; //01.09.2011. WW
 	permeability_strain_model = -1; //01.09.2011. WW
-#ifdef RFW_FRACTURE
-	frac_num = 0;
-	fracs_set = 0;
-#endif
 }
 
 /**************************************************************************
@@ -320,24 +311,6 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		//subkeyword found
 		if(line_string.find("$GEO_TYPE") != std::string::npos)
 		{
-			/*
-			      in.str(GetLineFromFile1(mmp_file));
-			      in >> geo_type_name;
-			      in.clear();
-			      if(geo_type_name.compare("DOMAIN")==0)
-			        continue;
-			      while(!(geo_name.find("$")!=string::npos)&&(!(geo_name.find("#")!=string::npos)))
-			      {
-			        position = mmp_file->tellg();
-			        in.str(GetLineFromFile1(mmp_file));
-			        in >> geo_name;
-			   in.clear();
-			   if(!(geo_name.find("$")!=string::npos))
-			   geo_name_vector.push_back(geo_name);
-			   }
-			   mmp_file->seekg(position,ios::beg);
-			   continue;
-			 */
 			while(!(m_string.find("$") != std::string::npos) &&
 			      (!(m_string.find("#") != std::string::npos)))
 			{
@@ -348,7 +321,8 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 				if(!(m_string.find("$") != std::string::npos) &&
 				   (!(m_string.find("#") != std::string::npos)))
 				{
-					geo_type_name = m_string;
+//					geo_type_name = m_string;
+					_geo_type = GEOLIB::convertGeoType (m_string);
 					geo_name_vector.push_back(geo_name);
 				}
 			}
@@ -906,10 +880,6 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		//subkeyword found
 		if(line_string.find("$PERMEABILITY_FUNCTION_DEFORMATION") != std::string::npos)
 		{
-#ifdef RFW_FRACTURE
-			relative_permeability_function.push_back(
-			        "PERMEABILITY_FUNCTION_DEFORMATION");
-#endif
 			in.str(GetLineFromFile1(mmp_file));
 			in >> permeability_model;
 			switch(permeability_model)
@@ -964,9 +934,6 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		//subkeyword found
 		if(line_string.find("$PERMEABILITY_FUNCTION_PRESSURE") != std::string::npos)
 		{
-#ifdef RFW_FRACTURE
-			relative_permeability_function.push_back("PERMEABILITY_FUNCTION_PRESSURE");
-#endif
 			in.str(GetLineFromFile1(mmp_file));
 			in >> permeability_pressure_model;
 			switch(permeability_pressure_model)
@@ -1054,9 +1021,6 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		//subkeyword found
 		if(line_string.find("$PERMEABILITY_SATURATION") != std::string::npos)
 		{
-#ifdef RFW_FRACTURE
-			relative_permeability_function.push_back("PERMEABILITY_SATURATION");
-#endif
 			int no_fluid_phases = (int)mfp_vector.size();
 			for(i = 0; i < no_fluid_phases; i++)
 			{
@@ -1164,9 +1128,6 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		//subkeyword found
 		if(line_string.find("$PERMEABILITY_FUNCTION_STRESS") != std::string::npos)
 		{
-#ifdef RFW_FRACTURE
-			relative_permeability_function.push_back("PERMEABILITY_FUNCTION_STRESS");
-#endif
 			in.str(GetLineFromFile1(mmp_file));
 			in >> permeability_stress_mode;
 			switch(permeability_stress_mode)
@@ -1308,9 +1269,6 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		if(line_string.find("$PERMEABILITY_FUNCTION_VELOCITY") != std::string::npos)
 		{
 			//WW   if(line_string.find("$PERMEABILITY_FUNCTION_STRESS")!=string::npos) { //subkeyword found
-#ifdef RFW_FRACTURE
-			relative_permeability_function.push_back("PERMEABILITY_FUNCTION_STRESS");
-#endif
 			in.str(GetLineFromFile1(mmp_file));
 			in >> permeability_model;
 			switch(permeability_model)
@@ -1335,9 +1293,6 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		//subkeyword found
 		if(line_string.find("$PERMEABILITY_FUNCTION_POROSITY") != std::string::npos)
 		{
-#ifdef RFW_FRACTURE
-			relative_permeability_function.push_back("PERMEABILITY_FUNCTION_POROSITY");
-#endif
 			in.str(GetLineFromFile1(mmp_file));
 			in >> permeability_porosity_model;
 			switch(permeability_porosity_model)
@@ -1407,22 +1362,6 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 			in.clear();
 			continue;
 		}
-
-#ifdef RFW_FRACTURE
-		//------------------------------------------------------------------------
-		//12.7 PERMEABILITY_FRAC_APERTURE
-		//------------------------------------------------------------------------
-
-		//subkeyword found
-		if(line_string.find("$PERMEABILITY_FRAC_APERTURE") != string::npos)
-		{
-			relative_permeability_function.push_back("PERMEABILITY_FRAC_APERTURE");
-			in.str(GetLineFromFile1(mmp_file));
-			in >> frac_perm_average_type >> roughness;
-			in.clear();
-			continue;
-		}
-#endif
 
 		//....................................................................
 		//subkeyword found
@@ -1690,34 +1629,6 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 			in.clear();
 			continue;
 		}
-
-		//------------------------------------------------------------------------
-#ifdef RFW_FRACTURE
-		//------------------------------------------------------------------------
-		//FRACTURE DATA, namely how many fractures, what are their names? RFW 11/2005
-		//------------------------------------------------------------------------
-		//subkeyword found
-		if(line_string.find("$FRACTURE_DATA") != std::string::npos)
-		{
-			in.str(GetLineFromFile1(mmp_file));
-			in >> frac_num;
-			frac_names.clear();
-			for(long i = 0; i != frac_num; ++i)
-			{
-				string read_frac;
-				in >> read_frac;
-
-				frac_names.push_back(read_frac);
-			}
-			frac_perm.resize(frac_names.size());
-			avg_aperture.resize(frac_names.size());
-			closed_fraction.resize(frac_names.size());
-			in.clear();
-
-			continue;
-		}
-		//-------------------------------------------------------------------------
-#endif
 	}
 	return position;
 }
@@ -1785,7 +1696,8 @@ void CMediumProperties::Write(std::fstream* mmp_file)
 	}
 	//--------------------------------------------------------------------
 	//GEO_TYPE
-	if(geo_type_name.compare("DOMAIN") == 0) //OK
+//	if(geo_type_name.compare("DOMAIN") == 0) //OK
+	if(_geo_type == GEOLIB::GEODOMAIN) // OK / TF
 	{
 		*mmp_file << " $GEO_TYPE" << endl;
 		*mmp_file << "  DOMAIN" << endl;
@@ -1796,7 +1708,8 @@ void CMediumProperties::Write(std::fstream* mmp_file)
 		for(int i = 0; i < (int)geo_name_vector.size(); i++)
 		{
 			*mmp_file << "  ";
-			*mmp_file << geo_type_name;
+//			*mmp_file << geo_type_name;
+			*mmp_file << GEOLIB::convertGeoTypeToString(_geo_type);
 			*mmp_file << " ";
 			*mmp_file << geo_name_vector[i] << endl;
 		}
@@ -1998,7 +1911,6 @@ void MMPWriteTecplot(std::string msh_name)
 **************************************************************************/
 void CMediumProperties::WriteTecplot(std::string msh_name)
 {
-	long i,j;
 	std::string element_type;
 	//----------------------------------------------------------------------
 	// GSP
@@ -2014,93 +1926,92 @@ void CMediumProperties::WriteTecplot(std::string msh_name)
 	mat_file.precision(12);
 	//--------------------------------------------------------------------
 	// MSH
-	CFEMesh* m_msh = NULL;
 	MeshLib::CElem* m_ele = NULL;
-	m_msh = FEMGet(msh_name);
-	if(!m_msh)
+	_mesh = FEMGet(msh_name);
+	if(!_mesh)
 		return;
 	//--------------------------------------------------------------------
 	if (!mat_file.good())
 		return;
 	mat_file.seekg(0L,std::ios::beg);
 	//--------------------------------------------------------------------
-	j = 0;
-	for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+	long j = 0;
+	for(size_t i = 0; i < _mesh->ele_vector.size(); i++)
 	{
-		m_ele = m_msh->ele_vector[i];
+		m_ele = _mesh->ele_vector[i];
 		if(m_ele->GetPatchIndex() == number)
 			j++;
 	}
 	long no_elements = j - 1;
 	//--------------------------------------------------------------------
 	mat_file << "VARIABLES = X,Y,Z,MAT" << std::endl;
-	long no_nodes = (long)m_msh->nod_vector.size();
+	const size_t no_nodes (_mesh->nod_vector.size());
 	mat_file << "ZONE T = " << name << ", " \
 	         << "N = " << no_nodes << ", " \
 	         << "E = " << no_elements << ", " \
 	         << "F = FEPOINT" << ", " << "ET = BRICK" << std::endl;
-	for(i = 0; i < no_nodes; i++)
+	for(size_t i = 0; i < no_nodes; i++)
 	{
-		double const* const pnt (m_msh->nod_vector[i]->getData());
+		double const* const pnt (_mesh->nod_vector[i]->getData());
 		mat_file << pnt[0] << " " << pnt[1] << " " << pnt[2] << " " << number << std::endl;
 	}
 	j = 0;
-	for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+	for(size_t i = 0; i < _mesh->ele_vector.size(); i++)
 	{
-		m_ele = m_msh->ele_vector[i];
+		m_ele = _mesh->ele_vector[i];
 		if(m_ele->GetPatchIndex() == number)
 		{
 			switch(m_ele->GetElementType())
 			{
 			case MshElemType::LINE:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[1] + 1 << " " << m_ele->nodes_index[0] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[1] + 1 << " " << m_ele->getNodeIndices()[0] +
 				1 << std::endl;
 				j++;
 				element_type = "ET = QUADRILATERAL";
 				break;
 			case MshElemType::QUAD:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << " " << m_ele->nodes_index[3] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << " " << m_ele->getNodeIndices()[3] +
 				1 << std::endl;
 				j++;
 				element_type = "ET = QUADRILATERAL";
 				break;
 			case MshElemType::HEXAHEDRON:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << " " << m_ele->nodes_index[3] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << " " << m_ele->getNodeIndices()[3] +
 				1 << " " \
-				<< m_ele->nodes_index[4] + 1 << " " << m_ele->nodes_index[5] + 1 <<
-				" " << m_ele->nodes_index[6] + 1 << " " << m_ele->nodes_index[7] +
+				<< m_ele->getNodeIndices()[4] + 1 << " " << m_ele->getNodeIndices()[5] + 1 <<
+				" " << m_ele->getNodeIndices()[6] + 1 << " " << m_ele->getNodeIndices()[7] +
 				1 << std::endl;
 				j++;
 				element_type = "ET = BRICK";
 				break;
 			case MshElemType::TRIANGLE:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << endl;
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << endl;
 				j++;
 				element_type = "ET = TRIANGLE";
 				break;
 			case MshElemType::TETRAHEDRON:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[1] + 1 <<
-				" " << m_ele->nodes_index[2] + 1 << " " << m_ele->nodes_index[3] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[1] + 1 <<
+				" " << m_ele->getNodeIndices()[2] + 1 << " " << m_ele->getNodeIndices()[3] +
 				1 << std::endl;
 				j++;
 				element_type = "ET = TETRAHEDRON";
 				break;
 			case MshElemType::PRISM:
 				mat_file \
-				<< m_ele->nodes_index[0] + 1 << " " << m_ele->nodes_index[0] + 1 <<
-				" " << m_ele->nodes_index[1] + 1 << " " << m_ele->nodes_index[2] +
+				<< m_ele->getNodeIndices()[0] + 1 << " " << m_ele->getNodeIndices()[0] + 1 <<
+				" " << m_ele->getNodeIndices()[1] + 1 << " " << m_ele->getNodeIndices()[2] +
 				1 << " " \
-				<< m_ele->nodes_index[3] + 1 << " " << m_ele->nodes_index[3] + 1 <<
-				" " << m_ele->nodes_index[4] + 1 << " " << m_ele->nodes_index[5] +
+				<< m_ele->getNodeIndices()[3] + 1 << " " << m_ele->getNodeIndices()[3] + 1 <<
+				" " << m_ele->getNodeIndices()[4] + 1 << " " << m_ele->getNodeIndices()[5] +
 				1 << std::endl;
 				j++;
 				element_type = "ET = BRICK";
@@ -2195,14 +2106,13 @@ double CMediumProperties::PermeabilitySaturationFunction(long number,double* gp,
 		return 1.0;
 	}
 	//  if(!(m_pcs->pcs_type_name.compare("RICHARDS_FLOW")==0)&&no_fluid_phases!=2) TF
-	if(!(m_pcs->getProcessType () == RICHARDS_FLOW) && no_fluid_phases != 2)
+	if(!(m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW) && no_fluid_phases != 2)
 		return 1.0;
 	// static int nidx0,nidx1;
 	double saturation = 0.0,saturation_eff; //OK411
 	int gueltig;
 	//---------------------------------------------------------------------
 	if(mode == 2)                         // Given value
-
 		saturation = argument;
 	else
 	{
@@ -2404,7 +2314,7 @@ double CMediumProperties::PermeabilitySaturationFunction(const double Saturation
 		return 1.0;
 	}
 	//  if(!(m_pcs->pcs_type_name.find("RICHARDS")!=string::npos) && no_fluid_phases!=2) TF
-	if(!(m_pcs->getProcessType () == RICHARDS_FLOW) && no_fluid_phases != 2)
+	if(!(m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW) && no_fluid_phases != 2)
 		return 1.0;
 	double saturation, saturation_eff;
 	int gueltig;
@@ -2962,7 +2872,7 @@ double* CMediumProperties::HeatDispersionTensorNew(int ip)
 	}
 	else
 		fluid_density = m_mfp->Density();
-	heat_capacity_fluids = m_mfp->specific_heat_capacity;
+	heat_capacity_fluids = m_mfp->getSpecificHeatCapacity();
 
 	//Global Velocity
 	double velocity[3] = {0.,0.,0.};
@@ -3893,7 +3803,7 @@ double CMediumProperties::Porosity(long number,double theta)
 		break;
 	case 11:                              // n = temp const, but spatially distributed CB
 		//porosity = porosity_model_values[0];
-		porosity = m_msh->ele_vector[number]->mat_vector(por_index);
+		porosity = _mesh->ele_vector[number]->mat_vector(por_index);
 		break;
 	case 12:                              // n = n0 + vol_strain, WX: 03.2011
 		porosity = PorosityVolStrain(number, porosity_model_values[0], assem);
@@ -3928,8 +3838,8 @@ double CMediumProperties::Porosity(long number,double theta)
 				pcs_temp = pcs_vector[i];
 				//	            if ( pcs_temp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0 ||
 				//                     pcs_temp->pcs_type_name.compare("LIQUID_FLOW") == 0         ) {
-				if ( pcs_temp->getProcessType() == GROUNDWATER_FLOW
-				     || pcs_temp->getProcessType() == LIQUID_FLOW)
+				if ( pcs_temp->getProcessType() == FiniteElement::GROUNDWATER_FLOW
+				     || pcs_temp->getProcessType() == FiniteElement::LIQUID_FLOW)
 				{
 					int idx;
 					idx = pcs_temp->GetElementValueIndex ( "POROSITY" );
@@ -4073,10 +3983,10 @@ double CMediumProperties::Porosity(CElement* assem)
 		{
 			pcs_temp = pcs_vector[i];
 			//			if ((pcs_temp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0) || (pcs_temp->pcs_type_name.compare("RICHARDS_FLOW") == 0)||(pcs_temp->pcs_type_name.compare("MULTI_PHASE_FLOW") == 0))
-			if ( (pcs_temp->getProcessType() == GROUNDWATER_FLOW)
-			     || (pcs_temp->getProcessType() == RICHARDS_FLOW)
+			if ( (pcs_temp->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
+			     || (pcs_temp->getProcessType() == FiniteElement::RICHARDS_FLOW)
 			     // TF
-			     || (pcs_temp->getProcessType() == MULTI_PHASE_FLOW) )
+			     || (pcs_temp->getProcessType() == FiniteElement::MULTI_PHASE_FLOW) )
 			{
 				int idx = pcs_temp->GetElementValueIndex ( "POROSITY" );
 				porosity = pcs_temp->GetElementValue(number, idx);
@@ -4282,7 +4192,7 @@ double* CMediumProperties::PermeabilityTensor(long index)
 					break;
 			// end of getting the index---------------------------------------------------------
 
-			tensor[0] = m_msh->ele_vector[index]->mat_vector(perm_index);
+			tensor[0] = _mesh->ele_vector[index]->mat_vector(perm_index);
 			//CMCD
 			//01.09.2011 WW.  int edx = m_pcs->GetElementValueIndex("PERMEABILITY");
 			//CMCD
@@ -4351,21 +4261,20 @@ double* CMediumProperties::PermeabilityTensor(long index)
 			// if first time step, do nothing. otherwise,
 			if ( aktueller_zeitschritt > 1 )
 			{
+				CRFProcess* pcs_tmp(NULL);
 				for (size_t i = 0; i < pcs_vector.size(); i++)
 				{
-					m_pcs_tmp = pcs_vector[i];
-					//	                if ( m_pcs_tmp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0 ||
-					//                                   m_pcs_tmp->pcs_type_name.compare("LIQUID_FLOW") == 0)
-					if ( m_pcs_tmp->getProcessType () == GROUNDWATER_FLOW ||
-					     m_pcs_tmp->getProcessType () == LIQUID_FLOW)
+					pcs_tmp = pcs_vector[i];
+					if ( pcs_tmp->getProcessType () == FiniteElement::GROUNDWATER_FLOW ||
+					     pcs_tmp->getProcessType () == FiniteElement::LIQUID_FLOW)
 						break;
 				}
 				// get index
-				idx_k = m_pcs_tmp->GetElementValueIndex("PERMEABILITY");
-				idx_n = m_pcs_tmp->GetElementValueIndex("POROSITY");
+				idx_k = pcs_tmp->GetElementValueIndex("PERMEABILITY");
+				idx_n = pcs_tmp->GetElementValueIndex("POROSITY");
 
 				// get values of n.
-				n_new = m_pcs_tmp->GetElementValue( index, idx_n + 1 );
+				n_new = pcs_tmp->GetElementValue( index, idx_n + 1 );
 
 				// calculate new permeability
 				// k_rel(n) = n_rel^{19/6}
@@ -4387,21 +4296,22 @@ double* CMediumProperties::PermeabilityTensor(long index)
 			// if first time step, do nothing. otherwise,
 			if ( aktueller_zeitschritt > 1 )
 			{
+				CRFProcess* pcs_tmp(NULL);
 				for (size_t i = 0; i < pcs_vector.size(); i++)
 				{
-					m_pcs_tmp = pcs_vector[i];
+					pcs_tmp = pcs_vector[i];
 					//	                if ( m_pcs_tmp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0 ||
 					//                                   m_pcs_tmp->pcs_type_name.compare("LIQUID_FLOW") == 0) TF
-					if ( m_pcs_tmp->getProcessType () == GROUNDWATER_FLOW ||
-					     m_pcs_tmp->getProcessType () == LIQUID_FLOW)
+					if ( pcs_tmp->getProcessType () == FiniteElement::GROUNDWATER_FLOW ||
+					     pcs_tmp->getProcessType () == FiniteElement::LIQUID_FLOW)
 						break;
 				}
 				// get index
-				idx_k = m_pcs_tmp->GetElementValueIndex("PERMEABILITY");
-				idx_n = m_pcs_tmp->GetElementValueIndex("POROSITY");
+				idx_k = pcs_tmp->GetElementValueIndex("PERMEABILITY");
+				idx_n = pcs_tmp->GetElementValueIndex("POROSITY");
 
 				// get values of n.
-				n_new = m_pcs_tmp->GetElementValue( index, idx_n + 1 );
+				n_new = pcs_tmp->GetElementValue( index, idx_n + 1 );
 
 				// calculate new permeability
 				// k_rel(n) = n_rel^{19/6}
@@ -4409,20 +4319,10 @@ double* CMediumProperties::PermeabilityTensor(long index)
 				n_rel = n_new / permeability_porosity_model_values[0];
 
 				// then relative permeability change
-				const double temp (
-				        ( n_rel -
-				          permeability_porosity_model_values[0] ) /
-				        (1 - permeability_porosity_model_values[0]));
-				k_rel = permeability_porosity_model_values[2] * \
-				        MathLib::fastpow(
-				        ( n_rel -
-				          permeability_porosity_model_values[0] )
-				        /
-				        (1 -
-				         permeability_porosity_model_values[0]),
-				        3) \
-				        + ( 1 -
-				            permeability_porosity_model_values[2] ) * temp * temp;
+				const double temp (( n_rel - permeability_porosity_model_values[0] ) / (1 - permeability_porosity_model_values[0]));
+				k_rel = permeability_porosity_model_values[2] *
+					MathLib::fastpow((n_rel - permeability_porosity_model_values[0] ) / (1 - permeability_porosity_model_values[0]),3)
+					+ ( 1 - permeability_porosity_model_values[2] ) * temp * temp;
 				// finially permeability
 				k_new = k_rel * permeability_porosity_model_values[1];
 				// save new permeability
@@ -4436,21 +4336,22 @@ double* CMediumProperties::PermeabilityTensor(long index)
 			// if first time step, do nothing. otherwise,
 			if ( aktueller_zeitschritt > 1 )
 			{
+				CRFProcess* pcs_tmp(NULL);
 				for (size_t i = 0; i < pcs_vector.size(); i++)
 				{
-					m_pcs_tmp = pcs_vector[i];
+					pcs_tmp = pcs_vector[i];
 					//	                if ( m_pcs_tmp->pcs_type_name.compare("GROUNDWATER_FLOW") == 0 ||
 					//	                                m_pcs_tmp->pcs_type_name.compare("LIQUID_FLOW") == 0) TF
-					if ( m_pcs_tmp->getProcessType() == GROUNDWATER_FLOW ||
-					     m_pcs_tmp->getProcessType () == LIQUID_FLOW)
+					if ( pcs_tmp->getProcessType() == FiniteElement::GROUNDWATER_FLOW ||
+							pcs_tmp->getProcessType () == FiniteElement::LIQUID_FLOW)
 						break;
 				}
 				// get index
-				idx_k = m_pcs_tmp->GetElementValueIndex("PERMEABILITY");
-				idx_n = m_pcs_tmp->GetElementValueIndex("POROSITY");
+				idx_k = pcs_tmp->GetElementValueIndex("PERMEABILITY");
+				idx_n = pcs_tmp->GetElementValueIndex("POROSITY");
 
 				// get values of n.
-				n_new = m_pcs_tmp->GetElementValue( index, idx_n + 1 );
+				n_new = pcs_tmp->GetElementValue( index, idx_n + 1 );
 
 				// calculate new permeability
 				// k_rel(n) = n_rel^{19/6}
@@ -4562,40 +4463,9 @@ double* CMediumProperties::PermeabilityTensor(long index)
 		}
 		break;
 	}
-#ifdef RFW_FRACTURE
-	double Krel = RelativePermeability(index); // rfw cmcd
-
-	for (int i = 0; i < geo_dimension * geo_dimension; i++)
-		tensor[i] *= Krel;
-#endif
 	return tensor;
 }
 
-#ifdef RFW_FRACTURE
-//rfw cmcd
-double CMediumProperties::RelativePermeability (long index)
-{
-	double Krel = 1.0;
-	string name;
-	int size = (int)relative_permeability_function.size();
-	for(int i = 0; i < size; ++i)
-	{
-		string name = relative_permeability_function[i];
-		//if (name == "PERMEABILITY_FUNCTION_DEFORMATION") Krel *= Call to function not yet in existence;
-		//if (name == "PERMEABILITY_FUNCTION_PRESSURE") Krel *= PermeabilityPressureFunction(index,double *gp,double theta);
-		//NOTE: the function PermeabilitySaturationFunction is overloaded, this must be dealt with somehow
-		//if (name == "PERMEABILITY_SATURATION") Krel *= PermeabilitySaturationFunction(long number,double*gp,double theta, int phase);
-		//if (name == "PERMEABILITY_FUNCTION_STRESS") Krel *= Call to function not yet in existence;
-		//if (name == "PERMEABILITY_FUNCTION_VELOCITY") Krel *= Call to function not yet in existence;
-		//if (name == "PERMEABILITY_FUNCTION_POROSITY") Krel *= PermeabilityPorosityFunction(index,double *gp,double theta);
-#ifdef RFW_FRACTURE
-		if (name == "PERMEABILITY_FRAC_APERTURE")
-			Krel *= PermeabilityFracAperture(index);
-#endif
-	}
-	return Krel;
-}
-#endif
 //------------------------------------------------------------------------
 //12.(i) PERMEABILITY_FUNCTION_DEFORMATION
 //------------------------------------------------------------------------
@@ -4612,13 +4482,10 @@ double CMediumProperties::PermeabilityFunctionPressure(long index, double PG2)
 	switch(permeability_pressure_model)
 	{
 	case 10: //WX: case 10, factor directly calculated from curve. 05.2010
-		if (m_pcs->getProcessType() == MULTI_PHASE_FLOW)
+		if (m_pcs->getProcessType() == FiniteElement::MULTI_PHASE_FLOW)
 			//WX: now it's only works for Multi_Phase_Flow. 05.2010
-			fac_perm_pressure = GetCurveValue(
-			        (int)permeability_pressure_model_values[0],
-			        0,
-			        PG2,
-			        &gueltig);
+			fac_perm_pressure = GetCurveValue((int) permeability_pressure_model_values[0], 0, PG2,
+						&gueltig);
 		//WX: PG2 = gas pressue. 11.05.2010
 		break;
 	default:
@@ -4668,7 +4535,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 		{
 			for (int i = 0; i < nnodes; i++)
 				strain_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-				        h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i],
+				        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
 				        idx_temp[j]);
 			strain_temp[j] = h_fem->interpolate(strain_nodes);
 		}
@@ -4693,7 +4560,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 		idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
 		for(int i = 0; i < nnodes; i++)
 			strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-			        h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i],
+			        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
 			        idStrainP);
 		strainp = h_fem->interpolate(strainp_nodes);
 		fac_perm_strain = GetCurveValue(permeability_strain_model_value[0],
@@ -4712,7 +4579,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 		idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
 		for(int i = 0; i < nnodes; i++)
 			strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-			        h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i],
+			        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
 			        idStrainP);
 		strainp = h_fem->interpolate(strainp_nodes);
 		if(strainp > 0)
@@ -4741,7 +4608,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 				for (int i = 0; i < nnodes; i++)
 					strain_nodes[i] = h_fem->dm_pcs->GetNodeValue(
 					        h_fem->dm_pcs->m_msh->ele_vector[index]->
-					        nodes_index
+					        getNodeIndices()
 					        [i],
 					        idx_temp[j]);
 				strain_temp[j] = h_fem->interpolate(strain_nodes);
@@ -4768,7 +4635,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 		idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
 		for(int i = 0; i < nnodes; i++)
 			strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-			        h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i],
+			        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
 			        idStrainP);
 		strainp = h_fem->interpolate(strainp_nodes);
 		if(strainp > 0.)
@@ -4799,7 +4666,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 		{
 			for (int i = 0; i < nnodes; i++)
 				strain_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-				        h_fem->dm_pcs->m_msh->ele_vector[index]->nodes_index[i],
+				        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
 				        idx_temp[j]);
 			strain_temp[j] = h_fem->interpolate(strain_nodes);
 		}
@@ -4831,790 +4698,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 
 //---------------------------------------------------------------------------------
 //12.(vii) PERMEABILITY_FUNCTION_FRAC_APERTURE
-//RFW 07/2005
 //---------------------------------------------------------------------------------
-#ifdef RFW_FRACTURE
-double CMediumProperties::PermeabilityFracAperture(long index)
-{
-	MeshLib::CElem* elem = NULL;
-	MeshLib::CElem* elem2 = NULL;
-	CFEMesh* m_msh = NULL;
-	CSolidProperties* mat_pointer;
-	CMediumProperties* m_mmp = NULL;
-	double ApertureSum = 0,ApertureAvg = 0, normalised_perm, min_aperture,
-	       permeability, c = 0. /*c is the fraction of fracture that is closed*/, WeightSum = 0;
-	double Sum_Squared_Diffs = 0, Std_Dev = 0, closed = 0, total_count = 0;
-	vector<double> aperture_list;
-	int i;
-
-	m_msh = fem_msh_vector[0];            // Something must be done later on here.
-	elem = m_msh->ele_vector[index];
-	int group = elem->GetPatchIndex();
-	m_mmp = mmp_vector[group];
-
-	double mini = 100, roughness_corr = 1, tortuosity_corr = 1;
-
-	if(elem->InFrac())
-	{
-		if(!elem->PermeabilityIsSet()) //if 1
-		{
-			mat_pointer = msp_vector[group];
-			min_aperture = mat_pointer->Get_Youngs_Min_Aperture(elem);
-
-			if(m_mmp->fracs_set != 1) //if 2
-			{
-				m_mmp->fracs_set = 1;
-				switch(frac_perm_average_type[0])
-				{
-				//******************************************************************************************************
-				case 'A': // -------------------arithmetic average----------------------
-					for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
-					{
-						elem2 = m_msh->ele_vector[i];
-						//are they part of the same fracture?
-						if(elem->GetFracNum() == elem2->GetFracNum() )
-							//change this to simply calling CalculateFracAperture, it will check if aperture has been set
-							if (elem2->ApertureIsSet())
-							{
-								if( (elem2->GetAperture() -
-								     min_aperture) >= 0.00000001)
-								{
-									ApertureSum +=
-									        (elem2->GetAperture()
-									         -
-									         min_aperture) *
-									        elem2->GetWeight();
-									aperture_list.push_back( (
-									                                 elem2
-									                                 ->
-									                                 GetAperture()
-									                                 -
-									                                 min_aperture) );
-									WeightSum +=
-									        elem2->GetWeight();
-								}
-								else
-									closed = closed +
-									         elem2->GetWeight();
-								total_count = total_count +
-								              elem2->GetWeight();
-							}
-					}
-
-					ApertureAvg = (ApertureSum / WeightSum);
-
-					//roughness correction, after Zimmerman and Bovarsson 1996
-					if(roughness[0] == 'C' || roughness[0] == 'c')
-					{
-						for(i = 0; i != (int)aperture_list.size(); ++i)
-							Sum_Squared_Diffs +=
-							        (aperture_list[i] -
-							         ApertureAvg) *
-							        (aperture_list[i] - ApertureAvg);
-						Std_Dev = sqrt(
-						        Sum_Squared_Diffs /
-						        (double)aperture_list.size());
-					}
-					else
-						Std_Dev = 0;
-
-					//calculating the peremability, permeability is the average fracture perm, normalised_perm is the perm of the current frac element
-					c = closed / total_count; //closed fractioncorrection afer Z and B 1996, and Walsh 1981
-					if(index == 1)
-						cout << "\nTotal weight = " << total_count << endl;
-
-					tortuosity_corr = (1 - c) / (1 + c);
-					if(Std_Dev < 0.73 * ApertureAvg)
-						roughness_corr = 1 - 1.5 * Std_Dev * Std_Dev /
-						                 (ApertureAvg * ApertureAvg);
-					else
-						roughness_corr = 0.2;
-					break;
-				//******************************************************************************************************
-				case 'G': // -------------------geometric average----------------------
-					for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
-					{
-						elem2 = m_msh->ele_vector[i];
-						//are they part of the same fracture?
-						if(elem->GetFracNum() == elem2->GetFracNum() )
-							if (elem2->ApertureIsSet())
-							{
-								if( (elem2->GetAperture() -
-								     min_aperture) > 0.0000001)
-								{
-									ApertureSum = ApertureSum +
-									              elem2->
-									              GetWeight() *
-									              log(
-									        elem2->GetAperture()
-									        -
-									        min_aperture);
-									aperture_list.push_back( (
-									                                 elem2
-									                                 ->
-									                                 GetAperture()
-									                                 -
-									                                 min_aperture));
-									WeightSum +=
-									        elem2->GetWeight();
-								}
-								else
-									closed = closed +
-									         elem2->GetWeight();
-
-								total_count = total_count +
-								              elem2->GetWeight();
-							}
-					}
-					ApertureAvg = exp(ApertureSum / WeightSum);
-
-					//roughness correction, after Zimmerman and Bovarsson 1996
-					//This roughness correction may not really be appropriate here, as this is and arithmetic standard deviation; I'm
-					//not very confident about the math here.
-					if(roughness[0] == 'C' || roughness[0] == 'c')
-					{
-						for(i = 0; i != (int)aperture_list.size(); ++i)
-							Sum_Squared_Diffs +=
-							        (aperture_list[i] -
-							         ApertureAvg) *
-							        (aperture_list[i] - ApertureAvg);
-						Std_Dev = sqrt(
-						        Sum_Squared_Diffs /
-						        (double)aperture_list.size());
-					}
-
-					//calculating the peremability, permeability is the average fracture perm, normalised_perm is the perm of the current frac element
-					c = closed / total_count; //closed fraction
-					if(Std_Dev < 0.73 * ApertureAvg)
-						roughness_corr = 1 - 1.5 * Std_Dev * Std_Dev /
-						                 (ApertureAvg * ApertureAvg);
-					else
-						roughness_corr = 0.2;
-					break;
-				//******************************************************************************************************
-				case 'H': // -------------------harmonic average----------------------
-					for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
-					{
-						elem2 = m_msh->ele_vector[i];
-						if(elem->GetFracNum() == elem2->GetFracNum() )
-							if (elem2->ApertureIsSet())
-							{
-								if( (elem2->GetAperture() -
-								     min_aperture) > 0.0000001)
-								{
-									ApertureSum = ApertureSum +
-									              ( elem2->
-									                GetWeight()
-									                /
-									                ((elem2->
-									                  GetAperture()
-									                  -
-									                  min_aperture)) );
-									WeightSum +=
-									        elem2->GetWeight();
-								}
-								else
-									closed = closed +
-									         elem2->GetWeight();
-
-								total_count = total_count +
-								              elem2->GetWeight();
-							}
-					}
-
-					ApertureAvg = WeightSum / ApertureSum;
-
-					//no roughness correction is available here, the harmonic mean is already an extreme case
-					//error message should print once
-					if( (roughness[0] == 'C' ||
-					     roughness[0] == 'c') && index == 0)
-						cout <<
-						"Error in CMediumProperties:: Roughness correction not implemented for harmonic mean.\n";
-
-					//calculating the peremability, permeability is the average fracture perm, normalised_perm is the perm of the current frac element
-					c = closed / total_count; //closed fraction, also not used for perm calculation with harmonic mean
-
-					break;
-				//******************************************************************************************************
-				default: // ---------------------------error------------------------------
-					cout <<
-					"Error in CMediumProperties::PermeabilityFracAperture.  No averaging type is set.\n";
-					abort();
-					break;
-					//******************************************************************************************************
-				} //end of switch case
-				//the values are stored in the mmp
-
-				permeability =
-				        (  (ApertureAvg *
-				            ApertureAvg) / 12  ) * tortuosity_corr * roughness_corr;
-				normalised_perm = permeability * ApertureAvg / (elem->GetAperture());
-
-				m_mmp->frac_perm[elem->GetFracNum()] = permeability;
-				m_mmp->avg_aperture[elem->GetFracNum()] = ApertureAvg;
-				m_mmp->closed_fraction[elem->GetFracNum()] = c;
-			}             //end if 2
-			else
-			{
-				permeability = m_mmp->frac_perm[elem->GetFracNum()];
-				ApertureAvg = m_mmp->avg_aperture[elem->GetFracNum()];
-
-				normalised_perm = permeability * ApertureAvg / (elem->GetAperture());
-			}
-
-			//the values stored in elem are used for flow calculation
-			elem->SetPermeability(normalised_perm);
-
-			if(index == 0)
-			{
-				cout <<
-				"\n************************************************************\n";
-				cout << "Some numbers from PermeabilityFracAperture:\n";
-				cout << " \nAvg Aperture =\t" << ApertureAvg <<
-				"\nStdDev Aperture =\t" << Std_Dev <<
-				"   \nAvg Permeability =\t" <<
-				permeability << "\n";
-				cout << " \nClosure ratio =\t" << c << " \nRoughness_corr =\t" <<
-				roughness_corr << "   \nTortuosity_corr =\t" << tortuosity_corr <<
-				"\n";
-				cout <<
-				"\n************************************************************\n";
-			}
-		}                         //end if 1
-		else                      // if the permeability has aleady been set for this timestep
-
-			normalised_perm = elem->GetPermeability();
-		return normalised_perm;
-	}
-	else                                  // RFW 18/11/2005
-	{
-		normalised_perm = 1e-9;   //this is a kind of default value but will rarely be used, need to fix this in the future
-		elem->SetPermeability(normalised_perm);
-		return normalised_perm;
-	}
-}
-
-/*************************************************************************
-   ROCKFLOW - Funktion: CSolidProperties::CalculateFracAperture
-   Aufgabe:
-   Calculate the aperture of the fracture at a given element, currently
-   aperture size is only in y-direction, and only for 2D triangles.
-   Formalparameter: (E: Eingabe; R: Rueckgabe; X: Beides)
-   E: const long index   :  element index
-   E: const double dy    :  step size for search for frac boundary
-   Ergebnis:
-   Returns the aperture as a double
-   Programmaenderungen:
-   04/2005 RFW Implementierung
-*************************************************************************/
-double CMediumProperties::CalculateFracAperture(MeshLib::CElem* elem, double delta_y)
-{
-	// TEST *************
-	//cout << "ELEMENT: "<<index <<endl;
-	// TEST *************
-
-	vector<double> intercept;
-	double aperture = 0, dy, dx;
-	vector<double> centroid;
-	MeshLib::CElem* last_elem = NULL, * current_elem = NULL;
-
-	vec<MeshLib::CElem*> neighbor_last, neighbor_current, neighbor_neighbor_last;
-	//the next line is here because Wenqings vec class destructor does not like empty vec's, and there is no guarantee these vecs will be filled in any given call to this function
-	neighbor_last.resize(1);
-	neighbor_current.resize(1);
-	neighbor_neighbor_last.resize(1);
-	long num_face1, num_face2;
-	bool at_frac_bound;
-	long step, current_index, last_index = elem->GetIndex(), group, index = elem->GetIndex();
-	vector<MeshLib::CElem*> neighbor_vec;
-	bool neighbors, shared_neighbors, neighbors_neighbor;
-	CFEMesh* msh_pointer = NULL;
-	msh_pointer = fem_msh_vector[0];      // Something must be done later on here.
-
-	if(elem->InFrac())                    // RFW 18/11/2005
-	{
-		if(!elem->ApertureIsSet()) //if the aperture has not already been set for this timestep
-		{
-			elem->CalcDispGravityCenter(centroid);
-
-			for(int k = -1; k != 3; k = k + 2  ) //start big for
-			{
-				//assigning search directions
-				dx = elem->GetFracDx() * delta_y * k;
-				dy = elem->GetFracDy() * delta_y * k;
-
-				at_frac_bound = false;
-				current_index = index;
-				step = 1;
-				group = 0;
-				neighbors = false;
-				shared_neighbors = false;
-				neighbors_neighbor = false;
-				at_frac_bound = false;
-				neighbor_vec.clear();
-
-				while(!at_frac_bound && step < 10000) //second condition to avoid infinite loop
-				{
-					last_index = current_index;
-
-					current_index =
-					        MSHWhatElemIsPointIn(centroid[0] + (step * dx),
-					                             centroid[1] + (step * dy),
-					                             current_index);
-					step = step + 1;
-					//************************
-					if(current_index >= 0)
-					{
-						if(msh_pointer->ele_vector[current_index]->InFrac()
-						   && current_index >= 0)
-						{
-						}
-						else if(current_index >= 0) //else 1, current element is outside fracture
-						{
-							at_frac_bound = true;
-
-							if(last_index == current_index)
-								cout <<
-								"PROBLEM IN: CalculateFracAperture, ~line 5280 of rf_mmp_new.\n";
-
-							last_elem =
-							        msh_pointer->ele_vector[last_index];
-							num_face1 = last_elem->GetFacesNumber();
-							neighbor_last.resize(num_face1);
-							last_elem->GetNeighbors(neighbor_last);
-
-							current_elem =
-							        msh_pointer->ele_vector[
-							                current_index];
-							num_face2 = current_elem->GetFacesNumber();
-							neighbor_current.resize(num_face2);
-							current_elem->GetNeighbors(neighbor_current);
-
-							for(long i = 0; i != num_face1; ++i)
-								if(neighbor_last[i] == current_elem)
-								{
-									neighbors = true;
-									neighbor_vec.push_back(
-									        last_elem);
-									neighbor_vec.push_back(
-									        current_elem);
-								}
-
-							if(!neighbors) //else 2
-								for(long i = 0; i != num_face1; ++i)
-								{
-									for(long j = 0;
-									    j != num_face2; ++j)
-										//one of the neighbours of the elements borders one of the neighbors of the other
-										if( neighbor_last[i
-										    ] ==
-										    neighbor_current
-										    [j]
-										    && (
-										            neighbor_last
-										            [i]
-										            != NULL
-										            &&
-										            neighbor_current
-										            [j]
-										            != NULL) )
-										{
-											shared_neighbors
-											        =
-											                true;
-
-											if(
-											        neighbor_current
-											        [j]
-											        ->
-											        InFrac())
-											{
-												neighbor_vec
-												.
-												push_back(
-												        neighbor_current
-												        [
-												                j
-												        ]);
-												neighbor_vec
-												.
-												push_back(
-												        current_elem);
-											}
-											else
-											{
-												neighbor_vec
-												.
-												push_back(
-												        last_elem);
-												neighbor_vec
-												.
-												push_back(
-												        neighbor_current
-												        [
-												                j
-												        ]);
-											}
-										}
-								}
-
-							if(!neighbors)
-							{
-								bool match = false;
-								vector<CNode*> matching_nodes;
-								for(long i = 0; i != num_face1; ++i)
-								{
-									for(long j = 0;
-									    j != num_face2; ++j)
-										if(neighbor_last[i]
-										   != NULL &&
-										   neighbor_current
-										   [j]
-										   != NULL)
-										{
-											match =
-											        MSHGetCommonNodes(
-											                neighbor_last
-											                [
-											                        i
-											                ],
-											                neighbor_current
-											                [
-											                        j
-											                ],
-											                matching_nodes);
-											//one of the neighbours of the elements borders one of the neighbors of the other
-											if(match &&
-											   matching_nodes
-											   .size()
-											   > 1 )
-											{
-												neighbors_neighbor
-												        =
-												                true;
-												if(
-												        neighbor_current
-												        [
-												                j
-												        ]
-												        ->
-												        InFrac()
-												        &&
-												        neighbor_last
-												        [
-												                i
-												        ]
-												        ->
-												        InFrac())
-												{
-													neighbor_vec
-													.
-													push_back(
-													        neighbor_current
-													        [
-													                j
-													        ]);
-													neighbor_vec
-													.
-													push_back(
-													        current_elem);
-												}
-												else
-												if(
-												        !
-												        neighbor_current
-												        [
-												                j
-												        ]
-												        ->
-												        InFrac()
-												        &&
-												        !
-												        neighbor_last
-												        [
-												                i
-												        ]
-												        ->
-												        InFrac())
-												{
-													neighbor_vec
-													.
-													push_back(
-													        last_elem);
-													neighbor_vec
-													.
-													push_back(
-													        neighbor_last
-													        [
-													                i
-													        ]);
-												}
-												else
-												if(
-												        !
-												        neighbor_current
-												        [
-												                j
-												        ]
-												        ->
-												        InFrac()
-												        &&
-												        neighbor_last
-												        [
-												                i
-												        ]
-												        ->
-												        InFrac() )
-												{
-													neighbor_vec
-													.
-													push_back(
-													        neighbor_last
-													        [
-													                i
-													        ]);
-													neighbor_vec
-													.
-													push_back(
-													        neighbor_current
-													        [
-													                j
-													        ]);
-												}
-												else
-													cout
-													<<
-													"ERROR 4 in CalculateFracAperture, element: "
-													<<
-													index
-													<<
-													endl;
-											}
-										}
-								}
-							}
-
-							vector<double> xnode, ynode, xstep, ystep;
-							xnode.resize(2);
-							ynode.resize(2);
-							xstep.resize(2);
-							ystep.resize(2);
-							if(neighbors || shared_neighbors ||
-							   neighbors_neighbor)
-							{
-								bool good_intersect = false,
-								     match = false;
-								MeshLib::CElem* neighbor_0,
-								* neighbor_1;
-								neighbor_0 = neighbor_vec[0];
-								neighbor_1 = neighbor_vec[1];
-								vector<CNode*> matching_nodes;
-								for(long r = 0;
-								    r != (long)neighbor_vec.size();
-								    r = r + 2)
-								{
-									match = MSHGetCommonNodes(
-									        neighbor_vec[r],
-									        neighbor_vec[r + 1],
-									        matching_nodes);
-									if(match && !good_intersect)
-									{
-										for(int m = 0;
-										    m !=
-										    (int)
-										    matching_nodes.
-										    size(); ++m)
-											//in order to let this function run when there is no deformation
-											//IMPORTANT NOTE: this has not been tested properly
-											for(int i =
-											            0;
-											    i <
-											    (int)
-											    pcs_vector
-											    .size();
-											    i++)
-											{
-												m_pcs
-												        =
-												                pcs_vector
-												                [
-												                        i
-												                ];
-												if(
-												        m_pcs
-												        ->
-												        pcs_type_name
-												        .
-												        find(
-												                "DEFORMATION")
-												        !=
-												        string
-												        ::
-												        npos)
-												{
-													xnode
-													[
-													        m
-													]
-													        =
-													                matching_nodes
-													                [
-													                        m
-													                ]
-													                ->
-													                X_displaced();
-													ynode
-													[
-													        m
-													]
-													        =
-													                matching_nodes
-													                [
-													                        m
-													                ]
-													                ->
-													                Y_displaced();
-												}
-												else
-												{
-													xnode
-													[
-													        m
-													]
-													        =
-													                matching_nodes
-													                [
-													                        m
-													                ]
-													                ->
-													                X();
-													ynode
-													[
-													        m
-													]
-													        =
-													                matching_nodes
-													                [
-													                        m
-													                ]
-													                ->
-													                Y();
-												}
-											}
-										//2 steps back
-										xstep[0] =
-										        centroid[0]
-										        +
-										        (step *
-										         dx) - 3 *
-										        dx;
-										//2 steps forward
-										xstep[1] =
-										        centroid[0]
-										        +
-										        (step * dx);
-										//2 steps back
-										ystep[0] =
-										        centroid[1]
-										        +
-										        (step *
-										         dy) - 3 *
-										        dy;
-										//2 steps forward
-										ystep[1] =
-										        centroid[1]
-										        +
-										        (step * dy);
-										good_intersect =
-										        LineSegmentIntersection(
-										                xnode,
-										                ynode,
-										                xstep,
-										                ystep,
-										                intercept);
-									}
-								}
-								if(!good_intersect)
-								{
-									cout <<
-									"ERROR2 in CalculateFracAperture, element: "
-									     << index << endl;
-									intercept.push_back(
-									        centroid[0] +
-									        (step *
-									         dx) - 1.5 * dx );
-									intercept.push_back(
-									        centroid[1] +
-									        (step *
-									         dy) - 1.5 * dy );
-								}
-							}
-							else
-							{ //else 3
-								intercept.push_back(
-								        centroid[0] +
-								        (step *
-								         dx) - 1.5 *
-								        dx );
-								intercept.push_back(
-								        centroid[1] +
-								        (step *
-								         dy) - 1.5 *
-								        dy );
-								cout <<
-								"ERROR3 in CalculateFracAperture, element: "
-								     << index <<
-								".  INSTABILITY??" <<
-								endl;
-							} //end else 3
-							  //  //end else 2
-						} //end else 1
-					}
-					else // else 4, point has jumped outside of model boundaries
-					{
-						at_frac_bound = true;
-						intercept.push_back(
-						        centroid[0] + (step * dx) - 1.5 * dx );
-						intercept.push_back(
-						        centroid[1] + (step * dy) - 1.5 * dy );
-						cout <<
-						"ERROR5 in CalculateFracAperture, element: " <<
-						index << "  current_index: " << current_index <<
-						endl;
-						cout << "  Intersection with model boundary." <<
-						endl;
-					} //end else 4
-				} // end while
-			}             //end big for
-			double xtop, xbot, ytop,ybot;
-			xtop = intercept[0];
-			xbot = intercept[2];
-			ytop = intercept[1];
-			ybot = intercept[3];
-
-			aperture = sqrt(  MathLib::fastpow(
-			                          (intercept[3] -
-			                           intercept[1]) )  +
-			                  MathLib::fastpow( (intercept[2] - intercept[0]))  );
-
-			elem->SetAperture(aperture);
-
-			return aperture;
-		}
-		else                      // if the aperture has already been set for this timestep
-		{
-			aperture = elem->GetAperture();
-			return aperture;
-		}
-	}
-	else
-	{
-		cout << "Element " << index << "neglected from fracture calculations.\n";
-		aperture = -10;
-		return aperture;
-	}
-}
-#endif
 //------------------------------------------------------------------------
 //13. CAPILLARY_PRESSURE_FUNCTION
 //------------------------------------------------------------------------
@@ -6450,15 +5534,15 @@ void CMediumProperties::SetConstantELEarea(double area, int group)
 	if (area != 1.0)
 		for (i = 0; i < no_processes; i++)
 		{
-			m_msh = FEMGet(convertProcessTypeToString (pcs_vector[i]->getProcessType()));
-			if(!m_msh)
+			_mesh = FEMGet(convertProcessTypeToString (pcs_vector[i]->getProcessType()));
+			if(!_mesh)
 				return;  //WW
-			no_ele = (long) m_msh->ele_vector.size();
+			no_ele = (long) _mesh->ele_vector.size();
 			for(j = 0; j < no_ele; j++)
 			{
-				ele_group = m_msh->ele_vector[j]->GetPatchIndex();
+				ele_group = _mesh->ele_vector[j]->GetPatchIndex();
 				if (ele_group == group)
-					m_msh->ele_vector[j]->SetFluxArea(area);
+					_mesh->ele_vector[j]->SetFluxArea(area);
 			}
 		}
 }
@@ -6532,8 +5616,8 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 		{
 			line_string = GetLineFromFile1(&mmp_property_file);
 			mmp_property_mesh = line_string;
-			m_msh = FEMGet(line_string);
-			if(!m_msh)
+			_mesh = FEMGet(line_string);
+			if(!_mesh)
 			{
 				cout <<
 				"CMediumProperties::SetDistributedELEProperties: no MSH data" <<
@@ -6548,7 +5632,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 			element_area = false;
 			mmp_property_file >> mmp_property_name;
 			cout << mmp_property_name << endl;
-			m_msh->mat_names_vector.push_back(mmp_property_name);
+			_mesh->mat_names_vector.push_back(mmp_property_name);
 			if (mmp_property_name == "GEOMETRY_AREA")
 				element_area = true;
 			continue;
@@ -6589,9 +5673,9 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 					mmpvals.push_back(mmpv);
 				}
 				// sort values to mesh
-				for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+				for(i = 0; i < (long)_mesh->ele_vector.size(); i++)
 				{
-					m_ele_geo = m_msh->ele_vector[i];
+					m_ele_geo = _mesh->ele_vector[i];
 					mat_vector_size = m_ele_geo->mat_vector.Size();
 					// CB Store old values as they are set to zero after resizing
 					for(j = 0; j < mat_vector_size; j++)
@@ -6606,7 +5690,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 						// Search for all elements of the mesh, which is the nearest given value in the input file
 						// Return value ihet is the index of the het. val in the mmpval-vector
 						ihet = GetNearestHetVal2(i,
-						                         m_msh,
+						                         _mesh,
 						                         xvals,
 						                         yvals,
 						                         zvals,
@@ -6617,7 +5701,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 					if(mmp_property_dis_type[0] == 'G')
 					{
 						mmpv = GetAverageHetVal2(i,
-						                         m_msh,
+						                         _mesh,
 						                         xvals,
 						                         yvals,
 						                         zvals,
@@ -6627,9 +5711,9 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 				}
 				break;
 			case 'E':     // Element data
-				for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+				for(i = 0; i < (long)_mesh->ele_vector.size(); i++)
 				{
-					m_ele_geo = m_msh->ele_vector[i];
+					m_ele_geo = _mesh->ele_vector[i];
 					mmp_property_file >> ddummy >> mmp_property_value;
 					mat_vector_size = m_ele_geo->mat_vector.Size();
 					if (mat_vector_size > 0)
@@ -6652,7 +5736,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 						        mmp_property_value;
 					}
 					if (element_area)
-						m_msh->ele_vector[i]->SetFluxArea(
+						_mesh->ele_vector[i]->SetFluxArea(
 						        mmp_property_value);
 					if(line_string.empty())
 					{
@@ -6674,10 +5758,10 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 	// CB now set VOL_MAT & VOL_BIO as heterogeneous values, if defined as model 2 and het Porosity
 	if( (mmp_property_name == "POROSITY") && (this->vol_bio_model == 2) )
 	{
-		m_msh->mat_names_vector.push_back("VOL_BIO");
-		for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+		_mesh->mat_names_vector.push_back("VOL_BIO");
+		for(i = 0; i < (long)_mesh->ele_vector.size(); i++)
 		{
-			m_ele_geo = m_msh->ele_vector[i]; // Get the element
+			m_ele_geo = _mesh->ele_vector[i]; // Get the element
 			mat_vec_size = m_ele_geo->mat_vector.Size();
 			// CB Store old values as they are set to zero after resizing
 			for(j = 0; j < mat_vec_size; j++)
@@ -6693,19 +5777,19 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 	}
 	if( (mmp_property_name == "POROSITY") && (this->vol_mat_model == 2) )
 	{
-		m_msh->mat_names_vector.push_back("VOL_MAT");
+		_mesh->mat_names_vector.push_back("VOL_MAT");
 		// Get the porosity index
-		for(por_index = 0; por_index < (int)m_msh->mat_names_vector.size(); por_index++)
-			if(m_msh->mat_names_vector[por_index].compare("POROSITY") == 0)
+		for(por_index = 0; por_index < (int)_mesh->mat_names_vector.size(); por_index++)
+			if(_mesh->mat_names_vector[por_index].compare("POROSITY") == 0)
 				break;
 		// Get the vol_bio index
-		for(vol_bio_index = 0; vol_bio_index < (int)m_msh->mat_names_vector.size();
+		for(vol_bio_index = 0; vol_bio_index < (int)_mesh->mat_names_vector.size();
 		    vol_bio_index++)
-			if(m_msh->mat_names_vector[vol_bio_index].compare("VOL_BIO") == 0)
+			if(_mesh->mat_names_vector[vol_bio_index].compare("VOL_BIO") == 0)
 				break;
-		for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+		for(i = 0; i < (long)_mesh->ele_vector.size(); i++)
 		{
-			m_ele_geo = m_msh->ele_vector[i]; // Get the element
+			m_ele_geo = _mesh->ele_vector[i]; // Get the element
 			mat_vec_size = m_ele_geo->mat_vector.Size();
 			// CB Store old values as they are set to zero after resizing
 			for(j = 0; j < mat_vec_size; j++)
@@ -6727,10 +5811,10 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 	// File handling
 
 	// CB
-	for(k = 0; k < (int)m_msh->mat_names_vector.size(); k++)
+	for(k = 0; k < (int)_mesh->mat_names_vector.size(); k++)
 	{
 		//file_name +="_sorted";
-		outfile = m_msh->mat_names_vector[k] + "_sorted";
+		outfile = _mesh->mat_names_vector[k] + "_sorted";
 		ofstream mmp_property_file_out(outfile.data());
 		if(!mmp_property_file_out.good())
 		{
@@ -6744,12 +5828,12 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 		//mmp_property_file_out << "$MSH_TYPE" << endl << "  " << mmp_property_mesh << endl;
 		//mmp_property_file_out << "$MMP_TYPE" << endl << "  " << "PERMEABILITY" << endl;
 		mmp_property_file_out << "$MMP_TYPE" << endl << "  " <<
-		m_msh->mat_names_vector[k] << endl;
+		_mesh->mat_names_vector[k] << endl;
 		mmp_property_file_out << "$DIS_TYPE" << endl << "  " << "ELEMENT" << endl;
 		mmp_property_file_out << "$DATA" << endl;
-		for(i = 0; i < (long)m_msh->ele_vector.size(); i++)
+		for(i = 0; i < (long)_mesh->ele_vector.size(); i++)
 		{
-			m_ele_geo = m_msh->ele_vector[i];
+			m_ele_geo = _mesh->ele_vector[i];
 			mmp_property_file_out << i << "  " << m_ele_geo->mat_vector(k) << endl;
 		}
 		mmp_property_file_out << "#STOP" << endl;
@@ -6781,11 +5865,11 @@ void CMediumProperties::WriteTecplotDistributedProperties()
 	// MSH
 	MeshLib::CNode* m_nod = NULL;
 	MeshLib::CElem* m_ele = NULL;
-	if (!m_msh)
+	if (!_mesh)
 		return;
 	//--------------------------------------------------------------------
 	// File handling
-	string mat_file_name = path + name + "_" + m_msh->pcs_name + "_PROPERTIES"
+	string mat_file_name = path + name + "_" + _mesh->pcs_name + "_PROPERTIES"
 	                       + TEC_FILE_EXTENSION;
 	fstream mat_file(mat_file_name.data(), ios::trunc | ios::out);
 	mat_file.setf(ios::scientific, ios::floatfield);
@@ -6794,9 +5878,9 @@ void CMediumProperties::WriteTecplotDistributedProperties()
 		return;
 	mat_file.seekg(0L, ios::beg);
 	//--------------------------------------------------------------------
-	if ((long) m_msh->ele_vector.size() > 0)
+	if ((long) _mesh->ele_vector.size() > 0)
 	{
-		m_ele = m_msh->ele_vector[0];
+		m_ele = _mesh->ele_vector[0];
 		switch (m_ele->GetElementType())
 		{
 		case MshElemType::LINE:
@@ -6827,26 +5911,26 @@ void CMediumProperties::WriteTecplotDistributedProperties()
 	//--------------------------------------------------------------------
 	// Header
 	mat_file << "VARIABLES = X,Y,Z";
-	for (j = 0; j < (int) m_msh->mat_names_vector.size(); j++)
-		mat_file << "," << m_msh->mat_names_vector[j];
+	for (j = 0; j < (int) _mesh->mat_names_vector.size(); j++)
+		mat_file << "," << _mesh->mat_names_vector[j];
 	mat_file << endl;
 	mat_file << "ZONE T = " << name << ", " << "N = "
-	         << (long) m_msh->nod_vector.size() << ", " << "E = "
-	         << (long) m_msh->ele_vector.size() << ", " << "F = FEPOINT" << ", "
+	         << (long) _mesh->nod_vector.size() << ", " << "E = "
+	         << (long) _mesh->ele_vector.size() << ", " << "F = FEPOINT" << ", "
 	         << "ET = " << element_type << endl;
 	//--------------------------------------------------------------------
 	// Nodes
-	for (i = 0; i < (long) m_msh->nod_vector.size(); i++)
+	for (i = 0; i < (long) _mesh->nod_vector.size(); i++)
 	{
-		m_nod = m_msh->nod_vector[i];
+		m_nod = _mesh->nod_vector[i];
 		double const* const pnt (m_nod->getData());
 		mat_file << pnt[0] << " " << pnt[1] << " " << pnt[2];
-		for (size_t j = 0; j < m_msh->mat_names_vector.size(); j++)
+		for (size_t j = 0; j < _mesh->mat_names_vector.size(); j++)
 		{
 			m_mat_prop_nod = 0.0;
 			for (k = 0; k < (int) m_nod->getConnectedElementIDs().size(); k++)
 			{
-				m_ele = m_msh->ele_vector[m_nod->getConnectedElementIDs()[k]];
+				m_ele = _mesh->ele_vector[m_nod->getConnectedElementIDs()[k]];
 				m_mat_prop_nod += m_ele->mat_vector(j);
 			}
 			m_mat_prop_nod /= (int) m_nod->getConnectedElementIDs().size();
@@ -6856,59 +5940,59 @@ void CMediumProperties::WriteTecplotDistributedProperties()
 	}
 	//--------------------------------------------------------------------
 	// Elements
-	for (i = 0; i < (long) m_msh->ele_vector.size(); i++)
+	for (i = 0; i < (long) _mesh->ele_vector.size(); i++)
 	{
-		m_ele = m_msh->ele_vector[i];
+		m_ele = _mesh->ele_vector[i];
 		//OK if(m_ele->GetPatchIndex()==number) {
 		switch (m_ele->GetElementType())
 		{
 		case MshElemType::LINE:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[0] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[0] + 1 << endl;
 			element_type = "QUADRILATERAL";
 			break;
 		case MshElemType::QUAD:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[2] + 1 << " "
-			         << m_ele->nodes_index[3] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[2] + 1 << " "
+			         << m_ele->getNodeIndices()[3] + 1 << endl;
 			element_type = "QUADRILATERAL";
 			break;
 		case MshElemType::HEXAHEDRON:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[2] + 1 << " "
-			         << m_ele->nodes_index[3] + 1 << " "
-			         << m_ele->nodes_index[4] + 1 << " "
-			         << m_ele->nodes_index[5] + 1 << " "
-			         << m_ele->nodes_index[6] + 1 << " "
-			         << m_ele->nodes_index[7] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[2] + 1 << " "
+			         << m_ele->getNodeIndices()[3] + 1 << " "
+			         << m_ele->getNodeIndices()[4] + 1 << " "
+			         << m_ele->getNodeIndices()[5] + 1 << " "
+			         << m_ele->getNodeIndices()[6] + 1 << " "
+			         << m_ele->getNodeIndices()[7] + 1 << endl;
 			element_type = "BRICK";
 			break;
 		case MshElemType::TRIANGLE:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[2] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[2] + 1 << endl;
 			element_type = "TRIANGLE";
 			break;
 		case MshElemType::TETRAHEDRON:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[2] + 1 << " "
-			         << m_ele->nodes_index[3] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[2] + 1 << " "
+			         << m_ele->getNodeIndices()[3] + 1 << endl;
 			element_type = "TETRAHEDRON";
 			break;
 		case MshElemType::PRISM:
-			mat_file << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[0] + 1 << " "
-			         << m_ele->nodes_index[1] + 1 << " "
-			         << m_ele->nodes_index[2] + 1 << " "
-			         << m_ele->nodes_index[3] + 1 << " "
-			         << m_ele->nodes_index[3] + 1 << " "
-			         << m_ele->nodes_index[4] + 1 << " "
-			         << m_ele->nodes_index[5] + 1 << endl;
+			mat_file << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[0] + 1 << " "
+			         << m_ele->getNodeIndices()[1] + 1 << " "
+			         << m_ele->getNodeIndices()[2] + 1 << " "
+			         << m_ele->getNodeIndices()[3] + 1 << " "
+			         << m_ele->getNodeIndices()[3] + 1 << " "
+			         << m_ele->getNodeIndices()[4] + 1 << " "
+			         << m_ele->getNodeIndices()[5] + 1 << endl;
 			element_type = "BRICK";
 			break;
 		default:
@@ -8005,7 +7089,7 @@ double CMediumProperties::PorosityVolStrain(long index, double val0, CFiniteElem
 		for (int i = 0; i < nnodes; i++)
 			strain_nodes[i] = assem->dm_pcs->GetNodeValue(
 			        assem->dm_pcs->m_msh->ele_vector[index]-> \
-			        nodes_index[i],
+			        getNodeIndices()[i],
 			        idx_temp[j]);
 		strain_temp[j] = assem->interpolate(strain_nodes);
 	}

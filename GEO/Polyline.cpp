@@ -288,4 +288,19 @@ bool containsEdge (const Polyline& ply, size_t id0, size_t id1)
 	}
 	return false;
 }
+
+bool operator==(Polyline const& lhs, Polyline const& rhs)
+{
+	if (lhs.getNumberOfPoints() != rhs.getNumberOfPoints())
+		return false;
+
+	const size_t n(lhs.getNumberOfPoints());
+	for (size_t k(0); k<n; k++) {
+		if (lhs.getPointID(k) != rhs.getPointID(k))
+			return false;
+	}
+
+	return true;
+}
+
 } // end namespace GEOLIB
