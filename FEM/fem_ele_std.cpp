@@ -6260,19 +6260,19 @@ void CFiniteElementStd::AssembleRHS(int dimension)
 	{
 		m_pcs = pcs_vector[i];
 		//		if(m_pcs->pcs_type_name.find("LIQUID_FLOW")!=string::npos) // TF
-		if (m_pcs->getProcessType() == LIQUID_FLOW)
+		if (m_pcs->getProcessType() == FiniteElement::LIQUID_FLOW)
 		{
 			PcsType = L;
 			break;
 			//		} else if (m_pcs->pcs_type_name.find("RICHARDS_FLOW") != string::npos) { // TF
 		}
-		else if (m_pcs->getProcessType() == RICHARDS_FLOW)
+		else if (m_pcs->getProcessType() == FiniteElement::RICHARDS_FLOW)
 		{
 			PcsType = R;
 			break;
 			//		} else if (m_pcs->pcs_type_name.find("GROUNDWATER_FLOW") // TF
 		}
-		else if (m_pcs->getProcessType() == GROUNDWATER_FLOW)
+		else if (m_pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 		{
 			PcsType = G;
 			break;
