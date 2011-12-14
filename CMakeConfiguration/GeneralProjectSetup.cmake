@@ -35,7 +35,7 @@ IF (OGS_BUILD_INFO)
 	    # Get git commit
 	    execute_process(
 	      COMMAND "git" "log" "--name-status" "HEAD^..HEAD"
-	      COMMAND "grep" "commit"
+	      COMMAND "grep" "-m" "1" "commit"
 	      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 	      OUTPUT_VARIABLE git_commit_info
 	      OUTPUT_STRIP_TRAILING_WHITESPACE

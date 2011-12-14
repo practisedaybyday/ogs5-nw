@@ -589,7 +589,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
             continue;
         }
 		//    if (out->m_pcs == NULL || out->pcs_type_name.compare("NO_PCS")==0)
-		if (out->m_pcs == NULL || out->getProcessType() == NO_PCS)
+		if (out->m_pcs == NULL || out->getProcessType() == FiniteElement::NO_PCS)
 			m_pcs = PCSGet(internal_val_name, true);
 		if (!m_pcs)
 			continue;

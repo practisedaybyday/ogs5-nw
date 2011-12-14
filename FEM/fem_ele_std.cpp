@@ -1936,12 +1936,12 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 		{
 			Matrix local_tensor(dim,dim);
 			Matrix temp_tensor(dim,dim);
-            if (MeshElement->tranform_tensor==NULL) {
+            if (MeshElement->transform_tensor==NULL) {
                 std::cout << "***Error: Geometric dimension in MMP is not consistent with element." << std::endl;
                 exit(0);
             }
-			Matrix t_transform_tensor(*MeshElement->tranform_tensor);
-			MeshElement->tranform_tensor->GetTranspose(t_transform_tensor);
+			Matrix t_transform_tensor(*MeshElement->transform_tensor);
+			MeshElement->transform_tensor->GetTranspose(t_transform_tensor);
 			Matrix global_tensor(dim,dim);
 			for (i = 0; i < ele_dim; i++)
 				for (int j = 0; j < ele_dim; j++)
@@ -2008,8 +2008,8 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
             {
                Matrix local_tensor(dim,dim);
                Matrix temp_tensor(dim,dim);
-               Matrix t_transform_tensor(*MeshElement->tranform_tensor);
-               MeshElement->tranform_tensor->GetTranspose(t_transform_tensor);
+               Matrix t_transform_tensor(*MeshElement->transform_tensor);
+               MeshElement->transform_tensor->GetTranspose(t_transform_tensor);
                Matrix global_tensor(dim,dim);
                for (i=0; i<ele_dim; i++)
                   for (int j=0; j<ele_dim; j++)
@@ -2020,7 +2020,7 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
                {
                   for (int j=0; j<dim; j++)
                      for (int k=0; k<dim; k++)
-                        global_tensor(i,j)+=(*MeshElement->tranform_tensor)(i,k)*temp_tensor(k,j);
+                        global_tensor(i,j)+=(*MeshElement->transform_tensor)(i,k)*temp_tensor(k,j);
                }
                //cout << "K:" << endl; global_tensor.Write();
                for(i=0; i<dim; i++)
