@@ -29,7 +29,7 @@ ELSE (OGS_PRECOMPILED_LIBS_DIR_FOUND)
 	ELSE (WIN32)
 		IF (OGS_FEM_LIS)
 			MESSAGE (FATAL_ERROR "Precompiled libraries not found! Make sure to also checked out the trunk/Libs directory beneath your sources directory.")
-		ENDIF (OGS_FEM_LIS)	
+		ENDIF (OGS_FEM_LIS)
 	ENDIF (WIN32)
 ENDIF (OGS_PRECOMPILED_LIBS_DIR_FOUND)
 
@@ -141,7 +141,7 @@ ENDIF(PARALLEL_USE_OPENMP)
 
 IF(PARALLEL_USE_MPI)
 	IF (WIN32)
-#		MESSAGE (FATAL_ERROR "Aborting: MPI is only supported under UNIX/LINUX!")			
+#		MESSAGE (FATAL_ERROR "Aborting: MPI is only supported under UNIX/LINUX!")
 		#ADD_DEFINITIONS(-DMPICH_IGNORE_CXX_SEEK)
 		FIND_PACKAGE(MPI REQUIRED)
 	ENDIF(WIN32)
@@ -152,19 +152,19 @@ IF(PARALLEL_USE_MPI)
 
 		IF( ${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} LESS 8)
 			find_program(MPI_COMPILER
- 			 NAMES mpic++ mpicxx mpiCC mpicc
-			 HINTS "${_MPI_BASE_DIR}"
- 			 PATH_SUFFIXES bin
-			  DOC "MPI compiler. Used only to detect MPI compilation flags.")
+				NAMES mpic++ mpicxx mpiCC mpicc
+				HINTS "${_MPI_BASE_DIR}"
+				PATH_SUFFIXES bin
+				DOC "MPI compiler. Used only to detect MPI compilation flags.")
 			IF(MPI_COMPILER)
 
-			MESSAGE (STATUS  "CMake version is less than 2.8, MPI compiler is set directly" )	
+			MESSAGE (STATUS  "CMake version is less than 2.8, MPI compiler is set directly" )
 			mark_as_advanced(MPI_COMPILER)
 				SET(CMAKE_C_COMPILER ${MPI_COMPILER})
-				SET(CMAKE_CXX_COMPILER ${MPI_COMPILER})   		
+				SET(CMAKE_CXX_COMPILER ${MPI_COMPILER})
 			ENDIF(MPI_COMPILER)
 		ELSE( ${CMAKE_MAJOR_VERSION}  EQUAL 2 AND ${CMAKE_MINOR_VERSION} LESS 8)
-			FIND_PACKAGE(MPI REQUIRED)		
+			FIND_PACKAGE(MPI REQUIRED)
 		ENDIF( ${CMAKE_MAJOR_VERSION} EQUAL 2 AND ${CMAKE_MINOR_VERSION} LESS 8)
 	ENDIF(UNIX)
 ENDIF(PARALLEL_USE_MPI)
