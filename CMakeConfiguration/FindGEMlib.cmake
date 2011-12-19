@@ -8,7 +8,7 @@
 if (NOT GEMlib_FOUND)
 
 	include(LibFindMacros)
-	
+
 	find_path( GEMlib_INCLUDE_DIR
 		NAMES node.h
 		PATHS ${CMAKE_SOURCE_DIR}/LIB/ )

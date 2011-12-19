@@ -4,7 +4,7 @@
 #  libgeotiff_FOUND
 #  libgeotiff_INCLUDE_DIRS
 #  libgeotiff_LIBRARIES
-	
+
 if (NOT libgeotiff_FOUND)
 
 	include(LibFindMacros)
@@ -36,7 +36,7 @@ if (NOT libgeotiff_FOUND)
 	else (NOT libgeotiff_LIBRARIES STREQUAL "libgeotiff_LIBRARIES-NOTFOUND" AND NOT libgeotiff_INCLUDE_DIR STREQUAL "libgeotiff_INCLUDE_DIR-NOTFOUND")
 		message (STATUS "Could NOT find libgeotiff.")
 	endif (NOT libgeotiff_LIBRARIES STREQUAL "libgeotiff_LIBRARIES-NOTFOUND" AND NOT libgeotiff_INCLUDE_DIR STREQUAL "libgeotiff_INCLUDE_DIR-NOTFOUND")
-	
+
 #	SET ( libgeotiff_INCLUDE_DIR ${libgeotiff_INCLUDE_DIR} ${libtiff_INCLUDE_DIR} )
 #	SET ( libgeotiff_LIBRARIES ${libgeotiff_LIBRARIES} ${libtiff_LIBRARIES} )
 
