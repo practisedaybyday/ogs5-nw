@@ -205,7 +205,7 @@ int GridAdapter::readMeshFromFile(const std::string &filename)
 
 			std::list<std::string> fields = splitString(line, ' ');
 
-			if (fields.size() >= 6)
+			if (fields.size() >= 5)
 			{
 				it = fields.begin();
 				if (atoi(it->c_str()) == (int)_elems->size())
@@ -237,7 +237,7 @@ int GridAdapter::readMeshFromFile(const std::string &filename)
 				}
 				else
 					std::cout <<
-					"GridAdapter::readMeshFromFile() - Index error while reading elements..."
+					"GridAdapter::readMeshFromFile() - Index error while reading element " << *it << "... "
 					          << std::endl;
 			}
 			else
@@ -267,7 +267,7 @@ MshElemType::type GridAdapter::getElementType(const std::string &t) const
 		return MshElemType::TETRAHEDRON;
 	if (t.compare("hex") == 0)
 		return MshElemType::HEXAHEDRON;
-	if (t.compare("pri") == 0)
+	if ((t.compare("pri") == 0) || (t.compare("pris") == 0))
 		return MshElemType::PRISM;
 	else
 		return MshElemType::INVALID;
