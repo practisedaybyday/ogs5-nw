@@ -174,7 +174,7 @@ int XmlCndInterface::writeFile(const QString &fileName, const QString &geoName, 
 				listTag = this->getCondListElement(doc, root, "SourceTerms");
 				condText = "ST";
 			}
-			else 
+			else
 			{
 				std::cout << "Error in XmlCndInterface::writeFile() - Unspecified FEMConditions found ... Abort writing." << std::endl;
 				return 0;
@@ -245,8 +245,8 @@ void XmlCndInterface::writeCondition( QDomDocument doc, QDomElement &listTag, co
 QDomElement XmlCndInterface::getCondListElement( QDomDocument doc, QDomElement &root, const QString &text ) const
 {
 	QDomNodeList list = root.elementsByTagName(text);
-	if (list.isEmpty()) 
-	{ 
+	if (list.isEmpty())
+	{
 		QDomElement newListTag ( doc.createElement(text) );
 		root.appendChild(newListTag);
 		return newListTag;
