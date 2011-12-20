@@ -14,7 +14,7 @@ NOTE: Since the executable, ogs, is created by linking the libraries dynamically
 cd sources
 mkdir Build
 cd Build
-cmake .. -DOGS_FEM_GEMS=ON 
+cmake .. -DOGS_FEM_GEMS=ON
 
 ## For using the GUI use the following cmake option ##
 
