@@ -61,7 +61,7 @@ public:
 	// Set Gauss point
 	void SetGaussPoint(const int gp, int& gp_r, int& gp_s, int& gp_t);
 	// Get Gauss integration information
-	double GetGaussData(const int gp, int& gp_r, int& gp_s, int& gp_t);
+	double GetGaussData(int gp, int& gp_r, int& gp_s, int& gp_t);
 
 	// Compute values of shape function at integral point unit
 	void ComputeShapefct(const int order);
@@ -148,8 +148,8 @@ protected:
 	// Order of shape functions
 	// Displacement, 2. Others, 1. Default, 1
 	int Order;
-	int ele_dim;                          // Dimension of element
-	int dim;                              // Dimension of real dimension
+	size_t ele_dim;                          // Dimension of element
+	size_t dim;                              // Dimension of real dimension
 	int nGaussPoints;                     // Number of Gauss points
 	int nGauss;                           // Number of sample points for Gauss integration
 	int gp;                               // Gauss point index.

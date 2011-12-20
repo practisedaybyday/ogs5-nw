@@ -3779,7 +3779,7 @@ void CRFProcess::CheckMarkedElement()
 		elem = m_msh->ele_vector[l];
 		done = false;
 		for(i = 0; i < (size_t)NumDeactivated_SubDomains; i++)
-			if(elem->GetPatchIndex() == Deactivated_SubDomain[i])
+			if(elem->GetPatchIndex() == static_cast<size_t>(Deactivated_SubDomain[i]))
 			{
 				elem->MarkingAll(false);
 				done = true;
@@ -3832,7 +3832,7 @@ void CRFProcess::CheckExcavedElement()
 	for (l = 0; l < (long)m_msh->ele_vector.size(); l++)
 	{
 		elem = m_msh->ele_vector[l];
-		if(elem->GetPatchIndex() == ExcavMaterialGroup && elem->GetMark())
+		if(elem->GetPatchIndex() == static_cast<size_t>(ExcavMaterialGroup) && elem->GetMark())
 		{
 			double const* ele_center(elem->GetGravityCenter());
 			if((GetCurveValue(ExcavCurve,0,aktuelle_zeit,
@@ -5383,7 +5383,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						double const* tmp_ele_coor (elem->GetGravityCenter());
 						//if(elem->GetPatchIndex()!=ExcavMaterialGroup){
 						//if(elem->GetExcavState()==-1)
-						if(elem->GetPatchIndex() != ExcavMaterialGroup)
+						if(elem->GetPatchIndex() != static_cast<size_t>(ExcavMaterialGroup))
 							continue;
 						else if (tmp_ele_coor[ExcavDirection] -
 						         (GetCurveValue(ExcavCurve,0,aktuelle_zeit,

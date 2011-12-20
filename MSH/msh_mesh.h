@@ -383,7 +383,7 @@ public:
 	std::string geo_name;                     //MB
 	std::string geo_type_name;                //OK10_4310
 
-	int max_mmp_groups;                       //OKCC
+	size_t max_mmp_groups;                       //OKCC
 	int msh_max_dim;
 
 	RandomWalk* PT;                           // PCH
