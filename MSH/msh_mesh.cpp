@@ -376,8 +376,7 @@ bool CFEMesh::Read(std::ifstream* fem_file)
 				newElem->Read(*fem_file);
 				setElementType(newElem->geo_type); //CC02/2006
 				if (newElem->GetPatchIndex() > max_mmp_groups)
-					max_mmp_groups
-					        = newElem->GetPatchIndex();
+					max_mmp_groups = newElem->GetPatchIndex();
 				//NW
 				if (newElem->GetDimension() > this->max_ele_dim)
 					this->max_ele_dim
@@ -1002,7 +1001,7 @@ void CFEMesh::GenerateHighOrderNodes()
 
 			done = false;
 
-			for (int i = 0; i < thisElem0->GetFacesNumber(); i++)
+			for (size_t i = 0; i < thisElem0->GetFacesNumber(); i++)
 			{
 				thisElem = thisElem0->GetNeighbor(i);
 				// look for adjacent solid elements
@@ -2061,7 +2060,7 @@ void CFEMesh::GetNODOnSFC_TIN(Surface* m_sfc, std::vector<long>&msh_nod_vector)
 **************************************************************************/
 void CFEMesh::GetNodesOnCylindricalSurface(Surface* m_sfc, std::vector<long>& NodesS)
 {
-	int k, l, nf;
+	int l, nf;
 	long i, j, m, fnode;
 	const int nNodes = NodesInUsage();
 	int faceIndex_loc[10];
@@ -2121,7 +2120,7 @@ void CFEMesh::GetNodesOnCylindricalSurface(Surface* m_sfc, std::vector<long>& No
 			for (j = 0; j < (long) cnode->getConnectedElementIDs().size(); j++)
 			{
 				elem = ele_vector[cnode->getConnectedElementIDs()[j]];
-				for (k = 0; k < elem->GetFacesNumber(); k++)
+				for (size_t k = 0; k < elem->GetFacesNumber(); k++)
 				{
 					nf = elem->GetElementFaceNodes(k, faceIndex_loc);
 					counter = 0;

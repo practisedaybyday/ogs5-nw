@@ -1939,7 +1939,7 @@ void CMediumProperties::WriteTecplot(std::string msh_name)
 	for(size_t i = 0; i < _mesh->ele_vector.size(); i++)
 	{
 		m_ele = _mesh->ele_vector[i];
-		if(m_ele->GetPatchIndex() == number)
+		if(m_ele->GetPatchIndex() == static_cast<size_t>(number))
 			j++;
 	}
 	long no_elements = j - 1;
@@ -1959,7 +1959,7 @@ void CMediumProperties::WriteTecplot(std::string msh_name)
 	for(size_t i = 0; i < _mesh->ele_vector.size(); i++)
 	{
 		m_ele = _mesh->ele_vector[i];
-		if(m_ele->GetPatchIndex() == number)
+		if(m_ele->GetPatchIndex() == static_cast<size_t>(number))
 		{
 			switch(m_ele->GetElementType())
 			{
@@ -5429,7 +5429,7 @@ void MMP2PCSRelation(CRFProcess* m_pcs)
 		for(long i = 0; i < (long)m_pcs->m_msh->ele_vector.size(); i++)
 		{
 			m_ele = m_pcs->m_msh->ele_vector[i];
-			if(m_ele->GetPatchIndex() < (int)mmp_vector.size())
+			if(m_ele->GetPatchIndex() < mmp_vector.size())
 			{
 				m_mmp = mmp_vector[m_ele->GetPatchIndex()];
 				m_mmp->m_pcs = m_pcs;

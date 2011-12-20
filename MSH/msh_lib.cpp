@@ -1097,7 +1097,6 @@ void MSHMoveNODUcFlow (CRFProcess* m_pcs)
 {
 	long nextnode = -1;
 	long startnode;
-	long node;
 	int anz_zeilen = 0;
 	int i;
 	double spanne_ges;
@@ -1112,7 +1111,7 @@ void MSHMoveNODUcFlow (CRFProcess* m_pcs)
 	double MinThickness = 1e-1;               //OKMB
 	double z_bottom;                          //OKMB
 
-	for (node = 0; node < NumberOfNodesPerLayer; node++)
+	for (size_t node = 0; node < NumberOfNodesPerLayer; node++)
 
 		if (m_pcs->m_msh->nod_vector[node]->free_surface == 1)
 		{
@@ -1558,7 +1557,7 @@ void GEOGetNodesInMaterialDomain(const int MatIndex, std::vector<long>& Nodes)
    10/2004 WW Implementation
 **************************************************************************/
 void GEOGetNodesInMaterialDomain(CFEMesh* m_msh,
-                                 const int MatIndex,
+                                 int MatIndex,
                                  std::vector<long>& Nodes,
                                  bool Order)
 {
@@ -1575,7 +1574,7 @@ void GEOGetNodesInMaterialDomain(CFEMesh* m_msh,
 		if (elem->GetMark())              // Marked for use
 		{
 			nn = elem->GetNodesNumber(Order);
-			if(elem->GetPatchIndex() == MatIndex)
+			if(elem->GetPatchIndex() == static_cast<size_t>(MatIndex))
 			{
 				Size = (int)Nodes.size();
 				for(i = 0; i < nn; i++)

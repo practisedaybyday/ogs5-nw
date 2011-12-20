@@ -3779,7 +3779,7 @@ int RandomWalk::GetTheElementOfTheParticleFromNeighbor(Particle* A)
 	}
 
 	// First meighbor's search around the main element
-	for(int i = 0; i < theElement->GetFacesNumber(); ++i)
+	for(size_t i = 0; i < theElement->GetFacesNumber(); ++i)
 	{
 		MeshLib::CElem* thisNeighbor = theElement->GetNeighbor(i);
 
@@ -3793,7 +3793,7 @@ int RandomWalk::GetTheElementOfTheParticleFromNeighbor(Particle* A)
 				return index;
 
 			// Second, search the neighbor's neighbor
-			for(int j = 0; j < thisNeighbor->GetFacesNumber(); ++j)
+			for(size_t j = 0; j < thisNeighbor->GetFacesNumber(); ++j)
 			{
 				MeshLib::CElem* theNeighborsNeighbor = thisNeighbor->GetNeighbor(j);
 
@@ -3806,7 +3806,7 @@ int RandomWalk::GetTheElementOfTheParticleFromNeighbor(Particle* A)
 						return index;
 
 					// Third, search the neighbor's neighbor's neighbor
-					for(int k = 0; k < theNeighborsNeighbor->GetFacesNumber();
+					for(size_t k = 0; k < theNeighborsNeighbor->GetFacesNumber();
 					    ++k)
 					{
 						MeshLib::CElem* theNeighborsNeighborsNeighbor =

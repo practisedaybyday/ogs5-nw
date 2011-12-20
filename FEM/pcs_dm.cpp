@@ -92,7 +92,7 @@ CRFProcessDeformation::~CRFProcessDeformation()
 	// Write Gauss stress // TEST for excavation analysis
 	//   if(reload==1)
 	//if(reload == 1 || reload == 3)
-	if(idata_type == write_all_binary || idata_type == read_write )	
+	if(idata_type == write_all_binary || idata_type == read_write )
 	{
 		WriteGaussPointStress();
 		if(type == 41) // mono-deformation-liquid
@@ -137,7 +137,7 @@ void CRFProcessDeformation::Initialization()
 {
     //-- NW 25.10.2011
     // this section has to be executed at latest before calling InitGauss()
-    // Control for reading and writing solution 
+    // Control for reading and writing solution
     if(reload == 1)
         idata_type = write_all_binary;
     if(reload == 2)
@@ -743,7 +743,7 @@ double CRFProcessDeformation::Execute(const int CouplingIterations)
 			}
 	}
 	//WX:01.2011 modified for coupled excavation
-	if((int)deact_dom.size() > 0 || PCS_ExcavState > 0)
+	if(deact_dom.size() > 0 || PCS_ExcavState > 0)
 	{
 		//	  MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  //abort();}
 
@@ -761,8 +761,8 @@ double CRFProcessDeformation::Execute(const int CouplingIterations)
 
 			elem = m_msh->ele_vector[l];
 			done = false;
-			for(i = 0; i < (size_t)deact_dom.size(); i++)
-				if(elem->GetPatchIndex() == deact_dom[i])
+			for(i = 0; i < deact_dom.size(); i++)
+				if(elem->GetPatchIndex() == static_cast<size_t>(deact_dom[i]))
 				{
 					elem->MarkingAll(false);
 					done = true;
@@ -1047,7 +1047,7 @@ void CRFProcessDeformation::InitGauss(void)
 	}
 	// Reload the stress results of the previous simulation
 	//if(reload >= 2)
-	if(idata_type == read_all_binary || idata_type == read_write )	
+	if(idata_type == read_all_binary || idata_type == read_write )
 	{
 		ReadGaussPointStress();
 		if(type == 41) // mono-deformation-liquid
@@ -1085,7 +1085,7 @@ void CRFProcessDeformation::CreateInitialState4Excavation()
 	}
 	Idx_Strain[NS] = GetNodeValueIndex("STRAIN_PLS");
 	// For excavation simulation. Moved here on 05.09.2007 WW
-	if((idata_type == write_all_binary || idata_type == none)  && reload != -1000 )	
+	if((idata_type == write_all_binary || idata_type == none)  && reload != -1000 )
 	//	if(reload < 2 && reload != -1000)
 	{
 		GravityForce = true;
@@ -2598,7 +2598,7 @@ void CRFProcessDeformation::WriteGaussPointStress()
    ROCKFLOW - Funktion: ReadGaussPointStress()
 
    Aufgabe:
-   Read Gauss point stresses 
+   Read Gauss point stresses
 
    Programmaenderungen:
    03/2005  WW  Erste Version
@@ -2726,7 +2726,7 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 		elem = m_msh->ele_vector[i];
 		elem->SetMark(false);
 		for (k = 0; k < SizeSubD; k++)
-			if (elem->GetPatchIndex() == ExcavDomainIndex[k])
+			if (elem->GetPatchIndex() == static_cast<size_t>(ExcavDomainIndex[k]))
 				elem->SetMark(true);
 		if (elem->GetMark())
 			actElements++;
