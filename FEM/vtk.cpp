@@ -641,7 +641,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 		for (int i = 0; i < (int) out->_nod_value_vector.size(); i++)
 		{
             const string &internal_val_name = out->_nod_value_vector[i];
-            const string &external_val_name = out->_alias_nod_value_vector[i];
+//            const string &external_val_name = out->_alias_nod_value_vector[i];
 			if (internal_val_name.find("VELOCITY_X1") != string::npos)
 			{
 				if (out->m_pcs == NULL)
@@ -745,7 +745,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
         for (int i = 0; i < (int)out->_nod_value_vector.size(); i++)
         {
             const string &internal_val_name = out->_nod_value_vector[i];
-            const string &external_val_name = out->_alias_nod_value_vector[i];
+//            const string &external_val_name = out->_alias_nod_value_vector[i];
             if (internal_val_name.find("DISPLACEMENT_X1") != string::npos)
             {
                 if (out->m_pcs == NULL)

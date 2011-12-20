@@ -890,7 +890,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 				{
 					elem = m_msh->ele_vector[ii];
 					nn = elem->GetNodesNumber(quadratic);
-					if(elem->GetPatchIndex() == bc->getExcavMatGr())
+					if(elem->GetPatchIndex() == static_cast<size_t>(bc->getExcavMatGr()))
 					{
 						Size = (int)nodes_vector.size();
 						for(i = 0; i < nn; i++)

@@ -492,20 +492,19 @@ int MSHSetMaxMMPGroups()
 	long j;
 	CFEMesh* m_msh = NULL;
 	//----------------------------------------------------------------------
-	int msh_max_mmp_groups;
+	size_t msh_max_mmp_groups;
 	for (i = 0; i < (int) fem_msh_vector.size(); i++)
 	{
 		m_msh = fem_msh_vector[i];
 		m_msh->max_mmp_groups = 0;
 		msh_max_mmp_groups = 0;
 		for (j = 0; j < (long) m_msh->ele_vector.size(); j++)
-			if ((m_msh->ele_vector[j]->GetPatchIndex() + 1)
-			    > msh_max_mmp_groups) //OK
+			if ((m_msh->ele_vector[j]->GetPatchIndex() + 1) > msh_max_mmp_groups)
 				msh_max_mmp_groups++;
 		m_msh->max_mmp_groups = msh_max_mmp_groups;
 	}
 	//----------------------------------------------------------------------
-	int g_msh_max_mmp_groups = 0;
+	size_t g_msh_max_mmp_groups = 0;
 	for (i = 0; i < (int) fem_msh_vector.size(); i++)
 		if (m_msh->max_mmp_groups > g_msh_max_mmp_groups)
 			g_msh_max_mmp_groups++;

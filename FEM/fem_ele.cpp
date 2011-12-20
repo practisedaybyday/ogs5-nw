@@ -447,7 +447,7 @@ double CElement::elemnt_average (const int idx, CRFProcess* m_pcs, const int ord
 **************************************************************************/
 double CElement::computeJacobian(const int order)
 {
-	int i, j = 0, k = 0;
+	int k = 0;
 	int nodes_number = nnodes;
 	double DetJac = 0.0;
 	double* dN = dshapefct;
@@ -463,10 +463,8 @@ double CElement::computeJacobian(const int order)
 	}
 	else
 		GradShapeFunction(dN, unit);
-	j = ele_dim * ele_dim;
-	for(i = 0; i < j; i++)
+	for(size_t i = 0; i < ele_dim*ele_dim; i++)
 		Jacobian[i] = 0.0;
-	j = 0;
 	//--------------------------------------------------------------------
 	switch(ele_dim)
 	{
@@ -490,7 +488,7 @@ double CElement::computeJacobian(const int order)
 		break;
 	//................................................................
 	case 2:
-		for(i = 0,j = nodes_number; i < nodes_number; i++,j++)
+		for(int i = 0,j = nodes_number; i < nodes_number; i++,j++)
 		{
 			Jacobian[0] += X[i] * dN[i];
 			Jacobian[1] += Y[i] * dN[i];
@@ -508,10 +506,8 @@ double CElement::computeJacobian(const int order)
 		invJacobian[1] = -Jacobian[1];
 		invJacobian[2] = -Jacobian[2];
 		invJacobian[3] = Jacobian[0];
-		j = ele_dim * ele_dim;
-		for(i = 0; i < j; i++)
+		for(size_t i = 0; i < ele_dim * ele_dim; i++)
 			invJacobian[i] /= DetJac;
-		j = 0;
 		//
 		//By WW
 		//if(MeshElement->area>0)
@@ -524,8 +520,9 @@ double CElement::computeJacobian(const int order)
 		}
 		break;
 	//................................................................
-	case 3:
-		for(i = 0; i < nodes_number; i++)
+	case 3: {
+		int j;
+		for(int i = 0; i < nodes_number; i++)
 		{
 			j = i + nodes_number;
 			k = i + 2 * nodes_number;
@@ -565,9 +562,10 @@ double CElement::computeJacobian(const int order)
 		invJacobian[6] =  Jacobian[3] * Jacobian[7] - Jacobian[6] * Jacobian[4];
 		invJacobian[7] =  Jacobian[1] * Jacobian[6] - Jacobian[7] * Jacobian[0];
 		invJacobian[8] =  Jacobian[0] * Jacobian[4] - Jacobian[3] * Jacobian[1];
-		for(i = 0; i < ele_dim * ele_dim; i++)
+		for(size_t i = 0; i < ele_dim * ele_dim; i++)
 			invJacobian[i] /= DetJac;
 		break;
+	} // end case 3
 	}
 	//--------------------------------------------------------------------
 	// Use absolute value (for grids by gmsh, whose orientation is clockwise)
@@ -619,33 +617,32 @@ void CElement::RealCoordinates(double* realXYZ)
  **************************************************************************/
 void CElement::UnitCoordinates(double* realXYZ)
 {
-	int i,j;
-
 	setOrder(Order);
 
-	for(i = 0; i < 3; i++)
-		x1buff[i] = 0.0;
+	x1buff[0] = X[0];
+	x1buff[1] = Y[0];
+	x1buff[2] = Z[0];
 
-	for(i = 0; i < nNodes; i++)
+	for(int i = 1; i < nNodes; i++)
 	{
 		x1buff[0] += X[i];
 		x1buff[1] += Y[i];
 		x1buff[2] += Z[i];
 	}
-	for(i = 0; i < 3; i++)
+	for(size_t i = 0; i < 3; i++)
 		x1buff[i] /= (double)nNodes;
 
-	for(i = 0; i < ele_dim; i++)
+	for(size_t i = 0; i < ele_dim; i++)
 		realXYZ[i] -= x1buff[i];
 
-	for(i = 0; i < ele_dim; i++)
+	for(size_t i = 0; i < ele_dim; i++)
 	{
 		unit[i] = 0.0;
-		for(j = 0; j < ele_dim; j++)
+		for(size_t j = 0; j < ele_dim; j++)
 			unit[i] += invJacobian[j * ele_dim + i] * realXYZ[j];
 	}
 
-	for(i = 0; i < ele_dim; i++)
+	for(size_t i = 0; i < ele_dim; i++)
 		realXYZ[i] = unit[i];
 }
 /***************************************************************************
@@ -716,7 +713,7 @@ void CElement::SetGaussPoint(const int gp, int& gp_r, int& gp_s, int& gp_t)
    02/2005 OK case 1
    02/2007 WW Abstract the calcultion of Gauss point in one function
  **************************************************************************/
-double CElement::GetGaussData(const int gp, int& gp_r, int& gp_s, int& gp_t)
+double CElement::GetGaussData(int gp, int& gp_r, int& gp_s, int& gp_t)
 {
 	double fkt = 0.0;
 	SetGaussPoint(gp, gp_r, gp_s, gp_t);
@@ -867,9 +864,8 @@ void CElement::ComputeShapefct(const int order)
    10/2005     WW        2D element transform in 3D space
    06/2007     WW        1D in 2D
  **************************************************************************/
-void CElement::ComputeGradShapefct(const int order)
+void CElement::ComputeGradShapefct(int order)
 {
-	int i, j, k;
 	int j_times_ele_dim_plus_k, j_times_nNodes_plus_i;
 	static double Var[3];
 	double* dN = dshapefct;
@@ -878,43 +874,39 @@ void CElement::ComputeGradShapefct(const int order)
 		dN = dshapefctHQ;
 
 	setOrder(order);
-	for(i = 0; i < nNodes; i++)
+	for(int i = 0; i < nNodes; i++)
 	{
-		for(j = 0,j_times_nNodes_plus_i = i; j < ele_dim;
-		    j++, j_times_nNodes_plus_i += nNodes)
-		{
+		size_t j(0);
+		for (j = 0, j_times_nNodes_plus_i = i; j < ele_dim; j++, j_times_nNodes_plus_i += nNodes) {
 			Var[j] = dN[j_times_nNodes_plus_i];
 			dN[j_times_nNodes_plus_i] = 0.0;
 		}
-		for(j = 0,j_times_ele_dim_plus_k = 0,j_times_nNodes_plus_i = i; j < ele_dim;
-		    j++, j_times_nNodes_plus_i += nNodes)
-			for(k = 0; k < ele_dim; k++, j_times_ele_dim_plus_k++)
-				dN[j_times_nNodes_plus_i] += invJacobian[j_times_ele_dim_plus_k] *
-				                             Var[k];
+		for (j = 0, j_times_ele_dim_plus_k = 0, j_times_nNodes_plus_i = i; j < ele_dim; j++, j_times_nNodes_plus_i
+						+= nNodes) {
+			for (size_t k = 0; k < ele_dim; k++, j_times_ele_dim_plus_k++) {
+				dN[j_times_nNodes_plus_i] += invJacobian[j_times_ele_dim_plus_k] * Var[k];
+			}
+		}
 	}
 	// 1D element in 3D
 	if((dim == 3 && ele_dim == 1) || (dim == 2 && ele_dim == 1))
-		for(i = 0; i < nNodes; i++)
+		for(int i = 0; i < nNodes; i++)
 		{
-			for(j = 1; j < dim; j++)
+			for(size_t j = 1; j < dim; j++)
 				dN[j * nNodes + i] = (*MeshElement->transform_tensor)(j) * dN[i];
 			dN[i] *= (*MeshElement->transform_tensor)(0);
 		}
 	// 2D element in 3D
-	if(dim == 3 && ele_dim == 2)
-	{
-		for(i = 0; i < nNodes * ele_dim; i++)
+	if (dim == 3 && ele_dim == 2) {
+		const size_t n_nodes_times_ele_dim( nNodes * ele_dim);
+		for (size_t i = 0; i < n_nodes_times_ele_dim; i++)
 			dShapefct[i] = dN[i];
-		for(i = 0; i < nNodes; i++)
-			for(j = 0; j < dim; j++)
-			{
+		for (int i = 0; i < nNodes; i++)
+			for (size_t j = 0; j < dim; j++) {
 				dN[j * nNodes + i] = 0.0;
-				for(k = 0; k < ele_dim; k++)
-					dN[j * nNodes +
-					   i] +=
-					        (*MeshElement->transform_tensor)(j,
-					                                        k) *
-					        dShapefct[k * nNodes + i];
+				for (size_t k = 0; k < ele_dim; k++)
+					dN[j * nNodes + i] += (*MeshElement->transform_tensor)(j, k) * dShapefct[k
+									* nNodes + i];
 			}
 	}
 }
