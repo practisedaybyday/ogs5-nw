@@ -8,7 +8,7 @@
 if (NOT Shapelib_FOUND)
 
 	include(LibFindMacros)
-	
+
 	find_path( Shapelib_INCLUDE_DIR
 		NAMES shapefil.h
 		PATHS	/usr/include/libshp /usr/include
@@ -22,13 +22,13 @@ if (NOT Shapelib_FOUND)
 			PATHS /usr/lib64 /usr/lib ${CMAKE_SOURCE_DIR}/../Libs/shapelib )
 		find_library(Shapelib_LIBRARIES
 			NAMES shapelib.a
-			PATHS /usr/lib64 /usr/lib 
+			PATHS /usr/lib64 /usr/lib
 			${CMAKE_SOURCE_DIR}/../Libs/shapelib/ )
 		find_library(Shapelib_LIBRARIES
 			NAMES shapelib
-			PATHS /usr/lib64 /usr/lib 
+			PATHS /usr/lib64 /usr/lib
 			${CMAKE_SOURCE_DIR}/../Libs/shapelib/ )
-	else ( UNIX )			
+	else ( UNIX )
 		find_library(Shapelib_LIBRARIES
 			NAMES shapelib
 			PATHS	${CMAKE_SOURCE_DIR}/../Libs/shapelib
@@ -45,5 +45,5 @@ if (NOT Shapelib_FOUND)
 	else (NOT Shapelib_LIBRARIES STREQUAL "Shapelib_LIBRARIES-NOTFOUND" AND NOT Shapelib_INCLUDE_DIR STREQUAL "Shapelib_INCLUDE_DIR-NOTFOUND")
 		#message (STATUS "Warning: shapelib not found!")
 	endif (NOT Shapelib_LIBRARIES STREQUAL "Shapelib_LIBRARIES-NOTFOUND" AND NOT Shapelib_INCLUDE_DIR STREQUAL "Shapelib_INCLUDE_DIR-NOTFOUND")
-	
+
 endif (NOT Shapelib_FOUND)

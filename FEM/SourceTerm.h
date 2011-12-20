@@ -26,10 +26,16 @@ public:
 	size_t getTimType() const {return _tim_type; }
 	void setTimType(size_t value) { _tim_type = value; }
 
-	/// Reads DIRECT source terms and creates conditions located on points that coincide with mesh nodes.
+	/**
+	 * Reads DIRECT source terms and creates conditions located on points that coincide with mesh nodes.
+	 * \param st_vector Vector of source terms
+	 * \param geo_name Name of the geometry the sourceterms are referring to
+	 * \param file_path Path to the node-value files (necessary since st-files only give the filename but not the path)
+	 */
 	static std::vector<FEMCondition*> createDirectSourceTerms(
 	        const std::vector<CSourceTerm*> &st_vector,
-	        const std::string &geo_name);
+	        const std::string &geo_name,
+			const std::string &file_path);
 
 private:
 	static void getDirectNodeValues(const std::string &filename,

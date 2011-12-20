@@ -8,7 +8,7 @@
 if (NOT libtiff_FOUND)
 
 	include(LibFindMacros)
-	
+
 	find_path( libtiff_INCLUDE_DIR
 		NAMES tiff.h
 		PATHS	/usr/include
@@ -20,7 +20,7 @@ if (NOT libtiff_FOUND)
 		find_library(libtiff_LIBRARIES
 			NAMES tiff
 			PATHS /usr/lib64 /usr/lib ${CMAKE_SOURCE_DIR}/../Libs/libtiff/libtiff)
-	else ( UNIX )			
+	else ( UNIX )
 		find_library(libtiff_LIBRARIES
 			NAMES libtiff
 			PATHS	${CMAKE_SOURCE_DIR}/../Libs/libtiff/libtiff
@@ -38,5 +38,5 @@ if (NOT libtiff_FOUND)
 	else (NOT libtiff_LIBRARIES STREQUAL "libtiff_LIBRARIES-NOTFOUND" AND NOT libtiff_INCLUDE_DIR STREQUAL "libtiff_INCLUDE_DIR-NOTFOUND")
 		message (STATUS "Could NOT find libtiff.")
 	endif (NOT libtiff_LIBRARIES STREQUAL "libtiff_LIBRARIES-NOTFOUND" AND NOT libtiff_INCLUDE_DIR STREQUAL "libtiff_INCLUDE_DIR-NOTFOUND")
-	
+
 endif (NOT libtiff_FOUND)

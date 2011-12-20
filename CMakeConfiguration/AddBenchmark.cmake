@@ -28,14 +28,14 @@ ELSE (WIN32)
 				COMMAND ${EXECUTABLE_OUTPUT_PATH}/ogs ${benchmarkStrippedName}
 				WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../benchmarks/${benchmarkDir}
 				TIMEOUT ${BENCHMARK_TIMEOUT})
-			
+
 			# Run gprof2dot.py
 			EXECUTE_PROCESS (
 				COMMAND ${GPROF_PATH} ${EXECUTABLE_OUTPUT_PATH}/ogs
 				COMMAND ${PROJECT_SOURCE_DIR}/scripts/gprof2dot.py -s -n 5.0 -e 1.0
 				COMMAND ${DOT_TOOL_PATH} -Tpng -o ${PROJECT_SOURCE_DIR}/../benchmarks/results/${benchmarkStrippedName}.png
 				WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../benchmarks/${benchmarkDir})
-				
+
 		ELSE()
 			EXECUTE_PROCESS (
 				COMMAND ${EXECUTABLE_OUTPUT_PATH}/ogs ${benchmarkStrippedName}

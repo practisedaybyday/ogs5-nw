@@ -12,20 +12,20 @@ IF (OGS_BUILD_INFO)
 	if(Subversion_FOUND)
 	  #Subversion_WC_INFO(${CMAKE_SOURCE_DIR} "svn") , not a working copy
 	  execute_process(
-	    COMMAND "svnversion" "--no-newline" ${CMAKE_SOURCE_DIR}
-	    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-	    OUTPUT_VARIABLE svn_revision
-	    ERROR_VARIABLE svn_error
-	    )
+        COMMAND "svnversion" "--no-newline" ${CMAKE_SOURCE_DIR}
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		OUTPUT_VARIABLE svn_revision
+		ERROR_VARIABLE svn_error
+		)
 	  set( SVN_REVISION "${svn_revision}" )
 	endif( Subversion_FOUND )
 
 	if( NOT MSVC )
 	    execute_process(
-	      COMMAND "date" "+%Y-%m-%d %H:%M:%S"
-	      OUTPUT_VARIABLE build_timestamp
-	      OUTPUT_STRIP_TRAILING_WHITESPACE
-	      )
+			COMMAND "date" "+%Y-%m-%d %H:%M:%S"
+			OUTPUT_VARIABLE build_timestamp
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+		)
 	    if( build_timestamp )
 	       set( BUILD_TIMESTAMP "${build_timestamp}" )
 	       # message( STATUS "Build timestamp: ${BUILD_TIMESTAMP}" )
@@ -34,13 +34,13 @@ IF (OGS_BUILD_INFO)
 	  if(GIT_FOUND)
 	    # Get git commit
 	    execute_process(
-	      COMMAND "git" "log" "--name-status" "HEAD^..HEAD"
-	      COMMAND "grep" "-m" "1" "commit"
-	      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-	      OUTPUT_VARIABLE git_commit_info
-	      OUTPUT_STRIP_TRAILING_WHITESPACE
-	      ERROR_VARIABLE not_git_repo
-	      )
+			COMMAND "git" "log" "--name-status" "HEAD^..HEAD"
+			COMMAND "grep" "-m" "1" "commit"
+			WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+			OUTPUT_VARIABLE git_commit_info
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+			ERROR_VARIABLE not_git_repo
+		)
 	    if( git_commit_info )
 	      # message( STATUS "Git commit: " ${git_commit_info} )
 	      set( GIT_COMMIT_INFO "${git_commit_info}" )
@@ -49,7 +49,7 @@ IF (OGS_BUILD_INFO)
 		message( STATUS "Git not versioning the source" )
 	      endif( not_git_repo )
 	    endif( git_commit_info )
-	    
+
 	    # Get git branch
 			execute_process(
 				COMMAND "git" "branch"

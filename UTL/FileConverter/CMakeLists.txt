@@ -96,6 +96,16 @@ IF (QT4_FOUND)
 		OGSProject
 		${QT_LIBRARIES}
 	)
+	
+	ADD_EXECUTABLE (generateMatPropsFromMatID generateMatPropsFromMatID.cpp )
+	TARGET_LINK_LIBRARIES (generateMatPropsFromMatID
+		FEM
+		MSH
+		FileIO
+		Base
+		OGSProject
+		${QT_LIBRARIES}
+	)	
 ENDIF () # QT4_FOUND
 
 ADD_EXECUTABLE (GMSH2OGS GMSH2OGS.cpp)
