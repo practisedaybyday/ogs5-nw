@@ -96,7 +96,8 @@ if [ "$OSTYPE" == 'msys' ]; then
 		cd build
 		cmake .. -DBUILD_TESTING=OFF -DVTK_USE_QT=ON -G "$CMAKE_GENERATOR"
 		cmake ..
-		$COMSPEC \/c "devenv.com VTK.sln /Build Release"
+		#$COMSPEC \/c "echo %PATH%"
+		$COMSPEC \/c "devenv VTK.sln /Build Release"
 		$COMSPEC \/c "devenv VTK.sln /Build Release /Project QVTK"
 		$COMSPEC \/c "devenv VTK.sln /Build Debug"
 		$COMSPEC \/c "devenv VTK.sln /Build Debug /Project QVTK"
