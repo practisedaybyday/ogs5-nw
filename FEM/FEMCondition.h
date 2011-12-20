@@ -68,8 +68,8 @@ public:
 	}
 
 	/// Sets a vector of values specifying the distribution.
-	void setLinearDisValues(const std::vector<int> &point_ids,
-	                        const std::vector<double> &point_values);
+	/// The first value specifies the point id, the second the value for that point.
+	void setLinearDisValues(const std::vector< std::pair<size_t, double> > &dis_values);
 
 	/// Convenience method for setting a single value specifying the distribution.
 	void setDisValue(double disValue) { _disValue.push_back(disValue); }
@@ -81,6 +81,8 @@ public:
 	static std::string condTypeToString(CondType type);
 
 protected:
+	std::vector< std::pair<size_t, double> > getDistributedPairs(std::vector<int> point_ids, std::vector<double> point_values);
+
 	CondType _type;
 	std::string _geoName;
 	std::vector<double> _disValue;

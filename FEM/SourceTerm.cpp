@@ -17,7 +17,7 @@ SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
 		this->setDisValue(st.getGeoNodeValue());
 	else if (this->getProcessDistributionType() == FiniteElement::LINEAR ||
 	         this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
-		this->setLinearDisValues(st.getPointsWithDistribedST(), st.getDistribedST());
+		this->setLinearDisValues(this->getDistributedPairs(st.getPointsWithDistribedST(), st.getDistribedST()));
 	else
 		std::cout << "Error in SourceTerm() - Unknown Process Distribution Type \"" <<
 		FiniteElement::convertDisTypeToString(st.getProcessDistributionType()) <<
@@ -27,36 +27,28 @@ SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
 
 std::vector<FEMCondition*> SourceTerm::createDirectSourceTerms(
         const std::vector<CSourceTerm*> &st_vector,
-        const std::string &geo_name)
+        const std::string &geo_name,
+		const std::string &file_path)
 {
 	// read source term file and make sure it's really DIRECT-STs
 	std::vector<FEMCondition*> conditions;
 
-	size_t count(1);
 	for (std::vector<CSourceTerm*>::const_iterator it = st_vector.begin(); it != st_vector.end();
 	     ++it)
 	{
 		if ((*it)->getProcessDistributionType() == FiniteElement::DIRECT)
 		{
 			std::vector< std::pair<size_t, double> > node_values;
-			SourceTerm::getDirectNodeValues((*it)->fname, node_values);
+			SourceTerm::getDirectNodeValues(file_path + "/" + (*it)->fname, node_values);
 
-			// create one constant boundary condition for every point specified in the DIRECT-array
-			size_t nNodes = node_values.size();
-			for (size_t i = 0; i < nNodes; i++)
-			{
-				std::stringstream out;
-				out << node_values[i].first;
-				SourceTerm* st = new SourceTerm(geo_name);
-				st->setProcessType((*it)->getProcessType());
-				st->setProcessPrimaryVariable((*it)->getProcessPrimaryVariable());
-				st->setGeoType(GEOLIB::POINT);
-				st->setGeoName(out.str());
-				st->setProcessDistributionType(FiniteElement::DIRECT);
-				st->setDisValue( /*count*/ node_values[i].second);
-				conditions.push_back(st);
-			}
-			count++;
+			SourceTerm* st = new SourceTerm(geo_name);
+			st->setProcessType((*it)->getProcessType());
+			st->setProcessPrimaryVariable((*it)->getProcessPrimaryVariable());
+			st->setGeoType(GEOLIB::INVALID);
+			st->setGeoName((*it)->fname);
+			st->setProcessDistributionType(FiniteElement::DIRECT);
+			st->setLinearDisValues(node_values);
+			conditions.push_back(st);
 		}
 		else
 			std::cout << "Error: no DIRECT distribution type" << std::endl;
@@ -70,10 +62,8 @@ void SourceTerm::getDirectNodeValues(const std::string &filename,
 	std::ifstream in(filename.c_str());
 	if (!in.is_open())
 	{
-		std::cout <<
-		"Error in getNodeValues() - Could not find file for direct node values..." <<
-		std::endl;
-		return;
+		std::cout << "Error in getNodeValues() - Could not find file for direct node values..." << std::endl;
+		//return;
 	}
 
 	std::stringstream str_in;

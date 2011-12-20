@@ -10,39 +10,39 @@ endif( CMAKE_SIZEOF_VOID_P EQUAL 4 )
 
 
 # Visual Studio detection
-if (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005" 
+if (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005"
   OR ${CMAKE_GENERATOR} STREQUAL "Visual Studio 9 2008"
   OR ${CMAKE_GENERATOR} STREQUAL "Visual Studio 10"
   OR ${CMAKE_GENERATOR} STREQUAL "NMake Makefiles")
-  
+
   set (VS32 TRUE)
   set (VS64 FALSE)
   message (STATUS "Generator: Visual Studio 32 Bit")
 
-endif (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005" 
+endif (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005"
   OR ${CMAKE_GENERATOR} STREQUAL "Visual Studio 9 2008"
   OR ${CMAKE_GENERATOR} STREQUAL "Visual Studio 10"
   OR ${CMAKE_GENERATOR} STREQUAL "NMake Makefiles")
-  
-if (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005 Win64" 
+
+if (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005 Win64"
   OR ${CMAKE_GENERATOR} STREQUAL "Visual Studio 9 2008 Win64"
   OR ${CMAKE_GENERATOR} STREQUAL "Visual Studio 10 Win64")
-  
+
   set (VS32 FALSE)
   set (VS64 TRUE)
   message (STATUS "Generator: Visual Studio 64 Bit")
 
-endif (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005 Win64" 
+endif (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005 Win64"
   OR ${CMAKE_GENERATOR} STREQUAL "Visual Studio 9 2008 Win64"
   OR ${CMAKE_GENERATOR} STREQUAL "Visual Studio 10 Win64")
 
 # Convert environment variables
 if (NOT $ENV{LIBRARIES_DIR} STREQUAL "")
-	STRING(REGEX REPLACE "\\\\" "/" LIBRARIES_DIR $ENV{LIBRARIES_DIR}) 
+	STRING(REGEX REPLACE "\\\\" "/" LIBRARIES_DIR $ENV{LIBRARIES_DIR})
 endif (NOT $ENV{LIBRARIES_DIR} STREQUAL "")
 
 MACRO(COPY_FILE_IF_CHANGED in_file out_file target)
-    IF(${in_file} IS_NEWER_THAN ${out_file})    
+    IF(${in_file} IS_NEWER_THAN ${out_file})
         #message("Copying file: ${in_file} to: ${out_file}")
         ADD_CUSTOM_COMMAND (
                 TARGET     ${target}
@@ -56,16 +56,16 @@ ENDMACRO(COPY_FILE_IF_CHANGED)
 MACRO(COPY_FILE_INTO_DIRECTORY_IF_CHANGED in_file out_dir target)
         GET_FILENAME_COMPONENT(file_name ${in_file} NAME)
         COPY_FILE_IF_CHANGED(${in_file} ${out_dir}/${file_name}
-${target})      
+${target})
 ENDMACRO(COPY_FILE_INTO_DIRECTORY_IF_CHANGED)
 
-#Copies all the files from in_file_list into the out_dir. 
+#Copies all the files from in_file_list into the out_dir.
 # sub-trees are ignored (files are stored in same out_dir)
 MACRO(COPY_FILES_INTO_DIRECTORY_IF_CHANGED in_file_list out_dir target)
     FOREACH(in_file ${in_file_list})
                 COPY_FILE_INTO_DIRECTORY_IF_CHANGED(${in_file}
 ${out_dir} ${target})
-        ENDFOREACH(in_file)     
+        ENDFOREACH(in_file)
 ENDMACRO(COPY_FILES_INTO_DIRECTORY_IF_CHANGED)
 
 MACRO(COPY_FILE_INTO_EXECUTABLE_DIRECTORY in_file target)
@@ -138,11 +138,11 @@ FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration)
     ELSE()
 		SET(THIS_BENCHMARK_TIMEOUT ${BENCHMARK_TIMEOUT})
     ENDIF()
-    
+
     STRING (REGEX MATCH "[^/]+$" benchmarkStrippedName ${benchmarkName})
     STRING (LENGTH ${benchmarkName} benchmarkNameLength)
     STRING (LENGTH ${benchmarkStrippedName} benchmarkStrippedNameLength)
-    MATH (EXPR substringLength ${benchmarkNameLength}-${benchmarkStrippedNameLength}) 
+    MATH (EXPR substringLength ${benchmarkNameLength}-${benchmarkStrippedNameLength})
     STRING (SUBSTRING ${benchmarkName} 0 ${substringLength} benchmarkDir)
     STRING (REPLACE "/" "_" benchmarkNameUnderscore ${benchmarkName})
     STRING (REPLACE "_LONG_" "_" benchmarkNameUnderscore ${benchmarkNameUnderscore})
@@ -172,7 +172,7 @@ FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration)
 	-DBENCHMARK_TIMEOUT=${THIS_BENCHMARK_TIMEOUT}
 	-P ${PROJECT_SOURCE_DIR}/CMakeConfiguration/AddBenchmark.cmake
     )
-    
+
     # compare file differences with python script only on dev2.intern.ufz.de
 	IF(HOST_IS_DEV2)
     	IF (PYTHONINTERP_FOUND)
@@ -181,32 +181,32 @@ FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration)
     	    FILE (APPEND ${PROJECT_SOURCE_DIR}/../benchmarks/results/temp/temp_${benchmarkNameUnderscore}.txt "${entry}\n")
     	  ENDFOREACH (entry ${ARGN})
     	  ADD_TEST (
-    	    ${authorName}_FILECOMPARE_${benchmarkName}  
-    	    ${CMAKE_COMMAND} -E chdir ${PROJECT_SOURCE_DIR}/../benchmarks/results
-    	    ${PYTHON_EXECUTABLE}
-    	    ${PROJECT_SOURCE_DIR}/scripts/compare.py
-    	    temp/temp_${benchmarkNameUnderscore}.txt
-    	    ../../benchmarks_ref/
-    	    ${authorName}_${benchmarkNameUnderscore}.html
-    	    ../
-    	  )
+			${authorName}_FILECOMPARE_${benchmarkName}
+			${CMAKE_COMMAND} -E chdir ${PROJECT_SOURCE_DIR}/../benchmarks/results
+			${PYTHON_EXECUTABLE}
+			${PROJECT_SOURCE_DIR}/scripts/compare.py
+			temp/temp_${benchmarkNameUnderscore}.txt
+			../../benchmarks_ref/
+			${authorName}_${benchmarkNameUnderscore}.html
+			../
+		)
     	ENDIF (PYTHONINTERP_FOUND)
 	ENDIF(HOST_IS_DEV2)
-  
+
   # copy benchmark output files to reference directory
   IF (COPY_BENCHMARKS_TO_REF)
     FOREACH (entry ${ARGN})
       CONFIGURE_FILE( ${PROJECT_SOURCE_DIR}/../benchmarks/${entry} ${PROJECT_SOURCE_DIR}/../benchmarks_ref/${entry} COPYONLY)
     ENDFOREACH (entry ${ARGN})
   ENDIF (COPY_BENCHMARKS_TO_REF)
-  
-  ENDIF (CONFIG_MATCH)   
-  
+
+  ENDIF (CONFIG_MATCH)
+
 ENDFUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration filesToCompare)
 
 # Checks if a valid ogs configuration is given
 FUNCTION(CHECK_CONFIG)
-	
+
 	SET(configs
 		"${OGS_USE_QT}"
 		"${OGS_FEM}"
@@ -218,9 +218,9 @@ FUNCTION(CHECK_CONFIG)
 		"${OGS_FEM_PQC}"
 		"${OGS_FEM_LIS}"
 		"${OGS_FEM_CHEMAPP}")
-	
+
 	SET(counter 0)
-	
+
 	FOREACH(config ${configs})
 		IF (config)
 			MATH(EXPR counter "${counter} + 1")
@@ -230,7 +230,7 @@ FUNCTION(CHECK_CONFIG)
 		MESSAGE(STATUS "No configuration specified. Assuming default configuration...")
 		SET(OGS_FEM ON)
 	ENDIF (counter EQUAL 0)
-	
+
 	IF (counter GREATER 1)
 		MESSAGE(FATAL_ERROR "Error: More than one OGS configuration given. Please use only one of the following configurations:
 			OGS_USE_QT (GUI configuration)
@@ -244,5 +244,5 @@ FUNCTION(CHECK_CONFIG)
 			OGS_FEM_LIS
 			OGS_FEM_CHEMAPP")
 	ENDIF (counter GREATER 1)
-	
+
 ENDFUNCTION()

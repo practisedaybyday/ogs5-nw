@@ -8,7 +8,7 @@
 if (NOT LIS_FOUND)
 
 	include(LibFindMacros)
-	
+
 	find_path( LIS_INCLUDE_DIR
 		NAMES lis.h
 		PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled)
@@ -18,16 +18,16 @@ if (NOT LIS_FOUND)
 		if(CMAKE_SIZEOF_VOID_P MATCHES "8")
 			find_library(LIS_LIBRARIES
 				NAMES lis-64
-				PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled )	
+				PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled )
 		else (CMAKE_SIZEOF_VOID_P MATCHES "8")
 			find_library(LIS_LIBRARIES
 				NAMES lis-32
-				PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled )	
+				PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled )
 		endif (CMAKE_SIZEOF_VOID_P MATCHES "8")
-	else ( UNIX )			
+	else ( UNIX )
 		find_library(LIS_LIBRARIES
 			NAMES lisomp
-			PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled )	
+			PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled )
 	endif ( UNIX )
 
 	# Set the include dir variables and the libraries and let libfind_process do the rest.
@@ -39,5 +39,5 @@ if (NOT LIS_FOUND)
 	else (NOT LIS_LIBRARIES STREQUAL "LIS_LIBRARIES-NOTFOUND" AND NOT LIS_INCLUDE_DIR STREQUAL "LIS_INCLUDE_DIR-NOTFOUND")
 		message (STATUS "Warning: LIS not found!")
 	endif (NOT LIS_LIBRARIES STREQUAL "LIS_LIBRARIES-NOTFOUND" AND NOT LIS_INCLUDE_DIR STREQUAL "LIS_INCLUDE_DIR-NOTFOUND")
-	
+
 endif (NOT LIS_FOUND)

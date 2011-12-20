@@ -17,5 +17,5 @@ BoundaryCondition::BoundaryCondition(const CBoundaryCondition &bc, const std::st
 		this->setDisValue(bc.getGeoNodeValue());
 	else if (this->getProcessDistributionType() == FiniteElement::LINEAR ||
 	         this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
-		this->setLinearDisValues(bc.getPointsWithDistribedBC(), bc.getDistribedBC());
+		this->setLinearDisValues(this->getDistributedPairs(bc.getPointsWithDistribedBC(), bc.getDistribedBC()));
 }
