@@ -1030,7 +1030,7 @@ void CInitialCondition::SetDomainEle(int nidx)
 			{
 				m_ele = m_msh->ele_vector[i];
 				// Marked for use
-				if(m_ele->GetMark() && m_ele->GetPatchIndex() == subdom_index[k] )
+				if(m_ele->GetMark() && m_ele->GetPatchIndex() == static_cast<size_t>(subdom_index[k]))
 					this->getProcess()->SetElementValue(i, nidx, subdom_ic[k]);
 				//WW ele_val = this->getProcess()->GetElementValue(i, nidx);
 			}

@@ -2546,7 +2546,7 @@ void COutput::ELEWritePLY_TECData(fstream &tec_file)
 		MeshLib::CElem* m_ele = m_msh->ele_vector[ele_vector_at_geo[i]];
 		// x,y,z
 		m_ele->GetEdges(ele_edges_vector);
-		for (int j = 0; j < m_ele->GetEdgesNumber(); j++)
+		for (size_t j = 0; j < m_ele->GetEdgesNumber(); j++)
 		{
 			MeshLib::CEdge* m_edg = ele_edges_vector[j];
 			if (m_edg->GetMark())

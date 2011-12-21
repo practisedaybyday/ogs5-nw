@@ -84,7 +84,7 @@ public:
 	// 4. Gravity term
 	void CalcGravity();
 	// 5. Strain coupling matrix
-	void CalcStrainCoupling(const int phase = 0);
+	void CalcStrainCoupling(int phase = 0);
 	// 6. Thermal coupling
 	void CalcRHS_by_ThermalDiffusion();
 	// 7. Advection matrix
@@ -340,7 +340,7 @@ private:
 	void AssembleCapillaryEffect();       // PCH
 	                                      // PCH for debugging
 
-	void Add2GlolbalMatrixII(const int block_cols = 2);            //WW. 06.2011
+	void add2GlobalMatrixII(int block_cols = 2);            //WW. 06.2011
 	void PrintTheSetOfElementMatrices(std::string mark);
 	// Friend classes, 01/07, WW
 	friend class ::CMediumProperties;

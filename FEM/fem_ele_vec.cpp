@@ -961,7 +961,7 @@ void CFiniteElementVec::ComputeMatrix_RHS(const double fkt,
  **************************************************************************/
 void CFiniteElementVec::LocalAssembly(const int update)
 {
-	int i, j;
+	int j;
 	double* a_n = NULL;
 
 	Index = MeshElement->GetIndex();
@@ -995,25 +995,25 @@ void CFiniteElementVec::LocalAssembly(const int update)
 	if(m_dom)
 	{
 		//06.2011. WW
-		for(i = 0; i < static_cast<int>(pcs->GetPrimaryVNumber()); i++)
+		for(size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
 			NodeShift[i] = m_dom->shift[i];
-		for(i = 0; i < nnodesHQ; i++)
+		for(int i = 0; i < nnodesHQ; i++)
 			eqs_number[i] = element_nodes_dom[i];
 	}
 	else
-		for(i = 0; i < nnodesHQ; i++)
+		for(int i = 0; i < nnodesHQ; i++)
 			eqs_number[i] =  MeshElement->nodes[i]->GetEquationIndex();
 
 	// For strain and stress extropolation all element types
 	// Number of elements associated to nodes
-	for(i = 0; i < nnodes; i++)
+	for(int i = 0; i < nnodes; i++)
 		dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
 
 	// Get displacement_n
 	if(dynamic)
 	{
 		a_n = pcs->GetAuxArray();
-		for(i = 0; i < dim; i++)
+		for(size_t i = 0; i < dim; i++)
 			for(j = 0; j < nnodesHQ; j++)
 			{
 				// Increment of acceleration, da
@@ -1031,21 +1031,21 @@ void CFiniteElementVec::LocalAssembly(const int update)
 			}
 	}
 	else
-		for(i = 0; i < dim; i++)
+		for(size_t i = 0; i < dim; i++)
 			for(j = 0; j < nnodesHQ; j++)
 				Disp[j + i * nnodesHQ] = pcs->GetNodeValue(nodes[j],Idx_dm0[i]);
 
 	// Get saturation of element nodes
 	if(Flow_Type > 0 && Flow_Type != 10)
 	{
-		for(i = 0; i < nnodes; i++)
+		for(int i = 0; i < nnodes; i++)
 		{
 			AuxNodal_S[i] = h_pcs->GetNodeValue(nodes[i], idx_S);
 			AuxNodal_S0[i] = h_pcs->GetNodeValue(nodes[i], idx_S0);
 		}
 		if(Flow_Type == 2 || Flow_Type == 3) //09.10.2009 PCH
 
-			for(i = 0; i < nnodes; i++)
+			for(int i = 0; i < nnodes; i++)
 			{
 				AuxNodal0[i] = h_pcs->GetNodeValue(nodes[i], idx_P1);
 				AuxNodal2[i] = h_pcs->GetNodeValue(nodes[i], idx_P2);
@@ -1058,7 +1058,7 @@ void CFiniteElementVec::LocalAssembly(const int update)
 			double fac = 1.0;
 			if(Flow_Type == 1)
 				fac = -1.0;
-			for(i = 0; i < nnodes; i++)
+			for(int i = 0; i < nnodes; i++)
 			{
 				//Pc
 				AuxNodal1[i] = fac * h_pcs->GetNodeValue(nodes[i], idx_P1 - 1);
@@ -1091,7 +1091,7 @@ void CFiniteElementVec::LocalAssembly(const int update)
 					smat->excavated = false;  // To be ... 12.2009. WW
 			}
 			//WX:07.2011
-			if(pcs->ExcavMaterialGroup == MeshElement->GetPatchIndex())
+			if(static_cast<size_t>(pcs->ExcavMaterialGroup) == MeshElement->GetPatchIndex())
 			{
 				double const* ele_center (MeshElement->GetGravityCenter());
 				if((GetCurveValue(pcs->ExcavCurve,0,aktuelle_zeit,
@@ -1204,7 +1204,7 @@ bool CFiniteElementVec::GlobalAssembly()
 						onExBoundary = true;
 						break;
 					}
-					else if (elem->GetPatchIndex() != pcs->ExcavMaterialGroup)
+					else if (elem->GetPatchIndex() != static_cast<size_t>(pcs->ExcavMaterialGroup))
 					{
 						onExBoundary = true;
 						break;
@@ -1218,7 +1218,7 @@ bool CFiniteElementVec::GlobalAssembly()
 			}
 
 			if (!onExBoundary)
-				for (int j = 0; j < dim; j++)
+				for (size_t j = 0; j < dim; j++)
 					(*RHS)(j * nnodesHQ + i) = 0.0;
 		}
 	}
@@ -1254,7 +1254,7 @@ bool CFiniteElementVec::GlobalAssembly()
  **************************************************************************/
 void CFiniteElementVec::GlobalAssembly_Stiffness()
 {
-	int i,j, k, l;
+	int i,j;
 	double f1,f2;
 	f1 = 1.0;
 	f2 = -1.0;
@@ -1268,9 +1268,9 @@ void CFiniteElementVec::GlobalAssembly_Stiffness()
 
 		long kk = 0;
 		// Assemble Jacobi preconditioner
-		for (k = 0; k < ele_dim; k++)
+		for (size_t k = 0; k < ele_dim; k++)
 		{
-			for (l = 0; l < ele_dim; l++)
+			for (size_t l = 0; l < ele_dim; l++)
 				for (i = 0; i < nnodesHQ; i++)
 				{
 					kk = eqs_number[i] + NodeShift[k];
@@ -1308,7 +1308,7 @@ void CFiniteElementVec::GlobalAssembly_Stiffness()
 			for (j = 0; j < nnodesHQ; j++)
 			{
 				// Local assembly of stiffness matrix
-				for (k = 0; k < ele_dim; k++)
+				for (size_t k = 0; k < ele_dim; k++)
 				{
 #ifdef NEW_EQS
 					(*A)(eqs_number[i] + NodeShift[k],eqs_number[j] +
@@ -1330,9 +1330,9 @@ void CFiniteElementVec::GlobalAssembly_Stiffness()
 		for (j = 0; j < nnodesHQ; j++)
 		{
 			// Local assembly of stiffness matrix
-			for (k = 0; k < ele_dim; k++)
+			for (size_t k = 0; k < ele_dim; k++)
 			{
-				for (l = 0; l < ele_dim; l++)
+				for (size_t l = 0; l < ele_dim; l++)
 #ifdef NEW_EQS
 					(*A)(eqs_number[i] + NodeShift[k],eqs_number[j] +
 					     NodeShift[l])
@@ -1448,7 +1448,6 @@ void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix* pCMatrix,
                                                         double fct,
                                                         const int phase)
 {
-	int i, j, k;
 #if defined(NEW_EQS)
 	CSparseMatrix* A = NULL;
 	if(m_dom)
@@ -1459,11 +1458,11 @@ void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix* pCMatrix,
 
 	int dim_shift = dim + phase;
 	// Add pressure coupling matrix to the stifness matrix
-	for (i = 0; i < nnodesHQ; i++)
+	for (int i = 0; i < nnodesHQ; i++)
 	{
-		for (j = 0; j < nnodes; j++)
+		for (int j = 0; j < nnodes; j++)
 		{
-			for(k = 0; k < ele_dim; k++)
+			for(size_t k = 0; k < ele_dim; k++)
 #ifdef NEW_EQS
 				(*A)(NodeShift[k] + eqs_number[i], NodeShift[dim_shift] +
 				     eqs_number[j])
@@ -1604,10 +1603,10 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 #endif
 			}
 			break;
-		case 2:                   // Multi-phase-flow: p_g-Sw*p_c
+		case 2: {                   // Multi-phase-flow: p_g-Sw*p_c
 			// 07.2011. WW
-
-			for (i = 0; i < dim * nnodesHQ; i++)
+			const int dim_times_nnodesHQ(dim * nnodesHQ);
+			for (i = 0; i < dim_times_nnodesHQ; i++)
 				AuxNodal1[i] = 0.0;
 
 			if(smat->bishop_model > 0)
@@ -1667,6 +1666,7 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 			}
 
 			break;
+		}
 		case 3:                   // Multi-phase-flow: SwPw+SgPg	// PCH 05.05.2009
 			for (i = 0; i < nnodes; i++)
 			{
@@ -1692,20 +1692,21 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 				               + pcs->GetNodeValue(nodes[i],idx_P);
 			}
 
+		const int dim_times_nnodesHQ(dim * nnodesHQ);
 		// Coupling effect to RHS
 		if(Flow_Type != 2)        // 07.2011. WW
 		{
-			for (i = 0; i < dim * nnodesHQ; i++)
+			for (i = 0; i < dim_times_nnodesHQ; i++)
 				AuxNodal1[i] = 0.0;
 			PressureC->multi(AuxNodal, AuxNodal1);
 		}
-		for (i = 0; i < dim * nnodesHQ; i++)
+		for (i = 0; i < dim_times_nnodesHQ; i++)
 			(*RHS)(i) -= fabs(biot) * AuxNodal1[i];
 	}                                     // End if partioned
 
 	// If dymanic
 	if(dynamic)
-		for (i = 0; i < dim; i++)
+		for (size_t i = 0; i < dim; i++)
 			for (j = 0; j < nnodesHQ; j++)
 				for (k = 0; k < nnodesHQ; k++)
 					(*RHS)(i * nnodesHQ + j) += (*Mass)(j,k) * (
@@ -1714,7 +1715,7 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 
 	//RHS->Write();
 
-	for (i = 0; i < dim; i++)
+	for (size_t i = 0; i < dim; i++)
 		for (j = 0; j < nnodesHQ; j++)
 			b_rhs[eqs_number[j] + NodeShift[i]] -= (*RHS)(i * nnodesHQ + j);
 	//WX:07.2011 if not on excav boundary, RHS=0
@@ -1760,7 +1761,7 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 						onExBoundary = true;
 						break;
 					}
-					else if (elem->GetPatchIndex() != pcs->ExcavMaterialGroup)
+					else if (elem->GetPatchIndex() != static_cast<size_t>(pcs->ExcavMaterialGroup))
 					{
 						onExBoundary = true;
 						break;
@@ -1774,7 +1775,7 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 			}
 
 			if (!onExBoundary)
-				for (int j = 0; j < dim; j++)
+				for (size_t j = 0; j < dim; j++)
 					b_rhs[eqs_number[i] + NodeShift[j]] = 0.0;
 		}
 	}
@@ -2613,14 +2614,9 @@ void CFiniteElementVec::CheckNodesInJumpedDomain()
  **************************************************************************/
 void CFiniteElementVec::ComputeRESM(const double* tangJump)
 {
-	int i;
 	static double dphi_e[3];
 
-	//TEST
-	//    computeJacobian(1);
-	//    ComputeGradShapefct(1);
-	//
-	for(i = 0; i < ele_dim; i++)
+	for(size_t i = 0; i < ele_dim; i++)
 	{
 		dphi_e[i] = 0.0;
 		for(int j = 0; j < nnodesHQ; j++)
@@ -3052,7 +3048,7 @@ int CFiniteElementVec::IntersectionPoint(const int O_edge, const double* NodeA, 
 **************************************************************************/
 void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 {
-	int i,j, k,l, ii, jj, gp_r, gp_s, gp_t;
+	int gp_r(0), gp_s(0), gp_t(0);
 	double fkt = 0.0, area, Jac_e = 0.0, f_j;
 
 	// For enhanced strain element
@@ -3068,27 +3064,19 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 	BDG->LimitSize(2, 2 * nnodesHQ);
 	PDB->LimitSize(2 * nnodesHQ,2);
 
-	gp_r = gp_s = gp_t = 0;
-
-	ThermalExpansion = 0.0;
 	if(T_Flag)
 	{
 		// Thermal effect
 		if(smat->Thermal_Expansion() > 0.0)
 			ThermalExpansion = smat->Thermal_Expansion();
-		for(i = 0; i < nnodes; i++)
+		for(int i = 0; i < nnodes; i++)
 			Temp[i] =  t_pcs->GetNodeValue(nodes[i],idx_T1) - t_pcs->GetNodeValue(
 			        nodes[i],
 			        idx_T0);
 	}
 
 	// Elastic modulus
-#ifdef RFW_FRACTURE
-	smat->Calculate_Lame_Constant(MeshElement);
-#endif
-#ifndef RFW_FRACTURE
 	smat->Calculate_Lame_Constant();
-#endif
 
 	smat->ElasticConsitutive(ele_dim, De);
 
@@ -3124,19 +3112,19 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 	if(fabs(eleV_DM->tract_j) < MKleinsteZahl)
 	{
 		// average of stresses within an element
-		for(j = 0; j < ns; j++)
+		for(int j = 0; j < ns; j++)
 		{
 			dstress[j] = 0.0;
-			for(i = 0; i < nGaussPoints; i++)
+			for(int i = 0; i < nGaussPoints; i++)
 				dstress[j] += (*eleV_DM->Stress)(j,i);
 		}
-		for(i = 0; i < ns; i++)
+		for(int i = 0; i < ns; i++)
 			dstress[i] /= (double)nGaussPoints;
 
-		for(i = 0; i < ele_dim; i++)
+		for(size_t i = 0; i < ele_dim; i++)
 		{
 			tt0[i] = 0.0;
-			for(j = 0; j < ns; j++)
+			for(int j = 0; j < ns; j++)
 				tt0[i] += (*Pe)(i,j) * dstress[j];
 		}
 		eleV_DM->tract_j = loc_dilatancy * tt0[0] + fabs(tt0[1]);
@@ -3147,12 +3135,12 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 		    //--------------------------------------------------------------
 		    //-----------  Integrate of traction on the jump plane ---------
 		    //--------------------------------------------------------------
-		    for(i=0; i<ns; i++) dstress[i] = (*eleV_DM->Stress)(i,gp);
+		    for(int i=0; i<ns; i++) dstress[i] = (*eleV_DM->Stress)(i,gp);
 		    fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
-		    for(i=0; i<ele_dim; i++)
+		    for(size_t i=0; i<ele_dim; i++)
 		    {
 		   tt0[i] = 0.0;
-		   for(j=0; j<ns; j++)
+		   for(int j=0; j<ns; j++)
 		   tt0[i] += (*Pe)(i,j)*dstress[j];
 		   }
 		   eleV_DM->tract_j = fkt*(loc_dilatancy*tt0[0]+fabs(tt0[1]));
@@ -3168,10 +3156,10 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 	// AuxMatrix temporarily used to store PDG
 	(*AuxMatrix) = 0.0;
 	// Integration of P^t*Stress^{elastic try}
-	for(i = 0; i < ele_dim; i++)
+	for(size_t i = 0; i < ele_dim; i++)
 		tt0[i] = 0.0;
 	//TEST
-	for(i = 0; i < ns; i++)
+	for(int i = 0; i < ns; i++)
 		dstress[i] = 0.0;         //Test average appoach
 	for(gp = 0; gp < nGaussPoints; gp++)
 	{
@@ -3190,13 +3178,13 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 		{
 			ComputeShapefct(1); // Linear interpolation function
 			Tem = 0.0;
-			for(i = 0; i < nnodes; i++)
+			for(int i = 0; i < nnodes; i++)
 				Tem += shapefct[i] * Temp[i];
-			for (i = 0; i < 3; i++)
+			for (size_t i = 0; i < 3; i++)
 				dstrain[i] -= ThermalExpansion * Tem;
 		}
 		/*
-		   for(i=0; i<ns; i++) dstress[i] = (*eleV_DM->Stress)(i,gp);
+		   for(int i=0; i<ns; i++) dstress[i] = (*eleV_DM->Stress)(i,gp);
 		   De->multi(dstrain, dstress);
 		   // Try stress
 		   Pe->multi(dstress, tt0, fkt);
@@ -3205,17 +3193,17 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 		PeDe->multi(*Ge, *AuxMatrix, fkt);
 
 		//TEST -----------Average approach -------------------------
-		for(i = 0; i < ns; i++)
+		for(int i = 0; i < ns; i++)
 			dstress[i] += (*eleV_DM->Stress)(i,gp);
 		De->multi(dstrain, dstress);
 		//-----------------------------------------------------------
 	}
 
 	//TEST average approach
-	for(i = 0; i < ns; i++)
+	for(int i = 0; i < ns; i++)
 		dstress[i] /= (double)nGaussPoints;
 	Pe->multi(dstress, tt0, 1.0);
-	for(i = 0; i < ele_dim; i++)
+	for(size_t i = 0; i < ele_dim; i++)
 		tt0[i] *= area;
 	//-------------------------------------------------------------
 
@@ -3240,17 +3228,17 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 		//--------------------------------------------------------------
 		//----------------   Local Jacobian   --------------------------
 		//--------------------------------------------------------------
-		for(i = 0; i < ele_dim; i++)
+		for(size_t i = 0; i < ele_dim; i++)
 			tt[i] = tt0[i];
 		AuxMatrix->multi(zeta, tt, -1.0);
 
 		Jac_e =  0.0;
-		for (i = 0; i < ele_dim; i++)
-			for(j = 0; j < ele_dim; j++)
+		for (size_t i = 0; i < ele_dim; i++)
+			for(size_t j = 0; j < ele_dim; j++)
 				Jac_e += D_prj[i] * (*AuxMatrix)(i,j) * D_prj[j];
 
 		Jac_e /= area;
-		for(i = 0; i < ele_dim; i++)
+		for(size_t i = 0; i < ele_dim; i++)
 			tt[i] /= area;
 
 		f_j = D_prj[0] * tt[0] + tt[1] - sj;
@@ -3270,7 +3258,7 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 		//--------------------------------------------------------------
 		//-----------  Integrate of traction on the jump plane ---------
 		//--------------------------------------------------------------
-		for(i = 0; i < ns; i++)
+		for(int i = 0; i < ns; i++)
 			dstress[i] = (*eleV_DM->Stress)(i,gp);
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		//---------------------------------------------------------
@@ -3285,9 +3273,9 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 		{
 			ComputeShapefct(1); // Linear interpolation function
 			Tem = 0.0;
-			for(i = 0; i < nnodes; i++)
+			for(int i = 0; i < nnodes; i++)
 				Tem += shapefct[i] * Temp[i];
-			for (i = 0; i < 3; i++)
+			for (size_t i = 0; i < 3; i++)
 				dstrain[i] -= ThermalExpansion * Tem;
 		}
 
@@ -3302,7 +3290,7 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 		{
 			// Two Dimensional
 			RecordGuassStrain(gp, gp_r, gp_s, gp_t);
-			for(i = 0; i < ns; i++)
+			for(int i = 0; i < ns; i++)
 			{
 				(*eleV_DM->Stress)(i,gp) = dstress[i];
 				dstrain[i] = 0.0;
@@ -3317,15 +3305,15 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 			// Compute stiffness matrix
 			ComputeMatrix_RHS(fkt, De);
 			// Stiffness contributed by enhanced strain to the stiffness matrix
-			for (i = 0; i < nnodesHQ; i++)
+			for (int i = 0; i < nnodesHQ; i++)
 			{
 				setTransB_Matrix(i);
 				// B^T*D*G
 				(*AuxMatrix) = 0.0;
 				B_matrix_T->multi(*De, *Ge, *AuxMatrix);
 
-				for (k = 0; k < ele_dim; k++)
-					for (l = 0; l < ele_dim; l++)
+				for (size_t k = 0; k < ele_dim; k++)
+					for (size_t l = 0; l < ele_dim; l++)
 						(*BDG)(k, ele_dim * i +
 						       l) += fkt * (*AuxMatrix)(k,l);
 				//
@@ -3333,8 +3321,8 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 				setB_Matrix(i);
 				(*AuxMatrix) = 0.0;
 				PeDe->multi(*B_matrix, *AuxMatrix);
-				for (k = 0; k < ele_dim; k++)
-					for (l = 0; l < ele_dim; l++)
+				for (size_t k = 0; k < ele_dim; k++)
+					for (size_t l = 0; l < ele_dim; l++)
 						(*PDB)(ele_dim * i + k,
 						       l) += fkt * (*AuxMatrix)(k,l) / area;
 			}
@@ -3343,21 +3331,21 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 
 	// Those contributed by enhanced strain to the stiffness matrix
 	// D*D^T
-	for(i = 0; i < ele_dim; i++)
-		for(j = 0; j < ele_dim; j++)
+	for(size_t i = 0; i < ele_dim; i++)
+		for(size_t j = 0; j < ele_dim; j++)
 			(*DtD)(i,j) = D_prj[i] * D_prj[j];
 
 	//
-	for (i = 0; i < nnodesHQ; i++)
-		for (j = 0; j < nnodesHQ; j++)
+	for (int i = 0; i < nnodesHQ; i++)
+		for (int j = 0; j < nnodesHQ; j++)
 		{
 			// Local assembly of stiffness matrix
-			for (k = 0; k < ele_dim; k++)
-				for (l = 0; l < ele_dim; l++)
+			for (size_t k = 0; k < ele_dim; k++)
+				for (size_t l = 0; l < ele_dim; l++)
 				{
 					f_j = 0.0;
-					for (ii = 0; ii < ele_dim; ii++)
-						for (jj = 0; jj < ele_dim; jj++)
+					for (size_t ii = 0; ii < ele_dim; ii++)
+						for (size_t jj = 0; jj < ele_dim; jj++)
 							f_j +=
 							        (*BDG)(k, ele_dim * i +
 							               ii) *
@@ -3531,8 +3519,8 @@ void ElementValue_DM::Read_BIN(std::fstream& is)
 void ElementValue_DM::ReadElementStressASCI(std::fstream& is)
 {
 	size_t i,j;
-    size_t ns = Stress0->Rows(); 
-    size_t nGS = Stress0->Cols(); 
+    size_t ns = Stress0->Rows();
+    size_t nGS = Stress0->Cols();
 
 	for(i=0; i<ns; i++)
 	{

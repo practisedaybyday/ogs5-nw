@@ -40,7 +40,7 @@ namespace FiniteElement
  */
 void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 {
-	int i, j, k, l;                       //, m;
+	int l;                       //, m;
 	//int dm_shift = problem_dimension_dm;
 	// ---- Gauss integral
 	int gp_r = 0,gp_s = 0,gp_t = 0;
@@ -98,11 +98,11 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 		                                                        0) - Sw) / perturb;
 
 		// Velocity
-		for (i = 0; i < dim; i++)
+		for (size_t i = 0; i < dim; i++)
 		{
 			gradPw[i] = 0.0;
 			gradPg[i] = 0.;
-			for(j = 0; j < nnodes; j++)
+			for(int j = 0; j < nnodes; j++)
 			{
 				gradPw[i] += (p2[j] - NodalVal1[j]) * dshapefct[i * nnodes + j];
 				gradPg[i] += p2[j] * dshapefct[i * nnodes + j];
@@ -120,11 +120,11 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 		dkdp2 = dSdp * ( MediaProp->PermeabilitySaturationFunction(S1,1)
 		                 - MediaProp->PermeabilitySaturationFunction(Sw,1)) / perturb;
 
-		for (i = 0; i < dim; i++)
+		for (size_t i = 0; i < dim; i++)
 		{
 			vw[i] = 0.0;
 			vg[i] = 0.;
-			for(j = 0; j < dim; j++)
+			for(size_t j = 0; j < dim; j++)
 			{
 				vw[i] += tensor[i * dim + j] * gradPw[j];
 				vg[i] += tensor[i * dim + j] * gradPg[j];
@@ -134,12 +134,12 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 		}
 
 		/// For the Laplace
-		for (i = 0; i < nnodes; i++)
+		for (int i = 0; i < nnodes; i++)
 		{
 			l = i + nnodes;
-			for (j = 0; j < nnodes; j++)
+			for (int j = 0; j < nnodes; j++)
 				//m = j+nnodes;
-				for (k = 0; k < dim; k++)
+				for (size_t k = 0; k < dim; k++)
 				{
 					f_buff = fkt * dshapefct[k * nnodes + i] * shapefct[j];
 					(*StiffMatrix)(i,j) += f_buff * vw[k];
@@ -184,7 +184,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 
 			/// if deformation is coupled
 			vw[0]  = 0.;  // Here for dSdp*grad u/dt
-			for (i = 0; i < nnodes; i++)
+			for (int i = 0; i < nnodes; i++)
 			//            for (i=0;i<nnodesHQ;i++)
 			{
 				vw[0]  += NodalVal2[i] * dshapefct[i] + NodalVal3[i] *
@@ -199,10 +199,10 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 		else
 			vw[0] = 0.;
 
-		for (i = 0; i < nnodes; i++)
+		for (int i = 0; i < nnodes; i++)
 		{
 			l = i + nnodes;
-			for (j = 0; j < nnodes; j++)
+			for (int j = 0; j < nnodes; j++)
 			{
 				//m = j+nnodes;
 				f_buff = fkt * shapefct[i] * shapefct[j];
@@ -218,7 +218,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 #endif
 	}                                     // loop gauss points
 
-	Add2GlolbalMatrixII(1);
+	add2GlobalMatrixII(1);
 
 	// StiffMatrix->Write();
 }
@@ -234,7 +234,6 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
  */
 void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
 {
-	int i, j, k;                          //, m;
 	//int dm_shift = problem_dimension_dm;
 	// ---- Gauss integral
 	int gp_r = 0,gp_s = 0,gp_t = 0;
@@ -278,10 +277,10 @@ void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
 		                                                        0) - Sw) / perturb;
 
 		// Velocity
-		for (i = 0; i < dim; i++)
+		for (size_t i = 0; i < dim; i++)
 		{
 			gradPw[i] = 0.0;
-			for(j = 0; j < nnodes; j++)
+			for(int j = 0; j < nnodes; j++)
 				gradPw[i] += NodalVal1[j] * dshapefct[i * nnodes + j];
 		}
 
@@ -291,20 +290,20 @@ void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
 		dkdp1 = dSdp * ( MediaProp->PermeabilitySaturationFunction(S1,0)
 		                 - MediaProp->PermeabilitySaturationFunction(Sw,0)) / perturb;
 
-		for (i = 0; i < dim; i++)
+		for (size_t i = 0; i < dim; i++)
 		{
 			vw[i] = 0.0;
-			for(j = 0; j < dim; j++)
+			for(size_t j = 0; j < dim; j++)
 				vw[i] += tensor[i * dim + j] * gradPw[j];
 
 			vw[i] *= dkdp1 * time_unit_factor / vsc1;
 		}
 
 		/// For the Laplace
-		for (i = 0; i < nnodes; i++)
-			for (j = 0; j < nnodes; j++)
+		for (int i = 0; i < nnodes; i++)
+			for (int j = 0; j < nnodes; j++)
 				//m = j+nnodes;
-				for (k = 0; k < dim; k++)
+				for (size_t k = 0; k < dim; k++)
 					(*StiffMatrix)(i,
 					               j) += fkt *
 					                     dshapefct[k * nnodes +
@@ -322,7 +321,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
 
 			/// if deformation is coupled
 			vw[0]  = 0.;  // Here for dSdp*grad u/dt
-			for (i = 0; i < nnodes; i++)
+			for (int i = 0; i < nnodes; i++)
 			//            for (i=0;i<nnodesHQ;i++)
 			{
 				vw[0]  += NodalVal2[i] * dshapefct[i] + NodalVal3[i] *
@@ -337,14 +336,14 @@ void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
 		else
 			vw[0] = 0.;
 
-		for (i = 0; i < nnodes; i++)
-			for (j = 0; j < nnodes; j++)
+		for (int i = 0; i < nnodes; i++)
+			for (int j = 0; j < nnodes; j++)
 				(*StiffMatrix)(i,j) += fkt * shapefct[i] * shapefct[j] * vw[0];
 
 #endif
 	}                                     // loop gauss points
 
-	Add2GlolbalMatrixII(1);
+	add2GlobalMatrixII(1);
 
 	// StiffMatrix->Write();
 }
