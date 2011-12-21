@@ -122,7 +122,7 @@ const MeshLib::CFEMesh* GridAdapter::toCFEMesh() const
 
 		mesh->ele_vector.push_back(elem);
 	}
-	//mesh->ConstructGrid();
+	mesh->ConstructGrid();
 	std::cout << "done." << std::endl;
 
 	return mesh;

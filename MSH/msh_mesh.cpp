@@ -434,6 +434,8 @@ void CFEMesh::ConnectedElements2Node(bool quadratic)
 **************************************************************************/
 void CFEMesh::ConstructGrid()
 {
+	std::cout << "Executing ConstructGrid()...";
+
 	bool done;
 
 	Math_Group::vec<CNode*> e_nodes0(20);
@@ -828,6 +830,8 @@ void CFEMesh::ConstructGrid()
 	Neighbors0.resize(0);
 	e_edgeNodes0.resize(0);
 	e_edgeNodes.resize(0);
+
+	std::cout << " done." << std::endl;
 }
 
 /**************************************************************************
