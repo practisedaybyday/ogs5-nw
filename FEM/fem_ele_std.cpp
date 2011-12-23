@@ -15,7 +15,7 @@
 //#include "rf_mfp_new.h"
 #include "rf_mmp_new.h"
 #include "rf_msp_new.h"
-
+#include "eos.h"
 #include "SparseMatrixDOK.h"
 
 #include "pcs_dm.h"                               // displacement coupled
@@ -1660,28 +1660,18 @@ double CFiniteElementStd::CalCoefMassPTC(int dof_index)
 		PG = interpolate(NodalVal0);
 		TG = interpolate(NodalVal_t0);
 		val = poro / PG;
-		if(FluidProp->density_model == 15)
-			val -= poro * FluidProp->CaldZdP(PG, TG) / FluidProp->CalCopressibility_PTC(
-			        PG,
-			        TG);
 		break;
 	case 1:
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 		TG = interpolate(NodalVal_t0);
 		PG = interpolate(NodalVal0);
 		val = -poro / TG;
-		if(FluidProp->density_model == 15)
-			val -= poro * FluidProp->CaldZdT(PG, TG) / FluidProp->CalCopressibility_PTC(
-			        PG,
-			        TG);
 		break;
 	case 2:
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 		PG = interpolate(NodalVal0);
 		TG = interpolate(NodalVal_t0);
-		val = poro * FluidProp->beta_T * TG;
-		if(FluidProp->beta_T == 0)
-			val = 0.0;
+		val = - poro * FluidProp->beta_T * TG;
 		break;
 	case 3:
 		val = MediaProp->HeatCapacity(Index,pcs->m_num->ls_theta,this);
@@ -2600,7 +2590,7 @@ void CFiniteElementStd::CalCoefLaplacePTC(int dof_index)
 	case 3:
 		tensor = MediaProp->HeatConductivityTensor(Index);
 		for(size_t i = 0; i < dim * dim; i++)
-			mat[i] = tensor[i];  //mat[i*dim+i] = tensor[i];
+			mat[i] = tensor[i];  
 		break;
 	}
 }
@@ -3246,29 +3236,23 @@ double CFiniteElementStd::CalCoefAdvectionPTC(int dof_index)
 		PG = interpolate(NodalVal0);
 		TG = interpolate(NodalVal_t0);
 		val = 1 / PG;
-		if(FluidProp->density_model == 15)
-			val -= FluidProp->CaldZdP(PG, TG) / FluidProp->CalCopressibility_PTC(PG, TG);
+	
 		break;
 	case 1:
 		PG = interpolate(NodalVal0);
 		TG = interpolate(NodalVal_t0);
 		val = -1 / TG;
-		if(FluidProp->density_model == 15)
-			val +=  FluidProp->CaldZdT(PG, TG) / FluidProp->CalCopressibility_PTC(PG,
-			                                                                      TG);
 		break;
 	case 2:
 		PG = interpolate(NodalVal0);
 		TG = interpolate(NodalVal_t0);
-		val = 1 - FluidProp->beta_T * TG;
-		if(FluidProp->beta_T == 0)
-			val = 0.0;
+		val = FluidProp->vhd - FluidProp->beta_T * TG;
 		break;
 	case 3:
 		dens_arg[0] = interpolate(NodalVal0);
 		dens_arg[1] = interpolate(NodalVal_t0);
 		dens_arg[2] = Index;
-		val = FluidProp->Density(dens_arg) * FluidProp->SpecificHeatCapacity();
+		val = FluidProp->Density(dens_arg) * FluidProp->SpecificHeatCapacity(dens_arg);
 		break;
 	}
 	return val;
@@ -5065,7 +5049,7 @@ void CFiniteElementStd::Assemble_Gravity()
 	//
 	//
 	int dof_n = 1;                        // 27.2.2007 WW
-	if(PcsType == V || PcsType == P)
+	if(PcsType == V || PcsType == P|| PcsType == S)
 		dof_n = 2;
 
 	//WW 05.01.07
@@ -5095,14 +5079,17 @@ void CFiniteElementStd::Assemble_Gravity()
 		//---------------------------------------------------------
 		ComputeGradShapefct(1);   // Linear interpolation function
 		ComputeShapefct(1);       // Moved from CalCoefLaplace(). 12.3.2007 WW
+		
 		// Material
-		if(PcsType == S)
-		{
-			dens_arg[0] = interpolate(NodalVal0); // pressure
-			dens_arg[1] = interpolate(NodalVal_t0); // temperature
-			dens_arg[2] = Index;
-			rho = FluidProp->Density(dens_arg);
-		}
+	if(FluidProp->density_model == 14)
+	{	if(PcsType == S)
+	dens_arg[1] = interpolate(NodalVal_t0);
+	if(PcsType == A)
+	dens_arg[1] = interpolate(NodalValC) + T_KILVIN_ZERO;
+	dens_arg[0] = interpolate(NodalVal1);
+	dens_arg[2] = Index;
+	rho  =  FluidProp->Density(dens_arg);
+	}
 		else
 			rho = FluidProp->Density();
 		if(gravity_constant < MKleinsteZahl) // HEAD version
@@ -5119,8 +5106,6 @@ void CFiniteElementStd::Assemble_Gravity()
 			{
 				if(PcsType == T)
 					CalCoefLaplace(false);
-				if(PcsType == S)
-					CalCoefLaplacePTC(0);
 				else
 					CalCoefLaplace(true);
 			}
@@ -5131,14 +5116,13 @@ void CFiniteElementStd::Assemble_Gravity()
 					CalCoefLaplace2(true, ii * dof_n + 1);
 				else if(PcsType == P)
 					CalCoefLaplacePSGLOBAL(true, ii * dof_n);
+				else if(PcsType == S)
+					CalCoefLaplacePTC(ii * dof_n);
 			}
 			// Calculate mass matrix
 			for (i = 0; i < nnodes; i++)
 				for (size_t k = 0; k < dim; k++)
-					NodalVal[i + ii *
-					         nnodes] -= fkt *
-					                    dshapefct[k * nnodes +
-					                              i] * mat[dim * k + dim - 1];
+					NodalVal[i + ii *nnodes] -= fkt * dshapefct[k * nnodes + i] * mat[dim * k + dim - 1];
 		}
 	}
 	//
@@ -5512,7 +5496,7 @@ void CFiniteElementStd::Cal_Velocity()
 		// Material
 		if(dof_n == 1)
 			CalCoefLaplace(true);
-		else if (PcsType == S)
+		else if (pcs->dof == 2 && PcsType == S)
 			CalCoefLaplacePTC(0);
 		else if (dof_n == 2 && PcsType == V) // PCH 05.2009
 			CalCoefLaplace2(true,0);
@@ -5542,12 +5526,12 @@ void CFiniteElementStd::Cal_Velocity()
 		//NW
 		if(k == 2 && (!HEAD_Flag) && FluidProp->CheckGravityCalculation())
 		{
-			if((FluidProp->density_model == 14)  || (FluidProp->density_model == 15))
-			{
-				dens_arg[0] = interpolate(NodalVal1);
+			if(FluidProp->density_model == 14)
+			{	if(PcsType == S)
+				dens_arg[1] = interpolate(NodalVal_t0);
+				if(PcsType == A)
 				dens_arg[1] = interpolate(NodalValC) + T_KILVIN_ZERO;
-				if(PcsType == S)
-					dens_arg[1] = interpolate(NodalVal_t0);
+				dens_arg[0] = interpolate(NodalVal1);
 				dens_arg[2] = Index;
 				coef  =  gravity_constant * FluidProp->Density(dens_arg);
 			}
@@ -8528,40 +8512,6 @@ double CFiniteElementStd::CalCoef_RHS_T_MPhase(int dof_index)
 	}
 	return val;
 }
-/**************************************************************************
-   FEMLib-Method:
-   Task: Calculate  coefficient of temperature induced RHS of multi-phase
-         flow
-   Programing:
-   02/2007 WW Implementation
-   last modification:
-**************************************************************************/
-double CFiniteElementStd::CalCoef_RHS_PTC(int dof_index)
-{
-	double val = 0.0;                     //, D_gw=0.0, D_ga=0.0; unused
-	// double expfactor=0.0,dens_arg[3]; unused
-	// int Index = MeshElement->GetIndex(); unused
-	ComputeShapefct(1);
-	//======================================================================
-	switch(dof_index)
-	{
-	case 0:
-
-		val = 0;
-		break;
-	case 1:
-		val = 0;
-		break;
-	case 2:
-		val = 0;
-		break;
-	case 3:
-		val = 0;
-		break;
-	}
-	return val;
-}
-
 /**************************************************************************
    FEMLib-Method:
    Task: Calculate coefficient of temperature induced RHS of PSGlobal scheme

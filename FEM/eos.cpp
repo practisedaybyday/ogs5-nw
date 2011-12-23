@@ -11,6 +11,7 @@
 
 #include "rf_mfp_new.h"
 #include "rf_mmp_new.h"
+#include "fem_ele_std.h"
 //#include "rf_num_new.h"
 #include "eos.h"
 #include "tools.h"
@@ -890,9 +891,6 @@ double Fluid_Heat_Conductivity (double rho, double T, int fluid)
 		h = ch4_heat_conductivity (rho,T);
 		break;
 	case 3:                               // NITROGEN
-		h = n2_heat_conductivity (rho,T);
-		break;
-	case 4:                               // NITROGEN
 		h = n2_heat_conductivity (rho,T);
 		break;
 
