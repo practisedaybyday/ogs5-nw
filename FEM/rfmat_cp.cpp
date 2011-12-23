@@ -302,10 +302,34 @@ ios::pos_type CompProperties::Read(ifstream* rfd_file)
 		}
 		//....................................................................
 		// subkeyword found
+		if(line_string.find("$CRITICAL_DENSITY") != std::string::npos)
+		{
+			in.str(GetLineFromFile1(rfd_file));
+			in >> critical_density;
+			in.clear();
+		}
+		//....................................................................
+		// subkeyword found
 		if(line_string.find("$ACENTRIC_FACTOR") != std::string::npos)
 		{
 			in.str(GetLineFromFile1(rfd_file));
 			in >> acentric_factor;
+			in.clear();
+		}
+		//....................................................................
+		// subkeyword found
+		if(line_string.find("$COMP_CAPACITY") != std::string::npos)
+		{
+			in.str(GetLineFromFile1(rfd_file));
+			in >> comp_capacity;
+			in.clear();
+		}
+		//....................................................................
+		// subkeyword found
+		if(line_string.find("$COMP_CONDUCTIVITY") != std::string::npos)
+		{
+			in.str(GetLineFromFile1(rfd_file));
+			in >> comp_conductivity;
 			in.clear();
 		}
 		//....................................................................

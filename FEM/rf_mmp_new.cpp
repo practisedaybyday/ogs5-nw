@@ -2588,7 +2588,10 @@ double CMediumProperties::HeatCapacity(long number, double theta,
 			heat_capacity_fluids = 0.0;
 			porosity = 0.0;
 		}
-		heat_capacity = porosity * heat_capacity_fluids + (1.0 - porosity) * specific_heat_capacity_solid * density_solid;
+		heat_capacity = porosity * heat_capacity_fluids + (1.
+		                                                   - porosity) *
+		                specific_heat_capacity_solid
+		                * density_solid;
 		break;
 	case 2:                               //boiling model for YD
 		//YD/OK: n c rho = n S^g c^g rho^g + n S^l c^l rho^l + (1-n) c^s rho^s
@@ -2659,34 +2662,32 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 	int i, dimen;
 	SolidProp::CSolidProperties* m_msp = NULL;
 	double heat_conductivity_fluids,Kx[3];
+	// TF unused variable - comment fix compile warning
+//   double *tensor = NULL;
+	//double a, b, Pc, T, Mw, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A, B,H_vap, dp_gw, dPc, dA, dB, dT, q,Tc=647.3,expfactor;
 	double a, b, rhow, rho_gw,rho_ga,rho_g, p_gw, mat_fac_w, mat_fac_g, A, B,H_vap, dp_gw, dPc,
 	       dA, dB, dT, q;
+	// TF unused variable - comment fix compile warning
+//   double Tc=647.3;
 	double expfactor;
 	double dens_arg[3]; //AKS
+	// TF unused variable - comment fix compile warning
+//   ElementValue* gp_ele = ele_gp_value[Fem_Ele_Std->Index];
 	//  double porosity =  this->porosity;  //MX
 	double Sw, porosity = this->porosity_model_values[0];
 	bool FLOW = false;                    //WW
+	//  int heat_capacity_model = 0;
 	CFluidProperties* m_mfp;              //WW
 	// long group = Fem_Ele_Std->GetMeshElement()->GetPatchIndex();
 	m_mfp = Fem_Ele_Std->FluidProp;       //WW
 
-	if(Fem_Ele_Std->FluidProp->heat_conductivity_model == 10 || Fem_Ele_Std->FluidProp->heat_conductivity_model == 1)
+	if (Fem_Ele_Std->PcsType == S) // Multi-phase WW
 	{
-	if (Fem_Ele_Std->pcs->type == 1111) 
-	{
-	m_mfp = mfp_vector[0];
-	dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal0);
-	dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
-	dens_arg[2] = Fem_Ele_Std->Index;
-	heat_conductivity_fluids = m_mfp->HeatConductivity(dens_arg);
-	}
-	if (Fem_Ele_Std->pcs->type == 5)
-	{
-	dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC1); 
-	dens_arg[1] = Fem_Ele_Std->interpolate( Fem_Ele_Std->NodalVal1) + T_KILVIN_ZERO; 
-	dens_arg[2] = Fem_Ele_Std->Index;
-	heat_conductivity_fluids= Fem_Ele_Std->FluidProp->HeatConductivity(dens_arg);
-	}
+		m_mfp = mfp_vector[0];
+		dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal0);
+		dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
+		dens_arg[2] = Fem_Ele_Std->Index;
+		heat_conductivity_fluids = m_mfp->HeatConductivity(dens_arg);
 	}
 	else
 	{
@@ -2713,7 +2714,22 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 			}
 			else
 			{
-					heat_conductivity_fluids= Fem_Ele_Std->FluidProp->HeatConductivity();
+				if (Fem_Ele_Std->FluidProp->density_model == 14
+				    && Fem_Ele_Std->MediaProp->heat_diffusion_model
+				    == 273 && Fem_Ele_Std->cpl_pcs)
+				{
+					dens_arg[0] = Fem_Ele_Std->interpolate(
+					        Fem_Ele_Std->NodalValC1); //Pressure
+					dens_arg[1] = Fem_Ele_Std->interpolate(
+					        Fem_Ele_Std->NodalVal1) + 273.15; //Temperature
+					dens_arg[2] = Fem_Ele_Std->Index; //ELE index
+					heat_conductivity_fluids
+					        = Fem_Ele_Std->FluidProp->HeatConductivity(
+					        dens_arg);
+				}
+				else
+					heat_conductivity_fluids
+					        = Fem_Ele_Std->FluidProp->HeatConductivity();
 				Sw = 1;
 
 				if (Fem_Ele_Std->cpl_pcs->type != 1)
@@ -2767,7 +2783,7 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 		// Capillary pressure
 		double PG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC1);
 		//Temperature
-		double TG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal1) + T_KILVIN_ZERO;
+		double TG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal1) + 273.15;
 		double Sw = Fem_Ele_Std->MediaProp->SaturationCapillaryPressureFunction(PG,0);
 		heat_conductivity_fluids = 0.0;
 		H_vap = 2257000;          //pow((Tc - TG),0.38)*2.65E+5;

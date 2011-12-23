@@ -15,7 +15,7 @@ double enthalpy (double rho, double T, std::string c);
 // calculates the density iteratively depending on pressure and temperature
 double isochoric_heat_capacity (double rho, double T, std::string c);
 // calculates the isochoric heat capacity depending on density and temperature
-double isobaric_heat_capacity(double rho, double T, int c);
+double isobaric_heat_capacity (double rho, double T, std::string c);
 // calculates the isobaric heat capacity depending on density and temperature
 double co2_viscosity (double rho, double T);
 // calculates the viscosity depending on density and temperature !ONLY for CO2!!!
