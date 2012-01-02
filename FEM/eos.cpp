@@ -11,6 +11,7 @@
 
 #include "rf_mfp_new.h"
 #include "rf_mmp_new.h"
+#include "fem_ele_std.h"
 //#include "rf_num_new.h"
 #include "eos.h"
 #include "tools.h"

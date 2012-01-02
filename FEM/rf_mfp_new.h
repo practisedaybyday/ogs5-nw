@@ -86,6 +86,7 @@ private:
 	double omega;                         // azentric factor for Peng-Robinson EOS
 	double molar_mass;
 	double beta_T; //AKS
+	double vhd; //AKS
 
 	/**
 	 * density
@@ -245,9 +246,7 @@ public:
 	double phi_0_tt (double T) const;
 	//AKS
 	double CalCopressibility(long idx_elem, double p, double T);
-	double CalCopressibility_PTC(double p, double T); //AKS
-	double CaldZdP(double p, double T);             //AKS
-	double CaldZdT(double p, double T);               //AKS
+	double CompDensity(long idx_elem, const std::string&, double p, double T);//AKS
 
 private:
 	// State variables

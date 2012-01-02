@@ -47,9 +47,6 @@ public:
 	double acentric_factor;
 	double critical_teperature;
 	double critical_volume;
-	double critical_density;
-	double comp_capacity;
-	double comp_conductivity;
 
 	/* Diffusionsmodelle und zugehoerige Beschreibungswerte */
 	int diffusion_model;                  /* Zerfallsmodell in geloester Phase */
