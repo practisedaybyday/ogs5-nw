@@ -13,6 +13,8 @@ source $SOURCE_LOCATION/scripts/base/configure_compiler.sh
 ## Windows specific
 if [ "$OSTYPE" == 'msys' ]; then
 
+	mkdir -vp ~/bin
+
 	# 7-zip
 	SEVENZIP_LOCATION=`which 7za`
 	if [ ! -z "$SEVENZIP_LOCATION" ]; then
