@@ -7,6 +7,7 @@ download_file() {
 	elif [ "$#" -eq "3" ]; then
 		echo "file (DOWNLOAD \"$1\" \"$2\" EXPECTED_MD5 \"$3\" SHOW_PROGRESS)" > download_file.cmake
 	fi
+	echo "Downloading file $1 ..."
 	cmake -P download_file.cmake
 	rm download_file.cmake
 }
