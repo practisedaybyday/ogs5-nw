@@ -150,7 +150,7 @@ if [ "$OSTYPE" == 'msys' ]; then
 
 		# Download modified makefile
 		if [ ! -f makefile_mod.vc ]; then
-			download_file http://dl.dropbox.com/u/5581063/makefile_mod.vc ./makefile_mod,vc 14fb13a5bd04ffc298fee7825dc7679f
+			download_file http://dl.dropbox.com/u/5581063/makefile_mod.vc ./makefile_mod,vc d41d8cd98f00b204e9800998ecf8427e
 		fi
 
 		echo " \
