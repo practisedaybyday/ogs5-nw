@@ -16,6 +16,7 @@
 
 //dialogs
 #include "DBConnectionDialog.h"
+#include "CondFromRasterDialog.h"
 #include "DiagramPrefsDialog.h"
 #include "FEMConditionSetupDialog.h"
 #include "GMSHPrefsDialog.h"
@@ -938,8 +939,7 @@ void MainWindow::importVtk()
 	QSettings settings("UFZ", "OpenGeoSys-5");
 	QStringList fileNames = QFileDialog::getOpenFileNames(this,
 	                                                      "Select VTK file(s) to import",
-	                                                      settings.value(
-	                                                              "lastOpenedFileDirectory").
+	                                                      settings.value("lastOpenedFileDirectory").
 	                                                      toString(),
 	                                                      "VTK files (*.vtk *.vti *.vtr *.vts *.vtp *.vtu);;");
 	foreach(QString fileName, fileNames) {
@@ -1285,19 +1285,8 @@ void MainWindow::showVisalizationPrefsDialog()
 
 void MainWindow::FEMTestStart()
 {
-	// *** begin test TetGen read mesh
-	const std::string path ("/home/fischeth/Desktop/data/Ketzin/PSglobal/Tom/MSH/");
-	std::string mesh_name ("ClosedSurface");
-	std::string fname_nodes(path + mesh_name + ".1.node");
-	std::string fname_elements(path + mesh_name + ".1.ele");
-
-	FileIO::TetGenInterface tetgen;
-	MeshLib::CFEMesh* mesh (tetgen.readTetGenMesh (fname_nodes, fname_elements));
-
-	if (mesh)
-		_meshModels->addMesh(mesh, mesh_name);
-	else
-		OGSError::box("Failed to load TetGen mesh file.");	std::cout << "This is test functionality only..." << std::endl;
+	CondFromRasterDialog dlg(this->_project);
+	dlg.exec();
 }
 
 void MainWindow::showTrackingSettingsDialog()
