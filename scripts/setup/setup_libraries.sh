@@ -19,16 +19,16 @@ if [ "$OSTYPE" == 'msys' ]; then
 		# Install Qt
 		if [ ! -d qt ]; then
 			# Download and extract
-			wget http://get.qt.nokia.com/qt/source/$QT_VERSION.zip -O ./$QT_VERSION.zip
+			download_file http://get.qt.nokia.com/qt/source/$QT_VERSION.zip ./$QT_VERSION.zip
 			7za x $QT_VERSION.zip
 			mv $QT_VERSION/ qt/
 			rm $QT_VERSION.zip
-		
+
 		elif [ -f qt/bin/qmake.exe -a -f qt/bin/QtGui4.dll -a -f qt/bin/QtGuid4.dll ]; then
 			# Already installed
 			QT_FOUND=true
 		fi
-		
+
 		if [ $QT_FOUND ]; then
 			echo "Qt already installed in $LIBS_LOCATION/qt"
 		else
@@ -40,7 +40,7 @@ if [ "$OSTYPE" == 'msys' ]; then
 			if [ $QT_SQL ]; then
 				if [ ! -d instantclient ]; then
 					if [ "$ARCHITECTURE" == "x64" ]; then
-						wget --no-check-certificate https://github.com/downloads/ufz/devguide/instantclient_11_2_x64.zip
+						download_file http://dl.dropbox.com/u/5581063/instantclient_11_2_x64.zip ./instantclient_11_2_x64.zip 015bd1b163571988cacf70e7d6185cb5
 						7za x instantclient_11_2_x64.zip
 						mv instantclient_11_2/ instantclient/
 						rm instantclient_11_2_x64.zip
@@ -48,7 +48,7 @@ if [ "$OSTYPE" == 'msys' ]; then
 				fi
 				QT_SQL_ARGS="-qt-sql-oci -I %cd%\..\instantclient\sdk\include -L %cd%\..\instantclient\sdk\lib\msvc"
 			fi
-			
+
 			cd qt
 
 			echo " \
@@ -61,19 +61,19 @@ if [ "$OSTYPE" == 'msys' ]; then
 			$COMSPEC \/k build.bat
 			QT_WAS_BUILT=true
 		fi
-		
+
 		export PATH=$PATH:$LIBS_LOCATION/qt/bin
-		
+
 	else
 		echo "Qt already installed in $QMAKE_LOCATION"
 	fi
-	
-	
+
+
 	# Install VTK
 	cd $LIBS_LOCATION
 	if [ ! -d vtk ]; then
 		# Download, extract, rename
-		wget http://www.vtk.org/files/release/5.8/$VTK_VERSION.tar.gz -O ./$VTK_VERSION.tar.gz
+		download_file http://www.vtk.org/files/release/5.8/$VTK_VERSION.tar.gz ./$VTK_VERSION.tar.gz
 		tar -xf $VTK_VERSION.tar.gz
 		rm $VTK_VERSION.tar.gz
 	# Check for existing installation
@@ -86,7 +86,7 @@ if [ "$OSTYPE" == 'msys' ]; then
 			VTK_FOUND=true
 		fi
 	fi
-	
+
 	if [ $VTK_FOUND ]; then
 		echo "VTK already installed in $LIBS_LOCATION/vtk"
 	else
@@ -102,25 +102,25 @@ if [ "$OSTYPE" == 'msys' ]; then
 		$COMSPEC \/c "devenv VTK.sln /Build Debug"
 		$COMSPEC \/c "devenv VTK.sln /Build Debug /Project QVTK"
 	fi
-	
+
 	# Install shapelib
 	cd $LIBS_LOCATION
 	if [ ! -d shapelib ]; then
 		# Download, extract
-		wget http://download.osgeo.org/shapelib/$SHAPELIB_VERSION.tar.gz
+		download_file http://download.osgeo.org/shapelib/$SHAPELIB_VERSION.tar.gz ./$SHAPELIB_VERSION.tar.gz
 		tar -xf $SHAPELIB_VERSION.tar.gz
 		mv $SHAPELIB_VERSION/ shapelib/
 		rm -rf $SHAPELIB_VERSION.tar.gz
 	elif [ -f shapelib/shapelib.lib ]; then
 		SHAPELIB_FOUND=true
 	fi
-	
+
 	if [ $SHAPELIB_FOUND ]; then
 		echo "Shapelib already installed in $LIBS_LOCATION/shapelib"
 	else
 		# Compile
 		cd shapelib
-		
+
 		echo " \
 		\"$WIN_DEVENV_PATH\\..\\..\\VC\\vcvarsall.bat\" $WIN_ARCHITECTURE &&\
 		nmake /f makefile.vc &&\
@@ -129,30 +129,30 @@ if [ "$OSTYPE" == 'msys' ]; then
 
 		$COMSPEC \/k build.bat
 	fi
-	
+
 	# Install libgeotiff
 	cd $LIBS_LOCATION
 	if [ ! -d libgeotiff ]; then
 		# Download, extract
-		wget http://download.osgeo.org/geotiff/libgeotiff/$LIBGEOTIFF_VERSION.tar.gz
+		download_file http://download.osgeo.org/geotiff/libgeotiff/$LIBGEOTIFF_VERSION.tar.gz ./$LIBGEOTIFF_VERSION.tar.gz
 		tar -xf $LIBGEOTIFF_VERSION.tar.gz
 		mv $LIBGEOTIFF_VERSION/ libgeotiff/
 		rm -rf $LIBGEOTIFF_VERSION.tar.gz
 	elif [ -f libgeotiff/geotiff.lib ]; then
 		LIBGEOTIFF_FOUND=true
 	fi
-	
+
 	if [ $LIBGEOTIFF_FOUND ]; then
 		echo "Libgeotiff already installed in $LIBS_LOCATION/libgeotiff"
 	else
 		# Compile
 		cd libgeotiff
-		
+
 		# Download modified makefile
 		if [ ! -f makefile_mod.vc ]; then
-			wget --no-check-certificate https://raw.github.com/gist/1088657/188ab5ebaa31c688e78acb5260e676aaae8f0f2c/makefile_mod.vc
+			download_file http://dl.dropbox.com/u/5581063/makefile_mod.vc ./makefile_mod.vc 14fb13a5bd04ffc298fee7825dc7679f
 		fi
-		
+
 		echo " \
 		\"$WIN_DEVENV_PATH\\..\\..\\VC\\vcvarsall.bat\" $WIN_ARCHITECTURE &&\
 		nmake /f makefile_mod.vc all&&\
