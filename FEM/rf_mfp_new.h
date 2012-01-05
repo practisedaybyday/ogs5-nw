@@ -244,8 +244,6 @@ public:
 	double phi_r_dt (double rho, double T) const;
 	double phi_r_dd (double rho, double T) const;
 	double phi_0_tt (double T) const;
-	//AKS
-	double CalCopressibility(long idx_elem, double p, double T);
 	double CompDensity(long idx_elem, const std::string&, double p, double T);//AKS
 
 private:
@@ -265,7 +263,6 @@ private:
 
 	double GasViscosity_Reichenberg_1971(double,double);
 	//AKS
-	double GasViscosity_Chung_1988(long idx_elem, double,double);
 	double MATCalcFluidDensityMethod8(double p, double T, double C);
 	double LiquidViscosity_Yaws_1976(double);
 	double LiquidViscosity_Marsily_1986(double);
