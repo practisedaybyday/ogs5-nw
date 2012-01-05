@@ -7,7 +7,7 @@
 #include "StringTools.h"
 
 ProjectData::ProjectData()
-//: _geoObjects ()
+: _geoObjects (NULL)
 {}
 
 ProjectData::~ProjectData()
