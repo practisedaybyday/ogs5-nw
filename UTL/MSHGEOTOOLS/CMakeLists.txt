@@ -4,6 +4,7 @@ INCLUDE_DIRECTORIES(
 	../../Base
 	../../GEO
 	../../FileIO
+	../../FileIO/MeshIO
 	../../MathLib
 	../../FEM
 	../../MSH
@@ -15,6 +16,7 @@ ADD_EXECUTABLE( ExtractMeshNodes mainExtractMeshNodes.cpp )
 ADD_EXECUTABLE( ModifyMeshProperties mainModifyMeshProperties.cpp ModifyMeshProperties.h ModifyMeshProperties.cpp )
 ADD_EXECUTABLE( filterMeshNodes filterMeshNodes.cpp )
 ADD_EXECUTABLE( extractSurface mainExtractSurface.cpp ExtractSurface.h ExtractSurface.cpp )
+ADD_EXECUTABLE( createMeshFromPolygon createMeshFromPolygon.cpp )
 
 TARGET_LINK_LIBRARIES( ExtractMeshNodes
 	GEO
@@ -48,6 +50,13 @@ TARGET_LINK_LIBRARIES( extractSurface
 	${QT_LIBRARIES}
 )
 
+TARGET_LINK_LIBRARIES( createMeshFromPolygon
+	GEO
+	MSH
+	MSHGEOTOOLS
+	FileIO
+	${QT_LIBRARIES}
+)
 
 IF (OGS_PACKAGING)
 	INSTALL ( TARGETS ExtractMeshNodes RUNTIME DESTINATION bin COMPONENT

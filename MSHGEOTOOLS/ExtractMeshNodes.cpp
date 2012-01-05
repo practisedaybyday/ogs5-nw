@@ -201,7 +201,7 @@ void ExtractMeshNodes::getPolygonFromPolyline (const GEOLIB::Polyline& polyline,
 	// create (an empty) polygon
 	polygon = new GEOLIB::Polygon (*(geo_obj->getPointVec (name)));
 
-	std::vector<GEOLIB::Point*> const* original_pnts (geo_obj->getPointVec(name));
+	std::vector<GEOLIB::Point*> const* orig_pnts (geo_obj->getPointVec(name));
 
 	// *** add ids of new points to polygon
 	// for top polyline sort points along polyline
@@ -209,7 +209,7 @@ void ExtractMeshNodes::getPolygonFromPolyline (const GEOLIB::Polyline& polyline,
 	for (size_t j(0); j < polyline.getNumberOfPoints(); j++)
 		for (size_t k(0); k < s; k++)
 		{
-			GEOLIB::Point* test_pnt (new GEOLIB::Point (*(*original_pnts)[(*top_ids)[k]]));
+			GEOLIB::Point* test_pnt (new GEOLIB::Point (*(*orig_pnts)[(*top_ids)[k]]));
 			(*test_pnt)[2] = 0.0;
 			if (MathLib::sqrDist(polyline.getPoint(j),test_pnt)
 					< std::numeric_limits<double>::epsilon()) {
@@ -221,20 +221,19 @@ void ExtractMeshNodes::getPolygonFromPolyline (const GEOLIB::Polyline& polyline,
 
 	// for bottom polyline sort points along polyline in reverse order
 	s = bottom_ids->size();
-	for (size_t j(polyline.getNumberOfPoints() - 1); j > 1; j--)
-		for (size_t k(0); k < s; k++)
-		{
-			GEOLIB::Point* test_pnt (new GEOLIB::Point (
-			                                 *(*original_pnts)[(*bottom_ids)[k]]));
-			(*test_pnt)[2] = 0.0;
-			if (MathLib::sqrDist (polyline.getPoint(j),
-			                      test_pnt) < std::numeric_limits<double>::epsilon())
-			{
-				polygon->addPoint ((*bottom_ids)[k]);
+	GEOLIB::Point test_pnt(0.0, 0.0, 0.0);
+	for (int j(polyline.getNumberOfPoints() - 1); j > -1; j--) {
+		for (size_t k(0); k < s; k++) {
+			test_pnt[0] = (*(*orig_pnts)[(*bottom_ids)[k]])[0];
+			test_pnt[1] = (*(*orig_pnts)[(*bottom_ids)[k]])[1];
+			test_pnt[2] = 0.0;
+			if (MathLib::sqrDist(polyline.getPoint(j), &test_pnt)
+							< std::numeric_limits<double>::epsilon()) {
+				polygon->addPoint((*bottom_ids)[k]);
 				k = s;
 			}
-			delete test_pnt;
 		}
+	}
 
 	// close polygon
 	polygon->addPoint (polygon->getPointID(0));

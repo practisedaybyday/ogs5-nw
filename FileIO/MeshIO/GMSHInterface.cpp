@@ -294,7 +294,8 @@ bool GMSHInterface::isPolygonInOtherPolygon(const std::vector<GEOLIB::Polyline*>
 			}
 		}
 	}
-	return ! is_not_hole;
+	if (i==j) return false;
+	return !is_not_hole;
 }
 
 void GMSHInterface::writePlaneSurface (std::list<size_t> const& polygon_list, bool respect_holes)

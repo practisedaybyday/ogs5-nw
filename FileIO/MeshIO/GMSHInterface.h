@@ -41,7 +41,7 @@ public:
 	 */
 	~GMSHInterface ();
 	/**
-	 * writes the geometric data (Points, Polylines, Surfaces) into a file of the GMSH format
+	 * writes the geometric data (Points, Polylines, Surfaces) into a file of the GMSH geometric format
 	 * @param proj_name Name of the geometry that will be included in the geo-file
 	 * @param geo Container for geometric information
 	 * @parem useStationsAsContraints If true, station data is included as constraints for meshing of surfaces (via addStationsAsConstraints()).
