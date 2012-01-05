@@ -86,6 +86,7 @@ protected:
 	CondType _type;
 	std::string _geoName;
 	std::vector<double> _disValue;
+	//std::vector<std::string> _directValue;
 	std::string _associated_geometry;
 };
 
