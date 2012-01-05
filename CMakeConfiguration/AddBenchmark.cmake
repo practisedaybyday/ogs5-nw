@@ -38,7 +38,7 @@ ELSE (WIN32)
 
 		ELSE()
 			EXECUTE_PROCESS (
-				COMMAND ${EXECUTABLE_OUTPUT_PATH}/ogs ${benchmarkStrippedName}
+				COMMAND ${GPROF_PATH} ${EXECUTABLE_OUTPUT_PATH}/ogs ${benchmarkStrippedName}
 				WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../benchmarks/${benchmarkDir}
 				TIMEOUT ${BENCHMARK_TIMEOUT})
 		ENDIF()
