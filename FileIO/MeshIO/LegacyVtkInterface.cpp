@@ -72,7 +72,7 @@ void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time,
 	stringstream ss;
 	// setw(4) sets the number of digits to be used
 	// and creates leading zeros if necessary
-	ss << setw(4) << setfill('0') << number;  
+	ss << setw(4) << setfill('0') << number;
 	baseFilename += ss.str();
 	baseFilename += ".vtk";
 
@@ -122,10 +122,10 @@ void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file,
 void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file) const
 {
 	const std::vector<MeshLib::CNode*> pointVector = _mesh->getNodeVector();
-	vtk_file << "POINTS " << pointVector.size() << " double" << endl;
+	const size_t n_linear_pnts (_mesh->GetNodesNumber(false));
+	vtk_file << "POINTS " << n_linear_pnts << " double" << endl;
 
-	const size_t n_pnts (pointVector.size());
-	for(size_t i = 0; i < n_pnts; i++)
+	for(size_t i = 0; i < n_linear_pnts; i++)
 	{
 		double const* const coords (pointVector[i]->getData());
 		vtk_file << coords[0] << " " << coords[1] << " " << coords[2] << endl;
