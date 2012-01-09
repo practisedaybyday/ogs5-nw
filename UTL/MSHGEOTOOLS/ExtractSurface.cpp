@@ -177,27 +177,17 @@ GEOLIB::Surface* ExtractSurface::extractSurface(GEOLIB::Polygon const & polygon,
 				if (k == n_nodes) // all nodes of element are points in the surface
 				{
 					if (n_nodes == 3)
-						sfc->addTriangle (id_map[nodes_indices[face_nodes[0
-						                                       ]]],
-						                  id_map[nodes_indices[face_nodes[1
-						                                       ]]],
-						                  id_map[nodes_indices[face_nodes[2
-						                                       ]]]);
-					else
-					{
+						sfc->addTriangle(id_map[nodes_indices[face_nodes[0]]],
+										id_map[nodes_indices[face_nodes[1]]],
+										id_map[nodes_indices[face_nodes[2]]]);
+					else {
 						// case n_nodes == 4 quad -> make two triangles
-						sfc->addTriangle (id_map[nodes_indices[face_nodes[0
-						                                       ]]],
-						                  id_map[nodes_indices[face_nodes[1
-						                                       ]]],
-						                  id_map[nodes_indices[face_nodes[2
-						                                       ]]]);
-						sfc->addTriangle (id_map[nodes_indices[face_nodes[0
-						                                       ]]],
-						                  id_map[nodes_indices[face_nodes[2
-						                                       ]]],
-						                  id_map[nodes_indices[face_nodes[3
-						                                       ]]]);
+						sfc->addTriangle(id_map[nodes_indices[face_nodes[0]]],
+										id_map[nodes_indices[face_nodes[1]]],
+										id_map[nodes_indices[face_nodes[2]]]);
+						sfc->addTriangle(id_map[nodes_indices[face_nodes[0]]],
+										id_map[nodes_indices[face_nodes[2]]],
+										id_map[nodes_indices[face_nodes[3]]]);
 					}
 				}
 			}

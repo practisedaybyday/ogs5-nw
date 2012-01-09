@@ -389,10 +389,9 @@ std::string readSurface(std::istream &in,
 		sfc_vec.push_back (sfc);
 	else
 	// surface created by polygon
-	if (ply_id != std::numeric_limits<size_t>::max())
+	if (ply_id != std::numeric_limits<size_t>::max() && ply_id != ply_vec.size())
 		if (ply_vec[ply_id]->isClosed())
 			polygon_vec.push_back (new Polygon (*(ply_vec[ply_id]), true));
-
 
 	return line;
 }
@@ -609,14 +608,14 @@ void writeGLIFileV4 (const std::string& fname,
 	{
 		const std::vector<GEOLIB::Polyline*>* plys (plys_vec->getVector());
 		std::cout << plys->size () << " polylines to file " << fname << std::endl;
-//		const std::vector<size_t>& pnt_id_map (geo.getPointVecObj(geo_name)->getIDMap());
 		for (size_t k(0); k < plys->size(); k++)
 		{
 			os << "#POLYLINE" << std::endl;
-			os << " $NAME " << std::endl << "  " << k << std::endl; // plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
+			std::string polyline_name;
+			plys_vec->getNameOfElement((*plys)[k], polyline_name);
+			os << " $NAME " << std::endl << "  " << polyline_name << std::endl;
 			os << " $POINTS" << std::endl;
 			for (size_t j(0); j < (*plys)[k]->getNumberOfPoints(); j++)
-//				os << "  " << pnt_id_map[((*plys)[k])->getPointID(j)] << std::endl;
 				os << "  " << ((*plys)[k])->getPointID(j) << std::endl;
 		}
 	}

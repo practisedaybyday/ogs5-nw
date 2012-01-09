@@ -741,7 +741,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
     //Displacement
     if (outNodeDisplacement)
     {
-        unsigned int disp_id = 0;
+//        unsigned int disp_id = 0;
         for (int i = 0; i < (int)out->_nod_value_vector.size(); i++)
         {
             const string &internal_val_name = out->_nod_value_vector[i];
@@ -750,7 +750,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
             {
                 if (out->m_pcs == NULL)
                     m_pcs = PCSGet(internal_val_name,true);
-                disp_id = 0;
+//                disp_id = 0;
             }
             else
                 continue;
