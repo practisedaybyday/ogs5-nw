@@ -11,6 +11,18 @@ IF (WIN32)
 		# Sets warning level 3 and ignores some warnings
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /wd4290 /wd4267")
 		SET(GCC OFF)
+
+    # Set $PATH to Visual Studio bin directory. Needed for finding dumpbin.exe
+    IF (MSVC80)
+      SET(ENV{PATH} "$ENV{PATH};$ENV{VS80COMNTOOLS}..\\..\\VC\\bin")
+    ENDIF ()
+    IF (MSVC90)
+      SET(ENV{PATH} "$ENV{PATH};$ENV{VS90COMNTOOLS}..\\..\\VC\\bin")
+    ENDIF ()
+    IF (MSVC10)
+      SET(ENV{PATH} "$ENV{PATH};$ENV{VS100COMNTOOLS}..\\..\\VC\\bin")
+    ENDIF ()
+
 	ELSE (MSVC)
 #FOR CYGWIN.  25.02.2010. WW
 		MESSAGE (STATUS "Might be GCC under cygwin.")
