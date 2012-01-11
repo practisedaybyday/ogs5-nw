@@ -130,7 +130,7 @@ CBoundaryCondition::CBoundaryCondition() :
 }
 
 // KR: Conversion from GUI-BC-object to CBoundaryCondition
-CBoundaryCondition::CBoundaryCondition(BoundaryCondition* bc)
+CBoundaryCondition::CBoundaryCondition(const BoundaryCondition* bc)
 	: ProcessInfo(bc->getProcessType(),bc->getProcessPrimaryVariable(),NULL), 
 	  GeoInfo(bc->getGeoType(),bc->getGeoObj()), 
 	  DistributionInfo(bc->getProcessDistributionType())
