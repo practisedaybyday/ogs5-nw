@@ -9,6 +9,7 @@ set( HEADERS
 	CubicSpline.h
 	LinearInterpolation.h
 	EarClippingTriangulation.h
+  EigenVectors.h
 	# directory LinAlg
 	LinAlg/VectorNorms.h
 	LinAlg/LinearSolver.h
@@ -27,6 +28,7 @@ set( SOURCES
 	CubicSpline.cpp
 	LinearInterpolation.cpp
 	EarClippingTriangulation.cpp
+  EigenVectors.cpp
 	# directory LinAlg
 	LinAlg/GaussAlgorithm.cpp
 	LinAlg/TriangularSolve.cpp
