@@ -100,6 +100,7 @@ const std::vector<GEOLIB::PointWithID*> MshEditor::getSurfaceNodes(const MeshLib
 	}
 	// Add last point
 	surface_pnts.push_back (nodes[nNodes - 1]);
+
 	return surface_pnts;
 }
 
