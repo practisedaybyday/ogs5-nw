@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
+ADD_SUBDIRECTORY( gtest )
+
 SET ( SOURCES
 	testrunner.cpp
 	testBase.cpp
@@ -13,14 +15,15 @@ IF (NOT MSVC)
 ENDIF (NOT MSVC)
 
 include_directories(
-	../Base
+	gtest
+  ../Base
 	../FileIO
 	../GEO
 	../MathLib
 )
 
 add_executable (testrunner ${SOURCES})
-target_link_libraries(testrunner ${GTEST_BOTH_LIBRARIES} FileIO GEO MathLib)
+target_link_libraries(testrunner GTest FileIO GEO MathLib)
 
 IF (WIN32)
 	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/testrunner)

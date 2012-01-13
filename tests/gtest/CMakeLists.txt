@@ -1,0 +1,9 @@
+# This Googletest 1.6 compressed to 2 source files
+
+IF (HAVE_PTHREADS)
+  ADD_DEFINITIONS (-DGTEST_HAS_PTHREAD=1)
+ELSE ()
+  ADD_DEFINITIONS (-DGTEST_HAS_PTHREAD=0)
+ENDIF ()
+
+ADD_LIBRARY (GTest gtest.h gtest-all.cc)

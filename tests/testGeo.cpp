@@ -7,7 +7,7 @@
 
 // ** INCLUDES **
 #include "Configure.h"
-#include <gtest/gtest.h>
+#include "gtest.h"
 
 #include <string>
 #include <vector>
