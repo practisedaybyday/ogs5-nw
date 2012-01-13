@@ -11,6 +11,19 @@
 #include <vtkSmartPointer.h>
 #include <vtkImageData.h>
 
+/**
+ *
+ * Functionality for automated testing
+ *
+ * What it does:
+ * * reads asc-rasterfile into QImage
+ * * converts QImage to VtkGeoImageSource
+ * * Created OGS-Mesh (GridAdapter) from vtkImageData extracted from VtkGeoImageSource
+ * * Writes mesh to file (by converted GridAdapter to CFEMesh)
+ *
+ * Generated mesh file can be compared to with ground truth.
+ *
+ **/
 
 int main ()
 {
