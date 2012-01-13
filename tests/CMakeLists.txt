@@ -80,4 +80,3 @@ IF (NOT MSVC)
 	add_subdirectory( data/GEO )
 ENDIF (NOT MSVC)
 
-add_subdirectory( VTK )
