@@ -79,3 +79,5 @@ IF (NOT MSVC)
 	add_subdirectory( data/bmskel )
 	add_subdirectory( data/GEO )
 ENDIF (NOT MSVC)
+
+add_subdirectory( VTK )
