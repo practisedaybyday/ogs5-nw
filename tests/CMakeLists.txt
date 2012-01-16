@@ -6,6 +6,7 @@ SET ( SOURCES
 	testrunner.cpp
 	testBase.cpp
 	testGeo.cpp
+  #Qt/Vtk/testMeshFromRaster.cpp
 )
 
 IF (NOT MSVC)
@@ -20,10 +21,39 @@ include_directories(
 	../FileIO
 	../GEO
 	../MathLib
+  ../FEM
+  ../MSH
+  ../OGSProject
 )
 
 add_executable (testrunner ${SOURCES})
-target_link_libraries(testrunner GTest FileIO GEO MathLib)
+target_link_libraries(testrunner
+  GTest
+  Base
+  FileIO
+  GEO
+  MathLib
+  FEM
+  MSH
+  OGSProject
+)
+
+IF(OGS_USE_QT)
+  INCLUDE( ${VTK_USE_FILE} )
+
+  include_directories(
+    ../Qt/QtDataView
+    ../Qt/VtkVis
+  )
+
+  target_link_libraries(testrunner
+    ${QT_LIBRARIES}
+    ${libgeotiff_LIBRARIES}
+    ${libtiff_LIBRARIES}
+    QtDataView
+    VtkVis
+  )
+ENDIF()
 
 IF (WIN32)
 	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/testrunner)

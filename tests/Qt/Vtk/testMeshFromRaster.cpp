@@ -3,6 +3,9 @@
  * 2012/01/13 KR Initial implementation
  */
 
+#include "Configure.h"
+#include "gtest.h"
+
 #include <iostream>
 
 #include "GridAdapter.h"
@@ -10,6 +13,7 @@
 #include "VtkGeoImageSource.h"
 #include <vtkSmartPointer.h>
 #include <vtkImageData.h>
+#include <QtGui/QApplication>
 
 /**
  *
@@ -25,13 +29,21 @@
  *
  **/
 
-int main ()
+TEST(Qt_Vtk, MeshFromRaster)
 {
-	QString fileName = "testMeshFromRaster.asc";
+	int argc = 1;
+	char** argv;
+	argv = new char*[1];
+	argv[0] = "testMeshFromRaster";
+	QApplication a(argc, &argv[0], false);
+	//setlocale(LC_NUMERIC,"C");
+	QString fileName(SOURCEPATH);
+	fileName += "/UTL/VTK/testMeshFromRaster.asc";
+	std::cout << fileName.toStdString() << std::endl;
 	vtkSmartPointer<VtkGeoImageSource> geo_image = vtkSmartPointer<VtkGeoImageSource>::New();
 	geo_image->setImageFilename(fileName);
 	vtkSmartPointer<vtkImageData> image = geo_image->GetOutput();
-	
+
 	GridAdapter* grid = VtkMeshConverter::convertImgToMesh(image, geo_image->getOrigin(), geo_image->getSpacing(), MshElemType::TRIANGLE, UseIntensityAs::ELEVATION);
 
 	std::string result_file_name("testMeshFromRaster_testresult.msh");
@@ -40,5 +52,5 @@ int main ()
 		FileIO::OGSMeshIO::write (grid->getCFEMesh(), out);
 	out.close();
 
-	return 1;
+	// a.exec();
 }
