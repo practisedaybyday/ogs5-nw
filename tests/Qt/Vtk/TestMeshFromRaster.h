@@ -3,17 +3,26 @@
  * 2012/01/13 KR Initial implementation
  */
 
+#ifndef TESTMESHFROMRASTER_H
+#define TESTMESHFROMRASTER_H
+
 #include "Configure.h"
-#include "gtest.h"
-
-#include <iostream>
-
 #include "GridAdapter.h"
 #include "VtkMeshConverter.h"
 #include "VtkGeoImageSource.h"
+
+#include <iostream>
+#include <sstream>
+
 #include <vtkSmartPointer.h>
 #include <vtkImageData.h>
-#include <QtGui/QApplication>
+
+#include <QFile>
+#include <QString>
+#include <QTest>
+#include <QTextStream>
+
+#include "gdiff.h" // This should be the last include.
 
 /**
  *
@@ -29,28 +38,53 @@
  *
  **/
 
-TEST(Qt_Vtk, MeshFromRaster)
+class TestMeshFromRaster : public QObject
 {
-	int argc = 1;
-	char** argv;
-	argv = new char*[1];
-	argv[0] = "testMeshFromRaster";
-	QApplication a(argc, &argv[0], false);
-	//setlocale(LC_NUMERIC,"C");
-	QString fileName(SOURCEPATH);
-	fileName += "/UTL/VTK/testMeshFromRaster.asc";
-	std::cout << fileName.toStdString() << std::endl;
-	vtkSmartPointer<VtkGeoImageSource> geo_image = vtkSmartPointer<VtkGeoImageSource>::New();
-	geo_image->setImageFilename(fileName);
-	vtkSmartPointer<vtkImageData> image = geo_image->GetOutput();
+	Q_OBJECT
+	
+private slots:
+	void test()
+	{
+		QString fileName(SOURCEPATH);
+		fileName += "/UTL/VTK/testMeshFromRaster.asc";
+		vtkSmartPointer<VtkGeoImageSource> geo_image = vtkSmartPointer<VtkGeoImageSource>::New();
+		geo_image->setImageFilename(fileName);
+		vtkSmartPointer<vtkImageData> image = geo_image->GetOutput();
 
-	GridAdapter* grid = VtkMeshConverter::convertImgToMesh(image, geo_image->getOrigin(), geo_image->getSpacing(), MshElemType::TRIANGLE, UseIntensityAs::ELEVATION);
+		GridAdapter* grid = VtkMeshConverter::convertImgToMesh(image, geo_image->getOrigin(),
+			geo_image->getSpacing(), MshElemType::TRIANGLE, UseIntensityAs::ELEVATION);
+		
+		std::stringstream ss;
+		FileIO::OGSMeshIO::write (grid->getCFEMesh(), ss);
+		
+		
+		QString refFile(SOURCEPATH);
+		refFile += "/UTL/VTK/testMeshFromRaster_result.msh";
+		
+		QFile qFile(refFile);
+		if(!qFile.open(QIODevice::ReadOnly | QIODevice::Text))
+			QFAIL(QString("Reference file %1 could not be read.").arg(refFile).toAscii());
+		
+		QString refFileContent = qFile.readAll();
+		
+		// File compare
+		diff_match_patch gdiff;
+		QString newContent = ss.str().c_str();
+		QList<Diff> diffs = gdiff.diff_main(newContent, refFileContent);
+		
+		if(diffs.length() > 0)
+		{
+			QString htmlOutput = gdiff.diff_prettyHtml(diffs);
+			QString htmlOutputFilename = "test.html";
+			QFile htmlFile(htmlOutputFilename);
+			if (!htmlFile.open(QIODevice::WriteOnly | QIODevice::Text))
+				QFAIL("Html output file could not be written.");
+			QTextStream htmlStream(&htmlFile);
+			htmlStream << htmlOutput;
+			QFAIL(QString("File compare failed. See %1 for the differences.")
+				.arg(htmlOutputFilename).toAscii());
+		}
+	}
+};
 
-	std::string result_file_name("testMeshFromRaster_testresult.msh");
-	std::ofstream out (result_file_name.c_str());
-	if (out.is_open())
-		FileIO::OGSMeshIO::write (grid->getCFEMesh(), out);
-	out.close();
-
-	// a.exec();
-}
+#endif // TESTMESHFROMRASTER_H
