@@ -2,11 +2,14 @@ cmake_minimum_required(VERSION 2.6)
 
 ADD_SUBDIRECTORY( gtest )
 
+IF(OGS_USE_QT)
+  ADD_SUBDIRECTORY( Qt )
+ENDIF()
+
 SET ( SOURCES
 	testrunner.cpp
 	testBase.cpp
 	testGeo.cpp
-  #Qt/Vtk/testMeshFromRaster.cpp
 )
 
 IF (NOT MSVC)
@@ -17,13 +20,13 @@ ENDIF (NOT MSVC)
 
 include_directories(
 	gtest
-  ../Base
-	../FileIO
+    ../Base
+    ../FileIO
 	../GEO
 	../MathLib
-  ../FEM
-  ../MSH
-  ../OGSProject
+    ../FEM
+    ../MSH
+    ../OGSProject
 )
 
 add_executable (testrunner ${SOURCES})
@@ -37,23 +40,6 @@ target_link_libraries(testrunner
   MSH
   OGSProject
 )
-
-IF(OGS_USE_QT)
-  INCLUDE( ${VTK_USE_FILE} )
-
-  include_directories(
-    ../Qt/QtDataView
-    ../Qt/VtkVis
-  )
-
-  target_link_libraries(testrunner
-    ${QT_LIBRARIES}
-    ${libgeotiff_LIBRARIES}
-    ${libtiff_LIBRARIES}
-    QtDataView
-    VtkVis
-  )
-ENDIF()
 
 IF (WIN32)
 	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/testrunner)
