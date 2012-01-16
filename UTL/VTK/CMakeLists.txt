@@ -14,6 +14,7 @@ INCLUDE_DIRECTORIES(
 
 # Create executables
 ADD_EXECUTABLE( testMeshFromRaster testMeshFromRaster.cpp )
+SET_TARGET_PROPERTIES(testMeshFromRaster PROPERTIES FOLDER Utilities)
 
 TARGET_LINK_LIBRARIES( testMeshFromRaster
 	FEM

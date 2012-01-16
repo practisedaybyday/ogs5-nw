@@ -17,6 +17,8 @@ ADD_EXECUTABLE( ModifyMeshProperties mainModifyMeshProperties.cpp ModifyMeshProp
 ADD_EXECUTABLE( filterMeshNodes filterMeshNodes.cpp )
 ADD_EXECUTABLE( extractSurface mainExtractSurface.cpp ExtractSurface.h ExtractSurface.cpp )
 ADD_EXECUTABLE( createMeshFromPolygon createMeshFromPolygon.cpp )
+SET_TARGET_PROPERTIES(ExtractMeshNodes ModifyMeshProperties filterMeshNodes
+  extractSurface createMeshFromPolygon PROPERTIES FOLDER Utilities)
 
 TARGET_LINK_LIBRARIES( ExtractMeshNodes
 	GEO
