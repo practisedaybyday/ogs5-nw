@@ -104,11 +104,11 @@ CSourceTerm::CSourceTerm(const SourceTerm* st)
 	this->geo_name = st->getGeoName();
 	const std::vector<double> dis_values = st->getDisValue();
 	
-	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
 	{
 		this->geo_node_value = dis_values[0];
 	}
-	else if (this->getProcessDistributionType() == FiniteElement::LINEAR)
+	else if (this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
 	{
 		for (size_t i=0; i<dis_values.size(); i+=2)
 		{
