@@ -22,7 +22,7 @@ IF (OGS_BUILD_INFO)
 
 	if( NOT MSVC )
 	    execute_process(
-			COMMAND "date" "+%Y-%m-%d %H:%M:%S"
+			COMMAND "date" "+%Y-%m-%d" # %H:%M:%S"
 			OUTPUT_VARIABLE build_timestamp
 			OUTPUT_STRIP_TRAILING_WHITESPACE
 		)
