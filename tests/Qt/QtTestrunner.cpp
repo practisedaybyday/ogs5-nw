@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
 	
+	// Add your test here:
 	TestMeshFromRaster testMeshFromRaster;
 	QTest::qExec(&testMeshFromRaster, argc, argv);
 	

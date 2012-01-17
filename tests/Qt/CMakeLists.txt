@@ -12,18 +12,21 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_SOURCE_DIR}/Qt/QtDataView
   ${CMAKE_SOURCE_DIR}/Qt/VtkVis
   ${CMAKE_SOURCE_DIR}/tests/Qt/gdiff
+  ${CMAKE_SOURCE_DIR}/tests/Qt
+  ${CMAKE_BINARY_DIR}/tests/Qt
 )
 
 SET(MOC_HEADERS
+  QtTestBase.h
+  
+  # Add your test file here:
   Vtk/TestMeshFromRaster.h
 )
-#SET(SOURCES
-#  Vtk/TestMeshFromRaster.cpp
-#)
+
 
 qt4_wrap_cpp( MOC_SOURCES ${MOC_HEADERS} )
 
-ADD_EXECUTABLE(QtTestrunner ${MOC_HEADERS} ${MOC_SOURCES} QtTestrunner.cpp)
+ADD_EXECUTABLE(QtTestrunner ${MOC_HEADERS} ${MOC_SOURCES} QtTestBase.cpp QtTestrunner.cpp)
 
 TARGET_LINK_LIBRARIES(QtTestrunner
   Base
@@ -39,3 +42,6 @@ TARGET_LINK_LIBRARIES(QtTestrunner
   VtkVis
   GDiff
 )
+
+# Create directory for result files in build directory
+FILE(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/tests/results)
