@@ -38,8 +38,8 @@ TARGET_LINK_LIBRARIES(QtTestrunner
   ${QT_LIBRARIES}
   ${libgeotiff_LIBRARIES}
   ${libtiff_LIBRARIES}
-  QtDataView
   VtkVis
+  QtDataView
   GDiff
 )
 
