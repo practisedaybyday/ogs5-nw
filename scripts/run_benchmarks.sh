@@ -44,34 +44,34 @@ set +e >/dev/null
 # Run FEM benchmarks
 cd $BUILD_LOCATION/build_fem
 if  [ "$1" = "ex" ]; then
-	ctest -R 'EXCEED' -E 'JOD|AllTests|FILE' -j $NUM_PROCESSORS > ../benchOut.txt
+	ctest -R 'EXCEED' -E 'JOD|Tests|FILE' -j $NUM_PROCESSORS > ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' -E 'JOD' >> ../benchOut.txt
 	
 	cd $BUILD_LOCATION/build_brns
-	ctest -R 'EXCEED' -E 'AllTests|FILE' -j $NUM_PROCESSORS >> ../benchOut.txt
+	ctest -R 'EXCEED' -E 'Tests|FILE' -j $NUM_PROCESSORS >> ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' >> ../benchOut.txt
 	
 	cd $BUILD_LOCATION/build_pqc
-	ctest -R 'EXCEED' -E 'AllTests|FILE' -j $NUM_PROCESSORS >> ../benchOut.txt
+	ctest -R 'EXCEED' -E 'Tests|FILE' -j $NUM_PROCESSORS >> ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' >> ../benchOut.txt
 	
 	cd $BUILD_LOCATION/build_gems
-	ctest -R 'EXCEED' -E 'AllTests|FILE' -j $NUM_PROCESSORS >> ../benchOut.txt
+	ctest -R 'EXCEED' -E 'Tests|FILE' -j $NUM_PROCESSORS >> ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' >> ../benchOut.txt
 else
-	ctest -E 'AllTests|FILE|EXCEED' -j $NUM_PROCESSORS > ../benchOut.txt
+	ctest -E 'Tests|FILE|EXCEED' -j $NUM_PROCESSORS > ../benchOut.txt
 	ctest -R 'FILECOMPARE' -E 'EXCEED' >> ../benchOut.txt
 	
 	cd $BUILD_LOCATION/build_brns
-	ctest -E 'FILE|EXCEED|AllTests' -j $NUM_PROCESSORS >> ../benchOut.txt
+	ctest -E 'FILE|EXCEED|Tests' -j $NUM_PROCESSORS >> ../benchOut.txt
 	ctest -R 'FILECOMPARE' -E 'EXCEED' >> ../benchOut.txt
 
 	cd $BUILD_LOCATION/build_pqc
-	ctest -E 'FILE|EXCEED|AllTests' -j $NUM_PROCESSORS >> ../benchOut.txt
+	ctest -E 'FILE|EXCEED|Tests' -j $NUM_PROCESSORS >> ../benchOut.txt
 	ctest -R 'FILECOMPARE' -E 'EXCEED' >> ../benchOut.txt
 	
 	cd $BUILD_LOCATION/build_gems
-	ctest -E 'FILE|EXCEED|AllTests' -j $NUM_PROCESSORS >> ../benchOut.txt
+	ctest -E 'FILE|EXCEED|Tests' -j $NUM_PROCESSORS >> ../benchOut.txt
 	ctest -R 'FILECOMPARE' -E 'EXCEED' >> ../benchOut.txt
 fi
 cd $BUILD_LOCATION >/dev/null
