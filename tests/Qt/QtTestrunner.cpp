@@ -9,7 +9,8 @@
 
 int main(int argc, char *argv[])
 {
-	QApplication app(argc, argv);
+	// Creating a non-gui (console) Qt application
+	QApplication app(argc, argv, false);
 	
 	// Add your test here:
 	TestMeshFromRaster testMeshFromRaster;
