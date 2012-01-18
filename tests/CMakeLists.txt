@@ -52,6 +52,8 @@ ENDIF()
 ADD_CUSTOM_TARGET(gtests ${testrunnerExe}
 	DEPENDS testrunner ${TESTRUNNER_LIBS})
 
+SET_TARGET_PROPERTIES(testrunner gtests PROPERTIES FOLDER Testing)
+
 macro(ADD_GOOGLE_TESTS executable)
 	foreach ( source ${ARGN} )
 		file(READ "${source}" contents)
