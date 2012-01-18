@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 2.6)
 
 ADD_SUBDIRECTORY( gtest )
 
-IF(OGS_USE_QT AND TESTDATA_DIR_FOUND)
-  ADD_SUBDIRECTORY( Qt )
-ENDIF()
-
 SET ( SOURCES
 	testrunner.cpp
 	testBase.cpp
@@ -41,14 +37,16 @@ target_link_libraries(testrunner
   OGSProject
 )
 
-IF (WIN32)
+IF (MSVC)
 	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/testrunner)
-ELSE (WIN32)
+	SET (QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/QtTestrunner)
+ELSE ()
 	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/testrunner)
 	IF ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 		TARGET_LINK_LIBRARIES( testrunner pthread )
 	ENDIF ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-ENDIF(WIN32)
+	SET (QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/QtTestrunner)
+ENDIF()
 
 macro(ADD_GOOGLE_TESTS executable)
 	foreach ( source ${ARGN} )
@@ -99,3 +97,7 @@ IF (NOT MSVC)
 	add_subdirectory( data/GEO )
 ENDIF (NOT MSVC)
 
+IF(OGS_USE_QT AND TESTDATA_DIR_FOUND)
+  ADD_SUBDIRECTORY( Qt )
+  ADD_TEST(QtTests ${QtTestrunnerExe} -xunitxml -o ./QtTestrunner.xml)
+ENDIF()
