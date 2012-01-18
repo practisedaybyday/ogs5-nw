@@ -49,6 +49,7 @@ void QtTestBase::compareToReference(QString string, QString refFile)
 #ifdef JENKINS_URL
 		// On jenkins construct a link to the diff html file
 		QString jenkinsURL(JENKINS_URL);
+		QString jobName(JENKINS_JOB_NAME);
 		QString relativePath;
 
 		QRegExp rx("(.*)(/.*build[^/]*.*)");
@@ -57,7 +58,8 @@ void QtTestBase::compareToReference(QString string, QString refFile)
 			relativePath = rx.cap(2);
 
 		// This assumes that the build dir is inside the sources dir.
-		htmlOutputFilename = QString("%1/lastCompletedBuild/artifact/sources%2").arg(jenkinsURL).arg(relativePath);
+		htmlOutputFilename = QString("%1%2/lastCompletedBuild/artifact/sources%3")
+			.arg(jenkinsURL).arg(jobName).arg(relativePath);
 #endif
 		QFAIL(QString("File compare failed. See %1 for the differences.")
 			.arg(htmlOutputFilename).toAscii());
