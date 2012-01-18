@@ -74,14 +74,21 @@ public:
 	/// Convenience method for setting a single value specifying the distribution.
 	void setDisValue(double disValue) { _disValue.push_back(disValue); }
 
+	/// Removes all distribution values 
+	void clearDisValues() { _disValue.resize(0); };
+
 	/// Sets the name of the geo-object the condition is assigned to.
 	void setGeoName(std::string geoName) { _geoName = geoName; }
 
 	/// Returns the type of the FEM condition as a string.
 	static std::string condTypeToString(CondType type);
 
+	/// Creates CONSTANT conditions on all points of the given object
+	//static std::vector<FEMCondition*> getConstantPointsWithElevation(const GEOLIB::GeoObject &obj, FEMCondition* cond);
+
 protected:
 	std::vector< std::pair<size_t, double> > getDistributedPairs(std::vector<int> point_ids, std::vector<double> point_values);
+	//static FEMCondition* getSinglePointWithElevation(FEMCondition* cond, size_t index);
 
 	CondType _type;
 	std::string _geoName;
