@@ -28,7 +28,7 @@ qt4_wrap_cpp( MOC_SOURCES ${MOC_HEADERS} )
 
 ADD_EXECUTABLE(QtTestrunner ${MOC_HEADERS} ${MOC_SOURCES} QtTestBase.cpp QtTestrunner.cpp)
 
-TARGET_LINK_LIBRARIES(QtTestrunner
+SET(QTTESTRUNNER_LIBS
   Base
   GEO
   FEM
@@ -42,6 +42,14 @@ TARGET_LINK_LIBRARIES(QtTestrunner
   QtDataView
   GDiff
 )
+
+TARGET_LINK_LIBRARIES(QtTestrunner ${QTTESTRUNNER_LIBS})
+
+ADD_CUSTOM_TARGET(qtests ${QtTestrunnerExe}
+    DEPENDS QtTestrunner ${QTTESTRUNNER_LIBS}
+)
+
+ADD_TEST(QTests ${QtTestrunnerExe} -xunitxml -o ./QtTestrunner.xml)
 
 # Create directory for result files in build directory
 FILE(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/tests/results)

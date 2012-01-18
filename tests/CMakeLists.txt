@@ -26,7 +26,7 @@ include_directories(
 )
 
 add_executable (testrunner ${SOURCES})
-target_link_libraries(testrunner
+SET(TESTRUNNER_LIBS 
   GTest
   Base
   FileIO
@@ -36,6 +36,7 @@ target_link_libraries(testrunner
   MSH
   OGSProject
 )
+target_link_libraries(testrunner ${TESTRUNNER_LIBS})
 
 IF (MSVC)
 	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/testrunner)
@@ -47,6 +48,9 @@ ELSE ()
 	ENDIF ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 	SET (QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/QtTestrunner)
 ENDIF()
+
+ADD_CUSTOM_TARGET(gtests ${testrunnerExe}
+	DEPENDS testrunner ${TESTRUNNER_LIBS})
 
 macro(ADD_GOOGLE_TESTS executable)
 	foreach ( source ${ARGN} )
@@ -63,7 +67,7 @@ endmacro()
 # Either collect all gtests in one ctest run of testrunner executable
 # or run each gtest individually
 IF (OGS_ONE_BIG_GTEST)
-	add_test (AllTests ${testrunnerExe}  --gtest_output=xml:./)
+	add_test (GTests ${testrunnerExe}  --gtest_output=xml:./)
 ELSE (OGS_ONE_BIG_GTEST)
 	ADD_GOOGLE_TESTS ( ${testrunnerExe} ${SOURCES})
 ENDIF (OGS_ONE_BIG_GTEST)
@@ -99,5 +103,4 @@ ENDIF (NOT MSVC)
 
 IF(OGS_USE_QT AND TESTDATA_DIR_FOUND)
   ADD_SUBDIRECTORY( Qt )
-  ADD_TEST(QtTests ${QtTestrunnerExe} -xunitxml -o ./QtTestrunner.xml)
 ENDIF()
