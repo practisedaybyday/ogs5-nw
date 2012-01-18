@@ -49,8 +49,7 @@ ELSE ()
 	SET (QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/QtTestrunner)
 ENDIF()
 
-ADD_CUSTOM_TARGET(gtests ${testrunnerExe}
-	DEPENDS testrunner ${TESTRUNNER_LIBS})
+ADD_CUSTOM_TARGET(gtests testrunner	DEPENDS ${TESTRUNNER_LIBS})
 
 SET_TARGET_PROPERTIES(testrunner gtests PROPERTIES FOLDER Testing)
 

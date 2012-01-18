@@ -44,10 +44,8 @@ SET(QTTESTRUNNER_LIBS
 )
 
 TARGET_LINK_LIBRARIES(QtTestrunner ${QTTESTRUNNER_LIBS})
-ADD_CUSTOM_TARGET(qtests ${QtTestrunnerExe}
-    DEPENDS QtTestrunner ${QTTESTRUNNER_LIBS}
-)
-SET_TARGET_PROPERTIES(QtTestrunner gtests PROPERTIES FOLDER Testing)
+ADD_CUSTOM_TARGET(qtests QtTestrunner DEPENDS  ${QTTESTRUNNER_LIBS})
+SET_TARGET_PROPERTIES(QtTestrunner qtests PROPERTIES FOLDER Testing)
 
 ADD_TEST(QTests ${QtTestrunnerExe} -xunitxml -o ./QtTestrunner.xml)
 
