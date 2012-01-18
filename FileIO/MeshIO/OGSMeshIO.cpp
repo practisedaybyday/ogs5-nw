@@ -57,6 +57,13 @@ MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string const& fname)
 
 void OGSMeshIO::write(MeshLib::CFEMesh const* mesh, std::ofstream &out)
 {
+	std::stringstream ss;
+	OGSMeshIO::write(mesh, ss);
+	out << ss.str();
+}
+
+void OGSMeshIO::write(MeshLib::CFEMesh const* mesh, std::stringstream &out)
+{
 	out << "#FEM_MSH" << std::endl;
 
 	out << "$PCS_TYPE" << std::endl << "  " << mesh->pcs_name << std::endl;
@@ -99,7 +106,7 @@ void OGSMeshIO::write(MeshLib::CFEMesh const* mesh, std::ofstream &out)
 	out << "#STOP" << std::endl;
 }
 
-void OGSMeshIO::writeElementsExceptLines(std::vector<MeshLib::CElem*> const& ele_vec, std::ofstream &out)
+void OGSMeshIO::writeElementsExceptLines(std::vector<MeshLib::CElem*> const& ele_vec, std::stringstream &out)
 {
 	const size_t ele_vector_size (ele_vec.size());
 	std::vector<bool> non_line_element (ele_vector_size, true);

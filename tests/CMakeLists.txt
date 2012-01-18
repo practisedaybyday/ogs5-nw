@@ -6,7 +6,6 @@ SET ( SOURCES
 	testrunner.cpp
 	testBase.cpp
 	testGeo.cpp
-  #Qt/Vtk/testMeshFromRaster.cpp
 )
 
 IF (NOT MSVC)
@@ -17,13 +16,13 @@ ENDIF (NOT MSVC)
 
 include_directories(
 	gtest
-  ../Base
-	../FileIO
+    ../Base
+    ../FileIO
 	../GEO
 	../MathLib
-  ../FEM
-  ../MSH
-  ../OGSProject
+    ../FEM
+    ../MSH
+    ../OGSProject
 )
 
 add_executable (testrunner ${SOURCES})
@@ -38,31 +37,16 @@ target_link_libraries(testrunner
   OGSProject
 )
 
-IF(OGS_USE_QT)
-  INCLUDE( ${VTK_USE_FILE} )
-
-  include_directories(
-    ../Qt/QtDataView
-    ../Qt/VtkVis
-  )
-
-  target_link_libraries(testrunner
-    ${QT_LIBRARIES}
-    ${libgeotiff_LIBRARIES}
-    ${libtiff_LIBRARIES}
-    QtDataView
-    VtkVis
-  )
-ENDIF()
-
-IF (WIN32)
+IF (MSVC)
 	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/testrunner)
-ELSE (WIN32)
+	SET (QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/QtTestrunner)
+ELSE ()
 	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/testrunner)
 	IF ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 		TARGET_LINK_LIBRARIES( testrunner pthread )
 	ENDIF ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-ENDIF(WIN32)
+	SET (QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/QtTestrunner)
+ENDIF()
 
 macro(ADD_GOOGLE_TESTS executable)
 	foreach ( source ${ARGN} )
@@ -113,3 +97,7 @@ IF (NOT MSVC)
 	add_subdirectory( data/GEO )
 ENDIF (NOT MSVC)
 
+IF(OGS_USE_QT AND TESTDATA_DIR_FOUND)
+  ADD_SUBDIRECTORY( Qt )
+  ADD_TEST(QtTests ${QtTestrunnerExe} -xunitxml -o ./QtTestrunner.xml)
+ENDIF()

@@ -1,4 +1,4 @@
-# This Googletest 1.6 compressed to 2 source files
+# This is Googletest 1.6 compressed to 2 source files
 
 IF (HAVE_PTHREADS)
   ADD_DEFINITIONS (-DGTEST_HAS_PTHREAD=1)
