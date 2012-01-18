@@ -173,3 +173,12 @@ FIND_PACKAGE(Doxygen)
 FIND_PROGRAM(GPROF_PATH gprof DOC "GNU profiler gprof")
 
 FIND_PACKAGE(cppcheck)
+
+########################
+### Find other stuff ###
+########################
+
+# Check if on Jenkins
+IF(NOT $ENV{JENKINS_URL} STREQUAL "")
+	SET(JENKINS_URL $ENV{JENKINS_URL})
+ENDIF()

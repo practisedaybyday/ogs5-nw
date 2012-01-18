@@ -12,6 +12,7 @@
 #include <QString>
 #include <QTest>
 #include <QTextStream>
+#include <QRegExp>
 
 #include "gdiff.h" // This should be the last include.
 
@@ -44,7 +45,21 @@ void QtTestBase::compareToReference(QString string, QString refFile)
 			QFAIL("Html output file could not be written.");
 		QTextStream htmlStream(&htmlFile);
 		htmlStream << htmlOutput;
-		QFAIL(QString("Test link http://www.google.de or www.google.de File compare failed. See %1 for the differences.")
+
+#ifdef JENKINS_URL
+		// On jenkins construct a link to the diff html file
+		QString jenkinsURL(JENKINS_URL);
+		QString relativePath;
+
+		QRegExp rx("(.*)(/.*build[^/]*.*)");
+		int pos = rx.indexIn(htmlOutputFilename);
+		if (pos > -1)
+			relativePath = rx.cap(2);
+
+		// This assumes that the build dir is inside the sources dir.
+		htmlOutputFilename = QString("%1/lastCompletedBuild/artifact/sources%2").arg(jenkinsURL).arg(relativePath);
+#endif
+		QFAIL(QString("File compare failed. See %1 for the differences.")
 			.arg(htmlOutputFilename).toAscii());
 	}
 }

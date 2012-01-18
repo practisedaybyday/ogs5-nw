@@ -18,7 +18,7 @@
 // for tests
 #cmakedefine OGS_EXECUTABLE "${OGS_EXECUTABLE}"
 #define PUT_TMP_DIR_IN "${PROJECT_BINARY_DIR}/tests/"
-
+#cmakedefine JENKINS_URL "${JENKINS_URL}"
 #cmakedefine PROCESSOR_COUNT ${PROCESSOR_COUNT}
 
 #endif // CONFIGURE_H
