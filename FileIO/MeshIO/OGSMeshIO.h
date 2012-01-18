@@ -25,13 +25,11 @@ public:
 	/// Read a OGS mesh from file.
 	static MeshLib::CFEMesh* loadMeshFromFile(std::string const& fileName);
 
-	/// Write an OGS msh to a file.
-	static void write (MeshLib::CFEMesh const* mesh, std::ofstream &out);
-	
-	/// Write an OGS msh to a stringstream
-	static void write (MeshLib::CFEMesh const* mesh, std::stringstream &out);
+	/// Write an OGS msh to a output stream.
+	static void write (MeshLib::CFEMesh const* mesh, std::ostream &out);
+
 private:
-	static void writeElementsExceptLines (std::vector<MeshLib::CElem*> const& ele_vec, std::stringstream &out);
+	static void writeElementsExceptLines (std::vector<MeshLib::CElem*> const& ele_vec, std::ostream &out);
 };
 } // end namespace FileIO
 
