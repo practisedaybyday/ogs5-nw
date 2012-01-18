@@ -58,7 +58,7 @@ void QtTestBase::compareToReference(QString string, QString refFile)
 			relativePath = rx.cap(2);
 
 		// This assumes that the build dir is inside the sources dir.
-		htmlOutputFilename = QString("%1%2/lastCompletedBuild/artifact/sources%3")
+		htmlOutputFilename = QString("%1job/%2/lastCompletedBuild/artifact/sources%3")
 			.arg(jenkinsURL).arg(jobName).arg(relativePath);
 #endif
 		QFAIL(QString("File compare failed. See %1 for the differences.")
