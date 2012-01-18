@@ -44,7 +44,7 @@ void QtTestBase::compareToReference(QString string, QString refFile)
 			QFAIL("Html output file could not be written.");
 		QTextStream htmlStream(&htmlFile);
 		htmlStream << htmlOutput;
-		QFAIL(QString("File compare failed. See %1 for the differences.")
+		QFAIL(QString("Test link http://www.google.de or www.google.de File compare failed. See %1 for the differences.")
 			.arg(htmlOutputFilename).toAscii());
 	}
 }
