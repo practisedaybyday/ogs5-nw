@@ -12,9 +12,11 @@ int main(int argc, char *argv[])
 	// Creating a non-gui (console) Qt application
 	QApplication app(argc, argv, false);
 	
+	bool success = true;
+	
 	// Add your test here:
 	TestMeshFromRaster testMeshFromRaster;
-	QTest::qExec(&testMeshFromRaster, argc, argv);
+	success = success && !QTest::qExec(&testMeshFromRaster, argc, argv);
 	
-	return 0;
+	return !success;
 }
