@@ -42,6 +42,7 @@ private slots:
 		vtkSmartPointer<VtkGeoImageSource> geo_image = vtkSmartPointer<VtkGeoImageSource>::New();
 		geo_image->setImageFilename(fileName);
 		vtkSmartPointer<vtkImageData> image = geo_image->GetOutput();
+		image->Update();
 
 		GridAdapter* grid = VtkMeshConverter::convertImgToMesh(image, geo_image->getOrigin(),
 			geo_image->getSpacing(), MshElemType::TRIANGLE, UseIntensityAs::ELEVATION);
