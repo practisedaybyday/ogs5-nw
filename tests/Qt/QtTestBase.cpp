@@ -16,6 +16,13 @@
 
 #include "gdiff.h" // This should be the last include.
 
+#include <iostream>
+
+QtTestBase::QtTestBase(int argc) : _writeRef(false)
+{
+	if(argc > 1)
+		_writeRef = true; 
+}
 
 void QtTestBase::compareToReference(QString string, QString refFile)
 {
@@ -32,9 +39,33 @@ void QtTestBase::compareToReference(QString string, QString refFile)
 	// File compare
 	diff_match_patch gdiff;
 	QList<Diff> diffs = gdiff.diff_main(string, fileContent);
-		
-	if(diffs.length() > 0)
+	
+	bool equal = true;
+	foreach(Diff diff, diffs)
 	{
+		if(diff.operation != EQUAL)
+		{
+			equal = false;
+			break;
+		}
+	}
+
+	if(!equal)
+	{
+		// Update reference file
+		if(_writeRef)
+		{
+			QFile file(filePath);
+     		if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+         		QWARN("Reference file could not be updated.");
+
+     		QTextStream out(&file);
+     		out << string;
+			QWARN(QString("Reference file %1 updated.").arg(refFile).toAscii());
+			QFAIL("Aborting...");
+		}
+		
+		// Html output
 		QString htmlOutput = gdiff.diff_prettyHtml(diffs);
 		QString htmlOutputFilename(BUILDPATH);
 		htmlOutputFilename += "/tests/results/";

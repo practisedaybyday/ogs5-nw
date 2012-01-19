@@ -44,10 +44,16 @@ SET(QTTESTRUNNER_LIBS
 )
 
 TARGET_LINK_LIBRARIES(QtTestrunner ${QTTESTRUNNER_LIBS})
+
+# Tests can be run with make qttests
 ADD_CUSTOM_TARGET(qtests QtTestrunner DEPENDS  ${QTTESTRUNNER_LIBS})
+
+# Prepares the results directory for test diffs
+ADD_CUSTOM_COMMAND(TARGET QtTestrunner PRE_BUILD
+	COMMAND ${CMAKE_COMMAND} -E remove_directory results
+	COMMAND ${CMAKE_COMMAND} -E make_directory results
+	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests COMMENT "Cleaning diff files")
+
 SET_TARGET_PROPERTIES(QtTestrunner qtests PROPERTIES FOLDER Testing)
 
 ADD_TEST(QTests ${QtTestrunnerExe} -xunitxml -o ./QtTestrunner.xml)
-
-# Create directory for result files in build directory
-FILE(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/tests/results)

@@ -34,8 +34,12 @@ class TestMeshFromRaster : public QtTestBase
 {
 	Q_OBJECT
 	
+public:
+	/// @brief Constructor which passes argc to the base class constructor.
+	TestMeshFromRaster(int argc) : QtTestBase(argc) {};
+	
 private slots:
-	void test()
+	void testMeshFromRaster()
 	{
 		QString fileName = getTestdataInputDir();
 		fileName += "testMeshFromRaster.asc";
@@ -47,7 +51,11 @@ private slots:
 		GridAdapter* grid = VtkMeshConverter::convertImgToMesh(image, geo_image->getOrigin(),
 			geo_image->getSpacing(), MshElemType::TRIANGLE, UseIntensityAs::ELEVATION);
 		
+		// Configure stream
 		std::stringstream ss;
+		ss.setf(ios::fixed);
+		ss.precision(6);
+		
 		FileIO::OGSMeshIO::write (grid->getCFEMesh(), ss);
 		
 		compareToReference(ss.str().c_str(), QString("testMeshFromRaster_result.msh"));
