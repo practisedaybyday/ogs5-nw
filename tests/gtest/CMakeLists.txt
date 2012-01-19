@@ -7,3 +7,5 @@ ELSE ()
 ENDIF ()
 
 ADD_LIBRARY (GTest gtest.h gtest-all.cc)
+
+SET_TARGET_PROPERTIES(GTest PROPERTIES FOLDER Testing)
