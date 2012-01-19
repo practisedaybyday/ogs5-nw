@@ -174,6 +174,30 @@ FIND_PROGRAM(GPROF_PATH gprof DOC "GNU profiler gprof")
 
 FIND_PACKAGE(cppcheck)
 
+# Find Exuberant ctags or BBEdit for code completion
+FIND_PROGRAM(CTAGS_TOOL_PATH ctags DOC "Exuberant ctags")
+FIND_PROGRAM(BBEDIT_TOOL_PATH bbedit DOC "BBEdit Editor")
+IF(BBEDIT_TOOL_PATH)
+	ADD_CUSTOM_TARGET(ctags
+		bbedit --maketags
+		WORKING_DIRECTORY ${CMAKE_SOURCES_DIR}
+		COMMENT "Creating tags..." VERBATIM
+	)
+	ADD_CUSTOM_COMMAND(TARGET ctags POST_BUILD
+		COMMAND mv -f tags ../tags
+		WORKING_DIRECTORY ${CMAKE_SOURCES_DIR}
+		COMMENT "Moving tags..." VERBATIM
+	)
+ELSE()
+	IF(CTAGS_TOOL_PATH)
+		ADD_CUSTOM_TARGET(ctags
+			ctags -R --fields=+iamS -f ${CMAKE_SOURCES_DIR}/../tags
+			WORKING_DIRECTORY ${CMAKE_SOURCES_DIR}
+			COMMENT "Creating tags..." VERBATIM
+		)
+	ENDIF()
+ENDIF()
+
 ########################
 ### Find other stuff ###
 ########################
