@@ -57,20 +57,13 @@ MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string const& fname)
 
 void OGSMeshIO::write(MeshLib::CFEMesh const* mesh, std::ostream &out)
 {
-//	std::stringstream ss;
-//	OGSMeshIO::write(mesh, ss);
-//	out << ss.str();
-//}
-//
-//void OGSMeshIO::write(MeshLib::CFEMesh const* mesh, std::stringstream &out)
-//{
 	out << "#FEM_MSH" << std::endl;
 
 	out << "$PCS_TYPE" << std::endl << "  " << mesh->pcs_name << std::endl;
 
 	out << "$NODES" << std::endl << "  ";
-	out << mesh->GetNodesNumber(false) << std::endl;
-	const size_t n_nodes(mesh->nod_vector.size());
+	const size_t n_nodes(mesh->GetNodesNumber(false));
+	out << n_nodes << std::endl;
 	for (size_t i(0); i < n_nodes; i++)
 	{
 		double const* const coords (mesh->nod_vector[i]->getData());
