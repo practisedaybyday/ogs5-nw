@@ -34,7 +34,7 @@ GMSHInterface::GMSHInterface (const std::string &fname) :
 	_n_plane_sfc(0)
 {
 	// open file
-	_out.open (fname.c_str());
+	_out_file.open (fname.c_str());
 	// check file stream
 	if (!_out)
 	{
@@ -49,7 +49,7 @@ GMSHInterface::GMSHInterface (const std::string &fname) :
 
 GMSHInterface::~GMSHInterface ()
 {
-	_out.close ();
+	_out_file.close();
 }
 
 void GMSHInterface::writeGMSHPoints(const std::vector<GEOLIB::Point*> &pnt_vec,
@@ -124,7 +124,7 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name,
 	std::cerr << "ok" << std::endl;
 
 	// check file stream
-	if (!_out)
+	if (!_out_file)
 		return false;
 
 	// create a quad tree for generate steiner points. this makes sure that the resulting geometry will be suitable for a FEM mesh.
@@ -239,6 +239,8 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name,
 			delete steiner_points[i];
 	}
 
+	_out_file << _out.str();
+	
 	delete quad_tree;
 
 	std::cerr << "ok" << std::endl;
@@ -369,9 +371,26 @@ void GMSHInterface::writeAllDataToGMSHInputFile (
         double mesh_density_scaling_station_pnts)
 {
 	// check file stream
-	if (!_out)
+	if (!_out_file)
 		return;
 
+
+	std::string file_string = this->writeAllDataToGMSHInput(geo, selected_geometries, number_of_point_per_quadtree_node, mesh_density_scaling, mesh_density_scaling_station_pnts);
+	if (!file_string.empty())
+	{
+		_out_file << file_string;
+		std::cout << "ok" << std::endl;
+	}
+}
+
+
+std::string GMSHInterface::writeAllDataToGMSHInput (
+        GEOLIB::GEOObjects& geo,
+        std::vector<std::string> const &selected_geometries,
+        size_t number_of_point_per_quadtree_node,
+        double mesh_density_scaling,
+        double mesh_density_scaling_station_pnts)
+{
 	std::cout << "GMSHInterface::writeGMSHInputFile adaptive " << std::endl;
 
 	std::vector<GEOLIB::Point*> all_points;
@@ -383,7 +402,7 @@ void GMSHInterface::writeAllDataToGMSHInputFile (
 	size_t bp_idx (0); // bounding polygon index
 	GEOLIB::Polygon* bounding_polygon (getBoundingPolygon(all_polylines, bp_idx));
 	if (!bounding_polygon)
-		return;
+		return "";
 
 	GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = this->createQuadTreeFromPoints(
 	        all_points,
@@ -593,17 +612,16 @@ void GMSHInterface::writeAllDataToGMSHInputFile (
 			}
 		}
 	delete quad_tree;
-	std::cout << "ok" << std::endl;
+	return _out.str();
 }
 
 void GMSHInterface::writeAllDataToGMSHInputFile (
         GEOLIB::GEOObjects& geo,
-        std::vector<std::string> const &
-        selected_geometries,
+        std::vector<std::string> const &selected_geometries,
         double mesh_density)
 {
 	// check file stream
-	if (!_out)
+	if (!_out_file)
 		return;
 
 	std::cout << "GMSHInterface::writeGMSHInputFile non adaptive" << std::endl;
@@ -736,6 +754,8 @@ void GMSHInterface::writeAllDataToGMSHInputFile (
 		}
 	}
 	_n_pnt_offset += n_stations;
+
+	_out_file << _out.str();
 
 	std::cout << "ok" << std::endl;
 }

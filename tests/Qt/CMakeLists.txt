@@ -20,6 +20,7 @@ SET(MOC_HEADERS
   QtTestBase.h
   
   # Add your test file here:
+  Geo/TestGMSHFromGeo.h
   Vtk/TestMeshFromRaster.h
 )
 

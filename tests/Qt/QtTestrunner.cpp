@@ -5,6 +5,7 @@
 
 #include <QApplication>
 #include <QtTest/QTest>
+#include "Geo/TestGMSHFromGeo.h"
 #include "Vtk/TestMeshFromRaster.h"
 
 /// @brief If a function name is passed via the command line the reference is updated.
@@ -16,8 +17,13 @@ int main(int argc, char *argv[])
 	bool success = true;
 	
 	// Add your test here:
+	TestGMSHFromGeo testGMSHFromGeo(argc);
+	success = success && !QTest::qExec(&testGMSHFromGeo, argc, argv);
+	
 	TestMeshFromRaster testMeshFromRaster(argc);
 	success = success && !QTest::qExec(&testMeshFromRaster, argc, argv);
+
+
 	
 	return !success;
 }
