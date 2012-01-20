@@ -32,6 +32,7 @@ public:
 	QString getTestdataInputDir();
 
 private:
+	void writeReferenceFile(QString string, QString filePath);
 	bool _writeRef;
 };
 

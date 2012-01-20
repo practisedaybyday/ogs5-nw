@@ -32,7 +32,15 @@ void QtTestBase::compareToReference(QString string, QString refFile)
 	
 	QFile qFile(filePath);
 	if(!qFile.open(QIODevice::ReadOnly | QIODevice::Text))
-		QFAIL(QString("Reference file %1 could not be read.").arg(refFile).toAscii());
+	{
+		if(_writeRef)
+		{
+			writeReferenceFile(string, filePath);
+			return;
+		}
+		else
+			QFAIL(QString("Reference file %1 could not be read.").arg(refFile).toAscii());
+	}
 		
 	QString fileContent = qFile.readAll();
 		
@@ -55,14 +63,8 @@ void QtTestBase::compareToReference(QString string, QString refFile)
 		// Update reference file
 		if(_writeRef)
 		{
-			QFile file(filePath);
-     		if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-         		QWARN("Reference file could not be updated.");
-
-     		QTextStream out(&file);
-     		out << string;
-			QWARN(QString("Reference file %1 updated.").arg(refFile).toAscii());
-			QFAIL("Aborting...");
+			writeReferenceFile(string, filePath);
+			return;
 		}
 		
 		// Html output
@@ -102,4 +104,15 @@ QString QtTestBase::getTestdataInputDir()
 	QString dir(TESTDATAPATH);
 	dir += "/input/";
 	return dir;
+}
+
+void QtTestBase::writeReferenceFile(QString string, QString filePath)
+{
+	QFile file(filePath);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+		QWARN("Reference file could not be updated.");
+
+	QTextStream out(&file);
+	out << string;
+	QWARN(QString("Reference file %1 updated.").arg(filePath).toAscii());
 }
