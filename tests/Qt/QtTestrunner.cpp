@@ -3,27 +3,27 @@
  * 2012-01-16 LB Initial implementation
  */
 
-#include <QApplication>
-#include <QtTest/QTest>
-#include "Geo/TestGMSHFromGeo.h"
-#include "Vtk/TestMeshFromRaster.h"
+#include "gtest.h"
+#include <string>
 
-/// @brief If a function name is passed via the command line the reference is updated.
-int main(int argc, char *argv[])
-{	
+#include <QApplication>
+
+// An evil global variable
+bool g_writeRef = false;
+
+int main(int argc, char* argv[])
+{
+	if(argc > 1)
+	{
+		std::string argument1(argv[1]);
+		if(argument1.compare("update") == 0)
+			g_writeRef = true;
+	}
+	
+	testing::InitGoogleTest ( &argc, argv );
+	
 	// Creating a non-gui (console) Qt application
 	QApplication app(argc, argv, false);
 	
-	bool success = true;
-	
-	// Add your test here:
-	TestGMSHFromGeo testGMSHFromGeo(argc);
-	success = success && !QTest::qExec(&testGMSHFromGeo, argc, argv);
-	
-	TestMeshFromRaster testMeshFromRaster(argc);
-	success = success && !QTest::qExec(&testMeshFromRaster, argc, argv);
-
-
-	
-	return !success;
+	return RUN_ALL_TESTS();
 }

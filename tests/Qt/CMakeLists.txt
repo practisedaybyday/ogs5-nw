@@ -1,35 +1,30 @@
 ADD_SUBDIRECTORY( gdiff )
 
+# Add your tests here:
+SET ( SOURCES
+	Vtk/TestMeshFromRaster.cpp
+	Geo/TestGMSHFromGeo.cpp
+)
+
 INCLUDE( ${VTK_USE_FILE} )
 
 INCLUDE_DIRECTORIES(
-  ${CMAKE_SOURCE_DIR}/Base
-  ${CMAKE_SOURCE_DIR}/GEO
-  ${CMAKE_SOURCE_DIR}/FEM
-  ${CMAKE_SOURCE_DIR}/FileIO
-  ${CMAKE_SOURCE_DIR}/MathLib
-  ${CMAKE_SOURCE_DIR}/MSH
-  ${CMAKE_SOURCE_DIR}/Qt/QtDataView
-  ${CMAKE_SOURCE_DIR}/Qt/VtkVis
-  ${CMAKE_SOURCE_DIR}/tests/Qt/gdiff
-  ${CMAKE_SOURCE_DIR}/tests/Qt
-  ${CMAKE_BINARY_DIR}/tests/Qt
+	.
+    ${CMAKE_SOURCE_DIR}/Base
+    ${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/Qt/QtDataView
+	${CMAKE_SOURCE_DIR}/Qt/VtkVis
+	${CMAKE_SOURCE_DIR}/tests/Qt/gdiff
+	${CMAKE_SOURCE_DIR}/tests/gtest
 )
 
-SET(MOC_HEADERS
-  QtTestBase.h
-  
-  # Add your test file here:
-  Geo/TestGMSHFromGeo.h
-  Vtk/TestMeshFromRaster.h
-)
+ADD_EXECUTABLE (QtTestrunner QtTestrunner.cpp TestHelperFunctions.cpp ${SOURCES})
 
-
-qt4_wrap_cpp( MOC_SOURCES ${MOC_HEADERS} )
-
-ADD_EXECUTABLE(QtTestrunner ${MOC_HEADERS} ${MOC_SOURCES} QtTestBase.cpp QtTestrunner.cpp)
-
-SET(QTTESTRUNNER_LIBS
+SET(QTTESTRUNNER_LIBS 
   Base
   GEO
   FEM
@@ -42,6 +37,7 @@ SET(QTTESTRUNNER_LIBS
   VtkVis
   QtDataView
   GDiff
+  GTest
 )
 
 TARGET_LINK_LIBRARIES(QtTestrunner ${QTTESTRUNNER_LIBS})
@@ -57,4 +53,4 @@ ADD_CUSTOM_COMMAND(TARGET QtTestrunner PRE_BUILD
 
 SET_TARGET_PROPERTIES(QtTestrunner qtests PROPERTIES FOLDER Testing)
 
-ADD_TEST(QTests ${QtTestrunnerExe} -xunitxml -o ./QtTestrunner.xml)
+ADD_TEST(QTests ${QtTestrunnerExe} --gtest_output=xml:./)
