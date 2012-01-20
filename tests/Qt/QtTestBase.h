@@ -7,6 +7,7 @@
 #define QTTESTBASE_H
 
 #include <QObject>
+#include <QTest>
 
 class QString;
 

@@ -51,6 +51,12 @@ private slots:
 		GridAdapter* grid = VtkMeshConverter::convertImgToMesh(image, geo_image->getOrigin(),
 			geo_image->getSpacing(), MshElemType::TRIANGLE, UseIntensityAs::ELEVATION);
 		
+		// Correct number of nodes?
+		QCOMPARE(grid->getNodes()->size(), (size_t)626);
+		
+		// Correct number of elements?
+		QCOMPARE(grid->getElements()->size(), (size_t)1082);
+		
 		// Configure stream
 		std::stringstream ss;
 		ss.setf(ios::fixed);
