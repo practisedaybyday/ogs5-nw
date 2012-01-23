@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
 ADD_SUBDIRECTORY( gtest )
-ADD_SUBDIRECTORY( gdiff )
 
 # Add tests which do not need testdata here:
 SET ( SOURCES
@@ -77,5 +76,6 @@ IF (NOT MSVC)
 ENDIF (NOT MSVC)
 
 IF(OGS_USE_QT AND TESTDATA_DIR_FOUND)
+  ADD_SUBDIRECTORY( gdiff ) # depends on Qt
   ADD_SUBDIRECTORY( Qt )
 ENDIF()
