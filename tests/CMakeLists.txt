@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.6)
-
 ADD_SUBDIRECTORY( gtest )
 
 # Add tests which do not need testdata here:
