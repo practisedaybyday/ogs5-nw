@@ -4,6 +4,7 @@
  */
 
 #include "MshEditor.h"
+#include "PointWithID.h"
 #include "msh_mesh.h"
 
 MeshLib::CFEMesh* MshEditor::removeMeshNodes(MeshLib::CFEMesh* mesh,
@@ -72,5 +73,34 @@ MeshLib::CFEMesh* MshEditor::removeMeshNodes(MeshLib::CFEMesh* mesh,
 	}
 
 	return new_mesh;
+}
+
+const std::vector<GEOLIB::PointWithID*> MshEditor::getSurfaceNodes(const MeshLib::CFEMesh &mesh)
+{
+	// Sort points lexicographically
+	size_t nNodes (mesh.nod_vector.size());
+	std::vector<GEOLIB::PointWithID*> nodes;
+	std::vector<size_t> perm;
+	for (size_t j(0); j<nNodes; j++)
+	{
+		nodes.push_back(new GEOLIB::PointWithID(mesh.nod_vector[j]->getData(), j));		
+		perm.push_back(j);
+	}
+	Quicksort<GEOLIB::PointWithID*> (nodes, 0, nodes.size(), perm);
+
+	// Extract surface points
+	double eps (sqrt(std::numeric_limits<double>::min()));
+	std::vector<GEOLIB::PointWithID*> surface_pnts;
+	for (size_t k(1); k < nNodes; k++)
+	{
+		const GEOLIB::PointWithID& p0 (*(nodes[k - 1]));
+		const GEOLIB::PointWithID& p1 (*(nodes[k]));
+		if (fabs (p0[0] - p1[0]) > eps || fabs (p0[1] - p1[1]) > eps)
+			surface_pnts.push_back (nodes[k - 1]);
+	}
+	// Add last point
+	surface_pnts.push_back (nodes[nNodes - 1]);
+
+	return surface_pnts;
 }
 

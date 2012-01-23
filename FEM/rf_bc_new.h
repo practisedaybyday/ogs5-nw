@@ -36,6 +36,8 @@ namespace MeshLib
 class CFEMesh;
 }
 
+class BoundaryCondition;
+
 class CBoundaryCondition :
 	public ProcessInfo,
 	public GeoInfo,
@@ -49,6 +51,8 @@ public:
 	friend class CBoundaryConditionsGroup;
 	friend class FileIO::BoundaryConditionIO;
 	CBoundaryCondition();
+	CBoundaryCondition(const BoundaryCondition* bc);
+
 	~CBoundaryCondition();
 	//      void Write(std::fstream*) const;
 	void WriteTecplot(std::fstream*) const;

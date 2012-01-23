@@ -16,6 +16,12 @@ ENDIF()
 
 FIND_PATH (OGS_LIBS_DIR_FOUND geotiff.lib ${PROJECT_SOURCE_DIR}/../Libs/libgeotiff)
 
+IF(DEFINED TESTDATA_DIR)
+	FIND_PATH(TESTDATA_DIR_FOUND testdata.dummy ${TESTDATA_DIR})
+ELSE()
+	FIND_PATH(TESTDATA_DIR_FOUND testdata.dummy ${PROJECT_SOURCE_DIR}/../testdata)
+ENDIF()
+
 # Find precompiled libraries (for BRNS GEMS LIS)
 FIND_PATH (OGS_PRECOMPILED_LIBS_DIR_FOUND GEMS3_rl.lib ${PROJECT_SOURCE_DIR}/../Libs/precompiled)
 IF (OGS_PRECOMPILED_LIBS_DIR_FOUND)
@@ -24,20 +30,14 @@ IF (OGS_PRECOMPILED_LIBS_DIR_FOUND)
 ELSE (OGS_PRECOMPILED_LIBS_DIR_FOUND)
 	IF (WIN32)
 		IF (OGS_FEM_BRNS OR OGS_FEM_GEMS OR OGS_FEM_CHEMAPP)
-			MESSAGE (FATAL_ERROR "Precompiled libraries not found! Make sure to also checked out the trunk/Libs directory beneath your sources directory.")
+			MESSAGE (FATAL_ERROR "Precompiled libraries not found! Make sure to also check out the trunk/Libs directory beneath your sources directory.")
 		ENDIF (OGS_FEM_BRNS OR OGS_FEM_GEMS OR OGS_FEM_CHEMAPP)
 	ELSE (WIN32)
 		IF (OGS_FEM_LIS)
-			MESSAGE (FATAL_ERROR "Precompiled libraries not found! Make sure to also checked out the trunk/Libs directory beneath your sources directory.")
+			MESSAGE (FATAL_ERROR "Precompiled libraries not found! Make sure to also check out the trunk/Libs directory beneath your sources directory.")
 		ENDIF (OGS_FEM_LIS)
 	ENDIF (WIN32)
 ENDIF (OGS_PRECOMPILED_LIBS_DIR_FOUND)
-
-FIND_PATH (LIB_DIR_FOUND GEMS3_rl.lib ${PROJECT_SOURCE_DIR}/LIB)
-IF (LIB_DIR_FOUND)
-	INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/LIB )
-	LINK_DIRECTORIES( ${PROJECT_SOURCE_DIR}/LIB )
-ENDIF (LIB_DIR_FOUND)
 
 ######################
 ### Find libraries ###
@@ -49,13 +49,16 @@ IF(Shapelib_FOUND)
 ENDIF() # Shapelib_FOUND
 
 ## pthread ##
-SET ( CMAKE_THREAD_PREFER_PTHREAD On )
+SET ( CMAKE_THREAD_PREFER_PTHREAD ON CACHE BOOL "" )
 FIND_PACKAGE( Threads )
-IF ( CMAKE_USE_PTHREADS_INIT )
-	SET (HAVE_PTHREADS TRUE)
+IF ( CMAKE_USE_PTHREADS_INIT AND NOT HAVE_PTHREADS)
+	SET (HAVE_PTHREADS TRUE CACHE BOOL "Is PThreads found.")
 	MESSAGE (STATUS "pthread library found." )
-ADD_DEFINITIONS(-DHAVE_PTHREADS)
-ENDIF (CMAKE_USE_PTHREADS_INIT )
+ENDIF ()
+IF(HAVE_PTHREADS)
+  ADD_DEFINITIONS(-DHAVE_PTHREADS)
+ENDIF()
+MARK_AS_ADVANCED(CMAKE_THREAD_PREFER_PTHREAD)
 
 ## boost (see FindBoost.cmake for more options) ##
 set(Boost_USE_STATIC_LIBS        ON)
@@ -67,7 +70,7 @@ FIND_PACKAGE( Boost COMPONENTS filesystem system regex)
 IF (OGS_LIBS_DIR_FOUND)
 	SET (VTK_DIR ${PROJECT_SOURCE_DIR}/../Libs/VTK/build)
 ENDIF () # OGS_LIBS_DIR_FOUND
-FIND_PACKAGE( VTK )
+FIND_PACKAGE( VTK 5.8 )
 
 IF (OGS_PYTHON)
 	FIND_PACKAGE (PythonLibs 2.5 REQUIRED)
@@ -91,9 +94,7 @@ IF ( QT4_FOUND )
 		set( QT_USE_QTXMLPATTERNS TRUE )
 	ENDIF (QT_QTXMLPATTERNS_FOUND)
 	INCLUDE( ${QT_USE_FILE} )
-	IF (OGS_USE_QT)
-		SET(OGS_USE_NETCDF ON FORCE)
-	ENDIF (OGS_USE_QT)
+	ADD_DEFINITIONS(${QT_DEFINITIONS})
 ENDIF (QT4_FOUND )
 
 ## VRPN ##
@@ -104,16 +105,6 @@ FIND_PATH (VRED_DIR_FOUND vrNodePtr.h ${VRED_DIR}/include/vred)
 
 ## OpenSG ##
 FIND_PACKAGE( OpenSG COMPONENTS OSGBase OSGSystem)
-
-## gtest ##
-IF(CMAKE_MINOR_VERSION GREATER 6)
-	IF (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005" AND NOT OGS_FEM_GEMS )
-		#SET (GTEST_MSVC_SEARCH MT)
-		SET (GTEST_ROOT ${PROJECT_SOURCE_DIR}/../Libs/gtest)
-	ENDIF (${CMAKE_GENERATOR} STREQUAL "Visual Studio 8 2005" AND NOT OGS_FEM_GEMS )
-	FIND_PACKAGE (GTest)
-ENDIF(CMAKE_MINOR_VERSION GREATER 6)
-
 
 IF(MKL)
 	# Find MKLlib
@@ -183,3 +174,37 @@ FIND_PACKAGE(Doxygen)
 FIND_PROGRAM(GPROF_PATH gprof DOC "GNU profiler gprof")
 
 FIND_PACKAGE(cppcheck)
+
+# Find Exuberant ctags or BBEdit for code completion
+FIND_PROGRAM(CTAGS_TOOL_PATH ctags DOC "Exuberant ctags")
+FIND_PROGRAM(BBEDIT_TOOL_PATH bbedit DOC "BBEdit Editor")
+IF(BBEDIT_TOOL_PATH)
+	ADD_CUSTOM_TARGET(ctags
+		bbedit --maketags
+		WORKING_DIRECTORY ${CMAKE_SOURCES_DIR}
+		COMMENT "Creating tags..." VERBATIM
+	)
+	ADD_CUSTOM_COMMAND(TARGET ctags POST_BUILD
+		COMMAND mv -f tags ../tags
+		WORKING_DIRECTORY ${CMAKE_SOURCES_DIR}
+		COMMENT "Moving tags..." VERBATIM
+	)
+ELSE()
+	IF(CTAGS_TOOL_PATH)
+		ADD_CUSTOM_TARGET(ctags
+			ctags -R --fields=+iamS -f ${CMAKE_SOURCES_DIR}/../tags
+			WORKING_DIRECTORY ${CMAKE_SOURCES_DIR}
+			COMMENT "Creating tags..." VERBATIM
+		)
+	ENDIF()
+ENDIF()
+
+########################
+### Find other stuff ###
+########################
+
+# Check if on Jenkins
+IF(NOT $ENV{JENKINS_URL} STREQUAL "")
+	SET(JENKINS_URL $ENV{JENKINS_URL})
+	SET(JENKINS_JOB_NAME $ENV{JOB_NAME})
+ENDIF()

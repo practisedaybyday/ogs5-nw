@@ -8,7 +8,8 @@
 #ifndef OGSMESHIO_H_
 #define OGSMESHIO_H_
 
-#include <fstream>
+#include <sstream>
+#include <iostream>
 
 namespace MeshLib
 {
@@ -24,10 +25,11 @@ public:
 	/// Read a OGS mesh from file.
 	static MeshLib::CFEMesh* loadMeshFromFile(std::string const& fileName);
 
-	/// Write an OGS msh to a file.
-	static void write (MeshLib::CFEMesh const* mesh, std::ofstream &out);
+	/// Write an OGS msh to a output stream.
+	static void write (MeshLib::CFEMesh const* mesh, std::ostream &out);
+
 private:
-	static void writeElementsExceptLines (std::vector<MeshLib::CElem*> const& ele_vec, std::ofstream &out);
+	static void writeElementsExceptLines (std::vector<MeshLib::CElem*> const& ele_vec, std::ostream &out);
 };
 } // end namespace FileIO
 

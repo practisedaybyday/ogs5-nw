@@ -57,7 +57,13 @@ int XmlGspInterface::readFile(const QString &fileName)
 		if (fileList.at(i).nodeName().compare("geo") == 0)
 		{
 			XmlGmlInterface gml(_project, schemaPath.toStdString() + "OpenGeoSysGLI.xsd");
-			gml.readFile(QString(path + fileList.at(i).toElement().text()));
+			QDomNodeList childList = fileList.at(i).childNodes();
+			for(int j = 0; j < childList.count(); j++)
+				if (childList.at(j).nodeName().compare("file") == 0) {
+					std::cout << "path: " << path.toStdString() << "#" << std::endl;
+					std::cout << "file name: " << (childList.at(j).toElement().text()).toStdString() << "#" << std::endl;
+					gml.readFile(QString(path + childList.at(j).toElement().text()));
+				}
 		}
 		else if (fileList.at(i).nodeName().compare("stn") == 0)
 		{

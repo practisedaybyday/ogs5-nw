@@ -164,32 +164,36 @@ int main (int argc, char* argv[])
 	}
 
 	std::vector<size_t> mesh_ids;
-	size_t ply_id (0);
-	size_t layer(1);
-	getMeshNodesFromLayerAlongPolyline(mesh, geo, unique_name, ply_id, layer, mesh_ids);
-	writeMeshNodes(mesh, mesh_ids, "MeshIDs.txt", "MeshNodesAsPoints.gli", true);
+//	size_t ply_id (0);
+//	size_t layer(1);
+//	getMeshNodesFromLayerAlongPolyline(mesh, geo, unique_name, ply_id, layer, mesh_ids);
+//	writeMeshNodes(mesh, mesh_ids, "MeshIDs.txt", "MeshNodesAsPoints.gli", true);
 
 	//*** extract surface out of mesh
-//	MeshLib::ExtractMeshNodes extract_mesh_nodes (mesh);
-//
-//	// *** generate a surface from polyline
+	MeshLib::ExtractMeshNodes extract_mesh_nodes (mesh);
+
+	// *** generate a polygon from polyline
 //	std::vector<GEOLIB::Polyline*> polylines;
-//	const size_t n_plys (plys->size());
-//	for (size_t k(0); k < n_plys; k++)
-//	{
-//		bool closed ((*plys)[k]->isClosed());
-//		if (!closed && k == 19)
-//		{
-//			std::cout << "converting polyline " << k << " to closed polyline" <<
-//			std::endl;
-//			GEOLIB::Polygon* polygon (NULL);
-//			extract_mesh_nodes.getPolygonFromPolyline(*((*plys)[k]), geo, tmp, polygon);
+	const size_t n_plys (plys->size());
+	for (size_t k(0); k < n_plys; k++)
+	{
+		bool closed ((*plys)[k]->isClosed());
+		if (!closed && k >= 19)
+		{
+			std::cout << "converting polyline " << k << " to closed polyline" << std::endl;
+			GEOLIB::Polygon* polygon(NULL);
+			extract_mesh_nodes.getPolygonFromPolyline(*((*plys)[k]), geo, unique_name, polygon);
 //			polylines.push_back (polygon);
-//		}
-//	}
-//
-//	geo->appendPolylineVec (polylines, tmp);
-//	FileIO::writeGLIFileV4 ("New.gli", tmp, *geo);
+//			geo->appendPolylineVec (polylines, unique_name);
+			std::string *polygon_name(new std::string);
+			geo->getPolylineVecObj(unique_name)->getNameOfElementByID(k, *polygon_name);
+			(*polygon_name) += "-Polygon";
+			geo->getPolylineVecObj(unique_name)->push_back(polygon, polygon_name);
+//			polylines.clear();
+		}
+	}
+
+	FileIO::writeGLIFileV4 ("New.gli", unique_name, *geo);
 
 	// *** search mesh nodes for direct assigning bc, st or ic
 //	std::string fname ("MeshIDs.txt");

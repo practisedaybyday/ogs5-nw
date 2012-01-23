@@ -47,18 +47,14 @@ int GridAdapter::convertCFEMesh(const MeshLib::CFEMesh* mesh)
 
 	size_t nNodes = mesh->nod_vector.size();
 	for (size_t i = 0; i < nNodes; i++)
-	{
-		GEOLIB::Point* pnt = new GEOLIB::Point(mesh->nod_vector[i]->getData());
-		_nodes->push_back(pnt);
-	}
+		_nodes->push_back(new GEOLIB::Point(mesh->nod_vector[i]->getData()));
 
-	Element* newElem = NULL;
 	size_t nElems = mesh->ele_vector.size();
 	size_t nElemNodes = 0;
 
 	for (size_t i = 0; i < nElems; i++)
 	{
-		newElem = new Element();
+		Element* newElem = new Element();
 		newElem->type = mesh->ele_vector[i]->GetElementType();
 		newElem->material = mesh->ele_vector[i]->GetPatchIndex();
 
@@ -72,9 +68,7 @@ int GridAdapter::convertCFEMesh(const MeshLib::CFEMesh* mesh)
 			_elems->push_back(newElem);
 		}
 		else
-			std::cout <<
-			"GridAdapter::convertCFEMesh() - Error recognising element type..." <<
-			std::endl;
+			std::cout << "GridAdapter::convertCFEMesh() - Error recognising element type..." << std::endl;
 	}
 
 	return 1;
@@ -95,34 +89,24 @@ const MeshLib::CFEMesh* GridAdapter::toCFEMesh() const
 	// set mesh nodes
 	size_t nNodes = _nodes->size();
 	for (size_t i = 0; i < nNodes; i++)
-	{
-		MeshLib::CNode* node(new MeshLib::CNode(i));
-		double coords[3] = { (*(*_nodes)[i])[0], (*(*_nodes)[i])[1], (*(*_nodes)[i])[2] };
-		node->SetCoordinates(coords);
-		mesh->nod_vector.push_back(node);
-	}
+		mesh->nod_vector.push_back(new MeshLib::CNode(i, (*(*_nodes)[i])[0], (*(*_nodes)[i])[1], (*(*_nodes)[i])[2]));
 
 	// set mesh elements
 	size_t nElems = _elems->size();
 	for (size_t i = 0; i < nElems; i++)
 	{
 		MeshLib::CElem* elem(new MeshLib::CElem());
-		//elem->SetElementType((*_elems)[i]->type);
 		elem->setElementProperties((*_elems)[i]->type);
 		elem->SetPatchIndex((*_elems)[i]->material);
 
 		size_t nElemNodes = ((*_elems)[i]->nodes).size();
-		//elem->SetNodesNumber(nElemNodes);
-		//elem->nodes_index.resize(nElemNodes);
 		for (size_t j = 0; j < nElemNodes; j++)
-		{
-			int a = (*_elems)[i]->nodes[j];
-			elem->SetNodeIndex(j, a);
-		}
+			elem->SetNodeIndex(j, (*_elems)[i]->nodes[j]);
 
 		mesh->ele_vector.push_back(elem);
 	}
-	//mesh->ConstructGrid();
+
+	mesh->ConstructGrid();
 	std::cout << "done." << std::endl;
 
 	return mesh;

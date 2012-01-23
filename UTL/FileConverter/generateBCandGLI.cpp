@@ -16,6 +16,7 @@
 #include "problem.h"
 Problem* aproblem = NULL;
 
+#include <algorithm>
 #include <QString>
 
 int main (int argc, char* argv[])

@@ -42,6 +42,8 @@ extern void remove_white_space(std::string*);
 #include "LinearInterpolation.h"
 #include "mathlib.h"
 
+#include "BoundaryCondition.h"
+
 #ifndef _WIN32
 #include <cstdio>
 #include <cstdlib>
@@ -125,6 +127,35 @@ CBoundaryCondition::CBoundaryCondition() :
 	time_contr_curve = -1;                //WX
 	bcExcav = -1;                         //WX
 	MatGr = -1;                           //WX
+}
+
+// KR: Conversion from GUI-BC-object to CBoundaryCondition
+CBoundaryCondition::CBoundaryCondition(const BoundaryCondition* bc)
+	: ProcessInfo(bc->getProcessType(),bc->getProcessPrimaryVariable(),NULL), 
+	  GeoInfo(bc->getGeoType(),bc->getGeoObj()), 
+	  DistributionInfo(bc->getProcessDistributionType())
+{
+	setProcess( PCSGet( this->getProcessType() ) );
+	this->geo_name = bc->getGeoName();
+	const std::vector<double> dis_values = bc->getDisValue();
+	
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
+	{
+		this->geo_node_value = dis_values[0];
+	}
+	else if (this->getProcessDistributionType() == FiniteElement::LINEAR)
+	{
+		for (size_t i=0; i<dis_values.size(); i+=2)
+		{
+
+			this->_PointsHaveDistribedBC.push_back(static_cast<int>(dis_values[i]));
+			this->_DistribedBC.push_back(dis_values[i+1]);
+		}
+	}
+	else
+		std::cout << "Error in CBoundaryCondition() - DistributionType \""
+		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType()) 
+				  << "\" currently not supported." << std::endl;
 }
 
 /**************************************************************************

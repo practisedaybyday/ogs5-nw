@@ -41,7 +41,7 @@ public:
 	 */
 	~GMSHInterface ();
 	/**
-	 * writes the geometric data (Points, Polylines, Surfaces) into a file of the GMSH format
+	 * writes the geometric data (Points, Polylines, Surfaces) into a file of the GMSH geometric format
 	 * @param proj_name Name of the geometry that will be included in the geo-file
 	 * @param geo Container for geometric information
 	 * @parem useStationsAsContraints If true, station data is included as constraints for meshing of surfaces (via addStationsAsConstraints()).
@@ -84,6 +84,12 @@ public:
 	void writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
 	                                  std::vector<std::string> const & selected_geometries,
 	                                  double mesh_density);
+
+	std::string writeAllDataToGMSHInput (GEOLIB::GEOObjects& geo,
+	                                    std::vector<std::string> const & selected_geometries,
+	                                    size_t number_of_point_per_quadtree_node = 10,
+	                                    double mesh_density_scaling = 0.3,
+	                                    double mesh_density_scaling_station_pnts = 0.05);
 
 	void writeGMSHPoints(const std::vector<GEOLIB::Point*>& pnt_vec,
 	                     GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = NULL);
@@ -135,10 +141,12 @@ private:
 	                            std::map<size_t,size_t> geo2gmsh_surface_id_map,
 	                            GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = NULL,
 	                            double mesh_density = 0.5);
+
 	size_t _n_pnt_offset;
 	size_t _n_lines;
 	size_t _n_plane_sfc;
-	std::ofstream _out;
+	std::stringstream _out;
+	std::ofstream _out_file;
 
 	/**
 	 * this private class is for storing meta data, i.e. the mapping between

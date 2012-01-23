@@ -377,41 +377,23 @@ private:
 		POINT mid_point(_ll);
 		mid_point[0] += (_ur[0] - _ll[0]) / 2.0;
 		mid_point[1] += (_ur[1] - _ll[1]) / 2.0;
-		_childs[0] = new QuadTree<POINT> (mid_point,
-		                                  _ur,
-		                                  this,
-		                                  _depth + 1,
-		                                  _max_points_per_node);                           // north east
+		_childs[0] = new QuadTree<POINT> (mid_point, _ur, this, _depth + 1, _max_points_per_node); // north east
 		POINT h_ll(mid_point), h_ur(mid_point);
 		h_ll[0] = _ll[0];
 		h_ur[1] = _ur[1];
-		_childs[1] = new QuadTree<POINT> (h_ll,
-		                                  h_ur,
-		                                  this,
-		                                  _depth + 1,
-		                                  _max_points_per_node);                       // north west
-		_childs[2] = new QuadTree<POINT> (_ll,
-		                                  mid_point,
-		                                  this,
-		                                  _depth + 1,
-		                                  _max_points_per_node);                           // south west
+		_childs[1] = new QuadTree<POINT> (h_ll, h_ur, this, _depth + 1, _max_points_per_node); // north west
+		_childs[2] = new QuadTree<POINT> (_ll, mid_point, this, _depth + 1, _max_points_per_node); // south west
 		h_ll = _ll;
 		h_ll[0] = mid_point[0];
 		h_ur = _ur;
 		h_ur[1] = mid_point[1];
-		_childs[3] = new QuadTree<POINT> (h_ll,
-		                                  h_ur,
-		                                  this,
-		                                  _depth + 1,
-		                                  _max_points_per_node);                         // south east
+		_childs[3] = new QuadTree<POINT> (h_ll, h_ur, this, _depth + 1, _max_points_per_node); // south east
 
 		// distribute points to sub quadtrees
-		for (size_t j(0); j < _pnts.size(); j++)
-		{
+		for (size_t j(0); j < _pnts.size(); j++) {
 			bool nfound(true);
 			for (size_t k(0); k < 4 && nfound; k++)
-				if (_childs[k]->addPoint(_pnts[j]))
-					nfound = false;
+				if (_childs[k]->addPoint(_pnts[j])) nfound = false;
 
 		}
 		_pnts.clear();

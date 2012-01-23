@@ -2,9 +2,12 @@
 set( SOURCES
 	ColorTableModel.cpp
 	ColorTableView.cpp
+	CondFromRasterDialog.cpp
+	ConditionWriterDialog.cpp
 	DatabaseConnection.cpp
 	DataView.cpp
 	DBConnectionDialog.cpp
+	DirectConditionGenerator.cpp
 	ElementTreeModel.cpp
 	FEMConditionSetupDialog.cpp
 	GEOModels.cpp
@@ -22,6 +25,7 @@ set( SOURCES
 	MshModel.cpp
 	MshQualitySelectionDialog.cpp
 	MshTabWidget.cpp
+	NetCdfConfigureDialog.cpp
 	NewProcessDialog.cpp
 	OGSRaster.cpp
 	ProcessModel.cpp
@@ -37,7 +41,9 @@ set( SOURCES
 set( MOC_HEADERS
 	ColorTableModel.h
 	ColorTableView.h
+	CondFromRasterDialog.h
 	CondItem.h	
+	ConditionWriterDialog.h
 	DatabaseConnection.h
 	DataView.h
 	DBConnectionDialog.h
@@ -55,6 +61,7 @@ set( MOC_HEADERS
 	MshModel.h
 	MshQualitySelectionDialog.h
 	MshTabWidget.h
+	NetCdfConfigureDialog.h
 	NewProcessDialog.h
 	ProcessModel.h
 	ProcessView.h
@@ -68,7 +75,7 @@ set( MOC_HEADERS
 # Header files
 set( HEADERS
 	BaseItem.h
-	ProcessItem.h
+	DirectConditionGenerator.h	
 	CondObjectListItem.h
 	GeoObjectListItem.h
 	GeoTreeItem.h
@@ -76,10 +83,13 @@ set( HEADERS
 	MshItem.h
 	MshLayerMapper.h
 	OGSRaster.h
+	ProcessItem.h	
 )
 
 # UI files
 set( UIS
+	CondFromRaster.ui
+	ConditionWriter.ui
 	DatabaseResultView.ui
 	DBConnection.ui
 	FEMConditionSetup.ui
@@ -90,6 +100,7 @@ set( UIS
 	MshEdit.ui
 	MshQualitySelection.ui
 	MshTabWidgetBase.ui
+	NetCdfConfigure.ui
 	NewProcess.ui
 	StationTabWidgetBase.ui
 )

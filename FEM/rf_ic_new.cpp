@@ -29,6 +29,8 @@ using namespace std;
 #include "rf_pcs.h"
 #include "rfmat_cp.h"
 
+#include "InitialCondition.h"
+
 //==========================================================================
 vector<CInitialConditionGroup*>ic_group_vector;
 vector<CInitialCondition*>ic_vector;
@@ -50,6 +52,26 @@ CInitialCondition::CInitialCondition() : dis_linear_f(NULL)
 	this->setProcess(NULL);               //OK
 
 	m_msh = NULL;                         //OK
+}
+
+// KR: Conversion from GUI-IC-object to CInitialCondition
+CInitialCondition::CInitialCondition(const InitialCondition* ic)
+	: ProcessInfo(ic->getProcessType(),ic->getProcessPrimaryVariable(),NULL), 
+	  GeoInfo(ic->getGeoType(),ic->getGeoObj()), 
+	  DistributionInfo(ic->getProcessDistributionType())
+{
+	setProcess( PCSGet( this->getProcessType() ) );
+	this->geo_name = ic->getGeoName();
+	const std::vector<double> dis_values = ic->getDisValue();
+	
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
+	{
+		this->geo_node_value = dis_values[0];
+	}
+	else
+		std::cout << "Error in CBoundaryCondition() - DistributionType \""
+		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType()) 
+				  << "\" currently not supported." << std::endl;
 }
 
 /**************************************************************************
