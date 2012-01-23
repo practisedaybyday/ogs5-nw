@@ -1,5 +1,3 @@
-ADD_SUBDIRECTORY( gdiff )
-
 # Add your tests here:
 SET ( SOURCES
 	Vtk/TestMeshFromRaster.cpp
@@ -18,7 +16,7 @@ INCLUDE_DIRECTORIES(
 	${CMAKE_SOURCE_DIR}/MSH
 	${CMAKE_SOURCE_DIR}/Qt/QtDataView
 	${CMAKE_SOURCE_DIR}/Qt/VtkVis
-	${CMAKE_SOURCE_DIR}/tests/Qt/gdiff
+	${CMAKE_SOURCE_DIR}/tests/gdiff
 	${CMAKE_SOURCE_DIR}/tests/gtest
 )
 
