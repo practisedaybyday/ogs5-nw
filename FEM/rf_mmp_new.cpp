@@ -1057,6 +1057,11 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 					in >> saturation_max[i];
 					in >> saturation_exp[i];
 					break;
+				case 43: // van Genuchten for two-phase flow. WW
+					in >> saturation_res[i];
+					in >> saturation_max[i];
+					in >> saturation_exp[i];
+					break;
 				case 44: // Van Genuchten for no wetting fluid, e.g., gas. WW
 					in >> saturation_res[i];
 					in >> saturation_max[i];
@@ -2401,18 +2406,31 @@ double CMediumProperties::PermeabilitySaturationFunction(const double Saturation
 		                                                 saturation_exp[phase]),2);
 		permeability_saturation = MRange(0.,permeability_saturation,1.);
 		break;
-	case 44:                              // Van Genuchtenfor non wetting fluid (e.g. gas):  WW
+	case 43:            // Van Genuchten for two-phase flow. WW
+		if (saturation > (saturation_max[phase] - MKleinsteZahl))
+			/* Mehr als Vollsaettigung mit Wasser */
+			saturation = saturation_max[phase] - MKleinsteZahl;
+		if (saturation < (saturation_res[phase] + MKleinsteZahl))
+			/* Weniger als Residualsaettigung Wasser */
+			saturation = saturation_res[phase] + MKleinsteZahl;
+        double df_temp;
+		//
+		saturation_eff = (saturation -  saturation_res[0]) / (1. - saturation_res[0] - saturation_res[1]);
+
+		df_temp = 1. - pow(1 - pow(saturation_eff,1./saturation_exp[0]), saturation_exp[0]);
+
+		permeability_saturation = sqrt(saturation_eff)*df_temp*df_temp;
+		permeability_saturation = MRange(0.,permeability_saturation,1.);
+		break;
+	case 44:                              // van Genuchtenfor non wetting fluid (e.g. gas):  WW
 		if (saturation > (saturation_max[0] - MKleinsteZahl)) //WX
 			saturation = saturation_max[0] - MKleinsteZahl;
 		if (saturation < (saturation_res[0] + MKleinsteZahl))
 			saturation = saturation_res[0] + MKleinsteZahl;
 		//
-		saturation_eff =
-		        (saturation - saturation_res[0]) / (saturation_max[0] - saturation_res[1]);
-		permeability_saturation = pow(1.0 - saturation_eff,1.0 / 3.0) \
-		                          * pow(1 - pow(saturation_eff,
-		                                        1. /
-		                                        saturation_exp[phase]),2.0 *
+		saturation_eff = 1. -(saturation -  saturation_res[0]) / (1. - saturation_res[0] - saturation_res[1]);
+		permeability_saturation = pow(saturation_eff,1.0 / 3.0) \
+		                          * pow(1 - pow(1. - saturation_eff,  1./saturation_exp[phase]), 2.0 *
 		                                saturation_exp[phase]);
 		permeability_saturation = MRange(permeability_tensor[9],permeability_saturation,1.);
 		break;
