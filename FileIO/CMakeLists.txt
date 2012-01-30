@@ -50,18 +50,23 @@ IF (Shapelib_FOUND)
 ENDIF (Shapelib_FOUND)
 
 IF (QT4_FOUND)
-	SET( HEADERS ${HEADERS} XmlIO/XMLInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XMLInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlGmlInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlGmlInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlStnInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlStnInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlCndInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlCndInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlGspInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlGspInterface.cpp )
-	SET( HEADERS ${HEADERS} FEFLOWInterface.h )
-	SET (SOURCES ${SOURCES} FEFLOWInterface.cpp )
+	SET( HEADERS ${HEADERS} 
+		XmlIO/XMLInterface.h 
+		XmlIO/XmlGmlInterface.h
+		XmlIO/XmlStnInterface.h
+		XmlIO/XmlCndInterface.h
+		XmlIO/XmlGspInterface.h
+		XmlIO/XmlLutReader.h
+		FEFLOWInterface.h
+	)
+	SET (SOURCES ${SOURCES} 
+		XmlIO/XMLInterface.cpp
+		XmlIO/XmlGmlInterface.cpp
+		XmlIO/XmlStnInterface.cpp
+		XmlIO/XmlCndInterface.cpp
+		XmlIO/XmlGspInterface.cpp
+		FEFLOWInterface.cpp 
+	)
 ENDIF (QT4_FOUND)
 
 # Create the library
@@ -83,6 +88,12 @@ INCLUDE_DIRECTORIES(
 	../MSH
 	../GEM
 )
+
+IF (QT4_FOUND)
+	INCLUDE_DIRECTORIES(
+		../Qt/VtkVis
+	)
+ENDIF()
 
 TARGET_LINK_LIBRARIES( FileIO
 #	Base
