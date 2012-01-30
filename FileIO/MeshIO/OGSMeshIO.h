@@ -10,6 +10,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <vector>
 
 namespace MeshLib
 {

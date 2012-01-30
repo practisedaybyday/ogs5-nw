@@ -17,6 +17,8 @@ ADD_EXECUTABLE( ModifyMeshProperties mainModifyMeshProperties.cpp ModifyMeshProp
 ADD_EXECUTABLE( filterMeshNodes filterMeshNodes.cpp )
 ADD_EXECUTABLE( extractSurface mainExtractSurface.cpp ExtractSurface.h ExtractSurface.cpp )
 ADD_EXECUTABLE( createMeshFromPolygon createMeshFromPolygon.cpp )
+ADD_EXECUTABLE( rotateMesh rotateMesh.cpp )
+
 SET_TARGET_PROPERTIES(ExtractMeshNodes ModifyMeshProperties filterMeshNodes
   extractSurface createMeshFromPolygon PROPERTIES FOLDER Utilities)
 
@@ -58,6 +60,13 @@ TARGET_LINK_LIBRARIES( createMeshFromPolygon
 	MSHGEOTOOLS
 	FileIO
 	${QT_LIBRARIES}
+)
+
+TARGET_LINK_LIBRARIES( rotateMesh
+	GEO
+	MSH
+	MSHGEOTOOLS
+	FileIO
 )
 
 IF (OGS_PACKAGING)

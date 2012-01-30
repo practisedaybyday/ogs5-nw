@@ -61,6 +61,15 @@ void getNewellPlane (const std::vector<GEOLIB::Point*>& pnts,
  */
 void rotatePointsToXY(MathLib::Vector &plane_normal, std::vector<GEOLIB::Point*> &pnts);
 
+/**
+ * The vector plane_normal should be the surface normal of the plane surface described
+ * by the points within the vector pnts. The method rotates both the plane normal and
+ * the points. The plane normal is rotated to y-axis.
+ * @param plane_normal
+ * @param pnts
+ */
+void rotatePointsToXZ(MathLib::Vector &plane_normal, std::vector<GEOLIB::Point*> &pnts);
+
 bool isPointInTriangle (const GEOLIB::Point* p,
                         const GEOLIB::Point* a, const GEOLIB::Point* b, const GEOLIB::Point* c);
 
