@@ -2880,8 +2880,8 @@ double* CMediumProperties::HeatDispersionTensorNew(int ip)
 	m_mfp = Fem_Ele_Std->FluidProp;
 	if(Fem_Ele_Std->FluidProp->density_model == 14 ) //used density changing with p, T
 	{
-		dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC1);
-		dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal1) + T_KILVIN_ZERO;
+		dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal0);
+		dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
 		dens_arg[2] = Fem_Ele_Std->Index;
 		fluid_density = Fem_Ele_Std->FluidProp->Density(dens_arg);
 	}
