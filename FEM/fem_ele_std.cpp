@@ -606,7 +606,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 		if(C_Flag)                //if(PCSGet("HEAT_TRANSPORT"))
 		{
 			cpl_pcs = PCSGet("MASS_TRANSPORT");
-			idx_c0 = cpl_pcs->GetNodeValueIndex("CONCENTRATION1");
+			idx_c0 = cpl_pcs->GetProcessComponentNumber();
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
@@ -657,7 +657,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 		}
 		break;
 	case 'M':                             // Mass transport
-		if(C_Flag && T_Flag)
+		if((PTC_Flag)||(C_Flag && T_Flag))
 		{
 			if(cpl_pcs == NULL)
 			{
@@ -1651,21 +1651,39 @@ double CFiniteElementStd::CalCoefMass2(int dof_index)
 double CFiniteElementStd::CalCoefMassPTC(int dof_index)
 {
 	int Index = MeshElement->GetIndex();
-	double val = 0.0;
-
+	double val = 0.0, z, dzdp, dzdT;
+    PG = interpolate(NodalVal0);
+    TG = interpolate(NodalVal_t0);
 	switch(dof_index)
 	{
 	case 0:
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-		val = poro / interpolate(NodalVal0);
+		val = poro / PG;
+		if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	    {
+		z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+		dzdp =FluidProp->dZ(Index, PG, TG, 0);
+		val -= poro*dzdp/z ;
+		}
 		break;
 	case 1:
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-		val = -poro / interpolate(NodalVal_t0);
+		val = -poro / TG;
+		if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	    {
+		z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+		dzdT = FluidProp->dZ(Index, PG, TG, 1);
+		val -= poro*dzdT/z;
+		}
 		break;
 	case 2:
+		if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	    {
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-		val = - poro * FluidProp->beta_T * interpolate(NodalVal_t0);
+		z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+		dzdT = FluidProp->dZ(Index, PG, TG, 1);
+		val = -poro * (z+TG*dzdT)/z;
+		}
 		break;
 	case 3:
 		val = MediaProp->HeatCapacity(Index,pcs->m_num->ls_theta,this);
@@ -3219,24 +3237,40 @@ double CFiniteElementStd::CalCoefAdvection()
 double CFiniteElementStd::CalCoefAdvectionPTC(int dof_index)
 {
 	int Index = MeshElement->GetIndex();
-	double val = 0.0;
-	double dens_arg[3];
-
+	double val = 0.0, z, dzdp, dzdT, dens_arg[3];
+    PG = interpolate(NodalVal0);
+    TG = interpolate(NodalVal_t0);
 	switch(dof_index)
 	{
 	case 0:
-		val = 1 / interpolate(NodalVal0);
-	
+	val = 1.0 / PG;
+	if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	{
+	z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+	dzdp = FluidProp->dZ(Index, PG, TG, 0);
+	val -=  dzdp/z ;
+	}
 		break;
 	case 1:
-		val = -1 / interpolate(NodalVal_t0);
+	val = -1.0 / TG;
+	if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	{
+	z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+	dzdT = FluidProp->dZ(Index, PG, TG, 1);
+	val -= dzdT/z ;
+	}
 		break;
 	case 2:
-		val = FluidProp->vhd - FluidProp->beta_T * interpolate(NodalVal_t0);
+	if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	{
+	z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+	dzdT = FluidProp->dZ(Index, PG, TG, 1);
+	val = 1.0 - ((z+TG*dzdT)/z);
+	}
 		break;
 	case 3:
-		dens_arg[0] = interpolate(NodalVal0);
-		dens_arg[1] = interpolate(NodalVal_t0);
+	dens_arg[0] = PG;
+	dens_arg[1] = TG;
 		dens_arg[2] = Index;
 		val = FluidProp->Density(dens_arg) * FluidProp->SpecificHeatCapacity(dens_arg);
 		break;
@@ -7591,8 +7625,15 @@ void CFiniteElementStd::Config()
 			NodalValC[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c0);
 			NodalValC1[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1);
 			if(cpl_pcs->type == 1212 || cpl_pcs->type == 42)
+		{
 				NodalVal_p2[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1 + 2);
 			NodalVal_p20[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c0 + 2);
+		}
+		if(cpl_pcs->type == 1111)
+			{
+			NodalVal_t0[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c0 + 2) + T_KILVIN_ZERO;
+			NodalVal_t1[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1 + 2) + T_KILVIN_ZERO;
+			}
 		}
 }
 /**************************************************************************

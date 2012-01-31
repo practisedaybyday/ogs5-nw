@@ -2971,7 +2971,7 @@ double* CMediumProperties::MassDispersionTensorNew(int ip, int tr_phase) // SB +
 	int i;
 	long index = Fem_Ele_Std->GetMeshElement()->GetIndex();
 	double molecular_diffusion[9], molecular_diffusion_value;
-	double vg;
+	double vg, PG, TG;
 	double D[9];
 	double alpha_l,alpha_t;
 	double theta = Fem_Ele_Std->pcs->m_num->ls_theta;
@@ -2981,14 +2981,20 @@ double* CMediumProperties::MassDispersionTensorNew(int ip, int tr_phase) // SB +
 	int set = 0;
 	ElementValue* gp_ele = ele_gp_value[index];
 	CompProperties* m_cp = cp_vec[component];
+	CFluidProperties* m_mfp;         
+	m_mfp = Fem_Ele_Std->FluidProp;  
 	MshElemType::type eleType = m_pcs->m_msh->ele_vector[number]->GetElementType();
 	int Dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
 	//----------------------------------------------------------------------
 	// Materials
-	molecular_diffusion_value =
-	        m_cp->CalcDiffusionCoefficientCP(index,theta, m_pcs) * TortuosityFunction(index,
-	                                                                                  g,
-	                                                                                  theta);
+	molecular_diffusion_value = m_cp->CalcDiffusionCoefficientCP(index,theta, m_pcs) * TortuosityFunction(index,g, theta);
+	if(Fem_Ele_Std->FluidProp->density_model == 14) 
+	{
+ 	m_mfp = mfp_vector[0];
+	PG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC);
+	TG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
+	molecular_diffusion_value = m_mfp->MaxwellStefanDiffusionCoef(index, PG, TG, component)* TortuosityFunction(index,g, theta);
+	}
 	molecular_diffusion_value *= Porosity(index,theta);
 	//CB, SB
 	saturation = PCSGetEleMeanNodeSecondary_2(index,

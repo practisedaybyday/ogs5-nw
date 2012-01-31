@@ -85,9 +85,6 @@ private:
 	double Ru;                            //universal_gas_constant;
 	double omega;                         // azentric factor for Peng-Robinson EOS
 	double molar_mass;
-	double beta_T; //AKS
-	double vhd; //AKS
-
 	/**
 	 * density
 	 */
@@ -244,7 +241,9 @@ public:
 	double phi_r_dt (double rho, double T) const;
 	double phi_r_dd (double rho, double T) const;
 	double phi_0_tt (double T) const;
-	double CompDensity(long idx_elem, const std::string&, double p, double T);//AKS
+	double SuperCompressibiltyFactor(int idx_elem, double p, double T); //AKS
+	double dZ(int idx_elem, double p, double T, int nk);//AKS
+	double MaxwellStefanDiffusionCoef(int idx_elem, double p, double T, int CNm); //AKS
 
 private:
 	// State variables

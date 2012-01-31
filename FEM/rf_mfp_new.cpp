@@ -487,17 +487,6 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 			in.clear();
 			continue;
 		}
-		//....................................................................
-		if(line_string.find("$SUPER_COMPRESSIBILITY") != string::npos)
-		{
-			{
-				in.str(GetLineFromFile1(mfp_file));
-				in >> beta_T;
-				in >> vhd;
-			}
-			in.clear();
-			continue;
-		}
 	}
 	return position;
 }
@@ -803,9 +792,13 @@ double CFluidProperties::Density(double* variables)
 			density = zbrent(variables[1],variables[0],fluid_id,1e-8);
 			break;
 		case 14: // mixture rho= sum_i x_i*rho_i
-			density = MixtureSubProperity(0, (long) variables[2], variables[0],variables[1]);
+			density = variables[0]*MixtureSubProperity(2, (long) variables[2], variables[0], variables[1]);
+			density /=  SuperCompressibiltyFactor((long) variables[2], variables[0], variables[1])*GAS_CONSTANT*variables[1];
 			break;
-		
+			case 15: // mixture rho= sum_i x_i*rho_i
+			density = variables[0]*molar_mass;
+			density /=  SuperCompressibiltyFactor(0, variables[0], variables[1])*GAS_CONSTANT*variables[1];
+			break;
 		case 18: //using calculated densities at nodes from the phase transition model, BG, NB 11/2010
 			variables[2] = phase;
 			density = GetElementValueFromNodes(int(variables[0]),
@@ -890,7 +883,8 @@ double CFluidProperties::Density(double* variables)
 			density = zbrent(primary_variable[1],primary_variable[0],fluid_id,1e-8);
 			break;
 		case 14:                  //AKS empiricaly extented Ideal gas Eq for real gas
-			density = MixtureSubProperity(0,(long)  variables[2], variables[0],variables[1]);
+			density = variables[0]*MixtureSubProperity(2, (long) variables[2], variables[0], variables[1]);
+			density /=  SuperCompressibiltyFactor((long) variables[2], variables[0], variables[1])*GAS_CONSTANT*variables[1];
 			break;
 		default:
 			std::cout << "Error in CFluidProperties::Density: no valid model" <<
@@ -1263,7 +1257,7 @@ double CFluidProperties::Viscosity(double* variables)
 		viscosity = Fluid_Viscosity(density,mfp_arguments[1],mfp_arguments[0],fluid_id);
 		break;
 	case 10: // mixture µ= sum_i sum_j x_i*x_j*intrc*sqrt[µ_i(rho,T)*µ_j(rho,T)]
-		viscosity = MixtureSubProperity(1, (long)  variables[2], variables[0], variables[1]);
+		viscosity = MixtureSubProperity(3, (long)  variables[2], variables[0], variables[1]);
 		break;
 	case 18: //BG, NB using calculated viscosities at nodes from the phase transition model
 		variables[2] = phase;
@@ -1443,18 +1437,16 @@ double CFluidProperties::SpecificHeatCapacity(double* variables)
 	case 1:                               // c = const, value already read in to specific_heat_capacity
 		break;
 	case 2:                               // c = f(p,T,Conc)
-		specific_heat_capacity = MATCalcFluidHeatCapacityMethod2(pressure,
-		                                                         temperature,
-		                                                         saturation);
+		specific_heat_capacity = MATCalcFluidHeatCapacityMethod2(pressure,temperature,saturation);
 		break;
 	case 5:
-		specific_heat_capacity = GetCurveValue(heat_phase_change_curve,
-		                                       0,
-		                                       temperature_buffer,
-		                                       &gueltig);
+		specific_heat_capacity = GetCurveValue(heat_phase_change_curve,0,  temperature_buffer, &gueltig);
+		break;
+	case 9:
+		specific_heat_capacity = isobaric_heat_capacity(Density(primary_variable), primary_variable[1], fluid_id);
 		break;
 	case 10:// mixture cp= sum_i sum_j x_i*x_j*intrc* sqrt[cp_i(rho,T)*cp_j(rho,T)]
-		specific_heat_capacity = MixtureSubProperity(2, (long) primary_variable[2], primary_variable[0], primary_variable[1]);
+		specific_heat_capacity = MixtureSubProperity(4, (long) primary_variable[2], primary_variable[0], primary_variable[1]);
 		break;
 	}
 	return specific_heat_capacity;
@@ -1733,8 +1725,11 @@ double CFluidProperties::HeatConductivity(double* variables)
 	case 3:                               // NB
 		heat_conductivity = Fluid_Heat_Conductivity (Density(),primary_variable[1],fluid_id);
 		break;
+	case 9:
+		heat_conductivity = Fluid_Heat_Conductivity(Density(primary_variable), primary_variable[1], fluid_id);
+		break;
 	case 10:  // mixture k= sum_i sum_j x_i*x_j*intrc*sqrt[k_i(rho,T)*k_j(rho,T)]
-		heat_conductivity = MixtureSubProperity(3, (long) primary_variable[2], primary_variable[0], primary_variable[1]);
+		heat_conductivity = MixtureSubProperity(6, (long) primary_variable[2], primary_variable[0], primary_variable[1]);
 		break;
 	}
 	return heat_conductivity;
@@ -3126,34 +3121,133 @@ double CFluidProperties::drhodT(double P, double T)
 }
 
 /**************************************************************************
+   Task: return diffusion coefficient of mixture component
+   Programing:
+   05/2010 AKS
+**************************************************************************/
+double  CFluidProperties::MaxwellStefanDiffusionCoef(int idx_elem, double p, double T, int CNm)
+{
+	CRFProcess* m_pcs;
+	double w[10], D[10], DD[10], Deff[10];
+	double Sx = 1.0, MIJ = 0.0, VDIJ=0.0, MI=0.0, VDI =0.0;
+	int CNr = (int) this->component_vector.size();
+	for (int i = 0; i < CNr; i++)
+	{
+	Deff[i] = 0.0;
+	DD[i] = 0.0;
+	}
+
+	for (int i = 0; i < CNr; i++)
+	{
+	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
+	w[i] = this->component_vector[i]->CalcElementMeanConcNew(idx_elem,m_pcs);
+	MIJ  += 1.0/this->component_vector[i]->molar_mass;
+	VDIJ += pow(this->component_vector[i]->Vd, 1.0/3.0);
+	}
+	for (int i = 0; i < CNr; i++)
+	{
+	MI = MIJ - 1.0/this->component_vector[i]->molar_mass;
+	VDI = VDIJ - pow(this->component_vector[i]->Vd, 1.0/3.0);
+	DD[i] = 0.0143*pow(T, 1.75)/(p*pow(2.0*pow(MI, -1), 0.5)*pow(VDI, 2));
+	}
+	D[0] = DD[2];
+	D[1] = DD[0];
+	D[2] = DD[1];
+
+	    Sx  = (w[0]*D[2] + w[1]*D[1] + w[2]*D[0]);
+	Deff[0] = (w[0]*D[1]*D[2] + (1-w[0])*D[0]*D[2])/Sx;
+	Deff[1] = (w[1]*D[1]*D[2] + (1-w[2])*D[0]*D[1])/Sx;
+	Deff[2] = ((1-w[0])*D[0]*D[2] + (1-w[1])*D[0]*D[1] + (1-w[2])*D[1]*D[2])/Sx;
+	return Deff[CNm];
+    }
+/**************************************************************************
    Task: return super compressibility factor of the mixture
    Programing:
    05/2010 AKS
 **************************************************************************/
-double CFluidProperties::CompDensity(long idx_elem, const string &fluid_name, double p,double T)
+double CFluidProperties::SuperCompressibiltyFactor(int idx_elem, double p, double T)
 {
-	therm_prop(fluid_name);
 	std::vector<double> roots;
-	double a, a0, b, A, B, rho_g;                   
-	double z1, z2, z3, h; 
-	a0=(1+(0.37464+1.54226*omega-0.2699*omega*omega)*(1-pow(T/Tc,0.5)));
-	a = 0.45724*GAS_CONSTANT*GAS_CONSTANT*Tc*Tc*a0*a0/pc;
-	b=0.07780*GAS_CONSTANT*Tc/pc;
-	A=a*p/(GAS_CONSTANT*GAS_CONSTANT*T*T);
-	B=b*p/(GAS_CONSTANT*T);
-	z1=-(1-B);
+	double A, B, z1, z2, z3, h, m0, a0, a, b; 
+	if(density_model == 15)
+	{
+	m0 = 0.37464 + 1.54226*omega - 0.26992*pow(omega, 2);
+	a0 = pow(1+m0*(1-pow(T/Tc, 0.5)), 2);
+	a = 0.457235*pow(GAS_CONSTANT*Tc, 2)*a0/pc;
+	b = 0.077796*GAS_CONSTANT*Tc/pc;
+	}
+	if(density_model == 14)
+	{
+	a = MixtureSubProperity(0, idx_elem, p, T);
+	b = MixtureSubProperity(1, idx_elem, p, T);
+	}
+	A = a*p*pow(GAS_CONSTANT*T, -2);
+	B = b*p*pow(GAS_CONSTANT*T, -1);
+	z1= B-1.0;
 	z2=(A-3.0*pow(B,2)-2.0*B);
-	z3=-(A*B-pow(B,2)-pow(B,3));
+	z3=(pow(B,3) + pow(B,2)-A*B);
 	NsPol3(z1,z2,z3,&roots);                     
-	//if((p < pc) && (T > Tc ))
 	h = FindMax(roots);
-	//if((p > pc) && (T > Tc ))
-	//h=FindMin(roots);
-	rho_g = molar_mass*p/(h*GAS_CONSTANT*T);
-
-	return rho_g;
+	return h;
 }
+/**************************************************************************
+   Task: return super compressibility factor of the mixture
+   Programing:
+   05/2010 AKS
+**************************************************************************/
+double CFluidProperties::dZ(int idx_elem, double p, double T, int nk)
+{
+	double adiabatic_index, sound_velocity, m0, a0, a, b, Vm, dpdVm, dVmdT, da, dZ, A, B, dA, dB, z, JCT;
+	double dens_arg[3], cp, cv, Mm;
+	dens_arg[0] = p;
+	dens_arg[1] = T;
+	if(density_model == 15)
+	{
+	m0 = 0.37464 + 1.54226*omega - 0.26992*pow(omega, 2);
+	a0 = pow(1+m0*(1-pow(T/Tc, 0.5)), 2);
+	a = 0.457235*pow(GAS_CONSTANT*Tc, 2)*a0/pc;
+	b = 0.077796*GAS_CONSTANT*Tc/pc;
+	da = -m0*(0.45724*pow(GAS_CONSTANT*Tc, 2)*sqrt(a0)*pow(T*Tc, -0.5)/pc);
+	//cp = isobaric_heat_capacity(Density(dens_arg), dens_arg[1], fluid_id);
+	//cv = isochoric_heat_capacity(Density(dens_arg), dens_arg[1], fluid_id);
+	//Mm =molar_mass;
+	}
+	if(density_model == 14)
+	{
+	a = MixtureSubProperity(0, idx_elem, p, T);
+	b = MixtureSubProperity(1, idx_elem, p, T);
+	da= -MixtureSubProperity(7, idx_elem, p, T);
+	//cp = MixtureSubProperity(4, idx_elem, p, T);
+	//cv = MixtureSubProperity(5, idx_elem, p, T);
+	//Mm = MixtureSubProperity(2, idx_elem, p, T);
+	}
+	A = a*p*pow(GAS_CONSTANT*T, -2);
+	B = b*p*pow(GAS_CONSTANT*T, -1);
+	dA= (da*A/a) -(2.0*A/T);
+	dB= -B/T;
+	z = SuperCompressibiltyFactor(idx_elem, p, T);
+    Vm = z*GAS_CONSTANT*T/p;//m3/kmol
+	if(nk == 0)//dz/dp
+    {
+	dpdVm= -GAS_CONSTANT*T*pow((Vm-b),-2) +  2.0*a*(Vm+b)*pow((Vm*Vm + 2.0*Vm*b - b*b), -2);
+	dZ  = p*pow(dpdVm*GAS_CONSTANT*T, -1) + (z/p);
+	// above calculation has tested with value of sound velocity
+	//adiabatic_index = cp/cv;
+	//sound_velocity = Vm*sqrt(-adiabatic_index*dpdVm/Mm);
+	}
 
+    if(nk == 1)//dz/dT
+    { 
+	dZ= dA*(B-z) + dB*(6*B*z + 2*z - 3*B*B - 2*B + A - z*z);
+	dZ /= (3*z*z + 2*(B - 1)*z + A - 2*B - 3*B*B); 
+	// above calculation has tested with value of JCT coefficient
+	//dVmdT= (GAS_CONSTANT/p)*(T*dZ + z);
+	//JCT = (T*dVmdT - Vm);
+	//JCT /= Mm*cp;
+	}
+
+	return dZ;
+}
 /**************************************************************************
    Task: returns various parameters account molecular interation of the different components of mixture
    Programing: 05/2010 AKS
@@ -3161,83 +3255,139 @@ double CFluidProperties::CompDensity(long idx_elem, const string &fluid_name, do
 double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, double p, double T)
 {
 	CRFProcess* m_pcs;
-	double mass_fraction[10], components_properties[10];
-	double variables = 0.0;
-	int component_number = (int) this->component_vector.size();
+	double mass_fraction[10], CPr[10], dens_arg[3], molar_volume[10];
+	double variables = 0.0, a0, m0;
+	int CNr = (int) this->component_vector.size();
+	dens_arg[0] = p;
+	dens_arg[1] = T;
+	dens_arg[2] = idx_elem;
+
 	switch(properties)
 	{
-case 0: // mixture density 'rho'
-	for (int i = 0; i < component_number; i++)
+	case 0:// attraction parameter 'a'
+
+	for (int i = 0; i < CNr; i++)
 	{
 	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
 	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew(idx_elem,m_pcs );
-	components_properties[i] = CompDensity(idx_elem, this->component_vector[i]->compname, p, T);
+	m0 = 0.37464 + 1.54226*this->component_vector[i]->omega - 0.26992*pow(this->component_vector[i]->omega, 2);
+	a0 = pow(1+m0*(1-pow(T/this->component_vector[i]->Tc, 0.5)), 2);
+	molar_volume[i] = this->component_vector[i]->Vm;
+	for (int j = 0; j < CNr; j++)
+	{
+	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
+	mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew(idx_elem,m_pcs );
+	m0 = 0.37464 + 1.54226*this->component_vector[j]->omega - 0.26992*pow(this->component_vector[j]->omega, 2);
+	a0 = pow(1+m0*(1-pow(T/this->component_vector[j]->Tc, 0.5)), 2);
+	molar_volume[j] = this->component_vector[j]->Vm;
+	CPr[j] = (0.457235*pow(GAS_CONSTANT*this->component_vector[j]->Tc, 2)*a0/this->component_vector[j]->pc);
 
-	variables += mass_fraction[i] *components_properties[i];
+	variables += mass_fraction[i]*mass_fraction[j]*pow(CPr[i]*CPr[j], 0.5)*molar_volume[i]/molar_volume[j];
+	}
 	}
 	break;
 
-case 1: // dynamic viscosity 'µ'
-	for (int i = 0; i < component_number; i++)
+	case 1:// repulsion parameter 'b'
+	for (int i = 0; i < CNr; i++)
+	{
+    m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
+	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew(idx_elem,m_pcs );
+	CPr[i] = 0.077796*GAS_CONSTANT*this->component_vector[i]->Tc/this->component_vector[i]->pc;
+	variables += mass_fraction[i]*CPr[i];
+	}
+	break;
+
+	case 2:// molecular weight 'M'
+	for (int i = 0; i < CNr; i++)
+	{
+	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
+	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew(idx_elem,m_pcs );
+	CPr[i] = this->component_vector[i]->molar_mass;
+
+	for (int j = 0; j < CNr; j++)
+	{
+	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
+	mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew(idx_elem,m_pcs );
+	CPr[j] = this->component_vector[j]->molar_mass;
+
+	variables += mass_fraction[i]*mass_fraction[j]*2.0*pow(pow(CPr[i], -1) + pow(CPr[j], -1), -1);
+	}
+	}
+	break;
+
+case 3:// dynamic viscosity 'µ'
+	for (int i = 0; i < CNr; i++)
 	{
 	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
 	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew(idx_elem, m_pcs );
-	components_properties[i] = Fluid_Viscosity(CompDensity(idx_elem, this->component_vector[i]->compname, p, T), T, p,(int)(2 * i + 0.25 * (i * i - i * i * i)));
-
-	for (int j = 0; j < component_number; j++)
-	{
-	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
-	mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew(idx_elem, m_pcs );
-	components_properties[j] = Fluid_Viscosity(CompDensity(idx_elem, this->component_vector[j]->compname, p, T), T, p,(int)(2 * j + 0.25 * (j * j - j * j * j)));
-
-	variables += mass_fraction[i] * mass_fraction[j] * components_properties[i]*components_properties[j];
+	CPr[i] = Fluid_Viscosity(Density(dens_arg), T, p, this->component_vector[i]->fluid_id);
+	variables += mass_fraction[i]*sqrt(CPr[i]);
 	}
-	}
-	variables = pow(variables, 0.5);
+	variables = variables*variables;
 	break;
 
-case 2: // specific heat capacity 'cp'
-	for (int i = 0; i < component_number; i++)
+case 4:// specific heat capacity 'cp'
+	for (int i = 0; i < CNr; i++)
 	{
 	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
 	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew( idx_elem, m_pcs );
 	therm_prop(this->component_vector[i]->compname);
-	components_properties[i] = isobaric_heat_capacity(CompDensity(idx_elem, this->component_vector[i]->compname, p, T), T, (int)(2 * i + 0.25 * (i * i - i * i * i)));
-
-	for (int j = 0; j < component_number; j++)
-	{
-	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
-	mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew(idx_elem, m_pcs );
-	therm_prop(this->component_vector[j]->compname);
-	components_properties[j] =  isobaric_heat_capacity(CompDensity(idx_elem, this->component_vector[j]->compname, p, T), T, (int)(2 * j + 0.25 * (j * j - j * j * j)));
-	
-	variables += mass_fraction[i] * mass_fraction[j] * components_properties[i]*components_properties[j];
+	CPr[i] = isobaric_heat_capacity(Density(dens_arg), T, this->component_vector[i]->fluid_id);
+	variables += mass_fraction[i]*sqrt(CPr[i]);
 	}
-	}
-	variables = pow(variables, 0.5);
+	variables = variables*variables;
 	break;
 
+	case 5:// specific heat capacity 'cv'
+	for (int i = 0; i < CNr; i++)
+	{
+	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
+	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew( idx_elem, m_pcs );
+	therm_prop(this->component_vector[i]->compname);
+	CPr[i] = isochoric_heat_capacity(Density(dens_arg), T, this->component_vector[i]->fluid_id);
+	variables += mass_fraction[i]*sqrt(CPr[i]);
+	}
+	variables = variables*variables;
+	break;
 
-case 3: // thermal conductivity 'k'
-	for (int i = 0; i < component_number; i++)
+case 6:// thermal conductivity 'k'
+	for (int i = 0; i < CNr; i++)
 	{
 	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
 	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew(idx_elem,m_pcs );
-	components_properties[i] = Fluid_Heat_Conductivity(CompDensity(idx_elem, this->component_vector[i]->compname, p, T), T, (int)(2 * i + 0.25 * (i * i - i * i * i)));
-
-	for (int j = 0; j < component_number; j++)
-	{
-	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
-	mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew(idx_elem, m_pcs );
-	components_properties[j] =   Fluid_Heat_Conductivity(CompDensity(idx_elem, this->component_vector[j]->compname, p, T), T, (int)(2 * j + 0.25 * (j * j - j * j * j)));
-
-	variables += mass_fraction[i] * mass_fraction[j] * components_properties[i]*components_properties[j];
+	CPr[i] = Fluid_Heat_Conductivity(Density(dens_arg), T, this->component_vector[i]->fluid_id);
+	variables += mass_fraction[i]*sqrt(CPr[i]);
 	}
-	}
-	variables = pow(variables, 0.5);
+	variables = variables*variables;
 	break;
 
+	case 7:// attraction parameter 'da'
+
+	for (int i = 0; i < CNr; i++)
+	{
+	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
+	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew(idx_elem,m_pcs );
+	m0 = 0.37464 + 1.54226*this->component_vector[i]->omega - 0.26992*pow( this->component_vector[i]->omega, 2);
+	a0 = pow((1+m0*(1-pow(T/this->component_vector[i]->Tc,0.5))), 1)*pow(T*this->component_vector[i]->Tc, -0.5);
+	molar_volume[i] = this->component_vector[i]->Vm;
+	CPr[i] = -m0*(0.45724*pow(GAS_CONSTANT*this->component_vector[i]->Tc, 2)*a0/this->component_vector[i]->pc);
+
+	for (int j = 0; j < CNr; j++)
+	{
+	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
+	mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew(idx_elem,m_pcs );
+	m0 = 0.37464 + 1.54226*this->component_vector[j]->omega - 0.26992*pow( this->component_vector[j]->omega, 2);
+	a0 = pow((1+m0*(1-pow(T/this->component_vector[j]->Tc,0.5))), 1)*pow(T*this->component_vector[j]->Tc, -0.5);
+	molar_volume[j] = this->component_vector[j]->Vm;
+	CPr[j] = -m0*(0.45724*pow(GAS_CONSTANT*this->component_vector[j]->Tc, 2)*a0/this->component_vector[j]->pc);
+
+	variables += mass_fraction[i]*mass_fraction[j]*pow(CPr[i]*CPr[j], 0.5)*molar_volume[i]/molar_volume[j];
 	}
+	}
+	
+	break;
+
+}
 	return variables;
 }
 
