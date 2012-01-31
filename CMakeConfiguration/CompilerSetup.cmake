@@ -41,7 +41,8 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 	# -g
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wall -Wextra -Woverloaded-virtual -fno-nonansi-builtins")
 	# would be cool: -Woverloaded-virtual, would be overkill: -Weffc++
-        ADD_DEFINITIONS(-DGCC)
+  ADD_DEFINITIONS(-DGCC)
+
 	IF (OGS_PROFILE)
 		IF( NOT CMAKE_BUILD_TYPE STREQUAL "Release" )
 			MESSAGE(STATUS "When using profiling you should set CMAKE_BUILD_TYPE to Release.")
@@ -49,4 +50,9 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 		SET(PROFILE_FLAGS "-pg -fno-omit-frame-pointer -O2 -DNDEBUG -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PROFILE_FLAGS}")
 	ENDIF (OGS_PROFILE)
-ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
+	
+ENDIF() # CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC
+
+IF(OGS_COVERAGE)
+  INCLUDE(CodeCoverage)
+ENDIF()
