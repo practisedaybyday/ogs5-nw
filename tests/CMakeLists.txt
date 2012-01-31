@@ -32,7 +32,7 @@ INCLUDE_DIRECTORIES(
 )
 
 ADD_EXECUTABLE (testrunner ${SOURCES})
-SET(TESTRUNNER_LIBS 
+TARGET_LINK_LIBRARIES(testrunner 
   GTest
   Base
   FileIO
@@ -42,20 +42,23 @@ SET(TESTRUNNER_LIBS
   MSH
   OGSProject
 )
-TARGET_LINK_LIBRARIES(testrunner ${TESTRUNNER_LIBS})
 
 IF (MSVC)
-	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/testrunner)
-	SET (QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/QtTestrunner)
+	SET(testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/testrunner)
+	SET(QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/QtTestrunner)
 ELSE ()
-	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/testrunner)
-	IF ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+	SET(testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/testrunner)
+	IF("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 		TARGET_LINK_LIBRARIES( testrunner pthread )
-	ENDIF ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+	ENDIF() # "${CMAKE_SYSTEM_NAME}" MATCHES "Linux"
 	SET (QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/QtTestrunner)
-ENDIF()
+ENDIF() # MSVC
 
-ADD_CUSTOM_TARGET(gtests testrunner	DEPENDS ${TESTRUNNER_LIBS})
+IF(OGS_COVERAGE)
+	SETUP_TARGET_FOR_COVERAGE(gtests testrunner "gtests_coverage_results")
+ELSE()
+	ADD_CUSTOM_TARGET(gtests testrunner	DEPENDS testrunner)
+ENDIF() # OGS_COVERAGE
 
 SET_TARGET_PROPERTIES(testrunner gtests PROPERTIES FOLDER Testing)
 
