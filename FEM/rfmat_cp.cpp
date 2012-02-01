@@ -272,7 +272,7 @@ ios::pos_type CompProperties::Read(ifstream* rfd_file)
 		if(line_string.find("$MOL_MASS") != std::string::npos)
 		{
 			in.str(GetLineFromFile1(rfd_file));
-			in >> mol_mass;
+			in >> molar_mass;
 			in.clear();
 		}
 		//....................................................................
@@ -280,7 +280,7 @@ ios::pos_type CompProperties::Read(ifstream* rfd_file)
 		if(line_string.find("$CRITICAL_PRESSURE") != std::string::npos)
 		{
 			in.str(GetLineFromFile1(rfd_file));
-			in >> critical_pressure;
+			in >> pc;
 			in.clear();
 		}
 		//....................................................................
@@ -288,24 +288,36 @@ ios::pos_type CompProperties::Read(ifstream* rfd_file)
 		if(line_string.find("$CRITICAL_TEMPERATURE") != std::string::npos)
 		{
 			in.str(GetLineFromFile1(rfd_file));
-			in >> critical_teperature;
+			in >> Tc;
 			in.clear();
 		}
 		//....................................................................
-		//....................................................................
-		// subkeyword found
-		if(line_string.find("$CRITICAL_VOLUME") != std::string::npos)
-		{
-			in.str(GetLineFromFile1(rfd_file));
-			in >> critical_volume;
-			in.clear();
-		}
-		//....................................................................
-		// subkeyword found
 		if(line_string.find("$ACENTRIC_FACTOR") != std::string::npos)
 		{
 			in.str(GetLineFromFile1(rfd_file));
-			in >> acentric_factor;
+			in >> omega;
+			in.clear();
+		}
+		//....................................................................
+		// subkeyword found
+		if(line_string.find("$FLUID_ID") != std::string::npos)
+		{
+			in.str(GetLineFromFile1(rfd_file));
+			in >> fluid_id;
+			in.clear();
+		}
+		if(line_string.find("$MOLAR_VOLUME") != std::string::npos)
+		{
+			in.str(GetLineFromFile1(rfd_file));
+			in >> Vm;
+			in.clear();
+		}
+		//....................................................................
+		// subkeyword found
+		if(line_string.find("$VOLUME_DIFFUSION") != std::string::npos)
+		{
+			in.str(GetLineFromFile1(rfd_file));
+			in >> Vd;
 			in.clear();
 		}
 		//....................................................................

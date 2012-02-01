@@ -187,6 +187,7 @@ protected:
 	int D_Flag;                           // Deformation
 	int PT_Flag;                          // Particle Tracking Random Walk
 	bool RD_Flag;                         // Dual Richards
+	bool PTC_Flag;                         // Pressure Temperature coupled process
 	// For extropolation
 	double Xi_p;
 	void SetExtropoGaussPoints(const int i); // 25.2.2007 WW
