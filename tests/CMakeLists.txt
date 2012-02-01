@@ -21,14 +21,14 @@ IF (NOT MSVC)
 ENDIF (NOT MSVC)
 
 INCLUDE_DIRECTORIES(
-	gtest
-    ../Base
-    ../FileIO
-	../GEO
-	../MathLib
-    ../FEM
-    ../MSH
-    ../OGSProject
+	${CMAKE_SOURCE_DIR}/tests/gtest
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/OGSProject
 )
 
 ADD_EXECUTABLE (testrunner ${SOURCES})

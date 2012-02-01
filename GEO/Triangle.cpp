@@ -8,10 +8,10 @@
 #include "Triangle.h"
 
 // MathLib
-#include "LinAlg/GaussAlgorithm.h"
 #include "MathTools.h"
 #include "Matrix.h"
 #include "Vector3.h"
+#include "GaussAlgorithm.h"
 
 namespace GEOLIB
 {
