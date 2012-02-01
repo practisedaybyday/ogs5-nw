@@ -5011,7 +5011,6 @@ void CFiniteElementStd::CalcStrainCoupling(int phase)
 	double fkt, du = 0.0;
 	SetHighOrderNodes();
 	// Loop over Gauss points
-	for (gp = 0; gp < nGaussPoints; gp++)
 		for (gp = 0; gp < nGaussPoints; gp++)
 		{
 			fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
