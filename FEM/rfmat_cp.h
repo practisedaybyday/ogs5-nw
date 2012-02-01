@@ -42,11 +42,13 @@ public:
 	int transport_phase;                 /* number of phase, in which component is transported */
 	int fluid_phase;
 	int valence;                          // valence of ionic elements /*MX*/
-	double mol_mass;
-	double critical_pressure;
-	double acentric_factor;
-	double critical_teperature;
-	double critical_volume;
+	double molar_mass;
+	double pc;						//Critical pressure [Pa]
+	double omega;                // accentric factor [-]
+	double Tc;					// Critical temperature [K]
+	int fluid_id;			// Requred to detect a particular fluid from *.mcp files: 0 for CO2; 1 for H2O; 2 for CH4; 3 for N2
+	double Vm;                // Vm [m3/kmol]: Molar volume used in interation parameter calculation 
+	double Vd;                 //[cm3/mol] diffusion volume
 
 	/* Diffusionsmodelle und zugehoerige Beschreibungswerte */
 	int diffusion_model;                  /* Zerfallsmodell in geloester Phase */

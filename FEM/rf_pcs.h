@@ -911,6 +911,7 @@ extern bool MASS_TRANSPORT_Process;
 extern bool FLUID_MOMENTUM_Process;
 extern bool RANDOM_WALK_Process;
 extern bool PS_Global;                            //NB
+extern bool PTC_FLOW_Process; //NB
 extern std::string project_title;                 //OK41
 extern bool pcs_created;
 extern std::vector<LINEAR_SOLVER*> PCS_Solver;    //WW
