@@ -54,9 +54,14 @@ ELSE ()
 	SET (QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/QtTestrunner)
 ENDIF() # MSVC
 
+# Add targets for running tests (with coverage reports)
 IF(OGS_COVERAGE)
 	SETUP_TARGET_FOR_COVERAGE(gtests testrunner "gtests_coverage_results")
-ELSE()
+	# Use cobertura output on Jenkins
+	IF(JENKINS_URL)
+		SETUP_TARGET_FOR_COVERAGE_COBERTURA(gtests_cobertura testrunner "gtests_coverage_results")
+	ENDIF() # JENKINS_URL
+ELSE() # without coverage reports
 	ADD_CUSTOM_TARGET(gtests testrunner	DEPENDS testrunner)
 ENDIF() # OGS_COVERAGE
 
