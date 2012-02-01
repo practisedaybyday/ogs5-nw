@@ -65,9 +65,8 @@ IF(OGS_COVERAGE)
 	ENDIF() # JENKINS_URL
 ELSE() # without coverage reports
 	ADD_CUSTOM_TARGET(gtests testrunner	DEPENDS testrunner)
+	SET_TARGET_PROPERTIES(testrunner gtests PROPERTIES FOLDER Testing)
 ENDIF() # OGS_COVERAGE
-
-SET_TARGET_PROPERTIES(testrunner gtests PROPERTIES FOLDER Testing)
 
 # Either collect all gtests in one ctest run of testrunner executable
 # or run each gtest individually
