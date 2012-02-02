@@ -63,6 +63,11 @@ IF(OGS_COVERAGE)
 	ELSE()
 		SETUP_TARGET_FOR_COVERAGE(gtests testrunner "gtests_coverage_results")
 	ENDIF() # JENKINS_URL
+	
+	IF(BENCHMARK_DIR_FOUND)
+		SETUP_TARGET_FOR_COVERAGE(benchmark_coverage ctest "benchmark_coverage_results" "-E;'Tests|FILE|EXCEED';-j;${PROCESSOR_COUNT}")
+	ENDIF() # BENCHMARK_DIR_FOUND
+	
 ELSE() # without coverage reports
 	ADD_CUSTOM_TARGET(gtests testrunner	DEPENDS testrunner)
 	SET_TARGET_PROPERTIES(testrunner gtests PROPERTIES FOLDER Testing)
