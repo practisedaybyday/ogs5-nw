@@ -59,14 +59,16 @@ IF(OGS_COVERAGE)
 	# Use cobertura output on Jenkins
 	IF(JENKINS_URL)
 		SETUP_TARGET_FOR_COVERAGE_COBERTURA(gtests_cobertura testrunner "gtests_coverage_results")
+		IF(BENCHMARK_DIR_FOUND)
+			SETUP_TARGET_FOR_COVERAGE_COBERTURA(benchmark_coverage ctest "benchmark_coverage_results" "-E;'Tests|FILE|EXCEED';-j;${PROCESSOR_COUNT}")
+		ENDIF() # BENCHMARK_DIR_FOUND
 	# Use lcov output else
 	ELSE()
 		SETUP_TARGET_FOR_COVERAGE(gtests testrunner "gtests_coverage_results")
+		IF(BENCHMARK_DIR_FOUND)
+			SETUP_TARGET_FOR_COVERAGE(benchmark_coverage ctest "benchmark_coverage_results" "-E;'Tests|FILE|EXCEED';-j;${PROCESSOR_COUNT}")
+		ENDIF() # BENCHMARK_DIR_FOUND
 	ENDIF() # JENKINS_URL
-	
-	IF(BENCHMARK_DIR_FOUND)
-		SETUP_TARGET_FOR_COVERAGE(benchmark_coverage ctest "benchmark_coverage_results" "-E;'Tests|FILE|EXCEED';-j;${PROCESSOR_COUNT}")
-	ENDIF() # BENCHMARK_DIR_FOUND
 	
 ELSE() # without coverage reports
 	ADD_CUSTOM_TARGET(gtests testrunner	DEPENDS testrunner)
