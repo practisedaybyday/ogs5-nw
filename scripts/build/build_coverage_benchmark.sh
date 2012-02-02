@@ -40,7 +40,6 @@ cmake $SOURCE_LOCATION
 
 cmake --build . --config Debug $BUILD_ARGS
 cmake --build . --config Debug --target benchmark_coverage $BUILD_ARGS
-fi
 
 cd "$SOURCE_LOCATION/scripts/build"
 
