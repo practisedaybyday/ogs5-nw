@@ -1,14 +1,14 @@
 
 INCLUDE_DIRECTORIES(
-	./
-	../../Base
-	../../GEO
-	../../FileIO
-	../../FileIO/MeshIO
-	../../MathLib
-	../../FEM
-	../../MSH
-	../../MSHGEOTOOLS
+	${CMAKE_SOURCE_DIR}/UTL/MSHGEOTOOLS
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/FileIO/MeshIO
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/MSHGEOTOOLS
 )
 
 # Create executables

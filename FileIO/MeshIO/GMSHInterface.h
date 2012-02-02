@@ -44,8 +44,8 @@ public:
 	 * writes the geometric data (Points, Polylines, Surfaces) into a file of the GMSH geometric format
 	 * @param proj_name Name of the geometry that will be included in the geo-file
 	 * @param geo Container for geometric information
-	 * @parem useStationsAsContraints If true, station data is included as constraints for meshing of surfaces (via addStationsAsConstraints()).
-	 * @parem useSteinerPoints If true, additional points will be generated based on a quadtree such that a certained pre-defined point-density is set.
+	 * @param useStationsAsContraints If true, station data is included as constraints for meshing of surfaces (via addStationsAsConstraints()).
+	 * @param useSteinerPoints If true, additional points will be generated based on a quadtree such that a certained pre-defined point-density is set.
 	 * @return if the file stream can be opened the method returns true, else it returns false
 	 */
 	bool writeGMSHInputFile(const std::string &proj_name,

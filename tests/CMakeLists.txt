@@ -21,18 +21,18 @@ IF (NOT MSVC)
 ENDIF (NOT MSVC)
 
 INCLUDE_DIRECTORIES(
-	gtest
-    ../Base
-    ../FileIO
-	../GEO
-	../MathLib
-    ../FEM
-    ../MSH
-    ../OGSProject
+	${CMAKE_SOURCE_DIR}/tests/gtest
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/OGSProject
 )
 
 ADD_EXECUTABLE (testrunner ${SOURCES})
-SET(TESTRUNNER_LIBS 
+TARGET_LINK_LIBRARIES(testrunner 
   GTest
   Base
   FileIO
@@ -42,22 +42,38 @@ SET(TESTRUNNER_LIBS
   MSH
   OGSProject
 )
-TARGET_LINK_LIBRARIES(testrunner ${TESTRUNNER_LIBS})
 
 IF (MSVC)
-	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/testrunner)
-	SET (QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/QtTestrunner)
+	SET(testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/testrunner)
+	SET(QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/Release/QtTestrunner)
 ELSE ()
-	SET (testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/testrunner)
-	IF ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+	SET(testrunnerExe ${EXECUTABLE_OUTPUT_PATH}/testrunner)
+	IF("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 		TARGET_LINK_LIBRARIES( testrunner pthread )
-	ENDIF ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+	ENDIF() # "${CMAKE_SYSTEM_NAME}" MATCHES "Linux"
 	SET (QtTestrunnerExe ${EXECUTABLE_OUTPUT_PATH}/QtTestrunner)
-ENDIF()
+ENDIF() # MSVC
 
-ADD_CUSTOM_TARGET(gtests testrunner	DEPENDS ${TESTRUNNER_LIBS})
-
-SET_TARGET_PROPERTIES(testrunner gtests PROPERTIES FOLDER Testing)
+# Add targets for running tests (with coverage reports)
+IF(OGS_COVERAGE)
+	# Use cobertura output on Jenkins
+	IF(JENKINS_URL)
+		SETUP_TARGET_FOR_COVERAGE_COBERTURA(gtests_cobertura testrunner "gtests_coverage_results")
+		IF(BENCHMARK_DIR_FOUND)
+			SETUP_TARGET_FOR_COVERAGE_COBERTURA(benchmark_coverage ctest "benchmark_coverage_results" "-E;'Tests|FILE|EXCEED';-j;${PROCESSOR_COUNT}")
+		ENDIF() # BENCHMARK_DIR_FOUND
+	# Use lcov output else
+	ELSE()
+		SETUP_TARGET_FOR_COVERAGE(gtests testrunner "gtests_coverage_results")
+		IF(BENCHMARK_DIR_FOUND)
+			SETUP_TARGET_FOR_COVERAGE(benchmark_coverage ctest "benchmark_coverage_results" "-E;'Tests|FILE|EXCEED';-j;${PROCESSOR_COUNT}")
+		ENDIF() # BENCHMARK_DIR_FOUND
+	ENDIF() # JENKINS_URL
+	
+ELSE() # without coverage reports
+	ADD_CUSTOM_TARGET(gtests testrunner	DEPENDS testrunner)
+	SET_TARGET_PROPERTIES(testrunner gtests PROPERTIES FOLDER Testing)
+ENDIF() # OGS_COVERAGE
 
 # Either collect all gtests in one ctest run of testrunner executable
 # or run each gtest individually

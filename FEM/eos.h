@@ -13,7 +13,7 @@ double pressure (double rho, double T, int fluid);
 // calculates the density iteratively depending on pressure and temperature
 double enthalpy (double rho, double T, std::string c);
 // calculates the density iteratively depending on pressure and temperature
-double isochoric_heat_capacity (double rho, double T, std::string c);
+double isochoric_heat_capacity (double rho, double T, int c);
 // calculates the isochoric heat capacity depending on density and temperature
 double isobaric_heat_capacity(double rho, double T, int c);
 // calculates the isobaric heat capacity depending on density and temperature

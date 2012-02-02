@@ -11,12 +11,12 @@ set( HEADERS
 
 # and include additional header
 include_directories(
-	../Base
-	../MathLib
-	../GEO
-	../FileIO
-	../MSH
-	../FEM
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/FEM
 )
 
 

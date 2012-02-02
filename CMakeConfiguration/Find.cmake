@@ -178,6 +178,7 @@ FIND_PACKAGE(cppcheck)
 # Find Exuberant ctags or BBEdit for code completion
 FIND_PROGRAM(CTAGS_TOOL_PATH ctags DOC "Exuberant ctags")
 FIND_PROGRAM(BBEDIT_TOOL_PATH bbedit DOC "BBEdit Editor")
+MARK_AS_ADVANCED(CTAGS_TOOL_PATH BBEDIT_TOOL_PATH)
 IF(BBEDIT_TOOL_PATH)
 	ADD_CUSTOM_TARGET(ctags
 		bbedit --maketags
