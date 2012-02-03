@@ -23,8 +23,11 @@ TEST(VTK, TestMeshFromRaster)
 	geo_image->setImageFilename(fileName);
 	vtkSmartPointer<vtkImageData> image = geo_image->GetOutput();
 	image->Update();
+	
+	double origin[3];
+	geo_image->getOrigin(origin[0], origin[1], origin[2]);
 
-	GridAdapter* grid = VtkMeshConverter::convertImgToMesh(image, geo_image->getOrigin(), geo_image->getSpacing(), MshElemType::TRIANGLE, UseIntensityAs::ELEVATION);
+	GridAdapter* grid = VtkMeshConverter::convertImgToMesh(image, origin, geo_image->getSpacing(), MshElemType::TRIANGLE, UseIntensityAs::ELEVATION);
 		
 	// Correct number of nodes?
 	ASSERT_EQ(grid->getNodes()->size(), (size_t)626);
