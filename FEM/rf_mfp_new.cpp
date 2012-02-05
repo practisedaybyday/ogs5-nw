@@ -3154,9 +3154,9 @@ double  CFluidProperties::MaxwellStefanDiffusionCoef(int idx_elem, double p, dou
 	D[1] = DD[0];
 	D[2] = DD[1];
 
-	    Sx  = (w[0]*D[2] + w[1]*D[1] + w[2]*D[0]);
+	    Sx  = (w[0]*D[1] + w[1]*D[2] + w[2]*D[0]);
 	Deff[0] = (w[0]*D[1]*D[2] + (1-w[0])*D[0]*D[2])/Sx;
-	Deff[1] = (w[1]*D[1]*D[2] + (1-w[2])*D[0]*D[1])/Sx;
+	Deff[1] = (w[1]*D[1]*D[2] + (1-w[1])*D[0]*D[1])/Sx;
 	Deff[2] = ((1-w[0])*D[0]*D[2] + (1-w[1])*D[0]*D[1] + (1-w[2])*D[1]*D[2])/Sx;
 	return Deff[CNm];
     }
@@ -3272,19 +3272,10 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
 	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew(idx_elem,m_pcs );
 	m0 = 0.37464 + 1.54226*this->component_vector[i]->omega - 0.26992*pow(this->component_vector[i]->omega, 2);
 	a0 = pow(1+m0*(1-pow(T/this->component_vector[i]->Tc, 0.5)), 2);
-	molar_volume[i] = this->component_vector[i]->Vm;
-	for (int j = 0; j < CNr; j++)
-	{
-	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
-	mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew(idx_elem,m_pcs );
-	m0 = 0.37464 + 1.54226*this->component_vector[j]->omega - 0.26992*pow(this->component_vector[j]->omega, 2);
-	a0 = pow(1+m0*(1-pow(T/this->component_vector[j]->Tc, 0.5)), 2);
-	molar_volume[j] = this->component_vector[j]->Vm;
-	CPr[j] = (0.457235*pow(GAS_CONSTANT*this->component_vector[j]->Tc, 2)*a0/this->component_vector[j]->pc);
-
-	variables += mass_fraction[i]*mass_fraction[j]*pow(CPr[i]*CPr[j], 0.5)*molar_volume[i]/molar_volume[j];
+	CPr[i] = (0.457235*pow(GAS_CONSTANT*this->component_vector[i]->Tc, 2)*a0/this->component_vector[i]->pc);
+	variables += mass_fraction[i]*sqrt(CPr[i]);
 	}
-	}
+	variables = variables*variables;
 	break;
 
 	case 1:// repulsion parameter 'b'
@@ -3303,15 +3294,7 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
 	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
 	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew(idx_elem,m_pcs );
 	CPr[i] = this->component_vector[i]->molar_mass;
-
-	for (int j = 0; j < CNr; j++)
-	{
-	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
-	mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew(idx_elem,m_pcs );
-	CPr[j] = this->component_vector[j]->molar_mass;
-
-	variables += mass_fraction[i]*mass_fraction[j]*2.0*pow(pow(CPr[i], -1) + pow(CPr[j], -1), -1);
-	}
+	variables += mass_fraction[i]*CPr[i];
 	}
 	break;
 
@@ -3369,21 +3352,10 @@ case 6:// thermal conductivity 'k'
 	mass_fraction[i] = this->component_vector[i]->CalcElementMeanConcNew(idx_elem,m_pcs );
 	m0 = 0.37464 + 1.54226*this->component_vector[i]->omega - 0.26992*pow( this->component_vector[i]->omega, 2);
 	a0 = pow((1+m0*(1-pow(T/this->component_vector[i]->Tc,0.5))), 1)*pow(T*this->component_vector[i]->Tc, -0.5);
-	molar_volume[i] = this->component_vector[i]->Vm;
 	CPr[i] = -m0*(0.45724*pow(GAS_CONSTANT*this->component_vector[i]->Tc, 2)*a0/this->component_vector[i]->pc);
-
-	for (int j = 0; j < CNr; j++)
-	{
-	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[j]->compname);
-	mass_fraction[j] = this->component_vector[j]->CalcElementMeanConcNew(idx_elem,m_pcs );
-	m0 = 0.37464 + 1.54226*this->component_vector[j]->omega - 0.26992*pow( this->component_vector[j]->omega, 2);
-	a0 = pow((1+m0*(1-pow(T/this->component_vector[j]->Tc,0.5))), 1)*pow(T*this->component_vector[j]->Tc, -0.5);
-	molar_volume[j] = this->component_vector[j]->Vm;
-	CPr[j] = -m0*(0.45724*pow(GAS_CONSTANT*this->component_vector[j]->Tc, 2)*a0/this->component_vector[j]->pc);
-
-	variables += mass_fraction[i]*mass_fraction[j]*pow(CPr[i]*CPr[j], 0.5)*molar_volume[i]/molar_volume[j];
+	variables += mass_fraction[i]*sqrt(-CPr[i]);
 	}
-	}
+	variables = variables*variables;
 	
 	break;
 
