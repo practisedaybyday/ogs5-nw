@@ -20,12 +20,12 @@ TEST(VTK, TestMeshFromRaster)
 	QString fileName = getTestdataInputDir();
 	fileName += "testMeshFromRaster.asc";
 	vtkSmartPointer<VtkGeoImageSource> geo_image = vtkSmartPointer<VtkGeoImageSource>::New();
-	geo_image->setImageFilename(fileName);
+	geo_image->readImage(fileName);
 	vtkSmartPointer<vtkImageData> image = geo_image->GetOutput();
 	image->Update();
 	
 	double origin[3];
-	geo_image->getOrigin(origin[0], origin[1], origin[2]);
+	geo_image->getOrigin(origin);
 
 	GridAdapter* grid = VtkMeshConverter::convertImgToMesh(image, origin, geo_image->getSpacing(), MshElemType::TRIANGLE, UseIntensityAs::ELEVATION);
 		
