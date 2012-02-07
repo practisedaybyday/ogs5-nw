@@ -26,6 +26,14 @@ public:
 	virtual ~TetGenInterface();
 
 	/**
+	 * write a mesh into TetGen mesh file format
+	 * @param nodes_fname
+	 * @param ele_fname
+	 * @param mesh
+	 */
+	void writeTetGenMesh (std::string const& nodes_fname, std::string const& ele_fname, MeshLib::CFEMesh const*const mesh) const;
+
+	/**
 	 * Method reads the TetGen mesh from node file and element file.
 	 * @param nodes_fname file name of the nodes file
 	 * @param ele_fname file name of the elements file
@@ -40,6 +48,8 @@ public:
 	friend class MeshLib::CFEMesh;
 
 private:
+	void writeTetGenNodes(std::string const& nodes_fname, MeshLib::CFEMesh const*const mesh) const;
+	void writeTetGenElements(std::string const& ele_fname, MeshLib::CFEMesh const*const mesh) const;
 	/**
 	 * Method reads the nodes from stream and stores them in the node vector of the mesh class.
 	 * For this purpose it uses methods parseNodesFileHeader() and parseNodes().
