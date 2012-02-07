@@ -9,7 +9,7 @@
 #include <string.h>
 // C++ STL
 // GeoLib
-#include "../FEM/files0.h"
+#include "files0.h"
 #include "geo_dom.h"
 // Vector
 std::vector<CGLDomain*> domain_vector; //CC

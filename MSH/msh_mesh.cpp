@@ -30,6 +30,8 @@
 #ifdef BENCHMARKING
 #include "benchtimer.h"
 #endif
+#include "MeshGrid.h"
+
 #include "rf_random_walk.h"
 // For surface integration. WW. 29.02.2009
 
@@ -115,7 +117,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 	_msh_n_tris(0), _msh_n_tets(0), _msh_n_prisms(0), _msh_n_pyras(0),
 	_min_edge_length(1e-3), NodesNumber_Linear(0),
 	NodesNumber_Quadratic(0), _axisymmetry(false), ncols(0), nrows(0),
-	x0(0.0), y0(0.0), csize(0.0), ndata_v(0.0)
+	x0(0.0), y0(0.0), csize(0.0), ndata_v(0.0), _mesh_grid(NULL)
 {
 	useQuadratic = false;
 	coordinate_system = 1;
@@ -138,7 +140,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 // Copy-Constructor for CFEMeshes.
 // Programming: 2010/11/10 KR
 CFEMesh::CFEMesh(CFEMesh const& old_mesh) :
-	PT(NULL)
+	PT(NULL), _mesh_grid(NULL)
 {
 	std::cout << "Copying mesh object ... ";
 
@@ -224,6 +226,8 @@ CFEMesh::~CFEMesh(void)
 	sparse_graph = NULL;
 	sparse_graph_H = NULL;
 #endif
+
+	delete _mesh_grid;
 }
 
 void CFEMesh::setElementType(MshElemType::type type)
@@ -433,7 +437,7 @@ void CFEMesh::ConnectedElements2Node(bool quadratic)
 **************************************************************************/
 void CFEMesh::ConstructGrid()
 {
-	std::cout << "Executing ConstructGrid()...";
+	std::cout << "Executing ConstructGrid() ... " << std::flush;
 
 	bool done;
 
@@ -458,7 +462,7 @@ void CFEMesh::ConstructGrid()
 	size_t e_size(ele_vector.size());
 
 	// 2011-11-21 TF
-	// initializing attributes of objects - why is this not done in the constructot?
+	// initializing attributes of objects - why is this not done in the constructor?
 	for (size_t e = 0; e < e_size; e++) {
 		ele_vector[e]->InitializeMembers();
 	}
@@ -829,6 +833,12 @@ void CFEMesh::ConstructGrid()
 	Neighbors0.resize(0);
 	e_edgeNodes0.resize(0);
 	e_edgeNodes.resize(0);
+
+	std::cout << "\tconstructing MeshGrid ... " << std::flush;
+	clock_t start(clock());
+	_mesh_grid = new MeshLib::MeshGrid(*this);
+	clock_t end(clock());
+	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s" << std::endl;
 
 	std::cout << " done." << std::endl;
 }
@@ -1304,88 +1314,39 @@ void CFEMesh::RenumberNodesForGlobalAssembly()
 **************************************************************************/
 long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
 {
-	const size_t nodes_in_usage(static_cast<size_t> (NodesInUsage()));
-#ifdef HAVE_PTHREADS
-	/* thread version */
-	pthread_t thread0, thread1, thread2, thread3;
-	//WW int iret0, iret1, iret2, iret3;
+	size_t node_idx(_mesh_grid->getIndexOfNearestNode(pnt->getData()));
+	return node_idx;
 
-	ThreadParameter* thread_param0(new ThreadParameter(
-	                                       pnt,
-	                                       0,
-	                                       static_cast<size_t> (nodes_in_usage /
-	                                                            4.0),
-	                                       nod_vector,
-	                                       0));
-	ThreadParameter* thread_param1(new ThreadParameter(
-	                                       pnt,
-	                                       static_cast<size_t> (nodes_in_usage /
-	                                                            4.0),
-	                                       static_cast<size_t> (nodes_in_usage /
-	                                                            2.0),
-	                                       nod_vector,
-	                                       1));
-	ThreadParameter* thread_param2(new ThreadParameter(
-	                                       pnt,
-	                                       static_cast<size_t> (nodes_in_usage /
-	                                                            2.0),
-	                                       static_cast<size_t> (3 *
-	                                                            nodes_in_usage
-	                                                            / 4.0),
-	                                       nod_vector,
-	                                       2));
-	ThreadParameter* thread_param3(new ThreadParameter(
-	                                       pnt,
-	                                       static_cast<size_t> (3.0 *
-	                                                            nodes_in_usage / 4.0),
-	                                       nodes_in_usage,
-	                                       nod_vector,
-	                                       3));
-
-	/* //WW
-	   iret0 = pthread_create( &thread0, NULL, threadGetDist, thread_param0);
-	   iret1 = pthread_create( &thread1, NULL, threadGetDist, thread_param1);
-	   iret2 = pthread_create( &thread2, NULL, threadGetDist, thread_param2);
-	   iret3 = pthread_create( &thread3, NULL, threadGetDist, thread_param3);
-	 */
-
-	pthread_create(&thread0, NULL, threadGetDist, thread_param0);
-	pthread_create(&thread1, NULL, threadGetDist, thread_param1);
-	pthread_create(&thread2, NULL, threadGetDist, thread_param2);
-	pthread_create(&thread3, NULL, threadGetDist, thread_param3);
-
-	pthread_join(thread0, NULL);
-	pthread_join(thread1, NULL);
-	pthread_join(thread2, NULL);
-	pthread_join(thread3, NULL);
-
-	if (thread_param0->_sqr_dist < thread_param1->_sqr_dist
-	    && thread_param0->_sqr_dist < thread_param2->_sqr_dist
-	    && thread_param0->_sqr_dist < thread_param3->_sqr_dist)
-		return thread_param0->_number;
-	if (thread_param1->_sqr_dist < thread_param0->_sqr_dist
-	    && thread_param1->_sqr_dist < thread_param2->_sqr_dist
-	    && thread_param1->_sqr_dist < thread_param3->_sqr_dist)
-		return thread_param1->_number;
-	if (thread_param2->_sqr_dist < thread_param0->_sqr_dist
-	    && thread_param2->_sqr_dist < thread_param1->_sqr_dist
-	    && thread_param2->_sqr_dist < thread_param3->_sqr_dist)
-		return thread_param2->_number;
-	return thread_param3->_number;
-#else // ifdef HAVE_PTHREADS
-	double sqr_dist(0.0), distmin(MathLib::sqrDist (nod_vector[0]->getData(), pnt->getData()));
-	size_t number(0);
-	for (size_t i = 1; i < nodes_in_usage; i++)
-	{
-		sqr_dist = MathLib::sqrDist (nod_vector[i]->getData(), pnt->getData());
-		if (sqr_dist < distmin)
-		{
-			distmin = sqr_dist;
-			number = i;
-		}
-	}
-	return number;
-#endif
+//	const size_t nodes_in_usage(static_cast<size_t> (NodesInUsage()));
+//	double sqr_dist(0.0), distmin(MathLib::sqrDist (nod_vector[0]->getData(), pnt->getData()));
+//	size_t number(0);
+//	for (size_t i = 1; i < nodes_in_usage; i++)
+//	{
+//		sqr_dist = MathLib::sqrDist (nod_vector[i]->getData(), pnt->getData());
+//		if (sqr_dist < distmin)
+//		{
+//			distmin = sqr_dist;
+//			number = i;
+//		}
+//	}
+//
+//	if (number != node_idx) {
+//		double const*const data0(nod_vector[node_idx]->getData());
+//		double const*const data1(nod_vector[number]->getData());
+//		std::cout << "pnt: "<< *pnt << " mesh grid node " << nod_vector[node_idx]->GetIndex() << ": "
+//			<< data0[0] << " " << data0[1] << " " << data0[2] <<
+//			", mesh grid node (old algorithm) " << nod_vector[number]->GetIndex() << ": "
+//			<< data1[0] << " " << data1[1] << " " << data1[2] << std::endl;
+//		std::cout << "bbx: " << _mesh_grid->getMinPoint() << " x " << _mesh_grid->getMaxPoint() << std::endl;
+//		size_t coords[3];
+//		_mesh_grid->getGridCoords(pnt->getData(), coords);
+//		std::cout << "grid coords: " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
+//		double llf[3], urb[3];
+//		_mesh_grid->getGridCornerPoints(pnt->getData(), llf, urb);
+//		std::cout << "local bbx: " << llf[0] << " " << llf[1] << " " << llf[2] << " x " << urb[0] << " " << urb[1] << " " << urb[2] << std::endl;
+//	}
+//
+//	return number;
 }
 
 /**************************************************************************

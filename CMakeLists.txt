@@ -55,13 +55,16 @@ OPTION_REQUIRES(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OGS_USE
 OPTION_REQUIRES(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OGS_USE_QT)
 OPTION(OGS_BUILD_INFO "Should build information be generated" ON)
 OPTION(CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
-IF(GCC AND GPROF_PATH)
-	OPTION(OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
-	IF(OGS_PROFILE AND DOT_TOOL_PATH)
-		OPTION(OGS_OUTPUT_PROFILE "Enables pdf output of profiling results." OFF)
-	ENDIF() # OGS_PROFILE AND DOT_TOOL_PATH
-ENDIF() # GCC AND GPROF_PATH
-OPTION (OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
+IF(GCC)
+	IF(GPROF_PATH)
+		OPTION(OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
+		IF(OGS_PROFILE AND DOT_TOOL_PATH)
+			OPTION(OGS_OUTPUT_PROFILE "Enables pdf output of profiling results." OFF)
+		ENDIF() # OGS_PROFILE AND DOT_TOOL_PATH
+	ENDIF() # GPROF_PATH
+	
+	OPTION_REQUIRES(OGS_COVERAGE "Enables code coverage measurements with gcov/lcov." OGS_BUILD_TESTS)
+ENDIF() # GCC 
 OPTION (OGS_BUILD_TESTS "Enables building of tests." OFF)
 
 MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_BUILD_INFO CMAKE_CMD_ARGS)
@@ -267,7 +270,6 @@ ENDIF (BENCHMARK_DIR_FOUND)
 IF (OGS_BUILD_UTILITIES)
 	ADD_SUBDIRECTORY (UTL/MSHGEOTOOLS/)
 	ADD_SUBDIRECTORY (UTL/FileConverter/)
-	#ADD_SUBDIRECTORY (tests/GEO/)
 ENDIF (OGS_BUILD_UTILITIES)
 
 ## Documentation ##

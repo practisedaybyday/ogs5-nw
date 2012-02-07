@@ -6,13 +6,13 @@ SET ( SOURCES
 
 # include directories
 INCLUDE_DIRECTORIES(
-	./
-	../Base
-	../GEO
-	../MSH
-	../MathLib
-	../FileIO
-	../FEM
+	${CMAKE_SOURCE_DIR}/MSHGEOTOOLS
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/FEM
 )
 
 # create library

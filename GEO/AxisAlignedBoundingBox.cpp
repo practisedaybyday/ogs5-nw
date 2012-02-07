@@ -61,25 +61,20 @@ bool AABB::containsPoint (const double* pnt, double eps) const
 
 bool AABB::containsPoint (double x, double y, double z, double eps) const
 {
-	if ((_min_pnt[0] <= x && x <= _max_pnt[0])
-	    || std::fabs(_min_pnt[0] - x) < eps
-	    || std::fabs(x - _max_pnt[0]) < eps)
-	{
-		if ((_min_pnt[1] <= y && y <= _max_pnt[1])
-		    || std::fabs(_min_pnt[1] - y) < eps
-		    || std::fabs(y - _max_pnt[1]) < eps)
-		{
-			if ((_min_pnt[2] <= z && z <= _max_pnt[2])
-			    || std::fabs(_min_pnt[2] - z) < eps
-			    || std::fabs(z - _max_pnt[2]) < eps)
+	if ((_min_pnt[0] <= x && x <= _max_pnt[0]) || std::fabs(_min_pnt[0] - x) < eps
+					|| std::fabs(x - _max_pnt[0]) < eps) {
+		if ((_min_pnt[1] <= y && y <= _max_pnt[1]) || std::fabs(_min_pnt[1] - y) < eps
+						|| std::fabs(y - _max_pnt[1]) < eps) {
+			if ((_min_pnt[2] <= z && z <= _max_pnt[2]) || std::fabs(_min_pnt[2] - z) < eps
+							|| std::fabs(z - _max_pnt[2]) < eps) {
 				return true;
-			else
+			} else {
 				return false;
-		}
-		else
+			}
+		} else {
 			return false;
-	}
-	else
-		return false;
+		}
+	} else return false;
 }
-}
+
+} // end namespace GEOLIB

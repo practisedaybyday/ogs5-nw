@@ -606,7 +606,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 		if(C_Flag)                //if(PCSGet("HEAT_TRANSPORT"))
 		{
 			cpl_pcs = PCSGet("MASS_TRANSPORT");
-			idx_c0 = cpl_pcs->GetNodeValueIndex("CONCENTRATION1");
+			idx_c0 = cpl_pcs->GetProcessComponentNumber();
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
@@ -657,7 +657,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 		}
 		break;
 	case 'M':                             // Mass transport
-		if(C_Flag && T_Flag)
+		if((PTC_Flag)||(C_Flag && T_Flag))
 		{
 			if(cpl_pcs == NULL)
 			{
@@ -1651,27 +1651,39 @@ double CFiniteElementStd::CalCoefMass2(int dof_index)
 double CFiniteElementStd::CalCoefMassPTC(int dof_index)
 {
 	int Index = MeshElement->GetIndex();
-	double val = 0.0;
-
+	double val = 0.0, z, dzdp, dzdT;
+    PG = interpolate(NodalVal0);
+    TG = interpolate(NodalVal_t0);
 	switch(dof_index)
 	{
 	case 0:
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-		PG = interpolate(NodalVal0);
-		TG = interpolate(NodalVal_t0);
 		val = poro / PG;
+		if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	    {
+		z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+		dzdp =FluidProp->dZ(Index, PG, TG, 0);
+		val -= poro*dzdp/z ;
+		}
 		break;
 	case 1:
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-		TG = interpolate(NodalVal_t0);
-		PG = interpolate(NodalVal0);
 		val = -poro / TG;
+		if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	    {
+		z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+		dzdT = FluidProp->dZ(Index, PG, TG, 1);
+		val -= poro*dzdT/z;
+		}
 		break;
 	case 2:
+		if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	    {
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-		PG = interpolate(NodalVal0);
-		TG = interpolate(NodalVal_t0);
-		val = - poro * FluidProp->beta_T * TG;
+		z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+		dzdT = FluidProp->dZ(Index, PG, TG, 1);
+		val = -poro * (z+TG*dzdT)/z;
+		}
 		break;
 	case 3:
 		val = MediaProp->HeatCapacity(Index,pcs->m_num->ls_theta,this);
@@ -2572,10 +2584,9 @@ void CFiniteElementStd::CalCoefLaplacePTC(int dof_index)
 		dens_arg[0] = interpolate(NodalVal0);
 		dens_arg[1] = interpolate(NodalVal_t0);
 		dens_arg[2] = Index;
-		mat_fac = FluidProp->Viscosity(dens_arg);
 		tensor = MediaProp->PermeabilityTensor(Index);
 		for(size_t i = 0; i < dim * dim; i++)
-			mat[i] = tensor[i] / mat_fac;
+			mat[i] = tensor[i] / FluidProp->Viscosity(dens_arg);
 		break;
 	case 1:
 		mat_fac = 0;
@@ -2590,7 +2601,7 @@ void CFiniteElementStd::CalCoefLaplacePTC(int dof_index)
 	case 3:
 		tensor = MediaProp->HeatConductivityTensor(Index);
 		for(size_t i = 0; i < dim * dim; i++)
-			mat[i] = tensor[i];  //mat[i*dim+i] = tensor[i];
+			mat[i] = tensor[i];  
 		break;
 	}
 }
@@ -3192,8 +3203,7 @@ double CFiniteElementStd::CalCoefAdvection()
 			dens_arg[0] = interpolate(NodalValC1);
 			dens_arg[1] = interpolate(NodalVal1) + T_KILVIN_ZERO;
 			dens_arg[2] = Index;
-			val = FluidProp->SpecificHeatCapacity(dens_arg) * FluidProp->Density(
-			        dens_arg);
+			val = FluidProp->SpecificHeatCapacity(dens_arg) * FluidProp->Density(dens_arg);
 		}
 		else
 			val = FluidProp->SpecificHeatCapacity() * FluidProp->Density();
@@ -3227,30 +3237,40 @@ double CFiniteElementStd::CalCoefAdvection()
 double CFiniteElementStd::CalCoefAdvectionPTC(int dof_index)
 {
 	int Index = MeshElement->GetIndex();
-	double val = 0.0;
-	double dens_arg[3];
-
+	double val = 0.0, z, dzdp, dzdT, dens_arg[3];
+    PG = interpolate(NodalVal0);
+    TG = interpolate(NodalVal_t0);
 	switch(dof_index)
 	{
 	case 0:
-		PG = interpolate(NodalVal0);
-		TG = interpolate(NodalVal_t0);
-		val = 1 / PG;
-	
+	val = 1.0 / PG;
+	if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	{
+	z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+	dzdp = FluidProp->dZ(Index, PG, TG, 0);
+	val -=  dzdp/z ;
+	}
 		break;
 	case 1:
-		PG = interpolate(NodalVal0);
-		TG = interpolate(NodalVal_t0);
-		val = -1 / TG;
+	val = -1.0 / TG;
+	if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	{
+	z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+	dzdT = FluidProp->dZ(Index, PG, TG, 1);
+	val -= dzdT/z ;
+	}
 		break;
 	case 2:
-		PG = interpolate(NodalVal0);
-		TG = interpolate(NodalVal_t0);
-		val = FluidProp->vhd - FluidProp->beta_T * TG;
+	if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
+	{
+	z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
+	dzdT = FluidProp->dZ(Index, PG, TG, 1);
+	val = 1.0 - ((z+TG*dzdT)/z);
+	}
 		break;
 	case 3:
-		dens_arg[0] = interpolate(NodalVal0);
-		dens_arg[1] = interpolate(NodalVal_t0);
+	dens_arg[0] = PG;
+	dens_arg[1] = TG;
 		dens_arg[2] = Index;
 		val = FluidProp->Density(dens_arg) * FluidProp->SpecificHeatCapacity(dens_arg);
 		break;
@@ -4049,17 +4069,19 @@ void CFiniteElementStd::CalcMassPTC()
 		// Compute geometry
 		ComputeShapefct(1);       // Linear interpolation function
 		for(in = 0; in < dof_n; in++)
+		{
 			for(jn = 0; jn < dof_n; jn++)
 			{
 				// Material
 				mat_fac = fkt * CalCoefMassPTC(in * dof_n + jn);
 				// Calculate mass matrix
 				for (i = 0; i < nnodes; i++)
+				{
 					for (j = 0; j < nnodes; j++)
-						(*Mass2)(i + in * nnodes,j + jn *
-						         nnodes) += mat_fac * shapefct[i] *
-						                    shapefct[j];
+						(*Mass2)(i + in * nnodes,j + jn *nnodes) += mat_fac * shapefct[i] *shapefct[j];
 			}
+			}
+		}
 	}
 }
 
@@ -4778,16 +4800,24 @@ void CFiniteElementStd::CalcAdvectionPTC()
 		vel[2] = gp_ele->Velocity(2, gp);
 
 		for (in = 0; in < dof_n; in++)
-			for (jn = 0; jn < dof_n; jn++) {
+		{
+			for (jn = 0; jn < dof_n; jn++) 
+			{
 				mat_fac = fkt * CalCoefAdvectionPTC(in * dof_n + jn);
 				for (i = 0; i < nnodes; i++)
+				{
 					for (j = 0; j < nnodes; j++)
+					{
 						for (size_t k = 0; k < dim; k++)
-							(*Advection)(i + in * nnodes, j + jn * nnodes) += mat_fac * shapefct[i]
-											* vel[k] * dshapefct[k * nnodes + j];
-			}
-	}
-}
+						{
+							(*Advection)(i + in * nnodes, j + jn * nnodes) += mat_fac * shapefct[i]* vel[k] * dshapefct[k * nnodes + j];
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
 /***************************************************************************
    GeoSys - Funktion:
            CFiniteElementStd:: CalcAdvection
@@ -5103,11 +5133,9 @@ void CFiniteElementStd::Assemble_Gravity()
 			{
 				if(PcsType == T)
 					CalCoefLaplace(false);
-				if(PcsType == S)
-					CalCoefLaplacePTC(0);
 				else
 					CalCoefLaplace(true);
-			}
+            }
 
 			if(dof_n == 2)
 			{
@@ -5115,6 +5143,8 @@ void CFiniteElementStd::Assemble_Gravity()
 					CalCoefLaplace2(true, ii * dof_n + 1);
 				else if(PcsType == P)
 					CalCoefLaplacePSGLOBAL(true, ii * dof_n);
+				else if(PcsType == S)
+					CalCoefLaplacePTC(ii);
 			}
 			// Calculate mass matrix
 			for (i = 0; i < nnodes; i++)
@@ -5526,15 +5556,20 @@ void CFiniteElementStd::Cal_Velocity()
 		//NW
 		if(k == 2 && (!HEAD_Flag) && FluidProp->CheckGravityCalculation())
 		{
-			if((FluidProp->density_model == 14)  || (FluidProp->density_model == 15))
+			if((FluidProp->density_model == 14))
 			{
 				dens_arg[0] = interpolate(NodalVal1);
 				dens_arg[1] = interpolate(NodalValC) + T_KILVIN_ZERO;
-				if(PcsType == S)
-					dens_arg[1] = interpolate(NodalVal_t0);
 				dens_arg[2] = Index;
 				coef  =  gravity_constant * FluidProp->Density(dens_arg);
 			}
+				if(PcsType==S)
+			{
+			dens_arg[0] = interpolate(NodalVal0);
+			dens_arg[1] = interpolate(NodalVal_t0);
+				dens_arg[2] = Index;
+			coef  =  gravity_constant*FluidProp->Density(dens_arg);
+            }
 			else
 				coef  =  gravity_constant * FluidProp->Density();
 			if(dim == 3 && ele_dim == 2)
@@ -6470,9 +6505,16 @@ void CFiniteElementStd::AssembleParabolicEquation()
 	for (i = 0; i < nnodes; i++)
 		NodalVal[i] = 0.0;
 	if(PcsType == V)                      // For DOF>1: 27.2.2007 WW
-
 		for (i = 0; i < nnodes; i++)
 			NodalVal[i + nnodes] = 0.0;
+	  if(PcsType==S)                              // For DOF>1: 27.2.2007 WW
+      {
+	  for (int in = 0; in < pcs->dof; in++)
+	  {
+      for (i=0;i<nnodes; i++)
+      NodalVal[i+in*nnodes] = 0.0;
+      }
+	  }
 	if(pcs->m_num->nls_method > 0 && (!dynamic)) //Newton method
 		StiffMatrix->multi(NodalVal1, NodalVal, -1.0);
 
@@ -6594,7 +6636,7 @@ void CFiniteElementStd::AssembleParabolicEquation()
 		for (i = 0; i < nnodes; i++)
 		{
 			NodalVal[i] = 0.0;
-			NodalVal0[i + nnodes] = pcs->GetNodeValue(nodes[i],idxt1);
+			NodalVal0[i + nnodes] = pcs->GetNodeValue(nodes[i],idxt0);
 			NodalVal[i + nnodes] = 0.0;
 		}
 	else if(PcsType == P)                 // For DOF>1:
@@ -7583,8 +7625,15 @@ void CFiniteElementStd::Config()
 			NodalValC[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c0);
 			NodalValC1[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1);
 			if(cpl_pcs->type == 1212 || cpl_pcs->type == 42)
+		{
 				NodalVal_p2[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1 + 2);
 			NodalVal_p20[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c0 + 2);
+		}
+		if(cpl_pcs->type == 1111)
+			{
+			NodalVal_t0[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c0 + 2) + T_KILVIN_ZERO;
+			NodalVal_t1[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1 + 2) + T_KILVIN_ZERO;
+			}
 		}
 }
 /**************************************************************************

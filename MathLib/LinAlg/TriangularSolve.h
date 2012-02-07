@@ -8,7 +8,7 @@
 #ifndef TRIANGULARSOLVE_H_
 #define TRIANGULARSOLVE_H_
 
-#include "../Matrix.h"
+#include "Matrix.h"
 
 namespace MathLib
 {
