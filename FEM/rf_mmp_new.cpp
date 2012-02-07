@@ -1057,6 +1057,11 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 					in >> saturation_max[i];
 					in >> saturation_exp[i];
 					break;
+				case 43: // van Genuchten for two-phase flow. WW
+					in >> saturation_res[i];
+					in >> saturation_max[i];
+					in >> saturation_exp[i];
+					break;
 				case 44: // Van Genuchten for no wetting fluid, e.g., gas. WW
 					in >> saturation_res[i];
 					in >> saturation_max[i];
@@ -2401,18 +2406,31 @@ double CMediumProperties::PermeabilitySaturationFunction(const double Saturation
 		                                                 saturation_exp[phase]),2);
 		permeability_saturation = MRange(0.,permeability_saturation,1.);
 		break;
-	case 44:                              // Van Genuchtenfor non wetting fluid (e.g. gas):  WW
+	case 43:            // Van Genuchten for two-phase flow. WW
+		if (saturation > (saturation_max[phase] - MKleinsteZahl))
+			/* Mehr als Vollsaettigung mit Wasser */
+			saturation = saturation_max[phase] - MKleinsteZahl;
+		if (saturation < (saturation_res[phase] + MKleinsteZahl))
+			/* Weniger als Residualsaettigung Wasser */
+			saturation = saturation_res[phase] + MKleinsteZahl;
+        double df_temp;
+		//
+		saturation_eff = (saturation -  saturation_res[0]) / (1. - saturation_res[0] - saturation_res[1]);
+
+		df_temp = 1. - pow(1 - pow(saturation_eff,1./saturation_exp[0]), saturation_exp[0]);
+
+		permeability_saturation = sqrt(saturation_eff)*df_temp*df_temp;
+		permeability_saturation = MRange(0.,permeability_saturation,1.);
+		break;
+	case 44:                              // van Genuchtenfor non wetting fluid (e.g. gas):  WW
 		if (saturation > (saturation_max[0] - MKleinsteZahl)) //WX
 			saturation = saturation_max[0] - MKleinsteZahl;
 		if (saturation < (saturation_res[0] + MKleinsteZahl))
 			saturation = saturation_res[0] + MKleinsteZahl;
 		//
-		saturation_eff =
-		        (saturation - saturation_res[0]) / (saturation_max[0] - saturation_res[1]);
-		permeability_saturation = pow(1.0 - saturation_eff,1.0 / 3.0) \
-		                          * pow(1 - pow(saturation_eff,
-		                                        1. /
-		                                        saturation_exp[phase]),2.0 *
+		saturation_eff = 1. -(saturation -  saturation_res[0]) / (1. - saturation_res[0] - saturation_res[1]);
+		permeability_saturation = pow(saturation_eff,1.0 / 3.0) \
+		                          * pow(1 - pow(1. - saturation_eff,  1./saturation_exp[phase]), 2.0 *
 		                                saturation_exp[phase]);
 		permeability_saturation = MRange(permeability_tensor[9],permeability_saturation,1.);
 		break;
@@ -2588,10 +2606,7 @@ double CMediumProperties::HeatCapacity(long number, double theta,
 			heat_capacity_fluids = 0.0;
 			porosity = 0.0;
 		}
-		heat_capacity = porosity * heat_capacity_fluids + (1.
-		                                                   - porosity) *
-		                specific_heat_capacity_solid
-		                * density_solid;
+		heat_capacity = porosity * heat_capacity_fluids + (1.0 - porosity) *specific_heat_capacity_solid* density_solid;
 		break;
 	case 2:                               //boiling model for YD
 		//YD/OK: n c rho = n S^g c^g rho^g + n S^l c^l rho^l + (1-n) c^s rho^s
@@ -2865,8 +2880,8 @@ double* CMediumProperties::HeatDispersionTensorNew(int ip)
 	m_mfp = Fem_Ele_Std->FluidProp;
 	if(Fem_Ele_Std->FluidProp->density_model == 14 ) //used density changing with p, T
 	{
-		dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC1);
-		dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal1) + T_KILVIN_ZERO;
+		dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal0);
+		dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
 		dens_arg[2] = Fem_Ele_Std->Index;
 		fluid_density = Fem_Ele_Std->FluidProp->Density(dens_arg);
 	}
@@ -2956,7 +2971,7 @@ double* CMediumProperties::MassDispersionTensorNew(int ip, int tr_phase) // SB +
 	int i;
 	long index = Fem_Ele_Std->GetMeshElement()->GetIndex();
 	double molecular_diffusion[9], molecular_diffusion_value;
-	double vg;
+	double vg, PG, TG;
 	double D[9];
 	double alpha_l,alpha_t;
 	double theta = Fem_Ele_Std->pcs->m_num->ls_theta;
@@ -2966,14 +2981,20 @@ double* CMediumProperties::MassDispersionTensorNew(int ip, int tr_phase) // SB +
 	int set = 0;
 	ElementValue* gp_ele = ele_gp_value[index];
 	CompProperties* m_cp = cp_vec[component];
+	CFluidProperties* m_mfp;         
+	m_mfp = Fem_Ele_Std->FluidProp;  
 	MshElemType::type eleType = m_pcs->m_msh->ele_vector[number]->GetElementType();
 	int Dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
 	//----------------------------------------------------------------------
 	// Materials
-	molecular_diffusion_value =
-	        m_cp->CalcDiffusionCoefficientCP(index,theta, m_pcs) * TortuosityFunction(index,
-	                                                                                  g,
-	                                                                                  theta);
+	molecular_diffusion_value = m_cp->CalcDiffusionCoefficientCP(index,theta, m_pcs) * TortuosityFunction(index,g, theta);
+	if(Fem_Ele_Std->FluidProp->density_model == 14) 
+	{
+ 	m_mfp = mfp_vector[0];
+	PG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC);
+	TG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
+	molecular_diffusion_value = m_mfp->MaxwellStefanDiffusionCoef(index, PG, TG, component)* TortuosityFunction(index,g, theta);
+	}
 	molecular_diffusion_value *= Porosity(index,theta);
 	//CB, SB
 	saturation = PCSGetEleMeanNodeSecondary_2(index,

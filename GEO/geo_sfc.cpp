@@ -13,7 +13,7 @@
 //MFC
 #include <cstdlib>
 //GEOLib
-#include "../FEM/files0.h"
+#include "files0.h"
 #include "geo_lib.h"
 #include "geo_mathlib.h"
 #include "geo_ply.h"

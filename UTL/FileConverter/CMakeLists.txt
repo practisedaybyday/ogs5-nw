@@ -1,13 +1,13 @@
 
 INCLUDE_DIRECTORIES(
-	./
-	../../Base
-	../../GEO
-	../../FileIO
-	../../MathLib
-	../../FEM
-	../../MSH
-	../../Qt/OpenSG
+	${CMAKE_SOURCE_DIR}/UTL/FileConverter
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/Qt/OpenSG
 )
 
 ## Shape to GLI file converter ##
@@ -47,7 +47,7 @@ IF (OGS_USE_OPENSG AND VTK_FOUND AND Boost_FOUND)
   SET_TARGET_PROPERTIES(ConvertVtkToOsg PROPERTIES FOLDER Utilities)
 
 	USE_OPENSG ( ConvertVtkToOsg )
-	INCLUDE_DIRECTORIES ( ../OpenSG ${Boost_INCLUDE_DIRS} )
+	INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/Qt/OpenSG ${Boost_INCLUDE_DIRS} )
 	TARGET_LINK_LIBRARIES ( ConvertVtkToOsg OgsOpenSG vtkRendering ${Boost_LIBRARIES} )
 
 	IF (OGS_PACKAGING)
@@ -64,7 +64,7 @@ IF(VTK_FOUND AND Boost_FOUND)
 	ADD_EXECUTABLE (ConvertGliToVtk ConvertGliToVtk.cpp)
   SET_TARGET_PROPERTIES(ConvertGliToVtk PROPERTIES FOLDER Utilities)
 
-	INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} ../../Qt/VtkVis )
+	INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/Qt/VtkVis )
 	TARGET_LINK_LIBRARIES ( ConvertGliToVtk FileIO VtkVis vtkRendering ${Boost_LIBRARIES} )
 
 	IF (OGS_PACKAGING)
