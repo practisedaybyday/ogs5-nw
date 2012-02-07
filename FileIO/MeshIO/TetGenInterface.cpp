@@ -18,6 +18,7 @@
 #include "msh_elem.h"
 #include "msh_mesh.h"
 #include "msh_node.h"
+#include "MeshGrid.h"
 
 namespace FileIO
 {
@@ -28,6 +29,155 @@ TetGenInterface::TetGenInterface() :
 
 TetGenInterface::~TetGenInterface()
 {
+}
+
+void TetGenInterface::writeTetGenMesh(std::string const& nodes_fname, std::string const& ele_fname,
+				MeshLib::CFEMesh const* const mesh) const
+{
+	writeTetGenNodes(nodes_fname, mesh);
+	writeTetGenElements(ele_fname, mesh);
+}
+
+void TetGenInterface::writeTetGenNodes(std::string const& nodes_fname, MeshLib::CFEMesh const*const mesh) const
+{
+	std::ofstream out(nodes_fname.c_str());
+	if (out) {
+		MeshLib::MeshGrid test(*mesh);
+		GEOLIB::Point const& ll (test.getMinPoint());
+
+		std::vector<MeshLib::CElem*> const& elements(mesh->getElementVector());
+		const size_t n_elements(elements.size());
+		size_t n_prisms(0);
+		for (size_t k(0); k<n_elements; k++) {
+			if (elements[k]->GetElementType() == MshElemType::PRISM) {
+				n_prisms++;
+			}
+		}
+		const size_t n_nodes(mesh->GetNodesNumber(false));
+		out << n_nodes+4*n_prisms << " 3 0 0" << std::endl;
+		std::vector<MeshLib::CNode*> const& nodes(mesh->getNodeVector());
+		for (size_t k(0); k<n_nodes; k++) {
+			double const*const node(nodes[k]->getData());
+			out << k << " " << node[0]-ll[0] << " " << node[1]-ll[1] << " " << node[2] << std::endl;
+		}
+		// write additional nodes for prisms
+		std::vector<size_t> idxs;
+		for (size_t k(0), idx(n_nodes); k<n_elements; k++) {
+			if (elements[k]->GetElementType() == MshElemType::PRISM) {
+				elements[k]->getNodeIndices(idxs);
+				double const*const n0((nodes[idxs[0]])->getData());
+				double const*const n1((nodes[idxs[1]])->getData());
+				double const*const n2((nodes[idxs[2]])->getData());
+				double const*const n3((nodes[idxs[3]])->getData());
+				double const*const n4((nodes[idxs[4]])->getData());
+				double const*const n5((nodes[idxs[5]])->getData());
+
+				idxs.clear();
+
+				// compute centroid of the prism
+				const double centroid[3] = {(n0[0]+n1[0]+n2[0]+n3[0]+n4[0]+n5[0])/6,
+										(n0[1]+n1[1]+n2[1]+n3[1]+n4[1]+n5[1])/6,
+										(n0[2]+n1[2]+n2[2]+n3[2]+n4[2]+n5[2])/6};
+
+				// center of first rectangle surface
+				const double center0[3] = {(n0[0]+n1[0]+n3[0]+n4[0])/4, (n0[1]+n1[1]+n3[1]+n4[1])/4, (n0[2]+n1[2]+n3[2]+n4[2])/4};
+				// center of second rectangle surface
+				const double center1[3] = {(n1[0]+n2[0]+n4[0]+n5[0])/4, (n1[1]+n2[1]+n4[1]+n5[1])/4, (n1[2]+n2[2]+n4[2]+n5[2])/4};
+				// center of third rectangle surface
+				const double center2[3] = {(n0[0]+n2[0]+n3[0]+n5[0])/4, (n0[1]+n2[1]+n3[1]+n5[1])/4, (n0[2]+n2[2]+n3[2]+n5[2])/4};
+
+				out << idx++ << " " << centroid[0]-ll[0] << " " << centroid[1]-ll[1] << " " << centroid[2] << std::endl;
+				out << idx++ << " " << center0[0]-ll[0] << " " << center0[1]-ll[1] << " " << center0[2] << std::endl;
+				out << idx++ << " " << center1[0]-ll[0] << " " << center1[1]-ll[1] << " " << center1[2] << std::endl;
+				out << idx++ << " " << center2[0]-ll[0] << " " << center2[1]-ll[1] << " " << center2[2] << std::endl;
+			}
+		}
+		out.close();
+	} else {
+		std::cout << "cold not open file for writing nodes" << std::endl;
+	}
+}
+
+void TetGenInterface::writeTetGenElements(std::string const& ele_fname, MeshLib::CFEMesh const*const mesh) const
+{
+	std::ofstream out(ele_fname.c_str());
+	if (out) {
+		std::vector<MeshLib::CElem*> const& elements(mesh->getElementVector());
+		const size_t n_elements(elements.size());
+		// count number of prisms, tetrahedras, hexahedras
+		size_t n_prisms(0), n_tets(0), n_hexs(0);
+		for (size_t k(0); k<n_elements; k++) {
+			switch (elements[k]->GetElementType()) {
+			case MshElemType::PRISM:
+				n_prisms++;
+				break;
+			case MshElemType::TETRAHEDRON:
+				n_tets++;
+				break;
+			case MshElemType::HEXAHEDRON:
+				n_hexs++;
+				break;
+			default:
+				std::cout << "count elements - element type not yet supported" << std::endl;
+			} // end case
+		} // end for
+
+		const size_t n_tetrahedras(n_tets+14*n_prisms);
+		const size_t nodes_offset(mesh->GetNodesNumber(false));
+		size_t cnt_prisms(0);
+		std::vector<size_t> idxs; // node indices
+		out << n_tetrahedras << " 4 0 0" << std::endl;
+		for (size_t k(0), cnt(0); k<n_elements; k++) {
+			elements[k]->getNodeIndices(idxs);
+			switch (elements[k]->GetElementType()) {
+			case MshElemType::PRISM:
+			{
+				out << cnt++ << " " << idxs[0] << " " << idxs[1] << " " << idxs[2] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				out << cnt++ << " " << idxs[3] << " " << idxs[5] << " " << idxs[4] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				//
+				out << cnt++ << " " << idxs[0] << " " << nodes_offset+cnt_prisms*4+1 << " " << idxs[1] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				out << cnt++ << " " << idxs[1] << " " << nodes_offset+cnt_prisms*4+1 << " " << idxs[4] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				out << cnt++ << " " << idxs[4] << " " << nodes_offset+cnt_prisms*4+1 << " " << idxs[3] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				out << cnt++ << " " << idxs[3] << " " << nodes_offset+cnt_prisms*4+1 << " " << idxs[0] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				//
+				out << cnt++ << " " << idxs[1] << " " << nodes_offset+cnt_prisms*4+2 << " " << idxs[2] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				out << cnt++ << " " << idxs[4] << " " << nodes_offset+cnt_prisms*4+2 << " " << idxs[1] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				out << cnt++ << " " << idxs[5] << " " << nodes_offset+cnt_prisms*4+2 << " " << idxs[4] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				out << cnt++ << " " << idxs[2] << " " << nodes_offset+cnt_prisms*4+2 << " " << idxs[5] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				//
+				out << cnt++ << " " << idxs[2] << " " << nodes_offset+cnt_prisms*4+3 << " " << idxs[0] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				out << cnt++ << " " << idxs[5] << " " << nodes_offset+cnt_prisms*4+3 << " " << idxs[2] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				out << cnt++ << " " << idxs[3] << " " << nodes_offset+cnt_prisms*4+3 << " " << idxs[5] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+				out << cnt++ << " " << idxs[0] << " " << nodes_offset+cnt_prisms*4+3 << " " << idxs[3] << " " << nodes_offset+cnt_prisms*4 << std::endl;
+
+				cnt_prisms++;
+
+				break;
+			}
+			case MshElemType::TETRAHEDRON:
+				out << cnt++ << " " << idxs[0] << " " << idxs[1] << " " << idxs[2] << " " << idxs[3] << std::endl;
+				break;
+			case MshElemType::HEXAHEDRON:
+				std::cout << "element type HEXAHEDRON not yet supported" << std::endl;
+				break;
+			case MshElemType::PYRAMID:
+				std::cout << "element type PYRAMID not yet supported" << std::endl;
+				break;
+			case MshElemType::LINE:
+				std::cout << "element type LINE not yet supported" << std::endl;
+				break;
+			case MshElemType::QUAD:
+				std::cout << "element type QUAD not yet supported" << std::endl;
+				break;
+			default:
+				std::cout << "element type not yet supported" << std::endl;
+			} // end case
+			idxs.clear();
+		} // end for
+		out.close();
+	} else {
+		std::cout << "cold not open file for writing elements" << std::endl;
+	}
 }
 
 MeshLib::CFEMesh* TetGenInterface::readTetGenMesh (std::string const& nodes_fname,
