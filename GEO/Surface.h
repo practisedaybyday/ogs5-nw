@@ -51,8 +51,7 @@ public:
 	/**
 	 * is the given point in the bounding volume of the surface
 	 */
-	bool isPntInBV (const double* pnt, double eps =
-	                        std::numeric_limits<double>::epsilon()) const;
+	bool isPntInBV (const double* pnt, double eps = std::numeric_limits<double>::epsilon()) const;
 
 	/**
 	 * is the given point pnt located in the surface

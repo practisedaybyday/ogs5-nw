@@ -1547,8 +1547,7 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 	for (size_t j(0); j < nodes_in_usage; j++)
 		if (sfc->isPntInBV((nod_vector[j])->getData(), _min_edge_length / 2.0))
 			if (sfc->isPntInSfc((nod_vector[j])->getData()))
-				msh_nod_vector.push_back(
-				        nod_vector[j]->GetIndex());
+				msh_nod_vector.push_back(nod_vector[j]->GetIndex());
 
 }
 
@@ -1923,23 +1922,12 @@ void CFEMesh::GetNODOnSFC_TIN(Surface* m_sfc, std::vector<long>&msh_nod_vector)
 	}
 
 	//Loop over all mesh nodes
-	for (size_t i = 0; i < static_cast<size_t> (NodesInUsage()); i++) //NW cannot use nod_vector.size() because of higher order elements
-	{
+	const size_t n_nodes(static_cast<size_t> (NodesInUsage()));
+	for (size_t i = 0; i < n_nodes; i++) {
 		double const* const pnt(nod_vector[i]->getData());
-		//         checkpoint[0] = nod_vector[i]->X();
-		//         checkpoint[1] = nod_vector[i]->Y();
-		//         checkpoint[2] = nod_vector[i]->Z();
-		node = new CNode(i, pnt);
-		if ((pnt[0] >= sfc_min[0] && pnt[0] <= sfc_max[0]) && (pnt[1]
-		                                                       >= sfc_min[1] && pnt[1] <=
-		                                                       sfc_max[1]) &&
-		    (pnt[2] >= sfc_min[2]
-		     &&
-		     pnt[2] <=
-		     sfc_max[2]))
-			m_msh_aux->nod_vector.push_back(node);
-		else
-			delete node;
+		if ((pnt[0] >= sfc_min[0] && pnt[0] <= sfc_max[0]) && (pnt[1] >= sfc_min[1] && pnt[1]
+						<= sfc_max[1]) && (pnt[2] >= sfc_min[2] && pnt[2] <= sfc_max[2]))
+			m_msh_aux->nod_vector.push_back(new CNode(i, pnt));
 	}
 
 	//----------------------------------------------------------------------
@@ -1961,27 +1949,11 @@ void CFEMesh::GetNODOnSFC_TIN(Surface* m_sfc, std::vector<long>&msh_nod_vector)
 		for (size_t i = 0; i < m_msh_aux->nod_vector.size(); i++)
 		{
 			double const* const pnt_i(m_msh_aux->nod_vector[i]->getData());
-			//            checkpoint[0] = m_msh_aux->nod_vector[i]->X();
-			//            checkpoint[1] = m_msh_aux->nod_vector[i]->Y();
-			//            checkpoint[2] = m_msh_aux->nod_vector[i]->Z();
 			dist = MCalcDistancePointToPlane(pnt_i, tri_point1, tri_point2,
 			                                 tri_point3);
-			//            if (k == 0)
-			//               m_msh_aux->nod_vector[i]->epsilon = dist;
-			/*
-			   else
-			   {
-			   if (m_msh_aux->nod_vector[i]->epsilon > dist)
-			   m_msh_aux->nod_vector[i]->epsilon = dist;
-			   }
-			 */
 			if (dist <= tolerance && dist >= -tolerance)
 				AngleSumPointInsideTriangle(checkpoint, tri_point1, tri_point2,
 				                            tri_point3, min_mesh_dist);
-				/* KR
-				   if (angle_sum > 359)
-				   m_msh_aux->nod_vector[i]->selected = 1;
-				 */
 		}
 	}
 

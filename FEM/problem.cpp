@@ -886,6 +886,9 @@ void Problem::Euler_TimeDiscretize()
 		std::cout << "\n#############################################################\n";
 		if(aktueller_zeitschritt >= max_time_steps)
 			break;
+
+//		// executing only one time step for profiling
+//		current_time = end_time;
 	}
 
 	std::cout << "----------------------------------------------------\n";

@@ -194,4 +194,13 @@ bool MeshGrid::calcNearestNodeInGrid(double const* const pnt, size_t const* cons
 	return true;
 }
 
+void MeshGrid::getNodeVectorsInAxisAlignedBoundingBox(GEOLIB::Point const& ll,
+				GEOLIB::Point const& ur, size_t &n_node_vectors, std::vector<MeshLib::CNode*> * & node_vectors)
+{
+	n_node_vectors = _n_steps[0]*_n_steps[1]*_n_steps[2];
+	node_vectors = new std::vector<MeshLib::CNode*>[n_node_vectors];
+	for (size_t k(0); k<n_node_vectors; k++)
+		node_vectors[k] = _grid_quad_to_node_map[k];
+}
+
 } // end namespace MeshLib
