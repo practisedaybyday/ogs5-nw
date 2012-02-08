@@ -17,12 +17,14 @@
 //dialogs
 #include "DBConnectionDialog.h"
 #include "CondFromRasterDialog.h"
+#include "ConditionWriterDialog.h"
 #include "DiagramPrefsDialog.h"
 #include "FEMConditionSetupDialog.h"
 #include "GMSHPrefsDialog.h"
 #include "LineEditDialog.h"
 #include "ListPropertiesDialog.h"
 #include "MshQualitySelectionDialog.h"
+#include "NetCdfConfigureDialog.h"
 #include "NewProcessDialog.h"
 #include "SetNameDialog.h"
 #include "VisPrefsDialog.h"
@@ -160,12 +162,12 @@ MainWindow::MainWindow(QWidget* parent /* = 0*/)
 	        this, SLOT(showLineEditDialog(const std::string &))); // open line edit dialog
 	connect(geoTabWidget->treeView, SIGNAL(requestNameChangeDialog(const std::string&, const GEOLIB::GEOTYPE, size_t)),
 			this, SLOT(showGeoNameDialog(const std::string&, const GEOLIB::GEOTYPE, size_t)));
-	connect(geoTabWidget->treeView, SIGNAL(requestCondSetupDialog(const std::string&, const GEOLIB::GEOTYPE, size_t)),
-			this, SLOT(showCondSetupDialog(const std::string&, const GEOLIB::GEOTYPE, size_t)));
+	connect(geoTabWidget->treeView, SIGNAL(requestCondSetupDialog(const std::string&, const GEOLIB::GEOTYPE, size_t, bool)),
+			this, SLOT(showCondSetupDialog(const std::string&, const GEOLIB::GEOTYPE, size_t, bool)));
 	connect(geoTabWidget->treeView, SIGNAL(loadFEMCondFileRequested(std::string)),
 	        this, SLOT(loadFEMConditions(std::string))); // add FEM Conditions
-	connect(geoTabWidget->treeView, SIGNAL(saveFEMConditionsRequested(QString, QString)),
-	        this, SLOT(writeFEMConditionsToFile(QString, QString)));
+	//connect(geoTabWidget->treeView, SIGNAL(saveFEMConditionsRequested(QString, QString)),
+	//        this, SLOT(writeFEMConditionsToFile(QString, QString)));
 	connect(_geoModels, SIGNAL(geoDataAdded(GeoTreeModel *, std::string, GEOLIB::GEOTYPE)),
 	        this, SLOT(updateDataViews()));
 	connect(_geoModels, SIGNAL(geoDataRemoved(GeoTreeModel *, std::string, GEOLIB::GEOTYPE)),
@@ -193,6 +195,8 @@ MainWindow::MainWindow(QWidget* parent /* = 0*/)
 	        _processModel, SLOT(removeProcess(const FiniteElement::ProcessType)));
 	connect(modellingTabWidget, SIGNAL(requestNewProcess()),
 		    this, SLOT(showNewProcessDialog()));
+	connect(modellingTabWidget->treeView, SIGNAL(saveConditionsRequested()),
+			this, SLOT(showConditionWriterDialog()));
 
 	// VisPipeline Connects
 	connect(_geoModels, SIGNAL(geoDataAdded(GeoTreeModel *, std::string, GEOLIB::GEOTYPE)),
@@ -646,7 +650,7 @@ void MainWindow::loadFile(const QString &fileName)
 	}
 
 	// NetCDF files
-	// YW  07.2010
+	// CH  01.2012
 	else if (fi.suffix().toLower() == "nc")
 	{
 #ifndef NDEBUG
@@ -655,17 +659,21 @@ void MainWindow::loadFile(const QString &fileName)
 		std::cout << "NetCDF Read ...\n" << std::flush;
 #endif
 		std::string name = fileName.toStdString();
-		std::vector<GEOLIB::Point*>* pnt_vec =
-		        new std::vector<GEOLIB::Point*>();
-		/* Data dimensions. */
-		size_t len_rlat, len_rlon;
-		FileIO::NetCDFInterface::readNetCDFData(name, pnt_vec, _geoModels,
-		                                        len_rlat, len_rlon);
-		MeshLib::CFEMesh* mesh = FileIO::NetCDFInterface::createMeshFromPoints(pnt_vec,
-		                                                                       len_rlat,
-		                                                                       len_rlon);
-		//GridAdapter* grid = new GridAdapter(mesh);
-		_meshModels->addMesh(mesh, name);
+		GridAdapter* mesh;
+
+		NetCdfConfigureDialog dlg(name);
+		dlg.exec();
+		if (dlg.getMesh() != NULL)
+		{
+			mesh = dlg.getMesh();
+			mesh->setName(dlg.getName());
+			_meshModels->addMesh(mesh);
+		}
+		if (dlg.getRaster() != NULL)
+		{
+			_vtkVisPipeline->addPipelineItem(dlg.getRaster());
+		}
+
 #ifndef NDEBUG
 		std::cout << myTimer.elapsed() << " ms" << std::endl;
 #endif
@@ -824,7 +832,7 @@ void MainWindow::importRaster()
 	if (!fileName.isEmpty())
 	{
 		VtkGeoImageSource* geoImage = VtkGeoImageSource::New();
-		geoImage->setImageFilename(fileName);
+		geoImage->readImage(fileName);
 		_vtkVisPipeline->addPipelineItem(geoImage);
 
 		QDir dir = QDir(fileName);
@@ -1001,7 +1009,6 @@ void MainWindow::showAddPipelineFilterItemDialog(QModelIndex parentIndex)
 	dlg.exec();
 }
 
-
 void MainWindow::loadFEMConditions(std::string geoName)
 {
 	QSettings settings("UFZ", "OpenGeoSys-5");
@@ -1087,27 +1094,37 @@ void MainWindow::loadFEMConditionsFromFile(const QString &fileName, std::string 
 	}
 }
 
-void MainWindow::writeFEMConditionsToFile(QString geoName, QString fileName)
+void MainWindow::writeFEMConditionsToFile(const QString &geoName, const FEMCondition::CondType type, const QString &fileName)
 {
 	QFileInfo fi(fileName);
 	if (fi.suffix().compare("cnd") == 0 )
 	{
 		std::string schemaName(_fileFinder.getPath("OpenGeoSysCond.xsd"));
 		XmlCndInterface xml(&_project, schemaName);
-		xml.writeFile(fileName, geoName);
+		xml.writeFile(fileName, geoName, type);
 	}
-	else if (fi.suffix().compare("bc") == 0 )
+	else
 	{
 		const std::vector<FEMCondition*> conds = _project.getConditions();
 		for (size_t i=0; i<conds.size(); i++)
 		{
-			if ((conds[i]->getCondType() == FEMCondition::BOUNDARY_CONDITION) && 
+			if ((conds[i]->getCondType() == type) &&
 				(QString::fromStdString(conds[i]->getAssociatedGeometryName()) == geoName))
 			{
-				bc_list.push_back(new CBoundaryCondition(static_cast<BoundaryCondition*>(conds[i])));
+				if (type == FEMCondition::BOUNDARY_CONDITION)
+					bc_list.push_back(new CBoundaryCondition(static_cast<BoundaryCondition*>(conds[i])));
+				else if (type == FEMCondition::INITIAL_CONDITION)
+					ic_vector.push_back(new CInitialCondition(static_cast<InitialCondition*>(conds[i])));
+				else if (type == FEMCondition::SOURCE_TERM)
+					st_vector.push_back(new CSourceTerm(static_cast<SourceTerm*>(conds[i])));
 			}
 		}
-		BCWrite(fileName.toStdString());
+		if (type == FEMCondition::BOUNDARY_CONDITION)
+			BCWrite(fileName.toStdString());
+		else if (type == FEMCondition::INITIAL_CONDITION)
+			ICWrite(fileName.toStdString());
+		else if (type == FEMCondition::SOURCE_TERM)
+			STWrite(fileName.toStdString());
 	}
 }
 
@@ -1202,6 +1219,14 @@ void MainWindow::callGMSH(std::vector<std::string> const & selectedGeometries,
 	}
 }
 
+void MainWindow::showConditionWriterDialog()
+{
+	ConditionWriterDialog dlg(_geoModels);
+	connect(&dlg , SIGNAL(saveFEMConditionsRequested(const QString&, const FEMCondition::CondType, const QString&)),
+	        this, SLOT(writeFEMConditionsToFile(const QString&, const FEMCondition::CondType, const QString&)));
+	dlg.exec();
+}
+
 void MainWindow::showDiagramPrefsDialog(QModelIndex &index)
 {
 	QString listName;
@@ -1249,7 +1274,7 @@ void MainWindow::showGeoNameDialog(const std::string &geometry_name, const GEOLI
 		id,	this->_geoModels->getElementNameByID(geometry_name, object_type, id));
 }
 
-void MainWindow::showCondSetupDialog(const std::string &geometry_name, const GEOLIB::GEOTYPE object_type, size_t id)
+void MainWindow::showCondSetupDialog(const std::string &geometry_name, const GEOLIB::GEOTYPE object_type, size_t id, bool on_points)
 {
 	std::string geo_name = this->_geoModels->getElementNameByID(geometry_name, object_type, id);
 	if (geo_name.empty())
@@ -1262,7 +1287,10 @@ void MainWindow::showCondSetupDialog(const std::string &geometry_name, const GEO
 		OGSError::box("FEM Condition Setup cancelled.");
 	else
 	{
-		FEMConditionSetupDialog dlg(geometry_name, object_type, geo_name, this->_geoModels->getGEOObject(geometry_name, object_type, geo_name));
+		if (on_points)
+			this->_geoModels->addNameForObjectPoints(geometry_name, object_type, geo_name, geometry_name);
+
+		FEMConditionSetupDialog dlg(geometry_name, object_type, geo_name, this->_geoModels->getGEOObject(geometry_name, object_type, geo_name), on_points);
 		connect(&dlg, SIGNAL(addFEMCondition(FEMCondition*)), this->_processModel, SLOT(addCondition(FEMCondition*)));
 		dlg.exec();
 	}
@@ -1307,6 +1335,21 @@ void MainWindow::showVisalizationPrefsDialog()
 
 void MainWindow::FEMTestStart()
 {
+	std::map<std::string, MeshLib::CFEMesh*> const& mesh_map (_project.getMeshObjects());
+
+	std::string mesh_name(mesh_map.begin()->first);
+	std::cout << "[Test] get mesh " << mesh_name << " ... " << std::flush;
+	MeshLib::CFEMesh const*const mesh (_project.getMesh(mesh_name));
+	if (mesh) {
+		std::cout << "done" << std::endl;
+		std::cout << "[Test] writing mesh in TetGen file format ... " << std::flush;
+		FileIO::TetGenInterface tetgen_io;
+		tetgen_io.writeTetGenMesh(mesh_name+".node", mesh_name+".ele", mesh);
+		std::cout << "done" << std::endl;
+	} else {
+		std::cout << "[Test] could not load mesh " << mesh_name << std::endl;
+	}
+
 	CondFromRasterDialog dlg(&_project);
 	dlg.exec();
 }
@@ -1551,7 +1594,7 @@ void MainWindow::loadDIRECTSourceTerms(const std::string mshname, const std::vec
 		// create new geometry points vector by copying mesh nodes vector
 		std::vector<GEOLIB::Point*>* new_points = new std::vector<GEOLIB::Point*>;
 		//ignore name map because it makes things incredibly slow (and mesh-nodes cannot have names anyway, can they?)
-		//std::map<std::string, size_t>* name_pnt_id_map = new std::map<std::string, size_t>; 
+		//std::map<std::string, size_t>* name_pnt_id_map = new std::map<std::string, size_t>;
 
 		for (size_t i = 0; i < points->size(); i++)
 		{

@@ -11,7 +11,6 @@
 //#include "MSHEnums.h"
 #include "GridAdapter.h"
 
-//class GridAdapter;
 class vtkImageData; // For conversion from Image to QuadMesh
 class vtkUnstructuredGrid; // For conversion vom vtk to ogs mesh
 
@@ -33,22 +32,22 @@ class VtkMeshConverter
 public:
 	/**
 	 * Converts greyscale image to a mesh
-	 * \parelem_type defines if elements of the new mesh should be triangles or quads (or hexes for 3D)
+	 * \param elem_type defines if elements of the new mesh should be triangles or quads (or hexes for 3D)
 	 * \param intensity_type defines how image intensities are interpreted
 	 */
 	static GridAdapter* convertImgToMesh(vtkImageData* img,
-									      const std::pair<double,double> &origin,
-	                                      const double &scalingFactor,
+									      const double origin[3],
+	                                      const double scalingFactor,
 										  MshElemType::type elem_type,
 										  UseIntensityAs::type intensity_type);
 
 	/**
 	 * Converts double array with raster values to a mesh
-	 * \parelem_type defines if elements of the new mesh should be triangles or quads (or hexes for 3D)
+	 * \param elem_type defines if elements of the new mesh should be triangles or quads (or hexes for 3D)
 	 * \param intensity_type defines how image intensities are interpreted
 	 */
 	static GridAdapter* convertImgToMesh(const double* img,
-	                                      const std::pair<double,double> &origin,
+	                                      const double origin[3],
 										  const size_t imgHeight,
 										  const size_t imgWidth,
 	                                      const double &scalingFactor,
@@ -63,7 +62,7 @@ private:
 	static GridAdapter* constructMesh(const double* pixVal,
 									   int* node_idx_map,
 									   const bool* visNodes,
-									   const std::pair<double,double> &origin,
+									   const double origin[3],
 									   const size_t &imgHeight,
 									   const size_t &imgWidth,
 									   const double &scalingFactor,
@@ -74,6 +73,8 @@ private:
 	static GridAdapter::Element* createElement(MshElemType::type t, int mat,
 		                                 size_t node1, size_t node2, 
 										 size_t node3, size_t node4 = 0);
+
+	static double getExistingValue(const double* img, size_t length);
 };
 
 #endif // VTKMESHCONVERTER_H

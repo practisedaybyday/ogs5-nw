@@ -6,7 +6,7 @@
  */
 
 // ** INCLUDES **
-#include <gtest/gtest.h>
+#include "gtest.h"
 
 #include "swap.h"
 

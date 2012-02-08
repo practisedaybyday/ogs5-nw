@@ -1,7 +1,7 @@
 #ifndef OGS_CL_TESTS_H
 #define OGS_CL_TESTS_H
 
-#include <gtest/gtest.h>
+#include "gtest.h"
 #include "Configure.h"
 
 #include <cstdlib>

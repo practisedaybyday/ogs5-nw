@@ -69,10 +69,10 @@ public:
 	                    double z,
 	                    double eps = std::numeric_limits<double>::epsilon()) const;
 
-	GEOLIB::Point getMinPoint () const { return _min_pnt; }
-	GEOLIB::Point getMaxPoint () const { return _max_pnt; }
+	GEOLIB::Point const& getMinPoint () const { return _min_pnt; }
+	GEOLIB::Point const& getMaxPoint () const { return _max_pnt; }
 
-private:
+protected:
 	GEOLIB::Point _min_pnt;
 	GEOLIB::Point _max_pnt;
 };

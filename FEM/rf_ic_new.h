@@ -33,6 +33,7 @@ namespace MeshLib
 {
 class CFEMesh;
 }
+class InitialCondition;
 
 /**
  * class for handling initial conditions
@@ -70,6 +71,7 @@ public:
 	double gradient_ref_depth_gradient;
 	std::string rfr_file_name;            //OK
 	CInitialCondition();
+	CInitialCondition(const InitialCondition* ic);
 	~CInitialCondition();
 	/**
 	 * read initial condition from stream

@@ -51,7 +51,7 @@ public:
 	friend class CBoundaryConditionsGroup;
 	friend class FileIO::BoundaryConditionIO;
 	CBoundaryCondition();
-	CBoundaryCondition(BoundaryCondition* bc);
+	CBoundaryCondition(const BoundaryCondition* bc);
 
 	~CBoundaryCondition();
 	//      void Write(std::fstream*) const;

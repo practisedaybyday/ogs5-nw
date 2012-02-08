@@ -58,6 +58,8 @@
 #include "FEMIO/ProcessIO.h"
 #include "readNonBlankLineFromInputStream.h"
 
+#include "SourceTerm.h"
+
 using FiniteElement::CElement;
 using MeshLib::CElem;
 using MeshLib::CEdge;
@@ -92,6 +94,34 @@ CSourceTerm::CSourceTerm() :
    //  display_mode = false; //OK
 }
 
+// KR: Conversion from GUI-ST-object to CSourceTerm
+CSourceTerm::CSourceTerm(const SourceTerm* st)
+	: ProcessInfo(st->getProcessType(),st->getProcessPrimaryVariable(),NULL), 
+	  GeoInfo(st->getGeoType(),st->getGeoObj()), 
+	  DistributionInfo(st->getProcessDistributionType())
+{
+	setProcess( PCSGet( this->getProcessType() ) );
+	this->geo_name = st->getGeoName();
+	const std::vector<double> dis_values = st->getDisValue();
+	
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
+	{
+		this->geo_node_value = dis_values[0];
+	}
+	else if (this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
+	{
+		for (size_t i=0; i<dis_values.size(); i+=2)
+		{
+
+			this->PointsHaveDistribedBC.push_back(static_cast<int>(dis_values[i]));
+			this->DistribedBC.push_back(dis_values[i+1]);
+		}
+	}
+	else
+		std::cout << "Error in CBoundaryCondition() - DistributionType \""
+		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType()) 
+				  << "\" currently not supported." << std::endl;
+}
 
 /**************************************************************************
  FEMLib-Method:

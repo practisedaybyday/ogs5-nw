@@ -55,15 +55,15 @@ MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string const& fname)
 	return NULL;
 }
 
-void OGSMeshIO::write(MeshLib::CFEMesh const* mesh, std::ofstream &out)
+void OGSMeshIO::write(MeshLib::CFEMesh const* mesh, std::ostream &out)
 {
 	out << "#FEM_MSH" << std::endl;
 
 	out << "$PCS_TYPE" << std::endl << "  " << mesh->pcs_name << std::endl;
 
 	out << "$NODES" << std::endl << "  ";
-	out << mesh->GetNodesNumber(false) << std::endl;
-	const size_t n_nodes(mesh->nod_vector.size());
+	const size_t n_nodes(mesh->GetNodesNumber(false));
+	out << n_nodes << std::endl;
 	for (size_t i(0); i < n_nodes; i++)
 	{
 		double const* const coords (mesh->nod_vector[i]->getData());
@@ -99,7 +99,7 @@ void OGSMeshIO::write(MeshLib::CFEMesh const* mesh, std::ofstream &out)
 	out << "#STOP" << std::endl;
 }
 
-void OGSMeshIO::writeElementsExceptLines(std::vector<MeshLib::CElem*> const& ele_vec, std::ofstream &out)
+void OGSMeshIO::writeElementsExceptLines(std::vector<MeshLib::CElem*> const& ele_vec, std::ostream &out)
 {
 	const size_t ele_vector_size (ele_vec.size());
 	std::vector<bool> non_line_element (ele_vector_size, true);

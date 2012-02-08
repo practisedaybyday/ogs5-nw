@@ -1,13 +1,12 @@
 /**
- * \file testGeo.cpp
+ * \file TestPointInPolygon.cpp
  * 2011-01-31 TF Initial implementation
  *
- * Tests for the GEO directory
  */
 
 // ** INCLUDES **
 #include "Configure.h"
-#include <gtest/gtest.h>
+#include "gtest.h"
 
 #include <string>
 #include <vector>
@@ -24,8 +23,8 @@
 TEST(GEO, PointInPolygon)
 {
 	GEOLIB::GEOObjects* _geo (new GEOLIB::GEOObjects);
-	std::string fname(SOURCEPATH);
-	fname += "/tests/data/GEO/TestDataPointInPolygon.gli";
+	std::string fname(TESTDATAPATH);
+	fname += "/input/SimplePolygon.gli";
 	std::string unique_name;
 	FileIO::readGLIFileV4(fname, _geo, unique_name);
 	const std::vector<GEOLIB::Polyline*>* plys(_geo->getPolylineVec(unique_name));

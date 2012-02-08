@@ -71,12 +71,13 @@ add_library( GEO STATIC
 
 
 include_directories(
-	.
-	../Base
-	../FEM
-	../FileIO
-	../MathLib
-	../MSH
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/MathLib/LinAlg
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/MSH
 )
 
 

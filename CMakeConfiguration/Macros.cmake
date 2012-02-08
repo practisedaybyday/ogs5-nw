@@ -246,3 +246,37 @@ FUNCTION(CHECK_CONFIG)
 	ENDIF (counter GREATER 1)
 
 ENDFUNCTION()
+
+# Creates one ctest for each googletest found in source files passed as arguments
+# number two onwards. Argument one specifies the testrunner executable.
+MACRO(ADD_GOOGLE_TESTS executable)
+	FOREACH ( source ${ARGN} )
+		FILE(READ "${source}" contents)
+		STRING(REGEX MATCHALL "TEST_?F?\\(([A-Za-z_0-9 ,]+)\\)" found_tests ${contents})
+		FOREACH(hit ${found_tests})
+			STRING(REGEX REPLACE ".*\\(([A-Za-z_0-9]+)[, ]*([A-Za-z_0-9]+)\\).*" "\\1.\\2" test_name ${hit})
+			ADD_TEST(${test_name} ${executable}  --gtest_output=xml --gtest_filter=${test_name} ${MI3CTestingDir})
+			# message ("Adding test: ${test_name}")
+		ENDFOREACH(hit)
+	ENDFOREACH()
+ENDMACRO()
+
+# copies the model files to the build dir and adds them as targets so that
+# the build files are re-built when the source model files change
+MACRO ( UPDATE_MODEL_FILES dirOUT fileLIST )
+	GET_FILENAME_COMPONENT( _tdir ${CMAKE_CURRENT_SOURCE_DIR} NAME )
+	#message (STATUS "Copying files to ${dirOUT} from ${fileLIST}.\n")
+	FOREACH ( _file1 ${${fileLIST}} )
+		SET( _file ${CMAKE_CURRENT_SOURCE_DIR}/${_file1} )
+		GET_FILENAME_COMPONENT( _fdest ${_file} NAME )
+		SET( dest ${dirOUT}/${_fdest} )
+		#message( STATUS "Copying ${_file} to ${dest} \n" )
+  
+		#message (STATUS "Adding targets ${_tdir}.${_fdest}\n").\n")
+		ADD_CUSTOM_TARGET( ${_tdir}.${_fdest}
+			${CMAKE_COMMAND} -E copy_if_different
+			${_file} ${dest})
+  
+		ADD_DEPENDENCIES( testrunner ${_tdir}.${_fdest} )
+	ENDFOREACH(_file1 ${${fileLIST}}) 
+ENDMACRO ( UPDATE_MODEL_FILES dirOUT fileLIST)

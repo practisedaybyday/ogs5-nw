@@ -30,6 +30,8 @@ class CFEMesh;
 class MeshNodesAlongPolyline;
 }
 
+class SourceTerm;
+
 typedef struct
 {
 	std::vector<double> value_reference;
@@ -42,6 +44,7 @@ class CSourceTerm : public ProcessInfo, public GeoInfo, public DistributionInfo
 {
 public:
 	CSourceTerm();
+	CSourceTerm(const SourceTerm* st);
 	~CSourceTerm();
 
 	std::ios::pos_type Read(std::ifstream* in,

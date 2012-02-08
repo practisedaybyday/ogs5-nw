@@ -37,11 +37,11 @@ SET( HEADERS
 	GeoIO/Gmsh2GeoIO.h
 )
 
-IF (OGS_USE_NETCDF)
+IF (VTK_FOUND)
 	INCLUDE( ${VTK_USE_FILE} )
 	SET (HEADERS NetCDFInterface.h ${HEADERS})
 	SET (SOURCES NetCDFInterface.cpp ${SOURCES})
-ENDIF (OGS_USE_NETCDF)
+ENDIF (VTK_FOUND)
 
 IF (Shapelib_FOUND)
 	SET( HEADERS ${HEADERS} SHPInterface.h )
@@ -50,18 +50,23 @@ IF (Shapelib_FOUND)
 ENDIF (Shapelib_FOUND)
 
 IF (QT4_FOUND)
-	SET( HEADERS ${HEADERS} XmlIO/XMLInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XMLInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlGmlInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlGmlInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlStnInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlStnInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlCndInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlCndInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlGspInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlGspInterface.cpp )
-	SET( HEADERS ${HEADERS} FEFLOWInterface.h )
-	SET (SOURCES ${SOURCES} FEFLOWInterface.cpp )
+	SET( HEADERS ${HEADERS} 
+		XmlIO/XMLInterface.h 
+		XmlIO/XmlGmlInterface.h
+		XmlIO/XmlStnInterface.h
+		XmlIO/XmlCndInterface.h
+		XmlIO/XmlGspInterface.h
+		XmlIO/XmlLutReader.h
+		FEFLOWInterface.h
+	)
+	SET (SOURCES ${SOURCES} 
+		XmlIO/XMLInterface.cpp
+		XmlIO/XmlGmlInterface.cpp
+		XmlIO/XmlStnInterface.cpp
+		XmlIO/XmlCndInterface.cpp
+		XmlIO/XmlGspInterface.cpp
+		FEFLOWInterface.cpp 
+	)
 ENDIF (QT4_FOUND)
 
 # Create the library
@@ -71,18 +76,24 @@ ADD_LIBRARY( FileIO STATIC
 )
 
 INCLUDE_DIRECTORIES(
-	.
-	./FEMIO
-	./MathIO
-	./MeshIO
-	./GeoIO
-	../Base
-	../FEM
-	../GEO
-	../MathLib
-	../MSH
-	../GEM
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/FileIO/FEMIO
+	${CMAKE_SOURCE_DIR}/FileIO/MathIO
+	${CMAKE_SOURCE_DIR}/FileIO/MeshIO
+	${CMAKE_SOURCE_DIR}/FileIO/GeoIO
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/GEM
 )
+
+IF (QT4_FOUND)
+	INCLUDE_DIRECTORIES(
+		../Qt/VtkVis
+	)
+ENDIF()
 
 TARGET_LINK_LIBRARIES( FileIO
 #	Base

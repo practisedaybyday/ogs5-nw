@@ -85,8 +85,6 @@ private:
 	double Ru;                            //universal_gas_constant;
 	double omega;                         // azentric factor for Peng-Robinson EOS
 	double molar_mass;
-	double beta_T; //AKS
-
 	/**
 	 * density
 	 */
@@ -243,11 +241,9 @@ public:
 	double phi_r_dt (double rho, double T) const;
 	double phi_r_dd (double rho, double T) const;
 	double phi_0_tt (double T) const;
-	//AKS
-	double CalCopressibility(long idx_elem, double p, double T);
-	double CalCopressibility_PTC(double p, double T); //AKS
-	double CaldZdP(double p, double T);             //AKS
-	double CaldZdT(double p, double T);               //AKS
+	double SuperCompressibiltyFactor(int idx_elem, double p, double T); //AKS
+	double dZ(int idx_elem, double p, double T, int nk);//AKS
+	double MaxwellStefanDiffusionCoef(int idx_elem, double p, double T, int CNm); //AKS
 
 private:
 	// State variables
@@ -266,7 +262,6 @@ private:
 
 	double GasViscosity_Reichenberg_1971(double,double);
 	//AKS
-	double GasViscosity_Chung_1988(long idx_elem, double,double);
 	double MATCalcFluidDensityMethod8(double p, double T, double C);
 	double LiquidViscosity_Yaws_1976(double);
 	double LiquidViscosity_Marsily_1986(double);

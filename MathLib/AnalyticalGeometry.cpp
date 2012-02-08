@@ -224,4 +224,47 @@ void rotatePointsToXY(Vector &plane_normal,
 
 	delete [] tmp;
 }
+
+void rotatePointsToXZ(Vector &n, std::vector<GEOLIB::Point*> &pnts)
+{
+	double small_value (sqrt (std::numeric_limits<double>::min()));
+	if (fabs(n[0]) < small_value && fabs(n[1]) < small_value)
+		return;
+
+	// *** some frequently used terms ***
+	// n_1^2 + n_2^2
+	const double h0(n[0] * n[0] + n[1] * n[1]);
+	// 1 / sqrt (n_1^2 + n_2^2)
+	const double h1(1.0 / sqrt(h0));
+	// 1 / sqrt (n_1^2 + n_2^2 + n_3^2)
+	const double h2(1.0 / sqrt(h0 + n[2] * n[2]));
+
+	Matrix<double> rot_mat(3, 3);
+	// calc rotation matrix
+	rot_mat(0, 0) = n[1] * h1;
+	rot_mat(0, 1) = - n[0] * h1;
+	rot_mat(0, 2) = 0.0;
+	rot_mat(1, 0) = n[0] * h2;
+	rot_mat(1, 1) = n[1] * h2;
+	rot_mat(1, 2) = n[2] * h2;
+	rot_mat(2, 0) = n[0] * n[2] * h1 * h2;
+	rot_mat(2, 1) = n[1] * n[2] * h1 * h2;
+	rot_mat(2, 2) = - sqrt(h0) * h2;
+
+	double* tmp (NULL);
+	size_t n_pnts(pnts.size());
+	for (size_t k(0); k < n_pnts; k++) {
+		tmp = rot_mat * pnts[k]->getData();
+		for (size_t j(0); j < 3; j++)
+			(*(pnts[k]))[j] = tmp[j];
+		delete [] tmp;
+	}
+
+	tmp = rot_mat * n.getData();
+	for (size_t j(0); j < 3; j++)
+		n[j] = tmp[j];
+
+	delete [] tmp;
+}
+
 } // end namespace MathLib

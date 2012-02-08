@@ -130,15 +130,15 @@ CBoundaryCondition::CBoundaryCondition() :
 }
 
 // KR: Conversion from GUI-BC-object to CBoundaryCondition
-CBoundaryCondition::CBoundaryCondition(BoundaryCondition* bc)
-	: ProcessInfo(bc->getProcessType(),bc->getProcessPrimaryVariable(),NULL), 
-	  GeoInfo(bc->getGeoType(),bc->getGeoObj()), 
+CBoundaryCondition::CBoundaryCondition(const BoundaryCondition* bc)
+	: ProcessInfo(bc->getProcessType(),bc->getProcessPrimaryVariable(),NULL),
+	  GeoInfo(bc->getGeoType(),bc->getGeoObj()),
 	  DistributionInfo(bc->getProcessDistributionType())
 {
 	setProcess( PCSGet( this->getProcessType() ) );
 	this->geo_name = bc->getGeoName();
 	const std::vector<double> dis_values = bc->getDisValue();
-	
+
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
 	{
 		this->geo_node_value = dis_values[0];
@@ -154,7 +154,7 @@ CBoundaryCondition::CBoundaryCondition(BoundaryCondition* bc)
 	}
 	else
 		std::cout << "Error in CBoundaryCondition() - DistributionType \""
-		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType()) 
+		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType())
 				  << "\" currently not supported." << std::endl;
 }
 
@@ -892,6 +892,9 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 
 	FiniteElement::PrimaryVariable primary_variable(FiniteElement::convertPrimaryVariable(_pcs_pv_name));
 	std::list<CBoundaryCondition*>::const_iterator p_bc = bc_list.begin();
+
+	clock_t start_time (clock());
+
 	while (p_bc != bc_list.end())
 	{
 		CBoundaryCondition* bc (*p_bc);
@@ -1384,6 +1387,10 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 		++p_bc;
 	} // list
 
+	clock_t end_time (clock());
+	std::cout << "\t[BC] set BC took " << (end_time-start_time)/(double)(CLOCKS_PER_SEC) << std::endl;
+
+	start_time = clock();
 	// SetTransientBCtoNodes  10/2008 WW/CB Implementation
 	p_bc = bc_list.begin();
 	while (p_bc != bc_list.end())
@@ -1461,6 +1468,8 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 	     if(no_bc<1)
 	     cout << "Warning: no boundary conditions specified for " << pcs_type_name << endl;
 	   */
+	end_time = clock();
+	std::cout << "\t[BC] set transient BC took " << (end_time-start_time)/(double)(CLOCKS_PER_SEC) << std::endl;
 }
 
 /**************************************************************************

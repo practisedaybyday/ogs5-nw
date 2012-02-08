@@ -160,6 +160,7 @@ bool MH_Process = false;                          // MH monolithic scheme
 bool MASS_TRANSPORT_Process = false;
 bool FLUID_MOMENTUM_Process = false;
 bool RANDOM_WALK_Process = false;
+bool PTC_FLOW_Process = false;
 bool pcs_created = false;
 
 namespace process
@@ -1656,6 +1657,8 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 					pcs_no_components++;
 					this->setProcessPrimaryVariable(FiniteElement::CONCENTRATION);
 				}
+				if (this->getProcessType() == FiniteElement::PTC_FLOW)
+					PTC_FLOW_Process = true;
 				//				if (_pcs_type_name.find("HEAT") != string::npos)
 				if (this->getProcessType() == FiniteElement::HEAT_TRANSPORT)
 					T_Process = true;

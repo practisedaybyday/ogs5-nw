@@ -267,7 +267,6 @@ private:
 	double  CalcCoefDualTransfer();
 	// 27.2.2007 WW
 	double CalCoef_RHS_T_MPhase(int dof_index);
-	double CalCoef_RHS_PTC(int dof_index);
 	// 27.2.2007 WW
 	double CalCoef_RHS_M_MPhase(int dof_index);
 	double CalCoef_RHS_PSGLOBAL(int dof_index);

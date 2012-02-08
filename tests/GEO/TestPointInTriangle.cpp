@@ -4,6 +4,7 @@
  *  Created on: Feb 28, 2011
  *      Author: TF
  */
+#include "gtest.h"
 
 #include <iostream>
 
@@ -13,7 +14,7 @@
 // MathLib
 #include "AnalyticalGeometry.h"
 
-int main ()
+TEST(GEO, PointInTriangle)
 {
 	GEOLIB::Point pnt_a (0.0, 0.0, 0.0);
 	GEOLIB::Point pnt_b (1.0, 0.0, 0.0);

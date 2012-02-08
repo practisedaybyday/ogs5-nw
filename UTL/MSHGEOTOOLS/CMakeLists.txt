@@ -1,14 +1,14 @@
 
 INCLUDE_DIRECTORIES(
-	./
-	../../Base
-	../../GEO
-	../../FileIO
-	../../FileIO/MeshIO
-	../../MathLib
-	../../FEM
-	../../MSH
-	../../MSHGEOTOOLS
+	${CMAKE_SOURCE_DIR}/UTL/MSHGEOTOOLS
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/FileIO/MeshIO
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/MSHGEOTOOLS
 )
 
 # Create executables
@@ -17,6 +17,10 @@ ADD_EXECUTABLE( ModifyMeshProperties mainModifyMeshProperties.cpp ModifyMeshProp
 ADD_EXECUTABLE( filterMeshNodes filterMeshNodes.cpp )
 ADD_EXECUTABLE( extractSurface mainExtractSurface.cpp ExtractSurface.h ExtractSurface.cpp )
 ADD_EXECUTABLE( createMeshFromPolygon createMeshFromPolygon.cpp )
+ADD_EXECUTABLE( rotateMesh rotateMesh.cpp )
+
+SET_TARGET_PROPERTIES(ExtractMeshNodes ModifyMeshProperties filterMeshNodes
+  extractSurface createMeshFromPolygon PROPERTIES FOLDER Utilities)
 
 TARGET_LINK_LIBRARIES( ExtractMeshNodes
 	GEO
@@ -56,6 +60,13 @@ TARGET_LINK_LIBRARIES( createMeshFromPolygon
 	MSHGEOTOOLS
 	FileIO
 	${QT_LIBRARIES}
+)
+
+TARGET_LINK_LIBRARIES( rotateMesh
+	GEO
+	MSH
+	MSHGEOTOOLS
+	FileIO
 )
 
 IF (OGS_PACKAGING)
