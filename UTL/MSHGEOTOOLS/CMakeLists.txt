@@ -9,6 +9,7 @@ INCLUDE_DIRECTORIES(
 	${CMAKE_SOURCE_DIR}/FEM
 	${CMAKE_SOURCE_DIR}/MSH
 	${CMAKE_SOURCE_DIR}/MSHGEOTOOLS
+	${CMAKE_SOURCE_DIR}/Qt/VtkVis
 )
 
 # Create executables
@@ -18,9 +19,10 @@ ADD_EXECUTABLE( filterMeshNodes filterMeshNodes.cpp )
 ADD_EXECUTABLE( extractSurface mainExtractSurface.cpp ExtractSurface.h ExtractSurface.cpp )
 ADD_EXECUTABLE( createMeshFromPolygon createMeshFromPolygon.cpp )
 ADD_EXECUTABLE( rotateMesh rotateMesh.cpp )
+ADD_EXECUTABLE( mapGeoToDEM mapGeoToDEM.cpp )
 
 SET_TARGET_PROPERTIES(ExtractMeshNodes ModifyMeshProperties filterMeshNodes
-  extractSurface createMeshFromPolygon PROPERTIES FOLDER Utilities)
+  extractSurface createMeshFromPolygon rotateMesh mapGeoToDEM PROPERTIES FOLDER Utilities)
 
 TARGET_LINK_LIBRARIES( ExtractMeshNodes
 	GEO
@@ -67,6 +69,12 @@ TARGET_LINK_LIBRARIES( rotateMesh
 	MSH
 	MSHGEOTOOLS
 	FileIO
+)
+
+TARGET_LINK_LIBRARIES( mapGeoToDEM
+	GEO
+	FileIO
+	VtkVis
 )
 
 IF (OGS_PACKAGING)
