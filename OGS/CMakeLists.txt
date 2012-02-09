@@ -47,6 +47,9 @@ TARGET_LINK_LIBRARIES( ogs
 	${CMAKE_THREAD_LIBS_INIT}
 )
 
+IF(VTK_FOUND)
+	TARGET_LINK_LIBRARIES( ogs vtkCommon )
+ENDIF()
 
 ####################
 ### Installation ###
