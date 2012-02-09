@@ -30,10 +30,10 @@ TEST(VTK, TestMeshFromRaster)
 	GridAdapter* grid = VtkMeshConverter::convertImgToMesh(image, origin, geo_image->getSpacing(), MshElemType::TRIANGLE, UseIntensityAs::ELEVATION);
 		
 	// Correct number of nodes?
-	ASSERT_EQ(grid->getNodes()->size(), (size_t)626);
+	ASSERT_EQ((size_t)626, grid->getNodes()->size());
 	
 	// Correct number of elements?
-	ASSERT_EQ(grid->getElements()->size(), (size_t)1082);
+	ASSERT_EQ((size_t)1082, grid->getElements()->size());
 	
 	// Configure stream
 	std::stringstream ss;
