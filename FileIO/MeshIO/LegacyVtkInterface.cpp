@@ -24,7 +24,9 @@
 #include <string>
 #include <iomanip>
 
+#ifdef VTK_FOUND
 #include "vtkMath.h"
+#endif
 
 using namespace std;
 
