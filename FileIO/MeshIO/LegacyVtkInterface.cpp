@@ -255,17 +255,17 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 		std::cout << "ArrayName: " << arrayName << std::endl;
 
 		// Write X, Y and Z arrays as vectors
-		if(k + 2 < numPointArrays)
+		if(k + 1 < numPointArrays)
 		{
 			if (_pointArrayNames[k].find("_X") != string::npos && _pointArrayNames[k + 1].find("_Y") &&
 				_pointArrayNames[k].find("_XX") == string::npos)
 			{
 				numComponents = 2;
-				if(k + 3 < numPointArrays)
+				if(k + 2 < numPointArrays)
 					if (_pointArrayNames[k + 2].find("_Z"))
 						numComponents = 3;
 
-				vtk_file << "VECTORS " << arrayName.substr(0, arrayName.size() - 3) <<
+				vtk_file << "VECTORS " << arrayName.substr(0, arrayName.size() - 2) <<
 				" double" << endl;
 				
 				double vector3[3];
