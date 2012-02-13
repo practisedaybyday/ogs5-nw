@@ -9,11 +9,14 @@
 class QString;
 
 extern bool g_writeRef;
+extern bool g_writeOutput;
 
 void compareToReference(QString string, QString refFile);
 
 QString getTestdataInputDir();
 
 void writeReferenceFile(QString string, QString filePath);
+
+void writeOutputFile(QString string, QString filePath);
 
 #endif // TESTHELPERFUNCTIONS_H
