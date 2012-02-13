@@ -37,7 +37,7 @@ public:
 	void setFormat(std::ios_base::fmtflags flags);
 
 protected:
-	/// @brief Writes the object to the given stringstream.
+	/// @brief Writes the object to the given stream.
 	/// This method must be implemented by a subclass.
 	virtual void write(std::ostream& stream) = 0;
 	

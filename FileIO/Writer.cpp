@@ -15,7 +15,6 @@ namespace FileIO
 
 Writer::Writer()
 {
-	
 }
 
 std::string Writer::writeToString()
