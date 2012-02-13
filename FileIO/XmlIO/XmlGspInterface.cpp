@@ -77,7 +77,8 @@ int XmlGspInterface::readFile(const QString &fileName)
 		{
 			std::string msh_name = path.toStdString() +
 			                       fileList.at(i).toElement().text().toStdString();
-			MeshLib::CFEMesh* msh = FileIO::OGSMeshIO::loadMeshFromFile(msh_name);
+			FileIO::OGSMeshIO meshIO;
+			MeshLib::CFEMesh* msh = meshIO.loadMeshFromFile(msh_name);
 			QFileInfo fi(QString::fromStdString(msh_name));
 			std::string name = fi.fileName().toStdString();
 			_project->addMesh(msh, name);
@@ -141,15 +142,9 @@ int XmlGspInterface::writeFile(const QString &fileName, const QString &tmp) cons
 	{
 		// write mesh file
 		QString fileName(path + QString::fromStdString(it->first));
-		std::ofstream out (fileName.toStdString().c_str(), std::fstream::out);
-		if (out.is_open())
-		{
-			FileIO::OGSMeshIO::write (it->second, out);
-			out.close();
-		}
-		else
-			std::cout << "MshTabWidget::saveMeshFile() - Could not create file..." <<
-			std::endl;
+		FileIO::OGSMeshIO meshIO;
+		meshIO.setMesh(it->second);
+		meshIO.writeToFile(fileName.toStdString());
 
 		// write entry in project file
 		QDomElement mshTag = doc.createElement("msh");
