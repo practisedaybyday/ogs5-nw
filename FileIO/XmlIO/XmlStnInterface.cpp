@@ -153,7 +153,7 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 void XmlStnInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationBorehole* borehole )
 {
 	//borehole->addSoilLayer((*borehole)[0], (*borehole)[1], (*borehole)[2], "");
-	double depth_check(-9999.0);
+	double depth_check((*borehole)[2]);
 	QDomElement horizon = stratRoot.firstChildElement();
 	while (!horizon.isNull())
 	{

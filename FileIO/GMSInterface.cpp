@@ -68,7 +68,7 @@ int GMSInterface::readBoreholesFromGMS(std::vector<GEOLIB::Point*>* boreholes,
 				(*pnt)[2] = strtod((++it)->c_str(), 0);
 				sName = (*(++it));
 				newBorehole = GEOLIB::StationBorehole::createStation(cName, (*pnt)[0], (*pnt)[1], (*pnt)[2], 0);
-				depth = -9999.0;
+				depth = (*pnt)[2];
 			}
 		}
 		else
