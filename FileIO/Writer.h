@@ -30,9 +30,6 @@ public:
 	/// @brief Writes the object to the given file.
 	void writeToFile(std::string filename);
 
-	/// @brief Writes the object to the given stream.
-	void writeToStream(std::ostream& stream);
-
 	/// @brief Sets the decimal precision.
 	void setPrecision(unsigned int precision);
 
