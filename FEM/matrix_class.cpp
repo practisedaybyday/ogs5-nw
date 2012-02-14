@@ -1742,7 +1742,7 @@ void CSparseMatrix::Diagonize(const long idiag, const double b_given, double* b)
 {
 	//
 	double vdiag = 0.;
-	long i, j, k, ii, jj, j0;
+	long j, k, ii, jj, j0;
 	long id = idiag % rows;
 	ii = idiag / rows;
 
@@ -1761,6 +1761,7 @@ void CSparseMatrix::Diagonize(const long idiag, const double b_given, double* b)
 				entry[(ii * DOF + jj) * size_entry_column + k] = 0.;
 			}
 
+#ifdef colDEBUG
 		/// Clean column id
 		for (i = 0; i < rows; i++)
 		{
@@ -1782,10 +1783,11 @@ void CSparseMatrix::Diagonize(const long idiag, const double b_given, double* b)
 				// Room for symmetry case
 			}
 		}
+#endif
 	}
 	else if(storage_type == JDS)
 	{
-		long i0, row_in_parse_table, counter;
+		long row_in_parse_table, counter;
 
 		// Row is zero
 		row_in_parse_table = row_index_mapping_o2n[id];
@@ -1810,6 +1812,7 @@ void CSparseMatrix::Diagonize(const long idiag, const double b_given, double* b)
 			else
 				break;
 		}
+#ifdef colDEBUG
 		//
 		counter = 0;
 		for (k = 0; k < max_columns; k++)
@@ -1837,6 +1840,7 @@ void CSparseMatrix::Diagonize(const long idiag, const double b_given, double* b)
 				//
 				counter++;
 			}
+#endif
 	}
 	b[idiag] = vdiag * b_given;
 }
