@@ -106,6 +106,10 @@ IF (Shapelib_FOUND)
 	TARGET_LINK_LIBRARIES( FileIO ${Shapelib_LIBRARIES} )
 ENDIF (Shapelib_FOUND)
 
+IF(VTK_FOUND)
+	TARGET_LINK_LIBRARIES( FileIO vtkCommon )
+ENDIF()
+
 IF(OGS_PACKAGING)
 	# Install xml schema files
 	FILE (GLOB XML_SCHEMA_FILES . "*.xs?")
