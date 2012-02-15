@@ -714,21 +714,23 @@ short REACT_GEM::Init_RUN()
         }
     }
 
-    //if (!m_flow_pcs->GetRestartFlag() >=2) {
     // now we do the calculation!
     // for GEM_REACT we also need internal information on porosity!....
 
     if ( ( m_flow_pcs->GetRestartFlag() >=2 ) )
     {
         if ( !ReadReloadGem() ) abort();
+            // Convert from concentration
+            REACT_GEM::ConcentrationToMass ( in,1 ); // I believe this is save for MPI
+
     }
     else
     {
+        GetInitialReactInfoFromMassTransport ( 1 ); //get the initial values from MD - last time step!
         cout << "Attentione GEMS users: Initial kinetics calculated without restart! This probably kills kinetics, as phases in m_xDC are not yet properly initialized!" << endl;
         cout << "No upper or lower constrains set during equilibration!...If your setup requires constrains, please contact georg.kosakowski@psi.ch" << endl;
     }
 
-    GetInitialReactInfoFromMassTransport ( 1 ); //get the initial values from MD - last time step!
 
 #ifdef USE_MPI_GEMS
     // MPI initialization.
@@ -817,15 +819,13 @@ short REACT_GEM::Init_RUN()
         // m_Node->na->GEM_print_ipm ( "ipm_for_debug.txt" );
         // scale data so that second pass gives the normalized volume of 1m^3
 
- //       if ( ! ( m_flow_pcs->GetRestartFlag() >=2 ) ) // we do not need this for complete restart, it might even kill convergence for kinetically controlled runs
- //       {
-
-
+	if ( ! ( m_flow_pcs->GetRestartFlag() >=2 ) ) // we do not need this for complete restart
+	  {
             for ( j=0;j<nIC;j++ )
             {
                 m_bIC[in*nIC+j]/= m_Vs[in]; //This is then for b vector
             }
-
+	
             //Get data
             REACT_GEM::SetReactInfoBackGEM ( in );// this is necessary, otherwise the correct data is not available
             // m_Node->na->GEM_write_dbr ( "dbr_for_crash_node0.txt" );
@@ -876,9 +876,9 @@ short REACT_GEM::Init_RUN()
                 }
             }                                     // end loop if initial gems run fails
 
-            REACT_GEM::GetReactInfoFromGEM ( in );// this we need also for restart runs
+            REACT_GEM::GetReactInfoFromGEM ( in );
 
- //       }
+        } // if restart runs finished
 
         // calculate the chemical porosity
         if ( m_flow_pcs->GetRestartFlag() <2 ) REACT_GEM::CalcPorosity ( in ); //during init it should be always done, except for restart !!!
