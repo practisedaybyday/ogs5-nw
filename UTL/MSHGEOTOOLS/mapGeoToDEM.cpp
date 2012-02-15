@@ -7,7 +7,7 @@
 #include "GEOObjects.h"
 #include "FileFinder.h"
 #include "VtkRaster.h"
-#include "XmlIO\XmlGmlInterface.h"
+#include "XmlIO/XmlGmlInterface.h"
 
 #include <QApplication>
 
