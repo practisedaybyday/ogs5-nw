@@ -1744,23 +1744,28 @@ void CSparseMatrix::Diagonize(const long idiag, const double b_given, double* b)
 	double vdiag = 0.;
 	long j, k, ii, jj, j0;
 	long id = idiag % rows;
+
+
 	ii = idiag / rows;
 
 	if(storage_type == CRS)
 	{
+        const long row_end = num_column_entries[id + 1];
 		/// Diagonal entry and the row where the diagonal entry exists
 		j = diag_entry[id];
 		vdiag = entry[(ii * DOF + ii) * size_entry_column + j];
 		/// Row where the diagonal entry exists
 		for(jj = 0; jj < DOF; jj++)
-			for(k = num_column_entries[id]; k < num_column_entries[id + 1]; k++)
+		{ 
+			const long ij = (ii * DOF + jj) * size_entry_column;
+			for(k = num_column_entries[id]; k < row_end; k++)
 			{
 				j0 = entry_column[k];
 				if(id == j0 && jj == ii) // Diagonal entry
 					continue;
-				entry[(ii * DOF + jj) * size_entry_column + k] = 0.;
+				entry[ij + k] = 0.;
 			}
-
+		}
 #ifdef colDEBUG
 		/// Clean column id
 		for (i = 0; i < rows; i++)
@@ -1787,6 +1792,7 @@ void CSparseMatrix::Diagonize(const long idiag, const double b_given, double* b)
 	}
 	else if(storage_type == JDS)
 	{
+        const long kk = ii * DOF; 
 		long row_in_parse_table, counter;
 
 		// Row is zero
@@ -1800,12 +1806,13 @@ void CSparseMatrix::Diagonize(const long idiag, const double b_given, double* b)
 				for(jj = 0; jj < DOF; jj++)
 				{
 					if(id == j0 && jj == ii)
-						vdiag =
-						        entry[(ii * DOF +
-						               jj) * size_entry_column + counter];
+					{
+						vdiag = entry[(kk + jj) * size_entry_column + counter];
+					}
 					else
-						entry[(ii * DOF +
-						       jj) * size_entry_column + counter] = 0.;
+					{
+						entry[(kk + jj) * size_entry_column + counter] = 0.;
+					} 
 				}
 				counter += num_column_entries[k];
 			}
