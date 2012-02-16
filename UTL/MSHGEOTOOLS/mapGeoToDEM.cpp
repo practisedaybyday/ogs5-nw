@@ -48,7 +48,7 @@ int main (int argc, char* argv[])
 		return -1;
 	}
 
-	if (geo_name.substr(geo_name.length()-4, 4).compare(".asc") != 0)
+	if (dem_name.substr(dem_name.length()-4, 4).compare(".asc") != 0)
 	{
 		std::cout << "Error: Parameter 2 should be an asc-file" << std::endl;
 		std::cout << "Usage: " << argv[0] << " <geo-file.gml> <DEM-file.asc>" << std::endl;
