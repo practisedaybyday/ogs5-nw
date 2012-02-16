@@ -96,9 +96,9 @@ SurfaceGrid::SurfaceGrid(Surface const*const sfc) :
 	for (size_t l(0); l<n_triangles; l++) {
 		Triangle const*const tri((*sfc)[l]);
 		Point const& pnt (*(tri->getPoint(0)));
-		i_min = i_max = (pnt[0]-_min_pnt[0]) * _inverse_step_sizes[0];
-		j_min = j_max = (pnt[1]-_min_pnt[1]) * _inverse_step_sizes[1];
-		k_min = k_max = (pnt[2]-_min_pnt[2]) * _inverse_step_sizes[2];
+		i_min = i_max = static_cast<size_t>((pnt[0]-_min_pnt[0]) * _inverse_step_sizes[0]);
+		j_min = j_max = static_cast<size_t>((pnt[1]-_min_pnt[1]) * _inverse_step_sizes[1]);
+		k_min = k_max = static_cast<size_t>((pnt[2]-_min_pnt[2]) * _inverse_step_sizes[2]);
 
 		if (i_min >= _n_steps[0] || j_min >= _n_steps[1] || k_min >= _n_steps[2]) {
 			std::cout << "error computing indices " << std::endl;
@@ -106,9 +106,9 @@ SurfaceGrid::SurfaceGrid(Surface const*const sfc) :
 
 		for (size_t m(1); m<3; m++) {
 			Point const& pnt (*(tri->getPoint(m)));
-			const size_t i ((pnt[0]-_min_pnt[0]) * _inverse_step_sizes[0]);
-			const size_t j ((pnt[1]-_min_pnt[1]) * _inverse_step_sizes[1]);
-			const size_t k ((pnt[2]-_min_pnt[2]) * _inverse_step_sizes[2]);
+			const size_t i (static_cast<size_t>((pnt[0]-_min_pnt[0]) * _inverse_step_sizes[0]));
+			const size_t j (static_cast<size_t>((pnt[1]-_min_pnt[1]) * _inverse_step_sizes[1]));
+			const size_t k (static_cast<size_t>((pnt[2]-_min_pnt[2]) * _inverse_step_sizes[2]));
 
 			if (i >= _n_steps[0] || j >= _n_steps[1] || k >= _n_steps[2]) {
 				std::cout << "error computing indices " << std::endl;
@@ -134,46 +134,12 @@ SurfaceGrid::SurfaceGrid(Surface const*const sfc) :
 
 bool SurfaceGrid::isPntInSurface(const double* pnt) const
 {
-	const double id ((pnt[0]-_min_pnt[0]) * _inverse_step_sizes[0]);
-	const double jd ((pnt[1]-_min_pnt[1]) * _inverse_step_sizes[1]);
-	const double kd ((pnt[2]-_min_pnt[2]) * _inverse_step_sizes[2]);
-
-	size_t i(static_cast<size_t>(id));
-	size_t j(static_cast<size_t>(jd));
-	size_t k(static_cast<size_t>(kd));
+	const size_t i (static_cast<size_t>((pnt[0]-_min_pnt[0]) * _inverse_step_sizes[0]));
+	const size_t j (static_cast<size_t>((pnt[1]-_min_pnt[1]) * _inverse_step_sizes[1]));
+	const size_t k (static_cast<size_t>((pnt[2]-_min_pnt[2]) * _inverse_step_sizes[2]));
 
 	if (i >= _n_steps[0] || j >= _n_steps[1] || k >= _n_steps[2]) {
-		if (-1 < id && id <= 0) {
-			i = 0;
-		} else {
-			if (_n_steps[0]-1 <= id && id < _n_steps[0]) {
-				i = _n_steps[0]-1;
-			}
-		}
-		if (i >= _n_steps[0]) return false;
-
-		if (-1 < jd && jd <= 0) {
-			j = 0;
-		} else {
-			if (_n_steps[1]-1 <= jd && jd < _n_steps[1]) {
-				j = _n_steps[1]-1;
-			}
-		}
-		if (j >= _n_steps[1]) return false;
-
-		if (-1 < kd && kd <= 0) {
-			k = 0;
-		} else {
-			if (_n_steps[2]-1 <= kd && kd < _n_steps[2]) {
-				k = _n_steps[2]-1;
-			}
-		}
-		if (k >= _n_steps[2]) return false;
-
-		std::cout << "pnt: " << pnt[0] << " " << pnt[1] << " " << pnt[2] << ", bbx: "
-			<< _min_pnt[0] << " " << _min_pnt[1] << " " << _min_pnt[2] << " x "
-			<< _max_pnt[0] << " " << _max_pnt[1] << " " << _max_pnt[2] << std::endl;
-//		return false;
+		return false;
 	}
 
 
