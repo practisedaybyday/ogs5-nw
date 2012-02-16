@@ -838,7 +838,7 @@ void CFEMesh::ConstructGrid()
 	clock_t start(clock());
 	_mesh_grid = new MeshLib::MeshGrid(*this);
 	clock_t end(clock());
-	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s" << std::endl;
+	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s -- " << std::flush;
 
 	std::cout << " done." << std::endl;
 }
@@ -1542,14 +1542,58 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
                           std::vector<size_t>& msh_nod_vector) const
 {
 	msh_nod_vector.clear();
+	clock_t begin, end;
 
+	std::cout << "[CFEMesh::GetNODOnSFC] init SurfaceGrid ... " << std::flush;
+	begin = clock();
+	const_cast<GEOLIB::Surface*>(sfc)->initSurfaceGrid();
+	end = clock();
+	std::cout << "done, took " << (end-begin)/(double)(CLOCKS_PER_SEC) << " s" << std::endl;
+
+	std::cout << "[CFEMesh::GetNODOnSFC] search with new algorithm ... " << std::flush;
+	begin = clock();
 	const size_t nodes_in_usage((size_t) NodesInUsage());
 	for (size_t j(0); j < nodes_in_usage; j++)
-		if (sfc->isPntInBV((nod_vector[j])->getData(), _min_edge_length / 2.0))
-			if (sfc->isPntInSfc((nod_vector[j])->getData()))
-				msh_nod_vector.push_back(
-				        nod_vector[j]->GetIndex());
+		if (sfc->isPntInBV((nod_vector[j])->getData(), _min_edge_length / 2.0)) {
+			std::cout << nod_vector[j]->getData()[0] << " " << nod_vector[j]->getData()[1] << " " << nod_vector[j]->getData()[2] << std::endl;
+			if (sfc->isPntInSfc((nod_vector[j])->getData())) {
+				msh_nod_vector.push_back(nod_vector[j]->GetIndex());
+			}
+		}
+	end = clock();
+	std::cout << "done, took " << (end-begin)/(double)(CLOCKS_PER_SEC) << " s" << std::endl;
 
+//
+//	std::cout << "[CFEMesh::GetNODOnSFC] search with new algorithm ... " << std::flush;
+//	begin = clock();
+//	std::vector<size_t> mesh_node_vector;
+//	size_t n_node_vectors(0);
+//	std::vector<MeshLib::CNode*>* * node_vectors(NULL);
+//	_mesh_grid->getNodeVectorsInAxisAlignedBoundingBox(sfc->getAABB().getMinPoint(),
+//					sfc->getAABB().getMaxPoint(), n_node_vectors, node_vectors);
+//
+//	for (size_t k(0); k<n_node_vectors; k++) {
+//		std::vector<MeshLib::CNode*> const& k_th_node_vector(*node_vectors[k]);
+////		const size_t n_nodes_k_th_vector(k_th_node_vector.size());
+//		for (size_t j(0); j < n_nodes_k_th_vector; j++) {
+//			if (sfc->isPntInBV((k_th_node_vector[j])->getData(), _min_edge_length / 2.0)) {
+//				if (sfc->isPntInSfc((k_th_node_vector[j])->getData())) {
+//					mesh_node_vector.push_back(k_th_node_vector[j]->GetIndex());
+//				}
+//			}
+//		}
+//	}
+//	end = clock();
+//	std::cout << "done, took " << (end-begin)/(double)(CLOCKS_PER_SEC) << " s" << std::endl;
+
+//	if (msh_nod_vector.size() != mesh_node_vector.size()) {
+//		std::cout << "[CFEMesh::GetNODOnSFC] sizes do not match" << std::endl;
+//		const size_t n(std::min(static_cast<size_t>(50), std::min(msh_nod_vector.size(), mesh_node_vector.size())));
+//		for (size_t k(0); k<n; k++)
+//			std::cout << msh_nod_vector[k] << "\t" << mesh_node_vector[k] << std::endl;
+//	}
+//
+//	delete [] node_vectors;
 }
 
 /**************************************************************************
@@ -1898,7 +1942,6 @@ void CFEMesh::GetNODOnSFC_TIN(Surface* m_sfc, std::vector<long>&msh_nod_vector)
 	//----------------------------------------------------------------------
 
 	CFEMesh* m_msh_aux(new CFEMesh(_geo_obj, _geo_name));
-	CNode* node = NULL;
 
 	tolerance = m_sfc->epsilon; //NW
 	// NW commented out below. Minimum edge length doesn't work for some cases
@@ -1923,23 +1966,12 @@ void CFEMesh::GetNODOnSFC_TIN(Surface* m_sfc, std::vector<long>&msh_nod_vector)
 	}
 
 	//Loop over all mesh nodes
-	for (size_t i = 0; i < static_cast<size_t> (NodesInUsage()); i++) //NW cannot use nod_vector.size() because of higher order elements
-	{
+	const size_t n_nodes(static_cast<size_t> (NodesInUsage()));
+	for (size_t i = 0; i < n_nodes; i++) {
 		double const* const pnt(nod_vector[i]->getData());
-		//         checkpoint[0] = nod_vector[i]->X();
-		//         checkpoint[1] = nod_vector[i]->Y();
-		//         checkpoint[2] = nod_vector[i]->Z();
-		node = new CNode(i, pnt);
-		if ((pnt[0] >= sfc_min[0] && pnt[0] <= sfc_max[0]) && (pnt[1]
-		                                                       >= sfc_min[1] && pnt[1] <=
-		                                                       sfc_max[1]) &&
-		    (pnt[2] >= sfc_min[2]
-		     &&
-		     pnt[2] <=
-		     sfc_max[2]))
-			m_msh_aux->nod_vector.push_back(node);
-		else
-			delete node;
+		if ((pnt[0] >= sfc_min[0] && pnt[0] <= sfc_max[0]) && (pnt[1] >= sfc_min[1] && pnt[1]
+						<= sfc_max[1]) && (pnt[2] >= sfc_min[2] && pnt[2] <= sfc_max[2]))
+			m_msh_aux->nod_vector.push_back(new CNode(i, pnt));
 	}
 
 	//----------------------------------------------------------------------
@@ -1961,27 +1993,11 @@ void CFEMesh::GetNODOnSFC_TIN(Surface* m_sfc, std::vector<long>&msh_nod_vector)
 		for (size_t i = 0; i < m_msh_aux->nod_vector.size(); i++)
 		{
 			double const* const pnt_i(m_msh_aux->nod_vector[i]->getData());
-			//            checkpoint[0] = m_msh_aux->nod_vector[i]->X();
-			//            checkpoint[1] = m_msh_aux->nod_vector[i]->Y();
-			//            checkpoint[2] = m_msh_aux->nod_vector[i]->Z();
 			dist = MCalcDistancePointToPlane(pnt_i, tri_point1, tri_point2,
 			                                 tri_point3);
-			//            if (k == 0)
-			//               m_msh_aux->nod_vector[i]->epsilon = dist;
-			/*
-			   else
-			   {
-			   if (m_msh_aux->nod_vector[i]->epsilon > dist)
-			   m_msh_aux->nod_vector[i]->epsilon = dist;
-			   }
-			 */
 			if (dist <= tolerance && dist >= -tolerance)
 				AngleSumPointInsideTriangle(checkpoint, tri_point1, tri_point2,
 				                            tri_point3, min_mesh_dist);
-				/* KR
-				   if (angle_sum > 359)
-				   m_msh_aux->nod_vector[i]->selected = 1;
-				 */
 		}
 	}
 

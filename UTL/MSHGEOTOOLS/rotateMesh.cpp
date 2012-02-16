@@ -73,8 +73,51 @@ int main (int argc, char* argv[])
 	MathLib::getNewellPlane(pnts, plane_normal, d);
 	MathLib::rotatePointsToXZ(plane_normal, pnts);
 
-	for (size_t k(0); k<n_nodes; k++) {
-		nodes[k]->SetCoordinates(pnts[k]->getData());
+	double mean_val_y((*pnts[0])[1]);
+	double min_val_y((*pnts[0])[1]), max_val_y((*pnts[0])[1]);
+	for (size_t k(1); k<n_nodes; k++) {
+		mean_val_y += (*pnts[k])[1];
+		if ((*pnts[k])[1] < min_val_y) min_val_y = (*pnts[k])[1];
+		if (max_val_y < (*pnts[k])[1]) max_val_y = (*pnts[k])[1];
+	}
+	mean_val_y /= n_nodes;
+
+	double varianz (MathLib::fastpow(mean_val_y-(*pnts[0])[1],2));
+	for (size_t k(1); k<n_nodes; k++) {
+		varianz += MathLib::fastpow(mean_val_y-(*pnts[k])[1],2);
+	}
+	std::cout << "statistical data of y coordinate:" << std::endl;
+	std::cout << "\tmean value: " << mean_val_y << std::endl;
+	std::cout << "\tminimal value: " << min_val_y << std::endl;
+	std::cout << "\tmaximal value: " << max_val_y << std::endl;
+	std::cout << "\tvarianz: " << varianz << std::endl;
+	std::cout << "\tstandard deviation: " << sqrt(varianz) << std::endl << std::endl;
+
+	size_t answer(0);
+	while (answer < 1 || answer > 3) {
+		std::cout << "Would should I do? Please give the number of the alternative!" << std::endl;
+		std::cout << "\t1 Leave the y coordinate for every mesh node untouched." << std::endl;
+		std::cout << "\t2 Choose the mean value as y coordinate for every mesh node." << std::endl;
+		std::cout << "\t3 Set y = 0 for every mesh node." << std::endl;
+		std::cin >> answer;
+	}
+
+	if (answer == 1) {
+		for (size_t k(0); k<n_nodes; k++) {
+			nodes[k]->SetCoordinates(pnts[k]->getData());
+		}
+	} else {
+		if (answer == 2) {
+			for (size_t k(0); k<n_nodes; k++) {
+				(*pnts[k])[1] = mean_val_y;
+				nodes[k]->SetCoordinates(pnts[k]->getData());
+			}
+		} else {
+			for (size_t k(0); k<n_nodes; k++) {
+				(*pnts[k])[1] = 0.0;
+				nodes[k]->SetCoordinates(pnts[k]->getData());
+			}
+		}
 	}
 
 	std::ofstream mesh_out;

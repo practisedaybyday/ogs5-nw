@@ -19,11 +19,12 @@
 namespace GEOLIB
 {
 Surface::Surface (const std::vector<Point*> &pnt_vec) :
-	GeoObject(), _sfc_pnts(pnt_vec), _bv()
+	GeoObject(), _sfc_pnts(pnt_vec), _bv(), _sfc_grid(NULL)
 {}
 
 Surface::~Surface ()
 {
+	delete _sfc_grid;
 	for (size_t k(0); k < _sfc_triangles.size(); k++)
 		delete _sfc_triangles[k];
 }
@@ -35,6 +36,8 @@ void Surface::addTriangle (size_t pnt_a, size_t pnt_b, size_t pnt_c)
 	_bv.update (*_sfc_pnts[pnt_a]);
 	_bv.update (*_sfc_pnts[pnt_b]);
 	_bv.update (*_sfc_pnts[pnt_c]);
+	delete _sfc_grid;
+	_sfc_grid=NULL;
 }
 
 Surface* Surface::createSurface(const Polyline &ply)
@@ -102,13 +105,47 @@ bool Surface::isPntInBV (const double* pnt, double eps) const
 	return _bv.containsPoint (pnt, eps);
 }
 
+void Surface::initSurfaceGrid()
+{
+	if (_sfc_grid == NULL) {
+		_sfc_grid = new SurfaceGrid(this);
+	}
+}
+
 bool Surface::isPntInSfc (const double* pnt) const
 {
-	bool nfound (true);
-	for (size_t k(0); k < _sfc_triangles.size() && nfound; k++)
-		if (_sfc_triangles[k]->containsPoint (pnt))
-			nfound = false;
+	return _sfc_grid->isPntInSurface(pnt);
 
-	return !nfound;
+//	bool nfound (true);
+//	size_t idx;
+//	for (size_t k(0); k < _sfc_triangles.size() && nfound; k++) {
+//		if (_sfc_triangles[k]->containsPoint (pnt)) {
+//			nfound = false;
+//			idx = k;
+//		}
+//	}
+//
+//	if (_valid_sfc_grid) {
+//		bool sfc_grid_found (_sfc_grid->isPntInSurface(pnt));
+//
+//		if (sfc_grid_found != !nfound) {
+//
+//			std::cout << "[old] found point " << pnt[0] << " " << pnt[1] << " " << pnt[2]
+//				<< " in triangle " << idx
+//				<< "( [" << *(_sfc_triangles[idx]->getPoint(0)) << "]  ["
+//				<< *(_sfc_triangles[idx]->getPoint(1)) << "]  ["
+//				<< *(_sfc_triangles[idx]->getPoint(2)) << "]" << std::endl;
+//
+//			_sfc_grid->isPntInSurface(pnt);
+//
+//			std::cout << "found point " << pnt[0] << " " << pnt[1] << " " << pnt[2] << std::flush;
+//			if (sfc_grid_found)
+//				std::cout << " with new and not with old algorithm" << std::endl;
+//			if (!nfound)
+//				std::cout << " with old and not with new algorithm" << std::endl;
+//		}
+//	}
+//
+//	return !nfound;
 }
 } // end namespace
