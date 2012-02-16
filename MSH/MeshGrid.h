@@ -40,7 +40,7 @@ public:
 	std::vector<MeshLib::CNode*> const& getNodesInGrid(double const*const pnt) const;
 
 	void getNodeVectorsInAxisAlignedBoundingBox(GEOLIB::Point const& ll, GEOLIB::Point const& ur,
-					size_t &n_node_vectors, std::vector<MeshLib::CNode*> * &node_vectors);
+					size_t &n_node_vectors, std::vector<MeshLib::CNode*>* * & node_vectors);
 
 private:
 	bool calcNearestNodeInGrid(double const* const pnt, size_t const* const coords,

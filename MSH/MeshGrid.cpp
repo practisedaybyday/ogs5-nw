@@ -98,7 +98,6 @@ MeshGrid::MeshGrid(MeshLib::CFEMesh const& mesh) :
 	for (size_t k(0); k<n_plane*_n_steps[2]; k++)
 		nodes_cnt += _grid_quad_to_node_map[k].size();
 
-	std::cout << "mesh has " << n_nodes << " nodes, grid has " << nodes_cnt << " nodes" << std::endl;
 	assert(n_nodes==nodes_cnt);
 #endif
 }
@@ -195,12 +194,37 @@ bool MeshGrid::calcNearestNodeInGrid(double const* const pnt, size_t const* cons
 }
 
 void MeshGrid::getNodeVectorsInAxisAlignedBoundingBox(GEOLIB::Point const& ll,
-				GEOLIB::Point const& ur, size_t &n_node_vectors, std::vector<MeshLib::CNode*> * & node_vectors)
+				GEOLIB::Point const& ur, size_t &n_node_vectors, std::vector<MeshLib::CNode*>* * &node_vectors)
 {
-	n_node_vectors = _n_steps[0]*_n_steps[1]*_n_steps[2];
-	node_vectors = new std::vector<MeshLib::CNode*>[n_node_vectors];
-	for (size_t k(0); k<n_node_vectors; k++)
-		node_vectors[k] = _grid_quad_to_node_map[k];
+	size_t start_coords[3];
+	size_t end_coords[3];
+
+	getGridCoords(ll.getData(), start_coords);
+	getGridCoords(ur.getData(), end_coords);
+
+	for (size_t k(0); k<3; k++) {
+		if (start_coords[k] > end_coords[k]) {
+			BASELIB::swap(start_coords[k], end_coords[k]);
+		}
+	}
+
+	n_node_vectors = 1;
+	for (size_t k(0); k<3; k++) {
+		if (end_coords[k]-start_coords[k] > 0) {
+			n_node_vectors *= (end_coords[k] - start_coords[k]);
+		}
+	}
+
+	node_vectors = new std::vector<MeshLib::CNode*>* [n_node_vectors];
+	size_t idx(0);
+	for (size_t i(start_coords[0]); i<end_coords[0]; i++) {
+		for (size_t j(start_coords[1]); j<end_coords[1]; j++) {
+			for (size_t k(start_coords[2]); k<end_coords[2]; k++) {
+				const size_t grid_idx (i + j * _n_steps[0] + k * _n_steps[0] * _n_steps[1]);
+				node_vectors[idx++] = &_grid_quad_to_node_map[grid_idx];
+			}
+		}
+	}
 }
 
 } // end namespace MeshLib
