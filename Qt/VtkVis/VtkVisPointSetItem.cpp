@@ -6,6 +6,7 @@
 // ** INCLUDES **
 #include "VtkAlgorithmProperties.h"
 #include "VtkVisPointSetItem.h"
+#include "VtkCompositeFilter.h"
 
 #include <limits>
 
@@ -19,6 +20,8 @@
 #include <vtkSmartPointer.h>
 #include <vtkTransform.h>
 #include <vtkTransformFilter.h>
+#include <vtkProperty.h>
+#include <vtkLookupTable.h>
 
 #include <QObject>
 #include <QRegExp>
@@ -38,7 +41,7 @@ VtkVisPointSetItem::VtkVisPointSetItem(
         vtkAlgorithm* algorithm, TreeItem* parentItem,
         const QList<QVariant> data /*= QList<QVariant>()*/)
 	: VtkVisPipelineItem(algorithm, parentItem, data), _mapper(NULL),
-	_transformFilter(NULL), _activeAttribute("")
+	_transformFilter(NULL)
 {
 	VtkVisPipelineItem* visParentItem = dynamic_cast<VtkVisPipelineItem*>(parentItem);
 	if (parentItem->parentItem())
@@ -61,7 +64,7 @@ VtkVisPointSetItem::VtkVisPointSetItem(
         VtkCompositeFilter* compositeFilter, TreeItem* parentItem,
         const QList<QVariant> data /*= QList<QVariant>()*/)
 	: VtkVisPipelineItem(compositeFilter, parentItem, data), _mapper(NULL),
-	_transformFilter(NULL), _activeAttribute("")
+	_transformFilter(NULL)
 {
 }
 
@@ -73,7 +76,6 @@ VtkVisPointSetItem::~VtkVisPointSetItem()
 
 void VtkVisPointSetItem::Initialize(vtkRenderer* renderer)
 {
-	_activeAttribute = "";
 	_transformFilter = vtkTransformFilter::New();
 	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 	transform->Identity();
@@ -91,30 +93,36 @@ void VtkVisPointSetItem::Initialize(vtkRenderer* renderer)
 	static_cast<vtkActor*>(_actor)->SetMapper(_mapper);
 	_renderer->AddActor(_actor);
 
-	// Set pre-set properties
+	// Determine the right pre-set properties
+	// Order is: _algorithm, _compositeFilter, create a new one with props copied from parent
 	VtkAlgorithmProperties* vtkProps = dynamic_cast<VtkAlgorithmProperties*>(_algorithm);
 	if (vtkProps)
 		setVtkProperties(vtkProps);
-
-	// Copy properties from parent
 	else
 	{
-		VtkVisPipelineItem* parentItem = dynamic_cast<VtkVisPipelineItem*>(this->parentItem());
-		while (parentItem)
+		vtkProps = dynamic_cast<VtkAlgorithmProperties*>(_compositeFilter);
+	
+		if (vtkProps)
+			setVtkProperties(vtkProps);
+		// Copy properties from parent
+		else
 		{
-			VtkAlgorithmProperties* parentProps =
-			        dynamic_cast<VtkAlgorithmProperties*>(parentItem->algorithm());
-			if (parentProps)
+			VtkVisPipelineItem* parentItem = dynamic_cast<VtkVisPipelineItem*>(this->parentItem());
+			while (parentItem)
 			{
-				VtkAlgorithmProperties* newProps = new VtkAlgorithmProperties();
-				newProps->SetScalarVisibility(parentProps->GetScalarVisibility());
-				newProps->SetTexture(parentProps->GetTexture());
-				setVtkProperties(newProps);
-				vtkProps = newProps;
-				parentItem = NULL;
+				VtkAlgorithmProperties* parentProps =
+						dynamic_cast<VtkAlgorithmProperties*>(parentItem->algorithm());
+				if (parentProps)
+				{
+					vtkProps = new VtkAlgorithmProperties(); // TODO memory leak?
+					vtkProps->SetScalarVisibility(parentProps->GetScalarVisibility());
+					vtkProps->SetTexture(parentProps->GetTexture());
+					setVtkProperties(vtkProps);
+					parentItem = NULL;
+				}
+				else
+					parentItem = dynamic_cast<VtkVisPipelineItem*>(parentItem->parentItem());
 			}
-			else
-				parentItem = dynamic_cast<VtkVisPipelineItem*>(parentItem->parentItem());
 		}
 	}
 
@@ -148,6 +156,8 @@ void VtkVisPointSetItem::SetScalarVisibility( bool on )
 
 void VtkVisPointSetItem::setVtkProperties(VtkAlgorithmProperties* vtkProps)
 {
+	_vtkProps = vtkProps;
+
 	QObject::connect(vtkProps, SIGNAL(ScalarVisibilityChanged(bool)),
 	                 _mapper, SLOT(SetScalarVisibility(bool)));
 
@@ -216,7 +226,7 @@ void VtkVisPointSetItem::SetActiveAttribute( const QString& name )
 		onPointData = false;
 	else if (name.contains("Solid Color"))
 	{
-		_activeAttribute = "Solid Color";
+		_vtkProps->SetActiveAttribute("Solid Color");
 		_mapper->ScalarVisibilityOff();
 		return;
 	}
@@ -242,7 +252,7 @@ void VtkVisPointSetItem::SetActiveAttribute( const QString& name )
 				}
 				else
 				{
-					_activeAttribute = "Solid Color";
+					_vtkProps->SetActiveAttribute("Solid Color");
 					_mapper->ScalarVisibilityOff();
 					return;
 				}
@@ -260,14 +270,14 @@ void VtkVisPointSetItem::SetActiveAttribute( const QString& name )
 				}
 				else
 				{
-					_activeAttribute = "Solid Color";
+					_vtkProps->SetActiveAttribute("Solid Color");
 					_mapper->ScalarVisibilityOff();
 					return;
 				}
 			}
 		}
 
-		_activeAttribute = name;
+		_vtkProps->SetActiveAttribute(name);
 		_mapper->SetScalarRange(dataSet->GetScalarRange());
 		this->setLookupTableForActiveScalar();
 		_mapper->ScalarVisibilityOn();
@@ -296,23 +306,22 @@ bool VtkVisPointSetItem::activeAttributeExists(vtkDataSetAttributes* data, std::
 
 void VtkVisPointSetItem::setLookupTableForActiveScalar()
 {
-	VtkAlgorithmProperties* vtkProps = dynamic_cast<VtkAlgorithmProperties*>(_algorithm);
-	if (vtkProps)
+	if (_vtkProps && this->GetActiveAttribute().length() > 0)
 	{
 		QVtkDataSetMapper* mapper = dynamic_cast<QVtkDataSetMapper*>(_mapper);
 		if (mapper)
 		{
-			if (vtkProps->GetLookupTable(this->GetActiveAttribute()) == NULL) // default color table
+			if (_vtkProps->GetLookupTable(this->GetActiveAttribute()) == NULL) // default color table
 			{
-				vtkLookupTable* lut = vtkLookupTable::New();
-				vtkProps->SetLookUpTable(GetActiveAttribute(), lut);
+				std::cout << "Active att: " << this->GetActiveAttribute().toStdString() << std::endl;
+				vtkLookupTable* lut = vtkLookupTable::New(); // is not a memory leak, gets deleted in VtkAlgorithmProperties
+				_vtkProps->SetLookUpTable(GetActiveAttribute(), lut);
 			}
 			else // specific color table
-				_mapper->SetLookupTable(vtkProps->GetLookupTable(this->GetActiveAttribute()));
+				_mapper->SetLookupTable(_vtkProps->GetLookupTable(this->GetActiveAttribute()));
 
 			//_mapper->SetScalarRange(this->_transformFilter->GetOutput()->GetScalarRange());
 			_mapper->SetScalarRange(vtkDataSet::SafeDownCast(this->_algorithm->GetOutputDataObject(0))->GetScalarRange());
-			//_mapper->Update();  //KR: not necessary?!
 		}
 	}
 }

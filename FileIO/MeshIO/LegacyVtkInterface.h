@@ -38,6 +38,8 @@ protected:
 	void WriteVTKCellData(std::fstream&) const;
 	void WriteVTKDataArrays(std::fstream&) const;
 	void WriteELEVelocity(std::fstream &vtk_file) const;
+    
+    void printScalarArray(std::string arrayName, std::fstream &vtk_file) const;
 
 	// Copied from COutput
 	CRFProcess* GetPCS_ELE(const std::string &var_name) const;

@@ -54,17 +54,7 @@ public:
 			lut->setInterpolationType(VtkColorLookupTable::NONE);
 
 		QDomElement point = docElement.firstChildElement();
-		QDomElement last_point = docElement.lastChildElement();
-
-		double range_start(0), range(1);
-		if (point.hasAttribute("x") && last_point.hasAttribute("x"))
-		{
-			range_start = strtod((point.attribute("x")).toStdString().c_str(),0);
-			range = strtod((last_point.attribute("x")).toStdString().c_str(),0) - range_start;
-		}
-		else return NULL;
-		
-		lut->SetTableRange(range_start, range_start+range);
+		double range[2] = { strtod((point.attribute("x")).toStdString().c_str(),0), strtod((point.attribute("x")).toStdString().c_str(),0) };
 
 		while (!point.isNull())
 		{
@@ -80,11 +70,16 @@ public:
 				char b = static_cast<int>(255 * strtod((point.attribute("b")).toStdString().c_str(),0));
 				char o = static_cast<int>(255 * (point.hasAttribute("o") ? strtod((point.attribute("o")).toStdString().c_str(),0) : 1));
 
+				if (value<range[0]) range[0] = value;
+				if (value>range[1]) range[1] = value;
+
 				unsigned char a[4] = { r, g, b, o };
 				lut->setColor(value, a);
 			}
 			point = point.nextSiblingElement();
 		}
+
+		lut->SetTableRange(range[0], range[1]);
 
 		delete file;
 

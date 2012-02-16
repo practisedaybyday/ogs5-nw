@@ -295,17 +295,13 @@ StationBorehole* StationBorehole::createStation(const std::string &line)
 	{
 		borehole->_name     = fields.front();
 		fields.pop_front();
-		(*borehole)[0]      = strtod((replaceString(",", ".",
-		                                            fields.front())).c_str(), NULL);
+		(*borehole)[0]      = strtod((replaceString(",", ".", fields.front())).c_str(), NULL);
 		fields.pop_front();
-		(*borehole)[1]      = strtod((replaceString(",", ".",
-		                                            fields.front())).c_str(), NULL);
+		(*borehole)[1]      = strtod((replaceString(",", ".", fields.front())).c_str(), NULL);
 		fields.pop_front();
-		(*borehole)[2]      = strtod((replaceString(",", ".",
-		                                            fields.front())).c_str(), NULL);
+		(*borehole)[2]      = strtod((replaceString(",", ".", fields.front())).c_str(), NULL);
 		fields.pop_front();
-		borehole->_depth    = strtod((replaceString(",", ".",
-		                                            fields.front())).c_str(), NULL);
+		borehole->_depth    = strtod((replaceString(",", ".", fields.front())).c_str(), NULL);
 		fields.pop_front();
 		if (fields.empty())
 			borehole->_date = 0;
