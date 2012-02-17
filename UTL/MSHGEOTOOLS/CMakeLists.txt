@@ -76,7 +76,7 @@ IF(QT4_FOUND)
 		${QT_LIBRARIES}
 	)
 
-	#IF(libtiff_FOUND)
+	
 
 		ADD_EXECUTABLE( mapGeoToDEM mapGeoToDEM.cpp )
 		TARGET_LINK_LIBRARIES( mapGeoToDEM
@@ -85,11 +85,11 @@ IF(QT4_FOUND)
 			FEM
 			FileIO
 			VtkVis
-			${libtiff_LIBRARIES}
 		)
+		IF(libgeotiff_FOUND)
+			TARGET_LINK_LIBRARIES( mapGeoToDEM ${libgeotiff_LIBRARIES})
+		ENDIF() # libgeotiff_FOUND
 		SET_TARGET_PROPERTIES(mapGeoToDEM PROPERTIES FOLDER Utilities)
-
-	#ENDIF() #libtiff_FOUND
 
 ENDIF() # QT4_FOUND
 
