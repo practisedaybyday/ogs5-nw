@@ -44,13 +44,6 @@ TARGET_LINK_LIBRARIES( filterMeshNodes
 	MSH
 )
 
-TARGET_LINK_LIBRARIES( rotateMesh
-	GEO
-	MSH
-	MSHGEOTOOLS
-	FileIO
-)
-
 IF(QT4_FOUND)
 
 	ADD_EXECUTABLE( extractSurface mainExtractSurface.cpp ExtractSurface.h ExtractSurface.cpp )
@@ -90,6 +83,14 @@ IF(QT4_FOUND)
 		SET_TARGET_PROPERTIES(mapGeoToDEM PROPERTIES FOLDER Utilities)
 
 	#ENDIF() #libtiff_FOUND
+	TARGET_LINK_LIBRARIES( rotateMesh
+		GEO
+		MSH
+		MSHGEOTOOLS
+		FileIO
+		${QT_LIBRARIES}
+	)	
+
 
 ENDIF() # QT4_FOUND
 
