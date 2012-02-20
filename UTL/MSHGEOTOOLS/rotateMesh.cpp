@@ -21,7 +21,7 @@
 // MSH
 #include "msh_lib.h" // for FEMRead
 
-
+// we need this for using the xml functions of Qt
 #include <QApplication>
 
 int main (int argc, char* argv[])
@@ -29,41 +29,36 @@ int main (int argc, char* argv[])
 	// Creating a non-gui (console) Qt application
 	QApplication app(argc, argv, false);
 
-	if (argc < 9)
-	{
-		std::cout << "Usage: " << argv[0] <<
-		" --mesh-in meshfile --mesh-out mesh-out-file " << std::flush;
-		std::cout << "--geo-in geo-file --geo-out geo-out-file [--upside-down true/false] " << std::endl;
+	if (argc < 9) {
+		std::cout << "Usage: " << argv[0] << " --mesh-in meshfile --mesh-out mesh-out-file "
+						<< std::flush;
+		std::cout << "--geo-in geo-file --geo-out geo-out-file [--upside-down true/false] "
+						<< std::endl;
 		return -1;
 	}
 
 	// *** parsing mesh options from command line
 	// *** parsing mesh in file name
-	std::string tmp (argv[1]);
-	if (tmp.find ("--mesh-in") == std::string::npos)
-	{
+	std::string tmp(argv[1]);
+	if (tmp.find("--mesh-in") == std::string::npos) {
 		std::cout << "could not find switch for reading mesh file name" << std::endl;
 		return -1;
 	}
 	tmp = argv[2];
-	std::string file_base_name (tmp);
-	if (tmp.find (".msh") != std::string::npos)
-		file_base_name = tmp.substr (0, tmp.size() - 4);
-
+	std::string file_base_name(tmp);
+	if (tmp.find(".msh") != std::string::npos) file_base_name = tmp.substr(0, tmp.size() - 4);
 
 	// *** parsing mesh output name
 	tmp = argv[3];
-	if (tmp.find ("--mesh-out") == std::string::npos)
-	{
+	if (tmp.find("--mesh-out") == std::string::npos) {
 		std::cout << "could not find switch for file name for writing the mesh" << std::endl;
 		return -1;
 	}
-	std::string mesh_out_fname (argv[4]);
+	std::string mesh_out_fname(argv[4]);
 
 	// *** parsing geometry options from command line
 	tmp = argv[5];
-	if (tmp.find ("--geo-in") == std::string::npos)
-	{
+	if (tmp.find("--geo-in") == std::string::npos) {
 		std::cout << "could not find switch for reading geometry file name" << std::endl;
 		return -1;
 	}
@@ -71,8 +66,7 @@ int main (int argc, char* argv[])
 
 	// *** read output name
 	tmp = argv[7];
-	if (tmp.find ("--geo-out") == std::string::npos)
-	{
+	if (tmp.find("--geo-out") == std::string::npos) {
 		std::cout << "could not find switch for file name for writing the geometry" << std::endl;
 		return -1;
 	}
@@ -81,8 +75,7 @@ int main (int argc, char* argv[])
 	// *** read mesh
 	std::vector<MeshLib::CFEMesh*> mesh_vec;
 	FEMRead(file_base_name, mesh_vec);
-	if (mesh_vec.empty())
-	{
+	if (mesh_vec.empty()) {
 		std::cerr << "could not read mesh from file " << std::endl;
 		return -1;
 	}
@@ -127,6 +120,18 @@ int main (int argc, char* argv[])
 	MathLib::rotatePointsToXZ(geo_plane_normal, *geo_pnts);
 
 	bool switch_upside_down(true);
+	if (argc > 10) {
+		tmp = argv[9];
+		if (tmp.find("--upside-down") != std::string::npos) {
+			tmp = argv[10];
+			if (tmp.find("true") != std::string::npos || tmp.find("TRUE") != std::string::npos) {
+				switch_upside_down = true;
+			} else {
+				switch_upside_down = false;
+			}
+		}
+	}
+
 	if (switch_upside_down) {
 		GEOLIB::AABB aabb(&pnts);
 		double val(aabb.getMinPoint()[2] + aabb.getMaxPoint()[2]);
