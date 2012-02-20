@@ -116,10 +116,9 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 	        false), _msh_n_lines(0), _msh_n_quads(0), _msh_n_hexs(0),
 	_msh_n_tris(0), _msh_n_tets(0), _msh_n_prisms(0), _msh_n_pyras(0),
 	_min_edge_length(1e-3), NodesNumber_Linear(0),
-	NodesNumber_Quadratic(0), _axisymmetry(false), ncols(0), nrows(0),
+	NodesNumber_Quadratic(0), useQuadratic(false), _axisymmetry(false), ncols(0), nrows(0),
 	x0(0.0), y0(0.0), csize(0.0), ndata_v(0.0), _mesh_grid(NULL)
 {
-	useQuadratic = false;
 	coordinate_system = 1;
 
 	max_ele_dim = 0; //NW
