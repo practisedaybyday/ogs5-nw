@@ -115,37 +115,6 @@ void Surface::initSurfaceGrid()
 bool Surface::isPntInSfc (const double* pnt) const
 {
 	return _sfc_grid->isPntInSurface(pnt);
-
-//	bool nfound (true);
-//	size_t idx;
-//	for (size_t k(0); k < _sfc_triangles.size() && nfound; k++) {
-//		if (_sfc_triangles[k]->containsPoint (pnt)) {
-//			nfound = false;
-//			idx = k;
-//		}
-//	}
-//
-//	if (_valid_sfc_grid) {
-//		bool sfc_grid_found (_sfc_grid->isPntInSurface(pnt));
-//
-//		if (sfc_grid_found != !nfound) {
-//
-//			std::cout << "[old] found point " << pnt[0] << " " << pnt[1] << " " << pnt[2]
-//				<< " in triangle " << idx
-//				<< "( [" << *(_sfc_triangles[idx]->getPoint(0)) << "]  ["
-//				<< *(_sfc_triangles[idx]->getPoint(1)) << "]  ["
-//				<< *(_sfc_triangles[idx]->getPoint(2)) << "]" << std::endl;
-//
-//			_sfc_grid->isPntInSurface(pnt);
-//
-//			std::cout << "found point " << pnt[0] << " " << pnt[1] << " " << pnt[2] << std::flush;
-//			if (sfc_grid_found)
-//				std::cout << " with new and not with old algorithm" << std::endl;
-//			if (!nfound)
-//				std::cout << " with old and not with new algorithm" << std::endl;
-//		}
-//	}
-//
-//	return !nfound;
 }
+
 } // end namespace
