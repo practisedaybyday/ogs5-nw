@@ -28,6 +28,27 @@ SurfaceGrid::SurfaceGrid(Surface const*const sfc) :
 		_delta[k] = _max_pnt[k] - _min_pnt[k];
 	}
 
+	if (_delta[0] < std::numeric_limits<double>::epsilon()) {
+		const double max_delta(std::max(_delta[1], _delta[2]));
+		_min_pnt[0] -= max_delta * 0.5e-3;
+		_max_pnt[0] += max_delta * 0.5e-3;
+		_delta[0] = _max_pnt[0] - _min_pnt[0];
+	}
+
+	if (_delta[1] < std::numeric_limits<double>::epsilon()) {
+		const double max_delta(std::max(_delta[0], _delta[2]));
+		_min_pnt[1] -= max_delta * 0.5e-3;
+		_max_pnt[1] += max_delta * 0.5e-3;
+		_delta[1] = _max_pnt[1] - _min_pnt[1];
+	}
+
+	if (_delta[2] < std::numeric_limits<double>::epsilon()) {
+		const double max_delta(std::max(_delta[0], _delta[1]));
+		_min_pnt[2] -= max_delta * 0.5e-3;
+		_max_pnt[2] += max_delta * 0.5e-3;
+		_delta[2] = _max_pnt[2] - _min_pnt[2];
+	}
+
 	const size_t n_triangles(sfc->getNTriangles());
 	const size_t n_tris_per_box(5);
 	// *** condition: n_triangles / (_n_steps[0] * _n_steps[1] * _n_steps[2]) < n_tris_per_box
