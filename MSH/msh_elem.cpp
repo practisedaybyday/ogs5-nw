@@ -989,8 +989,8 @@ int CElem::GetElementFacesTri(int Face, int* FaceNode)
 	else
 	{
 		FaceNode[0] = Face;
-		FaceNode[1] = (Face + 1) % 3;
-		FaceNode[2] = Face + 3;
+		FaceNode[1] = Face + 3;
+		FaceNode[2] = (Face + 1) % 3;
 		return 3;
 	}
 }
@@ -1016,8 +1016,8 @@ int CElem::GetElementFacesQuad(int Face, int* FaceNode)
 	else
 	{
 		FaceNode[0] = Face;
-		FaceNode[1] = (Face + 1) % 4;
-		FaceNode[2] = Face + 4;
+		FaceNode[1] =  Face + 4;
+		FaceNode[2] = (Face + 1) % 4;
 		return 3;
 	}
 }
