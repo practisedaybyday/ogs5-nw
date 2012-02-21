@@ -86,8 +86,8 @@ int main (int argc, char* argv[])
 	GEOLIB::GEOObjects* geo_objs (new GEOLIB::GEOObjects);
 	ProjectData* project_data (new ProjectData);
 	project_data->setGEOObjects (geo_objs);
-	std::string schema_name(
-		        "/home/fischeth/workspace/OGS-FirstFloor/sources/FileIO/OpenGeoSysGLI.xsd");
+
+	std::string schema_name("./OpenGeoSysGLI.xsd");
 	XmlGmlInterface xml(project_data, schema_name);
 	xml.readFile(QString::fromStdString (geo_fname_in));
 	std::vector<std::string> original_geo_names;

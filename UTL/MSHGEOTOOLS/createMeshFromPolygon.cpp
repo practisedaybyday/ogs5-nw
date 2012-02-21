@@ -42,7 +42,8 @@ int main (int argc, char* argv[])
 	GEOLIB::GEOObjects* geo (new GEOLIB::GEOObjects);
 	tmp = argv[2];
 	std::string unique_name;
-	FileIO::readGLIFileV4(tmp, geo, unique_name);
+	std::vector<std::string> error_strings;
+	FileIO::readGLIFileV4(tmp, geo, unique_name, error_strings);
 
 	// *** parse polyline id
 	tmp = argv[3];

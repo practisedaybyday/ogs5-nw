@@ -152,7 +152,8 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 
 	std::string geo_file_name (dateiname);
 	geo_file_name += ".gli";
-	FileIO::readGLIFileV4 (geo_file_name, &geo_obj, unique_name);
+	std::vector<std::string> file_read_errors;
+	FileIO::readGLIFileV4 (geo_file_name, &geo_obj, unique_name, file_read_errors);
 
 	//----------------------------------------------------------------------
 	// Read object data
