@@ -3811,7 +3811,7 @@ void CFEMesh::MarkInterface_mHM_Hydro_3D()
 	CElem* own_elem;
 	double cent[3];
 	double fac;
-	double tol = 1.e-9;
+	double tol = sqrt(DBL_EPSILON); 1.e-5;
 
 #ifdef output_top_z
 	/// For output z coordinate of all nodes on the top surface
@@ -3842,7 +3842,7 @@ void CFEMesh::MarkInterface_mHM_Hydro_3D()
 			cent[k] /= (double)own_elem->GetNodesNumber(false);
 
 //			node = elem->nodes[0];
-		double const* const pnt_0(own_elem->nodes[0]->getData());
+		double const* const pnt_0(elem->nodes[0]->getData());
 		cent[0] -= pnt_0[0];
 		cent[1] -= pnt_0[1];
 		cent[2] -= pnt_0[2];
@@ -3871,8 +3871,19 @@ void CFEMesh::MarkInterface_mHM_Hydro_3D()
 				node_mark[elem->nodes[k]->GetIndex()] = true;
 #endif
 		}
-		else
-			elem->SetMark(false);
+        else if ((*elem->transform_tensor)(2,2)*fac<-tol)
+        {
+            elem->SetMark(false);
+            for(k=0; k<3; k++)
+               (*elem->transform_tensor)(k,2) *= fac;
+
+#ifdef output_top_z
+            for(k=0; k<elem->GetNodesNumber(quad); k++)
+               node_mark[elem->nodes[k]->GetIndex()] = bottom;
+#endif
+         }
+         else
+           elem->SetMark(false);
 	}
 
 #ifdef output_top_z
