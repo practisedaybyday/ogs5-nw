@@ -242,7 +242,6 @@ int main (int argc, char* argv[])
 
 	xml.writeFile(QString::fromStdString (geo_fname_out), QString::fromStdString (original_geo_names[1]));
 
-	delete geo_objs;
 	delete project_data;
 
 	return 0;
