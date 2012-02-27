@@ -12,6 +12,9 @@ INCLUDE(CMakeConfiguration/CMakeSetup.cmake)
 ### Compiler setup ###
 INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
 
+### General project setup ###
+INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
+
 ### Find directories and libraries ###
 INCLUDE (CMakeConfiguration/Find.cmake)
 
@@ -89,9 +92,6 @@ IF(PROCESSOR_COUNT EQUAL 0)
 ELSE()
 	MESSAGE(STATUS "Number of processors: ${PROCESSOR_COUNT}")
 ENDIF() # PROCESSOR_COUNT
-
-### General project setup ###
-INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
 
 IF(OGS_FEM)
 	 MESSAGE (STATUS	"Configuring for FEM command line" )
