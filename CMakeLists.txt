@@ -12,11 +12,11 @@ INCLUDE(CMakeConfiguration/CMakeSetup.cmake)
 ### Compiler setup ###
 INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
 
-### General project setup ###
-INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
-
 ### Find directories and libraries ###
 INCLUDE (CMakeConfiguration/Find.cmake)
+
+### General project setup ###
+INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
 
 ###############
 ### Options ###
