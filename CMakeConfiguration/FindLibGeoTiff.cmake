@@ -37,7 +37,7 @@ if (NOT libgeotiff_FOUND)
 		message (STATUS "Could NOT find libgeotiff.")
 	endif (NOT libgeotiff_LIBRARIES STREQUAL "libgeotiff_LIBRARIES-NOTFOUND" AND NOT libgeotiff_INCLUDE_DIR STREQUAL "libgeotiff_INCLUDE_DIR-NOTFOUND")
 
-#	SET ( libgeotiff_INCLUDE_DIR ${libgeotiff_INCLUDE_DIR} ${libtiff_INCLUDE_DIR} )
-#	SET ( libgeotiff_LIBRARIES ${libgeotiff_LIBRARIES} ${libtiff_LIBRARIES} )
+	SET ( libgeotiff_INCLUDE_DIR ${libgeotiff_INCLUDE_DIR} ${libtiff_INCLUDE_DIR} CACHE STRING "libgeotiff include directories." FORCE )
+	SET ( libgeotiff_LIBRARIES ${libgeotiff_LIBRARIES} ${libtiff_LIBRARIES} CACHE STRING "libgeotiff link libraries." FORCE )
 
 endif (NOT libgeotiff_FOUND)

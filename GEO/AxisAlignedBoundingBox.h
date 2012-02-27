@@ -29,6 +29,13 @@ public:
 	AABB ();
 
 	/**
+	 * copy constructor.
+	 * @param src an axis aligned bounding box
+	 * @return
+	 */
+	AABB(AABB const& src);
+
+	/**
 	 * construction of object using vector of points
 	 * */
 	AABB ( const std::vector<GEOLIB::Point*>* points );
@@ -64,10 +71,8 @@ public:
 	 * check if point described by its coordinates x, y, z is in
 	 * the axis aligned bounding box
 	 */
-	bool containsPoint (double x,
-	                    double y,
-	                    double z,
-	                    double eps = std::numeric_limits<double>::epsilon()) const;
+	bool containsPoint(double x, double y, double z, double eps =
+					std::numeric_limits<double>::epsilon()) const;
 
 	GEOLIB::Point const& getMinPoint () const { return _min_pnt; }
 	GEOLIB::Point const& getMaxPoint () const { return _max_pnt; }

@@ -21,6 +21,10 @@ AABB::AABB ()
 	}
 }
 
+AABB::AABB(AABB const& src) :
+	_min_pnt(src._min_pnt.getData()), _max_pnt(src._max_pnt.getData())
+{}
+
 AABB::AABB ( const std::vector<GEOLIB::Point*>* points )
 {
 	size_t nPoints (points->size());

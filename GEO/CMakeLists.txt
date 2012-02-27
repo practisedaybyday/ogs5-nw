@@ -23,6 +23,7 @@ set( SOURCES
 	Station.cpp
 	Surface.cpp
 	Triangle.cpp
+	SurfaceGrid.cpp
 	Raster.cpp
 )
 
@@ -56,6 +57,7 @@ set( HEADERS
 	SimplePolygonTree.h
 	Station.h
 	Surface.h
+	SurfaceGrid.h
 	SurfaceVec.h
 	TemplatePoint.h
 	TemplateVec.h

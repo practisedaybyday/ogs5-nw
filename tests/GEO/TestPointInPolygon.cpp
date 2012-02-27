@@ -25,8 +25,9 @@ TEST(GEO, PointInPolygon)
 	GEOLIB::GEOObjects* _geo (new GEOLIB::GEOObjects);
 	std::string fname(TESTDATAPATH);
 	fname += "/input/SimplePolygon.gli";
+	std::vector<std::string> errors;
 	std::string unique_name;
-	FileIO::readGLIFileV4(fname, _geo, unique_name);
+	FileIO::readGLIFileV4(fname, _geo, unique_name, errors);
 	const std::vector<GEOLIB::Polyline*>* plys(_geo->getPolylineVec(unique_name));
 	std::vector<GEOLIB::Point*>* pnts_in_polygon(new std::vector<GEOLIB::Point*>);
 	std::vector<GEOLIB::Point*>* pnts_outside_of_polygon(new std::vector<GEOLIB::Point*>);

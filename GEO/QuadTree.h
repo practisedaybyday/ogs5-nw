@@ -86,11 +86,11 @@ public:
 
 		// check if point is already in quadtree
 		bool pnt_in_quadtree (false);
-		double equal_pnt_dist (MathLib::fastpow(2, _depth) * fabs(_ll[0] - _ur[0]) * 1e-6);
-		for (size_t k(0); k < _pnts.size() && !pnt_in_quadtree; k++)
-		{
-			const double sqr_dist (MathLib::sqrDist(_pnts[k]->getData(), pnt->getData()));
-			if (sqr_dist < equal_pnt_dist)
+		for (size_t k(0); k < _pnts.size() && !pnt_in_quadtree; k++) {
+			const double v0((*(_pnts[k]))[0] - (*pnt)[0]);
+			const double v1((*(_pnts[k]))[1] - (*pnt)[1]);
+			const double sqr_dist (v0*v0 + v1*v1);
+			if (sqr_dist < std::numeric_limits<double>::epsilon())
 				pnt_in_quadtree = true;
 		}
 		if (!pnt_in_quadtree)

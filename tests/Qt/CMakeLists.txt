@@ -31,7 +31,6 @@ SET(QTTESTRUNNER_LIBS
   MSH
   ${QT_LIBRARIES}
   ${libgeotiff_LIBRARIES}
-  ${libtiff_LIBRARIES}
   VtkVis
   QtDataView
   GDiff
