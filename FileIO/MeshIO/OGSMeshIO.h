@@ -31,11 +31,12 @@ public:
 	/// @brief Read a OGS mesh from file.
 	MeshLib::CFEMesh* loadMeshFromFile(std::string const& fileName);
 
-	/// @brief Write functionality.
-	void write(std::ostream &out);
-
 	/// @brief Sets the mesh.
 	void setMesh(MeshLib::CFEMesh const* mesh);
+
+protected:
+	/// @brief Write functionality.
+	void write(std::ostream &out);
 
 private:
 	void writeElementsExceptLines (std::vector<MeshLib::CElem*> const& ele_vec, std::ostream &out);
