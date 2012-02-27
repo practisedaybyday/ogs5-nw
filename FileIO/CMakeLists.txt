@@ -1,5 +1,6 @@
 # Source files
 SET( SOURCES
+	Writer.cpp
 	GMSInterface.cpp
 	GocadInterface.cpp
 	OGSIOVer4.cpp
@@ -19,6 +20,7 @@ SET( SOURCES
 
 # Header files
 SET( HEADERS
+	Writer.h
 	GMSInterface.h
 	GocadInterface.h
 	OGSIOVer4.h
