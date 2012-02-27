@@ -9,6 +9,7 @@
 #include "ProjectData.h"
 
 #include <QXmlStreamReader>
+#include "Writer.h"
 
 class FEMCondition;
 
@@ -20,7 +21,7 @@ class QDomElement;
 /**
  * \brief Base class for writing any information to and from XML files.
  */
-class XMLInterface
+class XMLInterface : public FileIO::Writer
 {
 public:
 	/**
@@ -38,16 +39,13 @@ public:
 	/// Check if the given xml-file is valid considering the schema-file used in the constructor
 	int isValid(const QString &fileName) const;
 
+	void setNameForExport(std::string name) { _exportName = name; };
+
 	/// Sets the schema filename used to check if xml files are valid.
 	void setSchema(const std::string &schemaName);
 
 	/// Reads an xml-file.
 	virtual int readFile(const QString &fileName) = 0;
-
-	/**
-	 * Writes an xml-file
-	 */
-	virtual int writeFile(const QString &filename, const QString &stnName) const = 0;
 
 protected:
 	/// Checks if a hash for the given data file exists to skip the time-consuming validation part.
@@ -60,9 +58,10 @@ protected:
 
 	/// Checks if the given file is conform to the given hash.
 	bool hashIsGood(const QString &fileName, const QByteArray &hash) const;
-
+	
 	ProjectData* _project;
 
+	std::string _exportName;
 	std::string _schemaName;
 	std::map<size_t, size_t> _idx_map;
 };

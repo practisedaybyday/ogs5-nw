@@ -61,12 +61,12 @@ MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string const& fname)
 	return NULL;
 }
 
-void OGSMeshIO::write(std::ostream &out)
+int OGSMeshIO::write(std::ostream &out)
 {
 	if(!_mesh)
 	{
 		std::cout << "OGSMeshIO cannot write: no mesh set!" << std::endl;
-		return;
+		return 0;
 	}
 	
 	out << "#FEM_MSH" << std::endl;
@@ -109,6 +109,7 @@ void OGSMeshIO::write(std::ostream &out)
 	out << "  ";
 	out << _mesh->_n_msh_layer << std::endl;
 	out << "#STOP" << std::endl;
+	return 1;
 }
 
 void OGSMeshIO::writeElementsExceptLines(std::vector<MeshLib::CElem*> const& ele_vec, std::ostream &out)

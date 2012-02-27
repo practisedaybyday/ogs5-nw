@@ -36,14 +36,11 @@ public:
 	/// Reads an xml-file containing FEM Conditions such as Boundary- or Initial Conditions
 	int readFile(std::vector<FEMCondition*> &conditions, const QString &fileName);
 
-	/// Writes an xml-file containing FEM Conditions such as Boundary- or Initial Conditions
-	int writeFile(const QString &fileName, const QString &geoName, FEMCondition::CondType) const;
+	void setConditionType(FEMCondition::CondType type) { _type = type; };
+	
 
-	/// Writes an xml-file containing containing FEM Conditions such as Boundary- or Initial Conditions
-	int writeFile(const QString &fileName, const QString &geoName) const
-	{
-		return writeFile(fileName, geoName, FEMCondition::UNSPECIFIED);
-	};
+protected:
+	int write(std::ostream& stream);
 
 private:
 	/// Read the details of various FEM Conditions from an xml-file
@@ -54,6 +51,7 @@ private:
 	QDomElement getCondListElement( QDomDocument doc, QDomElement &root, const QString &condText ) const;
 	void writeCondition( QDomDocument doc, QDomElement &listTag, const FEMCondition* cond, const QString &condText, const QString &geoName ) const;
 
+	FEMCondition::CondType _type;
 };
 
 #endif // XMLCNDINTERFACE_H

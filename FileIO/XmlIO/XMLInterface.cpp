@@ -16,7 +16,7 @@
 #endif // QT_USE_QTXMLPATTERNS
 
 XMLInterface::XMLInterface(ProjectData* project, const std::string &schemaFile)
-: _project(project), _schemaName(schemaFile)
+: _project(project), _exportName(""), _schemaName(schemaFile)
 {
 }
 

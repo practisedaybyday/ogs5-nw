@@ -28,7 +28,7 @@ public:
 	std::string writeToString();
 
 	/// @brief Writes the object to the given file.
-	void writeToFile(std::string filename);
+	int writeToFile(std::string filename);
 
 	/// @brief Sets the decimal precision.
 	void setPrecision(unsigned int precision);
@@ -39,7 +39,7 @@ public:
 protected:
 	/// @brief Writes the object to the given stream.
 	/// This method must be implemented by a subclass.
-	virtual void write(std::ostream& stream) = 0;
+	virtual int write(std::ostream& stream) = 0;
 	
 	/// @brief The stream to write to.
 	std::stringstream _stream;

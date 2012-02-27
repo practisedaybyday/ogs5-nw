@@ -23,25 +23,33 @@ std::string Writer::writeToString()
 	_stream.str("");
 	_stream.clear();
 	
-	this->write(_stream);
-	return _stream.str();
+	if (this->write(_stream))
+		return _stream.str();
+	else 
+		return std::string("");
 }
 
-void Writer::writeToFile(std::string filename)
+int Writer::writeToFile(std::string filename)
 {
-	std::ofstream fileStream;
-	fileStream.open (filename.c_str());
-	
-	// check file stream
-	if (!fileStream)
+	std::string file_content = this->writeToString();
+	if (!file_content.empty())
 	{
-		std::cerr << "Could not open file " << filename << " !" << std::endl;
-		return;
+		std::ofstream fileStream;
+		fileStream.open (filename.c_str());
+	
+		// check file stream
+		if (!fileStream)
+		{
+			std::cerr << "Could not open file " << filename << " !" << std::endl;
+			return 0;
+		}
+
+		fileStream << file_content;
+
+		fileStream.close();
+		return 1;
 	}
-
-	fileStream << this->writeToString();
-
-	fileStream.close();
+	return 0;
 }
 
 void Writer::setPrecision(unsigned int precision)
