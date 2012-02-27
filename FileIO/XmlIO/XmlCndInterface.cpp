@@ -10,6 +10,8 @@
 #include <QTextCodec>
 #include <QtXml/QDomDocument>
 
+namespace FileIO
+{
 
 XmlCndInterface::XmlCndInterface(ProjectData* project, const std::string &schemaFile)
 : XMLInterface(project, schemaFile)
@@ -128,12 +130,6 @@ void XmlCndInterface::readConditions( const QDomNode &listRoot,
 
 int XmlCndInterface::write(std::ostream& stream)
 {
-	if (this->_exportName.empty())
-	{
-		std::cout << "Error in XmlCndInterface::write() - No base object specified..." << std::endl;
-		return 0;
-	}
-
 	stream << "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"; // xml definition
 	stream << "<?xml-stylesheet type=\"text/xsl\" href=\"OpenGeoSysCND.xsl\"?>\n\n"; // stylefile definition
 
@@ -251,4 +247,6 @@ QDomElement XmlCndInterface::getCondListElement( QDomDocument doc, QDomElement &
 		return newListTag;
 	}
 	return list.at(0).toElement();
+}
+
 }

@@ -13,6 +13,9 @@
 #include <QFile>
 #include <QtXml/QDomDocument>
 
+namespace FileIO
+{
+
 XmlGspInterface::XmlGspInterface(ProjectData* project, const std::string &schemaFile)
 : XMLInterface(project, schemaFile)
 {
@@ -184,4 +187,6 @@ int XmlGspInterface::write(std::ostream& stream)
 	std::string xml = doc.toString().toStdString();
 	stream << xml;
 	return 1;
+}
+
 }

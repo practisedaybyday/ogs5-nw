@@ -9,6 +9,8 @@
 #include <QFile>
 #include <QtXml/QDomDocument>
 
+namespace FileIO
+{
 
 XmlStnInterface::XmlStnInterface(ProjectData* project, const std::string &schemaFile)
 : XMLInterface(project, schemaFile)
@@ -293,4 +295,6 @@ void XmlStnInterface::writeBoreholeData(QDomDocument &doc,
 			horizonNameTag.appendChild(horizonNameText);
 		}
 	}
+}
+
 }

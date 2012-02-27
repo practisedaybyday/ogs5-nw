@@ -8,6 +8,9 @@
 
 #include "XMLInterface.h"
 
+namespace FileIO
+{
+
 /**
  * \brief Reads and writes project information to and from XML files.
  */
@@ -35,5 +38,7 @@ protected:
 private:
 	std::string _filename;
 };
+
+}
 
 #endif // XMLGSPINTERFACE_H

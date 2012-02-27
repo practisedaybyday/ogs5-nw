@@ -22,12 +22,12 @@ TEST(GEO, TestGMSHFromGeo)
 
 	const std::string source_path (SOURCEPATH);
 	std::string schemaFile = source_path + "/FileIO/OpenGeoSysGLI.xsd";
-	XmlGmlInterface xml_geo(&project, schemaFile);
+	FileIO::XmlGmlInterface xml_geo(&project, schemaFile);
 	xml_geo.readFile(getTestdataInputDir() + "testGMSHFromGEO-BodeCatchment.gml");
 	xml_geo.readFile(getTestdataInputDir() + "testGMSHFromGEO-Bode_Rivers.gml");
 
 	schemaFile = source_path + "/FileIO/OpenGeoSysSTN.xsd";
-	XmlStnInterface xml_stn(&project, schemaFile);
+	FileIO::XmlStnInterface xml_stn(&project, schemaFile);
 	xml_stn.readFile(getTestdataInputDir() + "testGMSHFromGEO-BodeGroundWater.stn");
 	xml_stn.readFile(getTestdataInputDir() + "testGMSHFromGEO-BodeSelectedBoreholes.stn");
 

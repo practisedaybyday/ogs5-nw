@@ -8,6 +8,9 @@
 
 #include "XMLInterface.h"
 
+namespace FileIO
+{
+
 /**
  * \brief Reads and writes GeoObjects to and from XML files.
  */
@@ -50,5 +53,7 @@ private:
 	                     std::map<std::string, size_t>* sfc_names );
 
 };
+
+}
 
 #endif // XMLGMLINTERFACE_H

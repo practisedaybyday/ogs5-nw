@@ -15,6 +15,9 @@
 #include <QtXmlPatterns/QXmlSchemaValidator>
 #endif // QT_USE_QTXMLPATTERNS
 
+namespace FileIO
+{
+
 XMLInterface::XMLInterface(ProjectData* project, const std::string &schemaFile)
 : _project(project), _exportName(""), _schemaName(schemaFile)
 {
@@ -135,4 +138,6 @@ QByteArray XMLInterface::calcHash(const QString &fileName) const
 	QByteArray hash = QCryptographicHash::hash(buffer, QCryptographicHash::Md5);
 	delete [] buffer;
 	return hash;
+}
+
 }

@@ -10,6 +10,9 @@
 
 class FEMCondition;
 
+namespace FileIO
+{
+
 /**
  * \brief Reads and writes FEM Conditions to and from XML files.
  */
@@ -53,5 +56,7 @@ private:
 
 	FEMCondition::CondType _type;
 };
+
+}
 
 #endif // XMLCNDINTERFACE_H

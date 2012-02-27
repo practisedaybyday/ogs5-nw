@@ -18,10 +18,13 @@ class QDomDocument;
 class QDomNode;
 class QDomElement;
 
+namespace FileIO
+{
+
 /**
  * \brief Base class for writing any information to and from XML files.
  */
-class XMLInterface : public FileIO::Writer
+class XMLInterface : public Writer
 {
 public:
 	/**
@@ -65,5 +68,7 @@ protected:
 	std::string _schemaName;
 	std::map<size_t, size_t> _idx_map;
 };
+
+}
 
 #endif // XMLINTERFACE_H

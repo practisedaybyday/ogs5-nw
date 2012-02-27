@@ -8,6 +8,9 @@
 
 #include "XMLInterface.h"
 
+namespace FileIO
+{
+
 /**
  * \brief Reads and writes Observation Sites to and from XML files.
  */
@@ -39,5 +42,7 @@ private:
 	/// Reads the stratigraphy of a borehole from an xml-file
 	void readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationBorehole* borehole );
 };
+
+}
 
 #endif // XMLSTNINTERFACE_H

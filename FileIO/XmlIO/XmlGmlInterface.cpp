@@ -9,6 +9,9 @@
 #include <QTextCodec>
 #include <QtXml/QDomDocument>
 
+namespace FileIO
+{
+
 XmlGmlInterface::XmlGmlInterface(ProjectData* project, const std::string &schemaFile)
 : XMLInterface(project, schemaFile)
 {
@@ -350,6 +353,10 @@ int XmlGmlInterface::write(std::ostream& stream)
 		std::cout << "Surface vector empty, no surfaces written to file." << std::endl;
 
 	//insertStyleFileDefinition(filename);
+	std::string xml = doc.toString().toStdString();
+	stream << xml;
 
 	return 1;
+}
+
 }
