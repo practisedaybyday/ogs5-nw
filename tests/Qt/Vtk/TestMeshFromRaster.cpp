@@ -34,13 +34,11 @@ TEST(VTK, TestMeshFromRaster)
 	
 	// Correct number of elements?
 	ASSERT_EQ((size_t)1082, grid->getElements()->size());
+
+	FileIO::OGSMeshIO meshIO;
+	meshIO.setMesh(grid->getCFEMesh());
+	meshIO.setPrecision(6);
+	meshIO.setFormat(ios::fixed);
 	
-	// Configure stream
-	std::stringstream ss;
-	ss.setf(ios::fixed);
-	ss.precision(6);
-	
-	FileIO::OGSMeshIO::write (grid->getCFEMesh(), ss);
-	
-	compareToReference(ss.str().c_str(), QString("testMeshFromRaster_result.msh"));
+	compareToReference(meshIO.writeToString().c_str(), QString("testMeshFromRaster_result.msh"));
 }

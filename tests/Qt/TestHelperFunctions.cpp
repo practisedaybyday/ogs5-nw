@@ -70,6 +70,8 @@ void compareToReference(QString string, QString refFile)
 		QString htmlOutputFilename(BUILDPATH);
 		htmlOutputFilename += "/tests/results/";
 		htmlOutputFilename += refFile;
+		if(g_writeOutput)
+			writeOutputFile(string, htmlOutputFilename);
 		htmlOutputFilename += ".html";
 		QFile htmlFile(htmlOutputFilename);
 		if (!htmlFile.open(QIODevice::WriteOnly | QIODevice::Text))
@@ -109,9 +111,26 @@ void writeReferenceFile(QString string, QString filePath)
 {
 	QFile file(filePath);
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
 		std::cout << "Reference file could not be updated." << std::endl;
+		return;
+	}
 
 	QTextStream out(&file);
 	out << string;
 	std::cout << QString("Reference file %1 updated.").arg(filePath).toStdString() << std::endl;
+}
+
+void writeOutputFile(QString string, QString filePath)
+{
+	QFile file(filePath);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
+		std::cout << "Output file could not be written." << std::endl;
+		return;
+	}
+
+	QTextStream out(&file);
+	out << string;
+	std::cout << QString("Output file %1 updated.").arg(filePath).toStdString() << std::endl;
 }
