@@ -10,6 +10,8 @@
 #include <QTextCodec>
 #include <QtXml/QDomDocument>
 
+namespace FileIO
+{
 
 XmlCndInterface::XmlCndInterface(ProjectData* project, const std::string &schemaFile)
 : XMLInterface(project, schemaFile)
@@ -126,14 +128,8 @@ void XmlCndInterface::readConditions( const QDomNode &listRoot,
 	}
 }
 
-int XmlCndInterface::writeFile(const QString &fileName, const QString &geoName, FEMCondition::CondType type) const
+int XmlCndInterface::write(std::ostream& stream)
 {
-	std::fstream stream(fileName.toStdString().c_str(), std::ios::out);
-	if (!stream.is_open())
-	{
-		std::cout << "XmlCndInterface::writeFile() - Could not open file...\n";
-		return 0;
-	}
 	stream << "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"; // xml definition
 	stream << "<?xml-stylesheet type=\"text/xsl\" href=\"OpenGeoSysCND.xsl\"?>\n\n"; // stylefile definition
 
@@ -143,7 +139,7 @@ int XmlCndInterface::writeFile(const QString &fileName, const QString &geoName, 
 	root.setAttribute( "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance" );
 	root.setAttribute( "xsi:noNamespaceSchemaLocation", "http://141.65.34.25/OpenGeoSysCND.xsd" );
 
-	const std::vector<FEMCondition*> conditions (_project->getConditions(FiniteElement::INVALID_PROCESS, geoName.toStdString(), type) );
+	const std::vector<FEMCondition*> conditions (_project->getConditions(FiniteElement::INVALID_PROCESS, _exportName, _type) );
 
 	if (conditions.empty()) return 1;
 
@@ -154,7 +150,7 @@ int XmlCndInterface::writeFile(const QString &fileName, const QString &geoName, 
 	for (size_t i=0; i<nConditions; i++)
 	{
 		FEMCondition::CondType current_type = conditions[i]->getCondType();
-		if (current_type == type || type == FEMCondition::UNSPECIFIED)
+		if (current_type == _type || _type == FEMCondition::UNSPECIFIED)
 		{
 			QDomElement listTag;
 			QString condText;
@@ -179,12 +175,11 @@ int XmlCndInterface::writeFile(const QString &fileName, const QString &geoName, 
 				std::cout << "Error in XmlCndInterface::writeFile() - Unspecified FEMConditions found ... Abort writing." << std::endl;
 				return 0;
 			}
-			this->writeCondition(doc, listTag, conditions[i], condText, geoName);
+			this->writeCondition(doc, listTag, conditions[i], condText, QString::fromStdString(_exportName));
 		}
 	}
 	std::string xml = doc.toString().toStdString();
 	stream << xml;
-	stream.close();
 
 	return 1;
 }
@@ -252,4 +247,6 @@ QDomElement XmlCndInterface::getCondListElement( QDomDocument doc, QDomElement &
 		return newListTag;
 	}
 	return list.at(0).toElement();
+}
+
 }

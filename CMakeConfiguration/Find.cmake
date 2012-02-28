@@ -178,6 +178,17 @@ ENDIF(PARALLEL_USE_MPI)
 ### Find tools     ###
 ######################
 
+# Find Subversion
+FIND_PACKAGE(Subversion)
+
+# Find Git
+FIND_PACKAGE(Git)
+
+# msysGit on Windows
+IF(WIN32 AND GIT_FOUND)
+	FIND_PACKAGE(MsysGit)
+ENDIF() # WIN32 AND GIT_FOUND
+
 # Find dot tool from graphviz
 FIND_PROGRAM(DOT_TOOL_PATH dot DOC "Dot tool from graphviz")
 
@@ -192,7 +203,6 @@ FIND_PACKAGE(cppcheck)
 # Find Exuberant ctags or BBEdit for code completion
 FIND_PROGRAM(CTAGS_TOOL_PATH ctags DOC "Exuberant ctags")
 FIND_PROGRAM(BBEDIT_TOOL_PATH bbedit DOC "BBEdit Editor")
-MARK_AS_ADVANCED(CTAGS_TOOL_PATH BBEDIT_TOOL_PATH)
 IF(BBEDIT_TOOL_PATH)
 	ADD_CUSTOM_TARGET(ctags
 		bbedit --maketags
@@ -214,6 +224,18 @@ ELSE()
 	ENDIF()
 ENDIF()
 
+## Unix tools ##
+# Date
+FIND_PROGRAM(DATE_TOOL_PATH date PATHS ${MSYSGIT_BIN_DIR})
+# Grep
+FIND_PROGRAM(GREP_TOOL_PATH grep PATHS ${MSYSGIT_BIN_DIR})
+# Unzip
+FIND_PROGRAM(UNZIP_TOOL_PATH unzip PATHS ${MSYSGIT_BIN_DIR})
+
+# Hide these variables for the CMake user
+MARK_AS_ADVANCED(DOT_TOOL_PATH GPROF_PATH CTAGS_TOOL_PATH BBEDIT_TOOL_PATH
+	UNZIP_TOOL_PATH
+)
 ########################
 ### Find other stuff ###
 ########################

@@ -64,7 +64,7 @@ int main (int argc, char* argv[])
 	fileFinder.addDirectory(".");
 	fileFinder.addDirectory(std::string(SOURCEPATH).append("/FileIO"));
 
-	XmlGmlInterface xml(&project, fileFinder.getPath("OpenGeoSysGLI.xsd"));
+	FileIO::XmlGmlInterface xml(&project, fileFinder.getPath("OpenGeoSysGLI.xsd"));
 	if (xml.readFile(QString::fromStdString(geo_name)))
 	{
 		img_data = VtkRaster::loadDataFromASC(dem_name, origin_x, origin_y, width, height, cellsize);
@@ -82,7 +82,8 @@ int main (int argc, char* argv[])
 			}
 
 			std::string new_geo_name = geo_name.substr(0, geo_name.length()-4) + "_elevation.gml";
-			xml.writeFile(new_geo_name, names[0]);
+			xml.setNameForExport(names[0]);
+			xml.writeToFile(new_geo_name);
 
 			std::cout << "New file \"" << new_geo_name << " successfully written." << std::endl;
 			std::cout << std::endl;

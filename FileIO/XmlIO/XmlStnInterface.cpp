@@ -9,6 +9,8 @@
 #include <QFile>
 #include <QtXml/QDomDocument>
 
+namespace FileIO
+{
 
 XmlStnInterface::XmlStnInterface(ProjectData* project, const std::string &schemaFile)
 : XMLInterface(project, schemaFile)
@@ -189,15 +191,16 @@ void XmlStnInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::Stati
 	}
 }
 
-int XmlStnInterface::writeFile(const QString &filename, const QString &stnName) const
+int XmlStnInterface::write(std::ostream& stream)
 {
-	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
-	std::fstream stream(filename.toStdString().c_str(), std::ios::out);
-	if (!stream.is_open())
+	if (this->_exportName.empty())
 	{
-		std::cout << "XmlStnInterface::writeFile() - Could not open file...\n";
+		std::cout << "Error in XmlStnInterface::write() - No station list specified..." << std::endl;
 		return 0;
 	}
+
+	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
+
 	stream << "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"; // xml definition
 	stream << "<?xml-stylesheet type=\"text/xsl\" href=\"OpenGeoSysSTN.xsl\"?>\n\n"; // stylefile definition
 
@@ -207,7 +210,7 @@ int XmlStnInterface::writeFile(const QString &filename, const QString &stnName) 
 	root.setAttribute( "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance" );
 	root.setAttribute( "xsi:noNamespaceSchemaLocation", "http://141.65.34.25/OpenGeoSysSTN.xsd" );
 
-	const std::vector<GEOLIB::Point*>* stations (geoObjects->getStationVec(stnName.toStdString()));
+	const std::vector<GEOLIB::Point*>* stations (geoObjects->getStationVec(_exportName));
 	bool isBorehole =
 	        (static_cast<GEOLIB::Station*>((*stations)[0])->type() ==
 	         GEOLIB::Station::BOREHOLE) ? true : false;
@@ -218,7 +221,7 @@ int XmlStnInterface::writeFile(const QString &filename, const QString &stnName) 
 
 	QDomElement listNameTag = doc.createElement("name");
 	stationListTag.appendChild(listNameTag);
-	QDomText stationListNameText = doc.createTextNode(stnName);
+	QDomText stationListNameText = doc.createTextNode(QString::fromStdString(_exportName));
 	listNameTag.appendChild(stationListNameText);
 	QString listType = (isBorehole) ? "boreholes" : "stations";
 	QDomElement stationsTag = doc.createElement(listType);
@@ -238,12 +241,7 @@ int XmlStnInterface::writeFile(const QString &filename, const QString &stnName) 
 		QDomElement stationNameTag = doc.createElement("name");
 		stationTag.appendChild(stationNameTag);
 		QDomText stationNameText =
-		        doc.createTextNode(QString::fromStdString(static_cast<GEOLIB::Station*>((*
-		                                                                                 stations)
-		                                                                                [
-		                                                                                        i
-		                                                                                ])
-		                                                  ->getName()));
+		        doc.createTextNode(QString::fromStdString(static_cast<GEOLIB::Station*>((*stations)[i])->getName()));
 		stationNameTag.appendChild(stationNameText);
 
 		if (isBorehole)
@@ -253,7 +251,6 @@ int XmlStnInterface::writeFile(const QString &filename, const QString &stnName) 
 
 	std::string xml = doc.toString().toStdString();
 	stream << xml;
-	stream.close();
 	return 1;
 }
 
@@ -298,4 +295,6 @@ void XmlStnInterface::writeBoreholeData(QDomDocument &doc,
 			horizonNameTag.appendChild(horizonNameText);
 		}
 	}
+}
+
 }

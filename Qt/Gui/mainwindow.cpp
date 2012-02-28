@@ -185,6 +185,8 @@ MainWindow::MainWindow(QWidget* parent /* = 0*/)
 	        _elementModel, SLOT(clearView()));
 	connect(mshTabWidget->treeView, SIGNAL(qualityCheckRequested(VtkMeshSource*)),
 	        this, SLOT(showMshQualitySelectionDialog(VtkMeshSource*)));
+	connect(mshTabWidget->treeView, SIGNAL(requestCondSetupDialog(const std::string&, const GEOLIB::GEOTYPE, size_t, bool)),
+			this, SLOT(showCondSetupDialog(const std::string&, const GEOLIB::GEOTYPE, size_t, bool)));
 	connect(mshTabWidget->treeView, SIGNAL(requestDIRECTSourceTerms(const std::string, const std::vector<GEOLIB::Point*>*)),
 	        this, SLOT(loadDIRECTSourceTerms(const std::string, const std::vector<GEOLIB::Point*>*)));
 
@@ -501,7 +503,7 @@ void MainWindow::save()
 		{
 			std::string schemaName(_fileFinder.getPath("OpenGeoSysProject.xsd"));
 			XmlGspInterface xml(&_project, schemaName);
-			xml.writeFile(fileName);
+			xml.writeToFile(fileName.toStdString());
 		}
 		else if (fi.suffix().toLower() == "geo")
 		{
@@ -1106,7 +1108,9 @@ void MainWindow::writeFEMConditionsToFile(const QString &geoName, const FEMCondi
 	{
 		std::string schemaName(_fileFinder.getPath("OpenGeoSysCond.xsd"));
 		XmlCndInterface xml(&_project, schemaName);
-		xml.writeFile(fileName, geoName, type);
+		xml.setNameForExport(geoName.toStdString());
+		xml.setConditionType(type);
+		xml.writeToFile(fileName.toStdString());
 	}
 	else
 	{
@@ -1137,21 +1141,22 @@ void MainWindow::writeGeometryToFile(QString gliName, QString fileName)
 {
 	std::string schemaName(_fileFinder.getPath("OpenGeoSysGLI.xsd"));
 	XmlGmlInterface xml(&_project, schemaName);
-	xml.writeFile(fileName, gliName);
+	xml.setNameForExport(gliName.toStdString());
+	xml.writeToFile(fileName.toStdString());
 }
 
 void MainWindow::writeStationListToFile(QString listName, QString fileName)
 {
 	std::string schemaName(_fileFinder.getPath("OpenGeoSysSTN.xsd"));
 	XmlStnInterface xml(&_project, schemaName);
-	xml.writeFile(fileName, listName);
+	xml.setNameForExport(listName.toStdString());
+	xml.writeToFile(fileName.toStdString());
 }
 
 void MainWindow::exportBoreholesToGMS(std::string listName,
                                       std::string fileName)
 {
-	const std::vector<GEOLIB::Point*>* stations(_geoModels->getStationVec(
-	                                                    listName));
+	const std::vector<GEOLIB::Point*>* stations(_geoModels->getStationVec(listName));
 	GMSInterface::writeBoreholesToGMS(stations, fileName);
 }
 
@@ -1281,7 +1286,12 @@ void MainWindow::showGeoNameDialog(const std::string &geometry_name, const GEOLI
 
 void MainWindow::showCondSetupDialog(const std::string &geometry_name, const GEOLIB::GEOTYPE object_type, size_t id, bool on_points)
 {
-	std::string geo_name = this->_geoModels->getElementNameByID(geometry_name, object_type, id);
+	std::string geo_name("");
+	if (object_type != GEOLIB::INVALID)
+		geo_name = this->_geoModels->getElementNameByID(geometry_name, object_type, id);
+	else
+		geo_name = geometry_name; // in this case this is actually the mesh name
+
 	if (geo_name.empty())
 	{
 		this->showGeoNameDialog(geometry_name, object_type, id);

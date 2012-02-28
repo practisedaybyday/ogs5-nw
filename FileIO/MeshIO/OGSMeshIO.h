@@ -36,7 +36,7 @@ public:
 
 protected:
 	/// @brief Write functionality.
-	void write(std::ostream &out);
+	int write(std::ostream &out);
 
 private:
 	void writeElementsExceptLines (std::vector<MeshLib::CElem*> const& ele_vec, std::ostream &out);
