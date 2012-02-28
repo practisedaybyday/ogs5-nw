@@ -117,16 +117,15 @@ int main (int argc, char* argv[])
 
 	modify_mesh_nodes.setMaterial (polygon, material_id);
 
-	std::ofstream mesh_out;
-	mesh_out.open ("MeshWithMaterial.msh");
+	std::string mesh_out_fname("MeshWithMaterial.msh");
 
 	mesh->ConstructGrid();
-	if (mesh_out.is_open())
-	{
-		std::cout << "write MeshWithMaterial.msh" << std::endl;
-		FileIO::OGSMeshIO::write (mesh, mesh_out);
-	}
-	mesh_out.close ();
+
+	std::cout << "write " << mesh_out_fname << " ... " << std::flush;
+	FileIO::OGSMeshIO mesh_io;
+	mesh_io.setMesh(mesh);
+	mesh_io.writeToFile (mesh_out_fname);
+	std::cout << "ok" << std::endl;
 
 	return 0;
 }

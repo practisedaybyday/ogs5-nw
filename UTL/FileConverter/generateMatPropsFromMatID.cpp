@@ -43,17 +43,11 @@ int main (int argc, char* argv[])
 		(*elems)[i]->material = 0;
 	const MeshLib::CFEMesh* mesh(grid.getCFEMesh());
 	std::string new_mshname(name + "_new.msh");
-	std::ofstream out_msh( new_mshname.c_str(), std::ios::out );
-	if (out_msh.is_open())
-	{
-		FileIO::OGSMeshIO::write (mesh, out_msh);
-		out_msh.close();
-	}
-	else
-	{
-		std::cout << "Error: Could not create mesh file..." << std::endl;
-		return -1;
-	}
+	std::cout << "writing mesh to file " << new_mshname << " ... " << std::flush;
+	FileIO::OGSMeshIO mesh_io;
+	mesh_io.setMesh(mesh);
+	mesh_io.writeToFile (new_mshname);
+	std::cout << "ok" << std::endl;
 
 	std::cout << "New files \"" << new_mshname << "\" and \"" << new_matname << "\" written." << std::endl;
 	std::cout << "Conversion finished." << std::endl;
