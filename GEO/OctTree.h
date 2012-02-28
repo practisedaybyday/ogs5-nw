@@ -109,12 +109,6 @@ public:
 	}
 
 	/**
-	 * the vector of points stored in this node is returned (can be empty)
-	 * @return the vector of points
-	 */
-	const std::vector<POINT*>& getPoints () const { return _pnts; }
-
-	/**
 	 * range query - returns all points inside the range (min[0], max[0]) x (min[1], max[1]) x (min[2], max[2])
 	 * @param min
 	 * @param max
@@ -166,7 +160,7 @@ private:
 			_childs[k] = NULL;
 
 #ifndef NDEBUG
-		if (_depth <= 2)
+		if (_depth <= 1)
 			std::cout << "[OctTree] depth: " << _depth << ", bbx: " << _ll << " x " << _ur << std::endl;
 #endif
 	}

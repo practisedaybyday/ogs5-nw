@@ -238,6 +238,7 @@ int main (int argc, char* argv[])
 		geo_objs->addSurfaceVec(sfc_copies, geo_fname_out);
 	}
 
+	xml.setPrecision(2);
 	xml.setNameForExport(original_geo_names[1]);
 	xml.writeToFile(geo_fname_out);
 

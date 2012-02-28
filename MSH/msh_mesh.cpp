@@ -3346,13 +3346,13 @@ void CFEMesh::ImportMODFlowGrid(std::string const & fname)
    \brief Covert GIS shapfile defined cells into triangle/quadrilateral elements
 
    The GIS shapfile defined cells is read, converted into
-   triangle/quadrilateral elements, and the the coverted mesh are written in an OGS syntax file.
+   triangle/quadrilateral elements, and the the converted mesh are written in an OGS syntax file.
 
    \param fname The file name.
 
    12/2009 WW
    01/2010 TF changed signature to const & in order to save a string copy
-   added serveral std:: in order to avoid name space polution
+   added several std:: in order to avoid name space pollution
  */
 //---------------------------------------------------------------------------
 void CFEMesh::ConvertShapeCells(std::string const & fname)
@@ -3456,7 +3456,7 @@ void CFEMesh::ConvertShapeCells(std::string const & fname)
 			{
 				x = x0 + csize * k;
 				y = y0 + csize * ll;
-				point = new CNode((long)nod_vector.size(), x, y);
+				point = new CNode((long)nod_vector.size(), x, y, 0.0);
 				nod_vector.push_back(point);
 				node_index[counter] = point->GetIndex();
 			}
@@ -3764,7 +3764,7 @@ void CFEMesh::MarkInterface_mHM_Hydro_3D()
 	CElem* own_elem;
 	double cent[3];
 	double fac;
-	double tol = sqrt(DBL_EPSILON); 1.e-5;
+	double tol = sqrt(DBL_EPSILON); // 1.e-5;
 
 #ifdef output_top_z
 	/// For output z coordinate of all nodes on the top surface

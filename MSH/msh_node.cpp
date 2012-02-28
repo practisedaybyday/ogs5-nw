@@ -52,6 +52,22 @@ CNode::CNode(size_t Index, double const* coordinates) :
 	coordinate[2] = coordinates[2];
 }
 
+CNode::CNode(double x, double y, double z) :
+	CCore(0), free_surface (-1), patch_area (-1.0), crossroad (false), eqs_index (-1)
+{
+	coordinate[0] = x;
+	coordinate[1] = y;
+	coordinate[2] = z;
+}
+
+CNode::CNode(double const*const coords) :
+	CCore(0), free_surface (-1), patch_area (-1.0), crossroad (false), eqs_index (-1)
+{
+	coordinate[0] = coords[0];
+	coordinate[1] = coords[1];
+	coordinate[2] = coords[2];
+}
+
 /**************************************************************************
    MSHLib-Method:
    Task:
@@ -127,4 +143,11 @@ void CNode::SetCoordinates(const double* argCoord)
 	coordinate[1] = argCoord[1];
 	coordinate[2] = argCoord[2];
 }
+
+std::ostream& operator<< (std::ostream &os, MeshLib::CNode const &node)
+{
+	node.write (os);
+	return os;
+}
+
 }                                                 // namespace MeshLib

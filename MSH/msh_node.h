@@ -38,6 +38,8 @@ public:
 
 	/** constructor */
 	CNode(size_t Index);
+	CNode(double x, double y, double z);
+	CNode(double const*const coords);
 	CNode(size_t Index, double x, double y, double z = 0.0);
 	CNode(size_t Index, double const* coordinates);
 	CNode(size_t Index, const CNode* parent); //NW
@@ -64,6 +66,14 @@ public:
 	double& operator[] (size_t idx)
 	{
 		return const_cast<double&> (static_cast<const CNode&> (*this)[idx]);
+	}
+
+	/** write mesh node coordinates into stream (used from operator<<)
+	 * \param os a standard output stream
+	 */
+	virtual void write (std::ostream &os) const
+	{
+		os << coordinate[0] << " " << coordinate[1] << " " << coordinate[2] << std::flush;
 	}
 
 //	 double X() const { return coordinate[0]; };
@@ -143,5 +153,10 @@ private:
 	std::vector<size_t> _connected_nodes; //OK
 	std::vector<size_t> _connected_elements;
 };
+
+std::ostream& operator<< (std::ostream &os, MeshLib::CNode const &node);
+
 }                                                 // namespace MeshLib
+
+
 #endif
