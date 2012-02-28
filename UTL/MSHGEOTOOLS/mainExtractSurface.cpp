@@ -85,7 +85,7 @@ int main (int argc, char* argv[])
 
 	ProjectData* project_data (new ProjectData);
 	project_data->setGEOObjects (geo);
-	XmlGmlInterface xml_out (project_data, "OpenGeoSysGLI.xsd");
+	FileIO::XmlGmlInterface xml_out (project_data, "OpenGeoSysGLI.xsd");
 	for (size_t k(0); k < n_plys; k++) {
 		std::vector<GEOLIB::Point*>* sfc_pnts (new std::vector<GEOLIB::Point*>);
 		std::vector<GEOLIB::Surface*>* surfaces (new std::vector<GEOLIB::Surface*>);
@@ -106,7 +106,8 @@ int main (int argc, char* argv[])
 			std::string out_fname ("Surface");
 			out_fname += number2str (k);
 			out_fname += ".gml";
-			xml_out.writeFile (out_fname, fname);
+			xml_out.setNameForExport(fname);
+			xml_out.writeToFile(out_fname);
 		} else {
 			std::cout << "could not create any surface" << std::endl;
 		}

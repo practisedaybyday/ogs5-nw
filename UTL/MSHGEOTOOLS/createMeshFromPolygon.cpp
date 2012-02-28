@@ -104,10 +104,12 @@ int main (int argc, char* argv[])
 
 	ProjectData* project_data (new ProjectData);
 	project_data->setGEOObjects (geo);
-	XmlGmlInterface xml_out (project_data, "OpenGeoSysGLI.xsd");
+	FileIO::XmlGmlInterface xml_out (project_data, "OpenGeoSysGLI.xsd");
 
 	std::string surface_fname (base_fname+".gml");
-	xml_out.writeFile (surface_fname, gmsh_msh_fname);
+	xml_out.setNameForExport(gmsh_msh_fname);
+	xml_out.writeToFile(surface_fname);
+//	xml_out.writeFile (surface_fname, gmsh_msh_fname);
 
 	// get Surface for writing a OpenGeoSys TIN
 	std::vector<GEOLIB::Surface*> const& sfcs(*(geo->getSurfaceVec(gmsh_msh_fname)));

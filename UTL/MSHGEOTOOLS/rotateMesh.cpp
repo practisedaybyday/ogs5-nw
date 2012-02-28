@@ -90,7 +90,7 @@ int main (int argc, char* argv[])
 	project_data->setGEOObjects (geo_objs);
 
 	std::string schema_name("./OpenGeoSysGLI.xsd");
-	XmlGmlInterface xml(project_data, schema_name);
+	FileIO::XmlGmlInterface xml(project_data, schema_name);
 	xml.readFile(QString::fromStdString (geo_fname_in));
 	std::vector<std::string> original_geo_names;
 	geo_objs->getGeometryNames(original_geo_names);
@@ -238,7 +238,8 @@ int main (int argc, char* argv[])
 		geo_objs->addSurfaceVec(sfc_copies, geo_fname_out);
 	}
 
-	xml.writeFile(QString::fromStdString (geo_fname_out), QString::fromStdString (original_geo_names[1]));
+	xml.setNameForExport(original_geo_names[1]);
+	xml.writeToFile(geo_fname_out);
 
 	delete project_data;
 
