@@ -104,15 +104,6 @@ public:
 	 */
 	void addProperty(std::string pname, double (* get)(void*), void (* set)(void*, double));
 
-	/// Sets colour for this station
-	//void setColor(unsigned char r, unsigned char g, unsigned char b);
-
-	/// Sets colour for this station
-	//void setColor(const Color* color);
-
-	/// returns the colour for this station
-	//Color* getColor () { return _color; }
-
 	/// Returns a map containing all the properties of that station type.
 	const std::map<std::string, double> getProperties();
 
@@ -133,6 +124,10 @@ public:
 
 	/// Creates a new station object based on the given parameters.
 	static Station* createStation(const std::string &name, double x, double y, double z);
+
+	double getStationValue() { return this->_station_value; };
+
+	void setStationValue(double station_value) { this->_station_value = station_value; };
 
 protected:
 	/**
@@ -170,7 +165,7 @@ protected:
 	std::vector<STNProperty> _properties;
 
 private:
-
+	double _station_value;
 };
 
 /********* Boreholes *********/
