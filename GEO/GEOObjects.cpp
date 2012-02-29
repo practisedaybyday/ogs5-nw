@@ -120,13 +120,9 @@ bool GEOObjects::removePointVec(const std::string &name)
 	return false;
 }
 
-void GEOObjects::addStationVec(std::vector<Point*>* stations,
-                               std::string &name,
-                               const Color* const color)
+void GEOObjects::addStationVec(std::vector<Point*>* stations, std::string &name)
 {
 	size_t size = stations->size();
-	for (size_t i = 0; i < size; i++)
-		static_cast<Station*>((*stations)[i])->setColor(color);
 	isUniquePointVecName(name);
 	_pnt_vecs.push_back(new PointVec(name, stations, NULL, PointVec::STATION));
 }

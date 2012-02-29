@@ -61,9 +61,8 @@ int XmlStnInterface::readFile(const QString &fileName)
 				readStations(stationList.at(j), stations);
 		}
 
-		GEOLIB::Color* color = GEOLIB::getRandomColor();
 		if (!stations->empty())
-			geoObjects->addStationVec(stations, stnName, color);
+			geoObjects->addStationVec(stations, stnName);
 		else
 			delete stations;
 	}

@@ -78,10 +78,9 @@ public:
 	Station(double x = 0.0,
 	        double y = 0.0,
 	        double z = 0.0,
-	        std::string name = "",
-	        Color* const color = new Color(0,128,0));
+	        std::string name = "");
 
-	Station(Point* coords, std::string name = "", Color* const color = new Color(0,128,0));
+	Station(Point* coords, std::string name = "");
 
 	virtual ~Station();
 
@@ -106,13 +105,13 @@ public:
 	void addProperty(std::string pname, double (* get)(void*), void (* set)(void*, double));
 
 	/// Sets colour for this station
-	void setColor(unsigned char r, unsigned char g, unsigned char b);
+	//void setColor(unsigned char r, unsigned char g, unsigned char b);
 
 	/// Sets colour for this station
 	//void setColor(const Color* color);
 
 	/// returns the colour for this station
-	Color* getColor () { return _color; }
+	//Color* getColor () { return _color; }
 
 	/// Returns a map containing all the properties of that station type.
 	const std::map<std::string, double> getProperties();
@@ -171,7 +170,7 @@ protected:
 	std::vector<STNProperty> _properties;
 
 private:
-	Color* _color;
+
 };
 
 /********* Boreholes *********/
