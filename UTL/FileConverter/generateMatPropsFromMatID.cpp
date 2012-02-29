@@ -43,10 +43,11 @@ int main (int argc, char* argv[])
 		(*elems)[i]->material = 0;
 	const MeshLib::CFEMesh* mesh(grid.getCFEMesh());
 	std::string new_mshname(name + "_new.msh");
-
-	FileIO::OGSMeshIO msh_io;
-	msh_io.setMesh(mesh);
-	msh_io.writeToFile(new_mshname);
+	std::cout << "writing mesh to file " << new_mshname << " ... " << std::flush;
+	FileIO::OGSMeshIO mesh_io;
+	mesh_io.setMesh(mesh);
+	mesh_io.writeToFile (new_mshname);
+	std::cout << "ok" << std::endl;
 
 	std::cout << "New files \"" << new_mshname << "\" and \"" << new_matname << "\" written." << std::endl;
 	std::cout << "Conversion finished." << std::endl;

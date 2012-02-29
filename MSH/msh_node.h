@@ -8,6 +8,8 @@
 #ifndef msh_node_INC
 #define msh_node_INC
 
+#include <cassert>
+
 #include "matrix_class.h"
 #include <string>
 #include <vector>
@@ -48,6 +50,22 @@ public:
 	bool operator ==(const CNode& n);
 
 	// Get functions
+	/** \brief const access operator
+	 *  The access to the coordinates is like the access to a field.
+	 */
+	double const& operator[] (size_t idx) const
+	{
+		assert (idx <= 2);
+		return coordinate[idx];
+	}
+	/** \brief access operator (see book Effektiv C++ programmieren - subsection 1.3.2 ).
+	 * \sa const T& operator[] (size_t idx) const
+	 */
+	double& operator[] (size_t idx)
+	{
+		return const_cast<double&> (static_cast<const CNode&> (*this)[idx]);
+	}
+
 //	 double X() const { return coordinate[0]; };
 //	 double Y() const { return coordinate[1]; };
 //	 double Z() const { return coordinate[2]; };

@@ -5,6 +5,8 @@
  *      Author: TF
  */
 
+#include <ctime>
+
 // FileIO
 #include "MeshIO/OGSMeshIO.h"
 #include "XmlIO/XmlGmlInterface.h"
@@ -196,15 +198,11 @@ int main (int argc, char* argv[])
 		}
 	}
 
-	std::ofstream mesh_out;
-	mesh_out.open (mesh_out_fname.c_str());
-	if (mesh_out.is_open())
-	{
-		std::cout << "writing rotated mesh to " << mesh_out_fname << " ... " << std::flush;
-		FileIO::OGSMeshIO::write (&mesh_copy, mesh_out);
-		std::cout << "done" << std::endl;
-	}
-	mesh_out.close ();
+	std::cout << "writing rotated mesh to " << mesh_out_fname << " ... " << std::flush;
+	FileIO::OGSMeshIO mesh_io;
+	mesh_io.setMesh(&mesh_copy);
+	mesh_io.writeToFile (mesh_out_fname);
+	std::cout << "done" << std::endl;
 
 	geo_objs->addPointVec(geo_pnts, geo_fname_out);
 	geo_objs->getGeometryNames(original_geo_names);

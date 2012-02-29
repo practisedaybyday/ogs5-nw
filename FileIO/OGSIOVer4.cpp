@@ -552,9 +552,9 @@ bool readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& uniqu
 	{
 		pos = fname.rfind("\\"); // windows delimiter
 		if (pos == std::string::npos)
-			pos = fname.length() - 1;
+			pos = 0;
 	}
-	std::string path(fname.substr(0, pos + 1));
+	std::string path(fname.substr(0, pos==0 ? pos : pos + 1));
 
 	// read names of plys into temporary string-vec
 	std::map<std::string,size_t>* ply_names (new std::map<std::string,size_t>);

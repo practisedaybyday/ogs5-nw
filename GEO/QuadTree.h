@@ -63,7 +63,6 @@ public:
 		if (_is_leaf)
 			for (size_t k(0); k < 4; k++)
 				delete _childs[k];
-
 	}
 
 	/**

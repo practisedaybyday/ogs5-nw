@@ -15,6 +15,9 @@ INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
 ### Find directories and libraries ###
 INCLUDE (CMakeConfiguration/Find.cmake)
 
+### General project setup ###
+INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
+
 ###############
 ### Options ###
 ###############
@@ -89,9 +92,6 @@ IF(PROCESSOR_COUNT EQUAL 0)
 ELSE()
 	MESSAGE(STATUS "Number of processors: ${PROCESSOR_COUNT}")
 ENDIF() # PROCESSOR_COUNT
-
-### General project setup ###
-INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
 
 IF(OGS_FEM)
 	 MESSAGE (STATUS	"Configuring for FEM command line" )
@@ -254,7 +254,6 @@ IF (BENCHMARK_DIR_FOUND)
 	SET(BENCHMARK_TIMEOUT 1800) # in s, 30 minutes timeout on normal benchmarks
 	SET(EXCEEDING_BENCHMARK_TIMEOUT 86400) # 1 day timeout on exceeding benchmarks
 	STRING (COMPARE EQUAL "$ENV{HOSTNAME}" "dev2.intern.ufz.de" HOST_IS_DEV2)
-	MESSAGE (STATUS "Benchmarking through CTest enabled")
 	IF (${HOST_IS_DEV2})
 		MESSAGE (STATUS "On dev2: file comparing enabled")
 	ENDIF (${HOST_IS_DEV2})
