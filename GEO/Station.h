@@ -109,7 +109,7 @@ public:
 	void setColor(unsigned char r, unsigned char g, unsigned char b);
 
 	/// Sets colour for this station
-	void setColor(const Color* color);
+	//void setColor(const Color* color);
 
 	/// returns the colour for this station
 	Color* getColor () { return _color; }
