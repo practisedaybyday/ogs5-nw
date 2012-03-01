@@ -57,9 +57,9 @@ public:
 				_ur[1] += (dz-dy)/2.0;
 			}
 		}
-#ifndef NDEBUG
-		std::cout << "root of OctTree: bbx: " << _ll << " x " << _ur << std::endl;
-#endif
+//#ifndef NDEBUG
+//		std::cout << "root of OctTree: bbx: " << _ll << " x " << _ur << std::endl;
+//#endif
 	}
 
 	virtual ~OctTree()
@@ -159,10 +159,10 @@ private:
 		for (size_t k(0); k < 8; k++)
 			_childs[k] = NULL;
 
-#ifndef NDEBUG
-		if (_depth <= 1)
-			std::cout << "[OctTree] depth: " << _depth << ", bbx: " << _ll << " x " << _ur << std::endl;
-#endif
+//#ifndef NDEBUG
+//		if (_depth <= 1)
+//			std::cout << "[OctTree] depth: " << _depth << ", bbx: " << _ll << " x " << _ur << std::endl;
+//#endif
 	}
 
 
@@ -247,7 +247,8 @@ private:
 #endif
 
 		// distribute points to sub quadtrees
-		for (size_t j(0); j < _pnts.size(); j++) {
+		const size_t n_pnts(_pnts.size());
+		for (size_t j(0); j < n_pnts; j++) {
 			bool nfound(true);
 			for (size_t k(0); k < 8 && nfound; k++) {
 				if (_childs[k]->addPoint(_pnts[j])) {
