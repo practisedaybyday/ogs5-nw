@@ -42,11 +42,12 @@ class TNode
 
 protected:
    MULTI* pmm;  // Pointer to GEM IPM work data structure (see ms_multi.h)
+   TProfil* profil;
 
 #ifdef IPMGEMPLUGIN
        // These pointers are only used in standalone GEMIPM2K programs
     TMulti* multi;
-    TProfil* profil;
+//    TProfil* profil;
 #endif
 
     DATACH* CSD;  // Pointer to chemical system data structure CSD (DATACH)
@@ -97,13 +98,13 @@ protected:
     // writes CSD (DATACH structure) to a text DCH file
     // brief_mode - Do not write data items that contain only default values
     // with_comments -Write files with comments for all data entries ( in text mode)
-    void datach_to_text_file( fstream& ff, bool with_comments = true, bool brief_mode = false );
+    void datach_to_text_file( fstream& ff, bool with_comments = true, bool brief_mode = false, const char* path = " " );
     // reads CSD (DATACH structure) from a text DCH file
     void datach_from_text_file( fstream& ff);
     // writes work node (DATABR structure) to a text DBR file
     // brief_mode - Do not write data items that contain only default values
     // with_comments -Write files with comments for all data entries ( in text mode)
-    void databr_to_text_file(fstream& ff, bool with_comments = true, bool brief_mode = false  );
+    void databr_to_text_file( fstream& ff, bool with_comments = true, bool brief_mode = false, const char* path = " " );
      // reads work node (DATABR structure) from a text DBR file
     void databr_from_text_file(fstream& ff );
 

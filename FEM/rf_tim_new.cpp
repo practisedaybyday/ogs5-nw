@@ -765,6 +765,10 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
 		case FiniteElement::GROUNDWATER_FLOW:    // TF, if steady state, time step should be greater zero...transient flow does not work with adaptive stepping
 			time_step_length = min_time_step; // take min time step as conservative best guess for testing
 			break;
+		//		case 'L': // kg44 liquid flow ---if steady state, time step should be greater zero...transient flow does not work with adaptive stepping
+		case FiniteElement::LIQUID_FLOW:    // TF, if steady state, time step should be greater zero...transient flow does not work with adaptive stepping
+			time_step_length = min_time_step; // take min time step as conservative best guess for testing
+			break;
 		//		case 'M': // kg44 Mass transport ---if steady state, time step should be greater zero..
 		case FiniteElement::MASS_TRANSPORT:      // TF, if steady state, time step should be greater zero..
 			time_step_length = min_time_step; // take min time step as conservative best guess for testing
@@ -1024,15 +1028,16 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 					                   time_adapt_coe_vector[0];
 				}
 				break;
-			//			case 'G': //Groundwater flow
+			//			case 'G': //Groundwater flow and LIQUID_FLOW
 			case FiniteElement::GROUNDWATER_FLOW: // TF
+			case FiniteElement::LIQUID_FLOW: // TF
 				// iterdum=MMax(iterdum,m_pcs->iter);
 				imflag = 1;
 				if ( (imflag > 0) && ( m_pcs->iter_lin  >= time_adapt_tim_vector[1] ) )
 				{
 					imflag = 0;
 					std::cout <<
-					"Self adaptive time step: to many iterations for Groundwater flow"
+					"Self adaptive time step: to many iterations for Groundwater/LIQUID flow"
 					          << std::endl;
 				}
 				if (((imflag == 1) && (m_pcs->iter_lin <= time_adapt_tim_vector[0])))
