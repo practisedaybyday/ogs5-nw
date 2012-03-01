@@ -42,7 +42,7 @@ public:
 	/// Check if the given xml-file is valid considering the schema-file used in the constructor
 	int isValid(const QString &fileName) const;
 
-	void setNameForExport(std::string name) { _exportName = name; };
+	void setNameForExport(std::string const& name) { _exportName = name; };
 
 	/// Sets the schema filename used to check if xml files are valid.
 	void setSchema(const std::string &schemaName);
@@ -61,7 +61,7 @@ protected:
 
 	/// Checks if the given file is conform to the given hash.
 	bool hashIsGood(const QString &fileName, const QByteArray &hash) const;
-	
+
 	ProjectData* _project;
 
 	std::string _exportName;

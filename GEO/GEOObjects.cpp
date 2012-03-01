@@ -122,7 +122,6 @@ bool GEOObjects::removePointVec(const std::string &name)
 
 void GEOObjects::addStationVec(std::vector<Point*>* stations, std::string &name)
 {
-	size_t size = stations->size();
 	isUniquePointVecName(name);
 	_pnt_vecs.push_back(new PointVec(name, stations, NULL, PointVec::STATION));
 }

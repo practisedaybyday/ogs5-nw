@@ -92,6 +92,15 @@ IF(QT4_FOUND)
 		${QT_LIBRARIES}
 	)	
 
+	ADD_EXECUTABLE( testMeshSearchAlgorithms testMeshSearchAlgorithms.cpp )
+	TARGET_LINK_LIBRARIES( testMeshSearchAlgorithms
+		GEO
+		MSH
+		MSHGEOTOOLS
+		FileIO
+		${QT_LIBRARIES}
+	)	
+
 ENDIF() # QT4_FOUND
 
 IF (OGS_PACKAGING)
