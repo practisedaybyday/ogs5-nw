@@ -192,11 +192,31 @@ Problem::Problem (char* filename) :
 		path = path.substr(0, pos + 1);
 
 	// now start initialization of GEMS
-	if ( m_vec_GEM->Init_Nodes(/*FileName*/ path ) == 0)
-
-		if (m_vec_GEM->Init_RUN() == 0)
+        if ( m_vec_GEM -> Init_Nodes(path) == 0) 
+	{
+		if (m_vec_GEM->Init_RUN(path) == 0) 
+		{
 			m_vec_GEM->initialized_flag = 1;
+		}
+		else // something is wrong and we stop execution
+		{
+		              cout << " GEMS: Error in Init_Nodes..check input " << endl;
+#ifdef USE_MPI_GEMS
+            MPI_Finalize();                       //make sure MPI exits
+#endif
 
+            exit ( 1 );
+		}
+	}
+	else // something is wrong and we stop execution
+	{
+	 		              cout << " GEMS: Error in Init_RUN..check input " << endl;
+#ifdef USE_MPI_GEMS
+            MPI_Finalize();                       //make sure MPI exits
+#endif
+
+            exit ( 1 ); 
+	}
 #else                                          // GEM_REACT
 	//---------------------------------------------------
 	REACT* rc = NULL;                     //SB
@@ -2270,9 +2290,6 @@ inline double Problem::MassTrasport()
 		// Check if the Sequential Iterative Scheme needs to be intergrated
 		if (m_pcs->m_num->cpl_iterations > 1)
 			m_vec_GEM->flag_iterative_scheme = 1;  // set to standard iterative scheme;
-		// write time
-		std::cout << "CPU time elapsed before GEMIMP2K: " << TGetTimer(0) << " s" <<
-		std::endl;
 		// Move current xDC to previous xDC
 		m_vec_GEM->CopyCurXDCPre();
 		// Get info from MT
@@ -2289,9 +2306,6 @@ inline double Problem::MassTrasport()
 		// Set info in MT
 		m_vec_GEM->SetReactInfoBackMassTransport(m_time);
 		//m_vec_GEM->ConvPorosityNodeValue2Elem(); // update element porosity and push back values
-		// write time
-		std::cout << "CPU time elapsed after GEMIMP2K: " << TGetTimer(0) << " s" <<
-		std::endl;
 	}
 #endif                                         // GEM_REACT
 
@@ -3194,3 +3208,4 @@ double Problem::getEndTime()
 	return end_time;
 }
 #endif                                            //BRNS
+

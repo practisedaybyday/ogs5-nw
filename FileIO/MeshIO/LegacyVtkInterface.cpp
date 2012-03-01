@@ -505,3 +505,15 @@ CRFProcess* LegacyVtkInterface::GetPCS_ELE(const string &var_name) const
 		}
 	return pcs;
 }
+
+// round very small and very large numbers in order to avoid read error in paraview
+// paraview can not read number with exponents bigger/smaller than 300/-300 
+double LegacyVtkInterface::RoundDoubleVTK(double MyZahl)
+{
+  double rnumber;
+  rnumber=MyZahl;
+     if(MyZahl > 1.0e200) rnumber=1.0e200;
+     if(MyZahl < -1.0e200) rnumber=-1.0e200;
+     if((MyZahl < 1.0e-200)&&(MyZahl >-1.0e-200)) rnumber=0.0;
+  return rnumber;  
+}
