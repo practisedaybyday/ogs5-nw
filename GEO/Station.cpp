@@ -15,16 +15,16 @@
 
 namespace GEOLIB
 {
-Station::Station(double x, double y, double z, std::string name, Color* const color) :
-	Point (x,y,z), _name(name), _type(Station::STATION), _color(color)
+Station::Station(double x, double y, double z, std::string name) :
+	Point (x,y,z), _name(name), _type(Station::STATION), _station_value(0.0)
 {
 	addProperty("x", &getX, &Station::setX);
 	addProperty("y", &getY, &Station::setY);
 	addProperty("z", &getZ, &Station::setZ);
 }
 
-Station::Station(Point* coords, std::string name, Color* const color) :
-	Point (*coords), _name(name), _type(Station::STATION), _color(color)
+Station::Station(Point* coords, std::string name) :
+	Point (*coords), _name(name), _type(Station::STATION), _station_value(0.0)
 {
 	addProperty("x", &getX, &Station::setX);
 	addProperty("y", &getY, &Station::setY);
@@ -42,21 +42,6 @@ void Station::addProperty(std::string pname, double (* getFct)(void*), void (* s
 
 Station::~Station()
 {
-	delete _color;
-}
-
-void Station::setColor(unsigned char r, unsigned char g, unsigned char b)
-{
-	(*_color)[0] = r;
-	(*_color)[1] = g;
-	(*_color)[2] = b;
-}
-
-void Station::setColor(const Color* const color)
-{
-	(*_color)[0] = (*color)[0];
-	(*_color)[1] = (*color)[1];
-	(*_color)[2] = (*color)[2];
 }
 
 Station* Station::createStation(const std::string & line)

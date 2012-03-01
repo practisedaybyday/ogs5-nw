@@ -605,12 +605,14 @@ void MainWindow::loadFile(const QString &fileName)
 	// OpenGeoSys mesh files
 	else if (fi.suffix().toLower() == "msh")
 	{
-		std::string name = fileName.toStdString();
-
 		FileIO::OGSMeshIO meshIO;
+		std::string name = fileName.toStdString();
 		MeshLib::CFEMesh* msh = meshIO.loadMeshFromFile(name);
 		if (msh)
-			_meshModels->addMesh(msh, name);
+		{
+			std::string mesh_name = fi.baseName().toStdString();
+			_meshModels->addMesh(msh, mesh_name);
+		}
 		else
 			OGSError::box("Failed to load a mesh file.");
 	}
@@ -630,7 +632,7 @@ void MainWindow::loadFile(const QString &fileName)
 		std::string name = fi.baseName().toStdString();
 
 		if (GMSInterface::readBoreholesFromGMS(boreholes, fileName.toStdString()))
-			_geoModels->addStationVec(boreholes, name, GEOLIB::getRandomColor());
+			_geoModels->addStationVec(boreholes, name);
 		else
 			OGSError::box("Error reading GMS file.");
 	}
@@ -834,7 +836,7 @@ void MainWindow::importRaster()
 #endif
 	QString fileName = QFileDialog::getOpenFileName(this, "Select raster file to import",
 					settings.value("lastOpenedFileDirectory").toString(), QString(
-									"Raster files (*.asc *.bmp *.jpg *.png%1);;") .arg(geotiffExtension));
+									"Raster files (*.asc *.grd *.bmp *.jpg *.png%1);;") .arg(geotiffExtension));
 
 	if (!fileName.isEmpty())
 	{
@@ -1305,9 +1307,19 @@ void MainWindow::showCondSetupDialog(const std::string &geometry_name, const GEO
 		if (on_points)
 			this->_geoModels->addNameForObjectPoints(geometry_name, object_type, geo_name, geometry_name);
 
-		FEMConditionSetupDialog dlg(geometry_name, object_type, geo_name, this->_geoModels->getGEOObject(geometry_name, object_type, geo_name), on_points);
-		connect(&dlg, SIGNAL(addFEMCondition(FEMCondition*)), this->_processModel, SLOT(addCondition(FEMCondition*)));
-		dlg.exec();
+		if (object_type != GEOLIB::INVALID)
+		{
+			FEMConditionSetupDialog dlg(geometry_name, object_type, geo_name, this->_geoModels->getGEOObject(geometry_name, object_type, geo_name), on_points);
+			connect(&dlg, SIGNAL(addFEMCondition(FEMCondition*)), this->_processModel, SLOT(addCondition(FEMCondition*)));
+			dlg.exec();
+		}
+		else 
+		{
+			const MeshLib::CFEMesh* mesh = _project.getMesh(geo_name);
+			FEMConditionSetupDialog dlg(geo_name, mesh);
+			connect(&dlg, SIGNAL(addFEMCondition(FEMCondition*)), this->_processModel, SLOT(addCondition(FEMCondition*)));
+			dlg.exec();
+		}
 	}
 }
 
@@ -1366,7 +1378,7 @@ void MainWindow::FEMTestStart()
 		std::cout << "[Test] could not load mesh " << mesh_name << std::endl;
 	}
 	*/
-	CondFromRasterDialog dlg(&_project);
+	CondFromRasterDialog dlg(_project.getMeshObjects());
 	dlg.exec();
 }
 
@@ -1633,5 +1645,3 @@ void MainWindow::loadDIRECTSourceTerms(const std::string mshname, const std::vec
 		}
 	}
 }
-
-

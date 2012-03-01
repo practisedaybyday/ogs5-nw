@@ -61,9 +61,8 @@ int XmlStnInterface::readFile(const QString &fileName)
 				readStations(stationList.at(j), stations);
 		}
 
-		GEOLIB::Color* color = GEOLIB::getRandomColor();
 		if (!stations->empty())
-			geoObjects->addStationVec(stations, stnName, color);
+			geoObjects->addStationVec(stations, stnName);
 		else
 			delete stations;
 	}
@@ -84,7 +83,7 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 		{
 			std::string stationName("[NN]");
 			std::string boreholeDate("0000-00-00");
-			double boreholeDepth(0.0);
+			double boreholeDepth(0.0), stationValue(0.0);
 
 			QDomNodeList stationFeatures = station.childNodes();
 			for(int i = 0; i < stationFeatures.count(); i++)
@@ -95,14 +94,14 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 					        toStdString();
 				/* add other station features here */
 
+				else if (stationFeatures.at(i).nodeName().compare("value") == 0)
+					stationValue = strtod(stationFeatures.at(i).toElement().text().
+					                       toStdString().c_str(), 0);
 				else if (stationFeatures.at(i).nodeName().compare("bdepth") == 0)
-					boreholeDepth = strtod(stationFeatures.at(
-					                               i).toElement().text().
+					boreholeDepth = strtod(stationFeatures.at(i).toElement().text().
 					                       toStdString().c_str(), 0);
 				else if (stationFeatures.at(i).nodeName().compare("bdate") == 0)
-					boreholeDate  =
-					        stationFeatures.at(i).toElement().text().
-					        toStdString();
+					boreholeDate  = stationFeatures.at(i).toElement().text().toStdString();
 				/* add other borehole features here */
 			}
 
@@ -114,28 +113,24 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 			if (station.nodeName().compare("station") == 0)
 			{
 				GEOLIB::Station* s =
-				        new GEOLIB::Station(strtod((station.attribute("x")).
-				                                   toStdString().
-				                                   c_str(), 0),
-				                            strtod((station.attribute(
-				                                            "y")).toStdString().
-				                                   c_str(), 0),
-				                            zVal, stationName);
+				        new GEOLIB::Station(
+							strtod((station.attribute("x")).toStdString().c_str(), 0),
+				            strtod((station.attribute("y")).toStdString().c_str(), 0),
+				            zVal, 
+							stationName);
+				s->setStationValue(stationValue);
 				stations->push_back(s);
 			}
 			else if (station.nodeName().compare("borehole") == 0)
 			{
 				GEOLIB::StationBorehole* s = GEOLIB::StationBorehole::createStation(
 				        stationName,
-				        strtod((
-				                       station.attribute(
-				                               "x")).toStdString().c_str(), 0),
-				        strtod((
-				                       station.attribute(
-				                               "y")).toStdString().c_str(), 0),
+				        strtod((station.attribute("x")).toStdString().c_str(), 0),
+				        strtod((station.attribute("y")).toStdString().c_str(), 0),
 				        zVal,
 				        boreholeDepth,
 				        boreholeDate);
+				s->setStationValue(stationValue);
 				/* add stratigraphy to the borehole */
 				for(int i = 0; i < stationFeatures.count(); i++)
 					if (stationFeatures.at(i).nodeName().compare("strat") == 0)
@@ -227,7 +222,16 @@ int XmlStnInterface::write(std::ostream& stream)
 	QDomElement stationsTag = doc.createElement(listType);
 	stationListTag.appendChild(stationsTag);
 
+	bool useStationValue(false);
+	double sValue=static_cast<GEOLIB::Station*>((*stations)[0])->getStationValue();
 	size_t nStations(stations->size());
+	for (size_t i = 1; i < nStations; i++)
+		if (static_cast<GEOLIB::Station*>((*stations)[i])->getStationValue() != sValue)
+		{
+			useStationValue = true;
+			break;
+		}
+
 	for (size_t i = 0; i < nStations; i++)
 	{
 		QString stationType =  (isBorehole) ? "borehole" : "station";
@@ -243,6 +247,15 @@ int XmlStnInterface::write(std::ostream& stream)
 		QDomText stationNameText =
 		        doc.createTextNode(QString::fromStdString(static_cast<GEOLIB::Station*>((*stations)[i])->getName()));
 		stationNameTag.appendChild(stationNameText);
+
+		if (useStationValue)
+		{
+			QDomElement stationValueTag = doc.createElement("value");
+			stationTag.appendChild(stationValueTag);
+			QDomText stationValueText =
+					doc.createTextNode(QString::number(static_cast<GEOLIB::Station*>((*stations)[i])->getStationValue()));
+			stationValueTag.appendChild(stationValueText);
+		}
 
 		if (isBorehole)
 			writeBoreholeData(doc, stationTag,

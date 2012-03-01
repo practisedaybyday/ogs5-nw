@@ -114,7 +114,10 @@ void XmlCndInterface::readConditions( const QDomNode &listRoot,
 						if (distProps.at(j).nodeName().compare("Type") == 0)
 							c->setProcessDistributionType(FiniteElement::convertDisType(distProps.at(j).toElement().text().toStdString()));
 						else if (distProps.at(j).nodeName().compare("Value") == 0)
+						{
+							// insert direct
 							c->setDisValue(strtod(distProps.at(j).toElement().text().toStdString().c_str(), 0));
+						}
 					}
 				}
 			}
@@ -232,8 +235,14 @@ void XmlCndInterface::writeCondition( QDomDocument doc, QDomElement &listTag, co
 	disTypeTag.appendChild(disTypeText);
 	QDomElement disValueTag ( doc.createElement("Value") );
 	disTag.appendChild(disValueTag);
-	double dis_value (cond->getDisValue()[0]); //TODO: do this correctly!
-	QDomText disValueText ( doc.createTextNode(QString::number(dis_value)) );
+	QDomText disValueText;
+	if (cond->getProcessDistributionType() != FiniteElement::DIRECT)
+	{
+		double dis_value (cond->getDisValue()[0]); //TODO: do this correctly!
+		disValueText = doc.createTextNode(QString::number(dis_value));
+	}
+	else
+		disValueText = doc.createTextNode(QString::fromStdString(cond->getDirectFileName()));
 	disValueTag.appendChild(disValueText);
 }
 

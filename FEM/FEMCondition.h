@@ -83,8 +83,9 @@ public:
 	/// Returns the type of the FEM condition as a string.
 	static std::string condTypeToString(CondType type);
 
-	/// Creates CONSTANT conditions on all points of the given object
-	//static std::vector<FEMCondition*> getConstantPointsWithElevation(const GEOLIB::GeoObject &obj, FEMCondition* cond);
+	const std::string& getDirectFileName() const { return _direct_file_name; };
+
+	void setDirectFileName(std::string direct_file_name) { _direct_file_name = direct_file_name; };
 
 protected:
 	std::vector< std::pair<size_t, double> > getDistributedPairs(std::vector<int> point_ids, std::vector<double> point_values);
@@ -93,8 +94,8 @@ protected:
 	CondType _type;
 	std::string _geoName;
 	std::vector<double> _disValue;
-	//std::vector<std::string> _directValue;
 	std::string _associated_geometry;
+	std::string _direct_file_name;
 };
 
 #endif //FEMCONDITION_H
