@@ -96,7 +96,7 @@ void convertPoints (DBFHandle dbf_handle,
 
 	GEOLIB::GEOObjects* geo_objs (new GEOLIB::GEOObjects());
 	if (station)
-		geo_objs->addStationVec(points, points_group_name, GEOLIB::getRandomColor());
+		geo_objs->addStationVec(points, points_group_name);
 	else
 		geo_objs->addPointVec(points, points_group_name);
 
