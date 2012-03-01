@@ -30,6 +30,9 @@
 
 #ifndef IPMGEMPLUGIN
 
+class TProfil;
+class TNode;
+
 #include "m_param.h"
 #include "v_ipnc.h"
 // Internal subroutine for ET_translate() to process Phase scripts
@@ -38,7 +41,8 @@ typedef int (tget_ndx)( int nI, int nO, int Xplace );
 #else
 #include <time.h>
 #include "m_const.h"
-
+class TProfil;
+class TNode;
 #endif
 
 #include "s_fgl.h"
@@ -359,6 +363,7 @@ class TMulti
 {
     MULTI pm;
     MULTI *pmp;
+    TProfil *prof;
 
 // Internal arrays for the performance optimization  (since version 2.0.0)
    long int sizeN; /*, sizeL, sizeAN;*/
@@ -616,6 +621,7 @@ public:
      pmp->tpp_G = 0;
      pmp->tpp_S = 0;
      pmp->tpp_Vm = 0;
+ load=false;
    }
 
     ~TMulti()
@@ -629,6 +635,11 @@ public:
     MULTI* GetPM()
     { return &pm; }
 
+    void setProfil( TProfil *aProf )
+    {
+      prof = aProf;
+    }
+
     const char* GetName() const
     {  return "Multi";  }
 
@@ -638,7 +649,7 @@ public:
     void from_file( GemDataStream& ff );
     void to_text_file_gemipm( const char *path, bool addMui,
     		bool with_comments = true, bool brief_mode = false );
-    void from_text_file_gemipm( const char *path );
+    void from_text_file_gemipm(  TNode *na,const char *path );
 
     // EXTERNAL FUNCTIONS
     // MultiCalc
@@ -646,6 +657,7 @@ public:
     double CalculateEquilibriumState( long int typeMin, long int& NumIterFIA, long int& NumIterIPM );
     void InitalizeGEM_IPM_Data();
     void DC_LoadThermodynamicData();
+ bool load; // used in DC_LoadThermodynamicData to indicate if data was loaded at least once
     void setErrorMessage( long int num, const char *code, const char * msg);
     void addErrorMessage( const char * msg);
 
