@@ -42,13 +42,13 @@ TEST(GEO, TestGMSHFromGeo)
 	size_t max_number_of_points_in_quadtree_leaf (10);
 	double mesh_density_scaling_pnts(0.5);
 	double mesh_density_scaling_stations (0.05);
-		
+
 	//std::stringstream.setf(ios::fixed);
 	//std::stringstream.precision(6);
 
 	std::string file_name("testGMSHFromGeo.geo");
 	FileIO::GMSHInterface gmsh_io(file_name);
-	std::string result = gmsh_io.writeAllDataToGMSHInput(*geo_objects, geo_names, max_number_of_points_in_quadtree_leaf, mesh_density_scaling_pnts, mesh_density_scaling_stations);
-		
+	std::string result = gmsh_io.writeAllDataToGMSHInputAdaptive(*geo_objects, geo_names, max_number_of_points_in_quadtree_leaf, mesh_density_scaling_pnts, mesh_density_scaling_stations);
+
 	compareToReference(result.c_str(), QString("testGMSHFromGeo_result.geo"));
 }

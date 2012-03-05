@@ -10,11 +10,12 @@
 
 #include <string>
 
+// FileIO
+#include "Writer.h"
+
 // GEOLIB
 #include "GEOObjects.h"
 #include "Polygon.h"
-//#include "Point.h"
-#include "QuadTree.h"
 
 namespace MeshLib
 {
@@ -26,20 +27,35 @@ namespace FileIO
 /**
  * \brief Reads and writes GMSH-files to and from OGS data structures.
  */
-class GMSHInterface
+class GMSHInterface : public Writer
 {
 public:
+	enum MeshDensityAlgorithm {
+		NoMeshDensity = 0, //!< do not set the parameter
+		FixedMeshDensity, //!< set the parameter with a ixed value
+		AdaptivMeshDensity //!< computing the mesh density employing a QuadTree
+	};
+
+
 	/**
 	 * constructor opens a file stream with the given file name
-	 * @param fname file name
+	 * @param selected_geometries
+	 * @param geo_objs
 	 * @return
 	 */
-	GMSHInterface (const std::string &fname);
-	/**
-	 * destructor closes the stream
-	 * @return
-	 */
-	~GMSHInterface ();
+	GMSHInterface (GEOLIB::GEOObjects const& geo_objs,
+					bool include_stations_as_constraints,
+					MeshDensityAlgorithm mesh_density_algorithm,
+					std::vector<std::string>& selected_geometries);
+
+	void setSelectedGeometries (std::vector<std::string>& selected_geometries);
+
+protected:
+	int write(std::ostream& stream);
+
+private:
+	void writeGMSHInputFile(std::ostream & out);
+
 	/**
 	 * writes the geometric data (Points, Polylines, Surfaces) into a file of the GMSH geometric format
 	 * @param proj_name Name of the geometry that will be included in the geo-file
@@ -68,7 +84,7 @@ public:
 	 * of the Quadtree leaf the point is located in. The mesh_density is the edge size
 	 * multiplied with the scaling factor mesh_density_scaling_station_pnts.
 	 */
-	void writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
+	void writeAllDataToGMSHInputFileAdaptive (GEOLIB::GEOObjects& geo,
 	                                  std::vector<std::string> const & selected_geometries,
 	                                  size_t number_of_point_per_quadtree_node = 10,
 	                                  double mesh_density_scaling = 0.3,
@@ -81,18 +97,17 @@ public:
 	 * @param selected_geometries geometric information that should be included into the mesh process
 	 * @param mesh_density The mesh density at a point.
 	 */
-	void writeAllDataToGMSHInputFile (GEOLIB::GEOObjects& geo,
+	void writeAllDataToGMSHInputFileFixedMeshDensity (GEOLIB::GEOObjects& geo,
 	                                  std::vector<std::string> const & selected_geometries,
 	                                  double mesh_density);
 
-	std::string writeAllDataToGMSHInput (GEOLIB::GEOObjects& geo,
+	std::string writeAllDataToGMSHInputAdaptive (GEOLIB::GEOObjects& geo,
 	                                    std::vector<std::string> const & selected_geometries,
 	                                    size_t number_of_point_per_quadtree_node = 10,
 	                                    double mesh_density_scaling = 0.3,
 	                                    double mesh_density_scaling_station_pnts = 0.05);
 
-	void writeGMSHPoints(const std::vector<GEOLIB::Point*>& pnt_vec,
-	                     GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = NULL);
+	writeGMSHPoints(const std::vector<GEOLIB::Point*> &pnt_vec, std::ostream& out);
 	void writeGMSHPolyline (std::vector<GEOLIB::Polyline*> const& plys, size_t ply_id, size_t offset);
 	void writeGMSHPolylines(const std::vector<GEOLIB::Polyline*>& ply_vec);
 	size_t writeGMSHPolygon(std::vector<GEOLIB::Polyline*> const& ply_vec, size_t ply_id, size_t offset);
@@ -112,15 +127,14 @@ public:
 	 */
 	static void readGMSHMesh (std::string const& fname, MeshLib::CFEMesh* mesh);
 
-private:
 	GEOLIB::QuadTree<GEOLIB::Point>* createQuadTreeFromPoints(
 	        std::vector<GEOLIB::Point*> points,
 	        size_t number_of_point_per_quadtree_node);
-	void fetchGeometries (GEOLIB::GEOObjects const & geo,
-	                      std::vector<std::string> const & selected_geometries,
-	                      std::vector<GEOLIB::Point*>& all_points,
+
+	void fetchGeometries (std::vector<GEOLIB::Point*>& all_points,
 	                      std::vector<GEOLIB::Polyline*>& all_polylines,
 	                      std::vector<GEOLIB::Point*>& all_stations) const;
+
 	std::list<size_t> findHolesInsidePolygon(const std::vector<GEOLIB::Polyline*>* plys, size_t i) const;
 	/**
 	 * Method tests if the i-th polygon is included in any other polygon.
@@ -132,8 +146,8 @@ private:
 	bool isPolygonInOtherPolygon(const std::vector<GEOLIB::Polyline*>* plys, size_t i, size_t &j) const;
 	GEOLIB::Polygon* getBoundingPolygon (std::vector<GEOLIB::Polyline*> const & all_polylines,
 	                                     size_t &bp_idx) const;
-	std::vector<GEOLIB::Point*> getStationPoints(const GEOLIB::GEOObjects &geo_objects);
-	std::vector<GEOLIB::Point*> getSteinerPoints(GEOLIB::QuadTree<GEOLIB::Point>* quad_tree);
+	void getStationPoints(const GEOLIB::GEOObjects &geo_objects, std::vector<GEOLIB::Point*>& station_points) const;
+	void getSteinerPoints(GEOLIB::QuadTree<GEOLIB::Point>* quad_tree, std::vector<GEOLIB::Point*>& steiner_pnts) const;
 	void writeBoundingPolygon (GEOLIB::Polygon const* const bounding_polygon );
 	/// Adds a point-array (such as stations) as constraints to the geometry given by proj_name.
 	void addPointsAsConstraints(const std::vector<GEOLIB::Point*> &points,
@@ -142,11 +156,17 @@ private:
 	                            GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = NULL,
 	                            double mesh_density = 0.5);
 
+	void writePolylinesAsConstraints(GEOLIB::Polygon * bounding_polygon, size_t bp_idx,
+					std::vector<GEOLIB::Polyline*> const& all_polylines, double mesh_density,
+					GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = NULL);
+
 	size_t _n_pnt_offset;
 	size_t _n_lines;
 	size_t _n_plane_sfc;
-	std::stringstream _out;
-	std::ofstream _out_file;
+	GEOLIB::GEOObjects const& _geo_objs;
+	std::vector<std::string>& _selected_geometries;
+	bool _include_stations_as_constraints;
+	GMSHMeshDensityStrategy * _mesh_density_strategy;
 
 	/**
 	 * this private class is for storing meta data, i.e. the mapping between

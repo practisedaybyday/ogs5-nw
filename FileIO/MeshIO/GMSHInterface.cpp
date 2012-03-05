@@ -11,9 +11,14 @@
 
 // Base
 #include "swap.h"
+#include "Configure.h"
+#include "BuildInfo.h"
 
 // FileIO
 #include "GMSHInterface.h"
+#include "GMSHNoMeshDensity.h"
+#include "GMSHFixedMeshDensity.h"
+#include "GMSHAdaptivMeshDensity.h"
 
 // GEOLIB
 #include "Point.h"
@@ -28,48 +33,150 @@
 
 namespace FileIO
 {
-GMSHInterface::GMSHInterface (const std::string &fname) :
+GMSHInterface::GMSHInterface(GEOLIB::GEOObjects const& geo_objs,
+				bool include_stations_as_constraints,
+				MeshDensityAlgorithm mesh_density_algorithm,
+				double param1,
+				double param2,
+				size_t param3,
+				std::vector<std::string>& selected_geometries) :
 	_n_pnt_offset (0),
 	_n_lines (0),
-	_n_plane_sfc(0)
+	_n_plane_sfc(0),
+	_geo_objs(geo_objs),
+	_selected_geometries(selected_geometries),
+	_include_stations_as_constraints(include_stations_as_constraints)
 {
-	// open file
-	_out_file.open (fname.c_str());
-	// check file stream
-	if (!_out)
-	{
-		std::cerr << "could not open file " << fname << std::endl;
-		return;
+	if (mesh_density_algorithm == GMSHInterface::NoMeshDensity) {
+		_mesh_density_strategy = new GMSHNoMeshDensityStrategy;
+	} else {
+		if(mesh_density_algorithm == GMSHInterface::FixedMeshDensity) {
+			_mesh_density_strategy = new GMSHFixedMeshDensityStrategy(param1);
+		} else {
+			_mesh_density_strategy = new GMSHAdaptivMeshDensityStrategy(param1, param2, param3);
+		}
+	}
+}
+
+void GMSHInterface::setSelectedGeometries (std::vector<std::string>& selected_geometries)
+{
+	_selected_geometries = selected_geometries;
+	_n_pnt_offset = 0;
+	_n_lines = 0;
+	_n_plane_sfc = 0;
+}
+
+int GMSHInterface::write(std::ostream& stream)
+{
+	stream << "// GMSH input file created by OpenGeoSys " << OGS_VERSION << " build " << BUILD_TIMESTAMP << std::endl;
+	stream << std::endl;
+
+	writeGMSHInputFile(stream);
+//	computeBoundingPolygons(_bp_vec);
+//	for (std::vector<GEOLIB::Polygon*>::const_iterator it_bp(_bp_vec.begin()); it_bp != _bp_vec.end(); it_bp++) {
+//
+//	}
+}
+
+void GMSHInterface::writeGMSHInputFile(std::ostream& stream)
+{
+#ifndef NDEBUG
+	std::cerr << "[GMSHInterface::writeGMSHInputFile] get data from instance of class GEOObjects ... " << std::flush;
+#endif
+	// get data from geo
+	std::vector<GEOLIB::Point*> all_points;
+	std::vector<GEOLIB::Polyline*> all_polylines;
+	std::vector<GEOLIB::Point*> all_stations;
+	fetchGeometries (all_points, all_polylines, all_stations);
+#ifndef NDEBUG
+	std::cerr << "ok" << std::endl;
+#endif
+	_mesh_density_strategy->init(all_points);
+	if (dynamic_cast<GMSHAdaptiveMeshDensityStrategy*> (_mesh_density_strategy)
+					&& _include_stations_as_constraints) {
+		dynamic_cast<GMSHAdaptiveMeshDensityStrategy*> (_mesh_density_strategy)->addPoints(
+						all_stations);
 	}
 
-	_out << "// GMSH input file created by OpenGeoSys" << std::endl;
-	_out << std::endl;
-	_out.precision (20);
+	// search bounding polygon
+	size_t bp_idx(0); // bounding polygon index
+	GEOLIB::Polygon* bounding_polygon(getBoundingPolygon(all_polylines, bp_idx));
+	if (!bounding_polygon) return "";
+
+	// *** GMSH - write all non-station points
+	const size_t n(all_points.size());
+	double mesh_density;
+	for (size_t k(0); k < n; k++) {
+		if (bounding_polygon->isPntInPolygon(*(all_points[k]))) {
+			GEOLIB::Point ll, ur;
+			quad_tree->getLeaf(*(all_points[k]), ll, ur);
+			mesh_density = mesh_density_scaling * (ur[0] - ll[0]);
+			_out << "Point(" << _n_pnt_offset + k << ") = {" << (*(all_points[k]))[0] << ","
+							<< (*(all_points[k]))[1] << "," << (*(all_points[k]))[2] << ","
+							<< mesh_density << "};" << std::endl;
+		}
+	}
+
+	// write the bounding polygon
+	writeBoundingPolygon(bounding_polygon);
+
+	// apply offset changes here
+	_n_pnt_offset += n;
+
+	// write all other polylines as constraints
+	this->writePolylinesAsConstraints(bounding_polygon, bp_idx, all_polylines, mesh_density,
+					quad_tree);
+
+	// write stations as constraints
+	_out << "// Stations" << std::endl;
+	const size_t n_stations(all_stations.size());
+	for (size_t k(0); k < n_stations; k++)
+		if (bounding_polygon->isPntInPolygon(*(all_stations[k]))) {
+			GEOLIB::Point ll, ur;
+			quad_tree->getLeaf(*(all_stations[k]), ll, ur);
+			double mesh_density(mesh_density_scaling_station_pnts * (ur[0] - ll[0]));
+			_out << "Point(" << _n_pnt_offset + k << ") = {" << (*(all_stations[k]))[0] << ","
+							<< (*(all_stations[k]))[1] << "," << (*(all_stations[k]))[2] << ","
+							<< mesh_density << "};" << std::endl;
+			_out << "Point {" << _n_pnt_offset + k << "} In Surface {" << _n_plane_sfc - 1 << "};"
+							<< std::endl;
+		}
+	_n_pnt_offset += n_stations;
+
+	// write Steiner points
+	std::list<GEOLIB::QuadTree<GEOLIB::Point>*> leaf_list;
+	quad_tree->getLeafs(leaf_list);
+	_out << "// Steiner points" << std::endl;
+	for (std::list<GEOLIB::QuadTree<GEOLIB::Point>*>::const_iterator it(leaf_list.begin()); it
+					!= leaf_list.end(); it++)
+		if ((*it)->getPoints().empty()) {
+			// compute point from square
+			GEOLIB::Point ll, rr;
+			(*it)->getSquarePoints(ll, rr);
+			GEOLIB::Point mid_point(0.5 * (rr[0] + ll[0]), 0.5 * (rr[1] + ll[1]), 0.5 * (rr[2]
+							+ ll[2]));
+			if (bounding_polygon->isPntInPolygon(mid_point)) {
+				_out << "Point(" << _n_pnt_offset << ") = {" << mid_point[0] << "," << mid_point[1]
+								<< "," << mid_point[2] << "," << 0.5 * (rr[0] - ll[0]) << "};"
+								<< std::endl;
+				_out << "Point {" << _n_pnt_offset << "} In Surface {" << _n_plane_sfc - 1 << "};"
+								<< std::endl;
+				_n_pnt_offset++;
+
+			}
+		}
 }
 
-GMSHInterface::~GMSHInterface ()
-{
-	_out_file.close();
-}
 
-void GMSHInterface::writeGMSHPoints(const std::vector<GEOLIB::Point*> &pnt_vec,
-                                    GEOLIB::QuadTree<GEOLIB::Point>* quad_tree)
+void GMSHInterface::writeGMSHPoints(const std::vector<GEOLIB::Point*> &pnt_vec, std::ostream& out)
 {
 	// write points
 	const size_t n (pnt_vec.size());
-	for (size_t k(0); k < n; k++)
-	{
-		_out << "Point(" << _n_pnt_offset + k << ") = {" << (*(pnt_vec[k]))[0] << ","
+	for (size_t k(0); k < n; k++) {
+		out << "Point(" << _n_pnt_offset + k << ") = {" << (*(pnt_vec[k]))[0] << ","
 		     << (*(pnt_vec[k]))[1] << "," << (*(pnt_vec[k]))[2];
-
-		if (quad_tree)
-		{
-			GEOLIB::Point ll, ur;
-			quad_tree->getLeaf(*(pnt_vec[k]), ll, ur);
-			_out << "," << (0.5 * (ur[0] - ll[0]));
-		}
-
-		_out << "};" << std::endl;
+		out << mesh_density_strategy->getDensityAtPoint(pnt_vec[k]);
+		out << "};" << std::endl;
 	}
 	_n_pnt_offset += n;
 }
@@ -123,21 +230,16 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name,
 	const std::vector<GEOLIB::Polyline*>* plys (geo.getPolylineVec (proj_name));
 	std::cerr << "ok" << std::endl;
 
-	// check file stream
-	if (!_out_file)
-		return false;
-
 	// create a quad tree for generate steiner points. this makes sure that the resulting geometry will be suitable for a FEM mesh.
 	GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = this->createQuadTreeFromPoints(*pnts, 2);
 
 	std::vector<GEOLIB::Point*> station_points;
 	if (useStationsAsContraints)
 	{
-		station_points = this->getStationPoints(geo);
+		this->getStationPoints(geo, station_points);
 		for (size_t k(0); k < station_points.size(); k++)
 			quad_tree->addPoint (station_points[k]);
 	}
-
 	quad_tree->balance();
 
 	// write points
@@ -233,14 +335,14 @@ bool GMSHInterface::writeGMSHInputFile(const std::string &proj_name,
 
 	if (useSteinerPoints)
 	{
-		std::vector<GEOLIB::Point*> steiner_points = this->getSteinerPoints(quad_tree);
+		std::vector<GEOLIB::Point*> steiner_points;
+		this->getSteinerPoints(quad_tree, steiner_points);
+		_out << "// Steiner points" << std::endl;
 		this->addPointsAsConstraints(steiner_points, *plys, geo2gmsh_surface_id_map, quad_tree, 0.3);
 		for (size_t i = 0; i < steiner_points.size(); i++)
 			delete steiner_points[i];
 	}
 
-	_out_file << _out.str();
-	
 	delete quad_tree;
 
 	std::cerr << "ok" << std::endl;
@@ -254,8 +356,8 @@ std::list<size_t> GMSHInterface::findHolesInsidePolygon(const std::vector<GEOLIB
 	GEOLIB::Polygon polygon(*((*plys)[i]));
 	std::list<size_t> polygon_list;
 	polygon_list.push_back(i);
-	for (size_t j = 0; j < plys->size(); j++) // check if polygons are located completely inside the given polygon
-
+	for (size_t j = 0; j < plys->size(); j++) {
+		// check if polygons are located completely inside the given polygon
 		if ((i != j) && ((*plys)[j]->isClosed()))
 		{
 			GEOLIB::Polyline* line ((*plys)[j]);
@@ -269,6 +371,7 @@ std::list<size_t> GMSHInterface::findHolesInsidePolygon(const std::vector<GEOLIB
 			if (isInside)
 				polygon_list.push_back(j);
 		}
+	}
 	return polygon_list;
 }
 
@@ -313,78 +416,20 @@ void GMSHInterface::writePlaneSurface (std::list<size_t> const& polygon_list, bo
 	_n_plane_sfc++;
 }
 
-GEOLIB::QuadTree<GEOLIB::Point>* GMSHInterface::createQuadTreeFromPoints(
-        std::vector<GEOLIB::Point*> all_points,
-        size_t number_of_point_per_quadtree_node)
-{
-	// *** QuadTree - determining bounding box
-#ifndef NDEBUG
-	std::cout << "computing axis aligned bounding box for quadtree ... " << std::flush;
-#endif
-	// determine axis aligned bounding box
-	GEOLIB::Point ll(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 0);
-	GEOLIB::Point ur(std::numeric_limits<double>::min(), std::numeric_limits<double>::min(), 0);
-	for (size_t k(0); k < all_points.size(); k++)
-	{
-		if ((*(all_points[k]))[0] < ll[0])
-			ll[0] = (*(all_points[k]))[0];
-		if ((*(all_points[k]))[1] < ll[1])
-			ll[1] = (*(all_points[k]))[1];
-		if ((*(all_points[k]))[0] > ur[0])
-			ur[0] = (*(all_points[k]))[0];
-		if ((*(all_points[k]))[1] > ur[1])
-			ur[1] = (*(all_points[k]))[1];
-	}
-#ifndef NDEBUG
-	std::cout << "ok" << std::endl;
-#endif
-	// *** QuadTree - create object
-#ifndef NDEBUG
-	std::cout << "creating quadtree ... " << std::flush;
-#endif
-	GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = new GEOLIB::QuadTree<GEOLIB::Point>(
-	        ll,
-	        ur,
-	        number_of_point_per_quadtree_node);
-	std::cout << "ok" << std::endl;
 
-	// *** QuadTree - insert points
-#ifndef NDEBUG
-	std::cout << "inserting " << all_points.size() << " points into quadtree ... " <<
-	std::flush;
-#endif
-	for (size_t k(0); k < all_points.size(); k++)
-		quad_tree->addPoint (all_points[k]);
 
-#ifndef NDEBUG
-	std::cout << "ok" << std::endl;
-#endif
-
-	return quad_tree;
-}
-
-void GMSHInterface::writeAllDataToGMSHInputFile (
+void GMSHInterface::writeAllDataToGMSHInputFileAdaptive (
         GEOLIB::GEOObjects& geo,
         std::vector<std::string> const &selected_geometries,
         size_t number_of_point_per_quadtree_node,
         double mesh_density_scaling,
         double mesh_density_scaling_station_pnts)
 {
-	// check file stream
-	if (!_out_file)
-		return;
-
-
-	std::string file_string = this->writeAllDataToGMSHInput(geo, selected_geometries, number_of_point_per_quadtree_node, mesh_density_scaling, mesh_density_scaling_station_pnts);
-	if (!file_string.empty())
-	{
-		_out_file << file_string;
-		std::cout << "ok" << std::endl;
-	}
+	std::string file_string = this->writeAllDataToGMSHInputAdaptive(geo, selected_geometries, number_of_point_per_quadtree_node, mesh_density_scaling, mesh_density_scaling_station_pnts);
 }
 
 
-std::string GMSHInterface::writeAllDataToGMSHInput (
+std::string GMSHInterface::writeAllDataToGMSHInputAdaptive (
         GEOLIB::GEOObjects& geo,
         std::vector<std::string> const &selected_geometries,
         size_t number_of_point_per_quadtree_node,
@@ -392,23 +437,18 @@ std::string GMSHInterface::writeAllDataToGMSHInput (
         double mesh_density_scaling_station_pnts)
 {
 	std::cout << "GMSHInterface::writeGMSHInputFile adaptive " << std::endl;
-
 	std::vector<GEOLIB::Point*> all_points;
 	std::vector<GEOLIB::Polyline*> all_polylines;
 	std::vector<GEOLIB::Point*> all_stations;
-	fetchGeometries (geo, selected_geometries, all_points, all_polylines, all_stations);
+	fetchGeometries (all_points, all_polylines, all_stations);
 
-	// search bounding polygon
-	size_t bp_idx (0); // bounding polygon index
-	GEOLIB::Polygon* bounding_polygon (getBoundingPolygon(all_polylines, bp_idx));
-	if (!bounding_polygon)
-		return "";
-
+	// *** QuadTree ***
+	// QuadTree - insert points
 	GEOLIB::QuadTree<GEOLIB::Point>* quad_tree = this->createQuadTreeFromPoints(
 	        all_points,
 	        number_of_point_per_quadtree_node);
 
-	// *** QuadTree - insert stations
+	 // QuadTree - insert stations
 #ifndef NDEBUG
 	std::cout << "inserting " << all_stations.size() << " stations into quadtree ... " <<
 	std::flush;
@@ -429,14 +469,21 @@ std::string GMSHInterface::writeAllDataToGMSHInput (
 	std::cout << "ok" << std::endl;
 #endif
 
+	// search bounding polygon
+	size_t bp_idx (0); // bounding polygon index
+	GEOLIB::Polygon* bounding_polygon (getBoundingPolygon(all_polylines, bp_idx));
+	if (!bounding_polygon)
+		return "";
+
 	// *** GMSH - write all non-station points
 	const size_t n (all_points.size());
+	double mesh_density;
 	for (size_t k(0); k < n; k++) {
 		if (bounding_polygon->isPntInPolygon (*(all_points[k])))
 		{
 			GEOLIB::Point ll, ur;
 			quad_tree->getLeaf (*(all_points[k]), ll, ur);
-			double mesh_density (mesh_density_scaling * (ur[0] - ll[0]));
+			mesh_density  = mesh_density_scaling * (ur[0] - ll[0]);
 			_out << "Point(" << _n_pnt_offset + k << ") = {" <<
 			(*(all_points[k]))[0] << ","
 			     << (*(all_points[k]))[1] << "," << (*(all_points[k]))[2]
@@ -452,122 +499,7 @@ std::string GMSHInterface::writeAllDataToGMSHInput (
 	_n_pnt_offset += n;
 
 	// write all other polylines as constraints
-	const size_t n_polylines (all_polylines.size());
-	for (size_t k(0); k < n_polylines; k++)
-		if (k != bp_idx)
-		{
-			bool begin_line_pnt_inside_polygon (true);
-			bool end_line_pnt_inside_polygon (true);
-
-			size_t s (all_polylines[k]->getNumberOfPoints());
-
-			// write line segments (= Line) of the polyline
-			for (size_t j(0); j < s - 1; j++)
-			{
-//				_out << "Line(" << _n_lines+j << ") = {" << (all_polylines[k])->getPointID(j) << ","
-//						<< (all_polylines[k])->getPointID(j+1) << "};" << std::endl;
-//				// write line as constraint
-//				_out << "Line {" << _n_lines + j << "} In Surface {" << _n_plane_sfc-1 << "};" << std::endl;
-
-				// check if line segment is contained in bounding polygon
-				bool line_seg_is_already_used(GEOLIB::containsEdge(
-								*(dynamic_cast<GEOLIB::Polyline*> (bounding_polygon)),
-								(all_polylines[k])-> getPointID(j),
-								(all_polylines[k])-> getPointID(j + 1)));
-				// check if line segment is contained in a previous polyline
-				for (size_t i(0); i < k && !line_seg_is_already_used; i++)
-					line_seg_is_already_used = GEOLIB::containsEdge(*(all_polylines[i]),
-									(all_polylines[k])-> getPointID(j),
-									(all_polylines[k])->getPointID(j + 1));
-
-				if (!line_seg_is_already_used)
-				{
-					// check if first point of polyline is inside bounding polygon
-					if (j == 0)
-						begin_line_pnt_inside_polygon =
-						        bounding_polygon->isPntInPolygon (*(all_polylines[k])->getPoint(j));
-					// check if end point of the line is inside bounding polygon
-					end_line_pnt_inside_polygon =
-					        bounding_polygon->isPntInPolygon (
-					                *(all_polylines[k])->getPoint(j + 1));
-
-					if (begin_line_pnt_inside_polygon &&
-					    end_line_pnt_inside_polygon)
-					{
-						_out << "Line(" << _n_lines + j << ") = {" <<
-						(all_polylines[k])->getPointID(j) << ","
-						     << (all_polylines[k])->getPointID(j + 1) << "};" <<
-						std::endl;
-						// write line as constraint
-						_out << "Line {" << _n_lines + j <<
-						"} In Surface {" << _n_plane_sfc - 1 <<
-						"};" << std::endl;
-					}
-					else
-					{
-						if (begin_line_pnt_inside_polygon &&
-						    !end_line_pnt_inside_polygon)
-						{
-							// create new point
-							GEOLIB::Point * s(bounding_polygon-> getIntersectionPointPolygonLine(
-											*(all_polylines[k])-> getPoint(j),
-											*(all_polylines[k])->
-							                getPoint(j + 1)));
-							if (s != NULL)
-							{
-								// write new point as gmsh geo point with mesh density from existing point
-								GEOLIB::Point ll, ur;
-								quad_tree->getLeaf(*(all_polylines[k])-> getPoint(j), ll, ur);
-								double mesh_density(0.3 * (ur[0] - ll[0])); // scaling with 0.3 - do not know if this is a good value
-								_out << "Point(" << _n_pnt_offset << ") = {" << (*s)[0] << ","
-												<< (*s)[1] << "," << (*s)[2] << "," << mesh_density
-												<< "}; // new end point of polyline " << k
-												<< std::endl;
-								// write line
-								_out << "Line(" << _n_lines + j << ") = {"
-												<< (all_polylines[k])-> getPointID(j) << ","
-												<< _n_pnt_offset << "};" << std::endl;
-								// write line as constraint
-								_out << "Line {" << _n_lines + j << "} In Surface {"
-												<< _n_plane_sfc - 1 << "};" << std::endl;
-								_n_pnt_offset++;
-								delete s;
-							}
-						}
-						if (!begin_line_pnt_inside_polygon &&
-						    end_line_pnt_inside_polygon)
-						{
-							// create new point
-							GEOLIB::Point * s(bounding_polygon-> getIntersectionPointPolygonLine(
-											*(all_polylines[k])-> getPoint(j),
-											*(all_polylines[k])-> getPoint(j + 1)));
-							if (s != NULL) {
-								// write new point as gmsh geo point with mesh density from existing point
-								GEOLIB::Point ll, ur;
-								quad_tree->getLeaf(*(all_polylines[k])-> getPoint(j + 1), ll, ur);
-								double mesh_density(0.3 * (ur[0] - ll[0])); // scaling with 0.3 - do not know if this is a good value
-								_out << "Point(" << _n_pnt_offset << ") = {" << (*s)[0] << ","
-												<< (*s)[1] << "," << (*s)[2] << "," << mesh_density
-												<< "}; // new end point of polyline " << k
-												<< std::endl;
-								// write line
-								_out << "Line(" << _n_lines + j << ") = {" << _n_pnt_offset << ","
-												<< (all_polylines[k])->getPointID(j + 1) << "};"
-												<< std::endl;
-								// write line as constraint
-								_out << "Line {" << _n_lines + j << "} In Surface {"
-												<< _n_plane_sfc - 1 << "};" << std::endl;
-								_n_pnt_offset++;
-								delete s;
-							}
-						}
-					}
-					begin_line_pnt_inside_polygon = end_line_pnt_inside_polygon;
-				}
-			}
-			// update line counter
-			_n_lines += s;
-		}
+	this->writePolylinesAsConstraints(bounding_polygon, bp_idx, all_polylines, mesh_density, quad_tree);
 
 	// write stations as constraints
 	_out << "// Stations" << std::endl;
@@ -612,24 +544,19 @@ std::string GMSHInterface::writeAllDataToGMSHInput (
 			}
 		}
 	delete quad_tree;
-	return _out.str();
 }
 
-void GMSHInterface::writeAllDataToGMSHInputFile (
-        GEOLIB::GEOObjects& geo,
-        std::vector<std::string> const &selected_geometries,
+void GMSHInterface::writeAllDataToGMSHInputFileFixedMeshDensity (std::ostream &out,
         double mesh_density)
 {
-	// check file stream
-	if (!_out_file)
-		return;
-
-	std::cout << "GMSHInterface::writeGMSHInputFile non adaptive" << std::endl;
+#ifndef NDEBUG
+	std::cout << "[GMSHInterface::writeGMSHInputFile] non adaptive" << std::endl;
+#endif
 
 	std::vector<GEOLIB::Point*> all_points;
 	std::vector<GEOLIB::Polyline*> all_polylines;
 	std::vector<GEOLIB::Point*> all_stations;
-	fetchGeometries (geo, selected_geometries, all_points, all_polylines, all_stations);
+	fetchGeometries (all_points, all_polylines, all_stations);
 
 	// search bounding polygon
 	size_t bp_idx (0); // bounding polygon index
@@ -641,128 +568,40 @@ void GMSHInterface::writeAllDataToGMSHInputFile (
 	const size_t n (all_points.size());
 	for (size_t k(0); k < n; k++)
 		if (bounding_polygon->isPntInPolygon (*(all_points[k])))
-			_out << "Point(" << _n_pnt_offset + k << ") = {" <<
+			out << "Point(" << _n_pnt_offset + k << ") = {" <<
 			(*(all_points[k]))[0] << ","
 			     << (*(all_points[k]))[1] << "," << (*(all_points[k]))[2]
 			     << "," << mesh_density
 			     << "};" << std::endl;
-
-	std::cout << "write bounding polygon ... " << std::flush;
+#ifndef NDEBUG
+	std::cout << "\twrite bounding polygon ... " << std::flush;
+#endif
 	// write bounding polygon
 	writeBoundingPolygon (bounding_polygon);
 	_n_pnt_offset += n;
 
 	// write all other polylines as constraints
-	const size_t n_polylines (all_polylines.size());
-	for (size_t k(0); k < n_polylines; k++)
-		if (k != bp_idx) {
-			bool begin_line_pnt_inside_polygon(true);
-			bool end_line_pnt_inside_polygon(true);
-
-			size_t s(all_polylines[k]->getNumberOfPoints());
-
-			// write line segments (= Line) of the polyline
-			for (size_t j(0); j < s - 1; j++) {
-				// check if line segment is contained in bounding polygon
-				bool line_seg_is_already_used(GEOLIB::containsEdge(
-								*(dynamic_cast<GEOLIB::Polyline*> (bounding_polygon)),
-								(all_polylines[k])-> getPointID(j),
-								(all_polylines[k])-> getPointID(j + 1)));
-				// check if line segment is contained in a previous polyline
-				for (size_t i(0); i < k && !line_seg_is_already_used; i++)
-					line_seg_is_already_used = GEOLIB::containsEdge(*(all_polylines[i]),
-									(all_polylines[k])-> getPointID(j),
-									(all_polylines[k])->getPointID(j + 1));
-
-				if (!line_seg_is_already_used) {
-					// check if first point of polyline is inside bounding polygon
-					if (j == 0) begin_line_pnt_inside_polygon = bounding_polygon->isPntInPolygon(
-									*(all_polylines[k])->getPoint(j));
-					// check if end point of the line is inside bounding polygon
-					end_line_pnt_inside_polygon = bounding_polygon->isPntInPolygon(
-									*(all_polylines[k])->getPoint(j + 1));
-
-					if (begin_line_pnt_inside_polygon && end_line_pnt_inside_polygon) {
-						_out << "Line(" << _n_lines + j << ") = {"
-										<< (all_polylines[k])->getPointID(j) << ","
-										<< (all_polylines[k])->getPointID(j + 1) << "};"
-										<< std::endl;
-						// write line as constraint
-						_out << "Line {" << _n_lines + j << "} In Surface {" << _n_plane_sfc - 1
-										<< "};" << std::endl;
-					} else {
-						if (begin_line_pnt_inside_polygon && !end_line_pnt_inside_polygon) {
-							// create new point
-							GEOLIB::Point * s(bounding_polygon-> getIntersectionPointPolygonLine(
-											*(all_polylines[k])-> getPoint(j),
-											*(all_polylines[k])-> getPoint(j + 1)));
-							if (s != NULL) {
-								_out << "Point(" << _n_pnt_offset << ") = {" << (*s)[0] << ","
-												<< (*s)[1] << "," << (*s)[2] << "," << mesh_density
-												<< "}; // new end point of polyline " << k
-												<< std::endl;
-								// write line
-								_out << "Line(" << _n_lines + j << ") = {"
-												<< (all_polylines[k])-> getPointID(j) << ","
-												<< _n_pnt_offset << "};" << std::endl;
-								// write line as constraint
-								_out << "Line {" << _n_lines + j << "} In Surface {"
-												<< _n_plane_sfc - 1 << "};" << std::endl;
-								_n_pnt_offset++;
-								delete s;
-							}
-						}
-						if (!begin_line_pnt_inside_polygon && end_line_pnt_inside_polygon) {
-							// create new point
-							GEOLIB::Point * s(bounding_polygon-> getIntersectionPointPolygonLine(
-											*(all_polylines[k])-> getPoint(j),
-											*(all_polylines[k])-> getPoint(j + 1)));
-							if (s != NULL) {
-								_out << "Point(" << _n_pnt_offset << ") = {" << (*s)[0] << ","
-												<< (*s)[1] << "," << (*s)[2] << "," << mesh_density
-												<< "}; // new end point of polyline " << k
-												<< std::endl;
-								// write line
-								_out << "Line(" << _n_lines + j << ") = {" << _n_pnt_offset << ","
-												<< (all_polylines[k])->getPointID(j + 1) << "};"
-												<< std::endl;
-								// write line as constraint
-								_out << "Line {" << _n_lines + j << "} In Surface {"
-												<< _n_plane_sfc - 1 << "};" << std::endl;
-								_n_pnt_offset++;
-								delete s;
-							}
-						}
-					}
-					begin_line_pnt_inside_polygon = end_line_pnt_inside_polygon;
-				}
-			}
-			// update line counter
-			_n_lines += s;
-		}
+	writePolylinesAsConstraints(bounding_polygon, bp_idx, all_polylines, mesh_density, NULL);
 
 	// write stations as constraints
-	_out << "// Stations" << std::endl;
+	out << "// Stations" << std::endl;
 	const size_t n_stations (all_stations.size());
 	for (size_t k(0); k < n_stations; k++) {
 		if (bounding_polygon->isPntInPolygon(*(all_stations[k]))) {
-			_out << "Point(" << _n_pnt_offset + k << ") = {" << (*(all_stations[k]))[0] << ","
+			out << "Point(" << _n_pnt_offset + k << ") = {" << (*(all_stations[k]))[0] << ","
 							<< (*(all_stations[k]))[1] << "," << (*(all_stations[k]))[2] << ","
 							<< mesh_density << "};" << std::endl;
-			_out << "Point {" << _n_pnt_offset + k << "} In Surface {" << _n_plane_sfc - 1 << "};"
+			out << "Point {" << _n_pnt_offset + k << "} In Surface {" << _n_plane_sfc - 1 << "};"
 							<< std::endl;
 		}
 	}
 	_n_pnt_offset += n_stations;
-
-	_out_file << _out.str();
-
+#ifndef NDEBUG
 	std::cout << "ok" << std::endl;
+#endif
 }
 
-void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
-                                     std::vector<std::string> const & selected_geometries,
-                                     std::vector<GEOLIB::Point*>& all_points,
+void GMSHInterface::fetchGeometries (std::vector<GEOLIB::Point*>& all_points,
                                      std::vector<GEOLIB::Polyline*>& all_polylines,
                                      std::vector<GEOLIB::Point*>& all_stations) const
 {
@@ -771,12 +610,12 @@ void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
 	// get station names
 	std::vector<std::string> geo_station_names;
 
-	for (std::vector<std::string>::const_iterator it (selected_geometries.begin());
-	     it != selected_geometries.end(); ++it)
+	for (std::vector<std::string>::const_iterator it (_selected_geometries.begin());
+	     it != _selected_geometries.end(); ++it)
 	{
-		if ((geo.getPointVecObj (*it))->getType() == GEOLIB::PointVec::POINT)
+		if ((_geo_objs.getPointVecObj (*it))->getType() == GEOLIB::PointVec::POINT)
 			geo_names.push_back (*it);
-		else if ((geo.getPointVecObj (*it))->getType() == GEOLIB::PointVec::STATION)
+		else if ((_geo_objs.getPointVecObj (*it))->getType() == GEOLIB::PointVec::STATION)
 			geo_station_names.push_back (*it);
 	}
 
@@ -787,30 +626,30 @@ void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
 	{
 		// get data from geo
 #ifndef NDEBUG
-		std::cout << "fetch geometrical data for " << *it << " " << std::flush;
+		std::cout << "\tfetch geometrical data for " << *it << " " << std::flush;
 #endif
-		const std::vector<GEOLIB::Point*>* pnts (geo.getPointVec (*it));
-		const std::vector<GEOLIB::Polyline*>* plys (geo.getPolylineVec (*it));
+		const std::vector<GEOLIB::Point*>* pnts (_geo_objs.getPointVec (*it));
+		const std::vector<GEOLIB::Polyline*>* plys (_geo_objs.getPolylineVec (*it));
 #ifndef NDEBUG
 		std::cout << "ok" << std::endl;
 #endif
 
-		if (pnts)
-		{
+		if (pnts) {
 			// insert points into vector all_points
 			all_points.insert (all_points.end(), pnts->begin(), pnts->end());
 
-			if (plys)
-				for (size_t k(0); k < plys->size(); k++)
-				{
+			if (plys) {
+				for (size_t k(0); k < plys->size(); k++) {
 					size_t pos (all_polylines.size());
 					// insert new polyline
 					all_polylines.push_back (new GEOLIB::Polyline (all_points));
 					// copy points
-					for (size_t j(0); j < (*plys)[k]->getNumberOfPoints(); j++)
+					for (size_t j(0); j < (*plys)[k]->getNumberOfPoints(); j++) {
 						// set points of polyline
 						(all_polylines[pos])->addPoint(pnt_offset + ((*plys)[k])-> getPointID(j));
+					}
 				}
+			}
 			pnt_offset += pnts->size();
 		}
 	}
@@ -820,9 +659,9 @@ void GMSHInterface::fetchGeometries (GEOLIB::GEOObjects const & geo,
 	{
 		// get data from geo
 #ifndef NDEBUG
-		std::cout << "fetch station data for " << *it << " " << std::flush;
+		std::cout << "\tfetch station data for " << *it << " " << std::flush;
 #endif
-		const std::vector<GEOLIB::Point*>* pnts (geo.getPointVec (*it));
+		const std::vector<GEOLIB::Point*>* pnts (_geo_objs.getPointVec (*it));
 #ifndef NDEBUG
 		std::cout << "ok" << std::endl;
 #endif
@@ -837,7 +676,7 @@ GEOLIB::Polygon* GMSHInterface::getBoundingPolygon (
 {
 	GEOLIB::Polygon* bounding_polygon(NULL);
 	const size_t n_polylines (all_polylines.size());
-	for (size_t k(0); k < n_polylines; k++)
+	for (size_t k(0); k < n_polylines; k++) {
 		if (all_polylines[k]->isClosed ()) // == Polygon
 		{
 			if (bounding_polygon) // we have already a bounding polygon
@@ -865,6 +704,7 @@ GEOLIB::Polygon* GMSHInterface::getBoundingPolygon (
 				bp_idx = k;
 			}
 		}
+	}
 
 	if (!bounding_polygon)
 	{
@@ -906,13 +746,14 @@ void GMSHInterface::addPointsAsConstraints(const std::vector<GEOLIB::Point*> &po
                                            double mesh_density)
 {
 	std::vector<GEOLIB::Polygon*> polygons;
-	for (size_t j = 0; j < polylines.size(); j++)
+	for (size_t j = 0; j < polylines.size(); j++) {
 		if (polylines[j]->isClosed())
 		{
 			GEOLIB::Polygon* pgn = new GEOLIB::Polygon(*polylines[j]);
 			polygons.push_back(pgn);
 			//geo2gmsh_surface_id_map[polygons.size()-1] = geo2gmsh_surface_id_map[j]; // this should be the same as above but do you wanna take the risk?
 		}
+	}
 
 	size_t nPoints = points.size();
 	for (size_t i = 0; i < nPoints; i++)
@@ -957,9 +798,8 @@ void GMSHInterface::addPointsAsConstraints(const std::vector<GEOLIB::Point*> &po
 	}
 }
 
-std::vector<GEOLIB::Point*> GMSHInterface::getStationPoints(const GEOLIB::GEOObjects &geo)
+void GMSHInterface::getStationPoints(const GEOLIB::GEOObjects &geo, std::vector<GEOLIB::Point*>& station_points) const
 {
-	std::vector<GEOLIB::Point*> station_points;
 	std::vector<std::string> stn_names;
 	geo.getStationVectorNames(stn_names);
 
@@ -969,16 +809,14 @@ std::vector<GEOLIB::Point*> GMSHInterface::getStationPoints(const GEOLIB::GEOObj
 		const std::vector<GEOLIB::Point*>* pnts (geo.getPointVec (*it));
 		station_points.insert (station_points.end(), pnts->begin(), pnts->end());
 	}
-	return station_points;
 }
 
-std::vector<GEOLIB::Point*> GMSHInterface::getSteinerPoints(
-        GEOLIB::QuadTree<GEOLIB::Point>* quad_tree)
+void GMSHInterface::getSteinerPoints(
+        GEOLIB::QuadTree<GEOLIB::Point>* quad_tree,
+        std::vector<GEOLIB::Point*>& steiner_points) const
 {
-	std::vector<GEOLIB::Point*> steiner_points;
 	std::list<GEOLIB::QuadTree<GEOLIB::Point>*> leaf_list;
 	quad_tree->getLeafs (leaf_list);
-	_out << "// Steiner points" << std::endl;
 	for (std::list<GEOLIB::QuadTree<GEOLIB::Point>*>::const_iterator it (leaf_list.begin());
 	     it != leaf_list.end(); it++)
 		if ((*it)->getPoints().empty())
@@ -992,7 +830,110 @@ std::vector<GEOLIB::Point*> GMSHInterface::getSteinerPoints(
 			                          0.5 * (rr[2] + ll[2]));
 			steiner_points.push_back(mid_point);
 		}
-	return steiner_points;
+}
+
+void GMSHInterface::writePolylinesAsConstraints(GEOLIB::Polygon * bounding_polygon, size_t bp_idx,
+				std::vector<GEOLIB::Polyline*> const& all_polylines,
+				double mesh_density, GEOLIB::QuadTree<GEOLIB::Point>* quad_tree)
+{
+	const size_t n_polylines(all_polylines.size());
+	for (size_t k(0); k < n_polylines; k++) {
+		if (k != bp_idx) {
+			bool begin_line_pnt_inside_polygon(true);
+			bool end_line_pnt_inside_polygon(true);
+
+			size_t s(all_polylines[k]->getNumberOfPoints());
+
+			// write line segments (= Line) of the polyline
+			for (size_t j(0); j < s - 1; j++) {
+				// check if line segment is contained in bounding polygon
+				bool line_seg_is_already_used(GEOLIB::containsEdge(
+								*(dynamic_cast<GEOLIB::Polyline*> (bounding_polygon)),
+								(all_polylines[k])-> getPointID(j),
+								(all_polylines[k])-> getPointID(j + 1)));
+				// check if line segment is contained in a previous polyline
+				for (size_t i(0); i < k && !line_seg_is_already_used; i++)
+					line_seg_is_already_used = GEOLIB::containsEdge(*(all_polylines[i]),
+									(all_polylines[k])-> getPointID(j),
+									(all_polylines[k])->getPointID(j + 1));
+
+				if (!line_seg_is_already_used) {
+					// check if first point of polyline is inside bounding polygon
+					if (j == 0) begin_line_pnt_inside_polygon = bounding_polygon->isPntInPolygon(
+									*(all_polylines[k])->getPoint(j));
+					// check if end point of the line is inside bounding polygon
+					end_line_pnt_inside_polygon = bounding_polygon->isPntInPolygon(
+									*(all_polylines[k])->getPoint(j + 1));
+
+					if (begin_line_pnt_inside_polygon && end_line_pnt_inside_polygon) {
+						_out << "Line(" << _n_lines + j << ") = {"
+										<< (all_polylines[k])->getPointID(j) << ","
+										<< (all_polylines[k])->getPointID(j + 1) << "};"
+										<< std::endl;
+						// write line as constraint
+						_out << "Line {" << _n_lines + j << "} In Surface {" << _n_plane_sfc - 1
+										<< "};" << std::endl;
+					} else {
+						if (begin_line_pnt_inside_polygon && !end_line_pnt_inside_polygon) {
+							// create new point
+							GEOLIB::Point * s(bounding_polygon-> getIntersectionPointPolygonLine(
+											*(all_polylines[k])-> getPoint(j),
+											*(all_polylines[k])-> getPoint(j + 1)));
+							if (s != NULL) {
+								if (quad_tree) {
+									GEOLIB::Point ll, ur;
+									quad_tree->getLeaf (*(all_polylines[k])->getPoint(j + 1), ll, ur);
+									mesh_density = 0.3 * (ur[0] - ll[0]);
+								}
+								_out << "Point(" << _n_pnt_offset << ") = {" << (*s)[0] << ","
+												<< (*s)[1] << "," << (*s)[2] << "," << mesh_density
+												<< "}; // new end point of polyline " << k
+												<< std::endl;
+								// write line
+								_out << "Line(" << _n_lines + j << ") = {"
+												<< (all_polylines[k])-> getPointID(j) << ","
+												<< _n_pnt_offset << "};" << std::endl;
+								// write line as constraint
+								_out << "Line {" << _n_lines + j << "} In Surface {"
+												<< _n_plane_sfc - 1 << "};" << std::endl;
+								_n_pnt_offset++;
+								delete s;
+							}
+						}
+						if (!begin_line_pnt_inside_polygon && end_line_pnt_inside_polygon) {
+							// create new point
+							GEOLIB::Point * s(bounding_polygon-> getIntersectionPointPolygonLine(
+											*(all_polylines[k])-> getPoint(j),
+											*(all_polylines[k])-> getPoint(j + 1)));
+							if (s != NULL) {
+								if (quad_tree) {
+									GEOLIB::Point ll, ur;
+									quad_tree->getLeaf (*(all_polylines[k])->getPoint(j + 1), ll, ur);
+									mesh_density = 0.3 * (ur[0] - ll[0]);
+								}
+								_out << "Point(" << _n_pnt_offset << ") = {" << (*s)[0] << ","
+												<< (*s)[1] << "," << (*s)[2] << "," << mesh_density
+												<< "}; // new end point of polyline " << k
+												<< std::endl;
+								// write line
+								_out << "Line(" << _n_lines + j << ") = {" << _n_pnt_offset << ","
+												<< (all_polylines[k])->getPointID(j + 1) << "};"
+												<< std::endl;
+								// write line as constraint
+								_out << "Line {" << _n_lines + j << "} In Surface {"
+												<< _n_plane_sfc - 1 << "};" << std::endl;
+								_n_pnt_offset++;
+								delete s;
+							}
+						}
+					}
+					begin_line_pnt_inside_polygon = end_line_pnt_inside_polygon;
+				}
+			}
+			// update line counter
+			_n_lines += s;
+		}
+	}
 }
 
 bool GMSHInterface::isGMSHMeshFile (const std::string& fname)
