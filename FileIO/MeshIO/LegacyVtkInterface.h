@@ -31,7 +31,7 @@ public:
 	virtual ~LegacyVtkInterface();
 
 	void WriteDataVTK(int number, double simulation_time, std::string baseFilename) const;
-
+	double RoundDoubleVTK(double MyZahl);
 protected:
 	void WriteVTKHeader(std::fstream&, int, double) const;
 	void WriteVTKPointData(std::fstream&) const;

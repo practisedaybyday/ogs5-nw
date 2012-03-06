@@ -1,11 +1,9 @@
 # Source files
 
 set( SOURCES
-	array.h
 	databr.h
 	datach.h
 	gdatastream.h
-	gstring.h
 	io_arrays.h
 	jama_cholesky.h
 	jama_lu.h
