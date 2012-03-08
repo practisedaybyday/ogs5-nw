@@ -192,9 +192,9 @@ Problem::Problem (char* filename) :
 		path = path.substr(0, pos + 1);
 
 	// now start initialization of GEMS
-        if ( m_vec_GEM -> Init_Nodes(path) == 0) 
+        if ( m_vec_GEM -> Init_Nodes(path) == 0)
 	{
-		if (m_vec_GEM->Init_RUN(path) == 0) 
+		if (m_vec_GEM->Init_RUN(path) == 0)
 		{
 			m_vec_GEM->initialized_flag = 1;
 		}
@@ -215,7 +215,7 @@ Problem::Problem (char* filename) :
             MPI_Finalize();                       //make sure MPI exits
 #endif
 
-            exit ( 1 ); 
+            exit ( 1 );
 	}
 #else                                          // GEM_REACT
 	//---------------------------------------------------

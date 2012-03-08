@@ -68,7 +68,9 @@ int OGSMeshIO::write(std::ostream &out)
 		std::cout << "OGSMeshIO cannot write: no mesh set!" << std::endl;
 		return 0;
 	}
-	
+
+	setPrecision(9);
+
 	out << "#FEM_MSH" << std::endl;
 
 	out << "$PCS_TYPE" << std::endl << "  " << _mesh->pcs_name << std::endl;
