@@ -8,6 +8,7 @@
 #ifndef GMSHMESHDENSITYSTRATEGY_H_
 #define GMSHMESHDENSITYSTRATEGY_H_
 
+#include <ostream>
 #include <vector>
 
 // GEOLIB
@@ -21,8 +22,8 @@ namespace FileIO
 class GMSHMeshDensityStrategy
 {
 public:
-	virtual void init(std::vector<GEOLIB::Point*> &) = 0;
-	virtual std::ostream& getMeshDensityAtPoint(GEOLIB::Point const*const, std::ostream&) = 0;
+	virtual void init(std::vector<GEOLIB::Point*> const&) = 0;
+	virtual void getMeshDensityAtPoint(GEOLIB::Point const*const, std::ostream&) const = 0;
 };
 
 } // end namespace

@@ -12,6 +12,8 @@ SET( SOURCES
 	FEMIO/ProcessIO.cpp
 	FEMIO/BoundaryConditionIO.cpp
 	MeshIO/GMSHInterface.cpp
+	MeshIO/GMSHFixedMeshDensity.cpp
+	MeshIO/GMSHAdaptiveMeshDensity.cpp
 	MeshIO/LegacyVtkInterface.cpp
 	MeshIO/OGSMeshIO.cpp
 	MeshIO/TetGenInterface.cpp
@@ -33,6 +35,10 @@ SET( HEADERS
 	FEMIO/BoundaryConditionIO.h
 	MathIO/CRSIO.h
 	MeshIO/GMSHInterface.h
+	MeshIO/GMSHMeshDensityStrategy.h
+	MeshIO/GMSHNoMeshDensity.h
+	MeshIO/GMSHFixedMeshDensity.h
+	MeshIO/GMSHAdaptiveMeshDensity.h
 	MeshIO/LegacyVtkInterface.h
 	MeshIO/OGSMeshIO.h
 	MeshIO/TetGenInterface.h

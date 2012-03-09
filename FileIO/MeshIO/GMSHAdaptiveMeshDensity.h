@@ -15,13 +15,22 @@
 #include "Point.h"
 #include "QuadTree.h"
 
+namespace GEOLIB {
+class Polygon;
+}
+
 namespace FileIO {
 
 class GMSHAdaptiveMeshDensity: public GMSHMeshDensityStrategy {
 public:
 	GMSHAdaptiveMeshDensity(double pnt_density, double station_density, size_t max_pnts_per_leaf);
 	virtual ~GMSHAdaptiveMeshDensity();
+	void init(std::vector<GEOLIB::Point*> const& pnts);
+	void getMeshDensityAtPoint(GEOLIB::Point const*const pnt, std::ostream& out) const;
 	void addPoints(std::vector<GEOLIB::Point*> const& pnts);
+	void getMeshDensityAtStation(GEOLIB::Point const*const, std::ostream&) const;
+	void writeSteinerPoints (GEOLIB::Polygon const*const bounding_polygon,
+					size_t &pnt_idx_offset, size_t sfc_idx_offset, std::ostream & out) const;
 
 private:
 	double _pnt_density;
