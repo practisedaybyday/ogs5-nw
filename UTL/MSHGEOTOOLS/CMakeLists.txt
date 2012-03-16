@@ -105,7 +105,15 @@ IF(QT4_FOUND)
 		${QT_LIBRARIES}
 	)
 
-	SET_TARGET_PROPERTIES(extractSurface createMeshFromPolygon removeMeshNodes
+	ADD_EXECUTABLE( extrudeGeometryTo3D extrudeGeometryTo3D.cpp )
+	TARGET_LINK_LIBRARIES( extrudeGeometryTo3D
+		Base
+		FileIO
+		MSH
+		${QT_LIBRARIES}
+	)
+
+	SET_TARGET_PROPERTIES(extractSurface createMeshFromPolygon extrudeGeometryTo3D removeMeshNodes
 		PROPERTIES FOLDER Utilities)
 
 ENDIF() # QT4_FOUND
