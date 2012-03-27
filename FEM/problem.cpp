@@ -865,7 +865,7 @@ void Problem::Euler_TimeDiscretize()
 	//
 	CTimeDiscretization* m_tim = NULL;
 	aktueller_zeitschritt = 0;
-	WriteMessage("\n\n***Start time steps");
+	ScreenMessage("\n\n***Start time steps\n");
 	//
 	// Output zero time initial values
 	OUTData(0.0,aktueller_zeitschritt,true);
@@ -917,8 +917,8 @@ void Problem::Euler_TimeDiscretize()
 			// ---------------------------------
 			// TIME STEP ACCEPTED
 			// ---------------------------------
-			WriteMessage("This step is accepted.");
-			WriteMessage("------------------------------------------------------");
+			ScreenMessage("This step is accepted.\n");
+			ScreenMessage("------------------------------------------------------\n");
 			PostCouplingLoop();
 			if(print_result)
 			{
@@ -941,8 +941,8 @@ void Problem::Euler_TimeDiscretize()
 			// ---------------------------------
 			// TIME STEP FAILED
 			// ---------------------------------
-			WriteMessage("This step is rejected.");
-			WriteMessage("------------------------------------------------------");
+			ScreenMessage("This step is rejected.\n");
+			ScreenMessage("------------------------------------------------------\n");
 			rejected_times++;
 			current_time -= dt;
 			aktuelle_zeit = current_time;
@@ -962,7 +962,7 @@ void Problem::Euler_TimeDiscretize()
 			}
 			//
 		}
-		WriteMessage("\n#############################################################");
+		ScreenMessage("\n#############################################################\n");
 		if(aktueller_zeitschritt >= max_time_steps)
 			break;
 	}

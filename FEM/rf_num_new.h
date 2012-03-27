@@ -16,6 +16,9 @@
 #include <fstream>
 #include <string>
 #include <vector>
+
+namespace FiniteElement { enum ErrorMethod; } // JT
+//
 //----------------------------------------------------------------
 class CNumerics
 {
@@ -24,6 +27,8 @@ private:
 	double* DynamicDamping;
 	/// For GMRES solver. 30.06.2010. WW
 	long m_cols;
+	FiniteElement::ErrorMethod _pcs_nls_error_method;
+	FiniteElement::ErrorMethod _pcs_cpl_error_method;
 public:
 	// method
 	std::string method_name;              //OK
@@ -51,6 +56,8 @@ public:
 	double nls_relaxation;
 	double nls_error_tolerance[DOF_NUMBER_MAX];		//JT2012: array function of dof
 	double nls_plasticity_local_tolerance;
+	void setNonLinearErrorMethod (FiniteElement::ErrorMethod nls_method) { _pcs_nls_error_method = nls_method; }
+	FiniteElement::ErrorMethod getNonLinearErrorMethod () const { return _pcs_nls_error_method; }
 	//
 	// CPL WW
 	std::string cpl_variable;             // MB
@@ -61,6 +68,8 @@ public:
 	double cpl_error_tolerance[DOF_NUMBER_MAX]; // JT2012: array function of dof
 	bool cpl_error_specified;			  // JT2012
 	bool cpl_master_process;
+	void setCouplingErrorMethod (FiniteElement::ErrorMethod cpl_method) { _pcs_cpl_error_method = cpl_method; }
+	FiniteElement::ErrorMethod getCouplingErrorMethod () const { return _pcs_cpl_error_method; }
 	//
 	// ELE
 	int ele_gauss_points;                 // probably element-type-wise

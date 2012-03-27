@@ -42,9 +42,6 @@ extern int anz_kurven;                            /* Anzahl der Kurven */
 /* C1.11 Miscellaneous                                 */
 /******************************************************/
 
-/*JT: Send output message*/
-extern void WriteMessage(std::string message);
-
 /* Deklarationen fuer Schluesselwort #FRACTURE_APERTURE_DISTRIBUTION */
 extern double* fracture_aperture_array;
 /* Feld mit Knoten, die ausgegeben werden sollen */

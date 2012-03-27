@@ -1039,7 +1039,7 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 				//
 				case 2: // krg = 1.0 - krl (only for gas phase)
 					if(k==0){
-						WriteMessage("ERROR in MMPRead: Relative permeability model 2 is only valid for the gas phase.");
+						ScreenMessage("ERROR in MMPRead: Relative permeability model 2 is only valid for the gas phase.\n");
 						exit(0);
 					}
 					in >> minimum_relative_permeability;
@@ -1120,7 +1120,7 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 					break;
 				//
 				default:
-					WriteMessage("Error in MMPRead: no valid permeability saturation model");
+					ScreenMessage("Error in MMPRead: no valid permeability saturation model.\n");
 					break;
 				}
 				in.clear();
@@ -1392,7 +1392,7 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 				// a constant value of saturation in PP models. SHOULD DELETE THIS CHECK EVENTUALLY!
 				in >> capillary_pressure_values[2];
 				if(capillary_pressure_values[2] >= 0.0){ // Then a constant saturation value has been entered. This is model #2.
-					WriteMessage("WARNING in MMPRead. Capillary pressure model 1 used for a constant saturation. THIS IS NOW MODEL #2. PLEASE SWITCH TO MODEL #2.");
+					ScreenMessage("WARNING in MMPRead. Capillary pressure model 1 used for a constant saturation. THIS IS NOW MODEL #2. PLEASE SWITCH TO MODEL #2.\n");
 					capillary_pressure_model = 2;
 					capillary_pressure_values[0] = capillary_pressure_values[2];
 				}
@@ -1436,14 +1436,14 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 				}
 				break;
 			default:
-				WriteMessage("Error in MMPRead: no valid capillary pressure model.");
+				ScreenMessage("Error in MMPRead: no valid capillary pressure model.\n");
 				exit(1);
 				break;
 			}
 			if(old_format){
-				WriteMessage("\n Adopting capillary pressure saturation parameters from the");
-				WriteMessage(" relative permeability function for phase 0. Alternatively, you");
-				WriteMessage(" may enter capillary pressure specific parameters directly.");
+				ScreenMessage("\n Adopting capillary pressure saturation parameters from the\n");
+				ScreenMessage(" relative permeability function for phase 0. Alternatively, you\n");
+				ScreenMessage(" may enter capillary pressure specific parameters directly.\n");
 			}
 			in.clear();
 			continue;
@@ -2191,7 +2191,7 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 	switch(model)
 	{
 		default:
-			WriteMessage("ERROR in PermeabilitySaturationFunction(): Unrecognized relative permeability method.");
+			ScreenMessage("ERROR in PermeabilitySaturationFunction(): Unrecognized relative permeability method.\n");
 			exit(0);
 			break;
 		//
@@ -2205,7 +2205,7 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 		//
 		case 2: // krg = 1.0 - krl
 			// No need to come here. Method will have been shifted to the liquid phase.
-			WriteMessage("ERROR in PermeabilitySaturationFunction(). Shouldn't be here.");
+			ScreenMessage("ERROR in PermeabilitySaturationFunction(). Shouldn't be here.\n");
 			break;
 		//
 		case 3: // FUNCTION: LINEAR OR POWER --> WETTING: krw = (b*Se)^m
@@ -4511,7 +4511,7 @@ double CMediumProperties::CapillaryPressureFunction(const double wetting_saturat
 	switch(capillary_pressure_model)
 	{
 		default:
-			WriteMessage("Error in CFluidProperties::CapillaryPressure: no valid material model");
+			ScreenMessage("Error in CFluidProperties::CapillaryPressure: no valid material model.\n");
 			exit(0);
 			break;
 		//
@@ -4524,7 +4524,7 @@ double CMediumProperties::CapillaryPressureFunction(const double wetting_saturat
 			break;
 		//
 		case 2: // Constant saturation for pp models (for WX, from JT) (MUST BE A PP MODEL, SO WON'T COME HERE)
-			WriteMessage("ERROR: in CFluidProperties::CapillaryPressure: Constant saturation is not possible for a PS model");
+			ScreenMessage("ERROR: in CFluidProperties::CapillaryPressure: Constant saturation is not possible for a PS model.\n");
 			exit(0);
 			break;
 		//
@@ -4582,7 +4582,7 @@ double CMediumProperties::SaturationCapillaryPressureFunction(const double capil
 	switch(capillary_pressure_model)
 	{
 		default:
-			WriteMessage("Error in CFluidProperties::SaturationCapillaryPressureFunction: no valid material model");
+			ScreenMessage("Error in CFluidProperties::SaturationCapillaryPressureFunction: no valid material model.\n");
 			exit(0);
 			break;
 		//
@@ -4592,7 +4592,7 @@ double CMediumProperties::SaturationCapillaryPressureFunction(const double capil
 			return sl;
 		//
 		case 1: // Constant capillary pressure for ps models
-			WriteMessage("ERROR: in CFluidProperties::SaturationCapillaryPressureFunction: Constant capillary pressure is not possible for a PP model");
+			ScreenMessage("ERROR: in CFluidProperties::SaturationCapillaryPressureFunction: Constant capillary pressure is not possible for a PP model.\n");
 			exit(0);
 			break;
 		//
