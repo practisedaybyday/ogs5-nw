@@ -197,8 +197,12 @@ void OUTWrite(string base_file_name)
    08/2006 OK FLX calculations
    08/2007 WW Output initial values of variables
 **************************************************************************/
-void OUTData(double time_current, int time_step_number)
+void OUTData(double time_current, int time_step_number, bool force_output)
 {
+#if defined(USE_MPI) // JT2012
+	if(myrank != 0) return;
+#endif
+	//
 	COutput* m_out = NULL;
 	CRFProcess* m_pcs = NULL;
 	CFEMesh* m_msh = NULL;
@@ -231,7 +235,7 @@ void OUTData(double time_current, int time_step_number)
 		if (no_times == 0 && (m_out->nSteps > 0) && (time_step_number
 		                                             % m_out->nSteps == 0))
 			OutputBySteps = true;
-		if (time_step_number == 0) //WW
+		if (time_step_number == 0 || force_output) //WW//JT
 			OutputBySteps = true;
 		//======================================================================
 		// TECPLOT
@@ -239,7 +243,7 @@ void OUTData(double time_current, int time_step_number)
 		    || m_out->dat_type_name.compare("MATLAB") == 0)
 		{
 			//			m_out->matlab_delim = " ";
-			//			if (m_out->dat_type_name.compare("MATLAB") == 0) // JTARON, just for commenting header for matlab
+			//			if (m_out->dat_type_name.compare("MATLAB") == 0) // JT, just for commenting header for matlab
 			//				m_out->matlab_delim = "%";
 
 			switch (m_out->getGeoType())
@@ -599,7 +603,7 @@ void OUTDelete()
    Task:
    Programing:
    05/2005 OK Implementation
-   last modification: 03/2010 JTARON
+   last modification: 03/2010 JT
    09/2010 TF
 **************************************************************************/
 COutput* OUTGet(const std::string & out_name)
@@ -615,7 +619,7 @@ COutput* OUTGet(const std::string & out_name)
    FEMLib-Method:
    Task: Return output object for variable name (based on OUTGet)
    Programing:
-   03/2010 JTARON Implementation
+   03/2010 JT Implementation
    last modification:
 **************************************************************************/
 COutput* OUTGetRWPT(const std::string & out_name)

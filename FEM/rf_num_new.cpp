@@ -43,6 +43,7 @@ extern ios::pos_type GetNextSubKeyword(ifstream* file,string* line, bool* keywor
 #include "StringTools.h"
 #include "mathlib.h"
 #include "rf_pcs.h"
+#include "tools.h"
 // GeoSys-MSHLib
 
 extern size_t max_dim;                            //OK411 todo
@@ -62,6 +63,7 @@ CNumerics::CNumerics(string name)
 	pcs_type_name = name;                 //OK
 	// GLOBAL
 	renumber_method = 0;
+	//
 	// LS - Linear Solver
 	ls_method = 2;                        //OK41
 	ls_max_iterations = 1000;
@@ -69,20 +71,30 @@ CNumerics::CNumerics(string name)
 	ls_error_tolerance = 1e-12;
 	ls_theta = 1.0;
 	ls_precond = 1;
-	ls_storage_method = 2;                //OK41
-	m_cols = 5;                           // 06.2010. WW
+	ls_storage_method = 2;					//OK41
+	m_cols = 5;								// 06.2010. WW
 	ls_extra_arg = ""; //NW
+	//
 	// NLS - Nonlinear Solver
 	nls_method_name = "PICARD";
-	nls_method = -1;                       // Default linear, 0: Picard. 1: Newton
-	nls_max_iterations = 1;               //OK
-	nls_error_tolerance = 1.0e-4;
-	nls_error_tolerance_local = 1.0e-10;  //For element level
+	nls_method = -1;						//Default linear, 0: Picard. 1: Newton. 2:JFNK
+	nls_error_method = 1;					//JT2012
+	nls_max_iterations = 1;					//OK
 	nls_relaxation = 0.0;
-	// cpl WW
-	cpl_iterations = 1;                   //OK
-	cpl_tolerance = 1.0e-3;
-	cpl_variable = "FLUX";
+	for(size_t i=0; i<DOF_NUMBER_MAX; i++)	//JT2012
+		nls_error_tolerance[i] = -1.0;		//JT2012: should not default this. Should always be entered by user!
+	//
+	// CPL - Coupled processes
+	cpl_error_specified = false;
+	cpl_master_process = false;
+	cpl_process = "INVALID_PROCESS";		//JT2012: do not couple with any process, unless indicated
+	cpl_variable = "NONE";    
+	cpl_variable_JOD = "FLUX";
+	cpl_max_iterations = 1;					//OK
+	cpl_min_iterations = 1;					//JT2012
+	for(size_t i=0; i<DOF_NUMBER_MAX; i++)	//JT2012
+		cpl_error_tolerance[i] = -1.0;			//JT2012: should not default this. Should always be entered by user!
+	//
 	// ELE
 	ele_gauss_points = 3;
 	ele_mass_lumping = 0;
@@ -118,7 +130,6 @@ CNumerics::CNumerics(string name)
 		ls_precond = 4;
 		ls_storage_method = 4;
 		nls_max_iterations = 25;
-		nls_error_tolerance = 1.0e-3;
 	}
 	//
 }
@@ -149,6 +160,7 @@ bool NUMRead(string file_base_name)
 	//----------------------------------------------------------------------
 	CNumerics* m_num = NULL;
 	char line[MAX_ZEILE];
+	bool overall_coupling_exists=false; //JT
 	string sub_line;
 	string line_string;
 	ios::pos_type position;
@@ -168,6 +180,10 @@ bool NUMRead(string file_base_name)
 		line_string = line;
 		if(line_string.find("#STOP") != string::npos)
 			return true;
+		//
+		if(line_string.find("$OVERALL_COUPLING") != string::npos){
+			overall_coupling_exists = true; // JT: for error checking 
+		}
 		//----------------------------------------------------------------------
 		// keyword found
 		if(line_string.find("#NUMERICS") != string::npos)
@@ -176,6 +192,7 @@ bool NUMRead(string file_base_name)
 			position = m_num->Read(&num_file);
 			num_vector.push_back(m_num);
 			num_file.seekg(position,ios::beg);
+			m_num->NumConfigure(overall_coupling_exists);					  // JT2012
 		}                         // keyword found
 	}                                     // eof
 	return true;
@@ -196,6 +213,97 @@ bool CNumerics::CheckDynamic()
 }
 
 /**************************************************************************
+FEMLib-Method:
+Task: After a read of each m_num, configure any defaults here
+Programing:
+05/2011 JT Implementation
+**************************************************************************/
+void CNumerics::NumConfigure(bool overall_coupling_exists)
+{
+   CRFProcess *m_pcs = PCSGet(this->pcs_type_name);
+   if(!m_pcs)
+	   m_pcs = PCSGetUnconfigured(this->pcs_type_name);
+   CNumerics *m_num = NULL;
+   //
+   // Make sure we have all necessary tolerances
+   //
+   // Overall coupling check
+   if(overall_coupling_exists && !cpl_error_specified){
+	   if(this->nls_method < 0){
+		   std::cout<<"ERROR in NUMRead. Overall coupling requested, but ";
+		   std::cout<< this->pcs_type_name << " was not\n";
+		   std::cout<<"supplied with coupling tolerance. See $COUPLING_CONTROL keyword to enter this.\n";
+		   exit(1);
+	   }
+	   else{ // Can take the non-linear tolerance as an emergency backup
+		   std::cout<<"WARNING in NUMRead. Overall coupling requested, but ";
+		   std::cout<< this->pcs_type_name << " was not\n";
+		   std::cout<<"supplied with coupling tolerance. Adopting 10*non_linear_tolerance.\n";
+		   m_pcs->setCouplingErrorMethod(m_pcs->getNonLinearErrorMethod());
+		   for(size_t i=0; i<DOF_NUMBER_MAX; i++){
+			   cpl_error_tolerance[i] = 10.0*nls_error_tolerance[i];
+		   }
+		   cpl_error_specified = true;
+	   }
+   }
+   //
+   // Check master processes
+   if(cpl_master_process && !cpl_error_specified){
+	   std::cout<<"ERROR in NUMRead. Process coupling requested, but ";
+	   std::cout<< this->pcs_type_name << " was not\n";
+	   std::cout<<"supplied with coupling tolerance. See $COUPLING_CONTROL keyword to enter this.\n";
+	   exit(1);
+   }
+   //
+   // Check slave processes
+   for(size_t i=0; i<num_vector.size(); i++){
+	   if(num_vector[i] == this) continue;
+	   // Is the current process/num coupled from a master process?
+	   // Unfortunately, we cannot perform this error check for coupled variables. Variable arrays not yet configured.
+	   if(PCSGet(num_vector[i]->cpl_process) == m_pcs){
+		   if(!cpl_error_specified){
+			   std::cout<<"ERROR in NUMRead. Process coupling requested, but ";
+			   std::cout<< this->pcs_type_name << " was not\n";
+			   std::cout<<"supplied with coupling tolerance. See $COUPLING_CONTROL keyword to enter this.\n";
+			   exit(1);
+		   }
+	   }
+   }
+   //
+   // We are ok. Now check the tolerances.
+   //
+   if(this->nls_method < 0){ // linear solution
+	   if(cpl_error_specified){ // A coupling error was entered. Adopt this for error calculations.
+		   for(size_t i=0; i<DOF_NUMBER_MAX; i++){
+			   nls_error_tolerance[i] = cpl_error_tolerance[i];
+		   }
+		   m_pcs->setNonLinearErrorMethod(m_pcs->getCouplingErrorMethod());
+	   }
+	   else{ // We have no error tolerances for non-linear or coupled simulations. Force some defaults.
+		   m_pcs->setNonLinearErrorMethod(FiniteElement::LMAX);
+		   m_pcs->setCouplingErrorMethod(FiniteElement::LMAX);
+		   nls_error_tolerance[0] = cpl_error_tolerance[0] = 1.0;
+	   }
+   }
+   // Default CPL error method to NLS method. Just so error is not checked twice
+   if(!cpl_error_specified){
+	   m_pcs->setCouplingErrorMethod(m_pcs->getNonLinearErrorMethod());
+   }
+   //
+   // Default all NLS tolerances to the previous DOF, if they were not entered.
+   for(size_t i=1; i<DOF_NUMBER_MAX; i++){
+	   if(nls_error_tolerance[i] < 0.0)
+		   nls_error_tolerance[i] = nls_error_tolerance[i-1];
+   }
+   //
+   // Default all CPL tolerances to the previous DOF, if they were not entered.
+   for(size_t i=1; i<DOF_NUMBER_MAX; i++){
+	   if(cpl_error_tolerance[i] < 0.0)
+		   cpl_error_tolerance[i] = cpl_error_tolerance[i-1];
+   }
+}
+
+/**************************************************************************
    FEMLib-Method:
    Task: OBJ read function
    Programing:
@@ -204,6 +312,9 @@ bool CNumerics::CheckDynamic()
 ios::pos_type CNumerics::Read(ifstream* num_file)
 {
 	string line_string;
+	std::string error_method_name;
+	std::string coupling_target;
+	CRFProcess* m_pcs = NULL; //JT
 	bool new_keyword = false;
 	bool new_subkeyword = false;
 	ios::pos_type position;
@@ -225,6 +336,10 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 		{
 			line.str(GetLineFromFile1(num_file));
 			line >> pcs_type_name;
+			m_pcs = PCSGet(pcs_type_name); // JT
+			if(!m_pcs){ // then this must be a variable entry
+				m_pcs = PCSGetUnconfigured(pcs_type_name);
+			}
 			line.clear();
 			continue;
 		}
@@ -240,25 +355,103 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			continue;
 		}
 		//....................................................................
-		// subkeyword found
-		if(line_string.find("$NON_LINEAR_SOLVER") != string::npos)
+		// JT->WW: Local tolerance previously found in $NON_LINEAR_SOLVER for NEWTON. Moved here for now.
+		if(line_string.find("$PLASTICITY_TOLERANCE") != string::npos)
 		{
 			line.str(GetLineFromFile1(num_file));
+			line >> nls_plasticity_local_tolerance;
+		}
+		//....................................................................
+		// subkeyword found ($NON_LINEAR_ITERATION  -or-  $NON_LINEAR_ITERATIONS)
+		if(line_string.find("$NON_LINEAR_ITERATION") != string::npos)
+		{
+			// JT:	in >> nls_method_name 
+			//		in >> error_method_name
+			//		in >> max iter 
+			//		in >> relaxation 
+			//		in >> tolerance[1:dof]
+			//
+			line.str(GetLineFromFile1(num_file));
 			line >> nls_method_name;
-			line >> nls_error_tolerance;
+			line >> error_method_name;
+			line >> nls_max_iterations;
+			line >> nls_relaxation;
+			//
+			m_pcs->setNonLinearErrorMethod(FiniteElement::convertErrorMethod(error_method_name));
+			switch(m_pcs->getNonLinearErrorMethod())
+			{
+				case FiniteElement::ENORM: // only 1 tolerance required
+					line >> nls_error_tolerance[0];
+					break;
+				//
+				case FiniteElement::ERNORM: // only 1 tolerance required
+					line >> nls_error_tolerance[0];
+					break;
+				//
+				case FiniteElement::EVNORM: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
+					for(int i=0; i<DOF_NUMBER_MAX; i++)
+						line >> nls_error_tolerance[i];
+					break;
+				//
+				case FiniteElement::LMAX: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
+					for(int i=0; i<DOF_NUMBER_MAX; i++)
+						line >> nls_error_tolerance[i];
+					break;
+				//
+				case FiniteElement::BNORM: // only 1 tolerance required
+					line >> nls_error_tolerance[0];
+					break;
+				//
+				default:
+					WriteMessage("ERROR in NUMRead. Invalid non-linear iteration error method selected.");
+					exit(1);
+					break;
+			}
+
 			nls_method = 0;
 			if(nls_method_name.find("NEWTON") != string::npos)
-			{
 				nls_method = 1;
-				line >> nls_error_tolerance_local;
-			}
-			// 07.2010. WW
-			///  Jacobian free Newton-Krylov method
-			if(nls_method_name.find("JFNK") != string::npos)
-			{
+			else if(nls_method_name.find("JFNK") != string::npos) //  Jacobian free Newton-Krylov method
 				nls_method = 2;
-				line >> nls_error_tolerance_local;
+			//
+			line.clear();
+			continue;
+		}
+		else if(line_string.find("$NON_LINEAR_SOLVER") != string::npos)
+		{
+			WriteMessage("----------------------------------------------------------");
+			WriteMessage("Using old $NON_LINEAR_SOLVER keyword. Conider switching to"); 
+			WriteMessage("$NON_LINEAR_ITERATIONS. You'll be glad you did. Also,");
+			WriteMessage("$NON_LINEAR_SOLVER will eventually be obsolete.");
+			WriteMessage("----------------------------------------------------------");
+			//
+			// JT:	in >> method_name 
+			//		in >> tolerance
+			//		if(NEWTON) in >> tolerance_local
+			//		in >> max iter 
+			//		in >> relaxation 
+			//
+			//
+			line.str(GetLineFromFile1(num_file));
+			line >> nls_method_name;
+			//
+			nls_method = 0;
+			if(nls_method_name.find("NEWTON") != string::npos)
+				nls_method = 1;
+			else if(nls_method_name.find("JFNK") != string::npos) //  Jacobian free Newton-Krylov method
+				nls_method = 2;
+			//
+			if(nls_method > 0){
+				line >> nls_error_tolerance[0];
+				line >> nls_plasticity_local_tolerance;
+				error_method_name = "BNORM"; // JT: this is hardwired in old version
 			}
+			else{
+				line >> nls_error_tolerance[0];
+				error_method_name = "LMAX"; // JT: this is hardwired in old version
+			}
+			m_pcs->setNonLinearErrorMethod(FiniteElement::convertErrorMethod(error_method_name));
+			//
 			line >> nls_max_iterations;
 			line >> nls_relaxation;
 			line.clear();
@@ -270,7 +463,8 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 		{
 			line.str(GetLineFromFile1(num_file));
 			line >> ls_method;
-			line >> ls_error_method >> ls_error_tolerance;
+			line >> ls_error_method;
+			line >> ls_error_tolerance;
 			line >> ls_max_iterations;
 			line >> ls_theta;
 			line >> ls_precond;
@@ -278,6 +472,89 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			/// For GMRES. 06.2010. WW
 			if(ls_method == 13)
 				line >> m_cols;
+			line.clear();
+			continue;
+		}
+		//....................................................................
+		// JT subkeyword found
+		if(line_string.find("$COUPLING_ITERATIONS") != string::npos)
+		{
+			WriteMessage("$COUPLING_ITERATIONS keyword obsolete.");
+			WriteMessage("Use $COUPLING_CONTROL and $COUPLED_PROCESS for process couplings.");
+			exit(1);
+		}
+		//....................................................................
+		// JT subkeyword found
+		if(line_string.find("$COUPLING_CONTROL") != string::npos) // JT: For this process, how is coupling error handled?
+		{
+			// JT:	in >> error_method_name
+			//		in >> tolerance[1:dof]
+			//
+			line.str(GetLineFromFile1(num_file));
+			line >> error_method_name;
+			//
+			cpl_error_specified = true;
+			m_pcs->setCouplingErrorMethod(FiniteElement::convertErrorMethod(error_method_name));
+			switch(m_pcs->getCouplingErrorMethod())
+			{
+				case FiniteElement::ENORM: // only 1 tolerance required
+					line >> cpl_error_tolerance[0];
+					break;
+				//
+				case FiniteElement::ERNORM: // only 1 tolerance required
+					line >> cpl_error_tolerance[0];
+					break;
+				//
+				case FiniteElement::EVNORM: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
+					for(int i=0; i<DOF_NUMBER_MAX; i++)
+						line >> cpl_error_tolerance[i];
+					break;
+				//
+				case FiniteElement::LMAX: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
+					for(int i=0; i<DOF_NUMBER_MAX; i++)
+						line >> cpl_error_tolerance[i];
+					break;
+				//
+				case FiniteElement::BNORM:
+					WriteMessage("ERROR in NUMRead. BNORM not configured for process couplings.");
+					WriteMessage("                  We suggest ENORM as a valid companion for NEWTON couplings.");
+					exit(1);
+					break;
+				//
+				default:
+					WriteMessage("ERROR in NUMRead. Invalid coupling error method selected.");
+					exit(1);
+					break;
+			}
+			//
+			line.clear();
+			continue;
+		}
+		//....................................................................
+		// JT subkeyword found
+		if(line_string.find("$COUPLED_PROCESS") != string::npos) // JT: Is this process coupled to another process in an inner loop?
+		{
+			// in >> process name >> min iter >> max iter
+			//
+			line.str(GetLineFromFile1(num_file));
+			line >> coupling_target;			// name of coupled process -OR- process variable
+			line >> cpl_min_iterations;
+			line >> cpl_max_iterations;
+			//
+			cpl_master_process = true;
+			//
+			// Is coupling through a process name or a primary variable?
+			if(FiniteElement::convertPrimaryVariable(coupling_target) != FiniteElement::INVALID_PV){ // Then a valid process VARIABLE is entered. Use this.
+				cpl_variable = coupling_target;
+			}
+			else if(PCSGet(coupling_target)){ // Then a valid process is entered
+				cpl_process  = coupling_target;
+			}
+			else{
+				WriteMessage("WARNING. $COUPLED_PROCESS keyword encountered, but a valid process OR primary variable was not found.");
+				cpl_master_process = false;
+			}
+			//
 			line.clear();
 			continue;
 		}
@@ -343,16 +620,6 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			DynamicDamping[1] = 0.51;
 			DynamicDamping[2] = 0.51;
 			line >> DynamicDamping[0] >> DynamicDamping[1] >> DynamicDamping[2];
-			line.clear();
-			continue;
-		}
-		// WW subkeyword found
-		if(line_string.find("$COUPLING_ITERATIONS") != string::npos)
-		{
-			line.str(GetLineFromFile1(num_file));
-			line >> cpl_variable; //pcs_name. WW MB
-			line >> cpl_iterations;
-			line >> cpl_tolerance;
 			line.clear();
 			continue;
 		}

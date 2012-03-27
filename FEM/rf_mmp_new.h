@@ -17,6 +17,7 @@
 
 // GeoLib
 #include "GeoType.h"
+#include "makros.h" // JT
 
 // PCSLib
 #include "rf_pcs.h"
@@ -96,8 +97,6 @@ public:
 	//CMCD 9/2004 GeoSys 4
 	double PermeabilityPressureFunction(long index,double* gp,double theta);
 	//CMCD 9/2004 GeoSys 4
-	double PermeabilitySaturationFunction(long number,double* gp,double theta,int phase);
-	//CMCD 9/2004 GeoSys 4
 	double PermeabilityPorosityFunction(long index,double* gp,double theta);
 	double PermeabilityFunctionPressure(long index, double PG2); //WX:  05.2010
 	double PermeabilityFunctionStrain(long index, int nnodes, CFiniteElementStd* h_fem); //WX
@@ -117,12 +116,6 @@ public:
 	void CalStressPermeabilityFactor3_Coef(); //WW
 	void CalStressPermeabilityFactor4(double* kfac, double);
 	//CMCD 9/2004 GeoSys 4
-	double CapillaryPressureFunction(long number,
-	                                 double* gp,
-	                                 double theta,
-	                                 int phase,
-	                                 double saturation);
-	//CMCD 9/2004 GeoSys 4
 	double StorageFunction(long number,double* gp,double theta);
 	double HeatCapacity(long number,double theta, CFiniteElementStd* assem = NULL);
 	double* HeatConductivityTensor(int number); //MX
@@ -130,18 +123,14 @@ public:
 	double* MassDispersionTensorNew(int ip, int phase); //CMCD, SB, BG
 	//OK
 	double Density(long number,double* gp,double theta);
-	//OK4104
-	double SaturationCapillaryPressureFunction(long number,double* gp,double theta,int phase);
-	//OK4104
-	double SaturationPressureDependency(long number,double* gp,double theta);
+	// Capillary pressure functions
+	double CapillaryPressureFunction(const double wetting_saturation);
+	double PressureSaturationDependency(double wetting_saturation);
+	double SaturationPressureDependency(const double capillary_pressure);
+	double SaturationCapillaryPressureFunction(const double capillary_pressure);
 	//WW
-	double SaturationCapillaryPressureFunction(const double capillary_pressure, const int phase);
-	// WW
-	double SaturationPressureDependency(double saturation, double density_fluid, double theta);
-	// PCH
-	double PressureSaturationDependency(double saturation, double density_fluid, double theta);
-	//WW
-	double PermeabilitySaturationFunction(const double Saturation, int phase);
+	double PermeabilitySaturationFunction(const double wetting_saturation, int phase);
+	double GetEffectiveSaturationForPerm(const double wetting_saturation, int phase); // JT
 	//MX 1/2005
 	double PorosityVolumetricChemicalReaction(long);
 	double Porosity(long number,double theta); //CMCD 9/2004 GeoSys 4
@@ -204,7 +193,7 @@ public:
 	int unconfined_flow_group;
 	int permeability_model;               // permeability
 	double permeability;
-	double permeability_tensor[10];       // permeability_tensor[9] is the minmum permeability. WW
+	double permeability_tensor[9];       
 	std::string permeability_tensor_type_name;
 	std::string tortuosity_tensor_type_name;
 	int permeability_tensor_type;
@@ -215,21 +204,23 @@ public:
 	double permeability_pressure_rel;
 	int permeability_strain_model;        //WX: permeability function strain model. 05.2010
 	int permeability_strain_model_value[3]; //WX:permeability fuction strain model value. 05.2010
-	int permeability_saturation_model[3];
-	double permeability_saturation;
+	//
+	// Relative permeability (JT)
+	int permeability_saturation_model[MAX_FLUID_PHASES];
+	double minimum_relative_permeability;
+	double residual_saturation[MAX_FLUID_PHASES];
+	double maximum_saturation[MAX_FLUID_PHASES];
+	double saturation_exponent[MAX_FLUID_PHASES];
+	double perm_saturation_value[MAX_FLUID_PHASES];
+	//
 	std::string permeability_file;        //SB //OK/MB string permeability_dis_type_file;
 	std::string tortuosity_file;          // PCH
+	bool entry_pressure_conversion;		//JT
 	int capillary_pressure_model;
-	double capillary_pressure;
-	double fixed_saturation;              //WX: for fix Sw
 	int permeability_porosity_model;
 	double permeability_porosity_model_values[10];
 	double storativity;
-	double saturation_res[3];             // saturation max 3 phases
-	double saturation_max[3];
-	double saturation_eff[3];
-	double saturation_exp[3];
-	double saturation_alpha[3];           // JOD
+	double capillary_pressure_values[5];		//JT2012
 	double heat_capacity;                 // thermal properties
 	int mass_dispersion_model;
 	double mass_dispersion_longitudinal;
@@ -240,10 +231,6 @@ public:
 	double heat_dispersion_transverse;
 	double heat_conductivity_tensor[9];
 	int fct_number;                       // functions
-	double permeability_saturation_model_values[2];
-	double capillary_pressure_model_values[2];
-	double permeability_exp[1];           // JOD
-	double permeability_alpha[1];         // JOD
 	int heat_diffusion_model;
 	int evaporation;                      // if it is 647 then evaporation ON, else OFF: and corresponding heat loss will compensated by heat ST
 	double heatflux;

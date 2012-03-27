@@ -36,7 +36,8 @@ public:
 	 * @param pcs a pointer to the process
 	 * @return
 	 */
-	ProcessInfo (FiniteElement::ProcessType pcs_type, FiniteElement::PrimaryVariable pcs_pv, CRFProcess* pcs);
+	ProcessInfo (FiniteElement::ProcessType pcs_type, FiniteElement::PrimaryVariable pcs_pv, CRFProcess* pcs,
+		         FiniteElement::ErrorMethod nls_method, FiniteElement::ErrorMethod cpl_method);
 
 	/**
 	 * Sets the process type.
@@ -57,6 +58,16 @@ public:
 	void setProcess (CRFProcess* pcs);
 
 	/**
+	 * Sets the process non-linear error method
+	 */
+	void setNonLinearErrorMethod (FiniteElement::ErrorMethod nls_method);
+
+	/**
+	 * Sets the process coupling error method
+	 */
+	void setCouplingErrorMethod (FiniteElement::ErrorMethod cpl_method);
+
+	/**
 	 * Get the process type.
 	 * @return the process type
 	 */
@@ -74,6 +85,16 @@ public:
 	 */
 	CRFProcess* getProcess () const;
 
+	/**
+	 * Gets the process non-linear error method
+	 */
+	FiniteElement::ErrorMethod getNonLinearErrorMethod () const;
+
+	/**
+	 * Gets the process coupling error method
+	 */
+	FiniteElement::ErrorMethod getCouplingErrorMethod () const;
+
 	virtual ~ProcessInfo();
 
 protected:
@@ -85,6 +106,14 @@ protected:
 	 * the primary variable of the process, see enum PrimaryVariable for valid values
 	 */
 	FiniteElement::PrimaryVariable _pcs_pv;
+	/**
+	 * the non-linear error method of the process
+	 */
+	FiniteElement::ErrorMethod _pcs_nls_error_method;
+	/**
+	 * the coupling error method of the process
+	 */
+	FiniteElement::ErrorMethod _pcs_cpl_error_method;
 
 	/**
 	 * pointer to the object of class CRFProcess

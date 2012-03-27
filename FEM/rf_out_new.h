@@ -29,9 +29,9 @@ bool OUTRead(const std::string& file_base_name,
 
 extern void OUTWrite(std::string);
 #define OUT_FILE_EXTENSION ".out"
-extern void OUTData(double, const int step);
+extern void OUTData(double, const int step, bool force_output);
 extern void OUTDelete();
 extern COutput* OUTGet(const std::string &);
 extern void OUTCheck(void);                       // new SB
-extern COutput* OUTGetRWPT(const std::string &);  //JTARON
+extern COutput* OUTGetRWPT(const std::string &);  //JT
 #endif

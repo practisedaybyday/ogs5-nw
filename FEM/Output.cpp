@@ -299,7 +299,7 @@ ios::pos_type COutput::Read(std::ifstream& in_str,
 					tim_type_name = "STEPS"; //OK
 					break; //kg44 I guess that was missing..otherwise it pushes back a time_vector!
 				}
-				// JTARON 2010, reconfigured (and added RWPT)... didn't work
+				// JT 2010, reconfigured (and added RWPT)... didn't work
 				if (line_string.find("STEPPING") != string::npos)
 				{
 					double stepping_length, stepping_end, stepping_current;

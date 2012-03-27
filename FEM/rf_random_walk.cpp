@@ -378,7 +378,7 @@ void RandomWalk::InterpolateVelocity(Particle* A)
      Not really working.
    Programing:
    02/2007 PCH Implementation
-   03/2010 JTARON modified cell search algorithm
+   03/2010 JT modified cell search algorithm
 **************************************************************************/
 void RandomWalk::TracePathlineInThisElement(Particle* A)
 {
@@ -491,7 +491,7 @@ void RandomWalk::TracePathlineInThisElement(Particle* A)
 		A->x = R[0];
 		A->y = R[1];
 		A->z = R[2];
-		//update the element index // JTARON 2010;
+		//update the element index // JT 2010;
 		long i,j,k;
 		i = (int)((A->x - pnt_x_min) / dx);
 		j = (int)((A->y - pnt_y_min) / dy);
@@ -1397,7 +1397,7 @@ double* RandomWalk::InterpolateLocationOfTheParticleByBilinear(Particle* A, doub
    Class: RandomWalk
    Programing: Locate element location of particle, for FDM method
    PCH Implementation
-   03/2010 JTARON modified cellular search algorithm
+   03/2010 JT modified cellular search algorithm
 **************************************************************************/
 int RandomWalk::IndexOfTheElementThatThisParticleBelong(int option, Particle* A)
 {
@@ -2390,7 +2390,7 @@ void RandomWalk::AdvanceToNextTimeStep(double dt,double ctime)
 	//OK411???
 	for(int i = 0; i < numOfParticles; ++i)
 	{
-		TimeMobility = 0;         //JTARON 2010, using this for now. Setting identity = 1 causes simulation failure... not sure why??
+		TimeMobility = 0;         //JT 2010, using this for now. Setting identity = 1 causes simulation failure... not sure why??
 		//X[i].Now.identity=1;
 		if((X[i].Now.StartingTime < exceedtime) ||
 		   fabs(X[i].Now.StartingTime - exceedtime) < tol)
@@ -2658,7 +2658,7 @@ void RandomWalk::RecordPath(int no, Particle* P)
    MSHLib-Method:
    Task: Determines when to generate output files, and introduces call to data output
    Programing:
-   03/2010 JTARON
+   03/2010 JT
 **************************************************************************/
 void RandomWalk::RandomWalkOutput(double dbl_time, int current_time_step)
 {
@@ -4946,7 +4946,7 @@ int RandomWalk::ReadInVelocityFieldOnNodes(string file_base_name)
    FEMLib-Method:
    Programing: This function buildS FDM index for quads
    01/2007 PCH
-   Modified:: 03/2010 JTARON ... re-designed and expanded to 3-D
+   Modified:: 03/2010 JT ... re-designed and expanded to 3-D
 **************************************************************************/
 void RandomWalk::buildFDMIndex(void)
 {
@@ -5235,7 +5235,7 @@ void PCTRead(string file_base_name)
 			one.Past.x = one.Now.x = x;
 			one.Past.y = one.Now.y = y;
 			one.Past.z = one.Now.z = z;
-			//JTARON 2010
+			//JT 2010
 			one.Past.StartingTime = one.Now.StartingTime = Starting;
 			one.Past.identity = one.Now.identity = identity;
 			one.Past.Vx = one.Now.Vx = vx;

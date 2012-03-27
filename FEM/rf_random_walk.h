@@ -41,7 +41,7 @@ public:
 
 	// Time
 	double t;
-	double StartingTime;                  // JTARON 2010, added for continuous particle boundary, segemented by StartingTime
+	double StartingTime;                  // JT 2010, added for continuous particle boundary, segemented by StartingTime
 
 	// the element it belongs to
 	int elementIndex;
@@ -173,7 +173,7 @@ public:
 	void RandomlyDriftAway(Particle* A, double dt, double* delta, int type);
 	int RandomWalkDrift(double* Z, int type);
 	void SolveDispersionCoefficient(Particle* A);
-	void RandomWalkOutput(double,int);    //JTARON 2010
+	void RandomWalkOutput(double,int);    //JT 2010
 
 	int SolveForNextPosition(Particle* A, Particle* B);
 
@@ -221,15 +221,15 @@ private:
 	CFEMesh* m_msh;
 
 	std::vector<FDMIndex> indexFDM;
-	std::vector<std::string>rwpt_out_strings; //JTARON
+	std::vector<std::string>rwpt_out_strings; //JT
 	int nx;
 	int ny;
 	int nz;
-	int neFDM;                            // JTARON
+	int neFDM;                            // JT
 	double dx;
 	double dy;
 	double dz;
-	double xrw_range;                     //JTARON
+	double xrw_range;                     //JT
 	double yrw_range;
 	double zrw_range;
 

@@ -755,7 +755,7 @@ double CFiniteElementVec::CalDensity()
 		// Assume solid density is constant. (*smat->data_Density)(0)
 		if(smat->Density() > 0.0)
 		{
-			Sw = 1.0;     // JTARON, should be 1.0, unless multiphase (calculate below) (if unsaturated, fluid density would be negligible... so still works)
+			Sw = 1.0;     // JT, should be 1.0, unless multiphase (calculate below) (if unsaturated, fluid density would be negligible... so still works)
 			if(Flow_Type > 0 && Flow_Type != 10)
 				for(i = 0; i < nnodes; i++)
 					Sw += shapefct[i] * AuxNodal_S[i];
@@ -883,13 +883,10 @@ void CFiniteElementVec::ComputeMatrix_RHS(const double fkt,
 			// Pressure 1
 			fac2 = interpolate(AuxNodal0);
 			// Saturation of phase 1
-			fac1 = m_mmp->SaturationCapillaryPressureFunction(fac2,0);
+			fac1 = m_mmp->SaturationCapillaryPressureFunction(fac2);
 			if(PressureC_S_dp)
-				fac2 = fac1 + fac2* m_mmp->SaturationPressureDependency(
-				        fac1,
-				        m_mfp->
-				        Density(),
-				        1.0);
+				fac2 = fac1 - fac2* m_mmp->SaturationPressureDependency(fac2);
+				//JT: dSdP now returns actual sign (<0)
 		}
 
 		if(axisymmetry)
@@ -1400,8 +1397,7 @@ void CFiniteElementVec::GlobalAssembly_Stiffness()
 	   fact_NR += AuxNodal_S[i];  /// Sw
 
 	   /// dS_dPcPc
-	   fact_NR += m_mmp->SaturationPressureDependency(AuxNodal_S[i], m_mfp->Density(),
-	   1.0)*h_pcs->GetNodeValue(nodes[i],idx_P1);
+	   fact_NR += m_mmp->SaturationPressureDependency(AuxNodal_S[i])*h_pcs->GetNodeValue(nodes[i],idx_P1);
 	   }
 
 	   fact_NR /= static_cast<double>(nnodes);
@@ -1621,11 +1617,7 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 						bishop_coef = smat->bishop_model_value;
 						break;
 					case 2:
-						S_e =
-						        (AuxNodal_S[i] -
-						         m_mmp->saturation_res[0]) /
-						        (1 - m_mmp->saturation_res[0] -
-						         m_mmp->saturation_res[1]);
+						S_e = m_mmp->GetEffectiveSaturationForPerm(AuxNodal_S[i],0);
 						bishop_coef = pow(S_e, smat->bishop_model_value);
 						break;
 					default:
@@ -2052,8 +2044,8 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 			   double suc = interpolate(AuxNodal1);
 			   double dsuc = interpolate(AuxNodal);
 			   smat->TEPSwellingParameter_kis(suc);
-			   S_Water = m_mmp->SaturationCapillaryPressureFunction(suc,0);
-			   dS = S_Water - m_mmp->SaturationCapillaryPressureFunction(suc-dsuc,0);
+			   S_Water = m_mmp->SaturationCapillaryPressureFunction(suc);
+			   dS = S_Water - m_mmp->SaturationCapillaryPressureFunction(suc-dsuc);
 			   de_vsw = pow(S_Water, (*smat->data_Youngs)(2) )*dS;
 			   }
 			 */
@@ -2109,8 +2101,8 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 					Tem += shapefct[i] * Temp[i];
 					t1 += shapefct[i] * T1[i];
 				}
-				for (i = 0; i < 3; i++)
-					strain_ne[i] -= ThermalExpansion * Tem;
+				//for (i = 0; i < 3; i++)
+					//strain_ne[i] -= ThermalExpansion * Tem;
 			}
 			// Strain increment by creep
 			if(smat->Creep_mode == 1 || smat->Creep_mode == 2)
