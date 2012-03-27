@@ -388,11 +388,6 @@ void CFluidMomentum::Create()
 	}
 	if(!m_num)
 		cout << "Warning in CRFProcess::Create() - no numerical properties" << endl;
-	else
-	{
-		pcs_nonlinear_iterations = m_num->nls_max_iterations;
-		pcs_nonlinear_iteration_tolerance = m_num->nls_error_tolerance;
-	}
 }
 
 /**************************************************************************

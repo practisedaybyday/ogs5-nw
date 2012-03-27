@@ -2217,8 +2217,7 @@ CNodeValue* cnodev)
       //sat = mmp_vector[group]->SaturationCapillaryPressureFunction( -pressure0, 0);
       //cond0 *=  mmp_vector[group]->PermeabilitySaturationFunction(sat,0);
 
-      sat = mmp_vector[group]->SaturationCapillaryPressureFunction(
-         -pressure1, phase);
+      sat = mmp_vector[group]->SaturationCapillaryPressureFunction(-pressure1);
       cond1 *= mmp_vector[group]->PermeabilitySaturationFunction(sat, phase);
       // use of relative permeability for second node (absolute perm. for top node !!!!)
 
@@ -2264,11 +2263,10 @@ CNodeValue* cnodev)
       //WW m_ele = m_pcs_this->m_msh->ele_vector[msh_ele];
       group = m_pcs_this->m_msh->ele_vector[msh_ele]->GetPatchIndex();
 
-      //sat = mmp_vector[group]->SaturationCapillaryPressureFunction( -pressure0, phase);
+      //sat = mmp_vector[group]->SaturationCapillaryPressureFunction( -pressure0);
       //cond0 *=  mmp_vector[group]->PermeabilitySaturationFunction(sat,phase);
 
-      sat = mmp_vector[group]->SaturationCapillaryPressureFunction(
-         -pressure1, phase);
+      sat = mmp_vector[group]->SaturationCapillaryPressureFunction(-pressure1);
       cond1 *= mmp_vector[group]->PermeabilitySaturationFunction(sat, phase);
       // use of relative permeability for second node (absolute perm. for top node !!!!)
 

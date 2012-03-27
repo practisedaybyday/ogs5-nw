@@ -53,9 +53,9 @@ ProcessType convertProcessType ( const std::string& pcs_type_string )
 		return NO_PCS;
 	if (pcs_type_string.compare ("PTC_FLOW") == 0)
 		return PTC_FLOW;
-	else
-		std::cout << "WARNING in convertProcessType: process type #" << pcs_type_string <<
-		"# unknown" << std::endl;
+	//else
+		//std::cout << "WARNING in convertProcessType: process type #" << pcs_type_string <<
+		//"# unknown" << std::endl;
 	return INVALID_PROCESS;
 }
 
@@ -106,12 +106,22 @@ std::string convertProcessTypeToString ( ProcessType pcs_type )
 
 bool isFlowProcess (ProcessType pcs_type)
 {
-	if (pcs_type == LIQUID_FLOW || pcs_type == FLUID_FLOW
-	    || pcs_type == TWO_PHASE_FLOW || pcs_type == RICHARDS_FLOW
-	    || pcs_type == OVERLAND_FLOW || pcs_type == GROUNDWATER_FLOW
-	    || pcs_type == DEFORMATION_FLOW || pcs_type == MULTI_PHASE_FLOW
-	    || pcs_type == DEFORMATION_H2
+	if (   pcs_type == LIQUID_FLOW || pcs_type == FLUID_FLOW 
+		|| pcs_type == RICHARDS_FLOW || pcs_type == GROUNDWATER_FLOW
+		|| pcs_type == PS_GLOBAL || pcs_type == MULTI_PHASE_FLOW
+		|| pcs_type == DEFORMATION_FLOW || pcs_type == DEFORMATION_H2
+	    || pcs_type == TWO_PHASE_FLOW || pcs_type == OVERLAND_FLOW 
 	    || pcs_type == AIR_FLOW || pcs_type == PTC_FLOW)
+		return true;
+	return false;
+}
+
+bool isMultiFlowProcess (ProcessType pcs_type)
+{
+	if (pcs_type == PS_GLOBAL || 
+		pcs_type == MULTI_PHASE_FLOW ||
+		pcs_type == TWO_PHASE_FLOW ||
+		pcs_type == DEFORMATION_H2)
 		return true;
 	return false;
 }
@@ -207,11 +217,11 @@ PrimaryVariable convertPrimaryVariable ( const std::string& pcs_pv_string )
 		return STRAIN_ZZ;
 	if (pcs_pv_string.compare ("STRAIN_PLS") == 0)
 		return STRAIN_PLS;
-	else
-	{
-		std::cout << "convertPrimaryVariable #" << pcs_pv_string << "# not found" << std::endl;
-		exit (1);
-	}
+	//else
+	//{
+		//std::cout << "convertPrimaryVariable #" << pcs_pv_string << "# not found" << std::endl;
+		//exit (1);
+	//}
 	return INVALID_PV;
 }
 
@@ -388,6 +398,26 @@ const std::list<std::string> getAllDistributionNames()
 		enum_names.push_back( convertDisTypeToString(static_cast<DistributionType>(count++)) );
 	}
 	return enum_names;
+}
+
+ErrorMethod convertErrorMethod(const std::string& error_method_string)
+{
+	if (error_method_string.compare("LMAX") == 0)
+		return LMAX;
+	if (error_method_string.compare("ENORM") == 0)
+		return ENORM;
+	if (error_method_string.compare("EVNORM") == 0)
+		return EVNORM;
+	if (error_method_string.compare("ERNORM") == 0)
+		return ERNORM;
+	if (error_method_string.compare("BNORM") == 0)
+		return BNORM;
+	else
+	{
+		std::cout << "convertErrorMethod #" << error_method_string << "# not found"<< std::endl;
+		exit(1);
+	}
+	return INVALID_ERROR_METHOD;
 }
 
 } // end namespace FiniteElement

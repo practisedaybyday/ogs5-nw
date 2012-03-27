@@ -1566,7 +1566,7 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 		{
 			// Capillary pressure
 			PG = assem->interpolate(assem->NodalValC1);
-			Sw = assem->MediaProp->SaturationCapillaryPressureFunction(PG,0);
+			Sw = assem->MediaProp->SaturationCapillaryPressureFunction(PG);
 			double PG2 = assem->interpolate(assem->NodalVal_p2);
 			TG = assem->interpolate(assem->NodalVal1) + T_KILVIN_ZERO;
 			rhow = assem->FluidProp->Density();
@@ -1598,9 +1598,7 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 
 				if(PG < 0.0)
 				{
-					Sw = assem->MediaProp->SaturationCapillaryPressureFunction(
-					        -PG,
-					        0);
+					Sw = assem->MediaProp->SaturationCapillaryPressureFunction(-PG);
 					heat_capacity_fluids *= Sw;
 					if( assem->GasProp != 0)
 						heat_capacity_fluids +=

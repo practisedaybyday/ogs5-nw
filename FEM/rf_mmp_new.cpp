@@ -88,9 +88,10 @@ CMediumProperties::CMediumProperties() :
 	conductivity_model = -1;
 	flowlinearity_model = 0;
 	capillary_pressure_model = -1;
-	capillary_pressure_model_values[0] = 0.0;
+	capillary_pressure_values[4] = 1.0/DBL_EPSILON; // JT: max Pc
+	entry_pressure_conversion = false;
 	permeability_saturation_model[0] = -1;
-	permeability_saturation_model_values[0] = 1.0;
+	minimum_relative_permeability = 1.0e-9;	 // JT: the default value
 	unconfined_flow_group = -1;
 	permeability_stress_mode = -1;        //WW
 	c_coefficient = NULL;                 //WW
@@ -108,17 +109,11 @@ CMediumProperties::CMediumProperties() :
 	heat_diffusion_model = -1;            //WW
 	geo_area = 1.0;
 //	geo_type_name = "DOMAIN";             //OK
-	                                      //WW
-	saturation_max[0] = saturation_max[1] = saturation_max[2] = 1.0;
-	//WW
-	saturation_res[0] = saturation_res[1] = saturation_res[2] = 0.0;
-	permeability_tensor[9] = 1.0e-9;      // Minimum paermeability. 17.06.2008. WW
 	vol_mat = 0.0;
 	vol_bio = 0.0;
 	vol_mat_model = 0;
 	vol_bio_model = 0;
 	foc = 0.0;
-	fixed_saturation = 1.; //WX
 
 	permeability_pressure_model = -1; //01.09.2011. WW
 	permeability_strain_model = -1; //01.09.2011. WW
@@ -1017,116 +1012,122 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		//------------------------------------------------------------------------
 		//12.3 PERMEABILITY_FUNCTION_SATURATION
 		//------------------------------------------------------------------------
-		//....................................................................
-		//subkeyword found
 		if(line_string.find("$PERMEABILITY_SATURATION") != std::string::npos)
 		{
-			int no_fluid_phases = (int)mfp_vector.size();
-			for(i = 0; i < no_fluid_phases; i++)
+			int num_phases = 0;
+			if(H3_Process)
+				num_phases = 3; // the existence of additional fluids in the .mfp file is not an indicator of a 4-phase system.
+			else if(H2_Process)
+				num_phases = 2; // the existence of additional fluids in the .mfp file is not an indicator of a 3-phase system.
+			else if(H_Process)
+				num_phases = 1;
+			//
+			for(k = 0; k < num_phases; k++)
 			{
 				in.str(GetLineFromFile1(mmp_file));
-				in >> permeability_saturation_model[i];
-				switch(permeability_saturation_model[i])
+				in >> permeability_saturation_model[k];
+				//
+				switch(permeability_saturation_model[k])
 				{
-				case 0: // k=f(x)
-					in >> permeability_saturation_model_values[i];
+				case 0: // Curve of [Sw,k_rel]
+					in >> perm_saturation_value[k];	// curve number
 					break;
-				case 1: // Constant of 1. 26.05.2008. WW
-					in >> saturation_max[i];
+				//
+				case 1: // Constant
+					in >> perm_saturation_value[k]; // constant value of k_rel
 					break;
-				case 2: // k=S_eff    // Constant of 1. 26.05.2008. WW
-					in >> saturation_res[i];
-					in >> saturation_max[i];
+				//
+				case 2: // krg = 1.0 - krl (only for gas phase)
+					if(k==0){
+						WriteMessage("ERROR in MMPRead: Relative permeability model 2 is only valid for the gas phase.");
+						exit(0);
+					}
+					in >> minimum_relative_permeability;
 					break;
-				case 22: // k=1-S_eff // changed to 22 from 21. WW
-					in >> saturation_res[i];
-					in >> saturation_max[i];
+				//
+				case 3: // JT: Function (power or linear)      WETTING
+					// krw = (m*Se)^exp
+					// Se  = (sl - slr) / (slm - slr)
+					in >> residual_saturation[k];			// slr: residual saturation, this phase
+					in >> maximum_saturation[k];			// slm: maximum saturation, this phase
+					in >> saturation_exponent[k];			// (set exponent = 1 results in a linear k_rel function)
+					in >> perm_saturation_value[k];			// multiplier "m"
+					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
-				case 3: // power function
-					in >> saturation_res[i];
-					in >> saturation_max[i];
-					in >> saturation_exp[i];
+				//
+				case 33: // JT: Function (power or linear)     NON-WETTING 
+					// krg = (m*(1-Se))^exp
+					// Se  = (sl - slr) / (slm - slr) --> slr = 1 - sgm --> slm = 1 - sgr
+					in >> residual_saturation[k];			// sgr: residual saturation, this phase
+					in >> maximum_saturation[k];			// sgm: maximum saturation, this phase
+					in >> saturation_exponent[k];			// (set exponent = 1 results in a linear k_rel function)
+					in >> perm_saturation_value[k];			// multiplier "m"
+					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
-				case 33: // power function
-					in >> saturation_res[i];
-					in >> saturation_max[i];
-					in >> saturation_exp[i];
+				//
+				case 4: // 2-phase Van Genuchten/Mualem Model  WETTING	
+					// krw = pow(se,0.5) * pow(1.0-pow(1.0-pow(se,1.0/m),m),2)
+					// Se  = (sl - slr) / (slm - slr)
+					in >> residual_saturation[k];			// slr: residual saturation, this phase
+					in >> maximum_saturation[k];			// slm: maximum saturation, this phase
+					in >> saturation_exponent[k];			// exponent (always <= 1.0) --> (typical is 0.5) i.e. n = 1 / (1 - exponent) == 2.0
+					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
-				case 4: // van Genuchten
-					in >> saturation_res[i];
-					in >> saturation_max[i];
-					in >> saturation_exp[i];
+				//
+				case 44: // 2-phase Van Genuchten/Mualem Model NON-WETTING	
+					// krg = pow(1.0-se,1.0/3.0) * pow(1.0-pow(se,1.0/m),2.0*m)
+					// Se  = (sl - slr) / (slm - slr) --> slr = 1 - sgm --> slm = 1 - sgr
+					in >> residual_saturation[k];			// sgr: residual saturation, this phase
+					in >> maximum_saturation[k];			// sgm: maximum saturation, this phase
+					in >> saturation_exponent[k];			// exponent (always <= 1.0) --> (typical is 0.5) i.e. n = 1 / (1 - exponent) == 2.0
+					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
-				case 43: // van Genuchten for two-phase flow. WW
-					in >> saturation_res[i];
-					in >> saturation_max[i];
-					in >> saturation_exp[i];
+				//
+				case 6: // Brooks/Corey						   WETTING		
+					// krw = pow(se,3.0+2.0/m)
+					// Se  = (sl - slr) / (slm - slr)
+					in >> residual_saturation[k];			// slr: residual saturation, this phase
+					in >> maximum_saturation[k];			// slm: maximum saturation, this phase
+					in >> saturation_exponent[k];			// exponent (always >= 1.0) (typical might be 2.0)
+					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
-				case 44: // Van Genuchten for no wetting fluid, e.g., gas. WW
-					in >> saturation_res[i];
-					in >> saturation_max[i];
-					in >> saturation_exp[i];
-					in >> permeability_tensor[9]; // Minimum permeability. WW
+				//
+				case 66: // Brooks/Corey					   NON-WETTING	
+					// krg = pow(1.0-se,2)*(1.0-pow(se,1.0+2.0/m))
+					// Se  = (sl - slr) / (slm - slr) --> slr = 1 - sgm --> slm = 1 - sgr
+					in >> residual_saturation[k];			// sgr: residual saturation, this phase
+					in >> maximum_saturation[k];			// sgm: maximum saturation, this phase
+					in >> saturation_exponent[k];			// exponent (always >= 1.0) (typical might be 2.0)
+					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
-				case 6: //Brooks-Corey WW
-					in >> saturation_res[i];
-					in >> saturation_max[i];
-					in >> saturation_exp[i];
+				//
+				case 7: // Corey's curves					   WETTING		
+					// krw = pow(se,4)
+					// Se  = (sl - slr) / (slm - slr)
+					in >> residual_saturation[k];			// slr: residual saturation, this phase
+					in >> maximum_saturation[k];			// slm: maximum saturation, this phase
+					in >> saturation_exponent[k];			// exponent (always >= 1.0)
+					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
-				case 66: //Brooks-Corey for no wetting fluid, e.g., gas. WW
-					in >> saturation_res[i];
-					in >> saturation_max[i];
-					in >> saturation_exp[i];
-					in >> permeability_tensor[9]; // Minimum permeability. WW
+				//
+				case 77: // Corey's curves					   NON-WETTING
+					// krg = pow((1.0-se),2)*(1.0-pow(se,2))
+					// Se  = (sl - slr) / (slm - slr) --> slr = 1 - sgmax --> slm = 1 - sgr
+					in >> residual_saturation[k];			// sgr: residual saturation, this phase
+					in >> maximum_saturation[k];			// sgm: maximum saturation, this phase
+					in >> saturation_exponent[k];			// exponent (always >= 1.0)
+					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
-				case 14: // van Genuchten for liquid MX 03.2005 paper swelling pressure
-					in >> saturation_res[i];
-					in >> saturation_max[i];
-					in >> saturation_exp[i];
-					break;
-				case 15: // van Genuchten for gas MX 03.2005 paper swelling pressure
-					in >> saturation_res[i];
-					in >> saturation_max[i];
-					in >> saturation_exp[i];
-					break;
-				case 16: // van Genuchten/Mualem for light oil (B.R. Thoms Masters Thesis 2003) JOD
-					in >> saturation_res[i];
-					in >> saturation_max[i];
-					in >> saturation_exp[i];
-					in >> saturation_alpha[i];
-					break;
+				//
 				default:
-					std::cout <<
-					"Error in MMPRead: no valid permeability saturation model"
-					          << std::endl;
+					WriteMessage("Error in MMPRead: no valid permeability saturation model");
 					break;
 				}
 				in.clear();
 			}
 			continue;
 		}
-		/* See case 3 above   CMCD 11/2004...who put this in?, please come and see me so we can put it in together.
-		    if(line_string.find("$PERMEABILITY_FUNCTION_SATURATION")!=string::npos) { //subkeyword found
-		     int no_fluid_phases =(int)mfp_vector.size();
-		     for(i=0;i<no_fluid_phases;i++){
-		   *mmp_file >> permeability_saturation_model[i];
-		   *mmp_file >> delimiter;
-		        switch(permeability_saturation_model[i]) {
-		          case 0: // k=f(x)
-		            break;
-		          case 3: // power function
-		   *mmp_file >> saturation_res[i];
-		   *mmp_file >> saturation_max[i];
-		   *mmp_file >> saturation_exp[i];
-		   break;
-		   default:
-		   cout << "Error in MMPRead: no valid permeability saturation model" << endl;
-		   break;
-		   }
-		   mmp_file->ignore(MAX_ZEILE,'\n');
-		   }
-		   continue;
-		   }*/
+
 		//------------------------------------------------------------------------
 		//12.4 PERMEABILITY_FUNCTION_STRESS
 		//------------------------------------------------------------------------
@@ -1374,31 +1375,75 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		{
 			in.str(GetLineFromFile1(mmp_file));
 			in >> capillary_pressure_model;
+			i = 0;
+			// Value needed to check for old version formats.
+			capillary_pressure_values[2] = -1.0;
+			bool old_format = false;
+			//
 			switch(capillary_pressure_model)
 			{
-			case 0:       // k=f(x)
-				in >> capillary_pressure_model_values[0];
+			case 0:       // k=f(Se)
+				in >> capillary_pressure_values[0]; // curve
 				break;
 			case 1:       // const
-				in >> capillary_pressure;
-				in >> fixed_saturation; //WX
+				in >> capillary_pressure_values[0]; // the constant Pc value
+				//
+				// This next value is NOT REQUIRED. It is here because in the old version this entry was used to represent
+				// a constant value of saturation in PP models. SHOULD DELETE THIS CHECK EVENTUALLY!
+				in >> capillary_pressure_values[2];
+				if(capillary_pressure_values[2] >= 0.0){ // Then a constant saturation value has been entered. This is model #2.
+					WriteMessage("WARNING in MMPRead. Capillary pressure model 1 used for a constant saturation. THIS IS NOW MODEL #2. PLEASE SWITCH TO MODEL #2.");
+					capillary_pressure_model = 2;
+					capillary_pressure_values[0] = capillary_pressure_values[2];
+				}
+				break;
+			case 2:		  // Constant saturation for pp models (for WX, from JT)
+				in >> capillary_pressure_values[0]; // The fixed saturation
 				break;
 			case 4:       // van Genuchten
-				in >> capillary_pressure_model_values[0];
-				break; //WW
-
+				in >> capillary_pressure_values[0]; // Pb (or "alpha" if [alpha_switch>0])
+				in >> capillary_pressure_values[1]; // Slr
+				in >> capillary_pressure_values[2]; // Slmax
+				in >> capillary_pressure_values[3]; // exponent (always <= 1.0) --> (typical is 0.5) i.e. n = 1 / (1 - exponent) == 2.0
+				in >> capillary_pressure_values[4]; // maximum Pc
+				in >> i;							// alpha_switch (default = 0)
+				if(i>0) entry_pressure_conversion = true;
+				//
+				// JT: Check for old version format.
+				if(capillary_pressure_values[2] < 0.0){
+					entry_pressure_conversion = true;						// entry is alpha in old version
+					capillary_pressure_values[1] = residual_saturation[0];	// old version uses relative permeabilty values for this
+					capillary_pressure_values[2] = maximum_saturation[0];	// old version uses relative permeabilty values for this
+					capillary_pressure_values[3] = saturation_exponent[0];	// old version uses relative permeabilty values for this
+					capillary_pressure_values[4] = 1.0e10;
+					old_format = true;
+				}
+				break;
 			case 6:       //  Brook & Corey. 2.05.2008. WW
-				in >> capillary_pressure_model_values[0];
-				break; //WW
-			case 16:      // van Genuchten, separate fit (thoms) JOD
-				in >> permeability_exp[0];
-				in >> permeability_alpha[0];
+				in >> capillary_pressure_values[0]; // Pb
+				in >> capillary_pressure_values[1]; // Slr
+				in >> capillary_pressure_values[2]; // Slmax
+				in >> capillary_pressure_values[3]; // exponent (always >= 1.0) (typical might be 2.0)
+				in >> capillary_pressure_values[4]; // maximum Pc
+				//
+				// JT: Check for old version format.
+				if(capillary_pressure_values[2] < 0.0){
+					capillary_pressure_values[1] = residual_saturation[0];	// old version uses relative permeabilty values for this
+					capillary_pressure_values[2] = maximum_saturation[0];	// old version uses relative permeabilty values for this
+					capillary_pressure_values[3] = saturation_exponent[0];	// old version uses relative permeabilty values for this
+					capillary_pressure_values[4] = 1.0e10;
+					old_format = true;
+				}
 				break;
 			default:
-				//WW
-				std::cout << "Error in MMPRead: no valid capillary model" <<
-				std::endl;
+				WriteMessage("Error in MMPRead: no valid capillary pressure model.");
+				exit(1);
 				break;
+			}
+			if(old_format){
+				WriteMessage("\n Adopting capillary pressure saturation parameters from the");
+				WriteMessage(" relative permeability function for phase 0. Alternatively, you");
+				WriteMessage(" may enter capillary pressure specific parameters directly.");
 			}
 			in.clear();
 			continue;
@@ -1822,12 +1867,12 @@ void CMediumProperties::Write(std::fstream* mmp_file)
 			switch (permeability_saturation_model[0])
 			{
 			case 0:
-				*mmp_file << (int)permeability_saturation_model_values[0] << endl;
+				*mmp_file << (int)perm_saturation_value[0] << endl;
 				break;
 			case 4:       //VG
-				*mmp_file << saturation_res[0] << " ";
-				*mmp_file << saturation_max[0] << " ";
-				*mmp_file << saturation_exp[0] << endl;
+				*mmp_file << perm_saturation_value[0] << " ";
+				*mmp_file << 1.0-perm_saturation_value[0] << " ";
+				*mmp_file << perm_saturation_value[0] << endl;
 				break;
 			}
 		}
@@ -1842,15 +1887,15 @@ void CMediumProperties::Write(std::fstream* mmp_file)
 		switch (capillary_pressure_model)
 		{
 		case 0:
-			*mmp_file << (int)capillary_pressure_model_values[0] << endl;
+			*mmp_file << (int)capillary_pressure_values[0] << endl;
 			break;
 		case 4:                   //VG
-			*mmp_file << capillary_pressure_model_values[0] << endl;
+			*mmp_file << capillary_pressure_values[0] << endl;
 			break;
 		case 9:                   // HydroSphere
-			*mmp_file << saturation_res[0] << " ";
-			*mmp_file << capillary_pressure_model_values[0] << " ";
-			*mmp_file << capillary_pressure_model_values[1] << endl;
+			*mmp_file << capillary_pressure_values[0] << " ";
+			*mmp_file << capillary_pressure_values[1] << endl;
+			*mmp_file << capillary_pressure_values[2] << endl;
 			break;
 		}
 	}
@@ -2084,211 +2129,33 @@ CMediumProperties* CMediumProperties::GetByGroupNumber(int group_number)
    FEMLib-Method:
    Task:
    Programing:
-   03/1997 CT Erste Version
-   09/1998 CT Kurven ueber Schluesselwort #CURVES
-   08/1999 CT Erweiterung auf n-Phasen begonnen
-   09/2002 OK case 13
-   05/2003 MX case 14
-   08/2004 OK Template for MMP implementation
-   05/2005 MX Case 14, 15
-   05/2005 OK MSH
-   last modification:
-   ToDo: GetSoilRelPermSatu
-   10/2010 TF changed access to process type
+   03/2012 JT
 **************************************************************************/
-double CMediumProperties::PermeabilitySaturationFunction(long number,double* gp,double theta, \
-                                                         int phase)
+double CMediumProperties::GetEffectiveSaturationForPerm(const double wetting_saturation, int phase)
 {
-	//OK411
-	theta = theta;
-	gp = gp;
-	number = number;
-
-	int no_fluid_phases = (int)mfp_vector.size();
-	if(!m_pcs)
-	{
-		cout << "CMediumProperties::PermeabilitySaturationFunction: no PCS data" << endl;
-		return 1.0;
-	}
-	//  if(!(m_pcs->pcs_type_name.compare("RICHARDS_FLOW")==0)&&no_fluid_phases!=2) TF
-	if(!(m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW) && no_fluid_phases != 2)
-		return 1.0;
-	// static int nidx0,nidx1;
-	double saturation = 0.0,saturation_eff; //OK411
-	int gueltig;
-	//---------------------------------------------------------------------
-	if(mode == 2)                         // Given value
-		saturation = argument;
-	else
-	{
-		/*OK411
-		    string pcs_name_this = "SATURATION";
-		    char phase_char[1];
-		    sprintf(phase_char,"%i",phase+1);
-		    pcs_name_this.append(phase_char);
-		    nidx0 = PCSGetNODValueIndex(pcs_name_this,0);
-		    nidx1 = PCSGetNODValueIndex(pcs_name_this,1);
-		    if(mode==0){ // Gauss point values
-		      saturation = (1.-theta)*InterpolValue(number,nidx0,gp[0],gp[1],gp[2]) \
-		 + theta*InterpolValue(number,nidx1,gp[0],gp[1],gp[2]);
-		    }
-		   else{ // Node values
-		   saturation = (1.-theta)*GetNodeVal(number,nidx0) \
-		 + theta*GetNodeVal(number,nidx1);
-		   }
-		 */
-	}
-	//----------------------------------------------------------------------
-	switch(permeability_saturation_model[phase])
-	{
-	case 0:                               // k = f(x) user-defined function
-		//CMCD permeability_saturation_model_values[phase]
-		permeability_saturation =
-		        GetCurveValue((int)permeability_saturation_model_values[phase],
-		                      0,
-		                      saturation,
-		                      &gueltig);
-		break;
-	case 1:                               // linear function
-		return 1; //WX
-		break;
-	case 2:                               // linear function from ! liquid saturation
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		permeability_saturation = saturation_eff;
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-		break;
-	case 22:                              // Non-wetting. 1-Se WW
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		saturation_eff = 1.0 -
-		                 (saturation -
-		                  saturation_res[phase]) /
-		                 (saturation_max[phase] - saturation_res[phase]);
-		permeability_saturation = saturation_eff;
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-		break;
-	case 3:                               // Nichtlineare Permeabilitaets-Saettigungs-Beziehung
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		saturation_eff = MRange(0.,saturation_eff,1.);
-		permeability_saturation = pow(saturation_eff,saturation_exp[phase]);
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-		break;
-	case 4: {
-		// Van Genuchten: Wasser/Gas aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 Page 894 Equation 19 (Burdine's Equation)
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
+	double sl, se, slr, slm;
+	sl = wetting_saturation;
+	//
+	switch(phase){
+		case 0:
+			slr = residual_saturation[phase];
+			slm = maximum_saturation[phase];
+			sl  = MRange(slr,sl,slm);
+			se  = (sl - slr) / (slm - slr);
+			break;
 		//
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		//SB relperm[1] = pow(s_eff, 2.) * pow((1 - pow((1 - pow(s_eff, 1. / m)), m)),2.0); //SB:todo added ^2N1
-		//permeability_saturation = pow(saturation_eff,2.)
-		//                        * (1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase]));
-		// YD Advances in Water Resource 19 (1995) 25-38
-		double temp (1. - pow(1 - pow(saturation_eff,
-		                              1. / saturation_exp[phase]),saturation_exp[phase]));
-		permeability_saturation = sqrt(saturation_eff) * temp * temp;
-//            * MathLib::fastpow(1.-pow(1-pow(saturation_eff,1./saturation_exp[phase]),saturation_exp[phase]),2);
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-		break;
-	}
-	case 5:                               // Haverkamp Problem: aus SOIL SCI. SOC. AM. J., VOL. 41, 1977, Pages 285ff
-		break;
-	case 6:                               // Brooks/Corey: Alte Variante nach Helmig
-		break;
-	case 7:                               // Sprungfunktion
-		break;
-	case 8:                               // Brooks/Corey: Journal of the Irrigation and Drainage Division June/1966 Pages 61ff
-		break;
-	case 11:                              // Drei Phasen ueber Kurven
-		break;
-	case 12:                              // Drei Phasen nichtlineare Permeabilitaets-Saettigungs-Beziehung
-		break;
-	case 13:                              //OK Van Genuchten: Wasser/Gas aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 (Mualems Equation)
-		break;
-	case 14:                              //MX Van Genuchten: Wasser aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 (Mualems Equation)
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
+		case 1:
+			slr = 1.0 - maximum_saturation[phase];  // slr = 1.0 - sgm
+			slm = 1.0 - residual_saturation[phase]; // slm = 1.0 - sgr
+			sl  = MRange(slr,sl,slm);
+			se  = (sl - slr) / (slm - slr);
+			break;
 		//
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		//MX relperm[1] = pow(s_eff, 0.5) * pow((1 - pow((1 - pow(s_eff, 1. / m)), m)),2.0);
-		permeability_saturation = sqrt(saturation_eff) \
-		                          * MathLib::fastpow((1. -
-		                                              pow((1. -
-		                                                   pow(saturation_eff,1. /
-		                                                       saturation_exp[phase])),
-		                                                  saturation_exp[phase])),2);
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-		break;
-	case 15:                              //MX Van Genuchten: Gas aus Water Resour. Res. VOL. 23, pp2197-2206 1987
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		//
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		//MX relperm[1] = pow((1-s_eff), 0.5) * pow((1 - pow(s_eff, 1. / m)),2m);
-		permeability_saturation = sqrt((1 - saturation_eff)) \
-		                          * pow((1. - pow(saturation_eff,
-		                                          1. /
-		                                          saturation_exp[phase])),2.0 *
-		                                saturation_exp[phase]);
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-		break;
-	case 16:
-	{
-		// like 4  JOD vanGebuchten: Thoms MastersThesis 2003
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		//
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		//SB relperm[1] = pow(s_eff, 2.) * pow((1 - pow((1 - pow(s_eff, 1. / m)), m)),2.0); //SB:todo added ^2N1
-		//permeability_saturation = pow(saturation_eff,2.)
-		//                        * (1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase]));
-
-		double temp (1. - pow(1 - pow(saturation_eff,
-		                              1. / permeability_exp[phase]),permeability_exp[phase]));
-		permeability_saturation = sqrt(saturation_eff) * temp * temp;
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-		break;
+		default:
+			break;
 	}
-	default:
-		std::cout <<
-		"Error in CFluidProperties::PermeabilitySaturationFunction: no valid material model"
-		          << std::endl;
-		break;
-	}
-	return permeability_saturation;
+	//
+	return se;
 }
 
 /**************************************************************************
@@ -2305,248 +2172,148 @@ double CMediumProperties::PermeabilitySaturationFunction(long number,double* gp,
    05/2005 OK MSH
    08/2005 WW Remove interpolation
    03/2007 WW Brooks/Corey:
-   last modification:
-   ToDo: GetSoilRelPermSatu
+   03/2012 JT All new
 **************************************************************************/
-double CMediumProperties::PermeabilitySaturationFunction(const double Saturation, \
-                                                         int phase)
+double CMediumProperties::PermeabilitySaturationFunction(const double wetting_saturation, int phase)
 {
-	int no_fluid_phases = (int)mfp_vector.size();
-	if(!m_pcs)
-	{
-		std::cout << "CMediumProperties::PermeabilitySaturationFunction: no PCS data" <<
-		std::endl;
-		return 1.0;
+	double kr, sl, se, slr, slm, m, b;
+	int model, gueltig;
+	bool phase_shift = false;
+	sl = wetting_saturation;
+	//
+	model = permeability_saturation_model[phase];
+	if(model == 2){ // krg = 1.0 - krl : get paramters for liquid phase calculation
+		phase_shift = true;
+		phase  = 0;
+		model  = permeability_saturation_model[phase];
 	}
-	//  if(!(m_pcs->pcs_type_name.find("RICHARDS")!=string::npos) && no_fluid_phases!=2) TF
-	if(!(m_pcs->getProcessType () == FiniteElement::RICHARDS_FLOW) && no_fluid_phases != 2)
-		return 1.0;
-	double saturation, saturation_eff;
-	int gueltig;
-	saturation = Saturation;
-	//----------------------------------------------------------------------
-	switch(permeability_saturation_model[phase])
+	//
+	switch(model)
 	{
-	case 0:                               // k = f(x) user-defined function
-		//CMCD permeability_saturation_model_values[phase]
-		permeability_saturation =
-		        GetCurveValue((int)permeability_saturation_model_values[phase],
-		                      0,
-		                      saturation,
-		                      &gueltig);
-		break;
-	case 1:                               // constant WW. //linear function
-		return 1.0;
-		break;
-	case 2:                               // linear function from ! liquid saturation
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		permeability_saturation = saturation_eff;
-		permeability_saturation = MRange(permeability_tensor[9],
-		                                 permeability_saturation,
-		                                 saturation_max[phase]);
-		break;
-	case 22:                              // Non-wetting. WW 1-Se
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		saturation_eff = 1. -
-		                 (saturation -
-		                  saturation_res[phase]) /
-		                 (saturation_max[phase] - saturation_res[phase]);
-		permeability_saturation = saturation_eff;
-		//WW
-		permeability_saturation = MRange(permeability_tensor[9],
-		                                 permeability_saturation,
-		                                 saturation_max[phase]);
-		break;
-	case 3:                               // Nichtlineare Permeabilitaets-Saettigungs-Beziehung
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		saturation_eff = MRange(0.,saturation_eff,1.);
-		permeability_saturation = pow(saturation_eff,saturation_exp[phase]);
-		//WW
-		permeability_saturation = MRange(permeability_tensor[9],permeability_saturation,1.);
-		break;
-	case 33:                              // Nichtlineare Permeabilitaets-Saettigungs-Beziehung
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		saturation_eff = MRange(0.,saturation_eff,1.);
-		permeability_saturation = pow(1. - saturation_eff,saturation_exp[phase]);
-		permeability_saturation = MRange(permeability_tensor[9],permeability_saturation,1.);
-		break;
-	case 4:                               // Van Genuchten: Wasser/Gas aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 Page 894 Equation 19 (Burdine's Equation)
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
+		default:
+			WriteMessage("ERROR in PermeabilitySaturationFunction(): Unrecognized relative permeability method.");
+			exit(0);
+			break;
 		//
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		//SB relperm[1] = pow(s_eff, 2.) * pow((1 - pow((1 - pow(s_eff, 1. / m)), m)),2.0); //SB:todo added ^2N1
-		//permeability_saturation = pow(saturation_eff,2.)
-		//                        * (1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase]));
-		// YD Advances in Water Resource 19 (1995) 25-38
-		permeability_saturation = sqrt(saturation_eff) \
-		                          * MathLib::fastpow(1. -
-		                                             pow(1 -
-		                                                 pow(saturation_eff,1. /
-		                                                     saturation_exp[phase]),
-		                                                 saturation_exp[phase]),2);
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-		break;
-	case 43:            // Van Genuchten for two-phase flow. WW
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
-        double df_temp;
+		case 0: // CURVE
+			kr = GetCurveValue((int)perm_saturation_value[phase],0,sl,&gueltig);
+			break;
 		//
-		saturation_eff = (saturation -  saturation_res[0]) / (1. - saturation_res[0] - saturation_res[1]);
-
-		df_temp = 1. - pow(1 - pow(saturation_eff,1./saturation_exp[0]), saturation_exp[0]);
-
-		permeability_saturation = sqrt(saturation_eff)*df_temp*df_temp;
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-		break;
-	case 44:                              // van Genuchtenfor non wetting fluid (e.g. gas):  WW
-		if (saturation > (saturation_max[0] - MKleinsteZahl)) //WX
-			saturation = saturation_max[0] - MKleinsteZahl;
-		if (saturation < (saturation_res[0] + MKleinsteZahl))
-			saturation = saturation_res[0] + MKleinsteZahl;
+		case 1: // CONSTANT VALUE
+			kr = perm_saturation_value[phase];
+			break;
 		//
-		saturation_eff = 1. -(saturation -  saturation_res[0]) / (1. - saturation_res[0] - saturation_res[1]);
-		permeability_saturation = pow(saturation_eff,1.0 / 3.0) \
-		                          * pow(1 - pow(1. - saturation_eff,  1./saturation_exp[phase]), 2.0 *
-		                                saturation_exp[phase]);
-		permeability_saturation = MRange(permeability_tensor[9],permeability_saturation,1.);
-		break;
-	case 5:                               // Haverkamp Problem: aus SOIL SCI. SOC. AM. J., VOL. 41, 1977, Pages 285ff
-		break;
-	case 6:                               // Brooks Corey:  WW; changed 27.10.2010. BG + SB, version 5.0.08
-		if (saturation > (saturation_max[0] - MKleinsteZahl))
-			saturation = saturation_max[0] - MKleinsteZahl;
-		if (saturation < (saturation_res[0] + MKleinsteZahl))
-			saturation = saturation_res[0] + MKleinsteZahl;
+		case 2: // krg = 1.0 - krl
+			// No need to come here. Method will have been shifted to the liquid phase.
+			WriteMessage("ERROR in PermeabilitySaturationFunction(). Shouldn't be here.");
+			break;
 		//
-		saturation_eff =
-		        (saturation -
-		         saturation_res[0]) / (1. - saturation_res[0] - saturation_res[1]);
-		permeability_saturation = pow(saturation_eff,
-		                              (2.0 + 3.0 * saturation_exp[0]) / saturation_exp[0]);
-		permeability_saturation = MRange(DBL_EPSILON,permeability_saturation,1.);
-		break;
-	case 66:                              // Brooks Corey for non wetting fluid (e.g. gas):  WW; changed 27.10.2010. BG + SB, version 5.0.08
-		if (saturation > (saturation_max[0] - MKleinsteZahl))
-			saturation = saturation_max[0] - MKleinsteZahl;
-		if (saturation < (saturation_res[0] + MKleinsteZahl))
-			saturation = saturation_res[0] + MKleinsteZahl;
+		case 3: // FUNCTION: LINEAR OR POWER --> WETTING: krw = (b*Se)^m
+			slr = residual_saturation[phase];
+			slm = maximum_saturation[phase];
+			m   = saturation_exponent[phase];
+			b   = perm_saturation_value[phase];
+			sl  = MRange(slr, sl, slm);
+			se  = (sl - slr)/(slm - slr);
+			//
+			kr = pow((b*se),m);
+			if(kr < minimum_relative_permeability) 
+				kr = minimum_relative_permeability;
+			break;
 		//
-		saturation_eff =
-		        (saturation -
-		         saturation_res[0]) / (1. - saturation_res[0] - saturation_res[1]);
-		permeability_saturation = (1.0 - saturation_eff) * (1.0 - saturation_eff) *
-		                          (1.0 -
-		                           pow(saturation_eff,
-		                               (2.0 +
-		                                saturation_exp[phase]) / saturation_exp[phase]));
-		permeability_saturation = MRange(permeability_tensor[9],permeability_saturation,1.);
-		break;
-	case 7:                               // Sprungfunktion
-		break;
-	case 11:                              // Drei Phasen ueber Kurven
-		break;
-	case 12:                              // Drei Phasen nichtlineare Permeabilitaets-Saettigungs-Beziehung
-		break;
-	case 13:                              //OK Van Genuchten: Wasser/Gas aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 (Mualems Equation)
-		break;
-	case 14:
-	{
-		//MX Van Genuchten: Wasser aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 (Mualems Equation)
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
+		case 33: // FUNCTION: LINEAR OR POWER --> NON-WETTING krg = (b*(1-Se))^m
+			slr = 1.0 - maximum_saturation[phase];  // slr = 1.0 - sgm
+			slm = 1.0 - residual_saturation[phase]; // slm = 1.0 - sgr
+			m   = saturation_exponent[phase];
+			b   = perm_saturation_value[phase];
+			sl  = MRange(slr, sl, slm);
+			se  = (sl - slr)/(slm - slr);
+			//
+			kr = pow((b*(1.0-se)),m);
+			if(kr < minimum_relative_permeability) 
+				kr = minimum_relative_permeability;
+			break;
 		//
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		//MX relperm[1] = pow(s_eff, 0.5) * pow((1 - pow((1 - pow(s_eff, 1. / m)), m)),2.0);
-		double temp ((1. - pow((1. - pow(saturation_eff,
-		                                 1. / saturation_exp[phase])),saturation_exp[phase])));
-		permeability_saturation = sqrt(saturation_eff) * temp * temp;
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-		break;
+		case 4: // 2-phase VAN GENUCHTEN/MUALEM --> WETTING
+			slr = residual_saturation[phase];
+			slm = maximum_saturation[phase];
+			m   = saturation_exponent[phase];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
+			sl  = MRange(slr, sl, slm);
+			se  = (sl - slr)/(slm - slr);
+			//
+			kr = sqrt(se) * pow(1.0-pow(1.0-pow(se,1.0/m),m),2);
+			if(kr < minimum_relative_permeability) 
+				kr = minimum_relative_permeability;
+			break;
+		//
+		case 44: // 2-phase VAN GENUCHTEN/MUALEM --> NON-WETTING
+			slr = 1.0 - maximum_saturation[phase];		// slr = 1.0 - sgm
+			slm = 1.0 - residual_saturation[phase];		// slm = 1.0 - sgr
+			m   = saturation_exponent[phase];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
+			sl  = MRange(slr, sl, slm);
+			se  = (sl - slr)/(slm - slr);
+			//
+			kr = pow(1.0-se,1.0/3.0) * pow(1.0-pow(se,1.0/m),2.0*m);
+			if(kr < minimum_relative_permeability) 
+				kr = minimum_relative_permeability;
+			break;
+		//
+		case 6: // 2-phase BROOKS/COREY --> WETTING
+			slr = residual_saturation[phase];
+			slm = maximum_saturation[phase];
+			m   = saturation_exponent[phase];
+			sl  = MRange(slr, sl, slm);
+			se  = (sl - slr)/(slm - slr);
+			//
+			kr = pow(se,3.0+2.0/m);
+			if(kr < minimum_relative_permeability) 
+				kr = minimum_relative_permeability;
+			break;
+		//
+		case 66: // 2-phase BROOKS/COREY --> NON-WETTING
+			slr = 1.0 - maximum_saturation[phase];		// slr = 1.0 - sgm
+			slm = 1.0 - residual_saturation[phase];		// slm = 1.0 - sgr
+			m   = saturation_exponent[phase];
+			sl  = MRange(slr, sl, slm);
+			se  = (sl - slr)/(slm - slr);
+			//
+			kr = pow(1.0-se,2)*(1.0-pow(se,1.0+2.0/m));
+			if(kr < minimum_relative_permeability) 
+				kr = minimum_relative_permeability;
+			break;
+		//
+		case 7: // 2-phase COREY'S CURVES (JT) --> WETTING
+			slr = residual_saturation[phase];
+			slm = maximum_saturation[phase];
+			m   = saturation_exponent[phase];
+			sl  = MRange(slr, sl, slm);
+			se  = (sl - slr)/(slm - slr);
+			//
+			kr = pow(se,4);
+			if(kr < minimum_relative_permeability) 
+				kr = minimum_relative_permeability;
+			break;
+		//
+		case 77: // 2-phase COREY'S CURVES (JT) --> NON-WETTING
+			slr = 1.0 - maximum_saturation[phase];		// slr = 1.0 - sgm
+			slm = 1.0 - residual_saturation[phase];		// slm = 1.0 - sgr
+			m   = saturation_exponent[phase];
+			sl  = MRange(slr, sl, slm);
+			se  = (sl - slr)/(slm - slr);
+			//
+			kr = pow((1.0-se),2)*(1.0-pow(se,2));
+			if(kr < minimum_relative_permeability) 
+				kr = minimum_relative_permeability;
+			break;
 	}
-	case 15:
-	{
-		//MX Van Genuchten: Gas aus Water Resour. Res. VOL. 23, pp2197-2206 1987
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		//
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		//MX relperm[1] = pow((1-s_eff), 0.5) * pow((1 - pow(s_eff, 1. / m)),2m);
-		permeability_saturation = sqrt(1 - saturation_eff) \
-		                          * pow((1. - pow(saturation_eff,
-		                                          1. /
-		                                          saturation_exp[phase])),2.0 *
-		                                saturation_exp[phase]);
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-		break;
+	//
+	if(phase_shift){ // krg = 1.0 - krl : revert to gaseous phase
+		kr = 1.0 - kr;
+		if(kr < minimum_relative_permeability) 
+			kr = minimum_relative_permeability;
 	}
-	case 16:
-	{
-		// JOD
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		//
-		saturation_eff =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		//SB relperm[1] = pow(s_eff, 2.) * pow((1 - pow((1 - pow(s_eff, 1. / m)), m)),2.0); //SB:todo added ^2N1
-		//permeability_saturation = pow(saturation_eff,2.)
-		//                        * (1.-pow((1.- pow(saturation_eff,1./saturation_exp[phase])),saturation_exp[phase]));
-		// YD Advances in Water Resource 19 (1995) 25-38
-
-		double temp (1. - pow(1 - pow(saturation_eff,
-		                              1. / permeability_exp[phase]),permeability_exp[phase]));
-		permeability_saturation = sqrt(saturation_eff) * temp * temp;
-		permeability_saturation = MRange(0.,permeability_saturation,1.);
-
-		break;
-	}
-	default:
-		std::cout <<
-		"Error in CFluidProperties::PermeabilitySaturationFunction: no valid material model"
-		          << std::endl;
-		break;
-	}
-	return permeability_saturation;
+	//
+	return kr;
 }
 
 /**************************************************************************
@@ -2630,7 +2397,7 @@ double CMediumProperties::HeatCapacity(long number, double theta,
 			PG = assem->interpolate(assem->NodalValC1);
 			if (assem->cpl_pcs->type == 1212) // Multi-phase WW
 				PG *= -1.0;
-			Sat = SaturationCapillaryPressureFunction(-PG, 0);
+			Sat = SaturationCapillaryPressureFunction(-PG);
 		}
 		else
 			Sat = 1.0;
@@ -2718,8 +2485,7 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 				        Fem_Ele_Std->NodalValC1); // Capillary pressure
 				double
 				        Sw =
-				        Fem_Ele_Std->MediaProp->SaturationCapillaryPressureFunction(
-				                PG, 0);
+				        Fem_Ele_Std->MediaProp->SaturationCapillaryPressureFunction(PG);
 				//
 				m_mfp = mfp_vector[0];
 				heat_conductivity_fluids = Sw * m_mfp->HeatConductivity();
@@ -2756,8 +2522,7 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 					{
 						Sw
 						        = Fem_Ele_Std->MediaProp->
-						          SaturationCapillaryPressureFunction(
-						        -PG, 0);
+						          SaturationCapillaryPressureFunction(-PG);
 						heat_conductivity_fluids *= Sw;
 						if (Fem_Ele_Std->GasProp != 0)
 							heat_conductivity_fluids
@@ -2799,7 +2564,7 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 		double PG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC1);
 		//Temperature
 		double TG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal1) + 273.15;
-		double Sw = Fem_Ele_Std->MediaProp->SaturationCapillaryPressureFunction(PG,0);
+		double Sw = Fem_Ele_Std->MediaProp->SaturationCapillaryPressureFunction(PG);
 		heat_conductivity_fluids = 0.0;
 		H_vap = 2257000;          //pow((Tc - TG),0.38)*2.65E+5;
 		a = 19.81;
@@ -4723,6 +4488,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 //------------------------------------------------------------------------
 //13. CAPILLARY_PRESSURE_FUNCTION
 //------------------------------------------------------------------------
+
 /**************************************************************************
    FEMLib-Method:
    Task:
@@ -4733,128 +4499,66 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
    08/2004 OK Template for MMP implementation
    01/2004 OK Mode 3, given saturation
    05/2008 WW Brook & Corey
+   03/2012 JT All new
    last modification:
-   ToDo: GetSoilRelPermSatu
 **************************************************************************/
-double CMediumProperties::CapillaryPressureFunction(long number,double* gp,double theta, \
-                                                    int phase,double saturation)
+double CMediumProperties::CapillaryPressureFunction(const double wetting_saturation)
 {
-	//OK411
-	theta = theta;
-	gp = gp;
-	number = number;
-
-	double density_fluid = 0.;
-	double van_saturation,van_beta;
-	CFluidProperties* m_mfp = NULL;
-	// only for liquid phase
-	//if (phase == 0)  //YD
-	//  return 0.;
-	// static int nidx0,nidx1;
+	double pc, pb, sl, slr, slm, se, m;
 	int gueltig;
-	double capillary_pressure = 0.0;
-
-	//----------------------------------------------------------------------
+	sl = wetting_saturation;
+	//
 	switch(capillary_pressure_model)
 	{
-	case 0:                               // k = f(x) user-defined function
-		capillary_pressure = GetCurveValue((int)capillary_pressure_model_values[0],
-		                                   0,
-		                                   saturation,
-		                                   &gueltig);
-		break;
-	case 1:                               // constant
-		capillary_pressure = capillary_pressure;
-		break;
-	case 2:                               // Lineare Kapillardruck-Saettigungs-Beziehung
-		// kap12 steigt linear von 0 auf kap[2] im Bereich satu_water_saturated bis satu_water_residual
-		break;
-	case 3:                               // Parabolische Kapillardruck-Saettigungs-Beziehung
-		// kap12 steigt parabolisch von 0 auf kap[2] im Bereich satu_water_saturated bis satu_water_residual mit Exponent mat.kap[3]
-		break;
-	case 4:                               // Van Genuchten: Wasser/Gas aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 Page 894 Equation 21
-		// YD Advances in Water Resource 19 (1995) 25-38
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		m_mfp = MFPGet("LIQUID"); //YD
-		density_fluid = m_mfp->Density();
-		van_beta = 1. / (1 - saturation_exp[phase]);
-		van_saturation =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		capillary_pressure = density_fluid * gravity_constant /
-		                     capillary_pressure_model_values[0] \
-		                     * pow(pow(van_saturation,
-		                               -1. / saturation_exp[phase]) - 1.,1. / van_beta);
-		/*
-		   //WW
-		   if (capillary_pressure > (9.0e4 - MKleinsteZahl))
-		     capillary_pressure = 9.0e4;  // Mehr als Vollsaettigung mit Wasser
-		 */
-		if (capillary_pressure < (0. + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			capillary_pressure = 0. + MKleinsteZahl;
-		//if (capillary_pressure < 200)
-		//cout<<"c"<<capillary_pressure;
-
-		break;
-	case 5:                               // Haverkamp Problem: aus SOIL SCI. SOC. AM. J., VOL. 41, 1977, Pages 285ff
-		break;
-	case 6:                               // Brooks & Corey. 22.05.2008. WW
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		van_saturation =
-		        (saturation -
-		         saturation_res[0]) / (1.0 - saturation_res[0] - saturation_res[1]);
-		if(van_saturation < 1.0e-9)
-			van_saturation = 1.0e-9;
-		capillary_pressure = capillary_pressure_model_values[0] * pow(
-		        van_saturation,
-		        -1.0 /
-		        saturation_exp[0]);
-#ifdef CUTOFF
-		// PCH putting Pmax constraint as in TOUGH2
-		if(capillary_pressure > PMAX)
-			capillary_pressure = PMAX;
-#endif
-		break;
-	case 7:                               // Van Genuchten: Wasser/Gas aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 Page 894 Equation 21
-		break;
-	case 8:                               // 3Phasen ueber Kurven
-		break;
-	case 16:                              // JOD
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		m_mfp = MFPGet("LIQUID"); //YD
-		density_fluid = m_mfp->Density();
-		van_beta = 1. / (1 - saturation_exp[phase]);
-		van_saturation =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-		capillary_pressure = density_fluid * gravity_constant / saturation_alpha[phase] \
-		                     * pow(pow(van_saturation,
-		                               -1. / saturation_exp[phase]) - 1.,1. / van_beta);
-
-		if (capillary_pressure < (0. + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			capillary_pressure = 0. + MKleinsteZahl;
-		break;
-	default:
-		cout << "Error in CFluidProperties::CapillaryPressure: no valid material model" <<
-		endl;
-		break;
+		default:
+			WriteMessage("Error in CFluidProperties::CapillaryPressure: no valid material model");
+			exit(0);
+			break;
+		//
+		case 0: // k=f(x)
+			pc = GetCurveValue((int)capillary_pressure_values[0],0,sl,&gueltig);
+			break;
+		//
+		case 1: // Constant capillary pressure for ps models
+			pc = capillary_pressure_values[0];
+			break;
+		//
+		case 2: // Constant saturation for pp models (for WX, from JT) (MUST BE A PP MODEL, SO WON'T COME HERE)
+			WriteMessage("ERROR: in CFluidProperties::CapillaryPressure: Constant saturation is not possible for a PS model");
+			exit(0);
+			break;
+		//
+		case 4: // van Genuchten
+			pb  = capillary_pressure_values[0];
+			slr = capillary_pressure_values[1];
+			slm = capillary_pressure_values[2];
+			m   = capillary_pressure_values[3];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
+			//
+			// Convert alpha to entry pressure?
+			if(entry_pressure_conversion)
+				pb = (mfp_vector[0]->Density()*9.81)/pb;
+			//
+			sl  = MRange(slr, sl, slm);
+			se  = (sl-slr)/(slm-slr);
+			pc  = pb * pow(pow(se,(-1.0/m)) - 1.0, 1.0-m);
+			if(pc > capillary_pressure_values[4]) 
+				pc = capillary_pressure_values[4];
+			break;
+		//
+		case 6: //  Brook & Corey
+			pb  = capillary_pressure_values[0];
+			slr = capillary_pressure_values[1];
+			slm = capillary_pressure_values[2];
+			m   = capillary_pressure_values[3];			// always >= 1.0
+			//
+			sl  = MRange(slr, sl, slm);
+			se  = (sl-slr)/(slm-slr);
+			pc  = pb*pow(se,-1.0/m);
+			if(pc > capillary_pressure_values[4]) 
+				pc = capillary_pressure_values[4];
+			break;
 	}
-	return capillary_pressure;
+	return pc;
 }
 
 /**************************************************************************
@@ -4865,269 +4569,67 @@ double CMediumProperties::CapillaryPressureFunction(long number,double* gp,doubl
         SB Extensions case 4 and case 5
    02/2005 OK CMediumProperties function
    08/2005 WW Remove interploation
+   03/2012 JT All new.
    Last modified:
 **************************************************************************/
-double CMediumProperties::SaturationCapillaryPressureFunction
-        (const double capillary_pressure, const int phase)
+double CMediumProperties::SaturationCapillaryPressureFunction(const double capillary_pressure)
 {
-	static double saturation;
+	double se, sl, slr, slm, m, pb, pc;
 	int gueltig;
-	double van_beta = 0.0;
-	double density_fluid = 0.;
-	CFluidProperties* m_mfp = NULL;
-	//----------------------------------------------------------------------
+	pc = capillary_pressure;
+	//
+	// Get Se
 	switch(capillary_pressure_model)
 	{
-	case 0:                               // k = f(x) user-defined function
-		saturation = GetCurveValueInverse((int)capillary_pressure_model_values[0],
-		                                  0,
-		                                  capillary_pressure,
-		                                  &gueltig);
-		//WW 07.07.2008; changed 27.10.2010. BG + SB, version 5.0.08
-		if (saturation > (saturation_max[0] - MKleinsteZahl))
-			saturation = saturation_max[0] - MKleinsteZahl;
-		if (saturation < (saturation_res[0] + MKleinsteZahl))
-			saturation = saturation_res[0] + MKleinsteZahl;
-		break;
-	case 1:                               // constant
-		saturation = 1.0;         //MX test for DECOVALEX
-		saturation = fixed_saturation; //WX
-		break;
-	case 2:                               // Lineare Kapillardruck-Saettigungs-Beziehung
-		// kap12 steigt linear von 0 auf kap[2] im Bereich satu_water_saturated bis satu_water_residual
-		break;
-	case 3:                               // Parabolische Kapillardruck-Saettigungs-Beziehung
-		// kap12 steigt parabolisch von 0 auf kap[2] im Bereich satu_water_saturated bis satu_water_residual mit Exponent mat.kap[3]
-		break;
-	case 4:                               // Van Genuchten: Wasser/Gas aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 Page 894 Equation 21
-		m_mfp = mfp_vector[phase];
-		density_fluid = m_mfp->Density();
-		van_beta = 1 / (1 - saturation_exp[phase]);
-		if(capillary_pressure < MKleinsteZahl)
-			saturation = saturation_max[phase];
-		else
-			saturation =
-			        pow((pow(capillary_pressure * capillary_pressure_model_values[0] \
-			                 / density_fluid / gravity_constant,
-			                 van_beta) + 1),-1. * saturation_exp[phase]) \
-			        * (saturation_max[phase] -
-			           saturation_res[phase]) + saturation_res[phase];
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
-
-		/*OK
-		      a = kap[2];             // Test 0.005
-		      m = kap[3];             // Test 0.5
-		      n = kap[4];             // Test 2.
-		     saturation = pow(1.0 + pow(a*cap[1],n),-m) * (kap[1] - kap[0]) + kap[0];
-		 */
-		break;
-	case 5:                               // Haverkamp Problem: aus SOIL SCI. SOC. AM. J., VOL. 41, 1977, Pages 285ff
-		/*
-		      a = kap[2];             // 1.611e6 fuer Haverkamp
-		      b = kap[3];             // 3.96 fuer Haverkamp
-		      // SB: Umrechnen von cap in p_cap [cm]
-		      p_cap = cap[1] / GetFluidDensity(1, element, 0., 0., 0., 0.) / gravity_constant* 100.0;
-		      satu_return[1] = (a * (kap[1] - kap[0]))/(a + pow(p_cap,b)) + kap[0];
-		 */
-		break;
-	case 6:                               // Brooks & Corey. 22.05.2008. WW
-		if(capillary_pressure < MKleinsteZahl)
-			saturation = saturation_max[phase];
-		else
-			saturation = (1.0 - saturation_res[0] - saturation_res[1])
-			             * pow(capillary_pressure / capillary_pressure_model_values[0],
-			                   -saturation_exp[0])
-			             + saturation_res[0];
-		if (saturation > (saturation_max[0] - MKleinsteZahl))
-			saturation = saturation_max[0] - MKleinsteZahl;
-		if (saturation < (saturation_res[0] + MKleinsteZahl))
-			saturation = saturation_res[0] + MKleinsteZahl;
-		break;
-	case 7:                               // Van Genuchten: Wasser/Gas aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 Page 894 Equation 21
-		break;
-	case 8:                               // 3Phasen ueber Kurven
-		break;
-	case 16:                              // VanGenuchten/Mualem for light oil: R.B. Thoms MastersThesis 2003    JOD
-		m_mfp = mfp_vector[phase];
-		density_fluid = m_mfp->Density();
-		van_beta = 1 / (1 - saturation_exp[phase]);
-		if(capillary_pressure < MKleinsteZahl)
-			saturation = saturation_max[phase];
-		else
-			saturation = pow((pow(capillary_pressure * saturation_alpha[phase] \
-			                      / density_fluid / gravity_constant,
-			                      van_beta) + 1),-1. * saturation_exp[phase]) \
-			             * (saturation_max[phase] -
-			                saturation_res[phase]) + saturation_res[phase];
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		break;
-	default:
-		cout <<
-		"Error in CMediumProperties::SaturationCapillaryPressureFunction: no valid material model"
-		     << endl;
-		break;
+		default:
+			WriteMessage("Error in CFluidProperties::SaturationCapillaryPressureFunction: no valid material model");
+			exit(0);
+			break;
+		//
+		case 0: // k=f(x)
+			// Note: Use Inverse curve value because .rfd file has x=S, y=Pc as columns, and Pc is our input.
+			sl = GetCurveValueInverse((int)capillary_pressure_values[0],0,pc,&gueltig);
+			return sl;
+		//
+		case 1: // Constant capillary pressure for ps models
+			WriteMessage("ERROR: in CFluidProperties::SaturationCapillaryPressureFunction: Constant capillary pressure is not possible for a PP model");
+			exit(0);
+			break;
+		//
+		case 2: // Constant saturation for pp models (for WX, from JT)
+			sl = capillary_pressure_values[0];
+			return sl;
+		//
+		case 4: // van Genuchten
+			pb = capillary_pressure_values[0];
+			m  = capillary_pressure_values[3];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
+			//
+			// Convert alpha to entry pressure?
+			if(entry_pressure_conversion)
+				pb = (mfp_vector[0]->Density()*9.81)/pb;
+			//
+			if(pc < 0.0) pc = 0.0;
+			se = pow(pc/pb, 1.0/(1.0-m)) + 1.0;
+			se = pow(se,-m);
+			break;
+		//
+		case 6: //  Brook & Corey
+			pb = capillary_pressure_values[0];
+			m  = capillary_pressure_values[3];			// always >= 1.0
+			if(pc < pb) pc = pb;
+			se = pow(pc/pb,-m);
+			break;
 	}
-	return saturation;
+	// Get Sw
+	slr = capillary_pressure_values[1];
+	slm = capillary_pressure_values[2];
+	sl  = se*(slm-slr) + slr;
+	return sl;
 }
 
 /**************************************************************************
    FEMLib-Method:
-   Task:
-   Programing:
-   03/2002 CT CECalcSatuFromCap
-        SB Extensions case 4 and case 5
-   02/2005 OK CMediumProperties function
-   05/2008 WW Brooks & Corey.
-   Last modified:
-**************************************************************************/
-double CMediumProperties::SaturationCapillaryPressureFunction(long number,
-                                                              double* gp,
-                                                              double theta,
-                                                              int phase)
-{
-	//OK411
-	theta = theta;
-	gp = gp;
-	number = number;
-
-	// static int nidx0,nidx1;
-	static double saturation;
-	int gueltig;
-	double capillary_pressure = 0.0;
-	double van_beta = 0.0;
-	double density_fluid = 0.;
-	CFluidProperties* m_mfp = NULL;
-	//---------------------------------------------------------------------
-	if(mode == 2)
-		capillary_pressure = argument;
-	else
-	{
-		/*OK411
-		    nidx0 = PCSGetNODValueIndex("PRESSURE_CAP",0);
-		    nidx1 = PCSGetNODValueIndex("PRESSURE_CAP",1);
-		    if(mode==0){ // Gauss point values
-		      capillary_pressure = (1.-theta)*InterpolValue(number,nidx0,gp[0],gp[1],gp[2]) \
-		 + theta*InterpolValue(number,nidx1,gp[0],gp[1],gp[2]);
-		    }
-		    else{ // Node values
-		      capillary_pressure = (1.-theta)*GetNodeVal(number,nidx0) \
-		 + theta*GetNodeVal(number,nidx1);
-		    }
-		 */
-	}
-	//----------------------------------------------------------------------
-	switch(capillary_pressure_model)
-	{
-	case 0:                               // k = f(x) user-defined function
-		saturation = GetCurveValueInverse((int)capillary_pressure_model_values[0],
-		                                  0,
-		                                  capillary_pressure,
-		                                  &gueltig);
-		break;
-	case 1:                               // constant
-		break;
-	case 2:                               // Lineare Kapillardruck-Saettigungs-Beziehung
-		// kap12 steigt linear von 0 auf kap[2] im Bereich satu_water_saturated bis satu_water_residual
-		break;
-	case 3:                               // Parabolische Kapillardruck-Saettigungs-Beziehung
-		// kap12 steigt parabolisch von 0 auf kap[2] im Bereich satu_water_saturated bis satu_water_residual mit Exponent mat.kap[3]
-		break;
-	case 4:                               // Van Genuchten: Wasser/Gas aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 Page 894 Equation 21
-		m_mfp = mfp_vector[phase];
-		density_fluid = m_mfp->Density();
-		van_beta = 1 / (1 - saturation_exp[phase]);
-		if(capillary_pressure < MKleinsteZahl)
-			saturation = saturation_max[phase];
-		else
-			saturation =
-			        pow((pow(capillary_pressure * capillary_pressure_model_values[0] /
-			                 density_fluid / gravity_constant,
-			                 van_beta) + 1),-1. * saturation_exp[phase]) \
-			        * (saturation_max[phase] -
-			           saturation_res[phase]) + saturation_res[phase];
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
-
-		/*OK
-		      a = kap[2];             // Test 0.005
-		      m = kap[3];             // Test 0.5
-		      n = kap[4];             // Test 2.
-		     saturation = pow(1.0 + pow(a*cap[1],n),-m) * (kap[1] - kap[0]) + kap[0];
-		 */
-		break;
-	case 5:                               // Haverkamp Problem: aus SOIL SCI. SOC. AM. J., VOL. 41, 1977, Pages 285ff
-		/*
-		      a = kap[2];             // 1.611e6 fuer Haverkamp
-		      b = kap[3];             // 3.96 fuer Haverkamp
-		      // SB: Umrechnen von cap in p_cap [cm]
-		      p_cap = cap[1] / GetFluidDensity(1, element, 0., 0., 0., 0.) / gravity_constant* 100.0;
-		      satu_return[1] = (a * (kap[1] - kap[0]))/(a + pow(p_cap,b)) + kap[0];
-		 */
-		break;
-	case 6:                               // Brooks & Corey. 22.05.2008. WW
-		if(capillary_pressure < MKleinsteZahl)
-			saturation = saturation_max[phase];
-		else
-			saturation = (1.0 - saturation_res[0] - saturation_res[1])
-			             * pow(capillary_pressure / capillary_pressure_model_values[0],
-			                   -saturation_exp[0])
-			             + saturation_res[0];
-		if (saturation > (saturation_max[0] - MKleinsteZahl))
-			saturation = saturation_max[0] - MKleinsteZahl;
-		if (saturation < (saturation_res[0] + MKleinsteZahl))
-			saturation = saturation_res[0] + MKleinsteZahl;
-		break;
-	case 7:                               // Van Genuchten: Wasser/Gas aus SOIL SIC. SOC. AM. J. VOL. 44, 1980 Page 894 Equation 21
-		break;
-	case 8:                               // 3Phasen ueber Kurven
-		break;
-	case 16:                              // JOD not needed??
-		m_mfp = mfp_vector[phase];
-		density_fluid = m_mfp->Density();
-		van_beta = 1 / (1 - saturation_exp[phase]);
-		if(capillary_pressure < MKleinsteZahl)
-			saturation = saturation_max[phase];
-		else
-			saturation =
-			        pow((pow(capillary_pressure * saturation_alpha[phase] /
-			                 density_fluid /
-			                 gravity_constant,
-			                 van_beta) + 1),-1. * saturation_exp[phase]) \
-			        * (saturation_max[phase] -
-			           saturation_res[phase]) + saturation_res[phase];
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			/* Mehr als Vollsaettigung mit Wasser */
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			/* Weniger als Residualsaettigung Wasser */
-			saturation = saturation_res[phase] + MKleinsteZahl;
-		break;
-	default:
-		cout <<
-		"Error in CMediumProperties::SaturationCapillaryPressureFunction: no valid material model"
-		     << endl;
-		break;
-	}
-	return saturation;
-}
-
-/**************************************************************************
-   FEMLib-Method:
-   Task:
+   Task: returns dSw/dPc
    Programing:
    08/1999 CT Erste Version (MMTM0699GetSaturationPressureDependency)
    05/2001 OK Verallgemeinerung
@@ -5135,243 +4637,181 @@ double CMediumProperties::SaturationCapillaryPressureFunction(long number,
    08/2005 WW Remove interpolation
    03/2007 WW Analytical solution:
    02/2008 PCH Brooks-Corey dPc/dSw added
+   03/2012 JT All new. Added van Genuchten, Brooks Corey, fixed iterative, etc.
+           Plus, input should be Pc, not Sw.
    Last modified:
 **************************************************************************/
-double CMediumProperties::SaturationPressureDependency
-        (double saturation, double density_fluid, double theta)
-//(int phase, long index, double r, double s, double t, double theta)
+double CMediumProperties::SaturationPressureDependency(const double capillary_pressure)
 {
-	static double capillary_pressure,capillary_pressure1,capillary_pressure2;
-	static double saturation1,saturation2;
-	static double dS,dS_dp,dpc;
-	//WW double S_e,
-	double m, n, alpha;
-	int phase = 0;
-	//WW S_e=
-	m = n = alpha = 0.0;
-	//----------------------------------------------------------------------
-	// Vollsaettigung?
-	mode = 2;
-	phase = 0;                            //WW (int)mfp_vector.size()-1;
-	// Althogh p_c is known, we need to calculate it again just to fit the range of p_c>0.0
-	// for this derivative calculation
-	capillary_pressure = CapillaryPressureFunction(number,NULL,theta,phase, saturation);
-	if(capillary_pressure < MKleinsteZahl)
-		return 0.;
-	switch(capillary_pressure_model)      // 01.3.2007 WW
+	double dsdp,v1,v2,pc,pb,slr,slm,m,dpc,ds;
+	pc = capillary_pressure;
+	//
+	switch(capillary_pressure_model)
 	{
-	default:                              // k = f(x) user-defined function
-		//----------------------------------------------------------------------
-		// Wenn wir nah an der Vollsaettigung, ggf. Schrittweite verkleinern
-		dS = 1.e-2;
-		do
-		{
-			dS /= 10.;
-			saturation1 = saturation - dS;
-			capillary_pressure1 = CapillaryPressureFunction(number,
-			                                                NULL,
-			                                                theta,
-			                                                phase,
-			                                                saturation1);
-			saturation2 = saturation + dS;
-			capillary_pressure2 = CapillaryPressureFunction(number,
-			                                                NULL,
-			                                                theta,
-			                                                phase,
-			                                                saturation2);
-			//OK4105
-			dpc = capillary_pressure1 - capillary_pressure2;
-		}
-		while((dS > MKleinsteZahl) && (capillary_pressure2 < MKleinsteZahl / 100.));
-		if ( ((capillary_pressure1 > MKleinsteZahl) || (capillary_pressure2 > MKleinsteZahl)) \
-		     && (dpc > MKleinsteZahl) )
-			dS_dp = 2. * dS / (capillary_pressure1 - capillary_pressure2);
-		else
-			dS_dp = 0.;
-		//cout << "Warning in CMediumProperties::SaturationPressureDependency: dS_dp = 0" << endl; //OK4105
-		break;
-	case 44:                              // Van Genuchten: 01.3.2007 WW
-		m = saturation_exp[phase];
-		n = 1. / (1.0 - m);
-		alpha = capillary_pressure_model_values[0] / (density_fluid * gravity_constant);
-		// saturation is p_c
-		// dS_dp = dS_d/p_c * dp_c/dp = -dS_d/p_c
-		dS_dp = m * n * (saturation_max[phase] - saturation_res[phase]) *
-		        pow(1.0 + pow(alpha * capillary_pressure,n),-m - 1.0)
-		        * pow(alpha, n) * pow(capillary_pressure, n - 1.0);
-		break;
+		default:  // Iterative approximation
+			// JT:  So, this is better than before.  But still not a very good approximation.  But this is
+			// really unnecessary... just make sure the derivative of your function is input as a case below.
+			dpc = 1.0;
+			if(pc - dpc/10.0 < 0.0){
+				v1 = SaturationCapillaryPressureFunction(pc);
+				do{ dpc /= 10.0;
+					v2 = SaturationCapillaryPressureFunction(pc + dpc);
+					ds = v2-v1;
+				}
+				while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
+			}
+			else{
+				do{ dpc /= 10.0;
+					v1 = SaturationCapillaryPressureFunction(pc - dpc/2.0);
+					v2 = SaturationCapillaryPressureFunction(pc + dpc/2.0);
+					ds = v2-v1;
+				}
+				while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
+			}
+			dsdp = ds/dpc;
+			break;
+
+		case 1: //  Pc = CONSTANT
+			dsdp = 0.0;
+			break;
+
+		case 2: //  Sw = CONSTANT
+			dsdp = 0.0;
+			break;
+
+		case 4: //  Van Genuchten: 01.3.2007 WW  // 05.2010 JT. 
+			pb  = capillary_pressure_values[0];
+			slr = capillary_pressure_values[1];
+			slm = capillary_pressure_values[2];
+			m   = capillary_pressure_values[3];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
+			pc  = MRange(DBL_EPSILON,pc,1.0/DBL_EPSILON);
+			//
+			// Convert alpha to entry pressure?
+			if(entry_pressure_conversion)
+				pb = (mfp_vector[0]->Density()*9.81)/pb;
+			//
+			v1 = pow((pc/pb),(1.0/(1.0-m)));
+			v2 = pow((1.0+v1),(-1.0-m));
+			dsdp = (m*v1*v2*(slm-slr)) / ((m-1.0)*pc);
+			break;
+
+		case 6: //  Brooks & Corey. 10/2010 JT
+			pb = capillary_pressure_values[0];
+			if(pc<pb){
+				dsdp = 0.0;
+				break;
+			}
+			//
+			slr = capillary_pressure_values[1];
+			slm = capillary_pressure_values[2];
+			m   = capillary_pressure_values[3];		// always >= 1.0
+			//
+			v1 = pow((pc/pb),-m);
+			dsdp = (m*v1*(slr - slm)) / pc;
+			break;
 	}
-	//----------------------------------------------------------------------
-	mode = 0;
-	return dS_dp;
+	//
+	return dsdp;
 }
 
 /**************************************************************************
    FEMLib-Method:
-   Task:
+   Task: returns dPc/dSw
    Programing:
    03/2009 PCH Brooks-Corey dPc/dSw added
+   03/2012 JT: All new. + van Genuchten, fix iterative, etc.
    Last modified:
 **************************************************************************/
-double CMediumProperties::PressureSaturationDependency
-        (double saturation, double density_fluid, double theta)
+double CMediumProperties::PressureSaturationDependency(const double wetting_saturation)
 {
-	density_fluid = density_fluid;        //OK411
-
-	//WW static double capillary_pressure,
-	double capillary_pressure1,capillary_pressure2;
-	static double saturation1,saturation2;
-	static double dS; //WW,dpc;
-	// static double dS_dp;
-	// 01.3.2007 WW
-	double S_e, m, n, alpha, dPcdSe;
-	int phase = 0;
-	S_e = m = n = alpha = 0.0;
-
-	phase = 0;                            //WW (int)mfp_vector.size()-1;
-	// Althogh p_c is known, we need to calculate it again just to fit the range of p_c>0.0
-	// for this derivative calculation
-	capillary_pressure = CapillaryPressureFunction(number,NULL,theta,phase, saturation);
-	//	if(capillary_pressure < MKleinsteZahl)
-	//		return 0.;
-	switch(capillary_pressure_model)      // 01.3.2007 WW
+	double dpds,v1,v2,pc,pb,sl,se,slr,slm,m,dpc,ds;
+	sl = wetting_saturation;
+	//
+	switch(capillary_pressure_model)
 	{
-	case 0:                               // k = f(x) user-defined function
-		dS = 1.e-2;
-		do
-		{
-			dS /= 10.;
-			saturation1 = saturation - dS;
-			capillary_pressure1 = CapillaryPressureFunction(number,
-			                                                NULL,
-			                                                theta,
-			                                                phase,
-			                                                saturation1);
-			saturation2 = saturation + dS;
-			capillary_pressure2 = CapillaryPressureFunction(number,
-			                                                NULL,
-			                                                theta,
-			                                                phase,
-			                                                saturation2);
-			//OK4105
-			//WW dpc = capillary_pressure1 - capillary_pressure2;
-		}
-		while((dS > MKleinsteZahl) && (capillary_pressure2 < MKleinsteZahl / 100.));
+		default:  // Iterative approximation
+			// JT:  So, this is better than before.  But still not a very good approximation.  But this is
+			// really unnecessary... just make sure the derivative of your function is input as a case below.
+			if(sl<0.0) sl=0.0;
+			ds = 0.01;
+			if(sl - ds/10.0 < 0.0){
+				v1 = CapillaryPressureFunction(sl);
+				do{ ds /= 10.0;
+					v2 = CapillaryPressureFunction(sl + ds);
+					dpc = v2-v1;
+				}
+				while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
+			}
+			else{
+				do{ ds /= 10.0;
+					v1 = CapillaryPressureFunction(sl - ds/2.0);
+					v2 = CapillaryPressureFunction(sl + ds/2.0);
+					dpc = v2-v1;
+				}
+				while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
+			}
+			dpds = dpc/ds;
+			break;
 
-		dPcdSe = (capillary_pressure1 - capillary_pressure2) / (2. * dS);
-		break;
-	default:                              // k = f(x) user-defined function
-		dS = 1.e-2;
-		do
-		{
-			dS /= 10.;
-			saturation1 = saturation - dS;
-			capillary_pressure1 = CapillaryPressureFunction(number,
-			                                                NULL,
-			                                                theta,
-			                                                phase,
-			                                                saturation1);
-			saturation2 = saturation + dS;
-			capillary_pressure2 = CapillaryPressureFunction(number,
-			                                                NULL,
-			                                                theta,
-			                                                phase,
-			                                                saturation2);
-			//OK4105
-			//WW dpc = capillary_pressure1 - capillary_pressure2;
-		}
-		while((dS > MKleinsteZahl) && (capillary_pressure2 < MKleinsteZahl / 100.));
+		case 1: //  Pc = CONSTANT
+			dpds = 0.0;
+			break;
 
-		dPcdSe = (capillary_pressure1 - capillary_pressure2) / (2. * dS);
-		break;
+		case 2: //  Sw = CONSTANT
+			dpds = 0.0;
+			break;
 
-	case 6:                               // Brooks-Corey: 02.2008 PCH
-		if (saturation > (saturation_max[phase] - MKleinsteZahl))
-			saturation = saturation_max[phase] - MKleinsteZahl;
-		if (saturation < (saturation_res[phase] + MKleinsteZahl))
-			saturation = saturation_res[phase] + MKleinsteZahl;
+		case 4: //  Van Genuchten: 01.3.2007 WW  // 05.2010 JT. 
+			pb  = capillary_pressure_values[0];
+			slr = capillary_pressure_values[1];
+			slm = capillary_pressure_values[2];
+			m   = capillary_pressure_values[3];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
+			//
+			// Convert alpha to entry pressure?
+			if(entry_pressure_conversion)
+				pb = (mfp_vector[0]->Density()*9.81)/pb;
+			//
+			// Respect maximum pc bound, if it exists...
+			sl = MRange(slr, sl, slm);
+			se = (sl-slr)/(slm-slr);
+			pc = pb * pow(pow(se,(-1.0/m)) - 1.0, 1.0-m);
+			if(pc > capillary_pressure_values[4]){
+				dpds = 0.0;
+				break;
+			}
+			//
+			// Get dPc/dSw
+			sl = MRange(slr+DBL_EPSILON, sl, slm-DBL_EPSILON); // (infinity also occurs at sl=slmax for van Genuchten)
+			v1 = pow(((sl-slr) / (slm-slr)),(-1.0/m));
+			v2 = pow(v1-1.0,-m);
+			dpds = (pb*(m-1.0)*v1*v2) / (m*(sl-slr));
+			if(dpds < -1.0/DBL_EPSILON) dpds = -1.0/DBL_EPSILON;
+			break;
 
-		S_e =
-		        (saturation -
-		         saturation_res[phase]) / (saturation_max[phase] - saturation_res[phase]);
-
-		dPcdSe = -capillary_pressure_model_values[0] / (saturation_exp[0] * S_e) *
-		         pow(S_e, -1.0 / saturation_exp[0]);
-		break;
+		case 6: //  Brooks & Corey. 10/2010 JT
+			pb  = capillary_pressure_values[0];
+			slr = capillary_pressure_values[1];
+			slm = capillary_pressure_values[2];
+			m   = capillary_pressure_values[3];			// always >= 1.0
+			//
+			// Respect maximum pc bound, if it exists...
+			sl = MRange(slr, sl, slm);
+			se = (sl-slr)/(slm-slr);
+			pc = pb*pow(se,-1.0/m);
+			if(pc > capillary_pressure_values[4]){
+				dpds = 0.0;
+				break;
+			}
+			//
+			// Get dPc/dSw
+			sl = MRange(slr+DBL_EPSILON, sl, slm); // No upper bound needed for B&C
+			v1 = pow(((sl-slr) / (slm-slr)),(-1.0/m));
+			dpds = (pb*v1) / (m*(slr-sl));
+			if(dpds < -1.0/DBL_EPSILON) dpds = (-1.0/DBL_EPSILON);
+			break;
 	}
-
-	return dPcdSe;
-}
-
-/**************************************************************************
-   FEMLib-Method:
-   Task:
-   Programing:
-   08/1999 CT Erste Version (MMTM0699GetSaturationPressureDependency)
-   05/2001 OK Verallgemeinerung
-   02/2005 OK CMediumProperties function
-   Last modified:
-**************************************************************************/
-double CMediumProperties::SaturationPressureDependency(long number,double* gp,double theta)
-//(int phase, long index, double r, double s, double t, double theta)
-{
-	//OK411
-	gp = gp;
-
-	static double capillary_pressure,capillary_pressure1,capillary_pressure2;
-	static double saturation,saturation1,saturation2;
-	static double dS,dS_dp,dpc;
-	//int nidx0,nidx1;
-	int phase = (int)mfp_vector.size() - 1;
-	//----------------------------------------------------------------------
-	if(mode == 2)
-		saturation = argument;
-	else
-	{
-		/*OK411
-		    nidx0 = PCSGetNODValueIndex("SATURATION1",0);
-		    nidx1 = PCSGetNODValueIndex("SATURATION1",1);
-		    if(mode==0){ // Gauss point values
-		      saturation = (1.-theta)*InterpolValue(number,nidx0,gp[0],gp[1],gp[2]) \
-		 + theta*InterpolValue(number,nidx1,gp[0],gp[1],gp[2]);
-		    }
-		    else // Node values
-		    {
-		      saturation = SaturationCapillaryPressureFunction(number,NULL,theta,phase);
-		      saturation = (1.-theta)*GetNodeVal(number,nidx0) \
-		 + theta*GetNodeVal(number,nidx1);
-		   }
-		 */
-	}
-	//----------------------------------------------------------------------
-	// Vollsaettigung?
-	mode = 2;
-	capillary_pressure = CapillaryPressureFunction(number,NULL,theta,phase,saturation);
-	if(capillary_pressure < MKleinsteZahl)
-		return 0.;
-	//----------------------------------------------------------------------
-	// Wenn wir nah an der Vollsaettigung, ggf. Schrittweite verkleinern
-	dS = 1.e-2;
-	do
-	{
-		dS /= 10.;
-		saturation1 = saturation - dS;
-		capillary_pressure1 = CapillaryPressureFunction(number,NULL,theta,phase,saturation1);
-		saturation2 = saturation + dS;
-		capillary_pressure2 = CapillaryPressureFunction(number,NULL,theta,phase,saturation2);
-		//OK4105
-		dpc = capillary_pressure1 - capillary_pressure2;
-	}
-	while((dS > MKleinsteZahl) && (capillary_pressure2 < MKleinsteZahl / 100.));
-	if ( ((capillary_pressure1 > MKleinsteZahl) || (capillary_pressure2 > MKleinsteZahl)) \
-	     && (dpc > MKleinsteZahl) )
-		dS_dp = 2. * dS / (capillary_pressure1 - capillary_pressure2);
-	else
-		dS_dp = 0.;
-	//cout << "Warning in CMediumProperties::SaturationPressureDependency: dS_dp = 0" << endl; //OK4105
-	//----------------------------------------------------------------------
-	mode = 0;
-	return dS_dp;
+	//
+	return dpds;
 }
 
 /*************************************************************************************************************

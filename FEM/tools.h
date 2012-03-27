@@ -29,11 +29,11 @@ typedef struct                                    /* fuer Kurven (Kurven) */
 	/* Feld mit den eingelesenen Stuetzstellen */
 } Kurven;
 
-extern double GetCurveValue ( int, int, double, int*);
 //NB
 //extern double GetMatrixValue (double, double, std::string, int*);
 double GetMatrixValue(double var1, double var2, std::string caption, int *gueltig);
-extern double GetCurveValueInverse ( int, int, double, int*);
+extern double GetCurveValue ( int kurve, int methode, double punkt, int* gueltig);
+extern double GetCurveValueInverse ( int kurve, int methode, double wert, int* gueltig);
 extern double GetCurveDerivative(int kurve, int methode, double punkt, int* gueltig);
 extern Kurven* kurven;                            /* Feld mit Kurven */
 extern int anz_kurven;                            /* Anzahl der Kurven */
@@ -41,6 +41,9 @@ extern int anz_kurven;                            /* Anzahl der Kurven */
 /******************************************************/
 /* C1.11 Miscellaneous                                 */
 /******************************************************/
+
+/*JT: Send output message*/
+extern void WriteMessage(std::string message);
 
 /* Deklarationen fuer Schluesselwort #FRACTURE_APERTURE_DISTRIBUTION */
 extern double* fracture_aperture_array;

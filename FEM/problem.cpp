@@ -326,9 +326,8 @@ Problem::Problem (char* filename) :
 	OUTCheck();                           // new SB
 	//========================================================================
 	// Controls for coupling. WW
-	loop_index = 0;
-	max_coupling_iterations = 1;
-	coupling_tolerance = 1.e-4;
+	cpl_overall_max_iterations = 1;
+	cpl_overall_min_iterations = 1; // JT2012
 	//========================================================================
 	// WW
 	char line[MAX_ZEILE];
@@ -350,7 +349,9 @@ Problem::Problem (char* filename) :
 			if(line_string.find("$OVERALL_COUPLING") != std::string::npos)
 			{
 				in_num.str(GetLineFromFile1(&num_file));
-				in_num >> max_coupling_iterations >> coupling_tolerance;
+				//JT// in_num >> max_coupling_iterations >> coupling_tolerance;
+				//JT: coupling_tolerance is process dependent, cannot be here. See m_num->cpl_tolerance (with $COUPLING_CONTROL)
+				in_num >> cpl_overall_min_iterations >> cpl_overall_max_iterations;
 				break;
 			}
 		}
@@ -374,7 +375,7 @@ Problem::Problem (char* filename) :
 			end_time = m_tim->time_end;
 		if (max_time_steps <  m_tim->time_step_vector.size())
 			max_time_steps = m_tim->time_step_vector.size();
-		if (m_tim->GetTimeStepCrtlType() > 0)
+		if (m_tim->GetPITimeStepCrtlType() > 0)
 			time_ctr = true;
 	}
 	if(max_time_steps == 0)
@@ -659,9 +660,18 @@ void Problem::SetActiveProcesses()
 	for(i = 0; i < max_processes; i++)
 		if(total_processes[i])
 		{
-			m_pcs = PCSGet(total_processes[i]->m_num->cpl_variable);
-			if(m_pcs)
+			// JT: Check for a coupled variable or process (variable is probably necessary for multiple component transport situations.
+			// First try for a variable, because this is more general for mass transport
+			m_pcs = PCSGet(total_processes[i]->m_num->cpl_variable,true);
+			if(m_pcs){
 				coupled_process_index[i] = AssignProcessIndex(m_pcs, false);
+			}
+			else{ // Try for a process, because it may have been assigned this way
+				m_pcs = PCSGet(total_processes[i]->m_num->cpl_process);
+				if(m_pcs){
+					coupled_process_index[i] = AssignProcessIndex(m_pcs, false);
+				}
+			}
 			active_process_index.push_back(i);
 		}
 	// Transport  porcesses
@@ -783,136 +793,199 @@ void Problem::PCSRestart()
 	}
 }
 
+/*-------------------------------------------------------------------------
+   GeoSys - Function: SetTimeActiveProcesses
+   Task: For independent time stepping. Set processes to active in time.
+   Note: Minimum time step allowance in handled in CalcTimeStep()
+   Return:
+   Programming:
+   03/2012 JT
+   Modification:
+   --------------------------------------------------------------------*/
+void Problem::SetTimeActiveProcesses()
+{
+	size_t ii;
+	double tval, next_time, lowest_next_active;
+	CTimeDiscretization* m_tim = NULL;
+	CTimeDiscretization* inactive_tim = NULL;
+	next_time = current_time + dt;
+	//
+	lowest_next_active = DBL_MAX;
+	for(ii=0; ii<active_process_index.size(); ii++)
+	{
+		m_tim = total_processes[active_process_index[ii]]->Tim;
+		if(m_tim->time_independence && m_tim->next_active_time > next_time){ // Process is then not active this time step
+			m_tim->time_active = false; // deactivate
+			//
+			// store the lowest next active time of inactive processes
+			if(m_tim->next_active_time < lowest_next_active){
+				lowest_next_active = m_tim->next_active_time;
+				inactive_tim = m_tim;
+			}
+		}
+	}
+	//
+	// Check if we should shift time step slightly to hit a non-active process
+	if(inactive_tim){
+		tval = next_time + dt/1.0e3;				// a small dt increase is better than a miniscule dt on the next step
+		if(tval > lowest_next_active){				// allow this slight increase
+			inactive_tim->time_active = true;
+			dt = lowest_next_active - current_time;
+			next_time = current_time + dt;
+		}
+		else if(tval+dt > lowest_next_active){		// Try to smooth to the target time from 2 time steps away
+			dt = (lowest_next_active - current_time)/2.0;
+			next_time = current_time + dt;
+		}
+	}
+	//
+	// Set times for all active processes
+	for(ii=0; ii<active_process_index.size(); ii++)
+	{
+		m_tim = total_processes[active_process_index[ii]]->Tim;
+		if(m_tim->time_active){
+			m_tim->time_step_length = next_time - m_tim->last_active_time;
+			m_tim->last_active_time = next_time;
+		}
+	}
+}
+
 /**************************************************************************
    FEMLib-Method:
    07/2008 WW Implementation
    01/2009 WW Update
+   03/2012 JT Many changes. Allow independent time stepping.
 **************************************************************************/
 void Problem::Euler_TimeDiscretize()
 {
 	long accepted_times = 0;
 	long rejected_times = 0;
-	double dtdummy = 0;
+	double dt_rec;
+	int i,j,k;
 	//
 	CTimeDiscretization* m_tim = NULL;
 	aktueller_zeitschritt = 0;
-
-#if defined(USE_MPI)
-	if(myrank == 0)
-	{
-#endif
-	std::cout << "\n\n***Start time steps\n";
-	// Dump the initial conditions.
-
-	OUTData(0.0,aktueller_zeitschritt);
-#if defined(USE_MPI)
-}
-#endif
+	WriteMessage("\n\n***Start time steps");
 	//
+	// Output zero time initial values
+	OUTData(0.0,aktueller_zeitschritt,true);
+	//
+	// ------------------------------------------
+	// PERFORM TRANSIENT SIMULATION
+	// ------------------------------------------
 	while(end_time > current_time)
 	{
-		dt = DBL_EPSILON;
-
-		//09.01.2009. WW    //kg44 11.12.2009 this loop has a problem...dt will be always changed twice as in the CalcTimeStep function and the underlying adaptive time step control there is a loop over all the processes..not only on the associated ones
-		for(int i = 0; i < (int)active_process_index.size(); i++)
+		// Get time step
+		dt_last = dt;
+		dt = dt_rec = DBL_MAX;
+		for(i=0; i<(int)active_process_index.size(); i++)
 		{
 			m_tim = total_processes[active_process_index[i]]->Tim;
-			dtdummy = m_tim->CalcTimeStep(current_time);
-			// take always the smalles one, expect for first guess!
-			if (i == 0)
-				dt = dtdummy;
-			else
-				dt = MMin(dt,dtdummy);
-			if(dt < dt0)
-				dt = dt0;
+			if(!m_tim->time_active) continue; // JT
+			dt = MMin(dt,m_tim->CalcTimeStep(current_time));
+			dt_rec = MMin(dt_rec,m_tim->recommended_time_step); // to know if we have a critical time alteration
 		}
-		if(dt < DBL_EPSILON)
-		{
-			std::cout << "!!! Too small time step size. Choose smallest number: " <<
-			DBL_EPSILON << std::endl;
-			dt = DBL_EPSILON;
-			//kg44 04/2010 proceed exit(0);
-		}
+		SetTimeActiveProcesses(); // JT2012: Activate or deactivate processes with independent time stepping
+//
 #if defined(USE_MPI)
-		// all processes use the same time stepping
-		MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD); // all processes use the same time stepping (JT->WW. Must they always?)
 #endif
-		//kg44 11.12.2009 all time-step sizes should be equal?!
-		for(int i = 0; i < (int)active_process_index.size(); i++)
-		{
-			m_tim = total_processes[active_process_index[i]]->Tim;
-			m_tim->time_step_length = dt;
-		}
-
-		//
-		aktueller_zeitschritt++;  // Might be removed late on
+//
+		// Update time settings
+		aktueller_zeitschritt++;
 		current_time += dt;
 		aktuelle_zeit = current_time;
+		if(aktueller_zeitschritt == 1) 
+			dt_last = dt;
+		//
 		// Print messsage
 #if defined(USE_MPI)
 		if(myrank == 0)
 		{
 #endif
-		std::cout << "\n\n#############################################################";
-		std::cout << "\nTime step: " << aktueller_zeitschritt << "|  Time: " <<
+		std::cout << "\n\n#############################################################\n";
+		std::cout << "Time step: " << aktueller_zeitschritt << "|  Time: " <<
 		current_time << "|  Time step size: " << dt << std::endl;
+		if(dt_rec > dt){
+			std::cout << "This time step size was modified to match a critical time!" << std::endl;
+		}
 #if defined(USE_MPI)
-	}
+		}
 #endif
 		if(CouplingLoop())
 		{
-#if defined(USE_MPI)
-			if(myrank == 0)
-#endif
-			std::cout << "This step is accepted." << std::endl;
+			// ---------------------------------
+			// TIME STEP ACCEPTED
+			// ---------------------------------
+			WriteMessage("This step is accepted.");
+			WriteMessage("------------------------------------------------------");
 			PostCouplingLoop();
 			if(print_result)
-#if defined(USE_MPI)
 			{
-				if(myrank == 0)
-#endif
-				OUTData(current_time, aktueller_zeitschritt);
-#if defined(USE_MPI)
-			// MPI_Barrier (MPI_COMM_WORLD);
-		}
-#endif
-			//
+				if(current_time < end_time){ // JT: Make sure we printout on last time step
+					OUTData(current_time, aktueller_zeitschritt,false);
+				}
+				else{
+					OUTData(current_time, aktueller_zeitschritt,true);
+				}
+			}
 			accepted_times++;
+			for(i=0; i<(int)active_process_index.size(); i++)
+			{
+				m_tim = total_processes[active_process_index[i]]->Tim;
+				if(m_tim->time_active) m_tim->accepted_step_count++;
+			}
 		}
 		else
 		{
+			// ---------------------------------
+			// TIME STEP FAILED
+			// ---------------------------------
+			WriteMessage("This step is rejected.");
+			WriteMessage("------------------------------------------------------");
+			rejected_times++;
 			current_time -= dt;
-			// aktuelle_zeit might be removed late on
 			aktuelle_zeit = current_time;
-			aktueller_zeitschritt--; // Might be removed late on
+			aktueller_zeitschritt--;
 			//
-			for (size_t i = 0; i < pcs_vector.size(); i++)
+			// Increment active process step count
+			for(i=0; i<(int)active_process_index.size(); i++)
 			{
-				//				if (pcs_vector[i]->pcs_type_name.find("DEFORMATION") != string::npos)
-				// TF
-				if (isDeformationProcess (pcs_vector[i]->getProcessType()))
+				m_tim = total_processes[active_process_index[i]]->Tim;
+				if(m_tim->time_active) m_tim->rejected_step_count++;
+			}
+			// Copy nodal values in reverse
+			for(i = 0; i < (int)pcs_vector.size(); i++){
+				if(isDeformationProcess (pcs_vector[i]->getProcessType())) 
 					continue;
 				pcs_vector[i]->CopyTimestepNODValues(false);
 			}
-			rejected_times++;
-#if defined(USE_MPI)
-			if(myrank == 0)
-#endif
-			std::cout << "This step is rejected." << std::endl;
+			//
 		}
-#if defined(USE_MPI)
-		if(myrank == 0)
-#endif
-		std::cout << "\n#############################################################\n";
+		WriteMessage("\n#############################################################");
 		if(aktueller_zeitschritt >= max_time_steps)
 			break;
 	}
-
+#if defined(USE_MPI) // JT2012
+	if(myrank == 0)
+	{
+#endif
 	std::cout << "----------------------------------------------------\n";
-	std::cout << "|Acccepted step times |" << accepted_times;
-	std::cout << "|Rejected step times  |" << rejected_times << std::endl;
-	std::cout << "----------------------------------------------------\n";
-	//
+    for(i=0; i<(int)active_process_index.size(); i++) // JT2012
+    {
+		m_tim = total_processes[active_process_index[i]]->Tim;
+		j = total_processes[active_process_index[i]]->num_notsatisfied;
+		k = total_processes[active_process_index[i]]->num_diverged;
+		std::cout << "For process: " << convertProcessTypeToString(total_processes[active_process_index[i]]->getProcessType()) << std::endl;
+		std::cout << "|Acccepted time steps |" << m_tim->accepted_step_count;
+		std::cout << "|Rejected time steps  |" << m_tim->rejected_step_count << std::endl;
+		std::cout << "|Number of non-converged iterations |" << j;
+		std::cout << "|Number of these resulting from stagnation |"<< k << std::endl;
+    }
+    std::cout<<"----------------------------------------------------\n";
+#if defined(USE_MPI)
+	}
+#endif
 }
 
 /*-----------------------------------------------------------------------
@@ -923,14 +996,17 @@ void Problem::Euler_TimeDiscretize()
    07/2008 WW
    Modification:
    12.2008 WW Update
+   03.2012 JT All new. Different strategy, generalized tolerance criteria
    -------------------------------------------------------------------------*/
 bool Problem::CouplingLoop()
 {
-	int i, j, index, cpl_index;
-	double error = 1.e8;
-	double error_cpl = 1.e8;
-	CRFProcess* m_pcs = NULL;
+	int i, index, cpl_index;
+	double error, max_outer_error, max_inner_error;
+	bool run_flag[14];
+	int outer_index, inner_index, inner_max, inner_min;
+	//
 	CRFProcess* a_pcs = NULL;
+	CRFProcess* b_pcs = NULL;
 	CTimeDiscretization* m_tim = NULL;
 	//
 	print_result = false;
@@ -943,126 +1019,169 @@ bool Problem::CouplingLoop()
 	{
 		if(active_processes[i] && total_processes[i]->selected)
 		{
+			exe_flag[i] = true;
 			m_tim = total_processes[i]->Tim;
-			if(m_tim->CheckTime(current_time, dt) > DBL_MIN)
-			{
-				exe_flag[i] = true;
-				total_processes[i]->SetDefaultTimeStepAccepted();
-				acounter++;
-				m_tim->step_current++;
-			}
-			else
-				exe_flag[i] = false;
+			total_processes[i]->SetDefaultTimeStepAccepted();
+			acounter++;
+			m_tim->step_current++;
 		}
 		else
-		{
-			//21.05.2010.  WW
-			if(total_processes[i] &&
-			   total_processes[i]->tim_type_name.find("STEADY") != std::string::npos)
+		{   //21.05.2010.  WW
+			if(total_processes[i] && total_processes[i]->tim_type_name.find("STEADY") != std::string::npos)
 				acounter++;
-
 			exe_flag[i] = false;
 		}
 	}
-	//
 	int num_processes = (int)active_process_index.size();
+	//
+    // JT: All active processes must run on the overall loop. Strange this wasn't the case before.
+    for(i=0; i<(int)total_processes.size(); i++){
+	    run_flag[i] = exe_flag[i];
+    }
+	for(i=0; i<num_processes; i++){
+		index = active_process_index[i];
+		total_processes[index]->first_coupling_iteration = true;
+	}
+	//
 	// To do
 	//SB->WW I do not understand this condition, why switch off output?
 	//WW Reason:
 	/// Make output when all defined processes are activated.
-	if(acounter == num_processes)
-		print_result = true;
+	//JT->WW->SB:  I agree with SB. Just b/c one process is deactivated doesn't mean we don't want output for the others.
+	//if(acounter == num_processes)
+	print_result = true;
 	//
 	bool accept = true;
-	for(loop_index = 0; loop_index < max_coupling_iterations; loop_index++)
+	max_outer_error = 0.0;
+	for(outer_index = 0; outer_index < cpl_overall_max_iterations; outer_index++)
 	{
+	    // JT: All active processes must run on the overall loop. Strange this wasn't the case before.
+	    for(i=0; i<num_processes; i++){
+			index = active_process_index[i];
+		    run_flag[index] = exe_flag[index];
+	    }
+	    for(i=0; i<num_processes; i++){
+		  index = active_process_index[i];
+		  m_tim = total_processes[index]->Tim;
+		  if(!m_tim->time_active) run_flag[index] = false;
+	    }
+
 		for(i = 0; i < num_processes; i++)
 		{
 			index = active_process_index[i];
-			//RealFunction aProcess = active_processes[index];
+			if(!run_flag[index]) continue; //JT: may have been turned off after an inner loop!
 			cpl_index = coupled_process_index[index];
-			if(exe_flag[index])
+			//
+			// PERFORM AN INNER COUPLING
+			// ---------------------------------------
+			if(cpl_index >= 0 && run_flag[cpl_index])
 			{
 				a_pcs = total_processes[index];
-				//aProcess();
-				error = Call_Member_FN(this, active_processes[index]) ();
-				if(!a_pcs->TimeStepAccept())
-				{
-					accept = false;
-					break;
-				}
-				// If not accepted, m_tim->step_current++
-				if(cpl_index > -1 && exe_flag[cpl_index])
-				{
-					m_pcs = total_processes[cpl_index];
-					for(j = 0; j < m_pcs->m_num->cpl_iterations; j++)
-					{
-						//bProcess();
-						error_cpl =
-						        Call_Member_FN(this,
-						                       active_processes[cpl_index]) ();
-						if(!m_pcs->TimeStepAccept())
-						{
-							accept = false;
-							break;
-						}
-						// If not accepted, m_tim->step_current++
-						if(fabs(error_cpl - error) <
-						   m_pcs->m_num->cpl_tolerance)
-							break;
-						//aProcess();
-						error =
-						        Call_Member_FN(this,
-						                       active_processes[index]) ();
-						if(!a_pcs->TimeStepAccept())
-						{
-							accept = false;
-							break;
-						}
-						// If not accepted, m_tim->step_current++
-					}
-					exe_flag[cpl_index] = false;
-				}
-				else if(a_pcs->type != 55) //SB Not for fluid momentum process
-				{
-					if(fabs(error_cpl - error) < coupling_tolerance)
-						if(loop_index > 0) //SB4900 - never break in first coupling loop?
-							break;
-					error_cpl = error;
-				}
+				b_pcs = total_processes[cpl_index];
 				//
-				if(!accept)
-					break;
+				inner_max = a_pcs->m_num->cpl_max_iterations;
+				inner_min = a_pcs->m_num->cpl_min_iterations;
+				//
+				a_pcs->iter_outer_cpl = outer_index;
+				b_pcs->iter_outer_cpl = outer_index;
+				//
+				max_inner_error = 0.0;
+				for(inner_index=0; inner_index < a_pcs->m_num->cpl_max_iterations; inner_index++)
+				{
+					 a_pcs->iter_inner_cpl = inner_index;
+					 b_pcs->iter_inner_cpl = inner_index;
+					 //
+					 // FIRST PROCESS
+					 loop_process_number = i;
+					 if(a_pcs->first_coupling_iteration) PreCouplingLoop(a_pcs);
+					 error = Call_Member_FN(this, active_processes[index])();
+					 if(!a_pcs->TimeStepAccept()){ 
+					   accept = false;
+					   break;
+					 }
+					 //
+					 // COUPLED PROCESS
+					 loop_process_number = i+1;
+					 if(b_pcs->first_coupling_iteration) PreCouplingLoop(b_pcs);
+					 error = Call_Member_FN(this, active_processes[cpl_index])();
+					 if(!b_pcs->TimeStepAccept()){ 
+					   accept = false;
+					   break;
+					 }
+					 // 
+					 // Check for break criteria
+					 max_inner_error = MMax(a_pcs->cpl_max_relative_error,b_pcs->cpl_max_relative_error);
+					 a_pcs->first_coupling_iteration = false; // No longer true (JT: these are important, and are also used elswhere).
+					 b_pcs->first_coupling_iteration = false; // No longer true.
+					 //
+					 // Store the outer loop error
+					 if(inner_index==0)
+						max_outer_error = MMax(max_outer_error,max_inner_error);
+					 //
+					 std::cout << "\n======================================================\n";
+					 std::cout << "Inner coupling loop " << inner_index+1 << "/" << inner_max << " complete."<<std::endl;
+					 std::cout << "Max coupling error (relative to tolerance): " << max_inner_error << std::endl;
+					 std::cout << "======================================================\n";
+					 //
+					 // Coupling convergence criteria (use loop minimum from a_pcs because this is where the coupled process was called)
+					 if(max_inner_error <= 1.0 && inner_index+2 > a_pcs->m_num->cpl_min_iterations) // JT: error is relative to the tolerance.
+						 break;
+				}
+				run_flag[cpl_index] = false; // JT: CRUCIAL!!
 			}
+			else
+			{
+				// PERFORM AN OUTER COUPLING
+				// ---------------------------------------
+				a_pcs = total_processes[index];
+				a_pcs->iter_outer_cpl = outer_index;
+				a_pcs->iter_inner_cpl = 0;
+				//
+				loop_process_number = i;
+				if(a_pcs->first_coupling_iteration) PreCouplingLoop(a_pcs);
+				error = Call_Member_FN(this, active_processes[index])();
+				if(!a_pcs->TimeStepAccept()){ 
+				   accept = false;
+				   break;
+				}
+				a_pcs->first_coupling_iteration = false; // No longer true.
+				// Check for break criteria
+				max_outer_error = MMax(max_outer_error,a_pcs->cpl_max_relative_error);
+			}
+			if(!accept) break;
 		}
-		if(error_cpl < coupling_tolerance)
-			break;        // JOD/WW 4.10.01
-		std::cout << "Coupling loop: " << loop_index + 1 << " of " <<
-		max_coupling_iterations << std::endl;
-		if(!accept)
+		if(!accept) break;
+		//
+	    if(cpl_overall_max_iterations > 1){
+			std::cout << "\n======================================================\n";
+			std::cout << "Outer coupling loop " << outer_index+1 << "/" << cpl_overall_max_iterations << " complete."<<std::endl;
+			std::cout << "Max coupling error (relative to tolerance): " << max_outer_error << std::endl;
+			std::cout << "======================================================\n";
+	    }
+	    else{
+			std::cout << std::endl;
+	    }
+		// Coupling convergence criteria
+		if(max_outer_error <= 1.0 && outer_index+2 > cpl_overall_min_iterations) // JT: error is relative to the tolerance.
 			break;
-		/*index = active_process_index[1];
-		   cpl_index = coupled_process_index[index];
-		   if(exe_flag[index]) {
-		    a_pcs = total_processes[index];
-		     error =  Call_Member_FN(this, active_processes[index])();
-		   }
-		    index = active_process_index[0];
-		      cpl_index = coupled_process_index[index];
-		     if(exe_flag[index]){
-		     a_pcs = total_processes[index];
-		     error =  Call_Member_FN(this, active_processes[index])();
-		   }
-		   index = active_process_index[2];
-		   cpl_index = coupled_process_index[index];
-		   if(exe_flag[index]){
-		   a_pcs = total_processes[index];
-		   error =  Call_Member_FN(this, active_processes[index])();
-		   }*/
 	}
 	//
 	return accept;
 }
+
+/*-----------------------------------------------------------------------
+   GeoSys - Function: pre Coupling loop
+   Task: Process solution is beginning. Perform any pre-loop configurations
+   Return: error
+   Programming:
+   03/2012 JT
+   Modification:
+-------------------------------------------------------------------------*/
+void Problem::PreCouplingLoop(CRFProcess *m_pcs)
+{
+  m_pcs->CopyTimestepNODValues();
+}
+
 
 /*-----------------------------------------------------------------------
    GeoSys - Function: post Coupling loop
@@ -1128,7 +1247,7 @@ void Problem::PostCouplingLoop()
 		//BG
 		if ((m_pcs->simulator == "ECLIPSE") || (m_pcs->simulator == "DUMUX"))
 			m_pcs->Extropolation_GaussValue();
-		m_pcs->CopyTimestepNODValues(); //MB
+		//JT: Now done in PreCouplingLoop() // m_pcs->CopyTimestepNODValues(); //MB
 #define SWELLING
 #ifdef SWELLING
 		//MX ToDo//CMCD here is a bug in j=7
@@ -1196,7 +1315,7 @@ inline double Problem::LiquidFlow()
 	// Cases: decide, weather to use GEOSYS, ECLIPSE or DuMux; BG 10/2010
 	if((m_pcs->simulator.compare("GEOSYS") == 0)) //         ||(m_pcs->simulator.compare("ECLIPSE")==0)){ // standard: use GeoSys
 	{
-		error = m_pcs->ExecuteNonLinear();
+		error = m_pcs->ExecuteNonLinear(loop_process_number);
 #ifdef RESET_4410
 		PCSCalcSecondaryVariables(); // PCS member function
 #endif
@@ -1252,7 +1371,7 @@ inline double Problem::RichardsFlow()
 	if(twoflowcpl)
 	{                                     //-------  WW
 		// JOD coupling
-		lop_coupling_iterations = m_pcs->m_num->cpl_iterations;
+		lop_coupling_iterations = m_pcs->m_num->cpl_max_iterations;
 		if(pcs_vector.size() > 1 && lop_coupling_iterations > 1)
 			m_pcs->CopyCouplingNODValues();
 		//WW if(m_pcs->adaption) PCSStorage();
@@ -1260,7 +1379,7 @@ inline double Problem::RichardsFlow()
 		if(m_msh->geo_name.compare("REGIONAL") == 0)
 			LOPExecuteRegionalRichardsFlow(m_pcs);
 		else
-			error = m_pcs->ExecuteNonLinear();
+			error = m_pcs->ExecuteNonLinear(loop_process_number);
 		if(m_pcs->saturation_switch == true)
 			m_pcs->CalcSaturationRichards(1, false);  // JOD
 		else
@@ -1278,7 +1397,7 @@ inline double Problem::RichardsFlow()
 		if(m_msh->geo_name.compare("REGIONAL") == 0)
 			LOPExecuteRegionalRichardsFlow(m_pcs);
 		else
-			error = m_pcs->ExecuteNonLinear();
+			error = m_pcs->ExecuteNonLinear(loop_process_number);
 		if(m_pcs->TimeStepAccept())
 		{
 			//WW
@@ -1313,7 +1432,7 @@ inline double Problem::TwoPhaseFlow()
 	for(int i = 0; i < (int)multiphase_processes.size(); i++)
 	{
 		m_pcs = multiphase_processes[i];
-		error = m_pcs->ExecuteNonLinear();
+		error = m_pcs->ExecuteNonLinear(loop_process_number);
 		if(m_pcs->TimeStepAccept())
 		{
 			PCSCalcSecondaryVariables();
@@ -1360,7 +1479,7 @@ inline double Problem::MultiPhaseFlow()
 	if((m_pcs->simulator.compare("GEOSYS") == 0)) // ||(m_pcs->simulator.compare("ECLIPSE")==0)){ // standard: use GeoSys
 	{
 		//if((m_pcs->simulator.compare("GEOSYS")==0) ||(m_pcs->simulator.compare("ECLIPSE")==0)){ // standard: use GeoSys
-		error = m_pcs->ExecuteNonLinear();
+		error = m_pcs->ExecuteNonLinear(loop_process_number);
 		if(m_pcs->TimeStepAccept())
 			m_pcs->CalIntegrationPointValue();  //WW
 	}
@@ -1982,7 +2101,7 @@ inline double Problem::PS_Global()
 	CRFProcess* m_pcs = total_processes[3];
 	if(!m_pcs->selected)
 		return error;
-	error = m_pcs->ExecuteNonLinear();
+	error = m_pcs->ExecuteNonLinear(loop_process_number);
 	if(m_pcs->TimeStepAccept())
 		m_pcs->CalIntegrationPointValue();
 	return error;
@@ -2002,7 +2121,7 @@ inline double Problem::PTC_Flow()
 	CRFProcess* m_pcs = total_processes[5];
 	if(!m_pcs->selected)
 		return error;
-	error = m_pcs->ExecuteNonLinear();    //PTC
+	error = m_pcs->ExecuteNonLinear(loop_process_number);    //PTC
 	if(m_pcs->TimeStepAccept())
 		m_pcs->CalIntegrationPointValue();  //PTC
 	return error;
@@ -2095,18 +2214,18 @@ inline double Problem::GroundWaterFlow()
 	}
 	//-------------------------------
 
-	error =  m_pcs->ExecuteNonLinear();
+	error =  m_pcs->ExecuteNonLinear(loop_process_number);
 	//................................................................
 	// Calculate secondary variables
 	// NOD values
 	conducted = true;                     //WW
-	std::cout << "      Calculation of secondary NOD values" << std::endl;
+	//std::cout << "      Calculation of secondary NOD values" << std::endl;
 	if(m_pcs->TimeStepAccept())
 	{
 #ifdef RESET_4410
 		PCSCalcSecondaryVariables(); // PCS member function
 #endif
-		std::cout << "      Calculation of secondary GP values" << std::endl;
+		//std::cout << "      Calculation of secondary GP values" << std::endl;
 		m_pcs->CalIntegrationPointValue(); //WW
 		m_pcs->cal_integration_point_value = true; //WW Do not extropolate Gauss velocity
 
@@ -2127,7 +2246,7 @@ inline double Problem::GroundWaterFlow()
 #ifndef NEW_EQS                                //WW. 07.11.2008
 	if(m_pcs->tim_type_name.compare("STEADY") == 0) //CMCD 05/2006
 	{
-		std::cout << "      Calculation of secondary ELE values" << std::endl;
+		//std::cout << "      Calculation of secondary ELE values" << std::endl;
 		m_pcs->AssembleParabolicEquationRHSVector(); //WW LOPCalcNODResultants();
 		m_pcs->CalcELEVelocities();
 		m_pcs->selected = false;
@@ -2151,7 +2270,7 @@ inline double Problem::ComponentalFlow()
 	if(!m_pcs->selected)
 		return error;             //12.12.2008 WW
 	//
-	error = m_pcs->ExecuteNonLinear();
+	error = m_pcs->ExecuteNonLinear(loop_process_number);
 	m_pcs->CalIntegrationPointValue();    //WW
 	return error;
 }
@@ -2171,7 +2290,7 @@ inline double Problem::OverlandFlow()
 	if(!m_pcs->selected)
 		return error;             //12.12.2008 WW
 
-	error = m_pcs->ExecuteNonLinear();
+	error = m_pcs->ExecuteNonLinear(loop_process_number);
 	if(m_pcs->TimeStepAccept())
 		PCSCalcSecondaryVariables();
 	return error;
@@ -2192,7 +2311,7 @@ inline double Problem::AirFlow()
 	if(!m_pcs->selected)
 		return error;             //12.12.2008 WW
 
-	error = m_pcs->ExecuteNonLinear();
+	error = m_pcs->ExecuteNonLinear(loop_process_number);
 	m_pcs->CalIntegrationPointValue();    //WW
 	m_pcs->cal_integration_point_value = false; //AKS
 	m_pcs->CalcELEVelocities();           //OK
@@ -2215,7 +2334,7 @@ inline double Problem::HeatTransport()
 	if(!m_pcs->selected)
 		return error;             //12.12.2008 WW
 
-	error = m_pcs->ExecuteNonLinear();
+	error = m_pcs->ExecuteNonLinear(loop_process_number);
 	//if(m_pcs->non_linear)
 	//  error = m_pcs->ExecuteNonLinear();
 	//else
@@ -2245,7 +2364,7 @@ inline double Problem::MassTrasport()
 		m_pcs = transport_processes[i]; //18.08.2008 WW
 		                                //Component Mobile ?
 		if(CPGetMobil(m_pcs->GetProcessComponentNumber()) > 0)
-			error = m_pcs->ExecuteNonLinear();  //NW. ExecuteNonLinear() is called to use the adaptive time step scheme
+			error = m_pcs->ExecuteNonLinear(loop_process_number);  //NW. ExecuteNonLinear() is called to use the adaptive time step scheme
 	}
 	// Calculate Chemical reactions, after convergence of flow and transport
 	// Move inside iteration loop if couplingwith transport is implemented SB:todo
@@ -2288,7 +2407,7 @@ inline double Problem::MassTrasport()
 		int m_time = 1;           // 0-previous time step results; 1-current time step results
 
 		// Check if the Sequential Iterative Scheme needs to be intergrated
-		if (m_pcs->m_num->cpl_iterations > 1)
+		if (m_pcs->m_num->cpl_max_iterations > 1)
 			m_vec_GEM->flag_iterative_scheme = 1;  // set to standard iterative scheme;
 		// Move current xDC to previous xDC
 		m_vec_GEM->CopyCurXDCPre();
@@ -2366,7 +2485,7 @@ inline double Problem::FluidMomentum()
 			m_pcs->selected = false;
 	}
 	//
-	//error = 0.0 // JTARON... in unsteady flow, setting error=0.0 corresponds to error_cpl=0.0, and the coupling loop ceases before RWPT is performed
+	//error = 0.0 // JT... in unsteady flow, setting error=0.0 corresponds to error_cpl=0.0, and the coupling loop ceases before RWPT is performed
 	//            // What is the correct way to handle this, rather than setting error=1.e8???
 	return error;
 }
@@ -2505,10 +2624,10 @@ inline double Problem::RandomWalker()
 		}
 
 		if(rwpt_numsplits < 0)
-			rwpt_numsplits = 10;  // JTARON 2010 set default value, unless specified in .tim input file
+			rwpt_numsplits = 10;  // JT 2010 set default value, unless specified in .tim input file
 
 		rw_pcs->AdvanceBySplitTime(dt,rwpt_numsplits);
-		//	rw_pcs->TraceStreamline(); // JTARON, no longer needed
+		//	rw_pcs->TraceStreamline(); // JT, no longer needed
 		print_result = true;
 		rw_pcs->RandomWalkOutput(aktuelle_zeit,aktueller_zeitschritt);
 	}
@@ -2531,7 +2650,7 @@ inline double Problem::Deformation()
 	CRFProcess* m_pcs = total_processes[12];
 	//
 	dm_pcs = (CRFProcessDeformation*)(m_pcs);
-	error = dm_pcs->Execute(loop_index);
+	error = dm_pcs->Execute(loop_process_number);
 	//Error
 	if (dm_pcs->type / 10 == 4)
 	{
@@ -2798,7 +2917,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
 		}
 		//-----------------------------------------------------
 
-		m_pcs_local->ExecuteNonLinear();
+		m_pcs_local->ExecuteNonLinear(loop_process_number);
 		// Velocity. 22.05.2009. WW
 		m_pcs_local->CalIntegrationPointValue();
 		m_pcs_local->Extropolation_GaussValue();
@@ -2897,7 +3016,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
 #ifdef TRACE
 			std::cout << "Executing local process." << std::endl;
 #endif
-			m_pcs_local->ExecuteNonLinear();
+			m_pcs_local->ExecuteNonLinear(loop_process_number);
 		}                         // End of parallel block
 		//....................................................................
 		// Store results in global PCS tables
@@ -3153,8 +3272,8 @@ void Problem::PCSCalcSecondaryVariables()
 				//MMPCalcSecondaryVariablesNew(m_pcs);
 				break;
 			default:
-				std::cout << "PCSCalcSecondaryVariables - nothing to do" <<
-				std::endl;
+				//std::cout << "PCSCalcSecondaryVariables - nothing to do" <<
+				//std::endl;
 				break;
 			}
 		}                         //If

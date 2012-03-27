@@ -26,10 +26,12 @@ public:
 	void RosenBrock_TimeDiscretize() {}
 	//
 	void SetActiveProcesses();
+	void SetTimeActiveProcesses(); // JT2012
 	void PCSRestart();
 	//
 	bool CouplingLoop();
 	void PostCouplingLoop();
+	void PreCouplingLoop(CRFProcess *m_pcs = NULL);
 	// Copy u_n for auto time stepping
 	double* GetBufferArray() {return buffer_array; }
 
@@ -64,10 +66,10 @@ private:
 	double dt0;                           // Save the original time step size
 
 	// Controls
-	int loop_index;
-	int max_coupling_iterations;
+	int cpl_overall_max_iterations;
+	int cpl_overall_min_iterations;
+	int loop_process_number;
 	size_t max_time_steps;
-	double coupling_tolerance;
 	//
 	int lop_coupling_iterations;
 	bool CalcVelocities;

@@ -13,6 +13,7 @@
 #include <iostream>
 //#include <string>
 //#include <vector>
+#include "makros.h" // JT2012
 
 //----------------------------------------------------------------
 class CRFProcess;                                 //21.08.2008. WW
@@ -33,8 +34,13 @@ private:
 	double h_max;
 	double hacc;
 	double erracc;
+	double dynamic_control_tolerance[DOF_NUMBER_MAX+1];	//JT2012
+	std::string dynamic_control_error_method;			//JT2012
+	int dynamic_time_buffer;							//JT2012
+	double dynamic_minimum_suggestion;				    //JT2012
+	double dynamic_failure_threshold;					//JT2012
 public:                                           //OK
-	int tsize_ctrl_type;
+	int PI_tsize_ctrl_type;
 private:
 	std::vector<double> critical_time;
 	//End of data section for PI Time control ------------------------
@@ -52,8 +58,19 @@ public:
 	double time_end;
 	double time_current;
 	double time_control_manipulate;       //CMCD
+	double next_active_time;
+	double last_active_time;
+	double recommended_time_step;
+	double dt_failure_reduction_factor;
 	int step_current;
 	bool repeat;                          //OK/YD
+	bool time_active;					//JT2012
+	bool time_independence;				//JT2012
+	bool last_dt_accepted;				//JT2012
+	bool minimum_dt_reached;			//JT2012
+	long accepted_step_count;			//JT2012
+	long rejected_step_count;			//JT2012
+	//
 	// PCS
 	std::string pcs_type_name;            //OK
 	// NUM
@@ -64,9 +81,7 @@ public:
 	double multiply_coef;                 //YD
 	double max_time_step;                 //YD
 	double min_time_step;
-	double courant_desired;               //JTARON
-	double courant_initial;               //JTARON
-	int courant_static;                   //JTARON
+	//
 	//WW double minish; // JOD
 	//WW int sub_steps; // JOD 4.7.10
 	bool Write_tim_discrete;              //YD
@@ -88,7 +103,7 @@ public:
 	double AdaptiveFirstTimeStepEstimate();
 	// For PI time step control. Aug-Nov.2008. by WW
 	//Begin of function section for PI Time control ------------------------
-	int GetTimeStepCrtlType() const {return tsize_ctrl_type; }
+	int GetPITimeStepCrtlType() const {return PI_tsize_ctrl_type; }
 	double GetTimeStep() const {return this_stepsize; }
 	void SetTimeStep( double hnew)  {this_stepsize = hnew; }
 	double GetRTol() const { return relative_error; }
@@ -99,13 +114,19 @@ public:
 	double GetErracc() const { return erracc; }
 	void SetHacc(const double hacc_val)  { hacc = hacc_val; }
 	void setErracc(const double erracc_val) { erracc = erracc_val; }
-	double CheckTime(double const c_time, const double dt0);
+	//
+	//JT: done differently now. // double CheckTime(double const c_time, const double dt0);
 	void FillCriticalTime();              //21.08.2008.
 	//Begin of function section for PI Time control ------------------------
 	double ErrorControlAdaptiveTimeControl();
 	double NeumannTimeControl();
-	double CourantTimeControl();          // JTARON 2010
 	double SelfAdaptiveTimeControl();
+	double DynamicVariableTimeControl(); //JT2012
+	double DynamicTimeSmoothing(double suggested_time_step_change);		//JT2012
+	//
+	// Dynamic time control methods JT2012
+	bool isDynamicTimeFailureSuggested(CRFProcess *this_pcs=NULL);
+	//
 #ifdef GEM_REACT
 	double MaxTimeStep();
 #endif
@@ -129,5 +150,6 @@ extern void TIMDelete(std::string);
 extern double aktuelle_zeit;
 extern size_t aktueller_zeitschritt;
 extern double dt;
-extern int rwpt_numsplits;                        // JTARON 2010, for specifying sub time step for random walker in .tim input file
+extern double dt_last;
+extern int rwpt_numsplits;                        // JT 2010, for specifying sub time step for random walker in .tim input file
 #endif

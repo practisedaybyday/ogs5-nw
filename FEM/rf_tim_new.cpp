@@ -22,12 +22,14 @@
 #include "rf_mmp_new.h"
 // kg44 not found #include "elements.h"
 #include "rfmat_cp.h"
+#include "tools.h"
 //WW #include "elements.h" //set functions for stability criteria
 // ToDo
 double aktuelle_zeit;
 size_t aktueller_zeitschritt = 0;
 double dt = 0.0;
-int rwpt_numsplits = -1;                          //JTARON 2010
+double dt_last = 0.0;
+int rwpt_numsplits = -1;                          //JT 2010
 //==========================================================================
 std::vector<CTimeDiscretization*>time_vector;
 /**************************************************************************
@@ -43,13 +45,10 @@ CTimeDiscretization::CTimeDiscretization(void)
 	time_start = 0.0;
 	time_end = 1.0;
 	time_type_name = "CONSTANT";          //OK
-	time_control_name = "";               //kg44
+	time_control_name = "NONE";           //kg44//JT
 	time_unit = "SECOND";
 	max_time_step = 1.e10;                //YD
-	min_time_step = 0;                    //YD
-	courant_desired = 0.5;                //JTARON
-	courant_initial = 1.e-6;              //JTARON
-	courant_static = 0;                   //JTARON
+	min_time_step = DBL_EPSILON;          //YD//JT Minimum allowed timestep, this process
 	repeat = false;                       //OK/YD
 	step_current = 0;                     //WW
 	this_stepsize = 0.;                   //WW
@@ -60,7 +59,19 @@ CTimeDiscretization::CTimeDiscretization(void)
 	h_min = 0.2;                          //27.08.2008. WW
 	hacc = 0.;                            //27.08.2008. WW
 	erracc = 0.;                          //27.08.2008. WW
-	tsize_ctrl_type = -1;                 //27.08.2008. WW
+	PI_tsize_ctrl_type = -1;                 //27.08.2008. WW
+	minimum_dt_reached = false;			  //JT
+	time_active = true;					  //JT
+	time_independence = false;			  //JT
+	dt_failure_reduction_factor = 1.0;    //JT
+	accepted_step_count = 0;			  //JT
+	rejected_step_count = 0;			  //JT
+	last_active_time = 0.0;				  //JT
+	next_active_time = 0.0;				  //JT
+	dynamic_time_buffer = 0;			  //JT
+	for(size_t ii=0; ii<DOF_NUMBER_MAX+1; ii++){
+		dynamic_control_tolerance[ii] = -1.0;
+	}
 }
 
 /**************************************************************************
@@ -204,6 +215,17 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 			continue;
 		}
 		//....................................................................
+		// subkeyword found
+		if(line_string.find("$TIME_INDEPENDENCE") != std::string::npos) // JT2012
+		{
+			line.str(GetLineFromFile1(tim_file));
+			line >> time_independence;
+			// =0: Process will adopt minimum time step of all processes.
+			// =1: Process will have it's own time step (may not execute on every time step). It will be independent.
+			line.clear();
+			continue;
+		}
+		//....................................................................
 		/* //WW
 		   if(line_string.find("$TIME_FIXED_POINTS")!=string::npos) { // subkeyword found
 		   int no_fixed_points;
@@ -286,52 +308,142 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 				line >> time_control_name;
 				line.clear();
 
-				// 26.08.2008. WW
-				if(time_control_name == "PI_AUTO_STEP_SIZE")
+				if(time_control_name == "PI_AUTO_STEP_SIZE") // 26.08.2008. WW
 				{
 					line.str(GetLineFromFile1(tim_file));
-					line >> tsize_ctrl_type >> relative_error >>
+					line >> PI_tsize_ctrl_type >> relative_error >>
 					absolute_error >> this_stepsize;
 					//13.03.2008. WW
-					int real_type = (int)(tsize_ctrl_type / 10);
+					int real_type = (int)(PI_tsize_ctrl_type / 10);
 					if(real_type < 10 && real_type > 0) //
 					{
-						tsize_ctrl_type = real_type;
+						PI_tsize_ctrl_type = real_type;
 						line >> h_min >> h_max >> max_time_step;
 					}
 					else
 						max_time_step = 0.0;
 					line.clear();
 				}
-				// 12.03.2010 JTARON
-				if(time_control_name == "COURANT")
+				else if(time_control_name.find("DYNAMIC_VARIABLE") != std::string::npos) // JT2012
 				{
-					line_string = GetLineFromFile1(tim_file);
-					line.str(line_string);
-					//	      courant_desired = desired Courant number
-					//		  courant_initial = first time step size
-					//        courant_static = 0  --> variable velocity (adapt in time)
-					//        courant_static > 0  --> steady velocity (# of timesteps to recalculate...
-					//                                                 i.e. =2, calculate first 2 time steps only, then use last value as constant in remaining simulation)
-					line >> courant_desired >> courant_initial >>
-					courant_static;
+					// DYNAMIC TIME STEP SERIES
+					line.str(GetLineFromFile1(tim_file));
+					int num_tolerances = DOF_NUMBER_MAX;
+					double include_third_variable = -1.0;
+					double third_variable_tolerance = -1.0;
+					//
+					line >> dynamic_control_error_method;						// Corresponds to FiniteElement::ErrorMethod. Defines how tolerance is applied.
+					line >> time_step_length;									// initial_dt
+					line >> min_time_step;										// min_dt
+					line >> dynamic_failure_threshold;							// threshold to force a time failure (recommend 1.1-2.0. If tolerance is exceeeded on first iteration by this factor, dt will be decreased and a failure forced)
+					line >> dynamic_control_tolerance[DOF_NUMBER_MAX];			// max_increase_factor (dt never allowed to increase faster than this factor (i.e. 1.5)
+					//
+					// tolerances[1:dof]: One tolerance for each degree of freedom in process (or only one tolerance for certain methods)
+					switch(FiniteElement::convertErrorMethod(dynamic_control_error_method))
+					{
+						case FiniteElement::ENORM: // only 1 tolerance required
+							num_tolerances = 1;
+							line >> dynamic_control_tolerance[0];
+							//
+							// Next entry is OPTIONAL (may be left blank)!
+							line >> include_third_variable; // if >0.0, include a 3rd variable in the global norm (PwSnw model: Pc -- PcPnw model: Snw -- PwPnw model: Snw)
+							break;
+						//
+						case FiniteElement::ERNORM: // only 1 tolerance required
+							num_tolerances = 1;
+							line >> dynamic_control_tolerance[0];
+							//
+							// Next entry is OPTIONAL (may be left blank)!
+							line >> include_third_variable; // if >0.0, include a 3rd variable in the global norm (PwSnw model: Pc -- PcPnw model: Snw -- PwPnw model: Snw)
+							break;
+						//
+						case FiniteElement::EVNORM: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
+							for(int i=0; i<num_tolerances; i++)
+								line >> dynamic_control_tolerance[i];
+							//
+							// Next entry is OPTIONAL (may be left blank)!
+							line >> third_variable_tolerance; // tolerance of a third variable (PwSnw model: Pc -- PcPnw model: Snw -- PwPnw model: Snw)
+							break;
+						//
+						case FiniteElement::LMAX: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
+							for(int i=0; i<num_tolerances; i++)
+								line >> dynamic_control_tolerance[i];
+							//
+							// Next entry is OPTIONAL (may be left blank)!
+							line >> third_variable_tolerance; // tolerance of a third variable (PwSnw model: Pc -- PcPnw model: Snw -- PwPnw model: Snw)
+							break;
+						//
+						case FiniteElement::BNORM:
+							WriteMessage("ERROR in TIMRead. BNORM not configured for time control.");
+							WriteMessage("We suggest ENORM as a valid companion for NEWTON couplings.");
+							exit(1);
+							break;
+						//
+						default:
+							WriteMessage("ERROR in TIMRead. Invalid error method selected for dynamic time control.");
+							exit(1);
+							break;
+					}
+					//
+					if(num_tolerances > 1)
+						dynamic_control_tolerance[DOF_NUMBER_MAX] = third_variable_tolerance;
+					else
+						dynamic_control_tolerance[DOF_NUMBER_MAX] = include_third_variable;
 					line.clear();
 				}
-				// 26.08.2008. WW
-				if(time_control_name == "STEP_SIZE_RESTRICTION")
+				else if(time_control_name.find("DYNAMIC_COURANT") != std::string::npos) // JT2012
+				{
+					std::cout<<"Josh apologizes (especially to Marc), but promises DYNAMIC_COURANT will be merged into the next release."<<std::endl;
+					std::cout<<"emoticon:: sad face"<<std::endl;
+					exit(1);
+					//
+					// DYNAMIC TIME STEP SERIES
+					line.str(GetLineFromFile1(tim_file));
+					//
+					line >> time_step_length;									// initial_dt
+					line >> min_time_step;										// min_dt
+					line >> dynamic_control_tolerance[DOF_NUMBER_MAX];			// max_increase_factor (dt never allowed to increase faster than this factor (i.e. 1.5)
+					line >> dynamic_control_tolerance[0];						// desired courant number
+					//
+					// ADDITIONAL OPTIONS TO RESTRICT CALCULATION TO CERTAIN ELEMENTS
+					if(time_control_name.find("CONCENTRATION") != std::string::npos){	// DYNAMIC_COURANT_CONCENTRATION
+						line >> dynamic_control_tolerance[1]; // Concentration threshold (elements with concentration beneath this value are not included in Courant restriction)
+					}
+					else if(time_control_name.find("TEMPERATURE") != std::string::npos){// DYNAMIC_COURANT_TEMPERATURE
+						line >> dynamic_control_tolerance[1]; // Temperature threshold (elements with temperature BENEATH this value are not included in Courant restriction)
+						line >> dynamic_control_tolerance[2]; // Temperature threshold (elements with temperature ABOVE   this value are not included in Courant restriction)
+					}
+					//
+					line.clear();
+				}
+				else if(time_control_name.find("DYNAMIC_PRESSURE") != std::string::npos) // JT2012
+				{
+					// DYNAMIC TIME STEP SERIES
+					line.str(GetLineFromFile1(tim_file));
+					//
+					line >> time_step_length;									// initial_dt
+					line >> min_time_step;										// min_dt
+					line >> dynamic_control_tolerance[DOF_NUMBER_MAX];			// max_increase_factor (dt never allowed to increase faster than this factor (i.e. 1.5)
+					line >> dynamic_control_tolerance[0];						// pressure tolerance (mean pressure)
+					//
+					line.clear();
+				}
+				else if(time_control_name == "STEP_SIZE_RESTRICTION") // 26.08.2008. WW
 				{
 					line.str(GetLineFromFile1(tim_file));
 					line >> h_min >> h_max;
 					line.clear();
 				}
-				if(time_control_name == "NEUMANN")
+				else if(time_control_name == "NEUMANN"){
 					line.clear();
-				if(time_control_name == "ERROR_CONTROL_ADAPTIVE")
+				}
+				else if(time_control_name == "ERROR_CONTROL_ADAPTIVE")
 				{
 					m_pcs->adaption = true;
 					line.clear();
 				}
-				if(time_control_name == "SELF_ADAPTIVE")
+				else if(time_control_name == "SELF_ADAPTIVE")
+				{
 					//m_pcs->adaption = true; JOD removed
 					//WW minish = 10;
 					while((!new_keyword) || (!new_subkeyword) ||
@@ -383,6 +495,11 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 						}
 					} // end of while loop adaptive
 				// end of if "SELF_ADAPTIVE"
+				}
+				else{
+					WriteMessage("ERROR: Unrecognized time control type.");
+					exit(1);
+				}
 			}             // end of while
 		// end of "TIME_CONTROL"
 		//....................................................................
@@ -535,7 +652,7 @@ void CTimeDiscretization::Write(std::fstream* tim_file)
 		if(time_control_name == "PI_AUTO_STEP_SIZE")
 		{
 			*tim_file << "  " << time_control_name << std::endl;
-			*tim_file << "   " << tsize_ctrl_type << " " << relative_error << " " <<
+			*tim_file << "   " << PI_tsize_ctrl_type << " " << relative_error << " " <<
 			absolute_error << " " << this_stepsize << std::endl;
 		}
 		if(time_control_name == "STEP_SIZE_RESTRICTION")
@@ -563,65 +680,88 @@ void CTimeDiscretization::Write(std::fstream* tim_file)
    08/2004 OK Implementation
    08/2008 WW Force t+dt be indentical to the time for output or other special time
         WW Auto time step size control
+   03/2012 JT Modify critical time method, clean
 **************************************************************************/
-double CTimeDiscretization::CalcTimeStep(double crt_time)
+double CTimeDiscretization::CalcTimeStep(double current_time)
 {
-	// time_step_length = 0.0;
-	int no_time_steps = (int)time_step_vector.size();
-	if(no_time_steps > 0)
-		time_step_length = time_step_vector[0];
-	// Standard time stepping
-	if(step_current < no_time_steps)
-		time_step_length = time_step_vector[step_current];
-	// Time step controls
-	if( (time_control_name == "NEUMANN" ) || (time_control_name == "SELF_ADAPTIVE" ))
-	{
-		if(aktuelle_zeit < MKleinsteZahl && repeat == false)
-			time_step_length = FirstTimeStepEstimate();
-		else if( time_control_name == "NEUMANN" )
-			time_step_length = NeumannTimeControl();
-		else if(time_control_name == "SELF_ADAPTIVE")
-			time_step_length = SelfAdaptiveTimeControl();
-	}
-	if(time_control_name == "ERROR_CONTROL_ADAPTIVE")
-	{
-		if(aktuelle_zeit < MKleinsteZahl)
-			time_step_length = AdaptiveFirstTimeStepEstimate();
-		else
-			time_step_length = ErrorControlAdaptiveTimeControl();
-	}
-	if(time_control_name == "PI_AUTO_STEP_SIZE") //WW
-		time_step_length = this_stepsize;
-
-	if(time_control_name == "COURANT")    // JTARON 2010, a more straight-forward Courant control
-	{
-		if(step_current == 0)     // first time step, set an initial
-			time_step_length = courant_initial;
-		else if(courant_static == 0)
-			time_step_length = CourantTimeControl();
-		else if(step_current < courant_static + 1)
-		{
-			time_step_length = CourantTimeControl();
-			courant_initial = time_step_length;
-		}
-		else
-			time_step_length = courant_initial;  // take constant value from step_current = 0
-	}
-
-	//--------
-	//WW. Force t+dt be indentical to the time for output or other special time
-	// 25.08.2008
-	for(int i = 0; i < (int)critical_time.size(); i++)
-		if((crt_time < critical_time[i]) && (crt_time + time_step_length > critical_time[i]))
-		{
-			// _new, 23.09.2008.
-			if(fabs( critical_time[i] - crt_time) > DBL_EPSILON)
-				time_step_length = critical_time[i] - crt_time;
-			std::cout << "Time step set to " << time_step_length <<
-			" in order to match critical times!" << std::endl;
-			break;
-		}
+	double tval, next;
+	int no_time_steps = (int)time_step_vector.size(); 
 	//
+	// TIME STEP VECTOR
+	// -----------------------------------
+	if(no_time_steps > 0){
+		time_step_length = time_step_vector[0];
+		if(step_current < no_time_steps)
+			time_step_length = time_step_vector[step_current];
+	}
+	//
+	// TIME CONTROL METHODS
+	// -----------------------------------
+	if(time_control_name == "NEUMANN" || time_control_name == "SELF_ADAPTIVE"){
+		if(aktuelle_zeit < MKleinsteZahl && repeat == false){
+			time_step_length = FirstTimeStepEstimate();
+		}
+		else if( time_control_name == "NEUMANN" ){
+			time_step_length = NeumannTimeControl();
+		}
+		else if(time_control_name == "SELF_ADAPTIVE"){
+			time_step_length = SelfAdaptiveTimeControl();
+		}
+	}
+	else if(time_control_name == "ERROR_CONTROL_ADAPTIVE"){
+		if(aktuelle_zeit < MKleinsteZahl){
+			time_step_length = AdaptiveFirstTimeStepEstimate();
+		}
+		else{
+			time_step_length = ErrorControlAdaptiveTimeControl();
+		}
+	}
+	else if(time_control_name == "PI_AUTO_STEP_SIZE"){
+		time_step_length = this_stepsize;
+	}
+	else if(time_control_name.find("DYNAMIC") != std::string::npos){ // JT2012: Soon to come.
+		if(!last_dt_accepted){
+			time_step_length *= dt_failure_reduction_factor;
+			dynamic_minimum_suggestion = time_step_length;
+		}
+		else if(accepted_step_count > 1){ // initial time step is otherwise maintained for first 2 active time steps
+		}
+	}
+	else if(no_time_steps==0){ // Processes without time control
+		time_step_length = DBL_MAX; // Large, thus other processes will control the step
+	}
+	// Restrict by minimum
+	if(time_step_length < min_time_step){ // Default value of min_time_step is DBL_EPSILON, unless entered otherwise in the .tim read
+		time_step_length = min_time_step;
+	}
+	// JT: the recommended time step, before critical alteration (for dt control)
+	//     otherwise the critical time will govern time change, rather than primary variable rates.
+	recommended_time_step = time_step_length; 
+
+	// WW. Critical time match (JT2012 modified)
+	// ------------------------------------------------------
+	for(int i = 0; i < (int)critical_time.size(); i++)
+	{
+		if(current_time < critical_time[i])
+		{
+			next = current_time + time_step_length;
+			tval = next + time_step_length/1.0e3;				// JT2012. A tiny increase in dt is better than a miniscule dt on the next step
+			if(tval > critical_time[i]){						// Critical time is hit
+				if(next != critical_time[i]){					// otherwise, match is already exact
+					time_step_length = (critical_time[i] - current_time);
+				}
+				break;
+			}
+			else if(tval + time_step_length > critical_time[i]){ // We can hit the critical time in 2 time steps, smooth the transition
+				if(next + time_step_length != critical_time[i]){ // otherwise, match is already exact
+					time_step_length = (critical_time[i] - current_time)/2.0;
+				}
+				break;
+			}
+		}
+	}
+	//
+	next_active_time = current_time + time_step_length;
 	return time_step_length;
 }
 
@@ -808,10 +948,8 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
 				for (int j = 0; j < vertex_number; j++)
 					Node_Sat[j] = m_pcs->GetNodeValue(elem->GetNodeIndex(j),
 					                                  idxS);
-				buffer = m_mmp->SaturationPressureDependency(fem->interpolate(
-				                                                     Node_Sat),
-				                                             density_fluid,
-				                                             m_pcs->m_num->ls_theta);
+				// JT: dSdP now returns actual sign (<0)
+				buffer = -m_mmp->SaturationPressureDependency(m_mmp->CapillaryPressureFunction(fem->interpolate(Node_Sat)));
 				buffer *= 0.5 * elem->GetVolume() * elem->GetVolume();
 				buffer *= m_mmp->porosity_model_values[0]
 				          * mfp_vector[0]->Viscosity()
@@ -846,91 +984,168 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
 
 /**************************************************************************
    FEMLib-Method:
-   Task: Module controls adaptive timestep based on a simple Courant condition
+   Task: Control based on primary varable change
    Programing:
-   12.03.2010 JTARON implementation
+   02/2012 JT
 **************************************************************************/
-double CTimeDiscretization::CourantTimeControl(void)
+double CTimeDiscretization::DynamicVariableTimeControl(void)
 {
-	CRFProcess* m_pcs = NULL;
-	CFEMesh* m_msh = NULL;
-	ElementValue* gp_ele = NULL;
-	MeshLib::CElem* m_ele = NULL;
-
-	long iel;
-	int i, j, k, nds;
-	double vel[3], dx[3], dx_temp[3];
-	double vel_mag, new_dt, char_len;
-	double final_dt = 1.e-6;
-
-	m_pcs = PCSGet(pcs_type_name);
-	m_msh = FEMGet(pcs_type_name);
-
-	// Loop over elements
-	for (iel = 0; iel < (long)m_msh->ele_vector.size(); iel++)
+	long node, gnodes;
+	int ii, idx0, idx1, idx[DOF_NUMBER_MAX+1];
+	double error, tol, delta, edof, val, ndof, nerror, dof_error[DOF_NUMBER_MAX+1];
+	double suggested_time_step_change, suggested_time_step;
+	CRFProcess *m_pcs = PCSGet(pcs_type_name);
+	int num_variables = m_pcs->GetDOF();
+	gnodes = (long)m_pcs->m_msh->GetNodesNumber(false);
+	error = nerror = 0.0;
+	//
+	// Indices of primaries
+	for(ii=0; ii<num_variables; ii++){
+		idx[ii] = m_pcs->GetNodeValueIndex(m_pcs->pcs_primary_function_name[ii]);
+	}
+	// Is a third variable wished to be controlled (and is this allowed)
+	if(dynamic_control_tolerance[DOF_NUMBER_MAX] > 0.0 && m_pcs->isPCSMultiFlow){
+		if(m_pcs->getProcessType() == FiniteElement::MULTI_PHASE_FLOW)
+			idx[num_variables] = m_pcs->GetNodeValueIndex("SATURATION2");
+		else
+			idx[num_variables] = m_pcs->GetNodeValueIndex("PRESSURE2");
+		//
+		dynamic_control_tolerance[num_variables] = dynamic_control_tolerance[DOF_NUMBER_MAX]; // shift to 3rd variable slot
+		num_variables++;
+	}
+	//
+	// Get error
+	switch(FiniteElement::convertErrorMethod(dynamic_control_error_method))
 	{
-		// velocities first
-		gp_ele = ele_gp_value[iel];
-		gp_ele->GetEleVelocity(vel); // the ELEMENTAL velocity vector
-
-		// positions next
-		m_ele = m_msh->ele_vector[iel];
-		nds = m_ele->GetNodesNumber(false);
-		for(i = 0; i < nds; i++)  // max x,y,z lengths of element
-
-			for(j = i + 1; j < nds; j++)
-			{
-//               m_nod1 = m_msh->nod_vector[m_ele->nodes_index[i]];
-//               m_nod2 = m_msh->nod_vector[m_ele->nodes_index[j]];
-//             dx_temp[0] = (m_nod1->X()-m_nod2->X())*(m_nod1->X()-m_nod2->X());
-//             dx_temp[1] = (m_nod1->Y()-m_nod2->Y())*(m_nod1->Y()-m_nod2->Y());
-//             dx_temp[2] = (m_nod1->Z()-m_nod2->Z())*(m_nod1->Z()-m_nod2->Z());
-
-				double const* const pnt1 (
-				        m_msh->nod_vector[m_ele->getNodeIndices()[i]]->getData());
-				double const* const pnt2 (
-				        m_msh->nod_vector[m_ele->getNodeIndices()[j]]->getData());
-				dx_temp[0] = (pnt1[0] - pnt2[0]) * (pnt1[0] - pnt2[0]);
-				dx_temp[1] = (pnt1[1] - pnt2[1]) * (pnt1[1] - pnt2[1]);
-				dx_temp[2] = (pnt1[2] - pnt2[2]) * (pnt1[2] - pnt2[2]);
-
-				if(i == 0 && j == 1)
-					VCopy(dx,dx_temp,3);  //					copy dx_temp onto dx: first iteration
-				else
-					for(k = 0; k < 3; k++)
-						if(dx_temp[k] > dx[k])
-							dx[k] = dx_temp[k];
-				//					take max dx values (x,y,z) subsequent iterations
+		case FiniteElement::LMAX: // Max local error
+			for(ii=0; ii<num_variables; ii++){
+				idx0 = idx[ii];  //old time
+				idx1 = idx0 + 1; //new time
+				tol  = dynamic_control_tolerance[ii];
+				edof = 0.0;
+				//
+				for(node=0; node < gnodes; node++){
+					delta = fabs(m_pcs->GetNodeValue(node,idx1) - m_pcs->GetNodeValue(node,idx0)) / tol;
+					edof  = MMax(edof,delta);
+				}
+				error = MMax(error,edof);
+				dof_error[ii] = edof;
 			}
-		for(i = 0; i < 3; i++)    //							Hold square root until after internal loop, for efficiency only
-			dx[i] = sqrt(dx[i]);
+		break;
+		//
+		case FiniteElement::ENORM: // Error of global norm (single tolerance)
+			tol = dynamic_control_tolerance[0];
+			//
+			for(ii=0; ii<num_variables; ii++){
+				idx0 = idx[ii];  //old time
+				idx1 = idx0 + 1; //new time
+				edof = 0.0;
+				//
+				for(node=0; node < gnodes; node++){
+					delta  = m_pcs->GetNodeValue(node,idx1) - m_pcs->GetNodeValue(node,idx0);
+					edof  += delta*delta;
+				}
+				error += edof;
+				dof_error[ii] = sqrt(edof) / tol;
+			}
+			error = sqrt(error) / tol;
+		break;
+		//
+		case FiniteElement::EVNORM: // Error of global norm (DOF specific tolerance)
+			for(ii=0; ii<num_variables; ii++){
+				idx0 = idx[ii];  //old time
+				idx1 = idx0 + 1; //new time
+				tol = dynamic_control_tolerance[0];
+				edof = 0.0;
+				//
+				for(node=0; node < gnodes; node++){
+					delta  = m_pcs->GetNodeValue(node,idx1) - m_pcs->GetNodeValue(node,idx0);
+					edof  += delta*delta;
+				}
+				dof_error[ii] = sqrt(edof)/tol;
+				error = MMax(error,dof_error[ii]);
+			}
+		break;
+		//
+		case FiniteElement::ERNORM: // Error of relative global norm (single tolerance)
+			tol = dynamic_control_tolerance[0];
+			ndof = 0.0;
+			//
+			for(ii=0; ii<num_variables; ii++){
+				idx0 = idx[ii];  //old time
+				idx1 = idx0 + 1; //new time
+				edof = ndof = 0.0;
 
-		//    vel_mag = MVectorlength(vel[0],vel[1],vel[2]); //	velocity magnitude
-		vel_mag = sqrt (vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]);
-		for(i = 0; i < 3; i++)
-			vel[i] = fabs(vel[i]) / vel_mag;  //							normalized velocity
-		char_len = PointProduction(vel,dx); //			dot product, gives projection of element size onto velocity vector
-		new_dt = courant_desired * char_len / vel_mag; //		Courant timestep, this element
-
-		if(iel == 0)
-			final_dt = new_dt;
-		else if(new_dt < final_dt) //  take minimum value in domain
-			final_dt = new_dt;
+				//
+				for(node=0; node < gnodes; node++){
+					val   = m_pcs->GetNodeValue(node,idx1);
+					delta = val - m_pcs->GetNodeValue(node,idx0);
+					edof += delta*delta;
+					ndof += val*val;
+				}
+				error  += edof;
+				nerror += ndof;
+				dof_error[ii] = (sqrt(edof)/(sqrt(ndof)+DBL_EPSILON)) / tol;
+			}
+			error = (sqrt(error)/(sqrt(nerror)+DBL_EPSILON)) / tol;
+		break;
 	}
-	time_step_length = final_dt;
-
-	if(time_step_length < MKleinsteZahl)
-	{
-		std::cout <<
-		"Fatal error: Courant time step is less than machine tolerance, setting dt = 1.e-6"
-		          << std::endl;
-		time_step_length = 1.e-6;
+	// Get suggested time step
+	if(error < DBL_EPSILON) error = DBL_EPSILON;
+	suggested_time_step_change = time_step_length*(1.0 / error - 1.0);
+	suggested_time_step = suggested_time_step_change + time_step_length;
+	//
+	std::cout << "Dynamic Variable suggested time step:  " << suggested_time_step << std::endl;
+	if(num_variables>1){
+		for(ii=0; ii<num_variables; ii++){
+			edof = time_step_length + time_step_length*(1.0 / dof_error[ii] - 1.0);
+			std::cout << "--> For DOF #:  " << ii << "  suggested time step is: " << edof << std::endl;
+		}
 	}
-
-	if(Write_tim_discrete)
-		*tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit << "   " <<
-		time_step_length << "  " << m_pcs->iter_lin << std::endl;
+	//
+	// Smooth the time step suggestion
+	time_step_length = DynamicTimeSmoothing(suggested_time_step_change);
 	return time_step_length;
+}
+
+/**************************************************************************
+   FEMLib-Method:
+   Task: Smooth a time step suggestion from any calculation method
+   Programing:
+   02/2012 JT
+**************************************************************************/
+double CTimeDiscretization::DynamicTimeSmoothing(double suggested_time_step_change)
+{
+	double ddt, val, time_step;
+	int number_of_time_steps_to_smooth = 2;
+	//
+	ddt = fabs(suggested_time_step_change);
+	val = 1.0 - ddt/(time_step_length + ddt);			// how different is the suggestion from the current value
+	//
+    if(suggested_time_step_change>0.0)					// increase suggested in dt (take at least 1% but not more than 50%)
+	    val = MRange(0.01,val,0.5);
+    else												// decrease suggested in dt (take at least 20% but not more than 90%)
+	    val = MRange(0.2,val,0.9);
+    time_step = ddt*val + time_step_length;				// the suggested time step (after weighting)
+
+	// Buffer the time step change over "number_of_time_steps_to_smooth" time steps (taking the worst case)
+	dynamic_time_buffer++;
+	if(dynamic_time_buffer == 1) // Not yet tested 2 steps
+		dynamic_minimum_suggestion = time_step;
+	else
+		dynamic_minimum_suggestion = MMin(time_step,dynamic_minimum_suggestion);
+
+	if(dynamic_time_buffer < number_of_time_steps_to_smooth){
+		time_step = recommended_time_step; // recommended_time_step is the m_tim variable of last suggested time step before any critical changes
+	}
+	else{
+		dynamic_time_buffer = 0; // reset
+		time_step = dynamic_minimum_suggestion;
+		// do not allow to increase faster than this user input factor
+		// note, minimum time step is checked in CalcTimeStep()
+		time_step = MMin(time_step, recommended_time_step*dynamic_control_tolerance[DOF_NUMBER_MAX]); 
+	}
+	return time_step;
 }
 
 /**************************************************************************
@@ -1180,7 +1395,7 @@ double CTimeDiscretization::AdaptiveFirstTimeStepEstimate(void)
 					        = m_pcs->GetNodeValue(elem->GetNodeIndex(j), idxp);
 				p_ini = MMax(fabs(fem->interpolate(Node_p)), p_ini);
 			}
-			buff = safty_coe * sqrt(m_num->nls_error_tolerance / p_ini);
+			buff = safty_coe * sqrt(m_num->nls_error_tolerance[0] / p_ini);
 			buff /= m_pcs->time_unit_factor;
 			time_step_length = MMin(time_step_length, buff);
 			if (time_step_length < MKleinsteZahl)
@@ -1239,11 +1454,11 @@ double CTimeDiscretization::ErrorControlAdaptiveTimeControl(void)
 			//nonlinear_iteration_error = m_pcs->nonlinear_iteration_error;
 			if (repeat)
 				time_step_length *= MMax(safty_coe * sqrt(
-				                                 m_pcs->m_num->nls_error_tolerance
+				                                 m_pcs->m_num->nls_error_tolerance[0]
 				                                 / nonlinear_iteration_error), rmin);
 			else
 				time_step_length *= MMin(safty_coe * sqrt(
-				                                 m_pcs->m_num->nls_error_tolerance
+				                                 m_pcs->m_num->nls_error_tolerance[0]
 				                                 / nonlinear_iteration_error), rmax);
 			std::cout << "Error_Self_Adaptive Time Step: " << time_step_length
 			          << std::endl;
@@ -1258,6 +1473,49 @@ double CTimeDiscretization::ErrorControlAdaptiveTimeControl(void)
 }
 
 /**************************************************************************
+FEMLib-Method: 
+Task: Allow for time step retry if system changed rapidly and non-linearly
+    :: Currently will only allow this if DynamicVariable time control is used
+Programing:
+02.2011 JT implementation
+**************************************************************************/
+bool CTimeDiscretization::isDynamicTimeFailureSuggested(CRFProcess *m_pcs) 
+{
+	if(m_pcs->iter_nlin > 0 || this->minimum_dt_reached)
+		return false; // only checking on zeroth iteration (also do not fail if already at the minimum allowed dt)
+	//
+	// Currently only for use with DYNAMIC_VARIABLE time control
+	if(time_control_name.find("DYNAMIC_VARIABLE") == std::string::npos) 
+		return false;
+	//
+	FiniteElement::ErrorMethod method (FiniteElement::convertErrorMethod(this->dynamic_control_error_method));
+	if(method == m_pcs->getNonLinearErrorMethod()){ // Same as NL method, can re-use the values
+		for(int ii=0; ii<m_pcs->pcs_num_dof_errors; ii++){
+			if(this->dynamic_failure_threshold > m_pcs->pcs_absolute_error[ii]/this->dynamic_control_tolerance[ii]){
+				return true;
+			}
+		}
+	}
+	else if(method == m_pcs->getCouplingErrorMethod()){ // Alright, is different from NLS method. How about CPL method?
+		for(int ii=0; ii<m_pcs->cpl_num_dof_errors; ii++){
+			if(this->dynamic_failure_threshold > m_pcs->cpl_absolute_error[ii]/this->dynamic_control_tolerance[ii]){
+				return true;
+			}
+		}
+	}
+	else{ // Alright, this is annoying. Unfortunately we have to recalculate the node errors.
+		m_pcs->CalcIterationNODError(method,false,false);
+		for(int ii=0; ii<m_pcs->temporary_num_dof_errors; ii++){
+			if(this->dynamic_failure_threshold > m_pcs->temporary_absolute_error[ii]/this->dynamic_control_tolerance[ii]){
+				return true;
+			}
+		}
+	}
+	//
+	return false;
+}
+
+/**************************************************************************
    FEMLib-Method:
    Task:  Check the time of the process in the case: different process has
        different time step size
@@ -1266,6 +1524,8 @@ double CTimeDiscretization::ErrorControlAdaptiveTimeControl(void)
    06/2007 WW Implementation
    09/2007 WW The varable of the time step accumulation as a  member
 **************************************************************************/
+// JT: Now we do this differently.
+#ifdef obsolete
 double CTimeDiscretization::CheckTime(double const c_time, const double dt0)
 {
 	double pcs_step;
@@ -1332,6 +1592,7 @@ double CTimeDiscretization::CheckTime(double const c_time, const double dt0)
 	}
 	return this_stepsize;
 }
+#endif
 
 /**************************************************************************
    FEMLib-Method:

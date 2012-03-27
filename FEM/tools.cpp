@@ -46,6 +46,19 @@ long fracture_aperture_anz = 0l;
 
 #define TIMER_CEN_LIST "CEN_LIST"
 
+/**************************************************************************
+ Task: Output message to screen. Helps to remove so many IFDEFS
+ Programming:
+  03/2012 JT                                                           
+**************************************************************************/
+void WriteMessage(std::string message)
+{
+#if defined(USE_MPI)
+	if(myrank != 0) return;
+#endif
+	std::cout << message << std::endl;
+}
+
 /**************************************************************************/
 /* ROCKFLOW - Funktion: Signum
  */
@@ -123,34 +136,34 @@ double GetCurveValue(int kurve, int methode, double punkt, int* gueltig)
 	anz = kurven[kurve].anz_stuetzstellen;
 	s = kurven[kurve].stuetzstellen;
 	*gueltig = 1;
+	
 	i = 1l;
-
-	if (punkt < s[0].punkt)
-	{
+	while (punkt > s[i].punkt)
+		i++;
+	//
+	// Check curve bounds
+	if(punkt < s[0].punkt){
 		*gueltig = 0;
 		return s[0].wert;
 	}
-	if (punkt > s[anz - 1l].punkt)
-	{
+	if(punkt > s[anz - 1l].punkt){
 		*gueltig = 0;
 		return s[anz - 1l].wert;
 	}
-
-	/* Suchen der Stuetzstelle. Vorraussetzung: Zeitpunkte aufsteigend geordnet */
-	while (punkt > s[i].punkt)
-		i++;
-
+	//
+	// Otherwise, get interpolated value
 	switch (methode)
 	{
-	default:
-	case 0:
-		/* Lineare Interpolation */
-		return s[i - 1].wert +
-		       (s[i].wert - s[i - 1l].wert) / (s[i].punkt - s[i - 1l].punkt) *
-		       (punkt - s[i - 1l].punkt);
-	case 1:                               //WW/SF
-		// Piece wise constant
-		return s[i].wert;
+		default:
+			WriteMessage("ERROR: GetCurveValue() --> Invalid curve.");
+			return 0.0;
+		//
+		case 0:   // Linear Interpolation
+			return s[i - 1].wert + (s[i].wert - s[i - 1l].wert) / 
+				  (s[i].punkt - s[i - 1l].punkt) * (punkt - s[i - 1l].punkt);
+		//
+		case 1:   // Piece wise constant
+			return s[i].wert;
 	}
 }
 
@@ -239,13 +252,17 @@ double GetCurveValueInverse(int kurve, int methode, double wert, int* gueltig)
 
 	switch (methode)
 	{
-	default:
-	case 0:
-		/* Lineare Interpolation */
-		return s[i - 1].punkt +
-		       (s[i].punkt - s[i - 1l].punkt) / (s[i].wert - s[i - 1l].wert) *
-		       (wert - s[i - 1l].wert);
-	}
+		default:
+			WriteMessage("ERROR: GetCurveValue() --> Invalid curve.");
+			return 0.0;
+		//
+		case 0: // Lineare Interpolation
+			return s[i - 1].punkt + (s[i].punkt - s[i - 1l].punkt) / 
+				  (s[i].wert - s[i - 1l].wert) * (wert - s[i - 1l].wert);
+		//
+		case 1: // Piece wise constant
+			return s[i].punkt;
+		}
 }
 
 /**************************************************************************

@@ -391,6 +391,7 @@ public:
 	//....................................................................
 	// IO
 	std::ios::pos_type Read(std::ifstream*);
+	void PCSReadConfigurations();
 	void Write(std::fstream*);
 	//....................................................................
 	// 1-GEO
@@ -466,6 +467,13 @@ public:
 	int pcs_component_number;             //SB: counter for transport components
 	int ML_Cap;                           // 23.01 2009 PCH
 	int PartialPS;                        // 16.02 2009 PCH
+	//
+	// JT2012: Process type identifiers
+	bool isPCSFlow;
+	bool isPCSMultiFlow;
+	bool isPCSHeat;
+	bool isPCSMass;
+	bool isPCSDeformation;
 
 	int GetProcessComponentNumber() const //SB:namepatch
 	{
@@ -491,8 +499,7 @@ public:
 	const char* pcs_secondary_function_name[PCS_NUMBER_MAX];
 	const char* GetSecondaryVName(const int index) const
 	{
-		return pcs_secondary_function_name[
-		               index];
+		return pcs_secondary_function_name[index];
 	}
 	const char* pcs_secondary_function_unit[PCS_NUMBER_MAX];
 	int pcs_secondary_function_timelevel[PCS_NUMBER_MAX];
@@ -518,9 +525,6 @@ public:
 	int rwpt_app;
 	int srand_seed;
 	const char* pcs_num_name[2];          //For monolithic scheme
-	double pcs_nonlinear_iteration_tolerance;
-	int pcs_nonlinear_iterations;         //OK
-	int pcs_coupling_iterations;          //OK
 	std::string tim_type_name;            //OK
 	const char* pcs_sol_name;
 	std::string cpl_type_name;
@@ -558,6 +562,7 @@ public:
 	CRFProcess* GetProcessByFunctionName(char* name);
 	CRFProcess* GetProcessByNumber(int);
 	CFiniteElementStd* GetAssembler() {return fem; }
+	int GetDOF() {return dof;}
 	// CRFProcess *Get(string); // WW Removed
 	// Configuration
 	void Config();
@@ -583,7 +588,6 @@ public:
 	void CreateNODValues(void);
 	void SetNODValues();                  //OK
 	void CalcFluxesForCoupling();         //MB
-	double CalcCouplingNODError();        //MB
 	void SetNODFlux();                    //OK
 	//
 	void AssembleParabolicEquationRHSVector(); //OK
@@ -591,7 +595,7 @@ public:
 	//(vector<long>&); //OK
 	void AssembleParabolicEquationRHSVector(MeshLib::CNode*);
 #endif
-	double CalcIterationNODError(int method); //OK
+	double CalcIterationNODError(FiniteElement::ErrorMethod method, bool nls_error, bool cpl_error=false); //OK
 	                                          // Add bool forward = true. WW
 	void CopyTimestepNODValues(bool forward = true);
 	//Coupling
@@ -640,7 +644,8 @@ public:
 
 	//---
 	double Execute();
-	double ExecuteNonLinear();
+	double ExecuteNonLinear(int loop_process_number);
+	void PrintStandardIterationInformation(bool write_std_errors = true);
 
 	virtual void CalculateElementMatrices(void);
 	void DDCAssembleGlobalMatrix();
@@ -670,12 +675,26 @@ public:
 #endif
 
 	CTimeDiscretization* GetTimeStepping() const {return Tim; }
-	//Time Control
 	double timebuffer;                    //YD
-	// this is times of non-linear iterations
-	int iter_nlin;                        //YD //HS rename to avoid confusion;
-	// this is times of linear iterations
+	//
+	// NLS and CPL error and looping control
+	int num_diverged;
+	int num_notsatisfied;
+	int iter_nlin; 
 	int iter_lin;
+	int iter_outer_cpl;							// JT2012
+	int iter_inner_cpl;							// JT2012
+	int pcs_num_dof_errors;						// JT2012
+	double pcs_relative_error[DOF_NUMBER_MAX];	// JT2012: for NLS, we store relative error for each DOF
+	double pcs_absolute_error[DOF_NUMBER_MAX];	// JT2012: for NLS, we store error for each DOF
+	double pcs_unknowns_norm;
+	double cpl_max_relative_error;				// JT2012: For CPL, we just store the maximum, not each dof value
+	double cpl_absolute_error[DOF_NUMBER_MAX];	// JT2012: 
+	double temporary_absolute_error[DOF_NUMBER_MAX];	// JT2012: 
+	int temporary_num_dof_errors;
+	int cpl_num_dof_errors;						// JT2012
+	bool first_coupling_iteration;				// JT2012
+	//
 	// Specials
 	void PCSMoveNOD();
 	void PCSDumpModelNodeValues(void);
@@ -787,6 +806,7 @@ extern void RelocateDeformationProcess(CRFProcess* m_pcs);
 extern void PCSDestroyAllProcesses(void);
 
 extern CRFProcess* PCSGet(const std::string&);
+extern CRFProcess* PCSGetUnconfigured(const std::string &variable_name); // For unconfigured PCS obtainment
 /**
  * Function searchs in the global pcs_vector for a process with the process type pcs_type.
  * @param pcs_type process type
@@ -815,10 +835,13 @@ extern CRFProcess* PCSGet(const std::string&,const std::string&);
 CRFProcess* PCSGet(FiniteElement::ProcessType pcs_type, const std::string &pv_name);
 
 //OK
-extern CRFProcess* PCSGet(const std::string&,bool);
-extern CRFProcess* PCSGetFluxProcess();           //CMCD
-extern CRFProcess* PCSGetFlow();                  //OK
-extern bool PCSConfig();                          //OK
+extern CRFProcess* PCSGet(const std::string &variable_name, bool dummy);
+extern CRFProcess* PCSGetFluxProcess();					//CMCD
+extern CRFProcess* PCSGetFlow();						//OK//JT
+extern CRFProcess* PCSGetHeat();						//JT
+extern CRFProcess* PCSGetMass(size_t component_number);	//JT
+extern CRFProcess* PCSGetDeformation();					//JT
+extern bool PCSConfig();                          //
 // NOD
 extern int PCSGetNODValueIndex(const std::string&,int);
 extern double PCSGetNODValue(long,char*,int);
@@ -830,11 +853,9 @@ extern double PCSGetELEValue(long index,double* gp,double theta,const std::strin
 extern void PCSRestart();
 extern std::string PCSProblemType();
 // PCS global variables
-extern int pcs_no_fluid_phases;
 extern int pcs_no_components;
 extern bool pcs_monolithic_flow;
 extern int pcs_deformation;
-extern int dm_pcs_number;
 
 // ToDo
 //SB
@@ -902,16 +923,23 @@ extern int GetRFProcessNumTemperatures(void);
 extern int GetRFProcessSimulation(void);
 
 // Coupling Flag. WW
-extern bool T_Process;
-extern bool H_Process;
-extern bool M_Process;
-extern bool RD_Process;
-extern bool MH_Process;                           // MH monolithic scheme
-extern bool MASS_TRANSPORT_Process;
-extern bool FLUID_MOMENTUM_Process;
-extern bool RANDOM_WALK_Process;
-extern bool PS_Global;                            //NB
-extern bool PTC_FLOW_Process; //NB
+extern bool T_Process;					// Heat
+extern bool H_Process;					// Fluid
+extern bool H2_Process;					// Multi-phase
+extern bool H3_Process;					// 3-phase
+extern bool M_Process;					// Mechanical
+extern bool RD_Process;					// Richards
+extern bool MH_Process;					// MH monolithic scheme
+extern bool MASS_TRANSPORT_Process;		// Mass transport
+extern bool FLUID_MOMENTUM_Process;		// Momentum
+extern bool RANDOM_WALK_Process;		// RWPT
+extern bool PTC_FLOW_Process;			// PTC
+//
+extern int pcs_number_deformation;				// JT2012
+extern int pcs_number_flow;						// JT2012
+extern int pcs_number_heat;						// JT2012
+extern std::vector<int>pcs_number_mass;			// JT2012 (allow DOF_NUMBER_MAX components)
+//
 extern std::string project_title;                 //OK41
 extern bool pcs_created;
 extern std::vector<LINEAR_SOLVER*> PCS_Solver;    //WW

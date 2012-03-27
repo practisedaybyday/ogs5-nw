@@ -1410,7 +1410,7 @@ double CFiniteElementStd::CalCoefMass()
 	case L:                               // Liquid flow
 		// Is this really needed?
 		val = MediaProp->StorageFunction(Index,unit,pcs->m_num->ls_theta);
-		// JTARON 2010, needed storage term and fluid compressibility...
+		// JT 2010, needed storage term and fluid compressibility...
 		// We derive here the storage at constant strain, or the inverse of Biot's "M" coefficient
 		// Assumptions are the most general possible::  Invarience under "pi" (Detournay & Cheng) loading.
 		// Se = 1/M = poro/Kf + (alpha-poro)/Ks    ::    Cf = 1/Kf = 1/rho * drho/dp    ::    alpha = 1 - K/Ks
@@ -1451,7 +1451,7 @@ double CFiniteElementStd::CalCoefMass()
 			val = MediaProp->StorageFunction(Index,unit,pcs->m_num->ls_theta) * MMax(0.,
 			                                                                         Sw);
 
-			// JTARON 2010, generalized poroelastic storage. See single phase version in case "L".
+			// JT 2010, generalized poroelastic storage. See single phase version in case "L".
 			// Se = 1/M = poro/Kf + (alpha-poro)/Ks
 			rho_val = FluidProp->Density();
 			if(D_Flag > 0 && rho_val > MKleinsteZahl)
@@ -1473,8 +1473,8 @@ double CFiniteElementStd::CalCoefMass()
 
 				// dSedPc always return positive numbers for default case
 				// However, the value should be negative analytically.
-				double dSwdPc = m_mmp->SaturationPressureDependency(Sw, rho_val, 1);
-				val -= poro_val * dSwdPc;
+				double dSwdPc = m_mmp->SaturationPressureDependency(m_mmp->CapillaryPressureFunction(Sw));
+				val += poro_val * dSwdPc;
 			}
 		}
 		if(pcs->pcs_type_number == 1)
@@ -1519,10 +1519,10 @@ double CFiniteElementStd::CalCoefMass()
 	case R:                               // Richards
 		PG = interpolate(NodalVal1); //12.02.2007.  Important! WW
 		                             //WW
-		Sw = MediaProp->SaturationCapillaryPressureFunction(-PG,0);
+		Sw = MediaProp->SaturationCapillaryPressureFunction(-PG);
 		//     Sw = interpolate(NodalVal_Sat);
 		rhow = FluidProp->Density();
-		dSdp = MediaProp->SaturationPressureDependency(Sw, rhow, pcs->m_num->ls_theta);
+		dSdp = MediaProp->SaturationPressureDependency(-PG);
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 		// Storativity
 		val = MediaProp->StorageFunction(Index,unit,pcs->m_num->ls_theta) * Sw;
@@ -1531,7 +1531,7 @@ double CFiniteElementStd::CalCoefMass()
 		if(rhow > 0.0)
 			val += poro  * Sw * FluidProp->drho_dp / rhow;
 		// Capillarity
-		val += poro * dSdp;
+		val -= poro * dSdp; // JT: dSdp now returns actual sign (i.e. <0)
 		//WW
 		if(MediaProp->heat_diffusion_model == 273)
 		{
@@ -1588,9 +1588,9 @@ double CFiniteElementStd::CalCoefMass2(int dof_index)
 			TG = interpolate(NodalValC1) + T_KILVIN_ZERO;
 			dens_arg[1] = TG;
 		}
-		Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+		Sw = MediaProp->SaturationCapillaryPressureFunction(PG);
 		rhow = FluidProp->Density(dens_arg);
-		dSdp = -MediaProp->SaturationPressureDependency(Sw, rhow, pcs->m_num->ls_theta);
+		dSdp = MediaProp->SaturationPressureDependency(PG); // JT: dSdp now returns actual sign (i.e. <0)
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 		// Storativity   28.05.2008
 		// val = MediaProp->StorageFunction(Index,unit,pcs->m_num->ls_theta) *Sw;
@@ -1733,7 +1733,7 @@ double CFiniteElementStd::CalCoefMassPSGLOBAL(int dof_index)
 	case 2:                               // Pw in the non-wetting equation
 		Sw = 1.0 - interpolate(NodalVal_SatNW); //Sw = 1 - Snw
 		                                        // Pnw = Pw + Pc(Sw)
-		P = interpolate(NodalVal1) + MediaProp->CapillaryPressureFunction(0,NULL,0.0,1,Sw);
+		P = interpolate(NodalVal1) + MediaProp->CapillaryPressureFunction(Sw);
 		//      P = interpolate(NodalVal1);  // Pw
 		T = interpolate(NodalValC1);
 
@@ -2118,14 +2118,9 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 				CMediumProperties* m_mmp = NULL;
 				m_mmp = mmp_vector[0];
 				double dPcdSw = 0.0;
-				if (m_mmp->capillary_pressure_model_values[0] < MKleinsteZahl)
-					dPcdSw = 0.0;
-				else
-					dPcdSw = 1.0 / m_mmp->SaturationPressureDependency(Sw,
-					                                                   1000.0,
-					                                                   1);
+				dPcdSw = 1.0 / m_mmp->SaturationPressureDependency(m_mmp->CapillaryPressureFunction(Sw));
 				mat_fac = time_unit_factor * k_rel /
-				          mfp_vector[phase]->Viscosity() * (-dPcdSw);
+				          mfp_vector[phase]->Viscosity() * (dPcdSw);
 				for(size_t i = 0; i < dim * dim; i++)
 					mat[i] = tensor[i] * mat_fac;
 			}
@@ -2166,7 +2161,7 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 			PG = interpolate(NodalValC1);
 			if(cpl_pcs->type != 1212)
 				PG *= -1.0;
-			Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+			Sw = MediaProp->SaturationCapillaryPressureFunction(PG);
 			for(size_t i = 0; i < dim * dim; i++)
 				mat[i] = 0.0;
 			mat_fac = SolidProp->Heat_Conductivity(Sw);
@@ -2254,7 +2249,7 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 		// The following line only applies when Fluid Momentum is on
 		PG = interpolate(NodalVal1); //05.01.07 WW
 		                             //05.01.07 WW
-		Sw = MediaProp->SaturationCapillaryPressureFunction(-PG,0);
+		Sw = MediaProp->SaturationCapillaryPressureFunction(-PG);
 
 		tensor = MediaProp->PermeabilityTensor(Index);
 		mat_fac = time_unit_factor * MediaProp->PermeabilitySaturationFunction(Sw,0) \
@@ -2418,7 +2413,7 @@ void CFiniteElementStd::CalCoefLaplace2(bool Gravity,  int dof_index)
 	{
 	case 0: {
 		PG = interpolate(NodalVal1);
-		Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+		Sw = MediaProp->SaturationCapillaryPressureFunction(PG);
 		//
 		tensor = MediaProp->PermeabilityTensor(Index);
 		mat_fac = MediaProp->PermeabilitySaturationFunction(Sw,0) \
@@ -2475,7 +2470,7 @@ void CFiniteElementStd::CalCoefLaplace2(bool Gravity,  int dof_index)
 		{
 			PG = interpolate(NodalVal1);
 			PG2 = interpolate(NodalVal_p2);
-			Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+			Sw = MediaProp->SaturationCapillaryPressureFunction(PG);
 			dens_arg[0] = PG; // Shdould be Pw in some cases
 			if(diffusion)
 			{
@@ -2671,11 +2666,7 @@ void CFiniteElementStd::CalCoefLaplacePSGLOBAL(bool Gravity,  int dof_index)
 
 		k_rel = MediaProp->PermeabilitySaturationFunction(Sw,1);
 		// Pnw = Pw + Pc(Sw) //TODO: could cause errors in some cases
-		mfp_arg[0] = interpolate(NodalVal1) + MediaProp->CapillaryPressureFunction(0,
-		                                                                           NULL,
-		                                                                           0.0,
-		                                                                           1,
-		                                                                           Sw);
+		mfp_arg[0] = interpolate(NodalVal1) + MediaProp->CapillaryPressureFunction(Sw);
 		mfp_arg[1] = interpolate(NodalValC1); // TEMPERATURE1 in most cases
 
 		mat_fac = k_rel / GasProp->Viscosity(mfp_arg);
@@ -2710,24 +2701,13 @@ void CFiniteElementStd::CalCoefLaplacePSGLOBAL(bool Gravity,  int dof_index)
 			CElem* thisEle = pcs->m_msh->ele_vector[index];
 			int matgrp = thisEle->GetPatchIndex();
 			m_mmp = mmp_vector[matgrp];
-			//		Sw = 1.0 - Snw;
-			Sw = 1.0 - MRange(m_mmp->saturation_res[1],Snw,1.0);
-			//		Sw = 1.0 - MRange(m_mmp->saturation_res[1],Snw,1.0-m_mmp->saturation_res[0]);
 			k_rel = MediaProp->PermeabilitySaturationFunction(Sw,1);
 
 			double dPcdSw = 0.0;
-			if (m_mmp->capillary_pressure_model_values[0] < MKleinsteZahl)
-				dPcdSw = 0.0;
-			else
-				dPcdSw = m_mmp->PressureSaturationDependency(Sw, 1000.0, 1);
+			dPcdSw = m_mmp->PressureSaturationDependency(Sw);
 
 			// Pnw = Pw + Pc(Sw) // TODO: could cause errors in some cases
-			mfp_arg[0] = interpolate(NodalVal1) + MediaProp->CapillaryPressureFunction(
-			        0,
-			        NULL,
-			        0.0,
-			        1,
-			        Sw);
+			mfp_arg[0] = interpolate(NodalVal1) + MediaProp->CapillaryPressureFunction(Sw);
 			mfp_arg[1] = interpolate(NodalValC1);
 			mat_fac = k_rel / GasProp->Viscosity(mfp_arg) * (-dPcdSw);
 		}
@@ -2756,9 +2736,6 @@ void CFiniteElementStd::CalCoefLaplacePSGLOBAL(bool Gravity,  int dof_index)
 		CElem* thisEle = pcs->m_msh->ele_vector[index];
 		int matgrp = thisEle->GetPatchIndex();
 		m_mmp = mmp_vector[matgrp];
-		//		Sw = 1.0 - Snw;
-		Sw = 1.0 - MRange(m_mmp->saturation_res[1],Snw,1.0);
-		//	Sw = 1.0 - MRange(m_mmp->saturation_res[1],Snw,1.0-m_mmp->saturation_res[0]);
 		k_rel = MediaProp->PermeabilitySaturationFunction(Sw,1);
 		mat_fac = k_rel / GasProp->Viscosity();
 
@@ -3323,7 +3300,7 @@ double CFiniteElementStd::CalCoefStrainCouping(const int phase)
 		if(phase == 0)
 		{
 			PG = interpolate(NodalVal1);
-			Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+			Sw = MediaProp->SaturationCapillaryPressureFunction(PG);
 			val = Sw;
 		}
 		else
@@ -4595,9 +4572,9 @@ double CFiniteElementStd::CalcCoefDualTransfer()
 		pm = interpolate(NodalVal3);
 		pf = interpolate(NodalVal4);
 		// Matrix
-		Sm = m_matrix->SaturationCapillaryPressureFunction(-pm,0);
+		Sm = m_matrix->SaturationCapillaryPressureFunction(-pm);
 		// Fracture
-		Sf = f_matrix->SaturationCapillaryPressureFunction(-pf,0);
+		Sf = f_matrix->SaturationCapillaryPressureFunction(-pf);
 		permeability = m_matrix->PermeabilityTensor(Index);
 		ExFac = m_matrix->transfer_coefficient;
 		// Dual by van Genuchten
@@ -4609,12 +4586,7 @@ double CFiniteElementStd::CalcCoefDualTransfer()
 
 		else                      // by LBNL. WW
 		{
-			double Sf_e =
-			        (Sf -
-			         f_matrix->saturation_res[phase]) /
-			        (f_matrix->saturation_max[phase]
-			         - f_matrix->
-			         saturation_res[phase]);
+			double Sf_e = f_matrix->GetEffectiveSaturationForPerm(Sf,phase);
 			matrix_conductivity = Sf_e * m_matrix->PermeabilitySaturationFunction(Sm,0) \
 			                      / FluidProp->Viscosity();
 			ExFac *= -1.0;
@@ -4873,7 +4845,7 @@ void CFiniteElementStd::CalcRHS_by_ThermalDiffusion()
 		PG = interpolate(NodalVal1);
 		TG = interpolate(NodalValC) + T_KILVIN_ZERO;
 		//WW
-		Sw = MediaProp->SaturationCapillaryPressureFunction(-PG,0);
+		Sw = MediaProp->SaturationCapillaryPressureFunction(-PG);
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 		tort = MediaProp->TortuosityFunction(Index,unit,pcs->m_num->ls_theta);
 		beta = poro * MediaProp->StorageFunction(Index,unit,pcs->m_num->ls_theta) * Sw;
@@ -6364,14 +6336,15 @@ void CFiniteElementStd::AssembleParabolicEquation()
 	int i, ii;
 	int ii_sh;
 	long i_sh;
-	// NUM
-	double relax0, relax1;
-	//----------------------------------------------------------------------
+	double relax0, relax1, pcs_time_step, dt_inverse;
 	long dm_shift = 0, cshift = 0;        //WW 05.01.07
-
 	bool H2_mono = false; // 15. 07.2011. WW
 	if(PcsType == V || PcsType == P || PcsType == S)
 		H2_mono = true;
+	//
+	// JT2012: Get the time step of this process! Now dt can be independently controlled.
+	pcs_time_step = pcs->Tim->time_step_length;
+	dt_inverse = 1.0/pcs_time_step; // (also, no need to check minimum. It is handeled in Tim.
 
 	//WW 05.01.07
 	relax0 = pcs->m_num->nls_relaxation;  //WW
@@ -6380,9 +6353,7 @@ void CFiniteElementStd::AssembleParabolicEquation()
 	if(relax0 < DBL_MIN)
 		relax0 = 1.0;
 	relax1 = 1.0 - relax0;
-
 	//
-
 	if(pcs->dof > 1)
 		cshift = NodeShift[pcs->continuum];
 	if(pcs->type / 10 == 4)
@@ -6450,25 +6421,13 @@ void CFiniteElementStd::AssembleParabolicEquation()
 	//======================================================================
 	// Assemble global matrix
 	//----------------------------------------------------------------------
-	// Time discretization
-	// ToDo PCS time step
-	double dt_inverse = 0.0;
-	if(dt < MKleinsteZahl)
-	{
-		cout << "\n Zeitschritt ist Null ! Abbruch !" << endl;
-		//abort(); //WW. return;
-		return;                   //exit(NULL); //TK
-	}
-	else
-		dt_inverse = 1.0 / dt;
-	//----------------------------------------------------------------------
 	// Assemble local left matrix:
 	// [C]/dt + theta [K] non_linear_function for static problems
 	// [C] + beta1*dt [K] for dynamic problems: ? different equation type
 	if(dynamic)
 	{
 		fac1 = 1.0;
-		fac2 = beta1 * dt;
+		fac2 = beta1 * pcs_time_step;
 	}
 	else
 	{
@@ -6595,7 +6554,7 @@ void CFiniteElementStd::AssembleParabolicEquation()
 	if(dynamic)
 	{
 		fac1 = -1.0;
-		fac2 = beta1 * dt;
+		fac2 = beta1 * pcs_time_step;
 	}
 	else
 	{
@@ -6663,7 +6622,7 @@ void CFiniteElementStd::AssembleParabolicEquation()
 		//p_n+vp*dt
 		for (i = 0; i < nnodes; i++)
 		{
-			NodalVal0[i] *= dt;
+			NodalVal0[i] *= pcs_time_step;
 			NodalVal0[i] += pcs->GetNodeValue(nodes[i],idx_pres);
 		}
 		Laplace->multi(NodalVal0, NodalVal, -1.0);
@@ -6874,6 +6833,7 @@ void CFiniteElementStd::CalcFEM_FCT()
 void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 {
 	int i,j;
+	double pcs_time_step, dt_inverse;
 	ElementMatrix* EleMat = NULL;         //SB-3
 	// NUM
 	double theta = pcs->m_num->ls_theta;  //OK
@@ -6885,6 +6845,10 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		A = pcs->eqs_new->A;
 #endif
 
+	// JT2012: Get the time step of this process! Now dt can be independently controlled
+	pcs_time_step = pcs->Tim->time_step_length;
+	dt_inverse = 1.0/pcs_time_step; // (also, no need to check minimum. It is handeled in Tim.
+	//
 	//----------------------------------------------------------------------
 	unit[0] = unit[1] = unit[2] = 0.0;
 	// Non-linearities
@@ -6949,17 +6913,6 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 	}                                     //pcs->tim_type    //SB-3
 	//======================================================================
 	// Assemble global matrix
-	//----------------------------------------------------------------------
-	// Time discretization
-	// ToDo PCS time step
-	double dt_inverse = 0.0;
-	if(dt < MKleinsteZahl)
-	{
-		cout << "\n Zeitschritt ist Null ! Abbruch !" << endl;
-		return;
-	}
-	else
-		dt_inverse = 1.0 / dt;
 	//----------------------------------------------------------------------
 	// Assemble local left matrix:
 	// [C]/dt + theta [K] non_linear_function for static problems
@@ -8116,7 +8069,7 @@ void CFiniteElementStd::CalcSatution()
 		ComputeShapefct(1);
 		//
 		PG = interpolate(NodalVal0);
-		NodalVal_Sat[i] = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+		NodalVal_Sat[i] = MediaProp->SaturationCapillaryPressureFunction(PG);
 	}
 
 	if(ElementType == MshElemType::QUAD || ElementType == MshElemType::HEXAHEDRON)
@@ -8497,7 +8450,7 @@ double CFiniteElementStd::CalCoef_RHS_T_MPhase(int dof_index)
 	{
 	case 0:
 		PG = interpolate(NodalVal1);
-		Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+		Sw = MediaProp->SaturationCapillaryPressureFunction(PG);
 		TG = interpolate(NodalValC1) + T_KILVIN_ZERO;
 		TG0 = interpolate(NodalValC) + T_KILVIN_ZERO;
 		PG2 = interpolate(NodalVal_p2);
@@ -8588,7 +8541,7 @@ double CFiniteElementStd::CalCoef_RHS_T_PSGlobal(int dof_index)
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 		Sw = 1.0 - interpolate(NodalVal_SatNW);
 		// Pnw = Pw + Pc(Sw)
-		P  = interpolate(NodalVal1) + MediaProp->CapillaryPressureFunction(0,NULL,0.0,1,Sw);
+		P  = interpolate(NodalVal1) + MediaProp->CapillaryPressureFunction(Sw);
 		//      P  = interpolate(NodalVal1);  // Pw
 		T  = interpolate(NodalValC1);
 
@@ -9254,8 +9207,8 @@ double CFiniteElementStd::CalCoef_RHS_HEAT_TRANSPORT2(int dof_index)
 	dens_arg[1] = TG;
 	dens_arg[0] = PG2 - PG;
 	rhow = FluidProp->Density(dens_arg);
-	Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
-	dSdp = -MediaProp->SaturationPressureDependency(Sw, rhow, pcs->m_num->ls_theta);
+	Sw = MediaProp->SaturationCapillaryPressureFunction(PG);
+	dSdp = MediaProp->SaturationPressureDependency(PG);
 	poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 	if(MediaProp->evaporation == 647)
 		H_vap = -2257000;         //pow((Tc - TG),0.38)*2.5397E+5;//It is specific you can change thi value as you chaning fluid from water
@@ -9436,18 +9389,18 @@ double CFiniteElementStd::CalCoef_RHS_M_MPhase(int dof_index)
 	{
 	case 0:
 		PG = interpolate(NodalVal1);
-		Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+		PG2 = interpolate(NodalVal_p2); // JT
+		Sw = MediaProp->SaturationCapillaryPressureFunction(PG);
 		if(diffusion)
 		{
 			TG = interpolate(NodalValC1) + T_KILVIN_ZERO;
 			dens_aug[1] = TG;
 		}
 		//
-		dens_aug[0] = PG;
+		dens_aug[0] = PG2 - PG; //JT: this was wrong. density argument is water pressure.
 		rhow = FluidProp->Density(dens_aug);
 		val = Sw;
 		//
-		PG2 = interpolate(NodalVal_p2);
 		dens_aug[0] = PG2;
 		//
 		if(diffusion)
