@@ -53,9 +53,9 @@ long fracture_aperture_anz = 0l;
 **************************************************************************/
 void WriteMessage(std::string message)
 {
-#if defined(USE_MPI)
-	if(myrank != 0) return;
-#endif
+//#if defined(USE_MPI)
+	//if(myrank != 0) return;
+//#endif
 	std::cout << message << std::endl;
 }
 

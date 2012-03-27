@@ -1017,7 +1017,7 @@ double CTimeDiscretization::DynamicVariableTimeControl(void)
 	// Get error
 	switch(FiniteElement::convertErrorMethod(dynamic_control_error_method))
 	{
-		case FiniteElement::LMAX: // Max local error
+		default: // "LMAX", or other method
 			for(ii=0; ii<num_variables; ii++){
 				idx0 = idx[ii];  //old time
 				idx1 = idx0 + 1; //new time

@@ -4692,10 +4692,12 @@ void CRFProcess::GlobalAssembly()
 
 		//MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 
+		//JT->KG: Please check this. I think "this->first_coupling_iteration" is the check you want here. Such that this only 
+		// happens AFTER the first coupling iteration in your OGS-GEM coupling. Is this correct?
 #ifdef GEM_REACT
-		//		if ( _pcs_type_name.compare("MASS_TRANSPORT") == 0 && aktueller_zeitschritt > 1 && this->m_num->cpl_iterations > 1)
+		//		if ( _pcs_type_name.compare("MASS_TRANSPORT") == 0 && aktueller_zeitschritt > 1 && !this->first_coupling_iteration)
 		if ( this->getProcessType() == FiniteElement::MASS_TRANSPORT && aktueller_zeitschritt > 1 &&
-		     this->m_num->cpl_iterations > 1)
+		     !this->first_coupling_iteration)
 			IncorporateSourceTerms_GEMS();
 #endif
 #ifndef NEW_EQS                             //WW. 07.11.2008
@@ -7494,7 +7496,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool nls_error, bool cpl_error)
 {
 	static long i, k, g_nnodes;
-	static double error, error_g, change, max_c, min_c, val1, val2, value;
+	static double error, error_g, val1, val2, value;
 	int nidx1, ii;
 	double* eqs_x = NULL;     // 11.2007. WW
 	int num_dof_errors = pcs_number_of_primary_nvals;
