@@ -46,19 +46,6 @@ long fracture_aperture_anz = 0l;
 
 #define TIMER_CEN_LIST "CEN_LIST"
 
-/**************************************************************************
- Task: Output message to screen. Helps to remove so many IFDEFS
- Programming:
-  03/2012 JT                                                           
-**************************************************************************/
-void WriteMessage(std::string message)
-{
-//#if defined(USE_MPI)
-	//if(myrank != 0) return;
-//#endif
-	std::cout << message << std::endl;
-}
-
 /**************************************************************************/
 /* ROCKFLOW - Funktion: Signum
  */
@@ -155,7 +142,7 @@ double GetCurveValue(int kurve, int methode, double punkt, int* gueltig)
 	switch (methode)
 	{
 		default:
-			WriteMessage("ERROR: GetCurveValue() --> Invalid curve.");
+			ScreenMessage("ERROR: GetCurveValue() --> Invalid curve.\n");
 			return 0.0;
 		//
 		case 0:   // Linear Interpolation
@@ -253,7 +240,7 @@ double GetCurveValueInverse(int kurve, int methode, double wert, int* gueltig)
 	switch (methode)
 	{
 		default:
-			WriteMessage("ERROR: GetCurveValue() --> Invalid curve.");
+			ScreenMessage("ERROR: GetCurveValue() --> Invalid curve.\n");
 			return 0.0;
 		//
 		case 0: // Lineare Interpolation

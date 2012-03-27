@@ -374,13 +374,13 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 							break;
 						//
 						case FiniteElement::BNORM:
-							WriteMessage("ERROR in TIMRead. BNORM not configured for time control.");
-							WriteMessage("We suggest ENORM as a valid companion for NEWTON couplings.");
+							ScreenMessage("ERROR in TIMRead. BNORM not configured for time control.\n");
+							ScreenMessage("We suggest ENORM as a valid companion for NEWTON couplings.\n");
 							exit(1);
 							break;
 						//
 						default:
-							WriteMessage("ERROR in TIMRead. Invalid error method selected for dynamic time control.");
+							ScreenMessage("ERROR in TIMRead. Invalid error method selected for dynamic time control.\n");
 							exit(1);
 							break;
 					}
@@ -497,7 +497,7 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 				// end of if "SELF_ADAPTIVE"
 				}
 				else{
-					WriteMessage("ERROR: Unrecognized time control type.");
+					ScreenMessage("ERROR: Unrecognized time control type.\n");
 					exit(1);
 				}
 			}             // end of while
@@ -1017,7 +1017,10 @@ double CTimeDiscretization::DynamicVariableTimeControl(void)
 	// Get error
 	switch(FiniteElement::convertErrorMethod(dynamic_control_error_method))
 	{
-		default: // "LMAX", or other method
+		default:
+			return 0.0;
+		//
+		case FiniteElement::LMAX: // "LMAX"
 			for(ii=0; ii<num_variables; ii++){
 				idx0 = idx[ii];  //old time
 				idx1 = idx0 + 1; //new time
@@ -1489,14 +1492,14 @@ bool CTimeDiscretization::isDynamicTimeFailureSuggested(CRFProcess *m_pcs)
 		return false;
 	//
 	FiniteElement::ErrorMethod method (FiniteElement::convertErrorMethod(this->dynamic_control_error_method));
-	if(method == m_pcs->getNonLinearErrorMethod()){ // Same as NL method, can re-use the values
+	if(method == m_pcs->m_num->getNonLinearErrorMethod()){ // Same as NL method, can re-use the values
 		for(int ii=0; ii<m_pcs->pcs_num_dof_errors; ii++){
 			if(this->dynamic_failure_threshold > m_pcs->pcs_absolute_error[ii]/this->dynamic_control_tolerance[ii]){
 				return true;
 			}
 		}
 	}
-	else if(method == m_pcs->getCouplingErrorMethod()){ // Alright, is different from NLS method. How about CPL method?
+	else if(method == m_pcs->m_num->getCouplingErrorMethod()){ // Alright, is different from NLS method. How about CPL method?
 		for(int ii=0; ii<m_pcs->cpl_num_dof_errors; ii++){
 			if(this->dynamic_failure_threshold > m_pcs->cpl_absolute_error[ii]/this->dynamic_control_tolerance[ii]){
 				return true;

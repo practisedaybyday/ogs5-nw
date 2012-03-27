@@ -806,7 +806,6 @@ extern void RelocateDeformationProcess(CRFProcess* m_pcs);
 extern void PCSDestroyAllProcesses(void);
 
 extern CRFProcess* PCSGet(const std::string&);
-extern CRFProcess* PCSGetUnconfigured(const std::string &variable_name); // For unconfigured PCS obtainment
 /**
  * Function searchs in the global pcs_vector for a process with the process type pcs_type.
  * @param pcs_type process type

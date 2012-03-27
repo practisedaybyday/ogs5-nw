@@ -116,6 +116,19 @@ void DisplayMsg ( const char* s )
 	CloseMsgFile(f);
 }
 
+/**************************************************************************
+ Task: Output message to screen. Helps to remove so many IFDEFS
+ Programming:
+  03/2012 JT                                                           
+**************************************************************************/
+void ScreenMessage(const char* message)
+{
+//#if defined(USE_MPI)
+	//if(myrank != 0) return;
+//#endif
+	printf(message);
+}
+
 /**************************************************************************/
 /* ROCKFLOW - Funktion: DisplayMsgLn
  */

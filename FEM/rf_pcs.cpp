@@ -2015,39 +2015,6 @@ CRFProcess* PCSGet(FiniteElement::ProcessType pcs_type)
 	return NULL;
 }
 
-CRFProcess* PCSGetUnconfigured(const std::string &variable_name)
-{
-	if(variable_name.find("HEAD") != std::string::npos){
-		return PCSGet(FiniteElement::GROUNDWATER_FLOW);
-	}
-	if(variable_name.find("FLUX") != std::string::npos){
-		return PCSGet(FiniteElement::OVERLAND_FLOW);
-	}
-	if(variable_name.find("PRESSURE") != std::string::npos ||
-	   variable_name.find("SATURATION") != std::string::npos){
-		   for(size_t i=0; i<pcs_vector.size(); i++){
-			   if(pcs_vector[i]->isPCSFlow){
-				   if(pcs_vector[i]->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
-					   continue;
-				   if(pcs_vector[i]->getProcessType() == FiniteElement::OVERLAND_FLOW)
-					   continue;
-				   return pcs_vector[i];
-			   }
-		   }
-	}
-	if(variable_name.find("TEMPERATURE") != std::string::npos){
-		return PCSGetHeat();
-	}
-	if(variable_name.find("DISPLACEMENT") != std::string::npos){
-		return PCSGetDeformation();
-	}
-	for(size_t i=0; i<cp_vec.size(); i++){
-		if(cp_vec[i]->compname == variable_name)
-			return PCSGetMass(i);
-	}
-	return NULL;
-}
-
 /**************************************************************************
    FEMLib-Method:
    Task:
@@ -4041,7 +4008,7 @@ double CRFProcess::Execute()
 	//----------------------------------------------------------------------
 	if(m_num->fct_method > 0)      //NW
 	{
-		pcs_error = CalcIterationNODError(getNonLinearErrorMethod(),true,false); // JT
+		pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false); // JT
 #ifdef USE_MPI
 		if(myrank == 0)
 		{
@@ -4132,12 +4099,12 @@ double CRFProcess::Execute()
 
     // JT: Coupling error was wrong. Now ok.
     if(iter_nlin > 0){	// Just getting NL error
-	  pcs_error = CalcIterationNODError(getNonLinearErrorMethod(),true,false);     //OK4105//WW4117//JT
+	  pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false);     //OK4105//WW4117//JT
     }
     else{				// Getting NL and CPL error
-	  pcs_error = CalcIterationNODError(getCouplingErrorMethod(),true,true);		//JT2012
-      if(getNonLinearErrorMethod() != getCouplingErrorMethod())				//JT: If CPL error method is different, must call separately
-		pcs_error = CalcIterationNODError(getNonLinearErrorMethod(),true,false);   //JT2012 // get the NLS error. CPL was obtained before.
+	  pcs_error = CalcIterationNODError(m_num->getCouplingErrorMethod(),true,true);		//JT2012
+      if(m_num->getNonLinearErrorMethod() != m_num->getCouplingErrorMethod())				//JT: If CPL error method is different, must call separately
+		pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false);   //JT2012 // get the NLS error. CPL was obtained before.
     }
 
 	//----------------------------------------------------------------------
@@ -7690,7 +7657,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			break;
 		//
 		default:
-			WriteMessage("ERROR: Invalid error method for Iteration or Coupling Node error");
+			ScreenMessage("ERROR: Invalid error method for Iteration or Coupling Node error.\n");
 			return 0.0;
 		//
 		/* 
@@ -7900,7 +7867,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			// ---------------------------------------------------
 			//
 				damping = nl_theta;
-				switch(getNonLinearErrorMethod())
+				switch(m_num->getNonLinearErrorMethod())
 				{
 					// For most error methods
 					default:

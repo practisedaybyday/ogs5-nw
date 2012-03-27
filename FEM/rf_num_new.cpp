@@ -220,13 +220,6 @@ Programing:
 **************************************************************************/
 void CNumerics::NumConfigure(bool overall_coupling_exists)
 {
-   CRFProcess *m_pcs = PCSGet(this->pcs_type_name);
-   if(!m_pcs)
-	   m_pcs = PCSGetUnconfigured(this->pcs_type_name);
-   CNumerics *m_num = NULL;
-   //
-   // Make sure we have all necessary tolerances
-   //
    // Overall coupling check
    if(overall_coupling_exists && !cpl_error_specified){
 	   if(this->nls_method < 0){
@@ -239,7 +232,7 @@ void CNumerics::NumConfigure(bool overall_coupling_exists)
 		   std::cout<<"WARNING in NUMRead. Overall coupling requested, but ";
 		   std::cout<< this->pcs_type_name << " was not\n";
 		   std::cout<<"supplied with coupling tolerance. Adopting 10*non_linear_tolerance.\n";
-		   m_pcs->setCouplingErrorMethod(m_pcs->getNonLinearErrorMethod());
+		   setCouplingErrorMethod(getNonLinearErrorMethod());
 		   for(size_t i=0; i<DOF_NUMBER_MAX; i++){
 			   cpl_error_tolerance[i] = 10.0*nls_error_tolerance[i];
 		   }
@@ -255,39 +248,23 @@ void CNumerics::NumConfigure(bool overall_coupling_exists)
 	   exit(1);
    }
    //
-   // Check slave processes
-   for(size_t i=0; i<num_vector.size(); i++){
-	   if(num_vector[i] == this) continue;
-	   // Is the current process/num coupled from a master process?
-	   // Unfortunately, we cannot perform this error check for coupled variables. Variable arrays not yet configured.
-	   if(PCSGet(num_vector[i]->cpl_process) == m_pcs){
-		   if(!cpl_error_specified){
-			   std::cout<<"ERROR in NUMRead. Process coupling requested, but ";
-			   std::cout<< this->pcs_type_name << " was not\n";
-			   std::cout<<"supplied with coupling tolerance. See $COUPLING_CONTROL keyword to enter this.\n";
-			   exit(1);
-		   }
-	   }
-   }
-   //
    // We are ok. Now check the tolerances.
-   //
    if(this->nls_method < 0){ // linear solution
 	   if(cpl_error_specified){ // A coupling error was entered. Adopt this for error calculations.
 		   for(size_t i=0; i<DOF_NUMBER_MAX; i++){
 			   nls_error_tolerance[i] = cpl_error_tolerance[i];
 		   }
-		   m_pcs->setNonLinearErrorMethod(m_pcs->getCouplingErrorMethod());
+		   setNonLinearErrorMethod(getCouplingErrorMethod());
 	   }
 	   else{ // We have no error tolerances for non-linear or coupled simulations. Force some defaults.
-		   m_pcs->setNonLinearErrorMethod(FiniteElement::LMAX);
-		   m_pcs->setCouplingErrorMethod(FiniteElement::LMAX);
+		   setNonLinearErrorMethod(FiniteElement::LMAX);
+		   setCouplingErrorMethod(FiniteElement::LMAX);
 		   nls_error_tolerance[0] = cpl_error_tolerance[0] = 1.0;
 	   }
    }
    // Default CPL error method to NLS method. Just so error is not checked twice
    if(!cpl_error_specified){
-	   m_pcs->setCouplingErrorMethod(m_pcs->getNonLinearErrorMethod());
+	   setCouplingErrorMethod(getNonLinearErrorMethod());
    }
    //
    // Default all NLS tolerances to the previous DOF, if they were not entered.
@@ -314,7 +291,6 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 	string line_string;
 	std::string error_method_name;
 	std::string coupling_target;
-	CRFProcess* m_pcs = NULL; //JT
 	bool new_keyword = false;
 	bool new_subkeyword = false;
 	ios::pos_type position;
@@ -336,10 +312,6 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 		{
 			line.str(GetLineFromFile1(num_file));
 			line >> pcs_type_name;
-			m_pcs = PCSGet(pcs_type_name); // JT
-			if(!m_pcs){ // then this must be a variable entry
-				m_pcs = PCSGetUnconfigured(pcs_type_name);
-			}
 			line.clear();
 			continue;
 		}
@@ -377,8 +349,8 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line >> nls_max_iterations;
 			line >> nls_relaxation;
 			//
-			m_pcs->setNonLinearErrorMethod(FiniteElement::convertErrorMethod(error_method_name));
-			switch(m_pcs->getNonLinearErrorMethod())
+			setNonLinearErrorMethod(FiniteElement::convertErrorMethod(error_method_name));
+			switch(getNonLinearErrorMethod())
 			{
 				case FiniteElement::ENORM: // only 1 tolerance required
 					line >> nls_error_tolerance[0];
@@ -403,7 +375,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 					break;
 				//
 				default:
-					WriteMessage("ERROR in NUMRead. Invalid non-linear iteration error method selected.");
+					ScreenMessage("ERROR in NUMRead. Invalid non-linear iteration error method selected.\n");
 					exit(1);
 					break;
 			}
@@ -419,11 +391,9 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 		}
 		else if(line_string.find("$NON_LINEAR_SOLVER") != string::npos)
 		{
-			WriteMessage("----------------------------------------------------------");
-			WriteMessage("Using old $NON_LINEAR_SOLVER keyword. Conider switching to"); 
-			WriteMessage("$NON_LINEAR_ITERATIONS. You'll be glad you did. Also,");
-			WriteMessage("$NON_LINEAR_SOLVER will eventually be obsolete.");
-			WriteMessage("----------------------------------------------------------");
+			ScreenMessage(" Using old $NON_LINEAR_SOLVER keyword. Eventually this will become obsolete.\n");
+			ScreenMessage(" Conider switching to $NON_LINEAR_ITERATIONS for better results.\n");
+			ScreenMessage(" ---------------------------------------------------------------------------\n");
 			//
 			// JT:	in >> method_name 
 			//		in >> tolerance
@@ -450,7 +420,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 				line >> nls_error_tolerance[0];
 				error_method_name = "LMAX"; // JT: this is hardwired in old version
 			}
-			m_pcs->setNonLinearErrorMethod(FiniteElement::convertErrorMethod(error_method_name));
+			setNonLinearErrorMethod(FiniteElement::convertErrorMethod(error_method_name));
 			//
 			line >> nls_max_iterations;
 			line >> nls_relaxation;
@@ -479,8 +449,8 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 		// JT subkeyword found
 		if(line_string.find("$COUPLING_ITERATIONS") != string::npos)
 		{
-			WriteMessage("$COUPLING_ITERATIONS keyword obsolete.");
-			WriteMessage("Use $COUPLING_CONTROL and $COUPLED_PROCESS for process couplings.");
+			ScreenMessage("$COUPLING_ITERATIONS keyword obsolete.\n");
+			ScreenMessage("Use $COUPLING_CONTROL and $COUPLED_PROCESS for process couplings.\n");
 			exit(1);
 		}
 		//....................................................................
@@ -494,8 +464,8 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line >> error_method_name;
 			//
 			cpl_error_specified = true;
-			m_pcs->setCouplingErrorMethod(FiniteElement::convertErrorMethod(error_method_name));
-			switch(m_pcs->getCouplingErrorMethod())
+			setCouplingErrorMethod(FiniteElement::convertErrorMethod(error_method_name));
+			switch(getCouplingErrorMethod())
 			{
 				case FiniteElement::ENORM: // only 1 tolerance required
 					line >> cpl_error_tolerance[0];
@@ -516,13 +486,13 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 					break;
 				//
 				case FiniteElement::BNORM:
-					WriteMessage("ERROR in NUMRead. BNORM not configured for process couplings.");
-					WriteMessage("                  We suggest ENORM as a valid companion for NEWTON couplings.");
+					ScreenMessage("ERROR in NUMRead. BNORM not configured for process couplings.\n");
+					ScreenMessage("We suggest ENORM as a valid companion for NEWTON couplings.\n");
 					exit(1);
 					break;
 				//
 				default:
-					WriteMessage("ERROR in NUMRead. Invalid coupling error method selected.");
+					ScreenMessage("ERROR in NUMRead. Invalid coupling error method selected.\n");
 					exit(1);
 					break;
 			}
@@ -551,7 +521,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 				cpl_process  = coupling_target;
 			}
 			else{
-				WriteMessage("WARNING. $COUPLED_PROCESS keyword encountered, but a valid process OR primary variable was not found.");
+				ScreenMessage("WARNING. $COUPLED_PROCESS keyword encountered, but a valid process OR primary variable was not found.\n");
 				cpl_master_process = false;
 			}
 			//
