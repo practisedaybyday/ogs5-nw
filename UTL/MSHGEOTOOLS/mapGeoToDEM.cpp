@@ -172,9 +172,9 @@ int main (int argc, char* argv[])
 			{
 				in >> gml_name;
 
-				if (geo_name.substr(geo_name.length()-4, 4).compare(".gml") == 0)
+				if (gml_name.substr(gml_name.length()-4, 4).compare(".gml") == 0)
 					mapGeometry(gml_name, img_data);
-				else if (geo_name.substr(geo_name.length()-4, 4).compare(".stn") == 0)
+				else if (gml_name.substr(gml_name.length()-4, 4).compare(".stn") == 0)
 					mapStations(gml_name, img_data);
 				else
 					std::cout << "File extension for " << gml_name << " unknown." << std::endl;
