@@ -5,7 +5,7 @@
 
 #include <QApplication>
 #include "msh_mesh.h"
-#include "MeshIO\OGSMeshIO.h"
+#include "MeshIO/OGSMeshIO.h"
 #include "MshEditor.h"
 
 int main (int argc, char* argv[])

@@ -12,6 +12,9 @@
 
 #include <QApplication>
 
+#include <fstream>
+#include <iostream>
+
 float* img_data(NULL);	// pixel information
 double origin_x(0), origin_y(0), cellsize(0); // image origin + pixel size
 size_t width(0), height(0); // image dimensions
@@ -164,7 +167,7 @@ int main (int argc, char* argv[])
 		// map list of geometries to the same DEM
 		if (isList)
 		{
-			std::ifstream in(geo_name);
+			std::ifstream in(geo_name.c_str());
 			while (!in.eof())
 			{
 				in >> gml_name;
