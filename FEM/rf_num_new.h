@@ -9,6 +9,7 @@
 #define rf_num_new_INC
 
 #include "makros.h" // JT
+#include "FEMEnums.h"
 
 #define NUM_FILE_EXTENSION ".num"
 // C++ STL
@@ -17,7 +18,6 @@
 #include <string>
 #include <vector>
 
-namespace FiniteElement { enum ErrorMethod; } // JT
 //
 //----------------------------------------------------------------
 class CNumerics
