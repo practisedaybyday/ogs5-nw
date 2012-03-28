@@ -47,12 +47,13 @@ int XmlCndInterface::readFile(std::vector<FEMCondition*> &conditions, const QStr
 	QDomNodeList lists = docElement.childNodes();
 	for (int i = 0; i < lists.count(); i++)
 	{
-		if (lists.at(i).nodeName().compare("BoundaryConditions") == 0)
-			readConditions(lists.at(i), conditions, FEMCondition::BOUNDARY_CONDITION);
-		else if (lists.at(i).nodeName().compare("InitialConditions") == 0)
-			readConditions(lists.at(i), conditions, FEMCondition::INITIAL_CONDITION);
-		else if (lists.at(i).nodeName().compare("SourceTerms") == 0)
-			readConditions(lists.at(i), conditions, FEMCondition::SOURCE_TERM);
+		const QDomNode list_node (lists.at(i));
+		if (list_node.nodeName().compare("BoundaryConditions") == 0)
+			readConditions(list_node, conditions, FEMCondition::BOUNDARY_CONDITION);
+		else if (list_node.nodeName().compare("InitialConditions") == 0)
+			readConditions(list_node, conditions, FEMCondition::INITIAL_CONDITION);
+		else if (list_node.nodeName().compare("SourceTerms") == 0)
+			readConditions(list_node, conditions, FEMCondition::SOURCE_TERM);
 	}
 	if (!conditions.empty())
 		return 1;             //do something like _geoObjects->addStationVec(stations, stnName, color);
@@ -84,36 +85,40 @@ void XmlCndInterface::readConditions( const QDomNode &listRoot,
 			QDomNodeList condProperties = cond.childNodes();
 			for (int i = 0; i < condProperties.count(); i++)
 			{
+				const QDomNode prop_node (condProperties.at(i));
 				if (condProperties.at(i).nodeName().compare("Process") == 0)
 				{
-					QDomNodeList processProps = condProperties.at(i).childNodes();
+					QDomNodeList processProps = prop_node.childNodes();
 					for (int j = 0; j < processProps.count(); j++)
 					{
-						if (processProps.at(j).nodeName().compare("Type") == 0)
+						const QString prop_name(processProps.at(j).nodeName());
+						if (prop_name.compare("Type") == 0)
 							c->setProcessType(FiniteElement::convertProcessType(processProps.at(j).toElement().text().toStdString()));
-						else if (processProps.at(j).nodeName().compare("Variable") == 0)
+						else if (prop_name.compare("Variable") == 0)
 							c->setProcessPrimaryVariable(FiniteElement::convertPrimaryVariable(processProps.at(j).toElement().text().toStdString()));
 					}
 				}
-				else if (condProperties.at(i).nodeName().compare("Geometry") == 0)
+				else if (prop_node.nodeName().compare("Geometry") == 0)
 				{
-					QDomNodeList geoProps = condProperties.at(i).childNodes();
+					QDomNodeList geoProps = prop_node.childNodes();
 					for (int j = 0; j < geoProps.count(); j++)
 					{
-						if (geoProps.at(j).nodeName().compare("Type") == 0)
+						const QString prop_name(geoProps.at(j).nodeName());
+						if (prop_name.compare("Type") == 0)
 							c->setGeoType(GEOLIB::convertGeoType(geoProps.at(j).toElement().text().toStdString()));
-						else if (geoProps.at(j).nodeName().compare("Name") == 0)
+						else if (prop_name.compare("Name") == 0)
 							c->setGeoName(geoProps.at(j).toElement().text().toStdString());
 					}
 				}
-				else if (condProperties.at(i).nodeName().compare("Distribution") == 0)
+				else if (prop_node.nodeName().compare("Distribution") == 0)
 				{
-					QDomNodeList distProps = condProperties.at(i).childNodes();
+					QDomNodeList distProps = prop_node.childNodes();
 					for (int j = 0; j < distProps.count(); j++)
 					{
-						if (distProps.at(j).nodeName().compare("Type") == 0)
+						const QString prop_name(distProps.at(j).nodeName());
+						if (prop_name.compare("Type") == 0)
 							c->setProcessDistributionType(FiniteElement::convertDisType(distProps.at(j).toElement().text().toStdString()));
-						else if (distProps.at(j).nodeName().compare("Value") == 0)
+						else if (prop_name.compare("Value") == 0)
 						{
 							// insert direct
 							c->setDisValue(strtod(distProps.at(j).toElement().text().toStdString().c_str(), 0));

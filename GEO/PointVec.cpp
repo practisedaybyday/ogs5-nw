@@ -218,4 +218,14 @@ void PointVec::calculateAxisAlignedBoundingBox ()
 		aabb.update (*(*_data_vec)[i]);
 }
 
+std::vector<GEOLIB::Point*>* PointVec::deepcopy(const std::vector<GEOLIB::Point*> *pnt_vec)
+{
+	std::vector<GEOLIB::Point*>* new_points (new std::vector<GEOLIB::Point*>);
+
+	const size_t nPoints(pnt_vec->size());
+	for (size_t i = 0; i < nPoints; i++)
+		new_points->push_back(new GEOLIB::Point((*pnt_vec)[i]->getData()));
+	return new_points;
+}
+
 } // end namespace

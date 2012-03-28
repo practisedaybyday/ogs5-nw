@@ -37,9 +37,10 @@ public:
 	        const std::string &geo_name,
 			const std::string &file_path);
 
-private:
 	static void getDirectNodeValues(const std::string &filename,
 	                                std::vector< std::pair<size_t, double> > &nodes_values);
+
+private:
 	size_t _tim_type;
 };
 

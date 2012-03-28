@@ -60,8 +60,11 @@ public:
 	/// Returns the name of the associated geometry.
 	const std::string& getAssociatedGeometryName() const { return _associated_geometry; }
 
+	/// Convenience method for setting a single value specifying the distribution.
+	void setDisValue(double disValue) { _disValue.push_back(disValue); }
+
 	/// Sets a vector of values specifying the distribution.
-	void setDisValue(const std::vector<double> &disValue)
+	void setDisValues(const std::vector<double> &disValue)
 	{
 		for (size_t i = 0; i < disValue.size(); i++)
 			_disValue.push_back(disValue[i]);
@@ -69,10 +72,7 @@ public:
 
 	/// Sets a vector of values specifying the distribution.
 	/// The first value specifies the point id, the second the value for that point.
-	void setLinearDisValues(const std::vector< std::pair<size_t, double> > &dis_values);
-
-	/// Convenience method for setting a single value specifying the distribution.
-	void setDisValue(double disValue) { _disValue.push_back(disValue); }
+	void setDisValues(const std::vector< std::pair<size_t, double> > &dis_values);
 
 	/// Removes all distribution values 
 	void clearDisValues() { _disValue.resize(0); };

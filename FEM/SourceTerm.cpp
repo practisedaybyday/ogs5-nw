@@ -17,7 +17,7 @@ SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
 		this->setDisValue(st.getGeoNodeValue());
 	else if (this->getProcessDistributionType() == FiniteElement::LINEAR ||
 	         this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
-		this->setLinearDisValues(this->getDistributedPairs(st.getPointsWithDistribedST(), st.getDistribedST()));
+		this->setDisValues(this->getDistributedPairs(st.getPointsWithDistribedST(), st.getDistribedST()));
 	else
 		std::cout << "Error in SourceTerm() - Unknown Process Distribution Type \"" <<
 		FiniteElement::convertDisTypeToString(st.getProcessDistributionType()) <<
@@ -47,7 +47,7 @@ std::vector<FEMCondition*> SourceTerm::createDirectSourceTerms(
 			st->setGeoType(GEOLIB::INVALID);
 			st->setGeoName((*it)->fname);
 			st->setProcessDistributionType(FiniteElement::DIRECT);
-			st->setLinearDisValues(node_values);
+			st->setDisValues(node_values);
 			conditions.push_back(st);
 		}
 		else

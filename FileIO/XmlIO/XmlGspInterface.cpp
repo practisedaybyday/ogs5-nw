@@ -57,28 +57,33 @@ int XmlGspInterface::readFile(const QString &fileName)
 
 	for(int i = 0; i < fileList.count(); i++)
 	{
-		if (fileList.at(i).nodeName().compare("geo") == 0)
+		const QString file_node(fileList.at(i).nodeName());
+		if (file_node.compare("geo") == 0)
 		{
 			XmlGmlInterface gml(_project, schemaPath.toStdString() + "OpenGeoSysGLI.xsd");
-			QDomNodeList childList = fileList.at(i).childNodes();
+			const QDomNodeList childList = fileList.at(i).childNodes();
 			for(int j = 0; j < childList.count(); j++)
-				if (childList.at(j).nodeName().compare("file") == 0) {
+			{
+				const QDomNode child_node (childList.at(j));
+				if (child_node.nodeName().compare("file") == 0) 
+				{
 					std::cout << "path: " << path.toStdString() << "#" << std::endl;
-					std::cout << "file name: " << (childList.at(j).toElement().text()).toStdString() << "#" << std::endl;
-					gml.readFile(QString(path + childList.at(j).toElement().text()));
+					std::cout << "file name: " << (child_node.toElement().text()).toStdString() << "#" << std::endl;
+					gml.readFile(QString(path + child_node.toElement().text()));
 				}
+			}
 		}
-		else if (fileList.at(i).nodeName().compare("stn") == 0)
+		else if (file_node.compare("stn") == 0)
 		{
 			XmlStnInterface stn(_project, schemaPath.toStdString() + "OpenGeoSysSTN.xsd");
-			QDomNodeList childList = fileList.at(i).childNodes();
+			const QDomNodeList childList = fileList.at(i).childNodes();
 			for(int j = 0; j < childList.count(); j++)
 				if (childList.at(j).nodeName().compare("file") == 0)
 					stn.readFile(QString(path + childList.at(j).toElement().text()));
 		}
-		else if (fileList.at(i).nodeName().compare("msh") == 0)
+		else if (file_node.compare("msh") == 0)
 		{
-			std::string msh_name = path.toStdString() +
+			const std::string msh_name = path.toStdString() +
 			                       fileList.at(i).toElement().text().toStdString();
 			FileIO::OGSMeshIO meshIO;
 			MeshLib::CFEMesh* msh = meshIO.loadMeshFromFile(msh_name);

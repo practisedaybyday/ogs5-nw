@@ -58,18 +58,19 @@ int XmlGmlInterface::readFile(const QString &fileName)
 
 	for (int i = 0; i < geoTypes.count(); i++)
 	{
-		if (geoTypes.at(i).nodeName().compare("name") == 0)
-			gliName = geoTypes.at(i).toElement().text().toStdString();
-		else if (geoTypes.at(i).nodeName().compare("points") == 0)
+		const QDomNode type_node(geoTypes.at(i));
+		if (type_node.nodeName().compare("name") == 0)
+			gliName = type_node.toElement().text().toStdString();
+		else if (type_node.nodeName().compare("points") == 0)
 		{
-			readPoints(geoTypes.at(i), points, pnt_names);
+			readPoints(type_node, points, pnt_names);
 			geoObjects->addPointVec(points, gliName, pnt_names);
 		}
-		else if (geoTypes.at(i).nodeName().compare("polylines") == 0)
-			readPolylines(geoTypes.at(i), polylines, points,
+		else if (type_node.nodeName().compare("polylines") == 0)
+			readPolylines(type_node, polylines, points,
 			              geoObjects->getPointVecObj(gliName)->getIDMap(), ply_names);
-		else if (geoTypes.at(i).nodeName().compare("surfaces") == 0)
-			readSurfaces(geoTypes.at(i), surfaces, points,
+		else if (type_node.nodeName().compare("surfaces") == 0)
+			readSurfaces(type_node, surfaces, points,
 			             geoObjects->getPointVecObj(gliName)->getIDMap(), sfc_names);
 		else
 			std::cout << "Unknown XML-Node found in file." << std::endl;
