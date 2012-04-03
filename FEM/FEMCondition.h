@@ -66,8 +66,9 @@ public:
 	/// Sets a vector of values specifying the distribution.
 	void setDisValues(const std::vector<double> &disValue)
 	{
-		for (size_t i = 0; i < disValue.size(); i++)
-			_disValue.push_back(disValue[i]);
+		_disValue = disValue;
+		//for (size_t i = 0; i < disValue.size(); i++)
+		//	_disValue.push_back(disValue[i]);
 	}
 
 	/// Sets a vector of values specifying the distribution.

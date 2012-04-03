@@ -18,6 +18,8 @@ namespace MeshLib
 class CFEMesh;
 }
 
+class GridAdapter;
+
 /**
  * \brief A set of tools for manipulating existing meshes
  */
@@ -31,6 +33,8 @@ public:
 	                                         const std::vector<size_t> &nodes);
 
 	static const std::vector<GEOLIB::PointWithID*> getSurfaceNodes(const MeshLib::CFEMesh &mesh);
+
+	static MeshLib::CFEMesh* getMeshSurface(const MeshLib::CFEMesh &mesh);
 
 private:
 };

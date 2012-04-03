@@ -18,6 +18,10 @@ SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
 	else if (this->getProcessDistributionType() == FiniteElement::LINEAR ||
 	         this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
 		this->setDisValues(this->getDistributedPairs(st.getPointsWithDistribedST(), st.getDistribedST()));
+	else if (this->getProcessDistributionType() == FiniteElement::LINEAR)
+	{
+		this->_direct_file_name = st.fname;
+	}
 	else
 		std::cout << "Error in SourceTerm() - Unknown Process Distribution Type \"" <<
 		FiniteElement::convertDisTypeToString(st.getProcessDistributionType()) <<

@@ -10,6 +10,7 @@
 #include <QTextCodec>
 #include <QtXml/QDomDocument>
 
+#include <QStringList>
 namespace FileIO
 {
 
@@ -120,8 +121,17 @@ void XmlCndInterface::readConditions( const QDomNode &listRoot,
 							c->setProcessDistributionType(FiniteElement::convertDisType(distProps.at(j).toElement().text().toStdString()));
 						else if (prop_name.compare("Value") == 0)
 						{
-							// insert direct
-							c->setDisValue(strtod(distProps.at(j).toElement().text().toStdString().c_str(), 0));
+							QString text = distProps.at(j).toElement().text();
+							QStringList list = text.split(QRegExp("\\t"));
+							std::vector<double> disValues;
+							for (QStringList::iterator it=list.begin(); it!=list.end(); ++it)
+							{
+								std::string val (it->trimmed().toStdString());
+								if (!val.empty())
+									disValues.push_back(strtod(val.c_str(), 0));
+							}
+							c->setDisValues(disValues);
+							//c->setDisValue(strtod(distProps.at(j).toElement().text().toStdString().c_str(), 0));
 						}
 					}
 				}
@@ -241,6 +251,7 @@ void XmlCndInterface::writeCondition( QDomDocument doc, QDomElement &listTag, co
 	QDomElement disValueTag ( doc.createElement("Value") );
 	disTag.appendChild(disValueTag);
 	QDomText disValueText;
+	/*
 	if (cond->getProcessDistributionType() != FiniteElement::DIRECT)
 	{
 		double dis_value (cond->getDisValue()[0]); //TODO: do this correctly!
@@ -248,6 +259,22 @@ void XmlCndInterface::writeCondition( QDomDocument doc, QDomElement &listTag, co
 	}
 	else
 		disValueText = doc.createTextNode(QString::fromStdString(cond->getDirectFileName()));
+	*/
+	const std::vector<double> dis_values = cond->getDisValue();
+	const size_t nValues = dis_values.size();
+	std::stringstream ss;
+	if (nValues==1)
+		ss << dis_values[0];
+	else if ((nValues>1) && (nValues%2==0))
+	{
+		for (size_t i=0; i<nValues; i+=2)
+			ss << "\t" << dis_values[i] << "\t" << dis_values[i+1] << "\n";
+	}
+	else
+	{
+		std::cout << "Error in XmlCndInterface::writeCondition() - Inconsistent length of distribution value array." << std::endl;
+		ss << "-9999";
+	}
 	disValueTag.appendChild(disValueText);
 }
 
