@@ -34,10 +34,13 @@ public:
 	} Element;
 
 	/// Constructor using a FEM-Mesh Object as source
-	GridAdapter(const MeshLib::CFEMesh* mesh = NULL);
+	GridAdapter(const MeshLib::CFEMesh* mesh);
 
 	/// Constructor using a MSH-file as source
 	GridAdapter(const std::string &filename);
+
+	/// Copy Constructor
+	GridAdapter(const GridAdapter* grid = NULL);
 
 	~GridAdapter();
 

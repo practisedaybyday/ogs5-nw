@@ -94,6 +94,9 @@ public:
 	double getShortestPointDistance () const;
 	const GEOLIB::AABB& getAxisAlignedBoundingBox () const;
 
+	/// Creates a real copy of the point vector in memeory.
+	static std::vector<GEOLIB::Point*>* deepcopy(const std::vector<GEOLIB::Point*> *pnt_vec);
+
 //	/// Returns the name of an element given the element id.
 //	const std::string getNameOfElementByID (size_t id) const;
 

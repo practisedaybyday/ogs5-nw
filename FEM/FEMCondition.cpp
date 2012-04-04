@@ -51,7 +51,7 @@ std::string FEMCondition::condTypeToString(CondType type)
 		return "Unspecified";
 }
 
-void FEMCondition::setLinearDisValues(const std::vector< std::pair<size_t, double> > &dis_values)
+void FEMCondition::setDisValues(const std::vector< std::pair<size_t, double> > &dis_values)
 {
 	for (size_t i = 0; i < dis_values.size(); i++)
 	{

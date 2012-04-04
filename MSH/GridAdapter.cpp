@@ -26,6 +26,37 @@ GridAdapter::GridAdapter(const std::string &filename) :
 	readMeshFromFile(filename);
 }
 
+GridAdapter::GridAdapter(const GridAdapter* grid) :
+	_name(""), _nodes(new std::vector<GEOLIB::Point*>), _elems(new std::vector<Element*>),
+	_mesh(NULL)
+{
+	if (grid)
+	{
+		this->_name = grid->getName();
+	
+		const std::vector<GEOLIB::Point*> *nodes = grid->getNodes();
+		const size_t nNodes(nodes->size());
+		for (size_t i=0; i<nNodes; i++)
+		{
+			GEOLIB::Point* pnt (new GEOLIB::Point((*nodes)[i]->getData()));
+			this->addNode(pnt);
+		}
+
+		const std::vector<GridAdapter::Element*> *elements = grid->getElements();
+		const size_t nElems(elements->size());
+		for (size_t i=0; i<nElems; i++)
+		{
+			GridAdapter::Element* elem = new GridAdapter::Element;
+			elem->material = (*elements)[i]->material;
+			const size_t nElemNodes ((*elements)[i]->nodes.size());
+			for (size_t j=0; j<nElemNodes; j++)
+				elem->nodes.push_back((*elements)[i]->nodes[j]);
+			elem->type = (*elements)[i]->type;
+			this->addElement(elem);
+		}
+	}	
+}
+
 GridAdapter::~GridAdapter()
 {
 	size_t nNodes = _nodes->size();

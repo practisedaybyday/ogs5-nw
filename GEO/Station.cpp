@@ -225,6 +225,24 @@ int StationBorehole::addLayer(std::list<std::string> fields, StationBorehole* bo
 	return 1;
 }
 
+int StationBorehole::addStratigraphy(const std::vector<GEOLIB::Point*> &profile, const std::vector<std::string> soil_names)
+{
+	if (((profile.size()-1) == soil_names.size()) && (soil_names.size()>0))
+	{
+		this->_profilePntVec.push_back(profile[0]);
+		size_t nLayers = soil_names.size();
+		for (size_t i=0; i<nLayers; i++)
+		{
+			this->_profilePntVec.push_back(profile[i+1]);
+			this->_soilName.push_back(soil_names[i]);
+		}
+		return 1;
+	}
+	
+	std::cout << "Error in StationBorehole::addStratigraphy() - Length of parameter vectors does not match." << std::endl;
+	return 0;
+}
+
 int StationBorehole::addStratigraphies(const std::string &path, std::vector<Point*>* boreholes)
 {
 	std::vector<std::list<std::string> > data;
@@ -318,7 +336,7 @@ StationBorehole* StationBorehole::createStation(const std::string &name,
 	(*station)[1]   = y;
 	(*station)[2]   = z;
 	station->_depth = depth;
-	if (date.compare("0000-00-00"))
+	if (date.compare("0000-00-00") != 0)
 		station->_date  = xmlDate2double(date);
 	return station;
 }
