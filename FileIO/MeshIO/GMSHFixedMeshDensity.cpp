@@ -14,17 +14,17 @@ GMSHFixedMeshDensity::GMSHFixedMeshDensity(double mesh_density) :
 {
 }
 
-void GMSHFixedMeshDensity::init(std::vector<GEOLIB::Point*> const& vec)
+void GMSHFixedMeshDensity::init(std::vector<GEOLIB::Point const*> const& vec)
 {
 	// to avoid a warning here:
 	(void)(vec);
 }
 
-void GMSHFixedMeshDensity::getMeshDensityAtPoint(GEOLIB::Point const*const pnt, std::ostream& out) const
+double GMSHFixedMeshDensity::getMeshDensityAtPoint(GEOLIB::Point const*const pnt) const
 {
 	// to avoid a warning here:
 	const_cast<GEOLIB::Point const*>(pnt);
-	out << "," << _mesh_density;
+	return _mesh_density;
 }
 
 } // end namespace FileIO

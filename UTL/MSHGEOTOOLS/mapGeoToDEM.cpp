@@ -32,7 +32,7 @@ int main (int argc, char* argv[])
 
 	if (argc != 3)
 	{
-		std::cout << "Changes the z-Coordinates of the geometric objects in the geo-file according to the DEM." << std::endl;
+		std::cout << "Changes the z-Coordinates of the geometric objects in the gml-file according to the DEM." << std::endl;
 		std::cout << std::endl;
 		std::cout << "Usage: " << argv[0] << " <geo-file.gml> <DEM-file.asc>" << std::endl;
 		return -1;

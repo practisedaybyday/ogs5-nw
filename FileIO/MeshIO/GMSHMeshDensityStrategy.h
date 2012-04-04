@@ -17,13 +17,14 @@
 namespace FileIO
 {
 /**
- * virtual base class GMSHMeshDensityStrategy
+ * virtual base class GMSHMeshDensityStrategy for classes
+ * GMSHAdaptiveMeshDensity, GMSHFixedMeshDensity and GMSHNoMeshDensity
  */
 class GMSHMeshDensityStrategy
 {
 public:
-	virtual void init(std::vector<GEOLIB::Point*> const&) = 0;
-	virtual void getMeshDensityAtPoint(GEOLIB::Point const*const, std::ostream&) const = 0;
+	virtual void init(std::vector<GEOLIB::Point const*> const&) = 0;
+	virtual double getMeshDensityAtPoint(GEOLIB::Point const*const) const = 0;
 };
 
 } // end namespace

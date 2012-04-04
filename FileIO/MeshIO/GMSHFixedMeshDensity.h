@@ -16,8 +16,8 @@ class GMSHFixedMeshDensity : public GMSHMeshDensityStrategy
 {
 public:
 	GMSHFixedMeshDensity(double mesh_density);
-	void init(std::vector<GEOLIB::Point*> const& vec);
-	void getMeshDensityAtPoint(GEOLIB::Point const*const, std::ostream&) const;
+	void init(std::vector<GEOLIB::Point const*> const& vec);
+	double getMeshDensityAtPoint(GEOLIB::Point const*const) const;
 
 private:
 	double _mesh_density;

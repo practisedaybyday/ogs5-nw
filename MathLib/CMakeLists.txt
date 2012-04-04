@@ -28,7 +28,7 @@ set( SOURCES
 	LinearInterpolation.cpp
 	EarClippingTriangulation.cpp
 	# directory LinAlg
-	LinAlg/GaussAlgorithm.cpp
+#	LinAlg/GaussAlgorithm.cpp
 	LinAlg/TriangularSolve.cpp
 #	LinAlg/HouseholderAlgorithm.cpp
 )

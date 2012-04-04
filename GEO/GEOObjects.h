@@ -67,9 +67,9 @@ public:
 	                         std::string &name,
 	                         std::map<std::string, size_t>* pnt_names = NULL);
 
-	/** copies the pointers to the points in the vector to the PointVec with provided name.
-	 * the pointers are managed by the GEOObjects, i.e. GEOObjects will delete the Points at the
-	 * end of its scope
+	/** copies the pointers to the points in the given vector to the PointVec of the provided name.
+	 * The pointers are managed by the GEOObjects, i.e. GEOObjects will delete the Points at the
+	 * end of its scope.
 	 * \param points the vector with points
 	 * \param name the name of the internal PointVec
 	 * \param ids On return the vector holds the ids of the inserted points within the internal vector.
@@ -79,6 +79,16 @@ public:
 	 * */
 	virtual bool appendPointVec(const std::vector<Point*> &points,
 	                            std::string const &name, std::vector<size_t>* ids = NULL);
+
+	/**
+	 * append the point the the PointVec object with the name name
+	 * @param point (input) the point (exact the pointer to the point) that should be added
+	 * @param name (input) the name of the geometry the point should be added
+	 * @param id (output) the id of the point within the PointVec object will be set
+	 * @return true, if the point could be inserted (i.e. was not already contained in the vector)
+	 * else false  (the user have to delete the point be itself)
+	 */
+	bool appendPoint(Point* point, std::string const &name, size_t& id);
 
 	/**
 	 * Returns the point vector with the given name.
@@ -107,6 +117,7 @@ public:
 
 	/// Adds a vector of stations with the given name and colour to GEOObjects.
 	virtual void addStationVec(std::vector<Point*>* stations, std::string &name);
+
 	/// Filters a list of stations with the given name based on the criteria in PropertyBounds.
 	/// (See property system in Station class for more information.)
 	std::vector<Point*>* filterStationVec(const std::string &name,
@@ -214,11 +225,20 @@ public:
 	void getStationVectorNames(std::vector<std::string>& names) const;
 
 	/**
-	 * merge geometries
+	 * Method mergeGeometries merges the geometries that are given by the names in the vector.
+	 * Stations points are not included in the resulting merged geometry.
 	 * @param names the names of the geometries that are to be merged
 	 * @param merged_geo_name the name of the resulting geometry
 	 */
-	void mergeGeometries (std::vector<std::string> const & names, std::string &merged_geo_name);
+	void mergeGeometries(std::vector<std::string> const & names, std::string &merged_geo_name);
+
+	/**
+	 * Method mergeStations merges the stations that are given by the names in the vector.
+	 * Normal geometry points are not included in the resulting merged station vector.
+	 * @param station_names
+	 * @param merged_station_name
+	 */
+	void mergeStations(std::vector<std::string> const& station_names, std::string &merged_station_name);
 
 	/// Returns the geo object for a geometric item of the given name and type for the associated geometry.
 	const GEOLIB::GeoObject* getGEOObject(const std::string &geo_name,

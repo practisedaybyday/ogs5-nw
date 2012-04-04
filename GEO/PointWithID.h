@@ -27,6 +27,10 @@ public:
 		Point (coords), _id (id)
 	{}
 
+	PointWithID (GEOLIB::Point const& pnt, size_t id) :
+		Point (pnt), _id (id)
+	{}
+
 	size_t getID () const { return _id; }
 
 protected:

@@ -96,7 +96,7 @@ int main (int argc, char* argv[])
 	double pnt_scaling(0.5); // mesh density scaling on normal points
 	double station_scaling(0.05); // mesh density scaling on station points
 	size_t pnts_per_leaf(2); // points per quad tree leaf
-	FileIO::GMSHInterface gmsh_io(*geo, false, FileIO::GMSHInterface::AdaptiveMeshDensity, pnt_scaling, station_scaling, pnts_per_leaf,
+	FileIO::GMSHInterface gmsh_io(*geo, false, FileIO::GMSH::AdaptiveMeshDensity, pnt_scaling, station_scaling, pnts_per_leaf,
 					selected_geometries);
 	gmsh_io.writeToFile(gmsh_geo_fname);
 

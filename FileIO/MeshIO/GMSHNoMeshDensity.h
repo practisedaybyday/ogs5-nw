@@ -15,17 +15,17 @@ namespace FileIO {
 class GMSHNoMeshDensity: public FileIO::GMSHMeshDensityStrategy {
 public:
 	GMSHNoMeshDensity() {};
-	void init(std::vector<GEOLIB::Point*> const& vec)
+	void init(std::vector<GEOLIB::Point const*> const& vec)
 	{
 		// to avoid a warning here:
 		(void)(vec);
 	}
 
-	void getMeshDensityAtPoint(GEOLIB::Point const*const pnt, std::ostream& out) const
+	double getMeshDensityAtPoint(GEOLIB::Point const*const pnt) const
 	{
 		// to avoid a warning here:
 		(void)(pnt);
-		(void)(out);
+		return 0.0;
 	}
 };
 

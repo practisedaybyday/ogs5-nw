@@ -73,7 +73,7 @@ public:
 	 * @param pnt the point
 	 * @return If the point can be inserted the method returns true, else false.
 	 */
-	bool addPoint (POINT* pnt)
+	bool addPoint (POINT const* pnt)
 	{
 		if ((*pnt)[0] < _ll[0]) return false;
 		if ((*pnt)[0] > _ur[0]) return false;
@@ -176,7 +176,7 @@ public:
 
 	}
 
-	const std::vector<POINT*>& getPoints () const { return _pnts; }
+	const std::vector<POINT const*>& getPoints () const { return _pnts; }
 
 	void getSquarePoints (POINT& ll, POINT& ur) const
 	{
@@ -474,7 +474,7 @@ private:
 	 */
 	POINT _ur;
 	size_t _depth;
-	std::vector<POINT*> _pnts;
+	std::vector<POINT const*> _pnts;
 	bool _is_leaf;
 	/**
 	 * maximum number of points per leaf

@@ -50,7 +50,7 @@ TEST(GEO, TestGMSHFromGeo)
 //	FileIO::GMSHInterface gmsh_io(file_name);
 //	std::string result = gmsh_io.writeAllDataToGMSHInputAdaptive(*geo_objects, geo_names, max_number_of_points_in_quadtree_leaf, mesh_density_scaling_pnts, mesh_density_scaling_stations);
 
-	FileIO::GMSHInterface gmsh_io(*geo_objects, true, FileIO::GMSHInterface::AdaptiveMeshDensity, mesh_density_scaling_pnts, mesh_density_scaling_stations,
+	FileIO::GMSHInterface gmsh_io(*geo_objects, true, FileIO::GMSH::AdaptiveMeshDensity, mesh_density_scaling_pnts, mesh_density_scaling_stations,
 					max_number_of_points_in_quadtree_leaf, geo_names);
 	std::string result = gmsh_io.writeToString();
 

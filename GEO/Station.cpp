@@ -31,6 +31,15 @@ Station::Station(Point* coords, std::string name) :
 	addProperty("z", &getZ, &Station::setZ);
 }
 
+Station::Station(Station const& src) :
+	Point(src.getData()), _name(src._name), _type(src._type),
+	_station_value(src._station_value)
+{
+	addProperty("x", &getX, &Station::setX);
+	addProperty("y", &getY, &Station::setY);
+	addProperty("z", &getZ, &Station::setZ);
+}
+
 void Station::addProperty(std::string pname, double (* getFct)(void*), void (* set)(void*, double))
 {
 	STNProperty p;
