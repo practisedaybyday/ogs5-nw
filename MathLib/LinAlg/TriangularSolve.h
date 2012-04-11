@@ -24,8 +24,8 @@ void forwardSolve (const Matrix <FLOAT_TYPE> &L, FLOAT_TYPE* b)
 	size_t m (L.getNRows());
 
 	for (size_t r = 0; r < m; r++) {
-		FLOAT_TYPE t(L(r,0) * b[0]);
-		for (size_t c = 1; c < r; c++)
+		FLOAT_TYPE t(0.0);
+		for (size_t c = 0; c < r; c++)
 			t += L(r,c) * b[c];
 		b[r] = b[r] - t;
 	}

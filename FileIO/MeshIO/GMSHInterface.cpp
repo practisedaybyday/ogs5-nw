@@ -160,16 +160,18 @@ void GMSHInterface::writeGMSHInputFile(std::ostream& out)
 #endif
 	// *** get and merge data from _geo_objs
 	_gmsh_geo_name = "GMSHGeometry";
-	_gmsh_station_name = "GMSHStations";
 	_geo_objs.mergeGeometries(_selected_geometries, _gmsh_geo_name);
-	_geo_objs.mergeStations(_selected_geometries, _gmsh_station_name);
-	std::vector<GEOLIB::Point*> const* merged_pnts(_geo_objs.getPointVec(_gmsh_geo_name));
+	std::vector<GEOLIB::Point*> * merged_pnts(const_cast<std::vector<GEOLIB::Point*> *>(_geo_objs.getPointVec(_gmsh_geo_name)));
 	if (! merged_pnts) {
 		std::cerr << "[GMSHInterface::writeGMSHInputFile] did not found any points" << std::endl;
 		return;
+	} else {
+		const size_t n_pnts(merged_pnts->size());
+		for (size_t k(0); k<n_pnts; k++) {
+			(*((*merged_pnts)[k]))[2] = 0.0;
+		}
 	}
 	std::vector<GEOLIB::Polyline*> const* merged_plys(_geo_objs.getPolylineVec(_gmsh_geo_name));
-	std::vector<GEOLIB::Point*> const* merged_stations(_geo_objs.getStationVec(_gmsh_station_name));
 #ifndef NDEBUG
 	std::cerr << "ok" << std::endl;
 #endif
@@ -193,19 +195,24 @@ void GMSHInterface::writeGMSHInputFile(std::ostream& out)
 
 	// *** insert stations and polylines (except polygons) in the appropriate object of
 	//     class GMSHPolygonTree
-	if (merged_stations) {
-		const size_t n_stations(merged_stations->size());
-		for (size_t k(0); k < n_stations; k++) {
-			bool found(false);
-			for (std::list<GMSHPolygonTree*>::iterator it(_polygon_tree_list.begin());
-							it != _polygon_tree_list.end() && !found; it++) {
-				if ((*it)->insertStation((*merged_stations)[k])) {
-					found = true;
+	// *** insert stations
+	const size_t n_geo_names(_selected_geometries.size());
+	for (size_t j(0); j < n_geo_names; j++) {
+		const std::vector<GEOLIB::Point*>* stations (_geo_objs.getStationVec(_selected_geometries[j]));
+		if (stations) {
+			const size_t n_stations(stations->size());
+			for (size_t k(0); k < n_stations; k++) {
+				bool found(false);
+				for (std::list<GMSHPolygonTree*>::iterator it(_polygon_tree_list.begin());
+					it != _polygon_tree_list.end() && !found; it++) {
+					if ((*it)->insertStation((*stations)[k])) {
+						found = true;
+					}
 				}
 			}
 		}
 	}
-
+	// *** insert polylines
 	const size_t n_plys(merged_plys->size());
 	for (size_t k(0); k<n_plys; k++) {
 		if (! (*merged_plys)[k]->isClosed()) {
@@ -223,7 +230,11 @@ void GMSHInterface::writeGMSHInputFile(std::ostream& out)
 	}
 
 	// *** create GMSH data structures
-	_gmsh_pnts.resize(merged_pnts->size());
+	const size_t n_merged_pnts(merged_pnts->size());
+	_gmsh_pnts.resize(n_merged_pnts);
+	for (size_t k(0); k<n_merged_pnts; k++) {
+		_gmsh_pnts[k] = NULL;
+	}
 	for (std::list<GMSHPolygonTree*>::iterator it(_polygon_tree_list.begin());
 		it != _polygon_tree_list.end(); it++) {
 		(*it)->createGMSHPoints(_gmsh_pnts);
@@ -231,19 +242,18 @@ void GMSHInterface::writeGMSHInputFile(std::ostream& out)
 
 	// *** finally write data :-)
 	writePoints(out);
+	size_t pnt_id_offset(_gmsh_pnts.size());
 	for (std::list<GMSHPolygonTree*>::iterator it(_polygon_tree_list.begin());
 		it != _polygon_tree_list.end(); it++) {
 		(*it)->writeLineLoop(_n_lines, _n_plane_sfc, out);
 		(*it)->writeSubPolygonsAsLineConstraints(_n_lines, _n_plane_sfc-1, out);
 		(*it)->writeLineConstraints(_n_lines, _n_plane_sfc-1, out);
-//		(*it)->writeStations(_n_plane_sfc-1, out);
+		(*it)->writeStations(pnt_id_offset, _n_plane_sfc-1, out);
 	}
-//	writeLines(out);
 
 	_geo_objs.removeSurfaceVec(_gmsh_geo_name);
 	_geo_objs.removePolylineVec(_gmsh_geo_name);
 	_geo_objs.removePointVec(_gmsh_geo_name);
-	_geo_objs.removeStationVec(_gmsh_station_name);
 }
 
 //size_t GMSHInterface::createGMSHPointsInsideBoundingPolygon(
@@ -284,7 +294,9 @@ void GMSHInterface::writePoints(std::ostream& out) const
 {
 	const size_t n_gmsh_pnts(_gmsh_pnts.size());
 	for (size_t k(0); k<n_gmsh_pnts; k++) {
-		out << *(_gmsh_pnts[k]) << std::endl;
+		if (_gmsh_pnts[k]) {
+			out << *(_gmsh_pnts[k]) << std::endl;
+		}
 	}
 }
 

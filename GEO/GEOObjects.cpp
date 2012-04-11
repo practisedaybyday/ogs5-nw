@@ -474,27 +474,6 @@ void GEOObjects::mergeGeometries (std::vector<std::string> const & geo_names,
 	this->addSurfaceVec (merged_sfcs, merged_geo_name);
 }
 
-void GEOObjects::mergeStations(std::vector<std::string> const& station_names, std::string &merged_station_name)
-{
-	const size_t n_station_names(station_names.size());
-
-	// *** merge points
-	std::vector<GEOLIB::Point*>* merged_station_pnts (new std::vector<GEOLIB::Point*>);
-	for (size_t j(0); j < n_station_names; j++) {
-		const std::vector<GEOLIB::Point*>* stations (this->getStationVec(station_names[j]));
-		if (stations) {
-			if (dynamic_cast<GEOLIB::Station*>((*stations)[0]) != NULL) {
-				const size_t n_stations (stations->size());
-				for (size_t k(0); k < n_stations; k++)
-					merged_station_pnts->push_back (new GEOLIB::Station(*(dynamic_cast<GEOLIB::Station*>(((*stations)[k])))));
-			}
-		}
-	}
-	if (!merged_station_pnts->empty()) {
-		this->addStationVec (merged_station_pnts, merged_station_name);
-	}
-}
-
 const GEOLIB::GeoObject* GEOObjects::getGEOObject(const std::string &geo_name,
                                                             GEOLIB::GEOTYPE type,
                                                             const std::string &obj_name) const

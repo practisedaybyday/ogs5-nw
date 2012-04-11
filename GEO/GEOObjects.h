@@ -232,14 +232,6 @@ public:
 	 */
 	void mergeGeometries(std::vector<std::string> const & names, std::string &merged_geo_name);
 
-	/**
-	 * Method mergeStations merges the stations that are given by the names in the vector.
-	 * Normal geometry points are not included in the resulting merged station vector.
-	 * @param station_names
-	 * @param merged_station_name
-	 */
-	void mergeStations(std::vector<std::string> const& station_names, std::string &merged_station_name);
-
 	/// Returns the geo object for a geometric item of the given name and type for the associated geometry.
 	const GEOLIB::GeoObject* getGEOObject(const std::string &geo_name,
 	                                      GEOLIB::GEOTYPE type,
