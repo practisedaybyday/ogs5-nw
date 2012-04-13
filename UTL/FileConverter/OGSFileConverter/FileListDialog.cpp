@@ -5,8 +5,10 @@
 
 #include "FileListDialog.h"
 
+#include "StringTools.h"
 #include <QFileDialog>
 #include <QSettings>
+#include <QFileInfo>
 
 FileListDialog::FileListDialog(FileType input, FileType output, QWidget* parent)
 : _input_file_type(input), _output_file_type(output), QDialog(parent)
@@ -22,8 +24,7 @@ FileListDialog::~FileListDialog()
 void FileListDialog::on_addButton_pressed()
 {
 	QSettings settings("UFZ", "OpenGeoSys-5");
-	QString fileName = QFileDialog::getOpenFileName( this, 
-													 "Select data file to open",
+	QString fileName = QFileDialog::getOpenFileName( this, "Select data file to open",
 		                                             settings.value("lastOpenedOgsFileDirectory").toString(), 
 													 this->getFileTypeString(_input_file_type));
 	
@@ -49,13 +50,11 @@ void FileListDialog::on_browseButton_pressed()
 {
 	QString guess_name("");
 	if (!_allFiles.stringList().empty())
-	{
-		guess_name = _allFiles.stringList().at(0);
-		guess_name = guess_name.left(guess_name.length()-4);
-	}
+		guess_name = QString::fromStdString(getFileNameFromPath(_allFiles.stringList().at(0).toStdString()));
 	QSettings settings("UFZ", "OpenGeoSys-5");
-	QString fileName = QFileDialog::getSaveFileName( this, 
-													 "Save as",settings.value("lastOpenedOgsFileDirectory").toString().append(guess_name), 
+	QFileInfo fi(settings.value("lastOpenedOgsFileDirectory").toString());
+	QString fileName = QFileDialog::getSaveFileName( this, "Save as",
+													 fi.absolutePath().append("/").append(guess_name), 
 													 this->getFileTypeString(_output_file_type));
 	
 	if (!fileName.isEmpty())

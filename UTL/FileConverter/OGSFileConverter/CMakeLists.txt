@@ -6,12 +6,14 @@ project( OGSFileConverter )
 
 # Source files
 SET( SOURCES
+	ConversionTools.cpp
 	FileListDialog.cpp
 	OGSFileConverter.cpp
 )
 
 # Moc Header files
 SET( MOC_HEADERS
+	ConversionTools.h
 	FileListDialog.h
 	OGSFileConverter.h
 )
@@ -26,7 +28,6 @@ SET( UIS
 	FileList.ui
 	OGSFileConverter.ui
 )
-
 
 # Run Qts user interface compiler uic on .ui files
 QT4_WRAP_UI( UI_HEADERS ${UIS} )

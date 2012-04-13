@@ -337,7 +337,9 @@ ios::pos_type CInitialCondition::Read(std::ifstream* ic_file,
 					std::cerr <<
 					"error in CInitialCondition::Read: point name \"" <<
 					geo_name << "\" not found!" << std::endl;
+#ifndef OGS_USE_QT	//KR
 					exit (1);
+#endif
 				}
 				setGeoType (GEOLIB::POINT);
 				setGeoObj (pnt);
@@ -356,7 +358,9 @@ ios::pos_type CInitialCondition::Read(std::ifstream* ic_file,
 					std::cerr <<
 					"error in CInitialCondition::Read: polyline name \"" <<
 					geo_name << "\" not found!" << std::endl;
+#ifndef OGS_USE_QT	//KR
 					exit (1);
+#endif
 				}
 				setGeoType (GEOLIB::POLYLINE);
 				setGeoObj (ply);

@@ -5,16 +5,14 @@
 
 #include "OGSFileConverter.h"
 #include "FileListDialog.h"
+#include "ConversionTools.h"
 #include "OGSError.h"
-
-#include <QFileDialog>
-#include <QFileInfo>
-#include <QSettings>
 
 // conversion includes
 #include "ProjectData.h"
 #include "GEOObjects.h"
 #include "OGSIOVer4.h"
+#include "XmlIO/XmlCndInterface.h"
 #include "XmlIO/XmlGmlInterface.h"
 #include "StringTools.h"
 
@@ -84,12 +82,36 @@ void OGSFileConverter::convertGLI2GML(const QStringList input, const QString out
 
 void OGSFileConverter::convertCND2BC(const QStringList input, const QString output)
 {
+	ProjectData project;
+	FileFinder fileFinder = createFileFinder();
+	std::string schemaName(fileFinder.getPath("OpenGeoSysGLI.xsd"));
+	FileIO::XmlCndInterface xml(&project, schemaName);
+
+	std::vector<FEMCondition*> conditions;
+
+	for (QStringList::const_iterator it=input.begin(); it!=input.end(); ++it)
+		xml.readFile(conditions, *it);
+
+	//now write file based on extension (bc, ic, st) and write only conditions matching that type
 	OGSError::box("Not yet implemented");
 }
 
 void OGSFileConverter::convertBC2CND(const QStringList input, const QString output)
 {
-	OGSError::box("Not yet implemented");
+	ProjectData project;
+	std::vector<FEMCondition*> conditions;
+	for (QStringList::const_iterator it=input.begin(); it!=input.end(); ++it)
+		ConversionTools::getFEMConditionsFromASCIIFile(*it, conditions);
+
+	if (!conditions.empty())
+	{
+		project.addConditions(conditions);
+		FileFinder fileFinder = createFileFinder();
+		std::string schemaName(fileFinder.getPath("OpenGeoSysCND.xsd"));
+		FileIO::XmlCndInterface xml(&project, schemaName);
+		xml.writeToFile(output.toStdString());
+	}
+	OGSError::box("File conversion finished");
 }
 
 FileFinder OGSFileConverter::createFileFinder()

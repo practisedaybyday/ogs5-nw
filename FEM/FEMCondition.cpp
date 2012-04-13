@@ -67,7 +67,7 @@ std::vector< std::pair<size_t, double> > FEMCondition::getDistributedPairs(std::
 		size_t nValues (point_ids.size());
 		std::vector< std::pair<size_t, double> > dis_values(nValues);
 		for (size_t i=0; i<nValues; i++)
-			dis_values.push_back( std::pair<size_t, double>(point_ids[i],point_values[i]) );
+			dis_values[i] = std::pair<size_t, double>(point_ids[i],point_values[i]);
 		return dis_values;
 	}
 	std::cout << "Error in SourceTerm() - size of linear distribution arrays doesn't match..." << std::endl;
