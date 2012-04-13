@@ -23,14 +23,14 @@
       <item>
        <widget class="QPushButton" name="gml2gliButton">
         <property name="text">
-         <string>XML Geometry (GML) to GLI</string>
+         <string>XML Geometry to ASCII Geometry</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="gli2gmlButton">
         <property name="text">
-         <string>GLI to GML</string>
+         <string>ASCII Geometry to XML Geometry</string>
         </property>
        </widget>
       </item>
@@ -64,16 +64,16 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
-       <widget class="QPushButton" name="bc2cndButton">
+       <widget class="QPushButton" name="cnd2bcButton">
         <property name="text">
-         <string>ASCII-Conditions to XML</string>
+         <string>XML to ASCII-Conditions</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="cnd2bcButton">
+       <widget class="QPushButton" name="bc2cndButton">
         <property name="text">
-         <string>XML to ASCII-Conditions</string>
+         <string>ASCII-Conditions to XML</string>
         </property>
        </widget>
       </item>

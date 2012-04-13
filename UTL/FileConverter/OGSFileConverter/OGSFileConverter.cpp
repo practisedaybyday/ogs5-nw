@@ -8,6 +8,8 @@
 #include "ConversionTools.h"
 #include "OGSError.h"
 
+#include <QFileInfo>
+
 // conversion includes
 #include "ProjectData.h"
 #include "GEOObjects.h"
@@ -15,6 +17,14 @@
 #include "XmlIO/XmlCndInterface.h"
 #include "XmlIO/XmlGmlInterface.h"
 #include "StringTools.h"
+
+// old condition objects
+#include "BoundaryCondition.h"
+#include "InitialCondition.h"
+#include "SourceTerm.h"
+#include "rf_bc_new.h"
+#include "rf_ic_new.h"
+#include "rf_st_new.h"
 
 OGSFileConverter::OGSFileConverter(QWidget* parent)
 	: QDialog(parent)
@@ -83,8 +93,17 @@ void OGSFileConverter::convertGLI2GML(const QStringList input, const QString out
 void OGSFileConverter::convertCND2BC(const QStringList input, const QString output)
 {
 	ProjectData project;
+	GEOLIB::GEOObjects* geo_objects = new GEOLIB::GEOObjects;
+	project.setGEOObjects(geo_objects);
+
+	// HACK for enabling conversion of files without loading the associated geometry
+	std::vector<GEOLIB::Point*> *fake_geo = new std::vector<GEOLIB::Point*>;
+	fake_geo->push_back(new GEOLIB::Point(0,0,0));
+	std::string fake_name("conversionTestRun#1");
+	geo_objects->addPointVec(fake_geo, fake_name);
+
 	FileFinder fileFinder = createFileFinder();
-	std::string schemaName(fileFinder.getPath("OpenGeoSysGLI.xsd"));
+	std::string schemaName(fileFinder.getPath("OpenGeoSysCond.xsd"));
 	FileIO::XmlCndInterface xml(&project, schemaName);
 
 	std::vector<FEMCondition*> conditions;
@@ -92,8 +111,36 @@ void OGSFileConverter::convertCND2BC(const QStringList input, const QString outp
 	for (QStringList::const_iterator it=input.begin(); it!=input.end(); ++it)
 		xml.readFile(conditions, *it);
 
-	//now write file based on extension (bc, ic, st) and write only conditions matching that type
-	OGSError::box("Not yet implemented");
+	if (!conditions.empty())
+	{
+		project.addConditions(conditions);
+		QFileInfo fi(output);
+		FEMCondition::CondType type = FEMCondition::UNSPECIFIED;
+		if (fi.suffix().compare("bc") == 0)      type = FEMCondition::BOUNDARY_CONDITION;
+		else if (fi.suffix().compare("ic") == 0) type = FEMCondition::INITIAL_CONDITION;
+		else if (fi.suffix().compare("st") == 0) type = FEMCondition::SOURCE_TERM;
+
+		size_t nConds(conditions.size());
+		for (size_t i=0; i<nConds; i++)
+		{
+			if (conditions[i]->getCondType() == type)
+			{
+				if (type == FEMCondition::BOUNDARY_CONDITION)
+					bc_list.push_back(new CBoundaryCondition(static_cast<BoundaryCondition*>(conditions[i])));
+				else if (type == FEMCondition::INITIAL_CONDITION)
+					ic_vector.push_back(new CInitialCondition(static_cast<InitialCondition*>(conditions[i])));
+				else if (type == FEMCondition::SOURCE_TERM)
+					st_vector.push_back(new CSourceTerm(static_cast<SourceTerm*>(conditions[i])));
+			}
+		}
+		if (type == FEMCondition::BOUNDARY_CONDITION)
+			BCWrite(output.toStdString());
+		else if (type == FEMCondition::INITIAL_CONDITION)
+			ICWrite(output.toStdString());
+		else if (type == FEMCondition::SOURCE_TERM)
+			STWrite(output.toStdString());
+	}
+	OGSError::box("File conversion finished");
 }
 
 void OGSFileConverter::convertBC2CND(const QStringList input, const QString output)
@@ -107,7 +154,7 @@ void OGSFileConverter::convertBC2CND(const QStringList input, const QString outp
 	{
 		project.addConditions(conditions);
 		FileFinder fileFinder = createFileFinder();
-		std::string schemaName(fileFinder.getPath("OpenGeoSysCND.xsd"));
+		std::string schemaName(fileFinder.getPath("OpenGeoSysCond.xsd"));
 		FileIO::XmlCndInterface xml(&project, schemaName);
 		xml.writeToFile(output.toStdString());
 	}
