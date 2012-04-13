@@ -8017,7 +8017,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 
 			// CHECK FOR TIME STEP FAILURE
 			// ---------------------------------------------------
-			if(Tim && Tim->isDynamicTimeFailureSuggested(this)){
+			if(Tim->isDynamicTimeFailureSuggested(this)){
 				  accepted = false;
 				  Tim->last_dt_accepted = false;
 				  is_converged = true;
@@ -11541,11 +11541,8 @@ CRFProcess* PCSGetMass(size_t component_number)
 					l = j + ii * g_nnodes;
 					x0 = u_n[l];
 					x1 = GetNodeValue(k,nidx1);
-					err +=
-					        pow( (x1 -
-					              u_n0[l]) / (Atol + Rtol * max(fabs(x0),fabs(
-					                                                    x1))),
-					             2);
+					//err += pow( (x1 - u_n0[l]) / (Atol + Rtol * max(fabs(x0),fabs(x1))), 2);
+					err += pow( (x1 - GetNodeValue(k,nidx1-1)) / (Atol + Rtol * max(fabs(x0),fabs(x1))), 2);
 				}
 		}
 		err = sqrt(err / (double)size_x);

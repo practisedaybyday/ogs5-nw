@@ -2197,6 +2197,8 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 		//
 		case 0: // CURVE
 			kr = GetCurveValue((int)perm_saturation_value[phase],0,sl,&gueltig);
+			if(kr < minimum_relative_permeability) 
+				kr = minimum_relative_permeability;
 			break;
 		//
 		case 1: // CONSTANT VALUE
@@ -4643,31 +4645,29 @@ double CMediumProperties::SaturationCapillaryPressureFunction(const double capil
 **************************************************************************/
 double CMediumProperties::SaturationPressureDependency(const double capillary_pressure)
 {
-	double dsdp,v1,v2,pc,pb,slr,slm,m,dpc,ds;
+	double dsdp,v1,v2,pc,pb,slr,slm,m,dpc,ds,dpc2;
 	pc = capillary_pressure;
 	//
 	switch(capillary_pressure_model)
 	{
 		default:  // Iterative approximation
-			// JT:  So, this is better than before.  But still not a very good approximation.  But this is
-			// really unnecessary... just make sure the derivative of your function is input as a case below.
-			dpc = 1.0;
-			if(pc - dpc/10.0 < 0.0){
-				v1 = SaturationCapillaryPressureFunction(pc);
-				do{ dpc /= 10.0;
+			if(pc < 0.0) pc = 0.0;
+			//
+			dpc = 100.0;
+			do{ dpc /= 10.0;
+				dpc2 = dpc/2.0;
+				if(pc - dpc2 < 0.0){
 					v2 = SaturationCapillaryPressureFunction(pc + dpc);
-					ds = v2-v1;
+					v1 = SaturationCapillaryPressureFunction(pc);
 				}
-				while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
-			}
-			else{
-				do{ dpc /= 10.0;
-					v1 = SaturationCapillaryPressureFunction(pc - dpc/2.0);
-					v2 = SaturationCapillaryPressureFunction(pc + dpc/2.0);
-					ds = v2-v1;
+				else{
+					v2 = SaturationCapillaryPressureFunction(pc + dpc2);
+					v1 = SaturationCapillaryPressureFunction(pc - dpc2);
 				}
-				while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
+				ds = v2-v1;
 			}
+			while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
+			//
 			dsdp = ds/dpc;
 			break;
 
@@ -4684,7 +4684,7 @@ double CMediumProperties::SaturationPressureDependency(const double capillary_pr
 			slr = capillary_pressure_values[1];
 			slm = capillary_pressure_values[2];
 			m   = capillary_pressure_values[3];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
-			pc  = MRange(DBL_EPSILON,pc,1.0/DBL_EPSILON);
+			pc  = MRange(FLT_EPSILON,pc,capillary_pressure_values[4]);
 			//
 			// Convert alpha to entry pressure?
 			if(entry_pressure_conversion)
@@ -4697,11 +4697,7 @@ double CMediumProperties::SaturationPressureDependency(const double capillary_pr
 
 		case 6: //  Brooks & Corey. 10/2010 JT
 			pb = capillary_pressure_values[0];
-			if(pc<pb){
-				dsdp = 0.0;
-				break;
-			}
-			//
+			pc  = MRange(FLT_EPSILON,pc,capillary_pressure_values[4]);
 			slr = capillary_pressure_values[1];
 			slm = capillary_pressure_values[2];
 			m   = capillary_pressure_values[3];		// always >= 1.0
@@ -4724,32 +4720,29 @@ double CMediumProperties::SaturationPressureDependency(const double capillary_pr
 **************************************************************************/
 double CMediumProperties::PressureSaturationDependency(const double wetting_saturation)
 {
-	double dpds,v1,v2,pc,pb,sl,se,slr,slm,m,dpc,ds;
+	double dpds,v1,v2,pb,sl,slr,slm,m,dpc,ds,ds2;
 	sl = wetting_saturation;
 	//
 	switch(capillary_pressure_model)
 	{
 		default:  // Iterative approximation
-			// JT:  So, this is better than before.  But still not a very good approximation.  But this is
-			// really unnecessary... just make sure the derivative of your function is input as a case below.
-			if(sl<0.0) sl=0.0;
-			ds = 0.01;
-			if(sl - ds/10.0 < 0.0){
-				v1 = CapillaryPressureFunction(sl);
-				do{ ds /= 10.0;
+			sl = MRange(0.0,sl,1.0);
+			//
+			ds = 0.1;
+			do{ ds /= 10.0;
+				ds2 = ds/2.0;
+				if(sl - ds2 < 0.0){
 					v2 = CapillaryPressureFunction(sl + ds);
-					dpc = v2-v1;
+					v1 = CapillaryPressureFunction(sl);
 				}
-				while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
-			}
-			else{
-				do{ ds /= 10.0;
-					v1 = CapillaryPressureFunction(sl - ds/2.0);
-					v2 = CapillaryPressureFunction(sl + ds/2.0);
-					dpc = v2-v1;
+				else{
+					v2 = CapillaryPressureFunction(sl + ds2);
+					v1 = CapillaryPressureFunction(sl - ds2);
 				}
-				while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
+				dpc = v2-v1;
 			}
+			while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
+			//
 			dpds = dpc/ds;
 			break;
 
@@ -4771,15 +4764,6 @@ double CMediumProperties::PressureSaturationDependency(const double wetting_satu
 			if(entry_pressure_conversion)
 				pb = (mfp_vector[0]->Density()*9.81)/pb;
 			//
-			// Respect maximum pc bound, if it exists...
-			sl = MRange(slr, sl, slm);
-			se = (sl-slr)/(slm-slr);
-			pc = pb * pow(pow(se,(-1.0/m)) - 1.0, 1.0-m);
-			if(pc > capillary_pressure_values[4]){
-				dpds = 0.0;
-				break;
-			}
-			//
 			// Get dPc/dSw
 			sl = MRange(slr+DBL_EPSILON, sl, slm-DBL_EPSILON); // (infinity also occurs at sl=slmax for van Genuchten)
 			v1 = pow(((sl-slr) / (slm-slr)),(-1.0/m));
@@ -4793,15 +4777,6 @@ double CMediumProperties::PressureSaturationDependency(const double wetting_satu
 			slr = capillary_pressure_values[1];
 			slm = capillary_pressure_values[2];
 			m   = capillary_pressure_values[3];			// always >= 1.0
-			//
-			// Respect maximum pc bound, if it exists...
-			sl = MRange(slr, sl, slm);
-			se = (sl-slr)/(slm-slr);
-			pc = pb*pow(se,-1.0/m);
-			if(pc > capillary_pressure_values[4]){
-				dpds = 0.0;
-				break;
-			}
 			//
 			// Get dPc/dSw
 			sl = MRange(slr+DBL_EPSILON, sl, slm); // No upper bound needed for B&C
