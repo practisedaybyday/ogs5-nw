@@ -322,29 +322,32 @@ int XmlGmlInterface::write(std::ostream& stream)
 
 		if (surfaces)
 		{
-			QDomElement sfcListTag = doc.createElement("surfaces");
-			root.appendChild(sfcListTag);
-			nSurfaces = surfaces->size();
-			for (size_t i = 0; i < nSurfaces; i++)
+			if (! surfaces->empty())
 			{
-				QDomElement surfaceTag = doc.createElement("surface");
-				surfaceTag.setAttribute("id", QString::number(i));
-
-				std::string sfc_name("");
-				if (sfc_vec->getNameOfElementByID(i, sfc_name))
-					surfaceTag.setAttribute("name", QString::fromStdString(sfc_name));
-
-				sfcListTag.appendChild(surfaceTag);
-
-				// writing the elements compromising the surface
-				size_t nElements = ((*surfaces)[i])->getNTriangles();
-				for (size_t j = 0; j < nElements; j++)
+				QDomElement sfcListTag = doc.createElement("surfaces");
+				root.appendChild(sfcListTag);
+				nSurfaces = surfaces->size();
+				for (size_t i = 0; i < nSurfaces; i++)
 				{
-					QDomElement elementTag = doc.createElement("element");
-					elementTag.setAttribute("p1", QString::number((*(*(*surfaces)[i])[j])[0]));
-					elementTag.setAttribute("p2", QString::number((*(*(*surfaces)[i])[j])[1]));
-					elementTag.setAttribute("p3", QString::number((*(*(*surfaces)[i])[j])[2]));
-					surfaceTag.appendChild(elementTag);
+					QDomElement surfaceTag = doc.createElement("surface");
+					surfaceTag.setAttribute("id", QString::number(i));
+
+					std::string sfc_name("");
+					if (sfc_vec->getNameOfElementByID(i, sfc_name))
+						surfaceTag.setAttribute("name", QString::fromStdString(sfc_name));
+
+					sfcListTag.appendChild(surfaceTag);
+
+					// writing the elements compromising the surface
+					size_t nElements = ((*surfaces)[i])->getNTriangles();
+					for (size_t j = 0; j < nElements; j++)
+					{
+						QDomElement elementTag = doc.createElement("element");
+						elementTag.setAttribute("p1", QString::number((*(*(*surfaces)[i])[j])[0]));
+						elementTag.setAttribute("p2", QString::number((*(*(*surfaces)[i])[j])[1]));
+						elementTag.setAttribute("p3", QString::number((*(*(*surfaces)[i])[j])[2]));
+						surfaceTag.appendChild(elementTag);
+					}
 				}
 			}
 		}

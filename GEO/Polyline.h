@@ -98,6 +98,14 @@ public:
 	bool isClosed() const;
 
 	/**
+	 * Method tests if the given id of a point (within the vector of points the polyline is
+	 * based on) is inside the polyline.
+	 * @param pnt_id the id of the point
+	 * @return true if the point is part of the polyline, else false
+	 */
+	bool isPointIDInPolyline(size_t pnt_id) const;
+
+	/**
 	 * returns the index of the i-th polyline point
 	 * in the point vector
 	 */

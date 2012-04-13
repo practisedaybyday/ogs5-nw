@@ -62,10 +62,12 @@ public:
 	 * @param points vector of pointers to points
 	 * @param name the project name
 	 * @param pnt_names vector of the names corresponding to the points
+	 * @param eps relative tolerance value for testing of point uniqueness
 	 */
 	virtual void addPointVec(std::vector<Point*>* points,
 	                         std::string &name,
-	                         std::map<std::string, size_t>* pnt_names = NULL);
+	                         std::map<std::string, size_t>* pnt_names = NULL,
+	                         double eps = sqrt(std::numeric_limits<double>::min()));
 
 	/** copies the pointers to the points in the given vector to the PointVec of the provided name.
 	 * The pointers are managed by the GEOObjects, i.e. GEOObjects will delete the Points at the
@@ -86,7 +88,7 @@ public:
 	 * @param name (input) the name of the geometry the point should be added
 	 * @param id (output) the id of the point within the PointVec object will be set
 	 * @return true, if the point could be inserted (i.e. was not already contained in the vector)
-	 * else false  (the user have to delete the point be itself)
+	 * else false (the user have to delete the point itself)
 	 */
 	bool appendPoint(Point* point, std::string const &name, size_t& id);
 

@@ -123,6 +123,20 @@ bool Polyline::isClosed() const
 		return false;
 }
 
+bool Polyline::isPointIDInPolyline(size_t pnt_id) const
+{
+	const size_t n_ply_pnt_ids(_ply_pnt_ids.size());
+	size_t k(0);
+	while (k<n_ply_pnt_ids && _ply_pnt_ids[k] != pnt_id) {
+		k++;
+	}
+
+	if (k == n_ply_pnt_ids) {
+		return false;
+	}
+	return true;
+}
+
 size_t Polyline::getPointID(size_t i) const
 {
 	assert(i < _ply_pnt_ids.size());

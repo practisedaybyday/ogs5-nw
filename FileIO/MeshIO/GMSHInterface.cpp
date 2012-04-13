@@ -251,9 +251,9 @@ void GMSHInterface::writeGMSHInputFile(std::ostream& out)
 		(*it)->writeStations(pnt_id_offset, _n_plane_sfc-1, out);
 	}
 
-	_geo_objs.removeSurfaceVec(_gmsh_geo_name);
-	_geo_objs.removePolylineVec(_gmsh_geo_name);
-	_geo_objs.removePointVec(_gmsh_geo_name);
+//	_geo_objs.removeSurfaceVec(_gmsh_geo_name);
+//	_geo_objs.removePolylineVec(_gmsh_geo_name);
+//	_geo_objs.removePointVec(_gmsh_geo_name);
 }
 
 //size_t GMSHInterface::createGMSHPointsInsideBoundingPolygon(

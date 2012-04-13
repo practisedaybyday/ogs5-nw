@@ -31,10 +31,11 @@ GEOObjects::~GEOObjects()
 
 void GEOObjects::addPointVec(std::vector<Point*>* points,
                              std::string &name,
-                             std::map<std::string, size_t>* pnt_id_name_map)
+                             std::map<std::string, size_t>* pnt_id_name_map,
+                             double eps)
 {
 	isUniquePointVecName(name);
-	_pnt_vecs.push_back(new PointVec(name, points, pnt_id_name_map));
+	_pnt_vecs.push_back(new PointVec(name, points, pnt_id_name_map, PointVec::POINT, eps));
 }
 
 bool GEOObjects::appendPointVec(std::vector<Point*> const& new_points,
@@ -64,8 +65,13 @@ bool GEOObjects::appendPoint(Point* point, std::string const &name, size_t& id)
 	int idx = this->exists(name);
 
 	if (idx>=0) {
+		const size_t size_previous (_pnt_vecs[idx]->size());
 		id = _pnt_vecs[idx]->push_back (point);
-		return true;
+		if (size_previous < _pnt_vecs[idx]->size()) {
+			return true;
+		} else {
+			return false;
+		}
 	} else {
 		return false;
 	}
@@ -419,15 +425,14 @@ void GEOObjects::mergeGeometries (std::vector<std::string> const & geo_names,
 			if (dynamic_cast<GEOLIB::Station*>((*pnts)[0]) == NULL) {
 				n_pnts = pnts->size();
 				for (size_t k(0); k < n_pnts; k++)
-					merged_points->push_back (new GEOLIB::Point (((*pnts)[k])->
-					                                             getData()));
+					merged_points->push_back (new GEOLIB::Point (((*pnts)[k])->getData()));
 			}
 			if (n_geo_names - 1 > j) {
 				pnt_offsets[j + 1] = n_pnts + pnt_offsets[j];
 			}
 		}
 	}
-	this->addPointVec (merged_points, merged_geo_name);
+	addPointVec (merged_points, merged_geo_name, NULL, 1e-6);
 	std::vector<size_t> const& id_map (this->getPointVecObj(merged_geo_name)->getIDMap ());
 
 	// *** merge polylines
