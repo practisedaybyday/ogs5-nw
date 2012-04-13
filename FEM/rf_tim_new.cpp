@@ -796,6 +796,13 @@ CTimeDiscretization::CTimeDiscretization(const CTimeDiscretization& a_tim, std::
 	tim_discrete = a_tim.tim_discrete;
 	nonlinear_iteration_error = a_tim.nonlinear_iteration_error;
 	//
+	time_independence = a_tim.time_independence;
+	minimum_dt_reached = a_tim.minimum_dt_reached;
+	time_independence = false;
+	time_active = true;
+	last_active_time = 0.0;
+	next_active_time = 0.0;				  //JT
+	//
 	time_step_vector.clear();
 	time_adapt_tim_vector.clear();
 	time_adapt_coe_vector.clear();

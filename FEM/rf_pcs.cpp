@@ -701,9 +701,20 @@ void CRFProcess::Create()
 	if (!Tim)
 	{
 		//21.08.2008. WW
+		/* JT->WW: It doesn't seem like a good idea to give a non-existent Tim the properties of some specified [0] vector. 
+		           Why not set default values, and then let other "Tim" control the stepping?
+				   In other words. If HEAT_TRANSPORT doesn't have time control, 
+				   we cannot assign a time control type for a FLOW process to a HEAT process, this could give incorrect results.
+				   THE DEFAULTS ARE NOW SET UP SUCH THAT... if "Tim" doesn't exist, this process has no influence on the time step.
 		Tim = new CTimeDiscretization(*time_vector[0], pcs_type_name);
+		*/
+		Tim = new CTimeDiscretization();
+		Tim->pcs_type_name = pcs_type_name;
 		time_vector.push_back(Tim); //21.08.2008. WW
 	}
+	if(Tim->time_control_name == "NONE" && Tim->time_step_vector.size() > 0)
+		Tim->time_control_name = "STEPS";
+	//
 	if (Tim->time_unit.find("MINUTE") != std::string::npos)
 		time_unit_factor = 60.0;
 	else if (Tim->time_unit.find("HOUR") != std::string::npos)
