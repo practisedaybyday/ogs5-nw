@@ -542,6 +542,7 @@ public:
 	void SetNodeValue(long,int,double);   //OK
 	double GetNodeValue(size_t,int);        //OK
 	int GetNodeValueIndex(const std::string&); //OK
+	int GetLatestNodeValueIndex(const std::string&); //JT
 	//-----------------------------
 
 	std::vector<std::string> const& getElementValueNameVector () { return ele_val_name_vector; }

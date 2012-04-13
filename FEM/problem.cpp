@@ -1179,7 +1179,20 @@ bool Problem::CouplingLoop()
 -------------------------------------------------------------------------*/
 void Problem::PreCouplingLoop(CRFProcess *m_pcs)
 {
-  m_pcs->CopyTimestepNODValues();
+	/*For mass transport this routine is only called once (for the overall transport process)
+	  and so we need to copy for all transport components*/
+	if(m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
+	{
+		CRFProcess *c_pcs = NULL;
+		for(size_t i=0; i<pcs_vector.size(); i++){
+			c_pcs = pcs_vector[i];
+			if(c_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
+				c_pcs->CopyTimestepNODValues();
+		}
+	}
+	else{ // Otherwise, just copy this process
+		m_pcs->CopyTimestepNODValues();
+	}
 }
 
 
@@ -2464,7 +2477,7 @@ inline double Problem::FluidMomentum()
 	CFEMesh* m_msh = fem_msh_vector[0];   // Something must be done later on here.
 
 	fm_pcs = m_msh->fm_pcs;
-	fm_pcs->Execute();
+	fm_pcs->Execute(loop_process_number);
 
 	// Switch off rechard flow if
 	if(m_pcs->num_type_name.compare("STEADY") == 0 && aktueller_zeitschritt > 1)
