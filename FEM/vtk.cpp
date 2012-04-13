@@ -594,7 +594,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 		if (!m_pcs)
 			continue;
 
-		NodeIndex[i] = m_pcs->GetNodeValueIndex(internal_val_name);
+		NodeIndex[i] = m_pcs->GetLatestNodeValueIndex(internal_val_name); //JT: Latest
 		if (NodeIndex[i] < 0)
 			continue;
 
@@ -604,11 +604,13 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 
 		if (output_data)
 		{
+			/* JT: Just get the latest index. No need for all this extra looping.
 			for (size_t j = 0; j < m_pcs->GetPrimaryVNumber(); j++)
 				if (internal_val_name.compare(m_pcs->pcs_primary_function_name[j]) == 0) {
 					NodeIndex[i]++; //current step
 					break;
 				}
+			*/
 			if (!useBinary) {
 				fin << "          ";
 			} else {
@@ -677,9 +679,9 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 			if (output_data)
 			{
 				int ix, iy, iz;
-				ix = m_pcs->GetNodeValueIndex(velocity_name[velocity_id][0]);
-				iy = m_pcs->GetNodeValueIndex(velocity_name[velocity_id][1]);
-				iz = m_pcs->GetNodeValueIndex(velocity_name[velocity_id][2]);
+				ix = m_pcs->GetLatestNodeValueIndex(velocity_name[velocity_id][0]); // JT: Fix. Need latest value.
+				iy = m_pcs->GetLatestNodeValueIndex(velocity_name[velocity_id][1]);
+				iz = m_pcs->GetLatestNodeValueIndex(velocity_name[velocity_id][2]);
 				if (!useBinary)
 				{
 					fin << "          ";

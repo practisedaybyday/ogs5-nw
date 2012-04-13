@@ -7344,6 +7344,47 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 	}
 
 /**************************************************************************
+   FEMLib-Method: GetLatestNodeValueIndex
+   Task: Returns node value index of latest stored time of this variable
+   Programing:
+   03/2012 JT
+**************************************************************************/
+	int CRFProcess::GetLatestNodeValueIndex(const std::string &var_name)
+	{
+		int nidx = -2;
+		size_t k = nod_val_name_vector.size();
+		size_t j;
+
+		for (size_t i = 0; i < k; i++)
+		{
+			j = k - i - 1;
+			if (nod_val_name_vector[j].compare(var_name) == 0)
+			{
+				nidx = j;
+#ifdef gDEBUG
+				if(nidx < 0)
+				{
+					cout <<
+					" Fatal error in CRFProcess::GetNodeValueIndex() " << endl;
+					abort();
+				}
+#endif
+				return nidx;
+			}
+		}
+
+		// Suppress the following error message when Fluid Momentum process is on.
+		CRFProcess* m_pcs = PCSGet(FiniteElement::FLUID_MOMENTUM);
+		if (m_pcs)
+			;             // Don't print any error message.
+		else
+			cout << "Error in CRFProcess::GetNodeValueIndex - " <<
+			convertProcessTypeToString (getProcessType())
+			     << ", " << var_name << ", NIDX = " << nidx << endl;
+		//abort();
+		return nidx;
+	}
+/**************************************************************************
    FEMLib-Method:
    Task:
    Programing:
