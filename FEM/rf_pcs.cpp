@@ -7830,7 +7830,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
    07/2011 WW Newton-Raphson method
    3/2012  JT Clean, correct error obtainment, modify Newton convergence criteria
 **************************************************************************/
-	double CRFProcess::ExecuteNonLinear(int loop_process_number)
+	double CRFProcess::ExecuteNonLinear(int loop_process_number, bool print_pcs)
 	{
 		double nonlinear_iteration_error;
 		double nl_theta, damping, norm_x0, norm_b0, norm_x, norm_b, val;
@@ -7883,13 +7883,15 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
         if(myrank==0)
         {
 #endif
-		std::cout << "\n      ================================================" << std::endl;
-	    std::cout << "    ->Process " << loop_process_number << ": " << convertProcessTypeToString (this->getProcessType()) << std::endl;
-	    if(getProcessType() == FiniteElement::MASS_TRANSPORT){
-			std::cout << "      for " << this->pcs_primary_function_name[0];
-			std::cout << " pcs_component_number " << this->pcs_component_number << std::endl;
-	    }
-	    std::cout << "      ================================================" << std::endl;
+		if(print_pcs){ // JT: need check because of Regional Richards
+			std::cout << "\n      ================================================" << std::endl;
+			std::cout << "    ->Process " << loop_process_number << ": " << convertProcessTypeToString (this->getProcessType()) << std::endl;
+			if(getProcessType() == FiniteElement::MASS_TRANSPORT){
+				std::cout << "      for " << this->pcs_primary_function_name[0];
+				std::cout << " pcs_component_number " << this->pcs_component_number << std::endl;
+			}
+			std::cout << "      ================================================" << std::endl;
+		}
 #ifdef USE_MPI
 		}
 #endif
@@ -8079,7 +8081,8 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		// ------------------------------------------------------------
 
 	    if(!is_converged && m_num->nls_max_iterations > 1){
-		   std::cout << "WARNING: Max non-linear iterations reached without meeting desired tolerance.\n\n";
+		   if(Tim->GetPITimeStepCrtlType() < 1) // JT: obtainment of max iterations is a fundamental property of PI control.
+				std::cout << "WARNING: Max non-linear iterations reached without meeting desired tolerance.\n\n";
 		   num_notsatisfied++;
 	    }
 		// PI time step size control. 27.08.2008. WW
@@ -11541,8 +11544,7 @@ CRFProcess* PCSGetMass(size_t component_number)
 					l = j + ii * g_nnodes;
 					x0 = u_n[l];
 					x1 = GetNodeValue(k,nidx1);
-					//err += pow( (x1 - u_n0[l]) / (Atol + Rtol * max(fabs(x0),fabs(x1))), 2);
-					err += pow( (x1 - GetNodeValue(k,nidx1-1)) / (Atol + Rtol * max(fabs(x0),fabs(x1))), 2);
+					err += pow( (x1 - u_n0[l]) / (Atol + Rtol * max(fabs(x0),fabs(x1))), 2);
 				}
 		}
 		err = sqrt(err / (double)size_x);
