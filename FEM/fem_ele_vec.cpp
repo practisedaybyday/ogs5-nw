@@ -2101,8 +2101,8 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 					Tem += shapefct[i] * Temp[i];
 					t1 += shapefct[i] * T1[i];
 				}
-				//for (i = 0; i < 3; i++)
-					//strain_ne[i] -= ThermalExpansion * Tem;
+				for (i = 0; i < 3; i++) // JT: This was commented. SHOULDN'T BE!
+					strain_ne[i] -= ThermalExpansion * Tem;
 			}
 			// Strain increment by creep
 			if(smat->Creep_mode == 1 || smat->Creep_mode == 2)

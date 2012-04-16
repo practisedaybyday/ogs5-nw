@@ -1305,7 +1305,7 @@ double COutput::NODWritePLYDataTEC(int number)
 	GetNodeIndexVector(NodeIndex);
 	//--------------------------------------------------------------------
 	// Write header
-	if (number == 0 || number == 1)       //WW if(number==1)
+	if (number == 0)       //WW if(number==1)
 	{
 		//project_title;
 		std::string project_title_string = "Profiles along polylines";
@@ -2086,22 +2086,7 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 				<< _nod_value_vector[k] << endl;
 				return;
 			}
-			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k]);
-			for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
-			{
-				if (_nod_value_vector[k].compare(
-				            pcs->pcs_primary_function_name[i]) == 0)
-				{
-					NodeIndex[k]++;
-					break;
-				}
-				// JOD
-				if (_nod_value_vector[k].compare("COUPLING") == 0)
-				{
-					NodeIndex[k]++;
-					break;
-				}
-			}
+			NodeIndex[k] = pcs->GetLatestNodeValueIndex(_nod_value_vector[k]);  // JT latest
 		}
 	}
 	else if (msh_type_name.size() > 0)
@@ -2115,14 +2100,7 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 		}
 		for (size_t k = 0; k < nName; k++)
 		{
-			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k]);
-			for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
-				if (_nod_value_vector[k].compare(
-				            pcs->pcs_primary_function_name[i]) == 0)
-				{
-					NodeIndex[k]++;
-					break;
-				}
+			NodeIndex[k] = pcs->GetLatestNodeValueIndex(_nod_value_vector[k]); // JT latest
 		}
 	}
 	else if (fem_msh_vector.size() == 1)
@@ -2138,14 +2116,7 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 				<< _nod_value_vector[k] << endl;
 				return;
 			}
-			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k]);
-			for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
-				if (_nod_value_vector[k].compare(
-				            pcs->pcs_primary_function_name[i]) == 0)
-				{
-					NodeIndex[k]++;
-					break;
-				}
+			NodeIndex[k] = pcs->GetLatestNodeValueIndex(_nod_value_vector[k]); // JT latest
 		}
 	}
 }

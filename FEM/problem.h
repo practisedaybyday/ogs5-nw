@@ -107,7 +107,7 @@ private:
 	inline double MassTrasport();
 	inline double Deformation();
 	// Accessory
-	void LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global);
+	void LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global, int loop_process_number);
 	void LOPCalcELEResultants();
 	inline void ASMCalcNodeWDepth(CRFProcess* m_pcs);
 	void PCSCalcSecondaryVariables();

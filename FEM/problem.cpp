@@ -861,7 +861,7 @@ void Problem::Euler_TimeDiscretize()
 	long accepted_times = 0;
 	long rejected_times = 0;
 	double dt_rec;
-	int i,j,k;
+	int i;
 	//
 	CTimeDiscretization* m_tim = NULL;
 	aktueller_zeitschritt = 0;
@@ -970,19 +970,22 @@ void Problem::Euler_TimeDiscretize()
 	if(myrank == 0)
 	{
 #endif
-	std::cout << "----------------------------------------------------\n";
+	std::cout << "\n----------------------------------------------------\n";
     for(i=0; i<(int)active_process_index.size(); i++) // JT2012
     {
 		m_tim = total_processes[active_process_index[i]]->Tim;
-		j = total_processes[active_process_index[i]]->num_notsatisfied;
-		k = total_processes[active_process_index[i]]->num_diverged;
-		std::cout << "For process: " << convertProcessTypeToString(total_processes[active_process_index[i]]->getProcessType()) << std::endl;
-		std::cout << "|Acccepted time steps |" << m_tim->accepted_step_count;
-		std::cout << "|Rejected time steps  |" << m_tim->rejected_step_count << std::endl;
-		std::cout << "|Number of non-converged iterations |" << j;
-		std::cout << "|Number of these resulting from stagnation |"<< k << std::endl;
+		std::cout << "\nFor process: " << convertProcessTypeToString(total_processes[active_process_index[i]]->getProcessType()) << std::endl;
+		if(m_tim->time_control_name == "NONE"){
+			std::cout << "No time control for this process." << std::endl;
+		}
+		else{
+			std::cout << "Accepted time steps:                       " << m_tim->accepted_step_count << std::endl;
+			std::cout << "Rejected time steps:                       " << m_tim->rejected_step_count << std::endl;
+		}
+		std::cout << "Number of non-converged iterations:        " << total_processes[active_process_index[i]]->num_notsatisfied << std::endl;
+		std::cout << "Number of these resulting from stagnation: " << total_processes[active_process_index[i]]->num_diverged << std::endl;
     }
-    std::cout<<"----------------------------------------------------\n";
+    std::cout<<"\n----------------------------------------------------\n";
 #if defined(USE_MPI)
 	}
 #endif
@@ -1172,7 +1175,6 @@ bool Problem::CouplingLoop()
 /*-----------------------------------------------------------------------
    GeoSys - Function: pre Coupling loop
    Task: Process solution is beginning. Perform any pre-loop configurations
-   Return: error
    Programming:
    03/2012 JT
    Modification:
@@ -1260,7 +1262,9 @@ void Problem::PostCouplingLoop()
 		//BG
 		if ((m_pcs->simulator == "ECLIPSE") || (m_pcs->simulator == "DUMUX"))
 			m_pcs->Extropolation_GaussValue();
-		//JT: Now done in PreCouplingLoop() // m_pcs->CopyTimestepNODValues(); //MB
+		//
+		// JT: Now done in PreCouplingLoop() // m_pcs->CopyTimestepNODValues(); //MB
+		//
 #define SWELLING
 #ifdef SWELLING
 		//MX ToDo//CMCD here is a bug in j=7
@@ -1390,7 +1394,7 @@ inline double Problem::RichardsFlow()
 		//WW if(m_pcs->adaption) PCSStorage();
 		CFEMesh* m_msh = FEMGet("RICHARDS_FLOW");
 		if(m_msh->geo_name.compare("REGIONAL") == 0)
-			LOPExecuteRegionalRichardsFlow(m_pcs);
+			LOPExecuteRegionalRichardsFlow(m_pcs,loop_process_number);
 		else
 			error = m_pcs->ExecuteNonLinear(loop_process_number);
 		if(m_pcs->saturation_switch == true)
@@ -1408,7 +1412,7 @@ inline double Problem::RichardsFlow()
 	{
 		CFEMesh* m_msh = FEMGet("RICHARDS_FLOW"); //WW
 		if(m_msh->geo_name.compare("REGIONAL") == 0)
-			LOPExecuteRegionalRichardsFlow(m_pcs);
+			LOPExecuteRegionalRichardsFlow(m_pcs,loop_process_number);
 		else
 			error = m_pcs->ExecuteNonLinear(loop_process_number);
 		if(m_pcs->TimeStepAccept())
@@ -2685,7 +2689,7 @@ inline double Problem::Deformation()
    07/2008 WW Extract from LOPTimeLoop_PCS();
    05.2009 WW For surface-soil-ground coupled model
 **************************************************************************/
-inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
+inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global, int loop_process_number)
 {
 	int j,k;
 	long i;
@@ -2808,9 +2812,10 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
 			m_pcs_global->SetNodeValue(i,idxS - 1,value);
 		}
 	//======================================================================
-	std::cout << "    ->Process " << m_pcs_global->pcs_number << ": "
-	          << "REGIONAL_" << convertProcessTypeToString (m_pcs_global->getProcessType()) <<
-	std::endl;
+	std::cout << "\n      ================================================" << std::endl;
+	std::cout << "    ->Process " << loop_process_number << ": "
+	          << "REGIONAL_" << convertProcessTypeToString (m_pcs_global->getProcessType()) << std::endl;
+	std::cout << "      ================================================" << std::endl;
 	int no_richards_problems = (int)(m_pcs_global->m_msh->ele_vector.size() / no_local_elements);
 
 	//--- For couping with ground flow process. WW
@@ -2831,7 +2836,9 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
 	for(i = 0; i < no_richards_problems; i++)
 	//for(i=0;i<2;i++)
 	{
-		std::cout << "->Column number " << i << std::endl;
+		if(i>0) std::cout << "      ================================================" << std::endl;
+		std::cout << "      ->Column number: " << i << std::endl;
+		std::cout << "      ================================================" << std::endl;
 		m_pcs_local = pcs_vector[(int)pcs_vector.size() - 1];
 		m_pcs_local->pcs_number = i;
 		m_msh_local = fem_msh_vector[(int)fem_msh_vector.size() - 1];
@@ -2930,7 +2937,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global)
 		}
 		//-----------------------------------------------------
 
-		m_pcs_local->ExecuteNonLinear(loop_process_number);
+		m_pcs_local->ExecuteNonLinear(loop_process_number,false);
 		// Velocity. 22.05.2009. WW
 		m_pcs_local->CalIntegrationPointValue();
 		m_pcs_local->Extropolation_GaussValue();
