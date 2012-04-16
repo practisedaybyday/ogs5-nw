@@ -2119,8 +2119,8 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 			}
 			// Stress deduced by thermal or swelling strain incremental:
 			De->multi(strain_ne, dstress);
-			// for (i = 0; i < ns; i++)
-			//   dstrain[i] += strain_ne[i];
+			for(i = 0; i < ns; i++) // JT: This was commented. It shouldn't be.
+			    dstrain[i] += strain_ne[i];
 		}
 		// Fluid coupling;
 		S_Water = 1.0;
