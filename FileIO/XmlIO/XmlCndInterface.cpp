@@ -78,7 +78,8 @@ void XmlCndInterface::readConditions( const QDomNode &listRoot,
 	while (!cond.isNull())
 	{
 		std::string geometry_name ( cond.attribute("geometry").toStdString() );
-		if (this->_project->getGEOObjects()->exists(geometry_name) >= 0)
+		if (this->_project->getGEOObjects()->exists(geometry_name) >= 0 ||
+			this->_project->meshExists(geometry_name))
 		{
 
 			FEMCondition* c ( new FEMCondition(geometry_name, type) );

@@ -34,37 +34,7 @@ SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
 		std::endl;
 }
 
-std::vector<FEMCondition*> SourceTerm::createDirectSourceTerms(
-        const std::vector<CSourceTerm*> &st_vector,
-        const std::string &geo_name,
-		const std::string &file_path)
-{
-	// read source term file and make sure it's really DIRECT-STs
-	std::vector<FEMCondition*> conditions;
-
-	for (std::vector<CSourceTerm*>::const_iterator it = st_vector.begin(); it != st_vector.end();
-	     ++it)
-	{
-		if ((*it)->getProcessDistributionType() == FiniteElement::DIRECT)
-		{
-			std::vector< std::pair<size_t, double> > node_values;
-			SourceTerm::getDirectNodeValues(file_path + "/" + (*it)->fname, node_values);
-
-			SourceTerm* st = new SourceTerm(geo_name);
-			st->setProcessType((*it)->getProcessType());
-			st->setProcessPrimaryVariable((*it)->getProcessPrimaryVariable());
-			st->setGeoType(GEOLIB::INVALID);
-			st->setGeoName((*it)->fname);
-			st->setProcessDistributionType(FiniteElement::DIRECT);
-			st->setDisValues(node_values);
-			conditions.push_back(st);
-		}
-		else
-			std::cout << "Error: no DIRECT distribution type" << std::endl;
-	}
-	return conditions;
-}
-
+// Legacy function (only required for ascii st-files): reads values for 'direct' source terms
 void SourceTerm::getDirectNodeValues(const std::string &filename,
                                      std::vector< std::pair<size_t, double> > &node_values)
 {
@@ -72,7 +42,7 @@ void SourceTerm::getDirectNodeValues(const std::string &filename,
 	if (!in.is_open())
 	{
 		std::cout << "Error in getNodeValues() - Could not find file for direct node values..." << std::endl;
-		//return;
+		return;
 	}
 
 	std::stringstream str_in;
