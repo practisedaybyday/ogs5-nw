@@ -102,7 +102,8 @@ CSourceTerm::CSourceTerm(const SourceTerm* st)
 {
 	setProcess( PCSGet( this->getProcessType() ) );
 	this->geo_name = st->getGeoName();
-	const std::vector<double> dis_values = st->getDisValue();
+	const std::vector<size_t> dis_nodes = st->getDisNodes();
+	const std::vector<double> dis_values = st->getDisValues();
 	
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
 	{
@@ -110,11 +111,10 @@ CSourceTerm::CSourceTerm(const SourceTerm* st)
 	}
 	else if (this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
 	{
-		for (size_t i=0; i<dis_values.size(); i+=2)
+		for (size_t i=0; i<dis_values.size(); i++)
 		{
-
-			this->PointsHaveDistribedBC.push_back(static_cast<int>(dis_values[i]));
-			this->DistribedBC.push_back(dis_values[i+1]);
+			this->PointsHaveDistribedBC.push_back(static_cast<int>(dis_nodes[i]));
+			this->DistribedBC.push_back(dis_values[i]);
 		}
 	}
 	else

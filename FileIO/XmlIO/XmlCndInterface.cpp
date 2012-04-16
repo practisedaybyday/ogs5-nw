@@ -121,17 +121,34 @@ void XmlCndInterface::readConditions( const QDomNode &listRoot,
 							c->setProcessDistributionType(FiniteElement::convertDisType(distProps.at(j).toElement().text().toStdString()));
 						else if (prop_name.compare("Value") == 0)
 						{
-							QString text = distProps.at(j).toElement().text();
-							QStringList list = text.split(QRegExp("\\t"));
+							std::vector<size_t> disNodes;
 							std::vector<double> disValues;
-							for (QStringList::iterator it=list.begin(); it!=list.end(); ++it)
+							if (c->getProcessDistributionType()==FiniteElement::CONSTANT || 
+								c->getProcessDistributionType()==FiniteElement::CONSTANT_NEUMANN)
+								disValues.push_back( strtod(distProps.at(j).toElement().text().toStdString().c_str(), 0) );
+							else if (c->getProcessDistributionType()==FiniteElement::LINEAR || 
+								     c->getProcessDistributionType()==FiniteElement::LINEAR_NEUMANN ||
+									 c->getProcessDistributionType()==FiniteElement::DIRECT)
 							{
-								std::string val (it->trimmed().toStdString());
-								if (!val.empty())
-									disValues.push_back(strtod(val.c_str(), 0));
+								QString text = distProps.at(j).toElement().text();
+								QStringList list = text.split(QRegExp("\\t"));
+								size_t count(0);
+								for (QStringList::iterator it=list.begin(); it!=list.end(); ++it)
+								{
+									std::string val (it->trimmed().toStdString());
+									if (!val.empty())
+									{
+										if (count%2==0)
+											disNodes.push_back(atoi(val.c_str()));
+										else
+											disValues.push_back(strtod(val.c_str(), 0));
+										count++;
+									}
+								}
 							}
-							c->setDisValues(disValues);
-							//c->setDisValue(strtod(distProps.at(j).toElement().text().toStdString().c_str(), 0));
+							else
+								std::cout << "Error in XmlCndInterface::readConditions() - Distribution type not supported." << std::endl;
+							c->setDisValues(disNodes, disValues);
 						}
 					}
 				}
@@ -260,16 +277,18 @@ void XmlCndInterface::writeCondition( QDomDocument doc, QDomElement &listTag, co
 	else
 		disValueText = doc.createTextNode(QString::fromStdString(cond->getDirectFileName()));
 	*/
-	const std::vector<double> dis_values = cond->getDisValue();
+	const std::vector<size_t> dis_nodes = cond->getDisNodes();
+	const std::vector<double> dis_values = cond->getDisValues();
+	const size_t nNodes = dis_nodes.size();
 	const size_t nValues = dis_values.size();
 	std::stringstream ss;
-	if (nValues==1)							// CONSTANT
+	if (nNodes==0 && nValues==1)				// CONSTANT
 		ss << dis_values[0];
-	else if ((nValues>1) && (nValues%2==0))	// LINEAR && DIRECT
+	else if ((nValues>0) && (nValues==nNodes))	// LINEAR && DIRECT
 	{
 		ss << "\n\t";
-		for (size_t i=0; i<nValues; i+=2)
-			ss << dis_values[i] << "\t" << dis_values[i+1] << "\n\t";
+		for (size_t i=0; i<nValues; i++)
+			ss << dis_nodes[i] << "\t" << dis_values[i] << "\n\t";
 	}
 	else
 	{

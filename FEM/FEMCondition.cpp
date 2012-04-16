@@ -33,7 +33,8 @@ FEMCondition::FEMCondition(const FEMCondition &cond, CondType t)
 	  DistributionInfo(cond.getProcessDistributionType()),
 	  _type(t),
 	  _geoName(cond.getGeoName()),
-	  _disValue(cond.getDisValue()),
+	  _disNodes(cond.getDisNodes()),
+	  _disValues(cond.getDisValues()),
 	  _associated_geometry(cond.getAssociatedGeometryName()),
 	  _direct_file_name("")
 {
@@ -55,11 +56,11 @@ void FEMCondition::setDisValues(const std::vector< std::pair<size_t, double> > &
 {
 	for (size_t i = 0; i < dis_values.size(); i++)
 	{
-		this->_disValue.push_back(dis_values[i].first);
-		this->_disValue.push_back(dis_values[i].second);
+		this->_disNodes.push_back(dis_values[i].first);
+		this->_disValues.push_back(dis_values[i].second);
 	}
 }
-
+/*
 std::vector< std::pair<size_t, double> > FEMCondition::getDistributedPairs(std::vector<int> point_ids, std::vector<double> point_values)
 {
 	if (point_ids.size() == point_values.size())
@@ -74,4 +75,4 @@ std::vector< std::pair<size_t, double> > FEMCondition::getDistributedPairs(std::
 	std::vector< std::pair<size_t, double> > dis_values(0);
 	return dis_values;
 }
-
+*/

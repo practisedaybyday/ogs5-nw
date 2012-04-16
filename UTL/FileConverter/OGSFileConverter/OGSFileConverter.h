@@ -23,10 +23,10 @@ private:
 	FileFinder createFileFinder();
 
 private slots:
-	void convertGML2GLI(const QStringList input, const QString output);
-	void convertGLI2GML(const QStringList input, const QString output);
-	void convertCND2BC(const QStringList input, const QString output);
-	void convertBC2CND(const QStringList input, const QString output);
+	void convertGML2GLI(const QStringList &input, const QString &output);
+	void convertGLI2GML(const QStringList &input, const QString &output);
+	void convertCND2BC(const QStringList &input, const QString &output);
+	void convertBC2CND(const QStringList &input, const QString &output);
 
 	void on_gml2gliButton_pressed();
 	void on_gli2gmlButton_pressed();

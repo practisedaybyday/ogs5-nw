@@ -62,7 +62,8 @@ CInitialCondition::CInitialCondition(const InitialCondition* ic)
 {
 	setProcess( PCSGet( this->getProcessType() ) );
 	this->geo_name = ic->getGeoName();
-	const std::vector<double> dis_values = ic->getDisValue();
+	const std::vector<size_t> dis_nodes = ic->getDisNodes();
+	const std::vector<double> dis_values = ic->getDisValues();
 	
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
 	{

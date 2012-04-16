@@ -36,7 +36,7 @@ OGSFileConverter::~OGSFileConverter()
 {
 }
 
-void OGSFileConverter::convertGML2GLI(const QStringList input, const QString output)
+void OGSFileConverter::convertGML2GLI(const QStringList &input, const QString &output)
 {
 	ProjectData project;
 	GEOLIB::GEOObjects* geo_objects = new GEOLIB::GEOObjects;
@@ -53,7 +53,7 @@ void OGSFileConverter::convertGML2GLI(const QStringList input, const QString out
 	OGSError::box("File conversion finished");
 }
 
-void OGSFileConverter::convertGLI2GML(const QStringList input, const QString output)
+void OGSFileConverter::convertGLI2GML(const QStringList &input, const QString &output)
 {
 	ProjectData project;
 	GEOLIB::GEOObjects* geo_objects = new GEOLIB::GEOObjects;
@@ -90,7 +90,7 @@ void OGSFileConverter::convertGLI2GML(const QStringList input, const QString out
 	OGSError::box("File conversion finished");
 }
 
-void OGSFileConverter::convertCND2BC(const QStringList input, const QString output)
+void OGSFileConverter::convertCND2BC(const QStringList &input, const QString &output)
 {
 	ProjectData project;
 	GEOLIB::GEOObjects* geo_objects = new GEOLIB::GEOObjects;
@@ -143,7 +143,7 @@ void OGSFileConverter::convertCND2BC(const QStringList input, const QString outp
 	OGSError::box("File conversion finished");
 }
 
-void OGSFileConverter::convertBC2CND(const QStringList input, const QString output)
+void OGSFileConverter::convertBC2CND(const QStringList &input, const QString &output)
 {
 	ProjectData project;
 	std::vector<FEMCondition*> conditions;

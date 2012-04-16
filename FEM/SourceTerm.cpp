@@ -14,11 +14,16 @@ SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
 {
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT ||
 	    this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
-		this->setDisValue(st.getGeoNodeValue());
+		this->addDisValue(st.getGeoNodeValue());
 	else if (this->getProcessDistributionType() == FiniteElement::LINEAR ||
 	         this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
-		this->setDisValues(this->getDistributedPairs(st.getPointsWithDistribedST(), st.getDistribedST()));
-	else if (this->getProcessDistributionType() == FiniteElement::LINEAR)
+	{
+		const std::vector<int> st_nodes(st.getPointsWithDistribedST());
+		std::vector<size_t> dis_nodes(st_nodes.size());
+		for (size_t i=0; i<dis_nodes.size(); i++) dis_nodes[i] = static_cast<size_t>(st_nodes[i]);
+		this->setDisValues(dis_nodes, st.getDistribedST());
+	}
+	else if (this->getProcessDistributionType() == FiniteElement::DIRECT)
 	{
 		this->_direct_file_name = st.fname;
 	}
