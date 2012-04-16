@@ -731,6 +731,9 @@ void CFiniteElementStd::SetMaterial(int phase)
 	// Single continua thermal:
 	if(msp_vector.size() > 0)
 	{
+        // TODO: For multidomain meshes accessing msp_vector can result in SEGV.
+        // Either use checked \c at() access or ensure
+        // mmp_index < msp_vector.size().
 		SolidProp = msp_vector[mmp_index];
 		//KR not used: SolidProp->m_pcs = pcs;   //NW
 		SolidProp->Fem_Ele_Std = this; //CMCD for Decovalex
@@ -743,6 +746,8 @@ void CFiniteElementStd::SetMaterial(int phase)
 		else                      // fracture //WW
 			mmp_index = 2 * group + 1;
 	}
+    // TODO: For multidomain meshes accessing mmp_vector can result in SEGV,
+    // like above msp_vector[].
 	MediaProp = mmp_vector[mmp_index];
 	MediaProp->m_pcs = pcs;
 	MediaProp->Fem_Ele_Std = this;
