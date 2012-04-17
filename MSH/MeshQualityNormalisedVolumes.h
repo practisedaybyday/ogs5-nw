@@ -19,7 +19,6 @@ public:
 	virtual ~MeshQualityNormalisedVolumes() {}
 
 	virtual void check ();
-	virtual void getHistogram (std::vector<size_t>& histogram) const;
 };
 }
 

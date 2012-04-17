@@ -21,16 +21,16 @@ MeshQualityChecker::MeshQualityChecker(CFEMesh const* const mesh) :
 
 void MeshQualityChecker::getHistogram (std::vector<size_t>& histogram) const
 {
-	// get all elements of mesh
-	const std::vector<MeshLib::CElem*>& msh_elem (_mesh->getElementVector());
+    const size_t M = histogram.size();
 
-	const size_t msh_elem_size (msh_elem.size());
-	const size_t histogram_size (histogram.size() - 1);
-	for (size_t k(0); k < msh_elem_size; k++)
-		if (msh_elem[k]->GetElementType() != MshElemType::LINE)
-			histogram[static_cast<size_t>(*_mesh_quality_measure[k] *
-										   histogram_size)]++;
-
+    typedef std::vector<QualityType>::const_iterator QI;
+    for (QI q = _mesh_quality_measure.begin();
+        q != _mesh_quality_measure.end(); ++q)
+    {
+        if (!*q)
+            continue;
+        histogram[static_cast<size_t>(**q * M)]++;
+    }
 }
 
 void MeshQualityChecker::errorMsg (CElem* elem, size_t idx) const

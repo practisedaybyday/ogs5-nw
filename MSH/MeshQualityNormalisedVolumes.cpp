@@ -60,21 +60,4 @@ void MeshQualityNormalisedVolumes::check()
 		std::endl;
 }
 
-void MeshQualityNormalisedVolumes::getHistogram (std::vector<size_t>& histogram) const
-{
-	// get all elements of mesh
-	std::vector<MeshLib::CElem*> const& msh_elem (_mesh->getElementVector());
-
-	const size_t msh_elem_size (msh_elem.size());
-	const size_t histogram_size (histogram.size() - 1);
-	for (size_t k(0); k < msh_elem_size; k++)
-	{
-		MshElemType::type elem_type (msh_elem[k]->GetElementType());
-		if (elem_type != MshElemType::LINE
-		    && elem_type != MshElemType::TRIANGLE
-		    && elem_type != MshElemType::QUAD)
-			histogram[static_cast<size_t>(*_mesh_quality_measure[k] *
-			                               histogram_size)]++;
-	}
-}
 } // end namespace MeshLib
