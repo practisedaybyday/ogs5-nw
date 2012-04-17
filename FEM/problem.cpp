@@ -814,6 +814,7 @@ void Problem::SetTimeActiveProcesses()
 	for(ii=0; ii<active_process_index.size(); ii++)
 	{
 		m_tim = total_processes[active_process_index[ii]]->Tim;
+		m_tim->time_active = true; // activate
 		if(m_tim->time_independence && m_tim->next_active_time > next_time){ // Process is then not active this time step
 			m_tim->time_active = false; // deactivate
 			//
@@ -979,11 +980,13 @@ void Problem::Euler_TimeDiscretize()
 			std::cout << "No time control for this process." << std::endl;
 		}
 		else{
-			std::cout << "Accepted time steps:                       " << m_tim->accepted_step_count << std::endl;
-			std::cout << "Rejected time steps:                       " << m_tim->rejected_step_count << std::endl;
+			std::cout << "Accepted time steps:                " << m_tim->accepted_step_count << std::endl;
+			std::cout << "Rejected time steps:                " << m_tim->rejected_step_count << std::endl;
 		}
-		std::cout << "Number of non-converged iterations:        " << total_processes[active_process_index[i]]->num_notsatisfied << std::endl;
-		std::cout << "Number of these resulting from stagnation: " << total_processes[active_process_index[i]]->num_diverged << std::endl;
+		if(total_processes[active_process_index[i]]->m_num->nls_max_iterations > 1){
+			std::cout << "Number of non-converged iterations: " << total_processes[active_process_index[i]]->num_notsatisfied << std::endl;
+			std::cout << "Number of stagnated iterations:     " << total_processes[active_process_index[i]]->num_diverged << std::endl;
+		}
     }
     std::cout<<"\n----------------------------------------------------\n";
 #if defined(USE_MPI)

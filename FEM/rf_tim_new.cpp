@@ -216,7 +216,7 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 		}
 		//....................................................................
 		// subkeyword found
-		if(line_string.find("$TIME_INDEPENDENCE") != std::string::npos) // JT2012
+		if(line_string.find("$INDEPENDENT") != std::string::npos) // JT2012
 		{
 			line.str(GetLineFromFile1(tim_file));
 			line >> time_independence;
@@ -956,7 +956,7 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
 					Node_Sat[j] = m_pcs->GetNodeValue(elem->GetNodeIndex(j),
 					                                  idxS);
 				// JT: dSdP now returns actual sign (<0)
-				buffer = -m_mmp->SaturationPressureDependency(m_mmp->CapillaryPressureFunction(fem->interpolate(Node_Sat)));
+				buffer = -m_mmp->SaturationPressureDependency(m_mmp->CapillaryPressureFunction(fem->interpolate(Node_Sat)),true);
 				buffer *= 0.5 * elem->GetVolume() * elem->GetVolume();
 				buffer *= m_mmp->porosity_model_values[0]
 				          * mfp_vector[0]->Viscosity()

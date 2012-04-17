@@ -8062,33 +8062,34 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 				}
 			}
 
-			// SHORT PRINTOUT FOR DIVERGED ITERATIONS
-			// ---------------------------------------------------
-			if(diverged){
-				std::cout << " ============================================== " <<std::endl;
-				std::cout << "  NON-LINEAR ITERATION HAS DIVERGED. BREAKING.  " <<std::endl;
-				std::cout << " ============================================== " <<std::endl;
-				num_diverged++;
-				is_converged = true; // force a break.
-			}
-
 			// BREAK CRITERIA
-			if(is_converged)
+			if(is_converged || diverged)
+			{
 				break;
+			}
 		}
 		// ------------------------------------------------------------
 		// NON-LINEAR ITERATIONS COMPLETE
 		// ------------------------------------------------------------
 
-	    if(!is_converged && m_num->nls_max_iterations > 1){
-		   if(Tim->GetPITimeStepCrtlType() < 1) // JT: obtainment of max iterations is a fundamental property of PI control.
-				std::cout << "WARNING: Max non-linear iterations reached without meeting desired tolerance.\n\n";
-		   num_notsatisfied++;
-	    }
 		// PI time step size control. 27.08.2008. WW
 		if(Tim->GetPITimeStepCrtlType() > 0){
 			PI_TimeStepSize();
 		}
+
+		// If the timestep failed, no need for additional tracking. Otherwise, track and print.
+		if(accepted && m_num->nls_max_iterations > 1) // only for non-linear iterations
+		{
+			if(diverged){
+				num_diverged++;
+				std::cout << "\nWARNING: Non-Linear iteration has stagnated!\n" <<std::endl;
+			}
+			else if(!is_converged){
+				num_notsatisfied++;
+				std::cout << "\nWARNING: Max non-linear iterations reached without meeting desired tolerance.\n";
+			}
+		}
+
 		// Calculate secondary variables
 		if(accepted){
 			CalcSecondaryVariables();
