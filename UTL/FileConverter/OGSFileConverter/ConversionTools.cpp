@@ -112,7 +112,7 @@ std::vector< std::pair<size_t, double> > ConversionTools::getDirectNodeValues(st
 
 int ConversionTools::writeDirectValues(const FEMCondition &condition, const std::string &direct_value_file)
 {
-	std::ofstream out(direct_value_file);
+	std::ofstream out(direct_value_file.c_str());
 	if (!out.good())
 	{
 		std::cout << "Error in writeDirectValues() - Could not open file." << std::endl;
