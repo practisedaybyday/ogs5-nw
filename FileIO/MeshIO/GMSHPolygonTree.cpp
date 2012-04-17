@@ -53,46 +53,25 @@ void GMSHPolygonTree::insertPolyline (GEOLIB::PolylineWithSegmentMarker * ply)
 		_plys.push_back(ply);
 
 		// calculate possible intersection points
-		const size_t n_segments(ply->getNumberOfPoints()-1);
+		// pay attention: loop bound is not fix!
+		size_t n_segments (ply->getNumberOfPoints()-1);
 		for (size_t k(0); k<n_segments; k++) {
 			if (! ply->isSegmentMarked(k)) {
 				size_t seg_num(0);
 				GEOLIB::Point* s(_node_polygon->getIntersectionPointPolygonLine(*(ply->getPoint(k)), *(ply->getPoint(k+1)), seg_num));
 				if (s) {
-					// *** begin test code
-					double max_x_polygon_segment ((*(_node_polygon->getPoint(seg_num)))[0]);
-					double min_x_polygon_segment ((*(_node_polygon->getPoint(seg_num+1)))[0]);
-					double max_y_polygon_segment ((*(_node_polygon->getPoint(seg_num)))[1]);
-					double min_y_polygon_segment ((*(_node_polygon->getPoint(seg_num+1)))[1]);
-
-					double max_x_polyline_segment ((*(ply->getPoint(k)))[0]);
-					double min_x_polyline_segment ((*(ply->getPoint(k+1)))[0]);
-					double max_y_polyline_segment ((*(ply->getPoint(k)))[1]);
-					double min_y_polyline_segment ((*(ply->getPoint(k+1)))[1]);
-
-					if (max_x_polygon_segment < min_x_polygon_segment) {
-						std::swap (max_x_polygon_segment, min_x_polygon_segment);
-					}
-					if (max_y_polygon_segment < min_y_polygon_segment) {
-						std::swap (max_y_polygon_segment, min_y_polygon_segment);
-					}
-
-					if (max_x_polyline_segment < min_x_polyline_segment) {
-						std::swap (max_x_polyline_segment, min_x_polyline_segment);
-					}
-					if (max_y_polyline_segment < min_y_polyline_segment) {
-						std::swap (max_y_polyline_segment, min_y_polyline_segment);
-					}
-					// *** end test code
-
 					// insert intersection point to point vector of GEOObjects instance
 					size_t pnt_id;
+					// appendPoints deletes an already existing point
 					if (_geo_objs.appendPoint(s, _geo_name, pnt_id)) {
+						// case: new point
 						// modify the polygon
 						_node_polygon->insertPoint(seg_num+1, pnt_id);
 						// modify the polyline
 						ply->insertPoint(k+1, pnt_id);
+						n_segments++;
 					} else {
+						// case: existing point
 						// check if point id is polygon
 						if (! _node_polygon->isPointIDInPolyline(pnt_id)) {
 							_node_polygon->insertPoint(seg_num+1, pnt_id);
@@ -100,23 +79,53 @@ void GMSHPolygonTree::insertPolyline (GEOLIB::PolylineWithSegmentMarker * ply)
 						// check if point id is in polyline
 						if (! ply->isPointIDInPolyline(pnt_id)) {
 							ply->insertPoint(k+1, pnt_id);
+							n_segments++;
 						}
 					}
 
 					// mark the segment
-					if (_node_polygon->isPntInPolygon(*(ply->getPoint(k)))) {
+					if (_node_polygon->isPntInPolygon(*(ply->getPoint(k))) && _node_polygon->isPntInPolygon(*(ply->getPoint(k+1)))) {
 						ply->markSegment(k, true);
 						// insert line segment as constraint
 						_gmsh_lines_for_constraints.push_back(new GMSHLine(ply->getPointID(k), ply->getPointID(k+1)));
+					} else {
+						std::vector<GEOLIB::Point*> intersection_pnts;
+						std::vector<size_t> seg_nums;
+						_node_polygon->getAllIntersectionPointsPolygonLine(*(ply->getPoint(k)), *(ply->getPoint(k+1)), intersection_pnts, seg_nums);
+						if (!intersection_pnts.empty()) {
+							// insert the intersection points to point vector of GEOObjects instance
+							const size_t n_intersection_pnts(intersection_pnts.size());
+							for (size_t j(0); j<n_intersection_pnts; j++) {
+								size_t pnt_id1;
+								// appendPoints deletes an already existing point
+								if (_geo_objs.appendPoint(intersection_pnts[j], _geo_name, pnt_id1)) {
+									// case: new point
+									// modify the polygon
+									_node_polygon->insertPoint(seg_nums[j]+1, pnt_id1);
+									// modify the polyline
+									ply->insertPoint(k+1, pnt_id1);
+									n_segments++;
+								} else {
+									// case: existing point
+									// check if point id is within the polygon
+									if (! _node_polygon->isPointIDInPolyline(pnt_id1)) {
+										_node_polygon->insertPoint(seg_nums[j]+1, pnt_id1);
+									}
+									// check if point id is in polyline
+									if (! ply->isPointIDInPolyline(pnt_id1)) {
+										ply->insertPoint(k+1, pnt_id1);
+										n_segments++;
+									}
+								}
+							}
+
+							if (_node_polygon->isPntInPolygon(*(ply->getPoint(k))) && _node_polygon->isPntInPolygon(*(ply->getPoint(k+1)))) {
+								ply->markSegment(k, true);
+								// insert line segment as constraint
+								_gmsh_lines_for_constraints.push_back(new GMSHLine(ply->getPointID(k), ply->getPointID(k+1)));
+							}
+						}
 					}
-
-					if (_node_polygon->isPntInPolygon(*(ply->getPoint(k+2)))) {
-						ply->markSegment(k+1, true);
-						// insert line segment as constraint
-						_gmsh_lines_for_constraints.push_back(new GMSHLine(ply->getPointID(k+1), ply->getPointID(k+2)));
-					}
-
-
 				} else {
 					if (_node_polygon->isPntInPolygon(*(ply->getPoint(k))) && _node_polygon->isPntInPolygon(*(ply->getPoint(k+1)))) {
 						ply->markSegment(k, true);

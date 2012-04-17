@@ -126,13 +126,27 @@ bool Polygon::isPolylineInPolygon(const Polyline& ply) const
 
 bool Polygon::isPartOfPolylineInPolygon(const Polyline& ply) const
 {
-	size_t ply_size (ply.getNumberOfPoints());
+	const size_t ply_size (ply.getNumberOfPoints());
+	// check points
 	for (size_t k(0); k < ply_size; k++) {
 		if (isPntInPolygon (*(ply[k]))) {
 			return true;
 		}
 	}
+	// check segment intersections
+	GEOLIB::Point* s (new GEOLIB::Point (0,0,0));
+	const size_t n_nodes(getNumberOfPoints() - 1);
+	for (size_t k(0); k < ply_size - 1; k++) {
+		for (size_t j(0); j < n_nodes; j++) {
+			if (MathLib::lineSegmentIntersect(*(getPoint(j)), *(getPoint(j + 1)),
+							*(ply.getPoint(k)), *(ply.getPoint(k + 1)), *s)) {
+				delete s;
+				return true;
+			}
+		}
+	}
 
+	delete s;
 	return false;
 }
 
@@ -166,6 +180,37 @@ GEOLIB::Point* Polygon::getIntersectionPointPolygonLine (GEOLIB::Point const & a
 	}
 	delete s;
 	return NULL;
+}
+
+void Polygon::getAllIntersectionPointsPolygonLine (GEOLIB::Point const & a,
+                GEOLIB::Point const & b, std::vector<GEOLIB::Point*> &intersection_pnts,
+                std::vector<size_t>& seg_nums) const
+{
+	GEOLIB::Point* s (new GEOLIB::Point (0,0,0));
+
+	if (_simple_polygon_list.empty()) {
+		const size_t n_nodes(getNumberOfPoints() - 1);
+		for (size_t k(0); k < n_nodes; k++) {
+			if (MathLib::lineSegmentIntersect(*(getPoint(k)), *(getPoint(k + 1)), a, b, *s)) {
+				intersection_pnts.push_back(new GEOLIB::Point(*s));
+				seg_nums.push_back(k);
+			}
+		}
+	} else {
+		for (std::list<Polygon*>::const_iterator it(_simple_polygon_list.begin()); it
+					!= _simple_polygon_list.end(); ++it) {
+			const Polygon* polygon(*it);
+			const size_t n_nodes_simple_polygon(polygon->getNumberOfPoints() - 1);
+			for (size_t k(0); k < n_nodes_simple_polygon; k++) {
+				if (MathLib::lineSegmentIntersect(*(polygon->getPoint(k)), *(polygon->getPoint(k + 1)),
+								a, b, *s)) {
+					intersection_pnts.push_back(new GEOLIB::Point(*s));
+					seg_nums.push_back(k);
+				}
+			}
+		}
+	}
+	delete s;
 }
 
 const std::list<Polygon*>& Polygon::getListOfSimplePolygons()

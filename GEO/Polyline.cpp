@@ -63,17 +63,8 @@ void Polyline::insertPoint(size_t pos, size_t pnt_id)
 	assert(pnt_id < _ply_pnts.size());
 	assert(pos < _ply_pnt_ids.size());
 
-	if (isClosed()) {
-		std::cout << "polygon: " << std::endl;
-	} else {
-		std::cout << "polyline: " << std::endl;
-	}
-	std::cout << "previous: " << _ply_pnt_ids[pos-1] << "\t" << _ply_pnt_ids[pos] << "\t" << _ply_pnt_ids[pos+1]
-              << "\t" << _ply_pnt_ids[pos+2] << "\t" << _ply_pnt_ids[pos+3] << std::endl;
 	std::vector<size_t>::iterator it(_ply_pnt_ids.begin() + pos);
 	_ply_pnt_ids.insert(it, pnt_id);
-	std::cout << "after: " << _ply_pnt_ids[pos-1] << "\t" << _ply_pnt_ids[pos] << "\t" << _ply_pnt_ids[pos+1]
-              << "\t" << _ply_pnt_ids[pos+2] << "\t" << _ply_pnt_ids[pos+3] << std::endl;
 
 	if (_ply_pnt_ids.size() > 1) {
 		// update the _length vector

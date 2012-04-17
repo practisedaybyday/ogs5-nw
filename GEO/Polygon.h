@@ -81,10 +81,11 @@ public:
 	 */
 	bool isPolylineInPolygon (const Polyline& ply) const;
 	/**
-	 * Method checks if at least one (end!) point of a line segment of the polyline
-	 * is inside of the polygon.
+	 * Method checks first if at least one (end!) point of a line segment of the polyline
+	 * is inside of the polygon. If this test fails each line segment of the polyline will
+	 * be tested against each polygon segment for intersection.
 	 * @param ply the polyline that should be checked
-	 * @return
+	 * @return true if a part of the polyline is within the polygon
 	 */
 	bool isPartOfPolylineInPolygon (const Polyline& ply) const;
 
@@ -99,6 +100,20 @@ public:
 	GEOLIB::Point* getIntersectionPointPolygonLine (GEOLIB::Point const & a,
 	                                                GEOLIB::Point const & b,
 	                                                size_t& seg_num) const;
+
+	/**
+	 * Calculates all intersection points between the line segment (a,b) and the polygon.
+	 * @param a (input) the first point of the line segment
+	 * @param b (input) the second point of the line segment
+	 * @param intersection_pnts (output) vector of intersection points
+	 * @param seg_nums (output) the numbers of the polygon segments that are intersecting
+	 */
+	void getAllIntersectionPointsPolygonLine(GEOLIB::Point const & a,
+									GEOLIB::Point const & b,
+									std::vector<GEOLIB::Point*>& intersection_pnts,
+									std::vector<size_t>& seg_nums) const;
+
+
 	void computeListOfSimplePolygons ();
 	const std::list<Polygon*>& getListOfSimplePolygons ();
 

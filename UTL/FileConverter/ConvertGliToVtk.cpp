@@ -49,7 +49,8 @@ int main (int argc, char const* argv[])
 		directory_iterator end;
 		for (directory_iterator it("./"); it != end; ++it)
 		{
-			string curFile = it->path().file_string();
+			string curFile = it->path().filename(); // .string();
+
 			if (regex_match(curFile, e))
 				filenames.push_back(curFile);
 		}

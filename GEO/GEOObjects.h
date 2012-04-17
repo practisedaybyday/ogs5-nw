@@ -83,7 +83,9 @@ public:
 	                            std::string const &name, std::vector<size_t>* ids = NULL);
 
 	/**
-	 * append the point the the PointVec object with the name name
+	 * Method appends the point the the PointVec object with the name name. The PointVec
+	 * object takes care about deleting the point. If the point already exists within the
+	 * PointVec object this method will delete it.
 	 * @param point (input) the point (exact the pointer to the point) that should be added
 	 * @param name (input) the name of the geometry the point should be added
 	 * @param id (output) the id of the point within the PointVec object will be set

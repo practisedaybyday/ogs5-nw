@@ -70,8 +70,9 @@ size_t PointVec::uniqueInsert (Point* pnt)
 
 	if(k == n) {
 		_data_vec->push_back (pnt);
+		// update bounding box
 		_aabb.update (*((*_data_vec)[n]));
-		// update shortest distance and bounding box
+		// update shortest distance
 		for (size_t i(0); i < n; i++) {
 			double sqr_dist (MathLib::sqrDist((*_data_vec)[i], (*_data_vec)[n]));
 			if (sqr_dist < _sqr_shortest_dist)
