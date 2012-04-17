@@ -23,14 +23,14 @@ public:
 	virtual ~MeshQualityChecker () {}
 
 	virtual void check () = 0;
-	const std::vector<double>& getMeshQuality () const { return _mesh_quality_messure; }
+	const std::vector<double>& getMeshQuality () const { return _mesh_quality_measure; }
 	virtual void getHistogramm (std::vector<size_t>& histogramm) const;
 
 protected:
 	void errorMsg (CElem* elem, size_t idx) const;
 
 	CFEMesh const* const _mesh;
-	std::vector<double> _mesh_quality_messure;
+	std::vector<double> _mesh_quality_measure;
 	std::vector<size_t> _static_histogramm;
 };
 }

@@ -40,7 +40,7 @@ void MeshQualityNormalisedVolumes::check()
 			}
 			else if (volume < min_volume)
 				min_volume = volume;
-			_mesh_quality_messure[k] = volume;
+			_mesh_quality_measure[k] = volume;
 		}
 	}
 
@@ -50,9 +50,9 @@ void MeshQualityNormalisedVolumes::check()
 		if (elem_type != MshElemType::LINE
 		    && elem_type != MshElemType::TRIANGLE
 		    && elem_type != MshElemType::QUAD)
-			_mesh_quality_messure[k] /= max_volume;
+			_mesh_quality_measure[k] /= max_volume;
 		else
-			_mesh_quality_messure[k] = 1.1; // element has no valid value
+			_mesh_quality_measure[k] = 1.1; // element has no valid value
 	}
 
 	std::cout << "MeshQualityNormalisedVolumes::check() min_volume: " << min_volume
@@ -75,7 +75,7 @@ void MeshQualityNormalisedVolumes::getHistogramm (std::vector<size_t>& histogram
 		if (elem_type != MshElemType::LINE
 		    && elem_type != MshElemType::TRIANGLE
 		    && elem_type != MshElemType::QUAD)
-			histogramm[static_cast<size_t>(_mesh_quality_messure[k] *
+			histogramm[static_cast<size_t>(_mesh_quality_measure[k] *
 			                               histogramm_size)]++;
 	}
 }

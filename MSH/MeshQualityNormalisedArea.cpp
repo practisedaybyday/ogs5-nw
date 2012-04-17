@@ -78,15 +78,15 @@ void MeshQualityNormalisedArea::check()
 			}
 			if (min_volume > max_volume)
 				max_volume = min_volume;
-			_mesh_quality_messure[k] = min_volume;
+			_mesh_quality_measure[k] = min_volume;
 		}
 	}
 
 	for (size_t k(0); k < nElems; k++)
 	{
 		MshElemType::type elem_type (msh_elem[k]->GetElementType());
-		_mesh_quality_messure[k] =
-		        (elem_type == MshElemType::LINE) ? 1.1 : (_mesh_quality_messure[k] /
+		_mesh_quality_measure[k] =
+		        (elem_type == MshElemType::LINE) ? 1.1 : (_mesh_quality_measure[k] /
 		                                                  max_volume);
 	}
 }

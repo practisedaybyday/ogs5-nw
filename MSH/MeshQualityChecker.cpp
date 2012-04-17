@@ -15,7 +15,7 @@ MeshQualityChecker::MeshQualityChecker(CFEMesh const* const mesh) :
 	_mesh (mesh), _static_histogramm (100, 0)
 {
 	if (_mesh)
-		_mesh_quality_messure.resize ((_mesh->getElementVector()).size(), 0);
+		_mesh_quality_measure.resize ((_mesh->getElementVector()).size(), 0);
 }
 
 void MeshQualityChecker::getHistogramm (std::vector<size_t>& histogramm) const
@@ -27,7 +27,7 @@ void MeshQualityChecker::getHistogramm (std::vector<size_t>& histogramm) const
 	const size_t histogramm_size (histogramm.size() - 1);
 	for (size_t k(0); k < msh_elem_size; k++)
 		if (msh_elem[k]->GetElementType() != MshElemType::LINE)
-			histogramm[static_cast<size_t>(_mesh_quality_messure[k] *
+			histogramm[static_cast<size_t>(_mesh_quality_measure[k] *
 			                               histogramm_size)]++;
 
 }
