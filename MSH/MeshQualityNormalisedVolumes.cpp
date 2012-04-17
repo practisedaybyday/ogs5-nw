@@ -26,33 +26,31 @@ void MeshQualityNormalisedVolumes::check()
 	for (size_t k(0); k < msh_elem.size(); k++)
 	{
 		MshElemType::type elem_type (msh_elem[k]->GetElementType());
-		if (elem_type != MshElemType::LINE
-		    && elem_type != MshElemType::TRIANGLE
-		    && elem_type != MshElemType::QUAD)
+		if (elem_type == MshElemType::LINE
+		    || elem_type == MshElemType::TRIANGLE
+		    || elem_type == MshElemType::QUAD)
 		{
-			double volume (msh_elem[k]->calcVolume());
-			if (volume > max_volume)
-				max_volume = volume;
-			if (volume < sqrt(fabs(std::numeric_limits<double>::min())))
-			{
-				errorMsg(msh_elem[k], k);
-				error_count++;
-			}
-			else if (volume < min_volume)
-				min_volume = volume;
-			_mesh_quality_measure[k] = volume;
-		}
+            _mesh_quality_measure[k] = QualityType();
+            continue;
+        }
+
+        double volume (msh_elem[k]->calcVolume());
+        if (volume > max_volume)
+            max_volume = volume;
+        if (volume < sqrt(fabs(std::numeric_limits<double>::min())))
+        {
+            errorMsg(msh_elem[k], k);
+            error_count++;
+        }
+        else if (volume < min_volume)
+            min_volume = volume;
+        _mesh_quality_measure[k] = volume;
 	}
 
 	for (size_t k(0); k < msh_elem.size(); k++)
 	{
-		MshElemType::type elem_type (msh_elem[k]->GetElementType());
-		if (elem_type != MshElemType::LINE
-		    && elem_type != MshElemType::TRIANGLE
-		    && elem_type != MshElemType::QUAD)
-			_mesh_quality_measure[k] /= max_volume;
-		else
-			_mesh_quality_measure[k] = 1.1; // element has no valid value
+        if (_mesh_quality_measure[k])
+            *_mesh_quality_measure[k] /= max_volume;
 	}
 
 	std::cout << "MeshQualityNormalisedVolumes::check() min_volume: " << min_volume
@@ -75,7 +73,7 @@ void MeshQualityNormalisedVolumes::getHistogram (std::vector<size_t>& histogram)
 		if (elem_type != MshElemType::LINE
 		    && elem_type != MshElemType::TRIANGLE
 		    && elem_type != MshElemType::QUAD)
-			histogram[static_cast<size_t>(_mesh_quality_measure[k] *
+			histogram[static_cast<size_t>(*_mesh_quality_measure[k] *
 			                               histogram_size)]++;
 	}
 }

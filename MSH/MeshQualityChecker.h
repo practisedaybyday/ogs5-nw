@@ -9,6 +9,7 @@
 #define MESHQUALITYCHECKER_H_
 
 #include <vector>
+#include <boost/optional.hpp>
 
 // MSH
 #include "msh_mesh.h"
@@ -18,19 +19,21 @@ namespace MeshLib
 class MeshQualityChecker
 {
 public:
+	typedef boost::optional<double> QualityType;
+
 	MeshQualityChecker(CFEMesh const* const mesh);
 
 	virtual ~MeshQualityChecker () {}
 
 	virtual void check () = 0;
-	const std::vector<double>& getMeshQuality () const { return _mesh_quality_measure; }
+	std::vector<double> getMeshQuality (const double no_quality_value = -1) const;
 	virtual void getHistogram (std::vector<size_t>& histogram) const;
 
 protected:
 	void errorMsg (CElem* elem, size_t idx) const;
 
 	CFEMesh const* const _mesh;
-	std::vector<double> _mesh_quality_measure;
+	std::vector<QualityType> _mesh_quality_measure;
 	std::vector<size_t> _static_histogram;
 };
 }
