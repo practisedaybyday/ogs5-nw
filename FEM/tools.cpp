@@ -332,7 +332,7 @@ double GetCurveDerivative(int kurve, int methode, double punkt, int* gueltig)
 		if(fabs(s[i].punkt - s[i - 1].punkt) > DBL_MIN)
 			return (s[i].wert - s[i - 1].wert) / (s[i].punkt - s[i - 1].punkt);
 		else
-			return Signum(s[i + 1].wert - s[i].wert) / DBL_MIN;
+			return Signum(s[i + 1].wert - s[i].wert) / DBL_EPSILON;
 	case 1:
 		/* Gleitend */
 		if ((i > 1) && (i < anz - 2))
@@ -353,7 +353,7 @@ double GetCurveDerivative(int kurve, int methode, double punkt, int* gueltig)
 			if(fabs(s[i].punkt - s[i - 1].punkt) > DBL_MIN)
 				return (s[i].wert - s[i - 1].wert) / (s[i].punkt - s[i - 1].punkt);
 			else
-				return Signum(s[i + 1].wert - s[i].wert) / DBL_MIN;
+				return Signum(s[i + 1].wert - s[i].wert) / DBL_EPSILON;
 		}
 	}
 }
@@ -419,11 +419,13 @@ double GetCurveInverseDerivative(int kurve, int methode, double wert, int* guelt
 		if (wert < s[0].wert)
 		{
 			*gueltig = 0;
+			i = 1;
 			wert = s[0].wert;
 		}
 		if (wert > s[anz - 1].wert)
 		{
 			*gueltig = 0;
+			i = anz - 1;
 			wert = s[anz - 1].wert;
 		}
 		/* Suchen der Stuetzstelle. Vorraussetzung: Zeitpunkte aufsteigend geordnet */
@@ -436,11 +438,13 @@ double GetCurveInverseDerivative(int kurve, int methode, double wert, int* guelt
 		if (wert > s[0].wert)
 		{
 			*gueltig = 0;
+			i = 1;
 			wert = s[0].wert;
 		}
 		if (wert < s[anz - 1].wert)
 		{
 			*gueltig = 0;
+			i = anz - 1;
 			wert = s[anz - 1].wert;
 		}
 		/* Suchen der Stuetzstelle. Vorraussetzung: Zeitpunkte aufsteigend geordnet */
@@ -456,7 +460,7 @@ double GetCurveInverseDerivative(int kurve, int methode, double wert, int* guelt
 		if(fabs(s[i].wert - s[i - 1].wert) > DBL_MIN)
 			return (s[i].punkt - s[i - 1].punkt) / (s[i].wert - s[i - 1].wert);
 		else
-			return Signum(s[i + 1].punkt - s[i].punkt) / DBL_MIN;
+			return Signum(s[i + 1].punkt - s[i].punkt) / DBL_EPSILON;
 	case 1:
 		/* Gleitend */
 		if ((i > 1) && (i < anz - 2))
@@ -477,7 +481,7 @@ double GetCurveInverseDerivative(int kurve, int methode, double wert, int* guelt
 			if(fabs(s[i].wert - s[i - 1].wert) > DBL_MIN)
 				return (s[i].punkt - s[i - 1].punkt) / (s[i].wert - s[i - 1].wert);
 			else
-				return Signum(s[i + 1].punkt - s[i].punkt) / DBL_MIN;
+				return Signum(s[i + 1].punkt - s[i].punkt) / DBL_EPSILON;
 		}
 	}
 }
