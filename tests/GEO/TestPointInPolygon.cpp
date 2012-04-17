@@ -55,5 +55,5 @@ TEST(GEO, PointInPolygon)
 
 	ASSERT_EQ (static_cast<int>(pnts.size()), static_cast<int>(pnts_in_polygon->size() + pnts_outside_of_polygon->size()));
 	ASSERT_EQ (static_cast<int>(pnts_in_polygon->size()), 95511);
-	ASSERT_EQ (static_cast<int>(pnts_outside_of_polygon->size()),  198888);
+	ASSERT_EQ (static_cast<int>(pnts_outside_of_polygon->size()),  198889);
 }
