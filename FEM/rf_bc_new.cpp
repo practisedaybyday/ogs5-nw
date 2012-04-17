@@ -137,7 +137,8 @@ CBoundaryCondition::CBoundaryCondition(const BoundaryCondition* bc)
 {
 	setProcess( PCSGet( this->getProcessType() ) );
 	this->geo_name = bc->getGeoName();
-	const std::vector<double> dis_values = bc->getDisValue();
+	const std::vector<size_t> dis_nodes = bc->getDisNodes();
+	const std::vector<double> dis_values = bc->getDisValues();
 
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
 	{
@@ -145,11 +146,10 @@ CBoundaryCondition::CBoundaryCondition(const BoundaryCondition* bc)
 	}
 	else if (this->getProcessDistributionType() == FiniteElement::LINEAR)
 	{
-		for (size_t i=0; i<dis_values.size(); i+=2)
+		for (size_t i=0; i<dis_values.size(); i++)
 		{
-
-			this->_PointsHaveDistribedBC.push_back(static_cast<int>(dis_values[i]));
-			this->_DistribedBC.push_back(dis_values[i+1]);
+			this->_PointsHaveDistribedBC.push_back(static_cast<int>(dis_nodes[i]));
+			this->_DistribedBC.push_back(dis_values[i]);
 		}
 	}
 	else

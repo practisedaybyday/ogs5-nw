@@ -8,6 +8,7 @@
 // GEOLIB
 #include "BruteForceClosestPair.h"
 #include "PointVec.h"
+#include "PointWithID.h"
 
 // MathLib
 #include "MathTools.h"
@@ -219,5 +220,29 @@ void PointVec::calculateAxisAlignedBoundingBox ()
 	for (size_t i(0); i < n_pnts; i++)
 		_aabb.update (*(*_data_vec)[i]);
 }
+
+std::vector<GEOLIB::Point*>* PointVec::getSubset(const std::vector<size_t> &subset)
+{
+	std::vector<GEOLIB::Point*> *new_points (new std::vector<GEOLIB::Point*>(subset.size()));
+
+	const size_t nPoints(subset.size());
+	for (size_t i = 0; i < nPoints; i++)
+		(*new_points)[i] = new GEOLIB::PointWithID((*this->_data_vec)[subset[i]]->getData(), subset[i]);
+
+	return new_points;
+}
+
+std::vector<GEOLIB::Point*>* PointVec::deepcopy(const std::vector<GEOLIB::Point*> *pnt_vec)
+{
+	std::vector<GEOLIB::Point*>* new_points (new std::vector<GEOLIB::Point*>);
+
+	const size_t nPoints(pnt_vec->size());
+	for (size_t i = 0; i < nPoints; i++)
+		new_points->push_back(new GEOLIB::Point((*pnt_vec)[i]->getData()));
+	return new_points;
+}
+
+
+
 
 } // end namespace

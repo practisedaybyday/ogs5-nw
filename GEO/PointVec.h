@@ -25,6 +25,9 @@
 
 namespace GEOLIB
 {
+
+class PointWithID;
+
 /**
  * \ingroup GEOLIB
  *
@@ -97,6 +100,12 @@ public:
 
 	double getShortestPointDistance () const;
 	const GEOLIB::AABB& getAxisAlignedBoundingBox () const;
+
+	/// Creates a real copy of the point vector in memeory.
+	static std::vector<GEOLIB::Point*>* deepcopy(const std::vector<GEOLIB::Point*> *pnt_vec);
+
+	/// Returns a subset of this point vector containing only the points specified in "subset" as PointWithID-objects
+	std::vector<GEOLIB::Point*>* getSubset(const std::vector<size_t> &subset);
 
 //	/// Returns the name of an element given the element id.
 //	const std::string getNameOfElementByID (size_t id) const;

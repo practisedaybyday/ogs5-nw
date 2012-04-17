@@ -23,7 +23,7 @@ void GMSHFixedMeshDensity::init(std::vector<GEOLIB::Point const*> const& vec)
 double GMSHFixedMeshDensity::getMeshDensityAtPoint(GEOLIB::Point const*const pnt) const
 {
 	// to avoid a warning here:
-	const_cast<GEOLIB::Point const*>(pnt);
+	(void)(const_cast<GEOLIB::Point const*>(pnt));
 	return _mesh_density;
 }
 

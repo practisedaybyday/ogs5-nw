@@ -58,18 +58,19 @@ int XmlGmlInterface::readFile(const QString &fileName)
 
 	for (int i = 0; i < geoTypes.count(); i++)
 	{
-		if (geoTypes.at(i).nodeName().compare("name") == 0)
-			gliName = geoTypes.at(i).toElement().text().toStdString();
-		else if (geoTypes.at(i).nodeName().compare("points") == 0)
+		const QDomNode type_node(geoTypes.at(i));
+		if (type_node.nodeName().compare("name") == 0)
+			gliName = type_node.toElement().text().toStdString();
+		else if (type_node.nodeName().compare("points") == 0)
 		{
-			readPoints(geoTypes.at(i), points, pnt_names);
+			readPoints(type_node, points, pnt_names);
 			geoObjects->addPointVec(points, gliName, pnt_names);
 		}
-		else if (geoTypes.at(i).nodeName().compare("polylines") == 0)
-			readPolylines(geoTypes.at(i), polylines, points,
+		else if (type_node.nodeName().compare("polylines") == 0)
+			readPolylines(type_node, polylines, points,
 			              geoObjects->getPointVecObj(gliName)->getIDMap(), ply_names);
-		else if (geoTypes.at(i).nodeName().compare("surfaces") == 0)
-			readSurfaces(geoTypes.at(i), surfaces, points,
+		else if (type_node.nodeName().compare("surfaces") == 0)
+			readSurfaces(type_node, surfaces, points,
 			             geoObjects->getPointVecObj(gliName)->getIDMap(), sfc_names);
 		else
 			std::cout << "Unknown XML-Node found in file." << std::endl;
@@ -256,25 +257,33 @@ int XmlGmlInterface::write(std::ostream& stream)
 	{
 		const std::vector<GEOLIB::Point*>* points (pnt_vec->getVector());
 
-		nPoints = points->size();
-		for (size_t i = 0; i < nPoints; i++)
+		if (!points->empty())
 		{
-			QDomElement pointTag = doc.createElement("point");
-			pointTag.setAttribute("id", QString::number(i));
-			pointTag.setAttribute("x", QString::number((*(*points)[i])[0], 'f'));
-			pointTag.setAttribute("y", QString::number((*(*points)[i])[1], 'f'));
-			pointTag.setAttribute("z", QString::number((*(*points)[i])[2], 'f'));
+			nPoints = points->size();
+			for (size_t i = 0; i < nPoints; i++)
+			{
+				QDomElement pointTag = doc.createElement("point");
+				pointTag.setAttribute("id", QString::number(i));
+				pointTag.setAttribute("x", QString::number((*(*points)[i])[0], 'f'));
+				pointTag.setAttribute("y", QString::number((*(*points)[i])[1], 'f'));
+				pointTag.setAttribute("z", QString::number((*(*points)[i])[2], 'f'));
 
-			std::string point_name;
-			if (pnt_vec->getNameOfElementByID(i, point_name))
-				pointTag.setAttribute("name", QString::fromStdString(point_name));
+				std::string point_name;
+				if (pnt_vec->getNameOfElementByID(i, point_name))
+					pointTag.setAttribute("name", QString::fromStdString(point_name));
 
-			pointsListTag.appendChild(pointTag);
+				pointsListTag.appendChild(pointTag);
+			}
+		}
+		else
+		{
+			std::cout << "Point vector empty, abort writing geometry." << std::endl;
+			return 0;
 		}
 	}
 	else
 	{
-		std::cout << "Point vector empty, no points written to file." << std::endl;
+		std::cout << "Point vector empty, abort writing geometry." << std::endl;
 		return 0;
 	}
 
@@ -286,33 +295,39 @@ int XmlGmlInterface::write(std::ostream& stream)
 
 		if (polylines)
 		{
-			QDomElement plyListTag = doc.createElement("polylines");
-			root.appendChild(plyListTag);
-			nPolylines = polylines->size();
-			for (size_t i = 0; i < nPolylines; i++)
+			if (!polylines->empty())
 			{
-				QDomElement polylineTag = doc.createElement("polyline");
-				polylineTag.setAttribute("id", QString::number(i));
-
-				std::string ply_name("");
-				if (ply_vec->getNameOfElementByID(i, ply_name))
-					polylineTag.setAttribute("name", QString::fromStdString(ply_name));
-
-				plyListTag.appendChild(polylineTag);
-
-				nPoints = (*polylines)[i]->getNumberOfPoints();
-				for (size_t j = 0; j < nPoints; j++)
+				QDomElement plyListTag = doc.createElement("polylines");
+				root.appendChild(plyListTag);
+				nPolylines = polylines->size();
+				for (size_t i = 0; i < nPolylines; i++)
 				{
-					QDomElement plyPointTag = doc.createElement("pnt");
-					polylineTag.appendChild(plyPointTag);
-					QDomText plyPointText = doc.createTextNode(QString::number(((*polylines)[i])->getPointID(j)));
-					plyPointTag.appendChild(plyPointText);
+					QDomElement polylineTag = doc.createElement("polyline");
+					polylineTag.setAttribute("id", QString::number(i));
+
+					std::string ply_name("");
+					if (ply_vec->getNameOfElementByID(i, ply_name))
+						polylineTag.setAttribute("name", QString::fromStdString(ply_name));
+
+					plyListTag.appendChild(polylineTag);
+
+					nPoints = (*polylines)[i]->getNumberOfPoints();
+					for (size_t j = 0; j < nPoints; j++)
+					{
+						QDomElement plyPointTag = doc.createElement("pnt");
+						polylineTag.appendChild(plyPointTag);
+						QDomText plyPointText = doc.createTextNode(QString::number(((*polylines)[i])->getPointID(j)));
+						plyPointTag.appendChild(plyPointText);
+					}
 				}
 			}
+			else
+				std::cout << "Polyline vector empty, no polylines written to file." << std::endl;
 		}
 	}
 	else
 		std::cout << "Polyline vector empty, no polylines written to file." << std::endl;
+
 
 	// SURFACES
 	const GEOLIB::SurfaceVec* sfc_vec (geoObjects->getSurfaceVecObj(_exportName));
@@ -350,10 +365,13 @@ int XmlGmlInterface::write(std::ostream& stream)
 					}
 				}
 			}
+			else
+				std::cout << "Surface vector empty, no surfaces written to file." << std::endl;
 		}
 	}
 	else
 		std::cout << "Surface vector empty, no surfaces written to file." << std::endl;
+
 
 	//insertStyleFileDefinition(filename);
 	std::string xml = doc.toString().toStdString();

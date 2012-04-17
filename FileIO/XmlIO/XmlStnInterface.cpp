@@ -5,6 +5,7 @@
 
 #include "XmlStnInterface.h"
 #include "DateTools.h"
+#include <limits>
 
 #include <QFile>
 #include <QtXml/QDomDocument>
@@ -53,12 +54,14 @@ int XmlStnInterface::readFile(const QString &fileName)
 
 		for (int j = 0; j < stationList.count(); j++)
 		{
-			if (stationList.at(j).nodeName().compare("name") == 0)
-				stnName = stationList.at(j).toElement().text().toStdString();
-			else if (stationList.at(j).nodeName().compare("stations") == 0)
-				readStations(stationList.at(j), stations);
-			else if (stationList.at(j).nodeName().compare("boreholes") == 0)
-				readStations(stationList.at(j), stations);
+			const QDomNode station_node(stationList.at(j));
+			const QString station_type(station_node.nodeName());
+			if (station_type.compare("name") == 0)
+				stnName = station_node.toElement().text().toStdString();
+			else if (station_type.compare("stations") == 0)
+				readStations(station_node, stations);
+			else if (station_type.compare("boreholes") == 0)
+				readStations(station_node, stations);
 		}
 
 		if (!stations->empty())
@@ -88,20 +91,19 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 			QDomNodeList stationFeatures = station.childNodes();
 			for(int i = 0; i < stationFeatures.count(); i++)
 			{
-				if (stationFeatures.at(i).nodeName().compare("name") == 0)
-					stationName =
-					        stationFeatures.at(i).toElement().text().
-					        toStdString();
+				const QDomNode feature_node (stationFeatures.at(i));
+				const QString feature_name (feature_node.nodeName());
+				const std::string element_text (feature_node.toElement().text().toStdString());
+				if (feature_name.compare("name") == 0)
+					stationName = feature_node.toElement().text().toStdString();
 				/* add other station features here */
 
-				else if (stationFeatures.at(i).nodeName().compare("value") == 0)
-					stationValue = strtod(stationFeatures.at(i).toElement().text().
-					                       toStdString().c_str(), 0);
-				else if (stationFeatures.at(i).nodeName().compare("bdepth") == 0)
-					boreholeDepth = strtod(stationFeatures.at(i).toElement().text().
-					                       toStdString().c_str(), 0);
-				else if (stationFeatures.at(i).nodeName().compare("bdate") == 0)
-					boreholeDate  = stationFeatures.at(i).toElement().text().toStdString();
+				else if (feature_name.compare("value") == 0)
+					stationValue = strtod(element_text.c_str(), 0);
+				else if (feature_name.compare("bdepth") == 0)
+					boreholeDepth = strtod(element_text.c_str(), 0);
+				else if (feature_name.compare("bdate") == 0)
+					boreholeDate  = element_text;
 				/* add other borehole features here */
 			}
 
@@ -166,7 +168,7 @@ void XmlStnInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::Stati
 				/* add other horizon features here */
 
 			double depth (strtod((horizon.attribute("z")).toStdString().c_str(), 0));
-			if (depth != depth_check) // skip soil-layer if its thickness is zero
+			if (fabs(depth - depth_check) < std::numeric_limits<double>::min()) // skip soil-layer if its thickness is zero
 			{
 				borehole->addSoilLayer(strtod((horizon.attribute("x")).toStdString().c_str(), 0),
 									   strtod((horizon.attribute("y")).toStdString().c_str(), 0),
@@ -226,7 +228,7 @@ int XmlStnInterface::write(std::ostream& stream)
 	double sValue=static_cast<GEOLIB::Station*>((*stations)[0])->getStationValue();
 	size_t nStations(stations->size());
 	for (size_t i = 1; i < nStations; i++)
-		if (static_cast<GEOLIB::Station*>((*stations)[i])->getStationValue() != sValue)
+		if ((static_cast<GEOLIB::Station*>((*stations)[i])->getStationValue() - sValue) < std::numeric_limits<double>::min())
 		{
 			useStationValue = true;
 			break;
@@ -275,7 +277,7 @@ void XmlStnInterface::writeBoreholeData(QDomDocument &doc,
 	boreholeTag.appendChild(stationDepthTag);
 	QDomText stationDepthText = doc.createTextNode(QString::number(borehole->getDepth(), 'f'));
 	stationDepthTag.appendChild(stationDepthText);
-	if (borehole->getDate() != 0)
+	if (fabs(borehole->getDate()) > 0)
 	{
 		QDomElement stationDateTag = doc.createElement("bdate");
 		boreholeTag.appendChild(stationDateTag);

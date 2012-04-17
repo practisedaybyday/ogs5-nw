@@ -498,6 +498,11 @@ int GEOObjects::exists(const std::string &geometry_name) const
 	for (size_t i = 0; i < size; i++)
 		if (_pnt_vecs[i]->getName().compare(geometry_name) == 0)
 			return i;
+
+	// HACK for enabling conversion of files without loading the associated geometry
+	if (size>0 && _pnt_vecs[0]->getName().compare("conversionTestRun#1")==0)	
+		return 1;
+
 	return -1;
 }
 
