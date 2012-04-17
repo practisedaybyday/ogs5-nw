@@ -7,11 +7,11 @@
 #ifndef MESHQUALITYNORMALISEDAREA_H_
 #define MESHQUALITYNORMALISEDAREA_H_
 
-#include "MeshQualityChecker.h"
+#include "MeshQualityArea.h"
 
 namespace MeshLib
 {
-class MeshQualityNormalisedArea : public MeshQualityChecker
+class MeshQualityNormalisedArea : public MeshQualityArea
 {
 public:
 	MeshQualityNormalisedArea(CFEMesh const* const mesh);

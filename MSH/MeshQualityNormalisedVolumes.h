@@ -8,11 +8,11 @@
 #ifndef MESHQUALITYNORMALISEDVOLUMES_H_
 #define MESHQUALITYNORMALISEDVOLUMES_H_
 
-#include "MeshQualityChecker.h"
+#include "MeshQualityVolumes.h"
 
 namespace MeshLib
 {
-class MeshQualityNormalisedVolumes : public MeshQualityChecker
+class MeshQualityNormalisedVolumes : public MeshQualityVolumes
 {
 public:
 	MeshQualityNormalisedVolumes(CFEMesh const* const mesh);
