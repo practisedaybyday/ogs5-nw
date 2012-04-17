@@ -815,14 +815,7 @@ void COutput::WriteTECNodeData(fstream &tec_file)
 		m_pcs = PCSGet(_nod_value_vector[k], true);
 		if (m_pcs != NULL)
 		{
-			NodeIndex[k] = m_pcs->GetNodeValueIndex(_nod_value_vector[k]);
-			for (size_t i = 0; i < m_pcs->GetPrimaryVNumber(); i++)
-				if (_nod_value_vector[k].compare(
-				            m_pcs->pcs_primary_function_name[i]) == 0)
-				{
-					NodeIndex[k]++;
-					break;
-				}
+			NodeIndex[k] = m_pcs->GetLatestNodeValueIndex(_nod_value_vector[k]); // JT Latest.
 		}
 	}
 

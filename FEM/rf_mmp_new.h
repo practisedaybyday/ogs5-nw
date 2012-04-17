@@ -126,7 +126,7 @@ public:
 	// Capillary pressure functions
 	double CapillaryPressureFunction(const double wetting_saturation);
 	double PressureSaturationDependency(double wetting_saturation);
-	double SaturationPressureDependency(const double capillary_pressure);
+	double SaturationPressureDependency(const double capillary_pressure, bool allow_zero = false);
 	double SaturationCapillaryPressureFunction(const double capillary_pressure);
 	//WW
 	double PermeabilitySaturationFunction(const double wetting_saturation, int phase);

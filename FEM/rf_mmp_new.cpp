@@ -2152,7 +2152,7 @@ double CMediumProperties::GetEffectiveSaturationForPerm(const double wetting_sat
 			break;
 		//
 		default:
-			break;
+			return sl;
 	}
 	//
 	return se;
@@ -4526,7 +4526,8 @@ double CMediumProperties::CapillaryPressureFunction(const double wetting_saturat
 			break;
 		//
 		case 2: // Constant saturation for pp models (for WX, from JT) (MUST BE A PP MODEL, SO WON'T COME HERE)
-			ScreenMessage("ERROR: in CFluidProperties::CapillaryPressure: Constant saturation is not possible for a PS model.\n");
+			ScreenMessage("ERROR: in CFluidProperties::CapillaryPressure:");
+			ScreenMessage("Constant saturation is not possible for a PS model (PwSnw).\n");
 			exit(0);
 			break;
 		//
@@ -4594,7 +4595,8 @@ double CMediumProperties::SaturationCapillaryPressureFunction(const double capil
 			return sl;
 		//
 		case 1: // Constant capillary pressure for ps models
-			ScreenMessage("ERROR: in CFluidProperties::SaturationCapillaryPressureFunction: Constant capillary pressure is not possible for a PP model.\n");
+			ScreenMessage("ERROR: in CFluidProperties::SaturationCapillaryPressureFunction:");
+			ScreenMessage("Constant capillary pressure is not possible for a pressure model (PcPnw, PwPnw, or Richards).\n");
 			exit(0);
 			break;
 		//
@@ -4643,10 +4645,13 @@ double CMediumProperties::SaturationCapillaryPressureFunction(const double capil
            Plus, input should be Pc, not Sw.
    Last modified:
 **************************************************************************/
-double CMediumProperties::SaturationPressureDependency(const double capillary_pressure)
+double CMediumProperties::SaturationPressureDependency(const double capillary_pressure, bool allow_zero)
 {
 	double dsdp,v1,v2,pc,pb,slr,slm,m,dpc,ds,dpc2;
 	pc = capillary_pressure;
+	//
+	if(allow_zero && pc < DBL_EPSILON) // If we allow dSw/dPc = 0.0 (i.e. Richard's flow)
+		return 0.0;
 	//
 	switch(capillary_pressure_model)
 	{

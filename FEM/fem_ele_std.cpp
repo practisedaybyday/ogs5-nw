@@ -1522,7 +1522,7 @@ double CFiniteElementStd::CalCoefMass()
 		Sw = MediaProp->SaturationCapillaryPressureFunction(-PG);
 		//     Sw = interpolate(NodalVal_Sat);
 		rhow = FluidProp->Density();
-		dSdp = MediaProp->SaturationPressureDependency(-PG);
+		dSdp = MediaProp->SaturationPressureDependency(-PG,true);
 		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 		// Storativity
 		val = MediaProp->StorageFunction(Index,unit,pcs->m_num->ls_theta) * Sw;
@@ -8032,7 +8032,7 @@ void CFiniteElementStd::CalcSatution()
 	//
 	sign = -1.0;
 	idx_cp = pcs->GetNodeValueIndex("PRESSURE1") + 1;
-	idx_S =  pcs->GetNodeValueIndex("SATURATION1") + 1;
+	idx_S =  pcs->GetLatestNodeValueIndex("SATURATION1");
 	// Dual Richards
 	if(pcs->type == 22 && pcs->GetContinnumType() == 1)
 	{
