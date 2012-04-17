@@ -117,6 +117,10 @@ CSourceTerm::CSourceTerm(const SourceTerm* st)
 			this->DistribedBC.push_back(dis_values[i]);
 		}
 	}
+	else if (this->getProcessDistributionType() == FiniteElement::DIRECT)
+	{
+		// variable "fname" needs to be set, this must be done from outside! 
+	}
 	else
 		std::cout << "Error in CBoundaryCondition() - DistributionType \""
 		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType()) 
@@ -798,9 +802,12 @@ void CSourceTerm::Write(std::fstream* st_file)
    *st_file << convertPrimaryVariableToString (getProcessPrimaryVariable()) << std::endl;
    //--------------------------------------------------------------------
    //GEO_TYPE
-   *st_file << " $GEO_TYPE" << std::endl;
-   *st_file << "  ";
-   *st_file << getGeoTypeAsString() << " " << geo_name << std::endl;
+   if (this->getProcessDistributionType() != FiniteElement::DIRECT)
+   {
+	   *st_file << " $GEO_TYPE" << std::endl;
+	   *st_file << "  ";
+	   *st_file << getGeoTypeAsString() << " " << geo_name << std::endl;
+   }
    //--------------------------------------------------------------------
    // TIM_TYPE
    if (tim_type_name.size() > 0)                  //OK
@@ -839,6 +846,9 @@ void CSourceTerm::Write(std::fstream* st_file)
             *st_file << "  " << PointsHaveDistribedBC[i] << " ";
             *st_file << "  " << DistribedBC[i] << std::endl;
          }
+         break;
+      case  FiniteElement::DIRECT:
+         *st_file << " " << this->fname << std::endl;
          break;
       default:
          std::cerr << "this distributition type is not handled in CSourceTerm::Write" << std::endl;

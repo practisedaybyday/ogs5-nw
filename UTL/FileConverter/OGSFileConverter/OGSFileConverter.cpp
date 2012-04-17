@@ -120,6 +120,7 @@ void OGSFileConverter::convertCND2BC(const QStringList &input, const QString &ou
 		else if (fi.suffix().compare("ic") == 0) type = FEMCondition::INITIAL_CONDITION;
 		else if (fi.suffix().compare("st") == 0) type = FEMCondition::SOURCE_TERM;
 
+		size_t count(0);
 		size_t nConds(conditions.size());
 		for (size_t i=0; i<nConds; i++)
 		{
@@ -131,6 +132,14 @@ void OGSFileConverter::convertCND2BC(const QStringList &input, const QString &ou
 					ic_vector.push_back(new CInitialCondition(static_cast<InitialCondition*>(conditions[i])));
 				else if (type == FEMCondition::SOURCE_TERM)
 					st_vector.push_back(new CSourceTerm(static_cast<SourceTerm*>(conditions[i])));
+
+				if (conditions[i]->getProcessDistributionType() == FiniteElement::DIRECT)
+				{
+					std::string count_str (QString::number(count++).toStdString());
+					std::string direct_value_file = fi.absolutePath().toStdString() + "/direct_values" + count_str + ".txt";
+					st_vector[st_vector.size()-1]->fname = direct_value_file;
+					ConversionTools::writeDirectValues(*conditions[i], direct_value_file);
+				}
 			}
 		}
 		if (type == FEMCondition::BOUNDARY_CONDITION)
