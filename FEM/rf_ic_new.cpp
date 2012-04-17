@@ -62,7 +62,8 @@ CInitialCondition::CInitialCondition(const InitialCondition* ic)
 {
 	setProcess( PCSGet( this->getProcessType() ) );
 	this->geo_name = ic->getGeoName();
-	const std::vector<double> dis_values = ic->getDisValue();
+	const std::vector<size_t> dis_nodes = ic->getDisNodes();
+	const std::vector<double> dis_values = ic->getDisValues();
 	
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
 	{
@@ -337,7 +338,9 @@ ios::pos_type CInitialCondition::Read(std::ifstream* ic_file,
 					std::cerr <<
 					"error in CInitialCondition::Read: point name \"" <<
 					geo_name << "\" not found!" << std::endl;
+#ifndef OGS_USE_QT	//KR
 					exit (1);
+#endif
 				}
 				setGeoType (GEOLIB::POINT);
 				setGeoObj (pnt);
@@ -356,7 +359,9 @@ ios::pos_type CInitialCondition::Read(std::ifstream* ic_file,
 					std::cerr <<
 					"error in CInitialCondition::Read: polyline name \"" <<
 					geo_name << "\" not found!" << std::endl;
+#ifndef OGS_USE_QT	//KR
 					exit (1);
+#endif
 				}
 				setGeoType (GEOLIB::POLYLINE);
 				setGeoObj (ply);

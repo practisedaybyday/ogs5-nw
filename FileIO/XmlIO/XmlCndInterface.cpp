@@ -15,7 +15,7 @@ namespace FileIO
 {
 
 XmlCndInterface::XmlCndInterface(ProjectData* project, const std::string &schemaFile)
-: XMLInterface(project, schemaFile)
+: XMLInterface(project, schemaFile), _type(FEMCondition::UNSPECIFIED)
 {
 }
 
@@ -78,7 +78,8 @@ void XmlCndInterface::readConditions( const QDomNode &listRoot,
 	while (!cond.isNull())
 	{
 		std::string geometry_name ( cond.attribute("geometry").toStdString() );
-		if (this->_project->getGEOObjects()->exists(geometry_name) >= 0)
+		if (this->_project->getGEOObjects()->exists(geometry_name) >= 0 ||
+			this->_project->meshExists(geometry_name))
 		{
 
 			FEMCondition* c ( new FEMCondition(geometry_name, type) );
@@ -121,17 +122,34 @@ void XmlCndInterface::readConditions( const QDomNode &listRoot,
 							c->setProcessDistributionType(FiniteElement::convertDisType(distProps.at(j).toElement().text().toStdString()));
 						else if (prop_name.compare("Value") == 0)
 						{
-							QString text = distProps.at(j).toElement().text();
-							QStringList list = text.split(QRegExp("\\t"));
+							std::vector<size_t> disNodes;
 							std::vector<double> disValues;
-							for (QStringList::iterator it=list.begin(); it!=list.end(); ++it)
+							if (c->getProcessDistributionType()==FiniteElement::CONSTANT || 
+								c->getProcessDistributionType()==FiniteElement::CONSTANT_NEUMANN)
+								disValues.push_back( strtod(distProps.at(j).toElement().text().toStdString().c_str(), 0) );
+							else if (c->getProcessDistributionType()==FiniteElement::LINEAR || 
+								     c->getProcessDistributionType()==FiniteElement::LINEAR_NEUMANN ||
+									 c->getProcessDistributionType()==FiniteElement::DIRECT)
 							{
-								std::string val (it->trimmed().toStdString());
-								if (!val.empty())
-									disValues.push_back(strtod(val.c_str(), 0));
+								QString text = distProps.at(j).toElement().text();
+								QStringList list = text.split(QRegExp("\\t"));
+								size_t count(0);
+								for (QStringList::iterator it=list.begin(); it!=list.end(); ++it)
+								{
+									std::string val (it->trimmed().toStdString());
+									if (!val.empty())
+									{
+										if (count%2==0)
+											disNodes.push_back(atoi(val.c_str()));
+										else
+											disValues.push_back(strtod(val.c_str(), 0));
+										count++;
+									}
+								}
 							}
-							c->setDisValues(disValues);
-							//c->setDisValue(strtod(distProps.at(j).toElement().text().toStdString().c_str(), 0));
+							else
+								std::cout << "Error in XmlCndInterface::readConditions() - Distribution type not supported." << std::endl;
+							c->setDisValues(disNodes, disValues);
 						}
 					}
 				}
@@ -206,9 +224,10 @@ void XmlCndInterface::writeCondition( QDomDocument doc, QDomElement &listTag, co
 {
 	QString geoName (QString::fromStdString(cond->getAssociatedGeometryName()));
 
-	if (geoName.compare(geometryName) != 0)
+	if ((geometryName.length()>0) && (geoName.compare(geometryName) != 0))
 	{
 		std::cout << "Geometry name not matching, skipping condition \"" << cond->getGeoName() << "\"..." << std::endl;
+		return;
 	}
 
 	QDomElement condTag ( doc.createElement(condText) );
@@ -250,7 +269,6 @@ void XmlCndInterface::writeCondition( QDomDocument doc, QDomElement &listTag, co
 	disTypeTag.appendChild(disTypeText);
 	QDomElement disValueTag ( doc.createElement("Value") );
 	disTag.appendChild(disValueTag);
-	QDomText disValueText;
 	/*
 	if (cond->getProcessDistributionType() != FiniteElement::DIRECT)
 	{
@@ -260,21 +278,26 @@ void XmlCndInterface::writeCondition( QDomDocument doc, QDomElement &listTag, co
 	else
 		disValueText = doc.createTextNode(QString::fromStdString(cond->getDirectFileName()));
 	*/
-	const std::vector<double> dis_values = cond->getDisValue();
+	const std::vector<size_t> dis_nodes = cond->getDisNodes();
+	const std::vector<double> dis_values = cond->getDisValues();
+	const size_t nNodes = dis_nodes.size();
 	const size_t nValues = dis_values.size();
 	std::stringstream ss;
-	if (nValues==1)
+	if (nNodes==0 && nValues==1)				// CONSTANT
 		ss << dis_values[0];
-	else if ((nValues>1) && (nValues%2==0))
+	else if ((nValues>0) && (nValues==nNodes))	// LINEAR && DIRECT
 	{
-		for (size_t i=0; i<nValues; i+=2)
-			ss << "\t" << dis_values[i] << "\t" << dis_values[i+1] << "\n";
+		ss << "\n\t";
+		for (size_t i=0; i<nValues; i++)
+			ss << dis_nodes[i] << "\t" << dis_values[i] << "\n\t";
 	}
 	else
 	{
 		std::cout << "Error in XmlCndInterface::writeCondition() - Inconsistent length of distribution value array." << std::endl;
 		ss << "-9999";
 	}
+	std::string dv  = ss.str();
+	QDomText disValueText = doc.createTextNode(QString::fromStdString(ss.str()));
 	disValueTag.appendChild(disValueText);
 }
 

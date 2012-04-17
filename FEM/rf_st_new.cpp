@@ -102,7 +102,8 @@ CSourceTerm::CSourceTerm(const SourceTerm* st)
 {
 	setProcess( PCSGet( this->getProcessType() ) );
 	this->geo_name = st->getGeoName();
-	const std::vector<double> dis_values = st->getDisValue();
+	const std::vector<size_t> dis_nodes = st->getDisNodes();
+	const std::vector<double> dis_values = st->getDisValues();
 	
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
 	{
@@ -110,12 +111,15 @@ CSourceTerm::CSourceTerm(const SourceTerm* st)
 	}
 	else if (this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
 	{
-		for (size_t i=0; i<dis_values.size(); i+=2)
+		for (size_t i=0; i<dis_values.size(); i++)
 		{
-
-			this->PointsHaveDistribedBC.push_back(static_cast<int>(dis_values[i]));
-			this->DistribedBC.push_back(dis_values[i+1]);
+			this->PointsHaveDistribedBC.push_back(static_cast<int>(dis_nodes[i]));
+			this->DistribedBC.push_back(dis_values[i]);
 		}
+	}
+	else if (this->getProcessDistributionType() == FiniteElement::DIRECT)
+	{
+		// variable "fname" needs to be set, this must be done from outside! 
 	}
 	else
 		std::cout << "Error in CBoundaryCondition() - DistributionType \""
@@ -798,9 +802,12 @@ void CSourceTerm::Write(std::fstream* st_file)
    *st_file << convertPrimaryVariableToString (getProcessPrimaryVariable()) << std::endl;
    //--------------------------------------------------------------------
    //GEO_TYPE
-   *st_file << " $GEO_TYPE" << std::endl;
-   *st_file << "  ";
-   *st_file << getGeoTypeAsString() << " " << geo_name << std::endl;
+   if (this->getProcessDistributionType() != FiniteElement::DIRECT)
+   {
+	   *st_file << " $GEO_TYPE" << std::endl;
+	   *st_file << "  ";
+	   *st_file << getGeoTypeAsString() << " " << geo_name << std::endl;
+   }
    //--------------------------------------------------------------------
    // TIM_TYPE
    if (tim_type_name.size() > 0)                  //OK
@@ -839,6 +846,9 @@ void CSourceTerm::Write(std::fstream* st_file)
             *st_file << "  " << PointsHaveDistribedBC[i] << " ";
             *st_file << "  " << DistribedBC[i] << std::endl;
          }
+         break;
+      case  FiniteElement::DIRECT:
+         *st_file << " " << this->fname << std::endl;
          break;
       default:
          std::cerr << "this distributition type is not handled in CSourceTerm::Write" << std::endl;

@@ -39,6 +39,12 @@ bool ProjectData::removeMesh(const std::string &name)
 	return result > 0;
 }
 
+bool ProjectData::meshExists(const std::string &name)
+{
+	if (_msh_vec.count(name)>0) return true;
+	return false;
+}
+
 void ProjectData::addProcess(ProcessInfo* pcs)
 {
 	for (std::vector<ProcessInfo*>::const_iterator it = _pcs_vec.begin(); it != _pcs_vec.end(); ++it)

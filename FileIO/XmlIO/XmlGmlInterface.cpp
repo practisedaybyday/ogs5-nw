@@ -257,25 +257,33 @@ int XmlGmlInterface::write(std::ostream& stream)
 	{
 		const std::vector<GEOLIB::Point*>* points (pnt_vec->getVector());
 
-		nPoints = points->size();
-		for (size_t i = 0; i < nPoints; i++)
+		if (!points->empty())
 		{
-			QDomElement pointTag = doc.createElement("point");
-			pointTag.setAttribute("id", QString::number(i));
-			pointTag.setAttribute("x", QString::number((*(*points)[i])[0], 'f'));
-			pointTag.setAttribute("y", QString::number((*(*points)[i])[1], 'f'));
-			pointTag.setAttribute("z", QString::number((*(*points)[i])[2], 'f'));
+			nPoints = points->size();
+			for (size_t i = 0; i < nPoints; i++)
+			{
+				QDomElement pointTag = doc.createElement("point");
+				pointTag.setAttribute("id", QString::number(i));
+				pointTag.setAttribute("x", QString::number((*(*points)[i])[0], 'f'));
+				pointTag.setAttribute("y", QString::number((*(*points)[i])[1], 'f'));
+				pointTag.setAttribute("z", QString::number((*(*points)[i])[2], 'f'));
 
-			std::string point_name;
-			if (pnt_vec->getNameOfElementByID(i, point_name))
-				pointTag.setAttribute("name", QString::fromStdString(point_name));
+				std::string point_name;
+				if (pnt_vec->getNameOfElementByID(i, point_name))
+					pointTag.setAttribute("name", QString::fromStdString(point_name));
 
-			pointsListTag.appendChild(pointTag);
+				pointsListTag.appendChild(pointTag);
+			}
+		}
+		else
+		{
+			std::cout << "Point vector empty, abort writing geometry." << std::endl;
+			return 0;
 		}
 	}
 	else
 	{
-		std::cout << "Point vector empty, no points written to file." << std::endl;
+		std::cout << "Point vector empty, abort writing geometry." << std::endl;
 		return 0;
 	}
 
@@ -287,33 +295,39 @@ int XmlGmlInterface::write(std::ostream& stream)
 
 		if (polylines)
 		{
-			QDomElement plyListTag = doc.createElement("polylines");
-			root.appendChild(plyListTag);
-			nPolylines = polylines->size();
-			for (size_t i = 0; i < nPolylines; i++)
+			if (!polylines->empty())
 			{
-				QDomElement polylineTag = doc.createElement("polyline");
-				polylineTag.setAttribute("id", QString::number(i));
-
-				std::string ply_name("");
-				if (ply_vec->getNameOfElementByID(i, ply_name))
-					polylineTag.setAttribute("name", QString::fromStdString(ply_name));
-
-				plyListTag.appendChild(polylineTag);
-
-				nPoints = (*polylines)[i]->getNumberOfPoints();
-				for (size_t j = 0; j < nPoints; j++)
+				QDomElement plyListTag = doc.createElement("polylines");
+				root.appendChild(plyListTag);
+				nPolylines = polylines->size();
+				for (size_t i = 0; i < nPolylines; i++)
 				{
-					QDomElement plyPointTag = doc.createElement("pnt");
-					polylineTag.appendChild(plyPointTag);
-					QDomText plyPointText = doc.createTextNode(QString::number(((*polylines)[i])->getPointID(j)));
-					plyPointTag.appendChild(plyPointText);
+					QDomElement polylineTag = doc.createElement("polyline");
+					polylineTag.setAttribute("id", QString::number(i));
+
+					std::string ply_name("");
+					if (ply_vec->getNameOfElementByID(i, ply_name))
+						polylineTag.setAttribute("name", QString::fromStdString(ply_name));
+
+					plyListTag.appendChild(polylineTag);
+
+					nPoints = (*polylines)[i]->getNumberOfPoints();
+					for (size_t j = 0; j < nPoints; j++)
+					{
+						QDomElement plyPointTag = doc.createElement("pnt");
+						polylineTag.appendChild(plyPointTag);
+						QDomText plyPointText = doc.createTextNode(QString::number(((*polylines)[i])->getPointID(j)));
+						plyPointTag.appendChild(plyPointText);
+					}
 				}
 			}
+			else
+				std::cout << "Polyline vector empty, no polylines written to file." << std::endl;
 		}
 	}
 	else
 		std::cout << "Polyline vector empty, no polylines written to file." << std::endl;
+
 
 	// SURFACES
 	const GEOLIB::SurfaceVec* sfc_vec (geoObjects->getSurfaceVecObj(_exportName));
@@ -323,35 +337,41 @@ int XmlGmlInterface::write(std::ostream& stream)
 
 		if (surfaces)
 		{
-			QDomElement sfcListTag = doc.createElement("surfaces");
-			root.appendChild(sfcListTag);
-			nSurfaces = surfaces->size();
-			for (size_t i = 0; i < nSurfaces; i++)
+			if (!surfaces->empty())
 			{
-				QDomElement surfaceTag = doc.createElement("surface");
-				surfaceTag.setAttribute("id", QString::number(i));
-
-				std::string sfc_name("");
-				if (sfc_vec->getNameOfElementByID(i, sfc_name))
-					surfaceTag.setAttribute("name", QString::fromStdString(sfc_name));
-
-				sfcListTag.appendChild(surfaceTag);
-
-				// writing the elements compromising the surface
-				size_t nElements = ((*surfaces)[i])->getNTriangles();
-				for (size_t j = 0; j < nElements; j++)
+				QDomElement sfcListTag = doc.createElement("surfaces");
+				root.appendChild(sfcListTag);
+				nSurfaces = surfaces->size();
+				for (size_t i = 0; i < nSurfaces; i++)
 				{
-					QDomElement elementTag = doc.createElement("element");
-					elementTag.setAttribute("p1", QString::number((*(*(*surfaces)[i])[j])[0]));
-					elementTag.setAttribute("p2", QString::number((*(*(*surfaces)[i])[j])[1]));
-					elementTag.setAttribute("p3", QString::number((*(*(*surfaces)[i])[j])[2]));
-					surfaceTag.appendChild(elementTag);
+					QDomElement surfaceTag = doc.createElement("surface");
+					surfaceTag.setAttribute("id", QString::number(i));
+
+					std::string sfc_name("");
+					if (sfc_vec->getNameOfElementByID(i, sfc_name))
+						surfaceTag.setAttribute("name", QString::fromStdString(sfc_name));
+
+					sfcListTag.appendChild(surfaceTag);
+
+					// writing the elements compromising the surface
+					size_t nElements = ((*surfaces)[i])->getNTriangles();
+					for (size_t j = 0; j < nElements; j++)
+					{
+						QDomElement elementTag = doc.createElement("element");
+						elementTag.setAttribute("p1", QString::number((*(*(*surfaces)[i])[j])[0]));
+						elementTag.setAttribute("p2", QString::number((*(*(*surfaces)[i])[j])[1]));
+						elementTag.setAttribute("p3", QString::number((*(*(*surfaces)[i])[j])[2]));
+						surfaceTag.appendChild(elementTag);
+					}
 				}
 			}
+			else
+				std::cout << "Surface vector empty, no surfaces written to file." << std::endl;
 		}
 	}
 	else
 		std::cout << "Surface vector empty, no surfaces written to file." << std::endl;
+
 
 	//insertStyleFileDefinition(filename);
 	std::string xml = doc.toString().toStdString();
