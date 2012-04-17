@@ -35,6 +35,7 @@ double GetMatrixValue(double var1, double var2, std::string caption, int *guelti
 extern double GetCurveValue ( int kurve, int methode, double punkt, int* gueltig);
 extern double GetCurveValueInverse ( int kurve, int methode, double wert, int* gueltig);
 extern double GetCurveDerivative(int kurve, int methode, double punkt, int* gueltig);
+extern double GetCurveInverseDerivative ( int kurve, int methode, double wert, int* gueltig);
 extern Kurven* kurven;                            /* Feld mit Kurven */
 extern int anz_kurven;                            /* Anzahl der Kurven */
 

@@ -4647,7 +4647,8 @@ double CMediumProperties::SaturationCapillaryPressureFunction(const double capil
 **************************************************************************/
 double CMediumProperties::SaturationPressureDependency(const double capillary_pressure, bool allow_zero)
 {
-	double dsdp,v1,v2,pc,pb,slr,slm,m,dpc,ds,dpc2;
+	double dsdp,v1,v2,pc,pb,slr,slm,m;
+	int gueltig;
 	pc = capillary_pressure;
 	//
 	if(allow_zero && pc < DBL_EPSILON) // If we allow dSw/dPc = 0.0 (i.e. Richard's flow)
@@ -4655,25 +4656,13 @@ double CMediumProperties::SaturationPressureDependency(const double capillary_pr
 	//
 	switch(capillary_pressure_model)
 	{
-		default:  // Iterative approximation
-			if(pc < 0.0) pc = 0.0;
-			//
-			dpc = 100.0;
-			do{ dpc /= 10.0;
-				dpc2 = dpc/2.0;
-				if(pc - dpc2 < 0.0){
-					v2 = SaturationCapillaryPressureFunction(pc + dpc);
-					v1 = SaturationCapillaryPressureFunction(pc);
-				}
-				else{
-					v2 = SaturationCapillaryPressureFunction(pc + dpc2);
-					v1 = SaturationCapillaryPressureFunction(pc - dpc2);
-				}
-				ds = v2-v1;
-			}
-			while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
-			//
-			dsdp = ds/dpc;
+		default:
+			ScreenMessage("Error in CFluidProperties::SaturationPressureDependency: no valid material model.\n");
+			exit(0);
+			break;
+
+		case 0: // Curve value
+			dsdp = GetCurveInverseDerivative((int)capillary_pressure_values[0],1,pc,&gueltig);
 			break;
 
 		case 1: //  Pc = CONSTANT
@@ -4725,30 +4714,19 @@ double CMediumProperties::SaturationPressureDependency(const double capillary_pr
 **************************************************************************/
 double CMediumProperties::PressureSaturationDependency(const double wetting_saturation)
 {
-	double dpds,v1,v2,pb,sl,slr,slm,m,dpc,ds,ds2;
+	double dpds,v1,v2,pb,sl,slr,slm,m;
+	int gueltig;
 	sl = wetting_saturation;
 	//
 	switch(capillary_pressure_model)
 	{
-		default:  // Iterative approximation
-			sl = MRange(0.0,sl,1.0);
-			//
-			ds = 0.1;
-			do{ ds /= 10.0;
-				ds2 = ds/2.0;
-				if(sl - ds2 < 0.0){
-					v2 = CapillaryPressureFunction(sl + ds);
-					v1 = CapillaryPressureFunction(sl);
-				}
-				else{
-					v2 = CapillaryPressureFunction(sl + ds2);
-					v1 = CapillaryPressureFunction(sl - ds2);
-				}
-				dpc = v2-v1;
-			}
-			while(dpc > FLT_EPSILON && ds > FLT_EPSILON);
-			//
-			dpds = dpc/ds;
+		default:
+			ScreenMessage("Error in CFluidProperties::PressureSaturationDependency: no valid material model.\n");
+			exit(0);
+			break;
+
+		case 0: // curve value
+			dpds = GetCurveDerivative((int)capillary_pressure_values[0],1,sl,&gueltig);
 			break;
 
 		case 1: //  Pc = CONSTANT
