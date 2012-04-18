@@ -11,7 +11,7 @@
 #include "GridAdapter.h"
 
 FEMCondition::FEMCondition(const std::string &geometry_name, CondType t)
-	: _type(t), _geoName("[unspecified]"), _associated_geometry(geometry_name), _direct_file_name("")
+	: _type(t), _geoName("[unspecified]"), _associated_geometry(geometry_name)
 {
 	this->setProcessType(FiniteElement::INVALID_PROCESS);
 	this->setProcessPrimaryVariable(FiniteElement::INVALID_PV);
@@ -23,7 +23,7 @@ FEMCondition::FEMCondition(const std::string &geometry_name, FiniteElement::Proc
 				FiniteElement::PrimaryVariable pv, GEOLIB::GEOTYPE gt, const std::string &gn,
 				FiniteElement::DistributionType dt, CondType ct)
 	: ProcessInfo(pt, pv, NULL),  GeoInfo(gt, NULL), DistributionInfo(dt), _type(ct),
-	  _geoName(gn), _associated_geometry(geometry_name), _direct_file_name("")
+	  _geoName(gn), _associated_geometry(geometry_name)
 {
 }
 
@@ -35,8 +35,7 @@ FEMCondition::FEMCondition(const FEMCondition &cond, CondType t)
 	  _geoName(cond.getGeoName()),
 	  _disNodes(cond.getDisNodes()),
 	  _disValues(cond.getDisValues()),
-	  _associated_geometry(cond.getAssociatedGeometryName()),
-	  _direct_file_name("")
+	  _associated_geometry(cond.getAssociatedGeometryName())
 {
 }
 
@@ -54,25 +53,13 @@ std::string FEMCondition::condTypeToString(CondType type)
 
 void FEMCondition::setDisValues(const std::vector< std::pair<size_t, double> > &dis_values)
 {
+	std::vector<size_t> nodes;
+	std::vector<double> values;
 	for (size_t i = 0; i < dis_values.size(); i++)
 	{
-		this->_disNodes.push_back(dis_values[i].first);
-		this->_disValues.push_back(dis_values[i].second);
+		nodes.push_back(dis_values[i].first);
+		values.push_back(dis_values[i].second);
 	}
+	this->_disNodes=nodes;
+	this->_disValues=values;
 }
-/*
-std::vector< std::pair<size_t, double> > FEMCondition::getDistributedPairs(std::vector<int> point_ids, std::vector<double> point_values)
-{
-	if (point_ids.size() == point_values.size())
-	{
-		size_t nValues (point_ids.size());
-		std::vector< std::pair<size_t, double> > dis_values(nValues);
-		for (size_t i=0; i<nValues; i++)
-			dis_values[i] = std::pair<size_t, double>(point_ids[i],point_values[i]);
-		return dis_values;
-	}
-	std::cout << "Error in SourceTerm() - size of linear distribution arrays doesn't match..." << std::endl;
-	std::vector< std::pair<size_t, double> > dis_values(0);
-	return dis_values;
-}
-*/

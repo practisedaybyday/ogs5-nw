@@ -71,8 +71,6 @@ public:
 	{
 		_disNodes = disNodes;
 		_disValues = disValues;
-		//for (size_t i = 0; i < disValue.size(); i++)
-		//	_disValue.push_back(disValue[i]);
 	}
 
 	/// Sets a vector of values specifying the distribution.
@@ -88,19 +86,12 @@ public:
 	/// Returns the type of the FEM condition as a string.
 	static std::string condTypeToString(CondType type);
 
-	const std::string& getDirectFileName() const { return _direct_file_name; };
-
-	void setDirectFileName(std::string direct_file_name) { _direct_file_name = direct_file_name; };
-
 protected:
-	//std::vector< std::pair<size_t, double> > getDistributedPairs(std::vector<int> point_ids, std::vector<double> point_values);
-
 	CondType _type;
 	std::string _geoName;
 	std::vector<size_t> _disNodes;
 	std::vector<double> _disValues;
 	std::string _associated_geometry;
-	std::string _direct_file_name;
 };
 
 #endif //FEMCONDITION_H

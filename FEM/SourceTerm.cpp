@@ -25,7 +25,7 @@ SourceTerm::SourceTerm(const CSourceTerm &st, const std::string &geometry_name)
 	}
 	else if (this->getProcessDistributionType() == FiniteElement::DIRECT)
 	{
-		this->_direct_file_name = st.fname;
+		//this->_direct_file_name = st.fname;
 	}
 	else
 		std::cout << "Error in SourceTerm() - Unknown Process Distribution Type \"" <<
