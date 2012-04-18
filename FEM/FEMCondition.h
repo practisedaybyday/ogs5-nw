@@ -64,7 +64,7 @@ public:
 	const std::string& getAssociatedGeometryName() const { return _associated_geometry; }
 
 	/// Convenience method for setting a single value specifying the distribution.
-	void addDisValue(double disValue) { _disValues.push_back(disValue); }
+	void setConstantDisValue(double disValue) {_disValues.clear(); _disValues.push_back(disValue); }
 
 	/// Sets a vector of values specifying the distribution.
 	void setDisValues(const std::vector<size_t> &disNodes, const std::vector<double> &disValues)
