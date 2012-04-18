@@ -337,7 +337,7 @@ int XmlGmlInterface::write(std::ostream& stream)
 
 		if (surfaces)
 		{
-			if (!surfaces->empty())
+			if (! surfaces->empty())
 			{
 				QDomElement sfcListTag = doc.createElement("surfaces");
 				root.appendChild(sfcListTag);

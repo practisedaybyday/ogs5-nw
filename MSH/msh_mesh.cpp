@@ -1556,12 +1556,13 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 	begin = clock();
 #endif
 	const size_t nodes_in_usage((size_t) NodesInUsage());
-	for (size_t j(0); j < nodes_in_usage; j++)
+	for (size_t j(0); j < nodes_in_usage; j++) {
 		if (sfc->isPntInBV((nod_vector[j])->getData(), _min_edge_length / 2.0)) {
 			if (sfc->isPntInSfc((nod_vector[j])->getData())) {
 				msh_nod_vector.push_back(nod_vector[j]->GetIndex());
 			}
 		}
+	}
 #ifdef TIME_MEASUREMENT
 	end = clock();
 	std::cout << "done, took " << (end-begin)/(double)(CLOCKS_PER_SEC) << " s" << std::endl;

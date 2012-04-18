@@ -8,6 +8,8 @@
 #ifndef QUADTREE_H_
 #define QUADTREE_H_
 
+#include <limits>
+
 namespace GEOLIB
 {
 /**
@@ -71,7 +73,7 @@ public:
 	 * @param pnt the point
 	 * @return If the point can be inserted the method returns true, else false.
 	 */
-	bool addPoint (POINT* pnt)
+	bool addPoint (POINT const* pnt)
 	{
 		if ((*pnt)[0] < _ll[0]) return false;
 		if ((*pnt)[0] > _ur[0]) return false;
@@ -174,7 +176,7 @@ public:
 
 	}
 
-	const std::vector<POINT*>& getPoints () const { return _pnts; }
+	const std::vector<POINT const*>& getPoints () const { return _pnts; }
 
 	void getSquarePoints (POINT& ll, POINT& ur) const
 	{
@@ -208,28 +210,27 @@ public:
 		}
 	}
 
-	void getQuadTree (std::vector<POINT*>& pnts, std::vector<GEOLIB::Polyline*>& plys) const
-	{
-		size_t pnt_pos (pnts.size());
-		pnts.push_back (new POINT (_ll));
-		pnts.push_back (new POINT (_ur[0], _ll[1], _ll[2]));
-		pnts.push_back (new POINT (_ur));
-		pnts.push_back (new POINT (_ll[0], _ur[1], _ll[2]));
-
-		if (_father == NULL)
-		{
-			size_t ply_pos (plys.size());
-			plys.push_back (new Polyline (pnts));
-			for (size_t i(0); i < 4; i++)
-				plys[ply_pos]->addPoint (pnt_pos + i);
-			plys[ply_pos]->addPoint (pnt_pos);
-		}
-
-		if (!_is_leaf)
-			for (size_t i(0); i < 4; i++)
-				_childs[i]->getQuadTree (pnts, plys);
-
-	}
+//	void getQuadTree (std::vector<POINT*>& pnts, std::vector<GEOLIB::Polyline*>& plys) const
+//	{
+//		size_t pnt_pos (pnts.size());
+//		pnts.push_back (new POINT (_ll));
+//		pnts.push_back (new POINT (_ur[0], _ll[1], _ll[2]));
+//		pnts.push_back (new POINT (_ur));
+//		pnts.push_back (new POINT (_ll[0], _ur[1], _ll[2]));
+//
+//		if (_father == NULL)
+//		{
+//			size_t ply_pos (plys.size());
+//			plys.push_back (new GEOLIB::Polyline (pnts));
+//			for (size_t i(0); i < 4; i++)
+//				plys[ply_pos]->addPoint (pnt_pos + i);
+//			plys[ply_pos]->addPoint (pnt_pos);
+//		}
+//
+//		if (!_is_leaf)
+//			for (size_t i(0); i < 4; i++)
+//				_childs[i]->getQuadTree (pnts, plys);
+//	}
 
 	QuadTree<POINT> const* getFather ()
 	{
@@ -473,7 +474,7 @@ private:
 	 */
 	POINT _ur;
 	size_t _depth;
-	std::vector<POINT*> _pnts;
+	std::vector<POINT const*> _pnts;
 	bool _is_leaf;
 	/**
 	 * maximum number of points per leaf

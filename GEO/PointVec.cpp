@@ -5,27 +5,31 @@
  *      Author: TF
  */
 
+// GEOLIB
 #include "BruteForceClosestPair.h"
 #include "PointVec.h"
 #include "PointWithID.h"
 
+// MathLib
+#include "MathTools.h"
+
 namespace GEOLIB
 {
 PointVec::PointVec (const std::string& name, std::vector<Point*>* points,
-                    std::map<std::string, size_t>* name_id_map, PointType type) :
+                    std::map<std::string, size_t>* name_id_map, PointType type, double rel_eps) :
                     	TemplateVec<Point> (name, points, name_id_map),
 	_type(type), _sqr_shortest_dist (std::numeric_limits<double>::max())
 {
 	assert (_data_vec);
 	size_t number_of_all_input_pnts (_data_vec->size());
 
-	makePntsUnique (_data_vec, _pnt_id_map);
+	calculateAxisAlignedBoundingBox ();
+	rel_eps *= sqrt(MathLib::sqrDist (&(_aabb.getMinPoint()),&(_aabb.getMaxPoint())));
+	makePntsUnique (_data_vec, _pnt_id_map, rel_eps);
 
 	if (number_of_all_input_pnts - _data_vec->size() > 0)
 		std::cerr << "WARNING: there are " << number_of_all_input_pnts -
 		_data_vec->size() << " double points" << std::endl;
-//	calculateShortestDistance ();
-	calculateAxisAlignedBoundingBox ();
 }
 
 PointVec::~PointVec ()
@@ -65,16 +69,15 @@ size_t PointVec::uniqueInsert (Point* pnt)
 		    &&  fabs( (*((*_data_vec)[k]))[2] - (*pnt)[2]) < eps)
 			break;
 
-	if(k == n)
-	{
+	if(k == n) {
 		_data_vec->push_back (pnt);
-		// update shortest distance and bounding box
-		for (size_t i(0); i < n; i++)
-		{
+		// update bounding box
+		_aabb.update (*((*_data_vec)[n]));
+		// update shortest distance
+		for (size_t i(0); i < n; i++) {
 			double sqr_dist (MathLib::sqrDist((*_data_vec)[i], (*_data_vec)[n]));
 			if (sqr_dist < _sqr_shortest_dist)
 				_sqr_shortest_dist = sqr_dist;
-			aabb.update (*((*_data_vec)[n]));
 		}
 		return n;
 	}
@@ -100,7 +103,7 @@ double PointVec::getShortestPointDistance () const
 }
 
 void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec,
-                               std::vector<size_t> &pnt_id_map)
+                               std::vector<size_t> &pnt_id_map, double eps)
 {
 	size_t n_pnts_in_file (pnt_vec->size());
 	std::vector<size_t> perm;
@@ -116,7 +119,6 @@ void PointVec::makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec,
 
 	// unfortunately quicksort is not stable -
 	// sort identical points by id - to make sorting stable
-	double eps (sqrt(std::numeric_limits<double>::min()));
 	// determine intervals with identical points to resort for stability of sorting
 	std::vector<size_t> identical_pnts_interval;
 	bool identical (false);
@@ -216,7 +218,7 @@ void PointVec::calculateAxisAlignedBoundingBox ()
 {
 	const size_t n_pnts (_data_vec->size());
 	for (size_t i(0); i < n_pnts; i++)
-		aabb.update (*(*_data_vec)[i]);
+		_aabb.update (*(*_data_vec)[i]);
 }
 
 std::vector<GEOLIB::Point*>* PointVec::getSubset(const std::vector<size_t> &subset)

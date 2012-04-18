@@ -40,8 +40,8 @@ public:
  * \brief Class Polyline consists mainly of a reference to a point vector and
  * a vector that stores the indices in the point vector.
  * A polyline consists of at least one line segment. The polyline is specified by the points
- * of the line segments. The class Polyline stores the position of pointers to the points in the
- * m_ply_pnt_ids vector.
+ * of the line segments. The class Polyline stores ids of pointers to the points in the
+ * _ply_pnt_ids vector.
  * */
 class Polyline : public GeoObject
 {
@@ -61,13 +61,25 @@ public:
 	/** write the points to the stream */
 	void write(std::ostream &os) const;
 
-	/** adds a new pointer to a point to the polyline */
-	void addPoint(size_t pos);
+	/**
+	 * Adds an id of a point at the end of the polyline. The id have to be inside
+	 * the (internal) _ply_pnts vector the polyline is based on.
+	 * @param pnt_id
+	 */
+	virtual void addPoint(size_t pnt_id);
+
+	/**
+	 * Method inserts a new point (that have to be inside the _ply_pnts vector)
+	 * at the given position in the polyline.
+	 * @param pos the position in the polyline, pos have to be a value into the interval [0, number of points)
+	 * @param pnt_id the id of the new point in the vector of points the polyline is based on
+	 */
+	virtual void insertPoint(size_t pos, size_t pnt_id);
 
 	/**
 	 * Closes a polyline by adding a line segment that connects start- and end-point.
 	 * \param ply A Polyline containing at least three points.
-	 * \result A polygon.
+	 * \return A polygon.
 	 */
 	static Polyline* closePolyline(const Polyline& ply);
 
@@ -84,6 +96,14 @@ public:
 
 	/** returns true if the polyline is closed */
 	bool isClosed() const;
+
+	/**
+	 * Method tests if the given id of a point (within the vector of points the polyline is
+	 * based on) is inside the polyline.
+	 * @param pnt_id the id of the point
+	 * @return true if the point is part of the polyline, else false
+	 */
+	bool isPointIDInPolyline(size_t pnt_id) const;
 
 	/**
 	 * returns the index of the i-th polyline point
@@ -154,6 +174,8 @@ protected:
 std::ostream& operator<< (std::ostream &os, Polyline const& pl);
 
 bool containsEdge (const Polyline& ply, size_t id0, size_t id1);
+
+bool isLineSegmentIntersecting (const Polyline& ply, GEOLIB::Point const& s0, GEOLIB::Point const& s1);
 
 /**
  * comparison operator

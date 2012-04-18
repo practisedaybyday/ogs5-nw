@@ -12,17 +12,6 @@ namespace GEOLIB {
 
 template <typename POINT> class OctTree {
 public:
-	enum OctTreeQuadrant {
-		NEL = 0, //!< north east lower
-		NWL, //!< north west lower
-		SWL, //!< south west lower
-		SEL, //!< south east lower
-		NEU, //!< south west upper
-		NWU, //!< south west upper
-		SWU, //!< south west upper
-		SEU //!< south east upper
-	};
-
 	OctTree(POINT const& ll, POINT const& ur, size_t max_points_per_node) :
 		_father (NULL), _ll (ll), _ur (ur), _is_leaf (true),
 		_max_points_per_node (max_points_per_node)
@@ -137,6 +126,17 @@ public:
 	}
 
 private:
+	enum OctTreeQuadrant {
+		NEL = 0, //!< north east lower
+		NWL, //!< north west lower
+		SWL, //!< south west lower
+		SEL, //!< south east lower
+		NEU, //!< south west upper
+		NWU, //!< south west upper
+		SWU, //!< south west upper
+		SEU //!< south east upper
+	};
+
 	/**
 	 * private constructor
 	 * @param ll lower left point

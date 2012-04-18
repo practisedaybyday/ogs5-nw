@@ -89,8 +89,16 @@ int main (int argc, char* argv[])
 	std::string base_fname("Surface-"+ply_name); //number2str(polygon_id));
 	std::string gmsh_geo_fname(base_fname+".geo");
 	std::string gmsh_msh_fname(base_fname+".msh");
-	FileIO::GMSHInterface gmsh_io(gmsh_geo_fname);
-	gmsh_io.writeGMSHInputFile(tmp_name, *geo, false, false);
+
+	std::vector<std::string> selected_geometries;
+	selected_geometries.push_back(tmp_name);
+
+	double pnt_scaling(0.5); // mesh density scaling on normal points
+	double station_scaling(0.05); // mesh density scaling on station points
+	size_t pnts_per_leaf(2); // points per quad tree leaf
+	FileIO::GMSHInterface gmsh_io(*geo, false, FileIO::GMSH::AdaptiveMeshDensity, pnt_scaling, station_scaling, pnts_per_leaf,
+					selected_geometries);
+	gmsh_io.writeToFile(gmsh_geo_fname);
 
 	if (system(NULL) != 0) { // command processor available
 		std::string gmsh_command("gmsh -2 ");

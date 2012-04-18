@@ -66,8 +66,8 @@ ADD_EXECUTABLE( OGSFileConverter
 
 TARGET_LINK_LIBRARIES( OGSFileConverter
 	${QT_LIBRARIES}
-	GEO
 	FileIO
+	GEO
 	FEM
 	QtDataView
 )

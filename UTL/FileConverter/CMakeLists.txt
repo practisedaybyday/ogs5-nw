@@ -23,9 +23,9 @@ IF (Shapelib_FOUND)
 		FEM
     MSH
     MSHGEOTOOLS
+    FileIO
     GEO
     MathLib
-    FileIO
     Base
     OGSProject
 		${Shapelib_LIBRARIES}
@@ -80,9 +80,9 @@ IF (QT4_FOUND)
 		FEM
 		MSH
 		MSHGEOTOOLS
+		FileIO
 		GEO
 		MathLib
-		FileIO
 		Base
 		OGSProject
 		${QT_LIBRARIES}
@@ -93,9 +93,9 @@ IF (QT4_FOUND)
 		FEM
 		MSH
 		MSHGEOTOOLS
+		FileIO
 		GEO
 		MathLib
-		FileIO
 		Base
 		OGSProject
 		${QT_LIBRARIES}

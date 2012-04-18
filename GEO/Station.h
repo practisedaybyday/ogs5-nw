@@ -82,6 +82,13 @@ public:
 
 	Station(Point* coords, std::string name = "");
 
+	/**
+	 * Constructor copies the source object
+	 * @param src the Station object that should be copied
+	 * @return
+	 */
+	Station(Station const& src);
+
 	virtual ~Station();
 
 	/**
@@ -114,7 +121,7 @@ public:
 	bool inSelection(std::map<std::string, double> properties) const;
 
 	/// Returns the name of the station.
-	std::string getName() const { return _name; }
+	std::string const& getName() const { return _name; }
 
 	/// Returns the GeoSys-station-type for the station.
 	int type() const { return _type; }
