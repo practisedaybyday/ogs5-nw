@@ -136,6 +136,29 @@ Problem::Problem (char* filename) :
 		print_result = false;     //OK
 		return;
 	}
+	//
+	//JT: Set to true to force node copy at end of loop
+	force_post_node_copy = true;
+	//
+	//JT: Certain restrictions might be made if an external simulator is being used
+	external_coupling_exists = false; 
+	for(size_t i = 0; i < pcs_vector.size(); i++){
+		if(pcs_vector[i]->simulator.compare("GEOSYS") != 0)
+			external_coupling_exists = true;
+	}
+#ifdef GEM_REACT
+	external_coupling_exists = true;
+#endif
+#ifdef LIBPHREEQC
+	external_coupling_exists = true;
+#endif
+#ifdef BRNS
+	external_coupling_exists = true;
+#endif
+#ifdef CHEMAPP
+	external_coupling_exists = true;
+#endif
+	//
 	//......................................................................
 	//#ifdef RESET_4410
 	//  //if(pcs_vector[0]->pcs_type_name.compare("TWO_PHASE_FLOW")==0) //OK
@@ -664,12 +687,22 @@ void Problem::SetActiveProcesses()
 			// First try for a variable, because this is more general for mass transport
 			m_pcs = PCSGet(total_processes[i]->m_num->cpl_variable,true);
 			if(m_pcs){
+				m_pcs->pcs_is_cpl_underling = true;
+				total_processes[i]->pcs_is_cpl_overlord = true;
+				//
 				coupled_process_index[i] = AssignProcessIndex(m_pcs, false);
+				m_pcs->cpl_overlord = total_processes[i];
+				total_processes[i]->cpl_underling = m_pcs;
 			}
 			else{ // Try for a process, because it may have been assigned this way
 				m_pcs = PCSGet(total_processes[i]->m_num->cpl_process);
 				if(m_pcs){
+					m_pcs->pcs_is_cpl_underling = true;
+					total_processes[i]->pcs_is_cpl_overlord = true;
+					//
 					coupled_process_index[i] = AssignProcessIndex(m_pcs, false);
+					m_pcs->cpl_overlord = total_processes[i];
+					total_processes[i]->cpl_underling = m_pcs;
 				}
 			}
 			active_process_index.push_back(i);
@@ -863,6 +896,8 @@ void Problem::Euler_TimeDiscretize()
 	long rejected_times = 0;
 	double dt_rec;
 	int i;
+	bool force_output;
+	last_dt_accepted = false; // JT: false first. Thus copy node values after first dt.
 	//
 	CTimeDiscretization* m_tim = NULL;
 	aktueller_zeitschritt = 0;
@@ -877,7 +912,6 @@ void Problem::Euler_TimeDiscretize()
 	while(end_time > current_time)
 	{
 		// Get time step
-		dt_last = dt;
 		dt = dt_rec = DBL_MAX;
 		for(i=0; i<(int)active_process_index.size(); i++)
 		{
@@ -896,8 +930,6 @@ void Problem::Euler_TimeDiscretize()
 		aktueller_zeitschritt++;
 		current_time += dt;
 		aktuelle_zeit = current_time;
-		if(aktueller_zeitschritt == 1) 
-			dt_last = dt;
 		//
 		// Print messsage
 #if defined(USE_MPI)
@@ -918,17 +950,17 @@ void Problem::Euler_TimeDiscretize()
 			// ---------------------------------
 			// TIME STEP ACCEPTED
 			// ---------------------------------
+			last_dt_accepted = true;
 			ScreenMessage("This step is accepted.\n");
-			ScreenMessage("------------------------------------------------------\n");
 			PostCouplingLoop();
 			if(print_result)
 			{
-				if(current_time < end_time){ // JT: Make sure we printout on last time step
-					OUTData(current_time, aktueller_zeitschritt,false);
-				}
-				else{
-					OUTData(current_time, aktueller_zeitschritt,true);
-				}
+				if(current_time < end_time)
+					force_output = false;
+				else // JT: Make sure we printout on last time step
+					force_output = true;
+				//
+				OUTData(current_time, aktueller_zeitschritt,force_output);
 			}
 			accepted_times++;
 			for(i=0; i<(int)active_process_index.size(); i++)
@@ -942,26 +974,28 @@ void Problem::Euler_TimeDiscretize()
 			// ---------------------------------
 			// TIME STEP FAILED
 			// ---------------------------------
-			ScreenMessage("This step is rejected.\n");
-			ScreenMessage("------------------------------------------------------\n");
+			last_dt_accepted = false;
+			ScreenMessage("This step is rejected: Redo, with a new time step.\n");
 			rejected_times++;
 			current_time -= dt;
 			aktuelle_zeit = current_time;
 			aktueller_zeitschritt--;
 			//
-			// Increment active process step count
+			// decrement active dt, and increment count
 			for(i=0; i<(int)active_process_index.size(); i++)
 			{
 				m_tim = total_processes[active_process_index[i]]->Tim;
-				if(m_tim->time_active) m_tim->rejected_step_count++;
-			}
-			// Copy nodal values in reverse
-			for(i = 0; i < (int)pcs_vector.size(); i++){
-				if(isDeformationProcess (pcs_vector[i]->getProcessType())) 
+				if(!m_tim->time_active)
 					continue;
-				pcs_vector[i]->CopyTimestepNODValues(false);
+				m_tim->rejected_step_count++;
+				m_tim->last_active_time -= dt;
+				//
+				// Copy nodal values in reverse
+				if(isDeformationProcess(total_processes[active_process_index[i]]->getProcessType()))
+					continue;
+				total_processes[active_process_index[i]]->CopyTimestepNODValues(false);
+				// JT: This wasn't done before. Is it needed? // total_processes[active_process_index[i]]->CopyTimestepELEValues(false);
 			}
-			//
 		}
 		ScreenMessage("\n#############################################################\n");
 		if(aktueller_zeitschritt >= max_time_steps)
@@ -1156,7 +1190,10 @@ bool Problem::CouplingLoop()
 			}
 			if(!accept) break;
 		}
-		if(!accept) break;
+		if(!accept){
+			std::cout << std::endl;
+			break;
+		}
 		//
 	    if(cpl_overall_max_iterations > 1){
 			std::cout << "\n======================================================\n";
@@ -1184,6 +1221,9 @@ bool Problem::CouplingLoop()
 -------------------------------------------------------------------------*/
 void Problem::PreCouplingLoop(CRFProcess *m_pcs)
 {
+	if(!last_dt_accepted || force_post_node_copy) // if last time step not accepted or values were already copied.
+		return;
+	//
 	/*For mass transport this routine is only called once (for the overall transport process)
 	  and so we need to copy for all transport components*/
 	if(m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
@@ -1191,12 +1231,15 @@ void Problem::PreCouplingLoop(CRFProcess *m_pcs)
 		CRFProcess *c_pcs = NULL;
 		for(size_t i=0; i<pcs_vector.size(); i++){
 			c_pcs = pcs_vector[i];
-			if(c_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
+			if(c_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT){
 				c_pcs->CopyTimestepNODValues();
+				c_pcs->CopyTimestepELEValues();
+			}
 		}
 	}
 	else{ // Otherwise, just copy this process
 		m_pcs->CopyTimestepNODValues();
+		m_pcs->CopyTimestepELEValues();
 	}
 }
 
@@ -1263,40 +1306,14 @@ void Problem::PostCouplingLoop()
 		if (m_pcs->cal_integration_point_value) //WW
 			m_pcs->Extropolation_GaussValue();
 		//BG
-		if ((m_pcs->simulator == "ECLIPSE") || (m_pcs->simulator == "DUMUX"))
+		if ((m_pcs->simulator == "ECLIPSE") || (m_pcs->simulator == "DUMUX")){
 			m_pcs->Extropolation_GaussValue();
-		//
-		// JT: Now done in PreCouplingLoop() // m_pcs->CopyTimestepNODValues(); //MB
-		//
-#define SWELLING
-#ifdef SWELLING
-		//MX ToDo//CMCD here is a bug in j=7
-		for (int j = 0; j < m_pcs->pcs_number_of_evals; j++)
-		{
-			if (strcmp(m_pcs->pcs_eval_name[j],"POROSITY")) //if strings are equal the result is zero
-			{
-				int nidx0 =  m_pcs->GetElementValueIndex(m_pcs->pcs_eval_name[j]);
-				int nidx1 =  m_pcs->GetElementValueIndex(m_pcs->pcs_eval_name[j]) +
-				            1;
-				for (long l = 0; l < (long)m_pcs->m_msh->ele_vector.size(); l++)
-					m_pcs->SetElementValue(l,nidx0,
-					                       m_pcs->GetElementValue(l,nidx1));
-			}
-			else // this is only executed for porosities
-			{
-#ifdef GEM_REACT
-				// do nothing as porosity update is handled by REACT_GEMS after!! flow and transport solution
-#else
-				int nidx0 =  m_pcs->GetElementValueIndex(m_pcs->pcs_eval_name[j]);
-				int nidx1 =  m_pcs->GetElementValueIndex(m_pcs->pcs_eval_name[j]) +
-				            1;
-				for (long l = 0; l < (long)m_pcs->m_msh->ele_vector.size(); l++)
-					m_pcs->SetElementValue(l,nidx0,
-					                       m_pcs->GetElementValue(l,nidx1));
-#endif
-			}
 		}
-#endif
+		// JT: Now done in PreCouplingLoop() // m_pcs->CopyTimestepNODValues(); //MB
+		if(force_post_node_copy){ // JT: safety valve. Set this value to true (in Problem()) and values will be copied here.
+			m_pcs->CopyTimestepNODValues(); 
+			m_pcs->CopyTimestepELEValues(); 
+		}
 	}
 // WW
 #ifndef NEW_EQS                                //WW. 07.11.2008

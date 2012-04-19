@@ -422,15 +422,16 @@ double GetCurveInverseDerivative(int kurve, int methode, double wert, int* guelt
 			i = 1;
 			wert = s[0].wert;
 		}
-		if (wert > s[anz - 1].wert)
+		else if (wert > s[anz - 1].wert)
 		{
 			*gueltig = 0;
 			i = anz - 1;
 			wert = s[anz - 1].wert;
 		}
-		/* Suchen der Stuetzstelle. Vorraussetzung: Zeitpunkte aufsteigend geordnet */
-		while (wert > s[i].wert)
-			i++;
+		else{ /* Suchen der Stuetzstelle. Vorraussetzung: Zeitpunkte aufsteigend geordnet */
+			while(wert > s[i].wert)
+				i++;
+		}
 	}
 	else
 	{
@@ -441,15 +442,16 @@ double GetCurveInverseDerivative(int kurve, int methode, double wert, int* guelt
 			i = 1;
 			wert = s[0].wert;
 		}
-		if (wert < s[anz - 1].wert)
+		else if (wert < s[anz - 1].wert)
 		{
 			*gueltig = 0;
 			i = anz - 1;
 			wert = s[anz - 1].wert;
 		}
-		/* Suchen der Stuetzstelle. Vorraussetzung: Zeitpunkte aufsteigend geordnet */
-		while (wert < s[i].wert)
-			i++;
+		else{ /* Suchen der Stuetzstelle. Vorraussetzung: Zeitpunkte aufsteigend geordnet */
+			while (wert < s[i].wert)
+				i++;
+		}
 	}
 
 	switch (methode)

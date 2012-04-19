@@ -885,7 +885,7 @@ void CFiniteElementVec::ComputeMatrix_RHS(const double fkt,
 			// Saturation of phase 1
 			fac1 = m_mmp->SaturationCapillaryPressureFunction(fac2);
 			if(PressureC_S_dp)
-				fac2 = fac1 - fac2* m_mmp->SaturationPressureDependency(fac2);
+				fac2 = fac1 - fac2* m_mmp->PressureSaturationDependency(fac1,true);
 				//JT: dSdP now returns actual sign (<0)
 		}
 

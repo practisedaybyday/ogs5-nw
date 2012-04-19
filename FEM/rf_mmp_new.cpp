@@ -85,6 +85,9 @@ CMediumProperties::CMediumProperties() :
 	permeability_tensor_type = 0;
 	tortuosity_tensor_type = 0;
 	permeability_tensor[0] = 1.e-13;
+	residual_saturation[0] = 0.0;			// sgr: residual saturation, this phase
+	maximum_saturation[0] = 1.0;			// sgm: maximum saturation, this phase
+	saturation_exponent[0] = 1.0;			// (set exponent = 1 results in a linear k_rel function)
 	conductivity_model = -1;
 	flowlinearity_model = 0;
 	capillary_pressure_model = -1;
@@ -1384,6 +1387,15 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 			{
 			case 0:       // k=f(Se)
 				in >> capillary_pressure_values[0]; // curve
+				in >> capillary_pressure_values[1]; // Slr
+				in >> capillary_pressure_values[2]; // Slmax
+				//
+				// JT: Check for old version format.
+				if(capillary_pressure_values[2] < 0.0){
+					capillary_pressure_values[1] = residual_saturation[0];	// old version uses relative permeabilty values for this
+					capillary_pressure_values[2] = maximum_saturation[0];	// old version uses relative permeabilty values for this
+					old_format = true;
+				}
 				break;
 			case 1:       // const
 				in >> capillary_pressure_values[0]; // the constant Pc value
@@ -1396,9 +1408,16 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 					capillary_pressure_model = 2;
 					capillary_pressure_values[0] = capillary_pressure_values[2];
 				}
+				//
+				// Assign bounds
+				capillary_pressure_values[1] = 0.0; // Slr
+				capillary_pressure_values[2] = 1.0; // Slmax
 				break;
 			case 2:		  // Constant saturation for pp models (for WX, from JT)
 				in >> capillary_pressure_values[0]; // The fixed saturation
+				// Assign bounds
+				capillary_pressure_values[1] = 0.0; // Slr
+				capillary_pressure_values[2] = 1.0; // Slmax
 				break;
 			case 4:       // van Genuchten
 				in >> capillary_pressure_values[0]; // Pb (or "alpha" if [alpha_switch>0])
@@ -1441,9 +1460,9 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 				break;
 			}
 			if(old_format){
-				ScreenMessage("\n Adopting capillary pressure saturation parameters from the\n");
+				ScreenMessage("\n--\n Adopting capillary pressure saturation parameters from the\n");
 				ScreenMessage(" relative permeability function for phase 0. Alternatively, you\n");
-				ScreenMessage(" may enter capillary pressure specific parameters directly.\n");
+				ScreenMessage(" may enter capillary pressure specific parameters directly.\n--/n");
 			}
 			in.clear();
 			continue;
@@ -4541,11 +4560,11 @@ double CMediumProperties::CapillaryPressureFunction(const double wetting_saturat
 			if(entry_pressure_conversion)
 				pb = (mfp_vector[0]->Density()*9.81)/pb;
 			//
-			sl  = MRange(slr, sl, slm);
+			//sl  = MRange(slr, sl, slm);
+			sl  = MRange(slr+DBL_EPSILON, sl, slm-DBL_EPSILON);
 			se  = (sl-slr)/(slm-slr);
 			pc  = pb * pow(pow(se,(-1.0/m)) - 1.0, 1.0-m);
-			if(pc > capillary_pressure_values[4]) 
-				pc = capillary_pressure_values[4];
+			pc = MRange(DBL_EPSILON,pc,capillary_pressure_values[4]);
 			break;
 		//
 		case 6: //  Brook & Corey
@@ -4557,8 +4576,7 @@ double CMediumProperties::CapillaryPressureFunction(const double wetting_saturat
 			sl  = MRange(slr, sl, slm);
 			se  = (sl-slr)/(slm-slr);
 			pc  = pb*pow(se,-1.0/m);
-			if(pc > capillary_pressure_values[4]) 
-				pc = capillary_pressure_values[4];
+			pc = MRange(DBL_EPSILON,pc,capillary_pressure_values[4]);
 			break;
 	}
 	return pc;
@@ -4592,7 +4610,8 @@ double CMediumProperties::SaturationCapillaryPressureFunction(const double capil
 		case 0: // k=f(x)
 			// Note: Use Inverse curve value because .rfd file has x=S, y=Pc as columns, and Pc is our input.
 			sl = GetCurveValueInverse((int)capillary_pressure_values[0],0,pc,&gueltig);
-			return sl;
+			sl = MRange(capillary_pressure_values[1]+DBL_EPSILON,sl,capillary_pressure_values[2]-DBL_EPSILON);
+			break;
 		//
 		case 1: // Constant capillary pressure for ps models
 			ScreenMessage("ERROR: in CFluidProperties::SaturationCapillaryPressureFunction:");
@@ -4602,10 +4621,12 @@ double CMediumProperties::SaturationCapillaryPressureFunction(const double capil
 		//
 		case 2: // Constant saturation for pp models (for WX, from JT)
 			sl = capillary_pressure_values[0];
-			return sl;
+			break;
 		//
 		case 4: // van Genuchten
 			pb = capillary_pressure_values[0];
+			slr = capillary_pressure_values[1];
+			slm = capillary_pressure_values[2];
 			m  = capillary_pressure_values[3];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
 			//
 			// Convert alpha to entry pressure?
@@ -4615,19 +4636,21 @@ double CMediumProperties::SaturationCapillaryPressureFunction(const double capil
 			if(pc < 0.0) pc = 0.0;
 			se = pow(pc/pb, 1.0/(1.0-m)) + 1.0;
 			se = pow(se,-m);
+			sl = se*(slm-slr) + slr;
+			sl = MRange(slr+DBL_EPSILON,sl,slm-DBL_EPSILON);
 			break;
 		//
 		case 6: //  Brook & Corey
 			pb = capillary_pressure_values[0];
+			slr = capillary_pressure_values[1];
+			slm = capillary_pressure_values[2];
 			m  = capillary_pressure_values[3];			// always >= 1.0
 			if(pc < pb) pc = pb;
 			se = pow(pc/pb,-m);
+			sl = se*(slm-slr) + slr;
+			sl = MRange(slr+DBL_EPSILON,sl,slm-DBL_EPSILON);
 			break;
 	}
-	// Get Sw
-	slr = capillary_pressure_values[1];
-	slm = capillary_pressure_values[2];
-	sl  = se*(slm-slr) + slr;
 	return sl;
 }
 
@@ -4645,6 +4668,9 @@ double CMediumProperties::SaturationCapillaryPressureFunction(const double capil
            Plus, input should be Pc, not Sw.
    Last modified:
 **************************************************************************/
+
+/* JT: No longer used. But it is accurate. Use PressureSaturationDependency() with "invert" = true
+
 double CMediumProperties::SaturationPressureDependency(const double capillary_pressure, bool allow_zero)
 {
 	double dsdp,v1,v2,pc,pb,slr,slm,m;
@@ -4662,6 +4688,7 @@ double CMediumProperties::SaturationPressureDependency(const double capillary_pr
 			break;
 
 		case 0: // Curve value
+			// Note: Use Inverse curve value because .rfd file has x=S, y=Pc as columns, and Pc is our input.
 			dsdp = GetCurveInverseDerivative((int)capillary_pressure_values[0],1,pc,&gueltig);
 			break;
 
@@ -4703,18 +4730,21 @@ double CMediumProperties::SaturationPressureDependency(const double capillary_pr
 	//
 	return dsdp;
 }
+*/
 
 /**************************************************************************
    FEMLib-Method:
    Task: returns dPc/dSw
+   "invert" = false. Return dPc/dSw
+   "invert" = true.  Return dSw/dPc
    Programing:
    03/2009 PCH Brooks-Corey dPc/dSw added
-   03/2012 JT: All new. + van Genuchten, fix iterative, etc.
+   03/2012 JT: All new. + van Genuchten, use curve derivative, etc.
    Last modified:
 **************************************************************************/
-double CMediumProperties::PressureSaturationDependency(const double wetting_saturation)
+double CMediumProperties::PressureSaturationDependency(const double wetting_saturation, bool invert)
 {
-	double dpds,v1,v2,pb,sl,slr,slm,m;
+	double dpds,dsdp,v1,v2,pb,sl,slr,slm,m,lim,ds,dpc;
 	int gueltig;
 	sl = wetting_saturation;
 	//
@@ -4726,33 +4756,31 @@ double CMediumProperties::PressureSaturationDependency(const double wetting_satu
 			break;
 
 		case 0: // curve value
+			sl = MRange(capillary_pressure_values[1]+DBL_EPSILON, sl, capillary_pressure_values[2]-DBL_EPSILON);
 			dpds = GetCurveDerivative((int)capillary_pressure_values[0],1,sl,&gueltig);
 			break;
 
 		case 1: //  Pc = CONSTANT
-			dpds = 0.0;
-			break;
+			return 0.0;
 
 		case 2: //  Sw = CONSTANT
-			dpds = 0.0;
-			break;
+			return 0.0;
 
 		case 4: //  Van Genuchten: 01.3.2007 WW  // 05.2010 JT. 
 			pb  = capillary_pressure_values[0];
 			slr = capillary_pressure_values[1];
 			slm = capillary_pressure_values[2];
 			m   = capillary_pressure_values[3];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
+			sl  = MRange(slr+DBL_EPSILON, sl, slm-DBL_EPSILON); // (infinity also occurs at sl=slmax for van Genuchten)
 			//
 			// Convert alpha to entry pressure?
 			if(entry_pressure_conversion)
 				pb = (mfp_vector[0]->Density()*9.81)/pb;
 			//
 			// Get dPc/dSw
-			sl = MRange(slr+DBL_EPSILON, sl, slm-DBL_EPSILON); // (infinity also occurs at sl=slmax for van Genuchten)
 			v1 = pow(((sl-slr) / (slm-slr)),(-1.0/m));
 			v2 = pow(v1-1.0,-m);
 			dpds = (pb*(m-1.0)*v1*v2) / (m*(sl-slr));
-			if(dpds < -1.0/DBL_EPSILON) dpds = -1.0/DBL_EPSILON;
 			break;
 
 		case 6: //  Brooks & Corey. 10/2010 JT
@@ -4760,16 +4788,43 @@ double CMediumProperties::PressureSaturationDependency(const double wetting_satu
 			slr = capillary_pressure_values[1];
 			slm = capillary_pressure_values[2];
 			m   = capillary_pressure_values[3];			// always >= 1.0
+			sl  = MRange(slr+DBL_EPSILON, sl, slm); // No upper bound needed for B&C
 			//
 			// Get dPc/dSw
-			sl = MRange(slr+DBL_EPSILON, sl, slm); // No upper bound needed for B&C
 			v1 = pow(((sl-slr) / (slm-slr)),(-1.0/m));
 			dpds = (pb*v1) / (m*(slr-sl));
-			if(dpds < -1.0/DBL_EPSILON) dpds = (-1.0/DBL_EPSILON);
+			break;
+
+		case 99: // The old iterative method. Should anyone need it (but it is somewhat inaccurate at low and high saturations)
+			ds = 1.0e-2;
+			do{
+				ds /= 10.;
+				v1 = CapillaryPressureFunction(sl - ds);
+				v2 = CapillaryPressureFunction(sl + ds);
+				dpc = v1 - v2;
+			}
+			while((ds > DBL_EPSILON) && (v2 < DBL_EPSILON / 100.));
+			if (((v1 > DBL_EPSILON) || (v2 > DBL_EPSILON)) && (dpc > DBL_EPSILON) )
+				dsdp = (-2.0*ds) / dpc;
+			else
+				dsdp = 0.0;
+			//
+			dpds = 1.0 / dsdp;
 			break;
 	}
 	//
-	return dpds;
+	// Note: Sw and Pc are inversly related.. i.e. dsdp and dpds are always <= 0.0
+	lim = (-1.0)/DBL_EPSILON;
+	//
+	if(invert){ // Return dSw/dPc
+		dsdp = 1.0/dpds;
+		if(dsdp < lim) dsdp = lim;
+		return dsdp;
+	}
+	else{		// Return dPc/dSw
+		if(dpds < lim) dpds = lim;
+		return dpds;
+	}
 }
 
 /*************************************************************************************************************

@@ -1031,21 +1031,15 @@ void Linear_EQS::Message()
 	cout.setf(ios::scientific);
 	//
 	//system("color 0B");
-	cout << "\n================================================\n";
-	cout << "Linear solver " << solver_name << " with " << precond_name << ":\n";
-	//cout<<"\n------------------------------------------------ \n";
-	cout << "Iterations |";
-	cout << "Max Iters  |";
-	cout << "Norm of b  |";
-	cout << "Error      |\n";
-	//cout<<"\n------------------------------------------------ \n";
-	cout << setw(11) << iter << "|" << setw(11) << max_iter << "|"
-	     << setw(11) << bNorm << "|" << setw(11) << error << "|\n";
-	cout << "================================================\n";
-	if (iter == max_iter)
-		cout << " Maximum iteration reached !!! \n";
+	cout << "      ------------------------------------------------\n";
+	cout << "      Linear solver " << solver_name << " with " << precond_name << ":\n";
+	cout << "      Iterations |" << " Max Iters |" << " Norm of b |" << " Error\n";
+	cout << "      " << setw(11) << iter << "|" << setw(11) << max_iter << "|"
+	     << setw(11) << bNorm << "|" << setw(11) << error << "\n";
+	if (iter == max_iter) 
+		cout << "      WARNING: Maximum iterations reached !!! \n";
+	cout << "      ------------------------------------------------\n";
 	cout.flush();
-	//
 }
 /*\!
  ********************************************************************

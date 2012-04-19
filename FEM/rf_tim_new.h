@@ -150,6 +150,5 @@ extern void TIMDelete(std::string);
 extern double aktuelle_zeit;
 extern size_t aktueller_zeitschritt;
 extern double dt;
-extern double dt_last;
 extern int rwpt_numsplits;                        // JT 2010, for specifying sub time step for random walker in .tim input file
 #endif
