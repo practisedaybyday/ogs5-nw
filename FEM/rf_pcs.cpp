@@ -4701,7 +4701,7 @@ void CRFProcess::GlobalAssembly()
 			   (this->pcs_is_cpl_overlord && this->m_num->cpl_max_iterations > 1) || // This process (the overlord) controls coupling for another (the underling) process.
 			   (this->pcs_is_cpl_underling && this->cpl_overlord->m_num->cpl_max_iterations > 1)) // This process (the underling) has a coupling with a controlling (the overlord) process
 			{
-				IncorporateSourceTerms_GEMS();
+				//IncorporateSourceTerms_GEMS();
 			}
 		}
 #endif
@@ -7347,81 +7347,31 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    Programing:
    03/2005 OK Implementation
    01/2006 OK Test
+   03/2012 JT: Checks are unnecessary. Allow reverse order.
 **************************************************************************/
-	int CRFProcess::GetNodeValueIndex(const std::string &var_name)
+	int CRFProcess::GetNodeValueIndex(const std::string &var_name, bool reverse_order) // JT: Allow reverse order
 	{
-		int nidx = -2;
-
-		for (size_t i = 0; i < nod_val_name_vector.size(); i++)
+		if(!reverse_order)
 		{
-			if (nod_val_name_vector[i].compare(var_name) == 0)
+			for(size_t i = 0; i < nod_val_name_vector.size(); i++)
 			{
-				nidx = i;
-#ifdef gDEBUG
-				if(nidx < 0)
-				{
-					cout <<
-					" Fatal error in CRFProcess::GetNodeValueIndex() " << endl;
-					abort();
-				}
-#endif
-				return nidx;
+				if (nod_val_name_vector[i].compare(var_name) == 0)
+					return i;
 			}
 		}
-
-		// Suppress the following error message when Fluid Momentum process is on.
-		CRFProcess* m_pcs = PCSGet(FiniteElement::FLUID_MOMENTUM);
-		if (m_pcs)
-			;             // Don't print any error message.
 		else
-			cout << "Error in CRFProcess::GetNodeValueIndex - " <<
-			convertProcessTypeToString (getProcessType())
-			     << ", " << var_name << ", NIDX = " << nidx << endl;
-		//abort();
-		return nidx;
-	}
-
-/**************************************************************************
-   FEMLib-Method: GetLatestNodeValueIndex
-   Task: Returns node value index of latest stored time of this variable
-   Programing:
-   03/2012 JT
-**************************************************************************/
-	int CRFProcess::GetLatestNodeValueIndex(const std::string &var_name)
-	{
-		int nidx = -2;
-		size_t k = nod_val_name_vector.size();
-		size_t j;
-
-		for (size_t i = 0; i < k; i++)
 		{
-			j = k - i - 1;
-			if (nod_val_name_vector[j].compare(var_name) == 0)
+			int nvals = ((int)nod_val_name_vector.size()) - 1;
+			for(int j = nvals; j > -1; j--)
 			{
-				nidx = j;
-#ifdef gDEBUG
-				if(nidx < 0)
-				{
-					cout <<
-					" Fatal error in CRFProcess::GetNodeValueIndex() " << endl;
-					abort();
-				}
-#endif
-				return nidx;
+				if (nod_val_name_vector[j].compare(var_name) == 0)
+					return j;
 			}
 		}
-
-		// Suppress the following error message when Fluid Momentum process is on.
-		CRFProcess* m_pcs = PCSGet(FiniteElement::FLUID_MOMENTUM);
-		if (m_pcs)
-			;             // Don't print any error message.
-		else
-			cout << "Error in CRFProcess::GetNodeValueIndex - " <<
-			convertProcessTypeToString (getProcessType())
-			     << ", " << var_name << ", NIDX = " << nidx << endl;
-		//abort();
-		return nidx;
+		//
+		return -2;
 	}
+
 /**************************************************************************
    FEMLib-Method:
    Task:
@@ -7429,16 +7379,27 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    09/2005 PCH Implementation
    last modified:
 **************************************************************************/
-	int CRFProcess::GetElementValueIndex(const string &var_name)
+	int CRFProcess::GetElementValueIndex(const string &var_name, bool reverse_order)
 	{
-		int nidx = -1;
-		for (size_t i = 0; i < this->ele_val_name_vector.size(); i++)
-			if (this->ele_val_name_vector[i].compare(var_name) == 0)
+		if(!reverse_order)
+		{
+			for(size_t i = 0; i < ele_val_name_vector.size(); i++)
 			{
-				nidx = i;
-				return nidx;
+				if(ele_val_name_vector[i].compare(var_name) == 0)
+					return i;
 			}
-		return nidx;
+		}
+		else
+		{
+			int nvals = ((int)ele_val_name_vector.size()) - 1;
+			for(int j = nvals; j > -1; j--)
+			{
+				if(ele_val_name_vector[j].compare(var_name) == 0)
+					return j;
+			}
+		}
+		//
+		return -2;
 	}
 
 /**************************************************************************

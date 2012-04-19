@@ -293,7 +293,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 			CRFProcess* pcs = PCSGet(arrayName, true);
 			if (!pcs)
 				continue;
-			nod_value_index_vector[k] = pcs->GetLatestNodeValueIndex(arrayName); // JT: latest
+			nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName,true); // JT: latest
 			vtk_file << "SCALARS " << arrayName << " double 1" << endl;
 			vtk_file << "LOOKUP_TABLE default" << endl;
 
@@ -313,7 +313,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 		pcs = PCSGet(_pointArrayNames[0], true);
 	if (pcs && pcs->type == 1212)
 	{
-		size_t i = pcs->GetLatestNodeValueIndex("SATURATION1"); // JT: Latest
+		size_t i = pcs->GetNodeValueIndex("SATURATION1",true); // JT: Latest
 		vtk_file << "SCALARS SATURATION2 double 1" << endl;
 		vtk_file << "LOOKUP_TABLE default" << endl;
 		for (long j = 0l; j < numNodes; j++)

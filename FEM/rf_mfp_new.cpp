@@ -2994,11 +2994,11 @@ double MFPGetNodeValue(long node,const string &mfp_name, int phase_number)
 	   arguments[1] = tp->GetNodeValue(node,0);
 	 */
 	tp = PCSGet(pcs_name1,true);          //NB 4.8.01
-	val_idx = tp->GetLatestNodeValueIndex(pcs_name1); // NB // JT latest
+	val_idx = tp->GetNodeValueIndex(pcs_name1,true); // NB // JT latest
 	arguments[0] = tp->GetNodeValue(node,val_idx);
 
 	tp = PCSGet(pcs_name2,true);          //NB 4.8.01
-	val_idx = tp->GetLatestNodeValueIndex(pcs_name2); // NB // JT latest
+	val_idx = tp->GetNodeValueIndex(pcs_name2,true); // NB // JT latest
 	arguments[1] = tp->GetNodeValue(node,val_idx);
 	//......................................................................
 	switch(mfp_id)

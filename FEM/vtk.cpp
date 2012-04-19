@@ -594,7 +594,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 		if (!m_pcs)
 			continue;
 
-		NodeIndex[i] = m_pcs->GetLatestNodeValueIndex(internal_val_name); //JT: Latest
+		NodeIndex[i] = m_pcs->GetNodeValueIndex(internal_val_name,true); //JT: Latest
 		if (NodeIndex[i] < 0)
 			continue;
 
@@ -679,9 +679,9 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 			if (output_data)
 			{
 				int ix, iy, iz;
-				ix = m_pcs->GetLatestNodeValueIndex(velocity_name[velocity_id][0]); // JT: Fix. Need latest value.
-				iy = m_pcs->GetLatestNodeValueIndex(velocity_name[velocity_id][1]);
-				iz = m_pcs->GetLatestNodeValueIndex(velocity_name[velocity_id][2]);
+				ix = m_pcs->GetNodeValueIndex(velocity_name[velocity_id][0],true); // JT: Fix. Need latest value.
+				iy = m_pcs->GetNodeValueIndex(velocity_name[velocity_id][1],true);
+				iz = m_pcs->GetNodeValueIndex(velocity_name[velocity_id][2],true);
 				if (!useBinary)
 				{
 					fin << "          ";

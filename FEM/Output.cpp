@@ -815,7 +815,7 @@ void COutput::WriteTECNodeData(fstream &tec_file)
 		m_pcs = PCSGet(_nod_value_vector[k], true);
 		if (m_pcs != NULL)
 		{
-			NodeIndex[k] = m_pcs->GetLatestNodeValueIndex(_nod_value_vector[k]); // JT Latest.
+			NodeIndex[k] = m_pcs->GetNodeValueIndex(_nod_value_vector[k],true); // JT Latest.
 		}
 	}
 
@@ -2079,7 +2079,7 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 				<< _nod_value_vector[k] << endl;
 				return;
 			}
-			NodeIndex[k] = pcs->GetLatestNodeValueIndex(_nod_value_vector[k]);  // JT latest
+			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k],true);  // JT latest
 		}
 	}
 	else if (msh_type_name.size() > 0)
@@ -2093,7 +2093,7 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 		}
 		for (size_t k = 0; k < nName; k++)
 		{
-			NodeIndex[k] = pcs->GetLatestNodeValueIndex(_nod_value_vector[k]); // JT latest
+			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k],true); // JT latest
 		}
 	}
 	else if (fem_msh_vector.size() == 1)
@@ -2109,7 +2109,7 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 				<< _nod_value_vector[k] << endl;
 				return;
 			}
-			NodeIndex[k] = pcs->GetLatestNodeValueIndex(_nod_value_vector[k]); // JT latest
+			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k],true); // JT latest
 		}
 	}
 }

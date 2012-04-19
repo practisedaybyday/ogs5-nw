@@ -8040,7 +8040,7 @@ void CFiniteElementStd::CalcSatution()
 	//
 	sign = -1.0;
 	idx_cp = pcs->GetNodeValueIndex("PRESSURE1") + 1;
-	idx_S =  pcs->GetLatestNodeValueIndex("SATURATION1");
+	idx_S =  pcs->GetNodeValueIndex("SATURATION1",true);
 	// Dual Richards
 	if(pcs->type == 22 && pcs->GetContinnumType() == 1)
 	{
