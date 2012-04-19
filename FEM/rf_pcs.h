@@ -541,8 +541,7 @@ public:
 	std::vector<std::string> nod_val_name_vector;
 	void SetNodeValue(long,int,double);   //OK
 	double GetNodeValue(size_t,int);        //OK
-	int GetNodeValueIndex(const std::string&); //OK
-	int GetLatestNodeValueIndex(const std::string&); //JT
+	int GetNodeValueIndex(const std::string&, bool reverse_order = false); //OK
 	//-----------------------------
 
 	std::vector<std::string> const& getElementValueNameVector () { return ele_val_name_vector; }
@@ -554,7 +553,7 @@ public:
 	void SetElementValue(long,int,double); //PCH
 	double GetElementValue(size_t,int);     //PCH
 	                                      //PCH
-	int GetElementValueIndex(const std::string&);
+	int GetElementValueIndex(const std::string&, bool reverse_order = false);
 	//CB-----------------------------
 	int flow_pcs_type;
 	//----------------------------------------------------------------------
