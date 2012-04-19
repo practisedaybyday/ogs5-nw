@@ -391,9 +391,10 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 		}
 		else if(line_string.find("$NON_LINEAR_SOLVER") != string::npos)
 		{
-			ScreenMessage(" Using old $NON_LINEAR_SOLVER keyword. Eventually this will become obsolete.\n");
-			ScreenMessage(" Conider switching to $NON_LINEAR_ITERATIONS for better results.\n");
-			ScreenMessage(" ---------------------------------------------------------------------------\n");
+			ScreenMessage(" --\n Using old $NON_LINEAR_SOLVER keyword.\n");
+			ScreenMessage(" Eventually this will be obsolete. Conider switching to\n");
+			ScreenMessage(" $NON_LINEAR_ITERATIONS for better results and greater flexibility.\n");
+			ScreenMessage(" --\n");
 			//
 			// JT:	in >> method_name 
 			//		in >> tolerance

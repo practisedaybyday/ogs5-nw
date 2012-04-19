@@ -1298,7 +1298,7 @@ double COutput::NODWritePLYDataTEC(int number)
 	GetNodeIndexVector(NodeIndex);
 	//--------------------------------------------------------------------
 	// Write header
-	if (number == 0)       //WW if(number==1)
+	if (number == 0 || number == 1)       //WW if(number==1)
 	{
 		//project_title;
 		std::string project_title_string = "Profiles along polylines";

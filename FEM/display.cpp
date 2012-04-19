@@ -123,9 +123,10 @@ void DisplayMsg ( const char* s )
 **************************************************************************/
 void ScreenMessage(const char* message)
 {
-//#if defined(USE_MPI)
-	//if(myrank != 0) return;
-//#endif
+#ifdef USE_MPI
+	if(myrank > 0)
+		return;
+#endif
 	printf(message);
 }
 

@@ -265,6 +265,10 @@ CRFProcess::CRFProcess(void) :
 	adaption = false;                     //HS 03.2008
 	this->EclipseData = NULL;             //BG 09/2009, coupling to Eclipse
 	this->DuMuxData = NULL;               //SBG 09/2009, coupling to DuMux
+	cpl_overlord = NULL;
+	cpl_underling = NULL;
+	pcs_is_cpl_overlord = false;
+	pcs_is_cpl_underling = false;
 	//----------------------------------------------------------------------
 	// CPL
 	for(int i = 0; i < 10; i++)
@@ -3903,8 +3907,9 @@ double CRFProcess::Execute()
 {
 	int ii, nidx1;
 	double pcs_error, nl_theta, val_n;
-	long j, k, g_nnodes;          //07.01.07 WW
+	long j, k, nshift, g_nnodes;          //07.01.07 WW
 	double* eqs_x = NULL;
+	double implicit_lim = 1.0 - DBL_EPSILON;
 
 	pcs_error = DBL_MAX;
 	g_nnodes = m_msh->GetNodesNumber(false);
@@ -4123,20 +4128,39 @@ double CRFProcess::Execute()
 	//----------------------------------------------------------------------
 	if (m_num->nls_method_name.find("PICARD") != string::npos)
 	{
-	    if(pcs_error < 1.0){ // JT: Then the solution has converged, take the final value
+	    if(pcs_error < 1.0) // JT: Then the solution has converged, take the final value
 			nl_theta = 1.0;
-	    }
-        for (ii = 0; ii < pcs_number_of_primary_nvals; ii++)
-        {
-           nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
-           for (j = 0; j < g_nnodes; j++)
-           {
-              k = m_msh->Eqs2Global_NodeIndex[j];
-              val_n = GetNodeValue(k, nidx1);       //03.04.2009. WW
-              SetNodeValue(k, nidx1, (1.0-nl_theta)*val_n + nl_theta*eqs_x[j + ii*g_nnodes]); // JT2012
-              eqs_x[j + ii*g_nnodes] = val_n;      // Used for time stepping. 03.04.2009. WW
-           }
-        }
+	    //
+		if(nl_theta > implicit_lim) // This is most common. So go for the lesser calculations.
+		{
+			for (ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+			{
+			   nidx1  = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+			   nshift = ii*g_nnodes;
+			   for(j=0; j<g_nnodes; j++)
+			   {
+				  k = m_msh->Eqs2Global_NodeIndex[j];
+				  val_n = GetNodeValue(k, nidx1);       //03.04.2009. WW
+				  SetNodeValue(k, nidx1, eqs_x[j + nshift]);
+				  eqs_x[j + nshift] = val_n;      // Used for time stepping. 03.04.2009. WW
+			   }
+			}
+		}
+		else
+		{
+			for (ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+			{
+			   nidx1  = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+			   nshift = ii*g_nnodes;
+			   for(j=0; j<g_nnodes; j++)
+			   {
+				  k = m_msh->Eqs2Global_NodeIndex[j];
+				  val_n = GetNodeValue(k, nidx1);       //03.04.2009. WW
+				  SetNodeValue(k, nidx1, (1.0-nl_theta)*val_n + nl_theta*eqs_x[j + nshift]);
+				  eqs_x[j + nshift] = val_n;      // Used for time stepping. 03.04.2009. WW
+			   }
+			}
+		}
 	} 
 	//----------------------------------------------------------------------
 	// END OF PICARD
@@ -4670,13 +4694,16 @@ void CRFProcess::GlobalAssembly()
 
 		//MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 
-		//JT->KG: Please check this. I think "this->first_coupling_iteration" is the check you want here. Such that this only 
-		// happens AFTER the first coupling iteration in your OGS-GEM coupling. Is this correct?
 #ifdef GEM_REACT
-		//		if ( _pcs_type_name.compare("MASS_TRANSPORT") == 0 && aktueller_zeitschritt > 1 && !this->first_coupling_iteration)
-		if ( this->getProcessType() == FiniteElement::MASS_TRANSPORT && aktueller_zeitschritt > 1 &&
-		     !this->first_coupling_iteration)
-			IncorporateSourceTerms_GEMS();
+		if( getProcessType() == FiniteElement::MASS_TRANSPORT && aktueller_zeitschritt > 1)
+		{ // JT->KG. New coupling system.
+			if( _problem->GetCPLMaxIterations() > 1 || // Then there is a coupling on all processes
+			   (this->pcs_is_cpl_overlord && this->m_num->cpl_max_iterations > 1) || // This process (the overlord) controls coupling for another (the underling) process.
+			   (this->pcs_is_cpl_underling && this->cpl_overlord->m_num->cpl_max_iterations > 1)) // This process (the underling) has a coupling with a controlling (the overlord) process
+			{
+				IncorporateSourceTerms_GEMS();
+			}
+		}
 #endif
 #ifndef NEW_EQS                             //WW. 07.11.2008
 		SetCPL();                 //OK
@@ -7834,10 +7861,10 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 	{
 		double nonlinear_iteration_error;
 		double nl_theta, damping, norm_x0, norm_b0, norm_x, norm_b, val;
-		double error_x1, error_x2, error_b1, error_b2, error, last_error;
+		double error_x1, error_x2, error_b1, error_b2, error, last_error, percent_difference;
 		double* eqs_x = NULL;
 		double* eqs_b = NULL;
-		bool auto_tctr_break, is_converged, diverged;
+		bool converged, diverged;
 		int ii, nidx1, num_fail;
 		size_t j, k, g_nnodes;
 
@@ -7876,8 +7903,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			CopyU_n();
 		if (hasAnyProcessDeactivatedSubdomains)
 			this->CheckMarkedElement();  //NW
-		if(Tim)
-			Tim->last_dt_accepted = true; // JT2012
+		Tim->last_dt_accepted = true; // JT2012
 
 #ifdef USE_MPI
         if(myrank==0)
@@ -7885,10 +7911,12 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 #endif
 		if(print_pcs){ // JT: need check because of Regional Richards
 			std::cout << "\n      ================================================" << std::endl;
-			std::cout << "    ->Process " << loop_process_number << ": " << convertProcessTypeToString (this->getProcessType()) << std::endl;
 			if(getProcessType() == FiniteElement::MASS_TRANSPORT){
-				std::cout << "      for " << this->pcs_primary_function_name[0];
-				std::cout << " pcs_component_number " << this->pcs_component_number << std::endl;
+				std::cout << "    ->Process   " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
+				std::cout << "    ->Component " << pcs_component_number << ": " << pcs_primary_function_name[0] << std::endl;
+			}
+			else{
+				std::cout << "    ->Process " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
 			}
 			std::cout << "      ================================================" << std::endl;
 		}
@@ -7899,11 +7927,12 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		// ------------------------------------------------------------
 		// NON-LINEAR ITERATIONS (OR SINGLE ITERATION IF LINEAR)
 		// ------------------------------------------------------------
-		num_fail = 0;
-		last_error = DBL_MAX;
+		diverged = false;
+		converged = false;
+		accepted = true;
+		last_error = 1.0;
 		for(iter_nlin = 0; iter_nlin < m_num->nls_max_iterations; iter_nlin++)
 		{
-			auto_tctr_break = is_converged = diverged = false;
 			nonlinear_iteration_error = Execute();
 			//
 			// ---------------------------------------------------
@@ -7912,7 +7941,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			if(m_num->nls_method < 0)
 			{
 				PrintStandardIterationInformation(true);
-				is_converged = true;
+				converged = true;
 			}
 			else
 			{
@@ -7923,20 +7952,21 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 				damping = nl_theta;
 				switch(m_num->getNonLinearErrorMethod())
 				{
-					// For most error methods
+					// For most error methods (also works for Newton)
 					default:
 						PrintStandardIterationInformation(true);
 						//
 						if(nonlinear_iteration_error <= 1.0){
-							is_converged = true;
+							converged = true;
 						}
 						else{				// Check for stagnation
-							if((last_error - nonlinear_iteration_error)/last_error > 1.0e-2){
-								num_fail = 0;
-							}else{
+							percent_difference = 100.0 * ((last_error - nonlinear_iteration_error) / last_error);
+							if(iter_nlin > 0 &&  percent_difference < 1.0) // less than 1% difference (or an error increase) from previous error
 								num_fail++;
-								if(num_fail > 1) diverged = true;
-							}
+							else
+								num_fail = 0;
+							//
+							if(num_fail > 1) diverged = true; // require 2 consecutive failures
 							last_error = nonlinear_iteration_error;
 						}
 						break;
@@ -7979,50 +8009,46 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 							if(error > 10.0 && iter_nlin > 1)
 							{
 								diverged = true;
-								if(Tim && Tim->GetPITimeStepCrtlType() > 0){ // if PI automatic time control
-									auto_tctr_break = true;
-									PI_TimeStepSize();
+								if(Tim->GetPITimeStepCrtlType() > 0){ // if PI automatic time control
 									accepted = false;
+									PI_TimeStepSize();
 								}
 							}
 							//
 							// Check convergence
 							if(norm_x0 < m_num->nls_error_tolerance[0]){
 								error = norm_x0;
-								is_converged = true;
+								converged = true;
 							}
 							if(norm_b0 < 10 * m_num->nls_error_tolerance[0]){
 								error = norm_b0;
-								is_converged = true;
+								converged = true;
 							}
 							if(norm_b < 0.001 * norm_b0){
 								error = norm_b;
-								is_converged = true;
+								converged = true;
 							}
 							if(error <= m_num->nls_error_tolerance[0]){
-								is_converged = true;
+								converged = true;
 							}
 						}
 						// Newton information printout.
-						cout.width(8);
-						cout.precision(2);
+						cout.width(10);
+						cout.precision(3);
 						cout.setf(ios::scientific);
-						cout<<"         NR-Error" << "  " << "RHS Norm  " << "  " << "Unknowns Norm" << "  " << "Damping" << endl;
-						cout<<"         "<< error << "  " << norm_b << "   " << norm_x << "   " << damping << endl;
-						std::cout <<"      ------------------------------------------------"<<std::endl;
-						//
-						if(auto_tctr_break)
-							return error;
+						cout << "         NR-Error  |" << "    RHS Norm|" << "  Unknowns Norm|"  << " Damping\n";
+						cout << "         " << setw(10) << error << "|  " << setw(9) << norm_b << "| ";
+						cout << setw(14) << norm_x << "| "<< setw(9) << damping << endl;
+						cout.flush();
 						break;
 				}
 			}
 
 			// CHECK FOR TIME STEP FAILURE
 			// ---------------------------------------------------
-			if(Tim->isDynamicTimeFailureSuggested(this)){
+			if(!accepted || Tim->isDynamicTimeFailureSuggested(this)){
 				  accepted = false;
 				  Tim->last_dt_accepted = false;
-				  is_converged = true;
 				  break;
 			}
 
@@ -8030,7 +8056,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			// ---------------------------------------------------
 			if(m_num->nls_method > 0)
 			{
-				if(is_converged) 
+				if(converged) 
 					damping = 1.0; // Solution has converged. Take newest values.
 				//
 				for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
@@ -8049,21 +8075,19 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			if(mobile_nodes_flag ==1){
 				PCSMoveNOD();
 			}
-			if(Tim){
-				/* JT: I don't know if this time control method is used anymore. But it relies on a single error
-				       produced from CalcIterationNodeError(), but this now depends on the type of error to use.
-				       Therefore, I simply provide the error of the first dof, and not depending on the error type. If
-				       this time step is still used, someone will need to find another way to calculate the error it uses. 
-			    */
-				Tim->repeat = true;
-				if(is_converged){
-					Tim->repeat = false;
-					Tim->nonlinear_iteration_error = pcs_absolute_error[0];
-				}
+			/* JT: I don't know if this time control method is used anymore. But it relies on a single error
+			       produced from CalcIterationNodeError(), but this now depends on the type of error to use.
+			       Therefore, I simply provide the error of the first dof, and not depending on the error type. If
+			       this time step is still used, someone will need to find another way to calculate the error it uses. 
+		    */
+			Tim->repeat = true;
+			if(converged){
+				Tim->repeat = false;
+				Tim->nonlinear_iteration_error = pcs_absolute_error[0];
 			}
 
 			// BREAK CRITERIA
-			if(is_converged || diverged)
+			if(converged || diverged)
 			{
 				break;
 			}
@@ -8071,29 +8095,31 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		// ------------------------------------------------------------
 		// NON-LINEAR ITERATIONS COMPLETE
 		// ------------------------------------------------------------
-
 		// PI time step size control. 27.08.2008. WW
-		if(Tim->GetPITimeStepCrtlType() > 0){
-			PI_TimeStepSize();
+		if(accepted && Tim->GetPITimeStepCrtlType() > 0){
+			PI_TimeStepSize(); // might also set accepted to false here.
 		}
-
-		// If the timestep failed, no need for additional tracking. Otherwise, track and print.
-		if(accepted && m_num->nls_max_iterations > 1) // only for non-linear iterations
+		//
+		if(m_num->nls_max_iterations > 1) // only for non-linear iterations
 		{
 			if(diverged){
-				num_diverged++;
-				std::cout << "\nWARNING: Non-Linear iteration has stagnated!\n" <<std::endl;
+				if(accepted) // only increment if not fixed by a failed time step.
+					num_diverged++;
+				std::cout << "\nNon-linear iteration stabilized.";
 			}
-			else if(!is_converged){
-				num_notsatisfied++;
-				std::cout << "\nWARNING: Max non-linear iterations reached without meeting desired tolerance.\n";
+			else if(!converged){
+				if(accepted) // only increment if not fixed by a failed time step.
+					num_notsatisfied++;
+				if(Tim->GetPITimeStepCrtlType() < 1) // PI has the intrinsic property of doing this. So don't print it.
+					std::cout << "\nMax number of non-linear iterations reached.";
 			}
 		}
-
+		//
 		// Calculate secondary variables
 		if(accepted){
 			CalcSecondaryVariables();
 		}
+		//
 		// Release temporary memory of linear solver. WW
 #ifdef NEW_EQS                                 //WW
 #if defined(USE_MPI)
@@ -8145,7 +8171,6 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 				}
 			}
 			std::cout <<"         ->Euclidian norm of unknowns: " << pcs_unknowns_norm << std::endl;
-			std::cout <<"      ------------------------------------------------"<<std::endl;
 		}
 	}
 
@@ -8494,6 +8519,45 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 				//
 				for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
 					SetNodeValue(l, nidx0, GetNodeValue(l, nidx1));
+			}
+		}
+	}
+
+/**************************************************************************
+   FEMLib-Method:
+   Task:
+   Programing:
+   3/2012 JT. Based on the nodal version
+**************************************************************************/
+	void CRFProcess::CopyTimestepELEValues(bool forward)
+	{
+		size_t j, nvals, nidx0, nidx1;
+		long iel, num_ele;
+		bool copy_porosity = true;
+		nvals = ele_val_name_vector.size();
+		if(nvals < 2) return; // then we don't have 2 time levels of anything
+		num_ele = (long)m_msh->ele_vector.size();
+//
+#ifdef GEM_REACT
+		// do nothing as porosity update is handled by REACT_GEMS after!! flow and transport solution
+		copy_porosity = false;
+#endif
+//
+		for(j = 0; j < nvals-1; j++)
+		{
+			if(ele_val_name_vector[j].compare(ele_val_name_vector[j+1]) != 0) // If not the same, then we only have a single time slot
+				continue;
+			if(ele_val_name_vector[j].find("POROSITY") != string::npos && !copy_porosity) // Porosity
+				continue;
+			//
+			nidx0 = j;
+			nidx1 = j+1;
+			if(!forward){
+				nidx0++;
+				nidx1--;
+			}
+			for(iel = 0; iel < num_ele; iel++){
+				SetElementValue(iel,nidx0,GetElementValue(iel,nidx1));
 			}
 		}
 	}
@@ -11559,10 +11623,10 @@ CRFProcess* PCSGetMass(size_t component_number)
 
 		//compute hnew with the resriction: 0.2<=hnew/h<=6.0;
 		fac = max(factor2,min(factor1,pow(err,0.25) / sfactor));
-		hnew = dt / fac;          //*Tim->reject_factor;              // BG, use the reject factor to lower timestep after rejection BG
+		hnew = Tim->time_step_length / fac;          //*Tim->reject_factor;              // BG, use the reject factor to lower timestep after rejection BG
 
 		//determine if the error is small enough
-		if(err <= 1.0e0)          //step is accept
+		if(err <= 1.0e0 && accepted)          //step is accept (unless Newton diverged!)
 		{
 			accept_steps++;
 			if(Tim->GetPITimeStepCrtlType() == 2) //Mod. predictive step size controller (Gustafsson)
@@ -11571,12 +11635,12 @@ CRFProcess* PCSGetMass(size_t component_number)
 				{
 					factorGus =
 					        (hacc /
-					         dt) * pow(err * err / erracc,0.25) / sfactor;
+					         Tim->time_step_length) * pow(err * err / erracc,0.25) / sfactor;
 					factorGus = max(factor2, min(factor1,factorGus));
 					fac = max(fac, factorGus);
-					hnew = dt / fac;
+					hnew = Tim->time_step_length / fac;
 				}
-				hacc = dt;
+				hacc = Tim->time_step_length;
 				erracc = max(1.0e-2,err);
 				Tim->SetHacc(hacc);
 				Tim->setErracc(erracc);
@@ -11584,9 +11648,8 @@ CRFProcess* PCSGetMass(size_t component_number)
 			if(fabs(hnew) > hmax)
 				hnew = hmax;
 			if(!accepted)
-				hnew = min(fabs(hnew), dt);
+				hnew = min(fabs(hnew), Tim->time_step_length);
 			Tim->SetTimeStep(fabs(hnew));
-			accepted = true;
 			//store the used time steps for post-processing BG
 			if (Tim->step_current == 1) // BG
 				Tim->time_step_vector.push_back(Tim->time_step_length);
@@ -11596,6 +11659,11 @@ CRFProcess* PCSGetMass(size_t component_number)
 		}                         //end if(err<=1.0e0)
 		else
 		{
+			if(!accepted && err <= 1.0e0){ //JT: Then error suggests success, but the iteration diverged.
+				if(hnew/Tim->time_step_length > 0.99) // Shock the system to escape the stagnation.
+					hnew = Tim->time_step_length * 0.8;
+			}
+			//
 			//WW Tim->reject_factor = 1;                     //BG; if the time step is rejected the next timestep increase is reduced by the reject factor (choose reject factor between 0.1 and 0.9); 1.0 means no change
 			reject_steps++;
 			accepted = false;
@@ -11668,9 +11736,9 @@ CRFProcess* PCSGetMass(size_t component_number)
 			{
 				// Adding the rate of concentration change to the right hand side of the equation.
 #ifdef NEW_EQS                           //15.12.2008. WW
-				eqs_new->b[it] -= m_vec_GEM->m_xDC_Chem_delta[it * nDC + i] / dt;
+				eqs_new->b[it] -= m_vec_GEM->m_xDC_Chem_delta[it * nDC + i] / Tim->time_step_length;
 #else
-				eqs->b[it] -= m_vec_GEM->m_xDC_Chem_delta[it * nDC + i] / dt;
+				eqs->b[it] -= m_vec_GEM->m_xDC_Chem_delta[it * nDC + i] / Tim->time_step_length;
 #endif
 			}
 			// ----------------------------------------------------

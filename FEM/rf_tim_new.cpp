@@ -28,7 +28,6 @@
 double aktuelle_zeit;
 size_t aktueller_zeitschritt = 0;
 double dt = 0.0;
-double dt_last = 0.0;
 int rwpt_numsplits = -1;                          //JT 2010
 //==========================================================================
 std::vector<CTimeDiscretization*>time_vector;
@@ -758,6 +757,7 @@ double CTimeDiscretization::CalcTimeStep(double current_time)
 				}
 				break;
 			}
+			break;
 		}
 	}
 	//
@@ -956,7 +956,7 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
 					Node_Sat[j] = m_pcs->GetNodeValue(elem->GetNodeIndex(j),
 					                                  idxS);
 				// JT: dSdP now returns actual sign (<0)
-				buffer = -m_mmp->SaturationPressureDependency(m_mmp->CapillaryPressureFunction(fem->interpolate(Node_Sat)),true);
+				buffer = -m_mmp->PressureSaturationDependency(fem->interpolate(Node_Sat),true); //JT: now returns correct sign.
 				buffer *= 0.5 * elem->GetVolume() * elem->GetVolume();
 				buffer *= m_mmp->porosity_model_values[0]
 				          * mfp_vector[0]->Viscosity()

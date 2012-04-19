@@ -564,6 +564,10 @@ public:
 	CRFProcess* GetProcessByNumber(int);
 	CFiniteElementStd* GetAssembler() {return fem; }
 	int GetDOF() {return dof;}
+	bool pcs_is_cpl_overlord;
+	bool pcs_is_cpl_underling;
+	CRFProcess* cpl_overlord;
+	CRFProcess* cpl_underling;
 	// CRFProcess *Get(string); // WW Removed
 	// Configuration
 	void Config();
@@ -599,6 +603,7 @@ public:
 	double CalcIterationNODError(FiniteElement::ErrorMethod method, bool nls_error, bool cpl_error=false); //OK
 	                                          // Add bool forward = true. WW
 	void CopyTimestepNODValues(bool forward = true);
+	void CopyTimestepELEValues(bool forward = true);
 	//Coupling
 	//WW double CalcCouplingNODError(); //MB
 	void CopyCouplingNODValues();

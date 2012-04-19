@@ -125,8 +125,8 @@ public:
 	double Density(long number,double* gp,double theta);
 	// Capillary pressure functions
 	double CapillaryPressureFunction(const double wetting_saturation);
-	double PressureSaturationDependency(double wetting_saturation);
-	double SaturationPressureDependency(const double capillary_pressure, bool allow_zero = false);
+	double PressureSaturationDependency(double wetting_saturation, bool invert);
+	//JT: No longer used // double SaturationPressureDependency(const double capillary_pressure, bool allow_zero = false);
 	double SaturationCapillaryPressureFunction(const double capillary_pressure);
 	//WW
 	double PermeabilitySaturationFunction(const double wetting_saturation, int phase);
