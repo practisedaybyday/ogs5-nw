@@ -14,6 +14,9 @@
 #include "Configure.h"
 #include "display.h"
 #include "makros.h"
+#if defined(USE_MPI) // JT
+#include "par_ddc.h"
+#endif
 extern FILE* OpenMsgFile(void);
 extern void CloseMsgFile(FILE*);
 
@@ -114,6 +117,20 @@ void DisplayMsg ( const char* s )
 	f = OpenMsgFile();
 	fprintf(f,"%s",s);
 	CloseMsgFile(f);
+}
+
+/**************************************************************************
+ Task: Output message to screen. Helps to remove so many IFDEFS
+ Programming:
+  03/2012 JT                                                           
+**************************************************************************/
+void ScreenMessage(const char* message)
+{
+#ifdef USE_MPI
+	if(myrank > 0)
+		return;
+#endif
+	printf(message);
 }
 
 /**************************************************************************/

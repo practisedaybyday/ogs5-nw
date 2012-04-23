@@ -160,12 +160,12 @@ void CRFProcessDeformation::Initialization()
 	if(type / 10 == 4)
 		fem =  new CFiniteElementStd(this, Axisymm * m_msh->GetCoordinateFlag());
 	//
-	dm_pcs_number = pcs_number;
+	pcs_number_deformation = pcs_number;
 	//
 	if (m_num)
 	{
-		Tolerance_Local_Newton = m_num->nls_error_tolerance_local;
-		Tolerance_global_Newton = m_num->nls_error_tolerance;
+		Tolerance_Local_Newton  = m_num->nls_plasticity_local_tolerance;
+		Tolerance_global_Newton = m_num->nls_error_tolerance[0];
 	}
 	//
 
@@ -260,17 +260,15 @@ void CRFProcessDeformation::InitialMBuffer()
    05/2003 WW Polymorphism function by OK
    last modified: 23.05.2003
  **************************************************************************/
-double CRFProcessDeformation::Execute(const int CouplingIterations)
+double CRFProcessDeformation::Execute(int loop_process_number)
 {
 #if defined(USE_MPI)
 	if(myrank == 1)
 	{
 #endif
-	DisplayMsg("\n    ->Process: ");
-	DisplayLong(pcs_number);
-	DisplayMsg(", ");
-	//  cout << pcs_type_name << endl; // TF
-	std::cout << convertProcessTypeToString (getProcessType ()) << std::endl;
+		std::cout<<"\n      ================================================" << std::endl;
+	    std::cout << "    ->Process " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
+	    std::cout << "      ================================================" << std::endl;
 #if defined(USE_MPI)
 }
 #endif
@@ -357,7 +355,8 @@ double CRFProcessDeformation::Execute(const int CouplingIterations)
 
 	 */
 
-	if(CouplingIterations == 0 && m_num->nls_method != 2)
+	//JT//if(CouplingIterations == 0 && m_num->nls_method != 2)
+	if(this->first_coupling_iteration && m_num->nls_method != 2)
 		StoreLastSolution();      //u_n-->temp
 	//  Reset stress for each coupling step when partitioned scheme is applied to HM
 	if(H_Process && (type / 10 != 4))
@@ -482,10 +481,8 @@ double CRFProcessDeformation::Execute(const int CouplingIterations)
 			{
 #endif
 			//Screan printing:
-			cout << "\n=================================================== " << endl;
-			cout << "*** Step " << l << " of the total loading steps " <<
-			number_of_load_steps << endl;
-			cout << "    Load factor: " << LoadFactor << endl;
+            std::cout <<"      Starting loading step "<< l << "/" << number_of_load_steps <<".  Load factor: " << LoadFactor << std::endl;
+			std::cout <<"      ------------------------------------------------"<<std::endl;
 #ifdef USE_MPI
 		}
 #endif
@@ -520,6 +517,7 @@ double CRFProcessDeformation::Execute(const int CouplingIterations)
 			        pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
 			   #endif
 			 */
+			std::cout << "      Assembling equation system..." << std::endl;
 #ifdef USE_MPI                        //WW
 			clock_t cpu_time = 0; //WW
 			cpu_time = -clock();
@@ -549,7 +547,7 @@ double CRFProcessDeformation::Execute(const int CouplingIterations)
 			//
 #endif
 
-			cout << "Linear solver:" << endl;
+			std::cout << "      Calling linear solver..." << std::endl;
 			/// Linear solver
 #ifdef NEW_EQS                        //WW
 			//
@@ -591,7 +589,8 @@ double CRFProcessDeformation::Execute(const int CouplingIterations)
 				NormU = NormOfUnkonwn_orRHS();
 #endif
 
-				if(ite_steps == 1 && CouplingIterations == 0)
+				//JT//if(ite_steps == 1 && CouplingIterations == 0)
+				if(ite_steps == 1 && this->first_coupling_iteration)
 				{
 					InitialNorm = Norm;
 					InitialNormU0 = NormU;
@@ -621,28 +620,31 @@ double CRFProcessDeformation::Execute(const int CouplingIterations)
 					Recovery_du_JFNK();
 
 #endif
+				// JT: Store the process and coupling errors
+				pcs_num_dof_errors = 1;
+				if(ite_steps == 1){
+					pcs_absolute_error[0] = NormU;
+					pcs_relative_error[0] = pcs_absolute_error[0] / Tolerance_global_Newton;
+					cpl_max_relative_error = pcs_relative_error[0];
+					cpl_num_dof_errors = 1;
+				}
+				else{
+					pcs_absolute_error[0] = Error;
+					pcs_relative_error[0] = Error / Tolerance_global_Newton;
+				}
+				//
 #ifdef USE_MPI
 				if(myrank == 0)
 				{
 #endif
 				//Screan printing:
-				cout <<
-				"\n------------------------------------------------------------------ "
-				     << endl;
-				cout << "*** Newton-Raphson steps: " << ite_steps << endl;
-				cout.width(10);
-				cout.precision(3);
-				//           cout.setf(ios::fixed, ios::floatfield);
-				cout.setf(ios::scientific);
-				cout << "\nError     " << delim
-				     << "RHS Norm 0" << delim << "RHS Norm  " << delim <<
-				"Unknowns Norm"
-				     << delim << "Damping" << endl;
-				cout << Error << delim << InitialNorm << delim
-				     << Norm << delim << NormU << "   " << delim << damping << endl;
-				cout <<
-				"------------------------------------------------------------------ "
-				     << endl;
+				std::cout<<"      -->End of Newton-Raphson iteration: "<<ite_steps<<"/"<< MaxIteration <<std::endl;
+                cout.width(8);
+                cout.precision(2);
+                cout.setf(ios::scientific);
+                cout<<"         NR-Error"<<"  "<<"RHS Norm 0"<<"  "<<"RHS Norm  "<<"  "<<"Unknowns Norm"<<"  "<<"Damping"<<endl;
+                cout<<"         "<<Error<<"  "<<InitialNorm<<"  "<<Norm<<"   "<<NormU<<"   "<<"   "<<damping<<endl;
+                std::cout <<"      ------------------------------------------------"<<std::endl;
 #ifdef USE_MPI
 			}
 #endif
@@ -671,13 +673,11 @@ double CRFProcessDeformation::Execute(const int CouplingIterations)
 		// Update displacements, u=u+w for the Newton-Raphson
 		// u1 = u0 for pure elasticity
 		UpdateIterativeStep(1.0,1);
-
-		if(elasticity != 1)
-			cout << "Newton-Raphson (DM) terminated" << endl;
 	}
 	// Load step
 	//
 	// For coupling control
+	std::cout <<"      Deformation process converged." << std::endl;
 	Error = 0.0;
 	if(type / 10 != 4)                    // Partitioned scheme
 	{
@@ -701,9 +701,8 @@ double CRFProcessDeformation::Execute(const int CouplingIterations)
 	if(myrank == 0)
 	{
 #endif
-	cout << "CPU time elapsed in deformation process: "
-	     << (double)dm_time / CLOCKS_PER_SEC << "s" << endl;
-	cout << "=================================================== " << endl;
+    std::cout <<"      CPU time elapsed in deformation: " << (double)dm_time / CLOCKS_PER_SEC<<"s"<<std::endl;
+    std::cout <<"      ------------------------------------------------"<<std::endl;
 #ifdef USE_MPI
 }
 #endif
@@ -720,7 +719,8 @@ double CRFProcessDeformation::Execute(const int CouplingIterations)
 #endif
 #endif
 	//
-	if(CouplingIterations > 0)
+	//JT//if(CouplingIterations > 0)
+	if(this->first_coupling_iteration)
 		Error = fabs(Error - error_k0) / error_k0;
 	error_k0 = Error;
 	//
@@ -1092,7 +1092,7 @@ void CRFProcessDeformation::CreateInitialState4Excavation()
 		cout << "\n ***Excavation simulation: 1. Establish initial stress profile..." <<
 		endl;
 		counter = 0;
-		Execute();
+		Execute(0);
 	}
 	else
 		UpdateInitialStress(true);  // s0 = 0

@@ -52,7 +52,7 @@ public:
 	void GlobalAssembly_DM();
 
 	// overloaded
-	double Execute(const int CouplingIterations = 0);
+	double Execute(int loop_process_number);
 
 	// Aux. Memory
 	double* GetAuxArray() const {return ARRAY; }

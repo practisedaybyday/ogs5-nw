@@ -94,13 +94,20 @@ CFluidMomentum::~CFluidMomentum(void)
    last modification:
    01/2010 TF changed access to process type
 **************************************************************************/
-double CFluidMomentum::Execute()
+double CFluidMomentum::Execute(int loop_process_number)
 {
 	double pcs_error = 0.0;
 
 	int no_processes = (int)pcs_vector.size();
 
 	Create();
+
+	//JT: Printout message. Give zero error to coupling scheme.
+	std::cout << "\n      ================================================" << std::endl;
+	std::cout << "    ->Process " << loop_process_number << ": " << "FLUID_MOMENTUM" << std::endl;
+    std::cout << "      ================================================" << std::endl;
+	cout << "      Solving for nodal velocity..." << endl;
+	cpl_max_relative_error = pcs_error;
 
 	for(int i = 0; i < no_processes; ++i)
 	{
@@ -388,11 +395,6 @@ void CFluidMomentum::Create()
 	}
 	if(!m_num)
 		cout << "Warning in CRFProcess::Create() - no numerical properties" << endl;
-	else
-	{
-		pcs_nonlinear_iterations = m_num->nls_max_iterations;
-		pcs_nonlinear_iteration_tolerance = m_num->nls_error_tolerance;
-	}
 }
 
 /**************************************************************************

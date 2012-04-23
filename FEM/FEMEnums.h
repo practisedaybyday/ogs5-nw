@@ -76,6 +76,13 @@ std::string convertProcessTypeToString ( ProcessType pcs_type );
 bool isFlowProcess (ProcessType pcs_type);
 
 /**
+ * \brief Checks if the given pcs_type variable corresponds to a multiphase flow type of the enum ProcessType.
+ * @param pcs_type value of enum ProcessType
+ * @return true if pcs_type describes a flow process, else false
+ */
+bool isMultiFlowProcess (ProcessType pcs_type);
+
+/**
  * \brief Checks if the given pcs_type variable corresponds to a deformation type of the enum ProcessType.
  * @param pcs_type value of enum ProcessType
  * @return true if pcs_type describes a deformation process, else false
@@ -194,6 +201,33 @@ std::string convertDisTypeToString(DistributionType dis_type);
 
 /// Returns a list of strings containing all entries in the DistributionType enum.
 const std::list<std::string> getAllDistributionNames();
+
+/** \brief Types of error method supported by OpenGeoSys.
+ * If you change this enum, make sure you apply the changes to
+ * the functions convertErrorMethod(), convertErrorMethodToString()
+   Non-Linear and Coupling options (see also CRFProcess::CalcIterationNODError()): 
+   --> LMAX:	max(|x1-x0|)  -- Infinity norm: Local max error (across all elements) of solution vector delta (absolute error). Tolerance required for each primary variable.
+   --> ENORM:	|x1-x0|       -- Euclidian norm: Norm of the solution vector delta (absolute error). Norm taken over entire solution vector (all primary variables) and checked against a single tolerance.
+   --> EVNORM:	|x1-x0|       -- Euclidian varient norm: Norm of the solution vector delta (absolute error). Norm taken over solution vector of each primary variable, checked againes a tolerence specific to each variable.
+   --> ERNORM:	|(x1-x0)/x0)| -- Euclidian Relative norm: Norm of the solution vector delta divided by the norm of the solution vector. A single tolerance applied to all primary variables.
+   --> BNORM:	              -- OGS classic treatment of newton methods. ENORM error tolerance plus RHS ("B") control. (note: other error methods (i.e. ENORM) will also work well for NEWTON scheme)
+ */
+enum ErrorMethod
+{
+	INVALID_ERROR_METHOD = 0,   
+	LMAX,
+	ENORM, 
+	EVNORM,	
+	ERNORM,
+	BNORM
+};
+
+/**
+ * \brief Convert the given string into the appropriate enum value.
+ * @param pcs_type_string string describing an error method
+ * @return enum value describing error method
+ */
+ErrorMethod convertErrorMethod ( const std::string& error_method_string );
 
 } // end namespace FiniteElement
 

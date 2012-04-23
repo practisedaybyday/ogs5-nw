@@ -8,6 +8,9 @@
 #ifndef rf_num_new_INC
 #define rf_num_new_INC
 
+#include "makros.h" // JT
+#include "FEMEnums.h"
+
 #define NUM_FILE_EXTENSION ".num"
 // C++ STL
 #include "prototyp.h"
@@ -23,6 +26,8 @@ private:
 	double* DynamicDamping;
 	/// For GMRES solver. 30.06.2010. WW
 	long m_cols;
+	FiniteElement::ErrorMethod _pcs_nls_error_method;
+	FiniteElement::ErrorMethod _pcs_cpl_error_method;
 public:
 	// method
 	std::string method_name;              //OK
@@ -31,6 +36,7 @@ public:
 	// RENUMBER
 	int renumber_method;
 	int renumber_parameter;
+	//
 	// LS - Linear Solver
 	int ls_method;
 	int ls_max_iterations;
@@ -40,18 +46,30 @@ public:
 	int ls_precond;
 	int ls_storage_method;
 	std::string ls_extra_arg; //NW
-	// LS - Linear Solver
+	//
+	// NLS - Non-linear Solver
 	std::string nls_method_name;
 	int nls_method;                       // Picard or Newton
 	int nls_error_method;                 //WW
 	int nls_max_iterations;
-	double nls_error_tolerance;
-	double nls_error_tolerance_local;
 	double nls_relaxation;
+	double nls_error_tolerance[DOF_NUMBER_MAX];		//JT2012: array function of dof
+	double nls_plasticity_local_tolerance;
+	void setNonLinearErrorMethod (FiniteElement::ErrorMethod nls_method) { _pcs_nls_error_method = nls_method; }
+	FiniteElement::ErrorMethod getNonLinearErrorMethod () const { return _pcs_nls_error_method; }
+	//
 	// CPL WW
-	double cpl_tolerance;
-	int cpl_iterations;
 	std::string cpl_variable;             // MB
+	std::string cpl_process;              // JT
+	std::string cpl_variable_JOD;		//JT->JOD. This one defaults to FLUX. I'm not sure what you want to do with it, but cpl_variable must default to "NONE".
+	int cpl_max_iterations;
+	int cpl_min_iterations;				  // JT2012
+	double cpl_error_tolerance[DOF_NUMBER_MAX]; // JT2012: array function of dof
+	bool cpl_error_specified;			  // JT2012
+	bool cpl_master_process;
+	void setCouplingErrorMethod (FiniteElement::ErrorMethod cpl_method) { _pcs_cpl_error_method = cpl_method; }
+	FiniteElement::ErrorMethod getCouplingErrorMethod () const { return _pcs_cpl_error_method; }
+	//
 	// ELE
 	int ele_gauss_points;                 // probably element-type-wise
 	int ele_mass_lumping;
@@ -74,6 +92,9 @@ public:
 	double lag_min_weight;
 	int lag_use_matrix;
 	int lag_vel_method;
+	//
+	// Configure
+	void NumConfigure(bool overall_coupling_exists); //JT2012
 	//
 	// Dynamics
 	bool CheckDynamic();
