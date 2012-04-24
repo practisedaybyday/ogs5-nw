@@ -174,6 +174,7 @@ public:
 	int electric_conductivity_model;
 	int electric_conductivity_num_val;
 	double* electric_conductivity_val;
+	//
 	// Chemical properties
 	// TF 11/2011 - only in read-method used
 //	std::string dif_fct_name;

@@ -11,7 +11,7 @@
 #include <QFileInfo>
 
 FileListDialog::FileListDialog(FileType input, FileType output, QWidget* parent)
-: _input_file_type(input), _output_file_type(output), QDialog(parent)
+: QDialog(parent), _input_file_type(input), _output_file_type(output)
 {
 	setupUi(this);
 	this->listView->setModel(&_allFiles);

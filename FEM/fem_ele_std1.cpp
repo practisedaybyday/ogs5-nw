@@ -82,8 +82,8 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 		tensor = MediaProp->PermeabilityTensor(Index);
 		PG = interpolate(NodalVal1);
 		PG2 = interpolate(p2);
-		Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
-		S1 = Sw + perturb;        //MediaProp->SaturationCapillaryPressureFunction(PG+perturb,0);
+		Sw = MediaProp->SaturationCapillaryPressureFunction(PG);
+		S1 = Sw + perturb;        //MediaProp->SaturationCapillaryPressureFunction(PG+perturb);
 
 		dens_arg[0] = PG;
 		rhow = FluidProp->Density(dens_arg);
@@ -92,10 +92,9 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 		vsc1 = FluidProp->Viscosity();
 		vsc2 = GasProp->Viscosity();
 
-		//dSdp = MediaProp->SaturationPressureDependency(Sw, rhow, pcs->m_num->ls_theta);
+		//dSdp = MediaProp->SaturationPressureDependency(Sw);
 		dSdp =
-		        (MediaProp->SaturationCapillaryPressureFunction(PG + perturb,
-		                                                        0) - Sw) / perturb;
+		        (MediaProp->SaturationCapillaryPressureFunction(PG + perturb) - Sw) / perturb;
 
 		// Velocity
 		for (size_t i = 0; i < dim; i++)
@@ -155,7 +154,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 		/*
 		   // Mass related
 		   /// d(dS/dp)/dS
-		   d_ds_dp = ( MediaProp->SaturationPressureDependency(S1, rhow, pcs->m_num->ls_theta) - dSdp)/perturb;
+		   d_ds_dp = ( MediaProp->SaturationPressureDependency(S1) - dSdp)/perturb;
 
 		   phi_dP_dt = 0.;
 		   phi_dP_dt_g = 0.;
@@ -266,15 +265,14 @@ void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
 
 		tensor = MediaProp->PermeabilityTensor(Index);
 		PG = -interpolate(NodalVal1);
-		Sw = MediaProp->SaturationCapillaryPressureFunction(PG,0);
+		Sw = MediaProp->SaturationCapillaryPressureFunction(PG);
 		S1 = Sw + perturb;        //MediaProp->SaturationCapillaryPressureFunction(PG+perturb,0);
 
 		vsc1 = FluidProp->Viscosity();
 
-		//dSdp = MediaProp->SaturationPressureDependency(Sw, rhow, pcs->m_num->ls_theta);
+		//dSdp = MediaProp->SaturationPressureDependency(Sw);
 		dSdp =
-		        (MediaProp->SaturationCapillaryPressureFunction(PG + perturb,
-		                                                        0) - Sw) / perturb;
+		        (MediaProp->SaturationCapillaryPressureFunction(PG + perturb) - Sw) / perturb;
 
 		// Velocity
 		for (size_t i = 0; i < dim; i++)

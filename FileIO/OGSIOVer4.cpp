@@ -402,12 +402,22 @@ std::string readSurface(std::istream &in,
 	if (sfc)
 		// surface create by TIN
 		sfc_vec.push_back (sfc);
-	else {
-		// surface created by polygon
-		if (ply_id != std::numeric_limits<size_t>::max() && ply_id != ply_vec.size())
-			if (ply_vec[ply_id]->isClosed())
-				polygon_vec.push_back (new Polygon (*(ply_vec[ply_id]), true));
-	}
+	else
+    {
+        // surface created by polygon
+        if (ply_id != std::numeric_limits<size_t>::max() && ply_id != ply_vec.size())
+        {
+            if (ply_vec[ply_id]->isClosed())
+            {
+                polygon_vec.push_back (new Polygon (*(ply_vec[ply_id]), true));
+            }
+            else
+            {
+                std::cerr << "\n\tcannot create surface " << name << " from polyline: "
+                    << " polyline is not closed.\n";
+            }
+        }
+    }
 
 	return line;
 }

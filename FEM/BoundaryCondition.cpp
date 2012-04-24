@@ -14,7 +14,7 @@ BoundaryCondition::BoundaryCondition(const CBoundaryCondition &bc, const std::st
 {
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT ||
 	    this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
-		this->addDisValue(bc.getGeoNodeValue());
+		this->setConstantDisValue(bc.getGeoNodeValue());
 	else if (this->getProcessDistributionType() == FiniteElement::LINEAR ||
 	         this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
 	{

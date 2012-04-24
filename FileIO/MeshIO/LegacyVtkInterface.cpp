@@ -407,7 +407,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 		pcs = PCSGet(_pointArrayNames[0], true);
 	if (pcs && pcs->type == 1212)
 	{
-		size_t i = pcs->GetNodeValueIndex("SATURATION1");
+		size_t i = pcs->GetNodeValueIndex("SATURATION1",true); // JT: Latest
 		vtk_file << "SCALARS SATURATION2 double 1" << endl;
 		vtk_file << "LOOKUP_TABLE default" << endl;
 		for (long j = 0l; j < numNodes; j++)

@@ -257,6 +257,8 @@
 /* PCS / C++ */
 #define PCS_OBJECTS
 #define PCS_NUMBER_MAX 30
+#define DOF_NUMBER_MAX 5 // JT: max # dof's per process
+#define MAX_FLUID_PHASES 2 // JT: max # fluid phases
 #define noPCS_NOD
 #define GLI
 #define noWINDOWS

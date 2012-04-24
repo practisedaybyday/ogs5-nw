@@ -73,6 +73,7 @@ void ConversionTools::getFEMConditionsFromASCIIFile(const QString &file_name, st
 
 std::ios::pos_type ConversionTools::readBoundaryCondition(std::vector<FEMCondition*> &conditions, std::ifstream &in, const std::string &file_path, const GEOLIB::GEOObjects &geo_objects, const std::string &geo_name)
 {
+	Q_UNUSED(file_path);
 	CBoundaryCondition* bc(new CBoundaryCondition());
 	bool valid;
 	std::ios::pos_type position = bc->Read(&in, geo_objects, geo_name, valid);
@@ -83,6 +84,7 @@ std::ios::pos_type ConversionTools::readBoundaryCondition(std::vector<FEMConditi
 
 std::ios::pos_type ConversionTools::readInitialCondition(std::vector<FEMCondition*> &conditions, std::ifstream &in, const std::string &file_path, const GEOLIB::GEOObjects &geo_objects, const std::string &geo_name)
 {
+	Q_UNUSED(file_path);
 	CInitialCondition* ic = new CInitialCondition();
 	std::ios::pos_type position = ic->Read(&in, geo_objects, geo_name);
 	conditions.push_back(new InitialCondition(*ic, geo_name));

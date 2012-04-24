@@ -126,10 +126,8 @@ extern VoidFuncVoid LOPCalcSecondaryVariables_USER;
 VoidXFuncVoidX PCSDestroyELEMatrices[PCS_NUMBER_MAX];
 //------------------------------------------------------------------------
 // Globals, to be checked
-int pcs_no_fluid_phases = 0;
 int pcs_no_components = 0;
 bool pcs_monolithic_flow = false;
-int dm_pcs_number = 0;
 int pcs_deformation = 0;
 int dm_number_of_primary_nvals = 2;
 bool show_onces_adp = true;
@@ -152,16 +150,23 @@ bool hasAnyProcessDeactivatedSubdomains = false;  //NW
 
 //--------------------------------------------------------
 // Coupling Flag. WW
-bool T_Process = false;
-bool H_Process = false;
-bool M_Process = false;
-bool RD_Process = false;
-bool MH_Process = false;                          // MH monolithic scheme
-bool MASS_TRANSPORT_Process = false;
-bool FLUID_MOMENTUM_Process = false;
-bool RANDOM_WALK_Process = false;
-bool PTC_FLOW_Process = false;
+bool T_Process = false;					// Heat
+bool H_Process = false;					// Fluid
+bool H2_Process = false;				// Multi-phase
+bool H3_Process = false;				// 3-phase
+bool M_Process = false;					// Mechanical
+bool RD_Process = false;				// Richards
+bool MH_Process = false;				// MH monolithic scheme
+bool MASS_TRANSPORT_Process = false;	// Mass transport
+bool FLUID_MOMENTUM_Process = false;	// Momentum
+bool RANDOM_WALK_Process = false;		// RWPT
+bool PTC_FLOW_Process = false;			// PTC
 bool pcs_created = false;
+//
+int pcs_number_deformation = -1;				// JT2012
+int pcs_number_flow = -1;						// JT2012
+int pcs_number_heat = -1;						// JT2012
+vector<int>pcs_number_mass;						// JT2012
 
 namespace process
 {class CRFProcessDeformation;
@@ -214,18 +219,32 @@ CRFProcess::CRFProcess(void) :
 	// NUM
 	pcs_num_name[0] = NULL;
 	pcs_num_name[1] = NULL;
-	pcs_nonlinear_iterations = 1;
-	pcs_nonlinear_iteration_tolerance = 1.0e8;
-	pcs_coupling_iterations = 1;
 	pcs_sol_name = NULL;
 	m_num = NULL;
 	cpl_type_name = "PARTITIONED";        //OK
 	num_type_name = "FEM";                //OK
 	rwpt_app = 0;                         // PCH Application types for RWPT such as Cell Dynamics, Crypto, etc.
+	//
+	for(size_t i=0; i<DOF_NUMBER_MAX; i++)
+		pcs_number_mass.push_back(-1);		// JT2012 (allow DOF_NUMBER_MAX potential components)
+	//
 #ifndef NEW_EQS                                //WW 07.11.2008
 	eqs = NULL;                           //WW
 #endif
 	dof = 1;                              //WW
+	//
+	// ITERATIONS AND COUPLING
+	num_notsatisfied = 0;
+	num_diverged = 0;
+    cpl_max_relative_error = 0.0;
+	//
+	// PCS designations
+	isPCSDeformation = false;
+	isPCSFlow = false;
+	isPCSMultiFlow = false;
+	isPCSHeat = false;
+	isPCSMass = false;
+	//
 	//----------------------------------------------------------------------
 	// ELE
 	pcs_number_of_evals = 0;
@@ -246,6 +265,10 @@ CRFProcess::CRFProcess(void) :
 	adaption = false;                     //HS 03.2008
 	this->EclipseData = NULL;             //BG 09/2009, coupling to Eclipse
 	this->DuMuxData = NULL;               //SBG 09/2009, coupling to DuMux
+	cpl_overlord = NULL;
+	cpl_underling = NULL;
+	pcs_is_cpl_overlord = false;
+	pcs_is_cpl_underling = false;
 	//----------------------------------------------------------------------
 	// CPL
 	for(int i = 0; i < 10; i++)
@@ -588,9 +611,7 @@ void CRFProcess::Create()
 	}
 	else
 	{
-		pcs_nonlinear_iterations = m_num->nls_max_iterations;
-		pcs_nonlinear_iteration_tolerance = m_num->nls_error_tolerance;
-		if (pcs_nonlinear_iterations > 1) //WW
+		if (m_num->nls_max_iterations > 1) //WW
 			non_linear = true;
 	}
 	if (m_num->fct_method > 0)            //NW
@@ -684,9 +705,20 @@ void CRFProcess::Create()
 	if (!Tim)
 	{
 		//21.08.2008. WW
+		/* JT->WW: It doesn't seem like a good idea to give a non-existent Tim the properties of some specified [0] vector. 
+		           Why not set default values, and then let other "Tim" control the stepping?
+				   In other words. If HEAT_TRANSPORT doesn't have time control, 
+				   we cannot assign a time control type for a FLOW process to a HEAT process, this could give incorrect results.
+				   THE DEFAULTS ARE NOW SET UP SUCH THAT... if "Tim" doesn't exist, this process has no influence on the time step.
 		Tim = new CTimeDiscretization(*time_vector[0], pcs_type_name);
+		*/
+		Tim = new CTimeDiscretization();
+		Tim->pcs_type_name = pcs_type_name;
 		time_vector.push_back(Tim); //21.08.2008. WW
 	}
+	if(Tim->time_control_name == "NONE" && Tim->time_step_vector.size() > 0)
+		Tim->time_control_name = "STEPS";
+	//
 	if (Tim->time_unit.find("MINUTE") != std::string::npos)
 		time_unit_factor = 60.0;
 	else if (Tim->time_unit.find("HOUR") != std::string::npos)
@@ -1483,32 +1515,9 @@ bool PCSRead(std::string file_base_name)
 			CRFProcess* m_pcs = new CRFProcess();
 			m_pcs->file_name_base = file_base_name; //OK
 			position = m_pcs->Read(&pcs_file);
-			//..................................................................
-			// pcs_type_name_vector
-			if (m_pcs->pcs_type_name_vector.size() > 1)
-			{
-				string pname = m_pcs->pcs_type_name_vector[0]
-				               + m_pcs->pcs_type_name_vector[1];
-				m_pcs->pcs_type_name_vector.pop_back();
-				if (pname.find("FLOW") != string::npos && pname.find(
-				            "DEFORMATION") != string::npos)
-				{
-					//					m_pcs->_pcs_type_name = "DEFORMATION_FLOW";
-					m_pcs->setProcessType (FiniteElement::DEFORMATION_FLOW);
-					MH_Process = true; // MH monolithic scheme
-					if (pname.find("DYNAMIC") != string::npos)
-						m_pcs->pcs_type_name_vector[0] = "DYNAMIC";
-				}
-			}
-			else if (m_pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW)
-			{
-				//NW
-				std::cout << "***Error: DEFORMATION_FLOW is vague definition." <<
-				std::endl;
-				exit(0);
-			}
-
+			m_pcs->PCSReadConfigurations(); //JT
 			m_pcs->pcs_number = pcs_vector.size();
+
 			//RelocateDeformationProcess(m_pcs);
 			//			if (m_pcs->_pcs_type_name.find("DEFORMATION") != string::npos) { // TF
 			if (isDeformationProcess(m_pcs->getProcessType()))
@@ -1517,8 +1526,9 @@ bool PCSRead(std::string file_base_name)
 				pcs_vector[pcs_vector.size() - 1]->pcs_number = pcs_vector.size();
 				delete m_pcs;
 			}
-			else
+			else{
 				pcs_vector.push_back(m_pcs);
+			}
 
 			pcs_file.seekg(position, std::ios::beg);
 		}                         // keyword found
@@ -1551,6 +1561,9 @@ CRFProcess* CRFProcess::CopyPCStoDM_PCS()
 	dm_pcs->Memory_Type = Memory_Type;
 	dm_pcs->NumDeactivated_SubDomains = NumDeactivated_SubDomains;
 	dm_pcs->reload = reload;
+	dm_pcs->isPCSDeformation = true;
+	dm_pcs->isPCSFlow = this->isPCSFlow; //JT
+	dm_pcs->isPCSMultiFlow = this->isPCSMultiFlow; //JT
 	//WW
 	dm_pcs->write_boundary_condition =  write_boundary_condition;
 	if(!dm_pcs->Deactivated_SubDomain)
@@ -1568,6 +1581,48 @@ CRFProcess* CRFProcess::CopyPCStoDM_PCS()
 	}
 	//
 	return dynamic_cast<CRFProcess*> (dm_pcs);
+}
+
+/**************************************************************************
+   FEMLib-Method:
+   Task: Initial needed configurations following a read of PCS
+   Programing:
+   03/2012 JT
+**************************************************************************/
+void CRFProcess::PCSReadConfigurations()
+{
+	if(pcs_type_name_vector.size() > 1)
+	{
+		string pname = pcs_type_name_vector[0] + pcs_type_name_vector[1];
+		pcs_type_name_vector.pop_back();
+		if(pname.find("FLOW") != string::npos && pname.find("DEFORMATION") != string::npos)
+		{
+			setProcessType (FiniteElement::DEFORMATION_FLOW);
+			MH_Process = true; // MH monolithic scheme
+			if (pname.find("DYNAMIC") != string::npos)
+				pcs_type_name_vector[0] = "DYNAMIC";
+		}
+	}
+	else if(getProcessType() == FiniteElement::DEFORMATION_FLOW)
+	{
+		//NW
+		std::cout << "***Error: DEFORMATION_FLOW is vague definition." <<
+		std::endl;
+		exit(0);
+	}
+
+	if(isFlowProcess(getProcessType())){
+		this->isPCSFlow = true;
+		H_Process = true;
+	}
+	if(isMultiFlowProcess(getProcessType())){
+		this->isPCSMultiFlow = true;
+		H2_Process = true;
+	}
+	if(isDeformationProcess(getProcessType())){
+		this->isPCSDeformation = true;
+		M_Process = true;
+	}
 }
 
 /**************************************************************************
@@ -1626,70 +1681,51 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 				line_stream.str(line_string);
 				std::string pcs_type_name;
 				line_stream >> pcs_type_name;
+				pcs_type_name_vector.push_back(pcs_type_name);
 				this->setProcessType (FiniteElement::convertProcessType(pcs_type_name));
 				line_stream.clear();
 
-				//				if (_pcs_type_name.find("FLOW") != string::npos) {
 				if (isFlowProcess (this->getProcessType()))
 				{
-					pcs_no_fluid_phases++;
 					H_Process = true;
+					this->isPCSFlow = true; //JT2012
+					pcs_number_flow = pcs_vector.size(); //JT2012
+					if(this->getProcessType() == FiniteElement::PS_GLOBAL ||
+					   this->getProcessType() == FiniteElement::MULTI_PHASE_FLOW ||
+					   pcs_type_name.find("H2") != string::npos){
+						   this->isPCSMultiFlow = true;
+					}
 				}
-				//				if (_pcs_type_name.compare("PS_GLOBAL") == 0) {
-				if (this->getProcessType() == FiniteElement::PS_GLOBAL)
-					H_Process = true;
-				//				if (_pcs_type_name.compare("FLUID_FLOW") == 0) {
-				//					_pcs_type_name = "LIQUID_FLOW";
-				//				}
-				//				if (_pcs_type_name.find("DEFORMATION") != string::npos) {
 				if (isDeformationProcess(this->getProcessType()))
 				{
 					M_Process = true;
-					//if only "DEFORMATION", do not create solver for FLUID process. WW
-					if (pcs_no_fluid_phases < 1)
-						pcs_no_fluid_phases = 1;
+					this->isPCSDeformation = true; //JT2012
+					//JT: "pcs_number_deformation" is set in CRFProcessDeformation::Initialization()
 				}
-				//				if (_pcs_type_name.compare("MASS_TRANSPORT") == 0) {
 				if (this->getProcessType() == FiniteElement::MASS_TRANSPORT)
 				{
 					H_Process = true;
 					MASS_TRANSPORT_Process = true;
+					this->isPCSMass = true; //JT2012
+					pcs_number_mass[pcs_no_components] = pcs_vector.size(); //JT2012
 					pcs_no_components++;
 					this->setProcessPrimaryVariable(FiniteElement::CONCENTRATION);
 				}
-				if (this->getProcessType() == FiniteElement::PTC_FLOW)
+				if (this->getProcessType() == FiniteElement::PTC_FLOW){
 					PTC_FLOW_Process = true;
-				//				if (_pcs_type_name.find("HEAT") != string::npos)
-				if (this->getProcessType() == FiniteElement::HEAT_TRANSPORT)
+				}
+				if (this->getProcessType() == FiniteElement::HEAT_TRANSPORT){
 					T_Process = true;
-				pcs_type_name_vector.push_back(pcs_type_name);
-
-				//				if (_pcs_type_name.compare("FLUID_MOMENTUM") == 0) {
-				if (this->getProcessType() == FiniteElement::FLUID_MOMENTUM)
+					this->isPCSHeat = true; //JT2012
+					pcs_number_heat = pcs_vector.size(); //JT2012
+				}
+				if (this->getProcessType() == FiniteElement::FLUID_MOMENTUM){
 					FLUID_MOMENTUM_Process = true;
-				//				if (_pcs_type_name.compare("RANDOM_WALK") == 0) {
-				if (this->getProcessType() == FiniteElement::RANDOM_WALK)
+				}
+				if (this->getProcessType() == FiniteElement::RANDOM_WALK){
 					RANDOM_WALK_Process = true;
+				}
 			}
-		/*
-		   *pcs_file >> _pcs_type_name;
-		   if(_pcs_type_name.find("FLOW")!=string::npos){
-		   pcs_no_fluid_phases++;
-		   }
-		   if(_pcs_type_name.compare("FLUID_FLOW")==0){
-		   _pcs_type_name = "LIQUID_FLOW";
-		   }
-		   if(_pcs_type_name.find("DEFORMATION")!=string::npos)
-		   {
-		   //if only "DEFORMATION", do not create solver for FLUID process. WW
-		   if(pcs_no_fluid_phases<1)
-		   pcs_no_fluid_phases = 1;
-		   }
-		   if(_pcs_type_name.compare("MASS_TRANSPORT")==0)
-		   pcs_no_components++;
-		   pcs_file->ignore(MAX_ZEILE,'\n');
-		   continue;
-		 */
 		//....................................................................
 		// subkeyword found
 		if (line_string.find("$NUM_TYPE") != string::npos)
@@ -2746,7 +2782,6 @@ void CRFProcess::ConfigDeformation()
 		cpl_type_name = "MONOLITHIC";
 		pcs_deformation = 11;
 	}
-	pcs_coupling_iterations = 10;
 
 	CNumerics* num = NULL;
 
@@ -3396,7 +3431,7 @@ void CRFProcess:: Def_Variable_LiquidFlow()
 	pcs_eval_name[pcs_number_of_evals] = "POROSITY";           //MX, test for n=n(c), 04.2005
 	pcs_eval_unit[pcs_number_of_evals] = "-";
 	pcs_number_of_evals++;
-	pcs_eval_name[pcs_number_of_evals] = "PERMEABILITY";       //JTARON 2010 -- need this for index call of heterogeneous permeability
+	pcs_eval_name[pcs_number_of_evals] = "PERMEABILITY";       //JT 2010 -- need this for index call of heterogeneous permeability
 	pcs_eval_unit[pcs_number_of_evals] = "m2";
 	pcs_number_of_evals++;
 }
@@ -3865,19 +3900,20 @@ void CRFProcess::CheckExcavedElement()
    12/2007 WW Classes of sparse matrix (jagged diagonal storage) and linear solver
    and parellelisation of them
    07/2011 WW Add Newton-Rahson and reduce #ifdef
+   3/2012  JT Clean, and correct the error obtainment for NLS and CPL
    last modified:
  **************************************************************************/
 double CRFProcess::Execute()
 {
-	int nidx1;
-	double pcs_error;
-	double relax;                         //WW
-	int i;
-	long j, k = 0, g_nnodes = 0;          //07.01.07 WW
+	int ii, nidx1;
+	double pcs_error, nl_theta, val_n;
+	long j, k, nshift, g_nnodes;          //07.01.07 WW
+	double* eqs_x = NULL;
+	double implicit_lim = 1.0 - DBL_EPSILON;
 
 	pcs_error = DBL_MAX;
-
-	double* eqs_x = NULL;
+	g_nnodes = m_msh->GetNodesNumber(false);
+	
 #ifdef NEW_EQS
 	eqs_x = eqs_new->x;
 #else
@@ -3887,19 +3923,8 @@ double CRFProcess::Execute()
 #ifdef USE_MPI                                 //WW
 	long global_eqs_dim = pcs_number_of_primary_nvals * m_msh->GetNodesNumber(false);
 	CPARDomain* dom = dom_vector[myrank];
-	if(myrank == 0)
 #endif
-	cout << "    ->Process " << pcs_number << ": " << convertProcessTypeToString (
-	        this->getProcessType()) << endl;
-	//	if (! this->_pcs_type_name.compare("MASS_TRANSPORT")) {
-	if (this->getProcessType() == FiniteElement::MASS_TRANSPORT)
-	{
-		cout << "      for " << this->pcs_primary_function_name[0];
-		cout << " pcs_component_number " << this->pcs_component_number;
-		cout << endl;
-	}
-	//----------------------------------------------------------------------
-	// 0 Initialize equations
+
 #ifdef NEW_EQS                                 //WW
 	if(!configured_in_nonlinearloop)
 #if defined(USE_MPI)
@@ -3918,8 +3943,7 @@ double CRFProcess::Execute()
 	}
 	eqs_new->Initialize();
 #endif
-#else // ifdef NEW_EQS
-	// System matrix
+#else
 	SetLinearSolverType(eqs, m_num);      //WW
 	SetZeroLinearSolver(eqs);
 #endif
@@ -3935,12 +3959,9 @@ double CRFProcess::Execute()
 	   exit(1);
 	 */
 	//----------------------------------------------------------------------
-	// Solution vector
-	relax = 0.0;
-	if (m_num->nls_relaxation < DBL_MIN)
-		relax = 0.0;
-	else
-		relax = 1.0 - m_num->nls_relaxation;  //WW
+    nl_theta = 1.0 - m_num->nls_relaxation;
+    if(nl_theta < DBL_EPSILON) nl_theta = 1.0;
+
 	//NW. should mark active elements if any process uses deactivation
 	//if(NumDeactivated_SubDomains>0)
 	//TODO if it's nonlinear, CheckMarkedElement() has been already called
@@ -3948,60 +3969,41 @@ double CRFProcess::Execute()
 #ifdef NEW_EQS                                 //WW
 		if(!configured_in_nonlinearloop)
 #endif
-		CheckMarkedElement();
+			CheckMarkedElement();
 	m_msh->SwitchOnQuadraticNodes(false);
 
 	// If not Newton-Raphson method. 20.07.2011. WW
 	if(m_num->nls_method < 1 )
-		for (i = 0; i < pcs_number_of_primary_nvals; i++)
-		{
-			//new time
-			nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
-			g_nnodes = m_msh->GetNodesNumber(false); //WW
-			for (j = 0; j < g_nnodes; j++) //WW
-				eqs_x[j + i * g_nnodes] = GetNodeValue(
-				        m_msh->Eqs2Global_NodeIndex[j], nidx1);
-		}
-	/*---------------------------------------------------------------------*/
-	/* 1 Calc element matrices */
-	if ((aktueller_zeitschritt == 1) || (tim_type_name.compare("TRANSIENT")
-	                                     == 0))
 	{
-#ifdef USE_MPI                              //WW
-		if(myrank == 0)
-#endif
-		cout << "      Calculate element matrices" << endl;
+		for (ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+		{
+			nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+			for (j = 0; j < g_nnodes; j++) //WW
+				eqs_x[j + ii*g_nnodes] = GetNodeValue(m_msh->Eqs2Global_NodeIndex[j], nidx1);
+		}
 	}
-	/*---------------------------------------------------------------------*/
-	/* 2 Assemble EQS */
-#ifdef USE_MPI                                 //WW
-	if(myrank == 0)
-#endif
-	cout << "      Assemble equation system" << endl;
-	//
+
+	//---------------------------------------------------------------------
 	// Assembly
 #ifdef USE_MPI                                 //WW
 	clock_t cpu_time = 0;                 //WW
 	cpu_time = -clock();
+	if(myrank == 0)
 #endif
-	//
+	cout << "      Assembling equation system..." << endl;
 	GlobalAssembly();
 #ifdef USE_MPI
 	cpu_time += clock();
 	cpu_time_assembly += cpu_time;
+	if(myrank == 0)
 #endif
-	//
-	//----------------------------------------------------------------------
-	/* 5 Solve EQS */
-	//orig  cout << "      Solve equation system" << endl;
-	// cout << "Solve equation system myrank =" <<myrank<<"of size="<<size<<endl;
+	cout << "      Calling linear solver..." << endl;
 #ifdef CHECK_EQS
 	std::string eqs_name = convertProcessTypeToString(this->getProcessType()) + "_EQS.txt";
 	MXDumpGLS((char*)eqs_name.c_str(),1,eqs->b,eqs->x);
 #endif
-	//.....................................................................
-	// Execute linnear solver
-	//
+	//----------------------------------------------------------------------
+	// Execute linear solver
 #ifdef NEW_EQS                                 //WW
 #if defined(USE_MPI)
 	//21.12.2007
@@ -4013,31 +4015,32 @@ double CRFProcess::Execute()
 	iter_lin = eqs_new->Solver();
 #endif
 #endif
-#else // ifdef NEW_EQS
+#else
 	iter_lin = ExecuteLinearSolver();
 #endif
 
 	//----------------------------------------------------------------------
 	// Linearized Flux corrected transport (FCT) by Kuzmin 2009
 	//----------------------------------------------------------------------
-	if (this->m_num->fct_method > 0)      //NW
+	if(m_num->fct_method > 0)      //NW
 	{
-		pcs_error = CalcIterationNODError(1);
+		pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false); // JT
 #ifdef USE_MPI
 		if(myrank == 0)
-#endif
-		cout << "      PCS error: " << pcs_error << endl;
-		cout << "      Start FCT calculation" << endl;
-
-		// Set u^H: use the solution as the higher-order solution
-		for(i = 0; i < pcs_number_of_primary_nvals; i++)
 		{
-			nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
-			g_nnodes = m_msh->GetNodesNumber(false); //DOF>1, WW
-			for(j = 0; j < g_nnodes; j++)
-			{
+#endif
+        cout << "    Relative PCS error: " << pcs_error << endl;
+        cout << "    Start FCT calculation" << endl;
+#ifdef USE_MPI
+		}
+#endif
+		// Set u^H: use the solution as the higher-order solution
+		for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+		{
+			nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+			for(j = 0; j < g_nnodes; j++){
 				k = m_msh->Eqs2Global_NodeIndex[j];
-				SetNodeValue(k,nidx1,eqs_x[j + i * g_nnodes]);
+				SetNodeValue(k,nidx1,eqs_x[j + ii*g_nnodes]);
 			}
 		}
 
@@ -4054,15 +4057,12 @@ double CRFProcess::Execute()
 #endif
 
 		// Set initial guess
-		for(i = 0; i < pcs_number_of_primary_nvals; i++)
+		for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
 		{
-			//new time
-			nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
-			g_nnodes = m_msh->GetNodesNumber(false); //WW
-			for(j = 0; j < g_nnodes; j++)
-			{
+			nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+			for(j = 0; j < g_nnodes; j++){
 				k = m_msh->Eqs2Global_NodeIndex[j];
-				eqs_x[j + i * g_nnodes] = GetNodeValue(k,nidx1);
+				eqs_x[j + ii*g_nnodes] = GetNodeValue(k,nidx1);
 			}
 		}
 
@@ -4072,9 +4072,7 @@ double CRFProcess::Execute()
 		cpu_time = -clock();
 #endif
 		femFCTmode = true;
-
 		GlobalAssembly();
-
 		femFCTmode = false;
 #ifdef USE_MPI
 		cpu_time += clock();
@@ -4105,42 +4103,69 @@ double CRFProcess::Execute()
 #else // ifdef NEW_EQS
 		ExecuteLinearSolver();
 #endif
-	}
-	//
+	} 
+	//----------------------------------------------------------------------
+	// END OF FLUX CORRECTED TRANSPORT
+	//----------------------------------------------------------------------
+
 	//PCSDumpModelNodeValues();
 	//----------------------------------------------------------------------
-	// Error calculation
+	// ERROR CALCULATION
 	//----------------------------------------------------------------------
-	double val_n = 0.;                    //03.04.2007.  WW
 
-	// Remove the errror caculation for the Newton-Method. 07.2011. WW
-	//PICARD
+    // JT: Coupling error was wrong. Now ok.
+    if(iter_nlin > 0){	// Just getting NL error
+	  pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false);     //OK4105//WW4117//JT
+    }
+    else{				// Getting NL and CPL error
+	  pcs_error = CalcIterationNODError(m_num->getCouplingErrorMethod(),true,true);		//JT2012
+      if(m_num->getNonLinearErrorMethod() != m_num->getCouplingErrorMethod())				//JT: If CPL error method is different, must call separately
+		pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false);   //JT2012 // get the NLS error. CPL was obtained before.
+    }
+
+	//----------------------------------------------------------------------
+	// PICARD
+	//----------------------------------------------------------------------
 	if (m_num->nls_method_name.find("PICARD") != string::npos)
 	{
-		//......................................................................
-		pcs_error = CalcIterationNODError(1); //OK4105//WW4117
-#ifdef USE_MPI                              //WW
-		if(myrank == 0)
-#endif
-		cout << "      PCS error: " << pcs_error << endl;
-		//--------------------------------------------------------------------
-		// 7 Store solution vector in model node values table
-		//....................................................................
-		for (i = 0; i < pcs_number_of_primary_nvals; i++)
+	    if(pcs_error < 1.0) // JT: Then the solution has converged, take the final value
+			nl_theta = 1.0;
+	    //
+		if(nl_theta > implicit_lim) // This is most common. So go for the lesser calculations.
 		{
-			nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
-			g_nnodes = m_msh->GetNodesNumber(false); //DOF>1, WW
-			for (j = 0; j < g_nnodes; j++)
+			for (ii = 0; ii < pcs_number_of_primary_nvals; ii++)
 			{
-				k = m_msh->Eqs2Global_NodeIndex[j];
-				val_n = GetNodeValue(k, nidx1); //03.04.2009. WW
-				SetNodeValue(k, nidx1, relax * val_n +
-				             (1.0 - relax) * eqs_x[j + i * g_nnodes]);
-				eqs_x[j + i * g_nnodes] = val_n; // Used for time stepping. 03.04.2009. WW
+			   nidx1  = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+			   nshift = ii*g_nnodes;
+			   for(j=0; j<g_nnodes; j++)
+			   {
+				  k = m_msh->Eqs2Global_NodeIndex[j];
+				  val_n = GetNodeValue(k, nidx1);       //03.04.2009. WW
+				  SetNodeValue(k, nidx1, eqs_x[j + nshift]);
+				  eqs_x[j + nshift] = val_n;      // Used for time stepping. 03.04.2009. WW
+			   }
 			}
 		}
-	}                                     // END PICARD
+		else
+		{
+			for (ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+			{
+			   nidx1  = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+			   nshift = ii*g_nnodes;
+			   for(j=0; j<g_nnodes; j++)
+			   {
+				  k = m_msh->Eqs2Global_NodeIndex[j];
+				  val_n = GetNodeValue(k, nidx1);       //03.04.2009. WW
+				  SetNodeValue(k, nidx1, (1.0-nl_theta)*val_n + nl_theta*eqs_x[j + nshift]);
+				  eqs_x[j + nshift] = val_n;      // Used for time stepping. 03.04.2009. WW
+			   }
+			}
+		}
+	} 
 	//----------------------------------------------------------------------
+	// END OF PICARD
+	//----------------------------------------------------------------------
+
 #ifdef NEW_EQS                                 //WW
 	if(!configured_in_nonlinearloop)
 #if defined(USE_MPI)
@@ -4670,10 +4695,15 @@ void CRFProcess::GlobalAssembly()
 		//MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 
 #ifdef GEM_REACT
-		//		if ( _pcs_type_name.compare("MASS_TRANSPORT") == 0 && aktueller_zeitschritt > 1 && this->m_num->cpl_iterations > 1)
-		if ( this->getProcessType() == FiniteElement::MASS_TRANSPORT && aktueller_zeitschritt > 1 &&
-		     this->m_num->cpl_iterations > 1)
-			IncorporateSourceTerms_GEMS();
+		if( getProcessType() == FiniteElement::MASS_TRANSPORT && aktueller_zeitschritt > 1)
+		{ // JT->KG. New coupling system.
+			if( _problem->GetCPLMaxIterations() > 1 || // Then there is a coupling on all processes
+			   (this->pcs_is_cpl_overlord && this->m_num->cpl_max_iterations > 1) || // This process (the overlord) controls coupling for another (the underling) process.
+			   (this->pcs_is_cpl_underling && this->cpl_overlord->m_num->cpl_max_iterations > 1)) // This process (the underling) has a coupling with a controlling (the overlord) process
+			{
+				//IncorporateSourceTerms_GEMS();
+			}
+		}
 #endif
 #ifndef NEW_EQS                             //WW. 07.11.2008
 		SetCPL();                 //OK
@@ -7317,38 +7347,29 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    Programing:
    03/2005 OK Implementation
    01/2006 OK Test
+   03/2012 JT: Checks are unnecessary. Allow reverse order.
 **************************************************************************/
-	int CRFProcess::GetNodeValueIndex(const std::string &var_name)
+	int CRFProcess::GetNodeValueIndex(const std::string &var_name, bool reverse_order) // JT: Allow reverse order
 	{
-		int nidx = -2;
-
-		for (size_t i = 0; i < nod_val_name_vector.size(); i++)
+		if(!reverse_order)
 		{
-			if (nod_val_name_vector[i].compare(var_name) == 0)
+			for(size_t i = 0; i < nod_val_name_vector.size(); i++)
 			{
-				nidx = i;
-#ifdef gDEBUG
-				if(nidx < 0)
-				{
-					cout <<
-					" Fatal error in CRFProcess::GetNodeValueIndex() " << endl;
-					abort();
-				}
-#endif
-				return nidx;
+				if (nod_val_name_vector[i].compare(var_name) == 0)
+					return i;
 			}
 		}
-
-		// Suppress the following error message when Fluid Momentum process is on.
-		CRFProcess* m_pcs = PCSGet(FiniteElement::FLUID_MOMENTUM);
-		if (m_pcs)
-			;             // Don't print any error message.
 		else
-			cout << "Error in CRFProcess::GetNodeValueIndex - " <<
-			convertProcessTypeToString (getProcessType())
-			     << ", " << var_name << ", NIDX = " << nidx << endl;
-		//abort();
-		return nidx;
+		{
+			int nvals = ((int)nod_val_name_vector.size()) - 1;
+			for(int j = nvals; j > -1; j--)
+			{
+				if (nod_val_name_vector[j].compare(var_name) == 0)
+					return j;
+			}
+		}
+		//
+		return -2;
 	}
 
 /**************************************************************************
@@ -7358,16 +7379,27 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    09/2005 PCH Implementation
    last modified:
 **************************************************************************/
-	int CRFProcess::GetElementValueIndex(const string &var_name)
+	int CRFProcess::GetElementValueIndex(const string &var_name, bool reverse_order)
 	{
-		int nidx = -1;
-		for (size_t i = 0; i < this->ele_val_name_vector.size(); i++)
-			if (this->ele_val_name_vector[i].compare(var_name) == 0)
+		if(!reverse_order)
+		{
+			for(size_t i = 0; i < ele_val_name_vector.size(); i++)
 			{
-				nidx = i;
-				return nidx;
+				if(ele_val_name_vector[i].compare(var_name) == 0)
+					return i;
 			}
-		return nidx;
+		}
+		else
+		{
+			int nvals = ((int)ele_val_name_vector.size()) - 1;
+			for(int j = nvals; j > -1; j--)
+			{
+				if(ele_val_name_vector[j].compare(var_name) == 0)
+					return j;
+			}
+		}
+		//
+		return -2;
 	}
 
 /**************************************************************************
@@ -7465,152 +7497,314 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    08/2005 WW Re-implememtation based on NUMCalcIterationError
    01/2007 WW For DOF>1
    11/2007 WW Changes for the new classes of sparse and linear solver
+   3/2012  JT Clean, add newton, add CPL vs. NLS, go to enum system
    last modification:
 **************************************************************************/
-	double CRFProcess::CalcIterationNODError(int method)
-	{
-		static long i, k, g_nnodes;
-		static double error, change, max_c, min_c;
-		//-----------------------------------------------------WW
-		int nidx1;
-		int ii;
-		g_nnodes = m_msh->GetNodesNumber(false); //WW
-		//-----------------------------------------------------WW
-		double* eqs_x = NULL;     // 11.2007. WW
+double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool nls_error, bool cpl_error)
+{
+	static long i, k, g_nnodes;
+	static double error, error_g, val1, val2, value;
+	int nidx1, ii;
+	double* eqs_x = NULL;     // 11.2007. WW
+	int num_dof_errors = pcs_number_of_primary_nvals;
+	double unknowns_norm = 0.0;
+	double absolute_error[DOF_NUMBER_MAX];
+	g_nnodes = m_msh->GetNodesNumber(false);
+	
 #ifdef NEW_EQS
-		eqs_x = eqs_new->x;
+	eqs_x = eqs_new->x;
 #else
-		eqs_x = eqs->x;
+	eqs_x = eqs->x;
 #endif
-		error = 0.;
-		change = 0.;
 
-		max_c = 0.;
-		min_c = 1.e99;
-
-		switch (method)
-		{
+	switch(method)
+	{
+		//
+		// --> ENORM:	|x1-x0|       
+		//     Norm of the solution vector delta (absolute error). 
+		//     Norm taken over entire solution vector (all primary variables) and checked against a single tolerance.
+		//
+		case FiniteElement::ENORM:
+			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
+				for(ii=0;ii<pcs_number_of_primary_nvals;ii++){
+					for(i = 0; i < g_nnodes; i++){
+					   val1 = eqs_x[i+ii*g_nnodes];
+					   unknowns_norm += val1*val1;
+					}
+				}
+			}
+			else{						// PICARD
+				for(ii=0; ii<pcs_number_of_primary_nvals; ii++)
+				{
+					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+					//
+					for (i = 0; i < g_nnodes; i++){
+					   k = m_msh->Eqs2Global_NodeIndex[i];
+					   val1 = GetNodeValue(k, nidx1) - eqs_x[i+ii*g_nnodes];
+					   unknowns_norm += val1*val1;
+					}
+				}
+			}
+			num_dof_errors = 1;
+			unknowns_norm = sqrt(unknowns_norm);
+			absolute_error[0] = unknowns_norm;
+			break;
+		//
+		// --> ERNORM:	|(x1-x0)/x0)|
+		//     Norm of the solution vector delta divided by the solution vector (relative error). 
+		//     A single tolerance applied to all primary variables.
+		//
+		case FiniteElement::ERNORM:
+			value = 0.0;
+			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
+				for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
+				{
+					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+					//
+					for(i = 0; i < g_nnodes; i++){
+					   k = m_msh->Eqs2Global_NodeIndex[i];
+					   val1 = eqs_x[i+ii*g_nnodes];
+					   val2 = GetNodeValue(k, nidx1);
+					   //
+					   unknowns_norm += val1*val1;
+					   value += val2*val2;
+					}
+				}
+			}
+			else{						// PICARD
+				for(ii=0; ii<pcs_number_of_primary_nvals; ii++)
+				{
+					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+					//
+					error = 0.0;
+					for (i = 0; i < g_nnodes; i++){
+					   k = m_msh->Eqs2Global_NodeIndex[i];
+					   val1 = GetNodeValue(k, nidx1);
+					   val2 = val1 - eqs_x[i+ii*g_nnodes];
+					   //
+					   unknowns_norm += val2*val2;
+					   value += val1*val1;
+					}
+				}
+			}
+			num_dof_errors = 1;
+			unknowns_norm = sqrt(unknowns_norm);
+			absolute_error[0] = unknowns_norm / (sqrt(value)+DBL_EPSILON);
+			break;
+		//
+		// --> EVNORM:	|x1-x0|  
+		//     Norm of the solution vector delta (absolute error). 
+		//     Norm taken over solution vector of each primary variable, checked againes a tolerence specific to each variable.
+		//
+		case FiniteElement::EVNORM:
+			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
+				for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
+				{
+					error = 0.0;
+					for(i = 0; i < g_nnodes; i++){
+					   val1 = eqs_x[i+ii*g_nnodes];
+					   error += val1*val1;
+					}
+					unknowns_norm += error;
+					absolute_error[ii] = sqrt(error);
+				}
+			}
+			else{						// PICARD
+				for(ii=0; ii<pcs_number_of_primary_nvals; ii++)
+				{
+					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+					//
+					error = 0.0;
+					for (i = 0; i < g_nnodes; i++){
+					   k = m_msh->Eqs2Global_NodeIndex[i];
+					   val1 = GetNodeValue(k, nidx1) - eqs_x[i+ii*g_nnodes];
+					   error += val1*val1;
+					}
+					unknowns_norm += error;
+					absolute_error[ii] = sqrt(error);
+				}
+			}
+			unknowns_norm = sqrt(unknowns_norm);
+			break;
+		//
+		// --> BNORM: Get norm of solution vector, same as ENORM. RHS norm will be calculated later.
+		//     Norm of the solution vector delta (absolute error). 
+		//     Norm taken over entire solution vector (all primary variables) and checked against a single tolerance.
+		//
+		case FiniteElement::BNORM:
+			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
+				for(ii=0;ii<pcs_number_of_primary_nvals;ii++){
+					for(i = 0; i < g_nnodes; i++){
+					   val1 = eqs_x[i+ii*g_nnodes];
+					   unknowns_norm += val1*val1;
+					}
+				}
+			}
+			else{						// PICARD
+				for(ii=0; ii<pcs_number_of_primary_nvals; ii++)
+				{
+					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+					//
+					for (i = 0; i < g_nnodes; i++){
+					   k = m_msh->Eqs2Global_NodeIndex[i];
+					   val1 = GetNodeValue(k, nidx1) - eqs_x[i+ii*g_nnodes];
+					   unknowns_norm += val1*val1;
+					}
+				}
+			}
+			num_dof_errors = 1;
+			unknowns_norm = sqrt(unknowns_norm);
+			absolute_error[0] = unknowns_norm;
+			break;
+		//
+		// --> LMAX:	max(x1-x0)
+		//     Local max error (across all elements) of solution vector delta (absolute error). 
+		//     Tolerance required for each primary variable.
+		//
+		case FiniteElement::LMAX:
+			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
+				for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
+				{
+					error = 0.0;
+					for (i = 0; i < g_nnodes; i++){
+					   val1 = eqs_x[i+ii*g_nnodes];
+					   unknowns_norm += val1*val1;
+					   val1 = fabs(val1);
+					   if(val1 > error)
+						  error = val1;
+					}
+					absolute_error[ii] = error;
+				}
+			}
+			else{						// PICARD
+				for(ii=0; ii<pcs_number_of_primary_nvals; ii++)
+				{
+					error = 0.0;
+					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+					//
+					for (i = 0; i < g_nnodes; i++){
+					   k = m_msh->Eqs2Global_NodeIndex[i];
+					   val1 = GetNodeValue(k, nidx1) - eqs_x[i+ii*g_nnodes];
+					   unknowns_norm += val1*val1;
+					   val1 = fabs(val1);
+					   if(val1 > error)
+						  error = val1;
+					}
+					absolute_error[ii] = error;
+				}
+			}
+			unknowns_norm = sqrt(unknowns_norm);
+			break;
+		//
 		default:
-		case 0:
-			return 0.;
-		// Maximum error
-		case 1:
-			//WW
-			for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
-			{
-				//new time
-				nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
-				for (i = 0l; i < g_nnodes; i++) //WW
-				{
-					k = m_msh->Eqs2Global_NodeIndex[i];
-					error =
-					        max(error,
-					            fabs(GetNodeValue(k,
-					                              nidx1) -
-					                 eqs_x[i + ii * g_nnodes]));
-				}
-			}
-			return error;
-		case 2:
-			//WW
-			for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
-			{
-				//new time
-				nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
-				for (i = 0l; i < g_nnodes; i++) //WW
-				{
-					k = m_msh->Eqs2Global_NodeIndex[i];
-					error =
-					        max(error,
-					            fabs(eqs_x[i + ii *
-					                       g_nnodes] - GetNodeValue(k, nidx1))
-					            / (fabs(eqs_x[i + ii *
-					                          g_nnodes]) +
-					               fabs(GetNodeValue(k, nidx1)) + MKleinsteZahl) );
-				}
-			}
-			return error;
-		case 3:
-			//WW
-			for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
-			{
-				//new time
-				nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
-				for (i = 0l; i < g_nnodes; i++) //WW
-				{
-					k = m_msh->Eqs2Global_NodeIndex[i];
-					error =
-					        max(error,
-					            fabs(eqs_x[i + ii *
-					                       g_nnodes] - GetNodeValue(k, nidx1)));
-					max_c = max(max(max_c, fabs(fabs(
-					                                    eqs_x[i + ii *
-					                                          g_nnodes]))),
-					            fabs(GetNodeValue(k, nidx1)));
-				}
-			}
-			return error / (max_c + MKleinsteZahl);
+			ScreenMessage("ERROR: Invalid error method for Iteration or Coupling Node error.\n");
+			return 0.0;
+		//
+		/* 
+		-----------------------------------------------------------------------------------------------
+		ALTERNATIVE METHODS NOT YET IMPLEMENTED. MODIFY THEM AND ADD THEIR ENUM VALUES IF YOU WANT THEM.
+		-----------------------------------------------------------------------------------------------
+		// METHOD 4
 		case 4:
-			//WW
-			for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+			for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
 			{
-				//new time
+				error = max_c = 0.0;
 				nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
-				for (i = 0l; i < g_nnodes; i++) //WW
-				{
-					k = m_msh->Eqs2Global_NodeIndex[i];
-					error =
-					        max(error,
-					            fabs(eqs_x[i + ii *
-					                       g_nnodes] - GetNodeValue(k, nidx1)));
-					min_c = min(min_c, fabs(eqs_x[i + ii * g_nnodes]));
-					max_c = max(max_c, fabs(eqs_x[i + ii * g_nnodes]));
+				//
+				for (i = 0l; i < g_nnodes; i++){
+				   k = m_msh->Eqs2Global_NodeIndex[i];
+				   error = MMax(error, fabs(eqs_x[i+ii*g_nnodes] - GetNodeValue(k, nidx1)));
+				   max_c = MMax(MMax(max_c, fabs(fabs(eqs_x[i+ii*g_nnodes]))),fabs(GetNodeValue(k, nidx1)));
 				}
+				pcs_absolute_error[ii] = error / (max_c + MKleinsteZahl);
 			}
-			return error / (max_c - min_c + MKleinsteZahl);
+			break;
+		//
+		// METHOD 5
 		case 5:
-			//WW
-			for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+			for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
 			{
-				//new time
+				error = max_c = 0.0;
+				min_c = 1.e99;
 				nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
-				for (i = 0l; i < g_nnodes; i++) //WW
-				{
-					k = m_msh->Eqs2Global_NodeIndex[i];
-					error =
-					        max(error,
-					            fabs(eqs_x[i + ii *
-					                       g_nnodes] -  GetNodeValue(k, nidx1))
-					            / (fabs(eqs_x[i + ii *
-					                          g_nnodes] -
-					                    GetNodeValue(k, nidx1 -
-					                                 1)) + MKleinsteZahl));
+				//
+				for (i = 0l; i < g_nnodes; i++){
+				   k = m_msh->Eqs2Global_NodeIndex[i];
+				   error = MMax(error, fabs(eqs_x[i+ii*g_nnodes] - GetNodeValue(k, nidx1)));
+				   min_c = MMin(min_c, fabs(eqs_x[i+ii*g_nnodes]));
+				   max_c = MMax(max_c, fabs(eqs_x[i+ii*g_nnodes]));
 				}
+				pcs_absolute_error[ii] = error / (max_c - min_c + MKleinsteZahl) ;
 			}
-			return error;
+			break;
+		//
+		// METHOD 6
 		case 6:
-			//WW
-			for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+			for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
 			{
-				//new time
+				error = 0.0;
 				nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
-				for (i = 0l; i < g_nnodes; i++) //WW
-				{
-					k = m_msh->Eqs2Global_NodeIndex[i];
-					error =
-					        max(error,
-					            fabs(eqs_x[i + ii *
-					                       g_nnodes] -  GetNodeValue(k, nidx1)));
-					change =
-					        max(change,
-					            fabs(eqs_x[i + ii *
-					                       g_nnodes] -
-					                 GetNodeValue(k, nidx1 - 1)));
+				//
+				for (i = 0l; i < g_nnodes; i++) {
+				   k = m_msh->Eqs2Global_NodeIndex[i];
+				   error = MMax(error, fabs(eqs_x[i+ii*g_nnodes] -  GetNodeValue(k, nidx1))
+					  / (fabs(eqs_x[i+ii*g_nnodes] - GetNodeValue(k, nidx1-1)) + MKleinsteZahl));
 				}
+				pcs_absolute_error[ii] = error;
 			}
-			return error / (change + MKleinsteZahl);
-		}
+			break;
+		//
+		// METHOD 7
+		case 7:
+			for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
+			{
+				error = change = max_c = 0.0;
+				min_c = 1.e99;
+				nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+				//
+				for (i = 0l; i < g_nnodes; i++){
+				   k = m_msh->Eqs2Global_NodeIndex[i];
+				   error = MMax(error, fabs(eqs_x[i+ii*g_nnodes] -  GetNodeValue(k, nidx1)));
+				   change = MMax(change, fabs(eqs_x[i+ii*g_nnodes] - GetNodeValue(k, nidx1-1)));
+				}
+				pcs_absolute_error[ii] = error / (change + MKleinsteZahl);
+			}
+			break;
+		//
+		*/
 	}
+	//
+	// Store the error (JT)
+	// JT: now returning RELATIVE error. NECESSARY BECAUSE DOF MAY BE > 1 AND EACH DOF MAY HAVE DIFFERENT CHARACTER
+	if(cpl_error){ // Return coupling error
+	   error_g = 0.0;
+	   for(ii=0; ii<num_dof_errors; ii++){
+		   cpl_absolute_error[ii] = absolute_error[ii];
+		   error = absolute_error[ii] / m_num->cpl_error_tolerance[ii];
+		   error_g = MMax(error_g, error); // Coupling error just stores the maximum
+	   }
+	   cpl_max_relative_error = error_g;
+	   cpl_num_dof_errors = num_dof_errors;
+	}
+	if(nls_error){ // Return Non-Linear iteration error
+		error_g = 0.0;
+		for(ii=0; ii<num_dof_errors; ii++){
+		   pcs_absolute_error[ii] = absolute_error[ii];
+		   pcs_relative_error[ii] = absolute_error[ii] / m_num->nls_error_tolerance[ii];
+		   error_g = MMax(error_g, pcs_relative_error[ii]);
+		}
+		pcs_num_dof_errors = num_dof_errors;
+		pcs_unknowns_norm = unknowns_norm;
+	}
+	if(!nls_error && !cpl_error){ // Then this routine called from somewhere else to get the error (i.e. time control). Store it in a temporary vector for access.
+		for(ii=0; ii<num_dof_errors; ii++){
+			temporary_absolute_error[ii] = absolute_error[ii];
+		}
+		temporary_num_dof_errors = num_dof_errors;
+	}
+	//
+	return error_g; // Always returns the maximum relative error
+}
 
 /**************************************************************************
    FEMLib-Method:
@@ -7622,28 +7816,27 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    08/2008 WW Time step size control (First)
    12/2008 WW Time step size control (Update)
    07/2011 WW Newton-Raphson method
+   3/2012  JT Clean, correct error obtainment, modify Newton convergence criteria
 **************************************************************************/
-	double CRFProcess::ExecuteNonLinear()
+	double CRFProcess::ExecuteNonLinear(int loop_process_number, bool print_pcs)
 	{
-		double nonlinear_iteration_error = 0.0;
-
-		//-------------------------------------------------
-		/// For the Newton-Raphson method.  21.01.2011. WW
-		double damping, norm_x0, norm_b0, norm_x, norm_b;
-		double error_x1, error_b1, error_x2, error_b2, error;
-		double* eqs_x = NULL;     //
-		double* eqs_b = NULL;     //
-		bool auto_tctr_break;
-
-		int i, k, nidx1;
-		size_t j, g_nnodes;
+		double nonlinear_iteration_error;
+		double nl_theta, damping, norm_x0, norm_b0, norm_x, norm_b, val;
+		double error_x1, error_x2, error_b1, error_b2, error, last_error, percent_difference;
+		double* eqs_x = NULL;
+		double* eqs_b = NULL;
+		bool converged, diverged;
+		int ii, nidx1, num_fail;
+		size_t j, k, g_nnodes;
 
 		string delim = " ";
 		damping = 1.0;
 		norm_x0 = norm_b0 = norm_x = norm_b = 0.;
 		error = 1.;
-		error_x2 = error_b2 = DBL_MAX;
-		//-------------------------------------------------
+		error_x2 = DBL_MAX;
+		nl_theta = 1.0 - m_num->nls_relaxation;        //JT
+		if(nl_theta < DBL_EPSILON) nl_theta = 1.0;
+		g_nnodes = m_msh->GetNodesNumber(false);
 
 #ifdef NEW_EQS
 		eqs_x = eqs_new->x;
@@ -7667,186 +7860,227 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 #endif
 		//..................................................................
 		// PI time step size control. 29.08.2008. WW
-		if(Tim->GetTimeStepCrtlType() > 0 )
+		if(Tim->GetPITimeStepCrtlType() > 0 )
 			CopyU_n();
-
 		if (hasAnyProcessDeactivatedSubdomains)
 			this->CheckMarkedElement();  //NW
-
-		for(iter_nlin = 0; iter_nlin < pcs_nonlinear_iterations; iter_nlin++)
-		{
-			cout << "    PCS non-linear iteration: " << iter_nlin << "/"
-			     << pcs_nonlinear_iterations << endl;
-
-			auto_tctr_break = false;
-
-			nonlinear_iteration_error = Execute();
-
-			// Error caculation for the Newton-Raphson method. 07.2011. WW
-			// Norn of RHS and r
-			if (m_num->nls_method == 1)
-			{
-				double val;
-
-				norm_x = norm_b = 0.;
-				// Calculate the norm of x and b
-				for (i = 0; i < pcs_number_of_primary_nvals; i++)
-				{
-					g_nnodes = m_msh->GetNodesNumber(false);
-					for (j = 0; j < g_nnodes; j++)
-					{
-						val = eqs_x[j + i * g_nnodes];
-						norm_x += val * val;
-						val = eqs_b[j + i * g_nnodes];
-						norm_b += val * val;
-					}
-				}
-				norm_x = sqrt(norm_x);
-				norm_b = sqrt(norm_b);
-
-				// Initial norm
-				if(iter_nlin == 0)
-				{
-					norm_x0 = norm_x;
-					norm_b0 = norm_b;
-				}
-				else // Check the convergence
-				{
-					error_x1 = norm_x / norm_x0;
-					error_b1 = norm_b / norm_b0;
-
-					if(norm_x < pcs_nonlinear_iteration_tolerance && error_x1 >
-					   norm_x)
-						error_x1 = norm_x;
-					if(norm_b < pcs_nonlinear_iteration_tolerance && error_b1 >
-					   norm_b)
-						error_b1 = norm_b;
-
-					error = max(error_x1, error_b1);
-
-					// Compute damping for Newton-Raphson step
-					damping = 1.0;
-
-					if(error_x1 / error_x2 > 1.0e-1 || error_b1 / error_b2 >
-					   1.0e-1)
-						damping = 0.5;
-
-					if(error > 10.0 && iter_nlin > 1)
-					{
-						// if automatic time control
-						if(Tim->GetTimeStepCrtlType() > 0)
-						{
-							auto_tctr_break = true;
-
-							//Tim->SetTimeStep(0.25*Tim->GetTimeStep());
-							PI_TimeStepSize();
-							accepted = false;
-							return error;
-						}
-						else
-						{
-							cout <<
-							"Attention: Newton-Raphson step is diverged. Programme halt!"
-							     << endl;
-							exit(1);
-						}
-					}
-
-					error_x2 = error_x1;
-					error_b2 = error_b1;
-				}
-
-				if(auto_tctr_break)
-					break;
-
-				bool is_converged = false;
-				if(norm_x0 < pcs_nonlinear_iteration_tolerance)
-				{
-					error = norm_x0;
-					is_converged = true;
-				}
-				if(norm_b0 < 10 * pcs_nonlinear_iteration_tolerance)
-				{
-					error = norm_b0;
-					is_converged = true;
-				}
-				if(norm_b < 0.001 * norm_b0)
-				{
-					error = norm_b;
-					is_converged = true;
-				}
-				if(error <= pcs_nonlinear_iteration_tolerance)
-					is_converged = true;
+		Tim->last_dt_accepted = true; // JT2012
 
 #ifdef USE_MPI
-				if(myrank == 0)
-				{
+        if(myrank==0)
+        {
 #endif
-				//Screan printing:
-				cout <<
-				"\n------------------------------------------------------------------ "
-				     << endl;
-				cout << "*** Newton-Raphson steps: " << iter_nlin << endl;
-				cout.width(10);
-				cout.precision(3);
-				//           cout.setf(ios::fixed, ios::floatfield);
-				cout.setf(ios::scientific);
-				cout << "\nError     " << delim
-				     << "RHS Norm 0" << delim << "RHS Norm  " << delim <<
-				"Unknowns Norm"
-				     << delim << "Damping" << endl;
-				cout << error << delim << norm_b0 << delim
-				     << norm_b << delim << norm_x << "   " << delim << damping <<
-				endl;
-				cout <<
-				"------------------------------------------------------------------ "
-				     << endl;
-#ifdef USE_MPI
+		if(print_pcs){ // JT: need check because of Regional Richards
+			std::cout << "\n      ================================================" << std::endl;
+			if(getProcessType() == FiniteElement::MASS_TRANSPORT){
+				std::cout << "    ->Process   " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
+				std::cout << "    ->Component " << pcs_component_number << ": " << pcs_primary_function_name[0] << std::endl;
 			}
+			else{
+				std::cout << "    ->Process " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
+			}
+			std::cout << "      ================================================" << std::endl;
+		}
+#ifdef USE_MPI
+		}
 #endif
 
-				// Calculate the norm of x and b
-				for (i = 0; i < pcs_number_of_primary_nvals; i++)
-				{
-					nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
-					g_nnodes = m_msh->GetNodesNumber(false);
-					for (j = 0; j < g_nnodes; j++)
-					{
-						k = m_msh->Eqs2Global_NodeIndex[j];
-						SetNodeValue(k, nidx1, GetNodeValue(k,
-						                                    nidx1) +
-						             damping * eqs_x[j + i * g_nnodes]);
-					}
-				}
-
-				nonlinear_iteration_error = error;
-
-				if(is_converged)
-					break;
+		// ------------------------------------------------------------
+		// NON-LINEAR ITERATIONS (OR SINGLE ITERATION IF LINEAR)
+		// ------------------------------------------------------------
+		diverged = false;
+		converged = false;
+		accepted = true;
+		last_error = 1.0;
+		for(iter_nlin = 0; iter_nlin < m_num->nls_max_iterations; iter_nlin++)
+		{
+			nonlinear_iteration_error = Execute();
+			//
+			// ---------------------------------------------------
+			// LINEAR SOLUTION
+			// ---------------------------------------------------
+			if(m_num->nls_method < 0)
+			{
+				PrintStandardIterationInformation(true);
+				converged = true;
 			}
 			else
 			{
-				if(mobile_nodes_flag == 1)
-					PCSMoveNOD();
-				if(!Tim) //OK
-					continue;
-				if(nonlinear_iteration_error < pcs_nonlinear_iteration_tolerance)
+			// ---------------------------------------------------
+			// NON-LINEAR SOLUTION
+			// ---------------------------------------------------
+			//
+				damping = nl_theta;
+				switch(m_num->getNonLinearErrorMethod())
 				{
-					Tim->repeat = false; //OK/YD
-					                     //OK/YD
-					Tim->nonlinear_iteration_error = nonlinear_iteration_error;
-					break;
+					// For most error methods (also works for Newton)
+					default:
+						PrintStandardIterationInformation(true);
+						//
+						if(nonlinear_iteration_error <= 1.0){
+							converged = true;
+						}
+						else{				// Check for stagnation
+							percent_difference = 100.0 * ((last_error - nonlinear_iteration_error) / last_error);
+							if(iter_nlin > 0 &&  percent_difference < 1.0) // less than 1% difference (or an error increase) from previous error
+								num_fail++;
+							else
+								num_fail = 0;
+							//
+							if(num_fail > 1) diverged = true; // require 2 consecutive failures
+							last_error = nonlinear_iteration_error;
+						}
+						break;
+
+					// For (OGS) classic Newton error control
+					case FiniteElement::BNORM:
+						PrintStandardIterationInformation(false);
+						//
+						norm_x = pcs_unknowns_norm; // JT: this is already obtained in CalcIterationNodeError.
+						norm_b = 0.0; // must calculate this
+						for(ii = 0; ii < pcs_number_of_primary_nvals; ii++){
+							for (j = 0; j < g_nnodes; j++){
+								val = eqs_b[j + ii*g_nnodes];
+								norm_b += val*val;
+							}
+						}
+						norm_b = sqrt(norm_b);
+						//
+						if(iter_nlin == 0){
+							norm_x0 = norm_x;
+							norm_b0 = norm_b;
+							error_x2 = error_b2 = DBL_MAX;
+						}
+						else{
+							error_x1 = norm_x / norm_x0;
+							error_b1 = norm_b / norm_b0;
+
+							if(norm_x < m_num->nls_error_tolerance[0] && error_x1 > norm_x)
+								error_x1 = norm_x;
+							if(norm_b < m_num->nls_error_tolerance[0] && error_b1 > norm_b)
+								error_b1 = norm_b;
+							if(error_x1 / error_x2 > 0.1 || error_b1 / error_b2 > 0.1)
+								damping *= 0.5; // take 1/2 of original theta
+							//
+							error = max(error_x1, error_b1);
+							error_x2 = error_x1;
+							error_b2 = error_b1;
+							//
+							// Check for divergence
+							if(error > 10.0 && iter_nlin > 1)
+							{
+								diverged = true;
+								if(Tim->GetPITimeStepCrtlType() > 0){ // if PI automatic time control
+									accepted = false;
+									PI_TimeStepSize();
+								}
+							}
+							//
+							// Check convergence
+							if(norm_x0 < m_num->nls_error_tolerance[0]){
+								error = norm_x0;
+								converged = true;
+							}
+							if(norm_b0 < 10 * m_num->nls_error_tolerance[0]){
+								error = norm_b0;
+								converged = true;
+							}
+							if(norm_b < 0.001 * norm_b0){
+								error = norm_b;
+								converged = true;
+							}
+							if(error <= m_num->nls_error_tolerance[0]){
+								converged = true;
+							}
+						}
+						// Newton information printout.
+						cout.width(10);
+						cout.precision(3);
+						cout.setf(ios::scientific);
+						cout << "         NR-Error  |" << "    RHS Norm|" << "  Unknowns Norm|"  << " Damping\n";
+						cout << "         " << setw(10) << error << "|  " << setw(9) << norm_b << "| ";
+						cout << setw(14) << norm_x << "| "<< setw(9) << damping << endl;
+						cout.flush();
+						break;
 				}
-				else
-					Tim->repeat = true;  //OK/YD
+			}
+
+			// CHECK FOR TIME STEP FAILURE
+			// ---------------------------------------------------
+			if(!accepted || Tim->isDynamicTimeFailureSuggested(this)){
+				  accepted = false;
+				  Tim->last_dt_accepted = false;
+				  break;
+			}
+
+			// FOR NEWTON: COPY DAMPED CHANGES TO NEW TIME
+			// ---------------------------------------------------
+			if(m_num->nls_method > 0)
+			{
+				if(converged) 
+					damping = 1.0; // Solution has converged. Take newest values.
+				//
+				for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+				{
+					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+					for(j = 0; j < g_nnodes; j++){
+						k = m_msh->Eqs2Global_NodeIndex[j];
+						val = GetNodeValue(k,nidx1) + damping*eqs_x[j + ii*g_nnodes];
+						SetNodeValue(k,nidx1,val);
+					}
+				}
+			}
+
+			// OTHER CONFIGURATIONS AT THE END OF THIS NON-LINEAR ITERATION
+			// ---------------------------------------------------
+			if(mobile_nodes_flag ==1){
+				PCSMoveNOD();
+			}
+			/* JT: I don't know if this time control method is used anymore. But it relies on a single error
+			       produced from CalcIterationNodeError(), but this now depends on the type of error to use.
+			       Therefore, I simply provide the error of the first dof, and not depending on the error type. If
+			       this time step is still used, someone will need to find another way to calculate the error it uses. 
+		    */
+			Tim->repeat = true;
+			if(converged){
+				Tim->repeat = false;
+				Tim->nonlinear_iteration_error = pcs_absolute_error[0];
+			}
+
+			// BREAK CRITERIA
+			if(converged || diverged)
+			{
+				break;
 			}
 		}
+		// ------------------------------------------------------------
+		// NON-LINEAR ITERATIONS COMPLETE
+		// ------------------------------------------------------------
 		// PI time step size control. 27.08.2008. WW
-		if(Tim->GetTimeStepCrtlType() > 0)
-			PI_TimeStepSize();
-		// 8 Calculate secondary variables
-		if(accepted)              // 27.08.2008. WW
-			CalcSecondaryVariables();  // Moved here from Execute() WW
+		if(accepted && Tim->GetPITimeStepCrtlType() > 0){
+			PI_TimeStepSize(); // might also set accepted to false here.
+		}
+		//
+		if(m_num->nls_max_iterations > 1) // only for non-linear iterations
+		{
+			if(diverged){
+				if(accepted) // only increment if not fixed by a failed time step.
+					num_diverged++;
+				std::cout << "\nNon-linear iteration stabilized.";
+			}
+			else if(!converged){
+				if(accepted) // only increment if not fixed by a failed time step.
+					num_notsatisfied++;
+				if(Tim->GetPITimeStepCrtlType() < 1) // PI has the intrinsic property of doing this. So don't print it.
+					std::cout << "\nMax number of non-linear iterations reached.";
+			}
+		}
+		//
+		// Calculate secondary variables
+		if(accepted){
+			CalcSecondaryVariables();
+		}
+		//
 		// Release temporary memory of linear solver. WW
 #ifdef NEW_EQS                                 //WW
 #if defined(USE_MPI)
@@ -7857,6 +8091,48 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		configured_in_nonlinearloop = false;
 #endif
 		return nonlinear_iteration_error;
+	}
+
+/**************************************************************************
+   FEMLib-Method:
+   Task:
+   Programing:
+   3/2012  JT
+**************************************************************************/
+	void CRFProcess::PrintStandardIterationInformation(bool write_std_errors)
+	{
+		int ii;
+		//
+		// LINEAR SOLUTION
+		if(m_num->nls_method < 0)
+		{
+			std::cout << "      -->LINEAR solution complete. " << std::endl;
+			if(write_std_errors){
+				for(ii = 0; ii < pcs_number_of_primary_nvals; ii++){
+					 std::cout << "         PCS error DOF["<< ii <<"]: " << pcs_absolute_error[ii] << std::endl;
+				}
+			}
+			return;
+		}
+		//
+		// NON-LINEAR METHODS
+		if(m_num->nls_method == 0)
+			std::cout << "      -->End of PICARD iteration: " << iter_nlin << "/" << m_num->nls_max_iterations << std::endl;
+		else
+			std::cout << "      -->End of NEWTON-RAPHSON iteration: " << iter_nlin << "/" << m_num->nls_max_iterations << std::endl;
+		//
+		// Errors
+		// --------------------------------------------------
+		if(write_std_errors){
+			if(pcs_num_dof_errors == 1){
+				std::cout << "         PCS error: " << pcs_absolute_error[0] << std::endl;
+			}else{
+				for (ii = 0; ii < pcs_number_of_primary_nvals; ii++){
+					 std::cout << "         PCS error DOF["<< ii <<"]: " << pcs_absolute_error[ii] << std::endl;
+				}
+			}
+			std::cout <<"         ->Euclidian norm of unknowns: " << pcs_unknowns_norm << std::endl;
+		}
 	}
 
 /**************************************************************************
@@ -8137,38 +8413,6 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			}
 		}
 	}
-
-/**************************************************************************
-   FEMLib-Method:
-   Task: Ermittelt den Fehler bei Kopplungs Iterationen
-   Programing:
-   11/2005 MB implementation
-**************************************************************************/
-	double CRFProcess::CalcCouplingNODError()
-	{
-		static long i, k;
-		static double error; //WW, change, max_c, min_c;
-		int ndx0 = GetNodeValueIndex(m_num->cpl_variable);
-		int ndx1 = GetNodeValueIndex(m_num->cpl_variable) + 1;
-
-		error = 0.;
-		//WW change = 0.;
-
-		//WW max_c = 0.;
-		//WW min_c = 1.e99;
-
-		for (i = 0l; i < eqs->dim; i++)
-		{
-			k = m_msh->Eqs2Global_NodeIndex[i];
-			if(m_msh->nod_vector[k]->GetMark())
-				error =
-				        max(error,
-				            fabs(GetNodeValue(k, ndx1) - GetNodeValue(k, ndx0)));
-		}
-		cout <<  "  Coupling error: " << error << endl;
-
-		return error;
-	}
 #endif
 /**************************************************************************
    FEMLib-Method:
@@ -8179,7 +8423,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 	void CRFProcess::CopyCouplingNODValues()
 	{
 		//Carefull if cpl_variable = primary variable -> need extra column in NodeValueTable !
-		int nidx0 = GetNodeValueIndex(m_num->cpl_variable);
+		int nidx0 = GetNodeValueIndex(m_num->cpl_variable_JOD);
 		for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
 			SetNodeValue(l, nidx0, GetNodeValue(l, nidx0 + 1));
 		//	if (_pcs_type_name.find("RICHARDS") != string::npos) { //WW
@@ -8236,6 +8480,45 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				//
 				for (size_t l = 0; l < m_msh->GetNodesNumber(false); l++)
 					SetNodeValue(l, nidx0, GetNodeValue(l, nidx1));
+			}
+		}
+	}
+
+/**************************************************************************
+   FEMLib-Method:
+   Task:
+   Programing:
+   3/2012 JT. Based on the nodal version
+**************************************************************************/
+	void CRFProcess::CopyTimestepELEValues(bool forward)
+	{
+		size_t j, nvals, nidx0, nidx1;
+		long iel, num_ele;
+		bool copy_porosity = true;
+		nvals = ele_val_name_vector.size();
+		if(nvals < 2) return; // then we don't have 2 time levels of anything
+		num_ele = (long)m_msh->ele_vector.size();
+//
+#ifdef GEM_REACT
+		// do nothing as porosity update is handled by REACT_GEMS after!! flow and transport solution
+		copy_porosity = false;
+#endif
+//
+		for(j = 0; j < nvals-1; j++)
+		{
+			if(ele_val_name_vector[j].compare(ele_val_name_vector[j+1]) != 0) // If not the same, then we only have a single time slot
+				continue;
+			if(ele_val_name_vector[j].find("POROSITY") != string::npos && !copy_porosity) // Porosity
+				continue;
+			//
+			nidx0 = j;
+			nidx1 = j+1;
+			if(!forward){
+				nidx0++;
+				nidx1--;
+			}
+			for(iel = 0; iel < num_ele; iel++){
+				SetElementValue(iel,nidx0,GetElementValue(iel,nidx1));
 			}
 		}
 	}
@@ -8515,13 +8798,11 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					mmp = mmp_vector[matgrp];
 					mmp->mode = 2;
 					sum += 1.0 / sat2;
-					//			sum += 1.0/MRange(mmp->saturation_res[1],sat2,1.0-mmp->saturation_res[0]);
 				}
 				sat2 = (double)NumOfNeighborElements / sum;
 			}
 			else
 				mmp = mmp_vector[0];
-			//		sat2 = MRange(mmp->saturation_res[1],sat2,1.0-mmp->saturation_res[0]);
 			s_wetting = 1.0 - sat2;
 			// Assigning the secondary variable, Sw
 			SetNodeValue(i,ndx_s_wetting,s_wetting);
@@ -8538,7 +8819,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				        1.0 -
 				        sat2);
 			else
-				p_cap = mmp->CapillaryPressureFunction(i,NULL,1.0,0,1.0 - sat2);
+				p_cap = mmp->CapillaryPressureFunction(1.0 - sat2);
 
 			SetNodeValue(i,ndx_p_cap,p_cap);
 
@@ -8584,7 +8865,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				CElem* thisEle = m_msh->ele_vector[eleIdx];
 				int matgrp = thisEle->GetPatchIndex();
 				CMediumProperties* mmp = mmp_vector[matgrp];
-				sum += 1.0 / mmp->CapillaryPressureFunction(i,NULL,1.0,0,Sw);
+				sum += 1.0 / mmp->CapillaryPressureFunction(Sw);
 			}
 			p_cap = (double)NumOfNeighborElements / sum;
 			break;
@@ -8672,9 +8953,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					                          [j]];
 					m_mmp = mmp_vector[elem->GetPatchIndex()];
 					volume_sum += elem->volume;
-					saturation += m_mmp->SaturationCapillaryPressureFunction(
-					        p_cap,
-					        (int) mfp_vector.size() - 1) * elem->volume;
+					saturation += m_mmp->SaturationCapillaryPressureFunction(p_cap) * elem->volume;
 				}
 				saturation /= volume_sum;
 				SetNodeValue(i, idxS, saturation);
@@ -9625,29 +9904,55 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		//======================================================================
 	}
 #endif
-/**************************************************************************
-   PCSLib-Method:
-   08/2006 OK Implementation
-   compare with CMCDs PCSGetFluxProcess
-**************************************************************************/
-	CRFProcess* PCSGetFlow()
-	{
-		CRFProcess* m_pcs = NULL;
-		for(int i = 0; i < (int)pcs_vector.size(); i++)
-		{
-			m_pcs = pcs_vector[i];
-			//    if(m_pcs->_pcs_type_name.find("FLOW")!=string::npos)
-			if(isFlowProcess (m_pcs->getProcessType()))
-				return m_pcs;
-		}
-		return NULL;
-	}
 
 /**************************************************************************
-   PCSLib-Method:
-   based on MMPCalcSecondaryVariables
-   01/2007 OK Implementation
+PCSLib-Method:
+08/2006 OK Implementation
+compare with CMCDs PCSGetFluxProcess
+03/2012 JT No more loops.
 **************************************************************************/
+CRFProcess* PCSGetFlow()
+{
+	if(pcs_number_flow >= 0)
+		return pcs_vector[pcs_number_flow];
+	return NULL;
+}
+
+/**************************************************************************
+PCSLib-Method:
+03/2012 JT Implementation
+**************************************************************************/
+CRFProcess* PCSGetHeat()
+{
+	if(pcs_number_heat >= 0)
+		return pcs_vector[pcs_number_heat];
+	return NULL;
+}
+
+/**************************************************************************
+PCSLib-Method:
+03/2012 JT Implementation
+**************************************************************************/
+CRFProcess* PCSGetDeformation()
+{
+	if(pcs_number_deformation >= 0)
+		return pcs_vector[pcs_number_deformation];
+	return NULL;
+}
+
+/**************************************************************************
+PCSLib-Method:
+03/2012 JT Implementation
+**************************************************************************/
+CRFProcess* PCSGetMass(size_t component_number)
+{
+	if(component_number < DOF_NUMBER_MAX){ // don't exceed array dimensions
+		if(pcs_number_mass[component_number] >= 0){
+			return pcs_vector[pcs_number_mass[component_number]];
+		}
+	}
+	return NULL;
+}
 
 /**************************************************************************
    PCSLib-Method:
@@ -10098,18 +10403,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						int matgrp = thisEle->GetPatchIndex();
 						mmp = mmp_vector[matgrp];
 						mmp->mode = 2;
-						sum += 1.0 / MRange(mmp->saturation_res[1],
-						                    cpl_sat2,
-						                    1.0 - mmp->saturation_res[0]);
+						sum += 1.0 / cpl_sat2;
 					}
 					cpl_sat2 = (double)NumOfNeighborElements / sum;
-				}
-				else
-				{
-					mmp = mmp_vector[0];
-					cpl_sat2 = MRange(mmp->saturation_res[1],
-					                  cpl_sat2,
-					                  1.0 - mmp->saturation_res[0]);
 				}
 				// Assigning the secondary variable, Pc
 				if(mmp_vector.size() > 1)
@@ -10120,11 +10416,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					                2,
 					                1.0 - cpl_sat2);
 				else
-					p_cap = mmp->CapillaryPressureFunction(i,
-					                                       NULL,
-					                                       1.0,
-					                                       0,
-					                                       1.0 - cpl_sat2);
+					p_cap = mmp->CapillaryPressureFunction(1.0 - cpl_sat2);
 
 				m_pcs->SetNodeValue(i,ndx_p_cap,p_cap);
 				m_pcs->SetNodeValue(i,ndx_p_cap + 1,p_cap);
@@ -10177,18 +10469,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						int matgrp = thisEle->GetPatchIndex();
 						mmp = mmp_vector[matgrp];
 						mmp->mode = 2;
-						sum += 1.0 / MRange(mmp->saturation_res[1],
-						                    s_nonwetting,
-						                    1.0 - mmp->saturation_res[0]);
+						sum += 1.0 / s_nonwetting;
 					}
 					s_nonwetting = (double)NumOfNeighborElements / sum;
-				}
-				else
-				{
-					mmp = mmp_vector[0];
-					s_nonwetting = MRange(mmp->saturation_res[1],
-					                      s_nonwetting,
-					                      1.0 - mmp->saturation_res[0]);
 				}
 				// Assigning the secondary variable, Pc
 				if(mmp_vector.size() > 1)
@@ -10199,11 +10482,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					                2,
 					                1.0 - s_nonwetting);
 				else
-					p_cap = mmp->CapillaryPressureFunction(i,
-					                                       NULL,
-					                                       1.0,
-					                                       0,
-					                                       1.0 - s_nonwetting);
+					p_cap = mmp->CapillaryPressureFunction(1.0 - s_nonwetting);
 
 				m_pcs->SetNodeValue(i,ndx_s_nonwetting,s_nonwetting);
 				m_pcs->SetNodeValue(i,ndx_s_nonwetting + 1,s_nonwetting);
@@ -10270,8 +10549,6 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		}
 		else
 		{
-			pcs_nonlinear_iterations = m_num->nls_max_iterations;
-			pcs_nonlinear_iteration_tolerance = m_num->nls_error_tolerance;
 			num_type_name = "NEW"; //OK
 		}
 
@@ -11293,11 +11570,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					l = j + ii * g_nnodes;
 					x0 = u_n[l];
 					x1 = GetNodeValue(k,nidx1);
-					err +=
-					        pow( (x1 -
-					              u_n0[l]) / (Atol + Rtol * max(fabs(x0),fabs(
-					                                                    x1))),
-					             2);
+					err += pow( (x1 - u_n0[l]) / (Atol + Rtol * max(fabs(x0),fabs(x1))), 2);
 				}
 		}
 		err = sqrt(err / (double)size_x);
@@ -11311,24 +11584,24 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 		//compute hnew with the resriction: 0.2<=hnew/h<=6.0;
 		fac = max(factor2,min(factor1,pow(err,0.25) / sfactor));
-		hnew = dt / fac;          //*Tim->reject_factor;              // BG, use the reject factor to lower timestep after rejection BG
+		hnew = Tim->time_step_length / fac;          //*Tim->reject_factor;              // BG, use the reject factor to lower timestep after rejection BG
 
 		//determine if the error is small enough
-		if(err <= 1.0e0)          //step is accept
+		if(err <= 1.0e0 && accepted)          //step is accept (unless Newton diverged!)
 		{
 			accept_steps++;
-			if(Tim->GetTimeStepCrtlType() == 2) //Mod. predictive step size controller (Gustafsson)
+			if(Tim->GetPITimeStepCrtlType() == 2) //Mod. predictive step size controller (Gustafsson)
 			{
 				if(accept_steps > 1)
 				{
 					factorGus =
 					        (hacc /
-					         dt) * pow(err * err / erracc,0.25) / sfactor;
+					         Tim->time_step_length) * pow(err * err / erracc,0.25) / sfactor;
 					factorGus = max(factor2, min(factor1,factorGus));
 					fac = max(fac, factorGus);
-					hnew = dt / fac;
+					hnew = Tim->time_step_length / fac;
 				}
-				hacc = dt;
+				hacc = Tim->time_step_length;
 				erracc = max(1.0e-2,err);
 				Tim->SetHacc(hacc);
 				Tim->setErracc(erracc);
@@ -11336,9 +11609,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			if(fabs(hnew) > hmax)
 				hnew = hmax;
 			if(!accepted)
-				hnew = min(fabs(hnew), dt);
+				hnew = min(fabs(hnew), Tim->time_step_length);
 			Tim->SetTimeStep(fabs(hnew));
-			accepted = true;
 			//store the used time steps for post-processing BG
 			if (Tim->step_current == 1) // BG
 				Tim->time_step_vector.push_back(Tim->time_step_length);
@@ -11348,6 +11620,11 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		}                         //end if(err<=1.0e0)
 		else
 		{
+			if(!accepted && err <= 1.0e0){ //JT: Then error suggests success, but the iteration diverged.
+				if(hnew/Tim->time_step_length > 0.99) // Shock the system to escape the stagnation.
+					hnew = Tim->time_step_length * 0.8;
+			}
+			//
 			//WW Tim->reject_factor = 1;                     //BG; if the time step is rejected the next timestep increase is reduced by the reject factor (choose reject factor between 0.1 and 0.9); 1.0 means no change
 			reject_steps++;
 			accepted = false;
@@ -11420,9 +11697,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			{
 				// Adding the rate of concentration change to the right hand side of the equation.
 #ifdef NEW_EQS                           //15.12.2008. WW
-				eqs_new->b[it] -= m_vec_GEM->m_xDC_Chem_delta[it * nDC + i] / dt;
+				eqs_new->b[it] -= m_vec_GEM->m_xDC_Chem_delta[it * nDC + i] / Tim->time_step_length;
 #else
-				eqs->b[it] -= m_vec_GEM->m_xDC_Chem_delta[it * nDC + i] / dt;
+				eqs->b[it] -= m_vec_GEM->m_xDC_Chem_delta[it * nDC + i] / Tim->time_step_length;
 #endif
 			}
 			// ----------------------------------------------------
@@ -12981,7 +13258,7 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path,
 
 			//ToDo: works only for homogenouse properties
 			MediaProp = mmp_vector[MaterialGroup];
-			p_cap = MediaProp->CapillaryPressureFunction(0,0,0,0,saturation_liquid);
+			p_cap = MediaProp->CapillaryPressureFunction(saturation_liquid);
 
 			if (i == 230)
 				cout << i << " gas pressure: " << gas.pressure <<
