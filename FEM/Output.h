@@ -164,9 +164,9 @@ public:
 	std::vector<double>& getRWPTTimeVector () { return time_vector; }
 
 private:
-	friend void OUTData(double, int step);
+	friend void OUTData(double, int step, bool force_output);
 
-	//	std::vector<double> rwpt_time_vector; //JTARON, needed because outputs are treated differently in RWPT
+	//	std::vector<double> rwpt_time_vector; //JT, needed because outputs are treated differently in RWPT
 
 	// MSH
 	std::string msh_type_name;            //OK

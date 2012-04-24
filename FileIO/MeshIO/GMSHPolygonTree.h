@@ -69,6 +69,7 @@ public:
 	void writeSubPolygonsAsLineConstraints(size_t &line_offset, size_t sfc_number, std::ostream& out) const;
 	virtual void writeLineConstraints(size_t &line_offset, size_t sfc_number, std::ostream& out) const;
 	void writeStations(size_t & pnt_id_offset, size_t sfc_number, std::ostream& out) const;
+	void writeAdditionalPointData(size_t & pnt_id_offset, size_t sfc_number, std::ostream& out) const;
 
 private:
 	void getPointsFromSubPolygons(std::vector<GEOLIB::Point const*>& pnts);

@@ -410,6 +410,15 @@ public:
 	/// Comptute int {f} a dA on top surface.
 	void TopSurfaceIntegration();
 
+#ifndef NDEBUG
+	/**
+	 * This is a getter method to access the private attribute _mesh_grid
+	 * that is an instance of class MeshGrid.
+	 * @return
+	 */
+	MeshLib::MeshGrid const* getMeshGrid() const;
+#endif
+
 private:
 	// private attributes
 	/**

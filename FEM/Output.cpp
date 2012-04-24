@@ -299,7 +299,7 @@ ios::pos_type COutput::Read(std::ifstream& in_str,
 					tim_type_name = "STEPS"; //OK
 					break; //kg44 I guess that was missing..otherwise it pushes back a time_vector!
 				}
-				// JTARON 2010, reconfigured (and added RWPT)... didn't work
+				// JT 2010, reconfigured (and added RWPT)... didn't work
 				if (line_string.find("STEPPING") != string::npos)
 				{
 					double stepping_length, stepping_end, stepping_current;
@@ -815,14 +815,7 @@ void COutput::WriteTECNodeData(fstream &tec_file)
 		m_pcs = PCSGet(_nod_value_vector[k], true);
 		if (m_pcs != NULL)
 		{
-			NodeIndex[k] = m_pcs->GetNodeValueIndex(_nod_value_vector[k]);
-			for (size_t i = 0; i < m_pcs->GetPrimaryVNumber(); i++)
-				if (_nod_value_vector[k].compare(
-				            m_pcs->pcs_primary_function_name[i]) == 0)
-				{
-					NodeIndex[k]++;
-					break;
-				}
+			NodeIndex[k] = m_pcs->GetNodeValueIndex(_nod_value_vector[k],true); // JT Latest.
 		}
 	}
 
@@ -2086,22 +2079,7 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 				<< _nod_value_vector[k] << endl;
 				return;
 			}
-			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k]);
-			for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
-			{
-				if (_nod_value_vector[k].compare(
-				            pcs->pcs_primary_function_name[i]) == 0)
-				{
-					NodeIndex[k]++;
-					break;
-				}
-				// JOD
-				if (_nod_value_vector[k].compare("COUPLING") == 0)
-				{
-					NodeIndex[k]++;
-					break;
-				}
-			}
+			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k],true);  // JT latest
 		}
 	}
 	else if (msh_type_name.size() > 0)
@@ -2115,14 +2093,7 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 		}
 		for (size_t k = 0; k < nName; k++)
 		{
-			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k]);
-			for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
-				if (_nod_value_vector[k].compare(
-				            pcs->pcs_primary_function_name[i]) == 0)
-				{
-					NodeIndex[k]++;
-					break;
-				}
+			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k],true); // JT latest
 		}
 	}
 	else if (fem_msh_vector.size() == 1)
@@ -2138,14 +2109,7 @@ void COutput::GetNodeIndexVector(vector<int>&NodeIndex)
 				<< _nod_value_vector[k] << endl;
 				return;
 			}
-			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k]);
-			for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
-				if (_nod_value_vector[k].compare(
-				            pcs->pcs_primary_function_name[i]) == 0)
-				{
-					NodeIndex[k]++;
-					break;
-				}
+			NodeIndex[k] = pcs->GetNodeValueIndex(_nod_value_vector[k],true); // JT latest
 		}
 	}
 }

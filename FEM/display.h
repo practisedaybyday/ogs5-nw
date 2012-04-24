@@ -17,6 +17,8 @@
 #include <cstring>
 //#include <ctype.h>
 
+/*JT: Send output message*/
+extern void ScreenMessage(const char* message);
 /* Deklarationen */
 extern void DisplayStartMsg ( void );
 /* Gibt Eroeffnungsbildschirm aus */

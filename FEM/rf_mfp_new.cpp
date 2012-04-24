@@ -1566,7 +1566,7 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 		{
 			// Capillary pressure
 			PG = assem->interpolate(assem->NodalValC1);
-			Sw = assem->MediaProp->SaturationCapillaryPressureFunction(PG,0);
+			Sw = assem->MediaProp->SaturationCapillaryPressureFunction(PG);
 			double PG2 = assem->interpolate(assem->NodalVal_p2);
 			TG = assem->interpolate(assem->NodalVal1) + T_KILVIN_ZERO;
 			rhow = assem->FluidProp->Density();
@@ -1598,9 +1598,7 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 
 				if(PG < 0.0)
 				{
-					Sw = assem->MediaProp->SaturationCapillaryPressureFunction(
-					        -PG,
-					        0);
+					Sw = assem->MediaProp->SaturationCapillaryPressureFunction(-PG);
 					heat_capacity_fluids *= Sw;
 					if( assem->GasProp != 0)
 						heat_capacity_fluids +=
@@ -2996,11 +2994,11 @@ double MFPGetNodeValue(long node,const string &mfp_name, int phase_number)
 	   arguments[1] = tp->GetNodeValue(node,0);
 	 */
 	tp = PCSGet(pcs_name1,true);          //NB 4.8.01
-	val_idx = tp->GetNodeValueIndex(pcs_name1); // NB
+	val_idx = tp->GetNodeValueIndex(pcs_name1,true); // NB // JT latest
 	arguments[0] = tp->GetNodeValue(node,val_idx);
 
 	tp = PCSGet(pcs_name2,true);          //NB 4.8.01
-	val_idx = tp->GetNodeValueIndex(pcs_name2); // NB
+	val_idx = tp->GetNodeValueIndex(pcs_name2,true); // NB // JT latest
 	arguments[1] = tp->GetNodeValue(node,val_idx);
 	//......................................................................
 	switch(mfp_id)

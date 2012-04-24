@@ -152,12 +152,18 @@ void testOctTreeGlobalQueries (GEOLIB::OctTree<MeshLib::CNode> const& oct_tree, 
 void testOctTreePointQueries(GEOLIB::OctTree<MeshLib::CNode> const& oct_tree,
 				std::vector<GEOLIB::Point*> const& pnts_for_search,
 				std::vector<size_t> &idx_found_nodes)
+//void testOctTreePointQueries(GEOLIB::OctTree<GEOLIB::Point> const& oct_tree,
+//				std::vector<GEOLIB::Point*> const& pnts_for_search,
+//				std::vector<size_t> &idx_found_nodes)
 {
 	const size_t n_pnts(pnts_for_search.size());
 	std::vector<MeshLib::CNode*> pnts_in_range;
+//	std::vector<GEOLIB::Point*> pnts_in_range;
 	for(size_t k(0); k<n_pnts; k++) {
 		MeshLib::CNode q_min (pnts_for_search[k]->getData());
 		MeshLib::CNode q_max (pnts_for_search[k]->getData());
+//		GEOLIB::Point q_min (pnts_for_search[k]->getData());
+//		GEOLIB::Point q_max (pnts_for_search[k]->getData());
 		for (size_t d(0); d<3; d++) {
 			q_min[d] -= 1; //fabs(q_min[d]) * std::numeric_limits<double>::epsilon();
 			q_max[d] += 1; // fabs(q_max[d]) * std::numeric_limits<double>::epsilon();
@@ -187,7 +193,7 @@ void testOctTree(MeshLib::CFEMesh const*const mesh, std::vector<GEOLIB::Point*>&
 {
 	// get the mesh node vector
 	std::vector<MeshLib::CNode*> const& nodes_oct_tree(mesh->getNodeVector());
-//	std::vector<GEOLIB::Point*> nodes_as_pnts;
+	std::vector<GEOLIB::Point*> nodes_as_pnts;
 	const size_t n_nodes_oct_tree(nodes_oct_tree.size());
 	MeshLib::CNode min(0, nodes_oct_tree[0]->getData()), max(1, nodes_oct_tree[0]->getData());
 //	GEOLIB::Point min(nodes_oct_tree[0]->getData()), max(nodes_oct_tree[0]->getData());
@@ -201,14 +207,14 @@ void testOctTree(MeshLib::CFEMesh const*const mesh, std::vector<GEOLIB::Point*>&
 		if (max[1] < (*nodes_oct_tree[k])[1]) max[1] = (*nodes_oct_tree[k])[1];
 		if (max[2] < (*nodes_oct_tree[k])[2]) max[2] = (*nodes_oct_tree[k])[2];
 
-//		nodes_as_pnts.push_back(new GEOLIB::Point(nodes_oct_tree[k]->getData()));
+		nodes_as_pnts.push_back(new GEOLIB::Point(nodes_oct_tree[k]->getData()));
 	}
 
 	// *** create OctTree object
 	GEOLIB::OctTree<MeshLib::CNode> oct_tree(min, max, 2);
+//	GEOLIB::OctTree<GEOLIB::Point> oct_tree(min, max, 2);
 	std::cout << "[OctTree] inserting " << n_nodes_oct_tree << " points ... " << std::flush;
 	clock_t start(clock());
-//	GEOLIB::OctTree<GEOLIB::Point> oct_tree(min, max, 2);
 	for (size_t k(0); k<n_nodes_oct_tree; k++) {
 		oct_tree.addPoint(nodes_oct_tree[k]);
 //		oct_tree.addPoint(nodes_as_pnts[k]);
@@ -239,7 +245,11 @@ void testNaiveAlgorithm (MeshLib::CFEMesh const*const mesh,
 		double sqr_dist(0.0), distmin(MathLib::sqrDist (nodes[0]->getData(), k_th_pnt));
 		size_t idx(0);
 		for (size_t i = 1; i < nodes_in_usage; i++) {
-			sqr_dist = MathLib::sqrDist (nodes[i]->getData(), k_th_pnt);
+			double const*const i_th_node(nodes[i]->getData());
+//			sqr_dist = MathLib::sqrDist (i_th_node, k_th_pnt);
+			sqr_dist = (i_th_node[0]-k_th_pnt[0])*(i_th_node[0]-k_th_pnt[0]);
+			sqr_dist += (i_th_node[1]-k_th_pnt[1])*(i_th_node[1]-k_th_pnt[1]);
+			sqr_dist += (i_th_node[2]-k_th_pnt[2])*(i_th_node[2]-k_th_pnt[2]);
 			if (sqr_dist < distmin) {
 				distmin = sqr_dist;
 				idx = i;
@@ -270,10 +280,11 @@ int main (int argc, char* argv[])
 	// Creating a non-gui (console) Qt application
 	QApplication app(argc, argv, false);
 
-	if (argc < 6) {
+	if (argc < 3) {
 		std::cout << "Usage: " << argv[0] << " --mesh-in meshfile "
 						<< std::flush;
-		std::cout << "--geo-in geo-file --geo-out geo-out-file"
+		std::cout << "--number-of-search-points number " << std::flush;
+		std::cout << "[--geo-in geo-file --geo-out geo-out-file]"
 						<< std::endl;
 		return -1;
 	}
@@ -289,68 +300,94 @@ int main (int argc, char* argv[])
 	std::string file_base_name(tmp);
 	if (tmp.find(".msh") != std::string::npos) file_base_name = tmp.substr(0, tmp.size() - 4);
 
-	// *** parsing geometry options from command line
+	// *** parsing number of search points
 	tmp = argv[3];
-	if (tmp.find("--geo-in") == std::string::npos) {
-		std::cout << "could not find switch for reading geometry file name" << std::endl;
+	size_t n(0);
+	if (tmp.find("--number-of-search-points") == std::string::npos) {
+		std::cout << "could not find switch for reading number of points to search for" << std::endl;
 		return -1;
 	}
-	std::string geo_fname_in(argv[4]);
+	n = static_cast<size_t>(atoi(argv[4]));
 
-	// *** parsing geo output name
-	tmp = argv[5];
-	if (tmp.find("--geo-out") == std::string::npos) {
-		std::cout << "could not find switch for file name for writing the geometry" << std::endl;
-		return -1;
+	// *** parsing geometry options from command line
+	std::string geo_fname_in, geo_fname_out;
+	if (argc > 5) {
+		tmp = argv[5];
+		if (tmp.find("--geo-in") == std::string::npos) {
+			std::cout << "could not find switch for reading geometry file name" << std::endl;
+			return -1;
+		}
+		geo_fname_in = argv[6];
+
+		// *** parsing geo output name
+		tmp = argv[7];
+		if (tmp.find("--geo-out") == std::string::npos) {
+			std::cout << "could not find switch for file name for writing the geometry" << std::endl;
+			return -1;
+		}
+		std::string geo_fname_out(argv[8]);
 	}
-	std::string geo_fname_out(argv[6]);
 
 	// *** read mesh
 	std::vector<MeshLib::CFEMesh*> mesh_vec;
+	system ("cat /proc/meminfo | grep MemFree");
 	FEMRead(file_base_name, mesh_vec);
 	if (mesh_vec.empty()) {
 		std::cerr << "could not read mesh from file " << std::endl;
 		return -1;
 	}
+	system ("cat /proc/meminfo | grep MemFree");
 	MeshLib::CFEMesh* mesh (mesh_vec[mesh_vec.size() - 1]);
 	mesh->setNumberOfNodesFromNodesVectorSize();
 
 	// *** read geometry
-	GEOLIB::GEOObjects* geo_objs (new GEOLIB::GEOObjects);
 	ProjectData* project_data (new ProjectData);
-	project_data->setGEOObjects (geo_objs);
+	if (argc > 5) {
+		GEOLIB::GEOObjects* geo_objs (new GEOLIB::GEOObjects);
+		project_data->setGEOObjects (geo_objs);
 
-	std::string schema_name("./OpenGeoSysGLI.xsd");
-	FileIO::XmlGmlInterface xml(project_data, schema_name);
-	xml.readFile(QString::fromStdString (geo_fname_in));
-	std::vector<std::string> original_geo_names;
-	geo_objs->getGeometryNames(original_geo_names);
+		std::string schema_name("./OpenGeoSysGLI.xsd");
+		FileIO::XmlGmlInterface xml(project_data, schema_name);
+		xml.readFile(QString::fromStdString (geo_fname_in));
+		std::vector<std::string> original_geo_names;
+		geo_objs->getGeometryNames(original_geo_names);
+	}
 
 	// *** preparing test data
 	std::vector<MeshLib::CNode*> const& nodes(mesh->getNodeVector());
 	std::vector<GEOLIB::Point*> pnts_for_search;
-	const size_t n(10000);
 	for (size_t k(0); k<n; k++) {
-		double const*const c(nodes[2*k]->getData());
+		double const*const c(nodes[k]->getData());
 		// perturb the coordinates a little bit
-		pnts_for_search.push_back(new GEOLIB::Point(c[0]+0.1, c[1]+0.5, c[2]+1.0));
+		pnts_for_search.push_back(new GEOLIB::Point(c[0], c[1], c[2]));
 	}
 
-	// *** test mesh grid algorithm
 	mesh->ConstructGrid();
-	std::vector<size_t> idx_found_nodes_mesh_grid_alg;
-	testMeshGridAlgorithm(mesh, pnts_for_search, idx_found_nodes_mesh_grid_alg);
-
-	// *** test OctTree
-	std::vector<size_t> idx_found_nodes_oct_tree;
-	testOctTree(mesh, pnts_for_search, idx_found_nodes_oct_tree);
 
 	// *** test linear algorithm
 	std::vector<size_t> idx_found_nodes_linear_alg;
 	testNaiveAlgorithm(mesh, pnts_for_search, idx_found_nodes_linear_alg);
 
+	// *** test mesh grid algorithm
+	std::vector<size_t> idx_found_nodes_mesh_grid_alg;
+	testMeshGridAlgorithm(mesh, pnts_for_search, idx_found_nodes_mesh_grid_alg);
+
+	std::cout << "compare results of linear algorithm with MeshGrid ... " << std::flush;
+	for (size_t k(0); k<idx_found_nodes_mesh_grid_alg.size(); k++) {
+		if (idx_found_nodes_mesh_grid_alg[k] != idx_found_nodes_linear_alg[k]) {
+			std::cout << std::endl << "point: " << *pnts_for_search[k] << " node found within oct_tree: "
+				<<  *(nodes[idx_found_nodes_mesh_grid_alg[k]]) << ", node found with linear algorithm "
+				<<  *(nodes[idx_found_nodes_linear_alg[k]]);
+		}
+	}
+	std::cout << " done" << std::endl;
+
+	// *** test OctTree
+	std::vector<size_t> idx_found_nodes_oct_tree;
+//	testOctTree(mesh, pnts_for_search, idx_found_nodes_oct_tree);
+
 	// *** compare results
-	std::cout << "compare results ... " << std::flush;
+	std::cout << "compare results of linear algorithm with OctTree ... " << std::flush;
 	for (size_t k(0); k<idx_found_nodes_oct_tree.size(); k++) {
 		if (idx_found_nodes_oct_tree[k] != idx_found_nodes_linear_alg[k]) {
 			std::cout << std::endl << "point: " << *pnts_for_search[k] << " node found within oct_tree: "

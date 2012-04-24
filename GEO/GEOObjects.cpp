@@ -226,7 +226,7 @@ const PolylineVec* GEOObjects::getPolylineVecObj(const std::string &name) const
 			return _ply_vecs[i];
 
 #ifndef NDEBUG
-	std::cout << "DEB: GEOObjects::getPolylineVec() - No entry found with name \"" << name <<
+	std::cout << "DEB: GEOObjects::getPolylineVecObj() - No entry found with name \"" << name <<
 	"\"." << std::endl;
 #endif
 	return NULL;
@@ -313,7 +313,7 @@ const SurfaceVec* GEOObjects::getSurfaceVecObj(const std::string &name) const
 	for (size_t i = 0; i < size; i++)
 		if (_sfc_vecs[i]->getName().compare(name) == 0)
 			return _sfc_vecs[i];
-	std::cout << "GEOObjects::getSurfaceVec() - No entry found with name \"" << name <<
+	std::cout << "GEOObjects::getSurfaceVecObj() - No entry found with name \"" << name <<
 	"\"." << std::endl;
 	return NULL;
 }

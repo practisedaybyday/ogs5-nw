@@ -210,28 +210,6 @@ public:
 		}
 	}
 
-//	void getQuadTree (std::vector<POINT*>& pnts, std::vector<GEOLIB::Polyline*>& plys) const
-//	{
-//		size_t pnt_pos (pnts.size());
-//		pnts.push_back (new POINT (_ll));
-//		pnts.push_back (new POINT (_ur[0], _ll[1], _ll[2]));
-//		pnts.push_back (new POINT (_ur));
-//		pnts.push_back (new POINT (_ll[0], _ur[1], _ll[2]));
-//
-//		if (_father == NULL)
-//		{
-//			size_t ply_pos (plys.size());
-//			plys.push_back (new GEOLIB::Polyline (pnts));
-//			for (size_t i(0); i < 4; i++)
-//				plys[ply_pos]->addPoint (pnt_pos + i);
-//			plys[ply_pos]->addPoint (pnt_pos);
-//		}
-//
-//		if (!_is_leaf)
-//			for (size_t i(0); i < 4; i++)
-//				_childs[i]->getQuadTree (pnts, plys);
-//	}
-
 	QuadTree<POINT> const* getFather ()
 	{
 		return _father;
@@ -241,6 +219,29 @@ public:
 	{
 		return _childs[quadrant];
 	}
+
+	/**
+	 * Method calculates the maximum depth of the QuadTree instance. It is used within
+	 * the method GMSHAdaptiveMeshDensity::getSteinerPoints().
+	 * @param max_depth (input/output) at the entry max_depth contains the maximum depth up to now
+	 */
+	void getMaxDepth (size_t &max_depth) const
+	{
+		if (max_depth < _depth)
+			max_depth = _depth;
+
+		for (size_t k(0); k<4; k++) {
+			if (_childs[k]) {
+				_childs[k]->getMaxDepth(max_depth);
+			}
+		}
+	}
+
+	/**
+	 * Method returns the depth of the current QuadTree node.
+	 * @return the depth of the current QuadTree node
+	 */
+	size_t getDepth () const { return _depth; }
 
 private:
 	QuadTree<POINT>* getChild (Quadrant quadrant)
@@ -344,8 +345,6 @@ private:
 			return west_neighbor->getChild (NE);
 	}
 
-	size_t getDepth () const { return _depth; }
-
 	/**
 	 * private constructor
 	 * @param ll lower left point
@@ -365,10 +364,6 @@ private:
 		// init childs
 		for (size_t k(0); k < 4; k++)
 			_childs[k] = NULL;
-
-//#ifndef NDEBUG
-//		std::cerr << "lower left: " << _ll << ", upper right: " << _ur << ", depth: " << _depth << std::endl;
-//#endif
 	}
 
 	void splitNode ()
