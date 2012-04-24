@@ -14,6 +14,9 @@
 // GEOLIB
 #include "Point.h"
 #include "QuadTree.h"
+#ifndef NDEBUG
+#include "Polyline.h"
+#endif
 
 namespace GEOLIB {
 class Polygon;
@@ -29,8 +32,10 @@ public:
 	double getMeshDensityAtPoint(GEOLIB::Point const*const pnt) const;
 	void addPoints(std::vector<GEOLIB::Point const*> const& pnts);
 	double getMeshDensityAtStation(GEOLIB::Point const*const) const;
-	void writeSteinerPoints (GEOLIB::Polygon const*const bounding_polygon,
-					size_t &pnt_idx_offset, size_t sfc_idx_offset, std::ostream & out) const;
+	void getSteinerPoints (std::vector<GEOLIB::Point*> & pnts, size_t additional_levels = 0) const;
+#ifndef NDEBUG
+	void getQuadTreeGeometry(std::vector<GEOLIB::Point*> &pnts, std::vector<GEOLIB::Polyline*> &plys) const;
+#endif
 
 private:
 	double _pnt_density;

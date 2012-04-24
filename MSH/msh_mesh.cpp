@@ -15,6 +15,7 @@
 #ifndef NON_GEO                                   //WW
 #include "gs_project.h"
 #endif                                            //#ifndef NON_GEO
+
 // GEOLib
 //#include "geo_pnt.h"
 //#include "geo_ply.h"
@@ -834,11 +835,12 @@ void CFEMesh::ConstructGrid()
 	e_edgeNodes.resize(0);
 
 	std::cout << "\tconstructing MeshGrid ... " << std::flush;
+	system ("cat /proc/meminfo | grep MemFree");
 	clock_t start(clock());
 	_mesh_grid = new MeshLib::MeshGrid(*this);
 	clock_t end(clock());
+	system ("cat /proc/meminfo | grep MemFree");
 	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s -- " << std::flush;
-
 	std::cout << " done." << std::endl;
 }
 
@@ -3998,6 +4000,13 @@ void CFEMesh::TopSurfaceIntegration()
 	fem = NULL;
 	val.clear();
 }
+
+#ifndef NDEBUG
+MeshLib::MeshGrid const* CFEMesh::getMeshGrid() const
+{
+	return _mesh_grid;
+}
+#endif
 
 #ifdef USE_HydSysMshGen
 /**************************************************************************

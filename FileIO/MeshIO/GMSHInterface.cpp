@@ -249,6 +249,7 @@ void GMSHInterface::writeGMSHInputFile(std::ostream& out)
 		(*it)->writeSubPolygonsAsLineConstraints(_n_lines, _n_plane_sfc-1, out);
 		(*it)->writeLineConstraints(_n_lines, _n_plane_sfc-1, out);
 		(*it)->writeStations(pnt_id_offset, _n_plane_sfc-1, out);
+		(*it)->writeAdditionalPointData(pnt_id_offset, _n_plane_sfc-1, out);
 	}
 
 	_geo_objs.removeSurfaceVec(_gmsh_geo_name);

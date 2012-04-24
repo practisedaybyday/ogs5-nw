@@ -7,6 +7,9 @@
 
 #include "MeshGrid.h"
 
+// BaseLib
+#include "StringTools.h"
+
 namespace MeshLib {
 
 MeshGrid::MeshGrid(MeshLib::CFEMesh const& mesh) :
@@ -226,5 +229,86 @@ void MeshGrid::getNodeVectorsInAxisAlignedBoundingBox(GEOLIB::Point const& ll,
 		}
 	}
 }
+
+#ifndef NDEBUG
+void MeshGrid::createMeshGridGeometry(GEOLIB::GEOObjects* geo_obj) const
+{
+	std::vector<std::string> grid_names;
+
+	GEOLIB::Point const& llf (getMinPoint());
+	GEOLIB::Point const& urb (getMaxPoint());
+
+	const double dx ((urb[0]-llf[0])/_n_steps[0]);
+	const double dy ((urb[1]-llf[1])/_n_steps[1]);
+	const double dz ((urb[2]-llf[2])/_n_steps[2]);
+
+	// create grid names and grid boxes as geometry
+	for (size_t i(0); i<_n_steps[0]; i++) {
+		for (size_t j(0); j<_n_steps[1]; j++) {
+			for (size_t k(0); k<_n_steps[2]; k++) {
+
+				std::string name("MeshGrid-");
+				name += number2str<size_t>(i);
+				name +="-";
+				name += number2str<size_t>(j);
+				name += "-";
+				name += number2str<size_t> (k);
+				grid_names.push_back(name);
+
+				std::vector<GEOLIB::Point*>* points (new std::vector<GEOLIB::Point*>);
+				points->push_back(new GEOLIB::Point(llf[0]+i*dx, llf[1]+j*dy, llf[2]+k*dz));
+				points->push_back(new GEOLIB::Point(llf[0]+i*dx, llf[1]+(j+1)*dy, llf[2]+k*dz));
+				points->push_back(new GEOLIB::Point(llf[0]+(i+1)*dx, llf[1]+(j+1)*dy, llf[2]+k*dz));
+				points->push_back(new GEOLIB::Point(llf[0]+(i+1)*dx, llf[1]+j*dy, llf[2]+k*dz));
+				points->push_back(new GEOLIB::Point(llf[0]+i*dx, llf[1]+j*dy, llf[2]+(k+1)*dz));
+				points->push_back(new GEOLIB::Point(llf[0]+i*dx, llf[1]+(j+1)*dy, llf[2]+(k+1)*dz));
+				points->push_back(new GEOLIB::Point(llf[0]+(i+1)*dx, llf[1]+(j+1)*dy, llf[2]+(k+1)*dz));
+				points->push_back(new GEOLIB::Point(llf[0]+(i+1)*dx, llf[1]+j*dy, llf[2]+(k+1)*dz));
+				geo_obj->addPointVec(points, grid_names[grid_names.size()-1], NULL);
+
+				std::vector<GEOLIB::Polyline*>* plys (new std::vector<GEOLIB::Polyline*>);
+				GEOLIB::Polyline* ply0 (new GEOLIB::Polyline(*points));
+				for (size_t l(0); l<4; l++) {
+					ply0->addPoint(l);
+				}
+				ply0->addPoint(0);
+				plys->push_back(ply0);
+
+				GEOLIB::Polyline* ply1 (new GEOLIB::Polyline(*points));
+				for (size_t l(4); l<8; l++) {
+					ply1->addPoint(l);
+				}
+				ply1->addPoint(4);
+				plys->push_back(ply1);
+
+				GEOLIB::Polyline* ply2 (new GEOLIB::Polyline(*points));
+				ply2->addPoint(0);
+				ply2->addPoint(4);
+				plys->push_back(ply2);
+
+				GEOLIB::Polyline* ply3 (new GEOLIB::Polyline(*points));
+				ply3->addPoint(1);
+				ply3->addPoint(5);
+				plys->push_back(ply3);
+
+				GEOLIB::Polyline* ply4 (new GEOLIB::Polyline(*points));
+				ply4->addPoint(2);
+				ply4->addPoint(6);
+				plys->push_back(ply4);
+
+				GEOLIB::Polyline* ply5 (new GEOLIB::Polyline(*points));
+				ply5->addPoint(3);
+				ply5->addPoint(7);
+				plys->push_back(ply5);
+
+				geo_obj->addPolylineVec(plys, grid_names[grid_names.size()-1], NULL);
+			}
+		}
+	}
+	std::string merged_geo_name("MeshGrid");
+
+	geo_obj->mergeGeometries(grid_names, merged_geo_name);
+}
+#endif
 
 } // end namespace MeshLib

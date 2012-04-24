@@ -42,6 +42,15 @@ public:
 	void getNodeVectorsInAxisAlignedBoundingBox(GEOLIB::Point const& ll, GEOLIB::Point const& ur,
 					size_t &n_node_vectors, std::vector<MeshLib::CNode*>* * & node_vectors);
 
+#ifndef NDEBUG
+	/**
+	 * Method creates a geometry for every mesh grid box. Additionally it
+	 * creates one geometry containing all the box geometries.
+	 * @param geo_obj
+	 */
+	void createMeshGridGeometry(GEOLIB::GEOObjects* geo_obj) const;
+#endif
+
 private:
 	bool calcNearestNodeInGrid(double const* const pnt, size_t const* const coords,
 					double &sqr_min_dist, size_t &global_idx) const;
