@@ -12,7 +12,6 @@ set( SOURCES_FEM
 	msh_node.h
 	MshEditor.h
 	MSHEnums.h
-	MshLayerMapper.h
 	MeshNodesAlongPolyline.h
 	MeshGrid.h
 	
@@ -28,7 +27,6 @@ set( SOURCES_FEM
 	msh_node.cpp
 	MshEditor.cpp
 	MSHEnums.cpp
-	MshLayerMapper.cpp
 
 	MeshNodesAlongPolyline.cpp
 	MeshGrid.cpp
