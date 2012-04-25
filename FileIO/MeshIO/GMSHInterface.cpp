@@ -145,9 +145,11 @@ void GMSHInterface::readGMSHMesh(std::string const& fname, MeshLib::CFEMesh* mes
 
 int GMSHInterface::write(std::ostream& out)
 {
-	out << "// GMSH input file created by OpenGeoSys " << OGS_VERSION << " build "
-					<< BUILD_TIMESTAMP << std::endl;
-	out << std::endl;
+	out << "// GMSH input file created by OpenGeoSys " << OGS_VERSION << " built on ";
+#ifdef BUILD_TIMESTAMP
+	out << BUILD_TIMESTAMP;
+#endif
+	out << std::endl << std::endl;
 
 	writeGMSHInputFile(out);
 	return 1;

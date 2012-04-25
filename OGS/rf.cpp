@@ -99,12 +99,19 @@ int main ( int argc, char* argv[] )
 		if( anArg == "--build-info" || anArg == "-b" )
 		{
 			std::cout << "ogs version: " << OGS_VERSION << std::endl
-			          << "ogs date: " << OGS_DATE << std::endl
-			          << "cmake command line arguments: " << CMAKE_CMD_ARGS <<
-			std::endl
-			          << "git commit info: " << GIT_COMMIT_INFO << std::endl
-			          << "subversion info: " << SVN_REVISION << std::endl
-			          << "build timestamp: " << BUILD_TIMESTAMP << std::endl;
+			          << "ogs date: " << OGS_DATE << std::endl;
+#ifdef CMAKE_CMD_ARGS
+			std::cout << "cmake command line arguments: " << CMAKE_CMD_ARGS << std::endl;
+#endif // CMAKE_CMD_ARGS
+#ifdef GIT_COMMIT_INFO
+			std::cout << "git commit info: " << GIT_COMMIT_INFO << std::endl;
+#endif // GIT_COMMIT_INFO
+#ifdef SVN_REVISION
+			std::cout << "subversion info: " << SVN_REVISION << std::endl;
+#endif // SVN_REVISION
+#ifdef BUILD_TIMESTAMP
+			std::cout << "build timestamp: " << BUILD_TIMESTAMP << std::endl;
+#endif // BUILD_TIMESTAMP
 			continue;
 		}
 		if( anArg == "--version" )
