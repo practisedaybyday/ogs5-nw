@@ -107,8 +107,6 @@ void OGSMeshIO::writeElementsExceptLines(std::vector<MeshLib::CElem*> const& ele
 	size_t n_elements(0);
 
 	for (size_t i(0); i < ele_vector_size; i++) {
-		if (546 < i && i < 548) {
-			std::cout.precision(20);
 		if ((ele_vec[i])->GetElementType() == MshElemType::LINE) {
 			non_line_element[i] = false;
 			non_null_element[i] = false;
