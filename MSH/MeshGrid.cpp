@@ -85,9 +85,9 @@ MeshGrid::MeshGrid(MeshLib::CFEMesh const& mesh) :
 	// fill the grid vectors
 	for (size_t l(0); l<n_nodes; l++) {
 		double const*const node(nodes[l]->getData());
-		const size_t i ((node[0]-_min_pnt[0]) * _inverse_step_sizes[0]);
-		const size_t j ((node[1]-_min_pnt[1]) * _inverse_step_sizes[1]);
-		const size_t k ((node[2]-_min_pnt[2]) * _inverse_step_sizes[2]);
+		const size_t i (static_cast<size_t>((node[0]-_min_pnt[0]) * _inverse_step_sizes[0]));
+		const size_t j (static_cast<size_t>((node[1]-_min_pnt[1]) * _inverse_step_sizes[1]));
+		const size_t k (static_cast<size_t>((node[2]-_min_pnt[2]) * _inverse_step_sizes[2]));
 
 		if (i >= _n_steps[0] || j >= _n_steps[1] || k >= _n_steps[2]) {
 			std::cout << "error computing indices " << std::endl;
@@ -135,7 +135,7 @@ std::vector<MeshLib::CNode*> const& MeshGrid::getNodesInGrid(size_t const*const 
 void MeshGrid::getGridCoords(double const*const node, size_t* coords) const
 {
 	for (size_t k(0); k<3; k++)
-		coords[k] = (node[k]-_min_pnt[k]) * _inverse_step_sizes[k];
+		coords[k] = static_cast<size_t>((node[k]-_min_pnt[k]) * _inverse_step_sizes[k]);
 }
 
 size_t MeshGrid::getIndexOfNearestNode(double const*const pnt) const

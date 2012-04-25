@@ -107,9 +107,6 @@ public:
 	/// Returns a subset of this point vector containing only the points specified in "subset" as PointWithID-objects
 	std::vector<GEOLIB::Point*>* getSubset(const std::vector<size_t> &subset);
 
-//	/// Returns the name of an element given the element id.
-//	const std::string getNameOfElementByID (size_t id) const;
-
 private:
 	void makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector<size_t> &pnt_id_map, double eps = sqrt(std::numeric_limits<double>::min()));
 

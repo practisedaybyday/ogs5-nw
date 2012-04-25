@@ -110,7 +110,6 @@ public:
 	{
 		if (!_name_id_map) return false;
 		// search in map for id
-		//if (_name_id_map->empty()) return false;
 		std::map<std::string,size_t>::const_iterator it (_name_id_map->begin());
 		while (it != _name_id_map->end())
 		{
