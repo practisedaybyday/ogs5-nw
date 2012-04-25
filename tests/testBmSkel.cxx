@@ -11,7 +11,7 @@ using namespace std;
 #include "logging.h"
 #include "Configure.h"
 
-#include <gtest/gtest.h>
+#include "gtest.h"
 
 #include <cstdlib>
 #include <fstream>   // for ifstream

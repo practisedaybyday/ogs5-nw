@@ -15,6 +15,7 @@
 #include "Point.h"
 #include "Polyline.h"
 #include "Triangle.h"
+#include "SurfaceGrid.h"
 
 namespace GEOLIB
 {
@@ -51,8 +52,7 @@ public:
 	/**
 	 * is the given point in the bounding volume of the surface
 	 */
-	bool isPntInBV (const double* pnt, double eps =
-	                        std::numeric_limits<double>::epsilon()) const;
+	bool isPntInBV (const double* pnt, double eps = std::numeric_limits<double>::epsilon()) const;
 
 	/**
 	 * is the given point pnt located in the surface
@@ -69,6 +69,8 @@ public:
 	 */
 	AABB const & getAABB () const { return _bv; }
 
+	void initSurfaceGrid();
+
 protected:
 	/** a vector of pointers to Points */
 	const std::vector<Point*> &_sfc_pnts;
@@ -76,6 +78,8 @@ protected:
 	std::vector<Triangle*> _sfc_triangles;
 	/** bounding volume is an axis aligned bounding box */
 	AABB _bv;
+	/** a helper structure to improve the search */
+	SurfaceGrid* _sfc_grid;
 };
 }
 

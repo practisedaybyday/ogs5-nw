@@ -69,7 +69,11 @@ double sqrNrm2(const GEOLIB::Point* const p0);
 double sqrDist(const GEOLIB::Point* p0, const GEOLIB::Point* p1);
 
 /** squared dist between double arrays p0 and p1 (size of arrays is 3) */
-double sqrDist(const double* p0, const double* p1);
+inline double sqrDist(double const* p0, double const* p1)
+{
+	const double v[3] = {p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]};
+	return scpr (v, v, 3);
+}
 
 /** linear normalisation of val from [min, max] into [0,1] */
 float normalize(float min, float max, float val);

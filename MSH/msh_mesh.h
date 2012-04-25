@@ -77,6 +77,9 @@ public:
 };
 #endif                                         //#ifndef NON_GEO
 
+// forward declaration
+class MeshGrid;
+
 //------------------------------------------------------------------------
 // Class definition
 class CFEMesh
@@ -407,6 +410,15 @@ public:
 	/// Comptute int {f} a dA on top surface.
 	void TopSurfaceIntegration();
 
+#ifndef NDEBUG
+	/**
+	 * This is a getter method to access the private attribute _mesh_grid
+	 * that is an instance of class MeshGrid.
+	 * @return
+	 */
+	MeshLib::MeshGrid const* getMeshGrid() const;
+#endif
+
 private:
 	// private attributes
 	/**
@@ -485,6 +497,10 @@ private:
 	void CreateLineElementsFromMarkedEdges(CFEMesh* m_msh_ply,
 	                                       std::vector<long> &ele_vector_at_ply); //NW
 #endif                                      // #ifndef NON_GEO //WW
+
+	MeshGrid *_mesh_grid;
 };
+
 }                                                 // namespace MeshLib
+
 #endif

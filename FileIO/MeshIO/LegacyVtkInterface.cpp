@@ -23,14 +23,19 @@
 
 #include <string>
 #include <iomanip>
+
+#ifdef VTK_FOUND
+#include "vtkMath.h"
+#endif
+
 using namespace std;
 
 LegacyVtkInterface::LegacyVtkInterface(MeshLib::CFEMesh* mesh,
-                                       std::vector<std::string> pointArrayNames,
-                                       std::vector<std::string> cellArrayNames,
-                                       std::vector<std::string> materialPropertyArrayNames,
-                                       std::string meshTypeName,
-                                       ProcessInfo* processInfo)
+									   std::vector<std::string> pointArrayNames,
+									   std::vector<std::string> cellArrayNames,
+									   std::vector<std::string> materialPropertyArrayNames,
+									   std::string meshTypeName,
+									   ProcessInfo* processInfo)
 	: _mesh(mesh),
 	  _pointArrayNames(pointArrayNames),
 	  _cellArrayNames(cellArrayNames),
@@ -53,7 +58,7 @@ LegacyVtkInterface::~LegacyVtkInterface() {}
    12/2008 NW Remove ios::app, Add PCS name to VTK file name
 **************************************************************************/
 void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time,
-                                      std::string baseFilename) const
+									  std::string baseFilename) const
 {
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
 	char tf_name[10];
@@ -72,7 +77,7 @@ void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time,
 	stringstream ss;
 	// setw(4) sets the number of digits to be used
 	// and creates leading zeros if necessary
-	ss << setw(4) << setfill('0') << number;  
+	ss << setw(4) << setfill('0') << number;
 	baseFilename += ss.str();
 	baseFilename += ".vtk";
 
@@ -102,13 +107,13 @@ void LegacyVtkInterface::WriteDataVTK(int number, double simulation_time,
 }
 
 void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file,
-                                        int time_step_number,
-                                        double simulation_time) const
+										int time_step_number,
+										double simulation_time) const
 {
 	vtk_file << "# vtk DataFile Version 3.0" << endl;
 	vtk_file << "Unstructured Grid from OpenGeoSys" << endl;
-	vtk_file << "ASCII"  << endl;
-	vtk_file << "DATASET UNSTRUCTURED_GRID"  << endl;
+	vtk_file << "ASCII"	 << endl;
+	vtk_file << "DATASET UNSTRUCTURED_GRID"	 << endl;
 
 	// time information
 	// see http://www.visitusers.org/index.php?title=Time_and_Cycle_in_VTK_files
@@ -122,10 +127,10 @@ void LegacyVtkInterface::WriteVTKHeader(fstream &vtk_file,
 void LegacyVtkInterface::WriteVTKPointData(fstream &vtk_file) const
 {
 	const std::vector<MeshLib::CNode*> pointVector = _mesh->getNodeVector();
-	vtk_file << "POINTS " << pointVector.size() << " double" << endl;
+	const size_t n_linear_pnts (_mesh->GetNodesNumber(false));
+	vtk_file << "POINTS " << n_linear_pnts << " double" << endl;
 
-	const size_t n_pnts (pointVector.size());
-	for(size_t i = 0; i < n_pnts; i++)
+	for(size_t i = 0; i < n_linear_pnts; i++)
 	{
 		double const* const coords (pointVector[i]->getData());
 		vtk_file << coords[0] << " " << coords[1] << " " << coords[2] << endl;
@@ -236,80 +241,169 @@ void LegacyVtkInterface::WriteVTKCellData(fstream &vtk_file) const
 **************************************************************************/
 void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 {
-	std::vector<int> nod_value_index_vector(_pointArrayNames.size());
 	long numNodes = _mesh->GetNodesNumber(false);
 
 	// NODAL DATA
 	vtk_file << "POINT_DATA " << numNodes << endl;
-	for (size_t k = 0; k < _pointArrayNames.size(); k++)
+	const size_t numPointArrays = _pointArrayNames.size();
+
+	for (size_t k = 0; k < numPointArrays; k++)
 	{
+		size_t numComponents = 0;
+		bool toNext = false;
 		string arrayName = _pointArrayNames[k];
-		// Write x, y and z arrays as vectors
-		if (arrayName.find("_X") != string::npos && _pointArrayNames[k + 1].find("_Y"))
+		std::cout << "ArrayName: " << arrayName << std::endl;
+
+		// Write X, Y and Z arrays as vectors
+		if(k + 1 < numPointArrays)
 		{
-			size_t numComponents = 2;
-			if (_pointArrayNames[k + 2].find("_Z"))
-				numComponents = 3;
-
-			vtk_file << "VECTORS " <<
-			arrayName.substr(0, arrayName.size() - 2) << " double" << endl;
-			string arrayNames[3];
-			arrayNames[0] = arrayName;
-			arrayNames[1] = arrayName.substr(0, arrayName.size() - 1).append("Y");
-			if (numComponents == 3)
-				arrayNames[2] = arrayName.substr(0, arrayName.size() - 1).append("Z");
-
-			double vector3[3];
-			for (long j = 0l; j < numNodes; j++)
+			if (_pointArrayNames[k].find("_X") != string::npos && _pointArrayNames[k + 1].find("_Y") &&
+				_pointArrayNames[k].find("_XX") == string::npos)
 			{
-				for(size_t component = 0; component < numComponents; ++component)
-				{
-					CRFProcess* pcs = PCSGet(arrayNames[component], true);
-					if (!pcs)
-						continue;
-					nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName);
-					for (size_t i = 0; i < pcs->GetPrimaryVNumber(); i++)
-						if (arrayName.compare(pcs->pcs_primary_function_name[i]) == 0)
-						{
-							nod_value_index_vector[k]++;
-							break;
-						}
-					vector3[component] = pcs->GetNodeValue(
-					        _mesh->nod_vector[j]->GetIndex(),
-					        nod_value_index_vector[k]);
-				}
-				if (numComponents == 2)
-					vtk_file << vector3[0] << " " << vector3[1] << endl;
-				else
-					vtk_file << vector3[0] << " " << vector3[1] << " " << vector3[2] <<	endl;
-			}
-			if (numComponents == 2)
-				k += 1;
-			else
-				k += 2;
-		}
-		else
-		{
-			CRFProcess* pcs = PCSGet(arrayName, true);
-			if (!pcs)
-				continue;
-			nod_value_index_vector[k] = pcs->GetNodeValueIndex(arrayName,true); // JT: latest
-			vtk_file << "SCALARS " << arrayName << " double 1" << endl;
-			vtk_file << "LOOKUP_TABLE default" << endl;
+				numComponents = 2;
+				if(k + 2 < numPointArrays)
+					if (_pointArrayNames[k + 2].find("_Z"))
+						numComponents = 3;
 
-			for (long j = 0l; j < numNodes; j++)
-				if (nod_value_index_vector[k] > -1)
-					vtk_file << pcs->GetNodeValue(
-					        _mesh->nod_vector[j]->GetIndex(),
-					        nod_value_index_vector[k])
-					<< endl;
+				vtk_file << "VECTORS " << arrayName.substr(0, arrayName.size() - 2) <<
+				" double" << endl;
+				
+				double vector3[3];
+				for (long j = 0l; j < numNodes; j++)
+				{
+					for(size_t component = 0; component < numComponents; ++component)
+					{
+						int indexDataArray = k + component;
+						CRFProcess* pcs = PCSGet(_pointArrayNames[indexDataArray], true);
+						if (!pcs)
+							continue;
+						vector3[component] = pcs->GetNodeValue(_mesh->nod_vector[j]->GetIndex(),
+															   indexDataArray);
+					}
+					if (numComponents == 2)
+						vtk_file << vector3[0] << " " << vector3[1] << endl;
+					else
+						vtk_file << vector3[0] << " " << vector3[1] << " " << vector3[2] << endl;
+				}
+
+				toNext = true;
+			}
+			// Write tensors as Eigenvectors
+			// XX, XY, YY, ZZ, XZ, YZ must be present in that order
+			else if(k + 5 < numPointArrays)
+			{
+				if(_pointArrayNames[k + 0].find("_XX") != string::npos &&
+				   _pointArrayNames[k + 1].find("_XY") != string::npos &&
+				   _pointArrayNames[k + 2].find("_YY") != string::npos &&
+				   _pointArrayNames[k + 3].find("_ZZ") != string::npos &&
+				   _pointArrayNames[k + 4].find("_XZ") != string::npos &&
+				   _pointArrayNames[k + 5].find("_YZ") != string::npos)
+				{
+					numComponents = 6;
+#ifdef VTK_FOUND
+					vector<vector<double> > eigenvectors_1, eigenvectors_2, eigenvectors_3;
+
+					// Iterate over nodes
+					for (long j = 0l; j < numNodes; j++)
+					{
+						double vector6[6];
+						// Iterate over the tensor 6 arrays
+						for(size_t component = 0; component < numComponents; ++component)
+						{
+							int indexDataArray = k + component;
+							CRFProcess* pcs = PCSGet(_pointArrayNames[indexDataArray], true);
+							if (!pcs)
+								continue;
+							
+							vector6[component] = pcs->GetNodeValue(_mesh->nod_vector[j]->GetIndex(), indexDataArray);
+							//std::cout << "vector " << component << " : " << vector6[component] << std::endl;
+						}
+
+						double* tensor[3];
+						double tensor0[3];
+						double tensor1[3];
+						double tensor2[3];
+						tensor[0] = tensor0;
+						tensor[1] = tensor1;
+						tensor[2] = tensor2;
+
+
+						tensor0[0] = vector6[0];
+						tensor0[1] = vector6[1];
+						tensor0[2] = vector6[4];
+						tensor1[0] = vector6[1];
+						tensor1[1] = vector6[2];
+						tensor1[2] = vector6[5];
+						tensor2[0] = vector6[4];
+						tensor2[1] = vector6[5];
+						tensor2[2] = vector6[3];
+
+						// std::cout << "TensorMat:" << std::endl;
+						// std::cout << tensor0[0] << " " << tensor0[1] << " " << tensor0[2] << std::endl;
+						// std::cout << tensor1[0] << " " << tensor1[1] << " " << tensor1[2] << std::endl;
+						// std::cout << tensor2[0] << " " << tensor2[1] << " " << tensor2[2] << std::endl;
+						// std::cout << std::endl << std::endl;
+
+						double *eigenvectors[3];
+						double eigenvectors0[3];
+						double eigenvectors1[3];
+						double eigenvectors2[3];
+
+						eigenvectors[0] = eigenvectors0; eigenvectors[1] = eigenvectors1; eigenvectors[2] = eigenvectors2;
+						double eigenvalues[3];
+
+						vtkMath::Jacobi(tensor, eigenvalues, eigenvectors);
+
+						// Multiply normalized eigenvector with eigenvalues
+						std::vector<double> eigenvector_1, eigenvector_2, eigenvector_3;
+						eigenvector_1.push_back(eigenvectors[0][0] * eigenvalues[0]);
+						eigenvector_1.push_back(eigenvectors[0][1] * eigenvalues[1]);
+						eigenvector_1.push_back(eigenvectors[0][2] * eigenvalues[2]);
+						eigenvectors_1.push_back(eigenvector_1);
+						eigenvector_2.push_back(eigenvectors[1][0] * eigenvalues[0]);
+						eigenvector_2.push_back(eigenvectors[1][1] * eigenvalues[1]);
+						eigenvector_2.push_back(eigenvectors[1][2] * eigenvalues[2]);
+						eigenvectors_2.push_back(eigenvector_2);
+						eigenvector_3.push_back(eigenvectors[2][0] * eigenvalues[0]);
+						eigenvector_3.push_back(eigenvectors[2][1] * eigenvalues[1]);
+						eigenvector_3.push_back(eigenvectors[2][2] * eigenvalues[2]);
+						eigenvectors_3.push_back(eigenvector_3);
+					}
+
+					vtk_file << "VECTORS " << arrayName.substr(0, arrayName.size() - 3) <<
+					"_Eigenvector_1" << " double" << endl;
+					for(vector<vector<double> >::iterator it = eigenvectors_1.begin(); it != eigenvectors_1.end(); ++it)
+						vtk_file << (*it)[0] << " " << (*it)[1] << " " << (*it)[2] << endl;
+
+					vtk_file << "VECTORS " << arrayName.substr(0, arrayName.size() - 3) <<
+					"_Eigenvector_2" << " double" << endl;
+					for(vector<vector<double> >::iterator it = eigenvectors_2.begin(); it != eigenvectors_2.end(); ++it)
+						vtk_file << (*it)[0] << " " << (*it)[1] << " " << (*it)[2] << endl;
+
+					vtk_file << "VECTORS " << arrayName.substr(0, arrayName.size() - 3) <<
+					"_Eigenvector_3" << " double" << endl;
+					for(vector<vector<double> >::iterator it = eigenvectors_3.begin(); it != eigenvectors_3.end(); ++it)
+						vtk_file << (*it)[0] << " " << (*it)[1] << " " << (*it)[2] << endl;
+#else
+					for(size_t component = 0; component < numComponents; ++component)
+						printScalarArray(_pointArrayNames[k + component], vtk_file);
+#endif
+					toNext = true;
+				}
+			}
 		}
+
+		if (!toNext)
+			printScalarArray(arrayName, vtk_file);
+
+		if(numComponents > 0)
+			k += (numComponents - 1);
 	}
 	//======================================================================
 	// Saturation 2 for 1212 pp - scheme. 01.04.2009. WW
 	// ---------------------------------------------------------------------
 	CRFProcess* pcs = NULL;
-	if (!_pointArrayNames.empty())                    //SB added
+	if (!_pointArrayNames.empty())					  //SB added
 		pcs = PCSGet(_pointArrayNames[0], true);
 	if (pcs && pcs->type == 1212)
 	{
@@ -324,11 +418,11 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 	}
 //kg44 GEM node data
 #ifdef GEM_REACT
-	m_vec_GEM->WriteVTKGEMValues(vtk_file);    //kg44 export GEM internal variables like speciateion vector , phases etc
+	m_vec_GEM->WriteVTKGEMValues(vtk_file);	   //kg44 export GEM internal variables like speciateion vector , phases etc
 #endif
 	// ELEMENT DATA
 	// ---------------------------------------------------------------------
-	bool wroteAnyEleData = false;              //NW
+	bool wroteAnyEleData = false;			   //NW
 	if (!_cellArrayNames.empty())
 	{
 		CRFProcess* pcs = this->GetPCS_ELE(_cellArrayNames[0]);
@@ -337,7 +431,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 		if (_cellArrayNames[0].size() > 0)
 			for (size_t i = 0; i < _cellArrayNames.size(); i++)
 				ele_value_index_vector[i] = pcs->GetElementValueIndex(
-				        _cellArrayNames[i]);
+						_cellArrayNames[i]);
 
 		vtk_file << "CELL_DATA " << (long) _mesh->ele_vector.size() << endl;
 		wroteAnyEleData = true;
@@ -359,7 +453,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 				{
 					MeshLib::CElem* ele = _mesh->ele_vector[j];
 					CMediumProperties* MediaProp =
-					        mmp_vector[ele->GetPatchIndex()];
+							mmp_vector[ele->GetPatchIndex()];
 					for (size_t i = 0; i < 3; i++)
 						vtk_file <<
 						MediaProp->PermeabilityTensor(j)[i * 3 + i] << " ";
@@ -370,12 +464,12 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 			{
 				// NOW REMAINING SCALAR DATA  // JTARON 2010, reconfig
 				vtk_file << "SCALARS " << _cellArrayNames[k] << " double 1"
-				         << endl;
+						 << endl;
 				vtk_file << "LOOKUP_TABLE default" << endl;
 				for (size_t i = 0; i < _mesh->ele_vector.size(); i++)
 					vtk_file << pcs->GetElementValue(i,
-					                                 ele_value_index_vector[k])
-					         << endl;
+													 ele_value_index_vector[k])
+							 << endl;
 			}
 		}
 		//--------------------------------------------------------------------
@@ -413,7 +507,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 	if (mmp_vector.size() > 1)
 	{
 		// write header for cell data
-		if (!wroteAnyEleData)               //NW: check whether the header has been already written
+		if (!wroteAnyEleData)				//NW: check whether the header has been already written
 			vtk_file << "CELL_DATA " << _mesh->ele_vector.size() << endl;
 		wroteAnyEleData = true;
 
@@ -498,6 +592,24 @@ CRFProcess* LegacyVtkInterface::GetPCS_ELE(const string &var_name) const
 			}
 		}
 	return pcs;
+}
+
+void LegacyVtkInterface::printScalarArray(string arrayName, std::fstream &vtk_file) const
+{
+	CRFProcess* pcs = PCSGet(arrayName, true);
+	if (!pcs)
+		return;
+	
+	int indexDataArray = pcs->GetNodeValueIndex(arrayName);
+	long numNodes = _mesh->GetNodesNumber(false);
+	
+	vtk_file << "SCALARS " << arrayName << " double 1" << endl;
+	vtk_file << "LOOKUP_TABLE default" << endl;
+	
+	for (long j = 0l; j < numNodes; j++)
+		vtk_file << pcs->GetNodeValue(_mesh->nod_vector[j]->GetIndex(),
+									  indexDataArray)
+		<< endl;
 }
 
 // round very small and very large numbers in order to avoid read error in paraview

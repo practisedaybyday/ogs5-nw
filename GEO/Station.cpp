@@ -15,16 +15,25 @@
 
 namespace GEOLIB
 {
-Station::Station(double x, double y, double z, std::string name, Color* const color) :
-	Point (x,y,z), _name(name), _type(Station::STATION), _color(color)
+Station::Station(double x, double y, double z, std::string name) :
+	Point (x,y,z), _name(name), _type(Station::STATION), _station_value(0.0)
 {
 	addProperty("x", &getX, &Station::setX);
 	addProperty("y", &getY, &Station::setY);
 	addProperty("z", &getZ, &Station::setZ);
 }
 
-Station::Station(Point* coords, std::string name, Color* const color) :
-	Point (*coords), _name(name), _type(Station::STATION), _color(color)
+Station::Station(Point* coords, std::string name) :
+	Point (*coords), _name(name), _type(Station::STATION), _station_value(0.0)
+{
+	addProperty("x", &getX, &Station::setX);
+	addProperty("y", &getY, &Station::setY);
+	addProperty("z", &getZ, &Station::setZ);
+}
+
+Station::Station(Station const& src) :
+	Point(src.getData()), _name(src._name), _type(src._type),
+	_station_value(src._station_value)
 {
 	addProperty("x", &getX, &Station::setX);
 	addProperty("y", &getY, &Station::setY);
@@ -42,21 +51,6 @@ void Station::addProperty(std::string pname, double (* getFct)(void*), void (* s
 
 Station::~Station()
 {
-	delete _color;
-}
-
-void Station::setColor(unsigned char r, unsigned char g, unsigned char b)
-{
-	(*_color)[0] = r;
-	(*_color)[1] = g;
-	(*_color)[2] = b;
-}
-
-void Station::setColor(const Color* const color)
-{
-	(*_color)[0] = (*color)[0];
-	(*_color)[1] = (*color)[1];
-	(*_color)[2] = (*color)[2];
 }
 
 Station* Station::createStation(const std::string & line)
@@ -240,6 +234,24 @@ int StationBorehole::addLayer(std::list<std::string> fields, StationBorehole* bo
 	return 1;
 }
 
+int StationBorehole::addStratigraphy(const std::vector<GEOLIB::Point*> &profile, const std::vector<std::string> soil_names)
+{
+	if (((profile.size()-1) == soil_names.size()) && (soil_names.size()>0))
+	{
+		this->_profilePntVec.push_back(profile[0]);
+		size_t nLayers = soil_names.size();
+		for (size_t i=0; i<nLayers; i++)
+		{
+			this->_profilePntVec.push_back(profile[i+1]);
+			this->_soilName.push_back(soil_names[i]);
+		}
+		return 1;
+	}
+	
+	std::cout << "Error in StationBorehole::addStratigraphy() - Length of parameter vectors does not match." << std::endl;
+	return 0;
+}
+
 int StationBorehole::addStratigraphies(const std::string &path, std::vector<Point*>* boreholes)
 {
 	std::vector<std::list<std::string> > data;
@@ -295,17 +307,13 @@ StationBorehole* StationBorehole::createStation(const std::string &line)
 	{
 		borehole->_name     = fields.front();
 		fields.pop_front();
-		(*borehole)[0]      = strtod((replaceString(",", ".",
-		                                            fields.front())).c_str(), NULL);
+		(*borehole)[0]      = strtod((replaceString(",", ".", fields.front())).c_str(), NULL);
 		fields.pop_front();
-		(*borehole)[1]      = strtod((replaceString(",", ".",
-		                                            fields.front())).c_str(), NULL);
+		(*borehole)[1]      = strtod((replaceString(",", ".", fields.front())).c_str(), NULL);
 		fields.pop_front();
-		(*borehole)[2]      = strtod((replaceString(",", ".",
-		                                            fields.front())).c_str(), NULL);
+		(*borehole)[2]      = strtod((replaceString(",", ".", fields.front())).c_str(), NULL);
 		fields.pop_front();
-		borehole->_depth    = strtod((replaceString(",", ".",
-		                                            fields.front())).c_str(), NULL);
+		borehole->_depth    = strtod((replaceString(",", ".", fields.front())).c_str(), NULL);
 		fields.pop_front();
 		if (fields.empty())
 			borehole->_date = 0;
@@ -337,7 +345,7 @@ StationBorehole* StationBorehole::createStation(const std::string &name,
 	(*station)[1]   = y;
 	(*station)[2]   = z;
 	station->_depth = depth;
-	if (date.compare("0000-00-00"))
+	if (date.compare("0000-00-00") != 0)
 		station->_date  = xmlDate2double(date);
 	return station;
 }

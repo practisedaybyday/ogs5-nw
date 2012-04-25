@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include "Configure.h"
+
 // FileIO
 #include "GMSHInterface.h"
 #include "OGSIOVer4.h"
@@ -31,6 +33,9 @@
 // MathLib
 #include "AnalyticalGeometry.h"
 #include "EarClippingTriangulation.h"
+
+// Qt/Base
+#include "OGSError.h"
 
 using namespace GEOLIB;
 
@@ -108,13 +113,16 @@ std::string readPoints(std::istream &in, std::vector<Point*>* pnt_vec,
 }
 
 /** reads points from a vector */
-void readPolylinePointVector(const std::string &fname,
-                             std::vector<Point*>& pnt_vec, Polyline* ply, const std::string &path)
+void readPolylinePointVector(const std::string &fname, std::vector<Point*>& pnt_vec,
+				Polyline* ply, const std::string &path, std::vector<std::string> &errors)
 {
 	// open file
 	std::ifstream in((path + fname).c_str());
-	if (!in)
+	if (!in) {
 		std::cerr << "error opening stream from " << fname << std::endl;
+		errors.push_back ("[readPolylinePointVector] error opening stream from " + fname);
+		return;
+	}
 
 	double x, y, z;
 	while (in)
@@ -144,7 +152,8 @@ std::string readPolyline(std::istream &in,
                          std::vector<Point*>& pnt_vec,
                          bool zero_based_indexing,
                          const std::vector<size_t>& pnt_id_map,
-                         const std::string &path)
+                         const std::string &path,
+                         std::vector<std::string> &errors)
 {
 	std::string line, name_of_ply;
 	Polyline* ply(new Polyline(pnt_vec));
@@ -199,10 +208,10 @@ std::string readPolyline(std::istream &in,
 						ply->addPoint(pnt_id_map[pnt_id]);
 					in >> line;
 				}
-			else
-				std::cerr <<
-				"*** polyline is an arc *** reading not implemented" <<
-				std::endl;
+			else {
+				std::cerr << "*** polyline is an arc *** reading not implemented" << std::endl;
+				errors.push_back ("[readPolyline] reading polyline as an arc is not implemented");
+			}
 			// empty line or the keyword or subkeyword or end of file
 		}
 		//....................................................................
@@ -210,7 +219,7 @@ std::string readPolyline(std::istream &in,
 		{
 			in >> line; // read file name
 			line = path + line;
-			readPolylinePointVector(line, pnt_vec, ply, path);
+			readPolylinePointVector(line, pnt_vec, ply, path, errors);
 		} // subkeyword found
 	} while (line.find("#") == std::string::npos && line.size() != 0 && in);
 
@@ -239,10 +248,9 @@ std::string readPolyline(std::istream &in,
 std::string readPolylines(std::istream &in, std::vector<Polyline*>* ply_vec,
                           std::map<std::string,size_t>& ply_vec_names, std::vector<Point*>& pnt_vec,
                           bool zero_based_indexing, const std::vector<size_t>& pnt_id_map,
-                          const std::string &path)
+                          const std::string &path, std::vector<std::string>& errors)
 {
-	if (!in)
-	{
+	if (!in) {
 		std::cerr << "*** readPolylines input stream error " << std::endl;
 		return std::string("");
 	}
@@ -250,19 +258,22 @@ std::string readPolylines(std::istream &in, std::vector<Polyline*>* ply_vec,
 
 	while (!in.eof() && tag.find("#POLYLINE") != std::string::npos)
 		tag = readPolyline(in, ply_vec, ply_vec_names, pnt_vec,
-		                   zero_based_indexing, pnt_id_map, path);
+		                   zero_based_indexing, pnt_id_map, path, errors);
 
 	return tag;
 }
 
 void readTINFile(const std::string &fname, Surface* sfc,
-                 std::vector<Point*> &pnt_vec)
+                 std::vector<Point*> &pnt_vec, std::vector<std::string>& errors)
 {
 	// open file
 	std::ifstream in(fname.c_str());
-	if (!in)
+	if (!in) {
 		std::cerr << "readTINFile error opening stream from " << fname
 		          << std::endl;
+		errors.push_back ("readTINFile error opening stream from " + fname);
+		return;
+	}
 
 	size_t id;
 	double x, y, z;
@@ -303,7 +314,7 @@ std::string readSurface(std::istream &in,
                         const std::vector<Polyline*> &ply_vec,
                         const std::map<std::string, size_t>& ply_vec_names,
                         std::vector<Point*> &pnt_vec,
-                        std::string const& path)
+                        std::string const& path, std::vector<std::string>& errors)
 {
 	std::string line;
 	Surface* sfc(NULL);
@@ -339,7 +350,11 @@ std::string readSurface(std::istream &in,
 			line = path + line;
 			sfc = new Surface(pnt_vec);
 
-			readTINFile(line, sfc, pnt_vec);
+			readTINFile(line, sfc, pnt_vec, errors);
+			if (sfc->getNTriangles() == 0) {
+				delete sfc;
+				sfc = NULL;
+			}
 //			std::cout << "ok" << std::endl;
 		}
 		//....................................................................
@@ -361,19 +376,19 @@ std::string readSurface(std::istream &in,
 				else
 					ply_id = ply_vec.size();
 
-				if (ply_id == ply_vec.size())
+				if (ply_id == ply_vec.size()) {
 					std::cerr << "polyline for surface not found!" << std::endl;
-				else
-				{
-					if (type == 3)
-						std::cerr <<
-						"surface type 3: flat surface with any normal direction - - reading not implemented"
-						          << std::endl;
-
-					if (type == 2)
-						std::cerr <<
-						"vertical surface - reading not implemented"
-						          << std::endl;
+					errors.push_back("[readSurface] polyline for surface not found!");
+				} else {
+					if (type == 3) {
+						std::cerr << "surface type 3: flat surface with any normal direction - - reading not implemented"
+							<< std::endl;
+						errors.push_back("[readSurface] surface type 3: flat surface with any normal direction - - reading not implemented");
+					}
+					if (type == 2) {
+						std::cerr << "vertical surface - reading not implemented" << std::endl;
+						errors.push_back("[readSurface] vertical surface - reading not implemented");
+					}
 				}
 				in >> line;
 			}
@@ -388,11 +403,21 @@ std::string readSurface(std::istream &in,
 		// surface create by TIN
 		sfc_vec.push_back (sfc);
 	else
-	// surface created by polygon
-	if (ply_id != std::numeric_limits<size_t>::max())
-		if (ply_vec[ply_id]->isClosed())
-			polygon_vec.push_back (new Polygon (*(ply_vec[ply_id]), true));
-
+    {
+        // surface created by polygon
+        if (ply_id != std::numeric_limits<size_t>::max() && ply_id != ply_vec.size())
+        {
+            if (ply_vec[ply_id]->isClosed())
+            {
+                polygon_vec.push_back (new Polygon (*(ply_vec[ply_id]), true));
+            }
+            else
+            {
+                std::cerr << "\n\tcannot create surface " << name << " from polyline: "
+                    << " polyline is not closed.\n";
+            }
+        }
+    }
 
 	return line;
 }
@@ -411,7 +436,7 @@ std::string readSurfaces(std::istream &in,
                          const std::vector<Polyline*> &ply_vec,
                          const std::map<std::string,size_t>& ply_vec_names,
                          std::vector<Point*> &pnt_vec,
-                         const std::string &path)
+                         const std::string &path, std::vector<std::string>& errors)
 {
 	if (!in.good())
 	{
@@ -425,29 +450,18 @@ std::string readSurfaces(std::istream &in,
 	while (!in.eof() && tag.find("#SURFACE") != std::string::npos)
 	{
 		size_t n_polygons (polygon_vec.size());
-		tag = readSurface(in,
-		                  polygon_vec,
-		                  sfc_vec,
-		                  sfc_names,
-		                  ply_vec,
-		                  ply_vec_names,
-		                  pnt_vec,
-		                  path);
-		if (n_polygons < polygon_vec.size())
-		{
+		tag = readSurface(in, polygon_vec, sfc_vec, sfc_names, ply_vec, ply_vec_names, pnt_vec,
+						path, errors);
+		if (n_polygons < polygon_vec.size()) {
 			// subdivide polygon in simple polygons
-			GEOLIB::Surface* sfc (GEOLIB::Surface::createSurface (
-			                              *(dynamic_cast<GEOLIB::Polyline*>(polygon_vec
-			                                                                [
-			                                                                        polygon_vec.size() -
-			                                                                        1
-			                                                                ]))));
-			sfc_vec.push_back (sfc);
+			GEOLIB::Surface * sfc(GEOLIB::Surface::createSurface(
+									*(dynamic_cast<GEOLIB::Polyline*> (polygon_vec[polygon_vec.size() - 1]))));
+			sfc_vec.push_back(sfc);
 		}
 	}
 	for (size_t k(0); k < polygon_vec.size(); k++)
 		delete polygon_vec[k];
-	std::cout << "readSurfaces: number of read polygons  " << polygon_vec.size() << std::endl;
+//	std::cout << "readSurfaces: number of read polygons  " << polygon_vec.size() << std::endl;
 
 //	// subdivide all polygons in simple polygons
 //	for (std::vector<GEOLIB::Polygon*>::iterator polygon_it (polygon_vec.begin());
@@ -514,13 +528,16 @@ std::string readSurfaces(std::istream &in,
 	return tag;
 }
 
-void readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& unique_name)
+bool readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& unique_name, std::vector<std::string>& errors)
 {
 	std::cout << "GEOLIB::readGLIFile open stream from file " << fname
 	          << " ... " << std::flush;
 	std::ifstream in(fname.c_str());
-	if (!in)
+	if (!in) {
 		std::cerr << "error opening stream from " << fname << std::endl;
+		errors.push_back("[readGLIFileV4] error opening stream from " + fname);
+		return false;
+	}
 	std::cout << "done" << std::endl;
 
 	std::string tag;
@@ -545,9 +562,9 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& uniqu
 	{
 		pos = fname.rfind("\\"); // windows delimiter
 		if (pos == std::string::npos)
-			pos = fname.length() - 1;
+			pos = 0;
 	}
-	std::string path(fname.substr(0, pos + 1));
+	std::string path(fname.substr(0, pos==0 ? pos : pos + 1));
 
 	// read names of plys into temporary string-vec
 	std::map<std::string,size_t>* ply_names (new std::map<std::string,size_t>);
@@ -557,7 +574,7 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& uniqu
 		std::cout << "read polylines from stream ... " << std::flush;
 		tag = readPolylines(in, ply_vec, *ply_names, *pnt_vec,
 		                    zero_based_idx, geo->getPointVecObj(
-		                            unique_name)->getIDMap(), path);
+		                            unique_name)->getIDMap(), path, errors);
 		std::cout << " ok, " << ply_vec->size() << " polylines read"
 		          << std::endl;
 	}
@@ -571,7 +588,7 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& uniqu
 	if (tag.find("#SURFACE") != std::string::npos && in)
 	{
 		std::cout << "read surfaces from stream ... " << std::flush;
-		tag = readSurfaces(in, *sfc_vec, *sfc_names, *ply_vec, *ply_names, *pnt_vec, path);
+		tag = readSurfaces(in, *sfc_vec, *sfc_names, *ply_vec, *ply_names, *pnt_vec, path, errors);
 		std::cout << " ok, " << sfc_vec->size() << " surfaces read"
 		          << std::endl;
 	}
@@ -585,6 +602,11 @@ void readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& uniqu
 		geo->addPolylineVec(ply_vec, unique_name, ply_names);  // KR: insert into GEOObjects if not empty
 	if (!sfc_vec->empty())
 		geo->addSurfaceVec(sfc_vec, unique_name, sfc_names);  // KR: insert into GEOObjects if not empty
+
+	if (errors.empty())
+		return true;
+	else
+		return false;
 }
 
 void writeGLIFileV4 (const std::string& fname,
@@ -609,14 +631,14 @@ void writeGLIFileV4 (const std::string& fname,
 	{
 		const std::vector<GEOLIB::Polyline*>* plys (plys_vec->getVector());
 		std::cout << plys->size () << " polylines to file " << fname << std::endl;
-//		const std::vector<size_t>& pnt_id_map (geo.getPointVecObj(geo_name)->getIDMap());
 		for (size_t k(0); k < plys->size(); k++)
 		{
 			os << "#POLYLINE" << std::endl;
-			os << " $NAME " << std::endl << "  " << k << std::endl; // plys_vec->getNameOfElement ((*plys)[k]) << std::endl;
+			std::string polyline_name;
+			plys_vec->getNameOfElement((*plys)[k], polyline_name);
+			os << " $NAME " << std::endl << "  " << polyline_name << std::endl;
 			os << " $POINTS" << std::endl;
 			for (size_t j(0); j < (*plys)[k]->getNumberOfPoints(); j++)
-//				os << "  " << pnt_id_map[((*plys)[k])->getPointID(j)] << std::endl;
 				os << "  " << ((*plys)[k])->getPointID(j) << std::endl;
 		}
 	}

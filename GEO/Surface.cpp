@@ -19,11 +19,12 @@
 namespace GEOLIB
 {
 Surface::Surface (const std::vector<Point*> &pnt_vec) :
-	GeoObject(), _sfc_pnts(pnt_vec), _bv()
+	GeoObject(), _sfc_pnts(pnt_vec), _bv(), _sfc_grid(NULL)
 {}
 
 Surface::~Surface ()
 {
+	delete _sfc_grid;
 	for (size_t k(0); k < _sfc_triangles.size(); k++)
 		delete _sfc_triangles[k];
 }
@@ -35,6 +36,8 @@ void Surface::addTriangle (size_t pnt_a, size_t pnt_b, size_t pnt_c)
 	_bv.update (*_sfc_pnts[pnt_a]);
 	_bv.update (*_sfc_pnts[pnt_b]);
 	_bv.update (*_sfc_pnts[pnt_c]);
+	delete _sfc_grid;
+	_sfc_grid=NULL;
 }
 
 Surface* Surface::createSurface(const Polyline &ply)
@@ -102,13 +105,16 @@ bool Surface::isPntInBV (const double* pnt, double eps) const
 	return _bv.containsPoint (pnt, eps);
 }
 
+void Surface::initSurfaceGrid()
+{
+	if (_sfc_grid == NULL) {
+		_sfc_grid = new SurfaceGrid(this);
+	}
+}
+
 bool Surface::isPntInSfc (const double* pnt) const
 {
-	bool nfound (true);
-	for (size_t k(0); k < _sfc_triangles.size() && nfound; k++)
-		if (_sfc_triangles[k]->containsPoint (pnt))
-			nfound = false;
-
-	return !nfound;
+	return _sfc_grid->isPntInSurface(pnt);
 }
+
 } // end namespace

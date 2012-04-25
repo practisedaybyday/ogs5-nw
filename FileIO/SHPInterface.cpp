@@ -85,7 +85,7 @@ void SHPInterface::readStations(const SHPHandle &hSHP, int numberOfElements, std
 			stations->push_back(stn);
 		}
 
-		_geoObjects->addStationVec(stations, listName, GEOLIB::getRandomColor());
+		_geoObjects->addStationVec(stations, listName);
 		SHPDestroyObject(hSHPObject); // de-allocate SHPObject
 	}
 }

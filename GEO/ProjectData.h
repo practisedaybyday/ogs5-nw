@@ -27,11 +27,15 @@ public:
 	ProjectData();
 	virtual ~ProjectData();
 
+	//** Geometry functionality **//
+
 	// Returns the GEOObjects containing all points, polylines and surfaces
 	GEOLIB::GEOObjects* getGEOObjects() { return _geoObjects; }
 
 	// Returns the GEOObjects containing all points, polylines and surfaces
 	void setGEOObjects(GEOLIB::GEOObjects* geo_objects) { _geoObjects = geo_objects; }
+
+	//** Mesh functionality **//
 
 	/// Adds a new mesh
 	virtual void addMesh(MeshLib::CFEMesh* mesh, std::string &name);
@@ -45,6 +49,13 @@ public:
 	/// Removes the mesh with the given name.
 	virtual bool removeMesh(const std::string &name);
 
+	/// Checks if the name of the mesh is already exists, if so it generates a unique name.
+	bool isUniqueMeshName(std::string &name);
+
+	bool meshExists(const std::string &name);
+
+	//** Process functionality **//
+
 	/// Adds a new process
 	virtual void addProcess(ProcessInfo* pcs);
 
@@ -53,6 +64,8 @@ public:
 
 	/// Removes a process of the given type
 	virtual bool removeProcess(FiniteElement::ProcessType type);
+
+	//** FEM Condition functionality **//
 
 	/// Adds a new FEM Condition
 	virtual void addCondition(FEMCondition* cond);
@@ -79,9 +92,6 @@ public:
 	virtual void removeConditions(FiniteElement::ProcessType pcs_type = FiniteElement::INVALID_PROCESS, 
 								  std::string geo_name = "",
 								  FEMCondition::CondType cond_type = FEMCondition::UNSPECIFIED);
-
-	/// Checks if the name of the mesh is already exists, if so it generates a unique name.
-	bool isUniqueMeshName(std::string &name);
 
 private:
 	GEOLIB::GEOObjects* _geoObjects;

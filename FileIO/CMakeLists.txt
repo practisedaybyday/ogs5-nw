@@ -1,5 +1,6 @@
 # Source files
 SET( SOURCES
+	Writer.cpp
 	GMSInterface.cpp
 	GocadInterface.cpp
 	OGSIOVer4.cpp
@@ -11,6 +12,12 @@ SET( SOURCES
 	FEMIO/ProcessIO.cpp
 	FEMIO/BoundaryConditionIO.cpp
 	MeshIO/GMSHInterface.cpp
+	MeshIO/GMSHFixedMeshDensity.cpp
+	MeshIO/GMSHAdaptiveMeshDensity.cpp
+	MeshIO/GMSHPoint.cpp
+	MeshIO/GMSHLine.cpp
+	MeshIO/GMSHLineLoop.cpp
+	MeshIO/GMSHPolygonTree.cpp
 	MeshIO/LegacyVtkInterface.cpp
 	MeshIO/OGSMeshIO.cpp
 	MeshIO/TetGenInterface.cpp
@@ -19,6 +26,7 @@ SET( SOURCES
 
 # Header files
 SET( HEADERS
+	Writer.h
 	GMSInterface.h
 	GocadInterface.h
 	OGSIOVer4.h
@@ -31,17 +39,25 @@ SET( HEADERS
 	FEMIO/BoundaryConditionIO.h
 	MathIO/CRSIO.h
 	MeshIO/GMSHInterface.h
+	MeshIO/GMSHMeshDensityStrategy.h
+	MeshIO/GMSHNoMeshDensity.h
+	MeshIO/GMSHFixedMeshDensity.h
+	MeshIO/GMSHAdaptiveMeshDensity.h
+	MeshIO/GMSHPoint.h
+	MeshIO/GMSHLine.h
+	MeshIO/GMSHLineLoop.h
+	MeshIO/GMSHPolygonTree.h
 	MeshIO/LegacyVtkInterface.h
 	MeshIO/OGSMeshIO.h
 	MeshIO/TetGenInterface.h
 	GeoIO/Gmsh2GeoIO.h
 )
 
-IF (OGS_USE_NETCDF)
+IF (VTK_FOUND)
 	INCLUDE( ${VTK_USE_FILE} )
 	SET (HEADERS NetCDFInterface.h ${HEADERS})
 	SET (SOURCES NetCDFInterface.cpp ${SOURCES})
-ENDIF (OGS_USE_NETCDF)
+ENDIF (VTK_FOUND)
 
 IF (Shapelib_FOUND)
 	SET( HEADERS ${HEADERS} SHPInterface.h )
@@ -50,18 +66,23 @@ IF (Shapelib_FOUND)
 ENDIF (Shapelib_FOUND)
 
 IF (QT4_FOUND)
-	SET( HEADERS ${HEADERS} XmlIO/XMLInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XMLInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlGmlInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlGmlInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlStnInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlStnInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlCndInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlCndInterface.cpp )
-	SET( HEADERS ${HEADERS} XmlIO/XmlGspInterface.h )
-	SET (SOURCES ${SOURCES} XmlIO/XmlGspInterface.cpp )
-	SET( HEADERS ${HEADERS} FEFLOWInterface.h )
-	SET (SOURCES ${SOURCES} FEFLOWInterface.cpp )
+	SET( HEADERS ${HEADERS} 
+		XmlIO/XMLInterface.h 
+		XmlIO/XmlGmlInterface.h
+		XmlIO/XmlStnInterface.h
+		XmlIO/XmlCndInterface.h
+		XmlIO/XmlGspInterface.h
+		XmlIO/XmlLutReader.h
+		FEFLOWInterface.h
+	)
+	SET (SOURCES ${SOURCES} 
+		XmlIO/XMLInterface.cpp
+		XmlIO/XmlGmlInterface.cpp
+		XmlIO/XmlStnInterface.cpp
+		XmlIO/XmlCndInterface.cpp
+		XmlIO/XmlGspInterface.cpp
+		FEFLOWInterface.cpp 
+	)
 ENDIF (QT4_FOUND)
 
 IF(OGS_FEM_GEMS)
@@ -75,22 +96,29 @@ ADD_LIBRARY( FileIO STATIC
 )
 
 INCLUDE_DIRECTORIES(
-	.
-	./FEMIO
-	./MathIO
-	./MeshIO
-	./GeoIO
-	../Base
-	../FEM
-	../GEO
-	../MathLib
-	../MSH
-	../GEM
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/FileIO/FEMIO
+	${CMAKE_SOURCE_DIR}/FileIO/MathIO
+	${CMAKE_SOURCE_DIR}/FileIO/MeshIO
+	${CMAKE_SOURCE_DIR}/FileIO/GeoIO
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/GEM
+	${CMAKE_SOURCE_DIR}/Qt/Base
 )
 
+IF (QT4_FOUND)
+	INCLUDE_DIRECTORIES(
+		../Qt/VtkVis
+	)
+ENDIF()
+
 TARGET_LINK_LIBRARIES( FileIO
-#	Base
-#	MathLib
+	#	Base
+	#	MathLib
 	GEO
 	FEM
 )
@@ -98,6 +126,10 @@ TARGET_LINK_LIBRARIES( FileIO
 IF (Shapelib_FOUND)
 	TARGET_LINK_LIBRARIES( FileIO ${Shapelib_LIBRARIES} )
 ENDIF (Shapelib_FOUND)
+
+IF(VTK_FOUND)
+	TARGET_LINK_LIBRARIES( FileIO vtkCommon )
+ENDIF()
 
 IF(OGS_PACKAGING)
 	# Install xml schema files

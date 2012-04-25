@@ -5,10 +5,13 @@
 
 #include "XmlStnInterface.h"
 #include "DateTools.h"
+#include <limits>
 
 #include <QFile>
 #include <QtXml/QDomDocument>
 
+namespace FileIO
+{
 
 XmlStnInterface::XmlStnInterface(ProjectData* project, const std::string &schemaFile)
 : XMLInterface(project, schemaFile)
@@ -51,17 +54,18 @@ int XmlStnInterface::readFile(const QString &fileName)
 
 		for (int j = 0; j < stationList.count(); j++)
 		{
-			if (stationList.at(j).nodeName().compare("name") == 0)
-				stnName = stationList.at(j).toElement().text().toStdString();
-			else if (stationList.at(j).nodeName().compare("stations") == 0)
-				readStations(stationList.at(j), stations);
-			else if (stationList.at(j).nodeName().compare("boreholes") == 0)
-				readStations(stationList.at(j), stations);
+			const QDomNode station_node(stationList.at(j));
+			const QString station_type(station_node.nodeName());
+			if (station_type.compare("name") == 0)
+				stnName = station_node.toElement().text().toStdString();
+			else if (station_type.compare("stations") == 0)
+				readStations(station_node, stations);
+			else if (station_type.compare("boreholes") == 0)
+				readStations(station_node, stations);
 		}
 
-		GEOLIB::Color* color = GEOLIB::getRandomColor();
 		if (!stations->empty())
-			geoObjects->addStationVec(stations, stnName, color);
+			geoObjects->addStationVec(stations, stnName);
 		else
 			delete stations;
 	}
@@ -82,25 +86,24 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 		{
 			std::string stationName("[NN]");
 			std::string boreholeDate("0000-00-00");
-			double boreholeDepth(0.0);
+			double boreholeDepth(0.0), stationValue(0.0);
 
 			QDomNodeList stationFeatures = station.childNodes();
 			for(int i = 0; i < stationFeatures.count(); i++)
 			{
-				if (stationFeatures.at(i).nodeName().compare("name") == 0)
-					stationName =
-					        stationFeatures.at(i).toElement().text().
-					        toStdString();
+				const QDomNode feature_node (stationFeatures.at(i));
+				const QString feature_name (feature_node.nodeName());
+				const std::string element_text (feature_node.toElement().text().toStdString());
+				if (feature_name.compare("name") == 0)
+					stationName = feature_node.toElement().text().toStdString();
 				/* add other station features here */
 
-				else if (stationFeatures.at(i).nodeName().compare("bdepth") == 0)
-					boreholeDepth = strtod(stationFeatures.at(
-					                               i).toElement().text().
-					                       toStdString().c_str(), 0);
-				else if (stationFeatures.at(i).nodeName().compare("bdate") == 0)
-					boreholeDate  =
-					        stationFeatures.at(i).toElement().text().
-					        toStdString();
+				else if (feature_name.compare("value") == 0)
+					stationValue = strtod(element_text.c_str(), 0);
+				else if (feature_name.compare("bdepth") == 0)
+					boreholeDepth = strtod(element_text.c_str(), 0);
+				else if (feature_name.compare("bdate") == 0)
+					boreholeDate  = element_text;
 				/* add other borehole features here */
 			}
 
@@ -112,28 +115,24 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 			if (station.nodeName().compare("station") == 0)
 			{
 				GEOLIB::Station* s =
-				        new GEOLIB::Station(strtod((station.attribute("x")).
-				                                   toStdString().
-				                                   c_str(), 0),
-				                            strtod((station.attribute(
-				                                            "y")).toStdString().
-				                                   c_str(), 0),
-				                            zVal, stationName);
+				        new GEOLIB::Station(
+							strtod((station.attribute("x")).toStdString().c_str(), 0),
+				            strtod((station.attribute("y")).toStdString().c_str(), 0),
+				            zVal, 
+							stationName);
+				s->setStationValue(stationValue);
 				stations->push_back(s);
 			}
 			else if (station.nodeName().compare("borehole") == 0)
 			{
 				GEOLIB::StationBorehole* s = GEOLIB::StationBorehole::createStation(
 				        stationName,
-				        strtod((
-				                       station.attribute(
-				                               "x")).toStdString().c_str(), 0),
-				        strtod((
-				                       station.attribute(
-				                               "y")).toStdString().c_str(), 0),
+				        strtod((station.attribute("x")).toStdString().c_str(), 0),
+				        strtod((station.attribute("y")).toStdString().c_str(), 0),
 				        zVal,
 				        boreholeDepth,
 				        boreholeDate);
+				s->setStationValue(stationValue);
 				/* add stratigraphy to the borehole */
 				for(int i = 0; i < stationFeatures.count(); i++)
 					if (stationFeatures.at(i).nodeName().compare("strat") == 0)
@@ -153,6 +152,7 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 void XmlStnInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationBorehole* borehole )
 {
 	//borehole->addSoilLayer((*borehole)[0], (*borehole)[1], (*borehole)[2], "");
+	double depth_check((*borehole)[2]);
 	QDomElement horizon = stratRoot.firstChildElement();
 	while (!horizon.isNull())
 	{
@@ -164,17 +164,21 @@ void XmlStnInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::Stati
 			QDomNodeList horizonFeatures = horizon.childNodes();
 			for(int i = 0; i < horizonFeatures.count(); i++)
 				if (horizonFeatures.at(i).nodeName().compare("name") == 0)
-					horizonName =
-					        horizonFeatures.at(i).toElement().text().
-					        toStdString();
+					horizonName = horizonFeatures.at(i).toElement().text().toStdString();
 				/* add other horizon features here */
-			borehole->addSoilLayer(strtod((horizon.attribute("x")).toStdString().c_str(),
-			                              0),
-			                       strtod((horizon.attribute("y")).toStdString().c_str(),
-			                              0),
-			                       strtod((horizon.attribute("z")).toStdString().c_str(),
-			                              0),
-			                       horizonName);
+
+			double depth (strtod((horizon.attribute("z")).toStdString().c_str(), 0));
+			if (fabs(depth - depth_check) < std::numeric_limits<double>::min()) // skip soil-layer if its thickness is zero
+			{
+				borehole->addSoilLayer(strtod((horizon.attribute("x")).toStdString().c_str(), 0),
+									   strtod((horizon.attribute("y")).toStdString().c_str(), 0),
+									   depth,
+									   horizonName);
+				depth_check = depth;
+			}
+			else
+				std::cout << "Warning: Skipped layer \"" << horizonName << "\" in borehole \"" 
+					      << borehole->getName() << "\" because of thickness 0.0." << std::endl;
 		}
 		else
 			std::cout <<
@@ -184,15 +188,16 @@ void XmlStnInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::Stati
 	}
 }
 
-int XmlStnInterface::writeFile(const QString &filename, const QString &stnName) const
+int XmlStnInterface::write(std::ostream& stream)
 {
-	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
-	std::fstream stream(filename.toStdString().c_str(), std::ios::out);
-	if (!stream.is_open())
+	if (this->_exportName.empty())
 	{
-		std::cout << "XmlStnInterface::writeFile() - Could not open file...\n";
+		std::cout << "Error in XmlStnInterface::write() - No station list specified..." << std::endl;
 		return 0;
 	}
+
+	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
+
 	stream << "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"; // xml definition
 	stream << "<?xml-stylesheet type=\"text/xsl\" href=\"OpenGeoSysSTN.xsl\"?>\n\n"; // stylefile definition
 
@@ -202,7 +207,7 @@ int XmlStnInterface::writeFile(const QString &filename, const QString &stnName) 
 	root.setAttribute( "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance" );
 	root.setAttribute( "xsi:noNamespaceSchemaLocation", "http://141.65.34.25/OpenGeoSysSTN.xsd" );
 
-	const std::vector<GEOLIB::Point*>* stations (geoObjects->getStationVec(stnName.toStdString()));
+	const std::vector<GEOLIB::Point*>* stations (geoObjects->getStationVec(_exportName));
 	bool isBorehole =
 	        (static_cast<GEOLIB::Station*>((*stations)[0])->type() ==
 	         GEOLIB::Station::BOREHOLE) ? true : false;
@@ -213,13 +218,22 @@ int XmlStnInterface::writeFile(const QString &filename, const QString &stnName) 
 
 	QDomElement listNameTag = doc.createElement("name");
 	stationListTag.appendChild(listNameTag);
-	QDomText stationListNameText = doc.createTextNode(stnName);
+	QDomText stationListNameText = doc.createTextNode(QString::fromStdString(_exportName));
 	listNameTag.appendChild(stationListNameText);
 	QString listType = (isBorehole) ? "boreholes" : "stations";
 	QDomElement stationsTag = doc.createElement(listType);
 	stationListTag.appendChild(stationsTag);
 
+	bool useStationValue(false);
+	double sValue=static_cast<GEOLIB::Station*>((*stations)[0])->getStationValue();
 	size_t nStations(stations->size());
+	for (size_t i = 1; i < nStations; i++)
+		if ((static_cast<GEOLIB::Station*>((*stations)[i])->getStationValue() - sValue) < std::numeric_limits<double>::min())
+		{
+			useStationValue = true;
+			break;
+		}
+
 	for (size_t i = 0; i < nStations; i++)
 	{
 		QString stationType =  (isBorehole) ? "borehole" : "station";
@@ -233,13 +247,17 @@ int XmlStnInterface::writeFile(const QString &filename, const QString &stnName) 
 		QDomElement stationNameTag = doc.createElement("name");
 		stationTag.appendChild(stationNameTag);
 		QDomText stationNameText =
-		        doc.createTextNode(QString::fromStdString(static_cast<GEOLIB::Station*>((*
-		                                                                                 stations)
-		                                                                                [
-		                                                                                        i
-		                                                                                ])
-		                                                  ->getName()));
+		        doc.createTextNode(QString::fromStdString(static_cast<GEOLIB::Station*>((*stations)[i])->getName()));
 		stationNameTag.appendChild(stationNameText);
+
+		if (useStationValue)
+		{
+			QDomElement stationValueTag = doc.createElement("value");
+			stationTag.appendChild(stationValueTag);
+			QDomText stationValueText =
+					doc.createTextNode(QString::number(static_cast<GEOLIB::Station*>((*stations)[i])->getStationValue()));
+			stationValueTag.appendChild(stationValueText);
+		}
 
 		if (isBorehole)
 			writeBoreholeData(doc, stationTag,
@@ -248,7 +266,6 @@ int XmlStnInterface::writeFile(const QString &filename, const QString &stnName) 
 
 	std::string xml = doc.toString().toStdString();
 	stream << xml;
-	stream.close();
 	return 1;
 }
 
@@ -260,7 +277,7 @@ void XmlStnInterface::writeBoreholeData(QDomDocument &doc,
 	boreholeTag.appendChild(stationDepthTag);
 	QDomText stationDepthText = doc.createTextNode(QString::number(borehole->getDepth(), 'f'));
 	stationDepthTag.appendChild(stationDepthText);
-	if (borehole->getDate() != 0)
+	if (fabs(borehole->getDate()) > 0)
 	{
 		QDomElement stationDateTag = doc.createElement("bdate");
 		boreholeTag.appendChild(stationDateTag);
@@ -293,4 +310,6 @@ void XmlStnInterface::writeBoreholeData(QDomDocument &doc,
 			horizonNameTag.appendChild(horizonNameText);
 		}
 	}
+}
+
 }

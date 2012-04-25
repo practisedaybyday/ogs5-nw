@@ -14,5 +14,5 @@ InitialCondition::InitialCondition(const CInitialCondition &ic, const std::strin
 	               ic.getProcessDistributionType(), FEMCondition::INITIAL_CONDITION)
 {
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
-		this->setDisValue(ic.getGeoNodeValue());
+		this->setConstantDisValue(ic.getGeoNodeValue());
 }

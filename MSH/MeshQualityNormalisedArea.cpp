@@ -5,7 +5,7 @@
  */
 
 #include "MeshQualityNormalisedArea.h"
-#include "mathlib.cpp"
+#include "mathlib.h"
 
 namespace MeshLib
 {

@@ -8,6 +8,8 @@
 #ifndef QUADTREE_H_
 #define QUADTREE_H_
 
+#include <limits>
+
 namespace GEOLIB
 {
 /**
@@ -63,7 +65,6 @@ public:
 		if (_is_leaf)
 			for (size_t k(0); k < 4; k++)
 				delete _childs[k];
-
 	}
 
 	/**
@@ -72,7 +73,7 @@ public:
 	 * @param pnt the point
 	 * @return If the point can be inserted the method returns true, else false.
 	 */
-	bool addPoint (POINT* pnt)
+	bool addPoint (POINT const* pnt)
 	{
 		if ((*pnt)[0] < _ll[0]) return false;
 		if ((*pnt)[0] > _ur[0]) return false;
@@ -86,11 +87,11 @@ public:
 
 		// check if point is already in quadtree
 		bool pnt_in_quadtree (false);
-		double equal_pnt_dist (MathLib::fastpow(2, _depth) * fabs(_ll[0] - _ur[0]) * 1e-6);
-		for (size_t k(0); k < _pnts.size() && !pnt_in_quadtree; k++)
-		{
-			const double sqr_dist (MathLib::sqrDist(_pnts[k]->getData(), pnt->getData()));
-			if (sqr_dist < equal_pnt_dist)
+		for (size_t k(0); k < _pnts.size() && !pnt_in_quadtree; k++) {
+			const double v0((*(_pnts[k]))[0] - (*pnt)[0]);
+			const double v1((*(_pnts[k]))[1] - (*pnt)[1]);
+			const double sqr_dist (v0*v0 + v1*v1);
+			if (sqr_dist < std::numeric_limits<double>::epsilon())
 				pnt_in_quadtree = true;
 		}
 		if (!pnt_in_quadtree)
@@ -175,7 +176,7 @@ public:
 
 	}
 
-	const std::vector<POINT*>& getPoints () const { return _pnts; }
+	const std::vector<POINT const*>& getPoints () const { return _pnts; }
 
 	void getSquarePoints (POINT& ll, POINT& ur) const
 	{
@@ -209,29 +210,6 @@ public:
 		}
 	}
 
-	void getQuadTree (std::vector<POINT*>& pnts, std::vector<GEOLIB::Polyline*>& plys) const
-	{
-		size_t pnt_pos (pnts.size());
-		pnts.push_back (new POINT (_ll));
-		pnts.push_back (new POINT (_ur[0], _ll[1], _ll[2]));
-		pnts.push_back (new POINT (_ur));
-		pnts.push_back (new POINT (_ll[0], _ur[1], _ll[2]));
-
-		if (_father == NULL)
-		{
-			size_t ply_pos (plys.size());
-			plys.push_back (new Polyline (pnts));
-			for (size_t i(0); i < 4; i++)
-				plys[ply_pos]->addPoint (pnt_pos + i);
-			plys[ply_pos]->addPoint (pnt_pos);
-		}
-
-		if (!_is_leaf)
-			for (size_t i(0); i < 4; i++)
-				_childs[i]->getQuadTree (pnts, plys);
-
-	}
-
 	QuadTree<POINT> const* getFather ()
 	{
 		return _father;
@@ -241,6 +219,29 @@ public:
 	{
 		return _childs[quadrant];
 	}
+
+	/**
+	 * Method calculates the maximum depth of the QuadTree instance. It is used within
+	 * the method GMSHAdaptiveMeshDensity::getSteinerPoints().
+	 * @param max_depth (input/output) at the entry max_depth contains the maximum depth up to now
+	 */
+	void getMaxDepth (size_t &max_depth) const
+	{
+		if (max_depth < _depth)
+			max_depth = _depth;
+
+		for (size_t k(0); k<4; k++) {
+			if (_childs[k]) {
+				_childs[k]->getMaxDepth(max_depth);
+			}
+		}
+	}
+
+	/**
+	 * Method returns the depth of the current QuadTree node.
+	 * @return the depth of the current QuadTree node
+	 */
+	size_t getDepth () const { return _depth; }
 
 private:
 	QuadTree<POINT>* getChild (Quadrant quadrant)
@@ -344,8 +345,6 @@ private:
 			return west_neighbor->getChild (NE);
 	}
 
-	size_t getDepth () const { return _depth; }
-
 	/**
 	 * private constructor
 	 * @param ll lower left point
@@ -365,10 +364,6 @@ private:
 		// init childs
 		for (size_t k(0); k < 4; k++)
 			_childs[k] = NULL;
-
-//#ifndef NDEBUG
-//		std::cerr << "lower left: " << _ll << ", upper right: " << _ur << ", depth: " << _depth << std::endl;
-//#endif
 	}
 
 	void splitNode ()
@@ -377,41 +372,23 @@ private:
 		POINT mid_point(_ll);
 		mid_point[0] += (_ur[0] - _ll[0]) / 2.0;
 		mid_point[1] += (_ur[1] - _ll[1]) / 2.0;
-		_childs[0] = new QuadTree<POINT> (mid_point,
-		                                  _ur,
-		                                  this,
-		                                  _depth + 1,
-		                                  _max_points_per_node);                           // north east
+		_childs[0] = new QuadTree<POINT> (mid_point, _ur, this, _depth + 1, _max_points_per_node); // north east
 		POINT h_ll(mid_point), h_ur(mid_point);
 		h_ll[0] = _ll[0];
 		h_ur[1] = _ur[1];
-		_childs[1] = new QuadTree<POINT> (h_ll,
-		                                  h_ur,
-		                                  this,
-		                                  _depth + 1,
-		                                  _max_points_per_node);                       // north west
-		_childs[2] = new QuadTree<POINT> (_ll,
-		                                  mid_point,
-		                                  this,
-		                                  _depth + 1,
-		                                  _max_points_per_node);                           // south west
+		_childs[1] = new QuadTree<POINT> (h_ll, h_ur, this, _depth + 1, _max_points_per_node); // north west
+		_childs[2] = new QuadTree<POINT> (_ll, mid_point, this, _depth + 1, _max_points_per_node); // south west
 		h_ll = _ll;
 		h_ll[0] = mid_point[0];
 		h_ur = _ur;
 		h_ur[1] = mid_point[1];
-		_childs[3] = new QuadTree<POINT> (h_ll,
-		                                  h_ur,
-		                                  this,
-		                                  _depth + 1,
-		                                  _max_points_per_node);                         // south east
+		_childs[3] = new QuadTree<POINT> (h_ll, h_ur, this, _depth + 1, _max_points_per_node); // south east
 
 		// distribute points to sub quadtrees
-		for (size_t j(0); j < _pnts.size(); j++)
-		{
+		for (size_t j(0); j < _pnts.size(); j++) {
 			bool nfound(true);
 			for (size_t k(0); k < 4 && nfound; k++)
-				if (_childs[k]->addPoint(_pnts[j]))
-					nfound = false;
+				if (_childs[k]->addPoint(_pnts[j])) nfound = false;
 
 		}
 		_pnts.clear();
@@ -492,7 +469,7 @@ private:
 	 */
 	POINT _ur;
 	size_t _depth;
-	std::vector<POINT*> _pnts;
+	std::vector<POINT const*> _pnts;
 	bool _is_leaf;
 	/**
 	 * maximum number of points per leaf

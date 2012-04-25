@@ -8,7 +8,11 @@
 #ifndef OGSMESHIO_H_
 #define OGSMESHIO_H_
 
-#include <fstream>
+#include "Writer.h"
+
+#include <sstream>
+#include <iostream>
+#include <vector>
 
 namespace MeshLib
 {
@@ -18,16 +22,26 @@ class CElem;
 
 namespace FileIO
 {
-class OGSMeshIO
+class OGSMeshIO : public Writer
 {
 public:
-	/// Read a OGS mesh from file.
-	static MeshLib::CFEMesh* loadMeshFromFile(std::string const& fileName);
+	/// @brief Constructor.
+	OGSMeshIO();
 
-	/// Write an OGS msh to a file.
-	static void write (MeshLib::CFEMesh const* mesh, std::ofstream &out);
+	/// @brief Read a OGS mesh from file.
+	MeshLib::CFEMesh* loadMeshFromFile(std::string const& fileName);
+
+	/// @brief Sets the mesh.
+	void setMesh(MeshLib::CFEMesh const* mesh);
+
+protected:
+	/// @brief Write functionality.
+	int write(std::ostream &out);
+
 private:
-	static void writeElementsExceptLines (std::vector<MeshLib::CElem*> const& ele_vec, std::ofstream &out);
+	void writeElementsExceptLines (std::vector<MeshLib::CElem*> const& ele_vec, std::ostream &out);
+
+	MeshLib::CFEMesh const* _mesh;
 };
 } // end namespace FileIO
 

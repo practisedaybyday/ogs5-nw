@@ -18,11 +18,13 @@ set( SOURCES
 	PointVec.cpp
 	Polygon.cpp
 	Polyline.cpp
+	PolylineWithSegmentMarker.cpp
 	ProjectData.cpp
 	SimplePolygonTree.cpp
 	Station.cpp
 	Surface.cpp
 	Triangle.cpp
+	SurfaceGrid.cpp
 	Raster.cpp
 )
 
@@ -49,6 +51,7 @@ set( HEADERS
 	PointWithID.h
 	Polygon.h
 	Polyline.h
+	PolylineWithSegmentMarker.h
 	PolylineVec.h
 	ProjectData.h
 	PropertyBounds.h
@@ -56,6 +59,7 @@ set( HEADERS
 	SimplePolygonTree.h
 	Station.h
 	Surface.h
+	SurfaceGrid.h
 	SurfaceVec.h
 	TemplatePoint.h
 	TemplateVec.h
@@ -71,12 +75,13 @@ add_library( GEO STATIC
 
 
 include_directories(
-	.
-	../Base
-	../FEM
-	../FileIO
-	../MathLib
-	../MSH
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/MathLib/LinAlg
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/MSH
 )
 
 

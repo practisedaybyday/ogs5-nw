@@ -58,6 +58,8 @@
 #include "FEMIO/ProcessIO.h"
 #include "readNonBlankLineFromInputStream.h"
 
+#include "SourceTerm.h"
+
 using FiniteElement::CElement;
 using MeshLib::CElem;
 using MeshLib::CEdge;
@@ -92,6 +94,38 @@ CSourceTerm::CSourceTerm() :
    //  display_mode = false; //OK
 }
 
+// KR: Conversion from GUI-ST-object to CSourceTerm
+CSourceTerm::CSourceTerm(const SourceTerm* st)
+	: ProcessInfo(st->getProcessType(),st->getProcessPrimaryVariable(),NULL), 
+	  GeoInfo(st->getGeoType(),st->getGeoObj()), 
+	  DistributionInfo(st->getProcessDistributionType())
+{
+	setProcess( PCSGet( this->getProcessType() ) );
+	this->geo_name = st->getGeoName();
+	const std::vector<size_t> dis_nodes = st->getDisNodes();
+	const std::vector<double> dis_values = st->getDisValues();
+	
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
+	{
+		this->geo_node_value = dis_values[0];
+	}
+	else if (this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
+	{
+		for (size_t i=0; i<dis_values.size(); i++)
+		{
+			this->PointsHaveDistribedBC.push_back(static_cast<int>(dis_nodes[i]));
+			this->DistribedBC.push_back(dis_values[i]);
+		}
+	}
+	else if (this->getProcessDistributionType() == FiniteElement::DIRECT)
+	{
+		// variable "fname" needs to be set, this must be done from outside! 
+	}
+	else
+		std::cout << "Error in CBoundaryCondition() - DistributionType \""
+		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType()) 
+				  << "\" currently not supported." << std::endl;
+}
 
 /**************************************************************************
  FEMLib-Method:
@@ -768,9 +802,12 @@ void CSourceTerm::Write(std::fstream* st_file)
    *st_file << convertPrimaryVariableToString (getProcessPrimaryVariable()) << std::endl;
    //--------------------------------------------------------------------
    //GEO_TYPE
-   *st_file << " $GEO_TYPE" << std::endl;
-   *st_file << "  ";
-   *st_file << getGeoTypeAsString() << " " << geo_name << std::endl;
+   if (this->getProcessDistributionType() != FiniteElement::DIRECT)
+   {
+	   *st_file << " $GEO_TYPE" << std::endl;
+	   *st_file << "  ";
+	   *st_file << getGeoTypeAsString() << " " << geo_name << std::endl;
+   }
    //--------------------------------------------------------------------
    // TIM_TYPE
    if (tim_type_name.size() > 0)                  //OK
@@ -809,6 +846,9 @@ void CSourceTerm::Write(std::fstream* st_file)
             *st_file << "  " << PointsHaveDistribedBC[i] << " ";
             *st_file << "  " << DistribedBC[i] << std::endl;
          }
+         break;
+      case  FiniteElement::DIRECT:
+         *st_file << " " << this->fname << std::endl;
          break;
       default:
          std::cerr << "this distributition type is not handled in CSourceTerm::Write" << std::endl;

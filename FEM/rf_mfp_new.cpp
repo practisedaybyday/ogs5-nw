@@ -1256,7 +1256,7 @@ double CFluidProperties::Viscosity(double* variables)
 		                                  //NB
 		viscosity = Fluid_Viscosity(density,mfp_arguments[1],mfp_arguments[0],fluid_id);
 		break;
-	case 10: // mixture µ= sum_i sum_j x_i*x_j*intrc*sqrt[µ_i(rho,T)*µ_j(rho,T)]
+	case 10: // mixture ?= sum_i sum_j x_i*x_j*intrc*sqrt[?_i(rho,T)*?_j(rho,T)]
 		viscosity = MixtureSubProperity(3, (long)  variables[2], variables[0], variables[1]);
 		break;
 	case 18: //BG, NB using calculated viscosities at nodes from the phase transition model
@@ -1542,8 +1542,8 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 
 	if(assem->PcsType == S)
 	{
-		dens_arg[0] = assem->interpolate(assem->NodalVal0); 
-		dens_arg[1] = assem->interpolate(assem->NodalVal_t0); 
+		dens_arg[0] = assem->interpolate(assem->NodalVal0);
+		dens_arg[1] = assem->interpolate(assem->NodalVal_t0);
 		dens_arg[2] = assem->Index;
 		heat_capacity_fluids = assem->FluidProp->Density(dens_arg) *assem->FluidProp->SpecificHeatCapacity(dens_arg);
 	}
@@ -3166,7 +3166,7 @@ double  CFluidProperties::MaxwellStefanDiffusionCoef(int idx_elem, double p, dou
 double CFluidProperties::SuperCompressibiltyFactor(int idx_elem, double p, double T)
 {
 	std::vector<double> roots;
-	double A, B, z1, z2, z3, h, m0, a0, a, b; 
+	double A, B, z1, z2, z3, h, m0, a0, a, b;
 	if(density_model == 15)
 	{
 	m0 = 0.37464 + 1.54226*omega - 0.26992*pow(omega, 2);
@@ -3184,7 +3184,7 @@ double CFluidProperties::SuperCompressibiltyFactor(int idx_elem, double p, doubl
 	z1= B-1.0;
 	z2=(A-3.0*pow(B,2)-2.0*B);
 	z3=(pow(B,3) + pow(B,2)-A*B);
-	NsPol3(z1,z2,z3,&roots);                     
+	NsPol3(z1,z2,z3,&roots);
 	h = FindMax(roots);
 	return h;
 }
@@ -3195,10 +3195,7 @@ double CFluidProperties::SuperCompressibiltyFactor(int idx_elem, double p, doubl
 **************************************************************************/
 double CFluidProperties::dZ(int idx_elem, double p, double T, int nk)
 {
-	double adiabatic_index, sound_velocity, m0, a0, a, b, Vm, dpdVm, dVmdT, da, dZ, A, B, dA, dB, z, JCT;
-	double dens_arg[3], cp, cv, Mm;
-	dens_arg[0] = p;
-	dens_arg[1] = T;
+	double m0, a0, a, b, Vm, dpdVm, da, dZ, A, B, dA, dB, z;
 	if(density_model == 15)
 	{
 	m0 = 0.37464 + 1.54226*omega - 0.26992*pow(omega, 2);
@@ -3230,14 +3227,14 @@ double CFluidProperties::dZ(int idx_elem, double p, double T, int nk)
 	dpdVm= -GAS_CONSTANT*T*pow((Vm-b),-2) +  2.0*a*(Vm+b)*pow((Vm*Vm + 2.0*Vm*b - b*b), -2);
 	dZ  = p*pow(dpdVm*GAS_CONSTANT*T, -1) + (z/p);
 	// above calculation has tested with value of sound velocity
-	//adiabatic_index = cp/cv;
-	//sound_velocity = Vm*sqrt(-adiabatic_index*dpdVm/Mm);
+	//double adiabatic_index = cp/cv;
+	//double sound_velocity = Vm*sqrt(-adiabatic_index*dpdVm/Mm);
 	}
 
     if(nk == 1)//dz/dT
-    { 
+    {
 	dZ= dA*(B-z) + dB*(6*B*z + 2*z - 3*B*B - 2*B + A - z*z);
-	dZ /= (3*z*z + 2*(B - 1)*z + A - 2*B - 3*B*B); 
+	dZ /= (3*z*z + 2*(B - 1)*z + A - 2*B - 3*B*B);
 	// above calculation has tested with value of JCT coefficient
 	//dVmdT= (GAS_CONSTANT/p)*(T*dZ + z);
 	//JCT = (T*dVmdT - Vm);
@@ -3296,7 +3293,7 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
 	}
 	break;
 
-case 3:// dynamic viscosity 'µ'
+case 3:// dynamic viscosity '?'
 	for (int i = 0; i < CNr; i++)
 	{
 	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
@@ -3354,7 +3351,7 @@ case 6:// thermal conductivity 'k'
 	variables += mass_fraction[i]*sqrt(-CPr[i]);
 	}
 	variables = variables*variables;
-	
+
 	break;
 
 }

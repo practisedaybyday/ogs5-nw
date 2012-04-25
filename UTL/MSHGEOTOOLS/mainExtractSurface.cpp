@@ -67,10 +67,11 @@ int main (int argc, char* argv[])
 	GEOLIB::GEOObjects* geo (new GEOLIB::GEOObjects);
 	tmp = argv[4];
 	std::string unique_name;
-	FileIO::readGLIFileV4(tmp, geo, unique_name);
+	std::vector<std::string> error_strings;
+	FileIO::readGLIFileV4(tmp, geo, unique_name, error_strings);
 
 	// *** get Polygon
-	const std::vector<GEOLIB::Polyline*>* plys (geo->getPolylineVec (tmp));
+	const std::vector<GEOLIB::Polyline*>* plys (geo->getPolylineVec (unique_name));
 	if (!plys)
 	{
 		std::cout << "could not get vector of polylines" << std::endl;
@@ -84,26 +85,32 @@ int main (int argc, char* argv[])
 
 	ProjectData* project_data (new ProjectData);
 	project_data->setGEOObjects (geo);
-	XmlGmlInterface xml_out (project_data, "OpenGeoSysGLI.xsd");
-	for (size_t k(0); k < n_plys; k++)
-	{
-		GEOLIB::Polygon polygon (*((*plys)[k]));
+	FileIO::XmlGmlInterface xml_out (project_data, "OpenGeoSysGLI.xsd");
+	for (size_t k(0); k < n_plys; k++) {
 		std::vector<GEOLIB::Point*>* sfc_pnts (new std::vector<GEOLIB::Point*>);
 		std::vector<GEOLIB::Surface*>* surfaces (new std::vector<GEOLIB::Surface*>);
-		GEOLIB::Surface* surface (extract_surface.extractSurface(polygon, *sfc_pnts));
-		surfaces->push_back (surface);
-		std::cout << "number of triangles in surface " << k << ": " <<
-		surface->getNTriangles() << std::endl;
 
-		std::string fname ("PointsForSurface");
-		fname += number2str (k);
-		geo->addPointVec (sfc_pnts, fname);
-		geo->addSurfaceVec (surfaces, fname);
+		if ( ((*plys)[k])->isClosed() ) {
+			GEOLIB::Polygon polygon (*((*plys)[k]));
+			GEOLIB::Surface* surface(extract_surface.extractSurface(polygon, *sfc_pnts));
+			surfaces->push_back (surface);
+			std::cout << "number of triangles in surface " << k << ": " << surface->getNTriangles() << std::endl;
+		}
 
-		std::string out_fname ("Surface");
-		out_fname += number2str (k);
-		out_fname += ".gml";
-		xml_out.writeFile (out_fname, fname);
+		if (! surfaces->empty()) {
+			std::string fname ("PointsForSurface");
+			fname += number2str (k);
+			geo->addPointVec (sfc_pnts, fname);
+			geo->addSurfaceVec (surfaces, fname);
+
+			std::string out_fname ("Surface");
+			out_fname += number2str (k);
+			out_fname += ".gml";
+			xml_out.setNameForExport(fname);
+			xml_out.writeToFile(out_fname);
+		} else {
+			std::cout << "could not create any surface" << std::endl;
+		}
 	}
 
 	delete mesh;

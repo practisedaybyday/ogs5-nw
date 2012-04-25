@@ -41,6 +41,13 @@ public:
 	 */
 	TemplatePoint (T const* x);
 
+	/**
+	 * copy constructor - constructs a copy of the source object
+	 * @param src the source object
+	 * @return
+	 */
+	TemplatePoint (TemplatePoint const& src);
+
 	/** virtual destructor */
 	virtual ~TemplatePoint() {}
 
@@ -75,15 +82,15 @@ public:
 		os << _x[0] << " " << _x[1] << " " << _x[2] << std::flush;
 	}
 
-	/**
-	 * write point coordinates into string
-	 */
-	virtual std::string write () const
-	{
-		std::ostringstream strStream;
-		strStream << _x[0] << " " << _x[1] << " " << _x[2];
-		return strStream.str();
-	}
+//	/**
+//	 * write point coordinates into string
+//	 */
+//	virtual std::string write () const
+//	{
+//		std::ostringstream strStream;
+//		strStream << _x[0] << " " << _x[1] << " " << _x[2];
+//		return strStream.str();
+//	}
 
 	/** read point coordinates into stream (used from operator>>) */
 	virtual void read (std::istream &is)
@@ -116,6 +123,13 @@ template <class T> TemplatePoint<T>::TemplatePoint (T const* x) :
 {
 	for (size_t k(0); k < 3; k++)
 		_x[k] = x[k];
+}
+
+template <class T> TemplatePoint<T>::TemplatePoint (TemplatePoint <T>const& src) :
+	GeoObject()
+{
+	for (size_t k(0); k<3; k++)
+		_x[k] = src._x[k];
 }
 
 /** overload the output operator for class Point */

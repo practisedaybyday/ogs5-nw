@@ -25,6 +25,9 @@
 
 namespace GEOLIB
 {
+
+class PointWithID;
+
 /**
  * \ingroup GEOLIB
  *
@@ -56,11 +59,15 @@ public:
 	 * PointVec will take the ownership of the vector, i.e. it
 	 * deletes the names
 	 * @param type the type of the point, \sa enum PointType
+	 * @param rel_eps This is a relative error tolerance value for the test of identical points.
+	 * The size of the axis aligned bounding box multiplied with the value of rel_eps gives the
+	 * real tolerance \f$tol\f$. Two points \f$p_0, p_1 \f$ are identical iff
+	 * \f$|p_1 - p_0| \le tol.\f$
 	 * @return an object of type PointVec
 	 */
 	PointVec (const std::string& name, std::vector<Point*>* points,
 	          std::map<std::string, size_t>* name_id_map = NULL,
-	          PointType type = PointVec::POINT);
+	          PointType type = PointVec::POINT, double rel_eps = sqrt(std::numeric_limits<double>::min()));
 
 	/** Destructor deletes all Points of this PointVec. */
 	virtual ~PointVec ();
@@ -94,11 +101,17 @@ public:
 	double getShortestPointDistance () const;
 	const GEOLIB::AABB& getAxisAlignedBoundingBox () const;
 
+	/// Creates a real copy of the point vector in memeory.
+	static std::vector<GEOLIB::Point*>* deepcopy(const std::vector<GEOLIB::Point*> *pnt_vec);
+
+	/// Returns a subset of this point vector containing only the points specified in "subset" as PointWithID-objects
+	std::vector<GEOLIB::Point*>* getSubset(const std::vector<size_t> &subset);
+
 //	/// Returns the name of an element given the element id.
 //	const std::string getNameOfElementByID (size_t id) const;
 
 private:
-	void makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector<size_t> &pnt_id_map);
+	void makePntsUnique (std::vector<GEOLIB::Point*>* pnt_vec, std::vector<size_t> &pnt_id_map, double eps = sqrt(std::numeric_limits<double>::min()));
 
 	/** copy constructor doesn't have an implementation */
 	// compiler does not create a (possible unwanted) copy constructor
@@ -132,7 +145,7 @@ private:
 	double _sqr_shortest_dist;
 
 	void calculateAxisAlignedBoundingBox ();
-	AABB aabb;
+	AABB _aabb;
 };
 } // end namespace
 

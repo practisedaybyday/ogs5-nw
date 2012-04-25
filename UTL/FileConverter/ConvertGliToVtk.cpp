@@ -5,6 +5,9 @@
  * Implementation of ConvertGliToVtk utility
  */
 
+// for backward compatibility, see http://www.boost.org/doc/libs/1_48_0/libs/filesystem/v2/doc/index.htm
+#define BOOST_FILESYSTEM_VERSION 2
+
 // ** INCLUDES **
 #include "GEOObjects.h"
 #include "OGSIOVer4.h"
@@ -46,7 +49,8 @@ int main (int argc, char const* argv[])
 		directory_iterator end;
 		for (directory_iterator it("./"); it != end; ++it)
 		{
-			string curFile = it->path().filename(); //.string();
+			string curFile = it->path().filename(); // .string();
+
 			if (regex_match(curFile, e))
 				filenames.push_back(curFile);
 		}
@@ -61,7 +65,8 @@ int main (int argc, char const* argv[])
 
 		GEOLIB::GEOObjects* geo (new GEOLIB::GEOObjects);
 		std::string unique_name;
-		FileIO::readGLIFileV4(filename, geo, unique_name);
+		std::vector<std::string> error_strings;
+		FileIO::readGLIFileV4(filename, geo, unique_name, error_strings);
 		const std::vector< Point* >* pnts = geo->getPointVec(filename);
 		if (pnts)
 		{

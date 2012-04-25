@@ -34,7 +34,7 @@ int main (int argc, char* argv[])
 	        "/home/fischeth/workspace/OGS-FirstFloor/sources/FileIO/OpenGeoSysGLI.xsd");
 	ProjectData* project_data (new ProjectData);
 	project_data->setGEOObjects (geo_objs);
-	XmlGmlInterface xml(project_data, schema_name);
+	FileIO::XmlGmlInterface xml(project_data, schema_name);
 	std::string fname (argv[1]);
 	xml.readFile(QString::fromStdString (fname));
 

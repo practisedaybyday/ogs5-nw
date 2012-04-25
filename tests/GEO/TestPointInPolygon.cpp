@@ -1,13 +1,12 @@
 /**
- * \file testGeo.cpp
+ * \file TestPointInPolygon.cpp
  * 2011-01-31 TF Initial implementation
  *
- * Tests for the GEO directory
  */
 
 // ** INCLUDES **
 #include "Configure.h"
-#include <gtest/gtest.h>
+#include "gtest.h"
 
 #include <string>
 #include <vector>
@@ -24,10 +23,11 @@
 TEST(GEO, PointInPolygon)
 {
 	GEOLIB::GEOObjects* _geo (new GEOLIB::GEOObjects);
-	std::string fname(SOURCEPATH);
-	fname += "/tests/data/GEO/TestDataPointInPolygon.gli";
+	std::string fname(TESTDATAPATH);
+	fname += "/input/SimplePolygon.gli";
+	std::vector<std::string> errors;
 	std::string unique_name;
-	FileIO::readGLIFileV4(fname, _geo, unique_name);
+	FileIO::readGLIFileV4(fname, _geo, unique_name, errors);
 	const std::vector<GEOLIB::Polyline*>* plys(_geo->getPolylineVec(unique_name));
 	std::vector<GEOLIB::Point*>* pnts_in_polygon(new std::vector<GEOLIB::Point*>);
 	std::vector<GEOLIB::Point*>* pnts_outside_of_polygon(new std::vector<GEOLIB::Point*>);
@@ -54,6 +54,6 @@ TEST(GEO, PointInPolygon)
 	}
 
 	ASSERT_EQ (static_cast<int>(pnts.size()), static_cast<int>(pnts_in_polygon->size() + pnts_outside_of_polygon->size()));
-	ASSERT_EQ (static_cast<int>(pnts_in_polygon->size()), 95512);
-	ASSERT_EQ (static_cast<int>(pnts_outside_of_polygon->size()),  198888);
+	ASSERT_EQ (static_cast<int>(pnts_in_polygon->size()), 95511);
+	ASSERT_EQ (static_cast<int>(pnts_outside_of_polygon->size()),  198889);
 }

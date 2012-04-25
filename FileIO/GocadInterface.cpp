@@ -331,10 +331,8 @@ void GocadInterface::readTSurfData (std::istream &in)
 		{
 			// do something with border
 		}
-		else if (it->find("END") != std::string::npos)
-			end_not_read = false;
 		else
-			end_not_read = false;  // read unknown information tag
+			end_not_read = false;  // read unknown information tag ( or END-tag )
 	}
 
 	// go trough triangles and change idx
