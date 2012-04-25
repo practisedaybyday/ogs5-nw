@@ -8,6 +8,9 @@
 
 #include "XMLInterface.h"
 
+namespace FileIO
+{
+
 /**
  * \brief Reads and writes GeoObjects to and from XML files.
  */
@@ -26,22 +29,8 @@ public:
 	/// Reads an xml-file containing geometric object definitions into the GEOObjects used in the contructor
 	int readFile(const QString &fileName);
 
-	/**
-	 * Writes geometric data from GEOObjects to an xml-file (using the QString version)
-	 * \param filename The file into which the data will be written.
-	 * \param gliName The name of the GEOOBjects that will be written into the file.
-	 */
-	void writeFile(const std::string &filename, const std::string &gliName) const
-	{
-		writeFile (QString::fromStdString(filename), QString::fromStdString(gliName));
-	}
-
-	/**
-	 * Writes geometric data from GEOObjects to an xml-file
-	 * \param filename The file into which the data will be written.
-	 * \param gliName The name of the GEOOBjects that will be written into the file.
-	 */
-	int writeFile(const QString &filename, const QString &gliName) const;
+protected:
+	int write(std::ostream& stream);
 
 private:
 	/// Reads GEOLIB::Point-objects from an xml-file
@@ -64,5 +53,7 @@ private:
 	                     std::map<std::string, size_t>* sfc_names );
 
 };
+
+}
 
 #endif // XMLGMLINTERFACE_H

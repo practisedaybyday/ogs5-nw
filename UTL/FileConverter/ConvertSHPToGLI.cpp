@@ -96,7 +96,7 @@ void convertPoints (DBFHandle dbf_handle,
 
 	GEOLIB::GEOObjects* geo_objs (new GEOLIB::GEOObjects());
 	if (station)
-		geo_objs->addStationVec(points, points_group_name, GEOLIB::getRandomColor());
+		geo_objs->addStationVec(points, points_group_name);
 	else
 		geo_objs->addPointVec(points, points_group_name);
 
@@ -107,13 +107,14 @@ void convertPoints (DBFHandle dbf_handle,
 		schema_name = "OpenGeoSysGLI.xsd";
 	ProjectData* project_data (new ProjectData);
 	project_data->setGEOObjects (geo_objs);
-	XmlGmlInterface xml (project_data, schema_name);
 	if (station) {
-		XmlStnInterface xml (project_data, schema_name);
-		xml.writeFile(out_fname, points_group_name);
+		FileIO::XmlStnInterface xml (project_data, schema_name);
+		xml.setNameForExport(points_group_name);
+		xml.writeToFile(out_fname);
 	} else {
-		XmlGmlInterface xml (project_data, schema_name);
-		xml.writeFile(out_fname, points_group_name);
+		FileIO::XmlGmlInterface xml (project_data, schema_name);
+		xml.setNameForExport(points_group_name);
+		xml.writeToFile(out_fname);
 	}
 
 	delete project_data;

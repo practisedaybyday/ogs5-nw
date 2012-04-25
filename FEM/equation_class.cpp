@@ -756,6 +756,49 @@ int Linear_EQS::Solver(CNumerics* num)
 		ierr = lis_matrix_set_crs(nonzero,A->ptr,A->col_idx, value,AA);
 		ierr = lis_matrix_assemble(AA);
 
+//		{
+//			std::cout << "print some lines of matrix: " << std::endl;
+//			for (size_t r(0); r < 5; r++) {
+//					const unsigned row_end(A->ptr[r+1]);
+//					std::cout << r << ": " << std::flush;
+//					for (unsigned j(A->ptr[r]); j< row_end; j++) {
+//							std::cout << value[A->col_idx[j]] << " ";
+//					}
+//					std::cout << std::endl;
+//			}
+//
+//
+//			std::string fname("CO2MAN-Matrix.bin");
+//			std::ofstream os (fname.c_str(), std::ios::binary);
+//			std::cout << "writing matrix in binary format to " << fname << " ... " << std::flush;
+//			unsigned mat_size (size);
+//			os.write((char*) &mat_size, sizeof(unsigned));
+//			unsigned *iA(new unsigned[mat_size+1]);
+//			for (size_t k(0); k<mat_size+1; k++) {
+//				iA[k] = A->ptr[k];
+//			}
+//
+//			unsigned mat_nnz(iA[mat_size]);
+//			unsigned *jA(new unsigned[mat_nnz]);
+//			for (size_t k(0); k<mat_nnz; k++) {
+//				jA[k] = A->col_idx[k];
+//			}
+//
+//			double *A(new double[mat_nnz]);
+//			for (size_t k(0); k<mat_nnz; k++) {
+//				A[k] = value[k];
+//			}
+//
+//			os.write((char*) iA, (mat_size+1) * sizeof(unsigned));
+//			os.write((char*) jA, iA[mat_size] * sizeof(unsigned));
+//			os.write((char*) A, iA[mat_size] * sizeof(double));
+//			delete [] A;
+//			delete [] jA;
+//			delete [] iA;
+//			os.close();
+//			std::cout << "done" << std::endl;
+//		}
+
 		// Assemble the vector, b, x
 		//OK411 int iflag = 0;
 		ierr = lis_vector_duplicate(AA,&bb);

@@ -69,9 +69,10 @@ int main (int argc, char* argv[])
 	}
 
 	tmp = argv[4];
-	std::ofstream out (tmp.c_str());
 	std::cout << "writing mesh to file " << tmp << " ... " << std::flush;
-	FileIO::OGSMeshIO::write (mesh, out);
+	FileIO::OGSMeshIO mesh_io;
+	mesh_io.setMesh(mesh);
+	mesh_io.writeToFile (tmp);
 	std::cout << "ok" << std::endl;
 
 	delete mesh;

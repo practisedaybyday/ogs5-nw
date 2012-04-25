@@ -96,7 +96,7 @@ set( SOURCES
 	rf_react.cpp
 	rf_st_new.cpp
 	rf_tim_new.cpp
-	rfmat_cp.cpp	
+	rfmat_cp.cpp
 	SourceTerm.cpp
 	timer.cpp
 	tools.cpp
@@ -110,32 +110,32 @@ set( SOURCES
 IF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK )
 	SET( SOURCES ${SOURCES} equation_class.h equation_class.cpp )
     IF(OGS_FEM_JFNK)
-       SET( SOURCES ${SOURCES} rf_pcs1.cpp ) 
-    ENDIF(OGS_FEM_JFNK)	
+       SET( SOURCES ${SOURCES} rf_pcs1.cpp )
+    ENDIF(OGS_FEM_JFNK)
 ELSE(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK)
 	SET( SOURCES ${SOURCES} solver.h solver.cpp matrix.h matrix.cpp)
 ENDIF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK)
 
 
 IF(OGS_FEM_GEMS)
-	SET( SOURCES ${SOURCES} rf_REACT_GEM.h rf_REACT_GEM.cpp ) 
+	SET( SOURCES ${SOURCES} rf_REACT_GEM.h rf_REACT_GEM.cpp )
 ENDIF( OGS_FEM_GEMS )
 
 IF(OGS_FEM_BRNS)
-	SET( SOURCES ${SOURCES} rf_REACT_BRNS.h rf_REACT_BRNS.cpp ) 
+	SET( SOURCES ${SOURCES} rf_REACT_BRNS.h rf_REACT_BRNS.cpp )
 ENDIF(OGS_FEM_BRNS)
 
 include_directories(
-	.
-	../Base
-	../MathLib
-	../GEO
-	../FileIO
-	../FileIO/MeshIO
-	../FileIO/FEMIO
-	../MSH
-	../GEM
-	../OGSProject
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/FileIO/MeshIO
+	${CMAKE_SOURCE_DIR}/FileIO/FEMIO
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/GEM
+	${CMAKE_SOURCE_DIR}/OGSProject
 )
 
 IF (LIS)
@@ -143,7 +143,7 @@ IF (LIS)
 ENDIF (LIS)
 
 IF(OGS_FEM_PQC)
-  INCLUDE_DIRECTORIES(../PQC)
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/PQC)
 ENDIF (OGS_FEM_PQC)
 
 IF (PARALLEL_USE_MPI)
@@ -153,12 +153,12 @@ ENDIF (PARALLEL_USE_MPI)
 # Create the library
 add_library( FEM STATIC ${SOURCES} )
 
-target_link_libraries( 
+target_link_libraries(
 	FEM
 	Base
 	FileIO
- 	GEO
- 	MSH
+	GEO
+	MSH
 	OGSProject
 )
 
@@ -193,7 +193,7 @@ if (UNIX)
 	if (OGS_FEM_GEMS)
 		target_link_libraries( FEM gemipm2k boost_thread-mt )
 	endif (OGS_FEM_GEMS)
-	
+
 	if (OGS_FEM_BRNS)
 		target_link_libraries( FEM dl )
 	endif (OGS_FEM_BRNS)
@@ -201,7 +201,7 @@ if (UNIX)
 	if (LIS)
 		target_link_libraries( FEM ${LIS_LIBRARIES} )
 	endif (LIS)
-	
+
 	if (MKL)
 		target_link_libraries( FEM ${MKL_LIBRARIES} )
 	endif (MKL)
@@ -212,6 +212,6 @@ if (UNIX)
 endif (UNIX)
 
 IF (OGS_FEM_CHEMAPP)
-	INCLUDE_DIRECTORIES ( ../EQL )
+	INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/EQL )
 	TARGET_LINK_LIBRARIES ( FEM EQL )
 ENDIF (OGS_FEM_CHEMAPP)

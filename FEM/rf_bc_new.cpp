@@ -42,6 +42,8 @@ extern void remove_white_space(std::string*);
 #include "LinearInterpolation.h"
 #include "mathlib.h"
 
+#include "BoundaryCondition.h"
+
 #ifndef _WIN32
 #include <cstdio>
 #include <cstdlib>
@@ -125,6 +127,35 @@ CBoundaryCondition::CBoundaryCondition() :
 	time_contr_curve = -1;                //WX
 	bcExcav = -1;                         //WX
 	MatGr = -1;                           //WX
+}
+
+// KR: Conversion from GUI-BC-object to CBoundaryCondition
+CBoundaryCondition::CBoundaryCondition(const BoundaryCondition* bc)
+	: ProcessInfo(bc->getProcessType(),bc->getProcessPrimaryVariable(),NULL),
+	  GeoInfo(bc->getGeoType(),bc->getGeoObj()),
+	  DistributionInfo(bc->getProcessDistributionType())
+{
+	setProcess( PCSGet( this->getProcessType() ) );
+	this->geo_name = bc->getGeoName();
+	const std::vector<size_t> dis_nodes = bc->getDisNodes();
+	const std::vector<double> dis_values = bc->getDisValues();
+
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
+	{
+		this->geo_node_value = dis_values[0];
+	}
+	else if (this->getProcessDistributionType() == FiniteElement::LINEAR)
+	{
+		for (size_t i=0; i<dis_values.size(); i++)
+		{
+			this->_PointsHaveDistribedBC.push_back(static_cast<int>(dis_nodes[i]));
+			this->_DistribedBC.push_back(dis_values[i]);
+		}
+	}
+	else
+		std::cout << "Error in CBoundaryCondition() - DistributionType \""
+		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType())
+				  << "\" currently not supported." << std::endl;
 }
 
 /**************************************************************************
@@ -861,6 +892,9 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 
 	FiniteElement::PrimaryVariable primary_variable(FiniteElement::convertPrimaryVariable(_pcs_pv_name));
 	std::list<CBoundaryCondition*>::const_iterator p_bc = bc_list.begin();
+
+	clock_t start_time (clock());
+
 	while (p_bc != bc_list.end())
 	{
 		CBoundaryCondition* bc (*p_bc);
@@ -985,8 +1019,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 
 				if (m_polyline)
 				{
-					if (bc->getProcessDistributionType() ==
-					    FiniteElement::CONSTANT)
+					if (bc->getProcessDistributionType() == FiniteElement::CONSTANT)
 					{
 						// 08/2010 TF
 						double msh_min_edge_length =
@@ -1027,8 +1060,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 					}
 
 					// Get value from a linear function. 25.06.2011. WW
-					if (bc->getProcessDistributionType() ==
-					    FiniteElement::FUNCTION)
+					if (bc->getProcessDistributionType() == FiniteElement::FUNCTION)
 					{
 						// 08/2010 TF
 						double msh_min_edge_length =
@@ -1049,10 +1081,8 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						for (size_t i(0); i < nodes_vector_size; i++)
 						{
 							m_node_value = new CBoundaryConditionNode();
-							m_node_value->msh_node_number =
-							        nodes_vector[i] + ShiftInNodeVector;
-							m_node_value->geo_node_number =
-							        nodes_vector[i];
+							m_node_value->msh_node_number = nodes_vector[i] + ShiftInNodeVector;
+							m_node_value->geo_node_number = nodes_vector[i];
 //                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
 //                            m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
 							double const* const coords (
@@ -1060,12 +1090,8 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 							                          geo_node_number]
 							        ->getData());
 							m_node_value->node_value =
-							        bc->dis_linear_f->getValue(
-							                coords[0],
-							                coords[1
-							                ],
-							                coords[2
-							                ]);
+							        bc->dis_linear_f->getValue(coords[0],
+											coords[1], coords[2]);
 
 							m_node_value->CurveIndex =
 							        bc->getCurveIndex();
@@ -1076,8 +1102,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 					}
 
 					//WW / TF
-					if (bc->getProcessDistributionType() ==
-					    FiniteElement::LINEAR)
+					if (bc->getProcessDistributionType() == FiniteElement::LINEAR)
 					{
 						double msh_min_edge_length =
 						        m_msh->getMinEdgeLength();
@@ -1201,46 +1226,21 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						nodes_vector.push_back (msh_nod_vec[k]);
 					size_t nodes_vector_length (nodes_vector.size());
 
-					if (bc->getProcessDistributionType() ==
-					    FiniteElement::LINEAR)
-					{
+					if (bc->getProcessDistributionType() == FiniteElement::LINEAR) {
 						std::vector<CGLPolyline*>::iterator p =
-						        m_surface->polyline_of_surface_vector.begin();
+										m_surface->polyline_of_surface_vector.begin();
 						node_value.resize(nodes_vector_length);
 						p = m_surface->polyline_of_surface_vector.begin();
-						while (p !=
-						       m_surface->polyline_of_surface_vector.end())
-						{
+						while (p != m_surface->polyline_of_surface_vector.end()) {
 							m_polyline = *p;
-							for (size_t i(0);
-							     i < bc->getDistribedBC().size(); i++)
-							{
-								for (size_t j = 0;
-								     j <
-								     m_polyline->point_vector.size();
-								     j++)
-									if (bc->
-									    getPointsWithDistribedBC()
-									    [i
-									    ] ==
-									    m_polyline->
-									    point_vector[j]
-									    ->id)
-									{
-										if (fabs(bc->
-										         getDistribedBC()
-										         [i])
-										    < MKleinsteZahl)
-											bc->
-											getDistribedBC()
-											[i] =
-											        1.0e-20;
-										m_polyline->
-										point_vector[j]->
-										setPropert(
-										        bc->
-										        getDistribedBC()
-										        [i]);
+							for (size_t i(0); i < bc->getDistribedBC().size(); i++) {
+								for (size_t j = 0; j < m_polyline->point_vector.size(); j++)
+									if (bc-> getPointsWithDistribedBC()[i]
+													== m_polyline-> point_vector[j] ->id) {
+										if (fabs(bc-> getDistribedBC()[i]) < MKleinsteZahl) bc-> getDistribedBC()[i]
+														= 1.0e-20;
+										m_polyline-> point_vector[j]-> setPropert(
+														bc-> getDistribedBC()[i]);
 										break;
 									}
 							}
@@ -1248,9 +1248,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						}
 						//WW
 						node_value.resize(nodes_vector_length);
-						bc->SurfaceInterpolation(pcs,
-						                         nodes_vector,
-						                         node_value); //WW
+						bc->SurfaceInterpolation(pcs, nodes_vector, node_value); //WW
 					}
 
 					for (size_t i = 0; i < nodes_vector_length; i++)
@@ -1265,29 +1263,18 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						//YD/WW
 						m_node_value->pcs_pv_name = _pcs_pv_name;
 						//WW
-						if (bc->getProcessDistributionType() ==
-						    FiniteElement::LINEAR)
+						if (bc->getProcessDistributionType() == FiniteElement::LINEAR)
 							m_node_value->node_value = node_value[i];
-						else if (bc->getProcessDistributionType() // 25.08.2011. WW
-						         == FiniteElement::FUNCTION)
-						{
-//                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
-//                            m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
-							double const* const coords(
-							        m_msh->nod_vector[m_node_value->
-							                          geo_node_number]
-							        ->getData());
-							m_node_value->node_value =
-							        bc->dis_linear_f->getValue(
-							                coords[0],
-							                coords[1
-							                ],
-							                coords[2
-							                ]);
+						else {
+							// 25.08.2011. WW
+							if (bc->getProcessDistributionType() == FiniteElement::FUNCTION) {
+							//                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
+							//                            m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
+								double const* const coords(m_msh->nod_vector[m_node_value-> geo_node_number]->getData());
+								m_node_value->node_value = bc->dis_linear_f->getValue(coords[0],
+											coords[1], coords[2]);
+							} else m_node_value->node_value = bc->geo_node_value;
 						}
-						else
-							m_node_value->node_value =
-							        bc->geo_node_value;
 						m_node_value->CurveIndex = bc->getCurveIndex();
 						//OK
 						bc->node_number_vector = nodes_vector;
@@ -1353,6 +1340,10 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 		++p_bc;
 	} // list
 
+	clock_t end_time (clock());
+	std::cout << "\t[BC] set BC took " << (end_time-start_time)/(double)(CLOCKS_PER_SEC) << std::endl;
+
+	start_time = clock();
 	// SetTransientBCtoNodes  10/2008 WW/CB Implementation
 	p_bc = bc_list.begin();
 	while (p_bc != bc_list.end())
@@ -1430,6 +1421,8 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 	     if(no_bc<1)
 	     cout << "Warning: no boundary conditions specified for " << pcs_type_name << endl;
 	   */
+	end_time = clock();
+	std::cout << "\t[BC] set transient BC took " << (end_time-start_time)/(double)(CLOCKS_PER_SEC) << std::endl;
 }
 
 /**************************************************************************

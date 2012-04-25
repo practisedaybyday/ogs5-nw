@@ -54,6 +54,7 @@ for config in ${configs[@]}
 do
 	cmake_args=""
 	if [ "$config" = "FEM" ] ; then
+		cmake_args="-DOGS_BUILD_TESTS=ON"
 		config_cmake="OGS_FEM"
 		exe_name="ogs"
 		build_dir="build_fem"

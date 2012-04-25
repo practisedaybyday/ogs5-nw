@@ -219,11 +219,15 @@ void MSHWrite(std::string file_base_name)
 
 	if(!fem_msh_file.good())
 		return;
-	fem_msh_file.setf(std::ios::scientific,std::ios::floatfield);
-	fem_msh_file.precision(12);
 
 	for(size_t i = 0; i < fem_msh_vector.size(); i++)
-		FileIO::OGSMeshIO::write (fem_msh_vector[i], fem_msh_file);
+	{
+		FileIO::OGSMeshIO meshIO;
+		meshIO.setPrecision(12);
+		meshIO.setFormat(std::ios::scientific);
+		meshIO.setMesh(fem_msh_vector[i]);
+		fem_msh_file << meshIO.writeToString();
+	}
 	fem_msh_file << "#STOP";
 	fem_msh_file.close();
 }

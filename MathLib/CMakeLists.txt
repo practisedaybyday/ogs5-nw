@@ -28,7 +28,7 @@ set( SOURCES
 	LinearInterpolation.cpp
 	EarClippingTriangulation.cpp
 	# directory LinAlg
-	LinAlg/GaussAlgorithm.cpp
+#	LinAlg/GaussAlgorithm.cpp
 	LinAlg/TriangularSolve.cpp
 #	LinAlg/HouseholderAlgorithm.cpp
 )
@@ -39,14 +39,14 @@ add_library( MathLib STATIC ${HEADERS} ${SOURCES} )
 set_target_properties(MathLib PROPERTIES LINKER_LANGUAGE CXX)
 
 include_directories(
-	../Base
-	../GEO
-	.
-	./LinAlg
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/MathLib/LinAlg
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/GEO
 )
 
 target_link_libraries (
 	MathLib
-       Base
+	Base
 )
 

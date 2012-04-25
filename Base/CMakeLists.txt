@@ -25,9 +25,9 @@ add_library( Base STATIC ${HEADERS} ${SOURCES} )
 set_target_properties(Base PROPERTIES LINKER_LANGUAGE CXX)
 
 include_directories(
-	../GEO
-	../MathLib
-	.
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/MathLib
 )
 
 #target_link_libraries (

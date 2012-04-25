@@ -7,7 +7,7 @@
 #include "StringTools.h"
 
 ProjectData::ProjectData()
-//: _geoObjects ()
+: _geoObjects (NULL)
 {}
 
 ProjectData::~ProjectData()
@@ -37,6 +37,12 @@ bool ProjectData::removeMesh(const std::string &name)
 	delete _msh_vec[name];
 	size_t result = _msh_vec.erase(name);
 	return result > 0;
+}
+
+bool ProjectData::meshExists(const std::string &name)
+{
+	if (_msh_vec.count(name)>0) return true;
+	return false;
 }
 
 void ProjectData::addProcess(ProcessInfo* pcs)

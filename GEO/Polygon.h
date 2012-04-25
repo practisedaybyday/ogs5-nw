@@ -74,15 +74,42 @@ public:
 	 * @return if point is inside the polygon true, else false
 	 */
 	bool isPntInPolygon (double x, double y, double z) const;
+	/**
+	 * Method checks if all points of the polyline ply are inside of the polygon.
+	 * @param ply the polyline that should be checked
+	 * @return
+	 */
 	bool isPolylineInPolygon (const Polyline& ply) const;
-	GEOLIB::Point* getIntersectionPointPolygonLine (GEOLIB::Point const & a,
-	                                                GEOLIB::Point const & b) const;
+	/**
+	 * Method checks first if at least one (end!) point of a line segment of the polyline
+	 * is inside of the polygon. If this test fails each line segment of the polyline will
+	 * be tested against each polygon segment for intersection.
+	 * @param ply the polyline that should be checked
+	 * @return true if a part of the polyline is within the polygon
+	 */
+	bool isPartOfPolylineInPolygon (const Polyline& ply) const;
+
+	/**
+	 * Calculates the next intersection point between the line segment (a,b) and the
+	 * polygon starting with segment seg_num.
+	 * @param a (input) the first point of the line segment
+	 * @param b (input) the second point of the line segment
+	 * @param intersection_pnt (output) next intersection point
+	 * @param seg_num (input/output) the number of the polygon segment that is intersecting
+	 */
+	bool getNextIntersectionPointPolygonLine(GEOLIB::Point const & a,
+									GEOLIB::Point const & b,
+									GEOLIB::Point* intersection_pnt,
+									size_t& seg_num) const;
+
+
 	void computeListOfSimplePolygons ();
 	const std::list<Polygon*>& getListOfSimplePolygons ();
 
 	friend bool operator==(Polygon const& lhs, Polygon const& rhs);
 private:
 	/**
+	 * from book: Computational Geometry and Computer Graphics in C++, page 119
 	 * get the type of edge with respect to the given point (2d method!)
 	 * @param k number of line segment
 	 * @param pnt point that is edge type computed for

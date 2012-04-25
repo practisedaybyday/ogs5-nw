@@ -13,6 +13,9 @@
 #include <QFile>
 #include <QtXml/QDomDocument>
 
+namespace FileIO
+{
+
 XmlGspInterface::XmlGspInterface(ProjectData* project, const std::string &schemaFile)
 : XMLInterface(project, schemaFile)
 {
@@ -54,24 +57,36 @@ int XmlGspInterface::readFile(const QString &fileName)
 
 	for(int i = 0; i < fileList.count(); i++)
 	{
-		if (fileList.at(i).nodeName().compare("geo") == 0)
+		const QString file_node(fileList.at(i).nodeName());
+		if (file_node.compare("geo") == 0)
 		{
 			XmlGmlInterface gml(_project, schemaPath.toStdString() + "OpenGeoSysGLI.xsd");
-			gml.readFile(QString(path + fileList.at(i).toElement().text()));
+			const QDomNodeList childList = fileList.at(i).childNodes();
+			for(int j = 0; j < childList.count(); j++)
+			{
+				const QDomNode child_node (childList.at(j));
+				if (child_node.nodeName().compare("file") == 0) 
+				{
+					std::cout << "path: " << path.toStdString() << "#" << std::endl;
+					std::cout << "file name: " << (child_node.toElement().text()).toStdString() << "#" << std::endl;
+					gml.readFile(QString(path + child_node.toElement().text()));
+				}
+			}
 		}
-		else if (fileList.at(i).nodeName().compare("stn") == 0)
+		else if (file_node.compare("stn") == 0)
 		{
 			XmlStnInterface stn(_project, schemaPath.toStdString() + "OpenGeoSysSTN.xsd");
-			QDomNodeList childList = fileList.at(i).childNodes();
+			const QDomNodeList childList = fileList.at(i).childNodes();
 			for(int j = 0; j < childList.count(); j++)
 				if (childList.at(j).nodeName().compare("file") == 0)
 					stn.readFile(QString(path + childList.at(j).toElement().text()));
 		}
-		else if (fileList.at(i).nodeName().compare("msh") == 0)
+		else if (file_node.compare("msh") == 0)
 		{
-			std::string msh_name = path.toStdString() +
+			const std::string msh_name = path.toStdString() +
 			                       fileList.at(i).toElement().text().toStdString();
-			MeshLib::CFEMesh* msh = FileIO::OGSMeshIO::loadMeshFromFile(msh_name);
+			FileIO::OGSMeshIO meshIO;
+			MeshLib::CFEMesh* msh = meshIO.loadMeshFromFile(msh_name);
 			QFileInfo fi(QString::fromStdString(msh_name));
 			std::string name = fi.fileName().toStdString();
 			_project->addMesh(msh, name);
@@ -83,18 +98,17 @@ int XmlGspInterface::readFile(const QString &fileName)
 	return 1;
 }
 
-int XmlGspInterface::writeFile(const QString &fileName, const QString &tmp) const
+int XmlGspInterface::writeToFile(std::string filename)
 {
-	Q_UNUSED(tmp)
+	_filename = filename;
+	return FileIO::Writer::writeToFile(filename);
+}
+
+int XmlGspInterface::write(std::ostream& stream)
+{
 	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
-	std::fstream stream(fileName.toStdString().c_str(), std::ios::out);
-	QFileInfo fi(fileName);
-	QString path(fi.absolutePath() + "/");
-	if (!stream.is_open())
-	{
-		std::cout << "XmlGspInterface::writeFile() - Could not open file...\n";
-		return 0;
-	}
+	QFileInfo fi(QString::fromStdString(_filename));
+	std::string path((fi.absolutePath()).toStdString() + "/");
 
 	stream << "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"; // xml definition
 	stream << "<?xml-stylesheet type=\"text/xsl\" href=\"OpenGeoSysProject.xsl\"?>\n\n"; // stylefile definition
@@ -115,17 +129,19 @@ int XmlGspInterface::writeFile(const QString &fileName, const QString &tmp) cons
 	     ++it)
 	{
 		// write GLI file
-		XmlGmlInterface gml(_project, path.toStdString() + "OpenGeoSysGLI.xsd");
-		QString name(QString::fromStdString(*it));
-		gml.writeFile(QString(path + name + ".gml"), name);
-
-		// write entry in project file
-		QDomElement geoTag = doc.createElement("geo");
-		root.appendChild(geoTag);
-		QDomElement fileNameTag = doc.createElement("file");
-		geoTag.appendChild(fileNameTag);
-		QDomText fileNameText = doc.createTextNode(QString(name + ".gml"));
-		fileNameTag.appendChild(fileNameText);
+		XmlGmlInterface gml(_project, path + "OpenGeoSysGLI.xsd");
+		std::string name(*it);
+		gml.setNameForExport(name);
+		if (gml.writeToFile(std::string(path + name + ".gml")))
+		{
+			// write entry in project file
+			QDomElement geoTag = doc.createElement("geo");
+			root.appendChild(geoTag);
+			QDomElement fileNameTag = doc.createElement("file");
+			geoTag.appendChild(fileNameTag);
+			QDomText fileNameText = doc.createTextNode(QString::fromStdString(name + ".gml"));
+			fileNameTag.appendChild(fileNameText);
+		}
 	}
 
 	// MSH
@@ -134,16 +150,10 @@ int XmlGspInterface::writeFile(const QString &fileName, const QString &tmp) cons
 	     it != msh_vec.end(); ++it)
 	{
 		// write mesh file
-		QString fileName(path + QString::fromStdString(it->first));
-		std::ofstream out (fileName.toStdString().c_str(), std::fstream::out);
-		if (out.is_open())
-		{
-			FileIO::OGSMeshIO::write (it->second, out);
-			out.close();
-		}
-		else
-			std::cout << "MshTabWidget::saveMeshFile() - Could not create file..." <<
-			std::endl;
+		std::string fileName(path + it->first);
+		FileIO::OGSMeshIO meshIO;
+		meshIO.setMesh(it->second);
+		meshIO.writeToFile(fileName);
 
 		// write entry in project file
 		QDomElement mshTag = doc.createElement("msh");
@@ -161,26 +171,27 @@ int XmlGspInterface::writeFile(const QString &fileName, const QString &tmp) cons
 	     ++it)
 	{
 		// write STN file
-		XmlStnInterface stn(_project, path.toStdString() + "OpenGeoSysSTN.xsd");
-		QString name(QString::fromStdString(*it));
+		XmlStnInterface stn(_project, path + "OpenGeoSysSTN.xsd");
+		std::string name(*it);
+		stn.setNameForExport(name);
 
-		if (stn.writeFile(QString(path + name + ".stn"), name))
+		if (stn.writeToFile(path + name + ".stn"))
 		{
 			// write entry in project file
 			QDomElement geoTag = doc.createElement("stn");
 			root.appendChild(geoTag);
 			QDomElement fileNameTag = doc.createElement("file");
 			geoTag.appendChild(fileNameTag);
-			QDomText fileNameText = doc.createTextNode(QString(name + ".stn"));
+			QDomText fileNameText = doc.createTextNode(QString::fromStdString(name + ".stn"));
 			fileNameTag.appendChild(fileNameText);
 		}
 		else
-			std::cout << "XmlGspInterface::writeFile() -  Error writing file: " <<
-			name.toStdString() << std::endl;
+			std::cout << "XmlGspInterface::writeFile() -  Error writing file: " << name << std::endl;
 	}
 
 	std::string xml = doc.toString().toStdString();
 	stream << xml;
-	stream.close();
 	return 1;
+}
+
 }

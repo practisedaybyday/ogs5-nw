@@ -48,14 +48,11 @@ Polygon::~Polygon()
 
 bool Polygon::initialise ()
 {
-	if (this->isClosed())
-	{
+	if (this->isClosed()) {
 		calculateAxisAlignedBoundingBox();
 		ensureCWOrientation();
 		return true;
-	}
-	else
-	{
+	} else {
 		std::cerr << "ERROR in Polygon::initialise() - base polyline is not closed" <<
 		std::endl;
 		return false;
@@ -64,8 +61,8 @@ bool Polygon::initialise ()
 
 bool Polygon::isPntInPolygon (GEOLIB::Point const & pnt) const
 {
-	GEOLIB::Point min_aabb_pnt (_aabb.getMinPoint());
-	GEOLIB::Point max_aabb_pnt (_aabb.getMaxPoint());
+	GEOLIB::Point const& min_aabb_pnt (_aabb.getMinPoint());
+	GEOLIB::Point const& max_aabb_pnt (_aabb.getMaxPoint());
 
 	if (pnt[0] < min_aabb_pnt[0] || max_aabb_pnt[0] < pnt[0] || pnt[1] < min_aabb_pnt[1] ||
 	    max_aabb_pnt[1] < pnt[1])
@@ -74,13 +71,11 @@ bool Polygon::isPntInPolygon (GEOLIB::Point const & pnt) const
 	size_t n_intersections (0);
 	GEOLIB::Point s;
 
-	if (_simple_polygon_list.empty ())
-	{
+	if (_simple_polygon_list.empty ()) {
 		const size_t n_nodes (getNumberOfPoints() - 1);
-		for (size_t k(0); k < n_nodes; k++)
+		for (size_t k(0); k < n_nodes; k++) {
 			if (((*(getPoint(k)))[1] <= pnt[1] && pnt[1] <= (*(getPoint(k + 1)))[1]) ||
-			    ((*(getPoint(k + 1)))[1] <= pnt[1] && pnt[1] <= (*(getPoint(k)))[1]))
-			{
+			    ((*(getPoint(k + 1)))[1] <= pnt[1] && pnt[1] <= (*(getPoint(k)))[1])) {
 				switch (getEdgeType(k, pnt))
 				{
 				case EdgeType::TOUCHING:
@@ -95,67 +90,93 @@ bool Polygon::isPntInPolygon (GEOLIB::Point const & pnt) const
 					;
 				}
 			}
+		}
 		if (n_intersections % 2 == 1)
 			return true;
-	}
-	else
-	{
+	} else {
 		for (std::list<Polygon*>::const_iterator it (_simple_polygon_list.begin());
-		     it != _simple_polygon_list.end(); ++it)
+		     it != _simple_polygon_list.end(); ++it) {
 			if ((*it)->isPntInPolygon (pnt))
 				return true;
+		}
 		return false;
 	}
 	return false;
 }
 
-bool Polygon::isPntInPolygon (double x, double y, double z) const
+bool Polygon::isPntInPolygon(double x, double y, double z) const
 {
 	const GEOLIB::Point pnt(x,y,z);
 	return isPntInPolygon (pnt);
 }
 
-bool Polygon::isPolylineInPolygon (const Polyline& ply) const
+bool Polygon::isPolylineInPolygon(const Polyline& ply) const
 {
 	size_t ply_size (ply.getNumberOfPoints()), cnt (0);
-	for (size_t k(0); k < ply_size; k++)
-		if (isPntInPolygon (*(ply[k])))
+	for (size_t k(0); k < ply_size; k++) {
+		if (isPntInPolygon (*(ply[k]))) {
 			cnt++;
+		}
+	}
 
 	if (cnt == ply_size)
 		return true;
 	return false;
 }
 
-GEOLIB::Point* Polygon::getIntersectionPointPolygonLine (GEOLIB::Point const & a,
-                                                         GEOLIB::Point const & b) const
+bool Polygon::isPartOfPolylineInPolygon(const Polyline& ply) const
 {
-	GEOLIB::Point* s (new GEOLIB::Point (0,0,0));
-
-	if (_simple_polygon_list.empty ())
-	{
-		const size_t n_nodes (getNumberOfPoints() - 1);
-		for (size_t k(0); k < n_nodes; k++)
-			if (MathLib::lineSegmentIntersect (*(getPoint(k)), *(getPoint(k + 1)), a, b,
-			                                   *s))
-				return s;
-
-	}
-	else
-		for (std::list<Polygon*>::const_iterator it (_simple_polygon_list.begin());
-		     it != _simple_polygon_list.end(); ++it)
-		{
-			const Polygon* polygon (*it);
-			const size_t n_nodes_simple_polygon (polygon->getNumberOfPoints() - 1);
-			for (size_t k(0); k < n_nodes_simple_polygon; k++)
-				if (MathLib::lineSegmentIntersect (*(polygon->getPoint(k)),
-				                                   *(polygon->getPoint(k + 1)), a,
-				                                   b, *s))
-					return s;
-
+	const size_t ply_size (ply.getNumberOfPoints());
+	// check points
+	for (size_t k(0); k < ply_size; k++) {
+		if (isPntInPolygon (*(ply[k]))) {
+			return true;
 		}
+	}
+	// check segment intersections
+	GEOLIB::Point* s (new GEOLIB::Point (0,0,0));
+	const size_t n_nodes(getNumberOfPoints() - 1);
+	for (size_t k(0); k < ply_size - 1; k++) {
+		for (size_t j(0); j < n_nodes; j++) {
+			if (MathLib::lineSegmentIntersect(*(getPoint(j)), *(getPoint(j + 1)),
+							*(ply.getPoint(k)), *(ply.getPoint(k + 1)), *s)) {
+				delete s;
+				return true;
+			}
+		}
+	}
+
 	delete s;
-	return NULL;
+	return false;
+}
+
+bool Polygon::getNextIntersectionPointPolygonLine (GEOLIB::Point const & a,
+                GEOLIB::Point const & b, GEOLIB::Point* intersection_pnt,
+                size_t& seg_num) const
+{
+	if (_simple_polygon_list.empty()) {
+		const size_t n_nodes(getNumberOfPoints() - 1);
+		for (size_t k(seg_num); k < n_nodes; k++) {
+			if (MathLib::lineSegmentIntersect(*(getPoint(k)), *(getPoint(k + 1)), a, b, *intersection_pnt)) {
+				seg_num = k;
+				return true;
+			}
+		}
+	} else {
+		for (std::list<Polygon*>::const_iterator it(_simple_polygon_list.begin()); it
+					!= _simple_polygon_list.end(); ++it) {
+			const Polygon* polygon(*it);
+			const size_t n_nodes_simple_polygon(polygon->getNumberOfPoints() - 1);
+			for (size_t k(0); k < n_nodes_simple_polygon; k++) {
+				if (MathLib::lineSegmentIntersect(*(polygon->getPoint(k)), *(polygon->getPoint(k + 1)),
+								a, b, *intersection_pnt)) {
+					seg_num = k;
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 const std::list<Polygon*>& Polygon::getListOfSimplePolygons()

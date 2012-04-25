@@ -670,7 +670,7 @@ void CRFProcess::Create()
 	}
 	else
 	{
-		// If there is a solver exsiting. WW
+		// If there is a solver existing. WW
 		CRFProcess* m_pcs = NULL;
 		for (size_t i = 0; i < pcs_vector.size(); i++)
 		{

@@ -8,6 +8,8 @@
 
 #define OGS_QT_VERSION ${QT_VERSION_MAJOR}${QT_VERSION_MINOR}
 #define SOURCEPATH "${CMAKE_SOURCE_DIR}"
+#define BUILDPATH "${CMAKE_BINARY_DIR}"
+#define TESTDATAPATH "${TESTDATA_DIR_FOUND}"
 
 #cmakedefine OGS_VERSION "${OGS_VERSION}"
 #cmakedefine OGS_DATE "${OGS_DATE}"
@@ -16,7 +18,8 @@
 // for tests
 #cmakedefine OGS_EXECUTABLE "${OGS_EXECUTABLE}"
 #define PUT_TMP_DIR_IN "${PROJECT_BINARY_DIR}/tests/"
-
+#cmakedefine JENKINS_URL "${JENKINS_URL}"
+#cmakedefine JENKINS_JOB_NAME "${JENKINS_JOB_NAME}"
 #cmakedefine PROCESSOR_COUNT ${PROCESSOR_COUNT}
 
 #endif // CONFIGURE_H

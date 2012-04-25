@@ -78,10 +78,16 @@ public:
 	Station(double x = 0.0,
 	        double y = 0.0,
 	        double z = 0.0,
-	        std::string name = "",
-	        Color* const color = new Color(0,128,0));
+	        std::string name = "");
 
-	Station(Point* coords, std::string name = "", Color* const color = new Color(0,128,0));
+	Station(Point* coords, std::string name = "");
+
+	/**
+	 * Constructor copies the source object
+	 * @param src the Station object that should be copied
+	 * @return
+	 */
+	Station(Station const& src);
 
 	virtual ~Station();
 
@@ -105,15 +111,6 @@ public:
 	 */
 	void addProperty(std::string pname, double (* get)(void*), void (* set)(void*, double));
 
-	/// Sets colour for this station
-	void setColor(unsigned char r, unsigned char g, unsigned char b);
-
-	/// Sets colour for this station
-	void setColor(const Color* color);
-
-	/// returns the colour for this station
-	Color* getColor () { return _color; }
-
 	/// Returns a map containing all the properties of that station type.
 	const std::map<std::string, double> getProperties();
 
@@ -124,7 +121,7 @@ public:
 	bool inSelection(std::map<std::string, double> properties) const;
 
 	/// Returns the name of the station.
-	std::string getName() const { return _name; }
+	std::string const& getName() const { return _name; }
 
 	/// Returns the GeoSys-station-type for the station.
 	int type() const { return _type; }
@@ -134,6 +131,10 @@ public:
 
 	/// Creates a new station object based on the given parameters.
 	static Station* createStation(const std::string &name, double x, double y, double z);
+
+	double getStationValue() { return this->_station_value; };
+
+	void setStationValue(double station_value) { this->_station_value = station_value; };
 
 protected:
 	/**
@@ -171,7 +172,7 @@ protected:
 	std::vector<STNProperty> _properties;
 
 private:
-	Color* _color;
+	double _station_value;
 };
 
 /********* Boreholes *********/
@@ -198,6 +199,9 @@ public:
 	                                      double z,
 	                                      double depth,
 	                                      std::string date = "");
+
+	/// Adds a stratigraphy to a borehole given a vector of points of length "n" and a vector of soil names of length "n-1".
+	int addStratigraphy(const std::vector<GEOLIB::Point*> &profile, const std::vector<std::string> soil_names);
 
 	/// Reads the stratigraphy for a specified station from a file
 	static int addStratigraphy(const std::string &path, StationBorehole* borehole);

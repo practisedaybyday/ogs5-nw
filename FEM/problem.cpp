@@ -215,9 +215,9 @@ Problem::Problem (char* filename) :
 		path = path.substr(0, pos + 1);
 
 	// now start initialization of GEMS
-        if ( m_vec_GEM -> Init_Nodes(path) == 0) 
+        if ( m_vec_GEM -> Init_Nodes(path) == 0)
 	{
-		if (m_vec_GEM->Init_RUN(path) == 0) 
+		if (m_vec_GEM->Init_RUN(path) == 0)
 		{
 			m_vec_GEM->initialized_flag = 1;
 		}
@@ -238,7 +238,7 @@ Problem::Problem (char* filename) :
             MPI_Finalize();                       //make sure MPI exits
 #endif
 
-            exit ( 1 ); 
+            exit ( 1 );
 	}
 #else                                          // GEM_REACT
 	//---------------------------------------------------
@@ -1000,6 +1000,9 @@ void Problem::Euler_TimeDiscretize()
 		ScreenMessage("\n#############################################################\n");
 		if(aktueller_zeitschritt >= max_time_steps)
 			break;
+
+//		// executing only one time step for profiling
+//		current_time = end_time;
 	}
 #if defined(USE_MPI) // JT2012
 	if(myrank == 0)

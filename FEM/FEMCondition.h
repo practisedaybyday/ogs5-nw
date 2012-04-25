@@ -52,7 +52,10 @@ public:
 	CondType getCondType() const { return _type; }
 
 	/// Returns the value(s) for the distribution
-	const std::vector<double> getDisValue() const { return _disValue; }
+	const std::vector<size_t> getDisNodes() const { return _disNodes; }
+
+	/// Returns the value(s) for the distribution
+	const std::vector<double> getDisValues() const { return _disValues; }
 
 	/// Returns the name of the geo-object the condition is assigned to. This object is part of the associated geometry.
 	const std::string& getGeoName() const { return _geoName; }
@@ -60,19 +63,22 @@ public:
 	/// Returns the name of the associated geometry.
 	const std::string& getAssociatedGeometryName() const { return _associated_geometry; }
 
+	/// Convenience method for setting a single value specifying the distribution.
+	void setConstantDisValue(double disValue) {_disValues.clear(); _disValues.push_back(disValue); }
+
 	/// Sets a vector of values specifying the distribution.
-	void setDisValue(const std::vector<double> &disValue)
+	void setDisValues(const std::vector<size_t> &disNodes, const std::vector<double> &disValues)
 	{
-		for (size_t i = 0; i < disValue.size(); i++)
-			_disValue.push_back(disValue[i]);
+		_disNodes = disNodes;
+		_disValues = disValues;
 	}
 
 	/// Sets a vector of values specifying the distribution.
 	/// The first value specifies the point id, the second the value for that point.
-	void setLinearDisValues(const std::vector< std::pair<size_t, double> > &dis_values);
+	void setDisValues(const std::vector< std::pair<size_t, double> > &dis_values);
 
-	/// Convenience method for setting a single value specifying the distribution.
-	void setDisValue(double disValue) { _disValue.push_back(disValue); }
+	/// Removes all distribution values 
+	void clearDisValues() { _disValues.resize(0); };
 
 	/// Sets the name of the geo-object the condition is assigned to.
 	void setGeoName(std::string geoName) { _geoName = geoName; }
@@ -81,11 +87,10 @@ public:
 	static std::string condTypeToString(CondType type);
 
 protected:
-	std::vector< std::pair<size_t, double> > getDistributedPairs(std::vector<int> point_ids, std::vector<double> point_values);
-
 	CondType _type;
 	std::string _geoName;
-	std::vector<double> _disValue;
+	std::vector<size_t> _disNodes;
+	std::vector<double> _disValues;
 	std::string _associated_geometry;
 };
 

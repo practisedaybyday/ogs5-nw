@@ -12,7 +12,7 @@
 int GMSInterface::readBoreholesFromGMS(std::vector<GEOLIB::Point*>* boreholes,
                                        const std::string &filename)
 {
-	double depth(0.0);
+	double depth(-9999.0);
 	std::string line(""), cName(""), sName("");
 	std::list<std::string>::const_iterator it;
 	GEOLIB::Point* pnt = new GEOLIB::Point();
@@ -41,10 +41,18 @@ int GMSInterface::readBoreholesFromGMS(std::vector<GEOLIB::Point*>* boreholes,
 				(*pnt)[0] = strtod((++it)->c_str(), 0);
 				(*pnt)[1] = strtod((++it)->c_str(), 0);
 				(*pnt)[2] = strtod((++it)->c_str(), 0);
-				newBorehole->addSoilLayer((*pnt)[0], (*pnt)[1], (*pnt)[2], sName);
-				//if (fields.size()>4)
-				sName = (*(++it));
-				depth = (*pnt)[2];
+
+				// check if current layer has a thickness of 0.0.
+				// if so skip it since it will mess with the vtk-visualisation later on!
+				if ((*pnt)[2] != depth)
+				{
+					newBorehole->addSoilLayer((*pnt)[0], (*pnt)[1], (*pnt)[2], sName);
+					sName = (*(++it));
+					depth = (*pnt)[2];
+				}
+				else
+					std::cout << "Warning: Skipped layer \"" << sName << "\" in borehole \"" 
+					          << cName << "\" because of thickness 0.0." << std::endl;
 			}
 			else // add new borehole
 			{
@@ -59,10 +67,8 @@ int GMSInterface::readBoreholesFromGMS(std::vector<GEOLIB::Point*>* boreholes,
 				(*pnt)[1] = strtod((++it)->c_str(), 0);
 				(*pnt)[2] = strtod((++it)->c_str(), 0);
 				sName = (*(++it));
-				newBorehole =
-				        GEOLIB::StationBorehole::createStation(cName, (*pnt)[0],
-				                                               (*pnt)[1],
-				                                               (*pnt)[2], 0);
+				newBorehole = GEOLIB::StationBorehole::createStation(cName, (*pnt)[0], (*pnt)[1], (*pnt)[2], 0);
+				depth = (*pnt)[2];
 			}
 		}
 		else

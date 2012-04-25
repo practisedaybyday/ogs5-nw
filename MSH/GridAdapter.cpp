@@ -26,6 +26,37 @@ GridAdapter::GridAdapter(const std::string &filename) :
 	readMeshFromFile(filename);
 }
 
+GridAdapter::GridAdapter(const GridAdapter* grid) :
+	_name(""), _nodes(new std::vector<GEOLIB::Point*>), _elems(new std::vector<Element*>),
+	_mesh(NULL)
+{
+	if (grid)
+	{
+		this->_name = grid->getName();
+	
+		const std::vector<GEOLIB::Point*> *nodes = grid->getNodes();
+		const size_t nNodes(nodes->size());
+		for (size_t i=0; i<nNodes; i++)
+		{
+			GEOLIB::Point* pnt (new GEOLIB::Point((*nodes)[i]->getData()));
+			this->addNode(pnt);
+		}
+
+		const std::vector<GridAdapter::Element*> *elements = grid->getElements();
+		const size_t nElems(elements->size());
+		for (size_t i=0; i<nElems; i++)
+		{
+			GridAdapter::Element* elem = new GridAdapter::Element;
+			elem->material = (*elements)[i]->material;
+			const size_t nElemNodes ((*elements)[i]->nodes.size());
+			for (size_t j=0; j<nElemNodes; j++)
+				elem->nodes.push_back((*elements)[i]->nodes[j]);
+			elem->type = (*elements)[i]->type;
+			this->addElement(elem);
+		}
+	}	
+}
+
 GridAdapter::~GridAdapter()
 {
 	size_t nNodes = _nodes->size();
@@ -47,18 +78,14 @@ int GridAdapter::convertCFEMesh(const MeshLib::CFEMesh* mesh)
 
 	size_t nNodes = mesh->nod_vector.size();
 	for (size_t i = 0; i < nNodes; i++)
-	{
-		GEOLIB::Point* pnt = new GEOLIB::Point(mesh->nod_vector[i]->getData());
-		_nodes->push_back(pnt);
-	}
+		_nodes->push_back(new GEOLIB::Point(mesh->nod_vector[i]->getData()));
 
-	Element* newElem = NULL;
 	size_t nElems = mesh->ele_vector.size();
 	size_t nElemNodes = 0;
 
 	for (size_t i = 0; i < nElems; i++)
 	{
-		newElem = new Element();
+		Element* newElem = new Element();
 		newElem->type = mesh->ele_vector[i]->GetElementType();
 		newElem->material = mesh->ele_vector[i]->GetPatchIndex();
 
@@ -72,9 +99,7 @@ int GridAdapter::convertCFEMesh(const MeshLib::CFEMesh* mesh)
 			_elems->push_back(newElem);
 		}
 		else
-			std::cout <<
-			"GridAdapter::convertCFEMesh() - Error recognising element type..." <<
-			std::endl;
+			std::cout << "GridAdapter::convertCFEMesh() - Error recognising element type..." << std::endl;
 	}
 
 	return 1;
@@ -95,34 +120,24 @@ const MeshLib::CFEMesh* GridAdapter::toCFEMesh() const
 	// set mesh nodes
 	size_t nNodes = _nodes->size();
 	for (size_t i = 0; i < nNodes; i++)
-	{
-		MeshLib::CNode* node(new MeshLib::CNode(i));
-		double coords[3] = { (*(*_nodes)[i])[0], (*(*_nodes)[i])[1], (*(*_nodes)[i])[2] };
-		node->SetCoordinates(coords);
-		mesh->nod_vector.push_back(node);
-	}
+		mesh->nod_vector.push_back(new MeshLib::CNode(i, (*(*_nodes)[i])[0], (*(*_nodes)[i])[1], (*(*_nodes)[i])[2]));
 
 	// set mesh elements
 	size_t nElems = _elems->size();
 	for (size_t i = 0; i < nElems; i++)
 	{
 		MeshLib::CElem* elem(new MeshLib::CElem());
-		//elem->SetElementType((*_elems)[i]->type);
 		elem->setElementProperties((*_elems)[i]->type);
 		elem->SetPatchIndex((*_elems)[i]->material);
 
 		size_t nElemNodes = ((*_elems)[i]->nodes).size();
-		//elem->SetNodesNumber(nElemNodes);
-		//elem->nodes_index.resize(nElemNodes);
 		for (size_t j = 0; j < nElemNodes; j++)
-		{
-			int a = (*_elems)[i]->nodes[j];
-			elem->SetNodeIndex(j, a);
-		}
+			elem->SetNodeIndex(j, (*_elems)[i]->nodes[j]);
 
 		mesh->ele_vector.push_back(elem);
 	}
-	//mesh->ConstructGrid();
+
+	mesh->ConstructGrid();
 	std::cout << "done." << std::endl;
 
 	return mesh;

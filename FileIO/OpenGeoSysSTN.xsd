@@ -6,7 +6,7 @@
   
   <!-- element definition -->
   <xs:element name="name" type="xs:string" />
-
+  <xs:element name="value" type="xs:decimal" />
 
   <!-- attribute definition -->
   <xs:attribute name="id" type="xs:nonNegativeInteger" />
@@ -19,6 +19,7 @@
   <xs:complexType name="stationType">
     <xs:sequence>
       <xs:element ref="name" />
+      <xs:element ref="value"  minOccurs="0" />				<!-- value is optional -->
       <!-- other station features can be inserted here -->
     </xs:sequence>
     <xs:attribute ref="id" use="required" />

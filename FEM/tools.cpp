@@ -1270,12 +1270,6 @@ double GetMatrixValue(double var1, double var2, std::string caption, int *guelti
 	dim_x = matrix->matrix_dimension[0]; //NB 4.8.01
 	dim_y = matrix->matrix_dimension[1]; //NB
 
-	int rangeV1[2], rangeV2[2];
-
-	rangeV1[0] = 0;
-	rangeV1[1] = dim_x - 1;
-	rangeV2[0] = dim_x;
-	rangeV2[1] = dim_x + dim_y - 1;
 
 	if (var1 < *matrix->variable_data_vector[0]) //is var1 smaller then the smallest argument?
 	{

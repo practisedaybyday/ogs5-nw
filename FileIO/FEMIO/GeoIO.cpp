@@ -24,47 +24,66 @@ bool GeoIO::readGeoInfo (GeoInfo* geo_info, std::istream& in_str, std::string& g
 
 	if (geo_type_name.find("POINT") != std::string::npos)
 	{
-		strstream >> geo_name;
-		const GEOLIB::Point* pnt(
-		        (geo_obj.getPointVecObj(unique_geo_name))->getElementByName(geo_name));
-		if (pnt == NULL)
-		{
-			std::cerr << "ERROR in GeoIO::readGeoInfo: point name \"" << geo_name
-			          << "\" not found!" << std::endl;
-#ifdef OGS_USE_QT
-			return false;
-#else
-			exit(1);
-#endif
-		}
 		geo_info->setGeoType(GEOLIB::POINT);
-		geo_info->setGeoObj(pnt);
-		strstream.clear();
-		return true;
+		strstream >> geo_name;
+		
+		const GEOLIB::PointVec* pnt_vec(geo_obj.getPointVecObj(unique_geo_name));
+		if (pnt_vec)
+		{
+			const GEOLIB::Point* pnt(pnt_vec->getElementByName(geo_name));
+			if (pnt == NULL)
+			{
+				std::cerr << "ERROR in GeoIO::readGeoInfo: point name \"" 
+						  << geo_name << "\" not found!" << std::endl;
+#ifdef OGS_USE_QT
+				return false;
+#else
+				exit(1);
+#endif
+			}
+			geo_info->setGeoObj(pnt);
+			return true;
+		}
+
+		std::cerr << "Error in GeoIO::readGeoInfo: point vector not found!" <<std::endl;
+#ifdef OGS_USE_QT
+		return false;
+#else
+		exit(1);
+#endif
 	}
 
-	if (geo_type_name.find("POLYLINE") != std::string::npos)
+	else if (geo_type_name.find("POLYLINE") != std::string::npos)
 	{
 		geo_info->setGeoType(GEOLIB::POLYLINE);
 		strstream >> geo_name;
-		const GEOLIB::Polyline* ply(
-		        (geo_obj.getPolylineVecObj(unique_geo_name))->getElementByName(geo_name));
-		if (ply == NULL)
+		const GEOLIB::PolylineVec* ply_vec = geo_obj.getPolylineVecObj(unique_geo_name);
+		if (ply_vec)
 		{
-			std::cerr << "error in GeoIO::readGeoInfo: polyline name \"" << geo_name
-			          << "\" not found!" << std::endl;
+			const GEOLIB::Polyline* ply(ply_vec->getElementByName(geo_name));
+			if (ply == NULL)
+			{
+				std::cerr << "error in GeoIO::readGeoInfo: polyline name \"" 
+					      << geo_name << "\" not found!" << std::endl;
 #ifdef OGS_USE_QT
-			return false;
+				return false;
 #else
-			exit(1);
+				exit(1);
 #endif
+			}
+			geo_info->setGeoObj(ply);
+			return true;
 		}
-		geo_info->setGeoObj(ply);
-		strstream.clear();
-		return true;
+
+		std::cerr << "Error in GeoIO::readGeoInfo: polyline vector not found!" <<std::endl;
+#ifdef OGS_USE_QT
+		return false;
+#else
+		exit(1);
+#endif
 	}
 
-	if (geo_type_name.find("SURFACE") != std::string::npos)
+	else if (geo_type_name.find("SURFACE") != std::string::npos)
 	{
 		geo_info->setGeoType(GEOLIB::SURFACE);
 		strstream >> geo_name;
@@ -74,9 +93,8 @@ bool GeoIO::readGeoInfo (GeoInfo* geo_info, std::istream& in_str, std::string& g
 			const GEOLIB::Surface* sfc(sfc_vec->getElementByName(geo_name));
 			if (sfc == NULL)
 			{
-				std::cerr << "error in GeoIO::readGeoInfo: surface name \"" <<
-				geo_name
-				          << "\" not found!" << std::endl;
+				std::cerr << "Error in GeoIO::readGeoInfo: surface name \"" 
+						  << geo_name << "\" not found!" << std::endl;
 #ifdef OGS_USE_QT
 				return false;
 #else
@@ -84,22 +102,18 @@ bool GeoIO::readGeoInfo (GeoInfo* geo_info, std::istream& in_str, std::string& g
 #endif
 			}
 			geo_info->setGeoObj(sfc);
+			return true;
 		}
-		else
-		{
-			std::cerr << "error in GeoIO::readGeoInfo: surface vector not found!" <<
-			std::endl;
+
+		std::cerr << "Error in GeoIO::readGeoInfo: surface vector not found!" <<std::endl;
 #ifdef OGS_USE_QT
-			return false;
+		return false;
 #else
-			exit(1);
+		exit(1);
 #endif
-		}
-		strstream.clear();
-		return true;
 	}
 
-	if (geo_type_name.find("VOLUME") != std::string::npos)
+	else if (geo_type_name.find("VOLUME") != std::string::npos)
 	{
 		geo_info->setGeoType(GEOLIB::VOLUME);
 		strstream >> geo_name;
@@ -107,7 +121,7 @@ bool GeoIO::readGeoInfo (GeoInfo* geo_info, std::istream& in_str, std::string& g
 		return true;
 	}
 
-	if (geo_type_name.find("DOMAIN") != std::string::npos)
+	else if (geo_type_name.find("DOMAIN") != std::string::npos)
 	{
 		geo_info->setGeoType(GEOLIB::GEODOMAIN);
 		strstream >> geo_name;
@@ -117,4 +131,5 @@ bool GeoIO::readGeoInfo (GeoInfo* geo_info, std::istream& in_str, std::string& g
 
 	return false;
 }
+
 }

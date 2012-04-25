@@ -684,7 +684,7 @@ vec<void*>:: vec (const int argSize) : _size(argSize)
 #ifdef gDEBUG
 	if (!_entry)
 	{
-		cout << "\n*** failed in memory allocatiing for vec ";
+		cout << "\n*** failed in memory allocating for vec ";
 		abort();
 	}
 #endif
@@ -698,7 +698,7 @@ vec<void*>:: vec (const vec<void*>& v)
 #ifdef gDEBUG
 	if (!_entry)
 	{
-		std::cout << "\n*** failed in memory allocatiing for vec ";
+		std::cout << "\n*** failed in memory allocating for vec ";
 		abort();
 	}
 #endif
@@ -723,7 +723,7 @@ void vec<void*>:: resize(const int argSize)
 #ifdef gDEBUG
 	if (!_entry)
 	{
-		std::cout << "\n*** failed in memory allocatiing for vec ";
+		std::cout << "\n*** failed in memory allocating for vec ";
 		abort();
 	}
 #endif

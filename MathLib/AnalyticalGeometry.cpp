@@ -16,6 +16,7 @@
 #include "swap.h"
 
 // GEO
+#include "AxisAlignedBoundingBox.h"
 #include "Polyline.h"
 #include "Triangle.h"
 
@@ -55,11 +56,29 @@ bool lineSegmentIntersect (const GEOLIB::Point& a, const GEOLIB::Point& b,
                            const GEOLIB::Point& c, const GEOLIB::Point& d,
                            GEOLIB::Point& s)
 {
+	//*** in order to make the intersection test more stable
+	// compute bounding box for the points
+	GEOLIB::AABB aabb;
+	aabb.update(a);
+	aabb.update(b);
+	aabb.update(c);
+	aabb.update(d);
+	// transforming coordinates to interval [0,1]x[0,1]x[0,1]
+	double delta(aabb.getMaxPoint()[0]-aabb.getMinPoint()[0]);
+	const double tmp (aabb.getMaxPoint()[1]-aabb.getMinPoint()[1]);
+	if (delta < tmp) {
+		delta = tmp;
+	}
+	GEOLIB::Point a_cpy((a[0] - aabb.getMinPoint()[0])/delta, (a[1] - aabb.getMinPoint()[1])/delta, 0.0);
+	GEOLIB::Point b_cpy((b[0] - aabb.getMinPoint()[0])/delta, (b[1] - aabb.getMinPoint()[1])/delta, 0.0);
+	GEOLIB::Point c_cpy((c[0] - aabb.getMinPoint()[0])/delta, (c[1] - aabb.getMinPoint()[1])/delta, 0.0);
+	GEOLIB::Point d_cpy((d[0] - aabb.getMinPoint()[0])/delta, (d[1] - aabb.getMinPoint()[1])/delta, 0.0);
+
 	Matrix<double> mat(2,2);
-	mat(0,0) = b[0] - a[0];
-	mat(1,0) = b[1] - a[1];
-	mat(0,1) = c[0] - d[0];
-	mat(1,1) = c[1] - d[1];
+	mat(0,0) = b_cpy[0] - a_cpy[0];
+	mat(1,0) = b_cpy[1] - a_cpy[1];
+	mat(0,1) = c_cpy[0] - d_cpy[0];
+	mat(1,1) = c_cpy[1] - d_cpy[1];
 
 	// check if vectors are parallel
 	double eps (sqrt(std::numeric_limits<double>::min()));
@@ -69,29 +88,27 @@ bool lineSegmentIntersect (const GEOLIB::Point& a, const GEOLIB::Point& b,
 		if (fabs(mat(0,1)) < eps)
 			// vector (B-A) is parallel to x-axis
 			return false;
+	} else {
+		// vector (D-C) is not parallel to x-axis
+		if (fabs(mat(0,1)) >= eps)
+			// vector (B-A) is not parallel to x-axis
+			// \f$(B-A)\f$ and \f$(D-C)\f$ are parallel iff there exists
+			// a constant \f$c\f$ such that \f$(B-A) = c (D-C)\f$
+			if (fabs (mat(0,0) / mat(0,1) - mat(1,0) / mat(1,1)) < eps * fabs (mat(0,0) / mat(0,1)))
+				return false;
 	}
-	else
-	// vector (D-C) is not parallel to x-axis
-	if (fabs(mat(0,1)) >= eps)
-		// vector (B-A) is not parallel to x-axis
-		// \f$(B-A)\f$ and \f$(D-C)\f$ are parallel iff there exists
-		// a constant \f$c\f$ such that \f$(B-A) = c (D-C)\f$
-		if (fabs (mat(0,
-		              0) / mat(0,1) - mat(1,0) / mat(1,1)) < eps * fabs (mat(0,0) / mat(0,1)))
-			return false;
-
 
 	double* rhs (new double[2]);
-	rhs[0] = c[0] - a[0];
-	rhs[1] = c[1] - a[1];
+	rhs[0] = c_cpy[0] - a_cpy[0];
+	rhs[1] = c_cpy[1] - a_cpy[1];
 
-	GaussAlgorithm lu_solver (mat);
+	GaussAlgorithm<double> lu_solver (mat);
 	lu_solver.execute (rhs);
-	if (0 <= rhs[0] && rhs[0] <= 1.0 && 0 <= rhs[1] && rhs[1] <= 1.0)
-	{
+	if (0 <= rhs[0] && rhs[0] <= 1.0 && 0 <= rhs[1] && rhs[1] <= 1.0) {
 		s[0] = a[0] + rhs[0] * (b[0] - a[0]);
 		s[1] = a[1] + rhs[0] * (b[1] - a[1]);
 		s[2] = a[2] + rhs[0] * (b[2] - a[2]);
+
 		// check z component
 		double z0 (a[2] - d[2]), z1(rhs[0] * (b[2] - a[2]) + rhs[1] * (d[2] - c[2]));
 		delete [] rhs;
@@ -99,9 +116,9 @@ bool lineSegmentIntersect (const GEOLIB::Point& a, const GEOLIB::Point& b,
 			return true;
 		else
 			return false;
-	}
-	else
+	} else {
 		delete [] rhs;
+	}
 	return false;
 }
 
@@ -119,16 +136,14 @@ bool lineSegmentsIntersect (const GEOLIB::Polyline* ply,
 	 * \f$j+1\f$-st point of the polyline, \f$j>k+1\f$
 	 */
 	for (size_t k(0); k < n_segs - 2; k++)
-		for (size_t j(k + 2); j < n_segs; j++)
-		{
-			if (k != 0 || j < n_segs - 1)
-				if (lineSegmentIntersect (*(*ply)[k], *(*ply)[k + 1], *(*ply)[j],
-				                          *(*ply)[j + 1], intersection_pnt))
-				{
+		for (size_t j(k + 2); j < n_segs; j++) {
+			if (k != 0 || j < n_segs - 1) {
+				if (lineSegmentIntersect(*(*ply)[k], *(*ply)[k + 1],*(*ply)[j], *(*ply)[j + 1], intersection_pnt)) {
 					idx0 = k;
 					idx1 = j;
 					return true;
 				}
+			}
 		}
 	return false;
 }
@@ -143,7 +158,7 @@ bool isPointInTriangle (const double p[3], const double a[3], const double b[3],
 	mat(1,1) = c[1] - b[1];
 	double rhs[2] = {p[0] - b[0], p[1] - b[1]};
 
-	MathLib::GaussAlgorithm gauss (mat);
+	MathLib::GaussAlgorithm<double> gauss (mat);
 	gauss.execute (rhs);
 
 	if (0 <= rhs[0] && rhs[0] <= 1 && 0 <= rhs[1] && rhs[1] <= 1 && rhs[0] + rhs[1] <= 1)
@@ -224,4 +239,47 @@ void rotatePointsToXY(Vector &plane_normal,
 
 	delete [] tmp;
 }
+
+void rotatePointsToXZ(Vector &n, std::vector<GEOLIB::Point*> &pnts)
+{
+	double small_value (sqrt (std::numeric_limits<double>::min()));
+	if (fabs(n[0]) < small_value && fabs(n[1]) < small_value)
+		return;
+
+	// *** some frequently used terms ***
+	// n_1^2 + n_2^2
+	const double h0(n[0] * n[0] + n[1] * n[1]);
+	// 1 / sqrt (n_1^2 + n_2^2)
+	const double h1(1.0 / sqrt(h0));
+	// 1 / sqrt (n_1^2 + n_2^2 + n_3^2)
+	const double h2(1.0 / sqrt(h0 + n[2] * n[2]));
+
+	Matrix<double> rot_mat(3, 3);
+	// calc rotation matrix
+	rot_mat(0, 0) = n[1] * h1;
+	rot_mat(0, 1) = - n[0] * h1;
+	rot_mat(0, 2) = 0.0;
+	rot_mat(1, 0) = n[0] * h2;
+	rot_mat(1, 1) = n[1] * h2;
+	rot_mat(1, 2) = n[2] * h2;
+	rot_mat(2, 0) = n[0] * n[2] * h1 * h2;
+	rot_mat(2, 1) = n[1] * n[2] * h1 * h2;
+	rot_mat(2, 2) = - sqrt(h0) * h2;
+
+	double* tmp (NULL);
+	size_t n_pnts(pnts.size());
+	for (size_t k(0); k < n_pnts; k++) {
+		tmp = rot_mat * pnts[k]->getData();
+		for (size_t j(0); j < 3; j++)
+			(*(pnts[k]))[j] = tmp[j];
+		delete [] tmp;
+	}
+
+	tmp = rot_mat * n.getData();
+	for (size_t j(0); j < 3; j++)
+		n[j] = tmp[j];
+
+	delete [] tmp;
+}
+
 } // end namespace MathLib

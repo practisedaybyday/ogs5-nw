@@ -8,6 +8,9 @@
 
 #include "XMLInterface.h"
 
+namespace FileIO
+{
+
 /**
  * \brief Reads and writes Observation Sites to and from XML files.
  */
@@ -24,22 +27,8 @@ public:
 	/// Reads an xml-file containing station object definitions into the GEOObjects used in the contructor
 	int readFile(const QString &fileName);
 
-	/**
-	 * Writes station data from GEOObjects to an xml-file
-	 * \param filename The filename for the file into which the data will be written.
-	 * \param stnName The name of the station vector that will be written into the file.
-	 */
-	int writeFile(const QString &filename, const QString &stnName) const;
-
-	/**
-	 * Writes station data from GEOObjects to an xml-file (using QString version)
-	 * \param fname The filename for the file into which the data will be written.
-	 * \param stn_name The name of the station vector that will be written into the file.
-	 */
-	int writeFile(std::string const& fname, std::string const &stn_name) const
-	{
-		return writeFile (QString::fromStdString(fname), QString::fromStdString(stn_name));
-	}
+protected:
+	int write(std::ostream& stream);
 
 private:
 	/// Reads GEOLIB::Station- or StationBorehole-objects from an xml-file
@@ -53,5 +42,7 @@ private:
 	/// Reads the stratigraphy of a borehole from an xml-file
 	void readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationBorehole* borehole );
 };
+
+}
 
 #endif // XMLSTNINTERFACE_H

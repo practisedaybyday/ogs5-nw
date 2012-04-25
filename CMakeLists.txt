@@ -1,9 +1,9 @@
 #### OGS-5 Project ####
 
 # Specify minimum CMake version
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6.2)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 
-# Project name is set later
+# Project name
 PROJECT(OGS)
 
 ### CMake setup ###
@@ -14,6 +14,9 @@ INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
 
 ### Find directories and libraries ###
 INCLUDE (CMakeConfiguration/Find.cmake)
+
+### General project setup ###
+INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
 
 ###############
 ### Options ###
@@ -50,19 +53,22 @@ OPTION(OGS_PYTHON "Enable python scripting interface" OFF)
 OPTION(OGS_BUILD_UTILITIES "Build additional utility programs?" OFF)
 OPTION(OGS_CMAKE_DEBUG "Show additional cmake debug information" OFF)
 OPTION(OGS_ONE_BIG_GTEST "Should all gtests be collected to one ctest" ON)
-OPTION(OGS_USE_NETCDF "NetCDF interface" OFF)
 OPTION_REQUIRES(OGS_USE_OPENSG "VTK to OpenSG converter" OGS_USE_QT)
 OPTION_REQUIRES(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OGS_USE_QT)
 OPTION_REQUIRES(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OGS_USE_QT)
 OPTION(OGS_BUILD_INFO "Should build information be generated" ON)
 OPTION(CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
-IF(GCC AND GPROF_PATH)
-	OPTION(OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
-	IF(OGS_PROFILE AND DOT_TOOL_PATH)
-		OPTION(OGS_OUTPUT_PROFILE "Enables pdf output of profiling results." OFF)
-	ENDIF() # OGS_PROFILE AND DOT_TOOL_PATH
-ENDIF() # GCC AND GPROF_PATH
-OPTION (OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
+IF(GCC)
+	IF(GPROF_PATH)
+		OPTION(OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
+		IF(OGS_PROFILE AND DOT_TOOL_PATH)
+			OPTION(OGS_OUTPUT_PROFILE "Enables pdf output of profiling results." OFF)
+		ENDIF() # OGS_PROFILE AND DOT_TOOL_PATH
+	ENDIF() # GPROF_PATH
+	
+	OPTION_REQUIRES(OGS_COVERAGE "Enables code coverage measurements with gcov/lcov." OGS_BUILD_TESTS)
+ENDIF() # GCC 
+OPTION (OGS_BUILD_TESTS "Enables building of tests." OFF)
 
 MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_BUILD_INFO CMAKE_CMD_ARGS)
 
@@ -70,12 +76,12 @@ MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_BUILD_IN
 ### OGS version information. Adjust these if you release a new version. ###
 ###########################################################################
 SET (OGS_VERSION_MAJOR 5)
-SET (OGS_VERSION_MINOR 2)
-SET (OGS_VERSION_PATCH 08)
-SET (OGS_RELEASE_PERSONS "LB/TF/KR")
+SET (OGS_VERSION_MINOR 3)
+SET (OGS_VERSION_PATCH 0)
+SET (OGS_RELEASE_PERSONS "LB/TF/CH/KR")
 SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}(${OGS_RELEASE_PERSONS})")
 # should we use ISO dates: 2010-12-31 ?
-SET (OGS_DATE "14.12.2011")
+SET (OGS_DATE "25.04.2012")
 
 # Check for number of processors
 INCLUDE(ProcessorCount)
@@ -85,27 +91,24 @@ IF(PROCESSOR_COUNT EQUAL 0)
 	SET(PROCESSOR_COUNT 1)
 ELSE()
 	MESSAGE(STATUS "Number of processors: ${PROCESSOR_COUNT}")
-ENDIF() # PROCESSOR_COUNT 
-
-### General project setup ###
-INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
+ENDIF() # PROCESSOR_COUNT
 
 IF(OGS_FEM)
-	 MESSAGE (STATUS	"Configuring for FEM command line" )	
+	 MESSAGE (STATUS	"Configuring for FEM command line" )
 ENDIF(OGS_FEM)
 
 IF(OGS_FEM_SP)
-	MESSAGE (STATUS	 "Configuring for FEM command line with new sparse matrix" )	
+	MESSAGE (STATUS	"Configuring for FEM command line with new sparse matrix" )
 	ADD_DEFINITIONS(-DNEW_EQS)
 ENDIF(OGS_FEM_SP)
 
 IF(OGS_FEM_JFNK)
-	MESSAGE (STATUS	 "Configuring for Jacobi free Newton-Krylov method for H2M problem" ) 
+	MESSAGE (STATUS "Configuring for Jacobi free Newton-Krylov method for H2M problem" )
 	ADD_DEFINITIONS(-DNEW_EQS -DJFNK_H2M)
 ENDIF(OGS_FEM_JFNK)
 
 IF(OGS_FEM_MPI)
-	MESSAGE (STATUS	 "Configuring for FEM command line with MPI" )
+	MESSAGE (STATUS "Configuring for FEM command line with MPI" )
 	IF (UNIX)
 		STRING (REGEX MATCH mpi MPI_COMPILER_SET ${CMAKE_CXX_COMPILER})
 		IF (NOT MPI_COMPILER_SET)
@@ -119,7 +122,7 @@ IF(OGS_FEM_MPI)
 ENDIF(OGS_FEM_MPI)
 
 IF(OGS_FEM_GEMS)
-	MESSAGE (STATUS	 "Configuring for FEM command line with GEMS" )
+	MESSAGE (STATUS	"Configuring for FEM command line with GEMS" )
 	ADD_DEFINITIONS(-DNO_ERROR_CONTROL -DGEM_REACT -DGEMlib -DIPMGEMPLUGIN
 		-DNEW_EQS)
 	IF (MSVC)
@@ -133,7 +136,7 @@ IF(OGS_FEM_GEMS)
 ENDIF(OGS_FEM_GEMS)
 
 IF(OGS_FEM_PQC)
-	MESSAGE (STATUS	 "Configuring for FEM command line with PQC" )	
+	MESSAGE (STATUS "Configuring for FEM command line with PQC" )
 	MESSAGE (STATUS "Configuration: g++ and LIBPHREEQC")
 	ADD_DEFINITIONS(-DLIBPHREEQC -D_POSIX_SOURCE -DNO_ERROR_CONTROL -DNEW_EQS)
 	ADD_SUBDIRECTORY ( PQC )
@@ -143,7 +146,7 @@ IF(OGS_FEM_PQC)
 ENDIF(OGS_FEM_PQC)
 
 IF(OGS_FEM_BRNS)
-	MESSAGE (STATUS	 "Configuring for FEM command line with BRNS" )
+	MESSAGE (STATUS	"Configuring for FEM command line with BRNS" )
 	ADD_DEFINITIONS(-DNEW_EQS -DBRNS -DNO_ERROR_CONTROL -D_POSIX_SOURCE)
 	IF(PARALLEL_USE_MPI)
 			ADD_DEFINITIONS(-DUSE_MPI_BRNS)
@@ -151,7 +154,7 @@ IF(OGS_FEM_BRNS)
 ENDIF(OGS_FEM_BRNS)
 
 IF(OGS_FEM_LIS)
-	MESSAGE (STATUS	 "Configuring for FEM command line with LIS" )
+	MESSAGE (STATUS "Configuring for FEM command line with LIS" )
 	ADD_DEFINITIONS(-DNEW_EQS -DIPMGEMPLUGIN -DLIS)
 	SET(PARALLEL_USE_OPENMP ON CACHE BOOL "Use Library of Iterative Solvers")
 	SET(LIS ON CACHE BOOL "Use Library of Iterative Solvers")
@@ -159,7 +162,7 @@ IF(OGS_FEM_LIS)
 ENDIF(OGS_FEM_LIS)
 
 IF(OGS_FEM_MKL)
-	MESSAGE (STATUS	 "Configuring for FEM command line with MKL" )
+	MESSAGE (STATUS	"Configuring for FEM command line with MKL" )
 	ADD_DEFINITIONS(-DNO_ERROR_CONTROL -DNEW_EQS -DMKL)
 	SET(PARALLEL_USE_OPENMP ON CACHE BOOL "Use Library of Iterative Solvers")
 	SET(LIS ON CACHE BOOL "Use Library of Iterative Solvers")
@@ -168,7 +171,7 @@ IF(OGS_FEM_MKL)
 ENDIF(OGS_FEM_MKL)
 
 IF(OGS_FEM_CHEMAPP)
-	MESSAGE (STATUS	 "Configuring for FEM command line with CHEMAPP" )
+	MESSAGE (STATUS	"Configuring for FEM command line with CHEMAPP" )
 	ADD_DEFINITIONS(-DCHEMAPP)
 ENDIF(OGS_FEM_CHEMAPP)
 
@@ -192,6 +195,9 @@ IF(OGS_USE_VRPN)
 	ADD_DEFINITIONS(-DOGS_USE_VRPN)
 ENDIF() # OGS_USE_VRPN
 
+IF(OGS_USE_QT)
+	ADD_DEFINITIONS(-DOGS_USE_QT)
+ENDIF(OGS_USE_QT)
 
 # Add subdirectories with the projects
 ADD_SUBDIRECTORY( Base )
@@ -212,9 +218,8 @@ ADD_SUBDIRECTORY( OGSProject )
 ADD_SUBDIRECTORY( OGS )
 
 IF(OGS_USE_QT)
-	MESSAGE (STATUS	"Configuring for OGS with GUI" )	
+	MESSAGE (STATUS	"Configuring for OGS with GUI" )
 	SET(OGS_FEM ON )
-	ADD_DEFINITIONS(-DOGS_USE_QT)
 	#IF(OGS_USE_OPENSG AND CMAKE_COMPILER_IS_GNUCXX)
 	#	ADD_DEFINITIONS (-D__STDC_FORMAT_MACROS)	# for OpenSG compiling
 	#ENDIF()
@@ -225,10 +230,6 @@ ENDIF(OGS_USE_QT)
 CONFIGURE_FILE (Base/Configure.h.in ${PROJECT_BINARY_DIR}/Base/Configure.h)
 CONFIGURE_FILE (Base/BuildInfo.h.in ${PROJECT_BINARY_DIR}/Base/BuildInfo.h)
 
-IF (MSVC)
-	ADD_SUBDIRECTORY (CMakeConfiguration)
-ENDIF (MSVC)
-
 IF (BENCHMARK_DIR_FOUND OR GTEST_FOUND)
 	ENABLE_TESTING()
 ENDIF (BENCHMARK_DIR_FOUND OR GTEST_FOUND)
@@ -237,10 +238,9 @@ IF (EXAMPLEDATA_DIR_FOUND)
 	INSTALL (DIRECTORY ${EXAMPLEDATA_DIR_FOUND} DESTINATION . PATTERN .svn EXCLUDE)
 ENDIF (EXAMPLEDATA_DIR_FOUND)
 
-IF (GTEST_FOUND)
-	INCLUDE_DIRECTORIES(${GTEST_INCLUDE_DIRS})
+IF (OGS_BUILD_TESTS)
 	ADD_SUBDIRECTORY(tests)
-ENDIF (GTEST_FOUND)
+ENDIF (OGS_BUILD_TESTS)
 
 IF (OGS_PACKAGING)
 	# Add packaging configuration
@@ -250,29 +250,28 @@ ENDIF (OGS_PACKAGING)
 
 IF (OGS_CMAKE_DEBUG)
 	INCLUDE (CMakeConfiguration/PrintVariables.cmake)
-ENDIF (OGS_CMAKE_DEBUG) 
+ENDIF (OGS_CMAKE_DEBUG)
 
 IF (BENCHMARK_DIR_FOUND)
 	SET(BENCHMARK_TIMEOUT 1800) # in s, 30 minutes timeout on normal benchmarks
 	SET(EXCEEDING_BENCHMARK_TIMEOUT 86400) # 1 day timeout on exceeding benchmarks
 	STRING (COMPARE EQUAL "$ENV{HOSTNAME}" "dev2.intern.ufz.de" HOST_IS_DEV2)
-	MESSAGE (STATUS "Benchmarking through CTest enabled")
 	IF (${HOST_IS_DEV2})
 		MESSAGE (STATUS "On dev2: file comparing enabled")
 	ENDIF (${HOST_IS_DEV2})
-	
+
 	FILE (GLOB BENCHMARK_CONFIGS "${PROJECT_SOURCE_DIR}/../benchmarks/*.cmake")
 	FOREACH (BENCHMARK_CONFIG ${BENCHMARK_CONFIGS})
 		INCLUDE ("${BENCHMARK_CONFIG}")
 	ENDFOREACH(BENCHMARK_CONFIG)
-	
+
 	UNSET (COPY_BENCHMARKS_TO_REF CACHE)
 ENDIF (BENCHMARK_DIR_FOUND)
 
 IF (OGS_BUILD_UTILITIES)
 	ADD_SUBDIRECTORY (UTL/MSHGEOTOOLS/)
 	ADD_SUBDIRECTORY (UTL/FileConverter/)
-	ADD_SUBDIRECTORY (tests/GEO/)
+	ADD_SUBDIRECTORY (UTL/FileConverter/OGSFileConverter)
 ENDIF (OGS_BUILD_UTILITIES)
 
 ## Documentation ##

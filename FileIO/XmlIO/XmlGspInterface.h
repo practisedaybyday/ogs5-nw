@@ -8,6 +8,9 @@
 
 #include "XMLInterface.h"
 
+namespace FileIO
+{
+
 /**
  * \brief Reads and writes project information to and from XML files.
  */
@@ -26,12 +29,16 @@ public:
 	/// Reads an xml-file containing a GeoSys project.
 	/// Project files currently cover only geo-, msh- and station-data. This will be expanded in the future.
 	int readFile(const QString &fileName);
+	
+	int writeToFile(std::string filename);
 
-	/// Writes a GeoSys project file containing all data that is currently loaded.
-	/// Project files currently cover only geo-, msh- and station-data. This will be expanded in the future.
-	int writeFile(const QString &fileName, const QString &tmp = "") const;
+protected:
+	int write(std::ostream& stream);
 
 private:
+	std::string _filename;
 };
+
+}
 
 #endif // XMLGSPINTERFACE_H

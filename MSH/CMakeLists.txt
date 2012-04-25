@@ -13,6 +13,7 @@ set( SOURCES_FEM
 	MshEditor.h
 	MSHEnums.h
 	MeshNodesAlongPolyline.h
+	MeshGrid.h
 	
 	GridAdapter.cpp
 	msh_core.cpp
@@ -26,7 +27,9 @@ set( SOURCES_FEM
 	msh_node.cpp
 	MshEditor.cpp
 	MSHEnums.cpp
+
 	MeshNodesAlongPolyline.cpp
+	MeshGrid.cpp
 	#msh_pnt.cpp		# references removed elements.h nodes.h
 	
 	
@@ -106,14 +109,14 @@ endif (OGS_USE_QT)
 
 
 include_directories(
-	.
-	../Base
-	../GEO
-	../MathLib
-	../FileIO
-	../FEM
-	../LIB
-	../OGSProject
+	${CMAKE_SOURCE_DIR}/MSH
+	${CMAKE_SOURCE_DIR}/Base
+	${CMAKE_SOURCE_DIR}/GEO
+	${CMAKE_SOURCE_DIR}/MathLib
+	${CMAKE_SOURCE_DIR}/FileIO
+	${CMAKE_SOURCE_DIR}/FEM
+	${CMAKE_SOURCE_DIR}/LIB
+	${CMAKE_SOURCE_DIR}/OGSProject
 )
 
 

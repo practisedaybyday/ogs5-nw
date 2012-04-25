@@ -56,8 +56,7 @@ PetrelInterface::PetrelInterface(std::list<std::string> &sfc_fnames,
 	if (well_vec->size() > 0)
 		geo_obj->addStationVec(
 		        well_vec,
-		        _unique_name,
-		        (static_cast<GEOLIB::StationBorehole*> ((*well_vec)[0]))->getColor());
+		        _unique_name);
 	if (ply_vec->size () > 0)
 		geo_obj->addPolylineVec(ply_vec, _unique_name);
 }

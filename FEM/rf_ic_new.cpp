@@ -29,6 +29,8 @@ using namespace std;
 #include "rf_pcs.h"
 #include "rfmat_cp.h"
 
+#include "InitialCondition.h"
+
 //==========================================================================
 vector<CInitialConditionGroup*>ic_group_vector;
 vector<CInitialCondition*>ic_vector;
@@ -50,6 +52,27 @@ CInitialCondition::CInitialCondition() : dis_linear_f(NULL)
 	this->setProcess(NULL);               //OK
 
 	m_msh = NULL;                         //OK
+}
+
+// KR: Conversion from GUI-IC-object to CInitialCondition
+CInitialCondition::CInitialCondition(const InitialCondition* ic)
+	: ProcessInfo(ic->getProcessType(),ic->getProcessPrimaryVariable(),NULL), 
+	  GeoInfo(ic->getGeoType(),ic->getGeoObj()), 
+	  DistributionInfo(ic->getProcessDistributionType())
+{
+	setProcess( PCSGet( this->getProcessType() ) );
+	this->geo_name = ic->getGeoName();
+	const std::vector<size_t> dis_nodes = ic->getDisNodes();
+	const std::vector<double> dis_values = ic->getDisValues();
+	
+	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
+	{
+		this->geo_node_value = dis_values[0];
+	}
+	else
+		std::cout << "Error in CBoundaryCondition() - DistributionType \""
+		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType()) 
+				  << "\" currently not supported." << std::endl;
 }
 
 /**************************************************************************
@@ -315,7 +338,9 @@ ios::pos_type CInitialCondition::Read(std::ifstream* ic_file,
 					std::cerr <<
 					"error in CInitialCondition::Read: point name \"" <<
 					geo_name << "\" not found!" << std::endl;
+#ifndef OGS_USE_QT	//KR
 					exit (1);
+#endif
 				}
 				setGeoType (GEOLIB::POINT);
 				setGeoObj (pnt);
@@ -334,7 +359,9 @@ ios::pos_type CInitialCondition::Read(std::ifstream* ic_file,
 					std::cerr <<
 					"error in CInitialCondition::Read: polyline name \"" <<
 					geo_name << "\" not found!" << std::endl;
+#ifndef OGS_USE_QT	//KR
 					exit (1);
+#endif
 				}
 				setGeoType (GEOLIB::POLYLINE);
 				setGeoObj (ply);

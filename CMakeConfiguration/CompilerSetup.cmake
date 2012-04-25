@@ -35,19 +35,23 @@ ENDIF (WIN32)
 IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 	SET(GCC ON)
 	IF( NOT CMAKE_BUILD_TYPE STREQUAL "Debug" )
-		MESSAGE(STATUS "Set GCC release flags")
-		SET(CMAKE_CXX_FLAGS "-O3 -DNDEBUG")
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG")
 	ENDIF()
 	# -g
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wall -Wextra -Woverloaded-virtual -fno-nonansi-builtins")
 	# would be cool: -Woverloaded-virtual, would be overkill: -Weffc++
-        ADD_DEFINITIONS(-DGCC)
+  ADD_DEFINITIONS(-DGCC)
+
 	IF (OGS_PROFILE)
-		IF( NOT CMAKE_BUILD_TYPE STREQUAL "Debug" )
-			MESSAGE(Warning "When using profiling you should set CMAKE_BUILD_TYPE to Debug.")
+		IF( NOT CMAKE_BUILD_TYPE STREQUAL "Release" )
+			MESSAGE(STATUS "When using profiling you should set CMAKE_BUILD_TYPE to Release.")
 		ENDIF()
 		SET(PROFILE_FLAGS "-pg -fno-omit-frame-pointer -O2 -DNDEBUG -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PROFILE_FLAGS}")
-		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${PROFILE_FLAGS}ctest")
 	ENDIF (OGS_PROFILE)
-ENDIF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
+	
+ENDIF() # CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC
+
+IF(OGS_COVERAGE)
+  INCLUDE(CodeCoverage)
+ENDIF()

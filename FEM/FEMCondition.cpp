@@ -33,7 +33,8 @@ FEMCondition::FEMCondition(const FEMCondition &cond, CondType t)
 	  DistributionInfo(cond.getProcessDistributionType()),
 	  _type(t),
 	  _geoName(cond.getGeoName()),
-	  _disValue(cond.getDisValue()),
+	  _disNodes(cond.getDisNodes()),
+	  _disValues(cond.getDisValues()),
 	  _associated_geometry(cond.getAssociatedGeometryName())
 {
 }
@@ -50,26 +51,15 @@ std::string FEMCondition::condTypeToString(CondType type)
 		return "Unspecified";
 }
 
-void FEMCondition::setLinearDisValues(const std::vector< std::pair<size_t, double> > &dis_values)
+void FEMCondition::setDisValues(const std::vector< std::pair<size_t, double> > &dis_values)
 {
+	std::vector<size_t> nodes;
+	std::vector<double> values;
 	for (size_t i = 0; i < dis_values.size(); i++)
 	{
-		this->_disValue.push_back(dis_values[i].first);
-		this->_disValue.push_back(dis_values[i].second);
+		nodes.push_back(dis_values[i].first);
+		values.push_back(dis_values[i].second);
 	}
-}
-
-std::vector< std::pair<size_t, double> > FEMCondition::getDistributedPairs(std::vector<int> point_ids, std::vector<double> point_values)
-{
-	if (point_ids.size() == point_values.size())
-	{
-		size_t nValues (point_ids.size());
-		std::vector< std::pair<size_t, double> > dis_values(nValues);
-		for (size_t i=0; i<nValues; i++)
-			dis_values.push_back( std::pair<size_t, double>(point_ids[i],point_values[i]) );
-		return dis_values;
-	}
-	std::cout << "Error in SourceTerm() - size of linear distribution arrays doesn't match..." << std::endl;
-	std::vector< std::pair<size_t, double> > dis_values(0);
-	return dis_values;
+	this->_disNodes=nodes;
+	this->_disValues=values;
 }

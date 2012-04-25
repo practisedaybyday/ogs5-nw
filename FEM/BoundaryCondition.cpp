@@ -14,8 +14,13 @@ BoundaryCondition::BoundaryCondition(const CBoundaryCondition &bc, const std::st
 {
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT ||
 	    this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
-		this->setDisValue(bc.getGeoNodeValue());
+		this->setConstantDisValue(bc.getGeoNodeValue());
 	else if (this->getProcessDistributionType() == FiniteElement::LINEAR ||
 	         this->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
-		this->setLinearDisValues(this->getDistributedPairs(bc.getPointsWithDistribedBC(), bc.getDistribedBC()));
+	{
+		const std::vector<int> bc_nodes(bc.getPointsWithDistribedBC());
+		std::vector<size_t> dis_nodes(bc_nodes.size());
+		for (size_t i=0; i<dis_nodes.size(); i++) dis_nodes[i] = static_cast<size_t>(bc_nodes[i]);
+		this->setDisValues(dis_nodes, bc.getDistribedBC());
+	}
 }
