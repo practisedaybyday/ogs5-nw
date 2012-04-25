@@ -27,6 +27,7 @@ set( SOURCES_FEM
 	msh_node.cpp
 	MshEditor.cpp
 	MSHEnums.cpp
+
 	MeshNodesAlongPolyline.cpp
 	MeshGrid.cpp
 	#msh_pnt.cpp		# references removed elements.h nodes.h

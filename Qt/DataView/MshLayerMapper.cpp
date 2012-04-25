@@ -59,9 +59,9 @@ MeshLib::CFEMesh* MshLayerMapper::CreateLayers(const MeshLib::CFEMesh* mesh,
 				MeshLib::CElem* elem( new MeshLib::CElem() );
 				size_t nElemNodes = sfc_elem->getNodeIndices().Size();
 				if (sfc_elem->GetElementType() == MshElemType::TRIANGLE)
-					elem->setElementProperties(MshElemType::PRISM);                                           // extrude triangles to prism
+					elem->setElementProperties(MshElemType::PRISM);			// extrude triangles to prism
 				else if (sfc_elem->GetElementType() == MshElemType::QUAD)
-					elem->setElementProperties(MshElemType::HEXAHEDRON);                                            // extrude quads to hexes
+					elem->setElementProperties(MshElemType::HEXAHEDRON);	// extrude quads to hexes
 				else if (sfc_elem->GetElementType() == MshElemType::LINE)
 					continue;                                            // line elements are ignored and not duplicated
 				else
