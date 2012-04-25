@@ -76,12 +76,12 @@ MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_BUILD_IN
 ### OGS version information. Adjust these if you release a new version. ###
 ###########################################################################
 SET (OGS_VERSION_MAJOR 5)
-SET (OGS_VERSION_MINOR 2)
-SET (OGS_VERSION_PATCH 08)
-SET (OGS_RELEASE_PERSONS "LB/TF/KR")
+SET (OGS_VERSION_MINOR 3)
+SET (OGS_VERSION_PATCH 0)
+SET (OGS_RELEASE_PERSONS "LB/TF/CH/KR")
 SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}(${OGS_RELEASE_PERSONS})")
 # should we use ISO dates: 2010-12-31 ?
-SET (OGS_DATE "14.12.2011")
+SET (OGS_DATE "25.04.2012")
 
 # Check for number of processors
 INCLUDE(ProcessorCount)
