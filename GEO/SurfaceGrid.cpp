@@ -14,6 +14,7 @@ namespace GEOLIB {
 SurfaceGrid::SurfaceGrid(Surface const*const sfc) :
 	AABB(sfc->getAABB()), _triangles_in_grid_box(NULL)
 {
+	double delta[3] = {0.0, 0.0, 0.0};
 	// get and modify bounding box
 	for (size_t k(0); k<3; k++) {
 		// make the bounding box a little bit bigger,
@@ -25,72 +26,72 @@ SurfaceGrid::SurfaceGrid(Surface const*const sfc) :
 		if ((_max_pnt[k] - _min_pnt[k]) < 1e-3 * fabs(_max_pnt[k])) {
 			_min_pnt[k] -= 1e-3 * fabs(_max_pnt[k]);
 		}
-		_delta[k] = _max_pnt[k] - _min_pnt[k];
+		delta[k] = _max_pnt[k] - _min_pnt[k];
 	}
 
-	if (_delta[0] < std::numeric_limits<double>::epsilon()) {
-		const double max_delta(std::max(_delta[1], _delta[2]));
+	if (delta[0] < std::numeric_limits<double>::epsilon()) {
+		const double max_delta(std::max(delta[1], delta[2]));
 		_min_pnt[0] -= max_delta * 0.5e-3;
 		_max_pnt[0] += max_delta * 0.5e-3;
-		_delta[0] = _max_pnt[0] - _min_pnt[0];
+		delta[0] = _max_pnt[0] - _min_pnt[0];
 	}
 
-	if (_delta[1] < std::numeric_limits<double>::epsilon()) {
-		const double max_delta(std::max(_delta[0], _delta[2]));
+	if (delta[1] < std::numeric_limits<double>::epsilon()) {
+		const double max_delta(std::max(delta[0], delta[2]));
 		_min_pnt[1] -= max_delta * 0.5e-3;
 		_max_pnt[1] += max_delta * 0.5e-3;
-		_delta[1] = _max_pnt[1] - _min_pnt[1];
+		delta[1] = _max_pnt[1] - _min_pnt[1];
 	}
 
-	if (_delta[2] < std::numeric_limits<double>::epsilon()) {
-		const double max_delta(std::max(_delta[0], _delta[1]));
+	if (delta[2] < std::numeric_limits<double>::epsilon()) {
+		const double max_delta(std::max(delta[0], delta[1]));
 		_min_pnt[2] -= max_delta * 0.5e-3;
 		_max_pnt[2] += max_delta * 0.5e-3;
-		_delta[2] = _max_pnt[2] - _min_pnt[2];
+		delta[2] = _max_pnt[2] - _min_pnt[2];
 	}
 
 	const size_t n_triangles(sfc->getNTriangles());
 	const size_t n_tris_per_box(5);
 	// *** condition: n_triangles / (_n_steps[0] * _n_steps[1] * _n_steps[2]) < n_tris_per_box
-	// *** with _n_steps[1] = _n_steps[0] * _delta[1]/_delta[0], _n_steps[2] = _n_steps[0] * _delta[2]/_delta[0]
-	if (fabs(_delta[0]) < std::numeric_limits<double>::epsilon()
-					|| fabs(_delta[1]) < std::numeric_limits<double>::epsilon()
-					|| fabs(_delta[2]) < std::numeric_limits<double>::epsilon()) {
+	// *** with _n_steps[1] = _n_steps[0] * delta[1]/delta[0], _n_steps[2] = _n_steps[0] * delta[2]/delta[0]
+	if (fabs(delta[0]) < std::numeric_limits<double>::epsilon()
+					|| fabs(delta[1]) < std::numeric_limits<double>::epsilon()
+					|| fabs(delta[2]) < std::numeric_limits<double>::epsilon()) {
 		// 1d case y = z = 0
-		if (fabs(_delta[1]) < std::numeric_limits<double>::epsilon() && fabs(_delta[2]) < std::numeric_limits<double>::epsilon()) {
+		if (fabs(delta[1]) < std::numeric_limits<double>::epsilon() && fabs(delta[2]) < std::numeric_limits<double>::epsilon()) {
 			_n_steps[0] = static_cast<size_t>(ceil(n_triangles / (double)n_tris_per_box));
 			_n_steps[1] = 1;
 			_n_steps[2] = 1;
 		} else {
 			// 1d case x = z = 0
-			if (fabs(_delta[0]) < std::numeric_limits<double>::epsilon() && fabs(_delta[2]) < std::numeric_limits<double>::epsilon()) {
+			if (fabs(delta[0]) < std::numeric_limits<double>::epsilon() && fabs(delta[2]) < std::numeric_limits<double>::epsilon()) {
 				_n_steps[0] = 1;
 				_n_steps[1] = static_cast<size_t>(ceil(n_triangles / (double)n_tris_per_box));
 				_n_steps[2] = 1;
 			} else {
 				// 1d case x = y = 0
-				if (fabs(_delta[0]) < std::numeric_limits<double>::epsilon() && fabs(_delta[1]) < std::numeric_limits<double>::epsilon()) {
+				if (fabs(delta[0]) < std::numeric_limits<double>::epsilon() && fabs(delta[1]) < std::numeric_limits<double>::epsilon()) {
 					_n_steps[0] = 1;
 					_n_steps[1] = 1;
 					_n_steps[2] = static_cast<size_t>(ceil(n_triangles / (double)n_tris_per_box));
 				} else {
 					// 2d cases
 					// y = 0
-					if (fabs(_delta[1]) < std::numeric_limits<double>::epsilon()) {
-						_n_steps[0] = static_cast<size_t>(ceil(sqrt(n_triangles * _delta[0] / (n_tris_per_box*_delta[2]))));
+					if (fabs(delta[1]) < std::numeric_limits<double>::epsilon()) {
+						_n_steps[0] = static_cast<size_t>(ceil(sqrt(n_triangles * delta[0] / (n_tris_per_box*delta[2]))));
 						_n_steps[1] = 1;
-						_n_steps[2] = static_cast<size_t>(ceil(_n_steps[0] * _delta[2] / _delta[0]));
+						_n_steps[2] = static_cast<size_t>(ceil(_n_steps[0] * delta[2] / delta[0]));
 					} else {
 						// z = 0
-						if (fabs(_delta[2]) < std::numeric_limits<double>::epsilon()) {
-							_n_steps[0] = static_cast<size_t>(ceil(sqrt(n_triangles * _delta[0] / (n_tris_per_box*_delta[1]))));
-							_n_steps[1] = static_cast<size_t>(ceil(_n_steps[0] * _delta[1] / _delta[0]));
+						if (fabs(delta[2]) < std::numeric_limits<double>::epsilon()) {
+							_n_steps[0] = static_cast<size_t>(ceil(sqrt(n_triangles * delta[0] / (n_tris_per_box*delta[1]))));
+							_n_steps[1] = static_cast<size_t>(ceil(_n_steps[0] * delta[1] / delta[0]));
 							_n_steps[2] = 1;
 						} else {
 							// x = 0
 							_n_steps[0] = 1;
-							_n_steps[1] = static_cast<size_t>(ceil(sqrt((double)n_triangles/n_tris_per_box * _delta[1] / _delta[2])));
-							_n_steps[2] = static_cast<size_t>(ceil(n_triangles * _delta[2] / (n_tris_per_box*_delta[1])));
+							_n_steps[1] = static_cast<size_t>(ceil(sqrt((double)n_triangles/n_tris_per_box * delta[1] / delta[2])));
+							_n_steps[2] = static_cast<size_t>(ceil(n_triangles * delta[2] / (n_tris_per_box*delta[1])));
 						}
 					}
 				}
@@ -98,9 +99,9 @@ SurfaceGrid::SurfaceGrid(Surface const*const sfc) :
 		}
 	} else {
 		// 3d case
-		_n_steps[0] = static_cast<size_t>(ceil(pow(n_triangles * _delta[0]*_delta[0] / (n_tris_per_box*_delta[1]*_delta[2]), 1. / 3.)));
-		_n_steps[1] = static_cast<size_t>(ceil(_n_steps[0] * std::min(_delta[1] / _delta[0], 100.0)));
-		_n_steps[2] = static_cast<size_t>(ceil(_n_steps[0] * std::min(_delta[2] / _delta[0], 100.0)));
+		_n_steps[0] = static_cast<size_t>(ceil(pow(n_triangles * delta[0]*delta[0] / (n_tris_per_box*delta[1]*delta[2]), 1. / 3.)));
+		_n_steps[1] = static_cast<size_t>(ceil(_n_steps[0] * std::min(delta[1] / delta[0], 100.0)));
+		_n_steps[2] = static_cast<size_t>(ceil(_n_steps[0] * std::min(delta[2] / delta[0], 100.0)));
 	}
 
 	const size_t n_plane (_n_steps[0]*_n_steps[1]);
@@ -108,7 +109,7 @@ SurfaceGrid::SurfaceGrid(Surface const*const sfc) :
 
 	// some frequently used expressions to fill the grid vectors
 	for (size_t k(0); k<3; k++) {
-		_step_sizes[k] = _delta[k] / _n_steps[k];
+		_step_sizes[k] = delta[k] / _n_steps[k];
 		_inverse_step_sizes[k] = 1.0 / _step_sizes[k];
 	}
 

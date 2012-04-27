@@ -12,7 +12,7 @@
 
 namespace MeshLib {
 
-MeshGrid::MeshGrid(MeshLib::CFEMesh const& mesh) :
+MeshGrid::MeshGrid(MeshLib::CFEMesh const& mesh, size_t max_num_per_grid_cell) :
 	GEOLIB::AABB(), _grid_quad_to_node_map(NULL)
 {
 	// compute axis aligned bounding box
@@ -22,6 +22,7 @@ MeshGrid::MeshGrid(MeshLib::CFEMesh const& mesh) :
 		this->update(nodes[k]->getData());
 	}
 
+	double delta[3] = {0.0, 0.0, 0.0};
 	for (size_t k(0); k<3; k++) {
 		// make the bounding box a little bit bigger,
 		// such that the node with maximal coordinates fits into the grid
@@ -29,38 +30,38 @@ MeshGrid::MeshGrid(MeshLib::CFEMesh const& mesh) :
 		if (fabs(_max_pnt[k]) < std::numeric_limits<double>::epsilon()) {
 			_max_pnt[k] = (_max_pnt[k] - _min_pnt[k]) * (1.0+1e-6);
 		}
-		_delta[k] = _max_pnt[k] - _min_pnt[k];
+		delta[k] = _max_pnt[k] - _min_pnt[k];
 	}
 
-	// *** condition: n_nodes / (_n_steps[0] * _n_steps[1] * _n_steps[2]) < 500
-	// *** with _n_steps[1] = _n_steps[0] * _delta[1]/_delta[0], _n_steps[2] = _n_steps[0] * _delta[2]/_delta[0]
-	if (fabs(_delta[1]) < std::numeric_limits<double>::epsilon() || fabs(_delta[2]) < std::numeric_limits<double>::epsilon()) {
+	// *** condition: n_nodes / (_n_steps[0] * _n_steps[1] * _n_steps[2]) < max_num_per_grid_cell
+	// *** with _n_steps[1] = _n_steps[0] * delta[1]/delta[0], _n_steps[2] = _n_steps[0] * delta[2]/delta[0]
+	if (fabs(delta[1]) < std::numeric_limits<double>::epsilon() || fabs(delta[2]) < std::numeric_limits<double>::epsilon()) {
 		// 1d case y = z = 0
-		if (fabs(_delta[1]) < std::numeric_limits<double>::epsilon() && fabs(_delta[2]) < std::numeric_limits<double>::epsilon()) {
-			_n_steps[0] = static_cast<size_t>(ceil(n_nodes / 500.0));
+		if (fabs(delta[1]) < std::numeric_limits<double>::epsilon() && fabs(delta[2]) < std::numeric_limits<double>::epsilon()) {
+			_n_steps[0] = static_cast<size_t>(ceil(n_nodes / (double)max_num_per_grid_cell));
 			_n_steps[1] = 1;
 			_n_steps[2] = 1;
 		} else {
 			// 1d case x = z = 0
-			if (fabs(_delta[0]) < std::numeric_limits<double>::epsilon() && fabs(_delta[2]) < std::numeric_limits<double>::epsilon()) {
+			if (fabs(delta[0]) < std::numeric_limits<double>::epsilon() && fabs(delta[2]) < std::numeric_limits<double>::epsilon()) {
 				_n_steps[0] = 1;
-				_n_steps[1] = static_cast<size_t>(ceil(n_nodes / 500.0));
+				_n_steps[1] = static_cast<size_t>(ceil(n_nodes / (double)max_num_per_grid_cell));
 				_n_steps[2] = 1;
 			} else {
 				// 1d case x = y = 0
-				if (fabs(_delta[0]) < std::numeric_limits<double>::epsilon() && fabs(_delta[1]) < std::numeric_limits<double>::epsilon()) {
+				if (fabs(delta[0]) < std::numeric_limits<double>::epsilon() && fabs(delta[1]) < std::numeric_limits<double>::epsilon()) {
 					_n_steps[0] = 1;
 					_n_steps[1] = 1;
-					_n_steps[2] = static_cast<size_t>(ceil(n_nodes / 500.0));
+					_n_steps[2] = static_cast<size_t>(ceil(n_nodes / (double)max_num_per_grid_cell));
 				} else {
 					// 2d case
-					if (fabs(_delta[1]) < std::numeric_limits<double>::epsilon()) {
-						_n_steps[0] = static_cast<size_t>(ceil(sqrt(n_nodes * _delta[0] / (500*_delta[2]))));
+					if (fabs(delta[1]) < std::numeric_limits<double>::epsilon()) {
+						_n_steps[0] = static_cast<size_t>(ceil(sqrt(n_nodes * delta[0] / (max_num_per_grid_cell*delta[2]))));
 						_n_steps[1] = 1;
-						_n_steps[2] = static_cast<size_t>(ceil(_n_steps[0] * _delta[2] / _delta[0]));
+						_n_steps[2] = static_cast<size_t>(ceil(_n_steps[0] * delta[2] / delta[0]));
 					} else {
-						_n_steps[0] = static_cast<size_t>(ceil(sqrt(n_nodes * _delta[0] / (500*_delta[1]))));
-						_n_steps[1] = static_cast<size_t>(ceil(_n_steps[0] * _delta[1] / _delta[0]));
+						_n_steps[0] = static_cast<size_t>(ceil(sqrt(n_nodes * delta[0] / (max_num_per_grid_cell*delta[1]))));
+						_n_steps[1] = static_cast<size_t>(ceil(_n_steps[0] * delta[1] / delta[0]));
 						_n_steps[2] = 1;
 					}
 				}
@@ -68,9 +69,9 @@ MeshGrid::MeshGrid(MeshLib::CFEMesh const& mesh) :
 		}
 	} else {
 		// 3d case
-		_n_steps[0] = static_cast<size_t>(ceil(pow(n_nodes * _delta[0]*_delta[0] / (500*_delta[1]*_delta[2]), 1. / 3.)));
-		_n_steps[1] = static_cast<size_t>(ceil(_n_steps[0] * _delta[1] / _delta[0]));
-		_n_steps[2] = static_cast<size_t>(ceil(_n_steps[0] * _delta[2] / _delta[0]));
+		_n_steps[0] = static_cast<size_t>(ceil(pow(n_nodes * delta[0]*delta[0] / (max_num_per_grid_cell*delta[1]*delta[2]), 1. / 3.)));
+		_n_steps[1] = static_cast<size_t>(ceil(_n_steps[0] * delta[1] / delta[0]));
+		_n_steps[2] = static_cast<size_t>(ceil(_n_steps[0] * delta[2] / delta[0]));
 	}
 
 	const size_t n_plane (_n_steps[0]*_n_steps[1]);
@@ -78,7 +79,7 @@ MeshGrid::MeshGrid(MeshLib::CFEMesh const& mesh) :
 
 	// some frequently used expressions to fill the grid vectors
 	for (size_t k(0); k<3; k++) {
-		_step_sizes[k] = _delta[k] / _n_steps[k];
+		_step_sizes[k] = delta[k] / _n_steps[k];
 		_inverse_step_sizes[k] = 1.0 / _step_sizes[k];
 	}
 
@@ -108,34 +109,6 @@ MeshGrid::MeshGrid(MeshLib::CFEMesh const& mesh) :
 MeshGrid::~MeshGrid()
 {
 	delete [] _grid_quad_to_node_map;
-}
-
-void MeshGrid::getGridCornerPoints(double const*const node, double* llf, double* urb) const
-{
-	size_t coords[3];
-	getGridCoords(node, coords);
-	for (unsigned l(0); l<3; l++) {
-		llf[l] = _min_pnt[l] + coords[l] * _step_sizes[l];
-		urb[l] = _min_pnt[l] + (coords[l]+1) * _step_sizes[l];
-	}
-}
-
-std::vector<MeshLib::CNode*> const& MeshGrid::getNodesInGrid(double const*const node) const
-{
-	size_t coords[3];
-	getGridCoords(node, coords);
-	return _grid_quad_to_node_map[coords[0] + coords[1]*_n_steps[0]+coords[2]*_n_steps[0]*_n_steps[1]];
-}
-
-std::vector<MeshLib::CNode*> const& MeshGrid::getNodesInGrid(size_t const*const coords) const
-{
-	return _grid_quad_to_node_map[coords[0] + coords[1]*_n_steps[0]+coords[2]*_n_steps[0]*_n_steps[1]];
-}
-
-void MeshGrid::getGridCoords(double const*const node, size_t* coords) const
-{
-	for (size_t k(0); k<3; k++)
-		coords[k] = static_cast<size_t>((node[k]-_min_pnt[k]) * _inverse_step_sizes[k]);
 }
 
 size_t MeshGrid::getIndexOfNearestNode(double const*const pnt) const
@@ -173,6 +146,13 @@ size_t MeshGrid::getIndexOfNearestNode(double const*const pnt) const
 	return global_idx;
 }
 
+
+void MeshGrid::getGridCoords(double const*const node, size_t* coords) const
+{
+	for (size_t k(0); k<3; k++)
+		coords[k] = static_cast<size_t>((node[k]-_min_pnt[k]) * _inverse_step_sizes[k]);
+}
+
 bool MeshGrid::calcNearestNodeInGrid(double const* const pnt, size_t const* const coords,
 				double &sqr_min_dist, size_t &global_idx) const
 {
@@ -194,40 +174,6 @@ bool MeshGrid::calcNearestNodeInGrid(double const* const pnt, size_t const* cons
 		}
 	}
 	return true;
-}
-
-void MeshGrid::getNodeVectorsInAxisAlignedBoundingBox(GEOLIB::Point const& ll,
-				GEOLIB::Point const& ur, size_t &n_node_vectors, std::vector<MeshLib::CNode*>* * &node_vectors)
-{
-	size_t start_coords[3];
-	size_t end_coords[3];
-
-	getGridCoords(ll.getData(), start_coords);
-	getGridCoords(ur.getData(), end_coords);
-
-	for (size_t k(0); k<3; k++) {
-		if (start_coords[k] > end_coords[k]) {
-			BASELIB::swap(start_coords[k], end_coords[k]);
-		}
-	}
-
-	n_node_vectors = 1;
-	for (size_t k(0); k<3; k++) {
-		if (end_coords[k]-start_coords[k] > 0) {
-			n_node_vectors *= (end_coords[k] - start_coords[k]);
-		}
-	}
-
-	node_vectors = new std::vector<MeshLib::CNode*>* [n_node_vectors];
-	size_t idx(0);
-	for (size_t i(start_coords[0]); i<end_coords[0]; i++) {
-		for (size_t j(start_coords[1]); j<end_coords[1]; j++) {
-			for (size_t k(start_coords[2]); k<end_coords[2]; k++) {
-				const size_t grid_idx (i + j * _n_steps[0] + k * _n_steps[0] * _n_steps[1]);
-				node_vectors[idx++] = &_grid_quad_to_node_map[grid_idx];
-			}
-		}
-	}
 }
 
 #ifndef NDEBUG

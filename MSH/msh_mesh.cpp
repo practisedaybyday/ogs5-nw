@@ -834,17 +834,17 @@ void CFEMesh::ConstructGrid()
 	e_edgeNodes0.resize(0);
 	e_edgeNodes.resize(0);
 
-	/*
-	std::cout << "\tconstructing MeshGrid ... " << std::flush;
-	system ("cat /proc/meminfo | grep MemFree");
-	clock_t start(clock());
-	*/
-	_mesh_grid = new MeshLib::MeshGrid(*this);
-	/*
-	clock_t end(clock());
-	system ("cat /proc/meminfo | grep MemFree");
-	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s -- " << std::flush;
-	*/
+
+//	std::cout << "\tconstructing MeshGrid ... " << std::flush;
+//	system ("cat /proc/meminfo | grep MemFree ");
+//	clock_t start(clock());
+
+	_mesh_grid = new MeshLib::MeshGrid(*this, 511);
+
+//	clock_t end(clock());
+//	system ("cat /proc/meminfo | grep MemFree");
+//	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s -- " << std::flush;
+
 	std::cout << " done." << std::endl;
 }
 
