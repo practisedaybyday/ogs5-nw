@@ -46,6 +46,7 @@ set( HEADERS
 	GeoObject.h
 	GEOObjects.h
 	GeoType.h
+	Grid.h
 	Point.h
 	PointVec.h
 	PointWithID.h

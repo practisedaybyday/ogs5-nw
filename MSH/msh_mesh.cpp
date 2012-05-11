@@ -31,7 +31,6 @@
 #ifdef BENCHMARKING
 #include "benchtimer.h"
 #endif
-#include "MeshGrid.h"
 
 #include "rf_random_walk.h"
 // For surface integration. WW. 29.02.2009
@@ -833,19 +832,22 @@ void CFEMesh::ConstructGrid()
 	Neighbors0.resize(0);
 	e_edgeNodes0.resize(0);
 	e_edgeNodes.resize(0);
-
-
-//	std::cout << "\tconstructing MeshGrid ... " << std::flush;
-//	system ("cat /proc/meminfo | grep MemFree ");
-//	clock_t start(clock());
-
-	_mesh_grid = new MeshLib::MeshGrid(*this, 511);
-
-//	clock_t end(clock());
-//	system ("cat /proc/meminfo | grep MemFree");
-//	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s -- " << std::flush;
-
 	std::cout << " done." << std::endl;
+
+	constructMeshGrid();
+}
+
+void CFEMesh::constructMeshGrid()
+{
+#ifndef NDEBUG
+	std::cout << "CFEMesh::constructMeshGrid() ... " << std::flush;
+	clock_t start(clock());
+#endif
+	_mesh_grid = new GEOLIB::Grid<MeshLib::CNode>(this->getNodeVector(), 511);
+#ifndef NDEBUG
+	clock_t end(clock());
+	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s -- " << std::flush;
+#endif
 }
 
 /**************************************************************************
@@ -1319,8 +1321,8 @@ void CFEMesh::RenumberNodesForGlobalAssembly()
 **************************************************************************/
 long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
 {
-	size_t node_idx(_mesh_grid->getIndexOfNearestNode(pnt->getData()));
-	return node_idx;
+	MeshLib::CNode const*const node (_mesh_grid->getNearestPoint(pnt->getData()));
+	return node->GetIndex();
 
 //	const size_t nodes_in_usage(static_cast<size_t> (NodesInUsage()));
 //	double sqr_dist(0.0), distmin(MathLib::sqrDist (nod_vector[0]->getData(), pnt->getData()));
@@ -4006,7 +4008,7 @@ void CFEMesh::TopSurfaceIntegration()
 }
 
 #ifndef NDEBUG
-MeshLib::MeshGrid const* CFEMesh::getMeshGrid() const
+GEOLIB::Grid<MeshLib::CNode> const* CFEMesh::getGrid() const
 {
 	return _mesh_grid;
 }

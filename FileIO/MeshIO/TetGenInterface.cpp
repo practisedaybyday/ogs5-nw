@@ -18,7 +18,6 @@
 #include "msh_elem.h"
 #include "msh_mesh.h"
 #include "msh_node.h"
-#include "MeshGrid.h"
 
 namespace FileIO
 {
@@ -42,9 +41,6 @@ void TetGenInterface::writeTetGenNodes(std::string const& nodes_fname, MeshLib::
 {
 	std::ofstream out(nodes_fname.c_str());
 	if (out) {
-		MeshLib::MeshGrid test(*mesh);
-		GEOLIB::Point const& ll (test.getMinPoint());
-
 		std::vector<MeshLib::CElem*> const& elements(mesh->getElementVector());
 		const size_t n_elements(elements.size());
 		size_t n_prisms(0);
@@ -58,7 +54,7 @@ void TetGenInterface::writeTetGenNodes(std::string const& nodes_fname, MeshLib::
 		std::vector<MeshLib::CNode*> const& nodes(mesh->getNodeVector());
 		for (size_t k(0); k<n_nodes; k++) {
 			double const*const node(nodes[k]->getData());
-			out << k << " " << node[0]-ll[0] << " " << node[1]-ll[1] << " " << node[2] << std::endl;
+			out << k << " " << node[0] << " " << node[1] << " " << node[2] << std::endl;
 		}
 		// write additional nodes for prisms
 		std::vector<size_t> idxs;
@@ -86,10 +82,10 @@ void TetGenInterface::writeTetGenNodes(std::string const& nodes_fname, MeshLib::
 				// center of third rectangle surface
 				const double center2[3] = {(n0[0]+n2[0]+n3[0]+n5[0])/4, (n0[1]+n2[1]+n3[1]+n5[1])/4, (n0[2]+n2[2]+n3[2]+n5[2])/4};
 
-				out << idx++ << " " << centroid[0]-ll[0] << " " << centroid[1]-ll[1] << " " << centroid[2] << std::endl;
-				out << idx++ << " " << center0[0]-ll[0] << " " << center0[1]-ll[1] << " " << center0[2] << std::endl;
-				out << idx++ << " " << center1[0]-ll[0] << " " << center1[1]-ll[1] << " " << center1[2] << std::endl;
-				out << idx++ << " " << center2[0]-ll[0] << " " << center2[1]-ll[1] << " " << center2[2] << std::endl;
+				out << idx++ << " " << centroid[0] << " " << centroid[1] << " " << centroid[2] << std::endl;
+				out << idx++ << " " << center0[0] << " " << center0[1] << " " << center0[2] << std::endl;
+				out << idx++ << " " << center1[0] << " " << center1[1] << " " << center1[2] << std::endl;
+				out << idx++ << " " << center2[0] << " " << center2[1] << " " << center2[2] << std::endl;
 			}
 		}
 		out.close();

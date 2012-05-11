@@ -13,7 +13,6 @@ set( SOURCES_FEM
 	MshEditor.h
 	MSHEnums.h
 	MeshNodesAlongPolyline.h
-	MeshGrid.h
 	
 	GridAdapter.cpp
 	msh_core.cpp
@@ -29,7 +28,6 @@ set( SOURCES_FEM
 	MSHEnums.cpp
 
 	MeshNodesAlongPolyline.cpp
-	MeshGrid.cpp
 	#msh_pnt.cpp		# references removed elements.h nodes.h
 	
 	

@@ -5,6 +5,7 @@ set( HEADERS
 	DateTools.h
 	FileFinder.h
 	FileTools.h
+	MemWatch.h
 	quicksort.h
 	printList.h
 	uniqueListInsert.h
@@ -15,6 +16,7 @@ set( HEADERS
 
 set( SOURCES
 	DateTools.cpp
+	MemWatch.cpp
 	StringTools.cpp
 	binarySearch.cpp
 )
