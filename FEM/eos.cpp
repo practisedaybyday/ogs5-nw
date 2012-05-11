@@ -3175,6 +3175,18 @@ void CFluidProperties::therm_prop (string caption)
 		K[13][35] = 1;
 		break;
 	}
+	
+	case 'H':                             // Hydrogen; BG, 03/2012
+	{
+		fluid_id = 4;
+		rhoc = 313.6;             // [kg/m3]
+		Tc = 33.30;               // [K]
+		pc = 1297000;             // [Pa]
+		omega = -0.215;           // azentric factor, see PREOS
+		molar_mass = 2.015894;
+		// Limits sums in FHE-derivations
+	}
+
 	default: cout << "Error in eos.cpp: no fluid name specified!" << endl;
 		break;
 	}

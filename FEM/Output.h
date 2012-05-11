@@ -126,6 +126,7 @@ public:
 	void ELEWritePLY_TECHeader(std::fstream&); //OK
 	void ELEWritePLY_TECData(std::fstream&); //OK
 	void TIMValue_TEC(double);            //OK
+	void TIMValues_TEC(double tim_value[5], std::string *header, int dimension);   //BG 04/2011 added for more than 1 value per time
 	double NODFlux(long);                 //OK
 	void PCONWriteDOMDataTEC();           //MX
 	void WriteTECNodePCONData(std::fstream &); //MX
@@ -162,6 +163,7 @@ public:
 
 	//	std::vector<double>& getRWPTTimeVector () { return rwpt_time_vector; }
 	std::vector<double>& getRWPTTimeVector () { return time_vector; }
+    bool VARIABLESHARING;						 // Coordinates of each node as well as connection list is stored only for the first time step; BG: 05/2011 
 
 private:
 	friend void OUTData(double, int step, bool force_output);

@@ -2447,7 +2447,7 @@ void CFEMesh::CreateLayerPolylines(CGLPolyline* m_ply)
    08/2006 OK Implementation
    03/2010 TF change to new data structures, changed algorithm
 **************************************************************************/
-void CFEMesh::GetELEOnPLY(const GEOLIB::Polyline* ply, std::vector<size_t>& ele_vector_ply)
+void CFEMesh::GetELEOnPLY(const GEOLIB::Polyline* ply, std::vector<size_t>& ele_vector_ply, bool With1DElements)
 {
 	Math_Group::vec<CEdge*> ele_edges_vector(15);
 	Math_Group::vec<CNode*> edge_nodes(3);
@@ -2465,6 +2465,15 @@ void CFEMesh::GetELEOnPLY(const GEOLIB::Polyline* ply, std::vector<size_t>& ele_
 	{
 		ele_vector[i]->GetEdges (ele_edges_vector);
 		size_t n_edges (ele_vector[i]->GetEdgesNumber());
+		// Add 1D Elements for models with mixed 1D/2D Elements				BG, 11/2011
+		if ((ele_vector[i]->GetDimension() == 1) && (With1DElements == true))
+		{
+			for (size_t k = 0; k < nodes_near_ply.size(); k++)
+			{
+				if ((ele_vector[i]->GetNodeIndex(0) == nodes_near_ply[k]) || (ele_vector[i]->GetNodeIndex(1) == nodes_near_ply[k]))
+					ele_vector_ply.push_back(ele_vector[i]->GetIndex());
+			}
+		}
 		// loop over all edges of the i-th element
 		for (size_t j = 0; j < n_edges; j++)
 		{

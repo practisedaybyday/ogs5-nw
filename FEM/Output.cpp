@@ -59,6 +59,7 @@ COutput::COutput() :
 	tim_type_name = "TIMES";
 	m_pcs = NULL;
 	vtk = NULL; //NW
+	VARIABLESHARING = false;	//BG
 }
 
 COutput::COutput(size_t id) :
@@ -68,6 +69,7 @@ COutput::COutput(size_t id) :
 	tim_type_name = "TIMES";
 	m_pcs = NULL;
 	vtk = NULL; //NW
+	VARIABLESHARING = false;	//BG
 }
 
 void COutput::init()
@@ -327,6 +329,13 @@ ios::pos_type COutput::Read(std::ifstream& in_str,
 			in_str.ignore(MAX_ZEILE, '\n');
 			continue;
 		}
+
+		// Coordinates of each node as well as connection list is stored only for the first time step; BG: 05/2011 
+        if (line_string.find("$VARIABLESHARING") != string::npos)
+        {
+	       this->VARIABLESHARING = true;
+		   continue;
+        }  
 
 		// subkeyword found
 		if (line_string.find("$AMPLIFIER") != string::npos)
@@ -1009,6 +1018,19 @@ void COutput::WriteTECHeader(fstream &tec_file,int e_type, string e_type_name)
 	tec_file << "F=" << "FEPOINT" << ", ";
 	tec_file << "ET=" << e_type_name;
 	tec_file << endl;
+	//--------------------------------------------------------------------
+    // Write Header III: solution time			; BG 05/2011
+    tec_file << "STRANDID=1, SOLUTIONTIME=";
+    tec_file << _time;			// << "s\"";
+    tec_file << endl;
+
+    //--------------------------------------------------------------------
+    // Write Header IV: Variable sharing		; BG 05/2011
+    if (this->VARIABLESHARING == true)
+    {
+	   //int timestep = this->getNSteps;
+      //if (this->
+    }
 }
 
 /**************************************************************************
@@ -2338,6 +2360,8 @@ void COutput::ELEWriteSFC_TECData(fstream &tec_file)
 **************************************************************************/
 void COutput::CalcELEFluxes()
 {
+	double Test[5];
+
 	const FiniteElement::ProcessType pcs_type (getProcessType());
 	if (pcs_type == FiniteElement::INVALID_PROCESS)      // WW moved it here.
 
@@ -2345,10 +2369,14 @@ void COutput::CalcELEFluxes()
 		return;
 
 	CRFProcess* pcs = PCSGet(getProcessType());
-	if (FiniteElement::isDeformationProcess(pcs_type) || !isFlowProcess (pcs_type)
+    //BG 04/2011: MASS_TRANSPORT added to get MASS FLUX for Polylines
+    //cout << pcs->Tim->step_current << endl;
+    if (isDeformationProcess(pcs_type) || (!isFlowProcess (pcs_type) && (pcs_type != FiniteElement::MASS_TRANSPORT))
+	//if (isDeformationProcess(pcs_type) || !isFlowProcess (pcs_type)
 	    //WW
 	    || pcs->m_msh->geo_name.find("REGIONAL") != string::npos)
 		return;
+
 	//----------------------------------------------------------------------
 	switch (getGeoType())
 	{
@@ -2357,13 +2385,59 @@ void COutput::CalcELEFluxes()
 		//		CGLPolyline* ply = GEOGetPLYByName(geo_name);
 		//		if (!ply)
 		//			std::cout << "Warning in COutput::CalcELEFluxes - no GEO data" << std::endl;
-		double f_n_sum = 0.0;
-		//		f_n_sum = pcs->CalcELEFluxes(ply); // TF
-		f_n_sum = pcs->CalcELEFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()));
 
-		ELEWritePLY_TEC();
+		 //BG 04/2011: ELEWritePLY_TEC does not work for MASS_TRANSPORT because there is no flux considered
+		if (pcs_type != FiniteElement::MASS_TRANSPORT)
+		{
+			double f_n_sum = 0.0;
+			double *PhaseFlux;
+			std::string Header[2];
+			int dimension = 2;
+			Header[0] = "q_Phase1";
+			Header[1] = "q_Phase2";
+
+			PhaseFlux = pcs->CalcELEFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()));
+			if ((pcs_type == FiniteElement::GROUNDWATER_FLOW) || (pcs_type == FiniteElement::FLUID_FLOW))
+			{
+				ELEWritePLY_TEC();
+				f_n_sum = PhaseFlux[0];
+				TIMValue_TEC(f_n_sum);
+			}
+			if (pcs_type == FiniteElement::MULTI_PHASE_FLOW)
+			{		
+				Test[0] = PhaseFlux[0];
+				Test[1] = PhaseFlux[1];
+				TIMValues_TEC(Test, Header, dimension);
+			}
+		}
+		// BG, Output for Massflux added
+		else
+		{
+			double *MassFlux;
+			std::string Header[5];
+			int dimension = 5;
+			Header[0] = "AdvectiveMassFlux";
+			Header[1] = "DispersiveMassFlux";
+			Header[2] = "DiffusiveMassFlux";
+			Header[3] = "TotalMassFlux";
+			Header[4] = "TotalMass_sum";
+
+			MassFlux = pcs->CalcELEMassFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()), geo_name);
+			Test[0] = MassFlux[0];
+			Test[1] = MassFlux[1];
+			Test[2] = MassFlux[2];
+			Test[3] = MassFlux[3];
+			Test[4] = MassFlux[4];
+			TIMValues_TEC(Test, Header, dimension);
+		}
+
+		//double f_n_sum = 0.0;
+		//		f_n_sum = pcs->CalcELEFluxes(ply); // TF
+		//f_n_sum = pcs->CalcELEFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()));
+
+		//ELEWritePLY_TEC();
 		//BUGFIX_4402_OK_1
-		TIMValue_TEC(f_n_sum);
+		//TIMValue_TEC(f_n_sum);
 		break;
 	}
 	case GEOLIB::SURFACE:
@@ -2498,7 +2572,7 @@ void COutput::ELEWritePLY_TECData(fstream &tec_file)
 	//	vector<long> ele_vector_at_geo;
 	//	m_msh->GetELEOnPLY(m_ply, ele_vector_at_geo);
 	std::vector<size_t> ele_vector_at_geo;
-	m_msh->GetELEOnPLY(static_cast<const GEOLIB::Polyline*> (getGeoObj()), ele_vector_at_geo);
+	m_msh->GetELEOnPLY(static_cast<const GEOLIB::Polyline*> (getGeoObj()), ele_vector_at_geo, false);
 
 	// helper variables
 	Math_Group::vec<MeshLib::CEdge*> ele_edges_vector(15);
@@ -2559,7 +2633,11 @@ void COutput::TIMValue_TEC(double tim_value)
 	if(!_new_file_opened)
 		remove(tec_file_name.c_str());  //WW
 	//......................................................................
-	tec_file.open(tec_file_name.data(),ios::app | ios::out);
+    if(aktueller_zeitschritt==0)		//BG:04/2011 deletes the content of the file at the start of the simulation
+	   tec_file.open(tec_file_name.data(),ios::trunc|ios::out);
+    else
+		tec_file.open(tec_file_name.data(),ios::app | ios::out);
+
 	tec_file.setf(ios::scientific,ios::floatfield);
 	tec_file.precision(12);
 	if (!tec_file.good())
@@ -2573,7 +2651,7 @@ void COutput::TIMValue_TEC(double tim_value)
 #endif
 	//--------------------------------------------------------------------
 	// Write Header I: variables
-	if(aktueller_zeitschritt == 1)
+    if(aktueller_zeitschritt==0)		//BG:04/2011 bevor it was timestep 1	
 	{
 		tec_file << "VARIABLES = \"Time\",\"Value\"";
 		tec_file << endl;
@@ -2587,6 +2665,77 @@ void COutput::TIMValue_TEC(double tim_value)
 	tec_file << aktuelle_zeit << " " << tim_value << endl;
 	//--------------------------------------------------------------------
 	tec_file.close();                     // kg44 close file
+}
+
+/*-------------------------------------------------------------------------
+   GeoSys - Function: TIMValues_TEC
+   Task: Can write several values over time
+   Return: nothing
+   Programming: 10/2011 BG
+   Modification:
+ -------------------------------------------------------------------------*/
+void COutput::TIMValues_TEC(double tim_value[5], std::string *header, int dimension)
+{ 
+	double j[10];
+	
+    for (int i = 0; i < dimension; i++)
+		j[i] = tim_value[i];
+	
+   //----------------------------------------------------------------------
+   // File handling
+   //......................................................................
+   fstream tec_file;
+   string tec_file_name = file_base_name;         // + "_ply" + "_ele";
+   tec_file_name += "_" + getGeoTypeAsString();
+   tec_file_name += "_" + geo_name;
+   tec_file_name += "_TIM";
+   //  if(pcs_type_name.size()>1) // PCS
+   //    tec_file_name += "_" + pcs_type_name;
+   if(getProcessType () != FiniteElement::INVALID_PROCESS)       // PCS
+      tec_file_name += "_" + convertProcessTypeToString (getProcessType());
+   if(msh_type_name.size()>1)                     // MSH
+      tec_file_name += "_" + msh_type_name;
+   tec_file_name += TEC_FILE_EXTENSION;
+
+   if(!_new_file_opened)
+      remove(tec_file_name.c_str());              //WW
+   //......................................................................
+   if(aktueller_zeitschritt==0)		//BG:04/2011 deletes the content of the file at the start of the simulation
+	   tec_file.open(tec_file_name.data(),ios::trunc|ios::out);
+   else
+      tec_file.open(tec_file_name.data(),ios::app|ios::out);
+   tec_file.setf(ios::scientific,ios::floatfield);
+   tec_file.precision(12);
+   if (!tec_file.good()) return;
+   tec_file.seekg(0L,ios::beg);
+#ifdef SUPERCOMPUTER
+   // kg44 buffer the output
+   char mybuffer [MY_IO_BUFSIZE*MY_IO_BUFSIZE];
+   tec_file.rdbuf()->pubsetbuf(mybuffer,MY_IO_BUFSIZE*MY_IO_BUFSIZE);
+   //
+#endif
+   //--------------------------------------------------------------------
+   // Write Header I: variables
+   if(aktueller_zeitschritt==0)		//BG:04/2011 bevor it was timestep 1
+   {
+	  tec_file << "VARIABLES = \"Time\"";
+	  for (int i = 0; i < dimension; i++)
+         tec_file << ",\"" << header[i] << "\"";
+      tec_file << endl;
+      //--------------------------------------------------------------------
+      // Write Header II: zone
+      tec_file << "ZONE T=";
+      tec_file << geo_name;
+      tec_file << endl;
+   }
+   //--------------------------------------------------------------------
+   tec_file << aktuelle_zeit;
+   for (int i = 0; i < dimension; i++)
+      tec_file << " " << j[i];
+   tec_file << endl;
+   //--------------------------------------------------------------------
+   tec_file.close();                              // kg44 close file
+
 }
 
 double COutput::NODFlux(long nod_number)

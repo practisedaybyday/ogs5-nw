@@ -6052,6 +6052,68 @@ void CFiniteElementStd::Cal_Velocity_2()
 }
 
 /***************************************************************************
+   GeoSys - Funktion: Get_Element_Velocity
+   CFiniteElementStd:: Velocity calulation in gauss points from
+   node velocities obtained by DUMUX or ECLIPSE
+
+   Programming:  BG
+   08/2010	first version
+ **************************************************************************/
+double CFiniteElementStd::Get_Element_Velocity(int Index, CRFProcess* m_pcs, int phase_index, int dimension)
+{
+	ostringstream temp;
+	string tempstring;
+	double velocity[3];
+
+	ElementValue* gp_ele = ele_gp_value[Index];
+
+	// Gauss point loop
+	velocity[dimension] = 0;
+	for (gp = 0; gp < nGaussPoints; gp++)
+	{
+		//for(i_dim = 0; i_dim < dim; i_dim++)
+		//{
+			//velocity[i_dim] = 0;
+		//}
+
+		// Compute the shape function for interpolation within element
+		ComputeShapefct(1);
+
+		// Get gp velocity
+		if (phase_index == 0)
+		{
+			//cout << " Water " << Index;
+			velocity[dimension] += gp_ele->Velocity(dimension, gp);
+			//cout << " " << gp_ele->Velocity(dimension, gp);
+		}
+		else
+		{
+			//cout << " Gas " << Index;
+			velocity[dimension] += gp_ele->Velocity_g(dimension, gp);
+			//cout << " " << gp_ele->Velocity(dimension, gp);
+		}
+		//for(i_dim = 0; i_dim < dim; i_dim++)
+		//{
+		//	if (phase_index == 0)
+		//		velocity[i_dim] += gp_ele->Velocity(i_dim, gp);
+		//	else
+		//		velocity[i_dim] += gp_ele->Velocity_g(i_dim, gp);
+		//}
+	}
+	//cout << endl;
+	//cout << gp_ele->Velocity(dimension, 0) << " " << gp_ele->Velocity(dimension, 1) << " " << gp_ele->Velocity(dimension, 2) << " " << gp_ele->Velocity(dimension, 3) << " " << gp_ele->Velocity(dimension, 4) << " " << gp_ele->Velocity(dimension, 5) << " " << gp_ele->Velocity(dimension, 6) << " " << gp_ele->Velocity(dimension, 7) << " " << gp_ele->Velocity(dimension, 8) << " " << gp_ele->Velocity(dimension, 9) << " " << gp_ele->Velocity(dimension, 10) << " " << gp_ele->Velocity(dimension,11) << " " << gp_ele->Velocity(dimension, 12) << " " << gp_ele->Velocity(dimension, 13) << " " << gp_ele->Velocity(dimension, 14) << endl;
+
+	// Calculate average element velocity
+	velocity[dimension] /= nGaussPoints;
+	//for(i_dim = 0; i_dim < dim; i_dim++)
+	//{
+	//	velocity[i_dim] /= nGaussPoints;
+	//}
+
+	return velocity[dimension];
+}
+
+/***************************************************************************
    GeoSys - Funktion: Cal_GP_Velocity_ECLIPSE
    CFiniteElementStd:: Velocity calulation in gauss points from
    node velocities obtained by fluid momentum for one element

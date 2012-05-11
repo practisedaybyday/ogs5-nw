@@ -1554,6 +1554,23 @@ void CElem::SetNormalVector()
 		CrossProduction(v1,v2,normal_vector);
 		NormalizeVector(normal_vector,3);
 	}
+    if (this->GetElementType() == MshElemType::QUAD)		//BG 04/2011: calculation of the normal vector of a quad element
+      {
+		double const* const p0 (nodes[0]->getData());
+		double const* const p1 (nodes[1]->getData());
+		double const* const p2 (nodes[2]->getData());
+		double const* const p3 (nodes[3]->getData());
+        const double v1[3] = {p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]};
+		const double v2[3] = {p3[0] - p0[0], p3[1] - p0[1], p3[2] - p0[2]};
+        //v1[0] = nodes[1]->X() - nodes[0]->X();
+        //v1[1] = nodes[1]->Y() - nodes[0]->Y();
+        //v1[2] = nodes[1]->Z() - nodes[0]->Z();
+        //v2[0] = nodes[3]->X() - nodes[0]->X();
+        //v2[1] = nodes[3]->Y() - nodes[0]->Y();
+        //v2[2] = nodes[3]->Z() - nodes[0]->Z();
+        CrossProduction(v1,v2,normal_vector);
+        NormalizeVector(normal_vector,3);
+      }
 }
 
 // KR 2010/11/16

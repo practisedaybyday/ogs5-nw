@@ -54,6 +54,7 @@ class CNodeValue;
 class Problem;                                    //WW
 class CECLIPSEData;                               //BG Coupling to Eclipse
 class CDUMUXData;                                 //BG Coupling to DuMux
+class CPlaneEquation;	                          //BG Calculating Plane Equation
 using FiniteElement::CFiniteElementStd;
 using FiniteElement::CFiniteElementVec;
 using FiniteElement::ElementMatrix;
@@ -255,6 +256,7 @@ public:
 	// OUT
 	// Write indices of the nodes with boundary conditons
 	bool write_boundary_condition;        //15.01.2008. WW
+	bool OutputMassOfGasInModel;			// BG 05/2012
 	// Element matrices output
 	void Def_Variable_LiquidFlow();
 	void Def_Variable_MultiPhaseFlow();
@@ -339,7 +341,9 @@ public:
 	std::vector<long> bc_local_index_in_dom; //WW for domain decomposition
 	std::vector<long> rank_bc_node_value_in_dom; //WW
 	std::vector<long> bc_transient_index; //WW/CB
-	void UpdateTransientBC();             //WW/CB
+    std::vector<long> st_transient_index;       //WW/CB...BG
+    void UpdateTransientBC();                   //WW/CB
+    void UpdateTransientST();                   //WW/CB...BG
 	//....................................................................
 	// 6-ST
 	// Node values from sourse/sink or Neumann BC. WW
@@ -614,7 +618,7 @@ public:
 	void CreateELEGPValues();
 	void AllocateMemGPoint();             //NEW Gauss point values for CFEMSH WW
 	void CalcELEVelocities(void);
-	void CalcELEMassFluxes();
+	//void CalcELEMassFluxes();				//BG
 	//WW   double GetELEValue(long index,double*gp,double theta,string nod_fct_name);
 	void CheckMarkedElement();            //WW
 	void CheckExcavedElement();           //WX
@@ -757,7 +761,12 @@ public:
 	void PrimaryVariableStorageTransport(); //kg44
 	//double GetNewTimeStepSizeTransport(double mchange); //kg44
 	// FLX
-	double CalcELEFluxes(const GEOLIB::Polyline* const ply);
+	double* CalcELEFluxes(const GEOLIB::Polyline* const ply);											// modified 05/2012 by BG
+	double* CalcELEMassFluxes(const GEOLIB::Polyline* const ply, std::string NameofPolyline);			// Necessary for the output of mass fluxes over polylines, BG 08/2011
+    double TotalMass[10];																				// Necessary for the output of mass fluxes over polylines, BG 08/2011
+    std::vector <std::string> PolylinesforOutput;														// Necessary for the output of mass fluxes over polylines, BG 08/2011
+	double *Calc2DElementGradient(MeshLib::CElem* m_ele, double ElementConcentration[4]);						// Necessary for the output of mass fluxes over polylines, BG 08/2011
+
 	// NEW
 	CRFProcess* CopyPCStoDM_PCS();
 	bool OBJRelations();                  //OK

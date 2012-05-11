@@ -116,6 +116,8 @@ public:
 	                                    std::string phase);
 	//BG coupling to DuMux
 	std::string Cal_GP_Velocity_DuMux(int* i_ind, CRFProcess* m_pcs, int phase_index);
+	// BG, 04/2012: Provides the average element velocity over all gauss points	
+	double Get_Element_Velocity(int Index, CRFProcess* m_pcs, int phase_index, int dimension);
 	// necessary for using precalculated density and viscosity BG, 11/2010
 	double InterpolatePropertyToGausspoint(int GPIndex, CRFProcess* m_pcs, int Variableindex);
 	//

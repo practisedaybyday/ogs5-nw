@@ -143,6 +143,8 @@ public:
 	std::vector<double> node_value_vector;
 	std::vector<int> node_renumber_vector;
 	std::string tim_type_name;
+    std::string interpolation_method;			//BG
+    int TimeInterpolation;						//BG
 
 	std::string pcs_type_name_cond;
 	std::string pcs_pv_name_cond;

@@ -717,8 +717,11 @@ void Problem::SetActiveProcesses()
 			transport_processes.push_back(m_pcs);
 		//		if (m_pcs->pcs_type_name.compare("TWO_PHASE_FLOW") == 0) //09.01.2008. WW
 		// TF
-		if (m_pcs->getProcessType() == FiniteElement::TWO_PHASE_FLOW)
-			multiphase_processes.push_back(m_pcs);
+      if ((m_pcs->getProcessType() == FiniteElement::TWO_PHASE_FLOW) || (m_pcs->getProcessType() == FiniteElement::MULTI_PHASE_FLOW)) //BG 04/2011
+         multiphase_processes.push_back(m_pcs);
+
+	  if ((m_pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW) || (m_pcs->getProcessType() == FiniteElement::LIQUID_FLOW))	//BG 04/2011
+		  singlephaseflow_process.push_back(m_pcs);
 	}
 }
 
@@ -1587,6 +1590,9 @@ inline double Problem::MultiPhaseFlow()
 
 	//TestOutputEclipse(m_pcs);
 	//TestOutputDuMux(m_pcs);
+    
+	if (m_pcs->OutputMassOfGasInModel == true)		// 05/2012 BG
+		OutputMassOfGasInModel(m_pcs);
 
 	return error;
 }
@@ -2128,6 +2134,388 @@ void Problem::TestOutputEclipse(CRFProcess* m_pcs)
 }
 
 /*-------------------------------------------------------------------------
+   GeoSys - Function: OutputMassOfGasInModel()
+   Task: provides the sum of CO2 in the model domain in output files
+   Return: nothing
+   Programming:
+   02/2011 BG
+   -------------------------------------------------------------------------*/
+void Problem::OutputMassOfGasInModel(CRFProcess* m_pcs)
+{
+	//Testoutput amount of co2 in model domain calculated at nodes
+	CFEMesh* m_msh = fem_msh_vector[0];   //SB: ToDo hart gesetzt
+	MeshLib::CElem* m_ele = NULL;
+	MeshLib::CNode* m_node = NULL;
+	CMediumProperties* m_mat_mp = NULL;
+	std::ostringstream temp;
+	double mass_Gas_gas, mass_Gas_water, mass_Gas;
+	int index;
+	double saturation_Gas;
+	double saturation_water;
+	double node_volume;
+	double time;
+	std::string tempstring;
+	std::vector <std::string> vec_string;
+	//int position;
+	std::string path;
+	double density_Gas;
+	double porosity = 0.0;
+	int variable_index;
+	double concentration_Gas_water;
+	int indexConcentration_Gas;
+	int ProcessIndex_GasInLiquid;
+	CRFProcess *n_pcs = NULL;
+	int group;
+	std::string transport_process_name, Processname;
+	double Molweight_Gas;
+	double V_model;
+	//bool Windows_System;
+	int position;
+	std::string filename;
+
+	path = m_pcs->file_name_base;
+
+#ifdef _WIN32
+	{
+		position = int(path.find_last_of("\\"));
+		if (position < 0)
+			filename = "Sum_Gas_nodes.csv";
+		else
+		{
+			std::string path_new;
+			path_new = path.substr(0,position);
+			filename = path_new + "\\Sum_Gas_nodes.csv";
+		}
+	}
+#else
+	{
+		position = int(path.find_last_of("/"));
+		if (position < 0)
+			filename = "Sum_Gas_nodes.csv";
+		else
+		{
+			std::string path_new;
+			path_new = path.substr(0,position);
+			filename = path_new + "/Sum_Gas_nodes.csv";
+		}
+	}
+#endif
+
+	transport_process_name = "H2";
+	Molweight_Gas = 2;
+	Processname = "PS_GLOBAL";
+
+	ProcessIndex_GasInLiquid = -1;
+	if (ProcessIndex_GasInLiquid == -1)
+		for(int i = 0; i < int(pcs_vector.size()); i++)
+		{
+			n_pcs = pcs_vector[i];
+			// identify your process and store idx of pcs-vector
+			if (n_pcs->nod_val_name_vector[0] == transport_process_name)
+			   ProcessIndex_GasInLiquid = i;
+		}
+
+
+	if (m_pcs->Tim->step_current == 1)
+		//Header of the file
+		vec_string.push_back("Time, massGas_gas, massGas_water, massGas, porosity, Modelvolume, Pressure2, Density2");
+	else
+	{
+		CReadTextfiles_ECL TextFile;
+		TextFile.Read_Text(filename);
+
+		for (int i = 0; i < TextFile.NumberOfRows; i++)
+			vec_string.push_back(TextFile.Data[i]);
+	}
+
+	V_model = mass_Gas = mass_Gas_gas = mass_Gas_water = 0;
+	// +1: new timelevel
+	if (ProcessIndex_GasInLiquid > -1)
+		indexConcentration_Gas =
+			    pcs_vector[ProcessIndex_GasInLiquid]->GetNodeValueIndex(
+				        pcs_vector[ProcessIndex_GasInLiquid]->
+					    pcs_primary_function_name[0]) + 1;
+
+	for (long i = 0; i < (long)m_msh->nod_vector.size(); i++)
+	{
+		m_node = m_msh->nod_vector[i]; // get element
+		node_volume = 0;
+		saturation_Gas = 0;
+		if (mfp_vector[1]->density_model == 18)
+		{
+			variable_index = m_pcs->GetNodeValueIndex("DENSITY2");
+			density_Gas = m_pcs->GetNodeValue(i, variable_index);
+		}
+		else
+		{
+			variable_index = m_pcs->GetNodeValueIndex("PRESSURE2");
+			double p2 = m_pcs->GetNodeValue(i, variable_index);
+			double dens_arg[3];
+			dens_arg[0] = p2;
+			density_Gas = mfp_vector[1]->Density(dens_arg);
+			//cout << "Knoten: " << i << " Dichte: " << density_Gas << " P2: " << p2 << endl;
+		}
+
+		for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++)
+		{
+			m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
+
+			//get the phase volume of current element elem
+			group = m_ele->GetPatchIndex();
+			m_mat_mp = mmp_vector[group];
+			// CB Now provides also heterogeneous porosity, model 11
+			porosity = m_mat_mp->Porosity(m_ele->GetIndex(), 1);
+			//node_volume = node_volume + m_ele->GetVolume() / 8 * porosity; 
+			if (m_ele->GetElementType() == 2)
+				node_volume = node_volume + m_ele->GetVolume() / m_ele->GetNodesNumber(true) * porosity;
+			else
+				node_volume = node_volume + m_ele->GetVolume() / m_ele->GetNodesNumber(false) * porosity;
+			
+		}
+
+		V_model = V_model + node_volume;
+
+		//+1... new time level
+		if (Processname == "PS_GLOBAL")
+			index = m_pcs->GetNodeValueIndex("SATURATION1");
+		else
+			index = m_pcs->GetNodeValueIndex("SATURATION1") + 1;
+		saturation_water = m_pcs->GetNodeValue(i,index);
+		//if (saturation_water < 1)
+		saturation_Gas = 1 - saturation_water;
+		if (ProcessIndex_GasInLiquid > -1) 
+		{
+			concentration_Gas_water =
+		        pcs_vector[ProcessIndex_GasInLiquid]->GetNodeValue(
+		                i, indexConcentration_Gas);
+			mass_Gas_water = mass_Gas_water + node_volume * saturation_water *
+		                 concentration_Gas_water * Molweight_Gas * 0.001;			
+		}
+		else
+			mass_Gas_water = 0;
+
+		mass_Gas_gas = mass_Gas_gas + node_volume * saturation_Gas * density_Gas;
+		//cout << " Node: " << i << " saturation: " << saturation_water << " Density_CO2: " << density_CO2 << " node_volume: " << node_volume << endl;
+	}
+	mass_Gas = mass_Gas_gas + mass_Gas_water;
+	//calculating time
+	time = 0;
+	for (int k = 0; k < m_pcs->Tim->step_current; k++)
+		time += m_pcs->Tim->time_step_vector[k];
+	temp.str("");
+	temp.clear();
+	temp << time;
+	tempstring = temp.str();
+	tempstring += ", ";
+	temp.str("");
+	temp.clear();
+	temp.precision(12);
+	temp << mass_Gas_gas;
+	tempstring += temp.str();
+	tempstring += ", ";
+	temp.str("");
+	temp.clear();
+	temp.precision(12);
+	temp << mass_Gas_water;
+	tempstring += temp.str();
+	tempstring += ", ";
+	temp.str("");
+	temp.clear();
+	temp.precision(12);
+	temp << mass_Gas;
+	tempstring += temp.str();
+	tempstring += ", ";
+	temp.str("");
+	temp.clear();
+	temp.precision(12);
+	temp << porosity;
+	tempstring += temp.str();
+	tempstring += ", ";
+	temp.str("");
+	temp.clear();
+	temp.precision(12);
+	temp << V_model;
+	tempstring += temp.str();
+
+	// Test output pressure and density
+	variable_index = m_pcs->GetNodeValueIndex("PRESSURE2");
+	double p2 = m_pcs->GetNodeValue(1, variable_index);
+	double dens_arg[3];
+	dens_arg[0] = p2;
+	density_Gas = mfp_vector[1]->Density(dens_arg);
+	tempstring += ", ";
+	temp.str("");
+	temp.clear();
+	temp.precision(12);
+	temp << p2;
+	tempstring += temp.str();
+	tempstring += ", ";
+	temp.str("");
+	temp.clear();
+	temp.precision(12);
+	temp << density_Gas;
+	tempstring += temp.str();
+	// Test output pressure and density
+	
+	vec_string.push_back(tempstring);
+
+	//within the first timestep create file and write header
+	CWriteTextfiles_ECL TextFile;
+	TextFile.Write_Text(filename, vec_string);
+}
+
+/*-------------------------------------------------------------------------
+GeoSys - Function: OutputMassOfComponentInModel()
+Task: provides the sum of each transport component in the model domain in output files
+Return: nothing
+Programming:
+05/2011 BG
+-------------------------------------------------------------------------*/
+void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CRFProcess *transport_pcs) 
+{
+	//Testoutput mass of component in model domain calculated at nodes
+	MeshLib::CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
+	MeshLib::CElem* m_ele = NULL;
+	MeshLib::CNode* m_node = NULL;
+	CMediumProperties *m_mat_mp = NULL;
+	std::ostringstream temp;
+	double ComponentMass;
+	// //int index;
+	double saturation_water;
+	double node_volume;
+	double time;
+	std::string tempstring;
+	std::vector <std::string> vec_string;
+	//int position;
+	std::string path;
+	double density_water;
+	double porosity;
+	int variable_index;
+	double ComponentConcentration, TotalVolume, SourceTerm;
+	int indexComponentConcentration;
+	//CRFProcess *n_pcs = NULL;
+	int group;
+	std::string filename;
+	//bool Windows_System;
+	int position;
+
+	path = flow_pcs[0]->file_name_base;
+	//position = int(path.find_last_of("\\"));
+	//if (position >= 0)
+	//	Windows_System = true;
+	//else
+	//	Windows_System = false;
+	//if (Windows_System == true)
+#ifdef _WIN32
+	{
+		position = int(path.find_last_of("\\"));
+		if (position < 0)
+			filename = "Mass_" + transport_pcs->nod_val_name_vector[0] + "_nodes.csv";
+		else
+		{
+			std::string path_new;
+			path_new = path.substr(0,position);
+			filename = path_new + "\\Mass_" + transport_pcs->nod_val_name_vector[0] + "_nodes.csv";
+		}
+	}
+#else
+	{
+		position = int(path.find_last_of("/"));
+		if (position < 0)
+			filename = "Mass_" + transport_pcs->nod_val_name_vector[0] + "_nodes.csv";
+		else
+		{
+			std::string path_new;
+			path_new = path.substr(0,position);
+			filename = path_new + "/Mass_" + transport_pcs->nod_val_name_vector[0] + "_nodes.csv";
+		}
+	}
+#endif
+	if (flow_pcs[0]->Tim->step_current == 1) 
+	{
+		//Header of the file
+		vec_string.push_back("Time, ComponentMass, TotalVolume");
+	}
+	else 
+	{
+		//read file and store data
+		CReadTextfiles_ECL TextFile;
+		TextFile.Read_Text(filename);
+
+		for (int i = 0; i < TextFile.NumberOfRows; i++) 
+		{
+			vec_string.push_back(TextFile.Data[i]);
+		}
+	}
+
+	ComponentMass = TotalVolume = SourceTerm = 0;
+
+	for (long i = 0; i < (long)m_msh->nod_vector.size(); i++)
+	{
+   		m_node = m_msh->nod_vector[i]; // get element
+		node_volume = 0;
+		if (mfp_vector[0]->density_model == 18) 
+		{
+			variable_index = flow_pcs[0]->GetNodeValueIndex("DENSITY1"); 
+			density_water = flow_pcs[0]->GetNodeValue(i, variable_index);
+		}
+		else
+			density_water = mfp_vector[0]->Density();
+
+		for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++) 
+		{
+			m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
+			
+			//get the phase volume of current element elem
+			group = m_ele->GetPatchIndex();
+			m_mat_mp = mmp_vector[group];
+			porosity = m_mat_mp->Porosity(m_ele->GetIndex(), 1); // CB Now provides also heterogeneous porosity, model 11
+			node_volume = node_volume +  porosity * m_ele->GetVolume() * m_ele->GetFluxArea() / m_ele->GetNodesNumber(false);
+			//cout << m_ele->GetNodesNumber(false) << " " << endl;
+		}
+	
+		TotalVolume += node_volume;
+		if (flow_pcs[0]->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
+			saturation_water = 1;					// saturation does not exist for example in groundwater flow
+		else 
+		{
+			int index = flow_pcs[0]->GetNodeValueIndex("SATURATION1") + 1; //+1... new time level
+			saturation_water = flow_pcs[0]->GetNodeValue(i, index);
+		}
+		indexComponentConcentration = transport_pcs->GetNodeValueIndex(transport_pcs->pcs_primary_function_name[0]) + 1; // +1: new timelevel
+		ComponentConcentration = transport_pcs->GetNodeValue(i, indexComponentConcentration);
+
+		ComponentMass = ComponentMass + node_volume * saturation_water * ComponentConcentration;
+		//cout << " Node: " << i << " saturation: " << saturation_water << " Density_water: " << density_water << " node_volume: " << node_volume  << " Concentration: " << ComponentConcentration << endl;
+	}
+
+	//calculating source term
+	for (long i = 0; i < (long)transport_pcs->st_node_value.size(); i++)
+	{
+		SourceTerm = transport_pcs->st_node_value[i]->node_value;
+	}
+	SourceTerm *= transport_pcs->Tim->this_stepsize;
+
+	//calculating time
+	time = 0;
+	for (int k = 0; k < transport_pcs->Tim->step_current; k++) 
+	{
+		time += transport_pcs->Tim->time_step_vector[k];
+	}
+	temp.str(""); temp.clear(); temp.precision(14); temp << time; tempstring = temp.str();
+	tempstring += ", ";
+	temp.str(""); temp.clear(); temp.precision(14); temp << ComponentMass; tempstring += temp.str();
+	tempstring += ", ";
+	temp.str(""); temp.clear(); temp.precision(14); temp << TotalVolume; tempstring += temp.str();
+
+	vec_string.push_back(tempstring);
+
+	//within the first timestep create file and write header
+	CWriteTextfiles_ECL TextFile;
+	TextFile.Write_Text(filename, vec_string);
+}
+
+/*-------------------------------------------------------------------------
    GeoSys - Function: PS_Global()
    Task: Similate multi-phase flow by p-p scheme
    Return: error
@@ -2144,6 +2532,10 @@ inline double Problem::PS_Global()
 	error = m_pcs->ExecuteNonLinear(loop_process_number);
 	if(m_pcs->TimeStepAccept())
 		m_pcs->CalIntegrationPointValue();
+	
+	if (m_pcs->OutputMassOfGasInModel == true)		// 05/2012 BG
+		OutputMassOfGasInModel(m_pcs);
+
 	return error;
 }
 
@@ -2405,7 +2797,17 @@ inline double Problem::MassTrasport()
 		                                //Component Mobile ?
 		if(CPGetMobil(m_pcs->GetProcessComponentNumber()) > 0)
 			error = m_pcs->ExecuteNonLinear(loop_process_number);  //NW. ExecuteNonLinear() is called to use the adaptive time step scheme
+		
+		int component = m_pcs->pcs_component_number;
+		CompProperties* m_cp = cp_vec[component];
+
+		if (m_cp->OutputMassOfComponentInModel == 1)			// 05/2012 BG
+			if (singlephaseflow_process.size() >= 0)
+				OutputMassOfComponentInModel(singlephaseflow_process, m_pcs); 
+			else
+				OutputMassOfComponentInModel(multiphase_processes, m_pcs); 
 	}
+
 	// Calculate Chemical reactions, after convergence of flow and transport
 	// Move inside iteration loop if couplingwith transport is implemented SB:todo
 	//SB:todo move into Execute Reactions	  if((aktueller_zeitschritt % 1) == 0)
@@ -3187,7 +3589,7 @@ void Problem::LOPCalcELEResultants()
 			break;
 		case 'A':                 // Gas flow
 			m_pcs->CalcELEVelocities();
-			m_pcs->CalcELEMassFluxes();
+			//m_pcs->CalcELEMassFluxes();			// BG
 			break;
 		case 'T':                 // Two-phase flow
 			break;

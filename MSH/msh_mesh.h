@@ -295,7 +295,7 @@ public:
 	 * \brief gives the indices of CElement elements, which have an edge
 	 * in common with the polyline.
 	 */
-	void GetELEOnPLY(const GEOLIB::Polyline*, std::vector<size_t>&);
+	void GetELEOnPLY(const GEOLIB::Polyline*, std::vector<size_t>&, bool With1DElements);		// 11/2011 BG
 
 	/**
 	 * \brief gives the indices of nodes, which are contained in the surface

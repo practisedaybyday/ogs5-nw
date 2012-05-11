@@ -112,6 +112,7 @@ bool CReadTextfiles_ECL::Read_Text(std::string Filename)
 				abort = true;
 		}
 	}
+	in_file.close();
 	return error;
 }
 
@@ -133,7 +134,7 @@ CWriteTextfiles_ECL::~CWriteTextfiles_ECL(void)
 void CWriteTextfiles_ECL::Write_Text(std::string Filename, vector<std::string> Text)
 {
 	ofstream textfile;
-	textfile.open(Filename.data(), ios::out);
+	textfile.open(Filename.c_str(), ios::out);
 
 	for (int i = 0; i < int(Text.size()); i++)
 	{

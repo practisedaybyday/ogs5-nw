@@ -577,8 +577,9 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 		//			}
 		//		}
 		//--------------------------------------------------------------------
-		// ELE values
-		m_out->CalcELEFluxes();
+		// ELE values, only called if ele values are defined for output, 05/2012 BG
+		if (m_out->getElementValueVector().size() > 0)
+			m_out->CalcELEFluxes();
 	}                                     // OUT loop
 	//======================================================================
 }

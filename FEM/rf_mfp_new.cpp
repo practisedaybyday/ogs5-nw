@@ -776,12 +776,12 @@ double CFluidProperties::Density(double* variables)
 				variables[1] = T_0;
 			density = GetMatrixValue(variables[1],variables[0],fluid_name,&gueltig);
 			break;
-		case 11:                  //Peng-Robinson EOS for different fluids NB 4.9.05
+		case 11:                  // Redlich-Kwong EOS for different fluids NB 4.9.05
 			if(!T_Process)
 				variables[1] = T_0;
 			density = rkeos(variables[1],variables[0],fluid_id);
 			break;
-		case 12:                  // Redlich-Kwong EOS for different fluids NB 4.9.05
+		case 12:                  //Peng-Robinson EOS for different fluids NB 4.9.05
 			if(!T_Process)
 				variables[1] = T_0;
 			//NB

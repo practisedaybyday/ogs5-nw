@@ -85,6 +85,7 @@ private:
 	std::vector<CRFProcess*> total_processes;
 	std::vector<CRFProcess*> transport_processes;
 	std::vector<CRFProcess*> multiphase_processes;
+	std::vector<CRFProcess*> singlephaseflow_process;
 	ProblemMemFn* active_processes;
 	std::vector<int> active_process_index;
 	std::vector<int> coupled_process_index;
@@ -115,8 +116,10 @@ private:
 	inline void ASMCalcNodeWDepth(CRFProcess* m_pcs);
 	void PCSCalcSecondaryVariables();
 	bool Check();                     //OK
-	void TestOutputEclipse(CRFProcess* m_pcs);
-	void TestOutputDuMux(CRFProcess* m_pcs);
+	void TestOutputEclipse(CRFProcess* m_pcs);	//BG
+	void TestOutputDuMux(CRFProcess* m_pcs);	//BG
+	void OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CRFProcess *transport_pcs); //BG
+	void OutputMassOfGasInModel(CRFProcess* m_pcs); //BG
 
 	/**
 	 * pointer to an instance of class GEOObjects,
