@@ -176,6 +176,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 			in.clear();
 			in >> compressibility_model_temperature; //sub_line 2 for second phase
 			in >> compressibility_temperature; //sub_line 2
+			in >> JTC;
 			in.clear();
 
 			// available models see CFluidProperties::drhodP and CFluidProperties::drhodT
@@ -1256,7 +1257,7 @@ double CFluidProperties::Viscosity(double* variables)
 		                                  //NB
 		viscosity = Fluid_Viscosity(density,mfp_arguments[1],mfp_arguments[0],fluid_id);
 		break;
-	case 10: // mixture ?= sum_i sum_j x_i*x_j*intrc*sqrt[?_i(rho,T)*?_j(rho,T)]
+	case 10: // mixture µ= sum_i sum_j x_i*x_j*intrc*sqrt[µ_i(rho,T)*µ_j(rho,T)]
 		viscosity = MixtureSubProperity(3, (long)  variables[2], variables[0], variables[1]);
 		break;
 	case 18: //BG, NB using calculated viscosities at nodes from the phase transition model
@@ -1542,8 +1543,8 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 
 	if(assem->PcsType == S)
 	{
-		dens_arg[0] = assem->interpolate(assem->NodalVal0);
-		dens_arg[1] = assem->interpolate(assem->NodalVal_t0);
+		dens_arg[0] = assem->interpolate(assem->NodalVal1); 
+		dens_arg[1] = assem->interpolate(assem->NodalVal_t1); 
 		dens_arg[2] = assem->Index;
 		heat_capacity_fluids = assem->FluidProp->Density(dens_arg) *assem->FluidProp->SpecificHeatCapacity(dens_arg);
 	}
@@ -3024,7 +3025,7 @@ double MFPGetNodeValue(long node,const string &mfp_name, int phase_number)
    Task: derivative of density with respect to pressure
    Programing: 09/2009 NB
 **************************************************************************/
-double CFluidProperties::drhodP(double P, double T)
+double CFluidProperties::drhodP(int idx_elem, double P, double T)
 {
 	double arguments[2];
 	double rho1,rho2,drhodP;
@@ -3060,9 +3061,14 @@ double CFluidProperties::drhodP(double P, double T)
 
 		break;                    // use of difference quotient
 
-	case 4:                               // use of analytical derivation
-		drhodP = 0;               // to be done
+	case 7: // use of analytical derivation
+		drhodP = 1.0/P;       // Ideal gas
 		break;
+		
+	case 15: // use of analytical derivation
+		drhodP = dZ(idx_elem, P, T, 0); // Real gas PREOS
+		break;
+
 	default:
 		drhodP = 0;
 	}
@@ -3073,7 +3079,7 @@ double CFluidProperties::drhodP(double P, double T)
    Task: derivative of density with respect to temperature
    Programing: 09/2009 NB
 **************************************************************************/
-double CFluidProperties::drhodT(double P, double T)
+double CFluidProperties::drhodT(int idx_elem, double P, double T)
 {
 	double arguments[2];
 	double rho1,rho2,drhodT;
@@ -3107,8 +3113,12 @@ double CFluidProperties::drhodT(double P, double T)
 		drhodT = (rho1 - rho2) / compressibility_temperature;
 		break;
 
-	case 4:                               // use of analytical derivation
-		drhodT = 0;               // to be done
+	case 7: // use of analytical derivation
+		drhodT = -1.0/T; // Ideal gas 
+		break;
+
+	case 15: // use of analytical derivation
+		drhodT = dZ(idx_elem, P, T, 1); // Real gas PREOS
 		break;
 
 	default:
@@ -3152,7 +3162,7 @@ double  CFluidProperties::MaxwellStefanDiffusionCoef(int idx_elem, double p, dou
 	D[1] = DD[0];
 	D[2] = DD[1];
 
-	    Sx  = (w[0]*D[1] + w[1]*D[2] + w[2]*D[0]);
+	Sx  = (w[0]*D[1] + w[1]*D[2] + w[2]*D[0]);
 	Deff[0] = (w[0]*D[1]*D[2] + (1-w[0])*D[0]*D[2])/Sx;
 	Deff[1] = (w[1]*D[1]*D[2] + (1-w[1])*D[0]*D[1])/Sx;
 	Deff[2] = ((1-w[0])*D[0]*D[2] + (1-w[1])*D[0]*D[1] + (1-w[2])*D[1]*D[2])/Sx;
@@ -3195,7 +3205,7 @@ double CFluidProperties::SuperCompressibiltyFactor(int idx_elem, double p, doubl
 **************************************************************************/
 double CFluidProperties::dZ(int idx_elem, double p, double T, int nk)
 {
-	double m0, a0, a, b, Vm, dpdVm, da, dZ, A, B, dA, dB, z;
+	double m0, a0, a, b, Vm, dpdVm, da, dZ, A, B, dA, dB, z, beta;
 	if(density_model == 15)
 	{
 	m0 = 0.37464 + 1.54226*omega - 0.26992*pow(omega, 2);
@@ -3226,6 +3236,7 @@ double CFluidProperties::dZ(int idx_elem, double p, double T, int nk)
     {
 	dpdVm= -GAS_CONSTANT*T*pow((Vm-b),-2) +  2.0*a*(Vm+b)*pow((Vm*Vm + 2.0*Vm*b - b*b), -2);
 	dZ  = p*pow(dpdVm*GAS_CONSTANT*T, -1) + (z/p);
+	beta = 1.0/p - dZ/z;
 	// above calculation has tested with value of sound velocity
 	//double adiabatic_index = cp/cv;
 	//double sound_velocity = Vm*sqrt(-adiabatic_index*dpdVm/Mm);
@@ -3235,13 +3246,14 @@ double CFluidProperties::dZ(int idx_elem, double p, double T, int nk)
     {
 	dZ= dA*(B-z) + dB*(6*B*z + 2*z - 3*B*B - 2*B + A - z*z);
 	dZ /= (3*z*z + 2*(B - 1)*z + A - 2*B - 3*B*B);
+	beta = -1.0/T - dZ/z;
 	// above calculation has tested with value of JCT coefficient
 	//dVmdT= (GAS_CONSTANT/p)*(T*dZ + z);
 	//JCT = (T*dVmdT - Vm);
 	//JCT /= Mm*cp;
 	}
 
-	return dZ;
+	return beta;
 }
 /**************************************************************************
    Task: returns various parameters account molecular interation of the different components of mixture
@@ -3250,7 +3262,7 @@ double CFluidProperties::dZ(int idx_elem, double p, double T, int nk)
 double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, double p, double T)
 {
 	CRFProcess* m_pcs;
-	double mass_fraction[10], CPr[10], dens_arg[3], molar_volume[10];
+	double mass_fraction[10], CPr[10], dens_arg[3];
 	double variables = 0.0, a0, m0;
 	int CNr = (int) this->component_vector.size();
 	dens_arg[0] = p;
@@ -3293,7 +3305,7 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
 	}
 	break;
 
-case 3:// dynamic viscosity '?'
+case 3:// dynamic viscosity 'µ'
 	for (int i = 0; i < CNr; i++)
 	{
 	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
