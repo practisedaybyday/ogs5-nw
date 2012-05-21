@@ -5,7 +5,7 @@
  *      Author: TF
  */
 
-#include "LinearInterpolation.h"
+#include "PiecewiseLinearInterpolation.h"
 #include "binarySearch.h"
 #include "swap.h"
 

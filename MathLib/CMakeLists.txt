@@ -7,7 +7,7 @@ set( HEADERS
 	max.h
 	LinkedTriangle.h
 	CubicSpline.h
-	LinearInterpolation.h
+	PiecewiseLinearInterpolation.h
 	EarClippingTriangulation.h
 	# directory LinAlg
 	LinAlg/VectorNorms.h
@@ -25,7 +25,7 @@ set( SOURCES
 	AnalyticalGeometry.cpp
 	LinkedTriangle.cpp
 	CubicSpline.cpp
-	LinearInterpolation.cpp
+	PiecewiseLinearInterpolation.cpp
 	EarClippingTriangulation.cpp
 	# directory LinAlg
 #	LinAlg/GaussAlgorithm.cpp

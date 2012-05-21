@@ -5,8 +5,8 @@
  *      Author: TF
  */
 
-#ifndef LINEARINTERPOLATION_H_
-#define LINEARINTERPOLATION_H_
+#ifndef PIECEWISELINEARINTERPOLATION_H_
+#define PIECEWISELINEARINTERPOLATION_H_
 
 #include <limits>
 #include <vector>
@@ -32,4 +32,4 @@ private:
 };
 } // end namespace MathLib
 
-#endif /* LINEARINTERPOLATION_H_ */
+#endif /* PIECEWISELINEARINTERPOLATION_H_ */
