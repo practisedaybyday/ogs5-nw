@@ -88,7 +88,7 @@ if(OGS_USE_QT) #By WW
 		MeshQualityChecker.cpp
 		MeshQualityShortestLongestRatio.cpp
 		MeshQualityArea.cpp
-		MeshQualityVolumes.cpp
+		MeshQualityVolume.cpp
 		MeshQualityEquiAngleSkew.cpp
         
 		Delaunay/DT_Matrix.h

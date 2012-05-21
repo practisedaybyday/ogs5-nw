@@ -18,8 +18,6 @@ public:
 	virtual ~MeshQualityArea() {}
 
 	virtual void check ();
-protected:
-	double _minimum, _maximum;
 };
 }
 

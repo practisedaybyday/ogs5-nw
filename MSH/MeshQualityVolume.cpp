@@ -1,20 +1,20 @@
 /*
- * MeshQualityVolumes.cpp
+ * MeshQualityVolume.cpp
  *
  *  Created on: Mar 3, 2011
  *      Author: TF
  */
 
-#include "MeshQualityVolumes.h"
+#include "MeshQualityVolume.h"
 
 namespace MeshLib
 {
-MeshQualityVolumes::MeshQualityVolumes(
+MeshQualityVolume::MeshQualityVolume(
         CFEMesh const* const mesh) :
 	MeshQualityChecker(mesh)
 { }
 
-void MeshQualityVolumes::check()
+void MeshQualityVolume::check()
 {
 	// get all elements of mesh
 	const std::vector<MeshLib::CElem*>& msh_elem(_mesh->getElementVector());
@@ -43,7 +43,7 @@ void MeshQualityVolumes::check()
         _mesh_quality_measure[k] = volume;
 	}
 
-	std::cout << "MeshQualityVolumes::check() minimum: " << _min
+	std::cout << "MeshQualityVolume::check() minimum: " << _min
 	          << ", max_volume: " << _max << std::endl;
 	if (error_count > 0)
 		std::cout << "Warning: " << error_count << " elements with zero volume found." <<
