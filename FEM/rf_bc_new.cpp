@@ -1144,7 +1144,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 									break;
 								}
 						}
-						MathLib::LinearInterpolation (
+						MathLib::PiecewiseLinearInterpolation (
 						        interpolation_points,
 						        interpolation_values,
 						        nodes_as_interpol_points,

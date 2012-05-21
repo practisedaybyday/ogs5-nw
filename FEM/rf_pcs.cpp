@@ -12070,7 +12070,7 @@ CRFProcess* PCSGetMass(size_t component_number)
 					}
 			}
 			std::vector<double> interpol_res;
-			MathLib::LinearInterpolation (interpolation_points,
+			MathLib::PiecewiseLinearInterpolation (interpolation_points,
 			                              interpolation_values,
 			                              nodes_as_interpol_points,
 			                              interpol_res);
