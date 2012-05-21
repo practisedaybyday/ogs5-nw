@@ -12,25 +12,20 @@
 namespace MeshLib
 {
 MeshQualityChecker::MeshQualityChecker(CFEMesh const* const mesh) :
-	_mesh (mesh), _static_histogram (100, 0)
+	_min (), _max (), _mesh (mesh)
 {
 	if (_mesh)
-		_mesh_quality_measure.resize ((_mesh->getElementVector()).size(),
-			QualityType());
+		_mesh_quality_measure.resize ((_mesh->getElementVector()).size(), QualityType());
 }
 
-void MeshQualityChecker::getHistogram (std::vector<size_t>& histogram) const
+BASELIB::Histogram<double> MeshQualityChecker::getHistogram (size_t nclasses) const
 {
-    const size_t M = histogram.size();
+	if (nclasses == 0) {
+		// simple suggestion: number of classes with Sturges criterion
+		nclasses = static_cast<size_t>(1 + 3.3 * log (static_cast<float>((_mesh->getElementVector()).size())));
+	}
 
-    typedef std::vector<QualityType>::const_iterator QI;
-    for (QI q = _mesh_quality_measure.begin();
-        q != _mesh_quality_measure.end(); ++q)
-    {
-        if (!*q)
-            continue;
-        histogram[static_cast<size_t>(**q * M)]++;
-    }
+	return BASELIB::Histogram<double>(getMeshQuality(-1.0), nclasses, true);
 }
 
 void MeshQualityChecker::errorMsg (CElem* elem, size_t idx) const
@@ -75,4 +70,14 @@ MeshQualityChecker::getMeshQuality (const double no_quality_value) const
 	return q;
 }
 
+double MeshQualityChecker::getMinValue(double no_quality_value) const
+{
+	return (_min ? *_min : no_quality_value);
 }
+
+double MeshQualityChecker::getMaxValue(double no_quality_value) const
+{
+	return (_max ? *_max : no_quality_value);
+}
+
+} // end namespace MeshLib

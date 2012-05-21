@@ -11,6 +11,9 @@
 #include <vector>
 #include <boost/optional.hpp>
 
+// BaseLib
+#include "Histogram.h"
+
 // MSH
 #include "msh_mesh.h"
 
@@ -27,14 +30,17 @@ public:
 
 	virtual void check () = 0;
 	std::vector<double> getMeshQuality (const double no_quality_value = -1) const;
-	virtual void getHistogram (std::vector<size_t>& histogram) const;
+	double getMinValue(double no_quality_value = std::numeric_limits<double>::min()) const;
+	double getMaxValue(double no_quality_value = std::numeric_limits<double>::max()) const;
+	virtual BASELIB::Histogram<double> getHistogram (size_t nclasses = 0) const;
 
 protected:
 	void errorMsg (CElem* elem, size_t idx) const;
 
+	QualityType _min;
+	QualityType _max;
 	CFEMesh const* const _mesh;
 	std::vector<QualityType> _mesh_quality_measure;
-	std::vector<size_t> _static_histogram;
 };
 }
 

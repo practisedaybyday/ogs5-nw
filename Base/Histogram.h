@@ -54,14 +54,13 @@ class Histogram
             update();
     }
 
-    /** Creates histogram from \c std::vector reusing it.
-     * \attention Modifies input data.
+    /** Creates histogram from \c std::vector.
      * \param data Input vector.
      * \param nr_bins Number of bins in histogram.
      * \param computeHistogram Compute histogram if set. If not set user must call
      * \c update() before accessing data.
      */
-    Histogram(std::vector<T>& data, const unsigned int nr_bins = 16,
+    Histogram(std::vector<T> const& data, const unsigned int nr_bins = 16,
         const bool computeHistogram = true)
         : _data(data), _nr_bins(nr_bins)
     {

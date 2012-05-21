@@ -17,8 +17,6 @@ public:
 	virtual ~MeshQualityVolumes() {}
 
 	virtual void check ();
-protected:
-	double _minimum, _maximum;
 };
 }
 

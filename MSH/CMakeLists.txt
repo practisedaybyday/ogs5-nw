@@ -84,13 +84,9 @@ if(OGS_USE_QT) #By WW
         ${SOURCES_FEM}
 		MeshQualityChecker.h
 		MeshQualityShortestLongestRatio.h
-		MeshQualityNormalisedArea.h
-		MeshQualityNormalisedVolumes.h
 		MeshQualityEquiAngleSkew.h
 		MeshQualityChecker.cpp
 		MeshQualityShortestLongestRatio.cpp
-		MeshQualityNormalisedArea.cpp
-		MeshQualityNormalisedVolumes.cpp
 		MeshQualityArea.cpp
 		MeshQualityVolumes.cpp
 		MeshQualityEquiAngleSkew.cpp

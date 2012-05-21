@@ -11,9 +11,7 @@ namespace MeshLib
 {
 MeshQualityVolumes::MeshQualityVolumes(
         CFEMesh const* const mesh) :
-	MeshQualityChecker(mesh),
-	_minimum (std::numeric_limits<double>::max()),
-	_maximum (0.0)
+	MeshQualityChecker(mesh)
 { }
 
 void MeshQualityVolumes::check()
@@ -35,20 +33,18 @@ void MeshQualityVolumes::check()
         }
 
         double volume (msh_elem[k]->calcVolume());
-        if (volume > _maximum)
-            _maximum = volume;
-        if (volume < sqrt(fabs(std::numeric_limits<double>::min())))
-        {
-            errorMsg(msh_elem[k], k);
-            error_count++;
-        }
-        else if (volume < _minimum)
-            _minimum = volume;
+        if (volume > _max)
+            _max = volume;
+        if (volume < sqrt(fabs(std::numeric_limits<double>::min()))) {
+			errorMsg(msh_elem[k], k);
+			error_count++;
+		} else if (volume < _min)
+            _min = volume;
         _mesh_quality_measure[k] = volume;
 	}
 
-	std::cout << "MeshQualityVolumes::check() minimum: " << _minimum
-	          << ", max_volume: " << _maximum << std::endl;
+	std::cout << "MeshQualityVolumes::check() minimum: " << _min
+	          << ", max_volume: " << _max << std::endl;
 	if (error_count > 0)
 		std::cout << "Warning: " << error_count << " elements with zero volume found." <<
 		std::endl;
