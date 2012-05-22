@@ -104,7 +104,7 @@ REACT_BRNS* m_vec_BRNS;
 #include "problem.h"
 
 // MathLib
-#include "PiecewiseLinearInterpolation.h"
+#include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 
 using namespace std;
 using namespace MeshLib;

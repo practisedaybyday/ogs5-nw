@@ -8,7 +8,7 @@
 #include "geo_sfc.h"
 
 // MathLib
-#include "CubicSpline.h"
+#include "InterpolationAlgorithms/CubicSpline.h"
 
 using namespace std;
 

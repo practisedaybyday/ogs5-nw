@@ -39,7 +39,7 @@ extern void remove_white_space(std::string*);
 #include "rfmat_cp.h"
 //#include "geo_ply.h"
 // MathLib
-#include "PiecewiseLinearInterpolation.h"
+#include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 #include "mathlib.h"
 
 #include "BoundaryCondition.h"

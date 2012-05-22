@@ -51,7 +51,7 @@
 #include "quicksort.h"
 
 // MathLib
-#include "PiecewiseLinearInterpolation.h"
+#include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 
 // FileIO
 #include "FEMIO/GeoIO.h"
