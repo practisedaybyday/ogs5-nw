@@ -9,6 +9,8 @@ set( HEADERS
 	CubicSpline.h
 	PiecewiseLinearInterpolation.h
 	EarClippingTriangulation.h
+	# directory InterpolationAlgorithms
+	InterpolationAlgorithms/LinearIntervalInterpolation.h
 	# directory LinAlg
 	LinAlg/VectorNorms.h
 	LinAlg/LinearSolver.h
