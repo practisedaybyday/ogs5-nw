@@ -1,28 +1,28 @@
 /*
- * LinearInterpolation.h
+ * PiecewiseLinearInterpolation.h
  *
  *  Created on: Sep 7, 2010
  *      Author: TF
  */
 
-#ifndef LINEARINTERPOLATION_H_
-#define LINEARINTERPOLATION_H_
+#ifndef PIECEWISELINEARINTERPOLATION_H_
+#define PIECEWISELINEARINTERPOLATION_H_
 
 #include <limits>
 #include <vector>
 
 namespace MathLib
 {
-class LinearInterpolation
+class PiecewiseLinearInterpolation
 {
 public:
-	LinearInterpolation(const std::vector<double>& supporting_points,
+	PiecewiseLinearInterpolation(const std::vector<double>& supporting_points,
 	                    const std::vector<double>& values_at_supp_pnts);
-	LinearInterpolation(const std::vector<double>& supporting_points,
+	PiecewiseLinearInterpolation(const std::vector<double>& supporting_points,
 	                    const std::vector<double>& values_at_supp_pnts,
 	                    const std::vector<double>& points_to_interpolate,
 	                    std::vector<double>& values_at_interpol_pnts);
-	virtual ~LinearInterpolation();
+	virtual ~PiecewiseLinearInterpolation();
 
 	double getValue ( double pnt_to_interpolate );
 
@@ -32,4 +32,4 @@ private:
 };
 } // end namespace MathLib
 
-#endif /* LINEARINTERPOLATION_H_ */
+#endif /* PIECEWISELINEARINTERPOLATION_H_ */

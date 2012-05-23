@@ -7,6 +7,9 @@
 
 #include <ctime>
 
+// Base
+#include "Base/MemWatch.h"
+
 // FileIO
 #include "MeshIO/OGSMeshIO.h"
 #include "XmlIO/XmlGmlInterface.h"
@@ -211,22 +214,26 @@ void testOctTree(MeshLib::CFEMesh const*const mesh, std::vector<GEOLIB::Point*>&
 	}
 
 	// *** create OctTree object
-	GEOLIB::OctTree<MeshLib::CNode> oct_tree(min, max, 2);
+	std::cout << std::endl << "[OctTree]" << std::endl;
+	std::cout << "\tconstructing ... " << std::flush;
+	BaseLib::MemWatch mem_watch;
+	unsigned long mem_before = mem_watch.getVirtMemUsage();
+	GEOLIB::OctTree<MeshLib::CNode> *oct_tree (GEOLIB::OctTree<MeshLib::CNode>::createOctTree(min, max, 128));
+	std::cout << "done" << std::endl;
 //	GEOLIB::OctTree<GEOLIB::Point> oct_tree(min, max, 2);
-	std::cout << "[OctTree] inserting " << n_nodes_oct_tree << " points ... " << std::flush;
+	std::cout << "\tinserting " << n_nodes_oct_tree << " points ... " << std::flush;
 	clock_t start(clock());
 	for (size_t k(0); k<n_nodes_oct_tree; k++) {
-		oct_tree.addPoint(nodes_oct_tree[k]);
-//		oct_tree.addPoint(nodes_as_pnts[k]);
+		oct_tree->addPoint(nodes_oct_tree[k]);
+//		oct_tree->addPoint(nodes_as_pnts[k]);
 	}
 	clock_t stop(clock());
-	std::cout << "done,  " << (stop-start)/(double)(CLOCKS_PER_SEC) << " seconds" << std::endl;
+	unsigned long mem_after = mem_watch.getVirtMemUsage();
+	std::cout << "done,  " << (stop-start)/(double)(CLOCKS_PER_SEC) << " seconds, " << (mem_after-mem_before)/(1024*1024) << " MBytes" << std::endl;
 
-//	testOctTreeGlobalQueries(oct_tree, min.getData(), max.getData());
-
-	std::cout << "[OctTree] searching " << pnts_for_search.size() << " points ... " << std::flush;
+	std::cout << "\tsearching " << pnts_for_search.size() << " points ... " << std::flush;
 	start = clock();
-	testOctTreePointQueries(oct_tree, pnts_for_search, idx_found_nodes);
+	testOctTreePointQueries(*oct_tree, pnts_for_search, idx_found_nodes);
 	stop = clock();
 	std::cout << "done,  " << (stop-start)/(double)(CLOCKS_PER_SEC) << " seconds" << std::endl;
 }
@@ -330,13 +337,24 @@ int main (int argc, char* argv[])
 
 	// *** read mesh
 	std::vector<MeshLib::CFEMesh*> mesh_vec;
-	system ("cat /proc/meminfo | grep MemFree");
+#ifndef WIN32
+	BaseLib::MemWatch mem_watch;
+	clock_t start (clock());
+	unsigned long mem_without_mesh (mem_watch.getVirtMemUsage());
+#endif
 	FEMRead(file_base_name, mesh_vec);
+#ifndef WIN32
+	unsigned long mem_with_mesh (mem_watch.getVirtMemUsage());
+#endif
 	if (mesh_vec.empty()) {
 		std::cerr << "could not read mesh from file " << std::endl;
 		return -1;
 	}
-	system ("cat /proc/meminfo | grep MemFree");
+#ifndef WIN32
+	std::cout << "mem for pure mesh data structures: " << (mem_with_mesh-mem_without_mesh) / (1024*1024) << " MB" << std::endl;
+	clock_t stop = clock();
+	std::cout << "reading mesh took " << (stop-start)/(double)(CLOCKS_PER_SEC) << " s" << std::endl;
+#endif
 	MeshLib::CFEMesh* mesh (mesh_vec[mesh_vec.size() - 1]);
 	mesh->setNumberOfNodesFromNodesVectorSize();
 
@@ -362,46 +380,52 @@ int main (int argc, char* argv[])
 		pnts_for_search.push_back(new GEOLIB::Point(c[0], c[1], c[2]));
 	}
 
-	mesh->ConstructGrid();
-
 	// *** test linear algorithm
-	std::vector<size_t> idx_found_nodes_linear_alg;
-	testNaiveAlgorithm(mesh, pnts_for_search, idx_found_nodes_linear_alg);
+//	std::vector<size_t> idx_found_nodes_linear_alg;
+//	testNaiveAlgorithm(mesh, pnts_for_search, idx_found_nodes_linear_alg);
+
+#ifndef WIN32
+	unsigned mem_without_mesh_grid(mem_watch.getVirtMemUsage());
+#endif
+	std::cout << std::endl << "[MeshGrid]" << std::endl;
+	mesh->constructMeshGrid();
+#ifndef WIN32
+	unsigned mem_with_mesh_grid(mem_watch.getVirtMemUsage());
+	std::cout << "MeshGrid Mem: " << (mem_with_mesh_grid-mem_without_mesh_grid)/(1024*1024) << " MB" << std::endl;
+#endif
 
 	// *** test mesh grid algorithm
 	std::vector<size_t> idx_found_nodes_mesh_grid_alg;
 	testMeshGridAlgorithm(mesh, pnts_for_search, idx_found_nodes_mesh_grid_alg);
 
-	std::cout << "compare results of linear algorithm with MeshGrid ... " << std::flush;
-	for (size_t k(0); k<idx_found_nodes_mesh_grid_alg.size(); k++) {
-		if (idx_found_nodes_mesh_grid_alg[k] != idx_found_nodes_linear_alg[k]) {
-			std::cout << std::endl << "point: " << *pnts_for_search[k] << " node found within oct_tree: "
-				<<  *(nodes[idx_found_nodes_mesh_grid_alg[k]]) << ", node found with linear algorithm "
-				<<  *(nodes[idx_found_nodes_linear_alg[k]]);
-		}
-	}
-	std::cout << " done" << std::endl;
+//	std::cout << "compare results of linear algorithm with MeshGrid ... " << std::flush;
+//	for (size_t k(0); k<idx_found_nodes_mesh_grid_alg.size(); k++) {
+//		if (idx_found_nodes_mesh_grid_alg[k] != idx_found_nodes_linear_alg[k]) {
+//			std::cout << std::endl << "point: " << *pnts_for_search[k] << " node found within oct_tree: "
+//				<<  *(nodes[idx_found_nodes_mesh_grid_alg[k]]) << ", node found with linear algorithm "
+//				<<  *(nodes[idx_found_nodes_linear_alg[k]]);
+//		}
+//	}
+//	std::cout << " done" << std::endl;
 
 	// *** test OctTree
 	std::vector<size_t> idx_found_nodes_oct_tree;
-//	testOctTree(mesh, pnts_for_search, idx_found_nodes_oct_tree);
+	testOctTree(mesh, pnts_for_search, idx_found_nodes_oct_tree);
 
 	// *** compare results
-	std::cout << "compare results of linear algorithm with OctTree ... " << std::flush;
-	for (size_t k(0); k<idx_found_nodes_oct_tree.size(); k++) {
-		if (idx_found_nodes_oct_tree[k] != idx_found_nodes_linear_alg[k]) {
-			std::cout << std::endl << "point: " << *pnts_for_search[k] << " node found within oct_tree: "
-				<<  *(nodes[idx_found_nodes_oct_tree[k]]) << ", node found with linear algorithm "
-				<<  *(nodes[idx_found_nodes_linear_alg[k]]);
-		}
-	}
-	std::cout << " done" << std::endl;
+//	std::cout << "compare results of linear algorithm with OctTree ... " << std::flush;
+//	for (size_t k(0); k<idx_found_nodes_oct_tree.size(); k++) {
+//		if (idx_found_nodes_oct_tree[k] != idx_found_nodes_linear_alg[k]) {
+//			std::cout << std::endl << "point: " << *pnts_for_search[k] << " node found within oct_tree: "
+//				<<  *(nodes[idx_found_nodes_oct_tree[k]]) << ", node found with linear algorithm "
+//				<<  *(nodes[idx_found_nodes_linear_alg[k]]);
+//		}
+//	}
+//	std::cout << " done" << std::endl;
 
 	for (size_t k(0); k<n; k++) {
 		delete pnts_for_search[k];
 	}
-
-//	xml.writeFile(geo_fname_out, original_geo_names[1]);
 
 	delete project_data;
 

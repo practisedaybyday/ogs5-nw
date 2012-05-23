@@ -39,7 +39,7 @@ extern void remove_white_space(std::string*);
 #include "rfmat_cp.h"
 //#include "geo_ply.h"
 // MathLib
-#include "LinearInterpolation.h"
+#include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 #include "mathlib.h"
 
 #include "BoundaryCondition.h"
@@ -1144,7 +1144,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 									break;
 								}
 						}
-						MathLib::LinearInterpolation (
+						MathLib::PiecewiseLinearInterpolation (
 						        interpolation_points,
 						        interpolation_values,
 						        nodes_as_interpol_points,

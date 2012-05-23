@@ -1,11 +1,11 @@
 /*
- * LinearInterpolation.cpp
+ * PiecewiseLinearInterpolation.cpp
  *
  *  Created on: Sep 7, 2010
  *      Author: TF
  */
 
-#include "LinearInterpolation.h"
+#include "PiecewiseLinearInterpolation.h"
 #include "binarySearch.h"
 #include "swap.h"
 
@@ -13,18 +13,18 @@
 
 namespace MathLib
 {
-LinearInterpolation::LinearInterpolation(const std::vector<double>& supporting_points,
+PiecewiseLinearInterpolation::PiecewiseLinearInterpolation(const std::vector<double>& supporting_points,
                                          const std::vector<double>& values_at_supp_pnts)
 	: _supporting_points (supporting_points), _values_at_supp_pnts (values_at_supp_pnts)
 {}
 
-LinearInterpolation::LinearInterpolation(const std::vector<double>& supporting_points,
+PiecewiseLinearInterpolation::PiecewiseLinearInterpolation(const std::vector<double>& supporting_points,
                                          const std::vector<double>& values_at_supp_pnts,
                                          const std::vector<double>& points_to_interpolate,
                                          std::vector<double>& values_at_interpol_pnts)
 	: _supporting_points (supporting_points), _values_at_supp_pnts (values_at_supp_pnts)
 {
-//	std::cout << "LinearInterpolation::LinearInterpolation support_points, values_at_supp_pnts: " << std::endl;
+//	std::cout << "PiecewiseLinearInterpolation::PiecewiseLinearInterpolation support_points, values_at_supp_pnts: " << std::endl;
 //	for (size_t k(0); k<supporting_points.size(); k++) {
 //		std::cout << supporting_points[k] << " " << values_at_supp_pnts[k] << std::endl;
 //	}
@@ -34,10 +34,10 @@ LinearInterpolation::LinearInterpolation(const std::vector<double>& supporting_p
 		values_at_interpol_pnts.push_back (this->getValue (points_to_interpolate[k]));
 }
 
-LinearInterpolation::~LinearInterpolation()
+PiecewiseLinearInterpolation::~PiecewiseLinearInterpolation()
 {}
 
-double LinearInterpolation::getValue ( double pnt_to_interpolate )
+double PiecewiseLinearInterpolation::getValue ( double pnt_to_interpolate )
 {
 	// search interval that has the point inside
 	size_t interval_idx (std::numeric_limits<size_t>::max());

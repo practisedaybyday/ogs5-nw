@@ -1,5 +1,7 @@
 
 INCLUDE_DIRECTORIES(
+	${CMAKE_SOURCE_DIR}
+	${CMAKE_SOURCE_DIR}/Base
 	${CMAKE_SOURCE_DIR}/UTL/MSHGEOTOOLS
 	${CMAKE_SOURCE_DIR}/Base
 	${CMAKE_SOURCE_DIR}/GEO
@@ -101,12 +103,25 @@ IF(QT4_FOUND)
 
 	ADD_EXECUTABLE( testMeshSearchAlgorithms testMeshSearchAlgorithms.cpp )
 	TARGET_LINK_LIBRARIES( testMeshSearchAlgorithms
+		Base
 		GEO
 		MSH
 		MSHGEOTOOLS
 		FileIO
 		${QT_LIBRARIES}
 	)	
+
+	ADD_EXECUTABLE( createLayeredMesh createLayeredMesh.cpp )
+	TARGET_LINK_LIBRARIES( createLayeredMesh
+		GEO
+		MSH
+		MSHGEOTOOLS
+		FileIO
+		QtDataView
+		VtkVis
+		${QT_LIBRARIES}
+	)	
+	
 	
 	ADD_EXECUTABLE( removeMeshNodes removeMeshNodes.cpp )
 	TARGET_LINK_LIBRARIES( removeMeshNodes

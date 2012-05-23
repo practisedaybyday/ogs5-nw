@@ -26,6 +26,7 @@
 #include "Point.h"
 #include "Polyline.h"
 #include "Surface.h"
+#include "Grid.h"
 
 // MSHLib
 #include "MSHEnums.h"                             // KR 2010/11/15
@@ -76,9 +77,6 @@ public:
 	~GridsTopo();
 };
 #endif                                         //#ifndef NON_GEO
-
-// forward declaration
-class MeshGrid;
 
 //------------------------------------------------------------------------
 // Class definition
@@ -413,10 +411,10 @@ public:
 #ifndef NDEBUG
 	/**
 	 * This is a getter method to access the private attribute _mesh_grid
-	 * that is an instance of class MeshGrid.
+	 * that is an instance of class Grid.
 	 * @return
 	 */
-	MeshLib::MeshGrid const* getMeshGrid() const;
+	GEOLIB::Grid<MeshLib::CNode> const* getGrid() const;
 #endif
 
 private:
@@ -497,10 +495,12 @@ private:
 	void CreateLineElementsFromMarkedEdges(CFEMesh* m_msh_ply,
 	                                       std::vector<long> &ele_vector_at_ply); //NW
 #endif                                      // #ifndef NON_GEO //WW
-
-	MeshGrid *_mesh_grid;
+public:
+	void constructMeshGrid();
+private:
+	GEOLIB::Grid<MeshLib::CNode> *_mesh_grid;
 };
 
-}                                                 // namespace MeshLib
+} // namespace MeshLib
 
 #endif

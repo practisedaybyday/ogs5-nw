@@ -613,16 +613,23 @@ void writeGLIFileV4 (const std::string& fname,
                      const std::string& geo_name,
                      const GEOLIB::GEOObjects& geo)
 {
-	const std::vector<GEOLIB::Point*>* pnts (geo.getPointVec(geo_name));
+	GEOLIB::PointVec const*const pnt_vec(geo.getPointVecObj(geo_name));
+	std::vector<GEOLIB::Point*> const*const pnts (pnt_vec->getVector());
 	std::ofstream os (fname.c_str());
-	if (pnts)
-	{
-		std::cout << "writing " << pnts->size () << " points to file " << fname <<
+	if (pnts) {
+		std::string pnt_name;
+		const size_t n_pnts(pnts->size());
+		std::cout << "writing " << n_pnts << " points to file " << fname <<
 		std::endl;
 		os << "#POINTS" << std::endl;
 		os.precision (20);
-		for (size_t k(0); k < pnts->size(); k++)
-			os << k << " " << *((*pnts)[k]) << std::endl;
+		for (size_t k(0); k < n_pnts; k++) {
+			os << k << " " << *((*pnts)[k]) << std::flush;
+			if (pnt_vec->getNameOfElementByID(k, pnt_name)) {
+				os << " $NAME " << pnt_name << std::flush;
+			}
+			os << std::endl;
+		}
 	}
 
 	std::cout << "writing " << std::flush;
@@ -679,11 +686,18 @@ void writeAllDataToGLIFileV4 (const std::string& fname, const GEOLIB::GEOObjects
 	for (size_t j(0); j < geo_names.size(); j++)
 	{
 		os.precision (20);
-		const std::vector<GEOLIB::Point*>* pnts (geo.getPointVec(geo_names[j]));
-		if (pnts)
-		{
-			for (size_t k(0); k < pnts->size(); k++)
-				os << k + pnts_offset << " " << *((*pnts)[k]) << std::endl;
+		GEOLIB::PointVec const*const pnt_vec(geo.getPointVecObj(geo_names[j]));
+		std::vector<GEOLIB::Point*> const*const pnts (pnt_vec->getVector());
+		if (pnts) {
+			std::string pnt_name;
+			const size_t n_pnts(pnts->size());
+			for (size_t k(0); k < n_pnts; k++) {
+				os << k << " " << *((*pnts)[k]) << std::flush;
+				if (pnt_vec->getNameOfElementByID(k, pnt_name)) {
+					os << " $NAME " << pnt_name << std::flush;
+				}
+				os << std::endl;
+			}
 			pnts_offset += pnts->size();
 			pnts_id_offset.push_back (pnts_offset);
 		}

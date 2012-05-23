@@ -1,5 +1,6 @@
 INCLUDE(ResetConfigurations)        # To Debug, Release, RelWithDbgInfo
 INCLUDE(SetDefaultBuildType)
+INCLUDE(DisableCompilerFlag)
 SET_DEFAULT_BUILD_TYPE(Debug)
 INCLUDE(MSVCMultipleProcessCompile) # /MP Switch for VS
 
@@ -11,6 +12,8 @@ IF (WIN32)
 		# Sets warning level 3 and ignores some warnings
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /wd4290 /wd4267")
 		SET(GCC OFF)
+
+		DisableCompilerFlag(DEBUG /RTC1)
 
     # Set $PATH to Visual Studio bin directory. Needed for finding dumpbin.exe
     IF (MSVC80)

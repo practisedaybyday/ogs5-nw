@@ -13,7 +13,6 @@ set( SOURCES_FEM
 	MshEditor.h
 	MSHEnums.h
 	MeshNodesAlongPolyline.h
-	MeshGrid.h
 	
 	GridAdapter.cpp
 	msh_core.cpp
@@ -29,7 +28,6 @@ set( SOURCES_FEM
 	MSHEnums.cpp
 
 	MeshNodesAlongPolyline.cpp
-	MeshGrid.cpp
 	#msh_pnt.cpp		# references removed elements.h nodes.h
 	
 	
@@ -86,13 +84,11 @@ if(OGS_USE_QT) #By WW
         ${SOURCES_FEM}
 		MeshQualityChecker.h
 		MeshQualityShortestLongestRatio.h
-		MeshQualityNormalisedArea.h
-		MeshQualityNormalisedVolumes.h
 		MeshQualityEquiAngleSkew.h
 		MeshQualityChecker.cpp
 		MeshQualityShortestLongestRatio.cpp
-		MeshQualityNormalisedArea.cpp
-		MeshQualityNormalisedVolumes.cpp
+		MeshQualityArea.cpp
+		MeshQualityVolume.cpp
 		MeshQualityEquiAngleSkew.cpp
         
 		Delaunay/DT_Matrix.h
