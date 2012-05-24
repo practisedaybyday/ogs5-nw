@@ -2694,13 +2694,13 @@ void CFiniteElementStd::CalCoefLaplacePSGLOBAL(bool Gravity,  int dof_index)
 		if(pcs->num_type_name.find("dPcdSwGradSnw") != string::npos)
 		{
 //			double Snw = -1.0;
-			if(pcs->m_num->ele_upwinding == 1)
-			{
+//			if(pcs->m_num->ele_upwinding == 1)
+//			{
 				// Doing Upwind elements for saturation by divergent of pressure.
 				// Pnw upwind
-				int WhichNode = UpwindElement((int)(pcs->m_num->ele_upwind_method), 1);
+//				int WhichNode = UpwindElement((int)(pcs->m_num->ele_upwind_method), 1); // TF: set, but never used
 //				Snw = NodalVal_SatNW[WhichNode]; // TF: set, but never used
-			}
+//			}
 //			else
 //				Snw = interpolate(NodalVal_SatNW); // TF: set, but never used
 
@@ -2729,17 +2729,17 @@ void CFiniteElementStd::CalCoefLaplacePSGLOBAL(bool Gravity,  int dof_index)
 		tensor = MediaProp->PermeabilityTensor(Index);
 
 //		double Snw = -1.0;
-		if(pcs->m_num->ele_upwinding == 1)
-		{
+//		if(pcs->m_num->ele_upwinding == 1)
+//		{
 			// Doing Upwind elements for saturation by divergent of pressure.
 			// Pnw upwind
-			int WhichNode = UpwindElement((int)(pcs->m_num->ele_upwind_method), 1);
+//			int WhichNode = UpwindElement((int)(pcs->m_num->ele_upwind_method), 1); // TF: set, but never used
 //			Snw = NodalVal_SatNW[WhichNode]; // TF: set, but never used
-		}
+//		}
 //		else
 //			Snw = interpolate(NodalVal_SatNW); // TF: set, but never used
 
-		CElem* thisEle = pcs->m_msh->ele_vector[index];
+//		CElem* thisEle = pcs->m_msh->ele_vector[index]; // TF: set, but never used
 //		int matgrp = thisEle->GetPatchIndex(); // TF: set, but never used
 //		CMediumProperties* m_mmp = mmp_vector[matgrp];
 		k_rel = MediaProp->PermeabilitySaturationFunction(Sw,1);

@@ -16,6 +16,9 @@
 #include "gs_project.h"
 #endif                                            //#ifndef NON_GEO
 
+// BaseLib
+#include "Histogram.h"
+
 // GEOLib
 //#include "geo_pnt.h"
 //#include "geo_ply.h"
@@ -49,57 +52,57 @@ extern std::string GetLineFromFile1(std::ifstream*);
 
 size_t max_dim = 0; //OK411
 
-class ThreadParameter
-{
-public:
-	ThreadParameter(GEOLIB::Point const* const pnt, size_t start, size_t end,
-	                std::vector<MeshLib::CNode*> const& nod_vector, size_t id) :
-		_pnt(pnt), _start(start), _end(end), _nod_vector(nod_vector), _number(
-		        start), _sqr_dist(std::numeric_limits<double>::max()), _id(id)
-	{
-	}
+//class ThreadParameter
+//{
+//public:
+//	ThreadParameter(GEOLIB::Point const* const pnt, size_t start, size_t end,
+//	                std::vector<MeshLib::CNode*> const& nod_vector, size_t id) :
+//		_pnt(pnt), _start(start), _end(end), _nod_vector(nod_vector), _number(
+//		        start), _sqr_dist(std::numeric_limits<double>::max()), _id(id)
+//	{
+//	}
+//
+//	GEOLIB::Point const* const _pnt;
+//	size_t _start;
+//	size_t _end;
+//	std::vector<MeshLib::CNode*> const& _nod_vector;
+//	size_t _number;
+//	double _sqr_dist;
+//	size_t _id;
+//};
 
-	GEOLIB::Point const* const _pnt;
-	size_t _start;
-	size_t _end;
-	std::vector<MeshLib::CNode*> const& _nod_vector;
-	size_t _number;
-	double _sqr_dist;
-	size_t _id;
-};
-
-extern "C" {
-void* threadGetDist(void* ptr)
-{
-	ThreadParameter* thread_param((ThreadParameter*) (ptr));
-	size_t start(thread_param->_start);
-	size_t end(thread_param->_end);
-	std::vector<MeshLib::CNode*> const& nod_vector(thread_param->_nod_vector);
-	GEOLIB::Point const* const pnt(thread_param->_pnt);
-
-	double distmin(MathLib::sqrDist(nod_vector[start]->getData(),
-	                                pnt->getData()));
-	size_t number(start);
-	double sqr_dist(distmin);
-
-	for (size_t i = start + 1; i < end; i++)
-	{
-		sqr_dist = MathLib::sqrDist(nod_vector[i]->getData(), pnt->getData());
-		if (sqr_dist < distmin)
-		{
-			distmin = sqr_dist;
-			number = i;
-		}
-	}
-
-	thread_param->_number = number;
-	thread_param->_sqr_dist = distmin;
-
-	if (number == std::numeric_limits<size_t>::max())
-		return (void*) (-1);
-	return (void*) (number);
-}
-} // end extern "C"
+//extern "C" {
+//void* threadGetDist(void* ptr)
+//{
+//	ThreadParameter* thread_param((ThreadParameter*) (ptr));
+//	size_t start(thread_param->_start);
+//	size_t end(thread_param->_end);
+//	std::vector<MeshLib::CNode*> const& nod_vector(thread_param->_nod_vector);
+//	GEOLIB::Point const* const pnt(thread_param->_pnt);
+//
+//	double distmin(MathLib::sqrDist(nod_vector[start]->getData(),
+//	                                pnt->getData()));
+//	size_t number(start);
+//	double sqr_dist(distmin);
+//
+//	for (size_t i = start + 1; i < end; i++)
+//	{
+//		sqr_dist = MathLib::sqrDist(nod_vector[i]->getData(), pnt->getData());
+//		if (sqr_dist < distmin)
+//		{
+//			distmin = sqr_dist;
+//			number = i;
+//		}
+//	}
+//
+//	thread_param->_number = number;
+//	thread_param->_sqr_dist = distmin;
+//
+//	if (number == std::numeric_limits<size_t>::max())
+//		return (void*) (-1);
+//	return (void*) (number);
+//}
+//} // end extern "C"
 
 //========================================================================
 namespace MeshLib
@@ -115,7 +118,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 	_ele_type(MshElemType::INVALID), _n_msh_layer(0), _cross_section(
 	        false), _msh_n_lines(0), _msh_n_quads(0), _msh_n_hexs(0),
 	_msh_n_tris(0), _msh_n_tets(0), _msh_n_prisms(0), _msh_n_pyras(0),
-	_min_edge_length(1e-3), NodesNumber_Linear(0),
+	_min_edge_length(1e-3), _search_length(0.0), NodesNumber_Linear(0),
 	NodesNumber_Quadratic(0), useQuadratic(false), _axisymmetry(false), ncols(0), nrows(0),
 	x0(0.0), y0(0.0), csize(0.0), ndata_v(0.0), _mesh_grid(NULL)
 {
@@ -139,7 +142,7 @@ CFEMesh::CFEMesh(GEOLIB::GEOObjects* geo_obj, std::string* geo_name) :
 // Copy-Constructor for CFEMeshes.
 // Programming: 2010/11/10 KR
 CFEMesh::CFEMesh(CFEMesh const& old_mesh) :
-	PT(NULL), _mesh_grid(NULL)
+	PT(NULL), _search_length(old_mesh._search_length), _mesh_grid(NULL)
 {
 	std::cout << "Copying mesh object ... ";
 
@@ -303,6 +306,28 @@ void CFEMesh::computeMinEdgeLength()
 				        = kth_edge_length;
 		}
 	}
+}
+
+double CFEMesh::getSearchLength() const
+{
+	return _search_length;
+}
+
+void CFEMesh::computeSearchLength(double c)
+{
+	const size_t n(edge_vector.size());
+
+	double sum (0);
+	double sum_of_sqr (0);
+
+	for (size_t k(0); k < n; k++) {
+		const double x_k (edge_vector[k]->getLength());
+		sum += x_k;
+		sum_of_sqr += (x_k * x_k);
+	}
+
+	// sum - 2 s, where s is standard deviation
+	_search_length = sum/n - c * sqrt(1.0/(n-1) * (sum_of_sqr - (sum*sum)/n) );
 }
 
 /**************************************************************************
@@ -834,6 +859,8 @@ void CFEMesh::ConstructGrid()
 	e_edgeNodes.resize(0);
 	std::cout << " done." << std::endl;
 
+	computeSearchLength();
+	computeMinEdgeLength();
 	constructMeshGrid();
 }
 
