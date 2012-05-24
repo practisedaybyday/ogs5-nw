@@ -4180,7 +4180,7 @@ void CFiniteElementStd::CalcLumpedMass2()
 			vol += GetGaussData(gp, gp_r, gp_s, gp_t);
 	}
 	else
-		vol = MeshElement->GetVolume();
+	  vol = MeshElement->GetVolume() * MeshElement->area; //WW. 24.05.2012
 	//----------------------------------------------------------------------
 	// Initialize
 	(*Mass2) = 0.0;
