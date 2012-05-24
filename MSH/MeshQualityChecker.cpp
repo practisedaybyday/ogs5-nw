@@ -12,10 +12,10 @@
 namespace MeshLib
 {
 MeshQualityChecker::MeshQualityChecker(CFEMesh const* const mesh) :
-	_min (), _max (), _mesh (mesh)
+	_min (-1.0), _max (-1.0), _mesh (mesh)
 {
 	if (_mesh)
-		_mesh_quality_measure.resize ((_mesh->getElementVector()).size(), QualityType());
+		_mesh_quality_measure.resize ((_mesh->getElementVector()).size(), -1.0);
 }
 
 BASELIB::Histogram<double> MeshQualityChecker::getHistogram (size_t nclasses) const
@@ -25,7 +25,7 @@ BASELIB::Histogram<double> MeshQualityChecker::getHistogram (size_t nclasses) co
 		nclasses = static_cast<size_t>(1 + 3.3 * log (static_cast<float>((_mesh->getElementVector()).size())));
 	}
 
-	return BASELIB::Histogram<double>(getMeshQuality(-1.0), nclasses, true);
+	return BASELIB::Histogram<double>(getMeshQuality(), nclasses, true);
 }
 
 void MeshQualityChecker::errorMsg (CElem* elem, size_t idx) const
@@ -40,44 +40,20 @@ void MeshQualityChecker::errorMsg (CElem* elem, size_t idx) const
 		GEOLIB::Point((elem->GetNode(i))->getData()) << std::endl;
 }
 
-namespace detail
+std::vector<double> const&
+MeshQualityChecker::getMeshQuality () const
 {
-	struct QualityTypeToDoubleConverter
-	{
-		QualityTypeToDoubleConverter(const double& no_quality_value)
-			: _no_quality_value(no_quality_value) { }
-		double
-		operator()(const boost::optional<double>& opt_value)
-		{
-			return (opt_value ? *opt_value : _no_quality_value);
-		}
-
-		private:
-		const double _no_quality_value;
-	};
-}   // namespace detail
-
-std::vector<double>
-MeshQualityChecker::getMeshQuality (const double no_quality_value) const
-{
-	std::vector<double> q;
-	q.reserve(_mesh_quality_measure.size());
-	std::transform(
-		_mesh_quality_measure.begin(),
-		_mesh_quality_measure.end(),
-		std::back_inserter(q),
-		detail::QualityTypeToDoubleConverter(no_quality_value));
-	return q;
+	return _mesh_quality_measure;
 }
 
-double MeshQualityChecker::getMinValue(double no_quality_value) const
+double MeshQualityChecker::getMinValue() const
 {
-	return (_min ? *_min : no_quality_value);
+	return _min;
 }
 
-double MeshQualityChecker::getMaxValue(double no_quality_value) const
+double MeshQualityChecker::getMaxValue() const
 {
-	return (_max ? *_max : no_quality_value);
+	return _max;
 }
 
 } // end namespace MeshLib
