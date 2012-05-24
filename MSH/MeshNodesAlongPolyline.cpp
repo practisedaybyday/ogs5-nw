@@ -21,7 +21,7 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 	_ply(ply), _mesh(mesh), _linear_nodes (0)
 {
 	std::vector<CNode*> const& mesh_nodes (mesh->getNodeVector());
-	double min_edge_length (mesh->getMinEdgeLength());
+	double min_edge_length (mesh->getMinEdgeLength() * 1e2);
 
 	size_t n_linear_order_nodes (mesh->GetNodesNumber (false));
 	size_t n_nodes (mesh->GetNodesNumber (true));
@@ -47,7 +47,7 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 				if (MathLib::calcProjPntToLineAndDists(mesh_nodes[j]->getData(),
 								(_ply->getPoint(k))->getData(), (_ply->getPoint(k + 1))->getData(),
 								lambda, dist) <= min_edge_length)
-					if (0 <= lambda && lambda <= 1) {
+					if (0 <= lambda && lambda <= 1.0) {
 					if (mesh_nodes[j]->GetIndex() < n_linear_order_nodes) {
 						// check if node id is already in the vector
 						if (std::find(_msh_node_ids.begin(), _msh_node_ids.end(),
