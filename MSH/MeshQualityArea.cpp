@@ -22,7 +22,7 @@ void MeshQualityArea::check()
 	for (size_t k(0); k < nElems; k++) {
 		MshElemType::type elem_type(msh_elem[k]->GetElementType());
 		if (elem_type == MshElemType::LINE) {
-			_mesh_quality_measure[k] = QualityType();
+			_mesh_quality_measure[k] = -1.0;
 			continue;
 		}
 

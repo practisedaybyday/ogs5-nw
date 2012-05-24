@@ -28,7 +28,7 @@ void MeshQualityVolume::check()
 		    || elem_type == MshElemType::TRIANGLE
 		    || elem_type == MshElemType::QUAD)
 		{
-            _mesh_quality_measure[k] = QualityType();
+            _mesh_quality_measure[k] = -1.0;
             continue;
         }
 
