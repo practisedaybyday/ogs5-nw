@@ -39,7 +39,7 @@ void MeshQualityEquiAngleSkew::check ()
 		switch (msh_elem[k]->GetElementType())
 		{
 		case MshElemType::LINE:
-			_mesh_quality_measure[k] = 1.1;
+			_mesh_quality_measure[k] = QualityType();
 			break;
 		case MshElemType::TRIANGLE:
 			_mesh_quality_measure[k] = checkTriangle (msh_elem[k]);
