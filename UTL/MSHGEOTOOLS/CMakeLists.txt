@@ -76,12 +76,23 @@ IF(QT4_FOUND)
 		FEM
 		FileIO
 		VtkVis
+		${QT_LIBRARIES}
 	)
 	IF(libgeotiff_FOUND)
 		TARGET_LINK_LIBRARIES( mapGeoToDEM ${libgeotiff_LIBRARIES})
 	ENDIF() # libgeotiff_FOUND
 	SET_TARGET_PROPERTIES(mapGeoToDEM PROPERTIES FOLDER Utilities)
 
+	ADD_EXECUTABLE( mapGeoToMesh mapGeoToMesh.cpp )
+	TARGET_LINK_LIBRARIES( mapGeoToMesh
+		GEO
+		MSH
+		FEM
+		FileIO
+		${QT_LIBRARIES}
+	)
+	SET_TARGET_PROPERTIES(mapGeoToMesh PROPERTIES FOLDER Utilities)
+	
 	TARGET_LINK_LIBRARIES( rotateMesh
 		GEO
 		MSH
