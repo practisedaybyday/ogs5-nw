@@ -3250,7 +3250,7 @@ double CFluidProperties::dZ(int idx_elem, double p, double T, int nk)
 double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, double p, double T)
 {
 	CRFProcess* m_pcs;
-	double mass_fraction[10], CPr[10], dens_arg[3], molar_volume[10];
+	double mass_fraction[10], CPr[10], dens_arg[3]; //, molar_volume[10]; // TF unused variable
 	double variables = 0.0, a0, m0;
 	int CNr = (int) this->component_vector.size();
 	dens_arg[0] = p;
