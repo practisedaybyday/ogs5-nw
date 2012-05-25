@@ -328,6 +328,9 @@ void CFEMesh::computeSearchLength(double c)
 
 	// sum - 2 s, where s is standard deviation
 	_search_length = sum/n - c * sqrt(1.0/(n-1) * (sum_of_sqr - (sum*sum)/n) );
+	if (_search_length < 0) {
+		std::cerr << "[CFEMesh::computeSearchLength] _search_length = " << _search_length << std::endl;
+	}
 }
 
 /**************************************************************************
