@@ -139,6 +139,7 @@ private:
 	int compressibility_model_temperature; //NB
 	int compressibility_pressure;         //NB
 	int compressibility_temperature;      //NB
+		int JTC;      //NB
 
 	int phase;
 
@@ -206,14 +207,14 @@ public:
 	void CalPrimaryVariable(std::vector<std::string>& pcs_name_vector);
 	// Add an argument: double* variables = NULL. 28.05.2008 WW
 	double Density(double* variables = NULL);
-	double drhodP (double P, double T);
+	double drhodP (int idx_elem, double P, double T);
 	//AKS
 	double MixtureSubProperity(int properties, long idx_elem, double p, double T);
 	double GetElementValueFromNodes(long ElementIndex,
 	                                int GPIndex,
 	                                int PhaseIndex,
 	                                int Variable);                                           // BG 11/2010
-	double drhodT (double P, double T);
+	double drhodT (int idx_elem, double P, double T);
 	double Viscosity(double* variables = NULL); //OK4709
 	                                            //NB Jan09
 	double SpecificHeatCapacity(double* variables = NULL);

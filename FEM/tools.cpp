@@ -150,7 +150,7 @@ double GetCurveValue(int kurve, int methode, double punkt, int* gueltig)
 				  (s[i].punkt - s[i - 1l].punkt) * (punkt - s[i - 1l].punkt);
 		//
 		case 1:   // Piece wise constant
-			return s[i].wert;
+			return s[i-1].wert;               //BG changed from i to i-1, 2011
 	}
 }
 

@@ -1659,43 +1659,28 @@ double CFiniteElementStd::CalCoefMass2(int dof_index)
 double CFiniteElementStd::CalCoefMassPTC(int dof_index)
 {
 	int Index = MeshElement->GetIndex();
-	double val = 0.0, z, dzdp, dzdT;
-    PG = interpolate(NodalVal0);
-    TG = interpolate(NodalVal_t0);
+	double val = 0.0;
+    PG = interpolate(NodalVal1);
+    TG = interpolate(NodalVal_t1);
+	poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 	switch(dof_index)
 	{
 	case 0:
-		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-		val = poro / PG;
-		if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
-	    {
-		z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
-		dzdp =FluidProp->dZ(Index, PG, TG, 0);
-		val -= poro*dzdp/z ;
-		}
-		break;
+	val = poro*FluidProp->drhodP(Index, PG, TG);
+	break;
+
 	case 1:
-		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-		val = -poro / TG;
-		if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
-	    {
-		z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
-		dzdT = FluidProp->dZ(Index, PG, TG, 1);
-		val -= poro*dzdT/z;
-		}
-		break;
+	val = poro*FluidProp->drhodT(Index, PG, TG);
+	break;
+
 	case 2:
-		if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
-	    {
-		poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
-		z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
-		dzdT = FluidProp->dZ(Index, PG, TG, 1);
-		val = -poro * (z+TG*dzdT)/z;
-		}
-		break;
+	if(FluidProp->JTC==1)
+	val = poro*TG*FluidProp->drhodT(Index, PG, TG);
+	break;
+
 	case 3:
-		val = MediaProp->HeatCapacity(Index,pcs->m_num->ls_theta,this);
-		break;
+	val = MediaProp->HeatCapacity(Index,pcs->m_num->ls_theta,this);
+	break;
 	}
 	return val;
 }
@@ -1728,7 +1713,7 @@ double CFiniteElementStd::CalCoefMassPSGLOBAL(int dof_index)
 		P  = interpolate(NodalVal1); //Pw
 		T = interpolate(NodalValC1);
 
-		val = poro * (Sw) * FluidProp->drhodP(P,T) / FluidProp->Density();
+		val = poro * (Sw) * FluidProp->drhodP(0, P,T) / FluidProp->Density();
 		//		cout << FluidProp->fluid_name << " Pressure: " << P << " Temp: " << ": drhodP: " << FluidProp->drhodP(P,T) << " density: " << FluidProp->Density() << endl;
 		break;
 	case 1:                               // Snw in the wetting equation
@@ -1742,7 +1727,7 @@ double CFiniteElementStd::CalCoefMassPSGLOBAL(int dof_index)
 		//      P = interpolate(NodalVal1);  // Pw
 		T = interpolate(NodalValC1);
 
-		val = poro * (1. - Sw) * GasProp->drhodP(P,T) / GasProp->Density();
+		val = poro * (1. - Sw) * GasProp->drhodP(0, P,T) / GasProp->Density();
 
 		break;
 	case 3:                               // Snw in the non-wetting equation
@@ -2587,8 +2572,8 @@ void CFiniteElementStd::CalCoefLaplacePTC(int dof_index)
 	switch(dof_index)
 	{
 	case 0:
-		dens_arg[0] = interpolate(NodalVal0);
-		dens_arg[1] = interpolate(NodalVal_t0);
+		dens_arg[0] = interpolate(NodalVal1);
+		dens_arg[1] = interpolate(NodalVal_t1);
 		dens_arg[2] = Index;
 		tensor = MediaProp->PermeabilityTensor(Index);
 		for(size_t i = 0; i < dim * dim; i++)
@@ -3223,42 +3208,29 @@ double CFiniteElementStd::CalCoefAdvection()
 double CFiniteElementStd::CalCoefAdvectionPTC(int dof_index)
 {
 	int Index = MeshElement->GetIndex();
-	double val = 0.0, z, dzdp, dzdT, dens_arg[3];
-    PG = interpolate(NodalVal0);
-    TG = interpolate(NodalVal_t0);
+	double val = 0.0, dens_arg[3];
+    PG = interpolate(NodalVal1);
+    TG = interpolate(NodalVal_t1);
 	switch(dof_index)
 	{
 	case 0:
-	val = 1.0 / PG;
-	if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
-	{
-	z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
-	dzdp = FluidProp->dZ(Index, PG, TG, 0);
-	val -=  dzdp/z ;
-	}
-		break;
+	val = FluidProp->drhodP(Index, PG, TG);
+	break;
+
 	case 1:
-	val = -1.0 / TG;
-	if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
-	{
-	z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
-	dzdT = FluidProp->dZ(Index, PG, TG, 1);
-	val -= dzdT/z ;
-	}
-		break;
+	val = FluidProp->drhodT(Index, PG, TG);
+	break;
+
 	case 2:
-	if (FluidProp->density_model == 14 || FluidProp->density_model == 15)
-	{
-	z=FluidProp->SuperCompressibiltyFactor(Index, PG, TG);
-	dzdT = FluidProp->dZ(Index, PG, TG, 1);
-	val = 1.0 - ((z+TG*dzdT)/z);
-	}
-		break;
+	if(FluidProp->JTC==1)
+	val = 1.0 + TG*FluidProp->drhodT(Index, PG, TG);
+	break;
+
 	case 3:
 	dens_arg[0] = PG;
 	dens_arg[1] = TG;
-		dens_arg[2] = Index;
-		val = FluidProp->Density(dens_arg) * FluidProp->SpecificHeatCapacity(dens_arg);
+	dens_arg[2] = Index;
+	val = FluidProp->Density(dens_arg) * FluidProp->SpecificHeatCapacity(dens_arg);
 		break;
 	}
 	return val;
@@ -4206,7 +4178,7 @@ void CFiniteElementStd::CalcLumpedMass2()
 			vol += GetGaussData(gp, gp_r, gp_s, gp_t);
 	}
 	else
-		vol = MeshElement->GetVolume();
+	  vol = MeshElement->GetVolume() * MeshElement->area; //WW. 24.05.2012
 	//----------------------------------------------------------------------
 	// Initialize
 	(*Mass2) = 0.0;
@@ -6047,6 +6019,68 @@ void CFiniteElementStd::Cal_Velocity_2()
 		}
 	}
 	// gp_ele->Velocity.Write();
+}
+
+/***************************************************************************
+   GeoSys - Funktion: Get_Element_Velocity
+   CFiniteElementStd:: Velocity calulation in gauss points from
+   node velocities obtained by DUMUX or ECLIPSE
+
+   Programming:  BG
+   08/2010	first version
+ **************************************************************************/
+double CFiniteElementStd::Get_Element_Velocity(int Index, CRFProcess* m_pcs, int phase_index, int dimension)
+{
+	ostringstream temp;
+	string tempstring;
+	double velocity[3];
+
+	ElementValue* gp_ele = ele_gp_value[Index];
+
+	// Gauss point loop
+	velocity[dimension] = 0;
+	for (gp = 0; gp < nGaussPoints; gp++)
+	{
+		//for(i_dim = 0; i_dim < dim; i_dim++)
+		//{
+			//velocity[i_dim] = 0;
+		//}
+
+		// Compute the shape function for interpolation within element
+		ComputeShapefct(1);
+
+		// Get gp velocity
+		if (phase_index == 0)
+		{
+			//cout << " Water " << Index;
+			velocity[dimension] += gp_ele->Velocity(dimension, gp);
+			//cout << " " << gp_ele->Velocity(dimension, gp);
+		}
+		else
+		{
+			//cout << " Gas " << Index;
+			velocity[dimension] += gp_ele->Velocity_g(dimension, gp);
+			//cout << " " << gp_ele->Velocity(dimension, gp);
+		}
+		//for(i_dim = 0; i_dim < dim; i_dim++)
+		//{
+		//	if (phase_index == 0)
+		//		velocity[i_dim] += gp_ele->Velocity(i_dim, gp);
+		//	else
+		//		velocity[i_dim] += gp_ele->Velocity_g(i_dim, gp);
+		//}
+	}
+	//cout << endl;
+	//cout << gp_ele->Velocity(dimension, 0) << " " << gp_ele->Velocity(dimension, 1) << " " << gp_ele->Velocity(dimension, 2) << " " << gp_ele->Velocity(dimension, 3) << " " << gp_ele->Velocity(dimension, 4) << " " << gp_ele->Velocity(dimension, 5) << " " << gp_ele->Velocity(dimension, 6) << " " << gp_ele->Velocity(dimension, 7) << " " << gp_ele->Velocity(dimension, 8) << " " << gp_ele->Velocity(dimension, 9) << " " << gp_ele->Velocity(dimension, 10) << " " << gp_ele->Velocity(dimension,11) << " " << gp_ele->Velocity(dimension, 12) << " " << gp_ele->Velocity(dimension, 13) << " " << gp_ele->Velocity(dimension, 14) << endl;
+
+	// Calculate average element velocity
+	velocity[dimension] /= nGaussPoints;
+	//for(i_dim = 0; i_dim < dim; i_dim++)
+	//{
+	//	velocity[i_dim] /= nGaussPoints;
+	//}
+
+	return velocity[dimension];
 }
 
 /***************************************************************************
@@ -8556,7 +8590,7 @@ double CFiniteElementStd::CalCoef_RHS_T_PSGlobal(int dof_index)
 		//      P  = interpolate(NodalVal1);  // Pw
 		T  = interpolate(NodalValC1);
 
-		val = -(1. - Sw) * poro * GasProp->drhodT(P,T) / GasProp->Density();
+		val = -(1. - Sw) * poro * GasProp->drhodT(0, P,T) / GasProp->Density();
 		break;
 	case 2:
 		val = 0.;

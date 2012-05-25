@@ -77,6 +77,8 @@ CompProperties::CompProperties(/* int n // HS we do not need this. */)
 
 	this->setProcessType( FiniteElement::MASS_TRANSPORT );
 	this->setProcessPrimaryVariable( FiniteElement::CONCENTRATION );
+
+	OutputMassOfComponentInModel = 0;						// 05/2012 BG
 }
 
 /**************************************************************************
@@ -519,6 +521,13 @@ ios::pos_type CompProperties::Read(ifstream* rfd_file)
 				        ": Error in MAXIMUM_AQUEOUS_SOLUBILITY - setting max_solubility to 1.0!");
 				max_solubility = 1.0;
 			}
+		}
+		//....................................................................
+		// subkeyword found
+		// Output of the Mass of the component within the model if subkeyword is found, BG 05/2012
+		if(line_string.find("$OutputMassOfComponentInModel") != std::string::npos)
+		{
+			OutputMassOfComponentInModel = 1;
 		}
 	}                                     //end while
 	return position;

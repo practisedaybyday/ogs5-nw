@@ -5,8 +5,11 @@ SOURCE_LOCATION="$SOURCE_LOCATION/.."
 source $SOURCE_LOCATION/scripts/base/configure_compiler.sh
 
 # Parse options
-while getopts "a:d:" opt; do
+while getopts "a:ed:" opt; do
 	case $opt in
+		e)
+			RUN_EXCEEDING=true
+			;;
 		d)
 			BUILD_LOCATION="$SOURCE_LOCATION/$OPTARG"
 			;;
@@ -43,7 +46,7 @@ set +e >/dev/null
 
 # Run FEM benchmarks
 cd $BUILD_LOCATION/build_fem
-if  [ "$1" = "ex" ]; then
+if  [ $RUN_EXCEEDING ]; then
 	ctest -R 'EXCEED' -E 'JOD|Tests|FILE' -j $NUM_PROCESSORS > ../benchOut.txt
 	ctest -R 'EXCEEDING_FILECOMPARE' -E 'JOD' >> ../benchOut.txt
 	

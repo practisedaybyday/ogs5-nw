@@ -92,6 +92,7 @@ CSourceTerm::CSourceTerm() :
    nodes = NULL;                                  //OK
    analytical = false;                            //CMCD
    //  display_mode = false; //OK
+   this->TimeInterpolation = 0;                   //BG
 }
 
 // KR: Conversion from GUI-ST-object to CSourceTerm
@@ -346,6 +347,23 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
          {
         	 //				dis_type = 0;
             in >> CurveIndex;
+         }
+         in.clear();
+         continue;
+      }
+
+  	  //defines if time dependent source terms are use as piecewise constant or linear interpolated; BG 05/2011
+      if (line_string.find("$TIME_INTERPOLATION") != std::string::npos)
+      {
+         in.str(GetLineFromFile1(st_file));
+         in >> interpolation_method;
+         if (interpolation_method.find("LINEAR") != std::string::npos)
+         {
+            this->TimeInterpolation = 0;
+         }
+         if (interpolation_method.find("PIECEWISE_CONSTANT") != std::string::npos)
+         {
+            this->TimeInterpolation = 1;
          }
          in.clear();
          continue;
@@ -954,8 +972,9 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
            continue;
          }
 
+		// 05/2012 BG, it does not work for mass transport if the second part with "CONCENTRATION" is not added !! problem identified by GK und HS
          if ((convertProcessTypeToString (source_term->getProcessType ()).compare(pcs_type_name) == 0)
-            && (convertPrimaryVariableToString(source_term->getProcessPrimaryVariable()).compare(pcs_pv_name) == 0))
+            && ((convertPrimaryVariableToString(source_term->getProcessPrimaryVariable()).compare(pcs_pv_name) == 0) || (convertPrimaryVariableToString(source_term->getProcessPrimaryVariable()).compare("CONCENTRATION1") == 0)))
          // if ( source_term->getProcess() == m_pcs )
          {
              source_term->setProcess (m_pcs);      // HS: 01.09.2009
