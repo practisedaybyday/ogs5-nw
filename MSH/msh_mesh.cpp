@@ -317,6 +317,12 @@ void CFEMesh::computeSearchLength(double c)
 {
 	const size_t n(edge_vector.size());
 
+	if (n==0) {
+		std::cerr << "[CFEMesh::computeSearchLength] no edges found for computing _search_length, setting _search_lenght to " << 1e-3 << std::endl;
+		_search_length = 1e-3;
+		return;
+	}
+
 	double sum (0);
 	double sum_of_sqr (0);
 
@@ -328,8 +334,9 @@ void CFEMesh::computeSearchLength(double c)
 
 	// sum - 2 s, where s is standard deviation
 	_search_length = sum/n - c * sqrt(1.0/(n-1) * (sum_of_sqr - (sum*sum)/n) );
-	if (_search_length < 0) {
-		std::cerr << "[CFEMesh::computeSearchLength] _search_length = " << _search_length << std::endl;
+	if (_search_length <= 0) {
+		std::cerr << "[CFEMesh::computeSearchLength] computed _search_length = " << _search_length << ", set _search_lenght to " << 1e-3 << std::endl;
+		_search_length = 1e-3;
 	}
 }
 

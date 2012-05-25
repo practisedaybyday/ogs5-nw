@@ -11721,7 +11721,7 @@ CRFProcess* PCSGetMass(size_t component_number)
 		long i;
 		CSourceTerm* precip;
 		CSourceTerm* a_st;
-		precip  = NULL;
+ 		precip  = NULL;
 
 		for(i = 0; i < (long)st_vector.size(); i++)
 		{
