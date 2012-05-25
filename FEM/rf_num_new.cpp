@@ -88,7 +88,7 @@ CNumerics::CNumerics(string name)
 	cpl_error_specified = false;
 	cpl_master_process = false;
 	cpl_process = "INVALID_PROCESS";		//JT2012: do not couple with any process, unless indicated
-	cpl_variable = "NONE";    
+	cpl_variable = "NONE";
 	cpl_variable_JOD = "FLUX";
 	cpl_max_iterations = 1;					//OK
 	cpl_min_iterations = 1;					//JT2012
@@ -182,7 +182,7 @@ bool NUMRead(string file_base_name)
 			return true;
 		//
 		if(line_string.find("$OVERALL_COUPLING") != string::npos){
-			overall_coupling_exists = true; // JT: for error checking 
+			overall_coupling_exists = true; // JT: for error checking
 		}
 		//----------------------------------------------------------------------
 		// keyword found
@@ -337,10 +337,10 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 		// subkeyword found ($NON_LINEAR_ITERATION  -or-  $NON_LINEAR_ITERATIONS)
 		if(line_string.find("$NON_LINEAR_ITERATION") != string::npos)
 		{
-			// JT:	in >> nls_method_name 
+			// JT:	in >> nls_method_name
 			//		in >> error_method_name
-			//		in >> max iter 
-			//		in >> relaxation 
+			//		in >> max iter
+			//		in >> relaxation
 			//		in >> tolerance[1:dof]
 			//
 			line.str(GetLineFromFile1(num_file));
@@ -392,15 +392,15 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 		else if(line_string.find("$NON_LINEAR_SOLVER") != string::npos)
 		{
 			ScreenMessage(" --\n Using old $NON_LINEAR_SOLVER keyword.\n");
-			ScreenMessage(" Eventually this will be obsolete. Conider switching to\n");
+			ScreenMessage(" Eventually this will be obsolete. Consider switching to\n");
 			ScreenMessage(" $NON_LINEAR_ITERATIONS for better results and greater flexibility.\n");
 			ScreenMessage(" --\n");
 			//
-			// JT:	in >> method_name 
+			// JT:	in >> method_name
 			//		in >> tolerance
 			//		if(NEWTON) in >> tolerance_local
-			//		in >> max iter 
-			//		in >> relaxation 
+			//		in >> max iter
+			//		in >> relaxation
 			//
 			//
 			line.str(GetLineFromFile1(num_file));
