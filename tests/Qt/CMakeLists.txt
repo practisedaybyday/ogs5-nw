@@ -35,6 +35,7 @@ SET(QTTESTRUNNER_LIBS
   QtDataView
   GDiff
   GTest
+  vtkRendering
 )
 
 TARGET_LINK_LIBRARIES(QtTestrunner ${QTTESTRUNNER_LIBS})
