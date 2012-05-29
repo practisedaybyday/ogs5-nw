@@ -86,6 +86,10 @@ IF(NOT OGS_DONT_USE_VTK)
 ENDIF()
 IF(VTK_FOUND)
 	ADD_DEFINITIONS(-DVTK_FOUND)
+	FIND_PACKAGE(QVTK)
+	IF(NOT QVTK_FOUND AND OGS_USE_QT)
+		MESSAGE(FATAL_ERROR "QVTK was not found but is required for OGS_USE_QT! On Ubuntu it can be installed via 'sudo apt-get install libvtk5-qt4-dev'")
+	ENDIF()
 ENDIF()
 
 ## NetCDF ##
