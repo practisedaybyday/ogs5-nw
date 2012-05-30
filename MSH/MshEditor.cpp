@@ -8,6 +8,7 @@
 #include "msh_mesh.h"
 #include "GridAdapter.h"
 
+
 MeshLib::CFEMesh* MshEditor::removeMeshNodes(MeshLib::CFEMesh* mesh,
                                              const std::vector<size_t> &nodes)
 {
@@ -150,9 +151,10 @@ MeshLib::CFEMesh* MshEditor::getMeshSurface(const MeshLib::CFEMesh &mesh)
 		}
 	}
 
-	std::vector<GEOLIB::Point*> *nodes = new std::vector<GEOLIB::Point*>(nSurfacePoints,0);
+	std::vector<GEOLIB::Point*> *nodes = new std::vector<GEOLIB::Point*>(nSurfacePoints);
 	for (size_t j=0; j<nSurfacePoints; j++)
-		(*nodes)[sfc_points[j]->getID()]=sfc_points[j];//nodes->push_back(sfc_points[j]);
+		//(*nodes)[sfc_points[j]->getID()]=sfc_points[j];
+		(*nodes)[j] = sfc_points[j];
 
 	surface.setNodeVector(nodes);
 	surface.setElements(elements);

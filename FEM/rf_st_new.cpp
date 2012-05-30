@@ -51,7 +51,7 @@
 #include "quicksort.h"
 
 // MathLib
-#include "LinearInterpolation.h"
+#include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 
 // FileIO
 #include "FEMIO/GeoIO.h"
@@ -97,15 +97,15 @@ CSourceTerm::CSourceTerm() :
 
 // KR: Conversion from GUI-ST-object to CSourceTerm
 CSourceTerm::CSourceTerm(const SourceTerm* st)
-	: ProcessInfo(st->getProcessType(),st->getProcessPrimaryVariable(),NULL), 
-	  GeoInfo(st->getGeoType(),st->getGeoObj()), 
+	: ProcessInfo(st->getProcessType(),st->getProcessPrimaryVariable(),NULL),
+	  GeoInfo(st->getGeoType(),st->getGeoObj()),
 	  DistributionInfo(st->getProcessDistributionType())
 {
 	setProcess( PCSGet( this->getProcessType() ) );
 	this->geo_name = st->getGeoName();
 	const std::vector<size_t> dis_nodes = st->getDisNodes();
 	const std::vector<double> dis_values = st->getDisValues();
-	
+
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
 	{
 		this->geo_node_value = dis_values[0];
@@ -120,11 +120,11 @@ CSourceTerm::CSourceTerm(const SourceTerm* st)
 	}
 	else if (this->getProcessDistributionType() == FiniteElement::DIRECT)
 	{
-		// variable "fname" needs to be set, this must be done from outside! 
+		// variable "fname" needs to be set, this must be done from outside!
 	}
 	else
 		std::cout << "Error in CBoundaryCondition() - DistributionType \""
-		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType()) 
+		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType())
 				  << "\" currently not supported." << std::endl;
 }
 
@@ -3080,7 +3080,7 @@ void CSourceTerm::InterpolatePolylineNodeValueVector(
 		}
 	}
 
-	MathLib::LinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, node_values);
+	MathLib::PiecewiseLinearInterpolation (interpolation_points, interpolation_values, nodes_as_interpol_points, node_values);
 }
 
 /**************************************************************************

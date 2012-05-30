@@ -684,7 +684,7 @@ void CTimeDiscretization::Write(std::fstream* tim_file)
 double CTimeDiscretization::CalcTimeStep(double current_time)
 {
 	double tval, next;
-	int no_time_steps = (int)time_step_vector.size(); 
+	int no_time_steps = (int)time_step_vector.size();
 	//
 	// TIME STEP VECTOR
 	// -----------------------------------
@@ -735,7 +735,7 @@ double CTimeDiscretization::CalcTimeStep(double current_time)
 	}
 	// JT: the recommended time step, before critical alteration (for dt control)
 	//     otherwise the critical time will govern time change, rather than primary variable rates.
-	recommended_time_step = time_step_length; 
+	recommended_time_step = time_step_length;
 
 	// WW. Critical time match (JT2012 modified)
 	// ------------------------------------------------------
@@ -897,7 +897,7 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
 	//WW  int no_processes =(int)pcs_vector.size();
 	CFluidProperties* m_mfp = NULL;
 	m_mfp = MFPGet("LIQUID");             //WW
-	double density_fluid = m_mfp->Density(); //WW
+//	double density_fluid = m_mfp->Density(); //WW // TF: set, but never used
 
 	for (size_t n_p = 0; n_p < pcs_vector.size(); n_p++)
 	{
@@ -1153,7 +1153,7 @@ double CTimeDiscretization::DynamicTimeSmoothing(double suggested_time_step_chan
 		time_step = dynamic_minimum_suggestion;
 		// do not allow to increase faster than this user input factor
 		// note, minimum time step is checked in CalcTimeStep()
-		time_step = MMin(time_step, recommended_time_step*dynamic_control_tolerance[DOF_NUMBER_MAX]); 
+		time_step = MMin(time_step, recommended_time_step*dynamic_control_tolerance[DOF_NUMBER_MAX]);
 	}
 	return time_step;
 }
@@ -1483,19 +1483,19 @@ double CTimeDiscretization::ErrorControlAdaptiveTimeControl(void)
 }
 
 /**************************************************************************
-FEMLib-Method: 
+FEMLib-Method:
 Task: Allow for time step retry if system changed rapidly and non-linearly
     :: Currently will only allow this if DynamicVariable time control is used
 Programing:
 02.2011 JT implementation
 **************************************************************************/
-bool CTimeDiscretization::isDynamicTimeFailureSuggested(CRFProcess *m_pcs) 
+bool CTimeDiscretization::isDynamicTimeFailureSuggested(CRFProcess *m_pcs)
 {
 	if(m_pcs->iter_nlin > 0 || this->minimum_dt_reached)
 		return false; // only checking on zeroth iteration (also do not fail if already at the minimum allowed dt)
 	//
 	// Currently only for use with DYNAMIC_VARIABLE time control
-	if(time_control_name.find("DYNAMIC_VARIABLE") == std::string::npos) 
+	if(time_control_name.find("DYNAMIC_VARIABLE") == std::string::npos)
 		return false;
 	//
 	FiniteElement::ErrorMethod method (FiniteElement::convertErrorMethod(this->dynamic_control_error_method));

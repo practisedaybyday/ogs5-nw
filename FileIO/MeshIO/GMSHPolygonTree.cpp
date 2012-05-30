@@ -245,9 +245,11 @@ void GMSHPolygonTree::writeAdditionalPointData(size_t & pnt_id_offset, size_t sf
 		dynamic_cast<GMSHAdaptiveMeshDensity*>(_mesh_density_strategy)->getSteinerPoints(steiner_pnts, 0);
 		const size_t n(steiner_pnts.size());
 		for (size_t k(0); k<n; k++) {
-			out << "Point(" << pnt_id_offset + k << ") = {" << (*(steiner_pnts[k]))[0] << "," << (*(steiner_pnts[k]))[1] << ", 0.0, ";
-			out << _mesh_density_strategy->getMeshDensityAtPoint(steiner_pnts[k]) << "};" << std::endl;
-			out << "Point { " << pnt_id_offset + k << " } In Surface { " << sfc_number << " }; " << std::endl;
+			if (_node_polygon->isPntInPolygon(*(steiner_pnts[k]))) {
+				out << "Point(" << pnt_id_offset + k << ") = {" << (*(steiner_pnts[k]))[0] << "," << (*(steiner_pnts[k]))[1] << ", 0.0, ";
+				out << _mesh_density_strategy->getMeshDensityAtPoint(steiner_pnts[k]) << "};" << std::endl;
+				out << "Point { " << pnt_id_offset + k << " } In Surface { " << sfc_number << " }; " << std::endl;
+			}
 			delete steiner_pnts[k];
 		}
 		pnt_id_offset += n;

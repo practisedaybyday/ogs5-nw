@@ -85,5 +85,5 @@ set ( CMAKE_CONFIGURATION_TYPES "Release;Debug" CACHE TYPE INTERNAL FORCE )
 
 # Set build directories
 # Binaries are created in /bin and libraries in /lib
-set( EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin )
-set( LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib )
+set( EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin )
+set( LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib )

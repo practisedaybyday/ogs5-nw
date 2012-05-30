@@ -141,7 +141,7 @@ Problem::Problem (char* filename) :
 	force_post_node_copy = true;
 	//
 	//JT: Certain restrictions might be made if an external simulator is being used
-	external_coupling_exists = false; 
+	external_coupling_exists = false;
 	for(size_t i = 0; i < pcs_vector.size(); i++){
 		if(pcs_vector[i]->simulator.compare("GEOSYS") != 0)
 			external_coupling_exists = true;
@@ -1047,9 +1047,9 @@ void Problem::Euler_TimeDiscretize()
 bool Problem::CouplingLoop()
 {
 	int i, index, cpl_index;
-	double error, max_outer_error, max_inner_error;
+	double max_outer_error, max_inner_error; //, error;
 	bool run_flag[14];
-	int outer_index, inner_index, inner_max, inner_min;
+	int outer_index, inner_index, inner_max; //, inner_min;
 	//
 	CRFProcess* a_pcs = NULL;
 	CRFProcess* b_pcs = NULL;
@@ -1126,7 +1126,7 @@ bool Problem::CouplingLoop()
 				b_pcs = total_processes[cpl_index];
 				//
 				inner_max = a_pcs->m_num->cpl_max_iterations;
-				inner_min = a_pcs->m_num->cpl_min_iterations;
+//				inner_min = a_pcs->m_num->cpl_min_iterations; // variable set but never used
 				//
 				a_pcs->iter_outer_cpl = outer_index;
 				b_pcs->iter_outer_cpl = outer_index;
@@ -1140,8 +1140,9 @@ bool Problem::CouplingLoop()
 					 // FIRST PROCESS
 					 loop_process_number = i;
 					 if(a_pcs->first_coupling_iteration) PreCouplingLoop(a_pcs);
-					 error = Call_Member_FN(this, active_processes[index])();
-					 if(!a_pcs->TimeStepAccept()){ 
+//					 error = Call_Member_FN(this, active_processes[index])();
+					 Call_Member_FN(this, active_processes[index])();
+					 if(!a_pcs->TimeStepAccept()){
 					   accept = false;
 					   break;
 					 }
@@ -1149,12 +1150,13 @@ bool Problem::CouplingLoop()
 					 // COUPLED PROCESS
 					 loop_process_number = i+1;
 					 if(b_pcs->first_coupling_iteration) PreCouplingLoop(b_pcs);
-					 error = Call_Member_FN(this, active_processes[cpl_index])();
-					 if(!b_pcs->TimeStepAccept()){ 
+//					 error = Call_Member_FN(this, active_processes[cpl_index])();
+					 Call_Member_FN(this, active_processes[cpl_index])();
+					 if(!b_pcs->TimeStepAccept()){
 					   accept = false;
 					   break;
 					 }
-					 // 
+					 //
 					 // Check for break criteria
 					 max_inner_error = MMax(a_pcs->cpl_max_relative_error,b_pcs->cpl_max_relative_error);
 					 a_pcs->first_coupling_iteration = false; // No longer true (JT: these are important, and are also used elswhere).
@@ -1185,8 +1187,9 @@ bool Problem::CouplingLoop()
 				//
 				loop_process_number = i;
 				if(a_pcs->first_coupling_iteration) PreCouplingLoop(a_pcs);
-				error = Call_Member_FN(this, active_processes[index])();
-				if(!a_pcs->TimeStepAccept()){ 
+//				error = Call_Member_FN(this, active_processes[index])(); // TF: error set, but never used
+				Call_Member_FN(this, active_processes[index])();
+				if(!a_pcs->TimeStepAccept()){
 				   accept = false;
 				   break;
 				}
@@ -1317,8 +1320,8 @@ void Problem::PostCouplingLoop()
 		}
 		// JT: Now done in PreCouplingLoop() // m_pcs->CopyTimestepNODValues(); //MB
 		if(force_post_node_copy){ // JT: safety valve. Set this value to true (in Problem()) and values will be copied here.
-			m_pcs->CopyTimestepNODValues(); 
-			m_pcs->CopyTimestepELEValues(); 
+			m_pcs->CopyTimestepNODValues();
+			m_pcs->CopyTimestepELEValues();
 		}
 	}
 // WW

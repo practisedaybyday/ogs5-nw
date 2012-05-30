@@ -26,6 +26,7 @@
 #include "Point.h"
 #include "Polyline.h"
 #include "Surface.h"
+#include "Grid.h"
 
 // MSHLib
 #include "MSHEnums.h"                             // KR 2010/11/15
@@ -76,9 +77,6 @@ public:
 	~GridsTopo();
 };
 #endif                                         //#ifndef NON_GEO
-
-// forward declaration
-class MeshGrid;
 
 //------------------------------------------------------------------------
 // Class definition
@@ -142,6 +140,23 @@ public:
 	{
 		_min_edge_length = val;
 	}
+
+	/**
+	 * Access method to the search length for geometric search algorithms computed
+	 * by method \c computeSearchLength().
+	 * @return the search length
+	 */
+	double getSearchLength() const;
+
+	/**
+	 * @brief Compute the search length for geometric search algorithms.
+	 *
+	 * Let \f$\mu\f$ the mean value of all edge length and \f$s\f$ the
+	 * standard deviation. The search length \f$\ell\f$ is computed by the formula
+	 * \f$\ell = \mu - c \cdot s.\f$
+	 * @param c (input) scaling constant, default value = 2
+	 */
+	void computeSearchLength(double c = 2);
 
 	bool Read(std::ifstream*);
 
@@ -413,10 +428,10 @@ public:
 #ifndef NDEBUG
 	/**
 	 * This is a getter method to access the private attribute _mesh_grid
-	 * that is an instance of class MeshGrid.
+	 * that is an instance of class Grid.
 	 * @return
 	 */
-	MeshLib::MeshGrid const* getMeshGrid() const;
+	GEOLIB::Grid<MeshLib::CNode> const* getGrid() const;
 #endif
 
 private:
@@ -447,6 +462,12 @@ private:
 	 */
 	void computeMinEdgeLength();
 	double _min_edge_length;                  //TK
+
+	/**
+	 * length for geometrical search algorithms, calculated in method
+	 * \c computeSearchLength() and returned by method \c getSearchLength()
+	 */
+	double _search_length;
 
 	// Process friends
 	friend class ::CRFProcess;
@@ -497,10 +518,12 @@ private:
 	void CreateLineElementsFromMarkedEdges(CFEMesh* m_msh_ply,
 	                                       std::vector<long> &ele_vector_at_ply); //NW
 #endif                                      // #ifndef NON_GEO //WW
-
-	MeshGrid *_mesh_grid;
+public:
+	void constructMeshGrid();
+private:
+	GEOLIB::Grid<MeshLib::CNode> *_mesh_grid;
 };
 
-}                                                 // namespace MeshLib
+} // namespace MeshLib
 
 #endif

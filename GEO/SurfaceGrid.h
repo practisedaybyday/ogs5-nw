@@ -27,7 +27,6 @@ public:
 	bool isPntInSurface(const double* pnt) const;
 
 private:
-	double _delta[3];
 	double _step_sizes[3];
 	double _inverse_step_sizes[3];
 	size_t _n_steps[3];

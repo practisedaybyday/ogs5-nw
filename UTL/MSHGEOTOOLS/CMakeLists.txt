@@ -1,5 +1,7 @@
 
 INCLUDE_DIRECTORIES(
+	${CMAKE_SOURCE_DIR}
+	${CMAKE_SOURCE_DIR}/Base
 	${CMAKE_SOURCE_DIR}/UTL/MSHGEOTOOLS
 	${CMAKE_SOURCE_DIR}/Base
 	${CMAKE_SOURCE_DIR}/GEO
@@ -74,12 +76,25 @@ IF(QT4_FOUND)
 		FEM
 		FileIO
 		VtkVis
+		${QT_LIBRARIES}
+		vtkRendering
+		vtkIO
 	)
 	IF(libgeotiff_FOUND)
 		TARGET_LINK_LIBRARIES( mapGeoToDEM ${libgeotiff_LIBRARIES})
 	ENDIF() # libgeotiff_FOUND
 	SET_TARGET_PROPERTIES(mapGeoToDEM PROPERTIES FOLDER Utilities)
 
+	ADD_EXECUTABLE( mapGeoToMesh mapGeoToMesh.cpp )
+	TARGET_LINK_LIBRARIES( mapGeoToMesh
+		GEO
+		MSH
+		FEM
+		FileIO
+		${QT_LIBRARIES}
+	)
+	SET_TARGET_PROPERTIES(mapGeoToMesh PROPERTIES FOLDER Utilities)
+	
 	TARGET_LINK_LIBRARIES( rotateMesh
 		GEO
 		MSH
@@ -90,12 +105,27 @@ IF(QT4_FOUND)
 
 	ADD_EXECUTABLE( testMeshSearchAlgorithms testMeshSearchAlgorithms.cpp )
 	TARGET_LINK_LIBRARIES( testMeshSearchAlgorithms
+		Base
 		GEO
 		MSH
 		MSHGEOTOOLS
 		FileIO
 		${QT_LIBRARIES}
 	)	
+
+	ADD_EXECUTABLE( createLayeredMesh createLayeredMesh.cpp )
+	TARGET_LINK_LIBRARIES( createLayeredMesh
+		GEO
+		MSH
+		MSHGEOTOOLS
+		FileIO
+		QtDataView
+		VtkVis
+		${QT_LIBRARIES}
+		vtkRendering
+		vtkIO
+	)	
+	
 	
 	ADD_EXECUTABLE( removeMeshNodes removeMeshNodes.cpp )
 	TARGET_LINK_LIBRARIES( removeMeshNodes

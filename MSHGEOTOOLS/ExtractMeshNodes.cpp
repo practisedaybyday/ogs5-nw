@@ -125,12 +125,14 @@ void ExtractMeshNodes::getOrthogonalProjectedMeshNodesAlongPolyline (
 	if (polyline.isClosed())
 		number_of_ply_pnts--;
 
+	const double eps(_msh->getMinEdgeLength());
+
 	for (size_t k(0); k < number_of_ply_pnts; k++) {
 		GEOLIB::Point proj_ply_pnt((*(polyline.getPoint(k)))[0], (*(polyline.getPoint(k)))[1], 0.0);
 		for (size_t j(0); j < number_of_msh_nodes; j++) {
 			GEOLIB::Point mesh_pnt(msh_nodes[j]->getData());
 			mesh_pnt[2] = 0.0;
-			if (MathLib::sqrDist(&mesh_pnt,&proj_ply_pnt) < std::numeric_limits<double>::epsilon())
+			if (MathLib::sqrDist(&mesh_pnt,&proj_ply_pnt) < eps)
 				nodes_as_points.push_back(GEOLIB::PointWithID(msh_nodes[j]->getData(), j));
 		}
 	}
@@ -250,37 +252,40 @@ void ExtractMeshNodes::getProjectedPolylineFromPolyline(GEOLIB::Polyline const& 
 	std::vector<GEOLIB::PointWithID> all_projected_ply_pnts;
 	getOrthogonalProjectedMeshNodesAlongPolyline(ply_in, all_projected_ply_pnts);
 
-	// determine the mesh nodes from the right layer
-	std::vector<size_t> pnt_limits;
-	pnt_limits.push_back(0);
-	size_t upper_bound (all_projected_ply_pnts.size() - 1);
-	const double eps (std::numeric_limits<double>::epsilon());
-	for (size_t k(0); k < upper_bound; k++) {
-		const GEOLIB::PointWithID& p0 (all_projected_ply_pnts[k]);
-		const GEOLIB::PointWithID& p1 (all_projected_ply_pnts[k + 1]);
-		if (fabs (p0[0] - p1[0]) > eps || fabs (p0[1] - p1[1]) > eps)
-			pnt_limits.push_back(k+1);
+	if (! all_projected_ply_pnts.empty()) {
+		// determine the mesh nodes from the right layer
+		std::vector<size_t> pnt_limits;
+		pnt_limits.push_back(0);
+		size_t upper_bound (all_projected_ply_pnts.size() - 1);
+		const double eps (std::numeric_limits<double>::epsilon());
+		for (size_t k(0); k < upper_bound; k++) {
+			const GEOLIB::PointWithID& p0 (all_projected_ply_pnts[k]);
+			const GEOLIB::PointWithID& p1 (all_projected_ply_pnts[k + 1]);
+			if (fabs (p0[0] - p1[0]) > eps || fabs (p0[1] - p1[1]) > eps)
+				pnt_limits.push_back(k+1);
+		}
+
+		std::vector<GEOLIB::Point*> selected_projected_ply_pnts;
+		const size_t n(pnt_limits.size());
+		for (size_t k(0); k<n; k++) {
+			selected_projected_ply_pnts.push_back(new GEOLIB::Point(all_projected_ply_pnts[pnt_limits[k]+layer].getData()));
+		}
+
+		// append new points to the end of the points vector
+		std::vector<size_t> pnt_ids_of_mesh_nodes;
+		geo_obj->appendPointVec (selected_projected_ply_pnts, name, &pnt_ids_of_mesh_nodes);
+
+		// create (an empty) polyline
+		ply_out = new GEOLIB::Polyline(*(geo_obj->getPointVec(name)));
+
+		// add ids to polyline
+		const size_t size(pnt_ids_of_mesh_nodes.size());
+		for (size_t k(0); k<size; k++) {
+			ply_out->addPoint(pnt_ids_of_mesh_nodes[k]);
+		}
+	} else {
+		std::cout << "[ExtractMeshNodes::getProjectedPolylineFromPolyline] did not find any mesh nodes" << std::endl;
 	}
-
-	std::vector<GEOLIB::Point*> selected_projected_ply_pnts;
-	const size_t n(pnt_limits.size());
-	for (size_t k(0); k<n; k++) {
-		selected_projected_ply_pnts.push_back(new GEOLIB::Point(all_projected_ply_pnts[pnt_limits[k]+layer].getData()));
-	}
-
-	// append new points to the end of the points vector
-	std::vector<size_t> pnt_ids_of_mesh_nodes;
-	geo_obj->appendPointVec (selected_projected_ply_pnts, name, &pnt_ids_of_mesh_nodes);
-
-	// create (an empty) polyline
-	ply_out = new GEOLIB::Polyline(*(geo_obj->getPointVec(name)));
-
-	// add ids to polyline
-	const size_t size(pnt_ids_of_mesh_nodes.size());
-	for (size_t k(0); k<size; k++) {
-		ply_out->addPoint(pnt_ids_of_mesh_nodes[k]);
-	}
-
 }
 
 void ExtractMeshNodes::writeMesh2DNodeIDAndArea (std::ostream& os,

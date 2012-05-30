@@ -25,7 +25,7 @@ void MeshQualityShortestLongestRatio::check()
 		switch (msh_elem[k]->GetElementType())
 		{
 		case MshElemType::LINE:
-			_mesh_quality_messure[k] = 1.0;
+			_mesh_quality_measure[k] = 1.0;
 			break;
 		case MshElemType::TRIANGLE: {
 			GEOLIB::Point* a(new GEOLIB::Point(
@@ -34,7 +34,7 @@ void MeshQualityShortestLongestRatio::check()
 			                         (msh_elem[k]->GetNode(1))->getData()));
 			GEOLIB::Point* c(new GEOLIB::Point(
 			                         (msh_elem[k]->GetNode(2))->getData()));
-			_mesh_quality_messure[k] = checkTriangle(a, b, c);
+			_mesh_quality_measure[k] = checkTriangle(a, b, c);
 			delete a;
 			delete b;
 			delete c;
@@ -49,7 +49,7 @@ void MeshQualityShortestLongestRatio::check()
 			                         (msh_elem[k]->GetNode(2))->getData()));
 			GEOLIB::Point* d(new GEOLIB::Point(
 			                         (msh_elem[k]->GetNode(3))->getData()));
-			_mesh_quality_messure[k] = checkQuad(a, b, c, d);
+			_mesh_quality_measure[k] = checkQuad(a, b, c, d);
 			delete a;
 			delete b;
 			delete c;
@@ -65,7 +65,7 @@ void MeshQualityShortestLongestRatio::check()
 			                         (msh_elem[k]->GetNode(2))->getData()));
 			GEOLIB::Point* d(new GEOLIB::Point(
 			                         (msh_elem[k]->GetNode(3))->getData()));
-			_mesh_quality_messure[k] = checkTetrahedron(a, b, c, d);
+			_mesh_quality_measure[k] = checkTetrahedron(a, b, c, d);
 			delete a;
 			delete b;
 			delete c;
@@ -77,7 +77,7 @@ void MeshQualityShortestLongestRatio::check()
 			for (size_t j(0); j < 6; j++)
 				pnts.push_back(new GEOLIB::Point(
 				                       (msh_elem[k]->GetNode(j))->getData()));
-			_mesh_quality_messure[k] = checkPrism(pnts);
+			_mesh_quality_measure[k] = checkPrism(pnts);
 			for (size_t j(0); j < 6; j++)
 				delete pnts[j];
 			break;
@@ -87,7 +87,7 @@ void MeshQualityShortestLongestRatio::check()
 			for (size_t j(0); j < 8; j++)
 				pnts.push_back(new GEOLIB::Point(
 				                       (msh_elem[k]->GetNode(j))->getData()));
-			_mesh_quality_messure[k] = checkHexahedron(pnts);
+			_mesh_quality_measure[k] = checkHexahedron(pnts);
 			for (size_t j(0); j < 8; j++)
 				delete pnts[j];
 			break;

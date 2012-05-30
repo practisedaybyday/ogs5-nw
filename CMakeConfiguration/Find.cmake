@@ -86,6 +86,27 @@ IF(NOT OGS_DONT_USE_VTK)
 ENDIF()
 IF(VTK_FOUND)
 	ADD_DEFINITIONS(-DVTK_FOUND)
+	FIND_PACKAGE(QVTK)
+	IF(NOT QVTK_FOUND AND OGS_USE_QT)
+		MESSAGE(FATAL_ERROR "QVTK was not found but is required for OGS_USE_QT! On Ubuntu it can be installed via 'sudo apt-get install libvtk5-qt4-dev'")
+	ENDIF()
+ENDIF()
+
+## NetCDF ##
+IF(VTK_FOUND)
+	FIND_PATH(VTK_NETCDF_FOUND netcdf.h
+		PATHS ${VTK_INCLUDE_DIRS}/vtknetcdf ${VTK_SOURCE_DIR}/Utilities/vtknetcdf
+		NO_DEFAULT_PATH)
+ENDIF()
+
+IF(VTK_NETCDF_FOUND)
+	ADD_DEFINITIONS(-DVTK_NETCDF_FOUND)
+ELSE()
+	SET(NETCDF_CXX TRUE)
+	FIND_PACKAGE(NetCDF)
+	IF(NOT NETCDF_FOUND AND OGS_USE_QT)
+		MESSAGE(FATAL_ERROR "NetCDF was not found but is required for OGS_USE_QT!")
+	ENDIF()
 ENDIF()
 
 ## geotiff ##

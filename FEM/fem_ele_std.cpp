@@ -1536,7 +1536,7 @@ double CFiniteElementStd::CalCoefMass()
 		if(rhow > 0.0)
 			val += poro  * Sw * FluidProp->drho_dp / rhow;
 		// Capillarity
-		val += poro * dSdp; 
+		val += poro * dSdp;
 		//WW
 		if(MediaProp->heat_diffusion_model == 273)
 		{
@@ -2592,7 +2592,7 @@ void CFiniteElementStd::CalCoefLaplacePTC(int dof_index)
 	case 3:
 		tensor = MediaProp->HeatConductivityTensor(Index);
 		for(size_t i = 0; i < dim * dim; i++)
-			mat[i] = tensor[i];  
+			mat[i] = tensor[i];
 		break;
 	}
 }
@@ -2678,17 +2678,16 @@ void CFiniteElementStd::CalCoefLaplacePSGLOBAL(bool Gravity,  int dof_index)
 
 		if(pcs->num_type_name.find("dPcdSwGradSnw") != string::npos)
 		{
-			double Snw = -1.0;
-			if(pcs->m_num->ele_upwinding == 1)
-			{
+//			double Snw = -1.0;
+//			if(pcs->m_num->ele_upwinding == 1)
+//			{
 				// Doing Upwind elements for saturation by divergent of pressure.
 				// Pnw upwind
-				int WhichNode = UpwindElement((int)(pcs->m_num->ele_upwind_method),
-				                              1);
-				Snw = NodalVal_SatNW[WhichNode];
-			}
-			else
-				Snw = interpolate(NodalVal_SatNW);
+//				int WhichNode = UpwindElement((int)(pcs->m_num->ele_upwind_method), 1); // TF: set, but never used
+//				Snw = NodalVal_SatNW[WhichNode]; // TF: set, but never used
+//			}
+//			else
+//				Snw = interpolate(NodalVal_SatNW); // TF: set, but never used
 
 			CMediumProperties* m_mmp = NULL;
 			CElem* thisEle = pcs->m_msh->ele_vector[index];
@@ -2714,21 +2713,20 @@ void CFiniteElementStd::CalCoefLaplacePSGLOBAL(bool Gravity,  int dof_index)
 		// For Vnw
 		tensor = MediaProp->PermeabilityTensor(Index);
 
-		double Snw = -1.0;
-		if(pcs->m_num->ele_upwinding == 1)
-		{
+//		double Snw = -1.0;
+//		if(pcs->m_num->ele_upwinding == 1)
+//		{
 			// Doing Upwind elements for saturation by divergent of pressure.
 			// Pnw upwind
-			int WhichNode = UpwindElement((int)(pcs->m_num->ele_upwind_method), 1);
-			Snw = NodalVal_SatNW[WhichNode];
-		}
-		else
-			Snw = interpolate(NodalVal_SatNW);
+//			int WhichNode = UpwindElement((int)(pcs->m_num->ele_upwind_method), 1); // TF: set, but never used
+//			Snw = NodalVal_SatNW[WhichNode]; // TF: set, but never used
+//		}
+//		else
+//			Snw = interpolate(NodalVal_SatNW); // TF: set, but never used
 
-		CMediumProperties* m_mmp = NULL;
-		CElem* thisEle = pcs->m_msh->ele_vector[index];
-		int matgrp = thisEle->GetPatchIndex();
-		m_mmp = mmp_vector[matgrp];
+//		CElem* thisEle = pcs->m_msh->ele_vector[index]; // TF: set, but never used
+//		int matgrp = thisEle->GetPatchIndex(); // TF: set, but never used
+//		CMediumProperties* m_mmp = mmp_vector[matgrp];
 		k_rel = MediaProp->PermeabilitySaturationFunction(Sw,1);
 		mat_fac = k_rel / GasProp->Viscosity();
 
@@ -4756,7 +4754,7 @@ void CFiniteElementStd::CalcAdvectionPTC()
 
 		for (in = 0; in < dof_n; in++)
 		{
-			for (jn = 0; jn < dof_n; jn++) 
+			for (jn = 0; jn < dof_n; jn++)
 			{
 				mat_fac = fkt * CalCoefAdvectionPTC(in * dof_n + jn);
 				for (i = 0; i < nnodes; i++)

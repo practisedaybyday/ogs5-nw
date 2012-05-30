@@ -1543,8 +1543,8 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 
 	if(assem->PcsType == S)
 	{
-		dens_arg[0] = assem->interpolate(assem->NodalVal1); 
-		dens_arg[1] = assem->interpolate(assem->NodalVal_t1); 
+		dens_arg[0] = assem->interpolate(assem->NodalVal0);
+		dens_arg[1] = assem->interpolate(assem->NodalVal_t0);
 		dens_arg[2] = assem->Index;
 		heat_capacity_fluids = assem->FluidProp->Density(dens_arg) *assem->FluidProp->SpecificHeatCapacity(dens_arg);
 	}

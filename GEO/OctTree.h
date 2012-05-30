@@ -12,43 +12,34 @@ namespace GEOLIB {
 
 template <typename POINT> class OctTree {
 public:
-	OctTree(POINT const& ll, POINT const& ur, size_t max_points_per_node) :
-		_father (NULL), _ll (ll), _ur (ur), _is_leaf (true),
-		_max_points_per_node (max_points_per_node)
-#ifndef NDEBUG
-		, _depth(0)
-#endif
+
+	static OctTree<POINT>* createOctTree(POINT & ll, POINT & ur, size_t max_points_per_node)
 	{
-		// init childs
-		for (size_t k(0); k < 8; k++) {
-			_childs[k] = NULL;
-		}
+		const double dx(ur[0] - ll[0]);
+		const double dy(ur[1] - ll[1]);
+		const double dz(ur[2] - ll[2]);
 
-		const double dx(_ur[0] - _ll[0]);
-		const double dy(_ur[1] - _ll[1]);
-		const double dz(_ur[2] - _ll[2]);
-
-		if (dx > dy && dx > dz) {
-			_ll[1] -= (dx-dy)/2.0;
-			_ur[1] += (dx-dy)/2.0;
-			_ll[2] -= (dx-dz)/2.0;
-			_ur[2] += (dx-dz)/2.0;
+		if (dx >= dy && dx >= dz) {
+			ll[1] -= (dx-dy)/2.0;
+			ur[1] += (dx-dy)/2.0;
+			ll[2] -= (dx-dz)/2.0;
+			ur[2] += (dx-dz)/2.0;
 		} else {
-			if (dy > dx && dy > dz) {
-				_ll[0] -= (dy-dx)/2.0;
-				_ur[0] += (dy-dx)/2.0;
-				_ll[2] -= (dy-dz)/2.0;
-				_ur[2] += (dy-dz)/2.0;
+			if (dy >= dx && dy >= dz) {
+				ll[0] -= (dy-dx)/2.0;
+				ur[0] += (dy-dx)/2.0;
+				ll[2] -= (dy-dz)/2.0;
+				ur[2] += (dy-dz)/2.0;
 			} else {
-				_ll[0] -= (dz-dx)/2.0;
-				_ur[0] += (dz-dx)/2.0;
-				_ll[1] -= (dz-dy)/2.0;
-				_ur[1] += (dz-dy)/2.0;
+				ll[0] -= (dz-dx)/2.0;
+				ur[0] += (dz-dx)/2.0;
+				ll[1] -= (dz-dy)/2.0;
+				ur[1] += (dz-dy)/2.0;
 			}
 		}
-//#ifndef NDEBUG
-//		std::cout << "root of OctTree: bbx: " << _ll << " x " << _ur << std::endl;
-//#endif
+
+		OctTree<POINT>::_max_points_per_node = max_points_per_node;
+		return new OctTree<POINT>(ll, ur);
 	}
 
 	virtual ~OctTree()
@@ -92,7 +83,7 @@ public:
 		else
 			return false;
 
-		if (_pnts.size () > _max_points_per_node)
+		if (_pnts.size () > OctTree<POINT>::_max_points_per_node)
 			splitNode ();
 		return true;
 	}
@@ -141,30 +132,15 @@ private:
 	 * private constructor
 	 * @param ll lower left point
 	 * @param ur upper right point
-	 * @param father father in the tree
 	 * @return
 	 */
-#ifndef	NDEBUG
-	OctTree (POINT const& ll, POINT const& ur, OctTree* father, size_t max_points_per_node, size_t depth) :
-#else
-	OctTree (POINT const& ll, POINT const& ur, OctTree* father, size_t max_points_per_node) :
-#endif
-		_father (father), _ll (ll), _ur (ur), _is_leaf (true),
-		_max_points_per_node (max_points_per_node)
-#ifndef NDEBUG
-		, _depth(depth)
-#endif
+	OctTree (POINT const& ll, POINT const& ur) :
+		_ll (ll), _ur (ur), _is_leaf (true)
 	{
 		// init childs
 		for (size_t k(0); k < 8; k++)
 			_childs[k] = NULL;
-
-//#ifndef NDEBUG
-//		if (_depth <= 1)
-//			std::cout << "[OctTree] depth: " << _depth << ", bbx: " << _ll << " x " << _ur << std::endl;
-//#endif
 	}
-
 
 	void splitNode ()
 	{
@@ -174,45 +150,25 @@ private:
 		POINT p0(x_mid, y_mid, _ll[2]), p1(_ur[0], _ur[1], z_mid);
 
 		// create child NEL
-#ifndef NDEBUG
-		_childs[NEL] = new OctTree<POINT> (p0, p1, this, _max_points_per_node, _depth+1);
-#else
-		_childs[NEL] = new OctTree<POINT> (p0, p1, this, _max_points_per_node);
-#endif
+		_childs[NEL] = new OctTree<POINT> (p0, p1);
 
 		// create child NWL
 		p0[0] = _ll[0];
 		p1[0] = x_mid;
-#ifndef NDEBUG
-		_childs[NWL] = new OctTree<POINT> (p0, p1, this, _max_points_per_node, _depth+1);
-#else
-		_childs[NWL] = new OctTree<POINT> (p0, p1, this, _max_points_per_node);
-#endif
+		_childs[NWL] = new OctTree<POINT> (p0, p1);
 
 		// create child SWL
 		p0[1] = _ll[1];
 		p1[1] = y_mid;
-#ifndef NDEBUG
-		_childs[SWL] = new OctTree<POINT> (_ll, p1, this, _max_points_per_node, _depth+1);
-#else
-		_childs[SWL] = new OctTree<POINT> (_ll, p1, this, _max_points_per_node);
-#endif
+		_childs[SWL] = new OctTree<POINT> (_ll, p1);
 
 		// create child NEU
-#ifndef NDEBUG
-		_childs[NEU] = new OctTree<POINT> (p1, _ur, this, _max_points_per_node, _depth+1);
-#else
-		_childs[NEU] = new OctTree<POINT> (p1, _ur, this, _max_points_per_node);
-#endif
+		_childs[NEU] = new OctTree<POINT> (p1, _ur);
 
 		// create child SEL
 		p0[0] = x_mid;
 		p1[0] = _ur[0];
-#ifndef NDEBUG
-		_childs[SEL] = new OctTree<POINT> (p0, p1, this, _max_points_per_node, _depth+1);
-#else
-		_childs[SEL] = new OctTree<POINT> (p0, p1, this, _max_points_per_node);
-#endif
+		_childs[SEL] = new OctTree<POINT> (p0, p1);
 
 		// create child NWU
 		p0[0] = _ll[0];
@@ -221,30 +177,19 @@ private:
 		p1[0] = x_mid;
 		p1[1] = _ur[1];
 		p1[2] = _ur[2];
-#ifndef NDEBUG
-		_childs[NWU] = new OctTree<POINT> (p0, p1, this, _max_points_per_node, _depth+1);
-#else
-		_childs[NWU] = new OctTree<POINT> (p0, p1, this, _max_points_per_node);
-#endif
+		_childs[NWU] = new OctTree<POINT> (p0, p1);
 
 		// create child SWU
 		p0[1] = _ll[1];
 		p1[1] = y_mid;
-#ifndef NDEBUG
-		_childs[SWU] = new OctTree<POINT> (p0, p1, this, _max_points_per_node, _depth+1);
-#else
-		_childs[SWU] = new OctTree<POINT> (p0, p1, this, _max_points_per_node);
-#endif
+		_childs[SWU] = new OctTree<POINT> (p0, p1);
+
 		// create child SEU
 		p0[0] = x_mid;
 		p1[0] = _ur[0];
 		p1[1] = y_mid;
 		p1[2] = _ur[2];
-#ifndef NDEBUG
-		_childs[SEU] = new OctTree<POINT> (p0, p1, this, _max_points_per_node, _depth+1);
-#else
-		_childs[SEU] = new OctTree<POINT> (p0, p1, this, _max_points_per_node);
-#endif
+		_childs[SEU] = new OctTree<POINT> (p0, p1);
 
 		// distribute points to sub quadtrees
 		const size_t n_pnts(_pnts.size());
@@ -260,7 +205,6 @@ private:
 		_is_leaf = false;
 	}
 
-	OctTree<POINT>* _father;
 	/**
 	 * childs are sorted:
 	 *   _childs[0] is north east lower child
@@ -276,21 +220,21 @@ private:
 	/**
 	 * lower left front face point of the cube
 	 */
-	POINT _ll;
+	POINT const _ll;
 	/**
 	 * upper right back face point of the cube
 	 */
-	POINT _ur;
+	POINT const _ur;
+
 	std::vector<POINT*> _pnts;
 	bool _is_leaf;
 	/**
 	 * maximum number of points per leaf
 	 */
-	const size_t _max_points_per_node;
-#ifndef NDEBUG
-	size_t _depth;
-#endif
+	static size_t _max_points_per_node;
 };
+
+template <typename POINT> size_t OctTree<POINT>::_max_points_per_node = 0;
 
 }
 

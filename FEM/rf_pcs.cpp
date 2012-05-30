@@ -106,7 +106,7 @@ REACT_BRNS* m_vec_BRNS;
 #include "rfmat_cp.h"
 
 // MathLib
-#include "LinearInterpolation.h"
+#include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 
 using namespace std;
 using namespace MeshLib;
@@ -708,9 +708,9 @@ void CRFProcess::Create()
 	if (!Tim)
 	{
 		//21.08.2008. WW
-		/* JT->WW: It doesn't seem like a good idea to give a non-existent Tim the properties of some specified [0] vector. 
+		/* JT->WW: It doesn't seem like a good idea to give a non-existent Tim the properties of some specified [0] vector.
 		           Why not set default values, and then let other "Tim" control the stepping?
-				   In other words. If HEAT_TRANSPORT doesn't have time control, 
+				   In other words. If HEAT_TRANSPORT doesn't have time control,
 				   we cannot assign a time control type for a FLOW process to a HEAT process, this could give incorrect results.
 				   THE DEFAULTS ARE NOW SET UP SUCH THAT... if "Tim" doesn't exist, this process has no influence on the time step.
 		Tim = new CTimeDiscretization(*time_vector[0], pcs_type_name);
@@ -3944,7 +3944,7 @@ double CRFProcess::Execute()
 
 	pcs_error = DBL_MAX;
 	g_nnodes = m_msh->GetNodesNumber(false);
-	
+
 #ifdef NEW_EQS
 	eqs_x = eqs_new->x;
 #else
@@ -4134,7 +4134,7 @@ double CRFProcess::Execute()
 #else // ifdef NEW_EQS
 		ExecuteLinearSolver();
 #endif
-	} 
+	}
 	//----------------------------------------------------------------------
 	// END OF FLUX CORRECTED TRANSPORT
 	//----------------------------------------------------------------------
@@ -4192,7 +4192,7 @@ double CRFProcess::Execute()
 			   }
 			}
 		}
-	} 
+	}
 	//----------------------------------------------------------------------
 	// END OF PICARD
 	//----------------------------------------------------------------------
@@ -7547,7 +7547,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 	double unknowns_norm = 0.0;
 	double absolute_error[DOF_NUMBER_MAX];
 	g_nnodes = m_msh->GetNodesNumber(false);
-	
+
 #ifdef NEW_EQS
 	eqs_x = eqs_new->x;
 #else
@@ -7557,8 +7557,8 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 	switch(method)
 	{
 		//
-		// --> ENORM:	|x1-x0|       
-		//     Norm of the solution vector delta (absolute error). 
+		// --> ENORM:	|x1-x0|
+		//     Norm of the solution vector delta (absolute error).
 		//     Norm taken over entire solution vector (all primary variables) and checked against a single tolerance.
 		//
 		case FiniteElement::ENORM:
@@ -7588,7 +7588,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			break;
 		//
 		// --> ERNORM:	|(x1-x0)/x0)|
-		//     Norm of the solution vector delta divided by the solution vector (relative error). 
+		//     Norm of the solution vector delta divided by the solution vector (relative error).
 		//     A single tolerance applied to all primary variables.
 		//
 		case FiniteElement::ERNORM:
@@ -7629,8 +7629,8 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			absolute_error[0] = unknowns_norm / (sqrt(value)+DBL_EPSILON);
 			break;
 		//
-		// --> EVNORM:	|x1-x0|  
-		//     Norm of the solution vector delta (absolute error). 
+		// --> EVNORM:	|x1-x0|
+		//     Norm of the solution vector delta (absolute error).
 		//     Norm taken over solution vector of each primary variable, checked againes a tolerence specific to each variable.
 		//
 		case FiniteElement::EVNORM:
@@ -7665,7 +7665,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			break;
 		//
 		// --> BNORM: Get norm of solution vector, same as ENORM. RHS norm will be calculated later.
-		//     Norm of the solution vector delta (absolute error). 
+		//     Norm of the solution vector delta (absolute error).
 		//     Norm taken over entire solution vector (all primary variables) and checked against a single tolerance.
 		//
 		case FiniteElement::BNORM:
@@ -7695,7 +7695,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			break;
 		//
 		// --> LMAX:	max(x1-x0)
-		//     Local max error (across all elements) of solution vector delta (absolute error). 
+		//     Local max error (across all elements) of solution vector delta (absolute error).
 		//     Tolerance required for each primary variable.
 		//
 		case FiniteElement::LMAX:
@@ -7737,7 +7737,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			ScreenMessage("ERROR: Invalid error method for Iteration or Coupling Node error.\n");
 			return 0.0;
 		//
-		/* 
+		/*
 		-----------------------------------------------------------------------------------------------
 		ALTERNATIVE METHODS NOT YET IMPLEMENTED. MODIFY THEM AND ADD THEIR ENUM VALUES IF YOU WANT THEM.
 		-----------------------------------------------------------------------------------------------
@@ -8054,7 +8054,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			// ---------------------------------------------------
 			if(m_num->nls_method > 0)
 			{
-				if(converged) 
+				if(converged)
 					damping = 1.0; // Solution has converged. Take newest values.
 				//
 				for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
@@ -8076,7 +8076,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			/* JT: I don't know if this time control method is used anymore. But it relies on a single error
 			       produced from CalcIterationNodeError(), but this now depends on the type of error to use.
 			       Therefore, I simply provide the error of the first dof, and not depending on the error type. If
-			       this time step is still used, someone will need to find another way to calculate the error it uses. 
+			       this time step is still used, someone will need to find another way to calculate the error it uses.
 		    */
 			Tim->repeat = true;
 			if(converged){
@@ -12389,7 +12389,7 @@ CRFProcess* PCSGetMass(size_t component_number)
 		long i;
 		CSourceTerm* precip;
 		CSourceTerm* a_st;
-		precip  = NULL;
+ 		precip  = NULL;
 
 		for(i = 0; i < (long)st_vector.size(); i++)
 		{
@@ -12738,7 +12738,7 @@ CRFProcess* PCSGetMass(size_t component_number)
 					}
 			}
 			std::vector<double> interpol_res;
-			MathLib::LinearInterpolation (interpolation_points,
+			MathLib::PiecewiseLinearInterpolation (interpolation_points,
 			                              interpolation_values,
 			                              nodes_as_interpol_points,
 			                              interpol_res);

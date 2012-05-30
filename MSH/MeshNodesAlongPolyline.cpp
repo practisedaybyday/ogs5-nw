@@ -21,7 +21,7 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 	_ply(ply), _mesh(mesh), _linear_nodes (0)
 {
 	std::vector<CNode*> const& mesh_nodes (mesh->getNodeVector());
-	double min_edge_length (mesh->getMinEdgeLength());
+	double epsilon_radius (mesh->getSearchLength());
 
 	size_t n_linear_order_nodes (mesh->GetNodesNumber (false));
 	size_t n_nodes (mesh->GetNodesNumber (true));
@@ -36,6 +36,10 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 		for (size_t k = 0; k < ply->getNumberOfPoints() - 1; k++)
 		{
 			double act_length_of_ply(ply->getLength(k));
+			double seg_length (sqrt(MathLib::sqrDist(_ply->getPoint(k), _ply->getPoint(k + 1))));
+			double lower_lambda (- epsilon_radius / seg_length);
+			double upper_lambda (1 + epsilon_radius / seg_length);
+
 			// loop over all nodes
 			for (size_t j = 0; j < n_nodes; j++)
 			{
@@ -46,31 +50,33 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 				// at the k-th line segment of the polyline, i.e. 0 <= lambda <= 1?
 				if (MathLib::calcProjPntToLineAndDists(mesh_nodes[j]->getData(),
 								(_ply->getPoint(k))->getData(), (_ply->getPoint(k + 1))->getData(),
-								lambda, dist) <= min_edge_length)
-					if (0 <= lambda && lambda <= 1) {
-					if (mesh_nodes[j]->GetIndex() < n_linear_order_nodes) {
-						// check if node id is already in the vector
-						if (std::find(_msh_node_ids.begin(), _msh_node_ids.end(),
-										mesh_nodes[j]->GetIndex()) == _msh_node_ids.end()) {
-							_msh_node_ids.push_back(mesh_nodes[j] ->GetIndex());
-							_dist_of_proj_node_from_ply_start. push_back(act_length_of_ply + dist);
-							_linear_nodes++;
+								lambda, dist) <= epsilon_radius) {
+					if (lower_lambda <= lambda && lambda <= upper_lambda) {
+						if (mesh_nodes[j]->GetIndex() < n_linear_order_nodes) {
+							// check if node id is already in the vector
+							if (std::find(_msh_node_ids.begin(), _msh_node_ids.end(),
+											mesh_nodes[j]->GetIndex()) == _msh_node_ids.end()) {
+								_msh_node_ids.push_back(mesh_nodes[j] ->GetIndex());
+								_dist_of_proj_node_from_ply_start. push_back(act_length_of_ply + dist);
+								_linear_nodes++;
+							}
+						} else {
+							// check if node id is already in the vector
+							if (std::find(msh_node_higher_order_ids.begin(),
+											msh_node_higher_order_ids.end(), mesh_nodes[j]->GetIndex())
+											== msh_node_higher_order_ids.end()) {
+								msh_node_higher_order_ids.push_back(mesh_nodes[j]->GetIndex());
+								dist_of_proj_higher_order_node_from_ply_start .push_back(act_length_of_ply
+												+ dist);
+							}
 						}
-					} else
-					// check if node id is already in the vector
-					if (std::find(msh_node_higher_order_ids.begin(),
-									msh_node_higher_order_ids.end(), mesh_nodes[j]->GetIndex())
-									== msh_node_higher_order_ids.end()) {
-						msh_node_higher_order_ids.push_back(mesh_nodes[j]->GetIndex());
-						dist_of_proj_higher_order_node_from_ply_start .push_back(act_length_of_ply
-										+ dist);
-					}
-				} // end if lambda
+					} // end if lambda
+				}
 			} // end node loop
 		} // end line segment loop
 
 		if (_msh_node_ids.empty())
-			min_edge_length *= 2.0;
+			epsilon_radius *= 2.0;
 	}
 
 	// sort the (linear) nodes along the polyline according to their distances
@@ -80,7 +86,7 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 #ifndef NDEBUG
 	std::cout << "*****" << std::endl;
 	std::cout << "distances of linear nodes along polyline " << *ply <<
-	"(min_edge_length = " << min_edge_length << "): " << std::endl;
+	"(epsilon radius = " << epsilon_radius << "): " << std::endl;
 	for (size_t k(0); k < _dist_of_proj_node_from_ply_start.size(); k++)
 		std::cout << "\t" << _msh_node_ids[k] << " " <<
 		_dist_of_proj_node_from_ply_start[k] << std::endl;

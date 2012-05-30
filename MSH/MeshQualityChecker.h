@@ -10,6 +10,9 @@
 
 #include <vector>
 
+// BaseLib
+#include "Histogram.h"
+
 // MSH
 #include "msh_mesh.h"
 
@@ -23,15 +26,18 @@ public:
 	virtual ~MeshQualityChecker () {}
 
 	virtual void check () = 0;
-	const std::vector<double>& getMeshQuality () const { return _mesh_quality_messure; }
-	virtual void getHistogramm (std::vector<size_t>& histogramm) const;
+	std::vector<double> const& getMeshQuality () const;
+	double getMinValue() const;
+	double getMaxValue() const;
+	virtual BASELIB::Histogram<double> getHistogram (size_t nclasses = 0) const;
 
 protected:
 	void errorMsg (CElem* elem, size_t idx) const;
 
+	double _min;
+	double _max;
 	CFEMesh const* const _mesh;
-	std::vector<double> _mesh_quality_messure;
-	std::vector<size_t> _static_histogramm;
+	std::vector<double> _mesh_quality_measure;
 };
 }
 

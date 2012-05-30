@@ -92,7 +92,7 @@ int main (int argc, char* argv[])
 	if (argc < 5)
 	{
 		std::cout << "Usage: " << argv[0] <<
-		" --mesh ogs_meshfile --geometry ogs_geometry" << std::endl;
+		" --mesh ogs_meshfile --geometry ogs_geometry_as_gli_file" << std::endl;
 		return -1;
 	}
 
@@ -173,50 +173,50 @@ int main (int argc, char* argv[])
 	//*** extract surface out of mesh
 	MeshLib::ExtractMeshNodes extract_mesh_nodes (mesh);
 
-	// *** generate a polygon from polyline
-//	std::vector<GEOLIB::Polyline*> polylines;
-	const size_t n_plys (plys->size());
-	for (size_t k(0); k < n_plys; k++)
-	{
-		bool closed ((*plys)[k]->isClosed());
-		if (!closed && k >= 19)
-		{
-			std::cout << "converting polyline " << k << " to closed polyline" << std::endl;
-			GEOLIB::Polygon* polygon(NULL);
-			extract_mesh_nodes.getPolygonFromPolyline(*((*plys)[k]), geo, unique_name, polygon);
-//			polylines.push_back (polygon);
-//			geo->appendPolylineVec (polylines, unique_name);
-			std::string *polygon_name(new std::string);
-			geo->getPolylineVecObj(unique_name)->getNameOfElementByID(k, *polygon_name);
-			(*polygon_name) += "-Polygon";
-			geo->getPolylineVecObj(unique_name)->push_back(polygon, polygon_name);
-//			polylines.clear();
-		}
-	}
-
-	FileIO::writeGLIFileV4 ("New.gli", unique_name, *geo);
-
-	// *** search mesh nodes for direct assigning bc, st or ic
-//	std::string fname ("MeshIDs.txt");
-//	std::ofstream out (fname.c_str());
-//
-//	std::string fname_gli ("MeshNodesAsPnts.gli");
-//	std::ofstream pnt_out (fname_gli.c_str());
-//	pnt_out << "#POINTS" << std::endl;
-//
+//	// *** generate a polygon from polyline
+////	std::vector<GEOLIB::Polyline*> polylines;
 //	const size_t n_plys (plys->size());
-//	for (size_t k(0); k<n_plys; k++) {
+//	for (size_t k(0); k < n_plys; k++)
+//	{
 //		bool closed ((*plys)[k]->isClosed());
-//		if (!closed) {
-//			std::cout << "polyline " << k << " is not closed" << std::endl;
-//		} else {
-//			GEOLIB::Polygon polygon (*((*plys)[k]));
-////			extract_mesh_nodes.writeMesh2DNodeIDAndArea (out, pnt_out, polygon);
-//			extract_mesh_nodes.writeTopSurfaceMeshNodeIDs (out, pnt_out, polygon);
-//			// write all nodes - not only the surface nodes
-////			extract_mesh_nodes.writeMeshNodeIDs (out, pnt_out, polygon);
+//		if (!closed)
+//		{
+//			std::cout << "converting polyline " << k << " to closed polyline" << std::endl;
+//			GEOLIB::Polygon* polygon(NULL);
+//			extract_mesh_nodes.getPolygonFromPolyline(*((*plys)[k]), geo, unique_name, polygon);
+////			polylines.push_back (polygon);
+////			geo->appendPolylineVec (polylines, unique_name);
+//			std::string *polygon_name(new std::string);
+//			geo->getPolylineVecObj(unique_name)->getNameOfElementByID(k, *polygon_name);
+//			(*polygon_name) += "-Polygon";
+//			geo->getPolylineVecObj(unique_name)->push_back(polygon, polygon_name);
+////			polylines.clear();
 //		}
 //	}
+//
+//	FileIO::writeGLIFileV4 ("New.gli", unique_name, *geo);
+
+	// *** search mesh nodes for direct assigning bc, st or ic
+	std::string fname ("MeshIDs.txt");
+	std::ofstream out (fname.c_str());
+
+	std::string fname_gli ("MeshNodesAsPnts.gli");
+	std::ofstream pnt_out (fname_gli.c_str());
+	pnt_out << "#POINTS" << std::endl;
+
+	const size_t n_plys (plys->size());
+	for (size_t k(0); k<n_plys; k++) {
+		bool closed ((*plys)[k]->isClosed());
+		if (!closed) {
+			std::cout << "polyline " << k << " is not closed" << std::endl;
+		} else {
+			GEOLIB::Polygon polygon (*((*plys)[k]));
+//			extract_mesh_nodes.writeMesh2DNodeIDAndArea (out, pnt_out, polygon);
+			extract_mesh_nodes.writeTopSurfaceMeshNodeIDs (out, pnt_out, polygon);
+			// write all nodes - not only the surface nodes
+//			extract_mesh_nodes.writeMeshNodeIDs (out, pnt_out, polygon);
+		}
+	}
 
 	// *** for Model Pipiripau
 //	std::vector<GEOLIB::Polygon*> holes;

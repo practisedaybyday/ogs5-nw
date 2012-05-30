@@ -39,22 +39,22 @@ void MeshQualityEquiAngleSkew::check ()
 		switch (msh_elem[k]->GetElementType())
 		{
 		case MshElemType::LINE:
-			_mesh_quality_messure[k] = 1.1;
+			_mesh_quality_measure[k] = -1.0;
 			break;
 		case MshElemType::TRIANGLE:
-			_mesh_quality_messure[k] = checkTriangle (msh_elem[k]);
+			_mesh_quality_measure[k] = checkTriangle (msh_elem[k]);
 			break;
 		case MshElemType::QUAD:
-			_mesh_quality_messure[k] = checkQuad (msh_elem[k]);
+			_mesh_quality_measure[k] = checkQuad (msh_elem[k]);
 			break;
 		case MshElemType::TETRAHEDRON:
-			_mesh_quality_messure[k] = checkTetrahedron (msh_elem[k]);
+			_mesh_quality_measure[k] = checkTetrahedron (msh_elem[k]);
 			break;
 		case MshElemType::HEXAHEDRON:
-			_mesh_quality_messure[k] = checkHexahedron (msh_elem[k]);
+			_mesh_quality_measure[k] = checkHexahedron (msh_elem[k]);
 			break;
 		case MshElemType::PRISM:
-			_mesh_quality_messure[k] = checkPrism (msh_elem[k]);
+			_mesh_quality_measure[k] = checkPrism (msh_elem[k]);
 			break;
 		default:
 			break;
