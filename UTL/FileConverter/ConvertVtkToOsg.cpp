@@ -6,10 +6,11 @@
  */
 
 // ** INCLUDES **
-#include "vtkOsgActor.h"
+#include "VtkOsgConverter.h"
 
 #include <iostream>
 
+#include <vtkActor.h>
 #include <vtkDataSetMapper.h>
 #include <vtkGenericDataObjectReader.h>
 #include <vtkGeometryFilter.h>
@@ -162,11 +163,14 @@ int main (int argc, char const* argv[])
 			reader->Update();
 		}
 
-		vtkOsgActor* actor = vtkOsgActor::New();
-		actor->SetVerbose(true);
+		vtkActor* actor = vtkActor::New();
 		actor->SetMapper(mapper);
-		actor->UpdateOsg();
-		OSG::NodePtr node = actor->GetOsgRoot();
+
+		vtkOsgConverter converter(actor);
+		converter.SetVerbose(true);
+		//converter->SetMapper(mapper);
+		converter.WriteAnActor();
+		OSG::NodePtr node = converter.GetOsgNode();
 		replaceExt(filename, "osb");
 		if (useSwitch)
 		{
@@ -177,8 +181,6 @@ int main (int argc, char const* argv[])
 		else
 			OSG::SceneFileHandler::the().write(node, filename.c_str());
 
-		actor->ClearOsg();
-		actor->Delete();
 		if (reader)
 			reader->Delete();
 		if (oldStyleReader)
