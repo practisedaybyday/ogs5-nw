@@ -44,11 +44,11 @@ IF (OGS_USE_OPENSG AND VTK_FOUND AND Boost_FOUND)
 	INCLUDE( ${VTK_USE_FILE} )
 
 	ADD_EXECUTABLE (ConvertVtkToOsg ConvertVtkToOsg.cpp)
-  SET_TARGET_PROPERTIES(ConvertVtkToOsg PROPERTIES FOLDER Utilities)
+	SET_TARGET_PROPERTIES(ConvertVtkToOsg PROPERTIES FOLDER Utilities)
 
 	USE_OPENSG ( ConvertVtkToOsg )
 	INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/Qt/OpenSG ${Boost_INCLUDE_DIRS} )
-	TARGET_LINK_LIBRARIES ( ConvertVtkToOsg OgsOpenSG vtkRendering ${Boost_LIBRARIES} )
+	TARGET_LINK_LIBRARIES ( ConvertVtkToOsg OgsOpenSG vtkRendering vtkIO ${Boost_LIBRARIES} )
 
 	IF (OGS_PACKAGING)
 		INSTALL ( TARGETS ConvertVtkToOsg RUNTIME DESTINATION bin COMPONENT ConvertVtkToOsg )
@@ -65,7 +65,7 @@ IF(VTK_FOUND AND Boost_FOUND)
 	SET_TARGET_PROPERTIES(ConvertGliToVtk PROPERTIES FOLDER Utilities)
 
 	INCLUDE_DIRECTORIES ( ${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/Qt/VtkVis )
-	TARGET_LINK_LIBRARIES ( ConvertGliToVtk FileIO VtkVis vtkRendering
+	TARGET_LINK_LIBRARIES ( ConvertGliToVtk FileIO VtkVis vtkRendering vtkIO
 boost_filesystem-mt boost_system-mt boost_regex-mt)
 
 	IF (OGS_PACKAGING)

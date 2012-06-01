@@ -86,6 +86,8 @@ IF(QT4_FOUND)
 		FileIO
 		VtkVis
 		${QT_LIBRARIES}
+		vtkRendering
+		vtkIO
 	)
 	IF(libgeotiff_FOUND)
 		TARGET_LINK_LIBRARIES( mapGeoToDEM ${libgeotiff_LIBRARIES})
@@ -129,6 +131,8 @@ IF(QT4_FOUND)
 		QtDataView
 		VtkVis
 		${QT_LIBRARIES}
+		vtkRendering
+		vtkIO
 	)	
 	
 	
