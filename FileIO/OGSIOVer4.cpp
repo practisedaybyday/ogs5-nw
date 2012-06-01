@@ -528,6 +528,18 @@ std::string readSurfaces(std::istream &in,
 	return tag;
 }
 
+void extractPath (std::string const& fname, std::string& path)
+{
+	// extract path for reading external files
+	size_t pos(fname.rfind("/")); // linux, mac delimiter
+	if (pos == std::string::npos) {
+		pos = fname.rfind("\\"); // windows delimiter
+		if (pos == std::string::npos)
+			pos = 0;
+	}
+	path = fname.substr(0, pos==0 ? pos : pos + 1);
+}
+
 bool readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& unique_name, std::vector<std::string>& errors)
 {
 	std::cout << "GEOLIB::readGLIFile open stream from file " << fname
@@ -557,14 +569,8 @@ bool readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& uniqu
 		geo->addPointVec(pnt_vec, unique_name, pnt_id_names_map);  // KR: insert into GEOObjects if not empty
 
 	// extract path for reading external files
-	size_t pos(fname.rfind("/")); // linux, mac delimiter
-	if (pos == std::string::npos)
-	{
-		pos = fname.rfind("\\"); // windows delimiter
-		if (pos == std::string::npos)
-			pos = 0;
-	}
-	std::string path(fname.substr(0, pos==0 ? pos : pos + 1));
+	std::string path;
+	extractPath(fname, path);
 
 	// read names of plys into temporary string-vec
 	std::map<std::string,size_t>* ply_names (new std::map<std::string,size_t>);
@@ -675,6 +681,10 @@ void writeAllDataToGLIFileV4 (const std::string& fname, const GEOLIB::GEOObjects
 	std::vector<std::string> geo_names;
 	geo.getGeometryNames (geo_names);
 
+	// extract path for reading external files
+	std::string path;
+	extractPath(fname, path);
+
 	std::ofstream os (fname.c_str());
 
 	size_t pnts_offset (0);
@@ -737,19 +747,51 @@ void writeAllDataToGLIFileV4 (const std::string& fname, const GEOLIB::GEOObjects
 				os << "#POLYLINE" << std::endl;
 				std::string ply_name;
 				if (plys_vec->getNameOfElementByID (plys_cnt, ply_name))
-					os << " $NAME " << std::endl << "  " << ply_name <<
-					std::endl;
+					os << "\t$NAME " << std::endl << "\t\t" << ply_name << std::endl;
 				else
-					os << " $NAME " << std::endl << "  " << plys_cnt <<
-					std::endl;
-				os << " $POINTS" << std::endl;
+					os << "\t$NAME " << std::endl << "\t\t" << plys_cnt << std::endl;
+				os << "\t$POINTS" << std::endl;
 				for (size_t l(0); l < (*plys)[k]->getNumberOfPoints(); l++)
-					os << "  " << pnts_id_offset[j] + ((*plys)[k])->getPointID(
-					        l) << std::endl;
+					os << "\t\t" << pnts_id_offset[j] + ((*plys)[k])->getPointID(l) << std::endl;
 				plys_cnt++;
 			}
 		}
 	}
+
+	// writing surfaces as TIN files
+	size_t sfcs_cnt (0);
+	for (size_t j(0); j < geo_names.size(); j++)
+		{
+			const GEOLIB::SurfaceVec* sfcs_vec (geo.getSurfaceVecObj (geo_names[j]));
+			if (sfcs_vec) {
+				const std::vector<GEOLIB::Surface*>* sfcs (sfcs_vec->getVector());
+				for (size_t k(0); k < sfcs->size(); k++)
+				{
+					os << "#SURFACE" << std::endl;
+					std::string sfc_name(path);
+					if (sfcs_vec->getNameOfElementByID (sfcs_cnt, sfc_name)) {
+						os << "\t$NAME " << std::endl << "\t\t" << sfc_name << std::endl;
+					} else {
+						os << "\t$NAME " << std::endl << "\t\t" << sfcs_cnt << std::endl;
+						sfc_name += number2str (sfcs_cnt);
+					}
+					sfc_name += ".tin";
+					os << "\t$TIN" << std::endl;
+					os << "\t\t" << sfc_name << std::endl;
+					// create tin file
+					std::ofstream tin_os (sfc_name.c_str());
+					GEOLIB::Surface const& sfc (*(*sfcs)[k]);
+					const size_t n_tris (sfc.getNTriangles());
+					for (size_t l(0); l < n_tris; l++) {
+						GEOLIB::Triangle const& tri (*(sfc[l]));
+						tin_os << l << " " << *(tri.getPoint(0)) << " " << *(tri.getPoint(1)) << " " << *(tri.getPoint(2)) << std::endl;
+					}
+					tin_os.close();
+
+					sfcs_cnt++;
+				}
+			}
+		}
 
 	os << "#STOP" << std::endl;
 	os.close ();

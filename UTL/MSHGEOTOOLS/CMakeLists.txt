@@ -51,6 +51,7 @@ IF(QT4_FOUND)
 
 	ADD_EXECUTABLE( extractSurface mainExtractSurface.cpp ExtractSurface.h ExtractSurface.cpp )
 	ADD_EXECUTABLE( createMeshFromPolygon createMeshFromPolygon.cpp )
+	ADD_EXECUTABLE( convertSurfaceMeshToGeometry convertSurfaceMeshToGeometry.cpp )
 
 	TARGET_LINK_LIBRARIES( extractSurface
 		GEO
@@ -62,6 +63,14 @@ IF(QT4_FOUND)
 	)
 	
 	TARGET_LINK_LIBRARIES( createMeshFromPolygon
+		GEO
+		MSH
+		MSHGEOTOOLS
+		FileIO
+		${QT_LIBRARIES}
+	)
+
+	TARGET_LINK_LIBRARIES( convertSurfaceMeshToGeometry
 		GEO
 		MSH
 		MSHGEOTOOLS

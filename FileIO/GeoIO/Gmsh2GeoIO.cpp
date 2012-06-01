@@ -65,6 +65,7 @@ void Gmsh2GeoIO::loadMeshAsGeometry (std::string & fname, GEOLIB::GEOObjects* ge
 
 	geo->addPointVec (pnts, fname);
 
+	std::vector<size_t> const& pnt_id_map (geo->getPointVecObj(fname)->getIDMap());
 	// read element tag
 	getline (ins, line);
 	// read number of elements
@@ -109,7 +110,7 @@ void Gmsh2GeoIO::loadMeshAsGeometry (std::string & fname, GEOLIB::GEOObjects* ge
 			pos_end = line.find(" ", pos_beg);
 			const size_t id2 (str2number<size_t>(line.substr(pos_beg,
 			                                                 pos_end - pos_beg)) - 1); // shift -1!
-			sfc->addTriangle (id0, id1, id2);
+			sfc->addTriangle (pnt_id_map[id0], pnt_id_map[id1], pnt_id_map[id2]);
 		}
 	}
 	// read end element tag
