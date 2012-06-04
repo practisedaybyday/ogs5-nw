@@ -21,7 +21,7 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 	_ply(ply), _mesh(mesh), _linear_nodes (0)
 {
 	std::vector<CNode*> const& mesh_nodes (mesh->getNodeVector());
-	double epsilon_radius (mesh->getSearchLength());
+	double epsilon_radius (mesh->getMinEdgeLength()); // getSearchLength());
 
 	size_t n_linear_order_nodes (mesh->GetNodesNumber (false));
 	size_t n_nodes (mesh->GetNodesNumber (true));
