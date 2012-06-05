@@ -54,7 +54,6 @@ void getMeshNodesFromLayerAlongPolyline(MeshLib::CFEMesh *const mesh, GEOLIB::GE
 	delete ply_out;
 }
 
-
 void writeMeshNodes(MeshLib::CFEMesh const* const mesh, std::vector<size_t> const& node_ids,
 				std::string const& fname_ids, std::string const& fname_gli, bool write_gli)
 {

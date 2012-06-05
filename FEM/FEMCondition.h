@@ -1,6 +1,6 @@
 /**
  * \file FEMCondition.h
- * 25/11/2010 KR inital implementation
+ * 25/11/2010 KR initial implementation
  *
  */
 
@@ -77,7 +77,7 @@ public:
 	/// The first value specifies the point id, the second the value for that point.
 	void setDisValues(const std::vector< std::pair<size_t, double> > &dis_values);
 
-	/// Removes all distribution values 
+	/// Removes all distribution values
 	void clearDisValues() { _disValues.resize(0); };
 
 	/// Sets the name of the geo-object the condition is assigned to.

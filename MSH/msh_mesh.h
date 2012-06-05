@@ -501,7 +501,6 @@ private:
 	inline void Precipitation2NeumannBC(std::string const & fname,
 	                                    std::string const & ofname,
 	                                    double ratio = 0.8);
-
 #ifndef NON_GEO                             //  WW
 	/// Store border nodes among different grids.
 	std::vector<GridsTopo*> grid_neighbors;
