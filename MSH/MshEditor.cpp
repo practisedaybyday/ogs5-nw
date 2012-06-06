@@ -77,7 +77,7 @@ MeshLib::CFEMesh* MshEditor::removeMeshNodes(MeshLib::CFEMesh* mesh,
 	return new_mesh;
 }
 
-const std::vector<GEOLIB::PointWithID*> MshEditor::getSurfaceNodes(const MeshLib::CFEMesh &mesh)
+std::vector<GEOLIB::PointWithID*> MshEditor::getSurfaceNodes(const MeshLib::CFEMesh &mesh)
 {
 	std::cout << "Extracting surface nodes..." << std::endl;
 	// Sort points lexicographically
@@ -86,13 +86,13 @@ const std::vector<GEOLIB::PointWithID*> MshEditor::getSurfaceNodes(const MeshLib
 	std::vector<size_t> perm;
 	for (size_t j(0); j<nNodes; j++)
 	{
-		nodes.push_back(new GEOLIB::PointWithID(mesh.nod_vector[j]->getData(), j));		
+		nodes.push_back(new GEOLIB::PointWithID(mesh.nod_vector[j]->getData(), j));
 		perm.push_back(j);
 	}
 	Quicksort<GEOLIB::PointWithID*> (nodes, 0, nodes.size(), perm);
 
 	// Extract surface points
-	double eps (sqrt(std::numeric_limits<double>::min()));
+	double eps (std::numeric_limits<double>::epsilon());
 	std::vector<GEOLIB::PointWithID*> surface_pnts;
 	for (size_t k(1); k < nNodes; k++)
 	{
@@ -115,7 +115,7 @@ MeshLib::CFEMesh* MshEditor::getMeshSurface(const MeshLib::CFEMesh &mesh)
 	const size_t nSurfacePoints (sfc_points.size());
 
 	std::vector<GridAdapter::Element*> *elements = new std::vector<GridAdapter::Element*>;
-	
+
 	const size_t nElements = mesh.ele_vector.size();
 	for (size_t j=0; j<nElements; j++)
 	{

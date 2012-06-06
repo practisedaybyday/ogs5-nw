@@ -32,7 +32,7 @@ public:
 	static MeshLib::CFEMesh* removeMeshNodes(MeshLib::CFEMesh* mesh,
 	                                         const std::vector<size_t> &nodes);
 
-	static const std::vector<GEOLIB::PointWithID*> getSurfaceNodes(const MeshLib::CFEMesh &mesh);
+	static std::vector<GEOLIB::PointWithID*> getSurfaceNodes(const MeshLib::CFEMesh &mesh);
 
 	static MeshLib::CFEMesh* getMeshSurface(const MeshLib::CFEMesh &mesh);
 

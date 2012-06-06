@@ -17,6 +17,7 @@
 // Base
 #include "StringTools.h"
 #include "quicksort.h"
+#include "StringTools.h"
 
 // GEO
 #include "GEOObjects.h"
@@ -528,18 +529,6 @@ std::string readSurfaces(std::istream &in,
 	return tag;
 }
 
-void extractPath (std::string const& fname, std::string& path)
-{
-	// extract path for reading external files
-	size_t pos(fname.rfind("/")); // linux, mac delimiter
-	if (pos == std::string::npos) {
-		pos = fname.rfind("\\"); // windows delimiter
-		if (pos == std::string::npos)
-			pos = 0;
-	}
-	path = fname.substr(0, pos==0 ? pos : pos + 1);
-}
-
 bool readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& unique_name, std::vector<std::string>& errors)
 {
 	std::cout << "GEOLIB::readGLIFile open stream from file " << fname
@@ -570,7 +559,7 @@ bool readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& uniqu
 
 	// extract path for reading external files
 	std::string path;
-	extractPath(fname, path);
+	BaseLib::extractPath(fname, path);
 
 	// read names of plys into temporary string-vec
 	std::map<std::string,size_t>* ply_names (new std::map<std::string,size_t>);
@@ -683,7 +672,7 @@ void writeAllDataToGLIFileV4 (const std::string& fname, const GEOLIB::GEOObjects
 
 	// extract path for reading external files
 	std::string path;
-	extractPath(fname, path);
+	BaseLib::extractPath(fname, path);
 
 	std::ofstream os (fname.c_str());
 

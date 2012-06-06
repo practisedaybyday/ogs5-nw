@@ -62,6 +62,20 @@ std::string getFileNameFromPath(const std::string &str, bool with_extension)
 	return file.substr(0,end);
 }
 
+namespace BaseLib {
+void extractPath (std::string const& fname, std::string& path)
+{
+	// extract path for reading external files
+	size_t pos(fname.rfind("/")); // linux, mac delimiter
+	if (pos == std::string::npos) {
+		pos = fname.rfind("\\"); // windows delimiter
+		if (pos == std::string::npos)
+			pos = 0;
+	}
+	path = fname.substr(0, pos==0 ? pos : pos + 1);
+}
+} // end namespace BaseLib
+
 #ifdef MSVC
 void correctScientificNotation(std::string filename, size_t precision)
 {

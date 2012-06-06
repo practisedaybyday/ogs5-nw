@@ -36,6 +36,7 @@ void writeGLIFileV4 (const std::string& fname,
                      const GEOLIB::GEOObjects& geo);
 
 void writeAllDataToGLIFileV4 (const std::string& fname, const GEOLIB::GEOObjects& geo);
+
 } // end namespace
 
 #endif /* OGSIOVER4_H_ */

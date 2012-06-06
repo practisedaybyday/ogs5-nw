@@ -63,7 +63,14 @@ void trim(std::string &str, char ch = ' ');
  */
 std::string getFileNameFromPath(const std::string &str, bool with_extension = false);
 
-
+namespace BaseLib {
+/**
+ * extracts the path of a fully qualified path name of the file
+ * @param fname [input] the fully qualified path name of the file
+ * @param path [output] the path of the fully qualified path name of the file
+ */
+void extractPath (std::string const& fname, std::string& path);
+} // end namespace BaseLib
 
 #ifdef MSVC
 void correctScientificNotation(std::string filename, size_t precision = 0);

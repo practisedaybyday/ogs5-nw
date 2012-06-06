@@ -120,7 +120,7 @@ IF (QT4_FOUND)
 ENDIF()
 
 TARGET_LINK_LIBRARIES( FileIO
-	#	Base
+	Base
 	#	MathLib
 	GEO
 	FEM
