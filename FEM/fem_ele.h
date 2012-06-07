@@ -14,8 +14,7 @@
 
 // MSH
 #include "par_ddc.h"                              //OK //Moved from fem_ele_std.h. WW
-
-//#include "matrix_class.h"
+#include "MSHEnums.h"
 
 namespace Math_Group
 { class SymMatrix;
@@ -55,7 +54,6 @@ public:
 	CElement (int CoordFlag, const int order = 1);
 	virtual ~CElement ();
 	//
-	void ConfigNumerics(const int EleType);
 	void ConfigElement(CElem* MElement, bool FaceIntegration = false);
 	void setOrder(const int order);
 	// Set Gauss point
@@ -212,6 +210,8 @@ protected:
 
 	ExtrapolationMethod::type extrapo_method;
 	ExtrapolationMethod::type GetExtrapoMethod() {return extrapo_method; }
+private:
+	void ConfigNumerics(MshElemType::type elem_type);
 };
 
 /*------------------------------------------------------------------

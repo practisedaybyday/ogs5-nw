@@ -284,12 +284,12 @@ void CElement::setOrder(const int order)
    01/2010 NW Higher order line elements
    Last modified:
 **************************************************************************/
-void CElement::ConfigNumerics(const int EleType)
+void CElement::ConfigNumerics(MshElemType::type ele_type)
 {
 	// nGauss = GetNumericsGaussPoints(ElementType);
-	switch(EleType)
+	switch(ele_type)
 	{
-	case 1:                               // Line
+	case MshElemType::LINE:
 		ele_dim = 1;
 		nGauss = 2;
 		nGaussPoints = nGauss;
@@ -299,7 +299,7 @@ void CElement::ConfigNumerics(const int EleType)
 		GradShapeFunctionHQ = GradShapeFunctionLineHQ;
 		extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
 		return;
-	case 2:                               // Quadrilateral
+	case MshElemType::QUAD:
 		ele_dim = 2;
 		nGaussPoints = nGauss * nGauss;
 		ShapeFunction = ShapeFunctionQuad;
@@ -308,7 +308,7 @@ void CElement::ConfigNumerics(const int EleType)
 		GradShapeFunctionHQ = GradShapeFunctionQuadHQ;
 		extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
 		return;
-	case 3:                               // Hexahedra
+	case MshElemType::HEXAHEDRON:
 		ele_dim = 3;
 		nGaussPoints = nGauss * nGauss * nGauss;
 		ShapeFunction = ShapeFunctionHex;
@@ -317,7 +317,7 @@ void CElement::ConfigNumerics(const int EleType)
 		GradShapeFunctionHQ = GradShapeFunctionHexHQ;
 		extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
 		return;
-	case 4:                               // Triangle
+	case MshElemType::TRIANGLE:
 		ele_dim = 2;
 		nGaussPoints = nGauss = 3; // Fixed to 3
 		ShapeFunction = ShapeFunctionTri;
@@ -326,7 +326,7 @@ void CElement::ConfigNumerics(const int EleType)
 		GradShapeFunctionHQ = GradShapeFunctionTriHQ;
 		extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
 		return;
-	case 5:                               // Tedrahedra
+	case MshElemType::TETRAHEDRON:
 		ele_dim = 3;
 		//	   nGaussPoints = nGauss = 15;  // Fixed to 15
 		nGaussPoints = nGauss = 5; // Fixed to 5
@@ -336,7 +336,7 @@ void CElement::ConfigNumerics(const int EleType)
 		GradShapeFunctionHQ = GradShapeFunctionTetHQ;
 		extrapo_method = ExtrapolationMethod::EXTRAPO_LINEAR;
 		return;
-	case 6:                               // Prism
+	case MshElemType::PRISM:
 		ele_dim = 3;
 		nGaussPoints = 6;         // Fixed to 9
 		nGauss = 3;               // Fixed to 3
@@ -346,7 +346,7 @@ void CElement::ConfigNumerics(const int EleType)
 		GradShapeFunctionHQ = GradShapeFunctionPriHQ;
 		extrapo_method = ExtrapolationMethod::EXTRAPO_AVERAGE;
 		return;
-	case 7: // Pyramid
+	case MshElemType::PYRAMID:
 		ele_dim = 3;
 		if (Order == 1)
 			nGaussPoints = nGauss = 5;
@@ -358,6 +358,11 @@ void CElement::ConfigNumerics(const int EleType)
 		GradShapeFunctionHQ = GradShapeFunctionPyraHQ13;
 		extrapo_method = ExtrapolationMethod::EXTRAPO_AVERAGE;
 		return;
+	case MshElemType::INVALID:
+		std::cerr << "[CElement::ConfigNumerics] invalid element type" << std::endl;
+		break;
+	default:
+		std::cerr << "[CElement::ConfigNumerics] unknown element type" << std::endl;
 	}
 }
 
