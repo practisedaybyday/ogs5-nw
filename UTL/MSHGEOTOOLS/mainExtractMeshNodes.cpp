@@ -90,6 +90,7 @@ int main (int argc, char* argv[])
 {
 	if (argc < 5)
 	{
+		std::cout << "program " << argv[0] << " takes a *layered* mesh file and closed polylines from a geometry and computes the surface mesh nodes within the closed polyline" << std::endl;
 		std::cout << "Usage: " << argv[0] <<
 		" --mesh ogs_meshfile --geometry ogs_geometry_as_gli_file" << std::endl;
 		return -1;
