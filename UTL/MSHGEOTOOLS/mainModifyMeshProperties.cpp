@@ -26,12 +26,26 @@
 
 Problem* aproblem = NULL;
 
+char program_description[] =
+"This program reads an OpenGeoSys (OGS) mesh, a geometry (in OGS gli format) and\n\
+an id of a polygon described inside of the geometry. With the help of the\n\
+referenced polygon a volume is described. First the polygon is projected to\n\
+the bottom and top surface of the mesh and we obtain parts of the bottom and\n\
+top surfaces of the mesh. The bottom and top surfaces are linked together\n\
+via a third surface. The volume is defined as the part of the mesh that is\n\
+inside the three surfaces. Within this volume the material ids of the elements\n\
+are modified.";
+
 int main (int argc, char* argv[])
 {
-	if (argc < 9)
-	{
-		std::cout << "Usage: " << argv[0] <<
-		" --mesh ogs_meshfile --geometry ogs_geometry --polygon_id id --material_id id" << std::endl;
+	if (argc != 9 || argc != 11) {
+		std::cout << "********************************************************************************" << std::endl;
+		std::cout << program_description << std::endl;
+		std::cout << "********************************************************************************" << std::endl;
+		std::cout << "Usage: " << std::endl;
+		std::cout << argv[0] << "\n\t--mesh ogs_meshfile\n\t--geometry ogs_geometry\n\t--polygon_id id\n\t--material_id id" << std::endl;
+		std::cout << "*** or ***" << std::endl;
+		std::cout << argv[0] << "\n\t--mesh ogs_meshfile\n\t--geometry ogs_geometry\n\t--polygon_id id\n\t--old_material_id old_id\n\t--new_material_id new_id" << std::endl;
 		return -1;
 	}
 
@@ -45,6 +59,8 @@ int main (int argc, char* argv[])
 
 	tmp = argv[2];
 	std::string file_base_name (tmp);
+	std::string path;
+	BaseLib::extractPath(file_base_name, path);
 	if (tmp.find (".msh") != std::string::npos)
 		file_base_name = tmp.substr (0, tmp.size() - 4);
 
@@ -81,15 +97,6 @@ int main (int argc, char* argv[])
 		return -1;
 	}
 
-	bool closed ((*plys)[0]->isClosed());
-	if (!closed)
-	{
-		std::cout << "polyline is not closed" << std::endl;
-		delete mesh;
-		delete geo;
-		return -1;
-	}
-
 	// *** get polygon id
 	tmp = argv[5];
 	if (tmp.find ("--polygon_id") == std::string::npos)
@@ -101,25 +108,67 @@ int main (int argc, char* argv[])
 	}
 	size_t polygon_id (atoi (argv[6]));
 
-	// *** get material id
-	tmp = argv[7];
-	if (tmp.find ("--material") == std::string::npos)
-	{
-		std::cout << "could not read material id" << std::endl;
+	if (plys->size() <= polygon_id) {
+		std::cout << "polyline for id " << polygon_id << " not found" << std::endl;
 		delete mesh;
 		delete geo;
 		return -1;
 	}
-	size_t material_id (atoi (argv[8]));
+
+	bool closed ((*plys)[polygon_id]->isClosed());
+	if (!closed)
+	{
+		std::cout << "polyline with id " << polygon_id << " is not closed" << std::endl;
+		delete mesh;
+		delete geo;
+		return -1;
+	}
+
+	size_t old_material_id(0), new_material_id(0);
+	if (argc == 9) {
+		// *** get material id
+		tmp = argv[7];
+		if (tmp.find ("--material") == std::string::npos)
+		{
+			std::cout << "could not read material id" << std::endl;
+			delete mesh;
+			delete geo;
+			return -1;
+		}
+		new_material_id = atoi (argv[8]);
+	}
+	if (argc == 11) {
+		// *** get old material id
+		tmp = argv[7];
+		if (tmp.find ("--old_material_id") == std::string::npos)
+		{
+			std::cout << "could not read old material id" << std::endl;
+			delete mesh;
+			delete geo;
+			return -1;
+		}
+		old_material_id = atoi (argv[8]);
+		tmp = argv[9];
+		if (tmp.find ("--new_material_id") == std::string::npos)
+		{
+			std::cout << "could not read new material id" << std::endl;
+			delete mesh;
+			delete geo;
+			return -1;
+		}
+		new_material_id = atoi (argv[10]);
+	}
 
 	GEOLIB::Polygon polygon (*((*plys)[polygon_id]));
 	MeshLib::ModifyMeshProperties modify_mesh_nodes (mesh);
 
-	modify_mesh_nodes.setMaterial (polygon, material_id);
+	if (argc == 9) {
+		modify_mesh_nodes.setMaterial (polygon, new_material_id);
+	} else {
+		modify_mesh_nodes.substituteMaterialID (polygon, old_material_id, new_material_id);
+	}
 
-	std::string mesh_out_fname("MeshWithMaterial.msh");
-
-	mesh->ConstructGrid();
+	std::string mesh_out_fname(path+"MeshWithMaterial.msh");
 
 	std::cout << "write " << mesh_out_fname << " ... " << std::flush;
 	FileIO::OGSMeshIO mesh_io;

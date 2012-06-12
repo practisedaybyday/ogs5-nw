@@ -22,13 +22,13 @@
 namespace MeshLib
 {
 /**
- * This class implements an algorithm to extract mesh node ids from a given (extruded) mesh.
+ * This class implements an algorithm to extract mesh node ids from a given *extruded* mesh.
  */
 class ExtractMeshNodes
 {
 public:
 	/**
-	 * constructor - take the mesh
+	 * constructor - takes a *extruded* mesh
 	 * @param msh an instance of class CFEMesh
 	 */
 	ExtractMeshNodes(const CFEMesh* msh);
@@ -127,6 +127,18 @@ public:
 	void getProjectedPolylineFromPolyline(GEOLIB::Polyline const& ply_in,
 					GEOLIB::GEOObjects* geo_obj, std::string const& name,
                     GEOLIB::Polyline* &ply_out, size_t layer = 0) const;
+
+	/**
+	 * Method searchs the mesh nodes within a given volume described by a
+	 * polygon, i.e. a part of the mesh volume. The method does not take the
+	 * \f$z\f$ coordinates for both the polygon and the mesh nodes into
+	 * account.
+	 * @param polygon [input] the polygon that is the boundary
+	 * @param node_ids [output] the ids of the mesh nodes which \f$x\f$ and \f$y\f$
+	 * coordinates are inside the boundary polygon
+	 */
+	void getMeshNodeIDsWithinPolygon(GEOLIB::Polygon const& polygon,
+					std::vector<size_t> & node_ids) const;
 private:
 	/**
 	 * This method searchs all mesh nodes with the same x and y coordinates

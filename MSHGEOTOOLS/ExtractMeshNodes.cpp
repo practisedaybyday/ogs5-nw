@@ -456,4 +456,20 @@ void ExtractMeshNodes::writeNearestMeshNodeToPoint (std::ostream& os,
 
 	_gli_pnt_offset++;
 }
+
+void ExtractMeshNodes::getMeshNodeIDsWithinPolygon(GEOLIB::Polygon const& polygon,
+				std::vector<size_t> & node_ids) const
+{
+	// get all nodes of the mesh
+	const std::vector<MeshLib::CNode*>& mesh_nodes(_msh->getNodeVector());
+
+	// check if nodes (projected to x-y-plane) are inside the polygon
+	const size_t number_of_mesh_nodes(mesh_nodes.size());
+	for (size_t j(0); j < number_of_mesh_nodes; j++) {
+		if (polygon.isPntInPolygon(mesh_nodes[j]->getData())) {
+			node_ids.push_back(j);
+		}
+	}
+}
+
 } // end namespace MeshLib

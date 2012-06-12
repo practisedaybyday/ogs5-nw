@@ -46,6 +46,7 @@ TARGET_LINK_LIBRARIES( convertGLIVerticalSurfaceToPolygon
 TARGET_LINK_LIBRARIES( ModifyMeshProperties
 	GEO
 	MSH
+	MSHGEOTOOLS
 	MathLib
 	FileIO
 	FEM

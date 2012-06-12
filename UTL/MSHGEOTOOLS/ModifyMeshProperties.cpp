@@ -7,6 +7,10 @@
 
 #include "ModifyMeshProperties.h"
 
+// BaseLib
+#include "binarySearch.h"
+#include "quicksort.h"
+
 // FEM
 #include "matrix_class.h"
 
@@ -18,6 +22,9 @@
 #include "msh_elem.h"
 #include "msh_mesh.h"
 #include "msh_node.h"
+
+// MSHGEOTOOLS
+#include "ExtractMeshNodes.h"
 
 // MathLib
 #include "AnalyticalGeometry.h"
@@ -128,4 +135,43 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 	for (size_t j(0); j < mesh_nodes_as_points.size(); j++)
 		delete mesh_nodes_as_points[j];
 }
+
+void ModifyMeshProperties::substituteMaterialID (GEOLIB::Polygon const& polygon, size_t old_mat_id, size_t new_mat_id)
+{
+	MeshLib::ExtractMeshNodes mesh_node_extractor(_mesh);
+	std::vector<size_t> mesh_node_ids;
+	mesh_node_extractor.getMeshNodeIDsWithinPolygon(polygon, mesh_node_ids);
+	const size_t n_mesh_node_ids(mesh_node_ids.size());
+	std::vector<size_t> perm(n_mesh_node_ids);
+	// init permutation for sorting
+	for (size_t k(0); k<n_mesh_node_ids; k++) perm[k] = k;
+	// sort - since we want to use binary search
+	Quicksort<size_t> (mesh_node_ids, 0, n_mesh_node_ids, perm);
+	// get all nodes of the mesh
+	const std::vector<MeshLib::CNode*>& mesh_nodes (_mesh->getNodeVector());
+	// get all elements of the mesh
+	const std::vector<MeshLib::CElem*>& mesh_elements (_mesh->getElementVector());
+
+	for (size_t k(0); k<n_mesh_node_ids; k++) {
+		std::vector<size_t> const& connected_element_ids (mesh_nodes[mesh_node_ids[k]]->getConnectedElementIDs());
+		for (size_t j(0); j<connected_element_ids.size(); j++) {
+			if(mesh_elements[j]->GetPatchIndex() == old_mat_id) {
+				std::vector<size_t> connected_nodes;
+				// check if all nodes of element are in the mesh_node_ids vector
+				mesh_elements[j]->getNodeIndices(connected_nodes);
+				bool all_found(true);
+				const size_t n_connected_nodes(connected_nodes.size());
+				for (size_t i(0); i<n_connected_nodes && all_found; i++) {
+					if (searchElement(connected_nodes[i], 0, n_mesh_node_ids, mesh_node_ids) == std::numeric_limits<size_t>::max()) {
+						all_found = false;
+					}
+				}
+				if (all_found) {
+					mesh_elements[j]->setPatchIndex(new_mat_id);
+				}
+			}
+		}
+	}
 }
+
+} // end namespace MeshLib
