@@ -1189,41 +1189,43 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 				if (m_surface)
 				{
 					nodes_vector.clear();
-//					std::vector<long> nodes_vector_old;
 
 //					m_msh->GetNODOnSFC(m_surface, nodes_vector);
-//					std::ofstream debug_out ("MeshNodesOld.gli");
+//#ifndef NDEBUG
+//					GEOLIB::GEOObjects const& geo_obj(* m_msh->getGEOObjects());
+//					std::string const& geo_project_name (* m_msh->getProjectName());
+//					std::string sfc_name;
+//					geo_obj.getSurfaceVecObj(geo_project_name)->getNameOfElement(sfc, sfc_name);
+//					std::string debug_fname("MeshNodesOld-BC-" + sfc_name + ".gli");
+//					std::ofstream debug_out (debug_fname.c_str());
 //					debug_out << "#POINTS" << std::endl;
 //					for (size_t k(0); k<nodes_vector.size(); k++) {
 //						debug_out << k << " " <<
-//							(m_msh->getNodeVector())[nodes_vector[k]]->X() << " " <<
-//							(m_msh->getNodeVector())[nodes_vector[k]]->Y() << " " <<
-//							(m_msh->getNodeVector())[nodes_vector[k]]->Z() <<
+//							GEOLIB::Point((m_msh->getNodeVector())[nodes_vector[k]]->getData()) <<
 //							" $NAME " << nodes_vector[k] << std::endl;
 //					}
 //					debug_out << "#STOP" << std::endl;
 //					debug_out.close();
-
+//#endif
 					std::vector<size_t> msh_nod_vec;
 					m_msh->GetNODOnSFC(sfc, msh_nod_vec);
-
-//					debug_out.open ("MeshNodesNew.gli");
+//#ifndef NDEBUG
+//					debug_fname = "MeshNodesNew-BC-" + sfc_name + ".gli";
+//					debug_out.open (debug_fname.c_str());
 //					debug_out << "#POINTS" << std::endl;
 //					for (size_t k(0); k<msh_nod_vec.size(); k++) {
 //						debug_out << k << " " <<
-//							(m_msh->getNodeVector())[msh_nod_vec[k]]->X() << " " <<
-//							(m_msh->getNodeVector())[msh_nod_vec[k]]->Y() << " " <<
-//							(m_msh->getNodeVector())[msh_nod_vec[k]]->Z() <<
+//							GEOLIB::Point((m_msh->getNodeVector())[msh_nod_vec[k]]->getData()) <<
 //							" $NAME " << msh_nod_vec[k] << std::endl;
 //					}
 //					debug_out << "#STOP" << std::endl;
 //					debug_out.close();
-
-////					std::cout << "\t\told\tnew" << std::endl;
+//#endif
 //					nodes_vector.clear();
-					for (size_t k(0); k < msh_nod_vec.size(); k++)
+					for (size_t k(0); k < msh_nod_vec.size(); k++) {
 //						std::cout << "\t" << k << "\t" << nodes_vector_old[k] << "\t" << msh_nod_vec[k] << std::endl;
 						nodes_vector.push_back (msh_nod_vec[k]);
+					}
 					size_t nodes_vector_length (nodes_vector.size());
 
 					if (bc->getProcessDistributionType() == FiniteElement::LINEAR) {
