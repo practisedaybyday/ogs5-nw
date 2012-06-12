@@ -249,7 +249,8 @@ IF (OGS_PACKAGING)
 ENDIF (OGS_PACKAGING)
 
 IF (OGS_CMAKE_DEBUG)
-	INCLUDE (CMakeConfiguration/PrintVariables.cmake)
+	INCLUDE(ListAllCMakeVariableValues)
+	list_all_cmake_variable_values()
 ENDIF (OGS_CMAKE_DEBUG)
 
 IF (BENCHMARK_DIR_FOUND)
