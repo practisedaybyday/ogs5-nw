@@ -21,4 +21,3 @@ see https://svn.ufz.de/ogs for build instructions
 ## For using the GUI use the following cmake option ##
 
 	cmake .. -DOGS_USE_QT=ON
-
