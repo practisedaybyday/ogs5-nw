@@ -136,4 +136,16 @@ void OGSMeshIO::setMesh(MeshLib::CFEMesh const* mesh)
 	_mesh = mesh;
 }
 
+void OGSMeshIO::writeMeshNodesAsGLIPnts (std::vector<size_t> const& mesh_node_ids, std::ostream & os)
+{
+	std::vector<MeshLib::CNode*> const& nodes (_mesh->getNodeVector());
+	for (size_t k(0); k<mesh_node_ids.size(); k++) {
+		MeshLib::CNode const& node (*(nodes[mesh_node_ids[k]]));
+		double const*const coords (node.getData());
+		_out << k << " " << coords[0] << " " << coords[1] << " " << coords[2] << " $NAME " << node.GetIndex() << std::endl;
+	}
+
+	os << _out.str();
+}
+
 } // end namespace FileIO

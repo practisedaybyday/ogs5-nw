@@ -34,6 +34,8 @@ public:
 	/// @brief Sets the mesh.
 	void setMesh(MeshLib::CFEMesh const* mesh);
 
+	void writeMeshNodesAsGLIPnts (std::vector<size_t> const& mesh_node_ids, std::ostream & os);
+
 protected:
 	/// @brief Write functionality.
 	int write(std::ostream &out);

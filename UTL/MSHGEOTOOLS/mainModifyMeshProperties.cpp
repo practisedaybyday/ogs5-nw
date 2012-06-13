@@ -34,11 +34,11 @@ the bottom and top surface of the mesh and we obtain parts of the bottom and\n\
 top surfaces of the mesh. The bottom and top surfaces are linked together\n\
 via a third surface. The volume is defined as the part of the mesh that is\n\
 inside the three surfaces. Within this volume the material ids of the elements\n\
-are modified.";
+are modified. Programmed by Tom (thomas.fischer@ufz.de)";
 
 int main (int argc, char* argv[])
 {
-	if (argc != 9 || argc != 11) {
+	if (!(argc == 9 || argc == 11)) {
 		std::cout << "********************************************************************************" << std::endl;
 		std::cout << program_description << std::endl;
 		std::cout << "********************************************************************************" << std::endl;
@@ -73,6 +73,8 @@ int main (int argc, char* argv[])
 	}
 	MeshLib::CFEMesh* mesh (mesh_vec[mesh_vec.size() - 1]);
 
+	mesh->ConstructGrid();
+
 	// *** read geometry
 	tmp = argv[3];
 	if (tmp.find ("--geometry") == std::string::npos)
@@ -87,7 +89,8 @@ int main (int argc, char* argv[])
 	std::vector<std::string> error_strings;
 	FileIO::readGLIFileV4(tmp, geo, unique_name, error_strings);
 
-	// *** get Polygon
+	// *** get polygons
+	tmp = getFileNameFromPath(tmp, true);
 	const std::vector<GEOLIB::Polyline*>* plys (geo->getPolylineVec (tmp));
 	if (!plys)
 	{
@@ -169,7 +172,6 @@ int main (int argc, char* argv[])
 	}
 
 	std::string mesh_out_fname(path+"MeshWithMaterial.msh");
-
 	std::cout << "write " << mesh_out_fname << " ... " << std::flush;
 	FileIO::OGSMeshIO mesh_io;
 	mesh_io.setMesh(mesh);

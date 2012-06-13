@@ -147,6 +147,16 @@ void ModifyMeshProperties::substituteMaterialID (GEOLIB::Polygon const& polygon,
 	for (size_t k(0); k<n_mesh_node_ids; k++) perm[k] = k;
 	// sort - since we want to use binary search
 	Quicksort<size_t> (mesh_node_ids, 0, n_mesh_node_ids, perm);
+
+//#ifndef NDEBUG
+//	std::ofstream test_out ("Points.gli");
+//	test_out << "#POINTS" << std::endl;
+//	FileIO::OGSMeshIO mesh_io;
+//	mesh_io.setMesh(_mesh);
+//	mesh_io.writeMeshNodesAsGLIPnts(mesh_node_ids, test_out);
+//	test_out << "#STOP" << std::endl;
+//#endif
+
 	// get all nodes of the mesh
 	const std::vector<MeshLib::CNode*>& mesh_nodes (_mesh->getNodeVector());
 	// get all elements of the mesh
@@ -155,10 +165,10 @@ void ModifyMeshProperties::substituteMaterialID (GEOLIB::Polygon const& polygon,
 	for (size_t k(0); k<n_mesh_node_ids; k++) {
 		std::vector<size_t> const& connected_element_ids (mesh_nodes[mesh_node_ids[k]]->getConnectedElementIDs());
 		for (size_t j(0); j<connected_element_ids.size(); j++) {
-			if(mesh_elements[j]->GetPatchIndex() == old_mat_id) {
+			if(mesh_elements[connected_element_ids[j]]->GetPatchIndex() == old_mat_id) {
 				std::vector<size_t> connected_nodes;
 				// check if all nodes of element are in the mesh_node_ids vector
-				mesh_elements[j]->getNodeIndices(connected_nodes);
+				mesh_elements[connected_element_ids[j]]->getNodeIndices(connected_nodes);
 				bool all_found(true);
 				const size_t n_connected_nodes(connected_nodes.size());
 				for (size_t i(0); i<n_connected_nodes && all_found; i++) {
@@ -167,7 +177,7 @@ void ModifyMeshProperties::substituteMaterialID (GEOLIB::Polygon const& polygon,
 					}
 				}
 				if (all_found) {
-					mesh_elements[j]->setPatchIndex(new_mat_id);
+					mesh_elements[connected_element_ids[j]]->setPatchIndex(new_mat_id);
 				}
 			}
 		}

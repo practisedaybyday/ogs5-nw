@@ -91,8 +91,8 @@ int main (int argc, char* argv[])
 	if (argc < 5)
 	{
 		std::cout << "program " << argv[0] << " takes a *layered* mesh file and closed polylines from a geometry and computes the surface mesh nodes within the closed polyline" << std::endl;
-		std::cout << "Usage: " << argv[0] <<
-		" --mesh ogs_meshfile --geometry ogs_geometry_as_gli_file" << std::endl;
+		std::cout << "Usage: " << std::endl << argv[0] <<
+		"\n\t--mesh ogs_meshfile\n\t--geometry ogs_geometry_as_gli_file" << std::endl;
 		return -1;
 	}
 
@@ -118,6 +118,10 @@ int main (int argc, char* argv[])
 	}
 	MeshLib::CFEMesh* mesh (mesh_vec[mesh_vec.size() - 1]);
 	mesh->ConstructGrid();
+
+	// extract path
+	std::string path;
+	BaseLib::extractPath(argv[2], path);
 
 	// *** read geometry
 	tmp = argv[3];
@@ -197,24 +201,25 @@ int main (int argc, char* argv[])
 //	FileIO::writeGLIFileV4 ("New.gli", unique_name, *geo);
 
 	// *** search mesh nodes for direct assigning bc, st or ic
-	std::string fname ("MeshIDs.txt");
-	std::ofstream out (fname.c_str());
-
-	std::string fname_gli ("MeshNodesAsPnts.gli");
-	std::ofstream pnt_out (fname_gli.c_str());
-	pnt_out << "#POINTS" << std::endl;
-
 	const size_t n_plys (plys->size());
 	for (size_t k(0); k<n_plys; k++) {
 		bool closed ((*plys)[k]->isClosed());
 		if (!closed) {
 			std::cout << "polyline " << k << " is not closed" << std::endl;
 		} else {
+			std::string fname (path + "MeshIDs.txt");
+			std::ofstream out (fname.c_str());
+			std::string fname_gli (path + "MeshNodesAsPnts.gli");
+			std::ofstream pnt_out (fname_gli.c_str());
+			pnt_out << "#POINTS" << std::endl;
 			GEOLIB::Polygon polygon (*((*plys)[k]));
 //			extract_mesh_nodes.writeMesh2DNodeIDAndArea (out, pnt_out, polygon);
 			extract_mesh_nodes.writeTopSurfaceMeshNodeIDs (out, pnt_out, polygon);
 			// write all nodes - not only the surface nodes
 //			extract_mesh_nodes.writeMeshNodeIDs (out, pnt_out, polygon);
+			pnt_out << "#STOP" << std::endl;
+			out.close();
+			pnt_out.close();
 		}
 	}
 

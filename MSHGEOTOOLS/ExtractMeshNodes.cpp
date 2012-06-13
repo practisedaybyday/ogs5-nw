@@ -64,13 +64,10 @@ void ExtractMeshNodes::writeTopSurfaceMeshNodeIDs (std::ostream& os,
 
 	std::vector<GEOLIB::PointWithID> nodes_as_points;
 
-	for (size_t j(0); j < msh_nodes.size(); j++)
-	{
-//		if (msh_nodes[j]->Interior()) {
+	for (size_t j(0); j < msh_nodes.size(); j++) {
 		GEOLIB::Point pnt (msh_nodes[j]->getData());
 		if (polygon.isPntInPolygon(pnt))
 			nodes_as_points.push_back (GEOLIB::PointWithID (msh_nodes[j]->getData(), j));
-		//		}
 	}
 
 	std::vector<size_t> perm;
@@ -106,8 +103,7 @@ void ExtractMeshNodes::writeTopSurfaceMeshNodeIDs (std::ostream& os,
 	}
 	// write last point
 	gli_out << n_nodes + _gli_pnt_offset << " " << std::scientific <<
-	nodes_as_points[nodes_as_points.size() -
-	                1] << " $NAME " <<
+	nodes_as_points[nodes_as_points.size() - 1] << " $NAME " <<
 	nodes_as_points[nodes_as_points.size() - 1].getID() << std::endl;
 	n_nodes++;
 	_gli_pnt_offset += n_nodes;
