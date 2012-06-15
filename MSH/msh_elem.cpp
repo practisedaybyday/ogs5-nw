@@ -891,6 +891,8 @@ void CElem::GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes)
 	switch(geo_type)
 	{
 	case MshElemType::LINE:
+		EdgeNodes[0] = 0;
+		EdgeNodes[1] = 1;
 		break;                            // 1-D bar element
 	case MshElemType::QUAD:                   // 2-D quadrilateral element
 		EdgeNodes[0] = Edge;
@@ -1584,7 +1586,7 @@ void CElem::setElementProperties(MshElemType::type t, bool isFace)
 		ele_dim = 1;
 		geo_type = MshElemType::LINE;
 		nfaces = 2;
-		nedges = 0;
+		nedges = 1;
 		break;
 	case MshElemType::QUAD:
 		nnodes = 4;
