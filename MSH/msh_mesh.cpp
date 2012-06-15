@@ -1460,8 +1460,12 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply,
 			for (size_t k(0); k < n_valid_nodes; k++)
 				msh_nod_vector.push_back(node_ids[k]);
 #ifndef NDEBUG
-			std::cout << "****** access " << msh_nod_vector.size()
-			          << " buffered nodes for polyline " << ply << std::endl;
+			std::string ply_name;
+			if (! getGEOObjects()->getPolylineVecObj(*(getProjectName()))->getNameOfElement(ply, ply_name)) {
+				ply_name = "unknown-ply";
+			}
+			std::cout << "[DEBUG-INFO] access " << msh_nod_vector.size()
+			          << " buffered nodes for polyline " << ply_name << std::endl;
 #endif
 			return;
 		}
@@ -1485,8 +1489,12 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply,
 	for (size_t k(0); k < n_valid_nodes; k++)
 		msh_nod_vector.push_back(node_ids[k]);
 #ifndef NDEBUG
-	std::cout << "****** computed " << n_valid_nodes << " nodes for polyline "
-	          << ply << " - " << NodesInUsage() << std::endl;
+	std::string ply_name;
+	if (! getGEOObjects()->getPolylineVecObj(*(getProjectName()))->getNameOfElement(ply, ply_name)) {
+		ply_name = "unknown-ply";
+	}
+	std::cout << "[DEBUG-INFO] computed " << n_valid_nodes << " nodes for polyline "
+	          << ply_name << " - " << NodesInUsage() << std::endl;
 #endif
 }
 

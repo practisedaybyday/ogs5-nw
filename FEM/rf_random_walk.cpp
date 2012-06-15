@@ -3120,6 +3120,13 @@ int RandomWalk::SolveForNextPosition(Particle* A, Particle* B)
 
 	// Getting the number of the edges in the element that Particle P belongs
 	int nEdges = theElement->GetEdgesNumber();
+
+	// TF - to avoid an abort while processing line elements
+	// Is the handling for the mesh element type LINE not correct implemented?
+	if (theElement->GetElementType() == MshElemType::LINE) {
+		nEdges = 0;
+	}
+
 	int countNoIntersection = 0;
 
 	// The estimated position advected for the given B->t
