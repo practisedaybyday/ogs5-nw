@@ -4,6 +4,9 @@ SOURCE_LOCATION=`pwd`
 SOURCE_LOCATION="$SOURCE_LOCATION/.."
 source $SOURCE_LOCATION/scripts/base/configure_compiler.sh
 
+# Return code. Will be set to 1 (error) when a build failed
+returncode=0
+
 # Parse options
 while getopts "a:ed:" opt; do
 	case $opt in
@@ -45,19 +48,43 @@ fi
 cd $BUILD_LOCATION/build_fem
 if  [ $RUN_EXCEEDING ]; then
 	ctest -R 'EXCEED' -E 'JOD|Tests|FILE' -j $NUM_PROCESSORS
+	if [ "${?}" -ne "0" ] ; then
+		returncode=1
+	fi
 	ctest -R 'EXCEEDING_FILECOMPARE' -E 'JOD'
+	if [ "${?}" -ne "0" ] ; then
+		returncode=1
+	fi
 	
 	cd $BUILD_LOCATION/build_brns
 	ctest -R 'EXCEED' -E 'Tests|FILE' -j $NUM_PROCESSORS
+	if [ "${?}" -ne "0" ] ; then
+		returncode=1
+	fi
 	ctest -R 'EXCEEDING_FILECOMPARE'
+	if [ "${?}" -ne "0" ] ; then
+		returncode=1
+	fi
 	
 	cd $BUILD_LOCATION/build_pqc
 	ctest -R 'EXCEED' -E 'Tests|FILE' -j $NUM_PROCESSORS
+	if [ "${?}" -ne "0" ] ; then
+		returncode=1
+	fi
 	ctest -R 'EXCEEDING_FILECOMPARE'
+	if [ "${?}" -ne "0" ] ; then
+		returncode=1
+	fi
 	
 	cd $BUILD_LOCATION/build_gems
 	ctest -R 'EXCEED' -E 'Tests|FILE' -j $NUM_PROCESSORS
+	if [ "${?}" -ne "0" ] ; then
+		returncode=1
+	fi
 	ctest -R 'EXCEEDING_FILECOMPARE'
+	if [ "${?}" -ne "0" ] ; then
+		returncode=1
+	fi
 else
 	# Don´t abort on errors
 	set +e >/dev/null
@@ -93,3 +120,6 @@ else
 	set -e >/dev/null
 fi
 cd $BUILD_LOCATION >/dev/null
+
+echo "exit code is ${returncode}"
+exit ${returncode}
