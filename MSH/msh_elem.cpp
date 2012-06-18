@@ -22,7 +22,7 @@ namespace MeshLib
    Programing:
    06/2005 WW Implementation
 **************************************************************************/
-CElem::CElem(size_t Index) 
+CElem::CElem(size_t Index)
 : CCore(Index), normal_vector(NULL), /*geo_type(t), */owner(NULL), ele_dim(1),
 	nnodes(0), nnodesHQ(0), nodes(nnodes), nodes_index(nnodes),
 	patch_index(0), transform_tensor(NULL), angle(NULL)
@@ -891,6 +891,8 @@ void CElem::GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes)
 	switch(geo_type)
 	{
 	case MshElemType::LINE:
+		EdgeNodes[0] = 0;
+		EdgeNodes[1] = 1;
 		break;                            // 1-D bar element
 	case MshElemType::QUAD:                   // 2-D quadrilateral element
 		EdgeNodes[0] = Edge;
@@ -1016,7 +1018,7 @@ int CElem::GetElementFacesQuad(int Face, int* FaceNode)
 	else
 	{
 		FaceNode[0] = Face;
-		FaceNode[1] = (Face + 1) % 4; 
+		FaceNode[1] = (Face + 1) % 4;
 		FaceNode[2] = Face + 4;
 		return 3;
 	}
@@ -1584,7 +1586,7 @@ void CElem::setElementProperties(MshElemType::type t, bool isFace)
 		ele_dim = 1;
 		geo_type = MshElemType::LINE;
 		nfaces = 2;
-		nedges = 0;
+		nedges = 1;
 		break;
 	case MshElemType::QUAD:
 		nnodes = 4;

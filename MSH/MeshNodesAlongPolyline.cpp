@@ -84,24 +84,30 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 					_dist_of_proj_node_from_ply_start.size(), _msh_node_ids);
 
 #ifndef NDEBUG
-	std::cout << "*****" << std::endl;
-	std::cout << "distances of linear nodes along polyline " << *ply <<
-	"(epsilon radius = " << epsilon_radius << "): " << std::endl;
-	for (size_t k(0); k < _dist_of_proj_node_from_ply_start.size(); k++)
-		std::cout << "\t" << _msh_node_ids[k] << " " <<
-		_dist_of_proj_node_from_ply_start[k] << std::endl;
-	std::cout << "number of linear nodes along polyline " << ply << ": " <<
-	_dist_of_proj_node_from_ply_start.size()
-	          << ", number of higher order nodes: " << msh_node_higher_order_ids.size() <<
-	std::endl;
+//	std::cout << "[DEBUG-INFO] " << std::endl;
+//
+//	// fetch polyline name
+//	std::string ply_name;
+//	if (! _mesh->getGEOObjects()->getPolylineVecObj(*(_mesh->getProjectName()))->getNameOfElement(ply, ply_name)) {
+//		ply_name = "unknown-ply";
+//	}
+//
+//	std::cout << "distances of linear nodes along polyline " << ply_name <<
+//	" (epsilon radius = " << epsilon_radius << "): " << std::endl;
+//	for (size_t k(0); k < _dist_of_proj_node_from_ply_start.size(); k++)
+//		std::cout << "\t" << _msh_node_ids[k] << " " <<
+//		_dist_of_proj_node_from_ply_start[k] << std::endl;
+//	std::cout << "number of linear nodes along polyline " << ply_name << ": " <<
+//	_dist_of_proj_node_from_ply_start.size()
+//	          << ", number of higher order nodes: " << msh_node_higher_order_ids.size() <<
+//	std::endl;
 #endif
 	// assign/append higher order nodes at the end of vector _msh_node_ids
 	for (size_t k(0); k < msh_node_higher_order_ids.size(); k++)
 		_msh_node_ids.push_back (msh_node_higher_order_ids[k]);
 	// append distances for higher order nodes at the end of vector _dist_of_proj_node_from_ply_start
 	for (size_t k(0); k < dist_of_proj_higher_order_node_from_ply_start.size(); k++)
-		_dist_of_proj_node_from_ply_start.push_back (
-		        dist_of_proj_higher_order_node_from_ply_start[k]);
+		_dist_of_proj_node_from_ply_start.push_back(dist_of_proj_higher_order_node_from_ply_start[k]);
 }
 
 const std::vector<size_t>& MeshNodesAlongPolyline::getNodeIDs () const

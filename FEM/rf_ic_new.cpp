@@ -56,22 +56,22 @@ CInitialCondition::CInitialCondition() : dis_linear_f(NULL)
 
 // KR: Conversion from GUI-IC-object to CInitialCondition
 CInitialCondition::CInitialCondition(const InitialCondition* ic)
-	: ProcessInfo(ic->getProcessType(),ic->getProcessPrimaryVariable(),NULL), 
-	  GeoInfo(ic->getGeoType(),ic->getGeoObj()), 
+	: ProcessInfo(ic->getProcessType(),ic->getProcessPrimaryVariable(),NULL),
+	  GeoInfo(ic->getGeoType(),ic->getGeoObj()),
 	  DistributionInfo(ic->getProcessDistributionType())
 {
 	setProcess( PCSGet( this->getProcessType() ) );
 	this->geo_name = ic->getGeoName();
 	const std::vector<size_t> dis_nodes = ic->getDisNodes();
 	const std::vector<double> dis_values = ic->getDisValues();
-	
+
 	if (this->getProcessDistributionType() == FiniteElement::CONSTANT)
 	{
 		this->geo_node_value = dis_values[0];
 	}
 	else
 		std::cout << "Error in CBoundaryCondition() - DistributionType \""
-		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType()) 
+		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType())
 				  << "\" currently not supported." << std::endl;
 }
 
@@ -628,8 +628,7 @@ void CInitialCondition::SetPolyline(int nidx)
 		if (getGeoObj())
 		{
 			std::vector<long> nodes_vector;
-			m_msh->GetNODOnPLY(
-			        static_cast<const GEOLIB::Polyline*>(getGeoObj()), nodes_vector);
+			m_msh->GetNODOnPLY(static_cast<const GEOLIB::Polyline*>(getGeoObj()), nodes_vector);
 			for (size_t i = 0; i < nodes_vector.size(); i++)
 				this->getProcess()->SetNodeValue(nodes_vector[i],
 				                                 nidx,
