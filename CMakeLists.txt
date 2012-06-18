@@ -58,6 +58,7 @@ OPTION_REQUIRES(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OGS_USE
 OPTION_REQUIRES(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OGS_USE_QT)
 OPTION(OGS_BUILD_INFO "Should build information be generated" ON)
 OPTION(CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
+OPTION(OGS_DONT_USE_VTK "Don't use VTK" ON)
 IF(GCC)
 	IF(GPROF_PATH)
 		OPTION(OGS_PROFILE "Enables compiling with flags set for profiling with gprof." OFF)
@@ -197,6 +198,7 @@ ENDIF() # OGS_USE_VRPN
 
 IF(OGS_USE_QT)
 	ADD_DEFINITIONS(-DOGS_USE_QT)
+	SET(OGS_DONT_USE_VTK OFF)
 ENDIF(OGS_USE_QT)
 
 # Add subdirectories with the projects

@@ -2351,6 +2351,8 @@ int SpCG(double* b, double* x, long n)
 	if (vorkond)
 		MXVorkond(1, x, b);
 
+    printf("\t  SpCG iteration: %i/%i \n",k,max_iter);
+
 	return k;
 }
 
