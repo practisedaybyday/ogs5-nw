@@ -1,7 +1,7 @@
 INCLUDE(ResetConfigurations)        # To Debug, Release, RelWithDbgInfo
 INCLUDE(SetDefaultBuildType)
 INCLUDE(DisableCompilerFlag)
-SET_DEFAULT_BUILD_TYPE(Debug)
+SET_DEFAULT_BUILD_TYPE(Release)
 INCLUDE(MSVCMultipleProcessCompile) # /MP Switch for VS
 
 IF (WIN32)

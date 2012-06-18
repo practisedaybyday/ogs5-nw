@@ -50,7 +50,8 @@ void ModifyMeshProperties::setMaterial (const GEOLIB::Polygon& polygon, size_t m
 	MathLib::getNewellPlane (polygon_points, plane_normal_polygon, d_polygon);
 
 //	std::cout << "plane normal: " << plane_normal_polygon << std::endl;
-	MathLib::rotatePointsToXY(plane_normal_polygon, polygon_points);
+    MathLib::Vector tmp_plane_normal_polygon(plane_normal_polygon); //NW need to keep plane_normal_polygon for later use
+	MathLib::rotatePointsToXY(tmp_plane_normal_polygon, polygon_points);
 
 	// 3 create new polygon
 	GEOLIB::Polyline rot_polyline (polygon_points);

@@ -1073,8 +1073,11 @@ bool Problem::CouplingLoop()
 		}
 		else
 		{   //21.05.2010.  WW
-			if(total_processes[i] && total_processes[i]->tim_type_name.find("STEADY") != std::string::npos)
+			if(total_processes[i] && total_processes[i]->tim_type_name.find("STEADY") != std::string::npos) {
 				acounter++;
+                m_tim = total_processes[i]->Tim;
+                m_tim->step_current++; //NW increment needed to get correct time step length in CTimeDiscretization::CalcTimeStep()
+            }
 			exe_flag[i] = false;
 		}
 	}
@@ -1112,6 +1115,7 @@ bool Problem::CouplingLoop()
 		  if(!m_tim->time_active) run_flag[index] = false;
 	    }
 
+        max_outer_error = 0.0; //NW reset error for each iteration
 		for(i = 0; i < num_processes; i++)
 		{
 			index = active_process_index[i];
