@@ -1502,11 +1502,11 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply,
 	std::cout << "[DEBUG-INFO] computed " << n_valid_nodes << " nodes for polyline "
 	         << ply_name << " - " << NodesInUsage() << std::endl;
 
-	std::string fname ("MeshNodeIDsAlongPolyline"+ply_name+".txt");
-	std::ofstream os (fname.c_str());
-	for (size_t k(0); k < n_valid_nodes; k++)
-		os << node_ids[k] << std::endl;
-	os.close();
+//	std::string fname ("MeshNodeIDsAlongPolyline"+ply_name+".txt");
+//	std::ofstream os (fname.c_str());
+//	for (size_t k(0); k < n_valid_nodes; k++)
+//		os << node_ids[k] << std::endl;
+//	os.close();
 #endif
 }
 
