@@ -13,7 +13,6 @@ INCLUDE(CMakeConfiguration/CMakeSetup.cmake)
 INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
 
 ### Find directories and libraries ###
-OPTION(OGS_DONT_USE_VTK "Don't use VTK" ON)
 INCLUDE (CMakeConfiguration/Find.cmake)
 
 ### General project setup ###
@@ -198,7 +197,6 @@ ENDIF() # OGS_USE_VRPN
 
 IF(OGS_USE_QT)
 	ADD_DEFINITIONS(-DOGS_USE_QT)
-	SET(OGS_DONT_USE_VTK OFF)
 ENDIF(OGS_USE_QT)
 
 # Add subdirectories with the projects
