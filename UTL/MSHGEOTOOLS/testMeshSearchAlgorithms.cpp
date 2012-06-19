@@ -216,8 +216,10 @@ void testOctTree(MeshLib::CFEMesh const*const mesh, std::vector<GEOLIB::Point*>&
 	// *** create OctTree object
 	std::cout << std::endl << "[OctTree]" << std::endl;
 	std::cout << "\tconstructing ... " << std::flush;
+#ifndef WIN32
 	BaseLib::MemWatch mem_watch;
 	unsigned long mem_before = mem_watch.getVirtMemUsage();
+#endif
 	GEOLIB::OctTree<MeshLib::CNode> *oct_tree (GEOLIB::OctTree<MeshLib::CNode>::createOctTree(min, max, 128));
 	std::cout << "done" << std::endl;
 //	GEOLIB::OctTree<GEOLIB::Point> oct_tree(min, max, 2);
@@ -228,9 +230,10 @@ void testOctTree(MeshLib::CFEMesh const*const mesh, std::vector<GEOLIB::Point*>&
 //		oct_tree->addPoint(nodes_as_pnts[k]);
 	}
 	clock_t stop(clock());
+#ifndef WIN32
 	unsigned long mem_after = mem_watch.getVirtMemUsage();
 	std::cout << "done,  " << (stop-start)/(double)(CLOCKS_PER_SEC) << " seconds, " << (mem_after-mem_before)/(1024*1024) << " MBytes" << std::endl;
-
+#endif
 	std::cout << "\tsearching " << pnts_for_search.size() << " points ... " << std::flush;
 	start = clock();
 	testOctTreePointQueries(*oct_tree, pnts_for_search, idx_found_nodes);
