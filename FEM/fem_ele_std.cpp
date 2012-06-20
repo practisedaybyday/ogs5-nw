@@ -4637,7 +4637,7 @@ void CFiniteElementStd::CalcAdvection()
 		vel[1] = mat_factor * gp_ele->Velocity(1, gp);
 		vel[2] = mat_factor * gp_ele->Velocity(2, gp);
 		// If component is in non - wetting phase, as designated by transport_phase == 10 // SB, BG
-		if(cp_vec.size() > 0)
+		if(cp_vec.size() > 0 && this->pcs->pcs_component_number>=0)
 			// // SB, BG
 			if(cp_vec[this->pcs->pcs_component_number]->transport_phase == 10)
 			{
