@@ -43,7 +43,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 	# -g
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wall -Wextra -Woverloaded-virtual -fno-nonansi-builtins")
 	# would be cool: -Woverloaded-virtual, would be overkill: -Weffc++
-  ADD_DEFINITIONS(-DGCC)
+	ADD_DEFINITIONS(-DGCC)
 
 	IF (OGS_PROFILE)
 		IF( NOT CMAKE_BUILD_TYPE STREQUAL "Release" )
@@ -52,6 +52,14 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 		SET(PROFILE_FLAGS "-pg -fno-omit-frame-pointer -O2 -DNDEBUG -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PROFILE_FLAGS}")
 	ENDIF (OGS_PROFILE)
+
+	IF(OGS_BUILD_INFO)
+		# Get compiler version info, only first line, remove linebreaks
+		EXECUTE_PROCESS(COMMAND ${CMAKE_CXX_COMPILER} --version
+			COMMAND sed -n 1p
+			OUTPUT_VARIABLE GCC_VERSION)
+		STRING(REPLACE "\n" "" GCC_VERSION ${GCC_VERSION})
+	ENDIF() # OGS_BUILD_INFO
 	
 ENDIF() # CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC
 
