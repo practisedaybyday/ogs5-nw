@@ -153,8 +153,8 @@ MeshLib::CFEMesh* MshEditor::getMeshSurface(const MeshLib::CFEMesh &mesh)
 
 	std::vector<GEOLIB::Point*> *nodes = new std::vector<GEOLIB::Point*>(nSurfacePoints);
 	for (size_t j=0; j<nSurfacePoints; j++)
-		//(*nodes)[sfc_points[j]->getID()]=sfc_points[j];
-		(*nodes)[j] = sfc_points[j];
+		(*nodes)[sfc_points[j]->getID()]=sfc_points[j];
+		//(*nodes)[j] = sfc_points[j];
 
 	surface.setNodeVector(nodes);
 	surface.setElements(elements);
