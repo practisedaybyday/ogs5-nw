@@ -10,6 +10,9 @@
 #include <string>
 #include <vector>
 
+// BaseLib
+#include "StringTools.h"
+
 // MSH
 #include "msh_lib.h" // for FEMRead
 #include "msh_mesh.h"
@@ -24,9 +27,11 @@ int main (int argc, char* argv[])
 {
 	if (argc < 7)
 	{
-		std::cout << "Usage: " << argv[0] <<
-		" --nodes-with-area nodes_with_area_file --nodes-in-polygon nodes_in_polygon --output output_file_name [--mesh mesh]"
-		          << std::endl;
+		std::cout << "Usage: " << std::endl;
+		std::cout << argv[0] << "\n\t--nodes-with-area nodes_with_area_file" << std::endl;
+		std::cout << "\t--nodes-in-polygon nodes_in_polygon" << std::endl;
+		std::cout << "\t--output output_file_name" << std::endl;
+		std::cout << "\t[--mesh mesh]" << std::endl;
 		return -1;
 	}
 
@@ -51,6 +56,9 @@ int main (int argc, char* argv[])
 		return -1;
 	}
 
+	std::string input_base_fname(getFileNameFromPath(argv[2], false));
+	std::string path;
+	BaseLib::extractPath(argv[2], path);
 	tmp = argv[2];
 	std::ifstream in0 (tmp.c_str());
 	tmp = argv[4];
@@ -64,29 +72,27 @@ int main (int argc, char* argv[])
 	size_t tmp_id;
 	double tmp_area_val;
 
+	/*** load first input file */
 	bool all_ok (true);
-	while (!in0.eof() && all_ok)
-	{
+	while (!in0.eof() && all_ok) {
 		in0 >> tmp_id;
 		if (in0.fail())
 			all_ok = false;
-		if (all_ok)
-		{
+		if (all_ok) {
 			in0 >> tmp_area_val;
 			if (in0.fail ())
 				all_ok = false;
-			else
-			{
+			else {
 				ids0.push_back (tmp_id);
 				areas.push_back (tmp_area_val);
 			}
 		}
 	}
 	in0.close ();
-	std::cout << "read " << ids0.size() << " ids and " << areas.size() <<
-	" areas from file " << argv[2] << std::endl;
+	std::cout << "read " << ids0.size() << " ids and " << areas.size() << " areas from file " << argv[2] << std::endl;
 
 	all_ok = true;
+	/*** load second input file */
 	while (!in1.eof() && all_ok)
 	{
 		in1 >> tmp_id;
@@ -108,34 +114,46 @@ int main (int argc, char* argv[])
 	for (size_t k(0); k < perm.size(); k++)
 		sorted_areas[k] = areas[perm[k]];
 
+	// vector of flags to mark ids within vector ids0
+	std::vector<bool> not_found_ids_within_ids0(ids0.size(), true); // per default
+
 	std::vector<size_t> not_found_ids;
 	std::ofstream out (argv[6]);
-	if (!out)
-	{
+	if (!out) {
 		std::cout << "could not open file " << argv[6] << " for output" << std::endl;
 		return -1;
 	}
 	out.precision (12);
-	for (size_t k(0); k < ids1.size(); k++)
-	{
+	for (size_t k(0); k < ids1.size(); k++) {
 		size_t idx (searchElement (ids1[k], 0, ids0.size(), ids0));
-		if (idx != std::numeric_limits<size_t>::max())
-			out << ids1[k] << " " << sorted_areas[idx] << std::endl;
-		else
+		if (idx != std::numeric_limits<size_t>::max()) {
+			out << ids0[idx] << " " << sorted_areas[idx] << std::endl;
+			not_found_ids_within_ids0[idx] = false;
+		} else {
 			not_found_ids.push_back (ids1[k]);
+		}
 	}
 	out.close ();
 
-	if (!not_found_ids.empty())
-	{
+	std::string fname_remaining (path+input_base_fname + "-Remaining.txt");
+	std::ofstream os_remaining (fname_remaining.c_str());
+	std::cout << "writing to " << fname_remaining << " ... " << std::flush;
+	for (size_t k(0); k<ids0.size(); k++) {
+		if (not_found_ids_within_ids0[k]) {
+			os_remaining << ids0[k] << " " << sorted_areas[k] << std::endl;
+		}
+	}
+	os_remaining.close();
+	std::cout << "done" << std::endl;
+
+	if (!not_found_ids.empty()) {
 		std::sort (not_found_ids.begin(), not_found_ids.end());
 		for (size_t k(0); k < not_found_ids.size(); k++)
 			std::cout << not_found_ids[k] << std::endl;
 		std::cout << "number of not found ids: " << not_found_ids.size() << std::endl;
 	}
 
-	if (argc > 8)
-	{
+	if (argc > 8) {
 		tmp = argv[7];
 		if (tmp.find ("--mesh") != std::string::npos)
 		{
@@ -155,18 +173,13 @@ int main (int argc, char* argv[])
 			std::cout << "done" << std::endl;
 			MeshLib::CFEMesh* mesh (mesh_vec[mesh_vec.size() - 1]);
 
-			std::ofstream out_mesh_nodes_as_pnts ("MeshNodesAsPntsWW.gli");
-			if (out_mesh_nodes_as_pnts)
-			{
+			std::ofstream out_mesh_nodes_as_pnts ("MeshNodesAsPnts.gli");
+			if (out_mesh_nodes_as_pnts) {
 				out_mesh_nodes_as_pnts << "#POINTS" << std::endl;
 				const size_t ids0_size (ids0.size());
-				for (size_t k(0); k < ids0_size; k++)
-				{
-					double const* const pnt (
-					        mesh->getNodeVector()[ids0[k]]->getData());
-					out_mesh_nodes_as_pnts << k << " "
-					                       << pnt[0] << " " << pnt[1] << " " <<
-					pnt[2] << std::endl;
+				for (size_t k(0); k < ids0_size; k++) {
+					double const* const pnt (mesh->getNodeVector()[ids0[k]]->getData());
+					out_mesh_nodes_as_pnts << k << " " << pnt[0] << " " << pnt[1] << " " << pnt[2] << std::endl;
 				}
 				out_mesh_nodes_as_pnts << "#STOP" << std::endl;
 				out_mesh_nodes_as_pnts.close();

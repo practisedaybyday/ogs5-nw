@@ -24,7 +24,7 @@
 #include <string>
 #include <iomanip>
 
-#ifdef VTK_FOUND
+#if defined(VTK_FOUND) && defined(OGS_USE_QT)
 #include "vtkMath.h"
 #endif
 
@@ -300,7 +300,7 @@ void LegacyVtkInterface::WriteVTKDataArrays(fstream &vtk_file) const
 				   _pointArrayNames[k + 5].find("_YZ") != string::npos)
 				{
 					numComponents = 6;
-#ifdef VTK_FOUND
+#if defined(VTK_FOUND) && defined(OGS_USE_QT)
 					vector<vector<double> > eigenvectors_1, eigenvectors_2, eigenvectors_3;
 
 					// Iterate over nodes

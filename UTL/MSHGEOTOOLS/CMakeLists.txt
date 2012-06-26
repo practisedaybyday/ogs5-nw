@@ -16,13 +16,23 @@ INCLUDE_DIRECTORIES(
 
 # Create executables
 ADD_EXECUTABLE( ExtractMeshNodes mainExtractMeshNodes.cpp )
+ADD_EXECUTABLE( ExtractMeshNodeIDs mainExtractMeshNodeIDs.cpp )
 ADD_EXECUTABLE( ModifyMeshProperties mainModifyMeshProperties.cpp ModifyMeshProperties.h ModifyMeshProperties.cpp )
 ADD_EXECUTABLE( filterMeshNodes filterMeshNodes.cpp )
 ADD_EXECUTABLE( rotateMesh rotateMesh.cpp )
 ADD_EXECUTABLE( convertGLIVerticalSurfaceToPolygon mainConvertGLIVerticalSurfaceToPolygon.cpp )
 
-SET_TARGET_PROPERTIES(ExtractMeshNodes ModifyMeshProperties filterMeshNodes rotateMesh convertGLIVerticalSurfaceToPolygon
+SET_TARGET_PROPERTIES(ExtractMeshNodeIDs ExtractMeshNodes ModifyMeshProperties filterMeshNodes rotateMesh convertGLIVerticalSurfaceToPolygon
   PROPERTIES FOLDER Utilities)
+
+TARGET_LINK_LIBRARIES( ExtractMeshNodeIDs
+	GEO
+	MSH
+	MSHGEOTOOLS
+	FileIO
+	FEM
+	OGSProject
+)
 
 TARGET_LINK_LIBRARIES( ExtractMeshNodes
 	GEO
@@ -32,6 +42,7 @@ TARGET_LINK_LIBRARIES( ExtractMeshNodes
 	FEM
 	OGSProject
 )
+
 
 TARGET_LINK_LIBRARIES( convertGLIVerticalSurfaceToPolygon
 	GEO

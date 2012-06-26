@@ -7,7 +7,7 @@ if ARGV.size > 4
   $DB = Sequel.connect('sqlite://' + ARGV[4])
   puts "Connecting to #{ARGV[4]}"
 else
-  $DB = Sequel.connect('sqlite:///home/hudson/db/ogsbench.db')
+  $DB = Sequel.connect('sqlite://'+ ENV['HOME'] + '/db/ogsbench.db')
 end
 
 require 'bench_info.rb'

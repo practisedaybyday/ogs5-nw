@@ -20,6 +20,10 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_SOURCE_DIR}/MathLib
 )
 
+IF (LIS)
+  INCLUDE_DIRECTORIES(${LIS_INCLUDE_DIR})
+ENDIF (LIS)
+
 if (Shapelib_FOUND)
 	include_directories(${Shapelib_INCLUDE_DIR})
 endif (Shapelib_FOUND)

@@ -332,12 +332,18 @@ void CFEMesh::computeSearchLength(double c)
 		sum_of_sqr += (x_k * x_k);
 	}
 
-	// sum - 2 s, where s is standard deviation
-	_search_length = sum/n - c * sqrt(1.0/(n-1) * (sum_of_sqr - (sum*sum)/n) );
-	if (_search_length <= 0) {
-		std::cerr << "[CFEMesh::computeSearchLength] computed _search_length = " << _search_length << ", set _search_lenght to " << 1e-3 << std::endl;
-		_search_length = 1e-3;
+	// criterion: mu - c times s, where mu is the average and s is standard deviation
+	const double mu (sum/n);
+	const double s (sqrt(1.0/(n-1) * (sum_of_sqr - (sum*sum)/n) ));
+	while (mu < c * s) {
+		c *= 0.9;
 	}
+	_search_length = mu - c * s;
+#ifndef NDEBUG
+	if (c < 2) {
+		std::cerr << "[CFEMesh::computeSearchLength] computed _search_length = " << _search_length << ", the average value is: " << mu << ", standard deviation is: " << s << std::endl;
+	}
+#endif
 }
 
 /**************************************************************************
@@ -1460,8 +1466,12 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply,
 			for (size_t k(0); k < n_valid_nodes; k++)
 				msh_nod_vector.push_back(node_ids[k]);
 #ifndef NDEBUG
-			std::cout << "****** access " << msh_nod_vector.size()
-			          << " buffered nodes for polyline " << ply << std::endl;
+			std::string ply_name;
+			if (! getGEOObjects()->getPolylineVecObj(*(getProjectName()))->getNameOfElement(ply, ply_name)) {
+				ply_name = "unknown-ply";
+			}
+			std::cout << "[DEBUG-INFO] access " << msh_nod_vector.size()
+			          << " buffered nodes for polyline " << ply_name << std::endl;
 #endif
 			return;
 		}
@@ -1485,8 +1495,18 @@ void CFEMesh::GetNODOnPLY(const GEOLIB::Polyline* const ply,
 	for (size_t k(0); k < n_valid_nodes; k++)
 		msh_nod_vector.push_back(node_ids[k]);
 #ifndef NDEBUG
-	std::cout << "****** computed " << n_valid_nodes << " nodes for polyline "
-	          << ply << " - " << NodesInUsage() << std::endl;
+	std::string ply_name;
+	if (! getGEOObjects()->getPolylineVecObj(*(getProjectName()))->getNameOfElement(ply, ply_name)) {
+		ply_name = "unknown-ply";
+	}
+	std::cout << "[DEBUG-INFO] computed " << n_valid_nodes << " nodes for polyline "
+	         << ply_name << " - " << NodesInUsage() << std::endl;
+
+//	std::string fname ("MeshNodeIDsAlongPolyline"+ply_name+".txt");
+//	std::ofstream os (fname.c_str());
+//	for (size_t k(0); k < n_valid_nodes; k++)
+//		os << node_ids[k] << std::endl;
+//	os.close();
 #endif
 }
 
