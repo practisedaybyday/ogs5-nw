@@ -13,7 +13,9 @@ INCLUDE(CMakeConfiguration/CMakeSetup.cmake)
 INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
 
 ### Find directories and libraries ###
-INCLUDE (CMakeConfiguration/Find.cmake)
+IF(NOT OGS_NO_EXTERNAL_LIBS)
+	INCLUDE (CMakeConfiguration/Find.cmake)
+ENDIF() # NOT OGS_NO_EXTERNAL_LIBS
 
 ### General project setup ###
 INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
@@ -69,6 +71,8 @@ IF(GCC)
 	OPTION_REQUIRES(OGS_COVERAGE "Enables code coverage measurements with gcov/lcov." OGS_BUILD_TESTS)
 ENDIF() # GCC 
 OPTION (OGS_BUILD_TESTS "Enables building of tests." OFF)
+OPTION (OGS_NO_EXTERNAL_LIBS "Builds OGS without any external dependencies."
+OFF)
 
 MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_BUILD_INFO CMAKE_CMD_ARGS)
 
