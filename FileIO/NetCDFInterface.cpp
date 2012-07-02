@@ -4,11 +4,7 @@
  */
 #include "NetCDFInterface.h"
 #include <stdio.h>
-#ifdef VTK_NETCDF_FOUND
-#include <vtknetcdf/netcdf.h>
-#else
 #include <netcdf.h>
-#endif
 
 using namespace GEOLIB;
 using namespace MeshLib;
