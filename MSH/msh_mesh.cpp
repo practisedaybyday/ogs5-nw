@@ -882,15 +882,15 @@ void CFEMesh::ConstructGrid()
 
 void CFEMesh::constructMeshGrid()
 {
-#ifndef NDEBUG
-	std::cout << "CFEMesh::constructMeshGrid() ... " << std::flush;
-	clock_t start(clock());
-#endif
+//#ifndef NDEBUG
+//	std::cout << "CFEMesh::constructMeshGrid() ... " << std::flush;
+//	clock_t start(clock());
+//#endif
 	_mesh_grid = new GEOLIB::Grid<MeshLib::CNode>(this->getNodeVector(), 511);
-#ifndef NDEBUG
-	clock_t end(clock());
-	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s -- " << std::flush;
-#endif
+//#ifndef NDEBUG
+//	clock_t end(clock());
+//	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s -- " << std::flush;
+//#endif
 }
 
 /**************************************************************************

@@ -53,10 +53,10 @@ MeshLib::CFEMesh* OGSMeshIO::loadMeshFromFile(std::string const& fname)
 
 		mesh_vec[mesh_vec.size() - 1]->FillTransformMatrix();
 
-   #ifndef NDEBUG
+#ifndef NDEBUG
 		clock_t end(clock());
         std::cout << "total loading time: " << (end - start) / (double)(CLOCKS_PER_SEC) << " s" << std::endl;
-   #endif
+#endif
 
 		return mesh_vec[mesh_vec.size() - 1];
 	}
