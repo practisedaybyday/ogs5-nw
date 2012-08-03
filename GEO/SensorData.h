@@ -7,6 +7,8 @@
 #ifndef SENSORDATA_H
 #define SENSORDATA_H
 
+#include <cstddef>
+#include <string>
 #include <vector>
 
 /// Possible types of input data for time series sensor data.
