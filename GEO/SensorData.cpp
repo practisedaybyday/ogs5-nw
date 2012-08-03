@@ -6,6 +6,7 @@
 #include "SensorData.h"
 
 #include "StringTools.h"
+#include <cstdlib>
 #include <fstream>
 
 
