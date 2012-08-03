@@ -20,12 +20,13 @@ set( SOURCES
 	Polyline.cpp
 	PolylineWithSegmentMarker.cpp
 	ProjectData.cpp
+	Raster.cpp
+	SensorData.cpp
 	SimplePolygonTree.cpp
 	Station.cpp
 	Surface.cpp
-	Triangle.cpp
 	SurfaceGrid.cpp
-	Raster.cpp
+	Triangle.cpp
 )
 
 # Header files
@@ -57,6 +58,8 @@ set( HEADERS
 	ProjectData.h
 	PropertyBounds.h
 	QuadTree.h
+	Raster.h
+	SensorData.h
 	SimplePolygonTree.h
 	Station.h
 	Surface.h
@@ -65,7 +68,6 @@ set( HEADERS
 	TemplatePoint.h
 	TemplateVec.h
 	Triangle.h
-	Raster.h
 )
 
 # Create the library

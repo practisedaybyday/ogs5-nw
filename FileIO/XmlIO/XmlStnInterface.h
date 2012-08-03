@@ -32,7 +32,7 @@ protected:
 
 private:
 	/// Reads GEOLIB::Station- or StationBorehole-objects from an xml-file
-	void readStations  ( const QDomNode &stationsRoot, std::vector<GEOLIB::Point*>* stations );
+	void readStations  ( const QDomNode &stationsRoot, std::vector<GEOLIB::Point*>* stations, const std::string &filename);
 
 	/// Writes borehole-specific data to a station-xml-file.
 	void writeBoreholeData(QDomDocument &doc,

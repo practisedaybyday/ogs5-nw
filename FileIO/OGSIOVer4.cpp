@@ -17,7 +17,6 @@
 // Base
 #include "StringTools.h"
 #include "quicksort.h"
-#include "StringTools.h"
 
 // GEO
 #include "GEOObjects.h"
@@ -201,8 +200,7 @@ std::string readPolyline(std::istream &in,
 					size_t ply_size (ply->getNumberOfPoints());
 					if (ply_size > 0)
 					{
-						if (ply->getPointID (ply_size - 1) !=
-						    pnt_id_map[pnt_id])
+						if (ply->getPointID (ply_size - 1) != pnt_id_map[pnt_id])
 							ply->addPoint(pnt_id_map[pnt_id]);
 					}
 					else
@@ -553,7 +551,7 @@ bool readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& uniqu
 	tag = readPoints(in, pnt_vec, zero_based_idx, pnt_id_names_map);
 	std::cout << " ok, " << pnt_vec->size() << " points read" << std::endl;
 
-	unique_name = getFileNameFromPath(fname, true);
+	unique_name = BaseLib::getFileNameFromPath(fname, true);
 	if (!pnt_vec->empty())
 		geo->addPointVec(pnt_vec, unique_name, pnt_id_names_map);  // KR: insert into GEOObjects if not empty
 

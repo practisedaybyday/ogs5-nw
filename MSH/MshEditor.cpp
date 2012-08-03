@@ -122,10 +122,10 @@ MeshLib::CFEMesh* MshEditor::getMeshSurface(const MeshLib::CFEMesh &mesh)
 		MeshLib::CElem* elem (mesh.ele_vector[j]);
 		std::vector<size_t> elem_nodes;
 		bool is_surface (true);
-		for (size_t i=0; i<3; i++)
+		for (size_t i=0; i<4; i++)
 		{
 			size_t node_index = elem->GetNodeIndex(i);
-			bool node_found(false);
+			bool node_found(false), one_node(true);
 			for (size_t k=0; k<nSurfacePoints; k++)
 			{
 				if (sfc_points[k]->getID() == node_index)
@@ -137,8 +137,13 @@ MeshLib::CFEMesh* MshEditor::getMeshSurface(const MeshLib::CFEMesh &mesh)
 			}
 			if (!node_found)
 			{
-				is_surface = false;
-				break;
+				if (one_node == true)
+					one_node = false;
+				else
+				{
+					is_surface = false;
+					break;
+				}
 			}
 		}
 		if (is_surface)
@@ -153,8 +158,8 @@ MeshLib::CFEMesh* MshEditor::getMeshSurface(const MeshLib::CFEMesh &mesh)
 
 	std::vector<GEOLIB::Point*> *nodes = new std::vector<GEOLIB::Point*>(nSurfacePoints);
 	for (size_t j=0; j<nSurfacePoints; j++)
-		(*nodes)[sfc_points[j]->getID()]=sfc_points[j];
-		//(*nodes)[j] = sfc_points[j];
+		//(*nodes)[sfc_points[j]->getID()]=sfc_points[j];
+		(*nodes)[j] = sfc_points[j];
 
 	surface.setNodeVector(nodes);
 	surface.setElements(elements);

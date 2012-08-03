@@ -50,7 +50,7 @@ void FileListDialog::on_browseButton_pressed()
 {
 	QString guess_name("");
 	if (!_allFiles.stringList().empty())
-		guess_name = QString::fromStdString(getFileNameFromPath(_allFiles.stringList().at(0).toStdString()));
+		guess_name = QString::fromStdString(BaseLib::getFileNameFromPath(_allFiles.stringList().at(0).toStdString()));
 	QSettings settings("UFZ", "OpenGeoSys-5");
 	QFileInfo fi(settings.value("lastOpenedOgsFileDirectory").toString());
 	QString fileName = QFileDialog::getSaveFileName( this, "Save as",

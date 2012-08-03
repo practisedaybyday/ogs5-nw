@@ -20,6 +20,7 @@
     <xs:sequence>
       <xs:element ref="name" />
       <xs:element ref="value"  minOccurs="0" />				<!-- value is optional -->
+      <xs:element name="sensordata" minOccurs="0" />			<!-- time series data (optional) -->
       <!-- other station features can be inserted here -->
     </xs:sequence>
     <xs:attribute ref="id" use="required" />

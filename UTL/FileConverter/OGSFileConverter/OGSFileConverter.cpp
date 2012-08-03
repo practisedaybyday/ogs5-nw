@@ -78,7 +78,7 @@ void OGSFileConverter::convertGLI2GML(const QStringList &input, const QString &o
 		std::string merged_geo_name (merge_list[0]);
 		if (merge_list.size()>1)
 		{
-			merged_geo_name = getFileNameFromPath(output.toStdString());
+			merged_geo_name = BaseLib::getFileNameFromPath(output.toStdString());
 			geo_objects->mergeGeometries(merge_list, merged_geo_name);
 		}
 		FileFinder fileFinder = createFileFinder();

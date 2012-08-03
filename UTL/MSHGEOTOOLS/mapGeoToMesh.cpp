@@ -137,12 +137,12 @@ void constructFlatGrid()
 int main (int argc, char* argv[])
 {
 	QApplication app(argc, argv, false);
-
+	/*
 	if (argc != 3)
 	{
 		std::cout << "Changes the z-Coordinates of the geometric objects in the gml- or stn-files according to a given Mesh." << std::endl;
 		std::cout << std::endl;
-		std::cout << "Usage: " << argv[0] << " <geo-file.gml> <DEM-file.asc>" << std::endl;
+		std::cout << "Usage: " << argv[0] << " <geo-file.gml> <Mesh-file.msh>" << std::endl;
 		return -1;
 	}
 	
@@ -156,7 +156,7 @@ int main (int argc, char* argv[])
 		(geo_name.substr(geo_name.length()-4, 4).compare(".lst") != 0)) 
 	{
 		std::cout << "Error: Parameter 1 should be a gml- or stn-file" << std::endl;
-		std::cout << "Usage: " << argv[0] << " <geo-file.gml> <DEM-file.asc>" << std::endl;
+		std::cout << "Usage: " << argv[0] << " <geo-file.gml> <Mesh-file.msh>" << std::endl;
 		std::cout << std::endl;
 		return -1;
 	}
@@ -170,13 +170,13 @@ int main (int argc, char* argv[])
 
 	if (geo_name.substr(geo_name.length()-4, 4).compare(".lst") == 0)
 		isList = true;
-
-	/* //test functionality
-	bool isList(false);
-	std::string geo_name  = "c:/project/data/ammer/WESSRivers.gml";
-	std::string mesh_name = "c:/project/data/ammer/Ammer-Homogen100m-Final.msh";
-	std::string gml_name("");
 	*/
+	/* //test functionality*/
+	bool isList(false);
+	std::string geo_name  = "d:/bug_boundary.gml";
+	std::string mesh_name = "d:/Bug_Catchment.msh";
+	std::string gml_name("");
+	
 
 	FileIO::OGSMeshIO mesh_io;
 	mesh = mesh_io.loadMeshFromFile(mesh_name);

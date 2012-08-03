@@ -5,6 +5,8 @@
 
 #include "XmlStnInterface.h"
 #include "DateTools.h"
+#include "SensorData.h"
+#include "StringTools.h"
 #include <limits>
 
 #include <QFile>
@@ -59,9 +61,9 @@ int XmlStnInterface::readFile(const QString &fileName)
 			if (station_type.compare("name") == 0)
 				stnName = station_node.toElement().text().toStdString();
 			else if (station_type.compare("stations") == 0)
-				readStations(station_node, stations);
+				readStations(station_node, stations, fileName.toStdString());
 			else if (station_type.compare("boreholes") == 0)
-				readStations(station_node, stations);
+				readStations(station_node, stations, fileName.toStdString());
 		}
 
 		if (!stations->empty())
@@ -76,7 +78,8 @@ int XmlStnInterface::readFile(const QString &fileName)
 }
 
 void XmlStnInterface::readStations( const QDomNode &stationsRoot,
-                                 std::vector<GEOLIB::Point*>* stations )
+                                    std::vector<GEOLIB::Point*>* stations,
+								    const std::string &file_name )
 {
 	QDomElement station = stationsRoot.firstChildElement();
 	while (!station.isNull())
@@ -85,19 +88,24 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 		    station.hasAttribute("y"))
 		{
 			std::string stationName("[NN]");
+			std::string sensor_data_file_name("");
 			std::string boreholeDate("0000-00-00");
 			double boreholeDepth(0.0), stationValue(0.0);
 
 			QDomNodeList stationFeatures = station.childNodes();
 			for(int i = 0; i < stationFeatures.count(); i++)
 			{
+				// check for general station features
 				const QDomNode feature_node (stationFeatures.at(i));
 				const QString feature_name (feature_node.nodeName());
 				const std::string element_text (feature_node.toElement().text().toStdString());
 				if (feature_name.compare("name") == 0)
 					stationName = feature_node.toElement().text().toStdString();
+				if (feature_name.compare("sensordata") == 0)
+					sensor_data_file_name = feature_node.toElement().text().toStdString();
 				/* add other station features here */
 
+				// check for general borehole features
 				else if (feature_name.compare("value") == 0)
 					stationValue = strtod(element_text.c_str(), 0);
 				else if (feature_name.compare("bdepth") == 0)
@@ -107,10 +115,7 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 				/* add other borehole features here */
 			}
 
-			double zVal = (station.hasAttribute("z")) ? strtod((station.attribute(
-			                                                            "z")).
-			                                                   toStdString().c_str(),
-			                                                   0) : 0.0;
+			double zVal = (station.hasAttribute("z")) ? strtod((station.attribute("z")).toStdString().c_str(), 0) : 0.0;
 
 			if (station.nodeName().compare("station") == 0)
 			{
@@ -121,6 +126,8 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 				            zVal, 
 							stationName);
 				s->setStationValue(stationValue);
+				if (!sensor_data_file_name.empty())
+						s->addSensorDataFromCSV(BaseLib::copyPathToFileName(sensor_data_file_name, file_name));
 				stations->push_back(s);
 			}
 			else if (station.nodeName().compare("borehole") == 0)
