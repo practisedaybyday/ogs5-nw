@@ -263,17 +263,13 @@ protected:
 		                                           (StationBorehole*)stnObject;
 		                                   return stn->_depth; }
 	/// Returns the date this borehole has been drilled. Please see the documentation for Station::getX for details concerning the syntax.
-	static double getDate(void* stnObject)  { StationBorehole* stn =
-		                                          (StationBorehole*)stnObject;
-		                                  return stn->_date; }
+	static double getDate(void* stnObject)  { StationBorehole* stn = (StationBorehole*)stnObject; return stn->_date; }
 	/// Sets the depth of this borehole. Please see the documentation for Station::getX for details concerning the syntax.
 	static void setDepth(void* stnObject, double val) { StationBorehole* stn =
 		                                                    (StationBorehole*)stnObject;
 		                                            stn->_depth = val; }
 	/// Sets the date when this borehole has been drilled. Please see the documentation for Station::getX for details concerning the syntax.
-	static void setDate(void* stnObject, double val) { StationBorehole* stn =
-		                                                   (StationBorehole*)stnObject;
-		                                           stn->_date = val; }
+	static void setDate(void* stnObject, double val) { StationBorehole* stn = (StationBorehole*)stnObject; stn->_date = static_cast<int>(val); }
 
 private:
 	/// Adds a layer for the specified borehole profile based on the information given in the stringlist
@@ -290,7 +286,7 @@ private:
 	//std::vector<long> _soilType;
 	double _zCoord; // height at which the borehole officially begins (this might _not_ be the actual elevation)
 	double _depth; // depth of the borehole
-	double _date; // date when the borehole has been drilled
+	int _date; // date when the borehole has been drilled
 
 	/// Contains the names for all the soil layers
 	std::vector<std::string> _soilName;

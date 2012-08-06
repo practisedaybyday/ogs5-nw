@@ -6,6 +6,7 @@
 #include "SensorData.h"
 
 #include "StringTools.h"
+#include "DateTools.h"
 #include <cstdlib>
 #include <fstream>
 
@@ -102,11 +103,11 @@ int SensorData::readDataFromFile(const std::string &file_name)
 		return 0;
 	
 	size_t nDataArrays(nFields-1);
-
+	
 	//create vectors necessary to hold the data
 	for (size_t i=0; i<nDataArrays; i++)
 	{
-		this->_vec_names.push_back(SensorData::convertString2SensorDataType(*it++));
+		this->_vec_names.push_back(SensorData::convertString2SensorDataType(*++it));
 		this->_data_unit_string.push_back("");
 		std::vector<float> *data = new std::vector<float>;
 		this->_data_vecs.push_back(data);
@@ -119,7 +120,9 @@ int SensorData::readDataFromFile(const std::string &file_name)
 		if (nFields == fields.size())
 		{
 			it = fields.begin();
-			this->_time_steps.push_back(atoi((it++)->c_str()));
+			size_t pos(it->rfind("."));
+			size_t current_time_step = (pos == std::string::npos) ? atoi((it++)->c_str()) : strDate2int(*it++);
+			this->_time_steps.push_back(current_time_step);
 
 			for (size_t i=0; i<nDataArrays; i++)
 				this->_data_vecs[i]->push_back(static_cast<float>(strtod((it++)->c_str(), 0)));
@@ -147,9 +150,9 @@ std::string SensorData::convertSensorDataType2String(SensorDataType::type t)
 
 SensorDataType::type SensorData::convertString2SensorDataType(const std::string &s)
 {
-	if ((s.compare("Evaporation")==0) || (s.compare("EVAPORATION")==0)) return SensorDataType::PRECIPITATION;
+	if ((s.compare("Evaporation")==0) || (s.compare("EVAPORATION")==0)) return SensorDataType::EVAPORATION;
 	else if ((s.compare("Precipitation")==0) || (s.compare("PRECIPITATION")==0)) return SensorDataType::PRECIPITATION;
-	else if ((s.compare("Temperature")==0) || (s.compare("TEMPERATURE")==0)) return SensorDataType::PRECIPITATION;
+	else if ((s.compare("Temperature")==0) || (s.compare("TEMPERATURE")==0)) return SensorDataType::TEMPERATURE;
 	else return SensorDataType::OTHER;
 }
 
