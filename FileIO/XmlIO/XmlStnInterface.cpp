@@ -13,7 +13,7 @@
 #include <QtXml/QDomDocument>
 
 //RapidXML
-#include "RapidXML\rapidxml.hpp"
+#include "RapidXML/rapidxml.hpp"
 #include <iostream>
 
 namespace FileIO
