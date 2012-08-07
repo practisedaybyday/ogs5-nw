@@ -327,7 +327,7 @@ int XmlStnInterface::rapidReadFile(const std::string &fileName)
 {
 	GEOLIB::GEOObjects* geoObjects = _project->getGEOObjects();
 
-	std::ifstream in(fileName);
+	std::ifstream in(fileName.c_str());
 	if (in.fail()) 
 	{
 		std::cout << "XmlStnInterface::rapidReadFile() - Can't open xml-file." << std::endl;
@@ -340,7 +340,6 @@ int XmlStnInterface::rapidReadFile(const std::string &fileName)
 	in.seekg(0, std::ios::beg);
 	char* buffer = new char[length+1];
 	in.read(buffer, length);
-	size_t cnt (in.gcount());
 	buffer[in.gcount()] = '\0';
 	in.close();
 
