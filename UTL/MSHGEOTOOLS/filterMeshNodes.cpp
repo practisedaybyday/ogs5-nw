@@ -56,7 +56,7 @@ int main (int argc, char* argv[])
 		return -1;
 	}
 
-	std::string input_base_fname(getFileNameFromPath(argv[2], false));
+	std::string input_base_fname(BaseLib::getFileNameFromPath(argv[2], false));
 	std::string path;
 	BaseLib::extractPath(argv[2], path);
 	tmp = argv[2];
