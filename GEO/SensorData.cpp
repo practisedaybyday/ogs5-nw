@@ -18,7 +18,7 @@ SensorData::SensorData(const std::string &file_name)
 }
 
 SensorData::SensorData(std::vector<size_t> time_steps)
-: _time_steps(time_steps), _start(time_steps[0]), _end(time_steps[time_steps.size()-1]), _step_size(0), _time_unit(TimeStepType::NONE)
+: _start(time_steps[0]), _end(time_steps[time_steps.size()-1]), _step_size(0), _time_unit(TimeStepType::NONE), _time_steps(time_steps)
 {
 	for (size_t i=1; i<time_steps.size(); i++)
 	{
@@ -61,7 +61,7 @@ void SensorData::addTimeSeries( SensorDataType::type data_name, std::vector<floa
 
 const std::vector<float>* SensorData::getTimeSeries(SensorDataType::type time_series_name) const
 {
-	for (int i=0; i<_vec_names.size(); i++)
+	for (size_t i=0; i<_vec_names.size(); i++)
 	{
 		if (time_series_name == _vec_names[i])
 			return _data_vecs[i];
@@ -72,7 +72,7 @@ const std::vector<float>* SensorData::getTimeSeries(SensorDataType::type time_se
 
 const std::string SensorData::getDataUnit(SensorDataType::type time_series_name) const
 {
-	for (int i=0; i<_vec_names.size(); i++)
+	for (size_t i=0; i<_vec_names.size(); i++)
 	{
 		if (time_series_name == _vec_names[i])
 			return _data_unit_string[i];

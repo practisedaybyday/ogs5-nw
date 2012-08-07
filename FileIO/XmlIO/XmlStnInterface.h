@@ -8,6 +8,8 @@
 
 #include "XMLInterface.h"
 
+#include "RapidXML/rapidxml.hpp"
+
 namespace FileIO
 {
 
@@ -24,8 +26,11 @@ public:
 	 */
 	XmlStnInterface(ProjectData* project, const std::string &schemaFile);
 
-	/// Reads an xml-file containing station object definitions into the GEOObjects used in the contructor
+	/// Reads an xml-file containing station object definitions into the GEOObjects used in the contructor (requires Qt)
 	int readFile(const QString &fileName);
+
+	/// Reads an xml-file using the RapidXML parser integrated in the source code (i.e. this function is usable without Qt)
+	int rapidReadFile(const std::string &fileName);
 
 protected:
 	int write(std::ostream& stream);
@@ -40,7 +45,13 @@ private:
 	                       GEOLIB::StationBorehole* borehole) const;
 
 	/// Reads the stratigraphy of a borehole from an xml-file
-	void readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationBorehole* borehole );
+	void readStratigraphy( const QDomNode &stratRoot, GEOLIB::StationBorehole*  borehole );
+
+	/// Reads GEOLIB::Station- or StationBorehole-objects from an xml-file using the RapidXML parser
+	void rapidReadStations(const rapidxml::xml_node<>* station_root, std::vector<GEOLIB::Point*> *stations, const std::string &file_name);
+	
+	/// Reads the stratigraphy of a borehole from an xml-file using the RapidXML parser
+	void rapidReadStratigraphy(const rapidxml::xml_node<>* strat_root, GEOLIB::StationBorehole* borehole);
 };
 
 }

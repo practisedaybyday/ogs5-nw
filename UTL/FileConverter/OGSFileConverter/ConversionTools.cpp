@@ -34,7 +34,7 @@ void ConversionTools::getFEMConditionsFromASCIIFile(const QString &file_name, st
 	GEOLIB::GEOObjects geo_objects;
 	std::string geo_name(fi.baseName().toStdString() + ".gli");
 	std::string file_path(fi.absolutePath().toStdString() + "/");
-	FEMCondition::CondType type;
+	FEMCondition::CondType type(FEMCondition::UNSPECIFIED);
 	std::string cond_tag("");
 	if (fi.suffix().toLower() == "bc")
 	{
