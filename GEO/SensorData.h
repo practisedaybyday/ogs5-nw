@@ -11,8 +11,12 @@
 #include <string>
 #include <vector>
 
-/// Possible types of input data for time series sensor data.
-/// Implementation as Enum for specific implementations later on.
+/**
+ * Possible types of input data for time series sensor data.
+ * Implementation as Enum for specific implementations later on.
+ *
+ * \sa SensorData
+ */
 struct SensorDataType
 {
 	enum type {
@@ -24,6 +28,12 @@ struct SensorDataType
 	};
 };
 
+/**
+ * Possible types of time specification.
+ * In addition to the usual units we added 'DATE' for specification of dates
+ * in the format 'dd.mm.yyyy' as well as 'DATETIME' in the format
+ * 'dd.mm.yyyy.hh.mm.ss'.
+ */
 struct TimeStepType
 {
 	enum type {
@@ -88,7 +98,7 @@ public:
 
 	/// Allows to set a unit for the time steps
 	void setTimeUnit(TimeStepType::type t) { _time_unit = t; };
-	
+
 	/// Returns the unit the time steps
 	TimeStepType::type getTimeUnit() const { return _time_unit; };
 

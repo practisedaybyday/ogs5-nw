@@ -22,13 +22,14 @@ namespace GEOLIB
 /**
  * \ingroup GEOLIB
  *
- * \brief An observation station as a geometric object (i.e. basically a Point with some additional information.
+ * \brief A Station (observation site) is basically a Point with some additional information.
  *
- * An observation station as a geometric object. Such a station is basically a point object
- * with some additional information such as colour, a name, etc.
+ * Additional information is largely optional (except for a name, but even this may be empty).
+ * It may include a name, a stratigraphy (only for the derived class StationBore),
+ * time series data from data loggers (as a SensorData-object), etc.
  *
  * Notes concerning the property-system used in this class:
- * Variables of Station and derived classes can be defined to be "properties" of this class.
+ * Variables of Station and derived classes can be defined to be "properties" of this class (this is entirely optional!).
  * Certain functions in the GUI allow you to modify aspects of the visualisation based on these
  * properties (e.g. filtering operations such as "display only boreholes drilled after 1990 with a
  * depth between 400-800m").
@@ -38,6 +39,8 @@ namespace GEOLIB
  * and write-functions need to be actually implemented as static functions to avoid casting problems with the
  * function pointers used to dynamically connect the GUI functionality to the variables defined within the
  * station-classes. Please refer to the documentation of the properties defined below for details.
+ *
+ * \sa StationBorehole, SensorData
  */
 class Station : public Point
 {

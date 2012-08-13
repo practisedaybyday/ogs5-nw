@@ -15,6 +15,9 @@ namespace FileIO
 
 /**
  * \brief Reads and writes Observation Sites to and from XML files.
+ * Observation sites can have a number of optional attributes such as a stratigraphy for boreholes
+ * or time series data (SensorData). 
+ * Note, that SensorData files can be read from files but can currently not be written.
  */
 class XmlStnInterface : public XMLInterface
 {
