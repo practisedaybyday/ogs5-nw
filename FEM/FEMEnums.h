@@ -180,6 +180,7 @@ enum DistributionType
 	POINT,                                // BC
 	PRECIPITATION,
 	SYSTEM_DEPENDENT,                     // ST
+	CLIMATE,	// climate data (by NB)
 	// Sort of Neumann BC //WW
 	// make sure that this is always the last entry (important for iterating over the enum entries)!
 	DIS_END

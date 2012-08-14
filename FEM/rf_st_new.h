@@ -30,6 +30,41 @@ class CFEMesh;
 class MeshNodesAlongPolyline;
 }
 
+//##################################################################################################################
+//NB : weather data
+class CClimateData
+{
+public:
+	CClimateData ()
+	{
+
+	}
+	~CClimateData()
+	{
+
+	}
+
+	double pos_x;
+	double pos_y;
+	std::vector< std::string> data_types;
+	std::vector< std::vector<double> > data;
+	// this vector stores different data types (precipitation, temperature, groundwater_level,...) as time series
+	// inner vector: data types
+	// outer vector: time levels
+};
+//NB : distances
+
+class DistanceToWeatherStation
+{
+public:
+	int node_id;
+	std::vector<double> d;
+	DistanceToWeatherStation()
+	{
+
+	}
+};
+
 class SourceTerm;
 
 typedef struct
@@ -98,6 +133,12 @@ public:
 
 	//23.02.2009. WW
 	void DirectAssign(const long ShiftInNodeVector);
+
+	// including climate data into source terms
+	std::vector<DistanceToWeatherStation> Distances; // NB
+	std::vector<double> Sum_Distances; // NB
+	std::vector<CClimateData> WeatherStation; //NB
+
 	//03.2010. WW
 	std::string DirectAssign_Precipitation(double current_time);
 

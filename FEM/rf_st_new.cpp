@@ -16,6 +16,9 @@
 #include "files0.h"
 #include "mathlib.h"
 
+#include "MshEditor.h" //NB
+#include "PointWithID.h" // NB
+
 // GeoSys-GeoLib
 #include "GEOObjects.h"
 // GEO
@@ -37,6 +40,9 @@
 
 // Math
 #include "matrix_class.h"
+
+// BaseLib
+#include "FileTools.h"
 
 //#include "pcs_dm.h"
 
@@ -553,6 +559,118 @@ void CSourceTerm::ReadDistributionType(std::ifstream *st_file)
       }
       in.clear();
    }
+
+if (this->getProcessDistributionType() == FiniteElement::CLIMATE)
+   {
+      dis_type_name = "CLIMATE";
+      in >> fname; // base filename for climate input
+      in.clear();
+
+      int FileNumber=0;
+      std::stringstream FileName;
+      std::vector<std::string> FileList;
+      bool eofilelist=false;
+
+      // First step is to locate all climate files sharing the same base name
+      // ant put them in a list;
+
+      while(!eofilelist)
+      {
+    	  FileName << FilePath;
+    	  FileName << fname;
+
+    	  if (FileNumber<100)
+    	  {
+    		  FileName << 0;
+    		  if (FileNumber<10)
+    			  FileName << 0;
+    	  }
+
+    	  FileName << FileNumber;
+    	  FileName << ".clm";
+
+    	  if (IsFileExisting(FileName.str()))
+    	  {
+    		  FileList.push_back(FileName.str());
+    		  FileName.str("");
+    		  FileName.clear();
+    		  FileNumber++;
+    	  }
+    	  else
+    	  {
+    		  eofilelist = true;
+    	  }
+      }
+
+   	  std::cout << FileNumber << " climate files read. " << std::endl;
+
+      // Now, we read coordinates and climate data from each file of the file list, and store them nicely in a climate data class
+
+   	for (size_t i=0; i<FileList.size(); i++)
+   	   	  {
+
+   			std::fstream Climatefile;
+   			std::string line,snip;
+   			std::vector<std::string> data_types;
+            std::vector<double> data_values;
+
+   			Climatefile.open(FileList[i].c_str());
+   			CClimateData* Climate = new CClimateData;
+   			bool eof=false;
+
+   			while ((!Climatefile.eof())&&(!eof))
+   			{
+   				getline(Climatefile, line);
+   				std::istringstream iss(line);
+//   				std::cout << line << std::endl;
+   				iss >> snip;
+//   				std::cout << snip << std::endl;
+   				if (snip.compare("$POSITION_XY")==0)
+   				{
+   					getline(Climatefile, line);
+   					std::istringstream iss(line);
+   					iss >> Climate->pos_x >> Climate->pos_y;
+   				}
+   				if (snip.compare("$DATATYPES")==0)
+   				{
+   					getline(Climatefile, line);
+   					std::istringstream iss(line);
+   					while(iss>>snip)
+   						Climate->data_types.push_back(snip);
+   				}
+   				if(snip.compare("$DATA")==0)
+   				{
+   					do
+   					{
+   	   					getline(Climatefile, line);
+   	   					std::istringstream iss(line);
+
+   	   					if (line.find("#STOP")!=std::string::npos)
+   	   						{
+   	   						eof=true;
+   	   						break;
+   	   						}
+   						double dummy;
+     					while(iss>>dummy)
+     					{
+     						data_values.push_back(dummy);
+     					}
+    					Climate->data.push_back(data_values);
+    					data_values.clear();
+   					}
+   					while (!Climatefile.eof());
+   				}
+   			}
+
+   			WeatherStation.push_back(*Climate);
+   			Climate = NULL;
+   	  		Climatefile.close();
+   	  	  }
+
+
+
+
+   }
 }
 
 
@@ -967,7 +1085,8 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
              if ( cp_vec[cp_name_2_idx[convertPrimaryVariableToString(source_term->getProcessPrimaryVariable())]]->getProcess() != m_pcs )
                  continue;
           //-- 23.02.3009. WW
-         if (source_term->getProcessDistributionType()==FiniteElement::DIRECT) {
+         if (source_term->getProcessDistributionType()==FiniteElement::DIRECT || source_term->getProcessDistributionType()==FiniteElement::CLIMATE)
+		 { //NB For climate ST, the source terms (recharge in this case) will also be assigned directly to surface nodes
            source_term->DirectAssign(ShiftInNodeVector);
            continue;
          }
@@ -3540,6 +3659,61 @@ void CSourceTerm::SetNOD2MSHNOD(const std::vector<size_t>& nodes,
 	}
 }
 
+const std::vector<double> GetNodalArea (CFEMesh *mesh)
+		{
+	std::vector<double> NodeArea;
+
+	double total_area (0);
+
+	// for each node, a vector containing all the element idget every element
+	for (size_t n=0;n<mesh->nod_vector.size();n++)
+	{
+
+		double nodearea (0);
+
+		std::vector<size_t> connected_elements (mesh->nod_vector[n]->getConnectedElementIDs());
+
+		for (size_t i=0; i<connected_elements.size();i++)
+		{
+
+			CElem *Element (mesh->ele_vector[connected_elements[i]]);
+
+			// get nodes of this element
+			std::vector<CNode*> ElementNodes;
+			Element->GetNodes(ElementNodes);
+
+			// get area of this Element
+			// first, get coordinates for each node
+
+			GEOLIB::Point A (ElementNodes[0]->getData());
+			GEOLIB::Point B (ElementNodes[1]->getData());
+			GEOLIB::Point C (ElementNodes[2]->getData());
+
+			// distances of AB, BC, and AC
+
+			double a= pow ((A[0]-B[0])*(A[0]-B[0]) + (A[1]-B[1])*(A[1]-B[1]) + (A[2]-B[2])*(A[2]-B[2]),0.5);
+			double b= pow ((C[0]-B[0])*(C[0]-B[0]) + (C[1]-B[1])*(C[1]-B[1]) + (C[2]-B[2])*(C[2]-B[2]),0.5);
+			double c2= (A[0]-C[0])*(A[0]-C[0]) + (A[1]-C[1])*(A[1]-C[1]) + (A[2]-C[2])*(A[2]-C[2]);
+
+			// angle AC-BC
+			double cos_gamma = (c2-a*a-b*b)/(-2*a*b);
+			
+			// Area of tri-element
+			double Area = 0.5*a*b*sin(acos(cos_gamma));
+
+			nodearea += Area/3.0; // the third part of the area of each connected element adds up to the nodal area of n
+			total_area+=Area/3.0;
+		}
+
+		NodeArea.push_back(nodearea);
+
+	}
+
+
+	std::cout<< "Total surface Area: " << total_area << std::endl;
+
+	return NodeArea;
+}
 
 /**************************************************************************
  GeoSys source term function:
@@ -3556,41 +3730,118 @@ void CSourceTerm::DirectAssign(long ShiftInNodeVector)
    CNodeValue *m_nod_val = NULL;
    m_pcs = PCSGet(convertProcessTypeToString(getProcessType()));
 
-   //========================================================================
-   // File handling
-   std::ifstream d_file(fname.c_str(), std::ios::in);
-   //if (!st_file.good()) return;
-
-   if (!d_file.good())
+   if (getProcessDistributionType()==FiniteElement::CLIMATE) //NB for this type of ST, we assign a ST to each node on the Mesh surface (land surface)
    {
-      std::cout << "! Error in direct node source terms: Could not find file:!\n"
-         << fname << std::endl;
-      abort();
+
+
+		std::vector<size_t> SurfaceNodes;
+
+	//	m_pcs->m_msh->ConstructGrid();
+
+		std::vector<double> nodearea;
+
+		nodearea = GetNodalArea(m_pcs->m_msh);
+
+
+		const std::vector<GEOLIB::PointWithID*> points ( MshEditor::getSurfaceNodes(*(m_pcs->m_msh)) );
+
+		std::cout << points.size() << std::endl;
+
+		for (size_t i=0;i<points.size();i++)
+		{
+			size_t nodes (points[i]->getID());
+			 m_nod_val = new CNodeValue();
+			 m_nod_val->msh_node_number = nodes + ShiftInNodeVector;
+			 m_nod_val->geo_node_number = nodes;
+			 m_nod_val->setProcessDistributionType (getProcessDistributionType());
+	   	     m_nod_val->node_value = 1;  // values will be assigned in IncorporateSoureTerms (rf_pcs.cpp)
+			 m_nod_val->CurveIndex = CurveIndex;
+			 m_pcs->st_node_value.push_back(m_nod_val);
+			 m_pcs->st_node.push_back(this);
+			 SurfaceNodes.push_back(nodes);  // to calc distances to weather stations;
+			 m_pcs->m_msh->nod_vector[nodes]->patch_area = nodearea[nodes];
+		}
+
+		std::cout << SurfaceNodes.size() << " nodes found on mesh surface. " << std::endl;
+
+
+		double r = 2.0; // interpolation exponent
+
+		for (size_t n=0; n<m_pcs->st_node_value.size();n++)
+		{
+			size_t node_id (m_pcs->st_node_value[n]->msh_node_number);
+
+			MeshLib::CNode* Node;
+
+			Node = m_pcs->m_msh->nod_vector[node_id];
+			const double *coords (Node->getData());
+			double sum (0);
+
+			std::vector<double> dummy;
+			DistanceToWeatherStation foo;
+			double dist;
+
+			double x (coords[0]);
+			double y (coords[1]);
+
+			for (size_t i=0;i<WeatherStation.size();i++) // Distance to each weather station
+						{
+							// ignore z-coordinate for the moment, assuming elevation is ignorable compared to x-y-distance
+							dist = std::max(DBL_MIN,pow(((WeatherStation[i].pos_x-x)*(WeatherStation[i].pos_x-x)
+									+(WeatherStation[i].pos_y-y)*(WeatherStation[i].pos_y-y)),0.5)); // good old pythagoras
+							dist = 1/pow(dist,r);
+							sum += dist;
+							dummy.push_back(dist);
+						}
+
+
+			foo.d = dummy;
+			foo.node_id = node_id;
+			Distances.push_back(foo);
+			Sum_Distances.push_back(sum);
+
+			}
+
    }
-   // Rewind the file
-   d_file.clear();
-   d_file.seekg(0L, std::ios::beg);
-   //========================================================================
-   while (!d_file.eof())
+   else //NB this is the old version, where nodes were read from an separate input file
    {
-      line_string = GetLineFromFile1(&d_file);
-      if (line_string.find("#STOP") != std::string::npos)
-         break;
 
-      in.str(line_string);
-      in >> n_index >> n_val;
-      in.clear();
-      //
-      m_nod_val = new CNodeValue();
-      m_nod_val->msh_node_number = n_index + ShiftInNodeVector;
-      m_nod_val->geo_node_number = n_index;
-      m_nod_val->setProcessDistributionType (getProcessDistributionType());
-      m_nod_val->node_value = n_val;
-      m_nod_val->CurveIndex = CurveIndex;
-      m_pcs->st_node_value.push_back(m_nod_val);
-      m_pcs->st_node.push_back(this);
-      //
-   }                                              // eof
+	   //========================================================================
+	   // File handling
+	   std::ifstream d_file(fname.c_str(), std::ios::in);
+	   //if (!st_file.good()) return;
+
+	   if (!d_file.good())
+	   {
+		  std::cout << "! Error in direct node source terms: Could not find file:!\n"
+			 << fname << std::endl;
+		  abort();
+	   }
+	   // Rewind the file
+	   d_file.clear();
+	   d_file.seekg(0L, std::ios::beg);
+	   //========================================================================
+	   while (!d_file.eof())
+	   {
+		  line_string = GetLineFromFile1(&d_file);
+		  if (line_string.find("#STOP") != std::string::npos)
+			 break;
+
+		  in.str(line_string);
+		  in >> n_index >> n_val;
+		  in.clear();
+		  //
+		  m_nod_val = new CNodeValue();
+		  m_nod_val->msh_node_number = n_index + ShiftInNodeVector;
+		  m_nod_val->geo_node_number = n_index;
+		  m_nod_val->setProcessDistributionType (getProcessDistributionType());
+		  m_nod_val->node_value = n_val;
+		  m_nod_val->CurveIndex = CurveIndex;
+		  m_pcs->st_node_value.push_back(m_nod_val);
+		  m_pcs->st_node.push_back(this);
+		  //
+	   }                                              // eof
+	}
 }
 
 

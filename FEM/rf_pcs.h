@@ -48,6 +48,17 @@ using Math_Group::Linear_EQS;
 
 //using Math_Group::SparseMatrixDOK;
 //
+
+/*
+class etr_data
+{
+public:
+    double x;
+	double y;
+	double val;
+};
+*/
+
 class CSourceTermGroup;
 class CSourceTerm;
 class CNodeValue;
