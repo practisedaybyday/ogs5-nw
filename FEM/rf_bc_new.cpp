@@ -336,6 +336,15 @@ std::ios::pos_type CBoundaryCondition::Read(std::ifstream* bc_file,
 			}
 		}
 
+		if (line_string.find("GRADIENT") != std::string::npos) // 6/2012  JOD
+		{
+			this->setProcessDistributionType(FiniteElement::GRADIENT);
+		    in >> gradient_ref_depth;
+            in >> gradient_ref_depth_value;
+            in >> gradient_ref_depth_gradient;
+			in.clear();
+		}
+
 		// Time dependent function
 		//..Time dependent curve ............................................
 		if (line_string.find("$TIM_TYPE") != std::string::npos)
@@ -1101,6 +1110,28 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						}
 					}
 
+					if (bc->getProcessDistributionType() == FiniteElement::GRADIENT) // 6/2012 JOD
+					{
+						m_msh->GetNODOnPLY(ply, nodes_vector);
+
+						for (size_t k(0); k < nodes_vector.size(); k++) {
+							m_node_value = new CBoundaryConditionNode();
+							m_node_value->msh_node_number = -1;
+							m_node_value->msh_node_number = nodes_vector[k] + ShiftInNodeVector;
+							m_node_value->geo_node_number = nodes_vector[k];
+							m_node_value->node_value
+											= bc->gradient_ref_depth_gradient
+															* (bc->gradient_ref_depth
+																			- m_msh->nod_vector[nodes_vector[k]]->getData()[2])
+															+ bc->gradient_ref_depth_value;
+							m_node_value->CurveIndex = bc->getCurveIndex();
+							m_node_value->pcs_pv_name = _pcs_pv_name;
+							m_node_value->msh_node_number_subst = msh_node_number_subst;
+							pcs->bc_node.push_back(bc);
+							pcs->bc_node_value.push_back(m_node_value);
+						}
+					}
+
 					//WW / TF
 					if (bc->getProcessDistributionType() == FiniteElement::LINEAR)
 					{
@@ -1264,18 +1295,27 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						m_node_value->geo_node_number = nodes_vector[i];
 						//YD/WW
 						m_node_value->pcs_pv_name = _pcs_pv_name;
-						//WW
-						if (bc->getProcessDistributionType() == FiniteElement::LINEAR)
+
+						if (bc->getProcessDistributionType() == FiniteElement::LINEAR) {
 							m_node_value->node_value = node_value[i];
-						else {
+						} else {
+							if (bc->getProcessDistributionType() == FiniteElement::GRADIENT) {// 6/2012 JOD
+								m_node_value->node_value = bc->gradient_ref_depth_gradient
+															* (bc->gradient_ref_depth
+																			- m_msh->nod_vector[m_node_value->geo_node_number]->getData()[2])
+															+ bc->gradient_ref_depth_value;
+							} else {
 							// 25.08.2011. WW
-							if (bc->getProcessDistributionType() == FiniteElement::FUNCTION) {
+								if (bc->getProcessDistributionType() == FiniteElement::FUNCTION) {
 							//                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
 							//                            m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
-								double const* const coords(m_msh->nod_vector[m_node_value-> geo_node_number]->getData());
-								m_node_value->node_value = bc->dis_linear_f->getValue(coords[0],
-											coords[1], coords[2]);
-							} else m_node_value->node_value = bc->geo_node_value;
+									double const* const coords(m_msh->nod_vector[m_node_value-> geo_node_number]->getData());
+									m_node_value->node_value = bc->dis_linear_f->getValue(coords[0],
+													coords[1], coords[2]);
+								} else {
+									m_node_value->node_value = bc->geo_node_value;
+								}
+							}
 						}
 						m_node_value->CurveIndex = bc->getCurveIndex();
 						//OK

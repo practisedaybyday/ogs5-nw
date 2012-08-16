@@ -159,6 +159,10 @@ private:
 	double _periode_time_length; // JOD
 	bool _periodic; // JOD
 
+	double gradient_ref_depth; // 6/2012 JOD
+	double gradient_ref_depth_value;
+	double gradient_ref_depth_gradient;
+
 	double node_value_cond; //OK
 	double condition; //OK
 	double epsilon; //NW. temporally set here for surface interpolation
