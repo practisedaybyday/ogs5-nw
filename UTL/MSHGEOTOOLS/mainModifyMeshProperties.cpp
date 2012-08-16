@@ -90,7 +90,7 @@ int main (int argc, char* argv[])
 	FileIO::readGLIFileV4(tmp, geo, unique_name, error_strings);
 
 	// *** get polygons
-	tmp = getFileNameFromPath(tmp, true);
+	tmp = BaseLib::getFileNameFromPath(tmp, true);
 	const std::vector<GEOLIB::Polyline*>* plys (geo->getPolylineVec (tmp));
 	if (!plys)
 	{
