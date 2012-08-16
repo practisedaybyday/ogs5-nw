@@ -6,6 +6,9 @@
 #include "Configure.h"
 #include "mainwindow.h"
 
+// BaseLib
+#include "MemWatch.h"
+
 // models
 #include "ProcessModel.h"
 #include "ElementTreeModel.h"
@@ -611,7 +614,22 @@ void MainWindow::loadFile(const QString &fileName)
 	{
 		FileIO::OGSMeshIO meshIO;
 		std::string name = fileName.toStdString();
+#ifndef WIN32
+		BaseLib::MemWatch mem_watch;
+		unsigned long mem_without_mesh(mem_watch.getVirtMemUsage());
+#endif
+#ifndef NDEBUG
+		clock_t start_mesh_time(clock());
+#endif
 		MeshLib::CFEMesh* msh = meshIO.loadMeshFromFile(name);
+#ifndef NDEBUG
+		clock_t end_mesh_time(clock());
+		std::cout << "time for loading mesh and constructing topology: " << (end_mesh_time - start_mesh_time) / (double)(CLOCKS_PER_SEC) << " s" << std::endl;
+#endif
+#ifndef WIN32
+		unsigned long mem_with_mesh(mem_watch.getVirtMemUsage());
+		std::cout << "mem for pure mesh data structures: " << (mem_with_mesh-mem_without_mesh) / (1024*1024) << " MB" << std::endl;
+#endif
 		if (msh)
 		{
 			std::string mesh_name = fi.baseName().toStdString();
