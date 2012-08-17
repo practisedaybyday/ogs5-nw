@@ -84,7 +84,7 @@
 /* Header / Andere intern benutzte Module */
 #include "files0.h"
 #include "mathlib.h"
-#include "matrix.h"
+#include "matrix_routines.h"
 // MSHLib
 #include "msh_mesh.h"
 #include "msh_node.h"

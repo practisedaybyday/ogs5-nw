@@ -25,7 +25,7 @@
 //#include "rf_tim_new.h"
 #ifndef NEW_EQS                                   //WW. 06.11.2008
 // Sytem matrix
-#include "matrix.h"
+#include "matrix_routines.h"
 #endif
 // Parallel computing
 //#include "par_ddc.h"

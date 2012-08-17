@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include <map>
 
 /**
  * Possible types of input data for time series sensor data.
@@ -22,6 +23,7 @@ struct SensorDataType
 	enum type {
 		OTHER = 0,
 		PRECIPITATION,
+		RECHARGE,
 		EVAPORATION,
 		TEMPERATURE
 		// please expand if necessary
@@ -105,6 +107,9 @@ public:
 	/// Returns the data unit of the given time series
 	const std::string getDataUnit(SensorDataType::type t) const;
 
+	/// Returns the (interpolated) data value at the given time for the specified data type
+	float getData(SensorDataType::type t, double time, bool lin_int = false) const;
+
 	/// Converts Sensor Data Types to Strings
 	static std::string convertSensorDataType2String(SensorDataType::type t);
 
@@ -123,7 +128,7 @@ private:
 	std::vector<size_t> _time_steps;
 	std::vector<SensorDataType::type> _vec_names;
 	std::vector< std::vector<float>* > _data_vecs;
-
+	std::map<SensorDataType::type, size_t> _data_type_index;
 };
 
 #endif //SENSORDATA_H

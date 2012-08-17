@@ -38,7 +38,7 @@ extern ios::pos_type GetNextSubKeyword(ifstream* file,string* line, bool* keywor
 // GeoSys-FEMLib
 #include "rf_num_new.h"
 #ifndef NEW_EQS                                   //WW. 06.11.2008
-#include "matrix.h"
+#include "matrix_routines.h"
 #endif
 #include "StringTools.h"
 #include "mathlib.h"

@@ -39,7 +39,8 @@
 //#include <algorithm> // header of transform. WW
 #include <set>
 // GEOLib
-//#include "geo_ply.h"
+#include "PointWithID.h"
+
 /*------------------------------------------------------------------------*/
 /* MshLib */
 //#include "msh_elem.h"
@@ -73,7 +74,7 @@
 /*-----------------------------------------------------------------------*/
 /* Tools */
 #ifndef NEW_EQS                                   //WW. 06.11.2008
-#include "matrix.h"
+#include "matrix_routines.h"
 #endif
 #ifdef MFC                                        //WW
 #include "rf_fluid_momentum.h"
@@ -106,6 +107,7 @@ REACT_BRNS* m_vec_BRNS;
 #include "rfmat_cp.h"
 
 // MathLib
+#include "InterpolationAlgorithms/InverseDistanceInterpolation.h"
 #include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 
 using namespace std;
@@ -6206,150 +6208,78 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 		for (size_t i=0; i<st_vector.size();i++)
 		{
+			// NOTE (KR): This only works correctly if there is only ONE source term with DisType CLIMATE! TODO
+			// If more are needed pls let me know
 			if (st_vector[i]->getProcessDistributionType()==FiniteElement::CLIMATE)
 			{
 				m_st = st_vector[i];
+				const MathLib::InverseDistanceInterpolation<GEOLIB::PointWithID*, GEOLIB::Station*> *distances (m_st->getClimateStationDistanceInterpolation());
+
+				// Interpolate each ST to every surface node;
+				const std::vector<GEOLIB::Station*> &weather_stations (m_st->getClimateStations());
+				const size_t nStations = weather_stations.size();
+				vector<double> vec_etr(nStations);
+				for (size_t j=0; j<nStations; j++)
+					vec_etr[j] = static_cast<GEOLIB::Station*>(weather_stations[j])->getSensorData()->getData(SensorDataType::RECHARGE, aktuelle_zeit, true);
+
+				// Interpolate the point data onto the Mesh surface
+				const size_t nSTNodeValues ( st_node_value.size() );
+				const size_t nDistances ( distances->getNDomainPoints() );
+				for (size_t j=0; j<nSTNodeValues; j++)
+				{
+					// search the first node value index not set (this should be the start for the CLIMATE data
+					if (st_node_value[j]->node_value == std::numeric_limits<double>::min())
+					{
+						// Interpolate for each surface node
+						for (size_t w=0;w<nDistances;w++)
+						{
+							// for each ST_node, the distance to all weather stations has been determined before (InverseDistranceInterpolation)
+							// Value ETR(n) at node n by inverse distance weighting of ETR(WS) for each weather station WS
+							double st_value (0);
+							for (size_t q=0; q<nStations; q++)
+								st_value += vec_etr[q] * distances->getDistance(w,q) / distances->getSumOfDistances(w);
+
+							const size_t n (distances->getDomainPoint(w)->getID());
+							st_node_value[j+w]->node_value = 0.0001 * st_value * m_msh->nod_vector[n]->patch_area;
+						}
+						break;
+					}
+				}
+#ifndef NDEBUG
+				/* output of interpolated data */
+				ofstream file;
+				stringstream filename ("interpolation");
+
+				filename << FilePath << filename.str();
+
+				if(Tim->step_current<1000)
+				{
+					filename << 0;
+					if(Tim->step_current<100)
+					{
+						filename << 0;
+						if (Tim->step_current<10)
+							filename << 0;
+					}
+				}
+
+				filename << Tim->step_current << ".csv";
+				cout << "      Interpolation result written in " << filename.str() << endl;
+
+				file.open(filename.str().c_str());
+				file << "node,x,y,z,recharge,area"<< endl;
+
+				for (size_t i=0;i<st_node_value.size();i++)
+				{
+					const long z = st_node_value[i]->msh_node_number;
+					const double *coords (m_msh->nod_vector[z]->getData());
+					file << z << "," << coords[0] << "," << coords[1] << "," << "0" << ","<< st_node_value[i]->node_value << "," << m_msh->nod_vector[z]->patch_area<< endl;
+				}
+
+				file.close();
+#endif
 			}
 		}
-
-
-		if (m_st)
-		{
-
-			vector<double> vec_etr;
-
-			// Now its up to interpolate each ST to every surface node;
-			// st_nodes are already assigned
-
-
-			for (size_t j=0;j<m_st->WeatherStation.size();j++)
-				{
-				//WeatherStation.data[VALUE(t)][TYPE]
-				// Time is always TYPE 0
-				// exp:	data[1][0] is the second time value
-				//		data[6][1] is the 7th value of PRECIPITATION
-
-				double time_series_begin = m_st->WeatherStation[j].data[0][0];
-				double time_series_end = m_st->WeatherStation[j].data.back()[0];
-
-
-				if (aktuelle_zeit<=time_series_begin) // check if current time smaller than first time value  in time series
-				{
-					vec_etr.push_back( m_st->WeatherStation[j].data[0][1] ); // first value in time series
-					//etr.val = m_st->WeatherStation[j].data[0][1]; // first value in time series
-					//etr.x = m_st->WeatherStation[j].pos_x;
-					//etr.y = m_st->WeatherStation[j].pos_y;
-					//vec_etr.push_back(etr);
-				} else
-					if (aktuelle_zeit>=time_series_end)  // check if current time is larger than last time value in time series
-				{
-					vec_etr.push_back( m_st->WeatherStation[j].data.back()[1] ); // last value in time series
-					//etr.val = m_st->WeatherStation[j].data.back()[1]; // last value in time series
-					//etr.x = m_st->WeatherStation[j].pos_x;
-					//etr.y = m_st->WeatherStation[j].pos_y;
-					//vec_etr.push_back(etr);
-				}
-					else  // current time within given time series
-					{
-
-						int i (0);
-						while(aktuelle_zeit>m_st->WeatherStation[j].data[i][0])
-							i++;
-
-						//interpolate within times
-
-						double t0 (m_st->WeatherStation[j].data[i-1][0]);
-						double t1 (m_st->WeatherStation[j].data[i][0]);
-						double etr_0 (m_st->WeatherStation[j].data[i-1][1]);
-						double etr_1 (m_st->WeatherStation[j].data[i][1]);
-
-						vec_etr.push_back( etr_0 + (etr_1-etr_0)/(t1-t0) * (aktuelle_zeit-t0) ); // linear interpolation
-						//etr.val = etr_0 + (etr_1-etr_0)/(t1-t0) * (aktuelle_zeit-t0); // linear interpolation
-						//etr.x = m_st->WeatherStation[j].pos_x;
-						//etr.y = m_st->WeatherStation[j].pos_y;
-						//vec_etr.push_back(etr);
-
-
-					}
-
-				// the evaporation values for each climate station are now stored in vec_etr;
-
-				} // for each weather station
-
-			// now, in the last step, we interpolate the point data onto the Mesh surface
-
-
-				for (size_t w=0;w<m_st->Distances.size();w++)
-				{
-					// for each ST_node, the distance to all weather stations has been determined before (rf_st_new.cpp - DirectAssign)
-
-					// Value ETR(n) at node n by inverse distance weighting of ETR(WS) for each weather station WS
-
-
-
-					size_t id (m_st->Distances[w].node_id);
-					double st_value (0);
-
-
-					for (size_t q=0;q<m_st->Distances[w].d.size();q++)
-					{
-						// this is a loop over each WS
-
-//						st_value += (vec_etr[q].val * (1.0/m_st->Distances[w].d[q])/Sum_dist);
-
-						st_value += vec_etr[q] * m_st->Distances[w].d[q]/m_st->Sum_Distances[w];
-
-					}
-
-					size_t n = m_st->Distances[w].node_id;
-					st_node_value[w]->node_value = 0.0001*st_value*m_msh->nod_vector[n]->patch_area;
-
-				} // loop for each source_term node
-
-
-
-				ofstream file;
-
-						stringstream filename ("interpolation");
-
-
-						filename << FilePath << filename.str();
-
-						if(Tim->step_current<1000)
-						{
-							filename << 0;
-							if(Tim->step_current<100)
-							{
-								filename << 0;
-								if (Tim->step_current<10)
-									filename << 0;
-							}
-						}
-
-						filename << Tim->step_current << ".csv";
-
-						cout << "      Interpolation result written in " << filename.str() << endl;
-
-						file.open(filename.str().c_str());
-
-						file << "node,x,y,z,recharge,area"<< endl;
-
-						for (size_t i=0;i<st_node_value.size();i++)
-						{
-							long z = st_node_value[i]->msh_node_number;
-							const double *coords (m_msh->nod_vector[z]->getData());
-
-							file << z << "," << coords[0] << "," << coords[1] << "," << "0" << ","<< st_node_value[i]->node_value << "," << m_msh->nod_vector[z]->patch_area<< endl;
-						}
-
-						file.close();
-
-
-
-
-		} // if (m_st) (only for climate ST
-
-
 
 
 		m_st=NULL;

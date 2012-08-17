@@ -16,7 +16,7 @@
 #include "rfmat_cp.h"
 
 #ifndef NEW_EQS
-#include "matrix.h"
+#include "matrix_routines.h"
 #endif
 
 // Solver

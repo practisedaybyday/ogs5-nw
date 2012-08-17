@@ -11,6 +11,7 @@ SET( SOURCES
 	FEMIO/GeoIO.cpp
 	FEMIO/ProcessIO.cpp
 	FEMIO/BoundaryConditionIO.cpp
+	GeoIO/Gmsh2GeoIO.cpp
 	MeshIO/GMSHInterface.cpp
 	MeshIO/GMSHFixedMeshDensity.cpp
 	MeshIO/GMSHAdaptiveMeshDensity.cpp
@@ -21,7 +22,7 @@ SET( SOURCES
 	MeshIO/LegacyVtkInterface.cpp
 	MeshIO/OGSMeshIO.cpp
 	MeshIO/TetGenInterface.cpp
-	GeoIO/Gmsh2GeoIO.cpp
+	XmlIO/RapidXMLInterface.cpp
 )
 
 # Header files
@@ -37,6 +38,7 @@ SET( HEADERS
 	FEMIO/GeoIO.h
 	FEMIO/ProcessIO.h
 	FEMIO/BoundaryConditionIO.h
+	GeoIO/Gmsh2GeoIO.h
 	MathIO/CRSIO.h
 	MeshIO/GMSHInterface.h
 	MeshIO/GMSHMeshDensityStrategy.h
@@ -50,7 +52,7 @@ SET( HEADERS
 	MeshIO/LegacyVtkInterface.h
 	MeshIO/OGSMeshIO.h
 	MeshIO/TetGenInterface.h
-	GeoIO/Gmsh2GeoIO.h
+	XmlIO/RapidXMLInterface.h
 )
 
 IF (OGS_USE_QT)

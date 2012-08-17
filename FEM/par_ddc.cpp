@@ -39,7 +39,7 @@ using namespace std;
 // FEM-Makros
 #include "makros.h"
 #ifndef NEW_EQS                                   //WW. 11.2008
-#include "matrix.h"
+#include "matrix_routines.h"
 #endif
 #include "files0.h"
 #include "gs_project.h"

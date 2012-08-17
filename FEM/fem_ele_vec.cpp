@@ -10,7 +10,7 @@
 //#include <iostream>
 // Sytem matrix
 #include "mathlib.h"
-#include "matrix.h"
+#include "matrix_routines.h"
 #include "pcs_dm.h"
 #include "rf_mfp_new.h"
 #include "rf_msp_new.h"

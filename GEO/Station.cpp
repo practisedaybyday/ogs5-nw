@@ -33,7 +33,7 @@ Station::Station(Point* coords, std::string name) :
 
 Station::Station(Station const& src) :
 	Point(src.getData()), _name(src._name), _type(src._type),
-	_station_value(src._station_value), _sensor_data(NULL)
+	_station_value(src._station_value), _sensor_data(src._sensor_data)
 {
 	addProperty("x", &getX, &Station::setX);
 	addProperty("y", &getY, &Station::setY);

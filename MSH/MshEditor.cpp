@@ -9,6 +9,55 @@
 #include "GridAdapter.h"
 
 
+void MshEditor::getNodeAreas(const MeshLib::CFEMesh* mesh, std::vector<double> &node_area_vec)
+{
+	double total_area (0);
+
+	// for each node, a vector containing all the element idget every element
+	const size_t nNodes ( mesh->nod_vector.size() );
+	for (size_t n=0; n<nNodes; n++)
+	{
+		double node_area (0);
+
+		std::vector<size_t> connected_elements (mesh->nod_vector[n]->getConnectedElementIDs());
+
+		for (size_t i=0; i<connected_elements.size();i++)
+		{
+			MeshLib::CElem *Element (mesh->ele_vector[connected_elements[i]]);
+
+			// get nodes of this element
+			std::vector<MeshLib::CNode*> ElementNodes;
+			Element->GetNodes(ElementNodes);
+
+			// get area of this Element
+			// first, get coordinates for each node
+
+			GEOLIB::Point A (ElementNodes[0]->getData());
+			GEOLIB::Point B (ElementNodes[1]->getData());
+			GEOLIB::Point C (ElementNodes[2]->getData());
+
+			// distances of AB, BC, and AC
+			const double a = sqrt((A[0]-B[0])*(A[0]-B[0]) + (A[1]-B[1])*(A[1]-B[1]) + (A[2]-B[2])*(A[2]-B[2]));
+			const double b = sqrt((C[0]-B[0])*(C[0]-B[0]) + (C[1]-B[1])*(C[1]-B[1]) + (C[2]-B[2])*(C[2]-B[2]));
+			const double c2= (A[0]-C[0])*(A[0]-C[0]) + (A[1]-C[1])*(A[1]-C[1]) + (A[2]-C[2])*(A[2]-C[2]);
+
+			// angle AC-BC
+			const double cos_gamma = (c2-a*a-b*b)/(-2*a*b);
+			
+			// Area of tri-element
+			const double Area = 0.5*a*b*sin(acos(cos_gamma));
+
+			node_area += Area/3.0; // the third part of the area of each connected element adds up to the nodal area of n
+			total_area += Area/3.0;
+		}
+
+		node_area_vec.push_back(node_area);
+	}
+
+	std::cout<< "Total surface Area: " << total_area << std::endl;
+}
+
+
 MeshLib::CFEMesh* MshEditor::removeMeshNodes(MeshLib::CFEMesh* mesh,
                                              const std::vector<size_t> &nodes)
 {

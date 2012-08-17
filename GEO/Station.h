@@ -142,6 +142,9 @@ public:
 	/// Allows to set a specific value for this station (e.g. for classification)
 	void setStationValue(double station_value) { this->_station_value = station_value; };
 
+	/// Allows to add a SensorData to the observation site
+	void addSensorData(SensorData* sensor_data) { this->_sensor_data = sensor_data; };
+
 	/// Allows to add sensor data from a CSV file to the observation site
 	void addSensorDataFromCSV(const std::string &file_name) { this->_sensor_data = new SensorData(file_name); };
 

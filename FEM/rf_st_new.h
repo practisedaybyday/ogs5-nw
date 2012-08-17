@@ -24,46 +24,17 @@ namespace process                                 //WW
 class CRFProcessDeformation;
 };
 
+namespace MathLib
+{
+template<class T1, class T2> class InverseDistanceInterpolation;
+}
+
 namespace MeshLib
 {
 class CFEMesh;
 class MeshNodesAlongPolyline;
 }
 
-//##################################################################################################################
-//NB : weather data
-class CClimateData
-{
-public:
-	CClimateData ()
-	{
-
-	}
-	~CClimateData()
-	{
-
-	}
-
-	double pos_x;
-	double pos_y;
-	std::vector< std::string> data_types;
-	std::vector< std::vector<double> > data;
-	// this vector stores different data types (precipitation, temperature, groundwater_level,...) as time series
-	// inner vector: data types
-	// outer vector: time levels
-};
-//NB : distances
-
-class DistanceToWeatherStation
-{
-public:
-	int node_id;
-	std::vector<double> d;
-	DistanceToWeatherStation()
-	{
-
-	}
-};
 
 class SourceTerm;
 
@@ -134,10 +105,12 @@ public:
 	//23.02.2009. WW
 	void DirectAssign(const long ShiftInNodeVector);
 
+	// KR / NB
+	
 	// including climate data into source terms
-	std::vector<DistanceToWeatherStation> Distances; // NB
-	std::vector<double> Sum_Distances; // NB
-	std::vector<CClimateData> WeatherStation; //NB
+	const MathLib::InverseDistanceInterpolation<GEOLIB::PointWithID*, GEOLIB::Station*> *getClimateStationDistanceInterpolation() const { return this->_distances; };
+	const std::vector<GEOLIB::Station*>& getClimateStations() const { return this->_weather_stations; }; //NB
+
 
 	//03.2010. WW
 	std::string DirectAssign_Precipitation(double current_time);
@@ -254,6 +227,10 @@ private:                                          // TF, KR
 
 	std::string geo_name;
 	double _coup_leakance;
+
+	// including climate data into source terms
+	MathLib::InverseDistanceInterpolation<GEOLIB::PointWithID*, GEOLIB::Station*> *_distances; // NB
+	std::vector<GEOLIB::Station*> _weather_stations; //NB
 };
 
 class CSourceTermGroup
