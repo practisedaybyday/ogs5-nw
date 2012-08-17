@@ -330,12 +330,12 @@ ios::pos_type COutput::Read(std::ifstream& in_str,
 			continue;
 		}
 
-		// Coordinates of each node as well as connection list is stored only for the first time step; BG: 05/2011 
+		// Coordinates of each node as well as connection list is stored only for the first time step; BG: 05/2011
         if (line_string.find("$VARIABLESHARING") != string::npos)
         {
 	       this->VARIABLESHARING = true;
 		   continue;
-        }  
+        }
 
 		// subkeyword found
 		if (line_string.find("$AMPLIFIER") != string::npos)
@@ -2390,13 +2390,13 @@ void COutput::CalcELEFluxes()
 		if (pcs_type != FiniteElement::MASS_TRANSPORT)
 		{
 			double f_n_sum = 0.0;
-			double *PhaseFlux;
+			double *PhaseFlux(new double [2]);
 			std::string Header[2];
 			int dimension = 2;
 			Header[0] = "q_Phase1";
 			Header[1] = "q_Phase2";
 
-			PhaseFlux = pcs->CalcELEFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()));
+			pcs->CalcELEFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()), PhaseFlux);
 			if ((pcs_type == FiniteElement::GROUNDWATER_FLOW) || (pcs_type == FiniteElement::FLUID_FLOW))
 			{
 				ELEWritePLY_TEC();
@@ -2404,16 +2404,17 @@ void COutput::CalcELEFluxes()
 				TIMValue_TEC(f_n_sum);
 			}
 			if (pcs_type == FiniteElement::MULTI_PHASE_FLOW)
-			{		
+			{
 				Test[0] = PhaseFlux[0];
 				Test[1] = PhaseFlux[1];
 				TIMValues_TEC(Test, Header, dimension);
 			}
+			delete [] PhaseFlux;
 		}
 		// BG, Output for Massflux added
 		else
 		{
-			double *MassFlux;
+			double *MassFlux (new double[5]);
 			std::string Header[5];
 			int dimension = 5;
 			Header[0] = "AdvectiveMassFlux";
@@ -2422,13 +2423,14 @@ void COutput::CalcELEFluxes()
 			Header[3] = "TotalMassFlux";
 			Header[4] = "TotalMass_sum";
 
-			MassFlux = pcs->CalcELEMassFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()), geo_name);
+			pcs->CalcELEMassFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()), geo_name, MassFlux);
 			Test[0] = MassFlux[0];
 			Test[1] = MassFlux[1];
 			Test[2] = MassFlux[2];
 			Test[3] = MassFlux[3];
 			Test[4] = MassFlux[4];
 			TIMValues_TEC(Test, Header, dimension);
+			delete [] MassFlux;
 		}
 
 		//double f_n_sum = 0.0;
@@ -2651,7 +2653,7 @@ void COutput::TIMValue_TEC(double tim_value)
 #endif
 	//--------------------------------------------------------------------
 	// Write Header I: variables
-    if(aktueller_zeitschritt==0)		//BG:04/2011 bevor it was timestep 1	
+    if(aktueller_zeitschritt==0)		//BG:04/2011 bevor it was timestep 1
 	{
 		tec_file << "VARIABLES = \"Time\",\"Value\"";
 		tec_file << endl;
@@ -2675,12 +2677,12 @@ void COutput::TIMValue_TEC(double tim_value)
    Modification:
  -------------------------------------------------------------------------*/
 void COutput::TIMValues_TEC(double tim_value[5], std::string *header, int dimension)
-{ 
+{
 	double j[10];
-	
+
     for (int i = 0; i < dimension; i++)
 		j[i] = tim_value[i];
-	
+
    //----------------------------------------------------------------------
    // File handling
    //......................................................................

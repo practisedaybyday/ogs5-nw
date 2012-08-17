@@ -30,7 +30,7 @@ float getElevation(size_t x, size_t y)
 	return img_data[2*(y_index*width+x_index)];
 }
 
-int mapGeometry(const std::string &geo_name, float* img_data)
+int mapGeometry(const std::string &geo_name)
 {
 	std::cout << "Mapping " << geo_name << std::endl;
 	ProjectData project;
@@ -68,7 +68,7 @@ int mapGeometry(const std::string &geo_name, float* img_data)
 	return -1;
 }
 
-int mapStations(const std::string &geo_name, float* img_data)
+int mapStations(const std::string &geo_name)
 {
 	std::cout << "Mapping " << geo_name << std::endl;
 	ProjectData project;
@@ -108,7 +108,7 @@ int mapStations(const std::string &geo_name, float* img_data)
 				}
 			}
 		}
-	
+
 		std::string new_geo_name = geo_name.substr(0, geo_name.length()-4) + "_elevation.stn";
 		xml.setNameForExport(names[0]);
 		xml.writeToFile(new_geo_name);
@@ -134,15 +134,15 @@ int main (int argc, char* argv[])
 		std::cout << "Usage: " << argv[0] << " <geo-file.gml> <DEM-file.asc>" << std::endl;
 		return -1;
 	}
-	
+
 	bool isList(false);
 	std::string geo_name = argv[1];
 	std::string dem_name = argv[2];
 	std::string gml_name("");
 
-	if ((geo_name.substr(geo_name.length()-4, 4).compare(".gml") != 0) && 
+	if ((geo_name.substr(geo_name.length()-4, 4).compare(".gml") != 0) &&
 		(geo_name.substr(geo_name.length()-4, 4).compare(".stn") != 0) &&
-		(geo_name.substr(geo_name.length()-4, 4).compare(".lst") != 0)) 
+		(geo_name.substr(geo_name.length()-4, 4).compare(".lst") != 0))
 	{
 		std::cout << "Error: Parameter 1 should be a gml- or stn-file" << std::endl;
 		std::cout << "Usage: " << argv[0] << " <geo-file.gml> <DEM-file.asc>" << std::endl;
@@ -173,9 +173,9 @@ int main (int argc, char* argv[])
 				in >> gml_name;
 
 				if (gml_name.substr(gml_name.length()-4, 4).compare(".gml") == 0)
-					mapGeometry(gml_name, img_data);
+					mapGeometry(gml_name);
 				else if (gml_name.substr(gml_name.length()-4, 4).compare(".stn") == 0)
-					mapStations(gml_name, img_data);
+					mapStations(gml_name);
 				else
 					std::cout << "File extension for " << gml_name << " unknown." << std::endl;
 			}
@@ -185,9 +185,9 @@ int main (int argc, char* argv[])
 		else
 		{
 			if (geo_name.substr(geo_name.length()-4, 4).compare(".gml") == 0)
-				mapGeometry(geo_name, img_data);
+				mapGeometry(geo_name);
 			else if (geo_name.substr(geo_name.length()-4, 4).compare(".stn") == 0)
-				mapStations(geo_name, img_data);
+				mapStations(geo_name);
 		}
 	}
 	else
