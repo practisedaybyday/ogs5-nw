@@ -38,7 +38,7 @@ public:
 
 	const T1 getDomainPoint(size_t pnt_idx) const { return _domain_points[pnt_idx]; };
 
-	const T2 getSupportingPoint(size_t support_idx) const { return _supporting_points[pnt_idx]; };
+	const T2 getSupportingPoint(size_t support_idx) const { return _supporting_points[support_idx]; };
 
 	size_t getNDomainPoints() const { return _domain_points.size(); };
 
