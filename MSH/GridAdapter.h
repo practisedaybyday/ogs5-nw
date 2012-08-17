@@ -65,6 +65,9 @@ public:
 	/// Returns the grid as a CFEMesh for use in OGS-FEM
 	const MeshLib::CFEMesh* getCFEMesh() const;
 
+	/// Returns the grid as a CFEMesh for use in OGS-FEM
+	const MeshLib::CFEMesh* getCFEMesh();
+
 	/// Returns the name of the mesh.
 	std::string getName() const { return _name; }
 

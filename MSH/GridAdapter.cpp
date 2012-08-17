@@ -33,7 +33,7 @@ GridAdapter::GridAdapter(const GridAdapter* grid) :
 	if (grid)
 	{
 		this->_name = grid->getName();
-	
+
 		const std::vector<GEOLIB::Point*> *nodes = grid->getNodes();
 		const size_t nNodes(nodes->size());
 		for (size_t i=0; i<nNodes; i++)
@@ -54,7 +54,7 @@ GridAdapter::GridAdapter(const GridAdapter* grid) :
 			elem->type = (*elements)[i]->type;
 			this->addElement(elem);
 		}
-	}	
+	}
 }
 
 GridAdapter::~GridAdapter()
@@ -110,6 +110,13 @@ const MeshLib::CFEMesh* GridAdapter::getCFEMesh() const
 	if (_mesh)
 		return _mesh;
 	return toCFEMesh();
+}
+
+const MeshLib::CFEMesh* GridAdapter::getCFEMesh()
+{
+	if (_mesh == NULL)
+		_mesh = toCFEMesh();
+	return _mesh;
 }
 
 const MeshLib::CFEMesh* GridAdapter::toCFEMesh() const
