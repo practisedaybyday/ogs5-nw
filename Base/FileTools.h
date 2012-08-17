@@ -13,7 +13,7 @@
 /**
  * Returns true if given file exists. From http://www.techbytes.ca/techbyte103.html
  */
-static bool IsFileExisting(std::string strFilename)
+static bool IsFileExisting(std::string const& strFilename)
 {
 	struct stat stFileInfo;
 	bool blnReturn;
