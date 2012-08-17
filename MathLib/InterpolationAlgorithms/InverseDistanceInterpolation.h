@@ -38,7 +38,7 @@ public:
 
 	const T1 getDomainPoint(size_t pnt_idx) const { return _domain_points[pnt_idx]; };
 
-	const T2 getSupportingPoint(size_t support_idx) const { return _supporting_points[pnt_idx]; };
+	const T2 getSupportingPoint(size_t support_idx) const { return _supporting_points[support_idx]; };
 
 	size_t getNDomainPoints() const { return _domain_points.size(); };
 
@@ -56,14 +56,14 @@ private:
 	const std::vector<T2> _supporting_points;
 	std::vector<double> _sum_of_distances;
 	Matrix<double> _distances;
-	
+
 };
 
 template<class T1, class T2> InverseDistanceInterpolation<T1, T2>::InverseDistanceInterpolation(const std::vector<T1> domain_points,
 	                                                       const std::vector<T2> supporting_points)
 	: _interpolation_exponent(2.0),
-	  _domain_points (domain_points), 
-	  _supporting_points (supporting_points), 
+	  _domain_points (domain_points),
+	  _supporting_points (supporting_points),
 	  _sum_of_distances ( std::vector<double>(_domain_points.size(), 0.0) ),
 	  _distances ( Matrix<double>(_domain_points.size(), _supporting_points.size()) )
 {
@@ -93,7 +93,7 @@ template<class T1, class T2> void InverseDistanceInterpolation<T1, T2>::calculat
 	for (size_t n=0; n<nPoints;n++)
 	{
 		const double *coords (_domain_points[n]->getData());
-		
+
 		double sum (0.0);
 		std::vector<double> dummy;
 		//DistanceToWeatherStation foo;

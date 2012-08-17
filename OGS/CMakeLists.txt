@@ -41,12 +41,12 @@ ADD_EXECUTABLE( ogs
 )
 
 TARGET_LINK_LIBRARIES( ogs
-	MathLib
+	FEM
 	MSH
 	GEO
+	MathLib
 	FileIO
 	Base
-	FEM
 	OGSProject
 	${CMAKE_THREAD_LIBS_INIT}
 )
