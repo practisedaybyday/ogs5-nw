@@ -2119,14 +2119,14 @@ double vapour_saturation_density_n2(double T)
 }
 
 /*************************************************************
-   Carbon dioxide vapour saturation density at a temperature, Span,1996.
+   Carbon dioxide liquid saturation density at a temperature, Span,1996.
 
    Input: T in K
    Output: density in kg/m3
 
    Programming: NB
 *************************************************************/
-double vapour_saturation_density_co2(double T)
+double liquid_saturation_density_co2(double T)
 {
 	const double Tc = 304.128;
 	const double rhoc = 467.6;
@@ -2150,14 +2150,14 @@ double vapour_saturation_density_co2(double T)
 }
 
 /*************************************************************
-   Carbon dioxide liqiud saturation density at a temperature, Span,1996.
+   Carbon dioxide vapour saturation density at a temperature, Span,1996.
 
    Input: T in K
    Output: density in kg/m
 
    Programming: NB
 *************************************************************/
-double liquid_saturation_density_co2(double T)
+double vapour_saturation_density_co2(double T)
 {
 	const double Tc = 304.128;
 	const double rhoc = 467.6;
@@ -2176,7 +2176,7 @@ double liquid_saturation_density_co2(double T)
 	n[4] = -29.742252;
 	t[4] = (14. / 3.);
 
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 5; i++)
 		h += n[i] * pow((1 - T / Tc),t[i]);
 
 	return exp(h) * rhoc;
@@ -3175,7 +3175,7 @@ void CFluidProperties::therm_prop (string caption)
 		K[13][35] = 1;
 		break;
 	}
-	
+
 	case 'H':                             // Hydrogen; BG, 03/2012
 	{
 		fluid_id = 4;
