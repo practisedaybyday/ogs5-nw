@@ -1336,11 +1336,6 @@ double COutput::NODWritePLYDataTEC(int number)
 		//project_title;
 		std::string project_title_string = "Profiles along polylines";
 
-		if (dat_type_name.compare("GNUPLOT") != 0) // 6/2012 JOD
-			tec_file << " TITLE = \"" << project_title_string << "\"" << endl;
-		else
-			tec_file << "# ";
-
 		tec_file << " TITLE = \"" << project_title_string
 		         << "\"" << endl;
 		tec_file << " VARIABLES = \"DIST\" ";
