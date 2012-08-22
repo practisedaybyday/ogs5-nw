@@ -32,6 +32,9 @@
 #include "rf_tim_new.h"
 #include "vtk.h"
 
+// MathLib
+#include "MathTools.h"
+
 extern size_t max_dim;                            //OK411 todo
 
 #ifdef CHEMAPP
@@ -3488,54 +3491,77 @@ void COutput::CalculateThroughflow(CFEMesh* msh, vector<long>&nodes_on_sfc,
 			fem->FaceIntegration(nodesFVal);
 
 			// --------- construct normal vector ----------------------------------
+			MeshLib::CNode const& node0(*(m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]));
+			MeshLib::CNode const& node1(*(m_msh->nod_vector[elem->GetNode(nodesFace[1])->GetIndex()]));
+			MeshLib::CNode const& node2(*(m_msh->nod_vector[elem->GetNode(nodesFace[2])->GetIndex()]));
 
-			k = 2;
-			do {
-				v1[0]
-								= m_msh->nod_vector[elem->GetNode(nodesFace[1])->GetIndex()]->getData()[0]
-												- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[0];
-				v1[1]
-								= m_msh->nod_vector[elem->GetNode(nodesFace[1])->GetIndex()]->getData()[1]
-												- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[1];
-				v1[2]
-								= m_msh->nod_vector[elem->GetNode(nodesFace[1])->GetIndex()]->getData()[2]
-												- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[2];
-				v2[0]
-								= m_msh->nod_vector[elem->GetNode(nodesFace[k])->GetIndex()]->getData()[0]
-												- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[0];
-				v2[1]
-								= m_msh->nod_vector[elem->GetNode(nodesFace[k])->GetIndex()]->getData()[1]
-												- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[1];
-				v2[2]
-								= m_msh->nod_vector[elem->GetNode(nodesFace[k])->GetIndex()]->getData()[2]
-												- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[2];
-				k++;
-			} while (fabs(v1[0] - v2[0]) < 1.e-10 && fabs(v1[1] - v2[1]) < 1.e-10 && fabs(v1[2]
-							- v2[2]) < 1.e-10); // 3 points on surface are not on 1 line
+			v1[0] = node1[0] - node0[0];
+			v1[1] = node1[1] - node0[1];
+			v1[2] = node1[2] - node0[2];
+			v2[0] = node2[0] - node0[0];
+			v2[1] = node2[1] - node0[1];
+			v2[2] = node2[2] - node0[2];
 
+			MathLib::crossProd(v1,v2,normal_vector);
+//			CrossProduction(v1, v2, normal_vector);
 
-			CrossProduction(v1, v2, normal_vector);
-
-			/* if(fabs(normal_vector[1])> 1.e-10)
-			 {
-			 if(normal_vector[1] < 0)
-			 {
-			 normal_vector[0]=-normal_vector[0];
-			 normal_vector[1]=-normal_vector[1];
-			 normal_vector[2]=-normal_vector[2];
-			 }
-			 }
-			 else {
-			 if(normal_vector[0] < 0)
-			 {
-			 normal_vector[0]=-normal_vector[0];
-			 normal_vector[1]=-normal_vector[1];
-			 normal_vector[2]=-normal_vector[2];
-			 }
-			 }
-			 */
+			if (fabs(normal_vector[0]) > 1.e-20) // standardize direction for ± sign in result
+			{
+				if (normal_vector[0] < 0) { // point at x-direction
+					normal_vector[0] = -normal_vector[0];
+					normal_vector[1] = -normal_vector[1];
+				}
+			} else {
+				if (normal_vector[1] < 0) { // point at y-direction
+					normal_vector[0] = -normal_vector[0];
+					normal_vector[1] = -normal_vector[1];
+				}
+			}
 
 			NormalizeVector(normal_vector, 3);
+
+
+//			k = 2;
+//			do {
+//				v1[0] = m_msh->nod_vector[elem->GetNode(nodesFace[1])->GetIndex()]->getData()[0]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[0];
+//				v1[1] = m_msh->nod_vector[elem->GetNode(nodesFace[1])->GetIndex()]->getData()[1]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[1];
+//				v1[2] = m_msh->nod_vector[elem->GetNode(nodesFace[1])->GetIndex()]->getData()[2]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[2];
+//				v2[0] = m_msh->nod_vector[elem->GetNode(nodesFace[k])->GetIndex()]->getData()[0]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[0];
+//				v2[1] = m_msh->nod_vector[elem->GetNode(nodesFace[k])->GetIndex()]->getData()[1]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[1];
+//				v2[2] = m_msh->nod_vector[elem->GetNode(nodesFace[k])->GetIndex()]->getData()[2]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[2];
+//				k++;
+//			} while (fabs(v1[0] - v2[0]) < 1.e-10 && fabs(v1[1] - v2[1]) < 1.e-10 && fabs(v1[2]
+//							- v2[2]) < 1.e-10); // 3 points on surface are not on 1 line
+//
+//
+//			CrossProduction(v1, v2, normal_vector);
+//
+//			/* if(fabs(normal_vector[1])> 1.e-10)
+//			 {
+//			 if(normal_vector[1] < 0)
+//			 {
+//			 normal_vector[0]=-normal_vector[0];
+//			 normal_vector[1]=-normal_vector[1];
+//			 normal_vector[2]=-normal_vector[2];
+//			 }
+//			 }
+//			 else {
+//			 if(normal_vector[0] < 0)
+//			 {
+//			 normal_vector[0]=-normal_vector[0];
+//			 normal_vector[1]=-normal_vector[1];
+//			 normal_vector[2]=-normal_vector[2];
+//			 }
+//			 }
+//			 */
+//
+//			NormalizeVector(normal_vector, 3);
 
 			// ----------- calculate volume flux -------------------------------
 
