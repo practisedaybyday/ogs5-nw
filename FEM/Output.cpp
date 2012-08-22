@@ -2413,13 +2413,13 @@ void COutput::CalcELEFluxes()
 		if (pcs_type != FiniteElement::MASS_TRANSPORT)
 		{
 			double f_n_sum = 0.0;
-			double *PhaseFlux;
+			double *PhaseFlux(new double [2]);
 			std::string Header[2];
 			int dimension = 2;
 			Header[0] = "q_Phase1";
 			Header[1] = "q_Phase2";
 
-			PhaseFlux = pcs->CalcELEFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()));
+			pcs->CalcELEFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()), PhaseFlux);
 			if ((pcs_type == FiniteElement::GROUNDWATER_FLOW) || (pcs_type == FiniteElement::FLUID_FLOW))
 			{
 				ELEWritePLY_TEC();
@@ -2432,11 +2432,12 @@ void COutput::CalcELEFluxes()
 				Test[1] = PhaseFlux[1];
 				TIMValues_TEC(Test, Header, dimension);
 			}
+			delete [] PhaseFlux;
 		}
 		// BG, Output for Massflux added
 		else
 		{
-			double *MassFlux;
+			double *MassFlux (new double[5]);
 			std::string Header[5];
 			int dimension = 5;
 			Header[0] = "AdvectiveMassFlux";
@@ -2445,13 +2446,14 @@ void COutput::CalcELEFluxes()
 			Header[3] = "TotalMassFlux";
 			Header[4] = "TotalMass_sum";
 
-			MassFlux = pcs->CalcELEMassFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()), geo_name);
+			pcs->CalcELEMassFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()), geo_name, MassFlux);
 			Test[0] = MassFlux[0];
 			Test[1] = MassFlux[1];
 			Test[2] = MassFlux[2];
 			Test[3] = MassFlux[3];
 			Test[4] = MassFlux[4];
 			TIMValues_TEC(Test, Header, dimension);
+			delete [] MassFlux;
 		}
 
 		//double f_n_sum = 0.0;

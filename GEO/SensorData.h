@@ -10,20 +10,32 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include <map>
 
-/// Possible types of input data for time series sensor data.
-/// Implementation as Enum for specific implementations later on.
+/**
+ * Possible types of input data for time series sensor data.
+ * Implementation as Enum for specific implementations later on.
+ *
+ * \sa SensorData
+ */
 struct SensorDataType
 {
 	enum type {
 		OTHER = 0,
 		PRECIPITATION,
+		RECHARGE,
 		EVAPORATION,
 		TEMPERATURE
 		// please expand if necessary
 	};
 };
 
+/**
+ * Possible types of time specification.
+ * In addition to the usual units we added 'DATE' for specification of dates
+ * in the format 'dd.mm.yyyy' as well as 'DATETIME' in the format
+ * 'dd.mm.yyyy.hh.mm.ss'.
+ */
 struct TimeStepType
 {
 	enum type {
@@ -88,12 +100,15 @@ public:
 
 	/// Allows to set a unit for the time steps
 	void setTimeUnit(TimeStepType::type t) { _time_unit = t; };
-	
+
 	/// Returns the unit the time steps
 	TimeStepType::type getTimeUnit() const { return _time_unit; };
 
 	/// Returns the data unit of the given time series
 	const std::string getDataUnit(SensorDataType::type t) const;
+
+	/// Returns the (interpolated) data value at the given time for the specified data type
+	float getData(SensorDataType::type t, double time, bool lin_int = false) const;
 
 	/// Converts Sensor Data Types to Strings
 	static std::string convertSensorDataType2String(SensorDataType::type t);
@@ -113,7 +128,7 @@ private:
 	std::vector<size_t> _time_steps;
 	std::vector<SensorDataType::type> _vec_names;
 	std::vector< std::vector<float>* > _data_vecs;
-
+	std::map<SensorDataType::type, size_t> _data_type_index;
 };
 
 #endif //SENSORDATA_H

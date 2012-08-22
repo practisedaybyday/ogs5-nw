@@ -895,8 +895,8 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
 	double buffer;
 	//WW int no_time_steps;
 	//WW  int no_processes =(int)pcs_vector.size();
-	CFluidProperties* m_mfp = NULL;
-	m_mfp = MFPGet("LIQUID");             //WW
+//	CFluidProperties* m_mfp = NULL; // 2012-08 TF not used
+//	m_mfp = MFPGet("LIQUID");             //WW
 //	double density_fluid = m_mfp->Density(); //WW // TF: set, but never used
 
 	for (size_t n_p = 0; n_p < pcs_vector.size(); n_p++)

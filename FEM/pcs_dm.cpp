@@ -19,7 +19,7 @@
 #include "tools.h"
 //
 #ifndef NEW_EQS                                   //WW. 06.11.2008
-#include "matrix.h"
+#include "matrix_routines.h"
 #endif
 #include "fem_ele_vec.h"
 #include "pcs_dm.h"

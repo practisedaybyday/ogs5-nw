@@ -37,6 +37,28 @@ size_t searchElement (const T& key, size_t beg, size_t end, const std::vector<T>
 	return searchElement (key, m + 1, end, array);
 }
 
+template <class T>
+size_t getLargestIndexSmallerThanElement (const T& key, size_t beg, size_t end, const std::vector<T>& array)
+{
+	if (beg >= end)
+		return std::numeric_limits<size_t>::max();
+
+	size_t m ((end + beg) / 2);
+
+	if (m+1 == end) {
+		if (key==array[m])
+			return m;
+		else
+			std::numeric_limits<size_t>::max();
+	}
+
+	if (key >= array[m] && key < array[m+1])
+		return m;
+	if (key < array[m])
+		return getLargestIndexSmallerThanElement (key, beg, m, array);
+	return getLargestIndexSmallerThanElement (key, m + 1, end, array);
+}
+
 size_t searchElement (double const& val, size_t beg, size_t end, const std::vector<double>& array);
 size_t searchElement (double const& val, size_t beg, size_t end, const std::vector<double*>& array);
 

@@ -24,7 +24,7 @@
 
 /* Die Schnittstellen der Gleichungsloeser und der Speichertechnik werden
    sozusagen durchgeschleift: */
-/* #include "matrix.h" */
+/* #include "matrix_routines.h" */
 /* Speichertechnik fuer Matrix des Gesamtgleichungssystems */
 #ifndef NEW_EQS                                   //WW. 11.2008
 #include "solver.h"

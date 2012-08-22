@@ -14,7 +14,7 @@
 #include "fem_ele.h"
 #include "fem_ele_std.h"
 #ifndef NEW_EQS                                   //WW. 06.11.2008
-#include "matrix.h"
+#include "matrix_routines.h"
 #endif
 #include "mathlib.h"
 

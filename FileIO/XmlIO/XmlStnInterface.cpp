@@ -61,9 +61,9 @@ int XmlStnInterface::readFile(const QString &fileName)
 			if (station_type.compare("name") == 0)
 				stnName = station_node.toElement().text().toStdString();
 			else if (station_type.compare("stations") == 0)
-				readStations(station_node, stations, fileName.toStdString());
+				this->readStations(station_node, stations, fileName.toStdString());
 			else if (station_type.compare("boreholes") == 0)
-				readStations(station_node, stations, fileName.toStdString());
+				this->readStations(station_node, stations, fileName.toStdString());
 		}
 
 		if (!stations->empty())
@@ -141,9 +141,9 @@ void XmlStnInterface::readStations( const QDomNode &stationsRoot,
 				        boreholeDate);
 				s->setStationValue(stationValue);
 				/* add stratigraphy to the borehole */
-				for(int i = 0; i < stationFeatures.count(); i++)
-					if (stationFeatures.at(i).nodeName().compare("strat") == 0)
-						this->readStratigraphy(stationFeatures.at(i), s);
+				for(int j = 0; j < stationFeatures.count(); j++)
+					if (stationFeatures.at(j).nodeName().compare("strat") == 0)
+						this->readStratigraphy(stationFeatures.at(j), s);
 
 				stations->push_back(s);
 			}
@@ -175,7 +175,7 @@ void XmlStnInterface::readStratigraphy( const QDomNode &stratRoot, GEOLIB::Stati
 				/* add other horizon features here */
 
 			double depth (strtod((horizon.attribute("z")).toStdString().c_str(), 0));
-			if (fabs(depth - depth_check) < std::numeric_limits<double>::min()) // skip soil-layer if its thickness is zero
+			if (fabs(depth - depth_check) > std::numeric_limits<double>::epsilon()) // skip soil-layer if its thickness is zero
 			{
 				borehole->addSoilLayer(strtod((horizon.attribute("x")).toStdString().c_str(), 0),
 									   strtod((horizon.attribute("y")).toStdString().c_str(), 0),

@@ -612,6 +612,9 @@ void MainWindow::loadFile(const QString &fileName)
 	// OpenGeoSys mesh files
 	else if (fi.suffix().toLower() == "msh")
 	{
+		QTime myTimer0;
+		myTimer0.start();
+
 		FileIO::OGSMeshIO meshIO;
 		std::string name = fileName.toStdString();
 #ifndef WIN32
@@ -632,6 +635,7 @@ void MainWindow::loadFile(const QString &fileName)
 #endif
 		if (msh)
 		{
+			std::cout << "Total mesh loading time: " << myTimer0.elapsed() << " ms" << std::endl;
 			std::string mesh_name = fi.baseName().toStdString();
 			_meshModels->addMesh(msh, mesh_name);
 		}
@@ -1310,10 +1314,7 @@ void MainWindow::callGMSH(std::vector<std::string> & selectedGeometries,
 		}
 	}
 	else
-	{
-		OGSError::box("No geometry information selected.", "Error");
 		std::cout << "No geometry information selected..." << std::endl;
-	}
 }
 
 void MainWindow::showConditionWriterDialog()
@@ -1330,9 +1331,10 @@ void MainWindow::showDiagramPrefsDialog(QModelIndex &index)
 	GEOLIB::Station* stn = _geoModels->getStationModel()->stationFromIndex(
 	        index, listName);
 
-	if (stn->type() == GEOLIB::Station::STATION)
+	if ((stn->type() == GEOLIB::Station::STATION) && stn->getSensorData())
 	{
-		DiagramPrefsDialog* prefs = new DiagramPrefsDialog(stn, listName, _db);
+		DiagramPrefsDialog* prefs ( new DiagramPrefsDialog(stn) );
+		//DiagramPrefsDialog* prefs = new DiagramPrefsDialog(stn, listName, _db);
 		prefs->setAttribute(Qt::WA_DeleteOnClose);
 		prefs->show();
 	}

@@ -22,13 +22,14 @@ namespace GEOLIB
 /**
  * \ingroup GEOLIB
  *
- * \brief An observation station as a geometric object (i.e. basically a Point with some additional information.
+ * \brief A Station (observation site) is basically a Point with some additional information.
  *
- * An observation station as a geometric object. Such a station is basically a point object
- * with some additional information such as colour, a name, etc.
+ * Additional information is largely optional (except for a name, but even this may be empty).
+ * It may include a name, a stratigraphy (only for the derived class StationBore),
+ * time series data from data loggers (as a SensorData-object), etc.
  *
  * Notes concerning the property-system used in this class:
- * Variables of Station and derived classes can be defined to be "properties" of this class.
+ * Variables of Station and derived classes can be defined to be "properties" of this class (this is entirely optional!).
  * Certain functions in the GUI allow you to modify aspects of the visualisation based on these
  * properties (e.g. filtering operations such as "display only boreholes drilled after 1990 with a
  * depth between 400-800m").
@@ -38,6 +39,8 @@ namespace GEOLIB
  * and write-functions need to be actually implemented as static functions to avoid casting problems with the
  * function pointers used to dynamically connect the GUI functionality to the variables defined within the
  * station-classes. Please refer to the documentation of the properties defined below for details.
+ *
+ * \sa StationBorehole, SensorData
  */
 class Station : public Point
 {
@@ -138,6 +141,9 @@ public:
 
 	/// Allows to set a specific value for this station (e.g. for classification)
 	void setStationValue(double station_value) { this->_station_value = station_value; };
+
+	/// Allows to add a SensorData to the observation site
+	void addSensorData(SensorData* sensor_data) { this->_sensor_data = sensor_data; };
 
 	/// Allows to add sensor data from a CSV file to the observation site
 	void addSensorDataFromCSV(const std::string &file_name) { this->_sensor_data = new SensorData(file_name); };
@@ -263,17 +269,13 @@ protected:
 		                                           (StationBorehole*)stnObject;
 		                                   return stn->_depth; }
 	/// Returns the date this borehole has been drilled. Please see the documentation for Station::getX for details concerning the syntax.
-	static double getDate(void* stnObject)  { StationBorehole* stn =
-		                                          (StationBorehole*)stnObject;
-		                                  return stn->_date; }
+	static double getDate(void* stnObject)  { StationBorehole* stn = (StationBorehole*)stnObject; return stn->_date; }
 	/// Sets the depth of this borehole. Please see the documentation for Station::getX for details concerning the syntax.
 	static void setDepth(void* stnObject, double val) { StationBorehole* stn =
 		                                                    (StationBorehole*)stnObject;
 		                                            stn->_depth = val; }
 	/// Sets the date when this borehole has been drilled. Please see the documentation for Station::getX for details concerning the syntax.
-	static void setDate(void* stnObject, double val) { StationBorehole* stn =
-		                                                   (StationBorehole*)stnObject;
-		                                           stn->_date = val; }
+	static void setDate(void* stnObject, double val) { StationBorehole* stn = (StationBorehole*)stnObject; stn->_date = static_cast<int>(val); }
 
 private:
 	/// Adds a layer for the specified borehole profile based on the information given in the stringlist
@@ -290,7 +292,7 @@ private:
 	//std::vector<long> _soilType;
 	double _zCoord; // height at which the borehole officially begins (this might _not_ be the actual elevation)
 	double _depth; // depth of the borehole
-	double _date; // date when the borehole has been drilled
+	int _date; // date when the borehole has been drilled
 
 	/// Contains the names for all the soil layers
 	std::vector<std::string> _soilName;

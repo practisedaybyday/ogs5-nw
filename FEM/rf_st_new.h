@@ -24,11 +24,17 @@ namespace process                                 //WW
 class CRFProcessDeformation;
 };
 
+namespace MathLib
+{
+template<class T1, class T2> class InverseDistanceInterpolation;
+}
+
 namespace MeshLib
 {
 class CFEMesh;
 class MeshNodesAlongPolyline;
 }
+
 
 class SourceTerm;
 
@@ -98,6 +104,14 @@ public:
 
 	//23.02.2009. WW
 	void DirectAssign(const long ShiftInNodeVector);
+
+	// KR / NB
+	
+	// including climate data into source terms
+	const MathLib::InverseDistanceInterpolation<GEOLIB::PointWithID*, GEOLIB::Station*> *getClimateStationDistanceInterpolation() const { return this->_distances; };
+	const std::vector<GEOLIB::Station*>& getClimateStations() const { return this->_weather_stations; }; //NB
+
+
 	//03.2010. WW
 	std::string DirectAssign_Precipitation(double current_time);
 
@@ -213,6 +227,10 @@ private:                                          // TF, KR
 
 	std::string geo_name;
 	double _coup_leakance;
+
+	// including climate data into source terms
+	MathLib::InverseDistanceInterpolation<GEOLIB::PointWithID*, GEOLIB::Station*> *_distances; // NB
+	std::vector<GEOLIB::Station*> _weather_stations; //NB
 };
 
 class CSourceTermGroup

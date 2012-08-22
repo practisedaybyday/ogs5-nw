@@ -30,7 +30,7 @@ using namespace std;
 #include "files0.h"
 #include "makros.h"
 #include "mathlib.h"
-#include "matrix.h"
+#include "matrix_routines.h"
 #include "rf_pcs.h"                               //OK_MOD"
 #include "rf_tim_new.h"
 #include "solver.h"

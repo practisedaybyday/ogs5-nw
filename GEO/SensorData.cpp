@@ -6,6 +6,8 @@
 #include "SensorData.h"
 
 #include "StringTools.h"
+#include "DateTools.h"
+#include "binarySearch.h"
 #include <cstdlib>
 #include <fstream>
 
@@ -17,7 +19,7 @@ SensorData::SensorData(const std::string &file_name)
 }
 
 SensorData::SensorData(std::vector<size_t> time_steps)
-: _time_steps(time_steps), _start(time_steps[0]), _end(time_steps[time_steps.size()-1]), _step_size(0), _time_unit(TimeStepType::NONE)
+: _start(time_steps[0]), _end(time_steps[time_steps.size()-1]), _step_size(0), _time_unit(TimeStepType::NONE), _time_steps(time_steps)
 {
 	for (size_t i=1; i<time_steps.size(); i++)
 	{
@@ -55,12 +57,13 @@ void SensorData::addTimeSeries( SensorDataType::type data_name, std::vector<floa
 		_vec_names.push_back(data_name);
 		_data_vecs.push_back(data);
 		_data_unit_string.push_back(data_unit_string);
+		_data_type_index.insert( std::pair<SensorDataType::type, size_t>(data_name, _data_type_index.size()) );
 	}
 }
 
 const std::vector<float>* SensorData::getTimeSeries(SensorDataType::type time_series_name) const
 {
-	for (int i=0; i<_vec_names.size(); i++)
+	for (size_t i=0; i<_vec_names.size(); i++)
 	{
 		if (time_series_name == _vec_names[i])
 			return _data_vecs[i];
@@ -71,7 +74,7 @@ const std::vector<float>* SensorData::getTimeSeries(SensorDataType::type time_se
 
 const std::string SensorData::getDataUnit(SensorDataType::type time_series_name) const
 {
-	for (int i=0; i<_vec_names.size(); i++)
+	for (size_t i=0; i<_vec_names.size(); i++)
 	{
 		if (time_series_name == _vec_names[i])
 			return _data_unit_string[i];
@@ -102,14 +105,15 @@ int SensorData::readDataFromFile(const std::string &file_name)
 		return 0;
 	
 	size_t nDataArrays(nFields-1);
-
+	
 	//create vectors necessary to hold the data
 	for (size_t i=0; i<nDataArrays; i++)
 	{
-		this->_vec_names.push_back(SensorData::convertString2SensorDataType(*it++));
+		this->_vec_names.push_back(SensorData::convertString2SensorDataType(*++it));
 		this->_data_unit_string.push_back("");
 		std::vector<float> *data = new std::vector<float>;
 		this->_data_vecs.push_back(data);
+		this->_data_type_index.insert( std::pair<SensorDataType::type, size_t>(_vec_names.back(), _data_type_index.size()) );
 	}
 
 	while ( getline(in, line) )
@@ -119,7 +123,9 @@ int SensorData::readDataFromFile(const std::string &file_name)
 		if (nFields == fields.size())
 		{
 			it = fields.begin();
-			this->_time_steps.push_back(atoi((it++)->c_str()));
+			size_t pos(it->rfind("."));
+			size_t current_time_step = (pos == std::string::npos) ? atoi((it++)->c_str()) : strDate2int(*it++);
+			this->_time_steps.push_back(current_time_step);
 
 			for (size_t i=0; i<nDataArrays; i++)
 				this->_data_vecs[i]->push_back(static_cast<float>(strtod((it++)->c_str(), 0)));
@@ -136,10 +142,37 @@ int SensorData::readDataFromFile(const std::string &file_name)
 	return 1;
 }
 
+float SensorData::getData(SensorDataType::type t, double time, bool lin_int) const
+{
+	std::map<SensorDataType::type, size_t>::const_iterator it (this->_data_type_index.find(t));
+	if (it != _data_type_index.end())
+	{
+		const size_t data_index = it->second;
+		std::vector<float> &data (*_data_vecs[data_index]);
+		if (time <= this->_start) // check if current time smaller than first time value  in time series
+			return data[0];
+		else if (time >= this->_end)  // check if current time is larger than last time value in time series
+		{
+			return data.back();
+		}
+		else  // find value for given time and interpolate if necessary
+		{
+			size_t idx (getLargestIndexSmallerThanElement(static_cast<float>(time), 0, data.size(), data));
+
+			if (lin_int)
+				return static_cast<float>(data[idx] + (data[idx+1]-data[idx])/(_time_steps[idx+1]-this->_time_steps[idx]) * (time-this->_time_steps[idx]));
+			else 
+				return data[idx];
+		}
+	}
+	return -9999;
+}
+
 std::string SensorData::convertSensorDataType2String(SensorDataType::type t)
 {
 	if (SensorDataType::EVAPORATION == t) return "Evaporation";
 	else if (SensorDataType::PRECIPITATION == t) return "Precipitation";
+	else if (SensorDataType::RECHARGE == t) return "Recharge";
 	else if (SensorDataType::TEMPERATURE == t) return "Temperature";
 	// pls leave this as last choice
 	else return "Unknown";
@@ -147,9 +180,10 @@ std::string SensorData::convertSensorDataType2String(SensorDataType::type t)
 
 SensorDataType::type SensorData::convertString2SensorDataType(const std::string &s)
 {
-	if ((s.compare("Evaporation")==0) || (s.compare("EVAPORATION")==0)) return SensorDataType::PRECIPITATION;
+	if ((s.compare("Evaporation")==0) || (s.compare("EVAPORATION")==0)) return SensorDataType::EVAPORATION;
 	else if ((s.compare("Precipitation")==0) || (s.compare("PRECIPITATION")==0)) return SensorDataType::PRECIPITATION;
-	else if ((s.compare("Temperature")==0) || (s.compare("TEMPERATURE")==0)) return SensorDataType::PRECIPITATION;
+	else if ((s.compare("Recharge")==0) || (s.compare("RECHARGE")==0)) return SensorDataType::RECHARGE;
+	else if ((s.compare("Temperature")==0) || (s.compare("TEMPERATURE")==0)) return SensorDataType::TEMPERATURE;
 	else return SensorDataType::OTHER;
 }
 

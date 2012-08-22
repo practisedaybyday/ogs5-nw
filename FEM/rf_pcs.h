@@ -48,6 +48,17 @@ using Math_Group::Linear_EQS;
 
 //using Math_Group::SparseMatrixDOK;
 //
+
+/*
+class etr_data
+{
+public:
+    double x;
+	double y;
+	double val;
+};
+*/
+
 class CSourceTermGroup;
 class CSourceTerm;
 class CNodeValue;
@@ -689,7 +700,7 @@ public:
 	// NLS and CPL error and looping control
 	int num_diverged;
 	int num_notsatisfied;
-	int iter_nlin; 
+	int iter_nlin;
 	int iter_lin;
 	int iter_outer_cpl;							// JT2012
 	int iter_inner_cpl;							// JT2012
@@ -698,8 +709,8 @@ public:
 	double pcs_absolute_error[DOF_NUMBER_MAX];	// JT2012: for NLS, we store error for each DOF
 	double pcs_unknowns_norm;
 	double cpl_max_relative_error;				// JT2012: For CPL, we just store the maximum, not each dof value
-	double cpl_absolute_error[DOF_NUMBER_MAX];	// JT2012: 
-	double temporary_absolute_error[DOF_NUMBER_MAX];	// JT2012: 
+	double cpl_absolute_error[DOF_NUMBER_MAX];	// JT2012:
+	double temporary_absolute_error[DOF_NUMBER_MAX];	// JT2012:
 	int temporary_num_dof_errors;
 	int cpl_num_dof_errors;						// JT2012
 	bool first_coupling_iteration;				// JT2012
@@ -761,12 +772,30 @@ public:
 	void PrimaryVariableStorageTransport(); //kg44
 	//double GetNewTimeStepSizeTransport(double mchange); //kg44
 	// FLX
-	double* CalcELEFluxes(const GEOLIB::Polyline* const ply);											// modified 05/2012 by BG
-	double* CalcELEMassFluxes(const GEOLIB::Polyline* const ply, std::string NameofPolyline);			// Necessary for the output of mass fluxes over polylines, BG 08/2011
+
+	/**
+	 * modified 05/2012 by BG
+	 * @param ply
+	 * @param result
+	 */
+	void CalcELEFluxes(const GEOLIB::Polyline* const ply, double* result);
+	/**
+	 * Necessary for the output of mass fluxes over polylines, BG 08/2011
+	 * @param ply a pointer to a GEOLIB::Polyline
+	 * @param NameofPolyline the name of the polyline
+	 * @param result
+	 */
+	void CalcELEMassFluxes(const GEOLIB::Polyline* const ply, std::string const& NameofPolyline, double *result);
     double TotalMass[10];																				// Necessary for the output of mass fluxes over polylines, BG 08/2011
     std::vector <std::string> PolylinesforOutput;														// Necessary for the output of mass fluxes over polylines, BG 08/2011
-	double *Calc2DElementGradient(MeshLib::CElem* m_ele, double ElementConcentration[4]);						// Necessary for the output of mass fluxes over polylines, BG 08/2011
 
+	/**
+	 * Necessary for the output of mass fluxes over polylines, BG 08/2011
+	 * @param ele
+	 * @param ElementConcentration
+	 * @param grad
+	 */
+	void Calc2DElementGradient(MeshLib::CElem* ele, double ElementConcentration[4], double *grad);
 	// NEW
 	CRFProcess* CopyPCStoDM_PCS();
 	bool OBJRelations();                  //OK

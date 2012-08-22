@@ -9,6 +9,7 @@ set( HEADERS
 	EarClippingTriangulation.h
 	# directory InterpolationAlgorithms
 	InterpolationAlgorithms/CubicSpline.h
+	InterpolationAlgorithms/InverseDistanceInterpolation.h
 	InterpolationAlgorithms/LinearIntervalInterpolation.h
 	InterpolationAlgorithms/PiecewiseLinearInterpolation.h
 	# directory LinAlg

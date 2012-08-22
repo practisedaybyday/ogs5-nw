@@ -9,8 +9,9 @@
 #include "DateTools.h"
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 
-double date2double(int y, int m, int d)
+int date2int(int y, int m, int d)
 {
 	if ( (y < 1000 || y > 9999) || (m < 1 || m > 12) || (d < 1 || d > 31) )
 	{
@@ -18,14 +19,31 @@ double date2double(int y, int m, int d)
 		return 0;
 	}
 
-	int ddate = 0;
-	if (y < 1900)
-		y += 1900;
+	int ddate(0);
 	ddate = y * 10000;
 	ddate += (m * 100);
 	ddate += d;
 
 	return ddate;
+}
+
+std::string int2date(int date)
+{
+	if (date>10000000 && date<22000000)
+	{
+		int y = static_cast<int>(floor(date/10000.0));
+		int m = static_cast<int>(floor((date-(y*10000))/100.0));
+		int d = date-(y*10000)-(m*100);
+		std::stringstream ss;
+		if (d<10)
+			ss << "0";
+		ss << d << ".";
+		if (m<10)
+			ss << "0";
+		ss << m << "." << y;
+		return ss.str();
+	}
+	return "";
 }
 
 std::string date2string(double ddate)
@@ -57,17 +75,20 @@ std::string date2string(double ddate)
 	return s;
 }
 
-double strDate2double(const std::string &s)
+int strDate2int(const std::string &s)
 {
-	size_t sep ( s.find(".",0) );
-	int d ( atoi(s.substr(0, sep).c_str()) );
-	size_t sep2 ( s.find(".", sep + 1) );
-	int m ( atoi(s.substr(sep + 1,sep2 - (sep + 1)).c_str()) );
-	int y ( atoi(s.substr(sep2 + 1, s.length() - (sep2 + 1)).c_str()) );
-	return date2double(y, m, d);
+	std::string str(s);
+	if (s.length() > 10)
+		str = s.substr(0,10);
+	size_t sep ( str.find(".",0) );
+	int d ( atoi(str.substr(0, sep).c_str()) );
+	size_t sep2 ( str.find(".", sep + 1) );
+	int m ( atoi(str.substr(sep + 1,sep2 - (sep + 1)).c_str()) );
+	int y ( atoi(str.substr(sep2 + 1, s.length() - (sep2 + 1)).c_str()) );
+	return date2int(y, m, d);
 }
 
-double xmlDate2double(const std::string &s)
+int xmlDate2int(const std::string &s)
 {
 	if (s.length() == 10)
 	{
@@ -79,7 +100,7 @@ double xmlDate2double(const std::string &s)
 			std::cout << "Warning: xmlDate2double() -- month not in [1:12]" <<
 			std::endl;
 		int y = atoi(s.substr(0,4).c_str());
-		return date2double(y, m, d);
+		return date2int(y, m, d);
 	}
 	return 0;
 }

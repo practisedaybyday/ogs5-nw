@@ -200,7 +200,7 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 	msgdat = (char*)Free(msgdat);
 
 	if (!mesh_vec.empty())
-		return 100;
+		return 100; // magic number?
 
 	return 1;
 }

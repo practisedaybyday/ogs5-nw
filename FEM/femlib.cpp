@@ -25,7 +25,7 @@
 //#include "mathlib.h"
 //#include "rf_pcs.h" //OK_MOD"
 #ifndef NEW_EQS                                   //WW. 11.2008
-//#include "matrix.h"
+//#include "matrix_routines.h"
 #endif
 //#include "rf_mmp_new.h"
 //#include "rf_num_new.h"
