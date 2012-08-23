@@ -3592,7 +3592,7 @@ void CSourceTerm::DirectAssign(long ShiftInNodeVector)
 		{
 			size_t node_id (points[i]->getID());
 			CNodeValue* m_nod_val (new CNodeValue());
-			m_nod_val->msh_node_number = node_id;// KR  node_id + ShiftInNodeVector;
+			m_nod_val->msh_node_number = node_id + ShiftInNodeVector;
 			m_nod_val->geo_node_number = node_id;
 			m_nod_val->setProcessDistributionType (getProcessDistributionType());
 	   	    m_nod_val->node_value = std::numeric_limits<double>::min();  // values will be assigned in IncorporateSoureTerms (rf_pcs.cpp)
