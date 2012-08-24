@@ -90,9 +90,6 @@ void COutput::init()
 		std::cerr <<
 		"COutput::init(): trying to fetch process pointer using msh_type_name ... " <<
 		std::endl;
-		std::cerr <<
-		"COutput::init(): trying to fetch process pointer using msh_type_name ... " <<
-		std::endl;
 		if(msh_type_name.size() > 0)
 		{
 			_pcs = PCSGet(msh_type_name);

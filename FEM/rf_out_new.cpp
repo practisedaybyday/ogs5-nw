@@ -211,7 +211,6 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 
 	for (size_t i = 0; i < out_vector.size(); i++)
 	{
-		OutputBySteps = false;
 		m_out = out_vector[i];
 		// MSH
 		//		m_msh = m_out->GetMSH();
