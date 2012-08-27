@@ -2277,7 +2277,7 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 			break;
 		//
 		case 44: // 2-phase VAN GENUCHTEN/MUALEM --> NON-WETTING
-			/*slr = 1.0 - maximum_saturation[phase];		// slr = 1.0 - sgm
+			 slr = 1.0 - maximum_saturation[phase];		// slr = 1.0 - sgm
 			 slm = 1.0 - residual_saturation[phase];		// slm = 1.0 - sgr
 			 m   = saturation_exponent[phase];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
 			 sl  = MRange(slr, sl, slm);
@@ -2285,22 +2285,24 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 			 //
 			 kr = pow(1.0-se,1.0/3.0) * pow(1.0-pow(se,1.0/m),2.0*m);
 			 if(kr < minimum_relative_permeability)
-			 kr = minimum_relative_permeability;*/
-			if (sl > (maximum_saturation[phase] - MKleinsteZahl)) sl = maximum_saturation[phase]
-							- MKleinsteZahl;
-			if (sl < (residual_saturation[phase] + MKleinsteZahl)) sl = residual_saturation[phase]
-							+ MKleinsteZahl;
-
-			slr = residual_saturation[0];
-			slr1 = residual_saturation[1];
-
-			m = saturation_exponent[phase];
-
-			se = (sl - slr1) / (1 - slr);
-			//
-			kr = pow(1.0 - se, 1.0 / 3.0) * pow(1.0 - pow(se, 1.0 / m), 2.0 * m);
-			if (kr < minimum_relative_permeability)
-				kr = minimum_relative_permeability;
+			 kr = minimum_relative_permeability;
+			 // TF: the following commented code is a new implementation of JOD
+			 // with this code we have different results in benchmark H2/LabGasInjec/H2_Permeability_GasPressure
+//			if (sl > (maximum_saturation[phase] - MKleinsteZahl)) sl = maximum_saturation[phase]
+//							- MKleinsteZahl;
+//			if (sl < (residual_saturation[phase] + MKleinsteZahl)) sl = residual_saturation[phase]
+//							+ MKleinsteZahl;
+//
+//			slr = residual_saturation[0];
+//			slr1 = residual_saturation[1];
+//
+//			m = saturation_exponent[phase];
+//
+//			se = (sl - slr1) / (1 - slr);
+//			//
+//			kr = pow(1.0 - se, 1.0 / 3.0) * pow(1.0 - pow(se, 1.0 / m), 2.0 * m);
+//			if (kr < minimum_relative_permeability)
+//				kr = minimum_relative_permeability;
 			break;
 		//
 		case 6: // 2-phase BROOKS/COREY --> WETTING
@@ -2316,25 +2318,29 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 			break;
 		//
 		case 66: // 2-phase BROOKS/COREY --> NON-WETTING
-			if (sl > (maximum_saturation[phase] - MKleinsteZahl))
-				sl = maximum_saturation[phase]- MKleinsteZahl;
-			if (sl < (residual_saturation[phase] + MKleinsteZahl))
-				sl = residual_saturation[phase]+ MKleinsteZahl;
-			//
-			se = (sl - residual_saturation[1]) / (1. - residual_saturation[0] - residual_saturation[1]);
-			kr = pow(1.0 - se, 2) * (1.0 - pow(se, (2.0 + saturation_exponent[phase])
-							/ saturation_exponent[phase]));
-			kr = MRange(minimum_relative_permeability,kr,1.);
-
-			/*slr = 1.0 - maximum_saturation[phase];		// slr = 1.0 - sgm
-			slm = 1.0 - residual_saturation[phase];		// slm = 1.0 - sgr
+			slr = 1.0 - maximum_saturation[phase];          // slr = 1.0 - sgm
+			slm = 1.0 - residual_saturation[phase];         // slm = 1.0 - sgr
 			m   = saturation_exponent[phase];
 			sl  = MRange(slr, sl, slm);
 			se  = (sl - slr)/(slm - slr);
 			//
 			kr = pow(1.0-se,2)*(1.0-pow(se,1.0+2.0/m));
 			if(kr < minimum_relative_permeability)
-				kr = minimum_relative_permeability;*/
+					kr = minimum_relative_permeability;
+
+			// TF: the following commented code is a new implementation of JOD
+			// with this code we have different results in benchmark of
+			// Liakopoulos type and Buckley Leverett
+//			if (sl > (maximum_saturation[phase] - MKleinsteZahl))
+//				sl = maximum_saturation[phase]- MKleinsteZahl;
+//			if (sl < (residual_saturation[phase] + MKleinsteZahl))
+//				sl = residual_saturation[phase]+ MKleinsteZahl;
+//			//
+//			se = (sl - residual_saturation[1]) / (1. - residual_saturation[0] - residual_saturation[1]);
+//			kr = pow(1.0 - se, 2) * (1.0 - pow(se, (2.0 + saturation_exponent[phase])
+//							/ saturation_exponent[phase]));
+//			kr = MRange(minimum_relative_permeability,kr,1.);
+
 			break;
 		//
 		case 7: // 2-phase COREY'S CURVES (JT) --> WETTING
