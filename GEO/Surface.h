@@ -59,7 +59,7 @@ public:
 	 * @param pnt the point
 	 * @return true if the point is contained in the surface
 	 */
-	bool isPntInSfc (const double* pnt) const;
+	bool isPntInSfc (const double* pnt, double eps = std::numeric_limits<double>::epsilon()) const;
 
 	const std::vector<Point*>* getPointVec() const { return &_sfc_pnts; }
 

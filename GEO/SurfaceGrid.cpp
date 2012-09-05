@@ -15,16 +15,12 @@ SurfaceGrid::SurfaceGrid(Surface const*const sfc) :
 	AABB(sfc->getAABB()), _triangles_in_grid_box(NULL)
 {
 	double delta[3] = {0.0, 0.0, 0.0};
-	// get and modify bounding box
 	for (size_t k(0); k<3; k++) {
 		// make the bounding box a little bit bigger,
 		// such that the node with maximal coordinates fits into the grid
-		_max_pnt[k] *= (1.0+1e-6);
+		_max_pnt[k] *= (1.0 + 1e-6);
 		if (fabs(_max_pnt[k]) < std::numeric_limits<double>::epsilon()) {
-			_max_pnt[k] = (_max_pnt[k] - _min_pnt[k]) * (1.0+1e-6);
-		}
-		if ((_max_pnt[k] - _min_pnt[k]) < 1e-3 * fabs(_max_pnt[k])) {
-			_min_pnt[k] -= 1e-3 * fabs(_max_pnt[k]);
+			_max_pnt[k] = (_max_pnt[k] - _min_pnt[k]) * (1.0 + 1e-6);
 		}
 		delta[k] = _max_pnt[k] - _min_pnt[k];
 	}
@@ -154,7 +150,7 @@ SurfaceGrid::SurfaceGrid(Surface const*const sfc) :
 	}
 }
 
-bool SurfaceGrid::isPntInSurface(const double* pnt) const
+bool SurfaceGrid::isPntInSurface(const double* pnt, double eps) const
 {
 	const size_t i (static_cast<size_t>((pnt[0]-_min_pnt[0]) * _inverse_step_sizes[0]));
 	const size_t j (static_cast<size_t>((pnt[1]-_min_pnt[1]) * _inverse_step_sizes[1]));
@@ -164,12 +160,11 @@ bool SurfaceGrid::isPntInSurface(const double* pnt) const
 		return false;
 	}
 
-
 	std::vector<Triangle const*> const& triangles(_triangles_in_grid_box[i + j*_n_steps[0]+k*_n_steps[0]*_n_steps[1]]);
 	bool nfound (true);
 	const size_t n_triangles(triangles.size());
 	for (size_t k(0); k < n_triangles && nfound; k++) {
-		if (triangles[k]->containsPoint (pnt)) {
+		if (triangles[k]->containsPoint (pnt, eps)) {
 			nfound = false;
 		}
 	}

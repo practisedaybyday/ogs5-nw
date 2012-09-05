@@ -24,7 +24,7 @@ public:
 	SurfaceGrid(Surface const*const sfc);
 	virtual ~SurfaceGrid();
 
-	bool isPntInSurface(const double* pnt) const;
+	bool isPntInSurface(const double* pnt, double eps = 0) const;
 
 private:
 	double _step_sizes[3];

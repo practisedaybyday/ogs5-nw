@@ -112,9 +112,9 @@ void Surface::initSurfaceGrid()
 	}
 }
 
-bool Surface::isPntInSfc (const double* pnt) const
+bool Surface::isPntInSfc (const double* pnt, double eps) const
 {
-	return _sfc_grid->isPntInSurface(pnt);
+	return _sfc_grid->isPntInSurface(pnt, eps);
 }
 
 } // end namespace

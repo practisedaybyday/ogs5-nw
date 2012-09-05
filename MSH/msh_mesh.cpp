@@ -1621,16 +1621,30 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 	begin = clock();
 #endif
 	const size_t nodes_in_usage((size_t) NodesInUsage());
+
+	std::string sfc_name;
+	GEOLIB::SurfaceVec const*const  sfc_vec(_geo_obj->getSurfaceVecObj(*_geo_name));
+	sfc_vec->getNameOfElement(sfc, sfc_name);
+	std::string fname (*_geo_name+std::string("NodesInSurface")+sfc_name+std::string(".gli"));
+	std::ofstream test_out(fname.c_str());
+	test_out << "#POINTS" << std::endl;
+	size_t cnt(0);
+
 	for (size_t j(0); j < nodes_in_usage; j++) {
 		if (sfc->isPntInBV((nod_vector[j])->getData(), _search_length / 2.0)) {
-			if (sfc->isPntInSfc((nod_vector[j])->getData())) {
+			if (sfc->isPntInSfc((nod_vector[j])->getData(), _search_length / 2.0)) {
+				test_out << cnt++ << " " << nod_vector[j]->getData()[0] << " " << nod_vector[j]->getData()[1] << " " << nod_vector[j]->getData()[2] << " $NAME " << nod_vector[j]->GetIndex() << std::endl;
 				msh_nod_vector.push_back(nod_vector[j]->GetIndex());
 			}
 		}
 	}
+
+	test_out << "#STOP" << std::endl;
+	test_out.close();
+
 #ifdef TIME_MEASUREMENT
 	end = clock();
-	std::cout << "done, took " << (end-begin)/(double)(CLOCKS_PER_SEC) << " s" << std::endl;
+	std::cout << "done, took " << (end-begin)/(double)(CLOCKS_PER_SEC) << " s, " << msh_nod_vector.size() << "nodes found" << std::endl;
 #endif
 }
 
