@@ -21,6 +21,7 @@ ADD_EXECUTABLE( ModifyMeshProperties mainModifyMeshProperties.cpp ModifyMeshProp
 ADD_EXECUTABLE( filterMeshNodes filterMeshNodes.cpp )
 ADD_EXECUTABLE( rotateMesh rotateMesh.cpp )
 ADD_EXECUTABLE( convertGLIVerticalSurfaceToPolygon mainConvertGLIVerticalSurfaceToPolygon.cpp )
+ADD_EXECUTABLE( RemoveElementsByMaterialID mainRemoveElementsByMaterialID.cpp )
 
 SET_TARGET_PROPERTIES(ExtractMeshNodeIDs ExtractMeshNodes ModifyMeshProperties filterMeshNodes rotateMesh convertGLIVerticalSurfaceToPolygon
   PROPERTIES FOLDER Utilities)
@@ -69,12 +70,21 @@ TARGET_LINK_LIBRARIES( filterMeshNodes
 	MSH
 )
 
+TARGET_LINK_LIBRARIES( RemoveElementsByMaterialID
+	GEO
+	MSH
+	MSHGEOTOOLS
+	FileIO
+	FEM
+	OGSProject
+)
 
 IF(QT4_FOUND)
 
 	ADD_EXECUTABLE( extractSurface mainExtractSurface.cpp ExtractSurface.h ExtractSurface.cpp )
 	ADD_EXECUTABLE( createMeshFromPolygon createMeshFromPolygon.cpp )
 	ADD_EXECUTABLE( convertSurfaceMeshToGeometry convertSurfaceMeshToGeometry.cpp )
+	ADD_EXECUTABLE( convertOgsSurfaceMeshToGeometry convertOgsSurfaceMeshToGeometry.cpp )
 
 	TARGET_LINK_LIBRARIES( extractSurface
 		GEO
@@ -100,6 +110,14 @@ IF(QT4_FOUND)
 		FileIO
 		${QT_LIBRARIES}
 	)
+
+    TARGET_LINK_LIBRARIES( convertOgsSurfaceMeshToGeometry
+        GEO
+        MSH
+        MSHGEOTOOLS
+        FileIO
+        ${QT_LIBRARIES}
+    )
 
 	ADD_EXECUTABLE( mapGeoToDEM mapGeoToDEM.cpp )
 	TARGET_LINK_LIBRARIES( mapGeoToDEM
