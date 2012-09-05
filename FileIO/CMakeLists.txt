@@ -12,6 +12,7 @@ SET( SOURCES
 	FEMIO/ProcessIO.cpp
 	FEMIO/BoundaryConditionIO.cpp
 	GeoIO/Gmsh2GeoIO.cpp
+	GeoIO/OGSmsh2GeoIO.cpp
 	MeshIO/GMSHInterface.cpp
 	MeshIO/GMSHFixedMeshDensity.cpp
 	MeshIO/GMSHAdaptiveMeshDensity.cpp
@@ -39,6 +40,7 @@ SET( HEADERS
 	FEMIO/ProcessIO.h
 	FEMIO/BoundaryConditionIO.h
 	GeoIO/Gmsh2GeoIO.h
+	GeoIO/OGSmsh2GeoIO.h
 	MathIO/CRSIO.h
 	MeshIO/GMSHInterface.h
 	MeshIO/GMSHMeshDensityStrategy.h
