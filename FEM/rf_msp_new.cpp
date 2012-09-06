@@ -6600,13 +6600,16 @@ bool MSPRead(std::string file_base_name)
 	msp_file.seekg(0L,std::ios::beg);
 	//========================================================================
 	// Keyword loop
-	std::cout << "MSPRead" << std::endl;
+	std::cout << "MSPRead ... " << std::flush;
 	while (!msp_file.eof())
 	{
 		msp_file.getline(line,MAX_ZEILE);
 		line_string = line;
-		if(line_string.find("#STOP") != string::npos)
+		if(line_string.find("#STOP") != string::npos) {
+            std::cout << "done, read " << msp_vector.size() << " solid properties" <<
+            std::endl;
 			return true;
+		}
 		//----------------------------------------------------------------------
 		// keyword found
 		if(line_string.find("#SOLID_PROPERTIES") != std::string::npos)

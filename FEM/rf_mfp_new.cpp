@@ -519,13 +519,16 @@ bool MFPRead(std::string file_base_name)
 	mfp_file.seekg(0L,std::ios::beg);
 	//========================================================================
 	// Keyword loop
-	std::cout << "MFPRead" << std::endl;
+	std::cout << "MFPRead ... " << std::flush;
 	while (!mfp_file.eof())
 	{
 		mfp_file.getline(line,MAX_ZEILE);
 		line_string = line;
-		if(line_string.find("#STOP") != std::string::npos)
+		if(line_string.find("#STOP") != std::string::npos) {
+            std::cout << "done, read " << mfp_vector.size() << " fluid properties" <<
+            std::endl;
 			return true;
+		}
 		//----------------------------------------------------------------------
 		// keyword found
 		if(line_string.find("#FLUID_PROPERTIES") != std::string::npos)
@@ -1257,7 +1260,7 @@ double CFluidProperties::Viscosity(double* variables)
 		                                  //NB
 		viscosity = Fluid_Viscosity(density,mfp_arguments[1],mfp_arguments[0],fluid_id);
 		break;
-	case 10: // mixture µ= sum_i sum_j x_i*x_j*intrc*sqrt[µ_i(rho,T)*µ_j(rho,T)]
+	case 10: // mixture ï¿½= sum_i sum_j x_i*x_j*intrc*sqrt[ï¿½_i(rho,T)*ï¿½_j(rho,T)]
 		viscosity = MixtureSubProperity(3, (long)  variables[2], variables[0], variables[1]);
 		break;
 	case 18: //BG, NB using calculated viscosities at nodes from the phase transition model
@@ -3305,7 +3308,7 @@ double CFluidProperties::MixtureSubProperity(int properties, long idx_elem, doub
 	}
 	break;
 
-case 3:// dynamic viscosity 'µ'
+case 3:// dynamic viscosity 'ï¿½'
 	for (int i = 0; i < CNr; i++)
 	{
 	m_pcs = PCSGetNew("MASS_TRANSPORT", this->component_vector[i]->compname);
