@@ -74,6 +74,15 @@ TARGET_LINK_LIBRARIES( filterMeshNodes
 	MSH
 )
 
+ADD_EXECUTABLE( testMeshSearchAlgorithms testMeshSearchAlgorithms.cpp )
+TARGET_LINK_LIBRARIES( testMeshSearchAlgorithms
+	Base
+	GEO
+	MSH
+	MSHGEOTOOLS
+	FileIO
+)	
+
 
 IF(QT4_FOUND)
 
@@ -140,16 +149,6 @@ IF(QT4_FOUND)
 		${QT_LIBRARIES}
 	)	
 
-	ADD_EXECUTABLE( testMeshSearchAlgorithms testMeshSearchAlgorithms.cpp )
-	TARGET_LINK_LIBRARIES( testMeshSearchAlgorithms
-		Base
-		GEO
-		MSH
-		MSHGEOTOOLS
-		FileIO
-		${QT_LIBRARIES}
-	)	
-
 	ADD_EXECUTABLE( createLayeredMesh createLayeredMesh.cpp )
 	TARGET_LINK_LIBRARIES( createLayeredMesh
 		GEO
@@ -162,7 +161,6 @@ IF(QT4_FOUND)
 		vtkRendering
 		vtkIO
 	)	
-	
 	
 	ADD_EXECUTABLE( removeMeshNodes removeMeshNodes.cpp )
 	TARGET_LINK_LIBRARIES( removeMeshNodes

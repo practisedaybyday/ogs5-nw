@@ -377,6 +377,7 @@ int main (int argc, char* argv[])
 	// *** preparing test data
 	std::vector<MeshLib::CNode*> const& nodes(mesh->getNodeVector());
 	std::vector<GEOLIB::Point*> pnts_for_search;
+	n = std::min(n, nodes.size());
 	for (size_t k(0); k<n; k++) {
 		double const*const c(nodes[k]->getData());
 		// perturb the coordinates a little bit
