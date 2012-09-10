@@ -70,11 +70,11 @@ public:
 	 * @param pnt
 	 * @return true, if point is in triangle, else false
 	 */
-	bool containsPoint (const double* pnt) const;
+	bool containsPoint (const double* pnt, double eps = 0) const;
 
-	bool containsPoint (const Point &pnt) const
+	bool containsPoint (const Point &pnt, double eps = 0) const
 	{
-		return containsPoint (pnt.getData());
+		return containsPoint (pnt.getData(), eps);
 	}
 
 	/**
