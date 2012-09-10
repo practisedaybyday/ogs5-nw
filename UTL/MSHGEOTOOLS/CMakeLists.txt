@@ -19,11 +19,16 @@ ADD_EXECUTABLE( ExtractMeshNodes mainExtractMeshNodes.cpp )
 ADD_EXECUTABLE( ExtractMeshNodeIDs mainExtractMeshNodeIDs.cpp )
 ADD_EXECUTABLE( ModifyMeshProperties mainModifyMeshProperties.cpp ModifyMeshProperties.h ModifyMeshProperties.cpp )
 ADD_EXECUTABLE( filterMeshNodes filterMeshNodes.cpp )
-ADD_EXECUTABLE( rotateMesh rotateMesh.cpp )
+IF(QT4_FOUND)
+	ADD_EXECUTABLE( rotateMesh rotateMesh.cpp )
+ENDIF(QT4_FOUND)
 ADD_EXECUTABLE( convertGLIVerticalSurfaceToPolygon mainConvertGLIVerticalSurfaceToPolygon.cpp )
 
-SET_TARGET_PROPERTIES(ExtractMeshNodeIDs ExtractMeshNodes ModifyMeshProperties filterMeshNodes rotateMesh convertGLIVerticalSurfaceToPolygon
+SET_TARGET_PROPERTIES(ExtractMeshNodeIDs ExtractMeshNodes ModifyMeshProperties filterMeshNodes convertGLIVerticalSurfaceToPolygon
   PROPERTIES FOLDER Utilities)
+IF(QT4_FOUND)
+	SET_TARGET_PROPERTIES(rotateMesh PROPERTIES FOLDER Utilities)
+ENDIF(QT4_FOUND)
 
 TARGET_LINK_LIBRARIES( ExtractMeshNodeIDs
 	GEO
