@@ -12,7 +12,7 @@
 
 // FileIO
 #include "MeshIO/OGSMeshIO.h"
-#include "XmlIO/XmlGmlInterface.h"
+//#include "XmlIO/XmlGmlInterface.h"
 
 // GeoLib
 #include "OctTree.h"
@@ -28,7 +28,7 @@
 #include "msh_lib.h" // for FEMRead
 
 // we need this for using the xml functions of Qt
-#include <QApplication>
+//#include <QApplication>
 
 void testOctTreeGlobalQueries (GEOLIB::OctTree<MeshLib::CNode> const& oct_tree, double const*const min, double const*const max)
 {
@@ -288,7 +288,7 @@ void testMeshGridAlgorithm(MeshLib::CFEMesh const*const mesh,
 int main (int argc, char* argv[])
 {
 	// Creating a non-gui (console) Qt application
-	QApplication app(argc, argv, false);
+//	QApplication app(argc, argv, false);
 
 	if (argc < 3) {
 		std::cout << "Usage: " << argv[0] << " --mesh-in meshfile "
@@ -362,17 +362,17 @@ int main (int argc, char* argv[])
 	mesh->setNumberOfNodesFromNodesVectorSize();
 
 	// *** read geometry
-	ProjectData* project_data (new ProjectData);
-	if (argc > 5) {
-		GEOLIB::GEOObjects* geo_objs (new GEOLIB::GEOObjects);
-		project_data->setGEOObjects (geo_objs);
-
-		std::string schema_name("./OpenGeoSysGLI.xsd");
-		FileIO::XmlGmlInterface xml(project_data, schema_name);
-		xml.readFile(QString::fromStdString (geo_fname_in));
-		std::vector<std::string> original_geo_names;
-		geo_objs->getGeometryNames(original_geo_names);
-	}
+//	ProjectData* project_data (new ProjectData);
+//	if (argc > 5) {
+//		GEOLIB::GEOObjects* geo_objs (new GEOLIB::GEOObjects);
+//		project_data->setGEOObjects (geo_objs);
+//
+//		std::string schema_name("./OpenGeoSysGLI.xsd");
+//		FileIO::XmlGmlInterface xml(project_data, schema_name);
+//		xml.readFile(QString::fromStdString (geo_fname_in));
+//		std::vector<std::string> original_geo_names;
+//		geo_objs->getGeometryNames(original_geo_names);
+//	}
 
 	// *** preparing test data
 	std::vector<MeshLib::CNode*> const& nodes(mesh->getNodeVector());
@@ -412,8 +412,8 @@ int main (int argc, char* argv[])
 //	std::cout << " done" << std::endl;
 
 	// *** test OctTree
-	std::vector<size_t> idx_found_nodes_oct_tree;
-	testOctTree(mesh, pnts_for_search, idx_found_nodes_oct_tree);
+//	std::vector<size_t> idx_found_nodes_oct_tree;
+//	testOctTree(mesh, pnts_for_search, idx_found_nodes_oct_tree);
 
 	// *** compare results
 //	std::cout << "compare results of linear algorithm with OctTree ... " << std::flush;
@@ -430,7 +430,7 @@ int main (int argc, char* argv[])
 		delete pnts_for_search[k];
 	}
 
-	delete project_data;
+//	delete project_data;
 
 	return 0;
 }
