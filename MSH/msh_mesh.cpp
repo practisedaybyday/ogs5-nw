@@ -886,7 +886,8 @@ void CFEMesh::constructMeshGrid()
 //	std::cout << "CFEMesh::constructMeshGrid() ... " << std::flush;
 //	clock_t start(clock());
 //#endif
-	_mesh_grid = new GEOLIB::Grid<MeshLib::CNode>(this->getNodeVector(), 511);
+	if (_mesh_grid == NULL)
+		_mesh_grid = new GEOLIB::Grid<MeshLib::CNode>(this->getNodeVector(), 511);
 //#ifndef NDEBUG
 //	clock_t end(clock());
 //	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s -- " << std::flush;
@@ -1621,16 +1622,18 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 	begin = clock();
 #endif
 	const size_t nodes_in_usage((size_t) NodesInUsage());
+
 	for (size_t j(0); j < nodes_in_usage; j++) {
 		if (sfc->isPntInBV((nod_vector[j])->getData(), _search_length / 2.0)) {
-			if (sfc->isPntInSfc((nod_vector[j])->getData())) {
+			if (sfc->isPntInSfc((nod_vector[j])->getData(), _search_length / 2.0)) {
 				msh_nod_vector.push_back(nod_vector[j]->GetIndex());
 			}
 		}
 	}
+
 #ifdef TIME_MEASUREMENT
 	end = clock();
-	std::cout << "done, took " << (end-begin)/(double)(CLOCKS_PER_SEC) << " s" << std::endl;
+	std::cout << "done, took " << (end-begin)/(double)(CLOCKS_PER_SEC) << " s, " << msh_nod_vector.size() << "nodes found" << std::endl;
 #endif
 }
 

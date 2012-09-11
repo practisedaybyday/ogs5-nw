@@ -1058,7 +1058,7 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
 				//
-				case 33: // JT: Function (power or linear)     NON-WETTING 
+				case 33: // JT: Function (power or linear)     NON-WETTING
 					// krg = (m*(1-Se))^exp
 					// Se  = (sl - slr) / (slm - slr) --> slr = 1 - sgm --> slm = 1 - sgr
 					in >> residual_saturation[k];			// sgr: residual saturation, this phase
@@ -1068,7 +1068,7 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
 				//
-				case 4: // 2-phase Van Genuchten/Mualem Model  WETTING	
+				case 4: // 2-phase Van Genuchten/Mualem Model  WETTING
 					// krw = pow(se,0.5) * pow(1.0-pow(1.0-pow(se,1.0/m),m),2)
 					// Se  = (sl - slr) / (slm - slr)
 					in >> residual_saturation[k];			// slr: residual saturation, this phase
@@ -1077,7 +1077,7 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
 				//
-				case 44: // 2-phase Van Genuchten/Mualem Model NON-WETTING	
+				case 44: // 2-phase Van Genuchten/Mualem Model NON-WETTING
 					// krg = pow(1.0-se,1.0/3.0) * pow(1.0-pow(se,1.0/m),2.0*m)
 					// Se  = (sl - slr) / (slm - slr) --> slr = 1 - sgm --> slm = 1 - sgr
 					in >> residual_saturation[k];			// sgr: residual saturation, this phase
@@ -1086,7 +1086,7 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
 				//
-				case 6: // Brooks/Corey						   WETTING		
+				case 6: // Brooks/Corey						   WETTING
 					// krw = pow(se,3.0+2.0/m)
 					// Se  = (sl - slr) / (slm - slr)
 					in >> residual_saturation[k];			// slr: residual saturation, this phase
@@ -1095,7 +1095,9 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
 				//
-				case 66: // Brooks/Corey					   NON-WETTING	
+				case 10: // unconfined GW 6/2012 JOD
+					break;
+				case 66: // Brooks/Corey					   NON-WETTING
 					// krg = pow(1.0-se,2)*(1.0-pow(se,1.0+2.0/m))
 					// Se  = (sl - slr) / (slm - slr) --> slr = 1 - sgm --> slm = 1 - sgr
 					in >> residual_saturation[k];			// sgr: residual saturation, this phase
@@ -1104,7 +1106,7 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 					in >> minimum_relative_permeability;	// minimum relative permeability this phase
 					break;
 				//
-				case 7: // Corey's curves					   WETTING		
+				case 7: // Corey's curves					   WETTING
 					// krw = pow(se,4)
 					// Se  = (sl - slr) / (slm - slr)
 					in >> residual_saturation[k];			// slr: residual saturation, this phase
@@ -1453,6 +1455,10 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 					capillary_pressure_values[4] = 1.0e10;
 					old_format = true;
 				}
+				break;
+			case 10:     // unconfined 3D GW. 6/2012 JOD
+				in >> capillary_pressure_values[0]; // Pb
+				in >> capillary_pressure_values[1]; // Slr
 				break;
 			default:
 				ScreenMessage("Error in MMPRead: no valid capillary pressure model.\n");
@@ -2195,7 +2201,7 @@ double CMediumProperties::GetEffectiveSaturationForPerm(const double wetting_sat
 **************************************************************************/
 double CMediumProperties::PermeabilitySaturationFunction(const double wetting_saturation, int phase)
 {
-	double kr, sl, se, slr, slm, m, b;
+	double kr, sl, se, slr, slm, m, b, slr1;
 	int model, gueltig;
 	bool phase_shift = false;
 	sl = wetting_saturation;
@@ -2216,7 +2222,7 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 		//
 		case 0: // CURVE
 			kr = GetCurveValue((int)perm_saturation_value[phase],0,sl,&gueltig);
-			if(kr < minimum_relative_permeability) 
+			if(kr < minimum_relative_permeability)
 				kr = minimum_relative_permeability;
 			break;
 		//
@@ -2238,10 +2244,13 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 			se  = (sl - slr)/(slm - slr);
 			//
 			kr = pow((b*se),m);
-			if(kr < minimum_relative_permeability) 
+			if(kr < minimum_relative_permeability)
 				kr = minimum_relative_permeability;
 			break;
 		//
+		case 10: // for unconfined 3D GW 6/2012 JOD
+			kr =  wetting_saturation;
+			break;
 		case 33: // FUNCTION: LINEAR OR POWER --> NON-WETTING krg = (b*(1-Se))^m
 			slr = 1.0 - maximum_saturation[phase];  // slr = 1.0 - sgm
 			slm = 1.0 - residual_saturation[phase]; // slm = 1.0 - sgr
@@ -2251,7 +2260,7 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 			se  = (sl - slr)/(slm - slr);
 			//
 			kr = pow((b*(1.0-se)),m);
-			if(kr < minimum_relative_permeability) 
+			if(kr < minimum_relative_permeability)
 				kr = minimum_relative_permeability;
 			break;
 		//
@@ -2263,20 +2272,37 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 			se  = (sl - slr)/(slm - slr);
 			//
 			kr = sqrt(se) * pow(1.0-pow(1.0-pow(se,1.0/m),m),2);
-			if(kr < minimum_relative_permeability) 
+			if(kr < minimum_relative_permeability)
 				kr = minimum_relative_permeability;
 			break;
 		//
 		case 44: // 2-phase VAN GENUCHTEN/MUALEM --> NON-WETTING
-			slr = 1.0 - maximum_saturation[phase];		// slr = 1.0 - sgm
-			slm = 1.0 - residual_saturation[phase];		// slm = 1.0 - sgr
-			m   = saturation_exponent[phase];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
-			sl  = MRange(slr, sl, slm);
-			se  = (sl - slr)/(slm - slr);
-			//
-			kr = pow(1.0-se,1.0/3.0) * pow(1.0-pow(se,1.0/m),2.0*m);
-			if(kr < minimum_relative_permeability) 
-				kr = minimum_relative_permeability;
+			 slr = 1.0 - maximum_saturation[phase];		// slr = 1.0 - sgm
+			 slm = 1.0 - residual_saturation[phase];		// slm = 1.0 - sgr
+			 m   = saturation_exponent[phase];			// always <= 1.0.  Input is exponent = 1 / (1-lambda)
+			 sl  = MRange(slr, sl, slm);
+			 se  = (sl - slr)/(slm - slr);
+			 //
+			 kr = pow(1.0-se,1.0/3.0) * pow(1.0-pow(se,1.0/m),2.0*m);
+			 if(kr < minimum_relative_permeability)
+			 kr = minimum_relative_permeability;
+			 // TF: the following commented code is a new implementation of JOD
+			 // with this code we have different results in benchmark H2/LabGasInjec/H2_Permeability_GasPressure
+//			if (sl > (maximum_saturation[phase] - MKleinsteZahl)) sl = maximum_saturation[phase]
+//							- MKleinsteZahl;
+//			if (sl < (residual_saturation[phase] + MKleinsteZahl)) sl = residual_saturation[phase]
+//							+ MKleinsteZahl;
+//
+//			slr = residual_saturation[0];
+//			slr1 = residual_saturation[1];
+//
+//			m = saturation_exponent[phase];
+//
+//			se = (sl - slr1) / (1 - slr);
+//			//
+//			kr = pow(1.0 - se, 1.0 / 3.0) * pow(1.0 - pow(se, 1.0 / m), 2.0 * m);
+//			if (kr < minimum_relative_permeability)
+//				kr = minimum_relative_permeability;
 			break;
 		//
 		case 6: // 2-phase BROOKS/COREY --> WETTING
@@ -2287,20 +2313,34 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 			se  = (sl - slr)/(slm - slr);
 			//
 			kr = pow(se,3.0+2.0/m);
-			if(kr < minimum_relative_permeability) 
+			if(kr < minimum_relative_permeability)
 				kr = minimum_relative_permeability;
 			break;
 		//
 		case 66: // 2-phase BROOKS/COREY --> NON-WETTING
-			slr = 1.0 - maximum_saturation[phase];		// slr = 1.0 - sgm
-			slm = 1.0 - residual_saturation[phase];		// slm = 1.0 - sgr
+			slr = 1.0 - maximum_saturation[phase];          // slr = 1.0 - sgm
+			slm = 1.0 - residual_saturation[phase];         // slm = 1.0 - sgr
 			m   = saturation_exponent[phase];
 			sl  = MRange(slr, sl, slm);
 			se  = (sl - slr)/(slm - slr);
 			//
 			kr = pow(1.0-se,2)*(1.0-pow(se,1.0+2.0/m));
-			if(kr < minimum_relative_permeability) 
-				kr = minimum_relative_permeability;
+			if(kr < minimum_relative_permeability)
+					kr = minimum_relative_permeability;
+
+			// TF: the following commented code is a new implementation of JOD
+			// with this code we have different results in benchmark of
+			// Liakopoulos type and Buckley Leverett
+//			if (sl > (maximum_saturation[phase] - MKleinsteZahl))
+//				sl = maximum_saturation[phase]- MKleinsteZahl;
+//			if (sl < (residual_saturation[phase] + MKleinsteZahl))
+//				sl = residual_saturation[phase]+ MKleinsteZahl;
+//			//
+//			se = (sl - residual_saturation[1]) / (1. - residual_saturation[0] - residual_saturation[1]);
+//			kr = pow(1.0 - se, 2) * (1.0 - pow(se, (2.0 + saturation_exponent[phase])
+//							/ saturation_exponent[phase]));
+//			kr = MRange(minimum_relative_permeability,kr,1.);
+
 			break;
 		//
 		case 7: // 2-phase COREY'S CURVES (JT) --> WETTING
@@ -2311,7 +2351,7 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 			se  = (sl - slr)/(slm - slr);
 			//
 			kr = pow(se,4);
-			if(kr < minimum_relative_permeability) 
+			if(kr < minimum_relative_permeability)
 				kr = minimum_relative_permeability;
 			break;
 		//
@@ -2323,14 +2363,14 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
 			se  = (sl - slr)/(slm - slr);
 			//
 			kr = pow((1.0-se),2)*(1.0-pow(se,2));
-			if(kr < minimum_relative_permeability) 
+			if(kr < minimum_relative_permeability)
 				kr = minimum_relative_permeability;
 			break;
 	}
 	//
 	if(phase_shift){ // krg = 1.0 - krl : revert to gaseous phase
 		kr = 1.0 - kr;
-		if(kr < minimum_relative_permeability) 
+		if(kr < minimum_relative_permeability)
 			kr = minimum_relative_permeability;
 	}
 	//
@@ -2767,14 +2807,14 @@ double* CMediumProperties::MassDispersionTensorNew(int ip, int tr_phase) // SB +
 	int set = 0;
 	ElementValue* gp_ele = ele_gp_value[index];
 	CompProperties* m_cp = cp_vec[component];
-	CFluidProperties* m_mfp;         
-	m_mfp = Fem_Ele_Std->FluidProp;  
+	CFluidProperties* m_mfp;
+	m_mfp = Fem_Ele_Std->FluidProp;
 	MshElemType::type eleType = m_pcs->m_msh->ele_vector[number]->GetElementType();
 	int Dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
 	//----------------------------------------------------------------------
 	// Materials
 	molecular_diffusion_value = m_cp->CalcDiffusionCoefficientCP(index,theta, m_pcs) * TortuosityFunction(index,g, theta);
-	if(Fem_Ele_Std->FluidProp->density_model == 14) 
+	if(Fem_Ele_Std->FluidProp->density_model == 14)
 	{
  	m_mfp = mfp_vector[0];
 	PG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC);
@@ -4650,6 +4690,17 @@ double CMediumProperties::SaturationCapillaryPressureFunction(const double capil
 			sl = se*(slm-slr) + slr;
 			sl = MRange(slr+DBL_EPSILON,sl,slm-DBL_EPSILON);
 			break;
+		case 10: //  unconfined 3D GW.  6/2012 JOD
+			pb = capillary_pressure_values[0];
+			slr = capillary_pressure_values[1];
+			if(pc > 0) {
+			  sl = max(0., 1 - (pc / pb));
+			  sl = pow(sl, 2* (1 - sl));    //
+			  sl = slr  + (1 - slr) * sl;
+			}
+			else
+			  sl = 1;
+			break;
 	}
 	return sl;
 }
@@ -4700,7 +4751,7 @@ double CMediumProperties::SaturationPressureDependency(const double capillary_pr
 			dsdp = 0.0;
 			break;
 
-		case 4: //  Van Genuchten: 01.3.2007 WW  // 05.2010 JT. 
+		case 4: //  Van Genuchten: 01.3.2007 WW  // 05.2010 JT.
 			pb  = capillary_pressure_values[0];
 			slr = capillary_pressure_values[1];
 			slm = capillary_pressure_values[2];
@@ -4766,7 +4817,7 @@ double CMediumProperties::PressureSaturationDependency(const double wetting_satu
 		case 2: //  Sw = CONSTANT
 			return 0.0;
 
-		case 4: //  Van Genuchten: 01.3.2007 WW  // 05.2010 JT. 
+		case 4: //  Van Genuchten: 01.3.2007 WW  // 05.2010 JT.
 			pb  = capillary_pressure_values[0];
 			slr = capillary_pressure_values[1];
 			slm = capillary_pressure_values[2];
@@ -4795,6 +4846,8 @@ double CMediumProperties::PressureSaturationDependency(const double wetting_satu
 			dpds = (pb*v1) / (m*(slr-sl));
 			break;
 
+		case 10: //  unconfined 3D GW  6/2012 JOD
+			return 0;      // set phi/(rho * g) in storage
 		case 99: // The old iterative method. Should anyone need it (but it is somewhat inaccurate at low and high saturations)
 			ds = 1.0e-2;
 			do{

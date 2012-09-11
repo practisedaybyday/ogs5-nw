@@ -131,6 +131,13 @@ public:
 	void PCONWriteDOMDataTEC();           //MX
 	void WriteTECNodePCONData(std::fstream &); //MX
 
+	void NODWriteWaterBalance(double);	// 6/2012 JOD
+	void NODWriteWaterBalanceSFC(double);	// 6/2012 JOD
+	void NODWriteWaterBalancePLY(double);	// 6/2012 JOD
+	void NODWriteWaterBalancePNT(double);	// 6/2012 JOD
+	void NODWritePointsCombined(double);	// 6/2012 JOD
+	void CalculateThroughflow(MeshLib::CFEMesh*, std::vector<long>&, std::vector<double>&);	// 6/2012 JOD
+
 	void setTime (double time) { _time = time; }
 	/**
 	 * get time returns the value of attribute time
@@ -163,7 +170,7 @@ public:
 
 	//	std::vector<double>& getRWPTTimeVector () { return rwpt_time_vector; }
 	std::vector<double>& getRWPTTimeVector () { return time_vector; }
-    bool VARIABLESHARING;						 // Coordinates of each node as well as connection list is stored only for the first time step; BG: 05/2011 
+    bool VARIABLESHARING;						 // Coordinates of each node as well as connection list is stored only for the first time step; BG: 05/2011
 
 private:
 	friend void OUTData(double, int step, bool force_output);

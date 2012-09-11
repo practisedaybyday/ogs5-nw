@@ -23,6 +23,7 @@
 #include "makros.h"
 #include "mathlib.h"
 #include "msh_lib.h"
+#include "fem_ele.h"
 #include "problem.h"
 #include "rf_msp_new.h"
 #include "rf_pcs.h"
@@ -30,6 +31,9 @@
 #include "rf_random_walk.h"
 #include "rf_tim_new.h"
 #include "vtk.h"
+
+// MathLib
+#include "MathTools.h"
 
 extern size_t max_dim;                            //OK411 todo
 
@@ -50,6 +54,10 @@ extern size_t max_dim;                            //OK411 todo
 #endif // GEM_REACT
 
 using MeshLib::CFEMesh;
+using MeshLib::CElem;
+using MeshLib::CEdge;
+using MeshLib::CNode;
+
 using namespace std;
 
 COutput::COutput() :
@@ -79,9 +87,6 @@ void COutput::init()
 		std::cerr <<
 		"COutput::init(): could not initialize process pointer (process type INVALID_PROCESS) and appropriate mesh"
 		          << std::endl;
-		std::cerr <<
-		"COutput::init(): trying to fetch process pointer using msh_type_name ... " <<
-		std::endl;
 		std::cerr <<
 		"COutput::init(): trying to fetch process pointer using msh_type_name ... " <<
 		std::endl;
@@ -268,11 +273,7 @@ ios::pos_type COutput::Read(std::ifstream& in_str,
 		//subkeyword found
 		if (line_string.find("$GEO_TYPE") != string::npos)
 		{
-			FileIO::GeoIO::readGeoInfo (this,
-			                            in_str,
-			                            geo_name,
-			                            geo_obj,
-			                            unique_geo_name);
+			FileIO::GeoIO::readGeoInfo (this, in_str, geo_name, geo_obj, unique_geo_name);
 			continue;
 		}
 
@@ -330,12 +331,12 @@ ios::pos_type COutput::Read(std::ifstream& in_str,
 			continue;
 		}
 
-		// Coordinates of each node as well as connection list is stored only for the first time step; BG: 05/2011 
+		// Coordinates of each node as well as connection list is stored only for the first time step; BG: 05/2011
         if (line_string.find("$VARIABLESHARING") != string::npos)
         {
 	       this->VARIABLESHARING = true;
 		   continue;
-        }  
+        }
 
 		// subkeyword found
 		if (line_string.find("$AMPLIFIER") != string::npos)
@@ -903,32 +904,39 @@ void COutput::WriteTECNodeData(fstream &tec_file)
 			for (size_t k = 0; k < nName; k++)
 			{
 				m_pcs = GetPCS(_nod_value_vector[k]);
-				if (m_pcs != NULL) //WW
+				if (m_pcs != NULL) { //WW
 
-					if (NodeIndex[k] > -1)
-					{
-						val_n = m_pcs->GetNodeValue(
-						        //WW
-						        m_msh->nod_vector[j]->GetIndex(),
-						        NodeIndex[k]);
-						tec_file << val_n << " ";
-						if ((m_pcs->type == 1212 ||
-						     m_pcs->type == 42) &&
-						    _nod_value_vector[k].find(
-						            //WW
-						            "SATURATION") != string::npos)
-							//WW
-							tec_file << 1. - val_n << " ";
+					if (NodeIndex[k] > -1) {
+						if ((m_pcs->type == 14) && (_nod_value_vector[k] == "HEAD")) // HEAD output in Richards 6/2012 JOD
+						{
+							double rhow;
+							CRFProcess* pcs_transport (PCSGet("MASS_TRANSPORT"));
+							if (pcs_transport) {
+								double dens_arg[3];
+								dens_arg[2] = pcs_transport->GetNodeValue(
+												m_msh->nod_vector[j]->GetIndex(), 1); // first component!!!
+								rhow = mfp_vector[0]->Density(dens_arg); // first phase!!!  dens_arg
+							} else rhow = mfp_vector[0]->Density();
+
+							val_n = m_pcs->GetNodeValue(m_msh->nod_vector[j]->GetIndex(),
+															m_pcs->GetNodeValueIndex("PRESSURE1") + 1) / (rhow * 9.81)
+															+ m_msh->nod_vector[m_msh->nod_vector[j]->GetIndex()]->getData()[2];
+							tec_file << val_n << " ";
+						} else {
+							val_n = m_pcs->GetNodeValue(m_msh->nod_vector[j]->GetIndex(), NodeIndex[k]); //WW
+							tec_file << val_n << " ";
+							if ((m_pcs->type == 1212 || m_pcs->type == 42)
+								&& _nod_value_vector[k].find("SATURATION") != string::npos) //WW
+								tec_file << 1. - val_n << " ";
+						}
 					}
+				}
 			}
 			//OK4704
 			for (size_t k = 0; k < mfp_value_vector.size(); k++)
 				//tec_file << MFPGetNodeValue(m_msh->nod_vector[j]->GetIndex(),mfp_value_vector[k]) << " "; //NB
 				tec_file << MFPGetNodeValue(m_msh->nod_vector[j]->GetIndex(),
-				                            mfp_value_vector[k],
-				                            atoi(&mfp_value_vector[k][
-				                                         mfp_value_vector[k].size()
-				                                         - 1]) - 1) << " ";  //NB: MFP output for all phases
+				                            mfp_value_vector[k], atoi(&mfp_value_vector[k][mfp_value_vector[k].size() - 1]) - 1) << " ";  //NB: MFP output for all phases
 		}
 		tec_file << endl;
 	}
@@ -1324,6 +1332,7 @@ double COutput::NODWritePLYDataTEC(int number)
 	{
 		//project_title;
 		std::string project_title_string = "Profiles along polylines";
+
 		tec_file << " TITLE = \"" << project_title_string
 		         << "\"" << endl;
 		tec_file << " VARIABLES = \"DIST\" ";
@@ -1375,6 +1384,9 @@ double COutput::NODWritePLYDataTEC(int number)
 	}
 	//......................................................................
 	// , I=" << NodeListLength << ", J=1, K=1, F=POINT" << endl;
+	if (dat_type_name.compare("GNUPLOT") == 0) // 6/2012 JOD
+		tec_file << "# ";
+
 	tec_file << " ZONE T=\"TIME=" << _time << "\"" << endl;
 	//----------------------------------------------------------------------
 	// Write data
@@ -1539,9 +1551,12 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 	if (time_step_number == 0)            //WW  Old: if(time_step_number==1)
 	{
 		//project_title;
-		std::string project_title_string = "Time curves in points";
-		tec_file << " TITLE = \"" << project_title_string
-		         << "\"" << endl;
+		if (dat_type_name.compare("GNUPLOT") != 0) { // 6/2012 JOD
+			const std::string project_title_string ("Time curves in points");
+			tec_file << " TITLE = \"" << project_title_string << "\"" << endl;
+		} else
+					tec_file << "# ";
+
 		tec_file << " VARIABLES = \"TIME \" ";
 
 		//    if(pcs_type_name.compare("RANDOM_WALK")==0)
@@ -2390,13 +2405,13 @@ void COutput::CalcELEFluxes()
 		if (pcs_type != FiniteElement::MASS_TRANSPORT)
 		{
 			double f_n_sum = 0.0;
-			double *PhaseFlux;
+			double *PhaseFlux(new double [2]);
 			std::string Header[2];
 			int dimension = 2;
 			Header[0] = "q_Phase1";
 			Header[1] = "q_Phase2";
 
-			PhaseFlux = pcs->CalcELEFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()));
+			pcs->CalcELEFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()), PhaseFlux);
 			if ((pcs_type == FiniteElement::GROUNDWATER_FLOW) || (pcs_type == FiniteElement::FLUID_FLOW))
 			{
 				ELEWritePLY_TEC();
@@ -2404,16 +2419,17 @@ void COutput::CalcELEFluxes()
 				TIMValue_TEC(f_n_sum);
 			}
 			if (pcs_type == FiniteElement::MULTI_PHASE_FLOW)
-			{		
+			{
 				Test[0] = PhaseFlux[0];
 				Test[1] = PhaseFlux[1];
 				TIMValues_TEC(Test, Header, dimension);
 			}
+			delete [] PhaseFlux;
 		}
 		// BG, Output for Massflux added
 		else
 		{
-			double *MassFlux;
+			double *MassFlux (new double[5]);
 			std::string Header[5];
 			int dimension = 5;
 			Header[0] = "AdvectiveMassFlux";
@@ -2422,13 +2438,14 @@ void COutput::CalcELEFluxes()
 			Header[3] = "TotalMassFlux";
 			Header[4] = "TotalMass_sum";
 
-			MassFlux = pcs->CalcELEMassFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()), geo_name);
+			pcs->CalcELEMassFluxes(static_cast<const GEOLIB::Polyline*> (getGeoObj()), geo_name, MassFlux);
 			Test[0] = MassFlux[0];
 			Test[1] = MassFlux[1];
 			Test[2] = MassFlux[2];
 			Test[3] = MassFlux[3];
 			Test[4] = MassFlux[4];
 			TIMValues_TEC(Test, Header, dimension);
+			delete [] MassFlux;
 		}
 
 		//double f_n_sum = 0.0;
@@ -2651,7 +2668,7 @@ void COutput::TIMValue_TEC(double tim_value)
 #endif
 	//--------------------------------------------------------------------
 	// Write Header I: variables
-    if(aktueller_zeitschritt==0)		//BG:04/2011 bevor it was timestep 1	
+    if(aktueller_zeitschritt==0)		//BG:04/2011 bevor it was timestep 1
 	{
 		tec_file << "VARIABLES = \"Time\",\"Value\"";
 		tec_file << endl;
@@ -2675,12 +2692,12 @@ void COutput::TIMValue_TEC(double tim_value)
    Modification:
  -------------------------------------------------------------------------*/
 void COutput::TIMValues_TEC(double tim_value[5], std::string *header, int dimension)
-{ 
+{
 	double j[10];
-	
+
     for (int i = 0; i < dimension; i++)
 		j[i] = tim_value[i];
-	
+
    //----------------------------------------------------------------------
    // File handling
    //......................................................................
@@ -3353,4 +3370,470 @@ void COutput::addInfoToFileName (std::string& file_name, bool geo, bool process,
 
 	// finally add file extension
 	file_name += TEC_FILE_EXTENSION;
+}
+
+/**************************************************************************
+ FEMLib-Method:
+ 12/2011 JOD Calculates absolute value of volume flux at each note on an upright surface (normalvec) for water balance output
+ from CSourceTerm::FaceIntegration
+
+ **************************************************************************/
+void COutput::CalculateThroughflow(CFEMesh* msh, vector<long>&nodes_on_sfc,
+				vector<double>&node_value_vector)
+{
+	CRFProcess* m_pcs = PCSGet(getProcessType());
+
+	if (!msh || !m_pcs) {
+		std::cout << "Warning in COutput::FaceIntegration: no MSH and / or PCS  data for water balance";
+		return;
+	}
+
+	long i, j, k, l, count;
+	int nfaces, nfn;
+	int nodesFace[8];
+	double fac = 1.0, nodesFVal[8], v1[3], v2[3], normal_vector[3], normal_velocity, poro;
+	CMediumProperties *MediaProp;
+
+	int Axisymm = 1; // ani-axisymmetry
+	if (msh->isAxisymmetry()) Axisymm = -1; // Axisymmetry is true
+
+	CElem* elem = NULL;
+	CElem* face = new CElem(1);
+	FiniteElement::CElement* fem = new FiniteElement::CElement(Axisymm * msh->GetCoordinateFlag());
+	CNode* e_node = NULL;
+	CElem* e_nei = NULL;
+
+	set<long> set_nodes_on_sfc;
+	vector<long> vec_possible_elements;
+	vector<long> G2L((long) msh->nod_vector.size());
+	vector<double> NVal((long) nodes_on_sfc.size());
+
+	// ----- initialize --------------------------------------------------------------------
+
+	for (i = 0; i < (long) msh->nod_vector.size(); i++) {
+		msh->nod_vector[i]->SetMark(false);
+		G2L[i] = -1;
+	}
+
+	for (i = 0; i < (long) nodes_on_sfc.size(); i++) {
+		NVal[i] = 0.0;
+		k = nodes_on_sfc[i];
+		G2L[k] = i;
+	}
+
+	for (i = 0; i < (long) msh->ele_vector.size(); i++) {
+		msh->ele_vector[i]->selected = 0; //TODO can use a new variable
+	}
+	for (i = 0; i < (long) nodes_on_sfc.size(); i++) {
+		set_nodes_on_sfc.insert(nodes_on_sfc[i]);
+	}
+
+	// ---- search elements ------------------------------------------------------------------
+
+	face->SetFace();
+	for (i = 0; i < (long) nodes_on_sfc.size(); i++) {
+		k = nodes_on_sfc[i];
+		for (j = 0; j < (long) msh->nod_vector[k]->getConnectedElementIDs().size(); j++) {
+			l = msh->nod_vector[k]->getConnectedElementIDs()[j];
+			if (msh->ele_vector[l]->selected == 0)
+				vec_possible_elements.push_back(l);
+			msh->ele_vector[l]->selected += 1; // number of elements on the surface
+		}
+	}
+
+	// ---- face integration ------------------------------------------------------------------
+
+	for (i = 0; i < (long) vec_possible_elements.size(); i++) {
+
+		elem = msh->ele_vector[vec_possible_elements[i]];
+		MediaProp = mmp_vector[elem->GetPatchIndex()];
+		poro = MediaProp->Porosity(elem->GetIndex(), 1.0);
+
+		if (!elem->GetMark()) continue;
+		nfaces = elem->GetFacesNumber();
+		elem->SetOrder(msh->getOrder());
+
+		for (j = 0; j < nfaces; j++) {
+
+			e_nei = elem->GetNeighbor(j);
+			nfn = elem->GetElementFaceNodes(j, nodesFace);
+			//1st check
+			if (elem->selected < nfn) continue;
+			//2nd check: if all nodes of the face are on the surface
+			count = 0;
+			for (k = 0; k < nfn; k++) {
+
+				e_node = elem->GetNode(nodesFace[k]);
+				nodesFVal[k] = 1;
+				if (set_nodes_on_sfc.count(e_node->GetIndex()) > 0) {
+					count++;
+				}
+			} // end k
+			if (count != nfn) continue;
+
+			// --------- calculate area ----------------------------------
+
+			fac = 1.0;
+			if (elem->GetDimension() == e_nei->GetDimension()) // Not a surface face
+			fac = 0.5;
+
+			face->SetFace(elem, j);
+			face->SetOrder(msh->getOrder());
+			face->ComputeVolume();
+			fem->setOrder(msh->getOrder() + 1);
+			fem->ConfigElement(face, true);
+			fem->FaceIntegration(nodesFVal);
+
+			// --------- construct normal vector ----------------------------------
+			MeshLib::CNode const& node0(*(m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]));
+			MeshLib::CNode const& node1(*(m_msh->nod_vector[elem->GetNode(nodesFace[1])->GetIndex()]));
+			MeshLib::CNode const& node2(*(m_msh->nod_vector[elem->GetNode(nodesFace[2])->GetIndex()]));
+
+			v1[0] = node1[0] - node0[0];
+			v1[1] = node1[1] - node0[1];
+			v1[2] = node1[2] - node0[2];
+			v2[0] = node2[0] - node0[0];
+			v2[1] = node2[1] - node0[1];
+			v2[2] = node2[2] - node0[2];
+
+			MathLib::crossProd(v1,v2,normal_vector);
+//			CrossProduction(v1, v2, normal_vector);
+
+			if (fabs(normal_vector[0]) > 1.e-20) // standardize direction for ± sign in result
+			{
+				if (normal_vector[0] < 0) { // point at x-direction
+					normal_vector[0] = -normal_vector[0];
+					normal_vector[1] = -normal_vector[1];
+				}
+			} else {
+				if (normal_vector[1] < 0) { // point at y-direction
+					normal_vector[0] = -normal_vector[0];
+					normal_vector[1] = -normal_vector[1];
+				}
+			}
+
+			NormalizeVector(normal_vector, 3);
+
+
+//			k = 2;
+//			do {
+//				v1[0] = m_msh->nod_vector[elem->GetNode(nodesFace[1])->GetIndex()]->getData()[0]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[0];
+//				v1[1] = m_msh->nod_vector[elem->GetNode(nodesFace[1])->GetIndex()]->getData()[1]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[1];
+//				v1[2] = m_msh->nod_vector[elem->GetNode(nodesFace[1])->GetIndex()]->getData()[2]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[2];
+//				v2[0] = m_msh->nod_vector[elem->GetNode(nodesFace[k])->GetIndex()]->getData()[0]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[0];
+//				v2[1] = m_msh->nod_vector[elem->GetNode(nodesFace[k])->GetIndex()]->getData()[1]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[1];
+//				v2[2] = m_msh->nod_vector[elem->GetNode(nodesFace[k])->GetIndex()]->getData()[2]
+//						- m_msh->nod_vector[elem->GetNode(nodesFace[0])->GetIndex()]->getData()[2];
+//				k++;
+//			} while (fabs(v1[0] - v2[0]) < 1.e-10 && fabs(v1[1] - v2[1]) < 1.e-10 && fabs(v1[2]
+//							- v2[2]) < 1.e-10); // 3 points on surface are not on 1 line
+//
+//
+//			CrossProduction(v1, v2, normal_vector);
+//
+//			/* if(fabs(normal_vector[1])> 1.e-10)
+//			 {
+//			 if(normal_vector[1] < 0)
+//			 {
+//			 normal_vector[0]=-normal_vector[0];
+//			 normal_vector[1]=-normal_vector[1];
+//			 normal_vector[2]=-normal_vector[2];
+//			 }
+//			 }
+//			 else {
+//			 if(normal_vector[0] < 0)
+//			 {
+//			 normal_vector[0]=-normal_vector[0];
+//			 normal_vector[1]=-normal_vector[1];
+//			 normal_vector[2]=-normal_vector[2];
+//			 }
+//			 }
+//			 */
+//
+//			NormalizeVector(normal_vector, 3);
+
+			// ----------- calculate volume flux -------------------------------
+
+			for (k = 0; k < nfn; k++) {
+				e_node = elem->GetNode(nodesFace[k]);
+
+				v1[0] = m_pcs->GetNodeValue(e_node->GetIndex(), 7); // get velocity (flux)
+				v1[1] = m_pcs->GetNodeValue(e_node->GetIndex(), 8);
+				v1[2] = m_pcs->GetNodeValue(e_node->GetIndex(), 9);
+
+				normal_velocity = PointProduction(v1, normal_vector);
+
+				//NVal[G2L[e_node->GetIndex()]] += (fac*nodesFVal[k] * normal_velocity );      // JOD poro???
+				NVal[G2L[e_node->GetIndex()]] += fabs(fac * nodesFVal[k] * normal_velocity); // JOD poro???
+			}
+		} // end faces
+	} // end possible elements
+
+	for (i = 0; i < (long) nodes_on_sfc.size(); i++)
+		node_value_vector[i] = NVal[i]; // result:  | volume flux |_1
+
+
+	NVal.clear();
+	G2L.clear();
+	delete fem;
+	delete face;
+}
+
+/**************************************************************************
+ FEMLib-Method:
+ Task:   Write water balance
+ Use:    specify  $DAT_TYPE as WATER_BALANCE
+ Programing:
+ 06/2012 JOD Implementation
+ **************************************************************************/
+void COutput::NODWriteWaterBalance(double time_current)
+{
+	switch (getGeoType()) {
+	case GEOLIB::SURFACE:
+		NODWriteWaterBalanceSFC(time_current);
+		break;
+	case GEOLIB::POLYLINE:
+		NODWriteWaterBalancePLY(time_current);
+		break;
+	case GEOLIB::POINT:
+		NODWriteWaterBalancePNT(time_current);
+		break;
+	default:
+		break;
+	}
+
+}
+/**************************************************************************
+ FEMLib-Method:
+ Task:   Write water balance for polyline with leakance
+ Use:
+ Programing:
+ 06/2012 JOD Implementation
+ **************************************************************************/
+
+void COutput::NODWriteWaterBalancePNT(double time_current)
+{
+
+	CFEMesh* m_msh = NULL;
+	m_msh = FEMGet(convertProcessTypeToString(getProcessType()));
+	CRFProcess* m_pcs = NULL;
+	m_pcs = PCSGet(getProcessType());
+	long msh_node_number(m_msh->GetNODOnPNT(static_cast<const GEOLIB::Point*> (getGeoObj())));
+	double volume_flux;
+	//--------------------------------------------------------------------
+	// File handling
+	char number_char[3];
+	string number_string = number_char;
+	string tec_file_name = convertProcessTypeToString(getProcessType()) + "_pnt_" + geo_name
+					+ "_water_balance.txt";
+	if (_time < 1.e-20) // simulation must start at t= 0!!!
+	{
+		remove(tec_file_name.c_str());
+		return;
+	}
+	fstream tec_file(tec_file_name.data(), ios::app | ios::out);
+	tec_file.setf(ios::scientific, ios::floatfield);
+	tec_file.precision(12);
+	if (!tec_file.good()) return;
+	tec_file.seekg(0L, ios::beg);
+	//--------------------------------------------------------------------
+	// los geht's
+
+	volume_flux = m_pcs->GetNodeValue(msh_node_number, m_pcs->GetNodeValueIndex("FLUX") + 1)
+					* (m_pcs->GetNodeValue(msh_node_number, m_pcs->GetNodeValueIndex("HEAD")
+									+ 1)
+									- m_pcs->m_msh->nod_vector[msh_node_number]->getData()[2]);
+
+	tec_file << "time: " << time_current << " groundwater discharge (m^3/s): " << volume_flux
+					<< endl;
+
+	tec_file.close();
+
+}
+
+/**************************************************************************
+ FEMLib-Method:
+ Task:   Write water balance for polyline with leakance
+ Use:
+ Programing:
+ 06/2012 JOD Implementation
+ **************************************************************************/
+
+void COutput::NODWriteWaterBalancePLY(double time_current)
+{
+
+	CFEMesh* m_msh = NULL;
+	m_msh = FEMGet(convertProcessTypeToString(getProcessType()));
+	CRFProcess* m_pcs = NULL;
+	m_pcs = PCSGet(getProcessType());
+	vector<long> nodes_vector;
+	vector<double> nodes_vector_volume_flux;
+	GEOLIB::Polyline const* const ply(
+					dynamic_cast<GEOLIB::Polyline const* const > (this->getGeoObj()));
+	double volume_flux, volume_flux_node;
+
+	//--------------------------------------------------------------------
+	// File handling
+	char number_char[3];
+	string number_string = number_char;
+	string tec_file_name = convertProcessTypeToString(getProcessType()) + "_ply_" + geo_name
+					+ "_water_balance.txt";
+	if (_time < 1.e-20) // simulation must start at t= 0!!!
+	{
+		remove(tec_file_name.c_str());
+		return;
+	}
+	fstream tec_file(tec_file_name.data(), ios::app | ios::out);
+	tec_file.setf(ios::scientific, ios::floatfield);
+	tec_file.precision(12);
+	if (!tec_file.good()) return;
+	tec_file.seekg(0L, ios::beg);
+	//--------------------------------------------------------------------
+	// los geht's
+
+	if (ply) {
+		m_msh->GetNODOnPLY(ply, nodes_vector);
+		volume_flux = 0;
+		tec_file << "time: " << _time << endl;
+		for (int i = 0; i < (long) nodes_vector.size(); i++) {
+			volume_flux_node = m_pcs->GetNodeValue(nodes_vector[i], m_pcs->GetNodeValueIndex(
+							"FLUX") + 1) * (m_pcs->GetNodeValue(nodes_vector[i],
+							m_pcs->GetNodeValueIndex("HEAD") + 1)
+							- m_pcs->m_msh->nod_vector[nodes_vector[i]]->getData()[2]);
+			tec_file << " mesh node: " << nodes_vector[i] << " x: "
+							<< m_msh->nod_vector[nodes_vector[i]]->getData()[0] << " y: "
+							<< m_msh->nod_vector[nodes_vector[i]]->getData()[1] << " z: "
+							<< m_msh->nod_vector[nodes_vector[i]]->getData()[2]
+							<< " groundwater discharge (m^3/s): " << volume_flux_node << endl;
+			volume_flux += volume_flux_node;
+		}
+		tec_file << " total groundwater discharge (m^3/s): " << volume_flux << endl;
+	} // m_ply
+
+	tec_file.close();
+
+}
+
+/**************************************************************************
+ FEMLib-Method:
+ Task:   Write water balance for up-right surface
+ Use:
+ Programing:
+ 06/2012 JOD Implementation
+ **************************************************************************/
+
+void COutput::NODWriteWaterBalanceSFC(double time_current)
+{
+
+	CFEMesh* m_msh (FEMGet(convertProcessTypeToString(getProcessType())));
+//	CRFProcess* m_pcs (PCSGet(getProcessType()));
+	Surface *m_sfc = NULL;
+	m_sfc = GEOGetSFCByName(geo_name);
+
+	vector<long> nodes_vector;
+	vector<double> nodes_vector_volume_flux;
+
+	double volume_flux;
+	long i;
+
+	//--------------------------------------------------------------------
+	// File handling
+	char number_char[3];
+	string number_string = number_char;
+	string tec_file_name = convertProcessTypeToString(getProcessType()) + "_sfc_" + geo_name
+					+ "_water_balance.txt";
+	if (_time < 1.e-20) // simulation must start at t= 0!!!
+	{
+		remove(tec_file_name.c_str());
+		return;
+	}
+	fstream tec_file(tec_file_name.data(), ios::app | ios::out);
+	tec_file.setf(ios::scientific, ios::floatfield);
+	tec_file.precision(12);
+	if (!tec_file.good()) return;
+	tec_file.seekg(0L, ios::beg);
+	//--------------------------------------------------------------------
+	// los geht's
+
+	if (m_sfc) {
+
+		m_msh->GetNODOnSFC(m_sfc, nodes_vector);
+		nodes_vector_volume_flux.resize(nodes_vector.size());
+		CalculateThroughflow(m_msh, nodes_vector, nodes_vector_volume_flux);
+
+		volume_flux = 0;
+		for (i = 0; i < (long) nodes_vector_volume_flux.size(); i++) {
+			volume_flux += nodes_vector_volume_flux[i];
+			cout << nodes_vector_volume_flux[i] << " ";
+		}
+		tec_file << time_current << " " << volume_flux << endl;
+
+	} // m_sfc
+
+	tec_file.close();
+}
+
+/**************************************************************************
+ FEMLib-Method:
+ Task:   Write output of multiple points in single file
+ Use:    Specify  $DAT_TYPE as COMBINE_POINTS
+ Programing:
+ 06/2012 JOD Implementation
+ **************************************************************************/
+void COutput::NODWritePointsCombined(double time_current)
+{
+
+	CFEMesh* m_msh = NULL;
+	m_msh = FEMGet(convertProcessTypeToString(getProcessType()));
+	CRFProcess* m_pcs_out = NULL;
+	m_pcs_out = PCSGet(getProcessType());
+
+	//std::string tec_file_name(file_base_name + "_time_");
+	//addInfoToFileName(tec_file_name, true, true, true);
+
+	char number_char[3];
+	string number_string = number_char;
+	string tec_file_name = convertProcessTypeToString(getProcessType()) + "_time_" + "POINTS";
+	if (_time < 1.e-20) {
+		remove(tec_file_name.c_str());
+		return;
+	}
+	fstream tec_file(tec_file_name.data(), ios::app | ios::out);
+	tec_file.setf(ios::scientific, ios::floatfield);
+	tec_file.precision(12);
+	if (!tec_file.good()) return;
+	tec_file.seekg(0L, ios::beg);
+
+	long msh_node_number(m_msh->GetNODOnPNT(static_cast<const GEOLIB::Point*> (getGeoObj())));
+
+	//----------------------------------------------------------------------
+	// NIDX for output variables
+	size_t no_variables(_nod_value_vector.size());
+	vector<int> NodeIndex(no_variables);
+	GetNodeIndexVector(NodeIndex);
+
+	//   int no_variables = (int)nod_value_vector.size();
+	//vector<int>NodeIndex(no_variables);
+
+
+	tec_file << geo_name << " ";
+	std::string nod_value_name;
+	int nidx = m_pcs_out->GetNodeValueIndex(nod_value_name) + 1;
+
+	double val_n;
+
+	for (size_t i = 0; i < _nod_value_vector.size(); i++) {
+		nod_value_name = _nod_value_vector[i];
+		val_n = m_pcs_out->GetNodeValue(msh_node_number, NodeIndex[i]);
+		tec_file << "time " << time_current << " " << nod_value_name << " " << val_n << " "
+						<< endl;
+	}
+
+	tec_file.close();
+
 }

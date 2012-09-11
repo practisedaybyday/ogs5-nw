@@ -30,6 +30,11 @@ double Fluid_Heat_Conductivity (double rho, double T, int fluid);
 double rkeos(double T, double P, double MM, double a, double b);
 double melting_pressure_co2(double T,double Tt,double pt);
 double sublime_pressure_co2(double T,double Tt,double pt);
+/**
+ * Carbon dioxide vapour saturation density at a temperature, Span,1996.
+ * @param T temperature in K
+ * @return density in kg/m3
+ */
 double vapour_pressure_co2(double T);
 double rkeos(double T, double P, int fluid);
 double preos(double T, double P, int fluid);
@@ -57,6 +62,11 @@ double vapour_pressure_n2(double T);
 double liquid_saturation_density_n2(double T);
 double vapour_saturation_density_n2(double T);
 double vapour_saturation_density_co2(double T);
+/**
+ * Carbon dioxide liquid saturation density at a temperature, Span,1996.
+ * @param T temperature in K
+ * @return density in kg/qm
+ */
 double liquid_saturation_density_co2(double T);
 
 double DuansMixingRule(double T, double P, double x, int fluid1, int fluid2, bool neu);

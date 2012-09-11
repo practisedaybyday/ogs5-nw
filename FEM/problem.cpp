@@ -1597,7 +1597,7 @@ inline double Problem::MultiPhaseFlow()
 
 	//TestOutputEclipse(m_pcs);
 	//TestOutputDuMux(m_pcs);
-    
+
 	if (m_pcs->OutputMassOfGasInModel == true)		// 05/2012 BG
 		OutputMassOfGasInModel(m_pcs);
 
@@ -2272,12 +2272,12 @@ void Problem::OutputMassOfGasInModel(CRFProcess* m_pcs)
 			m_mat_mp = mmp_vector[group];
 			// CB Now provides also heterogeneous porosity, model 11
 			porosity = m_mat_mp->Porosity(m_ele->GetIndex(), 1);
-			//node_volume = node_volume + m_ele->GetVolume() / 8 * porosity; 
+			//node_volume = node_volume + m_ele->GetVolume() / 8 * porosity;
 			if (m_ele->GetElementType() == 2)
 				node_volume = node_volume + m_ele->GetVolume() / m_ele->GetNodesNumber(true) * porosity;
 			else
 				node_volume = node_volume + m_ele->GetVolume() / m_ele->GetNodesNumber(false) * porosity;
-			
+
 		}
 
 		V_model = V_model + node_volume;
@@ -2290,13 +2290,13 @@ void Problem::OutputMassOfGasInModel(CRFProcess* m_pcs)
 		saturation_water = m_pcs->GetNodeValue(i,index);
 		//if (saturation_water < 1)
 		saturation_Gas = 1 - saturation_water;
-		if (ProcessIndex_GasInLiquid > -1) 
+		if (ProcessIndex_GasInLiquid > -1)
 		{
 			concentration_Gas_water =
 		        pcs_vector[ProcessIndex_GasInLiquid]->GetNodeValue(
 		                i, indexConcentration_Gas);
 			mass_Gas_water = mass_Gas_water + node_volume * saturation_water *
-		                 concentration_Gas_water * Molweight_Gas * 0.001;			
+		                 concentration_Gas_water * Molweight_Gas * 0.001;
 		}
 		else
 			mass_Gas_water = 0;
@@ -2363,7 +2363,7 @@ void Problem::OutputMassOfGasInModel(CRFProcess* m_pcs)
 	temp << density_Gas;
 	tempstring += temp.str();
 	// Test output pressure and density
-	
+
 	vec_string.push_back(tempstring);
 
 	//within the first timestep create file and write header
@@ -2378,7 +2378,7 @@ Return: nothing
 Programming:
 05/2011 BG
 -------------------------------------------------------------------------*/
-void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CRFProcess *transport_pcs) 
+void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CRFProcess *transport_pcs)
 {
 	//Testoutput mass of component in model domain calculated at nodes
 	MeshLib::CFEMesh* m_msh = fem_msh_vector[0]; //SB: ToDo hart gesetzt
@@ -2395,9 +2395,9 @@ void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CR
 	std::vector <std::string> vec_string;
 	//int position;
 	std::string path;
-	double density_water;
+//	double density_water; // 2012-08 TF, variable ‘density_water’ set but not used [-Wunused-but-set-variable]
 	double porosity;
-	int variable_index;
+//	int variable_index; // 2012-08 TF, variable set but not used
 	double ComponentConcentration, TotalVolume, SourceTerm;
 	int indexComponentConcentration;
 	//CRFProcess *n_pcs = NULL;
@@ -2438,18 +2438,18 @@ void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CR
 		}
 	}
 #endif
-	if (flow_pcs[0]->Tim->step_current == 1) 
+	if (flow_pcs[0]->Tim->step_current == 1)
 	{
 		//Header of the file
 		vec_string.push_back("Time, ComponentMass, TotalVolume");
 	}
-	else 
+	else
 	{
 		//read file and store data
 		CReadTextfiles_ECL TextFile;
 		TextFile.Read_Text(filename);
 
-		for (int i = 0; i < TextFile.NumberOfRows; i++) 
+		for (int i = 0; i < TextFile.NumberOfRows; i++)
 		{
 			vec_string.push_back(TextFile.Data[i]);
 		}
@@ -2461,18 +2461,18 @@ void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CR
 	{
    		m_node = m_msh->nod_vector[i]; // get element
 		node_volume = 0;
-		if (mfp_vector[0]->density_model == 18) 
+		if (mfp_vector[0]->density_model == 18)
 		{
-			variable_index = flow_pcs[0]->GetNodeValueIndex("DENSITY1"); 
-			density_water = flow_pcs[0]->GetNodeValue(i, variable_index);
+//			variable_index = flow_pcs[0]->GetNodeValueIndex("DENSITY1"); // // 2012-08 TF, variable set but not used
+//			density_water = flow_pcs[0]->GetNodeValue(i, variable_index); // 2012-08 TF, variable ‘density_water’ set but not used [-Wunused-but-set-variable]
 		}
-		else
-			density_water = mfp_vector[0]->Density();
+//		else
+//			density_water = mfp_vector[0]->Density(); // 2012-08 TF, variable ‘density_water’ set but not used [-Wunused-but-set-variable]
 
-		for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++) 
+		for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++)
 		{
 			m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
-			
+
 			//get the phase volume of current element elem
 			group = m_ele->GetPatchIndex();
 			m_mat_mp = mmp_vector[group];
@@ -2480,11 +2480,11 @@ void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CR
 			node_volume = node_volume +  porosity * m_ele->GetVolume() * m_ele->GetFluxArea() / m_ele->GetNodesNumber(false);
 			//cout << m_ele->GetNodesNumber(false) << " " << endl;
 		}
-	
+
 		TotalVolume += node_volume;
 		if (flow_pcs[0]->getProcessType() == FiniteElement::GROUNDWATER_FLOW)
 			saturation_water = 1;					// saturation does not exist for example in groundwater flow
-		else 
+		else
 		{
 			int index = flow_pcs[0]->GetNodeValueIndex("SATURATION1") + 1; //+1... new time level
 			saturation_water = flow_pcs[0]->GetNodeValue(i, index);
@@ -2505,7 +2505,7 @@ void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CR
 
 	//calculating time
 	time = 0;
-	for (int k = 0; k < transport_pcs->Tim->step_current; k++) 
+	for (int k = 0; k < transport_pcs->Tim->step_current; k++)
 	{
 		time += transport_pcs->Tim->time_step_vector[k];
 	}
@@ -2539,7 +2539,7 @@ inline double Problem::PS_Global()
 	error = m_pcs->ExecuteNonLinear(loop_process_number);
 	if(m_pcs->TimeStepAccept())
 		m_pcs->CalIntegrationPointValue();
-	
+
 	if (m_pcs->OutputMassOfGasInModel == true)		// 05/2012 BG
 		OutputMassOfGasInModel(m_pcs);
 
@@ -2804,15 +2804,16 @@ inline double Problem::MassTrasport()
 		                                //Component Mobile ?
 		if(CPGetMobil(m_pcs->GetProcessComponentNumber()) > 0)
 			error = m_pcs->ExecuteNonLinear(loop_process_number);  //NW. ExecuteNonLinear() is called to use the adaptive time step scheme
-		
+
 		int component = m_pcs->pcs_component_number;
 		CompProperties* m_cp = cp_vec[component];
 
-		if (m_cp->OutputMassOfComponentInModel == 1)			// 05/2012 BG
+		if (m_cp->OutputMassOfComponentInModel == 1) {			// 05/2012 BG
 			if (singlephaseflow_process.size() >= 0)
-				OutputMassOfComponentInModel(singlephaseflow_process, m_pcs); 
+				OutputMassOfComponentInModel(singlephaseflow_process, m_pcs);
 			else
-				OutputMassOfComponentInModel(multiphase_processes, m_pcs); 
+				OutputMassOfComponentInModel(multiphase_processes, m_pcs);
+		}
 	}
 
 	// Calculate Chemical reactions, after convergence of flow and transport

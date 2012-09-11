@@ -105,7 +105,7 @@ else
 	ctest -R 'FILECOMPARE' -E 'EXCEED' >> ../benchOut.txt
 
 	# Print results
-	cat benchOut.txt
+	cat ../benchOut.txt
 	
 	cd $SOURCE_LOCATION/scripts
 	# Send emails on errors

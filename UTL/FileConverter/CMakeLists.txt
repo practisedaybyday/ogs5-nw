@@ -11,7 +11,7 @@ INCLUDE_DIRECTORIES(
 )
 
 ## Shape to GLI file converter ##
-IF (Shapelib_FOUND)
+IF (Shapelib_FOUND AND QT4_FOUND)
 
 	INCLUDE_DIRECTORIES (${Shapelib_INCLUDE_DIR})
 
@@ -36,7 +36,7 @@ IF (Shapelib_FOUND)
 		INSTALL ( TARGETS ConvertSHPToGLI RUNTIME DESTINATION bin COMPONENT ConvertSHPToGLI )
 	ENDIF (OGS_PACKAGING)
 
-ENDIF (Shapelib_FOUND)
+ENDIF (Shapelib_FOUND AND QT4_FOUND)
 
 ## VTK to OpenSG file converter ##
 IF (OGS_USE_OPENSG AND VTK_FOUND AND Boost_FOUND)

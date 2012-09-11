@@ -1559,30 +1559,25 @@ void GEOGetNodesInMaterialDomain(const int MatIndex, std::vector<long>& Nodes)
    Task: Get element nodes in a material domain
    Programing:
    10/2004 WW Implementation
-   06/2012 NW Made this function faster using std::set for large data set 
+   06/2012 NW Made this function faster using std::set for large data set
 **************************************************************************/
-void GEOGetNodesInMaterialDomain(CFEMesh* m_msh,
+void GEOGetNodesInMaterialDomain(CFEMesh const*const msh,
                                  int MatIndex,
                                  std::vector<long>& Nodes,
                                  bool Order)
 {
-	int i, nn;
-	long e, j;
-	MeshLib::CElem* elem = NULL;
-	bool exist;
-	nn = 0;
 	Nodes.resize(0);
 	std::set<long> set_nodes;
-	const long n_ele = (long)m_msh->ele_vector.size();
-	for (e = 0; e < n_ele; e++)
+	const size_t n_ele (msh->ele_vector.size());
+	for (size_t e = 0; e < n_ele; e++)
 	{
-		elem = m_msh->ele_vector[e];
+		MeshLib::CElem const*const elem (msh->ele_vector[e]);
 		if (elem->GetMark())              // Marked for use
 		{
-			nn = elem->GetNodesNumber(Order);
+			const int nn (elem->GetNodesNumber(Order));
 			if(elem->GetPatchIndex() == static_cast<size_t>(MatIndex))
 			{
-				for(i = 0; i < nn; i++)
+				for(int i = 0; i < nn; i++)
 				{
 					set_nodes.insert(elem->GetNodeIndex(i));
 				}
@@ -1590,7 +1585,7 @@ void GEOGetNodesInMaterialDomain(CFEMesh* m_msh,
 		}                                 // if
 	}                                         //For
 	Nodes.assign(set_nodes.begin(), set_nodes.end());
-	
+
 }
 
 /**************************************************************************

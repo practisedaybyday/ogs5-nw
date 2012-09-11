@@ -19,11 +19,16 @@ ADD_EXECUTABLE( ExtractMeshNodes mainExtractMeshNodes.cpp )
 ADD_EXECUTABLE( ExtractMeshNodeIDs mainExtractMeshNodeIDs.cpp )
 ADD_EXECUTABLE( ModifyMeshProperties mainModifyMeshProperties.cpp ModifyMeshProperties.h ModifyMeshProperties.cpp )
 ADD_EXECUTABLE( filterMeshNodes filterMeshNodes.cpp )
-ADD_EXECUTABLE( rotateMesh rotateMesh.cpp )
+IF(QT4_FOUND)
+	ADD_EXECUTABLE( rotateMesh rotateMesh.cpp )
+ENDIF(QT4_FOUND)
 ADD_EXECUTABLE( convertGLIVerticalSurfaceToPolygon mainConvertGLIVerticalSurfaceToPolygon.cpp )
 
-SET_TARGET_PROPERTIES(ExtractMeshNodeIDs ExtractMeshNodes ModifyMeshProperties filterMeshNodes rotateMesh convertGLIVerticalSurfaceToPolygon
+SET_TARGET_PROPERTIES(ExtractMeshNodeIDs ExtractMeshNodes ModifyMeshProperties filterMeshNodes convertGLIVerticalSurfaceToPolygon
   PROPERTIES FOLDER Utilities)
+IF(QT4_FOUND)
+	SET_TARGET_PROPERTIES(rotateMesh PROPERTIES FOLDER Utilities)
+ENDIF(QT4_FOUND)
 
 TARGET_LINK_LIBRARIES( ExtractMeshNodeIDs
 	GEO
@@ -68,6 +73,15 @@ TARGET_LINK_LIBRARIES( filterMeshNodes
 	Base
 	MSH
 )
+
+ADD_EXECUTABLE( testMeshSearchAlgorithms testMeshSearchAlgorithms.cpp )
+TARGET_LINK_LIBRARIES( testMeshSearchAlgorithms
+	Base
+	GEO
+	MSH
+	MSHGEOTOOLS
+	FileIO
+)	
 
 
 IF(QT4_FOUND)
@@ -135,16 +149,6 @@ IF(QT4_FOUND)
 		${QT_LIBRARIES}
 	)	
 
-	ADD_EXECUTABLE( testMeshSearchAlgorithms testMeshSearchAlgorithms.cpp )
-	TARGET_LINK_LIBRARIES( testMeshSearchAlgorithms
-		Base
-		GEO
-		MSH
-		MSHGEOTOOLS
-		FileIO
-		${QT_LIBRARIES}
-	)	
-
 	ADD_EXECUTABLE( createLayeredMesh createLayeredMesh.cpp )
 	TARGET_LINK_LIBRARIES( createLayeredMesh
 		GEO
@@ -157,7 +161,6 @@ IF(QT4_FOUND)
 		vtkRendering
 		vtkIO
 	)	
-	
 	
 	ADD_EXECUTABLE( removeMeshNodes removeMeshNodes.cpp )
 	TARGET_LINK_LIBRARIES( removeMeshNodes

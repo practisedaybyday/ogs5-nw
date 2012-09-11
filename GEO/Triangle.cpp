@@ -56,11 +56,17 @@ void Triangle::setTriangle (size_t pnt_a, size_t pnt_b, size_t pnt_c)
 	_longest_edge = sqrt (_longest_edge);
 }
 
-bool Triangle::containsPoint (const double* pnt) const
+bool Triangle::containsPoint (const double* pnt, double eps) const
 {
 	GEOLIB::Point const& a_tmp (*(_pnts[_pnt_ids[0]]));
+	if (sqrt(MathLib::sqrDist(a_tmp.getData(), pnt)) < eps)
+		return true;
 	GEOLIB::Point const& b_tmp (*(_pnts[_pnt_ids[1]]));
+	if (sqrt(MathLib::sqrDist(b_tmp.getData(), pnt)) < eps)
+		return true;
 	GEOLIB::Point const& c_tmp (*(_pnts[_pnt_ids[2]]));
+	if (sqrt(MathLib::sqrDist(c_tmp.getData(), pnt)) < eps)
+		return true;
 
 	GEOLIB::Point s(a_tmp);
 	for (size_t k(0); k < 3; k++)
@@ -69,16 +75,16 @@ bool Triangle::containsPoint (const double* pnt) const
 		s[k] /= 3.0;
 	}
 
-	double eps (1e-2);
-	GEOLIB::Point const a (a_tmp[0] + eps * (a_tmp[0] - s[0]),
-	                       a_tmp[1] + eps * (a_tmp[1] - s[1]),
-	                       a_tmp[2] + eps * (a_tmp[2] - s[2]));
-	GEOLIB::Point const b (b_tmp[0] + eps * (b_tmp[0] - s[0]),
-	                       b_tmp[1] + eps * (b_tmp[1] - s[1]),
-	                       b_tmp[2] + eps * (b_tmp[2] - s[2]));
-	GEOLIB::Point const c (c_tmp[0] + eps * (c_tmp[0] - s[0]),
-	                       c_tmp[1] + eps * (c_tmp[1] - s[1]),
-	                       c_tmp[2] + eps * (c_tmp[2] - s[2]));
+	double scaling (1e-2);
+	GEOLIB::Point const a (a_tmp[0] + scaling * (a_tmp[0] - s[0]),
+	                       a_tmp[1] + scaling * (a_tmp[1] - s[1]),
+	                       a_tmp[2] + scaling * (a_tmp[2] - s[2]));
+	GEOLIB::Point const b (b_tmp[0] + scaling * (b_tmp[0] - s[0]),
+	                       b_tmp[1] + scaling * (b_tmp[1] - s[1]),
+	                       b_tmp[2] + scaling * (b_tmp[2] - s[2]));
+	GEOLIB::Point const c (c_tmp[0] + scaling * (c_tmp[0] - s[0]),
+	                       c_tmp[1] + scaling * (c_tmp[1] - s[1]),
+	                       c_tmp[2] + scaling * (c_tmp[2] - s[2]));
 
 	const double delta (std::numeric_limits<double>::epsilon());
 	const double upper (1 + delta);
@@ -151,7 +157,7 @@ bool Triangle::containsPoint (const double* pnt) const
 	gauss.execute (y);
 
 	// check if the solution fulfills the third equation
-	if (fabs((b[2] - a[2]) * y[0] + (c[2] - a[2]) * y[1] - (pnt[2] - a[2])) < 1e-3)
+	if (fabs((b[2] - a[2]) * y[0] + (c[2] - a[2]) * y[1] - (pnt[2] - a[2])) < 1e-3 * _longest_edge)
 	{
 		if (-delta <= y[0] && y[0] <= upper && -delta <= y[1] && y[1] <= upper &&
 		    y[0] + y[1] <= upper)

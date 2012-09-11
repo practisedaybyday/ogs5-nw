@@ -42,14 +42,15 @@ size_t getLargestIndexSmallerThanElement (const T& key, size_t beg, size_t end, 
 {
 	if (beg >= end)
 		return std::numeric_limits<size_t>::max();
-	
+
 	size_t m ((end + beg) / 2);
 
-	if (m+1 == end)
+	if (m+1 == end) {
 		if (key==array[m])
 			return m;
 		else
 			std::numeric_limits<size_t>::max();
+	}
 
 	if (key >= array[m] && key < array[m+1])
 		return m;

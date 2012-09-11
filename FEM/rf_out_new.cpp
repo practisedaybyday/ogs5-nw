@@ -240,10 +240,11 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 		//======================================================================
 		// TECPLOT
 		if (m_out->dat_type_name.compare("TECPLOT") == 0
-		    || m_out->dat_type_name.compare("MATLAB") == 0)
+		    || m_out->dat_type_name.compare("MATLAB") == 0 || m_out->dat_type_name.compare("GNUPLOT") == 0)
 		{
 			//			m_out->matlab_delim = " ";
 			//			if (m_out->dat_type_name.compare("MATLAB") == 0) // JT, just for commenting header for matlab
+			//			if (m_out->dat_type_name.compare("GNUPLOT") == 0) // JOD, just for commenting header for gnupl
 			//				m_out->matlab_delim = "%";
 
 			switch (m_out->getGeoType())
@@ -291,8 +292,8 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 				break;
 			//------------------------------------------------------------------
 			case GEOLIB::POLYLINE: // profiles along polylines
-				std::cout << "Data output: Polyline profile - "
-				          << m_out->getGeoName() << std::endl;
+				 if (m_out->dat_type_name.compare("GNUPLOT") != 0) // JOD !!!!!
+					 std::cout << "Data output: Polyline profile - " << m_out->getGeoName() << std::endl;
 				if (OutputBySteps)
 				{
 					tim_value = m_out->NODWritePLYDataTEC(time_step_number);
@@ -328,8 +329,8 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 				break;
 			//------------------------------------------------------------------
 			case GEOLIB::POINT: // breakthrough curves in points
-				cout << "Data output: Breakthrough curves - "
-				     << m_out->getGeoName() << endl;
+				if (m_out->dat_type_name.compare("GNUPLOT") != 0) // JOD !!!!!
+					cout << "Data output: Breakthrough curves - " << m_out->getGeoName() << endl;
 				m_out->NODWritePNTDataTEC(time_current, time_step_number);
 				if (!m_out->_new_file_opened)
 					m_out->_new_file_opened = true;  //WW
@@ -548,35 +549,10 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 				break;
 			}
 		}
-		//		// ROCKFLOW
-		//		else if (m_out->dat_type_name.compare("ROCKFLOW") == 0) {
-		//			switch (m_out->getGeoType()) {
-		//			case GEOLIB::GEODOMAIN: // domain data
-		//				if (OutputBySteps) {
-		//					OutputBySteps = false;
-		//					m_out->WriteRFO(); //OK
-		//					if (!m_out->_new_file_opened)
-		//						m_out->_new_file_opened = true; //WW
-		//				} else {
-		//					for (size_t j = 0; j < no_times; j++) {
-		//						if ((time_current > m_out->time_vector[j]) ||
-		//								fabs(time_current - m_out->time_vector[j]) <MKleinsteZahl) { //WW MKleinsteZahl
-		//							m_out->WriteRFO(); //OK
-		//							m_out->time_vector.erase(m_out->time_vector.begin()
-		//									+ j);
-		//							if (!m_out->_new_file_opened)
-		//								m_out->_new_file_opened = true; //WW
-		//							break;
-		//						}
-		//					}
-		//				}
-		//				break;
-		//
-		//			default:
-		//				break;
-		//			}
-		//		}
-		//--------------------------------------------------------------------
+		else if (m_out->dat_type_name.compare("WATER_BALANCE") == 0)
+			m_out->NODWriteWaterBalance(time_current); // 6/2012 JOD, MW
+		else if (m_out->dat_type_name.compare("COMBINE_POINTS") == 0) m_out->NODWritePointsCombined(time_current);	// 6/2012 for calibration JOD
+
 		// ELE values, only called if ele values are defined for output, 05/2012 BG
 		if (m_out->getElementValueVector().size() > 0)
 			m_out->CalcELEFluxes();

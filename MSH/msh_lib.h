@@ -93,7 +93,7 @@ extern long* MSHGetNodesClose(long*,CGLPolyline*); //OK411
 
 extern long* GetPointsIn(Surface*,long*);         //OK411
                                                   //OK411
-extern void GEOGetNodesInMaterialDomain(MeshLib::CFEMesh*, int, std::vector<long>&, bool);
+extern void GEOGetNodesInMaterialDomain(MeshLib::CFEMesh const*const, int, std::vector<long>&, bool);
 extern void SetRFIPointsClose(CGLLine*);          //OK411
                                                   //OK411
 extern void MSHGetNodesClose(std::vector<long>&,CGLPoint*);

@@ -8,6 +8,11 @@
 #ifndef OCTTREE_H_
 #define OCTTREE_H_
 
+#include <limits>
+
+// MathLib
+#include "MathTools.h"
+
 namespace GEOLIB {
 
 template <typename POINT> class OctTree {
