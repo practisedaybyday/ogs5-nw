@@ -127,6 +127,7 @@ CBoundaryCondition::CBoundaryCondition() :
 	time_contr_curve = -1;                //WX
 	bcExcav = -1;                         //WX
 	MatGr = -1;                           //WX
+	is_MatGr_set = false; //NW
 }
 
 // KR: Conversion from GUI-BC-object to CBoundaryCondition
@@ -156,6 +157,9 @@ CBoundaryCondition::CBoundaryCondition(const BoundaryCondition* bc)
 		std::cout << "Error in CBoundaryCondition() - DistributionType \""
 		          << FiniteElement::convertDisTypeToString(this->getProcessDistributionType())
 				  << "\" currently not supported." << std::endl;
+
+    is_MatGr_set = false; //NW
+
 }
 
 /**************************************************************************
@@ -430,6 +434,15 @@ std::ios::pos_type CBoundaryCondition::Read(std::ifstream* bc_file,
 			in.clear();
 		}
 		//....................................................................
+		// assignment of BC on mesh nodes connected to certain material elements NW
+        if (line_string.find("$MAT_ID") != std::string::npos)
+        {
+            in.str(readNonBlankLineFromInputStream(*bc_file));
+            in >> MatGr;
+            is_MatGr_set = true;
+            in.clear();
+            continue;
+        }
 	}
 	return position;
 }
@@ -919,7 +932,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 			cont = false;
 
 			//------------------------------------------------------------------
-			if (bc->getExcav() > 0 || bc->geo_type_name.find("MATERIAL_DOMAIN") == 0)
+			if (bc->getExcav() > 0 || bc->isMatGrSet() /*bc->geo_type_name.find("MATERIAL_DOMAIN") == 0*/)
 			//WX: 01.2011. boundary conditions for excavation. 03.2011. Material domain BC
 			{
 				//GEOGetNodesInMaterialDomain(m_msh, m_bc->getExcavMatGr(),nodes_vector, quadratic);
@@ -952,7 +965,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						}
 					}
 				}
-
+				std::cout << "bc_value for mat group " << bc->getExcavMatGr() << " = " << bc->geo_node_value << std::endl;
 				for (i = 0; i < (long) nodes_vector.size(); i++) //possible nodes
 				//for(int j=0; j<m_msh->nod_vector[nodes_vector[i]]->connected_elements.size(); j++){
 				//if(m_msh->ele_vector[m_msh->nod_vector[nodes_vector[i]]->connected_elements[j]]->GetPatchIndex()==m_bc->getExcavMatGr())
@@ -962,7 +975,26 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 					m_node_value->msh_node_number = nodes_vector[i] +
 					                                ShiftInNodeVector; //nodes[i];
 					m_node_value->geo_node_number = nodes_vector[i]; //nodes[i];
-					m_node_value->node_value = bc->geo_node_value;
+					//NW extended calculation of bc values as follows
+                    if (bc->getProcessDistributionType() == FiniteElement::LINEAR) {
+                        std::cout << "***Error: BC distribution type LINEAR is not supported with material id specifications" << std::endl;
+                    } else {
+                        if (bc->getProcessDistributionType() == FiniteElement::GRADIENT) {// 6/2012 JOD
+                            m_node_value->node_value = bc->gradient_ref_depth_gradient
+                                                        * (bc->gradient_ref_depth
+                                                                        - m_msh->nod_vector[m_node_value->geo_node_number]->getData()[2])
+                                                        + bc->gradient_ref_depth_value;
+                        } else {
+                        // 25.08.2011. WW
+                            if (bc->getProcessDistributionType() == FiniteElement::FUNCTION) {
+                                double const* const coords(m_msh->nod_vector[m_node_value-> geo_node_number]->getData());
+                                m_node_value->node_value = bc->dis_linear_f->getValue(coords[0],
+                                                coords[1], coords[2]);
+                            } else {
+                                m_node_value->node_value = bc->geo_node_value;
+                            }
+                        }
+                    }
 					m_node_value->pcs_pv_name = _pcs_pv_name; //YD/WW
 					m_node_value->CurveIndex = bc->getCurveIndex();
 					pcs->bc_node.push_back(bc); //WW

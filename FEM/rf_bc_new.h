@@ -131,8 +131,10 @@ public:
 	}
 
 	int getExcav() {return bcExcav; }             //WX:12.2010 get bc excav model
-	int getExcavMatGr() {return MatGr; }     //WX:12.2010 get excav material group
+	int getExcavMatGr() const {return MatGr; }     //WX:12.2010 get excav material group
 	int getTimeContrCurve() {return time_contr_curve; } //WX:12.2010 get bc ativity controlled curve
+
+	bool isMatGrSet() const {return is_MatGr_set;}; //NW
 
 private:
 	std::vector<std::string> _PointsFCTNames;
@@ -191,6 +193,9 @@ private:
 	int MatGr;
 	// aktive state is controlled by time curve WX:01.2011
 	int time_contr_curve;
+
+	//NW
+	bool is_MatGr_set;
 };
 
 class CBoundaryConditionNode                      //OK raus
