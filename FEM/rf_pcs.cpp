@@ -6240,7 +6240,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 								st_value += vec_etr[q] * distances->getDistance(w,q) / distances->getSumOfDistances(w);
 
 							const size_t n (distances->getDomainPoint(w)->getID());
-							st_node_value[j+w]->node_value = 0.0001 * st_value * m_msh->nod_vector[n]->patch_area;
+							st_node_value[j+w]->node_value = st_value * m_msh->nod_vector[n]->patch_area;
 						}
 						break;
 					}

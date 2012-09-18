@@ -886,7 +886,8 @@ void CFEMesh::constructMeshGrid()
 //	std::cout << "CFEMesh::constructMeshGrid() ... " << std::flush;
 //	clock_t start(clock());
 //#endif
-	_mesh_grid = new GEOLIB::Grid<MeshLib::CNode>(this->getNodeVector(), 511);
+	if (_mesh_grid == NULL)
+		_mesh_grid = new GEOLIB::Grid<MeshLib::CNode>(this->getNodeVector(), 511);
 //#ifndef NDEBUG
 //	clock_t end(clock());
 //	std::cout << "done, took " << (end-start)/(double)(CLOCKS_PER_SEC) << " s -- " << std::flush;
@@ -1622,30 +1623,13 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 #endif
 	const size_t nodes_in_usage((size_t) NodesInUsage());
 
-#if DEBUG_OUTPUT_BC_NODES
-	std::string sfc_name;
-	GEOLIB::SurfaceVec const*const  sfc_vec(_geo_obj->getSurfaceVecObj(*_geo_name));
-	sfc_vec->getNameOfElement(sfc, sfc_name);
-	std::string fname (*_geo_name+std::string("NodesInSurface")+sfc_name+std::string(".gli"));
-	std::ofstream test_out(fname.c_str());
-	test_out << "#POINTS" << std::endl;
-	size_t cnt(0);
-#endif
 	for (size_t j(0); j < nodes_in_usage; j++) {
 		if (sfc->isPntInBV((nod_vector[j])->getData(), _search_length / 2.0)) {
 			if (sfc->isPntInSfc((nod_vector[j])->getData(), _search_length / 2.0)) {
-#if DEBUG_OUTPUT_BC_NODES
-				test_out << cnt++ << " " << nod_vector[j]->getData()[0] << " " << nod_vector[j]->getData()[1] << " " << nod_vector[j]->getData()[2] << " $NAME " << nod_vector[j]->GetIndex() << std::endl;
-#endif
 				msh_nod_vector.push_back(nod_vector[j]->GetIndex());
 			}
 		}
 	}
-
-#if DEBUG_OUTPUT_BC_NODES
-	test_out << "#STOP" << std::endl;
-	test_out.close();
-#endif
 
 #ifdef TIME_MEASUREMENT
 	end = clock();

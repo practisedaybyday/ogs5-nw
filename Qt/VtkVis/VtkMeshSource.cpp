@@ -134,7 +134,7 @@ int VtkMeshSource::RequestData( vtkInformation* request,
 			type = 5;
 			break;
 		case MshElemType::QUAD:
-			type = 8;
+			type = 9;
 			break;
 		case MshElemType::HEXAHEDRON:
 			type = 12;
