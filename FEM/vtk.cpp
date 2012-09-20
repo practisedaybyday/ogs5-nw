@@ -1061,5 +1061,90 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 		if (!useBinary || !output_data)
 			WriteDataArrayFooter(fin);
 	}
-	return true;
+    //MMP
+    if(out->mmp_value_vector.size() > 0)
+    {
+        double gp[3] = {.0, .0, .0};
+        double theta = 1.0;
+
+        struct ELEMENT_MMP_VALUES
+        {
+            static double getValue(CMediumProperties* mmp, int mmp_id, long i_e, double* gp, double theta) {
+                double mat_value = .0;
+                switch (mmp_id)
+                {
+                case 0:
+                    mat_value = mmp->Porosity(i_e, theta);
+                    break;
+                case 1:
+                    mat_value = mmp->PermeabilityTensor(i_e)[0];
+                    break;
+                case 2:
+                    mat_value = mmp->StorageFunction(i_e, gp, theta);
+                    break;
+                default:
+                    cout << "CVTK::WriteElementValues: no MMP values specified" << endl;
+                    break;
+                }
+                return mat_value;
+            }
+
+            static int getMMPIndex(const std::string &mmp_name) {
+                int mmp_id = -1;
+                if (mmp_name.compare("POROSITY") == 0) {
+                    mmp_id = 0;
+                } else if (mmp_name.compare("PERMEABILITY") == 0) {
+                    mmp_id = 1;
+                } else if (mmp_name.compare("STORAGE") == 0) {
+                    mmp_id = 2;
+                } else {
+                    cout << "CVTK::WriteElementValues: no valid MMP values specified. " << mmp_name << endl;
+                }
+                return mmp_id;
+            }
+        };
+
+        for (size_t i_mmp=0; i_mmp<out->mmp_value_vector.size(); i_mmp++) {
+            const std::string &mmp_name = out->mmp_value_vector[i_mmp];
+            int mmp_id = ELEMENT_MMP_VALUES::getMMPIndex(mmp_name);
+            if (mmp_id<0) continue;
+
+            if (!useBinary || !output_data)
+                WriteDataArrayHeader(fin, this->type_Double, mmp_name, 0, str_format, offset);
+
+            if (output_data)
+            {
+                if (!this->useBinary)
+                {
+                    fin << "          ";
+                    for(long i_e = 0; i_e < (long)msh->ele_vector.size(); i_e++)
+                    {
+                        ele = msh->ele_vector[i_e];
+                        CMediumProperties* mmp = mmp_vector[ele->GetPatchIndex()];
+                        double mat_value = ELEMENT_MMP_VALUES::getValue(mmp, mmp_id, i_e, gp, theta);
+                        fin << mat_value << " ";
+                    }
+                    fin << endl;
+                }
+                else
+                {
+                    //OK411
+                    write_value_binary<unsigned int>(fin, sizeof(int) * (long)msh->ele_vector.size());
+                    for (long i_e = 0; i_e < (long)msh->ele_vector.size(); i_e++) {
+                        ele = msh->ele_vector[i_e];
+                        CMediumProperties* mmp = mmp_vector[ele->GetPatchIndex()];
+                        double mat_value = ELEMENT_MMP_VALUES::getValue(mmp, mmp_id, i_e, gp, theta);
+                        write_value_binary(fin, mat_value);
+                    }
+                }
+            } else {
+                offset += (long)msh->ele_vector.size() * sizeof(double) + SIZE_OF_BLOCK_LENGTH_TAG;
+            }
+
+            if (!useBinary || !output_data)
+                WriteDataArrayFooter(fin);
+        }
+    }
+    
+    return true;
 }
