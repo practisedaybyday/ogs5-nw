@@ -1004,6 +1004,27 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 			case 10: //WX:05.2010 directly from curve
 				in >> permeability_pressure_model_values[0]; //WX: curve number 05.2010
 				break;
+            case 21: //NW: k=k0*(1+a*(p-p0)^b)
+                in >> permeability_pressure_model_values[0]; // k0
+                in >> permeability_pressure_model_values[1]; // p0
+                in >> permeability_pressure_model_values[2]; // a
+                in >> permeability_pressure_model_values[3]; // b
+                pcs_name_vector.push_back("PRESSURE1");
+                break;
+            case 22: //NW: k = k0 + A*(p-p0)^2 + B *(p-p0) + C
+                in >> permeability_pressure_model_values[0]; // k0
+                in >> permeability_pressure_model_values[1]; // p0
+                in >> permeability_pressure_model_values[2]; // A
+                in >> permeability_pressure_model_values[3]; // B
+                in >> permeability_pressure_model_values[4]; // C
+                pcs_name_vector.push_back("PRESSURE1");
+                break;
+            case 23: //NW: same as case 22 but less parameter
+                in >> permeability_pressure_model_values[0]; // b0
+                in >> permeability_pressure_model_values[1]; // p0
+                in >> permeability_pressure_model_values[2]; // Kn
+                pcs_name_vector.push_back("PRESSURE1");
+                break;
 			default:
 				std::cout << "Error in MMPRead: no valid permeability model" <<
 				std::endl;
@@ -4310,6 +4331,15 @@ double* CMediumProperties::PermeabilityTensor(long index)
 		}
 		break;
 	}
+
+	//NW
+	k_rel = 1.0;
+    if(permeability_pressure_model > 0) {
+        k_rel = this->PermeabilityPressureFunction();
+    }
+    for (size_t i=0; i<9; i++)
+        tensor[i] *= k_rel;
+
 	return tensor;
 }
 
@@ -7286,6 +7316,60 @@ double CMediumProperties::StorageFunction(long index,double* gp,double theta)
 	return storage;
 }
 
+double CMediumProperties::PermeabilityPressureFunction() const
+{
+    double k_rel = 1.0;
+
+    const double p = this->Fem_Ele_Std->interpolate(this->Fem_Ele_Std->NodalVal1); //OK4709 pressure
+
+    switch (this->permeability_pressure_model) {
+    case 1: // const
+        k_rel = permeability_pressure_model_values[0];
+        break;
+    case 21: // k = k0*(1+a*(p-p0)^b)
+        {
+            const double k0 = permeability_pressure_model_values[0];
+            const double p0 = permeability_pressure_model_values[1];
+            const double a = permeability_pressure_model_values[2];
+            const double b = permeability_pressure_model_values[3];
+            const double dp = p - p0;
+            const double sign_dp = (dp > .0) ? 1. : -1.;
+            k_rel = k0*(1.0 + a * sign_dp*pow(dp, b));
+        }
+        break;
+    case 22: //NW: k = k0 + A*(p-p0)^2 + B *(p-p0) + C
+        {
+            const double k0 = permeability_pressure_model_values[0];
+            const double p0 = permeability_pressure_model_values[1];
+            const double a = permeability_pressure_model_values[2];
+            const double b = permeability_pressure_model_values[3];
+            const double c = permeability_pressure_model_values[4];
+            const double dp = p - p0;
+            const double sign_dp = (dp > .0) ? 1. : -1.;
+            k_rel = k0 + a * sign_dp*pow(dp, 2.0) + b * dp + c;
+        }
+        break;
+    case 23: //NW: the same as case 22 but parameters are b0, p0, Kn
+        {
+            const double b0 = permeability_pressure_model_values[0];
+            const double p0 = permeability_pressure_model_values[1];
+            const double Kn = permeability_pressure_model_values[2];
+            const double invKn = 1.0 / Kn;
+            const double k0 = 1.0/12.0 * b0*b0;
+            const double a = 1.0/12.0 * pow(invKn, 2.0);
+            const double b = - 1.0/6.0 * invKn * b0;
+            const double dp = p - p0;
+            const double sign_dp = (dp > .0) ? 1. : -1.;
+            k_rel = k0 + a * sign_dp*pow(dp, 2.0) + b * dp;
+        }
+        break;
+    default:
+        break;
+    }
+    return k_rel;
+}
+
+#ifdef obsolete                                //OK411
 double CMediumProperties::PermeabilityPressureFunction(long index,double* gp,double theta)
 {
 	double k_rel = 0.0;
@@ -7294,7 +7378,6 @@ double CMediumProperties::PermeabilityPressureFunction(long index,double* gp,dou
 	gp = gp;
 	index = index;
 
-#ifdef obsolete                                //OK411
 	int nn, i, idummy,p_idx1;
 	long* element_nodes;
 	static double gh,  p, eins_durch_rho_g, sigma, z[8], h[8], grad_h[3];
@@ -7461,9 +7544,9 @@ double CMediumProperties::PermeabilityPressureFunction(long index,double* gp,dou
 		k_rel = 1.0;              // CMCD Einbau
 		break;                    // CMCD Einbau
 	}
-#endif
 	return k_rel;
 }
+#endif
 
 /**************************************************************************
    12.(ii)a Subfunction of Permeability_Function_Pressure

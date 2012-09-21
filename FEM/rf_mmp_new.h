@@ -95,7 +95,10 @@ public:
 	//CMCD 9/2004 GeoSys 4
 	double NonlinearFlowFunction(long number, double* gp, double theta);
 	//CMCD 9/2004 GeoSys 4
+#ifdef obsolete                                //OK411
 	double PermeabilityPressureFunction(long index,double* gp,double theta);
+#endif
+    double PermeabilityPressureFunction() const;
 	//CMCD 9/2004 GeoSys 4
 	double PermeabilityPorosityFunction(long index,double* gp,double theta);
 	double PermeabilityFunctionPressure(long index, double PG2); //WX:  05.2010
