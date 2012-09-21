@@ -1114,12 +1114,23 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 
             if (output_data)
             {
+                if (m_pcs==NULL) {
+                    m_pcs = PCSGetFlow();
+                }
+
                 if (!this->useBinary)
                 {
                     fin << "          ";
+                    int gp_r, gp_s, gp_t;
                     for(long i_e = 0; i_e < (long)msh->ele_vector.size(); i_e++)
                     {
                         ele = msh->ele_vector[i_e];
+                        ele->SetOrder(false);
+                        CFiniteElementStd* fem = m_pcs->GetAssember();
+                        fem->ConfigElement(ele, false);
+                        fem->Config();
+                        fem->SetGaussPoint(0, gp_r, gp_s, gp_t);
+                        fem->ComputeShapefct(1);
                         CMediumProperties* mmp = mmp_vector[ele->GetPatchIndex()];
                         double mat_value = ELEMENT_MMP_VALUES::getValue(mmp, mmp_id, i_e, gp, theta);
                         fin << mat_value << " ";
