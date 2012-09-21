@@ -65,6 +65,8 @@ public:
 	void SetMemory();
 	// Set variable  YD
 	void SetVariable();
+    //
+    void Config(); //NW made it public for outputting MMP
 
 	// Set coupling information
 	void ConfigureCoupling(CRFProcess* pcs, const int* Shift, bool dyn = false);
@@ -243,8 +245,6 @@ private:
 	void SetHighOrderNodes();             // 25.2.2007 WW
 	// Primary as water head
 	bool HEAD_Flag;
-	//
-	void Config();
 	//
 	double CalCoefMass();
 	// 25.2.2007 WW
