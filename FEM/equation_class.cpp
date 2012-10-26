@@ -722,7 +722,9 @@ int Linear_EQS::Solver(CNumerics* num)
 		std::cout <<
 		"------------------------------------------------------------------" <<
 		std::endl;
-		std::cout << "*** LIS solver computation" << std::endl;
+		std::cout << "*** LIS solver computation " << std::endl;
+		//omp_set_num_threads (1);
+		std::cout << "-> Max. number of threads = " << omp_get_max_threads() << std::endl;
 		int i, iter, ierr, size;
 		// Fix for the fluid_momentum Dof
 		size = A->Size() * A->Dof();
@@ -749,9 +751,10 @@ int Linear_EQS::Solver(CNumerics* num)
 		// tolerance and other setting parameters are same
 		//NW add max iteration counts
 		sprintf(tol_option,
-		        "-tol %e -maxiter %d",
+		        "-tol %e -maxiter %d -omp_num_threads %d",
 		        m_num->ls_error_tolerance,
-		        m_num->ls_max_iterations);
+		        m_num->ls_max_iterations,
+                omp_get_max_threads());
 
 		ierr = lis_matrix_set_crs(nonzero,A->ptr,A->col_idx, value,AA);
 		ierr = lis_matrix_assemble(AA);

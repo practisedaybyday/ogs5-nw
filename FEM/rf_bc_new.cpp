@@ -1243,6 +1243,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 			//------------------------------------------------------------------
 			if (bc->getGeoType() == GEOLIB::SURFACE)
 			{
+                std::cout << "-> Set BC: Surface " << bc->geo_name << " with " << convertDisTypeToString(bc->getProcessDistributionType()) << std::endl;
 				//CC10/05
 				// 04/2011 TF get the GEOLIB::Surface data structure
 				GEOLIB::Surface const* sfc(
@@ -1289,7 +1290,8 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 //						std::cout << "\t" << k << "\t" << nodes_vector_old[k] << "\t" << msh_nod_vec[k] << std::endl;
 						nodes_vector.push_back (msh_nod_vec[k]);
 					}
-					size_t nodes_vector_length (nodes_vector.size());
+					const size_t nodes_vector_length (nodes_vector.size());
+                    std::cout << "-> " << nodes_vector_length << " nodes are found for this BC" << std::endl;
 
 					if (bc->getProcessDistributionType() == FiniteElement::LINEAR) {
 						std::vector<CGLPolyline*>::iterator p =
@@ -1358,6 +1360,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						//WW group_vector.push_back(m_node_value);
 						//WW bc_group_vector.push_back(bc); //OK
 					}
+
 					node_value.clear();
 				}
 			}

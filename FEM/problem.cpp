@@ -777,6 +777,7 @@ void Problem::PCSCreate()
 			pcs_vector[i]->pcs_component_number;
 		}
 		std::cout << std::endl;
+        std::cout << " ->TIM_TYPE: " << pcs_vector[i]->tim_type_name <<  std::endl;
 		pcs_vector[i]->Create();
 	}
 

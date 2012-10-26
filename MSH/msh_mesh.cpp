@@ -394,13 +394,15 @@ bool CFEMesh::Read(std::ifstream* fem_file)
 			double x, y, z;
 			size_t no_nodes, idx;
 			*fem_file >> no_nodes >> std::ws;
+            nod_vector.resize(no_nodes); //NW
 			std::string s;
 			std::ios::pos_type position = fem_file->tellg();
 			for (size_t i = 0; i < no_nodes; i++)
 			{
 				*fem_file >> idx >> x >> y >> z;
 				CNode* newNode(new CNode(idx, x, y, z));
-				nod_vector.push_back(newNode);
+				//nod_vector.push_back(newNode);
+				nod_vector[i] = newNode; //NW
 				position = fem_file->tellg();
 				*fem_file >> s;
 				if (s.find("$AREA") != std::string::npos)
@@ -414,6 +416,7 @@ bool CFEMesh::Read(std::ifstream* fem_file)
 		{
 			size_t no_elements;
 			*fem_file >> no_elements >> std::ws;
+            ele_vector.resize(no_elements); //NW
 			for (size_t i = 0; i < no_elements; i++)
 			{
 				CElem* newElem(new CElem(i));
@@ -425,7 +428,7 @@ bool CFEMesh::Read(std::ifstream* fem_file)
 				if (newElem->GetDimension() > this->max_ele_dim)
 					this->max_ele_dim
 					        = newElem->GetDimension();
-				ele_vector.push_back(newElem);
+				ele_vector[i] = newElem; //NW
 			}
 		}
 		else if (line_string.find("$LAYER") != std::string::npos)

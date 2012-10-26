@@ -294,6 +294,8 @@ void readTINFile(const std::string &fname, Surface* sfc,
 		// create new Triangle
 		sfc->addTriangle(pnt_pos, pnt_pos + 1, pnt_pos + 2);
 	}
+
+    std::cout  << "-> read TIN data with " << sfc->getNTriangles() << " triangles" << std::endl;
 }
 
 /**************************************************************************
