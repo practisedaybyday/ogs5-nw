@@ -339,11 +339,11 @@ void CFEMesh::computeSearchLength(double c)
 		c *= 0.9;
 	}
 	_search_length = mu - c * s;
-#ifndef NDEBUG
-	if (c < 2) {
-		std::cerr << "[CFEMesh::computeSearchLength] computed _search_length = " << _search_length << ", the average value is: " << mu << ", standard deviation is: " << s << std::endl;
-	}
-#endif
+//#ifndef NDEBUG
+//	if (c < 2) {
+		std::cout << "[CFEMesh::computeSearchLength] computed _search_length = " << _search_length << ", the average value is: " << mu << ", standard deviation is: " << s << std::endl;
+//	}
+//#endif
 }
 
 /**************************************************************************
