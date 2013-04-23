@@ -101,12 +101,19 @@ private:
 	 * density deviated with respect to the concentration
 	 */
 	double drho_dC;
+    double rho_p0;
+    double rho_T0;
+    double rho_C0;
 
 	double diffusion; /*SB:2p */
 
 	// Viscosity
 	double viscosity;
 	double my_0;
+    double my_rho0;
+    double my_p0;
+    double my_T0;
+    double my_C0;
 	double dmy_dp;
 	double dmy_dT;
 	double dmy_dC;
@@ -122,7 +129,9 @@ private:
 	 * state variable: reference temperature
 	 */
 	double T_0;
+    double T_1;
 	double C_0;
+    double C_1;
 	double Z;
 
 	// Chemical properties
@@ -268,6 +277,8 @@ private:
 	double LiquidViscosity_Yaws_1976(double);
 	double LiquidViscosity_Marsily_1986(double);
 	double LiquidViscosity_NN(double,double);
+    double LiquidViscosity_LJH_MP1(double c, double T);
+    double LiquidViscosity_LJH_MP2(double c, double T);
 	double LiquidViscosity_CMCD(double p,double T,double C);
 	double MATCalcHeatConductivityMethod2(double p, double T, double C);
 	double MATCalcFluidHeatCapacityMethod2(double p, double T, double C);

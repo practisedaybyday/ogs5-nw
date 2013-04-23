@@ -60,9 +60,12 @@ CFluidProperties::CFluidProperties() :
 	drho_dp = 0.;
 	drho_dT = 0.;
 	drho_dC = 0.;
+	rho_p0 = rho_T0 = rho_C0 = .0;
 	// Viscosity
 	viscosity_model = 1;
 	my_0 = 1e-3;
+    my_rho0 = .0;
+    my_p0 = my_T0 = my_C0 = .0;
 	dmy_dp = 0.;
 	dmy_dT = 0.;
 	dmy_dC = 0.;
@@ -78,7 +81,9 @@ CFluidProperties::CFluidProperties() :
 	// State variables
 	p_0 = 101325.;
 	T_0 = 293.;
+	T_1 = T_0;
 	C_0 = 0.;
+	C_1 = C_0;
 	Z = 1.;
 	cal_gravity = true;
 	// Data
@@ -306,6 +311,38 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 			if(density_model == 18) // BG, NB calculated node densities from the phase transition model
 			{
 			}
+            if(density_model == 20) // rho(p,C,T) = rho_0*(1+beta_p*(p-p_0)+beta_C*(C-C_0)+beta_T*(T-T_0))
+            {
+                in >> rho_0;
+                in >> p_0;
+                in >> drho_dp;
+                in >> C_0;
+                in >> drho_dC;
+                in >> T_0;
+                in >> drho_dT;
+                density_pcs_name_vector.push_back("PRESSURE1");
+                density_pcs_name_vector.push_back("TEMPERATURE1");
+                density_pcs_name_vector.push_back("CONCENTRATION1");
+            }
+            if(density_model == 21) // rho(p,C,T) = rho_0+rho0_p*(p-p_0)+rho0_C*(C-C_0)+rho0_T*(T-T_0)
+            {
+                in >> rho_0;
+                in >> rho_p0;
+                in >> drho_dp;
+                in >> rho_C0;
+                in >> drho_dC;
+                in >> rho_T0;
+                in >> drho_dT;
+                C_1 = .0;
+                in >> C_1; //[g/L]
+                density_model = 20;
+                drho_dp /= rho_0;
+                drho_dC /= rho_0;
+                drho_dT /= rho_0;
+                density_pcs_name_vector.push_back("PRESSURE1");
+                density_pcs_name_vector.push_back("TEMPERATURE1");
+                density_pcs_name_vector.push_back("CONCENTRATION1");
+            }
 
 			//      mfp_file->ignore(MAX_ZEILE,'\n');
 			in.clear();
@@ -377,6 +414,28 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 			if(viscosity_model == 18) // BG, NB calculated node viscosities from the phase transition model
 			{
 			}
+			if(viscosity_model== 20) //NW
+			{
+                T_1 = .0;
+                in >> my_0 >> C_1 >> T_1; // C0[g/L], T[K]
+                viscosity_pcs_name_vector.push_back("PRESSURE1");
+                viscosity_pcs_name_vector.push_back("TEMPERATURE1");
+                std::cout << "-> Viscosity model " << viscosity_model << " for high-concentration saltwater is selected. Note that Kelvin should be used in HEAT_TRANSPORT.\n";
+                if (T_1 > .0)
+                    std::cout << "-> Constant temperature " << T_1 << " [K] is used.\n";
+			}
+			else if(viscosity_model== 21) //NW
+            {
+                T_1 = .0;
+                in >> my_0 >> my_p0 >> my_C0 >> my_T0 >> my_rho0 >> C_1 >> T_1; // C[g/L], T[K]
+                my_T0 -= T_KILVIN_ZERO;
+                viscosity_pcs_name_vector.push_back("PRESSURE1");
+                viscosity_pcs_name_vector.push_back("TEMPERATURE1");
+                std::cout << "-> Viscosity model " << viscosity_model << " for high-concentration saltwater is selected. Note that Kelvin should be used in HEAT_TRANSPORT.\n";
+                if (T_1 > .0)
+                    std::cout << "-> Constant temperature " << T_1 << " [K] is used.\n";
+            }
+
 
 			//    mfp_file->ignore(MAX_ZEILE,'\n');
 			in.clear();
@@ -810,6 +869,15 @@ double CFluidProperties::Density(double* variables)
 			                                   int(variables[2]),
 			                                   0);                                // hand over element index, Gauss point index and phase index
 			break;
+        case 20:                   // rho(p,C,T) = rho_0*(1+beta_p*(p-p_0)+beta_C*(C-C_0)+beta_T*(T-T_0))
+            {
+                double curC = (C_1 > .0) ? C_1 : max(variables[2],0.0);
+                density = rho_0 *
+                          (1.   + drho_dp * (max(variables[0],0.0) - rho_p0)
+                                + drho_dC * (curC - rho_C0)
+                                + drho_dT * (max(variables[1],0.0) - rho_T0));
+            }
+            break;
 		default:
 			std::cout << "Error in CFluidProperties::Density: no valid model" <<
 			std::endl;
@@ -890,6 +958,15 @@ double CFluidProperties::Density(double* variables)
 			density = variables[0]*MixtureSubProperity(2, (long) variables[2], variables[0], variables[1]);
 			density /=  SuperCompressibiltyFactor((long) variables[2], variables[0], variables[1])*GAS_CONSTANT*variables[1];
 			break;
+        case 20:                   // rho(p,C,T) = rho_0*(1+beta_p*(p-p_0)+beta_C*(C-C_0)+beta_T*(T-T_0))
+            {
+                double curC = (C_1 > .0) ? C_1 : max(primary_variable[2],0.0);
+                density = rho_0 *
+                          (1.   + drho_dp * (max(primary_variable[0],0.0) - rho_p0)
+                                + drho_dC * (curC - rho_C0)
+                                + drho_dT * (max(primary_variable[1],0.0) - rho_T0));
+            }
+            break;
 		default:
 			std::cout << "Error in CFluidProperties::Density: no valid model" <<
 			std::endl;
@@ -1268,7 +1345,21 @@ double CFluidProperties::Viscosity(double* variables)
 		viscosity =
 		        GetElementValueFromNodes(int(variables[0]), int(variables[1]),
 		                                 int(variables[2]), 1);                           // hand over element index, Gauss point index, phase index and variable index
+        break;
+	case 20: //NW for salt water
+        {
+            double curT = (T_1>.0) ? T_1 : primary_variable[1];
+            curT -= T_KILVIN_ZERO;
+            viscosity = LiquidViscosity_LJH_MP1(C_1, curT); //c[g/L], T[C]
+        }
 		break;
+    case 21: //NW for salt water
+    {
+        double curT = (T_1>.0) ? T_1 : primary_variable[1];
+        curT -= T_KILVIN_ZERO;
+        viscosity = LiquidViscosity_LJH_MP2(C_1, curT); //c[g/L], T[C]
+    }
+        break;
 	default:
 		cout << "Error in CFluidProperties::Viscosity: no valid model" << endl;
 		break;
@@ -1399,6 +1490,77 @@ double CFluidProperties::LiquidViscosity_NN(double c,double T)
 	     (1 + 0.7063 * sigma0 - 0.04832 * sigma0 * sigma * sigma0);
 	mu = mu0 / (f1 + f2);
 	return mu;
+}
+
+/**************************************************************************
+   FEMLib-Method:
+   Task:
+   Dynamic viscosity of high-concentration salt water based on
+   Lever&Jackson(1985), Hassanizadeh(1988), and Mercer&Pinder(1974)
+
+   Reference: FEFLOW Reference manual pg 31, (1-100)
+
+   Programing:
+   04/2013 NW implementation
+   last modification:
+**************************************************************************/
+double CFluidProperties::LiquidViscosity_LJH_MP1(double c,double T)
+{
+    double rho = Density();
+    double omega = c / rho;
+    double sigma = (T - 150.0) / 100.0;
+
+    double f = (1 + 0.7063 * sigma - 0.04832 * sigma * sigma * sigma) / (1. + 1.85 * omega - 4.1 * omega * omega + 44.5 * omega * omega * omega);
+    double vis = my_0 / f;
+    return vis;
+}
+
+/**************************************************************************
+   FEMLib-Method:
+   Task:
+   Dynamic viscosity of high-concentration salt water based on
+   Lever&Jackson(1985), Hassanizadeh(1988), and Mercer&Pinder(1974)
+
+   Reference: FEFLOW Reference manual pg 31, (1-101)
+
+   Programing:
+   04/2013 NW implementation
+   last modification:
+**************************************************************************/
+double CFluidProperties::LiquidViscosity_LJH_MP2(double c,double T)
+{
+    double f1, f2, mu;
+    double omega0, omega, sigma0, sigma;
+    double rho = Density();
+
+    if (rho <  MKleinsteZahl || my_T0 < MKleinsteZahl)
+        return 0.;
+
+    static double rho0 = -1;
+    if (rho0 <0) {
+        if (my_rho0 <= 0) {
+            double dens_arg[3];
+            dens_arg[0] = my_p0;
+            dens_arg[1] = my_T0 + T_KILVIN_ZERO;
+            dens_arg[2] = my_C0;
+            rho0 = Density(dens_arg);
+        } else {
+            rho0 = my_rho0;
+        }
+    }
+
+    omega = c / rho;
+    omega0 = my_C0 / rho0;
+    sigma = (T - 150.) / 100.;
+    sigma0 = (my_T0 - 150.) / 100.;
+
+    f1 = (1. + 1.85 * omega0 - 4.1 * omega0 * omega0 + 44.5 * omega0 * omega0 * omega0) /
+         (1. + 1.85 * omega - 4.1 * omega * omega + 44.5 * omega * omega * omega);
+    f2 = (1 + 0.7063 * sigma - 0.04832 * sigma * sigma * sigma) /
+         (1 + 0.7063 * sigma0 - 0.04832 * sigma0 * sigma0 * sigma0);
+    mu = my_0 / (f1*f2);
+
+    return mu;
 }
 
 ////////////////////////////////////////////////////////////////////////////
