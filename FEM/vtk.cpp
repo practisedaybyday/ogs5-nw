@@ -1156,6 +1156,95 @@ bool CVTK::WriteElementValue(std::fstream &fin,
                 WriteDataArrayFooter(fin);
         }
     }
-    
+    //MFP
+    if(out->mfp_value_vector.size() > 0)
+    {
+//
+        struct ELEMENT_MFP_VALUES
+        {
+            static double getValue(CFluidProperties* mfp, int mfp_id) {
+                double mat_value = .0;
+                switch (mfp_id)
+                {
+                case 0:
+                    mat_value = mfp->Density();
+                    break;
+                case 1:
+                    mat_value = mfp->Viscosity();
+                    break;
+                default:
+                    cout << "CVTK::WriteElementValues: no MFP values specified" << endl;
+                    break;
+                }
+                return mat_value;
+            }
+
+            static int getMFPIndex(const std::string &mfp_name) {
+                int mfp_id = -1;
+                if (mfp_name.compare("DENSITY") == 0) {
+                    mfp_id = 0;
+                } else if (mfp_name.compare("VISCOSITY") == 0) {
+                    mfp_id = 1;
+                } else {
+                    cout << "CVTK::WriteElementValues: no valid MFP values specified. " << mfp_name << endl;
+                }
+                return mfp_id;
+            }
+        };
+
+        for (size_t i_mfp=0; i_mfp<out->mfp_value_vector.size(); i_mfp++) {
+            const std::string &mfp_name = out->mfp_value_vector[i_mfp];
+            int mfp_id = ELEMENT_MFP_VALUES::getMFPIndex(mfp_name);
+            if (mfp_id<0) continue;
+
+            if (!useBinary || !output_data)
+                WriteDataArrayHeader(fin, this->type_Double, mfp_name, 0, str_format, offset);
+
+            if (output_data)
+            {
+                if (m_pcs==NULL) {
+                    m_pcs = PCSGetFlow();
+                }
+
+                if (!this->useBinary)
+                {
+                    fin << "          ";
+                    int gp_r, gp_s, gp_t;
+                    for(long i_e = 0; i_e < (long)msh->ele_vector.size(); i_e++)
+                    {
+                        ele = msh->ele_vector[i_e];
+                        ele->SetOrder(false);
+                        CFiniteElementStd* fem = m_pcs->GetAssember();
+                        fem->ConfigElement(ele, false);
+                        fem->Config();
+                        fem->SetGaussPoint(0, gp_r, gp_s, gp_t);
+                        fem->ComputeShapefct(1);
+                        CFluidProperties* mfp = mfp_vector[0];
+                        mfp->Fem_Ele_Std = fem;
+                        double mat_value = ELEMENT_MFP_VALUES::getValue(mfp, mfp_id);
+                        fin << mat_value << " ";
+                    }
+                    fin << endl;
+                }
+                else
+                {
+                    //OK411
+                    write_value_binary<unsigned int>(fin, sizeof(int) * (long)msh->ele_vector.size());
+                    for (long i_e = 0; i_e < (long)msh->ele_vector.size(); i_e++) {
+                        ele = msh->ele_vector[i_e];
+                        CFluidProperties* mfp = mfp_vector[0];
+                        double mat_value = ELEMENT_MFP_VALUES::getValue(mfp, mfp_id);
+                        write_value_binary(fin, mat_value);
+                    }
+                }
+            } else {
+                offset += (long)msh->ele_vector.size() * sizeof(double) + SIZE_OF_BLOCK_LENGTH_TAG;
+            }
+
+            if (!useBinary || !output_data)
+                WriteDataArrayFooter(fin);
+        }
+    }
+
     return true;
 }
