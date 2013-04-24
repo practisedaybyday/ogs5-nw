@@ -796,6 +796,7 @@ void CFiniteElementStd::SetMaterial(int phase)
 		FluidProp = mfp_vector[0];
 		FluidProp->Fem_Ele_Std = this;
 	}
+#ifndef OGS_ONLY_TH
 	// 03.2009 PCH
 	// or JFNK. 10.08.2010. WW
 	if((PCSGet("RICHARDS_FLOW") &&
@@ -809,6 +810,7 @@ void CFiniteElementStd::SetMaterial(int phase)
 		if (GasProp)
 			GasProp->Fem_Ele_Std = this;
 	}
+#endif
 	if (SolidProp && FluidProp) //NW
 		if(D_Flag > 0  && FluidProp->Density() > MKleinsteZahl)
 			SolidProp->Calculate_Lame_Constant();
