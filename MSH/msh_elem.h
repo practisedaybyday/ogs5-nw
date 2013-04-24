@@ -127,6 +127,7 @@ public:
 	{
 		volume = Vol;
 	}
+#ifndef OGS_ONLY_TH
 	// This will be activated after m_tim->CheckCourant() is ready to work
 	// kg44 21042010 activated
 	void SetCourant(double Cour)              //CMCD
@@ -149,6 +150,7 @@ public:
 	{
 		return representative_length;
 	}
+#endif
 	//------------------------------------------------------------------
 	// ID
 	MshElemType::type GetElementType() const { return geo_type; }
@@ -311,6 +313,7 @@ public:
 	void FillTransformMatrix();
 	void FillTransformMatrix(int noneed);
 	double getTransformTensor(int idx);
+#ifndef OGS_ONLY_TH
 	void AllocateMeomoryforAngle()
 	{
 		if (!angle)
@@ -324,6 +327,7 @@ public:
 	{
 		angle[i] = value;
 	}                                         // PCH
+#endif
 	//------------------------------------------------------------------
 	// I/O
 	void Read(std::istream& is = std::cin, int fileType = 0);
@@ -336,7 +340,9 @@ public:
 	//------------------------------------------------------------------
 	// MAT
 	Math_Group::Vec mat_vector;                           //OKWW
+#ifndef OGS_ONLY_TH
 	int matgroup_view;                        //TK
+#endif
 	//------------------------------------------------------------------
 	// Operator
 	// virtual void operator = (const CElem& elem);
@@ -348,6 +354,7 @@ public:
 	double* normal_vector;                    //WW normal_vector[3]; //OK
 	void SetNormalVector();                   //OK
 
+#ifndef OGS_ONLY_TH
 	// Since m_tim->CheckCourant() is deactivated, the following member are
 	// put in comment.
 	// kg44 21042010 reactivated
@@ -357,6 +364,7 @@ public:
 
 	int GetExcavState() {return excavated; }    //WX:01.2011 get excavation state
 	void SetExcavState(const int ExcavState) {excavated = ExcavState; }   //WX:01.2011 set excavation state
+#endif
 private:
 	// Members
 	// ID
@@ -379,7 +387,9 @@ private:
 	int face_index;                           // Local face index for the instance for face
 	double volume;
 	double gravity_center[3];
+#ifndef OGS_ONLY_TH
 	int grid_adaptation;                      // Flag for grid adapting.
+#endif
 	size_t patch_index;
 	/*
 	   // Since m_tim->CheckCourant() is deactivated, the following member are
@@ -397,10 +407,12 @@ private:
 	// double angle[3];	// PCH, angle[0] rotation along y axis
 	//	    angle[1] rotation along x' axis
 	//		angle[2] translation along z'' axis.
+#ifndef OGS_ONLY_TH
 	double* angle;                            // Dymanic allocate memory.  WW
 	//WW double MatT[9];
 
 	int excavated;  //WX:01.2011 excavation state
+#endif
 
 	// -- Methods
 	int GetElementFaces1D(int* FaceNode);

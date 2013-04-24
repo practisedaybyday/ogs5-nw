@@ -924,6 +924,7 @@ long MSHGetNextNode (long startnode, MeshLib::CFEMesh* m_msh)
 /**************************************************************************/
 void MSHSelectFreeSurfaceNodes (MeshLib::CFEMesh* m_msh)
 {
+#ifndef OGS_ONLY_TH
 	// Number of nodes per node layer
 	size_t NumberOfNodesPerLayer = m_msh->nod_vector.size()
 	                               / (m_msh->getNumberOfMeshLayers() + 1);
@@ -958,6 +959,7 @@ void MSHSelectFreeSurfaceNodes (MeshLib::CFEMesh* m_msh)
 		m_msh->nod_vector[strang[no_unconfined_layer]]->free_surface = 2;
 	} /*endfor*/
 	delete[] strang;
+#endif
 }
 
 /**************************************************************************
@@ -1035,9 +1037,11 @@ void MSHDefineMobile(CRFProcess* m_pcs)
 		}                                 //end if unconfined flow group
 	}                                         //end for mmp vector
 
+#ifndef OGS_ONLY_TH
 	// Set mobile MSH nodes flag
 	for(long i = 0; i < no_mobile_nodes; i++)
 		m_pcs->m_msh->nod_vector[i]->free_surface = 4;
+#endif
 
 	if (no_mobile_nodes > 0)
 	{
@@ -1099,6 +1103,7 @@ long* MSHGetNodesInColumn(long nextnode, int anz_zeilen, MeshLib::CFEMesh* m_msh
 /**************************************************************************/
 void MSHMoveNODUcFlow (CRFProcess* m_pcs)
 {
+#ifndef OGS_ONLY_TH
 	long nextnode = -1;
 	long startnode;
 	int anz_zeilen = 0;
@@ -1180,6 +1185,7 @@ void MSHMoveNODUcFlow (CRFProcess* m_pcs)
 			strang = (long*) Free(strang);
 		}                                 /*endif index ==1 */
 	/* end for Schleife �ber alle Knoten */
+#endif
 }
 
 /**************************************************************************
@@ -1194,6 +1200,7 @@ void MSHMoveNODUcFlow (CRFProcess* m_pcs)
 **************************************************************************/
 void CFEMesh::DefineMobileNodes(CRFProcess* m_pcs)
 {
+#ifndef OGS_ONLY_TH
 	long* mobile_nodes = NULL;
 	long no_mobile_nodes = -1;
 	long i,j;
@@ -1285,6 +1292,7 @@ void CFEMesh::DefineMobileNodes(CRFProcess* m_pcs)
 	//----------------------------------------------------------------------
 	delete [] mobile_nodes;
 	mobile_nodes = NULL;
+#endif OGS_ONLY_TH
 }
 
 /**************************************************************************

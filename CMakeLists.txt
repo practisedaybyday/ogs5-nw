@@ -36,6 +36,8 @@ OPTION(OGS_USE_QT "User interface configuration" OFF)
 OPTION(OGS_FEM_LIS "Library of Iterative Solvers for Linear Systems configuration" OFF)
 OPTION(OGS_FEM_MKL "Math kernel library configuration" OFF)
 
+OPTION(OGS_ONLY_TH "Optimize OGS for TH simulations" OFF)
+
 # supported on Linux and Windows
 OPTION(OGS_FEM_MPI "Message passing interface configuration" OFF)
 
@@ -96,6 +98,10 @@ IF(PROCESSOR_COUNT EQUAL 0)
 ELSE()
 	MESSAGE(STATUS "Number of processors: ${PROCESSOR_COUNT}")
 ENDIF() # PROCESSOR_COUNT
+
+IF(OGS_ONLY_TH)
+    ADD_DEFINITIONS(-DOGS_ONLY_TH)
+ENDIF()
 
 IF(OGS_FEM)
 	 MESSAGE (STATUS	"Configuring for FEM command line" )

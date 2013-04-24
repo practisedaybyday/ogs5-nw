@@ -129,6 +129,7 @@ double CFluidMomentum::Execute(int loop_process_number)
 			SolveDarcyVelocityOnNode();
 	}
 
+#ifndef OGS_ONLY_TH
 	// Just one time execution. Needs improvement later on.
 	m_pcs = PCSGet("RANDOM_WALK");
 	if(m_pcs && RWPTSwitch == 0)
@@ -137,6 +138,7 @@ double CFluidMomentum::Execute(int loop_process_number)
 			ConstructFractureNetworkTopology();
 		RWPTSwitch = 1;
 	}
+#endif
 
 	return pcs_error;
 }
@@ -311,8 +313,10 @@ void CFluidMomentum::SolveDarcyVelocityOnNode()
 		   }
 		   }
 		 */
+#ifndef OGS_ONLY_TH
 		// Obtain the edge velocity
 		SolveForEdgeVelocity();
+#endif
 
 		// Obtain element-based velocity
 		for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
@@ -397,6 +401,7 @@ void CFluidMomentum::Create()
 		cout << "Warning in CRFProcess::Create() - no numerical properties" << endl;
 }
 
+#ifndef OGS_ONLY_TH
 /**************************************************************************
    FEMLib-Method: void ConstructFractureNetworkTopology()
    Task: The function constructs the joint edges and crossroad nodes.
@@ -973,6 +978,7 @@ void CFluidMomentum::SolveForEdgeVelocity(void)
 		m_msh->edge_vector[i]->SetVelocity(V);
 	}
 }
+#endif
 
 void FMRead(string file_base_name)
 {

@@ -619,9 +619,10 @@ COutput* OUTGetRWPT(const std::string & out_name)
  *****************************************************************************************/
 void OUTCheck()
 {
-	std::cout << "Checking output data " << std::endl;
+	std::cout << "Checking output data ..." << std::flush;
 	// Go through all out objects (#OUTPUT-section in input file)
 	for (size_t i = 0; i < out_vector.size(); i++)
 		out_vector[i]->checkConsistency();
+    std::cout << " done" << std::endl;
 }
 

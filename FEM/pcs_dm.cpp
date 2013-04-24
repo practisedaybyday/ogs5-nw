@@ -725,6 +725,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	error_k0 = Error;
 	//
 
+#ifndef OGS_ONLY_TH
 	//----------------------------------------------------------------------
 	//Excavation. .. .12.2009. WW
 	//----------------------------------------------------------------------
@@ -807,7 +808,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			}
 		}                         //
 	}
-
+#endif
 	//----------------------------------------------------------------------
 
 	return Error;

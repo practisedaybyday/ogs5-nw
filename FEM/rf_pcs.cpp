@@ -3895,6 +3895,7 @@ void CRFProcess::CheckMarkedElement()
 **************************************************************************/
 void CRFProcess::CheckExcavedElement()
 {
+#ifndef OGS_ONLY_TH
 	int valid;
 	long l;
 	//bool done;
@@ -3913,6 +3914,7 @@ void CRFProcess::CheckExcavedElement()
 				elem->SetExcavState(1);
 		}
 	}
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -4697,7 +4699,11 @@ void CRFProcess::GlobalAssembly()
 			{
 				elem = m_msh->ele_vector[i];
 				// Marked for use //WX: modified for coupled excavation
-				if (elem->GetMark() && elem->GetExcavState() == -1)
+#ifndef OGS_ONLY_TH
+                if (elem->GetMark() && elem->GetExcavState() == -1)
+#else
+                if (elem->GetMark())
+#endif
 				{
 					elem->SetOrder(false);
 					fem->ConfigElement(elem, Check2D3D);
@@ -6203,6 +6209,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		long gindex = 0;
 		int dim_space = 0;        //kg44 better define here and not in a loop!
 
+#ifndef OGS_ONLY_TH
 //###############################
 //NB Climate Data
 
@@ -6286,7 +6293,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 
 //#####################
-
+#endif
 
 		if (rank == -1)
 		{
@@ -12942,6 +12949,7 @@ CRFProcess* PCSGetMass(size_t component_number)
 		return some_thing_done;
 	}
 
+#ifndef OGS_ONLY_TH
 /*************************************************************************
    GeoSys-Function: CalGPVelocitiesfromEclipse
    Task: Calculate gauss point velocities from Eclipse solution
@@ -13033,7 +13041,7 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path,
 	time = (double(finish) - double(start)) / CLOCKS_PER_SEC;
 	cout << "         Time: " << time << " seconds." << endl;
 }
-
+#endif
 
 //-------------------------------------------------------------------------
 //GeoSys - Function: CO2_H2O_NaCl_VLE_isobaric

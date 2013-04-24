@@ -188,7 +188,9 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 
 	//SBOK4209 MSHWrite(dateiname);
 	// PCTRead is bounded by msh
+#ifndef OGS_ONLY_TH
 	PCTRead(dateiname);                   // PCH
+#endif
 	FMRead(dateiname);                    // PCH
 	FCTRead(dateiname);                   //OK
 	CURRead(dateiname);                   //OK

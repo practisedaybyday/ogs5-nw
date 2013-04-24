@@ -1334,6 +1334,7 @@ double CTimeDiscretization::CheckCourant(void)
 	double stable_time_step = 0.0;
 	//  int edx;
 
+#ifndef OGS_ONLY_TH
 	for (index = 0; index < (long)m_pcs->m_msh->ele_vector.size(); index++)
 	{
 		elem = m_pcs->m_msh->ele_vector[index];
@@ -1362,6 +1363,7 @@ double CTimeDiscretization::CheckCourant(void)
 			critical_element_no = index;
 		}
 	}
+#endif
 	std::cout << "Courant time step control, critical element = " << critical_element_no <<
 	" Recomended time step " << recommended_time_step << std::endl;
 	return recommended_time_step;

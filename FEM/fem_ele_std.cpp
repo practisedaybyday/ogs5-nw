@@ -3316,6 +3316,7 @@ void CFiniteElementStd::CalcMass()
 	MNulleVec(alpha,3);
 	MNulleVec(summand,8);
 
+#ifndef OGS_ONLY_TH
 	if(PcsType == T)
 		if(upwind_method > 0)
 		{
@@ -3324,6 +3325,7 @@ void CFiniteElementStd::CalcMass()
 			Cal_Velocity_2();
 			UpwindAlphaMass(alpha); // CB 160507
 		}
+#endif
 
 	ElementValue* gp_ele = ele_gp_value[Index]; //NW
 
@@ -3353,6 +3355,7 @@ void CFiniteElementStd::CalcMass()
 		// GEO factor
 		mat_fac *= fkt;
 		// Calculate mass matrix
+#ifndef OGS_ONLY_TH
 		if(PcsType == T)
 		{
 			// upwinding: addiere SUPG-Summanden auf shapefct entsprechend Fkt. Mphi2D_SPG
@@ -3367,6 +3370,7 @@ void CFiniteElementStd::CalcMass()
 			//TEST OUTPUT
 		}
 		else
+#endif
 		{
 			for (i = 0; i < nnodes; i++)
 				for (j = 0; j < nnodes; j++)
@@ -4372,6 +4376,7 @@ void CFiniteElementStd::CalcLaplace()
 		// Compute geometry
 		ComputeGradShapefct(1);   // Linear interpolation function
 		// Calculate mass matrix
+#ifndef OGS_ONLY_TH
 		water_depth = 1.0;
 		// The following "if" is done by WW
 		if(PcsType == G && MediaProp->unconfined_flow_group == 1 && MeshElement->ele_dim ==
@@ -4383,6 +4388,7 @@ void CFiniteElementStd::CalcLaplace()
 				        (pcs->GetNodeValue(nodes[i],idx1) - Z[i]) * shapefct[i];
 		}
 		fkt *= water_depth;
+#endif
 		//---------------------------------------------------------
 
 		for (in_times_nnodes = 0,in = 0; in < dof_n; in++, in_times_nnodes += nnodes)
@@ -4391,6 +4397,7 @@ void CFiniteElementStd::CalcLaplace()
 			     jn++, jn_times_nnodes += nnodes)
 			{
 				// Material
+#ifndef OGS_ONLY_TH
 				if(dof_n == 1)
 					CalCoefLaplace(false,gp);
 				else if (dof_n == 2)
@@ -4402,6 +4409,9 @@ void CFiniteElementStd::CalcLaplace()
 					else if (PcsType == S)
 						CalCoefLaplacePTC(in * dof_n + jn);
 				}
+#else
+                CalCoefLaplace(false,gp);
+#endif
 				//---------------------------------------------------------
 
 				for (i = 0, i_plus_in_times_nnodes = in_times_nnodes; i < nnodes; i++, i_plus_in_times_nnodes++) {
@@ -4600,6 +4610,7 @@ void CFiniteElementStd::CalcAdvection()
 	int gp_r = 0, gp_s = 0, gp_t;
 	double fkt,mat_factor = 0.0;
 	double vel[3], dens_aug[3];
+#ifndef OGS_ONLY_TH
 	CFluidProperties* m_mfp_g = NULL;
 	bool multiphase = false;
 	//18.02.2008, 04.09.2008 WW
@@ -4611,12 +4622,17 @@ void CFiniteElementStd::CalcAdvection()
 		m_mfp_g =  mfp_vector[1];
 		GasProp = MFPGet("GAS");
 	}
+#endif
 	ElementValue* gp_ele = ele_gp_value[Index];
+#ifndef OGS_ONLY_TH
 	CRFProcess* pcs_fluid_momentum = PCSGet("FLUID_MOMENTUM");
+#endif
 
 	//Initial values
 	gp_t = 0;
+#ifndef OGS_ONLY_TH
 	(*Advection) = 0.0;
+#endif
 
 	//----------------------------------------------------------------------
 	// Loop over Gauss points
@@ -4636,6 +4652,7 @@ void CFiniteElementStd::CalcAdvection()
 		vel[0] = mat_factor * gp_ele->Velocity(0, gp);
 		vel[1] = mat_factor * gp_ele->Velocity(1, gp);
 		vel[2] = mat_factor * gp_ele->Velocity(2, gp);
+#ifndef OGS_ONLY_TH
 		// If component is in non - wetting phase, as designated by transport_phase == 10 // SB, BG
 		if(cp_vec.size() > 0 && this->pcs->pcs_component_number>=0)
 			// // SB, BG
@@ -4663,6 +4680,7 @@ void CFiniteElementStd::CalcAdvection()
 			vel[1] += mat_factor * gp_ele->Velocity_g(1, gp);
 			vel[2] += mat_factor * gp_ele->Velocity_g(2, gp);
 		}
+
 		// Velocity by Fluid_Momentum - 13.11.2009  PCH
 		if(pcs_fluid_momentum)
 		{
@@ -4678,7 +4696,7 @@ void CFiniteElementStd::CalcAdvection()
 			                                             m_pcs->GetElementValueIndex(
 			                                                     "VELOCITY1_Z") + 1);
 		}
-
+#endif
 		for (i = 0; i < nnodes; i++)
 			for (j = 0; j < nnodes; j++)
 				for (size_t k = 0; k < dim; k++)
@@ -4690,6 +4708,7 @@ void CFiniteElementStd::CalcAdvection()
 			vel[0] = gp_ele->Velocity(0, gp);
 			vel[1] = gp_ele->Velocity(1, gp);
 			vel[2] = gp_ele->Velocity(2, gp);
+#ifndef OGS_ONLY_TH
 			if(pcs_fluid_momentum)
 			{
 				CRFProcess* m_pcs = pcs_fluid_momentum;
@@ -4704,6 +4723,7 @@ void CFiniteElementStd::CalcAdvection()
 				        m_pcs->GetElementValue(index, m_pcs->GetElementValueIndex(
 				                                       "VELOCITY1_Z") + 1);
 			}
+#endif
 
 			double tau = 0;
 			CalcSUPGWeightingFunction(vel, gp, tau, weight_func);
@@ -6083,6 +6103,7 @@ double CFiniteElementStd::Get_Element_Velocity(int Index, CRFProcess* m_pcs, int
 	return velocity[dimension];
 }
 
+#ifndef OGS_ONLY_TH
 /***************************************************************************
    GeoSys - Funktion: Cal_GP_Velocity_ECLIPSE
    CFiniteElementStd:: Velocity calulation in gauss points from
@@ -6201,6 +6222,7 @@ string CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring,
 	// Output
 	// gp_ele->Velocity.Write();
 }
+#endif
 
 /***************************************************************************
    GeoSys - Funktion:
@@ -6908,8 +6930,10 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		(*Mass) = 0.0;
 		(*Laplace) = 0.0;
 		(*Advection) = 0.0;
+#ifndef OGS_ONLY_TH
 		(*Storage) = 0.0;
 		(*Content) = 0.0;
+#endif
 		//----------------------------------------------------------------------
 		// GEO
 		// double geo_fac = MediaProp->geo_area;
@@ -6928,10 +6952,12 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		CalcLaplace();
 		// Advection matrix.....................................................
 		CalcAdvection();
+#ifndef OGS_ONLY_TH
 		// Calc Storage Matrix for decay
 		CalcStorage();
 		// Calc Content Matrix for  saturation changes
 		CalcContent();
+#endif
 
 		// Store matrices to memory for steady state element matrices     //SB-3
 		if(pcs->Memory_Type > 0)
@@ -6940,8 +6966,10 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 			EleMat->SetMass_notsym(Mass);
 			EleMat->SetLaplace(Laplace);
 			EleMat->SetAdvection(Advection);
+#ifndef OGS_ONLY_TH
 			EleMat->SetStorage(Storage);
 			EleMat->SetContent(Content);
+#endif
 		}
 	}                                     //SB-3
 	else
@@ -6953,8 +6981,10 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		Mass = EleMat->GetMass_notsym();
 		Laplace = EleMat->GetLaplace();
 		Advection = EleMat->GetAdvection();
+#ifndef OGS_ONLY_TH
 		Storage = EleMat->GetStorage();
 		Content = EleMat->GetContent();
+#endif
 	}                                     //pcs->tim_type    //SB-3
 	//======================================================================
 	// Assemble global matrix
@@ -6984,6 +7014,7 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		*AuxMatrix      = *Advection;
 		(*AuxMatrix)   *= fac_advection;
 		*StiffMatrix   += *AuxMatrix;
+#ifndef OGS_ONLY_TH
 		// Storage matrix
 		*AuxMatrix      = *Storage;
 		(*AuxMatrix)   *= fac_storage;
@@ -6992,7 +7023,7 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		//*AuxMatrix      = *Content;		//SB, BG; Korrektur Stofftransport bei Mehrphasenströmung
 		//(*AuxMatrix)   *= fac_content;
 		//*StiffMatrix   += *AuxMatrix; // SB, BG
-
+#endif
 		//----------------------------------------------------------------------
 		// Add local matrix to global matrix
 		for(i = 0; i < nnodes; i++)
@@ -7033,6 +7064,7 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		*AuxMatrix     = *Advection;
 		(*AuxMatrix)  *= fac_advection;
 		*AuxMatrix1   += *AuxMatrix;
+#ifndef OGS_ONLY_TH
 		// Storage
 		*AuxMatrix     = *Storage;
 		(*AuxMatrix)  *= fac_storage;
@@ -7041,6 +7073,7 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		*AuxMatrix     = *Content;
 		(*AuxMatrix)  *= fac_content;
 		*AuxMatrix1   += *AuxMatrix;
+#endif
 
 		for (i = 0; i < nnodes; i++)
 		{

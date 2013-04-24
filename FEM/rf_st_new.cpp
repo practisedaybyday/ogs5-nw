@@ -3579,6 +3579,7 @@ void CSourceTerm::DirectAssign(long ShiftInNodeVector)
 {
    CRFProcess* m_pcs = PCSGet(convertProcessTypeToString(getProcessType()));
 
+#ifndef OGS_ONLY_TH
    if (getProcessDistributionType()==FiniteElement::CLIMATE) //NB for this type of ST, we assign a ST to each node on the Mesh surface (land surface)
    {
 		std::vector<double> node_area_vec;
@@ -3605,6 +3606,7 @@ void CSourceTerm::DirectAssign(long ShiftInNodeVector)
 		this->_distances = new MathLib::InverseDistanceInterpolation<GEOLIB::PointWithID*, GEOLIB::Station*>(points, this->_weather_stations);
    }
    else //NB this is the old version, where nodes were read from an separate input file
+#endif
    {
 		std::string line_string;
 		std::string st_file_name;
