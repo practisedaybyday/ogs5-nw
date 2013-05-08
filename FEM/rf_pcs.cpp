@@ -110,6 +110,8 @@ REACT_BRNS* m_vec_BRNS;
 #include "InterpolationAlgorithms/InverseDistanceInterpolation.h"
 #include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 
+#include "StringTools.h"
+
 using namespace std;
 using namespace MeshLib;
 using namespace Math_Group;
@@ -4045,7 +4047,8 @@ double CRFProcess::Execute()
 	iter_lin = dom->eqs->Solver(eqs_new->x, global_eqs_dim);
 #else
 #ifdef LIS
-	iter_lin = eqs_new->Solver(this->m_num); //NW
+    bool compress_eqs = (type/10==4 || this->NumDeactivated_SubDomains>0);
+	iter_lin = eqs_new->Solver(this->m_num, compress_eqs); //NW
 #else
 	iter_lin = eqs_new->Solver();
 #endif
@@ -4116,7 +4119,7 @@ double CRFProcess::Execute()
 
 		// Solve the algebra
 #ifdef CHECK_EQS
-		string eqs_name = pcs_type_name + "_EQS.txt";
+		string eqs_name = convertProcessTypeToString(this->getProcessType())  + "_EQS" + number2str(aktueller_zeitschritt) +  ".txt";
 		MXDumpGLS((char*)eqs_name.c_str(),1,eqs->b,eqs->x);
 #endif
 #ifdef NEW_EQS                              //WW

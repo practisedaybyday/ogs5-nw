@@ -515,7 +515,7 @@ int Linear_EQS::Solver(double* xg, const long n)
 #else // if defined(USE_MPI)
 #ifdef LIS                                     // PCH 02.2008
 //NW 01.2010 Use configuration in NUM file
-int Linear_EQS::Solver(CNumerics* num)
+int Linear_EQS::Solver(CNumerics* num, bool compress)
 {
 	// Check the openmp solver type iterative and directive
 	CNumerics* m_num;
@@ -725,95 +725,110 @@ int Linear_EQS::Solver(CNumerics* num)
 		std::cout << "*** LIS solver computation " << std::endl;
 		//omp_set_num_threads (1);
 		std::cout << "-> Max. number of threads = " << omp_get_max_threads() << std::endl;
-		int i, iter, ierr, size;
-		// Fix for the fluid_momentum Dof
-		size = A->Size() * A->Dof();
+		int i, iter, ierr, size, nonzero;
+        int *ptr, *index;
+        double* value;
+        // Fix for the fluid_momentum Dof
+        size = A->Size() * A->Dof();
+        // Establishing CRS type matrix from GeoSys Matrix data storage type
+        nonzero = A->nnz();
+        value = new double [nonzero];
+        ierr = A->GetCRSValue(value);
+        ptr = A->ptr;
+        index = A->col_idx;
 
-		// Assembling the matrix
-		// Establishing CRS type matrix from GeoSys Matrix data storage type
-		int nonzero = A->nnz();
-		double* value;
-		value = new double [nonzero];
-		ierr = A->GetCRSValue(value);
+        std::vector<int> vec_nz_rows;
+        if (compress) {
+            // check non-zero rows, non-zero entries
+            vec_nz_rows.reserve(size);
+            int n_nz_entries = 0;
+            for (int i=0; i<size; i++) {
+                int j_row_begin = A->ptr[i];
+                int j_row_end = A->ptr[i+1];
+                int old_n_nz_entries = n_nz_entries;
+                for (int j=j_row_begin; j<j_row_end; j++) {
+                    if (value[j]==.0) continue;
+                    n_nz_entries++;
+                }
+                if (n_nz_entries>old_n_nz_entries)
+                    vec_nz_rows.push_back(i);
+            }
 
-		// Creating a matrix.
-		ierr = lis_matrix_create(0,&AA);
-		ierr = lis_matrix_set_type(AA,LIS_MATRIX_CRS);
-		ierr = lis_matrix_set_size(AA,0,size);
+            int *new_ptr, *new_index;
+            double* new_value;
+            lis_matrix_malloc_crs((int)vec_nz_rows.size(), n_nz_entries, &new_ptr, &new_index, &new_value);
 
-		// Matrix solver and Precondition can be handled better way.
-		char solver_options[MAX_ZEILE], tol_option[MAX_ZEILE];
-		sprintf(solver_options,
-		        "-i %d -p %d %s",
-		        m_num->ls_method,
-		        m_num->ls_precond,
-		        m_num->ls_extra_arg.c_str());
-		// tolerance and other setting parameters are same
-		//NW add max iteration counts
-		sprintf(tol_option,
-		        "-tol %e -maxiter %d -omp_num_threads %d",
-		        m_num->ls_error_tolerance,
-		        m_num->ls_max_iterations,
-                omp_get_max_threads());
+            int nnz_counter = 0;
+            for (int i=0; i<(int)vec_nz_rows.size(); i++) {
+                const int old_i = vec_nz_rows[i];
+                const int j_row_begin = A->ptr[old_i];
+                const int j_row_end = A->ptr[old_i+1];
 
-		ierr = lis_matrix_set_crs(nonzero,A->ptr,A->col_idx, value,AA);
-		ierr = lis_matrix_assemble(AA);
+                new_ptr[i] = nnz_counter;
 
-//		{
-//			std::cout << "print some lines of matrix: " << std::endl;
-//			for (size_t r(0); r < 5; r++) {
-//					const unsigned row_end(A->ptr[r+1]);
-//					std::cout << r << ": " << std::flush;
-//					for (unsigned j(A->ptr[r]); j< row_end; j++) {
-//							std::cout << value[A->col_idx[j]] << " ";
-//					}
-//					std::cout << std::endl;
-//			}
-//
-//
-//			std::string fname("CO2MAN-Matrix.bin");
-//			std::ofstream os (fname.c_str(), std::ios::binary);
-//			std::cout << "writing matrix in binary format to " << fname << " ... " << std::flush;
-//			unsigned mat_size (size);
-//			os.write((char*) &mat_size, sizeof(unsigned));
-//			unsigned *iA(new unsigned[mat_size+1]);
-//			for (size_t k(0); k<mat_size+1; k++) {
-//				iA[k] = A->ptr[k];
-//			}
-//
-//			unsigned mat_nnz(iA[mat_size]);
-//			unsigned *jA(new unsigned[mat_nnz]);
-//			for (size_t k(0); k<mat_nnz; k++) {
-//				jA[k] = A->col_idx[k];
-//			}
-//
-//			double *A(new double[mat_nnz]);
-//			for (size_t k(0); k<mat_nnz; k++) {
-//				A[k] = value[k];
-//			}
-//
-//			os.write((char*) iA, (mat_size+1) * sizeof(unsigned));
-//			os.write((char*) jA, iA[mat_size] * sizeof(unsigned));
-//			os.write((char*) A, iA[mat_size] * sizeof(double));
-//			delete [] A;
-//			delete [] jA;
-//			delete [] iA;
-//			os.close();
-//			std::cout << "done" << std::endl;
-//		}
+                for (int j=j_row_begin; j<j_row_end; j++) {
+                    if (value[j]==.0) continue;
+                    new_index[nnz_counter] = A->col_idx[j];
+                    new_value[nnz_counter] = value[j];
+                    nnz_counter++;
+                }
+            }
+            new_ptr[vec_nz_rows.size()] = nnz_counter;
 
-		// Assemble the vector, b, x
-		//OK411 int iflag = 0;
-		ierr = lis_vector_duplicate(AA,&bb);
-		ierr = lis_vector_duplicate(AA,&xx);
-#pragma omp parallel for
-		for(i = 0; i < size; ++i)
-		{
-			ierr = lis_vector_set_value(LIS_INS_VALUE,i,x[i],xx);
-			ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[i],bb);
-		}
+            std::cout << "-> global linear equations are compressed with non-zero entries. original dim=" << size << ", compressed dim=" << vec_nz_rows.size() << "\n";
+
+            size = (int)vec_nz_rows.size();
+            ptr = new_ptr;
+            index = new_index;
+            delete [] value;
+            value = new_value;
+        }
+
+        // Creating a matrix.
+        ierr = lis_matrix_create(0,&AA);
+        ierr = lis_matrix_set_type(AA,LIS_MATRIX_CRS);
+        ierr = lis_matrix_set_size(AA,0,size);
+        ierr = lis_matrix_set_crs(nonzero, ptr, index, value, AA);
+        ierr = lis_matrix_assemble(AA);
+
+        // Assemble the vector, b, x
+        //OK411 int iflag = 0;
+        ierr = lis_vector_duplicate(AA,&bb);
+        ierr = lis_vector_duplicate(AA,&xx);
+
+        if (!compress) {
+            #pragma omp parallel for
+            for(i = 0; i < size; ++i)
+            {
+                ierr = lis_vector_set_value(LIS_INS_VALUE,i,x[i],xx);
+                ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[i],bb);
+            }
+        } else {
+            #pragma omp parallel for
+            for(i = 0; i < size; ++i)
+            {
+                ierr = lis_vector_set_value(LIS_INS_VALUE,i,x[vec_nz_rows[i]],xx);
+                ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[vec_nz_rows[i]],bb);
+            }
+        }
+
+		//lis_output(AA, bb, xx, LIS_FMT_MM, "leqs.txt");
 
 		// Create solver
+        // Matrix solver and Precondition can be handled better way.
+        char solver_options[MAX_ZEILE], tol_option[MAX_ZEILE];
+        sprintf(solver_options,
+                "-i %d -p %d %s",
+                m_num->ls_method,
+                m_num->ls_precond,
+                m_num->ls_extra_arg.c_str());
+        // tolerance and other setting parameters are same
+        //NW add max iteration counts
+        sprintf(tol_option,
+                "-tol %e -maxiter %d -omp_num_threads %d",
+                m_num->ls_error_tolerance,
+                m_num->ls_max_iterations,
+                omp_get_max_threads());
 		ierr = lis_solver_create(&solver);
 
 		ierr = lis_solver_set_option(solver_options,solver);
@@ -830,12 +845,23 @@ int Linear_EQS::Solver(CNumerics* num)
 		//	lis_vector_print(bb);
 
 		// Update the solution (answer) into the x vector
-#pragma omp parallel for
-		for(i = 0; i < size; ++i)
-			lis_vector_get_value(xx,i,&(x[i]));
+		if (!compress) {
+            #pragma omp parallel for
+            for(i = 0; i < size; ++i)
+                lis_vector_get_value(xx,i,&(x[i]));
+		} else {
+            #pragma omp parallel for
+            for(i = 0; i < size; ++i) {
+                lis_vector_get_value(xx,i,&(x[vec_nz_rows[i]]));
+            }
+		}
 
 		// Clear memory
-		delete [] value;
+		if (compress) {
+		    lis_matrix_destroy(AA);
+		} else {
+	        delete [] value;
+		}
 		//	lis_matrix_destroy(AA);
 		lis_vector_destroy(bb);
 		lis_vector_destroy(xx);
