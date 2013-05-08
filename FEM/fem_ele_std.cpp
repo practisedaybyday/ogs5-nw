@@ -425,6 +425,8 @@ CFiniteElementStd::~CFiniteElementStd()
 		delete [] idx_vel_disp;
 	delete [] idx_vel;
 	delete [] NodalVal_p20;               //AKS
+	delete [] NodalVal_t0;
+    delete [] NodalVal_t1;
 	//NW
 	if(weight_func)
 		delete [] weight_func;    // Remove bug. WW
