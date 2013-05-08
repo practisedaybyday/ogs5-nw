@@ -465,6 +465,9 @@ Problem::~Problem()
 		DestroyREACT();           //SB
 		cp_vec.clear();           // Destroy component properties vector
 	}
+	for (size_t i=0; i<out_vector.size(); i++)
+	    delete out_vector[i];
+	out_vector.clear();
 	//
 #ifdef CHEMAPP
 	if (Eqlink_vec.size() > 0)
