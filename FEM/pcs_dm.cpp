@@ -556,7 +556,8 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			dom->eqsH->Solver(eqs_new->x, global_eqs_dim);
 #else
 #ifdef LIS
-			eqs_new->Solver(this->m_num); //NW
+			bool compress_eqs = (type/10==4 || this->NumDeactivated_SubDomains>0);
+			eqs_new->Solver(this->m_num, compress_eqs); //NW
 #else
 			eqs_new->Solver(); //27.11.2007
 #endif
@@ -725,6 +726,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	error_k0 = Error;
 	//
 
+#ifndef OGS_ONLY_TH
 	//----------------------------------------------------------------------
 	//Excavation. .. .12.2009. WW
 	//----------------------------------------------------------------------
@@ -807,7 +809,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			}
 		}                         //
 	}
-
+#endif
 	//----------------------------------------------------------------------
 
 	return Error;
@@ -2399,7 +2401,7 @@ void CRFProcessDeformation::GlobalAssembly()
 	{
 		GlobalAssembly_DM();
 
-		if(type / 10 == 4)        // p-u monolithic scheme
+		if(type / 10 == 4) {        // p-u monolithic scheme
 
 			// if(!fem_dm->dynamic)   ///
 			//  RecoverSolution(1);  // p_i-->p_0
@@ -2407,6 +2409,22 @@ void CRFProcessDeformation::GlobalAssembly()
 			// Assemble pressure eqs
 			// Changes for OpenMP
 			GlobalAssembly_std(true);
+#if 0
+            const size_t n_nodes_linear = m_msh->GetNodesNumber(false);
+            const size_t n_nodes_quard = m_msh->GetNodesNumber(true);
+            const size_t offset_H = problem_dimension_dm * n_nodes_quard;
+			if (this->eqs_new->size_A > offset_H + n_nodes_linear)
+			{
+	            // set dummy diagonal entry of rows corresponding to unused quadratic nodes for H
+	            std::cout << "set dummy diagonal entry of rows corresponding to unused quadratic nodes for H\n";
+	            std::cout << "-> Linear nodes = " << n_nodes_linear << ", Quadratic nodes = " << n_nodes_quard << "\n";
+	            std::cout << "-> Constrain equation index from " << offset_H +  n_nodes_linear << " to " << offset_H + n_nodes_quard << "\n";
+	            for (size_t i=n_nodes_linear; i<n_nodes_quard; i++) {
+	                (*this->eqs_new->A)(offset_H+i,offset_H+i)=1.0;
+	            }
+			}
+#endif
+		}
 		// if(!fem_dm->dynamic)
 		//   RecoverSolution(2);  // p_i-->p_0
 

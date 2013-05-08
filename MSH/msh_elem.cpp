@@ -24,17 +24,21 @@ namespace MeshLib
 **************************************************************************/
 CElem::CElem(size_t Index)
 : CCore(Index), normal_vector(NULL), /*geo_type(t), */owner(NULL), ele_dim(1),
-	nnodes(0), nnodesHQ(0), nodes(nnodes), nodes_index(nnodes),
-	patch_index(0), transform_tensor(NULL), angle(NULL)
+	nnodes(0), nnodesHQ(0), nodes(nnodes), nodes_index(nnodes)
 {
-	grid_adaptation = -1;
 	volume = 0.0;
 	face_index = -1;
 	no_faces_on_surface = 0;
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
 	normal_vector = NULL;
 	area = 1.0;                               //WW
+#ifndef OGS_ONLY_TH
+    grid_adaptation = -1;
 	excavated = -1;                           //WX
+    patch_index = 0;
+    transform_tensor = NULL;
+    angle = NULL;
+#endif
 }
 /**************************************************************************
    MSHLib-Method:
@@ -45,8 +49,6 @@ CElem::CElem(size_t Index)
 CElem::CElem() : CCore(0), normal_vector(NULL)
 {
 	selected = 0;
-	matgroup_view = 0;
-	grid_adaptation = -1;
 	nnodes = 0;
 	nnodesHQ = 0;
 	ele_dim = 1;                              // Dimension of element
@@ -58,11 +60,15 @@ CElem::CElem() : CCore(0), normal_vector(NULL)
 	owner = NULL;
 	nodes.resize(8);                          // Nodes of face
 	transform_tensor = NULL;
-	angle = NULL;
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
 	area = 1.0;                               //WW area = 1.0
 	normal_vector = NULL;
-	excavated = -1;                           //WX
+#ifndef OGS_ONLY_TH
+    matgroup_view = 0;
+    grid_adaptation = -1;
+    angle = NULL;
+    excavated = -1;                           //WX
+#endif
 }
 
 /**************************************************************************
@@ -82,9 +88,11 @@ CElem::CElem(size_t Index, CElem* onwer, int Face) :
 	face_index = Face;
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
 	transform_tensor = NULL;
-	angle = NULL;
 	normal_vector = NULL;
-	excavated = -1;                           //WX
+#ifndef OGS_ONLY_TH
+    angle = NULL;
+    excavated = -1;                           //WX
+#endif
 	//
 	switch(owner->geo_type)
 	{
@@ -172,7 +180,6 @@ CElem::CElem(size_t Index, CElem* m_ele_parent) :
 	//  static int edgeIndex_loc[10];
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
 	transform_tensor = NULL;
-	angle = NULL;
 	this->setElementProperties(m_ele_parent->geo_type);
 
 	patch_index =  m_ele_parent->patch_index;
@@ -193,18 +200,25 @@ CElem::CElem(size_t Index, CElem* m_ele_parent) :
 	}
 	area = 1.0;                               //WW
 
-	excavated = -1;   //12.08.2011. WW
+#ifndef OGS_ONLY_TH
+    angle = NULL;
+    excavated = -1;   //12.08.2011. WW
+#endif
 }
 
 CElem::CElem(CElem const &elem) :
 	CCore(elem.GetIndex()),
 	mat_vector (elem.mat_vector),
+#ifndef OGS_ONLY_TH
 	matgroup_view (elem.matgroup_view),
+#endif
 	selected (elem.selected),
 	normal_vector(new double[3]),
+#ifndef OGS_ONLY_TH
 	representative_length (elem.representative_length),
 	courant (elem.courant),
 	neumann (elem.neumann),
+#endif
 	geo_type (elem.geo_type),
 	owner (elem.owner),
 	ele_dim (elem.ele_dim),
@@ -218,10 +232,14 @@ CElem::CElem(CElem const &elem) :
 	no_faces_on_surface (elem.no_faces_on_surface),
 	face_index (elem.face_index),
 	volume (elem.volume),
+#ifndef OGS_ONLY_TH
 	grid_adaptation (elem.grid_adaptation),
+#endif
 	patch_index (elem.patch_index),
-	area (elem.area),
-	angle (new double(*(elem.angle)))
+	area (elem.area)
+#ifndef OGS_ONLY_TH
+	,angle (new double(*(elem.angle)))
+#endif
 {
 	for (size_t k(0); k < 3; k++)
 	{
@@ -252,8 +270,10 @@ CElem::CElem(CElem const &elem) :
 CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, int mat) :
 	CCore(0), normal_vector(NULL), geo_type(t), owner(NULL), ele_dim(2),
 	nnodes(3), nnodesHQ(6), nodes(nnodes), nodes_index(nnodes),
-	nedges(3), edges(nedges), edges_orientation(nedges),
-	nfaces(3), patch_index(mat), transform_tensor(NULL), neighbors(nfaces), angle(NULL)
+	nedges(3), edges(nedges), edges_orientation(nedges)
+#ifndef OGS_ONLY_TH
+	,nfaces(3), patch_index(mat), transform_tensor(NULL), neighbors(nfaces), angle(NULL)
+#endif
 {
 	nodes_index[0] = node0;
 	nodes_index[1] = node1;
@@ -272,8 +292,10 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, int
 CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, size_t node3, int mat) :
 	CCore(0), normal_vector(NULL), geo_type(t), owner(NULL), ele_dim(2),
 	nnodes(4), nnodesHQ(9), nodes(nnodes), nodes_index(nnodes),
-	nedges(4), edges(nedges), edges_orientation(nedges),
-	nfaces(4), patch_index(mat), transform_tensor(NULL), neighbors(nfaces), angle(NULL)
+	nedges(4), edges(nedges), edges_orientation(nedges)
+#ifndef OGS_ONLY_TH
+	,nfaces(4), patch_index(mat), transform_tensor(NULL), neighbors(nfaces), angle(NULL)
+#endif
 {
 	nodes_index[0] = node0;
 	nodes_index[1] = node1;
@@ -310,14 +332,18 @@ CElem::~CElem()
 	if(transform_tensor)
 		delete transform_tensor;
 	transform_tensor = NULL;
+#ifndef OGS_ONLY_TH
 	if(angle)
 		delete [] angle;
 	angle = NULL;
+#endif
 	transform_tensor = NULL;
 	if (normal_vector)
 		delete [] normal_vector;
 	normal_vector = NULL;
+#ifndef OGS_ONLY_TH
 	delete [] angle;
+#endif
 }
 /**************************************************************************
    MSHLib-Method:
@@ -521,7 +547,9 @@ void CElem::Read(std::istream& is, int fileType)
 
 		if (buffer.find("-1") != std::string::npos)
 		{
+#ifndef OGS_ONLY_TH
 			grid_adaptation = strtol(buffer.data(), NULL, 0);
+#endif
 			is >> name;
 		}
 		else
@@ -1391,6 +1419,7 @@ void CElem::ComputeVolume()
 {
 	volume = calcVolume();
 
+#ifndef OGS_ONLY_TH
 	if (this->geo_type == MshElemType::LINE)                  // Line
 		representative_length = volume;
 	else if (this->geo_type == MshElemType::TRIANGLE)
@@ -1407,6 +1436,7 @@ void CElem::ComputeVolume()
 		representative_length = 0.0;  //NW set zero because I don't know what is the representative_length.
 	else
 		std::cerr << "Error in CElem::ComputeVolume() - MshElemType not found" << std::endl;
+#endif
 }
 
 double CElem::calcVolume () const

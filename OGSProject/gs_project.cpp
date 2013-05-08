@@ -392,7 +392,9 @@ void GSPWriteData()
 		else if(m_gsp->type.compare("pct") == 0) // PCH
 		{
 			path_base = g_gsp_path + m_gsp->base;
+#ifndef OGS_ONLY_TH
 			DATWriteParticleFile(aktueller_zeitschritt);
+#endif
 		}
 		else if(m_gsp->type.compare("pcs") == 0)
 		{

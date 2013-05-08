@@ -23,13 +23,18 @@ namespace MeshLib
    03/2010 TF moved initialization of attributes to initialization list, added docu
 **************************************************************************/
 CEdge::CEdge(size_t Index, bool quadr)
-	: CCore(Index), nodes_of_edges(3), joint (0), velocity (NULL)
+	: CCore(Index), nodes_of_edges(3)
 {
 	quadratic = quadr;
 	// Assume that each edge has three nodes, third node is middle point
 	for(size_t i = 0; i < 3; i++)
 		nodes_of_edges[i] = NULL;
+#ifndef OGS_ONLY_TH
+	joint = 0;
+	velocity = NULL;
+#endif
 }
+
 
 /**************************************************************************
    MSHLib-Method:
@@ -40,7 +45,9 @@ CEdge::CEdge(size_t Index, bool quadr)
 CEdge::~CEdge()
 {
 	nodes_of_edges.resize(0);
+#ifndef OGS_ONLY_TH
 	delete [] velocity;
+#endif
 }
 /**************************************************************************
    MSHLib-Method:

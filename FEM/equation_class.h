@@ -80,7 +80,7 @@ public:
 	double GetCPUtime() const { return cpu_time;  }
 #else
 #ifdef LIS                                  //NW
-	int Solver(CNumerics* num = NULL);
+	int Solver(CNumerics* num = NULL, bool compress=false);
 #else
 	int Solver();
 #endif

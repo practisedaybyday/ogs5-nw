@@ -43,6 +43,7 @@ public:
 
 	double getLength() const;
 
+#ifndef OGS_ONLY_TH
 	int GetJoint() const
 	{
 		return joint;
@@ -52,6 +53,7 @@ public:
 	{
 		return velocity[index];
 	}                                         // PCH
+#endif
 
 	// Set functions
 	void SetNodes(Math_Group::vec<CNode*>& Nodes)
@@ -63,6 +65,7 @@ public:
 	{
 		nodes_of_edges[index] = aNode;
 	}
+#ifndef OGS_ONLY_TH
 	void SetJoint(int i)
 	{
 		joint = i;
@@ -78,7 +81,7 @@ public:
 		velocity[1] = v[1];
 		velocity[2] = v[2];
 	}                                         // PCH
-
+#endif
 	// Operator
 	void operator =(CEdge& edg);
 	bool operator ==(CEdge& edg);
@@ -96,8 +99,10 @@ private:
 	 * the third is not really a mesh node, it is the middle point
 	 */
 	Math_Group::vec<CNode*> nodes_of_edges;
+#ifndef OGS_ONLY_TH
 	int joint;                                // PCH
 	double* velocity;                         // PCH
+#endif
 
 	friend class CElem;
 };

@@ -87,8 +87,10 @@ public:
 	void Create(void);
 	virtual double Execute(int loop_process_number);
 	void SolveDarcyVelocityOnNode();
+#ifndef OGS_ONLY_TH
 	void ConstructFractureNetworkTopology();
 	void SolveForEdgeVelocity(void);
+#endif
 
 protected:
 	FiniteElement::CFiniteElementStd* fem;

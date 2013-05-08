@@ -465,6 +465,9 @@ Problem::~Problem()
 		DestroyREACT();           //SB
 		cp_vec.clear();           // Destroy component properties vector
 	}
+	for (size_t i=0; i<out_vector.size(); i++)
+	    delete out_vector[i];
+	out_vector.clear();
 	//
 #ifdef CHEMAPP
 	if (Eqlink_vec.size() > 0)
@@ -594,6 +597,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 9;
 		//	} else if (m_pcs->pcs_type_name.compare("RANDOM_WALK") == 0) {
 	}
+#ifndef OGS_ONLY_TH
 	else if (m_pcs->getProcessType() == FiniteElement::RANDOM_WALK)
 	{
 		if (!activefunc)
@@ -603,6 +607,7 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		return 10;
 		//	} else if (m_pcs->pcs_type_name.compare("MASS_TRANSPORT") == 0) {
 	}
+#endif
 	else if (m_pcs->getProcessType() == FiniteElement::MASS_TRANSPORT)
 	{
 		if (!activefunc)
@@ -908,7 +913,9 @@ void Problem::Euler_TimeDiscretize()
 	ScreenMessage("\n\n***Start time steps\n");
 	//
 	// Output zero time initial values
+    std::cout << "Outputting initial values... " << std::flush;
 	OUTData(0.0,aktueller_zeitschritt,true);
+    std::cout << "done \n";
 	//
 	// ------------------------------------------
 	// PERFORM TRANSIENT SIMULATION
@@ -1375,6 +1382,7 @@ inline double Problem::LiquidFlow()
 			m_pcs->selected = false;
 	}
 
+#ifndef OGS_ONLY_TH
 	if(m_pcs->simulator.compare("ECLIPSE") == 0) // use ECLIPSE to calculate one phase liquid flow, BG
 	{
 		if(m_pcs->EclipseData == NULL) //SBG if this is the first call, make a new instance
@@ -1396,6 +1404,7 @@ inline double Problem::LiquidFlow()
 		if (success == 0)
 			std::cout << "Error running DuMux!" << std::endl;
 	}
+#endif
 
 	return error;
 }
@@ -1535,6 +1544,7 @@ inline double Problem::MultiPhaseFlow()
 			m_pcs->CalIntegrationPointValue();  //WW
 	}
 
+#ifndef OGS_ONLY_TH
 	if(m_pcs->simulator.compare("ECLIPSE") == 0) // use ECLIPSE to calculate multi-phase flow, BG
 	{
 		if(m_pcs->EclipseData == NULL) //SBG if this is the first call, make a new instance
@@ -1557,6 +1567,7 @@ inline double Problem::MultiPhaseFlow()
 		if (success == 0)
 			std::cout << "Error running DuMux!" << std::endl;
 	}
+#endif
 	//CO2-Phase_Transition BG, NB
 	if ((m_pcs->Phase_Transition_Model == 1) && ((m_pcs->simulator.compare("GEOSYS") == 0)))
 	{
@@ -1605,6 +1616,7 @@ inline double Problem::MultiPhaseFlow()
 	return error;
 }
 
+#ifndef OGS_ONLY_TH
 /*-------------------------------------------------------------------------
    GeoSys - Function: TestOutputDuMux()
    Task: provides the sum of CO2 in the model domain in output files
@@ -2140,6 +2152,7 @@ void Problem::TestOutputEclipse(CRFProcess* m_pcs)
 	tempstring = path_new + "\\Sum_CO2_elements.csv";
 	TextFile->Write_Text(tempstring, vec_string);
 }
+#endif
 
 /*-------------------------------------------------------------------------
    GeoSys - Function: OutputMassOfGasInModel()
@@ -2227,6 +2240,7 @@ void Problem::OutputMassOfGasInModel(CRFProcess* m_pcs)
 	if (m_pcs->Tim->step_current == 1)
 		//Header of the file
 		vec_string.push_back("Time, massGas_gas, massGas_water, massGas, porosity, Modelvolume, Pressure2, Density2");
+#ifndef OGS_ONLY_TH
 	else
 	{
 		CReadTextfiles_ECL TextFile;
@@ -2235,6 +2249,7 @@ void Problem::OutputMassOfGasInModel(CRFProcess* m_pcs)
 		for (int i = 0; i < TextFile.NumberOfRows; i++)
 			vec_string.push_back(TextFile.Data[i]);
 	}
+#endif
 
 	V_model = mass_Gas = mass_Gas_gas = mass_Gas_water = 0;
 	// +1: new timelevel
@@ -2367,9 +2382,11 @@ void Problem::OutputMassOfGasInModel(CRFProcess* m_pcs)
 
 	vec_string.push_back(tempstring);
 
+#ifndef OGS_ONLY_TH
 	//within the first timestep create file and write header
 	CWriteTextfiles_ECL TextFile;
 	TextFile.Write_Text(filename, vec_string);
+#endif
 }
 
 /*-------------------------------------------------------------------------
@@ -2444,6 +2461,7 @@ void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CR
 		//Header of the file
 		vec_string.push_back("Time, ComponentMass, TotalVolume");
 	}
+#ifndef OGS_ONLY_TH
 	else
 	{
 		//read file and store data
@@ -2455,7 +2473,7 @@ void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CR
 			vec_string.push_back(TextFile.Data[i]);
 		}
 	}
-
+#endif
 	ComponentMass = TotalVolume = SourceTerm = 0;
 
 	for (long i = 0; i < (long)m_msh->nod_vector.size(); i++)
@@ -2518,9 +2536,11 @@ void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CR
 
 	vec_string.push_back(tempstring);
 
+#ifndef OGS_ONLY_TH
 	//within the first timestep create file and write header
 	CWriteTextfiles_ECL TextFile;
 	TextFile.Write_Text(filename, vec_string);
+#endif
 }
 
 /*-------------------------------------------------------------------------
@@ -2941,6 +2961,7 @@ inline double Problem::FluidMomentum()
 	return error;
 }
 
+#ifndef OGS_ONLY_TH
 /*-------------------------------------------------------------------------
    GeoSys - Function: RandomWalker()
    Task:
@@ -3085,6 +3106,7 @@ inline double Problem::RandomWalker()
 
 	return 0.0;
 }
+#endif
 
 /*-------------------------------------------------------------------------
    GeoSys - Function: Deformation

@@ -108,8 +108,7 @@ bool OUTRead(const std::string& file_base_name,
 		if (line_string.find("#STOP") != string::npos)
 			return true;
 
-		COutput* out(new COutput(out_vector.size()));
-		out->getFileBaseName() = file_base_name;
+		COutput* out = NULL;
 		// Give version in file name
 		//15.01.2008. WW
 		if (line_string.find("#VERSION") != string::npos)
@@ -118,6 +117,8 @@ bool OUTRead(const std::string& file_base_name,
 		// keyword found
 		if (line_string.find("#OUTPUT") != string::npos)
 		{
+	        out = new COutput(out_vector.size());
+	        out->getFileBaseName() = file_base_name;
 			position = out->Read(out_file, geo_obj, unique_name);
 
 			if(output_version) //// 02.2011. WW
@@ -619,9 +620,10 @@ COutput* OUTGetRWPT(const std::string & out_name)
  *****************************************************************************************/
 void OUTCheck()
 {
-	std::cout << "Checking output data " << std::endl;
+	std::cout << "Checking output data ..." << std::flush;
 	// Go through all out objects (#OUTPUT-section in input file)
 	for (size_t i = 0; i < out_vector.size(); i++)
 		out_vector[i]->checkConsistency();
+    std::cout << " done" << std::endl;
 }
 

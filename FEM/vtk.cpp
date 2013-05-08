@@ -69,18 +69,18 @@ bool CVTK::InitializePVD(const string &file_base_name, const string &pcs_type_na
 
 bool CVTK::WriteHeaderOfPVD(std::fstream &fin)
 {
-	fin << "<?xml version=\"1.0\"?>" << std::endl;
+	fin << "<?xml version=\"1.0\"?>" << "\n";
 	fin <<
 	"<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">"
-	    << std::endl;
-	fin << INDEX_STR << "<Collection>" << std::endl;
+	    << "\n";
+	fin << INDEX_STR << "<Collection>" << "\n";
 	return true;
 }
 
 bool CVTK::WriteEndOfPVD(std::fstream &fin)
 {
-	fin << INDEX_STR << "</Collection>" << std::endl;
-	fin << "</VTKFile>" << std::endl;
+	fin << INDEX_STR << "</Collection>" << "\n";
+	fin << "</VTKFile>" << "\n";
 	return true;
 }
 
@@ -89,7 +89,7 @@ bool CVTK::WriteDatasetOfPVD(std::fstream &fin, double timestep, const std::stri
 	fin.setf(ios::scientific,std::ios::floatfield);
 	fin.precision(12);
 	fin << INDEX_STR << INDEX_STR << "<DataSet timestep=\"" << timestep <<
-	"\" group=\"\" part=\"0\" file=\"" << vtkfile << "\"/>" << std::endl;
+	"\" group=\"\" part=\"0\" file=\"" << vtkfile << "\"/>" << "\n";
 	return true;
 }
 
@@ -120,7 +120,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
 	{
 #endif
 		//error
-		cout << "***ERROR: Fail to create a PVD directory: " << pvd_dir_path << endl;
+		cout << "***ERROR: Fail to create a PVD directory: " << pvd_dir_path << "\n";
 		return false;
 	}
 	return true;
@@ -158,7 +158,7 @@ unsigned char CVTK::GetVTKCellType(const MshElemType::type ele_type)
 		break;
 	default:
 		std::cerr << "***ERROR: NO CORRESPONDING VTK CELL TYPE FOUND. (ELEMENT TYPE=" <<
-		ele_type << ")" << std::endl;
+		ele_type << ")" << "\n";
 	}
 	return cell_type;
 }
@@ -237,7 +237,7 @@ bool CVTK::WriteDataArrayHeader(std::fstream &fin,
 	fin << " format=\"" << str_format << "\"";
 	if (useBinary)
 		fin << " offset=\"" << offset << "\" /";
-	fin << ">" << std::endl;
+	fin << ">" << "\n";
 
 	return true;
 }
@@ -245,7 +245,7 @@ bool CVTK::WriteDataArrayHeader(std::fstream &fin,
 bool CVTK::WriteDataArrayFooter(std::fstream &fin)
 {
 	if (!this->useBinary)
-		fin << "        </DataArray>" << std::endl;
+		fin << "        </DataArray>" << "\n";
 
 	return true;
 }
@@ -268,7 +268,7 @@ bool CVTK::WriteXMLUnstructuredGrid(const std::string &vtkfile,
 
 	if (!fin.good())
 	{
-		std::cout << "***Warning: Cannot open the output file, " << vtkfile << std::endl;
+		std::cout << "***Warning: Cannot open the output file, " << vtkfile << "\n";
 		return false;
 	}
 
@@ -293,33 +293,33 @@ bool CVTK::WriteXMLUnstructuredGrid(const std::string &vtkfile,
 	bool data_out = !useBinary;
 
 	//# Header
-	fin << "<?xml version=\"1.0\"?>" << std::endl;
+	fin << "<?xml version=\"1.0\"?>" << "\n";
 	fin << "<!-- Time step: " << time_step_number << " | Time: " << out->getTime() << " -->" <<
-	std::endl;
+	"\n";
 	fin << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\"";
 	if (!this->useBinary || isLittleEndian)
 		fin << " byte_order=\"LittleEndian\"";
 	else
 		fin << " byte_order=\"BigEndian\"";
-	fin << ">" << std::endl;
-	//  fin << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">"  << endl;
+	fin << ">" << "\n";
+	//  fin << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">"  << "\n";
 
 	//# Unstructured Grid information
-	fin << "  <UnstructuredGrid>" << endl;
+	fin << "  <UnstructuredGrid>" << "\n";
 	fin << "    <Piece NumberOfPoints=\"" << msh->GetNodesNumber(false) <<
-	"\" NumberOfCells=\"" << msh->ele_vector.size() << "\">" << std::endl;
+	"\" NumberOfCells=\"" << msh->ele_vector.size() << "\">" << "\n";
 	//....................................................................
 	// Nodes
 	//OK411 CNode *nod = NULL;
-	fin << "      <Points>" << std::endl;
+	fin << "      <Points>" << "\n";
 	WriteDataArrayHeader(fin, type_Double, "", 3, str_format, offset);
 	WriteMeshNodes(fin, data_out, msh, offset);
 	WriteDataArrayFooter(fin);
-	fin << "      </Points>" << endl;
+	fin << "      </Points>" << "\n";
 	//....................................................................
 	// Elements
 	//OK411 CElem * ele = NULL;
-	fin << "      <Cells>" << endl;
+	fin << "      <Cells>" << "\n";
 	//connectivity
 	WriteDataArrayHeader(fin, type_Long, "connectivity", 0, str_format, offset);
 	long sum_ele_components = 0;
@@ -333,30 +333,30 @@ bool CVTK::WriteXMLUnstructuredGrid(const std::string &vtkfile,
 	WriteDataArrayHeader(fin, type_UChar, "types", 0, str_format, offset);
 	WriteMeshElementType(fin, data_out, msh, offset);
 	WriteDataArrayFooter(fin);
-	fin << "      </Cells>" << endl;
+	fin << "      </Cells>" << "\n";
 	//....................................................................
 	// Nodal values
 	if (out->_nod_value_vector.size() > 0)
-		fin << "      <PointData Scalars=\"" << out->_nod_value_vector[0] << "\">" << endl;
+		fin << "      <PointData Scalars=\"" << out->_nod_value_vector[0] << "\">" << "\n";
 	else
-		fin << "      <PointData Scalars=\"scalars\">" << endl;
+		fin << "      <PointData Scalars=\"scalars\">" << "\n";
 	WriteNodalValue(fin, data_out, out, msh, offset);
-	fin << "      </PointData>" << endl;
+	fin << "      </PointData>" << "\n";
 
 	//======================================================================
 	//....................................................................
 	// Element values
-	fin << "      <CellData>" << endl;
+	fin << "      <CellData>" << "\n";
 	WriteElementValue(fin, data_out, out, msh, offset);
-	fin << "      </CellData>" << endl;
-	fin << "    </Piece>" << endl;
-	fin << "  </UnstructuredGrid>" << endl;
+	fin << "      </CellData>" << "\n";
+	fin << "    </Piece>" << "\n";
+	fin << "  </UnstructuredGrid>" << "\n";
 
 	//======================================================================
 	// Raw data (for binary mode)
 	if (useBinary)
 	{
-		fin << "  <AppendedData encoding=\"raw\">" << endl;
+		fin << "  <AppendedData encoding=\"raw\">" << "\n";
 		fin << "    _";
 
 		//Node
@@ -373,11 +373,11 @@ bool CVTK::WriteXMLUnstructuredGrid(const std::string &vtkfile,
 		// Elemental values
 		this->WriteElementValue(fin, true, out, msh, offset);
 
-		fin << endl;
-		fin << "  </AppendedData>" << endl;
+		fin << "\n";
+		fin << "  </AppendedData>" << "\n";
 	}
 
-	fin << "</VTKFile>" << endl;
+	fin << "</VTKFile>" << "\n";
 	fin.close();
 
 	return true;
@@ -407,7 +407,7 @@ bool CVTK::WriteMeshNodes(std::fstream &fin, bool output_data, CFEMesh* msh, lon
 			{
 				double const* const pnt (msh->nod_vector[i]->getData());
 				fin << "          " << pnt[0] << " " << pnt[1] << " " << pnt[2] <<
-				endl;
+				"\n";
 			}
 		else
 		{
@@ -445,7 +445,7 @@ bool CVTK::WriteMeshElementConnectivity(std::fstream &fin,
 				fin << "          ";
 				for (size_t j = 0; j < ele->GetNodesNumber(false); j++)
 					fin << ele->GetNodeIndex(j) << " ";
-				fin << endl;
+				fin << "\n";
 			}
 		else
 		{
@@ -486,7 +486,7 @@ bool CVTK::WriteMeshElementOffset(std::fstream &fin, bool output_data, CFEMesh* 
 				ele_offset += ele->GetNodesNumber(false);
 				fin << ele_offset << " ";
 			}
-			fin << endl;
+			fin << "\n";
 		}
 		else
 		{
@@ -522,7 +522,7 @@ bool CVTK::WriteMeshElementType(std::fstream &fin, bool output_data, CFEMesh* ms
 				ele = msh->ele_vector[i];
 				fin << (int)this->GetVTKCellType(ele->GetElementType()) << " ";
 			}
-			fin << endl;
+			fin << "\n";
 		}
 		else
 		{
@@ -625,7 +625,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
                 }
             }
             if (!useBinary) {
-                fin << endl;
+                fin << "\n";
             }
 		}
 		else
@@ -701,7 +701,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
                                 msh->nod_vector[j]->GetIndex(), iy) << " ";
                         }
 					}
-					fin << endl;
+					fin << "\n";
 				}
 				else
 				{
@@ -798,7 +798,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
                     }
                 }
                 if (!useBinary) {
-                    fin << endl;
+                    fin << "\n";
                 } else {
                     write_value_binary<unsigned int>(fin, sizeof(double)*msh->GetNodesNumber(false)*3);
                 }
@@ -857,7 +857,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 				for (long j = 0; j < (long) msh->ele_vector.size(); j++)
 					fin << m_pcs->GetElementValue(j, ele_value_index_vector[i])
 					    << " ";
-				fin << endl;
+				fin << "\n";
 			}
 			else
 			{
@@ -900,7 +900,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
                         fin << ele_vel[1] << " ";
                     }
 				}
-				fin << endl;
+				fin << "\n";
 			}
 			else
 			{
@@ -975,7 +975,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
                                 1) << " ";
                         }
 					}
-					fin << endl;
+					fin << "\n";
 				}
 				else
 				{
@@ -1041,7 +1041,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 					ele = msh->ele_vector[i];
 					fin << ele->GetPatchIndex() << " ";
 				}
-				fin << endl;
+				fin << "\n";
 			}
 			else
 			{
@@ -1083,7 +1083,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
                     mat_value = mmp->StorageFunction(i_e, gp, theta);
                     break;
                 default:
-                    cout << "CVTK::WriteElementValues: no MMP values specified" << endl;
+                    cout << "CVTK::WriteElementValues: no MMP values specified" << "\n";
                     break;
                 }
                 return mat_value;
@@ -1098,7 +1098,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
                 } else if (mmp_name.compare("STORAGE") == 0) {
                     mmp_id = 2;
                 } else {
-                    cout << "CVTK::WriteElementValues: no valid MMP values specified. " << mmp_name << endl;
+                    cout << "CVTK::WriteElementValues: no valid MMP values specified. " << mmp_name << "\n";
                 }
                 return mmp_id;
             }
@@ -1135,7 +1135,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
                         double mat_value = ELEMENT_MMP_VALUES::getValue(mmp, mmp_id, i_e, gp, theta);
                         fin << mat_value << " ";
                     }
-                    fin << endl;
+                    fin << "\n";
                 }
                 else
                 {
@@ -1173,7 +1173,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
                     mat_value = mfp->Viscosity();
                     break;
                 default:
-                    cout << "CVTK::WriteElementValues: no MFP values specified" << endl;
+                    cout << "CVTK::WriteElementValues: no MFP values specified" << "\n";
                     break;
                 }
                 return mat_value;
@@ -1186,7 +1186,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
                 } else if (mfp_name.compare("VISCOSITY") == 0) {
                     mfp_id = 1;
                 } else {
-                    cout << "CVTK::WriteElementValues: no valid MFP values specified. " << mfp_name << endl;
+                    cout << "CVTK::WriteElementValues: no valid MFP values specified. " << mfp_name << "\n";
                 }
                 return mfp_id;
             }
@@ -1224,7 +1224,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
                         double mat_value = ELEMENT_MFP_VALUES::getValue(mfp, mfp_id);
                         fin << mat_value << " ";
                     }
-                    fin << endl;
+                    fin << "\n";
                 }
                 else
                 {

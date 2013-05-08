@@ -36,7 +36,7 @@ set( SOURCES
 	rf_num_new.h
 	rf_out_new.h
 	rf_pcs.h
-	rf_random_walk.h
+	#rf_random_walk.h
 	rf_react.h
 	rf_st_new.h
 	rf_tim_new.h
@@ -46,8 +46,8 @@ set( SOURCES
 	timer.h
 	tools.h
 	vtk.h
-	Eclipse.h
-	DUMUX.h
+	#Eclipse.h
+	#DUMUX.h
 	geochemcalc.h
 	GeoInfo.h
 	ProcessInfo.h
@@ -92,7 +92,7 @@ set( SOURCES
 	rf_num_new.cpp
 	rf_out_new.cpp
 	rf_pcs.cpp
-	rf_random_walk.cpp
+	#rf_random_walk.cpp
 	rf_react.cpp
 	rf_st_new.cpp
 	rf_tim_new.cpp
@@ -101,10 +101,14 @@ set( SOURCES
 	timer.cpp
 	tools.cpp
 	vtk.cpp
-	Eclipse.cpp
-	DUMUX.cpp
+	#Eclipse.cpp
+	#DUMUX.cpp
 	Output.cpp
 )
+
+IF(NOT OGS_ONLY_TH)
+    SET( SOURCES ${SOURCES} rf_random_walk.h rf_random_walk.cpp Eclipse.h Eclipse.cpp DUMUX.h DUMUX.cpp)
+ENDIF( )
 
 ## New sparse class. WW
 IF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK )

@@ -218,8 +218,10 @@ CFEMesh::~CFEMesh(void)
 		delete face_normal[i];
 	face_normal.clear();
 
+#ifndef OGS_ONLY_TH
 #ifndef NON_GEO                             //WW
 	delete PT; // PCH
+#endif
 #endif
 	// 1.11.2007 WW
 #ifdef NEW_EQS
@@ -406,7 +408,11 @@ bool CFEMesh::Read(std::ifstream* fem_file)
 				position = fem_file->tellg();
 				*fem_file >> s;
 				if (s.find("$AREA") != std::string::npos)
+#ifndef OGS_ONLY_TH
 					*fem_file >> newNode->patch_area;
+#else
+                *fem_file >> idx; //dummy
+#endif
 				else
 					fem_file->seekg(position, std::ios::beg);
 				*fem_file >> std::ws;
@@ -480,7 +486,7 @@ void CFEMesh::ConnectedElements2Node(bool quadratic)
 **************************************************************************/
 void CFEMesh::ConstructGrid()
 {
-	std::cout << "Executing ConstructGrid() ... " << std::flush;
+	std::cout << "Executing ConstructGrid() ... \n" << std::flush;
 
 	bool done;
 
@@ -510,6 +516,7 @@ void CFEMesh::ConstructGrid()
 		ele_vector[e]->InitializeMembers();
 	}
 
+	std::cout << "-> find neighbors ... \n" << std::flush;
 	for (size_t e = 0; e < e_size; e++)
 	{
 		CElem* elem(ele_vector[e]);
@@ -749,6 +756,7 @@ void CFEMesh::ConstructGrid()
 		default:
 			std::cerr << "CFEMesh::ConstructGrid MshElemType not handled"
 			          << std::endl;
+			break;
 		}
 		// Compute volume meanwhile
 		elem->ComputeVolume();
@@ -793,6 +801,7 @@ void CFEMesh::ConstructGrid()
 	// Node information
 	// 1. Default node index <---> eqs index relationship
 	// 2. Coordiate system flag
+    std::cout << "-> detect bbox ... \n" << std::flush;
 	double x_sum(0.0), y_sum(0.0), z_sum(0.0);
 	Eqs2Global_NodeIndex.clear();
 	double xyz_max[3] = //NW
@@ -858,6 +867,7 @@ void CFEMesh::ConstructGrid()
 	max_dim = coordinate_system / 10 - 1;
 	//----------------------------------------------------------------------
 	// Gravity center
+    std::cout << "-> compute gravity center ... \n" << std::flush;
 	for (size_t e = 0; e < e_size; e++)
 		ele_vector[e]->ComputeGravityCenter();  //NW
 	//----------------------------------------------------------------------
@@ -876,11 +886,14 @@ void CFEMesh::ConstructGrid()
 	Neighbors0.resize(0);
 	e_edgeNodes0.resize(0);
 	e_edgeNodes.resize(0);
-	std::cout << " done." << std::endl;
 
+    std::cout << "-> computeSearchLength ... \n" << std::flush;
 	computeSearchLength();
+    std::cout << "-> computeMinEdgeLength ... \n" << std::flush;
 	computeMinEdgeLength();
+    std::cout << "-> constructMeshGrid ... \n" << std::flush;
 	constructMeshGrid();
+    std::cout << " done." << std::endl;
 }
 
 void CFEMesh::constructMeshGrid()
@@ -3041,6 +3054,7 @@ void CFEMesh::FaceNormal()
 **************************************************************************/
 void CFEMesh::SetNODPatchAreas()
 {
+#ifndef OGS_ONLY_TH
 	long e;
 	int n1 = 0, n2 = 0;
 	double v1[3], v2[3], v3[3];
@@ -3111,6 +3125,7 @@ void CFEMesh::SetNODPatchAreas()
 		}
 		m_nod->patch_area = patch_area;
 	}
+#endif
 }
 
 /**************************************************************************

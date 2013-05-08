@@ -23,6 +23,7 @@ namespace MeshLib
 class CNode : public CCore
 {
 public:
+#ifndef OGS_ONLY_TH
 	int free_surface; //MB ??? mobile
 	// The vector to store the representative element index.
 	// This can be used to extract the norm of the plane that the element lies on.
@@ -35,6 +36,7 @@ public:
 	bool crossroad; //KR changed to bool // PCH: Make theses privates can be done later on.
 	std::vector<long> connected_faces; // BG, 09/2010, necessary for coupling to Eclipse, index of faces where the node is part of it
 	std::vector<double> distance_to_connected_faces; // BG, 09/2010,  necessary for coupling to Eclipse
+#endif
 
 	/** constructor */
 	CNode(size_t Index);

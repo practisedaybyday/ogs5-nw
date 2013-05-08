@@ -629,7 +629,7 @@ std::ios::pos_type CSolidProperties::Read(std::ifstream* msp_file)
 				   3   sigci
 				 */
 			}
-			data_Plasticity = new Matrix(Size);
+			data_Plasticity = new Matrix(Size+1); //TODO NW added +1 because WX added one for DP
 			for(i = 0; i < Size; i++)
 			{
 				in_sd.str(GetLineFromFile1(msp_file));
@@ -717,7 +717,7 @@ CSolidProperties::~CSolidProperties()
 {
 	if(data_Density)
 		delete data_Density;
-	if(data_Density)
+	if(data_Youngs)
 		delete data_Youngs;
 	if(data_Plasticity)
 		delete data_Plasticity;

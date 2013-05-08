@@ -1099,7 +1099,9 @@ void CFiniteElementVec::LocalAssembly(const int update)
 				{
 					excavation = true;
 					*(eleV_DM->Stress) = 0.;
+#ifndef OGS_ONLY_TH
 					MeshElement->SetExcavState(1);
+#endif
 				}
 			}
 		}

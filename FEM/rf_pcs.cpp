@@ -110,6 +110,8 @@ REACT_BRNS* m_vec_BRNS;
 #include "InterpolationAlgorithms/InverseDistanceInterpolation.h"
 #include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 
+#include "StringTools.h"
+
 using namespace std;
 using namespace MeshLib;
 using namespace Math_Group;
@@ -3895,6 +3897,7 @@ void CRFProcess::CheckMarkedElement()
 **************************************************************************/
 void CRFProcess::CheckExcavedElement()
 {
+#ifndef OGS_ONLY_TH
 	int valid;
 	long l;
 	//bool done;
@@ -3913,6 +3916,7 @@ void CRFProcess::CheckExcavedElement()
 				elem->SetExcavState(1);
 		}
 	}
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -4043,7 +4047,8 @@ double CRFProcess::Execute()
 	iter_lin = dom->eqs->Solver(eqs_new->x, global_eqs_dim);
 #else
 #ifdef LIS
-	iter_lin = eqs_new->Solver(this->m_num); //NW
+    bool compress_eqs = (type/10==4 || this->NumDeactivated_SubDomains>0);
+	iter_lin = eqs_new->Solver(this->m_num, compress_eqs); //NW
 #else
 	iter_lin = eqs_new->Solver();
 #endif
@@ -4114,7 +4119,7 @@ double CRFProcess::Execute()
 
 		// Solve the algebra
 #ifdef CHECK_EQS
-		string eqs_name = pcs_type_name + "_EQS.txt";
+		string eqs_name = convertProcessTypeToString(this->getProcessType())  + "_EQS" + number2str(aktueller_zeitschritt) +  ".txt";
 		MXDumpGLS((char*)eqs_name.c_str(),1,eqs->b,eqs->x);
 #endif
 #ifdef NEW_EQS                              //WW
@@ -4697,7 +4702,11 @@ void CRFProcess::GlobalAssembly()
 			{
 				elem = m_msh->ele_vector[i];
 				// Marked for use //WX: modified for coupled excavation
-				if (elem->GetMark() && elem->GetExcavState() == -1)
+#ifndef OGS_ONLY_TH
+                if (elem->GetMark() && elem->GetExcavState() == -1)
+#else
+                if (elem->GetMark())
+#endif
 				{
 					elem->SetOrder(false);
 					fem->ConfigElement(elem, Check2D3D);
@@ -6203,6 +6212,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		long gindex = 0;
 		int dim_space = 0;        //kg44 better define here and not in a loop!
 
+#ifndef OGS_ONLY_TH
 //###############################
 //NB Climate Data
 
@@ -6286,7 +6296,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 
 //#####################
-
+#endif
 
 		if (rank == -1)
 		{
@@ -12942,6 +12952,7 @@ CRFProcess* PCSGetMass(size_t component_number)
 		return some_thing_done;
 	}
 
+#ifndef OGS_ONLY_TH
 /*************************************************************************
    GeoSys-Function: CalGPVelocitiesfromEclipse
    Task: Calculate gauss point velocities from Eclipse solution
@@ -13033,7 +13044,7 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path,
 	time = (double(finish) - double(start)) / CLOCKS_PER_SEC;
 	cout << "         Time: " << time << " seconds." << endl;
 }
-
+#endif
 
 //-------------------------------------------------------------------------
 //GeoSys - Function: CO2_H2O_NaCl_VLE_isobaric
