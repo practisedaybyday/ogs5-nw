@@ -678,9 +678,10 @@ template<class T> void vec<T>:: Write(std::ostream& os) const
 }
 
 //2.
-vec<void*>:: vec (const int argSize) : _size(argSize)
+vec<void*>:: vec (const int argSize) : _size(argSize), _entry(NULL)
 {
-	_entry = new void*[argSize];
+    if (argSize > 0)
+        _entry = new void*[argSize];
 #ifdef gDEBUG
 	if (!_entry)
 	{
@@ -1939,7 +1940,7 @@ int CSparseMatrix::GetCRSValue(double* value)
 	int success = 1;
 	int i;
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for(i = 0; i < size_entry_column * DOF * DOF; ++i)
 		value[i] = entry[entry_index[i]];
 
