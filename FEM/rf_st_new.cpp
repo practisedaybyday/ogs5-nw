@@ -2652,6 +2652,7 @@ void STGroupDelete(std::string pcs_type_name, std::string pcs_pv_name)
 void CSourceTermGroup::SetPNT(CRFProcess* pcs, CSourceTerm* st,
 const int ShiftInNodeVector)
 {
+   std::cout << "-> Set ST: Point " << st->geo_name << " with " << convertDisTypeToString(st->getProcessDistributionType()) << std::endl;
    CNodeValue *nod_val (new CNodeValue());
 
    // TF removed some checks - check validity of data while reading data
@@ -2663,6 +2664,8 @@ const int ShiftInNodeVector)
    nod_val->geo_node_number = nod_val->msh_node_number - ShiftInNodeVector;
    nod_val->node_value = st->geo_node_value;
    nod_val->tim_type_name = st->tim_type_name;
+
+   std::cout << "-> node id " << nod_val->geo_node_number << " found for this ST\n";
 
    if (st->getProcessDistributionType() == FiniteElement::CRITICALDEPTH)
    {
