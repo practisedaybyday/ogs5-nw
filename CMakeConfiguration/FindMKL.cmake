@@ -1,90 +1,154 @@
-if (NOT MKL_FOUND)
+# Find Intel Math Karnel Library
 
-	if ( UNIX )
-		#Extract MKL
-		FIND_PATH (MKL_INCLUDE_DIR_FOUND mkl.h ${PROJECT_SOURCE_DIR}/../Libs/MKL/include)
-		IF (NOT MKL_INCLUDE_DIR_FOUND)
-			FIND_PATH (MKL_DIR_FOUND mkl-include.tgz ${PROJECT_SOURCE_DIR}/../Libs/MKL)
-			IF (MKL_DIR_FOUND)
-				MESSAGE (STATUS "Uncompressing MKL...")
-				EXECUTE_PROCESS (COMMAND tar xvzf mkl-include.tgz WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../Libs/MKL/ OUTPUT_QUIET)
-				IF (HAVE_64_BIT)
-					EXECUTE_PROCESS (COMMAND tar xvzf mkl-64.tgz WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../Libs/MKL/ OUTPUT_QUIET)
-				ELSE (HAVE_64_BIT)
-					EXECUTE_PROCESS (COMMAND tar xvzf mkl-32.tgz WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../Libs/MKL/ OUTPUT_QUIET)
-				ENDIF (HAVE_64_BIT)
-			ELSE (MKL_DIR_FOUND)
-				MESSAGE (STATUS "MKL archives in ../Libs/ not found")
-			ENDIF (MKL_DIR_FOUND)
-		ENDIF (NOT MKL_INCLUDE_DIR_FOUND)
-	endif (UNIX)
+#if (MKL_INCLUDES AND MKL_LIBRARIES)
+#  # Already in cache, be silent
+#  set (MKL_FIND_QUIETLY TRUE)
+#endif (MKL_INCLUDES AND MKL_LIBRARIES)
 
-	include(LibFindMacros)
+SET(MKL_DIR
+    "${MKL_DIR}"
+    CACHE
+    PATH
+    "Directory to search for MKL libraries")
+IF (NOT MKL_DIR)
+    MESSAGE (FATAL_ERROR "Please set MKL root diretory path" )
+ENDIF()
 
-	if ( UNIX )
-		find_path( MKL_INCLUDE_DIR NAMES mkl.h
-			PATHS ${CMAKE_SOURCE_DIR}/../Libs/MKL/include)
+FIND_PATH(MKL_INCLUDES NAMES mkl.h
+    HINTS ${MKL_DIR} PATH_SUFFIXES include
+)
 
-		# Tell if the unix system is on 64-bit base
-		if(CMAKE_SIZEOF_VOID_P MATCHES "8")
-			set (MKL_LIB_PATH "${CMAKE_SOURCE_DIR}/../Libs/MKL/64")
-			find_library(MKL_SOLVER_LIBRARY
-				NAMES mkl_solver_lp64 PATHS ${MKL_LIB_PATH} )
-			find_library(MKL_INTEL_LIBRARY
-				NAMES mkl_intel_lp64 PATHS ${MKL_LIB_PATH} )
-			find_library(MKL_CORE_LIBRARY
-				NAMES mkl_core PATHS ${MKL_LIB_PATH} )
-			set(TMP_MKL_PROCESS_LIBS ${MKL_SOLVER_LIBRARY} ${MKL_INTEL_LIBRARY} ${MKL_CORE_LIBRARY})
-			if(CMAKE_C_COMPILER EQUAL "icc")
-				find_library(MKL_INTEL_THREAD_LIBRARY
-					NAMES mkl_intel_thread PATHS ${MKL_LIB_PATH} )
-					find_library(MKL_IOMP5_LIBRARY
-						NAMES iomp5 PATHS ${MKL_LIB_PATH} )
-					find_library(MKL_PTHREAD_LIBRARY
-						NAMES pthread PATHS ${MKL_LIB_PATH} )
-					set(TMP_MKL_PROCESS_LIBS ${TMP_MKL_PROCESS_LIBS} ${MKL_INTEL_THREAD_LIBRARY} ${MKL_IOMP5_LIBRARY} ${MKL_PTHREAD_LIBRARY})
-			else(CMAKE_C_COMPILER EQUAL "icc")
-				find_library(MKL_GNU_THREAD_LIBRARY
-					NAMES mkl_gnu_thread PATHS ${MKL_LIB_PATH} )
-					set(TMP_MKL_PROCESS_LIBS ${TMP_MKL_PROCESS_LIBS} ${MKL_GNU_THREAD_LIBRARY})
-			endif(CMAKE_C_COMPILER EQUAL "icc")
+# Tell if the unix system is on 64-bit base
+if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "x86_64")
+#if(CMAKE_SIZEOF_VOID_P MATCHES "8")
+    MESSAGE (STATUS  "Look for 64-bit MKL" )
+    find_library(MKL_LIB_CORE mkl_core 
+      HINTS ${MKL_DIR} 
+      PATH_SUFFIXES
+      lib/intel64
+      lib/em64t
+    )
 
-		else (CMAKE_SIZEOF_VOID_P MATCHES "8")
-			set (MKL_LIB_PATH "${CMAKE_SOURCE_DIR}/../Libs/MKL/32")
-			find_library(MKL_SOLVER_LIBRARY
-				NAMES mkl_solver PATHS ${MKL_LIB_PATH} )
-			find_library(MKL_INTEL_LIBRARY
-				NAMES mkl_intel PATHS ${MKL_LIB_PATH} )
-			find_library(MKL_GNU_THREAD_LIBRARY
-				NAMES mkl_gnu_thread PATHS ${MKL_LIB_PATH} )
-			find_library(MKL_CORE_LIBRARY
-				NAMES mkl_core PATHS ${MKL_LIB_PATH} )
-			set(TMP_MKL_PROCESS_LIBS ${TMP_MKL_PROCESS_LIBS} ${MKL_SOLVER_LIBRARY} ${MKL_INTEL_LIBRARY} ${MKL_GNU_THREAD_LIBRARY} ${MKL_CORE_LIBRARY} CACHE STRING "Found MKL Libraries")
-		endif (CMAKE_SIZEOF_VOID_P MATCHES "8")
-	else ( UNIX )
-		find_library(MKL_LIBRARIES
-			NAMES libpardiso400_INTEL_IA32
-			PATHS ${CMAKE_SOURCE_DIR}/../Libs/precompiled )
-	endif ( UNIX )
+    find_library(MKL_LIB_INTEL mkl_intel_lp64 
+      HINTS ${MKL_DIR} 
+      PATH_SUFFIXES
+      lib/intel64
+      lib/em64t
+    )
 
-	# Set the include dir variables and the libraries and let libfind_process do the rest.
-	# NOTE: Singular variables for this library, plural for libraries this lib depends on.
-	if (UNIX)
-		if (NOT TMP_MKL_PROCESS_LIBS STREQUAL "TMP_MKL_PROCESS_LIBS-NOTFOUND" AND NOT MKL_INCLUDE_DIR STREQUAL "MKL_INCLUDE_DIR-NOTFOUND")
-			set(MKL_PROCESS_INCLUDES MKL_INCLUDE_DIR)
-			set(MKL_PROCESS_LIBS TMP_MKL_PROCESS_LIBS)
-			libfind_process(MKL)
-		else (NOT TMP_MKL_PROCESS_LIBS STREQUAL "TMP_MKL_PROCESS_LIBS-NOTFOUND" AND NOT MKL_INCLUDE_DIR STREQUAL "MKL_INCLUDE_DIR-NOTFOUND")
-			message (STATUS "Warning: MKL not found!")
-		endif (NOT TMP_MKL_PROCESS_LIBS STREQUAL "TMP_MKL_PROCESS_LIBS-NOTFOUND" AND NOT MKL_INCLUDE_DIR STREQUAL "MKL_INCLUDE_DIR-NOTFOUND")
-	else (UNIX)
-		if (NOT MKL_LIBRARIES STREQUAL "MKL_LIBRARIES-NOTFOUND")
-			set(MKL_PROCESS_LIBS MKL_LIBRARIES)
-			libfind_process(MKL)
-		else (NOT MKL_LIBRARIES STREQUAL "MKL_LIBRARIES-NOTFOUND")
-			message (STATUS "Warning: MKL not found!")
-		endif (NOT MKL_LIBRARIES STREQUAL "MKL_LIBRARIES-NOTFOUND")
-	endif (UNIX)
+    find_library(MKL_LIB_SOLVER mkl_solver_lp64 
+      HINTS ${MKL_DIR} 
+      PATH_SUFFIXES
+      lib/intel64
+      lib/em64t
+    )
+    
+    if (USE_OPENMP)
+        if(CMAKE_C_COMPILER EQUAL "icc")
+            find_library(MKL_LIB_INTEL_THREAD mkl_intel_thread 
+              HINTS ${MKL_DIR} 
+              PATH_SUFFIXES
+              lib/intel64
+              lib/em64t
+            )
+    
+            find_library(MKL_LIB_IMOP5 iomp5 
+              HINTS ${MKL_DIR} 
+              PATH_SUFFIXES
+              lib/intel64
+              lib/em64t
+            )
+     
+            find_library(MKL_LIB_PTHREAD pthread 
+              HINTS ${MKL_DIR} 
+              PATH_SUFFIXES
+              lib/intel64
+              lib/em64t
+            )
+            
+            SET (MKL_LIB_THREAD 
+                    "${MKL_LIB_INTEL_THREAD}" 
+                    "${MKL_LIB_IMOP5}"
+                    "${MKL_LIB_PTHREAD}")
+        else()
+            find_library(MKL_LIB_THREAD mkl_gnu_thread 
+              HINTS ${MKL_DIR} 
+              PATH_SUFFIXES
+              lib/intel64
+              lib/em64t
+            )
+        endif()
+    else(USE_OPENMP)
+        find_library(MKL_LIB_THREAD mkl_sequential
+          HINTS ${MKL_DIR} 
+          PATH_SUFFIXES
+          lib/intel64
+          lib/em64t
+        )
+    endif(USE_OPENMP)
+    
+    
+else()
+    MESSAGE (STATUS  "Look for 32-bit MKL" )
+    
+    find_library(MKL_LIB_CORE mkl_core 
+      HINTS ${MKL_DIR} 
+      PATH_SUFFIXES
+      lib/32
+    )
 
+    find_library(MKL_LIB_INTEL mkl_intel 
+      HINTS ${MKL_DIR} 
+      PATH_SUFFIXES
+      lib/32
+    )
 
-endif (NOT MKL_FOUND)
+    find_library(MKL_LIB_SOLVER mkl_solver 
+      HINTS ${MKL_DIR} 
+      PATH_SUFFIXES
+      lib/32
+    )
+
+    if (USE_OPENMP)
+        if(CMAKE_C_COMPILER EQUAL "icc")
+            find_library(MKL_LIB_INTEL_THREAD mkl_intel_thread 
+              HINTS ${MKL_DIR} PATH_SUFFIXES lib/32
+            )
+    
+            find_library(MKL_LIB_IMOP5 iomp5 
+              HINTS ${MKL_DIR} PATH_SUFFIXES lib/32
+            )
+     
+            find_library(MKL_LIB_PTHREAD pthread 
+              HINTS ${MKL_DIR} PATH_SUFFIXES lib/32
+            )
+            
+            SET (MKL_LIB_THREAD 
+                    "${MKL_LIB_INTEL_THREAD}" 
+                    "${MKL_LIB_IMOP5}"
+                    "${MKL_LIB_PTHREAD}")
+        else()
+            find_library(MKL_LIB_THREAD mkl_gnu_thread 
+              HINTS ${MKL_DIR} PATH_SUFFIXES lib/32
+            )
+        endif()
+    else(USE_OPENMP)
+        find_library(MKL_LIB_THREAD mkl_sequential
+          HINTS ${MKL_DIR} PATH_SUFFIXES lib/32
+        )
+    endif(USE_OPENMP)
+
+endif()
+
+SET (MKL_LIBRARIES 
+    "${MKL_LIB_INTEL}" 
+#            "${MKL_LIB_SOLVER}"
+    "${MKL_LIB_THREAD}"
+    "${MKL_LIB_CORE}" 
+        )
+MESSAGE (STATUS "MKL libs: ${MKL_LIBRARIES}")
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(MKL DEFAULT_MSG MKL_INCLUDES MKL_LIBRARIES)
+mark_as_advanced(MKL_INCLUDES MKL_LIBRARIES)
+
