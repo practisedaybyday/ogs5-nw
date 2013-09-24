@@ -914,7 +914,7 @@ void Problem::Euler_TimeDiscretize()
 	//
 	// Output zero time initial values
     std::cout << "Outputting initial values... " << std::flush;
-	OUTData(0.0,aktueller_zeitschritt,true);
+	OUTData(current_time,aktueller_zeitschritt,true);
     std::cout << "done \n";
 	//
 	// ------------------------------------------
