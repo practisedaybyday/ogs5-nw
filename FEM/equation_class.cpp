@@ -615,7 +615,7 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		iparm[9] = 13;            /* Perturb the pivot elements with 1E-13 */
 		iparm[10] = 1;            /* Use nonsymmetric permutation and scaling MPS */
 		iparm[11] = 0;            /* Not in use */
-		iparm[12] = 0;            /* Not in use */
+		iparm[12] = 1;            /* Use (non-) symmetric weighted matching  */
 		iparm[13] = 0;            /* Output: Number of perturbed pivots */
 		iparm[14] = 0;            /* Not in use */
 		iparm[15] = 0;            /* Not in use */
