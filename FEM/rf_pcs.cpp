@@ -336,6 +336,7 @@ CRFProcess::CRFProcess(void) :
 	PCS_ExcavState = -1;                  //WX
 
 	isRSM = false; //WW
+	write_leqs = false; //NW
 }
 
 void CRFProcess::setProblemObjectPointer (Problem* problem)
@@ -1586,6 +1587,7 @@ CRFProcess* CRFProcess::CopyPCStoDM_PCS()
 		dm_pcs->ExcavBeginCoordinate = ExcavBeginCoordinate;
 		dm_pcs->ExcavCurve = ExcavCurve;
 	}
+	dm_pcs->write_leqs = write_leqs;
 	//
 	return dynamic_cast<CRFProcess*> (dm_pcs);
 }
@@ -1948,6 +1950,11 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 		{
 			*pcs_file >> ExcavMaterialGroup >> ExcavDirection >>
 			ExcavBeginCoordinate >> ExcavCurve;
+			continue;
+		}
+		if(line_string.find("$LEQS_OUTPUT") == 0)
+		{
+			write_leqs = true;
 			continue;
 		}
 		//....................................................................
@@ -4611,6 +4618,26 @@ void CRFProcess::GlobalAssembly()
 		cout << "Error in CRFProcess::GlobalAssembly() - no TIM data" << endl;
 		return;
 	}
+	if (Write_Matrix)
+	{
+		std::string pcs_type_name(
+		        convertProcessTypeToString(this->getProcessType()));
+#if defined(USE_MPI)
+		char stro[32];
+		sprintf(stro, "%d",myrank);
+		string m_file_name = FileName + "_" + pcs_type_name + (string)stro +
+		                     "_element_matrix.txt";
+#else
+		std::string m_file_name = FileName + "_" + pcs_type_name
+		                          + "_element_matrix.txt";
+#endif
+		if (matrix_file) matrix_file->close();
+		delete matrix_file;
+		matrix_file = new std::fstream(m_file_name.c_str(), ios::trunc | ios::out);
+		if (!matrix_file->good())
+			std::cout << "Warning in GlobalAssembly: Matrix files are not found"
+			          << std::endl;
+	}
 
 	if (!fem)
 		// Which process needs this?
@@ -4729,6 +4756,17 @@ void CRFProcess::GlobalAssembly()
 
 		if (femFCTmode)     //NW
 			AddFCT_CorrectionVector();
+
+		if (write_leqs) {
+			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs.txt";
+#ifdef NEW_EQS
+			std::ofstream Dum(fname.c_str(), ios::out);
+			eqs_new->Write(Dum);
+			Dum.close();
+#else
+			MXDumpGLS(fname.c_str(), 1, eqs->b, eqs->x);
+#endif
+		}
 
 		//	          MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 		//eqs_new->Write();

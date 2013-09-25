@@ -268,6 +268,7 @@ public:
 	// Write indices of the nodes with boundary conditons
 	bool write_boundary_condition;        //15.01.2008. WW
 	bool OutputMassOfGasInModel;			// BG 05/2012
+	bool write_leqs;
 	// Element matrices output
 	void Def_Variable_LiquidFlow();
 	void Def_Variable_MultiPhaseFlow();
