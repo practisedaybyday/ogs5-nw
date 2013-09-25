@@ -7870,6 +7870,9 @@ void CFiniteElementStd::Assembly()
 		}
 		(*pcs->matrix_file) << "---RHS: " << endl;
 		RHS->Write(*pcs->matrix_file);
+		(*pcs->matrix_file) << "---U0: " << endl;
+		for (int i=0; i<nnodes; i++)
+			(*pcs->matrix_file) << "| " << NodalVal1[i] << " | " << endl;
 		(*pcs->matrix_file) << endl;
 	}
 }
