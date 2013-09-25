@@ -1115,7 +1115,7 @@ void CRFProcess:: WriteSolution()
 
 	std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
 	std::string m_file_name = FileName + "_" + pcs_type_name + "_" +
-	                          pcs_primary_function_name[0] + "_primary_value.asc";
+	                          pcs_primary_function_name[0] + "_primary_value" + number2str(aktueller_zeitschritt) + ".asc";
 	std::ofstream os ( m_file_name.c_str(), ios::trunc | ios::out );
 	if (!os.good() )
 	{
