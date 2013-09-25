@@ -400,6 +400,7 @@ Problem::Problem (char* filename) :
 			max_time_steps = m_tim->time_step_vector.size();
 		if (m_tim->GetPITimeStepCrtlType() > 0)
 			time_ctr = true;
+		m_tim->last_active_time = start_time; //NW
 	}
 	if(max_time_steps == 0)
 		max_time_steps = 1000000;
