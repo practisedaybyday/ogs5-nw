@@ -32,11 +32,11 @@ CElem::CElem(size_t Index)
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
 	normal_vector = NULL;
 	area = 1.0;                               //WW
+    transform_tensor = NULL;
 #ifndef OGS_ONLY_TH
     grid_adaptation = -1;
 	excavated = -1;                           //WX
     patch_index = 0;
-    transform_tensor = NULL;
     angle = NULL;
 #endif
 }
@@ -252,6 +252,8 @@ CElem::CElem(CElem const &elem) :
 	for (size_t k(0); k < (elem.nodes).Size(); k++)
 		nodes[k] = new CNode ((elem.nodes[k])->GetIndex(), (elem.nodes[k])->getData());
 
+    transform_tensor = NULL;
+
 	// copy edges
 //	edges = vec<CEdge*> ((elem.edges).Size());
 //	for (size_t k(0); k<(elem.edges).Size() ; k++) {
@@ -272,7 +274,7 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, int
 	nnodes(3), nnodesHQ(6), nodes(nnodes), nodes_index(nnodes),
 	nedges(3), edges(nedges), edges_orientation(nedges)
 #ifndef OGS_ONLY_TH
-	,nfaces(3), patch_index(mat), transform_tensor(NULL), neighbors(nfaces), angle(NULL)
+	,nfaces(3), patch_index(mat), neighbors(nfaces), angle(NULL)
 #endif
 {
 	nodes_index[0] = node0;
@@ -287,6 +289,8 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, int
 		edges[i] = NULL;
 		edges_orientation[i] = 1;
 	}
+
+    transform_tensor = NULL;
 }
 
 CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, size_t node3, int mat) :
@@ -294,7 +298,7 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, siz
 	nnodes(4), nnodesHQ(9), nodes(nnodes), nodes_index(nnodes),
 	nedges(4), edges(nedges), edges_orientation(nedges)
 #ifndef OGS_ONLY_TH
-	,nfaces(4), patch_index(mat), transform_tensor(NULL), neighbors(nfaces), angle(NULL)
+	,nfaces(4), patch_index(mat), neighbors(nfaces), angle(NULL)
 #endif
 {
 	nodes_index[0] = node0;
@@ -310,6 +314,8 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, siz
 		edges[i] = NULL;
 		edges_orientation[i] = 1;
 	}
+
+    transform_tensor = NULL;
 }
 
 /**************************************************************************
