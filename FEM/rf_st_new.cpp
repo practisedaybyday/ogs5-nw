@@ -899,6 +899,7 @@ void CSourceTerm::Write(std::fstream* st_file)
          break;
       default:
          std::cerr << "this distributition type is not handled in CSourceTerm::Write" << std::endl;
+         break;
    }
    //--------------------------------------------------------------------
 }
