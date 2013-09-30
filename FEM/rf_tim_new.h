@@ -89,6 +89,7 @@ public:
 	double nonlinear_iteration_error;     //OK/YD
 	//WW double max_adaptive_factor; // kg44
 	//WW double max_adaptive_concentration_change; // kg44
+	size_t last_rejected_timestep;
 public:
 	CTimeDiscretization(void);
 	//21.08.2008. WW

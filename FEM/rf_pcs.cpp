@@ -4061,6 +4061,7 @@ double CRFProcess::Execute()
 #ifdef LIS
     bool compress_eqs = (type/10==4 || this->NumDeactivated_SubDomains>0);
 	iter_lin = eqs_new->Solver(this->m_num, compress_eqs); //NW
+	iter_lin_max = std::max(iter_lin_max, iter_lin);
 #else
 	iter_lin = eqs_new->Solver();
 #endif
@@ -8229,6 +8230,9 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 				break;
 			}
 		}
+		if ((!converged || diverged) && m_num->nls_max_iterations>1)
+		    accepted = false;
+		iter_nlin_max = std::max(iter_nlin_max, iter_nlin);
 		// ------------------------------------------------------------
 		// NON-LINEAR ITERATIONS COMPLETE
 		// ------------------------------------------------------------
@@ -8240,9 +8244,12 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		if(m_num->nls_max_iterations > 1) // only for non-linear iterations
 		{
 			if(diverged){
-				if(accepted) // only increment if not fixed by a failed time step.
+				if(accepted) { // only increment if not fixed by a failed time step.
 					num_diverged++;
-				std::cout << "\nNon-linear iteration stabilized.";
+					std::cout << "\nNon-linear iteration stabilized.";
+				} else {
+					std::cout << "\nNon-linear iteration diverged.";
+				}
 			}
 			else if(!converged){
 				if(accepted) // only increment if not fixed by a failed time step.
