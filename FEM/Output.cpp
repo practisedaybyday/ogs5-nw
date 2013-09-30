@@ -2214,9 +2214,10 @@ void COutput::GetELEValuesIndexVector(vector<int>&ele_value_index_vector)
 {
 	if (_ele_value_vector[0].size() == 0)
 		return;
-	CRFProcess* m_pcs(GetPCS_ELE(_ele_value_vector[0]));
-	for (size_t i = 0; i < _ele_value_vector.size(); i++)
+	for (size_t i = 0; i < _ele_value_vector.size(); i++) {
+	    CRFProcess* m_pcs(GetPCS_ELE(_ele_value_vector[i]));
 		ele_value_index_vector[i] = m_pcs->GetElementValueIndex(_ele_value_vector[i]);
+	}
 }
 
 /**************************************************************************
