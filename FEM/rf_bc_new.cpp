@@ -1318,6 +1318,8 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						bc->SurfaceInterpolation(pcs, nodes_vector, node_value); //WW
 					}
 
+					bc->node_number_vector = nodes_vector;
+
 					for (size_t i = 0; i < nodes_vector_length; i++)
 					{
 						m_node_value = new CBoundaryConditionNode();
@@ -1353,7 +1355,6 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						}
 						m_node_value->CurveIndex = bc->getCurveIndex();
 						//OK
-						bc->node_number_vector = nodes_vector;
 						pcs->bc_node.push_back(bc); //WW
 						//WW
 						pcs->bc_node_value.push_back(m_node_value);
