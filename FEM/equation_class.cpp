@@ -871,7 +871,7 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		std::endl;
 	}
 
-	return -1;                            // This right now is meaningless.
+	return iter;                            // This right now is meaningless.
 }
 #else // ifdef LIS
 int Linear_EQS::Solver()
