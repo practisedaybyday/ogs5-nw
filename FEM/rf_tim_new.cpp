@@ -41,13 +41,14 @@ CTimeDiscretization::CTimeDiscretization(void)
 	: Write_tim_discrete(false),tim_discrete(NULL) //YD
 {
 	step_current = 0;
-	time_start = 0.0;
-	time_end = 1.0;
+	time_start = std::numeric_limits<double>::max();
+	time_end = 0.0;
 	time_type_name = "CONSTANT";          //OK
 	time_control_name = "NONE";           //kg44//JT
 	time_unit = "SECOND";
 	max_time_step = 1.e10;                //YD
 	min_time_step = DBL_EPSILON;          //YD//JT Minimum allowed timestep, this process
+	initial_time_step = DBL_EPSILON;
 	repeat = false;                       //OK/YD
 	step_current = 0;                     //WW
 	this_stepsize = 0.;                   //WW
@@ -477,6 +478,13 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 							line.clear();
 							// kg44 should not break break;
 						}
+						else if(line_string.find("INITIAL_TIME_STEP") !=
+						   std::string::npos)
+						{
+							*tim_file >> line_string;
+							initial_time_step = strtod(line_string.data(),NULL);
+							line.clear();
+						}
 						/*  //WW
 						   if(line_string.find("MINISH")!=string::npos){
 						   *tim_file >> line_string;
@@ -902,26 +910,28 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
 //	m_mfp = MFPGet("LIQUID");             //WW
 //	double density_fluid = m_mfp->Density(); //WW // TF: set, but never used
 
+	initial_time_step = std::max(initial_time_step, min_time_step);
+
 	for (size_t n_p = 0; n_p < pcs_vector.size(); n_p++)
 	{
 		m_pcs = pcs_vector[n_p];
 		CFiniteElementStd* fem = m_pcs->GetAssembler();
 
-		time_step_length = min_time_step; // take min time step as conservative best guess for testing
+		time_step_length = initial_time_step; // take min time step as conservative best guess for testing
 		//		switch (m_pcs->pcs_type_name[0]) {
 		switch (m_pcs->getProcessType()) // TF
 		{
 		//		case 'G': // kg44 groudnwater flow ---if steady state, time step should be greater zero...transient flow does not work with adaptive stepping
 		case FiniteElement::GROUNDWATER_FLOW:    // TF, if steady state, time step should be greater zero...transient flow does not work with adaptive stepping
-			time_step_length = min_time_step; // take min time step as conservative best guess for testing
+			time_step_length = initial_time_step; // take min time step as conservative best guess for testing
 			break;
 		//		case 'L': // kg44 liquid flow ---if steady state, time step should be greater zero...transient flow does not work with adaptive stepping
 		case FiniteElement::LIQUID_FLOW:    // TF, if steady state, time step should be greater zero...transient flow does not work with adaptive stepping
-			time_step_length = min_time_step; // take min time step as conservative best guess for testing
+			time_step_length = initial_time_step; // take min time step as conservative best guess for testing
 			break;
 		//		case 'M': // kg44 Mass transport ---if steady state, time step should be greater zero..
 		case FiniteElement::MASS_TRANSPORT:      // TF, if steady state, time step should be greater zero..
-			time_step_length = min_time_step; // take min time step as conservative best guess for testing
+			time_step_length = initial_time_step; // take min time step as conservative best guess for testing
 			break;
 		//		case 'R': // Richards
 		case FiniteElement::RICHARDS_FLOW:       // TF

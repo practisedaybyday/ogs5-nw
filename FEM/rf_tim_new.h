@@ -81,6 +81,7 @@ public:
 	double multiply_coef;                 //YD
 	double max_time_step;                 //YD
 	double min_time_step;
+	double initial_time_step;
 	//
 	//WW double minish; // JOD
 	//WW int sub_steps; // JOD 4.7.10
