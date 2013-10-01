@@ -1001,6 +1001,7 @@ void Problem::Euler_TimeDiscretize()
 					continue;
 				m_tim->rejected_step_count++;
 				m_tim->last_active_time -= dt;
+				m_tim->last_rejected_timestep = aktueller_zeitschritt+1;
 				//
 				// Copy nodal values in reverse
 				if(isDeformationProcess(total_processes[active_process_index[i]]->getProcessType()))
@@ -1079,6 +1080,9 @@ bool Problem::CouplingLoop()
 			total_processes[i]->SetDefaultTimeStepAccepted();
 			acounter++;
 			m_tim->step_current++;
+			// initilize
+			total_processes[i]->iter_nlin_max = 0;
+            total_processes[i]->iter_lin_max = 0;
 		}
 		else
 		{   //21.05.2010.  WW
@@ -1202,19 +1206,17 @@ bool Problem::CouplingLoop()
 				if(a_pcs->first_coupling_iteration) PreCouplingLoop(a_pcs);
 //				error = Call_Member_FN(this, active_processes[index])(); // TF: error set, but never used
 				Call_Member_FN(this, active_processes[index])();
-				if(!a_pcs->TimeStepAccept()){
-				   accept = false;
-				   break;
-				}
 				a_pcs->first_coupling_iteration = false; // No longer true.
 				// Check for break criteria
 				max_outer_error = MMax(max_outer_error,a_pcs->cpl_max_relative_error);
+	            std::cout << "coupling error (relative to tolerance): " << a_pcs->cpl_max_relative_error << std::endl;
+				if(!a_pcs->TimeStepAccept()){
+				   std::cout << "*** The process rejected this time step." << std::endl;
+				   accept = false;
+				   break;
+				}
 			}
 			if(!accept) break;
-		}
-		if(!accept){
-			std::cout << std::endl;
-			break;
 		}
 		//
 	    if(cpl_overall_max_iterations > 1){
@@ -1226,10 +1228,16 @@ bool Problem::CouplingLoop()
 	    else{
 			std::cout << std::endl;
 	    }
+		if(!accept){
+			std::cout << std::endl;
+			break;
+		}
 		// Coupling convergence criteria
 		if(max_outer_error <= 1.0 && outer_index+2 > cpl_overall_min_iterations) // JT: error is relative to the tolerance.
 			break;
 	}
+	if (max_outer_error > 1.0 && outer_index == cpl_overall_max_iterations && cpl_overall_max_iterations>1)
+	    accept = false;
 	//
 	return accept;
 }

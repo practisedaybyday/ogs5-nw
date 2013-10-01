@@ -4061,6 +4061,7 @@ double CRFProcess::Execute()
 #ifdef LIS
     bool compress_eqs = (type/10==4 || this->NumDeactivated_SubDomains>0);
 	iter_lin = eqs_new->Solver(this->m_num, compress_eqs); //NW
+	iter_lin_max = std::max(iter_lin_max, iter_lin);
 #else
 	iter_lin = eqs_new->Solver();
 #endif
@@ -8092,18 +8093,29 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 					// For most error methods (also works for Newton)
 					default:
 						PrintStandardIterationInformation(true);
+						if (iter_nlin==0)
+							percent_difference = .0;
+						else
+							percent_difference = 100.0 * ((last_error - nonlinear_iteration_error) / last_error);
+						std::cout << "         ->Nonlinear error: " << nonlinear_iteration_error << ", Convergence rate: " << percent_difference << "%"<< std::endl;
 						//
-						if(nonlinear_iteration_error <= 1.0){
+						if(nonlinear_iteration_error <= 1.0)
+						{
 							converged = true;
 						}
-						else{				// Check for stagnation
-							percent_difference = 100.0 * ((last_error - nonlinear_iteration_error) / last_error);
-							if(iter_nlin > 0 &&  percent_difference < 1.0) // less than 1% difference (or an error increase) from previous error
-								num_fail++;
-							else
+						else
+						{				// Check for stagnation
+							if (iter_nlin>0) {
+								//std::cout << "-> error_k=" << last_error << ", error_k1=" << nonlinear_iteration_error << ", convergence rate=" << percent_difference << "%"<< std::endl;
+								if(percent_difference < 1.0) // less than 1% difference (or an error increase) from previous error
+									num_fail++;
+								else
+									num_fail = 0;
+								//
+								if(num_fail > 1) diverged = true; // require 2 consecutive failures
+							} else {
 								num_fail = 0;
-							//
-							if(num_fail > 1) diverged = true; // require 2 consecutive failures
+							}
 							last_error = nonlinear_iteration_error;
 						}
 						break;
@@ -8229,6 +8241,9 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 				break;
 			}
 		}
+		if ((!converged || diverged) && m_num->nls_max_iterations>1)
+		    accepted = false;
+		iter_nlin_max = std::max(iter_nlin_max, iter_nlin);
 		// ------------------------------------------------------------
 		// NON-LINEAR ITERATIONS COMPLETE
 		// ------------------------------------------------------------
@@ -8240,15 +8255,18 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		if(m_num->nls_max_iterations > 1) // only for non-linear iterations
 		{
 			if(diverged){
-				if(accepted) // only increment if not fixed by a failed time step.
+				if(accepted) { // only increment if not fixed by a failed time step.
 					num_diverged++;
-				std::cout << "\nNon-linear iteration stabilized.";
+					std::cout << "\nNon-linear iteration stabilized."<< std::endl;
+				} else {
+					std::cout << "\nNon-linear iteration diverged."<< std::endl;
+				}
 			}
 			else if(!converged){
 				if(accepted) // only increment if not fixed by a failed time step.
 					num_notsatisfied++;
 				if(Tim->GetPITimeStepCrtlType() < 1) // PI has the intrinsic property of doing this. So don't print it.
-					std::cout << "\nMax number of non-linear iterations reached.";
+					std::cout << "\nMax number of non-linear iterations reached."<< std::endl;
 			}
 		}
 		//

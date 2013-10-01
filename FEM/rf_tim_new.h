@@ -81,6 +81,7 @@ public:
 	double multiply_coef;                 //YD
 	double max_time_step;                 //YD
 	double min_time_step;
+	double initial_time_step;
 	//
 	//WW double minish; // JOD
 	//WW int sub_steps; // JOD 4.7.10
@@ -89,6 +90,7 @@ public:
 	double nonlinear_iteration_error;     //OK/YD
 	//WW double max_adaptive_factor; // kg44
 	//WW double max_adaptive_concentration_change; // kg44
+	size_t last_rejected_timestep;
 public:
 	CTimeDiscretization(void);
 	//21.08.2008. WW
