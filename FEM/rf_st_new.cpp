@@ -2891,8 +2891,17 @@ void CSourceTermGroup::SetSFC(CSourceTerm* m_st, const int ShiftInNodeVector)
 
    if (m_sfc)
    {
+      std::cout << "-> Set ST: Surface " << m_st->geo_name << " with " << convertDisTypeToString(m_st->getProcessDistributionType()) << std::endl;
 
-      SetSurfaceNodeVector(m_sfc, sfc_nod_vector);
+// NW use TF's node searching function instead of SetSurfaceNodeVector
+//      SetSurfaceNodeVector(m_sfc, sfc_nod_vector);
+      GEOLIB::Surface const* sfc(static_cast<const GEOLIB::Surface*> (m_st->getGeoObj()));
+      std::vector<size_t> msh_nod_vec;
+      m_msh->GetNODOnSFC(sfc, msh_nod_vec);
+      for (size_t k(0); k < msh_nod_vec.size(); k++) {
+         sfc_nod_vector.push_back (msh_nod_vec[k]);
+      }
+      std::cout << "-> " << sfc_nod_vector.size() << " nodes are found for this ST" << std::endl;
       if (m_st->isCoupled())
          m_st->SetSurfaceNodeVectorConditional(sfc_nod_vector,
             sfc_nod_vector_cond);
