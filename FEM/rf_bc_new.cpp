@@ -338,15 +338,15 @@ std::ios::pos_type CBoundaryCondition::Read(std::ifstream* bc_file,
 				}
 				//        bc_file->ignore(MAX_ZEILE,'\n');
 			}
-		}
 
-		if (line_string.find("GRADIENT") != std::string::npos) // 6/2012  JOD
-		{
-			this->setProcessDistributionType(FiniteElement::GRADIENT);
-		    in >> gradient_ref_depth;
-            in >> gradient_ref_depth_value;
-            in >> gradient_ref_depth_gradient;
-			in.clear();
+	        if (line_string.find("GRADIENT") != std::string::npos) // 6/2012  JOD
+	        {
+	            this->setProcessDistributionType(FiniteElement::GRADIENT);
+	            in >> gradient_ref_depth;
+	            in >> gradient_ref_depth_value;
+	            in >> gradient_ref_depth_gradient;
+	            in.clear();
+	        }
 		}
 
 		// Time dependent function
