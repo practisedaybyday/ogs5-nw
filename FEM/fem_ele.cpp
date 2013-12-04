@@ -818,6 +818,15 @@ void CElement::FaceIntegration(double* NodeVal)
 		}
 
 		ComputeShapefct(Order);
+
+		if (this->axisymmetry)
+		{
+			double radius = 0.0;
+			for (int ii = 0; ii < nNodes; ii++)
+				radius += sf[ii] * MeshElement->GetNode(ii)->getData()[0];
+			fkt *= radius;         //2.0*pai*radius;
+		}
+
 		val = 0.0;
 		// Interpolation of value at Gauss point
 		for (i = 0; i < nNodes; i++)
@@ -828,6 +837,105 @@ void CElement::FaceIntegration(double* NodeVal)
 	}
 	for (i = 0; i < nNodes; i++)
 		NodeVal[i] = dbuff[i];
+}
+
+void CElement::DomainIntegration(double* NodeVal)
+{
+	int i, gp, gp_r, gp_s, gp_t;
+	double fkt = 0.0, det, val;
+	double* sf = shapefct;
+
+	setOrder(Order);
+	if(Order == 2)
+	{
+		sf = shapefctHQ;
+		if(MeshElement->GetElementType() == MshElemType::QUAD)
+			ShapeFunctionHQ = ShapeFunctionQuadHQ8;
+	}
+
+	det = MeshElement->GetVolume();
+	for (i = 0; i < nNodes; i++)
+		dbuff[i] = 0.0;
+	// Loop over Gauss points
+	for (gp = 0; gp < nGaussPoints; gp++)
+	{
+		//---------------------------------------------------------
+		//  Get local coordinates and weights
+		//  Compute Jacobian matrix and its determinate
+		//---------------------------------------------------------
+		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+
+		ComputeShapefct(Order);
+
+		val = 0.0;
+		// Interpolation of value at Gauss point
+		for (i = 0; i < nNodes; i++)
+			val += NodeVal[i] * sf[i];
+		// Integration
+		for (i = 0; i < nNodes; i++)
+			dbuff[i] += val * sf[i] * fkt;
+	}
+	for (i = 0; i < nNodes; i++)
+		NodeVal[i] = dbuff[i];
+}
+
+void CElement::CalcFaceMass(double* mass)
+{
+	int i, j, gp, gp_r, gp_s;
+	double fkt = 0.0, det, val;
+	double* sf = shapefct;
+
+	setOrder(Order);
+	if(Order == 2)
+	{
+		sf = shapefctHQ;
+		if(MeshElement->GetElementType() == MshElemType::QUAD)
+			ShapeFunctionHQ = ShapeFunctionQuadHQ8;
+	}
+
+	det = MeshElement->GetVolume();
+	for (i = 0; i < nNodes; i++)
+		dbuff[i] = 0.0;
+	// Loop over Gauss points
+	for (gp = 0; gp < nGaussPoints; gp++)
+	{
+		//---------------------------------------------------------
+		//  Get local coordinates and weights
+		//  Compute Jacobian matrix and its determinate
+		//---------------------------------------------------------
+		switch(MeshElement->GetElementType())
+		{
+		case MshElemType::LINE:   // Line
+			gp_r = gp;
+			unit[0] = MXPGaussPkt(nGauss, gp_r);
+			fkt = 0.5* det* MXPGaussFkt(nGauss, gp_r);
+			break;
+		case MshElemType::TRIANGLE: // Triangle
+			SamplePointTriHQ(gp, unit);
+			fkt = 2.0 * det * unit[2]; // Weights
+			break;
+		case MshElemType::QUAD:   // Quadralateral
+			gp_r = (int)(gp / nGauss);
+			gp_s = gp % nGauss;
+			unit[0] = MXPGaussPkt(nGauss, gp_r);
+			unit[1] = MXPGaussPkt(nGauss, gp_s);
+			fkt = 0.25* det* MXPGaussFkt(nGauss, gp_r) * MXPGaussFkt(nGauss, gp_s);
+			break;
+		default:
+			std::cerr << "CElement::CalcFaceMass element type not handled" <<
+			std::endl;
+		}
+
+		ComputeShapefct(Order);
+
+		for (i = 0; i < nnodes; i++)
+		{
+			for (j = 0; j < nnodes; j++)
+			{
+				mass[i*nnodes+j] += fkt * shapefct[i] * shapefct[j];
+			}
+		}
+	}
 }
 
 /***************************************************************************
