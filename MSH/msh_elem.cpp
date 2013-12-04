@@ -502,6 +502,8 @@ void CElem:: SetFace(CElem* onwer, const int Face)
 		std::cerr << "CElem::SetFace MshElemType not handled" << std::endl;
 	}
 
+	if (nodes.Size()<n)
+		nodes.resize(n);
 	for(size_t i = 0; i < n; i++)
 		nodes[i] = owner->nodes[nodeIndex_loc[i]];
 }
