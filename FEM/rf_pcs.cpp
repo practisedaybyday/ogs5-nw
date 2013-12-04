@@ -4764,7 +4764,7 @@ void CRFProcess::GlobalAssembly()
 			AddFCT_CorrectionVector();
 
 		if (write_leqs) {
-			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs.txt";
+			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_assembly.txt";
 #ifdef NEW_EQS
 			std::ofstream Dum(fname.c_str(), ios::out);
 			eqs_new->Write(Dum);
@@ -4798,6 +4798,16 @@ void CRFProcess::GlobalAssembly()
 
 		//ofstream Dum("rf_pcs.txt", ios::out); // WW
 		// eqs_new->Write(Dum);   Dum.close();
+		if (write_leqs) {
+			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_st.txt";
+#ifdef NEW_EQS
+			std::ofstream Dum(fname.c_str(), ios::out);
+			eqs_new->Write(Dum);
+			Dum.close();
+#else
+			MXDumpGLS(fname.c_str(), 1, eqs->b, eqs->x);
+#endif
+		}
 
 #define nOUTPUT_EQS_BIN
 #ifdef OUTPUT_EQS_BIN
@@ -5457,6 +5467,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			end = rank_bc_node_value_in_dom[rank];
 		}
 
+		size_t count_constrained_excluded = 0;
+
 		for(i = begin; i < end; i++)
 		{
 			gindex = i;
@@ -5570,6 +5582,21 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				time_fac = 1.0;
 			if(bc_msh_node >= 0)
 			{
+				//................................................................
+				// Constrain condition
+				if (m_bc_node->_bc->has_constrain)
+				{
+					CBoundaryCondition* bc = m_bc_node->_bc;
+					if (bc->constrain_var_id<0) {
+						bc->constrain_var_id = GetNodeValueIndex(bc->constrain_var_name) + 1;
+					}
+					double val = GetNodeValue(bc_msh_node,bc->constrain_var_id);
+					if (!FiniteElement::compare(val, bc->constrain_value, bc->constrain_operator)) {
+						count_constrained_excluded++;
+						continue; // skip this bc node
+					}
+				}
+
 				//................................................................
 				// Time dependencies - CURVE
 				curve =  m_bc_node->CurveIndex;
@@ -5744,6 +5771,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 #endif
 			}
 		}
+		if (count_constrained_excluded>0)
+			std::cout << "-> " << count_constrained_excluded << " nodes are excluded from BC because of constrained conditions" << std::endl;
 	}
 
 /**************************************************************************
@@ -6578,6 +6607,45 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				stgem_node_value_in_dom.clear();
 				stgem_local_index_in_dom.clear();
 				rank_stgem_node_value_in_dom.clear();
+			}
+		}
+
+		for (unsigned i=0; i<st_vector.size(); i++) {
+			CSourceTerm* st = st_vector[i];
+			if (!st->is_exchange_bc) continue;
+
+			double mass[100] = {};
+			if (st->getGeoType () == GEOLIB::POINT) {
+				const int k_eqs_id = m_msh->nod_vector[st->geo_node_number]->GetEquationIndex();
+#ifdef NEW_EQS
+				(*eqs_new->A)(k_eqs_id,k_eqs_id) += st->exchange_K;
+#else
+				MXInc(k_eqs_id,k_eqs_id, st->exchange_K);
+#endif
+			} else if (st->getGeoType () == GEOLIB::SURFACE || st->getGeoType() == GEOLIB::POLYLINE) {
+				for (size_t in=0; in<st->st_boundary_elements.size(); in++) {
+					MeshLib::CElem* face = st->st_boundary_elements[in];
+					const unsigned nen = face->GetNodesNumber(false);
+					fem->setOrder(m_msh->getOrder() + 1);
+					fem->ConfigElement(face, true);
+					for (unsigned k = 0; k < nen; k++)
+						for (unsigned l = 0; l < nen; l++)
+							mass[k*nen+l] = .0;
+					fem->CalcFaceMass(mass);
+					for (unsigned k = 0; k < nen; k++)
+					{
+						const int k_eqs_id = face->GetNode(k)->GetEquationIndex();
+						for (unsigned l = 0; l < nen; l++)
+						{
+							const int l_eqs_id = face->GetNode(l)->GetEquationIndex();
+#ifdef NEW_EQS
+							(*eqs_new->A)(k_eqs_id,l_eqs_id) += mass[k*nen+l] * st->exchange_K;
+#else
+							MXInc(k_eqs_id,l_eqs_id, mass[k*nen+l]);
+#endif
+						}
+					}
+				}
 			}
 		}
 	}
