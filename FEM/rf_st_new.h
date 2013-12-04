@@ -33,6 +33,7 @@ namespace MeshLib
 {
 class CFEMesh;
 class MeshNodesAlongPolyline;
+class CElem;
 }
 
 
@@ -60,7 +61,7 @@ public:
 
 	void EdgeIntegration(MeshLib::CFEMesh* m_msh,
 	                     const std::vector<long> & nodes_on_ply,
-	                     std::vector<double> & node_value_vector) const;
+	                     std::vector<double> & node_value_vector);
 	void FaceIntegration(MeshLib::CFEMesh* m_msh,
 	                     std::vector<long> & nodes_on_sfc,
 	                     std::vector<double> & node_value_vector);
@@ -167,6 +168,15 @@ public:
 
 	std::string fname;
 
+	double exchange_K;
+	bool is_exchange_bc;
+
+	bool has_constrain;
+	std::string constrain_var_name;
+	int constrain_var_id;
+	double constrain_value;
+	FiniteElement::ComparisonOperatorType constrain_operator;
+
 private:                                          // TF, KR
 	void ReadDistributionType(std::ifstream* st_file);
 	void ReadGeoType(std::ifstream* st_file,
@@ -231,6 +241,12 @@ private:                                          // TF, KR
 	// including climate data into source terms
 	MathLib::InverseDistanceInterpolation<GEOLIB::PointWithID*, GEOLIB::Station*> *_distances; // NB
 	std::vector<GEOLIB::Station*> _weather_stations; //NB
+
+	//NW
+	std::vector<MeshLib::CElem*> st_boundary_elements;
+	double gradient_ref_depth;
+	double gradient_ref_depth_value;
+	double gradient_ref_depth_gradient;
 };
 
 class CSourceTermGroup
@@ -319,7 +335,7 @@ private:
 	void SetPolylineNodeValueVector(CSourceTerm* st,
 	                                std::vector<long> const & ply_nod_vector,
 	                                std::vector<long>& ply_nod_vector_cond,
-	                                std::vector<double>& ply_nod_val_vector) const;
+	                                std::vector<double>& ply_nod_val_vector);
 
 	// JOD
 	void SetSurfaceNodeVector(Surface* m_sfc, std::vector<long>&sfc_nod_vector);
@@ -327,8 +343,8 @@ private:
 	                                Surface* m_sfc,
 	                                std::vector<long>&sfc_nod_vector,
 	                                std::vector<double>&sfc_nod_val_vector);
-	void AreaAssembly(const CSourceTerm* const st, const std::vector<long>& ply_nod_vector_cond,
-	                  std::vector<double>&  ply_nod_val_vector) const;
+	void AreaAssembly(CSourceTerm* st, const std::vector<long>& ply_nod_vector_cond,
+	                  std::vector<double>&  ply_nod_val_vector);
 };
 
 extern CSourceTermGroup* STGetGroup(std::string pcs_type_name,std::string pcs_pv_name);

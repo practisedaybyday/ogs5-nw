@@ -101,6 +101,8 @@ CSourceTerm::CSourceTerm() :
    analytical = false;                            //CMCD
    //  display_mode = false; //OK
    this->TimeInterpolation = 0;                   //BG
+   is_exchange_bc = false;
+   exchange_K = .0;
 }
 
 // KR: Conversion from GUI-ST-object to CSourceTerm
@@ -175,6 +177,10 @@ CSourceTerm::~CSourceTerm()
    dis_linear_f = NULL;
 
    //WW---------------------------------------
+
+
+   for (size_t i=0; i<this->st_boundary_elements.size(); i++)
+	   delete this->st_boundary_elements[i];
 }
 
 
@@ -325,7 +331,7 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
          else
          {
             ReadDistributionType(st_file);
-            continue;
+	        continue;
          }
       }
 
@@ -405,6 +411,28 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
          }
          continue;
       }
+
+      if (line_string.find("$EXCHANGE_CONDITION") != std::string::npos)
+      {
+         in.str(readNonBlankLineFromInputStream(*st_file));
+         in >> exchange_K;
+         is_exchange_bc = true;
+         std::cout << "-> ST is defined as an exchange condition with K=" << exchange_K << std::endl;
+         in.clear();
+         continue;
+      }
+
+		//....................................................................
+		if (line_string.find("$CONSTRAIN") != std::string::npos) // NW
+		{
+			// var > value
+			in.str(readNonBlankLineFromInputStream(*st_file));
+			in >> constrain_var_name >> line_string >> constrain_value;
+			constrain_operator = FiniteElement::convertComparisonOperatorType(line_string);
+			in.clear();
+			has_constrain = true;
+			std::cout << "-> $CONSTRAIN is given for ST" << std::endl;
+		}
    }                                              // end !new_keyword
    return position;
 }
@@ -567,7 +595,7 @@ void CSourceTerm::ReadDistributionType(std::ifstream *st_file)
       in.clear();
    }
 
-if (this->getProcessDistributionType() == FiniteElement::CLIMATE)
+   if (this->getProcessDistributionType() == FiniteElement::CLIMATE)
    {
       dis_type_name = "CLIMATE";
       in >> fname; // base filename for climate input
@@ -582,6 +610,14 @@ if (this->getProcessDistributionType() == FiniteElement::CLIMATE)
 	  delete stations;
    }
 
+	if (this->getProcessDistributionType() == FiniteElement::GRADIENT)
+	{
+	      dis_type_name = "GRADIENT";
+		in >> gradient_ref_depth;
+		in >> gradient_ref_depth_value;
+		in >> gradient_ref_depth_gradient;
+		in.clear();
+	}
 }
 
 
@@ -1213,7 +1249,7 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 //}
 
 void CSourceTerm::EdgeIntegration(CFEMesh* msh, const std::vector<long>&nodes_on_ply,
-std::vector<double>&node_value_vector) const
+std::vector<double>&node_value_vector)
 {
    long i, j, k, l;
    long this_number_of_nodes;
@@ -1231,6 +1267,11 @@ std::vector<double>&node_value_vector) const
    bool Const = false;
    if (this->getProcessDistributionType() == FiniteElement::CONSTANT || this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
       Const = true;
+
+   int Axisymm = 1;                               // ani-axisymmetry
+   if (msh->isAxisymmetry())
+      Axisymm = -1;                               // Axisymmetry is true
+   CElement* fem = new CElement(Axisymm * msh->GetCoordinateFlag());
 
    //CFEMesh* msh = m_pcs->m_msh;
    //CFEMesh* msh;  // JOD
@@ -1304,6 +1345,40 @@ std::vector<double>&node_value_vector) const
       if (!edge->GetMark())
          continue;
       edge->GetNodes(e_nodes);
+      if (msh->getOrder())
+      {
+         if (!(e_nodes[0]->GetMark() && e_nodes[1]->GetMark()
+            && e_nodes[2]->GetMark()))
+        	 continue;
+      } else {
+          if (!(e_nodes[0]->GetMark() && e_nodes[1]->GetMark()))
+        	  continue;
+      }
+      CElem* edge_ele = new CElem(1);
+      const size_t nen = msh->getOrder() ? 3 : 2;
+      std::vector<CNode*> edge_nodes(nen);
+      for(size_t j = 0; j < nen; j++)
+    	  edge_nodes[j] = edge->GetNode(j);
+      edge_ele->setNodes(edge_nodes);
+      edge_ele->setElementProperties(MshElemType::LINE, true);
+      edge_ele->SetOrder(msh->getOrder());
+      edge_ele->ComputeVolume();
+      st_boundary_elements.push_back(edge_ele);
+
+      fem->setOrder(msh->getOrder() + 1);
+      fem->ConfigElement(edge_ele, true);
+      double nodesFVal[3] = {};
+      nodesFVal[0] = node_value_vector[G2L[e_nodes[0]->GetIndex()]];
+      nodesFVal[1] = node_value_vector[G2L[e_nodes[1]->GetIndex()]];
+      if (msh->getOrder())
+          nodesFVal[2] = node_value_vector[G2L[e_nodes[2]->GetIndex()]];
+      fem->FaceIntegration(nodesFVal);
+      for (k = 0; k < (signed)nen; k++)
+      {
+         NVal[G2L[edge->GetNode(k)->GetIndex()]] += nodesFVal[k];
+      }
+
+#if 0
       if (msh->getOrder())                        // Quad
       {
          if (e_nodes[0]->GetMark() && e_nodes[1]->GetMark()
@@ -1390,6 +1465,7 @@ std::vector<double>&node_value_vector) const
             }                                     // End of is (!axi)
          }
       }
+#endif
    }
    for (i = 0; i < this_number_of_nodes; i++)
       node_value_vector[i] = NVal[i];
@@ -1535,14 +1611,14 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long>&nodes_on_sfc,
    if (msh->isAxisymmetry())
       Axisymm = -1;                               // Axisymmetry is true
    CElem* elem = NULL;
-   CElem* face = new CElem(1);
+//   CElem* face = new CElem(1);
    CElement* fem = new CElement(Axisymm * msh->GetCoordinateFlag());
    CNode* e_node = NULL;
    CElem* e_nei = NULL;
    //vec<CNode*> e_nodes(20);
    // vec<CElem*> e_neis(6);
 
-   face->SetFace();
+//   face->SetFace();
    this_number_of_nodes = (long) nodes_on_sfc.size();
    int nSize = (long) msh->nod_vector.size();
    std::vector<long> G2L(nSize);
@@ -1630,9 +1706,11 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long>&nodes_on_sfc,
                                                   // Not a surface face
          if (elem->GetDimension() == e_nei->GetDimension())
             fac = 0.5;
+         CElem* face = new CElem(1);
          face->SetFace(elem, j);
          face->SetOrder(msh->getOrder());
          face->ComputeVolume();
+         st_boundary_elements.push_back(face);
          fem->setOrder(msh->getOrder() + 1);
          fem->ConfigElement(face, true);
          fem->FaceIntegration(nodesFVal);
@@ -1703,7 +1781,7 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long>&nodes_on_sfc,
    NVal.clear();
    G2L.clear();
    delete fem;
-   delete face;
+   //delete face;
 }
 
 
@@ -1751,25 +1829,27 @@ std::vector<double>&node_value_vector) const
          continue;
       elem->GetNodes(e_nodes);
       size_t nn = elem->GetNodesNumber(msh->getOrder());
-      count = 0;
-      for (size_t j = 0; j < nn; j++)
-      {
-         for (size_t k = 0; k < this_number_of_nodes; k++)
-         {
-            if (*e_nodes[j] == *msh->nod_vector[nodes_in_dom[k]])
-            {
-               count++;
-               break;
-            }
-         }
+      if (nodes_in_dom.size()!=msh->nod_vector.size()) {
+          count = 0;
+          for (size_t j = 0; j < nn; j++)
+          {
+             for (size_t k = 0; k < this_number_of_nodes; k++)
+             {
+                if (*e_nodes[j] == *msh->nod_vector[nodes_in_dom[k]])
+                {
+                   count++;
+                   break;
+                }
+             }
+          }
+          if (count != nn)
+             continue;
       }
-      if (count != nn)
-         continue;
       for (size_t j = 0; j < nn; j++)
          nodesFVal[j] = node_value_vector[G2L[e_nodes[j]->GetIndex()]];
       fem->ConfigElement(elem, true);
       fem->setOrder(msh->getOrder() + 1);
-      fem->FaceIntegration(nodesFVal);
+      fem->DomainIntegration(nodesFVal);
       for (size_t j = 0; j < nn; j++)
          NVal[G2L[e_nodes[j]->GetIndex()]] += nodesFVal[j];
    }
@@ -2712,6 +2792,11 @@ const int ShiftInNodeVector)
          }
       }
    }
+   if (st->is_exchange_bc) {
+      nod_val->node_value *= st->exchange_K;
+   }
+   st->msh_node_number = nod_val->msh_node_number;
+   st->geo_node_number = nod_val->geo_node_number;
    //WW        group_vector.push_back(m_node_value);
    //WW        st_group_vector.push_back(st); //OK
    pcs->st_node_value.push_back(nod_val);         //WW
@@ -2791,12 +2876,15 @@ void CSourceTermGroup::SetPLY(CSourceTerm* st, int ShiftInNodeVector)
 {
 	CGLPolyline* old_ply (GEOGetPLYByName(st->geo_name));
 	if (old_ply) {
+		std::cout << "-> Set ST: Polyline " << st->geo_name << " with " << convertDisTypeToString(st->getProcessDistributionType()) << std::endl;
+
 		std::vector<long> ply_nod_vector;
 		std::vector<long> ply_nod_vector_cond;
 		std::vector<double> ply_nod_val_vector;
 
 		double min_edge_length (m_msh->getMinEdgeLength());
-		m_msh->setMinEdgeLength (old_ply->epsilon);
+		double new_epsilon = std::min(min_edge_length, old_ply->epsilon);
+		m_msh->setMinEdgeLength (new_epsilon);
 		m_msh->GetNODOnPLY(static_cast<const GEOLIB::Polyline*>(st->getGeoObj()), ply_nod_vector);
 		m_msh->setMinEdgeLength (min_edge_length);
 
@@ -2823,13 +2911,30 @@ void CSourceTermGroup::SetDMN(CSourceTerm *m_st, const int ShiftInNodeVector)
    std::vector<double> dmn_nod_val_vector;
    std::vector<long> dmn_nod_vector_cond;
 
-   GEOGetNodesInMaterialDomain(m_msh, m_st->analytical_material_group,
-      dmn_nod_vector, false);
-   size_t number_of_nodes (dmn_nod_vector.size());
-   dmn_nod_val_vector.resize(number_of_nodes);
+   if (m_st->getProcessDistributionType() == FiniteElement::ANALYTICAL) {
+      GEOGetNodesInMaterialDomain(m_msh, m_st->analytical_material_group,
+         dmn_nod_vector, false);
+      size_t number_of_nodes (dmn_nod_vector.size());
+      dmn_nod_val_vector.resize(number_of_nodes);
+      for (size_t i = 0; i < number_of_nodes; i++)
+         dmn_nod_val_vector[i] = 0;
+   } else {
+      dmn_nod_vector.resize(m_msh->nod_vector.size());
+      for (size_t i=0; i<m_msh->nod_vector.size(); i++)
+         dmn_nod_vector[i] = i;
+      dmn_nod_val_vector.resize(dmn_nod_vector.size());
+      if (m_st->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
+      {
+          for (size_t i=0; i<dmn_nod_vector.size(); i++)
+        	  dmn_nod_val_vector[i] = m_st->geo_node_value;
+      }
+   }
 
-   for (size_t i = 0; i < number_of_nodes; i++)
-      dmn_nod_val_vector[i] = 0;
+
+   if (m_st->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN || m_st->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN)
+   {
+      m_st->DomainIntegration(m_msh, dmn_nod_vector, dmn_nod_val_vector);
+   }
 
    m_st->SetNodeValues(dmn_nod_vector, dmn_nod_vector_cond,
       dmn_nod_val_vector, ShiftInNodeVector);
@@ -3198,7 +3303,7 @@ void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st, CGLPolyline *
 void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st,
 		std::vector<long> const & ply_nod_vector,
 		std::vector<long>& ply_nod_vector_cond,
-		std::vector<double>& ply_nod_val_vector) const
+		std::vector<double>& ply_nod_val_vector)
 {
 	size_t number_of_nodes(ply_nod_vector.size());
 	ply_nod_val_vector.resize(number_of_nodes);
@@ -3239,6 +3344,13 @@ void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st,
          ply_nod_val_vector[i] = st->dis_linear_f->getValue(pnt[0], pnt[1], pnt[2]);
       }
    }
+   else if (distype == FiniteElement::GRADIENT) //NW
+	{
+		for (size_t i(0); i < number_of_nodes; i++) {
+			double z = m_msh->nod_vector[ply_nod_vector[i]]->getData()[2];
+			ply_nod_val_vector[i] = st->gradient_ref_depth_gradient * (st->gradient_ref_depth - z) + st->gradient_ref_depth_value;
+		}
+	}
 	else //WW
 	{
 		for (size_t i = 0; i < number_of_nodes; i++) {
@@ -3247,9 +3359,15 @@ void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st,
 				ply_nod_val_vector[i] = st->geo_node_value / (double) number_of_nodes;
 		}
 	}
+	if (st->is_exchange_bc) {
+		for (size_t i = 0; i < number_of_nodes; i++) {
+			ply_nod_val_vector[i] *= st->exchange_K;
+		}
+	}
 	if (distype == FiniteElement::CONSTANT_NEUMANN
 			|| distype == FiniteElement::LINEAR_NEUMANN
-			|| distype == FiniteElement::GREEN_AMPT)
+			|| distype == FiniteElement::GREEN_AMPT
+			|| st->is_exchange_bc)
 	{
 		if (m_msh->GetMaxElementDim() == 1) // 1D  //WW MB
 			st->DomainIntegration(m_msh, ply_nod_vector,
@@ -3279,9 +3397,9 @@ void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st,
  11/2007 JOD
  last modification:
  **************************************************************************/
-void CSourceTermGroup::AreaAssembly(const CSourceTerm* const st,
+void CSourceTermGroup::AreaAssembly(CSourceTerm* st,
 const std::vector<long>& ply_nod_vector_cond,
-std::vector<double>& ply_nod_val_vector) const
+std::vector<double>& ply_nod_val_vector)
 {
    if (pcs_type_name == "RICHARDS_FLOW")
    {
@@ -3316,8 +3434,11 @@ void CSourceTermGroup::SetSurfaceNodeValueVector(CSourceTerm* st,
    long number_of_nodes = (long) sfc_nod_vector.size();
    sfc_nod_val_vector.resize(number_of_nodes);
 
+   double node_value = st->geo_node_value;
+   if (st->is_exchange_bc)
+	   node_value *= st->exchange_K;
    for (long i = 0; i < number_of_nodes; i++)
-      sfc_nod_val_vector[i] = st->geo_node_value;
+      sfc_nod_val_vector[i] = node_value;
    // KR & TF - case not used
    //	if (m_st->dis_type == 12) //To do. 4.10.06
    //		for (long i = 0; i < number_of_nodes; i++)
