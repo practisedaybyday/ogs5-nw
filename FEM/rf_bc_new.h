@@ -167,12 +167,21 @@ private:
 
 	double node_value_cond; //OK
 	double condition; //OK
+	bool conditional;
+
 	double epsilon; //NW. temporally set here for surface interpolation
 	bool time_dep_interpol;
 
+public:
+	bool has_constrain;
+	std::string constrain_var_name;
+	int constrain_var_id;
+	double constrain_value;
+	FiniteElement::ComparisonOperatorType constrain_operator;
+
+private:
 	// FCT
 	std::string fct_name;
-	bool conditional;
 
 	LinearFunctionData* dis_linear_f;   //24.8.2011. WW
 
@@ -212,6 +221,9 @@ public:
 	std::string fct_name;                 //WW
 	//FCT
 	int conditional;                      //OK
+
+	CBoundaryCondition* _bc;
+
 	CBoundaryConditionNode();
 
 	// 25.08.2011. WW

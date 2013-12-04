@@ -72,6 +72,7 @@ double cputime(double x)
 CBoundaryConditionNode::CBoundaryConditionNode()
 {
 	conditional = false;
+	_bc = NULL;
 }
 
 /**************************************************************************
@@ -128,6 +129,10 @@ CBoundaryCondition::CBoundaryCondition() :
 	bcExcav = -1;                         //WX
 	MatGr = -1;                           //WX
 	is_MatGr_set = false; //NW
+	has_constrain = false;
+	constrain_value = .0;
+	constrain_operator = FiniteElement::INVALID_OPERATOR_TYPE;
+	constrain_var_id = -1;
 }
 
 // KR: Conversion from GUI-BC-object to CBoundaryCondition
@@ -411,6 +416,19 @@ std::ios::pos_type CBoundaryCondition::Read(std::ifstream* bc_file,
 			conditional = true;
 		}
 
+		//....................................................................
+		if (line_string.find("$CONSTRAIN") != std::string::npos) // NW
+		{
+			// var > value
+			in.str(readNonBlankLineFromInputStream(*bc_file));
+			in >> constrain_var_name >> line_string >> constrain_value;
+			constrain_operator = FiniteElement::convertComparisonOperatorType(line_string);
+			in.clear();
+			has_constrain = true;
+			std::cout << "-> $CONSTRAIN is given for BC" << std::endl;
+		}
+
+		//....................................................................
 		if (line_string.find("$EPSILON") != std::string::npos) // NW
 		{
 			in.str(readNonBlankLineFromInputStream(*bc_file));
@@ -1016,6 +1034,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 			if (bc->getGeoType() == GEOLIB::POINT)
 			{
 				m_node_value = new CBoundaryConditionNode;
+				m_node_value->_bc = bc;
 				// Get MSH node number
 				if (bc->getProcessDistributionType()
 				    == FiniteElement::CONSTANT)
@@ -1080,6 +1099,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						for (size_t i(0); i < nodes_vector_size; i++)
 						{
 							m_node_value = new CBoundaryConditionNode();
+							m_node_value->_bc = bc;
 							m_node_value->msh_node_number =
 							        nodes_vector[i] + ShiftInNodeVector;
 							m_node_value->geo_node_number =
@@ -1122,6 +1142,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						for (size_t i(0); i < nodes_vector_size; i++)
 						{
 							m_node_value = new CBoundaryConditionNode();
+							m_node_value->_bc = bc;
 							m_node_value->msh_node_number = nodes_vector[i] + ShiftInNodeVector;
 							m_node_value->geo_node_number = nodes_vector[i];
 //                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
@@ -1148,6 +1169,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 
 						for (size_t k(0); k < nodes_vector.size(); k++) {
 							m_node_value = new CBoundaryConditionNode();
+							m_node_value->_bc = bc;
 							m_node_value->msh_node_number = -1;
 							m_node_value->msh_node_number = nodes_vector[k] + ShiftInNodeVector;
 							m_node_value->geo_node_number = nodes_vector[k];
@@ -1216,6 +1238,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						for (size_t i = 0; i < nodes_vector.size(); i++)
 						{
 							m_node_value = new CBoundaryConditionNode();
+							m_node_value->_bc = bc;
 							m_node_value->msh_node_number = -1;
 							m_node_value->msh_node_number =
 							        nodes_vector[i]
@@ -1323,6 +1346,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 					for (size_t i = 0; i < nodes_vector_length; i++)
 					{
 						m_node_value = new CBoundaryConditionNode();
+						m_node_value->_bc = bc;
 						m_node_value->msh_node_number = -1;
 						m_node_value->msh_node_number = nodes_vector[i]
 						                                + ShiftInNodeVector; //nodes[i];
@@ -1390,6 +1414,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 			if (bc->getMeshTypeName().compare("NODE") == 0)
 			{
 				m_node_value = new CBoundaryConditionNode;
+				m_node_value->_bc = bc;
 				m_node_value->msh_node_number = bc->getMeshNodeNumber();
 				m_node_value->geo_node_number = bc->getMeshNodeNumber();
 				m_node_value->node_value = bc->geo_node_value;
@@ -1465,6 +1490,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						for (size_t i = 0; i < nodes_vector.size(); i++)
 						{
 							m_node_value = new CBoundaryConditionNode();
+							m_node_value->_bc = bc;
 							m_node_value->msh_node_number = -1;
 							m_node_value->msh_node_number =
 							        nodes_vector[i]
