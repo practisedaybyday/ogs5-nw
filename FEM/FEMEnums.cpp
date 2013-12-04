@@ -424,4 +424,27 @@ ErrorMethod convertErrorMethod(const std::string& error_method_string)
 	return INVALID_ERROR_METHOD;
 }
 
+ComparisonOperatorType convertComparisonOperatorType(const std::string &str)
+{
+    if (str.compare("<") == 0)
+        return LT;
+    if (str.compare("<=") == 0)
+        return LE;
+    if (str.compare("=") == 0)
+        return EQ;
+    if (str.compare("!=") == 0)
+        return NE;
+    if (str.compare(">") == 0)
+        return GT;
+    if (str.compare(">=") == 0)
+        return GE;
+    else
+    {
+        std::cout << "convertComparisonOperatorType #" << str << "# not found"<< std::endl;
+        exit(1);
+    }
+    return INVALID_OPERATOR_TYPE;
+}
+
+
 } // end namespace FiniteElement

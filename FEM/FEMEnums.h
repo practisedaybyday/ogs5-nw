@@ -230,6 +230,33 @@ enum ErrorMethod
  */
 ErrorMethod convertErrorMethod ( const std::string& error_method_string );
 
+enum ComparisonOperatorType
+{
+    INVALID_OPERATOR_TYPE = 0,
+    LT,
+    LE,
+    EQ,
+    NE,
+    GT,
+    GE
+};
+
+ComparisonOperatorType convertComparisonOperatorType(const std::string &str);
+
+template<typename T>
+bool compare(T v1, T v2, ComparisonOperatorType optype)
+{
+	switch (optype) {
+	case LT: return v1 < v2;
+	case LE: return v1 <= v2;
+	case EQ: return v1 == v2;
+	case NE: return v1 != v2;
+	case GT: return v1 > v2;
+	case GE: return v1 >= v2;
+	default: return true;
+	}
+}
+
 } // end namespace FiniteElement
 
 #endif                                            //FEMENUMS_H
