@@ -6285,6 +6285,20 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		long gindex = 0;
 		int dim_space = 0;        //kg44 better define here and not in a loop!
 
+		//====================================================================
+		// Look for active boundary elements if constrain is given
+		for (unsigned i=0; i<st_vector.size(); i++)
+		{
+			CSourceTerm* st = st_vector[i];
+			if (!st->has_constrain) continue;
+
+			CSourceTermGroup m_st_group;
+			m_st_group.pcs_type_name = FiniteElement::convertProcessTypeToString(st->getProcessType());
+			m_st_group.pcs_pv_name = FiniteElement::convertPrimaryVariableToString(st->getProcessPrimaryVariable());
+			int idx = GetNodeValueIndex(m_st_group.pcs_pv_name)/2;
+			m_st_group.Set(this, Shift[idx]);
+		}
+
 #ifndef OGS_ONLY_TH
 //###############################
 //NB Climate Data
@@ -6399,6 +6413,91 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			end = rank_st_node_value_in_dom[rank];
 		}
 
+#if 0
+		//====================================================================
+		// Look for active boundary elements if constrain is given
+		size_t count_constrained_excluded = 0;
+		for (unsigned i=0; i<st_vector.size(); i++)
+		{
+			CSourceTerm* st = st_vector[i];
+			if (!st->has_constrain) continue;
+
+			if (st->constrain_var_id<0)
+				st->constrain_var_id = GetNodeValueIndex(st->constrain_var_name) + 1;
+
+			if (st->getGeoType () == GEOLIB::POINT) {
+				double val = GetNodeValue(st->geo_node_number,st->constrain_var_id);
+				if (!FiniteElement::compare(val, st->constrain_value, st->constrain_operator)) {
+					count_constrained_excluded++;
+					continue; // skip this bc node
+				}
+			} else {
+				st->st_boundary_elements_active.resize(st->st_boundary_elements.size());
+				for (size_t in=0; in<st->st_boundary_elements.size(); in++) {
+					MeshLib::CElem* face = st->st_boundary_elements[in];
+					const unsigned nen = face->GetNodesNumber(false);
+					double avg_val = .0;
+					for (unsigned k = 0; k < nen; k++)
+						avg_val += GetNodeValue(face->GetNode(k)->GetIndex(), st->constrain_var_id);
+					avg_val /= (double)nen;
+					st->st_boundary_elements_active[in] = FiniteElement::compare(avg_val, st->constrain_value, st->constrain_operator);
+					if (!st->st_boundary_elements_active[in])
+						count_constrained_excluded++;
+				}
+			}
+		}
+
+		// Boundary integration
+		for (unsigned i=0; i<st_vector.size(); i++)
+		{
+			CSourceTerm* st = st_vector[i];
+			if (!st->is_exchange_bc) continue;
+
+			// only Neumann BC
+			if (!(st->getProcessDistributionType()==FiniteElement::CONSTANT_NEUMANN || st->getProcessDistributionType()==FiniteElement::LINEAR_NEUMANN))
+				continue;
+
+			double mass[100] = {};
+			if (st->getGeoType () == GEOLIB::POINT) {
+				const int k_eqs_id = m_msh->nod_vector[st->geo_node_number]->GetEquationIndex();
+#ifdef NEW_EQS
+				(*eqs_new->A)(k_eqs_id,k_eqs_id) += st->exchange_K;
+#else
+				MXInc(k_eqs_id,k_eqs_id, st->exchange_K);
+#endif
+			} else if (st->getGeoType () == GEOLIB::SURFACE || st->getGeoType() == GEOLIB::POLYLINE) {
+				for (size_t in=0; in<st->st_boundary_elements.size(); in++) {
+					MeshLib::CElem* face = st->st_boundary_elements[in];
+					const unsigned nen = face->GetNodesNumber(false);
+					fem->setOrder(m_msh->getOrder() + 1);
+					fem->ConfigElement(face, true);
+					for (unsigned k = 0; k < nen; k++)
+						for (unsigned l = 0; l < nen; l++)
+							mass[k*nen+l] = .0;
+					fem->CalcFaceMass(mass);
+					for (unsigned k = 0; k < nen; k++)
+					{
+						const int k_eqs_id = face->GetNode(k)->GetEquationIndex();
+						for (unsigned l = 0; l < nen; l++)
+						{
+							const int l_eqs_id = face->GetNode(l)->GetEquationIndex();
+#ifdef NEW_EQS
+							(*eqs_new->A)(k_eqs_id,l_eqs_id) += mass[k*nen+l] * st->exchange_K;
+#else
+							MXInc(k_eqs_id,l_eqs_id, mass[k*nen+l]);
+#endif
+						}
+					}
+				}
+			}
+		}
+		if (count_constrained_excluded>0)
+			std::cout << "-> " << count_constrained_excluded << " nodes are excluded from ST because of constrained conditions" << std::endl;
+#endif
+
+		//====================================================================
+		// Add ST to RHS
+		size_t count_constrained_excluded = 0;
 		for (i = begin; i < end; i++)
 		{
 			gindex = i;
@@ -6406,6 +6505,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				gindex = st_node_value_in_dom[i];
 
 			cnodev = st_node_value[gindex];
+
 			shift = cnodev->msh_node_number - cnodev->geo_node_number;
 			if (rank > -1)
 			{
@@ -6433,6 +6533,19 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			if (msh_node < 0)
 				continue;
 			m_st = NULL;
+			// Constrain condition
+			if (cnodev->_st->has_constrain)
+			{
+				CSourceTerm* st = cnodev->_st;
+				if (st->constrain_var_id<0) {
+					st->constrain_var_id = GetNodeValueIndex(st->constrain_var_name) + 1;
+				}
+				double val = GetNodeValue(msh_node,st->constrain_var_id);
+				if (!FiniteElement::compare(val, st->constrain_value, st->constrain_operator)) {
+					count_constrained_excluded++;
+					continue; // skip this bc node
+				}
+			}
 			if (st_node.size() > 0 && (long) st_node.size() > i)
 			{
 				m_st = st_node[gindex];
@@ -6610,44 +6723,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			}
 		}
 
-		for (unsigned i=0; i<st_vector.size(); i++) {
-			CSourceTerm* st = st_vector[i];
-			if (!st->is_exchange_bc) continue;
 
-			double mass[100] = {};
-			if (st->getGeoType () == GEOLIB::POINT) {
-				const int k_eqs_id = m_msh->nod_vector[st->geo_node_number]->GetEquationIndex();
-#ifdef NEW_EQS
-				(*eqs_new->A)(k_eqs_id,k_eqs_id) += st->exchange_K;
-#else
-				MXInc(k_eqs_id,k_eqs_id, st->exchange_K);
-#endif
-			} else if (st->getGeoType () == GEOLIB::SURFACE || st->getGeoType() == GEOLIB::POLYLINE) {
-				for (size_t in=0; in<st->st_boundary_elements.size(); in++) {
-					MeshLib::CElem* face = st->st_boundary_elements[in];
-					const unsigned nen = face->GetNodesNumber(false);
-					fem->setOrder(m_msh->getOrder() + 1);
-					fem->ConfigElement(face, true);
-					for (unsigned k = 0; k < nen; k++)
-						for (unsigned l = 0; l < nen; l++)
-							mass[k*nen+l] = .0;
-					fem->CalcFaceMass(mass);
-					for (unsigned k = 0; k < nen; k++)
-					{
-						const int k_eqs_id = face->GetNode(k)->GetEquationIndex();
-						for (unsigned l = 0; l < nen; l++)
-						{
-							const int l_eqs_id = face->GetNode(l)->GetEquationIndex();
-#ifdef NEW_EQS
-							(*eqs_new->A)(k_eqs_id,l_eqs_id) += mass[k*nen+l] * st->exchange_K;
-#else
-							MXInc(k_eqs_id,l_eqs_id, mass[k*nen+l]);
-#endif
-						}
-					}
-				}
-			}
-		}
 	}
 
 #ifndef NEW_EQS                                   //WW
