@@ -2735,6 +2735,7 @@ const int ShiftInNodeVector)
 {
    std::cout << "-> Set ST: Point " << st->geo_name << " with " << convertDisTypeToString(st->getProcessDistributionType()) << std::endl;
    CNodeValue *nod_val (new CNodeValue());
+   nod_val->_st = st;
 
    // TF removed some checks - check validity of data while reading data
 
@@ -3532,6 +3533,7 @@ void CSourceTerm::SetNodeValues(const std::vector<long>& nodes, const std::vecto
    for (size_t i = 0; i < number_of_nodes; i++)
    {
       m_nod_val = new CNodeValue();
+      m_nod_val->_st = this;
       m_nod_val->msh_node_number = nodes[i] + ShiftInNodeVector;
       m_nod_val->geo_node_number = nodes[i];
       m_nod_val->setProcessDistributionType (getProcessDistributionType());
