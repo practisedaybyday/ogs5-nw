@@ -161,10 +161,12 @@ private:
 	double _periode_time_length; // JOD
 	bool _periodic; // JOD
 
+public:
 	double gradient_ref_depth; // 6/2012 JOD
 	double gradient_ref_depth_value;
 	double gradient_ref_depth_gradient;
 
+private:
 	double node_value_cond; //OK
 	double condition; //OK
 	bool conditional;
@@ -183,7 +185,9 @@ private:
 	// FCT
 	std::string fct_name;
 
+public:
 	LinearFunctionData* dis_linear_f;   //24.8.2011. WW
+private:
 
 	//WW
 	void SurfaceInterpolation(CRFProcess* m_pcs,

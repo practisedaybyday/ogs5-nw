@@ -44,6 +44,8 @@ extern void remove_white_space(std::string*);
 
 #include "BoundaryCondition.h"
 
+#include "DistributionTools.h"
+
 #ifndef _WIN32
 #include <cstdio>
 #include <cstdlib>
@@ -871,6 +873,31 @@ CBoundaryConditionsGroup::~CBoundaryConditionsGroup(void)
 	//  group_vector.clear();
 }
 
+void setDistributionData(CBoundaryCondition* bc, DistributionData &distData)
+{
+	distData.dis_type = bc->getProcessDistributionType();
+	distData.geo_obj = bc->getGeoObj();
+	switch (bc->getProcessDistributionType()) {
+	case FiniteElement::CONSTANT:
+		distData.dis_parameters.push_back(bc->getGeoNodeValue());
+		break;
+	case FiniteElement::LINEAR:
+		distData._DistribedBC = bc->getDistribedBC();
+		distData._PointsHaveDistribedBC = bc->getPointsWithDistribedBC();
+		break;
+	case FiniteElement::GRADIENT:
+		distData.dis_parameters.push_back(bc->gradient_ref_depth);
+		distData.dis_parameters.push_back(bc->gradient_ref_depth_value);
+		distData.dis_parameters.push_back(bc->gradient_ref_depth_gradient);
+		break;
+	case FiniteElement::FUNCTION:
+		distData.linear_f = bc->dis_linear_f;
+		break;
+	default:
+		break;
+	}
+}
+
 /**************************************************************************
    FEMLib-Method: CBoundaryCondition::Set
    Task: set boundary conditions
@@ -949,7 +976,18 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 		{
 			cont = false;
 
+			//-- 23.02.3009. WW
+			if (bc->getProcessDistributionType() == FiniteElement::DIRECT)
+			{
+				bc->DirectAssign(ShiftInNodeVector);
+				++p_bc;
+				continue;
+			}
+
 			//------------------------------------------------------------------
+			// Detect mesh nodes for this BC
+			//------------------------------------------------------------------
+			nodes_vector.clear();
 			if (bc->getExcav() > 0 || bc->isMatGrSet() /*bc->geo_type_name.find("MATERIAL_DOMAIN") == 0*/)
 			//WX: 01.2011. boundary conditions for excavation. 03.2011. Material domain BC
 			{
@@ -959,7 +997,6 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 				int nn = 0;
 				bool exist;
 				MeshLib::CElem* elem = NULL;
-				nodes_vector.resize(0);
 				for (ii = 0; ii < m_msh->ele_vector.size(); ii++)
 				{
 					elem = m_msh->ele_vector[ii];
@@ -984,285 +1021,116 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 					}
 				}
 				std::cout << "bc_value for mat group " << bc->getExcavMatGr() << " = " << bc->geo_node_value << std::endl;
-				for (i = 0; i < (long) nodes_vector.size(); i++) //possible nodes
-				//for(int j=0; j<m_msh->nod_vector[nodes_vector[i]]->connected_elements.size(); j++){
-				//if(m_msh->ele_vector[m_msh->nod_vector[nodes_vector[i]]->connected_elements[j]]->GetPatchIndex()==m_bc->getExcavMatGr())
-				{
-					m_node_value = new CBoundaryConditionNode();
-					m_node_value->msh_node_number = -1;
-					m_node_value->msh_node_number = nodes_vector[i] +
-					                                ShiftInNodeVector; //nodes[i];
-					m_node_value->geo_node_number = nodes_vector[i]; //nodes[i];
-					//NW extended calculation of bc values as follows
-                    if (bc->getProcessDistributionType() == FiniteElement::LINEAR) {
-                        std::cout << "***Error: BC distribution type LINEAR is not supported with material id specifications" << std::endl;
-                    } else {
-                        if (bc->getProcessDistributionType() == FiniteElement::GRADIENT) {// 6/2012 JOD
-                            m_node_value->node_value = bc->gradient_ref_depth_gradient
-                                                        * (bc->gradient_ref_depth
-                                                                        - m_msh->nod_vector[m_node_value->geo_node_number]->getData()[2])
-                                                        + bc->gradient_ref_depth_value;
-                        } else {
-                        // 25.08.2011. WW
-                            if (bc->getProcessDistributionType() == FiniteElement::FUNCTION) {
-                                double const* const coords(m_msh->nod_vector[m_node_value-> geo_node_number]->getData());
-                                m_node_value->node_value = bc->dis_linear_f->getValue(coords[0],
-                                                coords[1], coords[2]);
-                            } else {
-                                m_node_value->node_value = bc->geo_node_value;
-                            }
-                        }
-                    }
-					m_node_value->pcs_pv_name = _pcs_pv_name; //YD/WW
-					m_node_value->CurveIndex = bc->getCurveIndex();
-					pcs->bc_node.push_back(bc); //WW
-					pcs->bc_node_value.push_back(m_node_value); //WW
-					//j=m_msh->nod_vector[nodes_vector[i]]->connected_elements.size(); //only on material group boundary is selected
-				}
+
 				++p_bc;
 				continue;
 			}
-			//------------------------------------------------------------------
-			//-- 23.02.3009. WW
-			if (bc->getProcessDistributionType() == FiniteElement::DIRECT)
+			else if (bc->getGeoType() == GEOLIB::POINT)
 			{
-				bc->DirectAssign(ShiftInNodeVector);
-				++p_bc;
-				continue;
+				long node_id = m_msh->GetNODOnPNT(static_cast<const GEOLIB::Point*>(bc->getGeoObj()));
+				nodes_vector.push_back(node_id);
+				node_value.resize(1);
 			}
-			//................................................................
-			if (bc->getGeoType() == GEOLIB::POINT)
+			else if (bc->getGeoType() == GEOLIB::POLYLINE)
 			{
-				m_node_value = new CBoundaryConditionNode;
-				m_node_value->_bc = bc;
-				// Get MSH node number
-				if (bc->getProcessDistributionType()
-				    == FiniteElement::CONSTANT)
-					m_node_value->geo_node_number
-					        = m_msh->GetNODOnPNT(
-					        static_cast<const GEOLIB::Point*> (bc->getGeoObj()));
-
-				m_node_value->conditional = cont;
-				m_node_value->CurveIndex = bc->getCurveIndex();
-
-				// Get value from a linear function. 25.08.2011. WW
-				if (bc->getProcessDistributionType() == FiniteElement::FUNCTION)
-				{
-//                  a_node = m_msh->nod_vector[m_node_value->geo_node_number];
-//					m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
-					double const* const coords(
-					        m_msh->nod_vector[m_node_value->geo_node_number]->
-					        getData());
-					m_node_value->node_value = bc->dis_linear_f->getValue(
-					        coords[0], coords[1], coords[2]);
-				}
-				else
-					m_node_value->node_value = bc->geo_node_value;
-
-				m_node_value->msh_node_number = m_node_value->geo_node_number
-				                                + ShiftInNodeVector; //WW
-				//YD/WW
-				m_node_value->pcs_pv_name = _pcs_pv_name;
-				m_node_value->msh_node_number_subst = msh_node_number_subst;
-				pcs->bc_node.push_back(bc); //WW
-				//WW
-				pcs->bc_node_value.push_back(m_node_value);
-			}
-
-			if (bc->getGeoType() == GEOLIB::POLYLINE)
-			{
-				//CC
 				m_polyline = GEOGetPLYByName(bc->geo_name);
 				// 08/2010 TF get the polyline data structure
-				GEOLIB::Polyline const* ply(
-				        static_cast<const GEOLIB::Polyline*> (bc->getGeoObj()));
-
+				GEOLIB::Polyline const* ply(static_cast<const GEOLIB::Polyline*> (bc->getGeoObj()));
 				if (m_polyline)
 				{
-					if (bc->getProcessDistributionType() == FiniteElement::CONSTANT)
-					{
-						// 08/2010 TF
-						double msh_min_edge_length =
-						        m_msh->getMinEdgeLength();
-						m_msh->setMinEdgeLength(m_polyline->epsilon);
-						std::vector<size_t> my_nodes_vector;
-						m_msh->GetNODOnPLY(ply, my_nodes_vector);
-						m_msh->setMinEdgeLength(msh_min_edge_length);
-						nodes_vector.clear();
-						for (size_t k(0); k < my_nodes_vector.size(); k++)
-							nodes_vector.push_back(my_nodes_vector[k]);
-
-						// for some benchmarks we need the vector entries sorted by index
-						std::sort (nodes_vector.begin(), nodes_vector.end());
-
-						const size_t nodes_vector_size (nodes_vector.size());
-						for (size_t i(0); i < nodes_vector_size; i++)
-						{
-							m_node_value = new CBoundaryConditionNode();
-							m_node_value->_bc = bc;
-							m_node_value->msh_node_number =
-							        nodes_vector[i] + ShiftInNodeVector;
-							m_node_value->geo_node_number =
-							        nodes_vector[i];
-							//dis_prop[0];
-							m_node_value->node_value =
-							        bc->geo_node_value;
-							m_node_value->CurveIndex =
-							        bc->getCurveIndex();
-							//YD/WW
-							m_node_value->pcs_pv_name = _pcs_pv_name;
-							//WW
-							pcs->bc_node.push_back(bc);
-							//WW
-							pcs->bc_node_value.push_back(m_node_value);
-							//WW group_vector.push_back(m_node_value);
-							//WW bc_group_vector.push_back(m_bc); //OK
-						}
-					}
-
-					// Get value from a linear function. 25.06.2011. WW
-					if (bc->getProcessDistributionType() == FiniteElement::FUNCTION)
-					{
-						// 08/2010 TF
-						double msh_min_edge_length =
-						        m_msh->getMinEdgeLength();
-						m_msh->setMinEdgeLength(m_polyline->epsilon);
-						std::vector<size_t> my_nodes_vector;
-						m_msh->GetNODOnPLY(ply, my_nodes_vector);
-						m_msh->setMinEdgeLength(msh_min_edge_length);
-
-						nodes_vector.clear();
-						for (size_t k(0); k < my_nodes_vector.size(); k++)
-							nodes_vector.push_back(my_nodes_vector[k]);
-
-						// for some benchmarks we need the vector entries sorted by index
-						std::sort (nodes_vector.begin(), nodes_vector.end());
-
-						const size_t nodes_vector_size (nodes_vector.size());
-						for (size_t i(0); i < nodes_vector_size; i++)
-						{
-							m_node_value = new CBoundaryConditionNode();
-							m_node_value->_bc = bc;
-							m_node_value->msh_node_number = nodes_vector[i] + ShiftInNodeVector;
-							m_node_value->geo_node_number = nodes_vector[i];
-//                            a_node = m_msh->nod_vector[m_node_value->geo_node_number];
-//                            m_node_value->node_value = bc->dis_linear_f->getValue(a_node->X(),a_node->Y(),a_node->Z());
-							double const* const coords (
-							        m_msh->nod_vector[m_node_value->
-							                          geo_node_number]
-							        ->getData());
-							m_node_value->node_value =
-							        bc->dis_linear_f->getValue(coords[0],
-											coords[1], coords[2]);
-
-							m_node_value->CurveIndex =
-							        bc->getCurveIndex();
-							m_node_value->pcs_pv_name = _pcs_pv_name;
-							pcs->bc_node.push_back(bc);
-							pcs->bc_node_value.push_back(m_node_value);
-						}
-					}
-
-					if (bc->getProcessDistributionType() == FiniteElement::GRADIENT) // 6/2012 JOD
-					{
-						m_msh->GetNODOnPLY(ply, nodes_vector);
-
-						for (size_t k(0); k < nodes_vector.size(); k++) {
-							m_node_value = new CBoundaryConditionNode();
-							m_node_value->_bc = bc;
-							m_node_value->msh_node_number = -1;
-							m_node_value->msh_node_number = nodes_vector[k] + ShiftInNodeVector;
-							m_node_value->geo_node_number = nodes_vector[k];
-							m_node_value->node_value
-											= bc->gradient_ref_depth_gradient
-															* (bc->gradient_ref_depth
-																			- m_msh->nod_vector[nodes_vector[k]]->getData()[2])
-															+ bc->gradient_ref_depth_value;
-							m_node_value->CurveIndex = bc->getCurveIndex();
-							m_node_value->pcs_pv_name = _pcs_pv_name;
-							m_node_value->msh_node_number_subst = msh_node_number_subst;
-							pcs->bc_node.push_back(bc);
-							pcs->bc_node_value.push_back(m_node_value);
-						}
-					}
-
-					//WW / TF
-					if (bc->getProcessDistributionType() == FiniteElement::LINEAR)
-					{
-						double msh_min_edge_length =
-						        m_msh->getMinEdgeLength();
-						m_msh->setMinEdgeLength(m_polyline->epsilon);
-						std::vector<size_t> my_nodes_vector;
-						m_msh->GetNODOnPLY(ply, my_nodes_vector);
-						std::vector<double> nodes_as_interpol_points;
-						m_msh->getPointsForInterpolationAlongPolyline (
-						        ply,
-						        nodes_as_interpol_points);
-						m_msh->setMinEdgeLength(msh_min_edge_length);
-
-						nodes_vector.clear();
-						for (size_t k(0); k < my_nodes_vector.size(); k++)
-							nodes_vector.push_back(my_nodes_vector[k]);
-
-						std::vector<double> interpolation_points;
-						std::vector<double> interpolation_values;
-						for (size_t i(0); i < bc->getDistribedBC().size();
-						     i++)
-						{
-							for (size_t j = 0;
-							     j < ply->getNumberOfPoints(); j++)
-								if (bc->getPointsWithDistribedBC()[
-								            i] ==
-								    (int)ply->getPointID(j))
-								{
-									if (fabs(bc->getDistribedBC()
-									         [i]) <
-									    MKleinsteZahl)
-										bc->getDistribedBC()
-										[i] = 1.0e-20;
-									interpolation_points.
-									push_back (ply->getLength(j));
-									interpolation_values.
-									push_back (
-									        bc->getDistribedBC()
-									        [i]);
-									break;
-								}
-						}
-						MathLib::PiecewiseLinearInterpolation (
-						        interpolation_points,
-						        interpolation_values,
-						        nodes_as_interpol_points,
-						        node_value);
-
-						for (size_t i = 0; i < nodes_vector.size(); i++)
-						{
-							m_node_value = new CBoundaryConditionNode();
-							m_node_value->_bc = bc;
-							m_node_value->msh_node_number = -1;
-							m_node_value->msh_node_number =
-							        nodes_vector[i]
-							        +
-							        ShiftInNodeVector;
-							m_node_value->geo_node_number =
-							        nodes_vector[i];
-							m_node_value->node_value = node_value[i];
-							//YD/WW
-							m_node_value->pcs_pv_name = _pcs_pv_name;
-							m_node_value->CurveIndex =
-							        bc->getCurveIndex();
-							//WW
-							pcs->bc_node.push_back(bc);
-							//WW
-							pcs->bc_node_value.push_back(m_node_value);
-							//WW group_vector.push_back(m_node_value);
-							//WW bc_group_vector.push_back(bc); //OK
-						}
-						node_value.clear();
-					}
-					Free(nodes);
-				} // if(m_ply)
+					double msh_min_edge_length = m_msh->getMinEdgeLength();
+					m_msh->setMinEdgeLength(m_polyline->epsilon);
+					std::vector<size_t> my_nodes_vector;
+					m_msh->GetNODOnPLY(ply, my_nodes_vector);
+					m_msh->setMinEdgeLength(msh_min_edge_length);
+					nodes_vector.resize(my_nodes_vector.size());
+					for (size_t k(0); k < my_nodes_vector.size(); k++)
+						nodes_vector[k] = my_nodes_vector[k];
+					// for some benchmarks we need the vector entries sorted by index
+					std::sort (nodes_vector.begin(), nodes_vector.end());
+				}
 			}
+			else if (bc->getGeoType() == GEOLIB::SURFACE)
+			{
+				std::cout << "-> Set BC: Surface " << bc->geo_name << " with " << convertDisTypeToString(bc->getProcessDistributionType()) << std::endl;
+				GEOLIB::Surface const* sfc(static_cast<const GEOLIB::Surface*> (bc->getGeoObj()));
+
+				Surface* m_surface = GEOGetSFCByName(bc->geo_name);
+				if (m_surface)
+				{
+					nodes_vector.clear();
+
+//					m_msh->GetNODOnSFC(m_surface, nodes_vector);
+//#ifndef NDEBUG
+//					GEOLIB::GEOObjects const& geo_obj(* m_msh->getGEOObjects());
+//					std::string const& geo_project_name (* m_msh->getProjectName());
+//					std::string sfc_name;
+//					geo_obj.getSurfaceVecObj(geo_project_name)->getNameOfElement(sfc, sfc_name);
+//					std::string debug_fname("MeshNodesOld-BC-" + sfc_name + ".gli");
+//					std::ofstream debug_out (debug_fname.c_str());
+//					debug_out << "#POINTS" << std::endl;
+//					for (size_t k(0); k<nodes_vector.size(); k++) {
+//						debug_out << k << " " <<
+//							GEOLIB::Point((m_msh->getNodeVector())[nodes_vector[k]]->getData()) <<
+//							" $NAME " << nodes_vector[k] << std::endl;
+//					}
+//					debug_out << "#STOP" << std::endl;
+//					debug_out.close();
+//#endif
+					std::vector<size_t> msh_nod_vec;
+					m_msh->GetNODOnSFC(sfc, msh_nod_vec);
+//#ifndef NDEBUG
+//					debug_fname = "MeshNodesNew-BC-" + sfc_name + ".gli";
+//					debug_out.open (debug_fname.c_str());
+//					debug_out << "#POINTS" << std::endl;
+//					for (size_t k(0); k<msh_nod_vec.size(); k++) {
+//						debug_out << k << " " <<
+//							GEOLIB::Point((m_msh->getNodeVector())[msh_nod_vec[k]]->getData()) <<
+//							" $NAME " << msh_nod_vec[k] << std::endl;
+//					}
+//					debug_out << "#STOP" << std::endl;
+//					debug_out.close();
+//#endif
+//					nodes_vector.clear();
+					for (size_t k(0); k < msh_nod_vec.size(); k++) {
+//						std::cout << "\t" << k << "\t" << nodes_vector_old[k] << "\t" << msh_nod_vec[k] << std::endl;
+						nodes_vector.push_back (msh_nod_vec[k]);
+					}
+					const size_t nodes_vector_length (nodes_vector.size());
+					std::cout << "-> " << nodes_vector_length << " nodes are found for this BC" << std::endl;
+				}
+			}
+			//------------------------------------------------------------------
+			// Calculate BC values
+			//------------------------------------------------------------------
+			node_value.resize(nodes_vector.size());
+			DistributionData distData;
+			setDistributionData(bc, distData);
+			setDistribution(distData, *m_msh, nodes_vector, node_value);
+			//------------------------------------------------------------------
+			// create BC node
+			//------------------------------------------------------------------
+			const size_t nodes_vector_size (nodes_vector.size());
+			for (size_t i(0); i < nodes_vector_size; i++)
+			{
+				m_node_value = new CBoundaryConditionNode();
+				m_node_value->_bc = bc;
+				m_node_value->msh_node_number = nodes_vector[i] + ShiftInNodeVector;
+				m_node_value->geo_node_number = nodes_vector[i];
+				m_node_value->node_value = node_value[i];
+				m_node_value->CurveIndex = bc->getCurveIndex();
+				m_node_value->pcs_pv_name = _pcs_pv_name;
+				pcs->bc_node.push_back(bc);
+				pcs->bc_node_value.push_back(m_node_value);
+			}
+			//................................................................
+
+
+
+#if 0
+			// set distributed values
+
+			// create BC node
 			//------------------------------------------------------------------
 			if (bc->getGeoType() == GEOLIB::SURFACE)
 			{
@@ -1316,6 +1184,27 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 					const size_t nodes_vector_length (nodes_vector.size());
                     std::cout << "-> " << nodes_vector_length << " nodes are found for this BC" << std::endl;
 
+					// set distributed values
+					node_value.resize(nodes_vector.size());
+					DistributionData distData;
+					setDistributionData(bc, distData);
+					setDistribution(distData, *m_msh, nodes_vector, node_value);
+
+					// create BC node
+					const size_t nodes_vector_size (nodes_vector.size());
+					for (size_t i(0); i < nodes_vector_size; i++)
+					{
+						m_node_value = new CBoundaryConditionNode();
+						m_node_value->_bc = bc;
+						m_node_value->msh_node_number = nodes_vector[i] + ShiftInNodeVector;
+						m_node_value->geo_node_number = nodes_vector[i];
+						m_node_value->node_value = node_value[i];
+						m_node_value->CurveIndex = bc->getCurveIndex();
+						m_node_value->pcs_pv_name = _pcs_pv_name;
+						pcs->bc_node.push_back(bc);
+						pcs->bc_node_value.push_back(m_node_value);
+					}
+
 					if (bc->getProcessDistributionType() == FiniteElement::LINEAR) {
 						std::vector<CGLPolyline*>::iterator p =
 										m_surface->polyline_of_surface_vector.begin();
@@ -1343,6 +1232,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 
 					bc->node_number_vector = nodes_vector;
 
+#if 0
 					for (size_t i = 0; i < nodes_vector_length; i++)
 					{
 						m_node_value = new CBoundaryConditionNode();
@@ -1385,10 +1275,11 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 						//WW group_vector.push_back(m_node_value);
 						//WW bc_group_vector.push_back(bc); //OK
 					}
-
+#endif
 					node_value.clear();
 				}
 			}
+#endif
 			//------------------------------------------------------------------
 			// Material domain
 			//			if (bc->geo_type_name.find("MATERIAL_DOMAIN") == 0) {
