@@ -359,8 +359,7 @@ public:
 	//....................................................................
 	// 6-ST
 	// Node values from sourse/sink or Neumann BC. WW
-	std::vector<CNodeValue*> st_node_value; //WW
-	std::vector<CSourceTerm*> st_node;    //WW
+	std::vector<std::vector<CNodeValue*> > st_node_value; //WW
 	std::vector<long> st_node_value_in_dom; //WW for domain decomposition
 	std::vector<long> st_local_index_in_dom; //WW for domain decomposition
 	std::vector<long> rank_st_node_value_in_dom; //WW

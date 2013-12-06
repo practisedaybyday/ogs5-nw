@@ -1,16 +1,130 @@
 
 #include "DistributionTools.h"
 
+#include <algorithm>
+#include <set>
+
 #include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 #include "mathlib.h"
 #include "msh_mesh.h"
 #include "LinearFunctionData.h"
+
+void getNodesOnDistribution(DistributionData &dis_data, MeshLib::CFEMesh &msh, std::vector<long> &nodes_vector)
+{
+	if (dis_data.geo_type == GEOLIB::POINT)
+	{
+		std::cout << "-> looking for nodes on POINT " << dis_data.geo_name << std::endl;
+		long node_id = msh.GetNODOnPNT(static_cast<const GEOLIB::Point*>(dis_data.geo_obj));
+		nodes_vector.push_back(node_id);
+	}
+	else if (dis_data.geo_type == GEOLIB::POLYLINE)
+	{
+		std::cout << "-> looking for nodes on POLYLINE " << dis_data.geo_name << std::endl;
+		CGLPolyline* m_polyline = GEOGetPLYByName(dis_data.geo_name);
+		if (m_polyline)
+		{
+			GEOLIB::Polyline const* ply(static_cast<const GEOLIB::Polyline*> (dis_data.geo_obj));
+			double msh_min_edge_length = msh.getMinEdgeLength();
+			 msh.setMinEdgeLength(m_polyline->epsilon);
+			std::vector<size_t> my_nodes_vector;
+			 msh.GetNODOnPLY(ply, my_nodes_vector);
+			 msh.setMinEdgeLength(msh_min_edge_length);
+			nodes_vector.resize(my_nodes_vector.size());
+			for (size_t k(0); k < my_nodes_vector.size(); k++)
+				nodes_vector[k] = my_nodes_vector[k];
+			// for some benchmarks we need the vector entries sorted by index
+			std::sort (nodes_vector.begin(), nodes_vector.end());
+		}
+	}
+	else if (dis_data.geo_type == GEOLIB::SURFACE)
+	{
+		std::cout << "-> looking for nodes on SURFACE " << dis_data.geo_name << std::endl;
+		GEOLIB::Surface const* sfc(static_cast<const GEOLIB::Surface*> (dis_data.geo_obj));
+
+		Surface* m_surface = GEOGetSFCByName(dis_data.geo_name);
+		if (m_surface)
+		{
+			nodes_vector.clear();
+
+//					m_msh->GetNODOnSFC(m_surface, nodes_vector);
+//#ifndef NDEBUG
+//					GEOLIB::GEOObjects const& geo_obj(* m_msh->getGEOObjects());
+//					std::string const& geo_project_name (* m_msh->getProjectName());
+//					std::string sfc_name;
+//					geo_obj.getSurfaceVecObj(geo_project_name)->getNameOfElement(sfc, sfc_name);
+//					std::string debug_fname("MeshNodesOld-BC-" + sfc_name + ".gli");
+//					std::ofstream debug_out (debug_fname.c_str());
+//					debug_out << "#POINTS" << std::endl;
+//					for (size_t k(0); k<nodes_vector.size(); k++) {
+//						debug_out << k << " " <<
+//							GEOLIB::Point((m_msh->getNodeVector())[nodes_vector[k]]->getData()) <<
+//							" $NAME " << nodes_vector[k] << std::endl;
+//					}
+//					debug_out << "#STOP" << std::endl;
+//					debug_out.close();
+//#endif
+			std::vector<size_t> msh_nod_vec;
+			msh.GetNODOnSFC(sfc, msh_nod_vec);
+//#ifndef NDEBUG
+//					debug_fname = "MeshNodesNew-BC-" + sfc_name + ".gli";
+//					debug_out.open (debug_fname.c_str());
+//					debug_out << "#POINTS" << std::endl;
+//					for (size_t k(0); k<msh_nod_vec.size(); k++) {
+//						debug_out << k << " " <<
+//							GEOLIB::Point((m_msh->getNodeVector())[msh_nod_vec[k]]->getData()) <<
+//							" $NAME " << msh_nod_vec[k] << std::endl;
+//					}
+//					debug_out << "#STOP" << std::endl;
+//					debug_out.close();
+//#endif
+//					nodes_vector.clear();
+			for (size_t k(0); k < msh_nod_vec.size(); k++) {
+//						std::cout << "\t" << k << "\t" << nodes_vector_old[k] << "\t" << msh_nod_vec[k] << std::endl;
+				nodes_vector.push_back (msh_nod_vec[k]);
+			}
+		}
+	}
+	else if (dis_data.geo_type == GEOLIB::GEODOMAIN)
+	{
+		nodes_vector.resize(msh.nod_vector.size());
+		for (size_t i=0; i<msh.nod_vector.size(); i++)
+			nodes_vector[i] = i;
+	}
+	else if (!dis_data.mesh_type_name.empty())
+	{
+		if (dis_data.mesh_type_name=="NODE")
+			nodes_vector.push_back(dis_data.mesh_node_id);
+	}
+	else if (dis_data.mat_id >= 0)
+	{
+		std::cout << "-> looking for nodes with material group " << dis_data.mat_id << std::endl;
+		std::set<long> set_node_ids;
+		for (size_t ii = 0; ii < msh.ele_vector.size(); ii++)
+		{
+			MeshLib::CElem* elem = msh.ele_vector[ii];
+			if(elem->GetPatchIndex() != static_cast<size_t>(dis_data.mat_id))
+				continue;
+			size_t nn = elem->GetNodesNumber(msh.getOrder());
+			for(size_t i = 0; i < nn; i++)
+				set_node_ids.insert(elem->GetNodeIndex(i));
+		}
+		nodes_vector.assign(set_node_ids.begin(), set_node_ids.end());
+	}
+	std::cout << "-> " << nodes_vector.size() << " nodes are found" << std::endl;
+}
 
 void setDistributionConstant(MeshLib::CFEMesh &/*msh*/, std::vector<long> &vec_node_ids, std::vector<double> &vec_node_values, double val)
 {
 	const size_t nodes_vector_length = vec_node_ids.size();
 	for (size_t i = 0; i < nodes_vector_length; i++)
 		vec_node_values[i] = val;
+}
+
+void setDistributionConstantGeo(MeshLib::CFEMesh &/*msh*/, std::vector<long> &vec_node_ids, std::vector<double> &vec_node_values, double val)
+{
+	const size_t nodes_vector_length = vec_node_ids.size();
+	for (size_t i = 0; i < nodes_vector_length; i++)
+		vec_node_values[i] = val / (double)nodes_vector_length;
 }
 
 void setDistributionGradient(MeshLib::CFEMesh &msh, std::vector<long> &vec_node_ids, std::vector<double> &vec_node_values, double ref_depth, double ref_value, double gradient)
@@ -163,9 +277,11 @@ void setDistributionLinearSurface(MeshLib::CFEMesh &msh, std::vector<long> &vec_
 
 void setDistribution(DistributionData &dis_data, MeshLib::CFEMesh &msh, std::vector<long> &vec_node_ids, std::vector<double> &vec_node_values)
 {
-	if (dis_data.dis_type == FiniteElement::CONSTANT) {
+	if (dis_data.dis_type == FiniteElement::CONSTANT || dis_data.dis_type == FiniteElement::CONSTANT_NEUMANN) {
 		setDistributionConstant(msh, vec_node_ids, vec_node_values, dis_data.dis_parameters[0]);
-	} else if (dis_data.dis_type == FiniteElement::LINEAR) {
+	} else if (dis_data.dis_type == FiniteElement::CONSTANT_GEO) {
+		setDistributionConstantGeo(msh, vec_node_ids, vec_node_values, dis_data.dis_parameters[0]);
+	} else if (dis_data.dis_type == FiniteElement::LINEAR || dis_data.dis_type == FiniteElement::LINEAR_NEUMANN) {
 		if (dis_data.geo_type==GEOLIB::POLYLINE) {
 			GEOLIB::Polyline const* ply(static_cast<const GEOLIB::Polyline*> (dis_data.geo_obj));
 			setDistributionLinearPolyline(msh, vec_node_ids, vec_node_values, ply, dis_data._DistribedBC, dis_data._PointsHaveDistribedBC);
