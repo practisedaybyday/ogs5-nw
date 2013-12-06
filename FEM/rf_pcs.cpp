@@ -6448,6 +6448,10 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				}
 				std::vector<double> node_value(nodes_vector.size());
 				setDistribution(distData, *m_msh, nodes_vector, node_value);
+				if (m_st->is_exchange_bc) {
+					for (size_t j=0; j<node_value.size(); j++)
+						node_value[j] *= m_st->exchange_K;
+				}
 
 				// boundary integration
 				if (m_st->constrain_var_id<0)
@@ -6487,7 +6491,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				std::cout << "-> " << count_active << " nodes/elements are active in total " << active_elements.size() << " nodes/elements" << std::endl;
 			}
 
-			// exchange condition
+			// exchange condition needs to update a coefficient matrix
 			if (m_st->is_exchange_bc)
 			{
 				// only Neumann BC
