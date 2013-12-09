@@ -168,14 +168,18 @@ public:
 
 	std::string fname;
 
-	double exchange_K;
-	bool is_exchange_bc;
+	std::vector<size_t> transfer_h_matId;
+	std::vector<double> transfer_h_values;
+	bool is_transfer_bc;
 
 	bool has_constrain;
 	std::string constrain_var_name;
 	int constrain_var_id;
 	double constrain_value;
 	FiniteElement::ComparisonOperatorType constrain_operator;
+	FiniteElement::SourceTermType st_type;
+
+	FiniteElement::SourceTermType getSTType() const {return st_type;}
 
 	size_t getMeshNodeNumber() const
 	{

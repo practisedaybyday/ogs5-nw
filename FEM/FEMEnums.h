@@ -257,6 +257,17 @@ bool compare(T v1, T v2, ComparisonOperatorType optype)
 	}
 }
 
+enum SourceTermType
+{
+	INVALID_ST_TYPE = 0,
+	SOURCE,
+	NEUMANN
+};
+
+SourceTermType convertSTType(const std::string& st_type_string);
+
+std::string convertSTTypeToString(SourceTermType st_type);
+
 } // end namespace FiniteElement
 
 #endif                                            //FEMENUMS_H

@@ -103,8 +103,7 @@ CSourceTerm::CSourceTerm() :
    analytical = false;                            //CMCD
    //  display_mode = false; //OK
    this->TimeInterpolation = 0;                   //BG
-   is_exchange_bc = false;
-   exchange_K = .0;
+   is_transfer_bc = false;
    st_id = -1;
 }
 
@@ -415,12 +414,29 @@ std::ios::pos_type CSourceTerm::Read(std::ifstream *st_file,
          continue;
       }
 
-      if (line_string.find("$EXCHANGE_CONDITION") != std::string::npos)
+      if (line_string.find("$TRANSFER_COEFFICIENT") != std::string::npos)
       {
          in.str(readNonBlankLineFromInputStream(*st_file));
-         in >> exchange_K;
-         is_exchange_bc = true;
-         std::cout << "-> ST is defined as an exchange condition with K=" << exchange_K << std::endl;
+         std::string str;
+         in >> str;
+         if (str.find("CONSTANT") != std::string::npos) {
+            transfer_h_values.resize(1);
+            in >> transfer_h_values[0];
+         } else if (str.find("SUBDOMAIN") != std::string::npos) {
+            in.clear();
+            in.str(readNonBlankLineFromInputStream(*st_file));
+            unsigned n_doms = 0;
+            in >> n_doms;
+            transfer_h_values.resize(n_doms);
+            transfer_h_matId.resize(n_doms);
+            for (unsigned ii=0; ii<n_doms; ii++) {
+               in.clear();
+               in.str(readNonBlankLineFromInputStream(*st_file));
+               in >> transfer_h_matId[ii] >> transfer_h_values[ii];
+            }
+         }
+         is_transfer_bc = true;
+         std::cout << "-> ST is defined as a transfer condition" << std::endl;
          in.clear();
          continue;
       }
@@ -460,6 +476,15 @@ void CSourceTerm::ReadDistributionType(std::ifstream *st_file)
    std::string dis_type_name;
    in.str(GetLineFromFile1(st_file));
    in >> dis_type_name;
+
+   std::size_t found = dis_type_name.find("_NEUMANN");
+   if (found!=std::string::npos) {
+      this->st_type = FiniteElement::NEUMANN;
+      dis_type_name.erase(dis_type_name.begin()+found, dis_type_name.end());
+      std::cout << "-> This ST is recognized as Neumann BC" << std::endl;
+   } else {
+	   this->st_type = FiniteElement::SOURCE;
+   }
 
    this->setProcessDistributionType (FiniteElement::convertDisType(dis_type_name));
 
@@ -1083,6 +1108,18 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 			continue;
 		}
 
+		if (st->is_transfer_bc) {
+			std::vector<double> tmp_K(st->transfer_h_values);
+			st->transfer_h_values.resize(mmp_vector.size());
+			if (st->transfer_h_matId.size()>0) {
+				for (unsigned j=0; j<st->transfer_h_matId.size(); j++)
+					st->transfer_h_values[st->transfer_h_matId[j]] = tmp_K[j];
+			} else {
+				for (unsigned j=0; j<st->transfer_h_values.size(); j++)
+					st->transfer_h_values[j] = tmp_K[0];
+			}
+		}
+
 		//------------------------------------------------------------------
 		std::vector<long> nodes_vector;
 		std::vector<double> node_value;
@@ -1105,12 +1142,11 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 		//------------------------------------------------------------------
 		// Calculate integrated values
 		//------------------------------------------------------------------
-		if (st->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN
-				|| st->getProcessDistributionType() == FiniteElement::LINEAR_NEUMANN
-				|| st->getProcessDistributionType() == FiniteElement::GREEN_AMPT
-				|| st->is_exchange_bc)
+		if (st->getSTType()==FiniteElement::NEUMANN)
 		{
-			if (m_msh->GetMaxElementDim() == 2 && st->getGeoType()==GEOLIB::POLYLINE) {
+			if (st->getGeoType()==GEOLIB::POINT && st->is_transfer_bc) {
+				node_value[0] *= st->transfer_h_values[0];
+			} else if (m_msh->GetMaxElementDim() == 2 && st->getGeoType()==GEOLIB::POLYLINE) {
 				st->EdgeIntegration(m_msh, nodes_vector, node_value);
 			} else if (m_msh->GetMaxElementDim() == 3 && st->getGeoType()==GEOLIB::SURFACE) {
 				st->FaceIntegration(m_msh, nodes_vector, node_value);
@@ -1129,13 +1165,6 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 			for (size_t i = 0; i < st->node_value_vectorArea.size(); i++)
 				st->node_value_vectorArea[i] = 1.0; //Element width !
 			st->EdgeIntegration(m_msh, nodes_vector, st->node_value_vectorArea);
-		}
-		//------------------------------------------------------------------
-		// Apply transfer conditions
-		//------------------------------------------------------------------
-		if (st->is_exchange_bc) {
-			for (size_t j=0; j<node_value.size(); j++)
-				node_value[j] *= st->exchange_K;
 		}
 
 
@@ -1388,6 +1417,7 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
    vec<CNode*> e_nodes(3);
    vec<CEdge*> e_edges(12);
 
+#if 0
    double Jac = 0.0;
    double Weight = 0.0;
    double eta = 0.0;
@@ -1397,6 +1427,7 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
    bool Const = false;
    if (this->getProcessDistributionType() == FiniteElement::CONSTANT || this->getProcessDistributionType() == FiniteElement::CONSTANT_NEUMANN)
       Const = true;
+#endif
 
    int Axisymm = 1;                               // ani-axisymmetry
    if (msh->isAxisymmetry())
@@ -1443,6 +1474,7 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
             edge = e_edges[ii];
             if (edge->GetMark())
                continue;
+            edge->SetPatchIndex(elem->GetPatchIndex()); //NW
             edge->GetNodes(e_nodes);
             // Edge A
             if (*node == *e_nodes[0])
@@ -1491,6 +1523,7 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
       std::vector<CNode*> edge_nodes(nen);
       for(size_t j = 0; j < nen; j++)
     	  edge_nodes[j] = edge->GetNode(j);
+      edge_ele->setPatchIndex(edge->GetPatchIndex());
       edge_ele->setNodes(edge_nodes);
       edge_ele->setElementProperties(MshElemType::LINE, true);
       edge_ele->SetOrder(msh->getOrder());
@@ -1506,6 +1539,10 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
       if (msh->getOrder())
           nodesFVal[2] = node_value_vector[G2L[e_nodes[2]->GetIndex()]];
       fem->FaceIntegration(nodesFVal);
+      if (this->is_transfer_bc) {
+          for (k = 0; k < (signed)nen; k++)
+             nodesFVal[k] *= this->transfer_h_values[edge_ele->GetPatchIndex()];
+      }
       for (k = 0; k < (signed)nen; k++)
       {
          NVal[G2L[edge->GetNode(k)->GetIndex()]] += nodesFVal[k];
@@ -1645,6 +1682,7 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long>&nodes_on_sfc,
       Const = true;
    //----------------------------------------------------------------------
    // Interpolation of polygon values to nodes_on_sfc
+#if 0
    if (!Const)                                    // Get node BC by interpolation with surface
    {
       int nPointsPly = 0;
@@ -1738,6 +1776,7 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long>&nodes_on_sfc,
          }                                        // while
       }                                           //j
    }
+#endif
 
    int Axisymm = 1;                               // ani-axisymmetry
    //CFEMesh* msh = m_pcs->m_msh;
@@ -1850,6 +1889,10 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long>&nodes_on_sfc,
          fem->setOrder(msh->getOrder() + 1);
          fem->ConfigElement(face, true);
          fem->FaceIntegration(nodesFVal);
+         if (this->is_transfer_bc) {
+            for (k = 0; k < nfn; k++)
+               nodesFVal[k] *= this->transfer_h_values[face->GetPatchIndex()];
+         }
          for (k = 0; k < nfn; k++)
          {
             e_node = elem->GetNode(nodesFace[k]);
@@ -2930,8 +2973,8 @@ const int ShiftInNodeVector)
          }
       }
    }
-   if (st->is_exchange_bc) {
-      nod_val->node_value *= st->exchange_K;
+   if (st->is_transfer_bc) {
+      nod_val->node_value *= st->transfer_h_values;
    }
    st->msh_node_number = nod_val->msh_node_number;
    st->geo_node_number = nod_val->geo_node_number;
@@ -3380,6 +3423,7 @@ void CSourceTerm::InterpolatePolylineNodeValueVector(
  11/2007 JOD
  last modification:
  **************************************************************************/
+#if 0
 void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st, CGLPolyline * old_ply,
 		const std::vector<long>& ply_nod_vector,
 		std::vector<long>& ply_nod_vector_cond,
@@ -3440,7 +3484,9 @@ void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st, CGLPolyline *
 	if (st->isCoupled() && st->node_averaging)
 		AreaAssembly(st, ply_nod_vector_cond, ply_nod_val_vector);
 }
+#endif
 
+#if 0
 // 09/2010 TF
 void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st,
 		std::vector<long> const & ply_nod_vector,
@@ -3501,15 +3547,15 @@ void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st,
 				ply_nod_val_vector[i] = st->geo_node_value / (double) number_of_nodes;
 		}
 	}
-	if (st->is_exchange_bc) {
+	if (st->is_transfer_bc) {
 		for (size_t i = 0; i < number_of_nodes; i++) {
-			ply_nod_val_vector[i] *= st->exchange_K;
+			ply_nod_val_vector[i] *= st->transfer_h_values;
 		}
 	}
 	if (distype == FiniteElement::CONSTANT_NEUMANN
 			|| distype == FiniteElement::LINEAR_NEUMANN
 			|| distype == FiniteElement::GREEN_AMPT
-			|| st->is_exchange_bc)
+			|| st->is_transfer_bc)
 	{
 		if (m_msh->GetMaxElementDim() == 1) // 1D  //WW MB
 			st->DomainIntegration(m_msh, ply_nod_vector,
@@ -3530,7 +3576,7 @@ void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st,
 	if (st->isCoupled() && st->node_averaging)
 		AreaAssembly(st, ply_nod_vector_cond, ply_nod_val_vector);
 }
-
+#endif
 
 /**************************************************************************
  MSHLib-Method:
@@ -3567,6 +3613,7 @@ std::vector<double>& ply_nod_val_vector)
  11/2007 JOD
  last modification:
  **************************************************************************/
+#if 0
 void CSourceTermGroup::SetSurfaceNodeValueVector(CSourceTerm* st,
 		Surface* m_sfc, std::vector<long>&sfc_nod_vector,
 		std::vector<double>&sfc_nod_val_vector)
@@ -3577,8 +3624,8 @@ void CSourceTermGroup::SetSurfaceNodeValueVector(CSourceTerm* st,
    sfc_nod_val_vector.resize(number_of_nodes);
 
    double node_value = st->geo_node_value;
-   if (st->is_exchange_bc)
-	   node_value *= st->exchange_K;
+   if (st->is_transfer_bc)
+	   node_value *= st->transfer_h_values;
    for (long i = 0; i < number_of_nodes; i++)
       sfc_nod_val_vector[i] = node_value;
    // KR & TF - case not used
@@ -3638,7 +3685,7 @@ void CSourceTermGroup::SetSurfaceNodeValueVector(CSourceTerm* st,
    }
 
 }
-
+#endif
 
 /**************************************************************************
  MSHLib-Method:

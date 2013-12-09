@@ -4785,6 +4785,16 @@ void CRFProcess::GlobalAssembly()
 		//	          MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 		//eqs_new->Write();
 		IncorporateSourceTerms();
+		if (write_leqs) {
+			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_st.txt";
+#ifdef NEW_EQS
+			std::ofstream Dum(fname.c_str(), ios::out);
+			eqs_new->Write(Dum);
+			Dum.close();
+#else
+			MXDumpGLS(fname.c_str(), 1, eqs->b, eqs->x);
+#endif
+		}
 
 		//MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 
@@ -4807,7 +4817,7 @@ void CRFProcess::GlobalAssembly()
 		//ofstream Dum("rf_pcs.txt", ios::out); // WW
 		// eqs_new->Write(Dum);   Dum.close();
 		if (write_leqs) {
-			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_st.txt";
+			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_bc.txt";
 #ifdef NEW_EQS
 			std::ofstream Dum(fname.c_str(), ios::out);
 			eqs_new->Write(Dum);
@@ -6433,10 +6443,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			std::vector<bool> active_elements;
 
 			// constrain
-			if (m_st->has_constrain
-				&& (m_st->getProcessDistributionType()==FiniteElement::CONSTANT_NEUMANN
-					|| m_st->getProcessDistributionType()==FiniteElement::LINEAR_NEUMANN)
-				)
+			if (m_st->has_constrain && m_st->getSTType()==FiniteElement::NEUMANN)
 			{
 				std::cout << "-> update constrained ST " << is << std::endl;
 				// get distributed values
@@ -6448,10 +6455,6 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				}
 				std::vector<double> node_value(nodes_vector.size());
 				setDistribution(distData, *m_msh, nodes_vector, node_value);
-				if (m_st->is_exchange_bc) {
-					for (size_t j=0; j<node_value.size(); j++)
-						node_value[j] *= m_st->exchange_K;
-				}
 
 				// boundary integration
 				if (m_st->constrain_var_id<0)
@@ -6465,6 +6468,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						active_elements[0] = false;
 					} else {
 						count_active++;
+					}
+					if (m_st->is_transfer_bc) {
+						node_value[0] *= m_st->transfer_h_values[0];
 					}
 				} else {
 					for (size_t in=0; in<m_st->st_boundary_elements.size(); in++)
@@ -6492,11 +6498,10 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			}
 
 			// exchange condition needs to update a coefficient matrix
-			if (m_st->is_exchange_bc)
+			if (m_st->is_transfer_bc)
 			{
 				// only Neumann BC
-				if (!(m_st->getProcessDistributionType()==FiniteElement::CONSTANT_NEUMANN
-						|| m_st->getProcessDistributionType()==FiniteElement::LINEAR_NEUMANN))
+				if (m_st->getSTType()!=FiniteElement::NEUMANN)
 					continue;
 
 				double mass[100] = {};
@@ -6506,9 +6511,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					cnodev = st_node_value[is][0];
 					const int k_eqs_id = m_msh->nod_vector[cnodev->geo_node_number]->GetEquationIndex();
 #ifdef NEW_EQS
-					(*eqs_new->A)(k_eqs_id,k_eqs_id) += m_st->exchange_K;
+					(*eqs_new->A)(k_eqs_id,k_eqs_id) += m_st->transfer_h_values[0];
 #else
-					MXInc(k_eqs_id,k_eqs_id, st->exchange_K);
+					MXInc(k_eqs_id,k_eqs_id, m_st->transfer_h_values[0]);
 #endif
 				} else if (m_st->getGeoType () == GEOLIB::SURFACE || m_st->getGeoType() == GEOLIB::POLYLINE) {
 					for (size_t in=0; in<m_st->st_boundary_elements.size(); in++) {
@@ -6521,6 +6526,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 							for (unsigned l = 0; l < nen; l++)
 								mass[k*nen+l] = .0;
 						fem->CalcFaceMass(mass);
+						const double h = m_st->transfer_h_values[face->GetPatchIndex()];
 						for (unsigned k = 0; k < nen; k++)
 						{
 							const int k_eqs_id = face->GetNode(k)->GetEquationIndex();
@@ -6528,9 +6534,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 							{
 								const int l_eqs_id = face->GetNode(l)->GetEquationIndex();
 #ifdef NEW_EQS
-								(*eqs_new->A)(k_eqs_id,l_eqs_id) += mass[k*nen+l] * m_st->exchange_K;
+								(*eqs_new->A)(k_eqs_id,l_eqs_id) += mass[k*nen+l] * h;
 #else
-								MXInc(k_eqs_id,l_eqs_id, mass[k*nen+l]);
+								MXInc(k_eqs_id,l_eqs_id, mass[k*nen+l] * h);
 #endif
 							}
 						}

@@ -446,5 +446,22 @@ ComparisonOperatorType convertComparisonOperatorType(const std::string &str)
     return INVALID_OPERATOR_TYPE;
 }
 
+SourceTermType convertSTType(const std::string& str)
+{
+    if (str.compare("SOURCE") == 0)
+        return SOURCE;
+    if (str.compare("NEUMANN") == 0)
+        return NEUMANN;
+    return INVALID_ST_TYPE;
+}
+
+std::string convertSTTypeToString(SourceTermType st_type)
+{
+    if (st_type == SOURCE)
+        return "SOURCE";
+    if (st_type == NEUMANN)
+        return "NEUMANN";
+    return "INVALID_ST_TYPE";
+}
 
 } // end namespace FiniteElement
