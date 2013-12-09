@@ -977,7 +977,10 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 		}
 
 		if (!(bc->getProcess()==pcs && bc->getProcessPrimaryVariable()==primary_variable))
+		{
+			++p_bc;
 			continue;
+		}
 
 		//-- 23.02.3009. WW
 		if (bc->getProcessDistributionType() == FiniteElement::DIRECT)
