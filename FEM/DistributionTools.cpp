@@ -133,7 +133,7 @@ void setDistributionGradient(MeshLib::CFEMesh &msh, std::vector<long> &vec_node_
 	const size_t nodes_vector_length = vec_node_ids.size();
 	for (size_t i = 0; i < nodes_vector_length; i++) {
 		long node_id = vec_node_ids[i];
-		vec_node_values[i] = ref_depth * (ref_depth - msh.nod_vector[node_id]->getData()[2]) + ref_value;
+		vec_node_values[i] = gradient * (ref_depth - msh.nod_vector[node_id]->getData()[2]) + ref_value;
 	}
 }
 
