@@ -104,6 +104,8 @@ set( SOURCES
 	#Eclipse.cpp
 	#DUMUX.cpp
 	Output.cpp
+	DistributionTools.h
+	DistributionTools.cpp
 )
 
 IF(NOT OGS_ONLY_TH)

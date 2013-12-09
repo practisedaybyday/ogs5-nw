@@ -111,6 +111,7 @@ REACT_BRNS* m_vec_BRNS;
 #include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 
 #include "StringTools.h"
+#include "DistributionTools.h"
 
 using namespace std;
 using namespace MeshLib;
@@ -415,14 +416,17 @@ CRFProcess::~CRFProcess(void)
 	{
 		for(i = 0; i < (int)st_node_value.size(); i++)
 		{
-			m_nod_val = st_node_value[i];
-			//OK delete st_node_value[i];
-			//OK st_node_value[i] = NULL;
-			if(m_nod_val->check_me) //OK
+			for(int j = 0; j < (int)st_node_value[i].size(); j++)
 			{
-				m_nod_val->check_me = false;
-				delete m_nod_val;
-				m_nod_val = NULL;
+				m_nod_val = st_node_value[i][j];
+				//OK delete st_node_value[i];
+				//OK st_node_value[i] = NULL;
+				if(m_nod_val->check_me) //OK
+				{
+					m_nod_val->check_me = false;
+					delete m_nod_val;
+					m_nod_val = NULL;
+				}
 			}
 		}
 		st_node_value.clear();
@@ -987,10 +991,11 @@ void CRFProcess::WriteRHS_of_ST_NeumannBC()
 	os << endl;
 	os.setf(std::ios::scientific, std::ios::floatfield);
 	os.precision(14);
-	const size_t st_node_value_size(st_node_value.size());
-	os << st_node_value_size << endl;
-	for (size_t i = 0; i < st_node_value_size; i++)
-		st_node_value[i]->Write(os);
+	for (size_t i = 0; i < st_node_value.size(); i++) {
+		os << st_node_value[i].size() << endl;
+		for (size_t j = 0; j < st_node_value[i].size(); j++)
+			st_node_value[i][j]->Write(os);
+	}
 	os.close();
 }
 
@@ -1017,14 +1022,17 @@ void CRFProcess::ReadRHS_of_ST_NeumannBC()
 	getline(is, s_buffer);
 	getline(is, s_buffer);
 	getline(is, s_buffer);
-	size_t size;
-	is >> size >> ws;
-	st_node_value.clear();
-	for (size_t i = 0; i < size; i++)
+	st_node_value.resize(st_vector.size());
+	for (size_t i = 0; i < st_node_value.size(); i++)
 	{
-		CNodeValue* cnodev = new CNodeValue();
-		cnodev->Read(is);
-		st_node_value.push_back(cnodev);
+		size_t size;
+		is >> size >> ws;
+		for (size_t j = 0; j < size; j++)
+		{
+			CNodeValue* cnodev = new CNodeValue();
+			cnodev->Read(is);
+			st_node_value[i].push_back(cnodev);
+		}
 	}
 	is.close();
 }
@@ -4764,7 +4772,7 @@ void CRFProcess::GlobalAssembly()
 			AddFCT_CorrectionVector();
 
 		if (write_leqs) {
-			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs.txt";
+			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_assembly.txt";
 #ifdef NEW_EQS
 			std::ofstream Dum(fname.c_str(), ios::out);
 			eqs_new->Write(Dum);
@@ -4777,6 +4785,16 @@ void CRFProcess::GlobalAssembly()
 		//	          MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 		//eqs_new->Write();
 		IncorporateSourceTerms();
+		if (write_leqs) {
+			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_st.txt";
+#ifdef NEW_EQS
+			std::ofstream Dum(fname.c_str(), ios::out);
+			eqs_new->Write(Dum);
+			Dum.close();
+#else
+			MXDumpGLS(fname.c_str(), 1, eqs->b, eqs->x);
+#endif
+		}
 
 		//MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 
@@ -4798,6 +4816,16 @@ void CRFProcess::GlobalAssembly()
 
 		//ofstream Dum("rf_pcs.txt", ios::out); // WW
 		// eqs_new->Write(Dum);   Dum.close();
+		if (write_leqs) {
+			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_bc.txt";
+#ifdef NEW_EQS
+			std::ofstream Dum(fname.c_str(), ios::out);
+			eqs_new->Write(Dum);
+			Dum.close();
+#else
+			MXDumpGLS(fname.c_str(), 1, eqs->b, eqs->x);
+#endif
+		}
 
 #define nOUTPUT_EQS_BIN
 #ifdef OUTPUT_EQS_BIN
@@ -5298,14 +5326,17 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			// ST
 			for(i = 0; i < (long)st_node_value.size(); i++)
 			{
-				m_st_nv = st_node_value[i];
-				for(j = 0; j < (long)m_dom->nodes.size(); j++)
-					if(m_st_nv->geo_node_number == m_dom->nodes[j])
-					{
-						st_node_value_in_dom.push_back(i);
-						st_local_index_in_dom.push_back(j);
-						break;
-					}
+				for(size_t ii = 0; ii < st_node_value[i].size(); ii++)
+				{
+					m_st_nv = st_node_value[i][ii];
+					for(j = 0; j < (long)m_dom->nodes.size(); j++)
+						if(m_st_nv->geo_node_number == m_dom->nodes[j])
+						{
+							st_node_value_in_dom.push_back(ii);
+							st_local_index_in_dom.push_back(j);
+							break;
+						}
+				}
 			}
 			rank_st_node_value_in_dom.push_back((long)st_node_value_in_dom.size());
 		}
@@ -5313,8 +5344,11 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		long l_index;
 		for(i = 0; i < Size; i++)
 		{
-			l_index = st_node_value[i]->geo_node_number;
-			st_node_value[i]->node_value /= (double)node_connected_doms[l_index];
+			for(size_t ii = 0; ii < st_node_value[i].size(); ii++)
+			{
+				l_index = st_node_value[i][ii]->geo_node_number;
+				st_node_value[i][ii]->node_value /= (double)node_connected_doms[l_index];
+			}
 		}
 	}
 
@@ -5457,6 +5491,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			end = rank_bc_node_value_in_dom[rank];
 		}
 
+		size_t count_constrained_excluded = 0;
+
 		for(i = begin; i < end; i++)
 		{
 			gindex = i;
@@ -5570,6 +5606,21 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				time_fac = 1.0;
 			if(bc_msh_node >= 0)
 			{
+				//................................................................
+				// Constrain condition
+				if (m_bc_node->_bc->has_constrain)
+				{
+					CBoundaryCondition* bc = m_bc_node->_bc;
+					if (bc->constrain_var_id<0) {
+						bc->constrain_var_id = GetNodeValueIndex(bc->constrain_var_name) + 1;
+					}
+					double val = GetNodeValue(bc_msh_node,bc->constrain_var_id);
+					if (!FiniteElement::compare(val, bc->constrain_value, bc->constrain_operator)) {
+						count_constrained_excluded++;
+						continue; // skip this bc node
+					}
+				}
+
 				//................................................................
 				// Time dependencies - CURVE
 				curve =  m_bc_node->CurveIndex;
@@ -5744,6 +5795,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 #endif
 			}
 		}
+		if (count_constrained_excluded>0)
+			std::cout << "-> " << count_constrained_excluded << " nodes are excluded from BC because of constrained conditions" << std::endl;
 	}
 
 /**************************************************************************
@@ -6242,7 +6295,6 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		double vel[3];
 		bool is_valid;            //YD
 		CFunction* m_fct = NULL;  //YD
-		long i;                   //, group_vector_length;
 
 		double Scaling = 1.0;
 		if (type == 4)
@@ -6255,6 +6307,20 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		long end = 0;
 		long gindex = 0;
 		int dim_space = 0;        //kg44 better define here and not in a loop!
+
+		//====================================================================
+		// Look for active boundary elements if constrain is given
+		for (unsigned i=0; i<st_vector.size(); i++)
+		{
+			CSourceTerm* st = st_vector[i];
+			if (!st->has_constrain) continue;
+
+			CSourceTermGroup m_st_group;
+			m_st_group.pcs_type_name = FiniteElement::convertProcessTypeToString(st->getProcessType());
+			m_st_group.pcs_pv_name = FiniteElement::convertPrimaryVariableToString(st->getProcessPrimaryVariable());
+			int idx = GetNodeValueIndex(m_st_group.pcs_pv_name)/2;
+			m_st_group.Set(this, Shift[idx]);
+		}
 
 #ifndef OGS_ONLY_TH
 //###############################
@@ -6282,7 +6348,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				for (size_t j=0; j<nSTNodeValues; j++)
 				{
 					// search the first node value index not set (this should be the start for the CLIMATE data
-					if (st_node_value[j]->node_value == std::numeric_limits<double>::min())
+					if (st_node_value[i][j]->node_value == std::numeric_limits<double>::min())
 					{
 						// Interpolate for each surface node
 						for (size_t w=0;w<nDistances;w++)
@@ -6294,7 +6360,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 								st_value += vec_etr[q] * distances->getDistance(w,q) / distances->getSumOfDistances(w);
 
 							const size_t n (distances->getDomainPoint(w)->getID());
-							st_node_value[j+w]->node_value = st_value * m_msh->nod_vector[n]->patch_area;
+							st_node_value[i][j+w]->node_value = st_value * m_msh->nod_vector[n]->patch_area;
 						}
 						break;
 					}
@@ -6323,11 +6389,11 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				file.open(filename.str().c_str());
 				file << "node,x,y,z,recharge,area"<< endl;
 
-				for (size_t i=0;i<st_node_value.size();i++)
+				for (size_t ii=0;ii<st_node_value[i].size();ii++)
 				{
-					const long z = st_node_value[i]->msh_node_number;
+					const long z = st_node_value[i][ii]->msh_node_number;
 					const double *coords (m_msh->nod_vector[z]->getData());
-					file << z << "," << coords[0] << "," << coords[1] << "," << "0" << ","<< st_node_value[i]->node_value << "," << m_msh->nod_vector[z]->patch_area<< endl;
+					file << z << "," << coords[0] << "," << coords[1] << "," << "0" << ","<< st_node_value[i][ii]->node_value << "," << m_msh->nod_vector[z]->patch_area<< endl;
 				}
 
 				file.close();
@@ -6336,84 +6402,190 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		}
 
 
-		m_st=NULL;
 
 
 //#####################
 #endif
 
-		if (rank == -1)
+		for (size_t is=0; is<st_node_value.size(); is++)
 		{
-			begin = 0;
-			end = (long) st_node_value.size();
-#ifdef NEW_EQS                              //WW
-			eqs_rhs = eqs_new->b; //27.11.2007 WW
-#else
-			eqs_rhs = eqs->b;
-#endif
-		}
-		else
-		{
-			m_dom = dom_vector[rank];
-#ifdef NEW_EQS
-			if(type == 4 )
-				eqs_rhs = m_dom->eqsH->b;
-			else
-				eqs_rhs = m_dom->eqs->b;
-#else
-			eqs_rhs = m_dom->eqs->b;
-#endif
-			if (rank == 0)
-				begin = 0;
-			else
-				begin = rank_st_node_value_in_dom[rank - 1];
-			end = rank_st_node_value_in_dom[rank];
-		}
-
-		for (i = begin; i < end; i++)
-		{
-			gindex = i;
-			if (rank > -1)
-				gindex = st_node_value_in_dom[i];
-
-			cnodev = st_node_value[gindex];
-			shift = cnodev->msh_node_number - cnodev->geo_node_number;
-			if (rank > -1)
+			m_st=NULL;
+			if (is<st_vector.size())
+				m_st = st_vector[is];
+			if (rank == -1)
 			{
-				msh_node = st_local_index_in_dom[i];
-				dim_space = 0;
-				if (m_msh->NodesNumber_Linear == m_msh->NodesNumber_Quadratic)
+				begin = 0;
+				end = (long) st_node_value[is].size();
+	#ifdef NEW_EQS                              //WW
+				eqs_rhs = eqs_new->b; //27.11.2007 WW
+	#else
+				eqs_rhs = eqs->b;
+	#endif
+			}
+			else
+			{
+				m_dom = dom_vector[rank];
+	#ifdef NEW_EQS
+				if(type == 4 )
+					eqs_rhs = m_dom->eqsH->b;
+				else
+					eqs_rhs = m_dom->eqs->b;
+	#else
+				eqs_rhs = m_dom->eqs->b;
+	#endif
+				if (rank == 0)
+					begin = 0;
+				else
+					begin = rank_st_node_value_in_dom[rank - 1];
+				end = rank_st_node_value_in_dom[rank];
+			}
+
+			std::vector<bool> active_elements;
+
+			// constrain
+			if (m_st->has_constrain && m_st->getSTType()==FiniteElement::NEUMANN)
+			{
+				std::cout << "-> update constrained ST " << is << std::endl;
+				// get distributed values
+				DistributionData distData;
+				setDistributionData(m_st, distData);
+				std::vector<long> nodes_vector(st_node_value[is].size());
+				for (size_t ii=0; ii<st_node_value[is].size(); ii++) {
+					nodes_vector[ii] = st_node_value[is][ii]->msh_node_number;
+				}
+				std::vector<double> node_value(nodes_vector.size());
+				setDistribution(distData, *m_msh, nodes_vector, node_value);
+
+				// boundary integration
+				if (m_st->constrain_var_id<0)
+					m_st->constrain_var_id = GetNodeValueIndex(m_st->constrain_var_name) + 1;
+				active_elements.resize(m_st->st_boundary_elements.size(), true);
+				size_t count_active = 0;
+				if (m_st->getGeoType () == GEOLIB::POINT) {
+					double val = GetNodeValue(m_st->geo_node_number,m_st->constrain_var_id);
+					if (!FiniteElement::compare(val, m_st->constrain_value, m_st->constrain_operator)) {
+						node_value[0] = .0;
+						active_elements[0] = false;
+					} else {
+						count_active++;
+					}
+					if (m_st->is_transfer_bc) {
+						node_value[0] *= m_st->transfer_h_values[0];
+					}
+				} else {
+					for (size_t in=0; in<m_st->st_boundary_elements.size(); in++)
+					{
+						MeshLib::CElem* face = m_st->st_boundary_elements[in];
+						const unsigned nen = face->GetNodesNumber(m_msh->getOrder());
+						double avg_val = .0;
+						for (unsigned k = 0; k < nen; k++)
+							avg_val += GetNodeValue(face->GetNode(k)->GetIndex(), m_st->constrain_var_id);
+						avg_val /= (double)nen;
+						active_elements[in] = FiniteElement::compare(avg_val, m_st->constrain_value, m_st->constrain_operator);
+						if (active_elements[in]) count_active++;
+					}
+					if (m_msh->GetMaxElementDim()==2 && m_st->getGeoType()==GEOLIB::POLYLINE)
+						m_st->EdgeIntegration(m_msh, nodes_vector, node_value, &active_elements);
+					else if (m_msh->GetMaxElementDim()==3 && m_st->getGeoType()==GEOLIB::SURFACE)
+						m_st->FaceIntegration(m_msh, nodes_vector, node_value, &active_elements);
+				}
+
+				//update ST values
+				for (size_t ii=0; ii<st_node_value[is].size(); ii++) {
+					st_node_value[is][ii]->node_value = node_value[ii];
+				}
+				std::cout << "-> " << count_active << " nodes/elements are active in total " << active_elements.size() << " nodes/elements" << std::endl;
+			}
+
+			// exchange condition needs to update a coefficient matrix
+			if (m_st->is_transfer_bc)
+			{
+				// only Neumann BC
+				if (m_st->getSTType()!=FiniteElement::NEUMANN)
+					continue;
+
+				double mass[100] = {};
+				if (m_st->getGeoType () == GEOLIB::POINT) {
+					if (m_st->has_constrain && !active_elements[0])
+						continue;
+					cnodev = st_node_value[is][0];
+					const int k_eqs_id = m_msh->nod_vector[cnodev->geo_node_number]->GetEquationIndex();
+#ifdef NEW_EQS
+					(*eqs_new->A)(k_eqs_id,k_eqs_id) += m_st->transfer_h_values[0];
+#else
+					MXInc(k_eqs_id,k_eqs_id, m_st->transfer_h_values[0]);
+#endif
+				} else if (m_st->getGeoType () == GEOLIB::SURFACE || m_st->getGeoType() == GEOLIB::POLYLINE) {
+					for (size_t in=0; in<m_st->st_boundary_elements.size(); in++) {
+						if (m_st->has_constrain && !active_elements[in]) continue;
+						MeshLib::CElem* face = m_st->st_boundary_elements[in];
+						const unsigned nen = face->GetNodesNumber(false);
+						fem->setOrder(m_msh->getOrder() + 1);
+						fem->ConfigElement(face, true);
+						for (unsigned k = 0; k < nen; k++)
+							for (unsigned l = 0; l < nen; l++)
+								mass[k*nen+l] = .0;
+						fem->CalcFaceMass(mass);
+						const double h = m_st->transfer_h_values[face->GetPatchIndex()];
+						for (unsigned k = 0; k < nen; k++)
+						{
+							const int k_eqs_id = face->GetNode(k)->GetEquationIndex();
+							for (unsigned l = 0; l < nen; l++)
+							{
+								const int l_eqs_id = face->GetNode(l)->GetEquationIndex();
+#ifdef NEW_EQS
+								(*eqs_new->A)(k_eqs_id,l_eqs_id) += mass[k*nen+l] * h;
+#else
+								MXInc(k_eqs_id,l_eqs_id, mass[k*nen+l] * h);
+#endif
+							}
+						}
+					}
+				}
+			}
+
+			//====================================================================
+			// Add ST to RHS
+			for (long i = begin; i < end; i++)
+			{
+				gindex = i;
+				if (rank > -1)
+					gindex = st_node_value_in_dom[i];
+
+				cnodev = st_node_value[is][gindex];
+
+				shift = cnodev->msh_node_number - cnodev->geo_node_number;
+				if (rank > -1)
+				{
+					msh_node = st_local_index_in_dom[i];
 					dim_space = 0;
+					if (m_msh->NodesNumber_Linear == m_msh->NodesNumber_Quadratic)
+						dim_space = 0;
+					else
+					{
+						if (shift % m_msh->NodesNumber_Quadratic == 0)
+							dim_space = shift / m_msh->NodesNumber_Quadratic;
+						else
+							dim_space = m_msh->msh_max_dim;
+					}
+					shift = m_dom->shift[dim_space];
+				}
 				else
 				{
-					if (shift % m_msh->NodesNumber_Quadratic == 0)
-						dim_space = shift / m_msh->NodesNumber_Quadratic;
-					else
-						dim_space = m_msh->msh_max_dim;
+					msh_node = cnodev->msh_node_number;
+					msh_node -= shift;
 				}
-				shift = m_dom->shift[dim_space];
-			}
-			else
-			{
-				msh_node = cnodev->msh_node_number;
-				msh_node -= shift;
-			}
-			value = cnodev->node_value;
-			//--------------------------------------------------------------------
-			// Tests
-			if (msh_node < 0)
-				continue;
-			m_st = NULL;
-			if (st_node.size() > 0 && (long) st_node.size() > i)
-			{
-				m_st = st_node[gindex];
+				value = cnodev->node_value;
+				//--------------------------------------------------------------------
+				// Tests
+				if (msh_node < 0)
+					continue;
 				//--------------------------------------------------------------------
 				// CPL
 				//if(m_st->_pcs_type_name_cond.size()>0) continue; // this is a CPL source term, JOD removed
 				//--------------------------------------------------------------------
 				// system dependent YD
-				if (cnodev->getProcessDistributionType() ==
-				    FiniteElement::SYSTEM_DEPENDENT)
+				if (cnodev->getProcessDistributionType() == FiniteElement::SYSTEM_DEPENDENT)
 				{
 					long no_st_ele = (long) m_st->element_st_vector.size();
 					for (long i_st = 0; i_st < no_st_ele; i_st++)
@@ -6431,107 +6603,98 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						if (EleType == MshElemType::LINE) //Line
 							cnodev->node_value += vel[0];
 						//Traingle & Qua
-						if (EleType == MshElemType::TRIANGLE || EleType ==
-						    MshElemType::QUAD)
+						if (EleType == MshElemType::TRIANGLE || EleType == MshElemType::QUAD)
 						{
-							for (size_t i_face = 0;
-							     i_face < m_msh->face_vector.size();
-							     i_face++)
+							for (size_t i_face = 0; i_face < m_msh->face_vector.size(); i_face++)
 							{
 								face = m_msh->face_vector[i_face];
-								if ((size_t) m_st->
-								    element_st_vector[i_st] ==
-								    face->GetOwner()->GetIndex())
+								if ((size_t) m_st-> element_st_vector[i_st] == face->GetOwner()->GetIndex())
 									//
-									q_face = PointProduction(
-									        vel,
-									        m_msh->face_normal[
-									                i_face])
-									         * face->GetVolume();
+									q_face = PointProduction(vel,m_msh->face_normal[i_face]) * face->GetVolume();
 								//for(i_node)
 							}
 							cnodev->node_value = +q_face / 2;
 						}
 					}
-				}
+					//--------------------------------------------------------------------
+					// MB
+					//if(m_st->conditional && !m_st->river)
+					//{
+
+					GetNODValue(value, cnodev, m_st);
+				}             // st_node.size()>0&&(long)st_node.size()>i
+				//----------------------------------------------------------------------------------------
 				//--------------------------------------------------------------------
-				// MB
-				//if(m_st->conditional && !m_st->river)
-				//{
-
-				GetNODValue(value, cnodev, m_st);
-			}             // st_node.size()>0&&(long)st_node.size()>i
-			//----------------------------------------------------------------------------------------
-			//--------------------------------------------------------------------
-			// Please do not move the this section
-			curve = cnodev->CurveIndex;
-			if (curve > 0)
-			{
-                //Reading Time interpolation method; BG
-				if (m_st != NULL)	// in some cases the m_st is not defined -> interp_method is not changed for this cases
-					if (interp_method != m_st->TimeInterpolation)
-						interp_method = m_st->TimeInterpolation;
-
-				time_fac = GetCurveValue(curve, interp_method, aktuelle_zeit,
-				                         &valid);
-				//cout << "step: " << this->Tim->step_current << " Time: " << aktuelle_zeit << " Laenge: " << this->Tim->this_stepsize << " Beginn: " << this->Tim->time_start << " Ende " << this->Tim->time_end << " Faktor: " << time_fac << endl;
-				if (!valid)
+				// Please do not move the this section
+				curve = cnodev->CurveIndex;
+				if (curve > 0)
 				{
-					cout <<
-					"\n!!! Time dependent curve is not found. Results are not guaranteed "
-					     << endl;
-					cout <<
-					" in void CRFProcess::IncorporateSourceTerms(const double Scaling)"
-					     << endl;
-					time_fac = 1.0;
-				}
-			}
-			else
-				time_fac = 1.0;
+	                //Reading Time interpolation method; BG
+					if (m_st != NULL)	// in some cases the m_st is not defined -> interp_method is not changed for this cases
+						if (interp_method != m_st->TimeInterpolation)
+							interp_method = m_st->TimeInterpolation;
 
-			// Time dependencies - FCT    //YD
-			if (m_st)     //WW
-			{
-				//WW/YD //OK
-				if (m_msh && m_msh->geo_name.find("LOCAL") != string::npos)
-				{
-					if (m_st->getFunctionName().length() > 0)
+					time_fac = GetCurveValue(curve, interp_method, aktuelle_zeit, &valid);
+					//cout << "step: " << this->Tim->step_current << " Time: " << aktuelle_zeit << " Laenge: " << this->Tim->this_stepsize << " Beginn: " << this->Tim->time_start << " Ende " << this->Tim->time_end << " Faktor: " << time_fac << endl;
+					if (!valid)
 					{
-						m_fct = FCTGet(pcs_number);
+						cout <<
+						"\n!!! Time dependent curve is not found. Results are not guaranteed "
+						     << endl;
+						cout <<
+						" in void CRFProcess::IncorporateSourceTerms(const double Scaling)"
+						     << endl;
+						time_fac = 1.0;
+					}
+				}
+				else
+					time_fac = 1.0;
+
+				// Time dependencies - FCT    //YD
+				if (m_st)     //WW
+				{
+					//WW/YD //OK
+					if (m_msh && m_msh->geo_name.find("LOCAL") != string::npos)
+					{
+						if (m_st->getFunctionName().length() > 0)
+						{
+							m_fct = FCTGet(pcs_number);
+							if (m_fct)
+								time_fac = m_fct->GetValue(
+								        aktuelle_zeit,
+								        &is_valid,
+								        m_st->
+								        getFunctionMethod());  //fct_method. WW
+							else
+								cout <<
+								"Warning in CRFProcess::IncorporateSourceTerms - no FCT data"
+								     << endl;
+						}
+					}
+					else if (m_st->getFunctionName().length() > 0)
+					{
+						m_fct = FCTGet(m_st->getFunctionName());
 						if (m_fct)
-							time_fac = m_fct->GetValue(
-							        aktuelle_zeit,
-							        &is_valid,
-							        m_st->
-							        getFunctionMethod());  //fct_method. WW
+							time_fac = m_fct->GetValue(aktuelle_zeit, &is_valid);
 						else
 							cout <<
 							"Warning in CRFProcess::IncorporateSourceTerms - no FCT data"
 							     << endl;
 					}
 				}
-				else if (m_st->getFunctionName().length() > 0)
-				{
-					m_fct = FCTGet(m_st->getFunctionName());
-					if (m_fct)
-						time_fac = m_fct->GetValue(aktuelle_zeit, &is_valid);
-					else
-						cout <<
-						"Warning in CRFProcess::IncorporateSourceTerms - no FCT data"
-						     << endl;
-				}
+				//----------------------------------------------------------------------------------------
+				value *= time_fac * fac;
+				//------------------------------------------------------------------
+				// EQS->RHS
+				if (rank > -1)
+					bc_eqs_index = msh_node + shift;
+				else
+					bc_eqs_index = m_msh->nod_vector[msh_node]->GetEquationIndex() + shift;
+				eqs_rhs[bc_eqs_index] += value;
 			}
-			//----------------------------------------------------------------------------------------
-			value *= time_fac * fac;
-			//------------------------------------------------------------------
-			// EQS->RHS
-			if (rank > -1)
-				bc_eqs_index = msh_node + shift;
-			else
-				bc_eqs_index = m_msh->nod_vector[msh_node]->GetEquationIndex() +
-				               shift;
-			eqs_rhs[bc_eqs_index] += value;
 		}
+
+
 		//====================================================================
 
 		// if coupling to GEMS exist----------------------------------------------------
@@ -6553,7 +6716,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			// only when switch is on and not in the first time step
 			// loop over the Water_ST_vec vector,
 			// add the excess water to the right-hand-side of the equation
-			for (i = begin; i < end; i++)
+			for (long i = begin; i < end; i++)
 			{
 				if (rank > -1) // parallel version: stgem_node_value_in_dom and stgem_local_index_in_dom contain only values for the corresponding domain  == rank
 				{
@@ -6580,6 +6743,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				rank_stgem_node_value_in_dom.clear();
 			}
 		}
+
+
 	}
 
 #ifndef NEW_EQS                                   //WW
@@ -9632,24 +9797,27 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			//  ofstream st_out_file("st_out_file.txt",ios::app);
 			for (i = 0; i < (int) st_node_value.size(); i++)
 			{
-				cnodev = st_node_value[i];
-				// MSH-PCS
-				//m_nod = m_msh_this->nod_vector[m_st_group->group_vector[i]->msh_node_number];
-				//m_st_group->group_vector[i]->msh_node_number; //0
-				msh_node_number = cnodev->msh_node_number;
-				// MSH-PCS-CPL
-				//WW cpl_msh_nod_number = msh_node_number;
-				cpl_msh_ele_number = pcs_number; //OK:TODO
-				m_ele_cnd = m_pcs_cond->m_msh->ele_vector[cpl_msh_ele_number];
-				for (j = 0; j < m_ele_cnd->GetNodesNumber(false); j++)
-					cpl_ele_val += m_pcs_cond->GetNodeValue(
-					        m_ele_cnd->nodes_index[j], cpl_nidx);
-				cpl_ele_val /= m_ele_cnd->GetNodesNumber(false);
-				// VAL-CON
-				value = 2.314e-02 * cpl_ele_val * 1e-2;
-				//    st_out_file << value << endl;
-				// EQS-RHS
-				eqs->b[msh_node_number] += value;
+				for (size_t ii=0; ii<st_node_value[i].size(); ii++)
+				{
+					cnodev = st_node_value[i][ii];
+					// MSH-PCS
+					//m_nod = m_msh_this->nod_vector[m_st_group->group_vector[i]->msh_node_number];
+					//m_st_group->group_vector[i]->msh_node_number; //0
+					msh_node_number = cnodev->msh_node_number;
+					// MSH-PCS-CPL
+					//WW cpl_msh_nod_number = msh_node_number;
+					cpl_msh_ele_number = pcs_number; //OK:TODO
+					m_ele_cnd = m_pcs_cond->m_msh->ele_vector[cpl_msh_ele_number];
+					for (j = 0; j < m_ele_cnd->GetNodesNumber(false); j++)
+						cpl_ele_val += m_pcs_cond->GetNodeValue(
+						        m_ele_cnd->nodes_index[j], cpl_nidx);
+					cpl_ele_val /= m_ele_cnd->GetNodesNumber(false);
+					// VAL-CON
+					value = 2.314e-02 * cpl_ele_val * 1e-2;
+					//    st_out_file << value << endl;
+					// EQS-RHS
+					eqs->b[msh_node_number] += value;
+				}
 			}
 			//----------------------------------------------------------------------
 			/*
@@ -11846,14 +12014,17 @@ CRFProcess* PCSGetMass(size_t component_number)
 		const size_t st_node_value_size (st_node_value.size());
 		for (size_t i = 0; i < st_node_value_size; i++)
 		{
-			nod_val = st_node_value[i];
-			//OK delete st_node_value[i];
-			//OK st_node_value[i] = NULL;
-			if (nod_val->check_me) //OK
+			for (size_t ii = 0; ii < st_node_value[i].size(); ii++)
 			{
-				nod_val->check_me = false;
-				delete nod_val;
-				nod_val = NULL;
+				nod_val = st_node_value[i][ii];
+				//OK delete st_node_value[i];
+				//OK st_node_value[i] = NULL;
+				if (nod_val->check_me) //OK
+				{
+					nod_val->check_me = false;
+					delete nod_val;
+					nod_val = NULL;
+				}
 			}
 		}
 		st_node_value.clear();
@@ -12187,24 +12358,30 @@ CRFProcess* PCSGetMass(size_t component_number)
 		{
 			os << "#Source term or Neumann BC  (from " << m_file_name
 			   << ".st file) " << endl;
-			os << "#Total ST nodes  " << size_st << endl;
+			size_t n_st = 0;
+			for (size_t i = 0; i < st_node_value.size(); i++)
+				n_st += st_node_value[i].size();
+			os << "#Total ST nodes  " << n_st << endl;
 			os << "#Node index, x, y, z, name    value: " << endl;
 			for (size_t i = 0; i < size_st; i++)
 			{
-				nindex = st_node_value[i]->geo_node_number;
+				for (size_t ii = 0; ii < st_node_value[i].size(); ii++)
+				{
+					nindex = st_node_value[i][ii]->geo_node_number;
 //         anode = m_msh->nod_vector[nindex];
 //         os << nindex << "  " << convertPrimaryVariableToString(
 //            st_node[i]->getProcessPrimaryVariable()) << " " << std::setw(14)
 //            << anode->X() << " " << std::setw(14) << anode->Y() << " "
 //            << std::setw(14) << anode->Z() << " " << std::setw(14)
 //            << st_node_value[i]->node_value << endl;
-				double const* const pnt (m_msh->nod_vector[nindex]->getData());
-				os << nindex << "  " << convertPrimaryVariableToString(
-				        st_node[i]->getProcessPrimaryVariable()) << " " <<
-				std::setw(14)
-				<< pnt[0] << " " << std::setw(14) << pnt[1] << " "
-				<< std::setw(14) << pnt[2] << " " << std::setw(14)
-				<< st_node_value[i]->node_value << endl;
+					double const* const pnt (m_msh->nod_vector[nindex]->getData());
+					os << nindex << "  " << convertPrimaryVariableToString(
+							st_vector[i]->getProcessPrimaryVariable()) << " " <<
+					std::setw(14)
+					<< pnt[0] << " " << std::setw(14) << pnt[1] << " "
+					<< std::setw(14) << pnt[2] << " " << std::setw(14)
+					<< st_node_value[i][ii]->node_value << endl;
+				}
 			}
 		}
 		os << "#STOP" << endl;

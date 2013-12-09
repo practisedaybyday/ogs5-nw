@@ -30,6 +30,7 @@ CNodeValue::CNodeValue() :
 	CurveIndex = -1;
 	conditional = -1;
 	check_me = true;                      //OK
+	_st = NULL;
 }
 
 /**************************************************************************

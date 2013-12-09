@@ -2527,7 +2527,8 @@ void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CR
 	//calculating source term
 	for (long i = 0; i < (long)transport_pcs->st_node_value.size(); i++)
 	{
-		SourceTerm = transport_pcs->st_node_value[i]->node_value;
+		for (size_t j=0; j<transport_pcs->st_node_value[i].size(); j++)
+			SourceTerm = transport_pcs->st_node_value[i][j]->node_value;
 	}
 	SourceTerm *= transport_pcs->Tim->this_stepsize;
 
@@ -2652,12 +2653,14 @@ inline double Problem::GroundWaterFlow()
 		if(aktueller_zeitschritt == 1)
 		{
 			m_st = new CSourceTerm();
+			st_vector.push_back(m_st);
+			std::vector<CNodeValue*> node_values;
 			for(i = 0; i < neighb_grid->getBorderNodeNumber(); i++)
 			{
 				m_nod_val = new CNodeValue();
-				m_pcs->st_node_value.push_back(m_nod_val);
-				m_pcs->st_node.push_back(m_st);
+				node_values.push_back(m_nod_val);
 			}
+			m_pcs->st_node_value.push_back(node_values);
 		}
 		l = (long)m_pcs->st_node_value.size();
 		long* local_indxs = neighb_grid->getBorderNodeIndicies();
@@ -2673,12 +2676,12 @@ inline double Problem::GroundWaterFlow()
 		m_pcs->Integration(border_flux);
 
 		m = l - neighb_grid->getBorderNodeNumber();
-		for(i = m; i < l; i++)
+		for(i = 0; i < m_pcs->st_node_value.back().size(); i++)
 		{
-			m_nod_val = m_pcs->st_node_value[i];
-			m_nod_val->msh_node_number = local_indxs_this[i - m];
-			m_nod_val->geo_node_number = local_indxs_this[i - m];
-			m_nod_val->node_value = -border_flux[local_indxs_this[i - m]];
+			m_nod_val = m_pcs->st_node_value.back()[i];
+			m_nod_val->msh_node_number = local_indxs_this[i];
+			m_nod_val->geo_node_number = local_indxs_this[i];
+			m_nod_val->node_value = -border_flux[local_indxs_this[i]];
 		}
 	}
 	//-------------------------------
@@ -3257,11 +3260,8 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global, in
 		    }
 		 */
 		m_pcs_local->st_node_value.clear();
-		m_pcs_local->st_node.clear();
 		for(j = 0; j < (int)m_pcs_global->st_node_value.size(); j++)
 			m_pcs_local->st_node_value.push_back(m_pcs_global->st_node_value[j]);
-		for(j = 0; j < (int)m_pcs_global->st_node.size(); j++)
-			m_pcs_local->st_node.push_back(m_pcs_global->st_node[j]);
 		//....................................................................
 		pcs_vector.push_back(m_pcs_local);
 	}
@@ -3370,12 +3370,12 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global, in
 		{
 			CSourceTerm* m_st = NULL;
 			CNodeValue* m_nod_val = NULL;
+#if 0 //TODO
 			if(aktueller_zeitschritt == 1)
 			{
 				m_st = new CSourceTerm();
 				m_nod_val = new CNodeValue();
 				m_pcs_local->st_node_value.push_back(m_nod_val);
-				m_pcs_local->st_node.push_back(m_st);
 			}
 			else
 			{
@@ -3385,6 +3385,7 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global, in
 				                                   size() -
 				                                   1];
 			}
+#endif
 			//WW long *local_indxs = NULL;
 			//WW local_indxs = neighb_grid->getBorderNodeIndicies();
 			m_nod_val->msh_node_number = no_local_nodes - 1;

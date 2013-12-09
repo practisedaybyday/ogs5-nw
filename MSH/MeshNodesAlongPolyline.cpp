@@ -48,9 +48,10 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 				// is the orthogonal projection of the j-th node to the
 				// line g(lambda) = _ply->getPoint(k) + lambda * (_ply->getPoint(k+1) - _ply->getPoint(k))
 				// at the k-th line segment of the polyline, i.e. 0 <= lambda <= 1?
-				if (MathLib::calcProjPntToLineAndDists(mesh_nodes[j]->getData(),
-								(_ply->getPoint(k))->getData(), (_ply->getPoint(k + 1))->getData(),
-								lambda, dist) <= epsilon_radius) {
+				double d = MathLib::calcProjPntToLineAndDists(mesh_nodes[j]->getData(),
+						(_ply->getPoint(k))->getData(), (_ply->getPoint(k + 1))->getData(),
+						lambda, dist);
+				if (d <= epsilon_radius) {
 					if (lower_lambda <= lambda && lambda <= upper_lambda) {
 						if (mesh_nodes[j]->GetIndex() < n_linear_order_nodes) {
 							// check if node id is already in the vector

@@ -161,20 +161,33 @@ private:
 	double _periode_time_length; // JOD
 	bool _periodic; // JOD
 
+public:
 	double gradient_ref_depth; // 6/2012 JOD
 	double gradient_ref_depth_value;
 	double gradient_ref_depth_gradient;
 
+private:
 	double node_value_cond; //OK
 	double condition; //OK
+	bool conditional;
+
 	double epsilon; //NW. temporally set here for surface interpolation
 	bool time_dep_interpol;
 
+public:
+	bool has_constrain;
+	std::string constrain_var_name;
+	int constrain_var_id;
+	double constrain_value;
+	FiniteElement::ComparisonOperatorType constrain_operator;
+
+private:
 	// FCT
 	std::string fct_name;
-	bool conditional;
 
+public:
 	LinearFunctionData* dis_linear_f;   //24.8.2011. WW
+private:
 
 	//WW
 	void SurfaceInterpolation(CRFProcess* m_pcs,
@@ -212,6 +225,9 @@ public:
 	std::string fct_name;                 //WW
 	//FCT
 	int conditional;                      //OK
+
+	CBoundaryCondition* _bc;
+
 	CBoundaryConditionNode();
 
 	// 25.08.2011. WW

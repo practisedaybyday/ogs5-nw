@@ -94,6 +94,8 @@ public:
 
 	// Integrate Neumman type BC
 	void FaceIntegration(double* NodeVal);
+	void DomainIntegration(double* NodeVal);
+	void CalcFaceMass(double* mass_matrix);
 
 	// Coupling
 	//

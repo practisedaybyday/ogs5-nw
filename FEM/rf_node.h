@@ -19,6 +19,8 @@
 // FEM
 #include "FEMEnums.h"
 
+class CSourceTerm;
+
 class CNodeValue
 {
 public:
@@ -56,6 +58,7 @@ public:
 	void Write(std::ostream& os = std::cout) const;
 	void Read(std::istream& is = std::cin); //WW
 	bool check_me;                        //OK
+	CSourceTerm* _st;
 
 private:
 	FiniteElement::DistributionType _node_distype;

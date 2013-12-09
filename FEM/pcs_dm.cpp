@@ -2847,15 +2847,15 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 				m_node_value->CurveIndex = m_st->CurveIndex;
 				// Each node only take once
 				exist = false;
-				for (l = 0; l < (int) st_node_value.size(); l++)
-					if (st_node_value[l]->msh_node_number
+				for (l = 0; l < (int) st_node_value[k].size(); l++)
+					if (st_node_value[k][l]->msh_node_number
 					    == m_node_value->msh_node_number)
 					{
 						exist = true;
 						break;
 					}
 				if (!exist)
-					st_node_value.push_back(m_node_value);
+					st_node_value[k].push_back(m_node_value);
 			}
 	}
 	//

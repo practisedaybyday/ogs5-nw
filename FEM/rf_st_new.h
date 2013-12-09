@@ -33,6 +33,7 @@ namespace MeshLib
 {
 class CFEMesh;
 class MeshNodesAlongPolyline;
+class CElem;
 }
 
 
@@ -60,10 +61,10 @@ public:
 
 	void EdgeIntegration(MeshLib::CFEMesh* m_msh,
 	                     const std::vector<long> & nodes_on_ply,
-	                     std::vector<double> & node_value_vector) const;
+	                     std::vector<double> & node_value_vector, std::vector<bool>* active_elements=NULL);
 	void FaceIntegration(MeshLib::CFEMesh* m_msh,
 	                     std::vector<long> & nodes_on_sfc,
-	                     std::vector<double> & node_value_vector);
+	                     std::vector<double> & node_value_vector, std::vector<bool>* active_elements=NULL);
 	void DomainIntegration(MeshLib::CFEMesh* m_msh,
 	                       const std::vector<long> & nodes_in_dom,
 	                       std::vector<double> & node_value_vector) const;
@@ -167,6 +168,28 @@ public:
 
 	std::string fname;
 
+	std::vector<size_t> transfer_h_matId;
+	std::vector<double> transfer_h_values;
+	bool is_transfer_bc;
+
+	bool has_constrain;
+	std::string constrain_var_name;
+	int constrain_var_id;
+	double constrain_value;
+	FiniteElement::ComparisonOperatorType constrain_operator;
+	FiniteElement::SourceTermType st_type;
+
+	FiniteElement::SourceTermType getSTType() const {return st_type;}
+
+	size_t getMeshNodeNumber() const
+	{
+		return msh_node_number;
+	}
+	const std::string& getMeshTypeName() const
+	{
+		return msh_type_name;
+	}
+
 private:                                          // TF, KR
 	void ReadDistributionType(std::ifstream* st_file);
 	void ReadGeoType(std::ifstream* st_file,
@@ -192,8 +215,10 @@ private:                                          // TF, KR
 	int fct_method;
 	std::string fct_name;
 
+public:
 	LinearFunctionData* dis_linear_f;     //24.8.2011. WW
 
+private:
 	bool analytical;                      //2x?
 	size_t number_of_terms;
 	size_t _max_no_terms;                 // used only once in a global in rf_st_new
@@ -231,6 +256,15 @@ private:                                          // TF, KR
 	// including climate data into source terms
 	MathLib::InverseDistanceInterpolation<GEOLIB::PointWithID*, GEOLIB::Station*> *_distances; // NB
 	std::vector<GEOLIB::Station*> _weather_stations; //NB
+
+	//NW
+	int st_id;
+public:
+	std::vector<MeshLib::CElem*> st_boundary_elements;
+	double gradient_ref_depth;
+	double gradient_ref_depth_value;
+	double gradient_ref_depth_gradient;
+	int getID();
 };
 
 class CSourceTermGroup
@@ -319,7 +353,7 @@ private:
 	void SetPolylineNodeValueVector(CSourceTerm* st,
 	                                std::vector<long> const & ply_nod_vector,
 	                                std::vector<long>& ply_nod_vector_cond,
-	                                std::vector<double>& ply_nod_val_vector) const;
+	                                std::vector<double>& ply_nod_val_vector);
 
 	// JOD
 	void SetSurfaceNodeVector(Surface* m_sfc, std::vector<long>&sfc_nod_vector);
@@ -327,12 +361,15 @@ private:
 	                                Surface* m_sfc,
 	                                std::vector<long>&sfc_nod_vector,
 	                                std::vector<double>&sfc_nod_val_vector);
-	void AreaAssembly(const CSourceTerm* const st, const std::vector<long>& ply_nod_vector_cond,
-	                  std::vector<double>&  ply_nod_val_vector) const;
+	void AreaAssembly(CSourceTerm* st, const std::vector<long>& ply_nod_vector_cond,
+	                  std::vector<double>&  ply_nod_val_vector);
 };
 
 extern CSourceTermGroup* STGetGroup(std::string pcs_type_name,std::string pcs_pv_name);
 extern std::list<CSourceTermGroup*> st_group_list;
+
+class DistributionData;
+void setDistributionData(CSourceTerm* st, DistributionData &distData);
 
 /**
  * read source term file
