@@ -6400,7 +6400,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		for (size_t is=0; is<st_node_value.size(); is++)
 		{
 			m_st=NULL;
-			if (is<st_vector.size()-1)
+			if (is<st_vector.size())
 				m_st = st_vector[is];
 			if (rank == -1)
 			{
@@ -6503,7 +6503,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				if (m_st->getGeoType () == GEOLIB::POINT) {
 					if (m_st->has_constrain && !active_elements[0])
 						continue;
-					const int k_eqs_id = m_msh->nod_vector[m_st->geo_node_number]->GetEquationIndex();
+					cnodev = st_node_value[is][0];
+					const int k_eqs_id = m_msh->nod_vector[cnodev->geo_node_number]->GetEquationIndex();
 #ifdef NEW_EQS
 					(*eqs_new->A)(k_eqs_id,k_eqs_id) += m_st->exchange_K;
 #else
