@@ -2841,7 +2841,7 @@ void GetNormalDepthNODValue(double &value, CSourceTerm* st, long msh_node)
  **************************************************************************/
 void GetNODValue(double& value, CNodeValue* cnodev, CSourceTerm* st)
 {
-
+#if 0
 #ifndef NEW_EQS                                //WW. 06.11.2008
    if (st->isCoupled())
       GetCouplingNODValue(value, st, cnodev);
@@ -2865,6 +2865,7 @@ void GetNODValue(double& value, CNodeValue* cnodev, CSourceTerm* st)
    if (cnodev->getProcessDistributionType() == FiniteElement::NORMALDEPTH)
                                                   //MB
       GetNormalDepthNODValue(value, st, cnodev->msh_node_number);
+#endif
 #endif
    //	if (cnodev->node_distype == 10) // Philip infiltration JOD
    //		GetPhilipNODValue(value, st);

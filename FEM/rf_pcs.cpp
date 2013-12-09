@@ -9797,24 +9797,27 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			//  ofstream st_out_file("st_out_file.txt",ios::app);
 			for (i = 0; i < (int) st_node_value.size(); i++)
 			{
-				cnodev = st_node_value[i];
-				// MSH-PCS
-				//m_nod = m_msh_this->nod_vector[m_st_group->group_vector[i]->msh_node_number];
-				//m_st_group->group_vector[i]->msh_node_number; //0
-				msh_node_number = cnodev->msh_node_number;
-				// MSH-PCS-CPL
-				//WW cpl_msh_nod_number = msh_node_number;
-				cpl_msh_ele_number = pcs_number; //OK:TODO
-				m_ele_cnd = m_pcs_cond->m_msh->ele_vector[cpl_msh_ele_number];
-				for (j = 0; j < m_ele_cnd->GetNodesNumber(false); j++)
-					cpl_ele_val += m_pcs_cond->GetNodeValue(
-					        m_ele_cnd->nodes_index[j], cpl_nidx);
-				cpl_ele_val /= m_ele_cnd->GetNodesNumber(false);
-				// VAL-CON
-				value = 2.314e-02 * cpl_ele_val * 1e-2;
-				//    st_out_file << value << endl;
-				// EQS-RHS
-				eqs->b[msh_node_number] += value;
+				for (size_t ii=0; ii<st_node_value[i].size(); ii++)
+				{
+					cnodev = st_node_value[i][ii];
+					// MSH-PCS
+					//m_nod = m_msh_this->nod_vector[m_st_group->group_vector[i]->msh_node_number];
+					//m_st_group->group_vector[i]->msh_node_number; //0
+					msh_node_number = cnodev->msh_node_number;
+					// MSH-PCS-CPL
+					//WW cpl_msh_nod_number = msh_node_number;
+					cpl_msh_ele_number = pcs_number; //OK:TODO
+					m_ele_cnd = m_pcs_cond->m_msh->ele_vector[cpl_msh_ele_number];
+					for (j = 0; j < m_ele_cnd->GetNodesNumber(false); j++)
+						cpl_ele_val += m_pcs_cond->GetNodeValue(
+						        m_ele_cnd->nodes_index[j], cpl_nidx);
+					cpl_ele_val /= m_ele_cnd->GetNodesNumber(false);
+					// VAL-CON
+					value = 2.314e-02 * cpl_ele_val * 1e-2;
+					//    st_out_file << value << endl;
+					// EQS-RHS
+					eqs->b[msh_node_number] += value;
+				}
 			}
 			//----------------------------------------------------------------------
 			/*
