@@ -992,9 +992,11 @@ void setDistributionData(CSourceTerm* st, DistributionData &distData)
 	distData.geo_type = st->getGeoType();
 	switch (st->getProcessDistributionType()) {
 	case FiniteElement::CONSTANT:
+	case FiniteElement::CONSTANT_NEUMANN:
 		distData.dis_parameters.push_back(st->getGeoNodeValue());
 		break;
 	case FiniteElement::LINEAR:
+	case FiniteElement::LINEAR_NEUMANN:
 		distData._DistribedBC = st->getDistribedST();
 		distData._PointsHaveDistribedBC = st->getPointsWithDistribedST();
 		break;
@@ -1010,7 +1012,7 @@ void setDistributionData(CSourceTerm* st, DistributionData &distData)
 		break;
 	}
 	distData.mesh_type_name = st->getMeshTypeName();
-	if (st->getMeshTypeName()!="NODE") {
+	if (st->getMeshTypeName()=="NODE") {
 		distData.mesh_node_id = st->getMeshNodeNumber();
 	}
 }
@@ -1116,7 +1118,10 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 				st->EdgeIntegration(m_msh, nodes_vector, node_value);
 			} else if (m_msh->GetMaxElementDim() == 3 && st->getGeoType()==GEOLIB::SURFACE) {
 				st->FaceIntegration(m_msh, nodes_vector, node_value);
-			} else {
+			} else if (st->getGeoType()==GEOLIB::GEODOMAIN
+					|| (m_msh->GetMaxElementDim() == 1 && st->getGeoType()==GEOLIB::POLYLINE)
+					|| (m_msh->GetMaxElementDim() == 2 && st->getGeoType()==GEOLIB::SURFACE)
+					) {
 				st->DomainIntegration(m_msh, nodes_vector, node_value);
 			}
 		}
