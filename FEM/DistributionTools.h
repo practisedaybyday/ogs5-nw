@@ -26,7 +26,6 @@ struct DistributionData
 	GEOLIB::GEOTYPE geo_type;
 	std::string geo_name;
 	const GEOLIB::GeoObject* geo_obj;
-	Surface* surface;
 	FiniteElement::DistributionType dis_type;
 	std::vector<double> dis_parameters;
 	LinearFunctionData* linear_f;
@@ -37,7 +36,7 @@ struct DistributionData
 	int mat_id;
 
 	DistributionData()
-	: geo_type(GEOLIB::INVALID), geo_obj(NULL), surface(NULL), dis_type(FiniteElement::INVALID_DIS_TYPE), linear_f(NULL),
+	: geo_type(GEOLIB::INVALID), geo_obj(NULL), dis_type(FiniteElement::INVALID_DIS_TYPE), linear_f(NULL),
 	  mesh_node_id(-1), mat_id(-1)
 	{}
 };

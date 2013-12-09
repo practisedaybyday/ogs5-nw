@@ -16,6 +16,7 @@ void getNodesOnDistribution(DistributionData &dis_data, MeshLib::CFEMesh &msh, s
 		std::cout << "-> looking for nodes on POINT " << dis_data.geo_name << std::endl;
 		long node_id = msh.GetNODOnPNT(static_cast<const GEOLIB::Point*>(dis_data.geo_obj));
 		nodes_vector.push_back(node_id);
+		std::cout << "-> node ID " <<node_id << " is found" << std::endl;
 	}
 	else if (dis_data.geo_type == GEOLIB::POLYLINE)
 	{
@@ -25,10 +26,10 @@ void getNodesOnDistribution(DistributionData &dis_data, MeshLib::CFEMesh &msh, s
 		{
 			GEOLIB::Polyline const* ply(static_cast<const GEOLIB::Polyline*> (dis_data.geo_obj));
 			double msh_min_edge_length = msh.getMinEdgeLength();
-			 msh.setMinEdgeLength(m_polyline->epsilon);
+			msh.setMinEdgeLength(m_polyline->epsilon);
 			std::vector<size_t> my_nodes_vector;
-			 msh.GetNODOnPLY(ply, my_nodes_vector);
-			 msh.setMinEdgeLength(msh_min_edge_length);
+			msh.GetNODOnPLY(ply, my_nodes_vector);
+			msh.setMinEdgeLength(msh_min_edge_length);
 			nodes_vector.resize(my_nodes_vector.size());
 			for (size_t k(0); k < my_nodes_vector.size(); k++)
 				nodes_vector[k] = my_nodes_vector[k];
@@ -110,7 +111,7 @@ void getNodesOnDistribution(DistributionData &dis_data, MeshLib::CFEMesh &msh, s
 		}
 		nodes_vector.assign(set_node_ids.begin(), set_node_ids.end());
 	}
-	std::cout << "-> " << nodes_vector.size() << " nodes are found" << std::endl;
+	std::cout << "-> " << nodes_vector.size() << " nodes are found on the given distribution" << std::endl;
 }
 
 void setDistributionConstant(MeshLib::CFEMesh &/*msh*/, std::vector<long> &vec_node_ids, std::vector<double> &vec_node_values, double val)
@@ -286,7 +287,7 @@ void setDistribution(DistributionData &dis_data, MeshLib::CFEMesh &msh, std::vec
 			GEOLIB::Polyline const* ply(static_cast<const GEOLIB::Polyline*> (dis_data.geo_obj));
 			setDistributionLinearPolyline(msh, vec_node_ids, vec_node_values, ply, dis_data._DistribedBC, dis_data._PointsHaveDistribedBC);
 		} else if (dis_data.geo_type==GEOLIB::SURFACE) {
-			Surface* m_surface = dis_data.surface;
+			Surface* m_surface = GEOGetSFCByName(dis_data.geo_name);
 			setDistributionLinearSurface(msh, vec_node_ids, vec_node_values, m_surface, dis_data._DistribedBC, dis_data._PointsHaveDistribedBC);
 		}
 	} else if (dis_data.dis_type == FiniteElement::GRADIENT) {
