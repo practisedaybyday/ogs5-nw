@@ -93,12 +93,15 @@ public:
 	void GetEdgeVector(double* edge_vector);  //OK
 	                                          //OK
 	void GetEdgeMidPoint(double* edge_vector);
+	size_t GetPatchIndex() const {return patch_index; }
+	void SetPatchIndex(size_t index) { patch_index = index; }
 private:
 	/**
 	 * three mesh nodes are stored in this vector,
 	 * the third is not really a mesh node, it is the middle point
 	 */
 	Math_Group::vec<CNode*> nodes_of_edges;
+	size_t patch_index;
 #ifndef OGS_ONLY_TH
 	int joint;                                // PCH
 	double* velocity;                         // PCH

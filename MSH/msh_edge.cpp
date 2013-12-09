@@ -29,6 +29,7 @@ CEdge::CEdge(size_t Index, bool quadr)
 	// Assume that each edge has three nodes, third node is middle point
 	for(size_t i = 0; i < 3; i++)
 		nodes_of_edges[i] = NULL;
+	patch_index = -1;
 #ifndef OGS_ONLY_TH
 	joint = 0;
 	velocity = NULL;

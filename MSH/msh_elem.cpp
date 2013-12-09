@@ -475,6 +475,7 @@ void CElem:: SetFace(CElem* onwer, const int Face)
 	owner = onwer;
 	size_t n = owner->GetElementFaceNodes(Face, nodeIndex_loc);
 	face_index = Face;
+	patch_index = owner->patch_index;
 	switch(owner->geo_type)
 	{
 	//case MshElemType::LINE:  // 1-D bar element
@@ -500,6 +501,7 @@ void CElem:: SetFace(CElem* onwer, const int Face)
 		break;                           // 3-D pyramid element
 	default:
 		std::cerr << "CElem::SetFace MshElemType not handled" << std::endl;
+		break;
 	}
 
 	if (nodes.Size()<n)
