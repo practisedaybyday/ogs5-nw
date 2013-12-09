@@ -815,6 +815,7 @@ void CElement::FaceIntegration(double* NodeVal)
 		default:
 			std::cerr << "CElement::FaceIntegration element type not handled" <<
 			std::endl;
+			break;
 		}
 
 		ComputeShapefct(Order);
