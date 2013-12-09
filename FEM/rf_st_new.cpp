@@ -1102,10 +1102,6 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 		//------------------------------------------------------------------
 		node_value.resize(nodes_vector.size());
 		setDistribution(distData, *m_msh, nodes_vector, node_value);
-		if (st->is_exchange_bc) {
-			for (size_t j=0; j<node_value.size(); j++)
-				node_value[j] *= st->exchange_K;
-		}
 		//------------------------------------------------------------------
 		// Calculate integrated values
 		//------------------------------------------------------------------
@@ -1133,6 +1129,13 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 			for (size_t i = 0; i < st->node_value_vectorArea.size(); i++)
 				st->node_value_vectorArea[i] = 1.0; //Element width !
 			st->EdgeIntegration(m_msh, nodes_vector, st->node_value_vectorArea);
+		}
+		//------------------------------------------------------------------
+		// Apply transfer conditions
+		//------------------------------------------------------------------
+		if (st->is_exchange_bc) {
+			for (size_t j=0; j<node_value.size(); j++)
+				node_value[j] *= st->exchange_K;
 		}
 
 
