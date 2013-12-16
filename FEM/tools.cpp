@@ -24,7 +24,7 @@
 #define noTESTTOOLS
 /* Header / Andere intern benutzte Module */
 #include "femlib.h"
-#include "intrface.h"
+
 #include "mathlib.h"
 #include "rf_fct.h"                               //NB
 #include "rf_mmp_new.h"
