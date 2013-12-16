@@ -468,6 +468,13 @@ std::ios::pos_type CSolidProperties::Read(std::ifstream* msp_file)
 			in_sd.clear();
 		}
 		//....................................................................
+		if(line_string.find("$SOLID_BULK_MODULUS") != string::npos)//WX: 04.2013
+		{
+			in_sd.str(GetLineFromFile1(msp_file));
+			in_sd >> Ks;
+			in_sd.clear();
+		}
+		//....................................................................
 		if(line_string.find("BISHOP_COEFFICIENT") != string::npos) //WX
 		{
 			in_sd.str(GetLineFromFile1(msp_file));
@@ -674,6 +681,7 @@ CSolidProperties::CSolidProperties()
 	Plasticity_type = -1;
 
 	E = Lambda = G = K = 0.0;
+	Ks = 0.;                              //WX: 04.2013
 	devS = NULL;
 	axisymmetry = false;
 	dl2 = 0.0;
