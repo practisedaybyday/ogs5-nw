@@ -262,6 +262,23 @@ double& SparseMatrixDOK::operator()(size_t i, size_t j)
 	return this->mat_row[i][j];
 }
 
+double SparseMatrixDOK::operator()(size_t i, size_t j) const
+{
+#ifdef gDEBUG
+	if(i>=nrows||j>=nrows)
+	{
+		cout<<"\n Index exceeds the size of the matrix"<<"\n";
+		abort();
+	}
+#endif
+
+	col_t::const_iterator ii = mat_row[i].find(j);
+	if (ii!=mat_row[i].end())
+		return ii->second;
+	else
+		return .0;
+}
+
 double& SparseMatrixDOK::operator()(size_t i) //const
 {
 #ifdef gDEBUG

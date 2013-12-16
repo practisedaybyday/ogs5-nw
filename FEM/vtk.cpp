@@ -7,6 +7,9 @@
 #include <sys/types.h>
 #endif
 
+#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
+#include <sstream>
+#endif
 #include "Output.h"
 #include "fem_ele_std.h"                          // for element velocity
 #include "makros.h"
@@ -38,9 +41,13 @@ bool CVTK::InitializePVD(const string &file_base_name, const string &pcs_type_na
 	//PVD
 	this->vec_dataset.clear();
 	this->pvd_file_name = file_base_name;
+#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
+        this->pvd_file_name += mrank_str;
+#endif
 	if(pcs_type_name.size() > 0)          // PCS
 		this->pvd_file_name += "_" + pcs_type_name;
 	this->pvd_file_name += ".pvd";
+	/* // Make the following lines as comments by WW
 	//VTK
 	int ibs = (int)file_base_name.find_last_of("\\");
 	int is = (int)file_base_name.find_last_of("/");
@@ -61,7 +68,10 @@ bool CVTK::InitializePVD(const string &file_base_name, const string &pcs_type_na
     }
 	if (pcs_type_name.size() > 0)        // PCS
 		this->pvd_vtk_file_name_base += "_" + pcs_type_name;
-
+    */
+	
+	//
+    this->pvd_vtk_file_name_base = file_base_name + "_" + pcs_type_name; //WW
 	this->useBinary = binary;
 
 	return true;

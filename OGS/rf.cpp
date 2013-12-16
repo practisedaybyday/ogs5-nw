@@ -59,6 +59,16 @@ void ShowSwitches ( void );
 double elapsed_time_mpi;
 // ------
 #endif
+
+
+// Use PETSc. WW
+#ifdef USE_PETSC
+#include "petscksp.h"
+#ifdef USEPETSC34
+#include "petsctime.h"
+#endif
+#endif
+
 /* Definitionen */
 
 /**************************************************************************/
@@ -163,6 +173,30 @@ int main ( int argc, char* argv[] )
 	time_ele_paral = 0.0;
 #endif
 /*---------- MPI Initialization ----------------------------------*/
+
+
+#ifdef USE_PETSC
+	int rank, r_size;
+	PetscLogDouble v1,v2;
+	char help[] = "OGS with PETSc \n";
+	//PetscInitialize(argc, argv, help);
+	PetscInitialize(&argc,&argv,(char *)0,help);
+	//kg44 quick fix to compile PETSC with version PETSCV3.4
+#ifdef USEPETSC34
+       PetscTime(&v1);
+#else
+       PetscGetTime(&v1);
+#endif
+	MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+	MPI_Comm_size(PETSC_COMM_WORLD, &r_size);
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD, "===\nUse PETSc solver");
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD, "Number of CPUs: %d, rank: %d\n", r_size, rank);
+	PetscSynchronizedFlush(PETSC_COMM_WORLD);
+#endif
+
+
+
+
 /*---------- LIS solver -----------------------------------------*/
 #ifdef LIS
 	//int argc=0;
@@ -182,6 +216,10 @@ int main ( int argc, char* argv[] )
 #if defined(USE_MPI) //WW
 	if(myrank == 0)
 #endif
+#ifdef USE_PETSC
+        if(rank == 0 )
+#endif
+
 	DisplayStartMsg();
 	/* Speicherverwaltung initialisieren */
 	if (!InitMemoryTest())
@@ -258,5 +296,20 @@ int main ( int argc, char* argv[] )
 /*--------- LIS Finalize ------------------*/
 
 	free(dateiname);
+
+#ifdef USE_PETSC
+	//kg44 quick fix to compile PETSC with version PETSCV3.4
+#ifdef USEPETSC34
+       PetscTime(&v2);
+#else
+       PetscGetTime(&v2);
+#endif
+
+
+   PetscPrintf(PETSC_COMM_WORLD,"\t\n>>Total elapsed time by using PETSC:%f s\n",v2-v1);
+
+   PetscFinalize();
+#endif
+
 	return 0;
 }

@@ -10,6 +10,14 @@
 #include <string>
 #include <vector>
 
+#if defined(USE_PETSC)
+#include "PETSC/PETScLinearSolver.h"
+#include "petscksp.h"
+#include "petscmat.h"
+typedef Mat PETSc_Mat;
+typedef Vec PETSc_Vec;
+#endif
+
 namespace MeshLib
 {
 class CFEMesh;
@@ -31,6 +39,9 @@ public:
 	virtual ~LegacyVtkInterface();
 
 	void WriteDataVTK(int number, double simulation_time, std::string baseFilename) const;
+#if defined(USE_PETSC)
+	void WriteDataVTKPETSC(int number, double simulation_time, std::string baseFilename) const;
+#endif	
 	double RoundDoubleVTK(double MyZahl);
 protected:
 	void WriteVTKHeader(std::fstream&, int, double) const;
@@ -38,7 +49,12 @@ protected:
 	void WriteVTKCellData(std::fstream&) const;
 	void WriteVTKDataArrays(std::fstream&) const;
 	void WriteELEVelocity(std::fstream &vtk_file) const;
-    
+#if defined(USE_PETSC)
+	void WriteVTKPointDataPETSC(PetscViewer) const;
+	void WriteVTKCellDataPETSC(PetscViewer) const;
+	void WriteVTKDataArraysPETSC(PetscViewer) const;
+#endif	
+	
     void printScalarArray(std::string arrayName, std::fstream &vtk_file) const;
 
 	// Copied from COutput

@@ -28,7 +28,18 @@ private:
 	long m_cols;
 	FiniteElement::ErrorMethod _pcs_nls_error_method;
 	FiniteElement::ErrorMethod _pcs_cpl_error_method;
+        std::string lsover_name;    //WW          
+        std::string pres_name;              
 public:
+  const char *getLinearSolverName() const
+  {
+    return lsover_name.c_str();
+  }
+  const char *getPreconditionerName() const
+  {
+    return pres_name.c_str();
+  }
+
 	// method
 	std::string method_name;              //OK
 	// PCS
@@ -174,7 +185,9 @@ typedef struct
 #ifdef USE_MPI                                    //WW
 extern LINEAR_SOLVER* InitVectorLinearSolver(LINEAR_SOLVER*);
 #endif
-#ifndef NEW_EQS                                   //WW 07.11.2008
+//#ifndef NEW_EQS                                   //WW 07.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC) // && !defined(other parallel solver) //WW. 04.10.2012
+
 extern LINEAR_SOLVER* InitLinearSolver(LINEAR_SOLVER*);
 //
 extern void SetLinearSolverType(LINEAR_SOLVER*,CNumerics*);

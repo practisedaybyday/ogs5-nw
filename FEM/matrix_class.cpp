@@ -15,10 +15,12 @@
 //
 #include "mathlib.h"
 #include "matrix_class.h"
-//
+
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 #ifdef NEW_EQS
 #include "msh_mesh.h"
 #include "par_ddc.h"
+#endif
 #endif
 
 namespace Math_Group
@@ -1940,7 +1942,7 @@ int CSparseMatrix::GetCRSValue(double* value)
 	int success = 1;
 	int i;
 
-//#pragma omp parallel for
+#pragma omp parallel for
 	for(i = 0; i < size_entry_column * DOF * DOF; ++i)
 		value[i] = entry[entry_index[i]];
 

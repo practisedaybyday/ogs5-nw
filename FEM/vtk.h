@@ -40,9 +40,24 @@ protected:
 	VTK_XML_DATA_TYPE type_Double;
 	int SIZE_OF_BLOCK_LENGTH_TAG;
 	bool isLittleEndian;                  //Endian(byte order)
+#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
+  int mrank;
+  std::string mrank_str;
+#endif
 
 public:
-	CVTK(void){isInitialized = false; }
+#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
+  CVTK(const int rank, std::string rank_str)
+  {
+    mrank = rank;
+    mrank_str = rank_str;
+  }
+#else
+  CVTK(void)
+  {
+    isInitialized = false; 
+  }
+#endif
 	virtual ~CVTK(void){}
 
 protected:

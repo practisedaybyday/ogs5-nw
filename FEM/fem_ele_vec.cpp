@@ -56,7 +56,10 @@ CFiniteElementVec::CFiniteElementVec(process::CRFProcessDeformation* dm_pcs,
 	Tem = 273.15 + 23.0;
 	h_pcs = NULL;
 	t_pcs = NULL;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	m_dom = NULL;
+#endif
+
 	AuxNodal2 = NULL;
 	Idx_Vel  = NULL;
 	X0 = n_jump = pr_stress = NULL;
@@ -757,8 +760,11 @@ double CFiniteElementVec::CalDensity()
 		{
 			Sw = 1.0;     // JT, should be 1.0, unless multiphase (calculate below) (if unsaturated, fluid density would be negligible... so still works)
 			if(Flow_Type > 0 && Flow_Type != 10)
+			{
+                Sw = 0.; //WW 
 				for(i = 0; i < nnodes; i++)
 					Sw += shapefct[i] * AuxNodal_S[i];
+			}
 			rho =
 			        (1. -
 			         porosity) * fabs(smat->Density()) + porosity * Sw * density_fluid;
@@ -966,19 +972,29 @@ void CFiniteElementVec::LocalAssembly(const int update)
 	SetMaterial();
 	//12.2009. WW
 	eleV_DM = ele_value_dm[MeshElement->GetIndex()];
-	if(m_dom)                             //Moved here from GlobalAssemly. 08.2010. WW
-#ifdef NEW_EQS
+
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
+	if(m_dom)
+	  {                             //Moved here from GlobalAssemly. 08.2010. WW
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+	  //TODO
+#elif NEW_EQS
 		b_rhs = m_dom->eqsH->b;
 #else
 		b_rhs = m_dom->eqs->b;
 #endif
+	  }
 	else
-#ifdef NEW_EQS
+#endif //#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
+	  {
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+	    // TODO
+#elif NEW_EQS
 		b_rhs = pcs->eqs_new->b;
 #else
-		b_rhs = pcs->eqs->b;
+		b_rhs = pcs->eqs->b;	  
 #endif
-
+	  }
 	(*RHS) = 0.0;
 	(*Stiffness) = 0.0;
 	// 07.2011. WW
@@ -988,7 +1004,7 @@ void CFiniteElementVec::LocalAssembly(const int update)
 		(*PressureC_S) = 0.0;
 	if(PressureC_S_dp)
 		(*PressureC_S_dp) = 0.0;
-
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	if(m_dom)
 	{
 		//06.2011. WW
@@ -998,8 +1014,11 @@ void CFiniteElementVec::LocalAssembly(const int update)
 			eqs_number[i] = element_nodes_dom[i];
 	}
 	else
-		for(int i = 0; i < nnodesHQ; i++)
-			eqs_number[i] =  MeshElement->nodes[i]->GetEquationIndex();
+#endif //#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
+        {
+            for(int i = 0; i < nnodesHQ; i++)
+	       eqs_number[i] =  MeshElement->nodes[i]->GetEquationIndex();
+         }
 
 	// For strain and stress extropolation all element types
 	// Number of elements associated to nodes
@@ -1121,27 +1140,27 @@ void CFiniteElementVec::LocalAssembly(const int update)
 		//Output matrices
 		if(pcs->Write_Matrix)
 		{
-			(*pcs->matrix_file) << "### Element: " << Index << std::endl;
-			(*pcs->matrix_file) << "---Stiffness matrix: " << std::endl;
+			(*pcs->matrix_file) << "### Element: " << Index << "\n";
+			(*pcs->matrix_file) << "---Stiffness matrix: " << "\n";
 			Stiffness->Write(*pcs->matrix_file);
-			(*pcs->matrix_file) << "---RHS: " << std::endl;
+			(*pcs->matrix_file) << "---RHS: " << "\n";
 			RHS->Write(*pcs->matrix_file);
 			if(PressureC)
 			{
-				(*pcs->matrix_file) << "Pressue coupling matrix: " << std::endl;
+				(*pcs->matrix_file) << "Pressue coupling matrix: " << "\n";
 				PressureC->Write(*pcs->matrix_file);
 			}
 			// 07.2011. WW
 			if(PressureC_S)
 			{
 				(*pcs->matrix_file) <<
-				"Saturation depedent pressue coupling matrix: " << std::endl;
+				"Saturation depedent pressue coupling matrix: " << "\n";
 				PressureC_S->Write(*pcs->matrix_file);
 			}
 			if(PressureC_S_dp)
 			{
 				(*pcs->matrix_file) << "Jacobi pressue coupling matrix: " <<
-				std::endl;
+				"\n";
 				PressureC_S_dp->Write(*pcs->matrix_file);
 			}
 		}
@@ -1309,6 +1328,9 @@ void CFiniteElementVec::GlobalAssembly_Stiffness()
 				// Local assembly of stiffness matrix
 				for (size_t k = 0; k < ele_dim; k++)
 				{
+#if defined(USE_PETSC) // || defined(other parallel libs)//10.3012. WW
+				  //TODO
+#else
 #ifdef NEW_EQS
 					(*A)(eqs_number[i] + NodeShift[k],eqs_number[j] +
 					     NodeShift[k])
@@ -1317,6 +1339,7 @@ void CFiniteElementVec::GlobalAssembly_Stiffness()
 					MXInc(eqs_number[i] + NodeShift[k],
 					      eqs_number[j] + NodeShift[k],
 					      (*Mass)(i, j));
+#endif
 #endif
 				}
 			}             // loop j
@@ -1332,6 +1355,10 @@ void CFiniteElementVec::GlobalAssembly_Stiffness()
 			for (size_t k = 0; k < ele_dim; k++)
 			{
 				for (size_t l = 0; l < ele_dim; l++)
+				  {
+#if defined(USE_PETSC) // || defined(other parallel libs)//10.3012. WW
+				    //TODO
+#else
 #ifdef NEW_EQS
 					(*A)(eqs_number[i] + NodeShift[k],eqs_number[j] +
 					     NodeShift[l])
@@ -1342,6 +1369,8 @@ void CFiniteElementVec::GlobalAssembly_Stiffness()
 					      eqs_number[j] + NodeShift[l],
 					      f1 * (*Stiffness)(i + k * nnodesHQ, j + l * nnodesHQ));
 #endif
+#endif
+				  }
 			}
 		}                         // loop j
 	}                                     // loop i
@@ -1461,6 +1490,10 @@ void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix* pCMatrix,
 		for (int j = 0; j < nnodes; j++)
 		{
 			for(size_t k = 0; k < ele_dim; k++)
+			  {  
+#if defined(USE_PETSC) // || defined(other parallel libs)//10.3012. WW
+			    //TODO
+#else
 #ifdef NEW_EQS
 				(*A)(NodeShift[k] + eqs_number[i], NodeShift[dim_shift] +
 				     eqs_number[j])
@@ -1470,6 +1503,8 @@ void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix* pCMatrix,
 				      NodeShift[dim_shift] + eqs_number[j], \
 				      fct * (*pCMatrix)(nnodesHQ * k + i,j));
 #endif
+#endif
+			  }
 		}
 	}
 }

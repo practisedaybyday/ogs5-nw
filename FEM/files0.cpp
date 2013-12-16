@@ -56,6 +56,7 @@
 #ifdef CHEMAPP
 #include "eqlink.h"                               //MX
 #endif
+#include "fct_mpi.h"
 /* Tools */
 //#include "mathlib.h"
 //#include "femlib.h"
@@ -195,6 +196,9 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 	FCTRead(dateiname);                   //OK
 	CURRead(dateiname);                   //OK
 	//CURWrite(); //OK
+#ifdef USE_PETSC
+	FCT_MPI::FCTCommRead(dateiname);
+#endif
 	//----------------------------------------------------------------------
 	// Read Excel/CVS data
 	//PNTPropertiesRead(dateiname);

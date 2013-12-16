@@ -29,7 +29,8 @@
 
 #include "tools.h"                                //GetLineFromFile
 /* Tools */
-#ifndef NEW_EQS                                   //WW. 06.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 06.11.2008
 #include "matrix_routines.h"
 #endif
 
@@ -2277,7 +2278,8 @@ void GetGreenAmptNODValue(double &value, CSourceTerm* m_st, long msh_node)
  01/2007 JOD Implementation
  09/2010 KR cleaned up code
  **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 06.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 06.11.2008
 void GetCouplingNODValue(double &value, CSourceTerm* st, CNodeValue* cnodev)
 {
    //	if (st->COUPLING_SWITCH == true ||
@@ -2307,8 +2309,10 @@ void GetCouplingNODValue(double &value, CSourceTerm* st, CNodeValue* cnodev)
  01/2007 JOD Implementation
  10/2008 JOD overland node shifting for soil columns, averaging automatically 4.7.10
  **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 06.11.2008
-void GetCouplingNODValuePicard(double &value, CSourceTerm* m_st,
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 06.11.2008
+void GetCouplingNODValuePicard(double &value
+	, CSourceTerm* m_st,
 CNodeValue* cnodev)
 {
 
@@ -2366,7 +2370,8 @@ CNodeValue* cnodev)
  01/2007 JOD Implementation
  10/2008 JOD node shifting for soil columns 4.7.10
  **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 06.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 06.11.2008
 void GetCouplingNODValueNewton(double &value, CSourceTerm* m_st,
 CNodeValue* cnodev)
 {
@@ -2493,7 +2498,7 @@ double GetRelativeCouplingPermeability(const CRFProcess* pcs, double head, const
  phase = 0 in mfp, soil data in mmp_vetor[1] !!!!!
  06/2007 JOD Implementation
  **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 06.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC)                                   //WW. 06.11.2008
 void GetCouplingNODValueMixed(double& value, CSourceTerm* m_st,
 CNodeValue* cnodev)
 {
@@ -2642,7 +2647,7 @@ CNodeValue* cnodev)
             * 2 / (cond0 + cond1);
       // bc_value = supplyRate * gamma * dt;
 
-      MXRandbed(bc_eqs_index, bc_value, m_pcs_this->eqs->b);
+      MXRandbed(bc_eqs_index, bc_value, m_pcs_this->getEQSPointer()->b); //getEQSPointer. WW 
       value = 0;
 
    }                                              // end Richards
@@ -2841,8 +2846,8 @@ void GetNormalDepthNODValue(double &value, CSourceTerm* st, long msh_node)
  **************************************************************************/
 void GetNODValue(double& value, CNodeValue* cnodev, CSourceTerm* st)
 {
-#if 0
-#ifndef NEW_EQS                                //WW. 06.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+  //#ifndef NEW_EQS                                //WW. 06.11.2008
    if (st->isCoupled())
       GetCouplingNODValue(value, st, cnodev);
    else if (st->isAnalytical())
@@ -2865,7 +2870,6 @@ void GetNODValue(double& value, CNodeValue* cnodev, CSourceTerm* st)
    if (cnodev->getProcessDistributionType() == FiniteElement::NORMALDEPTH)
                                                   //MB
       GetNormalDepthNODValue(value, st, cnodev->msh_node_number);
-#endif
 #endif
    //	if (cnodev->node_distype == 10) // Philip infiltration JOD
    //		GetPhilipNODValue(value, st);

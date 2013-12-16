@@ -5,10 +5,11 @@
 
 //#include "makros.h"
 //#include <iostream>
-#include "fem_ele_std.h"
 #include <cfloat>
+#include "msh_elem.h"
+#include "fem_ele_std.h"
 /* Objekte */
-//#include "rf_pcs.h" //OK_MOD"
+#include "rf_pcs.h"
 #include "femlib.h"
 #include "mathlib.h"
 //#include "matrix_class.h"
@@ -97,6 +98,16 @@ CElement::CElement(int CoordFlag, const int order)
 	RD_Flag = RD_Process;
 	PTC_Flag = PTC_FLOW_Process;
 #endif
+
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+	idxm = NULL;  //> global indices of local matrix rows 
+	idxn = NULL;  //> global indices of local matrix columns 
+	local_idx = NULL; //> local index for local assemble
+	//local_matrix = NULL; //>  local matrix 
+	//local_vec = NULL; //>  local vector  
+#endif
+
+
 }
 
 //  Destructor of class Element
@@ -113,6 +124,20 @@ CElement::~CElement()
 	dshapefct = NULL;
 	dshapefctHQ = NULL;
 	shapefctHQ = NULL;
+
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+	if(idxm)
+	  delete [] idxm;  
+	if(idxn)
+	  delete [] idxn;  
+	if (local_idx)
+	  delete [] local_idx;
+	//if (local_idx)
+	//  delete [] local_matrix;
+	//if (local_idx)
+	//  delete [] local_vec;
+#endif
+
 }
 
 /**************************************************************************
@@ -1260,6 +1285,9 @@ void CElement::SetExtropoGaussPoints(const int i)
 		}
 		break;
 	case MshElemType::LINE:
+		break;
+	case MshElemType::PYRAMID: // WW. 09.2012. WW
+		SamplePointPyramid5(i, unit);
 		break;
 	default:
 		unit[0] = unit[1] = unit[2] = 0.; //07.01.2011. WW

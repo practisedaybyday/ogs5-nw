@@ -47,6 +47,9 @@ extern void FEMDeleteAll();
 //KR extern double msh_x_mid,msh_y_mid,msh_z_mid;      //OK
 // Might be removed
 void Read_RFI(std::istream& msh_file, MeshLib::CFEMesh* m_msh);
+extern void GMSH2MSH(const char*, MeshLib::CFEMesh*);
+extern int MSHSetMaxMMPGroups();                  //OK
+extern bool MSHTestMATGroups();                   //OK
 extern void MSHAssignMATGroup2Elements(std::string);
 extern void MSHCreateQuadsFromPLY(CGLPolyline*,int);
 //OK411 extern void MSHCreatePrismsFromTriangles();

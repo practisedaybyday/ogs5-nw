@@ -19,9 +19,9 @@ set( SOURCES_FEM
 	msh_edge.cpp
 	msh_elem.cpp
 	msh_faces.cpp
-	msh_gen.cpp
+	#msh_gen.cpp
 	msh_lib.cpp
-	msh_mat.cpp
+	#msh_mat.cpp
 	msh_mesh.cpp
 	msh_node.cpp
 	MshEditor.cpp
@@ -102,6 +102,14 @@ if(OGS_USE_QT) #By WW
 else (OGS_USE_QT)
 		set( SOURCES ${SOURCES_FEM})
 endif (OGS_USE_QT)
+
+IF(OGS_FEM_PETSC OR OGS_FEM_PETSC_GEMS) #By WW
+   SET( SOURCES 
+        ${SOURCES_FEM}
+       msh_lib_ext.cpp  
+      )
+ENDIF(OGS_FEM_PETSC OR OGS_FEM_PETSC_GEMS) 
+
 
 
 include_directories(

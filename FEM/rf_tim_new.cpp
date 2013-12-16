@@ -1544,6 +1544,8 @@ bool CTimeDiscretization::isDynamicTimeFailureSuggested(CRFProcess *m_pcs)
 			}
 		}
 	}
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
+
 	else{ // Alright, this is annoying. Unfortunately we have to recalculate the node errors.
 		m_pcs->CalcIterationNODError(method,false,false);
 		for(int ii=0; ii<m_pcs->temporary_num_dof_errors; ii++){
@@ -1552,6 +1554,7 @@ bool CTimeDiscretization::isDynamicTimeFailureSuggested(CRFProcess *m_pcs)
 			}
 		}
 	}
+#endif
 	//
 	return false;
 }

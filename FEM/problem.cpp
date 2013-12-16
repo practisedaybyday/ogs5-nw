@@ -14,12 +14,12 @@
 #include <mpi.h>
 #endif
 
-#if defined(USE_MPI_REGSOIL)
-#include "par_ddc.h"
-#endif
+
 #include <cfloat>
 #include <iostream>
 #include <sstream>
+//kg44: max size for size_t (system_dependent) is set normally here
+#include <limits>
 //WW
 //
 /*------------------------------------------------------------------------*/
@@ -38,7 +38,11 @@ extern int ReadData(char*, GEOLIB::GEOObjects& geo_obj, std::string& unique_name
 #include "pcs_dm.h"
 #include "rf_pcs.h"
 //16.12.2008.WW #include "rf_apl.h"
+
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 #include "par_ddc.h"
+#endif
+
 #include "rf_react.h"
 #include "rf_st_new.h"
 #include "rf_tim_new.h"
@@ -72,6 +76,9 @@ extern int ReadData(char*, GEOLIB::GEOObjects& geo_obj, std::string& unique_name
 #endif
 #include "rf_kinreact.h"
 
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+#include "PETSC/PETScLinearSolver.h"
+#endif
 namespace process
 {class CRFProcessDeformation;
 }
@@ -96,9 +103,12 @@ Problem::Problem (char* filename) :
 	{
 		// read data
 		ReadData(filename, *_geo_obj, _geo_name);
+#if !defined(USE_PETSC)  // &&  !defined(other parallel libs)//03~04.3012. WW
 		DOMRead(filename);
+#endif
 	}
-#ifndef NEW_EQS
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+	//#ifndef NEW_EQS
 	ConfigSolverProperties();             //_new. 19.10.2008. WW
 #endif
 
@@ -224,7 +234,7 @@ Problem::Problem (char* filename) :
 		else // something is wrong and we stop execution
 		{
 		              cout << " GEMS: Error in Init_Nodes..check input " << endl;
-#ifdef USE_MPI_GEMS
+#if defined(USE_MPI_GEMS) || defined(USE_PETSC) 
             MPI_Finalize();                       //make sure MPI exits
 #endif
 
@@ -234,7 +244,7 @@ Problem::Problem (char* filename) :
 	else // something is wrong and we stop execution
 	{
 	 		              cout << " GEMS: Error in Init_RUN..check input " << endl;
-#ifdef USE_MPI_GEMS
+#if defined(USE_MPI_GEMS) || defined(USE_PETSC)
             MPI_Finalize();                       //make sure MPI exits
 #endif
 
@@ -301,6 +311,9 @@ Problem::Problem (char* filename) :
 	// DDC
 	size_t no_processes = pcs_vector.size();
 	CRFProcess* m_pcs = NULL;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
+	//----------------------------------------------------------------------
+	// DDC
 	if(dom_vector.size() > 0)
 	{
 		DOMCreate();
@@ -334,6 +347,7 @@ Problem::Problem (char* filename) :
 		}
 #endif
 	}
+#endif //#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	//----------------------------------------------------------------------
 	PCSRestart();                         //SB
 	if(transport_processes.size() > 0)    //WW. 12.12.2008
@@ -403,7 +417,7 @@ Problem::Problem (char* filename) :
 		m_tim->last_active_time = start_time; //NW
 	}
 	if(max_time_steps == 0)
-		max_time_steps = 1000000;
+		max_time_steps = std::numeric_limits<std::size_t>::max()-1; // ULONG_MAX-1;  //kg44 increased the number to maximum number (size_t)
 	current_time =  start_time;
 	if (time_ctr)
 	{
@@ -787,6 +801,11 @@ void Problem::PCSCreate()
 		pcs_vector[i]->Create();
 	}
 
+
+#if defined(USE_PETSC) // || defined(other solver libs)//03.3012. WW
+       CreateEQS_LinearSolver();  
+#endif
+
 	for (size_t i = 0; i < no_processes; i++)
 		MMP2PCSRelation(pcs_vector[i]);
 
@@ -914,9 +933,17 @@ void Problem::Euler_TimeDiscretize()
 	ScreenMessage("\n\n***Start time steps\n");
 	//
 	// Output zero time initial values
+#if defined(USE_MPI)  || defined(USE_MPI_KRC) 
+		if(myrank == 0)
+		{
+#endif
     std::cout << "Outputting initial values... " << std::flush;
 	OUTData(current_time,aktueller_zeitschritt,true);
     std::cout << "done \n";
+#if defined(USE_MPI) || defined(USE_MPI_KRC) 
+		}
+#endif
+	
 	//
 	// ------------------------------------------
 	// PERFORM TRANSIENT SIMULATION
@@ -971,8 +998,15 @@ void Problem::Euler_TimeDiscretize()
 					force_output = false;
 				else // JT: Make sure we printout on last time step
 					force_output = true;
-				//
+#if defined(USE_MPI) || defined(USE_MPI_KRC) 
+				if(myrank == 0)
+				{
+#endif
+					//
 				OUTData(current_time, aktueller_zeitschritt,force_output);
+#if defined(USE_MPI)
+				}
+#endif
 			}
 			accepted_times++;
 			for(i=0; i<(int)active_process_index.size(); i++)
@@ -1346,7 +1380,8 @@ void Problem::PostCouplingLoop()
 		}
 	}
 // WW
-#ifndef NEW_EQS                                //WW. 07.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+	//#ifndef NEW_EQS                                //WW. 07.11.2008
 	if (total_processes[1])
 		total_processes[1]->AssembleParabolicEquationRHSVector();
 #endif
@@ -2715,7 +2750,8 @@ inline double Problem::GroundWaterFlow()
 		}
 	}
 	// ELE values
-#ifndef NEW_EQS                                //WW. 07.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+	//#ifndef NEW_EQS                                //WW. 07.11.2008
 	if(m_pcs->tim_type_name.compare("STEADY") == 0) //CMCD 05/2006
 	{
 		//std::cout << "      Calculation of secondary ELE values" << std::endl;

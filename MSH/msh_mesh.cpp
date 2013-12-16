@@ -811,8 +811,12 @@ void CFEMesh::ConstructGrid()
 
 	for (size_t e = 0; e < nod_vector.size(); e++)
 	{
+#if defined(USE_PETSC) // ||defined(USE_OTHER Parallel solver lib) //WW 01.06.2012
+		Eqs2Global_NodeIndex.push_back(nod_vector[e]->GetEquationIndex());	 
+#else
 		nod_vector[e]->SetEquationIndex(e);
 		Eqs2Global_NodeIndex.push_back(nod_vector[e]->GetIndex());
+#endif
 		double const* const coords(nod_vector[e]->getData());
 		x_sum += fabs(coords[0]);
 		y_sum += fabs(coords[1]);
@@ -1159,7 +1163,9 @@ void CFEMesh::GenerateHighOrderNodes()
 	NodesNumber_Quadratic = (long) nod_vector.size();
 	for (e = NodesNumber_Linear; (size_t) e < NodesNumber_Quadratic; e++)
 	{
+#if !defined(USE_PETSC) // && !defined(USE_OTHER Parallel solver lib)
 		nod_vector[e]->SetEquationIndex(e);
+#endif
 		Eqs2Global_NodeIndex.push_back(nod_vector[e]->GetIndex());
 	}
 	for (size_t e = 0; e < e_size; e++)
@@ -1328,43 +1334,43 @@ void CFEMesh::RenumberNodesForGlobalAssembly()
    long i;
    //--------------------------------------------------------------------
    //KEYWORD
-   *fem_msh_file << "#FEM_MSH" << std::endl;
+   *fem_msh_file << "#FEM_MSH" << "\n";
    //--------------------------------------------------------------------
    // PCS
-   *fem_msh_file << " $PCS_TYPE" << std::endl;
+   *fem_msh_file << " $PCS_TYPE" << "\n";
    *fem_msh_file << "  ";
-   *fem_msh_file << pcs_name << std::endl;
+   *fem_msh_file << pcs_name << "\n";
    //--------------------------------------------------------------------
    // MAT
    if (geo_name.size() > 0)
    {
-   *fem_msh_file << " $GEO_TYPE" << std::endl;
+   *fem_msh_file << " $GEO_TYPE" << "\n";
    *fem_msh_file << "  ";
    //OK10_4310
-   *fem_msh_file << geo_type_name << " " << geo_name << std::endl;
+   *fem_msh_file << geo_type_name << " " << geo_name << "\n";
    }
    //--------------------------------------------------------------------
    // NODES
-   *fem_msh_file << " $NODES" << std::endl;
+   *fem_msh_file << " $NODES" << "\n";
    *fem_msh_file << "  ";
    //WW
-   *fem_msh_file << GetNodesNumber(false) << std::endl;
+   *fem_msh_file << GetNodesNumber(false) << "\n";
    for (i = 0; i < (long) nod_vector.size(); i++)
    nod_vector[i]->Write(*fem_msh_file);     //WW
    //--------------------------------------------------------------------
    // ELEMENTS
-   *fem_msh_file << " $ELEMENTS" << std::endl;
+   *fem_msh_file << " $ELEMENTS" << "\n";
    *fem_msh_file << "  ";
-   *fem_msh_file << (long) ele_vector.size() << std::endl;
+   *fem_msh_file << (long) ele_vector.size() << "\n";
    for (i = 0; i < (long) ele_vector.size(); i++)
    {
    ele_vector[i]->SetIndex(i);              //20.01.06 WW/TK
    ele_vector[i]->WriteIndex(*fem_msh_file);//WW
    }
    //--------------------------------------------------------------------
-   *fem_msh_file << " $LAYER" << std::endl;
+   *fem_msh_file << " $LAYER" << "\n";
    *fem_msh_file << "  ";
-   *fem_msh_file << _n_msh_layer << std::endl;
+   *fem_msh_file << _n_msh_layer << "\n";
    //--------------------------------------------------------------------
    if (append_stop)
    *fem_msh_file << "#STOP";
@@ -1378,11 +1384,35 @@ void CFEMesh::RenumberNodesForGlobalAssembly()
    Programing:
    03/2010 TF implementation based on long CFEMesh::GetNODOnPNT(CGLPoint*m_pnt)
    by OK, WW
+   05/2012 WW Find node in subdomains for over-lapped DDC
 **************************************************************************/
 long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
 {
+#if defined(USE_PETSC) // || defined (other parallel linear solver lib). //WW. 05.2012
+  long node_id = -1;
+  
+  const size_t nodes_in_usage=NodesInUsage(); 
+
+  double sqr_dist = 0.0;
+  double distmin = getMinEdgeLength()/10.0;
+  if(distmin < 0.)
+    distmin = DBL_EPSILON;
+  
+  for (size_t i = 0; i < nodes_in_usage; i++)
+    {
+      sqr_dist = MathLib::sqrDist (nod_vector[i]->getData(), pnt->getData());
+      if (sqr_dist < distmin)
+	{
+	  node_id = i;
+	  break;
+	}
+    }
+  return node_id;
+
+#else
 	MeshLib::CNode const*const node (_mesh_grid->getNearestPoint(pnt->getData()));
 	return node->GetIndex();
+#endif // END: if use_petsc
 
 //	const size_t nodes_in_usage(static_cast<size_t> (NodesInUsage()));
 //	double sqr_dist(0.0), distmin(MathLib::sqrDist (nod_vector[0]->getData(), pnt->getData()));
@@ -1637,8 +1667,11 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 	std::cout << "[CFEMesh::GetNODOnSFC] search with new algorithm ... " << std::flush;
 	begin = clock();
 #endif
+#if defined(USE_PETSC) // || defined (other parallel linear solver lib). //WW. 05.2012
+  	const size_t nodes_in_usage= NodesInUsagePETSC(); //always use local nodes only ..
+#else
 	const size_t nodes_in_usage((size_t) NodesInUsage());
-
+#endif
 	for (size_t j(0); j < nodes_in_usage; j++) {
 		if (sfc->isPntInBV((nod_vector[j])->getData(), _search_length / 2.0)) {
 			if (sfc->isPntInSfc((nod_vector[j])->getData(), _search_length / 2.0)) {
@@ -1720,7 +1753,12 @@ void CFEMesh::GetNODOnSFC_PLY(Surface const* m_sfc,
 		}
 		//....................................................................
 		// Check nodes by comparing area
-		for (j = 0; j < NodesInUsage(); j++)
+#if defined(USE_PETSC) // || defined (other parallel linear solver lib). //WW. 05.2012
+		const size_t nn =  NodesInUsagePETSC();
+#else
+		const size_t nn =  NodesInUsage();
+#endif
+		for (j = 0; j < nn; j++)
 		{
 			Area2 = 0.0;
 			for (i = 0; i < nPointsPly; i++)
@@ -2527,7 +2565,8 @@ void CFEMesh::CreateLayerPolylines(CGLPolyline* m_ply)
 **************************************************************************/
 void CFEMesh::GetELEOnPLY(const GEOLIB::Polyline* ply, std::vector<size_t>& ele_vector_ply, bool With1DElements)
 {
-	Math_Group::vec<CEdge*> ele_edges_vector(15);
+	//WW EEMath_Group::vec<CEdge*> ele_edges_vector(15);
+	int loc_edge_nidx[3];
 	Math_Group::vec<CNode*> edge_nodes(3);
 
 	std::vector<size_t> nodes_near_ply;
@@ -2541,29 +2580,33 @@ void CFEMesh::GetELEOnPLY(const GEOLIB::Polyline* ply, std::vector<size_t>& ele_
 	// loop over all elements
 	for (size_t i = 0; i < ele_vector.size(); i++)
 	{
-		ele_vector[i]->GetEdges (ele_edges_vector);
-		size_t n_edges (ele_vector[i]->GetEdgesNumber());
+        CElem *elem = ele_vector[i];	//WW
+		// WW ele_vector[i]->GetEdges (ele_edges_vector);
+		size_t n_edges = elem->GetEdgesNumber();
 		// Add 1D Elements for models with mixed 1D/2D Elements				BG, 11/2011
-		if ((ele_vector[i]->GetDimension() == 1) && (With1DElements == true))
+		if ((elem->GetDimension() == 1) && (With1DElements == true))
 		{
 			for (size_t k = 0; k < nodes_near_ply.size(); k++)
 			{
-				if ((static_cast<size_t>(ele_vector[i]->GetNodeIndex(0)) == nodes_near_ply[k])
-								|| (static_cast<size_t>(ele_vector[i]->GetNodeIndex(1)) == nodes_near_ply[k]))
-					ele_vector_ply.push_back(ele_vector[i]->GetIndex());
+				if ((static_cast<size_t>(elem->GetNodeIndex(0)) == nodes_near_ply[k])
+								|| (static_cast<size_t>(elem->GetNodeIndex(1)) == nodes_near_ply[k]))
+					ele_vector_ply.push_back(elem->GetIndex());
 			}
 		}
 		// loop over all edges of the i-th element
 		for (size_t j = 0; j < n_edges; j++)
 		{
-			ele_edges_vector[j]->GetNodes(edge_nodes);
+			//WWele_edges_vector[j]->GetNodes(edge_nodes);
+			elem->GetLocalIndicesOfEdgeNodes(j, loc_edge_nidx); //WW
 			size_t selected (0);
 			// get all elements having an edge in common with ply
 			for (size_t k = 0; k < nodes_near_ply.size(); k++)
 			{
-				if (edge_nodes[0]->GetIndex() == nodes_near_ply[k])
+				//if (edge_nodes[0]->GetIndex() == nodes_near_ply[k])
+				if (elem->GetNodeIndex(loc_edge_nidx[0]) == nodes_near_ply[k])
 					selected++;
-				if (edge_nodes[1]->GetIndex() == nodes_near_ply[k])
+				//if (edge_nodes[1]->GetIndex() == nodes_near_ply[k])
+				if (elem->GetNodeIndex(loc_edge_nidx[1]) == nodes_near_ply[k])
 					selected++;
 			}
 			if (selected == 2)
@@ -4219,6 +4262,24 @@ void CFEMesh::HydroSysMeshGenerator(string fname,
 	gs_out.close();
 }
 #endif
+
+// 09. 2012 WW
+/// Free the memory occupied by edges
+void CFEMesh::FreeEdgeMemory()
+{
+   while(edge_vector.size())
+   {
+      delete edge_vector[edge_vector.size() -1 ];
+	  edge_vector[edge_vector.size() -1 ] = NULL;
+	  edge_vector.pop_back();
+   }
+
+   const size_t ne = ele_vector.size();
+   for(size_t i=0; i<ne; i++)
+   {
+      ele_vector[i]->FreeEdgeMemory();
+   }
+}
 }
 
 // namespace MeshLib

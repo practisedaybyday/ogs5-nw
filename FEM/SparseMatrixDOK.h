@@ -53,6 +53,11 @@ public:
 	SparseMatrixDOK();
 	explicit SparseMatrixDOK(const SparseMatrixDOK& m);
 
+	const mat_t& GetRawData() const
+	{
+		return mat_row;
+	}
+
 	mat_t& GetRawData()
 	{
 		return mat_row;
@@ -78,6 +83,7 @@ public:
 
 	// Access to members
 	double& operator()(size_t i, size_t j); //const;
+	double operator() (size_t i, size_t j) const; //const;
 	double& operator()(size_t i); //const;
 
 	size_t Rows() const

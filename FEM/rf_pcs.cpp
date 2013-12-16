@@ -97,9 +97,14 @@ REACT_GEM* m_vec_GEM;
 REACT_BRNS* m_vec_BRNS;
 #endif
 
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+#include "PETSC/PETScLinearSolver.h"
 // New EQS
-#ifdef NEW_EQS
+#elif NEW_EQS
 #include "equation_class.h"
+#else
+#include "solver.h"                               // ConfigRenumberProperties
+#include "matrix_routines.h"
 #endif
 #include "geochemcalc.h"
 #include "problem.h"
@@ -112,6 +117,7 @@ REACT_BRNS* m_vec_BRNS;
 
 #include "StringTools.h"
 #include "DistributionTools.h"
+#include "fct_mpi.h"
 
 using namespace std;
 using namespace MeshLib;
@@ -235,7 +241,15 @@ CRFProcess::CRFProcess(void) :
 	for(size_t i=0; i<DOF_NUMBER_MAX; i++)
 		pcs_number_mass.push_back(-1);		// JT2012 (allow DOF_NUMBER_MAX potential components)
 	//
-#ifndef NEW_EQS                                //WW 07.11.2008
+#if defined(USE_PETSC) // || defined(using other parallel scheme)//03.3012. WW
+        eqs_new = NULL;
+	MPI_Comm_rank(PETSC_COMM_WORLD, &myrank);
+	MPI_Comm_size(PETSC_COMM_WORLD, &mysize);
+
+#elif NEW_EQS                                //WW 07.11.2008
+	eqs_new = NULL;
+	configured_in_nonlinearloop = false;
+#else
 	eqs = NULL;                           //WW
 #endif
 	dof = 1;                              //WW
@@ -319,7 +333,7 @@ CRFProcess::CRFProcess(void) :
 	ML_Cap = 0;                           // 23.01.2009 PCH
 	PartialPS = 0;                        // 16.02 2009 PCH
 
-#ifdef USE_MPI                                 //WW
+#if defined( USE_MPI) || defined( USE_PETSC)     //WW
 	cpu_time_assembly = 0;
 #endif
 	// New equation and solver WW
@@ -333,10 +347,15 @@ CRFProcess::CRFProcess(void) :
 	this->Gl_Vec = NULL;                  //NW
 	this->Gl_Vec1 = NULL;                 //NW
 	this->FCT_AFlux = NULL;               //NW
+#ifdef USE_PETSC
+	this->FCT_K = NULL;
+	this->FCT_d = NULL;
+#endif
 	ExcavMaterialGroup = -1;              //01.2010 WX
 	PCS_ExcavState = -1;                  //WX
 
 	isRSM = false; //WW
+	eqs_x = NULL;
 	write_leqs = false; //NW
 }
 
@@ -469,7 +488,17 @@ CRFProcess::~CRFProcess(void)
 		this->Gl_Vec = NULL;
 		this->Gl_Vec1 = NULL;
 		this->FCT_AFlux = NULL;
+#ifdef USE_PETSC
+		delete this->FCT_K;
+		delete this->FCT_d;
+		this->FCT_K = NULL;
+		this->FCT_d = NULL;
+#endif
 	}
+#if defined(USE_PETSC) // || defined(other parallel libs)//10.3012. WW
+	delete eqs_new;
+        eqs_new = NULL;
+#endif
 }
 
 /**************************************************************************
@@ -629,25 +658,54 @@ void CRFProcess::Create()
 	if (m_num->fct_method > 0)            //NW
 	{
 		//Memory_Type = 1;
+#ifdef USE_PETSC
+		long gl_size = m_msh->getNumNodesGlobal();
+		this->FCT_K = new SparseMatrixDOK(gl_size, gl_size);
+		this->FCT_d = new SparseMatrixDOK(gl_size, gl_size);
+#else
 		long gl_size = m_msh->GetNodesNumber(false);
+#endif
 		this->FCT_AFlux = new SparseMatrixDOK(gl_size, gl_size);
-		this->Gl_ML = new Vec(gl_size);
-		this->Gl_Vec = new Vec(gl_size);
-		this->Gl_Vec1 = new Vec(gl_size);
+		this->Gl_ML = new Math_Group::Vec(gl_size);
+		this->Gl_Vec = new Math_Group::Vec(gl_size);
+		this->Gl_Vec1 = new Math_Group::Vec(gl_size);
 	}
 	//----------------------------------------------------------------------------
 	// EQS - create equation system
 	//WW CreateEQS();
 	std::cout << "->Create EQS" << '\n';
-#ifdef NEW_EQS
+#if !defined(USE_PETSC) // && !defined(other parallel solver lib). 04.2012 WW
+#if defined(NEW_EQS) 
 	size_t k;
 	for(k = 0; k < fem_msh_vector.size(); k++)
 		if(m_msh == fem_msh_vector[k])
 			break;
-	if(type == 4 || (type / 10 == 4))     // 03.08.2010. WW
-		eqs_new = EQS_Vector[2 * k + 1];
-	else
-		eqs_new = EQS_Vector[2 * k];
+//WW 02.2013. Pardiso
+   int eqs_num = 3;
+#ifdef USE_MPI
+   eqs_num = 2;
+#endif
+
+   //if(type==4||type==41)
+   //   eqs_new = EQS_Vector[2*k+1];
+   if(type == 4 || (type / 10 == 4))     // 03.08.2010. WW
+     eqs_new = EQS_Vector[eqs_num * k + 1];
+   else
+   {
+     //eqs_new = EQS_Vector[2*k];
+#ifdef USE_MPI
+     eqs_new = EQS_Vector[eqs_num * k];
+#else
+     if(getProcessType() == FiniteElement::MULTI_PHASE_FLOW || getProcessType() == FiniteElement::PS_GLOBAL)
+	 {
+	   eqs_new = EQS_Vector[eqs_num * k + 2 ];
+     }
+	 else
+	 {
+	   eqs_new = EQS_Vector[eqs_num * k];
+	 }
+#endif
+   } //WW 02.2013. Pardiso
 #else
 	//WW  phase=1;
 	//CRFProcess *m_pcs = NULL;                      //
@@ -705,6 +763,7 @@ void CRFProcess::Create()
 		size_unknowns = eqs->dim; //WW
 	}
 #endif                                         // If NEW_EQS
+#endif //END: if not use PETSC
 	// Set solver properties: EQS<->SOL
 	// Internen Speicher allokieren
 	// Speicher initialisieren
@@ -845,12 +904,12 @@ void CRFProcess::Create()
 		nod_val_name_vector.push_back(pcs_secondary_function_name[i]);
 	//
 	long m_msh_nod_vector_size = m_msh->NodesNumber_Quadratic;
-	for (long j = 0; j < m_msh_nod_vector_size; j++)
+	for (long j = 0; j < number_of_nvals; j++) // Swap number_of_nvals and mesh size. WW 19.12.2012
 	{
-		nod_values = new double[number_of_nvals];
-		for (int i = 0; i < number_of_nvals; i++)
-			nod_values[i] = 0.0;
-		nod_val_vector.push_back(nod_values);
+           nod_values = new double[m_msh_nod_vector_size];
+           for (int i = 0; i < m_msh_nod_vector_size; i++)
+              nod_values[i] = 0.0;
+           nod_val_vector.push_back(nod_values);
 	}
 	// Create element values - PCH
 	int number_of_evals = 2 * pcs_number_of_evals; //PCH, increase memory
@@ -941,7 +1000,9 @@ void CRFProcess::Create()
 		for(int i = 0; i < pcs_number_of_primary_nvals; i++)
 			p_var_index[i] = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
 
-#ifdef NEW_EQS
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+	size_unknowns =  m_msh->NodesNumber_Quadratic * pcs_number_of_primary_nvals;
+#elif NEW_EQS
 	/// For JFNK. 01.10.2010. WW
 #ifdef JFNK_H2M
 	if(m_num->nls_method == 2)
@@ -952,11 +1013,13 @@ void CRFProcess::Create()
 	}
 	else
 #endif
+	  {
 #ifdef USE_MPI
 	size_unknowns = eqs_new->size_global;
 #else
 	size_unknowns = eqs_new->A->Dim();
 #endif
+	  }
 #endif
 }
 
@@ -1120,10 +1183,27 @@ void CRFProcess:: WriteSolution()
 	//kg44 write out only between nwrite_restart timesteps
 	if ( ( aktueller_zeitschritt % nwrite_restart  ) > 0 )
 		return;
-
+	
+#if defined(USE_PETSC)  //|| defined(other parallel libs)//03.3012. WW
+	string rank_str;
+    	int rank , msize;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &msize);
+	stringstream ss (stringstream::in | stringstream::out);
+	ss.clear(); 
+	ss.str("");
+	ss << rank;
+	rank_str = ss.str();
+	ss.clear();
 	std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
 	std::string m_file_name = FileName + "_" + pcs_type_name + "_" +
-	                          pcs_primary_function_name[0] + "_primary_value" + number2str(aktueller_zeitschritt) + ".asc";
+	                          pcs_primary_function_name[0] + "_primary_value"+rank_str+"_" + number2str(aktueller_zeitschritt) + ".asc";
+
+#else
+	std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
+	std::string m_file_name = FileName + "_" + pcs_type_name + "_" +
+	                          pcs_primary_function_name[0] + "_primary_value.asc";
+#endif				  
 	std::ofstream os ( m_file_name.c_str(), ios::trunc | ios::out );
 	if (!os.good() )
 	{
@@ -1162,9 +1242,27 @@ void CRFProcess:: WriteSolution()
 **************************************************************************/
 void CRFProcess:: ReadSolution()
 {
+ 	
+#if defined(USE_PETSC)  //|| defined(other parallel libs)//03.3012. WW
+        string rank_str;
+	int rank , msize;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &msize);
+	stringstream ss (stringstream::in | stringstream::out);
+	ss.clear(); 
+	ss.str("");
+	ss << rank;
+	rank_str = ss.str();
+	ss.clear();
+	std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
+	std::string m_file_name = FileName + "_" + pcs_type_name + "_" +
+	                          pcs_primary_function_name[0] + "_primary_value_"+rank_str+".asc";
+
+#else 
 	std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
 	std::string m_file_name = FileName + "_" + pcs_type_name + "_" +
 	                          pcs_primary_function_name[0] + "_primary_value.asc";
+#endif
 	std::ifstream is ( m_file_name.c_str(), ios::in );
 	if (!is.good())
 	{
@@ -1372,6 +1470,7 @@ void PCSDestroyAllProcesses(void)
 	long i;
 	int j;
 	//----------------------------------------------------------------------
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	// SOLver
 #ifdef NEW_EQS                                 //WW
 #if defined(USE_MPI)
@@ -1406,6 +1505,10 @@ void PCSDestroyAllProcesses(void)
 	}
 	PCS_Solver.clear();                   //WW
 #endif
+	//------
+#endif //#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+
+
 	//----------------------------------------------------------------------
 	// PCS
 	for(j = 0; j < (int)pcs_vector.size(); j++)
@@ -1444,6 +1547,7 @@ void PCSDestroyAllProcesses(void)
 	//----------------------------------------------------------------------
 
 	// DOM WW
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 #if defined(USE_MPI)
 	//if(myrank==0)
 	dom_vector[myrank]->PrintEQS_CPUtime(); //WW
@@ -1455,6 +1559,7 @@ void PCSDestroyAllProcesses(void)
 		dom_vector[i] = NULL;
 	}
 	dom_vector.clear();
+#endif //#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	//----------------------------------------------------------------------
 	// ELE
 	for(i = 0; i < (long)ele_val_vector.size(); i++)
@@ -3617,7 +3722,8 @@ void CRFProcess::ConfigPTC_FLOW()
 //////////////////////////////////////////////////////////////////////////
 // Configuration NOD
 //////////////////////////////////////////////////////////////////////////
-#ifndef NEW_EQS                                   //WW. 07.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 07.11.2008
 /*************************************************************************
    ROCKFLOW - Function:
    Task: Config node values
@@ -3966,15 +4072,17 @@ double CRFProcess::Execute()
 	double pcs_error, nl_theta, val_n;
 	long j, k, nshift, g_nnodes;          //07.01.07 WW
 	double* eqs_x = NULL;
-	double implicit_lim = 1.0 - DBL_EPSILON;
 
 	pcs_error = DBL_MAX;
 	g_nnodes = m_msh->GetNodesNumber(false);
 
+#if !defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+       double implicit_lim = 1.0 - DBL_EPSILON;
 #ifdef NEW_EQS
 	eqs_x = eqs_new->x;
 #else
 	eqs_x = eqs->x;
+#endif
 #endif
 
 #ifdef USE_MPI                                 //WW
@@ -3982,7 +4090,9 @@ double CRFProcess::Execute()
 	CPARDomain* dom = dom_vector[myrank];
 #endif
 
-#ifdef NEW_EQS                                 //WW
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+	eqs_new->Initialize(); 
+#elif NEW_EQS                                 //WW
 	if(!configured_in_nonlinearloop)
 #if defined(USE_MPI)
 	{
@@ -4032,24 +4142,29 @@ double CRFProcess::Execute()
 	// If not Newton-Raphson method. 20.07.2011. WW
 	if(m_num->nls_method < 1 )
 	{
-		for (ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+	   InitializeRHS_with_u0(); 
+#else
+		for (int ii = 0; ii < pcs_number_of_primary_nvals; ii++)
 		{
 			nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+	       long const ish = ii * g_nnodes;
 			for (j = 0; j < g_nnodes; j++) //WW
-				eqs_x[j + ii*g_nnodes] = GetNodeValue(m_msh->Eqs2Global_NodeIndex[j], nidx1);
+				eqs_x[j + ish] = GetNodeValue(m_msh->Eqs2Global_NodeIndex[j], nidx1);
 		}
+#endif
 	}
 
 	//---------------------------------------------------------------------
 	// Assembly
-#ifdef USE_MPI                                 //WW
+#if defined( USE_MPI) || defined( USE_PETSC)         //WW
 	clock_t cpu_time = 0;                 //WW
 	cpu_time = -clock();
 	if(myrank == 0)
 #endif
 	cout << "      Assembling equation system..." << endl;
 	GlobalAssembly();
-#ifdef USE_MPI
+#if defined( USE_MPI) || defined( USE_PETSC)         //WW
 	cpu_time += clock();
 	cpu_time_assembly += cpu_time;
 	if(myrank == 0)
@@ -4061,7 +4176,11 @@ double CRFProcess::Execute()
 #endif
 	//----------------------------------------------------------------------
 	// Execute linear solver
-#ifdef NEW_EQS                                 //WW
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+		eqs_new->Solver();
+		//TEST 	double x_norm = eqs_new->GetVecNormX();
+		eqs_new->MappingSolution();
+#elif NEW_EQS                                 //WW
 #if defined(USE_MPI)
 	//21.12.2007
 	iter_lin = dom->eqs->Solver(eqs_new->x, global_eqs_dim);
@@ -4083,27 +4202,41 @@ double CRFProcess::Execute()
 	//----------------------------------------------------------------------
 	if(m_num->fct_method > 0)      //NW
 	{
-		pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false); // JT
-#ifdef USE_MPI
+#if defined(USE_PETSC)
+        eqs_x = eqs_new->GetGlobalSolution();
+		pcs_error = CalcIterationNODError(1);
+#else
+        pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false); // JT
+#endif
+
+#if defined(USE_MPI) || defined(USE_PETSC)
 		if(myrank == 0)
 		{
 #endif
-        cout << "    Relative PCS error: " << pcs_error << endl;
-        cout << "    Start FCT calculation" << endl;
-#ifdef USE_MPI
+        cout << "    Relative PCS error: " << pcs_error << "\n";
+        cout << "    Start FCT calculation" << "\n";
+#if defined(USE_MPI) || defined(USE_PETSC)
 		}
 #endif
 		// Set u^H: use the solution as the higher-order solution
-		for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+		for(int ii = 0; ii < pcs_number_of_primary_nvals; ii++)
 		{
 			nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
 			for(j = 0; j < g_nnodes; j++){
-				k = m_msh->Eqs2Global_NodeIndex[j];
-				SetNodeValue(k,nidx1,eqs_x[j + ii*g_nnodes]);
+#if defined(USE_PETSC)
+                k =  m_msh->Eqs2Global_NodeIndex[j] * pcs_number_of_primary_nvals + ii;
+	            SetNodeValue(j, nidx1, eqs_x[k]);
+#else
+                k = m_msh->Eqs2Global_NodeIndex[j];
+                SetNodeValue(k,nidx1,eqs_x[j + ii*g_nnodes]);
+#endif
 			}
 		}
 
 		// Initialize the algebra system
+#if defined(USE_PETSC)
+	    eqs_new->Initialize();
+#else
 #ifdef NEW_EQS                              //WW
 		if(!configured_in_nonlinearloop)
 #if defined(USE_MPI)
@@ -4114,9 +4247,11 @@ double CRFProcess::Execute()
 #else
 		SetZeroLinearSolver(eqs);
 #endif
+#endif
 
 		// Set initial guess
-		for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+#if !defined(USE_PETSC)
+		for(int ii = 0; ii < pcs_number_of_primary_nvals; ii++)
 		{
 			nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
 			for(j = 0; j < g_nnodes; j++){
@@ -4124,16 +4259,17 @@ double CRFProcess::Execute()
 				eqs_x[j + ii*g_nnodes] = GetNodeValue(k,nidx1);
 			}
 		}
+#endif
 
 		// Assembly
-#ifdef USE_MPI                              //WW
+#if defined(USE_MPI) || defined(USE_PETSC)
 		clock_t cpu_time = 0;     //WW
 		cpu_time = -clock();
 #endif
 		femFCTmode = true;
 		GlobalAssembly();
 		femFCTmode = false;
-#ifdef USE_MPI
+#if defined(USE_MPI) || defined(USE_PETSC)
 		cpu_time += clock();
 		cpu_time_assembly += cpu_time;
 #endif
@@ -4143,6 +4279,13 @@ double CRFProcess::Execute()
 		string eqs_name = convertProcessTypeToString(this->getProcessType())  + "_EQS" + number2str(aktueller_zeitschritt) +  ".txt";
 		MXDumpGLS((char*)eqs_name.c_str(),1,eqs->b,eqs->x);
 #endif
+
+#if defined(USE_PETSC)
+//		std::string eqs_output_file = FileName + number2str(aktueller_zeitschritt);
+//		eqs_new->EQSV_Viewer(eqs_output_file);
+		eqs_new->Solver();
+		eqs_new->MappingSolution();
+#else
 #ifdef NEW_EQS                              //WW
 #if defined(USE_MPI)
 		//21.12.2007
@@ -4152,16 +4295,17 @@ double CRFProcess::Execute()
 		eqs_new->Solver(this->m_num); //NW
 #else
 		eqs_new->Solver();
-
-		string fname = FileName + "_equation_results.txt";
-		ofstream dum(fname.c_str(), ios::out | ios::trunc);
-		eqs_new->Write(dum);
-		exit(1);
+// kg44 the next lines are for debug?
+//		string fname = FileName + "_equation_results.txt";
+//		ofstream dum(fname.c_str(), ios::out | ios::trunc);
+//		eqs_new->Write(dum);
+//		exit(1);
 #endif
 #endif
 #else // ifdef NEW_EQS
 		ExecuteLinearSolver();
 #endif
+#endif //USE_PETSC
 	}
 	//----------------------------------------------------------------------
 	// END OF FLUX CORRECTED TRANSPORT
@@ -4172,6 +4316,59 @@ double CRFProcess::Execute()
 	// ERROR CALCULATION
 	//----------------------------------------------------------------------
 
+    //
+    // Save the solution of the prevoius iteration of the nonlinear step for 
+    // the automatic time stepping. Modified for PETsc solver. 03.07.2012. WW
+    if(Tim->GetPITimeStepCrtlType() > 0)
+    {
+       double *x_k = NULL;
+       bool get_buffer_u_k = true;
+       x_k= _problem->GetBufferArray(get_buffer_u_k);
+       for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+       {
+          nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;		  
+#if !defined(USE_PETSC) // && !defined(other parallel libs)
+          const long ish = i * g_nnodes;
+#endif
+          for (j = 0; j < g_nnodes; j++)
+          {
+#if defined(USE_PETSC) // || defined(other parallel libs)
+             x_k[j*pcs_number_of_primary_nvals + i] =  GetNodeValue(j, nidx1); 
+#else
+	         x_k[j + ish] = GetNodeValue(m_msh->Eqs2Global_NodeIndex[j], nidx1);
+#endif
+          }
+       }
+    }
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+	//PICARD
+	//----------------------------------------------------------------------
+	// Error calculation
+	//----------------------------------------------------------------------
+	if (m_num->nls_method_name.find("PICARD") != string::npos)
+	{
+		eqs_x = eqs_new->GetGlobalSolution();
+		//......................................................................
+		pcs_error = CalcIterationNODError(1); //OK4105//WW4117
+		if(myrank == 0)
+		cout << "      PCS error: " << pcs_error << "\n";
+
+
+		//--------------------------------------------------------------------
+		// 7 Store solution vector in model node values table
+		//....................................................................
+		for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+		{
+		  nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;		  
+		  for (j = 0; j < g_nnodes; j++)
+		    {
+		      k =  m_msh->Eqs2Global_NodeIndex[j] * pcs_number_of_primary_nvals + i;
+		      SetNodeValue(j, nidx1, (1.-nl_theta )* GetNodeValue(j, nidx1) + nl_theta * eqs_x[k]);
+		    }
+		}
+				
+	}                                     // END PICARD
+#else
     // JT: Coupling error was wrong. Now ok.
     if(iter_nlin > 0){	// Just getting NL error
 	  pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false);     //OK4105//WW4117//JT
@@ -4189,17 +4386,20 @@ double CRFProcess::Execute()
 	{
 	    if(pcs_error < 1.0) // JT: Then the solution has converged, take the final value
 			nl_theta = 1.0;
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+		eqs_x = eqs_new->GetGlobalSolution();
+#endif
 	    //
 		if(nl_theta > implicit_lim) // This is most common. So go for the lesser calculations.
 		{
-			for (ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+			for (int ii = 0; ii < pcs_number_of_primary_nvals; ii++)
 			{
 			   nidx1  = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
-			   nshift = ii*g_nnodes;
+			   const long nshift = ii*g_nnodes;
 			   for(j=0; j<g_nnodes; j++)
 			   {
 				  k = m_msh->Eqs2Global_NodeIndex[j];
-				  val_n = GetNodeValue(k, nidx1);       //03.04.2009. WW
+				  const double val_n = GetNodeValue(k, nidx1);       //03.04.2009. WW
 				  SetNodeValue(k, nidx1, eqs_x[j + nshift]);
 				  eqs_x[j + nshift] = val_n;      // Used for time stepping. 03.04.2009. WW
 			   }
@@ -4207,14 +4407,14 @@ double CRFProcess::Execute()
 		}
 		else
 		{
-			for (ii = 0; ii < pcs_number_of_primary_nvals; ii++)
+			for (int ii = 0; ii < pcs_number_of_primary_nvals; ii++)
 			{
 			   nidx1  = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
-			   nshift = ii*g_nnodes;
+			   const long nshift = ii*g_nnodes;
 			   for(j=0; j<g_nnodes; j++)
 			   {
 				  k = m_msh->Eqs2Global_NodeIndex[j];
-				  val_n = GetNodeValue(k, nidx1);       //03.04.2009. WW
+				  const double val_n = GetNodeValue(k, nidx1);       //03.04.2009. WW
 				  SetNodeValue(k, nidx1, (1.0-nl_theta)*val_n + nl_theta*eqs_x[j + nshift]);
 				  eqs_x[j + nshift] = val_n;      // Used for time stepping. 03.04.2009. WW
 			   }
@@ -4224,6 +4424,7 @@ double CRFProcess::Execute()
 	//----------------------------------------------------------------------
 	// END OF PICARD
 	//----------------------------------------------------------------------
+#endif
 
 #ifdef NEW_EQS                                 //WW
 	if(!configured_in_nonlinearloop)
@@ -4248,9 +4449,9 @@ double CRFProcess::Execute()
 void CRFProcess::CopyU_n()
 {
 	int i, nidx1;
-	long g_nnodes, j, k;
+	long g_nnodes, j;
 
-	double* temp_v = _problem->GetBufferArray(); // 18.08.2011. WW
+    double *temp_v = _problem->GetBufferArray(); 
 
 	for(i = 0; i < pcs_number_of_primary_nvals; i++)
 	{
@@ -4265,13 +4466,20 @@ void CRFProcess::CopyU_n()
 			nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
 			g_nnodes = m_msh->GetNodesNumber(false); //DOF>1, WW
 		}
-		for(j = 0; j < g_nnodes; j++)
-		{
-			k = m_msh->Eqs2Global_NodeIndex[j];
-			temp_v[j + i * g_nnodes] = GetNodeValue(k,nidx1);
+#if !defined(USE_PETSC) // && !defined(other parallel libs)
+        const long ish = i * g_nnodes; 
+#endif
+        for(j = 0; j < g_nnodes; j++)
+        {
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+            temp_v[j* pcs_number_of_primary_nvals + i] = GetNodeValue(j,nidx1);
+#else
+            temp_v[j + ish] = GetNodeValue(m_msh->Eqs2Global_NodeIndex[j],nidx1);
+#endif
 		}
 	}
 }
+
 
 /*************************************************************************
    ROCKFLOW - Function:
@@ -4313,10 +4521,10 @@ void CRFProcess::CalculateElementMatrices(void)
    Programming:
    04/2010 NW Implementation
    last modified:
+   05/2013 NW Support PETSc parallelization
  **************************************************************************/
 void CRFProcess::AddFCT_CorrectionVector()
 {
-	size_t i,j;
 	int idx0 = 0;
 	int idx1 = idx0 + 1;
 	const double theta = this->m_num->ls_theta;
@@ -4325,7 +4533,7 @@ void CRFProcess::AddFCT_CorrectionVector()
 	SparseMatrixDOK::col_t* col;
 	SparseMatrixDOK::mat_t::const_iterator ii;
 	SparseMatrixDOK::col_t::const_iterator jj;
-	Vec* ML = this->Gl_ML;
+	Math_Group::Vec* ML = this->Gl_ML;
 #if defined(NEW_EQS)
 	CSparseMatrix* A = NULL;              //WW
 	//if(m_dom)
@@ -4334,10 +4542,16 @@ void CRFProcess::AddFCT_CorrectionVector()
 	A = this->eqs_new->A;
 #endif
 
+#ifdef USE_PETSC
+	// gather K
+	FCT_MPI::gatherK(FCT_MPI::ct, *FCT_K);
+	// compute D
+	FCT_MPI::computeD(m_msh, *FCT_K, *FCT_d);
+#endif
+
 	// List of Dirichlet nodes
 	std::set<long> list_bc_nodes;
-	//cout << "Dirichlet nodes" << endl;
-	for (i = 0; i < bc_node_value.size(); i++)
+	for (size_t i = 0; i < bc_node_value.size(); i++)
 	{
 		CBoundaryConditionNode* bc_node = bc_node_value[i];
 		long nod_id = bc_node->geo_node_number;
@@ -4357,33 +4571,39 @@ void CRFProcess::AddFCT_CorrectionVector()
 	//   -> f_ij = m_ij
 	//----------------------------------------------------------------------
 	// f_ij*=1/dt*(DeltaU_ij^H-DeltaU_ij^n)  for i!=j
-	for (i = 0; i < node_size; i++)
+	for (size_t i = 0; i < node_size; i++)
 	{
 		col = &fct_f[i];
 		for(jj = col->begin(); jj != col->end(); jj++)
 		{
-			j = (*jj).first;
+			const size_t j = (*jj).first;
 			if (i > j)
 				continue;  //symmetric part, off-diagonal
 			double diff_uH = this->GetNodeValue(i, idx1) - this->GetNodeValue(j, idx1);
 			double diff_u0 = this->GetNodeValue(i, idx0) - this->GetNodeValue(j, idx0);
 			double v = 1.0 / dt * (diff_uH - diff_u0);
-			(*FCT_AFlux)(i,j) *= v; //MC is already done in local ele assembly
+            (*FCT_AFlux)(i,j) *= v; //MC is already done in local ele assembly
+            (*FCT_AFlux)(j,i) *= -v; //MC is already done in local ele assembly
 		}
 	}
 
 	//Complete f, L
 	//Remark: Using iteration is only possible after the sparse table has been constructed.
-	for(i = 0; i < node_size; i++)
+	for(size_t i = 0; i < node_size; i++)
 	{
+		const size_t i_global = FCT_GLOB_ADDRESS(i);
 		col = &fct_f[i];
 		for(jj = col->begin(); jj != col->end(); jj++)
 		{
-			j = (*jj).first;
-			if (i > j)
-				continue;  //symmetric part, off-diagonal
+			const size_t j = (*jj).first;
+			const size_t j_global = FCT_GLOB_ADDRESS(j);
+			if (i > j || i==j)
+				continue;  //do below only for upper triangle due to symmetric
 
 			// Get artificial diffusion operator D
+#ifdef USE_PETSC
+			double d1 = (*FCT_d)(i_global, j_global);
+#else
 #if defined(NEW_EQS)
 			double K_ij = (*A)(i,j);
 			double K_ji = (*A)(j,i);
@@ -4394,6 +4614,8 @@ void CRFProcess::AddFCT_CorrectionVector()
 			if (K_ij == 0.0 && K_ji == 0.0)
 				continue;
 			double d1 = GetFCTADiff(K_ij, K_ji);
+#endif
+			if (d1 == 0.0) continue;
 			double d0 = d1; //TODO should use AuxMatrix at the previous time step
 			//if (list_bc_nodes.find(i)!=list_bc_nodes.end() || list_bc_nodes.find(j)!=list_bc_nodes.end()) {
 			//  d1 = d0 = 0.0;
@@ -4416,9 +4638,24 @@ void CRFProcess::AddFCT_CorrectionVector()
 				v = MinMod(v, -d1 * diff_uH);
 			else if (this->m_num->fct_prelimiter_type == 2)
 				v = SuperBee(v, -d1 * diff_uH);
-			(*FCT_AFlux)(i,j) = v;
-			(*FCT_AFlux)(j,i) = v;
+			(*FCT_AFlux)(i, j) = v;
+#ifdef USE_PETSC
+			(*FCT_AFlux)(j, i) = -v;
+#else
+			(*FCT_AFlux)(j, i) = v;
+#endif
 
+#ifdef USE_PETSC
+			// A += theta * D
+			if (i < (size_t)m_msh->getNumNodesLocal()) {
+				eqs_new->addMatrixEntry(i_global, i_global, -d1*theta);
+				eqs_new->addMatrixEntry(i_global, j_global, d1*theta);
+			}
+			if (j < (size_t)m_msh->getNumNodesLocal()) {
+				eqs_new->addMatrixEntry(j_global, i_global, d1*theta);
+				eqs_new->addMatrixEntry(j_global, j_global, -d1*theta);
+			}
+#else
 			// L = K + D
 #if defined(NEW_EQS)
 			(*A)(i,i) += -d1;
@@ -4433,45 +4670,64 @@ void CRFProcess::AddFCT_CorrectionVector()
 			MXInc(i,i,-d1);
 			MXInc(j,j,-d1);
 #endif
+#endif
 		}
 	}
 
 	//----------------------------------------------------------------------
 	// Assemble RHS: b_i += [- (1-theta) * L_ij] u_j^n
 	//----------------------------------------------------------------------
-	Vec* V1 = this->Gl_Vec1;
-	Vec* V = this->Gl_Vec;
+	Math_Group::Vec* V1 = this->Gl_Vec1;
+	Math_Group::Vec* V = this->Gl_Vec;
 	(*V1) = 0.0;
 	(*V) = 0.0;
+#if !defined(USE_PETSC)
 	double* eqs_rhs;
 #ifdef NEW_EQS
 	eqs_rhs = eqs_new->b;
 #else
 	eqs_rhs = eqs->b;
 #endif
+#endif
 	// b = [-(1-theta) * L] u^n
-	if (1.0 - theta > 0)
+	if (1.0 - theta > .0)
 	{
 		// u^n
-		for (i = 0; i < node_size; i++)
+		for (size_t i = 0; i < node_size; i++)
 			(*V1)(i) = this->GetNodeValue(i,idx0);
 		// L*u^n
-		for (i = 0; i < node_size; i++)
+		for (size_t i = 0; i < node_size; i++)
 		{
-			for (j = 0; j < node_size; j++)
+			const size_t i_global = FCT_GLOB_ADDRESS(i);
+			for (size_t j = 0; j < node_size; j++)
 			{
+				const size_t j_global = FCT_GLOB_ADDRESS(j);
+#ifdef USE_PETSC
+				// b+=-(1-theta)*D*u^n
+                (*V)(i) += (*FCT_d)(i_global, j_global) * (*V1)(j);
+#else
 #ifdef NEW_EQS
 				(*V)(i) += (*A)(i,j) * (*V1)(j);
 #else
 				(*V)(i) += MXGet(i,j) * (*V1)(j);
 #endif
+#endif
 			}
 		}
-		for (i = 0; i < node_size; i++)
+		for (size_t i = 0; i < node_size; i++) {
+#if defined(USE_PETSC)
+			if (i < m_msh->getNumNodesLocal()) {
+				const size_t i_global = FCT_GLOB_ADDRESS(i);
+				eqs_new->add_bVectorEntry(i_global, - (1.0 - theta) * (*V)(i), ADD_VALUES);
+			}
+#else
 			eqs_rhs[i] -= (1.0 - theta) * (*V)(i);
-		//(*RHS)(i+LocalShift) +=  NodalVal[i];
+	        //(*RHS)(i+LocalShift) +=  NodalVal[i];
+#endif
+		}
 	}
 
+#ifndef USE_PETSC
 	//----------------------------------------------------------------------
 	// Assemble A matrix: 1/dt*ML + theta * L
 	//----------------------------------------------------------------------
@@ -4481,8 +4737,8 @@ void CRFProcess::AddFCT_CorrectionVector()
 #ifdef NEW_EQS
 		(*A) = 0.0;
 #else
-		for (i = 0; i < node_size; i++)
-			for (j = 0; j < node_size; j++)
+		for (size_t i = 0; i < node_size; i++)
+			for (size_t j = 0; j < node_size; j++)
 				MXSet(i,j,0.0);
 
 #endif
@@ -4496,14 +4752,14 @@ void CRFProcess::AddFCT_CorrectionVector()
 #ifdef NEW_EQS
 		(*A) *= theta;
 #else
-		for (i = 0; i < node_size; i++)
-			for (j = 0; j < node_size; j++)
+		for (size_t i = 0; i < node_size; i++)
+			for (size_t j = 0; j < node_size; j++)
 				MXMul(i,j,theta);
 
 #endif
 	}
 	// A matrix: += 1/dt * ML
-	for (i = 0; i < node_size; i++)
+	for (size_t i = 0; i < node_size; i++)
 	{
 		double v = 1.0 / dt * (*ML)(i);
 #ifdef NEW_EQS
@@ -4512,33 +4768,34 @@ void CRFProcess::AddFCT_CorrectionVector()
 		MXInc(i,i,v);
 #endif
 	}
+#endif
 
 	//----------------------------------------------------------------------
 	// Assemble RHS: b += alpha * f
 	//----------------------------------------------------------------------
 	// Calculate R+, R-
-	Vec* R_plus = this->Gl_Vec1;
-	Vec* R_min = this->Gl_Vec;
+	Math_Group::Vec* R_plus = this->Gl_Vec1;
+	Math_Group::Vec* R_min = this->Gl_Vec;
 	(*R_plus) = 0.0;
 	(*R_min) = 0.0;
-	//for(ii=fct_f.begin(); ii!=fct_f.end(); ii++){
-	//  i = (*ii).first;
-	for(i = 0; i < node_size; i++)
+	for(size_t i = 0; i < node_size; i++)
 	{
+        const size_t i_global = FCT_GLOB_ADDRESS(i);
 		double P_plus, P_min;
 		double Q_plus, Q_min;
 		P_plus = P_min = 0.0;
 		Q_plus = Q_min = 0.0;
-		//for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
 		col = &fct_f[i];
 		for(jj = col->begin(); jj != col->end(); jj++)
 		{
-			j = (*jj).first;
+			const size_t j = (*jj).first;
 			if (i == j)
 				continue;
 			double f = (*jj).second; //double f = (*FCT_AFlux)(i,j);
+#ifndef USE_PETSC
 			if (i > j)
 				f *= -1.0;
+#endif
 			double diff_uH = this->GetNodeValue(j, idx1) - this->GetNodeValue(i, idx1);
 
 			P_plus += max(0.0, f);
@@ -4546,61 +4803,67 @@ void CRFProcess::AddFCT_CorrectionVector()
 			Q_plus = max(Q_plus, diff_uH);
 			Q_min = min(Q_min, diff_uH);
 		}
-		double ml = (*ML)(i);
+		double ml = (*ML)(i_global);
+
 		if (P_plus == 0.0)
-			(*R_plus)(i) = 0.0;
+			(*R_plus)(i_global) = 0.0;
 		else
-			(*R_plus)(i) = min(1.0, ml * Q_plus / (dt * P_plus));
+			(*R_plus)(i_global) = min(1.0, ml * Q_plus / (dt * P_plus));
 		if (P_min == 0.0)
-			(*R_min)(i) = 0.0;
+			(*R_min)(i_global) = 0.0;
 		else
-			(*R_min)(i) = min(1.0, ml * Q_min / (dt * P_min));
+			(*R_min)(i_global) = min(1.0, ml * Q_min / (dt * P_min));
 	}
 
+#ifdef USE_PETSC
+    FCT_MPI::gatherR(FCT_MPI::ct, *R_plus, *R_min);
+#endif
+
 	// for Dirichlet nodes
-	//cout << "Dirichlet nodes" << endl;
-	for (i = 0; i < bc_node_value.size(); i++)
+	for (size_t i = 0; i < bc_node_value.size(); i++)
 	{
 		CBoundaryConditionNode* bc_node = bc_node_value[i];
 		long nod_id = bc_node->geo_node_number;
-		//cout << nod_id << ": R+=" <<  (*R_plus)(nod_id) << ", R-=" << (*R_min)(nod_id) << endl;
-		(*R_plus)(nod_id) = 1.0;
-		(*R_min)(nod_id) = 1.0;
-
-		//col = &fct_f[nod_id];
-		//for (jj=col->begin(); jj!=col->end(); jj++) {
-		//  j = (*jj).first;
-		//  double f = (*jj).second; //double f = (*FCT_AFlux)(i,j);
-		//  cout << nod_id << "," << j << ": f=" << f << endl;
-		//}
+        const size_t i_global = FCT_GLOB_ADDRESS(nod_id);
+		(*R_plus)(i_global) = 1.0;
+		(*R_min)(i_global) = 1.0;
 	}
 
 	// b_i += alpha_i * f_ij
-	for (i = 0; i < node_size; i++)
+	for (size_t i = 0; i < node_size; i++)
 	{
+		const size_t i_global = FCT_GLOB_ADDRESS(i);
 		col = &fct_f[i];
 		for (jj = col->begin(); jj != col->end(); jj++)
 		{
-			//for(ii=fct_f.begin(); ii!=fct_f.end(); ii++){
-			//  i = (*ii).first;
-			//  for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
-			j = (*jj).first;
+			const size_t j = (*jj).first;
+	        const size_t j_global = FCT_GLOB_ADDRESS(j);
 			if (i == j)
 				continue;
 
 			double f = (*jj).second; //double f = (*FCT_AFlux)(i,j);
+#ifndef USE_PETSC
 			if (i > j)
 				f *= -1;  // symmetric
+#endif
 			double alpha = 1.0;
 			if (f > 0)
-				alpha = min((*R_plus)(i), (*R_min)(j));
+				alpha = min((*R_plus)(i_global), (*R_min)(j_global));
 			else
-				alpha = min((*R_plus)(j), (*R_min)(i));
+				alpha = min((*R_plus)(j_global), (*R_min)(i_global));
 
+			double val = .0;
 			if (this->m_num->fct_const_alpha < 0.0)
-				eqs_rhs[i] += alpha * f;
+				val = alpha * f;
 			else
-				eqs_rhs[i] += this->m_num->fct_const_alpha * f;
+				val = this->m_num->fct_const_alpha * f;
+
+#ifdef USE_PETSC
+			if (i < m_msh->getNumNodesLocal())
+				eqs_new->add_bVectorEntry(i_global, val, ADD_VALUES);
+#else
+            eqs_rhs[i] += val;
+#endif
 
 			//Note: Galerkin FEM is recovered if alpha = 1 as below,
 			//eqs_rhs[i] += 1.0*f;
@@ -4619,8 +4882,8 @@ void CRFProcess::AddFCT_CorrectionVector()
    11/2005 YD time step control
    01/2006 OK/TK Tests
    12/2007 WW Spase matrix class and condensation sequential and parallel loop
-   last modified:
    10/2010 TF changed access to process type
+   06/2012 WW Node based decompostion   
  **************************************************************************/
 void CRFProcess::GlobalAssembly()
 {
@@ -4675,7 +4938,13 @@ void CRFProcess::GlobalAssembly()
 		(*this->Gl_ML) = 0.0;
 		(*this->Gl_Vec) = 0.0;
 		(*this->Gl_Vec1) = 0.0;
+#ifdef USE_PETSC
+        (*this->FCT_K) = 0.0;
+        (*this->FCT_d) = .0;
+#endif
 	}
+
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	// DDC
 	if (dom_vector.size() > 0)
 	{
@@ -4734,6 +5003,7 @@ void CRFProcess::GlobalAssembly()
 #endif
 	}
 	else
+#endif //#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	{                                     // STD
 		//YDTEST. Changed to DOF 15.02.2007 WW
 		for (size_t ii = 0; ii < continuum_vector.size(); ii++)
@@ -4773,11 +5043,11 @@ void CRFProcess::GlobalAssembly()
 
 		if (write_leqs) {
 			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_assembly.txt";
-#ifdef NEW_EQS
+#if defined(NEW_EQS)
 			std::ofstream Dum(fname.c_str(), ios::out);
 			eqs_new->Write(Dum);
 			Dum.close();
-#else
+#elif !defined(USE_PETSC)
 			MXDumpGLS(fname.c_str(), 1, eqs->b, eqs->x);
 #endif
 		}
@@ -4787,11 +5057,11 @@ void CRFProcess::GlobalAssembly()
 		IncorporateSourceTerms();
 		if (write_leqs) {
 			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_st.txt";
-#ifdef NEW_EQS
+#if defined(NEW_EQS)
 			std::ofstream Dum(fname.c_str(), ios::out);
 			eqs_new->Write(Dum);
 			Dum.close();
-#else
+#elif !defined(USE_PETSC)
 			MXDumpGLS(fname.c_str(), 1, eqs->b, eqs->x);
 #endif
 		}
@@ -4809,8 +5079,14 @@ void CRFProcess::GlobalAssembly()
 			}
 		}
 #endif
-#ifndef NEW_EQS                             //WW. 07.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && !defined(other parallel libs)//03~04.3012. WW
+		//#ifndef NEW_EQS                             //WW. 07.11.2008
 		SetCPL();                 //OK
+#endif
+
+#if defined(USE_PETSC)  // || defined(other parallel libs)//03~04.3012. 
+		eqs_new->AssembleRHS_PETSc();
+		eqs_new->AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
 #endif
 		IncorporateBoundaryConditions();
 
@@ -4818,11 +5094,11 @@ void CRFProcess::GlobalAssembly()
 		// eqs_new->Write(Dum);   Dum.close();
 		if (write_leqs) {
 			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_bc.txt";
-#ifdef NEW_EQS
+#if defined(NEW_EQS)
 			std::ofstream Dum(fname.c_str(), ios::out);
 			eqs_new->Write(Dum);
 			Dum.close();
-#else
+#elif !defined(USE_PETSC)
 			MXDumpGLS(fname.c_str(), 1, eqs->b, eqs->x);
 #endif
 		}
@@ -4842,6 +5118,11 @@ void CRFProcess::GlobalAssembly()
 		//
 
 		//		  MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
+#if defined(USE_PETSC)  // || defined(other parallel libs)//03~04.3012.
+		MPI_Barrier (MPI_COMM_WORLD); 
+		  //	eqs_new->AssembleRHS_PETSc();
+		//eqs_new->AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
+#endif
 	}
 }
 
@@ -5070,6 +5351,7 @@ void CRFProcess::AllocateLocalMatrixMemory()
    06/2006 WW Take the advantege of sparse matrix to enhance simulation
    10/2007 WW Change for the new classes of sparse matrix and linear solver
  **************************************************************************/
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 void CRFProcess::DDCAssembleGlobalMatrix()
 {
 	int ii,jj, dof;
@@ -5246,6 +5528,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 	}
 #endif
 	}
+#endif //#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 
 /*************************************************************************
    ROCKFLOW - Function:
@@ -5299,6 +5582,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    Programing:
    05/2006 WW Implementation
 **************************************************************************/
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	void CRFProcess::SetBoundaryConditionSubDomain()
 	{
 		int k;
@@ -5404,6 +5688,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		}
 	}
 
+#endif //#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 /**************************************************************************
    FEMLib-Method: CRFProcess::IncorporateBoundaryConditions
    Task: set PCS boundary conditions
@@ -5430,12 +5715,18 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		int ii, idx0 = -1;
 		CBoundaryConditionNode* m_bc_node; //WW
 		CBoundaryCondition* m_bc; //WW
-		CPARDomain* m_dom = NULL;
 		CFunction* m_fct = NULL;  //OK
-		double* eqs_rhs = NULL;
 		bool is_valid = false;    //OK
 		//WW bool onExBoundary = false;                     //WX
 		bool excavated = false;   //WX
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+		vector<int> bc_eqs_id;
+		vector<double> bc_eqs_value;
+#else
+		double* eqs_rhs = NULL;
+		CPARDomain* m_dom = NULL;
+#endif
+		//
 #ifdef NEW_EQS
 		Linear_EQS* eqs_p = NULL;
 #endif
@@ -5451,10 +5742,16 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 		// WW
 		double Scaling = 1.0;
-		//WW bool quadr = false;                            //15.4.2008
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+		bool quadr = false;
+#endif
 		if(type == 4 || type / 10 == 4)
+		  {   
 			fac = Scaling;
-		//WW quadr = true;
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+		        quadr = true;
+#endif
+		  }
 		long begin = 0;
 		long end = 0;
 		long gindex = 0;
@@ -5462,13 +5759,17 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		{
 			begin = 0;
 			end = (long)bc_node_value.size();
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
+			//TODO
 #ifdef NEW_EQS                              //WW
 			eqs_p = eqs_new;
 			eqs_rhs = eqs_new->b; //27.11.2007 WW
 #else
 			eqs_rhs = eqs->b;
 #endif
+#endif
 		}
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 		else
 		{
 			m_dom = dom_vector[rank];
@@ -5490,17 +5791,18 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				begin = rank_bc_node_value_in_dom[rank - 1];
 			end = rank_bc_node_value_in_dom[rank];
 		}
-
+#endif //END: #if !defined(USE_PETSC) // && !defined(other parallel libs)
 		size_t count_constrained_excluded = 0;
 
 		for(i = begin; i < end; i++)
 		{
 			gindex = i;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 			if(rank > -1)
 				gindex = bc_node_value_in_dom[i];
+#endif
 			m_bc_node = bc_node_value[gindex];
 			m_bc = bc_node[gindex];
-			shift = m_bc_node->msh_node_number - m_bc_node->geo_node_number;
 			//
 			//WX: check if bc is aktive, when Time_Controlled_Aktive for this bc is defined
 			if(m_bc->getTimeContrCurve() > 0)
@@ -5580,6 +5882,39 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			if((m_bc->getExcav() > 0) && !excavated) //WX:01.2011. excav bc but is not excavated jet
 				continue;
 			//
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+			bc_msh_node  = m_bc_node->geo_node_number;
+			// Check whether the node is in this subdomain
+			if(quadr)
+			  {
+			    if(bc_msh_node > m_msh->loc_NodesNumber_Quadratic)
+			      continue;
+			  }
+			else
+			  {
+			    if(bc_msh_node > m_msh->loc_NodesNumber_Linear)
+			      continue;
+			  }
+
+
+			int dof_per_node = 0;
+			if (m_msh->NodesNumber_Linear == m_msh->NodesNumber_Quadratic)
+			  {
+			    dof_per_node = pcs_number_of_primary_nvals;
+			    shift = m_bc_node->msh_node_number / m_msh->NodesNumber_Linear;
+			  }
+			else
+			  {
+			    if(bc_msh_node < static_cast<long>(m_msh->NodesNumber_Linear))
+			      dof_per_node = pcs_number_of_primary_nvals;
+			    else
+			      dof_per_node =  m_msh->GetCoordinateFlag() / 10;
+			    shift = m_bc_node->msh_node_number / m_msh->NodesNumber_Quadratic;
+			  }
+ 
+
+#else
+			shift = m_bc_node->msh_node_number - m_bc_node->geo_node_number;
 			if(rank > -1)
 			{
 				bc_msh_node = bc_local_index_in_dom[i];
@@ -5599,6 +5934,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			}
 			else
 				bc_msh_node = m_bc_node->geo_node_number;
+#endif// END: if defined(USE_PETSC) // || defined(other parallel libs
 			//------------------------------------------------------------WW
 			if(m_msh)     //OK
 				//	    if(!m_msh->nod_vector[bc_msh_node]->GetMark()) //WW
@@ -5746,8 +6082,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						//bc_value = 0.;
 					}
 				}
-
+#if !defined(USE_PETSC) // && !defined(other parallel solver). //WW 04.2012. WW 
 				bc_eqs_index += shift;
+#endif
 
 #ifdef JFNK_H2M
 				/// If JFNK method (09.2010. WW):
@@ -5785,7 +6122,12 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				   }
 				   }
 				 */
-#ifdef NEW_EQS                        //WW
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+				  bc_eqs_id.push_back(static_cast<int>( m_msh->nod_vector[bc_msh_node]->GetEquationIndex()
+									* dof_per_node + shift));
+				  bc_eqs_value.push_back(bc_value);
+				  
+#elif NEW_EQS                        //WW
 				eqs_p->SetKnownX_i(bc_eqs_index, bc_value);
 #else
 				MXRandbed(bc_eqs_index,bc_value,eqs_rhs);
@@ -5795,6 +6137,64 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 #endif
 			}
 		}
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+		int nbc = static_cast<int>(bc_eqs_id.size());
+		if(nbc>0)
+		  {
+		    eqs_new->setArrayValues(0, nbc, &bc_eqs_id[0], &bc_eqs_value[0], INSERT_VALUES); 
+		    eqs_new->setArrayValues(1, nbc, &bc_eqs_id[0], &bc_eqs_value[0], INSERT_VALUES);
+		  } 
+
+#ifdef petsc_zero_row_test
+		//We have do the following collection because MatZeroR must be called by all processes
+		const int mpi_size = eqs_new->getMPI_Size(); 
+		vector <int> r_cnt(mpi_size);
+		vector <int> r_disp(mpi_size);
+		vector <int> r_vec(mpi_size);
+		int k;
+		for(k=0; k<mpi_size; k++)
+		  {
+		    r_cnt[k] = 1;
+		    r_disp[k] = k;
+		  }
+		// Get nbc
+		MPI_Allgatherv(&nbc,1, MPI_INT, &r_vec[0], &r_cnt[0], &r_disp[0], MPI_INT, PETSC_COMM_WORLD);
+		int v_disp = 0;
+		for(k=0; k<mpi_size; k++)
+		  {
+		    r_disp[k] = v_disp;
+		    v_disp += r_vec[k]; 
+		  }
+		r_cnt.resize(v_disp);
+		r_vec.resize(v_disp);
+		for(k=0; k<v_disp; k++)
+		  {
+		    r_cnt[k] = 0;
+		  }
+		const int v_shift = r_disp[eqs_new->getMPI_Rank()];
+		for(k=0; k<nbc; k++)
+		  {
+		    r_cnt[v_shift+k] = bc_eqs_id[k];
+		  }
+		MPI_Allreduce(&r_cnt[0], &r_vec[0], v_disp, MPI_INT, MPI_SUM,  PETSC_COMM_WORLD);
+		
+		MPI_Barrier (MPI_COMM_WORLD); 
+		eqs_new->zeroRows_in_Matrix(v_disp, &r_vec[0]);
+#endif //  petsc_zero_row_test    
+		eqs_new->AssembleUnkowns_PETSc();
+		eqs_new->AssembleRHS_PETSc();
+
+
+		//TEST
+		//PetscViewer viewer;
+		//eqs_new->EQSV_Viewer(FileName, viewer);
+
+
+		eqs_new->zeroRows_in_Matrix(nbc, &bc_eqs_id[0]);
+		eqs_new->AssembleMatrixPETSc();
+		
+#endif		
+
 		if (count_constrained_excluded>0)
 			std::cout << "-> " << count_constrained_excluded << " nodes are excluded from BC because of constrained conditions" << std::endl;
 	}
@@ -5817,10 +6217,18 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		int idx0, idx1;
 		CBoundaryConditionNode* m_bc_node; //WW
 		CBoundaryCondition* m_bc; //WW
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 		CPARDomain* m_dom = NULL;
+#endif
+
 		CFunction* m_fct = NULL;  //OK
-		double* eqs_rhs = NULL;
 		bool is_valid = false;    //OK
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+		vector<int> bc_eqs_id;
+		vector<double> bc_eqs_value;
+#else
+		double* eqs_rhs = NULL;
+#endif
 #ifdef NEW_EQS
 		Linear_EQS* eqs_p = NULL;
 #endif
@@ -5843,13 +6251,16 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		{
 			begin = 0;
 			end = (long)bc_node_value.size();
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW		     
 #ifdef NEW_EQS                              //WW
 			eqs_p = eqs_new;
 			eqs_rhs = eqs_new->b; //27.11.2007 WW
 #else
 			eqs_rhs = eqs->b;
 #endif
+#endif
 		}
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW		     
 		else
 		{
 			m_dom = dom_vector[rank];
@@ -5871,18 +6282,25 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				begin = rank_bc_node_value_in_dom[rank - 1];
 			end = rank_bc_node_value_in_dom[rank];
 		}
-
+#endif //END: !defined(USE_PETSC) // && !defined(other parallel libs)/
 		for(i = begin; i < end; i++)
 		{
 			gindex = i;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 			if(rank > -1)
 				gindex = bc_node_value_in_dom[i];
+#endif
 			m_bc_node = bc_node_value[gindex];
 
 			// PCH
 			if(axis == 0 && m_bc_node->pcs_pv_name.find("VELOCITY1_X") != string::npos)
 			{
 				m_bc = bc_node[gindex];
+
+#if defined(USE_PETSC) // ||defined(other parallel libs)//03~04.3012. WW
+				bc_msh_node = m_bc_node->geo_node_number;
+				
+#else		     
 				shift = m_bc_node->msh_node_number - m_bc_node->geo_node_number;
 				//
 				if(rank > -1)
@@ -5904,6 +6322,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				}
 				else
 					bc_msh_node = m_bc_node->geo_node_number;
+#endif
 				//------------------------------------------------------------WW
 				if(m_msh) //OK
 					//			if(!m_msh->nod_vector[bc_msh_node]->GetMark()) //WW
@@ -5995,8 +6414,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						           pcs_primary_function_name[continuum]) ==
 						   string::npos)
 							continue;
-
-#ifdef NEW_EQS                        //WW
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+					//TODO
+#elif NEW_EQS                        //WW
 					eqs_p->SetKnownX_i(bc_eqs_index, bc_value);
 #else
 					MXRandbed(bc_eqs_index,bc_value,eqs_rhs);
@@ -6010,6 +6430,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				m_bc = bc_node[gindex];
 				shift = m_bc_node->msh_node_number - m_bc_node->geo_node_number;
 				//
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 				if(rank > -1)
 				{
 					bc_msh_node = bc_local_index_in_dom[i];
@@ -6028,6 +6449,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					shift = m_dom->shift[dim_space];
 				}
 				else
+#endif
 					bc_msh_node = m_bc_node->geo_node_number;
 				//------------------------------------------------------------WW
 				if(m_msh) //OK
@@ -6117,8 +6539,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						           pcs_primary_function_name[continuum]) ==
 						   string::npos)
 							continue;
-
-#ifdef NEW_EQS                        //WW
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+					//TODO
+#elif NEW_EQS                        //WW
 					eqs_p->SetKnownX_i(bc_eqs_index, bc_value);
 #else
 					MXRandbed(bc_eqs_index,bc_value,eqs_rhs);
@@ -6132,6 +6555,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				m_bc = bc_node[gindex];
 				shift = m_bc_node->msh_node_number - m_bc_node->geo_node_number;
 				//
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 				if(rank > -1)
 				{
 					bc_msh_node = bc_local_index_in_dom[i];
@@ -6150,6 +6574,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					shift = m_dom->shift[dim_space];
 				}
 				else
+#endif 
 					bc_msh_node = m_bc_node->geo_node_number;
 				//------------------------------------------------------------WW
 				if(m_msh) //OK
@@ -6239,8 +6664,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						           pcs_primary_function_name[continuum]) ==
 						   std::string::npos)
 							continue;
-
-#ifdef NEW_EQS                        //WW
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+					//TODO
+#elif NEW_EQS                        //WW
 					eqs_p->SetKnownX_i(bc_eqs_index, bc_value);
 #else
 					MXRandbed(bc_eqs_index,bc_value,eqs_rhs);
@@ -6284,21 +6710,37 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		int interp_method = 0;
 		int curve, valid = 0;
 		long msh_node, shift;
-		long bc_eqs_index = -1;
 		MshElemType::type EleType; //ii
 		double q_face = 0.0;
 		CElem* elem = NULL;
 		CElem* face = NULL;
 		ElementValue* gp_ele = NULL;
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+		vector<int> st_eqs_id;
+		vector<double> st_eqs_value;
+#else
 		CPARDomain* m_dom = NULL;
 		double* eqs_rhs = NULL;
+		long bc_eqs_index = -1;
+		int dim_space = 0;        //kg44 better define here and not in a loop!
+#endif
 		double vel[3];
 		bool is_valid;            //YD
 		CFunction* m_fct = NULL;  //YD
+		long i;                   //, group_vector_length;
 
 		double Scaling = 1.0;
-		if (type == 4)
-			fac = Scaling;
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+		bool quadr = false;
+#endif
+		if(type == 4 || type / 10 == 4)
+		  {
+		    fac = Scaling;
+
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+		    quadr = true;
+#endif
+		  }
 
 		CNodeValue* cnodev = NULL;
 		CSourceTerm* m_st = NULL;
@@ -6306,7 +6748,6 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		long begin = 0;
 		long end = 0;
 		long gindex = 0;
-		int dim_space = 0;        //kg44 better define here and not in a loop!
 
 		//====================================================================
 		// Look for active boundary elements if constrain is given
@@ -6416,12 +6857,15 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			{
 				begin = 0;
 				end = (long) st_node_value[is].size();
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	#ifdef NEW_EQS                              //WW
 				eqs_rhs = eqs_new->b; //27.11.2007 WW
 	#else
 				eqs_rhs = eqs->b;
 	#endif
+#endif
 			}
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 			else
 			{
 				m_dom = dom_vector[rank];
@@ -6439,7 +6883,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					begin = rank_st_node_value_in_dom[rank - 1];
 				end = rank_st_node_value_in_dom[rank];
 			}
-
+#endif //END: #if !defined(USE_PETSC) // && !defined(other parallel libs)
 			std::vector<bool> active_elements;
 
 			// constrain
@@ -6510,9 +6954,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						continue;
 					cnodev = st_node_value[is][0];
 					const int k_eqs_id = m_msh->nod_vector[cnodev->geo_node_number]->GetEquationIndex();
-#ifdef NEW_EQS
+#if defined(NEW_EQS)
 					(*eqs_new->A)(k_eqs_id,k_eqs_id) += m_st->transfer_h_values[0];
-#else
+#elif !defined(USE_PETSC)
 					MXInc(k_eqs_id,k_eqs_id, m_st->transfer_h_values[0]);
 #endif
 				} else if (m_st->getGeoType () == GEOLIB::SURFACE || m_st->getGeoType() == GEOLIB::POLYLINE) {
@@ -6533,9 +6977,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 							for (unsigned l = 0; l < nen; l++)
 							{
 								const int l_eqs_id = face->GetNode(l)->GetEquationIndex();
-#ifdef NEW_EQS
+#if defined(NEW_EQS)
 								(*eqs_new->A)(k_eqs_id,l_eqs_id) += mass[k*nen+l] * h;
-#else
+#elif !defined(USE_PETSC)
 								MXInc(k_eqs_id,l_eqs_id, mass[k*nen+l] * h);
 #endif
 							}
@@ -6549,11 +6993,44 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			for (long i = begin; i < end; i++)
 			{
 				gindex = i;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 				if (rank > -1)
 					gindex = st_node_value_in_dom[i];
+#endif
 
 				cnodev = st_node_value[is][gindex];
 
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+			msh_node = cnodev->geo_node_number;
+			// Check whether the node is in this subdomain
+			if(quadr)
+			  {
+			    if(msh_node > m_msh->loc_NodesNumber_Quadratic)
+			      continue;
+			  }
+			else
+			  {
+			    if(msh_node > m_msh->loc_NodesNumber_Linear)
+			      continue;
+			  }
+
+			int dof_per_node = 0;
+			if (m_msh->NodesNumber_Linear == m_msh->NodesNumber_Quadratic)
+			  {
+			    dof_per_node = pcs_number_of_primary_nvals;
+			    shift = cnodev->msh_node_number / m_msh->NodesNumber_Linear;
+			  }
+			else
+			  {
+			    if( msh_node < static_cast<long> (m_msh->NodesNumber_Linear) )
+			      dof_per_node = pcs_number_of_primary_nvals;
+			    else
+			      dof_per_node =  m_msh->GetCoordinateFlag() / 10;
+			    shift = cnodev->msh_node_number / m_msh->NodesNumber_Quadratic;
+			  }
+ 
+
+#else
 				shift = cnodev->msh_node_number - cnodev->geo_node_number;
 				if (rank > -1)
 				{
@@ -6575,6 +7052,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					msh_node = cnodev->msh_node_number;
 					msh_node -= shift;
 				}
+#endif
 				value = cnodev->node_value;
 				//--------------------------------------------------------------------
 				// Tests
@@ -6686,11 +7164,18 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				value *= time_fac * fac;
 				//------------------------------------------------------------------
 				// EQS->RHS
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+			
+			st_eqs_id.push_back(static_cast<int>(m_msh->nod_vector[msh_node]->GetEquationIndex() * dof_per_node + shift));
+			st_eqs_value.push_back(value);
+			
+#else
 				if (rank > -1)
 					bc_eqs_index = msh_node + shift;
 				else
 					bc_eqs_index = m_msh->nod_vector[msh_node]->GetEquationIndex() + shift;
 				eqs_rhs[bc_eqs_index] += value;
+#endif
 			}
 		}
 
@@ -6704,7 +7189,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		if (flag_couple_GEMS == 1 && aktueller_zeitschritt > 1)
 		{
 			begin = 0;
-			if (rank == -1) // serial version
+			if (rank == -1) // serial version and also Version for PETSC!!
 
 				end = (long ) Water_ST_vec.size();
 			else          // parallel version
@@ -6725,13 +7210,25 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					//				cout << " gindex " << gindex << " i " << i << endl ;
 					// contains index to node
 					glocalindex = stgem_local_index_in_dom[i];
-					//				cout << " gem_node_index " << gem_node_index << endl;
+					//				cout << " gem_node_index " << gem_node_index << "\n";
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+			
+					st_eqs_id.push_back(static_cast<int>(m_msh->nod_vector[glocalindex]->GetEquationIndex()));
+					st_eqs_value.push_back(Water_ST_vec[gindex].water_st_value);
+#else
 					eqs_rhs[glocalindex] += Water_ST_vec[gindex].water_st_value;
+#endif
 				}
 				else // serial version
 				{
 					gem_node_index = Water_ST_vec[i].index_node;
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+					st_eqs_id.push_back(static_cast<int>(m_msh->nod_vector[gem_node_index]->GetEquationIndex()));
+					st_eqs_value.push_back(Water_ST_vec[i].water_st_value);
+
+#else
 					eqs_rhs[gem_node_index] += Water_ST_vec[i].water_st_value;
+#endif
 				}
 			}
 			// after finished adding to RHS, clear the vector
@@ -6743,11 +7240,17 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				rank_stgem_node_value_in_dom.clear();
 			}
 		}
-
-
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+		if(st_eqs_id.size()>0)
+		  {
+		    eqs_new->setArrayValues(1, static_cast<int>(st_eqs_id.size()),
+					    &st_eqs_id[0], &st_eqs_value[0]); 
+		    //eqs_new->AssembleRHS_PETSc();
+		  }
+#endif		
 	}
 
-#ifndef NEW_EQS                                   //WW
+#if !defined(USE_PETSC) && !defined(NEW_EQS)// || defined(other parallel libs)//03~04.3012.   
 /**************************************************************************
    FEMLib-Method:
    Task:
@@ -6826,7 +7329,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    06/2005 PCH Overriding
    last modification:
 **************************************************************************/
-#ifndef NEW_EQS                                   //WW 07.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW 07.11.2008
 	int CRFProcess::ExecuteLinearSolver(LINEAR_SOLVER* eqs)
 	{
 		long iter_count;
@@ -7619,7 +8123,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			abort();
 		}
 #endif
-		nod_val_vector[n][nidx] = value;
+		//WW 11.12.2012 	nod_val_vector[n][nidx] = value;
+		nod_val_vector[nidx][n] = value;
 	}
 
 /**************************************************************************
@@ -7658,7 +8163,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			abort();
 		}
 #endif
-		value = nod_val_vector[n][nidx];
+		//WW 11.12.2012		value = nod_val_vector[n][nidx];
+		value = nod_val_vector[nidx][n];
 		return value;
 	}
 
@@ -7811,7 +8317,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    03/2005 OK Implementation
    last modified:
 **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 07.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC)  //WW. 07.11.2008. 04.2012
 	void CRFProcess::SetNODValues()
 	{
 		for(long i = 0; i < (long)m_msh->nod_vector.size(); i++)
@@ -7842,6 +8348,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    3/2012  JT Clean, add newton, add CPL vs. NLS, go to enum system
    last modification:
 **************************************************************************/
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//02.3013. WW
 double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool nls_error, bool cpl_error)
 {
 	static long i, k, g_nnodes;
@@ -8147,6 +8654,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 	//
 	return error_g; // Always returns the maximum relative error
 }
+#endif // #if !defined(USE_PETSC)  WW
 
 /**************************************************************************
    FEMLib-Method:
@@ -8165,11 +8673,11 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		double nonlinear_iteration_error;
 		double nl_theta, damping, norm_x0, norm_b0, norm_x, norm_b, val;
 		double error_x1, error_x2, error_b1, error_b2, error, last_error, percent_difference;
-		double* eqs_x = NULL;
+		//double* eqs_x = NULL;     //
 		double* eqs_b = NULL;
 		bool converged, diverged;
 		int ii, nidx1, num_fail;
-		size_t j, k, g_nnodes;
+		size_t j, g_nnodes;
 
 		string delim = " ";
 		damping = 1.0;
@@ -8180,6 +8688,11 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		if(nl_theta < DBL_EPSILON) nl_theta = 1.0;
 		g_nnodes = m_msh->GetNodesNumber(false);
 
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+		eqs_x = eqs_new->GetGlobalSolution();
+#endif
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
+		int k;
 #ifdef NEW_EQS
 		eqs_x = eqs_new->x;
 		eqs_b = eqs_new->b;
@@ -8200,6 +8713,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		eqs_x = eqs->x;
 		eqs_b = eqs->b;
 #endif
+#endif
 		//..................................................................
 		// PI time step size control. 29.08.2008. WW
 		if(Tim->GetPITimeStepCrtlType() > 0 )
@@ -8208,7 +8722,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			this->CheckMarkedElement();  //NW
 		Tim->last_dt_accepted = true; // JT2012
 
-#ifdef USE_MPI
+#if defined(USE_PETSC) || defined (USE_MPI)  // || defined(other parallel libs)//01.3013. WW
         if(myrank==0)
         {
 #endif
@@ -8223,7 +8737,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			}
 			std::cout << "      ================================================" << std::endl;
 		}
-#ifdef USE_MPI
+#if defined(USE_PETSC) || defined (USE_MPI)  // || defined(other parallel libs)//01.3013. WW#ifdef USE_MPI
 		}
 #endif
 
@@ -8289,6 +8803,10 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 					case FiniteElement::BNORM:
 						PrintStandardIterationInformation(false);
 						//
+#if defined(USE_PETSC) // || defined(other parallel libs)//06.3012. WW
+		               norm_x = eqs_new->GetVecNormX();
+		               norm_b = eqs_new->GetVecNormRHS();			  
+#else
 						norm_x = pcs_unknowns_norm; // JT: this is already obtained in CalcIterationNodeError.
 						norm_b = 0.0; // must calculate this
 						for(ii = 0; ii < pcs_number_of_primary_nvals; ii++){
@@ -8298,6 +8816,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 							}
 						}
 						norm_b = sqrt(norm_b);
+#endif
 						//
 						if(iter_nlin == 0){
 							norm_x0 = norm_x;
@@ -8347,16 +8866,23 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 							}
 						}
 						// Newton information printout.
+#if defined (USE_MPI) || defined(USE_PETSC)
+                        if(myrank == 0)
+                         {
+#endif
 						cout.width(10);
 						cout.precision(3);
 						cout.setf(ios::scientific);
 						cout << "         NR-Error  |" << "    RHS Norm|" << "  Unknowns Norm|"  << " Damping\n";
 						cout << "         " << setw(10) << error << "|  " << setw(9) << norm_b << "| ";
-						cout << setw(14) << norm_x << "| "<< setw(9) << damping << endl;
-						cout.flush();
+						cout << setw(14) << norm_x << "| "<< setw(9) << damping << "\n";
+#if defined (USE_MPI) || defined(USE_PETSC)
+                        }
+#endif
 						break;
 				}
 			}
+
 
 			// CHECK FOR TIME STEP FAILURE
 			// ---------------------------------------------------
@@ -8376,11 +8902,20 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 				for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
 				{
 					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+					for (j = 0; j < g_nnodes; j++)
+					{
+					  SetNodeValue(j, nidx1, GetNodeValue(j,nidx1) +
+						       damping * eqs_x[m_msh->Eqs2Global_NodeIndex[j]*pcs_number_of_primary_nvals + ii]);
+					}
+#else
+					const long ish = ii * g_nnodes;
 					for(j = 0; j < g_nnodes; j++){
 						k = m_msh->Eqs2Global_NodeIndex[j];
-						val = GetNodeValue(k,nidx1) + damping*eqs_x[j + ii*g_nnodes];
+						val = GetNodeValue(k,nidx1) + damping*eqs_x[j + ish];
 						SetNodeValue(k,nidx1,val);
 					}
+#endif
 				}
 			}
 
@@ -8439,7 +8974,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		if(accepted){
 			CalcSecondaryVariables();
 		}
-		//
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 		// Release temporary memory of linear solver. WW
 #ifdef NEW_EQS                                 //WW
 #if defined(USE_MPI)
@@ -8448,6 +8983,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		eqs_new->Clean();         // Release buffer momery WW
 #endif
 		configured_in_nonlinearloop = false;
+#endif
 #endif
 		return nonlinear_iteration_error;
 	}
@@ -8638,7 +9174,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
    Programing:
    11/2005 MB Implementation
 **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 07.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC)  //WW. 07.11.2008. 04.2012
 	void CRFProcess::CalcFluxesForCoupling(void)
 	{
 		int i, j;
@@ -9452,7 +9988,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
    GeoSys-FEM Function:
    01/2006 OK Implementation
  **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 07.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC)  //WW. 07.11.2008. 04.2012
 	void CRFProcess::SetNODFlux()
 	{
 		long i;
@@ -9475,7 +10011,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
    GeoSys-FEM Function:
    01/2006 OK Implementation
  **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 07.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC)  //WW. 07.11.2008. 04.2012
 	void CRFProcess::AssembleParabolicEquationRHSVector()
 	{
 		//OK  long i;
@@ -9693,7 +10229,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
    11/2005 MB Implementation
    03/2006 OK 2nd version (binary coupling)
 **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 07.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC)  //WW. 07.11.2008. 04.2012
 	void CRFProcess::SetCPL()
 	{
 		int i;
@@ -10728,7 +11264,7 @@ void CRFProcess::Calc2DElementGradient(MeshLib::CElem* m_ele, double ElementConc
    GeoSys-FEM Function:
    08/2006 OK Implementation
  **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 07.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC)  //WW. 07.11.2008. 04.2012
 	//(vector<long>&ele_number_vector)
 	void CRFProcess::AssembleParabolicEquationRHSVector(CNode* m_nod)
 	{
@@ -11668,10 +12204,11 @@ CRFProcess* PCSGetMass(size_t component_number)
 		//
 		//OK m_msh->NodesNumber_Quadratic;
 		number_of_nvals = 2 * DOF + pcs_number_of_secondary_nvals;
-		for (long j = 0; j < (long) m_msh->nod_vector.size(); j++)
+                size_t nn = m_msh->nod_vector.size(); //11.12.2012. WW
+		for (long j = 0; j < number_of_nvals ; j++)
 		{
-			nod_values = new double[number_of_nvals];
-			for (int i = 0; i < number_of_nvals; i++)
+			nod_values = new double[nn];
+			for (size_t i = 0; i < nn; i++)
 				nod_values[i] = 0.0;
 			nod_val_vector.push_back(nod_values);
 		}
@@ -11811,7 +12348,7 @@ CRFProcess* PCSGetMass(size_t component_number)
    PCSLib-Method:
    07/2007 OK Implementation
 **************************************************************************/
-#ifndef NEW_EQS                                   //WW 07.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC)  //WW. 07.11.2008. 04.2012
 	bool CRFProcess::CreateEQS()
 	{
 		if(!m_num)
@@ -11892,7 +12429,8 @@ CRFProcess* PCSGetMass(size_t component_number)
    PCSLib-Method:
    07/2007 OK Implementation
 **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 07.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 07.11.2008
 	void PCSCreateNew()
 	{
 		int i;
@@ -11960,7 +12498,7 @@ CRFProcess* PCSGetMass(size_t component_number)
    PCSLib-Method:
    07/2007 OK Implementation
 **************************************************************************/
-#ifndef NEW_EQS                                   //WW 07.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC)  //WW. 07.11.2008. 04.2012
 	void EQSDelete()
 	{
 		LINEAR_SOLVER* eqs = NULL;
@@ -12117,7 +12655,8 @@ CRFProcess* PCSGetMass(size_t component_number)
 		//----------------------------------------------------------------------------
 		ELERelationsDelete();
 		NODRelationsDelete();
-#ifndef NEW_EQS                                //WW. 07.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+		//#ifndef NEW_EQS                                //WW. 07.11.2008
 		EQSDelete();
 #endif
 		OBJRelationsDelete();
@@ -12130,7 +12669,8 @@ CRFProcess* PCSGetMass(size_t component_number)
    PCSLib-Method:
    07/2007 OK Implementation
 **************************************************************************/
-#ifndef NEW_EQS                                   //WW 07.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW 07.11.2008
 	void CRFProcess::EQSDelete()
 	{
 		std::string pcs_type_name (convertProcessTypeToString (this->getProcessType()));
@@ -12169,24 +12709,31 @@ CRFProcess* PCSGetMass(size_t component_number)
    Programming:
    09/2007 WW Implementation
  **************************************************************************/
-
+#if defined(USE_PETSC)  //WW. 07.11.2008. 04.2012
 // New solvers WW
-#ifdef NEW_EQS                                    //1.09.2007 WW
+#elif NEW_EQS                                    //1.09.2007 WW
 
 	void CreateEQS_LinearSolver()
 	{
 		size_t i;
-		int dof_DM = 1;
+        // CB_merge_0513
+		//int dof_DM = 1;
+		int dof_DM = 0;  //WW 02.2023. Pardiso
 		int DM_type = -1;         //03.08.2010. WW
 		CRFProcess* m_pcs = NULL;
 		CFEMesh* a_msh = NULL;
 		SparseTable* sp = NULL;
 		SparseTable* spH = NULL;
 		Linear_EQS* eqs = NULL;
+        Linear_EQS* eqs_dof = NULL; //WW 02.2023. Pardiso
 		Linear_EQS* eqsH = NULL;
+
+        bool need_eqs = false;      //WW 02.2023. Pardiso
+        bool need_eqs_dof = false;  //WW 02.2023. Pardiso
 		int dof = 1;
 		//
-		size_t dof_nonDM (1);
+        //size_t dof_nonDM (1);     //WW 02.2023. Pardiso
+        size_t dof_nonDM (0);    
 
 		for(i = 0; i < pcs_vector.size(); i++)
 		{
@@ -12205,16 +12752,33 @@ CRFProcess* PCSGetMass(size_t component_number)
 					dof = m_pcs->m_msh->GetMaxElementDim();
 			}
 			else          // Monolithic scheme for the process with linear elements
-			if(dof_nonDM < m_pcs->GetPrimaryVNumber())
-			{
-				dof_nonDM = m_pcs->GetPrimaryVNumber();
+            {
+              // CB_merge_0513
+              //if(dof_nonDM < m_pcs->GetPrimaryVNumber()) //WW 02.2023. Pardiso
+              //{
+              //   dof_nonDM = m_pcs->GetPrimaryVNumber();
+              //   // PCH: DOF Handling for FLUID_MOMENTUM in case that the LIS and PARDISO solvers
+              //   // are chosen.
+              //   //				if(m_pcs->_pcs_type_name.compare("FLUID_MOMENTUM")==0)
+              //   if(m_pcs->getProcessType() == FLUID_MOMENTUM)
+              //      dof_nonDM = 1;
+              //} //WW 02.2023. Pardiso
 
-				// PCH: DOF Handling for FLUID_MOMENTUM in case that the LIS and PARDISO solvers
-				// are chosen.
-				//				if(m_pcs->_pcs_type_name.compare("FLUID_MOMENTUM")==0)
-				if(m_pcs->getProcessType() == FiniteElement::FLUID_MOMENTUM)
-					dof_nonDM = 1;
-			}
+              // 02.2013. WW //WW 02.2023. Pardiso
+              // Assume that the system with linear element only have one equation with DOF >1;
+              if( m_pcs->GetPrimaryVNumber() > 1)
+              {
+                dof_nonDM =  m_pcs->GetPrimaryVNumber();
+                dof = dof_nonDM;
+                need_eqs_dof = true;
+              }
+              else
+              {
+                dof = 1;
+                need_eqs = true;
+              } //WW 02.2023. Pardiso
+            }
+
 		}
 		//Check whether the JFNK method is employed for deformation problem 04.08.2010 WW
 		CNumerics* num = NULL;
@@ -12248,27 +12812,25 @@ CRFProcess* PCSGetMass(size_t component_number)
 			//
 			eqs = NULL;
 			eqsH = NULL;
-			if(sp)
-				eqs = new Linear_EQS(*sp, dof_nonDM);
-			if(spH)
-			{
-				/// If JFNK method.  //03.08.2010. WW
-				if(dof_DM < 0)
-				{
-					long nn_H = static_cast<long>(a_msh->GetNodesNumber(true));
-					long nn = static_cast<long>(a_msh->GetNodesNumber(false));
-					if(DM_type == 4)
-						dof_DM = -nn_H * dof;
-					else if(DM_type == 41)
-						dof_DM = -nn_H * dof - nn;
-					else if(DM_type == 42)
-						dof_DM = -nn_H * dof - nn * 2;
-				}
-
-				eqsH = new Linear_EQS(*spH, dof_DM);
-			}
-			EQS_Vector.push_back(eqs);
-			EQS_Vector.push_back(eqsH);
+			// CB_merge_0513
+            eqs_dof = NULL; //WW 02.2023. Pardiso
+            if(sp)//WW 02.2023. Pardiso
+            {
+              if(need_eqs) // 02.2013. WW
+	          {
+                //eqs = new Linear_EQS(*sp, dof_nonDM);//WW 02.2023. Pardiso
+                eqs = new Linear_EQS(*sp, 1);
+	          }
+              if(need_eqs_dof)
+	          {
+                eqs_dof = new Linear_EQS(*sp, dof_nonDM);
+	          }
+            }//WW 02.2023. Pardiso
+            if(spH)
+              eqsH = new Linear_EQS(*spH, dof_DM);
+            EQS_Vector.push_back(eqs);
+            EQS_Vector.push_back(eqsH);
+            EQS_Vector.push_back(eqs_dof); //WW 02.2023. Pardiso
 #endif
 		}
 	}
@@ -12409,6 +12971,21 @@ CRFProcess* PCSGetMass(size_t component_number)
 		//WW double reject_factor;                          // BG
 
 		double* u_n = _problem->GetBufferArray();
+
+        double *eqs_x = NULL;	
+        if (m_num->nls_method == 1) // Newton-Raphson
+	    {
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+		  eqs_x = eqs_new->GetGlobalSolution();
+#else
+#ifdef NEW_EQS
+		  eqs_x = eqs_new->x;
+#else
+		  eqs_x = eqs->x;
+#endif
+#endif
+	   }
+
 		//
 		//
 		hmax = Tim->GetMaximumTSizeRestric();
@@ -12480,12 +13057,10 @@ CRFProcess* PCSGetMass(size_t component_number)
 						        m_dom->element_nodes_dom[i]);
 						fem->ConfigElement(elem,Check2D3D);
 						fem->m_dom = m_dom;
-						fem->CalcEnergyNorm(u_n, norm_e_rank, norm_en_rank);
+						fem->CalcEnergyNorm(norm_e_rank, norm_en_rank);
 						// _new
 						if(ii == 1)
-							fem->CalcEnergyNorm_Dual(u_n,
-							                         norm_e_rank,
-							                         norm_en_rank);
+							fem->CalcEnergyNorm_Dual(norm_e_rank, norm_en_rank);
 					}
 				}
 			}
@@ -12531,41 +13106,59 @@ CRFProcess* PCSGetMass(size_t component_number)
 		double x0, x1;
 		double Rtol = Tim->GetRTol();
 		double Atol = Tim->GetATol();
-		double* u_n0 = NULL;
-#if defined(NEW_EQS)
-		u_n0 = eqs_new->x;
-#else
-		u_n0 = eqs->x;
-#endif
+		double *u_k = _problem->GetBufferArray(true);
 
 		size_x = 0;
 		for(ii = 0; ii < pcs_number_of_primary_nvals; ii++)
 		{
 			nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+			g_nnodes = m_msh->getNumNodesLocal(); 
+#else
 			g_nnodes = m_msh->GetNodesNumber(false);
+#endif
 			size_x += g_nnodes;
 
-			// if Newton-Raphson
-			if(m_num->nls_method >= 1)
-				for(j = 0; j < g_nnodes; j++)
-				{
-					k = m_msh->Eqs2Global_NodeIndex[j];
-					l = j + ii * g_nnodes;
-					x0 = u_n[l];
-					x1 = GetNodeValue(k,nidx1);
-					err += pow( u_n0[l] / (Atol + Rtol * max(fabs(x0),fabs(
-					                                                 x1))),2);
-				}
+			if (m_num->nls_method == 1) // Newton-Raphson
+			{
+               for(j = 0; j < g_nnodes; j++)
+               {
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+                  k = j;
+                  l = pcs_number_of_primary_nvals * j + ii;
+#else		
+                  k = m_msh->Eqs2Global_NodeIndex[j];
+                  l = j + ii * g_nnodes;
+#endif
+                  x0 = u_n[l];
+                  x1 = GetNodeValue(k,nidx1);
+                  err += pow( (eqs_x[l]) / (Atol + Rtol * max(fabs(x0),fabs( x1))), 2);
+               }
+		 	}
 			else
-				for(j = 0; j < g_nnodes; j++)
-				{
-					k = m_msh->Eqs2Global_NodeIndex[j];
-					l = j + ii * g_nnodes;
-					x0 = u_n[l];
-					x1 = GetNodeValue(k,nidx1);
-					err += pow( (x1 - u_n0[l]) / (Atol + Rtol * max(fabs(x0),fabs(x1))), 2);
-				}
+			{
+               for(j = 0; j < g_nnodes; j++)
+               {
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+                  k = j;
+                  l = pcs_number_of_primary_nvals * j + ii;
+#else		
+                  k = m_msh->Eqs2Global_NodeIndex[j];
+                  l = j + ii * g_nnodes;
+#endif
+                  x0 = u_n[l];
+                  x1 = GetNodeValue(k,nidx1);
+                  err += pow( (x1 - u_k[l]) / (Atol + Rtol * max(fabs(x0),fabs( x1))), 2);
+               }
+			}
 		}
+
+#if defined(USE_PETSC) // || defined(other parallel libs)//04.3012. WW
+		double err_l = err;
+		MPI_Allreduce(&err_l, &err, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		long size_xloc = size_x;
+		MPI_Allreduce(&size_xloc, &size_x, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+#endif
 		err = sqrt(err / (double)size_x);
 #endif
 
@@ -12691,6 +13284,8 @@ CRFProcess* PCSGetMass(size_t component_number)
 				// Adding the rate of concentration change to the right hand side of the equation.
 #ifdef NEW_EQS                           //15.12.2008. WW
 				eqs_new->b[it] -= m_vec_GEM->m_xDC_Chem_delta[it * nDC + i] / Tim->time_step_length;
+#elif defined(USE_PETSC)
+				// eqs_new->b[it] -= m_vec_GEM->m_xDC_Chem_delta[it * nDC + i] / Tim->time_step_length;				
 #else
 				eqs->b[it] -= m_vec_GEM->m_xDC_Chem_delta[it * nDC + i] / Tim->time_step_length;
 #endif

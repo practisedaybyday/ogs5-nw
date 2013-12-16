@@ -27,7 +27,9 @@ namespace FiniteElement
 {class CFiniteElementVec;
 }
 using FiniteElement::CFiniteElementVec;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 class CPARDomain;
+#endif
 
 namespace process
 {
@@ -67,7 +69,8 @@ public:
 	void StoreLastSolution(const int ty = 0);
 	void RecoverSolution(const int ty = 0);
 	double NormOfDisp();
-#ifndef NEW_EQS
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+  //#ifndef NEW_EQS
 	double NormOfUnkonwn_orRHS(bool isUnknowns = true);
 #endif
 	// Stress
@@ -110,8 +113,10 @@ private:
 
 	//
 	double error_k0;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	// Domain decompisition
-	inline void DomainAssembly(CPARDomain* m_dom);
+	void DomainAssembly(CPARDomain* m_dom);
+#endif
 
 	// For strong discontinuity approach
 	void Trace_Discontinuity();

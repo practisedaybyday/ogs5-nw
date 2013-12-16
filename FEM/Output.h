@@ -13,6 +13,10 @@
 #include <iostream>
 #include <vector>
 
+#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
+#include "mpi.h"
+#endif
+
 namespace MeshLib
 {class CFEMesh;
 }
@@ -32,6 +36,7 @@ public:
 	 * method initializes process and mesh attributes
 	 */
 	void init ();
+        void CreateVTKInstance(void); //WW
 	~COutput(void);
 
 	/**
@@ -97,6 +102,10 @@ public:
 	                        const std::string& unique_name);
 
 	void Write(std::fstream*);
+
+#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
+    void setMPI_Info(const int rank, const int size, std::string rank_str);
+#endif
 	// TF not used (at the moment?) REMOVE CANDIDATE
 	//    int GetPointClose(CGLPoint);
 	void WriteTimeCurveData(std::fstream &);
@@ -221,5 +230,14 @@ private:
 
 	// PCON values
 	std::vector<std::string> _pcon_value_vector;
+
+	/// Tecplot share zone
+	bool tecplot_zone_share; // 10.2012. WW
+
+#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
+    int mrank;
+    int msize;
+    std::string mrank_str;
+#endif
 };
 #endif // OUTPUT_H
