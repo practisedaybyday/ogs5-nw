@@ -8,6 +8,7 @@
 
 #include<iostream>
 
+#include "../../FEM/display.h"
 
 namespace petsc_group
 {
@@ -178,18 +179,22 @@ void PETScLinearSolver::VectorCreate(PetscInt m)
 
 void PETScLinearSolver::MatrixCreate( PetscInt m, PetscInt n)
 {
-
+  PetscErrorCode ierr;
   MatCreate(PETSC_COMM_WORLD, &A);
   // TEST  MatSetSizes(A, m_size_loc, PETSC_DECIDE, m, n);
-  MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,m,n);
+
+  ierr = MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,m,n);
   //MatSetSizes(A, m_size_loc, PETSC_DECIDE, m,  n);
-  MatSetType(A,MATMPIAIJ);
+  CHKERRCONTINUE(ierr);
 
   MatSetFromOptions(A);
-  MatSetUp(A);  // KG44 this seems to work with petsc 3.3 ..the commands below result in problems when assembling the matrix with version 3.3
-  //  MatMPIAIJSetPreallocation(A,d_nz,PETSC_NULL, o_nz,PETSC_NULL);
-  //  MatSeqAIJSetPreallocation(A,d_nz,PETSC_NULL);
+  MatSetType(A,MATMPIAIJ);
+  ScreenMessage2("-> set PETSc matrix preallocation wiht d_nz=%d and o_nz=%d\n", d_nz, o_nz);
+  MatMPIAIJSetPreallocation(A,d_nz,PETSC_NULL, o_nz,PETSC_NULL);
+  //MatSeqAIJSetPreallocation(A,d_nz,PETSC_NULL);
+  MatSetOption(A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE); // for MatZeroRows()
   MatGetOwnershipRange(A,&i_start,&i_end);
+  ScreenMessage2("-> PETSc linear solver range: start=%d, end=%d\n", i_start, i_end);
 
   //  std::cout<<"sub_a  "<<i_start<<";   sub_d "<<i_end<<"\n";
 }
@@ -245,7 +250,7 @@ void PETScLinearSolver::Solver()
    }
    else if (reason<0)
    {
-     PetscPrintf(PETSC_COMM_WORLD,"\nOther kind of divergence: this should not happen.\n");
+     PetscPrintf(PETSC_COMM_WORLD,"\nOther kind of divergence (%d): this should not happen.\n", reason);
    }
    else 
    {
