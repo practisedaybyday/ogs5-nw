@@ -12519,8 +12519,6 @@ CRFProcess* PCSGetMass(size_t component_number)
 				eqs->unknown_update_methods = \
 				        (int*) Free(eqs->unknown_update_methods);
 			eqs = DestroyLinearSolver(eqs);
-			if(m_pcs)
-				m_pcs->eqs = NULL;
 			PCS_Solver.erase((PCS_Solver.begin() + i));
 		}
 		//PCS_Solver.clear();
