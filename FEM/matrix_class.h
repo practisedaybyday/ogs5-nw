@@ -173,7 +173,7 @@ template<> class vec<void*>
 {
 public:
 	vec(int argSize);
-	vec() : _size (0) {}
+	vec() : _entry(NULL),_size (0) {}
 	explicit vec(const vec<void*>& v);
 
 	virtual ~vec();

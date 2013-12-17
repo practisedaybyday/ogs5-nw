@@ -680,7 +680,7 @@ template<class T> void vec<T>:: Write(std::ostream& os) const
 }
 
 //2.
-vec<void*>:: vec (const int argSize) : _size(argSize), _entry(NULL)
+vec<void*>:: vec (const int argSize) : _entry(NULL), _size(argSize)
 {
     if (argSize > 0)
         _entry = new void*[argSize];
