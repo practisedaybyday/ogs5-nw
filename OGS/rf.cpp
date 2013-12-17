@@ -189,7 +189,7 @@ int main ( int argc, char* argv[] )
 #endif
 	MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 	MPI_Comm_size(PETSC_COMM_WORLD, &r_size);
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD, "===\nUse PETSc solver");
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD, "===\nUse PETSc solver: ");
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD, "Number of CPUs: %d, rank: %d\n", r_size, rank);
 	PetscSynchronizedFlush(PETSC_COMM_WORLD);
 #endif

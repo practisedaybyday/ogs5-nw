@@ -117,16 +117,9 @@ using namespace std;
 /**************************************************************************/
 int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique_name )
 {
-#if defined(USE_MPI)                           //WW
-	if(myrank == 0)
-	{
-#endif
-	std::cout << std::endl;
-	std::cout << "---------------------------------------------" << std::endl;
-	std::cout << "Data input:" << std::endl;
-#if defined(USE_MPI)                        //WW
-}
-#endif
+	ScreenMessage("\n---------------------------------------------\n");
+	ScreenMessage("Data input:\n");
+
 	/* Dateinamen generieren */
 	//OK  DATCreateFileNames(dateiname);
 	static int datlen;

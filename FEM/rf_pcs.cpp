@@ -8776,7 +8776,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 							percent_difference = .0;
 						else
 							percent_difference = 100.0 * ((last_error - nonlinear_iteration_error) / last_error);
-						std::cout << "         ->Nonlinear error: " << nonlinear_iteration_error << ", Convergence rate: " << percent_difference << "%"<< std::endl;
+						ScreenMessage("         ->Nonlinear error: %e, Convergence rate: %e\%\n", nonlinear_iteration_error, percent_difference);
 						//
 						if(nonlinear_iteration_error <= 1.0)
 						{
@@ -9012,9 +9012,9 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		//
 		// NON-LINEAR METHODS
 		if(m_num->nls_method == 0)
-			std::cout << "      -->End of PICARD iteration: " << iter_nlin << "/" << m_num->nls_max_iterations << std::endl;
+			ScreenMessage("      -->End of PICARD iteration: %d/%d \n", iter_nlin, m_num->nls_max_iterations);
 		else
-			std::cout << "      -->End of NEWTON-RAPHSON iteration: " << iter_nlin << "/" << m_num->nls_max_iterations << std::endl;
+			ScreenMessage("      -->End of NEWTON-RAPHSON iteration: %d/%d \n", iter_nlin, m_num->nls_max_iterations);
 		//
 		// Errors
 		// --------------------------------------------------
@@ -9023,10 +9023,10 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 				std::cout << "         PCS error: " << pcs_absolute_error[0] << std::endl;
 			}else{
 				for (ii = 0; ii < pcs_number_of_primary_nvals; ii++){
-					 std::cout << "         PCS error DOF["<< ii <<"]: " << pcs_absolute_error[ii] << std::endl;
+					 ScreenMessage("         PCS error DOF[%d]: %e\n", ii,  pcs_absolute_error[ii]);
 				}
 			}
-			std::cout <<"         ->Euclidian norm of unknowns: " << pcs_unknowns_norm << std::endl;
+			ScreenMessage("         ->Euclidian norm of unknowns: \n", pcs_unknowns_norm);
 		}
 	}
 

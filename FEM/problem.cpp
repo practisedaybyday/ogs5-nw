@@ -79,6 +79,7 @@ extern int ReadData(char*, GEOLIB::GEOObjects& geo_obj, std::string& unique_name
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
 #include "PETSC/PETScLinearSolver.h"
 #endif
+
 namespace process
 {class CRFProcessDeformation;
 }
@@ -87,6 +88,12 @@ using process::CRFProcessDeformation;
 //NW: moved the following variables from rf.cpp to avoid linker errors
 std::string FileName;                             //WW
 std::string FilePath;                             //23.02.2009. WW
+
+#if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL) || \
+        defined(USE_MPI_GEMS) || defined(USE_MPI_BRNS) || defined(USE_PETSC)
+int mysize; //NW
+int myrank;
+#endif
 
 /**************************************************************************
    GeoSys - Function: Constructor
@@ -99,6 +106,11 @@ std::string FilePath;                             //23.02.2009. WW
 Problem::Problem (char* filename) :
 	dt0(0.), print_result(true), _geo_obj (new GEOLIB::GEOObjects), _geo_name (filename)
 {
+#if defined(USE_MPI) || defined(USE_PETSC)
+	MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
+	MPI_Comm_size(MPI_COMM_WORLD,&mysize);
+#endif
+
 	if (filename != NULL)
 	{
 		// read data
@@ -469,7 +481,10 @@ Problem::~Problem()
 	delete[] exe_flag;
 	if (buffer_array)
 		delete[] buffer_array;
+	if (buffer_array1)
+		delete[] buffer_array1;
 	buffer_array = NULL;
+	buffer_array1 = NULL;
 	active_processes = NULL;
 	exe_flag = NULL;
 	//
@@ -784,9 +799,9 @@ void Problem::PCSCreate()
 
 	for (size_t i = 0; i < no_processes; i++)
 	{
-		std::cout << "............................................." << std::endl;
+	    ScreenMessage2(".............................................\n");
 		FiniteElement::ProcessType pcs_type (pcs_vector[i]->getProcessType());
-		std::cout << "Create: " << FiniteElement::convertProcessTypeToString (pcs_type) << std::endl;
+		ScreenMessage2("Create: %s\n", FiniteElement::convertProcessTypeToString (pcs_type).c_str());
 		//		if (!pcs_vector[i]->pcs_type_name.compare("MASS_TRANSPORT")) {
 		//YS   // TF
 		if (pcs_type != FiniteElement::MASS_TRANSPORT && pcs_type != FiniteElement::FLUID_MOMENTUM
@@ -971,7 +986,7 @@ void Problem::Euler_TimeDiscretize()
 		aktuelle_zeit = current_time;
 		//
 		// Print messsage
-#if defined(USE_MPI)
+#if defined(USE_MPI) || defined(USE_PETSC)
 		if(myrank == 0)
 		{
 #endif
@@ -981,7 +996,7 @@ void Problem::Euler_TimeDiscretize()
 		if(dt_rec > dt){
 			std::cout << "This time step size was modified to match a critical time!" << std::endl;
 		}
-#if defined(USE_MPI)
+#if defined(USE_MPI) || defined(USE_PETSC)
 		}
 #endif
 		if(CouplingLoop())
@@ -1243,27 +1258,27 @@ bool Problem::CouplingLoop()
 				a_pcs->first_coupling_iteration = false; // No longer true.
 				// Check for break criteria
 				max_outer_error = MMax(max_outer_error,a_pcs->cpl_max_relative_error);
-	            std::cout << "coupling error (relative to tolerance): " << a_pcs->cpl_max_relative_error << std::endl;
+				ScreenMessage("coupling error (relative to tolerance): %e\n", a_pcs->cpl_max_relative_error);
 				if(!a_pcs->TimeStepAccept()){
-				   std::cout << "*** The process rejected this time step." << std::endl;
-				   accept = false;
-				   break;
+					ScreenMessage("*** The process rejected this time step.\n");
+					accept = false;
+					break;
 				}
 			}
 			if(!accept) break;
 		}
 		//
-	    if(cpl_overall_max_iterations > 1){
-			std::cout << "\n======================================================\n";
-			std::cout << "Outer coupling loop " << outer_index+1 << "/" << cpl_overall_max_iterations << " complete."<<std::endl;
-			std::cout << "Max coupling error (relative to tolerance): " << max_outer_error << std::endl;
-			std::cout << "======================================================\n";
-	    }
-	    else{
-			std::cout << std::endl;
-	    }
+		if(cpl_overall_max_iterations > 1){
+			ScreenMessage("\n======================================================\n");
+			ScreenMessage("Outer coupling loop %d/%d complete.\n", outer_index+1, cpl_overall_max_iterations);
+			ScreenMessage("Max coupling error (relative to tolerance): %d\n", max_outer_error);
+			ScreenMessage("======================================================\n");
+		}
+		else{
+			ScreenMessage("\n");
+		}
 		if(!accept){
-			std::cout << std::endl;
+			ScreenMessage("\n");
 			break;
 		}
 		// Coupling convergence criteria
