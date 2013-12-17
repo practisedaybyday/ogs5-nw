@@ -2846,6 +2846,7 @@ void GetNormalDepthNODValue(double &value, CSourceTerm* st, long msh_node)
  **************************************************************************/
 void GetNODValue(double& value, CNodeValue* cnodev, CSourceTerm* st)
 {
+#if 0
 #if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
   //#ifndef NEW_EQS                                //WW. 06.11.2008
    if (st->isCoupled())
@@ -2876,7 +2877,7 @@ void GetNODValue(double& value, CNodeValue* cnodev, CSourceTerm* st)
    //	if (cnodev->node_distype == 11) // Green_Ampt infiltration JOD
    if (cnodev->getProcessDistributionType() == FiniteElement::GREEN_AMPT)
       GetGreenAmptNODValue(value, st, cnodev->msh_node_number);
-
+#endif
 }
 
 
