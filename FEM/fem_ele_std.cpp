@@ -4530,7 +4530,7 @@ void CFiniteElementStd::CalcLaplace()
 				// Material
 				if(dof_n == 1)
 					CalCoefLaplace(false,gp);
-	#ifndef OGS_ONLY_TH
+#ifndef OGS_ONLY_TH
 				else if (dof_n == 2)
 				{
 					if (PcsType == V)
@@ -4540,9 +4540,9 @@ void CFiniteElementStd::CalcLaplace()
 					else if (PcsType == S)
 						CalCoefLaplacePTC(in * dof_n + jn);
 				}
-	#endif
+#endif
 				const int jsh = jn*nnodes;
-	#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
 				//---------------------------------------------------------
 				for (i = 0; i < act_nodes; i++)
 				{
@@ -4564,7 +4564,7 @@ void CFiniteElementStd::CalcLaplace()
 						}
 					} // j: nodes
 				} // i: nodes
-	#else
+#else
 				//---------------------------------------------------------
 				for (i = 0; i < nnodes; i++)
 				{
@@ -4587,7 +4587,7 @@ void CFiniteElementStd::CalcLaplace()
 						}
 					} // j: nodes
 				} // i: nodes
-	#endif
+#endif
 			}
 		} //	//TEST OUTPUT
 	}
