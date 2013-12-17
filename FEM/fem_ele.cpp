@@ -388,6 +388,7 @@ void CElement::ConfigNumerics(MshElemType::type ele_type)
 		break;
 	default:
 		std::cerr << "[CElement::ConfigNumerics] unknown element type" << std::endl;
+		break;
 	}
 }
 
@@ -726,6 +727,7 @@ void CElement::SetGaussPoint(const int gp, int& gp_r, int& gp_s, int& gp_t)
 		return;
 	default:
 		std::cerr << "CElement::SetGaussPoint invalid mesh element type given" << std::endl;
+		break;
 	}
 }
 /***************************************************************************
@@ -782,6 +784,7 @@ double CElement::GetGaussData(int gp, int& gp_r, int& gp_s, int& gp_t)
 		break;
 	default:
 		std::cerr << "CElement::GetGaussData invalid mesh element type given" << std::endl;
+		break;
 	}
 	return fkt;
 }
@@ -868,7 +871,7 @@ void CElement::FaceIntegration(double* NodeVal)
 void CElement::DomainIntegration(double* NodeVal)
 {
 	int i, gp, gp_r, gp_s, gp_t;
-	double fkt = 0.0, det, val;
+	double fkt = 0.0, val;
 	double* sf = shapefct;
 
 	setOrder(Order);
@@ -879,7 +882,7 @@ void CElement::DomainIntegration(double* NodeVal)
 			ShapeFunctionHQ = ShapeFunctionQuadHQ8;
 	}
 
-	det = MeshElement->GetVolume();
+	//double det = MeshElement->GetVolume();
 	for (i = 0; i < nNodes; i++)
 		dbuff[i] = 0.0;
 	// Loop over Gauss points
@@ -908,13 +911,13 @@ void CElement::DomainIntegration(double* NodeVal)
 void CElement::CalcFaceMass(double* mass)
 {
 	int i, j, gp, gp_r, gp_s;
-	double fkt = 0.0, det, val;
-	double* sf = shapefct;
+	double fkt = 0.0, det;
+//	double* sf = shapefct;
 
 	setOrder(Order);
 	if(Order == 2)
 	{
-		sf = shapefctHQ;
+//		sf = shapefctHQ;
 		if(MeshElement->GetElementType() == MshElemType::QUAD)
 			ShapeFunctionHQ = ShapeFunctionQuadHQ8;
 	}
@@ -950,6 +953,7 @@ void CElement::CalcFaceMass(double* mass)
 		default:
 			std::cerr << "CElement::CalcFaceMass element type not handled" <<
 			std::endl;
+			break;
 		}
 
 		ComputeShapefct(Order);
@@ -1172,6 +1176,7 @@ int CElement::GetLocalIndex(const int gp_r, const int gp_s, int gp_t)
 	default:
 		std::cerr << "CElement::GetLocalIndex invalid mesh element type given"
 		          << std::endl;
+		break;
 	}
 	return LoIndex;
 }
@@ -1282,6 +1287,7 @@ void CElement::SetExtropoGaussPoints(const int i)
 			unit[0] = -0.166666666666667;
 			unit[1] = -0.166666666666667;
 			unit[2] = 1.5;
+			break;
 		}
 		break;
 	case MshElemType::LINE:
