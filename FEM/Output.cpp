@@ -107,25 +107,21 @@ void COutput::init()
 {
 	if (getProcessType () == FiniteElement::INVALID_PROCESS)
 	{
-		std::cerr <<
-		"COutput::init(): could not initialize process pointer (process type INVALID_PROCESS) and appropriate mesh"
-		          << std::endl;
-		std::cerr <<
-		"COutput::init(): trying to fetch process pointer using msh_type_name ... " <<
-		std::endl;
-		if(msh_type_name.size() > 0)
+//		ScreenMessage("COutput::init(): could not initialize process pointer (process type INVALID_PROCESS) and appropriate mesh\n");
+//		ScreenMessage("COutput::init(): trying to fetch process pointer using msh_type_name ... \n");
+		if(!msh_type_name.empty())
 		{
 			_pcs = PCSGet(msh_type_name);
-			if (_pcs)
-				std::cerr << " successful" << std::endl;
-			else
+			if (!_pcs)
 			{
-				std::cerr << " failed" << std::endl;
+				std::cerr << "COutput::init(): failed to fetch process pointer using msh_type_name" << std::endl;
 				exit (1);
 			}
 		}
 		else
-			std::cerr << " failed" << std::endl;
+		{
+			std::cerr << "COutput::init(): failed to fetch process pointer using msh_type_name" << std::endl;
+		}
 	}
 
 	m_msh = FEMGet(convertProcessTypeToString(getProcessType()));
@@ -1641,20 +1637,23 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 	if (time_step_number == 0)            //WW  Old: if(time_step_number==1)
 	{
 		//project_title;
-		if (dat_type_name.compare("GNUPLOT") != 0) { // 6/2012 JOD
-			const std::string project_title_string ("Time curves in points");
-			tec_file << " TITLE = \"" << project_title_string << "\"" << "\n";
-		} else
-					tec_file << "# ";
-
-		tec_file << " VARIABLES = \"TIME \" ";
+		if (dat_type_name.compare("CSV") != 0) {
+			if (dat_type_name.compare("GNUPLOT") != 0) { // 6/2012 JOD
+				const std::string project_title_string ("Time curves in points");
+				tec_file << " TITLE = \"" << project_title_string << "\"" << "\n";
+			} else {
+				tec_file << "# ";
+			}
+			tec_file << " VARIABLES = ";
+		}
+		tec_file << "\"TIME \" ";
 
 		//    if(pcs_type_name.compare("RANDOM_WALK")==0)
 		if (getProcessType() == FiniteElement::RANDOM_WALK)
 			tec_file << "leavingParticles ";
 		for (size_t k = 0; k < no_variables; k++) //WW
 		{
-			tec_file << " \"" << _nod_value_vector[k] << "\" ";
+			tec_file << "\"" << _nod_value_vector[k] << "\" ";
 			//-------------------------------------WW
 			m_pcs = GetPCS(_nod_value_vector[k]);
 			if (m_pcs && m_pcs->type == 1212 && _nod_value_vector[k].find(
@@ -1682,16 +1681,18 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 			         << " Effective_Strain";
 		tec_file << "\n";
 
-		if (dat_type_name.compare("GNUPLOT") == 0) // 5.3.07 JOD
-		  tec_file << "# "; // comment
+		if (dat_type_name.compare("CSV") != 0) {
+			if (dat_type_name.compare("GNUPLOT") == 0) // 5.3.07 JOD
+			  tec_file << "# "; // comment
 
-		if (geo_name.find("POINT") == std::string::npos)
-			tec_file << " ZONE T=\"POINT="
-			//, I=" << anz_zeitschritte << ", J=1, K=1, F=POINT" << "\n";
-			         << getGeoTypeAsString() << geo_name << "\"" << "\n";
-		else
-			tec_file << " ZONE T=\"POINT=" << geo_name << "\""
-			         << "\n";  //, I=" << anz_zeitschritte << ", J=1, K=1, F=POINT" << "\n";
+			if (geo_name.find("POINT") == std::string::npos)
+				tec_file << " ZONE T=\"POINT="
+				//, I=" << anz_zeitschritte << ", J=1, K=1, F=POINT" << "\n";
+				         << getGeoTypeAsString() << geo_name << "\"" << "\n";
+			else
+				tec_file << " ZONE T=\"POINT=" << geo_name << "\""
+				         << "\n";  //, I=" << anz_zeitschritte << ", J=1, K=1, F=POINT" << "\n";
+		}
 	}
 
 	// For deformation
@@ -3476,7 +3477,10 @@ void COutput::addInfoToFileName (std::string& file_name, bool geo, bool process,
 		file_name += "_" + msh_type_name;
 
 	// finally add file extension
-	file_name += TEC_FILE_EXTENSION;
+	if (dat_type_name.compare("CSV") == 0)
+		file_name += ".csv";
+	else
+		file_name += TEC_FILE_EXTENSION;
 }
 
 /**************************************************************************
