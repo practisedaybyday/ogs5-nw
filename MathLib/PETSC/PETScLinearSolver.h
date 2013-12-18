@@ -33,7 +33,7 @@ public:
     ~PETScLinearSolver();
 
   void Config(const PetscReal tol, const PetscInt maxits, const KSPType lsol,
-                const PCType prec_type);
+                const PCType prec_type, const std::string &misc_setting="");
 
   void Init(const int *sparse_index = NULL);
   
@@ -127,6 +127,9 @@ public:
 
     int mpi_size;
     int rank;
+
+    typedef std::pair<std::string,std::string> Para;
+    std::vector<Para> vec_para;
 
     void VectorCreate(PetscInt m);
     void MatrixCreate(PetscInt m, PetscInt n);

@@ -6,9 +6,11 @@
 */
 #include "PETScLinearSolver.h"
 
-#include<iostream>
+#include <iostream>
+#include <list>
 
 #include "../../FEM/display.h"
+#include "StringTools.h"
 
 namespace petsc_group
 {
@@ -23,6 +25,8 @@ namespace petsc_group
    o_nz = 10; 	
    nz = 10;   
    m_size_loc = PETSC_DECIDE;
+   mpi_size = 0;
+   rank = 0;
  }
 
 PETScLinearSolver:: ~PETScLinearSolver()
@@ -144,7 +148,7 @@ void PETScLinearSolver::Init(const int *sparse_index)
  PCGAMG            "gamg"
 
 */
-void PETScLinearSolver::Config(const PetscReal tol, const PetscInt maxits, const KSPType lsol, const PCType prec_type )
+void PETScLinearSolver::Config(const PetscReal tol, const PetscInt maxits, const KSPType lsol, const PCType prec_type, const std::string &misc_setting)
 {
    ltolerance = tol;
    sol_type = lsol;
@@ -158,7 +162,40 @@ void PETScLinearSolver::Config(const PetscReal tol, const PetscInt maxits, const
    KSPGetPC(lsolver, &prec);
    PCSetType(prec, prec_type); //  PCJACOBI); //PCNONE);
    KSPSetTolerances(lsolver,ltolerance, PETSC_DEFAULT, PETSC_DEFAULT, maxits);
+
+   if (!misc_setting.empty()) {
+	   PetscPrintf(PETSC_COMM_WORLD, "-> additional PETSc arguments:\n");
+	   std::list<std::string> lst = splitString(misc_setting,' ');
+	   for (std::list<std::string>::iterator itr=lst.begin(); itr!=lst.end(); ++itr) {
+		   // key-value or only key
+		   std::string &str1 = *itr;
+		   if (str1.find('-')==std::string::npos)
+			   continue;
+		   ++itr;
+		   if (itr==lst.end())
+			   break;
+		   std::string val = "";
+		   std::string &str2 = *itr;
+		   if (str2.find('-')==std::string::npos)
+				val = str2;
+		   else
+			   --itr;
+		   vec_para.push_back(std::make_pair(str1, val));
+		   PetscPrintf(PETSC_COMM_WORLD, "\t %s = %s\n", str1.c_str(), val.c_str());
+	   }
+   }
+   for (std::vector<Para>::iterator itr=vec_para.begin(); itr!=vec_para.end(); ++itr) {
+	   PetscOptionsSetValue(itr->first.c_str(),itr->second.c_str());
+   }
+   char* copts;
+   PetscOptionsGetAll(&copts);
+   PetscPrintf(PETSC_COMM_WORLD, "-> PETSc options = %s\n", copts);
+   PetscFree(copts);
    KSPSetFromOptions(lsolver);
+   // reset options
+   for (std::vector<Para>::iterator itr=vec_para.begin(); itr!=vec_para.end(); ++itr) {
+	   PetscOptionsSetValue(itr->first.c_str(),"");
+   }
 
 }
 //-----------------------------------------------------------------
@@ -240,33 +277,49 @@ void PETScLinearSolver::Solver()
    PetscGetTime(&v1);
 #endif
 
+   PetscPrintf(PETSC_COMM_WORLD,"\n================================================\n");
+   PetscPrintf(PETSC_COMM_WORLD, "*** PETSc linear solver\n");
    KSPSolve(lsolver, b, x);
   
+   const char *slv_type;
+   const char *prc_type;
+   KSPGetType(lsolver, &slv_type);
+   PCGetType(prec, &prc_type);
    KSPGetConvergedReason(lsolver,&reason); //CHKERRQ(ierr);
-   if (reason==KSP_DIVERGED_INDEFINITE_PC)
-   {
-     PetscPrintf(PETSC_COMM_WORLD,"\nDivergence because of indefinite preconditioner;\n");
-     PetscPrintf(PETSC_COMM_WORLD,"Run the executable again but with -pc_factor_shift_positive_definite option.\n");
-   }
-   else if (reason<0)
-   {
-     PetscPrintf(PETSC_COMM_WORLD,"\nOther kind of divergence (%d): this should not happen.\n", reason);
-   }
-   else 
-   {
-     const char *slv_type;
-     const char *prc_type;
-     KSPGetType(lsolver, &slv_type);
-     PCGetType(prec, &prc_type);
+   KSPGetIterationNumber(lsolver,&its); //CHKERRQ(ierr);
+   PetscReal rtol=.0, abstol=.0, dtol=.0;
+   PetscInt maxits = 0;
+   KSPGetTolerances(lsolver, &rtol, &abstol, &dtol, &maxits);
+   PetscReal r_norm = .0;
+   KSPGetResidualNorm(lsolver, &r_norm);
+   PetscReal b_norm = .0;
+   VecNorm(b, NORM_2, &b_norm);
+   PetscReal error_r = r_norm/b_norm;
 
-      PetscPrintf(PETSC_COMM_WORLD,"\n================================================");         
-      PetscPrintf(PETSC_COMM_WORLD, "\nLinear solver %s with %s preconditioner",
-                                    slv_type, prc_type);         
-      KSPGetIterationNumber(lsolver,&its); //CHKERRQ(ierr);
-      PetscPrintf(PETSC_COMM_WORLD,"\nConvergence in %d iterations.\n",(int)its);
-      PetscPrintf(PETSC_COMM_WORLD,"\n================================================");           
+   PetscPrintf(PETSC_COMM_WORLD, "solver    : %s\n", slv_type);
+   PetscPrintf(PETSC_COMM_WORLD, "precon    : %s\n", prc_type);
+   PetscPrintf(PETSC_COMM_WORLD, "iteration : %d/%d\n", its, maxits);
+   PetscPrintf(PETSC_COMM_WORLD, "residual  : |r|=%e, |b|=%e, error=%e (tol=%e)\n", r_norm, b_norm, error_r, rtol);
+   if (reason>=0) {
+      PetscPrintf(PETSC_COMM_WORLD, "status    : Converged (reason=%d)\n", reason);
+   } else {
+      if (reason==KSP_DIVERGED_INDEFINITE_PC)
+      {
+         PetscPrintf(PETSC_COMM_WORLD, "status    : Diverged (indefinite precon)\n", reason);
+         PetscPrintf(PETSC_COMM_WORLD, "            Run the executable again but with -pc_factor_shift_positive_definite option.\n");
+      }
+      else if (reason==KSP_DIVERGED_ITS)
+      {
+          PetscPrintf(PETSC_COMM_WORLD, "status    : Diverged (max iteration)\n", reason);
+      }
+      else
+      {
+          PetscPrintf(PETSC_COMM_WORLD, "status    : Diverged (reason=%d)\n", reason);
+      }
+      exit(1);
    }
-   PetscPrintf(PETSC_COMM_WORLD,"\n");
+
+   PetscPrintf(PETSC_COMM_WORLD,"================================================\n");
 
    //VecAssemblyBegin(x);
    //VecAssemblyEnd(x);
