@@ -92,7 +92,7 @@ public:
     PetscInt getMPI_Size() const {return mpi_size;} 
     PetscInt getMPI_Rank() const {return rank;} 
 
-    void EQSV_Viewer(std::string file_name);
+    void EQSV_Viewer(std::string file_name, bool ascii=true);
    
   private:
     PETSc_Mat  A;

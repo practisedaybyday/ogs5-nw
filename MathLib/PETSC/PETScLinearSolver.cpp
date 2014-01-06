@@ -224,11 +224,16 @@ void PETScLinearSolver::MatrixCreate( PetscInt m, PetscInt n)
   //MatSetSizes(A, m_size_loc, PETSC_DECIDE, m,  n);
   CHKERRCONTINUE(ierr);
 
-  MatSetFromOptions(A);
   MatSetType(A,MATMPIAIJ);
+  MatSetFromOptions(A);
+#if 0
   ScreenMessage2("-> set PETSc matrix preallocation wiht d_nz=%d and o_nz=%d\n", d_nz, o_nz);
   MatMPIAIJSetPreallocation(A,d_nz,PETSC_NULL, o_nz,PETSC_NULL);
   //MatSeqAIJSetPreallocation(A,d_nz,PETSC_NULL);
+#else
+  ScreenMessage("-> do not preallocate PETSc\n");
+  MatSetUp(A);
+#endif
   MatSetOption(A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE); // for MatZeroRows()
   MatGetOwnershipRange(A,&i_start,&i_end);
   ScreenMessage2("-> PETSc linear solver range: start=%d, end=%d\n", i_start, i_end);
@@ -299,7 +304,7 @@ void PETScLinearSolver::Solver()
    PetscPrintf(PETSC_COMM_WORLD, "solver    : %s\n", slv_type);
    PetscPrintf(PETSC_COMM_WORLD, "precon    : %s\n", prc_type);
    PetscPrintf(PETSC_COMM_WORLD, "iteration : %d/%d\n", its, maxits);
-   PetscPrintf(PETSC_COMM_WORLD, "residual  : |r|=%e, |b|=%e, error=%e (tol=%e)\n", r_norm, b_norm, error_r, rtol);
+   PetscPrintf(PETSC_COMM_WORLD, "residual  : ||r||=%e, ||b||=%e, ||r||/||b||=%e (tol=%e)\n", r_norm, b_norm, error_r, rtol);
    if (reason>=0) {
       PetscPrintf(PETSC_COMM_WORLD, "status    : Converged (reason=%d)\n", reason);
    } else {
@@ -316,6 +321,7 @@ void PETScLinearSolver::Solver()
       {
           PetscPrintf(PETSC_COMM_WORLD, "status    : Diverged (reason=%d)\n", reason);
       }
+      PetscFinalize();
       exit(1);
    }
 
@@ -615,41 +621,63 @@ void PETScLinearSolver::zeroRows_in_Matrix(const int nrows, const  PetscInt *row
 
 
 
-void PETScLinearSolver::EQSV_Viewer(std::string file_name)
+void PETScLinearSolver::EQSV_Viewer(std::string file_name, bool ascii)
 {
-  PetscViewer viewer;
-  std::string fname = file_name + "_eqs_dump.txt";
-  PetscViewerASCIIOpen(PETSC_COMM_WORLD, fname.c_str(), &viewer);
-  PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_MATLAB);
+  if (ascii) {
+	  PetscViewer viewer;
+	  std::string fname = file_name + "_eqs_dump.txt";
+	  PetscViewerASCIIOpen(PETSC_COMM_WORLD, fname.c_str(), &viewer);
+	  PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_MATLAB);
 
-  AssembleRHS_PETSc();
-  AssembleUnkowns_PETSc();
-  AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
+	  AssembleRHS_PETSc();
+	  AssembleUnkowns_PETSc();
+	  AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
 
 
-  //PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_VTK);
-  PetscObjectSetName((PetscObject)A,"Stiffness_matrix");
-  PetscObjectSetName((PetscObject)b,"RHS");
-  PetscObjectSetName((PetscObject)x,"Solution");
-  MatView(A,viewer);
-  VecView(b, viewer);
-  VecView(x, viewer);  
+	  //PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_VTK);
+	  PetscObjectSetName((PetscObject)A,"Stiffness_matrix");
+	  PetscObjectSetName((PetscObject)b,"RHS");
+	  PetscObjectSetName((PetscObject)x,"Solution");
+	  MatView(A,viewer);
+	  VecView(b, viewer);
+	  VecView(x, viewer);
 
-//#define  EXIT_TEST
-#ifdef EXIT_TEST 
-  VecDestroy(&b);
-  VecDestroy(&x);
-  MatDestroy(&A);
-  if(lsolver) KSPDestroy(&lsolver);
-  // if(prec) PCDestroy(&prec);
-  if(global_x0)
-    delete []  global_x0;
-  if(global_x1)
-    delete []  global_x1;
-   PetscFinalize();
-   exit(0);
-#endif 
- 
+	//#define  EXIT_TEST
+	#ifdef EXIT_TEST
+	  VecDestroy(&b);
+	  VecDestroy(&x);
+	  MatDestroy(&A);
+	  if(lsolver) KSPDestroy(&lsolver);
+	  // if(prec) PCDestroy(&prec);
+	  if(global_x0)
+	    delete []  global_x0;
+	  if(global_x1)
+	    delete []  global_x1;
+	   PetscFinalize();
+	   exit(0);
+	#endif
+
+  } else {
+	  AssembleRHS_PETSc();
+	  AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
+
+	  {
+		  PetscViewer viewer;
+		  std::string fnameA = file_name + "_eqs_A.dat";
+		  PetscViewerBinaryOpen(PETSC_COMM_WORLD, fnameA.c_str(), FILE_MODE_WRITE , &viewer);
+		  MatView(A,viewer);
+		  PetscViewerDestroy(&viewer);
+	  }
+
+	  {
+		  PetscViewer viewer;
+		  std::string fnameRHS = file_name + "_eqs_rhs.dat";
+		  PetscViewerBinaryOpen(PETSC_COMM_WORLD, fnameRHS.c_str(), FILE_MODE_WRITE , &viewer);
+		  VecView(b, viewer);
+		  PetscViewerDestroy(&viewer);
+	  }
+  }
+
 }
 
 } //end of namespace
