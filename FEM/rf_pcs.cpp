@@ -4177,6 +4177,11 @@ double CRFProcess::Execute()
 	//----------------------------------------------------------------------
 	// Execute linear solver
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+	{
+		std::string eqs_name_base = convertProcessTypeToString(this->getProcessType());
+		eqs_name_base += "_" + number2str<size_t>(aktueller_zeitschritt);
+		eqs_new->EQSV_Viewer(eqs_name_base,false);
+	}
 		eqs_new->Solver();
 		//TEST 	double x_norm = eqs_new->GetVecNormX();
 		eqs_new->MappingSolution();
