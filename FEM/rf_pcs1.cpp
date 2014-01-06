@@ -693,9 +693,7 @@ void CreateEQS_LinearSolver()
       PETScLinearSolver *eqs = NULL; 
 
       if( pcs_type == FLUID_MOMENTUM )
-      {
- 	continue;
-      }
+         continue;
 
       if(  (pcs_type == DEFORMATION_H2)
          ||(pcs_type == DEFORMATION_FLOW) 
@@ -705,9 +703,7 @@ void CreateEQS_LinearSolver()
           int eqs_dim = nn_q*dim;
           vector<int> global_n_id;
           if(pcs_type == DEFORMATION_H2)
-          {
              eqs_dim += 2*nn;
-	  }
           else if(  (pcs_type == DEFORMATION_FLOW) 
                    ||(pcs_type == DEFORMATION_DYNAMIC) ) 
             eqs_dim += nn;
@@ -715,13 +711,13 @@ void CreateEQS_LinearSolver()
           sparse_info[0] = max_cnct_nodes * dim;
           sparse_info[1] = 0; //max_cnct_nodes * dim;
           sparse_info[2] = max_cnct_nodes * dim;
-	  sparse_info[3] = mesh->getNumNodesLocal_Q() * dim;
+          sparse_info[3] = mesh->getNumNodesLocal_Q() * dim;
           eqs = new PETScLinearSolver(eqs_dim);
           eqs->Init(sparse_info);
           eqs->set_rank_size(rank_p, size_p);
       }
       else if(  (pcs_type == MULTI_PHASE_FLOW)
-	   ||(pcs_type == TWO_PHASE_FLOW) ) 
+                ||(pcs_type == TWO_PHASE_FLOW) )
       {
          sparse_info[0] = max_cnct_nodes * 2;
          sparse_info[1] = 0; //max_cnct_nodes * 2;
@@ -732,11 +728,10 @@ void CreateEQS_LinearSolver()
          eqs->Init(sparse_info);
          eqs->set_rank_size(rank_p, size_p);
       }     
-      //else if( pcs_type == FLUID_MOMENTUM ) {}
       else 
       {
         sparse_info[0] = max_cnct_nodes;
-        sparse_info[1] = 0; //max_cnct_nodes;
+        sparse_info[1] = max_cnct_nodes; // 0;
         sparse_info[2] = max_cnct_nodes;
         sparse_info[3] = mesh->getNumNodesLocal();
 
