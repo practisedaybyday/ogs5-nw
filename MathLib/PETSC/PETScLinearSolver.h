@@ -28,19 +28,20 @@ namespace petsc_group
  
 class PETScLinearSolver
 {
-public:    
-  PETScLinearSolver (const int size);
+public:
+    PETScLinearSolver (const int size);
     ~PETScLinearSolver();
 
-  void Config(const PetscReal tol, const PetscInt maxits, const KSPType lsol,
+    void Config(const PetscReal tol, const PetscInt maxits, const KSPType lsol,
                 const PCType prec_type, const std::string &misc_setting="");
 
-  void Init(const int *sparse_index = NULL);
+    void Init(const int *sparse_index = NULL);
   
+    void CheckIfMatrixIsSame(const std::string &filename);
     void Solver();
     void AssembleRHS_PETSc();
     void AssembleUnkowns_PETSc();
-  void AssembleMatrixPETSc(const MatAssemblyType type = MAT_FINAL_ASSEMBLY); //MAT_FLUSH_ASSEMBLY
+    void AssembleMatrixPETSc(const MatAssemblyType type = MAT_FINAL_ASSEMBLY); //MAT_FLUSH_ASSEMBLY
 
     void UpdateSolutions(PetscScalar *u0, PetscScalar *u1);
     void MappingSolution();

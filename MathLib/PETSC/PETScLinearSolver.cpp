@@ -156,7 +156,11 @@ void PETScLinearSolver::Config(const PetscReal tol, const PetscInt maxits, const
 
 
    KSPCreate(PETSC_COMM_WORLD,&lsolver);
-   KSPSetOperators(lsolver, A, A,DIFFERENT_NONZERO_PATTERN);
+#if 0
+   KSPSetOperators(lsolver, A, A, SAME_NONZERO_PATTERN);
+#else
+   KSPSetOperators(lsolver, A, A, DIFFERENT_NONZERO_PATTERN);
+#endif
    KSPSetType(lsolver,lsol);
 
    KSPGetPC(lsolver, &prec);
@@ -251,6 +255,25 @@ void  PETScLinearSolver::getOwnerRange(int *start_r, int *end_r)
   *end_r = i_end;
 }
 
+void PETScLinearSolver::CheckIfMatrixIsSame(const std::string &filename)
+{
+  ScreenMessage("-> Check if the assembled matrix is the same as the one in a file: %s\n", filename.c_str());
+  PetscErrorCode ierr;
+  PetscViewer fd;
+  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,filename.c_str(),FILE_MODE_READ,&fd); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+
+  PETSc_Mat Y;
+  ierr = MatCreate(PETSC_COMM_WORLD,&Y);CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = MatSetFromOptions(Y);CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = MatLoad(Y,fd);CHKERRABORT(PETSC_COMM_WORLD,ierr);
+
+  ierr = MatAXPY(Y, -1., A, SAME_NONZERO_PATTERN);CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  PetscReal diff = .0;
+  ierr = MatNorm(Y, NORM_1, &diff);CHKERRABORT(PETSC_COMM_WORLD,ierr);
+
+  ScreenMessage("\t||A_assembled - A_file|| = %e\n", diff);
+}
+
 void PETScLinearSolver::Solver()
 {
   
@@ -284,6 +307,11 @@ void PETScLinearSolver::Solver()
 
    PetscPrintf(PETSC_COMM_WORLD,"\n================================================\n");
    PetscPrintf(PETSC_COMM_WORLD, "*** PETSc linear solver\n");
+#if 0
+   KSPSetOperators(lsolver, A, A, SAME_NONZERO_PATTERN);
+#else
+   KSPSetOperators(lsolver, A, A, DIFFERENT_NONZERO_PATTERN);
+#endif
    KSPSolve(lsolver, b, x);
   
    const char *slv_type;
@@ -304,7 +332,7 @@ void PETScLinearSolver::Solver()
    PetscPrintf(PETSC_COMM_WORLD, "solver    : %s\n", slv_type);
    PetscPrintf(PETSC_COMM_WORLD, "precon    : %s\n", prc_type);
    PetscPrintf(PETSC_COMM_WORLD, "iteration : %d/%d\n", its, maxits);
-   PetscPrintf(PETSC_COMM_WORLD, "residual  : ||r||=%e, ||b||=%e, ||r||/||b||=%e (tol=%e)\n", r_norm, b_norm, error_r, rtol);
+   PetscPrintf(PETSC_COMM_WORLD, "residual  : ||r||=%e, ||r||/||b||=%e(approx.), rtol=%e\n", r_norm, error_r, rtol);
    if (reason>=0) {
       PetscPrintf(PETSC_COMM_WORLD, "status    : Converged (reason=%d)\n", reason);
    } else {
