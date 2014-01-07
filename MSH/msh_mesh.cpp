@@ -343,7 +343,7 @@ void CFEMesh::computeSearchLength(double c)
 	_search_length = mu - c * s;
 //#ifndef NDEBUG
 //	if (c < 2) {
-		std::cout << "[CFEMesh::computeSearchLength] computed _search_length = " << _search_length << ", the average value is: " << mu << ", standard deviation is: " << s << std::endl;
+		ScreenMessage("[CFEMesh::computeSearchLength] computed _search_length = %e, the average value is: %e, standard deviation is: %e\n", _search_length, mu, s );
 //	}
 //#endif
 }
@@ -486,7 +486,7 @@ void CFEMesh::ConnectedElements2Node(bool quadratic)
 **************************************************************************/
 void CFEMesh::ConstructGrid()
 {
-	std::cout << "Executing ConstructGrid() ... \n" << std::flush;
+	ScreenMessage("-> executing ConstructGrid() ... \n");
 
 	bool done;
 
@@ -516,7 +516,7 @@ void CFEMesh::ConstructGrid()
 		ele_vector[e]->InitializeMembers();
 	}
 
-	std::cout << "-> find neighbors ... \n" << std::flush;
+	ScreenMessage("-> find neighbors ... \n");
 	for (size_t e = 0; e < e_size; e++)
 	{
 		CElem* elem(ele_vector[e]);
@@ -801,7 +801,7 @@ void CFEMesh::ConstructGrid()
 	// Node information
 	// 1. Default node index <---> eqs index relationship
 	// 2. Coordiate system flag
-    std::cout << "-> detect bbox ... \n" << std::flush;
+	ScreenMessage("-> detect bbox ... \n");
 	double x_sum(0.0), y_sum(0.0), z_sum(0.0);
 	Eqs2Global_NodeIndex.clear();
 	double xyz_max[3] = //NW
@@ -871,7 +871,7 @@ void CFEMesh::ConstructGrid()
 	max_dim = coordinate_system / 10 - 1;
 	//----------------------------------------------------------------------
 	// Gravity center
-    std::cout << "-> compute gravity center ... \n" << std::flush;
+    ScreenMessage("-> compute gravity center ... \n");
 	for (size_t e = 0; e < e_size; e++)
 		ele_vector[e]->ComputeGravityCenter();  //NW
 	//----------------------------------------------------------------------
@@ -891,13 +891,12 @@ void CFEMesh::ConstructGrid()
 	e_edgeNodes0.resize(0);
 	e_edgeNodes.resize(0);
 
-    std::cout << "-> computeSearchLength ... \n" << std::flush;
+	ScreenMessage("-> computeSearchLength ... \n");
 	computeSearchLength();
-    std::cout << "-> computeMinEdgeLength ... \n" << std::flush;
+	ScreenMessage("-> computeMinEdgeLength ... \n");
 	computeMinEdgeLength();
-    std::cout << "-> constructMeshGrid ... \n" << std::flush;
+	ScreenMessage("-> constructMeshGrid ... \n");
 	constructMeshGrid();
-    std::cout << " done." << std::endl;
 }
 
 void CFEMesh::constructMeshGrid()

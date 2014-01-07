@@ -118,7 +118,7 @@ bool OUTRead(const std::string& file_base_name,
 	out_file.seekg(0L, ios::beg);
 
 	// Keyword loop
-	cout << "OUTRead" << endl;
+	ScreenMessage("OUTRead\n");
 	while (!out_file.eof())
 	{
 		out_file.getline(line, MAX_ZEILE);
@@ -660,10 +660,10 @@ COutput* OUTGetRWPT(const std::string & out_name)
  *****************************************************************************************/
 void OUTCheck()
 {
-	std::cout << "Checking output data ..." << std::flush;
+	ScreenMessage("Checking output data ...\n");
 	// Go through all out objects (#OUTPUT-section in input file)
 	for (size_t i = 0; i < out_vector.size(); i++)
 		out_vector[i]->checkConsistency();
-    std::cout << " done" << std::endl;
+	ScreenMessage("done\n");
 }
 

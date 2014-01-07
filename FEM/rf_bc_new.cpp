@@ -660,15 +660,14 @@ bool BCRead(std::string const& file_base_name, const GEOLIB::GEOObjects& geo_obj
 	}
 
 	// Keyword loop
-	std::cout << "BCRead ... " << std::flush;
+	ScreenMessage("BCRead ... \n");
 	while (!bc_file.eof())
 	{
 		bc_file.getline(line, MAX_ZEILE);
 		line_string = line;
 		if (line_string.find("#STOP") != std::string::npos)
 		{
-			std::cout << "done, read " << bc_list.size()
-			          << " boundary conditions" << std::endl;
+			ScreenMessage("-> done, read %d boundary conditions\n", bc_list.size());
 			return true;
 		}
 		if (line_string.find("#BOUNDARY_CONDITION") != std::string::npos)

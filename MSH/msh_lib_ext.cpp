@@ -21,6 +21,7 @@
 //#endif
 #include <sstream>
 
+#include "display.h"
 
 using namespace std;
 using namespace MeshLib;
@@ -33,6 +34,7 @@ void FEMRead(const string& file_base_name,
              vector<MeshLib::CFEMesh*>& mesh_vec,
              GEOLIB::GEOObjects* geo_obj, string* unique_name)
 {
+  ScreenMessage("MSHRead\n");
   int i;
   int j;
   int k;      

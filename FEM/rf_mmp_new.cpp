@@ -152,7 +152,7 @@ bool MMPRead(std::string base_file_name)
 	//----------------------------------------------------------------------
 	//OK  MMPDelete();
 	//----------------------------------------------------------------------
-	std::cout << "MMPRead ... " << std::flush;
+	ScreenMessage("MMPRead\n");
 	CMediumProperties* m_mat_mp = NULL;
 	char line[MAX_ZEILE];
 	std::string sub_line;
@@ -177,8 +177,7 @@ bool MMPRead(std::string base_file_name)
 		line_string = line;
 		if(line_string.find("#STOP") != string::npos)
 		{
-			std::cout << "done, read " << mmp_vector.size() << " medium properties" <<
-			std::endl;
+			ScreenMessage("-> done, read %d medium properties\n", mmp_vector.size());
 			return true;
 		}
 		//----------------------------------------------------------------------

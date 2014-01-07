@@ -692,14 +692,14 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
    st_file_name = file_base_name + ST_FILE_EXTENSION;
    std::ifstream st_file(st_file_name.data(), std::ios::in);
 
+   ScreenMessage("STRead ... \n");
    if (!st_file.good())
    {
-      std::cout << "! Warning in STRead: No source terms !" << std::endl;
+      ScreenMessage("-> No source term found !\n");
       return false;
    }
 
    // Keyword loop
-   std::cout << "STRead ... " << std::flush;
    while (!st_file.eof())
    {
       st_file.getline(line, MAX_ZEILE);
@@ -726,9 +726,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
                st_vector[i]->setMaxNumberOfTerms (number_of_terms);
             }
          }
-
-         std::cout << "done, read " << st_vector.size() << " source terms" << std::endl;
-         return true;
+         break;
       }
       //----------------------------------------------------------------------
                                                   // keyword found
@@ -750,7 +748,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
       }                                           // keyword found
    }                                              // eof
 
-   std::cout << "done, read " << st_vector.size() << " source terms" << std::endl;
+   ScreenMessage("-> done, read %d source terms\n", st_vector.size());
 
    return true;
 }

@@ -7,6 +7,8 @@
 
 #include <list>
 
+#include "display.h"
+
 // GEOLIB
 #include "AxisAlignedBoundingBox.h"
 #include "Polygon.h"
@@ -65,9 +67,9 @@ Surface* Surface::createSurface(const Polyline &ply)
 		     simple_polygon_it != list_of_simple_polygons.end(); ++simple_polygon_it)
 		{
 			std::list<GEOLIB::Triangle> triangles;
-			std::cout << "triangulation of surface: ... " << std::flush;
+			ScreenMessage("-> triangulation of surface: ... \n");
 			MathLib::EarClippingTriangulation(*simple_polygon_it, triangles);
-			std::cout << "done - " << triangles.size () << " triangles " << std::endl;
+			ScreenMessage("-> done - %d triangles\n", triangles.size());
 
 			// add Triangles to Surface
 			std::list<GEOLIB::Triangle>::const_iterator it (triangles.begin());

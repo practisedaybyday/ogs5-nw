@@ -1624,7 +1624,7 @@ bool PCSRead(std::string file_base_name)
 	pcs_file.seekg(0, std::ios::beg);
 	//========================================================================
 	// Keyword loop
-	std::cout << "PCSRead ... " << std::flush;
+	ScreenMessage("PCSRead ... \n");
 	while (!pcs_file.eof())
 	{
 		pcs_file.getline(line, MAX_ZEILE);
@@ -1660,7 +1660,7 @@ bool PCSRead(std::string file_base_name)
 		}                         // keyword found
 	}                                     // eof
 
-	std::cout << "done, read " << pcs_vector.size() << " processes" << std::endl;
+	ScreenMessage("-> done, read %d processes\n", pcs_vector.size());
 
 	return true;
 }
@@ -2282,7 +2282,7 @@ void CRFProcess::Config(void)
 	//	if (_pcs_type_name.compare("LIQUID_FLOW") == 0) {
 	if (this->getProcessType() == FiniteElement::LIQUID_FLOW || this->getProcessType() == FiniteElement::FLUID_FLOW)
 	{
-		std::cout << "CRFProcess::Config LIQUID_FLOW" << std::endl;
+//		ScreenMessage2("CRFProcess::Config LIQUID_FLOW\n");
 		type = 1;
 		ConfigLiquidFlow();
 	}
@@ -4177,11 +4177,18 @@ double CRFProcess::Execute()
 	//----------------------------------------------------------------------
 	// Execute linear solver
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+#if 0
 	{
 		std::string eqs_name_base = convertProcessTypeToString(this->getProcessType());
 		eqs_name_base += "_" + number2str<size_t>(aktueller_zeitschritt);
 		eqs_new->EQSV_Viewer(eqs_name_base,false);
 	}
+#endif
+#if 0
+	if (aktueller_zeitschritt==19 && this->getProcessType()==FiniteElement::HEAT_TRANSPORT) {
+		eqs_new->CheckIfMatrixIsSame("/home/localadmin/tasks/20131217_LiWah/petsc/2units2faults/HEAT_TRANSPORT_19_eqs_A.dat");
+	}
+#endif
 		eqs_new->Solver();
 		//TEST 	double x_norm = eqs_new->GetVecNormX();
 		eqs_new->MappingSolution();
@@ -7926,7 +7933,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 	int GetRFProcessProcessingAndActivation(const char*)
 	{
-		cout << "GetRFProcessProcessingAndActivation - to be removed" << endl;
+		ScreenMessage("GetRFProcessProcessingAndActivation - to be removed\n");
 		return 0;
 	}
 

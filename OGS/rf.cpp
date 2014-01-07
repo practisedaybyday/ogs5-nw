@@ -176,22 +176,19 @@ int main ( int argc, char* argv[] )
 
 
 #ifdef USE_PETSC
-	int rank, r_size;
 	PetscLogDouble v1,v2;
 	char help[] = "OGS with PETSc \n";
 	//PetscInitialize(argc, argv, help);
 	PetscInitialize(&argc,&argv,(char *)0,help);
 	//kg44 quick fix to compile PETSC with version PETSCV3.4
 #ifdef USEPETSC34
-       PetscTime(&v1);
+	PetscTime(&v1);
 #else
-       PetscGetTime(&v1);
+	PetscGetTime(&v1);
 #endif
-	MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-	MPI_Comm_size(PETSC_COMM_WORLD, &r_size);
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD, "===\nUse PETSc solver: ");
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD, "Number of CPUs: %d, rank: %d\n", r_size, rank);
-	PetscSynchronizedFlush(PETSC_COMM_WORLD);
+	MPI_Comm_rank(PETSC_COMM_WORLD, &myrank);
+	MPI_Comm_size(PETSC_COMM_WORLD, &mysize);
+	ScreenMessage("===\nUse PETSc solver (MPI processes = %d)\n", mysize);
 #endif
 
 
@@ -213,13 +210,9 @@ int main ( int argc, char* argv[] )
 	TStartTimer(0);
 #endif
 	/* Intro ausgeben */
-#if defined(USE_MPI) //WW
+#if defined(USE_MPI) || defined(USE_PETSC)
 	if(myrank == 0)
 #endif
-#ifdef USE_PETSC
-        if(rank == 0 )
-#endif
-
 	DisplayStartMsg();
 	/* Speicherverwaltung initialisieren */
 	if (!InitMemoryTest())
@@ -244,6 +237,9 @@ int main ( int argc, char* argv[] )
 			dateiname = (char*) Malloc( (int) modelRoot.size() + 1 );
 			dateiname = strcpy( dateiname, modelRoot.c_str() );
 		}
+#if defined(USE_MPI) || defined(USE_PETSC)
+		if(myrank == 0)
+#endif
 		DisplayMsgLn(dateiname);
 	}
 	//WW  DisplayMsgLn("");

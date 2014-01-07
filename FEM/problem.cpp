@@ -118,6 +118,9 @@ Problem::Problem (char* filename) :
 #if !defined(USE_PETSC)  // &&  !defined(other parallel libs)//03~04.3012. WW
 		DOMRead(filename);
 #endif
+#if defined(USE_MPI) || defined(USE_PETSC)
+	MPI_Barrier(MPI_COMM_WORLD);
+#endif
 	}
 #if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
 	//#ifndef NEW_EQS
@@ -518,7 +521,7 @@ Problem::~Problem()
 	delete m_vec_BRNS;
 #endif
 
-	std::cout << "\n^O^: Your simulation is terminated normally ^O^ " << std::endl;
+	ScreenMessage("\nYour simulation is terminated normally\n");
 }
 
 /*-------------------------------------------------------------------------
@@ -782,8 +785,8 @@ void Problem::SetActiveProcesses()
  ***************************************************************************/
 void Problem::PCSCreate()
 {
-	std::cout << "---------------------------------------------" << std::endl;
-	std::cout << "Create PCS processes" << std::endl;
+	ScreenMessage("---------------------------------------------\n");
+	ScreenMessage("Create PCS processes\n");
 
 	size_t no_processes = pcs_vector.size();
 	//OK_MOD if(pcs_deformation>0) Init_Linear_Elements();
@@ -799,7 +802,7 @@ void Problem::PCSCreate()
 
 	for (size_t i = 0; i < no_processes; i++)
 	{
-	    ScreenMessage2(".............................................\n");
+		ScreenMessage2(".............................................\n");
 		FiniteElement::ProcessType pcs_type (pcs_vector[i]->getProcessType());
 		ScreenMessage2("Create: %s\n", FiniteElement::convertProcessTypeToString (pcs_type).c_str());
 		//		if (!pcs_vector[i]->pcs_type_name.compare("MASS_TRANSPORT")) {
@@ -807,18 +810,15 @@ void Problem::PCSCreate()
 		if (pcs_type != FiniteElement::MASS_TRANSPORT && pcs_type != FiniteElement::FLUID_MOMENTUM
 						&& pcs_type != FiniteElement::RANDOM_WALK)
 		{
-			std::cout << " for " << pcs_vector[i]->pcs_primary_function_name[0] << " ";
-			std::cout << " pcs_component_number " <<
-			pcs_vector[i]->pcs_component_number;
+			ScreenMessage2(" for %s pcs_component_number %d\n", pcs_vector[i]->pcs_primary_function_name[0], pcs_vector[i]->pcs_component_number);
 		}
-		std::cout << std::endl;
-        std::cout << " ->TIM_TYPE: " << pcs_vector[i]->tim_type_name <<  std::endl;
+		ScreenMessage2(" ->TIM_TYPE: %s\n", pcs_vector[i]->tim_type_name.c_str());
 		pcs_vector[i]->Create();
 	}
 
 
 #if defined(USE_PETSC) // || defined(other solver libs)//03.3012. WW
-       CreateEQS_LinearSolver();  
+	CreateEQS_LinearSolver();
 #endif
 
 	for (size_t i = 0; i < no_processes; i++)
@@ -851,7 +851,7 @@ void Problem::PCSRestart()
 
 	if (ok == 0)
 	{
-		std::cout << "RFR: no restart data" << std::endl;
+		ScreenMessage("RFR: no restart data\n");
 		return;
 	}
 
@@ -948,15 +948,15 @@ void Problem::Euler_TimeDiscretize()
 	ScreenMessage("\n\n***Start time steps\n");
 	//
 	// Output zero time initial values
-#if defined(USE_MPI)  || defined(USE_MPI_KRC) 
-		if(myrank == 0)
-		{
+#if defined(USE_MPI)  || defined(USE_MPI_KRC)
+	if(myrank == 0)
+	{
 #endif
-    std::cout << "Outputting initial values... " << std::flush;
+	std::cout << "Outputting initial values... " << std::flush;
 	OUTData(current_time,aktueller_zeitschritt,true);
-    std::cout << "done \n";
-#if defined(USE_MPI) || defined(USE_MPI_KRC) 
-		}
+	std::cout << "done \n";
+#if defined(USE_MPI)  || defined(USE_MPI_KRC)
+	}
 #endif
 	
 	//
@@ -1066,7 +1066,7 @@ void Problem::Euler_TimeDiscretize()
 //		// executing only one time step for profiling
 //		current_time = end_time;
 	}
-#if defined(USE_MPI) // JT2012
+#if defined(USE_MPI) || defined(USE_PETSC) // JT2012
 	if(myrank == 0)
 	{
 #endif
@@ -1088,7 +1088,7 @@ void Problem::Euler_TimeDiscretize()
 		}
     }
     std::cout<<"\n----------------------------------------------------\n";
-#if defined(USE_MPI)
+#if defined(USE_MPI) || defined(USE_PETSC) // JT2012
 	}
 #endif
 }

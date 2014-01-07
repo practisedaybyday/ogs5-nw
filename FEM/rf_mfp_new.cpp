@@ -578,14 +578,13 @@ bool MFPRead(std::string file_base_name)
 	mfp_file.seekg(0L,std::ios::beg);
 	//========================================================================
 	// Keyword loop
-	std::cout << "MFPRead ... " << std::flush;
+	ScreenMessage("MFPRead ... \n");
 	while (!mfp_file.eof())
 	{
 		mfp_file.getline(line,MAX_ZEILE);
 		line_string = line;
 		if(line_string.find("#STOP") != std::string::npos) {
-            std::cout << "done, read " << mfp_vector.size() << " fluid properties" <<
-            std::endl;
+            ScreenMessage("-> done, read %d fluid properties\n", mfp_vector.size());
 			return true;
 		}
 		//----------------------------------------------------------------------

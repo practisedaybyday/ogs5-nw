@@ -173,7 +173,7 @@ bool NUMRead(string file_base_name)
 	num_file.seekg(0L,ios::beg);
 	//========================================================================
 	// Keyword loop
-	cout << "NUMRead" << endl;
+	ScreenMessage("NUMRead\n");
 	while (!num_file.eof())
 	{
 		num_file.getline(line,MAX_ZEILE);

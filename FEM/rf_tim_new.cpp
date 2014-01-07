@@ -551,7 +551,7 @@ bool TIMRead(std::string file_base_name)
 	tim_file.seekg(0L,std::ios::beg);
 	//========================================================================
 	// Keyword loop
-	std::cout << "TIMRead" << std::endl;
+	ScreenMessage("TIMRead\n");
 	while (!tim_file.eof())
 	{
 		tim_file.getline(line,MAX_ZEILE);

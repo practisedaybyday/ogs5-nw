@@ -123,13 +123,13 @@ bool ICRead(const std::string& file_base_name,
 	std::ios::pos_type position;
 
 	// Keyword loop
-	std::cout << "ICRead" << std::endl;
+	ScreenMessage("ICRead\n");
 	while (!ic_file.eof())
 	{
 		ic_file.getline(line, MAX_ZEILE);
 		line_string = line;
 		if (line_string.find("#STOP") != string::npos)
-			return true;
+			break;
 
 		// keyword found
 		if (line_string.find("#INITIAL_CONDITION") != std::string::npos)
@@ -149,6 +149,7 @@ bool ICRead(const std::string& file_base_name,
 			ic_file.seekg(position, ios::beg);
 		}                         // keyword found
 	}                                     // eof
+	ScreenMessage("-> done, read %d initial conditions\n", ic_vector.size());
 	return true;
 }
 

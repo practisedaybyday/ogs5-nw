@@ -142,6 +142,7 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 	}
 	//----------------------------------------------------------------------
 	// Read GEO data
+	ScreenMessage("GLIRead\n");
 	GEOLIB_Read_GeoLib(dateiname);
 
 	std::string geo_file_name (dateiname);
