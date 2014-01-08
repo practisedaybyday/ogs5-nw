@@ -9518,7 +9518,9 @@ void CFiniteElementStd::Assemble_RHS_LIQUIDFLOW()
     int i_sh = NodeShift[dm_shift];
     for (int i = 0; i < nnodes; i++)
     {
+#ifndef USE_PETSC
         eqs_rhs[i_sh + eqs_number[i]] += NodalVal[i];
+#endif
         (*RHS)(i + LocalShift) +=  NodalVal[i];
     }
 }
