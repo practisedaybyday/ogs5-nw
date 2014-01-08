@@ -431,9 +431,9 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
                 my_T0 -= T_KILVIN_ZERO;
                 viscosity_pcs_name_vector.push_back("PRESSURE1");
                 viscosity_pcs_name_vector.push_back("TEMPERATURE1");
-                std::cout << "-> Viscosity model " << viscosity_model << " for high-concentration saltwater is selected. Note that Kelvin should be used in HEAT_TRANSPORT.\n";
+                ScreenMessage("-> Viscosity model 21 for high-concentration saltwater is selected. Note that Kelvin should be used in HEAT_TRANSPORT.\n");
                 if (T_1 > .0)
-                    std::cout << "-> Constant temperature " << T_1 << " [K] is used.\n";
+                	ScreenMessage("-> Constant temperature %f[K] is used.\n", T_1);
             }
 
 

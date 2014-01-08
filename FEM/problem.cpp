@@ -952,9 +952,9 @@ void Problem::Euler_TimeDiscretize()
 	if(myrank == 0)
 	{
 #endif
-	std::cout << "Outputting initial values... " << std::flush;
+	ScreenMessage("Outputting initial values... \n");
 	OUTData(current_time,aktueller_zeitschritt,true);
-	std::cout << "done \n";
+	ScreenMessage("done \n");
 #if defined(USE_MPI)  || defined(USE_MPI_KRC)
 	}
 #endif
@@ -965,6 +965,10 @@ void Problem::Euler_TimeDiscretize()
 	// ------------------------------------------
 	while(end_time > current_time)
 	{
+#if defined(USE_MPI) || defined(USE_PETSC)
+		MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
 		// Get time step
 		dt = dt_rec = DBL_MAX;
 		for(i=0; i<(int)active_process_index.size(); i++)

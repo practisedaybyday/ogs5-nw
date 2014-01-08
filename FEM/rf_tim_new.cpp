@@ -445,7 +445,7 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 				}
 				else if(time_control_name == "SELF_ADAPTIVE")
 				{
-					std::cout << "-> SELF_ADAPTIVE is chosen for time stepping. Current algorithm is based on coupling iteration counts." << std::endl;
+					ScreenMessage("-> SELF_ADAPTIVE is chosen for time stepping. Current algorithm is based on coupling iteration counts.\n");
 					//m_pcs->adaption = true; JOD removed
 					//WW minish = 10;
 					while((!new_keyword) || (!new_subkeyword) ||
@@ -995,8 +995,7 @@ double CTimeDiscretization::FirstTimeStepEstimate(void)
 			break;
 		}
 		default:
-			std::cout << "CTimeDiscretization::FirstTimeStepEstimate default case" <<
-			std::endl;
+			ScreenMessage("CTimeDiscretization::FirstTimeStepEstimate default case\n");
 			break;
 		}
 	}
@@ -1221,7 +1220,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 //	double my_max_time_step = 0.0;
 	CRFProcess* m_pcs = NULL;             //YDToDo: m_pcs should be member
 
-    std::cout << "-> calculate the next time step\n";
+	ScreenMessage("-> calculate the next time step\n");
 
 	// First calculate maximum time step according to Neumann criteria
 #ifdef GEM_REACT
@@ -1324,12 +1323,13 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 	time_step_length = MMin ( time_step_length,max_time_step );
 	time_step_length = MMax ( time_step_length,min_time_step );
 
-	std::cout << "  ->Self adaptive time stepping: " << "imflag=" << imflag << ", dt=" <<
-	time_step_length << ", max iterations= " << iterdum << ", nr. of evaluated processes= " <<
-	iprocs << std::endl;
+	ScreenMessage("  ->Self adaptive time stepping: imflag=%d, dt=%g, max iterations=%d, nr. of evaluated processes=%d\n",
+			 imflag,time_step_length,iterdum,iprocs);
 	if ( Write_tim_discrete )
-		*tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit << "   " <<
-		time_step_length << "  " << n_itr << std::endl;
+#if defined(USE_PETSC)
+	if (myrank==0)
+#endif
+		*tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit << "   " <<	time_step_length << "  " << n_itr << std::endl;
 	//}
 
 	if (time_step_length<=min_time_step) {

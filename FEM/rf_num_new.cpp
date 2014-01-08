@@ -583,7 +583,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line >> ele_supg_method >> ele_supg_method_length >>
 			ele_supg_method_diffusivity;
 			line.clear();
-			cout << "->SUPG method is selected." << endl;
+			ScreenMessage("->SUPG method is selected.\n");
 			continue;
 		}
 		// subkeyword found
@@ -616,7 +616,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line >> fct_prelimiter_type; //0: just cancel, 1: minmod, 2: superbee
 			line >> fct_const_alpha; //-1: off, [0.0,1.0] 0: Upwind, 1: Galerkin
 			line.clear();
-			cout << "->FEM_FCT method is selected." << endl;
+			ScreenMessage("->FEM_FCT method is selected.");
 			continue;
 		}
 
