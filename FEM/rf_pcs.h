@@ -407,6 +407,7 @@ public:
 	// 10-MCP
 	//....................................................................
 	// 11-OUT
+	std::string GetSolutionFileName(bool write);
 	void  WriteSolution();                //WW
 	void  ReadSolution();                 //WW
 	//....................................................................

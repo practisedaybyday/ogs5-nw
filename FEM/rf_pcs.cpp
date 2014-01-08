@@ -608,7 +608,7 @@ void CRFProcess::Create()
 	int DOF = GetPrimaryVNumber();        //OK should be PCS member variable
 	//----------------------------------------------------------------------------
 	// MMP - create mmp groups for each process //YD
-	std::cout << "->Create MMP" << std::endl;
+	ScreenMessage2("->Create MMP\n");
 	CMediumPropertiesGroup* m_mmp_group = NULL;
 	int continua = 1;                     //WW
 	if (RD_Process)
@@ -625,7 +625,7 @@ void CRFProcess::Create()
 	m_mmp_group = NULL;
 	//----------------------------------------------------------------------------
 	// NUM_NEW
-	std::cout << "->Create NUM" << std::endl;
+	ScreenMessage2("->Create NUM\n");
 	//	if (pcs_type_name.compare("RANDOM_WALK")) { // PCH RWPT does not need this.
 	if (this->getProcessType() != FiniteElement::RANDOM_WALK) // PCH RWPT does not need this.
 	{
@@ -673,7 +673,7 @@ void CRFProcess::Create()
 	//----------------------------------------------------------------------------
 	// EQS - create equation system
 	//WW CreateEQS();
-	std::cout << "->Create EQS" << '\n';
+	ScreenMessage2("->Create EQS\n");
 #if !defined(USE_PETSC) // && !defined(other parallel solver lib). 04.2012 WW
 #if defined(NEW_EQS) 
 	size_t k;
@@ -770,7 +770,7 @@ void CRFProcess::Create()
 
 	//----------------------------------------------------------------------------
 	// Time unit factor //WW
-	std::cout << "->Create TIM" << '\n';
+	ScreenMessage2("->Create TIM\n");
 	//CTimeDiscretization* Tim = TIMGet(_pcs_type_name);
 	Tim = TIMGet(pcs_type_name);
 	if (!Tim)
@@ -816,7 +816,7 @@ void CRFProcess::Create()
 	else
 	{
 		// BC - create BC groups for each process
-		cout << "->Create BC" << '\n';
+		ScreenMessage2("->Create BC\n");
 		CBoundaryConditionsGroup* m_bc_group = NULL;
 
 		//25.08.2011. WW
@@ -848,7 +848,7 @@ void CRFProcess::Create()
 				Write_Processed_BC();
 		}
 		// ST - create ST groups for each process
-		cout << "->Create ST" << '\n';
+		ScreenMessage2("->Create ST\n");
 		CSourceTermGroup* m_st_group = NULL;
 
 		if (WriteSourceNBC_RHS == 2) // Read from file
@@ -882,12 +882,12 @@ void CRFProcess::Create()
 		WriteBC();
 
 	// ELE - config and create element values
-	cout << "->Config ELE values" << '\n';
+	ScreenMessage2("->Config ELE values\n");
 	AllocateMemGPoint();
 
 	// ELE - config element matrices
 	// NOD - config and create node values
-	cout << "->Config NOD values" << '\n';
+	ScreenMessage2("->Config NOD values\n");
 	double* nod_values = NULL;
 	double* ele_values = NULL;            // PCH
 
@@ -946,23 +946,21 @@ void CRFProcess::Create()
 	if(reload >= 2 && type != 4 && type / 10 != 4) // Modified at 03.08.2010. WW
 	{
 		// PCH
-		cout << "Reloading the primary variables... " << endl;
+		ScreenMessage2("Reloading the primary variables... \n");
 		ReadSolution();           //WW
 	}
 
 	if (reload < 2)                       // PCH: If reload is set, no need to have ICs
 	{
 		// IC
-		cout << "->Assign IC" << '\n';
+		ScreenMessage2("->Assign IC\n");
 		SetIC();
 	}
 	else
 		// Bypassing IC
-		cout << "RELOAD is set to be " << reload << ". So, bypassing IC's"
-		     << endl;
+		ScreenMessage2("->RELOAD is set to be %d. So bypassing IC's\n", reload);
 
-	if (pcs_type_name_vector.size() && pcs_type_name_vector[0].find("DYNAMIC")
-	    != string::npos)                  //WW
+	if (pcs_type_name_vector.size() && pcs_type_name_vector[0].find("DYNAMIC") != string::npos)
 		setIC_danymic_problems();
 
 	// Keep all local matrices in the memory
@@ -1171,6 +1169,27 @@ void CRFProcess::Write_Processed_BC()
 
 /**************************************************************************
    FEMLib-Method:
+   Task: Get a name for the solution file
+   Programing:
+   last modified:
+**************************************************************************/
+std::string CRFProcess::GetSolutionFileName(bool write)
+{
+	std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
+	std::string m_file_name = FileName + "_" + pcs_type_name + "_" +
+	                          pcs_primary_function_name[0] + "_primary_value";
+	if (write)
+		m_file_name += "_" + number2str(aktueller_zeitschritt);
+#if defined(USE_PETSC)  //|| defined(other parallel libs)//03.3012. WW
+	m_file_name += "_rank" + number2str(myrank);
+#endif
+	m_file_name += ".asc";
+	return m_file_name;
+}
+
+
+/**************************************************************************
+   FEMLib-Method:
    Task: Write the solution
    Programing:
    04/2006 WW
@@ -1184,30 +1203,11 @@ void CRFProcess:: WriteSolution()
 	if ( ( aktueller_zeitschritt % nwrite_restart  ) > 0 )
 		return;
 	
-#if defined(USE_PETSC)  //|| defined(other parallel libs)//03.3012. WW
-	string rank_str;
-    	int rank , msize;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &msize);
-	stringstream ss (stringstream::in | stringstream::out);
-	ss.clear(); 
-	ss.str("");
-	ss << rank;
-	rank_str = ss.str();
-	ss.clear();
-	std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
-	std::string m_file_name = FileName + "_" + pcs_type_name + "_" +
-	                          pcs_primary_function_name[0] + "_primary_value"+rank_str+"_" + number2str(aktueller_zeitschritt) + ".asc";
-
-#else
-	std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
-	std::string m_file_name = FileName + "_" + pcs_type_name + "_" +
-	                          pcs_primary_function_name[0] + "_primary_value.asc";
-#endif				  
+	std::string m_file_name = GetSolutionFileName(true);
 	std::ofstream os ( m_file_name.c_str(), ios::trunc | ios::out );
 	if (!os.good() )
 	{
-		cout << "Failure to open file: " << m_file_name << endl;
+		ScreenMessage2("Failure to open file: %s\n", m_file_name.c_str());
 		abort();
 	}
 
@@ -1228,8 +1228,7 @@ void CRFProcess:: WriteSolution()
 		os << endl;
 	}
 	os.close();
-	cout << "Write solutions for timestep " << aktueller_zeitschritt << " into file " <<
-	m_file_name << endl;
+	ScreenMessage2("Write solutions for timestep %d into file %s\n", aktueller_zeitschritt, m_file_name.c_str());
 	delete [] idx;
 }
 
@@ -1243,30 +1242,11 @@ void CRFProcess:: WriteSolution()
 void CRFProcess:: ReadSolution()
 {
  	
-#if defined(USE_PETSC)  //|| defined(other parallel libs)//03.3012. WW
-        string rank_str;
-	int rank , msize;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &msize);
-	stringstream ss (stringstream::in | stringstream::out);
-	ss.clear(); 
-	ss.str("");
-	ss << rank;
-	rank_str = ss.str();
-	ss.clear();
-	std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
-	std::string m_file_name = FileName + "_" + pcs_type_name + "_" +
-	                          pcs_primary_function_name[0] + "_primary_value_"+rank_str+".asc";
-
-#else 
-	std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
-	std::string m_file_name = FileName + "_" + pcs_type_name + "_" +
-	                          pcs_primary_function_name[0] + "_primary_value.asc";
-#endif
+	std::string m_file_name = GetSolutionFileName(false);
 	std::ifstream is ( m_file_name.c_str(), ios::in );
 	if (!is.good())
 	{
-		cout << "Failure to open file: " << m_file_name << endl;
+		ScreenMessage2("Failure to open file: %s\n", m_file_name.c_str());
 		abort();
 	}
 	int j;
