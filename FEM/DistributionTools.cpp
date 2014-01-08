@@ -13,14 +13,16 @@ void getNodesOnDistribution(DistributionData &dis_data, MeshLib::CFEMesh &msh, s
 {
 	if (dis_data.geo_type == GEOLIB::POINT)
 	{
-		std::cout << "-> looking for nodes on POINT " << dis_data.geo_name << std::endl;
+		ScreenMessage2("-> looking for nodes on POINT %s\n", dis_data.geo_name.c_str());
 		long node_id = msh.GetNODOnPNT(static_cast<const GEOLIB::Point*>(dis_data.geo_obj));
-		nodes_vector.push_back(node_id);
-		std::cout << "-> node ID " <<node_id << " is found" << std::endl;
+		if (node_id>=0) {
+			nodes_vector.push_back(node_id);
+		}
+		ScreenMessage2("-> node ID %d is found\n", node_id);
 	}
 	else if (dis_data.geo_type == GEOLIB::POLYLINE)
 	{
-		std::cout << "-> looking for nodes on POLYLINE " << dis_data.geo_name << std::endl;
+		ScreenMessage2("-> looking for nodes on POLYLINE %s\n", dis_data.geo_name.c_str());
 		CGLPolyline* m_polyline = GEOGetPLYByName(dis_data.geo_name);
 		if (m_polyline)
 		{
@@ -39,7 +41,7 @@ void getNodesOnDistribution(DistributionData &dis_data, MeshLib::CFEMesh &msh, s
 	}
 	else if (dis_data.geo_type == GEOLIB::SURFACE)
 	{
-		std::cout << "-> looking for nodes on SURFACE " << dis_data.geo_name << std::endl;
+		ScreenMessage2("-> looking for nodes on SURFACE %s\n", dis_data.geo_name.c_str());
 		GEOLIB::Surface const* sfc(static_cast<const GEOLIB::Surface*> (dis_data.geo_obj));
 
 		Surface* m_surface = GEOGetSFCByName(dis_data.geo_name);
@@ -111,7 +113,7 @@ void getNodesOnDistribution(DistributionData &dis_data, MeshLib::CFEMesh &msh, s
 		}
 		nodes_vector.assign(set_node_ids.begin(), set_node_ids.end());
 	}
-	std::cout << "-> " << nodes_vector.size() << " nodes are found on the given distribution" << std::endl;
+	ScreenMessage2("-> %d nodes are found on the given distribution\n", nodes_vector.size());
 }
 
 void setDistributionConstant(MeshLib::CFEMesh &/*msh*/, std::vector<long> &vec_node_ids, std::vector<double> &vec_node_values, double val)
