@@ -345,6 +345,10 @@ void PETScLinearSolver::Solver()
       {
           PetscPrintf(PETSC_COMM_WORLD, "status    : Diverged (max iteration)\n", reason);
       }
+      else if (reason==KSP_DIVERGED_BREAKDOWN)
+      {
+          PetscPrintf(PETSC_COMM_WORLD, "status    : Diverged (breakdown)\n", reason);
+      }
       else
       {
           PetscPrintf(PETSC_COMM_WORLD, "status    : Diverged (reason=%d)\n", reason);
