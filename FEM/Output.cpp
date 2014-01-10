@@ -114,13 +114,13 @@ void COutput::init()
 			_pcs = PCSGet(msh_type_name);
 			if (!_pcs)
 			{
-				std::cerr << "COutput::init(): failed to fetch process pointer using msh_type_name" << std::endl;
+				ScreenMessage("COutput::init(): failed to fetch process pointer using msh_type_name\n");
 				exit (1);
 			}
 		}
 		else
 		{
-			std::cerr << "COutput::init(): failed to fetch process pointer using msh_type_name" << std::endl;
+			ScreenMessage("COutput::init(): failed to fetch process pointer using msh_type_name\n");
 		}
 	}
 

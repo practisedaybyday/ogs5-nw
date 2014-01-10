@@ -4048,9 +4048,14 @@ void CRFProcess::CheckExcavedElement()
  **************************************************************************/
 double CRFProcess::Execute()
 {
-	int ii, nidx1;
-	double pcs_error, nl_theta, val_n;
-	long j, k, nshift, g_nnodes;          //07.01.07 WW
+#ifndef USE_PETSC
+	int ii;
+	double val_n;
+	long nshift;
+#endif
+	int nidx1;
+	double pcs_error, nl_theta;
+	long j, k, g_nnodes;          //07.01.07 WW
 	double* eqs_x = NULL;
 
 	pcs_error = DBL_MAX;
@@ -4708,7 +4713,7 @@ void CRFProcess::AddFCT_CorrectionVector()
 		}
 		for (size_t i = 0; i < node_size; i++) {
 #if defined(USE_PETSC)
-			if (i < m_msh->getNumNodesLocal()) {
+			if (i < (size_t)m_msh->getNumNodesLocal()) {
 				const size_t i_global = FCT_GLOB_ADDRESS(i);
 				eqs_new->add_bVectorEntry(i_global, - (1.0 - theta) * (*V)(i), ADD_VALUES);
 			}
@@ -4851,7 +4856,7 @@ void CRFProcess::AddFCT_CorrectionVector()
 				val = this->m_num->fct_const_alpha * f;
 
 #ifdef USE_PETSC
-			if (i < m_msh->getNumNodesLocal())
+			if (i < (size_t)m_msh->getNumNodesLocal())
 				eqs_new->add_bVectorEntry(i_global, val, ADD_VALUES);
 #else
             eqs_rhs[i] += val;
@@ -5701,7 +5706,10 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		static long i;
 		static double bc_value, fac = 1.0, time_fac = 1.0;
 		long bc_msh_node = -1;
-		long bc_eqs_index, shift;
+#ifndef USE_PETSC
+		long bc_eqs_index;
+#endif
+		long shift;
 		int interp_method = 0;
 		int curve, valid = 0;
 		int ii, idx0 = -1;
@@ -6019,12 +6027,14 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					        m_bc->getPeriodePhaseShift());
 
 				//----------------------------------------------------------------
+#ifndef USE_PETSC
 				if(rank > -1)
 					bc_eqs_index = bc_msh_node;
 				else
 					//WW#
 					bc_eqs_index =
 					        m_msh->nod_vector[bc_msh_node]->GetEquationIndex();
+#endif
 				//..............................................................
 				// NEWTON WW   //Modified for JFNK. 09.2010. WW
 				if(m_num->nls_method >= 1 // 04.08.2010. WW _name.find("NEWTON")!=string::npos

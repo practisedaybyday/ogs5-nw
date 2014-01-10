@@ -996,7 +996,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 		//------------------------------------------------------------------
 		nodes_vector.clear();
 		getNodesOnDistribution(distData, *m_msh, nodes_vector);
-		std::cout << "-> " << nodes_vector.size() << " nodes are found for this BC" << std::endl;
+		ScreenMessage2( "-> %d nodes are found for this BC\n", nodes_vector.size());
 		//------------------------------------------------------------------
 		// Calculate BC values
 		//------------------------------------------------------------------
@@ -1034,7 +1034,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 	} // list
 
 	clock_t end_time (clock());
-	std::cout << "\t[BC] set BC took " << (end_time-start_time)/(double)(CLOCKS_PER_SEC) << std::endl;
+	ScreenMessage2("\t[BC] set BC took %g s\n", (end_time-start_time)/(double)(CLOCKS_PER_SEC));
 
 	start_time = clock();
 	// SetTransientBCtoNodes  10/2008 WW/CB Implementation
@@ -1109,7 +1109,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 	     cout << "Warning: no boundary conditions specified for " << pcs_type_name << endl;
 	   */
 	end_time = clock();
-	std::cout << "\t[BC] set transient BC took " << (end_time-start_time)/(double)(CLOCKS_PER_SEC) << std::endl;
+	ScreenMessage2 ("\t[BC] set transient BC took %g s.\n", (end_time-start_time)/(double)(CLOCKS_PER_SEC));
 }
 
 /**************************************************************************

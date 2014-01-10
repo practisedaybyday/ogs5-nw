@@ -1653,9 +1653,9 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 {
 	msh_nod_vector.clear();
 
+	ScreenMessage2("[CFEMesh::GetNODOnSFC] init SurfaceGrid ... \n");
 #ifdef TIME_MEASUREMENT
 	clock_t begin, end;
-	std::cout << "[CFEMesh::GetNODOnSFC] init SurfaceGrid ... " << std::flush;
 	begin = clock();
 #endif
 	const_cast<GEOLIB::Surface*>(sfc)->initSurfaceGrid();
@@ -1663,9 +1663,9 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 	end = clock();
 	std::cout << "done, took " << (end-begin)/(double)(CLOCKS_PER_SEC) << " s" << std::endl;
 
-	std::cout << "[CFEMesh::GetNODOnSFC] search with new algorithm ... " << std::flush;
 	begin = clock();
 #endif
+	ScreenMessage2("[CFEMesh::GetNODOnSFC] search with new algorithm ... \n");
 #if defined(USE_PETSC) // || defined (other parallel linear solver lib). //WW. 05.2012
   	const size_t nodes_in_usage= NodesInUsagePETSC(); //always use local nodes only ..
 #else
@@ -1681,8 +1681,9 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 
 #ifdef TIME_MEASUREMENT
 	end = clock();
-	std::cout << "done, took " << (end-begin)/(double)(CLOCKS_PER_SEC) << " s, " << msh_nod_vector.size() << "nodes found" << std::endl;
+	std::cout << "done, took " << (end-begin)/(double)(CLOCKS_PER_SEC) << " s " << std::endl;
 #endif
+	ScreenMessage2("[CFEMesh::GetNODOnSFC] done %d nodes found\n", msh_nod_vector.size());
 }
 
 /**************************************************************************
