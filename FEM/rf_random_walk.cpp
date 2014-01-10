@@ -5208,7 +5208,7 @@ void PCTRead(string file_base_name)
 	ifstream pct_file (pct_file_name.data(),ios::in);
 
 	std::stringstream ss;
-	int srand_seed;
+	int srand_seed = 0;
 	string s_flag;
 	getline(pct_file, s_flag);
 	ss.str(s_flag);
