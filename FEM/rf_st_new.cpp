@@ -482,7 +482,7 @@ void CSourceTerm::ReadDistributionType(std::ifstream *st_file)
    if (found!=std::string::npos) {
       this->st_type = FiniteElement::NEUMANN;
       dis_type_name.erase(dis_type_name.begin()+found, dis_type_name.end());
-      std::cout << "-> This ST is recognized as Neumann BC" << std::endl;
+      ScreenMessage("-> This ST is recognized as Neumann BC\n");
    } else {
 	   this->st_type = FiniteElement::SOURCE;
    }
@@ -1846,8 +1846,10 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long>&nodes_on_sfc,
       elem = msh->ele_vector[vec_possible_elements[i]];
       if (!elem->GetMark())
          continue;
+      if (elem->GetDimension()<3)
+         continue;
       if (active_elements && !(*active_elements)[i])
-    	  continue;
+         continue;
       nfaces = elem->GetFacesNumber();
       elem->SetOrder(msh->getOrder());
       for (j = 0; j < nfaces; j++)
