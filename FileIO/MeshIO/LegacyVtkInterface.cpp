@@ -100,12 +100,16 @@ void LegacyVtkInterface::WriteDataVTKPETSC(int number, double simulation_time,
     PetscViewerASCIIPrintf(viewer,"CYCLE 1 1 long\n");
     PetscViewerASCIIPrintf(viewer,"%d\n",number);
 
+    ScreenMessage2("\tcall WriteVTKPointDataPETSC()\n");
     this->WriteVTKPointDataPETSC(viewer);
+    ScreenMessage2("\tcall WriteVTKCellDataPETSC()\n");
     this->WriteVTKCellDataPETSC(viewer);
+    ScreenMessage2("\tcall WriteVTKDataArraysPETSC()\n");
     this->WriteVTKDataArraysPETSC(viewer);
 
 // close viewer
     PetscViewerDestroy(&viewer);
+    ScreenMessage2("\tdone\n");
 
     return;
 }
@@ -183,7 +187,17 @@ void LegacyVtkInterface::WriteVTKPointDataPETSC(PetscViewer viewer) const
         {
             PetscViewerASCIIPrintf(viewer, "%1.13lg %1.13lg %1.13lg \n",xp[i],yp[i],zp[i] );
         }
+        VecRestoreArray(xcoor, &xp);
+        VecRestoreArray(ycoor, &yp);
+        VecRestoreArray(zcoor, &zp);
     }
+
+    VecDestroy(&x);
+    VecDestroy(&y);
+    VecDestroy(&z);
+    VecDestroy(&xcoor);
+    VecDestroy(&ycoor);
+    VecDestroy(&zcoor);
 
     return;
 }
@@ -335,53 +349,85 @@ void LegacyVtkInterface::WriteVTKCellDataPETSC(PetscViewer viewer) const
 //	vtk_file << "CELLS " << numCells << " " << numAllPoints << "\n";
         PetscViewerASCIIPrintf(viewer,"CELLS %d %d\n",anz_elem,neglob);
         i=0;
+        std::stringstream ss;
         while (i < neglob)
         {
 
             switch((int) eglobp[i])// first entry: type of element as defined for vtk ..better than number of nodes
             {
             case 3: //LINE
-                PetscViewerASCIIPrintf(viewer," 2 ");
-                for(size_t j = 0; j < 2; j++) PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
+            	ss << " 2 ";
+                //PetscViewerASCIIPrintf(viewer," 2 ");
+                for(size_t j = 0; j < 2; j++)
+                	ss << eglobp[i+j+1] << " ";
+//                	PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
                 i+=2+1;
                 break;
             case 9: //QUAD
-                PetscViewerASCIIPrintf(viewer," 4 ");
-                for(size_t j = 0; j < 4; j++) PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
+            	ss << " 4 ";
+                //PetscViewerASCIIPrintf(viewer," 4 ");
+                for(size_t j = 0; j < 4; j++)
+                	ss << eglobp[i+j+1] << " ";
+//                	PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
                 i+=4+1;
                 break;
             case 12: //HEXAHEDRON:
-                PetscViewerASCIIPrintf(viewer," 6 ");
-                for(size_t j = 0; j < 6; j++) PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
+            	ss << " 6 ";
+                //PetscViewerASCIIPrintf(viewer," 6 ");
+                for(size_t j = 0; j < 6; j++)
+                	ss << eglobp[i+j+1] << " ";
+                	//PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
                 i+=6+1;
                 break;
             case 5: // TRIANGLE:
-                PetscViewerASCIIPrintf(viewer," 3 ");
-                for(size_t j = 0; j < 3; j++) PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
+            	ss << " 3 ";
+                //PetscViewerASCIIPrintf(viewer," 3 ");
+                for(size_t j = 0; j < 3; j++)
+                	ss << eglobp[i+j+1] << " ";
+                	//PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
                 i+=3+1;
                 break;
             case 10:// TETRAHEDRON:
-                PetscViewerASCIIPrintf(viewer," 4 ");
-                for(size_t j = 0; j < 4; j++) PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
+            	ss << " 4 ";
+//                PetscViewerASCIIPrintf(viewer," 4 ");
+                for(size_t j = 0; j < 4; j++)
+                	ss << eglobp[i+j+1] << " ";
+                	//PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
                 i+=4+1;
                 break;
             case 13: // PRISM: // VTK_WEDGE
-                PetscViewerASCIIPrintf(viewer," 6 ");
-                for(size_t j = 0; j < 6; j++) PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
+            	ss << " 6 ";
+//                PetscViewerASCIIPrintf(viewer," 6 ");
+                for(size_t j = 0; j < 6; j++)
+                	ss << eglobp[i+j+1] << " ";
+                	//PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
                 i+=6+1;
                 break;
             case 14: // PYRAMID:
-                PetscViewerASCIIPrintf(viewer," 5 ");
-                for(size_t j = 0; j < 5; j++) PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
+            	ss << " 5 ";
+//                PetscViewerASCIIPrintf(viewer," 5 ");
+                for(size_t j = 0; j < 5; j++)
+                	ss << eglobp[i+j+1] << " ";
+                	//PetscViewerASCIIPrintf(viewer," %d ",(long) eglobp[i+j+1]);
                 i+=5+1;
                 break;
             default:
                 cerr << "PETSC VTK Output 2::WriteVTKElementData MshElemType not handled" << "\n";
                 break;
             }
-            PetscViewerASCIIPrintf(viewer," \n ");
+        	ss << "\n";
+//            PetscViewerASCIIPrintf(viewer," \n ");
+        	if (i%1000==0) {
+        		PetscViewerASCIIPrintf(viewer, ss.str().c_str());
+        		ss.str("");
+        		ss.clear();
+        	}
         }
-
+        if (!ss.str().empty()) {
+    		PetscViewerASCIIPrintf(viewer, ss.str().c_str());
+        }
+		ss.str("");
+		ss.clear();
 
         // write cell types
 //	vtk_file << "CELL_TYPES " << numCells << "\n";
@@ -393,41 +439,65 @@ void LegacyVtkInterface::WriteVTKCellDataPETSC(PetscViewer viewer) const
             switch((int) eglobp[i])// first entry: type of element as defined for vtk ..better than number of nodes
             {
             case 3: //LINE
-                PetscViewerASCIIPrintf(viewer," 3 \n");
+            	ss << " 3 \n";
+//                PetscViewerASCIIPrintf(viewer," 3 \n");
                 i+=2+1;
                 break;
             case 9: //QUAD
-                PetscViewerASCIIPrintf(viewer," 9 \n");
+            	ss << " 9 \n";
+//                PetscViewerASCIIPrintf(viewer," 9 \n");
                 i+=4+1;
                 break;
             case 12: //HEXAHEDRON:
-                PetscViewerASCIIPrintf(viewer," 12 \n");
+            	ss << " 12 \n";
+                //PetscViewerASCIIPrintf(viewer," 12 \n");
                 i+=6+1;
                 break;
             case 5: // TRIANGLE:
-                PetscViewerASCIIPrintf(viewer," 5 \n");
+            	ss << " 5 \n";
+                //PetscViewerASCIIPrintf(viewer," 5 \n");
                 i+=3+1;
                 break;
             case 10:// TETRAHEDRON:
-                PetscViewerASCIIPrintf(viewer," 10 \n");
+            	ss << " 10 \n";
+                //PetscViewerASCIIPrintf(viewer," 10 \n");
                 i+=4+1;
                 break;
             case 13: // PRISM: // VTK_WEDGE
-                PetscViewerASCIIPrintf(viewer," 13 \n");
+            	ss << " 13 \n";
+                //PetscViewerASCIIPrintf(viewer," 13 \n");
                 i+=6+1;
                 break;
             case 14: // PYRAMID:
-                PetscViewerASCIIPrintf(viewer," 14 \n");;
+            	ss << " 14 \n";
+                //PetscViewerASCIIPrintf(viewer," 14 \n");;
                 i+=5+1;
                 break;
             default:
                 cerr << "COutput::WriteVTKElementData MshElemType not handled" << "\n";
                 break;
             }
+        	if (i%1000==0) {
+        		PetscViewerASCIIPrintf(viewer, ss.str().c_str());
+        		ss.str("");
+        		ss.clear();
+        	}
 //	PetscViewerASCIIPrintf(viewer," \n ");
         }
+        if (!ss.str().empty()) {
+    		PetscViewerASCIIPrintf(viewer, ss.str().c_str());
+        }
+		ss.str("");
+		ss.clear();
 
+        VecRestoreArray(eglob, &eglobp);
     } // end myrank == 0
+
+    VecRestoreArray(e, &ep);
+
+    VecDestroy(&e);
+    VecDestroy(&eglob);
+    VecDestroy(&x);
 }
 
     
@@ -497,8 +567,7 @@ void LegacyVtkInterface::WriteVTKDataArraysPETSC(PetscViewer viewer) const
                 PetscObjectSetName((PetscObject)x,carrayName);
 
                 for (long j = 0; j < count; j++)
-                    xp[j]= pcs->GetNodeValue(_mesh->nod_vector[j]->GetIndex(),
-                                             indexDataArray);
+                    xp[j]= pcs->GetNodeValue(_mesh->nod_vector[j]->GetIndex(), indexDataArray);
                 VecView(x, viewer);
             }
 
@@ -541,8 +610,7 @@ void LegacyVtkInterface::WriteVTKDataArraysPETSC(PetscViewer viewer) const
         std::vector<int> ele_value_index_vector(_cellArrayNames.size());
         if (_cellArrayNames[0].size() > 0)
             for (size_t i = 0; i < _cellArrayNames.size(); i++)
-                ele_value_index_vector[i] = pcs->GetElementValueIndex(
-                                                _cellArrayNames[i]);
+                ele_value_index_vector[i] = pcs->GetElementValueIndex(_cellArrayNames[i]);
 
         //....................................................................
         //
@@ -576,8 +644,9 @@ void LegacyVtkInterface::WriteVTKDataArraysPETSC(PetscViewer viewer) const
             {
                 const char * carrayName = _cellArrayNames[k].c_str();
                 PetscObjectSetName((PetscObject)e,carrayName);
+                const int ele_val_id = ele_value_index_vector[k];
                 for (long j = 0; j < count; j++)
-                    ep[j]= pcs->GetElementValue(j, ele_value_index_vector[k]);
+                    ep[j]= pcs->GetElementValue(j, ele_val_id);
                 VecView(e, viewer);
             }
         }
@@ -632,22 +701,25 @@ void LegacyVtkInterface::WriteVTKDataArraysPETSC(PetscViewer viewer) const
         }
         VecView(e, viewer);
 
-	const char * carrayNameD = "Domain";
+        const char * carrayNameD = "Domain";
         PetscObjectSetName((PetscObject)e,carrayNameD);
 
 //            vtk_file << "SCALARS " << "MatGroup" << " int 1" << "\n";
 //            vtk_file << "LOOKUP_TABLE default" << "\n";
-	int myrank;
-	MPI_Comm_rank(PETSC_COMM_WORLD, &myrank);
+        int myrank;
+        MPI_Comm_rank(PETSC_COMM_WORLD, &myrank);
         for (size_t i = 0; i < (size_t)count; i++)
         {
-            MeshLib::CElem* ele = _mesh->ele_vector[i];
             ep[i]=myrank;
-//                vtk_file << ele->GetPatchIndex() << "\n";
-    }
+        }
         VecView(e, viewer);
 
     }
+
+    VecRestoreArray(x, &xp);
+    VecRestoreArray(e, &ep);
+    VecDestroy(&x);
+    VecDestroy(&e);
 
 
     return;
