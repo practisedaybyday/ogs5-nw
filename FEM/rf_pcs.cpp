@@ -5746,12 +5746,12 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		bool quadr = false;
 #endif
 		if(type == 4 || type / 10 == 4)
-		  {   
+		{
 			fac = Scaling;
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-		        quadr = true;
+			quadr = true;
 #endif
-		  }
+		}
 		long begin = 0;
 		long end = 0;
 		long gindex = 0;
@@ -5886,15 +5886,15 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			bc_msh_node  = m_bc_node->geo_node_number;
 			// Check whether the node is in this subdomain
 			if(quadr)
-			  {
-			    if(bc_msh_node > m_msh->loc_NodesNumber_Quadratic)
-			      continue;
-			  }
+			{
+				if(bc_msh_node > m_msh->loc_NodesNumber_Quadratic)
+				continue;
+			}
 			else
-			  {
-			    if(bc_msh_node > m_msh->loc_NodesNumber_Linear)
-			      continue;
-			  }
+			{
+				if(bc_msh_node > m_msh->loc_NodesNumber_Linear)
+					continue;
+			}
 
 
 			int dof_per_node = 0;
@@ -6736,13 +6736,13 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		bool quadr = false;
 #endif
 		if(type == 4 || type / 10 == 4)
-		  {
-		    fac = Scaling;
+		{
+			fac = Scaling;
 
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-		    quadr = true;
+			quadr = true;
 #endif
-		  }
+		}
 
 		CNodeValue* cnodev = NULL;
 		CSourceTerm* m_st = NULL;
@@ -7006,30 +7006,30 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			msh_node = cnodev->geo_node_number;
 			// Check whether the node is in this subdomain
 			if(quadr)
-			  {
-			    if(msh_node > m_msh->loc_NodesNumber_Quadratic)
-			      continue;
-			  }
+			{
+				if(msh_node > m_msh->loc_NodesNumber_Quadratic)
+					continue;
+			}
 			else
-			  {
-			    if(msh_node > m_msh->loc_NodesNumber_Linear)
-			      continue;
-			  }
+			{
+				if(msh_node > m_msh->loc_NodesNumber_Linear)
+					continue;
+			}
 
 			int dof_per_node = 0;
 			if (m_msh->NodesNumber_Linear == m_msh->NodesNumber_Quadratic)
-			  {
-			    dof_per_node = pcs_number_of_primary_nvals;
-			    shift = cnodev->msh_node_number / m_msh->NodesNumber_Linear;
-			  }
+			{
+				dof_per_node = pcs_number_of_primary_nvals;
+				shift = cnodev->msh_node_number / m_msh->NodesNumber_Linear;
+			}
 			else
-			  {
-			    if( msh_node < static_cast<long> (m_msh->NodesNumber_Linear) )
-			      dof_per_node = pcs_number_of_primary_nvals;
-			    else
-			      dof_per_node =  m_msh->GetCoordinateFlag() / 10;
-			    shift = cnodev->msh_node_number / m_msh->NodesNumber_Quadratic;
-			  }
+			{
+				if( msh_node < static_cast<long> (m_msh->NodesNumber_Linear) )
+					dof_per_node = pcs_number_of_primary_nvals;
+				else
+					dof_per_node =  m_msh->GetCoordinateFlag() / 10;
+				shift = cnodev->msh_node_number / m_msh->NodesNumber_Quadratic;
+			}
  
 
 #else

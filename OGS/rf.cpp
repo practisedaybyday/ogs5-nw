@@ -271,7 +271,7 @@ int main ( int argc, char* argv[] )
 	delete aproblem;
 	aproblem = NULL;
 #ifdef TESTTIME
-	std::cout << "Simulation time: " << TGetTimer(0) << "s" << std::endl;
+	ScreenMessage2("Simulation time: %g s\n", TGetTimer(0));
 #endif
 	/* Abspann ausgeben */
 	/* Ctrl-C wieder normal */

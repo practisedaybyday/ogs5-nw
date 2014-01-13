@@ -564,6 +564,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line.str(GetLineFromFile1(num_file));
 			line >> ele_mass_lumping;
 			line.clear();
+			ScreenMessage("->Mass Lumping method is selected.\n");
 			continue;
 		}
 		// subkeyword found
