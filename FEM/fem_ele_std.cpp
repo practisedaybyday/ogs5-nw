@@ -8857,7 +8857,7 @@ ElementValue::ElementValue(CRFProcess* m_pcs, CElem* ele) : pcs(m_pcs)
 	else if(ele_type == MshElemType::TRIANGLE)
 		NGPoints = 3;
 	else if(ele_type == MshElemType::TETRAHEDRON)
-		NGPoints = 15;
+		NGPoints = 5; //15;
 	else
 		NGPoints = (int)MathLib::fastpow(NGP, ele_dim);
 
