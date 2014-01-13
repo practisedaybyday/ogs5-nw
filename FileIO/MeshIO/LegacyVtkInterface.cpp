@@ -181,7 +181,7 @@ void LegacyVtkInterface::WriteVTKPointDataPETSC(PetscViewer viewer) const
         VecGetArray(zcoor, &zp);
         for (i = 0; i < nn; i++)
         {
-            PetscViewerASCIIPrintf(viewer, "%lg %lg %lg \n",xp[i],yp[i],zp[i] );
+            PetscViewerASCIIPrintf(viewer, "%1.13lg %1.13lg %1.13lg \n",xp[i],yp[i],zp[i] );
         }
     }
 
