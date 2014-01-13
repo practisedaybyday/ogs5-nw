@@ -32,6 +32,15 @@ AABB::AABB ( const std::vector<GEOLIB::Point*>* points )
 		this->update((*(*points)[i])[0], (*(*points)[i])[1], (*(*points)[i])[2]);
 }
 
+void AABB::clear ()
+{
+	for (std::size_t k(0); k < 3; k++)
+	{
+		_min_pnt[k] = std::numeric_limits<double>::max();
+		_max_pnt[k] = - std::numeric_limits<double>::max();
+	}
+}
+
 void AABB::update (GEOLIB::Point const & pnt)
 {
 	update (pnt[0], pnt[1], pnt[2]);

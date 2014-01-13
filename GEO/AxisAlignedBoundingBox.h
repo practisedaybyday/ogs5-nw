@@ -40,6 +40,8 @@ public:
 	 * */
 	AABB ( const std::vector<GEOLIB::Point*>* points );
 
+	void clear();
+
 	void update (GEOLIB::Point const & pnt);
 	/**
 	 * update axis aligned bounding box
