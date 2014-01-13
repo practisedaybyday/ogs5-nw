@@ -31,6 +31,7 @@
 /**************************************************************************/
 #include "Configure.h"
 //#include <iostream>
+#include "../Base/MemWatch.h"
 //#include "makros.h"
 //#ifndef NEW_EQS //WW. 07.11.2008
 //#include "solver.h"
@@ -140,6 +141,10 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 		else
 			fclose (f);
 	}
+#ifndef WIN32
+	BaseLib::MemWatch mem_watch;
+	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 	//----------------------------------------------------------------------
 	// Read GEO data
 	ScreenMessage("GLIRead\n");
@@ -149,6 +154,9 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 	geo_file_name += ".gli";
 	std::vector<std::string> file_read_errors;
 	FileIO::readGLIFileV4 (geo_file_name, &geo_obj, unique_name, file_read_errors);
+#ifndef WIN32
+	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 
 	//----------------------------------------------------------------------
 	// Read object data
@@ -175,11 +183,18 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 	FEMDeleteAll();                       // KR moved from FEMRead()
 	std::vector<CFEMesh*> mesh_vec;
 	FEMRead(dateiname, mesh_vec, &geo_obj, &unique_name);
+#ifndef WIN32
+	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 	if (!mesh_vec.empty())                              //KR
 	{
 		fem_msh_vector.insert(fem_msh_vector.end(), mesh_vec.begin(), mesh_vec.end()); // re-inserted by KR
 #ifndef USE_PETSC
 		CompleteMesh();           //WW
+#else
+		ScreenMessage2("Optimize geometric objects\n");
+		geo_obj.optimiseObjects(unique_name, *fem_msh_vector[0]->getGrid());
+		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
 	}
 
