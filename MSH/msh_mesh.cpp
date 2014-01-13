@@ -1667,7 +1667,8 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 #endif
 	ScreenMessage2("[CFEMesh::GetNODOnSFC] search with new algorithm ... \n");
 #if defined(USE_PETSC) // || defined (other parallel linear solver lib). //WW. 05.2012
-  	const size_t nodes_in_usage= NodesInUsagePETSC(); //always use local nodes only ..
+//	const size_t nodes_in_usage= NodesInUsagePETSC(); //always use local nodes only ..
+	const size_t nodes_in_usage((size_t) NodesInUsage());
 #else
 	const size_t nodes_in_usage((size_t) NodesInUsage());
 #endif
