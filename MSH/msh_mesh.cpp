@@ -1666,12 +1666,11 @@ void CFEMesh::GetNODOnSFC(const GEOLIB::Surface* sfc,
 	begin = clock();
 #endif
 	ScreenMessage2("[CFEMesh::GetNODOnSFC] search with new algorithm ... \n");
-#if defined(USE_PETSC) // || defined (other parallel linear solver lib). //WW. 05.2012
+//#if defined(USE_PETSC) // || defined (other parallel linear solver lib). //WW. 05.2012
 //	const size_t nodes_in_usage= NodesInUsagePETSC(); //always use local nodes only ..
+//#else
 	const size_t nodes_in_usage((size_t) NodesInUsage());
-#else
-	const size_t nodes_in_usage((size_t) NodesInUsage());
-#endif
+//#endif
 	for (size_t j(0); j < nodes_in_usage; j++) {
 		if (sfc->isPntInBV((nod_vector[j])->getData(), _search_length / 2.0)) {
 			if (sfc->isPntInSfc((nod_vector[j])->getData(), _search_length / 2.0)) {
