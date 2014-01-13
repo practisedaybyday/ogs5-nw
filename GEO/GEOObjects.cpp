@@ -6,9 +6,11 @@
  */
 
 #include "GEOObjects.h"
-#include "StringTools.h"
 
 #include <fstream>
+
+#include "StringTools.h"
+#include "display.h"
 
 namespace GEOLIB
 {
@@ -316,6 +318,22 @@ const SurfaceVec* GEOObjects::getSurfaceVecObj(const std::string &name) const
 	std::cout << "GEOObjects::getSurfaceVecObj() - No entry found with name \"" << name <<
 	"\"." << std::endl;
 	return NULL;
+}
+
+void GEOObjects::optimiseObjects(const std::string &name, const GEOLIB::AABB &bb)
+{
+	const SurfaceVec* sfcVec = getSurfaceVecObj(name);
+	std::vector<Surface*>* sfc_vec = const_cast<std::vector<Surface*>*>(getSurfaceVec(name));
+	size_t size (sfc_vec->size());
+	for (size_t i = 0; i < size; i++) {
+		Surface* sfc = (*sfc_vec)[i];
+		size_t old_ntri = sfc->getNTriangles();
+		sfc->removeTriangles(bb);
+		size_t new_ntri = sfc->getNTriangles();
+		std::string sfc_name;
+		sfcVec->getNameOfElementByID(i, sfc_name);
+		ScreenMessage2("-> SURFACE %s is optimized from %d to %d triangles\n", sfc_name.c_str(), old_ntri, new_ntri);
+	}
 }
 
 bool GEOObjects::isUniquePointVecName(std::string &name)
