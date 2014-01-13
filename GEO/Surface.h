@@ -71,6 +71,8 @@ public:
 
 	void initSurfaceGrid();
 
+	void removeTriangles(const GEOLIB::AABB &bb);
+
 protected:
 	/** a vector of pointers to Points */
 	const std::vector<Point*> &_sfc_pnts;
