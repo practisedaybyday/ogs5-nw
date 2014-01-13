@@ -178,7 +178,9 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 	if (!mesh_vec.empty())                              //KR
 	{
 		fem_msh_vector.insert(fem_msh_vector.end(), mesh_vec.begin(), mesh_vec.end()); // re-inserted by KR
+#ifndef USE_PETSC
 		CompleteMesh();           //WW
+#endif
 	}
 
 	//SBOK4209 MSHWrite(dateiname);
