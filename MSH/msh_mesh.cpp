@@ -505,6 +505,7 @@ void CFEMesh::ConstructGrid()
 	Edge_Orientation = 1;
 
 	// Set neighbors of node
+	ScreenMessage2("-> Set elements connected to a node\n");
 	ConnectedElements2Node();
 
 	// Compute neighbors and edges
@@ -516,7 +517,7 @@ void CFEMesh::ConstructGrid()
 		ele_vector[e]->InitializeMembers();
 	}
 
-	ScreenMessage("-> find neighbors ... \n");
+	ScreenMessage2("-> find neighbors ... \n");
 	for (size_t e = 0; e < e_size; e++)
 	{
 		CElem* elem(ele_vector[e]);
@@ -801,7 +802,7 @@ void CFEMesh::ConstructGrid()
 	// Node information
 	// 1. Default node index <---> eqs index relationship
 	// 2. Coordiate system flag
-	ScreenMessage("-> detect bbox ... \n");
+	ScreenMessage2("-> detect bbox ... \n");
 	double x_sum(0.0), y_sum(0.0), z_sum(0.0);
 	Eqs2Global_NodeIndex.clear();
 	double xyz_max[3] = //NW
@@ -871,7 +872,7 @@ void CFEMesh::ConstructGrid()
 	max_dim = coordinate_system / 10 - 1;
 	//----------------------------------------------------------------------
 	// Gravity center
-    ScreenMessage("-> compute gravity center ... \n");
+    ScreenMessage2("-> compute gravity center ... \n");
 	for (size_t e = 0; e < e_size; e++)
 		ele_vector[e]->ComputeGravityCenter();  //NW
 	//----------------------------------------------------------------------
@@ -891,11 +892,11 @@ void CFEMesh::ConstructGrid()
 	e_edgeNodes0.resize(0);
 	e_edgeNodes.resize(0);
 
-	ScreenMessage("-> computeSearchLength ... \n");
+	ScreenMessage2("-> computeSearchLength ... \n");
 	computeSearchLength();
-	ScreenMessage("-> computeMinEdgeLength ... \n");
+	ScreenMessage2("-> computeMinEdgeLength ... \n");
 	computeMinEdgeLength();
-	ScreenMessage("-> constructMeshGrid ... \n");
+	ScreenMessage2("-> constructMeshGrid ... \n");
 	constructMeshGrid();
 }
 
@@ -2725,6 +2726,7 @@ std::ios::pos_type CFEMesh::GMSReadTIN(std::ifstream* tin_file)
 	return position;
 }
 
+#if 0
 /**************************************************************************
    GeoSys-Method:
    Task:
@@ -2744,6 +2746,7 @@ void CFEMesh::SetActiveElements(std::vector<long>&elements_active)
 	for (size_t i = 0; i < elements_active_size; i++)
 		ele_vector[elements_active[i]]->MarkingAll(true);
 }
+#endif
 
 /**************************************************************************
    MSHLib-Method:
@@ -2952,6 +2955,7 @@ void CFEMesh::PrismRefine(int Layer, int subdivision)
 	_n_msh_layer += subdivision;
 }
 
+#if 0
 /**************************************************************************
    FEMLib-Method:
    Task:
@@ -2968,6 +2972,7 @@ bool CFEMesh::NodeExists(size_t node)
 			return true;
 	return false;
 }
+#endif
 
 /**************************************************************************
    MSHLib-Method:
@@ -4138,12 +4143,12 @@ void CFEMesh::TopSurfaceIntegration()
 	val.clear();
 }
 
-#ifndef NDEBUG
+//#ifndef NDEBUG
 GEOLIB::Grid<MeshLib::CNode> const* CFEMesh::getGrid() const
 {
 	return _mesh_grid;
 }
-#endif
+//#endif
 
 #ifdef USE_HydSysMshGen
 /**************************************************************************

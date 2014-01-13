@@ -394,6 +394,7 @@ public:
 //         friend class ::Problem;
 //#endif
 	//....................................................................
+#ifdef ObsoleteGUI //WW 03.2012
 	// QUAD->HEX
 	void CreateHexELEFromQuad(int, double);
 	// QUAD->LINE
@@ -405,7 +406,6 @@ public:
 	// LINE->LINE
 	void AppendLineELE();
 
-#ifndef NON_GEO
 	// TRI->PRIS
 	void CreatePriELEFromTri(int, double);
 
@@ -492,14 +492,14 @@ public:
 	/// Comptute int {f} a dA on top surface.
 	void TopSurfaceIntegration();
 
-#ifndef NDEBUG
+//#ifndef NDEBUG
 	/**
 	 * This is a getter method to access the private attribute _mesh_grid
 	 * that is an instance of class Grid.
 	 * @return
 	 */
 	GEOLIB::Grid<MeshLib::CNode> const* getGrid() const;
-#endif
+//#endif
 
 private:
 	// private attributes
