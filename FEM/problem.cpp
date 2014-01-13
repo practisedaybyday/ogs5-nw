@@ -25,6 +25,7 @@
 /*------------------------------------------------------------------------*/
 /* Pre-processor definitions */
 #include "makros.h"
+#include "../Base/MemWatch.h"
 /*------------------------------------------------------------------------*/
 // MSHLib
 #include "msh_lib.h"
@@ -796,6 +797,10 @@ void Problem::PCSCreate()
 		pcs_vector[i]->Config();  //OK
 	}
 
+#ifndef WIN32
+	BaseLib::MemWatch mem_watch;
+#endif
+
 #ifdef NEW_EQS
 	CreateEQS_LinearSolver();             //WW
 #endif
@@ -819,6 +824,10 @@ void Problem::PCSCreate()
 
 #if defined(USE_PETSC) // || defined(other solver libs)//03.3012. WW
 	CreateEQS_LinearSolver();
+#endif
+
+#ifndef WIN32
+	ScreenMessage2("\tcurrent memory: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024));
 #endif
 
 	for (size_t i = 0; i < no_processes; i++)
@@ -936,6 +945,9 @@ void Problem::SetTimeActiveProcesses()
 **************************************************************************/
 void Problem::Euler_TimeDiscretize()
 {
+#ifndef WIN32
+	BaseLib::MemWatch mem_watch;
+#endif
 	long accepted_times = 0;
 	long rejected_times = 0;
 	double dt_rec;
@@ -963,10 +975,18 @@ void Problem::Euler_TimeDiscretize()
 	// ------------------------------------------
 	// PERFORM TRANSIENT SIMULATION
 	// ------------------------------------------
+#ifdef USE_PETSC
+	PetscLogDouble v1,v2;
+#endif
 	while(end_time > current_time)
 	{
 #if defined(USE_MPI) || defined(USE_PETSC)
 		MPI_Barrier(MPI_COMM_WORLD);
+#ifdef USEPETSC34
+		PetscTime(&v1);
+#else
+		PetscGetTime(&v1);
+#endif
 #endif
 
 		// Get time step
@@ -1010,9 +1030,16 @@ void Problem::Euler_TimeDiscretize()
 			// ---------------------------------
 			last_dt_accepted = true;
 			ScreenMessage("This step is accepted.\n");
+#ifndef WIN32
+			ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 			PostCouplingLoop();
 			if(print_result)
 			{
+#ifndef WIN32
+				ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
+				ScreenMessage2("-> output results\n");
 				if(current_time < end_time)
 					force_output = false;
 				else // JT: Make sure we printout on last time step
@@ -1033,6 +1060,16 @@ void Problem::Euler_TimeDiscretize()
 				m_tim = total_processes[active_process_index[i]]->Tim;
 				if(m_tim->time_active) m_tim->accepted_step_count++;
 			}
+#ifdef USEPETSC34
+		PetscTime(&v2);
+#else
+		PetscGetTime(&v2);
+#endif
+		ScreenMessage("\telapsed time for this time step: %g s\n", v2-v1);
+#ifndef WIN32
+		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
+
 		}
 		else
 		{

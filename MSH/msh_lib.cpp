@@ -304,6 +304,7 @@ MeshLib::CFEMesh* FEMGet(const std::string &msh_name)
    }
  */
 
+#ifdef ObsoleteGUI //WW 03.2012
 /**************************************************************************
    GeoLib-Method:
    Task:
@@ -803,6 +804,7 @@ void MSHLayerWriteTecplot()
 		}                                 // layer
 	}
 }
+#endif //#ifdef ObsoleteGUI //WW 03.2012
 
 /**************************************************************************
    MSHLib-Method:

@@ -33,6 +33,7 @@
 
 /* Preprozessor-Definitionen */
 #include "makros.h"
+#include "../Base/MemWatch.h"
 #define TEST
 /* Benutzte Module */
 #include "break.h"
@@ -267,6 +268,10 @@ int main ( int argc, char* argv[] )
 		FilePath = FileName.substr(0,indexChLinux) + "/";
 	// ---------------------------WW
 	Problem* aproblem = new Problem(dateiname);
+#ifndef WIN32
+	BaseLib::MemWatch mem_watch;
+	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage()/ (1024*1024));
+#endif
 	aproblem->Euler_TimeDiscretize();
 	delete aproblem;
 	aproblem = NULL;

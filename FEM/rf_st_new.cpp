@@ -13,6 +13,7 @@
 #include <iostream>
 #include <set>
 
+#include "MemWatch.h"
 #include "files0.h"
 #include "mathlib.h"
 
@@ -1171,7 +1172,12 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 		// create ST node
 		//------------------------------------------------------------------
 		std::vector<long> nodes_cond;
+		ScreenMessage2("-> create ST nodes\n");
 		st->SetNodeValues(nodes_vector, nodes_cond, node_value, ShiftInNodeVector);
+#ifndef WIN32
+		BaseLib::MemWatch mem_watch;
+		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 
 		//------------------------------------------------------------------
 		// FCT

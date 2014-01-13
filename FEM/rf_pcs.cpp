@@ -10,8 +10,19 @@
            and parellelisation of them
    02/2008 PCH OpenMP parallelization for Lis matrix solver
 **************************************************************************/
-#include "FEMEnums.h"
-#include "Output.h"
+#include "rf_pcs.h"
+
+// C
+#ifndef __APPLE__
+#include <malloc.h>
+#endif
+
+// C++
+#include <cfloat>
+#include <iomanip>                                //WW
+#include <iostream>
+//#include <algorithm> // header of transform. WW
+#include <set>
 
 /*--------------------- MPI Parallel  -------------------*/
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
@@ -26,18 +37,12 @@
 #endif
 /*--------------------- OpenMP Parallel ------------------*/
 
-#include "makros.h"
-// C
-#ifndef __APPLE__
-#include <malloc.h>
-#endif
 
-// C++
-#include <cfloat>
-#include <iomanip>                                //WW
-#include <iostream>
-//#include <algorithm> // header of transform. WW
-#include <set>
+#include "makros.h"
+#include "MemWatch.h"
+#include "FEMEnums.h"
+#include "Output.h"
+
 // GEOLib
 #include "PointWithID.h"
 
@@ -48,7 +53,6 @@
 /*-----------------------------------------------------------------------*/
 /* Objects */
 #include "pcs_dm.h"
-#include "rf_pcs.h"
 #ifndef NEW_EQS                                   //WW. 07.11.2008
 #include "solver.h"                               // ConfigRenumberProperties
 #endif
@@ -576,6 +580,9 @@ void CRFProcess::SetOBJNames()
 **************************************************************************/
 void CRFProcess::Create()
 {
+#ifndef WIN32
+	BaseLib::MemWatch mem_watch;
+#endif
 	// we need the string representation of process type at some points
 	std::string pcs_type_name(
 	        convertProcessTypeToString(this->getProcessType()));
@@ -847,6 +854,9 @@ void CRFProcess::Create()
 			if(WriteProcessed_BC == 1)
 				Write_Processed_BC();
 		}
+#ifndef WIN32
+		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 		// ST - create ST groups for each process
 		ScreenMessage2("->Create ST\n");
 		CSourceTermGroup* m_st_group = NULL;
@@ -884,6 +894,9 @@ void CRFProcess::Create()
 	// ELE - config and create element values
 	ScreenMessage2("->Config ELE values\n");
 	AllocateMemGPoint();
+#ifndef WIN32
+	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 
 	// ELE - config element matrices
 	// NOD - config and create node values
@@ -1018,6 +1031,10 @@ void CRFProcess::Create()
 	size_unknowns = eqs_new->A->Dim();
 #endif
 	  }
+#endif
+
+#ifndef WIN32
+	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
 }
 
@@ -5002,12 +5019,20 @@ void CRFProcess::GlobalAssembly()
 	else
 #endif //#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	{                                     // STD
+		const size_t dn = m_msh->ele_vector.size() / 10;
+		const bool print_progress = (dn >= 100);
+		if (print_progress)
+			ScreenMessage2("start local assembly for %d elements...\n", m_msh->ele_vector.size());
+	    const long n_eles = (long)m_msh->ele_vector.size();
+
 		//YDTEST. Changed to DOF 15.02.2007 WW
 		for (size_t ii = 0; ii < continuum_vector.size(); ii++)
 		{
 			continuum = ii;
 			for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
 			{
+				if (print_progress && (i+1)%dn==0)
+					ScreenMessage2("%d \%\n", ((i+1)*100/n_eles));
 				elem = m_msh->ele_vector[i];
 				// Marked for use //WX: modified for coupled excavation
 #ifndef OGS_ONLY_TH

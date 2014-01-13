@@ -457,6 +457,7 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 					                             m_out->msh_type_name,
 					                             m_out);
 #if defined(USE_PETSC)						
+							ScreenMessage2("-> output a VTK file\n");
 							vtkOutput.WriteDataVTKPETSC(
 							        time_step_number,
 							        m_out->_time,
@@ -490,6 +491,7 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 							        msh_type_name,
 							        m_out);
 #if defined(USE_PETSC)						
+							ScreenMessage2("-> output a VTK file\n");
 							vtkOutput.WriteDataVTKPETSC(
 							        time_step_number,
 							        m_out->_time,
