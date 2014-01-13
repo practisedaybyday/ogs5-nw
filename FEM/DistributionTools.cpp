@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <set>
 
+#include "display.h"
 #include "InterpolationAlgorithms/PiecewiseLinearInterpolation.h"
 #include "mathlib.h"
 #include "msh_mesh.h"
