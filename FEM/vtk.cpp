@@ -311,6 +311,9 @@ bool CVTK::WriteXMLPUnstructuredGrid(const std::string &vtkfile_base,
 	// point data
 	if (out->_nod_value_vector.size() > 0) {
 		fin << "    <PPointData Scalars=\"" << out->_nod_value_vector[0] << "\" >\n";
+#if 0
+		fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_UChar) << "\" Name=\"vtkGhostLevels\" format=\"ascii\" />\n";
+#endif
 		bool outNodeVelocity = false;
 		bool outNodeDisplacement = false;
 		for (size_t i=0; i<out->_nod_value_vector.size(); i++) {
@@ -335,6 +338,9 @@ bool CVTK::WriteXMLPUnstructuredGrid(const std::string &vtkfile_base,
 	// cell data
 	fin << "    <PCellData Scalars=\"" << "Domain" << "\" >\n";
 	fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Int) << "\" Name=\"Domain\" format=\"ascii\" />\n";
+#if 0
+	fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_UChar) << "\" Name=\"vtkGhostLevels\" format=\"ascii\" />\n";
+#endif
 	fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Int) << "\" Name=\"MatGroup\" format=\"ascii\" />\n";
 	std::vector<int> ele_value_index_vector(out->getElementValueVector().size());
 	if (ele_value_index_vector.size() > 0)
@@ -687,6 +693,40 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 	else
 		str_format = "appended";
 
+#ifdef USE_PETSC
+#if 0
+	// Ghost level
+	if (!useBinary || !output_data)
+		WriteDataArrayHeader(fin, type_UChar, "vtkGhostLevels", 0, str_format, offset);
+
+	if (output_data)
+	{
+		if (!useBinary) {
+			fin << "          ";
+		} else {
+			write_value_binary<unsigned int> (fin, sizeof(double)* msh->GetNodesNumber(false));
+		}
+		for (size_t j = 0; j < msh->GetNodesNumber(false); j++) {
+			unsigned v = j<msh->NodesInUsagePETSC() ? 0 : 1;
+			if (!useBinary) {
+				fin << v << " ";
+			} else {
+				write_value_binary(fin, v);
+			}
+		}
+		if (!useBinary) {
+			fin << "\n";
+		}
+	}
+	else
+	{
+		offset += msh->GetNodesNumber(false) * sizeof(unsigned char) + SIZE_OF_BLOCK_LENGTH_TAG;
+	}
+	if (!useBinary || !output_data)
+		WriteDataArrayFooter(fin);
+#endif
+#endif
+
     bool isXZplane = (msh->GetCoordinateFlag()==22);
     bool is3D = (msh->GetCoordinateFlag() / 10 == 3);
 	bool outNodeVelocity = false;
@@ -980,6 +1020,34 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 		          SIZE_OF_BLOCK_LENGTH_TAG;
 	if (!useBinary || !output_data)
 		WriteDataArrayFooter(fin);
+#if 0
+	// Ghost level
+	if (!useBinary || !output_data)
+		WriteDataArrayHeader(fin, this->type_UChar, "vtkGhostLevels", 0, str_format, offset);
+	if (output_data)
+	{
+		if (!this->useBinary)
+		{
+			fin << "          ";
+			for(long i = 0; i < (long)msh->ele_vector.size(); i++) {
+				fin << (msh->ele_vector[i]->isOverlapped() ? 1 : 0) << " ";
+			}
+			fin << "\n";
+		}
+		else
+		{
+			write_value_binary<unsigned int>(fin, sizeof(int) * (long)msh->ele_vector.size());
+			for (long i = 0; i < (long)msh->ele_vector.size(); i++)
+				write_value_binary(fin, (msh->ele_vector[i]->isOverlapped() ? 1 : 0));
+		}
+	}
+	else
+		//OK411
+		offset += (long)msh->ele_vector.size() * sizeof(int) +
+		          SIZE_OF_BLOCK_LENGTH_TAG;
+	if (!useBinary || !output_data)
+		WriteDataArrayFooter(fin);
+#endif
 #endif
 
 	// Mat ID

@@ -370,6 +370,9 @@ public:
 	int GetExcavState() {return excavated; }    //WX:01.2011 get excavation state
 	void SetExcavState(const int ExcavState) {excavated = ExcavState; }   //WX:01.2011 set excavation state
 #endif
+#if defined(USE_PETSC)
+	bool isOverlapped() const {return g_index!=NULL;}
+#endif
 private:
 	// Members
 	// ID
@@ -383,7 +386,7 @@ private:
 	Math_Group::vec<CNode*> nodes;
 	Math_Group::vec<long> nodes_index;
 #if defined(USE_PETSC) // || defined(using other parallel scheme). WW
-        int *g_index;
+	int *g_index;
 #endif
 
 
