@@ -955,6 +955,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 		str_format = "appended";
 
 #ifdef USE_PETSC
+	// Domain ID
 	if (!useBinary || !output_data)
 		WriteDataArrayHeader(fin, this->type_Int, "Domain", 0, str_format, offset);
 	if (output_data)
@@ -981,9 +982,34 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 		WriteDataArrayFooter(fin);
 #endif
 
-	bool outEleVelocity = false;
+	// Mat ID
+	if (!useBinary || !output_data)
+		WriteDataArrayHeader(fin, this->type_Int, "MatGroup", 0, str_format, offset);
+	if (output_data)
+	{
+		if (!this->useBinary)
+		{
+			fin << "          ";
+			for(long i = 0; i < (long)msh->ele_vector.size(); i++)
+				fin << msh->ele_vector[i]->GetPatchIndex() << " ";
+			fin << "\n";
+		}
+		else
+		{
+			write_value_binary<unsigned int>(fin, sizeof(int) * (long)msh->ele_vector.size());
+			for (long i = 0; i < (long)msh->ele_vector.size(); i++)
+				write_value_binary(fin, msh->ele_vector[i]->GetPatchIndex());
+		}
+	}
+	else
+	{
+		offset += (long)msh->ele_vector.size() * sizeof(int) + SIZE_OF_BLOCK_LENGTH_TAG;
+	}
+	if (!useBinary || !output_data)
+		WriteDataArrayFooter(fin);
 
 	//Element values
+	bool outEleVelocity = false;
 	for (int i = 0; i < (int) ele_value_index_vector.size(); i++)
 	{
 		if (out->getElementValueVector()[i].find("VELOCITY") != string::npos)
@@ -1174,40 +1200,6 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 		}
 	}
 	//Material information
-	if(mmp_vector.size() > 1)
-	{
-		if (!useBinary || !output_data)
-			WriteDataArrayHeader(fin, this->type_Int, "MatGroup", 0, str_format, offset);
-		if (output_data)
-		{
-			if (!this->useBinary)
-			{
-				fin << "          ";
-				for(long i = 0; i < (long)msh->ele_vector.size(); i++)
-				{
-					ele = msh->ele_vector[i];
-					fin << ele->GetPatchIndex() << " ";
-				}
-				fin << "\n";
-			}
-			else
-			{
-				//OK411
-				write_value_binary<unsigned int>(
-				        fin,
-				        sizeof(int) *
-				        (long)msh->ele_vector.size());
-				for (long i = 0; i < (long)msh->ele_vector.size(); i++)
-					write_value_binary(fin, msh->ele_vector[i]->GetPatchIndex());
-			}
-		}
-		else
-			//OK411
-			offset += (long)msh->ele_vector.size() * sizeof(int) +
-			          SIZE_OF_BLOCK_LENGTH_TAG;
-		if (!useBinary || !output_data)
-			WriteDataArrayFooter(fin);
-	}
     //MMP
     if(out->mmp_value_vector.size() > 0)
     {
