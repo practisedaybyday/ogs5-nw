@@ -96,12 +96,7 @@ void COutput::setMPI_Info(const int rank, const int size, std::string rank_str)
  */
 void COutput::CreateVTKInstance(void)
 {
-#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
-  vtk = new CVTK(mrank, mrank_str);
-#else
    vtk = new CVTK();
-#endif
-
 }
 void COutput::init()
 {

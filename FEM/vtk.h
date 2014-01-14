@@ -40,24 +40,12 @@ protected:
 	VTK_XML_DATA_TYPE type_Double;
 	int SIZE_OF_BLOCK_LENGTH_TAG;
 	bool isLittleEndian;                  //Endian(byte order)
-#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
-  int mrank;
-  std::string mrank_str;
-#endif
 
 public:
-#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
-  CVTK(const int rank, std::string rank_str)
-  {
-    mrank = rank;
-    mrank_str = rank_str;
-  }
-#else
   CVTK(void)
   {
     isInitialized = false; 
   }
-#endif
 	virtual ~CVTK(void){}
 
 protected:
@@ -107,6 +95,7 @@ protected:
 	//util
 	template <typename T> void write_value_binary(std::fstream &fin, T val);
 	bool IsLittleEndian();
+	std::string vtkDataType2str(VTK_XML_DATA_TYPE data_type);
 
 public:
 	//PVD
@@ -118,6 +107,9 @@ public:
 
 	//VTU
 	bool WriteXMLUnstructuredGrid(const std::string &vtkfile,
+	                              COutput* out,
+	                              const int time_step_number);
+	bool WriteXMLPUnstructuredGrid(const std::string &vtkfile,
 	                              COutput* out,
 	                              const int time_step_number);
 };

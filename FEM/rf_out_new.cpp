@@ -252,10 +252,9 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 		//OK4704 continue;
 		//--------------------------------------------------------------------
 		m_out->setTime (time_current);
-		size_t no_times (m_out->time_vector.size());
+		const size_t no_times (m_out->time_vector.size());
 		//--------------------------------------------------------------------
-		if (no_times == 0 && (m_out->nSteps > 0) && (time_step_number
-		                                             % m_out->nSteps == 0))
+		if (no_times == 0 && (m_out->nSteps > 0) && (time_step_number % m_out->nSteps == 0))
 			OutputBySteps = true;
 		if (time_step_number == 0 || force_output) //WW//JT
 			OutputBySteps = true;
@@ -524,72 +523,66 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 		}                           // PVD (ParaView)
 		else if (m_out->dat_type_name.find("PVD") != string::npos)
 		{
+			// check output
+			bool do_output = OutputBySteps;
+			if (!OutputBySteps)
+			{
+				for (size_t j = 0; j < no_times; j++)
+				{
+					if (time_current < m_out->time_vector[j])
+						continue;
+					m_out->time_vector.erase(m_out->time_vector.begin() + j);
+					do_output = true;
+					break;
+				}
+			}
+			if (!do_output)
+				continue;
+			OutputBySteps = false;
+
 			if (m_out->vtk == NULL)
-			  m_out->CreateVTKInstance(); //WW m_out->vtk = new CVTK();
+				m_out->CreateVTKInstance(); //WW m_out->vtk = new CVTK();
 			CVTK* vtk = m_out->vtk;
 
 			bool vtk_appended = false;
 			if (m_out->dat_type_name.find("PVD_A") != string::npos)
 				vtk_appended = true;
 
-			stringstream stm;
-			string pvd_vtk_file_name, pvd_vtk_file_path;
-
-			switch (m_out->getGeoType())
+			if (m_out->getGeoType()==GEOLIB::GEODOMAIN)
 			{
-			case GEOLIB::GEODOMAIN: // domain data
+				cout << "Data output: Domain - PVD\n" << endl;
 				if (time_step_number == 0)
 				{
 					std::string pcs_type ("");
 					if (m_out->getProcessType() != FiniteElement::INVALID_PROCESS)
-						pcs_type = FiniteElement::convertProcessTypeToString (
-						        m_out->getProcessType());
-					vtk->InitializePVD(m_out->file_base_name,
-					                   pcs_type,
-					                   vtk_appended);
+						pcs_type = FiniteElement::convertProcessTypeToString (m_out->getProcessType());
+					vtk->InitializePVD(m_out->file_base_name, pcs_type, vtk_appended);
 				}
 				// Set VTU file name and path
-				pvd_vtk_file_name = vtk->pvd_vtk_file_name_base;
-				stm << time_step_number;
-				pvd_vtk_file_name += stm.str() + ".vtu";
-                pvd_vtk_file_path = vtk->pvd_vtk_file_path_base + pvd_vtk_file_name;
-				// Output
-				if (OutputBySteps)
-				{
-					OutputBySteps = false;
-					vtk->WriteXMLUnstructuredGrid(pvd_vtk_file_path, m_out,
-					                              time_step_number);
-					VTK_Info dat;
-					dat.timestep = m_out->getTime();
-					dat.vtk_file = pvd_vtk_file_name;
-					vtk->vec_dataset.push_back(dat);
-					vtk->UpdatePVD(vtk->pvd_file_name, vtk->vec_dataset);
+				const std::string vtk_file_path_base = vtk->pvd_vtk_file_path_base + vtk->pvd_vtk_file_name_base;
+#ifdef USE_PETSC
+				std::string vtu_file_name = vtk_file_path_base + "_part" + number2str(myrank) + "_" + number2str(time_step_number) + ".vtu";
+				std::string pvd_vtk_file_name = vtk_file_path_base + "_" + number2str(time_step_number) + ".pvtu";
+#else
+				std::string vtu_file_name = vtk_file_path_base + number2str(time_step_number) + ".vtu";
+				std::string pvd_vtk_file_name = vtu_file_name;
+#endif
+				vtk->WriteXMLUnstructuredGrid(vtu_file_name, m_out, time_step_number);
+#ifdef USE_PETSC
+				if (myrank==0)
+					vtk->WriteXMLPUnstructuredGrid(vtk_file_path_base, m_out, time_step_number);
+#endif
+				VTK_Info dat;
+				dat.timestep = m_out->getTime();
+				dat.vtk_file = pvd_vtk_file_name;
+				vtk->vec_dataset.push_back(dat);
+#ifdef USE_PETSC
+				if (myrank==0) {
+#endif
+				vtk->UpdatePVD(vtk->pvd_file_name, vtk->vec_dataset);
+#ifdef USE_PETSC
 				}
-				else
-				{
-					for (size_t j = 0; j < no_times; j++)
-						if (time_current >= m_out->time_vector[j])
-						{
-							vtk->WriteXMLUnstructuredGrid(
-							        pvd_vtk_file_name,
-							        m_out,
-							        time_step_number);
-							m_out->time_vector.erase(
-							        m_out->time_vector.begin()
-							        + j);
-							VTK_Info dat;
-							dat.timestep = m_out->getTime();
-							dat.vtk_file = pvd_vtk_file_name;
-							vtk->vec_dataset.push_back(dat);
-							vtk->UpdatePVD(vtk->pvd_file_name,
-							               vtk->vec_dataset);
-							break;
-						}
-				}
-				break;
-
-			default:
-				break;
+#endif
 			}
 		}
 		else if (m_out->dat_type_name.compare("WATER_BALANCE") == 0)
