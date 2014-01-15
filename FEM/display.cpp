@@ -146,7 +146,7 @@ void ScreenMessage2(const char* format, ...)
 {
 	va_list arguments;
 	va_start (arguments, format);
-	char* allocatedBuffer;
+	char* allocatedBuffer=NULL;
 	vasprintf(&allocatedBuffer, format, arguments);
 	va_end ( arguments );
 #if defined(USE_MPI) || defined(USE_PETSC)
