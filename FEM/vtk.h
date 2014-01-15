@@ -109,8 +109,10 @@ public:
 	bool WriteXMLUnstructuredGrid(const std::string &vtkfile,
 	                              COutput* out,
 	                              const int time_step_number);
+#ifdef USE_PETSC
 	bool WriteXMLPUnstructuredGrid(const std::string &vtkfile,
 	                              COutput* out,
 	                              const int time_step_number);
+#endif
 };
 #endif

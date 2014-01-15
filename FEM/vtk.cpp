@@ -267,6 +267,7 @@ bool CVTK::WriteDataArrayFooter(std::fstream &fin)
 	return true;
 }
 
+#ifdef USE_PETSC
 bool CVTK::WriteXMLPUnstructuredGrid(const std::string &vtkfile_base,
                                     COutput* out,
                                     const int time_step_number)
@@ -375,6 +376,7 @@ bool CVTK::WriteXMLPUnstructuredGrid(const std::string &vtkfile_base,
 
 	return true;
 }
+#endif
 
 bool CVTK::WriteXMLUnstructuredGrid(const std::string &vtkfile,
                                     COutput* out,
