@@ -223,7 +223,6 @@ int main ( int argc, char* argv[] )
 		return 1; // LB changed from 0 to 1 because 0 is indicating success
 	}
 	if( argc == 1 )               // interactive mode
-
 		dateiname = ReadString();
 	else                         // non-interactive mode
 	{
@@ -255,6 +254,25 @@ int main ( int argc, char* argv[] )
 		std::cout << " Error: Cannot find file " << dateiname << std::endl;
 		return 1;
 	}
+
+	ScreenMessage("\n---------------------------------------------\n");
+	ScreenMessage("ogs version: %s\n", OGS_VERSION);
+	ScreenMessage("ogs date: %s\n", OGS_DATE);
+#ifdef CMAKE_CMD_ARGS
+	ScreenMessage("cmake command line arguments: %s\n", CMAKE_CMD_ARGS);
+#endif // CMAKE_CMD_ARGS
+#ifdef GIT_COMMIT_INFO
+	ScreenMessage("git commit info: %s\n", GIT_COMMIT_INFO);
+#endif // GIT_COMMIT_INFO
+#ifdef SVN_REVISION
+	ScreenMessage("subversion info: %s\n", SVN_REVISION);
+#endif // SVN_REVISION
+#ifdef BUILD_TIMESTAMP
+	ScreenMessage("build timestamp: %s\n", BUILD_TIMESTAMP);
+#endif // BUILD_TIMESTAMP
+#ifdef USE_PETSC
+	MPI_MPI_Barrier(PETSC_COMM_WORLD);
+#endif
 
 	FileName = dateiname;
 	size_t indexChWin, indexChLinux;
