@@ -120,6 +120,8 @@ CMediumProperties::CMediumProperties() :
 
 	permeability_pressure_model = -1; //01.09.2011. WW
 	permeability_strain_model = -1; //01.09.2011. WW
+
+	evaporation = -1;
 }
 
 /**************************************************************************
