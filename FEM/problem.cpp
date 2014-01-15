@@ -1060,12 +1060,14 @@ void Problem::Euler_TimeDiscretize()
 				m_tim = total_processes[active_process_index[i]]->Tim;
 				if(m_tim->time_active) m_tim->accepted_step_count++;
 			}
+#ifdef USE_PETSC
 #ifdef USEPETSC34
 		PetscTime(&v2);
 #else
 		PetscGetTime(&v2);
 #endif
 		ScreenMessage("\telapsed time for this time step: %g s\n", v2-v1);
+#endif
 #ifndef WIN32
 		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
