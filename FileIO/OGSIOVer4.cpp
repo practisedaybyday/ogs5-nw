@@ -278,20 +278,23 @@ void readTINFile(const std::string &fname, Surface* sfc,
 
 	size_t id;
 	double x, y, z;
-	while (in)
+	std::string line;
+	while (std::getline(in, line))
 	{
+		if (line.empty()) continue;
+		std::stringstream ss(line);
 		// read id
-		in >> id;
+		ss >> id;
 		// determine size
 		size_t pnt_pos(pnt_vec.size());
 		// read first point
-		in >> x >> y >> z;
+		ss >> x >> y >> z;
 		pnt_vec.push_back(new Point(x, y, z));
 		// read second point
-		in >> x >> y >> z;
+		ss >> x >> y >> z;
 		pnt_vec.push_back(new Point(x, y, z));
 		// read third point
-		in >> x >> y >> z;
+		ss >> x >> y >> z;
 		pnt_vec.push_back(new Point(x, y, z));
 		// create new Triangle
 		sfc->addTriangle(pnt_pos, pnt_pos + 1, pnt_pos + 2);
