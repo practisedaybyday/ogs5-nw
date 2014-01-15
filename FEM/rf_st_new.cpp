@@ -107,6 +107,7 @@ CSourceTerm::CSourceTerm() :
    this->TimeInterpolation = 0;                   //BG
    is_transfer_bc = false;
    st_id = -1;
+   has_constrain = false;
 }
 
 // KR: Conversion from GUI-ST-object to CSourceTerm
