@@ -173,7 +173,7 @@ bool NUMRead(string file_base_name)
 	num_file.seekg(0L,ios::beg);
 	//========================================================================
 	// Keyword loop
-	cout << "NUMRead" << endl;
+	ScreenMessage("NUMRead\n");
 	while (!num_file.eof())
 	{
 		num_file.getline(line,MAX_ZEILE);
@@ -432,7 +432,19 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 		// subkeyword found
 		if(line_string.find("$LINEAR_SOLVER") != string::npos)
 		{
-			line.str(GetLineFromFile1(num_file));
+		  std::string str_buf = GetLineFromFile1(num_file); //WW
+		  line.str(str_buf);
+                  if(str_buf.find("petsc") != string::npos) //03.2012. WW
+		    {
+		      line >> str_buf 
+			   >> lsover_name
+			   >> pres_name
+			   >> ls_error_tolerance
+			   >> ls_max_iterations
+			   >> ls_theta;
+		    }
+		  else
+		    {
 			line >> ls_method;
 			line >> ls_error_method;
 			line >> ls_error_tolerance;
@@ -443,6 +455,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			/// For GMRES. 06.2010. WW
 			if(ls_method == 13)
 				line >> m_cols;
+		    }
 			line.clear();
 			continue;
 		}
@@ -551,6 +564,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line.str(GetLineFromFile1(num_file));
 			line >> ele_mass_lumping;
 			line.clear();
+			ScreenMessage("->Mass Lumping method is selected.\n");
 			continue;
 		}
 		// subkeyword found
@@ -570,7 +584,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line >> ele_supg_method >> ele_supg_method_length >>
 			ele_supg_method_diffusivity;
 			line.clear();
-			cout << "->SUPG method is selected." << endl;
+			ScreenMessage("->SUPG method is selected.\n");
 			continue;
 		}
 		// subkeyword found
@@ -603,7 +617,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line >> fct_prelimiter_type; //0: just cancel, 1: minmod, 2: superbee
 			line >> fct_const_alpha; //-1: off, [0.0,1.0] 0: Upwind, 1: Galerkin
 			line.clear();
-			cout << "->FEM_FCT method is selected." << endl;
+			ScreenMessage("->FEM_FCT method is selected.");
 			continue;
 		}
 
@@ -730,7 +744,8 @@ void CNumerics::Write(fstream* num_file)
 //////////////////////////////////////////////////////////////////////////
 // LINEAR_SOLVER
 //////////////////////////////////////////////////////////////////////////
-#ifndef NEW_EQS                                   //WW. 06.11.2008
+//#ifndef NEW_EQS                                   //WW. 06.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC) // && !defined(other parallel solver) //WW. 04.10.2012
 
 /*************************************************************************
    ROCKFLOW - Funktion: SetZeroLinearSolver
@@ -1160,11 +1175,11 @@ void SetLinearSolverType(LINEAR_SOLVER* ls,CNumerics* m_num)
 LINEAR_SOLVER* InitializeLinearSolver(LINEAR_SOLVER* ls,CNumerics* m_num)
 {
 	SetLinearSolverType(ls,m_num);
-#ifdef USE_MPI                                 //WW
-	InitVectorLinearSolver(ls);
-#else
+//#ifdef USE_MPI                                 //WW
+//	InitVectorLinearSolver(ls);
+//#else
 	InitLinearSolver(ls);
-#endif
+//#endif
 	/* Internen Speicher allokieren */
 	InitMemoryLinearSolver(ls,ls->memory_number);
 	/* Speicher initialisieren */

@@ -408,7 +408,8 @@ extern void GetCriticalDepthNODValue(double& value, CSourceTerm*, long msh_node)
 extern void GetCouplingNODValue(double& value, CSourceTerm* m_st, CNodeValue* cnodev);
 // JOD
 extern void GetCouplingNODValueNewton(double& value, CSourceTerm* m_st, CNodeValue* cnodev);
-#ifndef NEW_EQS                                   //WW. 06.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 06.11.2008
                                                   //MB JOD
 extern void GetNormalDepthNODValue(double& value, CSourceTerm*, long msh_node);
 // JOD

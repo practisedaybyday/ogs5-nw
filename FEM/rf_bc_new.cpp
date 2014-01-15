@@ -660,15 +660,14 @@ bool BCRead(std::string const& file_base_name, const GEOLIB::GEOObjects& geo_obj
 	}
 
 	// Keyword loop
-	std::cout << "BCRead ... " << std::flush;
+	ScreenMessage("BCRead ... \n");
 	while (!bc_file.eof())
 	{
 		bc_file.getline(line, MAX_ZEILE);
 		line_string = line;
 		if (line_string.find("#STOP") != std::string::npos)
 		{
-			std::cout << "done, read " << bc_list.size()
-			          << " boundary conditions" << std::endl;
+			ScreenMessage("-> done, read %d boundary conditions\n", bc_list.size());
 			return true;
 		}
 		if (line_string.find("#BOUNDARY_CONDITION") != std::string::npos)
@@ -997,7 +996,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 		//------------------------------------------------------------------
 		nodes_vector.clear();
 		getNodesOnDistribution(distData, *m_msh, nodes_vector);
-		std::cout << "-> " << nodes_vector.size() << " nodes are found for this BC" << std::endl;
+		ScreenMessage2( "-> %d nodes are found for this BC\n", nodes_vector.size());
 		//------------------------------------------------------------------
 		// Calculate BC values
 		//------------------------------------------------------------------
@@ -1035,7 +1034,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 	} // list
 
 	clock_t end_time (clock());
-	std::cout << "\t[BC] set BC took " << (end_time-start_time)/(double)(CLOCKS_PER_SEC) << std::endl;
+	ScreenMessage2("\t[BC] set BC took %g s\n", (end_time-start_time)/(double)(CLOCKS_PER_SEC));
 
 	start_time = clock();
 	// SetTransientBCtoNodes  10/2008 WW/CB Implementation
@@ -1110,7 +1109,7 @@ void CBoundaryConditionsGroup::Set(CRFProcess* pcs, int ShiftInNodeVector,
 	     cout << "Warning: no boundary conditions specified for " << pcs_type_name << endl;
 	   */
 	end_time = clock();
-	std::cout << "\t[BC] set transient BC took " << (end_time-start_time)/(double)(CLOCKS_PER_SEC) << std::endl;
+	ScreenMessage2 ("\t[BC] set transient BC took %g s.\n", (end_time-start_time)/(double)(CLOCKS_PER_SEC));
 }
 
 /**************************************************************************

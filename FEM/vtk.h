@@ -42,7 +42,10 @@ protected:
 	bool isLittleEndian;                  //Endian(byte order)
 
 public:
-	CVTK(void){isInitialized = false; }
+  CVTK(void)
+  {
+    isInitialized = false; 
+  }
 	virtual ~CVTK(void){}
 
 protected:
@@ -92,6 +95,7 @@ protected:
 	//util
 	template <typename T> void write_value_binary(std::fstream &fin, T val);
 	bool IsLittleEndian();
+	std::string vtkDataType2str(VTK_XML_DATA_TYPE data_type);
 
 public:
 	//PVD
@@ -105,5 +109,10 @@ public:
 	bool WriteXMLUnstructuredGrid(const std::string &vtkfile,
 	                              COutput* out,
 	                              const int time_step_number);
+#ifdef USE_PETSC
+	bool WriteXMLPUnstructuredGrid(const std::string &vtkfile,
+	                              COutput* out,
+	                              const int time_step_number);
+#endif
 };
 #endif

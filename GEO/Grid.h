@@ -145,7 +145,8 @@ Grid<POINT>::Grid(std::vector<POINT*> const& pnts, size_t max_num_per_grid_cell)
 	for (size_t k(0); k < 3; k++) {
 		// make the bounding box a little bit bigger,
 		// such that the node with maximal coordinates fits into the grid
-		_max_pnt[k] *= (1.0 + 1e-6);
+		//_max_pnt[k] *= (1.0 + 1e-6);
+		_max_pnt[k] += std::abs(_max_pnt[k]) * 1e-6;
 		if (fabs(_max_pnt[k]) < std::numeric_limits<double>::epsilon()) {
 			_max_pnt[k] = (_max_pnt[k] - _min_pnt[k]) * (1.0 + 1e-6);
 		}
@@ -204,7 +205,11 @@ Grid<POINT>::Grid(std::vector<POINT*> const& pnts, size_t max_num_per_grid_cell)
 	// some frequently used expressions to fill the grid vectors
 	for (size_t k(0); k < 3; k++) {
 		_step_sizes[k] = delta[k] / _n_steps[k];
-		_inverse_step_sizes[k] = 1.0 / _step_sizes[k];
+//		_inverse_step_sizes[k] = 1.0 / _step_sizes[k];
+		if (_step_sizes[k]==0)
+			_inverse_step_sizes[k] = 1.0;
+		else
+			_inverse_step_sizes[k] = 1.0 / _step_sizes[k];
 	}
 
 	// fill the grid vectors
@@ -221,12 +226,14 @@ Grid<POINT>::Grid(std::vector<POINT*> const& pnts, size_t max_num_per_grid_cell)
 		_grid_quad_to_node_map[i + j * _n_steps[0] + k * n_plane].push_back(pnts[l]);
 	}
 
+#if 0
 #ifndef NDEBUG
 	size_t pnts_cnt(0);
 	for (size_t k(0); k < n_plane * _n_steps[2]; k++)
 		pnts_cnt += _grid_quad_to_node_map[k].size();
 
 	assert(n_pnts==pnts_cnt);
+#endif
 #endif
 }
 

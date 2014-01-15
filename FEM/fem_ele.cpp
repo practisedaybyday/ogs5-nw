@@ -5,10 +5,11 @@
 
 //#include "makros.h"
 //#include <iostream>
-#include "fem_ele_std.h"
 #include <cfloat>
+#include "msh_elem.h"
+#include "fem_ele_std.h"
 /* Objekte */
-//#include "rf_pcs.h" //OK_MOD"
+#include "rf_pcs.h"
 #include "femlib.h"
 #include "mathlib.h"
 //#include "matrix_class.h"
@@ -97,6 +98,16 @@ CElement::CElement(int CoordFlag, const int order)
 	RD_Flag = RD_Process;
 	PTC_Flag = PTC_FLOW_Process;
 #endif
+
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+	idxm = NULL;  //> global indices of local matrix rows 
+	idxn = NULL;  //> global indices of local matrix columns 
+	local_idx = NULL; //> local index for local assemble
+	//local_matrix = NULL; //>  local matrix 
+	//local_vec = NULL; //>  local vector  
+#endif
+
+
 }
 
 //  Destructor of class Element
@@ -113,6 +124,20 @@ CElement::~CElement()
 	dshapefct = NULL;
 	dshapefctHQ = NULL;
 	shapefctHQ = NULL;
+
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+	if(idxm)
+	  delete [] idxm;  
+	if(idxn)
+	  delete [] idxn;  
+	if (local_idx)
+	  delete [] local_idx;
+	//if (local_idx)
+	//  delete [] local_matrix;
+	//if (local_idx)
+	//  delete [] local_vec;
+#endif
+
 }
 
 /**************************************************************************
@@ -363,6 +388,7 @@ void CElement::ConfigNumerics(MshElemType::type ele_type)
 		break;
 	default:
 		std::cerr << "[CElement::ConfigNumerics] unknown element type" << std::endl;
+		break;
 	}
 }
 
@@ -701,6 +727,7 @@ void CElement::SetGaussPoint(const int gp, int& gp_r, int& gp_s, int& gp_t)
 		return;
 	default:
 		std::cerr << "CElement::SetGaussPoint invalid mesh element type given" << std::endl;
+		break;
 	}
 }
 /***************************************************************************
@@ -757,6 +784,7 @@ double CElement::GetGaussData(int gp, int& gp_r, int& gp_s, int& gp_t)
 		break;
 	default:
 		std::cerr << "CElement::GetGaussData invalid mesh element type given" << std::endl;
+		break;
 	}
 	return fkt;
 }
@@ -843,7 +871,7 @@ void CElement::FaceIntegration(double* NodeVal)
 void CElement::DomainIntegration(double* NodeVal)
 {
 	int i, gp, gp_r, gp_s, gp_t;
-	double fkt = 0.0, det, val;
+	double fkt = 0.0, val;
 	double* sf = shapefct;
 
 	setOrder(Order);
@@ -854,7 +882,7 @@ void CElement::DomainIntegration(double* NodeVal)
 			ShapeFunctionHQ = ShapeFunctionQuadHQ8;
 	}
 
-	det = MeshElement->GetVolume();
+	//double det = MeshElement->GetVolume();
 	for (i = 0; i < nNodes; i++)
 		dbuff[i] = 0.0;
 	// Loop over Gauss points
@@ -883,13 +911,13 @@ void CElement::DomainIntegration(double* NodeVal)
 void CElement::CalcFaceMass(double* mass)
 {
 	int i, j, gp, gp_r, gp_s;
-	double fkt = 0.0, det, val;
-	double* sf = shapefct;
+	double fkt = 0.0, det;
+//	double* sf = shapefct;
 
 	setOrder(Order);
 	if(Order == 2)
 	{
-		sf = shapefctHQ;
+//		sf = shapefctHQ;
 		if(MeshElement->GetElementType() == MshElemType::QUAD)
 			ShapeFunctionHQ = ShapeFunctionQuadHQ8;
 	}
@@ -925,6 +953,7 @@ void CElement::CalcFaceMass(double* mass)
 		default:
 			std::cerr << "CElement::CalcFaceMass element type not handled" <<
 			std::endl;
+			break;
 		}
 
 		ComputeShapefct(Order);
@@ -1147,6 +1176,7 @@ int CElement::GetLocalIndex(const int gp_r, const int gp_s, int gp_t)
 	default:
 		std::cerr << "CElement::GetLocalIndex invalid mesh element type given"
 		          << std::endl;
+		break;
 	}
 	return LoIndex;
 }
@@ -1257,9 +1287,13 @@ void CElement::SetExtropoGaussPoints(const int i)
 			unit[0] = -0.166666666666667;
 			unit[1] = -0.166666666666667;
 			unit[2] = 1.5;
+			break;
 		}
 		break;
 	case MshElemType::LINE:
+		break;
+	case MshElemType::PYRAMID: // WW. 09.2012. WW
+		SamplePointPyramid5(i, unit);
 		break;
 	default:
 		unit[0] = unit[1] = unit[2] = 0.; //07.01.2011. WW

@@ -14,13 +14,11 @@ set( SOURCES
 	femlib.h
 	files0.h
 	InitialCondition.h
-	intrface.h
 	makros.h
 	mathlib.h
 	matrix_class.h
 	SparseMatrixDOK.h
 	memory.h
-	par_ddc.h
 	pcs_dm.h
 	problem.h
 	prototyp.h
@@ -72,12 +70,10 @@ set( SOURCES
 	FEMEnums.cpp
 	files0.cpp
 	InitialCondition.cpp
-	#intrface.cpp
 	mathlib.cpp
 	matrix_class.cpp
 	SparseMatrixDOK.cpp
 	memory.cpp
-	par_ddc.cpp
 	pcs_dm.cpp
 	problem.cpp
 	rf_bc_new.cpp
@@ -108,19 +104,24 @@ set( SOURCES
 	DistributionTools.cpp
 )
 
-IF(NOT OGS_ONLY_TH)
-    SET( SOURCES ${SOURCES} rf_random_walk.h rf_random_walk.cpp Eclipse.h Eclipse.cpp DUMUX.h DUMUX.cpp)
-ENDIF( )
+IF(OGS_FEM_PETSC OR OGS_FEM_PETSC_GEMS)
+	SET( SOURCES ${SOURCES} rf_pcs1.cpp fct_mpi.h fct_mpi.cpp)
+ELSE(OGS_FEM_PETSC OR OGS_FEM_PETSC_GEMS)
+	SET( SOURCES ${SOURCES} par_ddc.h par_ddc.cpp)
+	## New sparse class. WW
+	IF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK )
+		SET( SOURCES ${SOURCES} equation_class.h equation_class.cpp )
+		IF(OGS_FEM_JFNK)
+			SET( SOURCES ${SOURCES} rf_pcs1.cpp )
+		ENDIF(OGS_FEM_JFNK)
+	ELSE(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK)
+		SET( SOURCES ${SOURCES} solver.h solver.cpp matrix_routines.h matrix_routines.cpp)
+	ENDIF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK)
+ENDIF()
 
-## New sparse class. WW
-IF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK )
-	SET( SOURCES ${SOURCES} equation_class.h equation_class.cpp )
-    IF(OGS_FEM_JFNK)
-       SET( SOURCES ${SOURCES} rf_pcs1.cpp )
-    ENDIF(OGS_FEM_JFNK)
-ELSE(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK)
-	SET( SOURCES ${SOURCES} solver.h solver.cpp matrix_routines.h matrix_routines.cpp)
-ENDIF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK)
+IF(NOT OGS_ONLY_TH)
+	SET( SOURCES ${SOURCES} rf_random_walk.h rf_random_walk.cpp Eclipse.h Eclipse.cpp DUMUX.h DUMUX.cpp)
+ENDIF( )
 
 
 IF(OGS_FEM_GEMS)

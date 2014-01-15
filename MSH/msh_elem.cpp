@@ -39,6 +39,9 @@ CElem::CElem(size_t Index)
     patch_index = 0;
     angle = NULL;
 #endif
+#if defined(USE_PETSC) // || defined(using other parallel scheme). WW
+        g_index = NULL;
+#endif
 }
 /**************************************************************************
    MSHLib-Method:
@@ -68,6 +71,9 @@ CElem::CElem() : CCore(0), normal_vector(NULL)
     grid_adaptation = -1;
     angle = NULL;
     excavated = -1;                           //WX
+#endif
+#if defined(USE_PETSC) // || defined(using other parallel scheme). WW
+        g_index = NULL;
 #endif
 }
 
@@ -165,6 +171,12 @@ CElem::CElem(size_t Index, CElem* onwer, int Face) :
 			}
 		}
 	}
+
+#if defined(USE_PETSC) // || defined(using other parallel scheme). WW
+        g_index = NULL;
+#endif
+
+
 }
 
 /**************************************************************************
@@ -199,6 +211,9 @@ CElem::CElem(size_t Index, CElem* m_ele_parent) :
 		edges_orientation[i] = 1;
 	}
 	area = 1.0;                               //WW
+#if defined(USE_PETSC) // || defined(using other parallel scheme). WW
+        g_index = NULL;
+#endif
 
 #ifndef OGS_ONLY_TH
     angle = NULL;
@@ -266,6 +281,11 @@ CElem::CElem(CElem const &elem) :
 
 	// copy neighbors
 //	vec<CElem*> neighbors;
+
+#if defined(USE_PETSC) // || defined(using other parallel scheme). WW
+        g_index = elem.g_index;
+#endif
+
 }
 
 
@@ -291,6 +311,9 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, int
 	}
 
     transform_tensor = NULL;
+#if defined(USE_PETSC) // || defined(using other parallel scheme). WW
+        g_index = NULL;
+#endif
 }
 
 CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, size_t node3, int mat) :
@@ -314,6 +337,9 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, siz
 		edges[i] = NULL;
 		edges_orientation[i] = 1;
 	}
+#if defined(USE_PETSC) // || defined(using other parallel scheme). WW
+        g_index = NULL;
+#endif
 
     transform_tensor = NULL;
 }
@@ -349,6 +375,12 @@ CElem::~CElem()
 	normal_vector = NULL;
 #ifndef OGS_ONLY_TH
 	delete [] angle;
+#endif
+
+#if defined(USE_PETSC) // || defined(using other parallel scheme). WW
+        if(g_index)
+          delete [] g_index;
+        g_index  = NULL;
 #endif
 }
 /**************************************************************************
@@ -795,7 +827,7 @@ void CElem::WriteIndex(std::ostream &os) const
 	os << index << " " << patch_index << " " << GetName() << " ";
 	for(int i = 0; i < nnodes - 1; i++)
 		os << nodes_index[i] << " ";
-	os << nodes_index[nnodes - 1] << std::endl;
+	os << nodes_index[nnodes - 1] << "\n";
 }
 
 /**************************************************************************
@@ -840,12 +872,12 @@ void CElem::WriteAll(std::ostream &os) const
 {
 	std::string deli = "  ";
 	os << index << deli << patch_index << deli << GetName() << deli;
-	os << "Index X Y Z: " << std::endl;
+	os << "Index X Y Z: " << "\n";
 	for (size_t i = 0; i < nodes.Size(); i++)
 	{
 		double const* const pnt_i(nodes[i]->getData());
 		os << nodes_index[i] << deli << pnt_i[0] << deli << pnt_i[1]
-		   << deli << pnt_i[2] << std::endl;
+		   << deli << pnt_i[2] << "\n";
 	}
 }
 
@@ -857,10 +889,10 @@ void CElem::WriteAll(std::ostream &os) const
 **************************************************************************/
 void CElem::WriteNeighbors(std::ostream &os) const
 {
-	os << "Neighbors of " << index << std::endl;
+	os << "Neighbors of " << index << "\n";
 	for(size_t i = 0; i < nfaces; i++)
 		neighbors[i]->WriteAll(os);
-	os << "End neighbors of " << index << std::endl << std::endl;
+	os << "End neighbors of " << index << "\n" << "\n";
 }
 
 /**************************************************************************

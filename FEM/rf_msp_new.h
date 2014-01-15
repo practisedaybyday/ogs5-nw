@@ -95,6 +95,7 @@ private:
 	double Lambda;
 	double G;                             // Shear stress modulus
 	double K;                             // Bulk modulus
+	double Ks;                            //WX solid Bulk modulus
 
 	// Rotation matrices and their transpose: UJG 25.11.2009
 	Matrix* Crotm;                        // If this is needed by permaebility calculation, we keep it. Otherwise remove it. (To do, UJG/WW)

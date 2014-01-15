@@ -60,6 +60,11 @@ extern size_t max_dim;                            //OK411 todo
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
 #include "par_ddc.h"
 #endif
+
+#if defined(USE_PETSC) ||  defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)//|| defined(other parallel libs)//03.3012. WW
+#include <mpi.h>
+#endif
+
 #ifdef SUPERCOMPUTER
 // kg44 this is usefull for io-buffering as endl flushes the buffer
 #define endl '\n'
@@ -92,6 +97,19 @@ bool OUTRead(const std::string& file_base_name,
 	ios::pos_type position;
 	bool output_version = false; // 02.2011. WW
 
+#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
+	int rank , msize;
+	string rank_str;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &msize);
+	std::ifstream is;
+	stringstream ss (stringstream::in | stringstream::out);
+	ss.clear(); 
+	ss.str("");
+	ss << rank;
+	rank_str = ss.str();
+	ss.clear();
+#endif
 	// File handling
 	std::string out_file_name = file_base_name + OUT_FILE_EXTENSION;
 	std::ifstream out_file(out_file_name.data(), ios::in);
@@ -100,7 +118,7 @@ bool OUTRead(const std::string& file_base_name,
 	out_file.seekg(0L, ios::beg);
 
 	// Keyword loop
-	cout << "OUTRead" << endl;
+	ScreenMessage("OUTRead\n");
 	while (!out_file.eof())
 	{
 		out_file.getline(line, MAX_ZEILE);
@@ -118,6 +136,9 @@ bool OUTRead(const std::string& file_base_name,
 		if (line_string.find("#OUTPUT") != string::npos)
 		{
 	        out = new COutput(out_vector.size());
+#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
+			out->setMPI_Info(rank, msize, rank_str);
+#endif
 	        out->getFileBaseName() = file_base_name;
 			position = out->Read(out_file, geo_obj, unique_name);
 
@@ -231,17 +252,16 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 		//OK4704 continue;
 		//--------------------------------------------------------------------
 		m_out->setTime (time_current);
-		size_t no_times (m_out->time_vector.size());
+		const size_t no_times (m_out->time_vector.size());
 		//--------------------------------------------------------------------
-		if (no_times == 0 && (m_out->nSteps > 0) && (time_step_number
-		                                             % m_out->nSteps == 0))
+		if (no_times == 0 && (m_out->nSteps > 0) && (time_step_number % m_out->nSteps == 0))
 			OutputBySteps = true;
 		if (time_step_number == 0 || force_output) //WW//JT
 			OutputBySteps = true;
 		//======================================================================
 		// TECPLOT
 		if (m_out->dat_type_name.compare("TECPLOT") == 0
-		    || m_out->dat_type_name.compare("MATLAB") == 0 || m_out->dat_type_name.compare("GNUPLOT") == 0)
+		    || m_out->dat_type_name.compare("MATLAB") == 0 || m_out->dat_type_name.compare("GNUPLOT") == 0 || m_out->dat_type_name.compare("CSV") == 0)
 		{
 			//			m_out->matlab_delim = " ";
 			//			if (m_out->dat_type_name.compare("MATLAB") == 0) // JT, just for commenting header for matlab
@@ -294,7 +314,7 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 			//------------------------------------------------------------------
 			case GEOLIB::POLYLINE: // profiles along polylines
 				 if (m_out->dat_type_name.compare("GNUPLOT") != 0) // JOD !!!!!
-					 std::cout << "Data output: Polyline profile - " << m_out->getGeoName() << std::endl;
+					 ScreenMessage("Data output: Polyline profile - %s\n", m_out->getGeoName().c_str());
 				if (OutputBySteps)
 				{
 					tim_value = m_out->NODWritePLYDataTEC(time_step_number);
@@ -331,14 +351,14 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 			//------------------------------------------------------------------
 			case GEOLIB::POINT: // breakthrough curves in points
 				if (m_out->dat_type_name.compare("GNUPLOT") != 0) // JOD !!!!!
-					cout << "Data output: Breakthrough curves - " << m_out->getGeoName() << endl;
+					ScreenMessage("Data output: Breakthrough curves - %s\n", m_out->getGeoName().c_str());
 				m_out->NODWritePNTDataTEC(time_current, time_step_number);
 				if (!m_out->_new_file_opened)
 					m_out->_new_file_opened = true;  //WW
 				break;
 			//------------------------------------------------------------------
 			case GEOLIB::SURFACE: // profiles at surfaces
-				cout << "Data output: Surface profile" << endl;
+				ScreenMessage("Data output: Surface profile\n");
 				//..............................................................
 				//				if (m_out->_dis_type_name.compare("AVERAGE") == 0) {
 				if (m_out->getProcessDistributionType() == FiniteElement::AVERAGE)
@@ -435,10 +455,18 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 					                             m_out->mmp_value_vector,
 					                             m_out->msh_type_name,
 					                             m_out);
+#if defined(USE_PETSC)						
+							ScreenMessage2("-> output a VTK file\n");
+							vtkOutput.WriteDataVTKPETSC(
+							        time_step_number,
+							        m_out->_time,
+							        m_out->
+							        file_base_name);
+#else
 					vtkOutput.WriteDataVTK(time_step_number,
 					                       m_out->_time,
 					                       m_out->file_base_name);
-
+#endif
 					if (!m_out->_new_file_opened)
 						//WW
 						m_out->_new_file_opened = true;
@@ -461,6 +489,17 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 							        m_out->
 							        msh_type_name,
 							        m_out);
+#if defined(USE_PETSC)						
+							ScreenMessage2("-> output a VTK file\n");
+							vtkOutput.WriteDataVTKPETSC(
+							        time_step_number,
+							        m_out->_time,
+							        m_out->
+							        file_base_name);
+							m_out->time_vector.erase(
+							        m_out->time_vector.begin()
+							        + j);
+#else
 							vtkOutput.WriteDataVTK(
 							        time_step_number,
 							        m_out->_time,
@@ -469,6 +508,8 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 							m_out->time_vector.erase(
 							        m_out->time_vector.begin()
 							        + j);
+							
+#endif
 							if (!m_out->_new_file_opened)
 								//WW
 								m_out->_new_file_opened = true;
@@ -482,72 +523,66 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 		}                           // PVD (ParaView)
 		else if (m_out->dat_type_name.find("PVD") != string::npos)
 		{
+			// check output
+			bool do_output = OutputBySteps;
+			if (!OutputBySteps)
+			{
+				for (size_t j = 0; j < no_times; j++)
+				{
+					if (time_current < m_out->time_vector[j])
+						continue;
+					m_out->time_vector.erase(m_out->time_vector.begin() + j);
+					do_output = true;
+					break;
+				}
+			}
+			if (!do_output)
+				continue;
+			OutputBySteps = false;
+
 			if (m_out->vtk == NULL)
-				m_out->vtk = new CVTK();
+				m_out->CreateVTKInstance(); //WW m_out->vtk = new CVTK();
 			CVTK* vtk = m_out->vtk;
 
 			bool vtk_appended = false;
 			if (m_out->dat_type_name.find("PVD_A") != string::npos)
 				vtk_appended = true;
 
-			stringstream stm;
-			string pvd_vtk_file_name, pvd_vtk_file_path;
-
-			switch (m_out->getGeoType())
+			if (m_out->getGeoType()==GEOLIB::GEODOMAIN)
 			{
-			case GEOLIB::GEODOMAIN: // domain data
+				cout << "Data output: Domain - PVD\n" << endl;
 				if (time_step_number == 0)
 				{
 					std::string pcs_type ("");
 					if (m_out->getProcessType() != FiniteElement::INVALID_PROCESS)
-						pcs_type = FiniteElement::convertProcessTypeToString (
-						        m_out->getProcessType());
-					vtk->InitializePVD(m_out->file_base_name,
-					                   pcs_type,
-					                   vtk_appended);
+						pcs_type = FiniteElement::convertProcessTypeToString (m_out->getProcessType());
+					vtk->InitializePVD(m_out->file_base_name, pcs_type, vtk_appended);
 				}
 				// Set VTU file name and path
-				pvd_vtk_file_name = vtk->pvd_vtk_file_name_base;
-				stm << time_step_number;
-				pvd_vtk_file_name += stm.str() + ".vtu";
-                pvd_vtk_file_path = vtk->pvd_vtk_file_path_base + pvd_vtk_file_name;
-				// Output
-				if (OutputBySteps)
-				{
-					OutputBySteps = false;
-					vtk->WriteXMLUnstructuredGrid(pvd_vtk_file_path, m_out,
-					                              time_step_number);
-					VTK_Info dat;
-					dat.timestep = m_out->getTime();
-					dat.vtk_file = pvd_vtk_file_name;
-					vtk->vec_dataset.push_back(dat);
-					vtk->UpdatePVD(vtk->pvd_file_name, vtk->vec_dataset);
+				const std::string vtk_file_path_base = vtk->pvd_vtk_file_path_base + vtk->pvd_vtk_file_name_base;
+#ifdef USE_PETSC
+				std::string vtu_file_name = vtk_file_path_base + "_part" + number2str(myrank) + "_" + number2str(time_step_number) + ".vtu";
+				std::string pvd_vtk_file_name = vtk_file_path_base + "_" + number2str(time_step_number) + ".pvtu";
+#else
+				std::string vtu_file_name = vtk_file_path_base + number2str(time_step_number) + ".vtu";
+				std::string pvd_vtk_file_name = vtu_file_name;
+#endif
+				vtk->WriteXMLUnstructuredGrid(vtu_file_name, m_out, time_step_number);
+#ifdef USE_PETSC
+				if (myrank==0)
+					vtk->WriteXMLPUnstructuredGrid(vtk_file_path_base, m_out, time_step_number);
+#endif
+				VTK_Info dat;
+				dat.timestep = m_out->getTime();
+				dat.vtk_file = pvd_vtk_file_name;
+				vtk->vec_dataset.push_back(dat);
+#ifdef USE_PETSC
+				if (myrank==0) {
+#endif
+				vtk->UpdatePVD(vtk->pvd_file_name, vtk->vec_dataset);
+#ifdef USE_PETSC
 				}
-				else
-				{
-					for (size_t j = 0; j < no_times; j++)
-						if (time_current >= m_out->time_vector[j])
-						{
-							vtk->WriteXMLUnstructuredGrid(
-							        pvd_vtk_file_name,
-							        m_out,
-							        time_step_number);
-							m_out->time_vector.erase(
-							        m_out->time_vector.begin()
-							        + j);
-							VTK_Info dat;
-							dat.timestep = m_out->getTime();
-							dat.vtk_file = pvd_vtk_file_name;
-							vtk->vec_dataset.push_back(dat);
-							vtk->UpdatePVD(vtk->pvd_file_name,
-							               vtk->vec_dataset);
-							break;
-						}
-				}
-				break;
-
-			default:
-				break;
+#endif
 			}
 		}
 		else if (m_out->dat_type_name.compare("WATER_BALANCE") == 0)
@@ -620,10 +655,10 @@ COutput* OUTGetRWPT(const std::string & out_name)
  *****************************************************************************************/
 void OUTCheck()
 {
-	std::cout << "Checking output data ..." << std::flush;
+	ScreenMessage("Checking output data ...\n");
 	// Go through all out objects (#OUTPUT-section in input file)
 	for (size_t i = 0; i < out_vector.size(); i++)
 		out_vector[i]->checkConsistency();
-    std::cout << " done" << std::endl;
+	ScreenMessage("done\n");
 }
 

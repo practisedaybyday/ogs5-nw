@@ -10,6 +10,8 @@
 
 #include "Configure.h"
 
+#include "display.h"
+
 // FileIO
 #include "GMSHInterface.h"
 #include "OGSIOVer4.h"
@@ -276,26 +278,29 @@ void readTINFile(const std::string &fname, Surface* sfc,
 
 	size_t id;
 	double x, y, z;
-	while (in)
+	std::string line;
+	while (std::getline(in, line))
 	{
+		if (line.empty()) continue;
+		std::stringstream ss(line);
 		// read id
-		in >> id;
+		ss >> id;
 		// determine size
 		size_t pnt_pos(pnt_vec.size());
 		// read first point
-		in >> x >> y >> z;
+		ss >> x >> y >> z;
 		pnt_vec.push_back(new Point(x, y, z));
 		// read second point
-		in >> x >> y >> z;
+		ss >> x >> y >> z;
 		pnt_vec.push_back(new Point(x, y, z));
 		// read third point
-		in >> x >> y >> z;
+		ss >> x >> y >> z;
 		pnt_vec.push_back(new Point(x, y, z));
 		// create new Triangle
 		sfc->addTriangle(pnt_pos, pnt_pos + 1, pnt_pos + 2);
 	}
 
-    std::cout  << "-> read TIN data with " << sfc->getNTriangles() << " triangles" << std::endl;
+	ScreenMessage("-> read TIN data with %d triangles\n", sfc->getNTriangles());
 }
 
 /**************************************************************************
@@ -531,15 +536,14 @@ std::string readSurfaces(std::istream &in,
 
 bool readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& unique_name, std::vector<std::string>& errors)
 {
-	std::cout << "GEOLIB::readGLIFile open stream from file " << fname
-	          << " ... " << std::flush;
+	//ScreenMessage("GEOLIB::readGLIFile open stream from file %s ...\n", fname.c_str());
 	std::ifstream in(fname.c_str());
 	if (!in) {
-		std::cerr << "error opening stream from " << fname << std::endl;
+		ScreenMessage2("error opening stream from %s\n", fname.c_str());
 		errors.push_back("[readGLIFileV4] error opening stream from " + fname);
 		return false;
 	}
-	std::cout << "done" << std::endl;
+	//ScreenMessage("done\n", fname.c_str());
 
 	std::string tag;
 	while (tag.find("#POINTS") == std::string::npos && !in.eof())
@@ -549,9 +553,9 @@ bool readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& uniqu
 	std::map<std::string,size_t>* pnt_id_names_map (new std::map<std::string,size_t>);
 	bool zero_based_idx(true);
 	std::vector<Point*>* pnt_vec(new std::vector<Point*>);
-	std::cout << "read points from stream ... " << std::flush;
+	ScreenMessage("-> read points from stream ...\n");
 	tag = readPoints(in, pnt_vec, zero_based_idx, pnt_id_names_map);
-	std::cout << " ok, " << pnt_vec->size() << " points read" << std::endl;
+	ScreenMessage("-> ok, %d points read\n", pnt_vec->size());
 
 	unique_name = BaseLib::getFileNameFromPath(fname, true);
 	if (!pnt_vec->empty())
@@ -566,31 +570,26 @@ bool readGLIFileV4(const std::string& fname, GEOObjects* geo, std::string& uniqu
 	std::vector<Polyline*>* ply_vec(new std::vector<Polyline*>);
 	if (tag.find("#POLYLINE") != std::string::npos && in)
 	{
-		std::cout << "read polylines from stream ... " << std::flush;
+		ScreenMessage("-> read polylines from stream ...\n");
 		tag = readPolylines(in, ply_vec, *ply_names, *pnt_vec,
 		                    zero_based_idx, geo->getPointVecObj(
 		                            unique_name)->getIDMap(), path, errors);
-		std::cout << " ok, " << ply_vec->size() << " polylines read"
-		          << std::endl;
+		ScreenMessage("-> ok, %d polylines read\n", ply_vec->size());
 	}
 	else
-		std::cerr
-		<< "tag #POLYLINE not found or input stream error in GEOObjects"
-		<< std::endl;
+		ScreenMessage("tag #POLYLINE not found or input stream error in GEOObjects\n");
 
 	std::vector<Surface*>* sfc_vec(new std::vector<Surface*>);
 	std::map<std::string,size_t>* sfc_names (new std::map<std::string,size_t>);
 	if (tag.find("#SURFACE") != std::string::npos && in)
 	{
-		std::cout << "read surfaces from stream ... " << std::flush;
+		ScreenMessage("-> read surfaces from stream ...\n");
 		tag = readSurfaces(in, *sfc_vec, *sfc_names, *ply_vec, *ply_names, *pnt_vec, path, errors);
-		std::cout << " ok, " << sfc_vec->size() << " surfaces read"
-		          << std::endl;
+		ScreenMessage("-> ok, %d surfaces read\n", sfc_vec->size());
 	}
 	else
-		std::cerr
-		<< "tag #SURFACE not found or input stream error in GEOObjects"
-		<< std::endl;
+		ScreenMessage("tag #SURFACE not found or input stream error in GEOObjects\n");
+
 	in.close();
 
 	if (!ply_vec->empty())

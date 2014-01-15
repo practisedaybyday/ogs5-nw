@@ -31,6 +31,7 @@
 /**************************************************************************/
 #include "Configure.h"
 //#include <iostream>
+#include "../Base/MemWatch.h"
 //#include "makros.h"
 //#ifndef NEW_EQS //WW. 07.11.2008
 //#include "solver.h"
@@ -56,6 +57,7 @@
 #ifdef CHEMAPP
 #include "eqlink.h"                               //MX
 #endif
+#include "fct_mpi.h"
 /* Tools */
 //#include "mathlib.h"
 //#include "femlib.h"
@@ -116,16 +118,9 @@ using namespace std;
 /**************************************************************************/
 int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique_name )
 {
-#if defined(USE_MPI)                           //WW
-	if(myrank == 0)
-	{
-#endif
-	std::cout << std::endl;
-	std::cout << "---------------------------------------------" << std::endl;
-	std::cout << "Data input:" << std::endl;
-#if defined(USE_MPI)                        //WW
-}
-#endif
+	ScreenMessage("\n---------------------------------------------\n");
+	ScreenMessage("Data input:\n");
+
 	/* Dateinamen generieren */
 	//OK  DATCreateFileNames(dateiname);
 	static int datlen;
@@ -146,14 +141,22 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 		else
 			fclose (f);
 	}
+#ifndef WIN32
+	BaseLib::MemWatch mem_watch;
+	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 	//----------------------------------------------------------------------
 	// Read GEO data
+	ScreenMessage("GLIRead\n");
 	GEOLIB_Read_GeoLib(dateiname);
 
 	std::string geo_file_name (dateiname);
 	geo_file_name += ".gli";
 	std::vector<std::string> file_read_errors;
 	FileIO::readGLIFileV4 (geo_file_name, &geo_obj, unique_name, file_read_errors);
+#ifndef WIN32
+	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 
 	//----------------------------------------------------------------------
 	// Read object data
@@ -180,10 +183,19 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 	FEMDeleteAll();                       // KR moved from FEMRead()
 	std::vector<CFEMesh*> mesh_vec;
 	FEMRead(dateiname, mesh_vec, &geo_obj, &unique_name);
+#ifndef WIN32
+	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 	if (!mesh_vec.empty())                              //KR
 	{
 		fem_msh_vector.insert(fem_msh_vector.end(), mesh_vec.begin(), mesh_vec.end()); // re-inserted by KR
+#ifndef USE_PETSC
 		CompleteMesh();           //WW
+#else
+		ScreenMessage2("Optimize geometric objects\n");
+		geo_obj.optimiseObjects(unique_name, *fem_msh_vector[0]->getGrid());
+		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 	}
 
 	//SBOK4209 MSHWrite(dateiname);
@@ -195,6 +207,9 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 	FCTRead(dateiname);                   //OK
 	CURRead(dateiname);                   //OK
 	//CURWrite(); //OK
+#ifdef USE_PETSC
+	FCT_MPI::FCTCommRead(dateiname);
+#endif
 	//----------------------------------------------------------------------
 	// Read Excel/CVS data
 	//PNTPropertiesRead(dateiname);

@@ -981,10 +981,12 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
 				{
 					/* Initializations */
 					/* System matrix */
-#ifdef NEW_EQS                     //WW
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+				  //Todo
+#elif NEW_EQS                     //WW
 					m_pcs->EQSInitialize();
 #else
-					SetZeroLinearSolver(m_pcs->eqs);
+					SetZeroLinearSolver(m_pcs->getEQSPointer());
 #endif
 
 					for (int i = 0; i < (long)m_msh->ele_vector.size(); i++)
@@ -998,7 +1000,9 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
 					m_pcs->IncorporateBoundaryConditions(-1,d);
 
 					// Solve for velocity
-#ifdef NEW_EQS
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+				  //Todo
+#elif NEW_EQS
 
 					double* x;
 					int size = m_msh->nod_vector.size();
@@ -1008,7 +1012,7 @@ void RandomWalk::InterpolateVelocityOfTheParticleByBilinear(int option, Particle
 					cout << "Solver passed in FLUID_MOMENTUM." << endl;
 #endif
 #else
-					m_pcs->ExecuteLinearSolver(m_pcs->eqs);
+					m_pcs->ExecuteLinearSolver(m_pcs->getEQSPointer());
 #endif
 				}
 			}
@@ -5204,7 +5208,7 @@ void PCTRead(string file_base_name)
 	ifstream pct_file (pct_file_name.data(),ios::in);
 
 	std::stringstream ss;
-	int srand_seed;
+	int srand_seed = 0;
 	string s_flag;
 	getline(pct_file, s_flag);
 	ss.str(s_flag);

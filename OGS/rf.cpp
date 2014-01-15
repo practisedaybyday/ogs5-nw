@@ -33,6 +33,7 @@
 
 /* Preprozessor-Definitionen */
 #include "makros.h"
+#include "../Base/MemWatch.h"
 #define TEST
 /* Benutzte Module */
 #include "break.h"
@@ -59,6 +60,16 @@ void ShowSwitches ( void );
 double elapsed_time_mpi;
 // ------
 #endif
+
+
+// Use PETSc. WW
+#ifdef USE_PETSC
+#include "petscksp.h"
+#ifdef USEPETSC34
+#include "petsctime.h"
+#endif
+#endif
+
 /* Definitionen */
 
 /**************************************************************************/
@@ -163,6 +174,27 @@ int main ( int argc, char* argv[] )
 	time_ele_paral = 0.0;
 #endif
 /*---------- MPI Initialization ----------------------------------*/
+
+
+#ifdef USE_PETSC
+	PetscLogDouble v1,v2;
+	char help[] = "OGS with PETSc \n";
+	//PetscInitialize(argc, argv, help);
+	PetscInitialize(&argc,&argv,(char *)0,help);
+	//kg44 quick fix to compile PETSC with version PETSCV3.4
+#ifdef USEPETSC34
+	PetscTime(&v1);
+#else
+	PetscGetTime(&v1);
+#endif
+	MPI_Comm_rank(PETSC_COMM_WORLD, &myrank);
+	MPI_Comm_size(PETSC_COMM_WORLD, &mysize);
+	ScreenMessage("===\nUse PETSc solver (MPI processes = %d)\n", mysize);
+#endif
+
+
+
+
 /*---------- LIS solver -----------------------------------------*/
 #ifdef LIS
 	//int argc=0;
@@ -179,7 +211,7 @@ int main ( int argc, char* argv[] )
 	TStartTimer(0);
 #endif
 	/* Intro ausgeben */
-#if defined(USE_MPI) //WW
+#if defined(USE_MPI) || defined(USE_PETSC)
 	if(myrank == 0)
 #endif
 	DisplayStartMsg();
@@ -191,7 +223,6 @@ int main ( int argc, char* argv[] )
 		return 1; // LB changed from 0 to 1 because 0 is indicating success
 	}
 	if( argc == 1 )               // interactive mode
-
 		dateiname = ReadString();
 	else                         // non-interactive mode
 	{
@@ -206,6 +237,9 @@ int main ( int argc, char* argv[] )
 			dateiname = (char*) Malloc( (int) modelRoot.size() + 1 );
 			dateiname = strcpy( dateiname, modelRoot.c_str() );
 		}
+#if defined(USE_MPI) || defined(USE_PETSC)
+		if(myrank == 0)
+#endif
 		DisplayMsgLn(dateiname);
 	}
 	//WW  DisplayMsgLn("");
@@ -221,6 +255,25 @@ int main ( int argc, char* argv[] )
 		return 1;
 	}
 
+	ScreenMessage("\n---------------------------------------------\n");
+	ScreenMessage("ogs version: %s\n", OGS_VERSION);
+	ScreenMessage("ogs date: %s\n", OGS_DATE);
+#ifdef CMAKE_CMD_ARGS
+	ScreenMessage("cmake command line arguments: %s\n", CMAKE_CMD_ARGS);
+#endif // CMAKE_CMD_ARGS
+#ifdef GIT_COMMIT_INFO
+	ScreenMessage("git commit info: %s\n", GIT_COMMIT_INFO);
+#endif // GIT_COMMIT_INFO
+#ifdef SVN_REVISION
+	ScreenMessage("subversion info: %s\n", SVN_REVISION);
+#endif // SVN_REVISION
+#ifdef BUILD_TIMESTAMP
+	ScreenMessage("build timestamp: %s\n", BUILD_TIMESTAMP);
+#endif // BUILD_TIMESTAMP
+#ifdef USE_PETSC
+	MPI_MPI_Barrier(PETSC_COMM_WORLD);
+#endif
+
 	FileName = dateiname;
 	size_t indexChWin, indexChLinux;
 	indexChWin = indexChLinux = 0;
@@ -233,11 +286,15 @@ int main ( int argc, char* argv[] )
 		FilePath = FileName.substr(0,indexChLinux) + "/";
 	// ---------------------------WW
 	Problem* aproblem = new Problem(dateiname);
+#ifndef WIN32
+	BaseLib::MemWatch mem_watch;
+	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage()/ (1024*1024));
+#endif
 	aproblem->Euler_TimeDiscretize();
 	delete aproblem;
 	aproblem = NULL;
 #ifdef TESTTIME
-	std::cout << "Simulation time: " << TGetTimer(0) << "s" << std::endl;
+	ScreenMessage2("Simulation time: %g s\n", TGetTimer(0));
 #endif
 	/* Abspann ausgeben */
 	/* Ctrl-C wieder normal */
@@ -258,5 +315,20 @@ int main ( int argc, char* argv[] )
 /*--------- LIS Finalize ------------------*/
 
 	free(dateiname);
+
+#ifdef USE_PETSC
+	//kg44 quick fix to compile PETSC with version PETSCV3.4
+#ifdef USEPETSC34
+       PetscTime(&v2);
+#else
+       PetscGetTime(&v2);
+#endif
+
+
+   PetscPrintf(PETSC_COMM_WORLD,"\t\n>>Total elapsed time by using PETSC:%f s\n",v2-v1);
+
+   PetscFinalize();
+#endif
+
 	return 0;
 }

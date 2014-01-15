@@ -23,14 +23,21 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 	std::vector<CNode*> const& mesh_nodes (mesh->getNodeVector());
 	double epsilon_radius (mesh->getMinEdgeLength()); // getSearchLength());
 
+#if defined(USE_PETSC) // || defined (other parallel linear solver lib). //WW. 05.2012
+	size_t n_linear_order_nodes = mesh->getNumNodesLocal();
+	size_t n_nodes = mesh->getNumNodesLocal_Q();
+#else
 	size_t n_linear_order_nodes (mesh->GetNodesNumber (false));
 	size_t n_nodes (mesh->GetNodesNumber (true));
-
+#endif
 	std::vector<size_t> msh_node_higher_order_ids;
 	std::vector<double> dist_of_proj_higher_order_node_from_ply_start;
 
+	//We need exactly defined polyline for DDC. If there is not any node located within the
+	// threhold the ployline, we do not forced to fill the _msh_node_ids.
+	//Therefore, the repeating loop is skipped.
 	// repeat until at least one relevant node was found
-	while (_msh_node_ids.empty())
+	// WW while (_msh_node_ids.empty())
 	{
 		// loop over all line segments of the polyline
 		for (size_t k = 0; k < ply->getNumberOfPoints() - 1; k++)
@@ -48,10 +55,9 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 				// is the orthogonal projection of the j-th node to the
 				// line g(lambda) = _ply->getPoint(k) + lambda * (_ply->getPoint(k+1) - _ply->getPoint(k))
 				// at the k-th line segment of the polyline, i.e. 0 <= lambda <= 1?
-				double d = MathLib::calcProjPntToLineAndDists(mesh_nodes[j]->getData(),
-						(_ply->getPoint(k))->getData(), (_ply->getPoint(k + 1))->getData(),
-						lambda, dist);
-				if (d <= epsilon_radius) {
+				if (MathLib::calcProjPntToLineAndDists(mesh_nodes[j]->getData(),
+								(_ply->getPoint(k))->getData(), (_ply->getPoint(k + 1))->getData(),
+								lambda, dist) <= epsilon_radius) {
 					if (lower_lambda <= lambda && lambda <= upper_lambda) {
 						if (mesh_nodes[j]->GetIndex() < n_linear_order_nodes) {
 							// check if node id is already in the vector
@@ -76,8 +82,10 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 			} // end node loop
 		} // end line segment loop
 
-		if (_msh_node_ids.empty())
-			epsilon_radius *= 2.0;
+		//We need exactly defined polyline for DDC. 
+		//Therefore, the following two line should be dropped.
+		//if (_msh_node_ids.empty())
+		//	epsilon_radius *= 2.0;
 	}
 
 	// sort the (linear) nodes along the polyline according to their distances

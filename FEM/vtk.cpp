@@ -1,5 +1,8 @@
 #include "vtk.h"
+
 #include <fstream>
+#include <sstream>
+
 #if defined(WIN32)
 #include <direct.h>
 #else
@@ -7,6 +10,7 @@
 #include <sys/types.h>
 #endif
 
+#include "StringTools.h"
 #include "Output.h"
 #include "fem_ele_std.h"                          // for element velocity
 #include "makros.h"
@@ -38,9 +42,10 @@ bool CVTK::InitializePVD(const string &file_base_name, const string &pcs_type_na
 	//PVD
 	this->vec_dataset.clear();
 	this->pvd_file_name = file_base_name;
-	if(pcs_type_name.size() > 0)          // PCS
+	if(pcs_type_name.size() > 0)
 		this->pvd_file_name += "_" + pcs_type_name;
 	this->pvd_file_name += ".pvd";
+	/* // Make the following lines as comments by WW
 	//VTK
 	int ibs = (int)file_base_name.find_last_of("\\");
 	int is = (int)file_base_name.find_last_of("/");
@@ -59,9 +64,12 @@ bool CVTK::InitializePVD(const string &file_base_name, const string &pcs_type_na
 		this->pvd_vtk_file_name_base = file_base_name;
         this->pvd_vtk_file_path_base = "";
     }
-	if (pcs_type_name.size() > 0)        // PCS
+    */
+    this->pvd_vtk_file_name_base = file_base_name;
+	if (pcs_type_name.size() > 0)
 		this->pvd_vtk_file_name_base += "_" + pcs_type_name;
-
+	
+	//
 	this->useBinary = binary;
 
 	return true;
@@ -109,6 +117,7 @@ bool CVTK::UpdatePVD(const string &pvdfile, const vector<VTK_Info> &vec_vtk)
 	return true;
 }
 
+#if 0
 bool CVTK::CreateDirOfPVD(const string &pvdfile)
 {
 	string pvd_dir_path = pvdfile + ".d";
@@ -125,6 +134,7 @@ bool CVTK::CreateDirOfPVD(const string &pvdfile)
 	}
 	return true;
 }
+#endif
 
 //#################################################################################################
 // Functions for VTU files (XML UnstructuredGrid file)
@@ -159,6 +169,7 @@ unsigned char CVTK::GetVTKCellType(const MshElemType::type ele_type)
 	default:
 		std::cerr << "***ERROR: NO CORRESPONDING VTK CELL TYPE FOUND. (ELEMENT TYPE=" <<
 		ele_type << ")" << "\n";
+		break;
 	}
 	return cell_type;
 }
@@ -198,12 +209,7 @@ void CVTK::InitializeVTU()
 	this->isInitialized = true;
 }
 
-bool CVTK::WriteDataArrayHeader(std::fstream &fin,
-                                VTK_XML_DATA_TYPE data_type,
-                                const std::string &str_name,
-                                int nr_components,
-                                const std::string &str_format,
-                                long offset)
+std::string CVTK::vtkDataType2str(VTK_XML_DATA_TYPE data_type)
 {
 	std::string str_data_type;
 	switch (data_type)
@@ -229,6 +235,17 @@ bool CVTK::WriteDataArrayHeader(std::fstream &fin,
 	case CVTK::Float64: str_data_type = "Float64";
 		break;
 	}
+	return str_data_type;
+}
+
+bool CVTK::WriteDataArrayHeader(std::fstream &fin,
+                                VTK_XML_DATA_TYPE data_type,
+                                const std::string &str_name,
+                                int nr_components,
+                                const std::string &str_format,
+                                long offset)
+{
+	std::string str_data_type = vtkDataType2str(data_type);
 	fin << "        <DataArray type=\"" << str_data_type << "\"";
 	if (str_name != "")
 		fin << " Name=\"" << str_name << "\"";
@@ -249,6 +266,117 @@ bool CVTK::WriteDataArrayFooter(std::fstream &fin)
 
 	return true;
 }
+
+#ifdef USE_PETSC
+bool CVTK::WriteXMLPUnstructuredGrid(const std::string &vtkfile_base,
+                                    COutput* out,
+                                    const int time_step_number)
+{
+	if (!this->isInitialized)
+		this->InitializeVTU();
+
+	//-------------------------------------------------------------------------
+	//# Setup file stream
+	//-------------------------------------------------------------------------
+	const std::string vtkfile = vtkfile_base + "_" + number2str(time_step_number) + ".pvtu";
+	std::fstream fin;
+	fin.open(vtkfile.data(), std::ios::out);
+
+	if (!fin.good())
+	{
+		std::cout << "***Warning: Cannot open the output file, " << vtkfile << "\n";
+		return false;
+	}
+
+	fin.setf(std::ios::scientific,std::ios::floatfield);
+	fin.precision(12);
+
+	//-------------------------------------------------------------------------
+	//# Output
+	//-------------------------------------------------------------------------
+	//# Header
+	fin << "<?xml version=\"1.0\"?>\n";
+	fin << "<!-- Time step: " << time_step_number << " | Time: " << out->getTime() << " -->\n";
+	fin << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\"";
+	if (isLittleEndian)
+		fin << " byte_order=\"LittleEndian\"";
+	else
+		fin << " byte_order=\"BigEndian\"";
+	fin << ">\n";
+
+	//# Unstructured Grid information
+	fin << "  <PUnstructuredGrid GhostLevel=\"1\">\n";
+	fin << "    <PPoints>\n";
+	fin << "       <PDataArray type=\"" << vtkDataType2str(this->type_Double) << "\" NumberOfComponents=\"3\" format=\"ascii\" />\n";
+	fin << "    </PPoints>\n";
+	// point data
+	if (out->_nod_value_vector.size() > 0) {
+		fin << "    <PPointData Scalars=\"" << out->_nod_value_vector[0] << "\" >\n";
+#if 0
+		fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_UChar) << "\" Name=\"vtkGhostLevels\" format=\"ascii\" />\n";
+#endif
+		bool outNodeVelocity = false;
+		bool outNodeDisplacement = false;
+		for (size_t i=0; i<out->_nod_value_vector.size(); i++) {
+			if (out->_nod_value_vector[i].find("VELOCITY") != string::npos)
+			{
+				outNodeVelocity = true;
+				continue;
+			}
+			if (out->_nod_value_vector[i].find("DISPLACEMENT") != string::npos)
+			{
+				outNodeDisplacement = true;
+				continue;
+			}
+			fin << "      <PDataArray type=\"" << vtkDataType2str(this->type_Double) << "\" Name=\"" << out->_nod_value_vector[i] << "\" format=\"ascii\" />\n";
+		}
+		if (outNodeVelocity)
+			fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Double) << "\" Name=\"" << velocity_name[0][3] << "\" NumberOfComponents=\"3\" format=\"ascii\" />\n";
+		if (outNodeDisplacement)
+			fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Double) << "\" Name=\"" << "DISPLACEMENT" << "\" NumberOfComponents=\"3\" format=\"ascii\" />\n";
+		fin << "    </PPointData>\n";
+	}
+	// cell data
+	fin << "    <PCellData Scalars=\"" << "Domain" << "\" >\n";
+	fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Int) << "\" Name=\"Domain\" format=\"ascii\" />\n";
+#if 0
+	fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_UChar) << "\" Name=\"vtkGhostLevels\" format=\"ascii\" />\n";
+#endif
+	fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Int) << "\" Name=\"MatGroup\" format=\"ascii\" />\n";
+	std::vector<int> ele_value_index_vector(out->getElementValueVector().size());
+	if (ele_value_index_vector.size() > 0)
+		out->GetELEValuesIndexVector(ele_value_index_vector);
+	bool outEleVelocity = false;
+	for (int i = 0; i < (int) ele_value_index_vector.size(); i++)
+	{
+		if (out->getElementValueVector()[i].find("VELOCITY") != string::npos)
+		{
+			outEleVelocity = true;
+			continue;
+		}
+		fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Double) << "\" Name=\"" << out->getElementValueVector()[i] << "\" format=\"ascii\" />\n";
+	}
+	if (outEleVelocity)
+		fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Double) << "\" Name=\"" << "ELEMENT_VELOCITY" << "\" NumberOfComponents=\"3\" format=\"ascii\" />\n";
+	for (size_t i_mmp=0; i_mmp<out->mmp_value_vector.size(); i_mmp++)
+		fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Double) << "\" Name=\"" << out->mmp_value_vector[i_mmp] << "\" format=\"ascii\" />\n";
+	for (size_t i=0; i<out->mfp_value_vector.size(); i++)
+		fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Double) << "\" Name=\"" << out->mfp_value_vector[i] << "\" format=\"ascii\" />\n";
+    fin << "    </PCellData>\n";
+
+	// sub files
+	for (int i=0; i<mysize; i++) {
+		std::string sub_vtu_file_name = vtkfile_base + "_part" + number2str(i) + "_" + number2str(time_step_number) + ".vtu";
+		fin << "    <Piece Source=\"" << sub_vtu_file_name << "\" />\n";
+	}
+	// closing
+	fin << "  </PUnstructuredGrid>" << "\n";
+	fin << "</VTKFile>" << "\n";
+	fin.close();
+
+	return true;
+}
+#endif
 
 bool CVTK::WriteXMLUnstructuredGrid(const std::string &vtkfile,
                                     COutput* out,
@@ -567,6 +695,40 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 	else
 		str_format = "appended";
 
+#ifdef USE_PETSC
+#if 0
+	// Ghost level
+	if (!useBinary || !output_data)
+		WriteDataArrayHeader(fin, type_UChar, "vtkGhostLevels", 0, str_format, offset);
+
+	if (output_data)
+	{
+		if (!useBinary) {
+			fin << "          ";
+		} else {
+			write_value_binary<unsigned int> (fin, sizeof(double)* msh->GetNodesNumber(false));
+		}
+		for (size_t j = 0; j < msh->GetNodesNumber(false); j++) {
+			unsigned v = j<msh->NodesInUsagePETSC() ? 0 : 1;
+			if (!useBinary) {
+				fin << v << " ";
+			} else {
+				write_value_binary(fin, v);
+			}
+		}
+		if (!useBinary) {
+			fin << "\n";
+		}
+	}
+	else
+	{
+		offset += msh->GetNodesNumber(false) * sizeof(unsigned char) + SIZE_OF_BLOCK_LENGTH_TAG;
+	}
+	if (!useBinary || !output_data)
+		WriteDataArrayFooter(fin);
+#endif
+#endif
+
     bool isXZplane = (msh->GetCoordinateFlag()==22);
     bool is3D = (msh->GetCoordinateFlag() / 10 == 3);
 	bool outNodeVelocity = false;
@@ -834,9 +996,90 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 	else
 		str_format = "appended";
 
-	bool outEleVelocity = false;
+#ifdef USE_PETSC
+	// Domain ID
+	if (!useBinary || !output_data)
+		WriteDataArrayHeader(fin, this->type_Int, "Domain", 0, str_format, offset);
+	if (output_data)
+	{
+		if (!this->useBinary)
+		{
+			fin << "          ";
+			for(long i = 0; i < (long)msh->ele_vector.size(); i++)
+				fin << myrank << " ";
+			fin << "\n";
+		}
+		else
+		{
+			write_value_binary<unsigned int>(fin, sizeof(int) * (long)msh->ele_vector.size());
+			for (long i = 0; i < (long)msh->ele_vector.size(); i++)
+				write_value_binary(fin, myrank);
+		}
+	}
+	else
+		//OK411
+		offset += (long)msh->ele_vector.size() * sizeof(int) +
+		          SIZE_OF_BLOCK_LENGTH_TAG;
+	if (!useBinary || !output_data)
+		WriteDataArrayFooter(fin);
+#if 0
+	// Ghost level
+	if (!useBinary || !output_data)
+		WriteDataArrayHeader(fin, this->type_UChar, "vtkGhostLevels", 0, str_format, offset);
+	if (output_data)
+	{
+		if (!this->useBinary)
+		{
+			fin << "          ";
+			for(long i = 0; i < (long)msh->ele_vector.size(); i++) {
+				fin << (msh->ele_vector[i]->isOverlapped() ? 1 : 0) << " ";
+			}
+			fin << "\n";
+		}
+		else
+		{
+			write_value_binary<unsigned int>(fin, sizeof(int) * (long)msh->ele_vector.size());
+			for (long i = 0; i < (long)msh->ele_vector.size(); i++)
+				write_value_binary(fin, (msh->ele_vector[i]->isOverlapped() ? 1 : 0));
+		}
+	}
+	else
+		//OK411
+		offset += (long)msh->ele_vector.size() * sizeof(int) +
+		          SIZE_OF_BLOCK_LENGTH_TAG;
+	if (!useBinary || !output_data)
+		WriteDataArrayFooter(fin);
+#endif
+#endif
+
+	// Mat ID
+	if (!useBinary || !output_data)
+		WriteDataArrayHeader(fin, this->type_Int, "MatGroup", 0, str_format, offset);
+	if (output_data)
+	{
+		if (!this->useBinary)
+		{
+			fin << "          ";
+			for(long i = 0; i < (long)msh->ele_vector.size(); i++)
+				fin << msh->ele_vector[i]->GetPatchIndex() << " ";
+			fin << "\n";
+		}
+		else
+		{
+			write_value_binary<unsigned int>(fin, sizeof(int) * (long)msh->ele_vector.size());
+			for (long i = 0; i < (long)msh->ele_vector.size(); i++)
+				write_value_binary(fin, msh->ele_vector[i]->GetPatchIndex());
+		}
+	}
+	else
+	{
+		offset += (long)msh->ele_vector.size() * sizeof(int) + SIZE_OF_BLOCK_LENGTH_TAG;
+	}
+	if (!useBinary || !output_data)
+		WriteDataArrayFooter(fin);
 
 	//Element values
+	bool outEleVelocity = false;
 	for (int i = 0; i < (int) ele_value_index_vector.size(); i++)
 	{
 		if (out->getElementValueVector()[i].find("VELOCITY") != string::npos)
@@ -1027,40 +1270,6 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 		}
 	}
 	//Material information
-	if(mmp_vector.size() > 1)
-	{
-		if (!useBinary || !output_data)
-			WriteDataArrayHeader(fin, this->type_Int, "MatGroup", 0, str_format, offset);
-		if (output_data)
-		{
-			if (!this->useBinary)
-			{
-				fin << "          ";
-				for(long i = 0; i < (long)msh->ele_vector.size(); i++)
-				{
-					ele = msh->ele_vector[i];
-					fin << ele->GetPatchIndex() << " ";
-				}
-				fin << "\n";
-			}
-			else
-			{
-				//OK411
-				write_value_binary<unsigned int>(
-				        fin,
-				        sizeof(int) *
-				        (long)msh->ele_vector.size());
-				for (long i = 0; i < (long)msh->ele_vector.size(); i++)
-					write_value_binary(fin, msh->ele_vector[i]->GetPatchIndex());
-			}
-		}
-		else
-			//OK411
-			offset += (long)msh->ele_vector.size() * sizeof(int) +
-			          SIZE_OF_BLOCK_LENGTH_TAG;
-		if (!useBinary || !output_data)
-			WriteDataArrayFooter(fin);
-	}
     //MMP
     if(out->mmp_value_vector.size() > 0)
     {

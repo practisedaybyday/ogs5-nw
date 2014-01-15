@@ -12,8 +12,16 @@
 //#include <vector>
 //#include <string>
 
+
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+#include "prototyp.h"
+#else
 // MSH
 #include "par_ddc.h"                              //OK //Moved from fem_ele_std.h. WW
+#endif 
+
+
+
 #include "MSHEnums.h"
 
 namespace Math_Group
@@ -27,6 +35,8 @@ namespace MeshLib
   class CEdge;
 }
 class CRFProcess;
+
+namespace  process { class CRFProcessDeformation;}
 
 namespace FiniteElement
 {
@@ -91,6 +101,7 @@ public:
 	int GetNumGaussPoints() const {return nGaussPoints; }
 	int GetNumGaussSamples() const {return nGauss; }
 	int Dim() const {return ele_dim; }
+    double Getdshapefct(int in) {return dshapefct[in];}
 
 	// Integrate Neumman type BC
 	void FaceIntegration(double* NodeVal);
@@ -130,7 +141,9 @@ public:
 	}
 protected:
 	CElem* MeshElement;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	CPARDomain* m_dom;                    //OK
+#endif
 	long* element_nodes_dom;              //Only a pointer. For domain decomposition. WW
 
 	friend class ::CRFProcess;
@@ -210,6 +223,15 @@ protected:
 	double node_val[20];
 	double dbuff[20];
 
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+  int act_nodes; //> activated nodes 
+  int act_nodes_h; //> activated nodes for high order elements
+  int *idxm;  //> global indices of local matrix rows  
+  int *idxn;  //> global indices of local matrix columns 
+  int *local_idx; //> local index for local assemble
+  //double *local_matrix; //>  local matrix 
+  //double *local_vec; //>  local vector  
+#endif
 	ExtrapolationMethod::type extrapo_method;
 	ExtrapolationMethod::type GetExtrapoMethod() {return extrapo_method; }
 private:

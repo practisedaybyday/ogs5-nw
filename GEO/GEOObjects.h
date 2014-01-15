@@ -246,6 +246,8 @@ public:
 	/** destructor */
 	virtual ~GEOObjects();
 
+	void optimiseObjects(const std::string &name, const GEOLIB::AABB &bb);
+
 protected:
 	/**
 	 * Determines if the given name is unique among all the names in point vectors and creates a

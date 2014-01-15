@@ -11,6 +11,8 @@
 //#include "FEMEnums.h"
 
 #include "fem_ele.h"
+#include "matrix_class.h"
+
 // Problems
 #include "rf_mfp_new.h"
 //#include "rf_msp_new.h"
@@ -99,11 +101,13 @@ public:
 	//
 	void CalcSatution();                  //WW
 	//
+#ifdef E_NORM
 	//25.08.2008. WW
-	void CalcEnergyNorm(const double* x_n1, double &err_norm0, double &err_normn);
+	void CalcEnergyNorm(double &err_norm0, double &err_normn);
 	//25.09.2008. WW
-	void CalcEnergyNorm_Dual(const double* x_n1, double &err_norm0, double &err_normn);
+	void CalcEnergyNorm_Dual(double &err_norm0, double &err_normn);
 	//
+#endif
 	void CalcNodeMatParatemer();          //WW
 	// Assembly
 	void Assembly();
@@ -335,13 +339,17 @@ private:
 	void Assemble_RHS_HEAT_TRANSPORT2();  //AKS
 	void Assemble_RHS_T_PSGlobal();       // Assembly of RHS by temperature for PSGlobal
 	void AssembleRHS(int dimension);      // PCH
+	void Assemble_RHS_LIQUIDFLOW();       //NW
 	void Assemble_DualTransfer();
 	bool check_matrices;                  //OK4104
 	void AssembleRHSVector();             //OK
 	void AssembleCapillaryEffect();       // PCH
 	                                      // PCH for debugging
-
-	void add2GlobalMatrixII(int block_cols = 2);            //WW. 06.2011
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+        void add2GlobalMatrixII();    
+#else
+	void add2GlobalMatrixII(const int block_cols = 2);            //WW. 06.2011
+#endif
 	void PrintTheSetOfElementMatrices(std::string mark);
 	// Friend classes, 01/07, WW
 	friend class ::CMediumProperties;

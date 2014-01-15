@@ -13,6 +13,7 @@
 #include <iostream>
 #include <set>
 
+#include "MemWatch.h"
 #include "files0.h"
 #include "mathlib.h"
 
@@ -29,7 +30,8 @@
 
 #include "tools.h"                                //GetLineFromFile
 /* Tools */
-#ifndef NEW_EQS                                   //WW. 06.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 06.11.2008
 #include "matrix_routines.h"
 #endif
 
@@ -105,6 +107,7 @@ CSourceTerm::CSourceTerm() :
    this->TimeInterpolation = 0;                   //BG
    is_transfer_bc = false;
    st_id = -1;
+   has_constrain = false;
 }
 
 // KR: Conversion from GUI-ST-object to CSourceTerm
@@ -481,7 +484,7 @@ void CSourceTerm::ReadDistributionType(std::ifstream *st_file)
    if (found!=std::string::npos) {
       this->st_type = FiniteElement::NEUMANN;
       dis_type_name.erase(dis_type_name.begin()+found, dis_type_name.end());
-      std::cout << "-> This ST is recognized as Neumann BC" << std::endl;
+      ScreenMessage("-> This ST is recognized as Neumann BC\n");
    } else {
 	   this->st_type = FiniteElement::SOURCE;
    }
@@ -691,14 +694,14 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
    st_file_name = file_base_name + ST_FILE_EXTENSION;
    std::ifstream st_file(st_file_name.data(), std::ios::in);
 
+   ScreenMessage("STRead ... \n");
    if (!st_file.good())
    {
-      std::cout << "! Warning in STRead: No source terms !" << std::endl;
+      ScreenMessage("-> No source term found !\n");
       return false;
    }
 
    // Keyword loop
-   std::cout << "STRead ... " << std::flush;
    while (!st_file.eof())
    {
       st_file.getline(line, MAX_ZEILE);
@@ -725,9 +728,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
                st_vector[i]->setMaxNumberOfTerms (number_of_terms);
             }
          }
-
-         std::cout << "done, read " << st_vector.size() << " source terms" << std::endl;
-         return true;
+         break;
       }
       //----------------------------------------------------------------------
                                                   // keyword found
@@ -749,7 +750,7 @@ const GEOLIB::GEOObjects& geo_obj, const std::string& unique_name)
       }                                           // keyword found
    }                                              // eof
 
-   std::cout << "done, read " << st_vector.size() << " source terms" << std::endl;
+   ScreenMessage("-> done, read %d source terms\n", st_vector.size());
 
    return true;
 }
@@ -1172,7 +1173,12 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 		// create ST node
 		//------------------------------------------------------------------
 		std::vector<long> nodes_cond;
+		ScreenMessage2("-> create ST nodes\n");
 		st->SetNodeValues(nodes_vector, nodes_cond, node_value, ShiftInNodeVector);
+#ifndef WIN32
+		BaseLib::MemWatch mem_watch;
+		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 
 		//------------------------------------------------------------------
 		// FCT
@@ -1847,8 +1853,10 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long>&nodes_on_sfc,
       elem = msh->ele_vector[vec_possible_elements[i]];
       if (!elem->GetMark())
          continue;
+      if (elem->GetDimension()<3)
+         continue;
       if (active_elements && !(*active_elements)[i])
-    	  continue;
+         continue;
       nfaces = elem->GetFacesNumber();
       elem->SetOrder(msh->getOrder());
       for (j = 0; j < nfaces; j++)
@@ -2277,7 +2285,8 @@ void GetGreenAmptNODValue(double &value, CSourceTerm* m_st, long msh_node)
  01/2007 JOD Implementation
  09/2010 KR cleaned up code
  **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 06.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 06.11.2008
 void GetCouplingNODValue(double &value, CSourceTerm* st, CNodeValue* cnodev)
 {
    //	if (st->COUPLING_SWITCH == true ||
@@ -2307,8 +2316,10 @@ void GetCouplingNODValue(double &value, CSourceTerm* st, CNodeValue* cnodev)
  01/2007 JOD Implementation
  10/2008 JOD overland node shifting for soil columns, averaging automatically 4.7.10
  **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 06.11.2008
-void GetCouplingNODValuePicard(double &value, CSourceTerm* m_st,
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 06.11.2008
+void GetCouplingNODValuePicard(double &value
+	, CSourceTerm* m_st,
 CNodeValue* cnodev)
 {
 
@@ -2366,7 +2377,8 @@ CNodeValue* cnodev)
  01/2007 JOD Implementation
  10/2008 JOD node shifting for soil columns 4.7.10
  **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 06.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 06.11.2008
 void GetCouplingNODValueNewton(double &value, CSourceTerm* m_st,
 CNodeValue* cnodev)
 {
@@ -2493,7 +2505,7 @@ double GetRelativeCouplingPermeability(const CRFProcess* pcs, double head, const
  phase = 0 in mfp, soil data in mmp_vetor[1] !!!!!
  06/2007 JOD Implementation
  **************************************************************************/
-#ifndef NEW_EQS                                   //WW. 06.11.2008
+#if !defined(NEW_EQS) && !defined(USE_PETSC)                                   //WW. 06.11.2008
 void GetCouplingNODValueMixed(double& value, CSourceTerm* m_st,
 CNodeValue* cnodev)
 {
@@ -2642,7 +2654,7 @@ CNodeValue* cnodev)
             * 2 / (cond0 + cond1);
       // bc_value = supplyRate * gamma * dt;
 
-      MXRandbed(bc_eqs_index, bc_value, m_pcs_this->eqs->b);
+      MXRandbed(bc_eqs_index, bc_value, m_pcs_this->getEQSPointer()->b); //getEQSPointer. WW 
       value = 0;
 
    }                                              // end Richards
@@ -2842,7 +2854,8 @@ void GetNormalDepthNODValue(double &value, CSourceTerm* st, long msh_node)
 void GetNODValue(double& value, CNodeValue* cnodev, CSourceTerm* st)
 {
 #if 0
-#ifndef NEW_EQS                                //WW. 06.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+  //#ifndef NEW_EQS                                //WW. 06.11.2008
    if (st->isCoupled())
       GetCouplingNODValue(value, st, cnodev);
    else if (st->isAnalytical())
@@ -2866,13 +2879,12 @@ void GetNODValue(double& value, CNodeValue* cnodev, CSourceTerm* st)
                                                   //MB
       GetNormalDepthNODValue(value, st, cnodev->msh_node_number);
 #endif
-#endif
    //	if (cnodev->node_distype == 10) // Philip infiltration JOD
    //		GetPhilipNODValue(value, st);
    //	if (cnodev->node_distype == 11) // Green_Ampt infiltration JOD
    if (cnodev->getProcessDistributionType() == FiniteElement::GREEN_AMPT)
       GetGreenAmptNODValue(value, st, cnodev->msh_node_number);
-
+#endif
 }
 
 

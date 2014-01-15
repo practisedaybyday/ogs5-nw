@@ -33,7 +33,13 @@ public:
 	void PostCouplingLoop();
 	void PreCouplingLoop(CRFProcess *m_pcs = NULL);
 	// Copy u_n for auto time stepping
-	double* GetBufferArray() {return buffer_array; }
+    double* GetBufferArray(const bool is_x_k = false)
+    {
+      if(is_x_k)
+        return buffer_array1;
+      else			
+        return buffer_array;
+    }
 	int GetCPLMaxIterations() { return cpl_overall_max_iterations; }
 
 	/**
@@ -62,6 +68,7 @@ private:
 	double end_time;
 	double current_time;
 	double* buffer_array;
+	double* buffer_array1;
 	int step_control_type;
 	bool last_dt_accepted;		//JT
 	bool force_post_node_copy; //JT

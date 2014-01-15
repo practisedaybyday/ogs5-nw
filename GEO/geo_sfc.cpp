@@ -1099,6 +1099,7 @@ std::ios::pos_type Surface::Read(std::ifstream* gli_file)
 			type = 1; //OK41
 			type_name = "TIN"; //CC8888
 			data_name = line_string; //CC8888
+			delete TIN;
 		} // subkeyword found
 		  //....................................................................
 		if (line_string.find("$MAT_GROUP") != string::npos) // subkeyword found

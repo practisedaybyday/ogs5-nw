@@ -11,6 +11,8 @@
    01/2002     MK         Umleitung der DisplayX-Funktionen in MSG-Datei
                           Ausnahmen: DisplayStartMsg/DisplayEndMsg                                                  */
 /**************************************************************************/
+#include <cstdarg>
+#include <cstdlib>
 #include "Configure.h"
 #include "display.h"
 #include "makros.h"
@@ -124,13 +126,36 @@ void DisplayMsg ( const char* s )
  Programming:
   03/2012 JT                                                           
 **************************************************************************/
-void ScreenMessage(const char* message)
+void ScreenMessage(const char* format, ...)
 {
-#ifdef USE_MPI
+#if defined(USE_MPI) || defined(USE_PETSC)
 	if(myrank > 0)
 		return;
 #endif
-	printf(message);
+    va_list arguments;
+    va_start (arguments, format);
+    char* allocatedBuffer;
+    vasprintf(&allocatedBuffer, format, arguments);
+    va_end ( arguments );
+    printf("%s", allocatedBuffer);
+    free(allocatedBuffer);
+    fflush (stdout);
+}
+
+void ScreenMessage2(const char* format, ...)
+{
+	va_list arguments;
+	va_start (arguments, format);
+	char* allocatedBuffer=NULL;
+	vasprintf(&allocatedBuffer, format, arguments);
+	va_end ( arguments );
+#if defined(USE_MPI) || defined(USE_PETSC)
+	printf("rank%d: %s", myrank, allocatedBuffer);
+#else
+	printf("%s", allocatedBuffer);
+#endif
+	free(allocatedBuffer);
+    fflush (stdout);
 }
 
 /**************************************************************************/

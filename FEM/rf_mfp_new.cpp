@@ -431,9 +431,9 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
                 my_T0 -= T_KILVIN_ZERO;
                 viscosity_pcs_name_vector.push_back("PRESSURE1");
                 viscosity_pcs_name_vector.push_back("TEMPERATURE1");
-                std::cout << "-> Viscosity model " << viscosity_model << " for high-concentration saltwater is selected. Note that Kelvin should be used in HEAT_TRANSPORT.\n";
+                ScreenMessage("-> Viscosity model 21 for high-concentration saltwater is selected. Note that Kelvin should be used in HEAT_TRANSPORT.\n");
                 if (T_1 > .0)
-                    std::cout << "-> Constant temperature " << T_1 << " [K] is used.\n";
+                	ScreenMessage("-> Constant temperature %f[K] is used.\n", T_1);
             }
 
 
@@ -578,14 +578,13 @@ bool MFPRead(std::string file_base_name)
 	mfp_file.seekg(0L,std::ios::beg);
 	//========================================================================
 	// Keyword loop
-	std::cout << "MFPRead ... " << std::flush;
+	ScreenMessage("MFPRead ... \n");
 	while (!mfp_file.eof())
 	{
 		mfp_file.getline(line,MAX_ZEILE);
 		line_string = line;
 		if(line_string.find("#STOP") != std::string::npos) {
-            std::cout << "done, read " << mfp_vector.size() << " fluid properties" <<
-            std::endl;
+            ScreenMessage("-> done, read %d fluid properties\n", mfp_vector.size());
 			return true;
 		}
 		//----------------------------------------------------------------------

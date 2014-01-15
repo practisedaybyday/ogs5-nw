@@ -51,6 +51,11 @@ public:
 
 	void GetTranspose(Matrix& m);
 
+        double *getEntryArray() 
+        {
+          return data;
+        }
+
 	// vec_result = This*vec. vec_result must be initialized
 	void multi(const double* vec, double* vec_result, double fac = 1.0);
 	// m_result = this*m. m_result must be initialized
@@ -168,7 +173,7 @@ template<> class vec<void*>
 {
 public:
 	vec(int argSize);
-	vec() : _size (0) {}
+	vec() : _entry(NULL),_size (0) {}
 	explicit vec(const vec<void*>& v);
 
 	virtual ~vec();

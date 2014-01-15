@@ -18,7 +18,8 @@
 #include "rf_pcs.h"                               //OK_MOD"
 #include "tools.h"
 //
-#ifndef NEW_EQS                                   //WW. 06.11.2008
+#if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
+//#ifndef NEW_EQS                                   //WW. 06.11.2008
 #include "matrix_routines.h"
 #endif
 #include "fem_ele_vec.h"
@@ -324,7 +325,9 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 		//        monolithic=1;
 		number_of_load_steps = 1;
 	// system matrix
-#ifdef NEW_EQS                              //WW
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+	//TODO
+#elif NEW_EQS                              //WW
 	//
 #if defined(USE_MPI)
 	CPARDomain* dom = dom_vector[myrank];
@@ -492,7 +495,9 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 		{
 			ite_steps++;
 			// Refresh solver
-#ifdef NEW_EQS                        //WW
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+			//TODO
+#elif NEW_EQS                        //WW
 #ifndef USE_MPI
 			eqs_new->Initialize(); //27.11.2007 WW
 #endif
@@ -549,7 +554,9 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 
 			std::cout << "      Calling linear solver..." << std::endl;
 			/// Linear solver
-#ifdef NEW_EQS                        //WW
+#if defined(USE_PETSC) //|| defined(other parallel libs)//03~04.3012. WW
+			//TODO
+#elif NEW_EQS                        //WW
 			//
 #if defined(USE_MPI)
 			//21.12.2007
@@ -571,7 +578,9 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			if(!elasticity)
 				Norm = dom->eqsH->NormRHS();
 #else
-#ifdef NEW_EQS
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+			//TODO
+#elif NEW_EQS
 			if(!elasticity)
 				Norm = eqs_new->NormRHS();
 #else
@@ -584,7 +593,9 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 				// Check the convergence
 				Error1 = Error;
 				ErrorU1 = ErrorU;
-#ifdef NEW_EQS
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+			//TODO
+#elif NEW_EQS
 				NormU = eqs_new->NormX();
 #else
 				NormU = NormOfUnkonwn_orRHS();
@@ -1113,6 +1124,7 @@ void CRFProcessDeformation::CreateInitialState4Excavation()
 	for (i = 0; i < m_msh->GetNodesNumber(false); i++)
 		for(j = 0; j < NS + 1; j++)
 			SetNodeValue(i, Idx_Strain[j], 0.0);
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	if(dom_vector.size() > 0)
 	{
 		bc_node_value_in_dom.clear();
@@ -1124,6 +1136,8 @@ void CRFProcessDeformation::CreateInitialState4Excavation()
 		CountDoms2Nodes(this);
 		SetBoundaryConditionSubDomain();
 	}
+#endif
+
 	if(reload == -1000)
 		reload = 1;
 }
@@ -1190,7 +1204,9 @@ void CRFProcessDeformation::SetInitialGuess_EQS_VEC()
 	long number_of_nodes;
 	long shift = 0;
 	double* eqs_x = NULL;
-#if defined(NEW_EQS)
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+	//TODO
+#elif NEW_EQS
 	eqs_x = eqs_new->x;
 #else
 	eqs_x = eqs->x;
@@ -1239,7 +1255,9 @@ void CRFProcessDeformation::UpdateIterativeStep(const double damp, const int u_t
 	int ColIndex = 0;
 	double* eqs_x = NULL;
 
-#if defined(NEW_EQS)
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+	//TODO
+#elif NEW_EQS
 	eqs_x = eqs_new->x;
 #else
 	eqs_x = eqs->x;
@@ -1356,6 +1374,7 @@ InitializeNewtonSteps(const bool ini_excav)
 
 	/// Dynamic: plus p_0 = 0
 	if(type == 41 && !fem_dm->dynamic)
+	{
 		// p_1 = 0
 		for (i = 0; i < pcs_number_of_primary_nvals; i++)
 		{
@@ -1376,8 +1395,9 @@ InitializeNewtonSteps(const bool ini_excav)
 					SetNodeValue(j, Col, 0.0);
 			}
 		}
+	}
 	else // non HM monolithic
-
+	{
 		for (i = start; i < end; i++)
 		{
 			Col = p_var_index[i] - 1;
@@ -1388,7 +1408,7 @@ InitializeNewtonSteps(const bool ini_excav)
 			if(fem_dm->dynamic)
 				continue;
 		}
-
+    }
 	/// Excavation: plus u_1 = 0;
 	if(ini_excav)
 		// p_1 = 0
@@ -1581,7 +1601,7 @@ double CRFProcessDeformation::NormOfDisp()
    07/2011   WW
 
 **************************************************************************/
-#ifndef NEW_EQS
+#if !defined(NEW_EQS) && !defined(USE_PETSC)
 double CRFProcessDeformation::NormOfUnkonwn_orRHS(bool isUnknowns)
 {
 	int i, j;
@@ -2267,6 +2287,7 @@ long CRFProcessDeformation::MarkBifurcatedNeighbor(const int PathIndex)
    Programing:
    04/2006 WW
 **************************************************************************/
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 void CRFProcessDeformation:: DomainAssembly(CPARDomain* m_dom)
 {
 	long i;
@@ -2328,6 +2349,7 @@ void CRFProcessDeformation:: DomainAssembly(CPARDomain* m_dom)
 
 	 */
 }
+#endif
 /**************************************************************************
    FEMLib-Method:
    Task: Assemble local matrices and RHS for each element
@@ -2336,6 +2358,7 @@ void CRFProcessDeformation:: DomainAssembly(CPARDomain* m_dom)
 **************************************************************************/
 void CRFProcessDeformation::GlobalAssembly()
 {
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//10.3012. WW
 #ifdef USE_MPI
 	if(dom_vector.size() > 0)
 	{
@@ -2398,6 +2421,7 @@ void CRFProcessDeformation::GlobalAssembly()
 	//----------------------------------------------------------------------
 	// STD
 	else
+#endif //#if !defined(USE_PETSC) // && !defined(other parallel libs)//10.3012. WW
 	{
 		GlobalAssembly_DM();
 
@@ -2554,7 +2578,9 @@ void CRFProcessDeformation::UpdateStress()
 		if (elem->GetMark())      // Marked for use
 		{
 			elem->SetOrder(true);
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 			fem_dm->m_dom = NULL;
+#endif
 			fem_dm->ConfigElement(elem);
 			fem_dm->LocalAssembly(1);
 		}
@@ -2708,7 +2734,10 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 	SizeSt = (int) st_vector.size();
 	bool exist = false;
 	double* eqs_b = NULL;
-#ifdef NEW_EQS
+
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+	//TODO
+#elif NEW_EQS
 	eqs_b = eqs_new->b;
 #else
 	eqs_b = eqs->b;
@@ -2757,7 +2786,8 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 		abort();
 	}
 	// 2. Compute the released node loading
-#ifndef NEW_EQS                             //WW. 06.11.2008
+
+#if !defined( NEW_EQS) && !defined(USE_PETSC)    //WW. 06.11.2008, 04.2012
 	SetLinearSolver(eqs);
 	SetZeroLinearSolver(eqs);
 #endif
@@ -3021,7 +3051,9 @@ bool CRFProcessDeformation::CalcBC_or_SecondaryVariable_Dynamics(bool BC)
 				{
 					bc_eqs_index += Shift[j];
 					// da = v = 0.0;
-#ifdef NEW_EQS                  //WW
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+					//TODO
+#elif NEW_EQS                  //WW
 					eqs_new->SetKnownX_i(bc_eqs_index, 0.);
 #else
 					MXRandbed(bc_eqs_index,0.0,eqs->b);
@@ -3031,7 +3063,9 @@ bool CRFProcessDeformation::CalcBC_or_SecondaryVariable_Dynamics(bool BC)
 				{
 					bc_eqs_index += Shift[problem_dimension_dm];
 					// da = v = 0.0;
-#ifdef NEW_EQS                  //WW
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+					//TODO
+#elif NEW_EQS                  //WW
 					eqs_new->SetKnownX_i(bc_eqs_index, 0.);
 #else
 					MXRandbed(bc_eqs_index,0.0,eqs->b);

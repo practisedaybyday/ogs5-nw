@@ -78,6 +78,18 @@ public:
 };
 #endif                                         //#ifndef NON_GEO
 
+/// For parallel computing. 03.2012. WW
+#if defined(USE_PETSC) // || defined(using other parallel scheme)
+typedef struct
+{
+  int index;
+  double x;
+  double y;
+  double z;
+} MeshNodes;
+
+#endif 
+
 //------------------------------------------------------------------------
 // Class definition
 class CFEMesh
@@ -132,6 +144,10 @@ public:
 	size_t getNumberOfPrisms () const;
 	size_t getNumberOfPyramids () const;
 	double getMinEdgeLength () const;
+        CNode* const* getNodes() const //WW 05.2012.
+        {
+	  return &nod_vector[0];
+        }  
 	/**
 	 * do not use this method REMOVE CANDIDATE
 	 * @param val
@@ -165,6 +181,55 @@ public:
 	//
 	void ConstructGrid();
 	void GenerateHighOrderNodes();
+/// For parallel computing. 03.2012. WW
+#if defined(USE_PETSC) // || defined(other parallel solver libs)
+	void ConfigHighOrderElements(); 
+
+	/*!
+	   Fill data for subdomain mesh
+           @param header  : mesh header
+           @param s_nodes : mesh nodes
+	*/
+	void setSubdomainNodes(int *header, const MeshNodes *s_nodes);
+	/*!
+	   Fill data for subdomain mesh
+           @param header    : mesh header
+           @param elem_info : element information
+           @param inside    : indicator for elements that are inside the subdomain
+	*/
+	void setSubdomainElements(int *header, const int *elem_info, const bool inside);
+	int calMaximumConnectedNodes();
+        /// Get number of nodes of the entire mesh       
+        int getNumNodesGlobal() const
+        {
+	   return glb_NodesNumber_Linear; 
+        }
+        /// Get number of nodes of the entire mesh of quadratic elements      
+        int getNumNodesGlobal_Q() const
+        {
+	   return glb_NodesNumber_Quadratic; 
+        }
+        /// Get number of nodes of the subdomain mesh       
+        int getNumNodesLocal() const
+        {
+	   return loc_NodesNumber_Linear; 
+        }
+        /// Get number of nodes of the subdomain mesh of quadratic elements      
+        int getNumNodesLocal_Q() const
+        {
+	   return loc_NodesNumber_Quadratic; 
+        }
+        
+        size_t NodesInUsagePETSC() const
+	{
+		if (useQuadratic)
+			return loc_NodesNumber_Quadratic;
+		else
+			return loc_NodesNumber_Linear;
+	}
+
+#endif
+
 	//
 //         void RenumberNodesForGlobalAssembly();
 	// For number of nodes
@@ -211,6 +276,8 @@ public:
 	{
 		NodesNumber_Linear = nod_vector.size();
 	}
+	/// Free the memory occupied by edges
+    void FreeEdgeMemory(); // 09.2012. WW
 
 #ifndef NON_GEO                             //WW
 	/**
@@ -327,6 +394,7 @@ public:
 //         friend class ::Problem;
 //#endif
 	//....................................................................
+#ifdef ObsoleteGUI //WW 03.2012
 	// QUAD->HEX
 	void CreateHexELEFromQuad(int, double);
 	// QUAD->LINE
@@ -338,7 +406,6 @@ public:
 	// LINE->LINE
 	void AppendLineELE();
 
-#ifndef NON_GEO
 	// TRI->PRIS
 	void CreatePriELEFromTri(int, double);
 
@@ -425,14 +492,14 @@ public:
 	/// Comptute int {f} a dA on top surface.
 	void TopSurfaceIntegration();
 
-#ifndef NDEBUG
+//#ifndef NDEBUG
 	/**
 	 * This is a getter method to access the private attribute _mesh_grid
 	 * that is an instance of class Grid.
 	 * @return
 	 */
 	GEOLIB::Grid<MeshLib::CNode> const* getGrid() const;
-#endif
+//#endif
 
 private:
 	// private attributes
@@ -474,6 +541,14 @@ private:
 
 	size_t NodesNumber_Linear;
 	size_t NodesNumber_Quadratic;
+/// For parallel computing. 03.2012. WW
+#if defined(USE_PETSC) // || defined(using other parallel scheme)
+  //int n_sub_elements;
+	int glb_NodesNumber_Linear;
+	int glb_NodesNumber_Quadratic;
+	int loc_NodesNumber_Linear; //index of shadow nodes starts from this number
+	int loc_NodesNumber_Quadratic;
+#endif
 	bool useQuadratic;
 	bool _axisymmetry;
 	bool top_surface_checked;                 // 07.06.2010.  WW

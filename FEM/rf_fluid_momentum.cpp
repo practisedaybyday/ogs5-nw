@@ -200,11 +200,13 @@ void CFluidMomentum::SolveDarcyVelocityOnNode()
 		{
 			/* Initializations */
 			/* System matrix */
-#ifdef NEW_EQS                           //WW
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+		  //TODO
+#elif NEW_EQS                           //WW
 			m_pcs->EQSInitialize();
 #else
-			SetLinearSolverType(m_pcs->eqs, m_num); //NW
-			SetZeroLinearSolver(m_pcs->eqs);
+			SetLinearSolverType(m_pcs->getEQSPointer(), m_num); //NW
+			SetZeroLinearSolver(m_pcs->getEQSPointer());
 #endif
 
 			for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
@@ -220,7 +222,9 @@ void CFluidMomentum::SolveDarcyVelocityOnNode()
 			//		MXDumpGLS("rf_pcs.txt",1,m_pcs->eqs->b,m_pcs->eqs->x); //abort();
 			m_pcs->IncorporateBoundaryConditions(-1,d);
 			// Solve for velocity
-#ifdef NEW_EQS
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+			//TODO
+#elif NEW_EQS
 
 			double* x;
 			int size = (int)m_msh->nod_vector.size(); //OK411??? long
@@ -230,7 +234,7 @@ void CFluidMomentum::SolveDarcyVelocityOnNode()
 			cout << "Solver passed in FLUID_MOMENTUM." << endl;
 #endif
 #else
-			ExecuteLinearSolver(m_pcs->eqs);
+			ExecuteLinearSolver(m_pcs->getEQSPointer());
 #endif
 
 			/* Store solution vector in model node values table */
@@ -258,16 +262,19 @@ void CFluidMomentum::SolveDarcyVelocityOnNode()
 			else
 				abort();  // Just stop something's wrong.
 
-#ifdef NEW_EQS
+#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+			//TODO
+#elif NEW_EQS
 			for(int j = 0; j < size; j++)
 				m_pcs->SetNodeValue(m_msh->Eqs2Global_NodeIndex[j],nidx1,x[j]);
 
 			delete [] x;
 #else
-			for(int j = 0; j < m_pcs->eqs->dim; j++)
+			LINEAR_SOLVER *eqs = m_pcs->getEQSPointer();
+			for(int j = 0; j < eqs->dim; j++)
 				m_pcs->SetNodeValue(m_msh->Eqs2Global_NodeIndex[j],
 				                    nidx1,
-				                    m_pcs->eqs->x[j]);
+				                    eqs->x[j]);
 #endif
 		}
 

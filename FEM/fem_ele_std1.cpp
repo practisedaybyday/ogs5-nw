@@ -64,7 +64,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 	p2_0 = NodalVal0 + nnodes;
 	p2 = NodalVal1 + nnodes;
 
-	*StiffMatrix = 0.;
+	//*StiffMatrix = 0.;
 
 	//======================================================================
 	// Loop over Gauss points
@@ -123,10 +123,11 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 		{
 			vw[i] = 0.0;
 			vg[i] = 0.;
+            const size_t ish = i * dim;
 			for(size_t j = 0; j < dim; j++)
 			{
-				vw[i] += tensor[i * dim + j] * gradPw[j];
-				vg[i] += tensor[i * dim + j] * gradPg[j];
+				vw[i] += tensor[ish + j] * gradPw[j];
+				vg[i] += tensor[ish + j] * gradPg[j];
 			}
 			vw[i] *= dkdp1 * time_unit_factor / vsc1;
 			vg[i] *= dkdp2 * rho_ga * time_unit_factor / (vsc2 * rhow);
@@ -217,7 +218,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 #endif
 	}                                     // loop gauss points
 
-	add2GlobalMatrixII(1);
+	//add2GlobalMatrixII(1);
 
 	// StiffMatrix->Write();
 }
@@ -249,7 +250,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
 	double vw[3];
 	const double g_constant = 9.81;
 
-	*StiffMatrix = 0.;
+	//*StiffMatrix = 0.;
 
 	//======================================================================
 	// Loop over Gauss points
@@ -341,7 +342,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
 #endif
 	}                                     // loop gauss points
 
-	add2GlobalMatrixII(1);
+	//add2GlobalMatrixII(1);
 
 	// StiffMatrix->Write();
 }

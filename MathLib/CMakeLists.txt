@@ -37,6 +37,11 @@ set( SOURCES
 #	LinAlg/HouseholderAlgorithm.cpp
 )
 
+IF(OGS_FEM_PETSC OR OGS_FEM_PETSC_GEMS)
+   set( HEADERS  ${HEADERS} PETSC/PETScLinearSolver.h)
+   set( SOURCES  ${SOURCES} PETSC/PETScLinearSolver.cpp)
+
+ENDIF()
 # Create the library
 add_library( MathLib STATIC ${HEADERS} ${SOURCES} )
 
@@ -45,6 +50,7 @@ set_target_properties(MathLib PROPERTIES LINKER_LANGUAGE CXX)
 include_directories(
 	${CMAKE_SOURCE_DIR}/MathLib
 	${CMAKE_SOURCE_DIR}/MathLib/LinAlg
+	${CMAKE_SOURCE_DIR}/MathLib/PETSC
 	${CMAKE_SOURCE_DIR}/Base
 	${CMAKE_SOURCE_DIR}/GEO
 )

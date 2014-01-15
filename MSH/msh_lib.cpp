@@ -80,6 +80,7 @@ void FEMDeleteAll()
 	fem_msh_vector.clear();
 }
 
+#ifndef USE_PETSC // && not defined(other parallel method with ddc)
 /**************************************************************************
    FEMLib-Method:
    Task:
@@ -147,6 +148,7 @@ void FEMRead(const std::string &file_base_name,
 
 	msh_file_ascii.close();
 }
+#endif
 
 /**************************************************************************
    MSHLib-Method: Read rfi file ()
@@ -302,6 +304,7 @@ MeshLib::CFEMesh* FEMGet(const std::string &msh_name)
    }
  */
 
+#ifdef ObsoleteGUI //WW 03.2012
 /**************************************************************************
    GeoLib-Method:
    Task:
@@ -801,6 +804,7 @@ void MSHLayerWriteTecplot()
 		}                                 // layer
 	}
 }
+#endif //#ifdef ObsoleteGUI //WW 03.2012
 
 /**************************************************************************
    MSHLib-Method:
@@ -1292,7 +1296,7 @@ void CFEMesh::DefineMobileNodes(CRFProcess* m_pcs)
 	//----------------------------------------------------------------------
 	delete [] mobile_nodes;
 	mobile_nodes = NULL;
-#endif OGS_ONLY_TH
+#endif
 }
 
 /**************************************************************************
@@ -1733,3 +1737,238 @@ void SetRFIPointsClose(CGLLine* m_lin)
 //    return false; //OK
 //  return ok;
 //}
+
+
+
+
+/**************************************************************************
+   MSHLib-Method:
+   01/2006 OK Implementation
+   06/2009 OK Bug fix
+**************************************************************************/
+int MSHSetMaxMMPGroups()
+{
+	int i;
+	long j;
+	CFEMesh* m_msh = NULL;
+	//----------------------------------------------------------------------
+	size_t msh_max_mmp_groups;
+	for (i = 0; i < (int) fem_msh_vector.size(); i++)
+	{
+		m_msh = fem_msh_vector[i];
+		m_msh->max_mmp_groups = 0;
+		msh_max_mmp_groups = 0;
+		for (j = 0; j < (long) m_msh->ele_vector.size(); j++)
+			if ((m_msh->ele_vector[j]->GetPatchIndex() + 1) > msh_max_mmp_groups)
+				msh_max_mmp_groups++;
+		m_msh->max_mmp_groups = msh_max_mmp_groups;
+	}
+	//----------------------------------------------------------------------
+	size_t g_msh_max_mmp_groups = 0;
+	for (i = 0; i < (int) fem_msh_vector.size(); i++)
+		if (m_msh->max_mmp_groups > g_msh_max_mmp_groups)
+			g_msh_max_mmp_groups++;
+	//----------------------------------------------------------------------
+	return g_msh_max_mmp_groups;
+}
+
+/**************************************************************************
+   MSHLib-Method:
+   07/2007 OK Implementation
+**************************************************************************/
+bool MSHTestMATGroups()
+{
+	int g_max_mmp_groups = MSHSetMaxMMPGroups();
+	if (g_max_mmp_groups > (int) mmp_vector.size())
+	{
+		std::cout << "Error: not enough MMP data";
+		return false;                     //abort();
+	}
+	return true;
+}
+
+
+
+
+/**************************************************************************
+   MSHLib-Method:
+   Task:
+   Programing:
+   04/2005 OK Implementation based on MSH2RFI by WW
+   08/2005 WW Re-implememtation
+   10/2005 TK proper ordering and closing of gaps
+   09/2011 TF changed std::string::compare to std::string::find for the new gmsh format
+        to avoid dos unix line-ending issues
+**************************************************************************/
+void GMSH2MSH(const char* filename,CFEMesh* m_msh)
+{
+	long id;
+	long i = 0;
+	int NumNodes = 0;
+	int NumElements = 0;
+	double x, y, z;
+	std::string strbuffer;
+
+	//WW  bool quad=false;
+	//WW  CRFProcess* m_pcs = NULL;
+	MeshLib::CNode* node = NULL;
+	MeshLib::CElem* elem = NULL;
+	std::ifstream msh_file(filename, std::ios::in);
+	getline(msh_file, strbuffer);             // Node keyword
+
+	// OLD GMSH  FORMAT----------------------------------------------------------------------
+	if (strbuffer.compare("$NOD") == 0)
+		while (strbuffer.compare("$ENDELM") != 0)
+		{
+			msh_file >> NumNodes >> std::ws;
+			//....................................................................
+			// Node data
+			for (i = 0; i < NumNodes; i++)
+			{
+				msh_file >> id >> x >> y >> z >> std::ws;
+
+				node = new MeshLib::CNode(id, x, y, z);
+				m_msh->nod_vector.push_back(node);
+			}
+
+			getline(msh_file, strbuffer); // End Node keyword
+			//....................................................................
+			// Element data
+			getline(msh_file, strbuffer); // Element keyword
+			msh_file >> NumElements >> std::ws;
+			for (i = 0; i < NumElements; i++)
+			{
+				elem = new MeshLib::CElem(i);
+				elem->Read(msh_file, 2);
+				m_msh->ele_vector.push_back(elem);
+			}
+			getline(msh_file, strbuffer); // END keyword
+
+			// ordering nodes and closing gaps TK
+			std::vector<int> gmsh_id;
+			long new_node_id;
+			int counter = 0;
+			int diff = 0;
+			int j = 0;
+			for (i = 0; i < (int) m_msh->nod_vector.size(); i++)
+			{
+				diff = m_msh->nod_vector[i]->GetIndex() - counter;
+				if (diff == 0)
+				{
+					gmsh_id.push_back(i);
+					counter++;
+				}
+				else
+				{
+					for (j = 0; j < diff; j++)
+					{
+						gmsh_id.push_back(i);
+						counter++;
+					}
+					i--;
+				}
+			}
+
+			for (i = 0; i < (int) m_msh->ele_vector.size(); i++)
+				for (j = 0; j < (int) m_msh->ele_vector[i]->GetVertexNumber(); j++)
+				{
+					new_node_id = gmsh_id[m_msh->ele_vector[i]->GetNodeIndex(j)
+					                      + 1];
+					//m_msh->ele_vector[i]->nodes[j]->SetIndex(new_node_id);/*global*/
+					/*local*/
+					m_msh->ele_vector[i]->getNodeIndices()[j] = new_node_id;
+				}
+			for (i = 0; i < (int) m_msh->nod_vector.size(); i++)
+				m_msh->nod_vector[i]->SetIndex(i);
+			// END OF: ordering nodes and closing gaps TK
+		}                                 /*End while*/
+	// END old GMSH Format----------------------------------------------------------------------
+	msh_file.close();
+
+	FileIO::GMSHInterface::readGMSHMesh(filename, m_msh);
+//   // NEW 2008 GMSH  FORMAT----------------------------------------------------------------------
+//   if (strbuffer.find("$MeshFormat") != std::string::npos)
+//   {
+//      getline(msh_file, strbuffer);               // version-number file-type data-size
+//      getline(msh_file, strbuffer);               //$EndMeshFormat
+//      getline(msh_file, strbuffer);               //$Nodes Keywords
+//
+//      while (strbuffer.find("$EndElements") == std::string::npos)
+//      {
+//         // Node data
+//         msh_file >> NumNodes >> std::ws;
+//         for (i = 0; i < NumNodes; i++)
+//         {
+//            msh_file >> id >> x >> y >> z >> std::ws;
+//            node = new MeshLib::CNode(id, x, y, z);
+//            m_msh->nod_vector.push_back(node);
+//         }
+//         getline(msh_file, strbuffer);            // End Node keyword $EndNodes
+//
+//         // Element data
+//         getline(msh_file, strbuffer);            // Element keyword $Elements
+//         msh_file >> NumElements >> std::ws;      // number-of-elements
+//         for (i = 0; i < NumElements; i++)
+//         {
+//            elem = new MeshLib::CElem(i);
+//            elem->Read(msh_file, 7);
+//            if (elem->GetElementType() != MshElemType::INVALID)
+//               m_msh->ele_vector.push_back(elem);
+//         }
+//         getline(msh_file, strbuffer);            // END keyword
+//
+//         // correct indices TF
+//         const size_t n_elements(m_msh->ele_vector.size());
+//         for (size_t k(0); k < n_elements; k++)
+//         {
+//            m_msh->ele_vector[k]->SetIndex(k);
+//         }
+//
+//         // ordering nodes and closing gaps TK
+//         std::vector<int> gmsh_id;
+//         long new_node_id;
+//         int counter = 0;
+//         int diff = 0;
+//         int j = 0;
+//         for (i = 0; i < (int) m_msh->nod_vector.size(); i++)
+//         {
+//            diff = m_msh->nod_vector[i]->GetIndex() - counter;
+//            if (diff == 0)
+//            {
+//               gmsh_id.push_back(i);
+//               counter++;
+//            }
+//            else
+//            {
+//               for (j = 0; j < diff; j++)
+//               {
+//                  gmsh_id.push_back(i);
+//                  counter++;
+//               }
+//               i--;
+//            }
+//         }
+//
+//         for (i = 0; i < (int) m_msh->ele_vector.size(); i++)
+//         {
+//            for (j = 0; j < (int) m_msh->ele_vector[i]->GetVertexNumber(); j++)
+//            {
+//               new_node_id = gmsh_id[m_msh->ele_vector[i]->GetNodeIndex(j)
+//                  + 1];
+//               //m_msh->ele_vector[i]->nodes[j]->SetIndex(new_node_id);/*global*/
+//                                                  /*local*/
+//               m_msh->ele_vector[i]->nodes_index[j] = new_node_id;
+//            }
+//         }
+//         for (i = 0; i < (int) m_msh->nod_vector.size(); i++)
+//         {
+//            m_msh->nod_vector[i]->SetIndex(i);
+//         }
+//         // END OF: ordering nodes and closing gaps TK
+//
+//      }                                           /*End while*/
+//   }
+//   // END New 2008 GMSH Format----------------------------------------------------------------------
+
+	//  m_msh->ConstructGrid(); // TF
+}

@@ -7,6 +7,8 @@
 
 #include <list>
 
+#include "display.h"
+
 // GEOLIB
 #include "AxisAlignedBoundingBox.h"
 #include "Polygon.h"
@@ -65,9 +67,9 @@ Surface* Surface::createSurface(const Polyline &ply)
 		     simple_polygon_it != list_of_simple_polygons.end(); ++simple_polygon_it)
 		{
 			std::list<GEOLIB::Triangle> triangles;
-			std::cout << "triangulation of surface: ... " << std::flush;
+			ScreenMessage("-> triangulation of surface: ... \n");
 			MathLib::EarClippingTriangulation(*simple_polygon_it, triangles);
-			std::cout << "done - " << triangles.size () << " triangles " << std::endl;
+			ScreenMessage("-> done - %d triangles\n", triangles.size());
 
 			// add Triangles to Surface
 			std::list<GEOLIB::Triangle>::const_iterator it (triangles.begin());
@@ -116,5 +118,56 @@ bool Surface::isPntInSfc (const double* pnt, double eps) const
 {
 	return _sfc_grid->isPntInSurface(pnt, eps);
 }
+
+void Surface::removeTriangles(const GEOLIB::AABB &bb)
+{
+	// find triangles located inside of the given bounding box
+	std::vector<Triangle*> new_tris;
+	for (size_t i(0); i < _sfc_triangles.size(); i++)
+	{
+		Triangle* tri = _sfc_triangles[i];
+		bool intersecting = false;
+		for (size_t k(0); k < 3; k++)
+		{
+			if (bb.containsPoint(*tri->getPoint(k))) {
+				intersecting = true;
+				break;
+			}
+		}
+		if (intersecting)
+			new_tris.push_back(tri);
+		else
+			delete tri;
+	}
+
+	if (new_tris.size()==_sfc_triangles.size()) {
+		return;
+	}
+
+	// initialize surface data
+	_sfc_triangles.clear();
+	_bv.clear();
+	delete _sfc_grid;
+	_sfc_grid=NULL;
+
+	// update
+	for (size_t i(0); i < new_tris.size(); i++)
+	{
+		_sfc_triangles.push_back(new_tris[i]);
+		_bv.update (*_sfc_pnts[(*new_tris[i])[0]]);
+		_bv.update (*_sfc_pnts[(*new_tris[i])[1]]);
+		_bv.update (*_sfc_pnts[(*new_tris[i])[2]]);
+	}
+
+}
+
+#if 0
+void Surface::removeTriangles()
+{
+	for (size_t k(0); k < _sfc_triangles.size(); k++)
+		delete _sfc_triangles[k];
+	_sfc_triangles.clear();
+}
+#endif
 
 } // end namespace
