@@ -610,7 +610,7 @@ void DiagonalMatrix::LimitSize(size_t dim)
    ==========================================================================*/
 //1.
 template<class T> vec<T>::vec(int argSize) :
-	_size(argSize), _entry (new T[argSize])
+	_size(argSize), _entry (argSize>0? new T[argSize] : NULL)
 {
 #ifdef gDEBUG
 	if (!_entry)
