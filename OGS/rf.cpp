@@ -271,7 +271,7 @@ int main ( int argc, char* argv[] )
 	ScreenMessage("build timestamp: %s\n", BUILD_TIMESTAMP);
 #endif // BUILD_TIMESTAMP
 #ifdef USE_PETSC
-	MPI_MPI_Barrier(PETSC_COMM_WORLD);
+	MPI_Barrier(PETSC_COMM_WORLD);
 #endif
 
 	FileName = dateiname;
