@@ -345,7 +345,7 @@ void CFEMesh::setSubdomainElements(int *header, const int *elem_info, const bool
   // Element
   for(i=0; i<ne; i++)
   {
-     CElem *new_elem = new CElem(i);
+     CElem *new_elem = new CElem(ele_vector.size());
      ele_vector.push_back(new_elem);
     
      counter = elem_info[i]; 
