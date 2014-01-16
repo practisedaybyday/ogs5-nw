@@ -361,12 +361,13 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, int
 }
 #endif
 
-CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, size_t node3, int /*mat*/) :
+CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, size_t node3, int mat) :
 	CCore(0), normal_vector(NULL), geo_type(t), owner(NULL), ele_dim(2),
 	nnodes(4), nnodesHQ(9), nodes(nnodes), nodes_index(nnodes),
 	nedges(4), edges(nedges), edges_orientation(nedges)
+	,nfaces(4), patch_index(mat), neighbors(nfaces)
 #ifndef OGS_ONLY_TH
-	,nfaces(4), patch_index(mat), neighbors(nfaces), angle(NULL)
+	, angle(NULL)
 #endif
 {
 	nodes_index[0] = node0;
