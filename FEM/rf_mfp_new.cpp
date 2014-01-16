@@ -1007,7 +1007,7 @@ double CFluidProperties::GetElementValueFromNodes(long ElementIndex,
 			"The Phase_Transition_Model should be used together with the density and viscosity model 18 !"
 			     << endl;
 			cout << "The run is terminated now ..." << endl;
-			system("Pause");
+			//system("Pause");
 			exit(0);
 		}
 
@@ -3340,7 +3340,7 @@ double  CFluidProperties::MaxwellStefanDiffusionCoef(int idx_elem, double p, dou
 double CFluidProperties::SuperCompressibiltyFactor(int idx_elem, double p, double T)
 {
 	std::vector<double> roots;
-	double A, B, z1, z2, z3, h, m0, a0, a, b;
+	double A, B, z1, z2, z3, h, m0, a0, a=.0, b=.0;
 	if(density_model == 15)
 	{
 	m0 = 0.37464 + 1.54226*omega - 0.26992*pow(omega, 2);
@@ -3369,7 +3369,7 @@ double CFluidProperties::SuperCompressibiltyFactor(int idx_elem, double p, doubl
 **************************************************************************/
 double CFluidProperties::dZ(int idx_elem, double p, double T, int nk)
 {
-	double m0, a0, a, b, Vm, dpdVm, da, dZ, A, B, dA, dB, z, beta;
+	double m0, a0, a=.0, b=.0, Vm, dpdVm, da=.0, dZ, A, B, dA, dB, z, beta=.0;
 	if(density_model == 15)
 	{
 	m0 = 0.37464 + 1.54226*omega - 0.26992*pow(omega, 2);

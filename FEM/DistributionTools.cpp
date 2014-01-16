@@ -221,14 +221,14 @@ void SurfaceInterpolation(Surface* m_surface, MeshLib::CFEMesh* m_msh, std::vect
 				}
 			}
 			//
-			p++;
+			++p;
 			if (Passed)
 				break;
 		}                         // while
 	}                                     //j
 }
 
-void setDistributionLinearPolyline(MeshLib::CFEMesh &msh, std::vector<long> &vec_node_ids, std::vector<double> &vec_node_values, GEOLIB::Polyline const* ply, std::vector<double> &DistribedBC, std::vector<int> &PointsHaveDistribedBC)
+void setDistributionLinearPolyline(MeshLib::CFEMesh &msh, std::vector<long> &/*vec_node_ids*/, std::vector<double> &vec_node_values, GEOLIB::Polyline const* ply, std::vector<double> &DistribedBC, std::vector<int> &PointsHaveDistribedBC)
 {
 	std::vector<double> nodes_as_interpol_points;
 	msh.getPointsForInterpolationAlongPolyline (ply, nodes_as_interpol_points);
@@ -273,7 +273,7 @@ void setDistributionLinearSurface(MeshLib::CFEMesh &msh, std::vector<long> &vec_
 					break;
 				}
 		}
-		p++;
+		++p;
 	}
 	SurfaceInterpolation(m_surface, &msh, vec_node_ids, vec_node_values);
 

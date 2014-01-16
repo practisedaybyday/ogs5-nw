@@ -114,9 +114,9 @@ SparseMatrixDOK& SparseMatrixDOK::operator=(double a)
 
 	const row_iter row_end = this->mat_row.end();
 
-	for (ii = this->mat_row.begin(); ii != row_end; ii++) {
+	for (ii = this->mat_row.begin(); ii != row_end; ++ii) {
 		const col_iter col_end = (*ii).end();
-		for (jj = (*ii).begin(); jj != col_end; jj++) {
+		for (jj = (*ii).begin(); jj != col_end; ++jj) {
 			//        for(jj=(*ii).second.begin(); jj!=(*ii).second.end(); jj++){
 			(*jj).second = a;
 		}
@@ -174,7 +174,7 @@ void SparseMatrixDOK::operator=(const SparseMatrixDOK& m)
 
 	for (size_t i = 0; i < this->nrows; i++) {
 		col = const_cast<col_t*> (&tmp_mat[i]);
-		for (jj = col->begin(); jj != col->end(); jj++) {
+		for (jj = col->begin(); jj != col->end(); ++jj) {
 			this->mat_row[i][(*jj).first] = (*jj).second;
 		}
 	}
@@ -318,7 +318,7 @@ void SparseMatrixDOK::CalculateNonZeroEntries()
 
 	long cnt = 0;
 
-	for (ii = this->mat_row.begin(); ii != this->mat_row.end(); ii++) {
+	for (ii = this->mat_row.begin(); ii != this->mat_row.end(); ++ii) {
 		cnt += (*ii).size();
 	}
 
@@ -352,7 +352,7 @@ void SparseMatrixDOK::Diagonize(size_t idiag, const double b_given, double *b)
 			//      for(col_id_itr kk=set_col_id[cnt_rows].begin(); kk!=colid_end; kk++){
 			//        jj = ii->find(*kk);
 			//#else
-			for (jj = i_mat.begin(); jj != itr_end; jj++) {
+			for (jj = i_mat.begin(); jj != itr_end; ++jj) {
 				//#endif
 				this->mat_col[(*jj).first].push_back(i);
 			}
@@ -363,7 +363,7 @@ void SparseMatrixDOK::Diagonize(size_t idiag, const double b_given, double *b)
 	double vdiag = .0;
 
 	col_t &i_mat = this->mat_row[idiag];
-	for (jj = i_mat.begin(); jj != i_mat.end(); jj++) {
+	for (jj = i_mat.begin(); jj != i_mat.end(); ++jj) {
 		if ((*jj).first == idiag) {
 			vdiag = (*jj).second;
 		} else {
@@ -427,11 +427,11 @@ void SparseMatrixDOK::Write(std::ostream &os, int format)
 
 		for (size_t i = 0; i < this->mat_row.size(); i++) {
 #ifdef USE_HASHMAP
-			for(col_id_itr kk=set_col_id[i].begin(); kk!=set_col_id[i].end(); kk++)
+			for(col_id_itr kk=set_col_id[i].begin(); kk!=set_col_id[i].end(); ++kk)
 			{
 				jj = this->mat_row[i].find(*kk);
 #else
-			for (jj = this->mat_row[i].begin(); jj != this->mat_row[i].end(); jj++) {
+			for (jj = this->mat_row[i].begin(); jj != this->mat_row[i].end(); ++jj) {
 #endif
 				os << std::setw(10) << i + 1 << " " << std::setw(10)
 						<< (*jj).first + 1 << " " << std::setw(15)
@@ -470,7 +470,7 @@ bool SparseMatrixDOK::IsSymmetry()
 #define ZERO_TOLERANCE 1.E-6
 	//
 	for (size_t i = 0; i < this->mat_row.size(); i++) {
-		for (jj = this->mat_row[i].begin(); jj != this->mat_row[i].end(); jj++) {
+		for (jj = this->mat_row[i].begin(); jj != this->mat_row[i].end(); ++jj) {
 			if (jj->first < i) continue;
 			jj2 = this->mat_row[jj->first].find(i);
 			if (jj2 != this->mat_row[jj->first].end()) {
@@ -510,7 +510,7 @@ void SparseMatrixDOK::ConstructSortedColumnID()
 	{
 		col_t::const_iterator col_end = this->mat_row[i].end();
 		col_id_t &colid = this->set_col_id[i];
-		for(col_iter jj=this->mat_row[i].begin(); jj!=col_end; jj++)
+		for(col_iter jj=this->mat_row[i].begin(); jj!=col_end; ++jj)
 		{
 			colid.insert((*jj).first);
 		}
@@ -547,16 +547,16 @@ void SparseMatrixDOK::ConstructCRSstructure()
 	col_iter jj;
 	long cnt_row = 0;
 
-	for (ii=this->mat_row.begin(); ii!=this->mat_row.end(); ii++)
+	for (ii=this->mat_row.begin(); ii!=this->mat_row.end(); ++ii)
 	{
 		ptr[cnt_row++] = counter_ptr; // starting point of the row
 #ifdef USE_HASHMAP
 		col_id_t &colid = this->set_col_id[cnt_row-1];
-		for (col_id_itr kk=colid.begin(); kk!=colid.end(); kk++)
+		for (col_id_itr kk=colid.begin(); kk!=colid.end(); ++kk)
 		{
 			jj = ii->find(*kk);
 #else
-			for (jj=(*ii).begin(); jj!=(*ii).end(); jj++)
+			for (jj=(*ii).begin(); jj!=(*ii).end(); ++jj)
 			{
 #endif
 				I = cnt_row; // row in global matrix
@@ -585,16 +585,16 @@ int SparseMatrixDOK::GetCRSValue(double* v)
 
 	const row_iter row_end = this->mat_row.end();
 
-	for(ii=this->mat_row.begin(); ii!=row_end; ii++)
+	for(ii=this->mat_row.begin(); ii!=row_end; ++ii)
 	{
 #ifdef USE_HASHMAP
 		const col_id_itr colid_end = set_col_id[cnt_rows].end();
-		for(col_id_itr kk=set_col_id[cnt_rows].begin(); kk!=colid_end; kk++)
+		for(col_id_itr kk=set_col_id[cnt_rows].begin(); kk!=colid_end; ++kk)
 		{
 			jj = ii->find(*kk);
 #else
 			const col_iter col_end = (*ii).end();
-			for(jj=(*ii).begin(); jj!=col_end; jj++)
+			for(jj=(*ii).begin(); jj!=col_end; ++jj)
 			{
 #endif
 				v[cnt++] = (*jj).second;

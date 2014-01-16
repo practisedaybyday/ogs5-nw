@@ -26,7 +26,6 @@ std::ios::pos_type ReadRank(std::ifstream* is, int myrank)
 	bool new_keyword = false;
 	std::ios::pos_type position;
 
-	std::string sub_string, strbuff;
 	std::stringstream in;
 
 	int temp = 0;
@@ -307,7 +306,7 @@ void computeD(const MeshLib::CFEMesh* m_msh, const Math_Group::SparseMatrixDOK &
 	{
 		const size_t i_glob = FCT_GLOB_ADDRESS(i);
 		col = &fct_f[i_glob];
-		for(jj = col->begin(); jj != col->end(); jj++)
+		for(jj = col->begin(); jj != col->end(); ++jj)
 		{
 			const size_t j = (*jj).first;
 			const size_t j_glob = j; //FCT_GLOB_ADDRESS(j);
@@ -356,7 +355,7 @@ void debugADFlux(int myrank, MeshLib::CFEMesh* m_msh, size_t node_size, Math_Gro
     {
         const size_t i_global = FCT_GLOB_ADDRESS(i);
         col = &fct_f[i];
-        for(jj = col->begin(); jj != col->end(); jj++)
+        for(jj = col->begin(); jj != col->end(); ++jj)
         {
             const size_t j = (*jj).first;
             const size_t j_global = FCT_GLOB_ADDRESS(j);

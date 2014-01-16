@@ -1905,7 +1905,7 @@ void SFCAssignMATColors()
 	for(int i = 0; i < (int)aux_vector.size(); i++)
 	{
 		m_color = aux_vector[i];
-		delete m_color;
+		delete [] m_color;
 	}
 	aux_vector.clear();
 	//----------------------------------------------------------------------

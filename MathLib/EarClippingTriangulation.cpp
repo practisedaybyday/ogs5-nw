@@ -204,7 +204,7 @@ void EarClippingTriangulation::clipEars()
 		bool nfound(true);
 		it = _vertex_list.begin();
 		prev = _vertex_list.end();
-		prev--;
+		--prev;
 		while (nfound && it != _vertex_list.end())
 		{
 			if (*it == ear)
@@ -216,7 +216,7 @@ void EarClippingTriangulation::clipEars()
 				{
 					next = _vertex_list.begin();
 					prev = _vertex_list.end();
-					prev--;
+					--prev;
 				}
 				// add triangle
 				_triangles.push_back(GEOLIB::Triangle(_pnts, *prev, ear, *next));
@@ -227,7 +227,7 @@ void EarClippingTriangulation::clipEars()
 					prevprev = _vertex_list.end();
 				else
 					prevprev = prev;
-				prevprev--;
+				--prevprev;
 
 				// apply changes to _convex_vertex_list and _ear_list looking "backward"
 				MathLib::Orientation orientation = getOrientation(_pnts[*prevprev],
@@ -255,10 +255,10 @@ void EarClippingTriangulation::clipEars()
 						if (prev == _vertex_list.begin())
 						{
 							prev = _vertex_list.end();
-							prev--;
+							--prev;
 						}
 						else
-							prev--;
+							--prev;
 					}
 				}
 
@@ -271,7 +271,7 @@ void EarClippingTriangulation::clipEars()
 				else
 				{
 					nextnext = next;
-					nextnext++;
+					++nextnext;
 				}
 
 				// apply changes to _convex_vertex_list and _ear_list looking "forward"
@@ -304,16 +304,16 @@ void EarClippingTriangulation::clipEars()
 			else
 			{
 				prev = it;
-				it++;
+				++it;
 			}
 		}
 	}
 	// add last triangle
 	next = _vertex_list.begin();
 	prev = next;
-	next++;
+	++next;
 	it = next;
-	next++;
+	++next;
 	if (getOrientation(_pnts[*prev], _pnts[*it], _pnts[*next]) == CCW)
 		_triangles.push_back(GEOLIB::Triangle(_pnts, *prev, *next, *it));
 	else

@@ -3912,7 +3912,7 @@ void CSourceTerm::SetNOD2MSHNOD(const std::vector<size_t>& nodes,
 int CSourceTerm::getID()
 {
 	if (st_id<0) {
-		for (st_id=0; st_id<st_vector.size(); st_id++)
+		for (st_id=0; st_id<(int)st_vector.size(); st_id++)
 			if (st_vector[st_id]==this) break;
 	}
 	return st_id;

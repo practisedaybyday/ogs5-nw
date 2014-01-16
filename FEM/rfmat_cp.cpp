@@ -670,7 +670,11 @@ void CompProperties::Write(ofstream* rfe_file)
    09/2004	SB		Fitted to CP Class Structure, now CompProperties Member function
 
 *************************************************************************/
+#ifdef GEM_REACT
 double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFProcess* m_pcs)
+#else
+double CompProperties::CalcDiffusionCoefficientCP(long /*index*/,double theta,CRFProcess* /*m_pcs*/)
+#endif
 {
 	(void)theta;
 	int p_idx = -1, t_idx = -1;
@@ -690,12 +694,6 @@ double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFPro
 	int i;
 #endif
 	// static int p_ind, t_ind;
-	//OK411
-	diffusion_average = diffusion_average;
-	pressure_average = pressure_average;
-	temperature_average = temperature_average;
-	p_idx = p_idx;
-	t_idx = t_idx;
 
 #ifdef GEM_REACT
 	const long group (m_pcs->m_msh->ele_vector[index]->GetPatchIndex());

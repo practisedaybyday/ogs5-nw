@@ -2223,7 +2223,7 @@ double CMediumProperties::GetEffectiveSaturationForPerm(const double wetting_sat
 **************************************************************************/
 double CMediumProperties::PermeabilitySaturationFunction(const double wetting_saturation, int phase)
 {
-	double kr, sl, se, slr, slm, m, b, slr1;
+	double kr=.0, sl, se, slr, slm, m, b, slr1;
 	int model, gueltig;
 	bool phase_shift = false;
 	sl = wetting_saturation;

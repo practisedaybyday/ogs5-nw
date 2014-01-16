@@ -20,7 +20,7 @@ public:
 		: FEMCondition(geometry_name, FEMCondition::BOUNDARY_CONDITION), _tim_type(0) {};
 	BoundaryCondition(const CBoundaryCondition &bc, const std::string &geometry_name);
 	BoundaryCondition(const FEMCondition &cond)
-		: FEMCondition(cond, FEMCondition::BOUNDARY_CONDITION) {};
+		: FEMCondition(cond, FEMCondition::BOUNDARY_CONDITION), _tim_type(0) {};
 	~BoundaryCondition() {}
 
 	size_t getTimType() const {return _tim_type; }

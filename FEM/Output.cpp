@@ -35,7 +35,7 @@
 // MathLib
 #include "MathTools.h"
 
-extern size_t max_dim;                            //OK411 todo
+extern size_t max_dim;
 
 #ifdef CHEMAPP
 #include "eqlink.h"
@@ -61,10 +61,9 @@ using MeshLib::CNode;
 using namespace std;
 
 COutput::COutput() :
-	GeoInfo(GEOLIB::GEODOMAIN), ProcessInfo(), _id(0), out_amplifier(0.0),
+	GeoInfo(GEOLIB::GEODOMAIN), ProcessInfo(), tim_type_name("TIMES"), _id(0), out_amplifier(0.0),
 	m_msh(NULL), nSteps(-1), _new_file_opened(false), dat_type_name("TECPLOT")
 {
-	tim_type_name = "TIMES";
 	m_pcs = NULL;
 	vtk = NULL; //NW
 	tecplot_zone_share = false; // 10.2012. WW
@@ -72,10 +71,9 @@ COutput::COutput() :
 }
 
 COutput::COutput(size_t id) :
-	GeoInfo(GEOLIB::GEODOMAIN), ProcessInfo(), _id(id), out_amplifier(0.0),
+	GeoInfo(GEOLIB::GEODOMAIN), ProcessInfo(), tim_type_name("TIMES"), _id(id), out_amplifier(0.0),
 	m_msh(NULL), nSteps(-1), _new_file_opened(false), dat_type_name("TECPLOT")
 {
-	tim_type_name = "TIMES";
 	m_pcs = NULL;
 	vtk = NULL; //NW
 	tecplot_zone_share = false; // 10.2012. WW
@@ -3497,7 +3495,7 @@ void COutput::CalculateThroughflow(CFEMesh* msh, vector<long>&nodes_on_sfc,
 	long i, j, k, l, count;
 	int nfaces, nfn;
 	int nodesFace[8];
-	double fac = 1.0, nodesFVal[8], v1[3], v2[3], normal_vector[3], normal_velocity, poro;
+	double fac = 1.0, nodesFVal[8], v1[3], v2[3], normal_vector[3], normal_velocity; //, poro;
 	CMediumProperties *MediaProp;
 
 	int Axisymm = 1; // ani-axisymmetry
@@ -3553,7 +3551,7 @@ void COutput::CalculateThroughflow(CFEMesh* msh, vector<long>&nodes_on_sfc,
 
 		elem = msh->ele_vector[vec_possible_elements[i]];
 		MediaProp = mmp_vector[elem->GetPatchIndex()];
-		poro = MediaProp->Porosity(elem->GetIndex(), 1.0);
+		//poro = MediaProp->Porosity(elem->GetIndex(), 1.0);
 
 		if (!elem->GetMark()) continue;
 		nfaces = elem->GetFacesNumber();
@@ -3770,7 +3768,7 @@ void COutput::NODWriteWaterBalancePNT(double time_current)
  06/2012 JOD Implementation
  **************************************************************************/
 
-void COutput::NODWriteWaterBalancePLY(double time_current)
+void COutput::NODWriteWaterBalancePLY(double /*time_current*/)
 {
 
 	CFEMesh* m_msh = NULL;
@@ -3929,7 +3927,7 @@ void COutput::NODWritePointsCombined(double time_current)
 
 	tec_file << geo_name << " ";
 	std::string nod_value_name;
-	int nidx = m_pcs_out->GetNodeValueIndex(nod_value_name) + 1;
+	//int nidx = m_pcs_out->GetNodeValueIndex(nod_value_name) + 1;
 
 	double val_n;
 

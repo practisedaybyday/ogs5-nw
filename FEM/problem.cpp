@@ -1657,7 +1657,7 @@ inline double Problem::MultiPhaseFlow()
 		if (success == 0)
 		{
 			std::cout << "Error running Eclipse!" << std::endl;
-			system("Pause");
+			//system("Pause");
 			exit(0);
 		}
 	}
@@ -1686,7 +1686,7 @@ inline double Problem::MultiPhaseFlow()
 				"If the Phase_Transition_Model is used the density model and the viscosity model should be 18!"
 				     << std::endl;
 				std::cout << "The run is terminated now ..." << std::endl;
-				system("Pause");
+				//system("Pause");
 				exit(0);
 			}
 			FluidProp = MFPGet("GAS");
@@ -1696,7 +1696,7 @@ inline double Problem::MultiPhaseFlow()
 				"If the Phase_Transition_Model is used the density model and the viscosity model should be 18!"
 				     << std::endl;
 				std::cout << "The run is terminated now ..." << std::endl;
-				system("Pause");
+				//system("Pause");
 				exit(0);
 			}
 		}
@@ -3084,7 +3084,7 @@ inline double Problem::RandomWalker()
 	//
 	CRFProcess* m_pcs = total_processes[10];
 	//
-	if(!m_pcs->selected)
+	if(!m_pcs || !m_pcs->selected)
 		return error;             //12.12.2008 WW
 	//
 	// CFEMesh* m_msh = NULL;
@@ -3131,7 +3131,7 @@ inline double Problem::RandomWalker()
 
 			rw_pcs->ReadInVelocityFieldOnNodes(dateiname);
 
-			delete [] dateiname;
+			free(dateiname);
 		}
 
 		// Set the mode of the RWPT method

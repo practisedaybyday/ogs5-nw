@@ -4071,25 +4071,25 @@ void CFiniteElementStd::CalcMass2()
 				mat_fac = CalCoefMass2(in * dof_n + jn);
 				mat_fac *= fkt;
 				// Calculate mass matrix
-		  const int jsh = jn * nnodes;
+				const int jsh = jn * nnodes;
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-		  for (i = 0; i < act_nodes; i++)
-		    {
-		      const int ia = local_idx[ia];
-		      const int ish = ia + in * nnodes;
-		      for (j = 0; j < nnodes; j++)
-			{
-			  (*Mass2)(ish,j + jsh) += mat_fac * shapefct[ia] * shapefct[j];
-			}
-		    }
+				for (i = 0; i < act_nodes; i++)
+				{
+					const int ia = local_idx[i]; //local_idx[ia]
+					const int ish = ia + in * nnodes;
+					for (j = 0; j < nnodes; j++)
+					{
+						(*Mass2)(ish,j + jsh) += mat_fac * shapefct[ia] * shapefct[j];
+					}
+				}
 #else
-		  for (i = 0; i < nnodes; i++)
-		    {
-		      const int ish = i + in * nnodes;
-		      for (j = 0; j < nnodes; j++)
-			(*Mass2)(ish, j + jsh) += mat_fac * shapefct[i] * shapefct[j];
-		    }
-#endif		  
+				for (i = 0; i < nnodes; i++)
+				{
+					const int ish = i + in * nnodes;
+					for (j = 0; j < nnodes; j++)
+						(*Mass2)(ish, j + jsh) += mat_fac * shapefct[i] * shapefct[j];
+				}
+#endif
 			}
 	}
 }

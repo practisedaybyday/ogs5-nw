@@ -8732,13 +8732,13 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 **************************************************************************/
 	double CRFProcess::ExecuteNonLinear(int loop_process_number, bool print_pcs)
 	{
-		double nonlinear_iteration_error;
+		double nonlinear_iteration_error = 1.0;
 		double nl_theta, damping, norm_x0, norm_b0, norm_x, norm_b, val;
-		double error_x1, error_x2, error_b1, error_b2, error, last_error, percent_difference;
+		double error_x1, error_x2, error_b1, error_b2=.0, error, last_error, percent_difference;
 		//double* eqs_x = NULL;     //
 		double* eqs_b = NULL;
 		bool converged, diverged;
-		int ii, nidx1, num_fail;
+		int ii, nidx1, num_fail=0;
 		size_t j, g_nnodes;
 
 		string delim = " ";
@@ -10566,7 +10566,7 @@ void CRFProcess::CalcELEFluxes(const GEOLIB::Polyline* const ply, double *result
 	bool Use_Element;
 	vector<size_t> vecConsideredEdges;
 	vector<CNode*> vec_nodes_edge;
-	bool Edge_on_Geo, Point_on_Geo;
+	bool Edge_on_Geo=false, Point_on_Geo=false;
 	std::vector<size_t> nod_vector_at_geo;
 	CElem* m_ele = NULL;
 	CEdge* m_edg = NULL;
@@ -10907,7 +10907,7 @@ void CRFProcess::CalcELEMassFluxes(const GEOLIB::Polyline* const ply, std::strin
 //	double totalmass; // 2012-08 TF not used
 //	double totalmassflux; // 2012-08 TF / unused
 	double *ConcentrationGradient (new double[3]);
-	int numberPolyline;
+	int numberPolyline = 0;
 
 	if (this->Tim->step_current == 0) {
 		this->PolylinesforOutput.push_back(NameofPolyline);
@@ -14417,7 +14417,7 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path,
 				{
 					cout << "Density calculation of water was not possible" <<
 					endl;
-					system("Pause");
+					//system("Pause");
 					exit(0);
 				}
 				//calculate new moles of H2O
@@ -14498,7 +14498,7 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path,
 				{
 					cout << "Density calculation of gas was not possible" <<
 					endl;
-					system("Pause");
+					//system("Pause");
 					exit(0);
 				}
 				//set new density to nodes
@@ -14861,7 +14861,7 @@ void CRFProcess::CalGPVelocitiesfromECLIPSE(string path,
 				     << endl;
 				cout << "Before: " << Volume_eff << " After: " << gas.volume +
 				liquid.volume << endl;
-				system("Pause");
+				//system("Pause");
 				exit(0);
 			}
 

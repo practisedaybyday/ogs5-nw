@@ -1902,7 +1902,7 @@ void CFEMesh::GetNODOnSFC_PLY_XY(Surface* m_sfc,
 					msh_nod_vector.push_back(
 					        a_node->GetIndex());
 			}
-		p_ply++;
+		++p_ply;
 	}
 	//
 	if (givenNodesOnSurface) //19.03.2009. WW

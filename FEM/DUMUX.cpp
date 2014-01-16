@@ -1363,7 +1363,7 @@ int CDUMUXData::RunDuMux(long Timestep, CRFProcess* m_pcs)
 		cout <<
 		"There are problems with writing input data for DuMux! The run is terminated." <<
 		endl;
-		system("Pause");
+		//system("Pause");
 		exit(0);
 	}
 
@@ -1460,7 +1460,7 @@ int CDUMUXData::RunDuMux(long Timestep, CRFProcess* m_pcs)
 	{
 		cout << "The DuMux execution does not work after " << number_loops << " trials!" <<
 		endl;
-		system("Pause");
+		//system("Pause");
 		exit(0);
 	}
 

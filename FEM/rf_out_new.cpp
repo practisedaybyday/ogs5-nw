@@ -241,7 +241,7 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 			cout << "Warning in OUTData - no MSH data" << endl;
 		//OK continue;
 		// PCS
-		if (m_out->_nod_value_vector.size() > 0)
+		if (!m_out->_nod_value_vector.empty())
 			m_pcs = m_out->GetPCS(m_out->_nod_value_vector[0]);
 		if (m_out->getElementValueVector().size() > 0)
 			m_pcs = m_out->GetPCS_ELE(m_out->getElementValueVector()[0]);
@@ -274,7 +274,7 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 				cout << "Data output: Domain" << endl;
 				if (OutputBySteps)
 				{
-					if (m_out->_pcon_value_vector.size() > 0)
+					if (!m_out->_pcon_value_vector.empty())
 						m_out->PCONWriteDOMDataTEC();  //MX
 					else
 					{
@@ -293,7 +293,7 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 						            time_current - m_out->time_vector[j])
 						    < MKleinsteZahl) //WW MKleinsteZahl
 						{
-							if (m_out->_pcon_value_vector.size() > 0)
+							if (!m_out->_pcon_value_vector.empty())
 								//MX
 								m_out->PCONWriteDOMDataTEC();
 							else
