@@ -9019,16 +9019,16 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			if(diverged){
 				if(accepted) { // only increment if not fixed by a failed time step.
 					num_diverged++;
-					std::cout << "\nNon-linear iteration stabilized."<< std::endl;
+					ScreenMessage("\nNon-linear iteration stabilized.\n");
 				} else {
-					std::cout << "\nNon-linear iteration diverged."<< std::endl;
+					ScreenMessage("\nNon-linear iteration diverged.\n");
 				}
 			}
 			else if(!converged){
 				if(accepted) // only increment if not fixed by a failed time step.
 					num_notsatisfied++;
 				if(Tim->GetPITimeStepCrtlType() < 1) // PI has the intrinsic property of doing this. So don't print it.
-					std::cout << "\nMax number of non-linear iterations reached."<< std::endl;
+					ScreenMessage("\nMax number of non-linear iterations reached.\n");
 			}
 		}
 		//
