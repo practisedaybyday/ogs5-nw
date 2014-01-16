@@ -675,7 +675,7 @@ void CreateEQS_LinearSolver()
    MPI_Comm_size(PETSC_COMM_WORLD, &size_p);
 
 
-   max_cnct_nodes = mesh->calMaximumConnectedNodes();  
+   max_cnct_nodes = mesh->calMaximumConnectedNodes();
 
    const int nn = mesh->getNumNodesGlobal();
    const int nn_q = mesh->getNumNodesGlobal_Q();

@@ -486,7 +486,7 @@ void CFEMesh::ConnectedElements2Node(bool quadratic)
 **************************************************************************/
 void CFEMesh::ConstructGrid()
 {
-	ScreenMessage("-> executing ConstructGrid() ... \n");
+	ScreenMessage2("-> executing ConstructGrid() ... \n");
 
 	bool done;
 
@@ -505,7 +505,7 @@ void CFEMesh::ConstructGrid()
 	Edge_Orientation = 1;
 
 	// Set neighbors of node
-	ScreenMessage2("-> Set elements connected to a node\n");
+	//ScreenMessage2("-> Set elements connected to a node\n");
 	ConnectedElements2Node();
 
 	// Compute neighbors and edges
@@ -792,7 +792,6 @@ void CFEMesh::ConstructGrid()
 
 	// check if this mesh includes multi-dimensional elements
 	if (max_ele_dim == 2 && _msh_n_lines > 0) //NW
-
 		this->has_multi_dim_ele = true;
 	else if (max_ele_dim == 3 && (_msh_n_quads + _msh_n_tris + _msh_n_lines)
 	         > 0)
@@ -2604,10 +2603,10 @@ void CFEMesh::GetELEOnPLY(const GEOLIB::Polyline* ply, std::vector<size_t>& ele_
 			for (size_t k = 0; k < nodes_near_ply.size(); k++)
 			{
 				//if (edge_nodes[0]->GetIndex() == nodes_near_ply[k])
-				if (elem->GetNodeIndex(loc_edge_nidx[0]) == nodes_near_ply[k])
+				if (elem->GetNodeIndex(loc_edge_nidx[0]) == (long)nodes_near_ply[k])
 					selected++;
 				//if (edge_nodes[1]->GetIndex() == nodes_near_ply[k])
-				if (elem->GetNodeIndex(loc_edge_nidx[1]) == nodes_near_ply[k])
+				if (elem->GetNodeIndex(loc_edge_nidx[1]) == (long)nodes_near_ply[k])
 					selected++;
 			}
 			if (selected == 2)
