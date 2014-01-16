@@ -4399,8 +4399,7 @@ double CRFProcess::Execute()
 		eqs_x = eqs_new->GetGlobalSolution();
 		//......................................................................
 		pcs_error = CalcIterationNODError(1); //OK4105//WW4117
-		if(myrank == 0)
-		cout << "      PCS error: " << pcs_error << "\n";
+		ScreenMessage("      PCS error: %g\n", pcs_error);
 
 
 		//--------------------------------------------------------------------
@@ -9082,7 +9081,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		// --------------------------------------------------
 		if(write_std_errors){
 			if(pcs_num_dof_errors == 1){
-				std::cout << "         PCS error: " << pcs_absolute_error[0] << std::endl;
+				ScreenMessage("         PCS error: %g\n", pcs_absolute_error[0]);
 			}else{
 				for (ii = 0; ii < pcs_number_of_primary_nvals; ii++){
 					 ScreenMessage("         PCS error DOF[%d]: %e\n", ii,  pcs_absolute_error[ii]);
