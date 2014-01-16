@@ -26,6 +26,10 @@ CElem::CElem(size_t Index)
 : CCore(Index), normal_vector(NULL), /*geo_type(t), */owner(NULL), ele_dim(1),
 	nnodes(0), nnodesHQ(0), nodes(nnodes), nodes_index(nnodes)
 {
+	selected = 0;
+	geo_type = MshElemType::INVALID;
+	nedges = 0;
+	nfaces = 0;
 	volume = 0.0;
 	face_index = -1;
 	no_faces_on_surface = 0;
@@ -34,10 +38,14 @@ CElem::CElem(size_t Index)
 	area = 1.0;                               //WW
     transform_tensor = NULL;
 #ifndef OGS_ONLY_TH
+	matgroup_view = 0;
     grid_adaptation = -1;
 	excavated = -1;                           //WX
     patch_index = 0;
     angle = NULL;
+	neumann = 0;
+	courant = 0;
+	representative_length = .0;
 #endif
 #if defined(USE_PETSC) // || defined(using other parallel scheme). WW
         g_index = NULL;
@@ -52,6 +60,9 @@ CElem::CElem(size_t Index)
 CElem::CElem() : CCore(0), normal_vector(NULL)
 {
 	selected = 0;
+	geo_type = MshElemType::INVALID;
+	nedges = 0;
+	nfaces = 0;
 	nnodes = 0;
 	nnodesHQ = 0;
 	ele_dim = 1;                              // Dimension of element
@@ -67,7 +78,10 @@ CElem::CElem() : CCore(0), normal_vector(NULL)
 	area = 1.0;                               //WW area = 1.0
 	normal_vector = NULL;
 #ifndef OGS_ONLY_TH
-    matgroup_view = 0;
+	matgroup_view = 0;
+	neumann = 0;
+	courant = 0;
+	representative_length = .0;
     grid_adaptation = -1;
     angle = NULL;
     excavated = -1;                           //WX
@@ -89,15 +103,29 @@ CElem::CElem(size_t Index, CElem* onwer, int Face) :
 	int i, j, k, n, ne;
 	int faceIndex_loc[10];
 	int edgeIndex_loc[10];
+	selected = 0;
+	geo_type = MshElemType::INVALID;
+	nedges = 0;
+	nfaces = 0;
 	no_faces_on_surface = 0;
+	area = .0;
+	volume = .0;
+	nnodes = 0;
+	nnodesHQ = 0;
+	ele_dim = 0;
 	n = owner->GetElementFaceNodes(Face, faceIndex_loc);
 	face_index = Face;
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
 	transform_tensor = NULL;
 	normal_vector = NULL;
 #ifndef OGS_ONLY_TH
+	neumann = 0;
+	courant = 0;
+	representative_length = .0;
+	matgroup_view = 0;
     angle = NULL;
     excavated = -1;                           //WX
+    grid_adaptation = -1;
 #endif
 	//
 	switch(owner->geo_type)
@@ -129,6 +157,7 @@ CElem::CElem(size_t Index, CElem* onwer, int Face) :
 		break;
 	default:
 		std::cerr << "CElem::CElem MshElemType not handled" << std::endl;
+		break;
 	}
 
 	patch_index =  owner->patch_index;
@@ -218,6 +247,8 @@ CElem::CElem(size_t Index, CElem* m_ele_parent) :
 #ifndef OGS_ONLY_TH
     angle = NULL;
     excavated = -1;   //12.08.2011. WW
+	matgroup_view = 0;
+    grid_adaptation = -1;
 #endif
 }
 
@@ -285,10 +316,14 @@ CElem::CElem(CElem const &elem) :
 #if defined(USE_PETSC) // || defined(using other parallel scheme). WW
         g_index = elem.g_index;
 #endif
+#ifndef OGS_ONLY_TH
+    excavated = -1;   //12.08.2011. WW
+	matgroup_view = 0;
+#endif
 
 }
 
-
+#if 0
 CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, int mat) :
 	CCore(0), normal_vector(NULL), geo_type(t), owner(NULL), ele_dim(2),
 	nnodes(3), nnodesHQ(6), nodes(nnodes), nodes_index(nnodes),
@@ -314,9 +349,19 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, int
 #if defined(USE_PETSC) // || defined(using other parallel scheme). WW
         g_index = NULL;
 #endif
+    face_index = 0;
+    neumann = .0;
+    courant = .0;
+    representative_length = .0;
+    no_faces_on_surface = 0;
+#ifndef OGS_ONLY_TH
+    excavated = -1;   //12.08.2011. WW
+	matgroup_view = 0;
+#endif
 }
+#endif
 
-CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, size_t node3, int mat) :
+CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, size_t node3, int /*mat*/) :
 	CCore(0), normal_vector(NULL), geo_type(t), owner(NULL), ele_dim(2),
 	nnodes(4), nnodesHQ(9), nodes(nnodes), nodes_index(nnodes),
 	nedges(4), edges(nedges), edges_orientation(nedges)
@@ -342,6 +387,19 @@ CElem::CElem (MshElemType::type t, size_t node0, size_t node1, size_t node2, siz
 #endif
 
     transform_tensor = NULL;
+    face_index = 0;
+    no_faces_on_surface = 0;
+    volume = .0;
+    area = .0;
+    selected = 0;
+#ifndef OGS_ONLY_TH
+    neumann = .0;
+    courant = .0;
+    representative_length = .0;
+    excavated = -1;   //12.08.2011. WW
+	matgroup_view = 0;
+	grid_adaptation = 0;
+#endif
 }
 
 /**************************************************************************
@@ -1446,6 +1504,7 @@ int CElem::GetElementFaceNodes(int Face, int* FacesNode)
 		return GetElementFacesPyramid(Face, FacesNode);
 	default:
 		std::cerr << "CElem::GetElementFaceNodes MshElemType not handled" << std::endl;
+		break;
 	}
 	return 0;
 }
