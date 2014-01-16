@@ -293,8 +293,10 @@ int main ( int argc, char* argv[] )
 	aproblem->Euler_TimeDiscretize();
 	delete aproblem;
 	aproblem = NULL;
+#ifndef USE_PETSC
 #ifdef TESTTIME
 	ScreenMessage2("Simulation time: %g s\n", TGetTimer(0));
+#endif
 #endif
 	/* Abspann ausgeben */
 	/* Ctrl-C wieder normal */
@@ -319,15 +321,12 @@ int main ( int argc, char* argv[] )
 #ifdef USE_PETSC
 	//kg44 quick fix to compile PETSC with version PETSCV3.4
 #ifdef USEPETSC34
-       PetscTime(&v2);
+	PetscTime(&v2);
 #else
-       PetscGetTime(&v2);
+	PetscGetTime(&v2);
 #endif
-
-
-   PetscPrintf(PETSC_COMM_WORLD,"\t\n>>Total elapsed time by using PETSC:%f s\n",v2-v1);
-
-   PetscFinalize();
+	PetscPrintf(PETSC_COMM_WORLD,"\t\n>>Total elapsed time by using PETSC:%f s\n",v2-v1);
+	PetscFinalize();
 #endif
 
 	return 0;

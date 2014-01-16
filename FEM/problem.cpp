@@ -120,7 +120,7 @@ Problem::Problem (char* filename) :
 		DOMRead(filename);
 #endif
 #if defined(USE_MPI) || defined(USE_PETSC)
-	MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
 #endif
 	}
 #if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
@@ -449,6 +449,7 @@ Problem::Problem (char* filename) :
 	}
 	else
 		buffer_array = NULL;
+	buffer_array1 = NULL;
 	//========================================================================
 	CRFProcessDeformation* dm_pcs = NULL;
 
@@ -2285,7 +2286,7 @@ void Problem::OutputMassOfGasInModel(CRFProcess* m_pcs)
 	double porosity = 0.0;
 	int variable_index;
 	double concentration_Gas_water;
-	int indexConcentration_Gas;
+	int indexConcentration_Gas=-1;
 	int ProcessIndex_GasInLiquid;
 	CRFProcess *n_pcs = NULL;
 	int group;
@@ -2740,7 +2741,7 @@ inline double Problem::GroundWaterFlow()
 	{
 		CSourceTerm* m_st = NULL;
 		CNodeValue* m_nod_val = NULL;
-		long l = 0, m = 0;
+		//long l = 0, m = 0;
 		//WW no_local_nodes = neighb_pcs->m_msh->getNumberOfMeshLayers()+1;
 
 		if(aktueller_zeitschritt == 1)
@@ -2755,7 +2756,7 @@ inline double Problem::GroundWaterFlow()
 			}
 			m_pcs->st_node_value.push_back(node_values);
 		}
-		l = (long)m_pcs->st_node_value.size();
+		//l = (long)m_pcs->st_node_value.size();
 		long* local_indxs = neighb_grid->getBorderNodeIndicies();
 		long* local_indxs_this = neighb_grid_this->getBorderNodeIndicies();
 		border_flux.resize(neighb_grid->getBorderNodeNumber());
@@ -2768,8 +2769,8 @@ inline double Problem::GroundWaterFlow()
 
 		m_pcs->Integration(border_flux);
 
-		m = l - neighb_grid->getBorderNodeNumber();
-		for(i = 0; i < m_pcs->st_node_value.back().size(); i++)
+		//m = l - neighb_grid->getBorderNodeNumber();
+		for(i = 0; i < (long)m_pcs->st_node_value.back().size(); i++)
 		{
 			m_nod_val = m_pcs->st_node_value.back()[i];
 			m_nod_val->msh_node_number = local_indxs_this[i];
@@ -2936,7 +2937,7 @@ inline double Problem::MassTrasport()
 		CompProperties* m_cp = cp_vec[component];
 
 		if (m_cp->OutputMassOfComponentInModel == 1) {			// 05/2012 BG
-			if (singlephaseflow_process.size() >= 0)
+			if (singlephaseflow_process.size() > 0)
 				OutputMassOfComponentInModel(singlephaseflow_process, m_pcs);
 			else
 				OutputMassOfComponentInModel(multiphase_processes, m_pcs);
@@ -3462,9 +3463,9 @@ inline void Problem::LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global, in
 		idx_v = m_pcs_local->GetNodeValueIndex("VELOCITY_Z1");
 		if(neighb_grid)
 		{
-			CSourceTerm* m_st = NULL;
 			CNodeValue* m_nod_val = NULL;
 #if 0 //TODO
+			CSourceTerm* m_st = NULL;
 			if(aktueller_zeitschritt == 1)
 			{
 				m_st = new CSourceTerm();

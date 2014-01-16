@@ -95,6 +95,7 @@ public:
 	double fct_const_alpha;               //NW
 	// Deformation
 	int GravityProfile;
+#if 0
 	// LAGRANGE method //OK
 	double lag_quality;
 	int lag_max_steps;
@@ -103,6 +104,7 @@ public:
 	double lag_min_weight;
 	int lag_use_matrix;
 	int lag_vel_method;
+#endif
 	//
 	// Configure
 	void NumConfigure(bool overall_coupling_exists); //JT2012

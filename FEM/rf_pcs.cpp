@@ -229,6 +229,36 @@ CRFProcess::CRFProcess(void) :
 #endif
 	ele_val_name_vector (std::vector<std::string>())
 {
+	iter_lin = 0;
+	iter_lin_max = 0;
+	iter_nlin = 0;
+	iter_nlin_max = 0;
+	iter_inner_cpl = 0;
+	iter_outer_cpl = 0;
+	first_coupling_iteration = false;
+	orig_size = 0;
+	ite_steps = 0;
+	cpl_num_dof_errors = 0;
+	continuum_ic = true;
+	ExcavDirection = 0;
+	ExcavCurve = 0;
+	ExcavBeginCoordinate = .0;
+	number_of_nvals = 0;
+	pcs_number_of_primary_nvals = 0;
+	pcs_number_of_secondary_nvals = 0;
+	pcs_number_of_history_values = 0;
+	pcs_type_number = 0;
+	pcs_number = 0;
+	type = -1;
+	srand_seed = 0;
+	pcs_unknowns_norm = .0;
+	size_unknowns = 0;
+	temporary_num_dof_errors = 0;
+	Tim = NULL;
+	saturation_switch = false;
+
+
+
 	TempArry = NULL;
 	//SB:GS4  pcs_component_number=0; //SB: counter for transport components
 	pcs_component_number = pcs_no_components - 1;
@@ -361,6 +391,11 @@ CRFProcess::CRFProcess(void) :
 	isRSM = false; //WW
 	eqs_x = NULL;
 	write_leqs = false; //NW
+
+	pcs_num_dof_errors = 1;
+	for (int i=0; i<DOF_NUMBER_MAX; i++)
+		pcs_absolute_error[i]=.0;
+
 }
 
 void CRFProcess::setProblemObjectPointer (Problem* problem)

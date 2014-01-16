@@ -26,6 +26,8 @@
 using namespace std;
 using namespace MeshLib;
 
+extern int myrank;
+extern int mysize;
 
 void BuildNodeStruc(MeshNodes *anode, MPI_Datatype *MPI_Node_ptr);
 
@@ -34,290 +36,251 @@ void FEMRead(const string& file_base_name,
              vector<MeshLib::CFEMesh*>& mesh_vec,
              GEOLIB::GEOObjects* geo_obj, string* unique_name)
 {
-  ScreenMessage("MSHRead\n");
-  int i;
-  int j;
-  int k;      
-  int msize;
-  int mrank;
+	ScreenMessage("MSHRead\n");
 
-  //0 long size_sbd_nodes = 0;
-  //1 long size_sbd_nodes_l = 0;
-  //2 ong size_sbd_nodes_h = 0;
-  //3 long size_sbd_elems = 0;
-  //4 long size_g_elems = 0;
-  const int nheaders = 10;
-  int mesh_header[ nheaders];
- 
-  MeshNodes *s_nodes = (MeshNodes *)malloc(sizeof(MeshNodes));  
-  int *elem_info = (int *)malloc(1);
+	//0 long size_sbd_nodes = 0;
+	//1 long size_sbd_nodes_l = 0;
+	//2 long size_sbd_nodes_h = 0;
+	//3 long size_sbd_elems = 0;
+	//4 long size_g_elems = 0;
+	static const int nheaders = 10;
+	int mesh_header[nheaders];
+
+	MeshNodes *s_nodes = (MeshNodes *)malloc(sizeof(MeshNodes));
+	int *elem_info = (int *)malloc(1);
 
 
-  string str_var = "";
+	MPI_Datatype MPI_node;
+	int tag[] = {0, 1, 2};
+	MPI_Status status;
 
-  MPI_Datatype MPI_node; 
-  int tag[] = {0, 1, 2};
-  //int ierr;
-  //MPI_Request send_request, recv_request;
-  MPI_Status status;  
-
-  MPI_Comm_size(MPI_COMM_WORLD,&msize);
-  MPI_Comm_rank(MPI_COMM_WORLD,&mrank);
- 
-
-  ifstream is;
+	ifstream is;
 #ifdef MULTI_MESH_FILE 
-  stringstream ss (stringstream::in | stringstream::out);
+	stringstream ss (stringstream::in | stringstream::out);
 #endif
-  
-  if(mrank == 0)
-  {      
-     str_var = file_base_name+"_partitioned.msh"; 
-     is.open(str_var.c_str()); 
-     getline(is, str_var); 
-     int num_parts;
-     is >> num_parts >>ws;
-     if(num_parts != msize) 
-     {
-       string str_m = "Sorry, I have to quit the simulation now because that "
-                      " the number of the requested computer cores "
-                      "is not identical to the number of subdomains.";
-       cout<<str_m<<endl;
-       MPI_Finalize();
-       exit(1);
 
-     }
-  }
+	if (myrank == 0)
+	{
+		std::string str_var = file_base_name + "_partitioned.msh";
+		is.open(str_var.c_str());
+		getline(is, str_var);
+		int num_parts;
+		is >> num_parts >>ws;
+		if(num_parts != mysize)
+		{
+			string str_m = "Sorry, I have to quit the simulation now because that "
+						  " the number of the requested computer cores "
+						  "is not identical to the number of subdomains.";
+			cout<<str_m<<endl;
+			PetscFinalize();
+			exit(1);
+		}
+	}
 
-  CFEMesh *mesh = new CFEMesh(geo_obj, unique_name);
-  mesh_vec.push_back(mesh);
+	CFEMesh *mesh = new CFEMesh(geo_obj, unique_name);
+	mesh_vec.push_back(mesh);
 
+	for(int i=0; i<mysize; i++)
+	{
+		if(myrank == 0)
+		{
+#ifdef MULTI_MESH_FILE
+			ss.clear();
+			ss.str("");
+			ss<<i;
+			str_var = file_base_name+"_"+ss.str()+".msh";
 
-  for(i=0; i<msize; i++)
-  {
-    if(mrank == 0)
-    {
-       
-#ifdef MULTI_MESH_FILE 
-       ss.clear(); 
-       ss.str("");
-       ss<<i;
-       str_var = file_base_name+"_"+ss.str()+".msh";
-   
-       is.open(str_var.c_str()); 
-       getline(is, str_var);  
-#endif     
+			is.open(str_var.c_str());
+			getline(is, str_var);
+#endif
 
-      cout<<"-->Parallel reading the partitioned mesh: "<<i<<endl;
-     
-      for(j=0; j< nheaders; j++)                   
-         is>>mesh_header[j];
-       is>>ws;
-    }
-    MPI_Bcast(mesh_header,  nheaders, MPI_INT, 0, MPI_COMM_WORLD);
-    //cout<<"\ncccccccccc "<<mesh_header[0]<<"    "<<mesh_header[1]
-    //	<<"   " <<mesh_header[2]<<"  "<<mesh_header[3]<<endl;
- 
+			cout<<"-->Parallel reading the partitioned mesh: "<<i<<endl;
 
-    //-------------------------------------------------------------------------
-    //Node
-    s_nodes = (MeshNodes *)realloc(s_nodes, sizeof(MeshNodes) * mesh_header[0]);
-   
-    if(i>0)
-    
-      BuildNodeStruc(s_nodes, &MPI_node);       
-    if(mrank == 0)
-    {
-       // Nodes
-       for(k=0; k<mesh_header[0]; k++)
-       {
-          MeshNodes *anode = &s_nodes[k];
-          is>>anode->index;
-	   
-	  is>>anode->x>>anode->y>>anode->z>>ws;
-	  	                     
-       }
-      
-       /* 
-	 //TEST
-       for(k=0; k<mesh_header[0]; k++)
-       {
-          MeshNodes *anode = &s_nodes[k];
-          cout<<anode->index<<" ";
-	  
- 	  cout<<anode->x<<" "<<anode->y<<" "<<anode->z<<endl;
+			for (int j=0; j<nheaders; j++)
+				is>>mesh_header[j];
+			is>>ws;
+		}
+		MPI_Bcast(mesh_header,  nheaders, MPI_INT, 0, MPI_COMM_WORLD);
+		//cout<<"\ncccccccccc "<<mesh_header[0]<<"    "<<mesh_header[1]
+		//	<<"   " <<mesh_header[2]<<"  "<<mesh_header[3]<<endl;
 
-        }
-       */
-         
-       if(i==0)
-      { 
-	 mesh->setSubdomainNodes(&mesh_header[0], s_nodes); 
-      }      
-      else
-      {
-         MPI_Send(s_nodes, mesh_header[0], MPI_node, i, tag[0], MPI_COMM_WORLD);  
-      }
-    }  
-    
-    if(i>0)
-    {
-      if(mrank == i)  
-      {
-         MPI_Recv(s_nodes, mesh_header[0], MPI_node, 0, tag[0], MPI_COMM_WORLD, &status); 
-         mesh->setSubdomainNodes(mesh_header, s_nodes); 
+		//-------------------------------------------------------------------------
+		//Node
+		s_nodes = (MeshNodes*)realloc(s_nodes, sizeof(MeshNodes) * mesh_header[0]);
+		if(i>0)
+			BuildNodeStruc(s_nodes, &MPI_node);
 
-         /*
-	 //TEST
-       for(k=0; k<mesh_header[0]; k++)
-       {
-          MeshNodes *anode = &s_nodes[k];
-          cout<<anode->index<<" ";
-	  
- 	  cout<<anode->x<<" "<<anode->y<<" "<<anode->z<<endl;
+		if(myrank == 0)
+		{
+			// Nodes
+			for(int k=0; k<mesh_header[0]; k++)
+			{
+				MeshNodes *anode = &s_nodes[k];
+				is>>anode->index;
+				is>>anode->x>>anode->y>>anode->z>>ws;
+			}
+			/*
+			//TEST
+			for(k=0; k<mesh_header[0]; k++)
+			{
+			MeshNodes *anode = &s_nodes[k];
+			cout<<anode->index<<" ";
 
-        }
-	 */
+			cout<<anode->x<<" "<<anode->y<<" "<<anode->z<<endl;
 
-      }
-	  
-    } 
+			}
+			*/
+			if(i==0)
+			{
+				mesh->setSubdomainNodes(&mesh_header[0], s_nodes);
+			}
+			else
+			{
+				MPI_Send(s_nodes, mesh_header[0], MPI_node, i, tag[0], MPI_COMM_WORLD);
+			}
+		}
 
-    //-------------------------------------------------------------------------
-    // Element
-    const int size_elem_info = mesh_header[2] + mesh_header[8];
-    elem_info = (int *)realloc(elem_info, sizeof(int) * size_elem_info );
-    if(mrank == 0)
-    {
-       int counter = mesh_header[2];
-       for(j=0; j<mesh_header[2]; j++)
-       {
-           elem_info[j] = counter;
-           is>> elem_info[counter];  //mat. idx
-           counter++;
-           is>> elem_info[counter];  //type
-           counter++;
-           is>> elem_info[counter];  //nnodes
-           const int nn_e =  elem_info[counter]; 
-           counter++;
-           for(k=0; k<nn_e; k++)
-           {
-              is>> elem_info[counter];
-              counter++; 
-           }
-       }
+		if(i>0)
+		{
+			if(myrank == i)
+			{
+				MPI_Recv(s_nodes, mesh_header[0], MPI_node, 0, tag[0], MPI_COMM_WORLD, &status);
+				mesh->setSubdomainNodes(mesh_header, s_nodes);
 
+				/*
+				//TEST
+				for(k=0; k<mesh_header[0]; k++)
+				{
+					MeshNodes *anode = &s_nodes[k];
+					cout<<anode->index<<" ";
+					cout<<anode->x<<" "<<anode->y<<" "<<anode->z<<endl;
+				}
+				*/
+			}
+		}
 
-       if(i==0)
-	 {
-	    mesh->setSubdomainElements(mesh_header, elem_info, true);    
-	 }     
-       else
-       {
-          MPI_Send(elem_info, size_elem_info, MPI_INT, i, tag[1], MPI_COMM_WORLD);  
-       }      
- 
-    }    
-    if(i>0)
-    {
-      if(mrank == i)  
-      {
-         MPI_Recv(elem_info, size_elem_info, MPI_INT, 0, tag[1], MPI_COMM_WORLD, &status); 
-	 mesh->setSubdomainElements(mesh_header, elem_info, true);         
-      }
-    }  
-    
-    //if(elem_info)
-    //  {
-    //free(elem_info);
-    //elem_info = NULL;
-    //  }
-   
-    //-------------------------------------------------------------------------
-    // Ghost element
-    const int size_elem_g_info = mesh_header[3] + mesh_header[9];
-    elem_info = (int *)realloc(elem_info, sizeof(int) * size_elem_g_info );
-    if(mrank == 0)
-    {
-       int counter = mesh_header[3];
-       for(j=0; j<mesh_header[3]; j++)
-       {
-           elem_info[j] = counter;
-           is>> elem_info[counter];  //mat. idx
-           counter++;
-           is>> elem_info[counter];  //type
-           counter++;
-           is>> elem_info[counter];  //nnodes
-           const int nn_e =  elem_info[counter]; 
-           counter++;
-           for(k=0; k<nn_e; k++)
-           {
-              is>> elem_info[counter];
-              counter++; 
-           }
-           is>> elem_info[counter];
-           const int nn_e_g =  elem_info[counter]; 
-           counter++;
-	   // ghost nodes for linear element
-           is>> elem_info[counter];
-           counter++;
-           for(k=0; k<nn_e_g; k++)
-           {
-              is>> elem_info[counter];
-              counter++; 
-           }
+		//-------------------------------------------------------------------------
+		// Element
+		const int size_elem_info = mesh_header[2] + mesh_header[8];
+		elem_info = (int *)realloc(elem_info, sizeof(int) * size_elem_info );
+		for (int ii=0; ii<size_elem_info; ii++)
+			elem_info[ii] = -1;
+		if(myrank == 0)
+		{
+			int counter = mesh_header[2];
+			for(int j=0; j<mesh_header[2]; j++)
+			{
+				elem_info[j] = counter;
+				is>> elem_info[counter];  //mat. idx
+				counter++;
+				is>> elem_info[counter];  //type
+				counter++;
+				is>> elem_info[counter];  //nnodes
+				const int nn_e =  elem_info[counter];
+				counter++;
+				for(int k=0; k<nn_e; k++)
+				{
+					is>> elem_info[counter];
+					counter++;
+				}
+			}
 
-       }
+			if(i==0)
+				mesh->setSubdomainElements(mesh_header, elem_info, true);
+			else
+				MPI_Send(elem_info, size_elem_info, MPI_INT, i, tag[1], MPI_COMM_WORLD);
+		}
+		if(i>0)
+		{
+			if(myrank == i)
+			{
+				MPI_Recv(elem_info, size_elem_info, MPI_INT, 0, tag[1], MPI_COMM_WORLD, &status);
+				mesh->setSubdomainElements(mesh_header, elem_info, true);
+			}
+		}
 
-       if(i==0)
-       {
-	  mesh->setSubdomainElements(mesh_header, elem_info, false);   
-       }      
-       else
-       {
-	  MPI_Send(elem_info, size_elem_g_info, MPI_INT, i, tag[2], MPI_COMM_WORLD);  
-       }      
- 
-    }    
-    if(i>0)
-    {
-      if(mrank == i)  
-      {
-          MPI_Recv(elem_info, size_elem_g_info, MPI_INT, 0, tag[2], MPI_COMM_WORLD, &status); 
-	  mesh->setSubdomainElements(mesh_header, elem_info, false);         
-      }
-    }
-     
-  }
+		//if(elem_info)
+		//  {
+		//free(elem_info);
+		//elem_info = NULL;
+		//  }
 
-  if(s_nodes)  
-  {
-     free(s_nodes);
-     s_nodes = NULL;
-  }
-  if(elem_info)
-  {
-    free(elem_info);
-    elem_info = NULL;
-  }
+		//-------------------------------------------------------------------------
+		// Ghost element
+		const int size_elem_g_info = mesh_header[3] + mesh_header[9];
+		elem_info = (int *)realloc(elem_info, sizeof(int) * size_elem_g_info );
+		if(myrank == 0)
+		{
+			int counter = mesh_header[3];
+			for(int j=0; j<mesh_header[3]; j++)
+			{
+				elem_info[j] = counter;
+				is>> elem_info[counter];  //mat. idx
+				counter++;
+				is>> elem_info[counter];  //type
+				counter++;
+				is>> elem_info[counter];  //nnodes
+				const int nn_e =  elem_info[counter];
+				counter++;
+				for(int k=0; k<nn_e; k++)
+				{
+					is>> elem_info[counter];
+					counter++;
+				}
+				is>> elem_info[counter];
+				const int nn_e_g =  elem_info[counter];
+				counter++;
+				// ghost nodes for linear element
+				is>> elem_info[counter];
+				counter++;
+				for(int k=0; k<nn_e_g; k++)
+				{
+					is>> elem_info[counter];
+					counter++;
+				}
+			}
 
-  if(mrank == 0)
-  {
-     is.clear();
-     is.close();  
-  }
+			if(i==0)
+				mesh->setSubdomainElements(mesh_header, elem_info, false);
+			else
+				MPI_Send(elem_info, size_elem_g_info, MPI_INT, i, tag[2], MPI_COMM_WORLD);
+		}
+		if(i>0)
+		{
+			if(myrank == i)
+			{
+				MPI_Recv(elem_info, size_elem_g_info, MPI_INT, 0, tag[2], MPI_COMM_WORLD, &status);
+				mesh->setSubdomainElements(mesh_header, elem_info, false);
+			}
+		}
+	}
 
-  MPI_Type_free(&MPI_node);
+	if(s_nodes)
+	{
+		free(s_nodes);
+		s_nodes = NULL;
+	}
+	if(elem_info)
+	{
+		free(elem_info);
+		elem_info = NULL;
+	}
 
-  MPI_Barrier (MPI_COMM_WORLD);
-  mesh->ConstructGrid();
-  mesh->FillTransformMatrix(); 
-  //mesh->calMaximumConnectedNodes();
-  MPI_Barrier (MPI_COMM_WORLD);
+	if(myrank == 0)
+	{
+		is.clear();
+		is.close();
+	}
 
-  //PetscFinalize();
-  //exit(0);
-}   
+	if (mysize>1)
+		MPI_Type_free(&MPI_node);
+
+	MPI_Barrier (MPI_COMM_WORLD);
+	mesh->ConstructGrid();
+	mesh->FillTransformMatrix();
+	//mesh->calMaximumConnectedNodes();
+	MPI_Barrier (MPI_COMM_WORLD);
+}
 
 
 namespace MeshLib
