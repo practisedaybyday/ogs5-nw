@@ -306,16 +306,13 @@ void CFEMesh::setSubdomainNodes(int *header, const MeshNodes *s_nodes)
   glb_NodesNumber_Linear =header[6];
   glb_NodesNumber_Quadratic =header[7];
 
+  nod_vector.resize(header[0]);
   for(k=0; k<header[0]; k++)
   {
      const MeshNodes *anode = &s_nodes[k];
      CNode *new_node = new CNode(k, anode->x, anode->y, anode->z);
-
      new_node->SetEquationIndex(anode->index);
-
-
-     nod_vector.push_back(new_node);    
-
+     nod_vector[k] = new_node;
   }
 }
 
@@ -344,10 +341,11 @@ void CFEMesh::setSubdomainElements(int *header, const int *elem_info, const bool
 
 
   // Element
+  ele_vector.resize(ne);
   for(i=0; i<ne; i++)
   {
-     CElem *new_elem = new CElem(ele_vector.size()); 
-     ele_vector.push_back(new_elem); 
+     CElem *new_elem = new CElem(i);
+     ele_vector[i] = new_elem;
     
      counter = elem_info[i]; 
  
@@ -403,7 +401,6 @@ void CFEMesh::setSubdomainElements(int *header, const int *elem_info, const bool
           new_elem->ele_dim = 2;
           new_elem->nfaces = 4;
           new_elem->nedges = 4;
-
           break;
         case 3: 
           new_elem->geo_type = MshElemType::HEXAHEDRON;
@@ -436,12 +433,12 @@ void CFEMesh::setSubdomainElements(int *header, const int *elem_info, const bool
      case 7://:PYRAMID: 
           new_elem->geo_type = MshElemType::PYRAMID; 
           new_elem->nnodes = 5;
-	  new_elem->ele_dim = 3;
-	  new_elem->nfaces = 5;
-	  new_elem->nedges = 8;
-	  break;
+          new_elem->ele_dim = 3;
+          new_elem->nfaces = 5;
+          new_elem->nedges = 8;
+          break;
        default:
-	 break;
+          break;
      }
      
      new_elem->InitializeMembers();
