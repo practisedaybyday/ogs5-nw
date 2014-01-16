@@ -88,7 +88,7 @@ SET (OGS_VERSION_PATCH 3-geothermal)
 SET (OGS_RELEASE_PERSONS "NW")
 SET (OGS_VERSION "${OGS_VERSION_MAJOR}.${OGS_VERSION_MINOR}.${OGS_VERSION_PATCH}(${OGS_RELEASE_PERSONS})")
 # should we use ISO dates: 2010-12-31 ?
-SET (OGS_DATE "28.08.2012")
+SET (OGS_DATE "16.01.2014")
 
 # Check for number of processors
 INCLUDE(ProcessorCount)
@@ -142,6 +142,7 @@ IF(OGS_FEM_PETSC)
 	  MESSAGE (FATAL_ERROR "Aborting: MPI implementation is not found!")
 	ENDIF(MPI_FOUND)
 ENDIF(OGS_FEM_PETSC)
+
 IF(OGS_FEM_MPI)
 	MESSAGE (STATUS "Configuring for FEM command line with MPI" )
 	IF (UNIX)
