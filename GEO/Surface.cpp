@@ -133,10 +133,17 @@ void Surface::removeTriangles(const GEOLIB::AABB &bb)
 				break;
 			}
 		}
-		if (intersecting)
+		if (intersecting) {
 			new_tris.push_back(tri);
+		}
 		else
+		{
+			for (unsigned j=0; j<3; j++) {
+				delete _sfc_pnts[(*tri)[j]];
+				(*const_cast<std::vector<Point*>*>(&_sfc_pnts))[(*tri)[j]] = NULL;
+			}
 			delete tri;
+		}
 	}
 
 	if (new_tris.size()==_sfc_triangles.size()) {
