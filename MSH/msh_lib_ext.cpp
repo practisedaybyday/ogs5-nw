@@ -275,6 +275,8 @@ void FEMRead(const string& file_base_name,
 	if (mysize>1)
 		MPI_Type_free(&MPI_node);
 
+	ScreenMessage2("-> mesh: %d nodes, %d elements\n", mesh->nod_vector.size(), mesh->ele_vector.size());
+
 	MPI_Barrier (MPI_COMM_WORLD);
 	mesh->ConstructGrid();
 	mesh->FillTransformMatrix();
@@ -341,11 +343,10 @@ void CFEMesh::setSubdomainElements(int *header, const int *elem_info, const bool
 
 
   // Element
-  ele_vector.resize(ne);
   for(i=0; i<ne; i++)
   {
      CElem *new_elem = new CElem(i);
-     ele_vector[i] = new_elem;
+     ele_vector.push_back(new_elem);
     
      counter = elem_info[i]; 
  
@@ -542,6 +543,7 @@ int CFEMesh::calMaximumConnectedNodes()
      if(k > max_connected_nodes)
        max_connected_nodes = k; 
    }
+   ScreenMessage2("-> max. connected nodes = %d\n", max_connected_nodes);
   
    int msize;
    //int mrank;
