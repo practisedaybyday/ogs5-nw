@@ -16,8 +16,9 @@ namespace petsc_group
 {
 
  PETScLinearSolver :: PETScLinearSolver (const int size)
-   :lsolver(NULL), prec(NULL), global_x0(NULL),  global_x1(NULL), global_buff(NULL) 
+   :A(NULL),b(NULL),x(NULL),lsolver(NULL), prec(NULL), global_x0(NULL),  global_x1(NULL), global_buff(NULL)
  {
+   i_start = i_end = 0;
    ltolerance = 1.e-10;
    m_size = size;
    time_elapsed = 0.0;   
