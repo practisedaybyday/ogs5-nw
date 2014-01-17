@@ -192,9 +192,11 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 #ifndef USE_PETSC
 		CompleteMesh();           //WW
 #else
+#if 0
 		ScreenMessage2("Optimize geometric objects\n");
 		geo_obj.optimiseObjects(unique_name, *fem_msh_vector[0]->getGrid());
 		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 #endif
 	}
 
