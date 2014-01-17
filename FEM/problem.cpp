@@ -971,7 +971,18 @@ void Problem::Euler_TimeDiscretize()
 #if defined(USE_MPI)  || defined(USE_MPI_KRC)
 	}
 #endif
-	
+
+	// check if this is a steady state simulation
+	bool isSteadySimulation = true;
+	for(i=0; i<(int)active_process_index.size(); i++)
+	{
+		if (total_processes[active_process_index[i]]->tim_type!=FiniteElement::TIM_STEADY)
+		{
+			isSteadySimulation = false;
+			break;
+		}
+	}
+
 	//
 	// ------------------------------------------
 	// PERFORM TRANSIENT SIMULATION
@@ -1073,6 +1084,10 @@ void Problem::Euler_TimeDiscretize()
 		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
 
+		}
+		else if (isSteadySimulation)
+		{
+			ScreenMessage("This step is rejected.\n");
 		}
 		else
 		{
@@ -1244,46 +1259,46 @@ bool Problem::CouplingLoop()
 				max_inner_error = 0.0;
 				for(inner_index=0; inner_index < a_pcs->m_num->cpl_max_iterations; inner_index++)
 				{
-					 a_pcs->iter_inner_cpl = inner_index;
-					 b_pcs->iter_inner_cpl = inner_index;
-					 //
-					 // FIRST PROCESS
-					 loop_process_number = i;
-					 if(a_pcs->first_coupling_iteration) PreCouplingLoop(a_pcs);
-//					 error = Call_Member_FN(this, active_processes[index])();
-					 Call_Member_FN(this, active_processes[index])();
-					 if(!a_pcs->TimeStepAccept()){
-					   accept = false;
-					   break;
-					 }
-					 //
-					 // COUPLED PROCESS
-					 loop_process_number = i+1;
-					 if(b_pcs->first_coupling_iteration) PreCouplingLoop(b_pcs);
-//					 error = Call_Member_FN(this, active_processes[cpl_index])();
-					 Call_Member_FN(this, active_processes[cpl_index])();
-					 if(!b_pcs->TimeStepAccept()){
-					   accept = false;
-					   break;
-					 }
-					 //
-					 // Check for break criteria
-					 max_inner_error = MMax(a_pcs->cpl_max_relative_error,b_pcs->cpl_max_relative_error);
-					 a_pcs->first_coupling_iteration = false; // No longer true (JT: these are important, and are also used elswhere).
-					 b_pcs->first_coupling_iteration = false; // No longer true.
-					 //
-					 // Store the outer loop error
-					 if(inner_index==0)
+					a_pcs->iter_inner_cpl = inner_index;
+					b_pcs->iter_inner_cpl = inner_index;
+					//
+					// FIRST PROCESS
+					loop_process_number = i;
+					if(a_pcs->first_coupling_iteration) PreCouplingLoop(a_pcs);
+//					error = Call_Member_FN(this, active_processes[index])();
+					Call_Member_FN(this, active_processes[index])();
+					if(!a_pcs->TimeStepAccept()){
+						accept = false;
+						break;
+					}
+					//
+					// COUPLED PROCESS
+					loop_process_number = i+1;
+					if(b_pcs->first_coupling_iteration) PreCouplingLoop(b_pcs);
+//					error = Call_Member_FN(this, active_processes[cpl_index])();
+					Call_Member_FN(this, active_processes[cpl_index])();
+					if(!b_pcs->TimeStepAccept()){
+						accept = false;
+						break;
+					}
+					//
+					// Check for break criteria
+					max_inner_error = MMax(a_pcs->cpl_max_relative_error,b_pcs->cpl_max_relative_error);
+					a_pcs->first_coupling_iteration = false; // No longer true (JT: these are important, and are also used elswhere).
+					b_pcs->first_coupling_iteration = false; // No longer true.
+					//
+					// Store the outer loop error
+					if(inner_index==0)
 						max_outer_error = MMax(max_outer_error,max_inner_error);
-					 //
-					 std::cout << "\n======================================================\n";
-					 std::cout << "Inner coupling loop " << inner_index+1 << "/" << inner_max << " complete."<<std::endl;
-					 std::cout << "Max coupling error (relative to tolerance): " << max_inner_error << std::endl;
-					 std::cout << "======================================================\n";
-					 //
-					 // Coupling convergence criteria (use loop minimum from a_pcs because this is where the coupled process was called)
-					 if(max_inner_error <= 1.0 && inner_index+2 > a_pcs->m_num->cpl_min_iterations) // JT: error is relative to the tolerance.
-						 break;
+					//
+					std::cout << "\n======================================================\n";
+					std::cout << "Inner coupling loop " << inner_index+1 << "/" << inner_max << " complete."<<std::endl;
+					std::cout << "Max coupling error (relative to tolerance): " << max_inner_error << std::endl;
+					std::cout << "======================================================\n";
+					//
+					// Coupling convergence criteria (use loop minimum from a_pcs because this is where the coupled process was called)
+					if(max_inner_error <= 1.0 && inner_index+2 > a_pcs->m_num->cpl_min_iterations) // JT: error is relative to the tolerance.
+						break;
 				}
 				run_flag[cpl_index] = false; // JT: CRUCIAL!!
 			}
@@ -1304,17 +1319,20 @@ bool Problem::CouplingLoop()
 				max_outer_error = MMax(max_outer_error,a_pcs->cpl_max_relative_error);
 				ScreenMessage("coupling error (relative to tolerance): %e\n", a_pcs->cpl_max_relative_error);
 				if(!a_pcs->TimeStepAccept()){
-					ScreenMessage("*** The process rejected this time step.\n");
-					accept = false;
 					if (a_pcs->tim_type==FiniteElement::TIM_STEADY) {
-						ScreenMessage("Cannot change time step size because the process is a steady state\n");
-						ScreenMessage("Terminate this simulation\n");
+#if 0
+						ScreenMessage("***ERR: Cannot change time step size because the process is a steady state\n");
+						ScreenMessage("***ERR: Terminate this simulation\n");
 #ifdef USE_PETSC
 						PetscFinalize();
 #endif
 						exit(1);
+#endif
+					} else {
+						ScreenMessage("***WARN: The process rejected this time step.\n");
+						accept = false;
+						break;
 					}
-					break;
 				}
 			}
 			if(!accept) break;
@@ -1478,6 +1496,8 @@ inline double Problem::LiquidFlow()
 	int success;
 	double error = 0.;
 	CRFProcess* m_pcs = total_processes[0];
+	if(m_pcs->tim_type==FiniteElement::TIM_STEADY && aktueller_zeitschritt>1)
+		m_pcs->selected = false;
 	if(!m_pcs->selected)
 		return error;
 	//  error = m_pcs->Execute();
@@ -1489,8 +1509,6 @@ inline double Problem::LiquidFlow()
 		PCSCalcSecondaryVariables(); // PCS member function
 #endif
 		m_pcs->CalIntegrationPointValue(); //WW
-		if(m_pcs->tim_type==FiniteElement::TIM_STEADY)
-			m_pcs->selected = false;
 	}
 
 #ifndef OGS_ONLY_TH
