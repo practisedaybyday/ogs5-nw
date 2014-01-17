@@ -5077,7 +5077,8 @@ void CRFProcess::GlobalAssembly()
 			for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
 			{
 				if (print_progress && (i+1)%dn==0)
-					ScreenMessage("%d \%\n", ((i+1)*100/n_eles));
+					ScreenMessage("* ");
+					//ScreenMessage("%d \%\n", ((i+1)*100/n_eles));
 				elem = m_msh->ele_vector[i];
 				// Marked for use //WX: modified for coupled excavation
 #ifndef OGS_ONLY_TH
@@ -5104,6 +5105,7 @@ void CRFProcess::GlobalAssembly()
 				}
 			}
 		}
+		ScreenMessage("\n");
 
 		if (femFCTmode)     //NW
 			AddFCT_CorrectionVector();

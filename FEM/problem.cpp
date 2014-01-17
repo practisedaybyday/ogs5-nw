@@ -1042,15 +1042,12 @@ void Problem::Euler_TimeDiscretize()
 			// ---------------------------------
 			last_dt_accepted = true;
 			ScreenMessage("This step is accepted.\n");
-#ifndef WIN32
-			ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
-#endif
 			PostCouplingLoop();
+#ifndef WIN32
+			ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
 			if(print_result)
 			{
-#ifndef WIN32
-				ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
-#endif
 				ScreenMessage2("-> output results\n");
 				if(current_time < end_time)
 					force_output = false;
