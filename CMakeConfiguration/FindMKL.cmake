@@ -29,21 +29,39 @@ if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "x86_64")
       lib/em64t
     )
 
-    find_library(MKL_LIB_INTEL mkl_intel_lp64 
-      HINTS ${MKL_DIR} 
-      PATH_SUFFIXES
-      lib/intel64
-      lib/em64t
-    )
+	if (OGS_USE_LONG)
+	    find_library(MKL_LIB_INTEL mkl_intel_ilp64 
+	      HINTS ${MKL_DIR} 
+	      PATH_SUFFIXES
+	      lib/intel64
+	      lib/em64t
+	    )
+    else()
+	    find_library(MKL_LIB_INTEL mkl_intel_lp64 
+	      HINTS ${MKL_DIR} 
+	      PATH_SUFFIXES
+	      lib/intel64
+	      lib/em64t
+	    )
+    endif()
 
-    find_library(MKL_LIB_SOLVER mkl_solver_lp64 
-      HINTS ${MKL_DIR} 
-      PATH_SUFFIXES
-      lib/intel64
-      lib/em64t
-    )
+	if (OGS_USE_LONG)
+	    find_library(MKL_LIB_SOLVER mkl_solver_ilp64 
+	      HINTS ${MKL_DIR} 
+	      PATH_SUFFIXES
+	      lib/intel64
+	      lib/em64t
+	    )
+    else()
+	    find_library(MKL_LIB_SOLVER mkl_solver_lp64 
+	      HINTS ${MKL_DIR} 
+	      PATH_SUFFIXES
+	      lib/intel64
+	      lib/em64t
+	    )
+    endif()
     
-    if (USE_OPENMP)
+    if (PARALLEL_USE_OPENMP)
         if(CMAKE_C_COMPILER EQUAL "icc")
             find_library(MKL_LIB_INTEL_THREAD mkl_intel_thread 
               HINTS ${MKL_DIR} 
@@ -78,14 +96,14 @@ if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "x86_64")
               lib/em64t
             )
         endif()
-    else(USE_OPENMP)
+    else()
         find_library(MKL_LIB_THREAD mkl_sequential
           HINTS ${MKL_DIR} 
           PATH_SUFFIXES
           lib/intel64
           lib/em64t
         )
-    endif(USE_OPENMP)
+    endif()
     
     
 else()
@@ -109,7 +127,7 @@ else()
       lib/32
     )
 
-    if (USE_OPENMP)
+    if (PARALLEL_USE_OPENMP)
         if(CMAKE_C_COMPILER EQUAL "icc")
             find_library(MKL_LIB_INTEL_THREAD mkl_intel_thread 
               HINTS ${MKL_DIR} PATH_SUFFIXES lib/32
@@ -132,11 +150,11 @@ else()
               HINTS ${MKL_DIR} PATH_SUFFIXES lib/32
             )
         endif()
-    else(USE_OPENMP)
+    else()
         find_library(MKL_LIB_THREAD mkl_sequential
           HINTS ${MKL_DIR} PATH_SUFFIXES lib/32
         )
-    endif(USE_OPENMP)
+    endif()
 
 endif()
 
