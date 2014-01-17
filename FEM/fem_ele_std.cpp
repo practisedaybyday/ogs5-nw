@@ -6720,14 +6720,14 @@ void CFiniteElementStd::AssembleParabolicEquation()
 	if(PcsType == V)                      // For DOF>1: 27.2.2007 WW
 		for (i = 0; i < nnodes; i++)
 			NodalVal[i + nnodes] = 0.0;
-	  if(PcsType==S)                              // For DOF>1: 27.2.2007 WW
-      {
-	  for (int in = 0; in < pcs->dof; in++)
-	  {
-      for (i=0;i<nnodes; i++)
-      NodalVal[i+in*nnodes] = 0.0;
-      }
-	  }
+	if (PcsType == S)                              // For DOF>1: 27.2.2007 WW
+	{
+		for (int in = 0; in < pcs->dof; in++)
+		{
+			for (i = 0; i < nnodes; i++)
+				NodalVal[i + in * nnodes] = 0.0;
+		}
+	}
 	if(pcs->m_num->nls_method > 0 && (!dynamic)) //Newton method
 		StiffMatrix->multi(NodalVal1, NodalVal, -1.0);
 
@@ -8312,27 +8312,34 @@ void CFiniteElementStd::Assembly()
 	//----------------------------------------------------------------------
 	//----------------------------------------------------------------------
 	// Output matrices
+#if 1
 	if(pcs->Write_Matrix)
 	{
-		(*pcs->matrix_file) << "---Mass matrix: " << "\n";
+		std::ostream &os = *pcs->matrix_file;
+#else
+	if(Index < 3)
+	{
+		std::ostream &os = std::cout;
+		os << "### Element: " << Index << "\n";
+#endif
+		os << "---Mass matrix: " << "\n";
 		if(Mass)
-			Mass->Write(*pcs->matrix_file);
+			Mass->Write(os);
 		else if(Mass2)
-			Mass2->Write(*pcs->matrix_file);
-		(*pcs->matrix_file) << "---Laplacian matrix: " << "\n";
-		Laplace->Write(*pcs->matrix_file);
+			Mass2->Write(os);
+		os << "---Laplacian matrix: " << "\n";
+		Laplace->Write(os);
 		if(Advection)
 		{
-			//CMCD
-			(*pcs->matrix_file) << "---Advective matrix: " << "\n";
-			Advection->Write(*pcs->matrix_file);
+			os << "---Advective matrix: " << "\n";
+			Advection->Write(os);
 		}
-		(*pcs->matrix_file) << "---RHS: " << "\n";
-		RHS->Write(*pcs->matrix_file);
-		(*pcs->matrix_file) << "---U0: " << "\n";
+		os << "---RHS: " << "\n";
+		RHS->Write(os);
+		os << "---U0: " << "\n";
 		for (int i=0; i<nnodes; i++)
-			(*pcs->matrix_file) << "| " << NodalVal1[i] << " | " << "\n";
-		(*pcs->matrix_file) << "\n";
+			os << "| " << NodalVal0[i] << " | " << "\n";
+		os << "\n";
 	}
 }
 
@@ -9477,6 +9484,7 @@ void CFiniteElementStd::Assemble_RHS_LIQUIDFLOW()
 {
     if (!isTemperatureCoupling()) return;
     if (FluidProp->drho_dT == .0 && SolidProp->Thermal_Expansion()==.0) return;
+    if (pcs->tim_type==FiniteElement::TIM_STEADY) return;
 
     int dm_shift = 0;
     if(pcs->type / 10 == 4)
