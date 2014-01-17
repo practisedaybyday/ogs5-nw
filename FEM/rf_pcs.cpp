@@ -4201,14 +4201,14 @@ double CRFProcess::Execute()
 	cpu_time = -clock();
 	if(myrank == 0)
 #endif
-	cout << "      Assembling equation system..." << endl;
+	cout << "Assembling equation system..." << endl;
 	GlobalAssembly();
 #if defined( USE_MPI) || defined( USE_PETSC)         //WW
 	cpu_time += clock();
 	cpu_time_assembly += cpu_time;
 	if(myrank == 0)
 #endif
-	cout << "      Calling linear solver..." << endl;
+	cout << "Calling linear solver..." << endl;
 #ifdef CHECK_EQS
 	std::string eqs_name = convertProcessTypeToString(this->getProcessType()) + "_EQS.txt";
 	MXDumpGLS((char*)eqs_name.c_str(),1,eqs->b,eqs->x);
@@ -4255,10 +4255,11 @@ double CRFProcess::Execute()
 	{
 #if defined(USE_PETSC)
         eqs_x = eqs_new->GetGlobalSolution();
-		pcs_error = CalcIterationNODError(1);
-#else
-        pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false); // JT
+        //		pcs_error = CalcIterationNODError(1);
 #endif
+//#else
+        pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false); // JT
+//#endif
 
 #if defined(USE_MPI) || defined(USE_PETSC)
 		if(myrank == 0)
@@ -4400,8 +4401,16 @@ double CRFProcess::Execute()
 	{
 		eqs_x = eqs_new->GetGlobalSolution();
 		//......................................................................
-		pcs_error = CalcIterationNODError(1); //OK4105//WW4117
-		ScreenMessage("      PCS error: %g\n", pcs_error);
+//		pcs_error = CalcIterationNODError(1); //OK4105//WW4117
+		if(iter_nlin > 0){	// Just getting NL error
+			pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false);     //OK4105//WW4117//JT
+		}
+		else{				// Getting NL and CPL error
+			pcs_error = CalcIterationNODError(m_num->getCouplingErrorMethod(),true,true);		//JT2012
+			if(m_num->getNonLinearErrorMethod() != m_num->getCouplingErrorMethod())				//JT: If CPL error method is different, must call separately
+			pcs_error = CalcIterationNODError(m_num->getNonLinearErrorMethod(),true,false);   //JT2012 // get the NLS error. CPL was obtained before.
+		}
+//		ScreenMessage("PCS error: %g\n", pcs_error);
 
 
 		//--------------------------------------------------------------------
@@ -8411,21 +8420,27 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    3/2012  JT Clean, add newton, add CPL vs. NLS, go to enum system
    last modification:
 **************************************************************************/
-#if !defined(USE_PETSC) // && !defined(other parallel libs)//02.3013. WW
+//#if !defined(USE_PETSC) // && !defined(other parallel libs)//02.3013. WW
 double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool nls_error, bool cpl_error)
 {
-	static long i, k, g_nnodes;
-	static double error, error_g, val1, val2, value;
+	long i, k, g_nnodes;
+	double error, error_g, val1, val2, value;
 	int nidx1, ii;
+#ifndef USE_PETSC
 	double* eqs_x = NULL;     // 11.2007. WW
+#endif
 	int num_dof_errors = pcs_number_of_primary_nvals;
 	double unknowns_norm = 0.0;
 	double absolute_error[DOF_NUMBER_MAX];
-	g_nnodes = m_msh->GetNodesNumber(false);
-
-#ifdef NEW_EQS
-	eqs_x = eqs_new->x;
+#ifdef USE_PETSC
+	g_nnodes = m_msh->getNumNodesLocal();
 #else
+	g_nnodes = m_msh->GetNodesNumber(false);
+#endif
+
+#if defined(NEW_EQS)
+	eqs_x = eqs_new->x;
+#elif !defined(USE_PETSC)
 	eqs_x = eqs->x;
 #endif
 
@@ -8437,13 +8452,16 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		//     Norm taken over entire solution vector (all primary variables) and checked against a single tolerance.
 		//
 		case FiniteElement::ENORM:
+		{
 			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
+#ifndef USE_PETSC
 				for(ii=0;ii<pcs_number_of_primary_nvals;ii++){
 					for(i = 0; i < g_nnodes; i++){
-					   val1 = eqs_x[i+ii*g_nnodes];
-					   unknowns_norm += val1*val1;
+						val1 = eqs_x[i+ii*g_nnodes];
+						unknowns_norm += val1*val1;
 					}
 				}
+#endif
 			}
 			else{						// PICARD
 				for(ii=0; ii<pcs_number_of_primary_nvals; ii++)
@@ -8461,12 +8479,14 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			unknowns_norm = sqrt(unknowns_norm);
 			absolute_error[0] = unknowns_norm;
 			break;
+		}
 		//
 		// --> ERNORM:	|(x1-x0)/x0)|
 		//     Norm of the solution vector delta divided by the solution vector (relative error).
 		//     A single tolerance applied to all primary variables.
 		//
 		case FiniteElement::ERNORM:
+		{
 			value = 0.0;
 			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
 				for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
@@ -8503,12 +8523,14 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			unknowns_norm = sqrt(unknowns_norm);
 			absolute_error[0] = unknowns_norm / (sqrt(value)+DBL_EPSILON);
 			break;
+		}
 		//
 		// --> EVNORM:	|x1-x0|
 		//     Norm of the solution vector delta (absolute error).
 		//     Norm taken over solution vector of each primary variable, checked againes a tolerence specific to each variable.
 		//
 		case FiniteElement::EVNORM:
+		{
 			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
 				for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
 				{
@@ -8538,12 +8560,14 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			}
 			unknowns_norm = sqrt(unknowns_norm);
 			break;
+		}
 		//
 		// --> BNORM: Get norm of solution vector, same as ENORM. RHS norm will be calculated later.
 		//     Norm of the solution vector delta (absolute error).
 		//     Norm taken over entire solution vector (all primary variables) and checked against a single tolerance.
 		//
 		case FiniteElement::BNORM:
+		{
 			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
 				for(ii=0;ii<pcs_number_of_primary_nvals;ii++){
 					for(i = 0; i < g_nnodes; i++){
@@ -8568,45 +8592,60 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			unknowns_norm = sqrt(unknowns_norm);
 			absolute_error[0] = unknowns_norm;
 			break;
+		}
 		//
 		// --> LMAX:	max(x1-x0)
 		//     Local max error (across all elements) of solution vector delta (absolute error).
 		//     Tolerance required for each primary variable.
 		//
 		case FiniteElement::LMAX:
+		{
 			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
 				for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
 				{
 					error = 0.0;
 					for (i = 0; i < g_nnodes; i++){
-					   val1 = eqs_x[i+ii*g_nnodes];
-					   unknowns_norm += val1*val1;
-					   val1 = fabs(val1);
-					   if(val1 > error)
-						  error = val1;
+						val1 = eqs_x[i+ii*g_nnodes];
+						unknowns_norm += val1*val1;
+						val1 = fabs(val1);
+						if(val1 > error)
+							error = val1;
 					}
 					absolute_error[ii] = error;
 				}
 			}
-			else{						// PICARD
+			else
+			{						// PICARD
 				for(ii=0; ii<pcs_number_of_primary_nvals; ii++)
 				{
 					error = 0.0;
 					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
 					//
 					for (i = 0; i < g_nnodes; i++){
-					   k = m_msh->Eqs2Global_NodeIndex[i];
-					   val1 = GetNodeValue(k, nidx1) - eqs_x[i+ii*g_nnodes];
-					   unknowns_norm += val1*val1;
-					   val1 = fabs(val1);
-					   if(val1 > error)
-						  error = val1;
+#ifdef USE_PETSC
+						val1 = GetNodeValue(i, nidx1);
+						val1 -= eqs_x[pcs_number_of_primary_nvals*m_msh->Eqs2Global_NodeIndex[i] + ii];
+#else
+						k = m_msh->Eqs2Global_NodeIndex[i];
+						val1 = GetNodeValue(k, nidx1) - eqs_x[i+ii*g_nnodes];
+#endif
+						unknowns_norm += val1*val1;
+						error = std::max(error, fabs(val1));
 					}
+#ifdef USE_PETSC
+					double error_l = error;
+					MPI_Allreduce(&error_l, &error, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#endif
 					absolute_error[ii] = error;
 				}
 			}
+#ifdef USE_PETSC
+			double unknowns_norm_l = unknowns_norm;
+			MPI_Allreduce(&unknowns_norm_l, &unknowns_norm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
 			unknowns_norm = sqrt(unknowns_norm);
 			break;
+		}
 		//
 		default:
 			ScreenMessage("ERROR: Invalid error method for Iteration or Coupling Node error.\n");
@@ -8689,21 +8728,21 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 	// Store the error (JT)
 	// JT: now returning RELATIVE error. NECESSARY BECAUSE DOF MAY BE > 1 AND EACH DOF MAY HAVE DIFFERENT CHARACTER
 	if(cpl_error){ // Return coupling error
-	   error_g = 0.0;
-	   for(ii=0; ii<num_dof_errors; ii++){
-		   cpl_absolute_error[ii] = absolute_error[ii];
-		   error = absolute_error[ii] / m_num->cpl_error_tolerance[ii];
-		   error_g = MMax(error_g, error); // Coupling error just stores the maximum
-	   }
-	   cpl_max_relative_error = error_g;
-	   cpl_num_dof_errors = num_dof_errors;
+		error_g = 0.0;
+		for(ii=0; ii<num_dof_errors; ii++){
+			cpl_absolute_error[ii] = absolute_error[ii];
+			error = absolute_error[ii] / m_num->cpl_error_tolerance[ii];
+			error_g = std::max(error_g, error); // Coupling error just stores the maximum
+		}
+		cpl_max_relative_error = error_g;
+		cpl_num_dof_errors = num_dof_errors;
 	}
 	if(nls_error){ // Return Non-Linear iteration error
 		error_g = 0.0;
 		for(ii=0; ii<num_dof_errors; ii++){
-		   pcs_absolute_error[ii] = absolute_error[ii];
-		   pcs_relative_error[ii] = absolute_error[ii] / m_num->nls_error_tolerance[ii];
-		   error_g = MMax(error_g, pcs_relative_error[ii]);
+			pcs_absolute_error[ii] = absolute_error[ii];
+			pcs_relative_error[ii] = absolute_error[ii] / m_num->nls_error_tolerance[ii];
+			error_g = std::max(error_g, pcs_relative_error[ii]);
 		}
 		pcs_num_dof_errors = num_dof_errors;
 		pcs_unknowns_norm = unknowns_norm;
@@ -8717,7 +8756,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 	//
 	return error_g; // Always returns the maximum relative error
 }
-#endif // #if !defined(USE_PETSC)  WW
+//#endif // #if !defined(USE_PETSC)  WW
 
 /**************************************************************************
    FEMLib-Method:
@@ -8786,19 +8825,19 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		Tim->last_dt_accepted = true; // JT2012
 
 #if defined(USE_PETSC) || defined (USE_MPI)  // || defined(other parallel libs)//01.3013. WW
-        if(myrank==0)
-        {
+		if(myrank==0)
+		{
 #endif
 		if(print_pcs){ // JT: need check because of Regional Richards
-			std::cout << "\n      ================================================" << std::endl;
+			std::cout << "\n================================================" << std::endl;
 			if(getProcessType() == FiniteElement::MASS_TRANSPORT){
-				std::cout << "    ->Process   " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
-				std::cout << "    ->Component " << pcs_component_number << ": " << pcs_primary_function_name[0] << std::endl;
+				std::cout << "->Process   " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
+				std::cout << "->Component " << pcs_component_number << ": " << pcs_primary_function_name[0] << std::endl;
 			}
 			else{
-				std::cout << "    ->Process " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
+				std::cout << "->Process " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
 			}
-			std::cout << "      ================================================" << std::endl;
+			std::cout << "================================================" << std::endl;
 		}
 #if defined(USE_PETSC) || defined (USE_MPI)  // || defined(other parallel libs)//01.3013. WW#ifdef USE_MPI
 		}
@@ -8839,7 +8878,8 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 							percent_difference = .0;
 						else
 							percent_difference = 100.0 * ((last_error - nonlinear_iteration_error) / last_error);
-						ScreenMessage("         ->Nonlinear error: %e, Convergence rate: %e\%\n", nonlinear_iteration_error, percent_difference);
+						ScreenMessage("\tNonlinear error: %e, Conv. rate: %2.1f\%\n", nonlinear_iteration_error, percent_difference);
+						ScreenMessage("------------------------------------------------\n");
 						//
 						if(nonlinear_iteration_error <= 1.0)
 						{
@@ -8930,8 +8970,8 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 						}
 						// Newton information printout.
 #if defined (USE_MPI) || defined(USE_PETSC)
-                        if(myrank == 0)
-                         {
+						if(myrank == 0)
+						{
 #endif
 						cout.width(10);
 						cout.precision(3);
@@ -8940,7 +8980,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 						cout << "         " << setw(10) << error << "|  " << setw(9) << norm_b << "| ";
 						cout << setw(14) << norm_x << "| "<< setw(9) << damping << "\n";
 #if defined (USE_MPI) || defined(USE_PETSC)
-                        }
+						}
 #endif
 						break;
 				}
@@ -8950,9 +8990,9 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			// CHECK FOR TIME STEP FAILURE
 			// ---------------------------------------------------
 			if(!accepted || Tim->isDynamicTimeFailureSuggested(this)){
-				  accepted = false;
-				  Tim->last_dt_accepted = false;
-				  break;
+				accepted = false;
+				Tim->last_dt_accepted = false;
+				break;
 			}
 
 			// FOR NEWTON: COPY DAMPED CHANGES TO NEW TIME
@@ -9005,7 +9045,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			}
 		}
 		if ((!converged || diverged) && m_num->nls_max_iterations>1)
-		    accepted = false;
+			accepted = false;
 		iter_nlin_max = std::max(iter_nlin_max, iter_nlin);
 		// ------------------------------------------------------------
 		// NON-LINEAR ITERATIONS COMPLETE
@@ -9075,21 +9115,21 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		//
 		// NON-LINEAR METHODS
 		if(m_num->nls_method == 0)
-			ScreenMessage("      -->End of PICARD iteration: %d/%d \n", iter_nlin, m_num->nls_max_iterations);
+			ScreenMessage("-->End of PICARD iteration: %d/%d \n", iter_nlin, m_num->nls_max_iterations);
 		else
-			ScreenMessage("      -->End of NEWTON-RAPHSON iteration: %d/%d \n", iter_nlin, m_num->nls_max_iterations);
+			ScreenMessage("-->End of NEWTON-RAPHSON iteration: %d/%d \n", iter_nlin, m_num->nls_max_iterations);
 		//
 		// Errors
 		// --------------------------------------------------
 		if(write_std_errors){
 			if(pcs_num_dof_errors == 1){
-				ScreenMessage("         PCS error: %g\n", pcs_absolute_error[0]);
+				ScreenMessage("\tPCS error: %g\n", pcs_absolute_error[0]);
 			}else{
 				for (ii = 0; ii < pcs_number_of_primary_nvals; ii++){
-					 ScreenMessage("         PCS error DOF[%d]: %e\n", ii,  pcs_absolute_error[ii]);
+					 ScreenMessage("\tPCS error DOF[%d]: %e\n", ii,  pcs_absolute_error[ii]);
 				}
 			}
-			ScreenMessage("         ->Euclidian norm of unknowns: \n", pcs_unknowns_norm);
+			ScreenMessage("\tEuclidian norm of unknowns: %e\n", pcs_unknowns_norm);
 		}
 	}
 

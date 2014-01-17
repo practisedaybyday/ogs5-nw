@@ -628,7 +628,7 @@ public:
 	void ConfigPTC_FLOW();                // AKS/NB
 	// Configuration 1 - NOD
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
-        void setSolver( petsc_group::PETScLinearSolver *petsc_solver );
+	void setSolver( petsc_group::PETScLinearSolver *petsc_solver );
 	double CalcIterationNODError(int method); //OK // PETSC version in rf_pcs1.cpp WW
 #endif
 

@@ -514,16 +514,17 @@ void CRFProcess::InitializeRHS_with_u0()
   eqs_new->AssembleUnkowns_PETSc();
  }
 
+#if 0
 /*!
-    Parallel defintion of this function for DDC by node
+    Parallel definition of this function for DDC by node
 
     WW 03.2012
 */
 double CRFProcess::CalcIterationNODError(int method)
 {
-  static long i, g_nnodes;
-  static double error_l, change_l, max_cl, min_cl;
-  static double error, change, max_c, min_c;
+  long i, g_nnodes;
+  double error_l, change_l, max_cl, min_cl;
+  double error, change, max_c, min_c;
   //-----------------------------------------------------
   int nidx1;
   int ii;
@@ -642,7 +643,7 @@ double CRFProcess::CalcIterationNODError(int method)
   
   return error; 
 }
-
+#endif
 
 /// Set PETSc solver. 10.2012. WW
 void CRFProcess::setSolver( petsc_group::PETScLinearSolver *petsc_solver ) 
