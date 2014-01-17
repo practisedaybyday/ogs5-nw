@@ -16,20 +16,25 @@
 #include <mpi.h>
 #endif
 
-#include "Configure.h"
-#include "makros.h"
+#include "equation_class.h"
 
 #include <cfloat>
+#include <iomanip>
+#ifdef USE_OPENMP
+#include <omp.h>
+#endif
+
 // NEW_EQS To be removed
 #ifdef NEW_EQS                                    //1.11.2007 WW
-#include "rf_pcs.h"
-#include <iomanip>
 
 
 #ifdef LIS                                        // 07.02.2008 PCH
 #include "lis.h"
-#include <omp.h>
+#ifndef LIS_INT
+#define LIS_INT int
 #endif
+#endif
+
 
 #if defined(_WIN32) || defined(_WIN64)
 #define pardiso_ PARDISO
@@ -61,12 +66,12 @@ extern int PARDISO
 #endif
 #endif
 
-#include "equation_class.h"
+#include "Configure.h"
+#include "makros.h"
+
 #include "matrix_class.h"
 #include "rf_num_new.h"
-#ifdef JFNK_H2M
 #include "rf_pcs.h"
-#endif
 
 std::vector<Math_Group::Linear_EQS*> EQS_Vector;
 using namespace std;
@@ -130,17 +135,6 @@ Linear_EQS::Linear_EQS(const SparseTable &sparse_table,
 	iter = 0;
 	bNorm = 1.0;
 	error = 1.0e10;
-
-	//NW moved below to rf.cpp. Initialization and finalization of LIS solver
-	//must be called only once but they were called several times with multiple meshes
-#ifdef LIS
-	////	A->Write();
-	//
-	LIS_INT argc = 0;
-	char** argv = NULL;
-	// Initialization of the lis solver.
-	lis_initialize(&argc, &argv);
-#endif
 }
 #if defined(USE_MPI)
 /**************************************************************************
@@ -181,10 +175,6 @@ Linear_EQS::~Linear_EQS()
 	x = NULL;
 	b = NULL;
 
-	//NW moved to rf.cpp
-#ifdef LIS
-	lis_finalize();
-#endif
 	///GMRES. 30.06.2010. WW
 	if(solver_type == 13)
 		H.ReleaseMemory();
@@ -241,6 +231,7 @@ void Linear_EQS::ConfigNumerics(CNumerics* m_num, const long n)
 		break;
 	case 12:
 		solver_name = "UMF";
+		break;
 	case 13:                              // 06.2010. WW
 		solver_name = "GMRES";
 		m_gmres = m_num->Get_m();
