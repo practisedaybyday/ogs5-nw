@@ -6629,30 +6629,34 @@ void CFiniteElementStd::AssembleParabolicEquation()
 	//----------------------------------------------------------------------
 	// Calculate matrices
 	// Mass matrix..........................................................
-	if(PcsType == V)                      //WW
+	if(this->pcs->tim_type==FiniteElement::TIM_STEADY)
 	{
-		if(pcs->m_num->ele_mass_lumping)
-			CalcLumpedMass2();
-		else
-			CalcMass2();
-	}
-	else if(PcsType == P)                 //PCH
-	{
-		if(pcs->m_num->ele_mass_lumping)
-			CalcLumpedMassPSGLOBAL();
-		else
-			CalcMassPSGLOBAL();
-	}
-	else if(PcsType == S)                 //AKS/NB
+		if(PcsType == V)                      //WW
+		{
+			if(pcs->m_num->ele_mass_lumping)
+				CalcLumpedMass2();
+			else
+				CalcMass2();
+		}
+		else if(PcsType == P)                 //PCH
+		{
+			if(pcs->m_num->ele_mass_lumping)
+				CalcLumpedMassPSGLOBAL();
+			else
+				CalcMassPSGLOBAL();
+		}
+		else if(PcsType == S)                 //AKS/NB
 
-		CalcMassPTC();
-	else
-	{
-		if(pcs->m_num->ele_mass_lumping)
-			CalcLumpedMass();
+			CalcMassPTC();
 		else
-			CalcMass();
+		{
+			if(pcs->m_num->ele_mass_lumping)
+				CalcLumpedMass();
+			else
+				CalcMass();
+		}
 	}
+
 	// Laplace matrix.......................................................
 	CalcLaplace();
 	if(PcsType == S)                      //AKS/NB
