@@ -9482,6 +9482,7 @@ void CFiniteElementStd::Assemble_RHS_Pc()
  **************************************************************************/
 void CFiniteElementStd::Assemble_RHS_LIQUIDFLOW()
 {
+	return;
     if (!isTemperatureCoupling()) return;
     if (FluidProp->drho_dT == .0 && SolidProp->Thermal_Expansion()==.0) return;
     if (pcs->tim_type==FiniteElement::TIM_STEADY) return;
