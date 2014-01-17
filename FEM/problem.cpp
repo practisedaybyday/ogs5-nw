@@ -1520,7 +1520,7 @@ inline double Problem::LiquidFlow()
 		success = m_pcs->EclipseData->RunEclipse(m_pcs->Tim->step_current, m_pcs);
 		if (success == 0)
 			std::cout << "Error running Eclipse!" << std::endl;
-		if(m_pcs->tim_type_name.compare("STEADY") == 0)
+		if(m_pcs->tim_type==FiniteElement::TIM_STEADY)
 			m_pcs->selected = false;
 	}
 
@@ -3144,6 +3144,7 @@ inline double Problem::RandomWalker()
 		rw_pcs = m_msh->PT;
 
 		// Do I need velocity fileds solved by the FEM?
+#if 0
 		if(m_pcs->tim_type_name.compare("PURERWPT") == 0)
 		{
 			rw_pcs->PURERWPT = 1;
@@ -3159,6 +3160,7 @@ inline double Problem::RandomWalker()
 
 			free(dateiname);
 		}
+#endif
 
 		// Set the mode of the RWPT method
 		if(m_pcs->num_type_name.compare("HETERO") == 0)
