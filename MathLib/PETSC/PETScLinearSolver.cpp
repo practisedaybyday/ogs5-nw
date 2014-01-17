@@ -306,7 +306,7 @@ void PETScLinearSolver::Solver()
    PetscGetTime(&v1);
 #endif
 
-   PetscPrintf(PETSC_COMM_WORLD,"\n================================================\n");
+   PetscPrintf(PETSC_COMM_WORLD,"\n------------------------------------------------\n");
    PetscPrintf(PETSC_COMM_WORLD, "*** PETSc linear solver\n");
 #if 0
    KSPSetOperators(lsolver, A, A, SAME_NONZERO_PATTERN);
@@ -358,7 +358,7 @@ void PETScLinearSolver::Solver()
       exit(1);
    }
 
-   PetscPrintf(PETSC_COMM_WORLD,"================================================\n");
+   PetscPrintf(PETSC_COMM_WORLD,"------------------------------------------------\n");
 
    //VecAssemblyBegin(x);
    //VecAssemblyEnd(x);

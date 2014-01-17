@@ -522,7 +522,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			        pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
 			   #endif
 			 */
-			std::cout << "      Assembling equation system..." << std::endl;
+			std::cout << "Assembling equation system..." << std::endl;
 #ifdef USE_MPI                        //WW
 			clock_t cpu_time = 0; //WW
 			cpu_time = -clock();
