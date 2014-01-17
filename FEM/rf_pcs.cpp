@@ -313,7 +313,7 @@ CRFProcess::CRFProcess(void) :
 	PCSSetIC_USER = NULL;
 	//----------------------------------------------------------------------
 	// TIM
-	tim_type_name = "TRANSIENT";          //OK
+	tim_type = FiniteElement::TIM_TRANSIENT;
 	time_unit_factor = 1.0;
 	timebuffer = 1.0e-5;                  //WW
 	//_pcs_type_name.empty();
@@ -1910,7 +1910,9 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 		// subkeyword found
 		if (line_string.find("$TIM_TYPE") != string::npos)
 		{
+			std::string tim_type_name;
 			*pcs_file >> tim_type_name;
+			this->tim_type = FiniteElement::convertTimType(tim_type_name);
 			pcs_file->ignore(MAX_ZEILE, '\n');
 			continue;
 		}
@@ -2163,7 +2165,7 @@ void CRFProcess::Write(std::fstream* pcs_file)
 	*pcs_file << "  " << cpl_type_name << endl;
 
 	*pcs_file << " $TIM_TYPE" << endl;
-	*pcs_file << "  " << tim_type_name << endl;
+	*pcs_file << "  " << FiniteElement::convertTimTypeToString(tim_type) << endl;
 
 	if (msh_type_name.size() > 0)
 	{
@@ -5056,7 +5058,7 @@ void CRFProcess::GlobalAssembly()
 		const size_t dn = m_msh->ele_vector.size() / 10;
 		const bool print_progress = (dn >= 100);
 		if (print_progress)
-			ScreenMessage2("start local assembly for %d elements...\n", m_msh->ele_vector.size());
+			ScreenMessage("start local assembly for %d elements...\n", m_msh->ele_vector.size());
 	    const long n_eles = (long)m_msh->ele_vector.size();
 
 		//YDTEST. Changed to DOF 15.02.2007 WW
@@ -5066,7 +5068,7 @@ void CRFProcess::GlobalAssembly()
 			for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
 			{
 				if (print_progress && (i+1)%dn==0)
-					ScreenMessage2("%d \%\n", ((i+1)*100/n_eles));
+					ScreenMessage("%d \%\n", ((i+1)*100/n_eles));
 				elem = m_msh->ele_vector[i];
 				// Marked for use //WX: modified for coupled excavation
 #ifndef OGS_ONLY_TH

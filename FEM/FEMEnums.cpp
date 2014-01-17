@@ -464,4 +464,22 @@ std::string convertSTTypeToString(SourceTermType st_type)
     return "INVALID_ST_TYPE";
 }
 
+TimType convertTimType(const std::string& str)
+{
+    if (str.compare("STEADY") == 0)
+        return TIM_STEADY;
+    if (str.compare("TRANSIENT") == 0)
+        return TIM_TRANSIENT;
+    return INVALID_TIM_TYPE;
+}
+
+std::string convertTimTypeToString(TimType st_type)
+{
+    if (st_type == TIM_STEADY)
+        return "STEADY";
+    if (st_type == TIM_TRANSIENT)
+        return "TRANSIENT";
+    return "INVALID_TIM_TYPE";
+}
+
 } // end namespace FiniteElement

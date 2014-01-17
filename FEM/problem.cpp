@@ -818,7 +818,7 @@ void Problem::PCSCreate()
 		{
 			ScreenMessage2(" for %s pcs_component_number %d\n", pcs_vector[i]->pcs_primary_function_name[0], pcs_vector[i]->pcs_component_number);
 		}
-		ScreenMessage2(" ->TIM_TYPE: %s\n", pcs_vector[i]->tim_type_name.c_str());
+		ScreenMessage2(" ->TIM_TYPE: %s\n", FiniteElement::convertTimTypeToString(pcs_vector[i]->tim_type).c_str());
 		pcs_vector[i]->Create();
 	}
 
@@ -1175,24 +1175,24 @@ bool Problem::CouplingLoop()
 			m_tim->step_current++;
 			// initilize
 			total_processes[i]->iter_nlin_max = 0;
-            total_processes[i]->iter_lin_max = 0;
+			total_processes[i]->iter_lin_max = 0;
 		}
 		else
 		{   //21.05.2010.  WW
-			if(total_processes[i] && total_processes[i]->tim_type_name.find("STEADY") != std::string::npos) {
+			if(total_processes[i] && total_processes[i]->tim_type==FiniteElement::TIM_STEADY) {
 				acounter++;
-                m_tim = total_processes[i]->Tim;
-                m_tim->step_current++; //NW increment needed to get correct time step length in CTimeDiscretization::CalcTimeStep()
-            }
+				m_tim = total_processes[i]->Tim;
+				m_tim->step_current++; //NW increment needed to get correct time step length in CTimeDiscretization::CalcTimeStep()
+			}
 			exe_flag[i] = false;
 		}
 	}
 	int num_processes = (int)active_process_index.size();
 	//
-    // JT: All active processes must run on the overall loop. Strange this wasn't the case before.
-    for(i=0; i<(int)total_processes.size(); i++){
-	    run_flag[i] = exe_flag[i];
-    }
+	// JT: All active processes must run on the overall loop. Strange this wasn't the case before.
+	for(i=0; i<(int)total_processes.size(); i++){
+		run_flag[i] = exe_flag[i];
+	}
 	for(i=0; i<num_processes; i++){
 		index = active_process_index[i];
 		total_processes[index]->first_coupling_iteration = true;
@@ -1210,18 +1210,18 @@ bool Problem::CouplingLoop()
 	max_outer_error = 0.0;
 	for(outer_index = 0; outer_index < cpl_overall_max_iterations; outer_index++)
 	{
-	    // JT: All active processes must run on the overall loop. Strange this wasn't the case before.
-	    for(i=0; i<num_processes; i++){
+		// JT: All active processes must run on the overall loop. Strange this wasn't the case before.
+		for(i=0; i<num_processes; i++){
 			index = active_process_index[i];
-		    run_flag[index] = exe_flag[index];
-	    }
-	    for(i=0; i<num_processes; i++){
-		  index = active_process_index[i];
-		  m_tim = total_processes[index]->Tim;
-		  if(!m_tim->time_active) run_flag[index] = false;
-	    }
+			run_flag[index] = exe_flag[index];
+		}
+		for(i=0; i<num_processes; i++){
+			index = active_process_index[i];
+			m_tim = total_processes[index]->Tim;
+			if(!m_tim->time_active) run_flag[index] = false;
+		}
 
-        max_outer_error = 0.0; //NW reset error for each iteration
+		max_outer_error = 0.0; //NW reset error for each iteration
 		for(i = 0; i < num_processes; i++)
 		{
 			index = active_process_index[i];
@@ -1306,6 +1306,14 @@ bool Problem::CouplingLoop()
 				if(!a_pcs->TimeStepAccept()){
 					ScreenMessage("*** The process rejected this time step.\n");
 					accept = false;
+					if (a_pcs->tim_type==FiniteElement::TIM_STEADY) {
+						ScreenMessage("Cannot change time step size because the process is a steady state\n");
+						ScreenMessage("Terminate this simulation\n");
+#ifdef USE_PETSC
+						PetscFinalize();
+#endif
+						exit(1);
+					}
 					break;
 				}
 			}
@@ -1315,7 +1323,7 @@ bool Problem::CouplingLoop()
 		if(cpl_overall_max_iterations > 1){
 			ScreenMessage("\n======================================================\n");
 			ScreenMessage("Outer coupling loop %d/%d complete.\n", outer_index+1, cpl_overall_max_iterations);
-			ScreenMessage("Max coupling error (relative to tolerance): %d\n", max_outer_error);
+			ScreenMessage("Max coupling error (relative to tolerance): %g\n", max_outer_error);
 			ScreenMessage("======================================================\n");
 		}
 		else{
@@ -1481,7 +1489,7 @@ inline double Problem::LiquidFlow()
 		PCSCalcSecondaryVariables(); // PCS member function
 #endif
 		m_pcs->CalIntegrationPointValue(); //WW
-		if(m_pcs->tim_type_name.compare("STEADY") == 0)
+		if(m_pcs->tim_type==FiniteElement::TIM_STEADY)
 			m_pcs->selected = false;
 	}
 
@@ -1707,7 +1715,7 @@ inline double Problem::MultiPhaseFlow()
 		}
 	}
 
-	if(m_pcs->tim_type_name.compare("STEADY") == 0)
+	if(m_pcs->tim_type==FiniteElement::TIM_STEADY)
 		m_pcs->selected = false;
 
 	//TestOutputEclipse(m_pcs);

@@ -7319,7 +7319,7 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		// Calculate matrices
 		// Mass matrix..........................................................
 		//NW
-		if(this->pcs->tim_type_name.compare("STEADY") != 0)
+		if(this->pcs->tim_type==FiniteElement::TIM_STEADY)
 		{
 			if(pcs->m_num->ele_mass_lumping)
 				CalcLumpedMass();

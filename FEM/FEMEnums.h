@@ -268,6 +268,17 @@ SourceTermType convertSTType(const std::string& st_type_string);
 
 std::string convertSTTypeToString(SourceTermType st_type);
 
+enum TimType
+{
+    INVALID_TIM_TYPE = 0,
+    TIM_STEADY,
+    TIM_TRANSIENT
+};
+
+TimType convertTimType(const std::string& st_type_string);
+
+std::string convertTimTypeToString(TimType st_type);
+
 } // end namespace FiniteElement
 
 #endif                                            //FEMENUMS_H

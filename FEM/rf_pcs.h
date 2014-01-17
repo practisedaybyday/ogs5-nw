@@ -562,7 +562,7 @@ public:
 	int rwpt_app;
 	int srand_seed;
 	const char* pcs_num_name[2];          //For monolithic scheme
-	std::string tim_type_name;            //OK
+	FiniteElement::TimType tim_type;
 	const char* pcs_sol_name;
 	std::string cpl_type_name;
 	CNumerics* m_num;
