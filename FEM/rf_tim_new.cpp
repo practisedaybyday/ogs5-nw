@@ -1282,9 +1282,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 				if ( (imflag > 0) && ( n_itr  >= time_adapt_tim_vector[1] ) )
 				{
 					imflag = 0;
-					std::cout <<
-					"Self adaptive time step: to many iterations for Groundwater/LIQUID flow"
-					          << std::endl;
+					ScreenMessage("Self adaptive time step: too many or diverged iterations for Groundwater/LIQUID flow %d %d \n", n_itr, time_adapt_tim_vector[1]);
 				}
 				if (((imflag == 1) && (n_itr <= time_adapt_tim_vector[0])))
 					imflag = 2;
@@ -1296,11 +1294,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 				if ( (imflag > 0) && ( n_itr  >= time_adapt_tim_vector[1] || !m_pcs->accepted ) )
 				{
 					imflag = 0;
-					std::cout <<
-					"Self adaptive time step: too many or diverged iterations for Transport "
-					          << n_itr << " " <<
-					time_adapt_tim_vector[1] <<
-					std::endl;
+					ScreenMessage("Self adaptive time step: too many or diverged iterations for Transport %d %d \n", n_itr, time_adapt_tim_vector[1]);
 				}
 				if ( ((imflag == 1) &&
 				      ( n_itr  <= time_adapt_tim_vector[0] ) ))
