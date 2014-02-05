@@ -6034,6 +6034,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				curve =  m_bc_node->CurveIndex;
 				if(curve > 0)
 				{
+					interp_method = m_bc->TimeInterpolation;
+
 					if(curve > 10000000) /// 16.08.2010. WW
 						time_fac = GetCurveValue(curve - 10000000,
 						                         interp_method,

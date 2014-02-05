@@ -131,6 +131,7 @@ CBoundaryCondition::CBoundaryCondition() :
 	bcExcav = -1;                         //WX
 	MatGr = -1;                           //WX
 	is_MatGr_set = false; //NW
+	TimeInterpolation = 0;
 	has_constrain = false;
 	constrain_value = .0;
 	constrain_operator = FiniteElement::INVALID_OPERATOR_TYPE;
@@ -463,6 +464,22 @@ std::ios::pos_type CBoundaryCondition::Read(std::ifstream* bc_file,
             in.clear();
             continue;
         }
+		if (line_string.find("$TIME_INTERPOLATION") != std::string::npos)
+		{
+			in.str(readNonBlankLineFromInputStream(*bc_file));
+			in >> interpolation_method;
+			if (interpolation_method.find("LINEAR") != std::string::npos)
+			{
+				this->TimeInterpolation = 0;
+			}
+			if (interpolation_method.find("PIECEWISE_CONSTANT") != std::string::npos)
+			{
+				this->TimeInterpolation = 1;
+			}
+			in.clear();
+			continue;
+		}
+
 	}
 	return position;
 }

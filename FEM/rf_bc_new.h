@@ -165,6 +165,8 @@ public:
 	double gradient_ref_depth; // 6/2012 JOD
 	double gradient_ref_depth_value;
 	double gradient_ref_depth_gradient;
+	std::string interpolation_method;
+	int TimeInterpolation;
 
 private:
 	double node_value_cond; //OK
