@@ -228,7 +228,6 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 	COutput* m_out = NULL;
 	CRFProcess* m_pcs = NULL;
 	CFEMesh* m_msh = NULL;
-	bool OutputBySteps = false;
 	double tim_value;
 
 	for (size_t i = 0; i < out_vector.size(); i++)
@@ -254,6 +253,7 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 		m_out->setTime (time_current);
 		const size_t no_times (m_out->time_vector.size());
 		//--------------------------------------------------------------------
+		bool OutputBySteps = false;
 		if (no_times == 0 && (m_out->nSteps > 0) && (time_step_number % m_out->nSteps == 0))
 			OutputBySteps = true;
 		if (time_step_number == 0 || force_output) //WW//JT
