@@ -2834,7 +2834,7 @@ inline double Problem::GroundWaterFlow()
 	// ELE values
 #if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW
 	//#ifndef NEW_EQS                                //WW. 07.11.2008
-	if(m_pcs->tim_type_name.compare("STEADY") == 0) //CMCD 05/2006
+	if(m_pcs->tim_type==FiniteElement::TIM_STEADY) //CMCD 05/2006
 	{
 		//std::cout << "      Calculation of secondary ELE values" << std::endl;
 		m_pcs->AssembleParabolicEquationRHSVector(); //WW LOPCalcNODResultants();
