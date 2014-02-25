@@ -1611,7 +1611,7 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 			    // Initial pressure should be subtracted, i.e. (p-p0) because DEFORMATION
 				// calculates stress balance of changes from the initial stress.
 			    // NW 28.08.2012
-				if (p0!=NULL) {
+				if (pcs->calcDiffFromStress0 && p0!=NULL) {
 				    val_n -= p0[nodes[i]];
 				}
 				AuxNodal[i] = LoadFactor * val_n;
@@ -1961,6 +1961,9 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 	//
 	if(smat->CreepModel() == 1000)        //HL_ODS
 		smat->CleanTrBuffer_HL_ODS();
+	for (i = 0; i < ns; i++)
+		stress0[i] = .0;
+
 	// Loop over Gauss points
 	for (gp = 0; gp < nGaussPoints; gp++)
 	{
@@ -2208,8 +2211,10 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 				p_D = De;
 			else
 				p_D = ConsistDep;
-			for (i = 0; i < ns; i++)
-				stress0[i] = (*eleV_DM->Stress0)(i,gp);
+			if (pcs->calcDiffFromStress0) {
+				for (i = 0; i < ns; i++)
+					stress0[i] = (*eleV_DM->Stress0)(i,gp);
+			}
 			ComputeMatrix_RHS(fkt, p_D);
 		}
 		else                      // Update stress

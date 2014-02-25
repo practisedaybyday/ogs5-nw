@@ -396,6 +396,8 @@ CRFProcess::CRFProcess(void) :
 	for (int i=0; i<DOF_NUMBER_MAX; i++)
 		pcs_absolute_error[i]=.0;
 
+	calcDiffFromStress0 = true;
+	resetStrain = true;
 }
 
 void CRFProcess::setProblemObjectPointer (Problem* problem)
@@ -915,7 +917,7 @@ void CRFProcess::Create()
 	}
 	//
     //--- construct IC -----------------------------------------------------------------
-	if(reload >= 2 && type != 4 && type / 10 != 4) // Modified at 03.08.2010. WW
+	if(reload >= 2 && ((type != 4 && type / 10 != 4) || !resetStrain)) // Modified at 03.08.2010. WW
 	{
 		// PCH
 		ScreenMessage2("Reloading the primary variables... \n");
@@ -1741,6 +1743,8 @@ CRFProcess* CRFProcess::CopyPCStoDM_PCS()
 		dm_pcs->ExcavCurve = ExcavCurve;
 	}
 	dm_pcs->write_leqs = write_leqs;
+	dm_pcs->calcDiffFromStress0 = calcDiffFromStress0;
+	dm_pcs->resetStrain = resetStrain;
 	//
 	return dynamic_cast<CRFProcess*> (dm_pcs);
 }
@@ -2110,6 +2114,26 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 		if(line_string.find("$LEQS_OUTPUT") == 0)
 		{
 			write_leqs = true;
+			continue;
+		}
+		if(line_string.find("$CALC_DIFF_FROM_STRESS0") == 0)
+		{
+			// a flag to calculate deformation in total stress or differential stress from reference state
+			// default is true
+			int dummy = 0;
+			*pcs_file >> dummy;
+			calcDiffFromStress0 = (dummy != 0);
+			ScreenMessage("-> $CALC_DIFF_FROM_STRESS0 = %d\n", dummy);
+			continue;
+		}
+		if(line_string.find("$RESET_STRAIN") == 0)
+		{
+			int dummy = 0;
+			*pcs_file >> dummy;
+			resetStrain = (dummy != 0);
+			ScreenMessage("-> $RESET_STRAIN = %d\n", dummy);
+			if (!resetStrain)
+				ScreenMessage("-> $RESET_STRAIN=0 is not supported yet\n", dummy);
 			continue;
 		}
 		//....................................................................

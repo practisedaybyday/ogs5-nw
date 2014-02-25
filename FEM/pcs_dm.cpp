@@ -149,7 +149,7 @@ void CRFProcessDeformation::Initialization()
     if(reload == 3)
         idata_type = read_write;
     //--
-    if (reload == 2 || reload == 3)
+    if ((reload == 2 || reload == 3) && calcDiffFromStress0)
         _isInitialStressNonZero = true; //NW
 
 	// Local assembliers
@@ -290,9 +290,9 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	if(myrank == 1)
 	{
 #endif
-		std::cout<<"\n      ================================================" << std::endl;
-	    std::cout << "    ->Process " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
-	    std::cout << "      ================================================" << std::endl;
+		std::cout<<"\n================================================" << std::endl;
+	    std::cout << "->Process " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
+	    std::cout << "================================================" << std::endl;
 #if defined(USE_MPI)
 }
 #endif
