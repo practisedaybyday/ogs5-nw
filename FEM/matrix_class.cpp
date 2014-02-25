@@ -12,6 +12,7 @@
 #include <cfloat>
 #include <cmath>
 #include <iomanip>
+#include <algorithm>
 //
 #include "mathlib.h"
 #include "matrix_class.h"
@@ -1031,6 +1032,8 @@ SparseTable::SparseTable(CPARDomain &m_dom, bool quadratic, bool symm) :
 		size_entry_column += diag_entry[i];
 	}
 	//
+#if 0
+	std::cout << "-> step 2" << std::endl;
 	for(i = 0; i < rows; i++)
 	{
 		// 'diag_entry' used as a temporary array
@@ -1050,6 +1053,39 @@ SparseTable::SparseTable(CPARDomain &m_dom, bool quadratic, bool symm) :
 	// Old index to new one
 	for(i = 0; i < rows; i++)
 		row_index_mapping_o2n[row_index_mapping_n2o[i]] = i;
+
+#else
+//	struct MyReverse {
+//		bool myfunction (long i, long j) { return (i>j); }
+//	};
+//	MyReverse myreverse;
+	std::vector<long> sorted_nr_nodes(diag_entry, diag_entry+rows);
+	std::cout << "-> sort " << rows << " items" << std::endl;
+	std::sort(sorted_nr_nodes.begin(), sorted_nr_nodes.end(), std::greater<long>());
+//	std::cout << "-> reverse" << std::endl;
+//	std::reverse(sorted_nr_nodes.begin(), sorted_nr_nodes.end());
+	const long max_nr_nodes = sorted_nr_nodes[0];
+	std::cout << "-> update map (max. column nr.=" << max_nr_nodes << ")" << std::endl;
+	//std::map<long,long> tmp;
+	std::vector<long> tmp(max_nr_nodes+1, 0);
+	for (i=0; i<rows; i++) {
+		long org_val = diag_entry[i];
+		//std::vector<long>::iterator itr = std::find(sorted_nr_nodes.begin(), sorted_nr_nodes.end(), org_val);
+		std::vector<long>::iterator itr = std::lower_bound(sorted_nr_nodes.begin(), sorted_nr_nodes.end(), org_val, std::greater<long>());
+		long new_pos = itr - sorted_nr_nodes.begin() + tmp[org_val];
+		//if (new_pos<0) std::cout << "***Error: new_pos is negative " << new_pos << std::endl;
+		tmp[org_val]++;
+		row_index_mapping_o2n[i] = new_pos;
+		diag_entry[i] = sorted_nr_nodes[i];
+	}
+	// New index to old one
+	for(i = 0; i < rows; i++)
+		row_index_mapping_n2o[row_index_mapping_o2n[i]] = i;
+#endif
+	//std::cout << myrank << ": dia="; for (i=0; i<10;i++) std::cout << diag_entry[i] << " "; std::cout << std::endl;
+	//std::cout << myrank << ": n2o="; for (i=0; i<10;i++) std::cout << row_index_mapping_n2o[i] << " "; std::cout << std::endl;
+	//std::cout << myrank << ": o2n="; for (i=0; i<10;i++) std::cout << row_index_mapping_o2n[i] << " "; std::cout << std::endl;
+
 	// Maximum number of columns in the sparse table
 	max_columns = diag_entry[0];
 	//--- End of sorting
