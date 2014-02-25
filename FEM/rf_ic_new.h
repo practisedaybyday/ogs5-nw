@@ -45,6 +45,7 @@ private:
 	std::vector<int> subdom_index;        //WW
 	std::vector<double> subdom_ic;        //WW
 	std::string fname;                    //17.11.2009. PCH
+    std::string ele_interpo_method; //NW
 
 	LinearFunctionData* dis_linear_f;     //24.8.2011. WW
 
@@ -62,6 +63,7 @@ public:
 	//KR std::vector<CNodeValue*> node_value_vector;
 	void SetDomain(int);
 	void SetByNodeIndex(int);             // 19.11.2009 PCH
+    void SetByElementValues(int); //NW
 	void SetPolyline(int);
 	void SetSurface(int);
 	void SetPoint(int);                   //MX
