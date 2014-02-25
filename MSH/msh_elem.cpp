@@ -1770,6 +1770,7 @@ void CElem::setElementProperties(MshElemType::type t, bool isFace)
 		break;
 	default:
 		std::cerr << "CElem::setElementProperties MshElemType not handled" << std::endl;
+		break;
 	}
 	this->nodes_index.resize(nnodes);
 }
