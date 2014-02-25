@@ -150,6 +150,7 @@ private:
 
 	std::string fname; //27.02.2009. WW
 	int _curve_index; // Time function index
+    std::string ele_interpo_method; //NW
 
 	// DIS
 	std::vector<long> node_number_vector;
@@ -199,6 +200,7 @@ private:
 	//19.03.2009. WW
 	inline void PatchAssign(long ShiftInNodeVector);
 
+    void SetByElementValues(long); //NW
 	// MSH
 	long _msh_node_number;
 	std::string _msh_type_name; //OK4105
