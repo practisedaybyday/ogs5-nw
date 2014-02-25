@@ -153,4 +153,17 @@ template<class num> void  DeleteArray(num* an_array)
 		delete [] an_array;
 	an_array = NULL;
 }
+
+struct EleToNodeInterpolationMethod
+{
+    enum type
+    {
+        VOLUME_WEIGHTED,
+        GAUSS_EXTRAPOLATION
+    };
+};
+
+double getNodalValueFromElementValue(CRFProcess &pcs, const std::map<long, double> &map_eleId_val, EleToNodeInterpolationMethod::type interpolation_type, long node_id);
+void convertElementDataToNodalData(CRFProcess &pcs, const std::vector<double> &vec_ele_data, EleToNodeInterpolationMethod::type interpolation_type, std::vector<double> &vec_nod_data);
+
 #endif
