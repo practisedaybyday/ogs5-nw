@@ -341,6 +341,10 @@ DistributionType convertDisType(const std::string& dis_type_string)
 		return CLIMATE;
 	if (dis_type_string.compare("FUNCTION") == 0)
 		return FUNCTION;                              //24.08.2011. WW
+    if (dis_type_string.compare("ELEMENT") == 0)
+        return ELEMENT;
+    if (dis_type_string.compare("INITIAL") == 0)
+        return INITIAL;
 	else
 	{
 		std::cout << "convertDisType #" << dis_type_string << "# not found"
@@ -388,6 +392,10 @@ std::string convertDisTypeToString(DistributionType dis_type)
 		return "CLIMATE";
 	if (dis_type == FUNCTION)
 		return "FUNCTION";         //24.08.2011. WW
+    if (dis_type == INITIAL)
+        return "INITIAL";
+    if (dis_type == ELEMENT)
+        return "ELEMENT";
 
 	return "INVALID_DIS_TYPE";
 }
