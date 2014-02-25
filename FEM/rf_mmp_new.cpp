@@ -9,6 +9,7 @@
 // C++ STL
 //#include <iostream>
 #include <cfloat>
+#include <algorithm>
 
 // FEMLib
 #include "tools.h"
@@ -122,6 +123,10 @@ CMediumProperties::CMediumProperties() :
 	permeability_strain_model = -1; //01.09.2011. WW
 
 	evaporation = -1;
+
+    permeability_hetero_value_id = 0;
+    porosity_hetero_value_id = 0;
+    storage_hetero_value_id = 0;
 }
 
 /**************************************************************************
@@ -687,7 +692,8 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		//------------------------------------------------------------------------
 
 		//subkeyword found
-		if(line_string.find("$STORAGE") != std::string::npos)
+        if((line_string.find("$STORAGE") != string::npos) &&
+            (!(line_string.find("_DISTRIBUTION") != std::string::npos)))
 		{
 			in.str(GetLineFromFile1(mmp_file));
 			in >> storage_model;
@@ -737,19 +743,24 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 				in >> storage_model_values[8]; //Fracture density
 				pcs_name_vector.push_back("PRESSURE1");
 				break;
-			default:
-				cout << "Error in MMPRead: no valid storativity model" << endl;
-				break;
 			case 7:       //RW/WW
 				in >> storage_model_values[0]; //Biot's alpha
 				in >> storage_model_values[1]; //Skempton's B coefficient
 				in >> storage_model_values[2]; //macroscopic drained bulk modulus
-				double val_l = storage_model_values[0] *
-				               (1. - storage_model_values[0] *
-				                storage_model_values[1])
-				               / storage_model_values[1] / storage_model_values[2];
-				storage_model_values[1] = val_l;
+                {
+                    double val_l = storage_model_values[0] *
+                        (1. - storage_model_values[0] *
+                        storage_model_values[1])
+                        / storage_model_values[1] / storage_model_values[2];
+                    storage_model_values[1] = val_l;
+                }
 				break;
+            case 8:      //NW: read from file 
+                in >> storage_model_values[0]; // some dummy default value is read
+                break;
+            default:
+                cout << "Error in MMPRead: no valid storativity model" << endl;
+                break;
 			}
 			in.clear();
 			continue;
@@ -1726,7 +1737,52 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 			in.clear();
 			continue;
 		}
-	}
+
+        //------------------------------------------------------------------------
+        //STORAGE DISTRIBUTION
+        //------------------------------------------------------------------------
+        //subkeyword found
+        if(line_string.find("$STORAGE_DISTRIBUTION") != std::string::npos)
+        {
+            in.str(GetLineFromFile1(mmp_file));
+            in >> storage_file;
+            string file_name = storage_file;
+            CGSProject* m_gsp = NULL;
+            m_gsp = GSPGetMember("mmp");
+            if(m_gsp)
+                file_name = m_gsp->path + storage_file;
+            //else{ //CB this is to get the correct path in case the exe is not run from within the project folder
+            //  pos = (int)FileName.find_last_of('\\', -1) + 1;
+            //  file_name = FileName.substr(0,pos) + porosity_file;
+            //}
+            //-------CB as above by WW
+            indexChWin = FileName.find_last_of('\\');
+            indexChLinux = FileName.find_last_of('/');
+            if(indexChWin == string::npos && indexChLinux == std::string::npos)
+                funfname = file_name;
+            else if(indexChWin != string::npos)
+            {
+                funfname = FileName.substr(0,indexChWin);
+                funfname = funfname + "\\" + file_name;
+            }
+            else if(indexChLinux != string::npos)
+            {
+                funfname = FileName.substr(0,indexChLinux);
+                funfname = funfname + "/" + file_name;
+            }
+            storage_file = funfname;
+            //WW
+            ifstream mmp_file(funfname.data(),ios::in);
+            if (!mmp_file.good())
+                std::cout <<
+                "Fatal error in MMPRead: no STORAGE_DISTRIBUTION file" <<
+                std::endl;
+            mmp_file.close();
+            storage_model = 8;
+            in.clear();
+            continue;
+        }
+    }
 	return position;
 }
 
@@ -3559,14 +3615,15 @@ double CMediumProperties::Porosity(long number,double theta)
 	///
 	ElementValue_DM* gval = NULL;
 
-	// CB Get idx of porosity in elements mat vector for het porosity
-	size_t por_index (0);
-	if (porosity_model == 11)
-		for (por_index = 0; por_index
-		     < m_pcs->m_msh->mat_names_vector.size(); por_index++)
-			if (m_pcs->m_msh->mat_names_vector[por_index].compare("POROSITY")
-			    == 0)
-				break;
+    //NW commented out below to use permeability_hetero_value_id instead of evaluating every time
+	//// CB Get idx of porosity in elements mat vector for het porosity
+	//size_t por_index (0);
+	//if (porosity_model == 11)
+	//	for (por_index = 0; por_index
+	//	     < m_pcs->m_msh->mat_names_vector.size(); por_index++)
+	//		if (m_pcs->m_msh->mat_names_vector[por_index].compare("POROSITY")
+	//		    == 0)
+	//			break;
 
 	// Functional dependencies
 	CRFProcess* pcs_temp;
@@ -3672,7 +3729,7 @@ double CMediumProperties::Porosity(long number,double theta)
 		break;
 	case 11:                              // n = temp const, but spatially distributed CB
 		//porosity = porosity_model_values[0];
-		porosity = _mesh->ele_vector[number]->mat_vector(por_index);
+		porosity = _mesh->ele_vector[number]->mat_vector(this->porosity_hetero_value_id);
 		break;
 	case 12:                              // n = n0 + vol_strain, WX: 03.2011
 		porosity = PorosityVolStrain(number, porosity_model_values[0], assem);
@@ -4053,15 +4110,16 @@ double* CMediumProperties::PermeabilityTensor(long index)
 		tensor[0] = permeability_tensor[0];
 		if( permeability_model == 2 )
 		{                         // here get the initial permeability values from material perperty class;
-			// get the index:-------------------------------------------------------------------
-			for(perm_index = 0; perm_index < (int)m_pcs->m_msh->mat_names_vector.size();
-			    perm_index++)
-				if(m_pcs->m_msh->mat_names_vector[perm_index].compare(
-				           "PERMEABILITY") == 0)
-					break;
-			// end of getting the index---------------------------------------------------------
+            //NW commented out below to use permeability_hetero_value_id instead of evaluating every time
+			//// get the index:-------------------------------------------------------------------
+			//for(perm_index = 0; perm_index < (int)m_pcs->m_msh->mat_names_vector.size();
+			//    perm_index++)
+			//	if(m_pcs->m_msh->mat_names_vector[perm_index].compare(
+			//	           "PERMEABILITY") == 0)
+			//		break;
+			//// end of getting the index---------------------------------------------------------
 
-			tensor[0] = _mesh->ele_vector[index]->mat_vector(perm_index);
+			tensor[0] = _mesh->ele_vector[index]->mat_vector(this->permeability_hetero_value_id);
 			//CMCD
 			//01.09.2011 WW.  int edx = m_pcs->GetElementValueIndex("PERMEABILITY");
 			//CMCD
@@ -5049,8 +5107,8 @@ void GetHeterogeneousFields()
 
 			//WW file_path_base_ext = file_path + m_mmp->permeability_file;
 			//WW
-			m_mmp->SetDistributedELEProperties(m_mmp->permeability_file);
-			m_mmp->WriteTecplotDistributedProperties();
+			m_mmp->permeability_hetero_value_id = m_mmp->SetDistributedELEProperties(m_mmp->permeability_file, i);
+			//m_mmp->WriteTecplotDistributedProperties();
 		}
 		//....................................................................
 		// For Porosity
@@ -5062,15 +5120,22 @@ void GetHeterogeneousFields()
 			//file_path_base_ext = file_path + m_mmp->porosity_file;
 			//m_mmp->SetDistributedELEProperties(file_path_base_ext); // CB Removed bugs in this function
 			// CB Removed bugs in this function
-			m_mmp->SetDistributedELEProperties(m_mmp->porosity_file);
-			m_mmp->WriteTecplotDistributedProperties();
+			m_mmp->porosity_hetero_value_id = m_mmp->SetDistributedELEProperties(m_mmp->porosity_file, i);
+			//m_mmp->WriteTecplotDistributedProperties();
 		}
+        //....................................................................
+        // For Storage
+        if(m_mmp->storage_file.size() > 0)
+        {
+            m_mmp->storage_hetero_value_id = m_mmp->SetDistributedELEProperties(m_mmp->storage_file, i);
+            //m_mmp->WriteTecplotDistributedProperties();
+        }
 		//....................................................................
 		// GEOMETRY_AREA
 		if(m_mmp->geo_area_file.size() > 0)
 		{
 			file_path_base_ext = file_path + m_mmp->geo_area_file;
-			m_mmp->SetDistributedELEProperties(file_path_base_ext);
+			m_mmp->SetDistributedELEProperties(file_path_base_ext, i);
 			m_mmp->WriteTecplotDistributedProperties();
 		}
 		//NW    else m_mmp->SetConstantELEarea(m_mmp->geo_area,i);
@@ -5110,7 +5175,7 @@ void CMediumProperties::SetConstantELEarea(double area, int group)
    Programing:
    11/2005 OK Implementation
 **************************************************************************/
-void CMediumProperties::SetDistributedELEProperties(string file_name)
+int CMediumProperties::SetDistributedELEProperties(const string &file_name, size_t mmp_id)
 {
 	string line_string, line1;
 	string mmp_property_name;
@@ -5145,7 +5210,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 		"Warning in CMediumProperties::SetDistributedELEProperties: no MMP property data"
 		     <<
 		endl;
-		return;
+		return -1;
 	}
 	mmp_property_file.clear();
 	mmp_property_file.seekg(0,ios::beg);
@@ -5154,20 +5219,21 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 	if(!(line_string.find("#MEDIUM_PROPERTIES_DISTRIBUTED") != string::npos))
 	{
 		cout << "Keyword #MEDIUM_PROPERTIES_DISTRIBUTED not found" << endl;
-		return;
+		return -1;
 	}
 	//----------------------------------------------------------------------
+    int ele_mat_id = 0; //NW
 	while(!mmp_property_file.eof())
 	{
 		line_string = GetLineFromFile1(&mmp_property_file);
 		if(line_string.find("STOP") != string::npos)
-			return;
+			break;
 		if(line_string.empty())
 		{
 			cout <<
 			"Error in CMediumProperties::SetDistributedELEProperties - no enough data sets"
 			     << endl;
-			return;
+			return -1;
 		}
 		//....................................................................
 		if(line_string.find("$MSH_TYPE") != string::npos)
@@ -5180,7 +5246,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 				cout <<
 				"CMediumProperties::SetDistributedELEProperties: no MSH data" <<
 				endl;
-				return;
+				return -1;
 			}
 			continue;
 		}
@@ -5190,7 +5256,13 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 			element_area = false;
 			mmp_property_file >> mmp_property_name;
 			cout << mmp_property_name << endl;
-			_mesh->mat_names_vector.push_back(mmp_property_name);
+            std::vector<std::string>::iterator itr = std::find(_mesh->mat_names_vector.begin(), _mesh->mat_names_vector.end(), mmp_property_name); 
+            if (_mesh->mat_names_vector.end() == itr) {
+                _mesh->mat_names_vector.push_back(mmp_property_name);
+                ele_mat_id = _mesh->mat_names_vector.size()-1;
+            } else {
+                ele_mat_id = itr - _mesh->mat_names_vector.begin();
+            }
 			if (mmp_property_name == "GEOMETRY_AREA")
 				element_area = true;
 			continue;
@@ -5234,6 +5306,9 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 				for(i = 0; i < (long)_mesh->ele_vector.size(); i++)
 				{
 					m_ele_geo = _mesh->ele_vector[i];
+                    //check mat id
+                    if (m_ele_geo->GetPatchIndex()!=mmp_id) continue; //NW
+
 					mat_vector_size = m_ele_geo->mat_vector.Size();
 					// CB Store old values as they are set to zero after resizing
 					for(j = 0; j < mat_vector_size; j++)
@@ -5273,6 +5348,10 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 				{
 					m_ele_geo = _mesh->ele_vector[i];
 					mmp_property_file >> ddummy >> mmp_property_value;
+
+                    //check mat id
+                    if (m_ele_geo->GetPatchIndex()!=mmp_id) continue; //NW
+
 					mat_vector_size = m_ele_geo->mat_vector.Size();
 					if (mat_vector_size > 0)
 					{
@@ -5301,7 +5380,7 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 						cout <<
 						"Error in CMediumProperties::SetDistributedELEProperties - not enough data sets"
 						     << endl;
-						return;
+						return -1;
 					}
 				}
 				break;
@@ -5367,7 +5446,8 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 	//Write sorted output file
 	//----------------------------------------------------------------------
 	// File handling
-
+    
+#if 0 //commented out by NW
 	// CB
 	for(k = 0; k < (int)_mesh->mat_names_vector.size(); k++)
 	{
@@ -5398,6 +5478,9 @@ void CMediumProperties::SetDistributedELEProperties(string file_name)
 		mmp_property_file_out.close();
 		//----------------------------------------------------------------------
 	}
+#endif
+
+    return ele_mat_id;
 }
 
 /**************************************************************************
@@ -7310,6 +7393,9 @@ double CMediumProperties::StorageFunction(long index,double* gp,double theta)
 	case 7:                               // poroelasticity RW
 		storage = storage_model_values[1];
 		break;
+    case 8:
+        storage = _mesh->ele_vector[index]->mat_vector(this->storage_hetero_value_id);
+        break;
 	default:
 		storage = 0.0;            //OK DisplayMsgLn("The requested storativity model is unknown!!!");
 		break;
