@@ -146,7 +146,8 @@ public:
 	void NODWriteWaterBalancePNT(double);	// 6/2012 JOD
 	void NODWritePointsCombined(double);	// 6/2012 JOD
 	void CalculateThroughflow(MeshLib::CFEMesh*, std::vector<long>&, std::vector<double>&);	// 6/2012 JOD
-
+    void WritePetrelElementData(int timestepnumber); //NW
+	
 	void setTime (double time) { _time = time; }
 	/**
 	 * get time returns the value of attribute time
