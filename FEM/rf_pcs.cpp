@@ -6016,7 +6016,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			{
 				//................................................................
 				// Constrain condition
-				if (m_bc_node->_bc->has_constrain)
+				if (m_bc->has_constrain)
 				{
 					CBoundaryCondition* bc = m_bc_node->_bc;
 					if (bc->constrain_var_id<0) {
