@@ -393,6 +393,11 @@ public:
 //         std::vector<GridsTopo*> grid_neighbors;
 //         friend class ::Problem;
 //#endif
+
+    /**
+     * \brief Find all nodes connecting the given elements
+     */
+    void GetNODOnELE(const std::vector<long> &vec_ele, std::vector<long> &vec_nod) const;
 	//....................................................................
 #ifdef ObsoleteGUI //WW 03.2012
 	// QUAD->HEX

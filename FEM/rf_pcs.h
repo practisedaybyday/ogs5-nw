@@ -862,6 +862,8 @@ public:
 	int ExcavCurve;                       //WX
 	double ExcavBeginCoordinate;          //WX
 	int PCS_ExcavState;                   //WX
+	bool calcDiffFromStress0;
+	bool resetStrain;
 #if defined(USE_MPI) || defined (USE_PETSC)                                 //WW
 	void Print_CPU_time_byAssembly(std::ostream &os = std::cout) const
 	{

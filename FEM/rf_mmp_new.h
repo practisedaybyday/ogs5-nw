@@ -140,7 +140,7 @@ public:
 	                                           //CMCD 4/2005
 	void SetConstantELEarea(double area, int group);
 	//OK
-	void SetDistributedELEProperties(std::string);
+	int SetDistributedELEProperties(const std::string&, size_t mmp_id);
 
 	void WriteTecplotDistributedProperties(); //OK
 
@@ -183,6 +183,7 @@ public:
 	double KC_porosity_initial;           // HS 11.2008
 	double KC_permeability_initial;       // HS 11.2008
 	std::string porosity_file;            //OK/MB
+    int porosity_hetero_value_id;
 	int tortuosity_model;
 	double tortuosity_model_values[10];
 	double tortuosity;
@@ -191,6 +192,8 @@ public:
 	int storage_model;                    // storativity
 	double storage_model_values[10];
 	double storage;
+    std::string storage_file; //NW
+    int storage_hetero_value_id;
 	int conductivity_model;
 	double conductivity;
 	int unconfined_flow_group;
@@ -217,6 +220,7 @@ public:
 	double perm_saturation_value[MAX_FLUID_PHASES];
 	//
 	std::string permeability_file;        //SB //OK/MB string permeability_dis_type_file;
+    int permeability_hetero_value_id;
 	std::string tortuosity_file;          // PCH
 	bool entry_pressure_conversion;		//JT
 	int capillary_pressure_model;

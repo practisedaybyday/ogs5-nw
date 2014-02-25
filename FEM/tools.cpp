@@ -1563,3 +1563,146 @@ void NsPol3 (double p, double q, double r, vector<double>* roots)
 	for(i = 0; i < nz; i++)
 		roots->push_back(z[i]);
 }
+
+double getNodalValueFromElementValue(CRFProcess &pcs, const std::map<long, double> &map_eleId_val, EleToNodeInterpolationMethod::type interpolation_type, long node_id)
+{
+    MeshLib::CFEMesh* m_msh = pcs.m_msh;
+    MeshLib::CNode* m_node = m_msh->nod_vector[node_id];
+    double nodal_val = 0.0;
+
+    switch (interpolation_type)
+    {
+    case EleToNodeInterpolationMethod::VOLUME_WEIGHTED:
+        {
+            const size_t n_conn_ele = m_node->getConnectedElementIDs().size();
+            double sum_weights = 0.0;
+
+            // sum the distance weighted data from each connected block
+            for (size_t j=0; j<n_conn_ele; j++)
+            {
+                const size_t e_id = m_node->getConnectedElementIDs()[j];
+                MeshLib::CElem* e = m_msh->ele_vector[e_id];
+
+                double ele_v = .0;
+                std::map<long, double>::const_iterator itr = map_eleId_val.find(e_id);
+
+                if (itr!=map_eleId_val.end()) {
+                    ele_v = itr->second;
+                } else {
+                    // skip elements which are not in the given list
+                    continue;
+                }
+
+                //calculate representative volume of the considered node in each connected element for weighting
+                double volume = e->GetVolume() / ((double)e->GetNodesNumber(false));
+                //weight
+                double weight = 1.0 / volume;
+                sum_weights += weight;
+
+                nodal_val += ele_v * weight;
+            }
+
+            nodal_val /= sum_weights;
+        }
+        break;
+    case EleToNodeInterpolationMethod::GAUSS_EXTRAPOLATION:
+        {
+            const size_t n_conn_ele = m_node->getConnectedElementIDs().size();
+            if (n_conn_ele==0) return 0;
+
+            MeshLib::CElem* e0 = m_msh->ele_vector[m_node->getConnectedElementIDs()[0]];
+            if (e0->GetElementType()!=MshElemType::QUAD && e0->GetElementType()!=MshElemType::HEXAHEDRON)
+                return 0;
+
+            if (e0->GetElementType()==MshElemType::QUAD) {
+                size_t mid_nod_id = node_id;
+                if (n_conn_ele<4) {
+                    std::map<long, int> set_mid_node;
+                    for (size_t i=0; i<e0->GetNodesNumber(false); i++) {
+                        long tmp_node_id = e0->GetNodeIndex(i);
+                        if (tmp_node_id==node_id) continue;
+                        if (m_msh->nod_vector[tmp_node_id]->getConnectedElementIDs().size()<4) continue;
+                        if (set_mid_node.count(tmp_node_id)==0)
+                            set_mid_node[tmp_node_id] = 0;
+                        else
+                            set_mid_node[tmp_node_id]++;
+                    }
+
+                    for (std::map<long, int>::iterator itr=set_mid_node.begin(); itr!=set_mid_node.end(); ++itr) {
+                        if (itr->second>1) {
+                            mid_nod_id = itr->first;
+                            break;
+                        }
+                    }
+                }
+
+            }
+
+            std::vector<double> ele_values(n_conn_ele);
+
+            for (size_t j=0; j<n_conn_ele; j++)
+            {
+                const size_t e_id = m_node->getConnectedElementIDs()[j];
+                MeshLib::CElem* e = m_msh->ele_vector[e_id];
+
+                if (e->GetElementType()!=MshElemType::QUAD && e->GetElementType()!=MshElemType::HEXAHEDRON)
+                    break;
+
+
+                double ele_v = .0;
+                std::map<long, double>::const_iterator itr = map_eleId_val.find(e_id);
+
+                if (itr!=map_eleId_val.end()) {
+                    ele_v = itr->second;
+                }
+
+                ele_values[j] = ele_v;
+            }
+
+        }
+        break;
+    }
+
+    return nodal_val;
+}
+
+void convertElementDataToNodalData(CRFProcess &pcs, const std::vector<double> &vec_ele_data, EleToNodeInterpolationMethod::type interpolation_type, std::vector<double> &vec_nod_values)
+{
+    MeshLib::CFEMesh* m_msh = pcs.m_msh;
+    const size_t n_nodes = m_msh->nod_vector.size();
+    vec_nod_values.resize(n_nodes);
+
+    if (interpolation_type == EleToNodeInterpolationMethod::VOLUME_WEIGHTED) {
+        for (size_t i=0; i<n_nodes; i++)
+        {
+            MeshLib::CNode* m_node = m_msh->nod_vector[i];
+            const size_t n_conn_ele = m_node->getConnectedElementIDs().size();
+
+            double nodal_val = 0.0;
+            double sum_weights = 0.0;
+
+            // sum the distance weighted data from each connected block
+            for (size_t j=0; j<n_conn_ele; j++)
+            {
+                const size_t e_id = m_node->getConnectedElementIDs()[j];
+                MeshLib::CElem* e = m_msh->ele_vector[e_id];
+
+                double weight = 0.0;
+
+                //calculate representative volume of the considered node in each connected element for weighting
+                double volume = e->GetVolume() / ((double)e->GetNodesNumber(false));
+
+                //weight
+                weight = 1.0 / volume;
+                sum_weights += weight;
+
+                nodal_val += vec_ele_data[e_id] * weight;
+            }
+
+            nodal_val /= sum_weights;
+            vec_nod_values[i] = nodal_val;
+        }
+    }
+
+}
+

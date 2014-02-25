@@ -70,18 +70,21 @@ namespace process
 {
 CRFProcessDeformation::
 CRFProcessDeformation()
-	: CRFProcess(), fem_dm(NULL), ARRAY(NULL),
+	: CRFProcess(), fem_dm(NULL), ARRAY(NULL),p0(NULL),
 	  counter(0), InitialNorm(0.0)
 
 {
 	error_k0 = 1.0e10;
 	idata_type = none;
+	_isInitialStressNonZero = false; //NW
 }
 
 CRFProcessDeformation::~CRFProcessDeformation()
 {
 	if(ARRAY)
 		delete [] ARRAY;
+    if(p0)
+        delete [] p0;
 	if(fem_dm)
 		delete fem_dm;
 
@@ -146,7 +149,8 @@ void CRFProcessDeformation::Initialization()
     if(reload == 3)
         idata_type = read_write;
     //--
-
+    if ((reload == 2 || reload == 3) && calcDiffFromStress0)
+        _isInitialStressNonZero = true; //NW
 
 	// Local assembliers
 	// An instaniate of CFiniteElementVec
@@ -198,6 +202,25 @@ void CRFProcessDeformation::Initialization()
 			h_pcs->SetNodeValue(i,idv0, h_pcs->GetNodeValue(i,idv1));
 	}
 #endif
+
+	// Initial pressure is stored to evaluate pressure difference from the initial
+	// because DEFORMATION calculates stress balance of changes from the initial stress
+	// NW 28.08.2012
+	if (_isInitialStressNonZero) {
+        std::cout << "->Initial stress is given." << std::endl;
+	    CRFProcess* h_pcs = PCSGet("LIQUID_FLOW");
+	    if (h_pcs) { //NW
+	        assert (p0 == NULL);
+	        std::cout << "->Found LIQUID_FLOW. Store initial liquid pressure." << std::endl;
+	        int n_nodes = m_msh->GetNodesNumber(false);
+	        p0 = new double[n_nodes];
+	        const int id_p0 = h_pcs->GetNodeValueIndex("PRESSURE1");
+	        for (i = 0; i < n_nodes; i++) {
+	            p0[i] = h_pcs->GetNodeValue(i, id_p0);
+	        }
+	    }
+	}
+
 	///////////////////////////
 	if(fem_dm->dynamic)
 		CalcBC_or_SecondaryVariable_Dynamics();
@@ -267,9 +290,9 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	if(myrank == 1)
 	{
 #endif
-		std::cout<<"\n      ================================================" << std::endl;
-	    std::cout << "    ->Process " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
-	    std::cout << "      ================================================" << std::endl;
+		std::cout<<"\n================================================" << std::endl;
+	    std::cout << "->Process " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
+	    std::cout << "================================================" << std::endl;
 #if defined(USE_MPI)
 }
 #endif
@@ -690,6 +713,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	//
 	// For coupling control
 	std::cout <<"      Deformation process converged." << std::endl;
+	double sqrt_norm = 0.0;
 	Error = 0.0;
 	if(type / 10 != 4)                    // Partitioned scheme
 	{
@@ -701,6 +725,8 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			}
 		NormU = Error;
 		Error = sqrt(NormU);
+		sqrt_norm = Error;
+		Error = .0;
 	}
 
 	// Determine the discontinuity surface if enhanced strain methods is on.
@@ -733,8 +759,10 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	//
 	//JT//if(CouplingIterations > 0)
 	if(this->first_coupling_iteration)
-		Error = fabs(Error - error_k0) / error_k0;
-	error_k0 = Error;
+		Error = fabs(sqrt_norm - error_k0) / error_k0;
+	else
+		Error = sqrt_norm;
+	error_k0 = sqrt_norm;
 	//
 
 #ifndef OGS_ONLY_TH
@@ -979,7 +1007,7 @@ void CRFProcessDeformation::InitGauss(void)
 								continue;
 							(*eleV_DM->Stress)(j, gp) =
 							        m_ic->getLinearFunction()->getValue(
-							                k,
+							                m_ic->GetDomain(k),
 							                xyz[0],
 							                xyz[1],
 							                xyz[2]);

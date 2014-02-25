@@ -21,7 +21,7 @@
 #include <cfloat>
 #include <iomanip>                                //WW
 #include <iostream>
-//#include <algorithm> // header of transform. WW
+#include <algorithm>
 #include <set>
 
 /*--------------------- MPI Parallel  -------------------*/
@@ -396,6 +396,8 @@ CRFProcess::CRFProcess(void) :
 	for (int i=0; i<DOF_NUMBER_MAX; i++)
 		pcs_absolute_error[i]=.0;
 
+	calcDiffFromStress0 = true;
+	resetStrain = true;
 }
 
 void CRFProcess::setProblemObjectPointer (Problem* problem)
@@ -848,6 +850,92 @@ void CRFProcess::Create()
 		m_msh->SwitchOnQuadraticNodes(true);
 	else
 		m_msh->SwitchOnQuadraticNodes(false);
+
+	// ELE - config and create element values
+	ScreenMessage2("->Config ELE values\n");
+	AllocateMemGPoint();
+#ifndef WIN32
+	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
+
+	// ELE - config element matrices
+	// NOD - config and create node values
+	ScreenMessage2("->Config NOD values\n");
+	double* nod_values = NULL;
+	double* ele_values = NULL;            // PCH
+
+	number_of_nvals = 2 * DOF + pcs_number_of_secondary_nvals;
+	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+	{
+		// new time
+		nod_val_name_vector.push_back(pcs_primary_function_name[i]);
+		// old time //need this MB!
+		nod_val_name_vector.push_back(pcs_primary_function_name[i]);
+	}
+	for (int i = 0; i < pcs_number_of_secondary_nvals; i++)
+		// new time
+		nod_val_name_vector.push_back(pcs_secondary_function_name[i]);
+	//
+	long m_msh_nod_vector_size = m_msh->NodesNumber_Quadratic;
+	for (long j = 0; j < number_of_nvals; j++) // Swap number_of_nvals and mesh size. WW 19.12.2012
+	{
+           nod_values = new double[m_msh_nod_vector_size];
+           for (int i = 0; i < m_msh_nod_vector_size; i++)
+              nod_values[i] = 0.0;
+           nod_val_vector.push_back(nod_values);
+	}
+	// Create element values - PCH
+	int number_of_evals = 2 * pcs_number_of_evals; //PCH, increase memory
+	if (number_of_evals > 0)              // WW added this "if" condition
+	{
+		for (int i = 0; i < pcs_number_of_evals; i++)
+		{
+			// new time
+			ele_val_name_vector.push_back(pcs_eval_name[i]);
+			// old time
+			ele_val_name_vector.push_back(pcs_eval_name[i]);
+		}
+		size_t m_msh_ele_vector_size(m_msh->ele_vector.size());
+		if (ele_val_vector.size() == 0)
+			for (size_t j = 0; j < m_msh_ele_vector_size; j++)
+			{
+				ele_values = new double[number_of_evals];
+				size_eval += number_of_evals; //WW
+				for (int i = 0; i < number_of_evals; i++)
+					ele_values[i] = 0.0;
+				ele_val_vector.push_back(ele_values);
+			}
+		else
+			for (size_t j = 0; j < m_msh_ele_vector_size; j++)
+			{
+				ele_values = ele_val_vector[j];
+				ele_values = resize(ele_values, size_eval, size_eval
+				                    + number_of_evals);
+				size_eval += number_of_evals;
+				ele_val_vector[j] = ele_values;
+			}
+	}
+	//
+    //--- construct IC -----------------------------------------------------------------
+	if(reload >= 2 && ((type != 4 && type / 10 != 4) || !resetStrain)) // Modified at 03.08.2010. WW
+	{
+		// PCH
+		ScreenMessage2("Reloading the primary variables... \n");
+		ReadSolution();           //WW
+	}
+
+	if (reload < 2)                       // PCH: If reload is set, no need to have ICs
+	{
+		// IC
+		ScreenMessage2("->Assign IC\n");
+		SetIC();
+	}
+	else
+		// Bypassing IC
+		ScreenMessage2("->RELOAD is set to be %d. So bypassing IC's\n", reload);
+
+	if (pcs_type_name_vector.size() && pcs_type_name_vector[0].find("DYNAMIC") != string::npos)
+		setIC_danymic_problems();
 	//
 	if (pcs_type_name_vector.size() && pcs_type_name_vector[0].find("DYNAMIC")
 	    != string::npos)                  //WW
@@ -926,90 +1014,7 @@ void CRFProcess::Create()
 	if (write_boundary_condition && WriteSourceNBC_RHS != 2)
 		WriteBC();
 
-	// ELE - config and create element values
-	ScreenMessage2("->Config ELE values\n");
-	AllocateMemGPoint();
-#ifndef WIN32
-	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
-#endif
 
-	// ELE - config element matrices
-	// NOD - config and create node values
-	ScreenMessage2("->Config NOD values\n");
-	double* nod_values = NULL;
-	double* ele_values = NULL;            // PCH
-
-	number_of_nvals = 2 * DOF + pcs_number_of_secondary_nvals;
-	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
-	{
-		// new time
-		nod_val_name_vector.push_back(pcs_primary_function_name[i]);
-		// old time //need this MB!
-		nod_val_name_vector.push_back(pcs_primary_function_name[i]);
-	}
-	for (int i = 0; i < pcs_number_of_secondary_nvals; i++)
-		// new time
-		nod_val_name_vector.push_back(pcs_secondary_function_name[i]);
-	//
-	long m_msh_nod_vector_size = m_msh->NodesNumber_Quadratic;
-	for (long j = 0; j < number_of_nvals; j++) // Swap number_of_nvals and mesh size. WW 19.12.2012
-	{
-           nod_values = new double[m_msh_nod_vector_size];
-           for (int i = 0; i < m_msh_nod_vector_size; i++)
-              nod_values[i] = 0.0;
-           nod_val_vector.push_back(nod_values);
-	}
-	// Create element values - PCH
-	int number_of_evals = 2 * pcs_number_of_evals; //PCH, increase memory
-	if (number_of_evals > 0)              // WW added this "if" condition
-	{
-		for (int i = 0; i < pcs_number_of_evals; i++)
-		{
-			// new time
-			ele_val_name_vector.push_back(pcs_eval_name[i]);
-			// old time
-			ele_val_name_vector.push_back(pcs_eval_name[i]);
-		}
-		size_t m_msh_ele_vector_size(m_msh->ele_vector.size());
-		if (ele_val_vector.size() == 0)
-			for (size_t j = 0; j < m_msh_ele_vector_size; j++)
-			{
-				ele_values = new double[number_of_evals];
-				size_eval += number_of_evals; //WW
-				for (int i = 0; i < number_of_evals; i++)
-					ele_values[i] = 0.0;
-				ele_val_vector.push_back(ele_values);
-			}
-		else
-			for (size_t j = 0; j < m_msh_ele_vector_size; j++)
-			{
-				ele_values = ele_val_vector[j];
-				ele_values = resize(ele_values, size_eval, size_eval
-				                    + number_of_evals);
-				size_eval += number_of_evals;
-				ele_val_vector[j] = ele_values;
-			}
-	}
-	//
-	if(reload >= 2 && type != 4 && type / 10 != 4) // Modified at 03.08.2010. WW
-	{
-		// PCH
-		ScreenMessage2("Reloading the primary variables... \n");
-		ReadSolution();           //WW
-	}
-
-	if (reload < 2)                       // PCH: If reload is set, no need to have ICs
-	{
-		// IC
-		ScreenMessage2("->Assign IC\n");
-		SetIC();
-	}
-	else
-		// Bypassing IC
-		ScreenMessage2("->RELOAD is set to be %d. So bypassing IC's\n", reload);
-
-	if (pcs_type_name_vector.size() && pcs_type_name_vector[0].find("DYNAMIC") != string::npos)
-		setIC_danymic_problems();
 
 	// Keep all local matrices in the memory
 	if (type != 55)                       //Not for fluid momentum. WW
@@ -1738,6 +1743,8 @@ CRFProcess* CRFProcess::CopyPCStoDM_PCS()
 		dm_pcs->ExcavCurve = ExcavCurve;
 	}
 	dm_pcs->write_leqs = write_leqs;
+	dm_pcs->calcDiffFromStress0 = calcDiffFromStress0;
+	dm_pcs->resetStrain = resetStrain;
 	//
 	return dynamic_cast<CRFProcess*> (dm_pcs);
 }
@@ -2107,6 +2114,26 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 		if(line_string.find("$LEQS_OUTPUT") == 0)
 		{
 			write_leqs = true;
+			continue;
+		}
+		if(line_string.find("$CALC_DIFF_FROM_STRESS0") == 0)
+		{
+			// a flag to calculate deformation in total stress or differential stress from reference state
+			// default is true
+			int dummy = 0;
+			*pcs_file >> dummy;
+			calcDiffFromStress0 = (dummy != 0);
+			ScreenMessage("-> $CALC_DIFF_FROM_STRESS0 = %d\n", dummy);
+			continue;
+		}
+		if(line_string.find("$RESET_STRAIN") == 0)
+		{
+			int dummy = 0;
+			*pcs_file >> dummy;
+			resetStrain = (dummy != 0);
+			ScreenMessage("-> $RESET_STRAIN = %d\n", dummy);
+			if (!resetStrain)
+				ScreenMessage("-> $RESET_STRAIN=0 is not supported yet\n", dummy);
 			continue;
 		}
 		//....................................................................
@@ -5659,6 +5686,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		CPARDomain* m_dom = NULL;
 		CBoundaryConditionNode* m_bc_nv = NULL;
 		CNodeValue* m_st_nv = NULL;
+#if 0 //ndef USE_MPI
 		//
 		for(k = 0; k < (int)dom_vector.size(); k++)
 		{
@@ -5703,6 +5731,88 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				st_node_value[i][ii]->node_value /= (double)node_connected_doms[l_index];
 			}
 		}
+#else
+		//
+		//m_dom = dom_vector[myrank];
+		const long n_bc_node_value = (long)bc_node_value.size();
+		std::cout << "-> n_bc_node_value = " << n_bc_node_value << std::endl;
+		const long n_st_node_value = (long)st_node_value.size();
+		std::cout << "-> n_st_node_value = " << n_st_node_value << std::endl;
+#ifndef USE_MPI
+		for(k = 0; k < (int)dom_vector.size(); k++)
+		{
+			m_dom = dom_vector[k];
+#else
+			m_dom = dom_vector[myrank];
+#endif
+			const long n_dom_nodes = (long)m_dom->nodes.size();
+			std::cout << "-> " << k << " th domain: n_dom_nodes = " << n_dom_nodes << std::endl;
+			std::vector<long> list_sorted_dom_nodes(m_dom->nodes);
+			std::sort(list_sorted_dom_nodes.begin(), list_sorted_dom_nodes.end());
+			std::vector<long> map_sorted2original(m_dom->nodes.size());
+			for (i=0; i<n_dom_nodes; i++) {
+				std::vector<long>::iterator itr = std::lower_bound(list_sorted_dom_nodes.begin(), list_sorted_dom_nodes.end(), m_dom->nodes[i]);
+				size_t new_pos = itr - list_sorted_dom_nodes.begin();
+				map_sorted2original[new_pos] = i;
+			}
+			// BC
+#ifdef USE_MPI
+			rank_bc_node_value_in_dom.resize(mysize);
+#endif
+			std::cout << "-> looking for domain BC nodes" << std::endl;
+			for(i = 0; i < n_bc_node_value; i++)
+			{
+				m_bc_nv = bc_node_value[i];
+
+				std::vector<long>::iterator itr = std::lower_bound(list_sorted_dom_nodes.begin(), list_sorted_dom_nodes.end(), m_bc_nv->geo_node_number);
+                if (itr==list_sorted_dom_nodes.end() || *itr!=m_bc_nv->geo_node_number) continue;
+				size_t pos_in_sorted = itr - list_sorted_dom_nodes.begin();
+				long pos_in_org = map_sorted2original[pos_in_sorted];
+				bc_node_value_in_dom.push_back(i);
+				bc_local_index_in_dom.push_back(pos_in_org);
+			}
+#ifdef USE_MPI
+			rank_bc_node_value_in_dom[myrank] = (long)bc_node_value_in_dom.size();
+#else
+			rank_bc_node_value_in_dom.push_back((long)bc_node_value_in_dom.size());
+#endif
+			// ST
+#ifdef USE_MPI
+			rank_st_node_value_in_dom.resize(mysize);
+#endif
+			std::cout << "-> looking for domain ST nodes" << std::endl;
+			for(i = 0; i < (long)st_node_value.size(); i++)
+			{
+				for(size_t ii = 0; ii < st_node_value[i].size(); ii++)
+				{
+					m_st_nv = st_node_value[i][ii];
+					std::vector<long>::iterator itr = std::lower_bound(list_sorted_dom_nodes.begin(), list_sorted_dom_nodes.end(), m_st_nv->geo_node_number);
+					if (itr==list_sorted_dom_nodes.end() || *itr!=m_st_nv->geo_node_number) continue;
+					size_t pos_in_sorted = itr - list_sorted_dom_nodes.begin();
+					long pos_in_org = map_sorted2original[pos_in_sorted];
+					st_node_value_in_dom.push_back(i);
+					st_local_index_in_dom.push_back(pos_in_org);
+				}
+			}
+#ifdef USE_MPI
+			rank_st_node_value_in_dom[myrank] = (long)st_node_value_in_dom.size();
+#else
+			rank_st_node_value_in_dom.push_back((long)st_node_value_in_dom.size());
+#endif
+#ifndef USE_MPI
+		}
+#endif
+
+		for(i = 0; i < (long)st_node_value.size(); i++)
+		{
+			for(size_t ii = 0; ii < st_node_value[i].size(); ii++)
+			{
+				m_st_nv = st_node_value[i][ii];
+				long l_index = m_st_nv->geo_node_number;
+				m_st_nv->node_value /= (double)node_connected_doms[l_index];
+			}
+		}
+#endif
 	}
 
 /**************************************************************************

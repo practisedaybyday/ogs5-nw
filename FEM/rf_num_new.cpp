@@ -49,7 +49,7 @@
 using namespace std;
 
 extern std::ios::pos_type GetNextSubKeyword(ifstream* file,string* line, bool* keyword);
-//extern size_t max_dim;                            //OK411 todo
+extern size_t max_dim;                            //OK411 todo
 
 
 //==========================================================================

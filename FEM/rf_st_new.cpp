@@ -1525,13 +1525,13 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
         	  continue;
       }
       CElem* edge_ele = new CElem(1);
+      edge_ele->setElementProperties(MshElemType::LINE, true);
       const size_t nen = msh->getOrder() ? 3 : 2;
       std::vector<CNode*> edge_nodes(nen);
       for(size_t j = 0; j < nen; j++)
     	  edge_nodes[j] = edge->GetNode(j);
       edge_ele->setPatchIndex(edge->GetPatchIndex());
       edge_ele->setNodes(edge_nodes);
-      edge_ele->setElementProperties(MshElemType::LINE, true);
       edge_ele->SetOrder(msh->getOrder());
       edge_ele->ComputeVolume();
       if (!active_elements)
@@ -1653,6 +1653,8 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
    G2L.clear();
    e_nodes.resize(0);
    e_edges.resize(0);
+
+   delete fem;
 }
 
 

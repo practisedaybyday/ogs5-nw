@@ -7699,6 +7699,7 @@ void CFiniteElementStd::Assemble_strainCPL(const int phase)
 	shift_index = problem_dimension_dm + phase;
 
 	fac = 1.0 / dt;
+	fac *= SolidProp->biot_const; //NW
 
 	if(dm_pcs->type != 41)
 		//if(D_Flag != 41)

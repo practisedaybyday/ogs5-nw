@@ -458,6 +458,7 @@ CFiniteElementVec::~CFiniteElementVec()
 		delete [] Idx_Vel;
 	X0 = n_jump = pr_stress = NULL;
 	delete [] AuxNodal;
+	delete [] AuxNodal0;
 	delete [] AuxNodal_S0;
 	delete [] AuxNodal_S;
 	delete [] AuxNodal1;
@@ -1594,6 +1595,7 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 	// If dynamic GetNodeValue(nodes[i],idx_P0) = 0;
 	if(Residual)
 	{
+        double* p0 = pcs->GetInitialFluidPressure(); //NW should calculate (p - p0) because OGS calculates (stress - stress0)
 		switch(Flow_Type)
 		{
 		case 0:                   // Liquid flow
@@ -1605,6 +1607,13 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 				if(pcs->PCS_ExcavState == 1)
 					//WX:07.2011 for HM excavation
 					val_n -= h_pcs->GetNodeValue(nodes[i],idx_P1 - 1);
+
+			    // Initial pressure should be subtracted, i.e. (p-p0) because DEFORMATION
+				// calculates stress balance of changes from the initial stress.
+			    // NW 28.08.2012
+				if (pcs->calcDiffFromStress0 && p0!=NULL) {
+				    val_n -= p0[nodes[i]];
+				}
 				AuxNodal[i] = LoadFactor * val_n;
 			}
 			break;
@@ -1952,6 +1961,9 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 	//
 	if(smat->CreepModel() == 1000)        //HL_ODS
 		smat->CleanTrBuffer_HL_ODS();
+	for (i = 0; i < ns; i++)
+		stress0[i] = .0;
+
 	// Loop over Gauss points
 	for (gp = 0; gp < nGaussPoints; gp++)
 	{
@@ -2199,8 +2211,10 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 				p_D = De;
 			else
 				p_D = ConsistDep;
-			for (i = 0; i < ns; i++)
-				stress0[i] = (*eleV_DM->Stress0)(i,gp);
+			if (pcs->calcDiffFromStress0) {
+				for (i = 0; i < ns; i++)
+					stress0[i] = (*eleV_DM->Stress0)(i,gp);
+			}
 			ComputeMatrix_RHS(fkt, p_D);
 		}
 		else                      // Update stress
