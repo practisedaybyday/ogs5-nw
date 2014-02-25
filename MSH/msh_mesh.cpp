@@ -2634,6 +2634,26 @@ void CFEMesh::GetNODOnSFC_PLY_Z(Surface* m_sfc,std::vector<long>&msh_nod_vector)
 	}
 }
 #endif                                         //WW#ifndef NON_GEO
+
+
+/**************************************************************************
+   MSHLib-Method:
+   Task: Find all nodes connecting the given elements
+   06/2012 NW
+**************************************************************************/
+void CFEMesh::GetNODOnELE(const std::vector<long> &vec_ele, std::vector<long> &vec_nod) const
+{
+    std::set<long> set_node_id;
+    for (size_t i=0; i<vec_ele.size(); i++) {
+        CElem* e = ele_vector[vec_ele[i]];
+        for (size_t j=0; j<e->GetNodesNumber(false); j++) {
+            set_node_id.insert(e->GetNodeIndex(j));
+        }
+    }
+
+    vec_nod.assign(set_node_id.begin(), set_node_id.end());
+}
+
 /**************************************************************************
    GeoSys-Method:
    Task:
