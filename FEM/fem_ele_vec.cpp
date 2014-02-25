@@ -458,6 +458,7 @@ CFiniteElementVec::~CFiniteElementVec()
 		delete [] Idx_Vel;
 	X0 = n_jump = pr_stress = NULL;
 	delete [] AuxNodal;
+	delete [] AuxNodal0;
 	delete [] AuxNodal_S0;
 	delete [] AuxNodal_S;
 	delete [] AuxNodal1;
