@@ -58,6 +58,7 @@ public:
 
 	// Aux. Memory
 	double* GetAuxArray() const {return ARRAY; }
+	double* GetInitialFluidPressure() const {return p0;};
 
 	void ScalingNodeForce(const double SFactor);
 	void InitGauss();
@@ -103,6 +104,8 @@ private:
 	CFiniteElementVec* fem_dm;
 	void InitialMBuffer();
 	double* ARRAY;
+	double* p0;
+	bool _isInitialStressNonZero;
 
 	int counter;
 	double InitialNorm;

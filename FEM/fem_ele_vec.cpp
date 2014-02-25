@@ -1594,6 +1594,7 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 	// If dynamic GetNodeValue(nodes[i],idx_P0) = 0;
 	if(Residual)
 	{
+        double* p0 = pcs->GetInitialFluidPressure(); //NW should calculate (p - p0) because OGS calculates (stress - stress0)
 		switch(Flow_Type)
 		{
 		case 0:                   // Liquid flow
@@ -1605,6 +1606,13 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 				if(pcs->PCS_ExcavState == 1)
 					//WX:07.2011 for HM excavation
 					val_n -= h_pcs->GetNodeValue(nodes[i],idx_P1 - 1);
+
+			    // Initial pressure should be subtracted, i.e. (p-p0) because DEFORMATION
+				// calculates stress balance of changes from the initial stress.
+			    // NW 28.08.2012
+				if (p0!=NULL) {
+				    val_n -= p0[nodes[i]];
+				}
 				AuxNodal[i] = LoadFactor * val_n;
 			}
 			break;
