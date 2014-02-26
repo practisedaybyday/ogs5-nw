@@ -968,7 +968,7 @@ void CElem:: MarkingAll(bool makop)
 		SizeV = nnodesHQ;
 	for (int i = 0; i < SizeV; i++)
 		nodes[i]->SetMark(makop);
-	for (size_t i = 0; i < nedges; i++)
+	for (size_t i = 0; i < edges.Size(); i++)
 		edges[i]->SetMark(makop);
 }
 /**************************************************************************
