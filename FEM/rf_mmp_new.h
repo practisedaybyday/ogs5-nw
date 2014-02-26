@@ -103,6 +103,8 @@ public:
 	double PermeabilityPorosityFunction(long index,double* gp,double theta);
 	double PermeabilityFunctionPressure(long index, double PG2); //WX:  05.2010
 	double PermeabilityFunctionStrain(long index, int nnodes, CFiniteElementStd* h_fem); //WX
+	double PermeabilityFunctionEffStress(long index, int nnodes, CFiniteElementStd *h_fem);//AS:08.2012
+	double StorageFunctionEffStress(long index, int nnodes, CFiniteElementStd *h_fem);//AS 08.2012
 	double PorosityVolStrain(long index, double val0, CFiniteElementStd* assem); //WX: 03.2011
 	double KozenyCarman(double k0 /*old permeability*/,
 	                    double n0 /*old porosity*/,
@@ -199,6 +201,7 @@ public:
 	int unconfined_flow_group;
 	int permeability_model;               // permeability
 	double permeability;
+	double local_permeability; //CB
 	double permeability_tensor[9];       
 	std::string permeability_tensor_type_name;
 	std::string tortuosity_tensor_type_name;
@@ -210,6 +213,10 @@ public:
 	double permeability_pressure_rel;
 	int permeability_strain_model;        //WX: permeability function strain model. 05.2010
 	int permeability_strain_model_value[3]; //WX:permeability fuction strain model value. 05.2010
+	int permeability_effstress_model_value[3];	//AS:perlmeability function eff stress 08.2012
+	int permeability_effstress_model;
+	int storage_effstress_model_value[3];			//AS:storage function eff stress 08.2012
+	int storage_effstress_model;
 	//
 	// Relative permeability (JT)
 	int permeability_saturation_model[MAX_FLUID_PHASES];
@@ -239,6 +246,7 @@ public:
 	double heat_conductivity_tensor[9];
 	int fct_number;                       // functions
 	int heat_diffusion_model;
+	double base_heat_diffusion_coefficient; 
 	int evaporation;                      // if it is 647 then evaporation ON, else OFF: and corresponding heat loss will compensated by heat ST
 	double heatflux;
 	double vaporfraction;
@@ -267,7 +275,7 @@ public:
 class CMediumPropertiesGroup                      //YD
 {
 public:
-	CMediumPropertiesGroup() {OrigSize = 0; }
+	CMediumPropertiesGroup() : m_msh(NULL) {OrigSize = 0; }
 	void Set(CRFProcess* m_pcs);
 	std::string pcs_name;
 	std::string pcs_type_name;

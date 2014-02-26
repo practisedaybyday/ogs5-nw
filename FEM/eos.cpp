@@ -271,6 +271,24 @@ double CFluidProperties::phi_0_t (double T) const
  ***********************************************************************/
 double CFluidProperties::phi_0_tt (double T) const
 {
+		if (fluid_id == 3) // N2
+	{
+		double a[6];
+		const double tau (Tc / T);
+
+		a[0] = 2.5;
+		a[1] = -1.934819e-4;
+		a[2] = -1.247742e-5;
+		a[3] = 6.678326e-8;
+		a[4] = 1.012941;
+		a[5] = 26.65788;
+
+		const double exp_a8 (exp(a[5]*tau));
+		const double phi_zero_tt = (-a[0] + 2.0*a[1]/tau + 6.0*a[2]/tau/tau + 12*a[3]/tau/tau/tau - a[4]*a[5]*a[5]*tau*tau*exp_a8/((exp_a8-1.0)*(exp_a8-1.0)))/(tau * tau);
+		return phi_zero_tt;
+	}
+	else
+	{
 	double phi_d = 0,phi_e = 0;
 	double tau;
 	int i;
@@ -283,6 +301,7 @@ double CFluidProperties::phi_0_tt (double T) const
 		         (k[1][i] * k[1][i]) * exp(-k[1][i] * tau) * pow(1 - exp(-k[1][i] * tau),-2));
 
 	return 0 - phi_d - phi_e;
+		}
 }
 
 /**********************************************************************
@@ -568,6 +587,44 @@ double enthalpy (double rho, double T, int c)
 }
 
 /**********************************************************************
+   Function for calculating isobaric heat capacity depending on Temperature.
+
+   linearised in a specified temperature interval for typical technological applications
+ ***********************************************************************/
+
+double linear_heat_capacity(double T, int c)
+{
+
+	double Tl[2] ,cpl[2]; //temperature limits in K, capacity limits in J/kg/K
+
+	switch (c) {
+		case 1: //H2O
+			Tl[0] = 275.0;
+			Tl[1] = 1000.0;
+			cpl[0] = 1859.0;
+			cpl[1] = 2288.0;
+			break;
+		case 3: //N2  1056.8+(1146.4-1056.8)/(900.0-500.0)*(variables[1]-500.0);
+			Tl[0] = 275.0;
+			Tl[1] = 1200.0;
+			cpl[0] = 1039.0;
+			cpl[1] = 1204.0;
+			break;
+		case 5: //O2
+			Tl[0] = 275.0;
+			Tl[1] = 1200.0;
+			cpl[0] = 915.0;
+			cpl[1] = 1115.0;
+			break;
+		default:
+			std::cout << "WARNING: Fluid not specified in linear_heat_capacity. Setting cp to 1000.\n";
+			return 1000.0;
+	}
+
+	return (cpl[0] + (cpl[1]-cpl[0])/(Tl[1]-Tl[0])*(T-Tl[0]));
+}
+
+/**********************************************************************
    Function for calculating isochoric heat capacity depending on density and
    Temperature.
 
@@ -694,55 +751,55 @@ double co2_viscosity (double rho, double T)
  ***********************************************************************/
 double co2_heat_conductivity (double rho, double T)
 {
-	double b[8],c[6],d[5];
-	double G_fn = 0,T_r,r,c_int_k,sum_c = 0;
-	int i;
-	double lamda_0,delta_lamda = 0,lamda;
+	double    Tc = 304.1282;
+    double    pc = 7377300;
+    double rho_c = 467.6;
+    double     M = 0.044098;
+    double     R = 8.314472;
+    double    NA = 6.0221353e23;
+    double rho_r = rho/rho_c;
+    double    Tr = T/Tc;
+    double lamda_r;
+	 double lamda;
 
-	b[0] = 0.4226159;
-	b[1] = 0.6280115;
-	b[2] = -0.5387661;
-	b[3] = 0.6735941;
-	b[4] = 0;
-	b[5] = 0;
-	b[6] = -0.4362677;
-	b[7] = 0.2255338;
+    double a[13] = {0, 3, 6.70697, 0.94604, 0.3, 0.3, 0.39751, 0.33791,    0.77963, 0.79857, 0.9, 0.02, 0.2};
+    double g[11] = {0, 0, 0, 1.5, 0, 1, 1.5, 1.5, 1.5, 3.5, 5.5};
+    double h[11] = {0, 1, 5, 1, 1, 2, 0, 5, 9, 0, 0};
+    double n[11] = {0, 7.69857587E+00, 1.59885811E-01, 1.56918621E+00, -6.73400790E+00, 1.63890156E+01, 3.69415242E+00, 2.23205514E+01, 6.61420950E+01, -1.71779133E-01, 4.33043347E-03};
+    double    nc = 0.775547504;
+    double lamda_r_ce;
+    double temp1,temp2,temp3;
 
-	c[1] = 0.02387869;
-	c[2] = 4.35079400;
-	c[3] = -10.33404000;
-	c[4] = 7.98159000;
-	c[5] = -1.94055800;
+	double   var = 1.0+a[11]*pow(pow(1-Tr,2),a[12]);
+    double alpha = 1-a[10]*log(var+sqrt(var*var-1.0));
+		   temp1 = rho_r*exp(-pow(rho_r,a[1])/a[1]-pow(a[2]*(Tr-1),2)-pow(a[3]*(rho_r-1),2));
+	       temp2 = pow(pow((1-1/Tr)+a[4]*pow(pow(rho_r-1,2),1./(2.*a[5])),2),a[6]);
+		   temp3 = pow(pow(a[7]*(rho_r-alpha),2),a[8]);
+	  lamda_r_ce = temp1/pow(temp2+temp3,a[9]);
+		   temp1 = 0;
+           temp2 = 0;
 
-	d[1] = 2.4471640E-02;
-	d[2] = 8.7056050E-05;
-	d[3] = -6.5479500E-08;
-	d[4] = 6.5949190E-11;
+    for (int i=1;i<4;i++)
+    {
+        temp1 += n[i]*pow(Tr,g[i])*pow(rho_r,h[i]);
+    }
+    for (int i=4;i<11;i++)
+    {
+        temp2 += n[i]*pow(Tr,g[i])*pow(rho_r,h[i]);
+    }
 
-	for (i = 1; i < 6; i++)
-		sum_c = sum_c + c[i] * pow((T / 100),(2 - i));
+    temp2 *= exp(-5.*rho_r*rho_r);
 
-	c_int_k = (1 + exp(-183.5 / T)) * sum_c;
+    lamda_r = temp1 + temp2 + nc*lamda_r_ce;
 
-// TF  r = pow((2*c_int_k/5),(0.5));
-	r = sqrt(2 * c_int_k / 5);
+//    double Lamda_C=pow(R,5./6.)*pow(pc,2./3.)/pow(Tc,1./6.)/pow(M,0.5)/pow(NA,1./3.);
+    double Lamda_C=0.00481384;  // W/m/K
 
-	T_r = T / 251.196;
 
-	for (i = 0; i < 8; i++)
-		G_fn = G_fn + (b[i] / MathLib::fastpow(T_r,i));
+    lamda = lamda_r * Lamda_C;
 
-	r =
 
-// TF      lamda_0 = (0.475598*pow(T,0.5)*(1+pow(r,2)))/G_fn;
-	        lamda_0 = (0.475598 * sqrt(T) * (1 + r * r)) / G_fn;
-
-	for (i = 1; i < 5; i++)
-		delta_lamda = delta_lamda + d[i] * MathLib::fastpow(rho,i);
-
-	lamda = (lamda_0 + delta_lamda) / 1000;
-
-	return lamda;
+    return lamda; 
 }
 
 /**********************************************************************
@@ -833,14 +890,97 @@ double h2o_viscosity_IAPWS (double rho, double T)
 }
 
 /**********************************************************************
+   Function for calculating viscosity of oxygen at a density rho and
+   a temperature T.
+   Programming: NB/TN
+   see Lemmon & Jacobson, Int J of Thermophys, 25(1), 2004
+ ***********************************************************************/
+double o2_viscosity (double rho, double T)
+{
+	const double MM (32.0); //
+	const double sigma_squared (0.11751184); // nm^2
+	const double ek (118.5); //K
+	const double T_c (154.581); //K
+	const double rho_c (13.63);
+
+	rho /= MM; // convert density in mol/dm^3
+
+
+	double b[5];
+
+	b[0] = 0.431;
+	b[1] = -0.4623;
+	b[2] = 0.08406;
+	b[3] = 0.005341;
+	b[4] = -0.00331;
+
+	double exponent (0);
+
+	for (unsigned i=0; i<5; i++)
+		exponent += b[i] * MathLib::fastpow(log(T/ek),i);
+
+	const double Omega = exp(exponent);
+	const double eta_0 = 0.0266958*pow(MM*T,0.5)/sigma_squared/Omega;
+	double rho_min (0.2); // densities lower than that do not influence eta_r (less than 1%)
+	 if (rho < rho_min) return eta_0*1e-6;	// for better efficiency near dilute gas (eta in Pa*s)
+
+	double N[5];
+	double t[5];
+	int d[5];
+	int l[5];
+	int gamma[5];
+
+
+	N[0] = 17.67;
+	N[1] = 0.4042;
+	N[2] = 0.0001077;
+	N[3] = 0.3510;
+	N[4] = -13.67;
+
+	t[0] = 0.05;
+	t[1] = 0.0;
+	t[2] = 2.1;
+	t[3] = 0.0;
+	t[4] = 0.5;
+
+	d[0] = 1;
+	d[1] = 5;
+	d[2] = 12;
+	d[3] = 8;
+	d[4] = 1;
+
+	l[0] = 0;
+	l[1] = 0;
+	l[2] = 0;
+	l[3] = 1;
+	l[4] = 2;
+
+	gamma[0] = 0;
+	gamma[1] = 0;
+	gamma[2] = 0;
+	gamma[3] = 1;
+	gamma[4] = 1;
+
+	const double tau = T_c/T;
+	const double delta = rho/rho_c;
+	double eta_r (0);
+
+	for (unsigned i=0; i<5; i++)
+	{
+		eta_r += N[i]*pow(tau,t[i])*MathLib::fastpow(delta,d[i])*exp(-gamma[i]*MathLib::fastpow(delta,l[i]));
+	}
+
+	return (eta_0+eta_r)*1e-6; // returns viscosity in Pa*s
+}
+
+/**********************************************************************
    Viscosity for different Fluids
 
    Programming: NB 4.8.01
           Nov 2008
  ***********************************************************************/
-double Fluid_Viscosity (double rho, double T, double p, int fluid)
+double Fluid_Viscosity (double rho, double T, double /*p*/, int fluid)
 {
-	p = p;                                //OK411
 	//TODO: make a global function for all properties: Fluid_Property(int c, int property, double T, double P) (NB)
 
 	double h;
@@ -862,7 +1002,12 @@ double Fluid_Viscosity (double rho, double T, double p, int fluid)
 	case 3:                               // Nitrogen
 		h = n2_viscosity (rho,T);
 		break;
-	default:   h = 1E-3;
+	case 5:
+		h = o2_viscosity(rho,T);		  // Oxygen
+		break;
+	default:
+		h = 1E-3;
+		break;
 	}
 
 	return h;
@@ -895,6 +1040,9 @@ double Fluid_Heat_Conductivity (double rho, double T, int fluid)
 		break;
 	case 4:                               // NITROGEN
 		h = n2_heat_conductivity (rho,T);
+		break;
+	case 5:
+		h = o2_heat_conductivity (rho,T); //OXYGEN
 		break;
 
 	default:   h = 0.5;
@@ -988,24 +1136,24 @@ double melting_pressure_co2(double T,double Tt,double pt)
  *             caption defines fluid
  * Programming: NB, Dec 08
  **************************************************************/
-double preos(double T, double P, int c)
+double preos(const CFluidProperties *mfp, double T, double P)
 {
 	double z1,z2,z3,h;
 	vector<double> roots;
 
-	CFluidProperties* mfp_prop;
+	// WW CFluidProperties* mfp_prop;
 
 	double a,b,Tc,pc,MM,Ru;
 	double omega,alpha;
 
 	//int i;
-	mfp_prop = MFPGet (c);
+	//mfp_prop = MFPGet (c); //14.11.2012. WW
 
-	Ru = mfp_prop->getUniversalGasConstant();
-	MM = mfp_prop->getMolarMass();
-	Tc = mfp_prop->getCriticalTemperature();
-	pc = mfp_prop->getCriticalPressure() / 1000;
-	omega = mfp_prop->getAzentricFactor();              // azentric factor
+	Ru = mfp->getUniversalGasConstant();
+	MM = mfp->getMolarMass();
+	Tc = mfp->getCriticalTemperature();
+	pc = mfp->getCriticalPressure() / 1000;
+	omega = mfp->getAzentricFactor();              // azentric factor
 
 	// Peng Robinson EOS:
 	// P= R*T / (V-b) - a*alpha / (V^2+2bV-b^2)   where V = MM/rho
@@ -1140,8 +1288,8 @@ double h2o_heat_conductivity_IAPWS_ind (double rho, double T)
 	double a[4],b[3],B[2],d[4],C[6];
 	int i;
 
-	T = T / 647.26;
-	rho = rho / 317.7;
+	T = T / 647.096;
+	rho = rho / 317.11;
 
 	a[0] =  0.0102811;
 	a[1] =  0.0299621;
@@ -1496,11 +1644,107 @@ double n2_viscosity (double rho, double T)
 }
 
 /**********************************************************************
-   Function for calculating thermal conductivity of nitrogen (N2) depending
+   Function for calculating thermal conductivity of oxygen (O2) depending
    on density and Temperature.
 
    see
    Stephan, Krauss and Laeseke: Viscosity and themal conductivity of fluid
+   Nitrogen, J. Chem. Phys. Ref. Data,Vol. 16, No. 4, 1987.
+
+   Programming: TN
+   see Lemmon & Jacobson, Int J of Thermophys, 25(1), 2004
+ ***********************************************************************/
+double o2_heat_conductivity (double rho, double T)
+{
+	const double MM (32.0); //
+	const double sigma_squared (0.11751184); // nm^2
+	const double ek (118.5); //K
+	const double T_c (154.581); //K
+	const double rho_c (13.63);
+
+	rho /= MM; // convert density in mol/dm^3
+
+	const double tau = T_c/T;
+	const double delta = rho/rho_c;
+
+	double b[5];
+
+	b[0] = 0.431;
+	b[1] = -0.4623;
+	b[2] = 0.08406;
+	b[3] = 0.005341;
+	b[4] = -0.00331;
+
+	double exponent (0);
+
+	for (unsigned i=0; i<5; i++)
+		exponent += b[i] * MathLib::fastpow(log(T/ek),i);
+
+	const double Omega = exp(exponent);
+	const double eta_0 = 0.0266958*pow(MM*T,0.5)/sigma_squared/Omega;
+
+	double N[9], t[8];
+	N[0] = 1.036;
+	N[1] = 6.283;
+	N[2] = -4.262;
+	N[3] = 15.31;
+	N[4] = 8.898;
+	N[5] = -0.7336;
+	N[6] = 6.728;
+	N[7] = -4.374;
+	N[8] = -0.4747;
+
+	t[0] = -0.9;
+	t[1] = -0.6;
+	t[2] = 0.0;
+	t[3] = 0.0;
+	t[4] = 0.3;
+	t[5] = 4.3;
+	t[6] = 0.5;
+	t[7] = 1.8;
+
+	const double lam_0 = N[0] * eta_0 + N[1]*pow(tau,t[0]) + N[2]*pow(tau,t[1]); //note counting is different due to different array sizes
+
+	int d[6], l[6], gamma[6];
+
+	d[0] = 1;
+	d[1] = 3;
+	d[2] = 4;
+	d[3] = 5;
+	d[4] = 7;
+	d[5] = 10;
+
+	l[0] = 0;
+	l[1] = 0;
+	l[2] = 0;
+	l[3] = 2;
+	l[4] = 2;
+	l[5] = 2;
+
+	gamma[0] = 0;
+	gamma[1] = 0;
+	gamma[2] = 0;
+	gamma[3] = 1;
+	gamma[4] = 1;
+	gamma[5] = 1;
+
+	double lam_r (0);
+
+	for (unsigned i=0; i<6; i++)
+	{
+		lam_r += N[i+3]*pow(tau,t[i+2])*MathLib::fastpow(delta,d[i])*exp(-gamma[i]*MathLib::fastpow(delta,l[i]));
+	}
+
+	return (lam_0 + lam_r)*1e-3; //convert mW/m/K into W/m/K
+
+}
+
+/**********************************************************************
+   Function for calculating thermal conductivity of nitrogen (N2) depending
+   on density and Temperature.
+
+   see
+   Stephan, Krauss and Laeseke: Viscosity and thermal conductivity of fluid
    Nitrogen, J. Chem. Phys. Ref. Data,Vol. 16, No. 4, 1987.
 
    Programming: NB
@@ -1720,9 +1964,8 @@ inline float SIGN(const double &a, const float &b)
              May 2009
    Last modification: NB Jun 2009
 *************************************************************/
-void auswahl (double T, double P, int fluid, double* x1, double* x2, double eps)
+void auswahl (double T, double P, int fluid, double* x1, double* x2, double /*eps*/)
 {
-	eps = eps;                            //OK411
 	switch (fluid)
 	{
 	case 0:                               //CO2
@@ -1836,7 +2079,7 @@ double zbrent(double TT, double PP, int fluid, const double tol)
 	fa = dpressure(TT,PP,fluid,x1);
 	fb = dpressure(TT,PP,fluid,x2);
 
-	if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0)) //cout << "Error in zbrent, fluid " << fluid << " T: " << TT << " P: " << PP << " b: " << b << endl;
+	if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0)) //cout << "Error in zbrent, fluid " << fluid << " T: " << TT << " P: " << PP << " b: " << b << "\n";
 		cout << ".";
 	fc = fb;
 	for (int iter = 0; iter < ITMAX; iter++)
@@ -2208,7 +2451,15 @@ void CFluidProperties::therm_prop (string caption)
 		Rs = 188.9241;            // specific gas constant [J/kg/K]
 		molar_mass = 44.0099;     // [g/mol]
 		omega = 0.22491;          // azentric factor, see PREOS
-
+		Vd = 26.9;
+		Zc = 0.27468;	//critical super-compressibility, see PREOS
+		n0=0.11333;
+		k3=0.28996;
+		m0 = 0.38493912223725674;
+		a = 383766.38336903340;
+		b = 0.026666761740035457;
+		k1 = 0.012304583901235679;
+		k2 = -0.14826846628826726;
 		// Limits sums in FHE-derivations
 
 		limit[0] = 7;
@@ -2469,6 +2720,16 @@ void CFluidProperties::therm_prop (string caption)
 		Rs = 461.51805;           //  [J/kg/K]
 		molar_mass = 18.01528;    //  [g/mol]
 		omega = 0.344;            // azentric factor, see PREOS
+		Vd = 25.14;
+		Zc = 0.22944;	//critical super-compressibility, see PREOS
+		n0=0.1156;
+		k3=0.0471;
+		m0 = 0.47568277359898614;
+		a = 943391.02482869523;
+		b = 0.018971230469153735;
+		k1 = 0.017189421358489602;
+		k2 = -0.029385598856191408;
+
 
 		// Limits for Sums in FHE-derivations
 
@@ -2765,7 +3026,15 @@ void CFluidProperties::therm_prop (string caption)
 		Rs = 518.3;               //  [J/kg/K]
 		molar_mass = 16.04;       //  [g/mol]
 		omega = 0.011;            // azentric factor, see PREOS
-
+		Vd = 25.14;
+		Zc = 0.286060;	//critical super-compressibility, see PREOS
+		n0=0.08248;
+		k3=0.20978;
+		m0 = 0.21389815179757277;
+		a = 206793.24123880462;
+		b = 0.026800319421855536;
+		k1 = 0.0019409288415128503;
+		k2 = -0.11003457942904071;
 		// Limits sums in FHE-derivations
 
 		limit[0] = 13;
@@ -2967,7 +3236,6 @@ void CFluidProperties::therm_prop (string caption)
 		K[13][37] = 1;
 		K[13][38] = 1;
 		K[13][39] = 1;
-
 		break;
 	}
 	case 'N':                             // Nitrogen
@@ -2981,7 +3249,15 @@ void CFluidProperties::therm_prop (string caption)
 		Rs = 296.8;               //  [J/kg/K]
 		molar_mass = 28.013;      //  [g/mol]
 		omega = 0.039;            // azentric factor, see PREOS
-
+		Vd = 18.5;
+		Zc = 0.287634;	//critical super-compressibility, see PREOS
+		n0=0.09967;
+		k3=0.24086;
+		m0 = 0.23704245415214481;
+		a = 0.91551836047871149;
+		b = 0.024130615006680459;
+		k1 = 0.0025206904456128499;
+		k2 = -0.12498696464510012;
 		// Limits sums in FHE-derivations
 		limit[0] = 6;
 		limit[1] = 32;
@@ -3007,6 +3283,8 @@ void CFluidProperties::therm_prop (string caption)
 		k[1][5] = 20.44072;
 		k[1][6] = 29.93949;
 		k[1][7] = 79.13892;
+
+
 		//real gas part
 		K[0][0] =  0.924803575275;
 		K[0][1] = -0.492448489428;
@@ -3185,9 +3463,21 @@ void CFluidProperties::therm_prop (string caption)
 		omega = -0.215;           // azentric factor, see PREOS
 		molar_mass = 2.015894;
 		// Limits sums in FHE-derivations
+		break;
+	}
+	case 'O':                             // Oxygen
+	{
+		fluid_id = 5;
+		//rhoc = 313.6;             // [kg/m3]
+		//Tc = 33.30;               // [K]
+		//pc = 1297000;             // [Pa]
+		//omega = -0.215;           // azentric factor, see PREOS
+		//molar_mass = 2.015894;
+		// Limits sums in FHE-derivations
+		break;
 	}
 
-	default: cout << "Error in eos.cpp: no fluid name specified!" << endl;
+	default: cout << "Error in eos.cpp: no fluid name specified!" << "\n";
 		break;
 	}
 }
@@ -3264,7 +3554,7 @@ inline double W3( double x)
 			case 3: return 12.1308 - 0.0099489 * T - 3042.09583 / T;
 			default: return 1;
 			}
-		cout << " This text should not be printed, something is wrong!" << endl;
+		cout << " This text should not be printed, something is wrong!" << "\n";
 		return 0;
 	}
 
@@ -3297,7 +3587,7 @@ inline double W3( double x)
 				// case 3: return 12.1308 -0.0099489*T - 3042.09583/T; aus F90
 			}
 		}
-		cout << " This text should not be printed, something is wrong!" << endl;
+		cout << " This text should not be printed, something is wrong!" << "\n";
 		return 0;
 	}
 
@@ -3318,7 +3608,7 @@ inline double W3( double x)
 //*
 //* Programming: NB, Sep10
 //*****************************************************************************/
-	void DuansParameter(int fluid, double a[14], double* Tc, double* Pc, double* M)
+	void DuansParameter(int fluid, double a[15], double* Tc, double* Pc, double* M)
 	{
 		switch (fluid)
 		{
@@ -3458,7 +3748,7 @@ double bip (int number, int fluid_a, int fluid_b, int i, int j, int k, double T)
 		default:
 			return 1;
 		}
-	cout << " This text should not be printed, something is wrong!" << endl;
+	cout << " This text should not be printed, something is wrong!" << "\n";
 	return 0;
 }
 
@@ -3674,7 +3964,7 @@ double DuansMixingRule(double T, double P, double x, int fluid1, int fluid2, boo
 	//			dev_1=dev;
 	//		} }else
 	//		{
-	//			//cout << " loop 1 left after " << n << " circles "<< endl;
+	//			//cout << " loop 1 left after " << n << " circles "<< "\n";
 	//			break;
 	//		}
 	//}*/
@@ -3704,11 +3994,11 @@ double DuansMixingRule(double T, double P, double x, int fluid1, int fluid2, boo
 				V2 = V;
 				dev_2 = dev;
 			} else
-			//cout << " loop 2 left after " << n << " circles "<< endl;
+			//cout << " loop 2 left after " << n << " circles "<< "\n";
 			break;
 			//goto l400;
 		} else
-		//cout << " loop 2 left after " << n << " circles "<< endl;
+		//cout << " loop 2 left after " << n << " circles "<< "\n";
 		break;
 	}
 
@@ -3727,7 +4017,7 @@ double DuansMixingRule(double T, double P, double x, int fluid1, int fluid2, boo
 			dev = DuanMixCompressibility(T, P, V, w);
 
 			if (fabs(dev) < 1.0e-5)
-			//cout << " returning after " << n << " iterations " << endl;
+			//cout << " returning after " << n << " iterations " << "\n";
 			return w.M / V * 1000;
 
 			if ((dev_1 * dev) > 0.0)
@@ -3735,13 +4025,13 @@ double DuansMixingRule(double T, double P, double x, int fluid1, int fluid2, boo
 			else if (dev_2 * dev > 0.0) V2 = V;
 			n++;
 			if (n > 1000) {
-				cout << " max it reached " << endl;
+				cout << " max it reached " << "\n";
 				return -1; // Max it
 			}
 		}
 	}
 
-	cout << "This should not happen. Call NB at TUD!" << endl;
+	cout << "This should not happen. Call NB at TUD!" << "\n";
 	return -1;
 }
 

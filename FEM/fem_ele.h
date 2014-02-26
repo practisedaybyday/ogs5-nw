@@ -247,7 +247,7 @@ private:
 class ElementMatrix
 {
 public:
-	ElementMatrix() : Mass(NULL), Laplace(NULL),
+	ElementMatrix() : Mass(NULL), Mass_notsym(NULL), Laplace(NULL),
 		          Advection(NULL), Storage(NULL), Content(NULL),
 		          CouplingA(NULL), CouplingB(NULL), Stiffness(NULL),
 		          RHS(NULL)       //SB4200
