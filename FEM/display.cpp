@@ -13,6 +13,7 @@
 /**************************************************************************/
 #include <cstdarg>
 #include <cstdlib>
+#include <cstdio>
 #include "Configure.h"
 #include "display.h"
 #include "makros.h"
@@ -120,6 +121,25 @@ void DisplayMsg ( const char* s )
 	fprintf(f,"%s",s);
 	CloseMsgFile(f);
 }
+
+#ifdef MSVC
+int vasprintf(char **strp, const char *format, va_list ap)
+{
+	va_list args = ap;
+
+	int len = _vscprintf( format, args ) + 1; // _vscprintf doesn't count terminating '\0'
+	va_end( args );
+
+	if ((*strp = (char*)malloc(len * sizeof(char))) == NULL)
+		return (-1);
+
+	len = vsprintf( *strp, format, ap ); // C4996
+	// Note: vsprintf is deprecated; consider using vsprintf_s instead
+
+	return len;
+}
+#endif
+
 
 /**************************************************************************
  Task: Output message to screen. Helps to remove so many IFDEFS
