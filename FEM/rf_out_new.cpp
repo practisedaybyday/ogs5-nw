@@ -564,7 +564,7 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 				std::string vtu_file_name = vtk_file_path_base + "_part" + number2str(myrank) + "_" + number2str(time_step_number) + ".vtu";
 				std::string pvd_vtk_file_name = vtk_file_path_base + "_" + number2str(time_step_number) + ".pvtu";
 #else
-				std::string vtu_file_name = vtk_file_path_base + number2str(time_step_number) + ".vtu";
+				std::string vtu_file_name = vtk_file_path_base + "_" + number2str(time_step_number) + ".vtu";
 				std::string pvd_vtk_file_name = vtu_file_name;
 #endif
 				vtk->WriteXMLUnstructuredGrid(vtu_file_name, m_out, time_step_number);
