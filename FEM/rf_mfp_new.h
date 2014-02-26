@@ -85,6 +85,7 @@ private:
 	double Ru;                            //universal_gas_constant;
 	double omega;                         // azentric factor for Peng-Robinson EOS
 	double molar_mass;
+	double Vd, Zc, n0, m0, a, b, k1, k2, k3;//constants are used in VTPR
 	/**
 	 * density
 	 */
@@ -109,6 +110,7 @@ private:
 
 	// Viscosity
 	double viscosity;
+	double viscosity_T_shift; //JM in order to use some viscosity functions, based on total temperature, within Richards
 	double my_0;
     double my_rho0;
     double my_p0;
@@ -216,14 +218,14 @@ public:
 	void CalPrimaryVariable(std::vector<std::string>& pcs_name_vector);
 	// Add an argument: double* variables = NULL. 28.05.2008 WW
 	double Density(double* variables = NULL);
-	double drhodP (int idx_elem, double P, double T);
 	//AKS
 	double MixtureSubProperity(int properties, long idx_elem, double p, double T);
 	double GetElementValueFromNodes(long ElementIndex,
 	                                int GPIndex,
 	                                int PhaseIndex,
 	                                int Variable);                                           // BG 11/2010
-	double drhodT (int idx_elem, double P, double T);
+    double drhodP(double* variables = NULL);
+	double drhodT(double* variables = NULL);
 	double Viscosity(double* variables = NULL); //OK4709
 	                                            //NB Jan09
 	double SpecificHeatCapacity(double* variables = NULL);
@@ -255,6 +257,7 @@ public:
 	double SuperCompressibiltyFactor(int idx_elem, double p, double T); //AKS
 	double dZ(int idx_elem, double p, double T, int nk);//AKS
 	double MaxwellStefanDiffusionCoef(int idx_elem, double p, double T, int CNm); //AKS
+	bool drho_dT_unsaturated; 
 
 private:
 	// State variables
