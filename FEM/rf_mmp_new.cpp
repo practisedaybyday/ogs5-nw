@@ -127,6 +127,7 @@ CMediumProperties::CMediumProperties() :
     permeability_hetero_value_id = 0;
     porosity_hetero_value_id = 0;
     storage_hetero_value_id = 0;
+	permeability_effstress_model = 0;
 }
 
 /**************************************************************************
@@ -930,6 +931,14 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 				in >> permeability_strain_model_value[0];
 				in >> permeability_strain_model_value[1];
 				break;
+			case 5: //strain volume (threshold value, can be changed with plas strain)
+				in >> permeability_strain_model_value[0]; //threshold vol. strain
+				in >> permeability_strain_model_value[1]; //d_fac/d_volStrain when vol. strain <= threshold
+				in >> permeability_strain_model_value[2];// d_fac/d_volStrain when vol. strain > threshold
+				in >> permeability_strain_model_value[3];//curve numer for dependenc between threshold and plas strain
+				                                         //if -1, threshold is constant
+				in >> permeability_strain_model_value[4];//lower limit
+				in >> permeability_strain_model_value[5];//uper limit
 			default:
 				cout << "Error in MMPRead: no valid permeability strain model" <<
 				endl;
@@ -1306,6 +1315,23 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 			in.clear();
 			continue;
 		}
+		//AS,WX:08.2012 
+		if(line_string.find("$PERMEABILITY_FUNCTION_EFFSTRESS")!=std::string::npos)
+		{
+			in.str(GetLineFromFile1(mmp_file));
+			in >> permeability_effstress_model;
+			switch(permeability_effstress_model)
+			{
+			case 1:
+				in >> permeability_effstress_model_value[0];
+				break;
+			default:
+				cout<< "Error in MMPRead: no valid permeability stress model" << "\n";
+				break;
+			}
+			in.clear();
+			continue;
+		}
 		//------------------------------------------------------------------------
 		//12.5 PERMEABILITY_FUNCTION_VELOCITY
 		//------------------------------------------------------------------------
@@ -1522,6 +1548,23 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 		{
 			in.str(GetLineFromFile1(mmp_file));
 			in >> specific_storage; //(Pa-1)
+			in.clear();
+			continue;
+		}
+		//AS:08.2012 storage function eff stress
+		if(line_string.find("$STORAGE_FUNCTION_EFFSTRESS")!=std::string::npos)
+		{
+			in.str(GetLineFromFile1(mmp_file));
+			in >> storage_effstress_model;
+			switch(storage_effstress_model)
+			{
+			case 1:
+				in >> storage_effstress_model_value[0];
+				break;
+			default:
+				cout<< "Error in MMPRead: no valid storage stress model" << "\n";
+				break;
+			}
 			in.clear();
 			continue;
 		}
@@ -2602,15 +2645,6 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 	// long group = Fem_Ele_Std->GetMeshElement()->GetPatchIndex();
 	m_mfp = Fem_Ele_Std->FluidProp;       //WW
 
-	if (Fem_Ele_Std->PcsType == S) // Multi-phase WW
-	{
-		m_mfp = mfp_vector[0];
-		dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal0);
-		dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
-		dens_arg[2] = Fem_Ele_Std->Index;
-		heat_conductivity_fluids = m_mfp->HeatConductivity(dens_arg);
-	}
-	else
 	{
 		for (size_t ii = 0; ii < pcs_vector.size(); ii++)
 			//		if (pcs_vector[ii]->pcs_type_name.find("FLOW") != string::npos) TF
@@ -4439,34 +4473,27 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 	int gueltig;
 	//WW CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) this;
 
-	switch(permeability_strain_model)
-	{
-	case 1:
-	{
+	//get plas strain and volume strain
+	int idStrainP;
+	double strainp_nodes[20] = {0.};
+	double strainp = 0.;
+	idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
+	for(int i = 0; i < nnodes; i++)
+		strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(
+		        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
+		        idStrainP);
+	strainp = h_fem->interpolate(strainp_nodes);
+	
 		double strain_temp[3] = {0}, vol_strain_temp = 0;
-		//ElementValue_DM *e_valDM = NULL;
-		//CFiniteElementVec *e_valVec = NULL;
 		int idx_temp[3];
 		int dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
 		if (dim == 2)
 			if(h_fem->axisymmetry)
 				dim = 3;
-		//WX:02.09.2010. should not be
-
-		//CSolidProperties *m_msp = NULL;
-		//int group = m_pcs->m_msh->ele_vector[number]->GetPatchIndex();
-		//m_msp = msp_vector[group];
-		//int PModel = m_msp->Plastictity();
-
-		//WW ele_index = index;
-
 		idx_temp[0] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
 		idx_temp[1] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
 		idx_temp[2] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
-
-		//WW:02.08.2010
 		double strain_nodes[20] = {0};
-
 		for (int j = 0; j < dim; j++)
 		{
 			for (int i = 0; i < nnodes; i++)
@@ -4475,30 +4502,23 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 				        idx_temp[j]);
 			strain_temp[j] = h_fem->interpolate(strain_nodes);
 		}
-
 		for (int j = 0; j < dim; j++)
 			vol_strain_temp += strain_temp[j];
 
+	switch(permeability_strain_model)
+	{
+	case 1:
+		{
 		fac_perm_strain = GetCurveValue(permeability_strain_model_value[0],
 		                                0,
 		                                vol_strain_temp,
 		                                &gueltig);
 		if(fac_perm_strain <= 0.)
 			fac_perm_strain = 1.;
-
 		break;
 	}
 	case 2: //equivalent plasical strain
 	{
-		int idStrainP;
-		double strainp_nodes[20] = {0.};
-		double strainp = 0.;
-		idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
-		for(int i = 0; i < nnodes; i++)
-			strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-			        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
-			        idStrainP);
-		strainp = h_fem->interpolate(strainp_nodes);
 		fac_perm_strain = GetCurveValue(permeability_strain_model_value[0],
 		                                0,
 		                                strainp,
@@ -4509,15 +4529,6 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 	}
 	case 3: //if StrainP>0, factor=f(StrainP), else factor=f(strain_Volume)
 	{
-		int idStrainP;
-		double strainp_nodes[20] = {0.};
-		double strainp = 0.;
-		idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
-		for(int i = 0; i < nnodes; i++)
-			strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-			        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
-			        idStrainP);
-		strainp = h_fem->interpolate(strainp_nodes);
 		if(strainp > 0)
 			fac_perm_strain = GetCurveValue(permeability_strain_model_value[1],
 			                                0,
@@ -4525,34 +4536,6 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 			                                &gueltig);
 		else
 		{
-			double strain_temp[3] = {0}, vol_strain_temp = 0;
-			int idx_temp[3];
-			int dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
-			if (dim == 2)
-				if(h_fem->axisymmetry)
-					dim = 3;
-			//WW ele_index = index;
-
-			idx_temp[0] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
-			idx_temp[1] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
-			idx_temp[2] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
-
-			double strain_nodes[20] = {0};
-
-			for (int j = 0; j < dim; j++)
-			{
-				for (int i = 0; i < nnodes; i++)
-					strain_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-					        h_fem->dm_pcs->m_msh->ele_vector[index]->
-					        getNodeIndices()
-					        [i],
-					        idx_temp[j]);
-				strain_temp[j] = h_fem->interpolate(strain_nodes);
-			}
-
-			for (int j = 0; j < dim; j++)
-				vol_strain_temp += strain_temp[j];
-
 			fac_perm_strain = GetCurveValue(permeability_strain_model_value[0],
 			                                0,
 			                                vol_strain_temp,
@@ -4564,16 +4547,7 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 	}
 	case 4: //factor = f(strainP+strain_Volume)
 	{
-		int idStrainP;
-		double strainp_nodes[20] = {0.};
-		double strainp = 0.;
 		double tmpfkt = 1.;
-		idStrainP = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_PLS");
-		for(int i = 0; i < nnodes; i++)
-			strainp_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-			        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
-			        idStrainP);
-		strainp = h_fem->interpolate(strainp_nodes);
 		if(strainp > 0.)
 		{
 			tmpfkt = GetCurveValue(permeability_strain_model_value[1],
@@ -4583,47 +4557,91 @@ double CMediumProperties::PermeabilityFunctionStrain(long index,
 			if(tmpfkt < 1.)
 				tmpfkt = 1.;
 		}
-
-		double strain_temp[3] = {0}, vol_strain_temp = 0;
-		int idx_temp[3];
-		int dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
-		if (dim == 2)
-			if(h_fem->axisymmetry)
-				dim = 3;
-		//WW ele_index = index;
-
-		idx_temp[0] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
-		idx_temp[1] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
-		idx_temp[2] = h_fem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
-
-		double strain_nodes[20] = {0};
-
-		for (int j = 0; j < dim; j++)
-		{
-			for (int i = 0; i < nnodes; i++)
-				strain_nodes[i] = h_fem->dm_pcs->GetNodeValue(
-				        h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
-				        idx_temp[j]);
-			strain_temp[j] = h_fem->interpolate(strain_nodes);
-		}
-		for (int j = 0; j < dim; j++)
-			vol_strain_temp += strain_temp[j];
-
 		fac_perm_strain = GetCurveValue(permeability_strain_model_value[0],
 		                                0,
 		                                vol_strain_temp,
 		                                &gueltig);
-
 		if(fac_perm_strain <= 0.)
 			fac_perm_strain = 1.;
-
 		fac_perm_strain *= tmpfkt;
 		break;
 	}
+	case 5:
+		{
+			double threshold = 0.;
+			threshold = permeability_strain_model_value[0];
+
+			if(permeability_strain_model_value[3]>MKleinsteZahl)
+				threshold = GetCurveValue(permeability_strain_model_value[3],
+		                                0,
+		                                vol_strain_temp,
+		                                &gueltig);
+			if(vol_strain_temp <= threshold)
+				fac_perm_strain = 1 - permeability_strain_model_value[1] 
+			                            * (threshold - vol_strain_temp);
+			else
+				fac_perm_strain = 1 + permeability_strain_model_value[2] 
+			                            * (vol_strain_temp - threshold);
+			fac_perm_strain = MRange(permeability_strain_model_value[4], fac_perm_strain
+				                         ,permeability_strain_model_value[5]);
+			break;
+		}
 	default:
 		break;
 	}
 	return fac_perm_strain;
+}
+//------------------------------------------------------------------------
+//12.(iv) PERMEABILITY_FUNCTION_EFFSTRESS
+//------------------------------------------------------------------------
+//AS: permeability as function of effective stress for liquid flow. 08.2012
+double CMediumProperties::PermeabilityFunctionEffStress(long index, int nnodes, CFiniteElementStd *h_fem)
+{
+	int i, j, size;
+	double perm_stress = 1.0;
+	//calculate principal effective stress
+	double stress[6]={0.}, prin_str[6]={0.}, prin_dir[9]={0.};
+	int stress_index[6];
+	//model dimension
+	int dim = h_fem->dm_pcs->m_msh->GetCoordinateFlag()/10;
+	size = 6;
+	if (dim==2)
+	{
+		size=4;
+		if(h_fem->axisymmetry)
+			dim=3;
+	}
+	stress_index[0] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_XX");
+	stress_index[1] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_YY");
+	stress_index[2] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_ZZ");
+	stress_index[3] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_XY");
+	if(size==6)
+	{
+		stress_index[4] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_XZ");
+		stress_index[5] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_YZ");
+	}
+	double stress_nodes[20]={0.};
+
+	switch(permeability_effstress_model)
+	{
+		//AS: case 1, permeability directly calculated from curve. 16.08.2012
+	case 1: 
+		for (j=0; j<size; j++)
+		{
+			for (i=0; i<nnodes; i++)
+				stress_nodes[i] = h_fem->dm_pcs->GetNodeValue(
+				h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
+				stress_index[j]);
+			stress[j] = h_fem->interpolate(stress_nodes);
+		}
+		h_fem->SolidProp->CalPrinStrDir(stress, prin_str, prin_dir, dim);
+		//permeability from curve with minimum (absolute value) principal effective stress as input
+		perm_stress = GetCurveValue((int)permeability_effstress_model_value[0], 0, prin_str[0], &i);
+		break;
+	default:
+		break;
+	}
+	return perm_stress;
 }
 //------------------------------------------------------------------------
 //12.(i) PERMEABILITY_FUNCTION_SATURATION
@@ -7401,6 +7419,56 @@ double CMediumProperties::StorageFunction(long index,double* gp,double theta)
 		break;
 	}
 	return storage;
+}
+
+//AS:08.2012 storgae function eff stress
+double CMediumProperties::StorageFunctionEffStress(long index, int nnodes, CFiniteElementStd *h_fem)
+{
+	int i, j, size;
+	double storage_stress = 1.0;
+	//calculate principal effective stress
+	double stress[6]={0.}, prin_str[6]={0.}, prin_dir[9]={0.};
+	int stress_index[6];
+	//model dimension
+	int dim = h_fem->dm_pcs->m_msh->GetCoordinateFlag()/10;
+	size = 6;
+	if (dim==2)
+	{
+		size=4;
+		if(h_fem->axisymmetry)
+			dim=3;
+	}
+	stress_index[0] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_XX");
+	stress_index[1] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_YY");
+	stress_index[2] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_ZZ");
+	stress_index[3] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_XY");
+	if(size==6)
+	{
+		stress_index[4] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_XZ");
+		stress_index[5] = h_fem->dm_pcs->GetNodeValueIndex("STRESS_YZ");
+	}
+	double stress_nodes[20]={0.};
+
+	switch(storage_effstress_model)
+	{
+		//AS: case 1, permeability directly calculated from curve. 16.08.2012
+	case 1: 
+		for (j=0; j<size; j++)
+		{
+			for (i=0; i<nnodes; i++)
+				stress_nodes[i] = h_fem->dm_pcs->GetNodeValue(
+				h_fem->dm_pcs->m_msh->ele_vector[index]->getNodeIndices()[i],
+				stress_index[j]);
+			stress[j] = h_fem->interpolate(stress_nodes);
+		}
+		h_fem->SolidProp->CalPrinStrDir(stress, prin_str, prin_dir, dim);
+		//permeability from curve with minimum (absolute value) principal effective stress as input
+		storage_stress = GetCurveValue((int)storage_effstress_model_value[0], 0, prin_str[0], &i);
+		break;
+	default:
+		break;
+	}
+	return storage_stress;
 }
 
 double CMediumProperties::PermeabilityPressureFunction() const
