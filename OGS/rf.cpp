@@ -197,7 +197,6 @@ int main ( int argc, char* argv[] )
 
 /*---------- LIS solver -----------------------------------------*/
 #ifdef LIS
-	// Initialization of the lis solver.
 	lis_initialize(&argc, &argv);
 #endif
 /*========================================================================*/

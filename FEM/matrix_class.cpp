@@ -1221,46 +1221,87 @@ CSparseMatrix::CSparseMatrix(const SparseTable &sparse_table, const int dof)
 	zero_e = 0.;
 	//
 #ifdef LIS                         // PCH
-	int counter, counter_ptr = 0, counter_col_idx = 0;
-	int i,k,ii,jj,I,J,K;
-	int row_in_sparse_table;
+	IndexType counter, counter_ptr = 0, counter_col_idx = 0;
+	IndexType i,k,ii,jj,J,K;
+	IndexType row_in_sparse_table;
 
-	ptr = new int [rows * dof + 1];
-	col_idx = new int [dof * dof * size_entry_column];
-	entry_index = new int [dof * dof * size_entry_column];
+	ptr = new IndexType [rows * dof + 1];
+	col_idx = new IndexType [dof * dof * size_entry_column];
+    entry_index = new IndexType [dof * dof * size_entry_column];
 
-	for(ii = 0; ii < DOF; ii++)
-		for(i = 0; i < rows; i++)
-		{
-			// Store ptr arrary for CRS
-			ptr[i + rows * ii] = counter_ptr;
-			row_in_sparse_table = row_index_mapping_o2n[i];
-			for(jj = 0; jj < DOF; jj++)
+	if (storage_type == JDS) {
+		for(ii = 0; ii < DOF; ii++)
+			for(i = 0; i < rows; i++)
 			{
-				counter = row_in_sparse_table;
-				for (k = 0; k < max_columns; k++)
+				// Store ptr arrary for CRS
+				ptr[i + rows * ii] = counter_ptr;
+				row_in_sparse_table = row_index_mapping_o2n[i];
+				for(jj = 0; jj < DOF; jj++)
 				{
-					if(row_in_sparse_table < num_column_entries[k])
+					counter = row_in_sparse_table;
+					for (k = 0; k < max_columns; k++)
 					{
-						I = ii * rows + i; // row in global matrix
-						                   // column in global matrix
-						J = jj * rows + entry_column[counter];
-						K = (ii * DOF + jj) * size_entry_column + counter;
+						if(row_in_sparse_table < num_column_entries[k])
+						{
+							//I = ii * rows + i; // row in global matrix
+							                   // column in global matrix
+							J = jj * rows + entry_column[counter];
+							K = (ii * DOF + jj) * size_entry_column + counter;
 
-						// Store column index for CRS
-						col_idx[counter_col_idx] = J;
-						entry_index[counter_col_idx] = K;
+							// Store column index for CRS
+							col_idx[counter_col_idx] = J;
+							entry_index[counter_col_idx] = K;
+
+							++counter_ptr;
+							++counter_col_idx;
+							counter += num_column_entries[k];
+						}
+						else
+							break;
+					}
+				}
+			}
+		ptr[i + rows * (ii - 1)] = counter_ptr;
+	} else if (storage_type == CRS) {
+		for(ii = 0; ii < DOF; ii++)
+		{
+			const long row_offset_dof = ii * rows;
+			for(i = 0; i < rows; i++)
+			{
+				ptr[row_offset_dof + i] = counter_ptr;
+				const long n_columns = num_column_entries[i+1] - num_column_entries[i];
+				const long col_offset = num_column_entries[i];
+				for(jj = 0; jj < DOF; jj++)
+				{
+					const long col_offset_dof = jj * rows;
+					for (k = 0; k < n_columns; k++)
+					{
+						// column in global matrix
+						col_idx[counter_col_idx] = col_offset_dof + entry_column[col_offset+k];
 
 						++counter_ptr;
 						++counter_col_idx;
-						counter += num_column_entries[k];
 					}
-					else
-						break;
 				}
 			}
 		}
-	ptr[i + rows * (ii - 1)] = counter_ptr;
+		ptr[i + rows * (ii - 1)] = counter_ptr;
+		// entry index: actual memory layout is not CRS
+        long cnt = 0;
+        for(int ii = 0; ii < DOF; ii++) {
+            for(i = 0; i < rows; i++) {
+                const long ptr0 = num_column_entries[i];
+                const long ptr1 = num_column_entries[i+1];
+                for(int jj = 0; jj < DOF; jj++) {
+                    const long offset_dof = (ii * DOF + jj) * size_entry_column;
+                    for (long k = ptr0; k < ptr1; k++) {
+                        entry_index[cnt++] = offset_dof + k;
+                    }
+                }
+            }
+        }
+	}
+
 #endif
 }
 /*\!
@@ -1459,21 +1500,29 @@ void CSparseMatrix::Write(std::ostream &os)
 	os.width(14);
 	os.precision(8);
 	//
-	if(storage_type == CRS )
-		for(ii = 0; ii < DOF; ii++)
-			for(i = 0; i < rows; i++)
-				for(jj = 0; jj < DOF; jj++)
-					for (k = num_column_entries[i];
-					     k < num_column_entries[i + 1]; k++)
+	if(storage_type == CRS ) {
+	    os << "Storage type: CRS\n";
+		for(ii = 0; ii < DOF; ii++) {
+			for(i = 0; i < rows; i++) {
+			    const long ptr0 = num_column_entries[i];
+                const long ptr1 = num_column_entries[i+1];
+				for(jj = 0; jj < DOF; jj++) {
+				    const long offset_dof = (ii * DOF + jj) * size_entry_column;
+					for (k = ptr0; k < ptr1; k++) {
 //TEST
 						// if(fabs(entry[(ii*DOF+jj)*size_entry_column+counter])>DBL_MIN) //DBL_EPSILON)
 						os << std::setw(10) << ii * rows + i << " "
 						   << std::setw(10) << jj * rows + entry_column[k] << " "
 						   << std::setw(15) <<
-						entry[(ii * DOF + jj) * size_entry_column + k] << std::endl;
-
+						entry[offset_dof + k] << "\n";
+					}
+				}
+			}
+		}
+	}
 	else if(storage_type == JDS )
 	{
+        os << "Storage type: JDS\n";
 		for(ii = 0; ii < DOF; ii++)
 			for(i = 0; i < rows; i++)
 			{

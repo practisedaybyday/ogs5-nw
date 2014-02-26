@@ -16,25 +16,34 @@
 #include <mpi.h>
 #endif
 
-#include "Configure.h"
-#include "makros.h"
+#include "equation_class.h"
 
 #include <cfloat>
+#include <iomanip>
+#ifdef USE_OPENMP
+#include <omp.h>
+#endif
+
 // NEW_EQS To be removed
 #ifdef NEW_EQS                                    //1.11.2007 WW
-#include "rf_pcs.h"
-#include <iomanip>
 
 
 #ifdef LIS                                        // 07.02.2008 PCH
 #include "lis.h"
-#include <omp.h>
+#ifndef LIS_INT
+#define LIS_INT int
 #endif
+#endif
+
 
 #if defined(_WIN32) || defined(_WIN64)
 #define pardiso_ PARDISO
 #else
+#ifdef OGS_USE_LONG
+#define PARDISO pardiso_64
+#else
 #define PARDISO pardiso_
+#endif
 #endif
 
 #ifdef MKL
@@ -57,12 +66,12 @@ extern int PARDISO
 #endif
 #endif
 
-#include "equation_class.h"
+#include "Configure.h"
+#include "makros.h"
+
 #include "matrix_class.h"
 #include "rf_num_new.h"
-#ifdef JFNK_H2M
 #include "rf_pcs.h"
-#endif
 
 std::vector<Math_Group::Linear_EQS*> EQS_Vector;
 using namespace std;
@@ -222,6 +231,7 @@ void Linear_EQS::ConfigNumerics(CNumerics* m_num, const long n)
 		break;
 	case 12:
 		solver_name = "UMF";
+		break;
 	case 13:                              // 06.2010. WW
 		solver_name = "GMRES";
 		m_gmres = m_num->Get_m();
@@ -502,6 +512,7 @@ int Linear_EQS::Solver(double* xg, const long n)
 //NW 01.2010 Use configuration in NUM file
 int Linear_EQS::Solver(CNumerics* num, bool compress)
 {
+    this->bNorm = Norm(b);
 	// Check the openmp solver type iterative and directive
 	CNumerics* m_num;
 	if (num != NULL)
@@ -514,20 +525,22 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 #ifdef MKL                               // PCH 10.03.2009: Requires the system platform where Math Kernel Library is properly configured.
 		//cout << "---------------------------------------------------" << endl;
 		//omp_set_num_threads (1);
-		cout << "->Start calling PARDISO with " << omp_get_max_threads() << " threads" <<
-		endl;
-		int i, iter, ierr;
+		ScreenMessage2("->Start calling PARDISO with %d threads\n", omp_get_max_threads());
+#ifdef OGS_USE_LONG
+        ScreenMessage2("->64bit integer is used in PARDISO\n");
+#endif
+		_INTEGER_t i, iter, ierr;
 		// Assembling the matrix
 		// Establishing CRS type matrix from GeoSys Matrix data storage type
-		int nonzero = A->nnz();
-		int numOfNode = A->Size() * A->Dof();
+		_INTEGER_t nonzero = A->nnz();
+		_INTEGER_t numOfNode = A->Size() * A->Dof();
 		double* value;
 		value = new double [nonzero];
 		ierr = A->GetCRSValue(value);
-		int* ptr = NULL;
-		int* index = NULL;
-		ptr = (int*)malloc((numOfNode + 1) * sizeof( int));
-		index = (int*)malloc((nonzero) * sizeof( int));
+		_INTEGER_t* ptr = NULL;
+		_INTEGER_t* index = NULL;
+		ptr = (_INTEGER_t*)malloc((numOfNode + 1) * sizeof( _INTEGER_t));
+		index = (_INTEGER_t*)malloc((nonzero) * sizeof( _INTEGER_t));
 
 		// Reindexing ptr according to Fortran-based PARDISO
 		for(i = 0; i < numOfNode; ++i)
@@ -539,20 +552,39 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		for(i = 0; i < nonzero; ++i)
 			index[i] = A->col_idx[i] + 1;
 
-		int mtype = 11;           /* Real unsymmetric matrix */
-		int nrhs = 1;             /* Number of right hand sides. */
+#if 0
+		{
+		    std::ofstream ofs("pardiso.txt");
+		    ofs << "ptr=\n";
+	        for(i = 0; i < numOfNode+1; ++i)
+	            ofs << ptr[i] << " ";
+            ofs << "\ncol_idx=\n";
+	        for(i = 0; i < nonzero; ++i)
+	            ofs << index[i] << " ";
+            ofs << "\nval=\n";
+            for(i = 0; i < nonzero; ++i)
+                ofs << value[i] << " ";
+            ofs << "\n";
+            ofs.close();
+		}
+#endif
+
+		_INTEGER_t mtype = 11;           /* Real unsymmetric matrix */
+		if (num->ls_storage_method==102)
+		    mtype = 1; // Real and structurally symmetric
+		_INTEGER_t nrhs = 1;             /* Number of right hand sides. */
 		/* Internal solver memory pointer pt, */
 		/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
 		/* or void *pt[64] should be OK on both architectures */
 		void* pt[64];
 		/* Pardiso control parameters.*/
-		int iparm[64];
+		_INTEGER_t iparm[64];
 		double dparm[64];
-		int maxfct, mnum, phase, error, msglvl, solver;
+		_INTEGER_t maxfct, mnum, phase, error, msglvl, solver;
 
 		/* Auxiliary variables.*/
 		double ddum;              /* Double dummy */
-		int idum;                 /* Integer dummy. */
+		_INTEGER_t idum;                 /* Integer dummy. */
 
 #ifdef _WIN32
 		// Check the license and initialize the solver
@@ -608,9 +640,12 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		iparm[17] = -1;           /* Output: Number of nonzeros in the factor LU */
 		iparm[18] = -1;           /* Output: Mflops for LU factorization */
 		iparm[19] = 0;            /* Output: Numbers of CG Iterations */
+        iparm[59] = 1;            /* PARDISO mode - in-core (0) or out-core (2) */
 		maxfct = 1;               /* Maximum number of numerical factorizations. */
 		mnum = 1;                 /* Which factorization to use. */
 		msglvl = 0;               /* Print statistical information in file */
+		if (numOfNode>1e6)
+			msglvl = 1; // output log for large problems
 		error = 0;                /* Initialize error flag */
 
 		/* --------------------------------------------------------------------*/
@@ -635,6 +670,13 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		         iparm, &msglvl, &ddum, &ddum, &error);
 #endif
 
+		if (msglvl==1) {
+	        printf("< Memory usage >\n");
+	        printf("             Peak memory on symbolic factorization = %d kb\n",  iparm[14]);
+	        printf("             Permanent memory on symbolic factorization = %d kb\n",  iparm[15]);
+	        printf("             Size of factors/Peak memory on numerical factorization and solution = %d\n",  iparm[16]);
+	        printf("             Total peak memory = %d kb\n", std::max(iparm[14], iparm[15]+iparm[16]));
+		}
 		if (error != 0)
 		{
 			printf("\nERROR during symbolic factorization: %d", error);
@@ -654,6 +696,13 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		         &numOfNode, value, ptr, index, &idum, &nrhs,
 		         iparm, &msglvl, &ddum, &ddum, &error);
 #endif
+		if (msglvl==1) {
+			printf("< Memory usage >\n");
+			printf("             Peak memory on symbolic factorization = %d kb\n",  iparm[14]);
+			printf("             Permanent memory on symbolic factorization = %d kb\n",  iparm[15]);
+			printf("             Size of factors/Peak memory on numerical factorization and solution = %d\n",  iparm[16]);
+			printf("             Total peak memory = %d kb\n", std::max(iparm[14], iparm[15]+iparm[16]));
+		}
 		if (error != 0)
 		{
 			printf("\nERROR during numerical factorization: %d", error);
@@ -677,6 +726,13 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		         &numOfNode, value, ptr, index, &idum, &nrhs,
 		         iparm, &msglvl, b, x, &error);
 #endif
+		if (msglvl==1) {
+			printf("< Memory usage >\n");
+			printf("             Peak memory on symbolic factorization = %d kb\n",  iparm[14]);
+			printf("             Permanent memory on symbolic factorization = %d kb\n",  iparm[15]);
+			printf("             Size of factors/Peak memory on numerical factorization and solution = %d\n",  iparm[16]);
+			printf("             Total peak memory = %d kb\n", std::max(iparm[14], iparm[15]+iparm[16]));
+		}
 		if (error != 0)
 		{
 			printf("\nERROR during solution: %d", error);
@@ -707,21 +763,21 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		std::cout <<
 		"------------------------------------------------------------------" <<
 		std::endl;
-		std::cout << "*** LIS solver computation " << std::endl;
-		//omp_set_num_threads (1);
-		std::cout << "-> Max. number of threads = " << omp_get_max_threads() << std::endl;
-		int i, iter, ierr, size, nonzero;
-        int *ptr, *index;
-        double* value;
-        // Fix for the fluid_momentum Dof
-        size = A->Size() * A->Dof();
-        // Establishing CRS type matrix from GeoSys Matrix data storage type
-        nonzero = A->nnz();
-        value = new double [nonzero];
-        ierr = A->GetCRSValue(value);
-        ptr = A->ptr;
-        index = A->col_idx;
+		ScreenMessage2("*** LIS solver computation with %d threads\n", omp_get_max_threads());
+		int i, ierr;
+		LIS_INT iter;
+		// Fix for the fluid_momentum Dof
+		long size = A->Size() * A->Dof();
 
+		// Assembling the matrix
+		// Establishing CRS type matrix from GeoSys Matrix data storage type
+		long nonzero = A->nnz();
+		ScreenMessage2("\t copying CRS data with dim=%ld and nnz=%ld\n", size, nonzero);
+		double* value = new double [nonzero];
+		ierr = A->GetCRSValue(value);
+
+
+#if 0
         std::vector<int> vec_nz_rows;
         if (compress) {
             // check non-zero rows, non-zero entries
@@ -768,12 +824,36 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
             delete [] value;
             value = new_value;
         }
+#endif
 
         // Creating a matrix.
         ierr = lis_matrix_create(0,&AA);
+#ifndef OGS_USE_LONG
         ierr = lis_matrix_set_type(AA,LIS_MATRIX_CRS);
+#else
+		ierr = lis_matrix_set_type(AA,LIS_MATRIX_CSR);
+#endif
         ierr = lis_matrix_set_size(AA,0,size);
-        ierr = lis_matrix_set_crs(nonzero, ptr, index, value, AA);
+
+		// Matrix solver and Precondition can be handled better way.
+		char solver_options[MAX_ZEILE], tol_option[MAX_ZEILE];
+		sprintf(solver_options,
+		        "-i %d -p %d %s",
+		        m_num->ls_method,
+		        m_num->ls_precond,
+		        m_num->ls_extra_arg.c_str());
+		// tolerance and other setting parameters are same
+		//NW add max iteration counts
+		sprintf(tol_option,
+		        "-tol %e -maxiter %d",
+		        m_num->ls_error_tolerance,
+		        m_num->ls_max_iterations);
+
+#ifndef OGS_USE_LONG
+		ierr = lis_matrix_set_crs(nonzero,A->ptr,A->col_idx, value,AA);
+#else
+		ierr = lis_matrix_set_csr(nonzero,A->ptr,A->col_idx, value,AA);
+#endif
         ierr = lis_matrix_assemble(AA);
 
         // Assemble the vector, b, x
@@ -789,40 +869,29 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
                 ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[i],bb);
             }
         } else {
+#if 0		
             #pragma omp parallel for
             for(i = 0; i < size; ++i)
             {
                 ierr = lis_vector_set_value(LIS_INS_VALUE,i,x[vec_nz_rows[i]],xx);
                 ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[vec_nz_rows[i]],bb);
             }
+#endif
         }
 
 		//lis_output(AA, bb, xx, LIS_FMT_MM, "leqs.txt");
 
 		// Create solver
-        // Matrix solver and Precondition can be handled better way.
-        char solver_options[MAX_ZEILE], tol_option[MAX_ZEILE];
-        sprintf(solver_options,
-                "-i %d -p %d %s",
-                m_num->ls_method,
-                m_num->ls_precond,
-                m_num->ls_extra_arg.c_str());
-        // tolerance and other setting parameters are same
-        //NW add max iteration counts
-        sprintf(tol_option,
-                "-tol %e -maxiter %d -omp_num_threads %d",
-                m_num->ls_error_tolerance,
-                m_num->ls_max_iterations,
-                omp_get_max_threads());
 		ierr = lis_solver_create(&solver);
 
 		ierr = lis_solver_set_option(solver_options,solver);
 		ierr = lis_solver_set_option(tol_option,solver);
 		ierr = lis_solver_set_option("-print mem",solver);
+		ScreenMessage2("\tcall lis_solve()\n");
 		ierr = lis_solve(AA,bb,xx,solver);
 		ierr = lis_solver_get_iters(solver,&iter);
 		//NW
-		printf("\t iteration: %d/%d\n", iter, m_num->ls_max_iterations);
+		printf("\t iteration: %lld/%d\n", iter, m_num->ls_max_iterations);
 		double resid = 0.0;
 		ierr = lis_solver_get_residualnorm(solver,&resid);
 		printf("\t residuals: %e\n", resid);
@@ -835,15 +904,19 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
             for(i = 0; i < size; ++i)
                 lis_vector_get_value(xx,i,&(x[i]));
 		} else {
+#if 0
             #pragma omp parallel for
             for(i = 0; i < size; ++i) {
                 lis_vector_get_value(xx,i,&(x[vec_nz_rows[i]]));
             }
+#endif
 		}
 
 		// Clear memory
 		if (compress) {
+#if 0
 		    lis_matrix_destroy(AA);
+#endif
 		} else {
 	        delete [] value;
 		}

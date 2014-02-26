@@ -7,8 +7,6 @@
 #ifndef eqs_class_INC
 #define eqs_class_INC
 
-#include "Configure.h"
-
 // NEW_EQS To be removed
 #ifdef NEW_EQS                                    //1.11.2007 WW
 #include <cmath>
@@ -19,6 +17,10 @@
 #ifdef LIS
 #include "lis.h"
 #endif
+
+#include "Configure.h"
+#include "matrix_class.h"
+
 class CNumerics;
 class CRFProcess;
 namespace process

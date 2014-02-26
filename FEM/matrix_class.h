@@ -16,6 +16,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <cassert>
 #ifdef NEW_EQS
 namespace MeshLib
 {class CFEMesh;
@@ -250,6 +251,12 @@ private:
 class CSparseMatrix
 {
 public:
+#ifndef OGS_USE_LONG
+	typedef int IndexType;
+#else
+	typedef long long int IndexType;
+#endif
+
 	CSparseMatrix(const SparseTable &sparse_table, const int dof);
 	~CSparseMatrix();
 	// Preconditioner
@@ -280,13 +287,13 @@ public:
 	}
 	long Size() const {return rows; }
 #ifdef LIS                                  // These two pointers are in need for Compressed Row Storage
-	int nnz() const                       // PCH
+	IndexType nnz() const                       // PCH
 	{
 		return DOF * DOF * size_entry_column;
 	}
-	int* ptr;
-	int* col_idx;
-	int* entry_index;
+	IndexType* ptr;
+	IndexType* col_idx;
+	IndexType* entry_index;
 	int GetCRSValue(double* value);
 #endif
 	// Print
