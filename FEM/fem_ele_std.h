@@ -31,7 +31,7 @@
 //R: Richards flow
 //F: Fluid momentum
 //A: Gas flow
-enum EnumProcessType { L, U, G, T, C, H, M, O, R, F, A, V, P, S};
+enum EnumProcessType { L, U, G, T, C, H, M, O, R, F, A, V, P};
 //-----------------------------------------------------
 
 namespace process
@@ -77,7 +77,6 @@ public:
 	// 1. Mass matrix
 	void CalcMass();
 	void CalcMass2();
-	void CalcMassPTC();                   //AKS/NB
 	void CalcMassPSGLOBAL();              // PCH
 	// 2. Lumped mass matrix
 	void CalcLumpedMass();
@@ -93,7 +92,6 @@ public:
 	void CalcRHS_by_ThermalDiffusion();
 	// 7. Advection matrix
 	void CalcAdvection();
-	void CalcAdvectionPTC();
 	// 8. Storage matrix
 	void CalcStorage();
 	// 9. Content matrix
@@ -253,7 +251,6 @@ private:
 	double CalCoefMass();
 	// 25.2.2007 WW
 	double CalCoefMass2(int dof_index);
-	double CalCoefMassPTC(int dof_index);
 	// 03.3.2009 PCH
 	double CalCoefMassPSGLOBAL(int dof_index);
 	void CalCoefLaplace(bool Gravity, int ip = 0);
@@ -261,11 +258,8 @@ private:
 	void CalCoefLaplaceMultiphase(int phase, int ip = 0);
 	void CalCoefLaplace2(bool Gravity, int dof_index);
 	// AKS/NB
-	void CalCoefLaplacePTC(int dof_index);
 	void CalCoefLaplacePSGLOBAL(bool Gravity, int dof_index);
 	double CalCoefAdvection();     //SB4200 OK/CMCD
-	//AKS/NB
-	double CalCoefAdvectionPTC(int dof_index);
 	double CalCoefStorage();       //SB4200
 	double CalCoefContent();
 	double CalCoefStrainCouping(const int phase = 0);
