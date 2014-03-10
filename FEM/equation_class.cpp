@@ -775,9 +775,11 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		ScreenMessage2("\t copying CRS data with dim=%ld and nnz=%ld\n", size, nonzero);
 		double* value = new double [nonzero];
 		ierr = A->GetCRSValue(value);
+		LIS_INT* ptr = A->ptr;
+		LIS_INT* col_idx = A->col_idx;
 
-
-#if 0
+#define ENABLE_COMPRESS_EQS
+#ifdef ENABLE_COMPRESS_EQS
         std::vector<int> vec_nz_rows;
         if (compress) {
             // check non-zero rows, non-zero entries
@@ -795,34 +797,36 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
                     vec_nz_rows.push_back(i);
             }
 
-            int *new_ptr, *new_index;
-            double* new_value;
-            lis_matrix_malloc_crs((int)vec_nz_rows.size(), n_nz_entries, &new_ptr, &new_index, &new_value);
+            if (vec_nz_rows.size() != (std::size_t)size) {
+                int *new_ptr, *new_index;
+                double* new_value;
+                lis_matrix_malloc_crs((int)vec_nz_rows.size(), n_nz_entries, &new_ptr, &new_index, &new_value);
 
-            int nnz_counter = 0;
-            for (int i=0; i<(int)vec_nz_rows.size(); i++) {
-                const int old_i = vec_nz_rows[i];
-                const int j_row_begin = A->ptr[old_i];
-                const int j_row_end = A->ptr[old_i+1];
+                int nnz_counter = 0;
+                for (int i=0; i<(int)vec_nz_rows.size(); i++) {
+                    const int old_i = vec_nz_rows[i];
+                    const int j_row_begin = A->ptr[old_i];
+                    const int j_row_end = A->ptr[old_i+1];
 
-                new_ptr[i] = nnz_counter;
+                    new_ptr[i] = nnz_counter;
 
-                for (int j=j_row_begin; j<j_row_end; j++) {
-                    if (value[j]==.0) continue;
-                    new_index[nnz_counter] = A->col_idx[j];
-                    new_value[nnz_counter] = value[j];
-                    nnz_counter++;
+                    for (int j=j_row_begin; j<j_row_end; j++) {
+                        if (value[j]==.0) continue;
+                        new_index[nnz_counter] = A->col_idx[j];
+                        new_value[nnz_counter] = value[j];
+                        nnz_counter++;
+                    }
                 }
+                new_ptr[vec_nz_rows.size()] = nnz_counter;
+
+                std::cout << "-> global linear equations are compressed with non-zero entries. original dim=" << size << ", compressed dim=" << vec_nz_rows.size() << "\n";
+
+                size = (int)vec_nz_rows.size();
+                ptr = new_ptr;
+                col_idx = new_index;
+                delete [] value;
+                value = new_value;
             }
-            new_ptr[vec_nz_rows.size()] = nnz_counter;
-
-            std::cout << "-> global linear equations are compressed with non-zero entries. original dim=" << size << ", compressed dim=" << vec_nz_rows.size() << "\n";
-
-            size = (int)vec_nz_rows.size();
-            ptr = new_ptr;
-            index = new_index;
-            delete [] value;
-            value = new_value;
         }
 #endif
 
@@ -850,9 +854,11 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		        m_num->ls_max_iterations);
 
 #ifndef OGS_USE_LONG
-		ierr = lis_matrix_set_crs(nonzero,A->ptr,A->col_idx, value,AA);
+		ierr = lis_matrix_set_crs(nonzero,ptr,col_idx, value,AA);
+//		ierr = lis_matrix_set_crs(nonzero,A->ptr,A->col_idx, value,AA);
 #else
-		ierr = lis_matrix_set_csr(nonzero,A->ptr,A->col_idx, value,AA);
+		ierr = lis_matrix_set_csr(nonzero,ptr,col_idx, value,AA);
+//		ierr = lis_matrix_set_csr(nonzero,A->ptr,A->col_idx, value,AA);
 #endif
         ierr = lis_matrix_assemble(AA);
 
@@ -869,7 +875,7 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
                 ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[i],bb);
             }
         } else {
-#if 0		
+#ifdef ENABLE_COMPRESS_EQS
             #pragma omp parallel for
             for(i = 0; i < size; ++i)
             {
@@ -904,7 +910,7 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
             for(i = 0; i < size; ++i)
                 lis_vector_get_value(xx,i,&(x[i]));
 		} else {
-#if 0
+#ifdef ENABLE_COMPRESS_EQS
             #pragma omp parallel for
             for(i = 0; i < size; ++i) {
                 lis_vector_get_value(xx,i,&(x[vec_nz_rows[i]]));
