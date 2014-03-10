@@ -4258,13 +4258,13 @@ double CRFProcess::Execute()
 		eqs_new->Solver();
 		//TEST 	double x_norm = eqs_new->GetVecNormX();
 		eqs_new->MappingSolution();
-#elif NEW_EQS                                 //WW
+#elif defined(NEW_EQS)                                 //WW
 #if defined(USE_MPI)
 	//21.12.2007
 	iter_lin = dom->eqs->Solver(eqs_new->x, global_eqs_dim);
 #else
 #ifdef LIS
-    bool compress_eqs = (type/10==4 || this->NumDeactivated_SubDomains>0);
+	bool compress_eqs = (type/10==4 || this->NumDeactivated_SubDomains>0);
 	iter_lin = eqs_new->Solver(this->m_num, compress_eqs); //NW
 	iter_lin_max = std::max(iter_lin_max, iter_lin);
 #else
