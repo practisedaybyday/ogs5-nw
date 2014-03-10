@@ -113,7 +113,9 @@ void COutput::init()
 		}
 		else
 		{
+#ifndef NDEBUG
 			ScreenMessage("COutput::init(): failed to fetch process pointer using msh_type_name\n");
+#endif
 		}
 	}
 
