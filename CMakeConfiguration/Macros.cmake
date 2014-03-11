@@ -176,22 +176,23 @@ FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration numProcesses)
 		-DBENCHMARK_TIMEOUT=${THIS_BENCHMARK_TIMEOUT}
 		-DOGS_FEM_CONFIG=${ogsConfiguration}
 		-DNUM_PROCESSES=${numProcesses}
+		-DBENCHMARK_DIR_FOUND=${BENCHMARK_DIR_FOUND}
 		-P ${PROJECT_SOURCE_DIR}/CMakeConfiguration/AddBenchmark.cmake
 	)
 
 	# compare file differences with python script
 	IF (PYTHONINTERP_FOUND)
-		FILE (REMOVE ${PROJECT_SOURCE_DIR}/../benchmarks/results/temp/temp_${benchmarkNameUnderscore}.txt)
+		FILE (REMOVE ${BENCHMARK_DIR_FOUND}/results/temp/temp_${benchmarkNameUnderscore}.txt)
 		FOREACH (entry ${ARGN})
-			FILE (APPEND ${PROJECT_SOURCE_DIR}/../benchmarks/results/temp/temp_${benchmarkNameUnderscore}.txt "${entry}\n")
+			FILE (APPEND ${BENCHMARK_DIR_FOUND}/results/temp/temp_${benchmarkNameUnderscore}.txt "${entry}\n")
 		ENDFOREACH (entry ${ARGN})
 		ADD_TEST (
 			${authorName}_FILECOMPARE_${benchmarkName}
-			${CMAKE_COMMAND} -E chdir ${PROJECT_SOURCE_DIR}/../benchmarks/results
+			${CMAKE_COMMAND} -E chdir ${BENCHMARK_DIR_FOUND}/results
 			${PYTHON_EXECUTABLE}
 			${PROJECT_SOURCE_DIR}/scripts/compare.py
 			temp/temp_${benchmarkNameUnderscore}.txt
-			../../benchmarks_ref/
+			${BENCHMARK_REF_DIR_FOUND}
 			${authorName}_${benchmarkNameUnderscore}.html
 			../
 		)
@@ -200,7 +201,7 @@ FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration numProcesses)
   # copy benchmark output files to reference directory
   IF (COPY_BENCHMARKS_TO_REF)
 	FOREACH (entry ${ARGN})
-	  CONFIGURE_FILE( ${PROJECT_SOURCE_DIR}/../benchmarks/${entry} ${PROJECT_SOURCE_DIR}/../benchmarks_ref/${entry} COPYONLY)
+	  CONFIGURE_FILE( ${BENCHMARK_DIR_FOUND}/${entry} ${BENCHMARK_REF_DIR_FOUND}/${entry} COPYONLY)
 	ENDFOREACH (entry ${ARGN})
   ENDIF (COPY_BENCHMARKS_TO_REF)
 
