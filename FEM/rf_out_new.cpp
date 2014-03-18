@@ -246,8 +246,10 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 			m_pcs = m_out->GetPCS_ELE(m_out->getElementValueVector()[0]);
 		if (!m_pcs)
 			m_pcs = m_out->GetPCS();  //OK
+#ifndef NDEBUG
 		if (!m_pcs)
 			cout << "Warning in OUTData - no PCS data" << endl;
+#endif
 		//OK4704 continue;
 		//--------------------------------------------------------------------
 		m_out->setTime (time_current);

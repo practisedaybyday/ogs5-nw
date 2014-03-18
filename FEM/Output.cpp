@@ -3433,8 +3433,10 @@ void COutput::checkConsistency ()
 		}
 		if (!pcs)
 			pcs = this->GetPCS();
+#ifndef NDEBUG
 		if (!pcs)
 			cout << "Warning in OUTData - no PCS data" << endl;
+#endif
 	}                                     // end if(_nod_value_vector.size()>0)
 }
 

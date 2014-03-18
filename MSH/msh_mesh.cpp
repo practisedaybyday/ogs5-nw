@@ -486,7 +486,7 @@ void CFEMesh::ConnectedElements2Node(bool quadratic)
 **************************************************************************/
 void CFEMesh::ConstructGrid()
 {
-	ScreenMessage2("-> executing ConstructGrid() ... \n");
+	ScreenMessage("-> executing ConstructGrid() ... \n");
 
 	bool done;
 
@@ -517,7 +517,9 @@ void CFEMesh::ConstructGrid()
 		ele_vector[e]->InitializeMembers();
 	}
 
+#ifndef NDEBUG
 	ScreenMessage2("-> find neighbors ... \n");
+#endif
 	for (size_t e = 0; e < e_size; e++)
 	{
 		CElem* elem(ele_vector[e]);
@@ -801,7 +803,9 @@ void CFEMesh::ConstructGrid()
 	// Node information
 	// 1. Default node index <---> eqs index relationship
 	// 2. Coordiate system flag
+#ifndef NDEBUG
 	ScreenMessage2("-> detect bbox ... \n");
+#endif
 	double x_sum(0.0), y_sum(0.0), z_sum(0.0);
 	Eqs2Global_NodeIndex.clear();
 	double xyz_max[3] = //NW
@@ -891,11 +895,17 @@ void CFEMesh::ConstructGrid()
 	e_edgeNodes0.resize(0);
 	e_edgeNodes.resize(0);
 
+#ifndef NDEBUG
 	ScreenMessage2("-> computeSearchLength ... \n");
+#endif
 	computeSearchLength();
+#ifndef NDEBUG
 	ScreenMessage2("-> computeMinEdgeLength ... \n");
+#endif
 	computeMinEdgeLength();
+#ifndef NDEBUG
 	ScreenMessage2("-> constructMeshGrid ... \n");
+#endif
 	constructMeshGrid();
 }
 

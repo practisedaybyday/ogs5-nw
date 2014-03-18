@@ -94,7 +94,8 @@ void FEMRead(const string& file_base_name,
 			getline(is, str_var);
 #endif
 
-			cout<<"-->Parallel reading the partitioned mesh: "<<i<<endl;
+			ScreenMessage("-->Parallel reading the partitioned mesh\n");
+			//cout<<"-->Parallel reading the partitioned mesh: "<<i<<endl;
 
 			for (int j=0; j<nheaders; j++)
 				is>>mesh_header[j];
