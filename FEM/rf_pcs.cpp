@@ -8992,8 +8992,8 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 						if (iter_nlin==0)
 							percent_difference = .0;
 						else
-							percent_difference = ((last_error - nonlinear_iteration_error) / last_error);
-						ScreenMessage("\tNonlinear error: %e, Conv. rate: %2.1f\%\n", nonlinear_iteration_error, percent_difference*100);
+							percent_difference = 100* ((last_error - nonlinear_iteration_error) / last_error);
+						ScreenMessage("\tNonlinear error: %e, Conv. rate: %2.1f\%\n", nonlinear_iteration_error, percent_difference);
 						ScreenMessage("------------------------------------------------\n");
 						//
 						if(nonlinear_iteration_error <= 1.0)
