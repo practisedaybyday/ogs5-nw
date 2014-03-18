@@ -990,6 +990,7 @@ void Problem::Euler_TimeDiscretize()
 #ifdef USE_PETSC
 	PetscLogDouble v1,v2;
 #endif
+	double previous_rejected_dt = .0;;
 	while(end_time > current_time)
 	{
 #if defined(USE_MPI) || defined(USE_PETSC)
@@ -1010,6 +1011,12 @@ void Problem::Euler_TimeDiscretize()
 			dt = MMin(dt,m_tim->CalcTimeStep(current_time));
 			dt_rec = MMin(dt_rec,m_tim->recommended_time_step); // to know if we have a critical time alteration
 		}
+
+		if (!last_dt_accepted && dt==previous_rejected_dt) {
+			ScreenMessage("Stop this simulation. New time step size is same as the rejected one.\n");
+			break;
+		}
+
 		SetTimeActiveProcesses(); // JT2012: Activate or deactivate processes with independent time stepping
 //
 #if defined(USE_MPI)
@@ -1097,6 +1104,7 @@ void Problem::Euler_TimeDiscretize()
 			current_time -= dt;
 			aktuelle_zeit = current_time;
 			aktueller_zeitschritt--;
+			previous_rejected_dt = dt;
 			//
 			// decrement active dt, and increment count
 			for(i=0; i<(int)active_process_index.size(); i++)
