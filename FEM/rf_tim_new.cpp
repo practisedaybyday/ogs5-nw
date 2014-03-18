@@ -1279,7 +1279,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 			case FiniteElement::LIQUID_FLOW: // TF
 				// iterdum=MMax(iterdum,m_pcs->iter);
 				imflag = 1;
-				if ( (imflag > 0) && ( n_itr  >= time_adapt_tim_vector[1] ) )
+				if ( (imflag > 0) && ( n_itr  >= time_adapt_tim_vector[1] || !m_pcs->accepted ) )
 				{
 					imflag = 0;
 					ScreenMessage("Self adaptive time step: too many or diverged iterations for Groundwater/LIQUID flow %d %d \n", n_itr, time_adapt_tim_vector[1]);
