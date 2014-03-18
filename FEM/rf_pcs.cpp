@@ -8964,6 +8964,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		converged = false;
 		accepted = true;
 		last_error = 1.0;
+		num_fail = 0;
 		for(iter_nlin = 0; iter_nlin < m_num->nls_max_iterations; iter_nlin++)
 		{
 			nonlinear_iteration_error = Execute();
@@ -8991,8 +8992,8 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 						if (iter_nlin==0)
 							percent_difference = .0;
 						else
-							percent_difference = 100.0 * ((last_error - nonlinear_iteration_error) / last_error);
-						ScreenMessage("\tNonlinear error: %e, Conv. rate: %2.1f\%\n", nonlinear_iteration_error, percent_difference);
+							percent_difference = ((last_error - nonlinear_iteration_error) / last_error);
+						ScreenMessage("\tNonlinear error: %e, Conv. rate: %2.1f\%\n", nonlinear_iteration_error, percent_difference*100);
 						ScreenMessage("------------------------------------------------\n");
 						//
 						if(nonlinear_iteration_error <= 1.0)
