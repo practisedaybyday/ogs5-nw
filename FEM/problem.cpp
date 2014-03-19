@@ -1115,12 +1115,20 @@ void Problem::Euler_TimeDiscretize()
 				m_tim->rejected_step_count++;
 				m_tim->last_active_time -= dt;
 				m_tim->last_rejected_timestep = aktueller_zeitschritt+1;
+				m_tim->step_current--;
 				//
 				// Copy nodal values in reverse
 				if(isDeformationProcess(total_processes[active_process_index[i]]->getProcessType()))
 					continue;
 				total_processes[active_process_index[i]]->CopyTimestepNODValues(false);
 				// JT: This wasn't done before. Is it needed? // total_processes[active_process_index[i]]->CopyTimestepELEValues(false);
+			}
+			for(i = 0; i < (int)total_processes.size(); i++)
+			{
+				if(!active_processes[i] && total_processes[i] && total_processes[i]->tim_type==FiniteElement::TIM_STEADY) {
+					m_tim = total_processes[i]->Tim;
+					m_tim->step_current--;
+				}
 			}
 		}
 		ScreenMessage("\n#############################################################\n");
