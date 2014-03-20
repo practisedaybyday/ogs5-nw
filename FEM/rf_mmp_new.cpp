@@ -128,6 +128,7 @@ CMediumProperties::CMediumProperties() :
     porosity_hetero_value_id = 0;
     storage_hetero_value_id = 0;
 	permeability_effstress_model = 0;
+	storage_effstress_model = 0;
 }
 
 /**************************************************************************
