@@ -1482,7 +1482,7 @@ double CFiniteElementStd::CalCoefMass()
 			      + (biot_val - poro_val) * (1.0 - biot_val) / SolidProp->K;            
 			// Will handle the dual porosity version later...
 		}
-		else
+		else if (MediaProp->storage_model != 1)
 		{
 			poro_val = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 			val += poro_val * drho_dp_rho; 
