@@ -295,7 +295,7 @@ int main ( int argc, char* argv[] )
 	aproblem = NULL;
 #ifndef USE_PETSC
 #ifdef TESTTIME
-	ScreenMessage2("Simulation time: %g s\n", TGetTimer(0));
+	ScreenMessage2("Simulation time: %ld s\n", TGetTimer(0));
 #endif
 #endif
 	/* Abspann ausgeben */
