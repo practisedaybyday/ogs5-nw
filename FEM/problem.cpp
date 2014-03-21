@@ -1116,6 +1116,7 @@ void Problem::Euler_TimeDiscretize()
 				m_tim->last_active_time -= dt;
 				m_tim->last_rejected_timestep = aktueller_zeitschritt+1;
 				m_tim->step_current--;
+				m_tim->repeat = true;
 				//
 				// Copy nodal values in reverse
 				if(isDeformationProcess(total_processes[active_process_index[i]]->getProcessType()))
@@ -1128,6 +1129,7 @@ void Problem::Euler_TimeDiscretize()
 				if(!active_processes[i] && total_processes[i] && total_processes[i]->tim_type==FiniteElement::TIM_STEADY) {
 					m_tim = total_processes[i]->Tim;
 					m_tim->step_current--;
+					m_tim->repeat = true;
 				}
 			}
 		}

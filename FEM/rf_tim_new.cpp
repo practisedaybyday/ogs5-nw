@@ -757,14 +757,14 @@ double CTimeDiscretization::CalcTimeStep(double current_time)
 			tval = next + time_step_length/1.0e3;				// JT2012. A tiny increase in dt is better than a miniscule dt on the next step
 			if(tval > critical_time[i]){						// Critical time is hit
 				if(next != critical_time[i]){					// otherwise, match is already exact
-					ScreenMessage2("-> modify the time step size to match a critical time: %g -> %g\n", time_step_length, critical_time[i] - current_time);
+					ScreenMessage("-> modify the time step size to match a critical time: %g -> %g\n", time_step_length, critical_time[i] - current_time);
 					time_step_length = (critical_time[i] - current_time);
 				}
 				break;
 			}
 			else if(tval + time_step_length > critical_time[i]){ // We can hit the critical time in 2 time steps, smooth the transition
 				if(next + time_step_length != critical_time[i]){ // otherwise, match is already exact
-					ScreenMessage2("-> modify the time step size to hit the critical time in 2 time steps: %g -> %g\n", time_step_length, (critical_time[i] - current_time)/2.0);
+					ScreenMessage("-> modify the time step size to hit the critical time in 2 time steps: %g -> %g\n", time_step_length, (critical_time[i] - current_time)/2.0);
 					time_step_length = (critical_time[i] - current_time)/2.0;
 				}
 				break;
