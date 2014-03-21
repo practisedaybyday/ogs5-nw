@@ -1331,10 +1331,10 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 		*tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit << "   " <<	time_step_length << "  " << n_itr << std::endl;
 	//}
 
-	if (time_step_length<=min_time_step) {
-		ScreenMessage2("-> ***ERROR*** Next time step size %g is less than or equal to the given minimum size %g. The simulation is aborted.", time_step_length, min_time_step);
-		exit(1);
-	}
+//	if (time_step_length<=min_time_step) {
+//		ScreenMessage("-> ***ERROR*** Next time step size %g is less than or equal to the given minimum size %g. The simulation is aborted.\n", time_step_length, min_time_step);
+//		exit(1);
+//	}
 	return time_step_length;
 }
 
