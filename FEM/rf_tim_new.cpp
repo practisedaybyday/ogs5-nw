@@ -756,7 +756,7 @@ double CTimeDiscretization::CalcTimeStep(double current_time)
 			next = current_time + time_step_length;
 			tval = next + time_step_length/1.0e3;				// JT2012. A tiny increase in dt is better than a miniscule dt on the next step
 			if(tval > critical_time[i]){						// Critical time is hit
-				if(next != critical_time[i]){					// otherwise, match is already exact
+				if(std::abs(next - critical_time[i])>time_step_length*1e-8){					// otherwise, match is already exact
 					ScreenMessage("-> modify the time step size to match a critical time: %g -> %g\n", time_step_length, critical_time[i] - current_time);
 					time_step_length = (critical_time[i] - current_time);
 				}
