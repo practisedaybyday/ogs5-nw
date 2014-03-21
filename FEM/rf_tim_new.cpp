@@ -757,12 +757,14 @@ double CTimeDiscretization::CalcTimeStep(double current_time)
 			tval = next + time_step_length/1.0e3;				// JT2012. A tiny increase in dt is better than a miniscule dt on the next step
 			if(tval > critical_time[i]){						// Critical time is hit
 				if(next != critical_time[i]){					// otherwise, match is already exact
+					ScreenMessage2("-> modify the time step size to match a critical time: %g -> %g\n", time_step_length, critical_time[i] - current_time);
 					time_step_length = (critical_time[i] - current_time);
 				}
 				break;
 			}
 			else if(tval + time_step_length > critical_time[i]){ // We can hit the critical time in 2 time steps, smooth the transition
 				if(next + time_step_length != critical_time[i]){ // otherwise, match is already exact
+					ScreenMessage2("-> modify the time step size to hit the critical time in 2 time steps: %g -> %g\n", time_step_length, (critical_time[i] - current_time)/2.0);
 					time_step_length = (critical_time[i] - current_time)/2.0;
 				}
 				break;
@@ -1277,7 +1279,9 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 			//			case 'G': //Groundwater flow and LIQUID_FLOW
 			case FiniteElement::GROUNDWATER_FLOW: // TF
 			case FiniteElement::LIQUID_FLOW: // TF
+#if 0
 				// iterdum=MMax(iterdum,m_pcs->iter);
+				iterdum = std::max(iterdum, n_itr);
 				imflag = 1;
 				if ( (imflag > 0) && ( n_itr  >= time_adapt_tim_vector[1] || !m_pcs->accepted ) )
 				{
@@ -1288,6 +1292,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 					imflag = 2;
 				break;
 			//			case 'M': // Mass transport
+#endif
 			case FiniteElement::MASS_TRANSPORT: // TF
 			case FiniteElement::HEAT_TRANSPORT:
 				iterdum = std::max(iterdum, n_itr);
@@ -1327,7 +1332,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 	//}
 
 	if (time_step_length<=min_time_step) {
-		std::cout << "-> ***ERROR*** Next time step size is less than or equal to the given minimum size. The simulation is aborted." << std::endl;
+		ScreenMessage2("-> ***ERROR*** Next time step size %g is less than or equal to the given minimum size %g. The simulation is aborted.", time_step_length, min_time_step);
 		exit(1);
 	}
 	return time_step_length;
