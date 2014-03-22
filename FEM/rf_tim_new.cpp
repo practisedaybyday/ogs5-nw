@@ -693,7 +693,6 @@ void CTimeDiscretization::Write(std::fstream* tim_file)
 **************************************************************************/
 double CTimeDiscretization::CalcTimeStep(double current_time)
 {
-	double tval, next;
 	int no_time_steps = (int)time_step_vector.size();
 	//
 	// TIME STEP VECTOR
@@ -749,16 +748,26 @@ double CTimeDiscretization::CalcTimeStep(double current_time)
 
 	// WW. Critical time match (JT2012 modified)
 	// ------------------------------------------------------
+	const double tol = time_step_length *1e-3;
 	for(int i = 0; i < (int)critical_time.size(); i++)
 	{
 		if(current_time < critical_time[i])
 		{
-			next = current_time + time_step_length;
-			tval = next + time_step_length/1.0e3;				// JT2012. A tiny increase in dt is better than a miniscule dt on the next step
+			double next = current_time + time_step_length;
+			double tval = next + time_step_length/1.0e3;				// JT2012. A tiny increase in dt is better than a miniscule dt on the next step
 			if(tval > critical_time[i]){						// Critical time is hit
-				if(std::abs(next - critical_time[i])>time_step_length*1e-8){					// otherwise, match is already exact
-					ScreenMessage("-> modify the time step size to match a critical time: %g -> %g\n", time_step_length, critical_time[i] - current_time);
-					time_step_length = (critical_time[i] - current_time);
+				bool modify = false;
+				if(next - critical_time[i] > .0){					// otherwise, match is already exact
+					ScreenMessage("-> suggested time step exceeds a critical time: %g > %g (tol=%g)\n", next, critical_time[i], tol);
+					modify = true;
+				} else if (critical_time[i] - next < tol) {
+					ScreenMessage("-> round suggested time step to a critical time: %g > %g (tol=%g)\n", next, critical_time[i], tol);
+					modify = true;
+				}
+				if(modify){
+					double new_dt = critical_time[i] - current_time;
+					ScreenMessage("-> modify the time step size to match a critical time: %g -> %g\n", time_step_length, new_dt);
+					time_step_length = new_dt;
 				}
 				break;
 			}
