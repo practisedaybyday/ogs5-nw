@@ -5,6 +5,9 @@
 
 #include "rf_pcs.h"
 
+#ifdef USE_PETSC
+#include "petscsnes.h"
+#endif
 
 class CRFProcessTH : public CRFProcess
 {
@@ -14,22 +17,28 @@ public:
 
 	void Initialization();
 	virtual double Execute(int loop_process_number);
-#if defined(USE_PETSC)
+#ifdef USE_PETSC
 	virtual void setSolver( petsc_group::PETScLinearSolver *petsc_solver );
+	void copyVecToNodalValues(Vec x);
+	void copyNodalValuesToVec(Vec x);
 #endif
 
 protected:
-	void StoreLastSolution(const int ty=0);
-	void ResetCouplingStep();
-	void InitializeNewtonSteps();
-	void RecoverSolution(const int ty = 0);
+#ifdef USE_PETSC
+	double ExecuteNonlinearWithPETsc();
+#endif
 	void UpdateIterativeStep(const double damp);
-	bool checkNRConvergence();
-
+#if !defined(NEW_EQS) && !defined(USE_PETSC)
+	double NormOfUnkonwn_orRHS(bool isUnknowns=true);
+#endif
 private:
 	double error_k0;
-	std::vector<double> ARRAY;
-
+	std::vector<int> vec_pos;
 };
+
+#ifdef USE_PETSC
+PetscErrorCode FormFunctionTH(SNES snes, Vec x, Vec f, void *ctx);
+PetscErrorCode FormJacobianTH(SNES snes, Vec x, Mat *jac, Mat *B, MatStructure *flag, void *ctx);
+#endif
 
 #endif

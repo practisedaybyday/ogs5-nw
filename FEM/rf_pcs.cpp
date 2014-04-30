@@ -399,7 +399,8 @@ CRFProcess::CRFProcess(void) :
 
 	calcDiffFromStress0 = true;
 	resetStrain = true;
-	useMPa = false;
+	scaleUnknowns = false;
+	scaleEQS = false;
 }
 
 void CRFProcess::setProblemObjectPointer (Problem* problem)
@@ -1755,7 +1756,7 @@ CRFProcess* CRFProcess::CopyPCStoDM_PCS()
 	dm_pcs->write_leqs = write_leqs;
 	dm_pcs->calcDiffFromStress0 = calcDiffFromStress0;
 	dm_pcs->resetStrain = resetStrain;
-	dm_pcs->useMPa = useMPa;
+	dm_pcs->scaleUnknowns = scaleUnknowns;
 	//
 	return dynamic_cast<CRFProcess*> (dm_pcs);
 }
@@ -1791,7 +1792,11 @@ CRFProcess* CRFProcess::CopyPCStoTH_PCS()
 		dm_pcs->ExcavCurve = ExcavCurve;
 	}
 	dm_pcs->write_leqs = write_leqs;
-	dm_pcs->useMPa = useMPa;
+	dm_pcs->scaleUnknowns = scaleUnknowns;
+	dm_pcs->vec_scale_dofs = vec_scale_dofs;
+	dm_pcs->scaleEQS = scaleEQS;
+	dm_pcs->vec_scale_eqs = vec_scale_eqs;
+	dm_pcs->tim_type = tim_type;
 	//
 	return dynamic_cast<CRFProcess*> (dm_pcs);
 }
@@ -2181,10 +2186,34 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 				ScreenMessage("-> $RESET_STRAIN=0 is not supported yet\n", dummy);
 			continue;
 		}
-		if(line_string.find("$USE_MPa") == 0)
+		if(line_string.find("$SCALE_DOF") == 0)
 		{
-			useMPa = true;
-			ScreenMessage("-> use MPa as unit of pressure\n");
+			int n = 0;
+			*pcs_file >> n;
+			vec_scale_dofs.resize(n);
+			for (int i=0; i<n; i++)
+				*pcs_file >> vec_scale_dofs[i];
+			scaleUnknowns = true;
+			std::stringstream ss;
+			ss << "-> scale DOFs:";
+			for (int i=0; i<n; i++)
+				ss << "[" << i <<"] " << vec_scale_dofs[i] << " ";
+			ScreenMessage("%s\n", ss.str().c_str());
+			continue;
+		}
+		if(line_string.find("$SCALE_EQS") == 0)
+		{
+			int n = 0;
+			*pcs_file >> n;
+			vec_scale_eqs.resize(n);
+			for (int i=0; i<n; i++)
+				*pcs_file >> vec_scale_eqs[i];
+			scaleEQS = true;
+			std::stringstream ss;
+			ss << "-> scale EQSs:";
+			for (int i=0; i<n; i++)
+				ss << "[" << i <<"] " << vec_scale_eqs[i] << " ";
+			ScreenMessage("%s\n", ss.str().c_str());
 			continue;
 		}
 		//....................................................................
@@ -5957,7 +5986,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
    10/2007 WW Changes for the new classes of sparse matrix and linear solver
    last modification:
 **************************************************************************/
-	void CRFProcess::IncorporateBoundaryConditions(const int rank)
+	void CRFProcess::IncorporateBoundaryConditions(const int rank, bool updateA, bool updateRHS, bool isResidual)
 	{
 		static long i;
 		static double bc_value, fac = 1.0, time_fac = 1.0;
@@ -6336,9 +6365,12 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						/// p_{n+1} = p_b,
 						//  SetNodeValue(m_bc_node->geo_node_number, idx0++, bc_value);
 						/// dp = u_b-u_n
-						bc_value -=  GetNodeValue(
-						        m_bc_node->geo_node_number,
-						        ++idx0);
+						if (isResidual) {
+							//SetNodeValue(m_bc_node->geo_node_number, idx0+1, bc_value);
+							bc_value -=  GetNodeValue(m_bc_node->geo_node_number, ++idx0);
+							//bc_value *= -1;
+						} else
+							bc_value -=  GetNodeValue(m_bc_node->geo_node_number, ++idx0);
 						// SetNodeValue(m_bc_node->geo_node_number, idx0, bc_value);
 						//SetNodeValue(m_bc_node->geo_node_number, idx0+1, bc_value);
 						//bc_value = 0.;
@@ -6384,8 +6416,12 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				   }
 				   }
 				 */
-				if (m_bc->getProcessPrimaryVariable()==FiniteElement::PRESSURE && this->useMPa)
-					bc_value *= 1e-6;
+				if (this->scaleUnknowns) {
+					if (m_bc->getProcessPrimaryVariable()==FiniteElement::PRESSURE)
+						bc_value *= vec_scale_dofs[0];
+					else if (m_bc->getProcessPrimaryVariable()==FiniteElement::TEMPERATURE)
+						bc_value *= vec_scale_dofs[1];
+				}
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
 				bc_eqs_id.push_back(static_cast<int>( m_msh->nod_vector[bc_msh_node]->GetEquationIndex()
 									* dof_per_node + shift));
@@ -6408,38 +6444,48 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		}
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
 		if (m_num->petsc_split_fields) {
-			for (unsigned i=0; i<dof_node_id.size(); i++) {
-				VecGetSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
-				int nrow = dof_node_id[i].size();
-				if(nrow>0)
-					VecSetValues(eqs_new->vec_subRHS[i], nrow, &dof_node_id[i][0], &dof_node_value[i][0], INSERT_VALUES);
-				VecAssemblyBegin(eqs_new->vec_subRHS[i]);
-				VecAssemblyEnd(eqs_new->vec_subRHS[i]);
-				VecRestoreSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+			if (updateRHS) {
+				for (unsigned i=0; i<dof_node_id.size(); i++) {
+					VecGetSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+//					for (unsigned j=0; j<dof_node_id[i].size(); j++)
+//						ScreenMessage2("-> bc: dof=%d, node id=%d, val=%g\n", i, dof_node_id[i][j], dof_node_value[i][j]);
+//					VecView(eqs_new->vec_subRHS[i], PETSC_VIEWER_STDOUT_WORLD);
+					int nrow = dof_node_id[i].size();
+					if(nrow>0)
+						VecSetValues(eqs_new->vec_subRHS[i], nrow, &dof_node_id[i][0], &dof_node_value[i][0], INSERT_VALUES);
+					VecAssemblyBegin(eqs_new->vec_subRHS[i]);
+					VecAssemblyEnd(eqs_new->vec_subRHS[i]);
+//					ScreenMessage2("-> after bc\n");
+//					VecView(eqs_new->vec_subRHS[i], PETSC_VIEWER_STDOUT_WORLD);
+					VecRestoreSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+				}
+				eqs_new->AssembleRHS_PETSc();
 			}
 
-			for (unsigned i=0; i<dof_node_id.size(); i++) {
-				int nrow = dof_node_id[i].size();
-				for (unsigned j=0; j<dof_node_id.size(); j++) {
-					PetscScalar diag_val = 1.0;
-					if (i!=j) diag_val = .0;
-					if(nrow>0)
-						MatZeroRows(eqs_new->vec_subA[i*dof_node_id.size()+j], nrow, &dof_node_id[i][0], diag_val, PETSC_NULL, PETSC_NULL);
-					else
-						MatZeroRows(eqs_new->vec_subA[i*dof_node_id.size()+j], 0, PETSC_NULL, diag_val, PETSC_NULL, PETSC_NULL);
+			if (updateA) {
+				for (unsigned i=0; i<dof_node_id.size(); i++) {
+					int nrow = dof_node_id[i].size();
+					for (unsigned j=0; j<dof_node_id.size(); j++) {
+						PetscScalar diag_val = 1.0;
+						if (i!=j) diag_val = .0;
+						if(nrow>0)
+							MatZeroRows(eqs_new->vec_subA[i*dof_node_id.size()+j], nrow, &dof_node_id[i][0], diag_val, PETSC_NULL, PETSC_NULL);
+						else
+							MatZeroRows(eqs_new->vec_subA[i*dof_node_id.size()+j], 0, PETSC_NULL, diag_val, PETSC_NULL, PETSC_NULL);
+					}
 				}
+				eqs_new->AssembleMatrixPETSc();
 			}
-			eqs_new->AssembleRHS_PETSc();
-			eqs_new->AssembleMatrixPETSc();
 
 		} else {
 
 			int nbc = static_cast<int>(bc_eqs_id.size());
-			if(nbc>0)
-			{
-				eqs_new->setArrayValues(0, nbc, &bc_eqs_id[0], &bc_eqs_value[0], INSERT_VALUES);
-				eqs_new->setArrayValues(1, nbc, &bc_eqs_id[0], &bc_eqs_value[0], INSERT_VALUES);
-			}
+			if (updateRHS) {
+				if(nbc>0)
+				{
+					eqs_new->setArrayValues(0, nbc, &bc_eqs_id[0], &bc_eqs_value[0], INSERT_VALUES);
+					eqs_new->setArrayValues(1, nbc, &bc_eqs_id[0], &bc_eqs_value[0], INSERT_VALUES);
+				}
 
 #ifdef petsc_zero_row_test
 		//We have do the following collection because MatZeroR must be called by all processes
@@ -6477,17 +6523,19 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		MPI_Barrier (MPI_COMM_WORLD); 
 		eqs_new->zeroRows_in_Matrix(v_disp, &r_vec[0]);
 #endif //  petsc_zero_row_test    
-			eqs_new->AssembleUnkowns_PETSc();
-			eqs_new->AssembleRHS_PETSc();
+				eqs_new->AssembleUnkowns_PETSc();
+				eqs_new->AssembleRHS_PETSc();
+			}
 
 
 			//TEST
 			//PetscViewer viewer;
 			//eqs_new->EQSV_Viewer(FileName, viewer);
 
-
-			eqs_new->zeroRows_in_Matrix(nbc, &bc_eqs_id[0]);
-			eqs_new->AssembleMatrixPETSc();
+			if (updateA) {
+				eqs_new->zeroRows_in_Matrix(nbc, &bc_eqs_id[0]);
+				eqs_new->AssembleMatrixPETSc();
+			}
 		}
 		
 #endif
@@ -7461,6 +7509,13 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				}
 				//----------------------------------------------------------------------------------------
 				value *= time_fac * fac;
+				if (scaleEQS) {
+					if (m_st->getProcessPrimaryVariable()==FiniteElement::PRESSURE) {
+						value *= vec_scale_eqs[0];
+					} else if (m_st->getProcessPrimaryVariable()==FiniteElement::TEMPERATURE) {
+						value *= vec_scale_eqs[1];
+					}
+				}
 				//------------------------------------------------------------------
 				// EQS->RHS
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW

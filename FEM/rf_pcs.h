@@ -259,7 +259,9 @@ protected:                                        //WW
 	int* Deactivated_SubDomain;
 	//New equation and solver objects WW
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+public:
    petsc_group::PETScLinearSolver *eqs_new;
+protected:
   int mysize;                               
   int myrank; 
 #elif NEW_EQS
@@ -714,7 +716,7 @@ public:
 	int GetRestartFlag() const {return reload; }
 #endif
 	// BC
-	void IncorporateBoundaryConditions(const int rank = -1);
+	void IncorporateBoundaryConditions(const int rank = -1, bool updateA = true, bool updateRHS = true, bool isResidual=false);
 	// PCH for FLUID_MOMENTUM
 	void IncorporateBoundaryConditions(const int rank, const int axis);
 #if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
@@ -865,7 +867,10 @@ public:
 	int PCS_ExcavState;                   //WX
 	bool calcDiffFromStress0;
 	bool resetStrain;
-	bool useMPa;
+	bool scaleUnknowns;
+	std::vector<double> vec_scale_dofs;
+	bool scaleEQS;
+	std::vector<double> vec_scale_eqs;
 #if defined(USE_MPI) || defined (USE_PETSC)                                 //WW
 	void Print_CPU_time_byAssembly(std::ostream &os = std::cout) const
 	{

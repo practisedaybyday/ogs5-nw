@@ -108,7 +108,7 @@ public:
 #endif
 	void CalcNodeMatParatemer();          //WW
 	// Assembly
-	void Assembly(const bool add2global=true);
+	void Assembly(bool updateA=true, bool updateRHS=true, const bool add2global=true);
 	void Assembly(int option, int dimension); // PCH for Fluid Momentum
 	void Cal_Velocity();
 	void Cal_Velocity_2();                //CB this is to provide velocity only at the element center of gravity
@@ -339,11 +339,11 @@ private:
 	void AssembleRHSVector();             //OK
 	void AssembleCapillaryEffect();       // PCH
 	                                      // PCH for debugging
-	void AssembleTHEquation();
+	void AssembleTHEquation(bool updateA=true, bool updateRHS=true);
 
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-	void add2GlobalMatrixII();
-	void add2GlobalMatrixII_Split();
+	void add2GlobalMatrixII(bool updateA=true, bool updateRHS=true);
+	void add2GlobalMatrixII_Split(bool updateA=true, bool updateRHS=true);
 #else
 	void add2GlobalMatrixII(const int block_cols = 2);            //WW. 06.2011
 #endif

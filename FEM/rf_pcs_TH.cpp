@@ -24,246 +24,38 @@ CRFProcessTH::~CRFProcessTH()
 
 void CRFProcessTH::Initialization()
 {
-	const size_t bufferSize = GetPrimaryVNumber() * m_msh->GetNodesNumber(false);
-	if(m_num->nls_method != FiniteElement::NL_JFNK)
-		ARRAY.resize(bufferSize);
 	int Axisymm = 1; // ani-axisymmetry
 	if (m_msh->isAxisymmetry())
 		Axisymm = -1;  // Axisymmetry is true
 	fem = new CFiniteElementStd(this, Axisymm * m_msh->GetCoordinateFlag());
 	fem->SetGaussPointNumber(m_num->ele_gauss_points);
 
-#if 1
+	if (vec_scale_dofs.empty())
+		vec_scale_dofs.resize(2, 1.);
+	if (vec_scale_eqs.empty())
+		vec_scale_eqs.resize(2, 1.);
+	if (scaleUnknowns) {
+		std::stringstream ss;
+		ss << "-> scale DOF:";
+		for (unsigned i=0; i<vec_scale_dofs.size(); i++)
+			ss << "[" << i <<"] " << vec_scale_dofs[i] << " ";
+		ScreenMessage("%s\n", ss.str().c_str());
+	}
+	if (scaleEQS) {
+		std::stringstream ss;
+		ss << "-> scale EQS:";
+		for (unsigned i=0; i<vec_scale_eqs.size(); i++)
+			ss << "[" << i <<"] " << vec_scale_eqs[i] << " ";
+		ScreenMessage("%s\n", ss.str().c_str());
+	}
+
+#if 0
 	// calculate initial velocity
 	ScreenMessage("-> compute velocity from initial pressure\n");
 	CalIntegrationPointValue();
 #endif
 }
 
-#ifdef USE_PETSC
-void CRFProcessTH::setSolver( petsc_group::PETScLinearSolver *petsc_solver )
-{
-   eqs_new = petsc_solver;
-
-	if (this->m_num->petsc_split_fields) {
-		ScreenMessage("-> prepare field splits in PETSc\n");
-		PetscErrorCode ierr;
-		int dof = this->GetPrimaryVNumber();
-		eqs_new->vec_subA.resize(dof*dof);
-		eqs_new->vec_isg.resize(dof);
-		eqs_new->vec_subRHS.resize(dof);
-		// setup matrix
-		int n_nodes = this->m_msh->getNumNodesGlobal();
-		for (int i=0; i<dof*dof; i++) {
-			ierr = MatCreate(PETSC_COMM_WORLD,&eqs_new->vec_subA[i]);CHKERRCONTINUE(ierr);
-			std::string str = "a" + number2str(i/dof) + number2str(i%dof) + "_";
-			ierr = MatSetOptionsPrefix(eqs_new->vec_subA[i],str.c_str());CHKERRCONTINUE(ierr);
-			ierr = MatSetSizes(eqs_new->vec_subA[i], PETSC_DECIDE,PETSC_DECIDE,n_nodes,n_nodes);CHKERRCONTINUE(ierr);
-			ierr = MatSetType(eqs_new->vec_subA[i], MATMPIAIJ);CHKERRCONTINUE(ierr);
-			ierr = MatSetFromOptions(eqs_new->vec_subA[i]);CHKERRCONTINUE(ierr);
-			ierr = MatMPIAIJSetPreallocation(eqs_new->vec_subA[i], eqs_new->d_nz, PETSC_NULL, eqs_new->o_nz, PETSC_NULL);CHKERRCONTINUE(ierr);
-			MatSetOption(eqs_new->vec_subA[i],MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
-			MatSetOption(eqs_new->vec_subA[i], MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE); // for MatZeroRows()
-			int i_start, i_end;
-			MatGetOwnershipRange(eqs_new->vec_subA[i],&i_start,&i_end);
-//			ScreenMessage2("-> Sub A[%d]: start=%d, end=%d\n", i, i_start, i_end);
-		}
-		ierr = MatDestroy(&eqs_new->A);CHKERRCONTINUE(ierr);
-		ierr = VecDestroy(&eqs_new->b);CHKERRCONTINUE(ierr);
-		ierr = VecDestroy(&eqs_new->x);CHKERRCONTINUE(ierr);
-		ierr = MatCreateNest(PETSC_COMM_WORLD, dof, NULL, dof, NULL, &eqs_new->vec_subA[0], &eqs_new->A);CHKERRCONTINUE(ierr);
-		ierr = MatGetVecs(eqs_new->A,&eqs_new->b,&eqs_new->x);CHKERRCONTINUE(ierr);
-		ierr = VecDuplicate(eqs_new->x, &eqs_new->total_x);CHKERRCONTINUE(ierr);
-		// setup index sets
-		ierr = MatNestGetISs(eqs_new->A, &eqs_new->vec_isg[0], NULL);CHKERRCONTINUE(ierr);
-#if 0
-		for (int i=0; i<dof; i++) {
-			int is_global_size, is_local_size;
-			ISGetSize(eqs_new->vec_isg[i], &is_global_size);
-			ISGetLocalSize(eqs_new->vec_isg[i], &is_local_size);
-			ScreenMessage2("-> IS[%d]: global size=%d, local size=%d\n", i, is_global_size, is_local_size);
-		}
-#endif
-//		ISView(eqs_new->vec_isg[0],PETSC_VIEWER_STDOUT_WORLD);CHKERRCONTINUE(ierr);
-//		ISView(eqs_new->vec_isg[1],PETSC_VIEWER_STDOUT_WORLD);CHKERRCONTINUE(ierr);
-	}
-
-	eqs_new->Config(m_num->ls_error_tolerance, m_num->ls_max_iterations, m_num->getLinearSolverName(), m_num->getPreconditionerName(), m_num->ls_extra_arg);
-
-//	if (this->m_num->petsc_split_fields) {
-//		PetscErrorCode ierr;
-//		int dof = this->GetPrimaryVNumber();
-//		// setup pc
-//		for (int i=0; i<dof; i++) {
-//			ierr = PCFieldSplitSetIS(eqs_new->prec, number2str(i).c_str(), eqs_new->vec_isg[i]);CHKERRCONTINUE(ierr);
-//		}
-//	}
-}
-#endif
-
-bool CRFProcessTH::checkNRConvergence()
-{
-	return true;
-#if 0
-#ifdef USE_PETSC
-	const double g_nnodes = m_msh->getNumNodesLocal();
-#else
-	const double g_nnodes = m_msh->GetNodesNumber(false);
-#endif
-	std::vector<double> pval_error(pcs_number_of_primary_nvals);
-	unsigned num_dof_errors = 0;
-
-	switch(m_num->getNonLinearErrorMethod())
-	{
-		// --> ERNORM:	|x1-x0|/|x0|
-		//     Norm of the solution vector delta divided by the solution vector (relative error).
-		//     A single tolerance applied to all primary variables.
-		//
-		case FiniteElement::ERNORM:
-		{
-#if defined(NEW_EQS)
-			const double NormDx = eqs_new->NormX();
-#elif !defined(USE_PETSC)
-			const double NormDx = NormOfUnkonwn_orRHS();
-#endif
-
-			double NormX0 = 0.0;
-			for(int ii=0;ii<pcs_number_of_primary_nvals;ii++)
-			{
-				int nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
-				//
-				for(long i = 0; i < g_nnodes; i++){
-					long k = m_msh->Eqs2Global_NodeIndex[i];
-					double val2 = GetNodeValue(k, nidx1);
-					NormX0 += val2*val2;
-				}
-			}
-#ifdef USE_PETSC
-			double local_value = NormX0;
-			MPI_Allreduce(&NormX0, &local_value, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-#endif
-			num_dof_errors = 1;
-			pval_error[0] = NormDx / (sqrt(NormX0)+std::numeric_limits<double>::epsilon());
-			break;
-		}
-		//
-		// --> LMAX:	max(x1-x0)
-		//     Local max error (across all elements) of solution vector delta (absolute error).
-		//     Tolerance required for each primary variable.
-		//
-		case FiniteElement::LMAX:
-		{
-			double NormDx = .0;
-			for(int ii=0;ii<pcs_number_of_primary_nvals;ii++)
-			{
-				NormDx = 0.0;
-				for (long i = 0; i < g_nnodes; i++) {
-					NormDx = std::max(NormDx, fabs(eqs_x[i+ii*g_nnodes]));
-				}
-				pval_error[ii] = NormDx;
-			}
-			break;
-		}
-		default:
-			break;
-	}
-
-
-	// Norm of residual (RHS in eqs)
-#ifdef USE_MPI
-	const double NormR = dom->eqsH->NormRHS();
-#else
-#if defined(NEW_EQS)
-	const double NormR = eqs_new->NormRHS();
-#elif !defined(USE_PETSC)
-	const double NormR = NormOfUnkonwn_orRHS(false);
-#endif
-#endif
-
-	// Norm of dx
-#if defined(NEW_EQS)
-	const double NormDx = eqs_new->NormX();
-#elif !defined(USE_PETSC)
-	const double NormDx = NormOfUnkonwn_orRHS();
-#endif
-
-	// Check the convergence
-	Error1 = Error;
-	ErrorU1 = ErrorU;
-	if(ite_steps == 1 && this->first_coupling_iteration)
-	{
-		InitialNorm = NormR;
-		InitialNormU0 = NormDx;
-		static bool firstime = true;
-		if (firstime) {
-			InitialNormU = NormDx;
-			firstime = false;
-		}
-	}
-
-	Error = NormR / InitialNorm;
-	ErrorU = NormDx / InitialNormU0;
-	if(NormR < newton_tol && Error > NormR)
-		Error = NormR;
-	//           if(Norm<TolNorm)  Error = 0.01*Tolerance_global_Newton;
-	if((NormDx / InitialNormU) <= newton_tol)
-		Error = NormDx / InitialNormU;
-
-	// Compute damping for Newton-Raphson step
-	double damping = 1.0;
-	//           if(Error/Error1>1.0e-1) damping=0.5;
-	if(Error / Error1 > 1.0e-1 || ErrorU / ErrorU1 > 1.0e-1)
-		damping = 0.5;
-	if(ErrorU < Error)
-		Error = ErrorU;
-	// JT: Store the process and coupling errors
-	pcs_num_dof_errors = 1;
-	if (ite_steps == 1){
-		pcs_absolute_error[0] = NormDx;
-		pcs_relative_error[0] = pcs_absolute_error[0] / newton_tol;
-		cpl_max_relative_error = pcs_relative_error[0];
-		cpl_num_dof_errors = 1;
-	} else {
-		pcs_absolute_error[0] = Error;
-		pcs_relative_error[0] = Error / newton_tol;
-	}
-	//
-#ifdef USE_MPI
-	if(myrank == 0)
-	{
-#endif
-	//Screan printing:
-	std::cout<<"      -->End of Newton-Raphson iteration: "<<ite_steps<<"/"<< n_max_iterations <<std::endl;
-	std::cout.width(8);
-	std::cout.precision(2);
-	std::cout.setf(std::ios::scientific);
-	std::cout<<"         NR-Error"<<"  "<<"RHS Norm 0"<<"  "<<"RHS Norm  "<<"  "<<"Unknowns Norm"<<"  "<<"Damping"<<std::endl;
-	std::cout<<"         "<<Error<<"  "<<InitialNorm<<"  "<<NormR<<"   "<<NormDx<<"   "<<"   "<<damping<<std::endl;
-	std::cout <<"      ------------------------------------------------"<<std::endl;
-#ifdef USE_MPI
-}
-#endif
-	if(Error > 100.0 && ite_steps > 1)
-	{
-		printf ("\n  Attention: Newton-Raphson step is diverged. Programme halt!\n");
-		exit(1);
-	}
-	if(InitialNorm < 10 * newton_tol
-		|| NormR < 0.001 * InitialNorm
-		|| Error <= newton_tol)
-		break;
-#endif
-}
-
-
-/*************************************************************************
-   ROCKFLOW - Function: CRFProcess::
-   Task:  Solve plastic deformation by generalized Newton-Raphson method
-   Programming:
-   02/2003 OK Implementation
-   05/2003 WW Polymorphism function by OK
-   last modified: 23.05.2003
- **************************************************************************/
 double CRFProcessTH::Execute(int loop_process_number)
 {
 	ScreenMessage("\n================================================\n");
@@ -276,40 +68,22 @@ double CRFProcessTH::Execute(int loop_process_number)
 	if(hasAnyProcessDeactivatedSubdomains || NumDeactivated_SubDomains > 0)
 		CheckMarkedElement();
 
-	// system matrix
 #if defined(USE_PETSC)
-	eqs_x = eqs_new->GetGlobalSolution();
-	{
-		static bool first = true;
-		if (first) {
-			if (m_num->petsc_split_fields) {
-				// set initial value
-				Vec sub_x;
-				const long number_of_nodes = num_nodes_p_var[0];
-				std::vector<int> vec_pos(number_of_nodes);
-				for (long j = 0; j < number_of_nodes; j++)
-					vec_pos[j] = m_msh->Eqs2Global_NodeIndex[j];
-				std::vector<double> vec_values(number_of_nodes);
-				const int ColIndex_p = p_var_index[0];
-				VecGetSubVector(eqs_new->total_x, eqs_new->vec_isg[0], &sub_x);
-				for (long j = 0; j < number_of_nodes; j++)
-					vec_values[j] = GetNodeValue(j,ColIndex_p);
-				VecSetValues(eqs_new->total_x, number_of_nodes, &vec_pos[0], &vec_values[0], INSERT_VALUES);
-				VecAssemblyBegin(sub_x);
-				VecAssemblyEnd(sub_x);
-				const int ColIndex_T = p_var_index[1];
-				VecRestoreSubVector(eqs_new->total_x, eqs_new->vec_isg[0], &sub_x);
-				VecGetSubVector(eqs_new->total_x, eqs_new->vec_isg[1], &sub_x);
-				for (long j = 0; j < number_of_nodes; j++)
-					vec_values[j] = GetNodeValue(j,ColIndex_T);
-				VecAssemblyBegin(sub_x);
-				VecAssemblyEnd(sub_x);
-				VecRestoreSubVector(eqs_new->total_x, eqs_new->vec_isg[1], &sub_x);
-				VecAssemblyBegin(eqs_new->total_x);
-				VecAssemblyEnd(eqs_new->total_x);
-			}
-		}
+	// set Dirichlet BC to nodal values
+	ScreenMessage("-> set initial guess\n");
+	IncorporateBoundaryConditions(-1, false, false, true);
+	copyNodalValuesToVec(eqs_new->total_x);
+	//VecView(eqs_new->total_x, PETSC_VIEWER_STDOUT_WORLD);
+
+	if (m_num->petsc_use_snes) {
+		bool error = ExecuteNonlinearWithPETsc();
+		dm_time += clock();
+		ScreenMessage("CPU time elapsed in this process: %gs\n", (double)dm_time / CLOCKS_PER_SEC);
+		ScreenMessage("------------------------------------------------\n");
+		return error;
 	}
+
+	eqs_x = eqs_new->GetGlobalSolution();
 #endif
 #if defined(NEW_EQS)                              //WW
 	//
@@ -325,23 +99,14 @@ double CRFProcessTH::Execute(int loop_process_number)
 	SetZeroLinearSolver(eqs);
 #endif
 
-#if 0
-	if(this->first_coupling_iteration && m_num->nls_method != FiniteElement::NL_JFNK)
-		StoreLastSolution();      //u_n-->temp
-	ResetCouplingStep();
-
-	// Initialize incremental displacement: w=0
-	InitializeNewtonSteps();
-#endif
-
 
 	// Begin Newton-Raphson steps
 	double Error = 1.0;
 //	double Error1 = 0.0;
-	double ErrorU = 1.0;
+//	double ErrorU = 1.0;
 //	double ErrorU1 = 0.0;
 	double InitialNorm = 0.0;
-	double InitialNormDx = 0.0;
+//	double InitialNormDx = 0.0;
 //	double InitialNormU = 0.0;
 	static double rp0 = .0, rT0 = 0;
 	static double rp0_L2 = .0, rT0_L2 = 0;
@@ -396,19 +161,17 @@ double CRFProcessTH::Execute(int loop_process_number)
 		double rp_max = std::numeric_limits<double>::max(), rT_max = std::numeric_limits<double>::max();
 		double rp_L2 = std::numeric_limits<double>::max(), rT_L2 = std::numeric_limits<double>::max();
 #if defined(USE_PETSC)
-		if (m_num->petsc_split_fields) {
-			Vec sub_x;
-			VecGetSubVector(eqs_new->b, eqs_new->vec_isg[0], &sub_x);
-			VecNorm(sub_x, NORM_2, &rp_L2);
-			VecNormBegin(sub_x, NORM_INFINITY, &rp_max);
-			VecNormEnd(sub_x, NORM_INFINITY, &rp_max);
-			VecRestoreSubVector(eqs_new->b, eqs_new->vec_isg[0], &sub_x);
-			VecGetSubVector(eqs_new->b, eqs_new->vec_isg[1], &sub_x);
-			VecNorm(sub_x, NORM_2, &rT_L2);
-			VecNormBegin(sub_x, NORM_INFINITY, &rT_max);
-			VecNormEnd(sub_x, NORM_INFINITY, &rT_max);
-			VecRestoreSubVector(eqs_new->b, eqs_new->vec_isg[1], &sub_x);
-		}
+		Vec sub_x;
+		VecGetSubVector(eqs_new->b, eqs_new->vec_isg[0], &sub_x);
+		VecNorm(sub_x, NORM_2, &rp_L2);
+		VecNormBegin(sub_x, NORM_INFINITY, &rp_max);
+		VecNormEnd(sub_x, NORM_INFINITY, &rp_max);
+		VecRestoreSubVector(eqs_new->b, eqs_new->vec_isg[0], &sub_x);
+		VecGetSubVector(eqs_new->b, eqs_new->vec_isg[1], &sub_x);
+		VecNorm(sub_x, NORM_2, &rT_L2);
+		VecNormBegin(sub_x, NORM_INFINITY, &rT_max);
+		VecNormEnd(sub_x, NORM_INFINITY, &rT_max);
+		VecRestoreSubVector(eqs_new->b, eqs_new->vec_isg[1], &sub_x);
 #endif
 		if(iter_nlin == 1 && this->first_coupling_iteration)
 		{
@@ -468,6 +231,7 @@ double CRFProcessTH::Execute(int loop_process_number)
 			eqs_x = eqs_new->GetGlobalSolution();
 		} else {
 			VecAXPY(eqs_new->total_x, 1.0, eqs_new->x);
+//			VecView(eqs_new->total_x, PETSC_VIEWER_STDOUT_SELF);
 		}
 #else
 		iter_lin = ExecuteLinearSolver();
@@ -482,8 +246,8 @@ double CRFProcessTH::Execute(int loop_process_number)
 		//----------------------------------------------------------------------
 		// Check convergence
 		//----------------------------------------------------------------------
-		if (m_num->petsc_split_fields) {
 #if defined(USE_PETSC)
+		if (m_num->petsc_split_fields) {
 			Vec sub_x;
 			// dx
 			VecGetSubVector(eqs_new->x, eqs_new->vec_isg[0], &sub_x);
@@ -508,8 +272,8 @@ double CRFProcessTH::Execute(int loop_process_number)
 			VecNormEnd(sub_x, NORM_INFINITY, &T_max);
 			VecRestoreSubVector(eqs_new->total_x, eqs_new->vec_isg[1], &sub_x);
 			// relative error
-#endif
 		}
+#endif
 
 		// Norm of dx
 #if defined(NEW_EQS)
@@ -523,18 +287,18 @@ double CRFProcessTH::Execute(int loop_process_number)
 		// Check the convergence
 //		Error1 = Error;
 //		ErrorU1 = ErrorU;
-		if(iter_nlin == 1 && this->first_coupling_iteration)
-		{
-			InitialNormDx = NormDx;
-			static bool firstime = true;
-			if (firstime) {
-//				InitialNormU = NormDx;
-				firstime = false;
-			}
-		}
+//		if(iter_nlin == 1 && this->first_coupling_iteration)
+//		{
+//			InitialNormDx = NormDx;
+//			static bool firstime = true;
+//			if (firstime) {
+////				InitialNormU = NormDx;
+//				firstime = false;
+//			}
+//		}
 
-		ErrorU = NormDx / InitialNormDx;
 #if 0
+		ErrorU = NormDx / InitialNormDx;
 		if(NormR < newton_tol && Error > NormR)
 			Error = NormR;
 		//           if(Norm<TolNorm)  Error = 0.01*Tolerance_global_Newton;
@@ -579,8 +343,8 @@ double CRFProcessTH::Execute(int loop_process_number)
 		// x^k1 = x^k + dx
 		UpdateIterativeStep(1.0);
 
-		ScreenMessage("-> update velocity\n");
-		CalIntegrationPointValue();
+//		ScreenMessage("-> update velocity\n");
+//		CalIntegrationPointValue();
 	} // Newton-Raphson iteration
 
 	// x^k1 = x^k + dx
@@ -640,53 +404,13 @@ double CRFProcessTH::Execute(int loop_process_number)
 	return Error;
 }
 
-#if 0
-/**************************************************************************
-   Copy the solution of the previous time interval to a vector
-   temporarily
-**************************************************************************/
-void CRFProcessTH::StoreLastSolution(const int ty)
-{
-	long shift = 0;
-	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
-	{
-		const long number_of_nodes = num_nodes_p_var[i];
-		for(long j = 0; j < number_of_nodes; j++)
-			ARRAY[shift + j] = GetNodeValue(j, p_var_index[i] - ty);
-		shift += number_of_nodes;
-	}
-}
-
-void CRFProcessTH::ResetCouplingStep()
-{
-	long shift = 0;
-	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
-	{
-		const long number_of_nodes = num_nodes_p_var[i];
-		for(long j = 0; j < number_of_nodes; j++)
-			SetNodeValue(j, p_var_index[i], ARRAY[shift + j]);
-		shift += number_of_nodes;
-	}
-}
-
-void CRFProcessTH::InitializeNewtonSteps()
-{
-	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
-	{
-		const int Col = p_var_index[i] - 1;
-		const long number_of_nodes = num_nodes_p_var[i];
-		for (int j = 0; j < number_of_nodes; j++)
-			SetNodeValue(j, Col, 0.0);
-	}
-}
-#endif
 
 /**************************************************************************
    Update solution in Newton-Raphson procedure
 **************************************************************************/
 void CRFProcessTH::UpdateIterativeStep(const double damp)
 {
-	long shift = 0;
+//	long shift = 0;
 #if defined(NEW_EQS)
 	const double* eqs_x = eqs_new->getX();
 #elif !defined (USE_PETSC)
@@ -694,126 +418,540 @@ void CRFProcessTH::UpdateIterativeStep(const double damp)
 #endif
 
 	// x^k1 = x^k + dx
-#if 0
-	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
-	{
-		const long number_of_nodes = num_nodes_p_var[i];
-		const int ColIndex = p_var_index[i];
-//		std::cout << std::endl;
-//		for(long j = 0; j < number_of_nodes; j++) {
-//			std::cout << eqs_x[j + shift] << " ";
-//		}
-		for (long j = 0; j < number_of_nodes; j++)
-		{
-#if defined(USE_PETSC)
-			SetNodeValue(j, ColIndex, GetNodeValue(j,ColIndex) +
-				damp * eqs_x[m_msh->Eqs2Global_NodeIndex[j]*pcs_number_of_primary_nvals + i]);
-#else
-			SetNodeValue(j, ColIndex, GetNodeValue(j, ColIndex) +  eqs_x[j + shift] * damp);
-//			std::cout << GetNodeValue(j, ColIndex) << " ";
-#endif
-		}
-//		std::cout << std::endl;
-		shift += number_of_nodes;
-	}
-#endif
-	const double p_fac = useMPa ? 1e6 : 1.0;
 	const long number_of_nodes = num_nodes_p_var[0];
-	const int ColIndex_p = p_var_index[0];
+#if defined(USE_PETSC)
 	if (m_num->petsc_split_fields) {
-#if defined(USE_PETSC)
 		Vec sub_x;
-		std::vector<double> array_x(m_msh->getNumNodesGlobal());
-		VecGetSubVector(eqs_new->x, eqs_new->vec_isg[0], &sub_x);
-		eqs_new->getGlobalVectorArray(sub_x, &array_x[0]);
-//		VecGetArray(sub_x, &array_x);
-		//TODO collect ghost node values from other rank
-		for (long j = 0; j < number_of_nodes; j++)
-		{
-			int k = m_msh->Eqs2Global_NodeIndex[j];
-			SetNodeValue(j, ColIndex_p, GetNodeValue(j,ColIndex_p) + array_x[k] * damp * p_fac);
-//			SetNodeValue(j, ColIndex_p, GetNodeValue(j,ColIndex_p) + array_x[j] * damp * p_fac);
+		//std::vector<double> array_x(m_msh->getNumNodesGlobal());
+		double* array_x = eqs_new->global_x0;
+		for (int i=0; i<2; i++) {
+			VecGetSubVector(eqs_new->x, eqs_new->vec_isg[i], &sub_x);
+			eqs_new->getGlobalVectorArray(sub_x, array_x);
+			const double inv_scaling = 1./vec_scale_dofs[i];
+			for (long j = 0; j < number_of_nodes; j++)
+			{
+				int k = m_msh->Eqs2Global_NodeIndex[j];
+				SetNodeValue(j, p_var_index[i], GetNodeValue(j,p_var_index[i]) + array_x[k] * damp * inv_scaling);
+			}
+			VecRestoreSubVector(eqs_new->x, eqs_new->vec_isg[i], &sub_x);
 		}
-		VecRestoreSubVector(eqs_new->x, eqs_new->vec_isg[0], &sub_x);
-		const int ColIndex_T = p_var_index[1];
-		VecGetSubVector(eqs_new->x, eqs_new->vec_isg[1], &sub_x);
-		eqs_new->getGlobalVectorArray(sub_x, &array_x[0]);
-//		VecGetArray(sub_x, &array_x);
-		for (long j = 0; j < number_of_nodes; j++)
-		{
-			int k = m_msh->Eqs2Global_NodeIndex[j];
-			SetNodeValue(j, ColIndex_T, GetNodeValue(j,ColIndex_T) + array_x[k] * damp);
-		}
-		VecRestoreSubVector(eqs_new->x, eqs_new->vec_isg[1], &sub_x);
 
-#endif
 	} else {
-		for (long j = 0; j < number_of_nodes; j++)
-		{
-#if defined(USE_PETSC)
-			double dp =  eqs_x[m_msh->Eqs2Global_NodeIndex[j]*pcs_number_of_primary_nvals];
-#else
-			double dp = eqs_x[j] * damp;
-	//			std::cout << GetNodeValue(j, ColIndex) << " ";
 #endif
-			SetNodeValue(j, ColIndex_p, GetNodeValue(j,ColIndex_p) + dp * damp * p_fac);
-		}
-		const int ColIndex_T = p_var_index[1];
-		shift = number_of_nodes;
-		for (long j = 0; j < number_of_nodes; j++)
+		for (int i=0; i<2; i++)
 		{
+			const double inv_scaling = 1./vec_scale_dofs[i];
+			for (long j = 0; j < number_of_nodes; j++)
+			{
 #if defined(USE_PETSC)
-			double dT =  eqs_x[m_msh->Eqs2Global_NodeIndex[j]*pcs_number_of_primary_nvals + 1];
+				double dx =  eqs_x[m_msh->Eqs2Global_NodeIndex[j]*pcs_number_of_primary_nvals+i];
 #else
-			double dT = eqs_x[j+shift] * damp;
-	//			std::cout << GetNodeValue(j, ColIndex) << " ";
+				double dx = eqs_x[j+number_of_nodes*i] * damp * vec_scale_dofs[i];
+		//			std::cout << GetNodeValue(j, ColIndex) << " ";
 #endif
-			SetNodeValue(j, ColIndex_T, GetNodeValue(j,ColIndex_T) + dT * damp);
+				SetNodeValue(j, p_var_index[i], GetNodeValue(j,p_var_index[i]) + dx * damp * inv_scaling);
+			}
 		}
+#if defined(USE_PETSC)
 	}
+#endif
 
 }
 
-#if 0
-/**************************************************************************
-   Retrieve the solution from the temporary array
-**************************************************************************/
-void CRFProcessTH::RecoverSolution(const int ty)
+#if !defined(NEW_EQS) && !defined(USE_PETSC)
+double CRFProcessTH::NormOfUnkonwn_orRHS(bool isUnknowns)
 {
-	int i, j, idx;
+	int i, j;
 	long number_of_nodes;
-	int Colshift = 1;
-	long shift = 0;
-	double tem = 0.0;
+	long v_shift = 0;
+	double NormW = 0.0;
+	double val;
 
-	int start, end;
+#ifdef G_DEBUG
+	if (!eqs)
+	{
+		printf(" \n Warning: solver not defined, exit from loop_ww.cc");
+		exit(1);
+	}
+#endif
 
-	start = 0;
-	end = pcs_number_of_primary_nvals;
+	double* vec = NULL;
+	if(isUnknowns)
+		vec = eqs->x;
+	else
+		vec = eqs->b;
 
-	for (i = start; i < end; i++)
+	int end = pcs_number_of_primary_nvals;
+
+	for (i = 0; i < end; i++)
 	{
 		number_of_nodes = num_nodes_p_var[i];
-		idx =  p_var_index[i] - Colshift;
 		for(j = 0; j < number_of_nodes; j++)
 		{
-			if(ty < 2)
-			{
-				if(ty == 1)
-					tem =  GetNodeValue(j, idx);
-				SetNodeValue(j, idx, ARRAY[shift + j]);
-				if(ty == 1)
-					ARRAY[shift + j] = tem;
-			}
-			else if(ty == 2)
-			{
-				tem = ARRAY[shift + j];
-				ARRAY[shift + j] = GetNodeValue(j, idx);
-				SetNodeValue(j,  idx,  tem);
-			}
+			val =  vec[v_shift + j];
+			NormW += val * val;
 		}
-		shift += number_of_nodes;
+
+		v_shift += number_of_nodes;
 	}
+	return sqrt(NormW);
 }
 #endif
+
+
+#ifdef USE_PETSC
+void CRFProcessTH::setSolver( petsc_group::PETScLinearSolver *petsc_solver )
+{
+	eqs_new = petsc_solver;
+
+	char str_precon_type[128];
+	PetscBool set;
+	PetscOptionsGetString(NULL, "-pc_type", str_precon_type, sizeof(str_precon_type), &set);
+	if (set) {
+		std::string str(str_precon_type);
+		if (str.compare("fieldsplit")==0)
+			this->m_num->petsc_split_fields = true;
+	}
+	if (this->m_num->petsc_split_fields) {
+		ScreenMessage("-> prepare field splits in PETSc\n");
+		PetscErrorCode ierr;
+		int dof = this->GetPrimaryVNumber();
+		eqs_new->vec_subA.resize(dof*dof);
+		eqs_new->vec_isg.resize(dof);
+		eqs_new->vec_subRHS.resize(dof);
+		// setup matrix
+		int n_nodes = this->m_msh->getNumNodesGlobal();
+		for (int i=0; i<dof*dof; i++) {
+			ierr = MatCreate(PETSC_COMM_WORLD,&eqs_new->vec_subA[i]);CHKERRCONTINUE(ierr);
+			std::string str = "a" + number2str(i/dof) + number2str(i%dof) + "_";
+			ierr = MatSetOptionsPrefix(eqs_new->vec_subA[i],str.c_str());CHKERRCONTINUE(ierr);
+			ierr = MatSetSizes(eqs_new->vec_subA[i], PETSC_DECIDE,PETSC_DECIDE,n_nodes,n_nodes);CHKERRCONTINUE(ierr);
+			ierr = MatSetType(eqs_new->vec_subA[i], MATMPIAIJ);CHKERRCONTINUE(ierr);
+			ierr = MatSetFromOptions(eqs_new->vec_subA[i]);CHKERRCONTINUE(ierr);
+			ierr = MatMPIAIJSetPreallocation(eqs_new->vec_subA[i], eqs_new->d_nz, PETSC_NULL, eqs_new->o_nz, PETSC_NULL);CHKERRCONTINUE(ierr);
+			MatSetOption(eqs_new->vec_subA[i],MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
+			MatSetOption(eqs_new->vec_subA[i], MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE); // for MatZeroRows()
+//			int i_start, i_end;
+//			MatGetOwnershipRange(eqs_new->vec_subA[i],&i_start,&i_end);
+//			ScreenMessage2("-> Sub A[%d]: start=%d, end=%d\n", i, i_start, i_end);
+		}
+		ierr = MatDestroy(&eqs_new->A);CHKERRCONTINUE(ierr);
+		ierr = VecDestroy(&eqs_new->b);CHKERRCONTINUE(ierr);
+		ierr = VecDestroy(&eqs_new->x);CHKERRCONTINUE(ierr);
+		ierr = MatCreateNest(PETSC_COMM_WORLD, dof, NULL, dof, NULL, &eqs_new->vec_subA[0], &eqs_new->A);CHKERRCONTINUE(ierr);
+		ierr = MatGetVecs(eqs_new->A,&eqs_new->b,&eqs_new->x);CHKERRCONTINUE(ierr);
+		ierr = VecDuplicate(eqs_new->x, &eqs_new->total_x);CHKERRCONTINUE(ierr);
+		// setup index sets
+		ierr = MatNestGetISs(eqs_new->A, &eqs_new->vec_isg[0], NULL);CHKERRCONTINUE(ierr);
+#if 0
+		for (int i=0; i<dof; i++) {
+			int is_global_size, is_local_size;
+			ISGetSize(eqs_new->vec_isg[i], &is_global_size);
+			ISGetLocalSize(eqs_new->vec_isg[i], &is_local_size);
+			ScreenMessage2("-> IS[%d]: global size=%d, local size=%d\n", i, is_global_size, is_local_size);
+		}
+#endif
+
+	} else {
+		ScreenMessage("-> do not use field splits in PETSc\n");
+		int ierr = VecDuplicate(eqs_new->x, &eqs_new->total_x);CHKERRCONTINUE(ierr);
+		int dof = this->GetPrimaryVNumber();
+		eqs_new->vec_isg.resize(dof);
+		int n_local_row, rstart;
+		VecGetLocalSize(eqs_new->b,&n_local_row);
+		VecGetOwnershipRange(eqs_new->b,&rstart,NULL);
+		// p
+		if (rstart%2==0)
+			ISCreateStride(PETSC_COMM_WORLD, std::ceil(n_local_row*0.5), rstart, 2, &eqs_new->vec_isg[0]);
+		else
+			ISCreateStride(PETSC_COMM_WORLD, std::floor(n_local_row*0.5), rstart+1, 2, &eqs_new->vec_isg[0]);
+		// T
+		if (rstart%2==0)
+			ISCreateStride(PETSC_COMM_WORLD, std::floor(n_local_row*0.5), rstart+1, 2, &eqs_new->vec_isg[1]);
+		else
+			ISCreateStride(PETSC_COMM_WORLD, std::ceil(n_local_row*0.5), rstart, 2, &eqs_new->vec_isg[1]);
+	}
+//	ISView(eqs_new->vec_isg[0],PETSC_VIEWER_STDOUT_WORLD);
+//	ISView(eqs_new->vec_isg[1],PETSC_VIEWER_STDOUT_WORLD);
+
+	const int n_local_nodes = this->m_msh->GetNodesNumber(false);
+	std::vector<int> idx_from(n_local_nodes), idx_to(n_local_nodes);
+	for (long j = 0; j < n_local_nodes; j++)
+	{
+		idx_from[j] = m_msh->Eqs2Global_NodeIndex[j];
+		idx_to[j] = j;
+	}
+	ISCreateGeneral(PETSC_COMM_SELF, n_local_nodes, &idx_from[0], PETSC_COPY_VALUES, &eqs_new->is_global_node_id);
+	ISCreateGeneral(PETSC_COMM_SELF, n_local_nodes, &idx_to[0], PETSC_COPY_VALUES, &eqs_new->is_local_node_id);
+//		ISView(eqs_new->is_global_node_id, PETSC_VIEWER_STDOUT_SELF);CHKERRCONTINUE(ierr);
+//		ISView(eqs_new->is_local_node_id, PETSC_VIEWER_STDOUT_SELF);CHKERRCONTINUE(ierr);
+
+	PetscBool usePetscSNES = PETSC_FALSE;
+	PetscOptionsHasName(NULL, "-use_snes", &usePetscSNES);
+	if (usePetscSNES) {
+		ScreenMessage("-> setup SNES\n");
+		this->m_num->petsc_use_snes = true;
+		eqs_new->ConfigWithNonlinear(m_num->ls_error_tolerance, m_num->ls_max_iterations, m_num->getLinearSolverName(), m_num->getPreconditionerName(), m_num->ls_extra_arg);
+		//	SNESGSSetTolerances(eqs_new->snes, PETSC_DECIDE, m_num->nls_error_tolerance[0], PETSC_DECIDE, m_num->nls_max_iterations);
+		SNESSetFunction(eqs_new->snes, eqs_new->b, FormFunctionTH, (void*)this);
+		SNESSetJacobian(eqs_new->snes, eqs_new->A, eqs_new->A, FormJacobianTH, (void*)this);
+		SNESSetFromOptions(eqs_new->snes);
+	} else {
+		eqs_new->Config(m_num->ls_error_tolerance, m_num->ls_max_iterations, m_num->getLinearSolverName(), m_num->getPreconditionerName(), m_num->ls_extra_arg);
+	}
+}
+
+void CRFProcessTH::copyVecToNodalValues(Vec x)
+{
+	const long number_of_nodes = num_nodes_p_var[0];
+	Vec sub_x_local;
+	VecCreateSeq(PETSC_COMM_SELF,number_of_nodes, &sub_x_local);
+
+	Vec sub_x;
+	for (int ii=0; ii<pcs_number_of_primary_nvals; ii++)
+	{
+		VecGetSubVector(x, eqs_new->vec_isg[ii], &sub_x);
+		VecScatter scatter;
+		VecScatterCreate(sub_x, eqs_new->is_global_node_id, sub_x_local, eqs_new->is_local_node_id, &scatter);
+		VecScatterBegin(scatter, sub_x, sub_x_local, INSERT_VALUES, SCATTER_FORWARD);
+		VecScatterEnd(scatter, sub_x, sub_x_local, INSERT_VALUES, SCATTER_FORWARD);
+		//VecView(sub_x_local, PETSC_VIEWER_STDOUT_SELF);
+		const double *array_x;
+		VecGetArrayRead(sub_x_local, &array_x);
+		const int p_var_id_ii = p_var_index[ii];
+		const double inv_scaling = 1./vec_scale_dofs[ii];
+		for (long j = 0; j < number_of_nodes; j++)
+			SetNodeValue(j, p_var_id_ii, array_x[j]*inv_scaling);
+		VecRestoreArrayRead(x, &array_x);
+		VecRestoreSubVector(x, eqs_new->vec_isg[ii], &sub_x);
+		VecScatterDestroy(&scatter);
+	}
+
+	VecDestroy(&sub_x_local);
+}
+
+void CRFProcessTH::copyNodalValuesToVec(Vec x)
+{
+//	ScreenMessage2("-> copyNodalValuesToVec\n");
+	const long number_of_nodes = num_nodes_p_var[0];
+	if (vec_pos.empty()) {
+		vec_pos.resize(number_of_nodes);
+		for (long j = 0; j < number_of_nodes; j++)
+			vec_pos[j] = m_msh->Eqs2Global_NodeIndex[j];
+	}
+
+	Vec sub_x;
+	double* vec_values = eqs_new->global_x1;
+	for (int ii=0; ii<pcs_number_of_primary_nvals; ii++)
+	{
+		const double scaling = vec_scale_dofs[ii];
+		for (long j = 0; j < number_of_nodes; j++) {
+			vec_values[j] = scaling * GetNodeValue(j, p_var_index[ii]);
+		}
+		VecGetSubVector(x, eqs_new->vec_isg[ii], &sub_x);
+		int subx_size, rstart, rend;
+		VecGetSize(sub_x,&subx_size);
+		VecGetOwnershipRange(sub_x, &rstart, &rend);
+		//ScreenMessage2("-> sub vec: gn=%d, ln=%d, rs=%d\n", subx_size, rend-rstart, rstart);
+		VecSetValues(sub_x, number_of_nodes, &vec_pos[0], &vec_values[0], INSERT_VALUES);
+		VecAssemblyBegin(sub_x);
+		VecAssemblyEnd(sub_x);
+		if (!this->m_num->petsc_split_fields) {
+			IS is;
+			ISCreateStride(PETSC_COMM_WORLD, rend-rstart, rstart, 1, &is);
+			VecScatter scatter;
+			VecScatterCreate(sub_x, is, x, eqs_new->vec_isg[ii], &scatter);
+			VecScatterBegin(scatter, sub_x, x, INSERT_VALUES, SCATTER_FORWARD);
+			VecScatterEnd(scatter, sub_x, x, INSERT_VALUES, SCATTER_FORWARD);
+			VecScatterDestroy(&scatter);
+			ISDestroy(&is);
+		}
+		VecRestoreSubVector(x, eqs_new->vec_isg[ii], &sub_x);
+		//VecView(sub_x, PETSC_VIEWER_STDOUT_SELF);
+		//VecView(x, PETSC_VIEWER_STDOUT_SELF);
+	}
+	VecAssemblyBegin(x);
+	VecAssemblyEnd(x);
+
+}
+
+double CRFProcessTH::ExecuteNonlinearWithPETsc()
+{
+	PetscLogDouble v1, v2;
+	PetscPrintf(PETSC_COMM_WORLD,"------------------------------------------------\n");
+	PetscPrintf(PETSC_COMM_WORLD, "*** PETSc nonlinear solver\n");
+	//VecView(eqs_new->total_x, PETSC_VIEWER_STDOUT_SELF);
+	PetscTime(&v1);
+	SNESSolve(eqs_new->snes, NULL, eqs_new->total_x);
+	PetscTime(&v2);
+	eqs_new->time_elapsed = v2 - v1;
+	SNESConvergedReason reason;
+	SNESGetConvergedReason(eqs_new->snes, &reason);
+	SNESGetIterationNumber(eqs_new->snes, &iter_nlin);
+	iter_nlin_max = std::max(iter_nlin_max, iter_nlin);
+	PetscPrintf(PETSC_COMM_WORLD,"------------------------------------------------\n");
+	//VecView(eqs_new->total_x, PETSC_VIEWER_STDOUT_SELF);
+	if (reason>0)
+	{
+		copyVecToNodalValues(eqs_new->total_x);
+	}
+
+	if(reason<=0 || Tim->isDynamicTimeFailureSuggested(this)){
+		accepted = false;
+		Tim->last_dt_accepted = false;
+	}
+
+	return 0; //TODO error
+}
+
+PetscErrorCode FormFunctionTH(SNES /*snes*/, Vec x, Vec f, void *ctx)
+{
+	bool debugOutput = false;
+	if (debugOutput)
+	ScreenMessage("-> form a residual function\n");
+	//VecView(x, PETSC_VIEWER_STDOUT_WORLD); //PETSC_VIEWER_STDOUT_SELF
+	CRFProcessTH* pcs = (CRFProcessTH*)ctx;
+	MeshLib::CFEMesh* m_msh = pcs->m_msh;
+	petsc_group::PETScLinearSolver* eqs_new = pcs->eqs_new;
+	CFiniteElementStd* fem = pcs->GetAssembler();
+
+	Vec b_org = eqs_new->b;
+	if (eqs_new->b!=f)
+		eqs_new->b = f;
+
+	// update nodal values
+	if (debugOutput)
+	ScreenMessage("-> update nodal values\n");
+	pcs->copyVecToNodalValues(x);
+//	pcs->IncorporateBoundaryConditions(-1, false, false, true); // set bc node values
+
+//	if (debugOutput)
+//	ScreenMessage("-> update integration point values\n");
+//	pcs->CalIntegrationPointValue();
+
+	const size_t dn = m_msh->ele_vector.size() / 10;
+	const bool print_progress = (dn >= 100) && debugOutput;
+	if (print_progress)
+		ScreenMessage("start local assembly for %d elements...\n", m_msh->ele_vector.size());
+
+	VecSet(f, 0.0);
+//	VecAssemblyBegin(f);
+//	VecAssemblyEnd(f);
+	for (size_t i=0; i<eqs_new->vec_subRHS.size(); i++) {
+		VecGetSubVector(f, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+	}
+
+	const size_t n_ele = m_msh->ele_vector.size();
+	for (size_t i = 0; i<n_ele; i++)
+	{
+		if (print_progress && (i+1)%dn==0)
+			ScreenMessage("* ");
+			//ScreenMessage("%d \%\n", ((i+1)*100/n_eles));
+		MeshLib::CElem* elem = m_msh->ele_vector[i];
+		// Marked for use //WX: modified for coupled excavation
+		if (elem->GetMark())
+		{
+			elem->SetOrder(false);
+			fem->ConfigElement(elem, false);
+			fem->Assembly(false, true);
+		}
+	}
+//	if (debugOutput)
+	if (print_progress) ScreenMessage("done\n");
+
+	for (size_t i=0; i<eqs_new->vec_subRHS.size(); i++) {
+		VecAssemblyBegin(eqs_new->vec_subRHS[i]);
+		VecAssemblyEnd(eqs_new->vec_subRHS[i]);
+		VecRestoreSubVector(f, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+	}
+	VecAssemblyBegin(f);
+	VecAssemblyEnd(f);
+
+	if (debugOutput)
+	ScreenMessage("-> impose Neumann BC and source/sink terms\n");
+	pcs->IncorporateSourceTerms();
+	VecAssemblyBegin(f);
+	VecAssemblyEnd(f);
+
+	if (debugOutput)
+	ScreenMessage("-> impose Dirichlet BC\n");
+	pcs->IncorporateBoundaryConditions(-1, false, true, true); // set bc residual = 0
+//
+	VecAssemblyBegin(f);
+	VecAssemblyEnd(f);
+
+	// assembly set -r
+	VecScale(f, -1.);
+//	VecAssemblyBegin(f);
+//	VecAssemblyEnd(f);
+
+	//VecView(f, PETSC_VIEWER_STDOUT_WORLD); //PETSC_VIEWER_STDOUT_SELF
+
+#if 0
+	int offset = 0;
+	if (eqs_new->vec_subA.size()>0) {
+		int dummy;
+		MatGetLocalSize(eqs_new->vec_subA[0], &offset, &dummy);
+	}
+	unsigned n = 5;
+	std::vector<int> idx_from(n*2);
+	for (unsigned i=0; i<n; i++)
+		idx_from[i] = 1000*i;
+	for (unsigned i=n; i<n*2; i++)
+		idx_from[i] = offset + idx_from[i-n];
+	std::vector<int> idx_to(idx_from.size());
+	for (unsigned i=0; i<idx_from.size(); i++)
+		idx_to[i] = i;
+	IS is_from, is_to;
+	Vec sub_x_local;
+	VecCreateSeq(PETSC_COMM_SELF, idx_from.size(), &sub_x_local);
+
+	ISCreateGeneral(PETSC_COMM_SELF, idx_from.size(), &idx_from[0], PETSC_COPY_VALUES, &is_from);
+	ISCreateGeneral(PETSC_COMM_SELF, idx_to.size(), &idx_to[0], PETSC_COPY_VALUES, &is_to);
+	VecScatter scatter;
+	VecScatterCreate(x, is_from, sub_x_local, is_to, &scatter);
+	VecScatterBegin(scatter, x, sub_x_local, INSERT_VALUES, SCATTER_FORWARD);
+	VecScatterEnd(scatter, x, sub_x_local, INSERT_VALUES, SCATTER_FORWARD);
+	const double *array_x;
+	VecGetArrayRead(sub_x_local, &array_x);
+	std::vector<double> vec_xi(idx_from.size());
+	for (unsigned i=0; i<vec_xi.size(); i++)
+		vec_xi[i] = array_x[i];
+//	double x34 = array_x[0];
+	VecRestoreArrayRead(x, &array_x);
+	VecScatterBegin(scatter, f, sub_x_local, INSERT_VALUES, SCATTER_FORWARD);
+	VecScatterEnd(scatter, f, sub_x_local, INSERT_VALUES, SCATTER_FORWARD);
+	VecGetArrayRead(sub_x_local, &array_x);
+	std::vector<double> vec_fi(idx_from.size());
+	for (unsigned i=0; i<vec_fi.size(); i++)
+		vec_fi[i] = array_x[i];
+//	double f34 = array_x[0];
+	VecRestoreArrayRead(x, &array_x);
+	VecScatterDestroy(&scatter);
+	ISDestroy(&is_from);
+	ISDestroy(&is_to);
+	VecDestroy(&sub_x_local);
+
+	for (unsigned i=0; i<idx_from.size(); i++)
+		ScreenMessage("-> row %d: x=%g, r=%g\n", idx_from[i], vec_xi[i], vec_fi[i]);
+//	ScreenMessage("-> row 34: x=%g, r=%g\n", x34, f34);
+//	VecView(x, PETSC_VIEWER_STDOUT_WORLD);
+//	ScreenMessage("-> evaluated r\n");
+//	VecView(f, PETSC_VIEWER_STDOUT_WORLD);
+
+	double r_max, r_min;
+	VecMax(f, NULL, &r_max);
+	VecMin(f, NULL, &r_min);
+	ScreenMessage("-> r: max=%g, min=%g\n", r_max, r_min);
+#endif
+
+	eqs_new->b = b_org;
+
+#if 0
+	// check if given x is properly set to node values
+	Vec x2;
+	VecDuplicate(x, &x2);
+	pcs->copyNodalValuesToVec(x2);
+	VecAXPY(x2, -1, x);
+	double diff_norm;
+	VecNorm(x2, NORM_2, &diff_norm);
+	ScreenMessage("-> ||x1-x2||=%g\n", diff_norm);
+#endif
+
+	return 0;
+}
+
+PetscErrorCode FormJacobianTH(SNES /*snes*/, Vec x, Mat *jac, Mat *B, MatStructure *flag, void *ctx)
+{
+	bool debugOutput = false;
+	if (debugOutput)
+	ScreenMessage("-> form a Jacobian matrix\n");
+	CRFProcessTH* pcs = (CRFProcessTH*)ctx;
+	petsc_group::PETScLinearSolver* eqs_new = pcs->eqs_new;
+	MeshLib::CFEMesh* m_msh = pcs->m_msh;
+	CFiniteElementStd* fem = pcs->GetAssembler();
+
+	Mat *mat = jac;
+	mat = B;
+	eqs_new->B = eqs_new->A;
+	eqs_new->A = *B;
+
+	if (debugOutput)
+	ScreenMessage("-> update nodal values\n");
+	pcs->copyVecToNodalValues(x);
+//	pcs->IncorporateBoundaryConditions(-1, false, false, true); // set bc node values
+//	if (debugOutput)
+//	ScreenMessage("-> update integration point values\n");
+//	pcs->CalIntegrationPointValue();
+
+	const std::vector<Mat> vec_subA_org(eqs_new->vec_subA);
+	if (eqs_new->vec_subA.size()>0) {
+		Mat **mats;
+		MatNestGetSubMats(*mat,NULL,NULL,&mats);
+		eqs_new->vec_subA[0]  = mats[0][0];
+		eqs_new->vec_subA[1]  = mats[0][1];
+		eqs_new->vec_subA[2]  = mats[1][0];
+		eqs_new->vec_subA[3]  = mats[1][1];
+		for (unsigned i=0; i<eqs_new->vec_subA.size(); i++) {
+			MatZeroEntries(eqs_new->vec_subA[i]);
+		}
+	}
+
+	MatZeroEntries(*mat);
+
+	const size_t dn = m_msh->ele_vector.size() / 10;
+	const bool print_progress = (dn >= 100) && debugOutput;
+	//if (debugOutput)
+	if (print_progress)
+		ScreenMessage("-> start local assembly for %d elements...\n", m_msh->ele_vector.size());
+
+	for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
+	{
+		if (print_progress && (i+1)%dn==0)
+			ScreenMessage("* ");
+			//ScreenMessage("%d \%\n", ((i+1)*100/n_eles));
+		MeshLib::CElem* elem = m_msh->ele_vector[i];
+		// Marked for use //WX: modified for coupled excavation
+		if (elem->GetMark())
+		{
+			elem->SetOrder(false);
+			fem->ConfigElement(elem, false);
+			fem->Assembly(true, false);
+		}
+	}
+//	if (debugOutput)
+	if (print_progress)ScreenMessage("done\n");
+
+	for (size_t i=0; i<eqs_new->vec_subA.size(); i++) {
+		MatAssemblyBegin(eqs_new->vec_subA[i], MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(eqs_new->vec_subA[i], MAT_FINAL_ASSEMBLY);
+	}
+	MatAssemblyBegin(*mat, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(*mat, MAT_FINAL_ASSEMBLY);
+
+	if (debugOutput)
+	ScreenMessage("-> impose Dirichlet BC\n");
+	pcs->IncorporateBoundaryConditions(-1, true, false);
+
+//	MatAssemblyBegin(*jac, MAT_FINAL_ASSEMBLY);
+//	MatAssemblyEnd(*jac, MAT_FINAL_ASSEMBLY);
+	MatAssemblyBegin(*jac, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(*jac, MAT_FINAL_ASSEMBLY);
+	MatAssemblyBegin(*B, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(*B, MAT_FINAL_ASSEMBLY);
+
+	*flag = SAME_NONZERO_PATTERN;
+
+//	for (size_t i=0; i<eqs_new->vec_subA.size(); i++)
+//		MatView(eqs_new->vec_subA[i], PETSC_VIEWER_STDOUT_WORLD);
+
+	eqs_new->A = eqs_new->B;
+	for (unsigned i=0; i<vec_subA_org.size(); i++)
+		eqs_new->vec_subA[i] = vec_subA_org[i];
+
+	return 0;
+}
+
+#endif
+
 
