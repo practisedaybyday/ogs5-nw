@@ -2511,7 +2511,7 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
    10/2010 TF changed access to process type
 **************************************************************************/
 double CMediumProperties::HeatCapacity(long number, double theta,
-                                       CFiniteElementStd* assem)
+                                       CFiniteElementStd* assem, double* var)
 {
 	SolidProp::CSolidProperties* m_msp = NULL;
 	double heat_capacity_fluids, specific_heat_capacity_solid;
@@ -2549,7 +2549,7 @@ double CMediumProperties::HeatCapacity(long number, double theta,
 		if (FLOW)
 		{
 			porosity = assem->MediaProp->Porosity(number, theta);
-			heat_capacity_fluids = MFPCalcFluidsHeatCapacity(assem);
+			heat_capacity_fluids = MFPCalcFluidsHeatCapacity(assem, var);
 		}
 		else
 		{
@@ -2608,6 +2608,52 @@ double CMediumProperties::HeatCapacity(long number, double theta,
 	return heat_capacity;
 }
 
+double CMediumProperties::dHeatCapacitydP(long number, double theta,
+                                       CFiniteElementStd* assem, double* variables)
+{
+	const double p = variables[0];
+	const double T = variables[1];
+	double arguments[3]={};
+
+	if (p < 0)
+		return 0;
+
+	//dU/dx = (U(x+dx/2)-rho(x-dx/2))/dx
+	double delta_x = std::sqrt(std::numeric_limits<double>::epsilon()) * p;
+	arguments[1] = T;
+	arguments[0] = p + (delta_x / 2.);
+	double val1 = HeatCapacity(number,theta, assem, arguments);
+	arguments[0] = p - (delta_x / 2.);
+	double val2 = HeatCapacity(number,theta, assem, arguments);
+	double grad = (val1 - val2) / delta_x;
+
+	return grad;
+
+}
+
+double CMediumProperties::dHeatCapacitydT(long number, double theta,
+                                       CFiniteElementStd* assem, double* variables)
+{
+	const double p = variables[0];
+	double T = variables[1];
+	double arguments[3]={};
+
+	if (p < 0)
+		return 0;
+	if (T==0) T = std::numeric_limits<double>::epsilon();
+
+	//dU/dx = (U(x+dx/2)-rho(x-dx/2))/dx
+	double delta_x = std::sqrt(std::numeric_limits<double>::epsilon()) * T;
+	arguments[0] = p;
+	arguments[1] = T + (delta_x / 2.);
+	double val1 = HeatCapacity(number,theta, assem, arguments);
+	arguments[1] = T - (delta_x / 2.);
+	double val2 = HeatCapacity(number,theta, assem, arguments);
+	double grad = (val1 - val2) / delta_x;
+
+	return grad;
+}
+
 /**************************************************************************
    FEMLib-Method:
    Task:
@@ -2622,7 +2668,7 @@ double CMediumProperties::HeatCapacity(long number, double theta,
    ToDo:
    10/2010 TF changed access to process type
 **************************************************************************/
-double* CMediumProperties::HeatConductivityTensor(int number)
+double* CMediumProperties::HeatConductivityTensor(int number, double* variables)
 {
 	int i, dimen;
 	SolidProp::CSolidProperties* m_msp = NULL;
@@ -2653,7 +2699,7 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 				FLOW = true;
 		if (FLOW)                 //WW
 		{
-			if (Fem_Ele_Std->cpl_pcs->type == 1212) // Multi-phase WW
+			if (Fem_Ele_Std->cpl_pcs && Fem_Ele_Std->cpl_pcs->type == 1212) // Multi-phase WW
 			{
 				double PG = Fem_Ele_Std->interpolate(
 				        Fem_Ele_Std->NodalValC1); // Capillary pressure
@@ -2684,10 +2730,10 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 				}
 				else
 					heat_conductivity_fluids
-					        = Fem_Ele_Std->FluidProp->HeatConductivity();
+					        = Fem_Ele_Std->FluidProp->HeatConductivity(variables);
 				Sw = 1;
 
-				if (Fem_Ele_Std->cpl_pcs->type != 1)
+				if (Fem_Ele_Std->cpl_pcs && Fem_Ele_Std->cpl_pcs->type != 1)
 				{
 					double PG = Fem_Ele_Std->interpolate(
 					        Fem_Ele_Std->NodalValC1); // Capillary pressure
@@ -2721,7 +2767,7 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 
 	m_msp = msp_vector[group];
 	m_msp->HeatConductivityTensor(dimen, heat_conductivity_tensor,
-	                              group); //MX
+	                              group, variables); //MX
 
 	for (i = 0; i < dimen * dimen; i++)
 		heat_conductivity_tensor[i] *= (1.0 - porosity);
@@ -2798,49 +2844,46 @@ double* CMediumProperties::HeatConductivityTensor(int number)
    last modification:
    ToDo:
 **************************************************************************/
-double* CMediumProperties::HeatDispersionTensorNew(int ip)
+double* CMediumProperties::HeatDispersionTensorNew(int ip, double* var)
 {
 	static double heat_dispersion_tensor[9];
 	double* heat_conductivity_porous_medium;
-	double vg, D[9];
-	double dens_arg[3];                   //AKS
-	double heat_capacity_fluids = 0.0;
-	double fluid_density;
-	double alpha_t, alpha_l;
-	long index = Fem_Ele_Std->GetMeshElement()->GetIndex();
-	CFluidProperties* m_mfp;
-	int Dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
+	const long index = Fem_Ele_Std->GetMeshElement()->GetIndex();
+	const int Dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
 	int i;
 	ElementValue* gp_ele = ele_gp_value[index];
 
 	// Materials
 	//MX, add index
-	heat_conductivity_porous_medium = HeatConductivityTensor(index);
-	m_mfp = Fem_Ele_Std->FluidProp;
-	if(Fem_Ele_Std->FluidProp->density_model == 14 ) //used density changing with p, T
-	{
-		dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal0);
-		dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
-		dens_arg[2] = Fem_Ele_Std->Index;
-		fluid_density = Fem_Ele_Std->FluidProp->Density(dens_arg);
-	}
-	else
-		fluid_density = m_mfp->Density();
-	heat_capacity_fluids = m_mfp->getSpecificHeatCapacity();
-
+	heat_conductivity_porous_medium = HeatConductivityTensor(index, var);
 	//Global Velocity
 	double velocity[3] = {0.,0.,0.};
 	gp_ele->getIPvalue_vec(ip, velocity); //gp velocities
-	vg = MBtrgVec(velocity,3);
+	const double vg = MBtrgVec(velocity,3);
 
 	//Dl in local coordinates
-	alpha_l = heat_dispersion_longitudinal;
-	alpha_t = heat_dispersion_transverse;
+	const double alpha_l = heat_dispersion_longitudinal;
+	const double alpha_t = heat_dispersion_transverse;
 
-	if (abs(vg) > MKleinsteZahl           //For the case of diffusive transport only
+	if (std::abs(vg) > MKleinsteZahl           //For the case of diffusive transport only
 	                                      //WW
 	    && (alpha_l > MKleinsteZahl || alpha_t > MKleinsteZahl) )
 	{
+		double D[9];
+		double dens_arg[3];                   //AKS
+		double fluid_density;
+		CFluidProperties* m_mfp = Fem_Ele_Std->FluidProp;
+		if(Fem_Ele_Std->FluidProp->density_model == 14 ) //used density changing with p, T
+		{
+			dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal0);
+			dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_T0);
+			dens_arg[2] = Fem_Ele_Std->Index;
+			fluid_density = Fem_Ele_Std->FluidProp->Density(dens_arg);
+		}
+		else
+			fluid_density = m_mfp->Density(var);
+
+		const double heat_capacity_fluids = m_mfp->getSpecificHeatCapacity();
 		switch (Dim)
 		{
 		case 1:                   // line elements
@@ -2931,7 +2974,7 @@ double* CMediumProperties::MassDispersionTensorNew(int ip, int tr_phase) // SB +
 	{
  	m_mfp = mfp_vector[0];
 	PG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC);
-	TG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
+	TG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_T0);
 	molecular_diffusion_value = m_mfp->MaxwellStefanDiffusionCoef(index, PG, TG, component)* TortuosityFunction(index,g, theta);
 	}
 	molecular_diffusion_value *= Porosity(index,theta);
