@@ -158,7 +158,7 @@ template<class T> class vec
 {
 public:
 	vec(int argSize);
-	vec() : _size(0) {}
+	vec() : _size(0), _entry(NULL) {}
 	explicit vec(const vec<T>& v);
 
 	virtual ~vec();

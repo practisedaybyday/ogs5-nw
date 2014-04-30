@@ -2617,7 +2617,7 @@ void CSolidProperties::TangentialDPwithTension(Matrix* Dep, double mm)
 }
 
 //WX: return to corner
-void CSolidProperties::TangentialDPwithTensionCorner(Matrix* Dep, double mm)
+void CSolidProperties::TangentialDPwithTensionCorner(Matrix* Dep, double /*mm*/)
 {
 	//return to corner
 	*Dep = *ConstitutiveMatrix;
@@ -3390,7 +3390,7 @@ void CSolidProperties::VecCrossProduct(double* vec1, double* vec2, double* resul
 	result_vec[2] = vec1[0] * vec2[1] + vec1[1] * vec1[0];
 }
 //calculate constitutive matrix when return to a line
-void CSolidProperties::CalDep_l(double* vecl, double* veclg, Matrix* D, Matrix* Dep_l, double fkt)
+void CSolidProperties::CalDep_l(double* vecl, double* veclg, Matrix* D, Matrix* Dep_l, double /*fkt*/)
 {
 	double TmpVec[6] = {0.};
 	double TmpVal = 0.;

@@ -809,17 +809,17 @@ void Problem::PCSCreate()
 
 	for (size_t i = 0; i < no_processes; i++)
 	{
-		ScreenMessage2(".............................................\n");
+		ScreenMessage(".............................................\n");
 		FiniteElement::ProcessType pcs_type (pcs_vector[i]->getProcessType());
-		ScreenMessage2("Create: %s\n", FiniteElement::convertProcessTypeToString (pcs_type).c_str());
+		ScreenMessage("Create: %s\n", FiniteElement::convertProcessTypeToString (pcs_type).c_str());
 		//		if (!pcs_vector[i]->pcs_type_name.compare("MASS_TRANSPORT")) {
 		//YS   // TF
 		if (pcs_type != FiniteElement::MASS_TRANSPORT && pcs_type != FiniteElement::FLUID_MOMENTUM
 						&& pcs_type != FiniteElement::RANDOM_WALK)
 		{
-			ScreenMessage2(" for %s pcs_component_number %d\n", pcs_vector[i]->pcs_primary_function_name[0], pcs_vector[i]->pcs_component_number);
+			ScreenMessage(" for %s pcs_component_number %d\n", pcs_vector[i]->pcs_primary_function_name[0], pcs_vector[i]->pcs_component_number);
 		}
-		ScreenMessage2(" ->TIM_TYPE: %s\n", FiniteElement::convertTimTypeToString(pcs_vector[i]->tim_type).c_str());
+		ScreenMessage("-> TIM_TYPE: %s\n", FiniteElement::convertTimTypeToString(pcs_vector[i]->tim_type).c_str());
 		pcs_vector[i]->Create();
 	}
 
@@ -1269,14 +1269,14 @@ bool Problem::CouplingLoop()
 				inner_max = a_pcs->m_num->cpl_max_iterations;
 //				inner_min = a_pcs->m_num->cpl_min_iterations; // variable set but never used
 				//
-				a_pcs->iter_outer_cpl = outer_index;
-				b_pcs->iter_outer_cpl = outer_index;
+				a_pcs->iter_outer_cpl = outer_index+1;
+				b_pcs->iter_outer_cpl = outer_index+1;
 				//
 				max_inner_error = 0.0;
 				for(inner_index=0; inner_index < a_pcs->m_num->cpl_max_iterations; inner_index++)
 				{
-					a_pcs->iter_inner_cpl = inner_index;
-					b_pcs->iter_inner_cpl = inner_index;
+					a_pcs->iter_inner_cpl = inner_index+1;
+					b_pcs->iter_inner_cpl = inner_index+1;
 					//
 					// FIRST PROCESS
 					loop_process_number = i;
@@ -1323,7 +1323,7 @@ bool Problem::CouplingLoop()
 				// PERFORM AN OUTER COUPLING
 				// ---------------------------------------
 				a_pcs = total_processes[index];
-				a_pcs->iter_outer_cpl = outer_index;
+				a_pcs->iter_outer_cpl = outer_index+1;
 				a_pcs->iter_inner_cpl = 0;
 				//
 				loop_process_number = i;

@@ -654,7 +654,7 @@ void CRFProcess::Create()
 	int DOF = GetPrimaryVNumber();        //OK should be PCS member variable
 	//----------------------------------------------------------------------------
 	// MMP - create mmp groups for each process //YD
-	ScreenMessage2("->Create MMP\n");
+	ScreenMessage("-> Create MMP\n");
 	CMediumPropertiesGroup* m_mmp_group = NULL;
 	int continua = 1;                     //WW
 	if (RD_Process)
@@ -671,7 +671,7 @@ void CRFProcess::Create()
 	m_mmp_group = NULL;
 	//----------------------------------------------------------------------------
 	// NUM_NEW
-	ScreenMessage2("->Create NUM\n");
+	ScreenMessage("-> Create NUM\n");
 	//	if (pcs_type_name.compare("RANDOM_WALK")) { // PCH RWPT does not need this.
 	if (this->getProcessType() != FiniteElement::RANDOM_WALK) // PCH RWPT does not need this.
 	{
@@ -692,7 +692,7 @@ void CRFProcess::Create()
 	}
 	if (!m_num)
 	{
-		std::cout << "Warning in CRFProcess::Create() - no NUM data" << std::endl;
+		ScreenMessage("Warning in CRFProcess::Create() - no NUM data\n");
 		m_num = new CNumerics(pcs_type_name); //OK
 		//		m_num = m_num_tmp;
 	}
@@ -719,7 +719,7 @@ void CRFProcess::Create()
 	//----------------------------------------------------------------------------
 	// EQS - create equation system
 	//WW CreateEQS();
-	ScreenMessage2("->Create EQS\n");
+	ScreenMessage("-> Create EQS\n");
 #if !defined(USE_PETSC) // && !defined(other parallel solver lib). 04.2012 WW
 #if defined(NEW_EQS) 
 	size_t k;
@@ -816,7 +816,7 @@ void CRFProcess::Create()
 
 	//----------------------------------------------------------------------------
 	// Time unit factor //WW
-	ScreenMessage2("->Create TIM\n");
+	ScreenMessage("-> Create TIM\n");
 	//CTimeDiscretization* Tim = TIMGet(_pcs_type_name);
 	Tim = TIMGet(pcs_type_name);
 	if (!Tim)
@@ -854,15 +854,15 @@ void CRFProcess::Create()
 		m_msh->SwitchOnQuadraticNodes(false);
 
 	// ELE - config and create element values
-	ScreenMessage2("->Config ELE values\n");
+	ScreenMessage("-> Config ELE values\n");
 	AllocateMemGPoint();
 #ifndef WIN32
-	ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+	ScreenMessaged("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
 
 	// ELE - config element matrices
 	// NOD - config and create node values
-	ScreenMessage2("->Config NOD values\n");
+	ScreenMessage("-> Config NOD values\n");
 	double* nod_values = NULL;
 	double* ele_values = NULL;            // PCH
 
@@ -922,19 +922,19 @@ void CRFProcess::Create()
 	if(reload >= 2 && ((type != 4 && type / 10 != 4) || !resetStrain)) // Modified at 03.08.2010. WW
 	{
 		// PCH
-		ScreenMessage("Reloading the primary variables... \n");
+		ScreenMessage("-> Reloading the primary variables... \n");
 		ReadSolution();           //WW
 	}
 
 	if (reload < 2)                       // PCH: If reload is set, no need to have ICs
 	{
 		// IC
-		ScreenMessage2("->Assign IC\n");
+		ScreenMessage("-> Assign IC\n");
 		SetIC();
 	}
 	else
 		// Bypassing IC
-		ScreenMessage2("->RELOAD is set to be %d. So bypassing IC's\n", reload);
+		ScreenMessage("-> RELOAD is set to be %d. So bypassing IC's\n", reload);
 
 	if (pcs_type_name_vector.size() && pcs_type_name_vector[0].find("DYNAMIC") != string::npos)
 		setIC_danymic_problems();
@@ -948,7 +948,7 @@ void CRFProcess::Create()
 	else
 	{
 		// BC - create BC groups for each process
-		ScreenMessage2("->Create BC\n");
+		ScreenMessage("-> Create BC\n");
 		CBoundaryConditionsGroup* m_bc_group = NULL;
 
 		//25.08.2011. WW
@@ -972,18 +972,19 @@ void CRFProcess::Create()
 				m_bc_group = NULL;
 				//OK}
 			}
+#ifndef USE_PETSC
 			if (bc_node_value.size() < 1) //WW
 				cout << "Warning: no boundary conditions specified for "
 				     << pcs_type_name << endl;
-
+#endif
 			if(WriteProcessed_BC == 1)
 				Write_Processed_BC();
 		}
 #ifndef WIN32
-		ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+		ScreenMessaged("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
 		// ST - create ST groups for each process
-		ScreenMessage2("->Create ST\n");
+		ScreenMessage("-> Create ST\n");
 		CSourceTermGroup* m_st_group = NULL;
 
 		if (WriteSourceNBC_RHS == 2) // Read from file
@@ -1964,6 +1965,7 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 			*pcs_file >> tim_type_name;
 			this->tim_type = FiniteElement::convertTimType(tim_type_name);
 			pcs_file->ignore(MAX_ZEILE, '\n');
+			ScreenMessage("-> $TIM_TYPE = %s\n", tim_type_name.c_str());
 			continue;
 		}
 		//....................................................................
@@ -6237,7 +6239,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					time_fac = 1.0;
 				//................................................................
 				// Time dependencies - FCT
-				if(m_bc_node->fct_name.length() > 0)
+				if(!m_bc_node->fct_name.empty())
 				{
 					m_fct = FCTGet(m_bc_node->fct_name);
 					if(m_fct)
@@ -6302,7 +6304,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 					        GetNodeValueIndex(convertPrimaryVariableToString(
 					                                  m_bc->
 					                                  getProcessPrimaryVariable()));
-					if(m_bc_node->pcs_pv_name.find("DISPLACEMENT") !=
+					if((type == 4 || type / 10 == 4) && m_bc_node->pcs_pv_name.find("DISPLACEMENT") !=
 					   string::npos)
 					{
 						bc_value -=  GetNodeValue(
@@ -7429,7 +7431,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				if (m_st)     //WW
 				{
 					//WW/YD //OK
-					if (m_msh && m_msh->geo_name.find("LOCAL") != string::npos)
+					if (m_msh && !m_msh->geo_name.empty() && m_msh->geo_name.find("LOCAL") != string::npos)
 					{
 						if (m_st->getFunctionName().length() > 0)
 						{
@@ -7446,7 +7448,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 								     << endl;
 						}
 					}
-					else if (m_st->getFunctionName().length() > 0)
+					else if (!m_st->getFunctionName().empty())
 					{
 						m_fct = FCTGet(m_st->getFunctionName());
 						if (m_fct)
@@ -7548,11 +7550,11 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 //					VecGetSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
 			for (unsigned i=0; i<dof_node_id.size(); i++) {
 				VecGetSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
-				if(st_eqs_id.size()>0)
+				if(!st_eqs_id.empty())
 				{
-				int nrow = dof_node_id[i].size();
-				if(nrow>0)
-					VecSetValues(eqs_new->vec_subRHS[i], nrow, &dof_node_id[i][0], &dof_node_value[i][0], ADD_VALUES);
+					int nrow = dof_node_id[i].size();
+					if(nrow>0)
+						VecSetValues(eqs_new->vec_subRHS[i], nrow, &dof_node_id[i][0], &dof_node_value[i][0], ADD_VALUES);
 				}
 				VecAssemblyBegin(eqs_new->vec_subRHS[i]);
 				VecAssemblyEnd(eqs_new->vec_subRHS[i]);
@@ -7560,7 +7562,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			}
 //				for (size_t i=0; i<eqs_new->vec_subRHS.size(); i++)
 //					VecRestoreSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
-			eqs_new->AssembleRHS_PETSc();
+			//eqs_new->AssembleRHS_PETSc();
 		} else {
 			if(st_eqs_id.size()>0)
 			eqs_new->setArrayValues(1, static_cast<int>(st_eqs_id.size()), &st_eqs_id[0], &st_eqs_value[0]);

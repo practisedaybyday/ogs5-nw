@@ -260,6 +260,8 @@ CFiniteElementVec::CFiniteElementVec(process::CRFProcessDeformation* dm_pcs,
 	// Coupling
 	Flow_Type = -1;
 	idx_P = -1;
+	eleV_DM = NULL;
+	idx_P0 = idx_pls = 0;
 	for (size_t i = 0; i < pcs_vector.size(); i++)
 	{
 		//      if (pcs_vector[i]->pcs_type_name.find("FLOW") != string::npos) {

@@ -104,9 +104,15 @@ CElement::CElement(int CoordFlag, const int order)
 	local_idx = NULL; //> local index for local assemble
 	//local_matrix = NULL; //>  local matrix 
 	//local_vec = NULL; //>  local vector  
+	act_nodes = act_nodes_h = 0;
 #endif
-
-
+	element_nodes_dom = NULL;
+	gp = 0;
+	idx_c0 = idx_c1 = 0;
+	Index = 0;
+	nnodes = nnodesHQ = nNodes = 0;
+	Radius = .0;
+	Xi_p = .0;
 }
 
 //  Destructor of class Element

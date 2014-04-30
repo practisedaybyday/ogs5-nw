@@ -20,6 +20,16 @@
 /*JT: Send output message*/
 extern void ScreenMessage(const char* message, ...);
 extern void ScreenMessage2(const char* message, ...);
+
+//#ifndef LOG_DEBUG
+//#define LOG_DEBUG 0
+//#endif
+extern int ogs_log_level;
+#define ScreenMessaged(fmt, ...) \
+            do { if (ogs_log_level) ScreenMessage(fmt, __VA_ARGS__); } while (0)
+#define ScreenMessage2d(fmt, ...) \
+            do { if (ogs_log_level) ScreenMessage2(fmt, __VA_ARGS__); } while (0)
+
 /* Deklarationen */
 extern void DisplayStartMsg ( void );
 /* Gibt Eroeffnungsbildschirm aus */

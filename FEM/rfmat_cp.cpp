@@ -673,16 +673,15 @@ void CompProperties::Write(ofstream* rfe_file)
 #ifdef GEM_REACT
 double CompProperties::CalcDiffusionCoefficientCP(long index,double theta,CRFProcess* m_pcs)
 #else
-double CompProperties::CalcDiffusionCoefficientCP(long /*index*/,double theta,CRFProcess* /*m_pcs*/)
+double CompProperties::CalcDiffusionCoefficientCP(long /*index*/,double /*theta*/,CRFProcess* /*m_pcs*/)
 #endif
 {
-	(void)theta;
-	int p_idx = -1, t_idx = -1;
+//	int p_idx = -1, t_idx = -1;
 	/*int dependence = 0; */
 	double diffusion_coefficient = -1.0;
-	double pressure_average = 1e5;
-	double temperature_average = 293.;
-	double diffusion_average = 0.0;
+//	double pressure_average = 1e5;
+//	double temperature_average = 293.;
+//	double diffusion_average = 0.0;
 	double* k = NULL;
 	double Dm;
 	// static long *element_nodes;

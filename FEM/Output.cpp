@@ -68,6 +68,11 @@ COutput::COutput() :
 	vtk = NULL; //NW
 	tecplot_zone_share = false; // 10.2012. WW
 	VARIABLESHARING = false;	//BG
+	_time = 0;
+#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
+	mrank = 0;
+	msize = 0;
+#endif
 }
 
 COutput::COutput(size_t id) :
@@ -78,6 +83,11 @@ COutput::COutput(size_t id) :
 	vtk = NULL; //NW
 	tecplot_zone_share = false; // 10.2012. WW
 	VARIABLESHARING = false;	//BG
+	_time = 0;
+#if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
+	mrank = 0;
+	msize = 0;
+#endif
 }
 #if defined(USE_PETSC) || defined(USE_MPI) //|| defined(other parallel libs)//03.3012. WW
 void COutput::setMPI_Info(const int rank, const int size, std::string rank_str)
@@ -1173,12 +1183,11 @@ void COutput::WriteELEValuesTECHeader(fstream &tec_file)
 **************************************************************************/
 void COutput::WriteELEValuesTECData(fstream &tec_file)
 {
-	CRFProcess* m_pcs = NULL;
+	//CRFProcess* m_pcs = NULL;
    CRFProcess* m_pcs_2 = NULL;
-	if (!_ele_value_vector.empty())
-		m_pcs = GetPCS_ELE(_ele_value_vector[0]);
-	else
+	if (_ele_value_vector.empty())
 		return;
+	//		m_pcs = GetPCS_ELE(_ele_value_vector[0]);
 
    vector <bool> skip; // CB
 	size_t no_ele_values = _ele_value_vector.size();
@@ -2577,6 +2586,7 @@ void COutput::CalcELEFluxes()
 		break;
 	default:
 		cout << "Warning in COutput::CalcELEFluxes(): no GEO type data" << endl;
+		break;
 	}
 
 	// WW   pcs->CalcELEFluxes(ply) changed 'mark' of elements
@@ -2858,9 +2868,8 @@ void COutput::TIMValues_TEC(double tim_value[5], std::string *header, int dimens
 
 }
 
-double COutput::NODFlux(long nod_number)
+double COutput::NODFlux(long /*nod_number*/)
 {
-	nod_number = nod_number;              //OK411
 	/*
 	   cout << gnode << " " \
 	    << m_pcs->GetNodeValue(gnode,NodeIndex[k]) << end
@@ -3567,7 +3576,7 @@ void COutput::CalculateThroughflow(CFEMesh* msh, vector<long>&nodes_on_sfc,
 	int nfaces, nfn;
 	int nodesFace[8];
 	double fac = 1.0, nodesFVal[8], v1[3], v2[3], normal_vector[3], normal_velocity; //, poro;
-	CMediumProperties *MediaProp;
+//	CMediumProperties *MediaProp;
 
 	int Axisymm = 1; // ani-axisymmetry
 	if (msh->isAxisymmetry()) Axisymm = -1; // Axisymmetry is true
@@ -3621,7 +3630,7 @@ void COutput::CalculateThroughflow(CFEMesh* msh, vector<long>&nodes_on_sfc,
 	for (i = 0; i < (long) vec_possible_elements.size(); i++) {
 
 		elem = msh->ele_vector[vec_possible_elements[i]];
-		MediaProp = mmp_vector[elem->GetPatchIndex()];
+//		MediaProp = mmp_vector[elem->GetPatchIndex()];
 		//poro = MediaProp->Porosity(elem->GetIndex(), 1.0);
 
 		if (!elem->GetMark()) continue;

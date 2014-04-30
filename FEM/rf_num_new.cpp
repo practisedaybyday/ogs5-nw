@@ -575,7 +575,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line.str(GetLineFromFile1(num_file));
 			line >> ele_mass_lumping;
 			line.clear();
-			ScreenMessage("->Mass Lumping method is selected.\n");
+			ScreenMessage("-> Mass Lumping method is selected.\n");
 			continue;
 		}
 		// subkeyword found
@@ -595,7 +595,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line >> ele_supg_method >> ele_supg_method_length >>
 			ele_supg_method_diffusivity;
 			line.clear();
-			ScreenMessage("->SUPG method is selected.\n");
+			ScreenMessage("-> SUPG method is selected.\n");
 			continue;
 		}
 		// subkeyword found
@@ -628,14 +628,14 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line >> fct_prelimiter_type; //0: just cancel, 1: minmod, 2: superbee
 			line >> fct_const_alpha; //-1: off, [0.0,1.0] 0: Upwind, 1: Galerkin
 			line.clear();
-			ScreenMessage("->FEM_FCT method is selected.");
+			ScreenMessage("-> FEM_FCT method is selected.");
 			continue;
 		}
 #ifdef USE_PETSC
 		if(line_string.find("$PETSC_SPLIT_FIELDS") != string::npos)
 		{
 			this->petsc_split_fields = true;
-			ScreenMessage("-> Split fields in PETSc\n");
+			ScreenMessage("-> Use field splits in PETSc\n");
 			continue;
 		}
 #endif

@@ -1046,6 +1046,7 @@ double Fluid_Heat_Conductivity (double rho, double T, int fluid)
 		break;
 
 	default:   h = 0.5;
+		break;
 	}
 
 	//if(caption.find("CARBON_DIOXIDE")!=string::npos)
