@@ -519,7 +519,7 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		m_num = num;              //NW
 	else
 		m_num = num_vector[0];
-
+	int iter=0;
 	if(m_num->ls_method == 805)           // Then, PARDISO parallel direct solver
 	{
 #ifdef MKL                               // PCH 10.03.2009: Requires the system platform where Math Kernel Library is properly configured.
@@ -765,14 +765,13 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		std::endl;
 		ScreenMessage2("*** LIS solver computation with %d threads\n", omp_get_max_threads());
 		int i, ierr;
-		LIS_INT iter;
 		// Fix for the fluid_momentum Dof
 		long size = A->Size() * A->Dof();
 
 		// Assembling the matrix
 		// Establishing CRS type matrix from GeoSys Matrix data storage type
 		long nonzero = A->nnz();
-		ScreenMessage2("\t copying CRS data with dim=%ld and nnz=%ld\n", size, nonzero);
+		ScreenMessage2("->copying CRS data with dim=%ld and nnz=%ld\n", size, nonzero);
 		double* value = new double [nonzero];
 		ierr = A->GetCRSValue(value);
 		LIS_INT* ptr = A->ptr;
@@ -893,14 +892,14 @@ int Linear_EQS::Solver(CNumerics* num, bool compress)
 		ierr = lis_solver_set_option(solver_options,solver);
 		ierr = lis_solver_set_option(tol_option,solver);
 		ierr = lis_solver_set_option("-print mem",solver);
-		ScreenMessage2("\tcall lis_solve()\n");
+		ScreenMessage2("->call lis_solve()\n");
 		ierr = lis_solve(AA,bb,xx,solver);
 		ierr = lis_solver_get_iters(solver,&iter);
 		//NW
-		printf("\t iteration: %lld/%d\n", iter, m_num->ls_max_iterations);
+		printf("iteration: %d/%d\n", iter, m_num->ls_max_iterations);
 		double resid = 0.0;
 		ierr = lis_solver_get_residualnorm(solver,&resid);
-		printf("\t residuals: %e\n", resid);
+		printf("residuals: %e\n", resid);
 		//	lis_vector_print(xx);
 		//	lis_vector_print(bb);
 
