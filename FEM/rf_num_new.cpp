@@ -79,7 +79,10 @@ CNumerics::CNumerics(string name)
 	ls_storage_method = 2;					//OK41
 	m_cols = 5;								// 06.2010. WW
 	ls_extra_arg = ""; //NW
+#ifdef USE_PETSC
 	petsc_split_fields = false;
+	petsc_use_snes = false;
+#endif
 	//
 	// NLS - Nonlinear Solver
 	nls_method_name = "PICARD";
@@ -89,6 +92,7 @@ CNumerics::CNumerics(string name)
 	nls_relaxation = 0.0;
 	for(size_t i=0; i<DOF_NUMBER_MAX; i++)	//JT2012
 		nls_error_tolerance[i] = -1.0;		//JT2012: should not default this. Should always be entered by user!
+	nls_jacobian_level = 0; // full
 	//
 	// CPL - Coupled processes
 	cpl_error_specified = false;
@@ -436,6 +440,16 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			//
 			line >> nls_max_iterations;
 			line >> nls_relaxation;
+			line.clear();
+			continue;
+		}
+		//....................................................................
+		// JT->WW: Local tolerance previously found in $NON_LINEAR_SOLVER for NEWTON. Moved here for now.
+		if(line_string.find("$JACOBIAN_LEVEL") != string::npos)
+		{
+			line.str(GetLineFromFile1(num_file));
+			line >> nls_jacobian_level;
+			ScreenMessage("-> $JACOBIAN_LEVEL = %d\n", nls_jacobian_level);
 			line.clear();
 			continue;
 		}
