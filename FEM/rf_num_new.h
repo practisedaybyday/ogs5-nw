@@ -57,15 +57,20 @@ public:
 	int ls_precond;
 	int ls_storage_method;
 	std::string ls_extra_arg; //NW
+#ifdef USE_PETSC
+	bool petsc_split_fields;
+	bool petsc_use_snes;
+#endif
 	//
 	// NLS - Non-linear Solver
 	std::string nls_method_name;
-	int nls_method;                       // Picard or Newton
+	FiniteElement::NonlinearSolverType nls_method;                       // Picard or Newton
 	int nls_error_method;                 //WW
 	int nls_max_iterations;
 	double nls_relaxation;
 	double nls_error_tolerance[DOF_NUMBER_MAX];		//JT2012: array function of dof
 	double nls_plasticity_local_tolerance;
+	int nls_jacobian_level;
 	void setNonLinearErrorMethod (FiniteElement::ErrorMethod nls_method) { _pcs_nls_error_method = nls_method; }
 	FiniteElement::ErrorMethod getNonLinearErrorMethod () const { return _pcs_nls_error_method; }
 	//

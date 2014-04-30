@@ -260,6 +260,8 @@ CFiniteElementVec::CFiniteElementVec(process::CRFProcessDeformation* dm_pcs,
 	// Coupling
 	Flow_Type = -1;
 	idx_P = -1;
+	eleV_DM = NULL;
+	idx_P0 = idx_pls = 0;
 	for (size_t i = 0; i < pcs_vector.size(); i++)
 	{
 		//      if (pcs_vector[i]->pcs_type_name.find("FLOW") != string::npos) {
@@ -286,7 +288,7 @@ CFiniteElementVec::CFiniteElementVec(process::CRFProcessDeformation* dm_pcs,
 
 				// 07.2011. WW
 				PressureC_S = new Matrix(60,20);
-				if(pcs->m_num->nls_method == 1 && h_pcs->type == 42) // Newton-raphson. WW
+				if(pcs->m_num->nls_method == FiniteElement::NL_NEWTON && h_pcs->type == 42) // Newton-raphson. WW
 					PressureC_S_dp = new Matrix(60,20);
 			}
 			// WW idx_P0 = pcs->GetNodeValueIndex("POROPRESSURE0");
@@ -1472,6 +1474,11 @@ void CFiniteElementVec::GlobalAssembly_Stiffness()
 
     07.2011. WW
  */
+#if defined(USE_PETSC) // || defined(other parallel libs)//10.3012. WW
+void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix*,
+                                                        double,
+                                                        const int) {}
+#else
 void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix* pCMatrix,
                                                         double fct,
                                                         const int phase)
@@ -1492,9 +1499,6 @@ void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix* pCMatrix,
 		{
 			for(size_t k = 0; k < ele_dim; k++)
 			  {  
-#if defined(USE_PETSC) // || defined(other parallel libs)//10.3012. WW
-			    //TODO
-#else
 #ifdef NEW_EQS
 				(*A)(NodeShift[k] + eqs_number[i], NodeShift[dim_shift] +
 				     eqs_number[j])
@@ -1504,11 +1508,11 @@ void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix* pCMatrix,
 				      NodeShift[dim_shift] + eqs_number[j], \
 				      fct * (*pCMatrix)(nnodesHQ * k + i,j));
 #endif
-#endif
 			  }
 		}
 	}
 }
+#endif
 
 /***************************************************************************
    GeoSys - Funktion:

@@ -187,7 +187,7 @@ class CRFProcess : public ProcessInfo
 {
 	//----------------------------------------------------------------------
 	// Properties
-private:
+protected:
 	/**
 	 * _problem is a pointer to an instance of class Problem.
 	 *  The pointer is used to get the geometric entities.
@@ -259,7 +259,9 @@ protected:                                        //WW
 	int* Deactivated_SubDomain;
 	//New equation and solver objects WW
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+public:
    petsc_group::PETScLinearSolver *eqs_new;
+protected:
   int mysize;                               
   int myrank; 
 #elif NEW_EQS
@@ -625,10 +627,10 @@ public:
 	void ConfigRandomWalk();
 	void ConfigMultiPhaseFlow();
 	void ConfigPS_Global();               // PCH
-	void ConfigPTC_FLOW();                // AKS/NB
+	void ConfigTH();
 	// Configuration 1 - NOD
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
-	void setSolver( petsc_group::PETScLinearSolver *petsc_solver );
+	virtual void setSolver( petsc_group::PETScLinearSolver *petsc_solver );
 	double CalcIterationNODError(int method); //OK // PETSC version in rf_pcs1.cpp WW
 #endif
 
@@ -714,7 +716,7 @@ public:
 	int GetRestartFlag() const {return reload; }
 #endif
 	// BC
-	void IncorporateBoundaryConditions(const int rank = -1);
+	void IncorporateBoundaryConditions(const int rank = -1, bool updateA = true, bool updateRHS = true, bool isResidual=false);
 	// PCH for FLUID_MOMENTUM
 	void IncorporateBoundaryConditions(const int rank, const int axis);
 #if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
@@ -838,6 +840,7 @@ public:
 	void Calc2DElementGradient(MeshLib::CElem* ele, double ElementConcentration[4], double *grad);
 	// NEW
 	CRFProcess* CopyPCStoDM_PCS();
+	CRFProcess* CopyPCStoTH_PCS();
 	bool OBJRelations();                  //OK
 	void OBJRelationsDelete();            //OK
 	bool NODRelations();                  //OK
@@ -864,6 +867,10 @@ public:
 	int PCS_ExcavState;                   //WX
 	bool calcDiffFromStress0;
 	bool resetStrain;
+	bool scaleUnknowns;
+	std::vector<double> vec_scale_dofs;
+	bool scaleEQS;
+	std::vector<double> vec_scale_eqs;
 #if defined(USE_MPI) || defined (USE_PETSC)                                 //WW
 	void Print_CPU_time_byAssembly(std::ostream &os = std::cout) const
 	{
@@ -1022,7 +1029,6 @@ extern bool MH_Process;					// MH monolithic scheme
 extern bool MASS_TRANSPORT_Process;		// Mass transport
 extern bool FLUID_MOMENTUM_Process;		// Momentum
 extern bool RANDOM_WALK_Process;		// RWPT
-extern bool PTC_FLOW_Process;			// PTC
 //
 extern int pcs_number_deformation;				// JT2012
 extern int pcs_number_flow;						// JT2012

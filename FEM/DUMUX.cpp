@@ -224,6 +224,10 @@ CDUMUXData::CDUMUXData(void)
 	this->ProcessIndex_CO2inLiquid = -1;
 	this->ProcessIndex_NaClinLiquid = -1;
 	this->TotalSimulationTime = 0;
+	dim = 0;
+	Molweight_CO2 = 0;
+	UsePrecalculatedFiles = false;
+	Windows_System = false;
 }
 
 CDUMUXData::~CDUMUXData(void)

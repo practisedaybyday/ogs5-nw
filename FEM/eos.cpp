@@ -752,11 +752,11 @@ double co2_viscosity (double rho, double T)
 double co2_heat_conductivity (double rho, double T)
 {
 	double    Tc = 304.1282;
-    double    pc = 7377300;
+//    double    pc = 7377300;
     double rho_c = 467.6;
-    double     M = 0.044098;
-    double     R = 8.314472;
-    double    NA = 6.0221353e23;
+//    double     M = 0.044098;
+//    double     R = 8.314472;
+//    double    NA = 6.0221353e23;
     double rho_r = rho/rho_c;
     double    Tr = T/Tc;
     double lamda_r;
@@ -1046,6 +1046,7 @@ double Fluid_Heat_Conductivity (double rho, double T, int fluid)
 		break;
 
 	default:   h = 0.5;
+		break;
 	}
 
 	//if(caption.find("CARBON_DIOXIDE")!=string::npos)

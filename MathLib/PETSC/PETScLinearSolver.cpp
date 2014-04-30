@@ -9,6 +9,8 @@
 #include <iostream>
 #include <list>
 
+#include "petsc-private/petscimpl.h"
+
 #include "../../FEM/display.h"
 #include "StringTools.h"
 
@@ -16,7 +18,7 @@ namespace petsc_group
 {
 
  PETScLinearSolver :: PETScLinearSolver (const int size)
-   :A(NULL),b(NULL),x(NULL),lsolver(NULL), prec(NULL), global_x0(NULL),  global_x1(NULL), global_buff(NULL)
+   :A(NULL),B(NULL),b(NULL),x(NULL),snes(NULL),lsolver(NULL), prec(NULL), total_x(NULL), global_x0(NULL),  global_x1(NULL), global_buff(NULL)
  {
    i_start = i_end = 0;
    ltolerance = 1.e-10;
@@ -28,15 +30,28 @@ namespace petsc_group
    m_size_loc = PETSC_DECIDE;
    mpi_size = 0;
    rank = 0;
+   is_global_node_id = NULL;
+   is_local_node_id = NULL;
  }
 
 PETScLinearSolver:: ~PETScLinearSolver()
 {
   VecDestroy(&b);
   VecDestroy(&x);
+  VecDestroy(&total_x);
+  for (size_t i=0; i<vec_subA.size(); i++)
+	  MatDestroy(&vec_subA[i]);
   MatDestroy(&A);
-  if(lsolver) KSPDestroy(&lsolver);
+  if(snes) SNESDestroy(&snes);
+  else if(lsolver) KSPDestroy(&lsolver);
   // if(prec) PCDestroy(&prec);
+
+  if (vec_subA.empty()) {
+	  for (size_t i=0; i<vec_isg.size(); i++)
+		ISDestroy(&vec_isg[i]);
+  }
+  ISDestroy(&is_global_node_id);
+  ISDestroy(&is_local_node_id);
 
   if(global_x0)
     delete []  global_x0;
@@ -151,23 +166,47 @@ void PETScLinearSolver::Init(const int *sparse_index)
 */
 void PETScLinearSolver::Config(const PetscReal tol, const PetscInt maxits, const KSPType lsol, const PCType prec_type, const std::string &misc_setting)
 {
+   KSPCreate(PETSC_COMM_WORLD,&lsolver);
+   ConfigLinear(tol, maxits, lsol, prec_type, misc_setting);
+   KSPSetFromOptions(lsolver);
+}
+
+void PETScLinearSolver::ConfigWithNonlinear(const PetscReal tol, const PetscInt maxits, const KSPType lsol, const PCType prec_type, const std::string &misc_setting)
+{
+   SNESCreate(PETSC_COMM_WORLD,&snes);
+   SNESGetKSP(snes, &lsolver);
+   ConfigLinear(tol, maxits, lsol, prec_type, misc_setting);
+}
+
+void PETScLinearSolver::ConfigLinear(const PetscReal tol, const PetscInt maxits, const KSPType lsol, const PCType prec_type, const std::string &misc_setting)
+{
+	if (lsolver==NULL) return;
+
    ltolerance = tol;
    sol_type = lsol;
-   pc_type = prec_type; 
+   pc_type = prec_type;
 
-
-   KSPCreate(PETSC_COMM_WORLD,&lsolver);
 #if 0
    KSPSetOperators(lsolver, A, A, SAME_NONZERO_PATTERN);
 #else
    KSPSetOperators(lsolver, A, A, DIFFERENT_NONZERO_PATTERN);
 #endif
-   KSPSetType(lsolver,lsol);
 
-   KSPGetPC(lsolver, &prec);
-   PCSetType(prec, prec_type); //  PCJACOBI); //PCNONE);
+   KSPSetType(lsolver,lsol);
    KSPSetTolerances(lsolver,ltolerance, PETSC_DEFAULT, PETSC_DEFAULT, maxits);
 
+	KSPGetPC(lsolver, &prec);
+	if (vec_subA.size()>0) {
+		PCSetType(prec,PCFIELDSPLIT);
+		for (int i=0; i<vec_isg.size(); i++) {
+			PCFieldSplitSetIS(prec, number2str(i).c_str(), vec_isg[i]);
+		}
+	} else {
+		PCSetType(prec, prec_type); //  PCJACOBI); //PCNONE);
+	}
+
+#if 1
+	if (vec_subA.empty()) {
    if (!misc_setting.empty()) {
 	   PetscPrintf(PETSC_COMM_WORLD, "-> additional PETSc arguments:\n");
 	   std::list<std::string> lst = splitString(misc_setting,' ');
@@ -196,13 +235,16 @@ void PETScLinearSolver::Config(const PetscReal tol, const PetscInt maxits, const
    PetscOptionsGetAll(&copts);
    PetscPrintf(PETSC_COMM_WORLD, "-> PETSc options = %s\n", copts);
    PetscFree(copts);
-   KSPSetFromOptions(lsolver);
+	}
+#endif
+#if 0
    // reset options
    for (std::vector<Para>::iterator itr=vec_para.begin(); itr!=vec_para.end(); ++itr) {
 	   PetscOptionsSetValue(itr->first.c_str(),"");
    }
-
+#endif
 }
+
 //-----------------------------------------------------------------
 void PETScLinearSolver::VectorCreate(PetscInt m)
 {
@@ -232,7 +274,7 @@ void PETScLinearSolver::MatrixCreate( PetscInt m, PetscInt n)
   MatSetType(A,MATMPIAIJ);
   MatSetFromOptions(A);
 #if 1
-  ScreenMessage2("-> set PETSc matrix preallocation wiht d_nz=%d and o_nz=%d\n", d_nz, o_nz);
+  ScreenMessage2d("-> set PETSc matrix preallocation wiht d_nz=%d and o_nz=%d\n", d_nz, o_nz);
   MatMPIAIJSetPreallocation(A,d_nz,PETSC_NULL, o_nz,PETSC_NULL);
   //MatSeqAIJSetPreallocation(A,d_nz,PETSC_NULL);
 #else
@@ -241,7 +283,7 @@ void PETScLinearSolver::MatrixCreate( PetscInt m, PetscInt n)
 #endif
   MatSetOption(A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE); // for MatZeroRows()
   MatGetOwnershipRange(A,&i_start,&i_end);
-  ScreenMessage2("-> PETSc linear solver range: start=%d, end=%d\n", i_start, i_end);
+  ScreenMessage2d("-> PETSc linear solver range: start=%d, end=%d\n", i_start, i_end);
 
   //  std::cout<<"sub_a  "<<i_start<<";   sub_d "<<i_end<<"\n";
 }
@@ -275,7 +317,7 @@ void PETScLinearSolver::CheckIfMatrixIsSame(const std::string &filename)
   ScreenMessage("\t||A_assembled - A_file|| = %e\n", diff);
 }
 
-void PETScLinearSolver::Solver()
+int PETScLinearSolver::Solver()
 {
   
    //TEST
@@ -306,7 +348,7 @@ void PETScLinearSolver::Solver()
    PetscGetTime(&v1);
 #endif
 
-   PetscPrintf(PETSC_COMM_WORLD,"\n------------------------------------------------\n");
+   PetscPrintf(PETSC_COMM_WORLD,"------------------------------------------------\n");
    PetscPrintf(PETSC_COMM_WORLD, "*** PETSc linear solver\n");
 #if 0
    KSPSetOperators(lsolver, A, A, SAME_NONZERO_PATTERN);
@@ -354,8 +396,9 @@ void PETScLinearSolver::Solver()
       {
           PetscPrintf(PETSC_COMM_WORLD, "status    : Diverged (reason=%d)\n", reason);
       }
-      PetscFinalize();
-      exit(1);
+//      PetscFinalize();
+//      exit(1);
+      return -1;
    }
 
    PetscPrintf(PETSC_COMM_WORLD,"------------------------------------------------\n");
@@ -404,10 +447,17 @@ void PETScLinearSolver::Solver()
    PetscMemoryGetCurrentUsage(&mem2);
    PetscPrintf(PETSC_COMM_WORLD, "###Memory usage by solver. Before :%f After:%f Increase:%d\n", mem1, mem2, (int)(mem2 - mem1));
 #endif
+
+   return its;
 }
 
-  void PETScLinearSolver::AssembleRHS_PETSc()
+void PETScLinearSolver::AssembleRHS_PETSc(bool assemble_subvec)
 {
+  if (assemble_subvec) {
+    for (size_t i=0; i<vec_subRHS.size(); i++)
+      VecRestoreSubVector(b, vec_isg[i], &vec_subRHS[i]);
+  }
+
   VecAssemblyBegin(b);
   VecAssemblyEnd(b);
 }
@@ -418,10 +468,44 @@ void PETScLinearSolver::AssembleUnkowns_PETSc()
 }
 void PETScLinearSolver::AssembleMatrixPETSc(const MatAssemblyType type)
 {
-  MatAssemblyBegin(A, type);
-  MatAssemblyEnd(A, type);
+	for (size_t i=0; i<vec_subA.size(); i++) {
+		MatAssemblyBegin(vec_subA[i], MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(vec_subA[i], MAT_FINAL_ASSEMBLY);
+	}
+
+	MatAssemblyBegin(A, type);
+	MatAssemblyEnd(A, type);
 }
 
+void PETScLinearSolver::getGlobalVectorArray(Vec &vec, PetscScalar *u1)
+{
+  PetscInt local_size;
+  VecGetLocalSize(vec, &local_size);
+
+  PetscScalar* xp = NULL;
+  VecGetArray(vec, &xp);
+
+  // number of elements to be sent for each rank
+  int size_rank;
+  MPI_Comm_size(PETSC_COMM_WORLD, &size_rank);
+  std::vector<PetscInt> i_cnt(size_rank);
+
+  MPI_Allgather(&local_size, 1, MPI_INT, &i_cnt[0], 1, MPI_INT, PETSC_COMM_WORLD);
+
+  // collect local array
+  PetscInt offset = 0;
+  // offset in the receive vector of the data from each rank
+  std::vector<PetscInt> i_disp(size_rank);
+  for(PetscInt i=0; i<size_rank; i++)
+  {
+      i_disp[i] = offset;
+      offset += i_cnt[i];
+  }
+
+  MPI_Allgatherv(xp, local_size, MPI_DOUBLE, u1, &i_cnt[0], &i_disp[0], MPI_DOUBLE, PETSC_COMM_WORLD);
+
+  VecRestoreArray(vec, &xp);
+}
 
 void PETScLinearSolver::UpdateSolutions(PetscScalar *u0, PetscScalar *u1)
 {
@@ -618,10 +702,22 @@ void PETScLinearSolver::add_xVectorEntry(const int i, const double value, Insert
 
 void PETScLinearSolver::Initialize( )
 {
-
    VecSet(b, 0.0);
    VecSet(x, 0.0);
+   for (unsigned i=0; i<vec_subA.size(); i++) {
+	   MatZeroEntries(vec_subA[i]);
+   }
    MatZeroEntries(A);
+#if 0
+   for (unsigned i=0; i<vec_subRHS.size(); i++) {
+      VecGetSubVector(b, vec_isg[i], &vec_subRHS[i]);
+      int gstart, gend, start;
+      PetscBool contiguous;
+      VecGetOwnershipRange(vec_subRHS[i],&gstart,&gend);
+      ISContiguousLocal(vec_isg[i],gstart,gend,&start,&contiguous);
+      ScreenMessage2("-> sub Vec[%d]: start=%d, end=%d, contiguous=%s\n", i, gstart, gend, contiguous ? "true" : "false");
+   }
+#endif
 } 
 
 
@@ -652,28 +748,55 @@ void PETScLinearSolver::zeroRows_in_Matrix(const int nrows, const  PetscInt *row
     MatZeroRows(A, 0, PETSC_NULL, one, PETSC_NULL, PETSC_NULL);
 }
 
-
-
-void PETScLinearSolver::EQSV_Viewer(std::string file_name, bool ascii)
+void PETScLinearSolver::EQSV_Viewer(const std::string& file_name, bool ascii)
 {
   if (ascii) {
 	  PetscViewer viewer;
-	  std::string fname = file_name + "_eqs_dump.txt";
-	  PetscViewerASCIIOpen(PETSC_COMM_WORLD, fname.c_str(), &viewer);
+	  PetscViewerASCIIOpen(PETSC_COMM_WORLD, file_name.c_str(), &viewer);
 	  PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_MATLAB);
 
 	  AssembleRHS_PETSc();
 	  AssembleUnkowns_PETSc();
 	  AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
 
+//	  PetscBool flg = PETSC_FALSE;
+//	  PetscOptionsGetBool(((PetscObject) A)->prefix, "-mat_ascii_output_large", &flg,NULL);
+//	  ScreenMessage2("A: mat_ascii_output_large found: %s\n", flg==PETSC_TRUE ? "true" : "false");
 
 	  //PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_VTK);
+#if 0
 	  PetscObjectSetName((PetscObject)A,"Stiffness_matrix");
-	  PetscObjectSetName((PetscObject)b,"RHS");
-	  PetscObjectSetName((PetscObject)x,"Solution");
 	  MatView(A,viewer);
-	  VecView(b, viewer);
-	  VecView(x, viewer);
+#if 1
+	  for (size_t i=0; i<vec_subA.size(); i++) {
+		  std::string name = "SubMatrix" + number2str(i);
+//		  PetscOptionsGetBool(((PetscObject) vec_subA[i])->prefix, "-mat_ascii_output_large", &flg,NULL);
+//		  ScreenMessage2("subA[%d]: mat_ascii_output_large found: %s\n", i, flg==PETSC_TRUE ? "true" : "false");
+		  PetscObjectSetName((PetscObject)vec_subA[i],name.c_str());
+		  MatView(vec_subA[i],viewer);
+	  }
+#endif
+#endif
+	  for (size_t i=0; i<vec_subRHS.size(); i++) {
+		  std::string name = "SubVector" + number2str(i);
+	      VecGetSubVector(b, vec_isg[i], &vec_subRHS[i]);
+		  PetscObjectSetName((PetscObject)vec_subRHS[i],name.c_str());
+		  VecView(vec_subRHS[i],viewer);
+	      VecRestoreSubVector(b, vec_isg[i], &vec_subRHS[i]);
+	  }
+	  for (size_t i=0; i<vec_subRHS.size(); i++) {
+		  std::string name = "SubVectorX" + number2str(i);
+	      VecGetSubVector(x, vec_isg[i], &vec_subRHS[i]);
+		  PetscObjectSetName((PetscObject)vec_subRHS[i],name.c_str());
+		  VecView(vec_subRHS[i],viewer);
+	      VecRestoreSubVector(b, vec_isg[i], &vec_subRHS[i]);
+	  }
+	  if (vec_subRHS.empty()) {
+		  PetscObjectSetName((PetscObject)b,"RHS");
+		  PetscObjectSetName((PetscObject)x,"Solution");
+		  VecView(b, viewer);
+		  VecView(x, viewer);
+	  }
 
 	//#define  EXIT_TEST
 	#ifdef EXIT_TEST
@@ -709,6 +832,27 @@ void PETScLinearSolver::EQSV_Viewer(std::string file_name, bool ascii)
 		  VecView(b, viewer);
 		  PetscViewerDestroy(&viewer);
 	  }
+  }
+
+}
+
+void PETScLinearSolver::Residual_Viewer(const std::string& file_name, bool ascii)
+{
+  if (ascii) {
+	  PetscViewer viewer;
+	  PetscViewerASCIIOpen(PETSC_COMM_WORLD, file_name.c_str(), &viewer);
+	  PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_MATLAB);
+
+	  AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
+
+	   // residual vector
+	   Vec Br,v,w;
+	   MatGetVecs(A,&w,&v);
+	   KSPBuildResidual(lsolver,v,w,&Br);
+
+	  //PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_VTK);
+	  PetscObjectSetName((PetscObject)Br,"Residual");
+	  VecView(Br, viewer);
   }
 
 }

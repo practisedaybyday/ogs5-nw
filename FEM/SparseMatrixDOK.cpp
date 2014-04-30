@@ -33,6 +33,7 @@ SparseMatrixDOK::SparseMatrixDOK(size_t _nrows, size_t _ncols)
 	col_idx = NULL;
 	entry_index = NULL;
 #endif
+	Sym = false;
 }
 
 SparseMatrixDOK::SparseMatrixDOK(size_t dim) //:Matrix(0)
@@ -52,6 +53,7 @@ SparseMatrixDOK::SparseMatrixDOK(size_t dim) //:Matrix(0)
 	col_idx = NULL;
 	entry_index = NULL;
 #endif
+	Sym = false;
 }
 
 SparseMatrixDOK::SparseMatrixDOK() //:Matrix(0)
@@ -71,6 +73,7 @@ SparseMatrixDOK::SparseMatrixDOK() //:Matrix(0)
 	col_idx = NULL;
 	entry_index = NULL;
 #endif
+	Sym = false;
 }
 
 SparseMatrixDOK::~SparseMatrixDOK()
@@ -103,6 +106,7 @@ SparseMatrixDOK::SparseMatrixDOK(const SparseMatrixDOK& m)
 	col_idx = m.col_idx;
 	entry_index = m.entry_index;
 #endif
+	is_constructed = false;
 }
 
 SparseMatrixDOK& SparseMatrixDOK::operator=(double a)

@@ -224,9 +224,12 @@ public:
 	                                int GPIndex,
 	                                int PhaseIndex,
 	                                int Variable);                                           // BG 11/2010
-    double drhodP(double* variables = NULL);
-	double drhodT(double* variables = NULL);
+    double drhodP(double* variables);
+	double drhodT(double* variables);
 	double Viscosity(double* variables = NULL); //OK4709
+	double dViscositydP(double* variables);
+	double dViscositydT(double* variables);
+
 	                                            //NB Jan09
 	double SpecificHeatCapacity(double* variables = NULL);
 	void therm_prop(std::string caption); //NB 4.9.05
@@ -281,7 +284,7 @@ private:
 	double LiquidViscosity_Marsily_1986(double);
 	double LiquidViscosity_NN(double,double);
     double LiquidViscosity_LJH_MP1(double c, double T);
-    double LiquidViscosity_LJH_MP2(double c, double T);
+    double LiquidViscosity_LJH_MP2(double c, double T, double rho);
 	double LiquidViscosity_CMCD(double p,double T,double C);
 	double MATCalcHeatConductivityMethod2(double p, double T, double C);
 	double MATCalcFluidHeatCapacityMethod2(double p, double T, double C);
@@ -293,7 +296,7 @@ extern void MFPWrite(std::string);
 #define MFP_FILE_EXTENSION ".mfp"
 //WW extern double MFPCalcVapourPressure(double);
 //WW
-extern double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem = NULL);
+extern double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem = NULL, double* var=NULL);
 extern double MFPCalcFluidsHeatConductivity(long index,
                                             double* gp,
                                             double theta,

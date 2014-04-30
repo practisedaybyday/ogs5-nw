@@ -122,9 +122,11 @@ public:
 	void CalStressPermeabilityFactor4(double* kfac, double);
 	//CMCD 9/2004 GeoSys 4
 	double StorageFunction(long number,double* gp,double theta);
-	double HeatCapacity(long number,double theta, CFiniteElementStd* assem = NULL);
-	double* HeatConductivityTensor(int number); //MX
-	double* HeatDispersionTensorNew(int ip); //CMCD
+	double HeatCapacity(long number,double theta, CFiniteElementStd* assem = NULL, double *var=NULL);
+	double dHeatCapacitydP(long number,double theta, CFiniteElementStd* assem, double *var);
+	double dHeatCapacitydT(long number,double theta, CFiniteElementStd* assem, double *var);
+	double* HeatConductivityTensor(int number, double* variables=NULL); //MX
+	double* HeatDispersionTensorNew(int ip, double* var=NULL); //CMCD
 	double* MassDispersionTensorNew(int ip, int phase); //CMCD, SB, BG
 	//OK
 	double Density(long number,double* gp,double theta);
@@ -212,7 +214,7 @@ public:
 	double permeability_pressure_model_values[10];
 	double permeability_pressure_rel;
 	int permeability_strain_model;        //WX: permeability function strain model. 05.2010
-	int permeability_strain_model_value[3]; //WX:permeability fuction strain model value. 05.2010
+	int permeability_strain_model_value[6]; //WX:permeability fuction strain model value. 05.2010
 	int permeability_effstress_model_value[3];	//AS:perlmeability function eff stress 08.2012
 	int permeability_effstress_model;
 	int storage_effstress_model_value[3];			//AS:storage function eff stress 08.2012

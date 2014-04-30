@@ -17,7 +17,7 @@ std::vector<CGLPolyline*> polyline_vector;
 int ply_max = -1;
 
 std::vector<CColumn*> column_vector;
-std::vector<CSoilProfile*> profile_vector; //YD
+//std::vector<CSoilProfile*> profile_vector; //YD
 
 /*----------------------------------------------------------------------*/
 // constructor
@@ -1172,6 +1172,7 @@ CColumn* COLGet(const std::string &col_name)
 			return column_vector[i];
 	return NULL;
 }
+#if 0
 /**************************************************************************
    GEOLib-Method:
    Programing:
@@ -1194,6 +1195,7 @@ CSoilProfile::~CSoilProfile() //YD
 	soil_type.clear();
 	soil_layer_thickness.clear();
 }
+#endif
 #ifdef RFW_FRACTURE
 /**************************************************************************
    GeoLib-Method: CalcPolylineLength();

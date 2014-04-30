@@ -111,6 +111,7 @@ public:
 	}
 	void SetKnownX_i(const long i, const double x_i);
 	double X(const long i) const {return x[i]; }
+	const double* getX() const {return x;}
 	double RHS(const long i) const {return b[i]; }
 	double NormX();
 	double NormRHS() { return bNorm; }

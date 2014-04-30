@@ -79,15 +79,20 @@ CNumerics::CNumerics(string name)
 	ls_storage_method = 2;					//OK41
 	m_cols = 5;								// 06.2010. WW
 	ls_extra_arg = ""; //NW
+#ifdef USE_PETSC
+	petsc_split_fields = false;
+	petsc_use_snes = false;
+#endif
 	//
 	// NLS - Nonlinear Solver
 	nls_method_name = "PICARD";
-	nls_method = -1;						//Default linear, 0: Picard. 1: Newton. 2:JFNK
+	nls_method = FiniteElement::INVALID_NL_TYPE;						//Default linear, 0: Picard. 1: Newton. 2:JFNK
 	nls_error_method = 1;					//JT2012
 	nls_max_iterations = 1;					//OK
 	nls_relaxation = 0.0;
 	for(size_t i=0; i<DOF_NUMBER_MAX; i++)	//JT2012
 		nls_error_tolerance[i] = -1.0;		//JT2012: should not default this. Should always be entered by user!
+	nls_jacobian_level = 0; // full
 	//
 	// CPL - Coupled processes
 	cpl_error_specified = false;
@@ -230,7 +235,7 @@ void CNumerics::NumConfigure(bool overall_coupling_exists)
 {
    // Overall coupling check
    if(overall_coupling_exists && !cpl_error_specified){
-	   if(this->nls_method < 0){
+	   if(this->nls_method == FiniteElement::INVALID_NL_TYPE){
 		   std::cout<<"ERROR in NUMRead. Overall coupling requested, but ";
 		   std::cout<< this->pcs_type_name << " was not\n";
 		   std::cout<<"supplied with coupling tolerance. See $COUPLING_CONTROL keyword to enter this.\n";
@@ -257,7 +262,7 @@ void CNumerics::NumConfigure(bool overall_coupling_exists)
    }
    //
    // We are ok. Now check the tolerances.
-   if(this->nls_method < 0){ // linear solution
+   if(this->nls_method == FiniteElement::INVALID_NL_TYPE){ // linear solution
 	   if(cpl_error_specified){ // A coupling error was entered. Adopt this for error calculations.
 		   for(size_t i=0; i<DOF_NUMBER_MAX; i++){
 			   nls_error_tolerance[i] = cpl_error_tolerance[i];
@@ -388,11 +393,12 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 					break;
 			}
 
-			nls_method = 0;
-			if(nls_method_name.find("NEWTON") != string::npos)
-				nls_method = 1;
+			if(nls_method_name.find("PICARD") != string::npos)
+				nls_method = FiniteElement::NL_PICARD;
+			else if(nls_method_name.find("NEWTON") != string::npos)
+				nls_method = FiniteElement::NL_NEWTON;
 			else if(nls_method_name.find("JFNK") != string::npos) //  Jacobian free Newton-Krylov method
-				nls_method = 2;
+				nls_method = FiniteElement::NL_JFNK;
 			//
 			line.clear();
 			continue;
@@ -414,13 +420,14 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line.str(GetLineFromFile1(num_file));
 			line >> nls_method_name;
 			//
-			nls_method = 0;
-			if(nls_method_name.find("NEWTON") != string::npos)
-				nls_method = 1;
+			if(nls_method_name.find("PICARD") != string::npos)
+				nls_method = FiniteElement::NL_PICARD;
+			else if(nls_method_name.find("NEWTON") != string::npos)
+				nls_method = FiniteElement::NL_NEWTON;
 			else if(nls_method_name.find("JFNK") != string::npos) //  Jacobian free Newton-Krylov method
-				nls_method = 2;
+				nls_method = FiniteElement::NL_JFNK;
 			//
-			if(nls_method > 0){
+			if(FiniteElement::isNewtonKind(nls_method)){
 				line >> nls_error_tolerance[0];
 				line >> nls_plasticity_local_tolerance;
 				error_method_name = "BNORM"; // JT: this is hardwired in old version
@@ -433,6 +440,16 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			//
 			line >> nls_max_iterations;
 			line >> nls_relaxation;
+			line.clear();
+			continue;
+		}
+		//....................................................................
+		// JT->WW: Local tolerance previously found in $NON_LINEAR_SOLVER for NEWTON. Moved here for now.
+		if(line_string.find("$JACOBIAN_LEVEL") != string::npos)
+		{
+			line.str(GetLineFromFile1(num_file));
+			line >> nls_jacobian_level;
+			ScreenMessage("-> $JACOBIAN_LEVEL = %d\n", nls_jacobian_level);
 			line.clear();
 			continue;
 		}
@@ -572,7 +589,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line.str(GetLineFromFile1(num_file));
 			line >> ele_mass_lumping;
 			line.clear();
-			ScreenMessage("->Mass Lumping method is selected.\n");
+			ScreenMessage("-> Mass Lumping method is selected.\n");
 			continue;
 		}
 		// subkeyword found
@@ -592,7 +609,7 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line >> ele_supg_method >> ele_supg_method_length >>
 			ele_supg_method_diffusivity;
 			line.clear();
-			ScreenMessage("->SUPG method is selected.\n");
+			ScreenMessage("-> SUPG method is selected.\n");
 			continue;
 		}
 		// subkeyword found
@@ -625,9 +642,17 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line >> fct_prelimiter_type; //0: just cancel, 1: minmod, 2: superbee
 			line >> fct_const_alpha; //-1: off, [0.0,1.0] 0: Upwind, 1: Galerkin
 			line.clear();
-			ScreenMessage("->FEM_FCT method is selected.");
+			ScreenMessage("-> FEM_FCT method is selected.");
 			continue;
 		}
+#ifdef USE_PETSC
+		if(line_string.find("$PETSC_SPLIT_FIELDS") != string::npos)
+		{
+			this->petsc_split_fields = true;
+			ScreenMessage("-> Use field splits in PETSc\n");
+			continue;
+		}
+#endif
 
 		//....................................................................
 		/*

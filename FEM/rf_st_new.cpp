@@ -1173,11 +1173,11 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 		// create ST node
 		//------------------------------------------------------------------
 		std::vector<long> nodes_cond;
-		ScreenMessage2("-> create ST nodes\n");
+		ScreenMessaged("-> Create ST nodes%s\n", "");
 		st->SetNodeValues(nodes_vector, nodes_cond, node_value, ShiftInNodeVector);
 #ifndef WIN32
 		BaseLib::MemWatch mem_watch;
-		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+		ScreenMessaged("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
 
 		//------------------------------------------------------------------

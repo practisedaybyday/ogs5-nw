@@ -44,7 +44,7 @@ CTimeDiscretization::CTimeDiscretization(void)
 	time_start = std::numeric_limits<double>::max();
 	time_end = 0.0;
 	time_type_name = "CONSTANT";          //OK
-	time_control_name = "NONE";           //kg44//JT
+	time_control_type = TimeControlType::INVALID;           //kg44//JT
 	time_unit = "SECOND";
 	max_time_step = 1.e10;                //YD
 	min_time_step = DBL_EPSILON;          //YD//JT Minimum allowed timestep, this process
@@ -73,6 +73,7 @@ CTimeDiscretization::CTimeDiscretization(void)
 		dynamic_control_tolerance[ii] = -1.0;
 	}
 	last_rejected_timestep = 0;
+	iteration_type = IterationType::LINEAR;
 }
 
 /**************************************************************************
@@ -306,10 +307,12 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 					break;
 				}
 				line.str(line_string);
+				std::string time_control_name;
 				line >> time_control_name;
 				line.clear();
+				time_control_type = convertTimeControlType(time_control_name);
 
-				if(time_control_name == "PI_AUTO_STEP_SIZE") // 26.08.2008. WW
+				if(time_control_type == TimeControlType::PI_AUTO_STEP_SIZE) // 26.08.2008. WW
 				{
 					line.str(GetLineFromFile1(tim_file));
 					line >> PI_tsize_ctrl_type >> relative_error >>
@@ -325,7 +328,7 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 						max_time_step = 0.0;
 					line.clear();
 				}
-				else if(time_control_name.find("DYNAMIC_VARIABLE") != std::string::npos) // JT2012
+				else if(time_control_type == TimeControlType::DYNAMIC_VARIABLE) // JT2012
 				{
 					// DYNAMIC TIME STEP SERIES
 					line.str(GetLineFromFile1(tim_file));
@@ -392,7 +395,7 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 						dynamic_control_tolerance[DOF_NUMBER_MAX] = include_third_variable;
 					line.clear();
 				}
-				else if(time_control_name.find("DYNAMIC_COURANT") != std::string::npos) // JT2012
+				else if(time_control_type == TimeControlType::DYNAMIC_COURANT) // JT2012
 				{
 					std::cout<<"Josh apologizes (especially to Marc), but promises DYNAMIC_COURANT will be merged into the next release."<<std::endl;
 					std::cout<<"emoticon:: sad face"<<std::endl;
@@ -417,7 +420,7 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 					//
 					line.clear();
 				}
-				else if(time_control_name.find("DYNAMIC_PRESSURE") != std::string::npos) // JT2012
+				else if(time_control_type == TimeControlType::DYNAMIC_PRESSURE) // JT2012
 				{
 					// DYNAMIC TIME STEP SERIES
 					line.str(GetLineFromFile1(tim_file));
@@ -429,25 +432,30 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 					//
 					line.clear();
 				}
-				else if(time_control_name == "STEP_SIZE_RESTRICTION") // 26.08.2008. WW
+				else if(time_control_type == TimeControlType::STEP_SIZE_RESTRICTION) // 26.08.2008. WW
 				{
 					line.str(GetLineFromFile1(tim_file));
 					line >> h_min >> h_max;
 					line.clear();
 				}
-				else if(time_control_name == "NEUMANN"){
+				else if(time_control_type == TimeControlType::NEUMANN){
 					line.clear();
 				}
-				else if(time_control_name == "ERROR_CONTROL_ADAPTIVE")
+				else if(time_control_type == TimeControlType::ERROR_CONTROL_ADAPTIVE)
 				{
 					m_pcs->adaption = true;
 					line.clear();
 				}
-				else if(time_control_name == "SELF_ADAPTIVE")
+				else if(time_control_type == TimeControlType::SELF_ADAPTIVE)
 				{
-					ScreenMessage("-> SELF_ADAPTIVE is chosen for time stepping. Current algorithm is based on coupling iteration counts.\n");
-					//m_pcs->adaption = true; JOD removed
-					//WW minish = 10;
+					if (time_control_name.find("_LINEAR")!=std::string::npos)
+						iteration_type = IterationType::LINEAR;
+					else if (time_control_name.find("_NONLINEAR")!=std::string::npos)
+						iteration_type = IterationType::NONLINEAR;
+					else if (time_control_name.find("_COUPLING")!=std::string::npos)
+						iteration_type = IterationType::COUPLING;
+					ScreenMessage("-> SELF_ADAPTIVE is chosen for time stepping based on %s iteration numbers\n", convertIterationTypeToString(iteration_type).c_str());
+
 					while((!new_keyword) || (!new_subkeyword) ||
 					      (!tim_file->eof()))
 					{
@@ -643,37 +651,31 @@ void CTimeDiscretization::Write(std::fstream* tim_file)
 	*tim_file << " $TIME_END" << std::endl;
 	*tim_file << "  " << time_end << std::endl;
 	//--------------------------------------------------------------------
-	if(time_control_name.size() == 0)
+	if(time_control_type == TimeControlType::INVALID)
 	{
 		*tim_file << " $TIME_STEPS" << std::endl;
 		for(i = 0; i < (int)time_step_vector.size(); i++)
 			*tim_file << "  " << 1 << " " << time_step_vector[i] << std::endl;
 	}
-	//--------------------------------------------------------------------
-	if(time_control_name.size() > 0)
+	else
 	{
 		*tim_file << " $TIME_CONTROL" << std::endl;
-		if(time_control_name == "COURANT_MANIPULATE")
+		*tim_file << "  " << convertTimeControlTypeToString(time_control_type) << std::endl;
+//		if(time_control_name == "COURANT_MANIPULATE")
+//		{
+//			*tim_file << "  " << time_control_name << std::endl;
+//			*tim_file << "   " << time_control_manipulate << std::endl;
+//		}
+		if(time_control_type == TimeControlType::PI_AUTO_STEP_SIZE)
 		{
-			*tim_file << "  " << time_control_name << std::endl;
-			*tim_file << "   " << time_control_manipulate << std::endl;
-		}
-		if(time_control_name == "PI_AUTO_STEP_SIZE")
-		{
-			*tim_file << "  " << time_control_name << std::endl;
 			*tim_file << "   " << PI_tsize_ctrl_type << " " << relative_error << " " <<
 			absolute_error << " " << this_stepsize << std::endl;
 		}
-		if(time_control_name == "STEP_SIZE_RESTRICTION")
+		else if(time_control_type == TimeControlType::STEP_SIZE_RESTRICTION)
 		{
-			*tim_file << "  " << time_control_name << std::endl;
 			*tim_file << "   " << h_min << " " << h_max << std::endl;
 		}
-		if(time_control_name == "NEUMANN")
-			*tim_file << "  " << time_control_name << std::endl;
-		if(time_control_name == "ERROR_CONTROL_ADAPTIVE")
-			*tim_file << "  " << time_control_name << std::endl;
-		if(time_control_name == "SELF_ADAPTIVE")
+		else if(time_control_type == TimeControlType::SELF_ADAPTIVE)
 		{
 			*tim_file << "  MAX_TIME_STEP " << max_time_step << std::endl;
 			*tim_file << "  MIM_TIME_STEP " << min_time_step << std::endl;
@@ -705,18 +707,18 @@ double CTimeDiscretization::CalcTimeStep(double current_time)
 	//
 	// TIME CONTROL METHODS
 	// -----------------------------------
-	if(time_control_name == "NEUMANN" || time_control_name == "SELF_ADAPTIVE"){
+	if(time_control_type == TimeControlType::NEUMANN || time_control_type == TimeControlType::SELF_ADAPTIVE){
 		if(aktuelle_zeit < MKleinsteZahl && repeat == false){
 			time_step_length = FirstTimeStepEstimate();
 		}
-		else if( time_control_name == "NEUMANN" ){
+		else if( time_control_type == TimeControlType::NEUMANN){
 			time_step_length = NeumannTimeControl();
 		}
-		else if(time_control_name == "SELF_ADAPTIVE"){
+		else if(time_control_type == TimeControlType::SELF_ADAPTIVE){
 			time_step_length = SelfAdaptiveTimeControl();
 		}
 	}
-	else if(time_control_name == "ERROR_CONTROL_ADAPTIVE"){
+	else if(time_control_type == TimeControlType::ERROR_CONTROL_ADAPTIVE){
 		if(aktuelle_zeit < MKleinsteZahl){
 			time_step_length = AdaptiveFirstTimeStepEstimate();
 		}
@@ -724,10 +726,12 @@ double CTimeDiscretization::CalcTimeStep(double current_time)
 			time_step_length = ErrorControlAdaptiveTimeControl();
 		}
 	}
-	else if(time_control_name == "PI_AUTO_STEP_SIZE"){
+	else if(time_control_type == TimeControlType::PI_AUTO_STEP_SIZE){
 		time_step_length = this_stepsize;
 	}
-	else if(time_control_name.find("DYNAMIC") != std::string::npos){ // JT2012: Soon to come.
+	else if(time_control_type == TimeControlType::DYNAMIC_COURANT
+			|| time_control_type == TimeControlType::DYNAMIC_PRESSURE
+			|| time_control_type == TimeControlType::DYNAMIC_VARIABLE){ // JT2012: Soon to come.
 		if(!last_dt_accepted){
 			time_step_length *= dt_failure_reduction_factor;
 			dynamic_minimum_suggestion = time_step_length;
@@ -807,7 +811,7 @@ CTimeDiscretization::CTimeDiscretization(const CTimeDiscretization& a_tim, std::
 	repeat = a_tim.repeat;
 	pcs_type_name = pcsname;              // by argument
 	time_type_name = a_tim.time_type_name;
-	time_control_name = a_tim.time_control_name;
+	time_control_type = a_tim.time_control_type;
 	time_unit = a_tim.time_unit;
 	iter_times = a_tim.iter_times;
 	multiply_coef = a_tim.multiply_coef;
@@ -1226,12 +1230,7 @@ double CTimeDiscretization::NeumannTimeControl(void)
 **************************************************************************/
 double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 {
-	int imflag = 1, iprocs = 0;
-	int iterdum = 1;
-//	double my_max_time_step = 0.0;
-	CRFProcess* m_pcs = NULL;             //YDToDo: m_pcs should be member
-
-	ScreenMessage("-> calculate the next time step\n");
+	ScreenMessage("-> calculate the next time step for %s\n", pcs_type_name.c_str());
 
 	// First calculate maximum time step according to Neumann criteria
 #ifdef GEM_REACT
@@ -1248,97 +1247,56 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 //	}
 #endif
 
-	// TF
+	// find pcs
+	CRFProcess* m_pcs = NULL;
 	const FiniteElement::ProcessType pcs_type (FiniteElement::convertProcessType (pcs_type_name));
-	int n_itr = 0;
 	for (size_t n_p = 0; n_p < pcs_vector.size(); n_p++)
 	{
-		m_pcs = pcs_vector[n_p];
-		//n_itr = m_pcs->iter_lin_max;
-		//n_itr = m_pcs->iter_nlin_max;
-        n_itr = m_pcs->iter_outer_cpl;
-
-		if (m_pcs->getProcessType() == pcs_type) //compare process type and type name from Tim object
-		{
-			iprocs++;
-			//			switch (m_pcs->pcs_type_name[0]) {
-			switch (m_pcs->getProcessType()) // TF
-			{
-			default:
-				std::cout << "Fatal error: No valid PCS type" << std::endl;
-				break;
-			//			case 'R': // Richards
-			case FiniteElement::RICHARDS_FLOW: // TF
-				if ( (imflag > 0) &&
-				     ( n_itr  >=
-				       time_adapt_tim_vector[time_adapt_tim_vector.size() - 1] ) )
-				{
-					imflag = 0;
-					time_step_length = time_step_length *
-					                   time_adapt_coe_vector[
-					        time_adapt_tim_vector.size() - 1];
-				}
-				if ((imflag == 1) && (n_itr <= time_adapt_tim_vector[0]))
-				{
-					imflag = 2;
-					time_step_length = time_step_length *
-					                   time_adapt_coe_vector[0];
-				}
-				break;
-			//			case 'G': //Groundwater flow and LIQUID_FLOW
-			case FiniteElement::GROUNDWATER_FLOW: // TF
-			case FiniteElement::LIQUID_FLOW: // TF
-#if 0
-				// iterdum=MMax(iterdum,m_pcs->iter);
-				iterdum = std::max(iterdum, n_itr);
-				imflag = 1;
-				if ( (imflag > 0) && ( n_itr  >= time_adapt_tim_vector[1] || !m_pcs->accepted ) )
-				{
-					imflag = 0;
-					ScreenMessage("Self adaptive time step: too many or diverged iterations for Groundwater/LIQUID flow %d %d \n", n_itr, time_adapt_tim_vector[1]);
-				}
-				if (((imflag == 1) && (n_itr <= time_adapt_tim_vector[0])))
-					imflag = 2;
-				break;
-			//			case 'M': // Mass transport
-#endif
-			case FiniteElement::MASS_TRANSPORT: // TF
-			case FiniteElement::HEAT_TRANSPORT:
-				iterdum = std::max(iterdum, n_itr);
-				if ( (imflag > 0) && ( n_itr  >= time_adapt_tim_vector[1] || !m_pcs->accepted ) )
-				{
-					imflag = 0;
-					ScreenMessage("Self adaptive time step: too many or diverged iterations for Transport %d %d \n", n_itr, time_adapt_tim_vector[1]);
-				}
-				if ( ((imflag == 1) &&
-				      ( n_itr  <= time_adapt_tim_vector[0] ) ))
-				    if (aktueller_zeitschritt-3>last_rejected_timestep)
-				        imflag = 2;
-				break;
-			}
-		}
+		if (pcs_vector[n_p]->getProcessType() == pcs_type)
+			m_pcs = pcs_vector[n_p];
+	}
+	if (!m_pcs) {
+		ScreenMessage("-> ERROR in SelfAdaptiveTimeControl(): PCS not found\n");
+		return 0.0;
 	}
 
-	if (imflag == 0 &&
-	    (time_adapt_coe_vector[time_adapt_tim_vector.size() - 1] * time_step_length ) >
-	    min_time_step)
-		time_step_length = time_step_length *
-		                   time_adapt_coe_vector[time_adapt_tim_vector.size() - 1];                                                                                                          //timestep smaller
-	else if (imflag == 2)
-		time_step_length = time_step_length * time_adapt_coe_vector[0];       //timestep bigger
+	// get iteration number
+	int n_itr = 0;
+	if (iteration_type==IterationType::LINEAR) {
+		n_itr = m_pcs->iter_lin_max;
+	} else if (iteration_type==IterationType::NONLINEAR) {
+		n_itr = m_pcs->iter_nlin_max;
+	} else if (iteration_type==IterationType::COUPLING) {
+		n_itr = m_pcs->iter_outer_cpl;
+	}
 
-	// BUG my_max_time_step is not necessarily initialised
-	time_step_length = MMin ( time_step_length,max_time_step );
-	time_step_length = MMax ( time_step_length,min_time_step );
+	// get the multiplier
+	double multiplier = 1.0;
+	if (!time_adapt_coe_vector.empty())
+		multiplier = time_adapt_coe_vector.back();
+	for (std::size_t i=0; i<time_adapt_tim_vector.size(); i++ ) {
+		if (n_itr <= time_adapt_tim_vector[i] ) {
+			multiplier = time_adapt_coe_vector[i];
+			break;
+		}
+	}
+	//
+	if (!m_pcs->accepted)
+		multiplier = time_adapt_coe_vector.back();
 
-	ScreenMessage("  ->Self adaptive time stepping: imflag=%d, dt=%g, max iterations=%d, nr. of evaluated processes=%d\n",
-			 imflag,time_step_length,iterdum,iprocs);
+	// update the time step length
+	time_step_length *= multiplier;
+	time_step_length = std::min(time_step_length, max_time_step);
+	time_step_length = std::max(time_step_length, min_time_step);
+
+	ScreenMessage("  ->Self adaptive time stepping: nr. itr=%d, multiplier=%g, next dt=%g\n",
+			 n_itr,multiplier, time_step_length);
+
 	if ( Write_tim_discrete )
 #if defined(USE_PETSC)
 	if (myrank==0)
 #endif
 		*tim_discrete << aktueller_zeitschritt << "  " << aktuelle_zeit << "   " <<	time_step_length << "  " << n_itr << std::endl;
-	//}
 
 //	if (time_step_length<=min_time_step) {
 //		ScreenMessage("-> ***ERROR*** Next time step size %g is less than or equal to the given minimum size %g. The simulation is aborted.\n", time_step_length, min_time_step);
@@ -1530,39 +1488,47 @@ Programing:
 **************************************************************************/
 bool CTimeDiscretization::isDynamicTimeFailureSuggested(CRFProcess *m_pcs)
 {
-	if(m_pcs->iter_nlin > 0 || this->minimum_dt_reached)
-		return false; // only checking on zeroth iteration (also do not fail if already at the minimum allowed dt)
 	//
-	// Currently only for use with DYNAMIC_VARIABLE time control
-	if(time_control_name.find("DYNAMIC_VARIABLE") == std::string::npos)
-		return false;
-	//
-	FiniteElement::ErrorMethod method (FiniteElement::convertErrorMethod(this->dynamic_control_error_method));
-	if(method == m_pcs->m_num->getNonLinearErrorMethod()){ // Same as NL method, can re-use the values
-		for(int ii=0; ii<m_pcs->pcs_num_dof_errors; ii++){
-			if(this->dynamic_failure_threshold > m_pcs->pcs_absolute_error[ii]/this->dynamic_control_tolerance[ii]){
-				return true;
+	if (time_control_type == TimeControlType::DYNAMIC_VARIABLE) {
+		if(m_pcs->iter_nlin > 0 || this->minimum_dt_reached)
+			return false; // only checking on zeroth iteration (also do not fail if already at the minimum allowed dt)
+		//
+		FiniteElement::ErrorMethod method (FiniteElement::convertErrorMethod(this->dynamic_control_error_method));
+		if(method == m_pcs->m_num->getNonLinearErrorMethod()){ // Same as NL method, can re-use the values
+			for(int ii=0; ii<m_pcs->pcs_num_dof_errors; ii++){
+				if(this->dynamic_failure_threshold > m_pcs->pcs_absolute_error[ii]/this->dynamic_control_tolerance[ii]){
+					return true;
+				}
 			}
 		}
-	}
-	else if(method == m_pcs->m_num->getCouplingErrorMethod()){ // Alright, is different from NLS method. How about CPL method?
-		for(int ii=0; ii<m_pcs->cpl_num_dof_errors; ii++){
-			if(this->dynamic_failure_threshold > m_pcs->cpl_absolute_error[ii]/this->dynamic_control_tolerance[ii]){
-				return true;
+		else if(method == m_pcs->m_num->getCouplingErrorMethod()){ // Alright, is different from NLS method. How about CPL method?
+			for(int ii=0; ii<m_pcs->cpl_num_dof_errors; ii++){
+				if(this->dynamic_failure_threshold > m_pcs->cpl_absolute_error[ii]/this->dynamic_control_tolerance[ii]){
+					return true;
+				}
 			}
 		}
-	}
 #if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
-
-	else{ // Alright, this is annoying. Unfortunately we have to recalculate the node errors.
-		m_pcs->CalcIterationNODError(method,false,false);
-		for(int ii=0; ii<m_pcs->temporary_num_dof_errors; ii++){
-			if(this->dynamic_failure_threshold > m_pcs->temporary_absolute_error[ii]/this->dynamic_control_tolerance[ii]){
-				return true;
+		else{ // Alright, this is annoying. Unfortunately we have to recalculate the node errors.
+			m_pcs->CalcIterationNODError(method,false,false);
+			for(int ii=0; ii<m_pcs->temporary_num_dof_errors; ii++){
+				if(this->dynamic_failure_threshold > m_pcs->temporary_absolute_error[ii]/this->dynamic_control_tolerance[ii]){
+					return true;
+				}
 			}
 		}
-	}
 #endif
+	} else if (time_control_type == TimeControlType::SELF_ADAPTIVE) {
+		int n_itr = 0;
+		if (iteration_type==IterationType::LINEAR) {
+			n_itr = m_pcs->iter_lin_max;
+		} else if (iteration_type==IterationType::NONLINEAR) {
+			n_itr = m_pcs->iter_nlin_max;
+		}
+		if (n_itr>=time_adapt_tim_vector.back())
+			return true;
+	}
+
 	//
 	return false;
 }

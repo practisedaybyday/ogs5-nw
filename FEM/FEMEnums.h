@@ -44,12 +44,13 @@ enum ProcessType
 	/// H process, incompressible flow
 	OVERLAND_FLOW,                        //!< OVERLAND_FLOW
 	PS_GLOBAL,                            //!< PS_GLOBAL
-	PTC_FLOW,                             // Fluid flow coupled with heat transport
 	RANDOM_WALK,                          //!< RANDOM_WALK
 	/// H process, incompressible flow
 	RICHARDS_FLOW,                        //!< RICHARDS_FLOW
 	/// H2 process, compressible flow
 	TWO_PHASE_FLOW,                       //!< TWO_PHASE_FLOW
+	/// TH monolithic
+	TH_MONOLITHIC,
 	// make sure that this is always the last entry (important for iterating over the enum entries)!
 	PROCESS_END
 };
@@ -281,6 +282,52 @@ TimType convertTimType(const std::string& st_type_string);
 
 std::string convertTimTypeToString(TimType st_type);
 
+enum NonlinearSolverType
+{
+	INVALID_NL_TYPE = -1,
+	NL_PICARD,
+	NL_NEWTON,
+	NL_JFNK
+};
+
+inline bool isNewtonKind(NonlinearSolverType type)
+{
+	return (type==NL_NEWTON || type==NL_JFNK);
+};
+
 } // end namespace FiniteElement
+
+struct IterationType
+{
+	enum type
+	{
+		INVALID,
+		LINEAR,
+		NONLINEAR,
+		COUPLING
+	};
+};
+
+std::string convertIterationTypeToString(IterationType::type st_type);
+
+struct TimeControlType
+{
+	enum type
+	{
+		INVALID,
+		PI_AUTO_STEP_SIZE,
+		DYNAMIC_VARIABLE,
+		DYNAMIC_COURANT,
+		DYNAMIC_PRESSURE,
+		STEP_SIZE_RESTRICTION,
+		NEUMANN,
+		ERROR_CONTROL_ADAPTIVE,
+		SELF_ADAPTIVE
+	};
+};
+
+TimeControlType::type convertTimeControlType(const std::string &str);
+
+std::string convertTimeControlTypeToString(TimeControlType::type st_type);
 
 #endif                                            //FEMENUMS_H

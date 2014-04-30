@@ -76,6 +76,7 @@ extern int ReadData(char*, GEOLIB::GEOObjects& geo_obj, std::string& unique_name
 #include "rf_REACT_BRNS.h"
 #endif
 #include "rf_kinreact.h"
+#include "rf_pcs_TH.h"
 
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
 #include "PETSC/PETScLinearSolver.h"
@@ -534,7 +535,7 @@ Problem::~Problem()
     3: PS_GLOBAL   | 4: MULTI_PHASE_FLOW  | 5: COMPONENTAL_FLOW
     6: OVERLAND_FLOW   | 7: AIR_FLOW          | 8: HEAT_TRANSPORT
     9: FLUID_MOMENTUM  |10: RANDOM_WALK       |11: MASS_TRANSPORT
-   12: DEFORMATION     |
+   12: DEFORMATION     |13: PTC_FLOW | 14: TH
    Return:
    Programming:
    07/2008 WW
@@ -670,13 +671,13 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		active_processes[3] = &Problem::PS_Global;
 		return 3;
 	}
-	else if (m_pcs->getProcessType() == FiniteElement::PTC_FLOW)
+	else if (m_pcs->getProcessType() == FiniteElement::TH_MONOLITHIC)
 	{
 		if (!activefunc)
-			return 5;
-		total_processes[5] = m_pcs;
-		active_processes[5] = &Problem::PTC_Flow;
-		return 5;
+			return 14;
+		total_processes[14] = m_pcs;
+		active_processes[14] = &Problem::TH_Monolithic;
+		return 14;
 	}
 	std::cout << "Error: no process is specified. " << std::endl;
 	return -1;
@@ -701,7 +702,7 @@ void Problem::SetActiveProcesses()
 {
 	int i;
 	CRFProcess* m_pcs = NULL;
-	const int max_processes = 14;         // PCH
+	const int max_processes = 15;         // PCH
 	total_processes.resize(max_processes);
 	active_processes = new ProblemMemFn[max_processes];
 	coupled_process_index.resize(max_processes);
@@ -808,17 +809,17 @@ void Problem::PCSCreate()
 
 	for (size_t i = 0; i < no_processes; i++)
 	{
-		ScreenMessage2(".............................................\n");
+		ScreenMessage(".............................................\n");
 		FiniteElement::ProcessType pcs_type (pcs_vector[i]->getProcessType());
-		ScreenMessage2("Create: %s\n", FiniteElement::convertProcessTypeToString (pcs_type).c_str());
+		ScreenMessage("Create: %s\n", FiniteElement::convertProcessTypeToString (pcs_type).c_str());
 		//		if (!pcs_vector[i]->pcs_type_name.compare("MASS_TRANSPORT")) {
 		//YS   // TF
 		if (pcs_type != FiniteElement::MASS_TRANSPORT && pcs_type != FiniteElement::FLUID_MOMENTUM
 						&& pcs_type != FiniteElement::RANDOM_WALK)
 		{
-			ScreenMessage2(" for %s pcs_component_number %d\n", pcs_vector[i]->pcs_primary_function_name[0], pcs_vector[i]->pcs_component_number);
+			ScreenMessage(" for %s pcs_component_number %d\n", pcs_vector[i]->pcs_primary_function_name[0], pcs_vector[i]->pcs_component_number);
 		}
-		ScreenMessage2(" ->TIM_TYPE: %s\n", FiniteElement::convertTimTypeToString(pcs_vector[i]->tim_type).c_str());
+		ScreenMessage("-> TIM_TYPE: %s\n", FiniteElement::convertTimTypeToString(pcs_vector[i]->tim_type).c_str());
 		pcs_vector[i]->Create();
 	}
 
@@ -828,7 +829,7 @@ void Problem::PCSCreate()
 #endif
 
 #ifndef WIN32
-	ScreenMessage2("\tcurrent memory: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024));
+	ScreenMessage("\tcurrent memory: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024));
 #endif
 
 	for (size_t i = 0; i < no_processes; i++)
@@ -1055,7 +1056,7 @@ void Problem::Euler_TimeDiscretize()
 #endif
 			if(print_result)
 			{
-				ScreenMessage2("-> output results\n");
+				ScreenMessage("-> output results\n");
 				if(current_time < end_time)
 					force_output = false;
 				else // JT: Make sure we printout on last time step
@@ -1085,7 +1086,7 @@ void Problem::Euler_TimeDiscretize()
 		ScreenMessage("\telapsed time for this time step: %g s\n", v2-v1);
 #endif
 #ifndef WIN32
-		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+		ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
 
 		}
@@ -1149,7 +1150,7 @@ void Problem::Euler_TimeDiscretize()
     {
 		m_tim = total_processes[active_process_index[i]]->Tim;
 		std::cout << "\nFor process: " << convertProcessTypeToString(total_processes[active_process_index[i]]->getProcessType()) << std::endl;
-		if(m_tim->time_control_name == "NONE"){
+		if(m_tim->time_control_type == TimeControlType::INVALID){
 			std::cout << "No time control for this process." << std::endl;
 		}
 		else{
@@ -1268,14 +1269,14 @@ bool Problem::CouplingLoop()
 				inner_max = a_pcs->m_num->cpl_max_iterations;
 //				inner_min = a_pcs->m_num->cpl_min_iterations; // variable set but never used
 				//
-				a_pcs->iter_outer_cpl = outer_index;
-				b_pcs->iter_outer_cpl = outer_index;
+				a_pcs->iter_outer_cpl = outer_index+1;
+				b_pcs->iter_outer_cpl = outer_index+1;
 				//
 				max_inner_error = 0.0;
 				for(inner_index=0; inner_index < a_pcs->m_num->cpl_max_iterations; inner_index++)
 				{
-					a_pcs->iter_inner_cpl = inner_index;
-					b_pcs->iter_inner_cpl = inner_index;
+					a_pcs->iter_inner_cpl = inner_index+1;
+					b_pcs->iter_inner_cpl = inner_index+1;
 					//
 					// FIRST PROCESS
 					loop_process_number = i;
@@ -1322,7 +1323,7 @@ bool Problem::CouplingLoop()
 				// PERFORM AN OUTER COUPLING
 				// ---------------------------------------
 				a_pcs = total_processes[index];
-				a_pcs->iter_outer_cpl = outer_index;
+				a_pcs->iter_outer_cpl = outer_index+1;
 				a_pcs->iter_inner_cpl = 0;
 				//
 				loop_process_number = i;
@@ -1508,7 +1509,6 @@ const std::string& Problem::getGeoObjName () const
    -------------------------------------------------------------------------*/
 inline double Problem::LiquidFlow()
 {
-	int success;
 	double error = 0.;
 	CRFProcess* m_pcs = total_processes[0];
 	if(m_pcs->tim_type==FiniteElement::TIM_STEADY && aktueller_zeitschritt>1)
@@ -1527,6 +1527,7 @@ inline double Problem::LiquidFlow()
 	}
 
 #ifndef OGS_ONLY_TH
+	int success;
 	if(m_pcs->simulator.compare("ECLIPSE") == 0) // use ECLIPSE to calculate one phase liquid flow, BG
 	{
 		if(m_pcs->EclipseData == NULL) //SBG if this is the first call, make a new instance
@@ -1661,7 +1662,6 @@ inline double Problem::TwoPhaseFlow()
 inline double Problem::MultiPhaseFlow()
 {
 	double error = 1.0e+8;
-	int success = 0;                      // BG
 	CRFProcess* m_pcs = total_processes[4];
 	if(!m_pcs->selected)
 		return error;             //12.12.2008 WW
@@ -1689,6 +1689,7 @@ inline double Problem::MultiPhaseFlow()
 	}
 
 #ifndef OGS_ONLY_TH
+	int success = 0;                      // BG
 	if(m_pcs->simulator.compare("ECLIPSE") == 0) // use ECLIPSE to calculate multi-phase flow, BG
 	{
 		if(m_pcs->EclipseData == NULL) //SBG if this is the first call, make a new instance
@@ -2713,26 +2714,6 @@ inline double Problem::PS_Global()
 }
 
 /*-------------------------------------------------------------------------
-   GeoSys - Function: PTC_FLOW()
-   Task: Simulate coupled haet and fluid flow
-   Return: error
-   Programming:
-   02/2011 AKS/NB Implementation
-   Modification:
-   -------------------------------------------------------------------------*/
-inline double Problem::PTC_Flow()
-{
-	double error = 1.0e+8;
-	CRFProcess* m_pcs = total_processes[5];
-	if(!m_pcs->selected)
-		return error;
-	error = m_pcs->ExecuteNonLinear(loop_process_number);    //PTC
-	if(m_pcs->TimeStepAccept())
-		m_pcs->CalIntegrationPointValue();  //PTC
-	return error;
-}
-
-/*-------------------------------------------------------------------------
    GeoSys - Function: GroundWaterFlow()
    Task:
    Return: error
@@ -3283,6 +3264,19 @@ inline double Problem::Deformation()
 		if(dm_pcs->type == 42) // H2M. 07.2011. WW
 			dm_pcs->CalcSecondaryVariablesUnsaturatedFlow();
 	}
+	return error;
+}
+
+inline double Problem::TH_Monolithic()
+{
+	double error = 1.0e+8;
+	CRFProcess* m_pcs = total_processes[14];
+	if(!m_pcs->selected)
+		return error;
+	CRFProcessTH* th_pcs = (CRFProcessTH*)m_pcs;
+	error = th_pcs->Execute(loop_process_number);
+	th_pcs->CalIntegrationPointValue();
+
 	return error;
 }
 

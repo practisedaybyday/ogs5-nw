@@ -107,7 +107,6 @@ private:
 	inline double TwoPhaseFlow();
 	inline double MultiPhaseFlow();
 	inline double PS_Global();            // 03 2009 PCH
-	inline double PTC_Flow();            // 02 2011 AKS/NB
 	inline double GroundWaterFlow();
 	inline double ComponentalFlow();
 	inline double OverlandFlow();
@@ -117,6 +116,7 @@ private:
 	inline double RandomWalker();
 	inline double MassTrasport();
 	inline double Deformation();
+	inline double TH_Monolithic();
 	// Accessory
 	void LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global, int loop_process_number);
 	void LOPCalcELEResultants();

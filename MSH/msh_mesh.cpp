@@ -320,7 +320,7 @@ void CFEMesh::computeSearchLength(double c)
 	const size_t n(edge_vector.size());
 
 	if (n==0) {
-		std::cerr << "[CFEMesh::computeSearchLength] no edges found for computing _search_length, setting _search_lenght to " << 1e-3 << std::endl;
+		ScreenMessaged("[CFEMesh::computeSearchLength] no edges found for computing _search_length, setting _search_lenght to %g\n", 1e-3);
 		_search_length = 1e-3;
 		return;
 	}
@@ -875,7 +875,7 @@ void CFEMesh::ConstructGrid()
 	max_dim = coordinate_system / 10 - 1;
 	//----------------------------------------------------------------------
 	// Gravity center
-    ScreenMessage2("-> compute gravity center ... \n");
+	//ScreenMessage2("-> compute gravity center ... \n");
 	for (size_t e = 0; e < e_size; e++)
 		ele_vector[e]->ComputeGravityCenter();  //NW
 	//----------------------------------------------------------------------

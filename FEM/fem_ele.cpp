@@ -96,7 +96,6 @@ CElement::CElement(int CoordFlag, const int order)
 	C_Flag = MASS_TRANSPORT_Process;
 	PT_Flag = 0;                          // PCH Initialize to be no RWPT.
 	RD_Flag = RD_Process;
-	PTC_Flag = PTC_FLOW_Process;
 #endif
 
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
@@ -105,9 +104,15 @@ CElement::CElement(int CoordFlag, const int order)
 	local_idx = NULL; //> local index for local assemble
 	//local_matrix = NULL; //>  local matrix 
 	//local_vec = NULL; //>  local vector  
+	act_nodes = act_nodes_h = 0;
 #endif
-
-
+	element_nodes_dom = NULL;
+	gp = 0;
+	idx_c0 = idx_c1 = 0;
+	Index = 0;
+	nnodes = nnodesHQ = nNodes = 0;
+	Radius = .0;
+	Xi_p = .0;
 }
 
 //  Destructor of class Element
@@ -401,13 +406,8 @@ void CElement::ConfigNumerics(MshElemType::type ele_type)
 **************************************************************************/
 double CElement::interpolate(double* nodalVal, const int order) const
 {
-	int nn = nnodes;
-	double* inTerpo = shapefct;
-	if(order == 2)
-	{
-		nn = nnodes;
-		inTerpo = shapefctHQ;
-	}
+	const int nn = (order == 2) ? nnodesHQ : nnodes;
+	double const * const inTerpo = (order == 2) ? shapefctHQ : shapefct;
 	double val = 0.0;
 	for(int i = 0; i < nn; i++)
 		val += nodalVal[i] * inTerpo[i];

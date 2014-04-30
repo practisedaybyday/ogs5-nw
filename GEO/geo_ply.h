@@ -141,16 +141,16 @@ public:
 	double center_point[3];
 };
 
-class CSoilProfile : public CGLPolyline  //YD
-{
-public:
-	CSoilProfile();
-	~CSoilProfile();
-	long profile_type;
-	std::string soil_name;
-	std::vector<long> soil_type;
-	std::vector<double>soil_layer_thickness;
-};
+//class CSoilProfile : public CGLPolyline  //YD
+//{
+//public:
+//	CSoilProfile();
+//	~CSoilProfile();
+//	long profile_type;
+//	std::string soil_name;
+//	std::vector<long> soil_type;
+//	std::vector<double>soil_layer_thickness;
+//};
 
 extern void COLDeleteLines();
 extern void COLDelete();
@@ -158,5 +158,5 @@ extern CColumn* COLGet(int);
 extern CColumn* COLGet(const std::string &);
 
 extern std::vector<CColumn*>column_vector;
-extern std::vector<CSoilProfile*>profile_vector;  //YD
+//extern std::vector<CSoilProfile*>profile_vector;  //YD
 #endif

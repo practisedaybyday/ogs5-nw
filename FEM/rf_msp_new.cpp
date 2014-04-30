@@ -1063,15 +1063,20 @@ double CSolidProperties::Heat_Conductivity(double refence)
    last modification:
    ToDo: geo_dimension
 **************************************************************************/
-void CSolidProperties::HeatConductivityTensor(const int dim, double* tensor, int group)
+void CSolidProperties::HeatConductivityTensor(const int dim, double* tensor, int /*group*/, double* variables)
 {
-	group = group;                        //OK411
 	//static double tensor[9];
 	double temperature = 0.0;
 	double saturation = 0.0;
 	int i = 0;
 	//WW
-	CalPrimaryVariable(conductivity_pcs_name_vector);
+	if (variables) {
+		primary_variable[0] = variables[0];
+		primary_variable[1] = variables[1];
+		primary_variable[2] = variables[2];
+	} else {
+		CalPrimaryVariable(conductivity_pcs_name_vector);
+	}
 	//--------------------------------------------------------------------
 	// MMP medium properties
 	//WW CMediumProperties *m_mmp = NULL;
@@ -1105,6 +1110,7 @@ void CSolidProperties::HeatConductivityTensor(const int dim, double* tensor, int
 		"***Error in CSolidProperties::HeatConductivityTensor(): conductivity mode is not supported "
 		     << endl;
 		//base_thermal_conductivity = Heat_Conductivity();
+		break;
 	}
 
 	//--------------------------------------------------------------------
@@ -2611,7 +2617,7 @@ void CSolidProperties::TangentialDPwithTension(Matrix* Dep, double mm)
 }
 
 //WX: return to corner
-void CSolidProperties::TangentialDPwithTensionCorner(Matrix* Dep, double mm)
+void CSolidProperties::TangentialDPwithTensionCorner(Matrix* Dep, double /*mm*/)
 {
 	//return to corner
 	*Dep = *ConstitutiveMatrix;
@@ -3384,7 +3390,7 @@ void CSolidProperties::VecCrossProduct(double* vec1, double* vec2, double* resul
 	result_vec[2] = vec1[0] * vec2[1] + vec1[1] * vec1[0];
 }
 //calculate constitutive matrix when return to a line
-void CSolidProperties::CalDep_l(double* vecl, double* veclg, Matrix* D, Matrix* Dep_l, double fkt)
+void CSolidProperties::CalDep_l(double* vecl, double* veclg, Matrix* D, Matrix* Dep_l, double /*fkt*/)
 {
 	double TmpVec[6] = {0.};
 	double TmpVal = 0.;

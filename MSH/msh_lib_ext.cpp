@@ -80,6 +80,7 @@ void FEMRead(const string& file_base_name,
 	CFEMesh *mesh = new CFEMesh(geo_obj, unique_name);
 	mesh_vec.push_back(mesh);
 
+	ScreenMessage("-> Parallel reading the partitioned mesh\n");
 	for(int i=0; i<mysize; i++)
 	{
 		if(myrank == 0)
@@ -94,7 +95,6 @@ void FEMRead(const string& file_base_name,
 			getline(is, str_var);
 #endif
 
-			ScreenMessage("-->Parallel reading the partitioned mesh\n");
 			//cout<<"-->Parallel reading the partitioned mesh: "<<i<<endl;
 
 			for (int j=0; j<nheaders; j++)
@@ -276,7 +276,7 @@ void FEMRead(const string& file_base_name,
 	if (mysize>1)
 		MPI_Type_free(&MPI_node);
 
-	ScreenMessage2("-> mesh: %d nodes, %d elements\n", mesh->nod_vector.size(), mesh->ele_vector.size());
+	ScreenMessage2d("-> mesh: %d nodes, %d elements\n", mesh->nod_vector.size(), mesh->ele_vector.size());
 
 	MPI_Barrier (MPI_COMM_WORLD);
 	mesh->ConstructGrid();
@@ -544,7 +544,7 @@ int CFEMesh::calMaximumConnectedNodes()
      if(k > max_connected_nodes)
        max_connected_nodes = k; 
    }
-   ScreenMessage2("-> max. connected nodes = %d\n", max_connected_nodes);
+   ScreenMessage2d("-> max. connected nodes = %d\n", max_connected_nodes);
   
    int msize;
    //int mrank;

@@ -56,18 +56,82 @@ namespace FiniteElement
 //========================================================================
 // Element calculation
 //========================================================================
+
+EnumProcessType getEnumProcessType(CRFProcess* pcs)
+{
+	EnumProcessType PcsType = EnumProcessType_INVALID;
+	char pcsT = (convertProcessTypeToString (pcs->getProcessType()))[0];
+	if (pcs->getProcessType () == AIR_FLOW) //OK
+		pcsT = 'A';
+	else if (pcs->getProcessType () == MULTI_PHASE_FLOW)
+		pcsT = 'V';               // Non-isothermal multiphase flow
+	else if(pcs->getProcessType () == DEFORMATION_H2) // 09.08.2010 WW
+		pcsT = 'V';               // Non-isothermal multiphase flow
+	else if(pcs->getProcessType () == DEFORMATION_FLOW) // NW
+		pcsT = 'L';
+
+	switch (pcsT)
+	{
+	default:
+		break;
+	case 'L':                             // Liquid flow
+		PcsType = L;
+		break;
+	case 'U':                             // Unconfined flow
+		PcsType = U;
+		break;
+	case 'G':                             // Groundwater flow
+		PcsType = G;
+		break;
+	case 'T':                             // Two-phase flow
+		PcsType = T;
+		break;
+	case 'C':                             // Componental flow
+		PcsType = C;
+		break;
+	case 'H':                             // heat transport
+		PcsType = H;
+		break;
+	case 'M':                             // Mass transport
+		PcsType = M;
+		break;
+	case 'O':                             // Overland flow
+		PcsType = O;
+		break;
+	case 'R':                             //OK4104 Richards flow
+		PcsType = R;
+		break;
+	case 'A':                             // Air (gas) flow
+		PcsType = A;
+		break;
+	case 'F':                             // Fluid Momentum Process
+		PcsType = R;              // R should include L if the eqn of R is written right.
+		break;
+	case 'V':                             // 24.02.2007 WW
+		PcsType = V;
+		break;
+	case 'P':                             // 04.03.2009 PCH
+		PcsType = P;
+		break;
+	}
+
+	if (pcs->getProcessType()==FiniteElement::TH_MONOLITHIC)
+		PcsType = TH;
+	return PcsType;
+}
+
 /**************************************************************************
    GeoSys - Function: Constructor
    Programmaenderungen:
    01/2005   WW    Erste Version
 **************************************************************************/
-CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, const int order)
+CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, const int order, const EnumProcessType pcsType)
 	: CElement(C_Sys_Flad, order), phase(0), comp(0), SolidProp(NULL),
 	  FluidProp(NULL), MediaProp(NULL),
 	  pcs(Pcs), dm_pcs(NULL), HEAD_Flag(false)
 {
 	int i;
-      int size_m = 64;                            //25.2.2007
+	int size_m = 64;                            //25.2.2007
 	string name2;
 	char name1[MAX_ZEILE];
 	cpl_pcs = NULL;
@@ -101,9 +165,15 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, con
 	NodalVal_SatNW = new double[size_m];
 	NodalVal_p2 = new double[size_m];
 	NodalVal_p20 = new double [size_m];   //AKS
-	NodalVal_t0 = new double [size_m];    //AKS/NB
-	NodalVal_t1 = new double [size_m];    //AKS/NB
+	NodalVal_T0 = new double [size_m];    //AKS/NB
+	NodalVal_T1 = new double [size_m];    //AKS/NB
+	NodalVal_p0 = new double [size_m];    //AKS/NB
+	NodalVal_p1 = new double [size_m];    //AKS/NB
 	mat = new double[9];                  // WW
+#if 0
+	fem1 = NULL;
+	fem2 = NULL;
+#endif
 	//NW
 	switch (C_Sys_Flad / 10)
 	{
@@ -152,45 +222,15 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, con
 
 	idx0 = idx1 = 0;                      // column index in the node value data
 	LocalShift = 0;
-	//	pcsT = pcs->pcs_type_name[0]; // TF
-	pcsT = (convertProcessTypeToString (pcs->getProcessType()))[0];
-	//	if (pcs->pcs_type_name.find("AIR") != string::npos) //OK // TF commented out
-	if (pcs->getProcessType () == AIR_FLOW) //OK
-		pcsT = 'A';
-	else if (pcs->getProcessType () == PTC_FLOW) //OK
-		pcsT = 'S';
-	//	if (pcs->pcs_type_name.find("MULTI") != string::npos) // 24.02.2007 WW
-	// 24.02.2007 WW
-	else if (pcs->getProcessType () == MULTI_PHASE_FLOW)
-		pcsT = 'V';               // Non-isothermal multiphase flow
-	else if(pcs->getProcessType () == DEFORMATION_H2) // 09.08.2010 WW
-		pcsT = 'V';               // Non-isothermal multiphase flow
-	else if(pcs->getProcessType () == DEFORMATION_FLOW) // NW
-		pcsT = 'L';
 
-	switch (pcsT)
+	if (pcsType==EnumProcessType_INVALID)
+		PcsType = getEnumProcessType(pcs);
+	else
+		PcsType = pcsType;
+
+	switch (PcsType)
 	{
-	default:
-		PcsType = L;
-		//WW GravityMatrix = new  SymMatrix(size_m);
-		if (dynamic)
-		{
-			idx0 = pcs->GetNodeValueIndex("PRESSURE_RATE1");
-			idx1 = idx0 + 1;
-			idx_pres = pcs->GetNodeValueIndex("PRESSURE1");
-			idx_vel_disp[0] = pcs->GetNodeValueIndex("VELOCITY_DM_X");
-			idx_vel_disp[1] = pcs->GetNodeValueIndex("VELOCITY_DM_Y");
-			if (dim == 3)
-				idx_vel_disp[2] = pcs->GetNodeValueIndex("VELOCITY_DM_Z");
-		}
-		else
-		{
-			idx0 = pcs->GetNodeValueIndex("PRESSURE1");
-			idx1 = idx0 + 1;
-		}
-		break;
-	case 'L':                             // Liquid flow
-		PcsType = L;
+	case L:                             // Liquid flow
 		// 02.2.2007 GravityMatrix = new  SymMatrix(size_m);
 		if (dynamic)
 		{
@@ -211,11 +251,7 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, con
 		idx_vel[1] = pcs->GetNodeValueIndex("VELOCITY_Y1");
 		idx_vel[2] = pcs->GetNodeValueIndex("VELOCITY_Z1");
 		break;
-	case 'U':                             // Unconfined flow
-		PcsType = U;
-		break;
-	case 'G':                             // Groundwater flow
-		PcsType = G;
+	case G:                             // Groundwater flow
 		idx0 = pcs->GetNodeValueIndex("HEAD");
 		idx1 = idx0 + 1;
 		//WW
@@ -225,30 +261,21 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, con
 		//WW
 		idx_vel[2] =  pcs->GetNodeValueIndex("VELOCITY_Z1");
 		break;
-	case 'T':                             // Two-phase flow
-		PcsType = T;
-		break;
-	case 'C':                             // Componental flow
-		PcsType = C;
-		break;
-	case 'H':                             // heat transport
-		PcsType = H;
+	case H:                             // heat transport
 		idx0 = pcs->GetNodeValueIndex("TEMPERATURE1");
 		idx1 = idx0 + 1;
 		break;
-	case 'M':                             // Mass transport
-		PcsType = M;
+	case M:                             // Mass transport
 		sprintf(name1, "%s", pcs->pcs_primary_function_name[0]);
 		name2 = name1;
 		idx0 = pcs->GetNodeValueIndex(name2);
 		idx1 = idx0 + 1;
 		break;
-	case 'O':                             // Liquid flow
-		PcsType = O;
+	case O:                             // Liquid flow
 		edlluse = new double [16]; //WW
 		edttuse = new double [16];
 		break;
-	case 'R':                             //OK4104 Richards flow
+	case R:                             //OK4104 Richards flow
 		// 02.2.2007 GravityMatrix = new  SymMatrix(size_m);
 		idx0 = pcs->GetNodeValueIndex("PRESSURE1");
 		idx1 = idx0 + 1;
@@ -266,18 +293,12 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, con
 			for (i = 0; i < pcs->pcs_number_of_primary_nvals; i++)
 				NodeShift[i] = i * pcs->m_msh->GetNodesNumber(false);
 		}
-		PcsType = R;
 		break;
-	case 'A':                             // Air (gas) flow
-		PcsType = A;
-		//OK
+	case A:                             // Air (gas) flow
 		idx0 = pcs->GetNodeValueIndex("PRESSURE1");
 		idx1 = idx0 + 1;          //OK
 		break;
-	case 'F':                             // Fluid Momentum Process
-		PcsType = R;              // R should include L if the eqn of R is written right.
-		break;
-	case 'V':                             // 24.02.2007 WW
+	case V:                             // 24.02.2007 WW
 		// // 02.2.2007 GravityMatrix = new  SymMatrix(size_m);
 		//12.12.2007 WW
 		for (i = 0; i < pcs->pcs_number_of_primary_nvals; i++)
@@ -291,10 +312,9 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, con
 		idx_vel[0] = pcs->GetNodeValueIndex("VELOCITY_X1");
 		idx_vel[1] = pcs->GetNodeValueIndex("VELOCITY_Y1");
 		idx_vel[2] = pcs->GetNodeValueIndex("VELOCITY_Z1");
-		PcsType = V;
 		size_m = 40;
 		break;
-	case 'P':                             // 04.03.2009 PCH
+	case P:                             // 04.03.2009 PCH
 		for (i = 0; i < pcs->pcs_number_of_primary_nvals; i++)
 			NodeShift[i] = i * pcs->m_msh->GetNodesNumber(false);
 		//
@@ -306,10 +326,52 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, con
 		idx_vel[0] = pcs->GetNodeValueIndex("VELOCITY_X1");
 		idx_vel[1] = pcs->GetNodeValueIndex("VELOCITY_Y1");
 		idx_vel[2] = pcs->GetNodeValueIndex("VELOCITY_Z1");
-		PcsType = P;
 		size_m = 40;
 		break;
+	case TH:
+		for (i = 0; i < pcs->pcs_number_of_primary_nvals; i++)
+			NodeShift[i] = i * pcs->m_msh->GetNodesNumber(false);
+#if 0
+		fem1 = new CFiniteElementStd(pcs,C_Sys_Flad,order,L);
+		fem2 = new CFiniteElementStd(pcs,C_Sys_Flad,order,H);
+#else
+		idxp0 = pcs->GetNodeValueIndex("PRESSURE1");
+		idxp1 = idxp0 + 1;
+		idxT0 = pcs->GetNodeValueIndex("TEMPERATURE1");
+		idxT1 = idxT0 + 1;
+		idx_vel[0] = pcs->GetNodeValueIndex("VELOCITY_X1");
+		idx_vel[1] = pcs->GetNodeValueIndex("VELOCITY_Y1");
+		idx_vel[2] = pcs->GetNodeValueIndex("VELOCITY_Z1");
+#endif
+		size_m = 40;
+		break;
+	case U:                             // Unconfined flow
+	case T:                             // Two-phase flow
+	case C:                             // Componental flow
+	case F:                             // Fluid Momentum Process
+		break;
+	default:
+#if 0
+		//WW GravityMatrix = new  SymMatrix(size_m);
+		if (dynamic)
+		{
+			idx0 = pcs->GetNodeValueIndex("PRESSURE_RATE1");
+			idx1 = idx0 + 1;
+			idx_pres = pcs->GetNodeValueIndex("PRESSURE1");
+			idx_vel_disp[0] = pcs->GetNodeValueIndex("VELOCITY_DM_X");
+			idx_vel_disp[1] = pcs->GetNodeValueIndex("VELOCITY_DM_Y");
+			if (dim == 3)
+				idx_vel_disp[2] = pcs->GetNodeValueIndex("VELOCITY_DM_Z");
+		}
+		else
+		{
+			idx0 = pcs->GetNodeValueIndex("PRESSURE1");
+			idx1 = idx0 + 1;
+		}
+#endif
+		break;
 	}
+
 	if (pcs->Memory_Type == 0)            // Do not store local matrices
 	{
 		// 04.03.2009 PCH
@@ -318,11 +380,13 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, con
 		else
 			Mass = new Matrix(size_m, size_m);
 		Laplace = new Matrix(size_m, size_m);
-		if (pcsT == 'H' || pcsT == 'M' || pcsT == 'A' || pcsT == 'S')
+		if (PcsType == H || PcsType == M || PcsType == A)
 		{
 			Advection = new Matrix(size_m, size_m);
 			Storage = new Matrix(size_m, size_m);
 			Content = new Matrix(size_m, size_m);
+		} else if (PcsType == TH) {
+			Advection = new Matrix(size_m, size_m);
 		}
 		if (D_Flag)
 			StrainCoupling = new Matrix(size_m, 60);
@@ -334,7 +398,6 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, con
 	AuxMatrix1 = new Matrix(size_m, size_m);
 
 	if (this->pcs->m_num->fct_method > 0) //NW
-
 		FCT_MassL = new DiagonalMatrix(size_m);
 	time_unit_factor = pcs->time_unit_factor;
 
@@ -354,7 +417,21 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, con
 	//local_matrix = new double[size_m * size_m]; //> local matrix
 	//local_vec = new double[size_m]; //> local vector
 #endif
-
+	add2global = false;
+	dof_index = 0;
+	drho_gw_dT = .0;
+	dSdp =.0;
+	GasProp = NULL;
+	index = 0;
+	M_g = 0;
+	mfp_pcs = NULL;
+	p_gw = .0;
+	PG = PG0 = PG2 = PG20 = 0;
+	poro = 0;
+	rho_g = rho_ga = rho_gw = rhow = 0;
+	Sw = 0;
+	TG = TG0 = 0;
+	tort = 0;
 }
 
 /**************************************************************************
@@ -427,8 +504,10 @@ CFiniteElementStd::~CFiniteElementStd()
 		delete [] idx_vel_disp;
 	delete [] idx_vel;
 	delete [] NodalVal_p20;               //AKS
-	delete [] NodalVal_t0;
-    delete [] NodalVal_t1;
+	delete [] NodalVal_T0;
+	delete [] NodalVal_T1;
+	delete [] NodalVal_p0;
+	delete [] NodalVal_p1;
 	//NW
 	if(weight_func)
 		delete [] weight_func;    // Remove bug. WW
@@ -446,7 +525,7 @@ CFiniteElementStd::~CFiniteElementStd()
 void CFiniteElementStd::SetMemory()
 {
 	int Size = nnodes;
-	if(PcsType == V || PcsType == P) //4.3.2009 PCH
+	if(PcsType == V || PcsType == P || PcsType == TH) //4.3.2009 PCH
 		Size *= 2;
 	ElementMatrix* EleMat = NULL;
 	// Prepare local matrices
@@ -456,13 +535,15 @@ void CFiniteElementStd::SetMemory()
 		if(PcsType == V || PcsType == P) //04.3.2009 PCH
 			Mass2->LimitSize(Size, Size);
 		else
-			Mass->LimitSize(nnodes, nnodes);  // Mass->LimitSize(nnodes); // unsymmetric in case of Upwinding
+			Mass->LimitSize(Size, Size);  // Mass->LimitSize(nnodes); // unsymmetric in case of Upwinding
 		Laplace->LimitSize(Size, Size);
 		if(PcsType == H || PcsType == M || PcsType == A)
 		{
 			Advection->LimitSize(Size, Size); //SB4200
 			Storage->LimitSize(Size, Size); //SB4200
 			Content->LimitSize(Size, Size); //SB4209
+		} else if (PcsType==TH) {
+			Advection->LimitSize(Size, Size);
 		}
 
 		if(PcsType == R && pcs->type == 22) //dual-porosity. WW
@@ -498,7 +579,6 @@ void CFiniteElementStd::SetMemory()
 	AuxMatrix->LimitSize(Size, Size);
 	AuxMatrix1->LimitSize(Size, Size);
 	if (this->pcs->m_num->fct_method > 0) //NW
-
 		FCT_MassL->LimitSize(Size);
 }
 
@@ -515,24 +595,12 @@ void CFiniteElementStd::SetMemory()
 **************************************************************************/
 void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, bool dyn)
 {
-	char pcsT;
-	//  pcsT = pcs->pcs_type_name[0]; // TF
-	// TF
-	ProcessType pcs_type (pcs->getProcessType());
-	pcsT = convertProcessTypeToString(pcs_type)[0];
-
-	//  if(pcs->pcs_type_name.find("AIR")!=string::npos) //OK
-	if(pcs_type == AIR_FLOW)              //OK
-		pcsT = 'A';
-	if(pcs_type == MULTI_PHASE_FLOW)      //24.2.2007 WW
-		pcsT = 'V';
-	if(pcs_type == PTC_FLOW)              //Feb 2011 AKS/NB
-		pcsT = 'S';
+	//ProcessType pcs_type (pcs->getProcessType());
+	EnumProcessType CplPcsType = getEnumProcessType(pcs);
 
 	if (D_Flag > 0)
 	{
 		for (size_t i = 0; i < pcs_vector.size(); i++)
-			//			if(pcs_vector[i]->pcs_type_name.find("DEFORMATION")!=string::npos){
 			if (isDeformationProcess(pcs_vector[i]->getProcessType()))
 			{
 				dm_pcs = (CRFProcessDeformation*) pcs_vector[i];
@@ -564,7 +632,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 				NodeShift[i] = Shift[i];
 	}
 
-	switch(pcsT)
+	switch(CplPcsType)
 	{
 	default:
 		if(T_Flag)
@@ -574,7 +642,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
-	case 'L':                             // Liquid flow
+	case L:                             // Liquid flow
 		if(T_Flag)
 		{
 			cpl_pcs = PCSGet("HEAT_TRANSPORT");
@@ -582,9 +650,9 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
-	case 'U':                             // Unconfined flow
+	case U:                             // Unconfined flow
 		break;
-	case 'G':                             // Groundwater flow
+	case G:                             // Groundwater flow
 		if(T_Flag)
 		{
 			cpl_pcs = PCSGet("HEAT_TRANSPORT");
@@ -592,7 +660,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
-	case 'T':                             // Two-phase flow
+	case T:                             // Two-phase flow
 		if(pcs->pcs_type_number == 0)
 		{
 			cpl_pcs = pcs_vector[pcs->pcs_number + 1];
@@ -606,7 +674,8 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
-	case 'S':                             // Multi-phase flow. 24.2.2007 WW
+#if 0
+	case S:                             // Multi-phase flow. 24.2.2007 WW
 		if(C_Flag)                //if(PCSGet("HEAT_TRANSPORT"))
 		{
 			cpl_pcs = PCSGet("MASS_TRANSPORT");
@@ -614,9 +683,10 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
-	case 'C':                             // Componental flow
+#endif
+	case C:                             // Componental flow
 		break;
-	case 'H':                             // heat transport
+	case H:                             // heat transport
 		//SB CMCD this needs to be fixed
 		cpl_pcs = PCSGet("GROUNDWATER_FLOW");
 		if(cpl_pcs)               //WW
@@ -660,12 +730,12 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			}
 		}
 		break;
-	case 'M':                             // Mass transport
-		if((PTC_Flag)||(C_Flag && T_Flag))
+	case M:                             // Mass transport
+		if(C_Flag && T_Flag)
 		{
 			if(cpl_pcs == NULL)
 			{
-				cpl_pcs = PCSGet("PTC_FLOW");
+				cpl_pcs = PCSGetFlow();
 				if(cpl_pcs)
 					idx_c0 = cpl_pcs->GetNodeValueIndex("PRESSURE1");
 				idx_c1 = idx_c0 + 1;
@@ -678,9 +748,9 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
-	case 'O':                             // Liquid flow
+	case O:                             // Liquid flow
 		break;
-	case 'R':                             // Richards flow
+	case R:                             // Richards flow
 		if(T_Flag)                //if(PCSGet("HEAT_TRANSPORT"))
 		{
 			cpl_pcs = PCSGet("HEAT_TRANSPORT");
@@ -688,7 +758,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
-	case 'V':                             // Multi-phase flow. 24.2.2007 WW
+	case V:                             // Multi-phase flow. 24.2.2007 WW
 		if(T_Flag)                //if(PCSGet("HEAT_TRANSPORT"))
 		{
 			cpl_pcs = PCSGet("HEAT_TRANSPORT");
@@ -696,7 +766,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
-	case 'A':                             //Gas flow
+	case A:                             //Gas flow
 		if(T_Flag)                //NB 23.01.2009 4.9.05
 		{
 			cpl_pcs = PCSGet("HEAT_TRANSPORT");
@@ -704,7 +774,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
-	case 'P':                             // Multi-phase flow. 03.03.2009 PCH
+	case P:                             // Multi-phase flow. 03.03.2009 PCH
 		if(T_Flag)
 		{
 			cpl_pcs = PCSGet("HEAT_TRANSPORT");
@@ -724,9 +794,9 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
    06/2009 OK MMP test not here (time consuming)
    01/2010 NW Set geo_area here
  **************************************************************************/
-void CFiniteElementStd::SetMaterial(int phase)
+void CFiniteElementStd::SetMaterial(int /*phase*/)
 {
-	phase = 0;
+//	phase = 0;
 	//----------------------------------------------------------------------
 	// MMP
 	int mmp_index = 0;
@@ -2007,7 +2077,7 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 	int Index = MeshElement->GetIndex();
 	double k_rel;
 	ComputeShapefct(1);                   //  12.3.2007 WW
-	double variables[3];                  //OK4709
+	//double variables[3];                  //OK4709
 	int tr_phase = 0;                     // SB, BG
 	double perm_effstress=1.;//AS:08.2012
 	//WX:12.2012 perm depends on p or strain, same as CalCoefLaplace2
@@ -2022,6 +2092,7 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 	{
 	default:
 		break;
+	case TH:
 	case L:                               // Liquid flow
 		tensor = MediaProp->PermeabilityTensor(Index);
 		//AS:08.2012 permeability function eff stress
@@ -2033,14 +2104,14 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 		}
 
 		//if (ele_dim != dim)
-        if (dim > MediaProp->geo_dimension)
+		if (dim > MediaProp->geo_dimension)
 		{
 			Matrix local_tensor(dim,dim);
 			Matrix temp_tensor(dim,dim);
-            if (MeshElement->transform_tensor==NULL) {
-                std::cout << "***Error: Geometric dimension in MMP is not consistent with element." << std::endl;
-                exit(0);
-            }
+			if (MeshElement->transform_tensor==NULL) {
+				std::cout << "***Error: Geometric dimension in MMP is not consistent with element." << std::endl;
+				exit(0);
+			}
 			Matrix t_transform_tensor(*MeshElement->transform_tensor);
 			MeshElement->transform_tensor->GetTranspose(t_transform_tensor);
 			Matrix global_tensor(dim,dim);
@@ -2059,14 +2130,17 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 				for(size_t j = 0; j < dim; j++)
 					tensor[dim * i + j] = global_tensor(i,j);
 		}
+#if 0
 		variables[0] = interpolate(NodalVal1); //OK4709 pressure
 		if(T_Flag)
-		variables[1] = interpolate(NodalValC); //OK4709 temperature
+			variables[1] = interpolate(NodalValC); //OK4709 temperature
 		else
 			variables[1] = 15;//WX
-
-		                                       //OK4709
+		//OK4709
 		mat_fac = FluidProp->Viscosity(variables);
+#else
+		mat_fac = FluidProp->Viscosity();
+#endif
 		//OK4709 mat_fac = FluidProp->Viscosity();
 		if(gravity_constant < MKleinsteZahl) // HEAD version
 			mat_fac = 1.0;
@@ -2435,10 +2509,8 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
    Programing:
    10/2008 PCH Implementation
 **************************************************************************/
-void CFiniteElementStd::CalCoefLaplaceMultiphase(int phase, int ip)
+void CFiniteElementStd::CalCoefLaplaceMultiphase(int phase, int /*ip*/)
 {
-	ip = ip;                              //OK411
-
 	int i = 0;
 	double mat_fac = 1.0;
 	double* tensor = NULL;
@@ -2915,9 +2987,8 @@ int CFiniteElementStd::UpwindElement(int option, int phase)
    last modification:
 **************************************************************************/
 //void CFiniteElementStd::UpwindUnitCoord(int p, int point, int ind, double *rupw, double *supw, double *tupw)
-void CFiniteElementStd::UpwindUnitCoord(int p, int point, int ind)
+void CFiniteElementStd::UpwindUnitCoord(int /*p*/, int point, int ind)
 {
-	p = p;                                //OK411
 	double scale;
 	double alpha[3];
 	int gp_r, gp_s, gp_t;
@@ -3367,15 +3438,15 @@ void CFiniteElementStd::CalcMass()
 	double fkt,mat_fac;
 	// Material
 	mat_fac = 1.0;
-	double alpha[3], summand[8];
 	double vel[3];                        //NW
 	//  int indice = MeshElement->GetIndex();
 	//  int phase = pcs->pcs_type_number;
-	int upwind_method = pcs->m_num->ele_upwind_method;
-	MNulleVec(alpha,3);
-	MNulleVec(summand,8);
 
 #ifndef OGS_ONLY_TH
+	int upwind_method = pcs->m_num->ele_upwind_method;
+	double alpha[3], summand[8];
+	MNulleVec(alpha,3);
+	MNulleVec(summand,8);
 	if(PcsType == T)
 		if(upwind_method > 0)
 		{
@@ -3509,7 +3580,7 @@ void CFiniteElementStd::CalcMass()
    12/2009 NW
    last modification:
 **************************************************************************/
-double CFiniteElementStd::CalcSUPGCoefficient(double* vel,int ip)
+double CFiniteElementStd::CalcSUPGCoefficient(double* vel,int ip, const double* diff_tensor)
 {
 	//--------------------------------------------------------------------
 	// Collect following information to determine SUPG coefficient
@@ -3525,14 +3596,16 @@ double CFiniteElementStd::CalcSUPGCoefficient(double* vel,int ip)
 	// Characteristic element length
 	double ele_len = CalcSUPGEffectiveElemenetLength(vel);
 	// Diffusivity = (effective heat conductivity) / (fluid heat capacity)
-	double* dispersion_tensor = NULL;
-	if (PcsType == H)                     //heat
+	const double* dispersion_tensor = diff_tensor;
+	if (diff_tensor==NULL) {
+		if (PcsType == H || PcsType == TH)                     //heat
+			dispersion_tensor = MediaProp->HeatConductivityTensor(MeshElement->GetIndex());
+		//mass
+		else if (PcsType == M)
+			// SB, BG
+			dispersion_tensor = MediaProp->MassDispersionTensorNew(ip, 0);
+	}
 
-		dispersion_tensor = MediaProp->HeatConductivityTensor(MeshElement->GetIndex());
-	//mass
-	else if (PcsType == M)
-		// SB, BG
-		dispersion_tensor = MediaProp->MassDispersionTensorNew(ip, 0);
 	double diff = .0;
 	switch (pcs->m_num->ele_supg_method_diffusivity)
 	{
@@ -3561,22 +3634,26 @@ double CFiniteElementStd::CalcSUPGCoefficient(double* vel,int ip)
 				max_diff = dispersion_tensor[i];
 		diff = max_diff;
 	}
+	break;
 	}
-	if (PcsType == H)                     //heat
-	{
-		if (FluidProp->density_model == 14)
+
+	if (diff_tensor==NULL) {
+		if (PcsType == H || PcsType == TH)                     //heat
 		{
-			double dens_arg[3]; //AKS
-			int Index = MeshElement->GetIndex();
-			dens_arg[0] = interpolate(NodalValC1);
-			dens_arg[1] = interpolate(NodalVal1) + T_KILVIN_ZERO;
-			dens_arg[2] = Index;
-			diff /=
-			        (FluidProp->SpecificHeatCapacity(dens_arg) *
-			         FluidProp->Density(dens_arg));
+			if (FluidProp->density_model == 14)
+			{
+				double dens_arg[3]; //AKS
+				int Index = MeshElement->GetIndex();
+				dens_arg[0] = interpolate(NodalValC1);
+				dens_arg[1] = interpolate(NodalVal1) + T_KILVIN_ZERO;
+				dens_arg[2] = Index;
+				diff /=
+				        (FluidProp->SpecificHeatCapacity(dens_arg) *
+				         FluidProp->Density(dens_arg));
+			}
+			else
+				diff /= (FluidProp->SpecificHeatCapacity() * FluidProp->Density());
 		}
-		else
-			diff /= (FluidProp->SpecificHeatCapacity() * FluidProp->Density());
 	}
 
 	//--------------------------------------------------------------------
@@ -3640,9 +3717,8 @@ void CFiniteElementStd::CalcSUPGWeightingFunction(double* vel, int ip, double &t
    12/2009 NW
    last modification:
 **************************************************************************/
-double CFiniteElementStd::CalcSUPGEffectiveElemenetLength(double* vel)
+double CFiniteElementStd::CalcSUPGEffectiveElemenetLength(double* /*vel*/)
 {
-	vel = vel;                            //OK411
 	double L = 0.0;
 	switch (this->ele_dim)
 	{
@@ -4483,7 +4559,7 @@ void CFiniteElementStd::CalcLaplace()
 	// ---- Gauss integral
 	int gp_r = 0, gp_s = 0, gp_t;
 	gp_t = 0;
-	double fkt, water_depth;
+	double fkt;
 	int dof_n = 1;
 
 
@@ -4505,7 +4581,7 @@ void CFiniteElementStd::CalcLaplace()
 		ComputeGradShapefct(1);   // Linear interpolation function
 		// Calculate mass matrix
 #ifndef OGS_ONLY_TH
-		water_depth = 1.0;
+		double water_depth = 1.0;
 		// The following "if" is done by WW
 		if(PcsType == G && MediaProp->unconfined_flow_group == 1 && MeshElement->ele_dim ==
 		   2 && !pcs->m_msh->hasCrossSection())
@@ -4521,7 +4597,7 @@ void CFiniteElementStd::CalcLaplace()
 
 		for (in = 0; in < dof_n; in++)
 		{
-			const int ishd = in * dof_n ;
+//			const int ishd = in * dof_n ;
 			const int ish = in*nnodes;
 			for (jn = 0; jn < dof_n;  jn++)
 			{
@@ -4552,7 +4628,7 @@ void CFiniteElementStd::CalcLaplace()
 						{
 							const int ksh = k*nnodes + ia;
 							const int km = dim *k ;
-							for(l=0; l< dim; l++)
+							for(l=0; l< (int)dim; l++)
 							{
 								(*Laplace)(iish, jjsh) += fkt * dshapefct[ksh] \
 								* mat[km + l] * dshapefct[l*nnodes+j];
@@ -4645,9 +4721,11 @@ void CFiniteElementStd:: Assemble_DualTransfer()
 	//
 	if(pcs->continuum == 0)
 	{
+#ifndef USE_PETSC
 		double ff = 1.0 / (1.0 - W);
 		if(MediaProp->transfer_coefficient < 0.0) // for LBNL
 			ff = 1.0;
+#endif
 		for(int i = 0; i < nnodes; i++)
 		{
 			for(int j = 0; j < nnodes; j++)
@@ -4758,8 +4836,9 @@ void CFiniteElementStd::CalcAdvection()
 	int i, j;
 	int gp_r = 0, gp_s = 0, gp_t;
 	double fkt,mat_factor = 0.0;
-	double vel[3], dens_aug[3];
+	double vel[3];
 #ifndef OGS_ONLY_TH
+	double dens_aug[3];
 	CFluidProperties* m_mfp_g = NULL;
 	bool multiphase = false;
 	//18.02.2008, 04.09.2008 WW
@@ -5146,7 +5225,7 @@ void CFiniteElementStd::CalcStrainCoupling(int phase)
 // Local assembly
 void CFiniteElementStd::Assemble_Gravity()
 {
-	int Index = MeshElement->GetIndex();
+	//int Index = MeshElement->GetIndex();
 	if((coordinate_system) % 10 != 2)     //NW: exclude (!axisymmetry)
 
 		// 27.2.2007 WW (*GravityMatrix) = 0.0;
@@ -5155,8 +5234,10 @@ void CFiniteElementStd::Assemble_Gravity()
 	// ---- Gauss integral
 	int gp_r = 0, gp_s = 0, gp_t;
 	gp_t = 0;
-	double fkt, rho, dens_arg[3];         //, rich_f;
-	double k_rel_iteration;
+	double fkt, rho; //, dens_arg[3];         //, rich_f;
+#if !defined(USE_PETSC) // && defined(other parallel libs)//03~04.3012. WW
+	double k_rel_iteration = 1.0;
+#endif
 	// GEO
 	//NW  double geo_fac = MediaProp->geo_area;
 	if(!FluidProp->CheckGravityCalculation())
@@ -5176,7 +5257,7 @@ void CFiniteElementStd::Assemble_Gravity()
 	//rich_f = 1.0;
 	//if(PcsType==R) rich_f = -1.0; //WW
 
-	k_rel_iteration = 1.0;
+//	k_rel_iteration = 1.0;
 
 	for (i = 0; i < dof_n * nnodes; i++)
 		NodalVal[i] = 0.0;
@@ -5257,6 +5338,7 @@ void CFiniteElementStd::Assemble_Gravity()
 		for (i = 0; i < nnodes; i++)
 		{
 #if !defined(USE_PETSC) // && defined(other parallel libs)//03~04.3012. WW
+			if (add2global)
 			eqs_rhs[cshift + eqs_number[i]]
 			        += k_rel_iteration * NodalVal[i + ii_sh];
 			//NW not necessary to multiply geo_area(geo_fac) here. It's already multiplied in ComputeJacobian() through fkt.
@@ -5544,6 +5626,10 @@ void CFiniteElementStd::Cal_Velocity()
 	//gp_ele->Velocity = 0.0; // CB commented and inserted below due to conflict with transport calculation, needs velocities
 	// Loop over Gauss points
 	k = (coordinate_system) % 10;
+
+	if (PcsType==TH)
+		idx1 = idxp1;
+
 	if(PcsType == T)                      //WW/CB
 	{
 		if(pcs->pcs_type_number == 0)
@@ -5620,6 +5706,8 @@ void CFiniteElementStd::Cal_Velocity()
 			CalCoefLaplace2(true,0);
 		else if (dof_n == 2 && PcsType == P) // PCH 05.2009
 			CalCoefLaplacePSGLOBAL(true,0);
+		else if (dof_n == 2 && PcsType == TH)
+			CalCoefLaplace(true);
 		//WW/CB
 		if((PcsType == T) && (pcs->pcs_type_number == 1))
 			flag_cpl_pcs = false;
@@ -5745,6 +5833,7 @@ void CFiniteElementStd::Cal_Velocity()
 	}
       gp_ele->Velocity = tmp_gp_velocity;
 	//
+#if 0
 	if(pcs->Write_Matrix)
 	{
 		(*pcs->matrix_file) << "### Element: " << Index << "\n";
@@ -5757,6 +5846,7 @@ void CFiniteElementStd::Cal_Velocity()
 		}
 	}
 	// gp_ele->Velocity.Write();
+#endif
 }
 
 /***************************************************************************
@@ -6162,7 +6252,7 @@ void CFiniteElementStd::Cal_Velocity_2()
    Programming:  BG
    08/2010	first version
  **************************************************************************/
-double CFiniteElementStd::Get_Element_Velocity(int Index, CRFProcess* m_pcs, int phase_index, int dimension)
+double CFiniteElementStd::Get_Element_Velocity(int Index, CRFProcess* /*m_pcs*/, int phase_index, int dimension)
 {
 	ostringstream temp;
 	string tempstring;
@@ -6514,7 +6604,9 @@ void CFiniteElementStd::AssembleParabolicEquation()
 {
 	int i, ii;
 	int ii_sh;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	long i_sh;
+#endif
 	double relax0, relax1, pcs_time_step, dt_inverse;
 	long dm_shift = 0, cshift = 0;        //WW 05.01.07
 	bool H2_mono = false; // 15. 07.2011. WW
@@ -6592,7 +6684,7 @@ void CFiniteElementStd::AssembleParabolicEquation()
 	CalcLaplace();
 	if(RD_Flag)                           //YD /WW
 		Assemble_DualTransfer();
-	if(pcs->Tim->time_control_name.find("NEUMANN") != string::npos)
+	if(pcs->Tim->time_control_type==TimeControlType::NEUMANN)
 		pcs->timebuffer /= mat[0];  //YD
 	//======================================================================
 	// Assemble global matrix
@@ -6647,7 +6739,7 @@ void CFiniteElementStd::AssembleParabolicEquation()
 	if(PcsType == V)                      // For DOF>1: 27.2.2007 WW
 		for (i = 0; i < nnodes; i++)
 			NodalVal[i + nnodes] = 0.0;
-	if(pcs->m_num->nls_method > 0 && (!dynamic)) //Newton method
+	if(pcs->m_num->nls_method == FiniteElement::NL_NEWTON && (!dynamic)) //Newton method
 		StiffMatrix->multi(NodalVal1, NodalVal, -1.0);
 
 	/// If JFNK. 10.08.2010 WW
@@ -6795,7 +6887,9 @@ void CFiniteElementStd::AssembleParabolicEquation()
 		int nDF = 2;
 		for(ii = 0; ii < nDF; ii++)
 		{
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 			i_sh = NodeShift[ii + dm_shift];
+#endif
 			ii_sh = ii * nnodes;
 			for (i = 0; i < nnodes; i++)
 			{
@@ -6826,103 +6920,129 @@ void CFiniteElementStd::AssembleParabolicEquation()
    04.2012. WW
  */
 //------------------------------------------------------
-void CFiniteElementStd::add2GlobalMatrixII()
+void CFiniteElementStd::add2GlobalMatrixII(bool updateA, bool updateRHS)
 {
-  int i;
-  int m_dim, n_dim;
-  int dof = pcs->pcs_number_of_primary_nvals;
-  if(pcs->GetContinnumType() == 1)
-    dof = 1;
+	if (pcs->m_num->petsc_split_fields) {
+		add2GlobalMatrixII_Split(updateA, updateRHS);
+		return;
+	}
+#if 0
+	if (myrank==1 && act_nodes != nnodes) {
+		bool found = false;
+		for (int i=0; i<nnodes; i++)
+			if (MeshElement->nodes[i]->GetEquationIndex()==292) found = true;
+		if (found) {
+			std::cout << "-> Index: " << Index << "\n";
+			std::cout << "-> Nodes: \n";
+			for (int i=0; i<nnodes; i++)
+				std::cout << MeshElement->nodes[i]->GetEquationIndex() << " ";
+			std::cout << "\n";
+			std::cout << "-> u0,u1: \n";
+			for (int i=0; i<nnodes; i++) {
+				std::cout << NodalVal_p0[i] << " "<< NodalVal_p1[i] << " "<< NodalVal_T0[i] << " "<< NodalVal_T1[i] << "\n";
+			}
+			std::cout << "\n";
 
-  double *local_matrix = NULL;
-  double *local_vec = NULL;
-  petsc_group::PETScLinearSolver *eqs = pcs->eqs_new;
+			std::cout << "-> Velocity: \n";
+			ele_gp_value[Index]->Velocity.Write();
+			std::cout << "-> StiffMatrix: \n";
+			StiffMatrix->Write(std::cout);
+			std::cout << "-> RHS: \n";
+			RHS->Write(std::cout);
+			std::cout << "-> act_nodes =" << act_nodes << "\n";
+			std::cout << "-> local_idx: \n";
+			for (int i = 0; i < act_nodes; i++)
+				std::cout << local_idx[i] << " ";
+			std::cout << "\n";
+			std::cout << std::endl;
+		}
+	}
+#endif
+
+	const int dof = (pcs->GetContinnumType() == 1) ? 1 : pcs->pcs_number_of_primary_nvals;
+
+	double *local_matrix = NULL;
+	double *local_vec = NULL;
+	petsc_group::PETScLinearSolver *eqs = pcs->eqs_new;
 
 #define n_assmb_petsc_test
 #ifdef assmb_petsc_test
-  char rank_char[10];
-  sprintf(rank_char, "%d", eqs->getMPI_Rank());
-  string fname = FileName + rank_char + "_e_matrix.txt";
-  ofstream os_t(fname.c_str(), ios::app);
-  os_t<<"\n=================================================="<<"\n";
+	char rank_char[10];
+	sprintf(rank_char, "%d", eqs->getMPI_Rank());
+	string fname = FileName + rank_char + "_e_matrix.txt";
+	ofstream os_t(fname.c_str(), ios::app);
+	os_t<<"\n=================================================="<<"\n";
 #endif
 
-  if(act_nodes != nnodes)
-    {
-      m_dim = act_nodes * dof;
-      n_dim = nnodes * dof;
+	const int m_dim = (act_nodes != nnodes) ? act_nodes * dof : nnodes * dof;
+	const int n_dim = (act_nodes != nnodes) ? nnodes * dof : m_dim;
 
-      const int dim_full = nnodes * dof;
-      int i_dom, j_dom, in, jn; 
-      // put the subdomain portion of local stiffness matrix to Mass 
-      double *loc_m = StiffMatrix->getEntryArray();
-      double *loc_v = RHS->getEntryArray();
-
-      for(i = 0; i < nnodes; i++)
+	if (act_nodes != nnodes)
 	{
-	  const int i_buff = MeshElement->nodes[i]->GetEquationIndex() *  dof;		
-	  for(int k=0; k<dof; k++)
-	    {
-	      idxn[k*nnodes + i] = i_buff + k;	
-	    }	    
-	  // local_vec[i] = 0.;
-	}     
+		const int dim_full = nnodes * dof;
+		// put the subdomain portion of local stiffness matrix to Mass
+		const double *loc_m = StiffMatrix->getEntryArray();
+		const double *loc_v = RHS->getEntryArray();
 
-      local_vec = NodalVal;
-      local_matrix = Laplace->getEntryArray(); //Temporary use
-      for( i=0; i<m_dim; i++)
-	{
-	  i_dom = i/act_nodes;
-	  in = i % act_nodes;
-	  int i_full = local_idx[in] + i_dom * nnodes;
-	  local_vec[i] = loc_v[i_full];
-	  i_full *= dim_full; 
+		for (int i = 0; i < nnodes; i++)
+		{
+			const int i_buff = MeshElement->nodes[i]->GetEquationIndex() * dof;
+			for (int k = 0; k < dof; k++)
+			{
+				idxn[k * nnodes + i] = i_buff + k;
+			}
+			// local_vec[i] = 0.;
+		}
 
-	  idxm[i] = MeshElement->nodes[local_idx[in]]->GetEquationIndex() *  dof + i_dom;
-         
+		local_vec = NodalVal;
+		local_matrix = Laplace->getEntryArray(); //Temporary use
+		for (int i = 0; i < m_dim; i++)
+		{
+			const int i_dom = i / act_nodes;
+			const int in = i % act_nodes;
+			int i_full = local_idx[in] + i_dom * nnodes;
+			local_vec[i] = loc_v[i_full];
+			i_full *= dim_full;
 
-	  for(int j=0; j<dim_full; j++)
-	    {
-	      local_matrix[i*dim_full +j] = loc_m[i_full + j]; 
+			idxm[i] = MeshElement->nodes[local_idx[in]]->GetEquationIndex() * dof + i_dom;
 
-	      //TEST
+			for (int j = 0; j < dim_full; j++)
+			{
+				local_matrix[i * dim_full + j] = loc_m[i_full + j];
+
+				//TEST
 #ifdef assmb_petsc_test
-	      os_t<<"("<<local_idx[in]<<") "<<local_matrix[i*dim_full +j]<<" ";
+				os_t<<"("<<local_idx[in]<<") "<<local_matrix[i*dim_full +j]<<" ";
 #endif //#ifdef assmb_petsc_test
 
-	      
-	    }
-	  
-	  //TEST
+			}
+
+			//TEST
 #ifdef assmb_petsc_test
-	  os_t<<"\n";
+			os_t<<"\n";
 #endif //#ifdef assmb_petsc_test
+		}
 
 	}
-    
-      
-    }
-  else
-    {
-      m_dim = nnodes * dof;
-      n_dim = m_dim;
-      //----------------------------------------------------------------------
-      // For overlapped partition DDC
-      local_matrix = StiffMatrix->getEntryArray();
-      local_vec = RHS->getEntryArray();
-
-      for(i = 0; i < nnodes; i++)
+	else
 	{
-	  const int i_buff = MeshElement->nodes[i]->GetEquationIndex() *  dof;		
-	  for(int k=0; k<dof; k++)
-	    {
-	      const int ki = k*nnodes + i;
-	      idxm[ki] = i_buff + k;
-	      idxn[ki] = idxm[ki];
-	    }	    
-	  // local_vec[i] = 0.;
-	}     
-    }
+		//----------------------------------------------------------------------
+		// For overlapped partition DDC
+		local_matrix = StiffMatrix->getEntryArray();
+		local_vec = RHS->getEntryArray();
+
+		for (int i = 0; i < nnodes; i++)
+		{
+			const int i_buff = MeshElement->nodes[i]->GetEquationIndex() * dof;
+			for (int k = 0; k < dof; k++)
+			{
+				const int ki = k * nnodes + i;
+				idxm[ki] = i_buff + k;
+				idxn[ki] = idxm[ki];
+			}
+			// local_vec[i] = 0.;
+		}
+	}
 
 
 
@@ -6955,11 +7075,138 @@ void CFiniteElementStd::add2GlobalMatrixII()
 	os_t.close();
 #endif //ifdef assmb_petsc_test
 
+  if (updateA)
   eqs->addMatrixEntries(m_dim, idxm, n_dim, idxn, local_matrix);
+  if (updateRHS)
   eqs->setArrayValues(1, m_dim, idxm, local_vec);
   //eqs->AssembleRHS_PETSc();
   //eqs->AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
 }
+
+void CFiniteElementStd::add2GlobalMatrixII_Split(bool updateA, bool updateRHS)
+{
+	assert(pcs->m_num->petsc_split_fields);
+
+	const int dof = pcs->pcs_number_of_primary_nvals;
+	const bool hasGhostNodes = (act_nodes != nnodes);
+	const int c_nnodes = nnodes;
+
+	petsc_group::PETScLinearSolver *eqs = pcs->eqs_new;
+	const int m_dim = hasGhostNodes ? act_nodes : nnodes;
+	const int n_dim = nnodes;
+	for (int i = 0; i < n_dim; i++)
+		idxn[i] = MeshElement->nodes[i]->GetEquationIndex();
+	for (int i = 0; i < m_dim; i++)
+		idxm[i] = MeshElement->nodes[local_idx[i]]->GetEquationIndex();
+	double const*const loc_cpl_mat = StiffMatrix->getEntryArray();
+	double const*const loc_cpl_rhs = RHS->getEntryArray();
+	const unsigned n_cpl_mat_columns = nnodes * dof;
+
+#if 0
+	if (myrank==1 && hasGhostNodes) {
+		bool found = false;
+		for (int i=0; i<nnodes; i++)
+			if (MeshElement->nodes[i]->GetEquationIndex()==292) found = true;
+		if (found) {
+			std::cout << "-> Index: " << Index << "\n";
+			std::cout << "-> Nodes: \n";
+			for (int i=0; i<nnodes; i++)
+				std::cout << MeshElement->nodes[i]->GetEquationIndex() << " ";
+			std::cout << "\n";
+			std::cout << "-> u0,u1: \n";
+			for (int i=0; i<nnodes; i++) {
+				std::cout << NodalVal_p0[i] << " "<< NodalVal_p1[i] << " "<< NodalVal_T0[i] << " "<< NodalVal_T1[i] << "\n";
+			}
+			std::cout << "\n";
+			std::cout << "-> Velocity: \n";
+			ele_gp_value[Index]->Velocity.Write();
+			std::cout << "-> StiffMatrix: \n";
+			StiffMatrix->Write(std::cout);
+			std::cout << "-> RHS: \n";
+			RHS->Write(std::cout);
+			std::cout << "-> act_nodes =" << act_nodes << "\n";
+			std::cout << "-> local_idx: \n";
+			for (int i = 0; i < act_nodes; i++)
+				std::cout << local_idx[i] << " ";
+			std::cout << "\n";
+			std::cout << "-> idxm: \n";
+			for (int i = 0; i < m_dim; i++)
+				std::cout << idxm[i] << " ";
+			std::cout << "\n";
+			for (int ii=0; ii<dof; ii++)
+			{
+//				ii= 1;
+				const int ii_offset = ii*n_dim*n_cpl_mat_columns;
+#if 0
+				for (int jj=0; jj<dof; jj++)
+				{
+//					jj = 0;
+					const int jj_offset = jj*nnodes;
+					std::cout << "sub mat " << ii << jj << ":\n";
+					for (int i = 0; i < m_dim; i++)
+					{
+						const int i_offest = ii_offset + local_idx[i]*nnodes*dof + jj_offset;
+						for (int j = 0; j < nnodes; j++) {
+							assert(i_offest + j < StiffMatrix->Rows()*StiffMatrix->Cols());
+							std::cout << loc_cpl_mat[i_offest + j] << " ";
+						}
+						std::cout << "\n";
+					}
+					std::cout << "\n";
+//					break;
+				}
+#endif
+				std::cout << "sub rhs " << ii << ":\n";
+				for (int i = 0; i < m_dim; i++)
+					std::cout << loc_cpl_rhs[local_idx[i]+ ii*nnodes] << " ";
+				std::cout << "\n";
+//				break;
+			}
+			std::cout << std::endl;
+		}
+	}
+#endif
+
+//	if (myrank==0) { // updateRHS
+//		std::cout << "# Element " << Index << std::endl;
+//		StiffMatrix->Write();
+//		RHS->Write();
+//	}
+
+	PetscInt ierr;
+	for (int ii=0; ii<dof; ii++)
+	{
+		if (updateA) {
+			const int ii_offset = ii*n_dim*n_cpl_mat_columns;
+			for (int jj=0; jj<dof; jj++)
+			{
+				(*Laplace) = .0;
+				double* local_matrix = Laplace->getEntryArray(); //Temporary use
+				const int jj_offset = jj*c_nnodes;
+				for (int i = 0; i < m_dim; i++)
+				{
+					const int i_offest = ii_offset + local_idx[i]*c_nnodes*dof + jj_offset;
+					for (int j = 0; j < c_nnodes; j++) {
+						//assert(i_offest + j < StiffMatrix->Rows()*StiffMatrix->Cols());
+						local_matrix[i * c_nnodes + j] = loc_cpl_mat[i_offest + j];
+					}
+				}
+				ierr = MatSetValues(eqs->vec_subA[ii*dof+jj], m_dim, idxm, n_dim, idxn, local_matrix, ADD_VALUES);CHKERRABORT(PETSC_COMM_WORLD,ierr);
+			}
+		}
+
+		if (updateRHS) {
+			double* local_vec = NodalVal;
+			for (int i=0; i<c_nnodes; i++)
+				local_vec[i] = .0;
+			for (int i = 0; i < m_dim; i++)
+				local_vec[i] = loc_cpl_rhs[local_idx[i]+ ii*c_nnodes];
+
+			ierr = VecSetValues(eqs->vec_subRHS[ii], m_dim, idxm, local_vec, ADD_VALUES);CHKERRABORT(PETSC_COMM_WORLD,ierr);
+		} // update RHS
+	}
+}
+
 #else
 //------------------------------------------------------
 /*!
@@ -6968,18 +7215,13 @@ void CFiniteElementStd::add2GlobalMatrixII()
    22.06.2011. WW
  */
 //------------------------------------------------------
-    void  CFiniteElementStd::add2GlobalMatrixII(const int block_cols)
+void  CFiniteElementStd::add2GlobalMatrixII(const int block_cols)
 {
-	long dm_shift = 0, cshift = 0;
+	if (!add2global) return;
 
-	if(pcs->dof > 1)
-		cshift = NodeShift[pcs->continuum];
-	if(pcs->type / 10 == 4)
-		dm_shift = problem_dimension_dm;
+	const int cshift = (pcs->dof > 1) ? NodeShift[pcs->continuum] : 0;
+	const int dm_shift = (pcs->type / 10 == 4) ? problem_dimension_dm : 0;
 
-
-	int i, j, ii, jj, ii_sh;
-	long i_sh, kk;
 #if defined(NEW_EQS)
 	CSparseMatrix* A = NULL;              //WW
 	if(m_dom)
@@ -6988,23 +7230,21 @@ void CFiniteElementStd::add2GlobalMatrixII()
 		A = pcs->eqs_new->A;
 #endif
 	// For DOF>1:
-	if(PcsType == V || PcsType == P)
+	if(PcsType == V || PcsType == P || PcsType == TH)
 	{
-		int nDF = 2;
-		int jj_sh;
-		long j_sh = 0;
-		for(ii = 0; ii < nDF; ii++)
+		const int nDF = 2;
+		for(int ii = 0; ii < nDF; ii++)
 		{
-			i_sh = NodeShift[ii + dm_shift];
-			ii_sh = ii * nnodes;
-			for(jj = 0; jj < block_cols; jj++)
+			const int i_sh = NodeShift[ii + dm_shift];
+			const int ii_sh = ii * nnodes;
+			for(int jj = 0; jj < block_cols; jj++)
 			{
-				j_sh = NodeShift[jj + dm_shift];
-				jj_sh = jj * nnodes;
-				for(i = 0; i < nnodes; i++)
+				const int j_sh = NodeShift[jj + dm_shift];
+				const int jj_sh = jj * nnodes;
+				for(int i = 0; i < nnodes; i++)
 				{
-					kk = i_sh + eqs_number[i]; // 02.2011. WW
-					for(j = 0; j < nnodes; j++)
+					const int kk = i_sh + eqs_number[i]; // 02.2011. WW
+					for(int j = 0; j < nnodes; j++)
 					{
 #ifdef NEW_EQS
 						(*A)(kk, j_sh + eqs_number[j]) += \
@@ -7020,17 +7260,17 @@ void CFiniteElementStd::add2GlobalMatrixII()
 	}
 	else
 	{
-		cshift += NodeShift[dm_shift]; //WW 05.01.07
-		for(i = 0; i < nnodes; i++)
+		const int cshift_dm = cshift + NodeShift[dm_shift]; //WW 05.01.07
+		for(int i = 0; i < nnodes; i++)
 		{
-			kk = cshift + eqs_number[i]; // 02.2011. WW
-			for(j = 0; j < nnodes; j++)
+			const int kk = cshift_dm + eqs_number[i]; // 02.2011. WW
+			for(int j = 0; j < nnodes; j++)
 			{
 #ifdef NEW_EQS
-				(*A)(kk, cshift + eqs_number[j]) += \
+				(*A)(kk, cshift_dm + eqs_number[j]) += \
 				        (*StiffMatrix)(i,j);
 #else
-				MXInc(kk, cshift + eqs_number[j], \
+				MXInc(kk, cshift_dm + eqs_number[j], \
 				      (*StiffMatrix)(i,j));
 #endif
 			}
@@ -7055,7 +7295,6 @@ void CFiniteElementStd::add2GlobalMatrixII()
 void CFiniteElementStd::CalcFEM_FCT()
 {
 	const double dt_inverse = 1.0 / dt;
-	const double theta = pcs->m_num->ls_theta;
 #if defined(NEW_EQS)
 	CSparseMatrix* A = NULL;              //WW
 	if(m_dom)
@@ -7142,6 +7381,7 @@ void CFiniteElementStd::CalcFEM_FCT()
 	// Setup local coefficient matrix and RHS vector
 	//----------------------------------------------------------------------
 #ifdef USE_PETSC
+	const double theta = pcs->m_num->ls_theta;
 	// A=1/dt*ML + theta*K
 	*AuxMatrix   *= theta;
 	*StiffMatrix  = *FCT_MassL;
@@ -7189,7 +7429,10 @@ void CFiniteElementStd::CalcFEM_FCT()
 **************************************************************************/
 void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 {
-	int i,j;
+	int i;
+#ifndef USE_PETSC
+	int j;
+#endif
 	double pcs_time_step, dt_inverse;
 	ElementMatrix* EleMat = NULL;         //SB-3
 	// NUM
@@ -7211,7 +7454,10 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 	// Non-linearities
 	//  double non_linear_function_iter = 1.0; //OK MediaProp->NonlinearFlowFunction(Index,unit,theta);
 	//  double non_linear_function_t0   = 1.0; //OK MediaProp->NonlinearFlowFunction(Index,unit,0.0);
-	double fac_mass, fac_laplace, fac_advection, fac_storage, fac_content;
+	double fac_mass, fac_laplace, fac_advection;
+#ifndef OGS_ONLY_TH
+	double fac_storage, fac_content;
+#endif
 	//if(((aktueller_zeitschritt==1)||(pcs->tim_type_name.compare("TRANSIENT")==0))){   //SB-3
 	//SB-3
 	if(((aktueller_zeitschritt == 1) || (pcs->Memory_Type == 0)))
@@ -7285,8 +7531,10 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 	fac_mass = dt_inverse;                //*geo_fac;
 	fac_laplace = theta;                  //* non_linear_function_iter; //*geo_fac;
 	fac_advection = theta;
+#ifndef OGS_ONLY_TH
 	fac_storage = theta;
 	fac_content = theta * dt_inverse;
+#endif
 
 	if (this->pcs->femFCTmode)            //NW
 
@@ -7314,9 +7562,17 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		//(*AuxMatrix)   *= fac_content;
 		//*StiffMatrix   += *AuxMatrix; // SB, BG
 #endif
+		if(pcs->matrix_file)
+		{
+			(*pcs->matrix_file) << "Stiffness: " << endl;
+			StiffMatrix->Write(*pcs->matrix_file);
+			(*pcs->matrix_file) << endl;
+		}
+
 #if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 		//----------------------------------------------------------------------
 		// Add local matrix to global matrix
+		if (add2global)
 		for(i = 0; i < nnodes; i++)
 		{
 			for(j = 0; j < nnodes; j++)
@@ -7342,8 +7598,10 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		fac_mass = dt_inverse;    //*geo_fac;
 		fac_laplace = -(1.0 - theta); // * non_linear_function_t0; //*geo_fac;
 		fac_advection = -(1.0 - theta);
+#ifndef OGS_ONLY_TH
 		fac_storage = -(1.0 - theta); //*lambda
 		fac_content = -(1.0 - theta) * dt_inverse;
+#endif
 
 		// Mass - Storage
 		*AuxMatrix1    = *Mass;
@@ -7377,6 +7635,7 @@ void CFiniteElementStd::AssembleMixedHyperbolicParabolicEquation()
 		for (i = 0; i < nnodes; i++)
 		{
 #if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
+			if (add2global)
 			eqs_rhs[NodeShift[problem_dimension_dm] + eqs_number[i]] += NodalVal[i];
 #endif
 			(*RHS)(i + LocalShift) +=  NodalVal[i];
@@ -7599,12 +7858,13 @@ void CFiniteElementStd::AssembleParabolicEquationNewtonJacobian(double** jacob,
 void CFiniteElementStd::Assemble_strainCPL(const int phase)
 {
 	int i, j;
-	int shift_index;
 	double* u_n = NULL;                   // Dynamic
 	double fac;
 	int Residual = -1;
 
-	shift_index = problem_dimension_dm + phase;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
+	int shift_index = problem_dimension_dm + phase;
+#endif
 
 	fac = 1.0 / dt;
 	fac *= SolidProp->biot_const; //NW
@@ -7717,9 +7977,12 @@ void CFiniteElementStd::Assemble_strainCPL(const int phase)
    28.11.2011 WW
  */
 //**************************************************************************
+#if defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
+void CFiniteElementStd::Assemble_strainCPL_Matrix(const double /*fac*/, const int /*phase*/)
+{
+#else
 void CFiniteElementStd::Assemble_strainCPL_Matrix(const double fac, const int phase)
 {
-#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	  //TODO
 	int i, j;
 	int shift_index;
@@ -7817,6 +8080,7 @@ void CFiniteElementStd::AssembleMassMatrix(int option)
 
 	//----------------------------------------------------------------------
 	// Add local matrix to global matrix
+#ifndef USE_PETSC
 	if(PcsType == V || PcsType == P)      // For DOF>1: 03.03.2009 PCH
 	{
 		int ii_sh, jj_sh;
@@ -7868,6 +8132,7 @@ void CFiniteElementStd::AssembleMassMatrix(int option)
 			}
 		}
 	}
+#endif
 }
 
 /**************************************************************************
@@ -7899,31 +8164,26 @@ void CFiniteElementStd::Config()
 #endif
 #endif
 
-#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-	int dof_p_node = pcs->pcs_number_of_primary_nvals;
-        if(pcs->GetContinnumType() == 1)
-	  dof_p_node = 1;
+#if defined(USE_PETSC)
+//	int dof_p_node = pcs->pcs_number_of_primary_nvals;
+//	if(pcs->GetContinnumType() == 1)
+//		dof_p_node = 1;
 
-	int i_buff = 0;
-        if(MeshElement->g_index) // ghost nodes pcs->pcs_number_of_primary_nvals
-	  {
-	    act_nodes = MeshElement->g_index[0];
-	    act_nodes_h = MeshElement->g_index[1];
-
-	    for(i = 0; i < act_nodes_h; i++)
-	      {
-		local_idx[i] = MeshElement->g_index[i+2];
-	      }
-	  }
+//	int i_buff = 0;
+	if (MeshElement->g_index) // ghost nodes pcs->pcs_number_of_primary_nvals
+	{
+		act_nodes = MeshElement->g_index[0];
+		act_nodes_h = MeshElement->g_index[1];
+		for(i = 0; i < act_nodes_h; i++)
+			local_idx[i] = MeshElement->g_index[i+2];
+	}
 	else
-	  {
-	    act_nodes = nnodes;
-	    act_nodes_h = nnodesHQ;
-	    for(i = 0; i < nn; i++)
-	      {
-		local_idx[i] = i;
-	      }
-	  }
+	{
+		act_nodes = nnodes;
+		act_nodes_h = nnodesHQ;
+		for(i = 0; i < nn; i++)
+			local_idx[i] = i;
+	}
 
 
 	//i_buff = nn*nn;
@@ -7974,13 +8234,14 @@ void CFiniteElementStd::Config()
 		idx00 = idxp20;
 		idx11 = idxp21;
 	}
-	for(i = 0; i < nnodes; i++)
-	{
-		NodalVal0[i] = pcs->GetNodeValue(nodes[i],idx00);
-		NodalVal1[i] = pcs->GetNodeValue(nodes[i],idx11);
-	}                                     //----------WW 05.01.07
+	if (PcsType != TH) {
+		for(i = 0; i < nnodes; i++)
+		{
+			NodalVal0[i] = pcs->GetNodeValue(nodes[i],idx00);
+			NodalVal1[i] = pcs->GetNodeValue(nodes[i],idx11);
+		}                                     //----------WW 05.01.07
+	}
 	if(PcsType == V)                      // 25.2.2007
-
 		for(i = 0; i < nnodes; i++)
 		{
 			NodalVal_p2[i] = pcs->GetNodeValue(nodes[i],idxp21);
@@ -8004,8 +8265,8 @@ void CFiniteElementStd::Config()
 		}
 		if(cpl_pcs->type == 1111)
 			{
-			NodalVal_t0[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c0 + 2) + T_KILVIN_ZERO;
-			NodalVal_t1[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1 + 2) + T_KILVIN_ZERO;
+			NodalVal_T0[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c0 + 2) + T_KILVIN_ZERO;
+			NodalVal_T1[i] = cpl_pcs->GetNodeValue(nodes[i],idx_c1 + 2) + T_KILVIN_ZERO;
 			}
 		}
 }
@@ -8027,8 +8288,9 @@ void CFiniteElementStd::Config()
    08/2008 WW Extract the configuration of material properties and knowns as
    a single function
 **************************************************************************/
-void CFiniteElementStd::Assembly()
+void CFiniteElementStd::Assembly(bool updateA, bool updateRHS, const bool add2global)
 {
+	this->add2global = add2global;
 	int i;
 	Config();                             //26.08.2008
 
@@ -8119,7 +8381,7 @@ void CFiniteElementStd::Assembly()
 		break;
 	//....................................................................
 	case O:                               // Overland flow
-		if(pcs->m_num->nls_method == 0) //PICARD
+		if(pcs->m_num->nls_method == FiniteElement::NL_PICARD) //PICARD
 		  {
 		    AssembleParabolicEquation();  //OK
 		    add2GlobalMatrixII();
@@ -8137,7 +8399,7 @@ void CFiniteElementStd::Assembly()
 		if(dm_pcs)
 			Assemble_strainCPL();
 
-		if(pcs->m_num->nls_method == 1) // Newton-Raphson. 07.2011. WW
+		if(pcs->m_num->nls_method == FiniteElement::NL_NEWTON) // Newton-Raphson. 07.2011. WW
 			ComputeAdditionalJacobi_Richards();
 		add2GlobalMatrixII();
 		break;
@@ -8164,7 +8426,7 @@ void CFiniteElementStd::Assembly()
 			Assemble_RHS_T_MPhaseFlow();
 		if(dm_pcs)
 			Assemble_RHS_M();
-		if(pcs->m_num->nls_method == 1) // Newton-Raphson. 06.2011. WW
+		if(pcs->m_num->nls_method == FiniteElement::NL_NEWTON) // Newton-Raphson. 06.2011. WW
 		{
 			ComputeAdditionalJacobi_H2();
 
@@ -8196,6 +8458,14 @@ void CFiniteElementStd::Assembly()
 			Assemble_RHS_M();
 		Assemble_RHS_T_PSGlobal();
 		add2GlobalMatrixII();
+		break;
+	case TH:
+		AssembleTHEquation(updateA, updateRHS);
+#ifdef USE_PETSC
+		add2GlobalMatrixII(updateA, updateRHS);
+#else
+		add2GlobalMatrixII();
+#endif
 		break;
 	//....................................................................
 	default:
@@ -9170,10 +9440,12 @@ void CFiniteElementStd::Assemble_RHS_T_MPhaseFlow()
 	double fkt, fac;
 	// Material
 	int dof_n = 2;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	// 02.2011 WW
 	int dm_shift = 0;
 	if(pcs->type / 10 == 4)
 		dm_shift = problem_dimension_dm;
+#endif
 	//----------------------------------------------------------------------
 	for (i = 0; i < dof_n * nnodes; i++)
 		NodalVal[i] = 0.0;
@@ -9214,10 +9486,14 @@ void CFiniteElementStd::Assemble_RHS_T_MPhaseFlow()
 		}
 	}
 	int ii_sh;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	long i_sh;
+#endif
 	for(ii = 0; ii < 2; ii++)
 	{
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 		i_sh = NodeShift[ii + dm_shift];
+#endif
 		ii_sh = ii * nnodes;
 		for (i = 0; i < nnodes; i++)
 		{
@@ -9277,10 +9553,14 @@ void CFiniteElementStd::Assemble_RHS_T_PSGlobal()
 		}
 	}
 	int ii_sh;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	long i_sh;
+#endif
 	for(ii = 0; ii < pcs->dof; ii++)
 	{
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 		i_sh = NodeShift[ii];
+#endif
 		ii_sh = ii * nnodes;
 		for (i = 0; i < nnodes; i++)
 		{
@@ -9360,10 +9640,14 @@ void CFiniteElementStd::Assemble_RHS_Pc()
 //         temp[i]=NodalVal[i];
 
 	int ii_sh;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	long i_sh;
+#endif
 	for(ii = 0; ii < pcs->dof; ii++)
 	{
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 		i_sh = NodeShift[ii];
+#endif
 		ii_sh = ii * nnodes;
 		for (i = 0; i < nnodes; i++)
 		{
@@ -9389,9 +9673,11 @@ void CFiniteElementStd::Assemble_RHS_LIQUIDFLOW()
     if ((FluidProp->drho_dT == .0 && (FluidProp->density_model<8 || FluidProp->density_model>14))&& SolidProp->Thermal_Expansion()==.0) return;
     if (pcs->tim_type==FiniteElement::TIM_STEADY) return;
 
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
     int dm_shift = 0;
     if(pcs->type / 10 == 4)
         dm_shift = problem_dimension_dm;
+#endif
     //----------------------------------------------------------------------
     for (int i = 0; i < nnodes; i++)
         NodalVal[i] = 0.0;
@@ -9449,7 +9735,9 @@ void CFiniteElementStd::Assemble_RHS_LIQUIDFLOW()
         for (int i = 0; i < nnodes; i++)
             NodalVal[i] += gp_fkt * fac * shapefct[i];
     }
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
     int i_sh = NodeShift[dm_shift];
+#endif
     for (int i = 0; i < nnodes; i++)
     {
 #ifndef USE_PETSC
@@ -9474,9 +9762,11 @@ void CFiniteElementStd::Assemble_RHS_M()
 	// Material
 	int dof_n = 2;
 	// 02.2011 WW
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	int dm_shift = 0;
 	if(pcs->type / 10 == 4)
 		dm_shift = problem_dimension_dm;
+#endif
 	//----------------------------------------------------------------------
 	for (i = 0; i < dof_n * nnodes; i++)
 		NodalVal[i] = 0.0;
@@ -9542,10 +9832,14 @@ void CFiniteElementStd::Assemble_RHS_M()
 	}
 	//
 	int ii_sh;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	long i_sh;
+#endif
 	for(ii = 0; ii < dof_n; ii++)
 	{
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 		i_sh = NodeShift[ii + dm_shift];
+#endif
 		ii_sh = ii * nnodes;
 		for (i = 0; i < nnodes; i++)
 		{
@@ -9647,10 +9941,14 @@ void CFiniteElementStd::Assemble_RHS_AIR_FLOW()
 		}
 	}
 	int ii_sh;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	long i_sh;
+#endif
 	for(ii = 0; ii < pcs->dof; ii++)
 	{
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 		i_sh = NodeShift[ii];
+#endif
 		ii_sh = ii * nnodes;
 		for (int i = 0; i < nnodes; i++)
 		{
@@ -9725,10 +10023,14 @@ void CFiniteElementStd::Assemble_RHS_HEAT_TRANSPORT()
 		}
 	}
 	int ii_sh;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	long i_sh;
+#endif
 	for(ii = 0; ii < pcs->dof; ii++)
 	{
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 		i_sh = NodeShift[ii];
+#endif
 		ii_sh = ii * nnodes;
 		for (i = 0; i < nnodes; i++)
 		{
@@ -9911,10 +10213,14 @@ void CFiniteElementStd::Assemble_RHS_HEAT_TRANSPORT2()
 		}
 	}
 	int ii_sh;
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 	long i_sh;
+#endif
 	for(ii = 0; ii < pcs->dof; ii++)
 	{
+#if !defined(USE_PETSC) // && !defined(other parallel libs)//03~04.3012. WW
 		i_sh = NodeShift[ii];
+#endif
 		ii_sh = ii * nnodes;
 		for (i = 0; i < nnodes; i++)
 		{
@@ -10530,6 +10836,940 @@ void CFiniteElementStd::PrintTheSetOfElementMatrices(std::string mark)
 		(*pcs->matrix_file) << "\n";
 	}
 }
+
+#if 0
+void CFiniteElementStd::AssembleTHEquation()
+{
+	// r_p
+	fem1->ConfigElement(MeshElement, false);
+	fem1->Assembly(false);
+
+	// J_pp
+
+	// J_pT
+
+	// r_T
+	fem2->ConfigElement(MeshElement, false);
+	fem2->Assembly(false);
+}
+#else
+void CFiniteElementStd::AssembleTHEquation(bool updateA, bool updateRHS)
+{
+	const unsigned c_dim = dim;
+	const int c_nnodes = nnodes;
+	const double pcs_time_step = pcs->Tim->time_step_length;
+	const double dt_inverse = 1.0/pcs_time_step;
+	const double theta = pcs->m_num->ls_theta;
+	const bool hasGravity = (coordinate_system) % 10 == 2 && FluidProp->CheckGravityCalculation();
+	const double g_const = hasGravity ? gravity_constant : .0;
+	const bool useSUPG = (pcs->m_num->ele_supg_method > 0);
+	const bool useLumpedMass = (pcs->m_num->ele_mass_lumping > 0);
+	const bool isTransient = (this->pcs->tim_type==FiniteElement::TIM_TRANSIENT);
+//	ElementValue* gp_ele = ele_gp_value[Index];
+	static Matrix t_transform_tensor(3,3);
+	if (dim > MediaProp->geo_dimension)
+	{
+		if (MeshElement->transform_tensor==NULL) {
+			std::cout << "***Error: Geometric dimension in MMP is not consistent with element." << std::endl;
+			exit(0);
+		}
+		t_transform_tensor.LimitSize(dim, dim);
+		MeshElement->transform_tensor->GetTranspose(t_transform_tensor);
+	}
+
+	for (int i=0; i<nnodes; i++) {
+		NodalVal_p0[i] = pcs->GetNodeValue(nodes[i], idxp0);
+		NodalVal_p1[i] = pcs->GetNodeValue(nodes[i], idxp1);
+		NodalVal_T0[i] = pcs->GetNodeValue(nodes[i], idxT0);
+		NodalVal_T1[i] = pcs->GetNodeValue(nodes[i], idxT1);
+	}
+
+	// Calculate matrices
+	const int offset_p = 0;
+	const int offset_T = c_nnodes;
+	(*StiffMatrix) = 0.0; // Jacobian
+	(*RHS) = 0.0; // Residual
+//	if (myrank==2 && updateA) {
+//		StiffMatrix->Write();
+//	}
+
+
+//#define TH_DEBUG
+#ifdef TH_DEBUG
+	// for debugging
+	Mass->LimitSize(nnodes, nnodes);
+	Laplace->LimitSize(nnodes, nnodes);
+	Advection->LimitSize(nnodes, nnodes);
+	(*Mass) = .0;
+	(*Laplace) = .0;
+	(*Advection) = .0;
+#endif
+#define ELE_CONST_K
+#ifdef ELE_CONST_K
+    double* tmp_k_tensor = MediaProp->PermeabilityTensor(Index);
+    if (c_dim > MediaProp->geo_dimension)
+    {
+        Matrix local_tensor(c_dim,c_dim), temp_tensor(c_dim,c_dim), global_tensor(c_dim,c_dim);
+        const unsigned c_ele_dim = ele_dim;
+        for (size_t i = 0; i < c_ele_dim; i++)
+            for (size_t j = 0; j < c_ele_dim; j++)
+                local_tensor(i,j) = tmp_k_tensor[j + i * c_ele_dim];
+        //cout << "K':" << endl; local_tensor.Write();
+        local_tensor.multi(t_transform_tensor, temp_tensor);
+        for (size_t i = 0; i < c_dim; i++)
+            for (size_t j = 0; j < c_dim; j++)
+                for (size_t k = 0; k < c_dim; k++)
+                    global_tensor(i, j) += (*MeshElement->transform_tensor)(i, k)
+                                    * temp_tensor(k,j);
+        //cout << "K:" << endl; global_tensor.Write();
+        for(size_t i = 0; i < c_dim; i++)
+            for(size_t j = 0; j < c_dim; j++)
+            	tmp_k_tensor[c_dim * i + j] = global_tensor(i,j);
+    }
+    double const* const k_tensor = tmp_k_tensor;
+	const double Ss = MediaProp->StorageFunction(Index,unit,pcs->m_num->ls_theta);
+	double dummy[3] = {};
+	double const* const lambda_tensor = MediaProp->HeatDispersionTensorNew(0, dummy);
+#endif
+
+#define USE_LMASS1
+#ifdef USE_LMASS1
+	if (isTransient && useLumpedMass) {
+		const double vol = MeshElement->GetVolume() * MeshElement->GetFluxArea();
+		// Center of the reference element
+		SetCenterGP();
+		ComputeShapefct(1);
+		const double gp_p1 = interpolate(NodalVal_p1);
+		const double gp_T1 = interpolate(NodalVal_T1);
+		double var[3] = {};
+		var[0] = gp_p1;
+		var[1] = gp_T1;
+		const double rhocp = MediaProp->HeatCapacity(Index,pcs->m_num->ls_theta,this,var);
+		const double drho_w_dp = FluidProp->drhodP(var);
+		const double drho_w_dT = FluidProp->drhodT(var);
+		const double cp_w = FluidProp->SpecificHeatCapacity(var);
+		const double porosity = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
+		const double drhocp_dp = porosity*cp_w*drho_w_dp;
+		const double drhocp_dT = porosity*cp_w*drho_w_dT;
+		const double fkt = vol / (double)nnodes;
+		const double M_tt_coeff1 = fkt * dt_inverse * rhocp;
+		const double M_tt_coeff2 = fkt * dt_inverse * drhocp_dT;
+		const double M_tp_coeff2 = fkt * dt_inverse * drhocp_dp;
+		if (updateA)
+		for (int i = 0; i < nnodes; i++) {
+			(*StiffMatrix)(offset_T+i,offset_T+i) +=  M_tt_coeff1;
+			for (int j = 0; j < nnodes; j++) {
+				(*StiffMatrix)(offset_T+i,offset_T+j) +=  M_tt_coeff2 * (NodalVal_T1[i] - NodalVal_T0[i]) * shapefct[j];
+				(*StiffMatrix)(offset_T+i,offset_p+j) +=  M_tp_coeff2 * (NodalVal_T1[i] - NodalVal_T0[i]) * shapefct[j];
+			}
+		}
+		if (updateRHS)
+		for (int i = 0; i < nnodes; i++) {
+			(*RHS)(offset_T+i) += M_tt_coeff1 * (NodalVal_T1[i] - NodalVal_T0[i]);
+		}
+	}
+#endif
+
+	//======================================================================
+	// Loop over Gauss points
+	int gp_r, gp_s, gp_t;
+	double var[3] = {}, vel[3] = {};
+	for (gp = 0; gp < nGaussPoints; gp++)
+	{
+		//---------------------------------------------------------
+		//  Get local coordinates and weights
+		//  Compute Jacobian matrix and its determinate
+		//---------------------------------------------------------
+		const double fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+		// Compute geometry
+		ComputeShapefct(1);
+		ComputeGradShapefct(1);
+		double const*const c_shapefct = shapefct;
+        double const*const c_dshapefct = dshapefct;
+
+		//---------------------------------------------------------
+		//  Get state variables
+		//---------------------------------------------------------
+		const double gp_p0 = interpolate(NodalVal_p0);
+		const double gp_T0 = interpolate(NodalVal_T0);
+		const double gp_p1 = interpolate(NodalVal_p1);
+		const double gp_T1 = interpolate(NodalVal_T1);
+//		if (myrank==2 && gp==0 && updateA)
+//		ScreenMessage2("%d: p0=%.3e, p1=%.3e, T0=%.3e, T1=%.3e\n", Index, gp_p0, gp_p1, gp_T0, gp_T1);
+		var[0] = gp_p1;
+		var[1] = gp_T1;
+		double grad_p0[3] = {}, grad_T0[3] = {};
+		double grad_p1[3] = {}, grad_T1[3] = {};
+		double grad_T1_r[3] = {};
+//		static double max_gradT1 = .0;
+		for (unsigned i=0; i<c_dim; i++) {
+			for (int j=0; j<c_nnodes; j++) {
+				grad_p0[i] += c_dshapefct[i*nnodes+j]*NodalVal_p0[j];
+				grad_p1[i] += c_dshapefct[i*nnodes+j]*NodalVal_p1[j];
+				grad_T0[i] += c_dshapefct[i*nnodes+j]*NodalVal_T0[j];
+				grad_T1_r[i] += c_dshapefct[i*nnodes+j]*NodalVal_T1[j];
+			}
+#define TH_INCLUDE_GRAD_T
+#ifdef TH_INCLUDE_GRAD_T
+			if (pcs->m_num->nls_jacobian_level==0)
+				grad_T1[i] = grad_T1_r[i];
+#ifdef USE_PETSC
+//			if (fabs(grad_T1[i]) > fabs(max_gradT1) ) {
+//				max_gradT1 = grad_T1[i];
+////				ScreenMessage2("-> max grad T updated = %g\n", max_gradT1);
+//			}
+#endif
+#endif
+		}
+
+		//---------------------------------------------------------
+		//  Get material properties
+		//---------------------------------------------------------
+#ifdef CONST_HEAT
+		{
+#endif
+		// Fluid properties
+		const double rho_w = FluidProp->Density(var);
+		const double drho_w_dp = FluidProp->drhodP(var);
+		const double drho_w_dT = FluidProp->drhodT(var);
+		const double vis = FluidProp->Viscosity(var);
+		const double dvis_dp = FluidProp->dViscositydP(var);
+		const double dvis_dT = FluidProp->dViscositydT(var);
+		const double cp_w = FluidProp->SpecificHeatCapacity(var);
+		// Medium properties
+#ifndef ELE_CONST_K
+		const double Ss = MediaProp->StorageFunction(Index,unit,pcs->m_num->ls_theta);
+		double* k_tensor = MediaProp->PermeabilityTensor(Index);
+		if (dim > MediaProp->geo_dimension)
+		{
+			Matrix local_tensor(dim,dim), temp_tensor(dim,dim), global_tensor(dim,dim);
+			for (size_t i = 0; i < ele_dim; i++)
+				for (size_t j = 0; j < ele_dim; j++)
+					local_tensor(i,j) = k_tensor[j + i * ele_dim];
+			//cout << "K':" << endl; local_tensor.Write();
+			local_tensor.multi(t_transform_tensor, temp_tensor);
+			for (size_t i = 0; i < dim; i++)
+				for (size_t j = 0; j < dim; j++)
+					for (size_t k = 0; k < dim; k++)
+						global_tensor(i, j) += (*MeshElement->transform_tensor)(i, k)
+										* temp_tensor(k,j);
+			//cout << "K:" << endl; global_tensor.Write();
+			for(size_t i = 0; i < dim; i++)
+				for(size_t j = 0; j < dim; j++)
+					k_tensor[dim * i + j] = global_tensor(i,j);
+		}
+		double const* const lambda_tensor = MediaProp->HeatDispersionTensorNew(gp, var);
+#endif
+		const double rhocp = MediaProp->HeatCapacity(Index,pcs->m_num->ls_theta,this,var);
+		const double porosity = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
+		const double drhocp_dp = porosity*cp_w*drho_w_dp;//  MediaProp->dHeatCapacitydP(Index,pcs->m_num->ls_theta,this,var);
+		const double drhocp_dT = porosity*cp_w*drho_w_dT; //MediaProp->dHeatCapacitydT(Index,pcs->m_num->ls_theta,this,var);
+
+		//---------------------------------------------------------
+		//  Set velocity
+		//---------------------------------------------------------
+#if 0
+		vel[0] = gp_ele->Velocity(0, gp);
+		vel[1] = gp_ele->Velocity(1, gp);
+		vel[2] = gp_ele->Velocity(2, gp);
+		if (myrank==0 && gp==0 && updateRHS)
+		ScreenMessage2("%d: vx=%.3e, vy=%.3e, vz=%.3e\n", Index, vel[0], vel[1], vel[2]);
+#else
+
+#if 1
+        for (unsigned i = 0; i < c_dim; i++)
+		{
+			vel[i] = .0;
+			for(unsigned j = 0; j < c_dim; j++)
+				vel[i] -= k_tensor[c_dim*i+j]/vis*grad_p1[j];
+			vel[i] -= k_tensor[c_dim*i + c_dim-1]/vis*rho_w*g_const;
+		}
+#endif
+//		if (gp==0 && Index<2)
+//		ScreenMessage2("%d: vx=%.3e, vy=%.3e, vz=%.3e\n", Index, vel[0], vel[1], vel[2]);
+//		if (gp==0 && Index<2)
+//		ScreenMessage2("%d: gx=%.3e, gy=%.3e, gz=%.3e\n", Index, gp_ele->Velocity(0, gp), gp_ele->Velocity(1, gp), gp_ele->Velocity(2, gp));
+//		if (c_dim > MediaProp->geo_dimension) {
+//			if (gp==0 && Index%100==0)
+//				ScreenMessage2("%d: vx=%.3e, vy=%.3e, vz=%.3e\n", Index, vel[0], vel[1], vel[2]);
+//			if (gp==0 && Index%100==0)
+//				ScreenMessage2("%d: gx=%.3e, gy=%.3e, gz=%.3e\n", Index, gp_ele->Velocity(0, gp), gp_ele->Velocity(1, gp), gp_ele->Velocity(2, gp));
+//		}
+#endif
+
+		//---------------------------------------------------------
+		//  Assemble Liquid flow equation
+		//  original: N^T*S*N*dp/dt + dN^T*k/mu*dN*p+dN^T*rho*g*z = 0
+		//---------------------------------------------------------
+#define ENABLE_PT
+#define ENABLE_TP
+#define ENABLE_TP_MASS
+
+#if 1
+		if (updateA) {
+		const double Mpp_coeff = isTransient ? dt_inverse * fkt * Ss : 0;
+		const double Lpp_coeff1 = theta * fkt/vis;
+		//const double Lpp_coeff2 = theta * fkt/(vis*vis);
+		const double Lpp_coeff3 = theta * fkt / vis * dvis_dp;
+		const double LpT_coeff3 = theta * fkt / vis * dvis_dT;
+		//const double Gpp_coeff1 = - theta * fkt / (vis*vis) * dvis_dp * rho_w * g_const;
+		const double Gpp_coeff2 = theta * fkt / vis * drho_w_dp * g_const;
+		//const double GpT_coeff3 = - theta * fkt / (vis*vis) * dvis_dT * rho_w * g_const;
+		const double GpT_coeff4 = theta * fkt / vis * drho_w_dT * g_const;
+
+		for (int i=0; i < c_nnodes; i++) {
+			 //symmetric
+			for (int j=i; j < c_nnodes; j++) {
+				double v_pp = .0;
+				// Jpp = 1/dt*N^T*Ss*N
+				v_pp = Mpp_coeff * c_shapefct[i] * c_shapefct[j];
+				for (unsigned k = 0; k < c_dim; k++) {
+					for (unsigned l = 0; l < c_dim; l++) {
+						// Jpp = theta*dN^T*k/mu*dN
+						v_pp += Lpp_coeff1 * c_dshapefct[k * c_nnodes + i] * k_tensor[c_dim * k + l] * c_dshapefct[l * c_nnodes + j];
+					}
+				}
+
+				(*StiffMatrix)(offset_p+i, offset_p+j) += v_pp;
+				if (i!=j) { // make it symmetric
+					(*StiffMatrix)(offset_p+j, offset_p+i) += v_pp;
+				}
+			}
+			//unsymmetric
+			for (int j = 0; j < c_nnodes; j++) {
+				double v_pp = .0;
+				double v_pT = .0;
+				for (unsigned k = 0; k < c_dim; k++) {
+					const double dN_N = c_dshapefct[k * c_nnodes + i] * c_shapefct[j];
+					const double dN_kz_N = dN_N * k_tensor[c_dim * k + c_dim - 1];
+					const double dN_v_N = c_dshapefct[k * c_nnodes + i] * vel[k] * c_shapefct[j];
+					// Jpp += theta/mu*dmu_dp*dN^T*q*N
+					v_pp += Lpp_coeff3 * dN_v_N;
+					// JpT += theta/mu*dmu_dT*dN^T*q*N
+					v_pT += LpT_coeff3 * dN_v_N;
+					// Jpp += theta*dN^T*k/mu*drho_w_dp*g*N
+					v_pp += Gpp_coeff2 * dN_kz_N;
+					// Jpt += theta*dN^T*k/mu*drho_w_dT*g*N
+					v_pT += GpT_coeff4 * dN_kz_N;
+				}
+				(*StiffMatrix)(offset_p+i, offset_p+j) += v_pp;
+#ifdef ENABLE_PT
+				(*StiffMatrix)(offset_p+i, offset_T+j) += v_pT;
+#endif
+			}
+		}
+		} //update A
+
+		if (updateRHS) {
+		// Rp += [1/dt*N^T*Ss*N + theta*dN^T*k/mu*dN]*p1 - [1/dt*N^T*Ss*N - (1-theta)*dN^T*k/mu*dN]*p0 + dN^T*k/mu*rho*g*z
+		const double Rp_coeff1 = isTransient ? dt_inverse * fkt * Ss * (gp_p1-gp_p0) : 0;
+		for (int i = 0; i < c_nnodes; i++) {
+			double v_p = 0;
+			// 1/dt*N^T*Ss*(p1-p0)
+			v_p += Rp_coeff1 * c_shapefct[i];
+			for (unsigned k = 0; k < c_dim; k++) {
+				// - dN^T*vel
+				v_p += - fkt * c_dshapefct[k * c_nnodes + i] * vel[k];
+			}
+			(*RHS)(offset_p+i) += v_p;
+		}
+		} // update RHS
+		//---------------------------------------------------------
+		//  Assemble Heat transport equation
+		//---------------------------------------------------------
+#ifdef CONST_HEAT
+	}
+		double varT[3] = {1750000., 333.15, .0};
+		const double rho_w = FluidProp->Density(varT);
+		const double drho_w_dp = 0; //FluidProp->drhodP(varT);
+		const double drho_w_dT = 0; //FluidProp->drhodT(varT);
+		const double vis = FluidProp->Viscosity(varT);
+		const double dvis_dp = 0; //FluidProp->dViscositydP(varT);
+		const double dvis_dT = 0; //FluidProp->dViscositydT(varT);
+		const double cp_w = FluidProp->SpecificHeatCapacity(varT);
+		const double rhocp = MediaProp->HeatCapacity(Index,pcs->m_num->ls_theta,this,varT);
+		const double drhocp_dp = 0; //MediaProp->dHeatCapacitydP(Index,pcs->m_num->ls_theta,this,varT);
+		const double drhocp_dT = 0; //MediaProp->dHeatCapacitydT(Index,pcs->m_num->ls_theta,this,varT);
+		const int offset_p = 0;
+		const int offset_T = c_nnodes;
+#endif
+
+		double supg_tau = 0;
+		if (useSUPG)
+			CalcSUPGWeightingFunction(vel, gp, supg_tau, weight_func);
+		double const*const c_weight_func = weight_func;
+
+		if (updateA) {
+		// Jtt = 1/dt*N^T*rho*cp*N
+		// Jtt += 1/dt*N^T*drhocp_dT*T1*N
+		// Jtp += 1/dt*N^T*drhocp_dp*T1*N
+//		const double M_tt_coeff1 = isTransient ? dt_inverse * fkt * rhocp : 0;
+		const double M_tt_coeff1 = isTransient ? dt_inverse * fkt * (rhocp + drhocp_dT * (gp_T1-gp_T0)) : 0;
+		const double M_tp_coeff1 = isTransient ? dt_inverse * fkt * drhocp_dp * (gp_T1-gp_T0) : 0;
+		if (useLumpedMass) {
+#ifdef USE_LMASS2
+			const double R_t_coeff1 = isTransient ? dt_inverse * fkt * rhocp : 0;
+//			double vol = MeshElement->GetVolume() * MeshElement->GetFluxArea();
+//			// Center of the reference element
+//			SetCenterGP();
+//			double factor = CalCoefMass();
+//			factor *= vol / (double)nnodes;
+//			for (int i = 0; i < nnodes; i++)
+//				(*StiffMatrix)(offset_T+i,offset_T+i) =  factor;
+
+			for (int i = 0; i < c_nnodes; i++) {
+				double NN = .0;
+				for (int j = 0; j < c_nnodes; j++) {
+					NN += c_shapefct[i] * c_shapefct[j];
+				}
+				(*StiffMatrix)(offset_T+i, offset_T+i) += M_tt_coeff1 * NN;
+#ifdef ENABLE_TP_MASS1
+				for (int k = 0; k < c_nnodes; k++) {
+//					(*StiffMatrix)(offset_T+i, offset_T+k) += dt_inverse * fkt * drhocp_dT * NodalVal_T1[i] * NN * c_shapefct[k];
+					(*StiffMatrix)(offset_T+i, offset_p+k) += dt_inverse * fkt * drhocp_dp * NodalVal_T1[i] * NN * c_shapefct[k];
+				}
+#endif
+				(*RHS)(offset_T+i) += R_t_coeff1 * NN * (NodalVal_T1[i] - NodalVal_T0[i]);
+#ifdef TH_DEBUG
+				(*Mass)(i, i) += 1./dt_inverse * R_t_coeff1 * NN;
+#endif
+			}
+#endif
+		} else {
+			for (int i = 0; i < c_nnodes; i++)
+				for (int j = 0; j < c_nnodes; j++) {
+					const double NN = c_shapefct[i] * c_shapefct[j];
+					(*StiffMatrix)(offset_T+i, offset_T+j) += M_tt_coeff1 * NN;
+					(*StiffMatrix)(offset_T+i, offset_p+j) += M_tp_coeff1 * NN;
+#ifdef TH_DEBUG
+					(*Mass)(i, j) += 1./dt_inverse * coeff_mass_T * NN;
+#endif
+				}
+			if (useSUPG)
+			{
+				// tau*({v}[dN])^T*[N]
+				for (int i = 0; i < c_nnodes; i++)
+					for (int j = 0; j < c_nnodes; j++) {
+						const double NN = c_weight_func[i] * c_shapefct[j];
+						(*StiffMatrix)(offset_T+i, offset_T+j) += supg_tau * M_tt_coeff1 * NN;
+						(*StiffMatrix)(offset_T+i, offset_p+j) += supg_tau * M_tp_coeff1 * NN;
+#ifdef TH_DEBUG
+						(*Mass)(i, j) += supg_tau * 1./dt_inverse * coeff_mass_T * NN;
+#endif
+					}
+			}
+		}
+
+		// L = theta*dN^T*lambda*dN*T
+		// Jtt += theta*dN^T*lambda*dN
+		const double theta_fkt = theta * fkt;
+		const double theta_fkt_Cw = theta_fkt * rho_w * cp_w;
+		const double Att_coeff2 = theta_fkt * drho_w_dT * cp_w;
+		const double Att_coeff3 = theta_fkt * drho_w_dp * cp_w;
+//		const double Att_coeff4 = theta_fkt_Cw / (vis*vis) * dvis_dT;
+//		const double Att_coeff5 = theta_fkt_Cw / (vis*vis) * dvis_dp;
+//		const double Att_coeff6 = - theta_fkt_Cw / vis;
+//		double G_tt_coeff1 = theta_fkt_Cw / vis *(1./vis*dvis_dT*rho_w - drho_w_dT) * g_const;
+//		double G_tp_coeff1 = theta_fkt_Cw / vis *(1./vis*dvis_dp*rho_w - drho_w_dp) * g_const;
+		for (int i = 0; i < c_nnodes; i++) {
+			//symmetric
+			for (int j = i; j < c_nnodes; j++) {
+				double v_TT = 0;
+				for (unsigned k = 0; k < c_dim; k++) {
+					for (unsigned l = 0; l < c_dim; l++) {
+						v_TT += theta_fkt * c_dshapefct[k * c_nnodes + i] * lambda_tensor[c_dim * k + l] * c_dshapefct[l * c_nnodes + j];
+#ifdef TH_DEBUG
+						(*Laplace)(i, j) += fkt * lambda_tensor[dim * k + l] * dshapefct[k * nnodes + i] * dshapefct[l * nnodes + j];
+#endif
+					}
+				}
+				(*StiffMatrix)(offset_T+i, offset_T+j) += v_TT;
+				if (i!=j)
+					(*StiffMatrix)(offset_T+j, offset_T+i) += v_TT;
+			}
+			//unsymmetric
+			for (int j = 0; j < c_nnodes; j++) {
+				double v_TT = 0;
+				double v_Tp = 0;
+				const double NN = c_shapefct[i] * c_shapefct[j];
+				const double WN = useSUPG ? c_weight_func[i] * c_shapefct[j] : 0;
+
+				for (unsigned k = 0; k < c_dim; k++) {
+					const double NdN = c_shapefct[i] * c_dshapefct[k * c_nnodes + j];
+					// Jtt += theta*N^T*rho_w*cp_w*q^T*dN
+					v_TT += theta_fkt_Cw * vel[k] * NdN;
+					// Jtt += theta*N^T*drho_w_dT*cp_w*q^T*grad(T)*N
+					v_TT += Att_coeff2 * vel[k] * grad_T1[k] * NN;
+					// Jtp += theta*N^T*drho_w_dp*cp_w*q^T*grad(T)*N
+					v_Tp += Att_coeff3 * vel[k] * grad_T1[k] * NN;
+#ifdef TH_DEBUG
+					(*Advection)(i, j) += fkt * shapefct[i] * rho_w * cp_w * vel[k] * dshapefct[k * nnodes + j];
+#endif
+					const double N_gT_kz_N = grad_T1[k] * k_tensor[c_dim * k + c_dim - 1] * NN;
+					// Jtt += - theta*N^T*rho_w*cp_w*grad(T)*k/mu*g*drho_dT*N
+					v_TT += - theta_fkt_Cw / vis * drho_w_dT * g_const * N_gT_kz_N;
+					// Jtt += - theta*N^T*rho_w*cp_w*grad(T)*1/mu*q*dmu_dT*N
+					v_TT += - theta_fkt_Cw * grad_T1[k] / vis * vel[k] * dvis_dT * NN;
+
+					// Jtp += - theta*N^T*rho_w*cp_w*grad(T)*k/mu*g*drho_dp*N
+					v_Tp += - theta_fkt_Cw / vis * drho_w_dp * g_const * N_gT_kz_N;
+					// Jtp += - theta*N^T*rho_w*cp_w*grad(T)/mu*q*dmu_dp*N
+					v_Tp += - theta_fkt_Cw * grad_T1[k] / vis * vel[k] * dvis_dp * NN;
+					for (unsigned l = 0; l < c_dim; l++) {
+						// Jtp += - theta*N^T*rho_w*cp_w*grad(T)*k/mu*dN
+						v_Tp += - theta_fkt_Cw * grad_T1[k] * k_tensor[c_dim * k + l] / vis * c_shapefct[i] * c_dshapefct[l * c_nnodes + j];
+					}
+
+					if (useSUPG)
+					{
+						//Calculate mat_factor*tau*({v}[dN])^T*({v}[dN])
+						const double WdN = c_weight_func[i] *  c_dshapefct[k * c_nnodes + j];
+						v_TT += supg_tau * theta_fkt_Cw * vel[k] * WdN;
+						v_TT += supg_tau * Att_coeff2 * vel[k] * grad_T1[k] * WN;
+						v_Tp += supg_tau * Att_coeff3 * vel[k] * grad_p1[k] * WN;
+#ifdef TH_DEBUG
+						(*Advection)(i,j) += supg_tau * fkt * rho_w * cp_w * vel[k] * WdN;
+#endif
+						const double W_gT_kz_N = grad_T1[k] * k_tensor[c_dim * k + c_dim - 1] * WN;
+						// Jtt += - theta*N^T*rho_w*cp_w*grad(T)*k/mu*g*drho_dT*N
+						v_TT += - theta_fkt_Cw / vis * drho_w_dT * g_const * W_gT_kz_N;
+						// Jtt += - theta*N^T*rho_w*cp_w*grad(T)*1/mu*q*dmu_dT*N
+						v_TT += - theta_fkt_Cw * grad_T1[k] / vis * vel[k] * dvis_dT * WN;
+
+						// Jtp += - theta*N^T*rho_w*cp_w*grad(T)*k/mu*g*drho_dp*N
+						v_Tp += - theta_fkt_Cw / vis * drho_w_dp * g_const * W_gT_kz_N;
+						// Jtp += - theta*N^T*rho_w*cp_w*grad(T)/mu*q*dmu_dp*N
+						v_Tp += - theta_fkt_Cw * grad_T1[k] / vis * vel[k] * dvis_dp * WN;
+						for (unsigned l = 0; l < c_dim; l++) {
+							// Jtp += - theta*N^T*rho_w*cp_w*grad(T)*k/mu*dN
+							v_Tp += - theta_fkt_Cw * grad_T1[k] * k_tensor[c_dim * k + l] / vis * c_weight_func[i] * c_dshapefct[l * c_nnodes + j];
+						}
+					}
+				}
+#define ADV
+#ifdef ADV
+				(*StiffMatrix)(offset_T+i, offset_T+j) += v_TT;
+#ifdef ENABLE_TP
+				(*StiffMatrix)(offset_T+i, offset_p+j) += v_Tp;
+#endif
+#endif
+			}
+		}
+		} //update A
+
+		if (updateRHS) {
+		// Rt += [1/dt*N^T*Cp*N + theta*(dN^T*lambda*dN+N^T*Cp_w*dN)]*T1 - [1/dt*N^T*Cp*N - (1-theta)*(dN^T*lambda*dN+N^T*Cp_w*dN)]*T0
+		if (isTransient) {
+			if (useLumpedMass) {
+#ifdef USE_LMASS2
+				for (int i = 0; i < c_nnodes; i++) {
+					double row_sum = .0;
+					for (int j = 0; j < c_nnodes; j++)
+						row_sum += dt_inverse * fkt * rhocp * c_shapefct[i] * c_shapefct[j];
+					(*RHS)(offset_T+i) += row_sum * (NodalVal_T1[i] - NodalVal_T0[i]);
+				}
+#endif
+			} else {
+				const double coeff = dt_inverse * fkt * rhocp * (gp_T1 - gp_T0);
+				for (int i = 0; i < c_nnodes; i++)
+					(*RHS)(offset_T+i) += c_shapefct[i] * coeff;
+				if (useSUPG)
+				{
+					// tau*({v}[dN])^T*[N]
+					for (int i = 0; i < c_nnodes; i++)
+						(*RHS)(offset_T+i) += supg_tau *  c_weight_func[i] * coeff;
+				}
+			}
+		}
+		for (int i = 0; i < c_nnodes; i++) {
+			double v_T = 0;
+			for (unsigned k = 0; k < c_dim; k++) {
+				for (unsigned l = 0; l < c_dim; l++) {
+					//dN^T*lambda*(theta*gradT1+(1-theta)*gradT0)
+					v_T += fkt * c_dshapefct[k * c_nnodes + i] * lambda_tensor[c_dim * k + l] * (theta*grad_T1_r[l]+(1.-theta)*grad_T0[l]);
+				}
+#ifdef ADV
+				//N^T*Cp_w*(theta*gradT1+(1-theta)*gradT0)
+				const double cp_v_gradT = fkt * rho_w * cp_w * vel[k] * (theta*grad_T1_r[k]+(1.-theta)*grad_T0[k]);
+				v_T += c_shapefct[i] * cp_v_gradT;
+				if (useSUPG) {
+					//Calculate mat_factor*tau*({v}[dN])^T*({v}[dN])
+					v_T += supg_tau * c_weight_func[i] * cp_v_gradT;
+				}
+#endif
+			}
+			(*RHS)(offset_T+i) += v_T;
+		}
+		} //update RHS
+#else
+		const int offset_p = 0;
+		const int offset_T = c_nnodes;
+		if (this->pcs->tim_type==FiniteElement::TIM_TRANSIENT) {
+			const double coeff = dt_inverse * fkt * Ss;
+			for (int i=0; i < c_nnodes; i++) {
+				(*StiffMatrix)(offset_p+i, offset_p+i) += coeff * c_shapefct[i] * c_shapefct[i];
+				for (int j=i+1; j < c_nnodes; j++) { //symmetric
+					// Jpp = 1/dt*N^T*Ss*N
+					const double v = coeff * c_shapefct[i] * c_shapefct[j];
+					(*StiffMatrix)(offset_p+i, offset_p+j) += v;
+					(*StiffMatrix)(offset_p+j, offset_p+i) += v;
+				}
+			}
+		}
+		const double Lpp_coeff1 = theta * fkt/vis;
+		for (int i = 0; i < c_nnodes; i++) {
+			for (int j = i; j < c_nnodes; j++) { //symmetric
+				double dN_k_dN = .0;
+				for (unsigned k = 0; k < c_dim; k++) {
+					for (unsigned l = 0; l < c_dim; l++) {
+						// Jpp = theta*dN^T*k/mu*dN
+						dN_k_dN += c_dshapefct[k * c_nnodes + i] * k_tensor[c_dim * k + l] * c_dshapefct[l * c_nnodes + j];
+					}
+				}
+				(*StiffMatrix)(offset_p+i, offset_p+j) += Lpp_coeff1 * dN_k_dN;
+				if (i!=j)
+					(*StiffMatrix)(offset_p+j, offset_p+i) += Lpp_coeff1 * dN_k_dN;
+			}
+		}
+		const double Lpp_coeff2 = theta * fkt/(vis*vis);
+		for (int i = 0; i < c_nnodes; i++) {
+			for (int j = 0; j < c_nnodes; j++) {
+				double v_pp = .0;
+				double v_pT = .0;
+				for (unsigned k = 0; k < c_dim; k++) {
+					const double dN_N = c_dshapefct[k * c_nnodes + i] * c_shapefct[j];
+					double dN_k_gradP_N = .0;
+					for (unsigned l = 0; l < c_dim; l++) {
+						dN_k_gradP_N += dN_N * k_tensor[c_dim * k + l] * grad_p1[l];
+					}
+					// Jpp += -theta*dN^T*k/mu^2*dmu_dp*grad p*N
+					v_pp += -dvis_dp * Lpp_coeff2 * dN_k_gradP_N;
+					// JpT += -theta*dN^T*k/mu^2*dmu_dT*grad p*N
+					v_pT += -dvis_dT * Lpp_coeff2 * dN_k_gradP_N;
+				}
+				(*StiffMatrix)(offset_p+i, offset_p+j) += v_pp;
+				(*StiffMatrix)(offset_p+i, offset_T+j) += v_pT;
+			}
+		}
+		if (hasGravity) {
+			const double coeff1 = - theta * fkt / (vis*vis) * dvis_dp * rho_w * gravity_constant;
+			const double coeff2 = theta * fkt / vis * drho_w_dp * gravity_constant;
+			const double coeff3 = - theta * fkt / (vis*vis) * dvis_dT * rho_w * gravity_constant;
+			const double coeff4 = theta * fkt / vis * drho_w_dT * gravity_constant;
+			for (int i = 0; i < c_nnodes; i++)
+				for (int j = 0; j < c_nnodes; j++) {
+					double v_pp = 0;
+					double v_pT = 0;
+					for (unsigned k = 0; k < c_dim; k++) {
+						const double dN_k_g_N = c_dshapefct[k * c_nnodes + i] * k_tensor[c_dim * k + c_dim - 1] * c_shapefct[j];
+						// Jpp += -theta*dN^T*k/mu^2*dmu_dp*rho_w*g*N
+						// Jpp += theta*dN^T*k/mu*drho_w_dp*g*N
+						v_pp += (coeff1 + coeff2) * dN_k_g_N;
+						// Jpt += -theta*dN^T*k/mu^2*dmu_dT*rho_w*g*N
+						// Jpt += theta*dN^T*k/mu*drho_w_dT*g*N
+						v_pT += (coeff3 + coeff4) * dN_k_g_N;
+					}
+					(*StiffMatrix)(offset_p+i, offset_p+j) += v_pp;
+					(*StiffMatrix)(offset_p+i, offset_T+j) += v_pT;
+				}
+		}
+
+		// Rp += [1/dt*N^T*Ss*N + theta*dN^T*k/mu*dN]*p1 - [1/dt*N^T*Ss*N - (1-theta)*dN^T*k/mu*dN]*p0 + dN^T*k/mu*rho*g*z
+		if (this->pcs->tim_type==FiniteElement::TIM_TRANSIENT) {
+			const double coeff = dt_inverse * fkt * Ss * (gp_p1-gp_p0);
+			for (int i = 0; i < c_nnodes; i++)
+				(*RHS)(offset_p+i) += coeff * c_shapefct[i];
+		}
+		for (int i = 0; i < c_nnodes; i++) {
+			double v_p = 0;
+			for (unsigned k = 0; k < c_dim; k++)
+				for (unsigned l = 0; l < c_dim; l++)
+					v_p += fkt * c_dshapefct[k * c_nnodes + i] * k_tensor[c_dim * k + l] / vis * (theta*grad_p1[l]-(1.-theta)*grad_p0[l]);
+			(*RHS)(offset_p+i) += v_p;
+		}
+		if (hasGravity) {
+			// Rp += dN^T*k/mu*rho*g
+			const double coeff = fkt  / vis * rho_w * gravity_constant;
+			for (int i = 0; i < c_nnodes; i++) {
+				double v_p = 0;
+				for (unsigned k = 0; k < c_dim; k++)
+					v_p += coeff * c_dshapefct[k * c_nnodes + i] * k_tensor[c_dim * k + c_dim - 1];
+				(*RHS)(offset_p+i) += v_p;
+			}
+		}
+
+		//---------------------------------------------------------
+		//  Assemble Heat transport equation
+		//---------------------------------------------------------
+		double supg_tau = 0;
+		if (pcs->m_num->ele_supg_method > 0)
+			CalcSUPGWeightingFunction(vel, gp, supg_tau, weight_func);
+
+		if(this->pcs->tim_type==FiniteElement::TIM_TRANSIENT) {
+			// Jtt = 1/dt*N^T*rho*cp*N
+			// Jtt += 1/dt*N^T*drhocp_dT*T1*N
+			// Jtp += 1/dt*N^T*drhocp_dp*T1*N
+			const double coeff_mass_T = dt_inverse * fkt * rhocp;
+			const double coeff_mass_dT = dt_inverse * fkt * drhocp_dT * gp_T1;
+			const double coeff_mass_dp = dt_inverse * fkt * drhocp_dp * gp_T1;
+			if (pcs->m_num->ele_mass_lumping > 0) {
+				for (int i = 0; i < c_nnodes; i++) {
+					double v_TT = 0;
+					double v_Tp = 0;
+					for (int j = 0; j < c_nnodes; j++) {
+						const double NN = c_shapefct[i] * c_shapefct[j];
+						v_TT += (coeff_mass_T + coeff_mass_dT) * NN;
+						v_Tp += coeff_mass_dp * NN;
+#ifdef TH_DEBUG
+						(*Mass)(i, i) += 1./dt_inverse * coeff_mass_T * NN;
+#endif
+					}
+					(*StiffMatrix)(offset_T+i, offset_T+i) += v_TT;
+					(*StiffMatrix)(offset_T+i, offset_p+i) += v_Tp;
+				}
+			} else {
+				for (int i = 0; i < c_nnodes; i++)
+					for (int j = 0; j < c_nnodes; j++) {
+						const double NN = c_shapefct[i] * c_shapefct[j];
+						(*StiffMatrix)(offset_T+i, offset_T+j) += (coeff_mass_T+ coeff_mass_dT) * NN;
+						(*StiffMatrix)(offset_T+i, offset_p+j) += coeff_mass_dp * NN;
+#ifdef TH_DEBUG
+						(*Mass)(i, j) += 1./dt_inverse * coeff_mass_T * NN;
+#endif
+					}
+				if (pcs->m_num->ele_supg_method > 0)
+				{
+					// tau*({v}[dN])^T*[N]
+					for (int i = 0; i < c_nnodes; i++)
+						for (int j = 0; j < c_nnodes; j++) {
+							const double NN = weight_func[i] * c_shapefct[j];
+							(*StiffMatrix)(offset_T+i, offset_T+j) += supg_tau * (coeff_mass_T+coeff_mass_dT) * NN;
+							(*StiffMatrix)(offset_T+i, offset_p+j) += supg_tau * coeff_mass_dp * NN;
+#ifdef TH_DEBUG
+							(*Mass)(i, j) += supg_tau * 1./dt_inverse * coeff_mass_T * NN;
+#endif
+						}
+				}
+			}
+		}
+
+		// L = theta*dN^T*lambda*dN*T
+		// Jtt += theta*dN^T*lambda*dN
+		const double Ltt_coeff = theta * fkt;
+		for (int i = 0; i < c_nnodes; i++) {
+			for (int j = i; j < c_nnodes; j++) {//symmetric
+				double v_TT = 0;
+				for (unsigned k = 0; k < c_dim; k++) {
+					for (unsigned l = 0; l < c_dim; l++) {
+						v_TT += Ltt_coeff * c_dshapefct[k * c_nnodes + i] * lambda_tensor[c_dim * k + l] * c_dshapefct[l * c_nnodes + j];
+#ifdef TH_DEBUG
+						(*Laplace)(i, j) += fkt * lambda_tensor[dim * k + l] * dshapefct[k * nnodes + i] * dshapefct[l * nnodes + j];
+#endif
+					}
+				}
+				(*StiffMatrix)(offset_T+i, offset_T+j) += v_TT;
+				if (i!=j)
+					(*StiffMatrix)(offset_T+j, offset_T+i) += v_TT;
+			}
+		}
+
+		// A = theta*N^T*rho_w*cp_w*q^T*dN*T
+		const double Att_coeff1 = theta * fkt * rho_w * cp_w;
+		const double Att_coeff2 = theta * fkt * drho_w_dT * cp_w;
+		const double Att_coeff3 = theta * fkt * drho_w_dp * cp_w;
+		const double Att_coeff4 = theta * fkt * rho_w * cp_w / (vis*vis) * dvis_dT;
+		const double Att_coeff5 = theta * fkt * rho_w * cp_w / (vis*vis) * dvis_dp;
+		const double Att_coeff6 = - theta * fkt * rho_w * cp_w / vis;
+		for (int i = 0; i < c_nnodes; i++) {
+			for (int j = 0; j < c_nnodes; j++) {
+				double v_TT = 0;
+				double v_Tp = 0;
+				const double NN = c_shapefct[i] * c_shapefct[j];
+				for (unsigned k = 0; k < c_dim; k++) {
+					const double NdN = c_shapefct[i] * c_dshapefct[k * c_nnodes + j];
+					// Jtt += theta*N^T*rho_w*cp_w*q^T*dN
+					v_TT += Att_coeff1 * vel[k] * NdN;
+					// Jtt += theta*N^T*drho_w_dT*cp_w*q^T*grad(T)*N
+					v_TT += Att_coeff2 * vel[k] * grad_T1[k] * NN;
+					// Jtp += theta*N^T*drho_w_dp*cp_w*q^T*grad(T)*N
+					v_Tp += Att_coeff3 * vel[k] * grad_T1[k] * NN;
+#ifdef TH_DEBUG
+					(*Advection)(i, j) += fkt * shapefct[i] * rho_w * cp_w * vel[k] * dshapefct[k * nnodes + j];
+#endif
+					for (unsigned l = 0; l < c_dim; l++) {
+						const double gT_k_gp_NN = grad_T1[k] * k_tensor[c_dim * k + l] * grad_p1[l] * NN;
+						// Jtt += theta*N^T*rho_w*cp_w*grad(T)^T*k/mu^2*dmu_dT*grad(p)*N
+						v_TT += Att_coeff4 * gT_k_gp_NN;
+						// Jtp += theta*N^T*rho_w*cp_w*grad(T)^T*k/mu^2*dmu_dp*grad(p)*N
+						v_Tp += Att_coeff5 * gT_k_gp_NN;
+						// Jtp += theta*N^T*rho_w*cp_w*grad(T)^T*(-k/mu)*dN
+#if 0
+						v_Tp += Att_coeff6 * grad_T1[k] * k_tensor[c_dim * k + l] * NdN;
+#else
+						v_Tp += Att_coeff6 * c_shapefct[i] * grad_T1[k] * k_tensor[c_dim * k + l] * c_dshapefct[l * c_nnodes + j];
+#endif
+					}
+				}
+				(*StiffMatrix)(offset_T+i, offset_T+j) += v_TT;
+				(*StiffMatrix)(offset_T+i, offset_p+j) += v_Tp;
+			}
+		}
+		if (hasGravity) {
+			double coeff1 = theta * fkt * rho_w * cp_w / vis *(1./vis*dvis_dT*rho_w - drho_w_dT) * gravity_constant;
+			double coeff2 = theta * fkt * rho_w * cp_w / vis *(1./vis*dvis_dp*rho_w - drho_w_dp) * gravity_constant;
+			for (int i = 0; i < c_nnodes; i++)
+				for (int j = 0; j < c_nnodes; j++) {
+					const double NN = c_shapefct[i] * c_shapefct[j];
+					double v_TT = .0;
+					double v_Tp = .0;
+					for (unsigned k = 0; k < c_dim; k++) {
+						const double N_gT_k_N = grad_T1[k] * k_tensor[c_dim * k + c_dim - 1] * NN;
+						// Jtt += theta*N^T*rho_w*cp_w*grad(T)^T*k/mu*[-1/mu*dmu_dT*rho+drho_dT]*g*N
+						v_TT += coeff1 * N_gT_k_N;
+						// Jtp += theta*N^T*rho_w*cp_w*grad(T)^T*k/mu*[-1/mu*dmu_dp*rho+drho_dp]*g*N
+						v_Tp += coeff2 * N_gT_k_N;
+					}
+					(*StiffMatrix)(offset_T+i, offset_T+j) += v_TT;
+					(*StiffMatrix)(offset_T+i, offset_p+j) += v_Tp;
+				}
+		}
+
+		if (pcs->m_num->ele_supg_method > 0)
+		{
+			//Calculate mat_factor*tau*({v}[dN])^T*({v}[dN])
+			for (int i = 0; i < c_nnodes; i++)
+				for (int j = 0; j < c_nnodes; j++) {
+					const double NN = weight_func[i] * c_shapefct[j];
+					double v_TT = 0;
+					double v_Tp = 0;
+					for (unsigned k = 0; k < c_dim; k++) {
+						const double NdN = weight_func[i] *  c_dshapefct[k * c_nnodes + j];
+						v_TT += supg_tau * Att_coeff1 * vel[k] * NdN;
+						v_TT += supg_tau * Att_coeff2 * vel[k] * grad_T1[k] * NN;
+						v_Tp += supg_tau * Att_coeff3 * vel[k] * grad_p1[k] * NN;
+#ifdef TH_DEBUG
+						(*Advection)(i,j) += supg_tau * fkt * rho_w * cp_w * vel[k] * NdN;
+#endif
+						for (unsigned l = 0; l < c_dim; l++) {
+							const double gT_k_gp_NN = grad_T1[k] * k_tensor[c_dim * k + l] * grad_p1[l] * NN;
+							// Jtt += theta*N^T*rho_w*cp_w*grad(T)^T*k/mu^2*dmu_dT*grad(p)*N
+							v_TT += supg_tau * Att_coeff4 * gT_k_gp_NN;
+							// Jtp += theta*N^T*rho_w*cp_w*grad(T)^T*k/mu^2*dmu_dp*grad(p)*N
+							v_Tp += supg_tau * Att_coeff5 * gT_k_gp_NN;
+							// Jtp += theta*N^T*rho_w*cp_w*grad(T)^T*(-k/mu)*dN
+#if 0
+							v_Tp += supg_tau * Att_coeff6 * grad_T1[k] * k_tensor[c_dim * k + l] * NdN;
+#else
+							v_Tp += supg_tau * Att_coeff6 * weight_func[i] * grad_T1[k] * k_tensor[c_dim * k + l] * c_dshapefct[l * c_nnodes + j];
+#endif
+						}
+					}
+					(*StiffMatrix)(offset_T+i, offset_T+j) += v_TT;
+					(*StiffMatrix)(offset_T+i, offset_p+j) += v_Tp;
+				}
+
+			if (hasGravity) {
+				double coeff1 = theta * fkt * rho_w * cp_w / vis *(1./vis*dvis_dT*rho_w - drho_w_dT) * gravity_constant;
+				double coeff2 = theta * fkt * rho_w * cp_w / vis *(1./vis*dvis_dp*rho_w - drho_w_dp) * gravity_constant;
+				for (int i = 0; i < c_nnodes; i++)
+					for (int j = 0; j < c_nnodes; j++) {
+						const double NN = weight_func[i] * c_shapefct[j];
+						double v_TT = 0;
+						double v_Tp = 0;
+						for (unsigned k = 0; k < c_dim; k++) {
+							const double N_gT_k_N = grad_T1[k] * k_tensor[c_dim * k + c_dim - 1] * NN;
+							// Jtt += theta*N^T*rho_w*cp_w*grad(T)^T*k/mu*[-1/mu*dmu_dT*rho+drho_dT]*g*N
+							v_TT += supg_tau * coeff1 * N_gT_k_N;
+							// Jtp += theta*N^T*rho_w*cp_w*grad(T)^T*k/mu*[-1/mu*dmu_dp*rho+drho_dp]*g*N
+							v_Tp += supg_tau * coeff2 * N_gT_k_N;
+						}
+						(*StiffMatrix)(offset_T+i, offset_T+j) += v_TT;
+						(*StiffMatrix)(offset_T+i, offset_p+j) += v_Tp;
+					}
+			}
+		}
+
+		// Rt += [1/dt*N^T*Cp*N + theta*(dN^T*lambda*dN+N^T*Cp_w*dN)]*T1 - [1/dt*N^T*Cp*N - (1-theta)*(dN^T*lambda*dN+N^T*Cp_w*dN)]*T0
+		if (this->pcs->tim_type==FiniteElement::TIM_TRANSIENT) {
+			if (pcs->m_num->ele_mass_lumping > 0) {
+				for (int i = 0; i < c_nnodes; i++) {
+					double row_sum = .0;
+					for (int j = 0; j < c_nnodes; j++)
+						row_sum += dt_inverse * fkt * rhocp * c_shapefct[i] * c_shapefct[j];
+					(*RHS)(offset_T+i) += row_sum * (NodalVal_T1[i] - NodalVal_T0[i]);
+				}
+			} else {
+				const double coeff = dt_inverse * fkt * rhocp * (gp_T1 - gp_T0);
+				for (int i = 0; i < c_nnodes; i++)
+					(*RHS)(offset_T+i) += c_shapefct[i] * coeff;
+				if (pcs->m_num->ele_supg_method > 0)
+				{
+					// tau*({v}[dN])^T*[N]
+					for (int i = 0; i < c_nnodes; i++)
+						(*RHS)(offset_T+i) += supg_tau *  weight_func[i] * coeff;
+				}
+			}
+		}
+		for (int i = 0; i < c_nnodes; i++) {
+			double v_T = 0;
+			for (unsigned k = 0; k < c_dim; k++)
+				for (unsigned l = 0; l < c_dim; l++)
+					v_T += fkt * lambda_tensor[c_dim * k + l] * c_dshapefct[k * c_nnodes + i] * (theta*grad_T1[l]-(1.-theta)*grad_T0[l]);
+			(*RHS)(offset_T+i) += v_T;
+		}
+		for (int i = 0; i < c_nnodes; i++)
+			for (size_t k = 0; k < c_dim; k++)
+				(*RHS)(offset_T+i) += fkt * c_shapefct[i] * rho_w * cp_w * vel[k] * (theta*grad_T1[k]-(1.-theta)*grad_T0[k]);
+		if (pcs->m_num->ele_supg_method > 0)
+		{
+			//Calculate mat_factor*tau*({v}[dN])^T*({v}[dN])
+			for (int i = 0; i < c_nnodes; i++)
+				for (unsigned k = 0; k < c_dim; k++)
+					(*RHS)(offset_T+i) += supg_tau * fkt * weight_func[i] * rho_w * cp_w * vel[k] * (theta*grad_T1[k]-(1.-theta)*grad_T0[k]);
+		}
+#endif
+	}
+
+	// RHS should be - residual
+	if (updateRHS)
+		(*RHS) *= -1.;
+
+#if !defined(USE_PETSC)
+	for(size_t ii = 0; ii < pcs->GetPrimaryVNumber(); ii++)
+		for (long i = 0; i < c_nnodes; i++)
+			eqs_rhs[NodeShift[ii] + eqs_number[i]] += (*RHS)(i + ii * c_nnodes);
+#endif
+
+	if (updateA && (pcs->scaleUnknowns || pcs->scaleEQS)) {
+		// scale p by 1e6
+		const double scale_p = 1./pcs->vec_scale_dofs[0] * pcs->vec_scale_eqs[0];
+		for (long i = 0; i < c_nnodes; i++)
+			for (long j = 0; j < c_nnodes; j++) {
+				(*StiffMatrix)(i,j) *= scale_p;
+				(*StiffMatrix)(i,j+c_nnodes) *= scale_p;
+//				(*StiffMatrix)(i+c_nnodes,j) *= scale_p;
+			}
+		// scale T
+		const double scale_T = 1./pcs->vec_scale_dofs[1] * pcs->vec_scale_eqs[1];
+		for (long i = 0; i < c_nnodes; i++)
+			for (long j = 0; j < c_nnodes; j++) {
+				(*StiffMatrix)(i+c_nnodes,j) *= scale_T;
+				(*StiffMatrix)(i+c_nnodes,j+c_nnodes) *= scale_T;
+//				(*StiffMatrix)(i,j+c_nnodes) *= scale_T;
+//				(*StiffMatrix)(i+c_nnodes,j+c_nnodes) *= scale_T;
+			}
+	}
+	if (updateRHS && pcs->scaleEQS) {
+		for (int ii=0; ii<2; ii++) {
+			const double scale_eqs = pcs->vec_scale_eqs[ii];
+			for (int i=0; i<c_nnodes; i++)
+				(*RHS)(ii*c_nnodes+i) *= scale_eqs;
+		}
+	}
+
+}
+#endif
+
 }                                                 // end namespace
 
 //////////////////////////////////////////////////////////////////////////

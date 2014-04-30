@@ -99,6 +99,7 @@ CFluidProperties::CFluidProperties() :
 #endif
 
 	compressibility_model_pressure = 0;
+	compressibility_model_temperature = 0;
 }
 
 /**************************************************************************
@@ -772,12 +773,9 @@ void CFluidProperties::CalPrimaryVariable(std::vector<std::string>& pcs_name_vec
 			primary_variable_t0[i] = Fem_Ele_Std->interpolate(nidx0,m_pcs);
 			primary_variable_t1[i] = Fem_Ele_Std->interpolate(nidx1,m_pcs);
 			primary_variable[i] =
-			        (1. - Fem_Ele_Std->pcs->m_num->ls_theta) * Fem_Ele_Std->interpolate(
-			                nidx0,
-			                m_pcs)
+			        (1. - Fem_Ele_Std->pcs->m_num->ls_theta) * primary_variable_t0[i]
 			        +
-			        Fem_Ele_Std->pcs->m_num->ls_theta* Fem_Ele_Std->
-			        interpolate(nidx1,m_pcs);
+			        Fem_Ele_Std->pcs->m_num->ls_theta* primary_variable_t1[i];
 		}
 		else if(mode == 2)        // Element average value
 		{
@@ -897,7 +895,8 @@ double CFluidProperties::Density(double* variables)
 			break;
         case 20:                   // rho(p,C,T) = rho_0*(1+beta_p*(p-p_0)+beta_C*(C-C_0)+beta_T*(T-T_0))
             {
-                double curC = (C_1 > .0) ? C_1 : max(variables[2],0.0);
+                double curC = C_1;
+//                double curC = (C_1 > .0) ? C_1 : max(variables[2],0.0);
                 density = rho_0 *
                           (1.   + drho_dp * (max(variables[0],0.0) - rho_p0)
                                 + drho_dC * (curC - rho_C0)
@@ -990,7 +989,8 @@ double CFluidProperties::Density(double* variables)
 			break;
         case 20:                   // rho(p,C,T) = rho_0*(1+beta_p*(p-p_0)+beta_C*(C-C_0)+beta_T*(T-T_0))
             {
-                double curC = (C_1 > .0) ? C_1 : max(primary_variable[2],0.0);
+                double curC = C_1;// > .0) ? C_1 : max(primary_variable[2],0.0);
+//                double curC = (C_1 > .0) ? C_1 : max(primary_variable[2],0.0);
                 density = rho_0 *
                           (1.   + drho_dp * (max(primary_variable[0],0.0) - rho_p0)
                                 + drho_dC * (curC - rho_C0)
@@ -1391,7 +1391,8 @@ double CFluidProperties::Viscosity(double* variables)
     {
         double curT = (T_1>.0) ? T_1 : primary_variable[1];
         curT -= T_KILVIN_ZERO;
-        viscosity = LiquidViscosity_LJH_MP2(C_1, curT); //c[g/L], T[C]
+        double rho = Density(primary_variable);
+        viscosity = LiquidViscosity_LJH_MP2(C_1, curT, rho); //c[g/L], T[C]
     }
         break;
 	default:
@@ -1401,6 +1402,49 @@ double CFluidProperties::Viscosity(double* variables)
 	//----------------------------------------------------------------------
 
 	return viscosity;
+}
+
+double CFluidProperties::dViscositydP(double* variables)
+{
+	const double p = variables[0];
+	const double T = variables[1];
+	double arguments[3]={};
+
+	if (p < 0)
+		return 0;
+
+	//dU/dx = (U(x+dx/2)-rho(x-dx/2))/dx
+	double delta_x = std::sqrt(std::numeric_limits<double>::epsilon()) * p;
+	arguments[1] = T;
+	arguments[0] = p + (delta_x / 2.);
+	double val1 = Viscosity(arguments);
+	arguments[0] = p - (delta_x / 2.);
+	double val2 = Viscosity(arguments);
+	double grad = (val1 - val2) / delta_x;
+
+	return grad;
+}
+
+double CFluidProperties::dViscositydT(double* variables)
+{
+	const double p = variables[0];
+	double T = variables[1];
+	double arguments[3]={};
+
+	if (p < 0)
+		return 0;
+	if (T==0) T = std::numeric_limits<double>::epsilon();
+
+	//dU/dx = (U(x+dx/2)-rho(x-dx/2))/dx
+	double delta_x = std::sqrt(std::numeric_limits<double>::epsilon()) * T;
+	arguments[0] = p;
+	arguments[1] = T + (delta_x / 2.);
+	double val1 = Viscosity(arguments);
+	arguments[1] = T - (delta_x / 2.);
+	double val2 = Viscosity(arguments);
+	double grad = (val1 - val2) / delta_x;
+
+	return grad;
 }
 
 /**************************************************************************
@@ -1567,12 +1611,8 @@ double CFluidProperties::LiquidViscosity_LJH_MP1(double c,double T)
    04/2013 NW implementation
    last modification:
 **************************************************************************/
-double CFluidProperties::LiquidViscosity_LJH_MP2(double c,double T)
+double CFluidProperties::LiquidViscosity_LJH_MP2(double c,double T, double rho)
 {
-    double f1, f2, mu;
-    double omega0, omega, sigma0, sigma;
-    double rho = Density();
-
     if (rho <  MKleinsteZahl || my_T0 < MKleinsteZahl)
         return 0.;
 
@@ -1588,16 +1628,22 @@ double CFluidProperties::LiquidViscosity_LJH_MP2(double c,double T)
             rho0 = my_rho0;
         }
     }
+    static double omega0 = -1, sigma0, f1_0, f2_0;
+    if (omega0 <0) {
+        omega0 = my_C0 / rho0;
+        sigma0 = (my_T0 - 150.) / 100.;
+        f1_0 = 1. + 1.85 * omega0 - 4.1 * omega0 * omega0 + 44.5 * omega0 * omega0 * omega0;
+        f2_0 = 1./(1 + 0.7063 * sigma0 - 0.04832 * sigma0 * sigma0 * sigma0);
+    }
+
+    double omega, sigma;
+    double f1, f2, mu;
 
     omega = c / rho;
-    omega0 = my_C0 / rho0;
     sigma = (T - 150.) / 100.;
-    sigma0 = (my_T0 - 150.) / 100.;
 
-    f1 = (1. + 1.85 * omega0 - 4.1 * omega0 * omega0 + 44.5 * omega0 * omega0 * omega0) /
-         (1. + 1.85 * omega - 4.1 * omega * omega + 44.5 * omega * omega * omega);
-    f2 = (1 + 0.7063 * sigma - 0.04832 * sigma * sigma * sigma) /
-         (1 + 0.7063 * sigma0 - 0.04832 * sigma0 * sigma0 * sigma0);
+    f1 = f1_0 / (1. + 1.85 * omega - 4.1 * omega * omega + 44.5 * omega * omega * omega);
+    f2 = (1 + 0.7063 * sigma - 0.04832 * sigma * sigma * sigma) * f2_0;
     mu = my_0 / (f1*f2);
 
     return mu;
@@ -1736,7 +1782,7 @@ double CFluidProperties::PhaseChange()
    Programing:
    02/2007 WW MFP implementation based on MATCalcFluidHeatCapacity (OK)
 **************************************************************************/
-double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
+double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem, double* var)
 {
 	double heat_capacity_fluids = 0.0;
 	double PG = 0.0, Sw = 0.0,TG,rhow,rho_gw,p_gw,dens_aug[3],rho_g;
@@ -1760,7 +1806,7 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 	{
 		//
 		//if (m_pcs->pcs_type_name.find("MULTI_PHASE_FLOW")!=string::npos)
-		if (m_pcs->type == 1212)  // non-isothermal multi-phase flow
+		if (m_pcs && m_pcs->type == 1212)  // non-isothermal multi-phase flow
 		{
 			// Capillary pressure
 			PG = assem->interpolate(assem->NodalValC1);
@@ -1786,10 +1832,14 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 
 		else
 		{
-			heat_capacity_fluids = assem->FluidProp->Density() *
-			                       assem->FluidProp->SpecificHeatCapacity();
+			heat_capacity_fluids = assem->FluidProp->Density(var) *
+			                       assem->FluidProp->SpecificHeatCapacity(var);
 
-			if(m_pcs->type != 1) // neither liquid nor ground water flow
+			if(m_pcs
+					&& !(m_pcs->getProcessType()==FiniteElement::LIQUID_FLOW
+							|| m_pcs->getProcessType()==FiniteElement::GROUNDWATER_FLOW
+							|| m_pcs->getProcessType()==FiniteElement::TH_MONOLITHIC)
+					) // neither liquid nor ground water flow
 			{
 				//  pressure
 				PG = assem->interpolate(assem->NodalValC1);
@@ -3228,16 +3278,30 @@ double CFluidProperties::drhodP(double* variables)
 	double p = variables[0];
 	double T = variables[1];
 
-	double arguments[2];
+	double arguments[3]={};
 	double rho1,rho2,drhodP;
+	double delta_p=.0;
 
-	if (P < 0)
+	if (density_model==20)
+		return drho_dp*rho_0;
+
+	if (p < 0)
 		return 0;
 
 	switch(compressibility_model_pressure)
 	{
 	case 0:                               // incompressible
+#if 0
 		drhodP = 0;
+#endif
+		//drhodP = (rho(p+dP/2)-rho(P-dP/2))/dP
+		delta_p = std::sqrt(std::numeric_limits<double>::epsilon()) * p;
+		arguments[1] = T;
+		arguments[0] = p + (delta_p / 2.);
+		rho1 = Density(arguments);
+		arguments[0] = p - (delta_p / 2.);
+		rho2 = Density(arguments);
+		drhodP = (rho1 - rho2) / delta_p;
 		break;
 
 	case 1:                               // constant slope compressibility
@@ -3250,10 +3314,10 @@ double CFluidProperties::drhodP(double* variables)
 	case 3:                               // use of difference quotient
 		arguments[1] = T;
 		// in case 3, compressibility_pressure acts as delta P
-		arguments[0] = P + (compressibility_pressure / 2.);
+		arguments[0] = p + (compressibility_pressure / 2.);
 		rho1 = Density(arguments);
 
-		arguments[0] = P - (compressibility_pressure / 2.);
+		arguments[0] = p - (compressibility_pressure / 2.);
 		rho2 = Density(arguments);
 
 		//drhodP = (rho(p+dP/2)-rho(P-dP/2))/dP
@@ -3281,19 +3345,33 @@ double CFluidProperties::drhodT(double* variables)
 {
 	double p = variables[0];
 	double T = variables[1];
-	double arguments[2];
+	double arguments[3]={};
 	double rho1,rho2,drhodT;
+	double deltaT=.0;
 
-   if(!drho_dT_unsaturated)     //fluid expansion (drho/dT) for unsaturated case activated? 
+	if (density_model==20)
+		return drho_dT*rho_0;
+
+	if(!drho_dT_unsaturated)     //fluid expansion (drho/dT) for unsaturated case activated?
 	{
-	  if (P < 0)
-	  return 0;
+		if (p < 0)
+			return 0;
 	}
+
+	if (T==0) T = std::numeric_limits<double>::epsilon();
 
 	switch(compressibility_model_temperature)
 	{
 	case 0:                               // fluid is incompressible
-		drhodT = 0;
+//		drhodT = 0;
+		//drhodP = (rho(p+dP/2)-rho(P-dP/2))/dP
+		deltaT = std::sqrt(std::numeric_limits<double>::epsilon()) * T;
+		arguments[0] = p;
+		arguments[1] = T + (deltaT / 2.);
+		rho1 = Density(arguments);
+		arguments[1] = T - (deltaT / 2.);
+		rho2 = Density(arguments);
+		drhodT = (rho1 - rho2) / deltaT;
 		break;
 	case 1:                               // constant slope compressibility, (for test cases)
 		drhodT = compressibility_temperature;
@@ -3305,7 +3383,7 @@ double CFluidProperties::drhodT(double* variables)
 
 	case 3:                               // use of difference quotient
 		// in case 3, compressibility_temperature acts as delta T
-		arguments[0] = P;
+		arguments[0] = p;
 
 		arguments[1] = T + (compressibility_temperature / 2.);
 		rho1 = Density(arguments);

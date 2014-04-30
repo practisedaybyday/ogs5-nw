@@ -181,7 +181,7 @@ public:
 	bool CheckTemperature_in_PhaseChange(const double T0, const double T1);
 	double Enthalpy(double temperature, const double latent_factor );
 	double Heat_Conductivity(double refence = 0.0);
-	void HeatConductivityTensor(const int dim, double* tensor, int group);
+	void HeatConductivityTensor(const int dim, double* tensor, int group, double* variables=NULL);
 	//   int GetCapacityMode() {return Capacity_mode;};  ??
 	// 3. Elasticity
 #ifdef RFW_FRACTURE

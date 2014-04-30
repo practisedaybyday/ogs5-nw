@@ -31,7 +31,7 @@
 //R: Richards flow
 //F: Fluid momentum
 //A: Gas flow
-enum EnumProcessType { L, U, G, T, C, H, M, O, R, F, A, V, P};
+enum EnumProcessType { L, U, G, T, C, H, M, O, R, F, A, V, P, TH, EnumProcessType_INVALID};
 //-----------------------------------------------------
 
 namespace process
@@ -58,7 +58,7 @@ using ::CRFProcess;
 class CFiniteElementStd : public CElement
 {
 public:
-	CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, const int order = 1);
+	CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, const int order = 1, const EnumProcessType pcsType=EnumProcessType_INVALID);
 	~CFiniteElementStd();
 
 	// Set material data
@@ -108,7 +108,7 @@ public:
 #endif
 	void CalcNodeMatParatemer();          //WW
 	// Assembly
-	void Assembly();
+	void Assembly(bool updateA=true, bool updateRHS=true, const bool add2global=true);
 	void Assembly(int option, int dimension); // PCH for Fluid Momentum
 	void Cal_Velocity();
 	void Cal_Velocity_2();                //CB this is to provide velocity only at the element center of gravity
@@ -172,7 +172,7 @@ public:
 	                       double* alpha,
 	                       double* summand);
 	//NW
-	double CalcSUPGCoefficient(double* vel,int ip);
+	double CalcSUPGCoefficient(double* vel,int ip, const double* diff_tensor=NULL);
 	//NW
 	void CalcSUPGWeightingFunction(double* vel, int ip, double &tau, double* v_dN);
 	//NW
@@ -187,7 +187,7 @@ private:
 	int dof_index;                        //24.02.2007 WW
 	// Column index in the node value table
 	int idx0, idx1, idxS, idxSn0, idxSn1, idx3;
-	int idxp0,idxp1, idxp20, idxp21, idxt0, idxt1;
+	int idxp0,idxp1, idxp20, idxp21, idxT0, idxT1;
 	int phase;
 	int comp;                             // Component
 	int LocalShift;                       // For RHS
@@ -200,7 +200,7 @@ private:
 	double* eqs_rhs;                      //For DDC WW
 	bool heat_phase_change;
 
-	char pcsT;
+	//char pcsT;
 	//     /**
 	//      * process type, \sa enum ProcessType
 	//      */
@@ -339,8 +339,11 @@ private:
 	void AssembleRHSVector();             //OK
 	void AssembleCapillaryEffect();       // PCH
 	                                      // PCH for debugging
+	void AssembleTHEquation(bool updateA=true, bool updateRHS=true);
+
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-        void add2GlobalMatrixII();    
+	void add2GlobalMatrixII(bool updateA=true, bool updateRHS=true);
+	void add2GlobalMatrixII_Split(bool updateA=true, bool updateRHS=true);
 #else
 	void add2GlobalMatrixII(const int block_cols = 2);            //WW. 06.2011
 #endif
@@ -350,7 +353,7 @@ private:
 	friend class SolidProp::CSolidProperties;
 	friend class ::CFluidProperties;
 	// Friend functions. WW
-	friend double ::MFPCalcFluidsHeatCapacity(CFiniteElementStd * assem);
+	friend double ::MFPCalcFluidsHeatCapacity(CFiniteElementStd * assem, double* var);
 
 	// Auxillarary vectors for node values
 	// Vector of local node values, e.g. pressure, temperature.
@@ -366,15 +369,23 @@ private:
 	double* NodalValC1;
 	double* NodalVal_Sat;
 	double* NodalVal_SatNW;
+	double* NodalVal_p0;
+	double* NodalVal_p1;
 	double* NodalVal_p2;
 	double* NodalVal_p20;                 //AKS
-	double* NodalVal_t0;
-	double* NodalVal_t1;                  //AKS
+	double* NodalVal_T0;
+	double* NodalVal_T1;                  //AKS
 	//
 	double* weight_func;                  //NW
 	void CalcFEM_FCT();                   //NW
 	//
 	friend class ::CRFProcess;
+
+#if 0
+	CFiniteElementStd* fem1;
+	CFiniteElementStd* fem2;
+#endif
+	bool add2global;
 };
 
 // Vector for storing element values WW

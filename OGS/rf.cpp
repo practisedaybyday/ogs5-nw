@@ -34,6 +34,7 @@
 /* Preprozessor-Definitionen */
 #include "makros.h"
 #include "../Base/MemWatch.h"
+#include "display.h"
 #define TEST
 /* Benutzte Module */
 #include "break.h"
@@ -95,6 +96,7 @@ int main ( int argc, char* argv[] )
 	/* parse command line arguments */
 	std::string anArg;
 	std::string modelRoot;
+	bool terminate = false;
 	for( int i = 1; i < argc; i++ )
 	{
 		anArg = std::string( argv[i] );
@@ -104,7 +106,9 @@ int main ( int argc, char* argv[] )
 			          << "Where OPTIONS are:\n"
 			          << "  -h [--help]       print this message and exit\n"
 			          << "  -b [--build-info] print build info and exit\n"
+			          << "  -v [--verbose]    print debug info\n"
 			          << "  --version         print ogs version and exit" << std::endl;
+			terminate = true;
 			continue;
 		}
 		if( anArg == "--build-info" || anArg == "-b" )
@@ -123,11 +127,18 @@ int main ( int argc, char* argv[] )
 #ifdef BUILD_TIMESTAMP
 			std::cout << "build timestamp: " << BUILD_TIMESTAMP << std::endl;
 #endif // BUILD_TIMESTAMP
+			terminate = true;
+			continue;
+		}
+		if( anArg == "--verbose" || anArg == "-v" )
+		{
+			ogs_log_level = 1;
 			continue;
 		}
 		if( anArg == "--version" )
 		{
 			std::cout << OGS_VERSION << std::endl;
+			terminate = true;
 			continue;
 		}
 		if( anArg == "--model-root" || anArg == "-m" )
@@ -140,8 +151,9 @@ int main ( int argc, char* argv[] )
 			modelRoot = std::string( argv[i] );
 	} // end of parse argc loop
 
-	if( argc > 1 && modelRoot == "" ) // non-interactive mode and no model given
+	if( terminate ) { // non-interactive mode and no model given
 		exit(0);             // e.g. just wanted the build info
+	}
 
 	char* dateiname(NULL);
 #ifdef SUPERCOMPUTER
@@ -285,7 +297,7 @@ int main ( int argc, char* argv[] )
 	Problem* aproblem = new Problem(dateiname);
 #ifndef WIN32
 	BaseLib::MemWatch mem_watch;
-	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage()/ (1024*1024));
+	ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage()/ (1024*1024));
 #endif
 	aproblem->Euler_TimeDiscretize();
 #ifdef USE_PETSC

@@ -49,10 +49,10 @@ ProcessType convertProcessType ( const std::string& pcs_type_string )
 		return FLUX;
 	if (pcs_type_string.compare ("PS_GLOBAL") == 0)
 		return PS_GLOBAL;
+	if (pcs_type_string.compare ("TH_MONOLITHIC") == 0)
+		return TH_MONOLITHIC;
 	if (pcs_type_string.compare ("NO_PCS") == 0)
 		return NO_PCS;
-	if (pcs_type_string.compare ("PTC_FLOW") == 0)
-		return PTC_FLOW;
 	//else
 		//std::cout << "WARNING in convertProcessType: process type #" << pcs_type_string <<
 		//"# unknown" << std::endl;
@@ -97,8 +97,8 @@ std::string convertProcessTypeToString ( ProcessType pcs_type )
 		return "FLUX";
 	if (pcs_type ==   PS_GLOBAL)
 		return "PS_GLOBAL";
-	if (pcs_type == PTC_FLOW)
-		return "PTC_FLOW";
+	if (pcs_type == TH_MONOLITHIC)
+		return "TH_MONOLITHIC";
 	if (pcs_type ==   NO_PCS)
 		return "NO_PCS";
 	return "INVALID_PROCESS";
@@ -111,7 +111,8 @@ bool isFlowProcess (ProcessType pcs_type)
 		|| pcs_type == PS_GLOBAL || pcs_type == MULTI_PHASE_FLOW
 		|| pcs_type == DEFORMATION_FLOW || pcs_type == DEFORMATION_H2
 	    || pcs_type == TWO_PHASE_FLOW || pcs_type == OVERLAND_FLOW 
-	    || pcs_type == AIR_FLOW || pcs_type == PTC_FLOW)
+	    || pcs_type == AIR_FLOW
+	    || pcs_type == TH_MONOLITHIC)
 		return true;
 	return false;
 }
@@ -491,3 +492,58 @@ std::string convertTimTypeToString(TimType st_type)
 }
 
 } // end namespace FiniteElement
+
+std::string convertIterationTypeToString(IterationType::type itr_type)
+{
+    if (itr_type == IterationType::LINEAR)
+        return "LINEAR";
+    else if (itr_type == IterationType::NONLINEAR)
+        return "NONLINEAR";
+    else if (itr_type == IterationType::COUPLING)
+        return "COUPLING";
+    return "INVALID";
+}
+
+TimeControlType::type convertTimeControlType(const std::string &str)
+{
+    if (str == "PI_AUTO_STEP_SIZE")
+        return TimeControlType::PI_AUTO_STEP_SIZE;
+    else if (str == "DYNAMIC_VARIABLE")
+        return TimeControlType::DYNAMIC_VARIABLE;
+    else if (str.find("DYNAMIC_COURANT")!=std::string::npos)
+        return TimeControlType::DYNAMIC_COURANT;
+    else if (str == "DYNAMIC_PRESSURE")
+        return TimeControlType::DYNAMIC_PRESSURE;
+    else if (str == "STEP_SIZE_RESTRICTION")
+        return TimeControlType::STEP_SIZE_RESTRICTION;
+    else if (str == "NEUMANN")
+        return TimeControlType::NEUMANN;
+    else if (str == "ERROR_CONTROL_ADAPTIVE")
+        return TimeControlType::ERROR_CONTROL_ADAPTIVE;
+    else if (str.find("SELF_ADAPTIVE")!=std::string::npos)
+        return TimeControlType::SELF_ADAPTIVE;
+
+    return TimeControlType::INVALID;
+}
+
+std::string convertTimeControlTypeToString(TimeControlType::type tc_type)
+{
+    if (tc_type == TimeControlType::PI_AUTO_STEP_SIZE)
+        return "PI_AUTO_STEP_SIZE";
+    else if (tc_type == TimeControlType::DYNAMIC_VARIABLE)
+        return "DYNAMIC_VARIABLE";
+    else if (tc_type == TimeControlType::DYNAMIC_COURANT)
+        return "DYNAMIC_COURANT";
+    else if (tc_type == TimeControlType::DYNAMIC_PRESSURE)
+        return "DYNAMIC_PRESSURE";
+    else if (tc_type == TimeControlType::STEP_SIZE_RESTRICTION)
+        return "STEP_SIZE_RESTRICTION";
+    else if (tc_type == TimeControlType::NEUMANN)
+        return "NEUMANN";
+    else if (tc_type == TimeControlType::ERROR_CONTROL_ADAPTIVE)
+        return "ERROR_CONTROL_ADAPTIVE";
+    else if (tc_type == TimeControlType::SELF_ADAPTIVE)
+        return "SELF_ADAPTIVE";
+    return "INVALID";
+
+}

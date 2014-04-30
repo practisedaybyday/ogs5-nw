@@ -2323,7 +2323,7 @@ double CMediumProperties::GetEffectiveSaturationForPerm(const double wetting_sat
 **************************************************************************/
 double CMediumProperties::PermeabilitySaturationFunction(const double wetting_saturation, int phase)
 {
-	double kr=.0, sl, se, slr, slm, m, b, slr1;
+	double kr=.0, sl, se, slr, slm, m, b;
 	int model, gueltig;
 	bool phase_shift = false;
 	sl = wetting_saturation;
@@ -2511,7 +2511,7 @@ double CMediumProperties::PermeabilitySaturationFunction(const double wetting_sa
    10/2010 TF changed access to process type
 **************************************************************************/
 double CMediumProperties::HeatCapacity(long number, double theta,
-                                       CFiniteElementStd* assem)
+                                       CFiniteElementStd* assem, double* var)
 {
 	SolidProp::CSolidProperties* m_msp = NULL;
 	double heat_capacity_fluids, specific_heat_capacity_solid;
@@ -2549,7 +2549,7 @@ double CMediumProperties::HeatCapacity(long number, double theta,
 		if (FLOW)
 		{
 			porosity = assem->MediaProp->Porosity(number, theta);
-			heat_capacity_fluids = MFPCalcFluidsHeatCapacity(assem);
+			heat_capacity_fluids = MFPCalcFluidsHeatCapacity(assem, var);
 		}
 		else
 		{
@@ -2608,6 +2608,52 @@ double CMediumProperties::HeatCapacity(long number, double theta,
 	return heat_capacity;
 }
 
+double CMediumProperties::dHeatCapacitydP(long number, double theta,
+                                       CFiniteElementStd* assem, double* variables)
+{
+	const double p = variables[0];
+	const double T = variables[1];
+	double arguments[3]={};
+
+	if (p < 0)
+		return 0;
+
+	//dU/dx = (U(x+dx/2)-rho(x-dx/2))/dx
+	double delta_x = std::sqrt(std::numeric_limits<double>::epsilon()) * p;
+	arguments[1] = T;
+	arguments[0] = p + (delta_x / 2.);
+	double val1 = HeatCapacity(number,theta, assem, arguments);
+	arguments[0] = p - (delta_x / 2.);
+	double val2 = HeatCapacity(number,theta, assem, arguments);
+	double grad = (val1 - val2) / delta_x;
+
+	return grad;
+
+}
+
+double CMediumProperties::dHeatCapacitydT(long number, double theta,
+                                       CFiniteElementStd* assem, double* variables)
+{
+	const double p = variables[0];
+	double T = variables[1];
+	double arguments[3]={};
+
+	if (p < 0)
+		return 0;
+	if (T==0) T = std::numeric_limits<double>::epsilon();
+
+	//dU/dx = (U(x+dx/2)-rho(x-dx/2))/dx
+	double delta_x = std::sqrt(std::numeric_limits<double>::epsilon()) * T;
+	arguments[0] = p;
+	arguments[1] = T + (delta_x / 2.);
+	double val1 = HeatCapacity(number,theta, assem, arguments);
+	arguments[1] = T - (delta_x / 2.);
+	double val2 = HeatCapacity(number,theta, assem, arguments);
+	double grad = (val1 - val2) / delta_x;
+
+	return grad;
+}
+
 /**************************************************************************
    FEMLib-Method:
    Task:
@@ -2622,7 +2668,7 @@ double CMediumProperties::HeatCapacity(long number, double theta,
    ToDo:
    10/2010 TF changed access to process type
 **************************************************************************/
-double* CMediumProperties::HeatConductivityTensor(int number)
+double* CMediumProperties::HeatConductivityTensor(int number, double* variables)
 {
 	int i, dimen;
 	SolidProp::CSolidProperties* m_msp = NULL;
@@ -2653,7 +2699,7 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 				FLOW = true;
 		if (FLOW)                 //WW
 		{
-			if (Fem_Ele_Std->cpl_pcs->type == 1212) // Multi-phase WW
+			if (Fem_Ele_Std->cpl_pcs && Fem_Ele_Std->cpl_pcs->type == 1212) // Multi-phase WW
 			{
 				double PG = Fem_Ele_Std->interpolate(
 				        Fem_Ele_Std->NodalValC1); // Capillary pressure
@@ -2684,10 +2730,10 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 				}
 				else
 					heat_conductivity_fluids
-					        = Fem_Ele_Std->FluidProp->HeatConductivity();
+					        = Fem_Ele_Std->FluidProp->HeatConductivity(variables);
 				Sw = 1;
 
-				if (Fem_Ele_Std->cpl_pcs->type != 1)
+				if (Fem_Ele_Std->cpl_pcs && Fem_Ele_Std->cpl_pcs->type != 1)
 				{
 					double PG = Fem_Ele_Std->interpolate(
 					        Fem_Ele_Std->NodalValC1); // Capillary pressure
@@ -2721,7 +2767,7 @@ double* CMediumProperties::HeatConductivityTensor(int number)
 
 	m_msp = msp_vector[group];
 	m_msp->HeatConductivityTensor(dimen, heat_conductivity_tensor,
-	                              group); //MX
+	                              group, variables); //MX
 
 	for (i = 0; i < dimen * dimen; i++)
 		heat_conductivity_tensor[i] *= (1.0 - porosity);
@@ -2798,49 +2844,46 @@ double* CMediumProperties::HeatConductivityTensor(int number)
    last modification:
    ToDo:
 **************************************************************************/
-double* CMediumProperties::HeatDispersionTensorNew(int ip)
+double* CMediumProperties::HeatDispersionTensorNew(int ip, double* var)
 {
 	static double heat_dispersion_tensor[9];
 	double* heat_conductivity_porous_medium;
-	double vg, D[9];
-	double dens_arg[3];                   //AKS
-	double heat_capacity_fluids = 0.0;
-	double fluid_density;
-	double alpha_t, alpha_l;
-	long index = Fem_Ele_Std->GetMeshElement()->GetIndex();
-	CFluidProperties* m_mfp;
-	int Dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
+	const long index = Fem_Ele_Std->GetMeshElement()->GetIndex();
+	const int Dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
 	int i;
 	ElementValue* gp_ele = ele_gp_value[index];
 
 	// Materials
 	//MX, add index
-	heat_conductivity_porous_medium = HeatConductivityTensor(index);
-	m_mfp = Fem_Ele_Std->FluidProp;
-	if(Fem_Ele_Std->FluidProp->density_model == 14 ) //used density changing with p, T
-	{
-		dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal0);
-		dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
-		dens_arg[2] = Fem_Ele_Std->Index;
-		fluid_density = Fem_Ele_Std->FluidProp->Density(dens_arg);
-	}
-	else
-		fluid_density = m_mfp->Density();
-	heat_capacity_fluids = m_mfp->getSpecificHeatCapacity();
-
+	heat_conductivity_porous_medium = HeatConductivityTensor(index, var);
 	//Global Velocity
 	double velocity[3] = {0.,0.,0.};
 	gp_ele->getIPvalue_vec(ip, velocity); //gp velocities
-	vg = MBtrgVec(velocity,3);
+	const double vg = MBtrgVec(velocity,3);
 
 	//Dl in local coordinates
-	alpha_l = heat_dispersion_longitudinal;
-	alpha_t = heat_dispersion_transverse;
+	const double alpha_l = heat_dispersion_longitudinal;
+	const double alpha_t = heat_dispersion_transverse;
 
-	if (abs(vg) > MKleinsteZahl           //For the case of diffusive transport only
+	if (std::abs(vg) > MKleinsteZahl           //For the case of diffusive transport only
 	                                      //WW
 	    && (alpha_l > MKleinsteZahl || alpha_t > MKleinsteZahl) )
 	{
+		double D[9];
+		double dens_arg[3];                   //AKS
+		double fluid_density;
+		CFluidProperties* m_mfp = Fem_Ele_Std->FluidProp;
+		if(Fem_Ele_Std->FluidProp->density_model == 14 ) //used density changing with p, T
+		{
+			dens_arg[0] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal0);
+			dens_arg[1] = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_T0);
+			dens_arg[2] = Fem_Ele_Std->Index;
+			fluid_density = Fem_Ele_Std->FluidProp->Density(dens_arg);
+		}
+		else
+			fluid_density = m_mfp->Density(var);
+
+		const double heat_capacity_fluids = m_mfp->getSpecificHeatCapacity();
 		switch (Dim)
 		{
 		case 1:                   // line elements
@@ -2931,7 +2974,7 @@ double* CMediumProperties::MassDispersionTensorNew(int ip, int tr_phase) // SB +
 	{
  	m_mfp = mfp_vector[0];
 	PG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalValC);
-	TG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_t0);
+	TG = Fem_Ele_Std->interpolate(Fem_Ele_Std->NodalVal_T0);
 	molecular_diffusion_value = m_mfp->MaxwellStefanDiffusionCoef(index, PG, TG, component)* TortuosityFunction(index,g, theta);
 	}
 	molecular_diffusion_value *= Porosity(index,theta);
@@ -3663,38 +3706,41 @@ double CMediumProperties::Porosity(long number,double theta)
 	// Functional dependencies
 	CRFProcess* pcs_temp;
 
-	const size_t no_pcs_names(this->porosity_pcs_name_vector.size());
-	for (size_t i = 0; i < no_pcs_names; i++)
-	{
-		str = porosity_pcs_name_vector[i];
-		pcs_temp = PCSGet(str, true); //MX
-		nidx0 = pcs_temp->GetNodeValueIndex(porosity_pcs_name_vector[i]);
-		nidx1 = nidx0 + 1;
-		if (mode == 0)            // Gauss point values
+	if (porosity_model!=1) {
+		const size_t no_pcs_names(this->porosity_pcs_name_vector.size());
+		for (size_t i = 0; i < no_pcs_names; i++)
 		{
-			assem->ComputeShapefct(1);
-			primary_variable[i] = (1. - theta) * assem->interpolate(nidx0,
-			                                                        pcs_temp) +
-			                      theta* assem->interpolate(nidx1, pcs_temp);
-		}                         // Node values
-		else if (mode == 1)
-			primary_variable[i] = (1. - theta) * pcs_temp->GetNodeValue(number,
-			                                                            nidx0) +
-			                      theta* pcs_temp->GetNodeValue(number, nidx1);
-		// Element average value
-		else if (mode == 2)
-			primary_variable[i] = (1. - theta) * assem->elemnt_average(nidx0,
-			                                                           pcs_temp) +
-			                      theta* assem->elemnt_average(nidx1, pcs_temp);
-		else if(mode == 1)        // Node values
+			str = porosity_pcs_name_vector[i];
+			pcs_temp = PCSGet(str, true); //MX
+			nidx0 = pcs_temp->GetNodeValueIndex(porosity_pcs_name_vector[i]);
+			nidx1 = nidx0 + 1;
+			if (mode == 0)            // Gauss point values
+			{
+				assem->ComputeShapefct(1);
+				primary_variable[i] = (1. - theta) * assem->interpolate(nidx0,
+				                                                        pcs_temp) +
+				                      theta* assem->interpolate(nidx1, pcs_temp);
+			}                         // Node values
+			else if (mode == 1)
+				primary_variable[i] = (1. - theta) * pcs_temp->GetNodeValue(number,
+				                                                            nidx0) +
+				                      theta* pcs_temp->GetNodeValue(number, nidx1);
+			// Element average value
+			else if (mode == 2)
+				primary_variable[i] = (1. - theta) * assem->elemnt_average(nidx0,
+				                                                           pcs_temp) +
+				                      theta* assem->elemnt_average(nidx1, pcs_temp);
+			else if(mode == 1)        // Node values
 
-			primary_variable[i] = (1. - theta) * pcs_temp->GetNodeValue(number,nidx0) \
-			                      + theta* pcs_temp->GetNodeValue(number,nidx1);
-		else if(mode == 2)        // Element average value
+				primary_variable[i] = (1. - theta) * pcs_temp->GetNodeValue(number,nidx0) \
+				                      + theta* pcs_temp->GetNodeValue(number,nidx1);
+			else if(mode == 2)        // Element average value
 
-			primary_variable[i] = (1. - theta) * assem->elemnt_average(nidx0,pcs_temp)
-			                      + theta* assem->elemnt_average(nidx1,pcs_temp);
+				primary_variable[i] = (1. - theta) * assem->elemnt_average(nidx0,pcs_temp)
+				                      + theta* assem->elemnt_average(nidx1,pcs_temp);
+		}
 	}
+
 
 	//----------------------------------------------------------------------
 	// Material models
@@ -4122,7 +4168,7 @@ double CMediumProperties::PorosityEffectiveConstrainedSwellingConstantIonicStren
 double* CMediumProperties::PermeabilityTensor(long index)
 {
 	static double tensor[9];
-	int perm_index = 0;
+	//int perm_index = 0;
 
 	int idx_k, idx_n;
 	double /*k_old, n_old,*/ k_new, n_new, k_rel, n_rel;
@@ -4445,7 +4491,7 @@ double* CMediumProperties::PermeabilityTensor(long index)
 //12.(ii) PERMEABILITY_FUNCTION_PRESSURE
 //------------------------------------------------------------------------
 //WX: implementation of ths permeability_function_pressure. 1. version only for multi_phase_flow. 05.2010
-double CMediumProperties::PermeabilityFunctionPressure(long index, double PG2)
+double CMediumProperties::PermeabilityFunctionPressure(long /*index*/, double PG2)
 {
 	int gueltig; //WX: for function GetCurveValue(). 11.05.2010
 	double fac_perm_pressure = 1;
@@ -5217,7 +5263,7 @@ int CMediumProperties::SetDistributedELEProperties(const string &file_name, size
 	int por_index = 0;
 	int vol_bio_index = 0;
 	string outfile;
-	int k;
+	//int k;
 
 	cout << " SetDistributedELEProperties: ";
 	//----------------------------------------------------------------------
@@ -7046,13 +7092,8 @@ double CMediumProperties::NonlinearFlowFunction(long index, double* gp, double t
    6		Storage as normal stress in element in stress field defined by KTB stress
    field, function to increase storage with distance from borehole.
 **************************************************************************/
-double CMediumProperties::StorageFunction(long index,double* gp,double theta)
+double CMediumProperties::StorageFunction(long index,double* /*gp*/,double /*theta*/)
 {
-	//OK411
-	theta = theta;
-	gp = gp;
-	index = index;
-
 	//int nn, i, Type;
 	//int idummy;
 	//double p; //WW, sigma, z[8];
