@@ -296,4 +296,37 @@ inline bool isNewtonKind(NonlinearSolverType type)
 
 } // end namespace FiniteElement
 
+struct IterationType
+{
+	enum type
+	{
+		INVALID,
+		LINEAR,
+		NONLINEAR,
+		COUPLING
+	};
+};
+
+std::string convertIterationTypeToString(IterationType::type st_type);
+
+struct TimeControlType
+{
+	enum type
+	{
+		INVALID,
+		PI_AUTO_STEP_SIZE,
+		DYNAMIC_VARIABLE,
+		DYNAMIC_COURANT,
+		DYNAMIC_PRESSURE,
+		STEP_SIZE_RESTRICTION,
+		NEUMANN,
+		ERROR_CONTROL_ADAPTIVE,
+		SELF_ADAPTIVE
+	};
+};
+
+TimeControlType::type convertTimeControlType(const std::string &str);
+
+std::string convertTimeControlTypeToString(TimeControlType::type st_type);
+
 #endif                                            //FEMENUMS_H

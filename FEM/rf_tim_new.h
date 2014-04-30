@@ -15,8 +15,11 @@
 //#include <vector>
 #include "makros.h" // JT2012
 
+#include "FEMEnums.h"
+
 //----------------------------------------------------------------
 class CRFProcess;                                 //21.08.2008. WW
+
 class CTimeDiscretization
 {
 private:
@@ -75,7 +78,8 @@ public:
 	std::string pcs_type_name;            //OK
 	// NUM
 	std::string time_type_name;           //OK
-	std::string time_control_name;
+	//std::string time_control_name;
+	TimeControlType::type time_control_type;
 	std::string time_unit;                //WW
 	double iter_times;                    //YD
 	double multiply_coef;                 //YD
@@ -91,6 +95,8 @@ public:
 	//WW double max_adaptive_factor; // kg44
 	//WW double max_adaptive_concentration_change; // kg44
 	size_t last_rejected_timestep;
+
+	IterationType::type iteration_type;
 public:
 	CTimeDiscretization(void);
 	//21.08.2008. WW
