@@ -3278,16 +3278,27 @@ double CFluidProperties::drhodP(double* variables)
 	double p = variables[0];
 	double T = variables[1];
 
-	double arguments[2];
+	double arguments[3]={};
 	double rho1,rho2,drhodP;
-
+	double delta_p=.0;
+	
 	if (p < 0)
 		return 0;
 
 	switch(compressibility_model_pressure)
 	{
 	case 0:                               // incompressible
+#if 0
 		drhodP = 0;
+#endif
+		//drhodP = (rho(p+dP/2)-rho(P-dP/2))/dP
+		delta_p = std::sqrt(std::numeric_limits<double>::epsilon()) * p;
+		arguments[1] = T;
+		arguments[0] = p + (delta_p / 2.);
+		rho1 = Density(arguments);
+		arguments[0] = p - (delta_p / 2.);
+		rho2 = Density(arguments);
+		drhodP = (rho1 - rho2) / delta_p;
 		break;
 
 	case 1:                               // constant slope compressibility
@@ -3331,19 +3342,30 @@ double CFluidProperties::drhodT(double* variables)
 {
 	double p = variables[0];
 	double T = variables[1];
-	double arguments[2];
+	double arguments[3]={};
 	double rho1,rho2,drhodT;
-
+	double deltaT=.0;
+	
 	if(!drho_dT_unsaturated)     //fluid expansion (drho/dT) for unsaturated case activated?
 	{
 		if (p < 0)
 			return 0;
 	}
 
+	if (T==0) T = std::numeric_limits<double>::epsilon();
+
 	switch(compressibility_model_temperature)
 	{
 	case 0:                               // fluid is incompressible
-		drhodT = 0;
+//		drhodT = 0;
+		//drhodP = (rho(p+dP/2)-rho(P-dP/2))/dP
+		deltaT = std::sqrt(std::numeric_limits<double>::epsilon()) * T;
+		arguments[0] = p;
+		arguments[1] = T + (deltaT / 2.);
+		rho1 = Density(arguments);
+		arguments[1] = T - (deltaT / 2.);
+		rho2 = Density(arguments);
+		drhodT = (rho1 - rho2) / deltaT;
 		break;
 	case 1:                               // constant slope compressibility, (for test cases)
 		drhodT = compressibility_temperature;
