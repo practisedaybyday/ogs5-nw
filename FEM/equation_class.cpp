@@ -295,7 +295,7 @@ void Linear_EQS::ConfigNumerics(CNumerics* m_num, const long n)
 		precond_name = "ILU not available. Use Jacobi";
 		precond_type = 1;
 #ifndef JFNK_H2M
-		if(m_num->nls_method == 2)
+		if(m_num->nls_method == FiniteElement::NL_JFNK)
 			prec_M  = new double[size_A];
 #endif
 #if defined(USE_MPI)
