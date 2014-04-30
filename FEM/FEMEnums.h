@@ -44,7 +44,6 @@ enum ProcessType
 	/// H process, incompressible flow
 	OVERLAND_FLOW,                        //!< OVERLAND_FLOW
 	PS_GLOBAL,                            //!< PS_GLOBAL
-	PTC_FLOW,                             // Fluid flow coupled with heat transport
 	RANDOM_WALK,                          //!< RANDOM_WALK
 	/// H process, incompressible flow
 	RICHARDS_FLOW,                        //!< RICHARDS_FLOW

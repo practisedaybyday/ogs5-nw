@@ -157,8 +157,6 @@ CFiniteElementStd:: CFiniteElementStd(CRFProcess* Pcs, const int C_Sys_Flad, con
 	//	if (pcs->pcs_type_name.find("AIR") != string::npos) //OK // TF commented out
 	if (pcs->getProcessType () == AIR_FLOW) //OK
 		pcsT = 'A';
-	else if (pcs->getProcessType () == PTC_FLOW) //OK
-		pcsT = 'S';
 	//	if (pcs->pcs_type_name.find("MULTI") != string::npos) // 24.02.2007 WW
 	// 24.02.2007 WW
 	else if (pcs->getProcessType () == MULTI_PHASE_FLOW)
@@ -526,8 +524,6 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 		pcsT = 'A';
 	if(pcs_type == MULTI_PHASE_FLOW)      //24.2.2007 WW
 		pcsT = 'V';
-	if(pcs_type == PTC_FLOW)              //Feb 2011 AKS/NB
-		pcsT = 'S';
 
 	if (D_Flag > 0)
 	{
@@ -606,6 +602,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
+#if 0
 	case 'S':                             // Multi-phase flow. 24.2.2007 WW
 		if(C_Flag)                //if(PCSGet("HEAT_TRANSPORT"))
 		{
@@ -614,6 +611,7 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 			idx_c1 = idx_c0 + 1;
 		}
 		break;
+#endif
 	case 'C':                             // Componental flow
 		break;
 	case 'H':                             // heat transport
@@ -661,11 +659,11 @@ void CFiniteElementStd::ConfigureCoupling(CRFProcess* pcs, const int* Shift, boo
 		}
 		break;
 	case 'M':                             // Mass transport
-		if((PTC_Flag)||(C_Flag && T_Flag))
+		if(C_Flag && T_Flag)
 		{
 			if(cpl_pcs == NULL)
 			{
-				cpl_pcs = PCSGet("PTC_FLOW");
+				cpl_pcs = PCSGetFlow();
 				if(cpl_pcs)
 					idx_c0 = cpl_pcs->GetNodeValueIndex("PRESSURE1");
 				idx_c1 = idx_c0 + 1;

@@ -625,7 +625,6 @@ public:
 	void ConfigRandomWalk();
 	void ConfigMultiPhaseFlow();
 	void ConfigPS_Global();               // PCH
-	void ConfigPTC_FLOW();                // AKS/NB
 	// Configuration 1 - NOD
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
 	void setSolver( petsc_group::PETScLinearSolver *petsc_solver );
@@ -1022,7 +1021,6 @@ extern bool MH_Process;					// MH monolithic scheme
 extern bool MASS_TRANSPORT_Process;		// Mass transport
 extern bool FLUID_MOMENTUM_Process;		// Momentum
 extern bool RANDOM_WALK_Process;		// RWPT
-extern bool PTC_FLOW_Process;			// PTC
 //
 extern int pcs_number_deformation;				// JT2012
 extern int pcs_number_flow;						// JT2012

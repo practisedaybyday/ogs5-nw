@@ -96,7 +96,6 @@ CElement::CElement(int CoordFlag, const int order)
 	C_Flag = MASS_TRANSPORT_Process;
 	PT_Flag = 0;                          // PCH Initialize to be no RWPT.
 	RD_Flag = RD_Process;
-	PTC_Flag = PTC_FLOW_Process;
 #endif
 
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW

@@ -177,7 +177,6 @@ bool MH_Process = false;				// MH monolithic scheme
 bool MASS_TRANSPORT_Process = false;	// Mass transport
 bool FLUID_MOMENTUM_Process = false;	// Momentum
 bool RANDOM_WALK_Process = false;		// RWPT
-bool PTC_FLOW_Process = false;			// PTC
 bool pcs_created = false;
 //
 int pcs_number_deformation = -1;				// JT2012
@@ -1874,9 +1873,6 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 					pcs_no_components++;
 					this->setProcessPrimaryVariable(FiniteElement::CONCENTRATION);
 				}
-				if (this->getProcessType() == FiniteElement::PTC_FLOW){
-					PTC_FLOW_Process = true;
-				}
 				if (this->getProcessType() == FiniteElement::HEAT_TRANSPORT){
 					T_Process = true;
 					this->isPCSHeat = true; //JT2012
@@ -2424,11 +2420,6 @@ void CRFProcess::Config(void)
 	{
 		type = 1313;
 		ConfigPS_Global();
-	}
-	if (this->getProcessType() == FiniteElement::PTC_FLOW) //24.02.2007 WW
-	{
-		type = 1111;
-		ConfigPTC_FLOW();
 	}
 }
 
@@ -3739,41 +3730,6 @@ void CRFProcess::ConfigPS_Global()
 
 	//
 	for(size_t i = 0; i < GetPrimaryVNumber(); i++) // 03.03.2008. WW
-		Shift[i] = i * m_msh->GetNodesNumber(true);
-}
-
-/**************************************************************************
-   FEMLib-Method: For Pressure-temperature-coupled flow for fluids
-   Task:
-   Programing:
-   02/2011 AKS/NB Implementation
-**************************************************************************/
-void CRFProcess::ConfigPTC_FLOW()
-{
-	dof = 2;
-	// 1.1 primary variables
-	pcs_number_of_primary_nvals = 2;
-	pcs_primary_function_name[0] = "PRESSURE1";
-	pcs_primary_function_unit[0] = "Pa";
-	pcs_primary_function_name[1] = "TEMPERATURE1";
-	pcs_primary_function_unit[1] = "K";
-	// 1.2 secondary variables
-	pcs_number_of_secondary_nvals = 0;
-	// Nodal velocity.
-	pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_X1";
-	pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
-	pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-	pcs_number_of_secondary_nvals++;
-	pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Y1";
-	pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
-	pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-	pcs_number_of_secondary_nvals++;
-	pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Z1";
-	pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
-	pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
-	pcs_number_of_secondary_nvals++;
-
-	for(size_t i = 0; i < GetPrimaryVNumber(); i++)
 		Shift[i] = i * m_msh->GetNodesNumber(true);
 }
 
@@ -5324,7 +5280,6 @@ void CRFProcess::CalIntegrationPointValue()
 	    || getProcessType() == FiniteElement::DEFORMATION_H2 // 07.2011. WW
 	    || getProcessType() == FiniteElement::AIR_FLOW
 	    || getProcessType() == FiniteElement::PS_GLOBAL
-	    || getProcessType() == FiniteElement::PTC_FLOW  //AKS/NB
 	    || getProcessType() == FiniteElement::DEFORMATION_FLOW //NW
 	    )
 		cal_integration_point_value = true;
