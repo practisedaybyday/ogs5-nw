@@ -296,7 +296,7 @@ extern void MFPWrite(std::string);
 #define MFP_FILE_EXTENSION ".mfp"
 //WW extern double MFPCalcVapourPressure(double);
 //WW
-extern double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem = NULL);
+extern double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem = NULL, double* var=NULL);
 extern double MFPCalcFluidsHeatConductivity(long index,
                                             double* gp,
                                             double theta,

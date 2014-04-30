@@ -1782,7 +1782,7 @@ double CFluidProperties::PhaseChange()
    Programing:
    02/2007 WW MFP implementation based on MATCalcFluidHeatCapacity (OK)
 **************************************************************************/
-double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
+double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem, double* var)
 {
 	double heat_capacity_fluids = 0.0;
 	double PG = 0.0, Sw = 0.0,TG,rhow,rho_gw,p_gw,dens_aug[3],rho_g;
@@ -1806,7 +1806,7 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 	{
 		//
 		//if (m_pcs->pcs_type_name.find("MULTI_PHASE_FLOW")!=string::npos)
-		if (m_pcs->type == 1212)  // non-isothermal multi-phase flow
+		if (m_pcs && m_pcs->type == 1212)  // non-isothermal multi-phase flow
 		{
 			// Capillary pressure
 			PG = assem->interpolate(assem->NodalValC1);
@@ -1832,10 +1832,14 @@ double MFPCalcFluidsHeatCapacity(CFiniteElementStd* assem)
 
 		else
 		{
-			heat_capacity_fluids = assem->FluidProp->Density() *
-			                       assem->FluidProp->SpecificHeatCapacity();
+			heat_capacity_fluids = assem->FluidProp->Density(var) *
+			                       assem->FluidProp->SpecificHeatCapacity(var);
 
-			if(m_pcs->type != 1) // neither liquid nor ground water flow
+			if(m_pcs
+					&& !(m_pcs->getProcessType()==FiniteElement::LIQUID_FLOW
+							|| m_pcs->getProcessType()==FiniteElement::GROUNDWATER_FLOW
+							|| m_pcs->getProcessType()==FiniteElement::TH_MONOLITHIC)
+					) // neither liquid nor ground water flow
 			{
 				//  pressure
 				PG = assem->interpolate(assem->NodalValC1);
