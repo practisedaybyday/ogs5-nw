@@ -3281,7 +3281,10 @@ double CFluidProperties::drhodP(double* variables)
 	double arguments[3]={};
 	double rho1,rho2,drhodP;
 	double delta_p=.0;
-	
+
+	if (density_model==20)
+		return drho_dp*rho_0;
+
 	if (p < 0)
 		return 0;
 
@@ -3345,7 +3348,10 @@ double CFluidProperties::drhodT(double* variables)
 	double arguments[3]={};
 	double rho1,rho2,drhodT;
 	double deltaT=.0;
-	
+
+	if (density_model==20)
+		return drho_dT*rho_0;
+
 	if(!drho_dT_unsaturated)     //fluid expansion (drho/dT) for unsaturated case activated?
 	{
 		if (p < 0)
