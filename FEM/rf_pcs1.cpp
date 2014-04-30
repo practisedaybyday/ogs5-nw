@@ -731,12 +731,12 @@ void CreateEQS_LinearSolver()
       }     
       else 
       {
-        sparse_info[0] = max_cnct_nodes;
-        sparse_info[1] = max_cnct_nodes; // 0;
-        sparse_info[2] = max_cnct_nodes;
-        sparse_info[3] = mesh->getNumNodesLocal();
+        sparse_info[0] = max_cnct_nodes * a_pcs->GetPrimaryVNumber();
+        sparse_info[1] = max_cnct_nodes * a_pcs->GetPrimaryVNumber(); // 0;
+        sparse_info[2] = max_cnct_nodes * a_pcs->GetPrimaryVNumber();
+        sparse_info[3] = mesh->getNumNodesLocal() * a_pcs->GetPrimaryVNumber();
 
-        eqs = new PETScLinearSolver(nn);
+        eqs = new PETScLinearSolver(nn* a_pcs->GetPrimaryVNumber());
         eqs->Init(sparse_info);
         eqs->set_rank_size(rank_p, size_p);
       }
