@@ -49,6 +49,8 @@ enum ProcessType
 	RICHARDS_FLOW,                        //!< RICHARDS_FLOW
 	/// H2 process, compressible flow
 	TWO_PHASE_FLOW,                       //!< TWO_PHASE_FLOW
+	/// TH monolithic
+	TH_MONOLITHIC,
 	// make sure that this is always the last entry (important for iterating over the enum entries)!
 	PROCESS_END
 };

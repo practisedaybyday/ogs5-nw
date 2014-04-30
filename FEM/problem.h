@@ -116,6 +116,7 @@ private:
 	inline double RandomWalker();
 	inline double MassTrasport();
 	inline double Deformation();
+	inline double TH_Monolithic();
 	// Accessory
 	void LOPExecuteRegionalRichardsFlow(CRFProcess* m_pcs_global, int loop_process_number);
 	void LOPCalcELEResultants();

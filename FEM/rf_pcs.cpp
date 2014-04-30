@@ -123,6 +123,8 @@ REACT_BRNS* m_vec_BRNS;
 #include "DistributionTools.h"
 #include "fct_mpi.h"
 
+#include "rf_pcs_TH.h"
+
 using namespace std;
 using namespace MeshLib;
 using namespace Math_Group;
@@ -397,6 +399,7 @@ CRFProcess::CRFProcess(void) :
 
 	calcDiffFromStress0 = true;
 	resetStrain = true;
+	useMPa = false;
 }
 
 void CRFProcess::setProblemObjectPointer (Problem* problem)
@@ -739,7 +742,7 @@ void CRFProcess::Create()
 #ifdef USE_MPI
      eqs_new = EQS_Vector[eqs_num * k];
 #else
-     if(getProcessType() == FiniteElement::MULTI_PHASE_FLOW || getProcessType() == FiniteElement::PS_GLOBAL)
+     if(getProcessType() == FiniteElement::MULTI_PHASE_FLOW || getProcessType() == FiniteElement::PS_GLOBAL || getProcessType() == FiniteElement::TH_MONOLITHIC)
 	 {
 	   eqs_new = EQS_Vector[eqs_num * k + 2 ];
      }
@@ -1027,6 +1030,10 @@ void CRFProcess::Create()
 			CRFProcessDeformation* dm_pcs =
 			        static_cast<CRFProcessDeformation*> (this);
 			dm_pcs->Initialization();
+		}
+		else if(this->getProcessType()==FiniteElement::TH_MONOLITHIC)
+		{
+			static_cast<CRFProcessTH*>(this)->Initialization();
 		}
 		else                      // Initialize FEM calculator
 		{
@@ -1685,6 +1692,11 @@ bool PCSRead(std::string file_base_name)
 				pcs_vector[pcs_vector.size() - 1]->pcs_number = pcs_vector.size();
 				delete m_pcs;
 			}
+			else if (m_pcs->getProcessType()==FiniteElement::TH_MONOLITHIC) {
+				pcs_vector.push_back(m_pcs->CopyPCStoTH_PCS());
+				pcs_vector[pcs_vector.size() - 1]->pcs_number = pcs_vector.size();
+				delete m_pcs;
+			}
 			else{
 				pcs_vector.push_back(m_pcs);
 			}
@@ -1720,6 +1732,7 @@ CRFProcess* CRFProcess::CopyPCStoDM_PCS()
 	dm_pcs->Memory_Type = Memory_Type;
 	dm_pcs->NumDeactivated_SubDomains = NumDeactivated_SubDomains;
 	dm_pcs->reload = reload;
+    dm_pcs->nwrite_restart = nwrite_restart;
 	dm_pcs->isPCSDeformation = true;
 	dm_pcs->isPCSFlow = this->isPCSFlow; //JT
 	dm_pcs->isPCSMultiFlow = this->isPCSMultiFlow; //JT
@@ -1741,6 +1754,43 @@ CRFProcess* CRFProcess::CopyPCStoDM_PCS()
 	dm_pcs->write_leqs = write_leqs;
 	dm_pcs->calcDiffFromStress0 = calcDiffFromStress0;
 	dm_pcs->resetStrain = resetStrain;
+	dm_pcs->useMPa = useMPa;
+	//
+	return dynamic_cast<CRFProcess*> (dm_pcs);
+}
+
+CRFProcess* CRFProcess::CopyPCStoTH_PCS()
+{
+	CRFProcessTH* dm_pcs (new CRFProcessTH());
+	dm_pcs->setProcessType (this->getProcessType());
+	dm_pcs->pcs_type_name_vector.push_back(pcs_type_name_vector[0].data());
+	dm_pcs->Write_Matrix = Write_Matrix;
+	dm_pcs->WriteSourceNBC_RHS = WriteSourceNBC_RHS;
+	dm_pcs->num_type_name = num_type_name;
+	dm_pcs->Memory_Type = Memory_Type;
+	dm_pcs->NumDeactivated_SubDomains = NumDeactivated_SubDomains;
+	dm_pcs->reload = reload;
+    dm_pcs->nwrite_restart = nwrite_restart;
+	dm_pcs->isPCSDeformation = false;
+	dm_pcs->isPCSFlow = this->isPCSFlow; //JT
+	dm_pcs->isPCSMultiFlow = this->isPCSMultiFlow; //JT
+	//WW
+	dm_pcs->write_boundary_condition =  write_boundary_condition;
+	if(!dm_pcs->Deactivated_SubDomain)
+		dm_pcs->Deactivated_SubDomain = new int[NumDeactivated_SubDomains];
+	for(int i = 0; i < NumDeactivated_SubDomains; i++)
+		dm_pcs->Deactivated_SubDomain[i] = Deactivated_SubDomain[i];
+	pcs_deformation = 1;
+	//WX:01.2011 for coupled excavation
+	if(ExcavMaterialGroup >= 0)
+	{
+		dm_pcs->ExcavMaterialGroup = ExcavMaterialGroup;
+		dm_pcs->ExcavDirection = ExcavDirection;
+		dm_pcs->ExcavBeginCoordinate = ExcavBeginCoordinate;
+		dm_pcs->ExcavCurve = ExcavCurve;
+	}
+	dm_pcs->write_leqs = write_leqs;
+	dm_pcs->useMPa = useMPa;
 	//
 	return dynamic_cast<CRFProcess*> (dm_pcs);
 }
@@ -2129,6 +2179,12 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 				ScreenMessage("-> $RESET_STRAIN=0 is not supported yet\n", dummy);
 			continue;
 		}
+		if(line_string.find("$USE_MPa") == 0)
+		{
+			useMPa = true;
+			ScreenMessage("-> use MPa as unit of pressure\n");
+			continue;
+		}
 		//....................................................................
 	}
 	//----------------------------------------------------------------------
@@ -2420,6 +2476,11 @@ void CRFProcess::Config(void)
 	{
 		type = 1313;
 		ConfigPS_Global();
+	}
+	if (this->getProcessType() == FiniteElement::TH_MONOLITHIC)
+	{
+		type = 1414;
+		ConfigTH();
 	}
 }
 
@@ -3731,6 +3792,36 @@ void CRFProcess::ConfigPS_Global()
 	//
 	for(size_t i = 0; i < GetPrimaryVNumber(); i++) // 03.03.2008. WW
 		Shift[i] = i * m_msh->GetNodesNumber(true);
+}
+
+void CRFProcess::ConfigTH()
+{
+	dof = 2;
+	pcs_number_of_primary_nvals = 2;
+	pcs_primary_function_name[0] = "PRESSURE1";
+	pcs_primary_function_unit[0] = "Pa";
+	pcs_primary_function_name[1] = "TEMPERATURE1";
+	pcs_primary_function_unit[1] = "K";
+	pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_X1";
+	pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+	pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+	pcs_number_of_secondary_nvals++;
+	pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Y1";
+	pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+	pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+	pcs_number_of_secondary_nvals++;
+	pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "VELOCITY_Z1";
+	pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "m/s";
+	pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
+	pcs_number_of_secondary_nvals++;
+
+	//
+	for(size_t i = 0; i < GetPrimaryVNumber(); i++)
+		Shift[i] = i * m_msh->GetNodesNumber(false);
+
+	num_nodes_p_var = new long[2];
+	num_nodes_p_var[0] = num_nodes_p_var[1] = m_msh->GetNodesNumber(false);
+	p_var_index = new int[2];
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -5054,6 +5145,12 @@ void CRFProcess::GlobalAssembly()
 	    //const long n_eles = (long)m_msh->ele_vector.size();
 	    const bool isTimeControlNeumann = (Tim->time_control_type==TimeControlType::NEUMANN);
 
+#ifdef USE_PETSC
+		for (size_t i=0; i<eqs_new->vec_subRHS.size(); i++) {
+			VecGetSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+		}
+#endif
+
 		//YDTEST. Changed to DOF 15.02.2007 WW
 		for (size_t ii = 0; ii < continuum_vector.size(); ii++)
 		{
@@ -5089,7 +5186,16 @@ void CRFProcess::GlobalAssembly()
 				}
 			}
 		}
-		ScreenMessage("\n");
+		ScreenMessage("done\n");
+
+#ifdef USE_PETSC
+		for (size_t i=0; i<eqs_new->vec_subRHS.size(); i++) {
+			VecAssemblyBegin(eqs_new->vec_subRHS[i]);
+			VecAssemblyEnd(eqs_new->vec_subRHS[i]);
+			VecRestoreSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+		}
+		eqs_new->AssembleRHS_PETSc();
+#endif
 
 		if (femFCTmode)     //NW
 			AddFCT_CorrectionVector();
@@ -5143,8 +5249,9 @@ void CRFProcess::GlobalAssembly()
 #endif
 
 #if defined(USE_PETSC)  // || defined(other parallel libs)//03~04.3012. 
-		eqs_new->AssembleRHS_PETSc();
-		eqs_new->AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
+		eqs_new->AssembleRHS_PETSc(false);
+//		ScreenMessage("-> assemble a global matrix\n");
+		eqs_new->AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY);
 #endif
 		ScreenMessage("-> impose Dirichlet BC\n");
 		IncorporateBoundaryConditions();
@@ -5281,6 +5388,7 @@ void CRFProcess::CalIntegrationPointValue()
 	    || getProcessType() == FiniteElement::AIR_FLOW
 	    || getProcessType() == FiniteElement::PS_GLOBAL
 	    || getProcessType() == FiniteElement::DEFORMATION_FLOW //NW
+	    || getProcessType() == FiniteElement::TH_MONOLITHIC
 	    )
 		cal_integration_point_value = true;
 	if (!cal_integration_point_value)
@@ -5868,6 +5976,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
 		vector<int> bc_eqs_id;
 		vector<double> bc_eqs_value;
+		vector<vector<int> > dof_node_id(this->GetPrimaryVNumber());
+		vector<vector<double> > dof_node_value(this->GetPrimaryVNumber());
 #else
 		double* eqs_rhs = NULL;
 		CPARDomain* m_dom = NULL;
@@ -6272,12 +6382,19 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				   }
 				   }
 				 */
+				if (m_bc->getProcessPrimaryVariable()==FiniteElement::PRESSURE && this->useMPa)
+					bc_value *= 1e-6;
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-				  bc_eqs_id.push_back(static_cast<int>( m_msh->nod_vector[bc_msh_node]->GetEquationIndex()
+				bc_eqs_id.push_back(static_cast<int>( m_msh->nod_vector[bc_msh_node]->GetEquationIndex()
 									* dof_per_node + shift));
-				  bc_eqs_value.push_back(bc_value);
+				bc_eqs_value.push_back(bc_value);
+				if (m_num->petsc_split_fields) {
+					int dof_id = m_bc->getProcessPrimaryVariable()==FiniteElement::PRESSURE ? 0 : 1; //TODO
+					dof_node_id[dof_id].push_back(static_cast<int>(m_msh->nod_vector[bc_msh_node]->GetEquationIndex()));
+					dof_node_value[dof_id].push_back(bc_value);
+				}
 				  
-#elif NEW_EQS                        //WW
+#elif defined(NEW_EQS)                        //WW
 				eqs_p->SetKnownX_i(bc_eqs_index, bc_value);
 #else
 				MXRandbed(bc_eqs_index,bc_value,eqs_rhs);
@@ -6288,12 +6405,39 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			}
 		}
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-		int nbc = static_cast<int>(bc_eqs_id.size());
-		if(nbc>0)
-		  {
-		    eqs_new->setArrayValues(0, nbc, &bc_eqs_id[0], &bc_eqs_value[0], INSERT_VALUES); 
-		    eqs_new->setArrayValues(1, nbc, &bc_eqs_id[0], &bc_eqs_value[0], INSERT_VALUES);
-		  } 
+		if (m_num->petsc_split_fields) {
+			for (unsigned i=0; i<dof_node_id.size(); i++) {
+				VecGetSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+				int nrow = dof_node_id[i].size();
+				if(nrow>0)
+					VecSetValues(eqs_new->vec_subRHS[i], nrow, &dof_node_id[i][0], &dof_node_value[i][0], INSERT_VALUES);
+				VecAssemblyBegin(eqs_new->vec_subRHS[i]);
+				VecAssemblyEnd(eqs_new->vec_subRHS[i]);
+				VecRestoreSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+			}
+
+			for (unsigned i=0; i<dof_node_id.size(); i++) {
+				int nrow = dof_node_id[i].size();
+				for (unsigned j=0; j<dof_node_id.size(); j++) {
+					PetscScalar diag_val = 1.0;
+					if (i!=j) diag_val = .0;
+					if(nrow>0)
+						MatZeroRows(eqs_new->vec_subA[i*dof_node_id.size()+j], nrow, &dof_node_id[i][0], diag_val, PETSC_NULL, PETSC_NULL);
+					else
+						MatZeroRows(eqs_new->vec_subA[i*dof_node_id.size()+j], 0, PETSC_NULL, diag_val, PETSC_NULL, PETSC_NULL);
+				}
+			}
+			eqs_new->AssembleRHS_PETSc();
+			eqs_new->AssembleMatrixPETSc();
+
+		} else {
+
+			int nbc = static_cast<int>(bc_eqs_id.size());
+			if(nbc>0)
+			{
+				eqs_new->setArrayValues(0, nbc, &bc_eqs_id[0], &bc_eqs_value[0], INSERT_VALUES);
+				eqs_new->setArrayValues(1, nbc, &bc_eqs_id[0], &bc_eqs_value[0], INSERT_VALUES);
+			}
 
 #ifdef petsc_zero_row_test
 		//We have do the following collection because MatZeroR must be called by all processes
@@ -6331,19 +6475,20 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 		MPI_Barrier (MPI_COMM_WORLD); 
 		eqs_new->zeroRows_in_Matrix(v_disp, &r_vec[0]);
 #endif //  petsc_zero_row_test    
-		eqs_new->AssembleUnkowns_PETSc();
-		eqs_new->AssembleRHS_PETSc();
+			eqs_new->AssembleUnkowns_PETSc();
+			eqs_new->AssembleRHS_PETSc();
 
 
-		//TEST
-		//PetscViewer viewer;
-		//eqs_new->EQSV_Viewer(FileName, viewer);
+			//TEST
+			//PetscViewer viewer;
+			//eqs_new->EQSV_Viewer(FileName, viewer);
 
 
-		eqs_new->zeroRows_in_Matrix(nbc, &bc_eqs_id[0]);
-		eqs_new->AssembleMatrixPETSc();
+			eqs_new->zeroRows_in_Matrix(nbc, &bc_eqs_id[0]);
+			eqs_new->AssembleMatrixPETSc();
+		}
 		
-#endif		
+#endif
 
 		if (count_constrained_excluded>0)
 			std::cout << "-> " << count_constrained_excluded << " nodes are excluded from BC because of constrained conditions" << std::endl;
@@ -6868,6 +7013,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
 		vector<int> st_eqs_id;
 		vector<double> st_eqs_value;
+		vector<vector<int> > dof_node_id(this->GetPrimaryVNumber());
+		vector<vector<double> > dof_node_value(this->GetPrimaryVNumber());
 #else
 		CPARDomain* m_dom = NULL;
 		double* eqs_rhs = NULL;
@@ -7318,6 +7465,11 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			
 			st_eqs_id.push_back(static_cast<int>(m_msh->nod_vector[msh_node]->GetEquationIndex() * dof_per_node + shift));
 			st_eqs_value.push_back(value);
+			if (m_num->petsc_split_fields) {
+				int dof_id = m_st->getProcessPrimaryVariable()==FiniteElement::PRESSURE ? 0 : 1; //TODO
+				dof_node_id[dof_id].push_back(static_cast<int>(m_msh->nod_vector[msh_node]->GetEquationIndex()));
+				dof_node_value[dof_id].push_back(value);
+			}
 			
 #else
 				if (rank > -1)
@@ -7391,13 +7543,30 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			}
 		}
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-		if(st_eqs_id.size()>0)
-		  {
-		    eqs_new->setArrayValues(1, static_cast<int>(st_eqs_id.size()),
-					    &st_eqs_id[0], &st_eqs_value[0]); 
-		    //eqs_new->AssembleRHS_PETSc();
-		  }
-#endif		
+		if (m_num->petsc_split_fields) {
+//				for (unsigned i=0; i<eqs_new->vec_subRHS.size(); i++)
+//					VecGetSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+			for (unsigned i=0; i<dof_node_id.size(); i++) {
+				VecGetSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+				if(st_eqs_id.size()>0)
+				{
+				int nrow = dof_node_id[i].size();
+				if(nrow>0)
+					VecSetValues(eqs_new->vec_subRHS[i], nrow, &dof_node_id[i][0], &dof_node_value[i][0], ADD_VALUES);
+				}
+				VecAssemblyBegin(eqs_new->vec_subRHS[i]);
+				VecAssemblyEnd(eqs_new->vec_subRHS[i]);
+				VecRestoreSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+			}
+//				for (size_t i=0; i<eqs_new->vec_subRHS.size(); i++)
+//					VecRestoreSubVector(eqs_new->b, eqs_new->vec_isg[i], &eqs_new->vec_subRHS[i]);
+			eqs_new->AssembleRHS_PETSc();
+		} else {
+			if(st_eqs_id.size()>0)
+			eqs_new->setArrayValues(1, static_cast<int>(st_eqs_id.size()), &st_eqs_id[0], &st_eqs_value[0]);
+			//eqs_new->AssembleRHS_PETSc();
+		}
+#endif
 	}
 
 #if !defined(USE_PETSC) && !defined(NEW_EQS)// || defined(other parallel libs)//03~04.3012.   
@@ -12891,7 +13060,7 @@ CRFProcess* PCSGetMass(size_t component_number)
  **************************************************************************/
 #if defined(USE_PETSC)  //WW. 07.11.2008. 04.2012
 // New solvers WW
-#elif NEW_EQS                                    //1.09.2007 WW
+#elif defined(NEW_EQS)                                    //1.09.2007 WW
 
 	void CreateEQS_LinearSolver()
 	{

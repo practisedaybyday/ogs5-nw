@@ -187,7 +187,7 @@ class CRFProcess : public ProcessInfo
 {
 	//----------------------------------------------------------------------
 	// Properties
-private:
+protected:
 	/**
 	 * _problem is a pointer to an instance of class Problem.
 	 *  The pointer is used to get the geometric entities.
@@ -625,9 +625,10 @@ public:
 	void ConfigRandomWalk();
 	void ConfigMultiPhaseFlow();
 	void ConfigPS_Global();               // PCH
+	void ConfigTH();
 	// Configuration 1 - NOD
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
-	void setSolver( petsc_group::PETScLinearSolver *petsc_solver );
+	virtual void setSolver( petsc_group::PETScLinearSolver *petsc_solver );
 	double CalcIterationNODError(int method); //OK // PETSC version in rf_pcs1.cpp WW
 #endif
 
@@ -837,6 +838,7 @@ public:
 	void Calc2DElementGradient(MeshLib::CElem* ele, double ElementConcentration[4], double *grad);
 	// NEW
 	CRFProcess* CopyPCStoDM_PCS();
+	CRFProcess* CopyPCStoTH_PCS();
 	bool OBJRelations();                  //OK
 	void OBJRelationsDelete();            //OK
 	bool NODRelations();                  //OK
@@ -863,6 +865,7 @@ public:
 	int PCS_ExcavState;                   //WX
 	bool calcDiffFromStress0;
 	bool resetStrain;
+	bool useMPa;
 #if defined(USE_MPI) || defined (USE_PETSC)                                 //WW
 	void Print_CPU_time_byAssembly(std::ostream &os = std::cout) const
 	{

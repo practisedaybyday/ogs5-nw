@@ -76,6 +76,7 @@ extern int ReadData(char*, GEOLIB::GEOObjects& geo_obj, std::string& unique_name
 #include "rf_REACT_BRNS.h"
 #endif
 #include "rf_kinreact.h"
+#include "rf_pcs_TH.h"
 
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
 #include "PETSC/PETScLinearSolver.h"
@@ -534,7 +535,7 @@ Problem::~Problem()
     3: PS_GLOBAL   | 4: MULTI_PHASE_FLOW  | 5: COMPONENTAL_FLOW
     6: OVERLAND_FLOW   | 7: AIR_FLOW          | 8: HEAT_TRANSPORT
     9: FLUID_MOMENTUM  |10: RANDOM_WALK       |11: MASS_TRANSPORT
-   12: DEFORMATION     |
+   12: DEFORMATION     |13: PTC_FLOW | 14: TH
    Return:
    Programming:
    07/2008 WW
@@ -670,6 +671,14 @@ inline int Problem::AssignProcessIndex(CRFProcess* m_pcs, bool activefunc)
 		active_processes[3] = &Problem::PS_Global;
 		return 3;
 	}
+	else if (m_pcs->getProcessType() == FiniteElement::TH_MONOLITHIC)
+	{
+		if (!activefunc)
+			return 14;
+		total_processes[14] = m_pcs;
+		active_processes[14] = &Problem::TH_Monolithic;
+		return 14;
+	}
 	std::cout << "Error: no process is specified. " << std::endl;
 	return -1;
 }
@@ -693,7 +702,7 @@ void Problem::SetActiveProcesses()
 {
 	int i;
 	CRFProcess* m_pcs = NULL;
-	const int max_processes = 14;         // PCH
+	const int max_processes = 15;         // PCH
 	total_processes.resize(max_processes);
 	active_processes = new ProblemMemFn[max_processes];
 	coupled_process_index.resize(max_processes);
@@ -3255,6 +3264,19 @@ inline double Problem::Deformation()
 		if(dm_pcs->type == 42) // H2M. 07.2011. WW
 			dm_pcs->CalcSecondaryVariablesUnsaturatedFlow();
 	}
+	return error;
+}
+
+inline double Problem::TH_Monolithic()
+{
+	double error = 1.0e+8;
+	CRFProcess* m_pcs = total_processes[14];
+	if(!m_pcs->selected)
+		return error;
+	CRFProcessTH* th_pcs = (CRFProcessTH*)m_pcs;
+	error = th_pcs->Execute(loop_process_number);
+	th_pcs->CalIntegrationPointValue();
+
 	return error;
 }
 

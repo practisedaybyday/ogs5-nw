@@ -49,6 +49,8 @@ ProcessType convertProcessType ( const std::string& pcs_type_string )
 		return FLUX;
 	if (pcs_type_string.compare ("PS_GLOBAL") == 0)
 		return PS_GLOBAL;
+	if (pcs_type_string.compare ("TH_MONOLITHIC") == 0)
+		return TH_MONOLITHIC;
 	if (pcs_type_string.compare ("NO_PCS") == 0)
 		return NO_PCS;
 	//else
@@ -95,6 +97,8 @@ std::string convertProcessTypeToString ( ProcessType pcs_type )
 		return "FLUX";
 	if (pcs_type ==   PS_GLOBAL)
 		return "PS_GLOBAL";
+	if (pcs_type == TH_MONOLITHIC)
+		return "TH_MONOLITHIC";
 	if (pcs_type ==   NO_PCS)
 		return "NO_PCS";
 	return "INVALID_PROCESS";
@@ -107,7 +111,8 @@ bool isFlowProcess (ProcessType pcs_type)
 		|| pcs_type == PS_GLOBAL || pcs_type == MULTI_PHASE_FLOW
 		|| pcs_type == DEFORMATION_FLOW || pcs_type == DEFORMATION_H2
 	    || pcs_type == TWO_PHASE_FLOW || pcs_type == OVERLAND_FLOW 
-	    || pcs_type == AIR_FLOW)
+	    || pcs_type == AIR_FLOW
+	    || pcs_type == TH_MONOLITHIC)
 		return true;
 	return false;
 }

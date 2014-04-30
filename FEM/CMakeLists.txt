@@ -34,6 +34,7 @@ set( SOURCES
 	rf_num_new.h
 	rf_out_new.h
 	rf_pcs.h
+	rf_pcs_TH.h
 	#rf_random_walk.h
 	rf_react.h
 	rf_st_new.h
@@ -88,6 +89,7 @@ set( SOURCES
 	rf_num_new.cpp
 	rf_out_new.cpp
 	rf_pcs.cpp
+	rf_pcs_TH.cpp
 	#rf_random_walk.cpp
 	rf_react.cpp
 	rf_st_new.cpp
