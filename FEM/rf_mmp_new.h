@@ -212,7 +212,7 @@ public:
 	double permeability_pressure_model_values[10];
 	double permeability_pressure_rel;
 	int permeability_strain_model;        //WX: permeability function strain model. 05.2010
-	int permeability_strain_model_value[3]; //WX:permeability fuction strain model value. 05.2010
+	int permeability_strain_model_value[6]; //WX:permeability fuction strain model value. 05.2010
 	int permeability_effstress_model_value[3];	//AS:perlmeability function eff stress 08.2012
 	int permeability_effstress_model;
 	int storage_effstress_model_value[3];			//AS:storage function eff stress 08.2012

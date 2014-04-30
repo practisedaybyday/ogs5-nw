@@ -2323,7 +2323,7 @@ double CMediumProperties::GetEffectiveSaturationForPerm(const double wetting_sat
 **************************************************************************/
 double CMediumProperties::PermeabilitySaturationFunction(const double wetting_saturation, int phase)
 {
-	double kr=.0, sl, se, slr, slm, m, b, slr1;
+	double kr=.0, sl, se, slr, slm, m, b;
 	int model, gueltig;
 	bool phase_shift = false;
 	sl = wetting_saturation;
@@ -4122,7 +4122,7 @@ double CMediumProperties::PorosityEffectiveConstrainedSwellingConstantIonicStren
 double* CMediumProperties::PermeabilityTensor(long index)
 {
 	static double tensor[9];
-	int perm_index = 0;
+	//int perm_index = 0;
 
 	int idx_k, idx_n;
 	double /*k_old, n_old,*/ k_new, n_new, k_rel, n_rel;
@@ -4445,7 +4445,7 @@ double* CMediumProperties::PermeabilityTensor(long index)
 //12.(ii) PERMEABILITY_FUNCTION_PRESSURE
 //------------------------------------------------------------------------
 //WX: implementation of ths permeability_function_pressure. 1. version only for multi_phase_flow. 05.2010
-double CMediumProperties::PermeabilityFunctionPressure(long index, double PG2)
+double CMediumProperties::PermeabilityFunctionPressure(long /*index*/, double PG2)
 {
 	int gueltig; //WX: for function GetCurveValue(). 11.05.2010
 	double fac_perm_pressure = 1;
@@ -5217,7 +5217,7 @@ int CMediumProperties::SetDistributedELEProperties(const string &file_name, size
 	int por_index = 0;
 	int vol_bio_index = 0;
 	string outfile;
-	int k;
+	//int k;
 
 	cout << " SetDistributedELEProperties: ";
 	//----------------------------------------------------------------------
@@ -7046,13 +7046,8 @@ double CMediumProperties::NonlinearFlowFunction(long index, double* gp, double t
    6		Storage as normal stress in element in stress field defined by KTB stress
    field, function to increase storage with distance from borehole.
 **************************************************************************/
-double CMediumProperties::StorageFunction(long index,double* gp,double theta)
+double CMediumProperties::StorageFunction(long index,double* /*gp*/,double /*theta*/)
 {
-	//OK411
-	theta = theta;
-	gp = gp;
-	index = index;
-
 	//int nn, i, Type;
 	//int idummy;
 	//double p; //WW, sigma, z[8];
