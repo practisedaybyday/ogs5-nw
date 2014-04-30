@@ -3706,38 +3706,41 @@ double CMediumProperties::Porosity(long number,double theta)
 	// Functional dependencies
 	CRFProcess* pcs_temp;
 
-	const size_t no_pcs_names(this->porosity_pcs_name_vector.size());
-	for (size_t i = 0; i < no_pcs_names; i++)
-	{
-		str = porosity_pcs_name_vector[i];
-		pcs_temp = PCSGet(str, true); //MX
-		nidx0 = pcs_temp->GetNodeValueIndex(porosity_pcs_name_vector[i]);
-		nidx1 = nidx0 + 1;
-		if (mode == 0)            // Gauss point values
+	if (porosity_model!=1) {
+		const size_t no_pcs_names(this->porosity_pcs_name_vector.size());
+		for (size_t i = 0; i < no_pcs_names; i++)
 		{
-			assem->ComputeShapefct(1);
-			primary_variable[i] = (1. - theta) * assem->interpolate(nidx0,
-			                                                        pcs_temp) +
-			                      theta* assem->interpolate(nidx1, pcs_temp);
-		}                         // Node values
-		else if (mode == 1)
-			primary_variable[i] = (1. - theta) * pcs_temp->GetNodeValue(number,
-			                                                            nidx0) +
-			                      theta* pcs_temp->GetNodeValue(number, nidx1);
-		// Element average value
-		else if (mode == 2)
-			primary_variable[i] = (1. - theta) * assem->elemnt_average(nidx0,
-			                                                           pcs_temp) +
-			                      theta* assem->elemnt_average(nidx1, pcs_temp);
-		else if(mode == 1)        // Node values
+			str = porosity_pcs_name_vector[i];
+			pcs_temp = PCSGet(str, true); //MX
+			nidx0 = pcs_temp->GetNodeValueIndex(porosity_pcs_name_vector[i]);
+			nidx1 = nidx0 + 1;
+			if (mode == 0)            // Gauss point values
+			{
+				assem->ComputeShapefct(1);
+				primary_variable[i] = (1. - theta) * assem->interpolate(nidx0,
+				                                                        pcs_temp) +
+				                      theta* assem->interpolate(nidx1, pcs_temp);
+			}                         // Node values
+			else if (mode == 1)
+				primary_variable[i] = (1. - theta) * pcs_temp->GetNodeValue(number,
+				                                                            nidx0) +
+				                      theta* pcs_temp->GetNodeValue(number, nidx1);
+			// Element average value
+			else if (mode == 2)
+				primary_variable[i] = (1. - theta) * assem->elemnt_average(nidx0,
+				                                                           pcs_temp) +
+				                      theta* assem->elemnt_average(nidx1, pcs_temp);
+			else if(mode == 1)        // Node values
 
-			primary_variable[i] = (1. - theta) * pcs_temp->GetNodeValue(number,nidx0) \
-			                      + theta* pcs_temp->GetNodeValue(number,nidx1);
-		else if(mode == 2)        // Element average value
+				primary_variable[i] = (1. - theta) * pcs_temp->GetNodeValue(number,nidx0) \
+				                      + theta* pcs_temp->GetNodeValue(number,nidx1);
+			else if(mode == 2)        // Element average value
 
-			primary_variable[i] = (1. - theta) * assem->elemnt_average(nidx0,pcs_temp)
-			                      + theta* assem->elemnt_average(nidx1,pcs_temp);
+				primary_variable[i] = (1. - theta) * assem->elemnt_average(nidx0,pcs_temp)
+				                      + theta* assem->elemnt_average(nidx1,pcs_temp);
+		}
 	}
+
 
 	//----------------------------------------------------------------------
 	// Material models
