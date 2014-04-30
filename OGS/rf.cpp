@@ -285,7 +285,7 @@ int main ( int argc, char* argv[] )
 	Problem* aproblem = new Problem(dateiname);
 #ifndef WIN32
 	BaseLib::MemWatch mem_watch;
-	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage()/ (1024*1024));
+	ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage()/ (1024*1024));
 #endif
 	aproblem->Euler_TimeDiscretize();
 #ifdef USE_PETSC

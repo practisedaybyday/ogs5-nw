@@ -573,7 +573,7 @@ void CInitialCondition::SetByElementValues(int nidx)
     }
 
     CRFProcess* pcs = this->getProcess();
-    MeshLib::CFEMesh* msh = pcs->m_msh;
+    //MeshLib::CFEMesh* msh = pcs->m_msh;
     // read element values
     std::vector<long> ic_ele_ids;
     std::map<long, double> map_eleId_values;

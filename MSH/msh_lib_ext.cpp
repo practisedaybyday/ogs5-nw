@@ -80,6 +80,7 @@ void FEMRead(const string& file_base_name,
 	CFEMesh *mesh = new CFEMesh(geo_obj, unique_name);
 	mesh_vec.push_back(mesh);
 
+	ScreenMessage("-->Parallel reading the partitioned mesh\n");
 	for(int i=0; i<mysize; i++)
 	{
 		if(myrank == 0)
@@ -94,7 +95,6 @@ void FEMRead(const string& file_base_name,
 			getline(is, str_var);
 #endif
 
-			ScreenMessage("-->Parallel reading the partitioned mesh\n");
 			//cout<<"-->Parallel reading the partitioned mesh: "<<i<<endl;
 
 			for (int j=0; j<nheaders; j++)

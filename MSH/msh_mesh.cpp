@@ -875,7 +875,7 @@ void CFEMesh::ConstructGrid()
 	max_dim = coordinate_system / 10 - 1;
 	//----------------------------------------------------------------------
 	// Gravity center
-    ScreenMessage2("-> compute gravity center ... \n");
+	//ScreenMessage2("-> compute gravity center ... \n");
 	for (size_t e = 0; e < e_size; e++)
 		ele_vector[e]->ComputeGravityCenter();  //NW
 	//----------------------------------------------------------------------

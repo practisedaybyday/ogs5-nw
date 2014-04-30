@@ -902,7 +902,7 @@ void CBoundaryCondition::SetByElementValues(long ShiftInNodeVector)
     }
 
     CRFProcess* pcs = this->getProcess();
-    MeshLib::CFEMesh* msh = pcs->m_msh;
+    //MeshLib::CFEMesh* msh = pcs->m_msh;
     // read element values
     std::vector<long> bc_ele_ids;
     std::map<long, double> map_eleId_val;
