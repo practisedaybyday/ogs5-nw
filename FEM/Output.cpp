@@ -1573,10 +1573,9 @@ double COutput::NODWritePLYDataTEC(int number)
 **************************************************************************/
 void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 {
-	long msh_node_number(m_msh->GetNODOnPNT(
-	                             static_cast<const GEOLIB::Point*> (getGeoObj())));
-        if(msh_node_number < 0)  //11.06.2012. WW
-	  return;
+	const long msh_node_number(m_msh->GetNODOnPNT(static_cast<const GEOLIB::Point*> (getGeoObj())));
+	if(msh_node_number < 0)  //11.06.2012. WW
+		return;
 
 	CRFProcess* dm_pcs = NULL;
 	for (size_t i = 0; i < pcs_vector.size(); i++)
@@ -1628,12 +1627,15 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 	vector<int> NodeIndex(no_variables);
 	GetNodeIndexVector(NodeIndex);
 	//--------------------------------------------------------------------
+	bool isCSV = (dat_type_name.compare("CSV") == 0);
+	bool isGNUPLOT = (dat_type_name.compare("GNUPLOT") == 0);
+	const std::string sep = isCSV ? ", " : " ";
 	// Write header
 	if (time_step_number == 0)            //WW  Old: if(time_step_number==1)
 	{
 		//project_title;
-		if (dat_type_name.compare("CSV") != 0) {
-			if (dat_type_name.compare("GNUPLOT") != 0) { // 6/2012 JOD
+		if (!isCSV) {
+			if (!isGNUPLOT) { // 6/2012 JOD
 				const std::string project_title_string ("Time curves in points");
 				tec_file << " TITLE = \"" << project_title_string << "\"" << "\n";
 			} else {
@@ -1641,14 +1643,14 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 			}
 			tec_file << " VARIABLES = ";
 		}
-		tec_file << "\"TIME \" ";
+		tec_file << "\"TIME\"";
 
 		//    if(pcs_type_name.compare("RANDOM_WALK")==0)
 		if (getProcessType() == FiniteElement::RANDOM_WALK)
 			tec_file << "leavingParticles ";
 		for (size_t k = 0; k < no_variables; k++) //WW
 		{
-			tec_file << "\"" << _nod_value_vector[k] << "\" ";
+			tec_file << sep << "\"" << _nod_value_vector[k] << "\"";
 			//-------------------------------------WW
 			m_pcs = GetPCS(_nod_value_vector[k]);
 			if (m_pcs && m_pcs->type == 1212 && _nod_value_vector[k].find(
@@ -1659,7 +1661,7 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 		//OK411
 		for (size_t k = 0; k < mfp_value_vector.size(); k++)
 			//NB MFP data names for multiple phases
-			tec_file << " \"" << mfp_value_vector[k] << "\" ";
+			tec_file << " \"" << mfp_value_vector[k] << "\"" << sep;
 		//
 #ifdef RFW_FRACTURE
 		for(i = 0; i < (int)mmp_vector.size(); ++i)
@@ -1676,8 +1678,8 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 			         << " Effective_Strain";
 		tec_file << "\n";
 
-		if (dat_type_name.compare("CSV") != 0) {
-			if (dat_type_name.compare("GNUPLOT") == 0) // 5.3.07 JOD
+		if (!isCSV) {
+			if (isGNUPLOT) // 5.3.07 JOD
 			  tec_file << "# "; // comment
 
 			if (geo_name.find("POINT") == std::string::npos)
@@ -1716,7 +1718,7 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 	//--------------------------------------------------------------------
 	// Write data
 	//......................................................................
-	tec_file << time_current << " ";
+	tec_file << time_current;
 	//......................................................................
 	// NOD values
 	if (getProcessType() == FiniteElement::RANDOM_WALK)
@@ -1759,9 +1761,9 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 								        GetNodeValueIndex(
 								                nod_value_name) +
 								        timelevel;
-								tec_file << m_pcs_out->GetNodeValue(
+								tec_file << sep << m_pcs_out->GetNodeValue(
 								        msh_node_number,
-								        nidx) << " ";
+								        nidx);
 							}
 							timelevel++;
 						}
@@ -1797,7 +1799,7 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 				//-----------------------------------------WW
 				double val_n = m_pcs->GetNodeValue(msh_node_number,
 				                                   NodeIndex[i]);
-				tec_file << val_n << " ";
+				tec_file << sep << val_n;
 				m_pcs = GetPCS(_nod_value_vector[i]);
 				if (m_pcs->type == 1212 && (_nod_value_vector[i].find(
 				                                    "SATURATION") != string::npos))
