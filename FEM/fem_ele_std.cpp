@@ -6647,7 +6647,7 @@ void CFiniteElementStd::AssembleParabolicEquation()
 	if(PcsType == V)                      // For DOF>1: 27.2.2007 WW
 		for (i = 0; i < nnodes; i++)
 			NodalVal[i + nnodes] = 0.0;
-	if(pcs->m_num->nls_method > 0 && (!dynamic)) //Newton method
+	if(pcs->m_num->nls_method == FiniteElement::NL_NEWTON && (!dynamic)) //Newton method
 		StiffMatrix->multi(NodalVal1, NodalVal, -1.0);
 
 	/// If JFNK. 10.08.2010 WW
@@ -8119,7 +8119,7 @@ void CFiniteElementStd::Assembly()
 		break;
 	//....................................................................
 	case O:                               // Overland flow
-		if(pcs->m_num->nls_method == 0) //PICARD
+		if(pcs->m_num->nls_method == FiniteElement::NL_PICARD) //PICARD
 		  {
 		    AssembleParabolicEquation();  //OK
 		    add2GlobalMatrixII();
@@ -8137,7 +8137,7 @@ void CFiniteElementStd::Assembly()
 		if(dm_pcs)
 			Assemble_strainCPL();
 
-		if(pcs->m_num->nls_method == 1) // Newton-Raphson. 07.2011. WW
+		if(pcs->m_num->nls_method == FiniteElement::NL_NEWTON) // Newton-Raphson. 07.2011. WW
 			ComputeAdditionalJacobi_Richards();
 		add2GlobalMatrixII();
 		break;
@@ -8164,7 +8164,7 @@ void CFiniteElementStd::Assembly()
 			Assemble_RHS_T_MPhaseFlow();
 		if(dm_pcs)
 			Assemble_RHS_M();
-		if(pcs->m_num->nls_method == 1) // Newton-Raphson. 06.2011. WW
+		if(pcs->m_num->nls_method == FiniteElement::NL_NEWTON) // Newton-Raphson. 06.2011. WW
 		{
 			ComputeAdditionalJacobi_H2();
 

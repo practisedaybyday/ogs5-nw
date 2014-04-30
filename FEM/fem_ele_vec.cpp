@@ -286,7 +286,7 @@ CFiniteElementVec::CFiniteElementVec(process::CRFProcessDeformation* dm_pcs,
 
 				// 07.2011. WW
 				PressureC_S = new Matrix(60,20);
-				if(pcs->m_num->nls_method == 1 && h_pcs->type == 42) // Newton-raphson. WW
+				if(pcs->m_num->nls_method == FiniteElement::NL_NEWTON && h_pcs->type == 42) // Newton-raphson. WW
 					PressureC_S_dp = new Matrix(60,20);
 			}
 			// WW idx_P0 = pcs->GetNodeValueIndex("POROPRESSURE0");

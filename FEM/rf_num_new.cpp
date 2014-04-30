@@ -82,7 +82,7 @@ CNumerics::CNumerics(string name)
 	//
 	// NLS - Nonlinear Solver
 	nls_method_name = "PICARD";
-	nls_method = -1;						//Default linear, 0: Picard. 1: Newton. 2:JFNK
+	nls_method = FiniteElement::INVALID_NL_TYPE;						//Default linear, 0: Picard. 1: Newton. 2:JFNK
 	nls_error_method = 1;					//JT2012
 	nls_max_iterations = 1;					//OK
 	nls_relaxation = 0.0;
@@ -230,7 +230,7 @@ void CNumerics::NumConfigure(bool overall_coupling_exists)
 {
    // Overall coupling check
    if(overall_coupling_exists && !cpl_error_specified){
-	   if(this->nls_method < 0){
+	   if(this->nls_method == FiniteElement::INVALID_NL_TYPE){
 		   std::cout<<"ERROR in NUMRead. Overall coupling requested, but ";
 		   std::cout<< this->pcs_type_name << " was not\n";
 		   std::cout<<"supplied with coupling tolerance. See $COUPLING_CONTROL keyword to enter this.\n";
@@ -257,7 +257,7 @@ void CNumerics::NumConfigure(bool overall_coupling_exists)
    }
    //
    // We are ok. Now check the tolerances.
-   if(this->nls_method < 0){ // linear solution
+   if(this->nls_method == FiniteElement::INVALID_NL_TYPE){ // linear solution
 	   if(cpl_error_specified){ // A coupling error was entered. Adopt this for error calculations.
 		   for(size_t i=0; i<DOF_NUMBER_MAX; i++){
 			   nls_error_tolerance[i] = cpl_error_tolerance[i];
@@ -388,11 +388,12 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 					break;
 			}
 
-			nls_method = 0;
-			if(nls_method_name.find("NEWTON") != string::npos)
-				nls_method = 1;
+			if(nls_method_name.find("PICARD") != string::npos)
+				nls_method = FiniteElement::NL_PICARD;
+			else if(nls_method_name.find("NEWTON") != string::npos)
+				nls_method = FiniteElement::NL_NEWTON;
 			else if(nls_method_name.find("JFNK") != string::npos) //  Jacobian free Newton-Krylov method
-				nls_method = 2;
+				nls_method = FiniteElement::NL_JFNK;
 			//
 			line.clear();
 			continue;
@@ -414,13 +415,14 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			line.str(GetLineFromFile1(num_file));
 			line >> nls_method_name;
 			//
-			nls_method = 0;
-			if(nls_method_name.find("NEWTON") != string::npos)
-				nls_method = 1;
+			if(nls_method_name.find("PICARD") != string::npos)
+				nls_method = FiniteElement::NL_PICARD;
+			else if(nls_method_name.find("NEWTON") != string::npos)
+				nls_method = FiniteElement::NL_NEWTON;
 			else if(nls_method_name.find("JFNK") != string::npos) //  Jacobian free Newton-Krylov method
-				nls_method = 2;
+				nls_method = FiniteElement::NL_JFNK;
 			//
-			if(nls_method > 0){
+			if(FiniteElement::isNewtonKind(nls_method)){
 				line >> nls_error_tolerance[0];
 				line >> nls_plasticity_local_tolerance;
 				error_method_name = "BNORM"; // JT: this is hardwired in old version

@@ -60,7 +60,7 @@ public:
 	//
 	// NLS - Non-linear Solver
 	std::string nls_method_name;
-	int nls_method;                       // Picard or Newton
+	FiniteElement::NonlinearSolverType nls_method;                       // Picard or Newton
 	int nls_error_method;                 //WW
 	int nls_max_iterations;
 	double nls_relaxation;

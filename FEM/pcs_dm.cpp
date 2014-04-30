@@ -259,7 +259,7 @@ void CRFProcessDeformation::InitialMBuffer()
 		             2 * m_msh->GetNodesNumber(false);
 
 	//Allocate memory for  temporal array
-	if(m_num->nls_method != 2)
+	if(m_num->nls_method != FiniteElement::NL_JFNK)
 		ARRAY =  new double[bufferSize];
 
 	// Allocate memory for element variables
@@ -382,7 +382,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	 */
 
 	//JT//if(CouplingIterations == 0 && m_num->nls_method != 2)
-	if(this->first_coupling_iteration && m_num->nls_method != 2)
+	if(this->first_coupling_iteration && m_num->nls_method != FiniteElement::NL_JFNK)
 		StoreLastSolution();      //u_n-->temp
 	//  Reset stress for each coupling step when partitioned scheme is applied to HM
 	if(H_Process && (type / 10 != 4))
@@ -550,7 +550,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			clock_t cpu_time = 0; //WW
 			cpu_time = -clock();
 #endif
-			if(m_num->nls_method != 2) // Not JFNK method. 05.08.2010. WW
+			if(m_num->nls_method != FiniteElement::NL_JFNK) // Not JFNK method. 05.08.2010. WW
 				GlobalAssembly();
 #ifdef USE_MPI
 			cpu_time += clock();
@@ -745,7 +745,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 }
 #endif
 	// Recovery the old solution.  Temp --> u_n	for flow proccess
-	if(m_num->nls_method != 2)
+	if(m_num->nls_method != FiniteElement::NL_JFNK)
 		RecoverSolution();
 	//
 #ifdef NEW_EQS                              //WW
@@ -1416,7 +1416,7 @@ InitializeNewtonSteps(const bool ini_excav)
 
 			else
 			{
-				if(m_num->nls_method > 0) // If newton. 29.09.2011. WW
+				if(FiniteElement::isNewtonKind(m_num->nls_method)) // If newton. 29.09.2011. WW
 					continue;
 
 				for (j = 0; j < number_of_nodes; j++)
@@ -2498,7 +2498,7 @@ void CRFProcessDeformation::GlobalAssembly()
 		// {				 MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
 
 		/// If not JFNK or if JFNK but the Newton step is greater than one. 11.11.2010. WW
-		if(!(m_num->nls_method == 2 && ite_steps == 1))
+		if(!(m_num->nls_method == FiniteElement::NL_JFNK && ite_steps == 1))
 		{
 			// Apply Dirchlete bounday condition
 			if(!fem_dm->dynamic)

@@ -2991,7 +2991,7 @@ void CRFProcess::ConfigDeformation()
 		if (num->pcs_type_name.find("DEFORMATION") != string::npos)
 		{
 			num->pcs_type_name = FiniteElement::convertProcessTypeToString(this->getProcessType());
-			if(num->nls_method >= 1) // Newton-Raphson
+			if(FiniteElement::isNewtonKind(m_num->nls_method)) // Newton-Raphson
 			{
 				pcs_deformation = 101;
 				if (type / 10 == 4)
@@ -4206,7 +4206,7 @@ double CRFProcess::Execute()
 	m_msh->SwitchOnQuadraticNodes(false);
 
 	// If not Newton-Raphson method. 20.07.2011. WW
-	if(m_num->nls_method < 1 )
+	if(!FiniteElement::isNewtonKind(m_num->nls_method))
 	{
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
 	   InitializeRHS_with_u0(); 
@@ -5012,7 +5012,7 @@ void CRFProcess::GlobalAssembly()
 
 	CElem* elem = NULL;
 
-	if(m_num->nls_method == 2)            //06.09.2010. WW
+	if(m_num->nls_method == FiniteElement::NL_JFNK)            //06.09.2010. WW
 		IncorporateBoundaryConditions();
 	bool Check2D3D;
 	Check2D3D = false;
@@ -5069,7 +5069,7 @@ void CRFProcess::GlobalAssembly()
 		//m_dom->eqs->Write(Dum);
 		//Dum.close();
 		IncorporateSourceTerms(j);
-		if(m_num->nls_method != 2) //06.09.2010. WW
+		if(m_num->nls_method != FiniteElement::NL_JFNK) //06.09.2010. WW
 			IncorporateBoundaryConditions(j);
 		/*
 		   //TEST
@@ -6221,7 +6221,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 #endif
 				//..............................................................
 				// NEWTON WW   //Modified for JFNK. 09.2010. WW
-				if(m_num->nls_method >= 1 // 04.08.2010. WW _name.find("NEWTON")!=string::npos
+				if(FiniteElement::isNewtonKind(m_num->nls_method) // 04.08.2010. WW _name.find("NEWTON")!=string::npos
 				   ||  type == 4 || type / 10 == 4   )
 				{ //Solution is in the manner of increment !
 					idx0 =
@@ -6239,7 +6239,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						        idx0 + 1);
 						/// if JFNK and if the first Newton step
 						/// In the successive Newton steps, node BC value taken from the previous Newton step.
-						if(m_num->nls_method == 2 && ite_steps == 1)
+						if(m_num->nls_method == FiniteElement::NL_JFNK && ite_steps == 1)
 							SetNodeValue(m_bc_node->geo_node_number,
 							             idx0,
 							             bc_value);
@@ -6566,7 +6566,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						        GetEquationIndex();
 					//..............................................................
 					// NEWTON WW
-					if(m_num->nls_method >= 1 //_name.find("NEWTON")!=string::npos
+					if(FiniteElement::isNewtonKind(m_num->nls_method) //_name.find("NEWTON")!=string::npos
 					   || type == 4 || type == 41  ) //Solution is in the manner of increment !
 					{
 						idx0 = GetNodeValueIndex(
@@ -6694,7 +6694,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						        GetEquationIndex();
 					//..............................................................
 					// NEWTON WW
-					if(m_num->nls_method >= 1 //_name.find("NEWTON")!=string::npos
+					if(FiniteElement::isNewtonKind(m_num->nls_method) //_name.find("NEWTON")!=string::npos
 					   || type == 4 || type == 41  ) //Solution is in the manner of increment !
 					{
 						idx0 = GetNodeValueIndex(
@@ -6819,7 +6819,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						        GetEquationIndex();
 					//..............................................................
 					// NEWTON WW
-					if(m_num->nls_method >= 1 //_name.find("NEWTON")!=std::string::npos
+					if(FiniteElement::isNewtonKind(m_num->nls_method) //_name.find("NEWTON")!=std::string::npos
 					   || type == 4 || type == 41  ) //Solution is in the manner of increment !
 					{
 						idx0 = GetNodeValueIndex(
@@ -8567,7 +8567,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		//
 		case FiniteElement::ENORM:
 		{
-			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
+			if(FiniteElement::isNewtonKind(m_num->nls_method)){  // NEWTON-RAPHSON
 #ifndef USE_PETSC
 				for(ii=0;ii<pcs_number_of_primary_nvals;ii++){
 					for(i = 0; i < g_nnodes; i++){
@@ -8602,7 +8602,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		case FiniteElement::ERNORM:
 		{
 			value = 0.0;
-			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
+			if(FiniteElement::isNewtonKind(m_num->nls_method)){  // NEWTON-RAPHSON
 				for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
 				{
 					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
@@ -8645,7 +8645,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		//
 		case FiniteElement::EVNORM:
 		{
-			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
+			if(FiniteElement::isNewtonKind(m_num->nls_method)){  // NEWTON-RAPHSON
 				for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
 				{
 					error = 0.0;
@@ -8682,7 +8682,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		//
 		case FiniteElement::BNORM:
 		{
-			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
+			if(FiniteElement::isNewtonKind(m_num->nls_method)){  // NEWTON-RAPHSON
 				for(ii=0;ii<pcs_number_of_primary_nvals;ii++){
 					for(i = 0; i < g_nnodes; i++){
 					   val1 = eqs_x[i+ii*g_nnodes];
@@ -8714,7 +8714,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		//
 		case FiniteElement::LMAX:
 		{
-			if(m_num->nls_method > 0){  // NEWTON-RAPHSON
+			if(FiniteElement::isNewtonKind(m_num->nls_method)){  // NEWTON-RAPHSON
 				for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
 				{
 					error = 0.0;
@@ -8972,7 +8972,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			// ---------------------------------------------------
 			// LINEAR SOLUTION
 			// ---------------------------------------------------
-			if(m_num->nls_method < 0)
+			if(m_num->nls_method == FiniteElement::INVALID_NL_TYPE)
 			{
 				PrintStandardIterationInformation(true);
 				converged = true;
@@ -9112,7 +9112,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 
 			// FOR NEWTON: COPY DAMPED CHANGES TO NEW TIME
 			// ---------------------------------------------------
-			if(m_num->nls_method > 0)
+			if(FiniteElement::isNewtonKind(m_num->nls_method))
 			{
 				if(converged)
 					damping = 1.0; // Solution has converged. Take newest values.
@@ -9217,7 +9217,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		int ii;
 		//
 		// LINEAR SOLUTION
-		if(m_num->nls_method < 0)
+		if(m_num->nls_method == FiniteElement::INVALID_NL_TYPE)
 		{
 			std::cout << "      -->LINEAR solution complete. " << std::endl;
 			if(write_std_errors){
@@ -9229,7 +9229,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		}
 		//
 		// NON-LINEAR METHODS
-		if(m_num->nls_method == 0)
+		if(m_num->nls_method == FiniteElement::NL_PICARD)
 			ScreenMessage("-->End of PICARD iteration: %d/%d \n", iter_nlin, m_num->nls_max_iterations);
 		else
 			ScreenMessage("-->End of NEWTON-RAPHSON iteration: %d/%d \n", iter_nlin, m_num->nls_max_iterations);
@@ -13189,7 +13189,7 @@ CRFProcess* PCSGetMass(size_t component_number)
 		double* u_n = _problem->GetBufferArray();
 
         double *eqs_x = NULL;	
-        if (m_num->nls_method == 1) // Newton-Raphson
+        if (m_num->nls_method == FiniteElement::NL_NEWTON) // Newton-Raphson
 	    {
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
 		  eqs_x = eqs_new->GetGlobalSolution();
@@ -13335,7 +13335,7 @@ CRFProcess* PCSGetMass(size_t component_number)
 #endif
 			size_x += g_nnodes;
 
-			if (m_num->nls_method == 1) // Newton-Raphson
+			if (m_num->nls_method == FiniteElement::NL_NEWTON) // Newton-Raphson
 			{
                for(j = 0; j < g_nnodes; j++)
                {
