@@ -401,13 +401,8 @@ void CElement::ConfigNumerics(MshElemType::type ele_type)
 **************************************************************************/
 double CElement::interpolate(double* nodalVal, const int order) const
 {
-	int nn = nnodes;
-	double* inTerpo = shapefct;
-	if(order == 2)
-	{
-		nn = nnodes;
-		inTerpo = shapefctHQ;
-	}
+	const int nn = (order == 2) ? nnodesHQ : nnodes;
+	double const * const inTerpo = (order == 2) ? shapefctHQ : shapefct;
 	double val = 0.0;
 	for(int i = 0; i < nn; i++)
 		val += nodalVal[i] * inTerpo[i];

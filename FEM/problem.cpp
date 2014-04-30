@@ -828,7 +828,7 @@ void Problem::PCSCreate()
 #endif
 
 #ifndef WIN32
-	ScreenMessage2("\tcurrent memory: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024));
+	ScreenMessage("\tcurrent memory: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024));
 #endif
 
 	for (size_t i = 0; i < no_processes; i++)
@@ -1055,7 +1055,7 @@ void Problem::Euler_TimeDiscretize()
 #endif
 			if(print_result)
 			{
-				ScreenMessage2("-> output results\n");
+				ScreenMessage("-> output results\n");
 				if(current_time < end_time)
 					force_output = false;
 				else // JT: Make sure we printout on last time step
@@ -1085,7 +1085,7 @@ void Problem::Euler_TimeDiscretize()
 		ScreenMessage("\telapsed time for this time step: %g s\n", v2-v1);
 #endif
 #ifndef WIN32
-		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+		ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
 
 		}
@@ -1508,7 +1508,6 @@ const std::string& Problem::getGeoObjName () const
    -------------------------------------------------------------------------*/
 inline double Problem::LiquidFlow()
 {
-	int success;
 	double error = 0.;
 	CRFProcess* m_pcs = total_processes[0];
 	if(m_pcs->tim_type==FiniteElement::TIM_STEADY && aktueller_zeitschritt>1)
@@ -1527,6 +1526,7 @@ inline double Problem::LiquidFlow()
 	}
 
 #ifndef OGS_ONLY_TH
+	int success;
 	if(m_pcs->simulator.compare("ECLIPSE") == 0) // use ECLIPSE to calculate one phase liquid flow, BG
 	{
 		if(m_pcs->EclipseData == NULL) //SBG if this is the first call, make a new instance
@@ -1661,7 +1661,6 @@ inline double Problem::TwoPhaseFlow()
 inline double Problem::MultiPhaseFlow()
 {
 	double error = 1.0e+8;
-	int success = 0;                      // BG
 	CRFProcess* m_pcs = total_processes[4];
 	if(!m_pcs->selected)
 		return error;             //12.12.2008 WW
@@ -1689,6 +1688,7 @@ inline double Problem::MultiPhaseFlow()
 	}
 
 #ifndef OGS_ONLY_TH
+	int success = 0;                      // BG
 	if(m_pcs->simulator.compare("ECLIPSE") == 0) // use ECLIPSE to calculate multi-phase flow, BG
 	{
 		if(m_pcs->EclipseData == NULL) //SBG if this is the first call, make a new instance

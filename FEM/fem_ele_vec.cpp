@@ -1472,6 +1472,11 @@ void CFiniteElementVec::GlobalAssembly_Stiffness()
 
     07.2011. WW
  */
+#if defined(USE_PETSC) // || defined(other parallel libs)//10.3012. WW
+void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix*,
+                                                        double,
+                                                        const int) {}
+#else
 void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix* pCMatrix,
                                                         double fct,
                                                         const int phase)
@@ -1492,9 +1497,6 @@ void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix* pCMatrix,
 		{
 			for(size_t k = 0; k < ele_dim; k++)
 			  {  
-#if defined(USE_PETSC) // || defined(other parallel libs)//10.3012. WW
-			    //TODO
-#else
 #ifdef NEW_EQS
 				(*A)(NodeShift[k] + eqs_number[i], NodeShift[dim_shift] +
 				     eqs_number[j])
@@ -1504,11 +1506,11 @@ void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix* pCMatrix,
 				      NodeShift[dim_shift] + eqs_number[j], \
 				      fct * (*pCMatrix)(nnodesHQ * k + i,j));
 #endif
-#endif
 			  }
 		}
 	}
 }
+#endif
 
 /***************************************************************************
    GeoSys - Funktion:

@@ -855,7 +855,7 @@ void CRFProcess::Create()
 	ScreenMessage2("->Config ELE values\n");
 	AllocateMemGPoint();
 #ifndef WIN32
-	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+	ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
 
 	// ELE - config element matrices
@@ -920,7 +920,7 @@ void CRFProcess::Create()
 	if(reload >= 2 && ((type != 4 && type / 10 != 4) || !resetStrain)) // Modified at 03.08.2010. WW
 	{
 		// PCH
-		ScreenMessage2("Reloading the primary variables... \n");
+		ScreenMessage("Reloading the primary variables... \n");
 		ReadSolution();           //WW
 	}
 
@@ -978,7 +978,7 @@ void CRFProcess::Create()
 				Write_Processed_BC();
 		}
 #ifndef WIN32
-		ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+		ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
 		// ST - create ST groups for each process
 		ScreenMessage2("->Create ST\n");
@@ -1053,7 +1053,7 @@ void CRFProcess::Create()
 
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
 	size_unknowns =  m_msh->NodesNumber_Quadratic * pcs_number_of_primary_nvals;
-#elif NEW_EQS
+#elif defined(NEW_EQS)
 	/// For JFNK. 01.10.2010. WW
 #ifdef JFNK_H2M
 	if(m_num->nls_method == 2)
@@ -1074,7 +1074,7 @@ void CRFProcess::Create()
 #endif
 
 #ifndef WIN32
-	ScreenMessage2("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+	ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
 #endif
 }
 
@@ -1272,7 +1272,7 @@ void CRFProcess:: WriteSolution()
 	os.setf(std::ios_base::scientific,std::ios_base::floatfield);
 
 	int j;
-	int* idx(new int [2 * pcs_number_of_primary_nvals]);
+	std::vector<int> idx(2 * pcs_number_of_primary_nvals);
 	for ( j = 0; j < pcs_number_of_primary_nvals; j++ )
 	{
 		idx[j] = GetNodeValueIndex ( pcs_primary_function_name[j] );
@@ -1285,8 +1285,7 @@ void CRFProcess:: WriteSolution()
 		os << endl;
 	}
 	os.close();
-	ScreenMessage2("Write solutions for timestep %d into file %s\n", aktueller_zeitschritt, m_file_name.c_str());
-	delete [] idx;
+	ScreenMessage("Write solutions for timestep %d into file %s\n", aktueller_zeitschritt, m_file_name.c_str());
 }
 
 /**************************************************************************
@@ -1298,40 +1297,38 @@ void CRFProcess:: WriteSolution()
 **************************************************************************/
 void CRFProcess:: ReadSolution()
 {
- 	
-	std::string m_file_name = GetSolutionFileName(false);
+	const std::string m_file_name = GetSolutionFileName(false);
 	std::ifstream is ( m_file_name.c_str(), ios::in );
 	if (!is.good())
 	{
 		ScreenMessage2("Failure to open file: %s\n", m_file_name.c_str());
 		abort();
 	}
-	int j;
 
-	int* idx (new int [2 * pcs_number_of_primary_nvals]);
-	double* val (new double [2 * pcs_number_of_primary_nvals]);
+	std::vector<int> idx(2 * pcs_number_of_primary_nvals);
+	std::vector<double> val(2 * pcs_number_of_primary_nvals);
 
-	for (j = 0; j < pcs_number_of_primary_nvals; j++ )
+	for (int j = 0; j < pcs_number_of_primary_nvals; j++ )
 	{
 		idx[j] = GetNodeValueIndex ( pcs_primary_function_name[j] );
 		idx[j + pcs_number_of_primary_nvals] = idx[j] + 1;
 	}
 	for (size_t i = 0; i < m_msh->GetNodesNumber ( false ); i++ )
 	{
-		for (j = 0; j < 2 * pcs_number_of_primary_nvals; j++ )
+		for (int j = 0; j < 2 * pcs_number_of_primary_nvals; j++ )
 			is >> val[j];
 		is >> ws;
 //		for (j = 0; j < 2 * pcs_number_of_primary_nvals; j++ )
 //			SetNodeValue ( i,idx[j], val[j] );
 		//previous and current value should be initially same
-		for (j = 0; j < pcs_number_of_primary_nvals; j++ ) {
-			SetNodeValue ( i,idx[j*2], val[j*2+1] );
-			SetNodeValue ( i,idx[j*2+1], val[j*2+1] );
+		for (int j = 0; j < pcs_number_of_primary_nvals; j++ ) {
+			SetNodeValue (i, idx[j], val[j+pcs_number_of_primary_nvals] );
+			SetNodeValue (i, idx[j+pcs_number_of_primary_nvals], val[j+pcs_number_of_primary_nvals] );
+//			SetNodeValue (i, idx[j*2], val[j*2+1] );
+//			SetNodeValue (i, idx[j*2+1], val[j*2+1] );
 		}
 	}
 	is.close();
-	delete [] idx;
-	delete [] val;
 }
 
 /**************************************************************************
@@ -4243,19 +4240,17 @@ double CRFProcess::Execute()
 	//----------------------------------------------------------------------
 	// Execute linear solver
 #if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
-#if 0
-	{
+	if (write_leqs){
 		std::string eqs_name_base = convertProcessTypeToString(this->getProcessType());
 		eqs_name_base += "_" + number2str<size_t>(aktueller_zeitschritt);
-		eqs_new->EQSV_Viewer(eqs_name_base,false);
+		eqs_new->EQSV_Viewer(eqs_name_base,true);
 	}
-#endif
 #if 0
 	if (aktueller_zeitschritt==19 && this->getProcessType()==FiniteElement::HEAT_TRANSPORT) {
 		eqs_new->CheckIfMatrixIsSame("/home/localadmin/tasks/20131217_LiWah/petsc/2units2faults/HEAT_TRANSPORT_19_eqs_A.dat");
 	}
 #endif
-		eqs_new->Solver();
+		iter_lin = eqs_new->Solver();
 		//TEST 	double x_norm = eqs_new->GetVecNormX();
 		eqs_new->MappingSolution();
 #elif defined(NEW_EQS)                                 //WW
@@ -4266,7 +4261,6 @@ double CRFProcess::Execute()
 #ifdef LIS
 	bool compress_eqs = (type/10==4 || this->NumDeactivated_SubDomains>0);
 	iter_lin = eqs_new->Solver(this->m_num, compress_eqs); //NW
-	iter_lin_max = std::max(iter_lin_max, iter_lin);
 #else
 	iter_lin = eqs_new->Solver();
 #endif
@@ -4274,6 +4268,7 @@ double CRFProcess::Execute()
 #else
 	iter_lin = ExecuteLinearSolver();
 #endif
+	iter_lin_max = std::max(iter_lin_max, iter_lin);
 
 	//----------------------------------------------------------------------
 	// Linearized Flux corrected transport (FCT) by Kuzmin 2009
@@ -4994,14 +4989,18 @@ void CRFProcess::GlobalAssembly()
 		std::string m_file_name = FileName + "_" + pcs_type_name
 		                          + "_element_matrix.txt";
 #endif
+#if 0
 		if (matrix_file) matrix_file->close();
 		delete matrix_file;
 		matrix_file = new std::fstream(m_file_name.c_str(), ios::trunc | ios::out);
 		if (!matrix_file->good())
 			std::cout << "Warning in GlobalAssembly: Matrix files are not found"
 			          << std::endl;
+#endif
 	}
 
+	assert(fem);
+#if 0
 	if (!fem)
 		// Which process needs this?
 		// Only one instance of CFiniteElementStd is required for each process
@@ -5009,6 +5008,7 @@ void CRFProcess::GlobalAssembly()
 		// Please move this declaration to pcs configuration.     WW
 		if (m_msh)
 			fem = new CFiniteElementStd(this, m_msh->GetCoordinateFlag());
+#endif
 
 	CElem* elem = NULL;
 
@@ -5095,7 +5095,7 @@ void CRFProcess::GlobalAssembly()
 		const bool print_progress = (dn >= 100);
 		if (print_progress)
 			ScreenMessage("start local assembly for %d elements...\n", m_msh->ele_vector.size());
-	    const long n_eles = (long)m_msh->ele_vector.size();
+	    //const long n_eles = (long)m_msh->ele_vector.size();
 	    const bool isTimeControlNeumann = (Tim->time_control_type==TimeControlType::NEUMANN);
 
 		//YDTEST. Changed to DOF 15.02.2007 WW
@@ -5139,26 +5139,31 @@ void CRFProcess::GlobalAssembly()
 			AddFCT_CorrectionVector();
 
 		if (write_leqs) {
-			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_assembly.txt";
+			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + number2str(aktueller_zeitschritt) + "_" + number2str(iter_nlin) + "_leqs_assembly.txt";
 #if defined(NEW_EQS)
 			std::ofstream Dum(fname.c_str(), ios::out);
 			eqs_new->Write(Dum);
 			Dum.close();
-#elif !defined(USE_PETSC)
+#elif defined(USE_PETSC)
+			eqs_new->EQSV_Viewer(fname);
+#else
 			MXDumpGLS(fname.c_str(), 1, eqs->b, eqs->x);
 #endif
 		}
 
 		//	          MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 		//eqs_new->Write();
+		ScreenMessage("-> impose Neumann BC and source/sink terms\n");
 		IncorporateSourceTerms();
-		if (write_leqs) {
-			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_st.txt";
+		if (false && write_leqs) {
+			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + number2str(aktueller_zeitschritt) + "_" + number2str(iter_nlin) + "_leqs_st.txt";
 #if defined(NEW_EQS)
 			std::ofstream Dum(fname.c_str(), ios::out);
 			eqs_new->Write(Dum);
 			Dum.close();
-#elif !defined(USE_PETSC)
+#elif defined(USE_PETSC)
+			eqs_new->EQSV_Viewer(fname);
+#else
 			MXDumpGLS(fname.c_str(), 1, eqs->b, eqs->x);
 #endif
 		}
@@ -5185,17 +5190,20 @@ void CRFProcess::GlobalAssembly()
 		eqs_new->AssembleRHS_PETSc();
 		eqs_new->AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
 #endif
+		ScreenMessage("-> impose Dirichlet BC\n");
 		IncorporateBoundaryConditions();
 
 		//ofstream Dum("rf_pcs.txt", ios::out); // WW
 		// eqs_new->Write(Dum);   Dum.close();
 		if (write_leqs) {
-			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + "_leqs_bc.txt";
+			std::string fname = FileName + "_" + convertProcessTypeToString(this->getProcessType()) + number2str(aktueller_zeitschritt) + "_" + number2str(iter_nlin) + "_leqs_bc.txt";
 #if defined(NEW_EQS)
 			std::ofstream Dum(fname.c_str(), ios::out);
 			eqs_new->Write(Dum);
 			Dum.close();
-#elif !defined(USE_PETSC)
+#elif defined(USE_PETSC)
+			eqs_new->EQSV_Viewer(fname);
+#else
 			MXDumpGLS(fname.c_str(), 1, eqs->b, eqs->x);
 #endif
 		}
