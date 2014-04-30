@@ -79,6 +79,7 @@ CNumerics::CNumerics(string name)
 	ls_storage_method = 2;					//OK41
 	m_cols = 5;								// 06.2010. WW
 	ls_extra_arg = ""; //NW
+	petsc_split_fields = false;
 	//
 	// NLS - Nonlinear Solver
 	nls_method_name = "PICARD";
@@ -630,6 +631,14 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			ScreenMessage("->FEM_FCT method is selected.");
 			continue;
 		}
+#ifdef USE_PETSC
+		if(line_string.find("$PETSC_SPLIT_FIELDS") != string::npos)
+		{
+			this->petsc_split_fields = true;
+			ScreenMessage("-> Split fields in PETSc\n");
+			continue;
+		}
+#endif
 
 		//....................................................................
 		/*

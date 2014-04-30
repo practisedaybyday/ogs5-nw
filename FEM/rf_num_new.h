@@ -57,6 +57,7 @@ public:
 	int ls_precond;
 	int ls_storage_method;
 	std::string ls_extra_arg; //NW
+	bool petsc_split_fields;
 	//
 	// NLS - Non-linear Solver
 	std::string nls_method_name;
