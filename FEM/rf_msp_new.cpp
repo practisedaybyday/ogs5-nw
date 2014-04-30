@@ -1063,15 +1063,20 @@ double CSolidProperties::Heat_Conductivity(double refence)
    last modification:
    ToDo: geo_dimension
 **************************************************************************/
-void CSolidProperties::HeatConductivityTensor(const int dim, double* tensor, int group)
+void CSolidProperties::HeatConductivityTensor(const int dim, double* tensor, int /*group*/, double* variables)
 {
-	group = group;                        //OK411
 	//static double tensor[9];
 	double temperature = 0.0;
 	double saturation = 0.0;
 	int i = 0;
 	//WW
-	CalPrimaryVariable(conductivity_pcs_name_vector);
+	if (variables) {
+		primary_variable[0] = variables[0];
+		primary_variable[1] = variables[1];
+		primary_variable[2] = variables[2];
+	} else {
+		CalPrimaryVariable(conductivity_pcs_name_vector);
+	}
 	//--------------------------------------------------------------------
 	// MMP medium properties
 	//WW CMediumProperties *m_mmp = NULL;
@@ -1105,6 +1110,7 @@ void CSolidProperties::HeatConductivityTensor(const int dim, double* tensor, int
 		"***Error in CSolidProperties::HeatConductivityTensor(): conductivity mode is not supported "
 		     << endl;
 		//base_thermal_conductivity = Heat_Conductivity();
+		break;
 	}
 
 	//--------------------------------------------------------------------
