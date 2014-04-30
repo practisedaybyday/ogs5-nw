@@ -18,7 +18,7 @@ namespace petsc_group
 {
 
  PETScLinearSolver :: PETScLinearSolver (const int size)
-   :A(NULL),b(NULL),x(NULL),lsolver(NULL), prec(NULL), global_x0(NULL),  global_x1(NULL), global_buff(NULL)
+   :A(NULL),B(NULL),b(NULL),x(NULL),snes(NULL),lsolver(NULL), prec(NULL), total_x(NULL), global_x0(NULL),  global_x1(NULL), global_buff(NULL)
  {
    i_start = i_end = 0;
    ltolerance = 1.e-10;
@@ -30,6 +30,8 @@ namespace petsc_group
    m_size_loc = PETSC_DECIDE;
    mpi_size = 0;
    rank = 0;
+   is_global_node_id = NULL;
+   is_local_node_id = NULL;
  }
 
 PETScLinearSolver:: ~PETScLinearSolver()
@@ -40,8 +42,16 @@ PETScLinearSolver:: ~PETScLinearSolver()
   for (size_t i=0; i<vec_subA.size(); i++)
 	  MatDestroy(&vec_subA[i]);
   MatDestroy(&A);
-  if(lsolver) KSPDestroy(&lsolver);
+  if(snes) SNESDestroy(&snes);
+  else if(lsolver) KSPDestroy(&lsolver);
   // if(prec) PCDestroy(&prec);
+
+  if (vec_subA.empty()) {
+	  for (size_t i=0; i<vec_isg.size(); i++)
+		ISDestroy(&vec_isg[i]);
+  }
+  ISDestroy(&is_global_node_id);
+  ISDestroy(&is_local_node_id);
 
   if(global_x0)
     delete []  global_x0;
@@ -156,11 +166,26 @@ void PETScLinearSolver::Init(const int *sparse_index)
 */
 void PETScLinearSolver::Config(const PetscReal tol, const PetscInt maxits, const KSPType lsol, const PCType prec_type, const std::string &misc_setting)
 {
+   KSPCreate(PETSC_COMM_WORLD,&lsolver);
+   ConfigLinear(tol, maxits, lsol, prec_type, misc_setting);
+   KSPSetFromOptions(lsolver);
+}
+
+void PETScLinearSolver::ConfigWithNonlinear(const PetscReal tol, const PetscInt maxits, const KSPType lsol, const PCType prec_type, const std::string &misc_setting)
+{
+   SNESCreate(PETSC_COMM_WORLD,&snes);
+   SNESGetKSP(snes, &lsolver);
+   ConfigLinear(tol, maxits, lsol, prec_type, misc_setting);
+}
+
+void PETScLinearSolver::ConfigLinear(const PetscReal tol, const PetscInt maxits, const KSPType lsol, const PCType prec_type, const std::string &misc_setting)
+{
+	if (lsolver==NULL) return;
+
    ltolerance = tol;
    sol_type = lsol;
-   pc_type = prec_type; 
+   pc_type = prec_type;
 
-   KSPCreate(PETSC_COMM_WORLD,&lsolver);
 #if 0
    KSPSetOperators(lsolver, A, A, SAME_NONZERO_PATTERN);
 #else
@@ -171,7 +196,7 @@ void PETScLinearSolver::Config(const PetscReal tol, const PetscInt maxits, const
    KSPSetTolerances(lsolver,ltolerance, PETSC_DEFAULT, PETSC_DEFAULT, maxits);
 
 	KSPGetPC(lsolver, &prec);
-	if (vec_isg.size()>0) {
+	if (vec_subA.size()>0) {
 		PCSetType(prec,PCFIELDSPLIT);
 		for (int i=0; i<vec_isg.size(); i++) {
 			PCFieldSplitSetIS(prec, number2str(i).c_str(), vec_isg[i]);
@@ -180,7 +205,8 @@ void PETScLinearSolver::Config(const PetscReal tol, const PetscInt maxits, const
 		PCSetType(prec, prec_type); //  PCJACOBI); //PCNONE);
 	}
 
-   #if 0
+#if 1
+	if (vec_subA.empty()) {
    if (!misc_setting.empty()) {
 	   PetscPrintf(PETSC_COMM_WORLD, "-> additional PETSc arguments:\n");
 	   std::list<std::string> lst = splitString(misc_setting,' ');
@@ -209,8 +235,8 @@ void PETScLinearSolver::Config(const PetscReal tol, const PetscInt maxits, const
    PetscOptionsGetAll(&copts);
    PetscPrintf(PETSC_COMM_WORLD, "-> PETSc options = %s\n", copts);
    PetscFree(copts);
+	}
 #endif
-   KSPSetFromOptions(lsolver);
 #if 0
    // reset options
    for (std::vector<Para>::iterator itr=vec_para.begin(); itr!=vec_para.end(); ++itr) {
@@ -218,6 +244,7 @@ void PETScLinearSolver::Config(const PetscReal tol, const PetscInt maxits, const
    }
 #endif
 }
+
 //-----------------------------------------------------------------
 void PETScLinearSolver::VectorCreate(PetscInt m)
 {
@@ -247,7 +274,7 @@ void PETScLinearSolver::MatrixCreate( PetscInt m, PetscInt n)
   MatSetType(A,MATMPIAIJ);
   MatSetFromOptions(A);
 #if 1
-  ScreenMessage2("-> set PETSc matrix preallocation wiht d_nz=%d and o_nz=%d\n", d_nz, o_nz);
+  ScreenMessage2d("-> set PETSc matrix preallocation wiht d_nz=%d and o_nz=%d\n", d_nz, o_nz);
   MatMPIAIJSetPreallocation(A,d_nz,PETSC_NULL, o_nz,PETSC_NULL);
   //MatSeqAIJSetPreallocation(A,d_nz,PETSC_NULL);
 #else
@@ -256,7 +283,7 @@ void PETScLinearSolver::MatrixCreate( PetscInt m, PetscInt n)
 #endif
   MatSetOption(A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE); // for MatZeroRows()
   MatGetOwnershipRange(A,&i_start,&i_end);
-  ScreenMessage2("-> PETSc linear solver range: start=%d, end=%d\n", i_start, i_end);
+  ScreenMessage2d("-> PETSc linear solver range: start=%d, end=%d\n", i_start, i_end);
 
   //  std::cout<<"sub_a  "<<i_start<<";   sub_d "<<i_end<<"\n";
 }

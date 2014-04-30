@@ -15,6 +15,7 @@
 
 #include "petscmat.h"
 #include "petscksp.h"
+#include "petscsnes.h"
 
 #ifdef USEPETSC34
 #include "petsctime.h"
@@ -33,6 +34,10 @@ public:
     ~PETScLinearSolver();
 
     void Config(const PetscReal tol, const PetscInt maxits, const KSPType lsol,
+                const PCType prec_type, const std::string &misc_setting="");
+    void ConfigWithNonlinear(const PetscReal tol, const PetscInt maxits, const KSPType lsol,
+                const PCType prec_type, const std::string &misc_setting="");
+    void ConfigLinear(const PetscReal tol, const PetscInt maxits, const KSPType lsol,
                 const PCType prec_type, const std::string &misc_setting="");
 
     void Init(const int *sparse_index = NULL);
@@ -98,9 +103,11 @@ public:
     void Residual_Viewer(const std::string& file_name, bool ascii=true);
   public:
 //  private:
-    PETSc_Mat  A;
+    PETSc_Mat A;
+    PETSc_Mat B;
     PETSc_Vec b;
     PETSc_Vec x;
+    SNES snes;
     KSP lsolver;
     PC prec; 
     std::vector<Mat> vec_subA; /* the four blocks */
@@ -141,6 +148,8 @@ public:
 
     void VectorCreate(PetscInt m);
     void MatrixCreate(PetscInt m, PetscInt n);
+
+	IS is_global_node_id, is_local_node_id;
 
 };
 
