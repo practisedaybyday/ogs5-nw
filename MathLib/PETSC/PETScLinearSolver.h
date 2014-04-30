@@ -38,11 +38,12 @@ public:
     void Init(const int *sparse_index = NULL);
   
     void CheckIfMatrixIsSame(const std::string &filename);
-    void Solver();
-    void AssembleRHS_PETSc();
+    int Solver();
+    void AssembleRHS_PETSc(bool assemble_subvec=false);
     void AssembleUnkowns_PETSc();
     void AssembleMatrixPETSc(const MatAssemblyType type = MAT_FINAL_ASSEMBLY); //MAT_FLUSH_ASSEMBLY
 
+    void getGlobalVectorArray(Vec &vec, PetscScalar *u1);
     void UpdateSolutions(PetscScalar *u0, PetscScalar *u1);
     void MappingSolution();
     int GetLocalSolution(PetscScalar *x_l); 
@@ -93,14 +94,20 @@ public:
     PetscInt getMPI_Size() const {return mpi_size;} 
     PetscInt getMPI_Rank() const {return rank;} 
 
-    void EQSV_Viewer(std::string file_name, bool ascii=true);
-   
-  private:
+    void EQSV_Viewer(const std::string& file_name, bool ascii=true);
+    void Residual_Viewer(const std::string& file_name, bool ascii=true);
+  public:
+//  private:
     PETSc_Mat  A;
     PETSc_Vec b;
     PETSc_Vec x;
     KSP lsolver;
     PC prec; 
+    std::vector<Mat> vec_subA; /* the four blocks */
+    std::vector<IS> vec_isg;  /* index sets of split "0" and "1" */
+    std::vector<Vec> vec_subRHS;
+    PETSc_Vec total_x;
+
     PetscInt i_start;
     PetscInt i_end;
 
