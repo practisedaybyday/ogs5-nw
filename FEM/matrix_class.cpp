@@ -214,17 +214,7 @@ void Matrix::multi(const double* vec, double* vec_result, double fac)
 			vec_result[i] += fac * (*this)(i,j) * vec[j];
 }
 
-double& Matrix::operator() (size_t i, size_t j) const
-{
-#ifdef gDEBUG
-	if(i >= nrows || j >= ncols)
-	{
-		std::cout << "\n Index exceeds the size of the matrix" << std::endl;
-		abort();
-	}
-#endif
-	return data[i * ncols + j];
-}
+
 void Matrix::LimitSize(size_t nRows, size_t nCols)
 {
 #ifdef gDEBUG

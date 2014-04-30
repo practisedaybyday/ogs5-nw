@@ -65,7 +65,17 @@ public:
 	void multi(const Matrix& m1, const Matrix& m2, Matrix& m_result);
 
 	// Access to members
-	virtual double& operator() (size_t i, size_t j = 0) const;
+	inline double& operator() (size_t i, size_t j=0) const
+	{
+	#ifdef gDEBUG
+		if(i >= nrows || j >= ncols)
+		{
+			std::cout << "\n Index exceeds the size of the matrix" << std::endl;
+			abort();
+		}
+	#endif
+		return data[i * ncols + j];
+	}
 	void LimitSize(size_t nRows, size_t nCols = 1);
 
 	size_t Rows() const {return nrows; }
