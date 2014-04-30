@@ -3281,7 +3281,7 @@ double CFluidProperties::drhodP(double* variables)
 	double arguments[2];
 	double rho1,rho2,drhodP;
 
-	if (P < 0)
+	if (p < 0)
 		return 0;
 
 	switch(compressibility_model_pressure)
@@ -3300,10 +3300,10 @@ double CFluidProperties::drhodP(double* variables)
 	case 3:                               // use of difference quotient
 		arguments[1] = T;
 		// in case 3, compressibility_pressure acts as delta P
-		arguments[0] = P + (compressibility_pressure / 2.);
+		arguments[0] = p + (compressibility_pressure / 2.);
 		rho1 = Density(arguments);
 
-		arguments[0] = P - (compressibility_pressure / 2.);
+		arguments[0] = p - (compressibility_pressure / 2.);
 		rho2 = Density(arguments);
 
 		//drhodP = (rho(p+dP/2)-rho(P-dP/2))/dP
@@ -3334,10 +3334,10 @@ double CFluidProperties::drhodT(double* variables)
 	double arguments[2];
 	double rho1,rho2,drhodT;
 
-   if(!drho_dT_unsaturated)     //fluid expansion (drho/dT) for unsaturated case activated? 
+	if(!drho_dT_unsaturated)     //fluid expansion (drho/dT) for unsaturated case activated?
 	{
-	  if (P < 0)
-	  return 0;
+		if (p < 0)
+			return 0;
 	}
 
 	switch(compressibility_model_temperature)
@@ -3355,7 +3355,7 @@ double CFluidProperties::drhodT(double* variables)
 
 	case 3:                               // use of difference quotient
 		// in case 3, compressibility_temperature acts as delta T
-		arguments[0] = P;
+		arguments[0] = p;
 
 		arguments[1] = T + (compressibility_temperature / 2.);
 		rho1 = Density(arguments);
