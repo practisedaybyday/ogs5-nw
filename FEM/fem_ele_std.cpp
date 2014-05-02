@@ -7866,6 +7866,9 @@ void CFiniteElementStd::Assemble_strainCPL(const int phase)
 	int shift_index = problem_dimension_dm + phase;
 #endif
 
+	if(this->pcs->tim_type==FiniteElement::TIM_STEADY)
+		return;
+
 	fac = 1.0 / dt;
 	fac *= SolidProp->biot_const; //NW
 
