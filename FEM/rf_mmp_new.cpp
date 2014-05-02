@@ -7530,7 +7530,7 @@ double CMediumProperties::PermeabilityPressureFunction() const
             const double a = permeability_pressure_model_values[2];
             const double b = permeability_pressure_model_values[3];
             const double dp = p - p0;
-            const double sign_dp = (dp > .0) ? 1. : -1.;
+            const double sign_dp = b==1 ? 1 : ((dp > .0) ? 1. : -1.);
             k_rel = k0*(1.0 + a * sign_dp*pow(dp, b));
         }
         break;
@@ -7554,7 +7554,7 @@ double CMediumProperties::PermeabilityPressureFunction() const
             const double invKn = 1.0 / Kn;
             const double k0 = 1.0/12.0 * b0*b0;
             const double a = 1.0/12.0 * pow(invKn, 2.0);
-            const double b = - 1.0/6.0 * invKn * b0;
+            const double b = + 1.0/6.0 * invKn * b0;
             const double dp = p - p0;
             const double sign_dp = (dp > .0) ? 1. : -1.;
             k_rel = k0 + a * sign_dp*pow(dp, 2.0) + b * dp;
