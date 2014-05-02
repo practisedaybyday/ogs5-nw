@@ -1757,6 +1757,7 @@ CRFProcess* CRFProcess::CopyPCStoDM_PCS()
 	dm_pcs->calcDiffFromStress0 = calcDiffFromStress0;
 	dm_pcs->resetStrain = resetStrain;
 	dm_pcs->scaleUnknowns = scaleUnknowns;
+	dm_pcs->tim_type = tim_type;
 	//
 	return dynamic_cast<CRFProcess*> (dm_pcs);
 }
@@ -3071,7 +3072,7 @@ void CRFProcess::ConfigDeformation()
 		if (num->pcs_type_name.find("DEFORMATION") != string::npos)
 		{
 			num->pcs_type_name = FiniteElement::convertProcessTypeToString(this->getProcessType());
-			if(FiniteElement::isNewtonKind(m_num->nls_method)) // Newton-Raphson
+			if(FiniteElement::isNewtonKind(num->nls_method)) // Newton-Raphson
 			{
 				pcs_deformation = 101;
 				if (type / 10 == 4)
