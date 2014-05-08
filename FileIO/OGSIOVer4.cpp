@@ -37,7 +37,7 @@
 #include "EarClippingTriangulation.h"
 
 // Qt/Base
-#include "OGSError.h"
+//#include "OGSError.h"
 
 using namespace GEOLIB;
 
