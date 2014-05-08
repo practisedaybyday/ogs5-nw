@@ -33,7 +33,7 @@ OPTION(OGS_FEM_GEMS "GEMS configuration" OFF)
 OPTION(OGS_FEM_PQC "Phreeqc configuration" OFF)
 OPTION(OGS_FEM_BRNS "BRNS configuration" OFF)
 OPTION(OGS_FEM_CHEMAPP "CHEMAPP configuration" OFF)
-OPTION(OGS_USE_QT "User interface configuration" OFF)
+#OPTION(OGS_USE_QT "User interface configuration" OFF)
 OPTION(OGS_FEM_LIS "Library of Iterative Solvers for Linear Systems configuration" OFF)
 OPTION(OGS_FEM_MKL "Math kernel library configuration" OFF)
 
@@ -52,15 +52,15 @@ ENDIF ()
 CHECK_CONFIG()
 
 # Additional options
-OPTION(OGS_PACKAGING "Creating installers / packages" OFF)
-OPTION_REQUIRES(OGS_PACKAGING_ZIP "Do you want to package as zip?" OGS_PACKAGING)
-OPTION(OGS_PYTHON "Enable python scripting interface" OFF)
-OPTION(OGS_BUILD_UTILITIES "Build additional utility programs?" OFF)
+#OPTION(OGS_PACKAGING "Creating installers / packages" OFF)
+#OPTION_REQUIRES(OGS_PACKAGING_ZIP "Do you want to package as zip?" OGS_PACKAGING)
+#OPTION(OGS_PYTHON "Enable python scripting interface" OFF)
+#OPTION(OGS_BUILD_UTILITIES "Build additional utility programs?" OFF)
 OPTION(OGS_CMAKE_DEBUG "Show additional cmake debug information" OFF)
-OPTION(OGS_ONE_BIG_GTEST "Should all gtests be collected to one ctest" ON)
-OPTION_REQUIRES(OGS_USE_OPENSG "VTK to OpenSG converter" OGS_USE_QT)
-OPTION_REQUIRES(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OGS_USE_QT)
-OPTION_REQUIRES(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OGS_USE_QT)
+#OPTION(OGS_ONE_BIG_GTEST "Should all gtests be collected to one ctest" ON)
+#OPTION_REQUIRES(OGS_USE_OPENSG "VTK to OpenSG converter" OGS_USE_QT)
+#OPTION_REQUIRES(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OGS_USE_QT)
+#OPTION_REQUIRES(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OGS_USE_QT)
 OPTION(OGS_BUILD_INFO "Should build information be generated" ON)
 OPTION(CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
 IF(GCC)
@@ -229,29 +229,29 @@ IF(OGS_USE_LONG)
 	ADD_DEFINITIONS(-DOGS_USE_LONG)
 ENDIF()
 
-IF(OGS_VRED_PLUGIN)
-	ADD_DEFINITIONS(-DOGS_VRED_PLUGIN)
-ENDIF() # OGS_VRED_PLUGIN
-
-IF(OGS_PYTHON)
-	ADD_DEFINITIONS(-DOGS_PYTHON)
-ENDIF() # OGS_PYTHON
+#IF(OGS_VRED_PLUGIN)
+#	ADD_DEFINITIONS(-DOGS_VRED_PLUGIN)
+#ENDIF() # OGS_VRED_PLUGIN
+#
+#IF(OGS_PYTHON)
+#	ADD_DEFINITIONS(-DOGS_PYTHON)
+#ENDIF() # OGS_PYTHON
 
 IF(MSVC)
 	ADD_DEFINITIONS(-DMSVC)
 ENDIF() # MSVC
 
-IF(OGS_USE_OPENSG)
-	ADD_DEFINITIONS(-DOGS_USE_OPENSG)
-ENDIF() # OGS_USE_OPENSG
-
-IF(OGS_USE_VRPN)
-	ADD_DEFINITIONS(-DOGS_USE_VRPN)
-ENDIF() # OGS_USE_VRPN
-
-IF(OGS_USE_QT)
-	ADD_DEFINITIONS(-DOGS_USE_QT)
-ENDIF(OGS_USE_QT)
+#IF(OGS_USE_OPENSG)
+#	ADD_DEFINITIONS(-DOGS_USE_OPENSG)
+#ENDIF() # OGS_USE_OPENSG
+#
+#IF(OGS_USE_VRPN)
+#	ADD_DEFINITIONS(-DOGS_USE_VRPN)
+#ENDIF() # OGS_USE_VRPN
+#
+#IF(OGS_USE_QT)
+#	ADD_DEFINITIONS(-DOGS_USE_QT)
+#ENDIF(OGS_USE_QT)
 
 # Add subdirectories with the projects
 ADD_SUBDIRECTORY( Base )
@@ -271,14 +271,14 @@ ADD_SUBDIRECTORY( FileIO )
 ADD_SUBDIRECTORY( OGSProject )
 ADD_SUBDIRECTORY( OGS )
 
-IF(OGS_USE_QT)
-	MESSAGE (STATUS	"Configuring for OGS with GUI" )
-	SET(OGS_FEM ON )
+#IF(OGS_USE_QT)
+#	MESSAGE (STATUS	"Configuring for OGS with GUI" )
+#	SET(OGS_FEM ON )
 	#IF(OGS_USE_OPENSG AND CMAKE_COMPILER_IS_GNUCXX)
 	#	ADD_DEFINITIONS (-D__STDC_FORMAT_MACROS)	# for OpenSG compiling
 	#ENDIF()
-	 ADD_SUBDIRECTORY( Qt )
-ENDIF(OGS_USE_QT)
+#	 ADD_SUBDIRECTORY( Qt )
+#ENDIF(OGS_USE_QT)
 
 # Create Configure.h
 CONFIGURE_FILE (Base/Configure.h.in ${PROJECT_BINARY_DIR}/Base/Configure.h)
@@ -297,11 +297,11 @@ IF (OGS_BUILD_TESTS)
 	ADD_SUBDIRECTORY(tests)
 ENDIF (OGS_BUILD_TESTS)
 
-IF (OGS_PACKAGING)
+#IF (OGS_PACKAGING)
 	# Add packaging configuration
-	MESSAGE (STATUS "Enabling packaging")
-	INCLUDE( CMakeConfiguration/Pack.cmake)
-ENDIF (OGS_PACKAGING)
+#	MESSAGE (STATUS "Enabling packaging")
+#	INCLUDE( CMakeConfiguration/Pack.cmake)
+#ENDIF (OGS_PACKAGING)
 
 IF (OGS_CMAKE_DEBUG)
 	INCLUDE(ListAllCMakeVariableValues)
@@ -326,13 +326,13 @@ IF (BENCHMARK_DIR_FOUND)
 	UNSET (COPY_BENCHMARKS_TO_REF CACHE)
 ENDIF (BENCHMARK_DIR_FOUND)
 
-IF (OGS_BUILD_UTILITIES)
-	ADD_SUBDIRECTORY (UTL/MSHGEOTOOLS/)
-	ADD_SUBDIRECTORY (UTL/FileConverter/)
-	IF (QT4_FOUND)
-		ADD_SUBDIRECTORY (UTL/FileConverter/OGSFileConverter)
-	ENDIF(QT4_FOUND)
-ENDIF (OGS_BUILD_UTILITIES)
+#IF (OGS_BUILD_UTILITIES)
+#	ADD_SUBDIRECTORY (UTL/MSHGEOTOOLS/)
+#	ADD_SUBDIRECTORY (UTL/FileConverter/)
+#	IF (QT4_FOUND)
+#		ADD_SUBDIRECTORY (UTL/FileConverter/OGSFileConverter)
+#	ENDIF(QT4_FOUND)
+#ENDIF (OGS_BUILD_UTILITIES)
 
 ## Documentation ##
 IF(DOXYGEN_FOUND)

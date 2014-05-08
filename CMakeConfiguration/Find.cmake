@@ -49,11 +49,11 @@ ENDIF (OGS_PRECOMPILED_LIBS_DIR_FOUND)
 ######################
 ### Find libraries ###
 ######################
-FIND_PACKAGE (PythonInterp)
-FIND_PACKAGE( Shapelib )
-IF(Shapelib_FOUND)
-	ADD_DEFINITIONS(-DShapelib_FOUND)
-ENDIF() # Shapelib_FOUND
+#FIND_PACKAGE (PythonInterp)
+#FIND_PACKAGE( Shapelib )
+#IF(Shapelib_FOUND)
+#	ADD_DEFINITIONS(-DShapelib_FOUND)
+#ENDIF() # Shapelib_FOUND
 
 ## pthread ##
 SET ( CMAKE_THREAD_PREFER_PTHREAD ON CACHE BOOL "" )
@@ -127,9 +127,9 @@ ENDIF()
 #	ADD_DEFINITIONS(-Dlibgeotiff_FOUND)
 #ENDIF() # libgeotiff_FOUND
 
-IF (OGS_PYTHON)
-	FIND_PACKAGE (PythonLibs 2.5 REQUIRED)
-ENDIF (OGS_PYTHON)
+#IF (OGS_PYTHON)
+#	FIND_PACKAGE (PythonLibs 2.5 REQUIRED)
+#ENDIF (OGS_PYTHON)
 
 ## Qt4 library ##
 #IF(NOT OGS_DONT_USE_QT)
