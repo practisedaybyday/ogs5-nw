@@ -60,6 +60,7 @@ void DisplayStartMsg ( void )
 	printf("          ##         University of Tuebingen (ZAG)         ##\n");
 	printf("          ##       Federal Institute for Geosciences       ##\n");
 	printf("          ##          and Natural Resources (BGR)          ##\n");
+	printf("          ##  German Research Centre for Geosciences (GFZ) ##\n");
 	printf("          ##                                               ##\n");
 
 	//align the version information to center of the line
