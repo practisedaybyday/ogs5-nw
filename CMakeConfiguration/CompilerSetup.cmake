@@ -42,6 +42,11 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_GNUCC)
 	ENDIF()
 	# -g
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wall -Wextra -fno-nonansi-builtins")
+
+	IF (NOT (GCC_VERSION VERSION_LESS 4.8) ) 
+	  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs") # suppress warnings in Eigen
+	ENDIF()
+  
 	# would be cool: -Woverloaded-virtual, would be overkill: -Weffc++
 	ADD_DEFINITIONS(-DGCC)
 
