@@ -12,6 +12,13 @@
 #include <cfloat>
 #include <iostream>
 #include <set>
+#include <algorithm>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+#include "display.h"
 
 #include "MemWatch.h"
 #include "files0.h"
@@ -1797,17 +1804,18 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
    //vec<CNode*> e_nodes(20);
    // vec<CElem*> e_neis(6);
 
-//   face->SetFace();
    const long this_number_of_nodes = (long) nodes_on_sfc.size();
    const long nSize = (long) msh->nod_vector.size();
    std::vector<long> G2L(nSize, -1);
    std::vector<double> NVal(this_number_of_nodes, .0);
 
+   #pragma omp parallel for
    for (i = 0; i < nSize; i++)
    {
       msh->nod_vector[i]->SetMark(false);
    }
 
+   #pragma omp parallel for private(k)
    for (i = 0; i < this_number_of_nodes; i++)
    {
       k = nodes_on_sfc[i];
@@ -1820,10 +1828,58 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
    // 2) face integration
 
    //init
-   for (i = 0; i < (long) msh->ele_vector.size(); i++)
+   const long n_ele = (long) msh->ele_vector.size();
+   #pragma omp parallel for
+   for (i = 0; i < n_ele; i++)
    {
       msh->ele_vector[i]->selected = 0;           //TODO can use a new variable
    }
+
+#define UNIQUE_OMP
+#ifdef UNIQUE_OMP
+   //unique set of node id on the surface
+#ifdef _OPENMP
+    std::cout << "[CSourceTerm::FaceIntegration] creating unique nodes ... " << std::flush;
+    double begin_unique = omp_get_wtime();
+#endif
+   std::vector<long> unique_nodes_on_sfc(nodes_on_sfc);
+   std::sort(unique_nodes_on_sfc.begin(), unique_nodes_on_sfc.end());
+   unique_nodes_on_sfc.erase(std::unique(unique_nodes_on_sfc.begin(), unique_nodes_on_sfc.end()), unique_nodes_on_sfc.end());
+#ifdef _OPENMP
+    std::cout << "done, took " << omp_get_wtime()-begin_unique << " s" << "\n";
+#endif
+
+   //filtering elements: elements should have nodes on the surface
+   //Notice: node-elements relation has to be constructed beforehand
+   #pragma omp parallel for default(none) private(k,j,l) shared(msh, nodes_on_sfc)
+   for (i = 0; i < this_number_of_nodes; i++)
+   {
+      k = nodes_on_sfc[i];
+      CNode* nod = msh->nod_vector[k];
+      const long n_k_conn_ele = nod->getConnectedElementIDs().size();
+      for (j = 0; j < n_k_conn_ele; j++)
+      {
+         l = nod->getConnectedElementIDs()[j];
+         CElem* e = msh->ele_vector[l];
+         #pragma omp atomic
+         e->selected++;       // remember how many nodes of an element are on the surface
+      }
+   }
+   long n_selected_ele = 0;
+   #pragma omp parallel for reduction (+ : n_selected_ele)
+   for (i=0; i<n_ele; i++)
+   {
+       if (msh->ele_vector[i]->selected > 0)
+           n_selected_ele++;
+   }
+   std::vector<long> vec_possible_elements;
+   vec_possible_elements.reserve(n_selected_ele);
+   for (i=0; i<n_ele; i++)
+   {
+       if (msh->ele_vector[i]->selected > 0)
+           vec_possible_elements.push_back(i);
+   }
+#else
    std::set<long> set_nodes_on_sfc;               //unique set of node id on the surface
    for (i = 0; i < (long) nodes_on_sfc.size(); i++)
    {
@@ -1844,8 +1900,22 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
          msh->ele_vector[l]->selected += 1;       // remember how many nodes of an element are on the surface
       }
    }
+#endif
+
+//#define ST_OMP
+
+#ifdef _OPENMP
+    std::cout << "[CSourceTerm::FaceIntegration] face integration ... " << std::flush;
+    double begin_int = omp_get_wtime();
+#endif
+   CElem face(1);
+   face.SetFace();
    //search elements & face integration
    const long n_vec_possible_elements = vec_possible_elements.size();
+#define ST_OMP
+#ifdef ST_OMP
+   #pragma omp parallel for default(none) shared(active_elements, NVal, G2L, msh, vec_possible_elements, unique_nodes_on_sfc, node_value_vector) private(elem, nodesFVal, e_nei, nodesFace, j, k, nfaces, e_node) firstprivate(fem, face)
+#endif
    for (i = 0; i < n_vec_possible_elements; i++)
    {
       elem = msh->ele_vector[vec_possible_elements[i]];
@@ -1869,7 +1939,12 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
          for (k = 0; k < nfn; k++)
          {
             e_node = elem->GetNode(nodesFace[k]);
+#ifdef UNIQUE_OMP
+            if (std::binary_search(unique_nodes_on_sfc.begin(), unique_nodes_on_sfc.end(), e_node->GetIndex()))
+//            if (std::find(unique_nodes_on_sfc.begin(), unique_nodes_on_sfc.end(), e_node->GetIndex()) != unique_nodes_on_sfc.end())
+#else
             if (set_nodes_on_sfc.count(e_node->GetIndex()) > 0)
+#endif
             {
                count++;
             }
@@ -1902,7 +1977,9 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
          for (k = 0; k < nfn; k++)
          {
             e_node = elem->GetNode(nodesFace[k]);
-            NVal[G2L[e_node->GetIndex()]] += fac * nodesFVal[k];
+            long id = G2L[e_node->GetIndex()];
+            #pragma omp atomic
+            NVal[id] += fac * nodesFVal[k];
          }
       }
    }
@@ -1958,8 +2035,10 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
    }
    */
 
+   #pragma omp for
    for (i = 0; i < this_number_of_nodes; i++)
       node_value_vector[i] = NVal[i];
+   #pragma omp for
    for (i = 0; i < nSize; i++)
       msh->nod_vector[i]->SetMark(true);
 
