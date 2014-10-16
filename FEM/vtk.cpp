@@ -1082,6 +1082,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
 	bool outEleVelocity = false;
 	for (int i = 0; i < (int) ele_value_index_vector.size(); i++)
 	{
+	    if (ele_value_index_vector[i]<0) continue;
 		if (out->getElementValueVector()[i].find("VELOCITY") != string::npos)
 		{
 			outEleVelocity = true;
