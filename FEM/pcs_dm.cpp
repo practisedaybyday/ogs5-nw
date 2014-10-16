@@ -44,6 +44,9 @@ using namespace std;
 #if defined(NEW_EQS)
 #include "equation_class.h"
 #endif
+#ifdef USE_PETSC
+#include "PETSC/PETScLinearSolver.h"
+#endif
 
 double LoadFactor = 1.0;
 double Tolerance_global_Newton = 0.0;
@@ -107,11 +110,11 @@ CRFProcessDeformation::~CRFProcessDeformation()
 	for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
 	{
 		elem = m_msh->ele_vector[i];
-		if (elem->GetMark())      // Marked for use
-		{
+//		if (elem->GetMark())      // Marked for use
+//		{
 			delete ele_value_dm[i];
 			ele_value_dm[i] = NULL;
-		}
+//		}
 	}
 	if(enhanced_strain_dm > 0)
 	{
@@ -502,24 +505,26 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			ErrorU = 1.0e+8;
 			Norm = 1.0e+8;
 			NormU = 1.0e+8;
-#ifdef USE_MPI
+#if defined(USE_MPI) || defined (USE_PETSC)
 			if(myrank == 0)
 			{
 #endif
 			//Screan printing:
             std::cout <<"      Starting loading step "<< l << "/" << number_of_load_steps <<".  Load factor: " << LoadFactor << std::endl;
 			std::cout <<"      ------------------------------------------------"<<std::endl;
-#ifdef USE_MPI
+#if defined(USE_MPI) || defined (USE_PETSC)
 		}
 #endif
 		}
 		ite_steps = 0;
 		while(ite_steps < MaxIteration)
 		{
-			ite_steps++;
+            ite_steps++;
+            std::cout<<"      -->Starting Newton-Raphson iteration: "<<ite_steps<<"/"<< MaxIteration <<"\n";
+            std::cout <<"      ------------------------------------------------"<<"\n";
 			// Refresh solver
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-			//TODO
+			eqs_new->Initialize();
 #elif NEW_EQS                        //WW
 #ifndef USE_MPI
 			eqs_new->Initialize(); //27.11.2007 WW
@@ -545,7 +550,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			        pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
 			   #endif
 			 */
-			std::cout << "Assembling equation system..." << std::endl;
+			ScreenMessage2("      Assembling equation system...\n");
 #ifdef USE_MPI                        //WW
 			clock_t cpu_time = 0; //WW
 			cpu_time = -clock();
@@ -575,10 +580,13 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			//
 #endif
 
-			std::cout << "      Calling linear solver..." << std::endl;
+			ScreenMessage2("      Calling linear solver...\n");
 			/// Linear solver
 #if defined(USE_PETSC) //|| defined(other parallel libs)//03~04.3012. WW
-			//TODO
+//			eqs_new->EQSV_Viewer("eqs" + number2str(aktueller_zeitschritt) + "b");
+			eqs_new->Solver();
+			//TEST 	double x_norm = eqs_new->GetVecNormX();
+			eqs_new->MappingSolution();
 #elif NEW_EQS                        //WW
 			//
 #if defined(USE_MPI)
@@ -593,7 +601,14 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 #endif
 #endif
 #else // ifdef NEW_EQS
+//		    std::string eqs_name = "eqs" + number2str(aktueller_zeitschritt) +  "b.txt";
+//		    MXDumpGLS((char*)eqs_name.c_str(),4,eqs->b,eqs->x);
 			ExecuteLinearSolver();
+//            std::cout << "x=\n";
+//            long nr_nodes = eqs->dim / problem_dimension_dm;
+//            for (long i=0;i<nr_nodes;i++)
+//                for (long k=0;k<problem_dimension_dm;k++)
+//                    std::cout << eqs->x[i+k*nr_nodes] << "\n";
 #endif
 			//
 			// Norm of b (RHS in eqs)
@@ -644,8 +659,10 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 				// Compute damping for Newton-Raphson step
 				damping = 1.0;
 				//           if(Error/Error1>1.0e-1) damping=0.5;
+#if 0
 				if(Error / Error1 > 1.0e-1 || ErrorU / ErrorU1 > 1.0e-1)
 					damping = 0.5;
+#endif
 				if(ErrorU < Error)
 					Error = ErrorU;
 #if defined(NEW_EQS) && defined(JFNK_H2M)
@@ -668,7 +685,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 					pcs_relative_error[0] = Error / Tolerance_global_Newton;
 				}
 				//
-#ifdef USE_MPI
+#if defined(USE_MPI) || defined (USE_PETSC)
 				if(myrank == 0)
 				{
 #endif
@@ -680,8 +697,8 @@ double CRFProcessDeformation::Execute(int loop_process_number)
                 cout<<"         NR-Error"<<"  "<<"RHS Norm 0"<<"  "<<"RHS Norm  "<<"  "<<"Unknowns Norm"<<"  "<<"Damping"<<endl;
                 cout<<"         "<<Error<<"  "<<InitialNorm<<"  "<<Norm<<"   "<<NormU<<"   "<<"   "<<damping<<endl;
                 std::cout <<"      ------------------------------------------------"<<std::endl;
-#ifdef USE_MPI
-			}
+#if defined(USE_MPI) || defined (USE_PETSC)
+				}
 #endif
 				if(Error > 100.0 && ite_steps > 1)
 				{
@@ -691,8 +708,10 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 				}
 				if(InitialNorm < 10 * Tolerance_global_Newton)
 					break;
+#if 0
 				if(Norm < 0.001 * InitialNorm)
 					break;
+#endif
 				if(Error <= Tolerance_global_Newton)
 					break;
 			}
@@ -1284,7 +1303,7 @@ void CRFProcessDeformation::UpdateIterativeStep(const double damp, const int u_t
 	double* eqs_x = NULL;
 
 #if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
-	//TODO
+	eqs_x = eqs_new->GetGlobalSolution();
 #elif NEW_EQS
 	eqs_x = eqs_new->x;
 #else
@@ -1327,18 +1346,25 @@ void CRFProcessDeformation::UpdateIterativeStep(const double damp, const int u_t
 		///  Update Newton step: w = w+dw
 		if(u_type == 0)
 		{
-			for(j = 0; j < number_of_nodes; j++)
+			for(j = 0; j < number_of_nodes; j++) {
+#ifdef USE_PETSC
+			      long k =  m_msh->Eqs2Global_NodeIndex[j] * pcs_number_of_primary_nvals + i;
+			      SetNodeValue(j, ColIndex, GetNodeValue(j, ColIndex) + eqs_x[k]*damp);
+#else
 				SetNodeValue(j,ColIndex, GetNodeValue(j,
 				                                      ColIndex) +
 				             eqs_x[j + shift] * damp);
+#endif
+			}
 			shift += number_of_nodes;
 		}
 		else
-			for(j = 0; j < number_of_nodes; j++)
+			for(j = 0; j < number_of_nodes; j++) {
 				SetNodeValue(j,ColIndex + 1, GetNodeValue(j,
 				                                          ColIndex +
 				                                          1) +
 				             GetNodeValue(j,ColIndex));
+			}
 	}
 
 	//if(type == 42&&m_num->nls_method>0)         //H2M, Newton-Raphson. 06.09.2010. WW
@@ -2475,6 +2501,9 @@ void CRFProcessDeformation::GlobalAssembly()
 	                (*this->eqs_new->A)(offset_H+i,offset_H+i)=1.0;
 	            }
 			}
+#if defined(USE_PETSC) //|| defined(other parallel libs)//03~04.3012. WW
+            eqs_new->EQSV_Viewer("eqs" + number2str(aktueller_zeitschritt) + "a");
+#endif
 #endif
 		}
 		// if(!fem_dm->dynamic)
@@ -2485,17 +2514,32 @@ void CRFProcessDeformation::GlobalAssembly()
 		// {			 MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
 
 		// DumpEqs("rf_pcs1.txt");
-		/*
-		   ofstream Dum("rf_pcs_omp.txt", ios::out); // WW
-		   eqs_new->Write(Dum);
+
+#if 0
+            {
+		   ofstream Dum(std::string("eqs_after_assembly.txt").c_str(), ios::out); // WW
+		   this->eqs_new->Write(Dum);
 		   Dum.close();
-		 */
+            }
+#endif
+        // Apply Neumann BC
+        IncorporateSourceTerms();
+        //DumpEqs("rf_pcs2.txt");
 
-		// Apply Neumann BC
-		IncorporateSourceTerms();
-		//DumpEqs("rf_pcs2.txt");
+#if defined(USE_PETSC)  // || defined(other parallel libs)//03~04.3012.
+		ScreenMessage2("assemble PETSc matrix and vectors...\n");
+		eqs_new->AssembleUnkowns_PETSc();
+		eqs_new->AssembleRHS_PETSc();
+		eqs_new->AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
+//		eqs_new->EQSV_Viewer("eqs_after_assembl");
+#endif
 
-		// {				 MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
+
+		// {			MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
+//#if defined(USE_PETSC)  // || defined(other parallel libs)//03~04.3012.
+////		eqs_new->EQSV_Viewer("eqs_after_ST");
+//		eqs_new->AssembleRHS_PETSc();
+//#endif
 
 		/// If not JFNK or if JFNK but the Newton step is greater than one. 11.11.2010. WW
 		if(!(m_num->nls_method == FiniteElement::NL_JFNK && ite_steps == 1))
@@ -2508,6 +2552,14 @@ void CRFProcessDeformation::GlobalAssembly()
 		}
 		//  {			 MXDumpGLS("rf_pcs_dm1.txt",1,eqs->b,eqs->x);  //abort();}
 		//
+
+#if 0
+            {
+           ofstream Dum(std::string("eqs_after_BCST.txt").c_str(), ios::out); // WW
+           this->eqs_new->Write(Dum);
+           Dum.close();
+            }
+#endif
 
 #define atest_dump
 #ifdef test_dump
@@ -2528,6 +2580,7 @@ void CRFProcessDeformation::GlobalAssembly()
 #endif
 		//
 	}
+	ScreenMessage2("Global assembly is done\n");
 }
 
 /*!  \brief Assembe matrix and vectors
