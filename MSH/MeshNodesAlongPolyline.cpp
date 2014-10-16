@@ -24,10 +24,11 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 	double epsilon_radius (mesh->getMinEdgeLength()); // getSearchLength());
 
 #if defined(USE_PETSC) // || defined (other parallel linear solver lib). //WW. 05.2012
-	size_t n_linear_order_nodes = mesh->getNumNodesLocal();
-	size_t n_nodes = mesh->getNumNodesLocal_Q();
+//	size_t n_linear_order_nodes = mesh->getNumNodesLocal();
+//	size_t n_nodes = mesh->getNumNodesLocal_Q();
+    size_t n_nodes (mesh->GetNodesNumber (true));
 #else
-	size_t n_linear_order_nodes (mesh->GetNodesNumber (false));
+//	size_t n_linear_order_nodes (mesh->GetNodesNumber (false));
 	size_t n_nodes (mesh->GetNodesNumber (true));
 #endif
 	std::vector<size_t> msh_node_higher_order_ids;
@@ -59,7 +60,7 @@ MeshNodesAlongPolyline::MeshNodesAlongPolyline(
 								(_ply->getPoint(k))->getData(), (_ply->getPoint(k + 1))->getData(),
 								lambda, dist) <= epsilon_radius) {
 					if (lower_lambda <= lambda && lambda <= upper_lambda) {
-						if (mesh_nodes[j]->GetIndex() < n_linear_order_nodes) {
+						if (!mesh->isHigherOrderNode(mesh_nodes[j]->GetIndex())) {
 							// check if node id is already in the vector
 							if (std::find(_msh_node_ids.begin(), _msh_node_ids.end(),
 											mesh_nodes[j]->GetIndex()) == _msh_node_ids.end()) {
