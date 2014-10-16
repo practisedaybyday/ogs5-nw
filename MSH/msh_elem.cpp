@@ -1022,21 +1022,29 @@ void CElem::GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes)
 	case MshElemType::LINE:
 		EdgeNodes[0] = 0;
 		EdgeNodes[1] = 1;
+		if (quadratic)
+			EdgeNodes[2] = 2;
 		break;                            // 1-D bar element
 	case MshElemType::QUAD:                   // 2-D quadrilateral element
 		EdgeNodes[0] = Edge;
 		EdgeNodes[1] = (Edge + 1) % 4;
+		if (quadratic)
+			EdgeNodes[2] = EdgeNodes[0] + 4;
 		break;
 	case MshElemType::HEXAHEDRON:             // 3-D hexahedral element
 		if(Edge < 8)
 		{
 			EdgeNodes[0] = Edge;
 			EdgeNodes[1] = (Edge + 1) % 4 + 4 * (int)(Edge / 4);
+			if (quadratic)
+				EdgeNodes[2] = EdgeNodes[0] + 8;
 		}
 		else
 		{
 			EdgeNodes[0] = Edge % 4;
 			EdgeNodes[1] = Edge % 4 + 4;
+			if (quadratic)
+				EdgeNodes[2] = EdgeNodes[0] + 16;
 		}
 		break;
 	case MshElemType::TRIANGLE:               // 2-D triagular element
@@ -1772,7 +1780,13 @@ void CElem::setElementProperties(MshElemType::type t, bool isFace)
 		std::cerr << "CElem::setElementProperties MshElemType not handled" << std::endl;
 		break;
 	}
+	if (quadratic) {
+	    if (this->nodes_index.Size() !=  nnodesHQ)
+	        this->nodes_index.resize( nnodesHQ);
+	} else {
+        if (this->nodes_index.Size() !=  nnodes)
 	this->nodes_index.resize(nnodes);
+	}
 }
 
 // NW
