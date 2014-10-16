@@ -1892,7 +1892,7 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
          face->ComputeVolume();
          if (active_elements==NULL)
             st_boundary_elements.push_back(face);
-         fem->setOrder(msh->getOrder() + 1);
+         fem->setOrder(msh->getOrder() ? 2 : 1);
          fem->ConfigElement(face, true);
          fem->FaceIntegration(nodesFVal);
          if (this->is_transfer_bc) {
@@ -2033,7 +2033,7 @@ std::vector<double>&node_value_vector) const
       for (size_t j = 0; j < nn; j++)
          nodesFVal[j] = node_value_vector[G2L[e_nodes[j]->GetIndex()]];
       fem->ConfigElement(elem, true);
-      fem->setOrder(msh->getOrder() + 1);
+      fem->setOrder(msh->getOrder() ? 2 : 1);
       fem->DomainIntegration(nodesFVal);
       for (size_t j = 0; j < nn; j++)
          NVal[G2L[e_nodes[j]->GetIndex()]] += nodesFVal[j];
