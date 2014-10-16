@@ -682,7 +682,9 @@ void CreateEQS_LinearSolver()
    const int nn_q = mesh->getNumNodesGlobal_Q();
    //const int nnl = mesh->getNumNodesLocal();
    //const int nnl_q = mesh->getNumNodesLocal_Q();
-   int dim = mesh->GetMaxElementDim();
+   const int dim = mesh->GetMaxElementDim();
+   const int max_ele_nodes = (dim<3) ? 9 : 20; // quad or hex
+   const int max_connected_eles = (dim<3) ? 4 : 8; // quad or hex
 
  
    const size_t npcs = pcs_vector.size(); 
@@ -709,8 +711,8 @@ void CreateEQS_LinearSolver()
                    ||(pcs_type == DEFORMATION_DYNAMIC) ) 
             eqs_dim += nn;
 
-          sparse_info[0] = max_cnct_nodes * dim;
-          sparse_info[1] = 0; //max_cnct_nodes * dim;
+          sparse_info[0] = max_connected_eles * max_ele_nodes * dim; //TODO max_cnct_nodes * dim;
+          sparse_info[1] = max_connected_eles * max_ele_nodes * dim; //max_cnct_nodes * dim;
           sparse_info[2] = max_cnct_nodes * dim;
           sparse_info[3] = mesh->getNumNodesLocal_Q() * dim;
           eqs = new PETScLinearSolver(eqs_dim);
