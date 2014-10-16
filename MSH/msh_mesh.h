@@ -219,16 +219,28 @@ public:
         {
 	   return loc_NodesNumber_Quadratic; 
         }
-        
-        size_t NodesInUsagePETSC() const
-	{
-		if (useQuadratic)
-			return loc_NodesNumber_Quadratic;
-		else
-			return loc_NodesNumber_Linear;
-	}
-
+        /// is the node owned by this domain
+        bool isNodeLocal(long node_id) const
+        {
+            // node numbering is assumed in the following order
+            // 1. local linear nodes
+            // 2. ghost linear nodes
+            // 3. local quad nodes
+            // 4. ghost quad nodes
+            if (isHigherOrderNode(node_id)) {
+                const size_t loc_nnodes_quad_only = loc_NodesNumber_Quadratic-loc_NodesNumber_Linear;
+                return static_cast<size_t>(node_id) < (NodesNumber_Linear+loc_nnodes_quad_only);
+            } else {
+                return node_id < loc_NodesNumber_Linear;
+            }
+            return true;
+        };
+#else
+        /// is the node owned by this domain
+        bool isNodeLocal(long) const {return true; }
 #endif
+        /// is the node used for higher-order elements
+        bool isHigherOrderNode(long node_id) const {return static_cast<size_t>(node_id) >= NodesNumber_Linear;};
 
 	//
 //         void RenumberNodesForGlobalAssembly();
