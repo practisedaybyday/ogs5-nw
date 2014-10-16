@@ -233,8 +233,9 @@ void FEMRead(const string& file_base_name,
 				counter++;
 				// ghost nodes for linear element
 				is>> elem_info[counter];
+				const int nn_e_g_quad =  elem_info[counter];
 				counter++;
-				for(int k=0; k<nn_e_g; k++)
+				for(int k=0; k<nn_e_g_quad; k++) //NW use nn_e_g_quad instead of nn_e_g
 				{
 					is>> elem_info[counter];
 					counter++;
@@ -276,9 +277,9 @@ void FEMRead(const string& file_base_name,
 	if (mysize>1)
 		MPI_Type_free(&MPI_node);
 
-	ScreenMessage2d("-> mesh: %d nodes, %d elements\n", mesh->nod_vector.size(), mesh->ele_vector.size());
 
 	MPI_Barrier (MPI_COMM_WORLD);
+	ScreenMessage2("mesh: nnodes_gl=%d, nnodes_gq=%d, nnodes_ll=%d, nnodes_lq=%d\n", mesh->GetNodesNumber(false), mesh->GetNodesNumber(true), mesh->getNumNodesLocal(), mesh->getNumNodesLocal_Q());
 	mesh->ConstructGrid();
 	mesh->FillTransformMatrix();
 	//mesh->calMaximumConnectedNodes();
