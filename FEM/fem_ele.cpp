@@ -17,7 +17,7 @@
 //#include "msh_elem.h"
 // Will be removed when new FEM is ready
 //=============================================
-FiniteElement::CElement* elem_dm = NULL;
+//FiniteElement::CElement* elem_dm = NULL;
 //=============================================
 
 namespace FiniteElement
@@ -1011,7 +1011,7 @@ void CElement::ComputeShapefct(const int order)
 void CElement::ComputeGradShapefct(int order)
 {
 	int j_times_ele_dim_plus_k, j_times_nNodes_plus_i;
-	static double Var[3];
+	double Var[3]; // static double Var[3];
 	double* dN = dshapefct;
 
 	if(order == 2)
