@@ -500,13 +500,23 @@ void CFEMesh::ConstructGrid()
 	Math_Group::vec<CNode*> e_edgeNodes0(3);
 	Math_Group::vec<CNode*> e_edgeNodes(3);
 
+#ifdef USE_PETSC
+	bool quadratic = (NodesNumber_Quadratic!=NodesNumber_Linear);
+	if (quadratic)
+		ScreenMessage2("-> this mesh is quadratic.\n");
+	else
+		ScreenMessage2("-> this mesh is linear.\n");
+#else
+	bool quadratic = false;
 	NodesNumber_Linear = nod_vector.size();
+#endif
+	this->SwitchOnQuadraticNodes(quadratic);
 
 	Edge_Orientation = 1;
 
 	// Set neighbors of node
 	//ScreenMessage2("-> Set elements connected to a node\n");
-	ConnectedElements2Node();
+	ConnectedElements2Node(quadratic);
 
 	// Compute neighbors and edges
 	size_t e_size(ele_vector.size());
@@ -523,14 +533,15 @@ void CFEMesh::ConstructGrid()
 	for (size_t e = 0; e < e_size; e++)
 	{
 		CElem* elem(ele_vector[e]);
+		elem->SetOrder(quadratic);
 		const Math_Group::vec<long>& node_index(elem->GetNodeIndeces());
 		elem->GetNeighbors(Neighbors0);
 
-		size_t nnodes0(elem->nnodes); // Number of nodes for linear element
+		const size_t nnodes0(elem->GetNodesNumber(quadratic)); //(elem->nnodes); // Number of nodes for linear element
 		for (size_t i = 0; i < nnodes0; i++) // Nodes
 			e_nodes0[i] = nod_vector[node_index[i]];
 
-		size_t nFaces = static_cast<size_t> (elem->GetFacesNumber());
+		const size_t nFaces = static_cast<size_t> (elem->GetFacesNumber());
 		// neighbors
 		for (size_t i = 0; i < nFaces; i++) // Faces
 		{
@@ -539,12 +550,12 @@ void CFEMesh::ConstructGrid()
 
 			done = false;
 			int faceIndex_loc0[10];
-			size_t nFaceNodes = static_cast<size_t> (elem->GetElementFaceNodes(
+			const size_t nFaceNodes = static_cast<size_t> (elem->GetElementFaceNodes(
 			                                                 i, faceIndex_loc0));
 			for (size_t k = 0; k < nFaceNodes; k++) //face nodes
 			{
 				size_t
-				nConnElems(
+				const nConnElems(
 				        e_nodes0[faceIndex_loc0[k]]->getConnectedElementIDs().size());
 				for (size_t ei = 0; ei < nConnElems; ei++) // elements connected to face node
 				{
@@ -558,7 +569,7 @@ void CFEMesh::ConstructGrid()
 					const Math_Group::vec<long>& node_index_glb(
 					        connElem->GetNodeIndeces());
 					connElem->GetNeighbors(Neighbors);
-					size_t nFacesConnElem =
+					const size_t nFacesConnElem =
 					        static_cast<size_t> (connElem->GetFacesNumber());
 
 					int faceIndex_loc[10];
@@ -639,17 +650,18 @@ void CFEMesh::ConstructGrid()
 		// --------------------------------
 
 		// Edges
-		size_t nedges0(elem->GetEdgesNumber());
+		const size_t nedges0(elem->GetEdgesNumber());
 		elem->GetEdges(Edges0);
+		const size_t nEdgeNodes = quadratic ? 3 : 2;
 		for (size_t i = 0; i < nedges0; i++) // edges
 		{
-			int edgeIndex_loc0[2];
+			int edgeIndex_loc0[3];
 			elem->GetLocalIndicesOfEdgeNodes(i, edgeIndex_loc0);
 			// Check neighbors
 			done = false;
-			for (size_t k = 0; k < 2; k++) // beginning and end of edge
+			for (size_t k = 0; k < nEdgeNodes; k++) // beginning and end of edge
 			{
-				size_t
+				const size_t
 				nConnElem(
 				        e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs().size());
 				for (size_t ei = 0; ei < nConnElem; ei++) // elements connected to edge node
@@ -663,10 +675,10 @@ void CFEMesh::ConstructGrid()
 					CElem* connElem(ele_vector[ee]);
 					const Math_Group::vec<long>& node_index_glb(
 					        connElem->GetNodeIndeces());
-					size_t nedges(connElem->GetEdgesNumber());
+					const size_t nedges(connElem->GetEdgesNumber());
 					connElem->GetEdges(Edges);
 					// Edges of neighbors
-					int edgeIndex_loc[2];
+					int edgeIndex_loc[3];
 					for (size_t ii = 0; ii < nedges; ii++) // edges of element connected to edge node
 					{
 						connElem->GetLocalIndicesOfEdgeNodes(ii,
@@ -705,17 +717,20 @@ void CFEMesh::ConstructGrid()
 			if (!done) // new edges and new node
 			{
 				Edges0[i] = new CEdge((long) edge_vector.size());
-				Edges0[i]->SetOrder(false);
+				Edges0[i]->SetOrder(quadratic);
 				e_edgeNodes0[0] = e_nodes0[edgeIndex_loc0[0]];
 				e_edgeNodes0[1] = e_nodes0[edgeIndex_loc0[1]];
-				e_edgeNodes0[2] = NULL;
+				if (quadratic)
+					e_edgeNodes0[2] = e_nodes0[edgeIndex_loc0[2]];
+				else
+					e_edgeNodes0[2] = NULL;
 				Edges0[i]->SetNodes(e_edgeNodes0);
 				edge_vector.push_back(Edges0[i]);
 			} // new edges
 		} //  for(i=0; i<nedges0; i++)
 		  //
 		  // Set edges and nodes
-		elem->SetOrder(false);
+		elem->SetOrder(quadratic);
 		elem->SetEdgesOrientation(Edge_Orientation);
 		elem->SetEdges(Edges0);
 		// Resize is true
