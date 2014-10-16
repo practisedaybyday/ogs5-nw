@@ -1679,8 +1679,7 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
    }
 
    long i, j, k, l;
-   long this_number_of_nodes;
-   int nfaces, nfn;
+   int nfaces; //, nfn;
    int nodesFace[8];
    double nodesFVal[8];
 
@@ -1799,20 +1798,18 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
    // vec<CElem*> e_neis(6);
 
 //   face->SetFace();
-   this_number_of_nodes = (long) nodes_on_sfc.size();
-   int nSize = (long) msh->nod_vector.size();
-   std::vector<long> G2L(nSize);
-   std::vector<double> NVal(this_number_of_nodes);
+   const long this_number_of_nodes = (long) nodes_on_sfc.size();
+   const long nSize = (long) msh->nod_vector.size();
+   std::vector<long> G2L(nSize, -1);
+   std::vector<double> NVal(this_number_of_nodes, .0);
 
    for (i = 0; i < nSize; i++)
    {
       msh->nod_vector[i]->SetMark(false);
-      G2L[i] = -1;
    }
 
    for (i = 0; i < this_number_of_nodes; i++)
    {
-      NVal[i] = 0.0;
       k = nodes_on_sfc[i];
       G2L[k] = i;
    }
@@ -1848,9 +1845,8 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
       }
    }
    //search elements & face integration
-   int count;
-   double fac = 1.0;
-   for (i = 0; i < (long) vec_possible_elements.size(); i++)
+   const long n_vec_possible_elements = vec_possible_elements.size();
+   for (i = 0; i < n_vec_possible_elements; i++)
    {
       elem = msh->ele_vector[vec_possible_elements[i]];
       if (!elem->GetMark())
@@ -1864,12 +1860,12 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
       for (j = 0; j < nfaces; j++)
       {
          e_nei = elem->GetNeighbor(j);
-         nfn = elem->GetElementFaceNodes(j, nodesFace);
+         const int nfn = elem->GetElementFaceNodes(j, nodesFace);
          //1st check
          if (elem->selected < nfn)
             continue;
          //2nd check: if all nodes of the face are on the surface
-         count = 0;
+         int count = 0;
          for (k = 0; k < nfn; k++)
          {
             e_node = elem->GetNode(nodesFace[k]);
@@ -1886,7 +1882,7 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
             e_node = elem->GetNode(nodesFace[k]);
             nodesFVal[k] = node_value_vector[G2L[e_node->GetIndex()]];
          }
-         fac = 1.0;
+         double fac = 1.0;
                                                   // Not a surface face
          if (elem->GetDimension() == e_nei->GetDimension())
             fac = 0.5;
