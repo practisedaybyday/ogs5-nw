@@ -63,7 +63,7 @@ public:
 	                     const std::vector<long> & nodes_on_ply,
 	                     std::vector<double> & node_value_vector, std::vector<bool>* active_elements=NULL);
 	void FaceIntegration(MeshLib::CFEMesh* m_msh,
-	                     std::vector<long> & nodes_on_sfc,
+	                     std::vector<long> const & nodes_on_sfc,
 	                     std::vector<double> & node_value_vector, std::vector<bool>* active_elements=NULL);
 	void DomainIntegration(MeshLib::CFEMesh* m_msh,
 	                       const std::vector<long> & nodes_in_dom,

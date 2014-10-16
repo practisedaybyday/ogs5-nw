@@ -1668,7 +1668,7 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
  01/2010 NW improvement of efficiency to search faces
  **************************************************************************/
 
-void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long>&nodes_on_sfc,
+void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_on_sfc,
 		std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
 {
    if (!msh)
