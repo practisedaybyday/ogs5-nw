@@ -10,7 +10,13 @@
 //#include <iostream>
 // Sytem matrix
 #include "mathlib.h"
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+#include "PETSC/PETScLinearSolver.h"
+#else
+#ifndef NEW_EQS                                   //WW. 06.11.2008
 #include "matrix_routines.h"
+#endif
+#endif
 #include "pcs_dm.h"
 #include "rf_mfp_new.h"
 #include "rf_msp_new.h"
@@ -355,6 +361,14 @@ CFiniteElementVec::CFiniteElementVec(process::CRFProcessDeformation* dm_pcs,
 	//
 	// Time unit factor
 	time_unit_factor = pcs->time_unit_factor;
+#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+	size_t size = 60; //dim * nnodesHQ;
+	idxm = new int[size];  //> global indices of local matrix rows
+	idxn = new int[size];  //> global indices of local matrix columns
+	local_idx = new int[size]; //> local index for local assemble
+	//local_matrix = new double[size_m * size_m]; //> local matrix
+	//local_vec = new double[size_m]; //> local vector
+#endif
 }
 
 //  Constructor of class Element_DM
@@ -976,6 +990,23 @@ void CFiniteElementVec::LocalAssembly(const int update)
 	//12.2009. WW
 	eleV_DM = ele_value_dm[MeshElement->GetIndex()];
 
+#ifdef USE_PETSC
+    if(MeshElement->g_index) // ghost nodes pcs->pcs_number_of_primary_nvals
+    {
+      act_nodes = MeshElement->g_index[0];
+      act_nodes_h = MeshElement->g_index[1];
+      for(int i = 0; i < act_nodes_h; i++)
+        local_idx[i] = MeshElement->g_index[i+2];
+    }
+    else
+    {
+      act_nodes = nnodes;
+      act_nodes_h = nnodesHQ;
+      for(int i = 0; i < nnodesHQ; i++)
+        local_idx[i] = i;
+    }
+#endif
+
 #if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	if(m_dom)
 	  {                             //Moved here from GlobalAssemly. 08.2010. WW
@@ -1261,6 +1292,11 @@ bool CFiniteElementVec::GlobalAssembly()
 
 	GlobalAssembly_Stiffness();
 
+#ifdef USE_PETSC
+	//ScreenMessage2("-> add2GlobalMatrixII()\n");
+	add2GlobalMatrixII();
+#endif
+
 	return true;
 }
 
@@ -1349,34 +1385,40 @@ void CFiniteElementVec::GlobalAssembly_Stiffness()
 		}                         // loop i
 	}
 
+#ifndef USE_PETSC
 	// Assemble stiffness matrix
 	for (i = 0; i < nnodesHQ; i++)
 	{
+		const long eqs_number_i = eqs_number[i];
 		for (j = 0; j < nnodesHQ; j++)
 		{
+			const long eqs_number_j = eqs_number[j];
 			// Local assembly of stiffness matrix
 			for (size_t k = 0; k < ele_dim; k++)
 			{
+				const long globalRowId = eqs_number_i + NodeShift[k];
+				const long localRowId = i + k * nnodesHQ;
 				for (size_t l = 0; l < ele_dim; l++)
 				  {
+					double globalColId = eqs_number_j + NodeShift[l];
+					double val = f1 * (*Stiffness)(localRowId, j + l * nnodesHQ);
 #if defined(USE_PETSC) // || defined(other parallel libs)//10.3012. WW
 				    //TODO
 #else
 #ifdef NEW_EQS
-					(*A)(eqs_number[i] + NodeShift[k],eqs_number[j] +
-					     NodeShift[l])
-					        += f1 *
-					           (*Stiffness)(i + k * nnodesHQ, j + l * nnodesHQ);
+					double &a = (*A)(globalRowId,globalColId);
+					#pragma omp atomic
+					a += val;
+					//(*A)(globalRowId,globalColId) += val;
 #else
-					MXInc(eqs_number[i] + NodeShift[k],
-					      eqs_number[j] + NodeShift[l],
-					      f1 * (*Stiffness)(i + k * nnodesHQ, j + l * nnodesHQ));
+					MXInc(globalRowId, globalColId, val);
 #endif
 #endif
 				  }
 			}
 		}                         // loop j
 	}                                     // loop i
+#endif
 
 	//TEST OUT
 	//Stiffness->Write();
@@ -1511,6 +1553,165 @@ void CFiniteElementVec::GlobalAssembly_PressureCoupling(Matrix* pCMatrix,
 			  }
 		}
 	}
+}
+#endif
+
+#ifdef USE_PETSC
+/*!
+   \brief Add the local stiff matrix to the global one
+
+   04.2012. WW
+ */
+//------------------------------------------------------
+void CFiniteElementVec::add2GlobalMatrixII()
+{
+  int i;
+  int m_dim, n_dim;
+  int dof = pcs->pcs_number_of_primary_nvals;
+
+  double *local_matrix = NULL;
+  double *local_vec = NULL;
+  petsc_group::PETScLinearSolver *eqs = pcs->eqs_new;
+
+//#define assmb_petsc_test
+#ifdef assmb_petsc_test
+  char rank_char[10];
+  sprintf(rank_char, "%d", eqs->getMPI_Rank());
+  std::string fname = FileName + rank_char + "_e_matrix.txt";
+  std::ofstream os_t(fname.c_str(), std::ios::app);
+  os_t<<"\n=================================================="<<"\n";
+#endif
+
+  if(act_nodes_h != nnodesHQ)
+  {
+//	  ScreenMessage2("-> overlapped elements = %d. act_nodes_h=%d \n", Index, act_nodes_h);
+      m_dim = act_nodes_h * dof;
+      n_dim = nnodesHQ * dof;
+	  //ScreenMessage2("-> m_dim = %d, n_dim=%d\n", m_dim, n_dim);
+
+      const int dim_full = nnodesHQ * dof;
+      int i_dom, in;
+      // put the subdomain portion of local stiffness matrix to Mass
+      double *loc_m = Stiffness->getEntryArray();
+      double *loc_v = RHS->getEntryArray();
+
+      for(i = 0; i < nnodesHQ; i++)
+      {
+        const int i_buff = MeshElement->nodes[i]->GetEquationIndex() *  dof;
+        for(int k=0; k<dof; k++)
+        {
+            idxn[k*nnodesHQ + i] = i_buff + k;
+//            ScreenMessage2("-> ki=%d, idxn=%d \n", k*nnodesHQ + i, i_buff + k);
+        }
+        // local_vec[i] = 0.;
+      }
+
+      static std::vector<double> temp_local_vec(60);
+      static std::vector<double> temp_local_matrix(60*60);
+      local_matrix = &temp_local_matrix[0];
+      local_vec = &temp_local_vec[0];
+      for( i=0; i<m_dim; i++)
+      {
+        i_dom = i/act_nodes_h;
+        in = i % act_nodes_h;
+        int i_full = local_idx[in] + i_dom * nnodesHQ;
+        local_vec[i] = loc_v[i_full];
+        i_full *= dim_full;
+
+        idxm[i] = MeshElement->nodes[local_idx[in]]->GetEquationIndex() *  dof + i_dom;
+//        ScreenMessage2("-> ki=%d, idxm=%d \n", i, idxm[i]);
+
+
+        for(int j=0; j<dim_full; j++)
+        {
+            local_matrix[i*dim_full +j] = loc_m[i_full + j];
+            //TEST
+#ifdef assmb_petsc_test
+	      os_t<<"("<<local_idx[in]<<") "<<local_matrix[i*dim_full +j]<<" ";
+#endif //#ifdef assmb_petsc_test
+        }
+
+        //TEST
+#ifdef assmb_petsc_test
+	  os_t<<"\n";
+#endif //#ifdef assmb_petsc_test
+
+      }
+  }
+  else
+  {
+//	  ScreenMessage2("-> internal elements = %d \n", Index);
+      m_dim = nnodesHQ * dof;
+      n_dim = m_dim;
+      //----------------------------------------------------------------------
+      // For overlapped partition DDC
+      local_matrix = Stiffness->getEntryArray();
+      local_vec = RHS->getEntryArray();
+
+      for(i = 0; i < nnodesHQ; i++)
+      {
+        const int i_buff = MeshElement->nodes[i]->GetEquationIndex() * dof;
+//        ScreenMessage2("-> node id=%d, eqs_id=%d \n", MeshElement->nodes[i]->GetIndex(), i_buff);
+        for(int k=0; k<dof; k++)
+        {
+          const int ki = k*nnodesHQ + i;
+//          ScreenMessage2("-> ki=%d, idx=%d \n", ki, i_buff + k);
+          idxm[ki] = i_buff + k;
+          idxn[ki] = idxm[ki];
+        }
+        // local_vec[i] = 0.;
+      }
+  }
+
+
+
+    //TEST
+#ifdef assmb_petsc_test
+      	{
+      	  os_t<<"\n------------------"<<act_nodes * dof<<"\n";
+      	Stiffness->Write(os_t);
+       RHS->Write(os_t);
+
+       os_t<<"Node ID: ";
+       for( i=0; i<this->nnodesHQ ; i++)
+	 {
+	   os_t<<MeshElement->nodes[i]->GetEquationIndex()<<" ";
+	 }
+       os_t<<"\n";
+       os_t<<"Act. Local ID: ";
+       for( i=0; i<act_nodes ; i++)
+	 {
+	   os_t<<local_idx[i]<<" ";
+	 }
+       os_t<<"\n";
+         os_t<<"Act. Global ID:";
+       for(i=0; i<act_nodes * dof; i++)
+	 {
+	   os_t<<idxm[i]<<" ";
+	 }
+       os_t<<"\n";
+       os_t<<"All Global ID:";
+     for(i=0; i<nnodesHQ * dof; i++)
+	 {
+	   os_t<<idxn[i]<<" ";
+	 }
+     os_t<<"\n";
+       	}
+	os_t.close();
+#endif //ifdef assmb_petsc_test
+
+//	ScreenMessage2("-> addMatrixEntries begin\n");
+  eqs->addMatrixEntries(m_dim, idxm, n_dim, idxn, &local_matrix[0]);
+//	ScreenMessage2("-> addMatrixEntries end\n");
+//	ScreenMessage2("-> setArrayValues begin\n");
+
+  static double temp_vec[100];
+  for (int i=0; i<m_dim; i++)
+      temp_vec[i] = - local_vec[i]; // r -= RHS
+  eqs->setArrayValues(1, m_dim, idxm, &temp_vec[0]);
+//	ScreenMessage2("-> add2petsc end\n");
+  //eqs->AssembleRHS_PETSc();
+  //eqs->AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
 }
 #endif
 
@@ -1757,9 +1958,18 @@ void CFiniteElementVec::GlobalAssembly_RHS()
 
 	//RHS->Write();
 
-	for (size_t i = 0; i < dim; i++)
-		for (j = 0; j < nnodesHQ; j++)
-			b_rhs[eqs_number[j] + NodeShift[i]] -= (*RHS)(i * nnodesHQ + j);
+#ifndef USE_PETSC
+//	std::cerr << "e: " << Index << "\n";
+	for (size_t i = 0; i < dim; i++) {
+		for (j = 0; j < nnodesHQ; j++) {
+//		    std::cerr << eqs_number[j] << "," << NodeShift[i] << "," << i * nnodesHQ + j << "\n";
+			long global_id = eqs_number[j] + NodeShift[i];
+			double val = (*RHS)(i * nnodesHQ + j);
+			#pragma omp atomic
+			b_rhs[global_id] -= val;
+		}
+	}
+#endif
 	//WX:07.2011 if not on excav boundary, RHS=0
 	int valid = 0;
 	if (excavation)

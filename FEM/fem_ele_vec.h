@@ -231,6 +231,9 @@ private:
 	void GlobalAssembly_Stiffness();
 	void GlobalAssembly_PressureCoupling(Matrix* pCMatrix, double fct, const int phase = 0);
 	void GlobalAssembly_RHS();
+#ifdef USE_PETSC
+	void add2GlobalMatrixII();
+#endif
 
 	//----------- Enhanced element ----------------
 	void CheckNodesInJumpedDomain();
