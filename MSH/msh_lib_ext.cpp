@@ -625,7 +625,7 @@ void BuildNodeStruc(MeshNodes *anode, MPI_Datatype *MPI_Node_ptr)
    */
 
    
-    
+#ifndef __MPIUNI_H
    MPI_Get_address(anode, disp);
    MPI_Get_address(&(anode[0].x), disp+1); 
    MPI_Get_address(&(anode[0].y), disp+2); 
@@ -638,7 +638,7 @@ void BuildNodeStruc(MeshNodes *anode, MPI_Datatype *MPI_Node_ptr)
        //      cout<<"j=" <<j<<" "<<disp[j]<<endl;
    }
    
-
+#endif
 
    // build datatype describing structure 
    MPI_Type_create_struct(4, nblocklen, disp, my_comp_type, MPI_Node_ptr);
