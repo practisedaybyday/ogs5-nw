@@ -275,8 +275,8 @@ void PETScLinearSolver::MatrixCreate( PetscInt m, PetscInt n)
   MatSetFromOptions(A);
 #if 1
   ScreenMessage2d("-> set PETSc matrix preallocation wiht d_nz=%d and o_nz=%d\n", d_nz, o_nz);
-  MatMPIAIJSetPreallocation(A,d_nz,PETSC_NULL, o_nz,PETSC_NULL);
-  //MatSeqAIJSetPreallocation(A,d_nz,PETSC_NULL);
+  MatMPIAIJSetPreallocation(A,d_nz,PETSC_NULL, o_nz, PETSC_NULL);
+  MatSeqAIJSetPreallocation(A,d_nz,PETSC_NULL);
 #else
   ScreenMessage("-> do not preallocate PETSc\n");
   MatSetUp(A);
