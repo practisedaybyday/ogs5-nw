@@ -1246,6 +1246,7 @@ void CRFProcessDeformation::ResetTimeStep()
 *************************************************************************/
 void CRFProcessDeformation::SetInitialGuess_EQS_VEC()
 {
+#ifndef USE_PETSC
 	int i;
 	long j, v_idx = 0;
 	long number_of_nodes;
@@ -1273,6 +1274,7 @@ void CRFProcessDeformation::SetInitialGuess_EQS_VEC()
 				eqs_x[shift + j] = 0.;
 		shift += number_of_nodes;
 	}
+#endif
 }
 
 /**************************************************************************
