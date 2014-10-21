@@ -264,7 +264,7 @@ public:
 protected:
   int mysize;                               
   int myrank; 
-#elif NEW_EQS
+#elif defined(NEW_EQS)
 #ifdef LIS
 public:
 	Linear_EQS* eqs_new;
