@@ -1050,6 +1050,8 @@ void CElem::GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes)
 	case MshElemType::TRIANGLE:               // 2-D triagular element
 		EdgeNodes[0] = Edge;
 		EdgeNodes[1] = (Edge + 1) % 3;
+		if (quadratic)
+			EdgeNodes[2] = EdgeNodes[0] + 3;
 		break;
 	case MshElemType::TETRAHEDRON:            // 3-D tetrahedra
 		if(Edge < 3)
@@ -1062,6 +1064,7 @@ void CElem::GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes)
 			EdgeNodes[0] = 3;
 			EdgeNodes[1] = (Edge + 1) % 3;
 		}
+		assert(!quadratic); //TODO not supported
 
 		break;
 	case MshElemType::PRISM:                  // 3-D prismatic element
@@ -1075,6 +1078,7 @@ void CElem::GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes)
 			EdgeNodes[0] = Edge % 3;
 			EdgeNodes[1] = Edge % 3 + 3;
 		}
+		assert(!quadratic); //TODO not supported
 		break;
 	case MshElemType::PYRAMID:                  // 3-D pyramid element
 		if(Edge < 4)
@@ -1087,10 +1091,12 @@ void CElem::GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes)
 			EdgeNodes[0] = Edge % 4;
 			EdgeNodes[1] = 4;
 		}
+		assert(!quadratic); //TODO not supported
 		break;
 	default:
 		std::cerr << "CElem::GetLocalIndicesOfEdgeNodes() - MshElemType not handled" <<
 		std::endl;
+		break;
 	}
 }
 /**************************************************************************
