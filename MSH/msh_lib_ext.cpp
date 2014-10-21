@@ -21,6 +21,7 @@
 //#endif
 #include <sstream>
 
+#include "StringTools.h"
 #include "display.h"
 
 using namespace std;
@@ -63,6 +64,19 @@ void FEMRead(const string& file_base_name,
 	{
 		std::string str_var = file_base_name + "_partitioned.msh";
 		is.open(str_var.c_str());
+		if (!is.good()) {
+			is.close();
+			is.clear();
+			str_var = file_base_name + "_partitioned_" + number2str(mysize) + ".msh";
+			is.open(str_var.c_str());
+			if (is.good()) {
+				ScreenMessage("-> found %s\n", str_var.c_str());
+			} else {
+				ScreenMessage("-> cannot find a partitioned mesh file\n");
+				PetscFinalize();
+				exit(1);
+			}
+		}
 		getline(is, str_var);
 		int num_parts;
 		is >> num_parts >>ws;
@@ -72,6 +86,7 @@ void FEMRead(const string& file_base_name,
 						  " the number of the requested computer cores "
 						  "is not identical to the number of subdomains.";
 			cout<<str_m<<endl;
+			ScreenMessage("(MPI size = %d, the number of subdomains = %d)\n", mysize, num_parts);
 			PetscFinalize();
 			exit(1);
 		}
