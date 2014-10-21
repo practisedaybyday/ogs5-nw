@@ -556,15 +556,10 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 #endif
 			//
 			if(type != 41)
+#if defined( USE_PETSC)         //WW
+                            InitializeRHS_with_u0();
+#else
 				SetInitialGuess_EQS_VEC();
-#ifdef MFC
-			m_str.Format(
-			        "Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Solve equation system", \
-			        aktuelle_zeit,
-			        pcs_type_name.c_str(),
-			        l,
-			        ite_steps);
-			pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
 #endif
 #ifdef USE_MPI                        //WW
 			// No initial guess for deformation.
@@ -580,6 +575,9 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			eqs_new->Solver();
 			//TEST 	double x_norm = eqs_new->GetVecNormX();
 			eqs_new->MappingSolution();
+		if(!elasticity)
+                   Norm = eqs_new->GetVecNormRHS();
+
 #elif NEW_EQS                        //WW
 			//
 #if defined(USE_MPI)
@@ -625,7 +623,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 				Error1 = Error;
 				ErrorU1 = ErrorU;
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-			//TODO
+				NormU = eqs_new->GetVecNormX();
 #elif NEW_EQS
 				NormU = eqs_new->NormX();
 #else
@@ -696,7 +694,15 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 					break;
 #endif
 				if(Error <= Tolerance_global_Newton)
-					break;
+				{
+					if(ite_steps==1)//WX:05.2012
+					{
+						UpdateIterativeStep(damping, 0);
+						break;
+					}
+					else
+						break;
+				}
 			}
 			// w = w+dw for Newton-Raphson
 			UpdateIterativeStep(damping, 0); // w = w+dw
@@ -719,6 +725,9 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	Error = 0.0;
 	if(type / 10 != 4)                    // Partitioned scheme
 	{
+#ifdef USE_PETSC
+                NormU =  eqs_new->GetVecNormX();
+#else
 		for(size_t n = 0; n < m_msh->GetNodesNumber(true); n++)
 			for(l = 0; l < pcs_number_of_primary_nvals; l++)
 			{
@@ -729,6 +738,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 		Error = sqrt(NormU);
 		sqrt_norm = Error;
 		Error = .0;
+#endif
 	}
 
 	// Determine the discontinuity surface if enhanced strain methods is on.
@@ -1222,7 +1232,6 @@ void CRFProcessDeformation::ResetTimeStep()
 *************************************************************************/
 void CRFProcessDeformation::SetInitialGuess_EQS_VEC()
 {
-#ifndef USE_PETSC
 	int i;
 	long j, v_idx = 0;
 	long number_of_nodes;
@@ -1250,7 +1259,6 @@ void CRFProcessDeformation::SetInitialGuess_EQS_VEC()
 				eqs_x[shift + j] = 0.;
 		shift += number_of_nodes;
 	}
-#endif
 }
 
 /**************************************************************************
