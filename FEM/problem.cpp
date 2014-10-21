@@ -467,6 +467,17 @@ Problem::Problem (char* filename) :
 	dm_pcs = (CRFProcessDeformation*)total_processes[12];
 	if(dm_pcs)
 		dm_pcs->CreateInitialState4Excavation();
+
+#ifdef OGS_DELETE_EDGES_AFTER_INIT
+	// Free memory occupied by edges. 09.2012. WW
+	if(!fluid_mom_pcs)
+	{
+       for(size_t k = 0; k < fem_msh_vector.size(); k++)
+       {
+		  fem_msh_vector[k]->FreeEdgeMemory();
+	   }
+	}
+#endif
 }
 
 /**************************************************************************
