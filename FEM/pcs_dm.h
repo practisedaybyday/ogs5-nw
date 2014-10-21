@@ -108,9 +108,9 @@ private:
 	bool _isInitialStressNonZero;
 
 	int counter;
-	double InitialNorm;
-	double InitialNormU;
-	double InitialNormU0;
+	double InitialNormR0;
+	double InitialNormDU;
+	double InitialNormDU0;
 
 	InitDataReadWriteType idata_type;
 

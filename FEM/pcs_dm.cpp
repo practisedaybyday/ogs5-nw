@@ -74,7 +74,7 @@ namespace process
 CRFProcessDeformation::
 CRFProcessDeformation()
 	: CRFProcess(), fem_dm(NULL), ARRAY(NULL),p0(NULL),
-	  counter(0), InitialNorm(0.0)
+	  counter(0), InitialNormR0(0.0)
 
 {
 	error_k0 = 1.0e10;
@@ -297,210 +297,70 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 
 	//-------------------------------------------------------
 	// Controls for Newton-Raphson steps
-	int l;
-
-	//  const int MaxLoadsteps=10; //20;
-	//  const double LoadAmplifier =2.0;
-	//  double MaxLoadRatio=1.0, maxStress=0.0;
-	//  double LoadFactor0 = 0.0;
-	//  double minLoadRatio = 0.0000001;
-	//  const int defaultSteps=100;
-
 	double damping = 1.0;
-	double NormU, Norm = 0.0, Error1, Error = 0.0;
+	double NormDU, NormR = 0.0, Error1, ErrorR = 0.0;
 	double ErrorU1, ErrorU = 0.0;
-
-	//const int defaultSteps=100;
 	int MaxIteration = m_num->nls_max_iterations;
-	int elasticity = 0;
-	//int monolithic=0;
-	//
-	string delim = " | ";
+	const string delim = " | ";
 	//----------------------------------------------------------
 	dm_time = -clock();
 	//
 	m_msh->SwitchOnQuadraticNodes(true);
 	//
-	//TEST if(num_type_name.find("EXCAVATION")!=0)
 	if(hasAnyProcessDeactivatedSubdomains || NumDeactivated_SubDomains > 0 ||
 	   num_type_name.find("EXCAVATION") != string::npos)
-		//if(NumDeactivated_SubDomains>0||num_type_name.find("EXCAVATION")!=string::npos)
 		CheckMarkedElement();
-	// MarkNodesForGlobalAssembly();
 
-	counter++;                            // Times of this method  to be called
+	counter++; // Times of this method  to be called
 	LoadFactor = 1.0;
 
 	// For pure elesticity
+	bool isLinearProblem = false;
 	if(pcs_deformation <= 100 && !fem_dm->dynamic)
 	{
-		elasticity = 1;
+		isLinearProblem = true;
 		MaxIteration = 1;
 	}
 
 	// For monolithic scheme
-	if(type / 10 == 4)                    // Modified at 05.07.2010 WW
-
-		//        monolithic=1;
+	if(type / 10 == 4)
 		number_of_load_steps = 1;
+
 	// system matrix
-#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
-	//TODO
-#elif NEW_EQS                              //WW
-	//
-#if defined(USE_MPI)
-	CPARDomain* dom = dom_vector[myrank];
-	long global_eqs_dim = pcs_number_of_primary_nvals * m_msh->GetNodesNumber(true);
-	dom->ConfigEQS(m_num, global_eqs_dim, true);
-#else
+#if defined (USE_PETSC)
+#elif defined(NEW_EQS)                              //WW
 	eqs_new->ConfigNumerics(m_num);       //27.11.2007 WW
-#endif
-	//
 #else
 	SetZeroLinearSolver(eqs);
 #endif
 
-	/*
-
-	   // dom->test();
-
-	   //TEST_MPI
-	   string test = "rank";
-	   char stro[1028];
-	   sprintf(stro, "%d",myrank);
-	   string test1 = test+(string)stro+"Assemble.txt";
-	   ofstream Dum(test1.c_str(), ios::out); // WW
-	   dom->eqsH->Write(Dum);
-	   Dum.close();
-	   //  MPI_Finalize();
-	   exit(1);
-
-	 */
-
-	//JT//if(CouplingIterations == 0 && m_num->nls_method != 2)
 	if(this->first_coupling_iteration && m_num->nls_method != FiniteElement::NL_JFNK)
 		StoreLastSolution();      //u_n-->temp
+
 	//  Reset stress for each coupling step when partitioned scheme is applied to HM
 	if(H_Process && (type / 10 != 4))
 		ResetCouplingStep();
+
 	//
-	// Compute the maxium ratio of load increment and
+	// Compute the maximum ratio of load increment and
 	//   predict the number of load steps
 	// ---------------------------------------------------------------
 	// Compute the ratio of the current load to initial yield load
 	// ---------------------------------------------------------------
 	number_of_load_steps = 1;
-	/*
-	   if(!elasticity&&!fem_dm->dynamic&&(type!=41))
-	   {
-	   InitializeNewtonSteps(0); // w=du=0
-	   number_of_load_steps = 1;
-
-	   if(counter==1) // The first time this method is called.
-	   {
-	       // This is may needed by pure mechacial process
-	       //  Auto increment loading  1
-	       //-----------  Predict the number of load increment -------------------
-	   //  Prepared for the special usage. i.e, for test purpose.
-	   //  Activate this segement if neccessary as well as Auto increment loading  2
-	   //---------------------------------------------------------------------
-	   // InitializeNewtonSteps(1); // u=0
-	   DisplayMsgLn("\nEvaluate load ratio: ");
-	   PreLoad = 1;
-	   GlobalAssembly();
-	   PreLoad = 0;
-	   //		 {MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  abort();}
-
-	   ExecuteLinearSolver();
-
-	   UpdateIterativeStep(1.0, 0); // w = w+dw
-	   MaxLoadRatio=CaclMaxiumLoadRatio();
-
-	   if(MaxLoadRatio<=1.0&&MaxLoadRatio>=0.0) number_of_load_steps=1;
-	   else if(MaxLoadRatio<0.0)
-	   {
-	   if( fabs(maxStress)> MKleinsteZahl)
-	   {
-	   int Incre=(int)fabs(MaxLoadRatio/maxStress);
-	   if(Incre)
-	   number_of_load_steps=defaultSteps;
-	   }
-	   number_of_load_steps=defaultSteps;
-	   }
-	   else
-	   {
-	   number_of_load_steps=(int)(LoadAmplifier*MaxLoadRatio);
-	   if(number_of_load_steps>=MaxLoadsteps) number_of_load_steps=MaxLoadsteps;
-	   }
-	   cout<<"\n***Load ratio: "<< MaxLoadRatio<<endl;
-
-	   }
-	   }
-	 */
-	// ---------------------------------------------------------------
-	// Load steps
-	// ---------------------------------------------------------------
-	/*
-	   //TEST
-	   if(Cam_Clay)
-	   {
-	    if(counter==1) number_of_load_steps = MaxLoadsteps;
-	    else number_of_load_steps = 1;
-	     if(fluid) number_of_load_steps = 10;
-	   }
-	 */
+	int l;
 	for(l = 1; l <= number_of_load_steps; l++)
 	{
-		// This is may needed by pure mechacial process
-		//  Auto increment loading  2
-		//-----------  Predict the load increment ration-------------------
-		//     Prepared for the special usage. i.e, for test purpose.
-		//     Agitate this segement if neccessary as well as Auto increment loading  1
-		//---------------------------------------------------------------------
-		/*
-		   if(elasticity!=1&&number_of_load_steps>1)
-		   {
-		    // Predictor the size of the load increment, only perform at the first calling
-		     minLoadRatio = (double)l/(double)number_of_load_steps;
-
-		   // Caculate load ratio \gamma_k
-		     if(l==1)
-		     {
-		       if(MaxLoadRatio>1.0)
-		      {
-		   LoadFactor=1.0/MaxLoadRatio;
-		   if(LoadFactor<minLoadRatio) LoadFactor=minLoadRatio;
-		   LoadFactor0=LoadFactor;
-		   }
-		   else LoadFactor = (double)l/(double)number_of_load_steps;
-		   }
-		   else
-		   {
-		   if(MaxLoadRatio>1.0)
-		   LoadFactor+=(1.0-LoadFactor0)/(number_of_load_steps-1);
-		   else LoadFactor = (double)l/(double)number_of_load_steps;
-		   }
-		   // End of Caculate load ratio \gamma_k
-
-		   }
-		   //TEST     else if(fluid)   LoadFactor = (double)l/(double)number_of_load_steps;
-		 */
-
-		//
-		// Initialize inremental displacement: w=0
+		// Initialize incremental displacement: w=0
 		InitializeNewtonSteps();
-		//
-		// Begin Newton-Raphson steps
-		if(elasticity != 1)
+		if(!isLinearProblem)
 		{
-			//ite_steps = 0;
-			Error = 1.0e+8;
-			ErrorU = 1.0e+8;
-			Norm = 1.0e+8;
-			NormU = 1.0e+8;
+			ErrorR = ErrorU = NormR = NormDU = 1.0e+8;
 			ScreenMessage("Starting loading step %d/%d. Load factor: %g\n", l, number_of_load_steps, LoadFactor);
 			ScreenMessage("------------------------------------------------\n");
 		}
+
+		// Begin Newton-Raphson steps
 		ite_steps = 0;
 		while(ite_steps < MaxIteration)
 		{
@@ -508,197 +368,124 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			ScreenMessage("-->Starting Newton-Raphson iteration: %d/%d\n", ite_steps, MaxIteration);
 			ScreenMessage("------------------------------------------------\n");
 			// Refresh solver
-#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
+#if defined(USE_PETSC)
 			eqs_new->Initialize();
-#elif NEW_EQS                        //WW
-#ifndef USE_MPI
-			eqs_new->Initialize(); //27.11.2007 WW
-#endif
-#ifdef JFNK_H2M
-			/// If JFNK method (1.09.2010. WW):
-			if(m_num->nls_method == 2)
-			{
-				Jacobian_Multi_Vector_JFNK();
-				eqs_new->setPCS(this);
-			}
-#endif
-#else // ifdef NEW_EQS
+#elif defined(NEW_EQS)
+			eqs_new->Initialize();
+#else
 			SetZeroLinearSolver(eqs);
 #endif
 
 			// Assemble and solve system equation
-			/*
-			   #ifdef MFC
-			        CString m_str;
-			        m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\
-			                      aktuelle_zeit,pcs_type_name.c_str(),l,ite_steps);
-			        pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
-			   #endif
-			 */
 			ScreenMessage("Assembling equation system...\n");
-#ifdef USE_MPI                        //WW
-			clock_t cpu_time = 0; //WW
-			cpu_time = -clock();
-#endif
 			if(m_num->nls_method != FiniteElement::NL_JFNK) // Not JFNK method. 05.08.2010. WW
 				GlobalAssembly();
-#ifdef USE_MPI
-			cpu_time += clock();
-			cpu_time_assembly += cpu_time;
-#endif
-			//
+
+			// init solution vector
 			if(type != 41)
-#if defined( USE_PETSC)         //WW
-                            InitializeRHS_with_u0();
+#if defined(USE_PETSC)
+				InitializeRHS_with_u0();
 #else
 				SetInitialGuess_EQS_VEC();
 #endif
-#ifdef USE_MPI                        //WW
-			// No initial guess for deformation.
-			// for(long ll=0; ll<eqs->dim; ll++)
-			//  eqs->x[ll] = 0.0;
-			//
-#endif
 
 			ScreenMessage("Calling linear solver...\n");
-			/// Linear solver
-#if defined(USE_PETSC) //|| defined(other parallel libs)//03~04.3012. WW
+			// Linear solver
+#if defined(USE_PETSC)
 //			eqs_new->EQSV_Viewer("eqs" + number2str(aktueller_zeitschritt) + "b");
 			eqs_new->Solver();
-			//TEST 	double x_norm = eqs_new->GetVecNormX();
 			eqs_new->MappingSolution();
-		if(!elasticity)
-                   Norm = eqs_new->GetVecNormRHS();
-
-#elif defined(NEW_EQS)                        //WW
-			//
-#if defined(USE_MPI)
-			//21.12.2007
-			dom->eqsH->Solver(eqs_new->x, global_eqs_dim);
-#else
-#ifdef LIS
+#elif defined(LIS)
 			bool compress_eqs = (type/10==4 || this->NumDeactivated_SubDomains>0);
-			eqs_new->Solver(this->m_num, compress_eqs); //NW
+			eqs_new->Solver(this->m_num, compress_eqs);
+#elif defined(NEW_EQS)
+			eqs_new->Solver();
 #else
-			eqs_new->Solver(); //27.11.2007
-#endif
-#endif
-#else // ifdef NEW_EQS
-//		    std::string eqs_name = "eqs" + number2str(aktueller_zeitschritt) +  "b.txt";
-//		    MXDumpGLS((char*)eqs_name.c_str(),4,eqs->b,eqs->x);
 			ExecuteLinearSolver();
-//            std::cout << "x=\n";
-//            long nr_nodes = eqs->dim / problem_dimension_dm;
-//            for (long i=0;i<nr_nodes;i++)
-//                for (long k=0;k<problem_dimension_dm;k++)
-//                    std::cout << eqs->x[i+k*nr_nodes] << "\n";
-#endif
-			//
-			// Norm of b (RHS in eqs)
-#ifdef USE_MPI
-			if(!elasticity)
-				Norm = dom->eqsH->NormRHS();
-#else
-#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-			//TODO
-#elif defined(NEW_EQS)
-			if(!elasticity)
-				Norm = eqs_new->NormRHS();
-#else
-			if(!elasticity)
-				Norm = NormOfUnkonwn_orRHS(false);
-#endif
-#endif
-			if(!elasticity)
-			{
-				// Check the convergence
-				Error1 = Error;
-				ErrorU1 = ErrorU;
-#if defined(USE_PETSC)
-				NormU = eqs_new->GetVecNormX();
-#elif defined(NEW_EQS)
-				NormU = eqs_new->NormX();
-#else
-				NormU = NormOfUnkonwn_orRHS();
 #endif
 
-				//JT//if(ite_steps == 1 && CouplingIterations == 0)
-				if(ite_steps == 1 && this->first_coupling_iteration)
+			if(!isLinearProblem)
+			{
+				// Get norm of residual vector, solution increment
+#if defined(USE_PETSC)
+				NormR = eqs_new->GetVecNormRHS();
+				NormDU = eqs_new->GetVecNormX();
+#elif defined(NEW_EQS)
+				NormR = eqs_new->NormRHS();
+				NormDU = eqs_new->NormX();
+#else
+				NormR = NormOfUnkonwn_orRHS(false);
+				NormDU = NormOfUnkonwn_orRHS();
+#endif
+
+//				if(ite_steps == 1 && this->first_coupling_iteration)
+				if(ite_steps == 1)
 				{
-					InitialNorm = Norm;
-					InitialNormU0 = NormU;
+					InitialNormR0 = NormR;
+					InitialNormDU0 = NormDU;
 					if(counter == 1)
-						InitialNormU = NormU;
+						InitialNormDU = NormDU;
 				}
 
-				Error = Norm / InitialNorm;
-				ErrorU = NormU / InitialNormU0;
-				if(Norm < Tolerance_global_Newton && Error > Norm)
-					Error = Norm;
-				//           if(Norm<TolNorm)  Error = 0.01*Tolerance_global_Newton;
-				if((NormU / InitialNormU) <= Tolerance_global_Newton)
-					Error = NormU / InitialNormU;
+				// store previous errors
+				Error1 = ErrorR;
+				ErrorU1 = ErrorU;
+
+				// calculate errors
+				ErrorR = NormR / InitialNormR0;
+				ErrorU = NormDU / InitialNormDU0;
+//				if(NormR < Tolerance_global_Newton && ErrorR > NormR)
+//					ErrorR = NormR;
+//				if((NormDU / InitialNormDU) <= Tolerance_global_Newton)
+//					ErrorR = NormDU / InitialNormDU;
 
 				// Compute damping for Newton-Raphson step
 				damping = 1.0;
-				//           if(Error/Error1>1.0e-1) damping=0.5;
+				//           if(ErrorR/Error1>1.0e-1) damping=0.5;
 #if 0
-				if(Error / Error1 > 1.0e-1 || ErrorU / ErrorU1 > 1.0e-1)
+				if(ErrorR / Error1 > 1.0e-1 || ErrorU / ErrorU1 > 1.0e-1)
 					damping = 0.5;
 #endif
-				if(ErrorU < Error)
-					Error = ErrorU;
-#if defined(NEW_EQS) && defined(JFNK_H2M)
-				/// If JFNK, get w from the buffer
-				if(m_num->nls_method == 2)
-					//damping = LineSearch();
-					Recovery_du_JFNK();
+//				if(ErrorU < ErrorR)
+//					ErrorR = ErrorU;
 
-#endif
 				// JT: Store the process and coupling errors
 				pcs_num_dof_errors = 1;
 				if(ite_steps == 1){
-					pcs_absolute_error[0] = NormU;
+					pcs_absolute_error[0] = NormDU;
 					pcs_relative_error[0] = pcs_absolute_error[0] / Tolerance_global_Newton;
 					cpl_max_relative_error = pcs_relative_error[0];
 					cpl_num_dof_errors = 1;
 				}
 				else{
-					pcs_absolute_error[0] = Error;
-					pcs_relative_error[0] = Error / Tolerance_global_Newton;
+					pcs_absolute_error[0] = ErrorR;
+					pcs_relative_error[0] = ErrorR / Tolerance_global_Newton;
 				}
 				//
 				ScreenMessage("-->End of Newton-Raphson iteration: %d/%d\n", ite_steps, MaxIteration);
 				ScreenMessage("   NR-Error  RHS Norm 0  RHS Norm    Unknowns Norm  Damping\n");
-				ScreenMessage("   %8.2e  %8.2e  %8.2e    %8.2e  %8.2e\n", Error, InitialNorm, Norm, NormU, damping);
+				ScreenMessage("   %8.2e  %8.2e  %8.2e    %8.2e  %8.2e\n", ErrorR, InitialNormR0, NormR, NormDU, damping);
 				ScreenMessage("------------------------------------------------\n");
 
-				if(Error > 100.0 && ite_steps > 1)
+				if(ErrorR > 100.0 && ite_steps > 1)
 				{
-					printf (
-					        "\n  Attention: Newton-Raphson step is diverged. Programme halt!\n");
+					ScreenMessage("***Attention: Newton-Raphson step is diverged. Programme halt!\n");
 					exit(1);
 				}
-				if(InitialNorm < 10 * Tolerance_global_Newton)
-					break;
-#if 0
-				if(Norm < 0.001 * InitialNorm)
-					break;
-#endif
-				if(Error <= Tolerance_global_Newton)
+//				if(InitialNormR0 < 10 * Tolerance_global_Newton)
+//					break;
+//				if(NormR < 0.001 * InitialNormR0)
+//					break;
+				if(ErrorR <= Tolerance_global_Newton)
 				{
-					if(ite_steps==1)//WX:05.2012
-					{
+					if (ite_steps==1)
 						UpdateIterativeStep(damping, 0);
-						break;
-					}
-					else
-						break;
+					break;
 				}
 			}
-			// w = w+dw for Newton-Raphson
+
 			UpdateIterativeStep(damping, 0); // w = w+dw
-		}                         // Newton-Raphson iteration
+		} // Newton-Raphson iteration
 
 		// Update stresses
 		UpdateStress();
@@ -706,151 +493,58 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			CalcBC_or_SecondaryVariable_Dynamics();
 
 		// Update displacements, u=u+w for the Newton-Raphson
-		// u1 = u0 for pure elasticity
+		// u1 = u0 for pure isLinearProblem
 		UpdateIterativeStep(1.0,1);
-	}
-	// Load step
-	//
+	} // Load step
+
+//	ScreenMessage("Deformation process converged.\n");
+
 	// For coupling control
-	ScreenMessage("Deformation process converged.\n");
-	double sqrt_norm = 0.0;
-	Error = 0.0;
-	if(type / 10 != 4)                    // Partitioned scheme
+	double norm_u = 0.0; //TODO norm of solution at current coupling iteration
+	double coupling_error = 0; //TODO ||u^k1-u^k||/||u^0||
+	if(type / 10 != 4) // Partitioned scheme
 	{
 #ifdef USE_PETSC
-                NormU =  eqs_new->GetVecNormX();
+		NormDU =  eqs_new->GetVecNormX();
 #else
 		for(size_t n = 0; n < m_msh->GetNodesNumber(true); n++)
 			for(l = 0; l < pcs_number_of_primary_nvals; l++)
 			{
-				NormU = GetNodeValue(n, fem_dm->Idx_dm1[l]);
-				Error += NormU * NormU;
+				NormDU = GetNodeValue(n, fem_dm->Idx_dm1[l]);
+				ErrorR += NormDU * NormDU;
 			}
-		NormU = Error;
-		Error = sqrt(NormU);
-		sqrt_norm = Error;
-		Error = .0;
+		NormDU = ErrorR;
+		ErrorR = sqrt(NormDU);
+		norm_u = ErrorR;
+		ErrorR = .0;
 #endif
 	}
+	if(this->first_coupling_iteration)
+		coupling_error = fabs(norm_u - error_k0) / error_k0;
+	else
+		coupling_error = norm_u;
+	error_k0 = norm_u;
 
 	// Determine the discontinuity surface if enhanced strain methods is on.
-
 	if(enhanced_strain_dm > 0)
 		Trace_Discontinuity();
-	//
-	dm_time += clock();
-	ScreenMessage("CPU time elapsed in deformation: %g s\n", (double)dm_time / CLOCKS_PER_SEC);
-	//ScreenMessage("------------------------------------------------\n");
+
 	// Recovery the old solution.  Temp --> u_n	for flow proccess
 	if(m_num->nls_method != FiniteElement::NL_JFNK)
 		RecoverSolution();
-	//
+
 #ifdef NEW_EQS                              //WW
-#if defined(USE_MPI)
-	dom->eqsH->Clean();
-#else
 	// Also allocate temporary memory for linear solver. WW
 	eqs_new->Clean();
 #endif
-#endif
+
 	//
-	//JT//if(CouplingIterations > 0)
-	if(this->first_coupling_iteration)
-		Error = fabs(sqrt_norm - error_k0) / error_k0;
-	else
-		Error = sqrt_norm;
-	error_k0 = sqrt_norm;
-	//
+	dm_time += clock();
 	ScreenMessage("PCS error: %g\n", pcs_relative_error[0]);
+	ScreenMessage("CPU time elapsed in deformation: %g s\n", (double)dm_time / CLOCKS_PER_SEC);
 	ScreenMessage("------------------------------------------------\n");
 
-#ifndef OGS_ONLY_TH
-	//----------------------------------------------------------------------
-	//Excavation. .. .12.2009. WW
-	//----------------------------------------------------------------------
-	std::vector<int> deact_dom;
-	for(l = 0; l < (long)msp_vector.size(); l++)
-		if(msp_vector[l]->excavated)
-			deact_dom.push_back(l);
-	if(ExcavMaterialGroup >= 0 && PCS_ExcavState < 0) //WX:01.2010.update pcs excav state
-	{
-		for(l = 0; l < (long)m_msh->ele_vector.size(); l++)
-			if((m_msh->ele_vector[l]->GetExcavState() > 0) &&
-			   !(m_msh->ele_vector[l]->GetMark()))
-			{
-				PCS_ExcavState = 1;
-				break;
-			}
-	}
-	//WX:01.2011 modified for coupled excavation
-	if(deact_dom.size() > 0 || PCS_ExcavState > 0)
-	{
-		//	  MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  //abort();}
-
-		//
-		// 07.04.2010 WW
-		size_t i;
-		bool done;
-		MeshLib::CElem* elem = NULL;
-		MeshLib::CNode* node = NULL;
-		ElementValue_DM* eleV_DM = NULL;
-		for (l = 0; l < (long)m_msh->ele_vector.size(); l++)
-		{
-			eleV_DM = ele_value_dm[l];
-			(*eleV_DM->Stress0) =  (*eleV_DM->Stress);
-
-			elem = m_msh->ele_vector[l];
-			done = false;
-			for(i = 0; i < deact_dom.size(); i++)
-				if(elem->GetPatchIndex() == static_cast<size_t>(deact_dom[i]))
-				{
-					elem->MarkingAll(false);
-					done = true;
-					break;
-				}
-			if(ExcavMaterialGroup >= 0) //WX
-				if(elem->GetExcavState() >= 0)
-				{
-					elem->MarkingAll(false);
-					done = true;
-				}
-			if(done)
-				continue;
-			else
-				elem->MarkingAll(true);
-		}
-
-		size_t mesh_node_vector_size (m_msh->nod_vector.size());
-		for (size_t l = 0; l < mesh_node_vector_size; l++)
-			while(m_msh->nod_vector[l]->getConnectedElementIDs().size())
-				m_msh->nod_vector[l]->getConnectedElementIDs().pop_back();
-
-		size_t mesh_ele_vector_size (m_msh->ele_vector.size());
-		//WX:07.2011 error fixed
-		for (size_t l = 0; l < mesh_ele_vector_size; l++)
-		{
-			elem = m_msh->ele_vector[l];
-			if(!elem->GetMark())
-				continue;
-			for(i = 0; i < elem->GetNodesNumber(m_msh->getOrder()); i++)
-			{
-				done = false;
-				node = elem->GetNode(i);
-				for(size_t j = 0; j < node->getConnectedElementIDs().size(); j++)
-					if(l == node->getConnectedElementIDs()[j])
-					{
-						done = true;
-						break;
-					}
-				if(!done)
-					node->getConnectedElementIDs().push_back(l);
-			}
-		}                         //
-	}
-#endif
-	//----------------------------------------------------------------------
-
-	return Error;
+	return coupling_error;
 }
 
 /**************************************************************************
