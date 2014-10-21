@@ -498,16 +498,8 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			ErrorU = 1.0e+8;
 			Norm = 1.0e+8;
 			NormU = 1.0e+8;
-#if defined(USE_MPI) || defined (USE_PETSC)
-			if(myrank == 0)
-			{
-#endif
-			//Screan printing:
-            std::cout <<"Starting loading step "<< l << "/" << number_of_load_steps <<".  Load factor: " << LoadFactor << std::endl;
-			std::cout <<"------------------------------------------------"<<std::endl;
-#if defined(USE_MPI) || defined (USE_PETSC)
-		}
-#endif
+			ScreenMessage("Starting loading step %d/%d. Load factor: %g\n", l, number_of_load_steps, LoadFactor);
+			ScreenMessage("------------------------------------------------\n");
 		}
 		ite_steps = 0;
 		while(ite_steps < MaxIteration)
@@ -676,7 +668,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 					pcs_relative_error[0] = Error / Tolerance_global_Newton;
 				}
 				//
-				ScreenMessage("-->End of Newton-Raphson iteration: %d/%d\n", ite_steps, ite_steps);
+				ScreenMessage("-->End of Newton-Raphson iteration: %d/%d\n", ite_steps, MaxIteration);
 				ScreenMessage("   NR-Error  RHS Norm 0  RHS Norm    Unknowns Norm  Damping\n");
 				ScreenMessage("   %8.2e  %8.2e  %8.2e    %8.2e  %8.2e\n", Error, InitialNorm, Norm, NormU, damping);
 				ScreenMessage("------------------------------------------------\n");
@@ -748,7 +740,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	//
 	dm_time += clock();
 	ScreenMessage("CPU time elapsed in deformation: %g s\n", (double)dm_time / CLOCKS_PER_SEC);
-	ScreenMessage("------------------------------------------------\n");
+	//ScreenMessage("------------------------------------------------\n");
 	// Recovery the old solution.  Temp --> u_n	for flow proccess
 	if(m_num->nls_method != FiniteElement::NL_JFNK)
 		RecoverSolution();
@@ -769,6 +761,8 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 		Error = sqrt_norm;
 	error_k0 = sqrt_norm;
 	//
+	ScreenMessage("PCS error: %g\n", pcs_relative_error[0]);
+	ScreenMessage("------------------------------------------------\n");
 
 #ifndef OGS_ONLY_TH
 	//----------------------------------------------------------------------
