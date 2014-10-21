@@ -500,14 +500,12 @@ void CFEMesh::ConstructGrid()
 	Math_Group::vec<CNode*> e_edgeNodes0(3);
 	Math_Group::vec<CNode*> e_edgeNodes(3);
 
-#ifdef USE_PETSC
-	bool quadratic = (NodesNumber_Quadratic!=NodesNumber_Linear);
+	const bool quadratic = (NodesNumber_Quadratic!=NodesNumber_Linear);
 	if (quadratic)
-		ScreenMessage2("-> this mesh is quadratic.\n");
+		ScreenMessage("-> this mesh is quadratic.\n");
 	else
-		ScreenMessage2("-> this mesh is linear.\n");
-#else
-	bool quadratic = false;
+		ScreenMessage("-> this mesh is linear.\n");
+#ifndef USE_PETSC
 	NodesNumber_Linear = nod_vector.size();
 #endif
 	this->SwitchOnQuadraticNodes(quadratic);
