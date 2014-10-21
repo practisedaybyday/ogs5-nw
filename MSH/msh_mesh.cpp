@@ -343,7 +343,7 @@ void CFEMesh::computeSearchLength(double c)
 	_search_length = mu - c * s;
 //#ifndef NDEBUG
 //	if (c < 2) {
-		ScreenMessage("[CFEMesh::computeSearchLength] computed _search_length = %e, the average value is: %e, standard deviation is: %e\n", _search_length, mu, s );
+		ScreenMessage("-> computed search length = %e, the average value is: %e, standard deviation is: %e\n", _search_length, mu, s );
 //	}
 //#endif
 }
@@ -486,7 +486,8 @@ void CFEMesh::ConnectedElements2Node(bool quadratic)
 **************************************************************************/
 void CFEMesh::ConstructGrid()
 {
-	ScreenMessage("-> executing ConstructGrid() ... \n");
+	ScreenMessage("---------------------------------------------\n");
+	ScreenMessage("Constructing grid ... \n");
 
 	bool done;
 
@@ -525,9 +526,7 @@ void CFEMesh::ConstructGrid()
 		ele_vector[e]->InitializeMembers();
 	}
 
-#ifndef NDEBUG
-	ScreenMessage2("-> find neighbors ... \n");
-#endif
+	ScreenMessage2d("-> find neighbors ... \n");
 	for (size_t e = 0; e < e_size; e++)
 	{
 		CElem* elem(ele_vector[e]);
@@ -816,9 +815,7 @@ void CFEMesh::ConstructGrid()
 	// Node information
 	// 1. Default node index <---> eqs index relationship
 	// 2. Coordiate system flag
-#ifndef NDEBUG
-	ScreenMessage2("-> detect bbox ... \n");
-#endif
+	ScreenMessage2d("-> detect bbox ... \n");
 	double x_sum(0.0), y_sum(0.0), z_sum(0.0);
 	Eqs2Global_NodeIndex.clear();
 	double xyz_max[3] = //NW
@@ -908,17 +905,11 @@ void CFEMesh::ConstructGrid()
 	e_edgeNodes0.resize(0);
 	e_edgeNodes.resize(0);
 
-#ifndef NDEBUG
-	ScreenMessage2("-> computeSearchLength ... \n");
-#endif
+	ScreenMessage2d("-> computeSearchLength ... \n");
 	computeSearchLength();
-#ifndef NDEBUG
-	ScreenMessage2("-> computeMinEdgeLength ... \n");
-#endif
+	ScreenMessage2d("-> computeMinEdgeLength ... \n");
 	computeMinEdgeLength();
-#ifndef NDEBUG
-	ScreenMessage2("-> constructMeshGrid ... \n");
-#endif
+	ScreenMessage2d("-> constructMeshGrid ... \n");
 	constructMeshGrid();
 }
 

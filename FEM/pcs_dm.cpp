@@ -291,7 +291,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 {
 	ScreenMessage("\n================================================\n");
 	ScreenMessage("->Process %d: %s\n", loop_process_number, convertProcessTypeToString (getProcessType()).c_str());
-	ScreenMessage("\n================================================\n");
+	ScreenMessage("================================================\n");
 
 	clock_t dm_time;
 
@@ -503,8 +503,8 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			{
 #endif
 			//Screan printing:
-            std::cout <<"      Starting loading step "<< l << "/" << number_of_load_steps <<".  Load factor: " << LoadFactor << std::endl;
-			std::cout <<"      ------------------------------------------------"<<std::endl;
+            std::cout <<"Starting loading step "<< l << "/" << number_of_load_steps <<".  Load factor: " << LoadFactor << std::endl;
+			std::cout <<"------------------------------------------------"<<std::endl;
 #if defined(USE_MPI) || defined (USE_PETSC)
 		}
 #endif
@@ -513,8 +513,8 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 		while(ite_steps < MaxIteration)
 		{
 			ite_steps++;
-			ScreenMessage("      -->Starting Newton-Raphson iteration: %d/%d\n", ite_steps, MaxIteration);
-			ScreenMessage("      ------------------------------------------------\n");
+			ScreenMessage("-->Starting Newton-Raphson iteration: %d/%d\n", ite_steps, MaxIteration);
+			ScreenMessage("------------------------------------------------\n");
 			// Refresh solver
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
 			eqs_new->Initialize();
@@ -543,7 +543,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			        pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
 			   #endif
 			 */
-			ScreenMessage("      Assembling equation system...\n");
+			ScreenMessage("Assembling equation system...\n");
 #ifdef USE_MPI                        //WW
 			clock_t cpu_time = 0; //WW
 			cpu_time = -clock();
@@ -573,7 +573,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			//
 #endif
 
-			ScreenMessage("      Calling linear solver...\n");
+			ScreenMessage("Calling linear solver...\n");
 			/// Linear solver
 #if defined(USE_PETSC) //|| defined(other parallel libs)//03~04.3012. WW
 //			eqs_new->EQSV_Viewer("eqs" + number2str(aktueller_zeitschritt) + "b");
@@ -678,10 +678,10 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 					pcs_relative_error[0] = Error / Tolerance_global_Newton;
 				}
 				//
-				ScreenMessage("      -->End of Newton-Raphson iteration: %d/%d\n", ite_steps, ite_steps);
-				ScreenMessage("         NR-Error  RHS Norm 0  RHS Norm    Unknowns Norm  Damping\n");
-				ScreenMessage("         %8.2e  %8.2e  %8.2e    %8.2e  %8.2e\n", Error, InitialNorm, Norm, NormU, damping);
-				ScreenMessage("      ------------------------------------------------\n");
+				ScreenMessage("-->End of Newton-Raphson iteration: %d/%d\n", ite_steps, ite_steps);
+				ScreenMessage("   NR-Error  RHS Norm 0  RHS Norm    Unknowns Norm  Damping\n");
+				ScreenMessage("   %8.2e  %8.2e  %8.2e    %8.2e  %8.2e\n", Error, InitialNorm, Norm, NormU, damping);
+				ScreenMessage("------------------------------------------------\n");
 
 				if(Error > 100.0 && ite_steps > 1)
 				{
@@ -714,7 +714,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	// Load step
 	//
 	// For coupling control
-	ScreenMessage("      Deformation process converged.\n");
+	ScreenMessage("Deformation process converged.\n");
 	double sqrt_norm = 0.0;
 	Error = 0.0;
 	if(type / 10 != 4)                    // Partitioned scheme
@@ -737,8 +737,8 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 		Trace_Discontinuity();
 	//
 	dm_time += clock();
-	ScreenMessage("      CPU time elapsed in deformation: %g s\n", (double)dm_time / CLOCKS_PER_SEC);
-	ScreenMessage("      ------------------------------------------------\n");
+	ScreenMessage("CPU time elapsed in deformation: %g s\n", (double)dm_time / CLOCKS_PER_SEC);
+	ScreenMessage("------------------------------------------------\n");
 	// Recovery the old solution.  Temp --> u_n	for flow proccess
 	if(m_num->nls_method != FiniteElement::NL_JFNK)
 		RecoverSolution();
@@ -2558,7 +2558,7 @@ void CRFProcessDeformation::GlobalAssembly()
 #endif
 		//
 	}
-	ScreenMessage("      Global assembly is done\n");
+	ScreenMessage("Global assembly is done\n");
 }
 
 /*!  \brief Assembe matrix and vectors
