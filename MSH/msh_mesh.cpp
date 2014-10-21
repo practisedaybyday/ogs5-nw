@@ -529,6 +529,7 @@ void CFEMesh::ConstructGrid()
 	ScreenMessage2d("-> find neighbors ... \n");
 	for (size_t e = 0; e < e_size; e++)
 	{
+//		ScreenMessage2d("[Element: %d]\n", e);
 		CElem* elem(ele_vector[e]);
 		elem->SetOrder(quadratic);
 		const Math_Group::vec<long>& node_index(elem->GetNodeIndeces());
@@ -654,56 +655,52 @@ void CFEMesh::ConstructGrid()
 		{
 			int edgeIndex_loc0[3];
 			elem->GetLocalIndicesOfEdgeNodes(i, edgeIndex_loc0);
+//			{
+//				std::stringstream ss; for (size_t k = 0; k < nEdgeNodes; k++) ss << e_nodes0[edgeIndex_loc0[k]]->GetIndex() << " ";
+//				ScreenMessage2d("\t edge %d: %s\n", i, ss.str().c_str());
+//			}
 			// Check neighbors
 			done = false;
 			for (size_t k = 0; k < nEdgeNodes; k++) // beginning and end of edge
 			{
-				const size_t
-				nConnElem(
-				        e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs().size());
+				CNode* work_node = e_nodes0[edgeIndex_loc0[k]];
+				const size_t nConnElem(work_node->getConnectedElementIDs().size());
 				for (size_t ei = 0; ei < nConnElem; ei++) // elements connected to edge node
 				{
-					size_t
-					ee(
-					        e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs(
-					                )[ei]);
+					size_t ee(work_node->getConnectedElementIDs()[ei]);
 					if (ee == e)
 						continue;
+//					ScreenMessage2d("\t -> check connecting element %d: \n", i);
 					CElem* connElem(ele_vector[ee]);
-					const Math_Group::vec<long>& node_index_glb(
-					        connElem->GetNodeIndeces());
+					const Math_Group::vec<long>& node_index_glb(connElem->GetNodeIndeces());
 					const size_t nedges(connElem->GetEdgesNumber());
 					connElem->GetEdges(Edges);
 					// Edges of neighbors
 					int edgeIndex_loc[3];
 					for (size_t ii = 0; ii < nedges; ii++) // edges of element connected to edge node
 					{
-						connElem->GetLocalIndicesOfEdgeNodes(ii,
-						                                     edgeIndex_loc);
+						connElem->GetLocalIndicesOfEdgeNodes(ii, edgeIndex_loc);
+//						{
+//							std::stringstream ss; for (size_t kk = 0; kk < nEdgeNodes; kk++) ss << node_index_glb[edgeIndex_loc[kk]] << " ";
+//							ScreenMessage2d("\t edge %d: %s\n", ii, ss.str().c_str());
+//						}
 
-						if ((node_index[edgeIndex_loc0[0]]
-						     == node_index_glb[edgeIndex_loc[0]]
-						     && node_index[edgeIndex_loc0[1]]
-						     == node_index_glb[edgeIndex_loc[1]])
-						    || (node_index[edgeIndex_loc0[0]]
-						        == node_index_glb[edgeIndex_loc[1]]
-						        && node_index[edgeIndex_loc0[1]]
-						        == node_index_glb[edgeIndex_loc[0]])) // check if elements share edge
-
+						if ((node_index[edgeIndex_loc0[0]] == node_index_glb[edgeIndex_loc[0]]
+						     && node_index[edgeIndex_loc0[1]] == node_index_glb[edgeIndex_loc[1]])
+						    || (node_index[edgeIndex_loc0[0]] == node_index_glb[edgeIndex_loc[1]]
+						        && node_index[edgeIndex_loc0[1]] == node_index_glb[edgeIndex_loc[0]])) // check if elements share edge
+						{
 							if (Edges[ii])
 							{
 								Edges0[i] = Edges[ii];
 								Edges[ii]->GetNodes(e_edgeNodes);
-								if ((size_t) node_index[
-								            edgeIndex_loc0[0]]
-								    == e_edgeNodes[1]->GetIndex()
-								    && (size_t) node_index[
-								            edgeIndex_loc0[1]]
-								    == e_edgeNodes[0]->GetIndex()) // check direction of edge
+								if ((size_t) node_index[edgeIndex_loc0[0]] == e_edgeNodes[1]->GetIndex()
+								    && (size_t) node_index[edgeIndex_loc0[1]] == e_edgeNodes[0]->GetIndex()) // check direction of edge
 									Edge_Orientation[i] = -1;
 								done = true;
 								break;
 							}
+						}
 					} //  for(ii=0; ii<nedges; ii++)
 					if (done)
 						break;
