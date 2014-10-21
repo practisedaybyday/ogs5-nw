@@ -488,33 +488,33 @@ using namespace FiniteElement;
 */
 void CRFProcess::InitializeRHS_with_u0(const bool quad)
 {
-  int j, ish;
-  vector<int> ix;
-  vector<double> val;
-  int nidx1; 
+	int j, ish;
+	vector<int> ix;
+	vector<double> val;
+	int nidx1;
 
-  int  g_nnodes = m_msh->getNumNodesLocal(); //GetNodesNumber(false);
-  if(quad)
-      g_nnodes = m_msh->getNumNodesLocal_Q();
-  const int size = g_nnodes * pcs_number_of_primary_nvals;
-  ix.resize(size);
-  val.resize(size);
+	int g_nnodes = m_msh->getNumNodesLocal(); //GetNodesNumber(false);
+	if (quad)
+		g_nnodes = m_msh->getNumNodesLocal_Q();
+	const int size = g_nnodes * pcs_number_of_primary_nvals;
+	ix.resize(size);
+	val.resize(size);
 
-  for (int i = 0; i < pcs_number_of_primary_nvals; i++)
-     {
-       //new time
-       nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
-       for (j = 0; j < g_nnodes; j++) 
-	 {
-	   ish = pcs_number_of_primary_nvals*j + i;
-	   ix[ish] = pcs_number_of_primary_nvals*m_msh->Eqs2Global_NodeIndex[j] + i;
-	   val[ish] = GetNodeValue(j, nidx1);
-	 }
-     }
-  // Assign u0 to x
-  eqs_new->setArrayValues(0, size, &ix[0], &val[0], INSERT_VALUES);
-  eqs_new->AssembleUnkowns_PETSc();
- }
+	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+	{
+		//new time
+		nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
+		for (j = 0; j < g_nnodes; j++)
+		{
+			ish = pcs_number_of_primary_nvals * j + i;
+			ix[ish] = pcs_number_of_primary_nvals * m_msh->Eqs2Global_NodeIndex[j] + i;
+			val[ish] = GetNodeValue(j, nidx1);
+		}
+	}
+	// Assign u0 to x
+	eqs_new->setArrayValues(0, size, &ix[0], &val[0], INSERT_VALUES);
+	eqs_new->AssembleUnkowns_PETSc();
+}
 
 #if 0
 /*!
