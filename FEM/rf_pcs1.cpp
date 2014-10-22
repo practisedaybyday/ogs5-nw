@@ -700,6 +700,8 @@ void CreateEQS_LinearSolver()
       if( pcs_type == FLUID_MOMENTUM )
          continue;
 
+      ScreenMessage2d("-> Process: %s\n", FiniteElement::convertProcessTypeToString(pcs_type).c_str());
+
       if(  (pcs_type == DEFORMATION_H2)
          ||(pcs_type == DEFORMATION_FLOW) 
          ||(pcs_type == DEFORMATION_DYNAMIC) 

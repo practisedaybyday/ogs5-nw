@@ -2,14 +2,15 @@
    The members of class Element definitions.
  */
 
-#include "Configure.h"
+#include "fem_ele_std.h"
+
 
 // C++ STL
 #include <cfloat>
 //#include <iostream>
 //#include <limits>	// PCH to better use system max and min
+#include "Configure.h"
 // Method
-#include "fem_ele_std.h"
 #include "mathlib.h"
 // Problems
 //#include "rf_mfp_new.h"
@@ -6965,7 +6966,7 @@ void CFiniteElementStd::add2GlobalMatrixII(bool updateA, bool updateRHS)
 	double *local_vec = NULL;
 	petsc_group::PETScLinearSolver *eqs = pcs->eqs_new;
 
-#define n_assmb_petsc_test
+//#define assmb_petsc_test
 #ifdef assmb_petsc_test
 	char rank_char[10];
 	sprintf(rank_char, "%d", eqs->getMPI_Rank());
@@ -7048,30 +7049,31 @@ void CFiniteElementStd::add2GlobalMatrixII(bool updateA, bool updateRHS)
 
     //TEST
 #ifdef assmb_petsc_test
-      	{
-      	  os_t<<"\n------------------"<<act_nodes * dof<<"\n";
-       StiffMatrix->Write(os_t);
-       RHS->Write(os_t);
-       
-       os_t<<"Node ID: ";
-       for( i=0; i<nnodes ; i++)
-	 {
-	   os_t<<MeshElement->nodes[i]->GetEquationIndex()<<" ";
-	 }
-       os_t<<"\n";
-       os_t<<"Act. Local ID: ";
-       for( i=0; i<act_nodes ; i++)
-	 {
-	   os_t<<local_idx[i]<<" ";
-	 }
-       os_t<<"\n";
-         os_t<<"Act. Global ID:";
-       for(i=0; i<act_nodes * dof; i++)
-	 {
-	   os_t<<idxm[i]<<" ";
-	 }
-       os_t<<"\n";
-       	}
+	{
+		os_t << "\n------------------" << act_nodes * dof << "\n";
+		os_t << "Element ID: " << index << "\n";
+		StiffMatrix->Write(os_t);
+		RHS->Write(os_t);
+
+		os_t << "Node ID: ";
+		for (int i = 0; i < nnodes; i++)
+		{
+			os_t << MeshElement->nodes[i]->GetEquationIndex() << " ";
+		}
+		os_t << "\n";
+		os_t << "Act. Local ID: ";
+		for (int i = 0; i < act_nodes; i++)
+		{
+			os_t << local_idx[i] << " ";
+		}
+		os_t << "\n";
+		os_t << "Act. Global ID:";
+		for (int i = 0; i < act_nodes * dof; i++)
+		{
+			os_t << idxm[i] << " ";
+		}
+		os_t << "\n";
+	}
 	os_t.close();
 #endif //ifdef assmb_petsc_test
 

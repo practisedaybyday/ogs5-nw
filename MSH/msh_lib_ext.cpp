@@ -95,6 +95,7 @@ void FEMRead(const string& file_base_name,
 	CFEMesh *mesh = new CFEMesh(geo_obj, unique_name);
 	mesh_vec.push_back(mesh);
 
+	MPI_Barrier(MPI_COMM_WORLD);
 	ScreenMessage("-> Parallel reading the partitioned mesh\n");
 	for(int i=0; i<mysize; i++)
 	{
@@ -117,6 +118,12 @@ void FEMRead(const string& file_base_name,
 			is>>ws;
 		}
 		MPI_Bcast(mesh_header,  nheaders, MPI_INT, 0, MPI_COMM_WORLD);
+		if (i==myrank) {
+			std::stringstream ss;
+			for (int j=0; j<nheaders; j++)
+				ss << mesh_header[j] << " ";
+			ScreenMessage2d("-> header: %s\n", ss.str().c_str());
+		}
 		//cout<<"\ncccccccccc "<<mesh_header[0]<<"    "<<mesh_header[1]
 		//	<<"   " <<mesh_header[2]<<"  "<<mesh_header[3]<<endl;
 
@@ -294,7 +301,9 @@ void FEMRead(const string& file_base_name,
 
 
 	MPI_Barrier (MPI_COMM_WORLD);
-	ScreenMessage2("mesh: nnodes_gl=%d, nnodes_gq=%d, nnodes_ll=%d, nnodes_lq=%d\n", mesh->GetNodesNumber(false), mesh->GetNodesNumber(true), mesh->getNumNodesLocal(), mesh->getNumNodesLocal_Q());
+	ScreenMessage2("-> nelements_g=%d, nnodes_gl=%d, nnodes_gq=%d, nnodes_ll=%d, nnodes_lq=%d\n", mesh->getElementVector().size(), mesh->GetNodesNumber(false), mesh->GetNodesNumber(true), mesh->getNumNodesLocal(), mesh->getNumNodesLocal_Q());
+	MPI_Barrier (MPI_COMM_WORLD);
+
 	mesh->ConstructGrid();
 	mesh->FillTransformMatrix();
 	//mesh->calMaximumConnectedNodes();

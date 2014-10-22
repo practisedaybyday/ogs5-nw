@@ -836,6 +836,8 @@ void Problem::PCSCreate()
 
 
 #if defined(USE_PETSC) // || defined(other solver libs)//03.3012. WW
+	ScreenMessage("---------------------------------------------\n");
+	ScreenMessage("Create linear solvers");
 	CreateEQS_LinearSolver();
 #endif
 

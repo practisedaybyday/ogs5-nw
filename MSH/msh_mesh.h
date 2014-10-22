@@ -186,61 +186,68 @@ public:
 	void ConfigHighOrderElements(); 
 
 	/*!
-	   Fill data for subdomain mesh
-           @param header  : mesh header
-           @param s_nodes : mesh nodes
-	*/
+	 Fill data for subdomain mesh
+	 @param header  : mesh header
+	 @param s_nodes : mesh nodes
+	 */
 	void setSubdomainNodes(int *header, const MeshNodes *s_nodes);
 	/*!
-	   Fill data for subdomain mesh
-           @param header    : mesh header
-           @param elem_info : element information
-           @param inside    : indicator for elements that are inside the subdomain
-	*/
+	 Fill data for subdomain mesh
+	 @param header    : mesh header
+	 @param elem_info : element information
+	 @param inside    : indicator for elements that are inside the subdomain
+	 */
 	void setSubdomainElements(int *header, const int *elem_info, const bool inside);
 	int calMaximumConnectedNodes();
-        /// Get number of nodes of the entire mesh       
-        int getNumNodesGlobal() const
-        {
-	   return glb_NodesNumber_Linear; 
-        }
-        /// Get number of nodes of the entire mesh of quadratic elements      
-        int getNumNodesGlobal_Q() const
-        {
-	   return glb_NodesNumber_Quadratic; 
-        }
-        /// Get number of nodes of the subdomain mesh       
-        int getNumNodesLocal() const
-        {
-	   return loc_NodesNumber_Linear; 
-        }
-        /// Get number of nodes of the subdomain mesh of quadratic elements      
-        int getNumNodesLocal_Q() const
-        {
-	   return loc_NodesNumber_Quadratic; 
-        }
-        /// is the node owned by this domain
-        bool isNodeLocal(long node_id) const
-        {
-            // node numbering is assumed in the following order
-            // 1. local linear nodes
-            // 2. ghost linear nodes
-            // 3. local quad nodes
-            // 4. ghost quad nodes
-            if (isHigherOrderNode(node_id)) {
-                const size_t loc_nnodes_quad_only = loc_NodesNumber_Quadratic-loc_NodesNumber_Linear;
-                return static_cast<size_t>(node_id) < (NodesNumber_Linear+loc_nnodes_quad_only);
-            } else {
-                return node_id < loc_NodesNumber_Linear;
-            }
-            return true;
-        };
+	/// Get number of nodes of the entire mesh
+	int getNumNodesGlobal() const
+	{
+		return glb_NodesNumber_Linear;
+	}
+	/// Get number of nodes of the entire mesh of quadratic elements
+	int getNumNodesGlobal_Q() const
+	{
+		return glb_NodesNumber_Quadratic;
+	}
+	/// Get number of nodes of the subdomain mesh
+	int getNumNodesLocal() const
+	{
+		return loc_NodesNumber_Linear;
+	}
+	/// Get number of nodes of the subdomain mesh of quadratic elements
+	int getNumNodesLocal_Q() const
+	{
+		return loc_NodesNumber_Quadratic;
+	}
+	/// is the node owned by this domain
+	bool isNodeLocal(long node_id) const
+	{
+		// node numbering is assumed in the following order
+		// 1. local linear nodes
+		// 2. ghost linear nodes
+		// 3. local quad nodes
+		// 4. ghost quad nodes
+		if (isHigherOrderNode(node_id))
+		{
+			const size_t loc_nnodes_quad_only = loc_NodesNumber_Quadratic - loc_NodesNumber_Linear;
+			return static_cast<size_t>(node_id) < (NodesNumber_Linear + loc_nnodes_quad_only);
+		}
+		else
+		{
+			return node_id < loc_NodesNumber_Linear;
+		}
+		return true;
+	}
 #else
-        /// is the node owned by this domain
-        bool isNodeLocal(long) const {return true; }
+	/// is the node owned by this domain
+	bool isNodeLocal(long) const
+	{   return true;}
 #endif
-        /// is the node used for higher-order elements
-        bool isHigherOrderNode(long node_id) const {return static_cast<size_t>(node_id) >= NodesNumber_Linear;};
+	/// is the node used for higher-order elements
+	bool isHigherOrderNode(long node_id) const
+	{
+		return static_cast<size_t>(node_id) >= NodesNumber_Linear;
+	}
 
 	//
 //         void RenumberNodesForGlobalAssembly();
