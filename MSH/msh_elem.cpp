@@ -6,13 +6,14 @@
    last modified
 **************************************************************************/
 
-#include "mathlib.h"
-#include <cmath>
-#include <cstdlib>                                //WW
-#include <float.h>                                //WW
-// MSHLib
-//WW#include "MSHEnums.h" // KR 2010/11/15
 #include "msh_elem.h"
+
+#include <cmath>
+#include <cstdlib>
+#include <cfloat>
+#include <iostream>
+
+#include "mathlib.h"
 
 namespace MeshLib
 {
@@ -737,6 +738,7 @@ void CElem::Read(std::istream& is, int fileType)
 			break;
 		default:
 			geo_type = MshElemType::INVALID;
+			break;
 		}
 		index--;
 		break;
@@ -1787,10 +1789,10 @@ void CElem::setElementProperties(MshElemType::type t, bool isFace)
 		break;
 	}
 	if (quadratic) {
-	    if (this->nodes_index.Size() !=  nnodesHQ)
+	    if (this->nodes_index.Size() !=  (unsigned)nnodesHQ)
 	        this->nodes_index.resize( nnodesHQ);
 	} else {
-        if (this->nodes_index.Size() !=  nnodes)
+        if (this->nodes_index.Size() !=  (unsigned)nnodes)
 	this->nodes_index.resize(nnodes);
 	}
 }
