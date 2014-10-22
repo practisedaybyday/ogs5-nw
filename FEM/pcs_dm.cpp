@@ -77,7 +77,7 @@ CRFProcessDeformation()
 	  counter(0), InitialNormR0(0.0)
 
 {
-	error_k0 = 1.0e10;
+	norm_du0_pre_cpl_itr = 0.0;
 	idata_type = none;
 	_isInitialStressNonZero = false; //NW
 }
@@ -106,15 +106,10 @@ CRFProcessDeformation::~CRFProcessDeformation()
 			WriteSolution();
 	}
 	//
-	MeshLib::CElem* elem = NULL;
 	for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
 	{
-		elem = m_msh->ele_vector[i];
-//		if (elem->GetMark())      // Marked for use
-//		{
-			delete ele_value_dm[i];
-			ele_value_dm[i] = NULL;
-//		}
+		delete ele_value_dm[i];
+		ele_value_dm[i] = NULL;
 	}
 	if(enhanced_strain_dm > 0)
 	{
@@ -279,6 +274,43 @@ void CRFProcessDeformation::InitialMBuffer()
 	}
 }
 
+double CRFProcessDeformation::getNormOfDisplacements()
+{
+#ifdef USE_PETSC
+	const int g_nnodes = m_msh->getNumNodesLocal_Q();
+	const int size = g_nnodes * pcs_number_of_primary_nvals;
+	vector<int> ix(size);
+	vector<double> val(size);
+	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+	{
+		const int nidx0 = GetNodeValueIndex(pcs_primary_function_name[i]);
+		for (int j = 0; j < g_nnodes; j++)
+		{
+			int ish = pcs_number_of_primary_nvals * j + i;
+			ix[ish] = pcs_number_of_primary_nvals * m_msh->Eqs2Global_NodeIndex[j] + i;
+			val[ish] = GetNodeValue(j, nidx0 + 1);
+		}
+	}
+	eqs_new->setArrayValues(0, size, &ix[0], &val[0], INSERT_VALUES);
+	eqs_new->AssembleUnkowns_PETSc();
+	double norm_u_k1 = eqs_new->GetVecNormX();
+#else
+	const int g_nnodes = m_msh->GetNodesNumber(true);
+	const int size = g_nnodes * pcs_number_of_primary_nvals;
+	double val = .0;
+	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+	{
+		const int nidx0 = GetNodeValueIndex(pcs_primary_function_name[i]);
+		for (int j = 0; j < g_nnodes; j++)
+		{
+			val += std::pow(GetNodeValue(j, nidx0+1), 2.0);
+		}
+	}
+	double norm_u_k1 = std::sqrt(val);
+#endif
+	return norm_u_k1;
+}
+
 /*************************************************************************
    ROCKFLOW - Function: CRFProcess::
    Task:  Solve plastic deformation by generalized Newton-Raphson method
@@ -294,37 +326,17 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	ScreenMessage("================================================\n");
 
 	clock_t dm_time;
-
-	//-------------------------------------------------------
-	// Controls for Newton-Raphson steps
-	double damping = 1.0;
-	double NormDU, NormR = 0.0, Error1, ErrorR = 0.0;
-	double ErrorU1, ErrorU = 0.0;
-	int MaxIteration = m_num->nls_max_iterations;
-	const string delim = " | ";
-	//----------------------------------------------------------
 	dm_time = -clock();
-	//
+
+	counter++; // Times of this method  to be called
+	// For pure elesticity
+	const bool isLinearProblem = (pcs_deformation <= 100 && !fem_dm->dynamic);
+
+	// setup mesh
 	m_msh->SwitchOnQuadraticNodes(true);
-	//
 	if(hasAnyProcessDeactivatedSubdomains || NumDeactivated_SubDomains > 0 ||
 	   num_type_name.find("EXCAVATION") != string::npos)
 		CheckMarkedElement();
-
-	counter++; // Times of this method  to be called
-	LoadFactor = 1.0;
-
-	// For pure elesticity
-	bool isLinearProblem = false;
-	if(pcs_deformation <= 100 && !fem_dm->dynamic)
-	{
-		isLinearProblem = true;
-		MaxIteration = 1;
-	}
-
-	// For monolithic scheme
-	if(type / 10 == 4)
-		number_of_load_steps = 1;
 
 	// system matrix
 #if defined (USE_PETSC)
@@ -348,11 +360,17 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	// Compute the ratio of the current load to initial yield load
 	// ---------------------------------------------------------------
 	number_of_load_steps = 1;
-	int l;
-	for(l = 1; l <= number_of_load_steps; l++)
+	if(type / 10 == 4) // For monolithic scheme
+		number_of_load_steps = 1;
+	LoadFactor = 1.0;
+	double damping = 1.0;
+	for(int l = 1; l <= number_of_load_steps; l++)
 	{
 		// Initialize incremental displacement: w=0
 		InitializeNewtonSteps();
+		double NormDU = 0.0, NormR = 0.0;
+		double ErrorR = 0.0, ErrorU = 0.0;
+		const int MaxIteration = isLinearProblem ? 1 : m_num->nls_max_iterations;
 		if(!isLinearProblem)
 		{
 			ErrorR = ErrorU = NormR = NormDU = 1.0e+8;
@@ -382,7 +400,7 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 				GlobalAssembly();
 
 			// init solution vector
-			if(type != 41)
+			if(isLinearProblem && type != 41)
 #if defined(USE_PETSC)
 				InitializeRHS_with_u0();
 #else
@@ -418,53 +436,32 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 				NormDU = NormOfUnkonwn_orRHS();
 #endif
 
-//				if(ite_steps == 1 && this->first_coupling_iteration)
-				if(ite_steps == 1)
+				if (ite_steps == 1)
 				{
+					if(this->first_coupling_iteration) {
+						InitialNormDU_coupling = NormDU;
+						norm_du0_pre_cpl_itr = .0;
+					}
 					InitialNormR0 = NormR;
 					InitialNormDU0 = NormDU;
-					if(counter == 1)
-						InitialNormDU = NormDU;
 				}
 
-				// store previous errors
-				Error1 = ErrorR;
-				ErrorU1 = ErrorU;
-
 				// calculate errors
-				ErrorR = NormR / InitialNormR0;
-				ErrorU = NormDU / InitialNormDU0;
-//				if(NormR < Tolerance_global_Newton && ErrorR > NormR)
-//					ErrorR = NormR;
-//				if((NormDU / InitialNormDU) <= Tolerance_global_Newton)
-//					ErrorR = NormDU / InitialNormDU;
+				ErrorR = NormR / (InitialNormR0==0 ? 1 : InitialNormR0);
+				ErrorU = NormDU / (InitialNormDU0==0 ? 1 : InitialNormDU0);
 
 				// Compute damping for Newton-Raphson step
 				damping = 1.0;
-				//           if(ErrorR/Error1>1.0e-1) damping=0.5;
+
 #if 0
 				if(ErrorR / Error1 > 1.0e-1 || ErrorU / ErrorU1 > 1.0e-1)
 					damping = 0.5;
 #endif
-//				if(ErrorU < ErrorR)
-//					ErrorR = ErrorU;
 
-				// JT: Store the process and coupling errors
-				pcs_num_dof_errors = 1;
-				if(ite_steps == 1){
-					pcs_absolute_error[0] = NormDU;
-					pcs_relative_error[0] = pcs_absolute_error[0] / Tolerance_global_Newton;
-					cpl_max_relative_error = pcs_relative_error[0];
-					cpl_num_dof_errors = 1;
-				}
-				else{
-					pcs_absolute_error[0] = ErrorR;
-					pcs_relative_error[0] = ErrorR / Tolerance_global_Newton;
-				}
 				//
 				ScreenMessage("-->End of Newton-Raphson iteration: %d/%d\n", ite_steps, MaxIteration);
 				ScreenMessage("   NR-Error  RHS Norm 0  RHS Norm    Unknowns Norm  Damping\n");
-				ScreenMessage("   %8.2e  %8.2e  %8.2e    %8.2e  %8.2e\n", ErrorR, InitialNormR0, NormR, NormDU, damping);
+				ScreenMessage("   %8.2e  %8.2e    %8.2e    %8.2e       %8.2e\n", ErrorR, InitialNormR0, NormR, NormDU, damping);
 				ScreenMessage("------------------------------------------------\n");
 
 				if(ErrorR > 100.0 && ite_steps > 1)
@@ -493,37 +490,9 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			CalcBC_or_SecondaryVariable_Dynamics();
 
 		// Update displacements, u=u+w for the Newton-Raphson
-		// u1 = u0 for pure isLinearProblem
+		// u1 = u0 for linear problems
 		UpdateIterativeStep(1.0,1);
 	} // Load step
-
-//	ScreenMessage("Deformation process converged.\n");
-
-	// For coupling control
-	double norm_u = 0.0; //TODO norm of solution at current coupling iteration
-	double coupling_error = 0; //TODO ||u^k1-u^k||/||u^0||
-	if(type / 10 != 4) // Partitioned scheme
-	{
-#ifdef USE_PETSC
-		NormDU =  eqs_new->GetVecNormX();
-#else
-		for(size_t n = 0; n < m_msh->GetNodesNumber(true); n++)
-			for(l = 0; l < pcs_number_of_primary_nvals; l++)
-			{
-				NormDU = GetNodeValue(n, fem_dm->Idx_dm1[l]);
-				ErrorR += NormDU * NormDU;
-			}
-		NormDU = ErrorR;
-		ErrorR = sqrt(NormDU);
-		norm_u = ErrorR;
-		ErrorR = .0;
-#endif
-	}
-	if(this->first_coupling_iteration)
-		coupling_error = fabs(norm_u - error_k0) / error_k0;
-	else
-		coupling_error = norm_u;
-	error_k0 = norm_u;
 
 	// Determine the discontinuity surface if enhanced strain methods is on.
 	if(enhanced_strain_dm > 0)
@@ -533,6 +502,16 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 	if(m_num->nls_method != FiniteElement::NL_JFNK)
 		RecoverSolution();
 
+	// get coupling error
+	const double norm_u_k1 = getNormOfDisplacements(); //InitialNormDU_coupling
+	const double cpl_abs_error = std::abs(InitialNormDU0 - norm_du0_pre_cpl_itr) / (norm_u_k1==0 ? 1 : norm_u_k1);
+	cpl_max_relative_error = cpl_abs_error / m_num->cpl_error_tolerance[0];
+	cpl_num_dof_errors = 1;
+	ScreenMessage("   ||u^k+1||=%g, ||du^k+1||-||du^k||=%g\n", norm_u_k1, std::abs(InitialNormDU0 - norm_du0_pre_cpl_itr));
+
+	// store current du0
+	norm_du0_pre_cpl_itr = InitialNormDU0;
+
 #ifdef NEW_EQS                              //WW
 	// Also allocate temporary memory for linear solver. WW
 	eqs_new->Clean();
@@ -540,11 +519,11 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 
 	//
 	dm_time += clock();
-	ScreenMessage("PCS error: %g\n", pcs_relative_error[0]);
+	ScreenMessage("PCS error: %g\n", cpl_max_relative_error);
 	ScreenMessage("CPU time elapsed in deformation: %g s\n", (double)dm_time / CLOCKS_PER_SEC);
 	ScreenMessage("------------------------------------------------\n");
 
-	return coupling_error;
+	return cpl_max_relative_error;
 }
 
 /**************************************************************************
