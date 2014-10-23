@@ -1012,7 +1012,7 @@ void CFiniteElementVec::LocalAssembly(const int update)
 	  {                             //Moved here from GlobalAssemly. 08.2010. WW
 #if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
 	  //TODO
-#elif NEW_EQS
+#elif defined(NEW_EQS)
 		b_rhs = m_dom->eqsH->b;
 #else
 		b_rhs = m_dom->eqs->b;
@@ -1023,7 +1023,7 @@ void CFiniteElementVec::LocalAssembly(const int update)
 	  {
 #if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
 	    // TODO
-#elif NEW_EQS
+#elif defined(NEW_EQS)
 		b_rhs = pcs->eqs_new->b;
 #else
 		b_rhs = pcs->eqs->b;	  
