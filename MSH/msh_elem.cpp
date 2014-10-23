@@ -285,7 +285,7 @@ CElem::CElem(CElem const &elem) :
 	patch_index (elem.patch_index),
 	area (elem.area)
 #ifndef OGS_ONLY_TH
-	,angle (new double(*(elem.angle)))
+	,angle (NULL)
 #endif
 {
 	for (size_t k(0); k < 3; k++)
@@ -299,7 +299,14 @@ CElem::CElem(CElem const &elem) :
 	for (size_t k(0); k < (elem.nodes).Size(); k++)
 		nodes[k] = new CNode ((elem.nodes[k])->GetIndex(), (elem.nodes[k])->getData());
 
-    transform_tensor = NULL;
+	transform_tensor = NULL;
+
+#ifndef OGS_ONLY_TH
+	if (elem.angle) {
+		AllocateMeomoryforAngle();
+		for (int i=0; i<3; i++) angle[i] = elem.angle[i];
+	}
+#endif
 
 	// copy edges
 //	edges = vec<CEdge*> ((elem.edges).Size());
