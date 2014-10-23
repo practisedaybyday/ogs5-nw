@@ -1387,7 +1387,7 @@ int CElem::GetElementFacesPri(int Face, int* FaceNode)
 			FaceNode[4] = 14;
 			FaceNode[5] =  8;
 			FaceNode[6] = 12;
-			FaceNode[7] = 10;
+			FaceNode[7] = 11;
 			nn = 8;
 		}
 		break;
