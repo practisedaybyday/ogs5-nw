@@ -3,22 +3,14 @@
    Designed and programmed by WW, 06/2004
  */
 
-//#include "makros.h"
-//#include <iostream>
+#include "fem_ele.h"
+
 #include <cfloat>
+
 #include "msh_elem.h"
-#include "fem_ele_std.h"
-/* Objekte */
 #include "rf_pcs.h"
 #include "femlib.h"
 #include "mathlib.h"
-//#include "matrix_class.h"
-// MSHLib
-//#include "msh_elem.h"
-// Will be removed when new FEM is ready
-//=============================================
-//FiniteElement::CElement* elem_dm = NULL;
-//=============================================
 
 namespace FiniteElement
 {

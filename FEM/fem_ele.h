@@ -5,7 +5,6 @@
  */
 
 #ifndef fem_INC
-
 #define fem_INC
 
 // C++
@@ -19,27 +18,27 @@
 // MSH
 #include "par_ddc.h"                              //OK //Moved from fem_ele_std.h. WW
 #endif 
-
-
-
 #include "MSHEnums.h"
 
 namespace Math_Group
-{ class SymMatrix;
-  class Matrix;
-  typedef Matrix Vec;
+{
+class SymMatrix;
+class Matrix;
+typedef Matrix Vec;
 }
 namespace MeshLib
-{ class CElem;
-  class CNode;
-  class CEdge;
+{
+class CElem;
+class CNode;
+class CEdge;
 }
 class CRFProcess;
-
 namespace  process { class CRFProcessDeformation;}
+
 
 namespace FiniteElement
 {
+
 struct ExtrapolationMethod
 {
 	enum type
@@ -287,8 +286,6 @@ public:
 	Matrix* GetCouplingMatrixB() {return CouplingB; }
 	Vec* GetRHS() {return RHS; }
 private:
-	//TODO in more gernal way for the case of sym and unsym. WW      SymMatrix *Mass;
-	//      SymMatrix *Laplace;
 	Matrix* Mass;
 	Matrix* Mass_notsym;
 	Matrix* Laplace;
@@ -300,11 +297,6 @@ private:
 	Matrix* Stiffness;
 	Vec* RHS;
 };
-}                                                 // end namespace
+} // end namespace
 
-//=============================================
-// For up coupling caculation in cel_*.cpp
-// Will be removed when new FEM is ready
-extern FiniteElement::CElement* elem_dm;
-//=============================================
 #endif

@@ -3,11 +3,12 @@
    Designed and programmed by WW, 06/2004
  */
 
-#include "Configure.h"
+#include "fem_ele_vec.h"
 
 #include <cfloat>
 //#include "makros.h"
 //#include <iostream>
+#include "Configure.h"
 // Sytem matrix
 #include "mathlib.h"
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
@@ -26,7 +27,6 @@
 //#include "msh_elem.h"
 // FEMLib
 //#include "fem_ele.h"
-#include "fem_ele_vec.h"
 //#include "rf_pcs.h"
 #include "tools.h"                                //12.2009. WW
 // Equation

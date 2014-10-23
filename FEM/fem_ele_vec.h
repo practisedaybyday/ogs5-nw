@@ -6,7 +6,7 @@
 #ifndef fem_dm_INC
 #define fem_dm_INC
 #include "fem_ele.h"
-//#include "matrix_class.h"
+#include "matrix_class.h"
 // Material properties
 //#include "rf_mfp_new.h"
 //#include "rf_mmp_new.h"
