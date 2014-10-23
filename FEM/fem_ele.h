@@ -256,7 +256,7 @@ public:
 	// Allocate memory for strain coupling matrix
 	void AllocateMemory(CElem* ele, int type = 0);
 	// Set members
-	void SetMass(SymMatrix* mass) { Mass = mass; }
+	void SetMass(Matrix* mass) { Mass = mass; }
 	void SetMass_notsym(Matrix* mass) { Mass_notsym = mass; }
 	void SetLaplace(Matrix* laplace) { Laplace = laplace; }
 	void SetStiffness(Matrix* x) { Stiffness = x; }
@@ -267,7 +267,7 @@ public:
 	void SetCouplingMatrixB(Matrix* cplM) {CouplingB = cplM; }
 	void SetRHS(Vec* rhs) {RHS = rhs; }
 	// Get members
-	SymMatrix* GetMass() {return Mass; }
+	Matrix* GetMass() {return Mass; }
 	Matrix* GetMass_notsym() {return Mass_notsym; }
 	Matrix* GetLaplace() {return Laplace; }
 	Matrix* GetStiffness() {return Stiffness; }
@@ -289,7 +289,7 @@ public:
 private:
 	//TODO in more gernal way for the case of sym and unsym. WW      SymMatrix *Mass;
 	//      SymMatrix *Laplace;
-	SymMatrix* Mass;
+	Matrix* Mass;
 	Matrix* Mass_notsym;
 	Matrix* Laplace;
 	Matrix* Advection;

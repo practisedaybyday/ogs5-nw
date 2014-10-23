@@ -104,7 +104,7 @@ CFiniteElementVec::CFiniteElementVec(process::CRFProcessDeformation* dm_pcs,
 			Idx_dm1[2] = Idx_dm1[2] + 1;
 			Idx_Vel[2] = pcs->GetNodeValueIndex("VELOCITY_DM_Z");
 		}
-		Mass = new SymMatrix(20);
+		Mass = new Matrix(20, 20);
 		dAcceleration = new Vec(60);
 
 		beta2 = dm_pcs->m_num->GetDynamicDamping_beta2();
@@ -576,7 +576,7 @@ void CFiniteElementVec::SetMemory()
 
 	if(dynamic)
 	{
-		Mass->LimitSize(nnodesHQ);
+		Mass->LimitSize(nnodesHQ, nnodesHQ);
 		dAcceleration->LimitSize(nnodesHQ * dim);
 	}
 }
