@@ -93,6 +93,7 @@ public:
 	double CaclMaxiumLoadRatio();
 
 	// Write stresses
+	std::string GetGaussPointStressFileName();
 	void WriteGaussPointStress();
 	void ReadGaussPointStress();
 	void ReadElementStress();

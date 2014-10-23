@@ -2332,6 +2332,18 @@ void CRFProcessDeformation::UpdateStress()
     fem_dm->ConfigureCoupling(this, Shift);
    }
  */
+
+std::string CRFProcessDeformation::GetGaussPointStressFileName()
+{
+	std::string m_file_name = FileName;
+#if defined(USE_PETSC)
+	m_file_name += "_rank" + number2str(myrank);
+#endif
+	m_file_name += ".sts";
+	return m_file_name;
+}
+
+
 /**************************************************************************
    ROCKFLOW - Funktion: WriteGaussPointStress()
 
@@ -2346,7 +2358,7 @@ void CRFProcessDeformation::UpdateStress()
 void CRFProcessDeformation::WriteGaussPointStress()
 {
 	long i;
-	string StressFileName = FileName + ".sts";
+	string StressFileName = GetGaussPointStressFileName();
 	fstream file_stress(StressFileName.data(),ios::binary | ios::out);
 	ElementValue_DM* eleV_DM = NULL;
 
@@ -2389,12 +2401,7 @@ void CRFProcessDeformation::WriteGaussPointStress()
 void CRFProcessDeformation::ReadGaussPointStress()
 {
 	long i, index, ActiveElements;
-	string StressFileName;
-#ifdef MFC                                  //WW
-	StressFileName = ext_file_name + ".sts";
-#else
-	StressFileName = FileName + ".sts";
-#endif
+	string StressFileName = GetGaussPointStressFileName();
 	fstream file_stress (StressFileName.data(),ios::binary | ios::in);
 	ElementValue_DM* eleV_DM = NULL;
 	//
