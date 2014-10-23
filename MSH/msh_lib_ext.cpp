@@ -251,7 +251,7 @@ void FEMRead(const string& file_base_name,
 					counter++;
 				}
 				is>> elem_info[counter];
-				const int nn_e_g =  elem_info[counter];
+				//const int nn_e_g =  elem_info[counter];
 				counter++;
 				// ghost nodes for linear element
 				is>> elem_info[counter];

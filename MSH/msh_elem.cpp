@@ -37,13 +37,13 @@ CElem::CElem(size_t Index)
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
 	normal_vector = NULL;
 	area = 1.0;                               //WW
-    transform_tensor = NULL;
+	transform_tensor = NULL;
 #ifndef OGS_ONLY_TH
 	matgroup_view = 0;
-    grid_adaptation = -1;
+	grid_adaptation = -1;
 	excavated = -1;                           //WX
-    patch_index = 0;
-    angle = NULL;
+	patch_index = 0;
+	angle = NULL;
 	neumann = 0;
 	courant = 0;
 	representative_length = .0;
@@ -102,8 +102,8 @@ CElem::CElem(size_t Index, CElem* onwer, int Face) :
 	CCore(Index), normal_vector(NULL), owner(onwer)
 {
 	int i, j, k, n, ne;
-	int faceIndex_loc[10];
-	int edgeIndex_loc[10];
+	int faceIndex_loc[10] = {};
+	int edgeIndex_loc[10] = {};
 	selected = 0;
 	geo_type = MshElemType::INVALID;
 	nedges = 0;

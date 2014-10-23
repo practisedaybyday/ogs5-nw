@@ -1,4 +1,5 @@
-#include "makros.h"
+
+#include "pcs_dm.h"
 
 #include <cfloat>
 #include <cmath>
@@ -6,6 +7,9 @@
 #include <iomanip>
 #include <iostream>
 #include <time.h>
+
+#include "makros.h"
+#include "StringTools.h"
 
 #include "FEMEnums.h"
 #include "mathlib.h"
@@ -23,7 +27,6 @@
 #include "matrix_routines.h"
 #endif
 #include "fem_ele_vec.h"
-#include "pcs_dm.h"
 #include "rf_msp_new.h"
 #include "rf_tim_new.h"
 // Excavation
@@ -37,8 +40,6 @@
 #include "rf_ic_new.h"
 
 #include "rf_node.h"
-
-using namespace std;
 
 // Solver
 #if defined(NEW_EQS)
@@ -59,10 +60,12 @@ bool GravityForce = true;
 
 bool Localizing = false;                          // for tracing localization
 // Last discontinuity element correponding to SeedElement
+
+using namespace std;
+
 vector<DisElement*> LastElement(0);
 vector<long> ElementOnPath(0);                    // Element on the discontinuity path
 
-using namespace std;
 using FiniteElement::CFiniteElementVec;
 using FiniteElement::CFiniteElementStd;
 using FiniteElement::ElementValue_DM;

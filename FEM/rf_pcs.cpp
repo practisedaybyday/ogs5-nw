@@ -9412,10 +9412,10 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		// LINEAR SOLUTION
 		if(m_num->nls_method == FiniteElement::INVALID_NL_TYPE)
 		{
-			std::cout << "      -->LINEAR solution complete. " << std::endl;
+			ScreenMessage("      -->LINEAR solution complete. \n");
 			if(write_std_errors){
 				for(ii = 0; ii < pcs_number_of_primary_nvals; ii++){
-					 std::cout << "         PCS error DOF["<< ii <<"]: " << pcs_absolute_error[ii] << std::endl;
+					 ScreenMessage( "         PCS error DOF[%d]: %g\n", ii, pcs_absolute_error[ii]);
 				}
 			}
 			return;
