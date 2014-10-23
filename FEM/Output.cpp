@@ -2876,17 +2876,18 @@ double COutput::NODFlux(long /*nod_number*/)
 	   flux_sum += m_pcs->GetNodeValue(gnode,NodeIndex[k]);
 	 */
 	// All elements at node //OK
-#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+//#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
+//	return 0;
+//#elif NEW_EQS                                 //WW. 07.11.2008
+//	return 0.;                            //To do: m_pcs->eqs_new->b[nod_number];
+//#else
+//	// Element nodal RHS contributions
+//	m_pcs->getEQSPointer()->b[nod_number] = 0.0;
+//	MeshLib::CNode* nod = m_msh->nod_vector[nod_number];
+//	m_pcs->AssembleParabolicEquationRHSVector(nod);
+//	return m_pcs->getEQSPointer()->b[nod_number];
+//#endif
 	return 0;
-#elif NEW_EQS                                 //WW. 07.11.2008
-	return 0.;                            //To do: m_pcs->eqs_new->b[nod_number];
-#else
-	// Element nodal RHS contributions
-	m_pcs->getEQSPointer()->b[nod_number] = 0.0;
-	MeshLib::CNode* nod = m_msh->nod_vector[nod_number];
-	m_pcs->AssembleParabolicEquationRHSVector(nod);
-	return m_pcs->getEQSPointer()->b[nod_number];
-#endif
 }
 
 void COutput::NODWriteLAYDataTEC(int time_step_number)
