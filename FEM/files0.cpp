@@ -29,9 +29,14 @@
    03/2003     RK         Quellcode bereinigt, Globalvariablen entfernt
  */
 /**************************************************************************/
+
+#include "files0.h"
+
 #include "Configure.h"
 //#include <iostream>
-#include "../Base/MemWatch.h"
+#include "MemWatch.h"
+#include "display.h"
+#include "memory.h"
 //#include "makros.h"
 //#ifndef NEW_EQS //WW. 07.11.2008
 //#include "solver.h"
@@ -63,7 +68,6 @@
 //#include "femlib.h"
 /* GeoLib */
 //#include "geo_lib.h"
-#include "files0.h"
 // MSHLib
 //#include "msh_lib.h"
 //#include "gs_project.h"

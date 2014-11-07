@@ -12,14 +12,13 @@
    09/1999     AH         Funktionen: TGetTime und TGetTicksPerSecond global.
    11/1999     C.Thorenz  Beliebige Anzahl Zeitspeicher
 **************************************************************************/
-#include "makros.h"
 #include "timer.h"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <vector>
 //#include<windows.h>
-using namespace std;
 
 /* Auf POSIX-Rechern ist exaktere Zeitmessung vorhanden */
 #ifdef _POSIX_SOURCE
@@ -30,10 +29,15 @@ using namespace std;
 #include <time.h>
 #endif
 
+#include "makros.h"
+#include "memory.h"
+
 /* Zeitspeicher */
 static int max_zeitspeicher = -1;
 static long* zeit = NULL;
 static int* running = NULL;
+
+using namespace std;
 vector <CClockTime*> ClockTimeVec;
 
 /*************************************************************************

@@ -8,9 +8,10 @@
    09/2005 CC GeoLib2
 **************************************************************************/
 
+#include "geo_pnt.h"
+
 #include <cstdlib>
 // GeoLib
-#include "geo_pnt.h"
 #include "mathlib.h"
 
 using namespace std;

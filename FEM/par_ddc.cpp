@@ -34,7 +34,6 @@ double time_ele_paral;
 #include <math.h>
 // C++ STL
 #include <iostream>
-using namespace std;
 #include "par_ddc.h"
 // FEM-Makros
 #include "makros.h"
@@ -49,6 +48,7 @@ using namespace std;
 #include "equation_class.h"
 #include "matrix_class.h"
 #endif
+using namespace std;
 vector<CPARDomain*>dom_vector;
 vector<int> node_connected_doms;                  //This will be removed after sparse class is finished WW
 

@@ -7,14 +7,15 @@
    last modified
 **************************************************************************/
 
-#include "gs_project.h"
-#include "makros.h"
+#include "rf_ic_new.h"
+
 // C++ STL
 #include <iostream>
 #include <list>
-using namespace std;
 // FEM-Makros
 //#include "files0.h"
+#include "makros.h"
+#include "display.h"
 #include "files0.h"
 #include "mathlib.h"
 // Base
@@ -24,7 +25,7 @@ using namespace std;
 // MSHLib
 #include "msh_lib.h"
 // FEMLib
-#include "rf_ic_new.h"
+#include "gs_project.h"
 #include "rf_node.h"
 #include "rf_pcs.h"
 #include "rfmat_cp.h"
@@ -32,6 +33,7 @@ using namespace std;
 #include "InitialCondition.h"
 
 //==========================================================================
+using namespace std;
 vector<CInitialConditionGroup*>ic_group_vector;
 vector<CInitialCondition*>ic_vector;
 

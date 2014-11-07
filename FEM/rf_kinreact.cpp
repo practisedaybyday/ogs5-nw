@@ -11,17 +11,19 @@
    05/2007    Dirk Schaefer      Addition of NAPL-dissolution
  ***************************************************************************/
 
+#include "rf_kinreact.h"
+
 #include <cfloat>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
+#include "display.h"
 #include "StringTools.h"
 #include "files0.h"
 #include "makros.h"
 #include "msh_lib.h"
-#include "rf_kinreact.h"
 #include "rf_mfp_new.h"
 #include "rf_mmp_new.h"
 #include "rf_msp_new.h"

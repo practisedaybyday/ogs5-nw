@@ -10,6 +10,9 @@
    03/2004 OK TINs
    09/2005 CC GeoLib2
 **************************************************************************/
+
+#include "geo_sfc.h"
+
 //MFC
 #include <cstdlib>
 //GEOLib
@@ -18,7 +21,6 @@
 #include "geo_mathlib.h"
 #include "geo_ply.h"
 #include "geo_pnt.h"
-#include "geo_sfc.h"
 
 // File path. 11.08.2011 WW
 #include "makros.h"

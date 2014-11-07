@@ -33,8 +33,10 @@
 
 /* Preprozessor-Definitionen */
 #include "makros.h"
-#include "../Base/MemWatch.h"
+#include "memory.h"
+#include "MemWatch.h"
 #include "display.h"
+#include "ogs_display.h"
 #define TEST
 /* Benutzte Module */
 #include "break.h"

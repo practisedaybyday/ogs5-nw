@@ -5,13 +5,17 @@
    08/2004 OK Implementation
    last modified:
 **************************************************************************/
-#include "makros.h"
+
+#include "rf_mfp_new.h"
+
 // C++ STL
 //#include <math.h>
 //#include <fstream>
 //#include <iostream>
 #include <cfloat>
 
+#include "makros.h"
+#include "display.h"
 // FEM-Makros
 //#include "mathlib.h"
 #include "eos.h"                                  //NB
@@ -20,7 +24,6 @@
 // GeoSys-FEMLib
 #include "fem_ele_std.h"
 //
-#include "rf_mfp_new.h"
 //#include "rf_mmp_new.h"
 extern double InterpolValue(long number,int ndx,double r,double s,double t);
 //#include "rf_pcs.h"

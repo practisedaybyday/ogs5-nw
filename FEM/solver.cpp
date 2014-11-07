@@ -24,16 +24,18 @@
    03/2003   RK   Quellcode bereinigt, Globalvariablen entfernt
 
 *************************************************************************/
+#include "solver.h"
+
 #include <cfloat>
 #include <iostream>
-using namespace std;
-#include "files0.h"
 #include "makros.h"
+#include "display.h"
+#include "memory.h"
+#include "files0.h"
 #include "mathlib.h"
 #include "matrix_routines.h"
 #include "rf_pcs.h"                               //OK_MOD"
 #include "rf_tim_new.h"
-#include "solver.h"
 #include "tools.h"
 #include "mathlib.h"
 
@@ -46,6 +48,9 @@ using namespace std;
 #ifdef UMFPACK
 #include <umfpack.h>
 #endif
+
+using namespace std;
+
 /**** Definitionen fuer Preconditioner (Ra, 3/2000) */
 #define VK_Skalierung  1
 #define VK_Extraktion 10

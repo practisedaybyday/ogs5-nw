@@ -12,7 +12,7 @@
 //#include <fstream>
 #include <iostream>
 //#include <string>
-//#include <vector>
+#include <vector>
 #include "makros.h" // JT2012
 
 #include "FEMEnums.h"

@@ -5,6 +5,9 @@
    08/2005 WW/OK Encapsulation from rf_ele_msh
    last modified
 **************************************************************************/
+
+#include "msh_mesh.h"
+
 #include <cfloat>
 #include <cmath>
 #include <fstream>
@@ -12,6 +15,10 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+
+#include "display.h"
+#include "memory.h"
+
 #ifndef NON_GEO                                   //WW
 #include "gs_project.h"
 #endif                                            //#ifndef NON_GEO
@@ -30,7 +37,6 @@
 #include "rf_mmp_new.h"
 
 // MSHLib
-#include "msh_mesh.h"
 #ifdef BENCHMARKING
 #include "benchtimer.h"
 #endif

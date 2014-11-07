@@ -11,7 +11,7 @@
 
 #include "petsc-private/petscimpl.h"
 
-#include "../../FEM/display.h"
+#include "../../Base/display.h"
 #include "StringTools.h"
 
 namespace petsc_group

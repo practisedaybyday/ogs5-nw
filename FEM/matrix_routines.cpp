@@ -74,17 +74,20 @@
    -> schnelleres Suchen
 **************************************************************************/
 
-#include "makros.h"
-#include "solver.h"
+#include "matrix_routines.h"
+
 #include <cfloat>
 
 #define noTESTMATRIX_PERF
 #define noDUMP
 
 /* Header / Andere intern benutzte Module */
+#include "makros.h"
+#include "display.h"
+#include "memory.h"
+#include "solver.h"
 #include "files0.h"
 #include "mathlib.h"
-#include "matrix_routines.h"
 // MSHLib
 #include "msh_mesh.h"
 #include "msh_node.h"

@@ -6,8 +6,13 @@
 
 #include "FileTools.h"
 
-// ** INCLUDES **
+#include <iostream>
+#include <fstream>
+#include <cstdio>
+
 #include <sys/stat.h>
+
+#include "display.h"
 
 /**
  * Returns true if given file exists. From http://www.techbytes.ca/techbyte103.html
@@ -35,5 +40,33 @@ bool IsFileExisting(std::string const& strFilename)
 		blnReturn = false;
 
 	return blnReturn;
+}
+
+bool HasCRInLineEnding(std::string const& strFilename)
+{
+	std::ifstream is(strFilename.c_str());
+	if (!is) {
+		ScreenMessage2("*** error: could not open %s\n", strFilename.data());
+		return false;
+	}
+
+	std::istream::sentry se(is, true);
+	std::streambuf* sb = is.rdbuf();
+
+	bool foundCR = false;
+	for (;;) {
+		int c = sb->sbumpc();
+		switch (c) {
+		case '\r':
+			foundCR = true;
+			break;
+		case '\n':
+		case EOF:
+			break;
+		}
+	}
+	is.close();
+
+	return foundCR;
 }
 

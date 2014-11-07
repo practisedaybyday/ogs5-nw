@@ -8,18 +8,21 @@
    09/2005 CC GeoLib2
    -------------------------------------------------------------------------*/
 
+#include "geo_lib.h"
+
 #include <stdio.h>
 #include <string.h>
 // C++
 #include <iostream>
 #include <string>
-using namespace std;
+
 // GL
-#include "geo_lib.h"
 #include "geo_ply.h"
 #include "geo_pnt.h"
 #include "geo_sfc.h"
 #include "geo_vol.h"
+
+using namespace std;
 
 extern void remove_white_space(string* buffer);
 

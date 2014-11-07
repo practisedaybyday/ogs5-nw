@@ -6,8 +6,9 @@
    09/2005 CC GeoLib2
 **************************************************************************/
 
-#include "files0.h"
 #include "geo_lin.h"
+
+#include "files0.h"
 #include "geo_mathlib.h" //CC
 #include "geo_pnt.h"
 

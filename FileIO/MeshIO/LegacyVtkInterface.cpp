@@ -8,6 +8,7 @@
 // ** INCLUDES **
 #include "LegacyVtkInterface.h"
 
+#include "display.h"
 #include "FEMEnums.h"
 #include "ProcessInfo.h"
 #include "fem_ele_std.h"

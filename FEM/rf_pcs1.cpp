@@ -473,6 +473,8 @@ double CRFProcess::LineSearch()
 #include <cmath>
 #include <cfloat> 
 
+#include "display.h"
+
 #include "PETSC/PETScLinearSolver.h"
 #include "FEMEnums.h"
 #include "msh_lib.h"

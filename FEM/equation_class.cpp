@@ -69,6 +69,7 @@ extern int PARDISO
 
 #include "Configure.h"
 #include "makros.h"
+#include "display.h"
 
 #include "matrix_class.h"
 #include "rf_num_new.h"

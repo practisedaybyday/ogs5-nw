@@ -20,10 +20,10 @@
 #include <sstream>
 #include <string>
 #include <vector>
-using namespace std;
 
 #include "files0.h"
 #include "makros.h"
+#include "display.h"
 #include "rf_mfp_new.h"
 #include "rf_mmp_new.h"
 #include "rf_msp_new.h"
@@ -36,6 +36,7 @@ using namespace std;
 #include "rf_REACT_GEM.h"
 #endif
 using SolidProp::CSolidProperties;
+using namespace std;
 /* Vector auf CompProperties , globale Zugriffe */
 // vector <CompProperties*> cp_vec;
 // do not need this anymore, use global map structure instead.

@@ -5,12 +5,17 @@
    02/2004 OK Implementation
    last modified
 **************************************************************************/
-#include "makros.h"
+#include "rf_bc_new.h"
+
 // C++ STL
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include <iostream>
+
+#include "makros.h"
+#include "display.h"
+#include "memory.h"
 
 // FileIO
 #include "BoundaryConditionIO.h"
@@ -34,7 +39,6 @@ extern void remove_white_space(std::string*);
 #include "gs_project.h"
 #include "tools.h"
 //#include "rf_node.h"
-#include "rf_bc_new.h"
 //#include "rf_pcs.h"
 //#include "rf_fct.h"
 #include "rfmat_cp.h"

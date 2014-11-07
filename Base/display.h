@@ -8,8 +8,8 @@
 /**************************************************************************/
 
 #ifndef display_INC
-
 #define display_INC
+
 /* Schutz gegen mehrfaches Einfuegen */
 
 /* Andere oeffentlich benutzte Module */
@@ -30,11 +30,6 @@ extern int ogs_log_level;
 #define ScreenMessage2d(fmt, ...) \
             do { if (ogs_log_level) ScreenMessage2(fmt, ## __VA_ARGS__); } while (0)
 
-/* Deklarationen */
-extern void DisplayStartMsg ( void );
-/* Gibt Eroeffnungsbildschirm aus */
-extern void DisplayEndMsg ( void );
-/* Gibt Programm-Abspann aus */
 extern void DisplayMsg ( const char* s );
 /* Schreibt Zeichenkette ohne Zeilenvorschub auf Standardausgabe */
 extern void DisplayMsgLn ( const char* s );

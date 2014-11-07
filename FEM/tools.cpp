@@ -18,11 +18,15 @@
    02/2010     OK            Cleaning
  */
 /**************************************************************************/
-#include "makros.h"
+
+#include "tools.h"
 
 #include <cfloat>
 #define noTESTTOOLS
 /* Header / Andere intern benutzte Module */
+#include "makros.h"
+#include "display.h"
+#include "memory.h"
 #include "femlib.h"
 
 #include "mathlib.h"
@@ -30,7 +34,6 @@
 #include "rf_mmp_new.h"
 #include "rf_num_new.h"
 #include "rf_tim_new.h"
-#include "tools.h"
 // GEOLib
 #include "files0.h"
 // MSHLib

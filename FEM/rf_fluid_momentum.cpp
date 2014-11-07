@@ -8,11 +8,12 @@
 **************************************************************************/
 
 #include <iostream>
-using namespace std;
 
 #include "matrix_class.h"
 #include "rf_fluid_momentum.h"
 #include "rf_random_walk.h"
+
+using namespace std;
 using namespace Math_Group;
 
 /**************************************************************************

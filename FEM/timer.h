@@ -13,6 +13,7 @@
 /* Andere oeffentlich benutzte Module */
 #include <time.h>
 #include <vector>
+#include <string>
 //#include <windows.h>
 
 /* Deklarationen */

@@ -32,6 +32,8 @@
 #include <string>
 
 #include "makros.h"
+#include "memory.h"
+#include "display.h"
 // FEM-Makros
 #include "files0.h"
 #include "makros.h"

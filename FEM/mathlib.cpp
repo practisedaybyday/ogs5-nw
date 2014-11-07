@@ -155,6 +155,8 @@
 //#include <stdio.h>
 #include "femlib.h"                               //CMCD 03 2004
 #include "makros.h"
+#include "memory.h"
+#include "display.h"
 #include "mathlib.h"
 //WW----------------------
 #include "par_ddc.h"

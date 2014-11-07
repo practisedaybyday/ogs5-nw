@@ -10,6 +10,7 @@
 //#include <iostream>
 //#include <limits>	// PCH to better use system max and min
 #include "Configure.h"
+#include "memory.h"
 // Method
 #include "mathlib.h"
 // Problems
@@ -50,8 +51,10 @@ extern double gravity_constant;                   // TEST, must be put in input 
 #define GAS_CONSTANT_V  461.5                     //WW
 #define T_KILVIN_ZERO  273.15                     //WW
 
-using namespace std;
 #include "Eclipse.h"                              //BG 09/2009
+
+using namespace std;
+
 namespace FiniteElement
 {
 //========================================================================

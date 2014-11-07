@@ -5,6 +5,7 @@
 #include <petscksp.h>
 #endif
 
+#include "display.h"
 #include "StringTools.h"
 #if defined(NEW_EQS)
 #include "equation_class.h"

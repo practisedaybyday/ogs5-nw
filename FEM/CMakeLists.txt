@@ -4,7 +4,7 @@ set( SOURCES
 	Stiff_Bulirsch-Stoer.h
 	BoundaryCondition.h
 	break.h
-	display.h
+	#display.h
 	eos.h
 	fem_ele.h
 	fem_ele_std.h
@@ -14,7 +14,7 @@ set( SOURCES
 	femlib.h
 	files0.h
 	InitialCondition.h
-	makros.h
+	#makros.h
 	mathlib.h
 	matrix_class.h
 	SparseMatrixDOK.h
@@ -60,7 +60,7 @@ set( SOURCES
 	Stiff_Bulirsch-Stoer.cpp
 	BoundaryCondition.cpp
 	break.cpp
-	display.cpp
+	#display.cpp
 	eos.cpp
 	fem_ele.cpp
 	fem_ele_std.cpp

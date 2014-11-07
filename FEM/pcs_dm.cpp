@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "makros.h"
+#include "display.h"
 #include "StringTools.h"
 
 #include "FEMEnums.h"

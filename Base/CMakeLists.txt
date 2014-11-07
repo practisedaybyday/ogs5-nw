@@ -11,7 +11,8 @@ set( HEADERS
 	uniqueListInsert.h
 	StringTools.h
 	swap.h
-	wait.h	
+	wait.h
+	display.h
 )
 
 set( SOURCES
@@ -20,6 +21,7 @@ set( SOURCES
 	MemWatch.cpp
 	StringTools.cpp
 	binarySearch.cpp
+	display.cpp
 )
 
 # Create the library

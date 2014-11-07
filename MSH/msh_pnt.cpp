@@ -5,9 +5,10 @@
    08/2005 OK Encapsulated from mshlib
 **************************************************************************/
 
-#include "math.h"
 #include <string>
 #include <vector>
+
+#include "math.h"
 using namespace std;
 
 /**************************************************************************

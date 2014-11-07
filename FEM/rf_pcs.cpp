@@ -39,6 +39,8 @@
 
 
 #include "makros.h"
+#include "display.h"
+#include "memory.h"
 #include "MemWatch.h"
 #include "FEMEnums.h"
 #include "Output.h"

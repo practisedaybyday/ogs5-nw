@@ -25,7 +25,8 @@
 /*------------------------------------------------------------------------*/
 /* Pre-processor definitions */
 #include "makros.h"
-#include "../Base/MemWatch.h"
+#include "display.h"
+#include "MemWatch.h"
 /*------------------------------------------------------------------------*/
 // MSHLib
 #include "msh_lib.h"

@@ -6,7 +6,6 @@
  */
 
 // ** INCLUDES **
-#include "Configure.h"
 #include "Output.h"
 
 #include <fstream>
@@ -14,6 +13,7 @@
 #include <string>
 
 #include "Configure.h"
+#include "display.h"
 
 #include "FEMIO/GeoIO.h"
 #include "GEOObjects.h"

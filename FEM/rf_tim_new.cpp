@@ -5,16 +5,18 @@
    08/2004 OK Implementation
    last modified:
 **************************************************************************/
+#include "rf_tim_new.h"
+
 // C++ STL
 //#include <math.h>
 //#include <iostream>
 #include <cfloat>
 // FEM-Makros
 #include "makros.h"
+#include "display.h"
 // GeoSys-GeoLib
 #include "files0.h"
 // GeoSys-FEMLib
-#include "rf_tim_new.h"
 //#include "rf_pcs.h"
 #include "Output.h"
 #include "fem_ele_std.h"

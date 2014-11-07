@@ -6,6 +6,7 @@
 #include "display.h"
 #include "files0.h"
 #include "makros.h"
+#include "memory.h"
 #include "mathlib.h"
 #include "rf_ic_new.h"
 #include "rf_kinreact.h"

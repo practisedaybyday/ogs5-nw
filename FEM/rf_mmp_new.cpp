@@ -5,11 +5,15 @@
    01/2004 OK Implementation
 **************************************************************************/
 
+#include "rf_mmp_new.h"
+
 //#include "makros.h"
 // C++ STL
 //#include <iostream>
 #include <cfloat>
 #include <algorithm>
+
+#include "display.h"
 
 // FEMLib
 #include "tools.h"
@@ -27,7 +31,6 @@ extern double gravity_constant;
 // LIB
 #include "files0.h"
 // this
-#include "rf_mmp_new.h"
 //#include "rf_react.h"
 #include "gs_project.h"
 // Gauss point veclocity

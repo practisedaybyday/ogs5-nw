@@ -317,9 +317,9 @@
 
 //enum DIS_TYPES {CONSTANT,LINEAR};
 
-#include "display.h"
-#include "memory.h"
-#include "timer.h"
+//#include "display.h"
+//#include "memory.h"
+//#include "timer.h"
 
 extern std::string FileName;
 extern std::string FilePath;                      //WW

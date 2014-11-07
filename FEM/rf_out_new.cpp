@@ -15,9 +15,9 @@
 #include <limits>
 #include <list>
 #include <string>
-using namespace std;
 
 // Base
+#include "display.h"
 #include "StringTools.h"
 
 // FEM-Makros
@@ -75,7 +75,9 @@ extern size_t max_dim;                            //OK411 todo
 #endif
 using MeshLib::CFEMesh;
 //==========================================================================
-vector<COutput*>out_vector;
+std::vector<COutput*>out_vector;
+
+using namespace std;
 
 /**************************************************************************
    FEMLib-Method:

@@ -5,10 +5,14 @@
    08/2005 OK Encapsulated from mshlib
 **************************************************************************/
 
-#include "math.h"
+#include "msh_lib.h"
+
 // C++
 #include <string>
 #include <vector>
+
+#include "memory.h"
+#include "math.h"
 
 // FileIO
 #include "MeshIO/GMSHInterface.h"
@@ -17,7 +21,6 @@
 #include "files0.h"
 #include "geo_lib.h"
 // MSHLib
-#include "msh_lib.h"
 // PCSLib
 #include "mathlib.h"
 #include "rf_mmp_new.h"                           //OK411
