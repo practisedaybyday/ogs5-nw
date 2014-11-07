@@ -731,27 +731,27 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 #endif
 #endif
 
-    bool isXZplane = (msh->GetCoordinateFlag()==22);
-    bool is3D = (msh->GetCoordinateFlag() / 10 == 3);
+	bool isXZplane = (msh->GetCoordinateFlag()==22);
+	bool is3D = (msh->GetCoordinateFlag() / 10 == 3);
 	bool outNodeVelocity = false;
-    bool outNodeDisplacement = false;
+	bool outNodeDisplacement = false;
 
 	//Nodal values
 	for (int i = 0; i < (int) out->_nod_value_vector.size(); i++)
 	{
-        const string &internal_val_name = out->_nod_value_vector[i];
-        const string &external_val_name = out->_alias_nod_value_vector[i];
+		const string &internal_val_name = out->_nod_value_vector[i];
+		const string &external_val_name = out->_alias_nod_value_vector[i];
 		//is velocity
 		if (internal_val_name.find("VELOCITY") != string::npos)
 		{
 			outNodeVelocity = true;
 			continue;
 		}
-        if (internal_val_name.find("DISPLACEMENT") != string::npos)
-        {
-            outNodeDisplacement = true;
-            continue;
-        }
+		if (internal_val_name.find("DISPLACEMENT") != string::npos)
+		{
+			outNodeDisplacement = true;
+			continue;
+		}
 		//    if (out->m_pcs == NULL || out->pcs_type_name.compare("NO_PCS")==0)
 		if (out->m_pcs == NULL || out->getProcessType() == FiniteElement::NO_PCS)
 			m_pcs = PCSGet(internal_val_name, true);
@@ -780,17 +780,17 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 			} else {
 				write_value_binary<unsigned int> (fin, sizeof(double)* msh->GetNodesNumber(false));
 			}
-            for (size_t j = 0; j < msh->GetNodesNumber(false); j++) {
-                double v = m_pcs->GetNodeValue(msh->nod_vector[j]->GetIndex(), NodeIndex[i]);
-                if (!useBinary) {
-                    fin << v << " ";
-                } else {
-                    write_value_binary(fin, v);
-                }
-            }
-            if (!useBinary) {
-                fin << "\n";
-            }
+			for (size_t j = 0; j < msh->GetNodesNumber(false); j++) {
+				double v = m_pcs->GetNodeValue(msh->nod_vector[j]->GetIndex(), NodeIndex[i]);
+				if (!useBinary) {
+					fin << v << " ";
+				} else {
+					write_value_binary(fin, v);
+				}
+			}
+			if (!useBinary) {
+				fin << "\n";
+			}
 		}
 		else
 			offset += msh->GetNodesNumber(false) * sizeof(double)
@@ -806,7 +806,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 		unsigned int velocity_id = 0;
 		for (int i = 0; i < (int) out->_nod_value_vector.size(); i++)
 		{
-            const string &internal_val_name = out->_nod_value_vector[i];
+			const string &internal_val_name = out->_nod_value_vector[i];
 //            const string &external_val_name = out->_alias_nod_value_vector[i];
 			if (internal_val_name.find("VELOCITY_X1") != string::npos)
 			{

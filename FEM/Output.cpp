@@ -131,7 +131,7 @@ void COutput::init()
 
 	m_msh = FEMGet(convertProcessTypeToString(getProcessType()));
 
-    setInternalVarialbeNames(m_msh); //NW
+	setInternalVarialbeNames(m_msh); //NW
 
 }
 
