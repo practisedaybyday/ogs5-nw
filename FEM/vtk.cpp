@@ -311,24 +311,26 @@ bool CVTK::WriteXMLPUnstructuredGrid(const std::string &vtkfile_base,
 	fin << "    </PPoints>\n";
 	// point data
 	if (out->_nod_value_vector.size() > 0) {
-		fin << "    <PPointData Scalars=\"" << out->_nod_value_vector[0] << "\" >\n";
+		fin << "    <PPointData Scalars=\"" << out->_alias_nod_value_vector[0] << "\" >\n";
 #if 0
 		fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_UChar) << "\" Name=\"vtkGhostLevels\" format=\"ascii\" />\n";
 #endif
 		bool outNodeVelocity = false;
 		bool outNodeDisplacement = false;
 		for (size_t i=0; i<out->_nod_value_vector.size(); i++) {
-			if (out->_nod_value_vector[i].find("VELOCITY") != string::npos)
+			const string &internal_val_name = out->_nod_value_vector[i];
+			const string &external_val_name = out->_alias_nod_value_vector[i];
+			if (internal_val_name.find("VELOCITY") != string::npos)
 			{
 				outNodeVelocity = true;
 				continue;
 			}
-			if (out->_nod_value_vector[i].find("DISPLACEMENT") != string::npos)
+			if (internal_val_name.find("DISPLACEMENT") != string::npos)
 			{
 				outNodeDisplacement = true;
 				continue;
 			}
-			fin << "      <PDataArray type=\"" << vtkDataType2str(this->type_Double) << "\" Name=\"" << out->_nod_value_vector[i] << "\" format=\"ascii\" />\n";
+			fin << "      <PDataArray type=\"" << vtkDataType2str(this->type_Double) << "\" Name=\"" << external_val_name << "\" format=\"ascii\" />\n";
 		}
 		if (outNodeVelocity)
 			fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Double) << "\" Name=\"" << velocity_name[0][3] << "\" NumberOfComponents=\"3\" format=\"ascii\" />\n";
