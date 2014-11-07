@@ -21,7 +21,7 @@
 #include <cfloat>
 #include <iomanip>
 #include <algorithm>
-#ifdef USE_OPENMP
+#ifdef _OPENMP
 #include <omp.h>
 #endif
 
