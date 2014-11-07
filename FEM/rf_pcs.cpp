@@ -3050,8 +3050,10 @@ void CRFProcess::ConfigHeatTransport()
 **************************************************************************/
 void CRFProcess::ConfigDeformation()
 {
+#ifndef USE_PETSC
 	// Generate high order nodes for all elements.
 	m_msh->GenerateHighOrderNodes();      //WW
+#endif
 	type = 4;
 	//	if (_pcs_type_name.find("DEFORMATION") != string::npos
 	//			&& _pcs_type_name.find("FLOW") != string::npos) {
@@ -6174,15 +6176,15 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			bc_msh_node  = m_bc_node->geo_node_number;
 			// Check whether the node is in this subdomain
 			if(quadr)
-			{
-				if(bc_msh_node > m_msh->loc_NodesNumber_Quadratic)
-				continue;
-			}
+			  {
+			    if(!m_msh->isNodeLocal(bc_msh_node))
+			      continue;
+			  }
 			else
-			{
-				if(bc_msh_node > m_msh->loc_NodesNumber_Linear)
-					continue;
-			}
+			  {
+			    if(!m_msh->isNodeLocal(bc_msh_node))
+			      continue;
+			  }
 
 
 			int dof_per_node = 0;
@@ -7352,15 +7354,15 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			msh_node = cnodev->geo_node_number;
 			// Check whether the node is in this subdomain
 			if(quadr)
-			{
-				if(msh_node > m_msh->loc_NodesNumber_Quadratic)
-					continue;
-			}
+			  {
+			    if(!m_msh->isNodeLocal(msh_node))
+			      continue;
+			  }
 			else
-			{
-				if(msh_node > m_msh->loc_NodesNumber_Linear)
-					continue;
-			}
+			  {
+                if(!m_msh->isNodeLocal(msh_node))
+			      continue;
+			  }
 
 			int dof_per_node = 0;
 			if (m_msh->NodesNumber_Linear == m_msh->NodesNumber_Quadratic)
@@ -9410,10 +9412,10 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		// LINEAR SOLUTION
 		if(m_num->nls_method == FiniteElement::INVALID_NL_TYPE)
 		{
-			std::cout << "      -->LINEAR solution complete. " << std::endl;
+			ScreenMessage("      -->LINEAR solution complete. \n");
 			if(write_std_errors){
 				for(ii = 0; ii < pcs_number_of_primary_nvals; ii++){
-					 std::cout << "         PCS error DOF["<< ii <<"]: " << pcs_absolute_error[ii] << std::endl;
+					 ScreenMessage( "         PCS error DOF[%d]: %g\n", ii, pcs_absolute_error[ii]);
 				}
 			}
 			return;

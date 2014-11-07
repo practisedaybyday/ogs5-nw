@@ -20,6 +20,7 @@
 
 #include <cfloat>
 #include <iomanip>
+#include <algorithm>
 #ifdef USE_OPENMP
 #include <omp.h>
 #endif
@@ -508,433 +509,552 @@ int Linear_EQS::Solver(double* xg, const long n)
 }
 
 #else // if defined(USE_MPI)
-#ifdef LIS                                     // PCH 02.2008
-//NW 01.2010 Use configuration in NUM file
-int Linear_EQS::Solver(CNumerics* num, bool compress)
-{
-    this->bNorm = Norm(b);
-	// Check the openmp solver type iterative and directive
-	CNumerics* m_num;
-	if (num != NULL)
-		m_num = num;              //NW
-	else
-		m_num = num_vector[0];
-	int iter=0;
-	if(m_num->ls_method == 805)           // Then, PARDISO parallel direct solver
-	{
-#ifdef MKL                               // PCH 10.03.2009: Requires the system platform where Math Kernel Library is properly configured.
-		//cout << "---------------------------------------------------" << endl;
-		//omp_set_num_threads (1);
-		ScreenMessage2("->Start calling PARDISO with %d threads\n", omp_get_max_threads());
-#ifdef OGS_USE_LONG
-        ScreenMessage2("->64bit integer is used in PARDISO\n");
-#endif
-		_INTEGER_t i, iter, ierr;
-		// Assembling the matrix
-		// Establishing CRS type matrix from GeoSys Matrix data storage type
-		_INTEGER_t nonzero = A->nnz();
-		_INTEGER_t numOfNode = A->Size() * A->Dof();
-		double* value;
-		value = new double [nonzero];
-		ierr = A->GetCRSValue(value);
-		_INTEGER_t* ptr = NULL;
-		_INTEGER_t* index = NULL;
-		ptr = (_INTEGER_t*)malloc((numOfNode + 1) * sizeof( _INTEGER_t));
-		index = (_INTEGER_t*)malloc((nonzero) * sizeof( _INTEGER_t));
 
+#if defined(LIS) || defined(MKL)
+Linear_EQS::IndexType Linear_EQS::searcgNonZeroEntries(IndexType nrows, IndexType* ptr, double* value, std::vector<IndexType> &vec_nz_rows, std::vector<IndexType> &vec_z_rows)
+{
+	vec_nz_rows.reserve(nrows);
+	IndexType n_nz_entries = 0;
+	for (LIS_INT i = 0; i < nrows; i++)
+	{
+		IndexType const j_row_begin = ptr[i];
+		IndexType const j_row_end = ptr[i + 1];
+		IndexType const old_n_nz_entries = n_nz_entries;
+		for (IndexType j = j_row_begin; j < j_row_end; j++)
+		{
+			if (value[j] == .0)
+				continue;
+			n_nz_entries++;
+		}
+		if (n_nz_entries > old_n_nz_entries)
+			vec_nz_rows.push_back(i);
+		else
+			vec_z_rows.push_back(i);
+	}
+	return n_nz_entries;
+}
+
+void Linear_EQS::compressCRS(const IndexType* org_ptr, const IndexType* org_col_idx, const double* org_value,
+		const std::vector<IndexType> &vec_nz_rows, const std::vector<IndexType> &vec_z_rows, IndexType n_nz_entries,
+		IndexType* &new_ptr, IndexType* &new_col_index, double* &new_value)
+{
+	IndexType n_new_rows = vec_nz_rows.size();
+	//lis_matrix_malloc_crs(n_new_rows, n_nz_entries, &new_ptr, &new_col_index, &new_value);
+	new_value = new double [n_nz_entries];
+	new_ptr = (IndexType*)malloc((vec_nz_rows.size() + 1) * sizeof(IndexType));
+	new_col_index = (IndexType*)malloc((n_nz_entries) * sizeof(IndexType));
+
+	LIS_INT nnz_counter = 0;
+	for (LIS_INT i = 0; i < n_new_rows; i++)
+	{
+		const LIS_INT old_i = vec_nz_rows[i];
+		const LIS_INT j_row_begin = org_ptr[old_i];
+		const LIS_INT j_row_end = org_ptr[old_i + 1];
+
+		new_ptr[i] = nnz_counter;
+
+		for (LIS_INT j = j_row_begin; j < j_row_end; j++)
+		{
+			if (org_value[j] == .0)
+				continue;
+			// count how many columns are excluded before current
+			LIS_INT offset_col = 0;
+			for (size_t k=0; k<vec_z_rows.size(); k++) {
+				if (vec_z_rows[k] < org_col_idx[j])
+					offset_col++;
+			}
+			new_col_index[nnz_counter] = org_col_idx[j] - offset_col;
+			new_value[nnz_counter] = org_value[j];
+			nnz_counter++;
+		}
+	}
+	new_ptr[vec_nz_rows.size()] = nnz_counter;
+	//assert(n_nz_entries==nnz_counter);
+}
+#endif
+
+#ifdef MKL
+void Linear_EQS::solveWithPARDISO(CNumerics* num, bool compress_if_possible)
+{
+	ScreenMessage2("------------------------------------------------------------------\n");
+	ScreenMessage2("*** PARDISO solver computation\n");
+
+	// Prepare CRS data
+	_INTEGER_t nonzero = A->nnz();
+	_INTEGER_t nrows = A->Size() * A->Dof();
+	double* value = new double [nonzero];
+	A->GetCRSValue(value);
+	_INTEGER_t* ptr = A->ptr;
+	_INTEGER_t* index = A->col_idx;
+
+	double* tmp_x = x;
+	double* tmp_b = b;
+
+	bool is_compressed = false;
+	std::vector<IndexType> vec_nz_rows;
+	if (compress_if_possible)
+	{
+		// check non-zero rows, non-zero entries
+		ScreenMessage2("-> Check non-zero entries\n");
+		std::vector<_INTEGER_t> vec_z_rows;
+		IndexType n_nz_entries = searcgNonZeroEntries(nrows, ptr, value, vec_nz_rows, vec_z_rows);
+
+		if (vec_nz_rows.size() != (std::size_t) nrows)
+		{
+			ScreenMessage2("-> Found %d empty rows. Delete them from total %d rows... \n", nrows - vec_nz_rows.size(), nrows);
+			is_compressed = true;
+			double* new_value;
+			_INTEGER_t* new_ptr, *new_index;
+			compressCRS(ptr, index, value, vec_nz_rows, vec_z_rows, n_nz_entries,
+					new_ptr, new_index, new_value);
+
+			// update
+			nrows = (int) vec_nz_rows.size();
+			nonzero = n_nz_entries;
+			ptr = new_ptr;
+			index = new_index;
+			delete[] value;
+			value = new_value;
+
+			// compress also x and RHS
+			tmp_x = new double[nrows];
+			tmp_b = new double[nrows];
+			#pragma omp parallel for
+			for(int i = 0; i < nrows; ++i)
+			{
+				tmp_x[i] = x[vec_nz_rows[i]];
+				tmp_b[i] = b[vec_nz_rows[i]];
+			}
+		}
+	}
+
+//#define PARDISO_INDEX_FROM_ONE
+#ifdef PARDISO_INDEX_FROM_ONE // in case PARDISO requires index start from one
+	const bool is_index_from_one = true;
+#else
+	const bool is_index_from_one = false;
+#endif
+	if (is_index_from_one) {
+		ptr = (_INTEGER_t*)malloc((nrows + 1) * sizeof( _INTEGER_t));
+		index = (_INTEGER_t*)malloc((nonzero) * sizeof( _INTEGER_t));
 		// Reindexing ptr according to Fortran-based PARDISO
-		for(i = 0; i < numOfNode; ++i)
+		_INTEGER_t i = 0;
+		for(i = 0; i < nrows; ++i)
 			ptr[i] = A->ptr[i] + 1;
 		//ptr needs one more storage
 		ptr[i] = A->ptr[i] + 1;
 		// Reindexing index according to Fortran-based PARDISO
 		// and zonzero of Matrix A
-		for(i = 0; i < nonzero; ++i)
+		for(_INTEGER_t i = 0; i < nonzero; ++i)
 			index[i] = A->col_idx[i] + 1;
+	}
 
 #if 0
-		{
-		    std::ofstream ofs("pardiso.txt");
-		    ofs << "ptr=\n";
-	        for(i = 0; i < numOfNode+1; ++i)
-	            ofs << ptr[i] << " ";
-            ofs << "\ncol_idx=\n";
-	        for(i = 0; i < nonzero; ++i)
-	            ofs << index[i] << " ";
-            ofs << "\nval=\n";
-            for(i = 0; i < nonzero; ++i)
-                ofs << value[i] << " ";
-            ofs << "\n";
-            ofs.close();
-		}
+	{
+		std::ofstream ofs("pardiso.txt");
+		ofs << "ptr=\n";
+		for(i = 0; i < nrows+1; ++i)
+			ofs << ptr[i] << " ";
+		ofs << "\ncol_idx=\n";
+		for(i = 0; i < nonzero; ++i)
+			ofs << index[i] << " ";
+		ofs << "\nval=\n";
+		for(i = 0; i < nonzero; ++i)
+			ofs << value[i] << " ";
+		ofs << "\n";
+		ofs.close();
+	}
 #endif
 
-		_INTEGER_t mtype = 11;           /* Real unsymmetric matrix */
-		if (num->ls_storage_method==102)
-		    mtype = 1; // Real and structurally symmetric
-		_INTEGER_t nrhs = 1;             /* Number of right hand sides. */
-		/* Internal solver memory pointer pt, */
-		/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
-		/* or void *pt[64] should be OK on both architectures */
-		void* pt[64];
-		/* Pardiso control parameters.*/
-		_INTEGER_t iparm[64];
-		double dparm[64];
-		_INTEGER_t maxfct, mnum, phase, error, msglvl, solver;
+	_INTEGER_t mtype = 11;           /* Real unsymmetric matrix */
+	if (num->ls_storage_method==102)
+		mtype = 1; // Real and structurally symmetric
+	_INTEGER_t nrhs = 1;             /* Number of right hand sides. */
+	/* Internal solver memory pointer pt, */
+	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
+	/* or void *pt[64] should be OK on both architectures */
+	void* pt[64];
+	/* Pardiso control parameters.*/
+	_INTEGER_t iparm[64];
+	_INTEGER_t maxfct, mnum, phase, error, msglvl;
 
-		/* Auxiliary variables.*/
-		double ddum;              /* Double dummy */
-		_INTEGER_t idum;                 /* Integer dummy. */
+	/* Auxiliary variables.*/
+	double ddum;              /* Double dummy */
+	_INTEGER_t idum;                 /* Integer dummy. */
 
 #ifdef _WIN32
-		// Check the license and initialize the solver
-		{
-			//static bool done = false;
-			//if (!done) {
-			PARDISOINIT (pt,  &mtype, &solver, iparm, dparm, &error);
-			if (error != 0)
-			{
-				if (error == -10 )
-					printf("->No license file found \n");
-				if (error == -11 )
-					printf("->License is expired \n");
-				if (error == -12 )
-					printf("->Wrong username or hostname \n");
-				exit(1);
-			}
-			else
-				printf("->PARDISO license check was successful ... \n");
-
-			//  done = true;
-			//}
-		}
-#endif
-
-		/* --------------------------------------------------------------------*/
-		/* .. Setup Pardiso control parameters.*/
-		/* --------------------------------------------------------------------*/
-		for (i = 0; i < 64; i++)
-			iparm[i] = 0;
-		iparm[0] = 1;             /* No solver default */
-		iparm[1] = 2;             /* Fill-in reordering from METIS */
-		/* Numbers of processors, value of MKL_NUM_THREADS */
-#ifdef _WIN32
-		iparm[2] = omp_get_max_threads();
-#else
-		iparm[2] = mkl_get_max_threads();
-#endif
-		iparm[3] = 0;             /* No iterative-direct algorithm */
-		iparm[4] = 0;             /* No user fill-in reducing permutation */
-		iparm[5] = 0;             /* Write solution into x */
-		iparm[6] = 0;             /* Not in use */
-		iparm[7] = 2;             /* Max numbers of iterative refinement steps */
-		iparm[8] = 0;             /* Not in use */
-		iparm[9] = 13;            /* Perturb the pivot elements with 1E-13 */
-		iparm[10] = 1;            /* Use nonsymmetric permutation and scaling MPS */
-		iparm[11] = 0;            /* Not in use */
-		iparm[12] = 1;            /* Use (non-) symmetric weighted matching  */
-		iparm[13] = 0;            /* Output: Number of perturbed pivots */
-		iparm[14] = 0;            /* Not in use */
-		iparm[15] = 0;            /* Not in use */
-		iparm[16] = 0;            /* Not in use */
-		iparm[17] = -1;           /* Output: Number of nonzeros in the factor LU */
-		iparm[18] = -1;           /* Output: Mflops for LU factorization */
-		iparm[19] = 0;            /* Output: Numbers of CG Iterations */
-        iparm[59] = 1;            /* PARDISO mode - in-core (0) or out-core (2) */
-		maxfct = 1;               /* Maximum number of numerical factorizations. */
-		mnum = 1;                 /* Which factorization to use. */
-		msglvl = 0;               /* Print statistical information in file */
-		if (numOfNode>1e6)
-			msglvl = 1; // output log for large problems
-		error = 0;                /* Initialize error flag */
-
-		/* --------------------------------------------------------------------*/
-		/* .. Initialize the internal solver memory pointer. This is only */
-		/* necessary for the FIRST call of the PARDISO solver. */
-		/* --------------------------------------------------------------------*/
-		for (i = 0; i < 64; i++)
-			pt[i] = 0;
-
-		/* --------------------------------------------------------------------*/
-		/* .. Reordering and Symbolic Factorization. This step also allocates */
-		/* all memory that is necessary for the factorization. */
-		/* --------------------------------------------------------------------*/
-		phase = 11;
-#ifdef _WIN32
-		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		         &numOfNode, value, ptr, index, &idum, &nrhs,
-		         iparm, &msglvl, &ddum, &ddum, &error, dparm);
-#else
-		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		         &numOfNode, value, ptr, index, &idum, &nrhs,
-		         iparm, &msglvl, &ddum, &ddum, &error);
-#endif
-
-		if (msglvl==1) {
-	        printf("< Memory usage >\n");
-	        printf("             Peak memory on symbolic factorization = %d kb\n",  iparm[14]);
-	        printf("             Permanent memory on symbolic factorization = %d kb\n",  iparm[15]);
-	        printf("             Size of factors/Peak memory on numerical factorization and solution = %d\n",  iparm[16]);
-	        printf("             Total peak memory = %d kb\n", std::max(iparm[14], iparm[15]+iparm[16]));
-		}
+	double dparm[64];
+	_INTEGER_t solver;
+	// Check the license and initialize the solver
+	{
+		//static bool done = false;
+		//if (!done) {
+		PARDISOINIT (pt,  &mtype, &solver, iparm, dparm, &error);
 		if (error != 0)
 		{
-			printf("\nERROR during symbolic factorization: %d", error);
+			if (error == -10 )
+				printf("->No license file found \n");
+			if (error == -11 )
+				printf("->License is expired \n");
+			if (error == -12 )
+				printf("->Wrong username or hostname \n");
 			exit(1);
 		}
+		else
+			printf("->PARDISO license check was successful ... \n");
 
-		/* --------------------------------------------------------------------*/
-		/* .. Numerical factorization.*/
-		/* --------------------------------------------------------------------*/
-		phase = 22;
-#ifdef _WIN32
-		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		         &numOfNode, value, ptr, index, &idum, &nrhs,
-		         iparm, &msglvl, &ddum, &ddum, &error, dparm);
-#else
-		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		         &numOfNode, value, ptr, index, &idum, &nrhs,
-		         iparm, &msglvl, &ddum, &ddum, &error);
-#endif
-		if (msglvl==1) {
-			printf("< Memory usage >\n");
-			printf("             Peak memory on symbolic factorization = %d kb\n",  iparm[14]);
-			printf("             Permanent memory on symbolic factorization = %d kb\n",  iparm[15]);
-			printf("             Size of factors/Peak memory on numerical factorization and solution = %d\n",  iparm[16]);
-			printf("             Total peak memory = %d kb\n", std::max(iparm[14], iparm[15]+iparm[16]));
-		}
-		if (error != 0)
-		{
-			printf("\nERROR during numerical factorization: %d", error);
-			exit(2);
-		}
-
-		/* --------------------------------------------------------------------*/
-		/* .. Back substitution and iterative refinement. */
-		/* --------------------------------------------------------------------*/
-		phase = 33;
-		iparm[7] = 2;             /* Max numbers of iterative refinement steps. */
-
-		/* Set right hand side to one. */
-
-#ifdef _WIN32
-		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		         &numOfNode, value, ptr, index, &idum, &nrhs,
-		         iparm, &msglvl, b, x, &error, dparm);
-#else
-		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		         &numOfNode, value, ptr, index, &idum, &nrhs,
-		         iparm, &msglvl, b, x, &error);
-#endif
-		if (msglvl==1) {
-			printf("< Memory usage >\n");
-			printf("             Peak memory on symbolic factorization = %d kb\n",  iparm[14]);
-			printf("             Permanent memory on symbolic factorization = %d kb\n",  iparm[15]);
-			printf("             Size of factors/Peak memory on numerical factorization and solution = %d\n",  iparm[16]);
-			printf("             Total peak memory = %d kb\n", std::max(iparm[14], iparm[15]+iparm[16]));
-		}
-		if (error != 0)
-		{
-			printf("\nERROR during solution: %d", error);
-			exit(3);
-		}
-
-		phase = -1;               /* Release internal memory. */
-#ifdef _WIN32
-		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		         &numOfNode, value, ptr, index, &idum, &nrhs,
-		         iparm, &msglvl, &ddum, &ddum, &error, dparm);
-#else
-		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-		         &numOfNode, value, ptr, index, &idum, &nrhs,
-		         iparm, &msglvl, &ddum, &ddum, &error);
+		//  done = true;
+		//}
+	}
 #endif
 
-		// Releasing the local memory
-		delete [] value;
+	/* --------------------------------------------------------------------*/
+	/* .. Setup Pardiso control parameters.*/
+	/* --------------------------------------------------------------------*/
+	for (int i = 0; i < 64; i++)
+		iparm[i] = 0;
+	iparm[0] = 1;             /* No solver default */
+	iparm[1] = 2;             /* Fill-in reordering from METIS */
+	/* Numbers of processors, value of MKL_NUM_THREADS */
+#ifdef _WIN32
+	iparm[2] = omp_get_max_threads();
+#else
+	iparm[2] = mkl_get_max_threads();
+#endif
+	iparm[3] = 0;             /* No iterative-direct algorithm */
+	iparm[4] = 0;             /* No user fill-in reducing permutation */
+	iparm[5] = 0;             /* Write solution into x */
+	iparm[6] = 0;             /* Not in use */
+	iparm[7] = 2;             /* Max numbers of iterative refinement steps */
+	iparm[8] = 0;             /* Not in use */
+	iparm[9] = 13;            /* Perturb the pivot elements with 1E-13 */
+	iparm[10] = 1;            /* Use nonsymmetric permutation and scaling MPS */
+	iparm[11] = 0;            /* Not in use */
+	iparm[12] = 1;            /* Use (non-) symmetric weighted matching  */
+	iparm[13] = 0;            /* Output: Number of perturbed pivots */
+	iparm[14] = 0;            /* Not in use */
+	iparm[15] = 0;            /* Not in use */
+	iparm[16] = 0;            /* Not in use */
+	iparm[17] = -1;           /* Output: Number of nonzeros in the factor LU */
+	iparm[18] = -1;           /* Output: Mflops for LU factorization */
+	iparm[19] = 0;            /* Output: Numbers of CG Iterations */
+	iparm[34] = 1;            /* Input: Zero-based indexing */
+	iparm[59] = 1;            /* PARDISO mode - in-core (0) or out-core (2) */
+	maxfct = 1;               /* Maximum number of numerical factorizations. */
+	mnum = 1;                 /* Which factorization to use. */
+	msglvl = 0;               /* Print statistical information in file */
+	if (nrows>1e6)
+		msglvl = 1; // output log for large problems
+	error = 0;                /* Initialize error flag */
+
+	/* --------------------------------------------------------------------*/
+	/* .. Initialize the internal solver memory pointer. This is only */
+	/* necessary for the FIRST call of the PARDISO solver. */
+	/* --------------------------------------------------------------------*/
+	for (int i = 0; i < 64; i++)
+		pt[i] = 0;
+
+	/* --------------------------------------------------------------------*/
+	/* .. Reordering and Symbolic Factorization. This step also allocates */
+	/* all memory that is necessary for the factorization. */
+	/* --------------------------------------------------------------------*/
+	ScreenMessage("-> Executing PARDISO\n");
+	phase = 11;
+#ifdef _WIN32
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+	         &nrows, value, ptr, index, &idum, &nrhs,
+	         iparm, &msglvl, &ddum, &ddum, &error, dparm);
+#else
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+	         &nrows, value, ptr, index, &idum, &nrhs,
+	         iparm, &msglvl, &ddum, &ddum, &error);
+#endif
+
+	if (msglvl==1) {
+		printf("< Memory usage >\n");
+		printf("             Peak memory on symbolic factorization = %d kb\n",  iparm[14]);
+		printf("             Permanent memory on symbolic factorization = %d kb\n",  iparm[15]);
+		printf("             Size of factors/Peak memory on numerical factorization and solution = %d\n",  iparm[16]);
+		printf("             Total peak memory = %d kb\n", std::max(iparm[14], iparm[15]+iparm[16]));
+	}
+	if (error != 0)
+	{
+		printf("\nERROR during symbolic factorization: %d", error);
+		exit(1);
+	}
+
+	/* --------------------------------------------------------------------*/
+	/* .. Numerical factorization.*/
+	/* --------------------------------------------------------------------*/
+	phase = 22;
+#ifdef _WIN32
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+	         &nrows, value, ptr, index, &idum, &nrhs,
+	         iparm, &msglvl, &ddum, &ddum, &error, dparm);
+#else
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+	         &nrows, value, ptr, index, &idum, &nrhs,
+	         iparm, &msglvl, &ddum, &ddum, &error);
+#endif
+	if (msglvl==1) {
+		printf("< Memory usage >\n");
+		printf("             Peak memory on symbolic factorization = %d kb\n",  iparm[14]);
+		printf("             Permanent memory on symbolic factorization = %d kb\n",  iparm[15]);
+		printf("             Size of factors/Peak memory on numerical factorization and solution = %d\n",  iparm[16]);
+		printf("             Total peak memory = %d kb\n", std::max(iparm[14], iparm[15]+iparm[16]));
+	}
+	if (error != 0)
+	{
+		printf("\nERROR during numerical factorization: %d", error);
+		exit(2);
+	}
+
+	/* --------------------------------------------------------------------*/
+	/* .. Back substitution and iterative refinement. */
+	/* --------------------------------------------------------------------*/
+	phase = 33;
+	iparm[7] = 2;             /* Max numbers of iterative refinement steps. */
+
+	/* Set right hand side to one. */
+
+#ifdef _WIN32
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+	         &nrows, value, ptr, index, &idum, &nrhs,
+	         iparm, &msglvl, b, x, &error, dparm);
+#else
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+	         &nrows, value, ptr, index, &idum, &nrhs,
+	         iparm, &msglvl, tmp_b, tmp_x, &error);
+#endif
+	if (msglvl==1) {
+		printf("< Memory usage >\n");
+		printf("             Peak memory on symbolic factorization = %d kb\n",  iparm[14]);
+		printf("             Permanent memory on symbolic factorization = %d kb\n",  iparm[15]);
+		printf("             Size of factors/Peak memory on numerical factorization and solution = %d\n",  iparm[16]);
+		printf("             Total peak memory = %d kb\n", std::max(iparm[14], iparm[15]+iparm[16]));
+	}
+	if (error != 0)
+	{
+		printf("\nERROR during solution: %d", error);
+		exit(3);
+	}
+
+	phase = -1;               /* Release internal memory. */
+#ifdef _WIN32
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+	         &nrows, value, ptr, index, &idum, &nrhs,
+	         iparm, &msglvl, &ddum, &ddum, &error, dparm);
+#else
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+	         &nrows, value, ptr, index, &idum, &nrhs,
+	         iparm, &msglvl, &ddum, &ddum, &error);
+#endif
+
+	if (is_compressed) {
+		#pragma omp parallel for
+		for(int i = 0; i < nrows; ++i) {
+			x[vec_nz_rows[i]] = tmp_x[i];
+		}
+	}
+
+	// Releasing the local memory
+	delete [] value;
+	if (is_compressed || is_index_from_one) {
 		free(ptr);
 		free(index);
-		//		MKL_FreeBuffers();
-		cout << "->Finished PARDISO computation" << endl;
+	}
+	if (is_compressed) {
+		delete tmp_x;
+		delete tmp_b;
+	}
+
+	//		MKL_FreeBuffers();
+	ScreenMessage2("-> Finished PARDISO computation\n");
+	ScreenMessage2("------------------------------------------------------------------\n");
+}
+#endif
+
+#ifdef LIS
+int Linear_EQS::solveWithLIS(CNumerics* m_num, bool compress)
+{
+	ScreenMessage2("------------------------------------------------------------------\n");
+	ScreenMessage2("*** LIS solver computation\n");
+
+	// Prepare CRS data
+	LIS_INT nrows = A->Size() * A->Dof();
+	LIS_INT nonzero = A->nnz();
+	//ScreenMessage2("-> copying CRS data with dim=%ld and nnz=%ld\n", nrows, nonzero);
+	LIS_REAL* value = new LIS_REAL [nonzero];
+	A->GetCRSValue(value);
+	LIS_INT* ptr = A->ptr;
+	LIS_INT* col_idx = A->col_idx;
+
+	bool is_compressed = false;
+	std::vector<LIS_INT> vec_nz_rows;
+	if (compress)
+	{
+		// check non-zero rows, non-zero entries
+		ScreenMessage2("-> Check non-zero entries\n");
+		std::vector<LIS_INT> vec_z_rows;
+		IndexType n_nz_entries = searcgNonZeroEntries(nrows, ptr, value, vec_nz_rows, vec_z_rows);
+
+		const LIS_INT n_new_rows = vec_nz_rows.size();
+		if (n_new_rows < nrows)
+		{
+			ScreenMessage2("-> Found %d empty rows. Delete them from total %d rows\n", nrows - n_new_rows, nrows);
+			is_compressed = true;
+			LIS_INT *new_ptr, *new_col_index;
+			LIS_REAL* new_value;
+			compressCRS(ptr, col_idx, value, vec_nz_rows, vec_z_rows, n_nz_entries,
+					new_ptr, new_col_index, new_value);
+
+			nrows = n_new_rows;
+			nonzero = n_nz_entries;
+			ptr = new_ptr;
+			col_idx = new_col_index;
+			delete[] value;
+			value = new_value;
+		}
+	}
+
+	// Creating a matrix.
+	int ierr = lis_matrix_create(0,&AA); CHKERR(ierr);
+#ifndef OGS_USE_LONG
+	ierr = lis_matrix_set_type(AA,LIS_MATRIX_CRS); CHKERR(ierr);
+#else
+	ierr = lis_matrix_set_type(AA,LIS_MATRIX_CSR); CHKERR(ierr);
+#endif
+	ierr = lis_matrix_set_size(AA,0,nrows); CHKERR(ierr);
+
+	// Matrix solver and Precondition can be handled better way.
+	char solver_options[MAX_ZEILE], tol_option[MAX_ZEILE];
+	sprintf(solver_options,
+	        "-i %d -p %d %s",
+	        m_num->ls_method,
+	        m_num->ls_precond,
+	        m_num->ls_extra_arg.c_str());
+	// tolerance and other setting parameters are same
+	//NW add max iteration counts
+	sprintf(tol_option,
+	        "-tol %e -maxiter %d",
+	        m_num->ls_error_tolerance,
+	        m_num->ls_max_iterations);
+
+#ifndef OGS_USE_LONG
+	ierr = lis_matrix_set_crs(nonzero,ptr,col_idx, value,AA); CHKERR(ierr);
+//		ierr = lis_matrix_set_crs(nonzero,A->ptr,A->col_idx, value,AA);
+#else
+	ierr = lis_matrix_set_csr(nonzero,ptr,col_idx, value,AA); CHKERR(ierr);
+//		ierr = lis_matrix_set_csr(nonzero,A->ptr,A->col_idx, value,AA);
+#endif
+    ierr = lis_matrix_assemble(AA); CHKERR(ierr);
+
+	// Assemble the vector, b, x
+	ierr = lis_vector_duplicate(AA,&bb); CHKERR(ierr);
+	ierr = lis_vector_duplicate(AA,&xx); CHKERR(ierr);
+
+	if (!is_compressed) {
+		#pragma omp parallel for
+		for(int i = 0; i < nrows; ++i)
+		{
+			ierr = lis_vector_set_value(LIS_INS_VALUE,i,x[i],xx);
+			ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[i],bb);
+		}
+	} else {
+		#pragma omp parallel for
+		for(int i = 0; i < nrows; ++i)
+		{
+			ierr = lis_vector_set_value(LIS_INS_VALUE,i,x[vec_nz_rows[i]],xx);
+			ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[vec_nz_rows[i]],bb);
+		}
+	}
+
+	//lis_output(AA, bb, xx, LIS_FMT_MM, "leqs.txt");
+
+	// Create solver
+	ierr = lis_solver_create(&solver); CHKERR(ierr);
+
+	ierr = lis_solver_set_option(solver_options,solver);
+	ierr = lis_solver_set_option(tol_option,solver);
+	ierr = lis_solver_set_option("-print mem",solver);
+	ScreenMessage2("-> Execute Lis\n");
+	ierr = lis_solve(AA,bb,xx,solver); CHKERR(ierr);
+	ScreenMessage2("-> done\n");
+	int iter=0;
+	ierr = lis_solver_get_iters(solver,&iter);
+	//NW
+	printf("iteration: %d/%d\n", iter, m_num->ls_max_iterations);
+	double resid = 0.0;
+	ierr = lis_solver_get_residualnorm(solver,&resid);
+	printf("residuals: %e\n", resid);
+	//	lis_vector_print(xx);
+	//	lis_vector_print(bb);
+
+	// Update the solution (answer) into the x vector
+	if (!is_compressed) {
+		#pragma omp parallel for
+		for(int i = 0; i < nrows; ++i)
+			lis_vector_get_value(xx,i,&(x[i]));
+	} else {
+		#pragma omp parallel for
+		for(int i = 0; i < nrows; ++i) {
+			lis_vector_get_value(xx,i,&(x[vec_nz_rows[i]]));
+		}
+	}
+
+	// Clear memory
+	if (is_compressed) {
+#if 0
+	    lis_matrix_destroy(AA);
+#endif
+	} else {
+		delete [] value;
+	}
+	//	lis_matrix_destroy(AA);
+	lis_vector_destroy(bb);
+	lis_vector_destroy(xx);
+	lis_solver_destroy(solver);
+	ScreenMessage2("------------------------------------------------------------------\n");
+
+	return iter;
+}
+#endif
+
+#if defined(LIS) || defined(MKL)
+int Linear_EQS::Solver(CNumerics* num, bool compress)
+{
+	CNumerics* m_num = (num == NULL) ? num_vector[0] : num;
+#define ENABLE_COMPRESS_EQS
+#ifndef ENABLE_COMPRESS_EQS
+	compress = false;
+#endif
+
+	// get RHS norm
+	this->bNorm = Norm(b);
+
+	int iter = 0;
+#ifdef _OPENMP
+	//omp_set_num_threads (1);
+	ScreenMessage2("-> Use OpenMP with %d threads\n", omp_get_max_threads());
+#endif
+#ifdef OGS_USE_LONG
+	ScreenMessage2("-> 64bit integer is used in PARDISO\n");
+#endif
+
+	if(m_num->ls_method == 805)           // Then, PARDISO parallel direct solver
+	{
+#ifdef MKL
+		solveWithPARDISO(num, compress);
 #endif
 	}
 	else                                  // LIS parallel solver
 	{
-		std::cout <<
-		"------------------------------------------------------------------" <<
-		std::endl;
-		ScreenMessage2("*** LIS solver computation with %d threads\n", omp_get_max_threads());
-		int i, ierr;
-		// Fix for the fluid_momentum Dof
-		long size = A->Size() * A->Dof();
-
-		// Assembling the matrix
-		// Establishing CRS type matrix from GeoSys Matrix data storage type
-		long nonzero = A->nnz();
-		ScreenMessage2("->copying CRS data with dim=%ld and nnz=%ld\n", size, nonzero);
-		double* value = new double [nonzero];
-		ierr = A->GetCRSValue(value);
-		LIS_INT* ptr = A->ptr;
-		LIS_INT* col_idx = A->col_idx;
-
-#define ENABLE_COMPRESS_EQS
-#ifdef ENABLE_COMPRESS_EQS
-        std::vector<int> vec_nz_rows;
-        if (compress) {
-            // check non-zero rows, non-zero entries
-            vec_nz_rows.reserve(size);
-            int n_nz_entries = 0;
-            for (int i=0; i<size; i++) {
-                int j_row_begin = A->ptr[i];
-                int j_row_end = A->ptr[i+1];
-                int old_n_nz_entries = n_nz_entries;
-                for (int j=j_row_begin; j<j_row_end; j++) {
-                    if (value[j]==.0) continue;
-                    n_nz_entries++;
-                }
-                if (n_nz_entries>old_n_nz_entries)
-                    vec_nz_rows.push_back(i);
-            }
-
-            if (vec_nz_rows.size() != (std::size_t)size) {
-                int *new_ptr, *new_index;
-                double* new_value;
-                lis_matrix_malloc_crs((int)vec_nz_rows.size(), n_nz_entries, &new_ptr, &new_index, &new_value);
-
-                int nnz_counter = 0;
-                for (int i=0; i<(int)vec_nz_rows.size(); i++) {
-                    const int old_i = vec_nz_rows[i];
-                    const int j_row_begin = A->ptr[old_i];
-                    const int j_row_end = A->ptr[old_i+1];
-
-                    new_ptr[i] = nnz_counter;
-
-                    for (int j=j_row_begin; j<j_row_end; j++) {
-                        if (value[j]==.0) continue;
-                        new_index[nnz_counter] = A->col_idx[j];
-                        new_value[nnz_counter] = value[j];
-                        nnz_counter++;
-                    }
-                }
-                new_ptr[vec_nz_rows.size()] = nnz_counter;
-
-                std::cout << "-> global linear equations are compressed with non-zero entries. original dim=" << size << ", compressed dim=" << vec_nz_rows.size() << "\n";
-
-                size = (int)vec_nz_rows.size();
-                ptr = new_ptr;
-                col_idx = new_index;
-                delete [] value;
-                value = new_value;
-            }
-        }
+#ifdef LIS
+		iter = solveWithLIS(num, compress);
 #endif
-
-        // Creating a matrix.
-        ierr = lis_matrix_create(0,&AA);
-#ifndef OGS_USE_LONG
-        ierr = lis_matrix_set_type(AA,LIS_MATRIX_CRS);
-#else
-		ierr = lis_matrix_set_type(AA,LIS_MATRIX_CSR);
-#endif
-        ierr = lis_matrix_set_size(AA,0,size);
-
-		// Matrix solver and Precondition can be handled better way.
-		char solver_options[MAX_ZEILE], tol_option[MAX_ZEILE];
-		sprintf(solver_options,
-		        "-i %d -p %d %s",
-		        m_num->ls_method,
-		        m_num->ls_precond,
-		        m_num->ls_extra_arg.c_str());
-		// tolerance and other setting parameters are same
-		//NW add max iteration counts
-		sprintf(tol_option,
-		        "-tol %e -maxiter %d",
-		        m_num->ls_error_tolerance,
-		        m_num->ls_max_iterations);
-
-#ifndef OGS_USE_LONG
-		ierr = lis_matrix_set_crs(nonzero,ptr,col_idx, value,AA);
-//		ierr = lis_matrix_set_crs(nonzero,A->ptr,A->col_idx, value,AA);
-#else
-		ierr = lis_matrix_set_csr(nonzero,ptr,col_idx, value,AA);
-//		ierr = lis_matrix_set_csr(nonzero,A->ptr,A->col_idx, value,AA);
-#endif
-        ierr = lis_matrix_assemble(AA);
-
-        // Assemble the vector, b, x
-        //OK411 int iflag = 0;
-        ierr = lis_vector_duplicate(AA,&bb);
-        ierr = lis_vector_duplicate(AA,&xx);
-
-        if (!compress) {
-            #pragma omp parallel for
-            for(i = 0; i < size; ++i)
-            {
-                ierr = lis_vector_set_value(LIS_INS_VALUE,i,x[i],xx);
-                ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[i],bb);
-            }
-        } else {
-#ifdef ENABLE_COMPRESS_EQS
-            #pragma omp parallel for
-            for(i = 0; i < size; ++i)
-            {
-                ierr = lis_vector_set_value(LIS_INS_VALUE,i,x[vec_nz_rows[i]],xx);
-                ierr = lis_vector_set_value(LIS_INS_VALUE,i,b[vec_nz_rows[i]],bb);
-            }
-#endif
-        }
-
-		//lis_output(AA, bb, xx, LIS_FMT_MM, "leqs.txt");
-
-		// Create solver
-		ierr = lis_solver_create(&solver);
-
-		ierr = lis_solver_set_option(solver_options,solver);
-		ierr = lis_solver_set_option(tol_option,solver);
-		ierr = lis_solver_set_option("-print mem",solver);
-		ScreenMessage2("->call lis_solve()\n");
-		ierr = lis_solve(AA,bb,xx,solver);
-		ierr = lis_solver_get_iters(solver,&iter);
-		//NW
-		printf("iteration: %d/%d\n", iter, m_num->ls_max_iterations);
-		double resid = 0.0;
-		ierr = lis_solver_get_residualnorm(solver,&resid);
-		printf("residuals: %e\n", resid);
-		//	lis_vector_print(xx);
-		//	lis_vector_print(bb);
-
-		// Update the solution (answer) into the x vector
-		if (!compress) {
-            #pragma omp parallel for
-            for(i = 0; i < size; ++i)
-                lis_vector_get_value(xx,i,&(x[i]));
-		} else {
-#ifdef ENABLE_COMPRESS_EQS
-            #pragma omp parallel for
-            for(i = 0; i < size; ++i) {
-                lis_vector_get_value(xx,i,&(x[vec_nz_rows[i]]));
-            }
-#endif
-		}
-
-		// Clear memory
-		if (compress) {
-#if 0
-		    lis_matrix_destroy(AA);
-#endif
-		} else {
-	        delete [] value;
-		}
-		//	lis_matrix_destroy(AA);
-		lis_vector_destroy(bb);
-		lis_vector_destroy(xx);
-		lis_solver_destroy(solver);
-		std::cout <<
-		"------------------------------------------------------------------" <<
-		std::endl;
 	}
 
-	return iter;                            // This right now is meaningless.
+	return iter;
 }
 #else // ifdef LIS
 int Linear_EQS::Solver()

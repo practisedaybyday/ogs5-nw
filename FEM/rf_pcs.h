@@ -264,7 +264,7 @@ public:
 protected:
   int mysize;                               
   int myrank; 
-#elif NEW_EQS
+#elif defined(NEW_EQS)
 #ifdef LIS
 public:
 	Linear_EQS* eqs_new;
@@ -879,6 +879,11 @@ public:
 		os << "--Global assembly: " << (double)cpu_time_assembly / CLOCKS_PER_SEC << "\n";
 	}
 #endif
+#if defined(USE_PETSC) //03.3012. WW
+        /// Initialize the RHS array of the system of equations with the previous solution.
+        void InitializeRHS_with_u0(const bool quad = false); //in rf_pcs1.cpp
+#endif
+
 private:
 	/**
 	 * Method configures the material parameters. For this purpose it searchs in all
@@ -886,11 +891,6 @@ private:
 	 * PERMEABILITY_X1 and POROSITY
 	 */
 	void configMaterialParameters ();
-#if defined(USE_PETSC) //03.3012. WW
-  /// Initialize the RHS array of the system of equations with the previous solution.
-  void InitializeRHS_with_u0(); //in rf_pcs1.cpp
-
-#endif
 };
 
 //========================================================================

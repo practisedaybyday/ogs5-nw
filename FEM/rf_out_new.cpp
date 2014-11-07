@@ -273,7 +273,7 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 			switch (m_out->getGeoType())
 			{
 			case GEOLIB::GEODOMAIN: // domain data
-				ScreenMessage("Data output: Domain");
+				ScreenMessage("-> Data output: Domain");
 				if (OutputBySteps)
 				{
 					if (!m_out->_pcon_value_vector.empty())
@@ -316,7 +316,7 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 			//------------------------------------------------------------------
 			case GEOLIB::POLYLINE: // profiles along polylines
 				 if (m_out->dat_type_name.compare("GNUPLOT") != 0) // JOD !!!!!
-					 ScreenMessage("Data output: Polyline profile - %s\n", m_out->getGeoName().c_str());
+					 ScreenMessage("-> Data output: Polyline profile - %s\n", m_out->getGeoName().c_str());
 				if (OutputBySteps)
 				{
 					tim_value = m_out->NODWritePLYDataTEC(time_step_number);
@@ -353,14 +353,14 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 			//------------------------------------------------------------------
 			case GEOLIB::POINT: // breakthrough curves in points
 				if (m_out->dat_type_name.compare("GNUPLOT") != 0) // JOD !!!!!
-					ScreenMessage("Data output: Breakthrough curves - %s\n", m_out->getGeoName().c_str());
+					ScreenMessage("-> Data output: Breakthrough curves - %s\n", m_out->getGeoName().c_str());
 				m_out->NODWritePNTDataTEC(time_current, time_step_number);
 				if (!m_out->_new_file_opened)
 					m_out->_new_file_opened = true;  //WW
 				break;
 			//------------------------------------------------------------------
 			case GEOLIB::SURFACE: // profiles at surfaces
-				ScreenMessage("Data output: Surface profile\n");
+				ScreenMessage("-> Data output: Surface profile\n");
 				//..............................................................
 				//				if (m_out->_dis_type_name.compare("AVERAGE") == 0) {
 				if (m_out->getProcessDistributionType() == FiniteElement::AVERAGE)
@@ -552,7 +552,7 @@ void OUTData(double time_current, int time_step_number, bool force_output)
 
 			if (m_out->getGeoType()==GEOLIB::GEODOMAIN)
 			{
-				ScreenMessage("Data output: Domain - PVD\n");
+				ScreenMessage("-> Data output: Domain - PVD\n");
 				if (time_step_number == 0)
 				{
 					std::string pcs_type ("");

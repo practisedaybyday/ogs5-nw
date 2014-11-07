@@ -47,6 +47,11 @@ class SparseTable;
 //
 class Linear_EQS
 {
+#ifndef OGS_USE_LONG
+	typedef int IndexType;
+#else
+	typedef long long int IndexType;
+#endif
 public:
 	Linear_EQS(const SparseTable &sparse_table,
 	           const long dof, bool messg = true);
@@ -179,6 +184,19 @@ private:                                          // Dot not remove this!
 	void Set_Plane_Rotation(double &dx, double &dy, double &cs, double &sn);
 	//
 	void Message();
+#ifdef MKL
+	void solveWithPARDISO(CNumerics* num, bool compress);
+#endif
+#ifdef LIS
+	int solveWithLIS(CNumerics* num, bool compress);
+#endif
+#if defined(LIS) || defined(MKL)
+	IndexType searcgNonZeroEntries(IndexType nrows, IndexType* ptr, double* value, std::vector<IndexType> &vec_nz_rows, std::vector<IndexType> &vec_z_rows);
+	void compressCRS(const IndexType* org_ptr, const IndexType* org_col_idx, const double* org_value,
+			const std::vector<IndexType> &vec_nz_rows, const std::vector<IndexType> &vec_z_rows, IndexType n_nz_entries,
+			IndexType* &new_ptr, IndexType* &new_col_index, double* &new_value);
+#endif
+
 	// Friends
 	friend class ::CRFProcess;
 	friend class process::CRFProcessDeformation;

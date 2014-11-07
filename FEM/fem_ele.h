@@ -5,7 +5,6 @@
  */
 
 #ifndef fem_INC
-
 #define fem_INC
 
 // C++
@@ -19,27 +18,27 @@
 // MSH
 #include "par_ddc.h"                              //OK //Moved from fem_ele_std.h. WW
 #endif 
-
-
-
 #include "MSHEnums.h"
 
 namespace Math_Group
-{ class SymMatrix;
-  class Matrix;
-  typedef Matrix Vec;
+{
+class SymMatrix;
+class Matrix;
+typedef Matrix Vec;
 }
 namespace MeshLib
-{ class CElem;
-  class CNode;
-  class CEdge;
+{
+class CElem;
+class CNode;
+class CEdge;
 }
 class CRFProcess;
-
 namespace  process { class CRFProcessDeformation;}
+
 
 namespace FiniteElement
 {
+
 struct ExtrapolationMethod
 {
 	enum type
@@ -256,7 +255,7 @@ public:
 	// Allocate memory for strain coupling matrix
 	void AllocateMemory(CElem* ele, int type = 0);
 	// Set members
-	void SetMass(SymMatrix* mass) { Mass = mass; }
+	void SetMass(Matrix* mass) { Mass = mass; }
 	void SetMass_notsym(Matrix* mass) { Mass_notsym = mass; }
 	void SetLaplace(Matrix* laplace) { Laplace = laplace; }
 	void SetStiffness(Matrix* x) { Stiffness = x; }
@@ -267,7 +266,7 @@ public:
 	void SetCouplingMatrixB(Matrix* cplM) {CouplingB = cplM; }
 	void SetRHS(Vec* rhs) {RHS = rhs; }
 	// Get members
-	SymMatrix* GetMass() {return Mass; }
+	Matrix* GetMass() {return Mass; }
 	Matrix* GetMass_notsym() {return Mass_notsym; }
 	Matrix* GetLaplace() {return Laplace; }
 	Matrix* GetStiffness() {return Stiffness; }
@@ -287,9 +286,7 @@ public:
 	Matrix* GetCouplingMatrixB() {return CouplingB; }
 	Vec* GetRHS() {return RHS; }
 private:
-	//TODO in more gernal way for the case of sym and unsym. WW      SymMatrix *Mass;
-	//      SymMatrix *Laplace;
-	SymMatrix* Mass;
+	Matrix* Mass;
 	Matrix* Mass_notsym;
 	Matrix* Laplace;
 	Matrix* Advection;
@@ -300,11 +297,6 @@ private:
 	Matrix* Stiffness;
 	Vec* RHS;
 };
-}                                                 // end namespace
+} // end namespace
 
-//=============================================
-// For up coupling caculation in cel_*.cpp
-// Will be removed when new FEM is ready
-extern FiniteElement::CElement* elem_dm;
-//=============================================
 #endif

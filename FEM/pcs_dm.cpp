@@ -1,4 +1,5 @@
-#include "makros.h"
+
+#include "pcs_dm.h"
 
 #include <cfloat>
 #include <cmath>
@@ -6,6 +7,9 @@
 #include <iomanip>
 #include <iostream>
 #include <time.h>
+
+#include "makros.h"
+#include "StringTools.h"
 
 #include "FEMEnums.h"
 #include "mathlib.h"
@@ -23,7 +27,6 @@
 #include "matrix_routines.h"
 #endif
 #include "fem_ele_vec.h"
-#include "pcs_dm.h"
 #include "rf_msp_new.h"
 #include "rf_tim_new.h"
 // Excavation
@@ -38,11 +41,12 @@
 
 #include "rf_node.h"
 
-using namespace std;
-
 // Solver
 #if defined(NEW_EQS)
 #include "equation_class.h"
+#endif
+#ifdef USE_PETSC
+#include "PETSC/PETScLinearSolver.h"
 #endif
 
 double LoadFactor = 1.0;
@@ -56,10 +60,12 @@ bool GravityForce = true;
 
 bool Localizing = false;                          // for tracing localization
 // Last discontinuity element correponding to SeedElement
+
+using namespace std;
+
 vector<DisElement*> LastElement(0);
 vector<long> ElementOnPath(0);                    // Element on the discontinuity path
 
-using namespace std;
 using FiniteElement::CFiniteElementVec;
 using FiniteElement::CFiniteElementStd;
 using FiniteElement::ElementValue_DM;
@@ -71,10 +77,10 @@ namespace process
 CRFProcessDeformation::
 CRFProcessDeformation()
 	: CRFProcess(), fem_dm(NULL), ARRAY(NULL),p0(NULL),
-	  counter(0), InitialNorm(0.0)
+	  counter(0), InitialNormR0(0.0)
 
 {
-	error_k0 = 1.0e10;
+	norm_du0_pre_cpl_itr = 0.0;
 	idata_type = none;
 	_isInitialStressNonZero = false; //NW
 }
@@ -103,15 +109,10 @@ CRFProcessDeformation::~CRFProcessDeformation()
 			WriteSolution();
 	}
 	//
-	MeshLib::CElem* elem = NULL;
 	for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
 	{
-		elem = m_msh->ele_vector[i];
-		if (elem->GetMark())      // Marked for use
-		{
-			delete ele_value_dm[i];
-			ele_value_dm[i] = NULL;
-		}
+		delete ele_value_dm[i];
+		ele_value_dm[i] = NULL;
 	}
 	if(enhanced_strain_dm > 0)
 	{
@@ -276,6 +277,43 @@ void CRFProcessDeformation::InitialMBuffer()
 	}
 }
 
+double CRFProcessDeformation::getNormOfDisplacements()
+{
+#ifdef USE_PETSC
+	const int g_nnodes = m_msh->getNumNodesLocal_Q();
+	const int size = g_nnodes * pcs_number_of_primary_nvals;
+	vector<int> ix(size);
+	vector<double> val(size);
+	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+	{
+		const int nidx0 = GetNodeValueIndex(pcs_primary_function_name[i]);
+		for (int j = 0; j < g_nnodes; j++)
+		{
+			int ish = pcs_number_of_primary_nvals * j + i;
+			ix[ish] = pcs_number_of_primary_nvals * m_msh->Eqs2Global_NodeIndex[j] + i;
+			val[ish] = GetNodeValue(j, nidx0 + 1);
+		}
+	}
+	eqs_new->setArrayValues(0, size, &ix[0], &val[0], INSERT_VALUES);
+	eqs_new->AssembleUnkowns_PETSc();
+	double norm_u_k1 = eqs_new->GetVecNormX();
+#else
+	const int g_nnodes = m_msh->GetNodesNumber(true);
+	const int size = g_nnodes * pcs_number_of_primary_nvals;
+	double val = .0;
+	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+	{
+		const int nidx0 = GetNodeValueIndex(pcs_primary_function_name[i]);
+		for (int j = 0; j < g_nnodes; j++)
+		{
+			val += std::pow(GetNodeValue(j, nidx0+1), 2.0);
+		}
+	}
+	double norm_u_k1 = std::sqrt(val);
+#endif
+	return norm_u_k1;
+}
+
 /*************************************************************************
    ROCKFLOW - Function: CRFProcess::
    Task:  Solve plastic deformation by generalized Newton-Raphson method
@@ -286,419 +324,168 @@ void CRFProcessDeformation::InitialMBuffer()
  **************************************************************************/
 double CRFProcessDeformation::Execute(int loop_process_number)
 {
-#if defined(USE_MPI)
-	if(myrank == 1)
-	{
-#endif
-		std::cout<<"\n================================================" << std::endl;
-	    std::cout << "->Process " << loop_process_number << ": " << convertProcessTypeToString (getProcessType()) << std::endl;
-	    std::cout << "================================================" << std::endl;
-#if defined(USE_MPI)
-}
-#endif
+	ScreenMessage("\n================================================\n");
+	ScreenMessage("->Process %d: %s\n", loop_process_number, convertProcessTypeToString (getProcessType()).c_str());
+	ScreenMessage("================================================\n");
 
 	clock_t dm_time;
-
-	//-------------------------------------------------------
-	// Controls for Newton-Raphson steps
-	int l;
-
-	//  const int MaxLoadsteps=10; //20;
-	//  const double LoadAmplifier =2.0;
-	//  double MaxLoadRatio=1.0, maxStress=0.0;
-	//  double LoadFactor0 = 0.0;
-	//  double minLoadRatio = 0.0000001;
-	//  const int defaultSteps=100;
-
-	double damping = 1.0;
-	double NormU, Norm = 0.0, Error1, Error = 0.0;
-	double ErrorU1, ErrorU = 0.0;
-
-	//const int defaultSteps=100;
-	int MaxIteration = m_num->nls_max_iterations;
-	int elasticity = 0;
-	//int monolithic=0;
-	//
-	string delim = " | ";
-	//----------------------------------------------------------
 	dm_time = -clock();
-	//
+
+	counter++; // Times of this method  to be called
+	// For pure elesticity
+	const bool isLinearProblem = (pcs_deformation <= 100 && !fem_dm->dynamic);
+
+	// setup mesh
 	m_msh->SwitchOnQuadraticNodes(true);
-	//
-	//TEST if(num_type_name.find("EXCAVATION")!=0)
 	if(hasAnyProcessDeactivatedSubdomains || NumDeactivated_SubDomains > 0 ||
 	   num_type_name.find("EXCAVATION") != string::npos)
-		//if(NumDeactivated_SubDomains>0||num_type_name.find("EXCAVATION")!=string::npos)
 		CheckMarkedElement();
-	// MarkNodesForGlobalAssembly();
 
-	counter++;                            // Times of this method  to be called
-	LoadFactor = 1.0;
-
-	// For pure elesticity
-	if(pcs_deformation <= 100 && !fem_dm->dynamic)
-	{
-		elasticity = 1;
-		MaxIteration = 1;
-	}
-
-	// For monolithic scheme
-	if(type / 10 == 4)                    // Modified at 05.07.2010 WW
-
-		//        monolithic=1;
-		number_of_load_steps = 1;
 	// system matrix
-#if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
-	//TODO
-#elif NEW_EQS                              //WW
-	//
-#if defined(USE_MPI)
-	CPARDomain* dom = dom_vector[myrank];
-	long global_eqs_dim = pcs_number_of_primary_nvals * m_msh->GetNodesNumber(true);
-	dom->ConfigEQS(m_num, global_eqs_dim, true);
-#else
+#if defined (USE_PETSC)
+#elif defined(NEW_EQS)                              //WW
 	eqs_new->ConfigNumerics(m_num);       //27.11.2007 WW
-#endif
-	//
 #else
 	SetZeroLinearSolver(eqs);
 #endif
 
-	/*
-
-	   // dom->test();
-
-	   //TEST_MPI
-	   string test = "rank";
-	   char stro[1028];
-	   sprintf(stro, "%d",myrank);
-	   string test1 = test+(string)stro+"Assemble.txt";
-	   ofstream Dum(test1.c_str(), ios::out); // WW
-	   dom->eqsH->Write(Dum);
-	   Dum.close();
-	   //  MPI_Finalize();
-	   exit(1);
-
-	 */
-
-	//JT//if(CouplingIterations == 0 && m_num->nls_method != 2)
 	if(this->first_coupling_iteration && m_num->nls_method != FiniteElement::NL_JFNK)
 		StoreLastSolution();      //u_n-->temp
+
 	//  Reset stress for each coupling step when partitioned scheme is applied to HM
 	if(H_Process && (type / 10 != 4))
 		ResetCouplingStep();
+
 	//
-	// Compute the maxium ratio of load increment and
+	// Compute the maximum ratio of load increment and
 	//   predict the number of load steps
 	// ---------------------------------------------------------------
 	// Compute the ratio of the current load to initial yield load
 	// ---------------------------------------------------------------
 	number_of_load_steps = 1;
-	/*
-	   if(!elasticity&&!fem_dm->dynamic&&(type!=41))
-	   {
-	   InitializeNewtonSteps(0); // w=du=0
-	   number_of_load_steps = 1;
-
-	   if(counter==1) // The first time this method is called.
-	   {
-	       // This is may needed by pure mechacial process
-	       //  Auto increment loading  1
-	       //-----------  Predict the number of load increment -------------------
-	   //  Prepared for the special usage. i.e, for test purpose.
-	   //  Activate this segement if neccessary as well as Auto increment loading  2
-	   //---------------------------------------------------------------------
-	   // InitializeNewtonSteps(1); // u=0
-	   DisplayMsgLn("\nEvaluate load ratio: ");
-	   PreLoad = 1;
-	   GlobalAssembly();
-	   PreLoad = 0;
-	   //		 {MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  abort();}
-
-	   ExecuteLinearSolver();
-
-	   UpdateIterativeStep(1.0, 0); // w = w+dw
-	   MaxLoadRatio=CaclMaxiumLoadRatio();
-
-	   if(MaxLoadRatio<=1.0&&MaxLoadRatio>=0.0) number_of_load_steps=1;
-	   else if(MaxLoadRatio<0.0)
-	   {
-	   if( fabs(maxStress)> MKleinsteZahl)
-	   {
-	   int Incre=(int)fabs(MaxLoadRatio/maxStress);
-	   if(Incre)
-	   number_of_load_steps=defaultSteps;
-	   }
-	   number_of_load_steps=defaultSteps;
-	   }
-	   else
-	   {
-	   number_of_load_steps=(int)(LoadAmplifier*MaxLoadRatio);
-	   if(number_of_load_steps>=MaxLoadsteps) number_of_load_steps=MaxLoadsteps;
-	   }
-	   cout<<"\n***Load ratio: "<< MaxLoadRatio<<endl;
-
-	   }
-	   }
-	 */
-	// ---------------------------------------------------------------
-	// Load steps
-	// ---------------------------------------------------------------
-	/*
-	   //TEST
-	   if(Cam_Clay)
-	   {
-	    if(counter==1) number_of_load_steps = MaxLoadsteps;
-	    else number_of_load_steps = 1;
-	     if(fluid) number_of_load_steps = 10;
-	   }
-	 */
-	for(l = 1; l <= number_of_load_steps; l++)
+	if(type / 10 == 4) // For monolithic scheme
+		number_of_load_steps = 1;
+	LoadFactor = 1.0;
+	double damping = 1.0;
+	for(int l = 1; l <= number_of_load_steps; l++)
 	{
-		// This is may needed by pure mechacial process
-		//  Auto increment loading  2
-		//-----------  Predict the load increment ration-------------------
-		//     Prepared for the special usage. i.e, for test purpose.
-		//     Agitate this segement if neccessary as well as Auto increment loading  1
-		//---------------------------------------------------------------------
-		/*
-		   if(elasticity!=1&&number_of_load_steps>1)
-		   {
-		    // Predictor the size of the load increment, only perform at the first calling
-		     minLoadRatio = (double)l/(double)number_of_load_steps;
-
-		   // Caculate load ratio \gamma_k
-		     if(l==1)
-		     {
-		       if(MaxLoadRatio>1.0)
-		      {
-		   LoadFactor=1.0/MaxLoadRatio;
-		   if(LoadFactor<minLoadRatio) LoadFactor=minLoadRatio;
-		   LoadFactor0=LoadFactor;
-		   }
-		   else LoadFactor = (double)l/(double)number_of_load_steps;
-		   }
-		   else
-		   {
-		   if(MaxLoadRatio>1.0)
-		   LoadFactor+=(1.0-LoadFactor0)/(number_of_load_steps-1);
-		   else LoadFactor = (double)l/(double)number_of_load_steps;
-		   }
-		   // End of Caculate load ratio \gamma_k
-
-		   }
-		   //TEST     else if(fluid)   LoadFactor = (double)l/(double)number_of_load_steps;
-		 */
-
-		//
-		// Initialize inremental displacement: w=0
+		// Initialize incremental displacement: w=0
 		InitializeNewtonSteps();
-		//
-		// Begin Newton-Raphson steps
-		if(elasticity != 1)
+		double NormDU = 0.0, NormR = 0.0;
+		double ErrorR = 0.0, ErrorU = 0.0;
+		const int MaxIteration = isLinearProblem ? 1 : m_num->nls_max_iterations;
+		if(!isLinearProblem)
 		{
-			//ite_steps = 0;
-			Error = 1.0e+8;
-			ErrorU = 1.0e+8;
-			Norm = 1.0e+8;
-			NormU = 1.0e+8;
-#ifdef USE_MPI
-			if(myrank == 0)
-			{
-#endif
-			//Screan printing:
-            std::cout <<"      Starting loading step "<< l << "/" << number_of_load_steps <<".  Load factor: " << LoadFactor << std::endl;
-			std::cout <<"      ------------------------------------------------"<<std::endl;
-#ifdef USE_MPI
+			ErrorR = ErrorU = NormR = NormDU = 1.0e+8;
+			ScreenMessage("Starting loading step %d/%d. Load factor: %g\n", l, number_of_load_steps, LoadFactor);
+			ScreenMessage("------------------------------------------------\n");
 		}
-#endif
-		}
+
+		// Begin Newton-Raphson steps
 		ite_steps = 0;
 		while(ite_steps < MaxIteration)
 		{
 			ite_steps++;
+			ScreenMessage("-->Starting Newton-Raphson iteration: %d/%d\n", ite_steps, MaxIteration);
+			ScreenMessage("------------------------------------------------\n");
 			// Refresh solver
-#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-			//TODO
-#elif NEW_EQS                        //WW
-#ifndef USE_MPI
-			eqs_new->Initialize(); //27.11.2007 WW
-#endif
-#ifdef JFNK_H2M
-			/// If JFNK method (1.09.2010. WW):
-			if(m_num->nls_method == 2)
-			{
-				Jacobian_Multi_Vector_JFNK();
-				eqs_new->setPCS(this);
-			}
-#endif
-#else // ifdef NEW_EQS
+#if defined(USE_PETSC)
+			eqs_new->Initialize();
+#elif defined(NEW_EQS)
+			eqs_new->Initialize();
+#else
 			SetZeroLinearSolver(eqs);
 #endif
 
 			// Assemble and solve system equation
-			/*
-			   #ifdef MFC
-			        CString m_str;
-			        m_str.Format("Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Calculate element matrices",\
-			                      aktuelle_zeit,pcs_type_name.c_str(),l,ite_steps);
-			        pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
-			   #endif
-			 */
-			std::cout << "Assembling equation system..." << std::endl;
-#ifdef USE_MPI                        //WW
-			clock_t cpu_time = 0; //WW
-			cpu_time = -clock();
-#endif
+			ScreenMessage("Assembling equation system...\n");
 			if(m_num->nls_method != FiniteElement::NL_JFNK) // Not JFNK method. 05.08.2010. WW
 				GlobalAssembly();
-#ifdef USE_MPI
-			cpu_time += clock();
-			cpu_time_assembly += cpu_time;
-#endif
-			//
-			if(type != 41)
+
+			// init solution vector
+			if(isLinearProblem && type != 41)
+#if defined(USE_PETSC)
+				InitializeRHS_with_u0();
+#else
 				SetInitialGuess_EQS_VEC();
-#ifdef MFC
-			m_str.Format(
-			        "Time step: t=%e sec, %s, Load step: %i, NR-Iteration: %i, Solve equation system", \
-			        aktuelle_zeit,
-			        pcs_type_name.c_str(),
-			        l,
-			        ite_steps);
-			pWin->SendMessage(WM_SETMESSAGESTRING,0,(LPARAM)(LPCSTR)m_str);
-#endif
-#ifdef USE_MPI                        //WW
-			// No initial guess for deformation.
-			// for(long ll=0; ll<eqs->dim; ll++)
-			//  eqs->x[ll] = 0.0;
-			//
 #endif
 
-			std::cout << "      Calling linear solver..." << std::endl;
-			/// Linear solver
-#if defined(USE_PETSC) //|| defined(other parallel libs)//03~04.3012. WW
-			//TODO
-#elif NEW_EQS                        //WW
-			//
-#if defined(USE_MPI)
-			//21.12.2007
-			dom->eqsH->Solver(eqs_new->x, global_eqs_dim);
-#else
-#ifdef LIS
+			ScreenMessage("Calling linear solver...\n");
+			// Linear solver
+#if defined(USE_PETSC)
+//			eqs_new->EQSV_Viewer("eqs" + number2str(aktueller_zeitschritt) + "b");
+			eqs_new->Solver();
+			eqs_new->MappingSolution();
+#elif defined(LIS)
 			bool compress_eqs = (type/10==4 || this->NumDeactivated_SubDomains>0);
-			eqs_new->Solver(this->m_num, compress_eqs); //NW
+			eqs_new->Solver(this->m_num, compress_eqs);
+#elif defined(NEW_EQS)
+			eqs_new->Solver();
 #else
-			eqs_new->Solver(); //27.11.2007
-#endif
-#endif
-#else // ifdef NEW_EQS
 			ExecuteLinearSolver();
 #endif
-			//
-			// Norm of b (RHS in eqs)
-#ifdef USE_MPI
-			if(!elasticity)
-				Norm = dom->eqsH->NormRHS();
-#else
-#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-			//TODO
-#elif NEW_EQS
-			if(!elasticity)
-				Norm = eqs_new->NormRHS();
-#else
-			if(!elasticity)
-				Norm = NormOfUnkonwn_orRHS(false);
-#endif
-#endif
-			if(!elasticity)
+
+			if(!isLinearProblem)
 			{
-				// Check the convergence
-				Error1 = Error;
-				ErrorU1 = ErrorU;
-#if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
-			//TODO
-#elif NEW_EQS
-				NormU = eqs_new->NormX();
+				// Get norm of residual vector, solution increment
+#if defined(USE_PETSC)
+				NormR = eqs_new->GetVecNormRHS();
+				NormDU = eqs_new->GetVecNormX();
+#elif defined(NEW_EQS)
+				NormR = eqs_new->NormRHS();
+				NormDU = eqs_new->NormX();
 #else
-				NormU = NormOfUnkonwn_orRHS();
+				NormR = NormOfUnkonwn_orRHS(false);
+				NormDU = NormOfUnkonwn_orRHS();
 #endif
 
-				//JT//if(ite_steps == 1 && CouplingIterations == 0)
-				if(ite_steps == 1 && this->first_coupling_iteration)
+				if (ite_steps == 1)
 				{
-					InitialNorm = Norm;
-					InitialNormU0 = NormU;
-					if(counter == 1)
-						InitialNormU = NormU;
+					if(this->first_coupling_iteration) {
+						InitialNormDU_coupling = NormDU;
+						norm_du0_pre_cpl_itr = .0;
+					}
+					InitialNormR0 = NormR;
+					InitialNormDU0 = NormDU;
 				}
 
-				Error = Norm / InitialNorm;
-				ErrorU = NormU / InitialNormU0;
-				if(Norm < Tolerance_global_Newton && Error > Norm)
-					Error = Norm;
-				//           if(Norm<TolNorm)  Error = 0.01*Tolerance_global_Newton;
-				if((NormU / InitialNormU) <= Tolerance_global_Newton)
-					Error = NormU / InitialNormU;
+				// calculate errors
+				ErrorR = NormR / (InitialNormR0==0 ? 1 : InitialNormR0);
+				ErrorU = NormDU / (InitialNormDU0==0 ? 1 : InitialNormDU0);
 
 				// Compute damping for Newton-Raphson step
 				damping = 1.0;
-				//           if(Error/Error1>1.0e-1) damping=0.5;
-				if(Error / Error1 > 1.0e-1 || ErrorU / ErrorU1 > 1.0e-1)
-					damping = 0.5;
-				if(ErrorU < Error)
-					Error = ErrorU;
-#if defined(NEW_EQS) && defined(JFNK_H2M)
-				/// If JFNK, get w from the buffer
-				if(m_num->nls_method == 2)
-					//damping = LineSearch();
-					Recovery_du_JFNK();
 
+#if 0
+				if(ErrorR / Error1 > 1.0e-1 || ErrorU / ErrorU1 > 1.0e-1)
+					damping = 0.5;
 #endif
-				// JT: Store the process and coupling errors
-				pcs_num_dof_errors = 1;
-				if(ite_steps == 1){
-					pcs_absolute_error[0] = NormU;
-					pcs_relative_error[0] = pcs_absolute_error[0] / Tolerance_global_Newton;
-					cpl_max_relative_error = pcs_relative_error[0];
-					cpl_num_dof_errors = 1;
-				}
-				else{
-					pcs_absolute_error[0] = Error;
-					pcs_relative_error[0] = Error / Tolerance_global_Newton;
-				}
+
 				//
-#ifdef USE_MPI
-				if(myrank == 0)
+				ScreenMessage("-->End of Newton-Raphson iteration: %d/%d\n", ite_steps, MaxIteration);
+				ScreenMessage("   NR-Error  RHS Norm 0  RHS Norm    Unknowns Norm  Damping\n");
+				ScreenMessage("   %8.2e  %8.2e    %8.2e    %8.2e       %8.2e\n", ErrorR, InitialNormR0, NormR, NormDU, damping);
+				ScreenMessage("------------------------------------------------\n");
+
+				if(ErrorR > 100.0 && ite_steps > 1)
 				{
-#endif
-				//Screan printing:
-				std::cout<<"      -->End of Newton-Raphson iteration: "<<ite_steps<<"/"<< MaxIteration <<std::endl;
-                cout.width(8);
-                cout.precision(2);
-                cout.setf(ios::scientific);
-                cout<<"         NR-Error"<<"  "<<"RHS Norm 0"<<"  "<<"RHS Norm  "<<"  "<<"Unknowns Norm"<<"  "<<"Damping"<<endl;
-                cout<<"         "<<Error<<"  "<<InitialNorm<<"  "<<Norm<<"   "<<NormU<<"   "<<"   "<<damping<<endl;
-                std::cout <<"      ------------------------------------------------"<<std::endl;
-#ifdef USE_MPI
-			}
-#endif
-				if(Error > 100.0 && ite_steps > 1)
-				{
-					printf (
-					        "\n  Attention: Newton-Raphson step is diverged. Programme halt!\n");
+					ScreenMessage("***Attention: Newton-Raphson step is diverged. Programme halt!\n");
 					exit(1);
 				}
-				if(InitialNorm < 10 * Tolerance_global_Newton)
+//				if(InitialNormR0 < 10 * Tolerance_global_Newton)
+//					break;
+//				if(NormR < 0.001 * InitialNormR0)
+//					break;
+				if(ErrorR <= Tolerance_global_Newton)
+				{
+					if (ite_steps==1)
+						UpdateIterativeStep(damping, 0);
 					break;
-				if(Norm < 0.001 * InitialNorm)
-					break;
-				if(Error <= Tolerance_global_Newton)
-					break;
+				}
 			}
-			// w = w+dw for Newton-Raphson
+
 			UpdateIterativeStep(damping, 0); // w = w+dw
-		}                         // Newton-Raphson iteration
+		} // Newton-Raphson iteration
 
 		// Update stresses
 		UpdateStress();
@@ -706,152 +493,40 @@ double CRFProcessDeformation::Execute(int loop_process_number)
 			CalcBC_or_SecondaryVariable_Dynamics();
 
 		// Update displacements, u=u+w for the Newton-Raphson
-		// u1 = u0 for pure elasticity
+		// u1 = u0 for linear problems
 		UpdateIterativeStep(1.0,1);
-	}
-	// Load step
-	//
-	// For coupling control
-	std::cout <<"      Deformation process converged." << std::endl;
-	double sqrt_norm = 0.0;
-	Error = 0.0;
-	if(type / 10 != 4)                    // Partitioned scheme
-	{
-		for(size_t n = 0; n < m_msh->GetNodesNumber(true); n++)
-			for(l = 0; l < pcs_number_of_primary_nvals; l++)
-			{
-				NormU = GetNodeValue(n, fem_dm->Idx_dm1[l]);
-				Error += NormU * NormU;
-			}
-		NormU = Error;
-		Error = sqrt(NormU);
-		sqrt_norm = Error;
-		Error = .0;
-	}
+	} // Load step
 
 	// Determine the discontinuity surface if enhanced strain methods is on.
-
 	if(enhanced_strain_dm > 0)
 		Trace_Discontinuity();
-	//
-	dm_time += clock();
-#ifdef USE_MPI
-	if(myrank == 0)
-	{
-#endif
-    std::cout <<"      CPU time elapsed in deformation: " << (double)dm_time / CLOCKS_PER_SEC<<"s"<<std::endl;
-    std::cout <<"      ------------------------------------------------"<<std::endl;
-#ifdef USE_MPI
-}
-#endif
+
 	// Recovery the old solution.  Temp --> u_n	for flow proccess
 	if(m_num->nls_method != FiniteElement::NL_JFNK)
 		RecoverSolution();
-	//
+
+	// get coupling error
+	const double norm_u_k1 = getNormOfDisplacements(); //InitialNormDU_coupling
+	const double cpl_abs_error = std::abs(InitialNormDU0 - norm_du0_pre_cpl_itr) / (norm_u_k1==0 ? 1 : norm_u_k1);
+	cpl_max_relative_error = cpl_abs_error / m_num->cpl_error_tolerance[0];
+	cpl_num_dof_errors = 1;
+	ScreenMessage("   ||u^k+1||=%g, ||du^k+1||-||du^k||=%g\n", norm_u_k1, std::abs(InitialNormDU0 - norm_du0_pre_cpl_itr));
+
+	// store current du0
+	norm_du0_pre_cpl_itr = InitialNormDU0;
+
 #ifdef NEW_EQS                              //WW
-#if defined(USE_MPI)
-	dom->eqsH->Clean();
-#else
 	// Also allocate temporary memory for linear solver. WW
 	eqs_new->Clean();
 #endif
-#endif
+
 	//
-	//JT//if(CouplingIterations > 0)
-	if(this->first_coupling_iteration)
-		Error = fabs(sqrt_norm - error_k0) / error_k0;
-	else
-		Error = sqrt_norm;
-	error_k0 = sqrt_norm;
-	//
+	dm_time += clock();
+	ScreenMessage("PCS error: %g\n", cpl_max_relative_error);
+	ScreenMessage("CPU time elapsed in deformation: %g s\n", (double)dm_time / CLOCKS_PER_SEC);
+	ScreenMessage("------------------------------------------------\n");
 
-#ifndef OGS_ONLY_TH
-	//----------------------------------------------------------------------
-	//Excavation. .. .12.2009. WW
-	//----------------------------------------------------------------------
-	std::vector<int> deact_dom;
-	for(l = 0; l < (long)msp_vector.size(); l++)
-		if(msp_vector[l]->excavated)
-			deact_dom.push_back(l);
-	if(ExcavMaterialGroup >= 0 && PCS_ExcavState < 0) //WX:01.2010.update pcs excav state
-	{
-		for(l = 0; l < (long)m_msh->ele_vector.size(); l++)
-			if((m_msh->ele_vector[l]->GetExcavState() > 0) &&
-			   !(m_msh->ele_vector[l]->GetMark()))
-			{
-				PCS_ExcavState = 1;
-				break;
-			}
-	}
-	//WX:01.2011 modified for coupled excavation
-	if(deact_dom.size() > 0 || PCS_ExcavState > 0)
-	{
-		//	  MXDumpGLS("rf_pcs.txt",1,eqs->b,eqs->x);  //abort();}
-
-		//
-		// 07.04.2010 WW
-		size_t i;
-		bool done;
-		MeshLib::CElem* elem = NULL;
-		MeshLib::CNode* node = NULL;
-		ElementValue_DM* eleV_DM = NULL;
-		for (l = 0; l < (long)m_msh->ele_vector.size(); l++)
-		{
-			eleV_DM = ele_value_dm[l];
-			(*eleV_DM->Stress0) =  (*eleV_DM->Stress);
-
-			elem = m_msh->ele_vector[l];
-			done = false;
-			for(i = 0; i < deact_dom.size(); i++)
-				if(elem->GetPatchIndex() == static_cast<size_t>(deact_dom[i]))
-				{
-					elem->MarkingAll(false);
-					done = true;
-					break;
-				}
-			if(ExcavMaterialGroup >= 0) //WX
-				if(elem->GetExcavState() >= 0)
-				{
-					elem->MarkingAll(false);
-					done = true;
-				}
-			if(done)
-				continue;
-			else
-				elem->MarkingAll(true);
-		}
-
-		size_t mesh_node_vector_size (m_msh->nod_vector.size());
-		for (size_t l = 0; l < mesh_node_vector_size; l++)
-			while(m_msh->nod_vector[l]->getConnectedElementIDs().size())
-				m_msh->nod_vector[l]->getConnectedElementIDs().pop_back();
-
-		size_t mesh_ele_vector_size (m_msh->ele_vector.size());
-		//WX:07.2011 error fixed
-		for (size_t l = 0; l < mesh_ele_vector_size; l++)
-		{
-			elem = m_msh->ele_vector[l];
-			if(!elem->GetMark())
-				continue;
-			for(i = 0; i < elem->GetNodesNumber(m_msh->getOrder()); i++)
-			{
-				done = false;
-				node = elem->GetNode(i);
-				for(size_t j = 0; j < node->getConnectedElementIDs().size(); j++)
-					if(l == node->getConnectedElementIDs()[j])
-					{
-						done = true;
-						break;
-					}
-				if(!done)
-					node->getConnectedElementIDs().push_back(l);
-			}
-		}                         //
-	}
-#endif
-	//----------------------------------------------------------------------
-
-	return Error;
+	return cpl_max_relative_error;
 }
 
 /**************************************************************************
@@ -1234,7 +909,7 @@ void CRFProcessDeformation::SetInitialGuess_EQS_VEC()
 	double* eqs_x = NULL;
 #if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
 	//TODO
-#elif NEW_EQS
+#elif defined(NEW_EQS)
 	eqs_x = eqs_new->x;
 #else
 	eqs_x = eqs->x;
@@ -1284,8 +959,8 @@ void CRFProcessDeformation::UpdateIterativeStep(const double damp, const int u_t
 	double* eqs_x = NULL;
 
 #if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
-	//TODO
-#elif NEW_EQS
+	eqs_x = eqs_new->GetGlobalSolution();
+#elif defined(NEW_EQS)
 	eqs_x = eqs_new->x;
 #else
 	eqs_x = eqs->x;
@@ -1327,18 +1002,25 @@ void CRFProcessDeformation::UpdateIterativeStep(const double damp, const int u_t
 		///  Update Newton step: w = w+dw
 		if(u_type == 0)
 		{
-			for(j = 0; j < number_of_nodes; j++)
+			for(j = 0; j < number_of_nodes; j++) {
+#ifdef USE_PETSC
+			      long k =  m_msh->Eqs2Global_NodeIndex[j] * pcs_number_of_primary_nvals + i;
+			      SetNodeValue(j, ColIndex, GetNodeValue(j, ColIndex) + eqs_x[k]*damp);
+#else
 				SetNodeValue(j,ColIndex, GetNodeValue(j,
 				                                      ColIndex) +
 				             eqs_x[j + shift] * damp);
+#endif
+			}
 			shift += number_of_nodes;
 		}
 		else
-			for(j = 0; j < number_of_nodes; j++)
+			for(j = 0; j < number_of_nodes; j++) {
 				SetNodeValue(j,ColIndex + 1, GetNodeValue(j,
 				                                          ColIndex +
 				                                          1) +
 				             GetNodeValue(j,ColIndex));
+			}
 	}
 
 	//if(type == 42&&m_num->nls_method>0)         //H2M, Newton-Raphson. 06.09.2010. WW
@@ -2475,6 +2157,9 @@ void CRFProcessDeformation::GlobalAssembly()
 	                (*this->eqs_new->A)(offset_H+i,offset_H+i)=1.0;
 	            }
 			}
+#if defined(USE_PETSC) //|| defined(other parallel libs)//03~04.3012. WW
+            eqs_new->EQSV_Viewer("eqs" + number2str(aktueller_zeitschritt) + "a");
+#endif
 #endif
 		}
 		// if(!fem_dm->dynamic)
@@ -2485,17 +2170,32 @@ void CRFProcessDeformation::GlobalAssembly()
 		// {			 MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
 
 		// DumpEqs("rf_pcs1.txt");
-		/*
-		   ofstream Dum("rf_pcs_omp.txt", ios::out); // WW
-		   eqs_new->Write(Dum);
+
+#if 0
+            {
+		   ofstream Dum(std::string("eqs_after_assembly.txt").c_str(), ios::out); // WW
+		   this->eqs_new->Write(Dum);
 		   Dum.close();
-		 */
+            }
+#endif
+        // Apply Neumann BC
+        IncorporateSourceTerms();
+        //DumpEqs("rf_pcs2.txt");
 
-		// Apply Neumann BC
-		IncorporateSourceTerms();
-		//DumpEqs("rf_pcs2.txt");
+#if defined(USE_PETSC)  // || defined(other parallel libs)//03~04.3012.
+		ScreenMessage2d("assemble PETSc matrix and vectors...\n");
+		eqs_new->AssembleUnkowns_PETSc();
+		eqs_new->AssembleRHS_PETSc();
+		eqs_new->AssembleMatrixPETSc(MAT_FINAL_ASSEMBLY );
+//		eqs_new->EQSV_Viewer("eqs_after_assembl");
+#endif
 
-		// {				 MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
+
+		// {			MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); // abort();}
+//#if defined(USE_PETSC)  // || defined(other parallel libs)//03~04.3012.
+////		eqs_new->EQSV_Viewer("eqs_after_ST");
+//		eqs_new->AssembleRHS_PETSc();
+//#endif
 
 		/// If not JFNK or if JFNK but the Newton step is greater than one. 11.11.2010. WW
 		if(!(m_num->nls_method == FiniteElement::NL_JFNK && ite_steps == 1))
@@ -2508,6 +2208,14 @@ void CRFProcessDeformation::GlobalAssembly()
 		}
 		//  {			 MXDumpGLS("rf_pcs_dm1.txt",1,eqs->b,eqs->x);  //abort();}
 		//
+
+#if 0
+            {
+           ofstream Dum(std::string("eqs_after_BCST.txt").c_str(), ios::out); // WW
+           this->eqs_new->Write(Dum);
+           Dum.close();
+            }
+#endif
 
 #define atest_dump
 #ifdef test_dump
@@ -2528,6 +2236,7 @@ void CRFProcessDeformation::GlobalAssembly()
 #endif
 		//
 	}
+	ScreenMessage("Global assembly is done\n");
 }
 
 /*!  \brief Assembe matrix and vectors
@@ -2623,6 +2332,18 @@ void CRFProcessDeformation::UpdateStress()
     fem_dm->ConfigureCoupling(this, Shift);
    }
  */
+
+std::string CRFProcessDeformation::GetGaussPointStressFileName()
+{
+	std::string m_file_name = FileName;
+#if defined(USE_PETSC)
+	m_file_name += "_rank" + number2str(myrank);
+#endif
+	m_file_name += ".sts";
+	return m_file_name;
+}
+
+
 /**************************************************************************
    ROCKFLOW - Funktion: WriteGaussPointStress()
 
@@ -2637,7 +2358,7 @@ void CRFProcessDeformation::UpdateStress()
 void CRFProcessDeformation::WriteGaussPointStress()
 {
 	long i;
-	string StressFileName = FileName + ".sts";
+	string StressFileName = GetGaussPointStressFileName();
 	fstream file_stress(StressFileName.data(),ios::binary | ios::out);
 	ElementValue_DM* eleV_DM = NULL;
 
@@ -2680,12 +2401,7 @@ void CRFProcessDeformation::WriteGaussPointStress()
 void CRFProcessDeformation::ReadGaussPointStress()
 {
 	long i, index, ActiveElements;
-	string StressFileName;
-#ifdef MFC                                  //WW
-	StressFileName = ext_file_name + ".sts";
-#else
-	StressFileName = FileName + ".sts";
-#endif
+	string StressFileName = GetGaussPointStressFileName();
 	fstream file_stress (StressFileName.data(),ios::binary | ios::in);
 	ElementValue_DM* eleV_DM = NULL;
 	//
@@ -2765,7 +2481,7 @@ void CRFProcessDeformation::ReleaseLoadingByExcavation()
 
 #if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
 	//TODO
-#elif NEW_EQS
+#elif defined(NEW_EQS)
 	eqs_b = eqs_new->b;
 #else
 	eqs_b = eqs->b;
@@ -3081,7 +2797,7 @@ bool CRFProcessDeformation::CalcBC_or_SecondaryVariable_Dynamics(bool BC)
 					// da = v = 0.0;
 #if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
 					//TODO
-#elif NEW_EQS                  //WW
+#elif defined(NEW_EQS)                  //WW
 					eqs_new->SetKnownX_i(bc_eqs_index, 0.);
 #else
 					MXRandbed(bc_eqs_index,0.0,eqs->b);
@@ -3093,7 +2809,7 @@ bool CRFProcessDeformation::CalcBC_or_SecondaryVariable_Dynamics(bool BC)
 					// da = v = 0.0;
 #if defined (USE_PETSC) // || defined (other parallel solver lib). 04.2012 WW
 					//TODO
-#elif NEW_EQS                  //WW
+#elif defined(NEW_EQS)                  //WW
 					eqs_new->SetKnownX_i(bc_eqs_index, 0.);
 #else
 					MXRandbed(bc_eqs_index,0.0,eqs->b);

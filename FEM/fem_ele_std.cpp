@@ -2,14 +2,15 @@
    The members of class Element definitions.
  */
 
-#include "Configure.h"
+#include "fem_ele_std.h"
+
 
 // C++ STL
 #include <cfloat>
 //#include <iostream>
 //#include <limits>	// PCH to better use system max and min
+#include "Configure.h"
 // Method
-#include "fem_ele_std.h"
 #include "mathlib.h"
 // Problems
 //#include "rf_mfp_new.h"
@@ -6580,7 +6581,7 @@ void CFiniteElementStd::AssembleRHS(int dimension)
 	  {
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
 	  //TODO
-#elif NEW_EQS                        //WW
+#elif defined(NEW_EQS)                        //WW
 		m_pcs->eqs_new->b[eqs_number[i]] += NodalVal[i];
 #else
 		m_pcs->eqs->b[eqs_number[i]] += NodalVal[i];
@@ -6965,7 +6966,7 @@ void CFiniteElementStd::add2GlobalMatrixII(bool updateA, bool updateRHS)
 	double *local_vec = NULL;
 	petsc_group::PETScLinearSolver *eqs = pcs->eqs_new;
 
-#define n_assmb_petsc_test
+//#define assmb_petsc_test
 #ifdef assmb_petsc_test
 	char rank_char[10];
 	sprintf(rank_char, "%d", eqs->getMPI_Rank());
@@ -7048,30 +7049,31 @@ void CFiniteElementStd::add2GlobalMatrixII(bool updateA, bool updateRHS)
 
     //TEST
 #ifdef assmb_petsc_test
-      	{
-      	  os_t<<"\n------------------"<<act_nodes * dof<<"\n";
-       StiffMatrix->Write(os_t);
-       RHS->Write(os_t);
-       
-       os_t<<"Node ID: ";
-       for( i=0; i<nnodes ; i++)
-	 {
-	   os_t<<MeshElement->nodes[i]->GetEquationIndex()<<" ";
-	 }
-       os_t<<"\n";
-       os_t<<"Act. Local ID: ";
-       for( i=0; i<act_nodes ; i++)
-	 {
-	   os_t<<local_idx[i]<<" ";
-	 }
-       os_t<<"\n";
-         os_t<<"Act. Global ID:";
-       for(i=0; i<act_nodes * dof; i++)
-	 {
-	   os_t<<idxm[i]<<" ";
-	 }
-       os_t<<"\n";
-       	}
+	{
+		os_t << "\n------------------" << act_nodes * dof << "\n";
+		os_t << "Element ID: " << index << "\n";
+		StiffMatrix->Write(os_t);
+		RHS->Write(os_t);
+
+		os_t << "Node ID: ";
+		for (int i = 0; i < nnodes; i++)
+		{
+			os_t << MeshElement->nodes[i]->GetEquationIndex() << " ";
+		}
+		os_t << "\n";
+		os_t << "Act. Local ID: ";
+		for (int i = 0; i < act_nodes; i++)
+		{
+			os_t << local_idx[i] << " ";
+		}
+		os_t << "\n";
+		os_t << "Act. Global ID:";
+		for (int i = 0; i < act_nodes * dof; i++)
+		{
+			os_t << idxm[i] << " ";
+		}
+		os_t << "\n";
+	}
 	os_t.close();
 #endif //ifdef assmb_petsc_test
 
@@ -8125,7 +8127,7 @@ void CFiniteElementStd::AssembleMassMatrix(int option)
 			{
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
 			  //TODO
-#elif NEW_EQS
+#elif defined(NEW_EQS)
 				(*A)(cshift + eqs_number[i], cshift + eqs_number[j]) += \
 				        (*Mass)(i,j);
 #else
@@ -8539,7 +8541,7 @@ void CFiniteElementStd::Assembly(int option, int dimension)
 
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
 	//TODO
-#elif NEW_EQS                              //PCH
+#elif defined(NEW_EQS)                              //PCH
 	eqs_rhs = pcs->eqs_new->b;
 #else
 	eqs_rhs = pcs->eqs->b;
@@ -10408,7 +10410,7 @@ void CFiniteElementStd::AssembleRHSVector()
 		//CB 04008
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
 	  // TODO
-#elif NEW_EQS
+#elif defined(NEW_EQS)
 		pcs->eqs_new->b[NodeShift[problem_dimension_dm] + eqs_number[i]] += NodalVal[i];
 #else
 		pcs->eqs->b[NodeShift[problem_dimension_dm] + eqs_number[i]] += NodalVal[i];
@@ -10486,7 +10488,7 @@ void CFiniteElementStd::AssembleCapillaryEffect()
 		//CB 04008
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
 	  //TODO
-#elif NEW_EQS
+#elif defined(NEW_EQS)
 		pcs->eqs_new->b[NodeShift[problem_dimension_dm] + eqs_number[i]] += NodalVal[i];
 #else
 		pcs->eqs->b[NodeShift[problem_dimension_dm] + eqs_number[i]] += NodalVal[i];

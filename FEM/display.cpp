@@ -23,7 +23,11 @@
 extern FILE* OpenMsgFile(void);
 extern void CloseMsgFile(FILE*);
 
+#ifdef NDEBUG
 int ogs_log_level = 0;
+#else
+int ogs_log_level = 1;
+#endif
 
 /**************************************************************************/
 /* ROCKFLOW - Funktion: DisplayStartMsg

@@ -486,33 +486,35 @@ using namespace FiniteElement;
 
    03.2012. WW
 */
-void CRFProcess::InitializeRHS_with_u0()
+void CRFProcess::InitializeRHS_with_u0(const bool quad)
 {
-  int j, ish;
-  vector<int> ix;
-  vector<double> val;
-  int nidx1; 
+	int j, ish;
+	vector<int> ix;
+	vector<double> val;
+	int nidx1;
 
-  const int  g_nnodes = m_msh->getNumNodesLocal(); //GetNodesNumber(false); 
-  const int size = g_nnodes * pcs_number_of_primary_nvals;
-  ix.resize(size);
-  val.resize(size);
+	int g_nnodes = m_msh->getNumNodesLocal(); //GetNodesNumber(false);
+	if (quad)
+		g_nnodes = m_msh->getNumNodesLocal_Q();
+	const int size = g_nnodes * pcs_number_of_primary_nvals;
+	ix.resize(size);
+	val.resize(size);
 
-  for (int i = 0; i < pcs_number_of_primary_nvals; i++)
-     {
-       //new time
-       nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
-       for (j = 0; j < g_nnodes; j++) 
-	 {
-	   ish = pcs_number_of_primary_nvals*j + i;
-	   ix[ish] = pcs_number_of_primary_nvals*m_msh->Eqs2Global_NodeIndex[j] + i;
-	   val[ish] = GetNodeValue(j, nidx1);
-	 }
-     }
-  // Assign u0 to x
-  eqs_new->setArrayValues(0, size, &ix[0], &val[0], INSERT_VALUES);
-  eqs_new->AssembleUnkowns_PETSc();
- }
+	for (int i = 0; i < pcs_number_of_primary_nvals; i++)
+	{
+		//new time
+		nidx1 = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
+		for (j = 0; j < g_nnodes; j++)
+		{
+			ish = pcs_number_of_primary_nvals * j + i;
+			ix[ish] = pcs_number_of_primary_nvals * m_msh->Eqs2Global_NodeIndex[j] + i;
+			val[ish] = GetNodeValue(j, nidx1);
+		}
+	}
+	// Assign u0 to x
+	eqs_new->setArrayValues(0, size, &ix[0], &val[0], INSERT_VALUES);
+	eqs_new->AssembleUnkowns_PETSc();
+}
 
 #if 0
 /*!
@@ -682,7 +684,9 @@ void CreateEQS_LinearSolver()
    const int nn_q = mesh->getNumNodesGlobal_Q();
    //const int nnl = mesh->getNumNodesLocal();
    //const int nnl_q = mesh->getNumNodesLocal_Q();
-   int dim = mesh->GetMaxElementDim();
+   const int dim = mesh->GetMaxElementDim();
+   const int max_ele_nodes = (dim<3) ? 9 : 20; // quad or hex
+   const int max_connected_eles = (dim<3) ? 4 : 8; // quad or hex
 
  
    const size_t npcs = pcs_vector.size(); 
@@ -695,6 +699,8 @@ void CreateEQS_LinearSolver()
 
       if( pcs_type == FLUID_MOMENTUM )
          continue;
+
+      ScreenMessage2d("-> Process: %s\n", FiniteElement::convertProcessTypeToString(pcs_type).c_str());
 
       if(  (pcs_type == DEFORMATION_H2)
          ||(pcs_type == DEFORMATION_FLOW) 
@@ -709,8 +715,8 @@ void CreateEQS_LinearSolver()
                    ||(pcs_type == DEFORMATION_DYNAMIC) ) 
             eqs_dim += nn;
 
-          sparse_info[0] = max_cnct_nodes * dim;
-          sparse_info[1] = 0; //max_cnct_nodes * dim;
+          sparse_info[0] = max_connected_eles * max_ele_nodes * dim; //TODO max_cnct_nodes * dim;
+          sparse_info[1] = max_connected_eles * max_ele_nodes * dim; //max_cnct_nodes * dim;
           sparse_info[2] = max_cnct_nodes * dim;
           sparse_info[3] = mesh->getNumNodesLocal_Q() * dim;
           eqs = new PETScLinearSolver(eqs_dim);

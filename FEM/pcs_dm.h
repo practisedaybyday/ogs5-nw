@@ -93,6 +93,7 @@ public:
 	double CaclMaxiumLoadRatio();
 
 	// Write stresses
+	std::string GetGaussPointStressFileName();
 	void WriteGaussPointStress();
 	void ReadGaussPointStress();
 	void ReadElementStress();
@@ -108,14 +109,14 @@ private:
 	bool _isInitialStressNonZero;
 
 	int counter;
-	double InitialNorm;
-	double InitialNormU;
-	double InitialNormU0;
+	double InitialNormR0;
+	double InitialNormDU_coupling;
+	double InitialNormDU0;
 
 	InitDataReadWriteType idata_type;
 
 	//
-	double error_k0;
+	double norm_du0_pre_cpl_itr;
 #if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	// Domain decompisition
 	void DomainAssembly(CPARDomain* m_dom);
@@ -124,6 +125,7 @@ private:
 	// For strong discontinuity approach
 	void Trace_Discontinuity();
 	long MarkBifurcatedNeighbor(const int PathIndex);
+	double getNormOfDisplacements();
 };
 }                                                 // end namespace
 

@@ -3,22 +3,14 @@
    Designed and programmed by WW, 06/2004
  */
 
-//#include "makros.h"
-//#include <iostream>
+#include "fem_ele.h"
+
 #include <cfloat>
+
 #include "msh_elem.h"
-#include "fem_ele_std.h"
-/* Objekte */
 #include "rf_pcs.h"
 #include "femlib.h"
 #include "mathlib.h"
-//#include "matrix_class.h"
-// MSHLib
-//#include "msh_elem.h"
-// Will be removed when new FEM is ready
-//=============================================
-FiniteElement::CElement* elem_dm = NULL;
-//=============================================
 
 namespace FiniteElement
 {
@@ -368,7 +360,7 @@ void CElement::ConfigNumerics(MshElemType::type ele_type)
 		return;
 	case MshElemType::PRISM:
 		ele_dim = 3;
-		nGaussPoints = 6;         // Fixed to 9
+		nGaussPoints = 6;         // Fixed to 6
 		nGauss = 3;               // Fixed to 3
 		ShapeFunction = ShapeFunctionPri;
 		ShapeFunctionHQ = ShapeFunctionPriHQ;
@@ -713,11 +705,11 @@ void CElement::SetGaussPoint(const int gp, int& gp_r, int& gp_s, int& gp_t)
 		return;
 	case MshElemType::PRISM:              // Prism
 		gp_r = gp % nGauss;
-		gp_s = (int)(gp / nGauss);
-		gp_t = (int)(nGaussPoints / nGauss);
-		unit[0] = MXPGaussPktTri(nGauss,gp_r,0);
-		unit[1] = MXPGaussPktTri(nGauss,gp_r,1);
-		unit[2] = MXPGaussPkt(gp_t,gp_s);
+		SamplePointTriHQ(gp_r, unit);
+        //
+		gp_s = nGaussPoints/nGauss;
+		gp_t = (int)(gp / nGauss);
+		unit[2] = MXPGaussPkt(gp_s,  gp_t);
 		return;
 	case MshElemType::PYRAMID: // Pyramid
 		if (Order == 1)
@@ -776,7 +768,7 @@ double CElement::GetGaussData(int gp, int& gp_r, int& gp_s, int& gp_t)
 	case MshElemType::PRISM:              // Prism
 		fkt = computeJacobian(Order);
 		// Weights
-		fkt *= MXPGaussFktTri(nGauss,gp_r) * MXPGaussFkt(gp_t, gp_s);
+		fkt *= MXPGaussFktTri(nGauss, gp_r) * MXPGaussFkt(gp_s, gp_t);
 		break;
 	case MshElemType::PYRAMID: // Pyramid
 		fkt = computeJacobian(Order);
@@ -1011,7 +1003,7 @@ void CElement::ComputeShapefct(const int order)
 void CElement::ComputeGradShapefct(int order)
 {
 	int j_times_ele_dim_plus_k, j_times_nNodes_plus_i;
-	static double Var[3];
+	double Var[3]; // static double Var[3];
 	double* dN = dshapefct;
 
 	if(order == 2)
@@ -1372,13 +1364,13 @@ void ElementMatrix::AllocateMemory(CElem* ele, int type)
 	switch(type)
 	{
 	case 0:                               // H || T Process
-		Mass = new SymMatrix(nnodes);
+		Mass = new Matrix(nnodes, nnodes);
 		//        Laplace = new SymMatrix(nnodes);
 		Laplace = new Matrix(nnodes, nnodes);
 		RHS = new Vec(nnodes);
 		break;
 	case 1:                               // HM Partioned scheme, Flow
-		Mass = new SymMatrix(nnodes);
+		Mass = new Matrix(nnodes, nnodes);
 		//        Laplace = new SymMatrix(nnodes);
 		Laplace = new Matrix(nnodes, nnodes);
 		RHS = new Vec(nnodes);
@@ -1396,7 +1388,7 @@ void ElementMatrix::AllocateMemory(CElem* ele, int type)
 		CouplingA = new Matrix(dim * nnodesHQ, nnodes);
 		break;
 	case 4:                               // HM monothlic scheme
-		Mass = new SymMatrix(nnodes);
+		Mass = new Matrix(nnodes, nnodes);
 		//        Laplace = new SymMatrix(nnodes);
 		Laplace = new Matrix(nnodes, nnodes);
 		size = dim * nnodesHQ;
@@ -1406,7 +1398,7 @@ void ElementMatrix::AllocateMemory(CElem* ele, int type)
 		CouplingB = new Matrix(nnodes, dim * nnodesHQ);
 		break;
 	case 5:                               // Mass Transport process
-		Mass = new SymMatrix(nnodes);
+		Mass = new Matrix(nnodes, nnodes);
 		Laplace = new Matrix(nnodes, nnodes);
 		Advection = new Matrix(nnodes, nnodes);
 		Storage = new Matrix(nnodes, nnodes);

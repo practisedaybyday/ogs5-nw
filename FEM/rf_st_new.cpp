@@ -1912,7 +1912,7 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
    face.SetFace();
    //search elements & face integration
    const long n_vec_possible_elements = vec_possible_elements.size();
-#define ST_OMP
+//#define ST_OMP
 #ifdef ST_OMP
    #pragma omp parallel for default(none) shared(active_elements, NVal, G2L, msh, vec_possible_elements, unique_nodes_on_sfc, node_value_vector) private(elem, nodesFVal, e_nei, nodesFace, j, k, nfaces, e_node) firstprivate(fem, face)
 #endif

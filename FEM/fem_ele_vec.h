@@ -6,7 +6,7 @@
 #ifndef fem_dm_INC
 #define fem_dm_INC
 #include "fem_ele.h"
-//#include "matrix_class.h"
+#include "matrix_class.h"
 // Material properties
 //#include "rf_mfp_new.h"
 //#include "rf_mmp_new.h"
@@ -156,7 +156,7 @@ private:
 	Matrix* PressureC;
 	Matrix* PressureC_S;                  // Function of S
 	Matrix* PressureC_S_dp;                  // Function of S and ds_dp
-	SymMatrix* Mass;                      // For dynamic analysis
+	Matrix* Mass;                      // For dynamic analysis
 	Vec* RHS;
 	// Global RHS. 08.2010. WW
 	double* b_rhs;
@@ -231,6 +231,9 @@ private:
 	void GlobalAssembly_Stiffness();
 	void GlobalAssembly_PressureCoupling(Matrix* pCMatrix, double fct, const int phase = 0);
 	void GlobalAssembly_RHS();
+#ifdef USE_PETSC
+	void add2GlobalMatrixII();
+#endif
 
 	//----------- Enhanced element ----------------
 	void CheckNodesInJumpedDomain();

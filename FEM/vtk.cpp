@@ -311,24 +311,26 @@ bool CVTK::WriteXMLPUnstructuredGrid(const std::string &vtkfile_base,
 	fin << "    </PPoints>\n";
 	// point data
 	if (out->_nod_value_vector.size() > 0) {
-		fin << "    <PPointData Scalars=\"" << out->_nod_value_vector[0] << "\" >\n";
+		fin << "    <PPointData Scalars=\"" << out->_alias_nod_value_vector[0] << "\" >\n";
 #if 0
 		fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_UChar) << "\" Name=\"vtkGhostLevels\" format=\"ascii\" />\n";
 #endif
 		bool outNodeVelocity = false;
 		bool outNodeDisplacement = false;
 		for (size_t i=0; i<out->_nod_value_vector.size(); i++) {
-			if (out->_nod_value_vector[i].find("VELOCITY") != string::npos)
+			const string &internal_val_name = out->_nod_value_vector[i];
+			const string &external_val_name = out->_alias_nod_value_vector[i];
+			if (internal_val_name.find("VELOCITY") != string::npos)
 			{
 				outNodeVelocity = true;
 				continue;
 			}
-			if (out->_nod_value_vector[i].find("DISPLACEMENT") != string::npos)
+			if (internal_val_name.find("DISPLACEMENT") != string::npos)
 			{
 				outNodeDisplacement = true;
 				continue;
 			}
-			fin << "      <PDataArray type=\"" << vtkDataType2str(this->type_Double) << "\" Name=\"" << out->_nod_value_vector[i] << "\" format=\"ascii\" />\n";
+			fin << "      <PDataArray type=\"" << vtkDataType2str(this->type_Double) << "\" Name=\"" << external_val_name << "\" format=\"ascii\" />\n";
 		}
 		if (outNodeVelocity)
 			fin << "      <PDataArray type=\""<< vtkDataType2str(this->type_Double) << "\" Name=\"" << velocity_name[0][3] << "\" NumberOfComponents=\"3\" format=\"ascii\" />\n";
@@ -729,27 +731,27 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 #endif
 #endif
 
-    bool isXZplane = (msh->GetCoordinateFlag()==22);
-    bool is3D = (msh->GetCoordinateFlag() / 10 == 3);
+	bool isXZplane = (msh->GetCoordinateFlag()==22);
+	bool is3D = (msh->GetCoordinateFlag() / 10 == 3);
 	bool outNodeVelocity = false;
-    bool outNodeDisplacement = false;
+	bool outNodeDisplacement = false;
 
 	//Nodal values
 	for (int i = 0; i < (int) out->_nod_value_vector.size(); i++)
 	{
-        const string &internal_val_name = out->_nod_value_vector[i];
-        const string &external_val_name = out->_alias_nod_value_vector[i];
+		const string &internal_val_name = out->_nod_value_vector[i];
+		const string &external_val_name = out->_alias_nod_value_vector[i];
 		//is velocity
 		if (internal_val_name.find("VELOCITY") != string::npos)
 		{
 			outNodeVelocity = true;
 			continue;
 		}
-        if (internal_val_name.find("DISPLACEMENT") != string::npos)
-        {
-            outNodeDisplacement = true;
-            continue;
-        }
+		if (internal_val_name.find("DISPLACEMENT") != string::npos)
+		{
+			outNodeDisplacement = true;
+			continue;
+		}
 		//    if (out->m_pcs == NULL || out->pcs_type_name.compare("NO_PCS")==0)
 		if (out->m_pcs == NULL || out->getProcessType() == FiniteElement::NO_PCS)
 			m_pcs = PCSGet(internal_val_name, true);
@@ -778,17 +780,17 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 			} else {
 				write_value_binary<unsigned int> (fin, sizeof(double)* msh->GetNodesNumber(false));
 			}
-            for (size_t j = 0; j < msh->GetNodesNumber(false); j++) {
-                double v = m_pcs->GetNodeValue(msh->nod_vector[j]->GetIndex(), NodeIndex[i]);
-                if (!useBinary) {
-                    fin << v << " ";
-                } else {
-                    write_value_binary(fin, v);
-                }
-            }
-            if (!useBinary) {
-                fin << "\n";
-            }
+			for (size_t j = 0; j < msh->GetNodesNumber(false); j++) {
+				double v = m_pcs->GetNodeValue(msh->nod_vector[j]->GetIndex(), NodeIndex[i]);
+				if (!useBinary) {
+					fin << v << " ";
+				} else {
+					write_value_binary(fin, v);
+				}
+			}
+			if (!useBinary) {
+				fin << "\n";
+			}
 		}
 		else
 			offset += msh->GetNodesNumber(false) * sizeof(double)
@@ -804,7 +806,7 @@ bool CVTK::WriteNodalValue(std::fstream &fin,
 		unsigned int velocity_id = 0;
 		for (int i = 0; i < (int) out->_nod_value_vector.size(); i++)
 		{
-            const string &internal_val_name = out->_nod_value_vector[i];
+			const string &internal_val_name = out->_nod_value_vector[i];
 //            const string &external_val_name = out->_alias_nod_value_vector[i];
 			if (internal_val_name.find("VELOCITY_X1") != string::npos)
 			{

@@ -467,6 +467,17 @@ Problem::Problem (char* filename) :
 	dm_pcs = (CRFProcessDeformation*)total_processes[12];
 	if(dm_pcs)
 		dm_pcs->CreateInitialState4Excavation();
+
+#ifdef OGS_DELETE_EDGES_AFTER_INIT
+	// Free memory occupied by edges. 09.2012. WW
+	if(!fluid_mom_pcs)
+	{
+       for(size_t k = 0; k < fem_msh_vector.size(); k++)
+       {
+		  fem_msh_vector[k]->FreeEdgeMemory();
+	   }
+	}
+#endif
 }
 
 /**************************************************************************
@@ -825,6 +836,8 @@ void Problem::PCSCreate()
 
 
 #if defined(USE_PETSC) // || defined(other solver libs)//03.3012. WW
+	ScreenMessage("---------------------------------------------\n");
+	ScreenMessage("Create linear solvers");
 	CreateEQS_LinearSolver();
 #endif
 
@@ -959,16 +972,17 @@ void Problem::Euler_TimeDiscretize()
 	//
 	CTimeDiscretization* m_tim = NULL;
 	aktueller_zeitschritt = 0;
-	ScreenMessage("\n\n***Start time steps\n");
+	ScreenMessage("\n\n---------------------------------------------\n");
+	ScreenMessage("Start time steps\n");
 	//
 	// Output zero time initial values
 #if defined(USE_MPI)  || defined(USE_MPI_KRC)
 	if(myrank == 0)
 	{
 #endif
-	ScreenMessage("Outputting initial values... \n");
+	ScreenMessage("-> outputting initial values... \n");
 	OUTData(current_time,aktueller_zeitschritt,true);
-	ScreenMessage("done \n");
+//	ScreenMessage("done \n");
 #if defined(USE_MPI)  || defined(USE_MPI_KRC)
 	}
 #endif

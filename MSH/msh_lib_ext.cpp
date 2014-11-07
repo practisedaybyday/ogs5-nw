@@ -21,6 +21,7 @@
 //#endif
 #include <sstream>
 
+#include "StringTools.h"
 #include "display.h"
 
 using namespace std;
@@ -63,6 +64,19 @@ void FEMRead(const string& file_base_name,
 	{
 		std::string str_var = file_base_name + "_partitioned.msh";
 		is.open(str_var.c_str());
+		if (!is.good()) {
+			is.close();
+			is.clear();
+			str_var = file_base_name + "_partitioned_" + number2str(mysize) + ".msh";
+			is.open(str_var.c_str());
+			if (is.good()) {
+				ScreenMessage("-> found %s\n", str_var.c_str());
+			} else {
+				ScreenMessage("-> cannot find a partitioned mesh file\n");
+				PetscFinalize();
+				exit(1);
+			}
+		}
 		getline(is, str_var);
 		int num_parts;
 		is >> num_parts >>ws;
@@ -72,6 +86,7 @@ void FEMRead(const string& file_base_name,
 						  " the number of the requested computer cores "
 						  "is not identical to the number of subdomains.";
 			cout<<str_m<<endl;
+			ScreenMessage("(MPI size = %d, the number of subdomains = %d)\n", mysize, num_parts);
 			PetscFinalize();
 			exit(1);
 		}
@@ -80,6 +95,7 @@ void FEMRead(const string& file_base_name,
 	CFEMesh *mesh = new CFEMesh(geo_obj, unique_name);
 	mesh_vec.push_back(mesh);
 
+	MPI_Barrier(MPI_COMM_WORLD);
 	ScreenMessage("-> Parallel reading the partitioned mesh\n");
 	for(int i=0; i<mysize; i++)
 	{
@@ -102,6 +118,12 @@ void FEMRead(const string& file_base_name,
 			is>>ws;
 		}
 		MPI_Bcast(mesh_header,  nheaders, MPI_INT, 0, MPI_COMM_WORLD);
+		if (i==myrank) {
+			std::stringstream ss;
+			for (int j=0; j<nheaders; j++)
+				ss << mesh_header[j] << " ";
+			ScreenMessage2d("-> header: %s\n", ss.str().c_str());
+		}
 		//cout<<"\ncccccccccc "<<mesh_header[0]<<"    "<<mesh_header[1]
 		//	<<"   " <<mesh_header[2]<<"  "<<mesh_header[3]<<endl;
 
@@ -229,12 +251,13 @@ void FEMRead(const string& file_base_name,
 					counter++;
 				}
 				is>> elem_info[counter];
-				const int nn_e_g =  elem_info[counter];
+				//const int nn_e_g =  elem_info[counter];
 				counter++;
 				// ghost nodes for linear element
 				is>> elem_info[counter];
+				const int nn_e_g_quad =  elem_info[counter];
 				counter++;
-				for(int k=0; k<nn_e_g; k++)
+				for(int k=0; k<nn_e_g_quad; k++) //NW use nn_e_g_quad instead of nn_e_g
 				{
 					is>> elem_info[counter];
 					counter++;
@@ -276,9 +299,11 @@ void FEMRead(const string& file_base_name,
 	if (mysize>1)
 		MPI_Type_free(&MPI_node);
 
-	ScreenMessage2d("-> mesh: %d nodes, %d elements\n", mesh->nod_vector.size(), mesh->ele_vector.size());
 
 	MPI_Barrier (MPI_COMM_WORLD);
+	ScreenMessage2("-> nelements_g=%d, nnodes_gl=%d, nnodes_gq=%d, nnodes_ll=%d, nnodes_lq=%d\n", mesh->getElementVector().size(), mesh->GetNodesNumber(false), mesh->GetNodesNumber(true), mesh->getNumNodesLocal(), mesh->getNumNodesLocal_Q());
+	MPI_Barrier (MPI_COMM_WORLD);
+
 	mesh->ConstructGrid();
 	mesh->FillTransformMatrix();
 	//mesh->calMaximumConnectedNodes();
@@ -624,7 +649,7 @@ void BuildNodeStruc(MeshNodes *anode, MPI_Datatype *MPI_Node_ptr)
    */
 
    
-    
+#ifndef __MPIUNI_H
    MPI_Get_address(anode, disp);
    MPI_Get_address(&(anode[0].x), disp+1); 
    MPI_Get_address(&(anode[0].y), disp+2); 
@@ -637,7 +662,7 @@ void BuildNodeStruc(MeshNodes *anode, MPI_Datatype *MPI_Node_ptr)
        //      cout<<"j=" <<j<<" "<<disp[j]<<endl;
    }
    
-
+#endif
 
    // build datatype describing structure 
    MPI_Type_create_struct(4, nblocklen, disp, my_comp_type, MPI_Node_ptr);

@@ -343,7 +343,7 @@ void CFEMesh::computeSearchLength(double c)
 	_search_length = mu - c * s;
 //#ifndef NDEBUG
 //	if (c < 2) {
-		ScreenMessage("[CFEMesh::computeSearchLength] computed _search_length = %e, the average value is: %e, standard deviation is: %e\n", _search_length, mu, s );
+		ScreenMessage("-> computed search length = %e, the average value is: %e, standard deviation is: %e\n", _search_length, mu, s );
 //	}
 //#endif
 }
@@ -486,7 +486,8 @@ void CFEMesh::ConnectedElements2Node(bool quadratic)
 **************************************************************************/
 void CFEMesh::ConstructGrid()
 {
-	ScreenMessage("-> executing ConstructGrid() ... \n");
+	ScreenMessage("---------------------------------------------\n");
+	ScreenMessage("Constructing grid ... \n");
 
 	bool done;
 
@@ -500,13 +501,21 @@ void CFEMesh::ConstructGrid()
 	Math_Group::vec<CNode*> e_edgeNodes0(3);
 	Math_Group::vec<CNode*> e_edgeNodes(3);
 
+	const bool quadratic = (NodesNumber_Quadratic!=NodesNumber_Linear);
+	if (quadratic)
+		ScreenMessage("-> this mesh is quadratic.\n");
+	else
+		ScreenMessage("-> this mesh is linear.\n");
+#ifndef USE_PETSC
 	NodesNumber_Linear = nod_vector.size();
+#endif
+	this->SwitchOnQuadraticNodes(quadratic);
 
 	Edge_Orientation = 1;
 
 	// Set neighbors of node
 	//ScreenMessage2("-> Set elements connected to a node\n");
-	ConnectedElements2Node();
+	ConnectedElements2Node(quadratic);
 
 	// Compute neighbors and edges
 	size_t e_size(ele_vector.size());
@@ -517,20 +526,20 @@ void CFEMesh::ConstructGrid()
 		ele_vector[e]->InitializeMembers();
 	}
 
-#ifndef NDEBUG
-	ScreenMessage2("-> find neighbors ... \n");
-#endif
+	ScreenMessage2d("-> find neighbors ... \n");
 	for (size_t e = 0; e < e_size; e++)
 	{
+//		ScreenMessage2d("[Element: %d]\n", e);
 		CElem* elem(ele_vector[e]);
+		elem->SetOrder(quadratic);
 		const Math_Group::vec<long>& node_index(elem->GetNodeIndeces());
 		elem->GetNeighbors(Neighbors0);
 
-		size_t nnodes0(elem->nnodes); // Number of nodes for linear element
+		const size_t nnodes0(elem->GetNodesNumber(quadratic)); //(elem->nnodes); // Number of nodes for linear element
 		for (size_t i = 0; i < nnodes0; i++) // Nodes
 			e_nodes0[i] = nod_vector[node_index[i]];
 
-		size_t nFaces = static_cast<size_t> (elem->GetFacesNumber());
+		const size_t nFaces = static_cast<size_t> (elem->GetFacesNumber());
 		// neighbors
 		for (size_t i = 0; i < nFaces; i++) // Faces
 		{
@@ -539,12 +548,12 @@ void CFEMesh::ConstructGrid()
 
 			done = false;
 			int faceIndex_loc0[10];
-			size_t nFaceNodes = static_cast<size_t> (elem->GetElementFaceNodes(
+			const size_t nFaceNodes = static_cast<size_t> (elem->GetElementFaceNodes(
 			                                                 i, faceIndex_loc0));
 			for (size_t k = 0; k < nFaceNodes; k++) //face nodes
 			{
 				size_t
-				nConnElems(
+				const nConnElems(
 				        e_nodes0[faceIndex_loc0[k]]->getConnectedElementIDs().size());
 				for (size_t ei = 0; ei < nConnElems; ei++) // elements connected to face node
 				{
@@ -558,7 +567,7 @@ void CFEMesh::ConstructGrid()
 					const Math_Group::vec<long>& node_index_glb(
 					        connElem->GetNodeIndeces());
 					connElem->GetNeighbors(Neighbors);
-					size_t nFacesConnElem =
+					const size_t nFacesConnElem =
 					        static_cast<size_t> (connElem->GetFacesNumber());
 
 					int faceIndex_loc[10];
@@ -639,62 +648,59 @@ void CFEMesh::ConstructGrid()
 		// --------------------------------
 
 		// Edges
-		size_t nedges0(elem->GetEdgesNumber());
+		const size_t nedges0(elem->GetEdgesNumber());
 		elem->GetEdges(Edges0);
+		const size_t nEdgeNodes = quadratic ? 3 : 2;
 		for (size_t i = 0; i < nedges0; i++) // edges
 		{
-			int edgeIndex_loc0[2];
+			int edgeIndex_loc0[3];
 			elem->GetLocalIndicesOfEdgeNodes(i, edgeIndex_loc0);
+//			{
+//				std::stringstream ss; for (size_t k = 0; k < nEdgeNodes; k++) ss << e_nodes0[edgeIndex_loc0[k]]->GetIndex() << " ";
+//				ScreenMessage2d("\t edge %d: %s\n", i, ss.str().c_str());
+//			}
 			// Check neighbors
 			done = false;
-			for (size_t k = 0; k < 2; k++) // beginning and end of edge
+			for (size_t k = 0; k < nEdgeNodes; k++) // beginning and end of edge
 			{
-				size_t
-				nConnElem(
-				        e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs().size());
+				CNode* work_node = e_nodes0[edgeIndex_loc0[k]];
+				const size_t nConnElem(work_node->getConnectedElementIDs().size());
 				for (size_t ei = 0; ei < nConnElem; ei++) // elements connected to edge node
 				{
-					size_t
-					ee(
-					        e_nodes0[edgeIndex_loc0[k]]->getConnectedElementIDs(
-					                )[ei]);
+					size_t ee(work_node->getConnectedElementIDs()[ei]);
 					if (ee == e)
 						continue;
+//					ScreenMessage2d("\t -> check connecting element %d: \n", i);
 					CElem* connElem(ele_vector[ee]);
-					const Math_Group::vec<long>& node_index_glb(
-					        connElem->GetNodeIndeces());
-					size_t nedges(connElem->GetEdgesNumber());
+					const Math_Group::vec<long>& node_index_glb(connElem->GetNodeIndeces());
+					const size_t nedges(connElem->GetEdgesNumber());
 					connElem->GetEdges(Edges);
 					// Edges of neighbors
-					int edgeIndex_loc[2];
+					int edgeIndex_loc[3];
 					for (size_t ii = 0; ii < nedges; ii++) // edges of element connected to edge node
 					{
-						connElem->GetLocalIndicesOfEdgeNodes(ii,
-						                                     edgeIndex_loc);
+						connElem->GetLocalIndicesOfEdgeNodes(ii, edgeIndex_loc);
+//						{
+//							std::stringstream ss; for (size_t kk = 0; kk < nEdgeNodes; kk++) ss << node_index_glb[edgeIndex_loc[kk]] << " ";
+//							ScreenMessage2d("\t edge %d: %s\n", ii, ss.str().c_str());
+//						}
 
-						if ((node_index[edgeIndex_loc0[0]]
-						     == node_index_glb[edgeIndex_loc[0]]
-						     && node_index[edgeIndex_loc0[1]]
-						     == node_index_glb[edgeIndex_loc[1]])
-						    || (node_index[edgeIndex_loc0[0]]
-						        == node_index_glb[edgeIndex_loc[1]]
-						        && node_index[edgeIndex_loc0[1]]
-						        == node_index_glb[edgeIndex_loc[0]])) // check if elements share edge
-
+						if ((node_index[edgeIndex_loc0[0]] == node_index_glb[edgeIndex_loc[0]]
+						     && node_index[edgeIndex_loc0[1]] == node_index_glb[edgeIndex_loc[1]])
+						    || (node_index[edgeIndex_loc0[0]] == node_index_glb[edgeIndex_loc[1]]
+						        && node_index[edgeIndex_loc0[1]] == node_index_glb[edgeIndex_loc[0]])) // check if elements share edge
+						{
 							if (Edges[ii])
 							{
 								Edges0[i] = Edges[ii];
 								Edges[ii]->GetNodes(e_edgeNodes);
-								if ((size_t) node_index[
-								            edgeIndex_loc0[0]]
-								    == e_edgeNodes[1]->GetIndex()
-								    && (size_t) node_index[
-								            edgeIndex_loc0[1]]
-								    == e_edgeNodes[0]->GetIndex()) // check direction of edge
+								if ((size_t) node_index[edgeIndex_loc0[0]] == e_edgeNodes[1]->GetIndex()
+								    && (size_t) node_index[edgeIndex_loc0[1]] == e_edgeNodes[0]->GetIndex()) // check direction of edge
 									Edge_Orientation[i] = -1;
 								done = true;
 								break;
 							}
+						}
 					} //  for(ii=0; ii<nedges; ii++)
 					if (done)
 						break;
@@ -705,17 +711,20 @@ void CFEMesh::ConstructGrid()
 			if (!done) // new edges and new node
 			{
 				Edges0[i] = new CEdge((long) edge_vector.size());
-				Edges0[i]->SetOrder(false);
+				Edges0[i]->SetOrder(quadratic);
 				e_edgeNodes0[0] = e_nodes0[edgeIndex_loc0[0]];
 				e_edgeNodes0[1] = e_nodes0[edgeIndex_loc0[1]];
-				e_edgeNodes0[2] = NULL;
+				if (quadratic)
+					e_edgeNodes0[2] = e_nodes0[edgeIndex_loc0[2]];
+				else
+					e_edgeNodes0[2] = NULL;
 				Edges0[i]->SetNodes(e_edgeNodes0);
 				edge_vector.push_back(Edges0[i]);
 			} // new edges
 		} //  for(i=0; i<nedges0; i++)
 		  //
 		  // Set edges and nodes
-		elem->SetOrder(false);
+		elem->SetOrder(quadratic);
 		elem->SetEdgesOrientation(Edge_Orientation);
 		elem->SetEdges(Edges0);
 		// Resize is true
@@ -803,9 +812,7 @@ void CFEMesh::ConstructGrid()
 	// Node information
 	// 1. Default node index <---> eqs index relationship
 	// 2. Coordiate system flag
-#ifndef NDEBUG
-	ScreenMessage2("-> detect bbox ... \n");
-#endif
+	ScreenMessage2d("-> detect bbox ... \n");
 	double x_sum(0.0), y_sum(0.0), z_sum(0.0);
 	Eqs2Global_NodeIndex.clear();
 	double xyz_max[3] = //NW
@@ -895,17 +902,11 @@ void CFEMesh::ConstructGrid()
 	e_edgeNodes0.resize(0);
 	e_edgeNodes.resize(0);
 
-#ifndef NDEBUG
-	ScreenMessage2("-> computeSearchLength ... \n");
-#endif
+	ScreenMessage2d("-> computeSearchLength ... \n");
 	computeSearchLength();
-#ifndef NDEBUG
-	ScreenMessage2("-> computeMinEdgeLength ... \n");
-#endif
+	ScreenMessage2d("-> computeMinEdgeLength ... \n");
 	computeMinEdgeLength();
-#ifndef NDEBUG
-	ScreenMessage2("-> constructMeshGrid ... \n");
-#endif
+	ScreenMessage2d("-> constructMeshGrid ... \n");
 	constructMeshGrid();
 }
 
@@ -1409,6 +1410,7 @@ long CFEMesh::GetNODOnPNT(const GEOLIB::Point* const pnt) const
   
   for (size_t i = 0; i < nodes_in_usage; i++)
     {
+      if (!isNodeLocal(i)) continue; //NW
       sqr_dist = MathLib::sqrDist (nod_vector[i]->getData(), pnt->getData());
       if (sqr_dist < distmin)
 	{
@@ -1764,12 +1766,13 @@ void CFEMesh::GetNODOnSFC_PLY(Surface const* m_sfc,
 		//....................................................................
 		// Check nodes by comparing area
 #if defined(USE_PETSC) // || defined (other parallel linear solver lib). //WW. 05.2012
-		const size_t nn =  NodesInUsagePETSC();
+		const size_t nn = this->NodesInUsage(); //static_cast<size_t> ( loc_NodesNumber_Quadratic);
 #else
 		const size_t nn =  NodesInUsage();
 #endif
 		for (j = 0; j < nn; j++)
 		{
+			if (!isNodeLocal(j)) continue;
 			Area2 = 0.0;
 			for (i = 0; i < nPointsPly; i++)
 			{

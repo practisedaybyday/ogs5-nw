@@ -6,13 +6,14 @@
    last modified
 **************************************************************************/
 
-#include "mathlib.h"
-#include <cmath>
-#include <cstdlib>                                //WW
-#include <float.h>                                //WW
-// MSHLib
-//WW#include "MSHEnums.h" // KR 2010/11/15
 #include "msh_elem.h"
+
+#include <cmath>
+#include <cstdlib>
+#include <cfloat>
+#include <iostream>
+
+#include "mathlib.h"
 
 namespace MeshLib
 {
@@ -36,13 +37,13 @@ CElem::CElem(size_t Index)
 	gravity_center[0] = gravity_center[1] = gravity_center[2] = 0.0;
 	normal_vector = NULL;
 	area = 1.0;                               //WW
-    transform_tensor = NULL;
+	transform_tensor = NULL;
 #ifndef OGS_ONLY_TH
 	matgroup_view = 0;
-    grid_adaptation = -1;
+	grid_adaptation = -1;
 	excavated = -1;                           //WX
-    patch_index = 0;
-    angle = NULL;
+	patch_index = 0;
+	angle = NULL;
 	neumann = 0;
 	courant = 0;
 	representative_length = .0;
@@ -101,8 +102,8 @@ CElem::CElem(size_t Index, CElem* onwer, int Face) :
 	CCore(Index), normal_vector(NULL), owner(onwer)
 {
 	int i, j, k, n, ne;
-	int faceIndex_loc[10];
-	int edgeIndex_loc[10];
+	int faceIndex_loc[10] = {};
+	int edgeIndex_loc[10] = {};
 	selected = 0;
 	geo_type = MshElemType::INVALID;
 	nedges = 0;
@@ -284,7 +285,7 @@ CElem::CElem(CElem const &elem) :
 	patch_index (elem.patch_index),
 	area (elem.area)
 #ifndef OGS_ONLY_TH
-	,angle (new double(*(elem.angle)))
+	,angle (NULL)
 #endif
 {
 	for (size_t k(0); k < 3; k++)
@@ -298,7 +299,14 @@ CElem::CElem(CElem const &elem) :
 	for (size_t k(0); k < (elem.nodes).Size(); k++)
 		nodes[k] = new CNode ((elem.nodes[k])->GetIndex(), (elem.nodes[k])->getData());
 
-    transform_tensor = NULL;
+	transform_tensor = NULL;
+
+#ifndef OGS_ONLY_TH
+	if (elem.angle) {
+		AllocateMeomoryforAngle();
+		for (int i=0; i<3; i++) angle[i] = elem.angle[i];
+	}
+#endif
 
 	// copy edges
 //	edges = vec<CEdge*> ((elem.edges).Size());
@@ -737,6 +745,7 @@ void CElem::Read(std::istream& is, int fileType)
 			break;
 		default:
 			geo_type = MshElemType::INVALID;
+			break;
 		}
 		index--;
 		break;
@@ -1022,26 +1031,36 @@ void CElem::GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes)
 	case MshElemType::LINE:
 		EdgeNodes[0] = 0;
 		EdgeNodes[1] = 1;
+		if (quadratic)
+			EdgeNodes[2] = 2;
 		break;                            // 1-D bar element
 	case MshElemType::QUAD:                   // 2-D quadrilateral element
 		EdgeNodes[0] = Edge;
 		EdgeNodes[1] = (Edge + 1) % 4;
+		if (quadratic)
+			EdgeNodes[2] = EdgeNodes[0] + 4;
 		break;
 	case MshElemType::HEXAHEDRON:             // 3-D hexahedral element
 		if(Edge < 8)
 		{
 			EdgeNodes[0] = Edge;
 			EdgeNodes[1] = (Edge + 1) % 4 + 4 * (int)(Edge / 4);
+			if (quadratic)
+				EdgeNodes[2] = EdgeNodes[0] + 8;
 		}
 		else
 		{
 			EdgeNodes[0] = Edge % 4;
 			EdgeNodes[1] = Edge % 4 + 4;
+			if (quadratic)
+				EdgeNodes[2] = EdgeNodes[0] + 16;
 		}
 		break;
 	case MshElemType::TRIANGLE:               // 2-D triagular element
 		EdgeNodes[0] = Edge;
 		EdgeNodes[1] = (Edge + 1) % 3;
+		if (quadratic)
+			EdgeNodes[2] = EdgeNodes[0] + 3;
 		break;
 	case MshElemType::TETRAHEDRON:            // 3-D tetrahedra
 		if(Edge < 3)
@@ -1054,7 +1073,8 @@ void CElem::GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes)
 			EdgeNodes[0] = 3;
 			EdgeNodes[1] = (Edge + 1) % 3;
 		}
-
+		if (quadratic)
+			EdgeNodes[2] = Edge + 4;
 		break;
 	case MshElemType::PRISM:                  // 3-D prismatic element
 		if(Edge < 6)
@@ -1067,6 +1087,8 @@ void CElem::GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes)
 			EdgeNodes[0] = Edge % 3;
 			EdgeNodes[1] = Edge % 3 + 3;
 		}
+		if (quadratic)
+			EdgeNodes[2] = Edge + 6;
 		break;
 	case MshElemType::PYRAMID:                  // 3-D pyramid element
 		if(Edge < 4)
@@ -1079,10 +1101,13 @@ void CElem::GetLocalIndicesOfEdgeNodes(const int Edge, int* EdgeNodes)
 			EdgeNodes[0] = Edge % 4;
 			EdgeNodes[1] = 4;
 		}
+		if (quadratic)
+			EdgeNodes[2] = Edge + 5;
 		break;
 	default:
 		std::cerr << "CElem::GetLocalIndicesOfEdgeNodes() - MshElemType not handled" <<
 		std::endl;
+		break;
 	}
 }
 /**************************************************************************
@@ -1369,7 +1394,7 @@ int CElem::GetElementFacesPri(int Face, int* FaceNode)
 			FaceNode[4] = 14;
 			FaceNode[5] =  8;
 			FaceNode[6] = 12;
-			FaceNode[7] = 10;
+			FaceNode[7] = 11;
 			nn = 8;
 		}
 		break;
@@ -1772,7 +1797,13 @@ void CElem::setElementProperties(MshElemType::type t, bool isFace)
 		std::cerr << "CElem::setElementProperties MshElemType not handled" << std::endl;
 		break;
 	}
+	if (quadratic) {
+	    if (this->nodes_index.Size() !=  (unsigned)nnodesHQ)
+	        this->nodes_index.resize( nnodesHQ);
+	} else {
+        if (this->nodes_index.Size() !=  (unsigned)nnodes)
 	this->nodes_index.resize(nnodes);
+	}
 }
 
 // NW
