@@ -56,12 +56,10 @@ bool HasCRInLineEnding(std::string const& strFilename)
 	bool foundCR = false;
 	for (;;) {
 		int c = sb->sbumpc();
-		switch (c) {
-		case '\r':
+		if (c=='\r') {
 			foundCR = true;
 			break;
-		case '\n':
-		case EOF:
+		} else if (c==EOF || c=='\n') {
 			break;
 		}
 	}

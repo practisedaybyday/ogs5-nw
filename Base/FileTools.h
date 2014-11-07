@@ -14,6 +14,7 @@
  */
 bool IsFileExisting(std::string const& strFilename);
 
-bool HasTextFileCorrectFormat(std::string const& strFilename);
+/// Returns true if given file includes CR
+bool HasCRInLineEnding(std::string const& strFilename);
 
 #endif // FILETOOLS_H

@@ -37,6 +37,7 @@
 #include "MemWatch.h"
 #include "display.h"
 #include "memory.h"
+#include "FileTools.h"
 //#include "makros.h"
 //#ifndef NEW_EQS //WW. 07.11.2008
 //#include "solver.h"
@@ -96,6 +97,46 @@ void CURWrite();                                  //OK
 
 using namespace std;
 
+static bool isValidTextFileFormat(const std::string &basename, const std::string &fext)
+{
+	const std::string fname(basename + fext);
+	if (!IsFileExisting(fname))
+		return true;
+#ifdef _WIN32
+	const bool is_win32 = true;
+#else
+	const bool is_win32 = false;
+#endif
+	if (is_win32 == HasCRInLineEnding(fname)) {
+		return true;
+	} else {
+		if (is_win32)
+			ScreenMessage("*** ERROR: Detect UNIX file format %s\n", fname.data());
+		else
+			ScreenMessage("*** ERROR: Detect Windows file format %s\n", fname.data());
+		return false;
+	}
+}
+
+static bool checkFormatOfInputFiles(const std::string &basename)
+{
+	bool valid = true;
+	valid &= isValidTextFileFormat(basename, ".gli");
+	valid &= isValidTextFileFormat(basename, ".msh");
+	valid &= isValidTextFileFormat(basename, ".pcs");
+	valid &= isValidTextFileFormat(basename, ".ic");
+	valid &= isValidTextFileFormat(basename, ".bc");
+	valid &= isValidTextFileFormat(basename, ".st");
+	valid &= isValidTextFileFormat(basename, ".mfp");
+	valid &= isValidTextFileFormat(basename, ".msp");
+	valid &= isValidTextFileFormat(basename, ".mmp");
+	valid &= isValidTextFileFormat(basename, ".mcp");
+	valid &= isValidTextFileFormat(basename, ".out");
+	valid &= isValidTextFileFormat(basename, ".tim");
+
+	return valid;
+}
+
 /**************************************************************************/
 /* ROCKFLOW - Funktion: ReadData
  */
@@ -144,6 +185,10 @@ int ReadData ( char* dateiname, GEOLIB::GEOObjects& geo_obj, std::string& unique
 			msgdat = (char*)Free(msgdat);
 		else
 			fclose (f);
+	}
+	if (!checkFormatOfInputFiles(dateiname)) {
+		ScreenMessage("terminate this program");
+		exit(0);
 	}
 #ifndef WIN32
 	BaseLib::MemWatch mem_watch;
