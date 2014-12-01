@@ -491,10 +491,10 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 			case 12:
 				in >> porosity_model_values[0]; //WX 03.2011, dependent on strain
 				break;
-			case 18: // AJ 06.2014 dependant on volumetric strain and unjacketed volumetric strain (Blöcher 2013)
+			case 13: // AJ 06.2014 dependant on volumetric strain and unjacketed volumetric strain (Blöcher 2013)
 				in >> porosity_model_values[0]; // initial porosity
 				break;
-			case 20: // AJ 06.2014 dependant on volumetric strain and unjacketed volumetric strain and temperature (case 18 + thermal dependency)
+			case 14: // AJ 06.2014 dependant on volumetric strain and unjacketed volumetric strain and temperature (case 18 + thermal dependency)
 				in >> porosity_model_values[0]; // initial porosity
 				in >> porosity_model_values[1]; // thermoelasticity mode
 				in >> porosity_model_values[2]; // reference temperature
@@ -3836,10 +3836,10 @@ double CMediumProperties::Porosity(long number,double theta)
 	case 12:                              // n = n0 + vol_strain, WX: 03.2011
 		porosity = PorosityVolStrain(number, porosity_model_values[0], assem);
 		break;
-	case 18:
+	case 13:
 		porosity = PorosityDrainedStrain(number, porosity_model_values[0], assem);
 		break;
-	case 20:
+	case 14:
 		porosity = PorosityDrainedStrainTemp(number, porosity_model_values[0], porosity_model_values[1], porosity_model_values[2], porosity_model_values[3], porosity_model_values[4], assem); //AJ: 09.2014
 		break;
 #ifdef GEM_REACT
@@ -4007,10 +4007,10 @@ double CMediumProperties::Porosity(CElement* assem)
 	case 12:                              // n = n0 + vol_strain
 		porosity = PorosityVolStrain(number, porosity_model_values[0], assem_tmp); //WX:03.2011
 		break;
-	case 18:
+	case 13:
 		porosity = PorosityDrainedStrain(number, porosity_model_values[0], assem_tmp);
 		break;
-	case 20:
+	case 14:
 		porosity = PorosityDrainedStrainTemp(number, porosity_model_values[0], porosity_model_values[1], porosity_model_values[2], porosity_model_values[3], porosity_model_values[4], assem_tmp); //AJ: 09.2014
 		break;
 #ifdef GEM_REACT
