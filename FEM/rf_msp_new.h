@@ -195,7 +195,10 @@ public:
 	void SetYoungsModulus(const double El)  {(*data_Youngs)(0) = El; }
 	double Poisson_Ratio() const {return PoissonRatio; }
 	void CalcYoungs_SVV(const double strain_v);
+	void CalcYoungs_Drained(const double stress_eff);
 	double Thermal_Expansion() const {return ThermalExpansion; }
+	double Solid_Bulk_Modulus() const {return Ks; }
+	double Biot_Coeff() const {return biot_const; }
 	// 4. Plasticity
 	int Plastictity() const {return Plasticity_type; }
 	double GetPlasticParameter(const int index) {return (*data_Plasticity)(index); }

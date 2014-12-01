@@ -392,6 +392,16 @@ std::ios::pos_type CSolidProperties::Read(std::ifstream* msp_file)
 				in_sd >> (*data_Youngs)(0) >> (*data_Youngs)(1) >> (*data_Youngs)(2);
 				in_sd.clear();
 				break;
+			case 3:
+				// data_Youngs drained model
+				//  0: C0
+				//  1: Cend
+				//  2: p_hat
+				// AJ 07.2014
+				data_Youngs = new Matrix(3);
+				in_sd >> (*data_Youngs)(0) >> (*data_Youngs)(1) >> (*data_Youngs)(2);
+				in_sd.clear();
+				break;
 			case 1000:    // case 10-13: transverse isotropic linear elasticity (UJG 24.11.2009)
 				// data_Youngs transverse isotropic linear elasticity
 				//  0: E_i     (Young's modulus of the plane of isotropy)
@@ -6390,6 +6400,24 @@ void CSolidProperties::CalcYoungs_SVV(const double strain_v)
 	K = (3.0 * Lambda + 2.0 * G) / 3.0;
 }
 /**************************************************************************
+   FEMLib-Method:
+   Task: Caculate Young modulus based on the expression of the drained bulk compressibility
+   Programing:
+   06/2014 AJ
+   last modified: 18/06/2014
+**************************************************************************/
+void CSolidProperties::CalcYoungs_Drained(const double stress_eff)
+{
+	double nv = Poisson_Ratio();
+	if (stress_eff <=0 )
+		E = (3*(1-2*nv))/((*data_Youngs)(0));
+	else
+		E = (3*(1-2*nv))/((*data_Youngs)(1) + ((*data_Youngs)(0) - (*data_Youngs)(1))*exp(-stress_eff/(*data_Youngs)(2)));
+	Lambda = E * nv / ((1. + nv) * (1. - 2. * nv));
+	G = 0.5 * E / (1. + nv);
+	K = (3.0 * Lambda + 2.0 * G) / 3.0;
+	biot_const = 1 - K/Ks;
+}/**************************************************************************
    FEMLib-Method:
    Task: Caculate increment of strain induced by HL creep model
    Programing:

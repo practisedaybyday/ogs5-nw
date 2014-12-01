@@ -2197,7 +2197,12 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 			smat->CalcYoungs_SVV(CalcStrain_v());
 			smat->ElasticConsitutive(ele_dim, De);
 		}
-
+		if(smat->Youngs_mode == 3) //AJ. 16.06.2014
+		{
+			smat->CalcYoungs_Drained(CalcStress_eff());
+			smat->ElasticConsitutive(ele_dim, De);
+		}
+		
 		ComputeStrain();
 		if(update)
 			RecordGuassStrain(gp, gp_r, gp_s, gp_t);
@@ -3872,5 +3877,38 @@ double CFiniteElementVec:: CalcStrain_v()
 		val += 0.5 * dstrain[i] * dstrain[i];
 
 	return sqrt(2.0 * val / 3.);
+}
+/***************************************************************************
+   GeoSys - Funktion:
+            CFiniteElementVec:: CalcStress_eff()
+   Aufgabe:
+           Calculate effective stress at Gauss points
+   Formalparameter:
+           E:
+
+   Programming:
+   06/2014   AJ
+ **************************************************************************/
+double CFiniteElementVec:: CalcStress_eff()
+{
+	int i;
+	size_t j;
+	double val =0.;
+	for (i = 0; i < ns; i++)
+		dstress[i] = 0.0;
+
+	for(j = 0; j < dim; j++)
+	{
+		for(i = 0; i < nnodes; i++)
+			dstress[j] += pcs->GetNodeValue(nodes[i],Idx_Stress[j]);
+		
+		dstress[j] /= nnodes;
+	}
+
+	for(j = 0; j < dim; j++)
+		val -= dstress[j];
+	val /= dim;
+
+	return val;
 }
 }                                                 // end namespace FiniteElement

@@ -491,6 +491,16 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 			case 12:
 				in >> porosity_model_values[0]; //WX 03.2011, dependent on strain
 				break;
+			case 18: // AJ 06.2014 dependant on volumetric strain and unjacketed volumetric strain (Blöcher 2013)
+				in >> porosity_model_values[0]; // initial porosity
+				break;
+			case 20: // AJ 06.2014 dependant on volumetric strain and unjacketed volumetric strain and temperature (case 18 + thermal dependency)
+				in >> porosity_model_values[0]; // initial porosity
+				in >> porosity_model_values[1]; // thermoelasticity mode
+				in >> porosity_model_values[2]; // reference temperature
+				in >> porosity_model_values[3]; // bulk thermal expansion coefficient
+				in >> porosity_model_values[4]; // solid thermal expansion coefficient
+				break;
 #ifdef GEM_REACT
 			case 15:
 				in >> porosity_model_values[0]; // set a default value for GEMS calculation
@@ -1427,6 +1437,14 @@ std::ios::pos_type CMediumProperties::Read(std::ifstream* mmp_file)
 				in >> permeability_porosity_model_values[2];
 				// this is prarameter k_fmin
 				in >> permeability_porosity_model_values[3];
+				break;
+			case 8:    //AJ: 04.2014
+				permeability_tensor_type = 0;
+				permeability_model = 8;
+				// initial permeability
+				in >> permeability_porosity_model_values[0];
+				// coefficient A
+				in >> permeability_porosity_model_values[1];
 				break;
 			default:
 				std::cout << "Error in MMPRead: no valid permeability model" <<
@@ -3818,6 +3836,12 @@ double CMediumProperties::Porosity(long number,double theta)
 	case 12:                              // n = n0 + vol_strain, WX: 03.2011
 		porosity = PorosityVolStrain(number, porosity_model_values[0], assem);
 		break;
+	case 18:
+		porosity = PorosityDrainedStrain(number, porosity_model_values[0], assem);
+		break;
+	case 20:
+		porosity = PorosityDrainedStrainTemp(number, porosity_model_values[0], porosity_model_values[1], porosity_model_values[2], porosity_model_values[3], porosity_model_values[4], assem); //AJ: 09.2014
+		break;
 #ifdef GEM_REACT
 	case 15:
 		porosity = porosity_model_values[0]; // default value as backup
@@ -3982,6 +4006,12 @@ double CMediumProperties::Porosity(CElement* assem)
 		break;
 	case 12:                              // n = n0 + vol_strain
 		porosity = PorosityVolStrain(number, porosity_model_values[0], assem_tmp); //WX:03.2011
+		break;
+	case 18:
+		porosity = PorosityDrainedStrain(number, porosity_model_values[0], assem_tmp);
+		break;
+	case 20:
+		porosity = PorosityDrainedStrainTemp(number, porosity_model_values[0], porosity_model_values[1], porosity_model_values[2], porosity_model_values[3], porosity_model_values[4], assem_tmp); //AJ: 09.2014
 		break;
 #ifdef GEM_REACT
 	case 15:
@@ -4344,6 +4374,7 @@ double* CMediumProperties::PermeabilityTensor(long index)
 			}
 		}
 		else if ( permeability_model == 7 ) // HS: 11.2008, for Clement biofilm clogging
+		{
 			// if first time step, do nothing. otherwise,
 			if ( aktueller_zeitschritt > 1 )
 			{
@@ -4385,6 +4416,33 @@ double* CMediumProperties::PermeabilityTensor(long index)
 				// now gives the newly calculated value to tensor[]
 				tensor[0] = k_new;
 			}
+		}
+		else if ( permeability_model == 8 ) //AJ: 05.2014
+		{
+			if ( aktueller_zeitschritt == 0 )
+			{
+				idx_k = m_pcs->GetElementValueIndex("PERMEABILITY");
+				k_new = permeability_porosity_model_values[0];
+			}
+			else
+			{
+				// get index
+				idx_k = m_pcs->GetElementValueIndex("PERMEABILITY");
+				idx_n = m_pcs->GetElementValueIndex("POROSITY");
+				
+				// get values of n.
+				n_new = m_pcs->GetElementValue( index, idx_n + 1 );
+
+				// calculate new permeability
+				// k_rel(n) = A.n^3/(1-n)^2 ; A =k0*(1-n0)^2/n^3
+				k_new = permeability_porosity_model_values[1]*MathLib::fastpow(n_new,3)/MathLib::fastpow(1-n_new,2);
+			}
+				// save new permeability
+				m_pcs->SetElementValue( index, idx_k + 1, k_new  );
+
+				// now gives the newly calculated value to tensor[]
+				tensor[0] = k_new;
+		}
 	}
 	// end of K-C relationship-----------------------------------------------------------------------------------
 
@@ -6807,6 +6865,156 @@ double CMediumProperties::PorosityVolStrain(long index, double val0, CFiniteElem
 	val += vol_strain_temp;
 	if(val < MKleinsteZahl)
 		val = 1e-6;  //lower limit of porostity
+	return val;
+}
+
+//AJ: 12.2014. Porosity = (n0 - vol_strain + vol_strain_us*(1 - n0)) / (1 - vol_strain)
+double CMediumProperties::PorosityDrainedStrain(long index, double val0, CFiniteElementStd* assem)
+{
+	double val = val0, vol_strain_temp = 0., strain_temp[3] = {0.}, strain_nodes[20] = {0.}, mean_stress_temp = 0., stress_temp[3] = {0.}, stress_nodes[20] = {0.}, vol_strain_us = 0., Ks;
+	int idx_temp[7] = {0}, nnodes = assem->nnodes, group;
+	SolidProp::CSolidProperties* m_msp = NULL;
+
+	//AJ CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) this;
+	int dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
+	if (dim == 2)
+		if(assem->axisymmetry)
+			dim = 3;
+	idx_temp[0] = assem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
+	idx_temp[1] = assem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
+	idx_temp[2] = assem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
+	idx_temp[3] = assem->dm_pcs->GetNodeValueIndex("STRESS_XX");
+	idx_temp[4] = assem->dm_pcs->GetNodeValueIndex("STRESS_YY");
+	idx_temp[5] = assem->dm_pcs->GetNodeValueIndex("STRESS_ZZ");
+
+	//AJ ele_index = index;
+	for (int j = 0; j < dim; j++)
+	{
+		for (int i = 0; i < nnodes; i++)
+		{
+			stress_nodes[i] = assem->dm_pcs->GetNodeValue(
+			        assem->dm_pcs->m_msh->ele_vector[index]-> \
+			        getNodeIndices()[i],
+			        idx_temp[j+dim]);
+			strain_nodes[i] = assem->dm_pcs->GetNodeValue(
+			        assem->dm_pcs->m_msh->ele_vector[index]-> \
+			        getNodeIndices()[i],
+			        idx_temp[j]);
+		}
+		strain_temp[j] = assem->interpolate(strain_nodes);
+		stress_temp[j] = assem->interpolate(stress_nodes);
+	}
+	for (int j = 0; j < dim; j++)
+	{
+		vol_strain_temp += strain_temp[j];
+		mean_stress_temp += stress_temp[j];
+	}
+	mean_stress_temp /= 3;
+
+	group = m_pcs->m_msh->ele_vector[number]->GetPatchIndex();
+	m_msp = msp_vector[group];
+	Ks = m_msp->Solid_Bulk_Modulus();
+
+	vol_strain_us = mean_stress_temp / Ks;
+
+	val = (val0 + vol_strain_temp - vol_strain_us*(1 - val0)) / (1 + vol_strain_temp);
+
+	if ( m_pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW || 
+		m_pcs->getProcessType() == FiniteElement::LIQUID_FLOW)
+	{
+		idx_temp[6] = m_pcs->GetElementValueIndex("POROSITY");
+		m_pcs->SetElementValue( index, idx_temp[6] + 1, val );
+	}
+	return val;
+}
+
+//AJ: 12.2014. Porosity = (n0 - vol_strain + vol_strain_us*(1 - n0)) / (1 - vol_strain) + thermal effect
+double CMediumProperties::PorosityDrainedStrainTemp(long index, double val0, int thermo_mode, double T0, double alpha_b, double alpha_s, CFiniteElementStd* assem) //AJ: 09.2014
+{
+	double val = val0, vol_strain_temp = 0., strain_temp[3] = {0.}, strain_nodes[20] = {0.}, mean_stress_temp = 0., stress_temp[3] = {0.}, stress_nodes[20] = {0.}, temperature_temp = 0., temperature_nodes[20] ={0.}, vol_strain_us = 0., Ks;
+	int idx_temp[8] = {0}, nnodes = assem->nnodes, group;
+	SolidProp::CSolidProperties* m_msp = NULL;
+
+	int dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
+	if (dim == 2)
+		if(assem->axisymmetry)
+			dim = 3;
+	idx_temp[0] = assem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
+	idx_temp[1] = assem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
+	idx_temp[2] = assem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
+	idx_temp[3] = assem->dm_pcs->GetNodeValueIndex("STRESS_XX");
+	idx_temp[4] = assem->dm_pcs->GetNodeValueIndex("STRESS_YY");
+	idx_temp[5] = assem->dm_pcs->GetNodeValueIndex("STRESS_ZZ");
+
+	//AJ ele_index = index;
+	for (int j = 0; j < dim; j++)
+	{
+		for (int i = 0; i < nnodes; i++)
+		{
+			stress_nodes[i] = assem->dm_pcs->GetNodeValue(
+			        assem->dm_pcs->m_msh->ele_vector[index]-> \
+			        getNodeIndices()[i],
+			        idx_temp[j+dim]);
+			strain_nodes[i] = assem->dm_pcs->GetNodeValue(
+			        assem->dm_pcs->m_msh->ele_vector[index]-> \
+			        getNodeIndices()[i],
+			        idx_temp[j]);
+		}
+		strain_temp[j] = assem->interpolate(strain_nodes);
+		stress_temp[j] = assem->interpolate(stress_nodes);
+	}
+	for (int j = 0; j < dim; j++)
+	{
+		vol_strain_temp += strain_temp[j];
+		mean_stress_temp += stress_temp[j];
+	}
+	mean_stress_temp /= 3;
+
+	group = m_pcs->m_msh->ele_vector[number]->GetPatchIndex();
+	m_msp = msp_vector[group];
+	Ks = m_msp->Solid_Bulk_Modulus();
+
+	vol_strain_us = mean_stress_temp / Ks;
+
+	if ( m_pcs->getProcessType() == FiniteElement::HEAT_TRANSPORT)
+	{
+		idx_temp[6] = assem->pcs->GetNodeValueIndex("TEMPERATURE1");
+
+		for (int i = 0; i < nnodes; i++)
+				temperature_nodes[i] = assem->pcs->GetNodeValue(
+						assem->pcs->m_msh->ele_vector[index]-> \
+						getNodeIndices()[i],
+						idx_temp[6]);
+		temperature_temp = assem->interpolate(temperature_nodes);
+	}
+	else
+	{
+		idx_temp[6] = assem->cpl_pcs->GetNodeValueIndex("TEMPERATURE1");
+
+		for (int i = 0; i < nnodes; i++)
+				temperature_nodes[i] = assem->cpl_pcs->GetNodeValue(
+						assem->cpl_pcs->m_msh->ele_vector[index]-> \
+						getNodeIndices()[i],
+						idx_temp[6]);
+		temperature_temp = assem->interpolate(temperature_nodes);
+	}
+
+	switch (thermo_mode)
+	{
+	case 1:
+		val = (val0 + vol_strain_temp - vol_strain_us*(1 - val0)) / (1 + vol_strain_temp) + (alpha_b - (1 - val0)*alpha_s)*(temperature_temp - T0);
+		break;
+	case 2:
+		val = (val0 + vol_strain_temp - vol_strain_us*(1 - val0) + alpha_b - (1 - val0)*alpha_s) / (1 + vol_strain_temp +alpha_b);
+		break;	
+	}
+
+	if ( m_pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW || 
+		m_pcs->getProcessType() == FiniteElement::LIQUID_FLOW)
+	{
+		idx_temp[7] = m_pcs->GetElementValueIndex("POROSITY");
+		m_pcs->SetElementValue( index, idx_temp[7] + 1, val );
+	}
 	return val;
 }
 

@@ -222,6 +222,7 @@ private:
 	double CalcStrain_v();
 	void ExtropolateGuassStrain();
 	void ExtropolateGuassStress();
+	double CalcStress_eff();
 
 	// Compute the local finite element matrices
 	void LocalAssembly_continuum(const int update);
