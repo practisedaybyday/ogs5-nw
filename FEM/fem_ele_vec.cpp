@@ -3657,6 +3657,7 @@ ElementValue_DM::ElementValue_DM(CElem* ele,  const int NGP, bool HM_Staggered)
 	int ele_dim;
 	//
 	Stress = NULL;
+	Strain = NULL;
 	pStrain = NULL;
 	prep0 = NULL;
 	e_i = NULL;
@@ -3686,6 +3687,7 @@ ElementValue_DM::ElementValue_DM(CElem* ele,  const int NGP, bool HM_Staggered)
 	Stress0 = new Matrix(LengthBS, NGPoints);
 	Stress_i = new Matrix(LengthBS, NGPoints);
 	Stress = Stress_i;
+	Strain = new Matrix(LengthBS, NGPoints);
 	if(HM_Staggered)
 		Stress_j = new Matrix(LengthBS, NGPoints);
 	else
@@ -3842,6 +3844,7 @@ ElementValue_DM::~ElementValue_DM()
 	y_surface = NULL;
 	Stress0 = NULL;
 	Stress = NULL;
+	Strain = NULL;
 	Stress_i = NULL;                      // for HM coupling iteration
 	Stress_j = NULL;                      // for HM coupling iteration
 	pStrain = NULL;
@@ -3891,24 +3894,16 @@ double CFiniteElementVec:: CalcStrain_v()
  **************************************************************************/
 double CFiniteElementVec:: CalcStress_eff()
 {
-	int i;
 	size_t j;
-	double val =0.;
-	for (i = 0; i < ns; i++)
-		dstress[i] = 0.0;
-
+	double val = 0.;
+	ElementValue_DM*  ele_value = ele_value_dm[MeshElement->GetIndex()];
+	
 	for(j = 0; j < dim; j++)
-	{
-		for(i = 0; i < nnodes; i++)
-			dstress[j] += pcs->GetNodeValue(nodes[i],Idx_Stress[j]);
-		
-		dstress[j] /= nnodes;
-	}
+		val -= (*ele_value->Stress)(j, gp);
 
-	for(j = 0; j < dim; j++)
-		val -= dstress[j];
 	val /= dim;
 
 	return val;
 }
-}                                                 // end namespace FiniteElement
+}                                                 
+// end namespace FiniteElement

@@ -6871,44 +6871,29 @@ double CMediumProperties::PorosityVolStrain(long index, double val0, CFiniteElem
 //AJ: 12.2014. Porosity = (n0 - vol_strain + vol_strain_us*(1 - n0)) / (1 - vol_strain)
 double CMediumProperties::PorosityDrainedStrain(long index, double val0, CFiniteElementStd* assem)
 {
-	double val = val0, vol_strain_temp = 0., strain_temp[3] = {0.}, strain_nodes[20] = {0.}, mean_stress_temp = 0., stress_temp[3] = {0.}, stress_nodes[20] = {0.}, vol_strain_us = 0., Ks;
-	int idx_temp[7] = {0}, nnodes = assem->nnodes, group;
-	SolidProp::CSolidProperties* m_msp = NULL;
-
-	//AJ CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) this;
+	double val = val0, vol_strain_temp = 0.,strain_temp[3] = {0.}, mean_stress_temp = 0., stress_temp[3] = {0.}, vol_strain_us = 0., Ks;
+	int idx_temp = 0, group, ngp = assem->nGaussPoints;
 	int dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
+	SolidProp::CSolidProperties* m_msp = NULL;
+	ElementValue_DM*  ele_value = ele_value_dm[index];
+	
 	if (dim == 2)
 		if(assem->axisymmetry)
 			dim = 3;
-	idx_temp[0] = assem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
-	idx_temp[1] = assem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
-	idx_temp[2] = assem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
-	idx_temp[3] = assem->dm_pcs->GetNodeValueIndex("STRESS_XX");
-	idx_temp[4] = assem->dm_pcs->GetNodeValueIndex("STRESS_YY");
-	idx_temp[5] = assem->dm_pcs->GetNodeValueIndex("STRESS_ZZ");
-
-	//AJ ele_index = index;
+		
 	for (int j = 0; j < dim; j++)
 	{
-		for (int i = 0; i < nnodes; i++)
+		for (int i = 0; i < ngp; i++) // loop on the Gauss points of the element
 		{
-			stress_nodes[i] = assem->dm_pcs->GetNodeValue(
-			        assem->dm_pcs->m_msh->ele_vector[index]-> \
-			        getNodeIndices()[i],
-			        idx_temp[j+dim]);
-			strain_nodes[i] = assem->dm_pcs->GetNodeValue(
-			        assem->dm_pcs->m_msh->ele_vector[index]-> \
-			        getNodeIndices()[i],
-			        idx_temp[j]);
+			stress_temp[j] += (*ele_value->Stress)(j,i);
+			strain_temp[j] += (*ele_value->Strain)(j,i);
 		}
-		strain_temp[j] = assem->interpolate(strain_nodes);
-		stress_temp[j] = assem->interpolate(stress_nodes);
-	}
-	for (int j = 0; j < dim; j++)
-	{
-		vol_strain_temp += strain_temp[j];
+		stress_temp[j] /= ngp; // average on Gauss points values
+		strain_temp[j] /= ngp;
 		mean_stress_temp += stress_temp[j];
+		vol_strain_temp += strain_temp[j];
 	}
+		
 	mean_stress_temp /= 3;
 
 	group = m_pcs->m_msh->ele_vector[number]->GetPatchIndex();
@@ -6922,8 +6907,8 @@ double CMediumProperties::PorosityDrainedStrain(long index, double val0, CFinite
 	if ( m_pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW || 
 		m_pcs->getProcessType() == FiniteElement::LIQUID_FLOW)
 	{
-		idx_temp[6] = m_pcs->GetElementValueIndex("POROSITY");
-		m_pcs->SetElementValue( index, idx_temp[6] + 1, val );
+		idx_temp = m_pcs->GetElementValueIndex("POROSITY");
+		m_pcs->SetElementValue( index, idx_temp + 1, val );
 	}
 	return val;
 }
@@ -6931,43 +6916,29 @@ double CMediumProperties::PorosityDrainedStrain(long index, double val0, CFinite
 //AJ: 12.2014. Porosity = (n0 - vol_strain + vol_strain_us*(1 - n0)) / (1 - vol_strain) + thermal effect
 double CMediumProperties::PorosityDrainedStrainTemp(long index, double val0, int thermo_mode, double T0, double alpha_b, double alpha_s, CFiniteElementStd* assem) //AJ: 09.2014
 {
-	double val = val0, vol_strain_temp = 0., strain_temp[3] = {0.}, strain_nodes[20] = {0.}, mean_stress_temp = 0., stress_temp[3] = {0.}, stress_nodes[20] = {0.}, temperature_temp = 0., temperature_nodes[20] ={0.}, vol_strain_us = 0., Ks;
-	int idx_temp[8] = {0}, nnodes = assem->nnodes, group;
-	SolidProp::CSolidProperties* m_msp = NULL;
-
+	double val = val0, vol_strain_temp = 0.,strain_temp[3] = {0.}, mean_stress_temp = 0., stress_temp[3] = {0.}, temperature_temp = 0., temperature_nodes[20] ={0.}, vol_strain_us = 0., Ks;
+	int idx_temp[2] = {0}, group, ngp = assem->nGaussPoints, nnodes = assem->nnodes;
 	int dim = m_pcs->m_msh->GetCoordinateFlag() / 10;
+	SolidProp::CSolidProperties* m_msp = NULL;
+	ElementValue_DM*  ele_value = ele_value_dm[index];
+	
 	if (dim == 2)
 		if(assem->axisymmetry)
 			dim = 3;
-	idx_temp[0] = assem->dm_pcs->GetNodeValueIndex("STRAIN_XX");
-	idx_temp[1] = assem->dm_pcs->GetNodeValueIndex("STRAIN_YY");
-	idx_temp[2] = assem->dm_pcs->GetNodeValueIndex("STRAIN_ZZ");
-	idx_temp[3] = assem->dm_pcs->GetNodeValueIndex("STRESS_XX");
-	idx_temp[4] = assem->dm_pcs->GetNodeValueIndex("STRESS_YY");
-	idx_temp[5] = assem->dm_pcs->GetNodeValueIndex("STRESS_ZZ");
-
-	//AJ ele_index = index;
+		
 	for (int j = 0; j < dim; j++)
 	{
-		for (int i = 0; i < nnodes; i++)
+		for (int i = 0; i < ngp; i++) // loop on the Gauss points of the element
 		{
-			stress_nodes[i] = assem->dm_pcs->GetNodeValue(
-			        assem->dm_pcs->m_msh->ele_vector[index]-> \
-			        getNodeIndices()[i],
-			        idx_temp[j+dim]);
-			strain_nodes[i] = assem->dm_pcs->GetNodeValue(
-			        assem->dm_pcs->m_msh->ele_vector[index]-> \
-			        getNodeIndices()[i],
-			        idx_temp[j]);
+			stress_temp[j] += (*ele_value->Stress)(j,i);
+			strain_temp[j] += (*ele_value->Strain)(j,i);
 		}
-		strain_temp[j] = assem->interpolate(strain_nodes);
-		stress_temp[j] = assem->interpolate(stress_nodes);
-	}
-	for (int j = 0; j < dim; j++)
-	{
-		vol_strain_temp += strain_temp[j];
+		stress_temp[j] /= ngp; // average on Gauss points values
+		strain_temp[j] /= ngp;
 		mean_stress_temp += stress_temp[j];
+		vol_strain_temp += strain_temp[j];
 	}
+		
 	mean_stress_temp /= 3;
 
 	group = m_pcs->m_msh->ele_vector[number]->GetPatchIndex();
@@ -6978,24 +6949,24 @@ double CMediumProperties::PorosityDrainedStrainTemp(long index, double val0, int
 
 	if ( m_pcs->getProcessType() == FiniteElement::HEAT_TRANSPORT)
 	{
-		idx_temp[6] = assem->pcs->GetNodeValueIndex("TEMPERATURE1");
+		idx_temp[0] = assem->pcs->GetNodeValueIndex("TEMPERATURE1");
 
 		for (int i = 0; i < nnodes; i++)
 				temperature_nodes[i] = assem->pcs->GetNodeValue(
 						assem->pcs->m_msh->ele_vector[index]-> \
 						getNodeIndices()[i],
-						idx_temp[6]);
+						idx_temp[0]);
 		temperature_temp = assem->interpolate(temperature_nodes);
 	}
 	else
 	{
-		idx_temp[6] = assem->cpl_pcs->GetNodeValueIndex("TEMPERATURE1");
+		idx_temp[0] = assem->cpl_pcs->GetNodeValueIndex("TEMPERATURE1");
 
 		for (int i = 0; i < nnodes; i++)
 				temperature_nodes[i] = assem->cpl_pcs->GetNodeValue(
 						assem->cpl_pcs->m_msh->ele_vector[index]-> \
 						getNodeIndices()[i],
-						idx_temp[6]);
+						idx_temp[0]);
 		temperature_temp = assem->interpolate(temperature_nodes);
 	}
 
@@ -7012,8 +6983,8 @@ double CMediumProperties::PorosityDrainedStrainTemp(long index, double val0, int
 	if ( m_pcs->getProcessType() == FiniteElement::GROUNDWATER_FLOW || 
 		m_pcs->getProcessType() == FiniteElement::LIQUID_FLOW)
 	{
-		idx_temp[7] = m_pcs->GetElementValueIndex("POROSITY");
-		m_pcs->SetElementValue( index, idx_temp[7] + 1, val );
+		idx_temp[1] = m_pcs->GetElementValueIndex("POROSITY");
+		m_pcs->SetElementValue( index, idx_temp[1] + 1, val );
 	}
 	return val;
 }
