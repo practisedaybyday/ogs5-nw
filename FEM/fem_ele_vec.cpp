@@ -2439,7 +2439,10 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 		else                      // Update stress
 
 			for(i = 0; i < ns; i++)
+			{
 				(*eleV_DM->Stress)(i, gp) = dstress[i];
+				(*eleV_DM->Strain)(i, gp) += dstrain[i];
+			}
 	}
 	// The mapping of Gauss point strain to element nodes
 	if(update)
