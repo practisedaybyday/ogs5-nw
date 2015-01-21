@@ -61,6 +61,7 @@ private:
 	Matrix* Stress;
 	Matrix* Stress_i;
 	Matrix* Stress_j;
+	Matrix* Strain;
 	Matrix* pStrain;
 	Matrix* y_surface;
 	// Preconsolidation pressure
@@ -222,6 +223,7 @@ private:
 	double CalcStrain_v();
 	void ExtropolateGuassStrain();
 	void ExtropolateGuassStress();
+	double CalcStress_eff();
 
 	// Compute the local finite element matrices
 	void LocalAssembly_continuum(const int update);

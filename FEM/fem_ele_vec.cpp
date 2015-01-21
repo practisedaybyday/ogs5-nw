@@ -2197,7 +2197,12 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 			smat->CalcYoungs_SVV(CalcStrain_v());
 			smat->ElasticConsitutive(ele_dim, De);
 		}
-
+		if(smat->Youngs_mode == 3) //AJ. 16.06.2014
+		{
+			smat->CalcYoungs_Drained(CalcStress_eff());
+			smat->ElasticConsitutive(ele_dim, De);
+		}
+		
 		ComputeStrain();
 		if(update)
 			RecordGuassStrain(gp, gp_r, gp_s, gp_t);
@@ -2434,7 +2439,10 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 		else                      // Update stress
 
 			for(i = 0; i < ns; i++)
+			{
 				(*eleV_DM->Stress)(i, gp) = dstress[i];
+				(*eleV_DM->Strain)(i, gp) += dstrain[i];
+			}
 	}
 	// The mapping of Gauss point strain to element nodes
 	if(update)
@@ -3652,6 +3660,7 @@ ElementValue_DM::ElementValue_DM(CElem* ele,  const int NGP, bool HM_Staggered)
 	int ele_dim;
 	//
 	Stress = NULL;
+	Strain = NULL;
 	pStrain = NULL;
 	prep0 = NULL;
 	e_i = NULL;
@@ -3681,6 +3690,7 @@ ElementValue_DM::ElementValue_DM(CElem* ele,  const int NGP, bool HM_Staggered)
 	Stress0 = new Matrix(LengthBS, NGPoints);
 	Stress_i = new Matrix(LengthBS, NGPoints);
 	Stress = Stress_i;
+	Strain = new Matrix(LengthBS, NGPoints);
 	if(HM_Staggered)
 		Stress_j = new Matrix(LengthBS, NGPoints);
 	else
@@ -3837,6 +3847,7 @@ ElementValue_DM::~ElementValue_DM()
 	y_surface = NULL;
 	Stress0 = NULL;
 	Stress = NULL;
+	Strain = NULL;
 	Stress_i = NULL;                      // for HM coupling iteration
 	Stress_j = NULL;                      // for HM coupling iteration
 	pStrain = NULL;
@@ -3873,4 +3884,29 @@ double CFiniteElementVec:: CalcStrain_v()
 
 	return sqrt(2.0 * val / 3.);
 }
-}                                                 // end namespace FiniteElement
+/***************************************************************************
+   GeoSys - Funktion:
+            CFiniteElementVec:: CalcStress_eff()
+   Aufgabe:
+           Calculate effective stress at Gauss points
+   Formalparameter:
+           E:
+
+   Programming:
+   06/2014   AJ
+ **************************************************************************/
+double CFiniteElementVec:: CalcStress_eff()
+{
+	size_t j;
+	double val = 0.;
+	ElementValue_DM*  ele_value = ele_value_dm[MeshElement->GetIndex()];
+	
+	for(j = 0; j < dim; j++)
+		val -= (*ele_value->Stress)(j, gp);
+
+	val /= dim;
+
+	return val;
+}
+}                                                 
+// end namespace FiniteElement
