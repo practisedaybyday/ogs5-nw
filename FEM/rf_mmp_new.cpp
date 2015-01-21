@@ -6896,7 +6896,7 @@ double CMediumProperties::PorosityDrainedStrain(long index, double val0, CFinite
 		
 	mean_stress_temp /= 3;
 
-	group = m_pcs->m_msh->ele_vector[number]->GetPatchIndex();
+	group = m_pcs->m_msh->ele_vector[index]->GetPatchIndex();
 	m_msp = msp_vector[group];
 	Ks = m_msp->Solid_Bulk_Modulus();
 
@@ -6941,7 +6941,7 @@ double CMediumProperties::PorosityDrainedStrainTemp(long index, double val0, int
 		
 	mean_stress_temp /= 3;
 
-	group = m_pcs->m_msh->ele_vector[number]->GetPatchIndex();
+	group = m_pcs->m_msh->ele_vector[index]->GetPatchIndex();
 	m_msp = msp_vector[group];
 	Ks = m_msp->Solid_Bulk_Modulus();
 

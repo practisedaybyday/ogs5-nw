@@ -6417,7 +6417,8 @@ void CSolidProperties::CalcYoungs_Drained(const double stress_eff)
 	G = 0.5 * E / (1. + nv);
 	K = (3.0 * Lambda + 2.0 * G) / 3.0;
 	biot_const = 1 - K/Ks;
-}/**************************************************************************
+}
+/**************************************************************************
    FEMLib-Method:
    Task: Caculate increment of strain induced by HL creep model
    Programing:
