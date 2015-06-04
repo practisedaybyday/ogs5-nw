@@ -39,7 +39,6 @@ set( SOURCES
 	solver.h
 	SourceTerm.h
 	tools.h
-	vtk.h
 	geochemcalc.h
 	GeoInfo.h
 	ProcessInfo.h
@@ -87,7 +86,6 @@ set( SOURCES
 	rfmat_cp.cpp
 	SourceTerm.cpp
 	tools.cpp
-	vtk.cpp
 	#Eclipse.cpp
 	#DUMUX.cpp
 	Output.cpp

@@ -9,6 +9,7 @@ SET( SOURCES
 	FEMIO/ProcessIO.cpp
 	FEMIO/BoundaryConditionIO.cpp
 	MeshIO/LegacyVtkInterface.cpp
+	MeshIO/vtk.cpp
 	MeshIO/OGSMeshIO.cpp
 	XmlIO/RapidXMLInterface.cpp
 )
@@ -25,6 +26,7 @@ SET( HEADERS
 	FEMIO/BoundaryConditionIO.h
 	MathIO/CRSIO.h
 	MeshIO/LegacyVtkInterface.h
+	MeshIO/vtk.h
 	MeshIO/OGSMeshIO.h
 	XmlIO/RapidXMLInterface.h
 )
