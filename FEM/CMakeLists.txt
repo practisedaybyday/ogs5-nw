@@ -31,7 +31,6 @@ set( SOURCES
 	rf_out_new.h
 	rf_pcs.h
 	rf_pcs_TH.h
-	#rf_random_walk.h
 	rf_react.h
 	rf_st_new.h
 	rf_tim_new.h
@@ -39,7 +38,6 @@ set( SOURCES
 	solver.h
 	SourceTerm.h
 	tools.h
-	geochemcalc.h
 	GeoInfo.h
 	ProcessInfo.h
 	DistributionInfo.h
@@ -79,15 +77,12 @@ set( SOURCES
 	rf_out_new.cpp
 	rf_pcs.cpp
 	rf_pcs_TH.cpp
-	#rf_random_walk.cpp
 	rf_react.cpp
 	rf_st_new.cpp
 	rf_tim_new.cpp
 	rfmat_cp.cpp
 	SourceTerm.cpp
 	tools.cpp
-	#Eclipse.cpp
-	#DUMUX.cpp
 	Output.cpp
 	DistributionTools.h
 	DistributionTools.cpp

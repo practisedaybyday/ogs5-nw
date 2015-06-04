@@ -1656,13 +1656,13 @@ inline double Problem::MultiPhaseFlow()
 	//initialize density and viscosity if the CO2 phase transition is used
 	if (m_pcs->Phase_Transition_Model == 1)
 	{
-		if (m_pcs->Tim->step_current == 1)
-		{
-			std::cout << " The Viscosity is not calculated yet!!!" << std::endl;
-			m_pcs->CalculateFluidDensitiesAndViscositiesAtNodes(m_pcs);
-		}
-		else
-			m_pcs->Phase_Transition_CO2(m_pcs, 1);
+//		if (m_pcs->Tim->step_current == 1)
+//		{
+//			std::cout << " The Viscosity is not calculated yet!!!" << std::endl;
+//			m_pcs->CalculateFluidDensitiesAndViscositiesAtNodes(m_pcs);
+//		}
+//		else
+//			m_pcs->Phase_Transition_CO2(m_pcs, 1);
 	}
 
 	//m_pcs->CalculateFluidDensitiesAndViscositiesAtNodes(m_pcs);
@@ -1705,11 +1705,11 @@ inline double Problem::MultiPhaseFlow()
 				exit(0);
 			}
 		}
-		if (m_pcs->Phase_Transition_Model == 1)
-		{
-			m_pcs->CalculateFluidDensitiesAndViscositiesAtNodes(m_pcs);
-			m_pcs->Phase_Transition_CO2(m_pcs, 0);
-		}
+//		if (m_pcs->Phase_Transition_Model == 1)
+//		{
+//			m_pcs->CalculateFluidDensitiesAndViscositiesAtNodes(m_pcs);
+//			m_pcs->Phase_Transition_CO2(m_pcs, 0);
+//		}
 	}
 
 	if(m_pcs->tim_type==FiniteElement::TIM_STEADY)
