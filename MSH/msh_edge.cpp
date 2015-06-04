@@ -115,13 +115,13 @@ bool CEdge::operator == (CEdge& ed)
 **************************************************************************/
 void CEdge::Write(std::ostream& osm) const
 {
-	osm << "Edge: " << index << std::endl;
+	osm << "Edge: " << index << "\n";
 	for(size_t i = 0; i < nodes_of_edges.Size(); i++)
 	{
-		osm << "Node: " << i << std::endl;
+		osm << "Node: " << i << "\n";
 		nodes_of_edges[i]->Write(osm);
 	}
-	osm << std::endl;
+	osm << "\n";
 }
 
 /**************************************************************************

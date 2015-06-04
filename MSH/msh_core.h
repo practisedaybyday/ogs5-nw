@@ -78,7 +78,7 @@ public:
 	// Output
 	virtual void Write(std::ostream& os = std::cout) const
 	{
-		os << std::endl;
+		os << "\n";
 	}
 
 protected:
