@@ -3,7 +3,7 @@
 set( SOURCES
 	Stiff_Bulirsch-Stoer.h
 	BoundaryCondition.h
-	break.h
+	#break.h
 	#display.h
 	eos.h
 	fem_ele.h
@@ -59,7 +59,7 @@ set( SOURCES
 	LinearFunctionData.cpp
 	Stiff_Bulirsch-Stoer.cpp
 	BoundaryCondition.cpp
-	break.cpp
+	#break.cpp
 	#display.cpp
 	eos.cpp
 	fem_ele.cpp

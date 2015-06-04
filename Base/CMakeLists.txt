@@ -1,6 +1,7 @@
 # Source files
 set( HEADERS
 	binarySearch.h
+	break.h
 	Configure.h.in
 	DateTools.h
 	FileFinder.h
@@ -16,6 +17,7 @@ set( HEADERS
 )
 
 set( SOURCES
+	break.cpp
 	DateTools.cpp
 	FileTools.cpp
 	MemWatch.cpp
