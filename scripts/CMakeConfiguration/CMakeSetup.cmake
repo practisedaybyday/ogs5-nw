@@ -1,7 +1,7 @@
 
 # Set additional CMake modules path
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeConfiguration")
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/scripts/CMakeConfiguration")
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/scripts/cmake")
 
 # Load addional modules
 INCLUDE(UseBackportedModules)
@@ -9,7 +9,7 @@ INCLUDE(OptionRequires)
 INCLUDE(CppcheckTargets)
 
 # Adds useful macros and variables
-INCLUDE( CMakeConfiguration/Macros.cmake )
+INCLUDE(Macros)
 
 
 # Suppress warning on setting policies

@@ -7,18 +7,18 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(OGS)
 
 ### CMake setup ###
-INCLUDE(CMakeConfiguration/CMakeSetup.cmake)
+INCLUDE(scripts/CMakeConfiguration/CMakeSetup.cmake)
 
 ### Compiler setup ###
-INCLUDE(CMakeConfiguration/CompilerSetup.cmake)
+INCLUDE(scripts/CMakeConfiguration/CompilerSetup.cmake)
 
 ### Find directories and libraries ###
 IF(NOT OGS_NO_EXTERNAL_LIBS)
-	INCLUDE (CMakeConfiguration/Find.cmake)
+	INCLUDE (scripts/CMakeConfiguration/Find.cmake)
 ENDIF() # NOT OGS_NO_EXTERNAL_LIBS
 
 ### General project setup ###
-INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
+INCLUDE(scripts/CMakeConfiguration/GeneralProjectSetup.cmake)
 
 ###############
 ### Options ###
@@ -104,7 +104,7 @@ ENDIF(OGS_FEM)
 IF(OGS_FEM_PETSC)
 	MESSAGE (STATUS "Configuring for PETSc" )
 
-	SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/findPETSC)
+	SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/scripts/cmake/findPETSC)
 
 	FIND_PACKAGE(PETSc REQUIRED QUIET)
 
