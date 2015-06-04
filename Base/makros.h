@@ -157,6 +157,7 @@
 #define CHEM_REACTION_EXTENSION  ".pqc"
 /* Dateinamen-Erweiterung fuer Text-Eingabedatei (Chemical reaction) */
 #define CHEMAPP_REACTION_EXTENSION  ".chm"
+#define REACTION_EXTENSION_CHEMAPP ".cap" // DL/SB 11.2008
 #define TEC_FILE_EXTENSION ".tec"
 #define VTK_FILE_EXTENSION ".vtk"                 //GK
 #define CSV_FILE_EXTENSION ".csv"
@@ -238,10 +239,10 @@
 /* PCS / C++ */
 #define PCS_OBJECTS
 #define PCS_NUMBER_MAX 30
-#define DOF_NUMBER_MAX 5 // JT: max # dof's per process
+#define DOF_NUMBER_MAX 6 // JT: max # dof's per process
 #define MAX_FLUID_PHASES 2 // JT: max # fluid phases
 #define noPCS_NOD
-#define GLI
+//#define GLI // KR
 #define noWINDOWS
 
 /**********************************************************************/
@@ -317,19 +318,17 @@
 
 //enum DIS_TYPES {CONSTANT,LINEAR};
 
-//#include "display.h"
-//#include "memory.h"
-//#include "timer.h"
-
 extern std::string FileName;
 extern std::string FilePath;                      //WW
 
 #define RESET_4410                                // H2_ELE test
 
+//---- MPI Parallel --------------
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL) || \
-        defined(USE_MPI_GEMS) || defined(USE_MPI_BRNS) || defined(USE_PETSC)
-extern int mysize; //NW
+        defined(USE_MPI_GEMS) || defined(USE_MPI_BRNS) || defined(USE_MPI_KRC) || defined(USE_PETSC)
+extern int mysize;                                //WW
 extern int myrank;
 #endif
+//---- MPI Parallel --------------
 
 #endif

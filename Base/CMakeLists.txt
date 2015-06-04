@@ -1,7 +1,6 @@
 # Source files
 set( HEADERS
 	binarySearch.h
-	break.h
 	Configure.h.in
 	DateTools.h
 	FileFinder.h
@@ -12,18 +11,25 @@ set( HEADERS
 	uniqueListInsert.h
 	StringTools.h
 	swap.h
-	wait.h
+	wait.h	
 	display.h
+	makros.h
+	timer.h
+	memory.h
+	break.h
 )
 
 set( SOURCES
-	break.cpp
 	DateTools.cpp
 	FileTools.cpp
 	MemWatch.cpp
 	StringTools.cpp
 	binarySearch.cpp
 	display.cpp
+	timer.cpp
+	memory.cpp
+	break.cpp
+	makros.cpp
 )
 
 # Create the library

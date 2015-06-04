@@ -13,7 +13,6 @@
 /* Andere oeffentlich benutzte Module */
 #include <time.h>
 #include <vector>
-#include <string>
 //#include <windows.h>
 
 /* Deklarationen */
@@ -62,10 +61,12 @@ public:
 	std::vector <double> time_transport;
 	std::vector <double> time_kinreact;
 	std::vector <double> time_equireact;
+      std::vector <double> time_reactdeact;
 	double time_total_flow;
 	double time_total_transport;
 	double time_total_kinreact;
 	double time_total_equireact;
+      double time_total_reactdeact;
 	double delta_clocktime;
 	clock_t start;
 	clock_t end;
@@ -79,5 +80,6 @@ public:
 	double difftime;
 };
 extern void CreateClockTime(void);
+extern void DestroyClockTime(void);
 extern std::vector <CClockTime*> ClockTimeVec;
 #endif
