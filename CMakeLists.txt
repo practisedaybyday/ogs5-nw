@@ -26,13 +26,13 @@ INCLUDE(CMakeConfiguration/GeneralProjectSetup.cmake)
 
 # Configurations
 OPTION(OGS_FEM "Default configuration" OFF)
-OPTION(OGS_FEM_SP "Sparse matrix configuration" OFF)
-OPTION(OGS_FEM_JFNK "Jacobi free Newton-Krylov method for H2M problem" OFF)
+#OPTION(OGS_FEM_SP "Sparse matrix configuration" OFF)
+#OPTION(OGS_FEM_JFNK "Jacobi free Newton-Krylov method for H2M problem" OFF)
 OPTION(OGS_FEM_PETSC "Use PETSc parallel solver" OFF)
-OPTION(OGS_FEM_GEMS "GEMS configuration" OFF)
-OPTION(OGS_FEM_PQC "Phreeqc configuration" OFF)
-OPTION(OGS_FEM_BRNS "BRNS configuration" OFF)
-OPTION(OGS_FEM_CHEMAPP "CHEMAPP configuration" OFF)
+#OPTION(OGS_FEM_GEMS "GEMS configuration" OFF)
+#OPTION(OGS_FEM_PQC "Phreeqc configuration" OFF)
+#OPTION(OGS_FEM_BRNS "BRNS configuration" OFF)
+#OPTION(OGS_FEM_CHEMAPP "CHEMAPP configuration" OFF)
 #OPTION(OGS_USE_QT "User interface configuration" OFF)
 OPTION(OGS_FEM_LIS "Library of Iterative Solvers for Linear Systems configuration" OFF)
 OPTION(OGS_FEM_MKL "Math kernel library configuration" OFF)
@@ -40,7 +40,7 @@ OPTION(OGS_FEM_MKL "Math kernel library configuration" OFF)
 OPTION(OGS_ONLY_TH "Optimize OGS for TH simulations" OFF)
 
 # supported on Linux and Windows
-OPTION(OGS_FEM_MPI "Message passing interface configuration" OFF)
+#OPTION(OGS_FEM_MPI "Message passing interface configuration" OFF)
 
 # Set default configuration when no other config is given
 IF (NOT OGS_FEM AND NOT OGS_FEM_SP AND NOT OGS_FEM_GEMS AND NOT OGS_FEM_PQC AND NOT OGS_FEM_BRNS AND NOT OGS_FEM_CHEMAPP AND NOT OGS_FEM_LIS AND NOT OGS_FEM_MKL AND NOT OGS_FEM_MPI AND NOT OGS_USE_QT AND NOT OGS_FEM_PETSC)
@@ -52,15 +52,7 @@ ENDIF ()
 CHECK_CONFIG()
 
 # Additional options
-#OPTION(OGS_PACKAGING "Creating installers / packages" OFF)
-#OPTION_REQUIRES(OGS_PACKAGING_ZIP "Do you want to package as zip?" OGS_PACKAGING)
-#OPTION(OGS_PYTHON "Enable python scripting interface" OFF)
-#OPTION(OGS_BUILD_UTILITIES "Build additional utility programs?" OFF)
 OPTION(OGS_CMAKE_DEBUG "Show additional cmake debug information" OFF)
-#OPTION(OGS_ONE_BIG_GTEST "Should all gtests be collected to one ctest" ON)
-#OPTION_REQUIRES(OGS_USE_OPENSG "VTK to OpenSG converter" OGS_USE_QT)
-#OPTION_REQUIRES(OGS_USE_VRPN "Use VRPN for head tracking (experimental)" OGS_USE_QT)
-#OPTION_REQUIRES(OGS_VRED_PLUGIN "Enable the Vred plugin (far from experimental)" OGS_USE_QT)
 OPTION(OGS_BUILD_INFO "Should build information be generated" ON)
 OPTION(CMAKE_CMD_ARGS "Build ogs5 storing the CMake command line args (hint: use cmake.ogs.sh" OFF )
 IF(GCC)
@@ -78,7 +70,7 @@ OPTION (OGS_NO_EXTERNAL_LIBS "Builds OGS without any external dependencies."
 OFF)
 OPTION (OGS_DELETE_EDGES_AFTER_INIT "Delete mesh edges after initialization if possible" OFF)
 
-MARK_AS_ADVANCED(FORCE OGS_PYTHON OGS_CMAKE_DEBUG OGS_ONE_BIG_GTEST OGS_BUILD_INFO CMAKE_CMD_ARGS)
+MARK_AS_ADVANCED(FORCE OGS_CMAKE_DEBUG OGS_BUILD_INFO CMAKE_CMD_ARGS)
 
 ###########################################################################
 ### OGS version information. Adjust these if you release a new version. ###
@@ -109,16 +101,6 @@ IF(OGS_FEM)
 	 MESSAGE (STATUS	"Configuring for FEM command line" )
 ENDIF(OGS_FEM)
 
-IF(OGS_FEM_SP)
-	MESSAGE (STATUS	"Configuring for FEM command line with new sparse matrix" )
-	ADD_DEFINITIONS(-DNEW_EQS)
-ENDIF(OGS_FEM_SP)
-
-IF(OGS_FEM_JFNK)
-	MESSAGE (STATUS "Configuring for Jacobi free Newton-Krylov method for H2M problem" )
-	ADD_DEFINITIONS(-DNEW_EQS -DJFNK_H2M)
-ENDIF(OGS_FEM_JFNK)
-
 IF(OGS_FEM_PETSC)
 	MESSAGE (STATUS "Configuring for PETSc" )
 
@@ -143,52 +125,6 @@ IF(OGS_FEM_PETSC)
 	  MESSAGE (FATAL_ERROR "Aborting: MPI implementation is not found!")
 	ENDIF(MPI_FOUND)
 ENDIF(OGS_FEM_PETSC)
-
-IF(OGS_FEM_MPI)
-	MESSAGE (STATUS "Configuring for FEM command line with MPI" )
-	IF (UNIX)
-		STRING (REGEX MATCH mpi MPI_COMPILER_SET ${CMAKE_CXX_COMPILER})
-		IF (NOT MPI_COMPILER_SET)
-			MESSAGE (FATAL_ERROR "Aborting. Make sure that you specified the mpi c and c++ compiler on the command line. E.g. cmake -DOGS_FEM_MPI=ON -DCMAKE_C_COMPILER=/opt/openmpi-1.4.1/bin/mpicc -DCMAKE_CXX_COMPILER=/opt/openmpi-1.4.1/bin/mpic++ ..")
-		ENDIF ()
-	ENDIF (UNIX)
-
-	SET(PARALLEL_USE_MPI ON CACHE BOOL "Use Message Passing Interface")
-	MARK_AS_ADVANCED(PARALLEL_USE_MPI)
-	ADD_DEFINITIONS(-DUSE_MPI -DNEW_EQS)
-ENDIF(OGS_FEM_MPI)
-
-IF(OGS_FEM_GEMS)
-	MESSAGE (STATUS	"Configuring for FEM command line with GEMS" )
-	ADD_DEFINITIONS(-DNO_ERROR_CONTROL -DGEM_REACT -DGEMlib -DIPMGEMPLUGIN
-		-DNEW_EQS)
-	IF (MSVC)
-		SET (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-		SET (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-	ENDIF (MSVC)
-
-	IF(PARALLEL_USE_MPI)
-		ADD_DEFINITIONS(-DUSE_MPI -DUSE_MPI_GEMS)
-	ENDIF(PARALLEL_USE_MPI)
-ENDIF(OGS_FEM_GEMS)
-
-IF(OGS_FEM_PQC)
-	MESSAGE (STATUS "Configuring for FEM command line with PQC" )
-	MESSAGE (STATUS "Configuration: g++ and LIBPHREEQC")
-	ADD_DEFINITIONS(-DLIBPHREEQC -D_POSIX_SOURCE -DNO_ERROR_CONTROL -DNEW_EQS)
-	ADD_SUBDIRECTORY ( PQC )
-	IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-		ADD_DEFINITIONS ( "-DMDL_DEBUG" )
-	ENDIF() # Debug
-ENDIF(OGS_FEM_PQC)
-
-IF(OGS_FEM_BRNS)
-	MESSAGE (STATUS	"Configuring for FEM command line with BRNS" )
-	ADD_DEFINITIONS(-DNEW_EQS -DBRNS -DNO_ERROR_CONTROL -D_POSIX_SOURCE)
-	IF(PARALLEL_USE_MPI)
-			ADD_DEFINITIONS(-DUSE_MPI_BRNS)
-	ENDIF(PARALLEL_USE_MPI)
-ENDIF(OGS_FEM_BRNS)
 
 IF(OGS_FEM_LIS)
 	SET(LIS ON CACHE BOOL "Use Library of Iterative Solvers")
@@ -220,39 +156,14 @@ IF(MKL)
 ENDIF()
 
 
-IF(OGS_FEM_CHEMAPP)
-	MESSAGE (STATUS	"Configuring for FEM command line with CHEMAPP" )
-	ADD_DEFINITIONS(-DCHEMAPP)
-ENDIF(OGS_FEM_CHEMAPP)
-
 IF(OGS_USE_LONG)
 	MESSAGE (STATUS	"Use long long int" )
 	ADD_DEFINITIONS(-DOGS_USE_LONG)
 ENDIF()
 
-#IF(OGS_VRED_PLUGIN)
-#	ADD_DEFINITIONS(-DOGS_VRED_PLUGIN)
-#ENDIF() # OGS_VRED_PLUGIN
-#
-#IF(OGS_PYTHON)
-#	ADD_DEFINITIONS(-DOGS_PYTHON)
-#ENDIF() # OGS_PYTHON
-
 IF(MSVC)
 	ADD_DEFINITIONS(-DMSVC)
 ENDIF() # MSVC
-
-#IF(OGS_USE_OPENSG)
-#	ADD_DEFINITIONS(-DOGS_USE_OPENSG)
-#ENDIF() # OGS_USE_OPENSG
-#
-#IF(OGS_USE_VRPN)
-#	ADD_DEFINITIONS(-DOGS_USE_VRPN)
-#ENDIF() # OGS_USE_VRPN
-#
-#IF(OGS_USE_QT)
-#	ADD_DEFINITIONS(-DOGS_USE_QT)
-#ENDIF(OGS_USE_QT)
 
 IF(OGS_DELETE_EDGES_AFTER_INIT)
 	ADD_DEFINITIONS(-DOGS_DELETE_EDGES_AFTER_INIT)
@@ -273,25 +184,10 @@ ADD_SUBDIRECTORY( GEO )
 ADD_SUBDIRECTORY( MSH )
 ADD_SUBDIRECTORY( MSHGEOTOOLS )
 ADD_SUBDIRECTORY( FEM )
-IF(OGS_FEM_GEMS)
-	ADD_SUBDIRECTORY( GEM )
-ENDIF(OGS_FEM_GEMS)
-IF(OGS_FEM_CHEMAPP)
-	ADD_SUBDIRECTORY( EQL )
-	LINK_DIRECTORIES( ${CMAKE_SOURCE_DIR}/EQL )
-ENDIF(OGS_FEM_CHEMAPP)
 ADD_SUBDIRECTORY( FileIO )
 ADD_SUBDIRECTORY( OGSProject )
 ADD_SUBDIRECTORY( OGS )
 
-#IF(OGS_USE_QT)
-#	MESSAGE (STATUS	"Configuring for OGS with GUI" )
-#	SET(OGS_FEM ON )
-	#IF(OGS_USE_OPENSG AND CMAKE_COMPILER_IS_GNUCXX)
-	#	ADD_DEFINITIONS (-D__STDC_FORMAT_MACROS)	# for OpenSG compiling
-	#ENDIF()
-#	 ADD_SUBDIRECTORY( Qt )
-#ENDIF(OGS_USE_QT)
 
 # Create Configure.h
 CONFIGURE_FILE (Base/Configure.h.in ${PROJECT_BINARY_DIR}/Base/Configure.h)
@@ -309,12 +205,6 @@ ENDIF (EXAMPLEDATA_DIR_FOUND)
 IF (OGS_BUILD_TESTS)
 	ADD_SUBDIRECTORY(tests)
 ENDIF (OGS_BUILD_TESTS)
-
-#IF (OGS_PACKAGING)
-	# Add packaging configuration
-#	MESSAGE (STATUS "Enabling packaging")
-#	INCLUDE( CMakeConfiguration/Pack.cmake)
-#ENDIF (OGS_PACKAGING)
 
 IF (OGS_CMAKE_DEBUG)
 	INCLUDE(ListAllCMakeVariableValues)
@@ -339,13 +229,6 @@ IF (BENCHMARK_DIR_FOUND)
 	UNSET (COPY_BENCHMARKS_TO_REF CACHE)
 ENDIF (BENCHMARK_DIR_FOUND)
 
-#IF (OGS_BUILD_UTILITIES)
-#	ADD_SUBDIRECTORY (UTL/MSHGEOTOOLS/)
-#	ADD_SUBDIRECTORY (UTL/FileConverter/)
-#	IF (QT4_FOUND)
-#		ADD_SUBDIRECTORY (UTL/FileConverter/OGSFileConverter)
-#	ENDIF(QT4_FOUND)
-#ENDIF (OGS_BUILD_UTILITIES)
 
 ## Documentation ##
 IF(DOXYGEN_FOUND)
