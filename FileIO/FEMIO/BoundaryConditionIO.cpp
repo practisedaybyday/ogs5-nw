@@ -204,39 +204,41 @@ void BoundaryConditionIO::write(std::ostream& out,
                                 CBoundaryCondition const& bc)
 {
 	// keyword
-	out << "#BOUNDARY_CONDITION" << std::endl;
+	out << "#BOUNDARY_CONDITION" << "\n";
 
 	// process and primary variable
-	out << "\t$PCS_TYPE" << std::endl;
+	out << "\t$PCS_TYPE" << "\n";
 	out << "\t\t" << convertProcessTypeToString(bc.getProcessType())
-	    << std::endl;
+	    << "\n";
 
-	out << "\t$PRIMARY_VARIABLE" << std::endl;
+	out << "\t$PRIMARY_VARIABLE" << "\n";
 	out << "\t\t" << convertPrimaryVariableToString(
-	        bc.getProcessPrimaryVariable()) << std::endl;
+	        bc.getProcessPrimaryVariable()) << "\n";
 
 	// geometry
-	out << "\t$GEO_TYPE" << std::endl;
-	out << "\t" << bc.getGeoTypeAsString() << " " << bc.geo_name << std::endl;
+	out << "\t$GEO_TYPE" << "\n";
+	out << "\t" << bc.getGeoTypeAsString() << " " << bc.geo_name << "\n";
 
 	// distribution type
-	out << "\t$DIS_TYPE" << std::endl;
+	out << "\t$DIS_TYPE" << "\n";
 	out << "\t\t" << convertDisTypeToString(bc.getProcessDistributionType());
 	if (bc.getProcessDistributionType() == FiniteElement::CONSTANT)
-		out << "\t\t" << bc.geo_node_value << std::endl;
+		out << "\t\t" << bc.geo_node_value << "\n";
 	else if (bc.getProcessDistributionType() == FiniteElement::LINEAR)
 	{
-		out << "\t\t" << bc._PointsHaveDistribedBC.size() << std::endl;
+		out << "\t\t" << bc._PointsHaveDistribedBC.size() << "\n";
 		for (size_t i = 0; i < bc._PointsHaveDistribedBC.size(); i++)
 			out << "\t\t" << bc._PointsHaveDistribedBC[i] << "  "
-			    << bc._DistribedBC[i] << std::endl;
+			    << bc._DistribedBC[i] << "\n";
 	}
+	else
+		out << "\n";
 
 	// function name
 	if (!bc.fct_name.empty())
 	{
-		out << "\t$FCT_TYPE" << std::endl;
-		out << "\t\t" << bc.fct_name << std::endl;
+		out << "\t$FCT_TYPE" << "\n";
+		out << "\t\t" << bc.fct_name << "\n";
 	}
 }
 } // end namespace FileIO

@@ -75,26 +75,26 @@ int OGSMeshIO::write(std::ostream &out)
 
 	setPrecision(9);
 
-	out << "#FEM_MSH" << std::endl;
+	out << "#FEM_MSH" << "\n";
 
-	out << "$PCS_TYPE" << std::endl << "  " << _mesh->pcs_name << std::endl;
+	out << "$PCS_TYPE" << "\n" << "  " << _mesh->pcs_name << "\n";
 
-	out << "$NODES" << std::endl << "  ";
+	out << "$NODES" << "\n" << "  ";
 	const size_t n_nodes(_mesh->GetNodesNumber(false));
-	out << n_nodes << std::endl;
+	out << n_nodes << "\n";
 	for (size_t i(0); i < n_nodes; i++)
 	{
 		double const* const coords (_mesh->nod_vector[i]->getData());
-		out << i << " " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
+		out << i << " " << coords[0] << " " << coords[1] << " " << coords[2] << "\n";
 	}
 
-	out << "$ELEMENTS" << std::endl << "  ";
+	out << "$ELEMENTS" << "\n" << "  ";
 	writeElementsExceptLines(_mesh->ele_vector, out);
 
-	out << " $LAYER" << std::endl;
+	out << " $LAYER" << "\n";
 	out << "  ";
-	out << _mesh->_n_msh_layer << std::endl;
-	out << "#STOP" << std::endl;
+	out << _mesh->_n_msh_layer << "\n";
+	out << "#STOP" << "\n";
 	return 1;
 }
 
@@ -118,7 +118,7 @@ void OGSMeshIO::writeElementsExceptLines(std::vector<MeshLib::CElem*> const& ele
 			}
 		}
 	}
-	out << n_elements << std::endl;
+	out << n_elements << "\n";
 	for (size_t i(0), k(0); i < ele_vector_size; i++) {
 		if (non_line_element[i] && non_null_element[i]) {
 			const size_t tmp_idx (ele_vec[i]->GetIndex());
@@ -142,7 +142,7 @@ void OGSMeshIO::writeMeshNodesAsGLIPnts (std::vector<size_t> const& mesh_node_id
 	for (size_t k(0); k<mesh_node_ids.size(); k++) {
 		MeshLib::CNode const& node (*(nodes[mesh_node_ids[k]]));
 		double const*const coords (node.getData());
-		_out << k << " " << coords[0] << " " << coords[1] << " " << coords[2] << " $NAME " << node.GetIndex() << std::endl;
+		_out << k << " " << coords[0] << " " << coords[1] << " " << coords[2] << " $NAME " << node.GetIndex() << "\n";
 	}
 
 	os << _out.str();

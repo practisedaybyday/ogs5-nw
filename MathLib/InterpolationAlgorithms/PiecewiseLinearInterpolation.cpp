@@ -24,11 +24,11 @@ PiecewiseLinearInterpolation::PiecewiseLinearInterpolation(const std::vector<dou
                                          std::vector<double>& values_at_interpol_pnts)
 	: _supporting_points (supporting_points), _values_at_supp_pnts (values_at_supp_pnts)
 {
-//	std::cout << "PiecewiseLinearInterpolation::PiecewiseLinearInterpolation support_points, values_at_supp_pnts: " << std::endl;
+//	std::cout << "PiecewiseLinearInterpolation::PiecewiseLinearInterpolation support_points, values_at_supp_pnts: " << "\n";
 //	for (size_t k(0); k<supporting_points.size(); k++) {
-//		std::cout << supporting_points[k] << " " << values_at_supp_pnts[k] << std::endl;
+//		std::cout << supporting_points[k] << " " << values_at_supp_pnts[k] << "\n";
 //	}
-//	std::cout << std::endl;
+//	std::cout << "\n";
 	values_at_interpol_pnts.clear();
 	for (size_t k(0); k < points_to_interpolate.size(); k++)
 		values_at_interpol_pnts.push_back (this->getValue (points_to_interpolate[k]));
