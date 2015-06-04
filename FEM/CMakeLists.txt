@@ -95,33 +95,23 @@ set( SOURCES
 	DistributionTools.cpp
 )
 
-IF(OGS_FEM_PETSC OR OGS_FEM_PETSC_GEMS)
+IF(OGS_FEM_PETSC)
 	SET( SOURCES ${SOURCES} rf_pcs1.cpp fct_mpi.h fct_mpi.cpp)
-ELSE(OGS_FEM_PETSC OR OGS_FEM_PETSC_GEMS)
+ELSE(OGS_FEM_PETSC)
 	SET( SOURCES ${SOURCES} par_ddc.h par_ddc.cpp)
 	## New sparse class. WW
-	IF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK )
+	IF(OGS_FEM_MKL OR OGS_FEM_LIS)
 		SET( SOURCES ${SOURCES} equation_class.h equation_class.cpp )
-		IF(OGS_FEM_JFNK)
-			SET( SOURCES ${SOURCES} rf_pcs1.cpp )
-		ENDIF(OGS_FEM_JFNK)
-	ELSE(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK)
+	ELSE()
 		SET( SOURCES ${SOURCES} solver.h solver.cpp matrix_routines.h matrix_routines.cpp)
-	ENDIF(OGS_FEM_SP OR OGS_FEM_MPI OR OGS_FEM_GEMS OR OGS_FEM_BRNS OR OGS_FEM_PQC OR OGS_FEM_MKL OR OGS_FEM_LIS OR OGS_FEM_JFNK)
+	ENDIF()
 ENDIF()
 
 IF(NOT OGS_ONLY_TH)
-	SET( SOURCES ${SOURCES} rf_random_walk.h rf_random_walk.cpp Eclipse.h Eclipse.cpp DUMUX.h DUMUX.cpp)
+	SET( SOURCES ${SOURCES} rf_random_walk.h rf_random_walk.cpp)
 ENDIF( )
 
 
-IF(OGS_FEM_GEMS)
-	SET( SOURCES ${SOURCES} rf_REACT_GEM.h rf_REACT_GEM.cpp )
-ENDIF( OGS_FEM_GEMS )
-
-IF(OGS_FEM_BRNS)
-	SET( SOURCES ${SOURCES} rf_REACT_BRNS.h rf_REACT_BRNS.cpp )
-ENDIF(OGS_FEM_BRNS)
 
 include_directories(
 	${CMAKE_SOURCE_DIR}/FEM
@@ -132,7 +122,6 @@ include_directories(
 	${CMAKE_SOURCE_DIR}/FileIO/MeshIO
 	${CMAKE_SOURCE_DIR}/FileIO/FEMIO
 	${CMAKE_SOURCE_DIR}/MSH
-	${CMAKE_SOURCE_DIR}/GEM
 	${CMAKE_SOURCE_DIR}/OGSProject
 )
 
@@ -143,10 +132,6 @@ ENDIF (LIS)
 IF (MKL)
   INCLUDE_DIRECTORIES(${MKL_INCLUDES})
 ENDIF (MKL)
-
-IF(OGS_FEM_PQC)
-  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/PQC)
-ENDIF (OGS_FEM_PQC)
 
 IF (PARALLEL_USE_MPI)
 	INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
@@ -164,14 +149,8 @@ target_link_libraries(
 	OGSProject
 )
 
-IF(OGS_FEM_PQC)
-   target_link_libraries(FEM PQC)
-ENDIF(OGS_FEM_PQC)
 
 if (WIN32)
-	if (OGS_FEM_GEMS)
-		target_link_libraries( FEM debug GEMS3_dbg optimized GEMS3_rl ) 
-	endif (OGS_FEM_GEMS)
 	if (LIS)
 		target_link_libraries( FEM ${LIS_LIBRARIES} ) 
 		set_target_properties( FEM PROPERTIES LINK_FLAGS "/NODEFAULTLIB:libcmt" )
@@ -179,12 +158,6 @@ if (WIN32)
 	if (MKL)
 		target_link_libraries( FEM ${MKL_LIBRARIES} )
 	endif (MKL)
-	if (OGS_FEM_BRNS)
-		target_link_libraries( FEM BrnsDll )
-	endif (OGS_FEM_BRNS)
-	if (OGS_FEM_CHEMAPP)
-		target_link_libraries( FEM ca_vc_e )
-	endif (OGS_FEM_CHEMAPP)
 	if (PARALLEL_USE_MPI)
 		SET( CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${MPI_COMPILE_FLAGS} )
 		target_link_libraries( FEM ${MPI_LIBRARIES} )
@@ -192,14 +165,6 @@ if (WIN32)
 endif (WIN32)
 
 if (UNIX)
-	if (OGS_FEM_GEMS)
-		target_link_libraries( FEM gemipm2k boost_thread-mt )
-	endif (OGS_FEM_GEMS)
-
-	if (OGS_FEM_BRNS)
-		target_link_libraries( FEM dl )
-	endif (OGS_FEM_BRNS)
-
 	if (LIS)
 		target_link_libraries( FEM ${LIS_LIBRARIES} )
 	endif (LIS)
@@ -213,7 +178,3 @@ if (UNIX)
 	endif (PARALLEL_USE_MPI)
 endif (UNIX)
 
-IF (OGS_FEM_CHEMAPP)
-	INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/EQL )
-	TARGET_LINK_LIBRARIES ( FEM EQL )
-ENDIF (OGS_FEM_CHEMAPP)

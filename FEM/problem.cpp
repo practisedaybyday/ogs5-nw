@@ -53,8 +53,6 @@ extern int ReadData(char*, GEOLIB::GEOObjects& geo_obj, std::string& unique_name
 #include "rf_fluid_momentum.h"
 #include "rf_random_walk.h"
 // Finite element
-#include "DUMUX.h"                                // BG 02/2011
-#include "Eclipse.h"                              //BG 09/2009
 #include "Output.h"
 #include "fem_ele_std.h"
 #include "files0.h"                               // GetLineFromFile1
@@ -1541,31 +1539,6 @@ inline double Problem::LiquidFlow()
 		m_pcs->CalIntegrationPointValue(); //WW
 	}
 
-#ifndef OGS_ONLY_TH
-	int success;
-	if(m_pcs->simulator.compare("ECLIPSE") == 0) // use ECLIPSE to calculate one phase liquid flow, BG
-	{
-		if(m_pcs->EclipseData == NULL) //SBG if this is the first call, make a new instance
-			m_pcs->EclipseData = new CECLIPSEData();
-		// call ECLIPSE interface
-		success = m_pcs->EclipseData->RunEclipse(m_pcs->Tim->step_current, m_pcs);
-		if (success == 0)
-			std::cout << "Error running Eclipse!" << std::endl;
-		if(m_pcs->tim_type==FiniteElement::TIM_STEADY)
-			m_pcs->selected = false;
-	}
-
-	else if (m_pcs->simulator.compare("DUMUX") == 0)
-	{
-		if(m_pcs->DuMuxData == NULL) //SBG if this is the first call, make a new instance
-			m_pcs->DuMuxData = new CDUMUXData();
-		// call DUMUX interface
-		success = m_pcs->DuMuxData->RunDuMux(m_pcs->Tim->step_current, m_pcs);
-		if (success == 0)
-			std::cout << "Error running DuMux!" << std::endl;
-	}
-#endif
-
 	return error;
 }
 
@@ -1703,31 +1676,6 @@ inline double Problem::MultiPhaseFlow()
 			m_pcs->CalIntegrationPointValue();  //WW
 	}
 
-#ifndef OGS_ONLY_TH
-	int success = 0;                      // BG
-	if(m_pcs->simulator.compare("ECLIPSE") == 0) // use ECLIPSE to calculate multi-phase flow, BG
-	{
-		if(m_pcs->EclipseData == NULL) //SBG if this is the first call, make a new instance
-			m_pcs->EclipseData = new CECLIPSEData();
-		// call ECLIPSE interface
-		success = m_pcs->EclipseData->RunEclipse(m_pcs->Tim->step_current, m_pcs);
-		if (success == 0)
-		{
-			std::cout << "Error running Eclipse!" << std::endl;
-			//system("Pause");
-			exit(0);
-		}
-	}
-	else if (m_pcs->simulator.compare("DUMUX") == 0)
-	{
-		if(m_pcs->DuMuxData == NULL) //SBG if this is the first call, make a new instance
-			m_pcs->DuMuxData = new CDUMUXData();
-		// call DUMUX interface
-		success = m_pcs->DuMuxData->RunDuMux(m_pcs->Tim->step_current, m_pcs);
-		if (success == 0)
-			std::cout << "Error running DuMux!" << std::endl;
-	}
-#endif
 	//CO2-Phase_Transition BG, NB
 	if ((m_pcs->Phase_Transition_Model == 1) && ((m_pcs->simulator.compare("GEOSYS") == 0)))
 	{
@@ -1776,543 +1724,6 @@ inline double Problem::MultiPhaseFlow()
 	return error;
 }
 
-#ifndef OGS_ONLY_TH
-/*-------------------------------------------------------------------------
-   GeoSys - Function: TestOutputDuMux()
-   Task: provides the sum of CO2 in the model domain in output files
-   Return: nothing
-   Programming:
-   02/2011 BG
-   -------------------------------------------------------------------------*/
-void Problem::TestOutputDuMux(CRFProcess* m_pcs)
-{
-	//Testoutput amount of co2 in model domain
-	CFEMesh* m_msh = fem_msh_vector[0];   //SB: ToDo hart gesetzt
-	MeshLib::CElem* m_ele = NULL;
-	MeshLib::CNode* m_node = NULL;
-	CMediumProperties* m_mat_mp = NULL;
-	std::ostringstream temp;
-	double mass_CO2_gas, mass_CO2_water, mass_CO2;
-	int index;
-	double saturation_CO2;
-	double saturation_water;
-	double node_volume;
-	double time;
-	std::string tempstring;
-	std::vector <std::string> vec_string;
-	//int position;
-	std::string path;
-	double density_CO2;
-	double porosity = 0.0;
-	int variable_index;
-	double concentration_CO2_water;
-	int indexConcentration_CO2;
-	//CRFProcess *n_pcs = NULL;
-	int group;
-
-	path = m_pcs->file_name_base;
-	int position = int(path.find_last_of("\\"));
-	std::string path_new;
-	path_new = path.substr(0,position);
-	//position = int(path_new.find_last_of("\\"));
-	//path_new = path_new.substr(0,position);
-	if (m_pcs->DuMuxData->Windows_System == true)
-		tempstring = path_new + "\\Sum_CO2_nodes.csv";
-	else
-		tempstring = path_new + "Sum_CO2_nodes.csv";
-
-	if (m_pcs->Tim->step_current == 1)
-		//Header of the file
-		vec_string.push_back("Time, massCO2_gas, massCO2_water, massCO2, porosity");
-	else
-	{
-		//read file and store data
-		CReadTextfiles_DuMux* TextFile;
-		TextFile = new CReadTextfiles_DuMux;
-		TextFile->Read_Text(tempstring);
-
-		for (int i = 0; i < TextFile->NumberOfRows; i++)
-			vec_string.push_back(TextFile->Data[i]);
-	}
-
-	mass_CO2 = mass_CO2_gas = mass_CO2_water = 0;
-	// +1: new timelevel
-	indexConcentration_CO2 =
-	        pcs_vector[m_pcs->DuMuxData->ProcessIndex_CO2inLiquid]->GetNodeValueIndex(
-	                pcs_vector[m_pcs->
-	                           DuMuxData
-	                           ->ProcessIndex_CO2inLiquid]->pcs_primary_function_name[0]) + 1;
-
-	for (long i = 0; i < (long)m_msh->nod_vector.size(); i++)
-	{
-		m_node = m_msh->nod_vector[i]; // get element
-		node_volume = 0;
-		saturation_CO2 = 0;
-		if (mfp_vector[1]->density_model == 18)
-		{
-			variable_index = m_pcs->GetNodeValueIndex("DENSITY2");
-			density_CO2 = m_pcs->GetNodeValue(i, variable_index);
-		}
-		else
-			density_CO2 = mfp_vector[1]->Density();
-
-		for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++)
-		{
-			m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
-
-			//get the phase volume of current element elem
-			group = m_ele->GetPatchIndex();
-			m_mat_mp = mmp_vector[group];
-			// CB Now provides also heterogeneous porosity, model 11
-			porosity = m_mat_mp->Porosity(m_ele->GetIndex(), 1);
-			node_volume = node_volume + m_ele->GetVolume() / 8 * porosity;
-		}
-
-		//+1... new time level
-		index = m_pcs->GetNodeValueIndex("SATURATION1") + 1;
-		saturation_water = m_pcs->GetNodeValue(i,index);
-		//if (saturation_water < 1)
-		saturation_CO2 = 1 - saturation_water;
-		concentration_CO2_water =
-		        pcs_vector[m_pcs->DuMuxData->ProcessIndex_CO2inLiquid]->GetNodeValue(
-		                i,
-		                indexConcentration_CO2);
-
-		mass_CO2_gas = mass_CO2_gas + node_volume * saturation_CO2 * density_CO2;
-		mass_CO2_water = mass_CO2_water + node_volume * saturation_water *
-		                 concentration_CO2_water * m_pcs->DuMuxData->Molweight_CO2 * 0.001;
-		//cout << " Node: " << i << " saturation: " << saturation_water << " Density_CO2: " << density_CO2 << " node_volume: " << node_volume << endl;
-	}
-	mass_CO2 = mass_CO2_gas + mass_CO2_water;
-	//calculating time
-	time = 0;
-	for (int k = 0; k < m_pcs->Tim->step_current; k++)
-		time += m_pcs->Tim->time_step_vector[k];
-	temp.str("");
-	temp.clear();
-	temp << time;
-	tempstring = temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2_gas;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2_water;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << porosity;
-	tempstring += temp.str();
-
-	vec_string.push_back(tempstring);
-
-	//within the first timestep create file and write header
-	CWriteTextfiles_DuMux* TextFile;
-	TextFile = new CWriteTextfiles_DuMux;
-	if (m_pcs->DuMuxData->Windows_System == true)
-		tempstring = path_new + "\\Sum_CO2_nodes.csv";
-	else
-		tempstring = path_new + "Sum_CO2_nodes.csv";
-	TextFile->Write_Text(tempstring, vec_string);
-
-	//Testoutput amount of co2 in model domain calculated at nodes-DuMux
-	//double element_volume;
-	Math_Group::vec<MeshLib::CNode*> ele_nodes(8);
-
-	path = m_pcs->file_name_base;
-	position = int(path.find_last_of("\\"));
-	path_new = path.substr(0,position);
-	//position = int(path_new.find_last_of("\\"));
-	//path_new = path_new.substr(0,position);
-	if (m_pcs->DuMuxData->Windows_System == true)
-		tempstring = path_new + "\\Sum_CO2_nodes_DuMux.csv";
-	else
-		tempstring = path_new + "Sum_CO2_nodes_DuMux.csv";
-
-	vec_string.clear();
-	if (m_pcs->Tim->step_current == 1)
-		//Header of the file
-		vec_string.push_back("Time, massCO2_gas, massCO2_water, massCO2, porosity");
-	else
-	{
-		//read file and store data
-		CReadTextfiles_DuMux* TextFile;
-		TextFile = new CReadTextfiles_DuMux;
-		TextFile->Read_Text(tempstring);
-
-		for (int i = 0; i < TextFile->NumberOfRows; i++)
-			vec_string.push_back(TextFile->Data[i]);
-	}
-
-	mass_CO2 = mass_CO2_gas = mass_CO2_water = 0;
-	// +1: new timelevel
-	indexConcentration_CO2 =
-	        pcs_vector[m_pcs->DuMuxData->ProcessIndex_CO2inLiquid]->GetNodeValueIndex(
-	                pcs_vector[m_pcs->
-	                           DuMuxData
-	                           ->ProcessIndex_CO2inLiquid]->pcs_primary_function_name[0]) + 1;
-
-	for (long i = 0; i < (long)m_pcs->DuMuxData->NodeData.size(); i++)
-	{
-		m_node = m_msh->nod_vector[i]; // get element
-		saturation_CO2 = 0;
-		node_volume = 0;
-
-		density_CO2 = m_pcs->DuMuxData->NodeData[i]->getPhaseDensity()[1];
-
-		for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++)
-		{
-			m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
-
-			//get the phase volume of current element elem
-			group = m_ele->GetPatchIndex();
-			m_mat_mp = mmp_vector[group];
-			// CB Now provides also heterogeneous porosity, model 11
-			porosity = m_mat_mp->Porosity(m_ele->GetIndex(), 1);
-			node_volume = node_volume + m_ele->GetVolume() / 8 * porosity;
-		}
-
-		saturation_water = m_pcs->DuMuxData->NodeData[i]->getPhaseSaturation()[0];
-		saturation_CO2 = 1 - saturation_water;
-
-		//concentration_CO2_water = pcs_vector[m_pcs->DuMuxData->ProcessIndex_CO2inLiquid]->GetNodeValue(i, indexConcentration_CO2);
-		concentration_CO2_water = m_pcs->DuMuxData->NodeData[i]->getCO2InLiquid() *
-		                          m_pcs->DuMuxData->NodeData[i]->getPhaseDensity()[0] /
-		                          (m_pcs->DuMuxData->Molweight_CO2 * 1e-3);
-
-		mass_CO2_gas = mass_CO2_gas + node_volume * saturation_CO2 * density_CO2;
-		mass_CO2_water = mass_CO2_water + node_volume * saturation_water *
-		                 concentration_CO2_water * m_pcs->DuMuxData->Molweight_CO2 * 0.001;
-	}
-	mass_CO2 = mass_CO2_gas + mass_CO2_water;
-	//calculating time
-	time = 0;
-	for (int k = 0; k < m_pcs->Tim->step_current; k++)
-		time += m_pcs->Tim->time_step_vector[k];
-	temp.str("");
-	temp.clear();
-	temp << time;
-	tempstring = temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2_gas;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2_water;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << porosity;
-	tempstring += temp.str();
-
-	vec_string.push_back(tempstring);
-
-	//within the first timestep create file and write header
-	TextFile = new CWriteTextfiles_DuMux;
-	if (m_pcs->DuMuxData->Windows_System == true)
-		tempstring = path_new + "\\Sum_CO2_nodes_DuMux.csv";
-	else
-		tempstring = path_new + "Sum_CO2_nodes_DuMux.csv";
-	TextFile->Write_Text(tempstring, vec_string);
-}
-
-/*-------------------------------------------------------------------------
-   GeoSys - Function: TestOutputEclipse()
-   Task: provides the sum of CO2 in the model domain in output files
-   Return: nothing
-   Programming:
-   02/2011 BG
-   -------------------------------------------------------------------------*/
-void Problem::TestOutputEclipse(CRFProcess* m_pcs)
-{
-	//Testoutput amount of co2 in model domain calculated at nodes
-	CFEMesh* m_msh = fem_msh_vector[0];   //SB: ToDo hart gesetzt
-	MeshLib::CElem* m_ele = NULL;
-	MeshLib::CNode* m_node = NULL;
-	CMediumProperties* m_mat_mp = NULL;
-	std::ostringstream temp;
-	double mass_CO2_gas, mass_CO2_water, mass_CO2;
-	int index;
-	double saturation_CO2;
-	double saturation_water;
-	double node_volume;
-	double time;
-	std::string tempstring;
-	std::vector <std::string> vec_string;
-	//int position;
-	std::string path;
-	double density_CO2;
-	double porosity = 0.0;
-	int variable_index;
-	double concentration_CO2_water;
-	int indexConcentration_CO2;
-	//CRFProcess *n_pcs = NULL;
-	int group;
-
-	path = m_pcs->file_name_base;
-	int position = int(path.find_last_of("\\"));
-	std::string path_new;
-	path_new = path.substr(0,position);
-	//position = int(path_new.find_last_of("\\"));
-	//path_new = path_new.substr(0,position);
-	tempstring = path_new + "\\Sum_CO2_nodes.csv";
-
-	if (m_pcs->Tim->step_current == 1)
-		//Header of the file
-		vec_string.push_back("Time, massCO2_gas, massCO2_water, massCO2, porosity");
-	else
-	{
-		//read file and store data
-		CReadTextfiles_ECL* TextFile;
-		TextFile = new CReadTextfiles_ECL;
-		TextFile->Read_Text(tempstring);
-
-		for (int i = 0; i < TextFile->NumberOfRows; i++)
-			vec_string.push_back(TextFile->Data[i]);
-	}
-
-	mass_CO2 = mass_CO2_gas = mass_CO2_water = 0;
-	// +1: new timelevel
-	indexConcentration_CO2 =
-	        pcs_vector[m_pcs->EclipseData->ProcessIndex_CO2inLiquid]->GetNodeValueIndex(
-	                pcs_vector[m_pcs
-	                           ->
-	                           EclipseData->ProcessIndex_CO2inLiquid]->
-	                pcs_primary_function_name[0]) + 1;
-
-	for (long i = 0; i < (long)m_msh->nod_vector.size(); i++)
-	{
-		m_node = m_msh->nod_vector[i]; // get element
-		node_volume = 0;
-		saturation_CO2 = 0;
-		if (mfp_vector[1]->density_model == 18)
-		{
-			variable_index = m_pcs->GetNodeValueIndex("DENSITY2");
-			density_CO2 = m_pcs->GetNodeValue(i, variable_index);
-		}
-		else
-			density_CO2 = mfp_vector[1]->Density();
-
-		for (int j = 0; j < int(m_node->getConnectedElementIDs().size()); j++)
-		{
-			m_ele = m_msh->ele_vector[m_node->getConnectedElementIDs()[j]];
-
-			//get the phase volume of current element elem
-			group = m_ele->GetPatchIndex();
-			m_mat_mp = mmp_vector[group];
-			// CB Now provides also heterogeneous porosity, model 11
-			porosity = m_mat_mp->Porosity(m_ele->GetIndex(), 1);
-			node_volume = node_volume + m_ele->GetVolume() / 8 * porosity;
-		}
-
-		//+1... new time level
-		index = m_pcs->GetNodeValueIndex("SATURATION1") + 1;
-		saturation_water = m_pcs->GetNodeValue(i,index);
-		//if (saturation_water < 1)
-		saturation_CO2 = 1 - saturation_water;
-		concentration_CO2_water =
-		        pcs_vector[m_pcs->EclipseData->ProcessIndex_CO2inLiquid]->GetNodeValue(
-		                i,
-		                indexConcentration_CO2);
-
-		mass_CO2_gas = mass_CO2_gas + node_volume * saturation_CO2 * density_CO2;
-		mass_CO2_water = mass_CO2_water + node_volume * saturation_water *
-		                 concentration_CO2_water * m_pcs->EclipseData->Molweight_CO2 *
-		                 0.001;
-		//cout << " Node: " << i << " saturation: " << saturation_water << " Density_CO2: " << density_CO2 << " node_volume: " << node_volume << endl;
-	}
-	mass_CO2 = mass_CO2_gas + mass_CO2_water;
-	//calculating time
-	time = 0;
-	for (int k = 0; k < m_pcs->Tim->step_current; k++)
-		time += m_pcs->Tim->time_step_vector[k];
-	temp.str("");
-	temp.clear();
-	temp << time;
-	tempstring = temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2_gas;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2_water;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << porosity;
-	tempstring += temp.str();
-
-	vec_string.push_back(tempstring);
-
-	//within the first timestep create file and write header
-	CWriteTextfiles_ECL* TextFile;
-	TextFile = new CWriteTextfiles_ECL;
-	tempstring = path_new + "\\Sum_CO2_nodes.csv";
-	TextFile->Write_Text(tempstring, vec_string);
-
-	//Testoutput amount of co2 in model domain calculated at elements
-	double element_volume;
-	Math_Group::vec<MeshLib::CNode*> ele_nodes(8);
-
-	path = m_pcs->file_name_base;
-	position = int(path.find_last_of("\\"));
-	path_new = path.substr(0,position);
-	//position = int(path_new.find_last_of("\\"));
-	//path_new = path_new.substr(0,position);
-	tempstring = path_new + "\\Sum_CO2_elements.csv";
-
-	vec_string.clear();
-	if (m_pcs->Tim->step_current == 1)
-		//Header of the file
-		vec_string.push_back("Time, massCO2_gas, massCO2_water, massCO2, porosity");
-	else
-	{
-		//read file and store data
-		CReadTextfiles_ECL* TextFile;
-		TextFile = new CReadTextfiles_ECL;
-		TextFile->Read_Text(tempstring);
-
-		for (int i = 0; i < TextFile->NumberOfRows; i++)
-			vec_string.push_back(TextFile->Data[i]);
-	}
-
-	mass_CO2 = mass_CO2_gas = mass_CO2_water = 0;
-	// +1: new timelevel
-	indexConcentration_CO2 =
-	        pcs_vector[m_pcs->EclipseData->ProcessIndex_CO2inLiquid]->GetNodeValueIndex(
-	                pcs_vector[m_pcs
-	                           ->
-	                           EclipseData->ProcessIndex_CO2inLiquid]->
-	                pcs_primary_function_name[0]) + 1;
-
-	for (long i = 0; i < long(m_pcs->EclipseData->eclgrid.size()); i++)
-	{
-		m_ele = m_msh->ele_vector[i];
-		m_node = m_msh->nod_vector[i]; // get element
-		saturation_CO2 = 0;
-		element_volume = 0;
-
-		if (m_pcs->EclipseData->E100 == true)
-			density_CO2 =
-			        m_pcs->EclipseData->Data[i][m_pcs->EclipseData->GetVariableIndex(
-			                                            "GAS_DEN")];
-		else
-			density_CO2 =
-			        m_pcs->EclipseData->Data[i][m_pcs->EclipseData->GetVariableIndex(
-			                                            "DENG")];
-
-		group = m_ele->GetPatchIndex();
-		m_mat_mp = mmp_vector[group];
-		// CB Now provides also heterogeneous porosity, model 11
-		porosity = m_mat_mp->Porosity(m_ele->GetIndex(), 1);
-		element_volume = m_ele->GetVolume() * porosity;
-		if (m_pcs->EclipseData->E100 == true)
-			saturation_water = 1 -
-			                   m_pcs->EclipseData->Data[i][m_pcs->EclipseData->
-			                                               GetVariableIndex("SGAS")];
-		else
-			saturation_water =
-			        m_pcs->EclipseData->Data[i][m_pcs->EclipseData->GetVariableIndex(
-			                                            "SWAT")];
-		saturation_CO2 =
-		        m_pcs->EclipseData->Data[i][m_pcs->EclipseData->GetVariableIndex("SGAS")];
-
-		m_ele->GetNodes(ele_nodes);
-		concentration_CO2_water = 0;
-		for (int j = 0; j < int(ele_nodes.Size()); j++)
-			concentration_CO2_water = concentration_CO2_water +
-			                          pcs_vector[m_pcs->EclipseData->
-			                                     ProcessIndex_CO2inLiquid]->
-			                          GetNodeValue(
-			        ele_nodes[j]->GetIndex(),
-			        indexConcentration_CO2) / ele_nodes.Size();
-
-		mass_CO2_gas = mass_CO2_gas + element_volume * saturation_CO2 * density_CO2;
-		mass_CO2_water = mass_CO2_water + element_volume * saturation_water *
-		                 concentration_CO2_water * m_pcs->EclipseData->Molweight_CO2 *
-		                 0.001;
-	}
-	mass_CO2 = mass_CO2_gas + mass_CO2_water;
-	//calculating time
-	time = 0;
-	for (int k = 0; k < m_pcs->Tim->step_current; k++)
-		time += m_pcs->Tim->time_step_vector[k];
-	temp.str("");
-	temp.clear();
-	temp << time;
-	tempstring = temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2_gas;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2_water;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << mass_CO2;
-	tempstring += temp.str();
-	tempstring += ", ";
-	temp.str("");
-	temp.clear();
-	temp.precision(12);
-	temp << porosity;
-	tempstring += temp.str();
-
-	vec_string.push_back(tempstring);
-
-	//within the first timestep create file and write header
-	TextFile = new CWriteTextfiles_ECL;
-	tempstring = path_new + "\\Sum_CO2_elements.csv";
-	TextFile->Write_Text(tempstring, vec_string);
-}
-#endif
 
 /*-------------------------------------------------------------------------
    GeoSys - Function: OutputMassOfGasInModel()
@@ -2403,11 +1814,11 @@ void Problem::OutputMassOfGasInModel(CRFProcess* m_pcs)
 #ifndef OGS_ONLY_TH
 	else
 	{
-		CReadTextfiles_ECL TextFile;
-		TextFile.Read_Text(filename);
-
-		for (int i = 0; i < TextFile.NumberOfRows; i++)
-			vec_string.push_back(TextFile.Data[i]);
+//		CReadTextfiles_ECL TextFile;
+//		TextFile.Read_Text(filename);
+//
+//		for (int i = 0; i < TextFile.NumberOfRows; i++)
+//			vec_string.push_back(TextFile.Data[i]);
 	}
 #endif
 
@@ -2543,9 +1954,9 @@ void Problem::OutputMassOfGasInModel(CRFProcess* m_pcs)
 	vec_string.push_back(tempstring);
 
 #ifndef OGS_ONLY_TH
-	//within the first timestep create file and write header
-	CWriteTextfiles_ECL TextFile;
-	TextFile.Write_Text(filename, vec_string);
+//	//within the first timestep create file and write header
+//	CWriteTextfiles_ECL TextFile;
+//	TextFile.Write_Text(filename, vec_string);
 #endif
 }
 
@@ -2624,14 +2035,14 @@ void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CR
 #ifndef OGS_ONLY_TH
 	else
 	{
-		//read file and store data
-		CReadTextfiles_ECL TextFile;
-		TextFile.Read_Text(filename);
-
-		for (int i = 0; i < TextFile.NumberOfRows; i++)
-		{
-			vec_string.push_back(TextFile.Data[i]);
-		}
+//		//read file and store data
+//		CReadTextfiles_ECL TextFile;
+//		TextFile.Read_Text(filename);
+//
+//		for (int i = 0; i < TextFile.NumberOfRows; i++)
+//		{
+//			vec_string.push_back(TextFile.Data[i]);
+//		}
 	}
 #endif
 	ComponentMass = TotalVolume = SourceTerm = 0;
@@ -2698,9 +2109,9 @@ void Problem::OutputMassOfComponentInModel(std::vector<CRFProcess*> flow_pcs, CR
 	vec_string.push_back(tempstring);
 
 #ifndef OGS_ONLY_TH
-	//within the first timestep create file and write header
-	CWriteTextfiles_ECL TextFile;
-	TextFile.Write_Text(filename, vec_string);
+//	//within the first timestep create file and write header
+//	CWriteTextfiles_ECL TextFile;
+//	TextFile.Write_Text(filename, vec_string);
 #endif
 }
 

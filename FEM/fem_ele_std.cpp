@@ -51,7 +51,6 @@ extern double gravity_constant;                   // TEST, must be put in input 
 #define GAS_CONSTANT_V  461.5                     //WW
 #define T_KILVIN_ZERO  273.15                     //WW
 
-#include "Eclipse.h"                              //BG 09/2009
 
 using namespace std;
 
@@ -6310,126 +6309,6 @@ double CFiniteElementStd::Get_Element_Velocity(int Index, CRFProcess* /*m_pcs*/,
 	return velocity[dimension];
 }
 
-#ifndef OGS_ONLY_TH
-/***************************************************************************
-   GeoSys - Funktion: Cal_GP_Velocity_ECLIPSE
-   CFiniteElementStd:: Velocity calulation in gauss points from
-   node velocities obtained by fluid momentum for one element
-
-   Programming:  SB, BG
-   09/2010
- **************************************************************************/
-string CFiniteElementStd::Cal_GP_Velocity_ECLIPSE(string tempstring,
-                                                  bool output_average,
-                                                  int phase_index,
-                                                  string phase)
-{
-	static double temp_vel_old[3] = { 0.0, 0.0, 0.0 }, temp_vel[3] = { 0.0, 0.0, 0.0 };
-	//double n_vel_x[8], n_vel_y[8], n_vel_z[8];
-	// ---- Gauss integral
-	//WW int gp_r=0, gp_s=0, gp_t=0;
-	//WW double fkt=0.0;
-	//  int i_idx;
-	double value[3], value_old[3];
-	ostringstream temp;
-
-	ElementValue* gp_ele = ele_gp_value[Index];
-
-	// Get  velocities from ECLIPSE faces in element node:
-	this->pcs->EclipseData->InterpolateDataFromFacesToNodes(this->Index,
-	                                                        NodalVal,
-	                                                        NodalVal1,
-	                                                        NodalVal2,
-	                                                        phase_index);
-
-	// Gauss point loop
-	for(size_t i_dim = 0; i_dim < dim; i_dim++)
-	{
-		value[i_dim] = 0;
-		value_old[i_dim] = 0;
-	}
-
-	for (gp = 0; gp < nGaussPoints; gp++)
-	{
-		// Get gauss point data
-		// GetGaussData(gp, gp_r, gp_s, gp_t);
-		//WW fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
-		// Compute the shape function for interpolation within element
-		ComputeShapefct(1);
-
-		// Save former gp velocity for test use only
-		for(size_t i_dim = 0; i_dim < dim; i_dim++)
-		{
-			if (phase_index == 0)
-				temp_vel_old[i_dim] = gp_ele->Velocity(i_dim,gp);
-			else
-				temp_vel_old[i_dim] = gp_ele->Velocity_g(i_dim,gp);
-		}
-
-		// Interpolate velocity from nodes to gauss point for all three velocity components
-		temp_vel[0] = interpolate(NodalVal);
-		temp_vel[1] = interpolate(NodalVal1);
-		temp_vel[2] = interpolate(NodalVal2);
-
-		// Set gauss point velocity
-		for(size_t i_dim = 0; i_dim < dim; i_dim++)
-			if (phase == "WATER")
-				gp_ele->Velocity(i_dim, gp) = temp_vel[i_dim];
-			else
-			{
-				if ((phase == "GAS") || (phase == "OIL"))
-					gp_ele->Velocity_g(i_dim, gp) = temp_vel[i_dim];
-				else
-				{
-					cout <<
-					"The program is canceled because there is a phase used which is not considered yet!"
-					     << endl;
-					system("Pause");
-					exit(0);
-				}
-			}
-
-		// Data for Test Output
-		if (output_average == true) //WW
-		{
-			for(size_t i_dim = 0; i_dim < dim; i_dim++)
-				// average value of all Gauss points
-				value_old[i_dim] = value_old[i_dim] + temp_vel_old[i_dim] /
-				                   nGaussPoints;
-			for(size_t i_dim = 0; i_dim < dim; i_dim++)
-				// average value of all Gauss points
-				value[i_dim] = value[i_dim] + temp_vel[i_dim] / nGaussPoints;
-		}
-		else if (gp == 1)
-		{
-			for(size_t i_dim = 0; i_dim < dim; i_dim++)
-				value_old[i_dim] = temp_vel_old[i_dim];
-			for(size_t i_dim = 0; i_dim < dim; i_dim++)
-				value[i_dim] = temp_vel[i_dim];
-		}
-	}                                     // end gauss point loop
-
-	// Data for Test Output
-	for(size_t i_dim = 0; i_dim < dim; i_dim++)
-	{
-		temp.str("");
-		temp.clear();
-		temp << value_old[i_dim];
-		tempstring += "; " + temp.str();
-	}
-	for(size_t i_dim = 0; i_dim < dim; i_dim++)
-	{
-		temp.str("");
-		temp.clear();
-		temp << value[i_dim];
-		tempstring += "; " + temp.str();
-	}
-	return tempstring;
-
-	// Output
-	// gp_ele->Velocity.Write();
-}
-#endif
 
 /***************************************************************************
    GeoSys - Funktion:
