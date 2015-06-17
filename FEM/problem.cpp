@@ -20,6 +20,12 @@
 #include <sstream>
 //kg44: max size for size_t (system_dependent) is set normally here
 #include <limits>
+
+#ifdef USE_PETSC
+#include <petsctime.h>
+#endif
+
+
 //WW
 //
 /*------------------------------------------------------------------------*/
@@ -1009,7 +1015,7 @@ void Problem::Euler_TimeDiscretize()
 	{
 #if defined(USE_MPI) || defined(USE_PETSC)
 		MPI_Barrier(MPI_COMM_WORLD);
-#ifdef USEPETSC34
+#if (PETSC_VERSION_NUMBER >= 3040)
 		PetscTime(&v1);
 #else
 		PetscGetTime(&v1);
@@ -1091,7 +1097,7 @@ void Problem::Euler_TimeDiscretize()
 				if(m_tim->time_active) m_tim->accepted_step_count++;
 			}
 #ifdef USE_PETSC
-#ifdef USEPETSC34
+#if (PETSC_VERSION_NUMBER >= 3040)
 		PetscTime(&v2);
 #else
 		PetscGetTime(&v2);

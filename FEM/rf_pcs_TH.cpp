@@ -3,6 +3,7 @@
 
 #ifdef USE_PETSC
 #include <petscksp.h>
+#include <petsctime.h>
 #endif
 
 #include "display.h"
@@ -595,7 +596,11 @@ void CRFProcessTH::setSolver( petsc_group::PETScLinearSolver *petsc_solver )
 		eqs_new->ConfigWithNonlinear(m_num->ls_error_tolerance, m_num->ls_max_iterations, m_num->getLinearSolverName(), m_num->getPreconditionerName(), m_num->ls_extra_arg);
 		//	SNESGSSetTolerances(eqs_new->snes, PETSC_DECIDE, m_num->nls_error_tolerance[0], PETSC_DECIDE, m_num->nls_max_iterations);
 		SNESSetFunction(eqs_new->snes, eqs_new->b, FormFunctionTH, (void*)this);
+#if (PETSC_VERSION_NUMBER >= 3050)
 		SNESSetJacobian(eqs_new->snes, eqs_new->A, eqs_new->A, FormJacobianTH, (void*)this);
+#else
+		SNESSetJacobian(eqs_new->snes, eqs_new->A, eqs_new->A, FormJacobianTH, (void*)this);
+#endif
 		SNESSetFromOptions(eqs_new->snes);
 	} else {
 		eqs_new->Config(m_num->ls_error_tolerance, m_num->ls_max_iterations, m_num->getLinearSolverName(), m_num->getPreconditionerName(), m_num->ls_extra_arg);
@@ -862,8 +867,15 @@ PetscErrorCode FormFunctionTH(SNES /*snes*/, Vec x, Vec f, void *ctx)
 	return 0;
 }
 
+#if (PETSC_VERSION_NUMBER >= 3050)
+PetscErrorCode FormJacobianTH(SNES snes, Vec x, Mat jac_, Mat B_, void *ctx)
+{
+	Mat* jac = &jac_;
+	Mat* B = &B_;
+#else
 PetscErrorCode FormJacobianTH(SNES /*snes*/, Vec x, Mat *jac, Mat *B, MatStructure *flag, void *ctx)
 {
+#endif
 	bool debugOutput = false;
 	if (debugOutput)
 	ScreenMessage("-> form a Jacobian matrix\n");
@@ -941,7 +953,9 @@ PetscErrorCode FormJacobianTH(SNES /*snes*/, Vec x, Mat *jac, Mat *B, MatStructu
 	MatAssemblyBegin(*B, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(*B, MAT_FINAL_ASSEMBLY);
 
+#if (PETSC_VERSION_NUMBER < 3050)
 	*flag = SAME_NONZERO_PATTERN;
+#endif
 
 //	for (size_t i=0; i<eqs_new->vec_subA.size(); i++)
 //		MatView(eqs_new->vec_subA[i], PETSC_VIEWER_STDOUT_WORLD);

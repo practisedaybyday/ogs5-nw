@@ -9,7 +9,9 @@
 #include <iostream>
 #include <list>
 
-#include "petsc-private/petscimpl.h"
+#include <petsc-private/petscimpl.h>
+#include <petscversion.h>
+#include <petsctime.h>
 
 #include "../../Base/display.h"
 #include "StringTools.h"
@@ -186,7 +188,10 @@ void PETScLinearSolver::ConfigLinear(const PetscReal tol, const PetscInt maxits,
    sol_type = lsol;
    pc_type = prec_type;
 
-#if 0
+
+#if (PETSC_VERSION_NUMBER >= 3050)
+   KSPSetOperators(lsolver, A, A);
+#elif (PETSC_VERSION_NUMBER > 3040)
    KSPSetOperators(lsolver, A, A, SAME_NONZERO_PATTERN);
 #else
    KSPSetOperators(lsolver, A, A, DIFFERENT_NONZERO_PATTERN);
@@ -342,7 +347,7 @@ int PETScLinearSolver::Solver()
 
    // #define PETSC34
    //kg44 quick fix to compile PETSC with version PETSCV3.4
-#ifdef USEPETSC34
+#if (PETSC_VERSION_NUMBER > 3040)
    PetscTime(&v1);
 #else
    PetscGetTime(&v1);
@@ -350,7 +355,9 @@ int PETScLinearSolver::Solver()
 
    PetscPrintf(PETSC_COMM_WORLD,"------------------------------------------------\n");
    PetscPrintf(PETSC_COMM_WORLD, "*** PETSc linear solver\n");
-#if 0
+#if (PETSC_VERSION_NUMBER >= 3050)
+   KSPSetOperators(lsolver, A, A);
+#elif (PETSC_VERSION_NUMBER > 3040)
    KSPSetOperators(lsolver, A, A, SAME_NONZERO_PATTERN);
 #else
    KSPSetOperators(lsolver, A, A, DIFFERENT_NONZERO_PATTERN);
@@ -407,7 +414,7 @@ int PETScLinearSolver::Solver()
    //VecAssemblyEnd(x);
 
    //kg44 quick fix to compile PETSC with version PETSCV3.4
-#ifdef USEPETSC34
+#if (PETSC_VERSION_NUMBER > 3040)
    PetscTime(&v2);
 #else
    PetscGetTime(&v2);

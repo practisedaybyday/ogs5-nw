@@ -38,7 +38,11 @@ private:
 
 #ifdef USE_PETSC
 PetscErrorCode FormFunctionTH(SNES snes, Vec x, Vec f, void *ctx);
+#if (PETSC_VERSION_NUMBER >= 3050)
+PetscErrorCode FormJacobianTH(SNES snes, Vec x, Mat jac, Mat B, void *ctx);
+#else
 PetscErrorCode FormJacobianTH(SNES snes, Vec x, Mat *jac, Mat *B, MatStructure *flag, void *ctx);
+#endif
 #endif
 
 #endif
