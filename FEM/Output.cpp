@@ -1586,6 +1586,11 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 	if(msh_node_number < 0)  //11.06.2012. WW
 		return;
 
+#ifdef USE_PETSC
+	if (!m_msh->isNodeLocal(msh_node_number))
+		return;
+#endif
+
 	CRFProcess* dm_pcs = NULL;
 	for (size_t i = 0; i < pcs_vector.size(); i++)
 		//		if (pcs_vector[i]->pcs_type_name.find("DEFORMATION") != string::npos) { TF
