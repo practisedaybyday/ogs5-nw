@@ -220,7 +220,7 @@ int main ( int argc, char* argv[] )
 /*========================================================================*/
 /* Kommunikation mit Betriebssystem */
 	/* Ctrl-C ausschalten */
-	NoBreak();
+	//NoBreak();
 	/* Timer fuer Gesamtzeit starten */
 #ifdef TESTTIME
 	TStartTimer(0);
@@ -318,7 +318,7 @@ int main ( int argc, char* argv[] )
 #endif
 	/* Abspann ausgeben */
 	/* Ctrl-C wieder normal */
-	StandardBreak();
+	//StandardBreak();
 /*--------- MPI Finalize ------------------*/
 #if defined(USE_MPI) || defined(USE_MPI_PARPROC) || defined(USE_MPI_REGSOIL)
 	elapsed_time_mpi += MPI_Wtime(); // 12.09.2007 WW
