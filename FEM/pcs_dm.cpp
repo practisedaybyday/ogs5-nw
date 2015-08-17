@@ -84,6 +84,7 @@ CRFProcessDeformation()
 	norm_du0_pre_cpl_itr = 0.0;
 	idata_type = none;
 	_isInitialStressNonZero = false; //NW
+	InitialNormDU0 = 0.0;
 }
 
 CRFProcessDeformation::~CRFProcessDeformation()
