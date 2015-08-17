@@ -3846,6 +3846,8 @@ ElementValue_DM::~ElementValue_DM()
 	if(orientation)
 		delete orientation;
 
+	delete Strain;
+
 	NodesOnPath = NULL;
 	orientation = NULL;
 	y_surface = NULL;
