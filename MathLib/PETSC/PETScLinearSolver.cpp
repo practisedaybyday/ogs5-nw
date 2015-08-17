@@ -347,7 +347,7 @@ int PETScLinearSolver::Solver()
 
    // #define PETSC34
    //kg44 quick fix to compile PETSC with version PETSCV3.4
-#if (PETSC_VERSION_NUMBER > 3040)
+#if (PETSC_VERSION_NUMBER >= 3040)
    PetscTime(&v1);
 #else
    PetscGetTime(&v1);
@@ -357,7 +357,7 @@ int PETScLinearSolver::Solver()
    PetscPrintf(PETSC_COMM_WORLD, "*** PETSc linear solver\n");
 #if (PETSC_VERSION_NUMBER >= 3050)
    KSPSetOperators(lsolver, A, A);
-#elif (PETSC_VERSION_NUMBER > 3040)
+#elif (PETSC_VERSION_NUMBER >= 3040)
    KSPSetOperators(lsolver, A, A, SAME_NONZERO_PATTERN);
 #else
    KSPSetOperators(lsolver, A, A, DIFFERENT_NONZERO_PATTERN);
@@ -414,7 +414,7 @@ int PETScLinearSolver::Solver()
    //VecAssemblyEnd(x);
 
    //kg44 quick fix to compile PETSC with version PETSCV3.4
-#if (PETSC_VERSION_NUMBER > 3040)
+#if (PETSC_VERSION_NUMBER >= 3040)
    PetscTime(&v2);
 #else
    PetscGetTime(&v2);

@@ -200,7 +200,7 @@ int main ( int argc, char* argv[] )
 	//PetscInitialize(argc, argv, help);
 	PetscInitialize(&argc,&argv,(char *)0,help);
 	//kg44 quick fix to compile PETSC with version PETSCV3.4
-#if (PETSC_VERSION_NUMBER > 3040)
+#if (PETSC_VERSION_NUMBER >= 3040)
 	PetscTime(&v1);
 #else
 	PetscGetTime(&v1);
