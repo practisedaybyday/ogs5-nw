@@ -177,7 +177,7 @@ FUNCTION (ADD_BENCHMARK authorName benchmarkName ogsConfiguration numProcesses)
 		-DOGS_FEM_CONFIG=${ogsConfiguration}
 		-DNUM_PROCESSES=${numProcesses}
 		-DBENCHMARK_DIR_FOUND=${BENCHMARK_DIR_FOUND}
-		-P ${PROJECT_SOURCE_DIR}/CMakeConfiguration/AddBenchmark.cmake
+		-P ${PROJECT_SOURCE_DIR}/scripts/CMakeConfiguration/AddBenchmark.cmake
 	)
 
 	# compare file differences with python script
