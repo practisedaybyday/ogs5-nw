@@ -146,6 +146,10 @@ ENDIF(PARALLEL_USE_MPI)
 ### Find tools     ###
 ######################
 
+# Find Python interpreter
+find_package (PythonInterp)
+message(STATUS "PythonInterp - ${PYTHONINTERP_FOUND}")
+
 # Find Subversion
 FIND_PACKAGE(Subversion)
 
