@@ -989,6 +989,9 @@ void CFiniteElementVec::LocalAssembly(const int update)
 	SetMaterial();
 	//12.2009. WW
 	eleV_DM = ele_value_dm[MeshElement->GetIndex()];
+	ns = 4;
+	if (MeshElement->GetDimension() == 3)
+		ns = 6;
 
 #ifdef USE_PETSC
     if(MeshElement->g_index) // ghost nodes pcs->pcs_number_of_primary_nvals
