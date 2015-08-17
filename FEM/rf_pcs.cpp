@@ -3099,7 +3099,7 @@ void CRFProcess::ConfigDeformation()
 		VariableStaticProblem();
 	// OBJ names are set to PCS name
 	// Geometry dimension
-	problem_dimension_dm = m_msh->GetCoordinateFlag() / 10;
+	problem_dimension_dm = m_msh->GetMaxElementDim(); // m_msh->GetCoordinateFlag() / 10;
 	problem_2d_plane_dm = 1;
 
 	// Coupling
@@ -3165,7 +3165,7 @@ void CRFProcess::VariableStaticProblem()
 	pcs_primary_function_name[1] = "DISPLACEMENT_Y1";
 	pcs_primary_function_unit[0] = "m";
 	pcs_primary_function_unit[1] = "m";
-	if(max_dim == 2)
+	if(m_msh->GetMaxElementDim() == 3)
 	{
 		pcs_number_of_primary_nvals = 3;
 		dm_number_of_primary_nvals = 3;
@@ -3216,7 +3216,7 @@ void CRFProcess::VariableStaticProblem()
 	//  pcs_secondary_function_timelevel[pcs_number_of_secondary_nvals] = 1;
 	//  pcs_number_of_secondary_nvals++;
 
-	if(max_dim == 2)                      // 3D
+	if(m_msh->GetMaxElementDim() == 3)                      // 3D
 	{
 		pcs_secondary_function_name[pcs_number_of_secondary_nvals] = "STRESS_XZ";
 		pcs_secondary_function_unit[pcs_number_of_secondary_nvals] = "Pa";
@@ -6200,7 +6200,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			    if(bc_msh_node < static_cast<long>(m_msh->NodesNumber_Linear))
 			      dof_per_node = pcs_number_of_primary_nvals;
 			    else
-			      dof_per_node =  m_msh->GetCoordinateFlag() / 10;
+			      dof_per_node =  m_msh->GetMaxElementDim();
 			    shift = m_bc_node->msh_node_number / m_msh->NodesNumber_Quadratic;
 			  }
  
@@ -7377,7 +7377,7 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 				if( msh_node < static_cast<long> (m_msh->NodesNumber_Linear) )
 					dof_per_node = pcs_number_of_primary_nvals;
 				else
-					dof_per_node =  m_msh->GetCoordinateFlag() / 10;
+					dof_per_node =  m_msh->GetMaxElementDim();
 				shift = cnodev->msh_node_number / m_msh->NodesNumber_Quadratic;
 			}
  
@@ -9503,7 +9503,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			return;
 
 		//
-		int NS = m_msh->GetCoordinateFlag() / 10;
+		int NS = m_msh->GetMaxElementDim();
 		//
 		if ((additioanl2ndvar_print > 0) && (additioanl2ndvar_print < 3))
 		{

@@ -70,6 +70,7 @@ CFiniteElementVec::CFiniteElementVec(process::CRFProcessDeformation* dm_pcs,
 	Idx_Vel  = NULL;
 	X0 = n_jump = pr_stress = NULL;
 	//
+	dim = pcs->m_msh->GetMaxElementDim(); //overwrite dim in CElement
 	ns = 4;
 	if(dim == 3)
 		ns = 6;

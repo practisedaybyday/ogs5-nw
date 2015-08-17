@@ -194,7 +194,7 @@ void CElement::ConfigElement(CElem* MElement, bool FaceIntegration)
 		}
 		else
 		{
-			switch(dim)
+			switch(coordinate_system/10)
 			{
 			case 1:
 				if(coordinate_system % 10 == 1)
@@ -237,13 +237,7 @@ void CElement::ConfigElement(CElem* MElement, bool FaceIntegration)
 				{
 					for(i = 0; i < nNodes; i++)
 					{
-						//07.04.2007. WW
-//                        a_node = MeshElement->nodes[i];
-//                        X[i] = a_node->X();
-//                        Y[i] = a_node->Z();
-//                        Z[i] = a_node->Y();
-						double const* const coords_node_i (
-						        MeshElement->nodes[i]->getData());
+						double const* const coords_node_i (MeshElement->nodes[i]->getData());
 						X[i] = coords_node_i[0];
 						Y[i] = coords_node_i[2];
 						Z[i] = coords_node_i[1];
