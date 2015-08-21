@@ -1585,6 +1585,7 @@ void COutput::NODWritePNTDataTEC(double time_current,int time_step_number)
 	const long msh_node_number(m_msh->GetNODOnPNT(static_cast<const GEOLIB::Point*> (getGeoObj())));
 	if(msh_node_number < 0)  //11.06.2012. WW
 		return;
+	ScreenMessage2("Node %d found for %s\n", msh_node_number, geo_name.data());
 
 #ifdef USE_PETSC
 	if (!m_msh->isNodeLocal(msh_node_number))
