@@ -116,6 +116,7 @@ private:
     double my_p0;
     double my_T0;
     double my_C0;
+    double my_Tstar;
 	double dmy_dp;
 	double dmy_dT;
 	double dmy_dC;

@@ -459,6 +459,13 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
                 if (T_1 > .0)
                 	ScreenMessage("-> Constant temperature %f[K] is used.\n", T_1);
             }
+            else if(viscosity_model == 30) //Fabien
+            {
+                in >> my_0 >> my_T0 >> my_Tstar;
+                viscosity_pcs_name_vector.push_back("PRESSURE1");
+                viscosity_pcs_name_vector.push_back("TEMPERATURE1");
+                ScreenMessage("-> Reynolds viscosity is selected.\n");
+            }
 
 
 			//    mfp_file->ignore(MAX_ZEILE,'\n');
@@ -1389,7 +1396,7 @@ double CFluidProperties::Viscosity(double* variables)
             curT -= T_KILVIN_ZERO;
             viscosity = LiquidViscosity_LJH_MP1(C_1, curT); //c[g/L], T[C]
         }
-		break;
+        break;
     case 21: //NW for salt water
     {
         double curT = (T_1>.0) ? T_1 : primary_variable[1];
@@ -1398,13 +1405,19 @@ double CFluidProperties::Viscosity(double* variables)
         viscosity = LiquidViscosity_LJH_MP2(C_1, curT, rho); //c[g/L], T[C]
     }
         break;
-	default:
-		cout << "Error in CFluidProperties::Viscosity: no valid model" << endl;
-		break;
-	}
-	//----------------------------------------------------------------------
+    case 30: //Fabien
+    {
+        double T = primary_variable[1];
+        viscosity = my_0 * std::exp(-(T - my_T0)/my_Tstar);
+    }
+        break;
+    default:
+        cout << "Error in CFluidProperties::Viscosity: no valid model" << endl;
+        break;
+    }
+    //----------------------------------------------------------------------
 
-	return viscosity;
+    return viscosity;
 }
 
 double CFluidProperties::dViscositydP(double* variables)
