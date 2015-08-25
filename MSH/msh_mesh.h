@@ -13,6 +13,7 @@
 #define msh_mesh_INC
 
 // C++
+#include <algorithm>
 #include <string>
 
 /** depreciated includes of GEOLib */
@@ -620,6 +621,34 @@ public:
 	void constructMeshGrid();
 private:
 	GEOLIB::Grid<MeshLib::CNode> *_mesh_grid;
+
+#ifdef USE_PETSC
+public:
+	std::size_t getLocalNodeID(std::size_t global_id) const
+	{
+		CompareGlobalNodeID comp(global_id);
+		std::vector<std::pair<std::size_t,std::size_t> >::const_iterator itr
+		                = std::find_if(_global_local_nodeids.begin(), _global_local_nodeids.end(), comp);
+		if (itr!=_global_local_nodeids.end())
+			return itr->second;
+		return -1;
+	}
+
+private:
+	std::vector<std::pair<std::size_t,std::size_t> > _global_local_nodeids;
+
+	class CompareGlobalNodeID
+	{
+	public:
+		CompareGlobalNodeID(std::size_t gid) : _global_id(gid) {}
+		bool operator()(std::pair<std::size_t,std::size_t> const& element)
+		{
+			return element.first==_global_id;
+		}
+	private:
+		std::size_t _global_id;
+	};
+#endif
 };
 
 } // namespace MeshLib

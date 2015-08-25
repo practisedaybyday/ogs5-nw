@@ -335,12 +335,14 @@ void CFEMesh::setSubdomainNodes(int *header, const MeshNodes *s_nodes)
   glb_NodesNumber_Quadratic =header[7];
 
   nod_vector.resize(header[0]);
+  _global_local_nodeids.reserve(header[0]);
   for(k=0; k<header[0]; k++)
   {
      const MeshNodes *anode = &s_nodes[k];
      CNode *new_node = new CNode(k, anode->x, anode->y, anode->z);
      new_node->SetEquationIndex(anode->index);
      nod_vector[k] = new_node;
+     _global_local_nodeids.push_back(std::make_pair((std::size_t)anode->index, (std::size_t)k));
   }
 }
 

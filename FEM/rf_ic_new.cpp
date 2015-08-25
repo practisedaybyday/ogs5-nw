@@ -544,6 +544,10 @@ void CInitialCondition::SetByNodeIndex(int nidx)
 		abort();
 	}
 
+#ifdef USE_PETSC
+	MeshLib::CFEMesh* msh = this->getProcess()->m_msh;
+#endif
+
 	while (!d_file.eof())
 	{
 		line_string = GetLineFromFile1(&d_file);
@@ -554,7 +558,14 @@ void CInitialCondition::SetByNodeIndex(int nidx)
 		in >> node_index >> node_val;
 		in.clear();
 
+#ifdef USE_PETSC
+		std::size_t local_node_index = msh->getLocalNodeID(node_index);
+		if (local_node_index!=-1) {
+			this->getProcess()->SetNodeValue(local_node_index,nidx,node_val);
+		}
+#else
 		this->getProcess()->SetNodeValue(node_index,nidx,node_val);
+#endif
 	}
 }
 
