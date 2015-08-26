@@ -560,7 +560,7 @@ void CInitialCondition::SetByNodeIndex(int nidx)
 
 #ifdef USE_PETSC
 		std::size_t local_node_index = msh->getLocalNodeID(node_index);
-		if (local_node_index!=-1) {
+		if (local_node_index!=static_cast<std::size_t>(-1)) {
 			this->getProcess()->SetNodeValue(local_node_index,nidx,node_val);
 		}
 #else
