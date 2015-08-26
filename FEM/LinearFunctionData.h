@@ -10,6 +10,55 @@
 
 #include <fstream>
 
+#include "exprtk/exprtk.hpp"
+
+#include "display.h"
+
+#if 1
+class ExprtTkFunction
+{
+	typedef exprtk::symbol_table<double> symbol_table_t;
+	typedef exprtk::expression<double> expression_t;
+	typedef exprtk::parser<double> parser_t;
+	typedef exprtk::parser_error::type error_t;
+
+public:
+	explicit ExprtTkFunction(const std::string &str_expression);
+
+	double getValue(double x, double y, double z) const;
+	std::string getExpression() const { return _exp_str; }
+
+private:
+	std::string _exp_str;
+	mutable double _x, _y, _z;
+	symbol_table_t symbol_table;
+	expression_t expression;
+};
+
+class LinearFunctionData
+{
+public:
+	LinearFunctionData(std::ifstream &ins, int num_var = -1);
+	~LinearFunctionData();
+
+	double getValue(size_t dom_i, double x, double y, double z) const;
+	double getValue(double x, double y, double z) const;
+	size_t* getSubDomIndex() const
+	{
+		return (size_t*)&_subdom_index[0];
+	}
+
+	std::string getExpression(size_t dom_i) const
+	{
+		return _subdom_f[dom_i]->getExpression();
+	}
+
+private:
+	std::vector<size_t> _subdom_index;
+	std::vector<ExprtTkFunction*> _subdom_f;
+};
+
+#else
 /*!
    \class LinearFunctionData
    \brief Define a linear function for IC, BC and ST
@@ -45,5 +94,6 @@ private:
 	// f = a0+b0*x+c0*y+d0*z
 	double* _a0, * _b0, * _c0, * _d0;
 };
+#endif
 
 #endif /* LINEARFUNCTIONDATA_H_ */

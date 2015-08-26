@@ -1012,7 +1012,8 @@ void CInitialCondition::SetDomain(int nidx)
 					}
 			}
 			else if(getProcessDistributionType() == FiniteElement::FUNCTION) //01.07.2008 WW
-
+			{
+				ScreenMessage("subdomain %d: %s\n", subdom_index[k], dis_linear_f->getExpression(subdom_index[k]).data());
 				for(i = 0; i < nodes_vector.size(); i++)
 				{
 //                MeshLib::CNode *thisNode = m_msh->nod_vector[nodes_vector[i]];
@@ -1025,6 +1026,7 @@ void CInitialCondition::SetDomain(int nidx)
 					                                                  pnt[1],
 					                                                  pnt[2]));
 				}
+			}
 			else
 				for (i = 0; i < nodes_vector.size(); i++)
 					this->getProcess()->SetNodeValue(nodes_vector[i], nidx,

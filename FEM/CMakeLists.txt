@@ -116,6 +116,7 @@ include_directories(
 	${CMAKE_SOURCE_DIR}/FileIO/FEMIO
 	${CMAKE_SOURCE_DIR}/MSH
 	${CMAKE_SOURCE_DIR}/OGSProject
+	${CMAKE_SOURCE_DIR}/ThirdParty
 )
 
 IF (LIS)
