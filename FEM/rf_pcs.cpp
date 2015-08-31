@@ -7306,9 +7306,11 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						continue;
 					cnodev = st_node_value[is][0];
 					const int k_eqs_id = m_msh->nod_vector[cnodev->geo_node_number]->GetEquationIndex();
-#if defined(NEW_EQS)
+#if defined(USE_PETSC)
+					eqs_new->addMatrixEntry(k_eqs_id,k_eqs_id, m_st->transfer_h_values[0]);
+#elif defined(NEW_EQS)
 					(*eqs_new->A)(k_eqs_id,k_eqs_id) += m_st->transfer_h_values[0];
-#elif !defined(USE_PETSC)
+#else
 					MXInc(k_eqs_id,k_eqs_id, m_st->transfer_h_values[0]);
 #endif
 				} else if (m_st->getGeoType () == GEOLIB::SURFACE || m_st->getGeoType() == GEOLIB::POLYLINE) {
@@ -7329,9 +7331,11 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 							for (unsigned l = 0; l < nen; l++)
 							{
 								const int l_eqs_id = face->GetNode(l)->GetEquationIndex();
-#if defined(NEW_EQS)
+#if defined(USE_PETSC)
+								eqs_new->addMatrixEntry(k_eqs_id,l_eqs_id, mass[k*nen+l] * h);
+#elif defined(NEW_EQS)
 								(*eqs_new->A)(k_eqs_id,l_eqs_id) += mass[k*nen+l] * h;
-#elif !defined(USE_PETSC)
+#else
 								MXInc(k_eqs_id,l_eqs_id, mass[k*nen+l] * h);
 #endif
 							}
