@@ -1201,7 +1201,7 @@ bool Problem::CouplingLoop()
 {
 	int i, index, cpl_index;
 	double max_outer_error, max_inner_error; //, error;
-	bool run_flag[14];
+	bool run_flag[20];
 	int outer_index, inner_index, inner_max; //, inner_min;
 	//
 	CRFProcess* a_pcs = NULL;
