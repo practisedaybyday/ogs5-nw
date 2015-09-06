@@ -33,6 +33,8 @@
 /*--------------------- OpenMP Parallel ------------------*/
 #if defined(LIS)
 #include "lis.h"
+#endif
+#ifdef _OPENMP
 #include <omp.h>
 #endif
 /*--------------------- OpenMP Parallel ------------------*/
