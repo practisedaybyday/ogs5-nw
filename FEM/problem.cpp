@@ -1023,11 +1023,13 @@ void Problem::Euler_TimeDiscretize()
 #endif
 
 		// Get time step
+		double dt_pre = dt;
 		dt = dt_rec = DBL_MAX;
 		for(i=0; i<(int)active_process_index.size(); i++)
 		{
 			m_tim = total_processes[active_process_index[i]]->Tim;
 			if(!m_tim->time_active) continue; // JT
+			m_tim->dt_pre = dt_pre;
 			dt = MMin(dt,m_tim->CalcTimeStep(current_time));
 			dt_rec = MMin(dt_rec,m_tim->recommended_time_step); // to know if we have a critical time alteration
 		}
@@ -1097,6 +1099,7 @@ void Problem::Euler_TimeDiscretize()
 				m_tim = pcs->Tim;
 				if(m_tim->time_active) {
 					m_tim->accepted_step_count++;
+					m_tim->dt_pre = dt;
 					if (m_tim->isPIDControl()) {
 						pcs->e_pre2 = pcs->e_pre;
 						pcs->e_pre = pcs->e_n;

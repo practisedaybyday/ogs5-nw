@@ -97,9 +97,11 @@ public:
 	size_t last_rejected_timestep;
 
 	IterationType::type iteration_type;
+	bool usePIDControl;
 	bool usePIDControlInSelfAdaptive;
 	std::string pid_variable;
 	double pid_error;
+	double dt_pre;
 public:
 	CTimeDiscretization(void);
 	//21.08.2008. WW
@@ -144,7 +146,8 @@ public:
 	//
 	//WW bool GetTimeStepTargetVector(); // kg44
 	double CheckCourant();                //CMCD
-	bool isPIDControl() const { return usePIDControlInSelfAdaptive; }
+	bool PIDControl();
+	bool isPIDControl() const { return usePIDControl || usePIDControlInSelfAdaptive; }
 };
 
 extern std::vector<CTimeDiscretization*> time_vector;

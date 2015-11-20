@@ -332,6 +332,13 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 						max_time_step = 0.0;
 					line.clear();
 				}
+				else if(time_control_type == TimeControlType::PID_CONTROL)
+				{
+					usePIDControl = true;
+					line.str(GetLineFromFile1(tim_file));
+					line >> pid_error >> initial_time_step >> min_time_step >> max_time_step;
+					line.clear();
+				}
 				else if(time_control_type == TimeControlType::DYNAMIC_VARIABLE) // JT2012
 				{
 					// DYNAMIC TIME STEP SERIES
@@ -748,6 +755,18 @@ double CTimeDiscretization::CalcTimeStep(double current_time)
 		}
 		else if(accepted_step_count > 1){ // initial time step is otherwise maintained for first 2 active time steps
 		}
+	}
+	else if(time_control_type == TimeControlType::PID_CONTROL){
+		if (!last_dt_accepted) {
+			CRFProcess* m_pcs = PCSGet(pcs_type_name);
+			double fac = std::min(1./m_pcs->e_n, 0.8);
+			double v = std::max(fac*dt_pre, min_time_step);
+			time_step_length = v*v/dt_pre;
+		}
+		else if(aktuelle_zeit < MKleinsteZahl && !repeat)
+			time_step_length = initial_time_step;
+//		else
+//			time_step_length = this_stepsize;
 	}
 	else if(no_time_steps==0){ // Processes without time control
 		time_step_length = DBL_MAX; // Large, thus other processes will control the step
@@ -1577,90 +1596,13 @@ bool CTimeDiscretization::isDynamicTimeFailureSuggested(CRFProcess *m_pcs)
 		}
 		if (n_itr>=time_adapt_tim_vector.back())
 			return true;
+	} else if (time_control_type == TimeControlType::PID_CONTROL) {
+		return !PIDControl();
 	}
 
 	//
 	return false;
 }
-
-/**************************************************************************
-   FEMLib-Method:
-   Task:  Check the time of the process in the case: different process has
-       different time step size
-   Return boolean value: skip or execute the process
-   Programing:
-   06/2007 WW Implementation
-   09/2007 WW The varable of the time step accumulation as a  member
-**************************************************************************/
-// JT: Now we do this differently.
-#ifdef obsolete
-double CTimeDiscretization::CheckTime(double const c_time, const double dt0)
-{
-	double pcs_step;
-	double time_forward;
-	bool ontime = false;
-	if((int)time_vector.size() == 1)
-		return dt0;
-	//
-	//WW please check +1
-	//OK   double pcs_step = time_step_vector[step_current+1];
-	if(time_step_vector.size() > 0)       // 16.09.2008. WW
-	{
-		//OK
-		if(step_current >= (int)time_step_vector.size())
-			//OK
-			pcs_step = time_step_vector[(int)time_step_vector.size() - 1];
-		else
-			//OK
-			pcs_step = time_step_vector[step_current];
-	}
-	else
-		pcs_step = this_stepsize;  // 16.09.2008. WW
-	time_forward = c_time - time_current - pcs_step;
-	if(time_forward > 0.0 || fabs(time_forward) < MKleinsteZahl)
-	{
-		time_current += pcs_step;
-		//WW. 02.02.2009    step_current++;
-		this_stepsize = dt_sum + dt0;
-		ontime = true;
-		dt_sum = 0.0;
-	}
-	/*
-	   // HS-WW: 04.01.2010, bugfix, if not ontime, set this_stepsize to zero
-	   if ( time_forward < 0.0 && fabs(time_forward)>MKleinsteZahl)
-	   {
-	   //check if current time step is critical time
-	   bool isCriticalTime = false;
-	   for (int i=0; i<(int)critical_time.size(); i++) {
-	    if (critical_time[i]-c_time>MKleinsteZahl)
-	      break;
-	    if (fabs(c_time-critical_time[i])<MKleinsteZahl) {
-	      isCriticalTime = true;
-	   break;
-	   }
-	   }
-
-	   if (!isCriticalTime)
-	   this_stepsize = 0.0;
-	   }
-	 */
-	if((fabs(pcs_step - time_end) < DBL_MIN) && fabs(c_time - time_end) < DBL_MIN)
-	{
-		this_stepsize = dt_sum + dt0;
-		ontime = true;
-		dt_sum = 0.0;
-	}
-	if(!ontime)
-		dt_sum += dt0;
-	//this_stepsize = 0.0;    //20.03.2009. WW
-	if(pcs_step > time_end)               // make output for other processes
-	{
-		dt_sum = 0.0;
-		this_stepsize = 0.0;
-	}
-	return this_stepsize;
-}
-#endif
 
 /**************************************************************************
    FEMLib-Method:
@@ -1697,48 +1639,6 @@ void CTimeDiscretization::FillCriticalTime()
 				std::swap (critical_time[i], critical_time[j]);
 }
 
-/**************************************************************************
-   FEMLib-Method:
-   Programing:
-   09/2007 WW Implementation
-**************************************************************************/
-bool IsSynCron()
-{
-	int i, count = 0;
-	for(i = 0; i < (int)time_vector.size(); i++)
-		if(time_vector[i]->dt_sum < DBL_MIN)
-			count++;
-	if(count == (int)time_vector.size())
-		return true;
-	else
-		return false;
-}
-
-/**************************************************************************
-   FEMLib-Method:
-   Task:  construct time_step_target_vector from ic-/bc-curves (time curves)
-   Return boolean value:
-   Programing:
-   12/2007 KG44 Implementation
-**************************************************************************/
-/* bool CTimeDiscretization::GetTimeStepTargetVector() {
-
-   bool have_vector=false;
-   int no_times, i,j, anz;
-   StuetzStellen *s = NULL;
-
-   if (anz_kurven<=0) return have_vector;
-   // first get the time curves
-    for (i;i<anz_kurven;i++) {
-       anz = kurven[i].anz_stuetzstellen;
-       s = kurven[i].stuetzstellen;
-   for (j;j<anz;j++){
-   time_step_target_vector.push_back(s[j].punkt);
-   }
-   }
-
-   return have_vector;
-   } */
 #ifdef GEM_REACT
 double CTimeDiscretization::MaxTimeStep()
 {
@@ -1788,3 +1688,48 @@ double CTimeDiscretization::MaxTimeStep()
 	return std::min(max_diff_time_step, max_adv_time_step);
 }
 #endif                                            // end of GEM_REACT
+
+bool CTimeDiscretization::PIDControl()
+{
+	//-----------------------------------------------------
+	if (aktueller_zeitschritt==1)
+		dt_pre = initial_time_step;
+	else
+		dt_pre = time_step_length;
+	CRFProcess* m_pcs = PCSGet(pcs_type_name);
+	int ii = 0;
+	if (m_pcs->getProcessType()==FiniteElement::LIQUID_FLOW) {
+		m_pcs->e_n = m_pcs->CalcVelocityChanges();
+	} else {
+		m_pcs->e_n = m_pcs->CalcNodeValueChanges(ii);
+	}
+	m_pcs->e_n /= pid_error;
+	std::cout << "-> e_n = " << m_pcs->e_n << std::endl;
+
+	//-----------------------------------------------------
+	bool accept = true;
+	double fac = 1.0;
+//	if (m_pcs->e_n > pid_error)
+//	{
+//		accept = false;
+//		fac *= pid_error / m_pcs->e_n;
+//	}
+//	else
+	if (aktueller_zeitschritt > 2)
+	{
+		accept = true;
+		double kP = 0.075, kI = 0.175, kD = 0.01;
+		fac = std::pow(m_pcs->e_pre/m_pcs->e_n, kP) * std::pow(1/m_pcs->e_n, kI) * std::pow(std::pow(m_pcs->e_pre, 2)/(m_pcs->e_n*m_pcs->e_pre2), kD);
+		std::cout << "-> fac = " << fac << std::endl;
+	}
+
+	//-----------------------------------------------------
+	dt = dt_pre * fac;
+	dt = std::max(time_step_length, min_time_step);
+	dt = std::min(time_step_length, max_time_step);
+//	time_step_length = std::max(time_step_length, dt_pre*l);
+//	time_step_length = std::min(time_step_length, dt_pre*L);
+
+
+	return accept;
+}

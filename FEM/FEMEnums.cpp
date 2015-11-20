@@ -522,6 +522,8 @@ TimeControlType::type convertTimeControlType(const std::string &str)
         return TimeControlType::ERROR_CONTROL_ADAPTIVE;
     else if (str.find("SELF_ADAPTIVE")!=std::string::npos)
         return TimeControlType::SELF_ADAPTIVE;
+    else if (str.find("PID_CONTROL")!=std::string::npos)
+        return TimeControlType::PID_CONTROL;
 
     return TimeControlType::INVALID;
 }
@@ -544,6 +546,8 @@ std::string convertTimeControlTypeToString(TimeControlType::type tc_type)
         return "ERROR_CONTROL_ADAPTIVE";
     else if (tc_type == TimeControlType::SELF_ADAPTIVE)
         return "SELF_ADAPTIVE";
+    else if (tc_type == TimeControlType::PID_CONTROL)
+        return "PID_CONTROL";
     return "INVALID";
 
 }

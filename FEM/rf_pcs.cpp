@@ -9167,12 +9167,12 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 **************************************************************************/
 	double CRFProcess::ExecuteNonLinear(int loop_process_number, bool print_pcs)
 	{
-		double nonlinear_iteration_error = 1.0;
+		double nl_itr_err = 1.0;
 		double nl_theta, damping, norm_x0, norm_b0, norm_x, norm_b, val;
-		double error_x1, error_x2, error_b1, error_b2=.0, error, last_error, percent_difference;
+		double error_x1, error_x2, error_b1, error_b2=.0, error, nl_itr_err_pre, percent_difference;
 		//double* eqs_x = NULL;     //
 		double* eqs_b = NULL;
-		bool converged, diverged;
+		bool converged;
 		int ii, nidx1, num_fail=0;
 		size_t j, g_nnodes;
 
@@ -9244,11 +9244,11 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		diverged = false;
 		converged = false;
 		accepted = true;
-		last_error = 1.0;
+		nl_itr_err_pre = 1.0;
 		num_fail = 0;
 		for(iter_nlin = 0; iter_nlin < m_num->nls_max_iterations; iter_nlin++)
 		{
-			nonlinear_iteration_error = Execute();
+			nl_itr_err = Execute();
 			//
 			// ---------------------------------------------------
 			// LINEAR SOLUTION
@@ -9273,11 +9273,13 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 						if (iter_nlin==0)
 							percent_difference = .0;
 						else
-							percent_difference = 100* ((last_error - nonlinear_iteration_error) / last_error);
-						ScreenMessage("\tNonlinear error: %e, Conv. rate: %2.1f\%\n", nonlinear_iteration_error, percent_difference);
+							percent_difference = 100* ((nl_itr_err_pre - nl_itr_err) / nl_itr_err_pre);
+//						conv_rate = std::max(conv_rate, nl_itr_err / nl_itr_err_pre);
+//						if (conv_rate)
+						ScreenMessage("\tNonlinear error: %e, Conv. rate: %2.1f\%\n", nl_itr_err, percent_difference);
 						ScreenMessage("------------------------------------------------\n");
 						//
-						if(nonlinear_iteration_error <= 1.0)
+						if(nl_itr_err <= 1.0)
 						{
 							converged = true;
 						}
@@ -9290,11 +9292,12 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 								else
 									num_fail = 0;
 								//
-								if(num_fail > 1) diverged = true; // require 2 consecutive failures
+								if(num_fail > 1)
+									diverged = true; // require 2 consecutive failures
 							} else {
 								num_fail = 0;
 							}
-							last_error = nonlinear_iteration_error;
+							nl_itr_err_pre = nl_itr_err;
 						}
 						break;
 
@@ -9486,7 +9489,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		configured_in_nonlinearloop = false;
 #endif
 #endif
-		return nonlinear_iteration_error;
+		return nl_itr_err;
 	}
 
 /**************************************************************************

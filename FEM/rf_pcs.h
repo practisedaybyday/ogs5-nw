@@ -225,6 +225,8 @@ protected:                                        //WW
 	bool accepted;                        //25.08.1008. WW
 	int accept_steps;                     //27.08.1008. WW
 	int reject_steps;                     //27.08.1008. WW
+	bool diverged;
+	double dt_pre;
 	//
 	int dof;                              //WW
 	long orig_size;                       // Size of source term nodes
