@@ -405,6 +405,10 @@ CRFProcess::CRFProcess(void) :
 	resetStrain = true;
 	scaleUnknowns = false;
 	scaleEQS = false;
+
+	e_n = 1.0;
+	e_pre = 1.0;
+	e_pre2 = 1.0;
 }
 
 void CRFProcess::setProblemObjectPointer (Problem* problem)
@@ -4601,6 +4605,10 @@ double CRFProcess::Execute()
 		eqs_new->Clean();
 #endif
 #endif
+
+	if (this->getProcessType()==FiniteElement::LIQUID_FLOW && Tim->usePIDControlInSelfAdaptive)
+		this->CalIntegrationPointValue();
+
 	return pcs_error;
 }
 
@@ -8721,6 +8729,78 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 
 /**************************************************************************
    FEMLib-Method:
+   Task:
+   Programing:
+   last modified:
+**************************************************************************/
+double CRFProcess::CalcNodeValueChanges(int ii)
+{
+	const int nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]);
+
+#ifdef USE_PETSC
+	long g_nnodes = m_msh->getNumNodesLocal();
+#else
+	long g_nnodes = m_msh->GetNodesNumber(false);
+#endif
+
+	double diff_norm = 0.0, current_norm = 0.0;
+	//
+	for (long i = 0; i < g_nnodes; i++)
+	{
+		double u0 = GetNodeValue(i, nidx1);
+		double u1 = GetNodeValue(i, nidx1 + 1);
+		diff_norm += (u1 - u0)*(u1 - u0);
+		current_norm += u1*u1;
+	}
+
+	diff_norm = sqrt(diff_norm);
+	current_norm = sqrt(current_norm);
+	double changes = diff_norm / (current_norm+DBL_EPSILON);
+#ifdef USE_PETSC
+	double changes_global = 0;
+	MPI_Allreduce(&changes, &changes_global, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+	changes = changes_global;
+#endif
+	return changes;
+}
+
+/**************************************************************************
+   FEMLib-Method:
+   Task:
+   Programing:
+   last modified:
+**************************************************************************/
+double CRFProcess::CalcVelocityChanges()
+{
+	assert(getProcessType()==FiniteElement::LIQUID_FLOW);
+
+	double diff_norm = 0.0, current_norm = 0.0;
+	//
+	for (size_t i = 0; i < ele_gp_value.size(); i++)
+	{
+		const Matrix &v0 = ele_gp_value[i]->Velocity0;
+		const Matrix &v1 = ele_gp_value[i]->Velocity;
+		for (unsigned gp=0; gp<v0.Cols(); gp++)
+		{
+			for (unsigned k=0; k<v0.Rows(); k++) {
+				diff_norm += std::pow(v1(k,gp) - v0(k,gp), 2);
+				current_norm += std::pow(v1(k,gp), 2);
+			}
+		}
+	}
+	diff_norm = std::sqrt(diff_norm);
+	current_norm = std::sqrt(current_norm);
+	double changes = diff_norm / (current_norm+DBL_EPSILON);
+#ifdef USE_PETSC
+	double changes_global = 0;
+	MPI_Allreduce(&changes, &changes_global, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+	changes = changes_global;
+#endif
+	return changes;
+}
+
+/**************************************************************************
+   FEMLib-Method:
    Task: Ermittelt den Fehler bei Iterationen
    new_iteration     : Vektor des neuen Iterationsschritts
    old_iteration_ndx : Knotenindex fuer Werte des alten Iterationsschritts
@@ -9303,14 +9383,6 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			}
 
 
-			// CHECK FOR TIME STEP FAILURE
-			// ---------------------------------------------------
-			if(!accepted || Tim->isDynamicTimeFailureSuggested(this)){
-				accepted = false;
-				Tim->last_dt_accepted = false;
-				break;
-			}
-
 			// FOR NEWTON: COPY DAMPED CHANGES TO NEW TIME
 			// ---------------------------------------------------
 			if(FiniteElement::isNewtonKind(m_num->nls_method))
@@ -9343,6 +9415,16 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			if(mobile_nodes_flag ==1){
 				PCSMoveNOD();
 			}
+
+			// CHECK FOR TIME STEP FAILURE
+			// ---------------------------------------------------
+			if(diverged || !accepted || Tim->isDynamicTimeFailureSuggested(this)){
+				accepted = false;
+				Tim->last_dt_accepted = false;
+				break;
+			}
+
+
 			/* JT: I don't know if this time control method is used anymore. But it relies on a single error
 			       produced from CalcIterationNodeError(), but this now depends on the type of error to use.
 			       Therefore, I simply provide the error of the first dof, and not depending on the error type. If

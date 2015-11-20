@@ -648,6 +648,9 @@ public:
 	void AssembleParabolicEquationRHSVector(MeshLib::CNode*);
 #endif
 	double CalcIterationNODError(FiniteElement::ErrorMethod method, bool nls_error, bool cpl_error=false); //OK
+	double CalcNodeValueChanges(int ii);
+	double CalcVelocityChanges();
+
 	                                          // Add bool forward = true. WW
 	void CopyTimestepNODValues(bool forward = true);
 	void CopyTimestepELEValues(bool forward = true);
@@ -891,6 +894,10 @@ private:
 	 * PERMEABILITY_X1 and POROSITY
 	 */
 	void configMaterialParameters ();
+
+	double e_n;
+	double e_pre;
+	double e_pre2;
 };
 
 //========================================================================

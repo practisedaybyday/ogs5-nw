@@ -1093,8 +1093,15 @@ void Problem::Euler_TimeDiscretize()
 			accepted_times++;
 			for(i=0; i<(int)active_process_index.size(); i++)
 			{
-				m_tim = total_processes[active_process_index[i]]->Tim;
-				if(m_tim->time_active) m_tim->accepted_step_count++;
+				CRFProcess* pcs = total_processes[active_process_index[i]];
+				m_tim = pcs->Tim;
+				if(m_tim->time_active) {
+					m_tim->accepted_step_count++;
+					if (m_tim->isPIDControl()) {
+						pcs->e_pre2 = pcs->e_pre;
+						pcs->e_pre = pcs->e_n;
+					}
+				}
 			}
 #ifdef USE_PETSC
 #if (PETSC_VERSION_NUMBER >= 3040)
