@@ -76,6 +76,8 @@ CTimeDiscretization::CTimeDiscretization(void)
 	}
 	last_rejected_timestep = 0;
 	iteration_type = IterationType::LINEAR;
+	last_dt_accepted = true;
+	usePIDControlInSelfAdaptive = false;
 }
 
 /**************************************************************************
@@ -495,6 +497,13 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 							initial_time_step = strtod(line_string.data(),NULL);
 							line.clear();
 						}
+						else if(line_string.find("PID") !=
+						   std::string::npos)
+						{
+							usePIDControlInSelfAdaptive = true;
+							*tim_file >> pid_variable >> pid_error;
+							line.clear();
+						}
 						/*  //WW
 						   if(line_string.find("MINISH")!=string::npos){
 						   *tim_file >> line_string;
@@ -508,8 +517,7 @@ std::ios::pos_type CTimeDiscretization::Read(std::ifstream* tim_file)
 							line >> iter_times;
 							line >> multiply_coef;
 							time_adapt_tim_vector.push_back(iter_times);
-							time_adapt_coe_vector.push_back(
-							        multiply_coef);
+							time_adapt_coe_vector.push_back(multiply_coef);
 							line.clear();
 						}
 					} // end of while loop adaptive
@@ -840,6 +848,8 @@ CTimeDiscretization::CTimeDiscretization(const CTimeDiscretization& a_tim, std::
 	for(i = 0; i < (int)a_tim.time_adapt_coe_vector.size(); i++)
 		time_adapt_coe_vector.push_back(a_tim.time_adapt_coe_vector[i]);
 	last_rejected_timestep = 0;
+	last_dt_accepted = true;
+	usePIDControlInSelfAdaptive = false;
 }
 
 /**************************************************************************
@@ -1286,6 +1296,24 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 	if (!m_pcs->accepted)
 		multiplier = time_adapt_coe_vector.back();
 
+	if (usePIDControlInSelfAdaptive && n_itr <= time_adapt_tim_vector.front())
+	{
+		if (aktueller_zeitschritt > 2)
+		{
+			double kP = 0.075, kI = 0.175, kD = 0.01; //TODO
+			multiplier = std::pow(m_pcs->e_pre/m_pcs->e_n, kP) * std::pow(1/m_pcs->e_n, kI) * std::pow(std::pow(m_pcs->e_pre, 2)/(m_pcs->e_n*m_pcs->e_pre2), kD);
+		}
+		else
+			multiplier = 1.0;
+		if (!m_pcs->accepted)
+		{
+			double fac = std::min(1./m_pcs->e_n, 0.8);
+			double v = std::max(fac*time_step_length, min_time_step);
+			multiplier = v*v/time_step_length/time_step_length;
+		}
+	}
+
+
 	// update the time step length
 	time_step_length *= multiplier;
 	time_step_length = std::min(time_step_length, max_time_step);
@@ -1526,6 +1554,26 @@ bool CTimeDiscretization::isDynamicTimeFailureSuggested(CRFProcess *m_pcs)
 			n_itr = m_pcs->iter_lin_max;
 		} else if (iteration_type==IterationType::NONLINEAR) {
 			n_itr = m_pcs->iter_nlin_max;
+		}
+		if (usePIDControlInSelfAdaptive) {
+			CRFProcess* m_pcs = PCSGet(pcs_type_name);
+			if (pid_variable == "VELOCITY1") {
+				m_pcs->e_n = m_pcs->CalcVelocityChanges();
+			} else {
+				int ii = m_pcs->GetNodeValueIndex(pid_variable);
+				if (ii<0) {
+					static bool done = false;
+					if (!done) {
+						done = true;
+						ScreenMessage("Given PID variable name not found: %s\n", pid_variable.c_str());
+					}
+				}
+				if (ii>=0)
+					m_pcs->e_n = m_pcs->CalcNodeValueChanges(ii);
+			}
+			m_pcs->e_n /= pid_error;
+			if (aktueller_zeitschritt > 2 && m_pcs->e_n > 1.0)
+				return true;
 		}
 		if (n_itr>=time_adapt_tim_vector.back())
 			return true;
