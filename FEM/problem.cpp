@@ -1497,6 +1497,10 @@ void Problem::PostCouplingLoop()
 		if(force_post_node_copy){ // JT: safety valve. Set this value to true (in Problem()) and values will be copied here.
 			m_pcs->CopyTimestepNODValues();
 			m_pcs->CopyTimestepELEValues();
+			for (size_t ie=0; ie<ele_gp_value.size(); ie++) {
+				ElementValue* ev = ele_gp_value[ie];
+				ev->Velocity0 = ev->Velocity;
+			}
 		}
 	}
 // WW

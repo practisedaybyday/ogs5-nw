@@ -399,6 +399,7 @@ public:
 	void getIPvalue_vec_phase(const int IP, int phase, double* vec);
 	void GetEleVelocity(double* vec);
 	Matrix Velocity;
+	Matrix Velocity0;
 private:
 	// Friend class
 	friend class ::CRFProcess;

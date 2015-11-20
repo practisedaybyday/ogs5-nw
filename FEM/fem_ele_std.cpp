@@ -8934,6 +8934,8 @@ ElementValue::ElementValue(CRFProcess* m_pcs, CElem* ele) : pcs(m_pcs)
 	//WW Velocity.resize(m_pcs->m_msh->GetCoordinateFlag()/10, NGPoints);
 	Velocity.resize(3, NGPoints);
 	Velocity = 0.0;
+	Velocity0.resize(3, NGPoints);
+	Velocity0 = 0.0;
 	// 15.3.2007 Multi-phase flow WW
 	if(pcs->type == 1212 || pcs->type == 1313 || m_pcs->type == 42)
 	{
@@ -8980,6 +8982,7 @@ void ElementValue::GetEleVelocity(double* vec)
 ElementValue::~ElementValue()
 {
 	Velocity.resize(0,0);
+	Velocity0.resize(0,0);
 	Velocity_g.resize(0,0);
 }
 
