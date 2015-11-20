@@ -50,7 +50,10 @@ public:
 
 	std::string getExpression(size_t dom_i) const
 	{
-		return _subdom_f[dom_i]->getExpression();
+		for (size_t i=0; i<_subdom_index.size(); i++)
+			if (dom_i == _subdom_index[i])
+				return _subdom_f[i]->getExpression();
+		return "";
 	}
 
 private:
