@@ -1321,7 +1321,8 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 		{
 			double kP = 0.075, kI = 0.175, kD = 0.01; //TODO
 			multiplier = std::pow(m_pcs->e_pre/m_pcs->e_n, kP) * std::pow(1/m_pcs->e_n, kI) * std::pow(std::pow(m_pcs->e_pre, 2)/(m_pcs->e_n*m_pcs->e_pre2), kD);
-		}
+		    ScreenMessage("-> PID: e_n-2=%g, e_n-1=%g, e_n=%g, fac=%g\n", m_pcs->e_pre2, m_pcs->e_pre, m_pcs->e_n, multiplier);
+        }
 		else
 			multiplier = 1.0;
 		if (!m_pcs->accepted)
@@ -1329,6 +1330,7 @@ double CTimeDiscretization::SelfAdaptiveTimeControl ( void )
 			double fac = std::min(1./m_pcs->e_n, 0.8);
 			double v = std::max(fac*time_step_length, min_time_step);
 			multiplier = v*v/time_step_length/time_step_length;
+		    ScreenMessage("-> PID: rejected. fac=%g\n", multiplier);
 		}
 	}
 
@@ -1704,7 +1706,7 @@ bool CTimeDiscretization::PIDControl()
 		m_pcs->e_n = m_pcs->CalcNodeValueChanges(ii);
 	}
 	m_pcs->e_n /= pid_error;
-	std::cout << "-> e_n = " << m_pcs->e_n << std::endl;
+	//std::cout << "-> e_n = " << m_pcs->e_n << std::endl;
 
 	//-----------------------------------------------------
 	bool accept = true;
@@ -1720,7 +1722,7 @@ bool CTimeDiscretization::PIDControl()
 		accept = true;
 		double kP = 0.075, kI = 0.175, kD = 0.01;
 		fac = std::pow(m_pcs->e_pre/m_pcs->e_n, kP) * std::pow(1/m_pcs->e_n, kI) * std::pow(std::pow(m_pcs->e_pre, 2)/(m_pcs->e_n*m_pcs->e_pre2), kD);
-		std::cout << "-> fac = " << fac << std::endl;
+		//std::cout << "-> fac = " << fac << std::endl;
 	}
 
 	//-----------------------------------------------------
