@@ -1593,6 +1593,7 @@ bool CTimeDiscretization::isDynamicTimeFailureSuggested(CRFProcess *m_pcs)
 					m_pcs->e_n = m_pcs->CalcNodeValueChanges(ii);
 			}
 			m_pcs->e_n /= pid_error;
+			ScreenMessage("-> PID: e_n=%g\n", m_pcs->e_n);
 			if (aktueller_zeitschritt > 2 && m_pcs->e_n > 1.0)
 				return true;
 		}
