@@ -1027,11 +1027,16 @@ void Problem::Euler_TimeDiscretize()
 		dt = dt_rec = DBL_MAX;
 		for(i=0; i<(int)active_process_index.size(); i++)
 		{
-			m_tim = total_processes[active_process_index[i]]->Tim;
+			CRFProcess* pcs = total_processes[active_process_index[i]];
+			m_tim = pcs->Tim;
 			if(!m_tim->time_active) continue; // JT
 			m_tim->dt_pre = dt_pre;
 			dt = MMin(dt,m_tim->CalcTimeStep(current_time));
 			dt_rec = MMin(dt_rec,m_tim->recommended_time_step); // to know if we have a critical time alteration
+			if (!m_tim->repeat && m_tim->isPIDControl()) {
+				pcs->e_pre2 = pcs->e_pre;
+				pcs->e_pre = pcs->e_n;
+			}
 		}
 
 		if (!last_dt_accepted && dt==previous_rejected_dt) {
@@ -1100,10 +1105,6 @@ void Problem::Euler_TimeDiscretize()
 				if(m_tim->time_active) {
 					m_tim->accepted_step_count++;
 					m_tim->dt_pre = dt;
-					if (m_tim->isPIDControl()) {
-						pcs->e_pre2 = pcs->e_pre;
-						pcs->e_pre = pcs->e_n;
-					}
 				}
 			}
 #ifdef USE_PETSC
