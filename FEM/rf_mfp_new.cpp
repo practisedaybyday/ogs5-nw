@@ -358,6 +358,12 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
                 density_pcs_name_vector.push_back("TEMPERATURE1");
                 density_pcs_name_vector.push_back("CONCENTRATION1");
             }
+            if(density_model == 31) // rho(p,T) MAGRI FEFLOW
+            {
+                density_pcs_name_vector.push_back("PRESSURE1");
+                density_pcs_name_vector.push_back("TEMPERATURE1");
+                ScreenMessage("-> Fabi FEFLOW density is selected.\n");
+            }
 
 			//      mfp_file->ignore(MAX_ZEILE,'\n');
 			in.clear();
@@ -465,6 +471,13 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
                 viscosity_pcs_name_vector.push_back("PRESSURE1");
                 viscosity_pcs_name_vector.push_back("TEMPERATURE1");
                 ScreenMessage("-> Reynolds viscosity is selected.\n");
+            }
+            else if(viscosity_model == 31) //Fabi FEFLOW
+            {
+                //in >> my_0
+                viscosity_pcs_name_vector.push_back("PRESSURE1");
+                viscosity_pcs_name_vector.push_back("TEMPERATURE1");
+                ScreenMessage("-> Fabi FEFLOW viscosity is selected.\n");
             }
 
 
@@ -913,6 +926,9 @@ double CFluidProperties::Density(double* variables)
                                 + drho_dT * (max(variables[1],0.0) - rho_T0));
             }
             break;
+         case 31:                                  //MAGRI FEFLOW density
+			density = MATCalcFluidDensityFabi(primary_variable[0],primary_variable[1]);
+            break;
 		default:
 			std::cout << "Error in CFluidProperties::Density: no valid model" <<
 			std::endl;
@@ -1006,6 +1022,9 @@ double CFluidProperties::Density(double* variables)
                                 + drho_dC * (curC - rho_C0)
                                 + drho_dT * (max(primary_variable[1],0.0) - rho_T0));
             }
+            break;
+         case 31:                                  //MAGRI FEFLOW density
+			density = MATCalcFluidDensityFabi(primary_variable[0],primary_variable[1]);
             break;
 		default:
 			std::cout << "Error in CFluidProperties::Density: no valid model" <<
@@ -1121,6 +1140,44 @@ double CFluidProperties::GetElementValueFromNodes(long ElementIndex,
 	}
 	//cout << "Variable: " << variable << endl;
 	return variable;
+}
+
+/*************************************************************************
+   FEFLOW - Funktion: MATCalcFluidDensityFabi
+
+   Task:
+   Fluid Density Magri FEFLOW rho(p,T) Case 31
+
+   Fluid-Density function according to FEFLOW WHITE PAPERS III MAgri et al
+
+   Programmaenderungen:
+   09/2015   FM
+   anyone makes it more elegant, thx!
+
+*************************************************************************/
+double CFluidProperties::MATCalcFluidDensityFabi(double P, double T)
+{
+double density;
+double press;
+press = P / 1e5;
+const double A = 9.99792877961606e+02, B = 5.07605113140940e-04, C = -5.28425478164183e-10;
+const double D = 5.13864847162196e-02, E = -3.61991396354483e-06, F = 7.97204102509724e-12;
+const double G = -7.53557031774437e-03, H = 6.32712093275576e-08, I = -1.66203631393248e-13;
+const double J = 4.60380647957350e-05, K = -5.61299059722121e-10, L = 1.80924436489400e-15;
+const double M = -2.26651454175013e-07, N = 3.36874416675978e-12, O = -1.30352149261326e-17;  
+const double PP = 6.14889851856743e-10, Q = -1.06165223196756e-14, R = 4.75014903737416e-20;
+const double S = -7.39221950969522e-13, TT = 1.42790422913922e-17, U = -7.13130230531541e-23;
+
+density = A + B * press + C * press * press + (D + E * press + F * press * press) * T
+					+ (G + H * press + I * press * press) * T * T
+					+ (J + K * press + L * press * press) * T * T * T
+					+ (M + N * press + O * press * press) * T * T * T * T
+					+ (PP + Q * press + R * press * press) * T * T * T * T * T
+					+ (S + TT * press + U * press * press) * T * T * T * T * T *T;
+
+/***density = A * (1 + B*T);   test passed***/
+return density;
+
 }
 
 /*************************************************************************
@@ -1411,6 +1468,9 @@ double CFluidProperties::Viscosity(double* variables)
         viscosity = my_0 * std::exp(-(T - my_T0)/my_Tstar);
     }
         break;
+    case 31:                               // Magri Visco Fit Feflow
+        viscosity = LiquidViscosity_Fabi(primary_variable[1]);
+        break;
     default:
         cout << "Error in CFluidProperties::Viscosity: no valid model" << endl;
         break;
@@ -1558,6 +1618,24 @@ double CFluidProperties::LiquidViscosity_Marsily_1986(double T)
 {
 	double my;
 	my = 2.285e-5 + 1.01e-3 * log(T);
+	return my;
+}
+
+/**************************************************************************
+   FEMLib-Method:
+   Task:
+   FEFLOW VISCOSITY FIT by Magri case 31
+   Programing:
+   FM Sept 2015
+   last modification: Anyone rewrite *T*T*T in a more elegant way THX
+**************************************************************************/
+double CFluidProperties::LiquidViscosity_Fabi(double T)
+{
+	double my;
+	const double A = 1.75879595266029e-03, B = -5.16976926689464e-05, C = 8.60121220346358e-07;
+	const double D = -8.17972869539407E-09, E = 4.33281560663312E-11, F = -1.18247503562765E-13;
+	const double G = 1.29200607741534E-16;
+	my = A + B*T + C*T*T + D*T*T*T + E*T*T*T*T + F*T*T*T*T*T + G*T*T*T*T*T*T;
 	return my;
 }
 

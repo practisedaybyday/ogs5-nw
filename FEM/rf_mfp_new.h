@@ -281,8 +281,10 @@ private:
 	double GasViscosity_Reichenberg_1971(double,double);
 	//AKS
 	double MATCalcFluidDensityMethod8(double p, double T, double C);
+	double MATCalcFluidDensityFabi(double p, double T);
 	double LiquidViscosity_Yaws_1976(double);
 	double LiquidViscosity_Marsily_1986(double);
+	double LiquidViscosity_Fabi(double);
 	double LiquidViscosity_NN(double,double);
     double LiquidViscosity_LJH_MP1(double c, double T);
     double LiquidViscosity_LJH_MP2(double c, double T, double rho);
