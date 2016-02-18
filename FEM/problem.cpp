@@ -111,7 +111,8 @@ int myrank;
    Modification:
  ***************************************************************************/
 Problem::Problem (char* filename) :
-	dt0(0.), print_result(true), _geo_obj (new GEOLIB::GEOObjects), _geo_name (filename)
+	dt0(0.), print_result(true), _geo_obj (new GEOLIB::GEOObjects), _geo_name (filename),
+	cpl_overall_tol(1.e-4)
 {
 #if defined(USE_MPI) || defined(USE_PETSC)
 	MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
@@ -410,7 +411,7 @@ Problem::Problem (char* filename) :
 				in_num.str(GetLineFromFile1(&num_file));
 				//JT// in_num >> max_coupling_iterations >> coupling_tolerance;
 				//JT: coupling_tolerance is process dependent, cannot be here. See m_num->cpl_tolerance (with $COUPLING_CONTROL)
-				in_num >> cpl_overall_min_iterations >> cpl_overall_max_iterations;
+				in_num >> cpl_overall_min_iterations >> cpl_overall_max_iterations >> cpl_overall_tol;
 				break;
 			}
 		}
@@ -452,10 +453,13 @@ Problem::Problem (char* filename) :
 				maxi_eqs_dim = m_pcs->size_unknowns;
 		}
 		buffer_array = new double[maxi_eqs_dim];
+		buffer_array1 = new double[maxi_eqs_dim];
 	}
 	else
+	{
 		buffer_array = NULL;
-	buffer_array1 = NULL;
+		buffer_array1 = NULL;
+	}
 	//========================================================================
 	CRFProcessDeformation* dm_pcs = NULL;
 
@@ -1398,10 +1402,10 @@ bool Problem::CouplingLoop()
 			break;
 		}
 		// Coupling convergence criteria
-		if(max_outer_error <= 1.0 && outer_index+2 > cpl_overall_min_iterations) // JT: error is relative to the tolerance.
+		if(max_outer_error < cpl_overall_tol && outer_index+2 > cpl_overall_min_iterations) // JT: error is relative to the tolerance.
 			break;
 	}
-	if (max_outer_error > 1.0 && outer_index == cpl_overall_max_iterations && cpl_overall_max_iterations>1)
+	if (max_outer_error > cpl_overall_tol && outer_index == cpl_overall_max_iterations && cpl_overall_max_iterations>1)
 	    accept = false;
 	//
 	return accept;

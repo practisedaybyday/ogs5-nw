@@ -68,7 +68,8 @@ public:
 	int nls_error_method;                 //WW
 	int nls_max_iterations;
 	double nls_relaxation;
-	double nls_error_tolerance[DOF_NUMBER_MAX];		//JT2012: array function of dof
+	double* nls_error_max_solution;
+	double* nls_error_tolerance;		//JT2012: array function of dof
 	double nls_plasticity_local_tolerance;
 	int nls_jacobian_level;
 	void setNonLinearErrorMethod (FiniteElement::ErrorMethod nls_method) { _pcs_nls_error_method = nls_method; }
@@ -80,7 +81,8 @@ public:
 	std::string cpl_variable_JOD;		//JT->JOD. This one defaults to FLUX. I'm not sure what you want to do with it, but cpl_variable must default to "NONE".
 	int cpl_max_iterations;
 	int cpl_min_iterations;				  // JT2012
-	double cpl_error_tolerance[DOF_NUMBER_MAX]; // JT2012: array function of dof
+	double* cpl_error_max_solution;
+	double* cpl_error_tolerance; // JT2012: array function of dof
 	bool cpl_error_specified;			  // JT2012
 	bool cpl_master_process;
 	void setCouplingErrorMethod (FiniteElement::ErrorMethod cpl_method) { _pcs_cpl_error_method = cpl_method; }

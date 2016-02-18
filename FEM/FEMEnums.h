@@ -223,7 +223,9 @@ enum ErrorMethod
 	ENORM, 
 	EVNORM,	
 	ERNORM,
-	BNORM
+	BNORM,
+	L1NORM,
+	L2NORM
 };
 
 /**

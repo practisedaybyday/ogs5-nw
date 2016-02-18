@@ -8835,6 +8835,7 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 	int num_dof_errors = pcs_number_of_primary_nvals;
 	double unknowns_norm = 0.0;
 	double absolute_error[DOF_NUMBER_MAX];
+	double absolute_error_cpl[DOF_NUMBER_MAX];
 #ifdef USE_PETSC
 	g_nnodes = m_msh->getNumNodesLocal();
 #else
@@ -8880,7 +8881,8 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			}
 			num_dof_errors = 1;
 			unknowns_norm = sqrt(unknowns_norm);
-			absolute_error[0] = unknowns_norm;
+			absolute_error[0] = unknowns_norm / m_num->nls_error_max_solution[0];
+			absolute_error_cpl[0] = unknowns_norm / m_num->nls_error_max_solution[0];
 			break;
 		}
 		//
@@ -8924,7 +8926,9 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			}
 			num_dof_errors = 1;
 			unknowns_norm = sqrt(unknowns_norm);
-			absolute_error[0] = unknowns_norm / (sqrt(value)+DBL_EPSILON);
+			const double error0 = absolute_error[0] = unknowns_norm / (sqrt(value)+DBL_EPSILON);
+			absolute_error[0] /= error0 / m_num->nls_error_max_solution[0];
+			absolute_error_cpl[0] = error0 / m_num->nls_error_max_solution[0];
 			break;
 		}
 		//
@@ -8943,7 +8947,9 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 					   error += val1*val1;
 					}
 					unknowns_norm += error;
-					absolute_error[ii] = sqrt(error);
+					const double error0 = sqrt(error);
+					absolute_error[0] /= error0 / m_num->nls_error_max_solution[0];
+					absolute_error_cpl[0] = error0 / m_num->nls_error_max_solution[0];
 				}
 			}
 			else{						// PICARD
@@ -9010,11 +9016,12 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 					for (i = 0; i < g_nnodes; i++){
 						val1 = eqs_x[i+ii*g_nnodes];
 						unknowns_norm += val1*val1;
-						val1 = fabs(val1);
-						if(val1 > error)
-							error = val1;
+						error = std::max(error, std::fabs(val1));
 					}
-					absolute_error[ii] = error;
+					absolute_error[ii] = error / (   m_num->nls_error_max_solution[ii]
+					                               * g_nnodes);
+					absolute_error_cpl[ii] = error / (   m_num->cpl_error_max_solution[ii]
+					                               * g_nnodes);
 				}
 			}
 			else
@@ -9026,8 +9033,8 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 					//
 					for (i = 0; i < g_nnodes; i++){
 #ifdef USE_PETSC
-						val1 = GetNodeValue(i, nidx1);
-						val1 -= eqs_x[pcs_number_of_primary_nvals*m_msh->Eqs2Global_NodeIndex[i] + ii];
+						val1 =  GetNodeValue(i, nidx1)
+							  - eqs_x[pcs_number_of_primary_nvals*m_msh->Eqs2Global_NodeIndex[i] + ii];
 #else
 						k = m_msh->Eqs2Global_NodeIndex[i];
 						val1 = GetNodeValue(k, nidx1) - eqs_x[i+ii*g_nnodes];
@@ -9039,7 +9046,10 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 					double error_l = error;
 					MPI_Allreduce(&error_l, &error, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
-					absolute_error[ii] = error;
+					absolute_error[ii] = error / (   m_num->nls_error_max_solution[ii]
+					                               * g_nnodes);
+					absolute_error_cpl[ii] = error / (   m_num->cpl_error_max_solution[ii]
+					                               * g_nnodes);
 				}
 			}
 #ifdef USE_PETSC
@@ -9049,6 +9059,118 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 			unknowns_norm = sqrt(unknowns_norm);
 			break;
 		}
+		// --> L1NORM
+		//     sum(e_i)/(N*phi)
+		//     where N is the size of solution and phi is the maximum quantity of the solution.
+		case FiniteElement::L1NORM:
+		{
+			if(FiniteElement::isNewtonKind(m_num->nls_method)){  // NEWTON-RAPHSON
+				for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
+				{
+					error = 0.0;
+					for (i = 0; i < g_nnodes; i++){
+						val1 = eqs_x[i+ii*g_nnodes];
+						unknowns_norm += val1 * val1;
+						error += std::fabs(val1);
+					}
+					absolute_error[ii] = error / (   m_num->nls_error_max_solution[ii]
+					                               * g_nnodes);
+					absolute_error_cpl[ii] = error / (   m_num->cpl_error_max_solution[ii]
+					                               * g_nnodes);
+				}
+			}
+			else
+			{						// PICARD
+				for(ii=0; ii<pcs_number_of_primary_nvals; ii++)
+				{
+					error = 0.0;
+					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+					//
+					for (i = 0; i < g_nnodes; i++){
+#ifdef USE_PETSC
+						val1 =  GetNodeValue(i, nidx1)
+							  - eqs_x[pcs_number_of_primary_nvals*m_msh->Eqs2Global_NodeIndex[i] + ii];
+#else
+						k = m_msh->Eqs2Global_NodeIndex[i];
+						val1 = GetNodeValue(k, nidx1) - eqs_x[i+ii*g_nnodes];
+#endif
+						unknowns_norm += val1*val1;
+						error += std::fabs(val1);
+					}
+#ifdef USE_PETSC
+					double error_l = error;
+					MPI_Allreduce(&error_l, &error, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+					absolute_error[ii] = error / (   m_num->nls_error_max_solution[ii]
+					                               * g_nnodes);
+					absolute_error_cpl[ii] = error / (   m_num->cpl_error_max_solution[ii]
+					                               * g_nnodes);
+				}
+			}
+#ifdef USE_PETSC
+			double unknowns_norm_l = unknowns_norm;
+			MPI_Allreduce(&unknowns_norm_l, &unknowns_norm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+			unknowns_norm = sqrt(unknowns_norm);
+			break;
+		}
+		// --> L2NORM
+		//     (sum(e_i^2)/(phi^2)/N)^{1/2}
+		//     where N is the size of solution and phi is the maximum quantity of the solution.
+		case FiniteElement::L2NORM:
+		{
+			if(FiniteElement::isNewtonKind(m_num->nls_method)){  // NEWTON-RAPHSON
+				for(ii=0;ii<pcs_number_of_primary_nvals;ii++)
+				{
+					for (i = 0; i < g_nnodes; i++){
+						val1 = eqs_x[i+ii*g_nnodes];
+						unknowns_norm += val1 * val1;
+					}
+					absolute_error[ii] = unknowns_norm / ( m_num->nls_error_max_solution[ii]
+					                                     * m_num->nls_error_max_solution[ii]
+														 * g_nnodes);
+					absolute_error_cpl[ii] = unknowns_norm / ( m_num->cpl_error_max_solution[ii]
+					                                     * m_num->cpl_error_max_solution[ii]
+														 * g_nnodes);
+				}
+			}
+			else
+			{						// PICARD
+				for(ii=0; ii<pcs_number_of_primary_nvals; ii++)
+				{
+					nidx1 = GetNodeValueIndex(pcs_primary_function_name[ii]) + 1;
+					//
+					for (i = 0; i < g_nnodes; i++){
+#ifdef USE_PETSC
+						val1 =  GetNodeValue(i, nidx1)
+							  - eqs_x[pcs_number_of_primary_nvals*m_msh->Eqs2Global_NodeIndex[i] + ii];
+#else
+						k = m_msh->Eqs2Global_NodeIndex[i];
+						val1 = GetNodeValue(k, nidx1) - eqs_x[i+ii*g_nnodes];
+#endif
+						unknowns_norm += val1*val1;
+					}
+#ifdef USE_PETSC
+					MPI_Allreduce(&unknowns_norm, &error, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#else
+					error = unknowns_norm;
+#endif
+					absolute_error[ii] = error / ( m_num->nls_error_max_solution[ii]
+					                                     * m_num->nls_error_max_solution[ii]
+														 * g_nnodes);
+					absolute_error_cpl[ii] = error / ( m_num->cpl_error_max_solution[ii]
+					                                     * m_num->cpl_error_max_solution[ii]
+														 * g_nnodes);
+				}
+			}
+#ifdef USE_PETSC
+			double unknowns_norm_l = unknowns_norm;
+			MPI_Allreduce(&unknowns_norm_l, &unknowns_norm, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+			unknowns_norm = sqrt(unknowns_norm);
+			break;
+		}
+
 		//
 		default:
 			ScreenMessage("ERROR: Invalid error method for Iteration or Coupling Node error.\n");
@@ -9133,26 +9255,22 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 	if(cpl_error){ // Return coupling error
 		error_g = 0.0;
 		for(ii=0; ii<num_dof_errors; ii++){
-			cpl_absolute_error[ii] = absolute_error[ii];
-			error = absolute_error[ii] / m_num->cpl_error_tolerance[ii];
-			error_g = std::max(error_g, error); // Coupling error just stores the maximum
+			error_g = std::max(error_g, absolute_error_cpl[ii]); // Coupling error just stores the maximum
 		}
 		cpl_max_relative_error = error_g;
 		cpl_num_dof_errors = num_dof_errors;
 	}
-	if(nls_error){ // Return Non-Linear iteration error
+	if(nls_error && (m_num->nls_max_iterations > 1) ){ // Return Non-Linear iteration error
 		error_g = 0.0;
 		for(ii=0; ii<num_dof_errors; ii++){
-			pcs_absolute_error[ii] = absolute_error[ii];
-			pcs_relative_error[ii] = absolute_error[ii] / m_num->nls_error_tolerance[ii];
-			error_g = std::max(error_g, pcs_relative_error[ii]);
+			error_g = std::max(error_g, absolute_error[ii]);
 		}
 		pcs_num_dof_errors = num_dof_errors;
 		pcs_unknowns_norm = unknowns_norm;
 	}
 	if(!nls_error && !cpl_error){ // Then this routine called from somewhere else to get the error (i.e. time control). Store it in a temporary vector for access.
 		for(ii=0; ii<num_dof_errors; ii++){
-			temporary_absolute_error[ii] = absolute_error[ii];
+			temporary_absolute_error[ii] = std::max(absolute_error[ii], absolute_error_cpl[ii]);
 		}
 		temporary_num_dof_errors = num_dof_errors;
 	}

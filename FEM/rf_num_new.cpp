@@ -92,9 +92,14 @@ CNumerics::CNumerics(string name)
 	nls_error_method = 1;					//JT2012
 	nls_max_iterations = 1;					//OK
 	nls_relaxation = 0.0;
-	for(size_t i=0; i<DOF_NUMBER_MAX; i++)	//JT2012
-		nls_error_tolerance[i] = -1.0;		//JT2012: should not default this. Should always be entered by user!
 	nls_jacobian_level = 0; // full
+	nls_error_max_solution = new double[DOF_NUMBER_MAX];
+	nls_error_tolerance = new double[DOF_NUMBER_MAX];
+	for(size_t i=0; i<DOF_NUMBER_MAX; i++)	//JT2012
+	{
+		nls_error_tolerance[i] = -1.0;		//JT2012: should not default this. Should always be entered by user!
+		nls_error_max_solution[i] = 1.0;
+	}
 	//
 	// CPL - Coupled processes
 	cpl_error_specified = false;
@@ -104,8 +109,13 @@ CNumerics::CNumerics(string name)
 	cpl_variable_JOD = "FLUX";
 	cpl_max_iterations = 1;					//OK
 	cpl_min_iterations = 1;					//JT2012
+	cpl_error_max_solution = new double[DOF_NUMBER_MAX];
+	cpl_error_tolerance = new double[DOF_NUMBER_MAX];
 	for(size_t i=0; i<DOF_NUMBER_MAX; i++)	//JT2012
+	{
 		cpl_error_tolerance[i] = -1.0;			//JT2012: should not default this. Should always be entered by user!
+		cpl_error_max_solution[i] = 1.0;
+	}
 	//
 	// ELE
 	ele_gauss_points = 3;
@@ -143,7 +153,7 @@ CNumerics::CNumerics(string name)
 		ls_storage_method = 4;
 		nls_max_iterations = 25;
 	}
-	//
+
 	_pcs_cpl_error_method = FiniteElement::LMAX;
 	_pcs_nls_error_method = FiniteElement::LMAX;
 	nls_plasticity_local_tolerance = 1e-12;
@@ -160,6 +170,18 @@ CNumerics::~CNumerics(void)
 	if(DynamicDamping)
 		delete [] DynamicDamping;
 	DynamicDamping = NULL;
+
+	if (nls_error_max_solution)
+		delete [] nls_error_max_solution;
+
+	if (nls_error_tolerance)
+		delete [] nls_error_tolerance;
+
+	if (cpl_error_max_solution)
+		delete [] cpl_error_max_solution;
+
+	if (cpl_error_tolerance)
+		delete [] cpl_error_tolerance;
 }
 
 /**************************************************************************
@@ -368,21 +390,23 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			switch(getNonLinearErrorMethod())
 			{
 				case FiniteElement::ENORM: // only 1 tolerance required
-					line >> nls_error_tolerance[0];
+					line >> cpl_error_max_solution[0] >> cpl_error_tolerance[0];
 					break;
 				//
 				case FiniteElement::ERNORM: // only 1 tolerance required
-					line >> nls_error_tolerance[0];
+					line >> cpl_error_max_solution[0] >> cpl_error_tolerance[0];
 					break;
 				//
 				case FiniteElement::EVNORM: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
-					for(int i=0; i<DOF_NUMBER_MAX; i++)
-						line >> nls_error_tolerance[i];
-					break;
-				//
 				case FiniteElement::LMAX: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
-					for(int i=0; i<DOF_NUMBER_MAX; i++)
-						line >> nls_error_tolerance[i];
+				case FiniteElement::L1NORM: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
+				case FiniteElement::L2NORM: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
+					{
+						int num_primary_vars;
+						line >> num_primary_vars;
+						for (int i=0; i<num_primary_vars; i++)
+							line >> nls_error_max_solution[i] >> nls_error_tolerance[i];
+					}
 					break;
 				//
 				case FiniteElement::BNORM: // only 1 tolerance required
@@ -509,21 +533,23 @@ ios::pos_type CNumerics::Read(ifstream* num_file)
 			switch(getCouplingErrorMethod())
 			{
 				case FiniteElement::ENORM: // only 1 tolerance required
-					line >> cpl_error_tolerance[0];
+					line >>  cpl_error_max_solution[0] >> cpl_error_tolerance[0];
 					break;
 				//
 				case FiniteElement::ERNORM: // only 1 tolerance required
-					line >> cpl_error_tolerance[0];
+					line >>  cpl_error_max_solution[0] >> cpl_error_tolerance[0];
 					break;
 				//
 				case FiniteElement::EVNORM: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
-					for(int i=0; i<DOF_NUMBER_MAX; i++)
-						line >> cpl_error_tolerance[i];
-					break;
-				//
 				case FiniteElement::LMAX: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
-					for(int i=0; i<DOF_NUMBER_MAX; i++)
-						line >> cpl_error_tolerance[i];
+				case FiniteElement::L1NORM: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
+				case FiniteElement::L2NORM: // 1 tolerance for each primary variable (for Deformation, only 1 tolerance required. Applies to x,y,z)
+					{
+						int num_primary_vars;
+						line >> num_primary_vars;
+						for (int i=0; i<num_primary_vars; i++)
+							line >> cpl_error_max_solution[i] >> cpl_error_tolerance[i];
+					}
 					break;
 				//
 				case FiniteElement::BNORM:

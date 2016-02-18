@@ -79,6 +79,7 @@ private:
 	bool external_coupling_exists;
 	int cpl_overall_max_iterations;
 	int cpl_overall_min_iterations;
+	double cpl_overall_tol;
 	int loop_process_number;
 	size_t max_time_steps;
 	//
