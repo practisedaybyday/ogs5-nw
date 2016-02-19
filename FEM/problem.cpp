@@ -1347,7 +1347,8 @@ bool Problem::CouplingLoop()
 					std::cout << "======================================================\n";
 					//
 					// Coupling convergence criteria (use loop minimum from a_pcs because this is where the coupled process was called)
-					if(max_inner_error <= 1.0 && inner_index+2 > a_pcs->m_num->cpl_min_iterations) // JT: error is relative to the tolerance.
+					if(   max_inner_error < a_pcs->m_num->cpl_error_tolerance[0]
+					   && inner_index+2 > a_pcs->m_num->cpl_min_iterations) // JT: error is relative to the tolerance.
 						break;
 				}
 				run_flag[cpl_index] = false; // JT: CRUCIAL!!
