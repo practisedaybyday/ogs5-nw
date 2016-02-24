@@ -417,6 +417,10 @@ ErrorMethod convertErrorMethod(const std::string& error_method_string)
 {
 	if (error_method_string.compare("LMAX") == 0)
 		return LMAX;
+	if (error_method_string.compare("L1NORM") == 0)
+		return L1NORM;
+	if (error_method_string.compare("L2NORM") == 0)
+		return L2NORM;
 	if (error_method_string.compare("ENORM") == 0)
 		return ENORM;
 	if (error_method_string.compare("EVNORM") == 0)
