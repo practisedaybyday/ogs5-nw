@@ -99,7 +99,7 @@ public:
 	void ReadElementStress();
 
 	// Access members
-	CFiniteElementVec* GetFEM_Assembler() const {return fem_dm; }
+	CFiniteElementVec* GetFEMAssembler() {return fem_dm; }
 
 private:
 	CFiniteElementVec* fem_dm;

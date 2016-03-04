@@ -12956,7 +12956,7 @@ CRFProcess* PCSGetMass(size_t component_number)
 			// Set initialization function
 			CRFProcessDeformation* dm_pcs = (CRFProcessDeformation*) this;
 			dm_pcs->Initialization();
-			if (!dm_pcs->GetFEM_Assembler())
+			if (!dm_pcs->GetFEMAssembler())
 				succeed = false;
 		}
 		else                      // Initialize FEM calculator

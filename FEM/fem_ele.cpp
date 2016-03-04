@@ -110,12 +110,18 @@ CElement::CElement(int CoordFlag, const int order)
 //  Destructor of class Element
 CElement::~CElement()
 {
-	delete  [] Jacobian;
-	delete  [] invJacobian;
-	delete  [] shapefct;
-	delete  [] shapefctHQ;
-	delete  [] dshapefct;
-	delete  [] dshapefctHQ;
+	if (Jacobian)
+		delete  [] Jacobian;
+	if (invJacobian)
+		delete  [] invJacobian;
+	if (shapefct)
+		delete  [] shapefct;
+	if (shapefctHQ)
+		delete  [] shapefctHQ;
+	if (dshapefct)
+		delete  [] dshapefct;
+	if (dshapefctHQ)
+		delete  [] dshapefctHQ;
 	Jacobian = NULL;
 	shapefct = NULL;
 	dshapefct = NULL;
@@ -663,13 +669,15 @@ void CElement::UnitCoordinates(double* realXYZ)
 	for(size_t i = 0; i < ele_dim; i++)
 		realXYZ[i] = unit[i];
 }
+
 /***************************************************************************
 
    08/2005     WW        Prism element
  **************************************************************************/
-void CElement::SetGaussPoint(const int gp, int& gp_r, int& gp_s, int& gp_t)
+void CElement::SetGaussPoint(const MshElemType::type elem_type, 
+	                         const int gp, int& gp_r, int& gp_s, int& gp_t)
 {
-	switch(MeshElement->GetElementType())
+	switch(elem_type)
 	{
 	case MshElemType::LINE:               // Line
 		gp_r = gp;
@@ -975,6 +983,23 @@ void CElement::ComputeShapefct(const int order)
 		ShapeFunction(shapefct, unit);
 	else if(order == 2)
 		ShapeFunctionHQ(shapefctHQ, unit);
+}
+
+
+void CElement::ComputeShapefct(const int order, double shape_fucntion[])
+{
+	if(order == 1)
+		ShapeFunction(shape_fucntion, unit);
+	else if(order == 2)
+		ShapeFunctionHQ(shape_fucntion, unit);
+}
+
+void CElement::ComputeGradShapefctLocal(const int order, double grad_shape_fucntion[])
+{
+	if(order == 1)
+		GradShapeFunction(grad_shape_fucntion, unit);
+	else if(order == 2)
+		GradShapeFunctionHQ(grad_shape_fucntion, unit);
 }
 
 /***************************************************************************

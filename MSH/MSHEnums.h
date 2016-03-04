@@ -24,7 +24,8 @@ struct MshElemType
 		TETRAHEDRON = 5,
 		PRISM = 6,
 		PYRAMID = 7,
-		INVALID = -1
+		INVALID = -1,
+		LAST = PYRAMID
 	};
 };
 

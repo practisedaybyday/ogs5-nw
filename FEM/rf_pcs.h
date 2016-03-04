@@ -398,6 +398,9 @@ public:
 		return orig_size;
 	}
 
+	FiniteElement::CFiniteElementStd* getLinearFEMAssembler()
+	{ return fem; }
+
 	//....................................................................
 	// 7-MFP
 	//....................................................................

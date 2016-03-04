@@ -64,19 +64,34 @@ public:
 	virtual ~CElement ();
 	//
 	void ConfigElement(CElem* MElement, bool FaceIntegration = false);
+	void ConfigNumerics(MshElemType::type elem_type);
+
 	void setOrder(const int order);
+	int getOrder() const {return Order;}
 	// Set Gauss point
-	void SetGaussPoint(const int gp, int& gp_r, int& gp_s, int& gp_t);
+	void SetGaussPoint(const MshElemType::type elem_type, const int gp,
+		               int& gp_r, int& gp_s, int& gp_t);
+	// Set Gauss point
+	void SetGaussPoint(const int gp, int& gp_r, int& gp_s, int& gp_t)
+	{
+		SetGaussPoint(MeshElement->GetElementType(), 
+			          gp, gp_r, gp_s, gp_t);
+	}
+
 	// Get Gauss integration information
 	double GetGaussData(int gp, int& gp_r, int& gp_s, int& gp_t);
 
 	// Compute values of shape function at integral point unit
 	void ComputeShapefct(const int order);
+	// Compute values of shape function at integral point unit
+	void ComputeShapefct(const int order, double shape_fucntion[]);
 	// Compute the Jacobian matrix. Return its determinate
 	double computeJacobian(const int order);
 
 	// Compute values of the derivatives of shape function at integral point
 	void ComputeGradShapefct(const int order);
+	// Compute values of the derivatives of shape function at integral point
+	void ComputeGradShapefctLocal(const int order, double grad_shape_fucntion[]);
 	// Compute the real coordinates from known unit coordinates
 	void RealCoordinates(double* realXYZ);
 	// Compute the unit coordinates from known unit coordinates
@@ -232,8 +247,6 @@ protected:
 #endif
 	ExtrapolationMethod::type extrapo_method;
 	ExtrapolationMethod::type GetExtrapoMethod() {return extrapo_method; }
-private:
-	void ConfigNumerics(MshElemType::type elem_type);
 };
 
 /*------------------------------------------------------------------

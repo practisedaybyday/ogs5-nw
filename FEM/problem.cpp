@@ -61,11 +61,15 @@ extern int ReadData(char*, GEOLIB::GEOObjects& geo_obj, std::string& unique_name
 // Finite element
 #include "Output.h"
 #include "fem_ele_std.h"
+#include "fem_ele_vec.h"
 #include "files0.h"                               // GetLineFromFile1
 #include "rf_bc_new.h"
 #include "rf_node.h"
 #include "rf_out_new.h"
 #include "tools.h"
+
+#include "ShapeFunctionPool.h"
+
 //
 #ifdef CHEMAPP
 #include "eqlink.h"
@@ -112,7 +116,7 @@ int myrank;
  ***************************************************************************/
 Problem::Problem (char* filename) :
 	dt0(0.), print_result(true), _geo_obj (new GEOLIB::GEOObjects), _geo_name (filename),
-	cpl_overall_tol(1.e-4)
+	cpl_overall_tol(1.e-4), _line_shapefunction_Pool(NULL), _quadr_shapefunction_Pool(NULL)
 {
 #if defined(USE_MPI) || defined(USE_PETSC)
 	MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
@@ -169,6 +173,9 @@ Problem::Problem (char* filename) :
 		print_result = false;     //OK
 		return;
 	}
+	
+	createShapeFunctionPool(); //WW
+
 	//
 	//JT: Set to true to force node copy at end of loop
 	force_post_node_copy = true;
@@ -544,6 +551,10 @@ Problem::~Problem()
 	delete m_vec_BRNS;
 #endif
 
+	if (_line_shapefunction_Pool)
+		delete _line_shapefunction_Pool;
+	if (_quadr_shapefunction_Pool)
+		delete _quadr_shapefunction_Pool;
 	ScreenMessage("\nYour simulation is terminated normally\n");
 }
 
@@ -3364,6 +3375,97 @@ bool Problem::Check()
 			return false;
 	}
 	return true;
+}
+
+void Problem::createShapeFunctionPool()
+{
+	CRFProcess* pcs_0c_fem = NULL;
+	CRFProcess* pcs_1c_fem = NULL;
+	for (std::size_t i = 0; i < pcs_vector.size(); i++)
+	{
+		CRFProcess* pcs = pcs_vector[i];
+		if (   pcs->getProcessType() == FiniteElement::DEFORMATION
+			|| pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
+			|| pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW
+			|| pcs->getProcessType() == FiniteElement::DEFORMATION_H2)
+		{
+			pcs_1c_fem = pcs;
+		}
+		else
+		{
+			pcs_0c_fem = pcs;
+		}
+	}
+
+	CFiniteElementStd* lin_fem_assembler = NULL;
+	CFiniteElementVec* fem_assembler = NULL;
+	if (pcs_0c_fem)
+		lin_fem_assembler = pcs_0c_fem->getLinearFEMAssembler();
+	if (pcs_1c_fem)
+	{
+		CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs_1c_fem);
+		if (!lin_fem_assembler) 
+			lin_fem_assembler = dm_pcs->getLinearFEMAssembler();
+		fem_assembler = dm_pcs->GetFEMAssembler();
+	}
+
+	// Check element types of meshes
+    std::vector<MshElemType::type> elem_types;
+	elem_types.reserve(MshElemType::LAST);
+	for (std::size_t i=0; i<elem_types.size(); i++)
+		elem_types.emplace_back(MshElemType::INVALID);
+
+	for (std::size_t i=0; i<fem_msh_vector.size(); i++)
+	{
+		MeshLib::CFEMesh* mesh = fem_msh_vector[i];
+		if (mesh->getNumberOfLines() > 0)
+			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+		if (mesh->getNumberOfTris() > 0)
+		{
+			elem_types[MshElemType::TRIANGLE-1] = MshElemType::TRIANGLE;
+			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+		}
+		if (mesh->getNumberOfQuads() > 0)
+		{
+			elem_types[MshElemType::QUAD-1] = MshElemType::QUAD;
+			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+		}
+		if (mesh->getNumberOfHexs() > 0)
+		{
+			elem_types[MshElemType::HEXAHEDRON-1] = MshElemType::HEXAHEDRON;
+			elem_types[MshElemType::QUAD-1] = MshElemType::QUAD;
+			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+		}
+		if (mesh->getNumberOfTets() > 0)
+		{
+			elem_types[MshElemType::TETRAHEDRON-1] = MshElemType::TETRAHEDRON;
+			elem_types[MshElemType::TRIANGLE-1] = MshElemType::TRIANGLE;
+			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+		}
+		if (mesh->getNumberOfPrisms() > 0)
+		{
+			elem_types[MshElemType::PRISM-1] = MshElemType::PRISM;
+			elem_types[MshElemType::QUAD-1] = MshElemType::QUAD;
+			elem_types[MshElemType::TRIANGLE-1] = MshElemType::TRIANGLE;
+			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+		}
+		if (mesh->getNumberOfPyramids() > 0)
+		{
+			elem_types[MshElemType::PYRAMID-1] = MshElemType::PYRAMID;
+			elem_types[MshElemType::QUAD-1] = MshElemType::QUAD;
+			elem_types[MshElemType::TRIANGLE-1] = MshElemType::TRIANGLE;
+			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+		}
+	}
+
+	if (lin_fem_assembler)
+		_line_shapefunction_Pool = 
+		new FiniteElement::ShapeFunctionPool<FiniteElement::CFiniteElementStd>
+		    (elem_types, *lin_fem_assembler);
+	if (fem_assembler)
+		_quadr_shapefunction_Pool = 
+		new FiniteElement::ShapeFunctionPool<FiniteElement::CFiniteElementVec>
+		    (elem_types, *fem_assembler);
 }
 
 /**************************************************************************
