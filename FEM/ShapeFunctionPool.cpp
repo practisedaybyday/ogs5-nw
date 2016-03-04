@@ -1,4 +1,4 @@
-/*! \file ShapeFunctionPool_impl.cpp
+/*! \file ShapeFunctionPool.cpp
      \brief Compute shape functions and their gradients with respect to
 	  the local coodinates, and store the results
 
@@ -8,11 +8,14 @@
 
 #include "ShapeFunctionPool.h"
 
+#include <cassert>     /* assert */
+#include "fem_ele.h"
+
 namespace FiniteElement
 {
-template <typename Quadrature> ShapeFunctionPool<Quadrature>::
-	ShapeFunctionPool(const std::vector<MshElemType::type>& elem_types,
-					  Quadrature& quadrature)
+ShapeFunctionPool::ShapeFunctionPool(
+			const std::vector<MshElemType::type>& elem_types,
+			CElement& quadrature)
 {
 	int num_elem_nodes[2][MshElemType::LAST];
 	int dim_elem[MshElemType::LAST];
@@ -38,6 +41,11 @@ template <typename Quadrature> ShapeFunctionPool<Quadrature>::
 	id = MshElemType::QUAD - 1;
 	num_elem_nodes[0][id] = 4;
 	num_elem_nodes[1][id] = 9;
+	dim_elem[id] = 2;
+
+	id = MshElemType::QUAD8 - 1;
+	num_elem_nodes[0][id] = 4;
+	num_elem_nodes[1][id] = 8;
 	dim_elem[id] = 2;
 
 	id = MshElemType::TRIANGLE - 1;
@@ -81,8 +89,7 @@ template <typename Quadrature> ShapeFunctionPool<Quadrature>::
 	computeQuadratures(elem_types, num_elem_nodes, dim_elem, quadrature);
 }
 
-template <typename Quadrature> ShapeFunctionPool<Quadrature>::
-	~ShapeFunctionPool()
+ShapeFunctionPool::~ShapeFunctionPool()
 {
 	for (std::size_t i=0; i<_shape_fucntion.size(); i++)
 	{
@@ -99,17 +106,17 @@ template <typename Quadrature> ShapeFunctionPool<Quadrature>::
 	}
 }
 
-template <typename Quadrature> void ShapeFunctionPool<Quadrature>::
+void ShapeFunctionPool::
 	computeQuadratures(const std::vector<MshElemType::type>& elem_types,
-                       const int num_elem_nodes[2][MshElemType::LAST],
+	                   const int num_elem_nodes[2][MshElemType::LAST],
 					   const int dim_elem[],
-		               Quadrature& quadrature)
+		               CElement& quadrature)
 {
 	const int order = quadrature.getOrder();
 	for (std::size_t i=0; i<elem_types.size(); i++)
 	{
 		const int type_id = elem_types[i] - 1;
-		quadrature.ConfigNumerics(elem_types[i]);
+		quadrature.ConfigShapefunction(elem_types[i]);
 
 		if (elem_types[type_id] == MshElemType::INVALID)
 			continue;
@@ -134,17 +141,17 @@ template <typename Quadrature> void ShapeFunctionPool<Quadrature>::
 	}
 }
 
-template <typename Quadrature> double const*const ShapeFunctionPool<Quadrature>::
+double* ShapeFunctionPool::
 getShapeFunctionValues(const MshElemType::type elem_type) const
 {
-	std::assert(_shape_fucntion[elem_type-1]);
+	assert(_shape_fucntion[elem_type-1]);
 	return _shape_fucntion[elem_type-1];
 }
 
-template <typename Quadrature> double const*const ShapeFunctionPool<Quadrature>::
+double* ShapeFunctionPool::
 getGradShapeFunctionValues(const MshElemType::type elem_type) const
 {
-	std::assert(_shape_fucntion[elem_type-1]);
+	assert(_shape_fucntion[elem_type-1]);
 	return _grad_shape_fucntion[elem_type-1];
 }
 

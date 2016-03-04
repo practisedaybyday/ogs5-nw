@@ -3433,7 +3433,7 @@ void Problem::createShapeFunctionPool()
 		if (mesh->getNumberOfHexs() > 0)
 		{
 			elem_types[MshElemType::HEXAHEDRON-1] = MshElemType::HEXAHEDRON;
-			elem_types[MshElemType::QUAD-1] = MshElemType::QUAD;
+			elem_types[MshElemType::QUAD8-1] = MshElemType::QUAD8;
 			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
 		}
 		if (mesh->getNumberOfTets() > 0)
@@ -3445,14 +3445,14 @@ void Problem::createShapeFunctionPool()
 		if (mesh->getNumberOfPrisms() > 0)
 		{
 			elem_types[MshElemType::PRISM-1] = MshElemType::PRISM;
-			elem_types[MshElemType::QUAD-1] = MshElemType::QUAD;
+			elem_types[MshElemType::QUAD8-1] = MshElemType::QUAD8;
 			elem_types[MshElemType::TRIANGLE-1] = MshElemType::TRIANGLE;
 			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
 		}
 		if (mesh->getNumberOfPyramids() > 0)
 		{
 			elem_types[MshElemType::PYRAMID-1] = MshElemType::PYRAMID;
-			elem_types[MshElemType::QUAD-1] = MshElemType::QUAD;
+			elem_types[MshElemType::QUAD8-1] = MshElemType::QUAD8;
 			elem_types[MshElemType::TRIANGLE-1] = MshElemType::TRIANGLE;
 			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
 		}
@@ -3460,12 +3460,37 @@ void Problem::createShapeFunctionPool()
 
 	if (lin_fem_assembler)
 		_line_shapefunction_Pool = 
-		new FiniteElement::ShapeFunctionPool<FiniteElement::CFiniteElementStd>
-		    (elem_types, *lin_fem_assembler);
+		new FiniteElement::ShapeFunctionPool(elem_types, *lin_fem_assembler);
 	if (fem_assembler)
 		_quadr_shapefunction_Pool = 
-		new FiniteElement::ShapeFunctionPool<FiniteElement::CFiniteElementVec>
-		    (elem_types, *fem_assembler);
+		new FiniteElement::ShapeFunctionPool(elem_types, *fem_assembler);
+
+	// Set ShapeFunctionPool
+	for (std::size_t i = 0; i < pcs_vector.size(); i++)
+	{
+		CRFProcess* pcs = pcs_vector[i];
+		if ( pcs->getProcessType() == FiniteElement::DEFORMATION )
+		{
+			CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs);
+			CFiniteElementVec* fem_assem_h = dm_pcs->GetFEMAssembler();
+			fem_assem_h->setShapeFunctionPool(_quadr_shapefunction_Pool);
+		}
+		if (   pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
+			|| pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW
+			|| pcs->getProcessType() == FiniteElement::DEFORMATION_H2)
+		{
+			CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs);
+			CFiniteElementVec* fem_assem_h = dm_pcs->GetFEMAssembler();
+			fem_assem_h->setShapeFunctionPool(_quadr_shapefunction_Pool);
+			CFiniteElementStd* fem_assem = dm_pcs->getLinearFEMAssembler();
+			fem_assem->setShapeFunctionPool(_line_shapefunction_Pool);
+		}
+		else
+		{
+			CFiniteElementStd* fem_assem = pcs->getLinearFEMAssembler();
+			fem_assem->setShapeFunctionPool(_line_shapefunction_Pool);
+		}
+	}
 }
 
 /**************************************************************************

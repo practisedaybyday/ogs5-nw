@@ -14,7 +14,7 @@ class CRFProcess;
 
 namespace FiniteElement
 {
-template <typename Quadrature> class ShapeFunctionPool;
+class ShapeFunctionPool;
 }
 namespace FiniteElement
 {
@@ -100,10 +100,8 @@ private:
 
 	/// Caches for shape functions and their derivatives with respect to
 	/// the local coordinates.
-	FiniteElement::ShapeFunctionPool<FiniteElement::CFiniteElementStd>* 
-		                                       _line_shapefunction_Pool;
-	FiniteElement::ShapeFunctionPool<FiniteElement::CFiniteElementVec>*
-		                                      _quadr_shapefunction_Pool;
+	FiniteElement::ShapeFunctionPool* _line_shapefunction_Pool;
+	FiniteElement::ShapeFunctionPool* _quadr_shapefunction_Pool;
 
 	// Print flag
 	bool print_result;

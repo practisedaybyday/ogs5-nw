@@ -57,6 +57,8 @@ using MeshLib::CNode;
 using MeshLib::CEdge;
 using MeshLib::CElem;
 
+class ShapeFunctionPool;
+
 class CElement
 {
 public:
@@ -64,8 +66,6 @@ public:
 	virtual ~CElement ();
 	//
 	void ConfigElement(CElem* MElement, bool FaceIntegration = false);
-	void ConfigNumerics(MshElemType::type elem_type);
-
 	void setOrder(const int order);
 	int getOrder() const {return Order;}
 	// Set Gauss point
@@ -78,18 +78,26 @@ public:
 			          gp, gp_r, gp_s, gp_t);
 	}
 
+	void setShapeFunctionPool(ShapeFunctionPool* const
+						      shape_function_pool)
+	{
+		_shape_function_pool_ptr = shape_function_pool;
+	};
+
 	// Get Gauss integration information
 	double GetGaussData(int gp, int& gp_r, int& gp_s, int& gp_t);
 
+	void ConfigShapefunction(MshElemType::type elem_type);
+
 	// Compute values of shape function at integral point unit
-	void ComputeShapefct(const int order);
+	void ComputeShapefct(const int gp, const int order);
 	// Compute values of shape function at integral point unit
 	void ComputeShapefct(const int order, double shape_fucntion[]);
 	// Compute the Jacobian matrix. Return its determinate
-	double computeJacobian(const int order);
+	void computeJacobian(const int gp, const int order);
 
 	// Compute values of the derivatives of shape function at integral point
-	void ComputeGradShapefct(const int order);
+	void ComputeGradShapefct(const int gp, const int order);
 	// Compute values of the derivatives of shape function at integral point
 	void ComputeGradShapefctLocal(const int order, double grad_shape_fucntion[]);
 	// Compute the real coordinates from known unit coordinates
@@ -97,7 +105,7 @@ public:
 	// Compute the unit coordinates from known unit coordinates
 	void UnitCoordinates(double* realXYZ);
 	// For axisymmetrical problems
-	void CalculateRadius();
+	void CalculateRadius(const int gp);
 	//
 	void setUnitCoordinates(double* u)
 	{ for(int i = 0; i < 3; i++) unit[i] = u[i]; }
@@ -181,14 +189,29 @@ protected:
 	int nGauss;                           // Number of sample points for Gauss integration
 	int gp;                               // Gauss point index.
 	mutable double unit[4];               // Local coordintes
+
 	double* Jacobian;                     // Jacobian matrix
-	double* invJacobian;                  // Inverse of Jacobian matrix.
-	double* shapefct;                     // Results of linear shape function at Gauss points
-	double* shapefctHQ;                   // Results of quadratic shape function at Gauss points
-	// Results of derivatives of linear shape function at Gauss points
+	/// Pointer to _inv_jacobian_all for a integation point
+	double* invJacobian;
+	/// Pointer to _shape_function_pool_ptr for a integation point
+	double* shapefct;
+	/// Pointer to _shape_function_pool_ptr for a integation point
+	double* shapefctHQ;
+	/// Pointer to _dshapefct_all for a integation point
 	double* dshapefct;
-	// Results of derivatives of quadratic shape function at Gauss points
+	/// Pointer to _dshapefctHQ_all for a integation point
 	double* dshapefctHQ;
+
+	/// The values of the determinants of the inversed Jacobians
+	/// of all integation points. 
+	double* _determinants_all;
+	/// The values of the inversed Jacobians of all integation points. 
+	double* _inv_jacobian_all;
+	/// The values of derivatives of linear shape functions all integation points.
+	double* _dshapefct_all;
+	/// The values of derivatives of quadratic shape functions all integation points.
+	double* _dshapefctHQ_all;
+
 	//
 	double x1buff[3],x2buff[3],x3buff[3],x4buff[3];
 	// Pointer to the linear interpolation function
@@ -199,6 +222,13 @@ protected:
 	VoidFuncDXCDX GradShapeFunction;
 	// Pointer to the gradient of Quadratic interpolation function
 	VoidFuncDXCDX GradShapeFunctionHQ;
+
+	ShapeFunctionPool* _shape_function_pool_ptr;
+	double* _shape_function_result_ptr;
+	double* _grad_shape_function_result_ptr;
+
+	void getShapeFunctionPtr(MshElemType::type elem_type);
+
 	// Coupling
 	int NodeShift[5];
 	// Displacement column indeces in the node value table

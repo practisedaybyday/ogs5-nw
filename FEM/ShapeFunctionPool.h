@@ -15,18 +15,20 @@
 
 namespace FiniteElement
 {
-template <typename Quadrature> class ShapeFunctionPool
+class CElement;
+
+class ShapeFunctionPool
 {
 public:
 	ShapeFunctionPool(const std::vector<MshElemType::type>& elem_types,
-		              Quadrature& quadrature);
+		              CElement& quadrature);
 	~ShapeFunctionPool();
 
 	/// Get shape function values of an element type
-	double const*const getShapeFunctionValues(const MshElemType::type elem_type) const;
+	double* getShapeFunctionValues(const MshElemType::type elem_type) const;
 
 	/// Get the values of the gradient of shape function of an element type
-	double const*const getGradShapeFunctionValues(const MshElemType::type elem_type) const;
+	double* getGradShapeFunctionValues(const MshElemType::type elem_type) const;
 
 private:
 	/// Results of shape functions of all integration points.
@@ -38,10 +40,8 @@ private:
 	void computeQuadratures(const std::vector<MshElemType::type>& elem_types,
 		                    const int num_elem_nodes[2][MshElemType::LAST],
 							const int dim_elem[],
-		                    Quadrature& quadrature);
+		                    CElement& quadrature);
 };
 } // end namespace
-
-#include "ShapeFunctionPool_impl.h"
 
 #endif

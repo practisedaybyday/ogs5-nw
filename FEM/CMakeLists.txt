@@ -87,7 +87,7 @@ set( SOURCES
 	DistributionTools.h
 	DistributionTools.cpp
 	ShapeFunctionPool.h
-	ShapeFunctionPool_impl.h
+	ShapeFunctionPool.cpp
 )
 
 IF(OGS_FEM_PETSC)
