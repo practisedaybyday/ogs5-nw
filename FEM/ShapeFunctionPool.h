@@ -20,8 +20,13 @@ class CElement;
 class ShapeFunctionPool
 {
 public:
+	/*!
+		\param elem_types          All involved element types.
+		\param quadrature          Numerical integration object.
+		\param num_sample_gs_pnts  Number of sample Gauss points.
+	*/
 	ShapeFunctionPool(const std::vector<MshElemType::type>& elem_types,
-		              CElement& quadrature);
+		              CElement& quadrature, const int num_sample_gs_pnts);
 	~ShapeFunctionPool();
 
 	/// Get shape function values of an element type
@@ -40,7 +45,8 @@ private:
 	void computeQuadratures(const std::vector<MshElemType::type>& elem_types,
 		                    const int num_elem_nodes[2][MshElemType::LAST],
 							const int dim_elem[],
-		                    CElement& quadrature);
+		                    CElement& quadrature,
+							const int num_sample_gs_pnts);
 };
 } // end namespace
 

@@ -570,6 +570,7 @@ void CRFProcess::InterpolateTempGP(CRFProcess* m_pcs, std::string name)
 	double T_ele;
 	double GP[3];
 	static double Node_T[8];
+	static double dbuff0[20];
 	int index1;                           //idxp,idxcp,idxS;
 	CMediumProperties* m_mmp = NULL;
 	MeshLib::CElem* elem = NULL;
@@ -597,14 +598,16 @@ void CRFProcess::InterpolateTempGP(CRFProcess* m_pcs, std::string name)
 
 		m_pcs->fem->ConfigElement(elem);
 		m_pcs->fem->setUnitCoordinates(GP);
-		m_pcs->fem->ComputeShapefct(1); // Linear
+		m_pcs->fem->ComputeShapefct(1, dbuff0); // Linear interpolation function
+
+		T_ele = 0.;
 		for(j = 0; j < elem->GetVertexNumber(); j++)
 		{
 			enode = elem->GetNodeIndex(j);
 			//m_pcs_mmp
-			Node_T[j] =  m_pcs->GetNodeValue(enode,m_pcs->GetNodeValueIndex(name) + 1);
+			T_ele +=  dbuff0[j] * m_pcs->GetNodeValue(enode,m_pcs->GetNodeValueIndex(name) + 1);
 		}
-		T_ele = fem->interpolate(Node_T);
+
 		m_pcs->SetElementValue(i,index1,T_ele);
 		m_pcs->SetElementValue(i,index1 - 1,T_ele);
 	}
@@ -613,12 +616,12 @@ void CRFProcess::InterpolateTempGP(CRFProcess* m_pcs, std::string name)
 //MX
 void CRFProcess::ExtropolateTempGP(CRFProcess* m_pcs, std::string name)
 {
-	MshElemType::type EleType;
+//	MshElemType::type EleType;
 	int j;
 	size_t i;
 	long enode, nn;
-	long group;
-	double GP[3];
+//	long group;
+//	double GP[3];
 	static double Node_T[8];
 	double T_sum = 0.0;
 	int index1, index_nod;                //idxp,idxcp,idxS;
@@ -637,6 +640,7 @@ void CRFProcess::ExtropolateTempGP(CRFProcess* m_pcs, std::string name)
 		m_pcs->GetAssembler();
 
 		// Activated Element
+		/*
 		group = elem->GetPatchIndex();
 		m_mmp = mmp_vector[group];
 		m_mmp->m_pcs = m_pcs;     //m_pcs_mmp
@@ -654,6 +658,7 @@ void CRFProcess::ExtropolateTempGP(CRFProcess* m_pcs, std::string name)
 		m_pcs->fem->ConfigElement(elem);
 		m_pcs->fem->setUnitCoordinates(GP);
 		m_pcs->fem->ComputeShapefct(1); // Linear
+		*/
 		for(j = 0; j < elem->GetVertexNumber(); j++)
 		{
 			enode = elem->GetNodeIndex(j);

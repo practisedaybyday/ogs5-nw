@@ -79,9 +79,12 @@ public:
 	}
 
 	void setShapeFunctionPool(ShapeFunctionPool* const
-						      shape_function_pool)
+						      lin_shape_fct_pool, 
+							  ShapeFunctionPool* const
+						      quad_shape_fct_pool)
 	{
-		_shape_function_pool_ptr = shape_function_pool;
+		_shape_function_pool_ptr[0] = lin_shape_fct_pool;
+		_shape_function_pool_ptr[1] = quad_shape_fct_pool;
 	};
 
 	// Get Gauss integration information
@@ -89,13 +92,20 @@ public:
 
 	void ConfigShapefunction(MshElemType::type elem_type);
 
-	// Compute values of shape function at integral point unit
-	void ComputeShapefct(const int gp, const int order);
+	// Get the values of shape function at integral point gp
+	void getShapefunctValues(const int gp, const int order) const;
+	// Get the pointer to the shape function array in the shape function pool
+	void getShapeFunctionPtr(const MshElemType::type elem_type, const int order);
 	// Compute values of shape function at integral point unit
 	void ComputeShapefct(const int order, double shape_fucntion[]);
 	// Compute the Jacobian matrix. Return its determinate
-	void computeJacobian(const int gp, const int order);
+	void computeJacobian(const int gp, const int order,
+		                 const bool inverse = true);
 
+	// Get the values of the gradient of the shape function at integral point gp
+	void getGradShapefunctValues(const int gp, const int order) const;
+	// Compute values of the derivatives of shape function at integral point
+	void ComputeGradShapefctInElement();
 	// Compute values of the derivatives of shape function at integral point
 	void ComputeGradShapefct(const int gp, const int order);
 	// Compute values of the derivatives of shape function at integral point
@@ -194,13 +204,13 @@ protected:
 	/// Pointer to _inv_jacobian_all for a integation point
 	double* invJacobian;
 	/// Pointer to _shape_function_pool_ptr for a integation point
-	double* shapefct;
+	mutable double* shapefct;
 	/// Pointer to _shape_function_pool_ptr for a integation point
-	double* shapefctHQ;
+	mutable double* shapefctHQ;
 	/// Pointer to _dshapefct_all for a integation point
-	double* dshapefct;
+	mutable double* dshapefct;
 	/// Pointer to _dshapefctHQ_all for a integation point
-	double* dshapefctHQ;
+	mutable double* dshapefctHQ;
 
 	/// The values of the determinants of the inversed Jacobians
 	/// of all integation points. 
@@ -223,11 +233,21 @@ protected:
 	// Pointer to the gradient of Quadratic interpolation function
 	VoidFuncDXCDX GradShapeFunctionHQ;
 
-	ShapeFunctionPool* _shape_function_pool_ptr;
-	double* _shape_function_result_ptr;
-	double* _grad_shape_function_result_ptr;
+	/// Pointers to ShapeFunctionPool for two orders.
+	/// [0]: Linear, [1] Quadratic
+	ShapeFunctionPool* _shape_function_pool_ptr[2];
+	/// Pointers to the start element of the shape function result array
+	//  for the present element for two orders.
+	/// [0]: Linear, [1] Quadratic
+	double* _shape_function_result_ptr[2];
+	/// Pointers to the start element of the gradient (local) shape function
+	//  result array for the present element for two orders.
+	double* _grad_shape_function_result_ptr[2];
 
-	void getShapeFunctionPtr(MshElemType::type elem_type);
+	void getGradShapeFunctionPtr(const MshElemType::type elem_type, const int order);
+
+	// Get the values of the local gradient of shape functions at integral point gp
+	void getLocalGradShapefunctValues(const int gp, const int order);
 
 	// Coupling
 	int NodeShift[5];
@@ -259,12 +279,12 @@ protected:
 	double Radius;                        // For axisymmetrical problems
 	long nodes[20];
 	long eqs_number[20];
-	double dShapefct[27];                 // Auxullary
 	double X[20];
 	double Y[20];
 	double Z[20];
 	double node_val[20];
 	double dbuff[20];
+	double dbuff0[27];                 // Auxullary
 
 #if defined(USE_PETSC) // || defined(other parallel libs)//03~04.3012. WW
   int act_nodes; //> activated nodes 

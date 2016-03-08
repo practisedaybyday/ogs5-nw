@@ -3400,20 +3400,27 @@ void Problem::createShapeFunctionPool()
 	CFiniteElementStd* lin_fem_assembler = NULL;
 	CFiniteElementVec* fem_assembler = NULL;
 	if (pcs_0c_fem)
+	{
 		lin_fem_assembler = pcs_0c_fem->getLinearFEMAssembler();
+		lin_fem_assembler->setOrder(1);
+	}
 	if (pcs_1c_fem)
 	{
 		CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs_1c_fem);
 		if (!lin_fem_assembler) 
 			lin_fem_assembler = dm_pcs->getLinearFEMAssembler();
 		fem_assembler = dm_pcs->GetFEMAssembler();
+		fem_assembler->setOrder(2);
 	}
 
 	// Check element types of meshes
     std::vector<MshElemType::type> elem_types;
 	elem_types.reserve(MshElemType::LAST);
-	for (std::size_t i=0; i<elem_types.size(); i++)
-		elem_types.emplace_back(MshElemType::INVALID);
+ 
+	for (std::size_t i=0; i<static_cast<std::size_t>(MshElemType::LAST); i++)
+	{
+		elem_types.push_back(MshElemType::INVALID);
+	}
 
 	for (std::size_t i=0; i<fem_msh_vector.size(); i++)
 	{
@@ -3458,12 +3465,17 @@ void Problem::createShapeFunctionPool()
 		}
 	}
 
+
+	const int num_gauss_sample_pnts
+		     = num_vector[0]->getNumIntegrationSamplePoints();
 	if (lin_fem_assembler)
 		_line_shapefunction_Pool = 
-		new FiniteElement::ShapeFunctionPool(elem_types, *lin_fem_assembler);
+		new FiniteElement::ShapeFunctionPool(elem_types, *lin_fem_assembler,
+		                                     num_gauss_sample_pnts);
 	if (fem_assembler)
 		_quadr_shapefunction_Pool = 
-		new FiniteElement::ShapeFunctionPool(elem_types, *fem_assembler);
+		new FiniteElement::ShapeFunctionPool(elem_types, *fem_assembler,
+		                                     num_gauss_sample_pnts);
 
 	// Set ShapeFunctionPool
 	for (std::size_t i = 0; i < pcs_vector.size(); i++)
@@ -3473,7 +3485,8 @@ void Problem::createShapeFunctionPool()
 		{
 			CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs);
 			CFiniteElementVec* fem_assem_h = dm_pcs->GetFEMAssembler();
-			fem_assem_h->setShapeFunctionPool(_quadr_shapefunction_Pool);
+			fem_assem_h->setShapeFunctionPool(_quadr_shapefunction_Pool,
+				                              _quadr_shapefunction_Pool);
 		}
 		if (   pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
 			|| pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW
@@ -3481,14 +3494,15 @@ void Problem::createShapeFunctionPool()
 		{
 			CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs);
 			CFiniteElementVec* fem_assem_h = dm_pcs->GetFEMAssembler();
-			fem_assem_h->setShapeFunctionPool(_quadr_shapefunction_Pool);
+			fem_assem_h->setShapeFunctionPool(_line_shapefunction_Pool, _quadr_shapefunction_Pool);
 			CFiniteElementStd* fem_assem = dm_pcs->getLinearFEMAssembler();
-			fem_assem->setShapeFunctionPool(_line_shapefunction_Pool);
+			fem_assem->setShapeFunctionPool(_line_shapefunction_Pool, _line_shapefunction_Pool);
 		}
 		else
 		{
 			CFiniteElementStd* fem_assem = pcs->getLinearFEMAssembler();
-			fem_assem->setShapeFunctionPool(_line_shapefunction_Pool);
+			fem_assem->setShapeFunctionPool(_line_shapefunction_Pool,
+				                            _line_shapefunction_Pool);
 		}
 	}
 }

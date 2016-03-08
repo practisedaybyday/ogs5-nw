@@ -3737,7 +3737,7 @@ double CMediumProperties::Porosity(long number,double theta)
 			nidx1 = nidx0 + 1;
 			if (mode == 0)            // Gauss point values
 			{
-				assem->ComputeShapefct(1);
+				//assem->ComputeShapefct(1);
 				primary_variable[i] = (1. - theta) * assem->interpolate(nidx0,
 				                                                        pcs_temp) +
 				                      theta* assem->interpolate(nidx1, pcs_temp);
@@ -3941,7 +3941,7 @@ double CMediumProperties::Porosity(CElement* assem)
 		nidx1 = nidx0 + 1;
 		if(mode == 0)             // Gauss point values
 		{
-			assem->ComputeShapefct(1);
+			//assem->ComputeShapefct(1);
 			primary_variable[i] = (1. - theta) * assem->interpolate(nidx0,pcs_temp)
 			                      + theta* assem->interpolate(nidx1,pcs_temp);
 		}

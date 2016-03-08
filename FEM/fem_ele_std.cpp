@@ -1491,7 +1491,7 @@ double CFiniteElementStd::CalCoefMass()
 	double drho_dp_rho=0.0;                  // drho/dp * 1/rho 
 
 	if(pcs->m_num->ele_mass_lumping)
-		ComputeShapefct(1);
+		getShapefunctValues(gp, 1);
 	switch(PcsType)
 	{
 	default:
@@ -1737,7 +1737,7 @@ double CFiniteElementStd::CalCoefMass2(int dof_index)
 	dens_arg[1] = 293.15;
 	//
 	if(pcs->m_num->ele_mass_lumping)
-		ComputeShapefct(1);
+		getShapefunctValues(gp, 1);
 	// CB_merge_0513 in case of het K, store local K in permeability_tensor
 	double *tensor = NULL;
 	tensor = MediaProp->PermeabilityTensor(Index);
@@ -1866,7 +1866,7 @@ double CFiniteElementStd::CalCoefMassPSGLOBAL(int dof_index)
 	//WW  diffusion = true;
 	//
 	if(pcs->m_num->ele_mass_lumping)
-		ComputeShapefct(1);
+		getShapefunctValues(gp, 1);
 	switch(dof_index)
 	{
 	case 0:
@@ -2079,7 +2079,7 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 	int nidx1;
 	int Index = MeshElement->GetIndex();
 	double k_rel;
-	ComputeShapefct(1);                   //  12.3.2007 WW
+	getShapefunctValues(ip, 1);                   //  12.3.2007 WW
 	//double variables[3];                  //OK4709
 	int tr_phase = 0;                     // SB, BG
 	double perm_effstress=1.;//AS:08.2012
@@ -2520,7 +2520,6 @@ void CFiniteElementStd::CalCoefLaplaceMultiphase(int phase, int /*ip*/)
 	// static double Hn[9],z[9];
 	int Index = MeshElement->GetIndex();
 	double k_rel;
-	ComputeShapefct(1);                   //  12.3.2007 WW
 
 	// For nodal value interpolation
 	//======================================================================
@@ -2601,7 +2600,7 @@ void CFiniteElementStd::CalCoefLaplace2(bool Gravity,  int dof_index)
 	tensor = MediaProp->PermeabilityTensor(Index);
 	MediaProp->local_permeability = tensor[0];
 	//
-	ComputeShapefct(1);                   //  12.3.2007 WW
+	getShapefunctValues(gp, 1);                   //  12.3.2007 WW
 
 	//WX: 11.05.2010
 	PG = interpolate(NodalVal1);
@@ -2782,7 +2781,7 @@ void CFiniteElementStd::CalCoefLaplacePSGLOBAL(bool Gravity,  int dof_index)
 
 	int Index = MeshElement->GetIndex();
 	//
-	ComputeShapefct(1);                   //  12.3.2007 WW
+	getShapefunctValues(gp, 1);                   //  12.3.2007 WW
 	//======================================================================
 	for(size_t i = 0; i < dim * dim; i++)
 		mat[i] = 0.0;
@@ -3478,9 +3477,9 @@ void CFiniteElementStd::CalcMass()
 		//  if((upwind_method == 1) || (upwind_method == 2))
 		//      UpwindUnitCoord(phase, gp, indice); // phase 0
 		//}
-		ComputeShapefct(1);       // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 		if (pcs->m_num->ele_supg_method > 0) //NW
-			ComputeGradShapefct(1);  // Linear interpolation function
+			getGradShapefunctValues(gp, 1);  // Linear interpolation function
 
 		// Material
 		mat_fac = CalCoefMass();
@@ -3856,7 +3855,8 @@ void CFiniteElementStd::UpwindAlphaMass(double* alpha)
 
 	//SetGaussPoint(point, gp_r, gp_s, gp_t);
 	// velocity transformation a,b,c -> r,s,t
-	computeJacobian(1);                   // order 1
+	const bool inverse = false;
+	computeJacobian(0, 1, inverse);                   // order 1
 	// multiply velocity vector with Jacobian matrix
 	// Jacobi*v-->v_rst
 	for (size_t i = 0; i < ele_dim; i++)
@@ -4158,7 +4158,7 @@ void CFiniteElementStd::CalcMass2()
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute geometry
-		ComputeShapefct(1);       // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 		for(in = 0; in < dof_n; in++)
 			for(jn = 0; jn < dof_n; jn++)
 			{
@@ -4216,7 +4216,7 @@ void CFiniteElementStd::CalcMassPSGLOBAL()
       //---------------------------------------------------------
       fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
       // Compute geometry
-      ComputeShapefct(1);       // Linear interpolation function
+      getShapefunctValues(gp, 1);       // Linear interpolation function
       for(in = 0; in < dof_n; in++)
 	for(jn = 0; jn < dof_n; jn++)
 	  {
@@ -4465,7 +4465,7 @@ void CFiniteElementStd::CalcStorage()
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute geometry
-		ComputeShapefct(1);       // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 		// Material
 		mat_fac = CalCoefStorage();
 		// GEO factor
@@ -4519,7 +4519,7 @@ void CFiniteElementStd::CalcContent()
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute geometry
-		ComputeShapefct(1);       // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 		// Material
 		mat_fac = CalCoefContent();
 		// GEO factor
@@ -4581,7 +4581,7 @@ void CFiniteElementStd::CalcLaplace()
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		//---------------------------------------------------------
 		// Compute geometry
-		ComputeGradShapefct(1);   // Linear interpolation function
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
 		// Calculate mass matrix
 #ifndef OGS_ONLY_TH
 		double water_depth = 1.0;
@@ -4707,7 +4707,7 @@ void CFiniteElementStd:: Assemble_DualTransfer()
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Material
-		ComputeShapefct(1);       // Moved here by NW 25.10.2011
+		getShapefunctValues(gp, 1);       // Moved here by NW 25.10.2011
         mat_fac = CalcCoefDualTransfer();
         mat_fac *= fkt;
 		// Calculate mass matrix
@@ -4875,8 +4875,8 @@ void CFiniteElementStd::CalcAdvection()
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		//---------------------------------------------------------
 		// Compute geometry
-		ComputeGradShapefct(1);   // Linear interpolation function....dNJ-1....var dshapefct
-		ComputeShapefct(1);       // Linear interpolation N....var shapefct
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function....dNJ-1....var dshapefct
+		getShapefunctValues(gp, 1);       // Linear interpolation N....var shapefct
 		//---------------------------------------------------------
         mat_factor = CalCoefAdvection(); // this should be called after calculating shape functions. NW
 		//Velocity
@@ -5027,12 +5027,12 @@ void CFiniteElementStd::CalcRHS_by_ThermalDiffusion()
 
 		//---------------------------------------------------------
 		// Compute geometry
-		ComputeGradShapefct(1);   // Linear interpolation function
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
 		//---------------------------------------------------------
 		// Material
 		//	  if(FluidProp->diffusion_model=273)
 		//    {
-		ComputeShapefct(1);
+		getShapefunctValues(gp, 1);
 		double rhow = FluidProp->Density();
 		PG = interpolate(NodalVal1);
 		TG = interpolate(NodalValC) + T_KILVIN_ZERO;
@@ -5184,9 +5184,9 @@ void CFiniteElementStd::CalcStrainCoupling(int phase)
 		{
 			fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 
-			ComputeGradShapefct(2);
-			ComputeShapefct(1);
-			ComputeShapefct(2);
+			getGradShapefunctValues(gp, 2);
+			getShapefunctValues(gp, 1);
+			getShapefunctValues(gp, 2);
 			//
 			fkt *= CalCoefStrainCouping(phase);
 			for(size_t i = 0; i < dim; i++ )
@@ -5277,8 +5277,8 @@ void CFiniteElementStd::Assemble_Gravity()
 		//---------------------------------------------------------
 		// Compute geometry
 		//---------------------------------------------------------
-		ComputeGradShapefct(1);   // Linear interpolation function
-		ComputeShapefct(1);       // Moved from CalCoefLaplace(). 12.3.2007 WW
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Moved from CalCoefLaplace(). 12.3.2007 WW
 		// Material
 		rho = FluidProp->Density();
 		if(gravity_constant < MKleinsteZahl) // HEAD version
@@ -5412,8 +5412,8 @@ void CFiniteElementStd::Assemble_Gravity_Multiphase()
 		//---------------------------------------------------------
 		// Compute geometry
 		//---------------------------------------------------------
-		ComputeGradShapefct(1);   // Linear interpolation function
-		ComputeShapefct(1);       // Moved from CalCoefLaplace(). 12.3.2007 WW
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Moved from CalCoefLaplace(). 12.3.2007 WW
 		// Material
 		// PCH
 		// Pressure equation is the sum of all pressures for all the phases
@@ -5539,7 +5539,7 @@ void CFiniteElementStd::Assemble_Gravity_Multiphase()
    //---------------------------------------------------------
    // Compute geometry
    //---------------------------------------------------------
-   ComputeGradShapefct(1); // Linear interpolation function
+   getGradShapefunctValues(gp, 1); // Linear interpolation function
 
    // Material
    CalCoefLaplace(true);
@@ -5697,8 +5697,8 @@ void CFiniteElementStd::Cal_Velocity()
 		//---------------------------------------------------------
 		// Compute geometry
 		//---------------------------------------------------------
-		ComputeGradShapefct(1);   // Linear interpolation function
-		ComputeShapefct(1);       // Moved from CalCoefLaplace(). 12.3.2007 WW
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Moved from CalCoefLaplace(). 12.3.2007 WW
 		                          //WW/CB
 		if((PcsType == T) && (pcs->pcs_type_number == 1))
 			flag_cpl_pcs = true;
@@ -5886,7 +5886,7 @@ void CFiniteElementStd::Cal_GP_Velocity_FM(int* i_ind)
 		// GetGaussData(gp, gp_r, gp_s, gp_t);
 		//WW fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute the shape function for interpolation within element
-		ComputeShapefct(1);
+		getShapefunctValues(gp, 1);
 
 		// Save former gp velocity
 		//WW  for(i_dim=0;i_dim<dim;i_dim++) vel_g_old[i_dim] = gp_ele->Velocity(i_dim,gp);
@@ -5952,7 +5952,6 @@ double CFiniteElementStd::InterpolatePropertyToGausspoint(int GPIndex,
 	// GetGaussData(gp, gp_r, gp_s, gp_t);
 	//fkt = GetGaussData(GPIndex, gp_r, gp_s, gp_t);
 	// Compute the shape function for interpolation within element
-	//ComputeShapefct(1);
 	//read density from nodes
 	for(i = 0; i < nnodes; i++)
 		NodalVal_BG[i] = m_pcs->GetNodeValue(nodes[i], Variableindex);
@@ -5999,7 +5998,7 @@ string CFiniteElementStd::Cal_GP_Velocity_DuMux(int* i_ind, CRFProcess* m_pcs, i
 			// GetGaussData(gp, gp_r, gp_s, gp_t);
 			//WW fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 			// Compute the shape function for interpolation within element
-			ComputeShapefct(1);
+			getShapefunctValues(gp, 1);
 
 			// Save former gp velocity
 			for(size_t i_dim = 0; i_dim < dim; i_dim++)
@@ -6150,7 +6149,7 @@ void CFiniteElementStd::Cal_Velocity_2()
 	//  Compute Jacobian matrix and its determination
 	//---------------------------------------------------------
 
-	GetGaussData(gp, gp_r, gp_s, gp_t);
+	//GetGaussData(gp, gp_r, gp_s, gp_t);
 	// calculate the velocity at the element center of gravity
 	if(PcsType == T)
 		SetCenterGP();            // CB 11/2007
@@ -6158,8 +6157,8 @@ void CFiniteElementStd::Cal_Velocity_2()
 	//---------------------------------------------------------
 	// Compute geometry
 	//---------------------------------------------------------
-	ComputeGradShapefct(1);               // Linear interpolation function
-	ComputeShapefct(1);                   // Moved from CalCoefLaplace(). 12.3.2007 WW
+	getGradShapefunctValues(gp, 1);               // Linear interpolation function
+	getShapefunctValues(gp, 1);                   // Moved from CalCoefLaplace(). 12.3.2007 WW
 	if((PcsType == T) && (pcs->pcs_type_number == 1)) //WW/CB
 		flag_cpl_pcs = true;
 	// Material
@@ -6273,7 +6272,7 @@ double CFiniteElementStd::Get_Element_Velocity(int Index, CRFProcess* /*m_pcs*/,
 		//}
 
 		// Compute the shape function for interpolation within element
-		ComputeShapefct(1);
+		getShapefunctValues(gp, 1);
 
 		// Get gp velocity
 		if (phase_index == 0)
@@ -6390,8 +6389,8 @@ void CFiniteElementStd::AssembleRHS(int dimension)
 		//---------------------------------------------------------
 		// Compute geometry
 		//---------------------------------------------------------
-		ComputeGradShapefct(1);   // Linear interpolation function
-		ComputeShapefct(1);       // Linear interpolation function
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 
 		// Material
 		CalCoefLaplace(true);
@@ -7947,7 +7946,7 @@ void CFiniteElementStd::AssembleMassMatrix(int option)
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 
 		// Compute geometry
-		ComputeShapefct(1);       // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 
 		if(option == 0)           // The consistent method
 
@@ -8510,6 +8509,7 @@ void CFiniteElementStd::ExtropolateGauss(CRFProcess* m_pcs, const int idof)
 	for(i = 0; i < nnodes; i++)
 		dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
 	//
+
 	gp_r = gp_s = gp_t = gp = 0;
 	ElementValue* gp_ele = ele_gp_value[Index];
 	//
@@ -8560,6 +8560,7 @@ void CFiniteElementStd::ExtropolateGauss(CRFProcess* m_pcs, const int idof)
 			avgEV1 = CalcAverageGaussPointValues(NodalVal2);
 	}
 
+	ConfigShapefunction(ElementType);
 	for(i = 0; i < nnodes; i++)
 	{
 		EV = EV1 = varx = 0.0;
@@ -8569,9 +8570,9 @@ void CFiniteElementStd::ExtropolateGauss(CRFProcess* m_pcs, const int idof)
 		{
 			SetExtropoGaussPoints(i);
 			//
-			ComputeShapefct(1); // Linear interpolation function
+			ComputeShapefct(1, dbuff0); // Linear interpolation function
 			for(j = i_s; j < i_e; j++)
-				EV += NodalVal1[j] * shapefct[j - ish];
+				EV += NodalVal1[j] * dbuff0[j - ish];
 		}
 		else if (this->GetExtrapoMethod() == ExtrapolationMethod::EXTRAPO_AVERAGE)
 			//average
@@ -8590,7 +8591,7 @@ void CFiniteElementStd::ExtropolateGauss(CRFProcess* m_pcs, const int idof)
 			// Calculate values at nodes
 			if (this->GetExtrapoMethod() == ExtrapolationMethod::EXTRAPO_LINEAR)
 				for(j = i_s; j < i_e; j++)
-					EV1 += NodalVal2[j] * shapefct[j - ish];
+					EV1 += NodalVal2[j] * dbuff0[j - ish];
 			else if (this->GetExtrapoMethod() == ExtrapolationMethod::EXTRAPO_AVERAGE)
 				//average
 				EV1 = avgEV1;
@@ -8659,12 +8660,13 @@ void CFiniteElementStd::CalcSatution()
 		// pressure
 		NodalVal0[i] = sign * pcs->GetNodeValue(nodes[i],idx_cp);
 	}
+
 	//
 	gp_r = gp_s = gp_t = gp = 0;
-	//
+	// for PG = interpolate(NodalVal0);
+	getShapeFunctionPtr(MeshElement->GetElementType(), 1);
 	for(gp = 0; gp < nGaussPoints; gp++)
 	{
-		SetGaussPoint(gp, gp_r, gp_s, gp_t);
 		if(ElementType == MshElemType::QUAD || ElementType == MshElemType::HEXAHEDRON)
 		{
 			i = GetLocalIndex(gp_r, gp_s, gp_t);
@@ -8676,7 +8678,7 @@ void CFiniteElementStd::CalcSatution()
 		//
 		if(i > nnodes)
 			continue;
-		ComputeShapefct(1);
+		getShapefunctValues(gp, 1);
 		//
         // CB_merge_0513 in case of het K, store local K 
         MediaProp->local_permeability  = tens[0];
@@ -8705,6 +8707,8 @@ void CFiniteElementStd::CalcSatution()
 	if (this->GetExtrapoMethod() == ExtrapolationMethod::EXTRAPO_AVERAGE)
 		// average
 		avgSat = CalcAverageGaussPointValues(NodalVal_Sat);
+
+	ConfigShapefunction(ElementType);
 	for(i = 0; i < nnodes; i++)
 	{
 		eS = 0.0;
@@ -8713,9 +8717,9 @@ void CFiniteElementStd::CalcSatution()
 		{
 			SetExtropoGaussPoints(i);
 			//
-			ComputeShapefct(1); // Linear interpolation function
+			ComputeShapefct(1, dbuff0); // Linear interpolation function
 			for(j = i_s; j < i_e; j++)
-				eS += NodalVal_Sat[j] * shapefct[j - ish];
+				eS += NodalVal_Sat[j] * dbuff0[j - ish];
 		}
 		else if (this->GetExtrapoMethod() == ExtrapolationMethod::EXTRAPO_AVERAGE)
 			eS = avgSat;
@@ -8789,7 +8793,8 @@ void CFiniteElementStd::CalcNodeMatParatemer()
 		dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
 	//
 	gp_r = gp_s = gp_t = gp = 0;
-	//
+	// for PG = interpolate(NodalVal0);
+	getShapeFunctionPtr(MeshElement->GetElementType(), 1);
 	for(gp = 0; gp < nGaussPoints; gp++)
 	{
 		SetGaussPoint(gp, gp_r, gp_s, gp_t);
@@ -8804,7 +8809,8 @@ void CFiniteElementStd::CalcNodeMatParatemer()
 		//
 		if(i > nnodes)
 			continue;
-		ComputeShapefct(1);
+
+		getShapefunctValues(gp, 1);
 		PG = interpolate(NodalVal1);
 		//
 		if((pcs->additioanl2ndvar_print > 0) && (pcs->additioanl2ndvar_print < 3))
@@ -8863,6 +8869,8 @@ void CFiniteElementStd::CalcNodeMatParatemer()
 		if(pcs->additioanl2ndvar_print > 1)
 			avgVal = CalcAverageGaussPointValues(NodalVal0);
 	}
+
+	ConfigShapefunction(ElementType);
 	for(i = 0; i < nnodes; i++)
 	{
 		// Calculate values at nodes
@@ -8870,7 +8878,7 @@ void CFiniteElementStd::CalcNodeMatParatemer()
 		{
 			SetExtropoGaussPoints(i);
 			//
-			ComputeShapefct(1); // Linear interpolation function
+			ComputeShapefct(1, dbuff0); // Linear interpolation function
 		}
 		if((pcs->additioanl2ndvar_print > 0) && (pcs->additioanl2ndvar_print < 3))
 		{
@@ -8878,10 +8886,10 @@ void CFiniteElementStd::CalcNodeMatParatemer()
 			if (this->GetExtrapoMethod() == ExtrapolationMethod::EXTRAPO_LINEAR)
 				for(int j = i_s; j < i_e; j++)
 				{
-					w[0] += NodalVal2[j] * shapefct[j - ish];
-					w[1] += NodalVal3[j] * shapefct[j - ish];
+					w[0] += NodalVal2[j] * dbuff0[j - ish];
+					w[1] += NodalVal3[j] * dbuff0[j - ish];
 					if(dim == 3)
-						w[2] += NodalVal4[j] * shapefct[j - ish];
+						w[2] += NodalVal4[j] * dbuff0[j - ish];
 				}
 			else if (this->GetExtrapoMethod() == ExtrapolationMethod::EXTRAPO_AVERAGE)
 				for(size_t k = 0; k < dim; k++)
@@ -9063,7 +9071,6 @@ double CFiniteElementStd::CalCoef_RHS_T_MPhase(int dof_index)
 	double val = 0.0, D_gw = 0.0, D_ga = 0.0;
 	double expfactor = 0.0,dens_arg[3];
 	int Index = MeshElement->GetIndex();
-	ComputeShapefct(1);
 	//======================================================================
 	switch(dof_index)
 	{
@@ -9148,7 +9155,6 @@ double CFiniteElementStd::CalCoef_RHS_T_PSGlobal(int dof_index)
 	//OK411 double expfactor=0.0;
 	double P,T;
 	int Index = MeshElement->GetIndex();
-	ComputeShapefct(1);
 	//======================================================================
 	switch(dof_index)
 	{
@@ -9192,7 +9198,6 @@ void CFiniteElementStd::CalCoef_RHS_Pc(int dof_index)
 
 	int Index = MeshElement->GetIndex();
 	//
-	ComputeShapefct(1);                   //  12.3.2007 WW
 	//======================================================================
 	for(size_t i = 0; i < dim * dim; i++)
 		mat[i] = 0.0;
@@ -9227,7 +9232,6 @@ void CFiniteElementStd::CalCoef_RHS_Pc(int dof_index)
 **************************************************************************/
 double CFiniteElementStd::CalCoef_RHS_PSGLOBAL(int dof_index)
 {
-	ComputeShapefct(1);
 	for(size_t i = 0; i < dim * dim; i++)
 		mat[i] = 0.0;
 
@@ -9349,8 +9353,8 @@ void CFiniteElementStd::Assemble_RHS_T_MPhaseFlow()
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute geometry
-		ComputeGradShapefct(1);   // Linear interpolation function
-		ComputeShapefct(1);       // Linear interpolation function
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 		for(ii = 0; ii < dof_n; ii++)
 		{
 			// Material
@@ -9426,8 +9430,8 @@ void CFiniteElementStd::Assemble_RHS_T_PSGlobal()
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute geometry
-		ComputeGradShapefct(1);   // Linear interpolation function
-		ComputeShapefct(1);       // Linear interpolation function
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 
 		for(ii = 0; ii < dof_n; ii++)
 		{
@@ -9502,8 +9506,8 @@ void CFiniteElementStd::Assemble_RHS_Pc()
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute geometry
-		ComputeGradShapefct(1);   // Linear interpolation function
-		ComputeShapefct(1);       // Linear interpolation function
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 		// grad Pc
 		for(ii = 0; ii < dof_n; ii++)
 		{
@@ -9584,7 +9588,7 @@ void CFiniteElementStd::Assemble_RHS_LIQUIDFLOW()
         //---------------------------------------------------------
         // Compute geometry
         //---------------------------------------------------------
-        ComputeShapefct(1);       // Linear interpolation function
+        getShapefunctValues(gp, 1);       // Linear interpolation function
         //---------------------------------------------------------
         //  Evaluate variables
         //---------------------------------------------------------
@@ -9695,9 +9699,9 @@ void CFiniteElementStd::Assemble_RHS_M()
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute geometry
-		ComputeShapefct(1);       // Linear interpolation function
-		//ComputeShapefct(2);
-		ComputeGradShapefct(2);
+		getShapefunctValues(gp, 1);       // Linear interpolation function
+
+		getGradShapefunctValues(gp, 2);
 		grad_du = 0.0;
 		//axi
 		for (i = 0; i < nnodesHQ; i++)
@@ -9779,8 +9783,8 @@ void CFiniteElementStd::Assemble_RHS_AIR_FLOW()
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute geometry
-		ComputeGradShapefct(1);   // Linear interpolation function
-		ComputeShapefct(1);       // Linear interpolation function
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 		ElementValue* gp_ele = ele_gp_value[Index];
 
 		for(ii = 0; ii < dof_n; ii++)
@@ -9880,8 +9884,8 @@ void CFiniteElementStd::Assemble_RHS_HEAT_TRANSPORT()
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute geometry
-		ComputeGradShapefct(1);   // Linear interpolation function
-		ComputeShapefct(1);       // Linear interpolation function
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 		ElementValue* gp_ele = ele_gp_value[Index];
 
 		for(ii = 0; ii < dof_n; ii++)
@@ -9948,7 +9952,6 @@ double CFiniteElementStd::CalCoef_RHS_HEAT_TRANSPORT2(int dof_index)
 	// TF unused variable - comment fix compile warning
 	//      double Tc=647.096;
 	double H_vap = 0.0,dens_arg[3];
-	ComputeShapefct(1);
 	PG = interpolate(NodalValC1);
 	PG2 = interpolate(NodalVal_p2);
 	TG = interpolate(NodalVal1) + T_KILVIN_ZERO;
@@ -10032,8 +10035,8 @@ void CFiniteElementStd::Assemble_RHS_HEAT_TRANSPORT2()
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute geometry
-		ComputeGradShapefct(1);   // Linear interpolation function
-		ComputeShapefct(1);       // Linear interpolation function
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 		// TF unused variable - comment fix compile warning
 		//         ElementValue* gp_ele = ele_gp_value[Index];
 		int dof_n = 2;
@@ -10635,7 +10638,7 @@ void CFiniteElementStd::CalcEnergyNorm_Dual(double &err_norm0,
 		mat_fac = CalcCoefDualTransfer();
 		mat_fac *= fkt;
 		// Material
-		ComputeShapefct(1);       // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
 		// Calculate mass matrix
 		for (i = 0; i < nnodes; i++)
 			for (j = 0; j < nnodes; j++)
@@ -10828,9 +10831,14 @@ void CFiniteElementStd::AssembleTHEquation(bool updateA, bool updateRHS)
 		const double vol = MeshElement->GetVolume() * MeshElement->GetFluxArea();
 		// Center of the reference element
 		SetCenterGP();
-		ComputeShapefct(1);
-		const double gp_p1 = interpolate(NodalVal_p1);
-		const double gp_T1 = interpolate(NodalVal_T1);
+		ComputeShapefct(1, dbuff0); // Linear interpolation function
+		double gp_p1 = 0.;
+		double gp_T1 = 0.;
+		for (int i=0; i<MeshElement->GetNodesNumber(false); i++)
+		{
+			gp_p1 += dbuff0[i] * NodalVal_p1[i];
+			gp_T1 += dbuff0[i] * NodalVal_T1[i];
+		}
 		double var[3] = {};
 		var[0] = gp_p1;
 		var[1] = gp_T1;
@@ -10872,8 +10880,8 @@ void CFiniteElementStd::AssembleTHEquation(bool updateA, bool updateRHS)
 		//---------------------------------------------------------
 		const double fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		// Compute geometry
-		ComputeShapefct(1);
-		ComputeGradShapefct(1);
+		getShapefunctValues(gp, 1);
+		getGradShapefunctValues(gp, 1);
 		double const*const c_shapefct = shapefct;
         double const*const c_dshapefct = dshapefct;
 

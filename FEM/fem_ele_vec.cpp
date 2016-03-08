@@ -1745,8 +1745,8 @@ void CFiniteElementVec::ComputeMass()
 		//  Compute Jacobian matrix and its determinate
 		//---------------------------------------------------------
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
-        ComputeShapefct(1); //need for density calculation
-        ComputeShapefct(2);       // Quadratic interpolation function
+        getShapefunctValues(gp, 1); //need for density calculation
+        getShapefunctValues(gp, 2);       // Quadratic interpolation function
 		fkt *= CalDensity();
 
 		for(i = 0; i < nnodesHQ; i++)
@@ -2194,8 +2194,8 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 		//---------------------------------------------------------
 		// Compute geometry
 		//---------------------------------------------------------
-		ComputeGradShapefct(2);
-		ComputeShapefct(2);
+		getGradShapefunctValues(gp, 2);
+		getShapefunctValues(gp, 2);
 		if(smat->Youngs_mode == 2) //WW/UJG. 22.01.2009
 		{
 			smat->CalcYoungs_SVV(CalcStrain_v());
@@ -2211,7 +2211,7 @@ void CFiniteElementVec::LocalAssembly_continuum(const int update)
 		if(update)
 			RecordGuassStrain(gp, gp_r, gp_s, gp_t);
 		if( F_Flag || T_Flag)
-			ComputeShapefct(1);  // Linear order interpolation function
+			getShapefunctValues(gp, 1);  // Linear order interpolation function
 		//---------------------------------------------------------
 		// Material properties (Integration of the stress)
 		//---------------------------------------------------------
@@ -2587,6 +2587,7 @@ void CFiniteElementVec::ExtropolateGuassStrain()
 		avgESyz = CalcAverageGaussPointValues(Syz);
 	}
 
+	ConfigShapefunction(ElementType);
 	for(i = 0; i < nnodes; i++)
 	{
 		ESxx = ESyy = ESzz = ESxy = ESxz = ESyz = 0.0;
@@ -2595,19 +2596,19 @@ void CFiniteElementVec::ExtropolateGuassStrain()
 		if (this->GetExtrapoMethod() == ExtrapolationMethod::EXTRAPO_LINEAR)
 		{
 			SetExtropoGaussPoints(i);
-			ComputeShapefct(1); // Linear interpolation function
+			ComputeShapefct(1, dbuff0); // Linear interpolation function
 			//
 			for(j = i_s; j < i_e; j++)
 			{
 				k = j - ish;
-				ESxx += Sxx[j] * shapefct[k];
-				ESyy += Syy[j] * shapefct[k];
-				ESxy += Sxy[j] * shapefct[k];
-				ESzz += Szz[j] * shapefct[k];
+				ESxx += Sxx[j] * dbuff0[k];
+				ESyy += Syy[j] * dbuff0[k];
+				ESxy += Sxy[j] * dbuff0[k];
+				ESzz += Szz[j] * dbuff0[k];
 				if(ele_dim == 3)
 				{
-					ESxz += Sxz[j] * shapefct[k];
-					ESyz += Syz[j] * shapefct[k];
+					ESxz += Sxz[j] * dbuff0[k];
+					ESyz += Syz[j] * dbuff0[k];
 				}
 			}
 		}
@@ -2742,6 +2743,7 @@ void CFiniteElementVec::ExtropolateGuassStress()
 		avgPls = CalcAverageGaussPointValues(pstr);
 	}
 
+	ConfigShapefunction(ElementType);
 	for(i = 0; i < nnodes; i++)
 	{
 		ESxx = ESyy = ESzz = ESxy = ESxz = ESyz = Pls = 0.0;
@@ -2752,20 +2754,20 @@ void CFiniteElementVec::ExtropolateGuassStress()
 			//
 			SetExtropoGaussPoints(i);
 			//
-			ComputeShapefct(1); // Linear interpolation function
+			ComputeShapefct(1, dbuff0); // Linear interpolation function
 			//
 			for(j = i_s; j < i_e; j++)
 			{
 				k = j - ish;
-				ESxx += Sxx[j] * shapefct[k];
-				ESyy += Syy[j] * shapefct[k];
-				ESxy += Sxy[j] * shapefct[k];
-				ESzz += Szz[j] * shapefct[k];
-				Pls += pstr[j] * shapefct[k];
+				ESxx += Sxx[j] * dbuff0[k];
+				ESyy += Syy[j] * dbuff0[k];
+				ESxy += Sxy[j] * dbuff0[k];
+				ESzz += Szz[j] * dbuff0[k];
+				Pls += pstr[j] * dbuff0[k];
 				if(ele_dim == 3)
 				{
-					ESxz += Sxz[j] * shapefct[k];
-					ESyz += Syz[j] * shapefct[k];
+					ESxz += Sxz[j] * dbuff0[k];
+					ESyz += Syz[j] * dbuff0[k];
 				}
 			}
 		}
@@ -3439,13 +3441,13 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 		//---------------------------------------------------------
 		// Compute geometry
 		//---------------------------------------------------------
-		ComputeGradShapefct(2);
+		getGradShapefunctValues(gp, 2);
 		ComputeStrain();
 		// Compute Ge, regular part of enhanced strain-jump matrix
 		ComputeRESM();
 		if(T_Flag)                // Contribution by thermal expansion
 		{
-			ComputeShapefct(1); // Linear interpolation function
+			getShapefunctValues(gp, 1); // Linear interpolation function
 			Tem = 0.0;
 			for(int i = 0; i < nnodes; i++)
 				Tem += shapefct[i] * Temp[i];
@@ -3533,14 +3535,14 @@ void CFiniteElementVec::LocalAssembly_EnhancedStrain(const int update)
 		//---------------------------------------------------------
 		// Compute geometry
 		//---------------------------------------------------------
-		ComputeGradShapefct(2);
+		getGradShapefunctValues(gp, 2);
 		ComputeStrain();
 		// Compute Ge
 		ComputeRESM();
 
 		if(T_Flag)                // Contribution by thermal expansion
 		{
-			ComputeShapefct(1); // Linear interpolation function
+			getShapefunctValues(gp, 1); // Linear interpolation function
 			Tem = 0.0;
 			for(int i = 0; i < nnodes; i++)
 				Tem += shapefct[i] * Temp[i];

@@ -75,8 +75,8 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 		//  Compute Jacobian matrix and its determinate
 		//---------------------------------------------------------
 		fkt = relax * GetGaussData(gp, gp_r, gp_s, gp_t);
-		ComputeShapefct(1);       // Linear interpolation function
-		ComputeGradShapefct(1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
 
 		//poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 		tensor = MediaProp->PermeabilityTensor(Index);
@@ -179,7 +179,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 		{
 			// setOrder(2);
 			// GetGaussData(gp, gp_r, gp_s, gp_t);
-			// ComputeGradShapefct(2);
+			// getGradShapefunctValues(gp, 2);
 			// setOrder(1);
 
 			/// if deformation is coupled
@@ -261,8 +261,8 @@ void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
 		//  Compute Jacobian matrix and its determinate
 		//---------------------------------------------------------
 		fkt = relax * GetGaussData(gp, gp_r, gp_s, gp_t);
-		ComputeShapefct(1);       // Linear interpolation function
-		ComputeGradShapefct(1);   // Linear interpolation function
+		getShapefunctValues(gp, 1);       // Linear interpolation function
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function
 
 		tensor = MediaProp->PermeabilityTensor(Index);
 		PG = -interpolate(NodalVal1);
@@ -315,7 +315,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
 		{
 			// setOrder(2);
 			// GetGaussData(gp, gp_r, gp_s, gp_t);
-			// ComputeGradShapefct(2);
+			// getGradShapefunctValues(gp, 2);
 			// setOrder(1);
 
 			/// if deformation is coupled

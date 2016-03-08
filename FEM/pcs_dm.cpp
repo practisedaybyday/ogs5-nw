@@ -665,12 +665,14 @@ void CRFProcessDeformation::InitGauss(void)
 			NGS = fem_dm->GetNumGaussPoints();
 			//WW NGSS = fem_dm->GetNumGaussSamples();
 
+			fem_dm->getShapeFunctionPtr(elem->GetElementType(), 1);
+
 			for (gp = 0; gp < NGS; gp++)
 			{
 				if(ccounter > 0)
 				{
 					fem_dm->GetGaussData(gp, gp_r, gp_s, gp_t);
-					fem_dm->ComputeShapefct(2);
+					fem_dm->getShapefunctValues(gp, 2);
 					fem_dm->RealCoordinates(xyz);
 					for (j = 0; j < NS; j++)
 					{
@@ -736,10 +738,12 @@ void CRFProcessDeformation::InitGauss(void)
 			int gp_r, gp_s, gp_t;
 			double z = 0.0;
 			double xyz[3];
+			fem_dm->getShapeFunctionPtr(elem->GetElementType(), 1);
+
 			for (gp = 0; gp < NGS; gp++)
 			{
 				fem_dm->GetGaussData(gp, gp_r, gp_s, gp_t);
-				fem_dm->ComputeShapefct(2);
+				fem_dm->getShapefunctValues(gp, 2);
 				fem_dm->RealCoordinates(xyz);
 				/*
 				   //THM2
@@ -1415,6 +1419,7 @@ double CRFProcessDeformation::CaclMaxiumLoadRatio(void)
 			SMat = fem_dm->smat;
 			SMat->axisymmetry = m_msh->isAxisymmetry();
 			PModel = SMat->Plasticity_type;
+
 			//
 			switch(PModel)
 			{
@@ -1465,8 +1470,7 @@ double CRFProcessDeformation::CaclMaxiumLoadRatio(void)
 					"CRFProcessDeformation::CaclMaxiumLoadRatio MshElemType not handled"
 					          << std::endl;
 				}
-				fem_dm->computeJacobian(2);
-				fem_dm->ComputeGradShapefct(2);
+				fem_dm->getGradShapefunctValues(gp, 2);
 				fem_dm->ComputeStrain();
 
 				dstrain = fem_dm->GetStrain();
