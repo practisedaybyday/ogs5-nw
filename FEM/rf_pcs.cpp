@@ -7291,9 +7291,9 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 						if (active_elements[in]) count_active++;
 					}
 					if (m_msh->GetMaxElementDim()==2 && m_st->getGeoType()==GEOLIB::POLYLINE)
-						m_st->EdgeIntegration(m_msh, nodes_vector, node_value, &active_elements);
+						m_st->EdgeIntegration(this, nodes_vector, node_value, &active_elements);
 					else if (m_msh->GetMaxElementDim()==3 && m_st->getGeoType()==GEOLIB::SURFACE)
-						m_st->FaceIntegration(m_msh, nodes_vector, node_value, &active_elements);
+						m_st->FaceIntegration(this, nodes_vector, node_value, &active_elements);
 				}
 
 				//update ST values

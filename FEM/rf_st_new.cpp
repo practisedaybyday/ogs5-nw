@@ -53,7 +53,9 @@
 // BaseLib
 #include "FileTools.h"
 
-//#include "pcs_dm.h"
+#include "fem_ele_std.h"
+#include "fem_ele_vec.h"
+#include "pcs_dm.h"
 
 // FEM
 //#include "problem.h"
@@ -1155,14 +1157,14 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 			if (st->getGeoType()==GEOLIB::POINT && st->is_transfer_bc) {
 				node_value[0] *= st->transfer_h_values[0];
 			} else if (m_msh->GetMaxElementDim() == 2 && st->getGeoType()==GEOLIB::POLYLINE) {
-				st->EdgeIntegration(m_msh, nodes_vector, node_value);
+				st->EdgeIntegration(m_pcs, nodes_vector, node_value);
 			} else if (m_msh->GetMaxElementDim() == 3 && st->getGeoType()==GEOLIB::SURFACE) {
-				st->FaceIntegration(m_msh, nodes_vector, node_value);
+				st->FaceIntegration(m_pcs, nodes_vector, node_value);
 			} else if (st->getGeoType()==GEOLIB::GEODOMAIN
 					|| (m_msh->GetMaxElementDim() == 1 && st->getGeoType()==GEOLIB::POLYLINE)
 					|| (m_msh->GetMaxElementDim() == 2 && st->getGeoType()==GEOLIB::SURFACE)
 					) {
-				st->DomainIntegration(m_msh, nodes_vector, node_value);
+				st->DomainIntegration(m_pcs, nodes_vector, node_value);
 			}
 		}
 		else if (st->getProcessDistributionType() == FiniteElement::CRITICALDEPTH
@@ -1172,7 +1174,7 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 			st->node_value_vectorArea.resize(nodes_vector.size());
 			for (size_t i = 0; i < st->node_value_vectorArea.size(); i++)
 				st->node_value_vectorArea[i] = 1.0; //Element width !
-			st->EdgeIntegration(m_msh, nodes_vector, st->node_value_vectorArea);
+			st->EdgeIntegration(m_pcs, nodes_vector, st->node_value_vectorArea);
 		}
 
 
@@ -1420,7 +1422,7 @@ void CSourceTermGroup::Set(CRFProcess* m_pcs, const int ShiftInNodeVector,
 //	e_edges.resize(0);
 //}
 
-void CSourceTerm::EdgeIntegration(CFEMesh* msh, const std::vector<long>&nodes_on_ply,
+void CSourceTerm::EdgeIntegration(CRFProcess* pcs, const std::vector<long>&nodes_on_ply,
 std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
 {
    long i, j, k, l;
@@ -1442,11 +1444,6 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
       Const = true;
 #endif
 
-   int Axisymm = 1;                               // ani-axisymmetry
-   if (msh->isAxisymmetry())
-      Axisymm = -1;                               // Axisymmetry is true
-   CElement* fem = new CElement(Axisymm * msh->GetCoordinateFlag());
-
    //CFEMesh* msh = m_pcs->m_msh;
    //CFEMesh* msh;  // JOD
    //msh = FEMGet(pcs_type_name);
@@ -1454,6 +1451,7 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
    CEdge* edge = NULL;
    CNode* node = NULL;
 
+   CFEMesh* msh = pcs->m_msh; 
    int nSize = (long) msh->nod_vector.size();
    this_number_of_nodes = (long) nodes_on_ply.size();
    std::vector<long> G2L(nSize);
@@ -1514,6 +1512,20 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
       }
    }
 
+   CElement* fem_assembler = dynamic_cast<CElement*>(pcs->getLinearFEMAssembler());
+   if (!fem_assembler)
+   {
+	   if (   pcs->getProcessType() == FiniteElement::DEFORMATION
+		   || pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
+           || pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW
+           || pcs->getProcessType() == FiniteElement::DEFORMATION_H2) 
+       {
+           process::CRFProcessDeformation* dm_pcs = dynamic_cast<process::CRFProcessDeformation*>(pcs);
+           fem_assembler = dynamic_cast<CElement*>(dm_pcs->GetFEMAssembler());
+       }
+   }
+   fem_assembler->setOrder(msh->getOrder()+1);
+
    for (i = 0; i < (long) msh->edge_vector.size(); i++)
    {
       edge = msh->edge_vector[i];
@@ -1544,14 +1556,13 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
       if (!active_elements)
          st_boundary_elements.push_back(edge_ele);
 
-      fem->setOrder(msh->getOrder() + 1);
-      fem->ConfigElement(edge_ele, true);
+      fem_assembler->ConfigElement(edge_ele, true);
       double nodesFVal[3] = {};
       nodesFVal[0] = node_value_vector[G2L[e_nodes[0]->GetIndex()]];
       nodesFVal[1] = node_value_vector[G2L[e_nodes[1]->GetIndex()]];
       if (msh->getOrder())
           nodesFVal[2] = node_value_vector[G2L[e_nodes[2]->GetIndex()]];
-      fem->FaceIntegration(nodesFVal);
+      fem_assembler->FaceIntegration(nodesFVal);
       if (this->is_transfer_bc) {
           for (k = 0; k < (signed)nen; k++)
              nodesFVal[k] *= this->transfer_h_values[edge_ele->GetPatchIndex()];
@@ -1660,8 +1671,6 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
    G2L.clear();
    e_nodes.resize(0);
    e_edges.resize(0);
-
-   delete fem;
 }
 
 
@@ -1675,9 +1684,10 @@ std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
  01/2010 NW improvement of efficiency to search faces
  **************************************************************************/
 
-void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_on_sfc,
+void CSourceTerm::FaceIntegration(CRFProcess* pcs, std::vector<long> const &nodes_on_sfc,
 		std::vector<double>&node_value_vector, std::vector<bool>* active_elements)
 {
+   CFEMesh* msh = pcs->m_msh;
    if (!msh)
    {
       std::cout
@@ -1792,13 +1802,21 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
    }
 #endif
 
-   int Axisymm = 1;                               // ani-axisymmetry
-   //CFEMesh* msh = m_pcs->m_msh;
-   if (msh->isAxisymmetry())
-      Axisymm = -1;                               // Axisymmetry is true
+   CElement* fem_assembler = dynamic_cast<CElement*>(pcs->getLinearFEMAssembler());
+   if (!fem_assembler)
+   {
+	   if (   pcs->getProcessType() == FiniteElement::DEFORMATION
+		   || pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
+           || pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW
+           || pcs->getProcessType() == FiniteElement::DEFORMATION_H2) 
+       {
+           process::CRFProcessDeformation* dm_pcs = dynamic_cast<process::CRFProcessDeformation*>(pcs);
+           fem_assembler = dynamic_cast<CElement*>(dm_pcs->GetFEMAssembler());
+       }
+   }
+   fem_assembler->setOrder(msh->getOrder()+1);
+
    CElem* elem = NULL;
-//   CElem* face = new CElem(1);
-   CElement* fem = new CElement(Axisymm * msh->GetCoordinateFlag());
    CNode* e_node = NULL;
    CElem* e_nei = NULL;
    //vec<CNode*> e_nodes(20);
@@ -1967,9 +1985,8 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
          face->ComputeVolume();
          if (active_elements==NULL)
             st_boundary_elements.push_back(face);
-         fem->setOrder(msh->getOrder() ? 2 : 1);
-         fem->ConfigElement(face, true);
-         fem->FaceIntegration(nodesFVal);
+         fem_assembler->ConfigElement(face, true);
+         fem_assembler->FaceIntegration(nodesFVal);
          if (this->is_transfer_bc) {
             for (k = 0; k < nfn; k++)
                nodesFVal[k] *= this->transfer_h_values[face->GetPatchIndex()];
@@ -2044,7 +2061,6 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
 
    NVal.clear();
    G2L.clear();
-   delete fem;
    //delete face;
 }
 
@@ -2057,18 +2073,14 @@ void CSourceTerm::FaceIntegration(CFEMesh* msh, std::vector<long> const &nodes_o
  08/2005 WW Re-Implementation
  09/2010 TF re structured some things
  **************************************************************************/
-void CSourceTerm::DomainIntegration(CFEMesh* msh, const std::vector<long>&nodes_in_dom,
+void CSourceTerm::DomainIntegration(CRFProcess* pcs, const std::vector<long>&nodes_in_dom,
 std::vector<double>&node_value_vector) const
 {
    double nodesFVal[8];
-
-   int Axisymm = 1;                               // ani-axisymmetry
-   if (msh->isAxisymmetry())
-      Axisymm = -1;                               // Axisymmetry is true
-   CElement* fem = new CElement(Axisymm * msh->GetCoordinateFlag());
    vec<CNode*> e_nodes(20);
-
    const size_t this_number_of_nodes (nodes_in_dom.size());
+
+   CFEMesh* msh = pcs->m_msh;
    const size_t nSize (msh->nod_vector.size());
    std::vector<long> G2L(nSize);
    std::vector<double> NVal(this_number_of_nodes);
@@ -2084,6 +2096,20 @@ std::vector<double>&node_value_vector) const
       NVal[i] = 0.0;
       G2L[nodes_in_dom[i]] = i;
    }
+
+   CElement* fem_assembler = dynamic_cast<CElement*>(pcs->getLinearFEMAssembler());
+   if (!fem_assembler)
+   {
+	   if (   pcs->getProcessType() == FiniteElement::DEFORMATION
+		   || pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
+           || pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW
+           || pcs->getProcessType() == FiniteElement::DEFORMATION_H2) 
+       {
+           process::CRFProcessDeformation* dm_pcs = dynamic_cast<process::CRFProcessDeformation*>(pcs);
+           fem_assembler = dynamic_cast<CElement*>(dm_pcs->GetFEMAssembler());
+       }
+   }
+   fem_assembler->setOrder(msh->getOrder()+1);
 
    size_t count = 0;
    for (size_t i = 0; i < msh->ele_vector.size(); i++)
@@ -2111,9 +2137,8 @@ std::vector<double>&node_value_vector) const
       }
       for (size_t j = 0; j < nn; j++)
          nodesFVal[j] = node_value_vector[G2L[e_nodes[j]->GetIndex()]];
-      fem->ConfigElement(elem, true);
-      fem->setOrder(msh->getOrder() ? 2 : 1);
-      fem->DomainIntegration(nodesFVal);
+      fem_assembler->ConfigElement(elem, true);
+      fem_assembler->DomainIntegration(nodesFVal);
       for (size_t j = 0; j < nn; j++)
          NVal[G2L[e_nodes[j]->GetIndex()]] += nodesFVal[j];
    }
@@ -2126,7 +2151,6 @@ std::vector<double>&node_value_vector) const
    NVal.clear();
    G2L.clear();
    e_nodes.resize(0);
-   delete fem;
 }
 
 /**************************************************************************
@@ -3666,7 +3690,6 @@ void CSourceTermGroup::SetPolylineNodeValueVector(CSourceTerm* st,
 	if (st->isCoupled() && st->node_averaging)
 		AreaAssembly(st, ply_nod_vector_cond, ply_nod_val_vector);
 }
-#endif
 
 /**************************************************************************
  MSHLib-Method:
@@ -3694,6 +3717,7 @@ std::vector<double>& ply_nod_val_vector)
          ply_nod_val_vector[i] /= sum_node_value;
    }
 }
+#endif
 
 
 /**************************************************************************

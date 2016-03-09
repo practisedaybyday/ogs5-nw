@@ -24,6 +24,8 @@ namespace process                                 //WW
 class CRFProcessDeformation;
 };
 
+class CRFProcess;
+
 namespace MathLib
 {
 template<class T1, class T2> class InverseDistanceInterpolation;
@@ -59,14 +61,11 @@ public:
 	                        const std::string & unique_name);
 	void Write(std::fstream*);
 
-	void EdgeIntegration(MeshLib::CFEMesh* m_msh,
-	                     const std::vector<long> & nodes_on_ply,
+	void EdgeIntegration(CRFProcess* pcs, const std::vector<long> & nodes_on_ply,
 	                     std::vector<double> & node_value_vector, std::vector<bool>* active_elements=NULL);
-	void FaceIntegration(MeshLib::CFEMesh* m_msh,
-	                     std::vector<long> const & nodes_on_sfc,
+	void FaceIntegration(CRFProcess* pcs, std::vector<long> const & nodes_on_sfc,
 	                     std::vector<double> & node_value_vector, std::vector<bool>* active_elements=NULL);
-	void DomainIntegration(MeshLib::CFEMesh* m_msh,
-	                       const std::vector<long> & nodes_in_dom,
+	void DomainIntegration(CRFProcess* pcs, const std::vector<long> & nodes_in_dom,
 	                       std::vector<double> & node_value_vector) const;
 
 	void SetNOD2MSHNOD(std::vector<long> & nodes, std::vector<long> & conditional_nodes);

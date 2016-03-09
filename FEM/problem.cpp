@@ -3406,6 +3406,13 @@ void Problem::createShapeFunctionPool()
 	}
 	if (pcs_1c_fem)
 	{
+		if (!lin_fem_assembler)
+		{
+			lin_fem_assembler = pcs_1c_fem->getLinearFEMAssembler();
+			if(lin_fem_assembler)
+				lin_fem_assembler->setOrder(1);
+		}
+
 		CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs_1c_fem);
 		if (!lin_fem_assembler) 
 			lin_fem_assembler = dm_pcs->getLinearFEMAssembler();

@@ -580,7 +580,7 @@ void CElem:: SetFace(CElem* onwer, const int Face)
 	//case MshElemType::LINE:  // 1-D bar element
 	//case MshElemType::QUAD: // 2-D quadrilateral element
 	case MshElemType::HEXAHEDRON:             // 3-D hexahedral element
-		this->setElementProperties(MshElemType::QUAD, true);
+		this->setElementProperties(MshElemType::QUAD8, true);
 		break;
 	//case MshElemType::TRIANGLE:  // 2-D triagular element
 	case MshElemType::TETRAHEDRON:            // 3-D tetrahedral element
@@ -590,11 +590,11 @@ void CElem:: SetFace(CElem* onwer, const int Face)
 		if(Face < 2)
 			this->setElementProperties(MshElemType::TRIANGLE, true);
 		else
-			this->setElementProperties(MshElemType::QUAD, true);
+			this->setElementProperties(MshElemType::QUAD8, true);
 		break;                            // 3-D prismatic element
 	case MshElemType::PYRAMID:
 		if(Face < 1)
-			this->setElementProperties(MshElemType::QUAD, true);
+			this->setElementProperties(MshElemType::QUAD8, true);
 		else
 			this->setElementProperties(MshElemType::TRIANGLE, true);
 		break;                           // 3-D pyramid element
