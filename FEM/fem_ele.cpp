@@ -157,6 +157,7 @@ void CElement::ConfigElement(CElem* MElement, bool FaceIntegration)
 	Index = MeshElement->GetIndex();
 	nnodes = MeshElement->nnodes;
 	nnodesHQ = MeshElement->nnodesHQ;
+	ele_dim = MeshElement->GetDimension();
 	bool done = false;
 	if (MeshElement->quadratic)
 		nNodes = nnodesHQ;
@@ -266,6 +267,7 @@ void CElement::ConfigElement(CElem* MElement, bool FaceIntegration)
 	getShapeFunctionPtr(MeshElement->GetElementType(), Order);
 	getGradShapeFunctionPtr(MeshElement->GetElementType(), Order);
 
+	SetIntegrationPointNumber(MeshElement->GetElementType());
 	ComputeGradShapefctInElement();
 }
 
@@ -300,6 +302,47 @@ void CElement::setOrder(const int order)
 		nNodes = nnodesHQ;
 }
 
+void CElement::SetIntegrationPointNumber(const MshElemType::type elem_type)
+{
+	switch(elem_type)
+	{
+	case MshElemType::LINE:
+		//nGauss = 2;
+		nGaussPoints = nGauss;
+		return;
+	case MshElemType::QUAD:
+	case MshElemType::QUAD8:
+		nGaussPoints = nGauss * nGauss;
+		return;
+	case MshElemType::HEXAHEDRON:
+		nGaussPoints = nGauss * nGauss * nGauss;
+		return;
+	case MshElemType::TRIANGLE:
+		nGaussPoints = nGauss = 3; // Fixed to 3
+		return;
+	case MshElemType::TETRAHEDRON:
+		//	   nGaussPoints = nGauss = 15;  // Fixed to 15
+		nGaussPoints = nGauss = 5; // Fixed to 5
+		return;
+	case MshElemType::PRISM:
+		nGaussPoints = 6;         // Fixed to 6
+		nGauss = 3;               // Fixed to 3
+		return;
+	case MshElemType::PYRAMID:
+		if (Order == 1)
+			nGaussPoints = nGauss = 5;
+		else
+			nGaussPoints = nGauss = 8;  //13;
+		return;
+	case MshElemType::INVALID:
+		std::cerr << "[CElement::ConfigNumerics] invalid element type" << std::endl;
+		break;
+	default:
+		std::cerr << "[CElement::ConfigNumerics] unknown element type" << std::endl;
+		break;
+	}
+}
+
 /**************************************************************************
    FEMLib-Method:
    Task:
@@ -311,6 +354,8 @@ void CElement::setOrder(const int order)
 **************************************************************************/
 void CElement::ConfigShapefunction(MshElemType::type elem_type)
 {
+	SetIntegrationPointNumber(elem_type);
+
 	switch(elem_type)
 	{
 	case MshElemType::LINE:
@@ -492,11 +537,11 @@ void CElement::computeJacobian(const int gp, const int order, const bool inverse
 	if(order == 2)
 	{
 		nodes_number = nnodesHQ;
-		dN = dshapefct;
+		dN = dshapefctHQ;
 	}
 	else
 	{
-		dN = dshapefctHQ;
+		dN = dshapefct;
 	}
 
 	for(size_t i = 0; i < ele_dim*ele_dim; i++)
@@ -1097,11 +1142,11 @@ void CElement::getLocalGradShapefunctValues(const int gp, const int order)
 {
 	if(order == 1)
 	{
-		shapefct = &_grad_shape_function_result_ptr[0][nnodes * ele_dim * gp];
+		dshapefct = &_grad_shape_function_result_ptr[0][nnodes * ele_dim * gp];
 	}
 	else if(order == 2)
 	{
-		shapefctHQ = &_grad_shape_function_result_ptr[1][nnodesHQ * nnodes * ele_dim * gp];
+		dshapefctHQ = &_grad_shape_function_result_ptr[1][nnodesHQ * nnodes * ele_dim * gp];
 	}
 }
 

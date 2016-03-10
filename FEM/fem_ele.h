@@ -129,6 +129,9 @@ public:
 	{
 		nGauss = nGuassP;
 	}
+
+	void SetIntegrationPointNumber(const MshElemType::type elem_type);
+
 	// Get values;
 	int GetNumGaussPoints() const {return nGaussPoints; }
 	int GetNumGaussSamples() const {return nGauss; }

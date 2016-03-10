@@ -77,13 +77,13 @@ ShapeFunctionPool::ShapeFunctionPool(
 	//std::vector<int> elem_type_ids
 	for (std::size_t i=0; i<elem_types.size(); i++)
 	{
-		const int type_id = elem_types[i] - 1;
-		if (elem_types[type_id] == MshElemType::INVALID)
+		if (elem_types[i] == MshElemType::INVALID)
 			continue;
 		// Set number of integration points.
 		quadrature.SetGaussPointNumber(num_sample_gs_pnts);
-		quadrature.ConfigShapefunction(elem_types[i]);
+		quadrature.SetIntegrationPointNumber(elem_types[i]);
 
+		const int type_id = elem_types[i] - 1;
 		int num_int_pnts = quadrature.GetNumGaussPoints();
 		const int size_shape_fct = num_elem_nodes[quadrature.getOrder() - 1][type_id]
 		                            * num_int_pnts;
@@ -120,11 +120,11 @@ void ShapeFunctionPool::
 	const int order = quadrature.getOrder();
 	for (std::size_t i=0; i<elem_types.size(); i++)
 	{
+		if (elem_types[i] == MshElemType::INVALID)
+			continue;
+
 		const int type_id = elem_types[i] - 1;
 		quadrature.ConfigShapefunction(elem_types[i]);
-
-		if (elem_types[type_id] == MshElemType::INVALID)
-			continue;
 
     	const int nnodes = num_elem_nodes[order-1][type_id];
     	const int elem_dim = dim_elem[type_id];

@@ -1490,8 +1490,6 @@ double CFiniteElementStd::CalCoefMass()
 	CompProperties* m_cp = NULL;
 	double drho_dp_rho=0.0;                  // drho/dp * 1/rho 
 
-	if(pcs->m_num->ele_mass_lumping)
-		getShapefunctValues(gp, 1);
 	switch(PcsType)
 	{
 	default:
