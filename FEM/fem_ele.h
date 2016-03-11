@@ -66,6 +66,10 @@ public:
 	virtual ~CElement ();
 	//
 	void ConfigElement(CElem* MElement, bool FaceIntegration = false);
+
+	void setElement(CElem* MElement)
+	{MeshElement = MElement;}
+
 	void setOrder(const int order);
 	int getOrder() const {return Order;}
 	// Set Gauss point

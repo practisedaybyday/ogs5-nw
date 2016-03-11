@@ -1802,20 +1802,6 @@ void CSourceTerm::FaceIntegration(CRFProcess* pcs, std::vector<long> const &node
    }
 #endif
 
-   CElement* fem_assembler = dynamic_cast<CElement*>(pcs->getLinearFEMAssembler());
-   if (!fem_assembler)
-   {
-	   if (   pcs->getProcessType() == FiniteElement::DEFORMATION
-		   || pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
-           || pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW
-           || pcs->getProcessType() == FiniteElement::DEFORMATION_H2) 
-       {
-           process::CRFProcessDeformation* dm_pcs = dynamic_cast<process::CRFProcessDeformation*>(pcs);
-           fem_assembler = dynamic_cast<CElement*>(dm_pcs->GetFEMAssembler());
-       }
-   }
-   fem_assembler->setOrder(msh->getOrder()+1);
-
    CElem* elem = NULL;
    CNode* e_node = NULL;
    CElem* e_nei = NULL;
@@ -1920,6 +1906,22 @@ void CSourceTerm::FaceIntegration(CRFProcess* pcs, std::vector<long> const &node
    }
 #endif
 
+   CElement* fem_assembler_quad = NULL;
+   CElement* fem_assembler_line = dynamic_cast<CElement*>(pcs->getLinearFEMAssembler());
+   if (   pcs->getProcessType() == FiniteElement::DEFORMATION
+	   || pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
+       || pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW
+       || pcs->getProcessType() == FiniteElement::DEFORMATION_H2) 
+    {
+           process::CRFProcessDeformation* dm_pcs = dynamic_cast<process::CRFProcessDeformation*>(pcs);
+           fem_assembler_quad = dynamic_cast<CElement*>(dm_pcs->GetFEMAssembler());
+    }
+   
+   CElement* fem_assembler = (msh->getOrder() == 1) ? fem_assembler_quad : fem_assembler_line;
+   assert(fem_assembler);
+
+   fem_assembler->setOrder(msh->getOrder()+1);
+
 //#define ST_OMP
 
 #ifdef _OPENMP
@@ -1985,6 +1987,7 @@ void CSourceTerm::FaceIntegration(CRFProcess* pcs, std::vector<long> const &node
          face->ComputeVolume();
          if (active_elements==NULL)
             st_boundary_elements.push_back(face);
+         fem_assembler->setOrder(msh->getOrder() ? 2 : 1);
          fem_assembler->ConfigElement(face, true);
          fem_assembler->FaceIntegration(nodesFVal);
          if (this->is_transfer_bc) {

@@ -1146,7 +1146,7 @@ void CElement::getLocalGradShapefunctValues(const int gp, const int order)
 	}
 	else if(order == 2)
 	{
-		dshapefctHQ = &_grad_shape_function_result_ptr[1][nnodesHQ * nnodes * ele_dim * gp];
+		dshapefctHQ = &_grad_shape_function_result_ptr[1][nnodesHQ * ele_dim * gp];
 	}
 }
 

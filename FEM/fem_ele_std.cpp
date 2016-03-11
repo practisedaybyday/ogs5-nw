@@ -2077,7 +2077,7 @@ void CFiniteElementStd::CalCoefLaplace(bool Gravity, int ip)
 	int nidx1;
 	int Index = MeshElement->GetIndex();
 	double k_rel;
-	getShapefunctValues(ip, 1);                   //  12.3.2007 WW
+//	getShapefunctValues(ip, 1);                   //  12.3.2007 WW
 	//double variables[3];                  //OK4709
 	int tr_phase = 0;                     // SB, BG
 	double perm_effstress=1.;//AS:08.2012
@@ -2598,7 +2598,7 @@ void CFiniteElementStd::CalCoefLaplace2(bool Gravity,  int dof_index)
 	tensor = MediaProp->PermeabilityTensor(Index);
 	MediaProp->local_permeability = tensor[0];
 	//
-	getShapefunctValues(gp, 1);                   //  12.3.2007 WW
+	//getShapefunctValues(gp, 1);                   //  12.3.2007 WW
 
 	//WX: 11.05.2010
 	PG = interpolate(NodalVal1);
@@ -4579,7 +4579,8 @@ void CFiniteElementStd::CalcLaplace()
 		fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
 		//---------------------------------------------------------
 		// Compute geometry
-		getGradShapefunctValues(gp, 1);   // Linear interpolation function
+		getGradShapefunctValues(gp, 1);
+		getShapefunctValues(gp, 1); // For thoese used in the material parameter caculation
 		// Calculate mass matrix
 #ifndef OGS_ONLY_TH
 		double water_depth = 1.0;

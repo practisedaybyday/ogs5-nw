@@ -2678,8 +2678,13 @@ void CFiniteElementVec::ExtropolateGuassStress()
 	long node_i = 0;
 	// For strain and stress extropolation all element types
 	// Number of elements associated to nodes
+	nnodes = MeshElement->GetNodesNumber(false);
 	for(i = 0; i < nnodes; i++)
+	{
 		dbuff[i] = (double)MeshElement->nodes[i]->getConnectedElementIDs().size();
+		nodes[i] = MeshElement->nodes_index[i];
+	}
+
 	//
 	gp = gp_r = gp_s = gp_t = 0;
 	eleV_DM = ele_value_dm[MeshElement->GetIndex()];

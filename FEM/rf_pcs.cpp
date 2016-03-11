@@ -947,7 +947,79 @@ void CRFProcess::Create()
 
 	if (pcs_type_name_vector.size() && pcs_type_name_vector[0].find("DYNAMIC") != string::npos)
 		setIC_danymic_problems();
-	//
+
+	// Keep all local matrices in the memory
+	if (type != 55)                       //Not for fluid momentum. WW
+	{
+		if (Memory_Type != 0)
+			AllocateLocalMatrixMemory();
+		if(type == 4 || type / 10 == 4)
+		{
+			// Set initialization function
+			//      CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) (this);
+			CRFProcessDeformation* dm_pcs =
+			        static_cast<CRFProcessDeformation*> (this);
+			dm_pcs->Initialization();
+		}
+		else if(this->getProcessType()==FiniteElement::TH_MONOLITHIC)
+		{
+			static_cast<CRFProcessTH*>(this)->Initialization();
+		}
+		else                      // Initialize FEM calculator
+		{
+			int Axisymm = 1; // ani-axisymmetry
+			if (m_msh->isAxisymmetry())
+				Axisymm = -1;  // Axisymmetry is true
+			fem = new CFiniteElementStd(this, Axisymm
+			                            * m_msh->GetCoordinateFlag());
+			fem->SetGaussPointNumber(m_num->ele_gauss_points);
+		}
+	}
+
+	// Initialize the system equations
+	if (PCSSetIC_USER)
+		PCSSetIC_USER(pcs_type_number);
+
+	if (compute_domain_face_normal)       //WW
+		m_msh->FaceNormal();
+	/// Variable index for equation. 20.08.2010. WW
+	if(p_var_index)
+		for(int i = 0; i < pcs_number_of_primary_nvals; i++)
+			p_var_index[i] = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
+
+#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
+	size_unknowns =  m_msh->NodesNumber_Quadratic * pcs_number_of_primary_nvals;
+#elif defined(NEW_EQS)
+	/// For JFNK. 01.10.2010. WW
+#ifdef JFNK_H2M
+	if(m_num->nls_method == 2)
+	{
+		size_unknowns = eqs_new->size_global;
+		array_u_JFNK = new double[eqs_new->size_global];
+		array_Fu_JFNK = new double[eqs_new->size_global];
+	}
+	else
+#endif
+	  {
+#ifdef USE_MPI
+	size_unknowns = eqs_new->size_global;
+#else
+	size_unknowns = eqs_new->A->Dim();
+#endif
+	  }
+#endif
+
+#ifndef WIN32
+	ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
+#endif
+}
+
+
+void CRFProcess::SetBoundaryConditionAndSourceTerm()
+{
+	std::string pcs_type_name(
+	        convertProcessTypeToString(this->getProcessType()));
+
 	if (pcs_type_name_vector.size() && pcs_type_name_vector[0].find("DYNAMIC")
 	    != string::npos)                  //WW
 	{
@@ -956,6 +1028,7 @@ void CRFProcess::Create()
 	}
 	else
 	{
+		const int DOF = GetPrimaryVNumber();
 		// BC - create BC groups for each process
 		ScreenMessage("-> Create BC\n");
 		CBoundaryConditionsGroup* m_bc_group = NULL;
@@ -1025,73 +1098,6 @@ void CRFProcess::Create()
 	// Write BC/ST nodes for vsualization.WW
 	if (write_boundary_condition && WriteSourceNBC_RHS != 2)
 		WriteBC();
-
-
-
-	// Keep all local matrices in the memory
-	if (type != 55)                       //Not for fluid momentum. WW
-	{
-		if (Memory_Type != 0)
-			AllocateLocalMatrixMemory();
-		if(type == 4 || type / 10 == 4)
-		{
-			// Set initialization function
-			//      CRFProcessDeformation *dm_pcs = (CRFProcessDeformation *) (this);
-			CRFProcessDeformation* dm_pcs =
-			        static_cast<CRFProcessDeformation*> (this);
-			dm_pcs->Initialization();
-		}
-		else if(this->getProcessType()==FiniteElement::TH_MONOLITHIC)
-		{
-			static_cast<CRFProcessTH*>(this)->Initialization();
-		}
-		else                      // Initialize FEM calculator
-		{
-			int Axisymm = 1; // ani-axisymmetry
-			if (m_msh->isAxisymmetry())
-				Axisymm = -1;  // Axisymmetry is true
-			fem = new CFiniteElementStd(this, Axisymm
-			                            * m_msh->GetCoordinateFlag());
-			fem->SetGaussPointNumber(m_num->ele_gauss_points);
-		}
-	}
-
-	// Initialize the system equations
-	if (PCSSetIC_USER)
-		PCSSetIC_USER(pcs_type_number);
-
-	if (compute_domain_face_normal)       //WW
-		m_msh->FaceNormal();
-	/// Variable index for equation. 20.08.2010. WW
-	if(p_var_index)
-		for(int i = 0; i < pcs_number_of_primary_nvals; i++)
-			p_var_index[i] = GetNodeValueIndex(pcs_primary_function_name[i]) + 1;
-
-#if defined(USE_PETSC) // || defined(other parallel libs)//03.3012. WW
-	size_unknowns =  m_msh->NodesNumber_Quadratic * pcs_number_of_primary_nvals;
-#elif defined(NEW_EQS)
-	/// For JFNK. 01.10.2010. WW
-#ifdef JFNK_H2M
-	if(m_num->nls_method == 2)
-	{
-		size_unknowns = eqs_new->size_global;
-		array_u_JFNK = new double[eqs_new->size_global];
-		array_Fu_JFNK = new double[eqs_new->size_global];
-	}
-	else
-#endif
-	  {
-#ifdef USE_MPI
-	size_unknowns = eqs_new->size_global;
-#else
-	size_unknowns = eqs_new->A->Dim();
-#endif
-	  }
-#endif
-
-#ifndef WIN32
-	ScreenMessage("\tcurrent mem: %d MB\n", mem_watch.getVirtMemUsage() / (1024*1024) );
-#endif
 }
 
 /**************************************************************************
@@ -5331,7 +5337,7 @@ void CRFProcess::GlobalAssembly()
 		//
 		//
 
-		//		  MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
+		//			MXDumpGLS("rf_pcs1.txt",1,eqs->b,eqs->x); //abort();
 #if defined(USE_PETSC)  // || defined(other parallel libs)//03~04.3012.
 		MPI_Barrier (MPI_COMM_WORLD); 
 		  //	eqs_new->AssembleRHS_PETSc();

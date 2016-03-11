@@ -606,7 +606,10 @@ void CElem:: SetFace(CElem* onwer, const int Face)
 	if (nodes.Size()<n)
 		nodes.resize(n);
 	for(size_t i = 0; i < n; i++)
+	{
 		nodes[i] = owner->nodes[nodeIndex_loc[i]];
+		nodes_index[i] = nodes[i]->GetIndex();
+	}
 }
 /**************************************************************************
    MSHLib-Method:

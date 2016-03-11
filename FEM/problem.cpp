@@ -174,8 +174,6 @@ Problem::Problem (char* filename) :
 		return;
 	}
 	
-	createShapeFunctionPool(); //WW
-
 	//
 	//JT: Set to true to force node copy at end of loop
 	force_post_node_copy = true;
@@ -854,6 +852,21 @@ void Problem::PCSCreate()
 		pcs_vector[i]->Create();
 	}
 
+	createShapeFunctionPool(); //WW
+
+	for (size_t i = 0; i < no_processes; i++)
+	{//WW
+		CRFProcess* pcs = pcs_vector[i];
+		pcs->SetBoundaryConditionAndSourceTerm();
+
+		if (   pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
+			|| pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW
+			|| pcs->getProcessType() == FiniteElement::DEFORMATION_H2)
+		{
+			CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs);
+			dm_pcs->InitGauss();
+		}
+	}
 
 #if defined(USE_PETSC) // || defined(other solver libs)//03.3012. WW
 	ScreenMessage("---------------------------------------------\n");
@@ -3503,7 +3516,7 @@ void Problem::createShapeFunctionPool()
 			CFiniteElementVec* fem_assem_h = dm_pcs->GetFEMAssembler();
 			fem_assem_h->setShapeFunctionPool(_line_shapefunction_Pool, _quadr_shapefunction_Pool);
 			CFiniteElementStd* fem_assem = dm_pcs->getLinearFEMAssembler();
-			fem_assem->setShapeFunctionPool(_line_shapefunction_Pool, _line_shapefunction_Pool);
+			fem_assem->setShapeFunctionPool(_line_shapefunction_Pool, _quadr_shapefunction_Pool);
 		}
 		else
 		{

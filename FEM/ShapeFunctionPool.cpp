@@ -133,6 +133,8 @@ void ShapeFunctionPool::
 
 		// Set number of integration points.
 		quadrature.SetGaussPointNumber(num_sample_gs_pnts);
+		quadrature.SetIntegrationPointNumber(elem_types[i]);
+
 		quadrature.ConfigShapefunction(elem_types[i]);
 		for (int gp = 0; gp < quadrature.GetNumGaussPoints(); gp++)
 	    {

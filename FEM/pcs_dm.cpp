@@ -188,7 +188,6 @@ void CRFProcessDeformation::Initialization()
 		return;
 	}
 	InitialMBuffer();
-	InitGauss();
 	////////////////////////////////////
 
 #ifdef DECOVALEX
@@ -621,7 +620,6 @@ void CRFProcessDeformation::InitGauss(void)
 			MatGroup = elem->GetPatchIndex();
 			SMat = msp_vector[MatGroup];
 			elem->SetOrder(true);
-			fem_dm->ConfigElement(elem);
 			eleV_DM = ele_value_dm[i];
 			*(eleV_DM->Stress0) = 0.0;
 			*(eleV_DM->Stress) = 0.0;
@@ -660,18 +658,19 @@ void CRFProcessDeformation::InitGauss(void)
 			}
 
 			//
-			//if 2D //ToDo: Set option for 3D
-			// Loop over Gauss points
-			NGS = fem_dm->GetNumGaussPoints();
-			//WW NGSS = fem_dm->GetNumGaussSamples();
-
-			fem_dm->getShapeFunctionPtr(elem->GetElementType(), 1);
+			if (ccounter > 0)
+			{
+				fem_dm->setElement(elem);
+				fem_dm->setOrder(2);
+				fem_dm->SetIntegrationPointNumber(elem->GetElementType());
+				NGS = fem_dm->GetNumGaussPoints();
+				fem_dm->getShapeFunctionPtr(elem->GetElementType(), 2);
+			}
 
 			for (gp = 0; gp < NGS; gp++)
 			{
-				if(ccounter > 0)
+				if (ccounter > 0)
 				{
-					fem_dm->GetGaussData(gp, gp_r, gp_s, gp_t);
 					fem_dm->getShapefunctValues(gp, 2);
 					fem_dm->RealCoordinates(xyz);
 					for (j = 0; j < NS; j++)
@@ -1383,16 +1382,12 @@ double CRFProcessDeformation::NormOfUnkonwn_orRHS(bool isUnknowns)
 //#define Modified_B_matrix
 double CRFProcessDeformation::CaclMaxiumLoadRatio(void)
 {
-	int j,gp, gp_r, gp_s; //, gp_t;
-	int PModel = 1;
-	long i = 0;
 	double* dstrain;
 
 	double S0 = 0.0, p0 = 0.0;
 	double MaxS = 0.000001;
 	double EffS = 0.0;
 
-	MeshLib::CElem* elem = NULL;
 	ElementValue_DM* eleV_DM = NULL;
 	CSolidProperties* SMat = NULL;
 
@@ -1404,13 +1399,11 @@ double CRFProcessDeformation::CaclMaxiumLoadRatio(void)
 	double PRatio = 0.0;
 	const double MaxR = 20.0;
 
-	int NGS, NGPS;
-
 	//gp_t = 0;
 
-	for (i = 0; i < (long)m_msh->ele_vector.size(); i++)
+	for (std::size_t i = 0; i < m_msh->ele_vector.size(); i++)
 	{
-		elem = m_msh->ele_vector[i];
+		MeshLib::CElem* elem = m_msh->ele_vector[i];
 		if (elem->GetMark())      // Marked for use
 		{
 			fem_dm->ConfigElement(elem);
@@ -1418,7 +1411,7 @@ double CRFProcessDeformation::CaclMaxiumLoadRatio(void)
 			eleV_DM = ele_value_dm[i];
 			SMat = fem_dm->smat;
 			SMat->axisymmetry = m_msh->isAxisymmetry();
-			PModel = SMat->Plasticity_type;
+			const int PModel = SMat->Plasticity_type;
 
 			//
 			switch(PModel)
@@ -1449,23 +1442,13 @@ double CRFProcessDeformation::CaclMaxiumLoadRatio(void)
 				S0 = (*Mat)(3);
 				break;
 			}
-			NGS = fem_dm->GetNumGaussPoints();
-			NGPS = fem_dm->GetNumGaussSamples();
+			const int NGS = fem_dm->GetNumGaussPoints();
 			//
-			for (gp = 0; gp < NGS; gp++)
+			for (int gp = 0; gp < NGS; gp++)
 			{
-				switch(elem->GetElementType())
+				if (!(    elem->GetElementType() == MshElemType::TRIANGLE
+				       || elem->GetElementType() == MshElemType::QUAD) )
 				{
-				case MshElemType::TRIANGLE: // Triangle
-					SamplePointTriHQ(gp, fem_dm->unit);
-					break;
-				case MshElemType::QUAD: // Quadralateral
-					gp_r = (int)(gp / NGPS);
-					gp_s = gp % NGPS;
-					fem_dm->unit[0] = MXPGaussPkt(NGPS, gp_r);
-					fem_dm->unit[1] = MXPGaussPkt(NGPS, gp_s);
-					break;
-				default:
 					std::cerr <<
 					"CRFProcessDeformation::CaclMaxiumLoadRatio MshElemType not handled"
 					          << std::endl;
@@ -1497,7 +1480,7 @@ double CRFProcessDeformation::CaclMaxiumLoadRatio(void)
 				}
 
 				// Stress of the previous time step
-				for(j = 0; j < fem_dm->ns; j++)
+				for(int j = 0; j < fem_dm->ns; j++)
 					fem_dm->dstress[j] = (*eleV_DM->Stress)(j,gp);
 
 				// Compute try stress, stress incremental:
@@ -1624,7 +1607,10 @@ void CRFProcessDeformation::Extropolation_GaussValue()
 		elem = m_msh->ele_vector[i];
 		if (elem->GetMark())      // Marked for use
 		{
-			fem_dm->ConfigElement(elem);
+			fem_dm->setElement(elem);
+			fem_dm->setOrder(2);
+			fem_dm->SetIntegrationPointNumber(elem->GetElementType());
+
 			fem_dm->SetMaterial();
 			//         eval_DM = ele_value_dm[i];
 			//TEST        (*eval_DM->Stress) += (*eval_DM->Stress0);
