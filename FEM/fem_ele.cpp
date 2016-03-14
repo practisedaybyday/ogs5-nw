@@ -149,7 +149,7 @@ CElement::~CElement()
    05/2007 WW 1D in 2D
    Last modified:
 **************************************************************************/
-void CElement::ConfigElement(CElem* MElement, bool FaceIntegration)
+void CElement::ConfigElement(CElem* MElement, const bool FaceIntegration)
 {
 	int i;
 	CNode* a_node = NULL;                 //07.04.2009. WW
@@ -264,11 +264,12 @@ void CElement::ConfigElement(CElem* MElement, bool FaceIntegration)
 		}
 
 	// WW
-	getShapeFunctionPtr(MeshElement->GetElementType(), Order);
-	getGradShapeFunctionPtr(MeshElement->GetElementType(), Order);
+	const MshElemType::type elem_type = MeshElement->GetElementType();
+	getShapeFunctionPtr(elem_type);
+	getGradShapeFunctionPtr(elem_type);
 
-	SetIntegrationPointNumber(MeshElement->GetElementType());
-	ComputeGradShapefctInElement();
+	SetIntegrationPointNumber(elem_type);
+	ComputeGradShapefctInElement(FaceIntegration);
 }
 
 /**************************************************************************
@@ -863,7 +864,7 @@ void CElement::FaceIntegration(double* NodeVal)
 {
 	setOrder(Order);
 
-	getShapeFunctionPtr(MeshElement->GetElementType(), Order);
+	getShapeFunctionPtr(MeshElement->GetElementType());
 
 	for (int i = 0; i < nNodes; i++)
 		dbuff[i] = 0.0;
@@ -929,7 +930,7 @@ void CElement::DomainIntegration(double* NodeVal)
 {
 	setOrder(Order);
 
-	getShapeFunctionPtr(MeshElement->GetElementType(), Order);
+	getShapeFunctionPtr(MeshElement->GetElementType());
 
 	//double det = MeshElement->GetVolume();
 	for (int i = 0; i < nNodes; i++)
@@ -961,7 +962,7 @@ void CElement::DomainIntegration(double* NodeVal)
 void CElement::CalcFaceMass(double* mass)
 {
 	setOrder(1);
-	getShapeFunctionPtr(MeshElement->GetElementType(), Order);
+	getShapeFunctionPtr(MeshElement->GetElementType());
 
 	const double det = MeshElement->GetVolume();
 	for (int i = 0; i < nNodes; i++)
@@ -1039,18 +1040,24 @@ void CElement::ComputeGradShapefctLocal(const int order, double grad_shape_fucnt
 		GradShapeFunctionHQ(grad_shape_fucntion, unit);
 }
 
-void CElement::getShapeFunctionPtr(const MshElemType::type elem_type, const int order)
+void CElement::getShapeFunctionPtr(const MshElemType::type elem_type)
 {
-	const int id = order -1;
-	_shape_function_result_ptr[id]
-		= (_shape_function_pool_ptr[id])->getShapeFunctionValues(elem_type);
+	if (_shape_function_pool_ptr[0])
+		_shape_function_result_ptr[0]
+			= (_shape_function_pool_ptr[0])->getShapeFunctionValues(elem_type);
+	if (_shape_function_pool_ptr[1])
+		_shape_function_result_ptr[1]
+			= (_shape_function_pool_ptr[1])->getShapeFunctionValues(elem_type);
 }
 
-void CElement::getGradShapeFunctionPtr(const MshElemType::type elem_type, const int order)
+void CElement::getGradShapeFunctionPtr(const MshElemType::type elem_type)
 {
-	const int id = order -1;
-	_grad_shape_function_result_ptr[id]
-		= (_shape_function_pool_ptr[id])->getGradShapeFunctionValues(elem_type);
+	if (_shape_function_pool_ptr[0])
+		_grad_shape_function_result_ptr[0]
+			= (_shape_function_pool_ptr[0])->getGradShapeFunctionValues(elem_type);
+	if (_shape_function_pool_ptr[1])
+		_grad_shape_function_result_ptr[1]
+			= (_shape_function_pool_ptr[1])->getGradShapeFunctionValues(elem_type);
 }
 
 void CElement::getGradShapefunctValues(const int gp, const int order) const
@@ -1082,7 +1089,8 @@ void CElement::getGradShapefunctValues(const int gp, const int order) const
    10/2005     WW        2D element transform in 3D space
    06/2007     WW        1D in 2D
  **************************************************************************/
-void CElement::ComputeGradShapefct(const int gp, const int order)
+void CElement::ComputeGradShapefct(const int gp, const int order,
+	                               const bool is_face_integration)
 {
 	setOrder(order);
 
@@ -1115,6 +1123,10 @@ void CElement::ComputeGradShapefct(const int gp, const int order)
 			}
 		}
 	}
+
+	if (is_face_integration)
+		return;
+
 	// 1D element in 3D
 	if((dim == 3 && ele_dim == 1) || (dim == 2 && ele_dim == 1))
 		for(int i = 0; i < nNodes; i++)
@@ -1150,13 +1162,13 @@ void CElement::getLocalGradShapefunctValues(const int gp, const int order)
 	}
 }
 
-void CElement::ComputeGradShapefctInElement()
+void CElement::ComputeGradShapefctInElement(const bool is_face_integration)
 {
 	for (int gp = 0; gp < nGaussPoints; gp++)
 	{
 		getLocalGradShapefunctValues(gp, Order);
 		computeJacobian(gp, Order);
-		ComputeGradShapefct(gp, Order);
+		ComputeGradShapefct(gp, Order, is_face_integration);
 	}
 }
 

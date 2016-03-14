@@ -65,7 +65,7 @@ public:
 	CElement (int CoordFlag, const int order = 1);
 	virtual ~CElement ();
 	//
-	void ConfigElement(CElem* MElement, bool FaceIntegration = false);
+	void ConfigElement(CElem* MElement, const bool FaceIntegration = false);
 
 	void setElement(CElem* MElement)
 	{MeshElement = MElement;}
@@ -99,7 +99,7 @@ public:
 	// Get the values of shape function at integral point gp
 	void getShapefunctValues(const int gp, const int order) const;
 	// Get the pointer to the shape function array in the shape function pool
-	void getShapeFunctionPtr(const MshElemType::type elem_type, const int order);
+	void getShapeFunctionPtr(const MshElemType::type elem_type);
 	// Compute values of shape function at integral point unit
 	void ComputeShapefct(const int order, double shape_fucntion[]);
 	// Compute the Jacobian matrix. Return its determinate
@@ -109,9 +109,10 @@ public:
 	// Get the values of the gradient of the shape function at integral point gp
 	void getGradShapefunctValues(const int gp, const int order) const;
 	// Compute values of the derivatives of shape function at integral point
-	void ComputeGradShapefctInElement();
+	void ComputeGradShapefctInElement(const bool is_face_integration);
 	// Compute values of the derivatives of shape function at integral point
-	void ComputeGradShapefct(const int gp, const int order);
+	void ComputeGradShapefct(const int gp, const int order,
+		                     const bool is_face_integration = false);
 	// Compute values of the derivatives of shape function at integral point
 	void ComputeGradShapefctLocal(const int order, double grad_shape_fucntion[]);
 	// Compute the real coordinates from known unit coordinates
@@ -251,7 +252,7 @@ protected:
 	//  result array for the present element for two orders.
 	double* _grad_shape_function_result_ptr[2];
 
-	void getGradShapeFunctionPtr(const MshElemType::type elem_type, const int order);
+	void getGradShapeFunctionPtr(const MshElemType::type elem_type);
 
 	// Get the values of the local gradient of shape functions at integral point gp
 	void getLocalGradShapefunctValues(const int gp, const int order);

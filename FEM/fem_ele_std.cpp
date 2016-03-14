@@ -8663,7 +8663,7 @@ void CFiniteElementStd::CalcSatution()
 	//
 	gp_r = gp_s = gp_t = gp = 0;
 	// for PG = interpolate(NodalVal0);
-	getShapeFunctionPtr(MeshElement->GetElementType(), 1);
+	getShapeFunctionPtr(MeshElement->GetElementType());
 	for(gp = 0; gp < nGaussPoints; gp++)
 	{
 		if(ElementType == MshElemType::QUAD || ElementType == MshElemType::HEXAHEDRON)
@@ -8793,7 +8793,7 @@ void CFiniteElementStd::CalcNodeMatParatemer()
 	//
 	gp_r = gp_s = gp_t = gp = 0;
 	// for PG = interpolate(NodalVal0);
-	getShapeFunctionPtr(MeshElement->GetElementType(), 1);
+	getShapeFunctionPtr(MeshElement->GetElementType());
 	for(gp = 0; gp < nGaussPoints; gp++)
 	{
 		SetGaussPoint(gp, gp_r, gp_s, gp_t);
