@@ -1017,6 +1017,9 @@ void CRFProcess::Create()
 
 void CRFProcess::SetBoundaryConditionAndSourceTerm()
 {
+#ifndef WIN32
+	BaseLib::MemWatch mem_watch;
+#endif
 	std::string pcs_type_name(
 	        convertProcessTypeToString(this->getProcessType()));
 
