@@ -40,7 +40,7 @@ public:
     return pres_name.c_str();
   }
 
-  const int getNumIntegrationSamplePoints () const
+  int getNumIntegrationSamplePoints () const
   {
 	  return ele_gauss_points;
   }

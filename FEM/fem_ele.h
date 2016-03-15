@@ -76,11 +76,7 @@ public:
 	void SetGaussPoint(const MshElemType::type elem_type, const int gp,
 		               int& gp_r, int& gp_s, int& gp_t);
 	// Set Gauss point
-	void SetGaussPoint(const int gp, int& gp_r, int& gp_s, int& gp_t)
-	{
-		SetGaussPoint(MeshElement->GetElementType(), 
-			          gp, gp_r, gp_s, gp_t);
-	}
+	void SetGaussPoint(const int gp, int& gp_r, int& gp_s, int& gp_t);
 
 	void setShapeFunctionPool(ShapeFunctionPool* const
 						      lin_shape_fct_pool, 

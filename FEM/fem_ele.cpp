@@ -741,6 +741,13 @@ void CElement::UnitCoordinates(double* realXYZ)
 		realXYZ[i] = unit[i];
 }
 
+void CElement::SetGaussPoint(const int gp, int& gp_r,
+	                             int& gp_s, int& gp_t)
+{
+	SetGaussPoint(MeshElement->GetElementType(), 
+		          gp, gp_r, gp_s, gp_t);
+}
+
 /***************************************************************************
 
    08/2005     WW        Prism element
@@ -831,10 +838,12 @@ double CElement::GetGaussData(int gp, int& gp_r, int& gp_s, int& gp_t)
 		      * MXPGaussFkt(nGauss, gp_t);
 		break;
 	case MshElemType::TRIANGLE:           // Triangle
+		SamplePointTriHQ(gp, unit);
 		fkt = _determinants_all[gp] * unit[2];           // Weights
 		break;
 	case MshElemType::TETRAHEDRON:        // Tedrahedra
 		//To be flexible          SamplePointTet15(gp, unit);
+		SamplePointTet5(gp, unit);
 		fkt = _determinants_all[gp] * unit[3];           // Weights
 		break;
 	case MshElemType::PRISM:              // Prism
@@ -842,6 +851,10 @@ double CElement::GetGaussData(int gp, int& gp_r, int& gp_s, int& gp_t)
 			  * MXPGaussFkt(gp_s, gp_t);
 		break;
 	case MshElemType::PYRAMID: // Pyramid
+		if (Order == 1)
+			SamplePointPyramid5(gp, unit);
+		else
+			SamplePointPyramid8(gp, unit);  //SamplePointPyramid13(gp, unit);
 		fkt = _determinants_all[gp] * unit[3];           // Weights
 		break;
 	default:
