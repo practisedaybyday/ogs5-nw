@@ -28,7 +28,7 @@ namespace FiniteElement
 CElement::CElement(int CoordFlag, const int order)
 	: MeshElement(NULL), Order(order), ele_dim(1), nGaussPoints(1), nGauss(3),
 	  ShapeFunction(NULL), ShapeFunctionHQ(NULL),
-	  GradShapeFunction(NULL), GradShapeFunctionHQ(NULL),
+	  GradShapeFunction(NULL), GradShapeFunctionHQ(NULL), _is_mixed_order(false),
 	  T_Flag(false), C_Flag(false), F_Flag(false), D_Flag(0), RD_Flag(false),
 	  extrapo_method(ExtrapolationMethod::EXTRAPO_LINEAR), invJacobian(NULL)
 {
@@ -269,6 +269,10 @@ void CElement::ConfigElement(CElem* MElement, const bool FaceIntegration)
 	getGradShapeFunctionPtr(elem_type);
 
 	SetIntegrationPointNumber(elem_type);
+	if (_is_mixed_order)
+	{
+		Order = 1;
+	}
 	ComputeGradShapefctInElement(FaceIntegration);
 }
 

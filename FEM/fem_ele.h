@@ -111,6 +111,12 @@ public:
 		                     const bool is_face_integration = false);
 	// Compute values of the derivatives of shape function at integral point
 	void ComputeGradShapefctLocal(const int order, double grad_shape_fucntion[]);
+	
+	void setMixedOrderFlag(const bool is_mixed_order)
+	{
+		_is_mixed_order = is_mixed_order;
+	}
+
 	// Compute the real coordinates from known unit coordinates
 	void RealCoordinates(double* realXYZ);
 	// Compute the unit coordinates from known unit coordinates
@@ -252,6 +258,8 @@ protected:
 
 	// Get the values of the local gradient of shape functions at integral point gp
 	void getLocalGradShapefunctValues(const int gp, const int order);
+
+	bool _is_mixed_order;
 
 	// Coupling
 	int NodeShift[5];

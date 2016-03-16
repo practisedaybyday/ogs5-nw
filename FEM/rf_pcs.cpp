@@ -5355,7 +5355,7 @@ void CRFProcess::GlobalAssembly()
 
      24.11.2010. WW
  */
-void CRFProcess::GlobalAssembly_std(bool is_quad, bool Check2D3D)
+void CRFProcess::GlobalAssembly_std(const bool is_mixed_order, bool Check2D3D)
 {
 	long i;
 	CElem* elem = NULL;
@@ -5366,7 +5366,8 @@ void CRFProcess::GlobalAssembly_std(bool is_quad, bool Check2D3D)
 		if (!elem->GetMark())     // Marked for use
 			continue;     // For OpenMP. WW
 
-		elem->SetOrder(is_quad);
+		elem->SetOrder(m_msh->getOrder());
+		fem->setMixedOrderFlag(is_mixed_order);
 		fem->ConfigElement(elem,Check2D3D);
 		fem->Assembly();
 	}

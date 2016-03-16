@@ -921,7 +921,7 @@ void COutput::WriteTECNodeData(fstream &tec_file)
 	         for (size_t i = 0; i < 3; i++)
 		        tec_file << x[i] << " ";
 		  }
-	   }  
+	   } 
 		// NOD values
 		// Mass transport
 		//     if(pcs_type_name.compare("MASS_TRANSPORT")==0){

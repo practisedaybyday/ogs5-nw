@@ -685,7 +685,7 @@ public:
 	void AllocateLocalMatrixMemory();
 	virtual void GlobalAssembly();        // Make as a virtul function. //10.09.201l. WW
 	/// For all PDEs excluding that for deformation. 24.11.2010l. WW
-	void GlobalAssembly_std(bool is_quad, bool Check2D3D = false);
+	void GlobalAssembly_std(const bool is_mixed_order, bool Check2D3D = false);
 	/// Assemble EQS for deformation process.
 	virtual void GlobalAssembly_DM() {}
 #if defined (NEW_EQS) && defined(JFNK_H2M)
