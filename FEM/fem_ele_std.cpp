@@ -5178,6 +5178,9 @@ void CFiniteElementStd::CalcStrainCoupling(int phase)
 	int kl, gp, gp_r, gp_s, gp_t;
 	double fkt, du = 0.0;
 	SetHighOrderNodes();
+
+	ComputeGradShapefctInElement(false);
+
 	// Loop over Gauss points
 		for (gp = 0; gp < nGaussPoints; gp++)
 		{

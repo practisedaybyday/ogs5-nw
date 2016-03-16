@@ -19,14 +19,14 @@ struct MshElemType
 	enum type {
 		LINE = 1,
 		QUAD = 2,
-		QUAD8 = 3,
-		HEXAHEDRON = 4,
-		TRIANGLE = 5,
-		TETRAHEDRON = 6,
-		PRISM = 7,
-		PYRAMID = 8,
+		HEXAHEDRON = 3,
+		TRIANGLE = 4,
+		TETRAHEDRON = 5,
+		PRISM = 6,
+		PYRAMID = 7,
+		QUAD8 = 8,
 		INVALID = -1,
-		LAST = PYRAMID
+		LAST = QUAD8
 	};
 };
 
