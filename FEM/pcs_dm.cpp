@@ -2198,7 +2198,7 @@ void CRFProcessDeformation::GlobalAssembly()
 			else
 				CalcBC_or_SecondaryVariable_Dynamics(true);
 		}
-		//  {			 MXDumpGLS("rf_pcs_dm1.txt",1,eqs->b,eqs->x);  //abort();}
+		//  {			MXDumpGLS("rf_pcs_dm1.txt",1,eqs->b,eqs->x);  //abort();}
 		//
 
 #if 0

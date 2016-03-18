@@ -62,8 +62,8 @@ CElement::CElement(int CoordFlag, const int order)
 	case 1:                               //OK
 		// Memory allocated for maxium 3 nodes elements
 		dim_jacobian = 1;
-		size_dshapefct = 6 * max_intgration_points;
-		size_dshapefctHQ = 9 * max_intgration_points;
+		size_dshapefct = 3 * max_intgration_points;
+		size_dshapefctHQ = 3 * max_intgration_points;
 		break;
 	case 2:
 		// Memory allocated for maxium 9 nodes elements
@@ -1057,6 +1057,16 @@ void CElement::ComputeGradShapefctLocal(const int order, double grad_shape_fucnt
 		GradShapeFunctionHQ(grad_shape_fucntion, unit);
 }
 
+void CElement::getShapeFunctionCentroid()
+{
+	if (_shape_function_pool_ptr[0])
+		shapefct
+		= (_shape_function_pool_ptr[0])->getGradShapeFunctionValues(MeshElement->GetElementType());
+	if (_shape_function_pool_ptr[1])
+		shapefctHQ
+			= (_shape_function_pool_ptr[1])->getGradShapeFunctionValues(MeshElement->GetElementType());
+
+}
 void CElement::getShapeFunctionPtr(const MshElemType::type elem_type)
 {
 	if (_shape_function_pool_ptr[0])
@@ -1194,13 +1204,15 @@ void CElement::ComputeGradShapefctInElement(const bool is_face_integration)
    Programming:
    09/2005     WW        Erste Version
  **************************************************************************/
-void CElement::SetCenterGP()
+void CElement::SetCenterGP(const MshElemType::type elem_type)
 {
+	const MshElemType::type e_type = (elem_type == MshElemType::INVALID)
+		? MeshElement->GetElementType() : elem_type;
 	// Center of the reference element
 	unit[0] = unit[1] = unit[2] = 0.0;
-	if(MeshElement->GetElementType() == MshElemType::TRIANGLE)
+	if(e_type == MshElemType::TRIANGLE)
 		unit[0] = unit[1] = 1.0 / 3.0;
-	else if(MeshElement->GetElementType() == MshElemType::TETRAHEDRON)
+	else if(e_type == MshElemType::TETRAHEDRON)
 		unit[0] = unit[1] = unit[2] = 0.25;
 }
 /***************************************************************************

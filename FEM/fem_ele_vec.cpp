@@ -607,6 +607,9 @@ void CFiniteElementVec::setB_Matrix(const int LocalIndex)
 
 		if(axisymmetry)           // Axisymmtry
 		{
+			Radius = 0.0;
+			for(int i = 0; i < nnodes; i++)
+				Radius += shapefct[i] * X[i];
 			// B_21, N/r
 			(*B_matrix)(1,0) = shapefctHQ[LocalIndex] / Radius;
 			// B_22, 0.0
@@ -708,6 +711,9 @@ void CFiniteElementVec::ComputeStrain()
 				dstrain[3] += Disp[i] * dshapefctHQ[j]
 				              + Disp[j] * dshapefctHQ[i];
 			}
+			Radius = 0.0;
+			for(i = 0; i < nnodesHQ; i++)
+				Radius += shapefctHQ[i] * X[i];
 			dstrain[1] /= Radius;
 		}
 		else
@@ -914,6 +920,11 @@ void CFiniteElementVec::ComputeMatrix_RHS(const double fkt,
 		}
 
 		if(axisymmetry)
+		{
+			Radius = 0.0;
+			for(int ii = 0; ii < nnodesHQ; ii++)
+				Radius += shapefctHQ[ii] * X[ii];
+
 			for (k = 0; k < nnodesHQ; k++)
 			{
 				for (l = 0; l < nnodes; l++)
@@ -933,6 +944,7 @@ void CFiniteElementVec::ComputeMatrix_RHS(const double fkt,
 							                  l) += f_buff * fac2;
 					}
 			}
+		}
 		else
 			for (k = 0; k < nnodesHQ; k++)
 			{

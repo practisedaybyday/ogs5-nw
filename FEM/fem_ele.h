@@ -94,6 +94,9 @@ public:
 
 	// Get the values of shape function at integral point gp
 	void getShapefunctValues(const int gp, const int order) const;
+	// Get the pointer to the shape function array
+	// in the shape function pool for element centroid
+	void getShapeFunctionCentroid();
 	// Get the pointer to the shape function array in the shape function pool
 	void getShapeFunctionPtr(const MshElemType::type elem_type);
 	// Compute values of shape function at integral point unit
@@ -163,7 +166,7 @@ public:
 	//double elemnt_average (const int idx, const int order =1);
 	double elemnt_average (const int idx,  CRFProcess* m_pcs, const int order = 1);
 
-	void SetCenterGP();
+	void SetCenterGP(const MshElemType::type elem_type = MshElemType::INVALID);
 	int GetGPindex() const {return gp; }
 	int GetElementIndex() const {return Index; }
 	CElem* GetMeshElement() const         //OK

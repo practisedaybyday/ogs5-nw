@@ -3434,7 +3434,7 @@ void Problem::createShapeFunctionPool()
 	}
 
 	// Check element types of meshes
-    std::vector<MshElemType::type> elem_types;
+	std::vector<MshElemType::type> elem_types;
 	elem_types.reserve(MshElemType::LAST);
  
 	for (std::size_t i=0; i<static_cast<std::size_t>(MshElemType::LAST); i++)
@@ -3446,42 +3446,42 @@ void Problem::createShapeFunctionPool()
 	{
 		MeshLib::CFEMesh* mesh = fem_msh_vector[i];
 		if (mesh->getNumberOfLines() > 0)
-			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+			elem_types[static_cast<int>(MshElemType::LINE)-1] = MshElemType::LINE;
 		if (mesh->getNumberOfTris() > 0)
 		{
-			elem_types[MshElemType::TRIANGLE-1] = MshElemType::TRIANGLE;
-			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+			elem_types[static_cast<int>(MshElemType::TRIANGLE)-1] = MshElemType::TRIANGLE;
+			elem_types[static_cast<int>(MshElemType::LINE)-1] = MshElemType::LINE;
 		}
 		if (mesh->getNumberOfQuads() > 0)
 		{
-			elem_types[MshElemType::QUAD-1] = MshElemType::QUAD;
-			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+			elem_types[static_cast<int>(MshElemType::QUAD)-1] = MshElemType::QUAD;
+			elem_types[static_cast<int>(MshElemType::LINE)-1] = MshElemType::LINE;
 		}
 		if (mesh->getNumberOfHexs() > 0)
 		{
-			elem_types[MshElemType::HEXAHEDRON-1] = MshElemType::HEXAHEDRON;
-			elem_types[MshElemType::QUAD8-1] = MshElemType::QUAD8;
-			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+			elem_types[static_cast<int>(MshElemType::HEXAHEDRON)-1] = MshElemType::HEXAHEDRON;
+			elem_types[static_cast<int>(MshElemType::QUAD8)-1] = MshElemType::QUAD8;
+			elem_types[static_cast<int>(MshElemType::LINE)-1] = MshElemType::LINE;
 		}
 		if (mesh->getNumberOfTets() > 0)
 		{
-			elem_types[MshElemType::TETRAHEDRON-1] = MshElemType::TETRAHEDRON;
-			elem_types[MshElemType::TRIANGLE-1] = MshElemType::TRIANGLE;
-			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+			elem_types[static_cast<int>(MshElemType::TETRAHEDRON)-1] = MshElemType::TETRAHEDRON;
+			elem_types[static_cast<int>(MshElemType::TRIANGLE)-1] = MshElemType::TRIANGLE;
+			elem_types[static_cast<int>(MshElemType::LINE)-1] = MshElemType::LINE;
 		}
 		if (mesh->getNumberOfPrisms() > 0)
 		{
-			elem_types[MshElemType::PRISM-1] = MshElemType::PRISM;
-			elem_types[MshElemType::QUAD8-1] = MshElemType::QUAD8;
-			elem_types[MshElemType::TRIANGLE-1] = MshElemType::TRIANGLE;
-			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+			elem_types[static_cast<int>(MshElemType::PRISM)-1] = MshElemType::PRISM;
+			elem_types[static_cast<int>(MshElemType::QUAD8)-1] = MshElemType::QUAD8;
+			elem_types[static_cast<int>(MshElemType::TRIANGLE)-1] = MshElemType::TRIANGLE;
+			elem_types[static_cast<int>(MshElemType::LINE)-1] = MshElemType::LINE;
 		}
 		if (mesh->getNumberOfPyramids() > 0)
 		{
-			elem_types[MshElemType::PYRAMID-1] = MshElemType::PYRAMID;
-			elem_types[MshElemType::QUAD8-1] = MshElemType::QUAD8;
-			elem_types[MshElemType::TRIANGLE-1] = MshElemType::TRIANGLE;
-			elem_types[MshElemType::LINE-1] = MshElemType::LINE;
+			elem_types[static_cast<int>(MshElemType::PYRAMID)-1] = MshElemType::PYRAMID;
+			elem_types[static_cast<int>(MshElemType::QUAD8)-1] = MshElemType::QUAD8;
+			elem_types[static_cast<int>(MshElemType::TRIANGLE)-1] = MshElemType::TRIANGLE;
+			elem_types[static_cast<int>(MshElemType::LINE)-1] = MshElemType::LINE;
 		}
 	}
 

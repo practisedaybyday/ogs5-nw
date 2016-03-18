@@ -1452,7 +1452,7 @@ void CFiniteElementStd::CalNodalEnthalpy()
 	for(i = 0; i < nnodes; i++)
 	{
 		NodalVal_Sat[i] = pcs->GetNodeValue(nodes[i], idxS);
-		SetCenterGP();
+		getShapeFunctionCentroid();
 		temp =  FluidProp->Density()
 		       * MediaProp->Porosity(Index,pcs->m_num->ls_theta)
 		       * NodalVal_Sat[i];
@@ -4282,7 +4282,7 @@ void CFiniteElementStd::CalcLumpedMass()
 		//NW multiply geo_area
 		vol = MeshElement->GetVolume() * MeshElement->GetFluxArea();
 	// Center of the reference element
-	SetCenterGP();
+	getShapeFunctionCentroid();
 	factor = CalCoefMass();
 	pcs->timebuffer = factor;             // Tim Control "Neumann"
 	factor *= vol / (double)nnodes;
@@ -4348,7 +4348,7 @@ void CFiniteElementStd::CalcLumpedMass2()
 	// Initialize
 	(*Mass2) = 0.0;
 	// Center of the reference element
-	SetCenterGP();
+	getShapeFunctionCentroid();
 	for(in = 0; in < dof_n; in++)
 	  {
 	    const int ish = in * nnodes;
@@ -4406,7 +4406,7 @@ void CFiniteElementStd::CalcLumpedMassPSGLOBAL()
 	// Initialize
 	(*Mass2) = 0.0;
 	// Center of the reference element
-	SetCenterGP();
+	getShapeFunctionCentroid();
 	for(in = 0; in < dof_n; in++)
 	  {
 	    const int ish = in * nnodes; //WW
@@ -5189,6 +5189,13 @@ void CFiniteElementStd::CalcStrainCoupling(int phase)
 			getGradShapefunctValues(gp, 2);
 			getShapefunctValues(gp, 1);
 			getShapefunctValues(gp, 2);
+
+			if (axisymmetry)
+			{
+				Radius = 0.0;
+				for(int i = 0; i < nnodes; i++)
+					Radius += shapefct[i] * X[i];
+			}
 			//
 			fkt *= CalCoefStrainCouping(phase);
 			for(size_t i = 0; i < dim; i++ )

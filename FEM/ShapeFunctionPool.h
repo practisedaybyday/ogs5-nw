@@ -32,15 +32,20 @@ public:
 	/// Get shape function values of an element type
 	double* getShapeFunctionValues(const MshElemType::type elem_type) const;
 
+	/// Get shape function values at the element centroid of an element type
+	double* getShapeFunctionCenterValues(const MshElemType::type elem_type) const;
+
 	/// Get the values of the gradient of shape function of an element type
 	double* getGradShapeFunctionValues(const MshElemType::type elem_type) const;
 
 private:
 	/// Results of shape functions of all integration points.
-	std::vector<double*> _shape_fucntion; 
+	std::vector<double*> _shape_function; 
+	/// Results of shape functions of all integration points at element centroid.
+	std::vector<double*> _shape_function_center; 
 	/// Results of the gradient of shape functions with respect to
 	/// local coordinates of all integration points.
-	std::vector<double*> _grad_shape_fucntion; 
+	std::vector<double*> _grad_shape_function; 
 
 	void computeQuadratures(const std::vector<MshElemType::type>& elem_types,
 		                    const int num_elem_nodes[2][MshElemType::LAST],
