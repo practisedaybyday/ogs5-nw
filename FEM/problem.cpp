@@ -2734,9 +2734,11 @@ inline double Problem::Deformation()
 	//Error
 	if (dm_pcs->type / 10 == 4)
 	{
-		m_pcs->cal_integration_point_value = true;
-		dm_pcs->CalIntegrationPointValue();
-
+		if (!dm_pcs->isDynamic())
+		{
+			m_pcs->cal_integration_point_value = true;
+			dm_pcs->CalIntegrationPointValue();
+		}
 		if(dm_pcs->type == 42) // H2M. 07.2011. WW
 			dm_pcs->CalcSecondaryVariablesUnsaturatedFlow();
 	}
@@ -3427,8 +3429,6 @@ void Problem::createShapeFunctionPool()
 		}
 
 		CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs_1c_fem);
-		if (!lin_fem_assembler) 
-			lin_fem_assembler = dm_pcs->getLinearFEMAssembler();
 		fem_assembler = dm_pcs->GetFEMAssembler();
 		fem_assembler->setOrder(2);
 	}
@@ -3493,9 +3493,19 @@ void Problem::createShapeFunctionPool()
 		new FiniteElement::ShapeFunctionPool(elem_types, *lin_fem_assembler,
 		                                     num_gauss_sample_pnts);
 	if (fem_assembler)
+	{
 		_quadr_shapefunction_Pool = 
 		new FiniteElement::ShapeFunctionPool(elem_types, *fem_assembler,
 		                                     num_gauss_sample_pnts);
+		if (!_line_shapefunction_Pool)
+		{
+			fem_assembler->setOrder(1);
+			_line_shapefunction_Pool = 
+			new FiniteElement::ShapeFunctionPool(elem_types, *fem_assembler,
+		                                     num_gauss_sample_pnts);
+			fem_assembler->setOrder(2);
+		}
+	}
 
 	// Set ShapeFunctionPool
 	for (std::size_t i = 0; i < pcs_vector.size(); i++)
@@ -3505,10 +3515,10 @@ void Problem::createShapeFunctionPool()
 		{
 			CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs);
 			CFiniteElementVec* fem_assem_h = dm_pcs->GetFEMAssembler();
-			fem_assem_h->setShapeFunctionPool(_quadr_shapefunction_Pool,
+			fem_assem_h->setShapeFunctionPool(_line_shapefunction_Pool,
 				                              _quadr_shapefunction_Pool);
 		}
-		if (   pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
+		else if (   pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
 			|| pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW
 			|| pcs->getProcessType() == FiniteElement::DEFORMATION_H2)
 		{

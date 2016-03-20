@@ -657,13 +657,13 @@ void CRFProcessDeformation::InitGauss(void)
 				 */
 			}
 
+			fem_dm->setElement(elem);
+			fem_dm->setOrder(2);
+			fem_dm->SetIntegrationPointNumber(elem->GetElementType());
+			NGS = fem_dm->GetNumGaussPoints();
 			//
 			if (ccounter > 0)
 			{
-				fem_dm->setElement(elem);
-				fem_dm->setOrder(2);
-				fem_dm->SetIntegrationPointNumber(elem->GetElementType());
-				NGS = fem_dm->GetNumGaussPoints();
 				fem_dm->getShapeFunctionPtr(elem->GetElementType());
 			}
 
@@ -2879,4 +2879,8 @@ bool CRFProcessDeformation::CalcBC_or_SecondaryVariable_Dynamics(bool BC)
 
 	return BC;
 }
+
+bool CRFProcessDeformation::isDynamic() const
+{return fem_dm->dynamic;}
+
 }                                                 // end namespace

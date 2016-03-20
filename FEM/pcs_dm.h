@@ -62,6 +62,9 @@ public:
 
 	void ScalingNodeForce(const double SFactor);
 	void InitGauss();
+
+	bool isDynamic() const;
+
 	//
 	void SetInitialGuess_EQS_VEC();
 	void UpdateIterativeStep(const double damp, const int u_type);

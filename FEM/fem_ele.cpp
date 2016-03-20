@@ -34,7 +34,7 @@ CElement::CElement(int CoordFlag, const int order)
 {
 	for (int i=0; i<2; i++)
 	{
-		_shape_function_pool_ptr[i] = (NULL);
+		_shape_function_pool_ptr[i] = NULL;
 		_shape_function_result_ptr[i] = NULL;
 		_grad_shape_function_result_ptr[i] = NULL;
 	}
@@ -1061,10 +1061,10 @@ void CElement::getShapeFunctionCentroid()
 {
 	if (_shape_function_pool_ptr[0])
 		shapefct
-		= (_shape_function_pool_ptr[0])->getGradShapeFunctionValues(MeshElement->GetElementType());
+		= (_shape_function_pool_ptr[0])->getShapeFunctionCenterValues(MeshElement->GetElementType());
 	if (_shape_function_pool_ptr[1])
 		shapefctHQ
-			= (_shape_function_pool_ptr[1])->getGradShapeFunctionValues(MeshElement->GetElementType());
+			= (_shape_function_pool_ptr[1])->getShapeFunctionCenterValues(MeshElement->GetElementType());
 
 }
 void CElement::getShapeFunctionPtr(const MshElemType::type elem_type)

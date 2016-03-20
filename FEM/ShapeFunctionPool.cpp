@@ -17,9 +17,6 @@ ShapeFunctionPool::ShapeFunctionPool(
 			const std::vector<MshElemType::type>& elem_types,
 			CElement& quadrature, const int num_sample_gs_pnts)
 {
-	int num_elem_nodes[2][MshElemType::LAST];
-	int dim_elem[MshElemType::LAST];
-
 	const std::size_t n_ele_types = elem_types.size();
 	_shape_function.reserve(n_ele_types);
 	_shape_function_center.reserve(n_ele_types);
@@ -31,6 +28,9 @@ ShapeFunctionPool::ShapeFunctionPool(
 		_shape_function_center.push_back(NULL);
 		_grad_shape_function.push_back(NULL);
 	}
+
+	int num_elem_nodes[2][MshElemType::LAST];
+	int dim_elem[MshElemType::LAST];
 
 	int id = static_cast<int>(MshElemType::LINE) - 1;
 	num_elem_nodes[0][id] = 2;
@@ -75,13 +75,14 @@ ShapeFunctionPool::ShapeFunctionPool(
 	//std::vector<int> elem_type_ids
 	for (std::size_t i=0; i<elem_types.size(); i++)
 	{
-		if (elem_types[i] == MshElemType::INVALID)
+		const MshElemType::type e_type = elem_types[i];
+		if (e_type == MshElemType::INVALID)
 			continue;
 		// Set number of integration points.
 		quadrature.SetGaussPointNumber(num_sample_gs_pnts);
-		quadrature.SetIntegrationPointNumber(elem_types[i]);
+		quadrature.SetIntegrationPointNumber(e_type);
 
-		const int type_id = static_cast<int>(elem_types[i]) - 1;
+		const int type_id = static_cast<int>(e_type) - 1;
 		int num_int_pnts = quadrature.GetNumGaussPoints();
 		const int num_nodes = num_elem_nodes[quadrature.getOrder() - 1][type_id];
 		_shape_function_center[type_id] = new double[num_nodes];
@@ -146,7 +147,6 @@ void ShapeFunctionPool::
 		quadrature.SetGaussPointNumber(num_sample_gs_pnts);
 		quadrature.SetIntegrationPointNumber(e_type);
 
-		quadrature.ConfigShapefunction(e_type);
 		for (int gp = 0; gp < quadrature.GetNumGaussPoints(); gp++)
 	    {
 			int gp_r, gp_s, gp_t;
