@@ -116,7 +116,7 @@ int myrank;
  ***************************************************************************/
 Problem::Problem (char* filename) :
 	dt0(0.), print_result(true), _geo_obj (new GEOLIB::GEOObjects), _geo_name (filename),
-	cpl_overall_tol(1.e-4), _line_shapefunction_Pool(NULL), _quadr_shapefunction_Pool(NULL)
+	cpl_overall_tol(1.e-4), _line_shapefunction_pool(NULL), _quadr_shapefunction_pool(NULL)
 {
 #if defined(USE_MPI) || defined(USE_PETSC)
 	MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
@@ -549,10 +549,10 @@ Problem::~Problem()
 	delete m_vec_BRNS;
 #endif
 
-	if (_line_shapefunction_Pool)
-		delete _line_shapefunction_Pool;
-	if (_quadr_shapefunction_Pool)
-		delete _quadr_shapefunction_Pool;
+	if (_line_shapefunction_pool)
+		delete _line_shapefunction_pool;
+	if (_quadr_shapefunction_pool)
+		delete _quadr_shapefunction_pool;
 	ScreenMessage("\nYour simulation is terminated normally\n");
 }
 
@@ -3489,18 +3489,18 @@ void Problem::createShapeFunctionPool()
 	const int num_gauss_sample_pnts
 		     = num_vector[0]->getNumIntegrationSamplePoints();
 	if (lin_fem_assembler)
-		_line_shapefunction_Pool = 
+		_line_shapefunction_pool = 
 		new FiniteElement::ShapeFunctionPool(elem_types, *lin_fem_assembler,
 		                                     num_gauss_sample_pnts);
 	if (fem_assembler)
 	{
-		_quadr_shapefunction_Pool = 
+		_quadr_shapefunction_pool = 
 		new FiniteElement::ShapeFunctionPool(elem_types, *fem_assembler,
 		                                     num_gauss_sample_pnts);
-		if (!_line_shapefunction_Pool)
+		if (!_line_shapefunction_pool)
 		{
 			fem_assembler->setOrder(1);
-			_line_shapefunction_Pool = 
+			_line_shapefunction_pool = 
 			new FiniteElement::ShapeFunctionPool(elem_types, *fem_assembler,
 		                                     num_gauss_sample_pnts);
 			fem_assembler->setOrder(2);
@@ -3515,8 +3515,8 @@ void Problem::createShapeFunctionPool()
 		{
 			CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs);
 			CFiniteElementVec* fem_assem_h = dm_pcs->GetFEMAssembler();
-			fem_assem_h->setShapeFunctionPool(_line_shapefunction_Pool,
-				                              _quadr_shapefunction_Pool);
+			fem_assem_h->setShapeFunctionPool(_line_shapefunction_pool,
+				                              _quadr_shapefunction_pool);
 		}
 		else if (   pcs->getProcessType() == FiniteElement::DEFORMATION_DYNAMIC
 			|| pcs->getProcessType() == FiniteElement::DEFORMATION_FLOW
@@ -3524,15 +3524,17 @@ void Problem::createShapeFunctionPool()
 		{
 			CRFProcessDeformation* dm_pcs = dynamic_cast<CRFProcessDeformation*>(pcs);
 			CFiniteElementVec* fem_assem_h = dm_pcs->GetFEMAssembler();
-			fem_assem_h->setShapeFunctionPool(_line_shapefunction_Pool, _quadr_shapefunction_Pool);
+			fem_assem_h->setShapeFunctionPool(_line_shapefunction_pool, _quadr_shapefunction_pool);
 			CFiniteElementStd* fem_assem = dm_pcs->getLinearFEMAssembler();
-			fem_assem->setShapeFunctionPool(_line_shapefunction_Pool, _quadr_shapefunction_Pool);
+			fem_assem->setShapeFunctionPool(_line_shapefunction_pool, _quadr_shapefunction_pool);
 		}
 		else
 		{
 			CFiniteElementStd* fem_assem = pcs->getLinearFEMAssembler();
-			fem_assem->setShapeFunctionPool(_line_shapefunction_Pool,
-				                            _line_shapefunction_Pool);
+			if (!_quadr_shapefunction_pool)
+				_quadr_shapefunction_pool = _line_shapefunction_pool;
+			fem_assem->setShapeFunctionPool(_line_shapefunction_pool,
+				                            _quadr_shapefunction_pool);
 		}
 	}
 }
