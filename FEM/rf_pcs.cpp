@@ -1082,7 +1082,7 @@ void CRFProcess::SetBoundaryConditionAndSourceTerm()
 				m_st_group = STGetGroup(pcs_type_name,
 				                        pcs_primary_function_name[i]);
 
-				if (m_st_group != NULL)
+				if (!m_st_group)
 				{
 					m_st_group = new CSourceTermGroup();
 					//OK
