@@ -639,7 +639,7 @@ void CRFProcess::Create()
 	if (Write_Matrix)
 	{
 		std::cout << "->Write Matrix" << '\n';
-#if defined(USE_MPI)
+#if defined(USE_PETSC) || defined(USE_MPI)
 		char stro[32];
 		sprintf(stro, "%d",myrank);
 		string m_file_name = FileName + "_" + pcs_type_name + (string)stro +
