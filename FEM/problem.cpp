@@ -550,7 +550,19 @@ Problem::~Problem()
 #endif
 
 	if (_line_shapefunction_pool)
-		delete _line_shapefunction_pool;
+	{
+		if (_line_shapefunction_pool == _quadr_shapefunction_pool)
+		{
+			delete _line_shapefunction_pool;
+			_line_shapefunction_pool = NULL;
+			_quadr_shapefunction_pool = NULL;
+		}
+		else
+		{
+			delete _line_shapefunction_pool;
+			_line_shapefunction_pool = NULL;
+		}
+	}
 	if (_quadr_shapefunction_pool)
 		delete _quadr_shapefunction_pool;
 	ScreenMessage("\nYour simulation is terminated normally\n");
