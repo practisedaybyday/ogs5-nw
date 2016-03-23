@@ -323,21 +323,21 @@ void CElement::SetIntegrationPointNumber(const MshElemType::type elem_type)
 		nGaussPoints = nGauss * nGauss * nGauss;
 		return;
 	case MshElemType::TRIANGLE:
-		nGaussPoints = nGauss = 3; // Fixed to 3
+		nGaussPoints = 3; //nGauss = 3; // Fixed to 3
 		return;
 	case MshElemType::TETRAHEDRON:
 		//	   nGaussPoints = nGauss = 15;  // Fixed to 15
-		nGaussPoints = nGauss = 5; // Fixed to 5
+		nGaussPoints = 5; //nGauss = 5; // Fixed to 5
 		return;
 	case MshElemType::PRISM:
 		nGaussPoints = 6;         // Fixed to 6
-		nGauss = 3;               // Fixed to 3
+		//nGauss = 3;               // Fixed to 3
 		return;
 	case MshElemType::PYRAMID:
 		if (Order == 1)
-			nGaussPoints = nGauss = 5;
+			nGaussPoints = 5; //nGauss = 5;
 		else
-			nGaussPoints = nGauss = 8;  //13;
+			nGaussPoints = 8; //nGauss = 8;  //13;
 		return;
 	case MshElemType::INVALID:
 		std::cerr << "[CElement::ConfigNumerics] invalid element type" << std::endl;
@@ -402,7 +402,7 @@ void CElement::ConfigShapefunction(MshElemType::type elem_type)
 		return;
 	case MshElemType::TRIANGLE:
 		ele_dim = 2;
-		nGaussPoints = nGauss = 3; // Fixed to 3
+		nGaussPoints = 3; //nGauss = 3; // Fixed to 3
 		ShapeFunction = ShapeFunctionTri;
 		ShapeFunctionHQ = ShapeFunctionTriHQ;
 		GradShapeFunction = GradShapeFunctionTri;
@@ -412,7 +412,7 @@ void CElement::ConfigShapefunction(MshElemType::type elem_type)
 	case MshElemType::TETRAHEDRON:
 		ele_dim = 3;
 		//	   nGaussPoints = nGauss = 15;  // Fixed to 15
-		nGaussPoints = nGauss = 5; // Fixed to 5
+		nGaussPoints = 5; //nGauss = 5; // Fixed to 5
 		ShapeFunction = ShapeFunctionTet;
 		ShapeFunctionHQ = ShapeFunctionTetHQ;
 		GradShapeFunction = GradShapeFunctionTet;
@@ -422,7 +422,7 @@ void CElement::ConfigShapefunction(MshElemType::type elem_type)
 	case MshElemType::PRISM:
 		ele_dim = 3;
 		nGaussPoints = 6;         // Fixed to 6
-		nGauss = 3;               // Fixed to 3
+		//nGauss = 3;               // Fixed to 3
 		ShapeFunction = ShapeFunctionPri;
 		ShapeFunctionHQ = ShapeFunctionPriHQ;
 		GradShapeFunction = GradShapeFunctionPri;
@@ -432,9 +432,9 @@ void CElement::ConfigShapefunction(MshElemType::type elem_type)
 	case MshElemType::PYRAMID:
 		ele_dim = 3;
 		if (Order == 1)
-			nGaussPoints = nGauss = 5;
+			nGaussPoints = 5; //nGauss = 5;
 		else
-			nGaussPoints = nGauss = 8;  //13;
+			nGaussPoints = 8; //nGauss = 8;  //13;
 		ShapeFunction = ShapeFunctionPyra;
 		ShapeFunctionHQ = ShapeFunctionPyraHQ13;
 		GradShapeFunction = GradShapeFunctionPyra;
@@ -789,11 +789,13 @@ void CElement::SetGaussPoint(const MshElemType::type elem_type,
 		SamplePointTet5(gp, unit);
 		return;
 	case MshElemType::PRISM:              // Prism
-		gp_r = gp % nGauss;
-		SamplePointTriHQ(gp_r, unit);
-        //
-		gp_s = nGaussPoints/nGauss;
-		gp_t = (int)(gp / nGauss);
+		// nGaussPoints = 6;         // Fixed to 6
+		// nGauss = 3;               // Fixed to 3
+		gp_r = gp % 3; // gp % nGauss
+		SamplePointTriHQ(gp_r, unit);		
+		//
+		gp_s = nGaussPoints/3; // nGaussPoints/nGauss
+		gp_t = (int)(gp / 3);  // gp/nGauss
 		unit[2] = MXPGaussPkt(gp_s,  gp_t);
 		return;
 	case MshElemType::PYRAMID: // Pyramid
@@ -825,47 +827,50 @@ void CElement::SetGaussPoint(const MshElemType::type elem_type,
  **************************************************************************/
 double CElement::GetGaussData(int gp, int& gp_r, int& gp_s, int& gp_t)
 {
-	double fkt = 0.0;
 	switch(MeshElement->GetElementType())
 	{
 	case MshElemType::LINE:               // Line
-		fkt = _determinants_all[gp] * MXPGaussFkt(nGauss, gp_r);
-		break;
+		gp_r = gp;
+		return _determinants_all[gp] * MXPGaussFkt(nGauss, gp_r);
 	case MshElemType::QUAD8:               // Quadralateral
 	case MshElemType::QUAD:               // Quadralateral
-		fkt = _determinants_all[gp] *
+		gp_r = (int)(gp / nGauss);
+		gp_s = gp % nGauss;
+		return _determinants_all[gp] *
 			  MXPGaussFkt(nGauss, gp_r) * MXPGaussFkt(nGauss, gp_s);
-		break;
 	case MshElemType::HEXAHEDRON:         // Hexahedra
-		fkt = _determinants_all[gp]
+		gp_r = (int)(gp / (nGauss * nGauss));
+		gp_s = (gp % (nGauss * nGauss));
+		gp_t = gp_s % nGauss;
+		gp_s /= nGauss;
+		return _determinants_all[gp]
 			  * MXPGaussFkt(nGauss, gp_r) * MXPGaussFkt(nGauss, gp_s)
 		      * MXPGaussFkt(nGauss, gp_t);
-		break;
 	case MshElemType::TRIANGLE:           // Triangle
 		SamplePointTriHQ(gp, unit);
-		fkt = _determinants_all[gp] * unit[2];           // Weights
-		break;
+		return _determinants_all[gp] * unit[2];           // Weights
 	case MshElemType::TETRAHEDRON:        // Tedrahedra
 		//To be flexible          SamplePointTet15(gp, unit);
 		SamplePointTet5(gp, unit);
-		fkt = _determinants_all[gp] * unit[3];           // Weights
-		break;
-	case MshElemType::PRISM:              // Prism
-		fkt = _determinants_all[gp] * MXPGaussFktTri(nGauss, gp_r)
+		return _determinants_all[gp] * unit[3];           // Weights
+	case MshElemType::PRISM:              // Prism nGauss=3
+		gp_r = gp % 3; // gp % nGauss
+		//
+		gp_s = nGaussPoints/3; // nGaussPoints/nGauss
+		gp_t = (int)(gp / 3);  // gp/nGauss
+		return _determinants_all[gp] * MXPGaussFktTri(3, gp_r)
 			  * MXPGaussFkt(gp_s, gp_t);
-		break;
 	case MshElemType::PYRAMID: // Pyramid
 		if (Order == 1)
 			SamplePointPyramid5(gp, unit);
 		else
 			SamplePointPyramid8(gp, unit);  //SamplePointPyramid13(gp, unit);
-		fkt = _determinants_all[gp] * unit[3];           // Weights
-		break;
+		return _determinants_all[gp] * unit[3];           // Weights
 	default:
 		std::cerr << "CElement::GetGaussData invalid mesh element type given" << std::endl;
-		break;
+		return 0.;
 	}
-	return fkt;
+	return 0.;
 }
 
 /***************************************************************************
