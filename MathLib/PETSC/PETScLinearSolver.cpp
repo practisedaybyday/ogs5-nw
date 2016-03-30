@@ -211,35 +211,46 @@ void PETScLinearSolver::ConfigLinear(const PetscReal tol, const PetscInt maxits,
 	}
 
 #if 1
-	if (vec_subA.empty()) {
-   if (!misc_setting.empty()) {
-	   PetscPrintf(PETSC_COMM_WORLD, "-> additional PETSc arguments:\n");
-	   std::list<std::string> lst = splitString(misc_setting,' ');
-	   for (std::list<std::string>::iterator itr=lst.begin(); itr!=lst.end(); ++itr) {
-		   // key-value or only key
-		   std::string &str1 = *itr;
-		   if (str1.find('-')==std::string::npos)
-			   continue;
-		   ++itr;
-		   if (itr==lst.end())
-			   break;
-		   std::string val = "";
-		   std::string &str2 = *itr;
-		   if (str2.find('-')==std::string::npos)
-				val = str2;
-		   else
-			   --itr;
-		   vec_para.push_back(std::make_pair(str1, val));
-		   PetscPrintf(PETSC_COMM_WORLD, "\t %s = %s\n", str1.c_str(), val.c_str());
-	   }
-   }
-   for (std::vector<Para>::iterator itr=vec_para.begin(); itr!=vec_para.end(); ++itr) {
-	   PetscOptionsSetValue(itr->first.c_str(),itr->second.c_str());
-   }
-   char* copts;
-   PetscOptionsGetAll(&copts);
-   PetscPrintf(PETSC_COMM_WORLD, "-> PETSc options = %s\n", copts);
-   PetscFree(copts);
+	if (vec_subA.empty())
+	{
+		if (!misc_setting.empty())
+		{
+			PetscPrintf(PETSC_COMM_WORLD, "-> additional PETSc arguments:\n");
+			std::list<std::string> lst = splitString(misc_setting, ' ');
+			for (std::list<std::string>::iterator itr = lst.begin();
+			     itr != lst.end();
+			     ++itr)
+			{
+				// key-value or only key
+				std::string& str1 = *itr;
+				std::string val = "";
+				if (str1.find('-') == std::string::npos) continue;
+				++itr;
+				if (itr != lst.end())
+				{
+					std::string& str2 = *itr;
+					if (str2[0] != '-')
+						val = str2;
+					else
+						--itr;
+				}
+				vec_para.push_back(std::make_pair(str1, val));
+				PetscPrintf(PETSC_COMM_WORLD, "\t %s = %s\n", str1.c_str(),
+				            val.c_str());
+				if (itr == lst.end())
+					break;
+			}
+		}
+		for (std::vector<Para>::iterator itr = vec_para.begin();
+		     itr != vec_para.end();
+		     ++itr)
+		{
+			PetscOptionsSetValue(itr->first.c_str(), itr->second.c_str());
+		}
+		char* copts;
+		PetscOptionsGetAll(&copts);
+		PetscPrintf(PETSC_COMM_WORLD, "-> PETSc options = %s\n", copts);
+		PetscFree(copts);
 	}
 #endif
 #if 0
