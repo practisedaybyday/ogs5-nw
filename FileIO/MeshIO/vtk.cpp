@@ -1341,8 +1341,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
                         CFiniteElementStd* fem = m_pcs->GetAssember();
                         fem->ConfigElement(ele, false);
                         fem->Config();
-                        fem->getShapeFunctionPtr(ele->GetElementType());
-                        fem->getShapefunctValues(0, 1);
+                        fem->getShapeFunctionCentroid();
                         CMediumProperties* mmp = mmp_vector[ele->GetPatchIndex()];
                         double mat_value = ELEMENT_MMP_VALUES::getValue(mmp, mmp_id, i_e, gp, theta);
                         fin << mat_value << " ";
@@ -1429,8 +1428,7 @@ bool CVTK::WriteElementValue(std::fstream &fin,
                         CFiniteElementStd* fem = m_pcs->GetAssember();
                         fem->ConfigElement(ele, false);
                         fem->Config();
-                        fem->getShapeFunctionPtr(ele->GetElementType());
-                        fem->getShapefunctValues(0, 1);
+                        fem->getShapeFunctionCentroid();
                         CFluidProperties* mfp = mfp_vector[0];
                         mfp->Fem_Ele_Std = fem;
                         double mat_value = ELEMENT_MFP_VALUES::getValue(mfp, mfp_id);
