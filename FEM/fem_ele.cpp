@@ -534,9 +534,6 @@ void CElement::computeJacobian(const int gp, const int order, const bool inverse
 {
 	int nodes_number = nnodes;
 	double DetJac = 0.0;
-	//    double *sh = shapefct;
-	double dx,dy,dz;
-	dx = dy = dz = 0.0;
 
 	double* dN = NULL;
 	if(order == 2)
@@ -556,25 +553,27 @@ void CElement::computeJacobian(const int gp, const int order, const bool inverse
 	{
 	//................................................................
 	case 1:
-		// If Line in X or Z direction, coordinate is saved in local X
-		// If Line in 3D space, a transform is applied and cast coordinate in local X
-		dx = X[1] - X[0];         //+Y[1]-Y[0];
-		Jacobian[0] = 0.5 * dx;
+		{
+			// If Line in X or Z direction, coordinate is saved in local X
+			// If Line in 3D space, a transform is applied and cast coordinate in local X
+			const double dx = X[1] - X[0];         //+Y[1]-Y[0];
+			Jacobian[0] = 0.5 * dx;
 
-		if (!inverse)
+			if (!inverse)
 			return;
 
-		invJacobian = &_inv_jacobian_all[gp * 1];
-		invJacobian[0] = 2.0 / dx;
-		DetJac = Jacobian[0];
-		//WW
-		//if(MeshElement->area>0)
-		DetJac *= MeshElement->area;
-		//WW          DetJac*=MeshElement->GetFluxArea();//CMCD
-		if(axisymmetry)
-		{
-			CalculateRadius(gp);
-			DetJac *= Radius; //2.0*pai*Radius;
+			invJacobian = &_inv_jacobian_all[gp * 1];
+			invJacobian[0] = 2.0 / dx;
+			DetJac = Jacobian[0];
+			//WW
+			//if(MeshElement->area>0)
+			DetJac *= MeshElement->area;
+			//WW          DetJac*=MeshElement->GetFluxArea();//CMCD
+			if(axisymmetry)
+			{
+				CalculateRadius(gp);
+				DetJac *= Radius; //2.0*pai*Radius;
+			}
 		}
 		break;
 	//................................................................
@@ -1054,7 +1053,7 @@ void CElement::ComputeShapefct(const int order, double shape_fucntion[])
 		ShapeFunctionHQ(shape_fucntion, unit);
 }
 
-void CElement::ComputeGradShapefctLocal(const int order, double grad_shape_fucntion[])
+void CElement::computeGradShapefctLocal(const int order, double grad_shape_fucntion[])
 {
 	if(order == 1)
 		GradShapeFunction(grad_shape_fucntion, unit);
@@ -1072,6 +1071,18 @@ void CElement::getShapeFunctionCentroid()
 			= (_shape_function_pool_ptr[1])->getShapeFunctionCenterValues(MeshElement->GetElementType());
 
 }
+
+void CElement::getGradShapeFunctionCentroid()
+{
+	if (_shape_function_pool_ptr[0])
+		dshapefct
+		= (_shape_function_pool_ptr[0])->getGradShapeFunctionCenterValues(MeshElement->GetElementType());
+	if (_shape_function_pool_ptr[1])
+		dshapefctHQ
+			= (_shape_function_pool_ptr[1])->getGradShapeFunctionCenterValues(MeshElement->GetElementType());
+
+}
+
 void CElement::getShapeFunctionPtr(const MshElemType::type elem_type)
 {
 	if (_shape_function_pool_ptr[0])

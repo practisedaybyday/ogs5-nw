@@ -3452,6 +3452,8 @@ void CFiniteElementStd::CalcMass()
 		{
 			// CB 11/07 this is to provide the velocity at the element center of gravity
 			// call to his function here is also required for upwinding in CalcCoefLaplace
+			getShapeFunctionCentroid();               // Linear interpolation function
+			getGradShapeFunctionCentroid();           //
 			Cal_Velocity_2();
 			UpwindAlphaMass(alpha); // CB 160507
 		}
@@ -6160,14 +6162,12 @@ void CFiniteElementStd::Cal_Velocity_2()
 
 	//GetGaussData(gp, gp_r, gp_s, gp_t);
 	// calculate the velocity at the element center of gravity
-	if(PcsType == T)
-		SetCenterGP();            // CB 11/2007
+	//WWif(PcsType == T)
+	//WW	SetCenterGP();            // CB 11/2007
 
 	//---------------------------------------------------------
 	// Compute geometry
 	//---------------------------------------------------------
-	getGradShapefunctValues(gp, 1);               // Linear interpolation function
-	getShapefunctValues(gp, 1);                   // Moved from CalCoefLaplace(). 12.3.2007 WW
 	if((PcsType == T) && (pcs->pcs_type_number == 1)) //WW/CB
 		flag_cpl_pcs = true;
 	// Material

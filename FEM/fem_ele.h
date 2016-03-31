@@ -105,6 +105,9 @@ public:
 	void computeJacobian(const int gp, const int order,
 		                 const bool inverse = true);
 
+	// Get the pointer to the gradient of shape function array
+	// in the shape function pool for element centroid
+	void getGradShapeFunctionCentroid();
 	// Get the values of the gradient of the shape function at integral point gp
 	void getGradShapefunctValues(const int gp, const int order) const;
 	// Compute values of the derivatives of shape function at integral point
@@ -113,7 +116,7 @@ public:
 	void ComputeGradShapefct(const int gp, const int order,
 		                     const bool is_face_integration = false);
 	// Compute values of the derivatives of shape function at integral point
-	void ComputeGradShapefctLocal(const int order, double grad_shape_fucntion[]);
+	void computeGradShapefctLocal(const int order, double grad_shape_fucntion[]);
 	
 	void setMixedOrderFlag(const bool is_mixed_order)
 	{

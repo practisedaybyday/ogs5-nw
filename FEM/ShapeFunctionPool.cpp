@@ -21,12 +21,14 @@ ShapeFunctionPool::ShapeFunctionPool(
 	_shape_function.reserve(n_ele_types);
 	_shape_function_center.reserve(n_ele_types);
 	_grad_shape_function.reserve(n_ele_types);
+	_grad_shape_function_center.reserve(n_ele_types);
 
 	for (std::size_t i=0; i<n_ele_types; i++)
 	{
 		_shape_function.push_back(NULL);
 		_shape_function_center.push_back(NULL);
 		_grad_shape_function.push_back(NULL);
+		_grad_shape_function_center.push_back(NULL);
 	}
 
 	int num_elem_nodes[2][MshElemType::LAST];
@@ -89,6 +91,7 @@ ShapeFunctionPool::ShapeFunctionPool(
 		const int size_shape_fct = num_nodes * num_int_pnts;
 		_shape_function[type_id] = new double[size_shape_fct];
 		_grad_shape_function[type_id] = new double[dim_elem[type_id] * size_shape_fct];
+		_grad_shape_function_center[type_id] = new double[dim_elem[type_id] * num_nodes];
 	}
 
 	computeQuadratures(elem_types, num_elem_nodes, dim_elem, quadrature, num_sample_gs_pnts);
@@ -116,6 +119,13 @@ ShapeFunctionPool::~ShapeFunctionPool()
 			delete [] _grad_shape_function[i];
 		_grad_shape_function[i] = NULL;
 	}
+
+	for (std::size_t i=0; i<_grad_shape_function_center.size(); i++)
+	{
+		if (_grad_shape_function_center[i])
+			delete [] _grad_shape_function_center[i];
+		_grad_shape_function_center[i] = NULL;
+	}
 }
 
 void ShapeFunctionPool::
@@ -140,6 +150,8 @@ void ShapeFunctionPool::
 		double* shape_function_center_values = _shape_function_center[type_id];
 		quadrature.SetCenterGP(e_type);
 		quadrature.ComputeShapefct(order, shape_function_center_values);
+		double* grad_shape_function_center_values = _grad_shape_function_center[type_id];
+		quadrature.computeGradShapefctLocal(order, grad_shape_function_center_values);
 
 		double* shape_function_values = _shape_function[type_id];
 		double* dshape_function_values = _grad_shape_function[type_id];
@@ -157,7 +169,7 @@ void ShapeFunctionPool::
 
 			double* dshape_function_values_gs
 				    = &dshape_function_values[gp * nnodes * elem_dim];
-			quadrature.ComputeGradShapefctLocal(order, dshape_function_values_gs);
+			quadrature.computeGradShapefctLocal(order, dshape_function_values_gs);
 		}
 	}
 }
@@ -181,6 +193,13 @@ getGradShapeFunctionValues(const MshElemType::type elem_type) const
 {
 	assert(_grad_shape_function[static_cast<int>(elem_type)-1]);
 	return _grad_shape_function[static_cast<int>(elem_type)-1];
+}
+
+double* ShapeFunctionPool::
+getGradShapeFunctionCenterValues(const MshElemType::type elem_type) const
+{
+	assert(_grad_shape_function_center[static_cast<int>(elem_type)-1]);
+	return _grad_shape_function_center[static_cast<int>(elem_type)-1];
 }
 
 } // end namespace
