@@ -1734,8 +1734,6 @@ double CFiniteElementStd::CalCoefMass2(int dof_index)
 		diffusion = true;
 	dens_arg[1] = 293.15;
 	//
-	if(pcs->m_num->ele_mass_lumping)
-		getShapefunctValues(gp, 1);
 	// CB_merge_0513 in case of het K, store local K in permeability_tensor
 	double *tensor = NULL;
 	tensor = MediaProp->PermeabilityTensor(Index);
@@ -1863,8 +1861,6 @@ double CFiniteElementStd::CalCoefMassPSGLOBAL(int dof_index)
 	//WWif(MediaProp->heat_diffusion_model==273&&cpl_pcs)
 	//WW  diffusion = true;
 	//
-	if(pcs->m_num->ele_mass_lumping)
-		getShapefunctValues(gp, 1);
 	switch(dof_index)
 	{
 	case 0:
