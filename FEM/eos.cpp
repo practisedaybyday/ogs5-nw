@@ -837,6 +837,7 @@ double h2o_viscosity_IAPWS (double rho, double T)
 	double sum1 = 0,sum2 = 0,sum3 = 0;
 	int i,j;
 
+	T += 273.15;
 	T = T / 647.096;
 	rho = rho / 322.0;
 

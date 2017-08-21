@@ -1261,8 +1261,8 @@ std::string CRFProcess::GetSolutionFileName(bool write)
 	std::string pcs_type_name (convertProcessTypeToString(this->getProcessType()));
 	std::string m_file_name = FileName + "_" + pcs_type_name + "_" +
 	                          pcs_primary_function_name[0] + "_primary_value";
-	if (write)
-		m_file_name += "_" + number2str(aktueller_zeitschritt);
+	//if (write)
+	//	m_file_name += "_" + number2str(aktueller_zeitschritt);
 #if defined(USE_PETSC)  //|| defined(other parallel libs)//03.3012. WW
 	m_file_name += "_rank" + number2str(myrank);
 #endif
@@ -7317,6 +7317,8 @@ void CRFProcess::DDCAssembleGlobalMatrix()
 			// exchange condition needs to update a coefficient matrix
 			if (m_st->is_transfer_bc)
 			{
+				if (st_node_value[is].empty())
+					continue;
 				// only Neumann BC
 				if (m_st->getSTType()!=FiniteElement::NEUMANN)
 					continue;

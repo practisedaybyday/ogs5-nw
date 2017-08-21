@@ -179,7 +179,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_H2()
 		{
 			// setOrder(2);
 			// GetGaussData(gp, gp_r, gp_s, gp_t);
-			// getGradShapefunctValues(gp, 2);
+			getGradShapefunctValues(gp, 2);
 			// setOrder(1);
 
 			/// if deformation is coupled
@@ -315,7 +315,7 @@ void CFiniteElementStd::ComputeAdditionalJacobi_Richards()
 		{
 			// setOrder(2);
 			// GetGaussData(gp, gp_r, gp_s, gp_t);
-			// getGradShapefunctValues(gp, 2);
+			getGradShapefunctValues(gp, 2);
 			// setOrder(1);
 
 			/// if deformation is coupled

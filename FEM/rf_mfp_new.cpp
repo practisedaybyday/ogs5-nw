@@ -288,6 +288,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 				in >> C_0;
 				density_pcs_name_vector.push_back("PRESSURE1");
 				density_pcs_name_vector.push_back("TEMPERATURE1");
+				ScreenMessage("-> IAPWS-IF97 density is selected.\n");
 			}
 			if(density_model == 9) //WW
 				// Molar mass
@@ -427,6 +428,7 @@ std::ios::pos_type CFluidProperties::Read(std::ifstream* mfp_file)
 			{
 				std::string arg1,arg2;
 				in >> arg1 >> arg2; //get up to three arguments for density model
+				ScreenMessage("-> IAPWS-IF97 visco is selected.\n");
 
 				if (arg1.length() == 0) // if no arguments are given use standard
 				{
@@ -1205,6 +1207,7 @@ double CFluidProperties::MATCalcFluidDensityMethod8(double Press, double TempK, 
 	int i;
 	double salinity;
 
+	TempK += 273.15;
 	pressure_average = Press;
 	temperature_average = TempK;
 	salinity = C_0;
