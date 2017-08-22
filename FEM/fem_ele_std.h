@@ -181,6 +181,8 @@ public:
 	void ExtropolateGauss(CRFProcess* m_pcs, const int idof);
 	//
 
+	double CalcEntropy(const double T0);
+
 private:
 	bool newton_raphson;                  //24.05.2007 WW
 	long index;

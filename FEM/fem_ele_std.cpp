@@ -11673,9 +11673,72 @@ void CFiniteElementStd::AssembleTHEquation(bool updateA, bool updateRHS)
 }
 #endif
 
+
+double CFiniteElementStd::CalcEntropy(const double T0)
+{
+	Config();
+
+	int gp_r = 0, gp_s = 0, gp_t;
+	double vel[3];
+
+	ElementValue* gp_ele = ele_gp_value[Index];
+
+	gp_t = 0;
+	double entropy = 0.;
+	//----------------------------------------------------------------------
+	// Loop over Gauss points
+	for (gp = 0; gp < nGaussPoints; gp++)
+	{
+		//  Get local coordinates and weights
+		//  Compute Jacobian matrix and its determinate
+		//---------------------------------------------------------
+		const double fkt = GetGaussData(gp, gp_r, gp_s, gp_t);
+		//---------------------------------------------------------
+		// Compute geometry
+		getGradShapefunctValues(gp, 1);   // Linear interpolation function....dNJ-1....var dshapefct
+		getShapefunctValues(gp, 1);       // Linear interpolation N....var shapefct
+		//---------------------------------------------------------
+		//Velocity
+		vel[0] = gp_ele->Velocity(0, gp);
+		vel[1] = gp_ele->Velocity(1, gp);
+		vel[2] = gp_ele->Velocity(2, gp);
+
+		CalCoefLaplace(false,gp);
+		const double k_T = mat[0];
+		const double* perm = MediaProp->PermeabilityTensor(Index);
+		double variables[3];
+		variables[0] = interpolate(NodalValC); //pressure
+		variables[1] = interpolate(NodalVal1); //temperature
+		const double mu = FluidProp->Viscosity(variables);
+
+		double gradT[] = {0., 0., 0.};
+		for (int i = 0; i < nnodes; i++)
+		{
+		    for (int k = 0; k < dim; k++)
+			{
+		      gradT[k] += dshapefct[k * nnodes + i] * NodalVal1[i];
+			}
+		}
+		double gradT2 = 0.0;
+		double v2 = 0.0;
+		for (int k = 0; k < dim; k++)
+		{
+			gradT2 += gradT[k] * gradT[k];
+			v2 = vel[k] * vel[k];
+		}
+
+		entropy += (k_T * gradT2 / T0 + mu * v2 / (perm[0] * T0) ) * fkt;
+	}
+
+	return entropy;
+}
+
+
 }                                                 // end namespace
 
 //////////////////////////////////////////////////////////////////////////
 
 using FiniteElement::ElementValue;
 vector<ElementValue*> ele_gp_value;
+
+

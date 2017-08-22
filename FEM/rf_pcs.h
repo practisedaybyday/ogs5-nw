@@ -711,6 +711,9 @@ public:
 	double ExecuteNonLinear(int loop_process_number, bool print_pcs=true);
 	void PrintStandardIterationInformation(bool write_std_errors = true);
 
+
+	void computeEntropy();
+
 	virtual void CalculateElementMatrices(void);
 #if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 	void DDCAssembleGlobalMatrix();
@@ -906,6 +909,8 @@ private:
 	double e_n;
 	double e_pre;
 	double e_pre2;
+
+	double T0;
 };
 
 //========================================================================

@@ -232,7 +232,7 @@ CRFProcess::CRFProcess(void) :
 #ifdef JFNK_H2M
 	JFNK_precond(false), norm_u_JFNK(NULL), array_u_JFNK(NULL), array_Fu_JFNK(NULL),
 #endif
-	ele_val_name_vector (std::vector<std::string>())
+	ele_val_name_vector (std::vector<std::string>()), T0(0.)
 {
 	iter_lin = 0;
 	iter_lin_max = 0;
@@ -2016,6 +2016,15 @@ std::ios::pos_type CRFProcess::Read(std::ifstream* pcs_file)
 			pcs_file->ignore(MAX_ZEILE, '\n');
 			continue;
 		}
+
+		// subkeyword found
+		if (line_string.find("$T0") != string::npos)
+		{
+			*pcs_file >> T0;
+			pcs_file->ignore(MAX_ZEILE, '\n');
+			continue;
+		}
+
 		//....................................................................
 		//WW
 		if (line_string.find("$BOUNDARY_CONDITION_OUTPUT") != string::npos)
@@ -9616,6 +9625,8 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		// Calculate secondary variables
 		if(accepted){
 			CalcSecondaryVariables();
+
+			computeEntropy();
 		}
 #if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
 		// Release temporary memory of linear solver. WW
@@ -14427,3 +14438,41 @@ CRFProcess* PCSGetMass(size_t component_number)
 	}
 
 
+
+void CRFProcess::computeEntropy()
+{
+	if (getProcessType() != FiniteElement::HEAT_TRANSPORT)
+		return;
+
+	assert(fem);
+
+	CElem* elem = NULL;
+
+	bool Check2D3D;
+	Check2D3D = false;
+	if (type == 66)
+		Check2D3D = true;
+
+	const std::size_t num_mat = mmp_vector.size();
+
+	std::vector<double> entropy(num_mat);
+	for (std::size_t i=0; i<num_mat; i++)
+		entropy[i] = 0.;
+
+	for (size_t i = 0; i < m_msh->ele_vector.size(); i++)
+	{
+		elem = m_msh->ele_vector[i];
+		if (elem->GetMark())
+		{
+			elem->SetOrder(false);
+			fem->ConfigElement(elem, Check2D3D);
+			entropy[elem->GetPatchIndex()] += fem->CalcEntropy(T0);
+		}
+	}
+	std::cout <<"\n--- Entropy output:\n";
+	for (std::size_t i=0; i<num_mat; i++)
+	{
+		std::cout <<"\t Material ID: " << i << " Entropy: " << entropy[i] <<"\n";
+	}
+	std::cout << std::endl;
+}
