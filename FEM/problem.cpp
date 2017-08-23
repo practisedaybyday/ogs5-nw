@@ -1554,6 +1554,7 @@ void Problem::PostCouplingLoop()
 				ev->Velocity0 = ev->Velocity;
 			}
 		}
+		m_pcs->computeEntropy();
 	}
 // WW
 #if !defined(USE_PETSC) && !defined(NEW_EQS) // && defined(other parallel libs)//03~04.3012. WW

@@ -3066,6 +3066,10 @@ void CRFProcess::ConfigHeatTransport()
 		pcs_primary_function_unit[1] = "K";
 		pcs_number_of_secondary_nvals = 0;
 	}
+
+	pcs_number_of_evals = 1;
+	pcs_eval_name[0] = "ENTROPY";
+	pcs_eval_unit[0] = "J/K";
 }
 
 /**************************************************************************
@@ -9624,8 +9628,6 @@ double CRFProcess::CalcIterationNODError(FiniteElement::ErrorMethod method, bool
 		//
 		// Calculate secondary variables
 		if(accepted){
-			CalcSecondaryVariables();
-
 			computeEntropy();
 		}
 #if !defined(USE_PETSC) // && !defined(other parallel libs)//03.3012. WW
@@ -14466,13 +14468,8 @@ void CRFProcess::computeEntropy()
 		{
 			elem->SetOrder(false);
 			fem->ConfigElement(elem, Check2D3D);
-			entropy[elem->GetPatchIndex()] += fem->CalcEntropy(T0);
+			SetElementValue(i, GetElementValueIndex("ENTROPY"),
+				            fem->CalcEntropy(T0));
 		}
 	}
-	std::cout <<"\n--- Entropy output:\n";
-	for (std::size_t i=0; i<num_mat; i++)
-	{
-		std::cout <<"\t Material ID: " << i << " Entropy: " << entropy[i] <<"\n";
-	}
-	std::cout << std::endl;
 }
