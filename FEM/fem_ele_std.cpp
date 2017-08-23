@@ -11710,6 +11710,7 @@ double CFiniteElementStd::CalcEntropy(const double T0)
 		variables[0] = interpolate(NodalValC); //pressure
 		variables[1] = interpolate(NodalVal1); //temperature
 		const double mu = FluidProp->Viscosity(variables);
+		const double poro = MediaProp->Porosity(Index,pcs->m_num->ls_theta);
 
 		double gradT[] = {0., 0., 0.};
 		for (int i = 0; i < nnodes; i++)
@@ -11727,7 +11728,7 @@ double CFiniteElementStd::CalcEntropy(const double T0)
 			v2 = vel[k] * vel[k];
 		}
 
-		entropy += (k_T * gradT2 / T0 + mu * v2 / (perm[0] * T0) ) * fkt;
+		entropy += (k_T * gradT2 / T0 + mu * v2 / (perm[0] * T0 * poro * poro) ) * fkt;
 	}
 
 	return entropy;
