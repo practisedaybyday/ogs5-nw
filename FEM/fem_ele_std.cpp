@@ -11728,7 +11728,7 @@ double CFiniteElementStd::CalcEntropy(const double T0)
 			v2 = vel[k] * vel[k];
 		}
 
-		entropy += (k_T * gradT2 / T0 + mu * v2 / (perm[0] * T0 * poro * poro) ) * fkt;
+		entropy += (k_T * gradT2 / (T0 * T0) + mu * v2 / (perm[0] * T0 * poro * poro) ) * fkt;
 	}
 
 	return entropy;
