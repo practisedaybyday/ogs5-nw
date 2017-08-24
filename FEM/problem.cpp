@@ -1021,6 +1021,12 @@ void Problem::Euler_TimeDiscretize()
 	ScreenMessage("Start time steps\n");
 	//
 	// Output zero time initial values
+
+	for(i=0; i<(int)active_process_index.size(); i++)
+	{
+		total_processes[active_process_index[i]]->computeEntropy();
+	}
+
 #if defined(USE_MPI)  || defined(USE_MPI_KRC)
 	if(myrank == 0)
 	{
