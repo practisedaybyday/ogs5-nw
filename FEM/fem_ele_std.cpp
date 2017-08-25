@@ -11725,7 +11725,7 @@ double CFiniteElementStd::CalcEntropy(const double T0)
 		for (int k = 0; k < dim; k++)
 		{
 			gradT2 += gradT[k] * gradT[k];
-			v2 = vel[k] * vel[k];
+			v2 += vel[k] * vel[k];
 		}
 
 		entropy += (k_T * gradT2 / (T0 * T0) + mu * v2 / (perm[0] * T0 * poro * poro) ) * fkt;
